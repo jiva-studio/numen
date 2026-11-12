@@ -2,56 +2,28 @@ syntax = "proto3";
 
 package numen.v1;
 
-import "numen/v1/embedding.proto";
-
 option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
 
 // ProviderService is served by a plugin that provides connection types. The core calls it with the
 // fields of one connection for the length of one call. The provider keeps no state and no key between
-// calls.
+// calls. The core knows an operation by its name only; the payload and the frames are bytes of the
+// contract the operation belongs to.
 service ProviderService {
-  // Complete turns messages into the text of an answer.
-  rpc Complete(ProviderServiceCompleteRequest) returns (ProviderServiceCompleteResponse);
-
-  // Embed turns texts into vectors, in the order of the texts.
-  rpc Embed(ProviderServiceEmbedRequest) returns (ProviderServiceEmbedResponse);
-
-  // Chat streams the next turn of a conversation: text, then tool calls, then the end of the turn. A
-  // failure ends the stream. One call is one turn and the history travels with it.
-  rpc Chat(ProviderServiceChatRequest) returns (stream ProviderServiceChatResponse);
-
-  // ListModels lists the models of the connection that fit an operation.
-  rpc ListModels(ProviderServiceListModelsRequest) returns (ProviderServiceListModelsResponse);
-
-  // ListReasoningLevels lists the reasoning levels of the model of the call.
-  rpc ListReasoningLevels(ProviderServiceListReasoningLevelsRequest) returns (ProviderServiceListReasoningLevelsResponse);
-
-  // GetModelProfile returns what the provider knows about the embedding model of the call.
-  rpc GetModelProfile(ProviderServiceGetModelProfileRequest) returns (ProviderServiceGetModelProfileResponse);
-
-  // ProbeEmbeddingWidth embeds one short text with the model of the call and returns the width of the vector.
-  rpc ProbeEmbeddingWidth(ProviderServiceProbeEmbeddingWidthRequest) returns (ProviderServiceProbeEmbeddingWidthResponse);
-
-  // SubmitJob is reserved for deferred requests. No plugin serves it and the core does not call it.
-  rpc SubmitJob(ProviderServiceSubmitJobRequest) returns (ProviderServiceSubmitJobResponse);
-
-  // GetJobStatus is reserved for deferred requests. No plugin serves it and the core does not call it.
-  rpc GetJobStatus(ProviderServiceGetJobStatusRequest) returns (ProviderServiceGetJobStatusResponse);
-
-  // FetchJobResult is reserved for deferred requests. No plugin serves it and the core does not call it.
-  rpc FetchJobResult(ProviderServiceFetchJobResultRequest) returns (ProviderServiceFetchJobResultResponse);
+  // Call carries out one operation for one connection. The stream holds data frames and ends with one
+  // done or one failure.
+  rpc Call(ProviderServiceCallRequest) returns (stream ProviderServiceCallResponse);
 }
 
 // ProviderCall is the connection one call is made for: a snapshot the core reads at the start of the call.
 message ProviderCall {
+  string connection_id = 1;
   // type is the id the manifest of the plugin gives the type, without the plugin id.
-  string type = 1;
+  string type = 2;
   // fields are the fields that are not secret, with the fixed values of the type.
-  map<string, string> fields = 2;
-  repeated ProviderSecret secrets = 3;
-  string model = 4;
-  // reasoning is a value from ListReasoningLevels, or empty for the default of the provider.
-  string reasoning = 5;
+  map<string, string> fields = 3;
+  repeated ProviderSecret secrets = 4;
+  // options are the values of the row fields of the type that the row of the call holds.
+  map<string, string> options = 5;
 }
 
 message ProviderSecret {
@@ -59,207 +31,49 @@ message ProviderSecret {
   string value = 2 [debug_redact = true];
 }
 
-// ProviderFailureKind is what the core does after a call fails.
-enum ProviderFailureKind {
-  PROVIDER_FAILURE_KIND_UNSPECIFIED = 0;
-  // PROVIDER_FAILURE_KIND_TRY_NEXT is a connection that cannot serve now; the core goes to the next one.
-  PROVIDER_FAILURE_KIND_TRY_NEXT = 1;
-  // PROVIDER_FAILURE_KIND_STOP is a request that is wrong in itself; the core goes to no other connection.
-  PROVIDER_FAILURE_KIND_STOP = 2;
+// FailureKind is what the core does after a call fails.
+enum FailureKind {
+  FAILURE_KIND_UNSPECIFIED = 0;
+  // FAILURE_KIND_TRY_NEXT is a connection that cannot serve now; the core goes to the next one.
+  FAILURE_KIND_TRY_NEXT = 1;
+  // FAILURE_KIND_STOP is a request that is wrong in itself; the core goes to no other connection.
+  FAILURE_KIND_STOP = 2;
 }
 
-// ProviderFailureReason is why a call failed. The core shows a reason, and sees no HTTP code and no text
-// from a service.
-enum ProviderFailureReason {
-  PROVIDER_FAILURE_REASON_UNSPECIFIED = 0;
-  PROVIDER_FAILURE_REASON_KEY_REJECTED = 1;
-  PROVIDER_FAILURE_REASON_PAYMENT_REQUIRED = 2;
-  PROVIDER_FAILURE_REASON_RATE_LIMITED = 3;
-  PROVIDER_FAILURE_REASON_UNREACHABLE = 4;
-  PROVIDER_FAILURE_REASON_TIMEOUT = 5;
-  PROVIDER_FAILURE_REASON_BAD_REQUEST = 6;
-  PROVIDER_FAILURE_REASON_UNKNOWN = 7;
+// FailureReason is why a call failed. The core shows a reason, and sees no HTTP code and no text from a
+// service.
+enum FailureReason {
+  FAILURE_REASON_UNSPECIFIED = 0;
+  FAILURE_REASON_REJECTED_KEY = 1;
+  FAILURE_REASON_PAYMENT_REQUIRED = 2;
+  FAILURE_REASON_RATE_LIMITED = 3;
+  FAILURE_REASON_UNAVAILABLE = 4;
+  FAILURE_REASON_INVALID_REQUEST = 5;
 }
 
-// ProviderFailure is a call that was served and failed. A response that holds a failure holds no result.
+// ProviderFailure is a call that was served and failed.
 message ProviderFailure {
-  ProviderFailureKind kind = 1;
-  ProviderFailureReason reason = 2;
+  FailureKind kind = 1;
+  FailureReason reason = 2;
   // retry_after_ms is the wait the service asked for, and zero when it gave none.
   int64 retry_after_ms = 3;
+  // message is for the log of the provider; the core does not show it.
+  string message = 4;
 }
 
-message ProviderMessage {
-  // role is system, user or assistant.
-  string role = 1;
-  string text = 2;
+message ProviderServiceCallRequest {
+  // operation is the name of the operation, such as "llm.chat".
+  string operation = 1;
+  ProviderCall call = 2;
+  bytes payload = 3;
 }
 
-message ProviderServiceCompleteRequest {
-  ProviderCall call = 1;
-  repeated ProviderMessage messages = 2;
-  optional double temperature = 3;
-  int32 max_tokens = 4;
-}
-
-message ProviderServiceCompleteResponse {
-  string text = 1;
-  ProviderFailure failure = 2;
-}
-
-message ProviderChatMessage {
-  // role is system, user, assistant or tool.
-  string role = 1;
-  string text = 2;
-  // tool_calls are the calls an assistant message asked for.
-  repeated ProviderToolCall tool_calls = 3;
-  // tool_call_id is the call a tool message answers.
-  string tool_call_id = 4;
-}
-
-message ProviderToolDefinition {
-  string name = 1;
-  string description = 2;
-  // parameters_json is the JSON schema of the arguments.
-  string parameters_json = 3;
-}
-
-message ProviderToolCall {
-  string id = 1;
-  string name = 2;
-  // arguments_json is the arguments as one JSON object.
-  string arguments_json = 3;
-}
-
-// ProviderChatFinishReason is why a turn ended.
-enum ProviderChatFinishReason {
-  PROVIDER_CHAT_FINISH_REASON_UNSPECIFIED = 0;
-  // PROVIDER_CHAT_FINISH_REASON_STOP is an answer the model finished.
-  PROVIDER_CHAT_FINISH_REASON_STOP = 1;
-  // PROVIDER_CHAT_FINISH_REASON_TOOL_CALLS is a turn that asks for tool calls.
-  PROVIDER_CHAT_FINISH_REASON_TOOL_CALLS = 2;
-  // PROVIDER_CHAT_FINISH_REASON_LENGTH is an answer cut off at the length limit.
-  PROVIDER_CHAT_FINISH_REASON_LENGTH = 3;
-}
-
-message ProviderChatFinish {
-  ProviderChatFinishReason reason = 1;
-}
-
-message ProviderServiceChatRequest {
-  ProviderCall call = 1;
-  repeated ProviderChatMessage messages = 2;
-  repeated ProviderToolDefinition tools = 3;
-  optional double temperature = 4;
-  int32 max_tokens = 5;
-}
-
-// ProviderServiceChatResponse is one event of a turn. A turn ends with a finish or a failure.
-message ProviderServiceChatResponse {
-  oneof event {
-    string text_delta = 1;
-    ProviderToolCall tool_call = 2;
-    ProviderChatFinish finish = 3;
-    ProviderFailure failure = 4;
+// ProviderServiceCallResponse is one frame of a call.
+message ProviderServiceCallResponse {
+  oneof frame {
+    bytes data = 1;
+    // done ends the call; it may be empty.
+    bytes done = 2;
+    ProviderFailure failure = 3;
   }
-}
-
-message ProviderServiceEmbedRequest {
-  ProviderCall call = 1;
-  repeated string texts = 2;
-}
-
-message ProviderServiceEmbedResponse {
-  repeated FloatVector vectors = 1;
-  ProviderFailure failure = 2;
-}
-
-message ProviderModel {
-  string id = 1;
-  string title = 2;
-  // operations are what the service says the model does; empty when it says nothing.
-  repeated string operations = 3;
-}
-
-message ProviderServiceListModelsRequest {
-  ProviderCall call = 1;
-  string operation = 2;
-}
-
-message ProviderServiceListModelsResponse {
-  repeated ProviderModel models = 1;
-  ProviderFailure failure = 2;
-}
-
-message ProviderReasoningLevel {
-  string value = 1;
-  string title = 2;
-}
-
-message ProviderServiceListReasoningLevelsRequest {
-  ProviderCall call = 1;
-}
-
-message ProviderServiceListReasoningLevelsResponse {
-  repeated ProviderReasoningLevel levels = 1;
-  ProviderFailure failure = 2;
-}
-
-message ProviderServiceGetModelProfileRequest {
-  ProviderCall call = 1;
-}
-
-message ProviderServiceGetModelProfileResponse {
-  // is_known is false when the provider has no profile for the model; the core then probes the width.
-  bool is_known = 1;
-  int32 dimensions = 2;
-  // max_tokens is zero when the provider does not know the limit.
-  int32 max_tokens = 3;
-  string pooling = 4;
-  string query_prefix = 5;
-  string document_prefix = 6;
-  // source is the type and the address of the connection, never a key.
-  string source = 7;
-  ProviderFailure failure = 8;
-}
-
-message ProviderServiceProbeEmbeddingWidthRequest {
-  ProviderCall call = 1;
-}
-
-message ProviderServiceProbeEmbeddingWidthResponse {
-  int32 dimensions = 1;
-  ProviderFailure failure = 2;
-}
-
-message ProviderServiceSubmitJobRequest {
-  ProviderCall call = 1;
-  string operation = 2;
-  bytes request = 3;
-}
-
-message ProviderServiceSubmitJobResponse {
-  // job_id is opaque to the core.
-  string job_id = 1;
-  ProviderFailure failure = 2;
-}
-
-message ProviderServiceGetJobStatusRequest {
-  ProviderCall call = 1;
-  string job_id = 2;
-}
-
-message ProviderServiceGetJobStatusResponse {
-  string status = 1;
-  ProviderFailure failure = 2;
-}
-
-message ProviderServiceFetchJobResultRequest {
-  ProviderCall call = 1;
-  string job_id = 2;
-}
-
-message ProviderServiceFetchJobResultResponse {
-  bytes result = 1;
-  ProviderFailure failure = 2;
 }

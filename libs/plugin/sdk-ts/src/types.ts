@@ -10,7 +10,7 @@ import type { CommandItem, CommandsHost, CommandTarget } from './commands'
 import type { SlotHost } from './slots'
 import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
-import type { ModelHost } from './models'
+import type { ConnectionHost } from './connections'
 import type { MountedView, ViewCapability, ViewContexts, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from './workspace'
 
@@ -317,7 +317,7 @@ export interface PluginUi {
 // PluginWork is the agent and the background work of the core.
 export interface PluginWork {
   readonly agent?: AgentHost
-  readonly models?: ModelHost
+  readonly connections?: ConnectionHost
   readonly tasks?: TaskHost
   readonly backgroundTasks?: BackgroundTaskHost
 }

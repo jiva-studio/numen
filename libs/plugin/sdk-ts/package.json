@@ -8,6 +8,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./contracts/llm": "./src/contracts/llm/index.ts",
+    "./contracts/acp": "./src/contracts/acp/index.ts",
     "./testing": "./src/testing/index.ts",
     "./host-modules": "./src/hostModules.ts",
     "./vite": "./src/vite.ts"
@@ -17,6 +19,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.14.0",
     "@connectrpc/connect": "^2.3.0",
     "@connectrpc/connect-web": "^2.3.0",
     "@tailwindcss/node": "^4.3.3",

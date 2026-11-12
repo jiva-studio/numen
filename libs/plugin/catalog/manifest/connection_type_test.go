@@ -12,7 +12,8 @@ import (
 const connectionHead = `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"}`
 
 const openRouterType = `{"id":"openrouter","title":"OpenRouter","description":"One key for many models.",
-	"operations":["complete","embed"],
+	"operations":["llm.complete","llm.embed","llm.models"],
+	"rowFields":[{"key":"model","type":"string","title":"Model","required":true,"optionsFrom":"llm.models"}],
 	"fields":[
 		{"key":"baseUrl","type":"string","title":"Address","isAddress":true,"fixedValue":"https://openrouter.ai/api/v1"},
 		{"key":"apiKey","type":"secret","title":"API key","required":true},
@@ -29,7 +30,7 @@ func TestAManifestDeclaresTheConnectionTypesOfThePlugin(t *testing.T) {
 	}
 
 	declared, ok := m.Contributes.GetConnectionType("openrouter")
-	if !ok || declared.Title != "OpenRouter" || !declared.HasOperation("embed") || declared.HasOperation("chat") {
+	if !ok || declared.Title != "OpenRouter" || !declared.HasOperation("llm.embed") || declared.HasOperation("llm.chat") {
 		t.Fatalf("the openrouter type = %+v, %v", declared, ok)
 	}
 	address, _ := declared.GetField("baseUrl")
@@ -39,6 +40,10 @@ func TestAManifestDeclaresTheConnectionTypesOfThePlugin(t *testing.T) {
 	key, _ := declared.GetField("apiKey")
 	if key.Type != manifest.ConnectionFieldSecret || !key.IsRequired {
 		t.Errorf("the key field = %+v", key)
+	}
+	model, _ := declared.GetRowField("model")
+	if model.OptionsFrom != "llm.models" || !model.IsRequired {
+		t.Errorf("the model row field = %+v", model)
 	}
 	if _, ok := m.Contributes.GetConnectionType("missing"); ok {
 		t.Error("a type the manifest does not declare was found")
@@ -62,17 +67,20 @@ func TestAConnectionTypeIDJoinsThePluginIDAndTheLocalID(t *testing.T) {
 }
 
 func TestAConnectionTypeThatTheApplicationCannotUseIsRefused(t *testing.T) {
-	const head = `{"id":"x","title":"T","operations":["complete"]`
+	const head = `{"id":"x","title":"T","operations":["llm.complete"]`
 	cases := map[string]string{
-		"an id in capitals":              `{"id":"OpenRouter","title":"T","operations":["complete"]}`,
-		"an id with a slash":             `{"id":"a/b","title":"T","operations":["complete"]}`,
+		"an id in capitals":              `{"id":"OpenRouter","title":"T","operations":["llm.complete"]}`,
+		"an id with a slash":             `{"id":"a/b","title":"T","operations":["llm.complete"]}`,
 		"a type declared twice":          head + `},` + head + `}`,
-		"no title":                       `{"id":"x","title":" ","operations":["complete"]}`,
+		"no title":                       `{"id":"x","title":" ","operations":["llm.complete"]}`,
 		"no operation":                   `{"id":"x","title":"T","operations":[]}`,
 		"an operation in capitals":       `{"id":"x","title":"T","operations":["Complete"]}`,
-		"an operation twice":             `{"id":"x","title":"T","operations":["complete","complete"]}`,
-		"a reserved operation":           `{"id":"x","title":"T","operations":["submit"]}`,
+		"an operation twice":             `{"id":"x","title":"T","operations":["llm.complete","llm.complete"]}`,
 		"a field key with a dash":        head + `,"fields":[{"key":"base-url","type":"string","title":"A"}]}`,
+		"a row field of numbers":         head + `,"rowFields":[{"key":"a","type":"number","title":"A"}]}`,
+		"a row field keyed connection":   head + `,"rowFields":[{"key":"connection","type":"string","title":"A"}]}`,
+		"options from an unserved call":  head + `,"rowFields":[{"key":"model","type":"string","title":"Model","optionsFrom":"llm.models"}]}`,
+		"options from on a field":        `{"id":"x","title":"T","operations":["llm.complete","llm.models"],"fields":[{"key":"a","type":"string","title":"A","optionsFrom":"llm.models"}]}`,
 		"a field key twice":              head + `,"fields":[{"key":"a","type":"string","title":"A"},{"key":"a","type":"string","title":"B"}]}`,
 		"a reserved field key":           head + `,"fields":[{"key":"name","type":"string","title":"A"}]}`,
 		"an unknown field type":          head + `,"fields":[{"key":"a","type":"range","title":"A"}]}`,
@@ -103,7 +111,7 @@ func TestAConnectionTypeThatTheApplicationCannotUseIsRefused(t *testing.T) {
 
 func TestAPluginThatDeclaresConnectionTypesDeclaresABackend(t *testing.T) {
 	text := `{"id":"a.b","name":"A","version":"1.0.0","contributes":{"connectionTypes":[
-		{"id":"x","title":"T","operations":["complete"]}]}}`
+		{"id":"x","title":"T","operations":["llm.complete"]}]}}`
 	if _, err := manifestjson.Read(strings.NewReader(text)); !errors.Is(err, manifest.ErrNoBackend) {
 		t.Errorf("err = %v, want ErrNoBackend", err)
 	}

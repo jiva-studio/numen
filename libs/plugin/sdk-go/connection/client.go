@@ -13,8 +13,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
-// ErrNoConnection means the settings of the plugin hold no row that can serve the operation.
-var ErrNoConnection = errors.New("connection: no connection serves the operation")
+var (
+	// ErrNoConnection means the settings of the plugin hold no row that can serve the operation.
+	ErrNoConnection = errors.New("connection: no connection serves the operation")
+	// ErrStreamEnded means the stream of a call ended with neither a done nor a failure.
+	ErrStreamEnded = errors.New("connection: the stream ended before the call did")
+)
 
 // Failure is one row that did not answer: the name of its connection and the reason.
 type Failure struct{ ConnectionName, Reason string }
@@ -31,23 +35,58 @@ func (e *AllFailedError) Error() string {
 	return "connection: every connection failed: " + strings.Join(parts, "; ")
 }
 
-// RejectedError means a connection found the request itself wrong, so no other connection was tried.
-type RejectedError struct{ ConnectionName, Reason string }
+// StoppedError means a connection found the request itself wrong, so no other connection was tried.
+type StoppedError struct{ ConnectionName, Reason string }
 
 // Error names the connection and the reason.
-func (e *RejectedError) Error() string {
-	return "connection: " + e.ConnectionName + " rejected the request: " + e.Reason
+func (e *StoppedError) Error() string {
+	return "connection: " + e.ConnectionName + " stopped the request: " + e.Reason
+}
+
+// Priority says whose action a call serves. A call that sets none is background, so it waits behind the
+// calls of a person's actions when its connection runs as many calls as it may.
+//
+//numen:api
+type Priority int
+
+const (
+	// PriorityBackground is work that serves no person's action, such as indexing.
+	PriorityBackground Priority = iota
+	// PriorityInteractive is a person's action, such as a search or a check of a line.
+	PriorityInteractive
+)
+
+// Frames are the frames of one call. A reader calls Next until it returns false, then reads Err, and
+// reads Done where Err is nil.
+type Frames interface {
+	// Next moves to the next data frame. It returns false at the end of the call and on an error.
+	Next() bool
+	// Data is the data frame Next moved to.
+	Data() []byte
+	// Done is the done payload, once Next returned false and Err is nil.
+	Done() []byte
+	// Err returns why the call ended: nil after a done, ErrNoConnection, *AllFailedError or *StoppedError
+	// for a call the core could not serve, the error of the context for a canceled call, or ErrStreamEnded.
+	Err() error
+	// Close ends the call and cancels it if it has not ended.
+	Close() error
+}
+
+// Caller carries out one operation through the rows of the plugin. A Client is the Caller of a plugin
+// process; a plugin compiled into the core is handed one of the core.
+type Caller interface {
+	Call(ctx context.Context, operation string, payload []byte, priority Priority) (Frames, error)
 }
 
 // Client asks the core to carry out operations for one plugin. The core takes the connections from the
 // rows of the settings of that plugin; a request names no connection and a result holds no key.
 type Client struct {
-	host numenv1connect.HostModelServiceClient
+	host numenv1connect.HostConnectionServiceClient
 }
 
 // NewClient creates a client for the host at baseURL, authenticating with token.
 func NewClient(httpClient connect.HTTPClient, baseURL, token string) *Client {
-	return &Client{host: numenv1connect.NewHostModelServiceClient(
+	return &Client{host: numenv1connect.NewHostConnectionServiceClient(
 		httpClient, baseURL, connect.WithInterceptors(hostcall.Bearer(token)),
 	)}
 }
@@ -77,123 +116,104 @@ func newClientAt(endpoint hostcall.Endpoint) *Client {
 	return NewClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Token)
 }
 
-// Priority says whose action a call serves. A call that sets none is background, so it waits behind the
-// calls of a person's actions when its connection runs as many calls as it may.
-//
-//numen:api
-type Priority int
-
-const (
-	// PriorityBackground is work that serves no person's action, such as indexing.
-	PriorityBackground Priority = iota
-	// PriorityInteractive is a person's action, such as a search or a check of a line.
-	PriorityInteractive
-)
-
-// CompleteRequest is what a consumer asks a model to complete.
-type CompleteRequest struct {
-	Messages    []Message
-	Temperature *float64
-	MaxTokens   int
-	Priority    Priority
-}
-
-// EmbedRequest is the texts a consumer asks a model to embed.
-type EmbedRequest struct {
-	Texts    []string
-	Priority Priority
-}
-
-// EmbedResult holds one vector for each text, in the order of the texts.
-type EmbedResult struct{ Vectors [][]float32 }
-
-// EmbeddingProfile is what the first row that answers says about its embedding model. Model is the
-// model of that row and MaxTokens is zero when the limit is not known.
-type EmbeddingProfile struct {
-	Model          string
-	Source         string
-	Pooling        string
-	QueryPrefix    string
-	DocumentPrefix string
-	Dimensions     int
-	MaxTokens      int
-}
-
-// Complete asks the rows of the plugin, in order, to complete the messages. It returns ErrNoConnection,
-// *AllFailedError or *RejectedError where no row answers.
-func (c *Client) Complete(ctx context.Context, request CompleteRequest) (CompleteResult, error) {
-	messages := make([]*v1.HostModelMessage, len(request.Messages))
-	for i, one := range request.Messages {
-		messages[i] = &v1.HostModelMessage{Role: one.Role, Text: one.Text}
-	}
-	wire := &v1.HostModelServiceCompleteRequest{Messages: messages, Temperature: request.Temperature, MaxTokens: int32(request.MaxTokens), Priority: writePriority(request.Priority)}
-	response, err := c.host.Complete(ctx, connect.NewRequest(wire))
+// Call asks the rows of the plugin, in order, to carry out the operation. The core goes to the next row
+// only when a row fails before its first data frame. The caller closes the frames.
+func (c *Client) Call(ctx context.Context, operation string, payload []byte, priority Priority) (Frames, error) {
+	stream, err := c.host.Call(ctx, connect.NewRequest(&v1.HostConnectionServiceCallRequest{
+		Operation: operation, Payload: payload, Priority: writePriority(priority),
+	}))
 	if err != nil {
-		return CompleteResult{}, fmt.Errorf("connection: complete: %w", err)
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, ctxErr
+		}
+		return nil, fmt.Errorf("connection: call %s: %w", operation, err)
 	}
-	if err := readError(response.Msg.GetError(), response.Msg.GetDetail(), response.Msg.GetFailures()); err != nil {
-		return CompleteResult{}, err
-	}
-	return CompleteResult{Text: response.Msg.GetText()}, nil
+	return &stream{stream: stream, contextErr: ctx.Err, operation: operation}, nil
 }
 
-// Embed asks the rows of the plugin, in order, to embed the texts. It returns the errors Complete does.
-func (c *Client) Embed(ctx context.Context, request EmbedRequest) (EmbedResult, error) {
-	response, err := c.host.Embed(ctx, connect.NewRequest(&v1.HostModelServiceEmbedRequest{Texts: request.Texts, Priority: writePriority(request.Priority)}))
-	if err != nil {
-		return EmbedResult{}, fmt.Errorf("connection: embed: %w", err)
-	}
-	if err := readError(response.Msg.GetError(), response.Msg.GetDetail(), response.Msg.GetFailures()); err != nil {
-		return EmbedResult{}, err
-	}
-	vectors := make([][]float32, len(response.Msg.GetVectors()))
-	for i, one := range response.Msg.GetVectors() {
-		vectors[i] = one.GetValues()
-	}
-	return EmbedResult{Vectors: vectors}, nil
+type stream struct {
+	stream     *connect.ServerStreamForClient[v1.HostConnectionServiceCallResponse]
+	contextErr func() error
+	operation  string
+	data       []byte
+	done       []byte
+	err        error
+	isDone     bool
 }
 
-// GetEmbeddingProfile asks the rows of the plugin, in order, for the profile of their embedding model.
-// It returns the errors Complete does.
-func (c *Client) GetEmbeddingProfile(ctx context.Context) (EmbeddingProfile, error) {
-	response, err := c.host.GetEmbeddingProfile(ctx, connect.NewRequest(&v1.HostModelServiceGetEmbeddingProfileRequest{}))
-	if err != nil {
-		return EmbeddingProfile{}, fmt.Errorf("connection: get embedding profile: %w", err)
+func (s *stream) Next() bool {
+	for !s.isDone {
+		if !s.stream.Receive() {
+			s.isDone = true
+			s.err = s.readEnd()
+			return false
+		}
+		switch frame := s.stream.Msg().GetFrame().(type) {
+		case *v1.HostConnectionServiceCallResponse_Data:
+			s.data = frame.Data
+			return true
+		case *v1.HostConnectionServiceCallResponse_Done:
+			s.isDone, s.done = true, frame.Done
+		case *v1.HostConnectionServiceCallResponse_Failure:
+			s.isDone = true
+			s.err = readFailure(frame.Failure)
+		}
 	}
-	if err := readError(response.Msg.GetError(), response.Msg.GetDetail(), response.Msg.GetFailures()); err != nil {
-		return EmbeddingProfile{}, err
-	}
-	return EmbeddingProfile{
-		Model:          response.Msg.GetModel(),
-		Source:         response.Msg.GetSource(),
-		Pooling:        response.Msg.GetPooling(),
-		QueryPrefix:    response.Msg.GetQueryPrefix(),
-		DocumentPrefix: response.Msg.GetDocumentPrefix(),
-		Dimensions:     int(response.Msg.GetDimensions()),
-		MaxTokens:      int(response.Msg.GetMaxTokens()),
-	}, nil
+	return false
 }
 
-func readError(code v1.HostModelErrorCode, detail string, failures []*v1.HostModelFailure) error {
-	switch code {
-	case v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_UNSPECIFIED:
-		return nil
-	case v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_NO_CONNECTION:
+func (s *stream) Data() []byte { return s.data }
+
+func (s *stream) Done() []byte { return s.done }
+
+func (s *stream) Err() error { return s.err }
+
+func (s *stream) Close() error { return s.stream.Close() }
+
+func (s *stream) readEnd() error {
+	if err := s.stream.Err(); err != nil {
+		if ctxErr := s.contextErr(); ctxErr != nil {
+			return ctxErr
+		}
+		return fmt.Errorf("connection: call %s: %w", s.operation, err)
+	}
+	return ErrStreamEnded
+}
+
+// readFailure turns the failure frame of a call into ErrNoConnection, *AllFailedError or *StoppedError.
+func readFailure(failure *v1.CallFailure) error {
+	failures := failure.GetFailures()
+	switch failure.GetError() {
+	case v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION:
 		return ErrNoConnection
-	case v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_ALL_FAILED:
+	case v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED:
 		all := &AllFailedError{Failures: make([]Failure, len(failures))}
 		for i, one := range failures {
 			all.Failures[i] = Failure{ConnectionName: one.GetConnectionName(), Reason: one.GetReason()}
 		}
 		return all
-	case v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_REJECTED:
-		rejected := &RejectedError{}
+	case v1.CallErrorCode_CALL_ERROR_CODE_STOPPED:
+		stopped := &StoppedError{}
 		if len(failures) > 0 {
-			rejected.ConnectionName, rejected.Reason = failures[0].GetConnectionName(), failures[0].GetReason()
+			stopped.ConnectionName, stopped.Reason = failures[0].GetConnectionName(), failures[0].GetReason()
 		}
-		return rejected
+		return stopped
+	case v1.CallErrorCode_CALL_ERROR_CODE_UNSPECIFIED:
 	}
-	return fmt.Errorf("connection: unknown error code %d: %s", code, detail)
+	return fmt.Errorf("connection: unknown error code %d: %s", failure.GetError(), failure.GetDetail())
+}
+
+// Collect reads frames to their end and returns the data frames in order with the done payload. It closes
+// the frames.
+func Collect(frames Frames) (data [][]byte, done []byte, err error) {
+	defer func() { err = errors.Join(err, frames.Close()) }()
+	for frames.Next() {
+		data = append(data, frames.Data())
+	}
+	if err := frames.Err(); err != nil {
+		return nil, nil, err
+	}
+	return data, frames.Done(), nil
 }
 
 func writePriority(priority Priority) v1.Priority {

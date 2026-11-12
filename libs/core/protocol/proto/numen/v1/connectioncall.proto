@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/hostconnection.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// ConnectionCallService carries out the operations a plugin view asks for, through the rows of the plugin
+// the request names. The host endpoint that plugin processes reach with their token does not mount it,
+// and the handler refuses a request that carries a token.
+service ConnectionCallService {
+  // Call carries out one operation as HostConnectionService.Call does.
+  rpc Call(ConnectionCallServiceCallRequest) returns (stream ConnectionCallServiceCallResponse);
+}
+
+message ConnectionCallServiceCallRequest {
+  // plugin_id is the plugin whose rows serve the call.
+  string plugin_id = 1;
+  string operation = 2;
+  bytes payload = 3;
+  Priority priority = 4;
+}
+
+// ConnectionCallServiceCallResponse is one frame of a call.
+message ConnectionCallServiceCallResponse {
+  oneof frame {
+    bytes data = 1;
+    // done ends the call; it may be empty.
+    bytes done = 2;
+    CallFailure failure = 3;
+  }
+}

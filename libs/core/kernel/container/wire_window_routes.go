@@ -8,11 +8,11 @@ import (
 	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connectioncall"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
-	windowmodel "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/model"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
 	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
@@ -335,8 +335,8 @@ func mountConnection(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountModel(w *windowWiring) {
-	handler := windowmodel.NewService(openModelLists(w.a), openModelCalls(w.a))
-	path, served := windowmodel.NewRoute(handler, w.state.Gate.CountQuestions())
+func mountConnectionCall(w *windowWiring) {
+	handler := connectioncall.NewService(openModelCalls(w.a))
+	path, served := connectioncall.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

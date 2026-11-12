@@ -50,7 +50,7 @@ func writeConnection(entry connections.Entry) (*v1.ProviderConnection, error) {
 func writeUses(uses []connection.Use) []*v1.ProviderConnectionUse {
 	wire := make([]*v1.ProviderConnectionUse, 0, len(uses))
 	for _, one := range uses {
-		wire = append(wire, &v1.ProviderConnectionUse{PluginId: one.PluginID, PluginName: one.PluginName, Operation: one.Operation})
+		wire = append(wire, &v1.ProviderConnectionUse{PluginId: one.PluginID, PluginName: one.PluginName, Operations: one.Operations})
 	}
 	return wire
 }
@@ -72,6 +72,13 @@ func writeType(one connection.Type) (*v1.ProviderConnectionType, error) {
 		}
 		wire.Fields = append(wire.Fields, converted)
 	}
+	for _, field := range one.Declaration.RowFields {
+		converted, err := writeField(field)
+		if err != nil {
+			return nil, err
+		}
+		wire.RowFields = append(wire.RowFields, converted)
+	}
 	return wire, nil
 }
 
@@ -87,6 +94,7 @@ func writeField(field manifest.ConnectionField) (*v1.ManifestConnectionField, er
 		Min:         field.Min,
 		Max:         field.Max,
 		Step:        field.Step,
+		OptionsFrom: field.OptionsFrom,
 	}
 	if field.Default != nil {
 		value, err := structpb.NewValue(field.Default)

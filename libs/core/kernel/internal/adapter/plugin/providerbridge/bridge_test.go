@@ -202,7 +202,7 @@ func TestAStopFailureBecomesAStopError(t *testing.T) {
 	_, err := provider.Complete(t.Context(), modelcall.ProviderCall{}, modelcall.CompleteRequest{})
 
 	var stopError *connection.StopError
-	if !errors.As(err, &stopError) || stopError.Reason != connection.FailureReasonBadRequest {
+	if !errors.As(err, &stopError) || stopError.Reason != connection.FailureReasonInvalidRequest {
 		t.Errorf("err = %v, want a stop error for a bad request", err)
 	}
 }
@@ -213,7 +213,7 @@ func TestAFailureOfNoKindIsAStopOfUnknownReason(t *testing.T) {
 	_, err := provider.Complete(t.Context(), modelcall.ProviderCall{}, modelcall.CompleteRequest{})
 
 	var stopError *connection.StopError
-	if !errors.As(err, &stopError) || stopError.Reason != connection.FailureReasonUnknown {
+	if !errors.As(err, &stopError) || stopError.Reason != connection.FailureReasonUnavailable {
 		t.Errorf("err = %v, want a stop error of unknown reason", err)
 	}
 }
@@ -224,7 +224,7 @@ func TestARoleThePluginDoesNotServeIsAStopOfUnknownReason(t *testing.T) {
 	_, err := provider.ProbeEmbeddingWidth(t.Context(), modelcall.ProviderCall{})
 
 	var stopError *connection.StopError
-	if !errors.As(err, &stopError) || stopError.Reason != connection.FailureReasonUnknown {
+	if !errors.As(err, &stopError) || stopError.Reason != connection.FailureReasonUnavailable {
 		t.Errorf("err = %v, want a stop error of unknown reason", err)
 	}
 }

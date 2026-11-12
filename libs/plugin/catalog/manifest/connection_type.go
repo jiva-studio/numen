@@ -21,23 +21,26 @@ const (
 
 var (
 	connectionTypeIDPattern    = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
-	connectionOperationPattern = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
+	connectionOperationPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)*$`)
 	connectionFieldKeyPattern  = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*$`)
 )
 
 // ConnectionType is a kind of connection a plugin provides. ID is the local part of the type id, and
-// Operations are the calls the type supports.
+// Operations are the names of the operations the type serves. RowFields are the values a row that names
+// a connection of the type holds besides the connection.
 type ConnectionType struct {
 	ID          string
 	Title       string
 	Description string
 	Operations  []string
 	Fields      []ConnectionField
+	RowFields   []ConnectionField
 }
 
 // ConnectionField is one value a connection of a type holds. FixedValue is held by every connection
 // of the type and is neither stored nor edited. IsAddress marks the field whose change clears the
-// secret fields of the connection.
+// secret fields of the connection. OptionsFrom names the operation of the type that lists the values
+// of a row field.
 type ConnectionField struct {
 	Key         string
 	Type        string
@@ -51,6 +54,7 @@ type ConnectionField struct {
 	Min         *float64
 	Max         *float64
 	Step        *float64
+	OptionsFrom string
 }
 
 func (t ConnectionType) GetField(key string) (ConnectionField, bool) {
@@ -62,7 +66,17 @@ func (t ConnectionType) GetField(key string) (ConnectionField, bool) {
 	return ConnectionField{}, false
 }
 
-// HasOperation reports whether the type supports the operation.
+// GetRowField returns the row field with the key.
+func (t ConnectionType) GetRowField(key string) (ConnectionField, bool) {
+	for _, one := range t.RowFields {
+		if one.Key == key {
+			return one, true
+		}
+	}
+	return ConnectionField{}, false
+}
+
+// HasOperation reports whether the type serves the operation.
 func (t ConnectionType) HasOperation(operation string) bool {
 	return slices.Contains(t.Operations, operation)
 }
@@ -97,8 +111,6 @@ func connectionFieldTypes() []string {
 	return []string{SettingTypeString, settingTypeNumber, settingTypeBoolean, SettingTypeEnum, SettingTypeFile, ConnectionFieldSecret}
 }
 
-func reservedConnectionOperations() []string { return []string{"submit", "status", "fetch"} }
-
 func (m Manifest) listConnectionTypeIssues() []error {
 	var issues []error
 	observed := map[string]bool{}
@@ -115,6 +127,7 @@ func (m Manifest) listConnectionTypeIssues() []error {
 		}
 		issues = append(issues, listConnectionOperationIssues(one)...)
 		issues = append(issues, listConnectionFieldIssues(one)...)
+		issues = append(issues, listRowFieldIssues(one)...)
 	}
 	return issues
 }
@@ -131,9 +144,7 @@ func listConnectionOperationIssues(t ConnectionType) []error {
 	for index, operation := range t.Operations {
 		switch {
 		case !connectionOperationPattern.MatchString(operation):
-			issues = append(issues, newConnectionIssue("type %q: operation %q is not a lowercase word", t.ID, operation))
-		case slices.Contains(reservedConnectionOperations(), operation):
-			issues = append(issues, newConnectionIssue("type %q: %q is the name of a call of deferred requests, not an operation", t.ID, operation))
+			issues = append(issues, newConnectionIssue("type %q: operation %q is not lowercase words joined by dots", t.ID, operation))
 		case slices.Index(t.Operations, operation) != index:
 			issues = append(issues, newConnectionIssue("type %q: operation %q is listed twice", t.ID, operation))
 		}
@@ -157,6 +168,9 @@ func listConnectionFieldIssues(t ConnectionType) []error {
 		observed[field.Key] = true
 		if field.IsAddress {
 			addresses++
+		}
+		if field.OptionsFrom != "" {
+			issues = append(issues, newFieldIssue(t.ID, field, "names optionsFrom and is no row field"))
 		}
 		issues = append(issues, listConnectionFieldShapeIssues(t.ID, field)...)
 	}
@@ -216,4 +230,36 @@ func listParallelRequestsIssues(typeID string, field ConnectionField) []error {
 		return []error{newConnectionIssue("type %q: the default of %s is a whole number of at least min", typeID, ConnectionParallelRequests)}
 	}
 	return nil
+}
+
+// rowFieldConnection is the key a row stores its connection under.
+const rowFieldConnection = "connection"
+
+func listRowFieldIssues(t ConnectionType) []error {
+	var issues []error
+	observed := map[string]bool{}
+	for _, field := range t.RowFields {
+		switch {
+		case !connectionFieldKeyPattern.MatchString(field.Key):
+			issues = append(issues, newConnectionIssue("type %q: row field key %q is not letters and digits starting with a letter", t.ID, field.Key))
+		case field.Key == rowFieldConnection:
+			issues = append(issues, newConnectionIssue("type %q: row field key %q is reserved", t.ID, field.Key))
+		case observed[field.Key]:
+			issues = append(issues, newConnectionIssue("type %q: row field %q is declared twice", t.ID, field.Key))
+		}
+		observed[field.Key] = true
+		if field.Type != SettingTypeString && field.Type != SettingTypeEnum {
+			issues = append(issues, newFieldIssue(t.ID, field, "is a row field and is not a string or an enum"))
+		}
+		if field.Type == SettingTypeEnum && len(field.Options) == 0 && field.OptionsFrom == "" {
+			issues = append(issues, newFieldIssue(t.ID, field, "is an enum with neither options nor optionsFrom"))
+		}
+		if field.FixedValue != nil || field.IsAddress {
+			issues = append(issues, newFieldIssue(t.ID, field, "is a row field and has a fixed value or the address mark"))
+		}
+		if field.OptionsFrom != "" && !t.HasOperation(field.OptionsFrom) {
+			issues = append(issues, newFieldIssue(t.ID, field, "lists its options from %q, which the type does not serve", field.OptionsFrom))
+		}
+	}
+	return issues
 }

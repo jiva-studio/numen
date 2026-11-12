@@ -101,11 +101,11 @@ func TestAFailureToTryTheNextGoesToTheNextRow(t *testing.T) {
 
 func TestAStopEndsTheCallAndNamesTheConnection(t *testing.T) {
 	s := newSetup(t, "complete")
-	s.world.Provider.Fail(addressOne, stop(connection.FailureReasonBadRequest))
+	s.world.Provider.Fail(addressOne, stop(connection.FailureReasonInvalidRequest))
 
 	_, err := s.complete(t)
 
-	var rejected *connection.RejectedError
+	var rejected *connection.StoppedError
 	if !errors.As(err, &rejected) || rejected.ConnectionName != "First" || rejected.Reason != "bad request" {
 		t.Fatalf("err = %v, want a rejection by First for a bad request", err)
 	}
@@ -116,7 +116,7 @@ func TestAStopEndsTheCallAndNamesTheConnection(t *testing.T) {
 
 func TestAStopSetsNoCooldown(t *testing.T) {
 	s := newSetup(t, "complete")
-	s.world.Provider.Fail(addressOne, stop(connection.FailureReasonBadRequest))
+	s.world.Provider.Fail(addressOne, stop(connection.FailureReasonInvalidRequest))
 	s.attempt(t)
 
 	if _, err := s.complete(t); err != nil {
@@ -130,13 +130,13 @@ func TestAStopSetsNoCooldown(t *testing.T) {
 
 func TestEveryReasonOfAFailureIsNamedForThePerson(t *testing.T) {
 	for reason, want := range map[connection.FailureReason]string{
-		connection.FailureReasonKeyRejected:     "key rejected",
+		connection.FailureReasonRejectedKey:     "key rejected",
 		connection.FailureReasonPaymentRequired: "payment required",
 		connection.FailureReasonRateLimited:     "rate limited",
-		connection.FailureReasonUnreachable:     "unreachable",
-		connection.FailureReasonTimeout:         "timeout",
-		connection.FailureReasonBadRequest:      "bad request",
-		connection.FailureReasonUnknown:         "unknown",
+		connection.FailureReasonUnavailable:     "unreachable",
+		connection.FailureReasonUnavailable:     "timeout",
+		connection.FailureReasonInvalidRequest:  "bad request",
+		connection.FailureReasonUnavailable:     "unknown",
 	} {
 		s := newSetup(t, "complete")
 		s.world.Provider.FailAlways(addressOne, tryNext(reason, 0))
@@ -144,7 +144,7 @@ func TestEveryReasonOfAFailureIsNamedForThePerson(t *testing.T) {
 
 		_, err := s.complete(t)
 
-		var rejected *connection.RejectedError
+		var rejected *connection.StoppedError
 		if !errors.As(err, &rejected) || rejected.Reason != want {
 			t.Errorf("reason %v: err = %v, want a rejection for %q", reason, err, want)
 		}
@@ -236,7 +236,7 @@ func TestTheKeysGoOnlyToThePluginThatProvidesTheType(t *testing.T) {
 	s := newSetup(t, "complete")
 	other := s.world.Add(t, modelcalltest.OtherServerTypeID, "Other", "https://other.test/v1", "sk-other")
 	s.world.Rows.Set(consumerID, "complete", modelcalltest.Row(other, "m"), modelcalltest.Row(s.one, "m"))
-	s.world.Provider.FailAlways("https://other.test/v1", tryNext(connection.FailureReasonUnreachable, 0))
+	s.world.Provider.FailAlways("https://other.test/v1", tryNext(connection.FailureReasonUnavailable, 0))
 
 	if _, err := s.complete(t); err != nil {
 		t.Fatal(err)
@@ -252,10 +252,10 @@ func TestNothingTheConsumerReceivesContainsAKey(t *testing.T) {
 	for name, arrange := range map[string]func(*setup){
 		"an answer": func(*setup) {},
 		"every row failed": func(s *setup) {
-			s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonKeyRejected, 0))
+			s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonRejectedKey, 0))
 			s.world.Provider.FailAlways(addressTwo, tryNext(connection.FailureReasonPaymentRequired, 0))
 		},
-		"a rejection": func(s *setup) { s.world.Provider.FailAlways(addressOne, stop(connection.FailureReasonBadRequest)) },
+		"a rejection": func(s *setup) { s.world.Provider.FailAlways(addressOne, stop(connection.FailureReasonInvalidRequest)) },
 		"a plain error of the provider": func(s *setup) {
 			s.world.Provider.FailAlways(addressOne, errors.New("HTTP 401: Authorization: Bearer "+keyOne))
 			s.world.Provider.FailAlways(addressTwo, errors.New("HTTP 401: Authorization: Bearer "+keyTwo))
@@ -319,10 +319,10 @@ func TestAProviderRestartedInTheMiddleOfACallIsStartedAgainForTheRetry(t *testin
 
 func TestEveryProviderOpenedIsReleased(t *testing.T) {
 	s := newSetup(t, "complete")
-	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonTimeout, 0))
+	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonUnavailable, 0))
 
 	s.attempt(t)
-	s.world.Provider.FailAlways(addressTwo, stop(connection.FailureReasonBadRequest))
+	s.world.Provider.FailAlways(addressTwo, stop(connection.FailureReasonInvalidRequest))
 	s.attempt(t)
 
 	if opened, released := len(s.world.Source.Opened()), s.world.Source.Released(); opened != released {

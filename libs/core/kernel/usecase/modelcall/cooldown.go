@@ -71,7 +71,7 @@ func (c *cooldown) start(version connectionVersion, reason connection.FailureRea
 }
 
 func lastsUntilEdited(reason connection.FailureReason) bool {
-	return reason == connection.FailureReasonKeyRejected || reason == connection.FailureReasonPaymentRequired
+	return reason == connection.FailureReasonRejectedKey || reason == connection.FailureReasonPaymentRequired
 }
 
 type notice struct {

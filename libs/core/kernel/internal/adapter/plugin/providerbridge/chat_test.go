@@ -132,7 +132,7 @@ func TestAChatFailureAfterTheFirstEventKeepsTheEventsAndBecomesAStopError(t *tes
 	err := provider.Chat(t.Context(), modelcall.ProviderCall{}, modelcall.ChatRequest{}, collect(&got))
 
 	var stopError *connection.StopError
-	if !errors.As(err, &stopError) || stopError.Reason != connection.FailureReasonBadRequest || len(got) != 1 || got[0].TextDelta != "partial" {
+	if !errors.As(err, &stopError) || stopError.Reason != connection.FailureReasonInvalidRequest || len(got) != 1 || got[0].TextDelta != "partial" {
 		t.Errorf("err = %v, events = %v", err, got)
 	}
 }
@@ -156,7 +156,7 @@ func TestAChatRoleThePluginDoesNotServeIsAStopOfUnknownReason(t *testing.T) {
 	err := provider.Chat(t.Context(), modelcall.ProviderCall{}, modelcall.ChatRequest{}, func(modelcall.ChatEvent) error { return nil })
 
 	var stopError *connection.StopError
-	if !errors.As(err, &stopError) || stopError.Reason != connection.FailureReasonUnknown {
+	if !errors.As(err, &stopError) || stopError.Reason != connection.FailureReasonUnavailable {
 		t.Errorf("err = %v, want a stop error of unknown reason", err)
 	}
 }

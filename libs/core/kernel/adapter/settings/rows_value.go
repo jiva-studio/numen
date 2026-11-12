@@ -10,14 +10,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// The keys of a row in the value of a setting of rows.
-const (
-	rowConnection = "connection"
-	rowModel      = "model"
-	rowReasoning  = "reasoning"
-)
+// rowConnection is the key of the connection in a row of the value of a setting of rows. Every other key
+// of a row is a row field of the type of the connection, held as a string.
+const rowConnection = "connection"
 
-type rowIdentity struct{ connection, model string }
+// rowIdentity is the connection and the options of a row, written in the order of their keys.
+type rowIdentity struct{ connection, options string }
 
 func checkRows(declared manifest.Setting, registries Registries, value any) error {
 	list, isList := value.([]any)
@@ -35,7 +33,7 @@ func checkRows(declared manifest.Setting, registries Registries, value any) erro
 			return fmt.Errorf("row %d: %w", index+1, err)
 		}
 		if pairs[identity] {
-			return fmt.Errorf("row %d: %w: the connection and the model are in a row before", index+1, ErrWrongType)
+			return fmt.Errorf("row %d: %w: the connection and its options are in a row before", index+1, ErrWrongType)
 		}
 		pairs[identity] = true
 	}
@@ -62,26 +60,25 @@ func readRow(row any, connectionIDs map[string]bool, isKnown bool) (rowIdentity,
 	if !isObject {
 		return rowIdentity{}, fmt.Errorf("%w: expected an object", ErrWrongType)
 	}
-	for _, key := range slices.Sorted(maps.Keys(object)) {
-		if key != rowConnection && key != rowModel && key != rowReasoning {
-			return rowIdentity{}, fmt.Errorf("%w: %q is no key of a row", ErrWrongType, key)
-		}
-	}
 	connection, err := readRowText(object, rowConnection, true)
 	if err != nil {
 		return rowIdentity{}, err
 	}
-	model, err := readRowText(object, rowModel, true)
-	if err != nil {
-		return rowIdentity{}, err
-	}
-	if _, err := readRowText(object, rowReasoning, false); err != nil {
-		return rowIdentity{}, err
+	var options strings.Builder
+	for _, key := range slices.Sorted(maps.Keys(object)) {
+		if key == rowConnection {
+			continue
+		}
+		text, err := readRowText(object, key, false)
+		if err != nil {
+			return rowIdentity{}, err
+		}
+		fmt.Fprintf(&options, "%q=%q;", key, text)
 	}
 	if isKnown && !connectionIDs[connection] {
 		return rowIdentity{}, fmt.Errorf("%q is %w the connections", connection, ErrNotAnOption)
 	}
-	return rowIdentity{connection: connection, model: model}, nil
+	return rowIdentity{connection: connection, options: options.String()}, nil
 }
 
 func readRowText(object map[string]any, key string, isRequired bool) (string, error) {
@@ -120,7 +117,7 @@ func (f *File) dropInvalidRows(owner string, declared manifest.Setting) {
 		case err != nil:
 			reason = err.Error()
 		case pairs[identity]:
-			reason = "the connection and the model are in a row before"
+			reason = "the connection and its options are in a row before"
 		case declared.Max != nil && float64(len(remainder)) >= *declared.Max:
 			reason = fmt.Sprintf("more than %v rows", *declared.Max)
 		}

@@ -33,7 +33,7 @@ const everyFieldManifest = `{
 			"when": {"setting": "mode", "is": ["a"]}},
 		{"key": "theme", "type": "enum", "title": "Theme", "optionsFrom": "themes", "preview": true},
 		{"key": "token", "type": "string", "title": "Token", "generate": "token"},
-		{"key": "rows", "type": "connections", "title": "Rows", "operation": "complete", "max": 2}
+		{"key": "rows", "type": "connections", "title": "Rows", "operations": ["llm.complete"], "max": 2}
 	],
 	"services": ["numen.v1.Full"],
 	"settingsViews": [{"id": "v", "title": "V"}],
@@ -57,7 +57,7 @@ const everyFieldManifest = `{
 		"keybindings": [{"key": "mod+shift+r", "command": "task.run", "values": {"n": "3"}, "when": "window.isVaultOpen"}],
 		"viewCapabilities": ["conversation"],
 		"dropHandlers": [{"types": ["text/uri-list"]}],
-		"connectionTypes": [{"id": "svc", "title": "Service", "description": "d", "operations": ["complete"], "fields": [
+		"connectionTypes": [{"id": "svc", "title": "Service", "description": "d", "operations": ["llm.complete"], "fields": [
 			{"key": "baseUrl", "type": "string", "title": "Address", "description": "d", "isAddress": true, "fixedValue": "https://svc.example/v1"},
 			{"key": "mode", "type": "enum", "title": "Mode", "options": ["a", "b"], "default": "a"},
 			{"key": "apiKey", "type": "secret", "title": "Key", "required": true},

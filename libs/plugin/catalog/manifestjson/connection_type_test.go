@@ -9,7 +9,7 @@ import (
 
 func TestAConnectionTypeIsReadWithItsFields(t *testing.T) {
 	m, err := manifestjson.Decode([]byte(`{"id":"a.b","contributes":{"connectionTypes":[
-		{"id":"local","title":"Local","description":"d","operations":["complete","embed"],"fields":[
+		{"id":"local","title":"Local","description":"d","operations":["llm.complete","llm.embed"],"fields":[
 			{"key":"baseUrl","type":"string","title":"Address","description":"where","isAddress":true,"required":true,"default":"http://localhost:11434/v1"},
 			{"key":"mode","type":"enum","title":"Mode","options":["a",{"value":"b","title":"B"}]},
 			{"key":"parallelRequests","type":"number","title":"Parallel","default":2,"min":1,"max":8,"step":1}]}]}}`))
@@ -21,7 +21,7 @@ func TestAConnectionTypeIsReadWithItsFields(t *testing.T) {
 		t.Fatalf("types = %+v", m.Contributes.ConnectionTypes)
 	}
 	one := m.Contributes.ConnectionTypes[0]
-	if one.ID != "local" || one.Title != "Local" || one.Description != "d" || !slices.Equal(one.Operations, []string{"complete", "embed"}) {
+	if one.ID != "local" || one.Title != "Local" || one.Description != "d" || !slices.Equal(one.Operations, []string{"llm.complete", "llm.embed"}) {
 		t.Errorf("type = %+v", one)
 	}
 	address, mode, parallel := one.Fields[0], one.Fields[1], one.Fields[2]

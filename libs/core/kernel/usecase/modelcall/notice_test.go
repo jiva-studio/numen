@@ -65,10 +65,10 @@ func TestAnotherReasonOfTheSameConnectionIsNotifiedAgain(t *testing.T) {
 
 func TestAnEditedConnectionIsNotifiedAgain(t *testing.T) {
 	s := newSetup(t, "complete")
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonKeyRejected, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonRejectedKey, 0))
 	s.attempt(t)
 	s.world.Edit(t, s.one, "First, new key")
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonKeyRejected, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonRejectedKey, 0))
 
 	s.attempt(t)
 
@@ -106,7 +106,7 @@ func TestThePersonIsNotNotifiedAboutARowThatWasOnlySkipped(t *testing.T) {
 
 func TestThePersonIsNotNotifiedAboutAStop(t *testing.T) {
 	s := newSetup(t, "complete")
-	s.world.Provider.Fail(addressOne, stop(connection.FailureReasonBadRequest))
+	s.world.Provider.Fail(addressOne, stop(connection.FailureReasonInvalidRequest))
 
 	s.attempt(t)
 

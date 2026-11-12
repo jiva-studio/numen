@@ -931,6 +931,161 @@ func (*DeletePluginDataResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{15}
 }
 
+// OptionsRequest is the payload of an operation a row field of a connection type names in options_from.
+type OptionsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// operations are the operations the setting of rows the field belongs to is used for.
+	Operations    []string `protobuf:"bytes,1,rep,name=operations,proto3" json:"operations,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OptionsRequest) Reset() {
+	*x = OptionsRequest{}
+	mi := &file_numen_v1_settings_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OptionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OptionsRequest) ProtoMessage() {}
+
+func (x *OptionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OptionsRequest.ProtoReflect.Descriptor instead.
+func (*OptionsRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *OptionsRequest) GetOperations() []string {
+	if x != nil {
+		return x.Operations
+	}
+	return nil
+}
+
+// Options is the done frame of an operation a row field names in options_from: the values the field can
+// take, in the order to show them.
+type Options struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Options       []*Option              `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Options) Reset() {
+	*x = Options{}
+	mi := &file_numen_v1_settings_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Options) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Options) ProtoMessage() {}
+
+func (x *Options) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Options.ProtoReflect.Descriptor instead.
+func (*Options) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *Options) GetOptions() []*Option {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+// Option is one value of a field.
+type Option struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Value string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	// title is shown in place of the value; empty shows the value.
+	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// group is the heading the option is shown under; empty is no heading.
+	Group         string `protobuf:"bytes,3,opt,name=group,proto3" json:"group,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Option) Reset() {
+	*x = Option{}
+	mi := &file_numen_v1_settings_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Option) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Option) ProtoMessage() {}
+
+func (x *Option) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_settings_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Option.ProtoReflect.Descriptor instead.
+func (*Option) Descriptor() ([]byte, []int) {
+	return file_numen_v1_settings_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *Option) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *Option) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Option) GetGroup() string {
+	if x != nil {
+		return x.Group
+	}
+	return ""
+}
+
 var File_numen_v1_settings_proto protoreflect.FileDescriptor
 
 const file_numen_v1_settings_proto_rawDesc = "" +
@@ -984,7 +1139,17 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"byte_count\x18\x02 \x01(\x03R\tbyteCount\"6\n" +
 	"\x17DeletePluginDataRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\"\x1a\n" +
-	"\x18DeletePluginDataResponse*s\n" +
+	"\x18DeletePluginDataResponse\"0\n" +
+	"\x0eOptionsRequest\x12\x1e\n" +
+	"\n" +
+	"operations\x18\x01 \x03(\tR\n" +
+	"operations\"5\n" +
+	"\aOptions\x12*\n" +
+	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions\"J\n" +
+	"\x06Option\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
+	"\x05group\x18\x03 \x01(\tR\x05group*s\n" +
 	"\bPresence\x12\x18\n" +
 	"\x14PRESENCE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PRESENCE_PRESENT\x10\x01\x12\x18\n" +
@@ -1012,7 +1177,7 @@ func file_numen_v1_settings_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_settings_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_numen_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_numen_v1_settings_proto_goTypes = []any{
 	(Presence)(0),                    // 0: numen.v1.Presence
 	(*GetSettingsRequest)(nil),       // 1: numen.v1.GetSettingsRequest
@@ -1031,38 +1196,42 @@ var file_numen_v1_settings_proto_goTypes = []any{
 	(*GetPluginDataResponse)(nil),    // 14: numen.v1.GetPluginDataResponse
 	(*DeletePluginDataRequest)(nil),  // 15: numen.v1.DeletePluginDataRequest
 	(*DeletePluginDataResponse)(nil), // 16: numen.v1.DeletePluginDataResponse
-	(*PluginInfo)(nil),               // 17: numen.v1.PluginInfo
-	(*PluginSetting)(nil),            // 18: numen.v1.PluginSetting
-	(*ReasoningLevel)(nil),           // 19: numen.v1.ReasoningLevel
+	(*OptionsRequest)(nil),           // 17: numen.v1.OptionsRequest
+	(*Options)(nil),                  // 18: numen.v1.Options
+	(*Option)(nil),                   // 19: numen.v1.Option
+	(*PluginInfo)(nil),               // 20: numen.v1.PluginInfo
+	(*PluginSetting)(nil),            // 21: numen.v1.PluginSetting
+	(*ReasoningLevel)(nil),           // 22: numen.v1.ReasoningLevel
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetSettingsResponse.models:type_name -> numen.v1.Model
-	17, // 1: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
-	18, // 2: numen.v1.GetSettingsResponse.app:type_name -> numen.v1.PluginSetting
+	20, // 1: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
+	21, // 2: numen.v1.GetSettingsResponse.app:type_name -> numen.v1.PluginSetting
 	4,  // 3: numen.v1.Model.writes:type_name -> numen.v1.Setting
 	0,  // 4: numen.v1.Model.presence:type_name -> numen.v1.Presence
-	19, // 5: numen.v1.Model.reasoning_levels:type_name -> numen.v1.ReasoningLevel
+	22, // 5: numen.v1.Model.reasoning_levels:type_name -> numen.v1.ReasoningLevel
 	4,  // 6: numen.v1.WatchSettingsResponse.changed:type_name -> numen.v1.Setting
 	4,  // 7: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	1,  // 8: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
-	7,  // 9: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
-	9,  // 10: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
-	11, // 11: numen.v1.SettingsService.ChoosePluginPath:input_type -> numen.v1.ChoosePluginPathRequest
-	13, // 12: numen.v1.SettingsService.GetPluginData:input_type -> numen.v1.GetPluginDataRequest
-	15, // 13: numen.v1.SettingsService.DeletePluginData:input_type -> numen.v1.DeletePluginDataRequest
-	5,  // 14: numen.v1.SettingsService.WatchSettings:input_type -> numen.v1.WatchSettingsRequest
-	2,  // 15: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
-	8,  // 16: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
-	10, // 17: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
-	12, // 18: numen.v1.SettingsService.ChoosePluginPath:output_type -> numen.v1.ChoosePluginPathResponse
-	14, // 19: numen.v1.SettingsService.GetPluginData:output_type -> numen.v1.GetPluginDataResponse
-	16, // 20: numen.v1.SettingsService.DeletePluginData:output_type -> numen.v1.DeletePluginDataResponse
-	6,  // 21: numen.v1.SettingsService.WatchSettings:output_type -> numen.v1.WatchSettingsResponse
-	15, // [15:22] is the sub-list for method output_type
-	8,  // [8:15] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	19, // 8: numen.v1.Options.options:type_name -> numen.v1.Option
+	1,  // 9: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
+	7,  // 10: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
+	9,  // 11: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
+	11, // 12: numen.v1.SettingsService.ChoosePluginPath:input_type -> numen.v1.ChoosePluginPathRequest
+	13, // 13: numen.v1.SettingsService.GetPluginData:input_type -> numen.v1.GetPluginDataRequest
+	15, // 14: numen.v1.SettingsService.DeletePluginData:input_type -> numen.v1.DeletePluginDataRequest
+	5,  // 15: numen.v1.SettingsService.WatchSettings:input_type -> numen.v1.WatchSettingsRequest
+	2,  // 16: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
+	8,  // 17: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
+	10, // 18: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
+	12, // 19: numen.v1.SettingsService.ChoosePluginPath:output_type -> numen.v1.ChoosePluginPathResponse
+	14, // 20: numen.v1.SettingsService.GetPluginData:output_type -> numen.v1.GetPluginDataResponse
+	16, // 21: numen.v1.SettingsService.DeletePluginData:output_type -> numen.v1.DeletePluginDataResponse
+	6,  // 22: numen.v1.SettingsService.WatchSettings:output_type -> numen.v1.WatchSettingsResponse
+	16, // [16:23] is the sub-list for method output_type
+	9,  // [9:16] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_settings_proto_init() }
@@ -1078,7 +1247,7 @@ func file_numen_v1_settings_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_settings_proto_rawDesc), len(file_numen_v1_settings_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   16,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

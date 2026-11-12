@@ -531,10 +531,14 @@ type ManifestConnectionType struct {
 	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Title       string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	// operations are the calls the type supports, such as "complete" and "embed". Lowercase words.
+	// operations are the names of the operations the type serves, such as "llm.chat": lowercase words
+	// joined by dots. The core knows them as names only.
 	Operations []string `protobuf:"bytes,4,rep,name=operations,proto3" json:"operations,omitempty"`
 	// fields are the values a connection of the type holds, in the order the form shows them.
-	Fields        []*ManifestConnectionField `protobuf:"bytes,5,rep,name=fields,proto3" json:"fields,omitempty"`
+	Fields []*ManifestConnectionField `protobuf:"bytes,5,rep,name=fields,proto3" json:"fields,omitempty"`
+	// row_fields are the values a row that names a connection of the type holds besides the connection,
+	// such as a model. The core hands them to the provider as the options of the call.
+	RowFields     []*ManifestConnectionField `protobuf:"bytes,6,rep,name=row_fields,json=rowFields,proto3" json:"row_fields,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -604,6 +608,13 @@ func (x *ManifestConnectionType) GetFields() []*ManifestConnectionField {
 	return nil
 }
 
+func (x *ManifestConnectionType) GetRowFields() []*ManifestConnectionField {
+	if x != nil {
+		return x.RowFields
+	}
+	return nil
+}
+
 // ManifestConnectionField is one value a connection of a type holds.
 type ManifestConnectionField struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -622,10 +633,13 @@ type ManifestConnectionField struct {
 	// clears the secret fields of the connection.
 	IsAddress bool `protobuf:"varint,8,opt,name=is_address,json=isAddress,proto3" json:"is_address,omitempty"`
 	// options are the values of an enum field.
-	Options       *structpb.ListValue `protobuf:"bytes,9,opt,name=options,proto3" json:"options,omitempty"`
-	Min           *float64            `protobuf:"fixed64,10,opt,name=min,proto3,oneof" json:"min,omitempty"`
-	Max           *float64            `protobuf:"fixed64,11,opt,name=max,proto3,oneof" json:"max,omitempty"`
-	Step          *float64            `protobuf:"fixed64,12,opt,name=step,proto3,oneof" json:"step,omitempty"`
+	Options *structpb.ListValue `protobuf:"bytes,9,opt,name=options,proto3" json:"options,omitempty"`
+	Min     *float64            `protobuf:"fixed64,10,opt,name=min,proto3,oneof" json:"min,omitempty"`
+	Max     *float64            `protobuf:"fixed64,11,opt,name=max,proto3,oneof" json:"max,omitempty"`
+	Step    *float64            `protobuf:"fixed64,12,opt,name=step,proto3,oneof" json:"step,omitempty"`
+	// options_from names an operation of the type whose done frame is a numen.v1.Options message: the
+	// values a row field can take. It is called with the options the row holds so far.
+	OptionsFrom   string `protobuf:"bytes,13,opt,name=options_from,json=optionsFrom,proto3" json:"options_from,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -742,6 +756,13 @@ func (x *ManifestConnectionField) GetStep() float64 {
 		return *x.Step
 	}
 	return 0
+}
+
+func (x *ManifestConnectionField) GetOptionsFrom() string {
+	if x != nil {
+		return x.OptionsFrom
+	}
+	return ""
 }
 
 // ManifestTextKind is the readable name of one kind of text version a plugin makes. The application
@@ -1720,9 +1741,10 @@ type ManifestSetting struct {
 	OptionsFrom string `protobuf:"bytes,19,opt,name=options_from,json=optionsFrom,proto3" json:"options_from,omitempty"`
 	// generate makes the host fill an empty value; "token" is 32 random bytes in hex.
 	Generate string `protobuf:"bytes,20,opt,name=generate,proto3" json:"generate,omitempty"`
-	// operation is the operation a setting of type connections needs of each connection, such as
-	// "complete". max is the number of rows.
-	Operation     string `protobuf:"bytes,21,opt,name=operation,proto3" json:"operation,omitempty"`
+	// operations are the operations a setting of type connections is used for, such as "llm.chat". A
+	// call of the plugin for one of them goes through the rows of the setting, and a plugin calls no
+	// operation no setting names. max is the number of rows.
+	Operations    []string `protobuf:"bytes,22,rep,name=operations,proto3" json:"operations,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1883,11 +1905,11 @@ func (x *ManifestSetting) GetGenerate() string {
 	return ""
 }
 
-func (x *ManifestSetting) GetOperation() string {
+func (x *ManifestSetting) GetOperations() []string {
 	if x != nil {
-		return x.Operation
+		return x.Operations
 	}
-	return ""
+	return nil
 }
 
 type ManifestNoteType struct {
@@ -2287,7 +2309,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x04when\x18\x04 \x01(\tR\x04when\x1a9\n" +
 	"\vValuesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbb\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xfd\x01\n" +
 	"\x16ManifestConnectionType\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -2295,7 +2317,9 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
 	"operations\x18\x04 \x03(\tR\n" +
 	"operations\x129\n" +
-	"\x06fields\x18\x05 \x03(\v2!.numen.v1.ManifestConnectionFieldR\x06fields\"\xb3\x03\n" +
+	"\x06fields\x18\x05 \x03(\v2!.numen.v1.ManifestConnectionFieldR\x06fields\x12@\n" +
+	"\n" +
+	"row_fields\x18\x06 \x03(\v2!.numen.v1.ManifestConnectionFieldR\trowFields\"\xd6\x03\n" +
 	"\x17ManifestConnectionField\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -2311,7 +2335,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x03min\x18\n" +
 	" \x01(\x01H\x01R\x03min\x88\x01\x01\x12\x15\n" +
 	"\x03max\x18\v \x01(\x01H\x02R\x03max\x88\x01\x01\x12\x17\n" +
-	"\x04step\x18\f \x01(\x01H\x03R\x04step\x88\x01\x01B\x0e\n" +
+	"\x04step\x18\f \x01(\x01H\x03R\x04step\x88\x01\x01\x12!\n" +
+	"\foptions_from\x18\r \x01(\tR\voptionsFromB\x0e\n" +
 	"\f_fixed_valueB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
@@ -2392,7 +2417,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01\"=\n" +
 	"\x11ManifestCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xfd\x04\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\x85\x05\n" +
 	"\x0fManifestSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -2413,11 +2438,13 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\bmultiple\x18\x11 \x01(\bR\bmultiple\x12\x18\n" +
 	"\apreview\x18\x12 \x01(\bR\apreview\x12!\n" +
 	"\foptions_from\x18\x13 \x01(\tR\voptionsFrom\x12\x1a\n" +
-	"\bgenerate\x18\x14 \x01(\tR\bgenerate\x12\x1c\n" +
-	"\toperation\x18\x15 \x01(\tR\toperationB\x06\n" +
+	"\bgenerate\x18\x14 \x01(\tR\bgenerate\x12\x1e\n" +
+	"\n" +
+	"operations\x18\x16 \x03(\tR\n" +
+	"operationsB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_step\"\xd1\x01\n" +
+	"\x05_stepJ\x04\b\x15\x10\x16\"\xd1\x01\n" +
 	"\x10ManifestNoteType\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x1b\n" +
 	"\x06chunks\x18\x02 \x01(\bH\x00R\x06chunks\x88\x01\x01\x126\n" +
@@ -2517,23 +2544,24 @@ var file_numen_v1_manifest_proto_depIdxs = []int32{
 	2,  // 18: numen.v1.ManifestContributes.drop_handlers:type_name -> numen.v1.ManifestDropHandler
 	25, // 19: numen.v1.ManifestKeybinding.values:type_name -> numen.v1.ManifestKeybinding.ValuesEntry
 	5,  // 20: numen.v1.ManifestConnectionType.fields:type_name -> numen.v1.ManifestConnectionField
-	29, // 21: numen.v1.ManifestConnectionField.default:type_name -> google.protobuf.Value
-	30, // 22: numen.v1.ManifestConnectionField.options:type_name -> google.protobuf.ListValue
-	26, // 23: numen.v1.ManifestSlotEntry.values:type_name -> numen.v1.ManifestSlotEntry.ValuesEntry
-	27, // 24: numen.v1.ManifestDependency.metadata:type_name -> numen.v1.ManifestDependency.MetadataEntry
-	28, // 25: numen.v1.ManifestOptionsBy.options:type_name -> numen.v1.ManifestOptionsBy.OptionsEntry
-	29, // 26: numen.v1.ManifestSetting.default:type_name -> google.protobuf.Value
-	30, // 27: numen.v1.ManifestSetting.options:type_name -> google.protobuf.ListValue
-	17, // 28: numen.v1.ManifestSetting.options_by:type_name -> numen.v1.ManifestOptionsBy
-	18, // 29: numen.v1.ManifestSetting.when:type_name -> numen.v1.ManifestCondition
-	30, // 30: numen.v1.ManifestNoteType.headings:type_name -> google.protobuf.ListValue
-	21, // 31: numen.v1.ManifestCommand.arguments:type_name -> numen.v1.ManifestCommandArgument
-	30, // 32: numen.v1.ManifestOptionsBy.OptionsEntry.value:type_name -> google.protobuf.ListValue
-	33, // [33:33] is the sub-list for method output_type
-	33, // [33:33] is the sub-list for method input_type
-	33, // [33:33] is the sub-list for extension type_name
-	33, // [33:33] is the sub-list for extension extendee
-	0,  // [0:33] is the sub-list for field type_name
+	5,  // 21: numen.v1.ManifestConnectionType.row_fields:type_name -> numen.v1.ManifestConnectionField
+	29, // 22: numen.v1.ManifestConnectionField.default:type_name -> google.protobuf.Value
+	30, // 23: numen.v1.ManifestConnectionField.options:type_name -> google.protobuf.ListValue
+	26, // 24: numen.v1.ManifestSlotEntry.values:type_name -> numen.v1.ManifestSlotEntry.ValuesEntry
+	27, // 25: numen.v1.ManifestDependency.metadata:type_name -> numen.v1.ManifestDependency.MetadataEntry
+	28, // 26: numen.v1.ManifestOptionsBy.options:type_name -> numen.v1.ManifestOptionsBy.OptionsEntry
+	29, // 27: numen.v1.ManifestSetting.default:type_name -> google.protobuf.Value
+	30, // 28: numen.v1.ManifestSetting.options:type_name -> google.protobuf.ListValue
+	17, // 29: numen.v1.ManifestSetting.options_by:type_name -> numen.v1.ManifestOptionsBy
+	18, // 30: numen.v1.ManifestSetting.when:type_name -> numen.v1.ManifestCondition
+	30, // 31: numen.v1.ManifestNoteType.headings:type_name -> google.protobuf.ListValue
+	21, // 32: numen.v1.ManifestCommand.arguments:type_name -> numen.v1.ManifestCommandArgument
+	30, // 33: numen.v1.ManifestOptionsBy.OptionsEntry.value:type_name -> google.protobuf.ListValue
+	34, // [34:34] is the sub-list for method output_type
+	34, // [34:34] is the sub-list for method input_type
+	34, // [34:34] is the sub-list for extension type_name
+	34, // [34:34] is the sub-list for extension extendee
+	0,  // [0:34] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_manifest_proto_init() }

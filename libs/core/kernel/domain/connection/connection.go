@@ -59,10 +59,17 @@ func IsValidID(id string) bool {
 	return true
 }
 
-// Use is a setting of rows of a plugin that names a connection. Operation is the operation the
-// setting needs.
-type Use struct{ PluginID, PluginName, Operation string }
+// Use is a setting of rows of a plugin that names a connection. Operations are the operations the
+// setting is used for.
+type Use struct {
+	PluginID   string
+	PluginName string
+	Operations []string
+}
 
-// Row is one entry of the settings of a plugin that names a connection, with the model and the
-// reasoning level chosen for it.
-type Row struct{ ConnectionID, Model, Reasoning string }
+// Row is one entry of the settings of a plugin that names a connection, with the values of the row
+// fields of the type chosen for it.
+type Row struct {
+	ConnectionID string
+	Options      map[string]string
+}

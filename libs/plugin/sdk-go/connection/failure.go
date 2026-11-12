@@ -8,36 +8,30 @@ import (
 // Reason is why a call failed. The core shows a reason and sees no HTTP code and no text from a service.
 type Reason int
 
-// The reasons of a failure. The zero value is ReasonUnknown.
+// The reasons of a failure. The zero value is ReasonUnavailable.
 const (
-	ReasonUnknown Reason = iota
-	ReasonKeyRejected
+	ReasonUnavailable Reason = iota
+	ReasonRejectedKey
 	ReasonPaymentRequired
 	ReasonRateLimited
-	ReasonUnreachable
-	ReasonTimeout
-	ReasonBadRequest
+	ReasonInvalidRequest
 )
 
 // String returns the words the person reads for the reason.
 func (r Reason) String() string {
 	switch r {
-	case ReasonKeyRejected:
+	case ReasonRejectedKey:
 		return "key rejected"
 	case ReasonPaymentRequired:
 		return "payment required"
 	case ReasonRateLimited:
 		return "rate limited"
-	case ReasonUnreachable:
-		return "unreachable"
-	case ReasonTimeout:
-		return "timeout"
-	case ReasonBadRequest:
-		return "bad request"
-	case ReasonUnknown:
-		return "unknown"
+	case ReasonInvalidRequest:
+		return "invalid request"
+	case ReasonUnavailable:
+		return "unavailable"
 	}
-	return "unknown"
+	return "unavailable"
 }
 
 type failure struct {
@@ -49,8 +43,8 @@ type failure struct {
 func (f *failure) Error() string { return f.reason.String() }
 
 // NewTryNextError is "this connection cannot serve now, try the next": a rejected key, a payment
-// required, a limit of rate with its Retry-After, a service that is unreachable or slow, or a failure
-// on its side. retryAfter is zero when the service gave none.
+// required, a limit of rate with its Retry-After, or a service that is unreachable, slow or failing on
+// its side. retryAfter is zero when the service gave none.
 func NewTryNextError(reason Reason, retryAfter time.Duration) error {
 	return &failure{reason: reason, isTryNext: true, retryAfter: max(retryAfter, 0)}
 }
@@ -78,5 +72,5 @@ func GetReason(err error) (Reason, bool) {
 	if one, ok := errors.AsType[*failure](err); ok {
 		return one.reason, true
 	}
-	return ReasonUnknown, false
+	return ReasonUnavailable, false
 }

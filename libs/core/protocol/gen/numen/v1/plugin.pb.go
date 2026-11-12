@@ -395,8 +395,8 @@ type PluginSetting struct {
 	// The value in force as JSON, resolved by the core: the stored value, else the default, else the
 	// first of the options in force.
 	ValueJson string `protobuf:"bytes,21,opt,name=value_json,json=valueJson,proto3" json:"value_json,omitempty"`
-	// The operation a setting of type connections needs of each connection. max is the number of rows.
-	Operation     string `protobuf:"bytes,22,opt,name=operation,proto3" json:"operation,omitempty"`
+	// The operations a setting of type connections is used for. max is the number of rows.
+	Operations    []string `protobuf:"bytes,23,rep,name=operations,proto3" json:"operations,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -571,11 +571,11 @@ func (x *PluginSetting) GetValueJson() string {
 	return ""
 }
 
-func (x *PluginSetting) GetOperation() string {
+func (x *PluginSetting) GetOperations() []string {
 	if x != nil {
-		return x.Operation
+		return x.Operations
 	}
-	return ""
+	return nil
 }
 
 // PluginSettingOption is one value an enum setting can hold.
@@ -1325,7 +1325,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\xdd\x05\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\xe5\x05\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1349,11 +1349,13 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x0eactive_options\x18\x13 \x03(\v2\x1d.numen.v1.PluginSettingOptionR\ractiveOptions\x12\x19\n" +
 	"\bis_shown\x18\x14 \x01(\bR\aisShown\x12\x1d\n" +
 	"\n" +
-	"value_json\x18\x15 \x01(\tR\tvalueJson\x12\x1c\n" +
-	"\toperation\x18\x16 \x01(\tR\toperationB\x06\n" +
+	"value_json\x18\x15 \x01(\tR\tvalueJson\x12\x1e\n" +
+	"\n" +
+	"operations\x18\x17 \x03(\tR\n" +
+	"operationsB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_step\"m\n" +
+	"\x05_stepJ\x04\b\x16\x10\x17\"m\n" +
 	"\x13PluginSettingOption\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +

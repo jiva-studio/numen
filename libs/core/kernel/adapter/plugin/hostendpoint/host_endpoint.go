@@ -60,7 +60,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	endpoint := &Endpoint{callers: callers, port: linked.Port, serveResult: make(chan error, 1)}
 
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostModelServiceHandler(&modelEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewHostConnectionServiceHandler(&connectionEndpoint{endpoint: endpoint}))
 	mux.Handle(vault.NewHandler(endpoint, callers.Lent))
 	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))

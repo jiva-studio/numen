@@ -68,7 +68,7 @@ func TestAWaitOfMoreThanTenMinutesIsLimitedToTenMinutes(t *testing.T) {
 }
 
 func TestARejectedKeyOrAPaymentRequiredLastsUntilTheConnectionIsEdited(t *testing.T) {
-	for _, reason := range []connection.FailureReason{connection.FailureReasonKeyRejected, connection.FailureReasonPaymentRequired} {
+	for _, reason := range []connection.FailureReason{connection.FailureReasonRejectedKey, connection.FailureReasonPaymentRequired} {
 		s := newSetup(t, "complete")
 		s.world.Provider.Fail(addressOne, tryNext(reason, 0))
 		s.attempt(t)
@@ -125,7 +125,7 @@ func modelcalltestRow(s *setup) connection.Row {
 
 func TestATimeoutIsTriedOnceMoreBeforeTheRowIsSetAside(t *testing.T) {
 	s := newSetup(t, "complete")
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonTimeout, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonUnavailable, 0))
 
 	result, err := s.complete(t)
 
@@ -139,7 +139,7 @@ func TestATimeoutIsTriedOnceMoreBeforeTheRowIsSetAside(t *testing.T) {
 
 func TestAnUnreachableServiceIsTriedOnceMoreBeforeTheRowIsSetAside(t *testing.T) {
 	s := newSetup(t, "complete")
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonUnreachable, 0), tryNext(connection.FailureReasonUnreachable, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonUnavailable, 0), tryNext(connection.FailureReasonUnavailable, 0))
 
 	result, err := s.complete(t)
 
@@ -150,7 +150,7 @@ func TestAnUnreachableServiceIsTriedOnceMoreBeforeTheRowIsSetAside(t *testing.T)
 
 func TestOnlyOneRetryIsMade(t *testing.T) {
 	s := newSetup(t, "complete")
-	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonTimeout, 0))
+	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonUnavailable, 0))
 
 	s.attempt(t)
 
@@ -161,8 +161,8 @@ func TestOnlyOneRetryIsMade(t *testing.T) {
 
 func TestAReasonOtherThanATimeoutOrAnUnreachableServiceIsNotRetried(t *testing.T) {
 	for _, reason := range []connection.FailureReason{
-		connection.FailureReasonKeyRejected, connection.FailureReasonPaymentRequired,
-		connection.FailureReasonRateLimited, connection.FailureReasonUnknown,
+		connection.FailureReasonRejectedKey, connection.FailureReasonPaymentRequired,
+		connection.FailureReasonRateLimited, connection.FailureReasonUnavailable,
 	} {
 		s := newSetup(t, "complete")
 		s.world.Provider.FailAlways(addressOne, tryNext(reason, 0))
@@ -177,7 +177,7 @@ func TestAReasonOtherThanATimeoutOrAnUnreachableServiceIsNotRetried(t *testing.T
 
 func TestARowSetAsideAfterARetryStartsItsCooldown(t *testing.T) {
 	s := newSetup(t, "complete")
-	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonTimeout, 0))
+	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonUnavailable, 0))
 	s.attempt(t)
 
 	s.attempt(t)

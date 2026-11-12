@@ -13,7 +13,7 @@ import (
 )
 
 // attempt is what one operation does with a provider once the call to it is made.
-type attempt[R, T any] func(ctx context.Context, provider R, call modelcall.ProviderCall, row connection.Row) (T, error)
+type attempt func(ctx context.Context, provider connectionport.Provider, call modelcall.ProviderCall) ([]byte, error)
 
 // asideRow is a connection set aside in the call being carried out.
 type asideRow struct {
@@ -23,8 +23,8 @@ type asideRow struct {
 	reason   connection.FailureReason
 }
 
-type rowOutcome[T any] struct {
-	value   T
+type rowOutcome struct {
+	value   []byte
 	failure *connection.Failure
 	aside   *asideRow
 	err     error
@@ -43,10 +43,8 @@ type asking struct {
 	priority       modelcall.Priority
 }
 
-func carry[R, T any](
-	ctx context.Context, c *Calls, ask asking, pick func(connectionport.Provider) R, do attempt[R, T],
-) (T, error) {
-	var none T
+func carry(ctx context.Context, c *Calls, ask asking, do attempt) ([]byte, error) {
+	var none []byte
 	rows, err := c.rows.ListRows(ask.callerPluginID, ask.operation)
 	if err != nil {
 		return none, fmt.Errorf("read the rows of %s: %w", ask.callerPluginID, err)
@@ -60,7 +58,7 @@ func carry[R, T any](
 		if err := ctx.Err(); err != nil {
 			return none, err
 		}
-		outcome := tryRow(ctx, c, row, ask, pick, do)
+		outcome := tryRow(ctx, c, row, ask, do)
 		if outcome.err != nil {
 			return none, outcome.err
 		}
@@ -97,47 +95,44 @@ func (c *Calls) readConnectionSecrets(ctx context.Context, resolved connection.R
 
 // rowCall is one row being called: the connection as resolved, the secrets once they are read, and the
 // operation to carry out.
-type rowCall[R, T any] struct {
+type rowCall struct {
 	calls    callServices
 	resolved connection.Resolved
 	row      connection.Row
-	pick     func(connectionport.Provider) R
-	do       attempt[R, T]
+	do       attempt
 	priority modelcall.Priority
 	secrets  map[string]string
 }
 
-func tryRow[R, T any](
-	ctx context.Context, c *Calls, row connection.Row, ask asking, pick func(connectionport.Provider) R, do attempt[R, T],
-) rowOutcome[T] {
+func tryRow(ctx context.Context, c *Calls, row connection.Row, ask asking, do attempt) rowOutcome {
 	resolved, skip, err := c.checkRow(row, ask.operation)
 	if err != nil {
-		return rowOutcome[T]{err: err}
+		return rowOutcome{err: err}
 	}
 	if skip != nil {
-		return rowOutcome[T]{failure: skip}
+		return rowOutcome{failure: skip}
 	}
-	call := &rowCall[R, T]{calls: c, resolved: resolved, row: row, pick: pick, do: do, priority: ask.priority}
+	call := &rowCall{calls: c, resolved: resolved, row: row, do: do, priority: ask.priority}
 	for tries := 1; ; tries++ {
 		value, err := call.callOnce(ctx)
 		if err == nil {
-			return rowOutcome[T]{value: value, isDone: true}
+			return rowOutcome{value: value, isDone: true}
 		}
 		if ctxErr := ctx.Err(); ctxErr != nil {
-			return rowOutcome[T]{err: ctxErr}
+			return rowOutcome{err: ctxErr}
 		}
 		judged := readVerdict(resolved, err)
 		if judged.isCooling {
 			c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
 		}
 		if judged.isSkipped || judged.err != nil {
-			return rowOutcome[T]{failure: judged.skip, err: judged.err}
+			return rowOutcome{failure: judged.skip, err: judged.err}
 		}
 		if tries == 1 && isRetried(judged.reason) {
 			continue
 		}
 		c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
-		return rowOutcome[T]{
+		return rowOutcome{
 			failure: &connection.Failure{ConnectionName: resolved.Name, Reason: judged.reason.String()},
 			aside:   &asideRow{id: resolved.ID, name: resolved.Name, revision: resolved.Revision, reason: judged.reason},
 		}
@@ -155,7 +150,7 @@ func (c *Calls) checkRow(row connection.Row, operation string) (connection.Resol
 		return resolved, nil, err
 	}
 	if !resolved.Declaration.HasOperation(operation) {
-		return resolved, newSkip(resolved.Name, "this type cannot "+operation), nil
+		return resolved, newSkip(resolved.Name, "the type does not serve "+operation), nil
 	}
 	version := connectionVersion{id: resolved.ID, revision: resolved.Revision}
 	if cooling, isCooling := c.cooldown.get(version, c.clock.Now()); isCooling {
@@ -192,7 +187,7 @@ func readVerdict(resolved connection.Resolved, err error) verdict {
 	case errors.Is(err, errQueueTimeout):
 		return verdict{isSkipped: true, skip: newSkip(resolved.Name, "busy")}
 	case errors.As(err, &unavailable):
-		return verdict{isSkipped: true, skip: newSkip(resolved.Name, connection.FailureReasonUnreachable.String())}
+		return verdict{isSkipped: true, skip: newSkip(resolved.Name, connection.FailureReasonUnavailable.String())}
 	case errors.Is(err, connection.ErrSecretMissing):
 		return verdict{isSkipped: true, skip: newSkip(resolved.Name, "key missing")}
 	case errors.Is(err, connection.ErrKeyStore):
@@ -200,19 +195,19 @@ func readVerdict(resolved connection.Resolved, err error) verdict {
 	case errors.Is(err, connection.ErrStaleRevision):
 		return verdict{err: fmt.Errorf("call %s: %w", resolved.Name, err)}
 	case errors.As(err, &stopError):
-		return verdict{err: &connection.RejectedError{ConnectionName: resolved.Name, Reason: stopError.Reason.String()}}
+		return verdict{err: &connection.StoppedError{ConnectionName: resolved.Name, Reason: stopError.Reason.String()}}
 	case errors.As(err, &tryNext):
 		return verdict{reason: tryNext.Reason, retryAfter: tryNext.RetryAfter}
 	}
-	return verdict{reason: connection.FailureReasonUnreachable}
+	return verdict{reason: connection.FailureReasonUnavailable}
 }
 
 func isRetried(reason connection.FailureReason) bool {
-	return reason == connection.FailureReasonTimeout || reason == connection.FailureReasonUnreachable
+	return reason == connection.FailureReasonUnavailable
 }
 
-func (r *rowCall[R, T]) callOnce(ctx context.Context) (T, error) {
-	var none T
+func (r *rowCall) callOnce(ctx context.Context) ([]byte, error) {
+	var none []byte
 	freeSlot, err := r.calls.acquire(ctx, r.resolved.ID, r.resolved.ParallelRequests, r.priority)
 	if err != nil {
 		return none, err
@@ -230,7 +225,7 @@ func (r *rowCall[R, T]) callOnce(ctx context.Context) (T, error) {
 		}
 		r.secrets = secrets
 	}
-	return r.do(ctx, r.pick(provider), r.resolved.NewCall(r.secrets, r.row.Model, r.row.Reasoning), r.row)
+	return r.do(ctx, provider, r.resolved.NewCall(r.secrets, r.row.Options))
 }
 
 func (c *Calls) reportSetAside(rows []asideRow) {
@@ -240,13 +235,3 @@ func (c *Calls) reportSetAside(rows []asideRow) {
 		}
 	}
 }
-
-func pickCompletion(provider connectionport.Provider) connectionport.CompletionProvider {
-	return provider
-}
-
-func pickEmbedding(provider connectionport.Provider) connectionport.EmbeddingProvider {
-	return provider
-}
-
-func pickProfiles(provider connectionport.Provider) connectionport.ModelProfiles { return provider }

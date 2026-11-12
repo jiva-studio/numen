@@ -106,7 +106,7 @@ func TestAProviderRestartedBeforeTheFirstEventIsStartedAgainForTheRetry(t *testi
 
 func TestAFailureAfterTheFirstEventIsPassedOnAndNothingIsRepeated(t *testing.T) {
 	s := newSetup(t, "chat")
-	s.world.Provider.ScriptChat(addressOne, tryNext(connection.FailureReasonUnreachable, 0),
+	s.world.Provider.ScriptChat(addressOne, tryNext(connection.FailureReasonUnavailable, 0),
 		modelcalldomain.ChatEvent{TextDelta: "partial"},
 		modelcalldomain.ChatEvent{ToolCall: &modelcalldomain.ToolCall{ID: "c1", Name: "list_notes", Arguments: "{}"}},
 	)
@@ -139,7 +139,7 @@ func TestAPlainErrorAfterTheFirstEventCountsAsUnreachable(t *testing.T) {
 
 func TestAStopAfterTheFirstEventNamesTheConnection(t *testing.T) {
 	s := newSetup(t, "chat")
-	s.world.Provider.ScriptChat(addressOne, stop(connection.FailureReasonBadRequest), modelcalldomain.ChatEvent{TextDelta: "partial"})
+	s.world.Provider.ScriptChat(addressOne, stop(connection.FailureReasonInvalidRequest), modelcalldomain.ChatEvent{TextDelta: "partial"})
 
 	_, err := s.chat(t)
 
@@ -151,11 +151,11 @@ func TestAStopAfterTheFirstEventNamesTheConnection(t *testing.T) {
 
 func TestAStopBeforeTheFirstEventEndsTheCallAndNamesTheConnection(t *testing.T) {
 	s := newSetup(t, "chat")
-	s.world.Provider.Fail(addressOne, stop(connection.FailureReasonBadRequest))
+	s.world.Provider.Fail(addressOne, stop(connection.FailureReasonInvalidRequest))
 
 	_, err := s.chat(t)
 
-	var rejected *connection.RejectedError
+	var rejected *connection.StoppedError
 	if !errors.As(err, &rejected) || rejected.ConnectionName != "First" || rejected.Reason != "bad request" {
 		t.Fatalf("err = %v, want a rejection by First", err)
 	}

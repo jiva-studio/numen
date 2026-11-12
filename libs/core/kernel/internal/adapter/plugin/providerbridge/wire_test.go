@@ -21,13 +21,13 @@ func TestEveryFailureKindOfTheSchemaIsReadAsAFailure(t *testing.T) {
 
 func TestEveryReasonOfTheSchemaIsReadAsItsReason(t *testing.T) {
 	expected := map[v1.ProviderFailureReason]connection.FailureReason{
-		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_KEY_REJECTED:     connection.FailureReasonKeyRejected,
+		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_KEY_REJECTED:     connection.FailureReasonRejectedKey,
 		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_PAYMENT_REQUIRED: connection.FailureReasonPaymentRequired,
 		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_RATE_LIMITED:     connection.FailureReasonRateLimited,
-		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_UNREACHABLE:      connection.FailureReasonUnreachable,
-		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_TIMEOUT:          connection.FailureReasonTimeout,
-		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_BAD_REQUEST:      connection.FailureReasonBadRequest,
-		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_UNKNOWN:          connection.FailureReasonUnknown,
+		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_UNREACHABLE:      connection.FailureReasonUnavailable,
+		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_TIMEOUT:          connection.FailureReasonUnavailable,
+		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_BAD_REQUEST:      connection.FailureReasonInvalidRequest,
+		v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_UNKNOWN:          connection.FailureReasonUnavailable,
 	}
 	for number := range v1.ProviderFailureReason_name {
 		reason := v1.ProviderFailureReason(number)
