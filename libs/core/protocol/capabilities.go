@@ -1,10 +1,7 @@
-// Package protocol holds the capability names and wire contracts shared by hosts and plugins.
+// Package protocol holds the wire contracts shared by hosts and plugins.
 package protocol
 
 import "strings"
-
-// CapabilityAgentProvider is the capability of a plugin that runs agent programs.
-const CapabilityAgentProvider = "ai.agent.provider"
 
 // vectorsReadyPrefix starts the event the host emits when every chunk of a vault carries a vector.
 const vectorsReadyPrefix = "onVectorsReady:"
