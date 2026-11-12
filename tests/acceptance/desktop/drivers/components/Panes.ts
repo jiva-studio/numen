@@ -17,8 +17,8 @@ export class Panes {
     return pane.getByRole('tab', { name: tabName })
   }
 
-  getPaneWithTab(tabName: RegExp): Locator {
-    return this.page.locator(PANES).filter({ has: this.page.getByRole('tab', { name: tabName }) })
+  getPaneWithTab(tab: Locator): Locator {
+    return this.page.locator(PANES).filter({ has: tab })
   }
 
   getTabs(pane: Locator): Locator {

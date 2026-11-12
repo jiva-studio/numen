@@ -88,8 +88,7 @@ export class ReaderDriver {
 
   async expectOwnPane(kind: TabKindChoice, reference: string, name: string): Promise<void> {
     await this.tab.getTabPanel(kind, reference, name)
-    const tabName = this.getTabName(reference, name)
-    const panes = this.panes.getPaneWithTab(tabName)
+    const panes = this.panes.getPaneWithTab(await this.tab.findTab(kind, reference, name))
     await expect(panes, `the tab "${name}" is not in one pane`).toHaveCount(1)
     await expect(this.panes.getTabs(panes.first())).toHaveCount(1)
   }

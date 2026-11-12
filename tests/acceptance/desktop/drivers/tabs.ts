@@ -40,6 +40,10 @@ export class TabDriver {
     this.panels = new TabPanels(scenario)
   }
 
+  async findTab(kind: TabKindChoice, reference: string, name: string): Promise<Locator> {
+    return this.getTab(kind, reference, name)
+  }
+
   private async getTab(kind: TabKindChoice, reference: string, name: string, preferNote = false): Promise<Locator> {
     if (kind !== ANY_TAB) {
       const one = await this.requireKind(kind, reference, name)
