@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/arrange"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/library"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/links"

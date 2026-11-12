@@ -190,9 +190,6 @@ func TestConversionsConstantsAndSchemaErrors(t *testing.T) {
 	if ReadOnly != 1 || ReadWrite != 2 {
 		t.Fatalf("effects = %d, %d", ReadOnly, ReadWrite)
 	}
-	if Full != 1 || Reading != 2 {
-		t.Fatalf("servers = %d, %d", Full, Reading)
-	}
 	if ErrorCodeUnspecified != 0 || ErrorCodeUnknownTool != 1 || ErrorCodeBadArguments != 2 {
 		t.Fatalf("error codes = %d, %d, %d", ErrorCodeUnspecified, ErrorCodeUnknownTool, ErrorCodeBadArguments)
 	}

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/files"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/links"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/usecase/notes"
