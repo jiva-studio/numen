@@ -6,8 +6,8 @@ import { CONVERSATION } from '../src/views'
 
 /** Connections that end every call at once, for views that need them to be mounted. */
 const CONNECTIONS: ConnectionHost = {
-  // eslint-disable-next-line require-yield
   call: async function* () {
+    yield* []
     return { ok: true, value: new Uint8Array() }
   },
 }

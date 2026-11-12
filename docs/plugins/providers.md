@@ -49,7 +49,7 @@ A connection runs at most `parallelRequests` calls at once: the value stored on 
 
 ### From TypeScript
 
-A plugin view gets `context.work.connections`, a `ConnectionHost` whose `call(operation, payload, options)` is an async generator of the data frames that returns the done payload or a `ConnectionError` with `error` (`'no_connection'`, `'all_failed'`, `'stopped'` or `'canceled'`), `message` and `failures` (`connectionName` and `reason` for each row). The contract modules wrap it: `complete`, `embed`, `getProfile` and `chat` of `@numen/plugin-sdk/contracts/llm`. The priority is `options.priority` (`'interactive'` or `'background'`) and `options.signal` cancels the call. The calls go to `ConnectionCallService` of the window with the id of the plugin; the endpoint plugin processes reach with their token does not mount it, and the service refuses a request that carries a token.
+A plugin view gets `context.work.connections`, a `ConnectionHost` whose `call(operation, payload, options)` is an async generator of the data frames that returns the done payload or a `ConnectionError` with `error` (`'no_connection'`, `'all_failed'`, `'stopped'` or `'canceled'`), `message` and `failures` (`connectionName` and `reason` for each row). The contract modules wrap it: `complete`, `embed`, `getProfile` and `chat` of the `llm` namespace of `@numen/plugin-sdk/contracts`. The priority is `options.priority` (`'interactive'` or `'background'`) and `options.signal` cancels the call. The calls go to `ConnectionCallService` of the window with the id of the plugin; the endpoint plugin processes reach with their token does not mount it, and the service refuses a request that carries a token.
 
 ## Agent programs as providers
 

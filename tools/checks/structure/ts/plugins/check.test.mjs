@@ -22,6 +22,7 @@ const EXPORTS = {
   '@numen/plugin-sdk': {
     '.': './src/index.ts',
     './testing': './src/testing/index.ts',
+    './contracts': './src/contracts/index.ts',
     './vite': './src/vite.ts',
     './internal': './src/internal.ts',
   },
@@ -44,6 +45,16 @@ test('the main entry, the test entry and a stylesheet are clean in a plugin sour
     ),
   ]
   assert.deepEqual(findPluginEntryViolations(files, EXPORTS), [])
+})
+
+test('the contracts entry is clean in a plugin source file, a path below it is reported', () => {
+  const found = findPluginEntryViolations(
+    [file('plugins/a/frontend/index.ts', '@numen/plugin-sdk/contracts', '@numen/plugin-sdk/contracts/acp')],
+    EXPORTS,
+  )
+  assert.equal(found.length, 1)
+  assert.equal(found[0].line, 2)
+  assert.match(found[0].symbol, /is not an entry @numen\/plugin-sdk declares/)
 })
 
 test('a build entry is clean in a build configuration file', () => {
