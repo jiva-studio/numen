@@ -19,12 +19,11 @@ const connectionIDLength = 9
 // fields the person set, secret fields excluded: their values are kept in the key store. Revision
 // grows by one at every change, including a change of a secret.
 type Connection struct {
-	ID                      string
-	TypeID                  string
-	Name                    string
-	Revision                int
-	Fields                  map[string]any
-	IsPrivateNetworkAllowed bool
+	ID       string
+	TypeID   string
+	Name     string
+	Revision int
+	Fields   map[string]any
 }
 
 // Type is a kind of connection together with the plugin that provides it. IsAvailable is whether

@@ -7,7 +7,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-
 )
 
 func readFields(wire map[string]*structpb.Value) map[string]any {
@@ -36,16 +35,15 @@ func writeConnection(entry connections.Entry) (*v1.ProviderConnection, error) {
 		return nil, err
 	}
 	return &v1.ProviderConnection{
-		Id:                      entry.ID,
-		TypeId:                  entry.TypeID,
-		Name:                    entry.Name,
-		Fields:                  fields,
-		SecretKeysSet:           entry.SecretKeysSet,
-		IsTypeAvailable:         entry.IsTypeAvailable,
-		Revision:                int32(entry.Revision),
-		IsComplete:              entry.IsComplete,
-		IsPrivateNetworkAllowed: entry.IsPrivateNetworkAllowed,
-		Uses:                    writeUses(entry.Uses),
+		Id:              entry.ID,
+		TypeId:          entry.TypeID,
+		Name:            entry.Name,
+		Fields:          fields,
+		SecretKeysSet:   entry.SecretKeysSet,
+		IsTypeAvailable: entry.IsTypeAvailable,
+		Revision:        int32(entry.Revision),
+		IsComplete:      entry.IsComplete,
+		Uses:            writeUses(entry.Uses),
 	}, nil
 }
 

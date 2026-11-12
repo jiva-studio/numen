@@ -24,12 +24,11 @@ const jsonNull = "null"
 
 // connectionEntry is a connection as the file lays it out. A secret value is never part of it.
 type connectionEntry struct {
-	ID                  string         `json:"id"`
-	TypeID              string         `json:"type"`
-	Name                string         `json:"name"`
-	Revision            int            `json:"revision"`
-	Fields              map[string]any `json:"fields"`
-	AllowPrivateNetwork bool           `json:"allowPrivateNetwork,omitempty"`
+	ID       string         `json:"id"`
+	TypeID   string         `json:"type"`
+	Name     string         `json:"name"`
+	Revision int            `json:"revision"`
+	Fields   map[string]any `json:"fields"`
 }
 
 func (f *File) readConnections(raw json.RawMessage) {
@@ -59,7 +58,7 @@ func newConnection(entry connectionEntry) connection.Connection {
 	}
 	return connection.Connection{
 		ID: entry.ID, TypeID: entry.TypeID, Name: entry.Name, Revision: entry.Revision,
-		Fields: fields, IsPrivateNetworkAllowed: entry.AllowPrivateNetwork,
+		Fields: fields,
 	}
 }
 
@@ -72,7 +71,7 @@ func newConnectionEntries(connections []connection.Connection) []connectionEntry
 		}
 		entries = append(entries, connectionEntry{
 			ID: one.ID, TypeID: one.TypeID, Name: one.Name, Revision: one.Revision,
-			Fields: fields, AllowPrivateNetwork: one.IsPrivateNetworkAllowed,
+			Fields: fields,
 		})
 	}
 	return entries

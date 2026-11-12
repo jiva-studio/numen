@@ -37,16 +37,15 @@ type operation struct {
 // Entry is a connection as a window shows it: the fields the type declares, the keys of the secret
 // fields that hold a value for the current address, and no value of a secret.
 type Entry struct {
-	ID                      string
-	TypeID                  string
-	Name                    string
-	Revision                int
-	Fields                  map[string]any
-	SecretKeysSet           []string
-	IsTypeAvailable         bool
-	IsComplete              bool
-	IsPrivateNetworkAllowed bool
-	Uses                    []connection.Use
+	ID              string
+	TypeID          string
+	Name            string
+	Revision        int
+	Fields          map[string]any
+	SecretKeysSet   []string
+	IsTypeAvailable bool
+	IsComplete      bool
+	Uses            []connection.Use
 }
 
 // Connections holds every use case on the list of connections.
@@ -226,7 +225,7 @@ func (o operation) buildEntry(ctx context.Context, one connection.Connection) (E
 	}
 	entry := Entry{
 		ID: one.ID, TypeID: one.TypeID, Name: one.Name, Revision: one.Revision,
-		Fields: map[string]any{}, IsPrivateNetworkAllowed: one.IsPrivateNetworkAllowed, Uses: uses,
+		Fields: map[string]any{}, Uses: uses,
 	}
 	found, isFound := o.types.GetType(one.TypeID)
 	if !isFound {

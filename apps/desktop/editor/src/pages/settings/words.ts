@@ -47,9 +47,6 @@ export const WORDS = {
   connectionKeyClear: 'Remove key',
   connectionKeyClearing: 'The key will be removed when you save.',
   connectionAddressChanged: 'Changing the address removes the stored key. Enter it again.',
-  connectionPrivateNetwork: 'Allow a private network address',
-  connectionPrivateNetworkHint:
-    'Needed for a server on your local network. Addresses on this computer are always allowed.',
   connectionModelNote: 'Choose the model on the page of the plugin, not here.',
   connectionAgentNote: (pluginName: string) =>
     `${pluginName} runs the program on this computer with your own login. No other field is needed.`,

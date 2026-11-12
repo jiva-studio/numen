@@ -39,7 +39,6 @@ const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => 
   secretKeysSet: [],
   isTypeAvailable: true,
   isComplete: true,
-  isPrivateNetworkAllowed: false,
   uses: [],
   ...overrides,
 })
@@ -105,7 +104,6 @@ describe('createConnectionStore', () => {
       name: 'New',
       fields: {},
       secrets: {},
-      isPrivateNetworkAllowed: false,
     })
 
     expect(answer).toStrictEqual({ ok: true, value: expect.objectContaining({ id: 'c00000002' }) })
@@ -124,7 +122,6 @@ describe('createConnectionStore', () => {
       name: 'Work',
       fields: {},
       secrets: {},
-      isPrivateNetworkAllowed: false,
     })
 
     expect(answer).toStrictEqual({ ok: false, error: 'Another connection has this name.' })
@@ -142,7 +139,6 @@ describe('createConnectionStore', () => {
       name: 'N',
       fields: {},
       secrets: {},
-      isPrivateNetworkAllowed: false,
     })
 
     expect(answer).toStrictEqual({

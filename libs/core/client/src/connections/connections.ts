@@ -66,7 +66,6 @@ export interface ConnectionInfo {
   readonly secretKeysSet: readonly string[]
   readonly isTypeAvailable: boolean
   readonly isComplete: boolean
-  readonly isPrivateNetworkAllowed: boolean
   readonly uses: readonly ConnectionUse[]
 }
 
@@ -76,7 +75,6 @@ export interface ConnectionDraft {
   readonly name: string
   readonly fields: Readonly<Record<string, ConnectionValue>>
   readonly secrets: Readonly<Record<string, string>>
-  readonly isPrivateNetworkAllowed: boolean
 }
 
 /**
@@ -204,7 +202,6 @@ const readConnection = (connection: ProviderConnection): ConnectionInfo => {
     secretKeysSet: connection.secretKeysSet,
     isTypeAvailable: connection.isTypeAvailable,
     isComplete: connection.isComplete,
-    isPrivateNetworkAllowed: connection.isPrivateNetworkAllowed,
     uses: connection.uses.map((one) => ({
       pluginId: one.pluginId,
       pluginName: one.pluginName,
@@ -264,7 +261,6 @@ export const createConnectionClient = (rpc: ConnectionRpc): ConnectionClient => 
         name: draft.name,
         fields: toWireFields(draft.fields),
         secrets: { ...draft.secrets },
-        isPrivateNetworkAllowed: draft.isPrivateNetworkAllowed,
       }),
     ),
   update: async (change) =>
@@ -275,7 +271,6 @@ export const createConnectionClient = (rpc: ConnectionRpc): ConnectionClient => 
         name: change.name,
         fields: toWireFields(change.fields),
         secrets: { ...change.secrets },
-        isPrivateNetworkAllowed: change.isPrivateNetworkAllowed,
       }),
     ),
   delete: async (id) => {

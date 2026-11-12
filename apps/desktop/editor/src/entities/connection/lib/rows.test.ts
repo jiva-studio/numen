@@ -37,7 +37,6 @@ const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => 
   secretKeysSet: [],
   isTypeAvailable: true,
   isComplete: true,
-  isPrivateNetworkAllowed: false,
   uses: [],
   ...overrides,
 })

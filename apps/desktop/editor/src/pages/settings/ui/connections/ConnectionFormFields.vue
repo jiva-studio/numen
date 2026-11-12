@@ -1,11 +1,10 @@
 <script setup lang="ts">
 /**
  * The part of the form of a connection that follows its type: the name, one input for each field
- * the type declares, the private network switch, and the notes. A type of an agent program has no
+ * the type declares, and the notes. A type of an agent program has no
  * field and the form says so.
  */
 import { computed } from 'vue'
-import { Switch } from '@numen/ui'
 import type {
   ConnectionFieldInfo,
   ConnectionTypeInfo,
@@ -25,7 +24,6 @@ const props = defineProps<{
 }>()
 
 const name = defineModel<string>('name', { required: true })
-const isPrivateAllowed = defineModel<boolean>('isPrivateAllowed', { required: true })
 
 const emit = defineEmits<{
   (e: 'update-value', key: string, value: ConnectionValue): void
@@ -73,14 +71,6 @@ function getValue(field: ConnectionFieldInfo): ConnectionValue | undefined {
       @update="(value) => onUpdate(field, value)"
       @clear="emit('clear-secret', field.key)"
     />
-
-    <div v-if="view.hasPrivateChoice" class="connection-form__switch">
-      <Switch v-model="isPrivateAllowed" :aria-label="words.connectionPrivateNetwork" />
-      <div>
-        <span class="connection-form__label">{{ words.connectionPrivateNetwork }}</span>
-        <p class="connection-form__hint">{{ words.connectionPrivateNetworkHint }}</p>
-      </div>
-    </div>
 
     <p v-if="hasNothingToEnter" class="connection-form__hint">
       {{ words.connectionAgentNote(type.pluginName) }}
@@ -136,12 +126,6 @@ function getValue(field: ConnectionFieldInfo): ConnectionValue | undefined {
 
 .connection-form__input:focus {
   outline: var(--numen-stroke) solid var(--numen-accent);
-}
-
-.connection-form__switch {
-  display: flex;
-  gap: 0.625rem;
-  align-items: flex-start;
 }
 
 .connection-form__hint,

@@ -10,7 +10,6 @@ import {
   getSentFields,
   getSentSecrets,
   getStoredSecretKeys,
-  hasPrivateNetworkChoice,
   isStoredKeyLost,
 } from './form'
 
@@ -79,13 +78,6 @@ describe('getAddressField', () => {
   })
 })
 
-describe('hasPrivateNetworkChoice', () => {
-  it('is true for a type whose address the person enters', () => {
-    expect(hasPrivateNetworkChoice(compatible)).toBe(true)
-    expect(hasPrivateNetworkChoice(openRouter)).toBe(false)
-  })
-})
-
 describe('getMissingFields', () => {
   it('names the required fields that have no value, secrets included', () => {
     expect(getMissingFields(compatible, {}, {})).toStrictEqual(['baseUrl'])
@@ -111,7 +103,6 @@ const stored = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => ({
   secretKeysSet: ['apiKey'],
   isTypeAvailable: true,
   isComplete: true,
-  isPrivateNetworkAllowed: false,
   uses: [],
   ...overrides,
 })

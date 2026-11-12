@@ -14,12 +14,11 @@ import (
 // values of the editable fields; a key left out is cleared. A key left out of Secrets keeps its
 // value and an empty value clears it.
 type UpdateRequest struct {
-	ID                      string
-	Revision                int
-	Name                    string
-	Fields                  map[string]any
-	Secrets                 map[string]string
-	IsPrivateNetworkAllowed bool
+	ID       string
+	Revision int
+	Name     string
+	Fields   map[string]any
+	Secrets  map[string]string
 }
 
 // Update changes the name, the fields and the secrets of a connection, and adds 1 to its revision.
@@ -133,14 +132,13 @@ func (u *Update) plan(
 	updated := current
 	updated.Name = name
 	updated.Revision = current.Revision + 1
-	updated.IsPrivateNetworkAllowed = request.IsPrivateNetworkAllowed
 	updated.Fields = mergeFields(declared.Declaration, current.Fields, edited)
 
 	plan, hasKey, err := u.planSecrets(ctx, declared, current, updated, request.Secrets)
 	if err != nil {
 		return connection.Connection{}, secretPlan{}, err
 	}
-	if err := checkAddress(declared.Declaration, updated.Fields, hasKey, updated.IsPrivateNetworkAllowed); err != nil {
+	if err := checkAddress(declared.Declaration, updated.Fields, hasKey); err != nil {
 		return connection.Connection{}, secretPlan{}, err
 	}
 	return updated, plan, nil

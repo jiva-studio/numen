@@ -28,11 +28,6 @@ export function getAddressField(type: ConnectionTypeInfo): ConnectionFieldInfo |
   return getEditableFields(type).find((one) => one.isAddress)
 }
 
-/** Whether the person may allow a private network: only an address the person enters can name one. */
-export function hasPrivateNetworkChoice(type: ConnectionTypeInfo): boolean {
-  return getAddressField(type) !== undefined
-}
-
 /** The keys of the required editable fields that hold no value; a stored secret counts as one. */
 export function getMissingFields(
   type: ConnectionTypeInfo,

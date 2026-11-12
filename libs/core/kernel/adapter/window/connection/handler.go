@@ -64,11 +64,10 @@ func (h *Handler) CreateProviderConnection(
 	ctx context.Context, r *connect.Request[v1.CreateProviderConnectionRequest],
 ) (*connect.Response[v1.CreateProviderConnectionResponse], error) {
 	entry, err := h.connections.Create.Execute(ctx, connections.CreateRequest{
-		TypeID:                  r.Msg.GetTypeId(),
-		Name:                    r.Msg.GetName(),
-		Fields:                  readFields(r.Msg.GetFields()),
-		Secrets:                 r.Msg.GetSecrets(),
-		IsPrivateNetworkAllowed: r.Msg.GetIsPrivateNetworkAllowed(),
+		TypeID:  r.Msg.GetTypeId(),
+		Name:    r.Msg.GetName(),
+		Fields:  readFields(r.Msg.GetFields()),
+		Secrets: r.Msg.GetSecrets(),
 	})
 	if err != nil {
 		code, served := getErrorCode(err)
@@ -89,12 +88,11 @@ func (h *Handler) UpdateProviderConnection(
 	ctx context.Context, r *connect.Request[v1.UpdateProviderConnectionRequest],
 ) (*connect.Response[v1.UpdateProviderConnectionResponse], error) {
 	entry, err := h.connections.Update.Execute(ctx, connections.UpdateRequest{
-		ID:                      r.Msg.GetId(),
-		Revision:                int(r.Msg.GetRevision()),
-		Name:                    r.Msg.GetName(),
-		Fields:                  readFields(r.Msg.GetFields()),
-		Secrets:                 r.Msg.GetSecrets(),
-		IsPrivateNetworkAllowed: r.Msg.GetIsPrivateNetworkAllowed(),
+		ID:       r.Msg.GetId(),
+		Revision: int(r.Msg.GetRevision()),
+		Name:     r.Msg.GetName(),
+		Fields:   readFields(r.Msg.GetFields()),
+		Secrets:  r.Msg.GetSecrets(),
 	})
 	if err != nil {
 		code, served := getErrorCode(err)

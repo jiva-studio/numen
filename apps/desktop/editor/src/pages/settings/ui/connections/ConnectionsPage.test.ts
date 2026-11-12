@@ -89,7 +89,6 @@ const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => 
   secretKeysSet: ['apiKey'],
   isTypeAvailable: true,
   isComplete: true,
-  isPrivateNetworkAllowed: false,
   uses: [],
   ...overrides,
 })
@@ -213,7 +212,7 @@ describe('the Add dialog', () => {
     dispose(wrapper)
   })
 
-  it('shows an address and an optional key for a server, and a switch for private networks', async () => {
+  it('shows an address and an optional key for a server', async () => {
     const { wrapper } = mountPage([], [SERVER])
     await flushPromises()
 
@@ -222,7 +221,6 @@ describe('the Add dialog', () => {
     const labels = Array.from(dialog().querySelectorAll('label')).map(nameOf)
     expect(labels).toStrictEqual(['Name', 'Address', 'API key'])
     expect(dialog().textContent).toContain('May stay empty for a server on this computer.')
-    expect(dialog().querySelector('[role="switch"]')).not.toBeNull()
     dispose(wrapper)
   })
 
@@ -234,7 +232,6 @@ describe('the Add dialog', () => {
 
     expect(Array.from(dialog().querySelectorAll('label')).map(nameOf)).toStrictEqual(['Name'])
     expect(dialog().textContent).toContain('No other field is needed.')
-    expect(dialog().querySelector('[role="switch"]')).toBeNull()
     dispose(wrapper)
   })
 
@@ -266,7 +263,6 @@ describe('the Add dialog', () => {
       name: '',
       fields: { parallelRequests: 4 },
       secrets: { apiKey: 'sk-secret-1' },
-      isPrivateNetworkAllowed: false,
     })
     expect(root().querySelector('[role="dialog"]')).toBeNull()
     dispose(wrapper)
@@ -321,7 +317,6 @@ describe('editing and deleting', () => {
       name: 'Work',
       fields: { parallelRequests: 4 },
       secrets: {},
-      isPrivateNetworkAllowed: false,
     })
     dispose(wrapper)
   })

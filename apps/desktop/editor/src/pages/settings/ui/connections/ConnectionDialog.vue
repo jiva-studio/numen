@@ -102,7 +102,6 @@ function onKeepFocus(event: KeyboardEvent): void {
       <ConnectionFormFields
         v-if="type"
         v-model:name="form.state.name"
-        v-model:is-private-allowed="form.state.isPrivateAllowed"
         :type="type"
         :view="form.view.value"
         :values="form.state.values"

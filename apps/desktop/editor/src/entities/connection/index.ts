@@ -22,7 +22,6 @@ export {
   getSentFields,
   getSentSecrets,
   getStoredSecretKeys,
-  hasPrivateNetworkChoice,
   isStoredKeyLost,
 } from './lib/form'
 export {

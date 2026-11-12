@@ -11,11 +11,10 @@ import (
 // CreateRequest is a new connection. An empty Name makes the core name it from the title of the
 // type. Secrets are the values of the secret fields by key.
 type CreateRequest struct {
-	TypeID                  string
-	Name                    string
-	Fields                  map[string]any
-	Secrets                 map[string]string
-	IsPrivateNetworkAllowed bool
+	TypeID  string
+	Name    string
+	Fields  map[string]any
+	Secrets map[string]string
 }
 
 // Create adds a connection at the end of the list and keeps its secret fields in the key store.
@@ -48,7 +47,7 @@ func (u *Create) Execute(ctx context.Context, request CreateRequest) (Entry, err
 		return Entry{}, err
 	}
 	hasKey := slices.ContainsFunc(getSecretKeys(declared.Declaration), func(key string) bool { return request.Secrets[key] != "" })
-	if err := checkAddress(declared.Declaration, fields, hasKey, request.IsPrivateNetworkAllowed); err != nil {
+	if err := checkAddress(declared.Declaration, fields, hasKey); err != nil {
 		return Entry{}, err
 	}
 	known, err := u.repository.ListConnections()
@@ -64,7 +63,6 @@ func (u *Create) Execute(ctx context.Context, request CreateRequest) (Entry, err
 	}
 	created := connection.Connection{
 		ID: id, TypeID: request.TypeID, Name: name, Revision: 1, Fields: fields,
-		IsPrivateNetworkAllowed: request.IsPrivateNetworkAllowed,
 	}
 	if err := u.store(ctx, declared, created, request.Secrets); err != nil {
 		return Entry{}, err

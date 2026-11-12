@@ -22,7 +22,6 @@ import {
   getSentFields,
   getSentSecrets,
   getStoredSecretKeys,
-  hasPrivateNetworkChoice,
   isStoredKeyLost,
 } from '@/entities/connection'
 import { WORDS as words } from '../words'
@@ -43,7 +42,6 @@ export interface ConnectionFormState {
   values: Record<string, ConnectionValue>
   secrets: Record<string, string>
   clearedKeys: readonly string[]
-  isPrivateAllowed: boolean
   problem: string
   isSaving: boolean
 }
@@ -54,7 +52,6 @@ export interface ConnectionFormView {
   readonly fields: readonly ConnectionFieldInfo[]
   readonly storedKeys: readonly string[]
   readonly isKeyLost: boolean
-  readonly hasPrivateChoice: boolean
 }
 
 function createState(input: ConnectionFormInput): ConnectionFormState {
@@ -65,7 +62,6 @@ function createState(input: ConnectionFormInput): ConnectionFormState {
     values: createInitialValues(input.types(), stored),
     secrets: {},
     clearedKeys: [],
-    isPrivateAllowed: stored?.isPrivateNetworkAllowed ?? false,
     problem: '',
     isSaving: false,
   })
@@ -75,7 +71,7 @@ function createView(input: ConnectionFormInput, state: ConnectionFormState) {
   return computed<ConnectionFormView>(() => {
     const type = input.types().find((one) => one.id === state.typeId)
     if (!type) {
-      return { type, fields: [], storedKeys: [], isKeyLost: false, hasPrivateChoice: false }
+      return { type, fields: [], storedKeys: [], isKeyLost: false }
     }
     const stored = input.connection()
     return {
@@ -83,7 +79,6 @@ function createView(input: ConnectionFormInput, state: ConnectionFormState) {
       fields: getEditableFields(type),
       storedKeys: getStoredSecretKeys(type, stored, state.values),
       isKeyLost: isStoredKeyLost(type, stored, state.values),
-      hasPrivateChoice: hasPrivateNetworkChoice(type),
     }
   })
 }
@@ -122,7 +117,6 @@ function createActions(
       name: state.name,
       fields: getSentFields(target, state.values),
       secrets: getSentSecrets(state.secrets, state.clearedKeys),
-      isPrivateNetworkAllowed: hasPrivateNetworkChoice(target) && state.isPrivateAllowed,
     }
     if (stored) return input.update({ ...request, id: stored.id, revision: stored.revision })
     return input.create({ ...request, typeId: target.id })

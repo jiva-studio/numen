@@ -20,7 +20,6 @@ const connection: ConnectionInfo = {
   secretKeysSet: [],
   isTypeAvailable: true,
   isComplete: true,
-  isPrivateNetworkAllowed: false,
   uses: [],
 }
 
@@ -66,7 +65,6 @@ describe('the connections in the settings tab', () => {
       name: 'Work',
       fields: {},
       secrets: {},
-      isPrivateNetworkAllowed: false,
     })
 
     expect(answer).toStrictEqual({ ok: false, error: 'Another connection has this name.' })

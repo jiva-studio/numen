@@ -182,7 +182,7 @@ func describeField(field manifest.ConnectionField) string {
 	return fmt.Sprintf("%q", field.Key)
 }
 
-func checkAddress(declared manifest.ConnectionType, fields map[string]any, hasKey, isPrivateAllowed bool) error {
+func checkAddress(declared manifest.ConnectionType, fields map[string]any, hasKey bool) error {
 	for _, field := range declared.Fields {
 		if !field.IsAddress || field.FixedValue != nil {
 			continue
@@ -191,7 +191,7 @@ func checkAddress(declared manifest.ConnectionType, fields map[string]any, hasKe
 		if !isText || address == "" {
 			return nil
 		}
-		return CheckAddress(address, hasKey, isPrivateAllowed)
+		return CheckAddress(address, hasKey)
 	}
 	return nil
 }

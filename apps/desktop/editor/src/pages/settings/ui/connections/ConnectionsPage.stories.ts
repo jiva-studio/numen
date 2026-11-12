@@ -95,7 +95,6 @@ const connection = (overrides: Partial<ConnectionInfo>): ConnectionInfo => ({
   secretKeysSet: ['apiKey'],
   isTypeAvailable: true,
   isComplete: true,
-  isPrivateNetworkAllowed: false,
   uses: [],
   ...overrides,
 })
@@ -214,16 +213,13 @@ export const AddDialogOfAService: Story = {
   },
 }
 
-/** A server asks for the address, takes a key that may stay empty, and offers the private network switch. */
+/** A server asks for the address, takes a key that may stay empty. */
 export const AddDialogOfAServer: Story = {
   render: render([], [SERVER]),
   play: async ({ canvasElement }) => {
     const dialog = await openDialog(canvasElement)
     await expect(dialog.getByLabelText('Address')).toBeVisible()
     await expect(dialog.getByText('May stay empty for a server on this computer.')).toBeVisible()
-    await expect(
-      dialog.getByRole('switch', { name: 'Allow a private network address' }),
-    ).toBeVisible()
     await expect(dialog.getByText('Mode')).toBeVisible()
     await expect(dialog.getByText('Stream the answer')).toBeVisible()
   },

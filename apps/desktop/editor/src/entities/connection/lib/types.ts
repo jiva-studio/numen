@@ -55,7 +55,6 @@ export interface ConnectionInfo {
   readonly secretKeysSet: readonly string[]
   readonly isTypeAvailable: boolean
   readonly isComplete: boolean
-  readonly isPrivateNetworkAllowed: boolean
   readonly uses: readonly ConnectionUse[]
 }
 
@@ -65,7 +64,6 @@ export interface ConnectionDraft {
   readonly name: string
   readonly fields: Readonly<Record<string, ConnectionValue>>
   readonly secrets: Readonly<Record<string, string>>
-  readonly isPrivateNetworkAllowed: boolean
 }
 
 /**
