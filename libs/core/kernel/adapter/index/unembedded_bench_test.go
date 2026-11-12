@@ -123,7 +123,7 @@ func BenchmarkSaveVectors(b *testing.B) {
 			Chunk: p.Chunk, Hash: hash, Recipe: getBenchModel().Recipe(), Value: value, Coarse: coarse,
 		})
 		named = append(named, vector.Stored{
-			ChunkID: chunk.ID(p.Chunk), Hash: hash, Model: getBenchModel(),
+			ChunkID: chunk.ID(p.Chunk), Hash: hash, Recipe: getBenchModel().Recipe(),
 			Kind: vector.QuantizedInt8, Value: value, Coarse: coarse,
 		})
 	}
