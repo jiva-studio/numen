@@ -62,10 +62,10 @@ func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 		t.Fatal(err)
 	}
 	stdout := &lockedBuffer{}
-	isCopied := make(chan struct{})
+	copyErrCh := make(chan error, 1)
 	go func() {
-		defer close(isCopied)
-		_, _ = io.Copy(stdout, stdoutRead)
+		_, err := io.Copy(stdout, stdoutRead)
+		copyErrCh <- err
 	}()
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount failed: %v", err)
@@ -82,7 +82,9 @@ func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 				t.Error(err)
 			}
 		}
-		<-isCopied
+		if err := <-copyErrCh; err != nil {
+			t.Errorf("copy stdout: %v", err)
+		}
 		if err := stdoutRead.Close(); err != nil {
 			t.Error(err)
 		}
