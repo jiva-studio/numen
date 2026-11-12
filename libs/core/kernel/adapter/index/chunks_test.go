@@ -1445,7 +1445,7 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 		t.Errorf("expected ascending chunk IDs within source, got %d and %d", unembedded[2].Chunk, unembedded[3].Chunk)
 	}
 
-	firstPage, cursor1, err := db.Sources().GetUnembeddedChunks(ctx, getFirstVault().ID, getBenchModel(), "", 2)
+	firstPage, cursor1, err := db.Sources().GetUnembeddedChunks(ctx, getFirstVault().ID, getBenchModel().Recipe(), "", 2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1453,7 +1453,7 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 		t.Fatalf("page 1 unexpected: %+v", firstPage)
 	}
 
-	secondPage, _, err := db.Sources().GetUnembeddedChunks(ctx, getFirstVault().ID, getBenchModel(), cursor1, 2)
+	secondPage, _, err := db.Sources().GetUnembeddedChunks(ctx, getFirstVault().ID, getBenchModel().Recipe(), cursor1, 2)
 	if err != nil {
 		t.Fatal(err)
 	}

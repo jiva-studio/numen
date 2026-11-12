@@ -91,7 +91,7 @@ func BenchmarkUnembedded(b *testing.B) {
 	})
 	b.Run("Passages", func(b *testing.B) {
 		for b.Loop() {
-			if _, _, err := passages.GetUnembeddedChunks(ctx, getBenchVault().ID, getBenchModel(), "", chunksPerPage); err != nil {
+			if _, _, err := passages.GetUnembeddedChunks(ctx, getBenchVault().ID, getBenchModel().Recipe(), "", chunksPerPage); err != nil {
 				b.Fatal(err)
 			}
 		}

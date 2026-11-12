@@ -3,10 +3,10 @@ package vectors
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"slices"
 	"strconv"
 	"testing"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 )
 
 // vectorIndex records the calls made to it, in order.
