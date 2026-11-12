@@ -25,7 +25,6 @@ import { expectTabAt, openTabAt } from './tab-position.js'
 const FILES_TITLE = 'Files'
 /** The id the window gives its one Settings tab: the kind and the identity of the kind. */
 const SETTINGS_TAB_ID = 'settings:settings'
-/** A conversation titles its tab by its first question, so the tab is told by its kind and not by the title. */
 const isTitledByContent = (kind: TabKindChoice): boolean => kind === 'Agent'
 
 /** The files that have a tab type: a file of any other type is not opened, so nothing shows that the open was handled. */
@@ -111,10 +110,6 @@ export class TabDriver {
     return name.endsWith('.md') ? getTabName(name) : getStem(name)
   }
 
-  /**
-   * The panel of the tab, once the tab is in front. Panels are found through their tab, as a note and its
-   * plex carry the same title, and only the panel of the tab in front is shown.
-   */
   private async getShownPanel(kind: TabKindChoice, reference: string, name: string): Promise<Locator> {
     await this.requireKindIfNamed(kind, reference, name)
     await this.scenario.closePalette()
@@ -236,10 +231,6 @@ export class TabDriver {
     await expect(panel).toContainText(/0:0[1-9]/)
   }
 
-  /**
-   * The path of the note in front. A note opened from a file tree that is linked to it is shown in the linked
-   * tab while the tree stays the active tab of the core, so a note that is selected in its pane counts as in front.
-   */
   private async getShownNotePath(notePath: string): Promise<string> {
     const active = await readActivePath(this.scenario.page.request)
     if (active === notePath) return active

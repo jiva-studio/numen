@@ -82,7 +82,6 @@ const leaveRecordingAt = async (page: Page, panel: TabPanel, file: string, time:
     .toContain(`"t":[${parseTime(time)},`)
 }
 
-/** Opens the tab of the file and leaves it at the position. */
 export const openTabAt = async (host: Host, file: string, position: string, where: string): Promise<void> => {
   const { page } = host
   const panel = new TabPanel(await openVaultFile(page, path.dirname(file), path.basename(file)))

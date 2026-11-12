@@ -1,7 +1,7 @@
 /** The person at the plex: the notes drawn around the note in focus, and the links made from there. */
 import { expect, type Locator } from 'playwright/test'
 import { getGraph } from '../../../e2e/desktop/tests/support/workspace.js'
-import { getEscaped, getStem, parseReference } from './rules.js'
+import { escapeRegExp, getStem, parseReference } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 export class PlexDriver {
@@ -20,7 +20,6 @@ export class PlexDriver {
     await expect(this.getNote(title, relation)).toHaveCount(has ? 1 : 0)
   }
 
-  /** The node of a note, whatever its relation to the note in focus. */
   private getNode(title: string): Locator {
     return getGraph(this.scenario.page).locator(`[aria-label^="${title}, "]`)
   }
@@ -37,7 +36,7 @@ export class PlexDriver {
   }
 
   async choose(reference: string, name: string): Promise<void> {
-    const title = getEscaped(this.getTitle(reference, name))
+    const title = escapeRegExp(this.getTitle(reference, name))
     await getGraph(this.scenario.page)
       .getByRole('button', { name: new RegExp(`^${title}, `) })
       .click()

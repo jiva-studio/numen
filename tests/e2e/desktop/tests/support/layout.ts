@@ -88,7 +88,6 @@ export const dragRowOnto = async (page: Page, row: Locator, onto: Locator): Prom
   await page.mouse.up()
 }
 
-/** The width of an element as laid out, in CSS pixels. */
 const readWidth = async (element: Locator): Promise<number> =>
   element.evaluate((one) => one.getBoundingClientRect().width)
 

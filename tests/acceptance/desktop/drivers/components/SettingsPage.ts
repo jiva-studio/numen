@@ -1,6 +1,6 @@
 /** The Settings tab: the pages of the window and of each plugin, their rows, choices, texts and switches. */
 import { expect, type Locator, type Page } from 'playwright/test'
-import { getEscaped } from '../rules.js'
+import { escapeRegExp } from '../rules.js'
 
 const SYSTEM = /^System/
 const BACK = /All plugins/i
@@ -24,7 +24,7 @@ export class SettingsPage {
   async showPage(plugin?: string): Promise<Locator> {
     const panel = this.getPanel()
     await expect(panel).toBeVisible()
-    const entry = plugin === undefined ? SYSTEM : new RegExp(getEscaped(plugin), 'i')
+    const entry = plugin === undefined ? SYSTEM : new RegExp(escapeRegExp(plugin), 'i')
     const button = panel.getByRole('button', { name: entry }).first()
     // A page of one plugin hides the list of the pages: the way to another is back to the list.
     if (!(await button.isVisible())) await panel.getByRole('button', { name: BACK }).click()
@@ -35,7 +35,7 @@ export class SettingsPage {
   getRow(panel: Locator, name: string): Locator {
     return panel
       .locator('.settings__row')
-      .filter({ has: this.page.locator('.settings__name', { hasText: new RegExp(`^${getEscaped(name)}$`) }) })
+      .filter({ has: this.page.locator('.settings__name', { hasText: new RegExp(`^${escapeRegExp(name)}$`) }) })
   }
 
   async requireRow(panel: Locator, name: string): Promise<Locator> {
@@ -58,7 +58,7 @@ export class SettingsPage {
 
   /** The option of an open menu whose name starts with the value. */
   getOption(value: string): Locator {
-    return this.page.getByRole('menuitemradio', { name: new RegExp(`^${getEscaped(value)}`) }).first()
+    return this.page.getByRole('menuitemradio', { name: new RegExp(`^${escapeRegExp(value)}`) }).first()
   }
 
   getAnyOption(): Locator {

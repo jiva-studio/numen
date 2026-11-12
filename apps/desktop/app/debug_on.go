@@ -14,9 +14,8 @@ import (
 
 // DebugOptions holds test settings for debug builds.
 type DebugOptions struct {
-	HTTPAddr string
-	IsMockML bool
-	// FolderFile names a file holding the folder the folder dialog answers with.
+	HTTPAddr   string
+	IsMockML   bool
 	FolderFile string
 }
 

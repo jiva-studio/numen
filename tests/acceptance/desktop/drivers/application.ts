@@ -7,7 +7,7 @@ import { readActivePath } from '../../../e2e/desktop/tests/support/test.js'
 import { callRPC, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
 import {
   assertPaletteField,
-  getEscaped,
+  escapeRegExp,
   getPaletteField,
   parseApplication,
   type PaletteAction,
@@ -63,7 +63,7 @@ export class ApplicationDriver {
     const { page } = this.scenario
     const field = this.palette.field()
     const row = SECOND_ACTIONS[label]
-    const name = new RegExp('^' + getEscaped(row ?? label) + '$')
+    const name = new RegExp('^' + escapeRegExp(row ?? label) + '$')
     const command = this.palette.rowNamed(name)
     if (label === DELETE_TEXT) await this.expectOpenTabHasText()
     if (label === PROOFREAD_TEXT) await this.expectActiveFileHasMadeText()
@@ -85,7 +85,7 @@ export class ApplicationDriver {
     const field = this.palette.searchField()
     const kind = await this.readPaletteKind(field)
     assertPaletteField('pick', kind)
-    const name = new RegExp(`^${getEscaped(value)}$`)
+    const name = new RegExp(`^${escapeRegExp(value)}$`)
     if (kind === 'item') {
       await this.palette.optionNamed(name).click()
     } else {

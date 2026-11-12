@@ -1,6 +1,6 @@
 /** The person at the composer of the agent: the message, the Send and Stop buttons, the model. */
 import { expect, type Locator } from 'playwright/test'
-import { getEscaped } from './rules.js'
+import { escapeRegExp } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 const COMPOSER = 'Ask about the vault'
@@ -50,6 +50,6 @@ export class AgentDriver {
 
   async expectModel(model: string): Promise<void> {
     const label = this.scenario.page.locator('.model-selector__label').first()
-    await expect(label).toHaveText(new RegExp(` · ${getEscaped(model)}$`))
+    await expect(label).toHaveText(new RegExp(` · ${escapeRegExp(model)}$`))
   }
 }

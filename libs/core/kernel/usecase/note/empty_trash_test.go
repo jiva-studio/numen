@@ -89,7 +89,6 @@ func TestEmptyTrashReturnsTheUndeletedPathsTogetherWithTheWriterError(t *testing
 	}
 }
 
-// noTrashedVersions is a trash whose files have no versions.
 type noTrashedVersions struct{}
 
 func (noTrashedVersions) DeleteUnder(context.Context, domain.Vault, string, []string) error {

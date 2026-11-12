@@ -18,7 +18,7 @@ describe('parseEnvironment', () => {
     expect(() => parseEnvironment([['weather', 'slow']])).toThrow('is not part of the environment')
   })
 
-  it('fails on a state the name does not take', () => {
+  it('fails on a state that is not in the list of states', () => {
     expect(() => parseEnvironment([['agent', 'none']])).toThrow('is not a state of the agent')
     expect(() => parseEnvironment([['latest release', 'soon']])).toThrow('is not a state of the latest release')
   })

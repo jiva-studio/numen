@@ -10,7 +10,6 @@ import (
 
 const trashedScanPath = ".trash/" + scanPath
 
-// trashScan files the recognized text of the scan under the trash, as removing the scan does.
 func (s *scene) trashScan(t *testing.T) domain.TextVersion {
 	t.Helper()
 	s.requestText(t)
@@ -43,7 +42,7 @@ func (s *scene) getTrashedVersions(t *testing.T) []domain.TextVersion {
 	return found
 }
 
-func TestDeleteUnderTheTrashDeletesTheRecordsAndTheFilesOfTrashedVersions(t *testing.T) {
+func TestDeleteTrashedRemovesRecordsAndFilesOfTrashedVersions(t *testing.T) {
 	s := newScene(t)
 	version := s.trashScan(t)
 	trash := textversion.NewTrashVersions(s.repo, s.folders)
@@ -60,7 +59,7 @@ func TestDeleteUnderTheTrashDeletesTheRecordsAndTheFilesOfTrashedVersions(t *tes
 	}
 }
 
-func TestDeleteUnderTheTrashKeepsTheVersionsOfWhatStays(t *testing.T) {
+func TestDeleteTrashedKeepsVersionsOfOtherFiles(t *testing.T) {
 	s := newScene(t)
 	s.trashScan(t)
 	trash := textversion.NewTrashVersions(s.repo, s.folders)

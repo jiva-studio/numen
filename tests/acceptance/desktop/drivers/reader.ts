@@ -1,7 +1,7 @@
 /** The person at a reader and at the panes: pages and their buttons, the contents of a book, the place of a tab. */
 import { expect, type Locator } from 'playwright/test'
 import { readBox } from '../../../e2e/desktop/tests/support/browser.js'
-import { getEscaped, getStem, parseHeaded, parseReference, type Place, type TabKindChoice } from './rules.js'
+import { escapeRegExp, getStem, parseColumn, parseReference, type Place, type TabKindChoice } from './rules.js'
 import { Panes } from './components/Panes.js'
 import { ReaderView } from './components/ReaderView.js'
 import type { Scenario } from './scenario.js'
@@ -48,7 +48,7 @@ export class ReaderDriver {
 
   async expectContents(rows: readonly (readonly string[])[], kind: TabKindChoice, reference: string, name: string): Promise<void> {
     const entries = (await this.getView(kind, reference, name)).getChapters()
-    await expect(entries).toHaveText(parseHeaded(rows, 'chapter'))
+    await expect(entries).toHaveText(parseColumn(rows, 'chapter'))
   }
 
   async expectContentsHidden(kind: TabKindChoice, reference: string, name: string): Promise<void> {
@@ -63,7 +63,7 @@ export class ReaderDriver {
 
   private getTabName(reference: string, name: string): RegExp {
     const title = parseReference(reference, name).reference === 'at' ? getStem(name) : name
-    return new RegExp(`^(Linked tab )?${getEscaped(title)}`, 'i')
+    return new RegExp(`^(Linked tab )?${escapeRegExp(title)}`, 'i')
   }
 
   async moveToOtherPane(kind: TabKindChoice, reference: string, name: string): Promise<void> {
@@ -89,7 +89,7 @@ export class ReaderDriver {
   async expectOwnPane(kind: TabKindChoice, reference: string, name: string): Promise<void> {
     await this.tab.getTabPanel(kind, reference, name)
     const tabName = this.getTabName(reference, name)
-    const panes = this.panes.getHolding(tabName)
+    const panes = this.panes.getPaneWithTab(tabName)
     await expect(panes, `the tab "${name}" is not in one pane`).toHaveCount(1)
     await expect(this.panes.getTabs(panes.first())).toHaveCount(1)
   }

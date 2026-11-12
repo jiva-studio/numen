@@ -114,7 +114,6 @@ export class TextDriver {
     await expect.poll(() => hasMadeText(request, filePath)).toBe(true)
   }
 
-  /** The download ends with the text of the link, or with a failed task in the list of the tasks. */
   private async expectEnded(notePath: string): Promise<void> {
     const { request } = this.scenario.page
     await expect.poll(async () => (await hasVersions(request, notePath)) || (await this.window.hasFailedTask())).toBe(true)

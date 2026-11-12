@@ -1,6 +1,6 @@
 /** The panel of a tab, and what a reader or a player puts into it. */
 import { expect, type Locator } from 'playwright/test'
-import { getEscaped, getStem } from '../rules.js'
+import { escapeRegExp, getStem } from '../rules.js'
 import type { Host } from './host.js'
 import { TabStrip } from './TabStrip.js'
 
@@ -79,12 +79,12 @@ export class TabPanels {
 
   /** The panel of the file, named by the beginning of its file name. */
   ofFile(file: string): Locator {
-    return this.host.page.getByRole('tabpanel', { name: new RegExp(getEscaped(getStem(file)), 'i') })
+    return this.host.page.getByRole('tabpanel', { name: new RegExp(escapeRegExp(getStem(file)), 'i') })
   }
 
   /** The panel of the note: a tab linked to the file tree is named with the words "Linked tab" before its title. */
   ofNote(title: string): Locator {
-    const escaped = getEscaped(title)
+    const escaped = escapeRegExp(title)
     return this.host.page
       .getByRole('tabpanel', { name: new RegExp(`^(Linked tab )?${escaped} Close ${escaped}$`) })
       .filter({ has: this.host.page.locator('.note__text') })

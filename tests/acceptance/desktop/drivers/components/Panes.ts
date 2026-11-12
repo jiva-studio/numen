@@ -17,8 +17,7 @@ export class Panes {
     return pane.getByRole('tab', { name: tabName })
   }
 
-  /** The panes that hold a tab with the name. */
-  getHolding(tabName: RegExp): Locator {
+  getPaneWithTab(tabName: RegExp): Locator {
     return this.page.locator(PANES).filter({ has: this.page.getByRole('tab', { name: tabName }) })
   }
 

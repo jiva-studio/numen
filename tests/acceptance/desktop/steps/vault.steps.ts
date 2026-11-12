@@ -2,7 +2,7 @@ import type { DataTable } from 'playwright-bdd'
 import { Given, Then, When } from '../support/bdd.js'
 
 Given('the empty vault {string}', ({ person }, name: string) => {
-  person.vault.createEmpty(name)
+  person.vault.createEmptyVault(name)
 })
 
 Given('{vault} has the following:', async ({ person }, vault: string, files: DataTable) => {

@@ -67,7 +67,6 @@ export interface ServerOptions {
   readonly application: Application
   readonly vault: string
   readonly readPageText: (address: string) => string | undefined
-  /** The settings of the environment in force from the first moment of the application. */
   readonly environment: readonly EnvironmentSetting[]
 }
 

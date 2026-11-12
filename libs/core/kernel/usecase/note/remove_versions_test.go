@@ -32,7 +32,7 @@ func (c changeFixture) getVersionKeys(t *testing.T, path string) []string {
 	return keys
 }
 
-func TestTrashingAFileMovesItsVersionsIntoTheTrashAndRestoringBringsThemBack(t *testing.T) {
+func TestTrashAndRestoreMoveVersionsToTheTrashAndBack(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"talks/Heat.md": "# Heat\n"})
 	c.saveVersion(t, "talks/Heat.md", "first")

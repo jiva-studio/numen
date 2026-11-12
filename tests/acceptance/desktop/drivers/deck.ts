@@ -25,7 +25,6 @@ export class DeckDriver {
     await this.expectSaved(value, tab)
   }
 
-  /** The value is kept in the file of the deck before the person goes on, as the application may end next. */
   private async expectSaved(value: string, tab: TabRef): Promise<void> {
     const world = this.scenario.getWorld()
     const file = parseReference(tab.reference, tab.name).reference === 'at' ? tab.name : getCardFile(tab.name)

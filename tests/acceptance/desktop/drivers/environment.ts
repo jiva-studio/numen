@@ -52,9 +52,7 @@ export const createRelease = (version: string): JsonObject => ({
 })
 
 export interface EnvironmentTargets {
-  /** The address of the stand-ins. */
   readonly origin: string
-  /** The file the mock embedding model holds its batches while it exists. */
   readonly embeddingHoldFile: string
 }
 

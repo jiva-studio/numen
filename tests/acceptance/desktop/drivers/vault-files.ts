@@ -36,7 +36,6 @@ export const getSampleKind = (fileName: string): SampleKind => {
   return kind
 }
 
-/** The path as the table writes it: a folder ends with a slash. */
 const describePath = (write: Pick<VaultWrite, 'kind' | 'path'>): string =>
   write.kind === 'folder' ? `${write.path}/` : write.path
 

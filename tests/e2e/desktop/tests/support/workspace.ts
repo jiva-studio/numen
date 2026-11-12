@@ -13,7 +13,6 @@ export const waitForWindow = async (page: Page): Promise<void> => {
   await expect(page.locator('[data-tasks-status]')).toBeVisible()
 }
 
-/** Presses Enter on the row at `path` of the files tab once it is drawn: a folder opens, a file opens in a tab. */
 const openTreeRow = async (page: Page, path: string): Promise<void> => {
   const row = page.locator(`[data-tree-row="${path}"]`)
   await expect(row).toBeVisible()

@@ -2,7 +2,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { expect } from 'playwright/test'
-import { getEscaped, getRating, parseReviewScope } from './rules.js'
+import { escapeRegExp, getRatingNumber, parseReviewScope } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 const getAnswerFolder = (vault: string): string => path.join(vault, '.numen', 'md.numen.views.flashcards.studio')
@@ -33,7 +33,7 @@ export class ReviewDriver {
 
   async chooseVault(name: string): Promise<void> {
     const { page } = this.scenario
-    await page.getByRole('button', { name: new RegExp(getEscaped(name)) }).click()
+    await page.getByRole('button', { name: new RegExp(escapeRegExp(name)) }).click()
     await expect(page.getByRole('heading', { name })).toBeVisible()
   }
 
@@ -42,7 +42,7 @@ export class ReviewDriver {
     const button =
       parseReviewScope(scope) === 'vault'
         ? page.getByRole('button', { name: /Review/ })
-        : page.getByRole('button', { name: new RegExp(getEscaped(name)) })
+        : page.getByRole('button', { name: new RegExp(escapeRegExp(name)) })
     await expect(button).toBeEnabled()
     await button.click()
     await expect(page.getByRole('button', { name: /Show the answer/ })).toBeVisible()
@@ -53,14 +53,14 @@ export class ReviewDriver {
   }
 
   async answer(answer: string): Promise<void> {
-    getRating(answer)
+    getRatingNumber(answer)
     this.answersBefore = this.readAnswers().length
     this.hasAnswered = true
     await this.scenario.page.getByRole('button', { name: new RegExp(`\\b${answer}\\b`) }).click()
   }
 
   async expectAnswer(answer: string): Promise<void> {
-    const rating = getRating(answer)
+    const rating = getRatingNumber(answer)
     await expect.poll(() => this.readAnswers().length).toBe(this.answersBefore + 1)
     expect(this.readAnswers().at(-1)?.rating).toBe(rating)
   }

@@ -16,9 +16,9 @@ const POSITIONS: Record<TabKind, string> = {
 
 export const getStem = (file: string): string => path.basename(file).replace(/\.[^.]+$/, '')
 
-export const getEscaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+export const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-export const getTitlePattern = (title: string): RegExp => new RegExp(`^(Linked tab )?${getEscaped(title)}( Close |$)`)
+export const getTitlePattern = (title: string): RegExp => new RegExp(`^(Linked tab )?${escapeRegExp(title)}( Close |$)`)
 
 /** The title the product gives the tab of a web address: the characters a file name cannot have become "-". */
 export const getAddressTitle = (address: string): string => address.replace(/[/\\:*?"<>|#]/g, '-')
@@ -132,7 +132,7 @@ const RATINGS = new Map([
 ])
 
 /** The number the review log writes for an answer. */
-export const getRating = (answer: string): number => {
+export const getRatingNumber = (answer: string): number => {
   const rating = RATINGS.get(answer)
   if (rating === undefined) throw new Error(`"${answer}" is not an answer: use Again, Hard, Good or Easy`)
   return rating
@@ -320,7 +320,7 @@ export const parseKeys = (text: string): string => {
 }
 
 /** The rows of a table with one column, below its header. */
-export const parseHeaded = (rows: readonly (readonly string[])[], header: string): string[] => {
+export const parseColumn = (rows: readonly (readonly string[])[], header: string): string[] => {
   if (rows.length === 0 || rows[0]?.length !== 1 || rows[0][0] !== header) {
     throw new Error(`the table must start with the header "| ${header} |"`)
   }

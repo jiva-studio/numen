@@ -70,7 +70,6 @@ export class NoteDriver {
       .click({ modifiers: ['ControlOrMeta'] })
   }
 
-  /** Brings the note to the front: only the panel of the tab in front is shown. */
   private async showNote(notePath: string): Promise<void> {
     await this.strip.show(this.strip.noteTab(getTabName(notePath)))
   }

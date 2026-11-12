@@ -27,7 +27,6 @@ export const getCardFile = (title: string): string => {
   return `${CARDS_FOLDER}/${title.trim()}.md`
 }
 
-/** The type a card file declares in its frontmatter: card-model, deck or preset. */
 const readCardType = (text: string): string | undefined => {
   const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1] ?? ''
   return /^type:\s*(\S+)\s*$/m.exec(frontmatter)?.[1]
@@ -81,7 +80,6 @@ export interface CardModel {
 
 const CARD_MODEL_HEADER = ['card model', 'fields', 'template', 'front', 'back']
 
-/** The card model of a row: a first row makes it with its fields, and a later row takes it as it is. */
 const getModel = (models: Map<string, CardModel>, title: string, fields: string): CardModel => {
   const known = models.get(title)
   if (known !== undefined) {

@@ -27,14 +27,14 @@ import {
   parsePresets,
   readCardModelFields,
 } from './cards.js'
-import { assertEntry, getStem, parseHeaded, readLinkAddress } from './rules.js'
+import { assertEntry, getStem, parseColumn, readLinkAddress } from './rules.js'
 import { assertPathsAreFree, parseVaultChecks, parseVaultFiles, type VaultWrite } from './vault-files.js'
 import type { Scenario } from './scenario.js'
 
 export class VaultDriver {
   constructor(private readonly scenario: Scenario) {}
 
-  createEmpty(name: string): void {
+  createEmptyVault(name: string): void {
     this.scenario.createVault(name)
   }
 
@@ -98,7 +98,7 @@ export class VaultDriver {
    * list holds these vaults and no other.
    */
   async expectList(rows: readonly (readonly string[])[]): Promise<void> {
-    const names = parseHeaded(rows, 'vault')
+    const names = parseColumn(rows, 'vault')
     if (this.scenario.actions === 0) for (const name of names) await this.addToList(name)
     const { request } = this.scenario.page
     await expect
@@ -108,7 +108,7 @@ export class VaultDriver {
 
   /** The vault holds a note for each address, and no other link note. */
   async expectLinks(vault: string, rows: readonly (readonly string[])[]): Promise<void> {
-    const addresses = parseHeaded(rows, 'address')
+    const addresses = parseColumn(rows, 'address')
     const world = this.scenario.getWorld()
     const name = this.scenario.getVault(vault)
     await expect

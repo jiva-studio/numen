@@ -5,7 +5,7 @@
  */
 import { expect } from 'playwright/test'
 import { Palette } from './components/Palette.js'
-import { getEscaped, getPaletteField, isAskedFor, parsePaletteRows } from './rules.js'
+import { escapeRegExp, getPaletteField, isAskedFor, parsePaletteRows } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 const COMMAND_PLACEHOLDER = 'Type a command'
@@ -39,7 +39,7 @@ export class PaletteDriver {
   async expectRows(rows: readonly (readonly string[])[]): Promise<void> {
     for (const { list, row, isDisabled } of parsePaletteRows(rows)) {
       await this.waitForAsk(list)
-      const option = this.palette.rowNamed(new RegExp('^' + getEscaped(row) + '$'))
+      const option = this.palette.rowNamed(new RegExp('^' + escapeRegExp(row) + '$'))
       await expect(option.first(), `the list "${list}" has no row "${row}"`).toBeVisible()
       if (isDisabled) await expect(option.first()).toHaveAttribute('aria-disabled', 'true')
       else await expect(option.first()).not.toHaveAttribute('aria-disabled', 'true')
@@ -56,7 +56,7 @@ export class PaletteDriver {
 
   /** The open palette lists the command under its name as many times as the count says. */
   async expectCommandCount(label: string, count: number): Promise<void> {
-    await expect(this.palette.rowNamed(new RegExp('^' + getEscaped(label) + '$'))).toHaveCount(count)
+    await expect(this.palette.rowNamed(new RegExp('^' + escapeRegExp(label) + '$'))).toHaveCount(count)
   }
 
   private async readAsk(): Promise<Ask | undefined> {
@@ -112,9 +112,8 @@ export class PaletteDriver {
     await page.keyboard.press('Enter')
   }
 
-  /** Clicks the row that names the value: the whole name, or the words a name begins with. */
   private async pickRow(value: string, isExact: boolean): Promise<void> {
-    const pattern = new RegExp(`^${getEscaped(value)}${isExact ? '$' : ''}`)
+    const pattern = new RegExp(`^${escapeRegExp(value)}${isExact ? '$' : ''}`)
     const rows = this.palette.rowNamed(pattern)
     await expect(rows.first(), `the palette lists no row named "${value}"`).toBeVisible()
     if ((await rows.count()) > 1) throw new Error(`more than one row of the palette is named "${value}": write more of the name`)

@@ -39,7 +39,6 @@ export class CommandDriver {
     await this.drivers.palette.answer(parseArguments(table))
   }
 
-  /** Answers the folder dialog with the folder of a vault of the world, which the command opens when it runs. */
   private chooseFolder(vault: string): void {
     const folder = this.scenario.getWorld().getFolder(this.scenario.getVault(vault))
     this.scenario.getServer().writeFolderChoice(folder)

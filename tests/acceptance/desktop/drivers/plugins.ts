@@ -38,7 +38,6 @@ export class PluginDriver {
     await expect(toggle).toBeChecked({ checked: isEnabled })
   }
 
-  /** Shows the switch of the plugin in the Settings tab. */
   private async showToggle(name: string): Promise<Locator> {
     const { page } = this.scenario
     const field = page.getByRole('combobox', { name: 'Search the vault' })

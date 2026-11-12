@@ -2,7 +2,7 @@
 import { expect, type Locator } from 'playwright/test'
 import { Palette } from './components/Palette.js'
 import { SearchResults } from './components/SearchResults.js'
-import { parseHeaded } from './rules.js'
+import { parseColumn } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 /** The first pass over a new file may take this long before the search finds it. */
@@ -56,7 +56,7 @@ export class SearchDriver {
       await expect(results).toHaveCount(0)
       return
     }
-    // A file that lost its text leaves the index after a while, so the words are typed again until the result is gone.
+    // The index removes a file that lost its text after a delay, so the words are typed again until the index has no hit for the file.
     await expect(async () => {
       await this.type()
       await expect(results).toHaveCount(0, { timeout: 3_000 })
@@ -96,7 +96,7 @@ export class SearchDriver {
     rows: readonly (readonly string[])[],
     rule: 'only' | 'include' | 'exclude',
   ): Promise<void> {
-    const wanted = parseHeaded(rows, 'action')
+    const wanted = parseColumn(rows, 'action')
     const names = await this.listActions(text, group)
     if (rule === 'only') expect(names).toStrictEqual(wanted)
     else if (rule === 'include') expect(names).toEqual(expect.arrayContaining(wanted))

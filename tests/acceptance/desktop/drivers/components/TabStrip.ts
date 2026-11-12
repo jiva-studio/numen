@@ -1,6 +1,6 @@
 /** The tabs of the window: finding one by id, title, file or kind, and bringing it to the front. */
 import { expect, type Locator, type Page } from 'playwright/test'
-import { getEscaped, getStem, getTitlePattern } from '../rules.js'
+import { escapeRegExp, getStem, getTitlePattern } from '../rules.js'
 import type { Host } from './host.js'
 
 export class TabStrip {
@@ -13,13 +13,12 @@ export class TabStrip {
 
   /** The tab of a note: a tab linked to the file tree is named with the words "Linked tab" before its title. */
   noteTab(title: string): Locator {
-    const escaped = getEscaped(title)
+    const escaped = escapeRegExp(title)
     return this.host.page
       .getByRole('tab', { name: new RegExp(`^(Linked tab )?${escaped} Close ${escaped}$`) })
       .and(this.host.page.locator('[data-workspace-tab^="note:"]'))
   }
 
-  /** The tabs of the notes. */
   noteTabs(): Locator {
     return this.host.page.locator('[data-workspace-tab^="note:"]')
   }
@@ -36,7 +35,7 @@ export class TabStrip {
 
   /** The tab of the file inside a pane. */
   tabOfFileIn(pane: Locator | Page, file: string): Locator {
-    return pane.getByRole('tab', { name: new RegExp('^' + getEscaped(getStem(file)), 'i') })
+    return pane.getByRole('tab', { name: new RegExp('^' + escapeRegExp(getStem(file)), 'i') })
   }
 
   /** The first pane of the window. */
@@ -44,7 +43,6 @@ export class TabStrip {
     return this.host.page.locator('section[data-workspace-pane]').first()
   }
 
-  /** The button that closes the tab. */
   closeButton(tab: Locator): Locator {
     return tab.getByRole('button', { name: /^Close / })
   }

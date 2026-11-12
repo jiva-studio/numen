@@ -2,7 +2,7 @@
 import { expect, type Locator } from 'playwright/test'
 import type { ApplicationDriver } from './application.js'
 import { SettingsPage } from './components/SettingsPage.js'
-import { getEscaped } from './rules.js'
+import { escapeRegExp } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 const OPEN_SETTINGS = 'Open settings'
@@ -17,7 +17,6 @@ export class SettingsDriver {
     return new SettingsPage(this.scenario.page)
   }
 
-  /** The panel of the Settings tab on the page of the plugin, or on the page of the window when no plugin is named. */
   private async showPage(plugin?: string): Promise<Locator> {
     await this.scenario.ensureWorkspace()
     const tab = this.settings.getTab()
@@ -49,9 +48,8 @@ export class SettingsDriver {
     else await expect(this.settings.getTextInput(row)).toHaveValue(value)
   }
 
-  /** How many options of the setting match: a setting with one option shows it as plain text, with more it lists them in a menu. */
   private async countOptions(row: Locator, option: string): Promise<number> {
-    const pattern = new RegExp(getEscaped(option))
+    const pattern = new RegExp(escapeRegExp(option))
     const choice = this.settings.getChoice(row)
     if ((await choice.count()) === 0) {
       const fixed = this.settings.getFixedValue(row)

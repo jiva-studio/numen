@@ -123,7 +123,7 @@ func TestRemovePluginVersionsReturnsWhatItRemoved(t *testing.T) {
 	}
 }
 
-func TestGetVersionsUnderListsAFileAndAFolder(t *testing.T) {
+func TestGetVersionsByPrefixReturnsAFileAndAFolder(t *testing.T) {
 	repo := openRepository(t)
 	save(t, repo,
 		newVersion(".trash/talks/a.mp3", "p.one", "k"),

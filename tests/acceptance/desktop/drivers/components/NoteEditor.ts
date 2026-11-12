@@ -1,6 +1,6 @@
 /** The text of a note in its panel: typing at the end, replacing words, links and the banner. */
 import { expect, type Locator } from 'playwright/test'
-import { getEscaped } from '../rules.js'
+import { escapeRegExp } from '../rules.js'
 import type { Host } from './host.js'
 import { TabPanels } from './TabPanel.js'
 
@@ -18,7 +18,6 @@ export class NoteEditor {
     return this.panels.ofNote(this.title)
   }
 
-  /** The text of the note. */
   text(): Locator {
     return this.panel().locator('.note__text .cm-content')
   }
@@ -54,7 +53,7 @@ export class NoteEditor {
   async getCompletion(label: string): Promise<Locator> {
     const option = this.host.page
       .locator('.cm-tooltip-autocomplete')
-      .getByRole('option', { name: new RegExp(`^${getEscaped(label)}`) })
+      .getByRole('option', { name: new RegExp(`^${escapeRegExp(label)}`) })
       .first()
     await expect(option).toBeVisible()
     return option

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   parseApplication,
-  getRating,
+  getRatingNumber,
   parseReviewScope,
   assertEntry,
   assertPosition,
@@ -24,7 +24,7 @@ import {
   assertWorldApplication,
   isAskedFor,
   parseArguments,
-  parseHeaded,
+  parseColumn,
   parseKeys,
   parseTabRef,
   parseTabRows,
@@ -220,13 +220,13 @@ describe('getAncestors', () => {
   })
 })
 
-describe('getRating', () => {
+describe('getRatingNumber', () => {
   it('numbers the four answers', () => {
-    expect(['Again', 'Hard', 'Good', 'Easy'].map(getRating)).toEqual([1, 2, 3, 4])
+    expect(['Again', 'Hard', 'Good', 'Easy'].map(getRatingNumber)).toEqual([1, 2, 3, 4])
   })
 
   it('throws for a word that is no answer', () => {
-    expect(() => getRating('Maybe')).toThrow('"Maybe" is not an answer')
+    expect(() => getRatingNumber('Maybe')).toThrow('"Maybe" is not an answer')
   })
 })
 
@@ -377,13 +377,13 @@ describe('parseKeys', () => {
   })
 })
 
-describe('parseHeaded', () => {
+describe('parseColumn', () => {
   it('gives the rows below the header', () => {
-    expect(parseHeaded([['vault'], ['Test'], ['Coastline']], 'vault')).toEqual(['Test', 'Coastline'])
+    expect(parseColumn([['vault'], ['Test'], ['Coastline']], 'vault')).toEqual(['Test', 'Coastline'])
   })
 
   it('fails on another header', () => {
-    expect(() => parseHeaded([['name'], ['Test']], 'vault')).toThrow('must start with the header "| vault |"')
+    expect(() => parseColumn([['name'], ['Test']], 'vault')).toThrow('must start with the header "| vault |"')
   })
 })
 

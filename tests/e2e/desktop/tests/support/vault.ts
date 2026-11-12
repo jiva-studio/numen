@@ -145,7 +145,7 @@ export const destroyIndexedNote = async (
   await expect.poll(() => isIndexedNote(request, notePath), { timeout: 45_000 }).toBe(false)
 }
 
-const findTrashed = (name: string): string[] => {
+const findTrashedPaths = (name: string): string[] => {
   const vault = getVaultPath()
   const trash = path.join(vault, '.trash')
   if (!fs.existsSync(trash)) return []
@@ -158,7 +158,7 @@ const findTrashed = (name: string): string[] => {
 /** Takes the files of the vault's trash named `name` off the disk. */
 export const destroyTrashed = (name: string): void => {
   const vault = getVaultPath()
-  for (const one of findTrashed(name)) fs.rmSync(path.join(vault, one))
+  for (const one of findTrashedPaths(name)) fs.rmSync(path.join(vault, one))
 }
 
 /** One record a connection holds: the role it was written with, its type, label and marker. */
@@ -248,7 +248,6 @@ export const writeSetting = async (
   })
 }
 
-/** Every setting in force, as the core answers them. */
 const readSettings = async (request: APIRequestContext): Promise<JsonObject> =>
   JSON.parse(
     String((await callRPC(request, 'SettingsService/GetSettings', {}))['written'] ?? '{}'),

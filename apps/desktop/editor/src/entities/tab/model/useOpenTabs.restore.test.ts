@@ -36,7 +36,7 @@ const createOpenTabs = (window: ReturnType<typeof createWindow>) =>
   })
 
 describe('the open tabs of a window whose files tab is in focus', () => {
-  it('keep the note shown beside it as the active tab, and show it again after a restart', () => {
+  it('restores the adjacent note as the active tab after a restart', () => {
     const window = createWindow()
     window.restored.restoreTabs(
       [
