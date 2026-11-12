@@ -210,7 +210,7 @@ export interface NoteBuffer {
 }
 
 /** The window a plugin runs in: its application, its target and how it opens web links. */
-export interface ContextInfoHost {
+interface ContextInfoHost {
   readonly app: AppInfo
   readonly target: string
   readonly openExternal: (url: string) => Promise<void>
