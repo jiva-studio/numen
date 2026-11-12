@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
-	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/operation"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/servicetype"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/ports"
 )
@@ -67,23 +67,26 @@ type chatAnswer struct {
 }
 
 // Complete asks the chat completions endpoint of the service for an answer.
-func (g *Gateway) Complete(ctx context.Context, call connection.Call, limit time.Duration, request connection.ProviderCompleteRequest) (connection.CompleteResult, error) {
-	messages := make([]chatMessage, len(request.Messages))
-	for i, message := range request.Messages {
-		messages[i] = chatMessage{Role: message.Role, Content: message.Text}
+func (g *Gateway) Complete(ctx context.Context, call connection.Call, limit time.Duration, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
+	messages := make([]chatMessage, len(request.GetMessages()))
+	for i, message := range request.GetMessages() {
+		messages[i] = chatMessage{Role: message.GetRole(), Content: message.GetText()}
 	}
-	body := chatBody{Model: call.Model, Messages: messages, Temperature: request.Temperature, MaxTokens: 0, MaxCompletionTokens: 0, ReasoningEffort: "", Reasoning: nil}
-	body.MaxTokens, body.MaxCompletionTokens = splitTokenLimit(call.Type, request.MaxTokens)
-	body.ReasoningEffort, body.Reasoning = splitReasoning(call.Type, call.Reasoning)
+	body := chatBody{
+		Model: call.Options[llm.OptionModel], Messages: messages, Temperature: request.Temperature,
+		MaxTokens: 0, MaxCompletionTokens: 0, ReasoningEffort: "", Reasoning: nil,
+	}
+	body.MaxTokens, body.MaxCompletionTokens = splitTokenLimit(call.Type, int(request.GetMaxTokens()))
+	body.ReasoningEffort, body.Reasoning = splitReasoning(call.Type, call.Options[llm.OptionReasoning])
 
 	var answer chatAnswer
 	if err := g.send(ctx, call, limit, endpoint{http.MethodPost, "/chat/completions"}, body, &answer); err != nil {
-		return connection.CompleteResult{}, err
+		return nil, err
 	}
 	if len(answer.Choices) == 0 {
-		return connection.CompleteResult{}, connection.NewStopError(connection.ReasonUnknown)
+		return nil, connection.NewStopError(connection.ReasonUnavailable)
 	}
-	return connection.CompleteResult{Text: answer.Choices[0].Message.Content}, nil
+	return &llm.CompleteResult{Text: answer.Choices[0].Message.Content}, nil
 }
 
 func splitTokenLimit(typeID string, limit int) (maxTokens, maxCompletionTokens int) {
@@ -115,11 +118,11 @@ type embedAnswer struct {
 // Embed asks the embeddings endpoint of the service for one vector for each text.
 func (g *Gateway) Embed(ctx context.Context, call connection.Call, limit time.Duration, texts []string) ([][]float32, error) {
 	var answer embedAnswer
-	if err := g.send(ctx, call, limit, endpoint{http.MethodPost, "/embeddings"}, embedBody{Model: call.Model, Input: texts}, &answer); err != nil {
+	if err := g.send(ctx, call, limit, endpoint{http.MethodPost, "/embeddings"}, embedBody{Model: call.Options[llm.OptionModel], Input: texts}, &answer); err != nil {
 		return nil, err
 	}
 	if len(answer.Data) != len(texts) {
-		return nil, connection.NewStopError(connection.ReasonUnknown)
+		return nil, connection.NewStopError(connection.ReasonUnavailable)
 	}
 	vectors := make([][]float32, len(texts))
 	for position, one := range answer.Data {
@@ -128,7 +131,7 @@ func (g *Gateway) Embed(ctx context.Context, call connection.Call, limit time.Du
 			index = *one.Index
 		}
 		if index < 0 || index >= len(vectors) || vectors[index] != nil || len(one.Embedding) == 0 {
-			return nil, connection.NewStopError(connection.ReasonUnknown)
+			return nil, connection.NewStopError(connection.ReasonUnavailable)
 		}
 		vectors[index] = one.Embedding
 	}
@@ -145,33 +148,36 @@ type modelsAnswer struct {
 	} `json:"data"`
 }
 
-// ListModels lists the models of the service. OpenRouter labels its models, so the list holds the
-// models that fit the operation; the other services give no label, and every model is listed with no
-// operations. A model with no declared output modalities counts as a model of text, because OpenRouter
-// leaves the list out for some.
-func (g *Gateway) ListModels(ctx context.Context, call connection.Call, limit time.Duration, op string) ([]connection.Model, error) {
+// ListModels lists the models of the service that fit the operations of a setting of rows. OpenRouter
+// labels its models, so the list holds its embedding models for a setting used for llm.embed alone and its
+// models of text for a setting used for llm.complete or llm.chat, and none for any other; the other
+// services give no label, and every model is listed. A model with no declared output modalities counts as
+// a model of text, because OpenRouter leaves the list out for some.
+func (g *Gateway) ListModels(ctx context.Context, call connection.Call, limit time.Duration, operations []string) ([]connection.Option, error) {
+	isText := slices.Contains(operations, llm.OperationComplete) || slices.Contains(operations, llm.OperationChat)
+	isEmbed := slices.Contains(operations, llm.OperationEmbed)
 	path, isLabeled := "/models", call.Type == servicetype.OpenRouter
-	if isLabeled && op == operation.Embed {
+	if isLabeled && isEmbed && !isText {
 		path = "/embeddings/models"
-	} else if isLabeled && !operation.IsText(op) {
-		return []connection.Model{}, nil
+	} else if isLabeled && !isText {
+		return []connection.Option{}, nil
 	}
 	var answer modelsAnswer
 	if err := g.send(ctx, call, limit, endpoint{http.MethodGet, path}, nil, &answer); err != nil {
 		return nil, err
 	}
-	models := make([]connection.Model, 0, len(answer.Data))
+	models := make([]connection.Option, 0, len(answer.Data))
 	for _, one := range answer.Data {
-		model := connection.Model{ID: one.ID, Title: one.Name}
-		if isLabeled {
-			if operation.IsText(op) && !makesText(one.Architecture.OutputModalities) {
-				continue
-			}
-			model.Operations = []string{op}
+		if isLabeled && isText && !makesText(one.Architecture.OutputModalities) {
+			continue
 		}
-		models = append(models, model)
+		title := one.Name
+		if title == "" {
+			title = one.ID
+		}
+		models = append(models, connection.Option{Value: one.ID, Title: title})
 	}
-	slices.SortFunc(models, func(a, b connection.Model) int { return strings.Compare(a.ID, b.ID) })
+	slices.SortFunc(models, func(a, b connection.Option) int { return strings.Compare(a.Value, b.Value) })
 	return models, nil
 }
 

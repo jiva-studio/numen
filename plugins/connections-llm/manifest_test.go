@@ -7,21 +7,23 @@ import (
 )
 
 type field struct {
-	Key        string   `json:"key"`
-	Type       string   `json:"type"`
-	IsAddress  bool     `json:"isAddress"`
-	IsRequired bool     `json:"required"`
-	FixedValue *string  `json:"fixedValue"`
-	Default    *float64 `json:"default"`
-	Min        *float64 `json:"min"`
-	Max        *float64 `json:"max"`
-	Step       *float64 `json:"step"`
+	Key         string   `json:"key"`
+	Type        string   `json:"type"`
+	OptionsFrom string   `json:"optionsFrom"`
+	IsAddress   bool     `json:"isAddress"`
+	IsRequired  bool     `json:"required"`
+	FixedValue  *string  `json:"fixedValue"`
+	Default     *float64 `json:"default"`
+	Min         *float64 `json:"min"`
+	Max         *float64 `json:"max"`
+	Step        *float64 `json:"step"`
 }
 
 type connectionType struct {
 	ID         string   `json:"id"`
 	Operations []string `json:"operations"`
 	Fields     []field  `json:"fields"`
+	RowFields  []field  `json:"rowFields"`
 }
 
 type manifestShape struct {
@@ -75,7 +77,7 @@ func TestManifestProvidesTheThreeTypesOfAnOpenAICompatibleService(t *testing.T) 
 	var ids []string
 	for _, one := range readManifest(t).Contributes.ConnectionTypes {
 		ids = append(ids, one.ID)
-		if !slices.Equal(one.Operations, []string{"complete", "embed", "chat"}) {
+		if !slices.Equal(one.Operations, []string{"llm.complete", "llm.chat", "llm.embed", "llm.profile", "llm.models", "llm.reasoning"}) {
 			t.Errorf("type %s operations = %v", one.ID, one.Operations)
 		}
 	}
@@ -130,6 +132,22 @@ func TestEveryTypeAllowsFourParallelRequestsAndAtMost32(t *testing.T) {
 		}
 		if last := one.Fields[len(one.Fields)-1]; last.Key != "parallelRequests" {
 			t.Errorf("%s: last field = %s, want parallelRequests", one.ID, last.Key)
+		}
+	}
+}
+
+// A row names the model, listed by llm.models, and the reasoning level, listed by llm.reasoning.
+func TestEveryTypeListsTheModelAndTheReasoningOfARowFromItsProvider(t *testing.T) {
+	for _, one := range readManifest(t).Contributes.ConnectionTypes {
+		if len(one.RowFields) != 2 {
+			t.Fatalf("%s: row fields = %+v", one.ID, one.RowFields)
+		}
+		model, reasoning := one.RowFields[0], one.RowFields[1]
+		if model.Key != "model" || !model.IsRequired || model.OptionsFrom != "llm.models" {
+			t.Errorf("%s: model row field = %+v", one.ID, model)
+		}
+		if reasoning.Key != "reasoning" || reasoning.IsRequired || reasoning.OptionsFrom != "llm.reasoning" {
+			t.Errorf("%s: reasoning row field = %+v", one.ID, reasoning)
 		}
 	}
 }

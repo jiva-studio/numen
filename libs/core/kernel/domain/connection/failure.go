@@ -24,46 +24,40 @@ func (e *AllFailedError) Error() string {
 	return strings.Join(parts, "; ")
 }
 
-// RejectedError is a connection that found the request itself wrong.
-type RejectedError struct{ ConnectionName, Reason string }
+// StoppedError is a connection that found the request itself wrong, so no other row was tried.
+type StoppedError struct{ ConnectionName, Reason string }
 
 // Error names the connection and the reason.
-func (e *RejectedError) Error() string { return e.ConnectionName + ": " + e.Reason }
+func (e *StoppedError) Error() string { return e.ConnectionName + ": " + e.Reason }
 
 // FailureReason is why a call to a provider failed. The provider names it from an enum; the core sees
-// no HTTP code and no text from a service. The zero value is FailureReasonUnknown.
+// no HTTP code and no text from a service. The zero value is FailureReasonUnavailable.
 type FailureReason int
 
 // The reasons of a failure.
 const (
-	FailureReasonUnknown FailureReason = iota
-	FailureReasonKeyRejected
+	FailureReasonUnavailable FailureReason = iota
+	FailureReasonRejectedKey
 	FailureReasonPaymentRequired
 	FailureReasonRateLimited
-	FailureReasonUnreachable
-	FailureReasonTimeout
-	FailureReasonBadRequest
+	FailureReasonInvalidRequest
 )
 
 // String returns the words the person reads for the reason.
 func (r FailureReason) String() string {
 	switch r {
-	case FailureReasonKeyRejected:
+	case FailureReasonRejectedKey:
 		return "key rejected"
 	case FailureReasonPaymentRequired:
 		return "payment required"
 	case FailureReasonRateLimited:
 		return "rate limited"
-	case FailureReasonUnreachable:
-		return "unreachable"
-	case FailureReasonTimeout:
-		return "timeout"
-	case FailureReasonBadRequest:
-		return "bad request"
-	case FailureReasonUnknown:
-		return "unknown"
+	case FailureReasonInvalidRequest:
+		return "invalid request"
+	case FailureReasonUnavailable:
+		return "unavailable"
 	}
-	return "unknown"
+	return "unavailable"
 }
 
 // TryNextError is a connection that cannot serve now. RetryAfter is zero when the service gave no wait.

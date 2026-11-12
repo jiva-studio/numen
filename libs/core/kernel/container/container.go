@@ -8,8 +8,8 @@ package container
 import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
@@ -43,8 +43,7 @@ type Scales struct {
 
 // Machine is what the hardware allows the installation to use.
 type Machine struct {
-	ResolvedCompute settingsdomain.ResolvedCompute
-	Hardware        settingsdomain.MachineSpecs
+	ResolvedCompute machinedomain.ResolvedCompute
 }
 
 // Config is what the user may point somewhere else. Empty fields mean the platform's own locations. What the

@@ -112,7 +112,7 @@ export const startOwnServer = async (
         XDG_DATA_HOME: path.join(root, 'data'),
         XDG_STATE_HOME: path.join(root, 'state'),
         HOME: home,
-        NUMEN_MOCK_ML: 'true',
+        NUMEN_TEST_MOCK_ML: 'true',
         NUMEN_PLUGINS_PATH: path.join(repoRoot, 'plugins'),
         ...getSharedPairEnv(),
         NUMEN_DEBUG_TLS_CERT: certificate,

@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
 // UseCases are the use cases ProviderConnectionService is answered through.
@@ -22,6 +23,8 @@ type UseCases struct {
 	Delete    *connections.Delete
 	List      *connections.List
 	ListTypes *connections.ListTypes
+	// RowOptions lists the values of row fields; nil answers every list with no options.
+	RowOptions *rowoptions.Options
 }
 
 // Handler serves ProviderConnectionService over the use cases on connections.
@@ -132,10 +135,37 @@ func (h *Handler) DeleteProviderConnection(
 	return connect.NewResponse(&v1.DeleteProviderConnectionResponse{RemovedUses: writeUses(removed)}), nil
 }
 
+// ListRowOptions returns the values a row field of the type of a connection can take, as its provider
+// lists them.
+func (h *Handler) ListRowOptions(
+	ctx context.Context, r *connect.Request[v1.ListRowOptionsRequest],
+) (*connect.Response[v1.ListRowOptionsResponse], error) {
+	if h.connections.RowOptions == nil {
+		return connect.NewResponse(&v1.ListRowOptionsResponse{}), nil
+	}
+	listed, err := h.connections.RowOptions.ListOptions(ctx, r.Msg.GetConnectionId(), r.Msg.GetField(), r.Msg.GetOptions(), r.Msg.GetOperations())
+	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, connect.NewError(connect.CodeCanceled, ctxErr)
+		}
+		code, served := getErrorCode(err)
+		if !served {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		return connect.NewResponse(&v1.ListRowOptionsResponse{Error: code, Detail: getDetail(err)}), nil
+	}
+	options := make([]*v1.Option, len(listed))
+	for i, one := range listed {
+		options[i] = &v1.Option{Value: one.Value, Title: one.Title, Group: one.Group}
+	}
+	return connect.NewResponse(&v1.ListRowOptionsResponse{Options: options}), nil
+}
+
 func getDetail(err error) string {
 	sentinels := []error{
 		connection.ErrNotFound, connections.ErrNameTaken, connections.ErrInvalidField,
 		connection.ErrTypeUnavailable, connection.ErrKeyStore, connection.ErrStaleRevision,
+		rowoptions.ErrProviderUnavailable, rowoptions.ErrNoOptions,
 	}
 	for _, sentinel := range sentinels {
 		if errors.Is(err, sentinel) {
@@ -159,6 +189,10 @@ func getErrorCode(err error) (v1.ProviderConnectionErrorCode, bool) {
 		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED, true
 	case errors.Is(err, connection.ErrStaleRevision):
 		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION, true
+	case errors.Is(err, rowoptions.ErrProviderUnavailable):
+		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE, true
+	case errors.Is(err, rowoptions.ErrNoOptions):
+		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD, true
 	}
 	return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED, false
 }

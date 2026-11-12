@@ -1,5 +1,5 @@
-// Package hostchat asks the model API of the host for the turns of a conversation. The host picks the
-// connection that answers.
+// Package hostchat asks the host for the turns of a conversation through the operation llm.chat. The host
+// picks the connection that answers.
 package hostchat
 
 import (
@@ -8,24 +8,22 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/ports"
 )
 
-// Stream is the events of one turn.
+// Stream is the frames of one turn, as llm.ChatStream reads them.
 type Stream interface {
-	Next() (connection.ChatEvent, bool)
+	Next() bool
+	Frame() *llm.ChatFrame
+	Finish() *llm.ChatFinish
 	Err() error
 	Close() error
 }
 
-// Client is the model API of the host, as the agent uses it.
-type Client interface {
-	Chat(ctx context.Context, request connection.ChatRequest) (*connection.ChatStream, error)
-}
-
 // Open starts a turn.
-type Open func(ctx context.Context, request connection.ChatRequest) (Stream, error)
+type Open func(ctx context.Context, request *llm.ChatRequest, priority connection.Priority) (Stream, error)
 
 // Chat asks the host for turns through open.
 type Chat struct {
@@ -43,7 +41,7 @@ func FromEnvironment() (*Chat, error) {
 	if err != nil {
 		return nil, err
 	}
-	return fromClient(client), nil
+	return fromCaller(client), nil
 }
 
 // FromVariables returns a Chat that connects to the host the variables name.
@@ -52,12 +50,12 @@ func FromVariables(vars map[string]string) (*Chat, error) {
 	if err != nil {
 		return nil, err
 	}
-	return fromClient(client), nil
+	return fromCaller(client), nil
 }
 
-func fromClient(client Client) *Chat {
-	return New(func(ctx context.Context, request connection.ChatRequest) (Stream, error) {
-		stream, err := client.Chat(ctx, request)
+func fromCaller(caller connection.Caller) *Chat {
+	return New(func(ctx context.Context, request *llm.ChatRequest, priority connection.Priority) (Stream, error) {
+		stream, err := llm.Chat(ctx, caller, request, priority)
 		if err != nil {
 			return nil, err
 		}
@@ -70,10 +68,10 @@ var _ ports.Chat = (*Chat)(nil)
 // Stream asks the host for the next turn of the conversation and passes the text to emit as it arrives.
 // A person waits for the answer, so the turn is interactive.
 func (c *Chat) Stream(ctx context.Context, turn conversation.Turn, emit func(string) error) (reply conversation.Reply, err error) {
-	stream, err := c.open(ctx, connection.ChatRequest{
+	stream, err := c.open(ctx, &llm.ChatRequest{
 		Messages: writeMessages(turn.Messages), Tools: writeTools(turn.Tools),
-		Temperature: turn.Temperature, MaxTokens: turn.MaxTokens, Priority: connection.PriorityInteractive,
-	})
+		Temperature: turn.Temperature, MaxTokens: int32(turn.MaxTokens),
+	}, connection.PriorityInteractive)
 	if err != nil {
 		return conversation.Reply{}, readError(err)
 	}
@@ -81,57 +79,53 @@ func (c *Chat) Stream(ctx context.Context, turn conversation.Turn, emit func(str
 
 	reply.Message = conversation.Message{Role: "assistant", Text: "", ToolCalls: nil, ToolCallID: ""}
 	var text strings.Builder
-	for {
-		event, ok := stream.Next()
-		if !ok {
-			break
+	for stream.Next() {
+		frame := stream.Frame()
+		if call := frame.GetToolCall(); call != nil {
+			reply.Message.ToolCalls = append(reply.Message.ToolCalls, readCall(call))
+			continue
 		}
-		switch {
-		case event.ToolCall != nil:
-			reply.Message.ToolCalls = append(reply.Message.ToolCalls, readCall(*event.ToolCall))
-		case event.Finish != nil:
-			reply.IsCut = event.Finish.Reason == connection.FinishLength
-		default:
-			text.WriteString(event.TextDelta)
-			if err := emit(event.TextDelta); err != nil {
-				return reply, err
-			}
+		delta := frame.GetTextDelta()
+		text.WriteString(delta)
+		if err := emit(delta); err != nil {
+			return reply, err
 		}
 	}
 	reply.Message.Text = text.String()
 	if streamErr := stream.Err(); streamErr != nil {
 		return reply, readError(streamErr)
 	}
+	reply.IsCut = stream.Finish().GetReason() == llm.FinishReason_FINISH_REASON_LENGTH
 	return reply, nil
 }
 
-func writeMessages(messages []conversation.Message) []connection.ChatMessage {
-	out := make([]connection.ChatMessage, len(messages))
+func writeMessages(messages []conversation.Message) []*llm.ChatMessage {
+	out := make([]*llm.ChatMessage, len(messages))
 	for i, one := range messages {
-		calls := make([]connection.ToolCall, len(one.ToolCalls))
+		calls := make([]*llm.ToolCall, len(one.ToolCalls))
 		for j, call := range one.ToolCalls {
-			calls[j] = connection.ToolCall{ID: call.ID, Name: call.Name, Arguments: call.Arguments}
+			calls[j] = &llm.ToolCall{Id: call.ID, Name: call.Name, ArgumentsJson: call.Arguments}
 		}
-		out[i] = connection.ChatMessage{Role: one.Role, Text: one.Text, ToolCalls: calls, ToolCallID: one.ToolCallID}
+		out[i] = &llm.ChatMessage{Role: one.Role, Text: one.Text, ToolCalls: calls, ToolCallId: one.ToolCallID}
 	}
 	return out
 }
 
-func writeTools(tools []conversation.Tool) []connection.ToolDefinition {
-	out := make([]connection.ToolDefinition, len(tools))
+func writeTools(tools []conversation.Tool) []*llm.ToolDefinition {
+	out := make([]*llm.ToolDefinition, len(tools))
 	for i, one := range tools {
-		out[i] = connection.ToolDefinition{Name: one.Name, Description: one.Description, Parameters: one.Parameters}
+		out[i] = &llm.ToolDefinition{Name: one.Name, Description: one.Description, ParametersJson: string(one.Parameters)}
 	}
 	return out
 }
 
-func readCall(call connection.ToolCall) conversation.ToolCall {
-	return conversation.ToolCall{ID: call.ID, Name: call.Name, Arguments: call.Arguments}
+func readCall(call *llm.ToolCall) conversation.ToolCall {
+	return conversation.ToolCall{ID: call.GetId(), Name: call.GetName(), Arguments: call.GetArgumentsJson()}
 }
 
 func readError(err error) error {
 	var allFailed *connection.AllFailedError
-	var rejected *connection.RejectedError
+	var stopped *connection.StoppedError
 	switch {
 	case errors.Is(err, connection.ErrNoConnection):
 		return errors.Join(conversation.ErrNoConnection, err)
@@ -141,8 +135,8 @@ func readError(err error) error {
 			parts[i] = one.ConnectionName + ": " + one.Reason
 		}
 		return errors.New(strings.Join(parts, "; "))
-	case errors.As(err, &rejected):
-		return errors.New(rejected.ConnectionName + ": " + rejected.Reason)
+	case errors.As(err, &stopped):
+		return errors.New(stopped.ConnectionName + ": " + stopped.Reason)
 	}
 	return err
 }

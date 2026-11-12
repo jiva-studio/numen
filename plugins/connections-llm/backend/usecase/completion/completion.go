@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/operation"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/reasoning"
@@ -29,29 +30,34 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Completion, erro
 }
 
 // Complete asks the service for an answer. A level of reasoning outside those the model supports is a stop.
-func (c *Completion) Complete(ctx context.Context, call connection.Call, request connection.ProviderCompleteRequest) (connection.CompleteResult, error) {
-	if !reasoning.IsSupported(call.Type, call.Model, call.Reasoning) {
-		return connection.CompleteResult{}, connection.NewStopError(connection.ReasonBadRequest)
+func (c *Completion) Complete(ctx context.Context, call connection.Call, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
+	model := call.Options[llm.OptionModel]
+	if !reasoning.IsSupported(call.Type, model, call.Options[llm.OptionReasoning]) {
+		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
 	address := call.Fields[servicetype.FieldBaseURL]
-	result, err := c.gateway.Complete(ctx, call, c.limits.Get(call.Type, address, call.Model, operation.Complete), request)
+	result, err := c.gateway.Complete(ctx, call, c.limits.Get(call.Type, address, model, operation.Complete), request)
 	if err != nil {
-		return connection.CompleteResult{}, err
+		return nil, err
 	}
-	c.limits.MarkServed(address, call.Model)
+	c.limits.MarkServed(address, model)
 	return result, nil
 }
 
-// Chat asks the service for the next turn and sends its events as they arrive. A level of reasoning outside the
-// levels the model supports is a stop.
-func (c *Completion) Chat(ctx context.Context, call connection.Call, request connection.ProviderChatRequest, send func(connection.ChatEvent) error) error {
-	if !reasoning.IsSupported(call.Type, call.Model, call.Reasoning) {
-		return connection.NewStopError(connection.ReasonBadRequest)
+// Chat asks the service for the next turn and sends its frames as they arrive. A level of reasoning outside
+// the levels the model supports is a stop.
+func (c *Completion) Chat(
+	ctx context.Context, call connection.Call, request *llm.ChatRequest, send func(*llm.ChatFrame) error,
+) (*llm.ChatFinish, error) {
+	model := call.Options[llm.OptionModel]
+	if !reasoning.IsSupported(call.Type, model, call.Options[llm.OptionReasoning]) {
+		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
 	address := call.Fields[servicetype.FieldBaseURL]
-	if err := c.gateway.Chat(ctx, call, c.limits.Get(call.Type, address, call.Model, operation.Chat), request, send); err != nil {
-		return err
+	finish, err := c.gateway.Chat(ctx, call, c.limits.Get(call.Type, address, model, operation.Chat), request, send)
+	if err != nil {
+		return nil, err
 	}
-	c.limits.MarkServed(address, call.Model)
-	return nil
+	c.limits.MarkServed(address, model)
+	return finish, nil
 }

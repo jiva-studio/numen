@@ -29,7 +29,7 @@ func TestEnvironmentSanitization(t *testing.T) {
 		"LC_ALL", "lc_ctype", "LC_MESSAGES",
 		"SSL_CERT_FILE", "SSL_CERT_DIR",
 		"HTTP_PROXY", "https_proxy", "NO_PROXY", "no_proxy",
-		"NUMEN_MOCK_ML", "NUMEN_MOCK_EMBED_LOG", "NUMEN_MOCK_EMBED_HOLD_FILE",
+		"NUMEN_TEST_MOCK_ML", "NUMEN_TEST_MOCK_EMBED_LOG", "NUMEN_TEST_MOCK_EMBED_HOLD_FILE", "NUMEN_TEST_LANTERN",
 	}
 	for _, key := range allowed {
 		if !IsWhitelistedEnv(key) {

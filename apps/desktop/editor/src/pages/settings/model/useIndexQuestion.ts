@@ -3,6 +3,12 @@ import { runInBackground } from '@numen/ui'
 import type { StoredRow } from '@/entities/connection'
 import type { InstallationConnections } from '../types'
 
+/**
+ * The operation of a setting of rows whose change indexes the vault again: its rows hold the model the
+ * vectors of the notes are made with.
+ */
+export const INDEXING_OPERATION = 'llm.embed'
+
 /** What the question about indexing the vault again needs from the page of the rows. */
 export interface IndexQuestionSource {
   readonly getConnections: () => InstallationConnections

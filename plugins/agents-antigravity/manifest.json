@@ -12,7 +12,22 @@
       {
         "id": "antigravity",
         "title": "Antigravity",
-        "operations": ["complete"],
+        "operations": ["llm.complete", "llm.models", "llm.reasoning"],
+        "rowFields": [
+          {
+            "key": "model",
+            "type": "string",
+            "title": "Model",
+            "required": true,
+            "optionsFrom": "llm.models"
+          },
+          {
+            "key": "reasoning",
+            "type": "enum",
+            "title": "Reasoning",
+            "optionsFrom": "llm.reasoning"
+          }
+        ],
         "fields": [
           {
             "key": "parallelRequests",

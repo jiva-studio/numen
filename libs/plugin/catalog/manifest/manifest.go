@@ -183,7 +183,7 @@ type Setting struct {
 	Preview     bool
 	OptionsFrom string
 	Generate    string
-	Operation   string
+	Operations  []string
 }
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
@@ -204,7 +204,9 @@ type Manifest struct {
 	Services         []string
 	SettingsViews    []SettingsView
 	Contributes      Contributes
-	Warnings         []string
+	// IsOffByDefault keeps the plugin off until the person enables it.
+	IsOffByDefault bool
+	Warnings       []string
 }
 
 // GetProtocol returns the plugin protocol the manifest declares. An absent protocol is 1.

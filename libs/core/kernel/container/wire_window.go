@@ -167,7 +167,7 @@ func buildWindow(
 		Start: session.cases.start, Show: session.cases.show, OpenPlugin: session.cases.openPlugin,
 		Flush: session.cases.flush, Close: session.cases.close,
 		NoteWritten: indexer.WakeNotes,
-	}, session.tools.importFiles, opening.Out)
+	}, session.tools.importFiles, getMediaType(a.vault), opening.Out)
 
 	kinds := newTabKinds(a, db)
 	return windowBuilt{
@@ -236,7 +236,7 @@ func mountServices(w *windowWiring) {
 	mountAgent(w)
 	mountCommand(w)
 	mountConnection(w)
-	mountModel(w)
+	mountConnectionCall(w)
 	mountText(w)
 	mountPlugin(w)
 	mountCatalog(w)

@@ -1,7 +1,7 @@
 /**
  * What a connection is, as the window holds it: the kinds of connection the plugins provide, the
- * connections the person made of them, and the models a connection lists. No value of a secret is
- * ever read back.
+ * connections the person made of them, and the options a row field of a connection lists. No value of
+ * a secret is ever read back.
  */
 
 /** A value a field of a connection holds. */
@@ -24,6 +24,8 @@ export interface ConnectionFieldInfo {
   readonly min?: number
   readonly max?: number
   readonly step?: number
+  /** The operation of the type that lists the values of a row field; empty for none. */
+  readonly optionsFrom?: string
 }
 
 /** A kind of connection one plugin provides. */
@@ -35,6 +37,8 @@ export interface ConnectionTypeInfo {
   readonly description: string
   readonly operations: readonly string[]
   readonly fields: readonly ConnectionFieldInfo[]
+  /** The values a row that names a connection of the type holds besides the connection. */
+  readonly rowFields: readonly ConnectionFieldInfo[]
   readonly isAvailable: boolean
 }
 
@@ -42,7 +46,7 @@ export interface ConnectionTypeInfo {
 interface ConnectionUse {
   readonly pluginId: string
   readonly pluginName: string
-  readonly operation: string
+  readonly operations: readonly string[]
 }
 
 /** A stored connection. */
@@ -83,6 +87,7 @@ type ConnectionErrorCode =
   | 'type_unavailable'
   | 'key_store_failed'
   | 'stale_revision'
+  | 'provider_unavailable'
 
 /** A served refusal with the reason the core gives. */
 export interface ConnectionFailure {
@@ -90,24 +95,9 @@ export interface ConnectionFailure {
   readonly detail: string
 }
 
-/** A model a connection lists. `operations` is empty where the service labels no operation. */
-export interface ModelInfo {
-  readonly id: string
-  readonly title: string
-  readonly operations: readonly string[]
-}
-
-/** A reasoning level of a model. */
-export interface ReasoningLevelInfo {
+/** One value a row field can take, as the provider of the connection lists it. */
+export interface RowOption {
   readonly value: string
   readonly title: string
-}
-
-/** Why the core did not give a list. */
-type ModelListErrorCode = 'not_found' | 'provider_unavailable'
-
-/** A served refusal with the reason the core gives. */
-export interface ModelListFailure {
-  readonly errorCode: ModelListErrorCode
-  readonly detail: string
+  readonly group: string
 }

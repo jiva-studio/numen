@@ -12,7 +12,7 @@ import type { PluginServices } from './pluginServices'
 /** The host dependencies of one concern; the host reads the ones it is given. */
 export type HostParts = Pick<
   PluginHostDeps,
-  Exclude<keyof PluginHostDeps, 'registerKind' | 'registerExtensionReader' | 'openTab'>
+  Exclude<keyof PluginHostDeps, 'target' | 'registerKind' | 'registerExtensionReader' | 'openTab'>
 >
 
 /** How a plugin registers the tab kinds and the readers it brings. */

@@ -1,4 +1,4 @@
-// Package machine holds the timing functions and the sentinel errors of the machine the program runs on.
+// Package machine holds the timing functions, the sentinel errors and the worker sizing of the machine the program runs on.
 package machine
 
 import "errors"

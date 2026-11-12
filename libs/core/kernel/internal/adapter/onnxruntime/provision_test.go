@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 )
 
 func getLibraryBytes() []byte { return []byte("a shared library") }
@@ -192,7 +193,7 @@ func TestProvisionOfflineFetchesNothing(t *testing.T) {
 	cfg.Offline = true
 
 	_, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir())
-	if err == nil || !strings.Contains(err.Error(), onnxruntime.EnvOffline) {
+	if err == nil || !strings.Contains(err.Error(), provision.EnvOffline) {
 		t.Fatalf("Provision() = %v, want the offline switch named", err)
 	}
 	if hits.Load() != 0 {
@@ -434,14 +435,14 @@ func TestProvisionKeepsTheLibraryInTheModelsHome(t *testing.T) {
 
 func TestFromEnvironmentReadsTheProviderAndTheOfflineSwitch(t *testing.T) {
 	t.Setenv(onnxruntime.EnvProvider, "coreml")
-	t.Setenv(onnxruntime.EnvOffline, "1")
+	t.Setenv(provision.EnvOffline, "1")
 	cfg := onnxruntime.FromEnvironment(testsupport.NewClockAt(time.Unix(0, 0)))
 	if cfg.Provider != "coreml" || !cfg.Offline {
 		t.Errorf("FromEnvironment() = %+v", cfg)
 	}
 
 	t.Setenv(onnxruntime.EnvProvider, "")
-	t.Setenv(onnxruntime.EnvOffline, "no")
+	t.Setenv(provision.EnvOffline, "no")
 	cfg = onnxruntime.FromEnvironment(testsupport.NewClockAt(time.Unix(0, 0)))
 	if cfg.Provider != "" || cfg.Offline {
 		t.Errorf("FromEnvironment() = %+v", cfg)

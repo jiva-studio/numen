@@ -49,4 +49,4 @@ The transcript under the player is edited in place. The player saves the edit th
 
 ## Running without models
 
-`numen -debug-mock-ml`, and `NUMEN_MOCK_ML=true` in the environment of a plugin, transcribe every recording with a mock model, for automated runs.
+`numen -debug-mock-ml`, and `NUMEN_TEST_MOCK_ML=true` in the environment of a plugin, transcribe every recording with a mock model, for automated runs.

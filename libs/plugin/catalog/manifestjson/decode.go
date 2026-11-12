@@ -132,6 +132,7 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Services:         wire.GetServices(),
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
 		Contributes:      contributes,
+		IsOffByDefault:   wire.GetIsOffByDefault(),
 	}, nil
 }
 
@@ -199,7 +200,7 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Preview:     one.GetPreview(),
 			OptionsFrom: one.GetOptionsFrom(),
 			Generate:    one.GetGenerate(),
-			Operation:   one.GetOperation(),
+			Operations:  one.GetOperations(),
 		})
 	}
 	return out, nil

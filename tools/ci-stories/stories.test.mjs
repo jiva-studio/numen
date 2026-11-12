@@ -32,7 +32,7 @@ test('every story the tree declares is found where it stands', async () => {
   for (const [one, book] of [
     ['controls-menu--grouped', 'ui'],
     ['workspace--crowded', 'shell'],
-    ['desktop-window--settings', 'shell'],
+    ['desktop-window--settings', 'editor'],
     ['flash-cards-window--cards-due', 'plugins'],
   ]) {
     assert.equal(declared.get(one), book, `${one} is declared in the ${book} Storybook`)

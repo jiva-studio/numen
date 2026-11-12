@@ -1,2 +1,2 @@
-/** The background tasks of the core, shown as notices of the window. */
+/** The background tasks of the core and the failures of the window, as the plugins list them. */
 export { useWindowTasks } from './model/useWindowTasks'

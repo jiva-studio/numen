@@ -10,6 +10,7 @@ const READ_WRITE = ['vault:read', 'vault:write']
 
 const createHost = () => {
   const host = createPluginHost({
+    target: 'desktop.editor',
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
     openTab: () => Promise.resolve('tab'),

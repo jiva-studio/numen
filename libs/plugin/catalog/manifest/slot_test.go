@@ -156,7 +156,7 @@ func TestSlotEntryValueAsNumberIsRefused(t *testing.T) {
 func TestAValueForACommandOfTheWindowIsCheckedAgainstTheRegistry(t *testing.T) {
 	valid := []string{
 		`[{"slot":"titleBar.commands","command":"app:file.open","values":{"placement":"split"}}]`,
-		`[{"slot":"titleBar.commands","command":"app:link.import","values":{"address":"https://example.org"}}]`,
+		`[{"slot":"titleBar.commands","command":"app:file.reveal","values":{"kind":"atlas"}}]`,
 		`[{"slot":"titleBar.commands","command":"org.example.harbor:harbor.open","values":{"any":"thing"}}]`,
 		`[{"slot":"fileTree.context","command":"app:file.open","values":{"placement":"current"}},{"slot":"fileTree.context","command":"app:file.open","values":{"placement":"split"}}]`,
 	}

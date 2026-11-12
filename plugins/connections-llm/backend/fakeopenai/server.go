@@ -39,7 +39,7 @@ type Config struct {
 	APIKey          string
 	Dimensions      int
 	Models          []Model
-	IsLabeled      bool
+	IsLabeled       bool
 	EmbeddingModels []Model
 }
 

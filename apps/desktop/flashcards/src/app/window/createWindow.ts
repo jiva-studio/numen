@@ -11,14 +11,13 @@ import {
   usePluginStyles,
   type PluginLoaderDeps,
 } from '@numen/plugin-loader'
-import { createNoticeQueue, useWindowFrame } from '@numen/workbench'
+import { createNoticeQueue, loadFrameRuntime, useWindowFrame } from '@numen/workbench'
 import { createWindowAgent } from '@/entities/agent'
 import { createWindowCommands } from '@/entities/plugin'
 import { createWindowTabs } from '@/entities/tab'
 import { createVaultsHost, useVaults } from '@/entities/vault'
 import { useAppearance } from '@/features/appearance'
 import { useAppStart } from '@/features/app-start'
-import { loadWailsRuntime, useExternalLinks } from '@/features/external-links'
 import { useWindowKeys } from '@/features/window-keys'
 import { useWindowTasks } from '@/features/window-tasks'
 import { formatError } from '@/shared/api/errors'
@@ -31,9 +30,10 @@ export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'dynamicImport'>
 export function createWindow(deps: WindowDeps = {}) {
   const notices = createNoticeQueue()
   const tabs = createWindowTabs()
-  const frame = useWindowFrame(loadWailsRuntime)
+  const frame = useWindowFrame(loadFrameRuntime)
   const windowAgent = createWindowAgent()
   const { vaults, isListing } = useVaults((text) => notices.show(WINDOW_SOURCE, text, 'error'))
+  const backgroundTasks = useWindowTasks(notices)
   const { host, mountView, titleBarView } = createShellHost({
     tabs,
     notices,
@@ -49,6 +49,7 @@ export function createWindow(deps: WindowDeps = {}) {
       window: createWindowHost(frame, (error) =>
         notices.show(WINDOW_SOURCE, formatError(error), 'error'),
       ),
+      backgroundTasks,
     },
   })
   const loader = createPluginLoader({
@@ -57,13 +58,11 @@ export function createWindow(deps: WindowDeps = {}) {
   })
   const start = useAppStart(loader)
   useWindowKeys({ tabs, vaults })
-  useWindowTasks(notices)
-  useExternalLinks(notices)
   const appearance = useAppearance(notices)
 
   onUnmounted(() => windowAgent.dispose())
 
-  usePluginStyles(() => tabs.frontViews.value)
+  usePluginStyles(() => tabs.frontPlugins.value)
 
   return {
     tabs,
@@ -71,6 +70,7 @@ export function createWindow(deps: WindowDeps = {}) {
     plugins: start,
     titleBarView,
     notices,
+    backgroundTasks,
     mountView,
     appearance,
   }

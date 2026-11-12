@@ -186,22 +186,6 @@ func readPlace(place *v1.SearchPlace) Place {
 	return Place{VaultID: place.GetVaultId(), Recipe: place.GetRecipe()}
 }
 
-func writePlace(place Place) *v1.SearchPlace {
-	return &v1.SearchPlace{VaultId: place.VaultID, Recipe: place.Recipe}
-}
-
-func readDescription(res *v1.DescribeSearchSourceResponse) Description {
-	return Description{
-		Name:          res.GetName(),
-		Recipe:        res.GetRecipe(),
-		Width:         res.GetWidth(),
-		ChunkTokens:   res.GetChunkTokens(),
-		MinTextLength: res.GetMinTextLength(),
-		Concurrency:   res.GetConcurrency(),
-		FloorHint:     res.GetFloorHint(),
-	}
-}
-
 func writeDescription(d Description) *v1.DescribeSearchSourceResponse {
 	return &v1.DescribeSearchSourceResponse{
 		Name:          d.Name,
@@ -214,59 +198,10 @@ func writeDescription(d Description) *v1.DescribeSearchSourceResponse {
 	}
 }
 
-func readVectors(vectors []*v1.FloatVector) [][]float32 {
-	out := make([][]float32, len(vectors))
-	for i, one := range vectors {
-		out[i] = one.GetValues()
-	}
-	return out
-}
-
 func writeVectors(dense [][]float32) []*v1.FloatVector {
 	vectors := make([]*v1.FloatVector, len(dense))
 	for i, values := range dense {
 		vectors[i] = &v1.FloatVector{Values: values}
 	}
 	return vectors
-}
-
-// Client calls the search source service of a plugin.
-type Client struct {
-	rpc numenv1connect.SearchSourceServiceClient
-}
-
-// NewClient creates a client of the search source service served at baseURL.
-func NewClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) *Client {
-	return &Client{rpc: numenv1connect.NewSearchSourceServiceClient(httpClient, baseURL, opts...)}
-}
-
-// Describe returns the description of the source the plugin serves.
-func (c *Client) Describe(ctx context.Context) (Description, error) {
-	res, err := c.rpc.DescribeSearchSource(ctx, connect.NewRequest(&v1.DescribeSearchSourceRequest{}))
-	if err != nil {
-		return Description{}, err
-	}
-	return readDescription(res.Msg), nil
-}
-
-// IndexTexts returns one vector per text, in order.
-func (c *Client) IndexTexts(ctx context.Context, place Place, texts []Text) ([][]float32, error) {
-	indexed := make([]*v1.IndexedText, len(texts))
-	for i, one := range texts {
-		indexed[i] = &v1.IndexedText{ChunkId: one.ChunkID, Path: one.Path, VersionId: one.VersionID, Text: one.Text}
-	}
-	res, err := c.rpc.IndexTexts(ctx, connect.NewRequest(&v1.IndexTextsRequest{Place: writePlace(place), Texts: indexed}))
-	if err != nil {
-		return nil, err
-	}
-	return readVectors(res.Msg.GetVectors()), nil
-}
-
-// EmbedQueries returns one vector per query, in order.
-func (c *Client) EmbedQueries(ctx context.Context, queries []string) ([][]float32, error) {
-	res, err := c.rpc.EmbedQueries(ctx, connect.NewRequest(&v1.EmbedQueriesRequest{Queries: queries}))
-	if err != nil {
-		return nil, err
-	}
-	return readVectors(res.Msg.GetVectors()), nil
 }

@@ -191,3 +191,24 @@ message DeletePluginDataRequest {
 }
 
 message DeletePluginDataResponse {}
+
+// OptionsRequest is the payload of an operation a row field of a connection type names in options_from.
+message OptionsRequest {
+  // operations are the operations the setting of rows the field belongs to is used for.
+  repeated string operations = 1;
+}
+
+// Options is the done frame of an operation a row field names in options_from: the values the field can
+// take, in the order to show them.
+message Options {
+  repeated Option options = 1;
+}
+
+// Option is one value of a field.
+message Option {
+  string value = 1;
+  // title is shown in place of the value; empty shows the value.
+  string title = 2;
+  // group is the heading the option is shown under; empty is no heading.
+  string group = 3;
+}

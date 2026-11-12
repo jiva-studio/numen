@@ -10,7 +10,7 @@ import {
   type SettingEdit,
   type SettingsStore,
 } from '@/entities/settings'
-import { listModels, listReasoningLevels, type ConnectionStore } from '@/entities/connection'
+import { listRowOptions, type ConnectionStore } from '@/entities/connection'
 import { countNotes, listFiles } from '@/entities/file'
 import { PLUGIN_FAILURE_WORDS, readPluginReadme, useCatalogEntries } from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
@@ -114,7 +114,15 @@ function createInstallationConnections({ connections }: SettingsTabConfigDeps) {
     create: connections.create,
     update: connections.update,
     delete: connections.delete,
-    models: { listModels, listReasoningLevels },
+    listRowOptions: async (
+      connectionId: string,
+      field: string,
+      options: Readonly<Record<string, string>>,
+      operations: readonly string[],
+    ) => {
+      const answer = await listRowOptions(connectionId, field, options, operations)
+      return answer.ok ? answer : { ok: false as const, error: answer.error.detail }
+    },
     countNotes: () => countNotes(listFiles),
   }
 }

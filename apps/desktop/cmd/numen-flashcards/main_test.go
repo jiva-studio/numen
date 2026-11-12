@@ -73,7 +73,7 @@ func addVaultOf(t *testing.T, cfg container.Config, name string) domain.Vault {
 	return added
 }
 
-// The page is given whether a vault is indexed, the window it draws and the plugins' services it
+// The page is given whether a vault is indexed and the plugins' services it
 // forwards.
 func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 	cfg, db, _, _, _ := makeWindow(t)
@@ -89,7 +89,6 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 	}
 	for name, wired := range map[string]any{
 		"indexed": api.Ensure,
-		"window":  api.Window,
 	} {
 		if reflect.ValueOf(wired).IsZero() {
 			t.Errorf("the page has no %s", name)
@@ -106,7 +105,7 @@ func TestTheFlashcardsPageIsGivenTheLinksOfItsVaults(t *testing.T) {
 	addVaultOf(t, cfg, "One")
 	api := makeWindowAPI(cfg)
 
-	started, err := container.OpenFlashcards(cfg, t.Context(), api, io.Discard, "flashcards", func(string) {})
+	started, err := container.OpenShell(cfg, t.Context(), platform.TargetFlashcards, api, io.Discard, "flashcards", func(string) {})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,6 +118,9 @@ func TestTheFlashcardsPageIsGivenTheLinksOfItsVaults(t *testing.T) {
 
 	if api.ResolveLinks == nil {
 		t.Error("the page has no links")
+	}
+	if api.Window.Name != platform.TargetFlashcards {
+		t.Errorf("the window answers as %q", api.Window.Name)
 	}
 }
 
@@ -211,9 +213,6 @@ func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
 
 	if api.GetFrontendPluginIDs == nil || api.GetPluginDir == nil {
 		t.Error("the page is not told the plugins it loads")
-	}
-	if api.Window.Name != platform.TargetFlashcards {
-		t.Errorf("the window answers as %q", api.Window.Name)
 	}
 }
 

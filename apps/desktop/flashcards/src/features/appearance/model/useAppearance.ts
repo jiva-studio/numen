@@ -1,35 +1,23 @@
 /**
- * The appearance commands as the window's command palette: opened with Ctrl+P (Cmd+P), filled with
- * the themes and modes the application offers, and kept in step with the themes it reports.
+ * The appearance of the window and its palette: the theme and mode the settings name, applied to the
+ * page and kept in step with the themes the application reports, and chosen from the palette.
  */
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { createFollower } from '@numen/ui'
-import type { NoticeQueue } from '@numen/workbench'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { runInBackground } from '@numen/ui'
+import { createWindowAppearance, useAppearancePalette, type NoticeQueue } from '@numen/workbench'
 import { listPlugins } from '@/entities/plugin'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
-import { themeClient } from '../api/theme'
-import { createAppearance } from './appearance'
-
-const isToggleChord = (event: KeyboardEvent): boolean =>
-  !event.defaultPrevented &&
-  (event.ctrlKey || event.metaKey) &&
-  !event.altKey &&
-  !event.shiftKey &&
-  event.key.toLowerCase() === 'p'
+import { themes } from '../api/theme'
+import { WORDS } from '../words'
 
 export function useAppearance(notices: NoticeQueue) {
-  const pluginNames = ref<ReadonlyMap<string, string>>(new Map())
   const showError = (text: string) => notices.show(WINDOW_SOURCE, text, 'error')
-  const appearance = createAppearance({
-    client: themeClient,
-    getPluginName: (pluginId) => pluginNames.value.get(pluginId) ?? pluginId,
-    onError: showError,
+  const pluginNames = ref<ReadonlyMap<string, string>>(new Map())
+  const appearance = createWindowAppearance({ core: themes, words: WORDS, write: showError })
+  watch(appearance.state.lost, (text) => {
+    if (text !== '') showError(text)
   })
-
-  const isOpen = ref(false)
-  const query = ref('')
-  const groups = computed(() => appearance.getGroups(query.value))
 
   /** The plugin names read again, so a group is titled with the name the host holds now. */
   const refreshPluginNames = async () => {
@@ -40,59 +28,22 @@ export function useAppearance(notices: NoticeQueue) {
     }
   }
 
-  let isMounted = true
-  const abortController = new AbortController()
-  const follow = createFollower({
-    isOpen: () => isMounted,
-    setLost: showError,
-    wait: (ms) => new Promise((then) => setTimeout(then, ms)),
+  const palette = useAppearancePalette({
+    appearance,
+    words: WORDS,
+    getPluginName: (pluginId) => pluginNames.value.get(pluginId) ?? pluginId,
+    writeChoice: (theme, mode) =>
+      themes.writeAppearance(theme, mode).catch((error: Caught) => formatError(error)),
+    onOpen: async () => {
+      await Promise.all([refreshPluginNames(), appearance.reload()])
+    },
+    write: showError,
   })
 
-  /* -------------------------------- Handlers -------------------------------- */
-  function onKeyDown(event: KeyboardEvent) {
-    if (!isToggleChord(event)) return
-    event.preventDefault()
-    if (isOpen.value) {
-      onDismiss()
-      return
-    }
-    query.value = ''
-    isOpen.value = true
-    // Stryker disable next-line all: refreshPluginNames and appearance.refresh catch their own errors
-    Promise.all([refreshPluginNames(), appearance.refresh()]).catch((error: Caught) =>
-      showError(formatError(error)),
-    )
-  }
-
-  async function onChoose(item: string) {
-    isOpen.value = false
-    await appearance.chooseItem(item)
-  }
-
-  function onDismiss() {
-    isOpen.value = false
-  }
-
-  /* ---------------------------------- Hooks --------------------------------- */
   onMounted(() => {
-    globalThis.addEventListener('keydown', onKeyDown)
-    // Stryker disable next-line all: appearance.refresh catches its own errors
-    appearance.refresh().catch((error: Caught) => showError(formatError(error)))
-    follow(
-      () => themeClient.watchThemes(abortController.signal),
-      async (names) => {
-        if (names.length > 0) await appearance.refresh()
-      },
-    ).catch(
-      // Stryker disable next-line all: createFollower catches stream errors and reports them through setLost
-      (error: Caught) => showError(formatError(error)),
-    )
+    runInBackground(appearance.start(), (error: Caught) => showError(formatError(error)))
   })
-  onUnmounted(() => {
-    isMounted = false
-    abortController.abort()
-    globalThis.removeEventListener('keydown', onKeyDown)
-  })
+  onUnmounted(() => appearance.close())
 
-  return { isOpen, query, groups, onChoose, onDismiss }
+  return palette
 }

@@ -6,7 +6,7 @@ export * from './views'
 export * from './testing/index'
 export * from './buffers'
 export * from './texts'
-export * from './models'
+export * from './connections'
 export * from './notices'
 export * from './tasks'
 export * from './backgroundTasks'
@@ -24,7 +24,6 @@ export {
   getAssetUrl,
   getBytesQuery,
   getRelationErrorWords,
-  MAX_BUSY_RETRIES,
   ReportedError,
   type Caught,
   type ErrorCode,

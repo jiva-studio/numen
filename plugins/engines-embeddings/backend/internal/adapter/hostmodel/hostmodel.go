@@ -1,5 +1,5 @@
-// Package hostmodel asks the model API of the host for vectors. The host picks the connection that
-// answers.
+// Package hostmodel asks the host for vectors through the operations llm.embed and llm.profile. The host
+// picks the connection that answers.
 package hostmodel
 
 import (
@@ -7,24 +7,19 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
 
-// Client is the model API of the host, as the embeddings plugin uses it.
-type Client interface {
-	Embed(ctx context.Context, request connection.EmbedRequest) (connection.EmbedResult, error)
-	GetEmbeddingProfile(ctx context.Context) (connection.EmbeddingProfile, error)
-}
-
-// Models adapts a Client to the port of the use case.
+// Models adapts the connections of the host to the port of the use case.
 type Models struct {
-	client Client
+	caller connection.Caller
 }
 
-// New returns Models that call client.
-func New(client Client) Models {
-	return Models{client: client}
+// New returns Models that call through caller.
+func New(caller connection.Caller) Models {
+	return Models{caller: caller}
 }
 
 // OpenFromEnvironment connects to the host the process environment names.
@@ -54,34 +49,38 @@ func (m Models) Embed(ctx context.Context, role model.Role, texts []string) ([][
 	if role == model.RoleQuery {
 		priority = connection.PriorityInteractive
 	}
-	result, err := m.client.Embed(ctx, connection.EmbedRequest{Texts: texts, Priority: priority})
+	result, err := llm.Embed(ctx, m.caller, &llm.EmbedRequest{Texts: texts}, priority)
 	if err != nil {
 		return nil, readError(err)
 	}
-	return result.Vectors, nil
+	vectors := make([][]float32, len(result.GetVectors()))
+	for i, one := range result.GetVectors() {
+		vectors[i] = one.GetValues()
+	}
+	return vectors, nil
 }
 
 func (m Models) GetEmbeddingProfile(ctx context.Context) (model.ConnectionProfile, error) {
-	profile, err := m.client.GetEmbeddingProfile(ctx)
+	profile, err := llm.GetProfile(ctx, m.caller)
 	if err != nil {
 		return model.ConnectionProfile{}, readError(err)
 	}
 	return model.ConnectionProfile{
-		Model: profile.Model, Source: profile.Source, Pooling: profile.Pooling,
-		QueryPrefix: profile.QueryPrefix, DocumentPrefix: profile.DocumentPrefix,
-		Dimensions: profile.Dimensions, MaxTokens: profile.MaxTokens,
+		Model: profile.GetModel(), Source: profile.GetSource(), Pooling: profile.GetPooling(),
+		QueryPrefix: profile.GetQueryPrefix(), DocumentPrefix: profile.GetDocumentPrefix(),
+		Dimensions: int(profile.GetWidth()), MaxTokens: int(profile.GetMaxTokens()),
 	}, nil
 }
 
 func readError(err error) error {
 	var failed *connection.AllFailedError
-	var rejected *connection.RejectedError
+	var stopped *connection.StoppedError
 	switch {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
 	case errors.Is(err, connection.ErrNoConnection):
 		return ports.ConnectionError{Err: ports.ErrNoConnection}
-	case errors.As(err, &failed), errors.As(err, &rejected):
+	case errors.As(err, &failed), errors.As(err, &stopped):
 		return ports.ConnectionError{Err: err}
 	}
 	return err

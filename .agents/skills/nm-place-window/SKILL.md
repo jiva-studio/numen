@@ -116,22 +116,22 @@ The flashcards window is the plugin host plus a vault chooser: the plugins of it
 
 ```text
 apps/desktop/flashcards/src/
-├── main.ts                       entry: mounts app/
+├── main.ts                       entry: mounts app/ and hands external links to the opener of @numen/workbench
 ├── app/
 │   ├── App.vue                   the root: the chooser, or the plugin view for the chosen vault
 │   ├── window/                   createWindow(): creates the notices, the tabs and the services in the order they depend on each other, then the host
-│   ├── plugins/                  the window's LoaderHost for the target desktop.flashcards: binds the tabs, slots, vaults, commands (none) and agent to the plugins
+│   ├── plugins/                  the loader's createPluginHost for the target desktop.flashcards: binds the tabs, vaults, commands (none), background tasks and agent
 │   └── app.css                   the entry style sheet
 ├── pages/
 │   └── vault-chooser/            the screen with the vaults to choose from: ui/ (VaultChooser.vue, MountedView.vue: renders a view a plugin declares into an element), lib/ (rows, the key that opens a vault)
 ├── features/
-│   ├── app-start/                start the plugins the core lists and tell when the window can be drawn: model/               choose a theme or mode from the palette and apply it: api/ (theme service), model/, lib/
-│   ├── window-tasks/             show the background tasks of the core as notices: api/ (window service stream), model/
-│   └── external-links/           open an address that leads outside the window in the system browser: model/
+│   ├── app-start/                start the plugins the core lists and tell when the window can be drawn: model/
+│   ├── appearance/               the appearance and the theme palette of @numen/workbench over the theme service: api/, model/
+│   └── window-tasks/             the background task list of @numen/workbench over the window service stream: api/, model/
 ├── entities/
 │   ├── vault/                    the vaults of the installation: api/ (vaults service), lib/ (VaultRow)
 │   ├── tab/                      the tab kinds the plugins register and the one tab the window shows, a plugin view opened on a vault: model/ (open and close), lib/
-│   ├── plugin/                   the installed plugins and the slots their manifests declare: api/ (plugin catalog), model/
+│   ├── plugin/                   the installed plugins and the models of a plugin: api/ (plugin catalog), model/
 │   └── agent/                    whether the agent is reachable: api/ (agent service), model/
 └── shared/
     └── api/                      clients.ts: the generated clients bound once; errors.ts: the error text helpers

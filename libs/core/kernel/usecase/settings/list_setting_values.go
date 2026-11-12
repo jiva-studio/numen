@@ -99,7 +99,7 @@ func listPluginValues(stored settingsdomain.Stored, one plugin.Info, add func([]
 			values[settingsdomain.JoinPath(path)] = declared.DefaultJSON
 		}
 	}
-	enabled := true
+	enabled := !one.IsOffByDefault
 	if value, found := stored.GetValue(one.ID, settingsdomain.HostFieldEnabled); found {
 		if configured, isBool := value.(bool); isBool {
 			enabled = configured

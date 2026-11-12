@@ -2,15 +2,6 @@ package source
 
 import "github.com/jiva-studio/numen/libs/note/domain"
 
-// ImportedFile is one item the user supplied to this application, by the name
-// the source machine gives it.
-type ImportedFile struct {
-	Name     string
-	Handle   string
-	IsFolder bool
-	IsFile   bool
-}
-
 // NearestQuery is a search by meaning: the vector the model answered with, the
 // recipe it was made under, the kinds of source to look in (all where empty),
 // how many chunks to return at most and the similarity under which a chunk is

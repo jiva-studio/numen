@@ -195,7 +195,7 @@ describe('a shared command in the palette', () => {
 
   it('keeps its own title where its one item is an item of a handler, in the group of its plugin', async () => {
     const { removeEmptyCommands } = setUp({
-      'app:link.downloadMedia': [
+      [CREATE_TEXT]: [
         {
           id: 'md.numen.engines.transcription:t1',
           title: 'transcript',
@@ -204,7 +204,7 @@ describe('a shared command in the palette', () => {
       ],
     })
     const shared = {
-      ...createCommand('app:link.downloadMedia'),
+      ...createCommand(CREATE_TEXT),
       text: 'Delete text',
       input: 'items' as const,
     }
@@ -216,15 +216,14 @@ describe('a shared command in the palette', () => {
   })
 
   it('that asks for its arguments keeps its steps where one handler holds', async () => {
-    const IMPORT = 'app:link.import'
     const { removeEmptyCommands } = setUp({
-      [IMPORT]: [{ id: 'md.numen.tools.media.importer', title: 'Import link' }],
+      [CREATE_TEXT]: [{ id: 'md.numen.engines.ocr', title: 'Recognize text' }],
     })
     const shared: Command = {
-      ...createCommand(IMPORT),
-      text: 'Import link',
+      ...createCommand(CREATE_TEXT),
+      text: 'Create text',
       input: 'arguments',
-      prompts: [{ name: 'address', title: 'Address', isRequired: true }],
+      prompts: [{ name: 'language', title: 'Language', isRequired: true }],
     }
 
     removeEmptyCommands([shared])

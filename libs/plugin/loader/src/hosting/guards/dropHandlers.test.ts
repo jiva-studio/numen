@@ -104,6 +104,7 @@ describe('a drop handler registration', () => {
 describe('a drop in a host with several plugins', () => {
   const createHost = () =>
     createPluginHost({
+      target: 'desktop.editor',
       registerKind: () => vi.fn(),
       registerExtensionReader: () => vi.fn(),
       openTab: () => Promise.resolve('tab'),

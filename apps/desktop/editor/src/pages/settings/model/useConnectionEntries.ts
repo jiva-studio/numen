@@ -1,11 +1,12 @@
 /**
- * The connections a row can choose from, for one operation: each with whether it can serve the
- * operation and why not. The connections are read when the rows open.
+ * The connections a row can choose from, for the operations of a setting: each with whether it can
+ * serve them and why not, and the row fields of its type. The connections are read when the rows open.
  */
 import { computed, onMounted } from 'vue'
 import {
   getConnectionUsability,
   sortByUsability,
+  type ConnectionFieldInfo,
   type ConnectionInfo,
   type ConnectionTypeInfo,
 } from '@/entities/connection'
@@ -20,7 +21,7 @@ const USABILITY_WORDS = {
 
 export function useConnectionEntries(
   getConnections: () => InstallationConnections,
-  getOperation: () => string,
+  getOperations: () => readonly string[],
 ) {
   const stored = computed<readonly ConnectionInfo[]>(() => getConnections().list.value)
   const types = computed<readonly ConnectionTypeInfo[]>(() => getConnections().types.value)
@@ -32,7 +33,7 @@ export function useConnectionEntries(
         return {
           connection,
           type,
-          ...getConnectionUsability(connection, type, getOperation(), USABILITY_WORDS),
+          ...getConnectionUsability(connection, type, getOperations(), USABILITY_WORDS),
         }
       }),
     ),
@@ -54,5 +55,7 @@ export function useConnectionEntries(
     choices,
     getReason: (connectionId: string): string =>
       entries.value.find((one) => one.connection.id === connectionId)?.reason ?? '',
+    getRowFields: (connectionId: string): readonly ConnectionFieldInfo[] =>
+      entries.value.find((one) => one.connection.id === connectionId)?.type?.rowFields ?? [],
   }
 }

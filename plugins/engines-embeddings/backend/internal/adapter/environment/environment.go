@@ -51,9 +51,9 @@ func parseThreads(val string) int {
 
 // The variables of the mock model, which automated tests select.
 const (
-	envMockModel    = "NUMEN_MOCK_ML"
-	envMockLog      = "NUMEN_MOCK_EMBED_LOG"
-	envMockOpenHold = "NUMEN_MOCK_OPEN_HOLD_MS"
+	envMockModel    = "NUMEN_TEST_MOCK_ML"
+	envMockLog      = "NUMEN_TEST_MOCK_EMBED_LOG"
+	envMockOpenHold = "NUMEN_TEST_MOCK_OPEN_HOLD_MS"
 )
 
 // IsMockModel returns whether the variables ask for the mock model.

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"strings"
+	"slices"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -15,204 +15,163 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/schematest"
 )
 
+// fakeHost answers a call with the frames the test sets and records the request and the token.
 type fakeHost struct {
-	numenv1connect.UnimplementedHostModelServiceHandler
+	numenv1connect.UnimplementedHostConnectionServiceHandler
 	token    string
-	complete func(*v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse
-	embed    func(*v1.HostModelServiceEmbedRequest) *v1.HostModelServiceEmbedResponse
-	profile  *v1.HostModelServiceGetEmbeddingProfileResponse
+	received *v1.HostConnectionServiceCallRequest
+	frames   []*v1.HostConnectionServiceCallResponse
+	err      error
 }
 
-func (h *fakeHost) Complete(
-	_ context.Context, request *connect.Request[v1.HostModelServiceCompleteRequest],
-) (*connect.Response[v1.HostModelServiceCompleteResponse], error) {
-	h.token = request.Header().Get("Authorization")
-	return connect.NewResponse(h.complete(request.Msg)), nil
+func (h *fakeHost) Call(
+	_ context.Context, request *connect.Request[v1.HostConnectionServiceCallRequest],
+	stream *connect.ServerStream[v1.HostConnectionServiceCallResponse],
+) error {
+	h.token, h.received = request.Header().Get("Authorization"), request.Msg
+	for _, one := range h.frames {
+		if err := stream.Send(one); err != nil {
+			return err
+		}
+	}
+	return h.err
 }
 
-func (h *fakeHost) Embed(
-	_ context.Context, request *connect.Request[v1.HostModelServiceEmbedRequest],
-) (*connect.Response[v1.HostModelServiceEmbedResponse], error) {
-	return connect.NewResponse(h.embed(request.Msg)), nil
+func hostData(text string) *v1.HostConnectionServiceCallResponse {
+	return &v1.HostConnectionServiceCallResponse{Frame: &v1.HostConnectionServiceCallResponse_Data{Data: []byte(text)}}
 }
 
-func (h *fakeHost) GetEmbeddingProfile(
-	context.Context, *connect.Request[v1.HostModelServiceGetEmbeddingProfileRequest],
-) (*connect.Response[v1.HostModelServiceGetEmbeddingProfileResponse], error) {
-	return connect.NewResponse(h.profile), nil
+func hostDone(text string) *v1.HostConnectionServiceCallResponse {
+	return &v1.HostConnectionServiceCallResponse{Frame: &v1.HostConnectionServiceCallResponse_Done{Done: []byte(text)}}
+}
+
+func hostFailure(failure *v1.CallFailure) *v1.HostConnectionServiceCallResponse {
+	return &v1.HostConnectionServiceCallResponse{Frame: &v1.HostConnectionServiceCallResponse_Failure{Failure: failure}}
 }
 
 func newTestClient(t *testing.T, host *fakeHost) *Client {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostModelServiceHandler(host))
+	mux.Handle(numenv1connect.NewHostConnectionServiceHandler(host))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return NewClient(server.Client(), server.URL, "token-1")
 }
 
-func TestCompleteSendsMessagesAndTheTokenAndReturnsTheText(t *testing.T) {
-	var received *v1.HostModelServiceCompleteRequest
-	host := &fakeHost{complete: func(request *v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse {
-		received = request
-		return &v1.HostModelServiceCompleteResponse{Text: "fixed"}
-	}}
-	temperature := 0.5
-	result, err := newTestClient(t, host).Complete(t.Context(), CompleteRequest{
-		Messages: []Message{{Role: "system", Text: "s"}, {Role: "user", Text: "u"}}, Temperature: &temperature, MaxTokens: 100,
-	})
-	if err != nil || result.Text != "fixed" {
-		t.Fatalf("Complete = %v, %v", result, err)
+func collectCall(t *testing.T, client *Client, priority Priority) ([]string, string, error) {
+	t.Helper()
+	frames, err := client.Call(t.Context(), "llm.chat", []byte("list the notes"), priority)
+	if err != nil {
+		return nil, "", err
 	}
-	if host.token != "Bearer token-1" {
-		t.Errorf("Authorization = %q", host.token)
+	data, done, err := Collect(frames)
+	texts := make([]string, len(data))
+	for i, one := range data {
+		texts[i] = string(one)
 	}
-	if len(received.GetMessages()) != 2 || received.GetMessages()[1].GetText() != "u" || received.GetTemperature() != 0.5 || received.GetMaxTokens() != 100 {
-		t.Errorf("request = %v", received)
+	return texts, string(done), err
+}
+
+func TestACallSendsTheOperationThePayloadAndTheTokenAndReadsTheFramesInOrder(t *testing.T) {
+	host := &fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostData("Let me "), hostData("look."), hostDone("finish")}}
+
+	frames, done, err := collectCall(t, newTestClient(t, host), PriorityInteractive)
+
+	if err != nil || !slices.Equal(frames, []string{"Let me ", "look."}) || done != "finish" {
+		t.Fatalf("Call = %v, %q, %v", frames, done, err)
+	}
+	if host.token != "Bearer token-1" || host.received.GetOperation() != "llm.chat" || string(host.received.GetPayload()) != "list the notes" ||
+		host.received.GetPriority() != v1.Priority_PRIORITY_INTERACTIVE {
+		t.Errorf("token = %q, request = %v", host.token, host.received)
 	}
 }
 
-func TestEmbedReturnsTheVectorsInOrder(t *testing.T) {
-	host := &fakeHost{embed: func(request *v1.HostModelServiceEmbedRequest) *v1.HostModelServiceEmbedResponse {
-		response := &v1.HostModelServiceEmbedResponse{}
-		for i := range request.GetTexts() {
-			response.Vectors = append(response.Vectors, &v1.FloatVector{Values: []float32{float32(i)}})
-		}
-		return response
-	}}
-	result, err := newTestClient(t, host).Embed(t.Context(), EmbedRequest{Texts: []string{"a", "b", "c"}})
-	if err != nil || len(result.Vectors) != 3 || result.Vectors[2][0] != 2 {
-		t.Fatalf("Embed = %v, %v", result, err)
-	}
-}
-
-func TestGetEmbeddingProfileReturnsTheProfileOfTheRowThatAnswered(t *testing.T) {
-	host := &fakeHost{profile: &v1.HostModelServiceGetEmbeddingProfileResponse{
-		Model: "te3", Source: "openrouter", Pooling: "mean", QueryPrefix: "q", DocumentPrefix: "d", Dimensions: 3, MaxTokens: 8000,
-	}}
-	profile, err := newTestClient(t, host).GetEmbeddingProfile(t.Context())
-	want := EmbeddingProfile{Model: "te3", Source: "openrouter", Pooling: "mean", QueryPrefix: "q", DocumentPrefix: "d", Dimensions: 3, MaxTokens: 8000}
-	if err != nil || profile != want {
-		t.Fatalf("GetEmbeddingProfile = %#v, %v, want %#v", profile, err, want)
-	}
-}
-
-func TestANoConnectionResponseIsErrNoConnection(t *testing.T) {
-	host := &fakeHost{complete: func(*v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse {
-		return &v1.HostModelServiceCompleteResponse{Error: v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_NO_CONNECTION}
-	}}
-	_, err := newTestClient(t, host).Complete(t.Context(), CompleteRequest{})
-	if !errors.Is(err, ErrNoConnection) {
-		t.Errorf("err = %v, want ErrNoConnection", err)
-	}
-}
-
-func TestAnAllFailedResponseNamesEveryConnectionAndReason(t *testing.T) {
-	host := &fakeHost{embed: func(*v1.HostModelServiceEmbedRequest) *v1.HostModelServiceEmbedResponse {
-		return &v1.HostModelServiceEmbedResponse{
-			Error: v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_ALL_FAILED,
-			Failures: []*v1.HostModelFailure{
-				{ConnectionName: "OpenRouter", Reason: "payment required"}, {ConnectionName: "Ollama", Reason: "unreachable"},
-			},
-		}
-	}}
-	_, err := newTestClient(t, host).Embed(t.Context(), EmbedRequest{Texts: []string{"a"}})
-	var failed *AllFailedError
-	if !errors.As(err, &failed) {
-		t.Fatalf("err = %v, want *AllFailedError", err)
-	}
-	if len(failed.Failures) != 2 || failed.Failures[0] != (Failure{ConnectionName: "OpenRouter", Reason: "payment required"}) ||
-		failed.Failures[1] != (Failure{ConnectionName: "Ollama", Reason: "unreachable"}) {
-		t.Errorf("failures = %v", failed.Failures)
-	}
-	if !strings.Contains(err.Error(), "OpenRouter: payment required; Ollama: unreachable") {
-		t.Errorf("text = %q", err.Error())
-	}
-}
-
-func TestARejectedResponseIsARejectedError(t *testing.T) {
-	host := &fakeHost{complete: func(*v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse {
-		return &v1.HostModelServiceCompleteResponse{
-			Error:    v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_REJECTED,
-			Failures: []*v1.HostModelFailure{{ConnectionName: "OpenRouter", Reason: "bad request"}},
-		}
-	}}
-	_, err := newTestClient(t, host).Complete(t.Context(), CompleteRequest{})
-	var rejected *RejectedError
-	if !errors.As(err, &rejected) || rejected.ConnectionName != "OpenRouter" || rejected.Reason != "bad request" {
-		t.Errorf("err = %v, want a rejection by OpenRouter for a bad request", err)
-	}
-}
-
-func TestEveryHostModelErrorCodeIsReadAsAnError(t *testing.T) {
-	for code := range v1.HostModelErrorCode_name {
-		if v1.HostModelErrorCode(code) == v1.HostModelErrorCode_HOST_MODEL_ERROR_CODE_UNSPECIFIED {
-			continue
-		}
-		if readError(v1.HostModelErrorCode(code), "", nil) == nil {
-			t.Errorf("code %v is read as success", v1.HostModelErrorCode(code))
-		}
-	}
-}
-
-func TestACanceledCallReturnsTheContextError(t *testing.T) {
-	host := &fakeHost{complete: func(*v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse { return nil }}
-	ctx, cancel := context.WithCancel(t.Context())
-	cancel()
-	if _, err := newTestClient(t, host).Complete(ctx, CompleteRequest{}); !errors.Is(err, context.Canceled) {
-		t.Errorf("err = %v, want context.Canceled", err)
-	}
-}
-
-func TestNewClientFromVarsNeedsAHostPort(t *testing.T) {
-	if _, err := NewClientFromVars(map[string]string{}); err == nil {
-		t.Error("NewClientFromVars accepted variables with no host port")
-	}
-	if _, err := NewClientFromVars(map[string]string{"NUMEN_HOST_PORT": "4000", "NUMEN_PLUGIN_TOKEN": "t"}); err != nil {
-		t.Errorf("NewClientFromVars = %v", err)
-	}
-}
-
-func TestCompleteSendsThePriorityAndABackgroundOneWhereNoneIsSet(t *testing.T) {
-	for name, want := range map[string]struct {
-		priority Priority
-		wire     v1.Priority
+func TestAFailureFrameIsReadAsTheErrorOfTheCall(t *testing.T) {
+	for name, c := range map[string]struct {
+		failure *v1.CallFailure
+		check   func(error) bool
 	}{
-		"interactive": {PriorityInteractive, v1.Priority_PRIORITY_INTERACTIVE},
-		"background":  {PriorityBackground, v1.Priority_PRIORITY_BACKGROUND},
-		"unset":       {0, v1.Priority_PRIORITY_BACKGROUND},
+		"no connection": {
+			&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION},
+			func(err error) bool { return errors.Is(err, ErrNoConnection) },
+		},
+		"every row failed": {
+			&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED, Failures: []*v1.CallRowFailure{
+				{ConnectionName: "OpenRouter", Reason: "payment required"}, {ConnectionName: "Ollama", Reason: "unavailable"},
+			}},
+			func(err error) bool {
+				var failed *AllFailedError
+				return errors.As(err, &failed) && slices.Equal(failed.Failures, []Failure{
+					{ConnectionName: "OpenRouter", Reason: "payment required"}, {ConnectionName: "Ollama", Reason: "unavailable"},
+				})
+			},
+		},
+		"a stop": {
+			&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_STOPPED, Failures: []*v1.CallRowFailure{{ConnectionName: "OpenRouter", Reason: "invalid request"}}},
+			func(err error) bool {
+				var stopped *StoppedError
+				return errors.As(err, &stopped) && stopped.ConnectionName == "OpenRouter" && stopped.Reason == "invalid request"
+			},
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			var received v1.Priority
-			host := &fakeHost{complete: func(request *v1.HostModelServiceCompleteRequest) *v1.HostModelServiceCompleteResponse {
-				received = request.GetPriority()
-				return &v1.HostModelServiceCompleteResponse{}
-			}}
+			host := &fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostData("partial"), hostFailure(c.failure)}}
 
-			_, err := newTestClient(t, host).Complete(t.Context(), CompleteRequest{Priority: want.priority})
+			frames, _, err := collectCall(t, newTestClient(t, host), PriorityBackground)
 
-			if err != nil || received != want.wire {
-				t.Errorf("priority = %v, %v, want %v", received, err, want.wire)
+			if !c.check(err) || frames != nil {
+				t.Errorf("err = %v, frames = %v", err, frames)
 			}
 		})
 	}
 }
 
-func TestEmbedSendsThePriority(t *testing.T) {
-	var received v1.Priority
-	host := &fakeHost{embed: func(request *v1.HostModelServiceEmbedRequest) *v1.HostModelServiceEmbedResponse {
-		received = request.GetPriority()
-		return &v1.HostModelServiceEmbedResponse{}
-	}}
+func TestAStreamThatEndsWithNeitherADoneNorAFailureIsAnError(t *testing.T) {
+	host := &fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostData("partial")}}
 
-	_, err := newTestClient(t, host).Embed(t.Context(), EmbedRequest{Texts: []string{"a"}, Priority: PriorityInteractive})
+	_, _, err := collectCall(t, newTestClient(t, host), PriorityBackground)
 
-	if err != nil || received != v1.Priority_PRIORITY_INTERACTIVE {
-		t.Errorf("priority = %v, %v, want interactive", received, err)
+	if !errors.Is(err, ErrStreamEnded) {
+		t.Errorf("err = %v, want ErrStreamEnded", err)
 	}
 }
 
-func TestEveryPriorityOfTheSchemaIsProducedFromAClientPriority(t *testing.T) {
+func TestAStatusOfTheHostIsAnErrorOfNoFailureKind(t *testing.T) {
+	host := &fakeHost{err: connect.NewError(connect.CodeInternal, errors.New("the settings are unreadable"))}
+
+	_, _, err := collectCall(t, newTestClient(t, host), PriorityBackground)
+
+	var failed *AllFailedError
+	if err == nil || errors.Is(err, ErrNoConnection) || errors.As(err, &failed) {
+		t.Errorf("err = %v, want an error of no failure kind", err)
+	}
+}
+
+func TestACanceledCallReturnsTheErrorOfTheContext(t *testing.T) {
+	client := newTestClient(t, &fakeHost{})
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	frames, err := client.Call(ctx, "llm.complete", nil, PriorityBackground)
+	if err == nil {
+		_, _, err = Collect(frames)
+	}
+
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("err = %v, want context.Canceled", err)
+	}
+}
+
+func TestEveryErrorCodeOfTheSchemaIsReadAsAnError(t *testing.T) {
+	schematest.CheckHandled(t, func(code v1.CallErrorCode) bool {
+		err := readFailure(&v1.CallFailure{Error: code})
+		var failed *AllFailedError
+		var stopped *StoppedError
+		return errors.Is(err, ErrNoConnection) || errors.As(err, &failed) || errors.As(err, &stopped)
+	})
+}
+
+func TestEveryPriorityOfTheSchemaIsWrittenFromOne(t *testing.T) {
 	schematest.CheckProduced(t, map[v1.Priority]Priority{
 		v1.Priority_PRIORITY_INTERACTIVE: PriorityInteractive,
 		v1.Priority_PRIORITY_BACKGROUND:  PriorityBackground,

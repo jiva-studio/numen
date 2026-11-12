@@ -18,8 +18,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 )
 
 // Document is the settings file as declared by the composition root: one object
@@ -67,8 +65,8 @@ func DefaultTitles() Titles {
 	return Titles{SyncTitleAndFilename: &isOn}
 }
 
-func DefaultPerformance() hardware.Performance {
-	return hardware.Performance{Profile: getAppString(keyProfile)}
+func DefaultPerformance() Performance {
+	return Performance{Profile: getAppString(keyProfile)}
 }
 
 // Path is where the settings live.

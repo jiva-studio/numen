@@ -238,7 +238,7 @@ type failingKeys struct{ *memoryKeys }
 
 func (failingKeys) GetKey(context.Context, string) (string, error) { return "", errDisk }
 
-func TestNewCallCarriesTheFieldsTheSecretsTheModelAndTheReasoning(t *testing.T) {
+func TestNewCallCarriesTheConnectionItsFieldsItsSecretsAndTheOptionsOfTheRow(t *testing.T) {
 	f := newFixture(t)
 	created := f.createOpenRouter(t, "Work")
 	resolved, err := f.connection.Resolve.Execute(created.ID)
@@ -246,9 +246,9 @@ func TestNewCallCarriesTheFieldsTheSecretsTheModelAndTheReasoning(t *testing.T) 
 		t.Fatal(err)
 	}
 
-	call := resolved.NewCall(map[string]string{"apiKey": "sk-or-1"}, "openai/gpt-5", "low")
+	call := resolved.NewCall(map[string]string{"apiKey": "sk-or-1"}, map[string]string{"model": "openai/gpt-5", "reasoning": "low"})
 
-	if call.Type != "openrouter" || call.Model != "openai/gpt-5" || call.Reasoning != "low" ||
+	if call.ConnectionID != created.ID || call.Type != "openrouter" || call.Options["model"] != "openai/gpt-5" || call.Options["reasoning"] != "low" ||
 		call.Secrets["apiKey"] != "sk-or-1" || call.Fields["baseUrl"] != "https://openrouter.ai/api/v1" {
 		t.Errorf("call = %+v", call)
 	}

@@ -29,8 +29,8 @@ func newQueueSetup(t *testing.T, parallelRequests int) *queueSetup {
 	w := modelcalltest.New()
 	entry := w.AddLimited(t, "Limited", addressLimited, parallelRequests)
 	for _, plugin := range []string{consumerID, otherConsumerID} {
-		w.Rows.Set(plugin, "complete", modelcalltest.Row(entry, "m"))
-		w.Rows.Set(plugin, "embed", modelcalltest.Row(entry, "m"))
+		w.Rows.Set(plugin, modelcalltest.CompleteOperation, modelcalltest.Row(entry, "m"))
+		w.Rows.Set(plugin, modelcalltest.EmbedOperation, modelcalltest.Row(entry, "m"))
 	}
 	return &queueSetup{
 		world: w, entry: entry,
@@ -41,9 +41,9 @@ func newQueueSetup(t *testing.T, parallelRequests int) *queueSetup {
 func (s *queueSetup) complete(ctx context.Context, plugin, text string, priority modelcalldomain.Priority) <-chan error {
 	failed := make(chan error, 1)
 	go func() {
-		_, err := s.calls.Complete(ctx, plugin, modelcalldomain.CompleteRequest{
-			Messages: []modelcalldomain.Message{{Role: "user", Text: text}},
-		}, priority)
+		_, err := s.calls.Call(ctx, plugin, modelcalldomain.Request{
+			Operation: modelcalltest.CompleteOperation, Payload: []byte(text), Priority: priority,
+		}, func([]byte) error { return nil })
 		failed <- err
 	}()
 	return failed
@@ -52,7 +52,9 @@ func (s *queueSetup) complete(ctx context.Context, plugin, text string, priority
 func (s *queueSetup) embed(ctx context.Context, plugin string, priority modelcalldomain.Priority) <-chan error {
 	failed := make(chan error, 1)
 	go func() {
-		_, err := s.calls.Embed(ctx, plugin, []string{"text"}, priority)
+		_, err := s.calls.Call(ctx, plugin, modelcalldomain.Request{
+			Operation: modelcalltest.EmbedOperation, Payload: []byte("text"), Priority: priority,
+		}, func([]byte) error { return nil })
 		failed <- err
 	}()
 	return failed
@@ -70,8 +72,8 @@ func (s *queueSetup) awaitEntered(t *testing.T) {
 func (s *queueSetup) texts() []string {
 	var texts []string
 	for _, one := range s.world.Provider.Calls() {
-		if one.Operation == "complete" {
-			texts = append(texts, one.Request.Messages[0].Text)
+		if one.Operation == modelcalltest.CompleteOperation {
+			texts = append(texts, string(one.Payload))
 		}
 	}
 	return texts
@@ -181,7 +183,7 @@ func TestTheDefaultOfTheTypeSetsTheLimitWhereNothingIsStored(t *testing.T) {
 func TestACallOfAConnectionWithNoLimitIsNeverQueued(t *testing.T) {
 	w := modelcalltest.New()
 	entry := w.AddServer(t, "First", addressOne, keyOne)
-	w.Rows.Set(consumerID, "complete", modelcalltest.Row(entry, "m"))
+	w.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.Row(entry, "m"))
 	s := &queueSetup{world: w, calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside)}
 	w.Provider.Block(addressOne)
 	var calls []<-chan error
@@ -286,32 +288,10 @@ func TestAnEmbedCallWaitsAsLongAsItsPriorityAllows(t *testing.T) {
 	}
 }
 
-func TestAnEmbeddingProfileCallIsBackground(t *testing.T) {
-	s := newQueueSetup(t, 1)
-	s.world.Provider.Block(addressLimited)
-	s.embed(t.Context(), consumerID, modelcalldomain.PriorityBackground)
-	s.awaitEntered(t)
-
-	profile := make(chan error, 1)
-	go func() {
-		_, err := s.calls.GetEmbeddingProfile(t.Context(), consumerID)
-		profile <- err
-	}()
-	s.world.Waits.AwaitCount(t, 1)
-
-	if got := s.world.Waits.List(); got[0] != 10*time.Minute {
-		t.Errorf("waits = %v, want 10m0s", got)
-	}
-	s.world.Provider.Unblock(addressLimited)
-	if err := awaitDone(t, profile); err != nil {
-		t.Error(err)
-	}
-}
-
 func TestATimedOutWaitIsSkippedAsBusyAndTheNextRowServes(t *testing.T) {
 	s := newQueueSetup(t, 1)
 	second := s.world.AddServer(t, "Second", addressTwo, keyTwo)
-	s.world.Rows.Set(otherConsumerID, "complete", modelcalltest.Row(s.entry, "m"), modelcalltest.Row(second, "m"))
+	s.world.Rows.Set(otherConsumerID, modelcalltest.CompleteOperation, modelcalltest.Row(s.entry, "m"), modelcalltest.Row(second, "m"))
 	s.world.Provider.Block(addressLimited)
 	s.complete(t.Context(), consumerID, "running", modelcalldomain.PriorityBackground)
 	s.awaitEntered(t)

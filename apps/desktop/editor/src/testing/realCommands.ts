@@ -28,6 +28,7 @@ import type { FileKind } from '@/entities/file'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import type { IndexCoverage } from '@/shared/model/notices/coverage'
+import { TARGET } from '@/shared/lib/window'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { useDeclaredCommands, watchCommandLists } from '@/features/plugin-commands'
 import { createSearchMenu, createWindowSlots } from '@/features/plugin-host'
@@ -120,6 +121,7 @@ const createHost = (
   })
   const host = createPluginHost({
     ...slots.hostDeps,
+    target: TARGET,
     registerKind: () => () => undefined,
     registerExtensionReader: () => () => undefined,
     openTab: () => Promise.resolve('tab-1'),

@@ -92,7 +92,7 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     hasPluginItems: host.commands.hasCommandItems,
   })
   const registry = createSlotRegistry({
-    getEntries: slots.hostDeps.getSlotEntries,
+    getEntries: () => slots.hostDeps.getSlotEntries(new Map()),
     findCommand: findSlotCommand,
     findView: () => undefined,
     getWhenValues: slots.hostDeps.getSlotWhenValues,

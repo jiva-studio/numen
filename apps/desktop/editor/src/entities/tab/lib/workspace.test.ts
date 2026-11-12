@@ -6,22 +6,10 @@
  * message lands in a conversation the user cannot see.
  */
 import { describe, expect, it } from 'vitest'
-import { FileText, SlidersHorizontal } from '@lucide/vue'
+import { SlidersHorizontal } from '@lucide/vue'
 import { getPanes } from '@numen/workbench'
 import { findTabKindIcon } from './icons'
-import { NOTE, SETTINGS, createWorkspace } from './workspace'
-
-describe('the kinds a tab is filed under', () => {
-  const kinds = [NOTE, SETTINGS]
-
-  it('are each a word, so an identity names its kind', () => {
-    for (const kind of kinds) expect(kind).not.toBe('')
-  })
-
-  it('are each their own, so two kinds never share an identity', () => {
-    expect(new Set(kinds).size).toBe(kinds.length)
-  })
-})
+import { SETTINGS, createWorkspace } from './workspace'
 
 describe('the layout the window opens with', () => {
   const createLayout = () => createWorkspace(['plex:one'], ['agent:one', 'files:tree'])
@@ -89,8 +77,7 @@ describe('the layout of a window with one side empty', () => {
 
 describe('findTabKindIcon', () => {
   it('returns the icon for built-in tab kinds and null for others', () => {
-    expect(findTabKindIcon(NOTE)).toBe(FileText)
     expect(findTabKindIcon(SETTINGS)).toBe(SlidersHorizontal)
-    expect(findTabKindIcon('unknown')).toBeNull()
+    expect(findTabKindIcon('note')).toBeNull()
   })
 })

@@ -10,15 +10,15 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
-// The shared commands the plugin handles.
+// The commands the plugin declares, and the shared command it handles.
 const (
-	commandImport        = command.ImportLink
+	commandImport        = "link.import"
 	commandCreateText    = command.CreateText
-	commandDownloadMedia = command.DownloadMedia
-	commandDeleteMedia   = command.DeleteMedia
+	commandDownloadMedia = "link.downloadMedia"
+	commandDeleteMedia   = "link.deleteMedia"
 )
 
-// argumentAddress is the argument of app:link.import that holds the web address.
+// argumentAddress is the argument of link.import that holds the web address.
 const argumentAddress = "address"
 
 func newCommands(links *link.Links) (*command.Registry, error) {

@@ -2,10 +2,14 @@ package connection
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"connectrpc.com/connect"
 
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
@@ -15,93 +19,110 @@ import (
 //
 //numen:api
 type Call struct {
+	// ConnectionID is the id of the connection, for the log of the provider.
+	ConnectionID string
 	// Type is the id of the connection type in the manifest of the plugin, without the plugin id.
 	Type string
 	// Fields are the fields that are not secret, with the fixed values of the type.
 	Fields map[string]string
 	// Secrets are the secret fields by key. A Secret prints without its value.
 	Secrets map[string]Secret
-	// Model is the name the person chose. The provider does not check it against its list of models.
-	Model string
-	// Reasoning is a value from ListReasoningLevels, or empty for the default of the provider.
-	Reasoning string
+	// Options are the values of the row fields of the type that the row of the call holds, such as the
+	// model the person chose. The provider does not check them against its lists.
+	Options map[string]string
 }
 
-// Message is one message of a completion. Role is system, user or assistant.
-type Message struct{ Role, Text string }
+// Operation carries out one operation for the connection of call. It sends its data frames in order with
+// send and returns the done payload, which may be empty. It returns NewTryNextError or NewStopError for a
+// call that failed, ctx.Err() for a call that was canceled, and the error of the first send that fails.
+// Any other error is a stop for a reason of unavailable.
+type Operation func(ctx context.Context, call Call, payload []byte, send func(data []byte) error) ([]byte, error)
 
-type ProviderCompleteRequest struct {
-	Messages    []Message
-	Temperature *float64
-	MaxTokens   int
-}
+// Provider holds the operations one plugin serves, by operation name, such as "llm.chat". An operation the
+// map does not hold answers as not implemented.
+type Provider map[string]Operation
 
-// CompleteResult is the text of an answer.
-type CompleteResult struct{ Text string }
-
-// Model is a model a service lists. Operations is empty when the service gives no label.
-type Model struct {
-	ID         string
-	Title      string
-	Operations []string
-}
-
-// ReasoningLevel is a level of reasoning a model takes.
-type ReasoningLevel struct{ Value, Title string }
-
-// ModelProfile is what a provider knows about an embedding model. IsKnown is false for a model it has
-// no profile for, and the core then probes the width. MaxTokens is zero when the limit is not known.
-type ModelProfile struct {
-	IsKnown        bool
-	Dimensions     int
-	MaxTokens      int
-	Pooling        string
-	QueryPrefix    string
-	DocumentPrefix string
-	Source         string
-}
-
-// Completer carries out the operation complete.
-type Completer interface {
-	Complete(ctx context.Context, call Call, request ProviderCompleteRequest) (CompleteResult, error)
-}
-
-// Embedder carries out the operation embed. It returns raw vectors in the order of the texts.
-type Embedder interface {
-	Embed(ctx context.Context, call Call, texts []string) ([][]float32, error)
-}
-
-// ModelLister lists the models of a connection and the reasoning levels of the model of the call.
-type ModelLister interface {
-	ListModels(ctx context.Context, call Call, operation string) ([]Model, error)
-	ListReasoningLevels(ctx context.Context, call Call) ([]ReasoningLevel, error)
-}
-
-// ProfileReader reads the profile of the embedding model of the call, and measures the width of its
-// vectors where the profile is not known.
-type ProfileReader interface {
-	GetModelProfile(ctx context.Context, call Call) (ModelProfile, error)
-	ProbeEmbeddingWidth(ctx context.Context, call Call) (int, error)
-}
-
-// Provider lists the roles one plugin fills. A nil role is not served.
-//
-// A role returns NewTryNextError or NewStopError for a call that failed, and ctx.Err() for a call that
-// was canceled. Any other error is a stop of unknown reason.
-type Provider struct {
-	Completer Completer
-	Embedder  Embedder
-	Models    ModelLister
-	Profiles  ProfileReader
-	Chatter   Chatter
-}
-
-// NewHandler creates the Connect-RPC handler for the roles of a Provider.
+// NewHandler creates the Connect-RPC handler for the operations of a Provider.
 func NewHandler(provider Provider, opts ...connect.HandlerOption) (string, http.Handler) {
 	return numenv1connect.NewProviderServiceHandler(&adapter{provider: provider}, opts...)
 }
 
-// Mount registers the roles of a Provider on the plugin Server.
+// Mount registers the operations of a Provider on the plugin Server.
 func Mount(s *server.Server, provider Provider) {
 	s.Register(NewHandler(provider, s.HandlerOptions()...))
+}
+
+// adapter serves the operations of a Provider. A canceled call answers with the status code Canceled, and
+// any other error with a failure frame; the text of an error that is no failure kind never leaves the
+// provider.
+type adapter struct {
+	numenv1connect.UnimplementedProviderServiceHandler
+	provider Provider
+}
+
+func (a *adapter) Call(
+	ctx context.Context, request *connect.Request[v1.ProviderServiceCallRequest], stream *connect.ServerStream[v1.ProviderServiceCallResponse],
+) error {
+	operation, isServed := a.provider[request.Msg.GetOperation()]
+	if !isServed {
+		return connect.NewError(connect.CodeUnimplemented, fmt.Errorf("the operation %q is not served", request.Msg.GetOperation()))
+	}
+	var sendErr error
+	send := func(data []byte) error {
+		sendErr = stream.Send(&v1.ProviderServiceCallResponse{Frame: &v1.ProviderServiceCallResponse_Data{Data: data}})
+		return sendErr
+	}
+	done, err := operation(ctx, readCall(request.Msg.GetCall()), request.Msg.GetPayload(), send)
+	switch {
+	case err == nil:
+		return stream.Send(&v1.ProviderServiceCallResponse{Frame: &v1.ProviderServiceCallResponse_Done{Done: done}})
+	case sendErr != nil:
+		return sendErr
+	case ctx.Err() != nil || errors.Is(err, context.Canceled):
+		return connect.NewError(connect.CodeCanceled, err)
+	}
+	return stream.Send(&v1.ProviderServiceCallResponse{Frame: &v1.ProviderServiceCallResponse_Failure{Failure: writeFailure(err)}})
+}
+
+func readCall(wire *v1.ProviderCall) Call {
+	call := Call{
+		ConnectionID: wire.GetConnectionId(),
+		Type:         wire.GetType(),
+		Fields:       wire.GetFields(),
+		Secrets:      make(map[string]Secret, len(wire.GetSecrets())),
+		Options:      wire.GetOptions(),
+	}
+	for _, one := range wire.GetSecrets() {
+		call.Secrets[one.GetKey()] = Secret{Value: one.GetValue()}
+	}
+	return call
+}
+
+func writeFailure(err error) *v1.ProviderFailure {
+	reason, _ := GetReason(err)
+	retryAfter, isTryNext := IsTryNext(err)
+	if !isTryNext {
+		return &v1.ProviderFailure{Kind: v1.FailureKind_FAILURE_KIND_STOP, Reason: writeReason(reason)}
+	}
+	return &v1.ProviderFailure{
+		Kind:         v1.FailureKind_FAILURE_KIND_TRY_NEXT,
+		Reason:       writeReason(reason),
+		RetryAfterMs: retryAfter.Round(time.Millisecond).Milliseconds(),
+	}
+}
+
+func writeReason(reason Reason) v1.FailureReason {
+	switch reason {
+	case ReasonRejectedKey:
+		return v1.FailureReason_FAILURE_REASON_REJECTED_KEY
+	case ReasonPaymentRequired:
+		return v1.FailureReason_FAILURE_REASON_PAYMENT_REQUIRED
+	case ReasonRateLimited:
+		return v1.FailureReason_FAILURE_REASON_RATE_LIMITED
+	case ReasonInvalidRequest:
+		return v1.FailureReason_FAILURE_REASON_INVALID_REQUEST
+	case ReasonUnavailable:
+		return v1.FailureReason_FAILURE_REASON_UNAVAILABLE
+	}
+	return v1.FailureReason_FAILURE_REASON_UNAVAILABLE
 }

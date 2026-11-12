@@ -39,7 +39,7 @@ func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 }
 
 func TestTheHandlerDescribesAndIndexesWithTheModelTheEnvironmentNames(t *testing.T) {
-	t.Setenv("NUMEN_MOCK_ML", "true")
+	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	h := newHandler(newServer(nil), noPlaces)
 
 	described, err := h.Describe(t.Context())
@@ -57,7 +57,7 @@ func TestTheHandlerDescribesAndIndexesWithTheModelTheEnvironmentNames(t *testing
 }
 
 func TestASearchAsksThePlaceWithTheVectorOfTheQueryAndAnswersItsChunks(t *testing.T) {
-	t.Setenv("NUMEN_MOCK_ML", "true")
+	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	place := &nearestPlace{matches: []host.NearestMatch{{ChunkID: "41", Similarity: 0.8}, {ChunkID: "7", Similarity: 0.5}}}
 	var vaults []string
 	h := newHandler(newServer(nil), func(vaultID string) (host.PlaceSearch, error) {

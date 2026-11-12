@@ -97,7 +97,7 @@ func TestTheHandlersDownloadAndDeleteTheMediaAndTheText(t *testing.T) {
 			t.Errorf("after %s the copy is kept: %v, want %v", step.id, !step.hasCopy, step.hasCopy)
 		}
 	}
-	for _, removed := range []string{"link.import", "link.downloadText", "link.deleteText", "link.downloadVideo", "link.deleteVideo"} {
+	for _, removed := range []string{"app:link.import", "link.downloadText", "link.deleteText", "link.downloadVideo", "link.deleteVideo"} {
 		if _, err := commands.RunCommand(t.Context(), command.Request{Command: removed, Path: made.OpenedPath}); !errors.Is(err, command.ErrUnknownCommand) {
 			t.Errorf("%s answered %v, want ErrUnknownCommand", removed, err)
 		}
@@ -233,14 +233,14 @@ func TestCommandErrorPaths(t *testing.T) {
 		}
 	}
 
-	// app:link.downloadMedia when Copy fails with non-ErrBeingFetched error.
+	// link.downloadMedia when Copy fails with non-ErrBeingFetched error.
 	cf.canCopy = false
 	if _, err := commands.RunCommand(t.Context(), command.Request{Command: commandDownloadMedia, Path: res.OpenedPath}); err == nil {
-		t.Error("app:link.downloadMedia(not copyable) succeeded")
+		t.Error("link.downloadMedia(not copyable) succeeded")
 	}
 	cf.canCopy = true
 
-	// app:link.downloadMedia when Copy is already in progress (ErrBeingFetched).
+	// link.downloadMedia when Copy is already in progress (ErrBeingFetched).
 	cf.startedCh = make(chan struct{})
 	cf.blockCh = make(chan struct{})
 	foundLink, err := links.Read(t.Context(), res.OpenedPath)
@@ -255,13 +255,13 @@ func TestCommandErrorPaths(t *testing.T) {
 	cf.startedCh = nil
 	cf.blockCh = nil
 	if callErr != nil || !strings.HasPrefix(ans.Message, "Already downloading the media of ") {
-		t.Fatalf("app:link.downloadMedia(in progress) = (%+v, %v)", ans, callErr)
+		t.Fatalf("link.downloadMedia(in progress) = (%+v, %v)", ans, callErr)
 	}
 
-	// app:link.deleteMedia when DeleteCopy fails.
+	// link.deleteMedia when DeleteCopy fails.
 	es.listErr = errors.New("list error")
 	if _, err := commands.RunCommand(t.Context(), command.Request{Command: commandDeleteMedia, Path: res.OpenedPath}); err == nil {
-		t.Error("app:link.deleteMedia(listErr) succeeded")
+		t.Error("link.deleteMedia(listErr) succeeded")
 	}
 	es.listErr = nil
 }
@@ -372,7 +372,7 @@ func TestDownloadMediaAnswersOnceItsTaskIsShown(t *testing.T) {
 	res, err := runWithin(t, commands, command.Request{Command: commandDownloadMedia, Path: path})
 
 	if err != nil || res.Message == "" {
-		t.Fatalf("app:link.downloadMedia answered %+v (%v)", res, err)
+		t.Fatalf("link.downloadMedia answered %+v (%v)", res, err)
 	}
 	if _, isShown := findTask(queue, link.GetCopyTaskID("Mills", path)); !isShown {
 		t.Errorf("the copy is not shown as a task once the handler answered: %+v", queue.ListTasks())
@@ -393,7 +393,7 @@ func TestAFailedCopyFailsTheTaskAndNotTheHandler(t *testing.T) {
 	links.Wait()
 
 	if err != nil {
-		t.Errorf("app:link.downloadMedia answered %v, want the failure on its task alone", err)
+		t.Errorf("link.downloadMedia answered %v, want the failure on its task alone", err)
 	}
 	task, isShown := findTask(queue, link.GetCopyTaskID("Mills", path))
 	if !isShown || !strings.Contains(task.FailureReason, "403 Forbidden") {
@@ -407,7 +407,7 @@ func TestDownloadMediaOfAnAddressNothingCopiesFailsBeforeAnyTask(t *testing.T) {
 	_, err := runWithin(t, commands, command.Request{Command: commandDownloadMedia, Path: path})
 
 	if !errors.Is(err, link.ErrNotCopyable) {
-		t.Errorf("app:link.downloadMedia answered %v, want ErrNotCopyable", err)
+		t.Errorf("link.downloadMedia answered %v, want ErrNotCopyable", err)
 	}
 	if tasks := queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("the tasks %+v are shown for a copy that never started", tasks)

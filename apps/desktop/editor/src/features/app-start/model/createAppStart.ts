@@ -4,8 +4,7 @@
  */
 import { onMounted, onUnmounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { INTERFACE_WAIT_MS } from '@numen/plugin-loader'
-import { waitFor } from './waitFor'
+import { waitWithinInterfaceLimit } from '@numen/plugin-loader'
 import type { Caught } from '@/shared/api/errors'
 
 export interface StartDeps {
@@ -30,7 +29,7 @@ async function startPluginsWithinLimit(deps: StartDeps): Promise<void> {
   if (!starting) return
   runInBackground(starting, deps.reportError)
   const interfaceStarted = deps.waitForInterfacePlugins?.() ?? starting
-  await waitFor(interfaceStarted, INTERFACE_WAIT_MS)
+  await waitWithinInterfaceLimit(interfaceStarted)
 }
 
 async function withinLimit<T>(what: string, work: Promise<T>, limitMs: number): Promise<T> {
@@ -59,7 +58,7 @@ export function createAppStart(deps: StartDeps, stepLimitMs: number = STEP_LIMIT
   /** Why the workspace did not load, shown with a retry; empty while it loads and once it has. */
   const failure = ref('')
   let attempt = 0
-  let drawTimer: ReturnType<typeof setTimeout> | undefined
+  const unmounting = new AbortController()
 
   const run = async (): Promise<void> => {
     // Stryker disable next-line UpdateOperator: generation counter only needs a distinct value per run
@@ -82,12 +81,18 @@ export function createAppStart(deps: StartDeps, stepLimitMs: number = STEP_LIMIT
   }
 
   onMounted(() => {
-    drawTimer = setTimeout(() => (isStarted.value = true), INTERFACE_WAIT_MS)
-    return run()
+    const running = run()
+    runInBackground(
+      waitWithinInterfaceLimit(running, unmounting.signal).then(() => {
+        isStarted.value = true
+      }),
+      deps.reportError,
+    )
+    return running
   })
 
   onUnmounted(() => {
-    clearTimeout(drawTimer)
+    unmounting.abort()
     // Stryker disable next-line UpdateOperator: generation counter only needs a distinct value per run
     attempt++
   })

@@ -28,6 +28,7 @@ function declare(changes: Partial<CommandDeclaration> = {}): CommandDeclaration 
 
 function createHost(declarations: CommandDeclaration[], extra: Partial<PluginHostDeps> = {}) {
   const deps: PluginHostDeps = {
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),

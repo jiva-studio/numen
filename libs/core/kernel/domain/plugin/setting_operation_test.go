@@ -1,18 +1,19 @@
 package plugin
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func TestASettingOfRowsIsShownWithItsOperationAndItsRowLimit(t *testing.T) {
+func TestASettingOfRowsIsShownWithItsOperationsAndItsRowLimit(t *testing.T) {
 	limit := 2.0
-	declared := manifest.Setting{Key: "connections", Type: manifest.SettingTypeConnections, Operation: "embed", Max: &limit}
+	declared := manifest.Setting{Key: "connections", Type: manifest.SettingTypeConnections, Operations: []string{"llm.embed", "llm.profile"}, Max: &limit}
 
 	view := NewSetting(declared, "", nil)
 
-	if view.Operation != "embed" || view.Max == nil || *view.Max != 2 {
-		t.Errorf("the setting shown = %+v, want operation embed and max 2", view)
+	if !slices.Equal(view.Operations, []string{"llm.embed", "llm.profile"}) || view.Max == nil || *view.Max != 2 {
+		t.Errorf("the setting shown = %+v, want operations llm.embed and llm.profile and max 2", view)
 	}
 }

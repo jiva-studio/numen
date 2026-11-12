@@ -20,7 +20,7 @@ func TestTheFirstRequestOfAnOpenAICompatibleModelOutlastsTheSettingAndTheNextOne
 	}
 
 	_, err := svc.Complete(newContext(t), call, oneUserMessage("hi"))
-	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonTimeout})
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnavailable})
 }
 
 func TestAFailedFirstRequestKeepsTheLongLimit(t *testing.T) {

@@ -31,6 +31,7 @@ describe('createPluginHost', () => {
           title: 'Run Test',
         },
       ],
+      target: 'desktop.editor',
       registerKind: vi.fn((kind) => {
         registeredKinds.push(kind)
         return () => {
@@ -198,6 +199,7 @@ describe('createPluginHost', () => {
 
     // Host without getReaderExtensions does not register extension readers
     const hostNoExt = createPluginHost({
+      target: 'desktop.editor',
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader,
       openTab: vi.fn(async () => 't1'),
@@ -219,6 +221,7 @@ describe('createPluginHost', () => {
 
     // Host with getReaderExtensions and getTabState returning undefined vs object
     const hostWithExt = createPluginHost({
+      target: 'desktop.editor',
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader,
       getReaderExtensions: () => ['pdf'],
@@ -499,6 +502,7 @@ describe('a view mounted by a plugin', () => {
   const createHost = (registerNow = true) => {
     const read = vi.fn(async (path: string) => ({ body: `Body of ${path}` }))
     const host = createPluginHost({
+      target: 'desktop.editor',
       registerKind: () => vi.fn(),
       registerExtensionReader: () => vi.fn(),
       openTab: () => Promise.resolve('tab'),

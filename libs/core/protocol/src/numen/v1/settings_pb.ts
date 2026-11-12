@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IqgBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nSgQICRAKIvEBCgVNb2RlbBIQCghuYW1lZF9hdBgBIAMoCRIMCgRuYW1lGAIgASgJEg0KBXRpdGxlGAMgASgJEg0KBWdyb3VwGAQgASgJEhIKCmlzX2RlZmF1bHQYBSABKAgSIQoGd3JpdGVzGAYgAygLMhEubnVtZW4udjEuU2V0dGluZxIkCghwcmVzZW5jZRgHIAEoDjISLm51bWVuLnYxLlByZXNlbmNlEjIKEHJlYXNvbmluZ19sZXZlbHMYCCADKAsyGC5udW1lbi52MS5SZWFzb25pbmdMZXZlbBIZChFkZWZhdWx0X3JlYXNvbmluZxgJIAEoCSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciFwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlIicKElJldHJ5UGx1Z2luUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiJgoTUmV0cnlQbHVnaW5SZXNwb25zZRIPCgdmYWlsdXJlGAEgASgJIjkKF0Nob29zZVBsdWdpblBhdGhSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRILCgNrZXkYAiABKAkiTAoYQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlEgwKBHBhdGgYASABKAkSEQoJaXNfY2hvc2VuGAIgASgIEg8KB3Byb2JsZW0YAyABKAkiKQoUR2V0UGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIj8KFUdldFBsdWdpbkRhdGFSZXNwb25zZRISCgpmaWxlX2NvdW50GAEgASgFEhIKCmJ5dGVfY291bnQYAiABKAMiLAoXRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIhoKGERlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZSpzCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhQKEFBSRVNFTkNFX1BSRVNFTlQQARIYChRQUkVTRU5DRV9OT1RfRkVUQ0hFRBACEh0KGVBSRVNFTkNFX05PVEhJTkdfVE9fRkVUQ0gQAzLXBAoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USSgoLUmV0cnlQbHVnaW4SHC5udW1lbi52MS5SZXRyeVBsdWdpblJlcXVlc3QaHS5udW1lbi52MS5SZXRyeVBsdWdpblJlc3BvbnNlElkKEENob29zZVBsdWdpblBhdGgSIS5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBoiLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXNwb25zZRJQCg1HZXRQbHVnaW5EYXRhEh4ubnVtZW4udjEuR2V0UGx1Z2luRGF0YVJlcXVlc3QaHy5udW1lbi52MS5HZXRQbHVnaW5EYXRhUmVzcG9uc2USWQoQRGVsZXRlUGx1Z2luRGF0YRIhLm51bWVuLnYxLkRlbGV0ZVBsdWdpbkRhdGFSZXF1ZXN0GiIubnVtZW4udjEuRGVsZXRlUGx1Z2luRGF0YVJlc3BvbnNlElIKDVdhdGNoU2V0dGluZ3MSHi5udW1lbi52MS5XYXRjaFNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXNwb25zZTABQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin, file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IqgBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nSgQICRAKIvEBCgVNb2RlbBIQCghuYW1lZF9hdBgBIAMoCRIMCgRuYW1lGAIgASgJEg0KBXRpdGxlGAMgASgJEg0KBWdyb3VwGAQgASgJEhIKCmlzX2RlZmF1bHQYBSABKAgSIQoGd3JpdGVzGAYgAygLMhEubnVtZW4udjEuU2V0dGluZxIkCghwcmVzZW5jZRgHIAEoDjISLm51bWVuLnYxLlByZXNlbmNlEjIKEHJlYXNvbmluZ19sZXZlbHMYCCADKAsyGC5udW1lbi52MS5SZWFzb25pbmdMZXZlbBIZChFkZWZhdWx0X3JlYXNvbmluZxgJIAEoCSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciFwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlIicKElJldHJ5UGx1Z2luUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiJgoTUmV0cnlQbHVnaW5SZXNwb25zZRIPCgdmYWlsdXJlGAEgASgJIjkKF0Nob29zZVBsdWdpblBhdGhSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRILCgNrZXkYAiABKAkiTAoYQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlEgwKBHBhdGgYASABKAkSEQoJaXNfY2hvc2VuGAIgASgIEg8KB3Byb2JsZW0YAyABKAkiKQoUR2V0UGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIj8KFUdldFBsdWdpbkRhdGFSZXNwb25zZRISCgpmaWxlX2NvdW50GAEgASgFEhIKCmJ5dGVfY291bnQYAiABKAMiLAoXRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIhoKGERlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZSIkCg5PcHRpb25zUmVxdWVzdBISCgpvcGVyYXRpb25zGAEgAygJIiwKB09wdGlvbnMSIQoHb3B0aW9ucxgBIAMoCzIQLm51bWVuLnYxLk9wdGlvbiI1CgZPcHRpb24SDQoFdmFsdWUYASABKAkSDQoFdGl0bGUYAiABKAkSDQoFZ3JvdXAYAyABKAkqcwoIUHJlc2VuY2USGAoUUFJFU0VOQ0VfVU5TUEVDSUZJRUQQABIUChBQUkVTRU5DRV9QUkVTRU5UEAESGAoUUFJFU0VOQ0VfTk9UX0ZFVENIRUQQAhIdChlQUkVTRU5DRV9OT1RISU5HX1RPX0ZFVENIEAMy1wQKD1NldHRpbmdzU2VydmljZRJKCgtHZXRTZXR0aW5ncxIcLm51bWVuLnYxLkdldFNldHRpbmdzUmVxdWVzdBodLm51bWVuLnYxLkdldFNldHRpbmdzUmVzcG9uc2USUAoNV3JpdGVTZXR0aW5ncxIeLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1Jlc3BvbnNlEkoKC1JldHJ5UGx1Z2luEhwubnVtZW4udjEuUmV0cnlQbHVnaW5SZXF1ZXN0Gh0ubnVtZW4udjEuUmV0cnlQbHVnaW5SZXNwb25zZRJZChBDaG9vc2VQbHVnaW5QYXRoEiEubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QaIi5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USUAoNR2V0UGx1Z2luRGF0YRIeLm51bWVuLnYxLkdldFBsdWdpbkRhdGFSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0UGx1Z2luRGF0YVJlc3BvbnNlElkKEERlbGV0ZVBsdWdpbkRhdGESIS5udW1lbi52MS5EZWxldGVQbHVnaW5EYXRhUmVxdWVzdBoiLm51bWVuLnYxLkRlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZRJSCg1XYXRjaFNldHRpbmdzEh4ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5XYXRjaFNldHRpbmdzUmVzcG9uc2UwAUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_plugin, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -424,6 +424,80 @@ export type DeletePluginDataResponse = Message<"numen.v1.DeletePluginDataRespons
  */
 export const DeletePluginDataResponseSchema: GenMessage<DeletePluginDataResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 15);
+
+/**
+ * OptionsRequest is the payload of an operation a row field of a connection type names in options_from.
+ *
+ * @generated from message numen.v1.OptionsRequest
+ */
+export type OptionsRequest = Message<"numen.v1.OptionsRequest"> & {
+  /**
+   * operations are the operations the setting of rows the field belongs to is used for.
+   *
+   * @generated from field: repeated string operations = 1;
+   */
+  operations: string[];
+};
+
+/**
+ * Describes the message numen.v1.OptionsRequest.
+ * Use `create(OptionsRequestSchema)` to create a new message.
+ */
+export const OptionsRequestSchema: GenMessage<OptionsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 16);
+
+/**
+ * Options is the done frame of an operation a row field names in options_from: the values the field can
+ * take, in the order to show them.
+ *
+ * @generated from message numen.v1.Options
+ */
+export type Options = Message<"numen.v1.Options"> & {
+  /**
+   * @generated from field: repeated numen.v1.Option options = 1;
+   */
+  options: Option[];
+};
+
+/**
+ * Describes the message numen.v1.Options.
+ * Use `create(OptionsSchema)` to create a new message.
+ */
+export const OptionsSchema: GenMessage<Options> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 17);
+
+/**
+ * Option is one value of a field.
+ *
+ * @generated from message numen.v1.Option
+ */
+export type Option = Message<"numen.v1.Option"> & {
+  /**
+   * @generated from field: string value = 1;
+   */
+  value: string;
+
+  /**
+   * title is shown in place of the value; empty shows the value.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * group is the heading the option is shown under; empty is no heading.
+   *
+   * @generated from field: string group = 3;
+   */
+  group: string;
+};
+
+/**
+ * Describes the message numen.v1.Option.
+ * Use `create(OptionSchema)` to create a new message.
+ */
+export const OptionSchema: GenMessage<Option> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 18);
 
 /**
  * Presence is what a model's files are on this machine. It says where files

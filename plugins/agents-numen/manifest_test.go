@@ -7,11 +7,11 @@ import (
 )
 
 type settingShape struct {
-	Key       string   `json:"key"`
-	Type      string   `json:"type"`
-	Operation string   `json:"operation"`
-	Max       *float64 `json:"max"`
-	Default   any      `json:"default"`
+	Key        string   `json:"key"`
+	Type       string   `json:"type"`
+	Operations []string `json:"operations"`
+	Max        *float64 `json:"max"`
+	Default    any      `json:"default"`
 }
 
 func readSettings(t *testing.T) []settingShape {
@@ -29,8 +29,8 @@ func readSettings(t *testing.T) []settingShape {
 func TestManifestDeclaresOneRowOfTheOperationChat(t *testing.T) {
 	for _, one := range readSettings(t) {
 		if one.Key == "connections" {
-			if one.Type != "connections" || one.Operation != "chat" || one.Max == nil || *one.Max != 1 {
-				t.Errorf("the connections setting is %+v, want the kind connections for chat with at most one row", one)
+			if one.Type != "connections" || !slices.Equal(one.Operations, []string{"llm.chat"}) || one.Max == nil || *one.Max != 1 {
+				t.Errorf("the connections setting is %+v, want the kind connections for llm.chat with at most one row", one)
 			}
 			return
 		}

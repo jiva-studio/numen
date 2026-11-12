@@ -24,7 +24,7 @@
       "type": "connections",
       "title": "Connections",
       "description": "Services and agents that proofread, tried in order. The next one is used when one cannot answer.",
-      "operation": "complete",
+      "operations": ["llm.complete"],
       "max": 5
     },
     {

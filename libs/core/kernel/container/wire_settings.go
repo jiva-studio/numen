@@ -5,15 +5,16 @@ import (
 	"fmt"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
+	machineadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
@@ -35,8 +36,7 @@ func (c Config) ApplySettings() (Config, []string, error) {
 }
 
 func applySettingsFile(c Config, s settingsadapter.File) Config {
-	compute := settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(s.Performance.Profile)
-	c.machine = Machine{ResolvedCompute: compute.Resolved, Hardware: compute.Machine}
+	c.machine = Machine{ResolvedCompute: settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(s.Performance.Profile)}
 	configurePluginHost(settingsOf(c), s)
 	return c
 }
@@ -79,7 +79,7 @@ type settingsPlaces struct {
 	SettingsPath    string
 	ThemesPath      string
 	RegistryPath    string
-	ResolvedCompute settingsdomain.ResolvedCompute
+	ResolvedCompute machinedomain.ResolvedCompute
 }
 
 type settingsStores struct {
@@ -302,7 +302,7 @@ func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
 }
 
 func resolveProfile(profile string) string {
-	return settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(profile).Resolved.Profile
+	return settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(profile).Profile
 }
 
 func settingsThemes(c settingsWiring, scales Scales, say func(string)) (*theme.Service, error) {

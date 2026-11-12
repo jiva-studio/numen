@@ -75,8 +75,9 @@ message PluginSetting {
   // The value in force as JSON, resolved by the core: the stored value, else the default, else the
   // first of the options in force.
   string value_json = 21;
-  // The operation a setting of type connections needs of each connection. max is the number of rows.
-  string operation = 22;
+  // The operations a setting of type connections is used for. max is the number of rows.
+  repeated string operations = 23;
+  reserved 22;
 }
 
 // PluginSettingOption is one value an enum setting can hold.

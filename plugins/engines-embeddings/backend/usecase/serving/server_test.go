@@ -130,7 +130,7 @@ func TestEmbeddingServerDefaultModelIsPinned(t *testing.T) {
 }
 
 func TestTheMockEmbedderServesWhereTheEnvironmentAsksForIt(t *testing.T) {
-	t.Setenv("NUMEN_MOCK_ML", "true")
+	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	srv := newEmbeddingServer()
 
 	served, err := srv.GetModelInfo(t.Context())
@@ -200,7 +200,7 @@ func TestTheEmbedderOpensWithTheProfileOfTheLocalModel(t *testing.T) {
 }
 
 func TestTheMockModelReportsNoFloorHint(t *testing.T) {
-	t.Setenv("NUMEN_MOCK_ML", "true")
+	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	srv := newEmbeddingServer()
 	if srv.modelInfo.MinChunkLength != 40 {
 		t.Fatalf("initial mock MinChunkLength = %d, want 40", srv.modelInfo.MinChunkLength)

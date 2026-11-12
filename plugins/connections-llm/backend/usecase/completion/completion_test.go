@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/usecase/completion"
 )
@@ -17,28 +18,32 @@ type gateway struct {
 	calls int
 }
 
-func (g *gateway) Complete(_ context.Context, _ connection.Call, limit time.Duration, _ connection.ProviderCompleteRequest) (connection.CompleteResult, error) {
+func (g *gateway) Complete(_ context.Context, _ connection.Call, limit time.Duration, _ *llm.CompleteRequest) (*llm.CompleteResult, error) {
 	g.calls++
 	g.limit = limit
-	return connection.CompleteResult{Text: "answer"}, g.err
+	return &llm.CompleteResult{Text: "answer"}, g.err
 }
 
-func (g *gateway) Chat(_ context.Context, _ connection.Call, limit time.Duration, _ connection.ProviderChatRequest, send func(connection.ChatEvent) error) error {
+func (g *gateway) Chat(
+	_ context.Context, _ connection.Call, limit time.Duration, _ *llm.ChatRequest, send func(*llm.ChatFrame) error,
+) (*llm.ChatFinish, error) {
 	g.calls++
 	g.limit = limit
 	if g.err != nil {
-		return g.err
+		return nil, g.err
 	}
-	return send(connection.ChatEvent{})
+	return &llm.ChatFinish{Reason: llm.FinishReason_FINISH_REASON_STOP}, send(&llm.ChatFrame{Event: &llm.ChatFrame_TextDelta{TextDelta: "hi"}})
 }
 
 func (g *gateway) Embed(context.Context, connection.Call, time.Duration, []string) ([][]float32, error) {
 	return nil, nil
 }
 
-func (g *gateway) ListModels(context.Context, connection.Call, time.Duration, string) ([]connection.Model, error) {
+func (g *gateway) ListModels(context.Context, connection.Call, time.Duration, []string) ([]connection.Option, error) {
 	return nil, nil
 }
+
+func ignoreFrame(*llm.ChatFrame) error { return nil }
 
 func newCompletion(t *testing.T, g *gateway) *completion.Completion {
 	t.Helper()
@@ -50,13 +55,15 @@ func newCompletion(t *testing.T, g *gateway) *completion.Completion {
 }
 
 func call(typeID, model, level string) connection.Call {
-	return connection.Call{Type: typeID, Model: model, Reasoning: level, Fields: map[string]string{"baseUrl": "https://api.test/v1"}}
+	return connection.Call{
+		Type: typeID, Options: map[string]string{llm.OptionModel: model, llm.OptionReasoning: level}, Fields: map[string]string{"baseUrl": "https://api.test/v1"},
+	}
 }
 
 func TestACompletionIsAskedOfTheServiceWithTheLimitOfTheOperation(t *testing.T) {
 	g := &gateway{}
 
-	result, err := newCompletion(t, g).Complete(t.Context(), call("openai", "gpt-4o", ""), connection.ProviderCompleteRequest{})
+	result, err := newCompletion(t, g).Complete(t.Context(), call("openai", "gpt-4o", ""), &llm.CompleteRequest{})
 
 	if err != nil || result.Text != "answer" || g.limit != limits.DefaultCompleteLimit {
 		t.Errorf("result = %v, err = %v, limit = %v", result, err, g.limit)
@@ -67,8 +74,8 @@ func TestALevelOfReasoningOutsideTheLevelsOfTheModelIsAStopBeforeAnyRequest(t *t
 	g := &gateway{}
 	subject := newCompletion(t, g)
 
-	_, completeErr := subject.Complete(t.Context(), call("openai", "gpt-4o", "high"), connection.ProviderCompleteRequest{})
-	chatErr := subject.Chat(t.Context(), call("openai", "gpt-4o", "high"), connection.ProviderChatRequest{}, func(connection.ChatEvent) error { return nil })
+	_, completeErr := subject.Complete(t.Context(), call("openai", "gpt-4o", "high"), &llm.CompleteRequest{})
+	_, chatErr := subject.Chat(t.Context(), call("openai", "gpt-4o", "high"), &llm.ChatRequest{}, ignoreFrame)
 
 	for _, err := range []error{completeErr, chatErr} {
 		if err == nil {
@@ -80,27 +87,27 @@ func TestALevelOfReasoningOutsideTheLevelsOfTheModelIsAStopBeforeAnyRequest(t *t
 	}
 }
 
-func TestAChatPassesItsEventsOn(t *testing.T) {
+func TestAChatPassesItsFramesAndItsFinishOn(t *testing.T) {
 	g := &gateway{}
 	var events int
 
-	err := newCompletion(t, g).Chat(t.Context(), call("openrouter", "m", "low"), connection.ProviderChatRequest{}, func(connection.ChatEvent) error {
+	finish, err := newCompletion(t, g).Chat(t.Context(), call("openrouter", "m", "low"), &llm.ChatRequest{}, func(*llm.ChatFrame) error {
 		events++
 		return nil
 	})
 
-	if err != nil || events != 1 {
+	if err != nil || events != 1 || finish.GetReason() != llm.FinishReason_FINISH_REASON_STOP {
 		t.Errorf("err = %v, events = %d", err, events)
 	}
 }
 
 func TestAFailureOfTheServiceIsReturnedAsItIs(t *testing.T) {
-	failure := connection.NewStopError(connection.ReasonBadRequest)
+	failure := connection.NewStopError(connection.ReasonInvalidRequest)
 	g := &gateway{err: failure}
 	subject := newCompletion(t, g)
 
-	_, completeErr := subject.Complete(t.Context(), call("openai", "m", ""), connection.ProviderCompleteRequest{})
-	chatErr := subject.Chat(t.Context(), call("openai", "m", ""), connection.ProviderChatRequest{}, func(connection.ChatEvent) error { return nil })
+	_, completeErr := subject.Complete(t.Context(), call("openai", "m", ""), &llm.CompleteRequest{})
+	_, chatErr := subject.Chat(t.Context(), call("openai", "m", ""), &llm.ChatRequest{}, ignoreFrame)
 
 	if !errors.Is(completeErr, failure) || !errors.Is(chatErr, failure) {
 		t.Errorf("errors = %v, %v, want the failure of the service", completeErr, chatErr)

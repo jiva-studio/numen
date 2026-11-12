@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// HostConnectionService is what a plugin calls to carry out an operation through its connections. The
+// core takes the connections from the rows of the settings of the calling plugin, which the token names.
+// A request names no connection and no key. The payload and the frames are bytes of the contract the
+// operation belongs to.
+service HostConnectionService {
+  // Call carries out one operation. The core goes to the next row only when a row fails before its first
+  // data frame. The stream holds data frames and ends with one done or one failure.
+  rpc Call(HostConnectionServiceCallRequest) returns (stream HostConnectionServiceCallResponse);
+}
+
+// Priority says whose action a call serves. The zero value is background, so a call that sets none
+// waits behind the calls of a person's actions.
+enum Priority {
+  PRIORITY_UNSPECIFIED = 0;
+  // PRIORITY_INTERACTIVE is a call made for a person's action, such as a search or a check of a line.
+  PRIORITY_INTERACTIVE = 1;
+  // PRIORITY_BACKGROUND is a call made for work that serves no person's action, such as indexing.
+  PRIORITY_BACKGROUND = 2;
+}
+
+// CallErrorCode is the reason a call did not succeed.
+enum CallErrorCode {
+  CALL_ERROR_CODE_UNSPECIFIED = 0;
+  // CALL_ERROR_CODE_NO_CONNECTION is a plugin with no row that can serve the operation.
+  CALL_ERROR_CODE_NO_CONNECTION = 1;
+  // CALL_ERROR_CODE_ALL_FAILED is every row set aside or failed; the failures name each one. A row that
+  // fails after its first data frame is ALL_FAILED with that one connection.
+  CALL_ERROR_CODE_ALL_FAILED = 2;
+  // CALL_ERROR_CODE_STOPPED is a request that is wrong in itself, and the failure names the connection.
+  CALL_ERROR_CODE_STOPPED = 3;
+}
+
+// CallRowFailure is one row that did not answer.
+message CallRowFailure {
+  string connection_name = 1;
+  string reason = 2;
+}
+
+// CallFailure ends a call that did not succeed.
+message CallFailure {
+  CallErrorCode error = 1;
+  string detail = 2;
+  repeated CallRowFailure failures = 3;
+}
+
+message HostConnectionServiceCallRequest {
+  // operation is the name of the operation, such as "llm.chat".
+  string operation = 1;
+  bytes payload = 2;
+  Priority priority = 3;
+}
+
+// HostConnectionServiceCallResponse is one frame of a call.
+message HostConnectionServiceCallResponse {
+  oneof frame {
+    bytes data = 1;
+    // done ends the call; it may be empty.
+    bytes done = 2;
+    CallFailure failure = 3;
+  }
+}

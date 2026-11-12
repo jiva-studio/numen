@@ -9,7 +9,7 @@ import (
 )
 
 // EnvMockML names the variable that has the plugin hear every recording with the mock model.
-const EnvMockML = "NUMEN_MOCK_ML"
+const EnvMockML = "NUMEN_TEST_MOCK_ML"
 
 // envModelsDir names the folder plugins keep their models in; the host sets it.
 const envModelsDir = "NUMEN_MODELS_DIR"

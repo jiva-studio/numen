@@ -163,14 +163,19 @@ func listConditionIssues(subject string, when *Condition, declared map[string]Se
 
 func listConnectionsSettingIssues(s Setting, key string) []error {
 	if s.Type != SettingTypeConnections {
-		if s.Operation == "" {
+		if len(s.Operations) == 0 {
 			return nil
 		}
-		return []error{fmt.Errorf("%w: %s names an operation and holds no rows of connections", ErrInvalidSetting, key)}
+		return []error{fmt.Errorf("%w: %s names operations and holds no rows of connections", ErrInvalidSetting, key)}
 	}
 	var issues []error
-	if !connectionOperationPattern.MatchString(s.Operation) {
-		issues = append(issues, fmt.Errorf("%w: %s needs an operation of lowercase letters and digits, got %q", ErrInvalidSetting, key, s.Operation))
+	if len(s.Operations) == 0 {
+		issues = append(issues, fmt.Errorf("%w: %s names no operation", ErrInvalidSetting, key))
+	}
+	for _, operation := range s.Operations {
+		if !connectionOperationPattern.MatchString(operation) {
+			issues = append(issues, fmt.Errorf("%w: %s needs operations of lowercase words joined by dots, got %q", ErrInvalidSetting, key, operation))
+		}
 	}
 	if s.Max == nil || *s.Max < 1 || *s.Max != math.Trunc(*s.Max) {
 		issues = append(issues, fmt.Errorf("%w: %s needs max, the number of rows, as a whole number of at least 1", ErrInvalidSetting, key))
@@ -202,11 +207,13 @@ func listDuplicateOperationIssues(settings []Setting) []error {
 		if s.Type != SettingTypeConnections {
 			continue
 		}
-		if first, isTaken := keyOf[s.Operation]; isTaken {
-			issues = append(issues, fmt.Errorf("%w: %s and %s both hold rows for the operation %q", ErrInvalidSetting, first, s.Key, s.Operation))
-			continue
+		for _, operation := range s.Operations {
+			if first, isTaken := keyOf[operation]; isTaken {
+				issues = append(issues, fmt.Errorf("%w: %s and %s both hold rows for the operation %q", ErrInvalidSetting, first, s.Key, operation))
+				continue
+			}
+			keyOf[operation] = s.Key
 		}
-		keyOf[s.Operation] = s.Key
 	}
 	return issues
 }

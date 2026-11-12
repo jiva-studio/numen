@@ -233,8 +233,11 @@ export const SERVICE_STANDARD_IMPORTS = [
   'unicode/utf8',
 ]
 
+/** The folder of the Go SDK in the repository. */
+const SDK_GO_DIR = 'libs/plugin/sdk-go'
+
 /** The SDK packages a plugin service may import: every package of the Go SDK. */
-const SDK_GO_MODULE = `${GO_MODULE_ROOT}libs/plugin/sdk-go`
+const SDK_GO_MODULE = `${GO_MODULE_ROOT}${SDK_GO_DIR}`
 
 /** The packages of the plugin's own backend a service may import: its API, domain, use cases, ports and wire. */
 export const SERVICE_OWN_PACKAGES = ['api', 'domain', 'usecase', 'ports', 'wire']
@@ -372,26 +375,27 @@ function findPluginConfigDrift() {
   const found = []
   const exampleDir = path.join(REPO_ROOT, 'plugins/.example')
   const rootGolangci = path.join(REPO_ROOT, '.golangci.yml')
-  const exampleGolangci = path.join(exampleDir, '.golangci.yml')
   const baseEslint = path.join(REPO_ROOT, 'tools/lint-layers/base-eslint.mjs')
   const exampleEslint = path.join(exampleDir, 'eslint.config.js')
 
-  if (fs.existsSync(rootGolangci) && fs.existsSync(exampleGolangci)) {
+  for (const dir of ['plugins/.example', SDK_GO_DIR]) {
+    const golangci = path.join(REPO_ROOT, dir, '.golangci.yml')
+    if (!fs.existsSync(rootGolangci) || !fs.existsSync(golangci)) continue
     const rootLinters = parseEnabledGoLinters(fs.readFileSync(rootGolangci, 'utf8'))
-    const exLinters = parseEnabledGoLinters(fs.readFileSync(exampleGolangci, 'utf8'))
+    const linters = parseEnabledGoLinters(fs.readFileSync(golangci, 'utf8'))
     for (const l of rootLinters) {
-      if (!exLinters.includes(l)) {
+      if (!linters.includes(l)) {
         found.push({
-          file: 'plugins/.example/.golangci.yml',
+          file: `${dir}/.golangci.yml`,
           line: 1,
           symbol: `missing linter '${l}' enabled in root .golangci.yml`,
         })
       }
     }
-    for (const l of exLinters) {
+    for (const l of linters) {
       if (!rootLinters.includes(l)) {
         found.push({
-          file: 'plugins/.example/.golangci.yml',
+          file: `${dir}/.golangci.yml`,
           line: 1,
           symbol: `extra linter '${l}' not in root .golangci.yml`,
         })
@@ -436,14 +440,18 @@ function findPluginConfigDrift() {
 
   const pluginsDir = path.join(REPO_ROOT, 'plugins')
   const pluginNames = listPluginNames(pluginsDir)
-  const goConfigCopies = [
+  const pluginCopies = [
     'plugins/.example',
-    'libs/plugin/sdk-go',
     ...pluginNames
       .filter((name) => fs.existsSync(path.join(pluginsDir, name, 'go.mod')))
       .map((name) => `plugins/${name}`),
   ]
-  for (const name of ['.golangci.yml', '.golangci-structure.yml']) {
+  // The SDK has a .golangci.yml of its own, whose linters findPluginConfigDrift compares with the root.
+  const copiesByName = {
+    '.golangci.yml': pluginCopies,
+    '.golangci-structure.yml': [...pluginCopies, SDK_GO_DIR],
+  }
+  for (const [name, goConfigCopies] of Object.entries(copiesByName)) {
     const rootFile = path.join(REPO_ROOT, name)
     if (!fs.existsSync(rootFile)) {
       found.push({ file: name, line: 1, symbol: 'the root Go lint configuration is missing' })

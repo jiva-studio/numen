@@ -229,11 +229,7 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 	for _, id := range slices.Sorted(maps.Keys(f.Plugins)) {
 		settings, found := declared(id)
 		if !found {
-			isDefault := isDefaultPlugin(id, f.Plugins[id])
 			delete(f.Plugins, id)
-			if isDefault {
-				continue
-			}
 			f.AddNotice(fmt.Sprintf("numen.json: no installed plugin %s; its settings are ignored", id))
 			continue
 		}

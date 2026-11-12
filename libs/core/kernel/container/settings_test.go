@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
+	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 
@@ -159,14 +159,11 @@ func TestSettingsThatCannotBeSavedAreRefused(t *testing.T) {
 // plan is resolved from the performance section.
 func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	response := DefaultSettings()
-	response.Performance = hardware.Performance{Profile: settingsdomain.ProfileEco}
+	response.Performance = settings.Performance{Profile: machinedomain.ProfileEco}
 
 	got := NewConfig(Config{}).SetSettings(response)
 
-	if got.GetMachine().Hardware.LogicalCPUs < 1 {
-		t.Errorf("the hardware was not detected: %+v", got.GetMachine().Hardware)
-	}
-	if got.GetMachine().ResolvedCompute.Profile != settingsdomain.ProfileEco || got.GetMachine().ResolvedCompute.Workers != 1 {
+	if got.GetMachine().ResolvedCompute.Profile != machinedomain.ProfileEco || got.GetMachine().ResolvedCompute.Workers != 1 {
 		t.Errorf("the compute plan is %+v", got.GetMachine().ResolvedCompute)
 	}
 }
@@ -251,7 +248,7 @@ func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 // A configuration copied before the settings were applied keeps the plan it had.
 func TestApplySettingsKeepsTheOriginalConfiguration(t *testing.T) {
 	response := DefaultSettings()
-	response.Performance = hardware.Performance{Profile: settingsdomain.ProfileEco}
+	response.Performance = settings.Performance{Profile: machinedomain.ProfileEco}
 	before := NewConfig(Config{})
 
 	after := before.SetSettings(response)

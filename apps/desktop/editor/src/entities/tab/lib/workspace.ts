@@ -6,8 +6,6 @@
  */
 import { branch, pane, type Workspace } from '@numen/workbench'
 
-/** A note edited in the window, under the path the vault files it at. */
-export const NOTE = 'note'
 /** What this installation is configured as, one tab of it to a window. */
 export const SETTINGS = 'settings'
 

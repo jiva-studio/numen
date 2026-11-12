@@ -6,7 +6,7 @@ package manifest
 // contributes.handlers.
 func IsSharedCommand(id string) bool {
 	switch id {
-	case "app:file.createText", "app:link.import", "app:link.downloadMedia", "app:link.deleteMedia":
+	case "app:file.createText":
 		return true
 	}
 	return false
@@ -16,10 +16,6 @@ func IsSharedCommand(id string) bool {
 // commands.json declares them once for every handler.
 func GetSharedCommandArguments(id string) []CommandArgument {
 	switch id {
-	case "app:link.import":
-		return []CommandArgument{
-			{Name: "address", Title: "Web address", Type: "string", IsRequired: true},
-		}
 	}
 	return nil
 }
@@ -34,7 +30,7 @@ func GetAppCommandArguments(id string) ([]AppCommandArgument, bool) {
 		}, true
 	case "app:file.reveal":
 		return []AppCommandArgument{
-			{Name: "kind", Title: "Place", Type: "enum", Options: []string{"plex", "files"}},
+			{Name: "kind", Title: "Place", Type: "string"},
 		}, true
 	}
 	return nil, false

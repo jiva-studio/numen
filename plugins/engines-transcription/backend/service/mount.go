@@ -18,7 +18,7 @@ import (
 )
 
 // Mount registers the handlers and the agent tool transcript_create on s over the host the process
-// was started for. The model is the mock one where NUMEN_MOCK_ML is "true". The transcriptions and
+// was started for. The model is the mock one where NUMEN_TEST_MOCK_ML is "true". The transcriptions and
 // the model end with s.
 func Mount(s *server.Server) error {
 	endpoint, err := hostcall.FromEnv()

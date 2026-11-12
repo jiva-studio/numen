@@ -12,7 +12,6 @@ import {
   ArrowRightLeft,
   Command,
   Copy,
-  Download,
   CornerDownRight,
   CornerLeftUp,
   ExternalLink,
@@ -22,7 +21,6 @@ import {
   FileX,
   FolderPlus,
   FolderRoot,
-  Link,
   Link2,
   Link2Off,
   Navigation,
@@ -77,9 +75,6 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   [COMMAND.emptyTrash, Trash2],
   // shared commands: their ids are not constants
   ['app:file.createText', FileText],
-  ['app:link.import', Link],
-  ['app:link.downloadMedia', Download],
-  ['app:link.deleteMedia', Trash2],
 ])
 
 const isPluginCommandId = (id: string): boolean => getCommandOwner(id).includes('.')

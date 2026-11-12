@@ -7,11 +7,12 @@ import (
 	"os"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 )
 
 // EnvMockML names the variable that has the plugin answer with the mock proofreader where its settings
 // hold no connection; with a connection the plugin asks it.
-const EnvMockML = "NUMEN_MOCK_ML"
+const EnvMockML = "NUMEN_TEST_MOCK_ML"
 
 const mockEnabled = "true"
 
@@ -19,7 +20,14 @@ const mockEnabled = "true"
 var ErrNoConnection = errors.New("proofreading is off: add a connection on the Connections page, then choose it in the settings of LLM Proofreading")
 
 // Completer asks the connections of the plugin to complete a request.
-type Completer func(ctx context.Context, request connection.CompleteRequest) (connection.CompleteResult, error)
+type Completer func(ctx context.Context, request *llm.CompleteRequest, priority connection.Priority) (*llm.CompleteResult, error)
+
+// NewCompleter returns the Completer that asks the rows of the plugin through caller.
+func NewCompleter(caller connection.Caller) Completer {
+	return func(ctx context.Context, request *llm.CompleteRequest, priority connection.Priority) (*llm.CompleteResult, error) {
+		return llm.Complete(ctx, caller, request, priority)
+	}
+}
 
 // IsMockEnabled reports whether the value of EnvMockML selects the mock model.
 func IsMockEnabled(value string) bool { return value == mockEnabled }
@@ -31,27 +39,27 @@ func IsMockSelected() bool { return IsMockEnabled(os.Getenv(EnvMockML)) }
 // the request is interactive.
 func NewAsk(complete Completer) func(ctx context.Context, instruction, prompt string) (string, error) {
 	return func(ctx context.Context, instruction, prompt string) (string, error) {
-		result, err := complete(ctx, connection.CompleteRequest{
-			Messages: []connection.Message{
+		result, err := complete(ctx, &llm.CompleteRequest{
+			Messages: []*llm.Message{
 				{Role: "system", Text: instruction},
 				{Role: "user", Text: prompt},
 			},
-			Temperature: nil,
-			MaxTokens:   0,
-			Priority:    connection.PriorityInteractive,
-		})
+		}, connection.PriorityInteractive)
 		if errors.Is(err, connection.ErrNoConnection) {
 			return "", ErrNoConnection
 		}
-		return result.Text, err
+		if err != nil {
+			return "", err
+		}
+		return result.GetText(), nil
 	}
 }
 
 // WithMock returns a Completer that answers with the mock proofreader where the settings hold no
 // connection, and asks complete otherwise.
 func WithMock(complete Completer) Completer {
-	return func(ctx context.Context, request connection.CompleteRequest) (connection.CompleteResult, error) {
-		result, err := complete(ctx, request)
+	return func(ctx context.Context, request *llm.CompleteRequest, priority connection.Priority) (*llm.CompleteResult, error) {
+		result, err := complete(ctx, request, priority)
 		if errors.Is(err, connection.ErrNoConnection) {
 			return CompleteMock(ctx, request)
 		}

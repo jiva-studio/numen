@@ -2,6 +2,7 @@ package modelcalltest
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
@@ -9,42 +10,41 @@ import (
 
 // Recorded is one call a provider received.
 type Recorded struct {
-	Operation string
-	Address   string
-	Call      modelcall.ProviderCall
-	Request   modelcall.CompleteRequest
-	Chat      modelcall.ChatRequest
+	Operation  string
+	Address    string
+	Call       modelcall.ProviderCall
+	Payload    []byte
+	Operations []string
 }
 
 // Provider is a connectionport.Provider whose answers are scripted by the address of the connection.
-// A call with no script succeeds.
+// A call with no script sends no data frame and answers the done payload "answer from <address>".
 type Provider struct {
-	mu        sync.Mutex
-	queued    map[string][]error
-	always    map[string]error
-	blocked   map[string]chan struct{}
-	scripts   map[string]chatScript
-	recorded  []Recorded
-	entered   chan string
-	IsUnknown bool
+	mu       sync.Mutex
+	queued   map[string][]error
+	always   map[string]error
+	blocked  map[string]chan struct{}
+	scripts  map[string]script
+	recorded []Recorded
+	entered  chan string
 }
 
 // NewProvider creates a provider that answers every call.
 func NewProvider() *Provider {
 	return &Provider{
-		queued: map[string][]error{}, always: map[string]error{}, blocked: map[string]chan struct{}{}, scripts: map[string]chatScript{},
+		queued: map[string][]error{}, always: map[string]error{}, blocked: map[string]chan struct{}{}, scripts: map[string]script{},
 		entered: make(chan string, 256),
 	}
 }
 
-// Fail makes the next calls to the address fail with the errors, one for each call.
+// Fail makes the next calls to the address fail with the errors before any frame, one for each call.
 func (p *Provider) Fail(address string, errs ...error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.queued[address] = append(p.queued[address], errs...)
 }
 
-// FailAlways makes every call to the address fail with err.
+// FailAlways makes every call to the address fail with err before any frame.
 func (p *Provider) FailAlways(address string, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -76,14 +76,6 @@ func (p *Provider) CallsTo(address string) []Recorded {
 	return calls
 }
 
-func (p *Provider) receive(ctx context.Context, operation string, call modelcall.ProviderCall, request ...modelcall.CompleteRequest) error {
-	recorded := Recorded{Operation: operation, Address: call.Fields["baseUrl"], Call: call}
-	if len(request) > 0 {
-		recorded.Request = request[0]
-	}
-	return p.record(ctx, recorded)
-}
-
 func (p *Provider) record(ctx context.Context, recorded Recorded) error {
 	address := recorded.Address
 	p.mu.Lock()
@@ -109,101 +101,53 @@ func (p *Provider) record(ctx context.Context, recorded Recorded) error {
 	return err
 }
 
-// Complete answers "answer from <address>".
-func (p *Provider) Complete(
-	ctx context.Context, call modelcall.ProviderCall, request modelcall.CompleteRequest,
-) (modelcall.CompleteResult, error) {
-	if err := p.receive(ctx, "complete", call, request); err != nil {
-		return modelcall.CompleteResult{}, err
-	}
-	return modelcall.CompleteResult{Text: "answer from " + call.Fields["baseUrl"]}, nil
-}
-
-// Embed answers a vector of two numbers for each text: its length and 1.
-func (p *Provider) Embed(ctx context.Context, call modelcall.ProviderCall, texts []string) ([][]float32, error) {
-	if err := p.receive(ctx, "embed", call); err != nil {
-		return nil, err
-	}
-	vectors := make([][]float32, len(texts))
-	for i, text := range texts {
-		vectors[i] = []float32{float32(len(text)), 1}
-	}
-	return vectors, nil
-}
-
-// ListModels answers two models, the first one labeled with the operation.
-func (p *Provider) ListModels(ctx context.Context, call modelcall.ProviderCall, operation string) ([]modelcall.Model, error) {
-	if err := p.receive(ctx, "list models", call); err != nil {
-		return nil, err
-	}
-	return []modelcall.Model{{ID: "model-1", Title: "Model one", Operations: []string{operation}}, {ID: "model-2"}}, nil
-}
-
-// ListReasoningLevels answers two levels.
-func (p *Provider) ListReasoningLevels(ctx context.Context, call modelcall.ProviderCall) ([]modelcall.ReasoningLevel, error) {
-	if err := p.receive(ctx, "list reasoning levels", call); err != nil {
-		return nil, err
-	}
-	return []modelcall.ReasoningLevel{{Value: "low", Title: "Low"}, {Value: "high", Title: "High"}}, nil
-}
-
-// GetModelProfile answers a profile of width 3, or an unknown profile where IsUnknown is set.
-func (p *Provider) GetModelProfile(ctx context.Context, call modelcall.ProviderCall) (modelcall.ModelProfile, error) {
-	if err := p.receive(ctx, "get model profile", call); err != nil {
-		return modelcall.ModelProfile{}, err
-	}
-	if p.IsUnknown {
-		return modelcall.ModelProfile{}, nil
-	}
-	return modelcall.ModelProfile{
-		IsKnown: true, Dimensions: 3, MaxTokens: 8191, Pooling: "mean", QueryPrefix: "query: ", DocumentPrefix: "passage: ",
-		Source: call.Type + " " + call.Fields["baseUrl"],
-	}, nil
-}
-
-// ProbeEmbeddingWidth answers 7.
-func (p *Provider) ProbeEmbeddingWidth(ctx context.Context, call modelcall.ProviderCall) (int, error) {
-	if err := p.receive(ctx, "probe embedding width", call); err != nil {
-		return 0, err
-	}
-	return 7, nil
-}
-
-type chatScript struct {
-	events []modelcall.ChatEvent
+type script struct {
+	frames []string
 	err    error
 }
 
-// ScriptChat makes the calls of Chat to the address send the events and then return err. A call with no
-// script sends "answer from <address>" and a finish of reason stop.
-func (p *Provider) ScriptChat(address string, err error, events ...modelcall.ChatEvent) {
+// Script makes the calls to the address send the frames and then return err, or the done payload
+// "answer from <address>" where err is nil.
+func (p *Provider) Script(address string, err error, frames ...string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.scripts[address] = chatScript{events: events, err: err}
+	p.scripts[address] = script{frames: frames, err: err}
 }
 
-// Chat sends the events scripted for the address. A failure scripted with Fail or FailAlways is returned
-// before any event.
-func (p *Provider) Chat(
-	ctx context.Context, call modelcall.ProviderCall, request modelcall.ChatRequest, send func(modelcall.ChatEvent) error,
-) error {
-	address := call.Fields["baseUrl"]
-	if err := p.record(ctx, Recorded{Operation: "chat", Address: address, Call: call, Chat: request}); err != nil {
-		return err
+// Call sends the frames scripted for the address. A failure scripted with Fail or FailAlways is returned
+// before any frame.
+func (p *Provider) Call(
+	ctx context.Context, operation string, call modelcall.ProviderCall, payload []byte, send modelcall.Send,
+) ([]byte, error) {
+	address := call.Fields[addressField]
+	if err := p.record(ctx, Recorded{Operation: operation, Address: address, Call: call, Payload: payload}); err != nil {
+		return nil, err
 	}
 	p.mu.Lock()
-	script, isScripted := p.scripts[address]
+	scripted := p.scripts[address]
 	p.mu.Unlock()
-	if !isScripted {
-		stop := modelcall.ChatFinishStop
-		script = chatScript{events: []modelcall.ChatEvent{{TextDelta: "answer from " + address}, {Finish: &stop}}}
-	}
-	for _, one := range script.events {
-		if err := send(one); err != nil {
-			return err
+	for _, one := range scripted.frames {
+		if err := send([]byte(one)); err != nil {
+			return nil, err
 		}
 	}
-	return script.err
+	if scripted.err != nil {
+		return nil, scripted.err
+	}
+	return []byte("answer from " + address), nil
+}
+
+// ListOptions answers two models; the group of the first names the operations of the setting.
+func (p *Provider) ListOptions(
+	ctx context.Context, operation string, call modelcall.ProviderCall, operations []string,
+) ([]modelcall.Option, error) {
+	address := call.Fields[addressField]
+	if err := p.record(ctx, Recorded{Operation: operation, Address: address, Call: call, Operations: operations}); err != nil {
+		return nil, err
+	}
+	return []modelcall.Option{
+		{Value: "model-1", Title: "Model one", Group: strings.Join(operations, " ")}, {Value: "model-2"},
+	}, nil
 }
 
 // Entered receives the address of each call as the provider takes it.

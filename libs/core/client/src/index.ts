@@ -2,10 +2,12 @@ export * from './clients'
 export * from './catalog'
 export * from './manifest'
 export * from './connections'
-export * from './models'
+export * from './connectioncalls'
 export * from './protocol'
 export { transport } from './transport'
 export * from './settings'
+export * from './themes'
+export * from './tasks'
 export {
   formatErrorCodeMessage,
   formatErrorMessage,

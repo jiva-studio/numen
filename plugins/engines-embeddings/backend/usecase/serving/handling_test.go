@@ -199,8 +199,8 @@ func TestTheEnvironmentOverridesTheChosenProfile(t *testing.T) {
 
 func TestTheMockModelRecordsWhatItIsGiven(t *testing.T) {
 	log := filepath.Join(t.TempDir(), "embed.log")
-	t.Setenv("NUMEN_MOCK_ML", "true")
-	t.Setenv("NUMEN_MOCK_EMBED_LOG", log)
+	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
+	t.Setenv("NUMEN_TEST_MOCK_EMBED_LOG", log)
 	srv := newEmbeddingServer()
 	t.Cleanup(func() { closeServer(t, srv) })
 

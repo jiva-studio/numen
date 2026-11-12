@@ -30,6 +30,7 @@ const bind = (
 
 const setup = (keybindings: readonly DeclaredKeybinding[], takesKey = false) => {
   const host = createPluginHost({
+    target: 'desktop.editor',
     registerKind: () => () => undefined,
     registerExtensionReader: () => () => undefined,
     openTab: () => Promise.resolve('tab-1'),

@@ -12,7 +12,22 @@
       {
         "id": "acp",
         "title": "ACP agent",
-        "operations": ["complete"],
+        "operations": ["llm.complete", "llm.models", "llm.reasoning"],
+        "rowFields": [
+          {
+            "key": "model",
+            "type": "string",
+            "title": "Model",
+            "required": true,
+            "optionsFrom": "llm.models"
+          },
+          {
+            "key": "reasoning",
+            "type": "enum",
+            "title": "Reasoning",
+            "optionsFrom": "llm.reasoning"
+          }
+        ],
         "fields": [
           { "key": "program", "type": "file", "title": "Program", "required": true },
           {

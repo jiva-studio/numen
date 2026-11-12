@@ -11,6 +11,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 )
 
 type fakeHandler struct {
@@ -62,13 +63,13 @@ func (f fakeHandler) EmbedQueries(_ context.Context, queries []string) ([][]floa
 	return vectors, nil
 }
 
-func serve(t *testing.T, h Handler) *Client {
+func serve(t *testing.T, h Handler) *testClient {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(NewHandler(h))
 	web := httptest.NewServer(mux)
 	t.Cleanup(web.Close)
-	return NewClient(web.Client(), web.URL)
+	return newTestClient(web.Client(), web.URL)
 }
 
 func TestClient_RoundTripsTheDescriptionAndTheVectorsThroughTheHandler(t *testing.T) {
@@ -123,4 +124,69 @@ func TestClient_PropagatesHandlerErrors(t *testing.T) {
 	if _, err := client.IndexTexts(t.Context(), Place{}, []Text{{Text: "a"}}); err == nil {
 		t.Fatal("expected error from IndexTexts")
 	}
+}
+
+func writePlace(place Place) *v1.SearchPlace {
+	return &v1.SearchPlace{VaultId: place.VaultID, Recipe: place.Recipe}
+}
+
+func readDescription(res *v1.DescribeSearchSourceResponse) Description {
+	return Description{
+		Name:          res.GetName(),
+		Recipe:        res.GetRecipe(),
+		Width:         res.GetWidth(),
+		ChunkTokens:   res.GetChunkTokens(),
+		MinTextLength: res.GetMinTextLength(),
+		Concurrency:   res.GetConcurrency(),
+		FloorHint:     res.GetFloorHint(),
+	}
+}
+
+func readVectors(vectors []*v1.FloatVector) [][]float32 {
+	out := make([][]float32, len(vectors))
+	for i, one := range vectors {
+		out[i] = one.GetValues()
+	}
+	return out
+}
+
+// testClient calls the search source service of a plugin.
+type testClient struct {
+	rpc numenv1connect.SearchSourceServiceClient
+}
+
+// newTestClient creates a client of the search source service served at baseURL.
+func newTestClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) *testClient {
+	return &testClient{rpc: numenv1connect.NewSearchSourceServiceClient(httpClient, baseURL, opts...)}
+}
+
+// Describe returns the description of the source the plugin serves.
+func (c *testClient) Describe(ctx context.Context) (Description, error) {
+	res, err := c.rpc.DescribeSearchSource(ctx, connect.NewRequest(&v1.DescribeSearchSourceRequest{}))
+	if err != nil {
+		return Description{}, err
+	}
+	return readDescription(res.Msg), nil
+}
+
+// IndexTexts returns one vector per text, in order.
+func (c *testClient) IndexTexts(ctx context.Context, place Place, texts []Text) ([][]float32, error) {
+	indexed := make([]*v1.IndexedText, len(texts))
+	for i, one := range texts {
+		indexed[i] = &v1.IndexedText{ChunkId: one.ChunkID, Path: one.Path, VersionId: one.VersionID, Text: one.Text}
+	}
+	res, err := c.rpc.IndexTexts(ctx, connect.NewRequest(&v1.IndexTextsRequest{Place: writePlace(place), Texts: indexed}))
+	if err != nil {
+		return nil, err
+	}
+	return readVectors(res.Msg.GetVectors()), nil
+}
+
+// EmbedQueries returns one vector per query, in order.
+func (c *testClient) EmbedQueries(ctx context.Context, queries []string) ([][]float32, error) {
+	res, err := c.rpc.EmbedQueries(ctx, connect.NewRequest(&v1.EmbedQueriesRequest{Queries: queries}))
+	if err != nil {
+		return nil, err
+	}
+	return readVectors(res.Msg.GetVectors()), nil
 }

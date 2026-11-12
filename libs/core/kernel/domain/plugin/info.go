@@ -32,4 +32,6 @@ type Info struct {
 	HasBackend    bool
 	Readers       []ReaderInfo
 	SettingsViews []manifest.SettingsView
+	// IsOffByDefault keeps the plugin off until the person enables it.
+	IsOffByDefault bool
 }

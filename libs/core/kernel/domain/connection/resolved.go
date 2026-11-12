@@ -22,14 +22,14 @@ type Resolved struct {
 	Fingerprint      string
 }
 
-// NewCall makes the call to the provider of the connection with the secrets read for it, the model and
-// the reasoning level of the row.
-func (r Resolved) NewCall(secrets map[string]string, model, reasoning string) modelcall.ProviderCall {
+// NewCall makes the call to the provider of the connection with the secrets read for it and the options
+// of the row.
+func (r Resolved) NewCall(secrets, options map[string]string) modelcall.ProviderCall {
 	return modelcall.ProviderCall{
-		Type:      r.Declaration.ID,
-		Fields:    maps.Clone(r.Fields),
-		Secrets:   maps.Clone(secrets),
-		Model:     model,
-		Reasoning: reasoning,
+		ConnectionID: r.ID,
+		Type:         r.Declaration.ID,
+		Fields:       maps.Clone(r.Fields),
+		Secrets:      maps.Clone(secrets),
+		Options:      maps.Clone(options),
 	}
 }

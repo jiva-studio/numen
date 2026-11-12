@@ -1,6 +1,4 @@
-/** The plugins the application has installed, and the slots their manifests declare. */
-export { getPluginModels } from './api/models'
+/** The plugins the application has installed, the commands the window gives them and their models. */
+export { getPluginConnections } from './api/connections'
 export { listPlugins } from './api/plugins'
-export { createSlotIssueReporter } from './model/createSlotIssueReporter'
 export { createWindowCommands } from './model/createWindowCommands'
-export { createWindowSlots } from './model/createWindowSlots'

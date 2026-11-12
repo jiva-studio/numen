@@ -30,7 +30,7 @@ import type {
   VaultNotes,
   VaultRelations,
   VaultTexts,
-  ModelHost,
+  ConnectionHost,
   VaultsHost,
   WindowHost,
   WorkspaceHost,
@@ -98,6 +98,8 @@ export type SlotCommandFinder = (
 ) => SlotCommandLook | undefined
 
 export interface PluginHostDeps {
+  /** The target of the window, which the plugins it activates read as theirs. */
+  readonly target: string
   readonly getContentTypes?: () => Readonly<Record<string, string>>
   readonly getWindowValues?: () => WhenValues
   readonly whenReader?: WhenReader
@@ -161,7 +163,7 @@ export interface PluginHostDeps {
   readonly getTexts?: (pluginId: string) => VaultTexts
   readonly getNotices?: (pluginId: string) => NoticeHost
   readonly getTasks?: (pluginId: string) => TaskHost | undefined
-  readonly getModels?: (pluginId: string) => ModelHost
+  readonly getConnections?: (pluginId: string) => ConnectionHost
   readonly getSlotEntries?: () => readonly DeclaredSlotEntry[] | undefined
   readonly createSlotCommandFinder?: (own: HostCommandReads) => SlotCommandFinder
   readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues
@@ -284,7 +286,7 @@ export interface ContextVaultHost {
 }
 
 /**
- * The services of the window itself: its workspace, commands, notices, tasks, models, slots and agent. A
+ * The services of the window itself: its workspace, commands, notices, tasks, connections, slots and agent. A
  * service the window lacks answers undefined.
  */
 export interface ContextWindowHost {
@@ -296,7 +298,7 @@ export interface ContextWindowHost {
   readonly getWindow: () => WindowHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
   readonly getTasks: (pluginId: string) => TaskHost | undefined
-  readonly getModels: (pluginId: string) => ModelHost | undefined
+  readonly getConnections: (pluginId: string) => ConnectionHost | undefined
   readonly getBackgroundTasks: () => BackgroundTaskHost | undefined
   readonly getSlots: () => SlotHost
 }

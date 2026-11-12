@@ -4,8 +4,8 @@ import { createChangeFollower, themes, type SettingsStore } from '@/entities/set
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { runInBackground } from '@numen/ui'
+import { createWindowAppearance } from '@numen/workbench'
 import { APPEARANCE_WORDS } from '../words'
-import { createWindowAppearance } from './appearance'
 import type { SettingWords } from './settingCommands'
 import { createWindowSettingPalette } from './windowPalette'
 

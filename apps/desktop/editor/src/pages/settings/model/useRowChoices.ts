@@ -1,102 +1,145 @@
 import { computed, ref, watch } from 'vue'
-import {
-  listModelsForOperation,
-  type ModelInfo,
-  type ModelListFailure,
-  type ReasoningLevelInfo,
-  type RowDraft,
-  type StoredRow,
-} from '@/entities/connection'
+import { runInBackground } from '@numen/ui'
+import type { ConnectionFieldInfo, RowDraft, RowOption } from '@/entities/connection'
 import { formatError } from '@/shared/api/errors'
 import type { Result } from '@/shared/lib/result'
 import { WORDS as words } from '../words'
-import type { ListModels, ListReasoningLevels, SelectChoice } from '../types'
+import type { ListRowOptions, SelectChoice } from '../types'
+import { INDEXING_OPERATION } from './useIndexQuestion'
 
 /** What a row reads from the provider of its connection and how it answers. */
 export interface RowChoicesSource {
   readonly getRow: () => RowDraft
-  readonly getOperation: () => string
-  readonly getListModels: () => ListModels | undefined
-  readonly getListReasoningLevels: () => ListReasoningLevels | undefined
-  readonly update: (patch: Partial<StoredRow>) => void
+  /** The row fields of the type of the connection the row names; none while it names none. */
+  readonly getRowFields: () => readonly ConnectionFieldInfo[]
+  readonly getOperations: () => readonly string[]
+  readonly getListRowOptions: () => ListRowOptions | undefined
+  readonly update: (options: Readonly<Record<string, string>>) => void
 }
 
-async function readAnswer<T>(
-  pending: Promise<Result<T, ModelListFailure>>,
-): Promise<Result<T, string>> {
+/** One row field as the row draws it: its choices, why they could not be listed, and whether it is open. */
+export interface RowFieldChoices {
+  readonly field: ConnectionFieldInfo
+  readonly value: string
+  readonly choices: readonly SelectChoice[]
+  readonly problem: string
+  readonly isDisabled: boolean
+}
+
+interface Listed {
+  readonly options: readonly RowOption[]
+  readonly problem: string
+}
+
+async function readAnswer(
+  pending: Promise<Result<readonly RowOption[], string>>,
+): Promise<Result<readonly RowOption[], string>> {
   try {
-    const answer = await pending
-    return answer.ok ? answer : { ok: false, error: answer.error.detail }
+    return await pending
   } catch (caughtError) {
     return { ok: false, error: formatError(caughtError) }
   }
 }
 
+const readChoice = (one: RowOption): SelectChoice => ({
+  id: one.value,
+  text: one.title || one.value,
+  ...(one.title === '' || one.title === one.value ? {} : { detail: one.value }),
+  ...(one.group === '' ? {} : { group: one.group }),
+})
+
 /**
- * The models and the reasoning levels of the connection a row names, asked from its provider
- * whenever the connection or the model changes. Choosing a connection for an operation other than
- * embedding gives the row the first of its models; embedding waits for the person to choose one,
- * because a choice there indexes the vault again. An answer that comes after the row changed again is dropped.
+ * The choices of the row fields of the connection a row names. A field that names optionsFrom is asked
+ * from the provider whenever the connection or a field before it changes, with the values the row holds
+ * so far; a field after an empty required field waits. A field that is not required offers the default
+ * of the provider first. Choosing a connection fills its first required field with the first of its
+ * options, except for a setting that indexes the vault: there the person chooses, because a choice
+ * indexes the vault again. An answer that comes after the row changed again is dropped.
  */
 export function useRowChoices(source: RowChoicesSource) {
-  const models = ref<readonly ModelInfo[]>([])
-  const levels = ref<readonly ReasoningLevelInfo[]>([])
-  const problem = ref('')
-  const levelsProblem = ref('')
-  let modelsRequest = 0
-  let levelsRequest = 0
+  const listed = ref<Readonly<Record<string, Listed>>>({})
+  const requests = new Map<string, number>()
 
-  const modelChoices = computed<readonly SelectChoice[]>(() =>
-    listModelsForOperation(models.value, source.getOperation()).map((one) => ({
-      id: one.id,
-      text: one.title,
-      ...(one.title === one.id ? {} : { detail: one.id }),
-    })),
+  const getValue = (field: ConnectionFieldInfo): string => source.getRow().options[field.key] ?? ''
+
+  const isWaiting = (index: number): boolean =>
+    source.getRow().connection === '' ||
+    source
+      .getRowFields()
+      .slice(0, index)
+      .some((one) => one.isRequired && getValue(one) === '')
+
+  const fields = computed<readonly RowFieldChoices[]>(() =>
+    source.getRowFields().map((field, index) => {
+      const asked = listed.value[field.key]
+      const options = field.optionsFrom
+        ? (asked?.options ?? [])
+        : field.options.map((one) => ({ ...one, group: '' }))
+      const choices = [
+        ...(field.isRequired ? [] : [{ id: '', text: words.connectionRowsDefault }]),
+        ...options.map(readChoice),
+      ]
+      return {
+        field,
+        value: getValue(field),
+        choices,
+        problem: asked?.problem ?? '',
+        isDisabled:
+          isWaiting(index) || (!field.isRequired && field.type !== 'string' && choices.length <= 1),
+      }
+    }),
   )
 
-  const levelChoices = computed<readonly SelectChoice[]>(() => [
-    { id: '', text: words.connectionRowsDefault },
-    ...levels.value.map((one) => ({ id: one.value, text: one.title || one.value })),
-  ])
+  const ask = async (field: ConnectionFieldInfo, index: number): Promise<void> => {
+    const request = (requests.get(field.key) ?? 0) + 1
+    requests.set(field.key, request)
+    listed.value = Object.fromEntries(
+      Object.entries(listed.value).filter(([key]) => key !== field.key),
+    )
+    const list = source.getListRowOptions()
+    if (!field.optionsFrom || isWaiting(index) || !list) return
+    const row = source.getRow()
+    const answer = await readAnswer(
+      list(row.connection, field.key, row.options, source.getOperations()),
+    )
+    if (requests.get(field.key) !== request) return
+    listed.value = {
+      ...listed.value,
+      [field.key]: answer.ok
+        ? { options: answer.value, problem: '' }
+        : { options: [], problem: words.connectionRowsOptionsFailed(field.title, answer.error) },
+    }
+    const first = answer.ok ? answer.value[0] : undefined
+    const isFirstRequired = source.getRowFields().findIndex((one) => one.isRequired) === index
+    if (
+      first &&
+      isFirstRequired &&
+      getValue(field) === '' &&
+      !source.getOperations().includes(INDEXING_OPERATION)
+    ) {
+      source.update({ ...source.getRow().options, [field.key]: first.value })
+    }
+  }
 
   watch(
-    () => source.getRow().connection,
-    async (connection) => {
-      const request = ++modelsRequest
-      const listModels = source.getListModels()
-      models.value = []
-      problem.value = ''
-      if (connection === '' || !listModels) return
-      const answer = await readAnswer(listModels(connection, source.getOperation()))
-      if (request !== modelsRequest) return
-      if (!answer.ok) {
-        problem.value = answer.error
-        return
-      }
-      models.value = answer.value
-      const first = listModelsForOperation(answer.value, source.getOperation())[0]
-      if (source.getOperation() !== 'embed' && source.getRow().model === '' && first) {
-        source.update({ model: first.id })
-      }
+    () =>
+      source.getRowFields().map((field, index) =>
+        JSON.stringify([
+          source.getRow().connection,
+          field.key,
+          ...source
+            .getRowFields()
+            .slice(0, index)
+            .map((one) => getValue(one)),
+        ]),
+      ),
+    (next, previous) => {
+      source.getRowFields().forEach((field, index) => {
+        if (previous?.[index] !== next[index]) runInBackground(ask(field, index), () => undefined)
+      })
     },
     { immediate: true },
   )
 
-  watch(
-    () => [source.getRow().connection, source.getRow().model] as const,
-    async ([connection, model]) => {
-      const request = ++levelsRequest
-      const listLevels = source.getListReasoningLevels()
-      levels.value = []
-      levelsProblem.value = ''
-      if (connection === '' || model === '' || !listLevels) return
-      const answer = await readAnswer(listLevels(connection, model))
-      if (request !== levelsRequest) return
-      if (answer.ok) levels.value = answer.value
-      else levelsProblem.value = answer.error
-    },
-    { immediate: true },
-  )
-
-  return { modelChoices, levelChoices, problem, levelsProblem }
+  return { fields }
 }

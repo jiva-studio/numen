@@ -10,18 +10,18 @@
  * settings tab to show the Connections page.
  *
  * The one row of a setting of one row that names no connection says "Choose a connection".
- * Only a row that names a connection and a model is written. A row added and not yet complete
- * stays on the page.
+ * Only a row that names a connection and a value for each required row field of its type is written.
+ * A row added and not yet complete stays on the page.
  *
- * A change of the connection or the model of embeddings indexes the vault again, which a service
- * may charge for. It is written after a question that names the notes and the connection, and a
+ * A change of the rows of a setting that indexes the vault indexes it again, which a service may
+ * charge for. It is written after a question that names the notes and the connection, and a
  * row that is not complete changes nothing meanwhile.
  */
 import { computed, nextTick, useTemplateRef, watch } from 'vue'
 import { Plus } from '@lucide/vue'
 import { Button, runInBackground } from '@numen/ui'
 import { PluginSettingsCard } from '@numen/plugin-manager'
-import { readRows, type StoredRow } from '@/entities/connection'
+import { getRowKey, readRows, type StoredRow } from '@/entities/connection'
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
 import type { InstallationConnections } from '../../../types'
@@ -30,7 +30,7 @@ import { ConfirmDialog } from '../../confirm-dialog'
 import { WORDS as words } from '../../../words'
 import ConnectionRowEditor from './ConnectionRowEditor.vue'
 import { useConnectionEntries } from '../../../model/useConnectionEntries'
-import { useIndexQuestion } from '../../../model/useIndexQuestion'
+import { INDEXING_OPERATION, useIndexQuestion } from '../../../model/useIndexQuestion'
 import { useRowDrafts } from '../../../model/useRowDrafts'
 import { useRowOrder } from '../../../model/useRowOrder'
 
@@ -50,6 +50,7 @@ const emit = defineEmits<{
 const list = useTemplateRef<HTMLElement>('list')
 const { drafts, write, revert, add, remove, update, move } = useRowDrafts({
   getValue: () => props.value,
+  getRowFields: (connectionId) => getRowFields(connectionId),
   onChange: (rows) => onRowsChange(rows),
 })
 const { question, ask, confirm, cancel } = useIndexQuestion({
@@ -69,11 +70,11 @@ const { heldKey, announcement, drag, onGripPress, onGripKey } = useRowOrder({
   move,
 })
 
-const operation = computed(() => props.setting.operation ?? '')
+const operations = computed(() => props.setting.operations ?? [])
 const limit = computed(() => props.setting.max ?? 1)
-const { stored, choices, getReason } = useConnectionEntries(
+const { stored, choices, getReason, getRowFields } = useConnectionEntries(
   () => props.connections,
-  () => operation.value,
+  () => operations.value,
 )
 const isSingle = computed(() => limit.value === 1)
 
@@ -104,7 +105,7 @@ function onAdd(): void {
 }
 
 function onRowsChange(rows: readonly StoredRow[]): void {
-  if (operation.value !== 'embed') {
+  if (!operations.value.includes(INDEXING_OPERATION)) {
     emit('change', rows)
     return
   }
@@ -121,9 +122,8 @@ function getRowReason(connection: string): string {
 }
 
 function isIndexChange(rows: readonly StoredRow[]): boolean {
-  const getKey = (one: StoredRow): string => `${one.connection}\0${one.model}`
-  const written = readRows(props.value).map(getKey)
-  return rows.length > 0 && rows.map(getKey).join('\n') !== written.join('\n')
+  const written = readRows(props.value).map(getRowKey)
+  return rows.length > 0 && rows.map(getRowKey).join('\n') !== written.join('\n')
 }
 </script>
 
@@ -149,16 +149,22 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
         </Button>
       </div>
 
-      <ul v-else-if="drafts.length > 0" ref="list" class="connection-rows__list" :aria-label="setting.title">
+      <ul
+        v-else-if="drafts.length > 0"
+        ref="list"
+        class="connection-rows__list"
+        :aria-label="setting.title"
+      >
         <ConnectionRowEditor
           v-for="(row, index) in drafts"
           :key="row.key"
           :row="row"
           :position="index + 1"
           :count="drafts.length"
-          :operation="operation"
+          :operations="operations"
           :choices="choices"
           :reason="getRowReason(row.connection)"
+          :row-fields="getRowFields(row.connection)"
           :is-single="isSingle"
           :types="props.connections.types.value"
           :create="props.connections.create"
@@ -168,8 +174,7 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
             drag.dragging.value?.hasMoved === true && drag.dragging.value.item === index
           "
           :is-drop-target="drag.dragging.value?.hasMoved === true && drag.at.value === index"
-          :list-models="props.connections.models.listModels"
-          :list-reasoning-levels="props.connections.models.listReasoningLevels"
+          :list-row-options="props.connections.listRowOptions"
           @update="(patch) => update(row.key, patch)"
           @remove="remove(row.key)"
           @grip-press="(event) => onGripPress(index, event)"
