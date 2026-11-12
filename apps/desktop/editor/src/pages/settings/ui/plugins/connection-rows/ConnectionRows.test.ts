@@ -242,7 +242,7 @@ describe('the rows of a setting of connections', () => {
     dispose(wrapper)
   })
 
-  it('fills the model with the first model of the list once a connection is chosen, and writes the row', async () => {
+  it('asks for a model once a connection is chosen, and writes the row only when the model is chosen', async () => {
     const { wrapper, listRowOptions } = mountRows()
     await click(findButton(/add connection/i))
 
@@ -250,7 +250,32 @@ describe('the rows of a setting of connections', () => {
     await flushPromises()
 
     expect(listRowOptions).toHaveBeenCalledWith(HOME.id, 'model', {}, ['llm.complete'])
-    expect(changes(wrapper)).toStrictEqual([[stored(HOME.id, 'alpha')]])
+    expect(wrapper.findAllComponents(Select)[1]?.props('modelValue')).toBe('')
+    expect(problemOf('Model')).toBe('Choose a model')
+    expect(changes(wrapper)).toStrictEqual([])
+
+    wrapper.findAllComponents(Select)[1]?.vm.$emit('update:modelValue', 'beta')
+    await flushPromises()
+
+    expect(problemOf('Model')).toBe('')
+    expect(changes(wrapper)).toStrictEqual([[stored(HOME.id, 'beta')]])
+    dispose(wrapper)
+  })
+
+  it('writes nothing when a stored row takes another connection, until its model is chosen', async () => {
+    const { wrapper } = mountRows({ value: [row(WORK.id, 'alpha'), row(HOME.id, 'beta')] })
+    await flushPromises()
+
+    wrapper.findAllComponents(Select)[0]?.vm.$emit('update:modelValue', HOME.id)
+    await flushPromises()
+
+    expect(changes(wrapper)).toStrictEqual([])
+    expect(root().querySelectorAll('li')).toHaveLength(2)
+
+    wrapper.findAllComponents(Select)[1]?.vm.$emit('update:modelValue', 'alpha')
+    await flushPromises()
+
+    expect(changes(wrapper)).toStrictEqual([[stored(HOME.id, 'alpha'), stored(HOME.id, 'beta')]])
     dispose(wrapper)
   })
 
@@ -336,6 +361,7 @@ describe('the rows of a setting of connections', () => {
     expect(root().querySelector('[role="dialog"]')).toBeNull()
     expect(wrapper.findAllComponents(Select)[0]?.props('modelValue')).toBe(fresh.id)
     expect(wrapper.findAllComponents(Select)[1]?.props('modelValue')).toBe('')
+    expect(problemOf('Model')).toBe('Choose a model')
     expect(listRowOptions).toHaveBeenCalledWith(fresh.id, 'model', {}, ['llm.embed'])
     expect(changes(wrapper)).toStrictEqual([])
     dispose(wrapper)
@@ -605,6 +631,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     await click(findButton(/add connection/i))
 
     await choose(wrapper, 0, HOME.id)
+    await choose(wrapper, 1, 'alpha')
 
     expect(root().querySelector('[role="alertdialog"]')).toBeNull()
     expect(changes(wrapper)).toStrictEqual([[stored(HOME.id, 'alpha')]])

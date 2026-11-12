@@ -88,8 +88,11 @@ export function useRowDrafts(source: RowDraftsSource) {
       drafts.value = drafts.value.filter((one) => one.key !== key)
       write()
     },
+    /** Changes a row; the rows are written only once that row is complete. */
     update: (key: string, patch: Partial<StoredRow>): void => {
       drafts.value = drafts.value.map((one) => (one.key === key ? { ...one, ...patch } : one))
+      const changed = drafts.value.filter((one) => one.key === key)
+      if (getCompleteRows(changed, source.getRowFields).length === 0) return
       write()
     },
     move: (from: number, to: number): void => {

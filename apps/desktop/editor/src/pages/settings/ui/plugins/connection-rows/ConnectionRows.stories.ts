@@ -304,8 +304,8 @@ export const RowOfAnUnusableConnection: Story = {
   },
 }
 
-/** Adding a row and choosing a connection fills the model with the first model of its list and writes the row. */
-export const ChoosingAConnectionFillsTheModel: Story = {
+/** Adding a row and choosing a connection writes nothing until the model is chosen, and the model control asks for it. */
+export const ChoosingAConnectionAsksForTheModel: Story = {
   render: render({ rows: [] }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -315,18 +315,23 @@ export const ChoosingAConnectionFillsTheModel: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Connection' }))
     await userEvent.click(await within(document.body).findByRole('option', { name: /^Work/ }))
 
+    await expect(canvas.getByRole('button', { name: 'Model' })).toHaveAccessibleDescription(
+      'Choose a model',
+    )
+    await expect(readWritten(canvasElement)).toStrictEqual([])
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Model' }))
+    await userEvent.click(await within(document.body).findByRole('option', { name: /GPT-5 mini/ }))
+
     await waitFor(() =>
       expect(readWritten(canvasElement)).toStrictEqual([
-        { connection: WORK.id, model: 'google/gemini-2.5-flash' },
+        { connection: WORK.id, model: 'openai/gpt-5-mini' },
       ]),
-    )
-    await expect(canvas.getByRole('button', { name: 'Model' })).toHaveTextContent(
-      'Gemini 2.5 Flash',
     )
   },
 }
 
-/** The last entry of the connection list adds a connection; the saved one is chosen with its first model, and the models open. */
+/** The last entry of the connection list adds a connection; the saved one is chosen, the models open, and the row is written once a model is chosen. */
 export const NewConnectionEntryChoosesTheModelNext: Story = {
   render: render({ rows: [row(WORK.id, 'google/gemini-2.5-flash')] }),
   play: async ({ canvasElement }) => {
@@ -342,9 +347,15 @@ export const NewConnectionEntryChoosesTheModelNext: Story = {
     await waitFor(() => expect(within(document.body).queryByRole('dialog')).toBeNull())
     await expect(canvas.getByRole('button', { name: 'Connection' })).toHaveTextContent('Fresh')
     await expect(await within(document.body).findByRole('combobox')).toBeVisible()
+    await expect(readWritten(canvasElement)).toStrictEqual([
+      row(WORK.id, 'google/gemini-2.5-flash'),
+    ])
+
+    await userEvent.click(await within(document.body).findByRole('option', { name: /GPT-5 mini/ }))
+
     await waitFor(() =>
       expect(readWritten(canvasElement)).toStrictEqual([
-        { connection: 'c00000099', model: 'google/gemini-2.5-flash' },
+        { connection: 'c00000099', model: 'openai/gpt-5-mini' },
       ]),
     )
   },
