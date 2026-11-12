@@ -33,10 +33,11 @@ func makeIndex(t *testing.T) *container.Index {
 
 // unit is a model of the name given that makes a vector of eight dimensions
 // for each text.
+// unit is a model whose name is its recipe: two units of different names make vectors that cannot be compared.
 type unit struct{ name string }
 
 func (u unit) Describe() searchsource.Description {
-	return searchsource.Description{Name: u.name, Width: 8, SourceRecipe: "mean"}
+	return searchsource.Description{Name: u.name, Width: 8, SourceRecipe: u.name}
 }
 
 func (unit) Embed(_ context.Context, texts []string) ([][]float32, error) {
