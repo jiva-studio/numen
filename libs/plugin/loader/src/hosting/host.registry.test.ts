@@ -310,15 +310,15 @@ describe('a tab kind opened as the editor of a path', () => {
   })
 
   it('opens the tab in the current pane for any other option and tolerates non-function unreg', () => {
-    const deps = createDeps()
-    const { open, sub } = registerKind(deps, undefined)
+    const openTab = vi.fn(async (_kind: string, _at?: string) => 'tab-1')
+    const { open, sub } = registerKind(createDeps({ openTab }), undefined)
 
     open('Samples/One.md')
     open('Samples/Two.md', 'Two', { where: 'current' })
     open('Samples/Three.md', 'Three', null)
     open('Samples/Four.md', 'Four', 'split')
 
-    expect(vi.mocked(deps.openTab).mock.calls.map((call) => call[1])).toStrictEqual([
+    expect(openTab.mock.calls.map((call) => call[1])).toStrictEqual([
       'Samples/One.md',
       'Samples/Two.md',
       'Samples/Three.md',
