@@ -20,7 +20,12 @@ export function useSettingsTab(
   const initialPluginId = ref<string | null>(null)
   const initialSearchQuery = ref('')
   const markedSetting = ref('')
-  const state: SettingsTabState = { installation, initialPluginId, initialSearchQuery, markedSetting }
+  const state: SettingsTabState = {
+    installation,
+    initialPluginId,
+    initialSearchQuery,
+    markedSetting,
+  }
 
   /** One settings tab to a window: the settings are the installation's, not a file's. */
   const kind: TabKind<SettingsTabState, typeof SETTINGS> = {

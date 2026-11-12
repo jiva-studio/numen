@@ -39,7 +39,11 @@ const QUOTA: PluginHealthItem = {
   detail: '',
 }
 
-const setup = (unwatched = '', items: readonly PluginHealthItem[] = [], ids = ['app:settings.open']) => {
+const setup = (
+  unwatched = '',
+  items: readonly PluginHealthItem[] = [],
+  ids = ['app:settings.open'],
+) => {
   const log = createMessageLog()
   const tasks = ref<readonly Task[]>([READING])
   const runs: { command: string; values: Readonly<Record<string, string>> | undefined }[] = []
@@ -87,7 +91,10 @@ describe('the background tasks of the window', () => {
   it('list an error of a plugin as a failed task with its fix, and leave a warning out', () => {
     const listed = setup('', [CONNECTION, QUOTA]).read()
 
-    expect(listed.map((one) => one.id)).toStrictEqual(['reading', 'health:org.example.atlas:connection'])
+    expect(listed.map((one) => one.id)).toStrictEqual([
+      'reading',
+      'health:org.example.atlas:connection',
+    ])
     expect(listed[1]).toMatchObject({
       label: 'Atlas',
       state: 'failed',

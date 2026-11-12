@@ -44,7 +44,6 @@ const {
   choosePath: onPathChoose,
   clearPath: onPathClear,
 } = usePluginPaths(fieldDeps, fields)
-
 </script>
 
 <template>

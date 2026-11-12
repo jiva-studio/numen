@@ -77,9 +77,7 @@ export function createHealthClient(rpc: HealthRpc): HealthClient {
   return {
     watchHealth: async function* (signal) {
       for await (const update of rpc.watchHealth({}, { signal })) {
-        yield update.items
-          .filter((item) => item.severity !== HealthSeverity.OK)
-          .map(readItem)
+        yield update.items.filter((item) => item.severity !== HealthSeverity.OK).map(readItem)
       }
     },
     reportHealth: async (pluginId, item) => {
@@ -105,4 +103,3 @@ export function createHealthClient(rpc: HealthRpc): HealthClient {
     },
   }
 }
-

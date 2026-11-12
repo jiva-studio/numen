@@ -11,7 +11,10 @@ import type { PluginDetailProps } from './PluginDetail.types'
 import { createManagedPlugin, createAvailablePlugin } from './testing/managed'
 
 const baseProps = (overrides: Partial<PluginDetailProps> = {}): PluginDetailProps => ({
-  plugin: createManagedPlugin('sample.notes', 'Notes', { version: '2.1.0', description: 'Takes notes.' }),
+  plugin: createManagedPlugin('sample.notes', 'Notes', {
+    version: '2.1.0',
+    description: 'Takes notes.',
+  }),
   isEnabled: true,
   readme: '',
   dataFileCount: 0,
@@ -106,7 +109,11 @@ describe('PluginDetail', () => {
       detail: '',
       actionLabel: '',
     }
-    expect(mountDetail({ health: [start] }).find('details').exists()).toBe(false)
+    expect(
+      mountDetail({ health: [start] })
+        .find('details')
+        .exists(),
+    ).toBe(false)
   })
 
   it('draws the bar of the worst item with its text, detail and fix, and emits the fix', async () => {

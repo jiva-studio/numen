@@ -69,8 +69,19 @@ describe('PluginRow', () => {
 
   it('shows the badge of the worst health item of a plugin that runs', () => {
     const plugin = createPluginInfo('test.engine', 'Speech Engine')
-    const quota = { key: 'quota', severity: 'warning', text: 'Half used', detail: '', actionLabel: '' } as const
-    const connection = { ...quota, key: 'connection', severity: 'error', text: 'No connection' } as const
+    const quota = {
+      key: 'quota',
+      severity: 'warning',
+      text: 'Half used',
+      detail: '',
+      actionLabel: '',
+    } as const
+    const connection = {
+      ...quota,
+      key: 'connection',
+      severity: 'error',
+      text: 'No connection',
+    } as const
 
     const warned = mount(PluginRow, { props: { plugin, isEnabled: true, health: [quota] } })
     const failed = mount(PluginRow, {

@@ -116,16 +116,22 @@ describe('PluginDetail', () => {
 
   it('renders failure card, calls retryPlugin on retry, and writes disabled on disable', async () => {
     const plugin = createPluginInfo('test.plugin', 'Super Engine')
-    const { wrapper, retryPlugin, recordedWrites } = createDetail(plugin, {}, undefined, undefined, [
-      {
-        pluginId: 'test.plugin',
-        key: 'start',
-        severity: 'error',
-        text: 'Timed out while starting',
-        detail: 'handshake timeout after 10s',
-        action: { command: 'app:settings.open', values: { plugin: 'test.plugin' }, title: '' },
-      },
-    ])
+    const { wrapper, retryPlugin, recordedWrites } = createDetail(
+      plugin,
+      {},
+      undefined,
+      undefined,
+      [
+        {
+          pluginId: 'test.plugin',
+          key: 'start',
+          severity: 'error',
+          text: 'Timed out while starting',
+          detail: 'handshake timeout after 10s',
+          action: { command: 'app:settings.open', values: { plugin: 'test.plugin' }, title: '' },
+        },
+      ],
+    )
 
     const stoppedCard = wrapper.find('.plugin-stopped')
     expect(stoppedCard.exists()).toBe(true)

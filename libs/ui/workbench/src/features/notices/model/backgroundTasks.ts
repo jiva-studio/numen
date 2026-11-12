@@ -3,11 +3,7 @@
  * plugins, and the failures the window reports as failed tasks, with a cancel and a dismissal.
  */
 import { computed, ref, watch, type Ref } from 'vue'
-import {
-  createBackgroundTask,
-  type BackgroundTask,
-  type WorkTask,
-} from '../lib/backgroundTask'
+import { createBackgroundTask, type BackgroundTask, type WorkTask } from '../lib/backgroundTask'
 
 export interface BackgroundTaskHostDeps {
   readonly tasks: Readonly<Ref<readonly WorkTask[]>>
@@ -39,9 +35,7 @@ export function createBackgroundTaskHost(deps: BackgroundTaskHostDeps): Backgrou
   const list = computed<readonly BackgroundTask[]>(() =>
     deps.tasks.value
       .filter((task) => !dismissedIds.value.has(task.id))
-      .map((task) =>
-        createBackgroundTask(task, cancellingIds.value.has(task.id)),
-      ),
+      .map((task) => createBackgroundTask(task, cancellingIds.value.has(task.id))),
   )
 
   watch(deps.tasks, (tasks) => {
