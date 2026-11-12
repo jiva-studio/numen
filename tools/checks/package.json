@@ -6,7 +6,7 @@
   "description": "The structural, style and documentation checks of the repository, with the registry that selects and runs them.",
   "dependencies": {
     "@vue/compiler-sfc": "^3.5.44",
-    "dependency-cruiser": "^18.7.1",
+    "dependency-cruiser": "^18.7.2",
     "postcss": "^8.5.32",
     "postcss-html": "^2.0.0",
     "postcss-value-parser": "^4.2.0",
