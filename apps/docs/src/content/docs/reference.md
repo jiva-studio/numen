@@ -27,14 +27,6 @@ Two things are not settings and are not in here: which files count as notes, and
 | `interfaceScale` | a number | scale of controls and interface text. 1 is the default. From 0.8 to 2. |
 | `textScale` | a number | scale of note and book text. 1 is the default. From 0.8 to 1.75. |
 
-### `app.agent`
-
-Selects the agent the panel uses and configures how each program runs. A program's section is kept whether or not it is selected, so switching agent preserves the settings of the previous one. The programs are the ones listed by the plugins that provide agents.
-
-| | | |
-| --- | --- | --- |
-| `use` | text | names the program the panel uses. When absent, the program that the providers mark as default is used. |
-
 ### `app.naming`
 
 | | | |
@@ -53,36 +45,7 @@ The settings of the plugin ACP Agents.
 
 | | | |
 | --- | --- | --- |
-| `executablePath` | text | installed ACP agents are discovered automatically. Choose one or more custom ACP agent executables to add them. |
 | `requestTimeout` | a number | seconds to wait for an answer or a new session; empty waits 120. From 1 to 3600. |
-
-### `md.numen.agents.antigravity`
-
-The settings of the plugin Antigravity Agent.
-
-| | | |
-| --- | --- | --- |
-| `executablePath` | text | path to the Antigravity CLI executable. Empty finds it automatically. |
-| `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
-
-### `md.numen.agents.claude`
-
-The settings of the plugin Claude Code Agent.
-
-| | | |
-| --- | --- | --- |
-| `executablePath` | text | path to the Claude Code CLI executable. Empty finds it automatically. |
-| `readsHooksAndSkills` | yes or no | let Claude Code read the hooks, skills, standing instructions in CLAUDE.md and plugins configured for this person. Off. A hook is a shell command Claude Code runs itself. What a vault contains is never read. |
-| `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
-
-### `md.numen.agents.codex`
-
-The settings of the plugin OpenAI Codex Agent.
-
-| | | |
-| --- | --- | --- |
-| `executablePath` | text | path to the OpenAI Codex CLI executable. Empty finds it automatically. |
-| `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
 
 ### `md.numen.agents.mcp.server`
 
@@ -203,7 +166,7 @@ The settings of the plugin Agent Chat.
 
 | | | |
 | --- | --- | --- |
-| `reasoning` | text | the depth of reasoning a new question starts with, by the name of one of the levels the model lists. Empty uses the default of the model; a level the model does not list is ignored. |
+| `connections` | text | agents. |
 
 ### `md.numen.views.flashcards.studio`
 
@@ -212,6 +175,7 @@ The settings of the plugin Flashcards Studio.
 | | | |
 | --- | --- | --- |
 | `dayStartTime` | text | time a review day starts, HH:MM up to 12:00; other values use 04:00. |
+| `agentConnections` | text | agents. |
 
 ### `md.numen.views.plex.graph`
 
