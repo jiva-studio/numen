@@ -34,7 +34,7 @@ export function packOptions(options: PlexOptions, tightness: number): PlexOption
 }
 
 /**
- * How tightly this neighborhood must be packed for the window to hold all of it: the loosest packing that fits every node, and the tightest one when no packing does.
+ * How tightly this graph must be packed for the window to hold all of it: the loosest packing that fits every node, and the tightest one when no packing does.
  * A box narrows and a gap closes before a relation is dropped, since a reader can act on a node drawn small but not on one that is not drawn.
  */
 export function measureCrowding(options: PlexOptions, counts: RelationCounts): PlexOptions {

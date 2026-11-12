@@ -8,11 +8,11 @@ import { nextTick } from 'vue'
 import Plex from './Plex.vue'
 import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
 import type { Viewport } from '@numen/ui'
-import { neighborhoods } from '../fixtures/neighborhoods'
+import { graphs } from '../fixtures/graphs'
 
 const mountPlex = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) =>
   mount(Plex, {
-    props: { neighborhood: neighborhoods.typical, duration: 0, ...props },
+    props: { graph: graphs.typical, duration: 0, ...props },
     attachTo: document.body,
   })
 
@@ -98,7 +98,7 @@ describe('what a screen reader and a keyboard are given', () => {
     // wherever the keyboard is.
     const plex = mountPlex()
     expect(plex.findAll('.plex__node[tabindex="0"]')).toHaveLength(
-      neighborhoods.typical.nodes.length,
+      graphs.typical.nodes.length,
     )
     expect(plex.findAll('.plex__node[tabindex="-1"]')).toHaveLength(0)
   })
@@ -111,20 +111,20 @@ describe('what a screen reader and a keyboard are given', () => {
   })
 
   it('still names a node whose title is empty', () => {
-    const plex = mountPlex({ neighborhood: neighborhoods.awkwardLabels })
+    const plex = mountPlex({ graph: graphs.awkwardLabels })
     expect(plex.find('[aria-label="Untitled, child"]').exists()).toBe(true)
   })
 
   it('keeps the full title in the accessible name when the box truncates it', () => {
     const long = 'Supercalifragilisticexpialidociousandthensomemore'
-    const plex = mountPlex({ neighborhood: neighborhoods.awkwardLabels })
+    const plex = mountPlex({ graph: graphs.awkwardLabels })
     expect(plex.find(`[aria-label="${long}, child"]`).exists()).toBe(true)
   })
 })
 
 describe('what did not fit', () => {
   it('says so and not hiding it', () => {
-    const plex = mountPlex({ neighborhood: neighborhoods.overcrowded })
+    const plex = mountPlex({ graph: graphs.overcrowded })
     const status = plex.get('[role="status"]').text()
 
     // How much fits depends on the window, so the sentence is checked against what
@@ -146,7 +146,7 @@ describe('what did not fit', () => {
   it('passes the counts over, so the words are not the plex to choose', () => {
     // Knowing English is the same mistake as knowing the domain, one step down.
     const plex = mount(Plex, {
-      props: { neighborhood: neighborhoods.overcrowded, duration: 0 },
+      props: { graph: graphs.overcrowded, duration: 0 },
       slots: {
         overflow: `<template #default="{ overflow }">спрятано: {{ overflow.length }}</template>`,
       },
@@ -156,7 +156,7 @@ describe('what did not fit', () => {
 
   it('can be kept quiet by a slot that draws nothing', () => {
     const plex = mount(Plex, {
-      props: { neighborhood: neighborhoods.overcrowded, duration: 0 },
+      props: { graph: graphs.overcrowded, duration: 0 },
       slots: { overflow: '<span class="hushed" />' },
     })
     expect(plex.get('[role="status"]').text()).toBe('')
@@ -271,19 +271,19 @@ describe('how wide a box is drawn', () => {
   })
 })
 
-describe('being given the next neighborhood', () => {
+describe('being given the next graph', () => {
   it('arrives at once when there is no movement to make', async () => {
     const plex = mountPlex()
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(true)
 
-    await plex.setProps({ neighborhood: neighborhoods.leaf })
+    await plex.setProps({ graph: graphs.leaf })
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(false)
     expect(plex.find('[aria-label="Inbox, parent"]').exists()).toBe(true)
   })
 
   it('sets off and not jumping when it has time to move', async () => {
     const plex = mountPlex({ duration: 400 })
-    await plex.setProps({ neighborhood: neighborhoods.leaf })
+    await plex.setProps({ graph: graphs.leaf })
 
     // Still showing the old picture: on its way, not replaced.
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(true)
@@ -292,15 +292,15 @@ describe('being given the next neighborhood', () => {
 
   it('remains still when it has nowhere left to go', async () => {
     const plex = mountPlex()
-    await plex.setProps({ neighborhood: neighborhoods.leaf })
+    await plex.setProps({ graph: graphs.leaf })
     expect(plex.vm.isMoving).toBe(false)
   })
 
-  it('re-aims at the newest neighborhood and not queueing them', async () => {
+  it('re-aims at the newest graph and not queueing them', async () => {
     const plex = mountPlex({ duration: 400 })
-    await plex.setProps({ neighborhood: neighborhoods.leaf })
-    await plex.setProps({ neighborhood: neighborhoods.root })
-    await plex.setProps({ neighborhood: neighborhoods.diamond, duration: 0 })
+    await plex.setProps({ graph: graphs.leaf })
+    await plex.setProps({ graph: graphs.root })
+    await plex.setProps({ graph: graphs.diamond, duration: 0 })
 
     // Four clicks in a second end at the fourth, not at a queue of three.
     expect(plex.find('[aria-label^="Recursive CTE"]').exists()).toBe(true)

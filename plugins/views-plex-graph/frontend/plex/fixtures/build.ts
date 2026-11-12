@@ -17,7 +17,7 @@ const RELATION: Record<PlexRelation, string> = {
   sibling: 'contains',
 }
 
-/** A neighborhood of the requested size, for turning knobs against. */
+/** A graph of the requested size, for turning knobs against. */
 export function build(title: string, counts: RelationCounts): PlexGraph {
   return buildAround({ id: 'focus', title }, null, counts)
 }
@@ -45,7 +45,7 @@ export function buildAround(
   //
   // It is also removed from the generated nodes: from the parent's side, the
   // node navigated from is one of the children about to be generated, and it
-  // already has an identifier. A plex rejects a neighborhood that contains the
+  // already has an identifier. A plex rejects a graph that contains the
   // same node twice.
   const others = from ? invented.filter((node) => node.id !== from.id) : invented
 

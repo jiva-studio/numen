@@ -223,9 +223,9 @@ describe('the edges follow the boxes', () => {
  */
 describe('the title a line carries while the picture moves', () => {
   const getEdgeKey = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`
-  const withLabels = (neighborhood: PlexGraph): PlexGraph => ({
-    ...neighborhood,
-    edges: neighborhood.edges.map((edge) => ({ ...edge, labels: [{ text: 'contains' }] })),
+  const withLabels = (graph: PlexGraph): PlexGraph => ({
+    ...graph,
+    edges: graph.edges.map((edge) => ({ ...edge, labels: [{ text: 'contains' }] })),
   })
   const from = arrangePlex(withLabels(before))
   const to = arrangePlex(withLabels(after))
@@ -251,11 +251,11 @@ describe('the title a line carries while the picture moves', () => {
   it('holds the words a settled line was cut to', () => {
     // Wide letters and a long label, so the cut is well short of the whole.
     const measureLabelWidth = (label: string) => 30 * [...label].length
-    const arrangeWithLabels = (neighborhood: PlexGraph) =>
+    const arrangeWithLabels = (graph: PlexGraph) =>
       arrangePlex(
         {
-          ...neighborhood,
-          edges: neighborhood.edges.map((edge) => ({
+          ...graph,
+          edges: graph.edges.map((edge) => ({
             ...edge,
             labels: [{ text: 'the scene in the assembly' }],
           })),
@@ -279,11 +279,11 @@ describe('the title a line carries while the picture moves', () => {
 
     // A window that wraps the fan, at the default settings: the test targets a
     // title moving off the middle, not the amount of spare space in the window.
-    const arrangeWithTitles = (neighborhood: PlexGraph) =>
+    const arrangeWithTitles = (graph: PlexGraph) =>
       arrangePlex(
         {
-          ...neighborhood,
-          edges: neighborhood.edges.map((edge) => ({ ...edge, labels: [{ text: 'contains' }] })),
+          ...graph,
+          edges: graph.edges.map((edge) => ({ ...edge, labels: [{ text: 'contains' }] })),
         },
         {
           measureLabel: measureLabelWidth,
@@ -355,9 +355,9 @@ describe('the title a line carries while the picture moves', () => {
 })
 
 describe('the arrow a line carries while the picture moves', () => {
-  const markArrows = (neighborhood: PlexGraph): PlexGraph => ({
-    ...neighborhood,
-    edges: neighborhood.edges.map((edge) =>
+  const markArrows = (graph: PlexGraph): PlexGraph => ({
+    ...graph,
+    edges: graph.edges.map((edge) =>
       edge.to === 'a' ? { ...edge, arrows: ['to' as const] } : edge,
     ),
   })

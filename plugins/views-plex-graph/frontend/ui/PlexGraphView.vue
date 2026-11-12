@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Displays the graph neighborhood of notes and handles graph interaction gestures.
+ * Displays the graph of notes and handles graph interaction gestures.
  */
 import { computed } from 'vue'
 import { Menu, LoadingIndicator } from '@numen/ui'
@@ -18,7 +18,7 @@ defineOptions({ name: 'PlexTab' })
 const props = defineProps<{ state: PlexTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { dragged, picture: neighborhood } = props.state.canvas
+const { dragged, picture: graph } = props.state.canvas
 const { request: menu, menuItems: items, getMenuIcon, getNodeIcon } = props.state.menu
 const { quickLink } = props.state.quickLink
 const { linkInspector } = props.state.inspector
@@ -111,15 +111,15 @@ function onDismissLinkInspector() {
       {{ props.state.canvas.view.error.value }}
     </p>
 
-    <!-- Until the first neighborhood lands, an empty plex and one no one has
+    <!-- Until the first graph lands, an empty plex and one no one has
          answered for yet are drawn the same way. -->
     <LoadingIndicator v-if="props.state.canvas.view.isLoading.value" :label="words.loading" />
 
     <Plex
-      v-else-if="neighborhood"
+      v-else-if="graph"
       ref="picture"
       class="plex__image"
-      :neighborhood="neighborhood!"
+      :graph="graph!"
       :options="options"
       :creatable="props.state.canvas.creatable"
       :pending="pending"

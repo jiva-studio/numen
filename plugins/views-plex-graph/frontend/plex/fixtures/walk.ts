@@ -1,6 +1,6 @@
 import type { PlexEdge, PlexGraph, PlexNode } from '../../types'
 /**
- * A small graph, and the rule for extracting one neighborhood from it.
+ * A small graph, and the rule for extracting one graph from it.
  *
  * This is the application's job, stubbed. None of it may move into the component:
  * once the plex works out who a sibling is, it depends on the domain. It exists because
@@ -62,7 +62,7 @@ const getJumps = (id: string): string[] => {
 
 export const walkStart = 'hexagonal'
 
-export function createNeighborhood(id: string): PlexGraph {
+export function createGraph(id: string): PlexGraph {
   const focus = GRAPH[id]
   if (!focus) throw new Error(`no such node: ${id}`)
 
@@ -72,7 +72,7 @@ export function createNeighborhood(id: string): PlexGraph {
       .map((other) => ({ id: other, title: GRAPH[other]!.title, relation }))
 
   // A node reachable two ways takes one relation, first match wins. The plex rejects
-  // a neighborhood that contains the same node twice.
+  // a graph that contains the same node twice.
   const related: PlexNode[] = []
   const visited = new Set<string>([id])
   for (const group of [

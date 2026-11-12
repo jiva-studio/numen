@@ -5,7 +5,7 @@
 **Intent:** `intent.md` in the task folder
 **Issue:** jiva-studio/numen#1838
 
-A rename with no change of behavior: the core call that answers the notes related to one note, its messages, the kernel types behind it, the TypeScript SDK call and types, and every caller take names that say what the data is. The wire keeps every field name and number. Names marked *(proposal)* wait for the owner (questions in `intent.md`).
+A rename with no change of behavior: the core call that answers the notes related to one note, its messages, the kernel types behind it, the TypeScript SDK call and types, and every caller take names that say what the data is. The wire keeps every field name and number.
 
 ## 1. Target names
 
@@ -30,13 +30,13 @@ Generated names that follow: Go `v1.ListRelatedNotesRequest`, `v1.ListRelatedNot
 
 | File (old → new path) | Old | New |
 | :-- | :-- | :-- |
-| `libs/note/domain/neighborhood.go` → `related_notes.go` | `type Neighbor` | `type RelatedNoteRef` *(proposal; `domain.RelatedNote` is taken, see Q1)* |
-| same | `type Neighborhood` | `type RelatedNotes` *(proposal, Q2)* |
-| same | `func (n *Neighborhood) AddNeighbor(note NoteRef, neighbor Neighbor)` | `func (n *RelatedNotes) AddRelatedNote(note NoteRef, related RelatedNoteRef)` |
+| `libs/note/domain/neighborhood.go` → `related_notes.go` | `type Neighbor` | `type RelatedNote` *(the creation input became `NewRelatedNote`)* |
+| same | `type Neighborhood` | `type NoteGraph` |
+| same | `func (n *Neighborhood) AddNeighbor(note NoteRef, neighbor Neighbor)` | `func (n *NoteGraph) AddRelatedNote(note NoteRef, related RelatedNote)` |
 | `libs/note/domain/neighborhood_test.go` → `related_notes_test.go` | callers | follow |
 | `libs/core/kernel/usecase/note/query/neighborhood.go` → `related_notes.go` | `type ShowNeighborhood`, `NewShowNeighborhood` | `type ListRelatedNotes`, `NewListRelatedNotes` |
 | same | `getNeighbors`, `neighborSet`, locals `neighbor` | `getRelatedNotes`, `relatedNoteSet`, `related` |
-| `libs/core/kernel/usecase/note/query/outline.go` | `type NeighborhoodView` (embeds `domain.Neighborhood`) | `type RelatedNotesView` (embeds `domain.RelatedNotes`) |
+| `libs/core/kernel/usecase/note/query/outline.go` | `type NeighborhoodView` (embeds `domain.Neighborhood`) | `type RelatedNotesView` (embeds `domain.NoteGraph`) |
 | same | `type GetNeighborhoodView`, `NewGetNeighborhoodView`, field `neighborhood` | `type GetRelatedNotesView`, `NewGetRelatedNotesView`, field `relatedNotes` |
 | `libs/core/kernel/adapter/window/editor/note/calls.go` | `outlineCalls.GetNeighborhood` | `outlineCalls.ListRelatedNotes` |
 | `libs/core/kernel/adapter/window/editor/note/notes.go` | `(h *Outline) GetNeighborhood`, `&v1.Neighbor{...}` | `(h *Outline) ListRelatedNotes`, `&v1.RelatedNote{...}` |
@@ -54,42 +54,42 @@ Generated names that follow: Go `v1.ListRelatedNotesRequest`, `v1.ListRelatedNot
 | File | Old | New |
 | :-- | :-- | :-- |
 | `libs/plugin/sdk-ts/src/workspace.ts` | `interface NoteNeighbor` | `interface RelatedNote` |
-| same | `interface NoteNeighborhood` | `interface RelatedNotes` *(proposal, Q2)* |
-| same | `VaultNotes.getNeighborhood(path): Promise<NoteNeighborhood>` | `VaultNotes.listRelatedNotes(path): Promise<RelatedNotes>` |
+| same | `interface NoteNeighborhood` | `interface NoteGraph` |
+| same | `VaultNotes.getNeighborhood(path): Promise<NoteNeighborhood>` | `VaultNotes.listRelatedNotes(path): Promise<NoteGraph>` |
 | same | comments "a neighboring note", "to a neighbor, or two neighbors" | "a related note", "to a related note, or two related notes" |
-| `libs/plugin/loader/src/contract.ts` | re-export `NoteNeighborhood` | re-export `RelatedNotes` |
+| `libs/plugin/loader/src/contract.ts` | re-export `NoteNeighborhood` | re-export `NoteGraph` |
 | `libs/plugin/loader/src/hosting/guards/servicePermissions.ts` | key `getNeighborhood` | key `listRelatedNotes` |
 | `libs/plugin/loader/src/hosting/contextServices.test.ts` | `getNeighborhood` | `listRelatedNotes` |
 | `libs/core/client/src/protocol.ts` | `GetNeighborhoodResponseSchema` | `ListRelatedNotesResponseSchema` |
 | `apps/desktop/editor/src/entities/note/api/notes.ts` | `getNeighborhood`, `notes.getNeighborhood({ path })` | `listRelatedNotes`, `notes.listRelatedNotes({ path })` |
-| `apps/desktop/editor/src/entities/note/api/noteWords.ts` | `NeighborhoodWire`, `mapNeighborhood` | `RelatedNotesWire`, `mapRelatedNotes` |
-| `apps/desktop/editor/src/entities/note/lib/note.ts` | `type Neighborhood = NoteNeighborhood` | `type RelatedNotes = RelatedNotes` imported from `@numen/plugin-loader` (re-export, or import under the same name and export it) |
+| `apps/desktop/editor/src/entities/note/api/noteWords.ts` | `NeighborhoodWire`, `mapNeighborhood` | `NoteGraphWire`, `mapNoteGraph` |
+| `apps/desktop/editor/src/entities/note/lib/note.ts` | `type Neighborhood = NoteNeighborhood` | `NoteGraph` imported from `@numen/plugin-loader` (re-export, or import under the same name and export it) |
 | `apps/desktop/editor/src/entities/note/index.ts` | export `getNeighborhood` | export `listRelatedNotes` |
 | `apps/desktop/editor/src/features/plugin-host/model/pluginServices.ts` | `getNeighborhood: (path) => getNeighborhood(path)` | `listRelatedNotes: (path) => listRelatedNotes(path)` |
 | `apps/desktop/editor/src/testing/mocks/note.ts` | mock key `getNeighborhood` | `listRelatedNotes` |
 | `apps/desktop/editor/src/entities/note/api/{notes,noteWords}.test.ts`, `features/plugin-host/model/pluginServices.test.ts` | callers and `describe('mapNeighborhood')` | follow |
 
-### 1.4 Plex plugin (`plugins/views-plex-graph/frontend`) *(proposal, Q3)*
+### 1.4 Plex plugin (`plugins/views-plex-graph/frontend`)
 
-Rule for the coder: a name whose value is the SDK data (`RelatedNotes`, `RelatedNote`, the call) moves; a name whose value is the drawn graph (`PlexNeighborhood`, `PlexNode`, `PlexEdge`) stays.
+Rule for the coder: a name whose value is the SDK data (`NoteGraph`, `RelatedNote`, the call) moves; a name whose value is the drawn graph (`PlexGraph`, `PlexNode`, `PlexEdge`) takes the word `graph`.
 
 | File | Old | New |
 | :-- | :-- | :-- |
 | `types.ts` | `type Neighbor = NoteNeighbor` | `type RelatedNote` re-exported from `@numen/plugin-sdk` |
-| same | `interface Neighborhood` | `interface RelatedNotes` |
+| same | `interface Neighborhood` | `interface NoteGraph` |
 | same | `interface Neighbors { neighborhood(path) }` | `interface RelatedNoteQueries { listRelatedNotes(path) }` |
-| same | `PlexView.neighborhood: Ref<Neighborhood \| null>` | `PlexView.relatedNotes: Ref<RelatedNotes \| null>` |
-| `model/usePlexView.ts` | its own `Neighbors` interface, ref `neighborhood`, `core.neighborhood(path)` | `RelatedNoteQueries`, ref `relatedNotes`, `core.listRelatedNotes(path)` |
+| same | `PlexView.neighborhood: Ref<Neighborhood \| null>` | `PlexView.noteGraph: Ref<NoteGraph \| null>` |
+| `model/usePlexView.ts` | its own `Neighbors` interface, ref `neighborhood`, `core.neighborhood(path)` | `RelatedNoteQueries`, ref `noteGraph`, `core.listRelatedNotes(path)` |
 | `index.ts` | `usePlexView({ neighborhood: (path) => notes.getNeighborhood(path) })` | `usePlexView({ listRelatedNotes: (path) => notes.listRelatedNotes(path) })` |
-| `lib/picture.ts` | `convertNeighborhood`, `areNeighborhoodsEqual`, params `neighborhood` | `convertRelatedNotes`, `areRelatedNotesEqual`, params `relatedNotes` |
-| `model/usePlexTab.ts`, `model/kind.ts` | `view.neighborhood`, locals `neighborhood` | `view.relatedNotes`, `relatedNotes` |
-| `fixtures/index.ts` | `createNeighborhood`, `RelatedNeighborSpec`, `NeighborSpec`, params `neighbors` | `createRelatedNotes`, `RelatedNoteSpec`, `RelatedNoteInput`, `relatedNotes` |
+| `lib/picture.ts` | `convertNeighborhood`, `areNeighborhoodsEqual`, params `neighborhood` | `convertNoteGraph`, `areNoteGraphsEqual`, params `noteGraph` |
+| `model/usePlexTab.ts`, `model/kind.ts` | `view.neighborhood`, locals `neighborhood` | `view.noteGraph`, `relatedNotes` |
+| `fixtures/index.ts` | `createNeighborhood`, `RelatedNeighborSpec`, `NeighborSpec`, params `neighbors` | `createNoteGraph`, `RelatedNoteSpec`, `RelatedNoteInput`, `relatedNotes` |
 | `fixtures/host.ts` | `getNeighborhood:` | `listRelatedNotes:` |
 | `ui/PlexGraphView.stories.ts` | `NeighborSpec`, param `neighbors` | `RelatedNoteInput`, `relatedNotes` |
 | `words.ts` | comment "The neighborhood is being read" | "The related notes are being read" |
 | tests (`lib/picture.test.ts`, `model/usePlexTab.test.ts`, `model/usePlexView.test.ts`, `model/kind.test.ts`) | callers | follow |
 
-Stays: `PlexNeighborhood`, the `neighborhood` prop of `Plex.vue` / `plex/ui/props.ts`, `PlexGraphView.vue`'s `picture: neighborhood`, `plex/lib/neighborhood.ts` (`assertNeighborhood`), `plex/fixtures/neighborhoods.ts`, `plex/fixtures/walk.ts` `createNeighborhood` (returns a `PlexNeighborhood`), the arrange/transition parameters, and `aria-label="Neighborhood"` in `plex/ui/render/PlexView.vue` (Q6).
+Moves with it: `PlexNeighborhood` → `PlexGraph`, the `neighborhood` prop of `Plex.vue` / `plex/ui/props.ts` → `graph`, `PlexGraphView.vue`'s `picture: neighborhood` → `graph`, `plex/lib/neighborhood.ts` (`assertNeighborhood`) → `plex/lib/graph.ts` (`assertGraph`), `plex/fixtures/neighborhoods.ts` → `graphs.ts`, `walk.ts` `createNeighborhood` → `createGraph`, and the arrange/transition parameters. The `aria-label` of the plex group in `plex/ui/render/PlexView.vue` becomes "Related notes".
 
 ## 2. Blast radius
 
@@ -124,10 +124,10 @@ No new acceptance test file: the behavior is covered by the existing suites. The
 - **Given**: the branch after the change
 - **When**: from the repo root, run
   ```sh
-  git grep -n -E 'GetNeighborhood|getNeighborhood|NoteNeighbor|ShowNeighborhood|NeighborhoodView|AddNeighbor|neighborSet|getNeighbors|NeighborSpec|NeighborhoodWire|mapNeighborhood|convertNeighborhood|areNeighborhoodsEqual|neighborhoodOf' -- ':!plugins/views-flashcards-studio' ':!.agents/tasks'
-  git grep -n -w -E 'Neighbor|Neighbors|Neighborhood' -- 'libs/note' 'libs/core' 'libs/plugin' 'apps/desktop' 'apps/mobile' 'plugins/views-plex-graph' ':!.agents/tasks'
+  git grep -n -E 'GetNeighborhood|getNeighborhood|NoteNeighbor|ShowNeighborhood|NeighborhoodView|AddNeighbor|neighborSet|getNeighbors|NeighborSpec|NeighborhoodWire|mapNeighborhood|convertNeighborhood|areNeighborhoodsEqual|neighborhoodOf|PlexNeighborhood|assertNeighborhood|createNeighborhood' -- ':!plugins/views-flashcards-studio' ':!.agents/tasks'
+  git grep -n -i -E 'Neighborhoods?' -- 'libs/note' 'libs/core' 'libs/plugin' 'apps/desktop' 'apps/mobile' 'plugins/views-plex-graph' ':!.agents/tasks'
   ```
-- **Then**: the first command prints nothing; the second prints only `aria-label="Neighborhood"` in `plugins/views-plex-graph/frontend/plex/ui/render/PlexView.vue`.
+- **Then**: the first command prints nothing; the second prints only the "neighborhood view" prose in `hostwindow.proto`, `workspace.proto` and their generated files, and `sdk-go/host/window.go`, which is out of scope.
 
 ### AC-2: the generated code matches the schema
 

@@ -13,7 +13,7 @@ import type { PlexType, Probe } from '../model/sizing/measure'
 import type { PlexHeading, PlexGraph, PlexRelation, PlexDestination } from '../../types'
 
 export interface PlexProps {
-  neighborhood: PlexGraph
+  graph: PlexGraph
   options?: PlexOptionsInput
   placement?: Placement
   showEdgeLabels?: boolean

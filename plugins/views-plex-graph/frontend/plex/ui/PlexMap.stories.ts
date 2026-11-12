@@ -74,13 +74,13 @@ const createEdge = (neighbor: PlexNode): PlexEdge => {
   return label ? createLine('focus', neighbor.id, label, 'to') : { from: 'focus', to: neighbor.id }
 }
 
-const createNeighborhood = (neighbors: readonly PlexNode[]): PlexGraph => ({
+const createGraph = (neighbors: readonly PlexNode[]): PlexGraph => ({
   nodes: [node('focus', 'Entropy', 'focus'), ...neighbors],
   edges: neighbors.map(createEdge),
 })
 
-/** A wide neighborhood: more nodes at the sides than in depth. */
-const WIDE = createNeighborhood([
+/** A wide graph: more nodes at the sides than in depth. */
+const WIDE = createGraph([
   ...RELATED,
   node('landauer', "Landauer's principle", 'jump'),
   node('carnot', 'Carnot cycle', 'jump'),
@@ -150,13 +150,13 @@ interface MapScreen {
 const map = ({ headings = () => [], creatable = [], menu = null }: MapScreen) => ({
   components: { Plex, Menu },
   setup() {
-    const neighborhood = ref<PlexGraph>(WIDE)
-    return { neighborhood, headings, creatable, menu, MENU, menuIcon }
+    const graph = ref<PlexGraph>(WIDE)
+    return { graph, headings, creatable, menu, MENU, menuIcon }
   },
   template: `
     <div style="height: 100vh">
       <Plex
-        :neighborhood="neighborhood"
+        :graph="graph"
         :creatable="creatable"
         :duration="420"
         :headings="headings"
@@ -267,9 +267,9 @@ const EVERY_LINE: PlexGraph = {
 export const EveryLine: Story = {
   render: () => ({
     components: { Plex },
-    setup: () => ({ neighborhood: ref(EVERY_LINE) }),
+    setup: () => ({ graph: ref(EVERY_LINE) }),
     template:
-      '<div style="height: 100vh"><Plex :neighborhood="neighborhood" :creatable="[]" :duration="0" /></div>',
+      '<div style="height: 100vh"><Plex :graph="graph" :creatable="[]" :duration="0" /></div>',
   }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

@@ -2,10 +2,10 @@
 /**
  * The plex: one focused node, with all other nodes placed by their relation to it.
  *
- * Takes a neighborhood and emits an identifier when one is chosen. It does not
+ * Takes a graph and emits an identifier when one is chosen. It does not
  * fetch data, does not interpret what an identifier addresses, and does not
  * compute who is related to whom. The caller answers `activate` with the next
- * neighborhood, and the plex transitions to it.
+ * graph, and the plex transitions to it.
  */
 import { computed, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
@@ -71,7 +71,7 @@ const behavior = computed<PlexBehavior>(() => ({
 }))
 
 const { frame, isMoving } = usePlexTransition(
-  () => props.neighborhood,
+  () => props.graph,
   () => ({
     options: { ...props.options, viewport: room.value },
     placement: props.placement,
@@ -143,12 +143,12 @@ const frameStyle = computed(() => ({
 }))
 
 /**
- * A neighborhood is drawn from the node it is seen from, so every node walks
+ * A graph is drawn from the node it is seen from, so every node walks
  * to a new relation when another one arrives. A menu is anchored where one of them
  * was.
  */
 watch(
-  () => props.neighborhood,
+  () => props.graph,
   () => emit('dismiss'),
 )
 </script>

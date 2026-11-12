@@ -10,8 +10,8 @@ import {
 } from '../lib/arrange'
 import { optionsForType, useTypeSize } from '../model/sizing/plexScale'
 import { EXPANSION_DELAY } from '../model/sizing/expansion'
-import { neighborhoods } from '../fixtures/neighborhoods'
-import { createNeighborhood, walkStart } from '../fixtures/walk'
+import { graphs } from '../fixtures/graphs'
+import { createGraph, walkStart } from '../fixtures/walk'
 import { build, buildAround, type TitledNode } from '../fixtures/build'
 import { nameNow } from '../fixtures/names'
 import { ring } from '../fixtures/ring'
@@ -28,7 +28,7 @@ import type {
 } from '../../types'
 
 interface Knobs {
-  neighborhood: PlexGraph
+  graph: PlexGraph
   placement: Placement
   showEdgeLabels: boolean
   duration: number
@@ -130,7 +130,7 @@ const createNavigableStory = (start: (args: Knobs) => PlexGraph) => (args: Knobs
     const createdItem = ref<PlexNode[]>([])
     const links = ref<PlexEdge[]>([])
 
-    const neighborhood = computed<PlexGraph>(() => {
+    const graph = computed<PlexGraph>(() => {
       const base = focus.value
         ? buildAround(focus.value, cameFrom.value, createCounts(args))
         : start(args)
@@ -149,9 +149,9 @@ const createNavigableStory = (start: (args: Knobs) => PlexGraph) => (args: Knobs
     })
 
     const onActivate = (id: string) => {
-      const selected = neighborhood.value.nodes.find((node) => node.id === id)
+      const selected = graph.value.nodes.find((node) => node.id === id)
       if (!selected) return
-      const was = neighborhood.value.nodes.find((node) => node.relation === 'focus')
+      const was = graph.value.nodes.find((node) => node.relation === 'focus')
       cameFrom.value = was ? { id: was.id, title: was.title } : null
       focus.value = { id: selected.id, title: selected.title }
     }
@@ -172,7 +172,7 @@ const createNavigableStory = (start: (args: Knobs) => PlexGraph) => (args: Knobs
     }
 
     const dropOnto = (ids: readonly string[], relation: PlexRelation) => {
-      const here = neighborhood.value.nodes.find((node) => node.relation === 'focus')
+      const here = graph.value.nodes.find((node) => node.relation === 'focus')
       if (!here) return
       for (const one of ids) createRelatedNode(here.id, one, relation)
     }
@@ -190,14 +190,14 @@ const createNavigableStory = (start: (args: Knobs) => PlexGraph) => (args: Knobs
       create,
       link,
       dropOnto,
-      neighborhood,
+      graph,
       options: computed(() => createOptions(args, type.value)),
     }
   },
   template: `
     <div style="height:100vh">
       <Plex
-        :neighborhood="neighborhood"
+        :graph="graph"
         :placement="args.placement"
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
@@ -227,14 +227,14 @@ const renderWalk = (args: Knobs) => ({
     return {
       args,
       focused,
-      neighborhood: computed(() => createNeighborhood(focused.value)),
+      graph: computed(() => createGraph(focused.value)),
       options: computed(() => createOptions(args, type.value)),
     }
   },
   template: `
     <div style="height:100vh">
       <Plex
-        :neighborhood="neighborhood"
+        :graph="graph"
         :placement="args.placement"
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
@@ -307,7 +307,7 @@ const meta = {
     siblings: range(0, 12, 1, 'Playground'),
     title: { control: 'text', table: { category: 'Playground' } },
 
-    neighborhood: { table: { disable: true } },
+    graph: { table: { disable: true } },
     options: { table: { disable: true } },
     clock: { table: { disable: true } },
     naming: { table: { disable: true } },
@@ -370,14 +370,14 @@ const meta = {
     title: 'A node',
   },
 
-  render: createNavigableStory((args) => args.neighborhood),
+  render: createNavigableStory((args) => args.graph),
 } satisfies Meta<Knobs>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
 const invented = {
-  args: { neighborhood: neighborhoods.typical, maxPerLine: 9 },
+  args: { graph: graphs.typical, maxPerLine: 9 },
   render: createNavigableStory((args: Knobs) => build(args.title, createCounts(args))),
 }
 
@@ -563,14 +563,14 @@ export const AskingForANode: Story = {
   },
 }
 
-/** Renders a neighborhood with multiple connected parents. */
+/** Renders a graph with multiple connected parents. */
 export const SeveralParents: Story = {
-  args: { neighborhood: neighborhoods.diamond },
+  args: { graph: graphs.diamond },
 }
 
-/** Renders an overcrowded neighborhood with overflow indicators. */
+/** Renders an overcrowded graph with overflow indicators. */
 export const Overcrowded: Story = {
-  args: { neighborhood: neighborhoods.overcrowded },
+  args: { graph: graphs.overcrowded },
 }
 
 const titledLines: PlexGraph = {
@@ -593,7 +593,7 @@ const titledLines: PlexGraph = {
 
 /** Renders edge labels along curved paths, truncated where they do not fit, and raises hovered lines. */
 export const TitledLines: Story = {
-  args: { neighborhood: titledLines, duration: 0, spread: 1 },
+  args: { graph: titledLines, duration: 0, spread: 1 },
   play: async ({ canvasElement }) => {
     const title = (words: string) =>
       [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].filter(
@@ -662,7 +662,7 @@ const arrowedLines: PlexGraph = {
 
 /** Renders directional arrowheads on edges and raises them on hover. */
 export const ArrowedLines: Story = {
-  args: { neighborhood: arrowedLines, duration: 0 },
+  args: { graph: arrowedLines, duration: 0 },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const svg = canvasElement.querySelector('svg')!
@@ -736,12 +736,12 @@ export const ArrowedLines: Story = {
 
 /** Renders nodes with long, non-Latin, and empty labels. */
 export const AwkwardLabels: Story = {
-  args: { neighborhood: neighborhoods.awkwardLabels },
+  args: { graph: graphs.awkwardLabels },
 }
 
 /** Expands a truncated node box on hover to show the full title. */
 export const RestingOnATitle: Story = {
-  args: { neighborhood: neighborhoods.awkwardLabels },
+  args: { graph: graphs.awkwardLabels },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
@@ -776,7 +776,7 @@ export const RestingOnATitle: Story = {
 export const Walk: Story = {
   render: renderWalk,
   args: {
-    neighborhood: createNeighborhood(walkStart),
+    graph: createGraph(walkStart),
     gap: 18,
   },
   play: async ({ args, canvasElement }) => {
@@ -923,7 +923,7 @@ export const HeadingsInside: Story = {
 
 /** Renders the plex inside a small fixed container. */
 export const SmallWindow: Story = {
-  args: { neighborhood: neighborhoods.crowded },
+  args: { graph: graphs.crowded },
   render: (args) => ({
     components: { Plex },
     setup: () => {
@@ -934,7 +934,7 @@ export const SmallWindow: Story = {
       <div style="height:100vh;display:grid;place-items:center;background:#8883">
         <div style="width:420px;height:320px;outline:1px solid var(--numen-rule)">
           <Plex
-            :neighborhood="args.neighborhood"
+            :graph="args.graph"
             :placement="args.placement"
             :options="options"
             :show-edge-labels="args.showEdgeLabels"
