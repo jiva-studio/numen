@@ -30,11 +30,11 @@ Generated names that follow: Go `v1.ListRelatedNotesRequest`, `v1.ListRelatedNot
 
 | File (old → new path) | Old | New |
 | :-- | :-- | :-- |
-| `libs/note/domain/neighborhood.go` → `related_notes.go` | `type Neighbor` | `type RelatedNote` *(the creation input became `NewRelatedNote`)* |
+| libs/note/domain/neighborhood.go → `related_notes.go` | `type Neighbor` | `type RelatedNote` *(the creation input became `NewRelatedNote`)* |
 | same | `type Neighborhood` | `type NoteGraph` |
 | same | `func (n *Neighborhood) AddNeighbor(note NoteRef, neighbor Neighbor)` | `func (n *NoteGraph) AddRelatedNote(note NoteRef, related RelatedNote)` |
-| `libs/note/domain/neighborhood_test.go` → `related_notes_test.go` | callers | follow |
-| `libs/core/kernel/usecase/note/query/neighborhood.go` → `related_notes.go` | `type ShowNeighborhood`, `NewShowNeighborhood` | `type ListRelatedNotes`, `NewListRelatedNotes` |
+| libs/note/domain/neighborhood_test.go → `related_notes_test.go` | callers | follow |
+| libs/core/kernel/usecase/note/query/neighborhood.go → `related_notes.go` | `type ShowNeighborhood`, `NewShowNeighborhood` | `type ListRelatedNotes`, `NewListRelatedNotes` |
 | same | `getNeighbors`, `neighborSet`, locals `neighbor` | `getRelatedNotes`, `relatedNoteSet`, `related` |
 | `libs/core/kernel/usecase/note/query/outline.go` | `type NeighborhoodView` (embeds `domain.Neighborhood`) | `type RelatedNotesView` (embeds `domain.NoteGraph`) |
 | same | `type GetNeighborhoodView`, `NewGetNeighborhoodView`, field `neighborhood` | `type GetRelatedNotesView`, `NewGetRelatedNotesView`, field `relatedNotes` |
@@ -43,7 +43,7 @@ Generated names that follow: Go `v1.ListRelatedNotesRequest`, `v1.ListRelatedNot
 | `libs/core/kernel/adapter/window/editor/note/handler.go` | field `getNeighborhood *query.GetNeighborhoodView`, `NewOutline(..., neighborhood, ...)` | field `getRelatedNotes *query.GetRelatedNotesView`, param `relatedNotes` |
 | `libs/core/kernel/container/wire_window_routes.go` | `query.NewGetNeighborhoodView(...)` | `query.NewGetRelatedNotesView(...)` |
 | `libs/core/kernel/adapter/window/editor/export_test.go`, `serve_test.go` | `NoteUseCases.Neighborhood` | `NoteUseCases.RelatedNotes` |
-| `libs/core/kernel/usecase/note/neighborhood_test.go` → `related_notes_test.go`; `neighborhood_graph_test.go` → `related_notes_graph_test.go`; `connection_test.go` | helpers `neighborhoodOf`, test names with `Neighborhood` | `relatedNotesOf`, test names with `RelatedNotes` (e.g. `TestANeighborhoodStaysInsideItsVault` → `TestRelatedNotesStayInsideTheirVault`) |
+| libs/core/kernel/usecase/note/neighborhood_test.go → `related_notes_test.go`; `neighborhood_graph_test.go` → `related_notes_graph_test.go`; `connection_test.go` | helpers `neighborhoodOf`, test names with `Neighborhood` | `relatedNotesOf`, test names with `RelatedNotes` (e.g. `TestANeighborhoodStaysInsideItsVault` → `TestRelatedNotesStayInsideTheirVault`) |
 | `libs/core/kernel/adapter/window/editor/{changes,connections,rename,vault_session}_test.go` | `client.GetNeighborhood`, `v1.GetNeighborhoodRequest`, locals `neighborhood` | `client.ListRelatedNotes`, `v1.ListRelatedNotesRequest`, `related` |
 | `apps/mobile/bind/mobile_test.go:122` | `ask("NoteService", "GetNeighborhood", ...)` | `ask("NoteService", "ListRelatedNotes", ...)` |
 
@@ -151,7 +151,7 @@ No new acceptance test file: the behavior is covered by the existing suites. The
 
 1. `make generate-check`.
 2. Go: `go test ./domain/...` in `libs/note`; `go test ./usecase/note/... ./adapter/window/editor/... ./container/...` in `libs/core/kernel`; `go build ./...` in `libs/core/protocol` and `libs/plugin/sdk-go`; `go test ./bind/...` in `apps/mobile`; `make compile` for every module that imports `numenv1`; `make lint` targets for `libs/note` and `libs/core/kernel`.
-3. TS typecheck: `libs/core/protocol`, `libs/core/client`, `libs/plugin/sdk-ts`, `libs/plugin/loader`, `apps/desktop/editor` (after `npm run build` in `libs/ui/core`, then `libs/ui/shell`), `plugins/views-plex-graph`.
+3. TS typecheck: `libs/core/protocol`, `libs/core/client`, `libs/plugin/sdk-ts`, `libs/plugin/loader`, `apps/desktop/editor` (after `npm run build` in `libs/ui/components`, then `libs/ui/workbench`), `plugins/views-plex-graph`.
 4. TS unit: `libs/plugin/loader` and `apps/desktop/editor` `npm run test:unit`; `plugins/views-plex-graph` `npm run test:unit` (covers its stories: run chromium and webkit projects one at a time if it has them).
 5. e2e (offline): `tests/e2e/desktop/tests/plugins/views.plex.graph/` (`graph`, `hierarchy`, `links`, `search-menu`), `tests/e2e/desktop/tests/shell/lifecycle/perf.spec.ts`.
 6. AC-1 grep.
