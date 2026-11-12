@@ -2,8 +2,6 @@ package editor
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net"
@@ -16,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
@@ -67,15 +66,15 @@ func Listen(ctx context.Context, files *FileServer, stopped func(error)) (*Loopb
 }
 
 func newLoopback(target net.Listener, files *FileServer, stopped func(error)) (*Loopback, error) {
-	word := make([]byte, 24)
-	if _, err := rand.Read(word); err != nil {
+	token, err := localendpoint.NewToken()
+	if err != nil {
 		return nil, err
 	}
 
 	back := &Loopback{
 		files:   files,
 		address: (&url.URL{Scheme: "http", Host: target.Addr().String()}).String(),
-		token:   base64.RawURLEncoding.EncodeToString(word),
+		token:   token,
 	}
 	back.server = &http.Server{
 		Handler:           back.getHandler(),
@@ -95,14 +94,14 @@ func newLoopback(target net.Listener, files *FileServer, stopped func(error)) (*
 }
 
 func (l *Loopback) getHandler() http.Handler {
-	target := "/" + l.token + "/"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		escaped := r.URL.EscapedPath()
-		if !strings.HasPrefix(escaped, target) {
+		presented, afterToken, _ := strings.Cut(strings.TrimPrefix(escaped, "/"), "/")
+		if !localendpoint.IsTokenEqual(l.token, presented) {
 			http.Error(w, "not an address this run gave out", http.StatusForbidden)
 			return
 		}
-		id, rest, found := strings.Cut(strings.TrimPrefix(escaped, target), "/")
+		id, rest, found := strings.Cut(afterToken, "/")
 		if !found {
 			http.Error(w, "not a file of a vault", http.StatusBadRequest)
 			return

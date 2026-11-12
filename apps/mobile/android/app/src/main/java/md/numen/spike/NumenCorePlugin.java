@@ -22,6 +22,7 @@ public class NumenCorePlugin extends Plugin {
                 long port = core.start(dir);
                 JSObject said = new JSObject();
                 said.put("port", port);
+                said.put("token", core.token());
                 said.put("dir", dir);
                 call.resolve(said);
             } catch (Exception why) {

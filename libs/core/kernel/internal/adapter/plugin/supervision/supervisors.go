@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -92,7 +93,7 @@ func (s *Supervisors) FindByToken(token string) (string, bool) {
 	var pluginID string
 	var found bool
 	for id, endpoint := range s.endpoints {
-		if tokensEqual(endpoint.Token, token) {
+		if localendpoint.IsTokenEqual(endpoint.Token, token) {
 			pluginID, found = id, true
 		}
 	}

@@ -73,6 +73,7 @@ func TestStartAnswers(t *testing.T) {
 		if err != nil {
 			t.Fatalf("asking %s: %v", method, err)
 		}
+		req.Header.Set("Authorization", "Bearer "+core.Token())
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Connect-Protocol-Version", "1")
 		res, err := http.DefaultClient.Do(req)
@@ -244,6 +245,7 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 		if err != nil {
 			t.Fatalf("asking %s: %v", item, err)
 		}
+		req.Header.Set("Authorization", "Bearer "+core.Token())
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Connect-Protocol-Version", "1")
 		res, err := http.DefaultClient.Do(req)
@@ -325,6 +327,7 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 		if err != nil {
 			t.Fatalf("asking %s: %v", item, err)
 		}
+		req.Header.Set("Authorization", "Bearer "+core.Token())
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Connect-Protocol-Version", "1")
 		res, err := http.DefaultClient.Do(req)
@@ -380,4 +383,74 @@ func asString(t *testing.T, value any) string {
 		t.Fatalf("%v is %T, want a JSON string", value, value)
 	}
 	return text
+}
+
+// Every process on the phone can connect to the loopback port, so a request
+// without the token of this start is refused and one with it is answered.
+func TestTheServerAnswersOnlyARequestWithTheToken(t *testing.T) {
+	core := bind.NewCore()
+	port, err := core.Start(t.TempDir())
+	if err != nil {
+		t.Fatalf("starting: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := core.Stop(); err != nil {
+			t.Error(err)
+		}
+	})
+	if core.Token() == "" {
+		t.Fatal("a running core has no token")
+	}
+
+	url := fmt.Sprintf("http://127.0.0.1:%d/numen.v1.FileService/ListFiles", port)
+	for name, authorization := range map[string]string{
+		"none":          "",
+		"another token": "Bearer " + strings.Repeat("0", len(core.Token())),
+		"no scheme":     core.Token(),
+		"the token":     "Bearer " + core.Token(),
+	} {
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, strings.NewReader(`{"folder":""}`))
+		if err != nil {
+			t.Fatalf("asking with %s: %v", name, err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Connect-Protocol-Version", "1")
+		if authorization != "" {
+			req.Header.Set("Authorization", authorization)
+		}
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("asking with %s: %v", name, err)
+		}
+		if err := res.Body.Close(); err != nil {
+			t.Fatal(err)
+		}
+		want := http.StatusUnauthorized
+		if name == "the token" {
+			want = http.StatusOK
+		}
+		if res.StatusCode != want {
+			t.Errorf("a request with %s answered %s, want %d", name, res.Status, want)
+		}
+	}
+}
+
+func TestTheTokenChangesWithEveryStart(t *testing.T) {
+	core := bind.NewCore()
+	if core.Token() != "" {
+		t.Fatal("a core that is not running has a token")
+	}
+	var tokens []string
+	for range 2 {
+		if _, err := core.Start(t.TempDir()); err != nil {
+			t.Fatalf("starting: %v", err)
+		}
+		tokens = append(tokens, core.Token())
+		if err := core.Stop(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if tokens[0] == "" || tokens[0] == tokens[1] {
+		t.Errorf("tokens %q", tokens)
+	}
 }

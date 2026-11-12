@@ -1,7 +1,8 @@
 // Package bind exposes the core to the mobile platform.
 //
 // One call starts a server on the loopback interface and returns its listening
-// port. All requests to it follow the schema in libs/core/protocol, the same
+// port. Every request to it must carry the token that Token returns as a bearer
+// credential. The requests follow the schema in libs/core/protocol, the same
 // schema the desktop window uses.
 package bind
 
@@ -36,6 +37,7 @@ func NewCore() *Core { return &Core{} }
 
 type runningCore struct {
 	port   int
+	token  string
 	isDown atomic.Bool
 	stop   context.CancelFunc
 	opened *container.OpenedWindow
@@ -98,17 +100,22 @@ func (c *Core) Start(dir string) (int, error) {
 	// phone, so only those three services are mounted. The settings file, which
 	// contains the model API keys, and the files on disk next to the notes
 	// (books and the model sets that run over them) are not served.
-	server := &http.Server{
-		ReadHeaderTimeout: readHeaderTimeout,
-		Handler: allowOrigin(opened.NewHandler(
-			http.NotFoundHandler(),
-			numenv1connect.VaultServiceName,
-			numenv1connect.NoteServiceName,
-			numenv1connect.FileServiceName,
-		)),
+	handler, token, err := opened.NewLocalHandler(
+		http.NotFoundHandler(),
+		numenv1connect.VaultServiceName,
+		numenv1connect.NoteServiceName,
+		numenv1connect.FileServiceName,
+	)
+	if err != nil {
+		stop()
+		return 0, errors.Join(err, listener.Close(), opened.Close())
 	}
+	// The preflight of the browser carries no credentials, so the origin policy stands outside the
+	// token check.
+	server := &http.Server{ReadHeaderTimeout: readHeaderTimeout, Handler: allowOrigin(handler)}
 	c.running = &runningCore{
 		port:   listener.port,
+		token:  token,
 		stop:   stop,
 		opened: opened,
 		server: server,
@@ -174,6 +181,17 @@ func (c *Core) Stop() error {
 	return err
 }
 
+// Token returns the secret every request to the server must carry as a bearer credential, or the
+// empty string when none is running. It is new on every start.
+func (c *Core) Token() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.running == nil || c.running.isDown.Load() {
+		return ""
+	}
+	return c.running.token
+}
+
 // Port returns the listening port of the server, or zero when none is running.
 func (c *Core) Port() int {
 	c.mu.Lock()
@@ -218,7 +236,7 @@ func allowOrigin(next http.Handler) http.Handler {
 		head.Set("Access-Control-Allow-Origin", Page)
 		head.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 		head.Set("Access-Control-Allow-Headers", strings.Join([]string{
-			"Content-Type", "Connect-Protocol-Version", "Connect-Timeout-Ms",
+			"Authorization", "Content-Type", "Connect-Protocol-Version", "Connect-Timeout-Ms",
 			"Connect-Accept-Encoding", "Connect-Content-Encoding", "X-User-Agent",
 		}, ", "))
 		head.Set("Access-Control-Expose-Headers", strings.Join([]string{

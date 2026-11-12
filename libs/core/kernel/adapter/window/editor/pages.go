@@ -16,6 +16,7 @@ import (
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -102,6 +103,17 @@ func (s statePages) GetPlaying() *atomic.Pointer[Loopback] { return &s.state.Pla
 // Naming none builds the whole schema.
 func (o *Installation) NewHandler(files http.Handler, named ...string) http.Handler {
 	return o.pages.newHandler(files, named...)
+}
+
+// NewLocalHandler is NewHandler for a handler behind a socket that other processes on the machine can
+// reach. It answers only a request that carries the returned token as a bearer credential, and the
+// token is new on every call.
+func (o *Installation) NewLocalHandler(files http.Handler, named ...string) (handler http.Handler, token string, err error) {
+	token, err = localendpoint.NewToken()
+	if err != nil {
+		return nil, "", err
+	}
+	return localendpoint.RequireBearerToken(token, o.pages.newHandler(files, named...)), token, nil
 }
 
 func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {

@@ -2,7 +2,6 @@ package supervision
 
 import (
 	"context"
-	"crypto/subtle"
 	"net/http"
 	"time"
 
@@ -21,10 +20,6 @@ func NoEndpoint() transport.Endpoint {
 // IsNoEndpoint reports whether the endpoint is the one of a plugin that has none.
 func IsNoEndpoint(e transport.Endpoint) bool {
 	return e.Host == "" && e.Port == 0
-}
-
-func tokensEqual(a, b string) bool {
-	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }
 
 func createRPCShutdown(endpoint transport.Endpoint, client *http.Client, gracePeriod time.Duration) func(context.Context) error {

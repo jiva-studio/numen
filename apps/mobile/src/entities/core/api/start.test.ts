@@ -8,7 +8,7 @@ import { startCore } from './start'
 const PORT = 41234
 
 const plugin = vi.hoisted(() => ({
-  start: vi.fn(async () => ({ port: 41234, dir: '/data/vault' })),
+  start: vi.fn(async () => ({ port: 41234, dir: '/data/vault', token: 't0ken' })),
 }))
 
 vi.mock('@capacitor/core', () => ({
@@ -25,8 +25,10 @@ afterEach(() => {
 describe('reaching the core', () => {
   it('starts the core via the NumenCore plugin and requests each service on loopback at its port', async () => {
     const request: string[] = []
-    vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
+    const authorized: (string | null)[] = []
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
       request.push(input instanceof Request ? input.url : String(input))
+      authorized.push(new Headers(init?.headers).get('Authorization'))
       throw new Error('speech recognition failed: no speech detected')
     })
 
@@ -40,5 +42,6 @@ describe('reaching the core', () => {
       `http://127.0.0.1:${PORT}/numen.v1.VaultService/GetVaultState`,
       `http://127.0.0.1:${PORT}/numen.v1.NoteService/GetOpeningNote`,
     ])
+    expect(authorized).toEqual(['Bearer t0ken', 'Bearer t0ken'])
   })
 })

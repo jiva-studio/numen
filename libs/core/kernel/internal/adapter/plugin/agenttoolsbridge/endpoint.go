@@ -2,22 +2,20 @@ package agenttoolsbridge
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/subtle"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 )
 
 // shutdownLimit is how long the calls in flight have to finish when the endpoint closes. A connection
@@ -72,7 +70,7 @@ type toolCaller interface {
 }
 
 func serveEndpoint(ctx context.Context, tools []tool, scope callScope, caller toolCaller) (*endpoint, error) {
-	token, err := createToken()
+	token, err := localendpoint.NewToken()
 	if err != nil {
 		return nil, err
 	}
@@ -224,28 +222,14 @@ func newErrorResult(text string) *sdk.CallToolResult {
 	return &sdk.CallToolResult{IsError: true, Content: []sdk.Content{&sdk.TextContent{Text: text}}}
 }
 
-func createToken() (string, error) {
-	raw := make([]byte, 32)
-	if _, err := rand.Read(raw); err != nil {
-		return "", fmt.Errorf("create the token of the agent's tools: %w", err)
-	}
-	return hex.EncodeToString(raw), nil
-}
-
 func requireToken(token string, next http.Handler) http.Handler {
-	expected := []byte("Bearer " + token)
+	authenticated := localendpoint.RequireBearerToken(token, next)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if origins, hasOrigin := r.Header["Origin"]; hasOrigin && (len(origins) != 1 || !isLoopbackOrigin(origins[0])) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
-		presented := strings.TrimSpace(r.Header.Get("Authorization"))
-		if subtle.ConstantTimeCompare([]byte(presented), expected) != 1 {
-			w.Header().Set("WWW-Authenticate", `Bearer realm="numen"`)
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-			return
-		}
-		next.ServeHTTP(w, r)
+		authenticated.ServeHTTP(w, r)
 	})
 }
 
