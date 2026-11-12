@@ -95,6 +95,13 @@ describe('the page of a plugin opened after another', () => {
     fileCounts.answer(FIRST.id, 7)
     readmes.answer(FIRST.id, 'First agent readme.')
     await flushPromises()
+    for (const name of ['About', 'Data']) {
+      await wrapper
+        .findAll('[role="tab"]')
+        .find((one) => one.text() === name)
+        ?.trigger('click')
+      record()
+    }
     observer.disconnect()
 
     const text = history.join('\n')

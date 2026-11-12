@@ -3,10 +3,13 @@
  * operations on a plugin that belong to its page. Each answer is mapped into the types of this
  * entity.
  */
+import { PLUGIN_CONTRIBUTION_KIND, type PluginContributionKindValue } from '@numen/core-client'
 import { settingsService } from '@/shared/api/clients'
 import type { JsonValue } from '@/shared/api/json'
 import type {
   Configuration,
+  PluginContribution,
+  PluginContributionKind,
   PluginSettingCondition,
   PluginSettingInfo,
   SettingEdit,
@@ -27,6 +30,46 @@ const readCondition = (
 type ServedSettings = Awaited<ReturnType<typeof settingsService.getSettings>>
 type ServedPlugin = NonNullable<ServedSettings['plugins']>[number]
 type ServedSetting = NonNullable<ServedPlugin['settings']>[number]
+type ServedContribution = NonNullable<ServedPlugin['contributions']>[number]
+
+type ContributionKinds = Record<PluginContributionKindValue, PluginContributionKind | null>
+
+const CONTRIBUTION_KINDS: Readonly<ContributionKinds> = {
+  [PLUGIN_CONTRIBUTION_KIND.UNSPECIFIED]: null,
+  [PLUGIN_CONTRIBUTION_KIND.COMMANDS]: 'commands',
+  [PLUGIN_CONTRIBUTION_KIND.KEYBINDINGS]: 'keybindings',
+  [PLUGIN_CONTRIBUTION_KIND.TAB_KINDS]: 'tabKinds',
+  [PLUGIN_CONTRIBUTION_KIND.READERS]: 'readers',
+  [PLUGIN_CONTRIBUTION_KIND.HANDLERS]: 'handlers',
+  [PLUGIN_CONTRIBUTION_KIND.TRIGGERS]: 'triggers',
+  [PLUGIN_CONTRIBUTION_KIND.TEXT_KINDS]: 'textKinds',
+  [PLUGIN_CONTRIBUTION_KIND.NOTE_TYPES]: 'noteTypes',
+  [PLUGIN_CONTRIBUTION_KIND.THEMES]: 'themes',
+  [PLUGIN_CONTRIBUTION_KIND.SLOTS]: 'slots',
+  [PLUGIN_CONTRIBUTION_KIND.LISTENERS]: 'listeners',
+  [PLUGIN_CONTRIBUTION_KIND.VIEW_CAPABILITIES]: 'viewCapabilities',
+  [PLUGIN_CONTRIBUTION_KIND.DROP_HANDLERS]: 'dropHandlers',
+  [PLUGIN_CONTRIBUTION_KIND.FRAME_ORIGINS]: 'frameOrigins',
+  [PLUGIN_CONTRIBUTION_KIND.CONNECTION_TYPES]: 'connectionTypes',
+  [PLUGIN_CONTRIBUTION_KIND.OPERATIONS]: 'operations',
+  [PLUGIN_CONTRIBUTION_KIND.PERMISSIONS]: 'permissions',
+  [PLUGIN_CONTRIBUTION_KIND.DEPENDENCIES]: 'dependencies',
+  [PLUGIN_CONTRIBUTION_KIND.SERVICES]: 'services',
+  [PLUGIN_CONTRIBUTION_KIND.CAPABILITIES]: 'capabilities',
+  [PLUGIN_CONTRIBUTION_KIND.ACTIVATION_EVENTS]: 'activationEvents',
+}
+
+const readContributionItem = (item: ServedContribution['items'][number]) => ({
+  text: item.text,
+  detail: item.detail,
+  keys: item.keys,
+})
+
+const readContributions = (served: readonly ServedContribution[]): readonly PluginContribution[] =>
+  served.flatMap((one) => {
+    const kind = CONTRIBUTION_KINDS[one.kind]
+    return kind === null ? [] : [{ kind, items: one.items.map(readContributionItem) }]
+  })
 
 const readJson = (text: string): JsonValue | undefined => {
   // Stryker disable next-line ConditionalExpression: empty text fails JSON.parse and leaves the value undefined
@@ -94,6 +137,8 @@ export const getSettings = async (): Promise<Configuration> => {
       hasBackend: p.hasBackend,
       readers: p.readers.map((one) => ({ id: one.id, extensions: one.extensions })),
       settingsViews: p.settingsViews.map((one) => ({ id: one.id, title: one.title })),
+      contributions: readContributions(p.contributions),
+      isOffByDefault: p.isOffByDefault,
       settings: p.settings.map(readPluginSetting),
     })),
     app: answer.app.map(readPluginSetting),

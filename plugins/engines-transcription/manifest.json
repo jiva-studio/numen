@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.transcription",
   "name": "Audio/Video Transcription",
-  "version": "2026.11.19",
+  "version": "2026.11.20",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "capabilities": ["tools"],
@@ -137,7 +137,7 @@
       "key": "model",
       "type": "enum",
       "title": "Model",
-      "description": "Speech recognition model downloaded from Hugging Face. Parakeet v3 supports 25 European languages with automatic language detection; Parakeet v2 is English-only.",
+      "description": "From Hugging Face. Parakeet v3: 25 European languages, v2: English only",
       "default": "parakeet-tdt-0.6b-v3-int8",
       "options": [
         {
@@ -170,7 +170,7 @@
       "key": "transcribeAutomatically",
       "type": "boolean",
       "title": "Transcribe automatically",
-      "description": "Transcribe every recording in the vault that has no transcript. A transcript removed with Delete text is made again",
+      "description": "Transcribe every recording in the vault that has no transcript",
       "default": false
     }
   ]

@@ -124,6 +124,11 @@
   white-space: nowrap;
 }
 
+.task-item__label--wrapped {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .task-item__detail {
   font-size: var(--numen-text-1);
   color: var(--numen-hushed);

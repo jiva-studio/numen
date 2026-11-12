@@ -139,7 +139,7 @@ const render =
     components: { ConnectionsPage },
     setup: () => ({ connections: createPage(connections, types) }),
     template: `
-      <div class="numen" style="container-type:inline-size;inline-size:26rem;padding:1rem;background:var(--numen-surface);--settings-measure:54rem;--settings-apart:1.75rem;--settings-choice:16rem">
+      <div class="numen" style="container:settings / inline-size;inline-size:26rem;padding:1rem;background:var(--numen-surface)">
         <ConnectionsPage :connections="connections" />
       </div>
     `,

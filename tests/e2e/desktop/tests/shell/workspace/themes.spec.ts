@@ -5,7 +5,7 @@ import { readOwner, writeSetting } from '../../support/vault.js'
 
 const openSystemSettings = async (page: Page) => {
   await runCommand(page, 'Open settings', /^Open settings$/)
-  const settings = page.getByRole('tabpanel', { name: /Settings/ })
+  const settings = page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
   await settings.getByRole('button', { name: /^System/ }).click()
   return settings
 }

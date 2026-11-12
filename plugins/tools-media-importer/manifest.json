@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.11.18",
+  "version": "2026.11.19",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "capabilities": ["tools"],
@@ -107,7 +107,7 @@
       "key": "captions",
       "type": "string",
       "title": "Caption languages",
-      "description": "Caption languages in order of preference, comma-separated",
+      "description": "Preferred caption languages, comma-separated",
       "default": ""
     },
     {
@@ -121,14 +121,14 @@
       "key": "downloadCaptionsAutomatically",
       "type": "boolean",
       "title": "Download captions automatically",
-      "description": "Download the captions or the article of every link note that has none. A text removed with Delete text is downloaded again",
+      "description": "Download captions or the article of every link note that has none",
       "default": false
     },
     {
       "key": "copyMaxSizeMb",
       "type": "number",
       "title": "Maximum download size",
-      "description": "Maximum video download size in megabytes; 0 for no limit",
+      "description": "Largest video to download, in MB; 0 for no limit",
       "default": 500,
       "min": 0,
       "max": 100000,

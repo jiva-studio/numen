@@ -55,6 +55,9 @@ const parseEditValue = (edit: SettingEdit): JsonValue | undefined => {
 /** The first element of the path of a setting of the shell. */
 const OWNER_APP = 'app'
 
+/** The field of a plugin's settings the host keeps: whether the plugin runs. */
+const HOST_FIELD_ENABLED = 'enabled'
+
 const getDeclaredDefault = (
   app: readonly PluginSettingInfo[],
   plugins: readonly PluginInfo[],
@@ -63,8 +66,9 @@ const getDeclaredDefault = (
   const [owner, ...key] = path
   if (owner === OWNER_APP) return app.find((one) => one.key === key.join('.'))?.default
   if (key.length !== 1) return undefined
-  return plugins.find((one) => one.id === owner)?.settings.find((one) => one.key === key[0])
-    ?.default
+  const plugin = plugins.find((one) => one.id === owner)
+  if (plugin?.isOffByDefault && key[0] === HOST_FIELD_ENABLED) return false
+  return plugin?.settings.find((one) => one.key === key[0])?.default
 }
 
 const askVault = async (): Promise<Configuration | undefined> => {

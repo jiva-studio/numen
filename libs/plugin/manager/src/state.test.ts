@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PluginHealth } from './pluginInfo'
-import { getPluginState, getWorstItem } from './state'
+import { getPluginState, getWorstItem, hasStateLabel } from './state'
 
 const item = (key: string, severity: PluginHealth['severity']): PluginHealth => ({
   key,
@@ -41,5 +41,19 @@ describe('getPluginState', () => {
   it('follows the enabled setting for a plugin without items', () => {
     expect(getPluginState(true)).toBe('enabled')
     expect(getPluginState(false, [])).toBe('disabled')
+  })
+})
+
+describe('the state label of a plugin row', () => {
+  it('names a plugin that is not installed, has an error or has a warning', () => {
+    expect(hasStateLabel('available')).toBe(true)
+    expect(hasStateLabel('error')).toBe(true)
+    expect(hasStateLabel('warning')).toBe(true)
+  })
+
+  it('names no plugin that runs, is off or stopped', () => {
+    expect(hasStateLabel('enabled')).toBe(false)
+    expect(hasStateLabel('disabled')).toBe(false)
+    expect(hasStateLabel('stopped')).toBe(false)
   })
 })

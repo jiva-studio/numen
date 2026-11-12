@@ -35,6 +35,14 @@ func TestNewWirePluginInfos_CarriesSettingsViews(t *testing.T) {
 	}
 }
 
+func TestNewWirePluginInfos_CarriesIsOffByDefault(t *testing.T) {
+	wire := NewWirePluginInfos([]plugin.Info{{ID: "a.b", IsOffByDefault: true}, {ID: "c.d"}})
+
+	if !wire[0].GetIsOffByDefault() || wire[1].GetIsOffByDefault() {
+		t.Errorf("the plugins carry is_off_by_default %v and %v", wire[0].GetIsOffByDefault(), wire[1].GetIsOffByDefault())
+	}
+}
+
 func TestNewWirePluginInfos_CarriesMultiple(t *testing.T) {
 	wire := NewWirePluginInfos([]plugin.Info{{
 		ID: "a.b",

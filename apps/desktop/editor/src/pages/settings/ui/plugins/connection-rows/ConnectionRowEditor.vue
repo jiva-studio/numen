@@ -233,7 +233,7 @@ const columns = computed(() =>
   min-inline-size: 0;
 }
 
-@container (max-width: 34rem) {
+@container settings (max-width: 34rem) {
   .connection-rows__fields {
     grid-template-columns: minmax(0, 1fr);
   }

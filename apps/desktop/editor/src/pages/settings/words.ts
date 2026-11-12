@@ -12,8 +12,7 @@ export const WORDS = {
   searchConnections: 'Search connections',
   /** The button of the fix of a health item that names no title of its own. */
   healthAction: 'Fix',
-  /** Accessible name of the info button next to a setting title. */
-  aboutSetting: (name: string) => `About ${name}`,
+  resetSettingOf: (name: string) => `Reset ${name} to its default`,
   /** The page of connections. */
   secretMasked: '••••••••',
   connectionAdd: 'Add connection',
@@ -37,8 +36,6 @@ export const WORDS = {
   connectionDeleteFailed: 'The connection was not deleted:',
   connectionType: 'Type',
   connectionName: 'Name',
-  connectionAddress: 'Address',
-  connectionAddressFixed: 'The address is part of this type.',
   connectionAddressChanged: 'Changing the address removes the stored key. Enter it again.',
   connectionAgentNote: (pluginName: string) =>
     `${pluginName} runs the program on this computer with your own login. No other field is needed.`,
@@ -75,10 +72,7 @@ export const WORDS = {
     `The values of ${title} could not be listed: ${detail}`,
   /** title: what a plugin titles the operation, or its name. */
   connectionCannot: (title: string) => `This type cannot ${title}`,
-  /** The label of the action that opens a plugin's settings. */
-  configure: 'Configure',
   /** A plugin's setting of type file or folder. */
-  pathNone: 'None',
   pathChoose: 'Choose…',
   pathAdd: 'Add…',
   pathClear: 'Clear',

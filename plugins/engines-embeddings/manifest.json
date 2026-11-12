@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.embeddings",
   "name": "Vector Embeddings",
-  "version": "2026.11.13",
+  "version": "2026.11.14",
   "protocol": 1,
   "description": "Meaning-based search across your notes, books, and recordings",
   "capabilities": ["search.source"],
@@ -41,7 +41,7 @@
       "key": "model",
       "type": "string",
       "title": "Model",
-      "description": "Local model identifier. A local model needs a profile: the listed ones ship with the plugin, and a profile file of your own in the profiles folder of the plugin data directory adds more (see the plugin README). Local models are downloaded from Hugging Face.",
+      "description": "Local embedding model from Hugging Face; it needs a profile",
       "default": "Xenova/multilingual-e5-small",
       "options": [
         {
@@ -69,7 +69,7 @@
       "key": "connections",
       "type": "connections",
       "title": "Connection",
-      "description": "Changing the connection or the model indexes the vault again.",
+      "description": "A new connection or model reindexes the vault",
       "operations": ["llm.embed", "llm.profile"],
       "max": 1,
       "when": {
@@ -81,7 +81,7 @@
       "key": "minChunkLength",
       "type": "number",
       "title": "Smallest piece of text to index for meaning",
-      "description": "Pieces of text shorter than this many characters get no vector for the search by meaning, so page numbers and running heads do not crowd out real answers. They stay searchable by their words. A note shorter than this is found by its words too. 0 gives every piece a vector",
+      "description": "Characters a piece needs for a vector; shorter ones are found by words",
       "default": 40,
       "min": 0,
       "max": 1000,
@@ -91,7 +91,7 @@
       "key": "chunkTokens",
       "type": "number",
       "title": "Longest chunk of a note, in tokens",
-      "description": "A note is cut into chunks of at most this many tokens, and each chunk gets a vector. It never exceeds the input limit of the model. A smaller value gives more precise passages and more vectors. A change cuts the notes again; vectors for texts that are unchanged are kept.",
+      "description": "Largest piece of a note, in tokens, that gets one vector",
       "default": 256,
       "min": 16,
       "max": 8192,

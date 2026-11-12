@@ -78,15 +78,16 @@ describe('the settings opened at a setting of a plugin', () => {
     const tab = mount(SettingsTab, { props: { state: settings.state }, attachTo: document.body })
     await flushPromises()
 
-    expect(tab.find('.plugin-detail__title').text()).toContain('Atlas')
-    expect(tab.find('.plugin-health').text()).toContain('Choose a connection')
+    expect(tab.get('h2').text()).toBe('Atlas')
+    expect(tab.get('[role="alert"]').text()).toContain('Choose a connection')
+    expect(tab.get('[role="tab"][aria-selected="true"]').text()).toBe('Settings')
     const marked = tab.findAllComponents(SettingRow).filter((one) => one.props('isMarked'))
     expect(marked.map((one) => one.props('name'))).toStrictEqual(['Source'])
     expect(scrolled).toStrictEqual(['Source'])
     tab.unmount()
   })
 
-  it('list the plugin with the badge of its worst item', async () => {
+  it('list the plugin with the label of its worst item', async () => {
     const installation = createInstallation({
       plugins: ref([ATLAS]),
       health: ref([CONNECTION]),
@@ -97,7 +98,8 @@ describe('the settings opened at a setting of a plugin', () => {
     const tab = mount(SettingsTab, { props: { state: settings.state }, attachTo: document.body })
     await flushPromises()
 
-    expect(tab.find('.plugin-row__badge--error').text()).toBe('Error')
+    const row = tab.get('button[aria-label="Atlas, Error"]')
+    expect(row.text()).toContain('Error')
     tab.unmount()
   })
 })

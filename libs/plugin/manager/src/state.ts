@@ -27,3 +27,8 @@ export const getPluginState = (
   if (worst) return worst.severity
   return isEnabled ? 'enabled' : 'disabled'
 }
+
+const LABELED_STATES: readonly PluginState[] = ['available', 'error', 'warning']
+
+/** Whether the row of a plugin in the state names the state. */
+export const hasStateLabel = (state: PluginState): boolean => LABELED_STATES.includes(state)

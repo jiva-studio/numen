@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.acp",
   "name": "ACP Agents",
-  "version": "2026.11.14",
+  "version": "2026.11.15",
   "protocol": 1,
   "description": "External AI assistants via the Agent Client Protocol: Claude Code, Codex, Antigravity and any other ACP program",
   "targets": ["desktop.editor", "desktop.flashcards"],
@@ -154,7 +154,7 @@
       "key": "requestTimeout",
       "type": "number",
       "title": "Request timeout",
-      "description": "Seconds to wait for the program to answer a request from a connection, or to open the session of a task. Without a value, it waits 120 seconds.",
+      "description": "Seconds to wait for an answer or a new session; empty waits 120",
       "min": 1,
       "max": 3600,
       "step": 1

@@ -90,6 +90,49 @@ export interface PluginInfo {
   readonly capabilities: readonly string[]
   readonly readers?: readonly PluginReader[]
   readonly settingsViews?: readonly PluginSettingsViewInfo[]
+  readonly contributions?: readonly PluginContribution[]
+  /** Whether the plugin is off while its settings hold no enabled value. */
+  readonly isOffByDefault?: boolean
+}
+
+/** A section of a manifest, named after its key, whose entries the plugin page lists. */
+export type PluginContributionKind =
+  | 'commands'
+  | 'keybindings'
+  | 'tabKinds'
+  | 'readers'
+  | 'handlers'
+  | 'triggers'
+  | 'textKinds'
+  | 'noteTypes'
+  | 'themes'
+  | 'slots'
+  | 'listeners'
+  | 'viewCapabilities'
+  | 'dropHandlers'
+  | 'frameOrigins'
+  | 'connectionTypes'
+  | 'operations'
+  | 'permissions'
+  | 'dependencies'
+  | 'services'
+  | 'capabilities'
+  | 'activationEvents'
+
+/** One section of a manifest with its entries, in the order the manifest declares them. */
+export interface PluginContribution {
+  readonly kind: PluginContributionKind
+  readonly items: readonly PluginContributionItem[]
+}
+
+/**
+ * One entry of a section: its title, or its id where it has none; its id or target as the manifest
+ * writes it; and for a command or a keybinding the shortcut, such as `mod+shift+a`.
+ */
+export interface PluginContributionItem {
+  readonly text: string
+  readonly detail: string
+  readonly keys: string
 }
 
 /** A view a plugin's frontend registers under `id` and the settings form mounts. */

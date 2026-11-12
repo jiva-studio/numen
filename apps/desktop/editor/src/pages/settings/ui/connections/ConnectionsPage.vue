@@ -6,6 +6,7 @@
  */
 import { nextTick, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
+import { BreadcrumbBar } from '@numen/plugin-manager'
 import { Button, runInBackground } from '@numen/ui'
 import type { ConnectionInfo } from '@/entities/connection'
 import type { InstallationConnections } from '../../types'
@@ -30,6 +31,10 @@ let rowOpener: HTMLElement | null = null
 let deleteOpener: HTMLElement | null = null
 
 /* -------------------------------- Handlers -------------------------------- */
+function onBack(): void {
+  emit('back')
+}
+
 function onCloseDialog(): void {
   const wasEditing = dialog.editing.value !== null
   dialog.close()
@@ -65,9 +70,7 @@ function onCancelDelete(): void {
 
 <template>
   <div class="connections-page">
-    <Button variant="ghost" size="small" class="connections-page__back" @click="emit('back')">
-      &larr; {{ words.backToPlugins }}
-    </Button>
+    <BreadcrumbBar :current="words.connections" @back="onBack" />
 
     <div class="connections-page__head">
       <Button
@@ -81,7 +84,11 @@ function onCancelDelete(): void {
       </Button>
     </div>
 
-    <div v-if="page.connections.value.length > 0" class="connections-page__list" role="list">
+    <div
+      v-if="page.connections.value.length > 0"
+      class="settings-card connections-page__list"
+      role="list"
+    >
       <ConnectionRow
         v-for="connection in page.connections.value"
         :key="connection.id"
@@ -133,37 +140,25 @@ function onCancelDelete(): void {
   margin-inline: auto;
 }
 
-.connections-page__back {
-  align-self: flex-start;
-  margin-block-end: 0.75rem;
-}
-
 .connections-page__head {
   display: flex;
   gap: 0.75rem;
   align-items: center;
   justify-content: flex-end;
-}
-
-.connections-page__head {
   margin-block-end: var(--settings-apart);
 }
 
-
 .connections-page__legend {
-  margin: 0.25rem 0 var(--settings-apart);
+  margin: 0.75rem 0 0;
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
-}
-
-.connections-page__legend {
-  margin-block: 0.75rem 0;
 }
 
 .connections-page__list {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  padding: 0;
+  overflow: hidden;
 }
 
 .connections-page__empty {

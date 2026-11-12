@@ -129,7 +129,58 @@ message PluginInfo {
   repeated PluginSettingsView settings_views = 13;
   // Whether the plugin declares a backend the host starts.
   bool has_backend = 14;
+  // What the manifest declares, one entry per section that declares anything, in the order of
+  // PluginContributionKind.
+  repeated PluginContribution contributions = 15;
+  // Whether the plugin stays off until the person enables it, when its settings hold no enabled value.
+  bool is_off_by_default = 16;
   reserved 10;
+}
+
+// PluginContribution is one section of a plugin's manifest and the entries it declares, in the
+// order the manifest declares them.
+message PluginContribution {
+  PluginContributionKind kind = 1;
+  repeated PluginContributionItem items = 2;
+}
+
+// PluginContributionItem is one entry of a section of a manifest.
+message PluginContributionItem {
+  // The title of the entry, or its id where it declares no title.
+  string text = 1;
+  // The id or the target of the entry as the manifest writes it. Empty where it has none.
+  string detail = 2;
+  // The shortcut of a command or a keybinding as the manifest writes it, such as mod+shift+a. Empty
+  // for every other entry.
+  string keys = 3;
+}
+
+// PluginContributionKind is a section of a manifest, named after its key. The zero value means
+// nothing. KEYBINDINGS lists only the bindings of commands the plugin does not declare; a binding
+// of a command it declares is the keys of that command.
+enum PluginContributionKind {
+  PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED = 0;
+  PLUGIN_CONTRIBUTION_KIND_COMMANDS = 1;
+  PLUGIN_CONTRIBUTION_KIND_KEYBINDINGS = 2;
+  PLUGIN_CONTRIBUTION_KIND_TAB_KINDS = 3;
+  PLUGIN_CONTRIBUTION_KIND_READERS = 4;
+  PLUGIN_CONTRIBUTION_KIND_HANDLERS = 5;
+  PLUGIN_CONTRIBUTION_KIND_TRIGGERS = 6;
+  PLUGIN_CONTRIBUTION_KIND_TEXT_KINDS = 7;
+  PLUGIN_CONTRIBUTION_KIND_NOTE_TYPES = 8;
+  PLUGIN_CONTRIBUTION_KIND_THEMES = 9;
+  PLUGIN_CONTRIBUTION_KIND_SLOTS = 10;
+  PLUGIN_CONTRIBUTION_KIND_LISTENERS = 11;
+  PLUGIN_CONTRIBUTION_KIND_VIEW_CAPABILITIES = 12;
+  PLUGIN_CONTRIBUTION_KIND_DROP_HANDLERS = 13;
+  PLUGIN_CONTRIBUTION_KIND_FRAME_ORIGINS = 14;
+  PLUGIN_CONTRIBUTION_KIND_CONNECTION_TYPES = 15;
+  PLUGIN_CONTRIBUTION_KIND_OPERATIONS = 16;
+  PLUGIN_CONTRIBUTION_KIND_PERMISSIONS = 17;
+  PLUGIN_CONTRIBUTION_KIND_DEPENDENCIES = 18;
+  PLUGIN_CONTRIBUTION_KIND_SERVICES = 19;
+  PLUGIN_CONTRIBUTION_KIND_CAPABILITIES = 20;
+  PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS = 21;
 }
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.
