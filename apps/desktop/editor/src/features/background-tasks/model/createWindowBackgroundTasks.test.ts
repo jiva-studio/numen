@@ -122,7 +122,7 @@ describe('the background tasks of the window', () => {
   it('list an error without a fix where the window has no handler for its command', async () => {
     const { read, host, runs } = setup('', [CONNECTION], [])
 
-    expect(read()[1]?.action).toStrictEqual({ label: '' })
+    expect(read()[1]?.actionLabel).toBe('')
     host.runAction('health:org.example.atlas:connection')
     await nextTick()
     expect(runs).toStrictEqual([])
