@@ -37,18 +37,20 @@ func (a *AuthInterceptor) checkToken(header http.Header) error {
 	token := a.token
 	a.mu.RUnlock()
 
-	if token == "" {
-		return connect.NewError(connect.CodeUnauthenticated, ErrUnauthorized)
-	}
-	authHeader := header.Get("Authorization")
-	if !strings.HasPrefix(authHeader, "Bearer ") {
-		return connect.NewError(connect.CodeUnauthenticated, ErrUnauthorized)
-	}
-	received := strings.TrimPrefix(authHeader, "Bearer ")
-	if subtle.ConstantTimeCompare([]byte(received), []byte(token)) != 1 {
+	if !HasBearerToken(header, token) {
 		return connect.NewError(connect.CodeUnauthenticated, ErrUnauthorized)
 	}
 	return nil
+}
+
+// HasBearerToken reports whether the Authorization header carries the token as a bearer credential,
+// compared in constant time. An empty token matches no header.
+func HasBearerToken(header http.Header, token string) bool {
+	if token == "" {
+		return false
+	}
+	bearer, isBearer := strings.CutPrefix(header.Get("Authorization"), "Bearer ")
+	return isBearer && subtle.ConstantTimeCompare([]byte(bearer), []byte(token)) == 1
 }
 
 // WrapUnary wraps unary RPC handlers with token verification.

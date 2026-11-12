@@ -8,6 +8,9 @@ on:
       core:
         type: boolean
         required: true
+      atomicfile:
+        type: boolean
+        required: true
       protocol:
         type: boolean
         required: true
@@ -138,6 +141,41 @@ jobs:
             (cd "$module" && go test ${RACE:+"$RACE"} ./...)
             echo "::endgroup::"
           done
+
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-key: ${{ steps.go.outputs.cache-key }}
+
+  # libs/atomicfile replaces files with a different call on Windows, and the platforms of core-test run there only on request.
+  atomicfile-windows:
+    name: Atomic File (Windows)
+    if: inputs.atomicfile
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+        working-directory: libs/atomicfile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: libs/atomicfile/go.mod
+          cache-key: atomicfile-windows
+
+      # A Windows runner checks the repository out on another drive than its temporary folder.
+      - name: Configure temporary directory
+        run: |
+          echo "TMP=$RUNNER_TEMP" >> "$GITHUB_ENV"
+          echo "TEMP=$RUNNER_TEMP" >> "$GITHUB_ENV"
+
+      - name: Run Go tests
+        run: go test ./...
 
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache
