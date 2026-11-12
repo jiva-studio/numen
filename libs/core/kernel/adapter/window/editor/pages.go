@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -63,12 +64,13 @@ func NewRoute(path string, handler http.Handler, service any) Route {
 // pageSet is what answers the requests that reach a window: the routes of its
 // services and the services beside them.
 type pageSet struct {
-	gate      *wire.Gate
-	window    pageWindow
-	routes    []Route
-	themes    numenv1connect.ThemeServiceHandler
-	plugins   PluginServices
-	pluginDir func(id string) (string, bool)
+	gate       *wire.Gate
+	window     pageWindow
+	routes     []Route
+	themes     numenv1connect.ThemeServiceHandler
+	plugins    PluginServices
+	pluginDir  func(id string) (string, bool)
+	mediaTypes *file.GetMediaType
 }
 
 // pageWindow is what the pages and the installation need of the window besides its gate: the vault it
@@ -225,7 +227,7 @@ func (s pageSet) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescap
 		return false
 	}
 	defer closeAndReport(s.window.AddTask, file)
-	setAssetHeaders(w.Header(), info.Name())
+	setAssetHeaders(w.Header(), s.mediaTypes.Execute(info.Name()))
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 	return true
 }

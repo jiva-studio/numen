@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -78,16 +79,17 @@ type Installation struct {
 // errNoVault is returned for a vault query on a window with no vault open.
 var errNoVault = errors.New("the window has no vault")
 
-// NewInstallation makes the installation of a window over its state, the lifecycle of what it shows and
-// the import of dropped files. Nothing is served and no vault is open until Start.
-func NewInstallation(state *State, lifecycle Lifecycle, imports Importer, out io.Writer) *Installation {
+// NewInstallation makes the installation of a window over its state, the lifecycle of what it shows,
+// the import of dropped files and the content types vault files are served as. Nothing is served and no
+// vault is open until Start.
+func NewInstallation(state *State, lifecycle Lifecycle, imports Importer, mediaTypes *file.GetMediaType, out io.Writer) *Installation {
 	if lifecycle.NoteWritten != nil {
 		state.Writes.NotifyNoteWritten = lifecycle.NoteWritten
 	}
 	return &Installation{
 		lifecycle: lifecycle,
 		imports:   imports,
-		pages:     pageSet{gate: state.Gate, window: statePages{state: state}},
+		pages:     pageSet{gate: state.Gate, window: statePages{state: state}, mediaTypes: mediaTypes},
 		out:       out,
 	}
 }
