@@ -1,0 +1,15 @@
+/* The measures of the settings pages: the plugin list, a plugin page and the pages the
+   application draws beside them. */
+:where(:root) {
+  --settings-measure: 45rem;
+  --settings-card-pad: 1rem;
+  --settings-card-inset: 0.25rem;
+  --settings-row-min: 3.25rem;
+  --settings-row-pad: 0.75rem;
+  --settings-control: 16.25rem;
+  --settings-choice: 16rem;
+  --settings-value: 6rem;
+  --settings-apart: 1.75rem;
+  --settings-near: 0.375rem;
+  --settings-hover-bg: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 6%);
+}

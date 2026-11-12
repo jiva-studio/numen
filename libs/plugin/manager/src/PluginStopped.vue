@@ -17,7 +17,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const isDetailShown = ref(false)
+const isDetailExpanded = ref(false)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onRetry(): void {
@@ -25,16 +25,16 @@ function onRetry(): void {
 }
 
 function onToggleDetail(): void {
-  isDetailShown.value = !isDetailShown.value
+  isDetailExpanded.value = !isDetailExpanded.value
 }
 </script>
 
 <template>
-  <div class="plugin-stopped" role="group" :aria-label="words.pluginState.stopped">
+  <div class="settings-card plugin-stopped" role="group" :aria-label="words.pluginState.stopped">
     <TriangleAlert class="plugin-stopped__icon" :size="20" :stroke-width="1.75" aria-hidden="true" />
     <div class="plugin-stopped__text">
       <span class="plugin-stopped__reason">{{ props.item.text }}</span>
-      <code v-if="isDetailShown" class="plugin-stopped__detail">{{ props.item.detail }}</code>
+      <code v-if="isDetailExpanded" class="plugin-stopped__detail">{{ props.item.detail }}</code>
       <span class="plugin-stopped__actions">
         <button type="button" class="plugin-stopped__action" @click="onRetry">
           {{ words.pluginRetry }}
@@ -43,10 +43,10 @@ function onToggleDetail(): void {
           v-if="props.item.detail"
           type="button"
           class="plugin-stopped__action"
-          :aria-expanded="isDetailShown"
+          :aria-expanded="isDetailExpanded"
           @click="onToggleDetail"
         >
-          {{ isDetailShown ? words.pluginHideDetails : words.pluginShowDetails }}
+          {{ isDetailExpanded ? words.pluginHideDetails : words.pluginShowDetails }}
         </button>
       </span>
     </div>
@@ -58,12 +58,7 @@ function onToggleDetail(): void {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  margin-block-end: 1.5rem;
-  padding: var(--settings-card-pad, 1rem);
-  min-block-size: var(--settings-row-min, 3.25rem);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  background-color: var(--numen-raised);
+  padding: var(--settings-card-pad);
   color: var(--numen-ink);
 }
 

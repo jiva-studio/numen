@@ -41,6 +41,7 @@ const items = computed(() =>
 const health = computed(() =>
   getManagedHealth(items.value, props.plugin.id, props.manager.canRunCommand),
 )
+const isApple = computed(() => props.settings.getPlatform() === 'darwin')
 const marked = computed(() => [
   ...getMarkedSettings(items.value, props.plugin.id),
   ...(props.markedSetting ? [props.markedSetting] : []),
@@ -69,7 +70,7 @@ function onRunAction(key: string): void {
     :can-install="false"
     :has-settings="hasSettings"
     :health="health"
-    :initial-tab="props.markedSetting ? 'settings' : undefined"
+    :is-apple="isApple"
     @back="onBack"
     @toggle-enabled="setEnabled"
     @retry="retry"

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * Registry list of plugins: the System and Connections pages as two tiles, a banner for
- * each stopped plugin, then the plugin search and the plugin rows.
+ * The list of plugins: the System and Connections pages as two tiles, a card for each stopped
+ * plugin, then the search field and the plugin rows that match it.
  */
-import { computed, ref } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { ChevronRight, Search, TriangleAlert, X } from '@lucide/vue'
-import { getCategoryIcon } from './categoryIcons'
+import NavigationRow from './NavigationRow.vue'
 import PluginRow from './PluginRow.vue'
 import { getFilteredPluginItems, parsePluginQuery, type PluginFilterContext } from './filter'
 import type { PluginHealth } from './pluginInfo'
@@ -28,34 +28,22 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const searchInput = ref<HTMLInputElement | null>(null)
+const searchInput = useTemplateRef<HTMLInputElement>('searchInput')
 const filterContext: PluginFilterContext = { isEnabled: isPluginEnabled }
-
 const parsedQuery = computed(() => parsePluginQuery(searchQuery.value))
-
-const tiles = [
-  {
-    page: 'system',
-    name: words.systemSettings,
-    detail: words.systemSettingsDetail,
-  },
-  {
-    page: 'connections',
-    name: words.connections,
-    detail: words.connectionsDetail,
-  },
-]
-
-const shownPlugins = computed(() =>
+const filteredPlugins = computed(() =>
   getFilteredPluginItems(props.plugins, parsedQuery.value, filterContext),
 )
-
 const stoppedPlugins = computed(() =>
   props.plugins.flatMap((plugin) => {
     const item = getStartItem(props.health?.[plugin.id] ?? [])
     return item ? [{ plugin, item }] : []
   }),
 )
+const TILES = [
+  { page: 'system', name: words.systemSettings, detail: words.systemSettingsDetail },
+  { page: 'connections', name: words.connections, detail: words.connectionsDetail },
+]
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClearSearch(): void {
@@ -75,81 +63,68 @@ function onTogglePlugin(pluginId: string, isEnabled: boolean): void {
 function isPluginEnabled(pluginId: string): boolean {
   return props.enabled[pluginId] ?? true
 }
+
+function getReasonId(pluginId: string): string {
+  return `plugins-list-stopped-${pluginId.replaceAll('.', '-')}`
+}
 </script>
 
 <template>
-  <div class="plugins-list settings__plugins">
+  <div class="plugins-list">
     <div class="plugins-list__tiles">
-      <button
-        v-for="tile in tiles"
-        :key="tile.page"
-        type="button"
-        class="plugins-list__tile"
-        :class="`${tile.page}-row`"
-        @click="onSelectPlugin(tile.page)"
-      >
-        <span class="plugins-list__glyph" aria-hidden="true">
-          <component :is="getCategoryIcon(tile.page)" :size="20" :stroke-width="1.75" />
-        </span>
-        <span class="plugins-list__tile-text">
-          <span class="plugins-list__tile-name">{{ tile.name }}</span>
-          <span class="plugins-list__tile-detail">{{ tile.detail }}</span>
-        </span>
-      </button>
+      <div v-for="tile in TILES" :key="tile.page" class="settings-card plugins-list__tile">
+        <NavigationRow
+          :name="tile.name"
+          :detail="tile.detail"
+          :category="tile.page"
+          @select="onSelectPlugin(tile.page)"
+        />
+      </div>
     </div>
 
-    <div
+    <button
       v-for="{ plugin, item } in stoppedPlugins"
       :key="`stopped-${plugin.id}`"
-      class="plugins-list__alarm"
-      role="button"
-      tabindex="0"
+      type="button"
+      class="settings-card plugins-list__alarm"
       :aria-label="words.pluginStoppedBanner(plugin.name)"
+      :aria-describedby="getReasonId(plugin.id)"
       @click="onSelectPlugin(plugin.id)"
-      @keydown.enter.prevent="onSelectPlugin(plugin.id)"
-      @keydown.space.prevent="onSelectPlugin(plugin.id)"
     >
-      <TriangleAlert
-        class="plugins-list__alarm-icon"
-        :size="20"
-        :stroke-width="1.75"
-        aria-hidden="true"
-      />
+      <TriangleAlert class="plugins-list__alarm-icon" :size="20" aria-hidden="true" />
       <span class="plugins-list__alarm-text">
         <span class="plugins-list__alarm-name">{{ words.pluginStoppedBanner(plugin.name) }}</span>
-        {{ item.text }}
+        <span :id="getReasonId(plugin.id)">{{ item.text }}</span>
       </span>
-      <ChevronRight class="plugins-list__alarm-chevron" :size="16" aria-hidden="true" />
-    </div>
+      <ChevronRight class="plugins-list__chevron" :size="16" aria-hidden="true" />
+    </button>
 
-    <div v-if="props.plugins.length > 0" class="plugins-list__toolbar">
-      <span class="plugins-list__field">
-        <Search class="plugins-list__search-icon" :size="16" aria-hidden="true" />
-        <input
-          ref="searchInput"
-          v-model="searchQuery"
-          type="search"
-          :placeholder="words.searchPlugins"
-          class="plugins-list__search"
-          aria-label="Search plugins"
-          @keydown.esc="onClearSearch"
-        />
-        <button
-          v-if="searchQuery !== ''"
-          type="button"
-          class="plugins-list__clear"
-          :aria-label="words.clearSearch"
-          :title="words.clearSearch"
-          @click="onClearSearch"
-        >
-          <X :size="14" aria-hidden="true" />
-        </button>
-      </span>
-    </div>
+    <span v-if="props.plugins.length > 0" class="plugins-list__field">
+      <Search class="plugins-list__search-icon" :size="16" aria-hidden="true" />
+      <input
+        ref="searchInput"
+        v-model="searchQuery"
+        type="search"
+        :placeholder="words.searchPlugins"
+        class="plugins-list__search"
+        :aria-label="words.searchPluginsLabel"
+        @keydown.esc="onClearSearch"
+      />
+      <button
+        v-if="searchQuery !== ''"
+        type="button"
+        class="plugins-list__clear"
+        :aria-label="words.clearSearch"
+        :title="words.clearSearch"
+        @click="onClearSearch"
+      >
+        <X :size="14" aria-hidden="true" />
+      </button>
+    </span>
 
-    <div v-if="shownPlugins.length > 0" class="plugins-list__box">
+    <div v-if="filteredPlugins.length > 0" class="settings-card plugins-list__box">
       <PluginRow
-        v-for="item in shownPlugins"
+        v-for="item in filteredPlugins"
         :key="item.plugin.id"
         :plugin="item.plugin"
         :is-enabled="isPluginEnabled(item.plugin.id)"
@@ -159,10 +134,8 @@ function isPluginEnabled(pluginId: string): boolean {
       />
     </div>
 
-    <div v-if="props.plugins.length === 0" class="plugins-list__empty">
-      {{ words.noPlugins }}
-    </div>
-    <div v-else-if="shownPlugins.length === 0" class="plugins-list__box plugins-list__none">
+    <p v-if="props.plugins.length === 0" class="plugins-list__empty">{{ words.noPlugins }}</p>
+    <div v-else-if="filteredPlugins.length === 0" class="settings-card plugins-list__none">
       <Search class="plugins-list__none-icon" :size="24" :stroke-width="1.5" aria-hidden="true" />
       <span class="plugins-list__none-title">{{ words.noPluginsMatch(searchQuery.trim()) }}</span>
       <span class="plugins-list__none-hint">{{ words.noPluginsHint }}</span>
@@ -177,19 +150,62 @@ function isPluginEnabled(pluginId: string): boolean {
   gap: 0.625rem;
 }
 
-.plugins-list__toolbar {
+.plugins-list__tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.plugins-list__alarm {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-block-start: calc(1.5rem - 0.625rem);
+  gap: 0.75rem;
+  inline-size: 100%;
+  padding: var(--settings-card-pad);
+  color: var(--numen-ink);
+  font-family: inherit;
+  font-size: var(--numen-text-2);
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--numen-motion-hover) ease;
+}
+
+.plugins-list__alarm:hover {
+  background-color: var(--settings-hover-bg);
+}
+
+.plugins-list__alarm:focus-visible {
+  outline: var(--numen-stroke) solid var(--numen-accent);
+}
+
+.plugins-list__alarm-icon {
+  flex: none;
+  color: var(--numen-alarm);
+}
+
+.plugins-list__alarm-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-inline-size: 0;
+  color: var(--numen-hushed);
+}
+
+.plugins-list__alarm-name {
+  color: var(--numen-ink);
+  font-weight: 500;
+}
+
+.plugins-list__chevron {
+  flex: none;
+  color: var(--numen-hushed);
 }
 
 .plugins-list__field {
   position: relative;
-  flex: 1;
-  min-inline-size: 0;
   display: flex;
   align-items: center;
+  margin-block-start: 0.875rem;
 }
 
 .plugins-list__search-icon {
@@ -197,6 +213,28 @@ function isPluginEnabled(pluginId: string): boolean {
   inset-inline-start: 0.75rem;
   color: var(--numen-hushed);
   pointer-events: none;
+}
+
+.plugins-list__search {
+  box-sizing: border-box;
+  appearance: none;
+  inline-size: 100%;
+  block-size: var(--numen-action-size);
+  padding: 0 2.25rem;
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius);
+  background-color: var(--numen-field-bg);
+  color: var(--numen-ink);
+  font-family: inherit;
+  font-size: var(--numen-text-2);
+}
+
+.plugins-list__search::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.plugins-list__search:focus {
+  outline: var(--numen-stroke) solid var(--numen-accent);
 }
 
 .plugins-list__clear {
@@ -215,141 +253,13 @@ function isPluginEnabled(pluginId: string): boolean {
 }
 
 .plugins-list__clear:hover {
-  background-color: color-mix(in oklab, var(--numen-field-bg), var(--numen-ink) 8%);
+  background-color: var(--settings-hover-bg);
   color: var(--numen-ink);
 }
 
-.plugins-list__search::-webkit-search-cancel-button {
-  appearance: none;
-}
-
-.plugins-list__search {
-  box-sizing: border-box;
-  appearance: none;
-  inline-size: 100%;
-  block-size: var(--numen-action-size);
-  padding: 0 2.25rem;
-  background-color: var(--numen-field-bg);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  color: var(--numen-ink);
-  font-family: inherit;
-  font-size: var(--numen-text-2);
-}
-
-.plugins-list__search:focus {
-  outline: var(--numen-stroke) solid var(--numen-accent);
-}
-
-.plugins-list__tiles {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
-@container (max-width: 34rem) {
-  .plugins-list__tiles {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.plugins-list__tile {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: var(--settings-card-pad, 1rem);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  background-color: var(--numen-raised);
-  color: var(--numen-ink);
-  font-family: inherit;
-  font-size: var(--numen-text-2);
-  text-align: start;
-  cursor: pointer;
-  transition: border-color var(--numen-motion-hover) ease;
-}
-
-.plugins-list__tile:hover {
-  border-color: color-mix(in oklab, var(--numen-rule), var(--numen-ink) 25%);
-}
-
-.plugins-list__tile:focus-visible {
-  outline: var(--numen-stroke) solid var(--numen-accent);
-}
-
-.plugins-list__glyph {
-  display: grid;
-  place-items: center;
-  flex: none;
-  color: var(--numen-hushed);
-}
-
-.plugins-list__tile-text {
-  display: flex;
-  flex-direction: column;
-  min-inline-size: 0;
-}
-
-.plugins-list__tile-name {
-  font-weight: 500;
-}
-
-.plugins-list__tile-detail {
-  color: var(--numen-hushed);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.plugins-list__alarm {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  box-sizing: border-box;
-  min-block-size: var(--settings-row-min, 3.25rem);
-  padding: var(--settings-card-pad, 1rem);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  background-color: var(--numen-raised);
-  cursor: pointer;
-  user-select: none;
-  transition: background-color var(--numen-motion-hover) ease;
-}
-
-.plugins-list__alarm:hover {
-  background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 5%);
-}
-
-.plugins-list__alarm:focus-visible {
-  outline: var(--numen-stroke) solid var(--numen-accent);
-  outline-offset: calc(-1 * var(--numen-stroke));
-}
-
-.plugins-list__alarm-chevron {
-  flex: none;
-  color: var(--numen-hushed);
-}
-
-.plugins-list__alarm-icon {
-  flex: none;
-  color: var(--numen-alarm);
-}
-
-.plugins-list__alarm-text {
-  flex: 1;
-  min-inline-size: 0;
-  color: var(--numen-hushed);
-}
-
-.plugins-list__alarm-name {
-  color: var(--numen-ink);
-  font-weight: 500;
-}
-
+.plugins-list__tile,
 .plugins-list__box {
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  background-color: var(--numen-raised);
+  padding: 0;
   overflow: hidden;
 }
 
@@ -358,7 +268,7 @@ function isPluginEnabled(pluginId: string): boolean {
   flex-direction: column;
   align-items: center;
   gap: 0.375rem;
-  padding: 2.5rem var(--settings-card-pad, 1rem);
+  padding: 2.5rem var(--settings-card-pad);
   text-align: center;
 }
 
@@ -379,18 +289,14 @@ function isPluginEnabled(pluginId: string): boolean {
 }
 
 .plugins-list__empty {
+  margin: 0;
   padding-block: var(--numen-gutter);
   color: var(--numen-hushed);
 }
 
-@container (max-width: 34rem) {
-  .plugins-list__toolbar {
-    flex-wrap: wrap;
+@container settings (max-width: 34rem) {
+  .plugins-list__tiles {
+    grid-template-columns: minmax(0, 1fr);
   }
-
-  .plugins-list__field {
-    flex-basis: 100%;
-  }
-
 }
 </style>

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * One connection as a row of the list, drawn by the row of the plugin list: the name, the type as
- * the secondary text (with the address and the plugins that use it), and a chip for each operation or
+ * One connection as a row of the list, drawn by the navigation row of the plugin manager: the
+ * name, the type as the secondary text (with the address and the plugins that use it), and a chip
  * for the state. The whole row opens the connection for editing.
  */
 import { computed, useTemplateRef } from 'vue'
-import { SystemRow } from '@numen/plugin-manager'
+import { NavigationRow } from '@numen/plugin-manager'
 import type { ConnectionInfo, ConnectionTypeInfo } from '@/entities/connection'
 import {
   getAddressText,
@@ -29,7 +29,7 @@ const state = computed(() => getConnectionState(props.connection))
 const typeTitle = computed(() => props.type?.title ?? props.connection.typeId)
 const address = computed(() => getAddressText(props.type, props.connection))
 const usedBy = computed(() => getUsedByNames(props.connection.uses))
-const row = useTemplateRef<InstanceType<typeof SystemRow>>('row')
+const row = useTemplateRef<InstanceType<typeof NavigationRow>>('row')
 const detail = computed(() =>
   [
     typeTitle.value,
@@ -48,9 +48,9 @@ function onEdit(): void {
 </script>
 
 <template>
-  <SystemRow
+  <NavigationRow
     ref="row"
-    page="connections"
+    category="connections"
     :name="connection.name"
     :detail="detail"
     @select="onEdit"
@@ -65,7 +65,7 @@ function onEdit(): void {
         </span>
       </template>
     </template>
-  </SystemRow>
+  </NavigationRow>
 </template>
 
 <style scoped>

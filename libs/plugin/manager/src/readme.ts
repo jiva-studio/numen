@@ -1,32 +1,8 @@
-/**
- * Parses a plugin's README.md into a summary and expandable detail around `<!-- more -->`,
- * strips a leading `# Title` heading, and rewrites relative `assets/` links to `/plugin/<id>/assets/`.
- */
-export interface PluginReadmeParts {
-  readonly summary: string
-  readonly more: string
-}
+/** The README.md of a plugin as its About tab draws it. */
 
-const LEADING_H1 = /^\s*#\s+\S[^\n]*\n*/
-const MORE_MARKER = /<!--\s*more\s*-->/i
-const RELATIVE_ASSET_LINK = /\]\((?:\.\/)?assets\//g
+const HTML_COMMENT = /<!--[\s\S]*?-->/g
+const LEADING_TITLE = /^\s*#[ \t]+\S[^\n]*(?:\n|$)/
 
-/** Splits a plugin README on `<!-- more -->` with fallback to the manifest description. */
-export function parsePluginReadme(
-  raw: string,
-  pluginId: string,
-  fallbackDescription: string,
-): PluginReadmeParts {
-  const rewritten = raw.replace(RELATIVE_ASSET_LINK, `](/plugin/${pluginId}/assets/`)
-  const body = rewritten.replace(LEADING_H1, '').trim()
-  if (body === '') {
-    return { summary: fallbackDescription.trim(), more: '' }
-  }
-  const match = MORE_MARKER.exec(body)
-  if (!match) {
-    return { summary: body, more: '' }
-  }
-  const summary = body.slice(0, match.index).trim() || fallbackDescription.trim()
-  const more = body.slice(match.index + match[0].length).trim()
-  return { summary, more }
-}
+/** The README without its HTML comments and without a leading `# Title`, which the header shows. */
+export const getReadmeText = (raw: string): string =>
+  raw.replace(HTML_COMMENT, '').replace(LEADING_TITLE, '').trim()

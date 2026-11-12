@@ -29,7 +29,7 @@ const chooseTheme = async (page: Page, title: string): Promise<void> => {
 
 const setPresetThemesEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
   await runCommand(page, 'Open settings', /^Open settings$/)
-  const settings = page.getByRole('tabpanel', { name: /Settings/ })
+  const settings = page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
   await expect(settings).toBeVisible()
   const toggle = settings.getByRole('switch', { name: /Enabled Preset Themes/ })
   if (!(await toggle.isVisible())) {

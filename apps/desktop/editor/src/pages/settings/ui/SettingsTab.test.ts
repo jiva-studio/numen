@@ -109,20 +109,36 @@ const chooseItem = async (words: string) => {
 }
 
 const openSystemSettings = async (tab: Tab) => {
-  await tab.find('.system-row').trigger('click')
+  await tab.get('button[aria-label="System"]').trigger('click')
   await nextTick()
 }
 
+const getButtonNames = (tab: Tab) =>
+  tab.findAll('button').map((one) => one.attributes('aria-label'))
+
+const openPlugin = async (tab: Tab, name: string) => {
+  await tab.get(`button[aria-label="${name}"]`).trigger('click')
+  await nextTick()
+}
+
+const goBack = async (tab: Tab) => {
+  await tab.get('button[aria-label="All plugins"]').trigger('click')
+  await nextTick()
+}
+
+const isPluginPage = (tab: Tab) => tab.find('[role="tablist"]').exists()
+
+const isList = (tab: Tab) => tab.find('button[aria-label="System"]').exists()
+
 describe('the settings tab', () => {
-  it('draws the system settings row at the top of the list', () => {
+  it('draws the System tile at the top of the list', () => {
     const { tab } = createTab()
-    const rows = tab.findAll('.plugin-row')
-    expect(rows.length).toBeGreaterThan(0)
-    expect(rows[0]!.text()).toContain(words.systemSettings)
-    expect(rows[0]!.text()).toContain(words.systemSettingsDetail)
+    const system = tab.get('button[aria-label="System"]')
+    expect(getButtonNames(tab)[0]).toBe(words.systemSettings)
+    expect(system.text()).toContain(words.systemSettingsDetail)
   })
 
-  it('draws the Connections row after system settings and plugin rows below them', () => {
+  it('draws the Connections tile after System and the plugin rows below them', () => {
     const samplePlugin: PluginInfo = {
       id: 'test.transcription',
       name: 'Transcription Plugin',
@@ -135,11 +151,11 @@ describe('the settings tab', () => {
       settings: [],
     }
     const { tab } = createTab({}, [samplePlugin])
-    const rows = tab.findAll('.plugin-row')
-    expect(rows.length).toBe(3)
-    expect(rows[0]!.text()).toContain(words.systemSettings)
-    expect(rows[1]!.text()).toContain('Connections')
-    expect(rows[2]!.text()).toContain('Transcription Plugin')
+    expect(getButtonNames(tab)).toStrictEqual([
+      'System',
+      'Connections',
+      'Transcription Plugin',
+    ])
   })
 
   it('opens on the theme the core resolved, in one list with the themes of plugins', async () => {
@@ -180,7 +196,7 @@ describe('the settings tab', () => {
     const { tab } = createTab()
     await openSystemSettings(tab)
     expect(tab.get('.system-detail__file').text()).toBe('/numen.json')
-    expect(tab.find('.system-detail__where button').exists()).toBe(false)
+    expect(tab.findAll('button').map((one) => one.text())).not.toContain('Edit')
   })
 
   it('carries no pencil, and no editor spliced under a row', async () => {
@@ -195,12 +211,11 @@ describe('the settings tab', () => {
     expect(tab.find('.system-detail').exists()).toBe(false)
     await openSystemSettings(tab)
     expect(tab.find('.system-detail').exists()).toBe(true)
-    expect(tab.find('.system-detail__where').exists()).toBe(true)
+    expect(tab.get('[aria-current="page"]').text()).toBe(words.systemSettings)
 
-    await tab.find('.system-detail__back').trigger('click')
-    await nextTick()
+    await goBack(tab)
     expect(tab.find('.system-detail').exists()).toBe(false)
-    expect(tab.find('.system-row').exists()).toBe(true)
+    expect(isList(tab)).toBe(true)
   })
 
   it('switches to full-page plugin detail when a plugin is selected, and returns on back', async () => {
@@ -217,24 +232,16 @@ describe('the settings tab', () => {
     }
     const { tab } = createTab({}, [samplePlugin])
 
-    // Click on the plugin row to select it
-    const rows = tab.findAll('.plugin-row')
-    expect(rows.length).toBe(3)
-    await rows[2]!.trigger('click')
-    await nextTick()
+    await openPlugin(tab, 'Document OCR')
 
-    // Full page plugin detail: system detail and list are gone
-    expect(tab.find('.system-row').exists()).toBe(false)
-    expect(tab.find('.plugin-detail').exists()).toBe(true)
-    expect(tab.find('.plugin-detail__title').text()).toContain('Document OCR')
+    expect(isList(tab)).toBe(false)
+    expect(isPluginPage(tab)).toBe(true)
+    expect(tab.get('h2').text()).toBe('Document OCR')
 
-    // Click back button
-    await tab.find('.plugin-detail__back').trigger('click')
-    await nextTick()
+    await goBack(tab)
 
-    // Back to main settings page
-    expect(tab.find('.plugin-detail').exists()).toBe(false)
-    expect(tab.find('.system-row').exists()).toBe(true)
+    expect(isPluginPage(tab)).toBe(false)
+    expect(isList(tab)).toBe(true)
   })
 
   it('opens the Connections page from the rows of a plugin that has none', async () => {
@@ -261,8 +268,7 @@ describe('the settings tab', () => {
       ],
     }
     const { tab } = createTab({}, [proofreading])
-    await tab.findAll('.plugin-row')[2]!.trigger('click')
-    await nextTick()
+    await openPlugin(tab, 'Test Proofreading')
     expect(tab.find('.connections-page').exists()).toBe(false)
 
     const open = tab.findAll('button').find((one) => one.text() === 'Open Connections')
@@ -270,7 +276,7 @@ describe('the settings tab', () => {
     await nextTick()
 
     expect(tab.find('.connections-page').exists()).toBe(true)
-    expect(tab.find('.plugin-detail').exists()).toBe(false)
+    expect(isPluginPage(tab)).toBe(false)
   })
 
   it('keeps the cleared search query when navigating into a plugin detail and back', async () => {
@@ -289,22 +295,19 @@ describe('the settings tab', () => {
     initialSearchQuery.value = 'feature:agent'
     await nextTick()
 
-    const searchInput = tab.get('.plugins-list__search-input')
+    const searchInput = tab.get('input[type="search"]')
     expect((searchInput.element as HTMLInputElement).value).toBe('feature:agent')
 
     await searchInput.setValue('')
     await nextTick()
     expect(initialSearchQuery.value).toBe('')
 
-    const rows = tab.findAll('.plugin-row')
-    await rows[2]!.trigger('click')
-    await nextTick()
-    expect(tab.find('.plugin-detail').exists()).toBe(true)
+    await openPlugin(tab, 'Agent Chat')
+    expect(isPluginPage(tab)).toBe(true)
 
-    await tab.find('.plugin-detail__back').trigger('click')
-    await nextTick()
+    await goBack(tab)
 
-    const restoredInput = tab.get('.plugins-list__search-input')
+    const restoredInput = tab.get('input[type="search"]')
     expect((restoredInput.element as HTMLInputElement).value).toBe('')
   })
 })

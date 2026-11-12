@@ -42,9 +42,9 @@ const nameId = computed(() => `plugin-row-${props.at}`)
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--detail-gap) var(--numen-panel-gap);
-  min-block-size: var(--settings-row-min, 3.25rem);
+  min-block-size: var(--settings-row-min);
   box-sizing: border-box;
-  padding-block: var(--settings-row-pad, 0.625rem);
+  padding-block: var(--settings-row-pad);
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 

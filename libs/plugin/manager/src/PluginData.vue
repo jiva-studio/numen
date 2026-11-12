@@ -40,7 +40,7 @@ function onConfirm(): void {
 
 <template>
   <div class="plugin-data">
-    <div v-if="props.fileCount > 0" class="plugin-data__card">
+    <div v-if="props.fileCount > 0" class="settings-card">
       <DetailRow
         :at="`data-${props.pluginId}`"
         :name="words.pluginData"
@@ -76,14 +76,6 @@ function onConfirm(): void {
   --asking-gap: 0.375rem;
   --asking-pad-block: 0.5rem;
   --asking-pad-inline: 0.75rem;
-}
-
-.plugin-data__card {
-  padding-block: calc(var(--settings-card-pad, 1rem) - var(--settings-row-pad, 0.75rem));
-  padding-inline: var(--settings-card-pad, 1rem);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  background-color: var(--numen-raised);
 }
 
 .plugin-data__asking {

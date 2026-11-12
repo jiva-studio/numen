@@ -76,14 +76,6 @@ const {
 
 <style scoped>
 .settings {
-  --settings-measure: 45rem;
-  --settings-card-pad: 1rem;
-  --settings-row-min: 3.25rem;
-  --settings-row-pad: 0.75rem;
-  --settings-apart: 1.75rem;
-  --settings-near: 0.375rem;
-  --settings-value: 6rem;
-  --settings-choice: 16rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -101,7 +93,7 @@ const {
 }
 
 .settings__main {
-  container-type: inline-size;
+  container: settings / inline-size;
   inline-size: 100%;
   max-inline-size: var(--settings-measure);
   margin-inline: auto;

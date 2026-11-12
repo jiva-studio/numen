@@ -1,7 +1,11 @@
 /** The plugin list and the plugin page: data in by props, answers out as events. */
+import './tokens/settings.css'
+import './styles/card.css'
+
 export { default as PluginsList } from './PluginsList.vue'
 export { default as PluginDetail } from './PluginDetail.vue'
-export { default as SystemRow } from './SystemRow.vue'
+export { default as NavigationRow } from './NavigationRow.vue'
+export { default as BreadcrumbBar } from './BreadcrumbBar.vue'
 export { default as PluginSettingsCard } from './PluginSettingsCard.vue'
 export type { PluginDetailProps } from './PluginDetail.types'
 export {
@@ -43,5 +47,5 @@ export {
   START_HEALTH_KEY,
   type PluginState,
 } from './state'
-export { parsePluginReadme, type PluginReadmeParts } from './readme'
+export { getReadmeText } from './readme'
 export { PLUGIN_WORDS } from './words'

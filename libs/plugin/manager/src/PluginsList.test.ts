@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PluginsList from './PluginsList.vue'
+import type { PluginHealth } from './pluginInfo'
 import PluginRow from './PluginRow.vue'
 import { createManagedPlugin, createAvailablePlugin } from './testing/managed'
 
@@ -20,6 +21,12 @@ const plugins = [
   createAvailablePlugin('sample.offer', 'Offered Reader'),
 ]
 
+const createHealth = (
+  key: string,
+  severity: PluginHealth['severity'],
+  text: string,
+): PluginHealth => ({ key, severity, text, detail: '', actionLabel: '' })
+
 const mountList = (props: Record<string, unknown> = {}) =>
   mount(PluginsList, { props: { plugins, enabled: {}, ...props } })
 
@@ -27,15 +34,9 @@ const listNames = (wrapper: ReturnType<typeof mountList>) =>
   wrapper.findAllComponents(PluginRow).map((row) => row.props('plugin').name)
 
 describe('PluginsList', () => {
-  it('lists the plugins under the categories their manifests declare', () => {
+  it('lists the plugins by the label of their category, then by name', () => {
     const wrapper = mountList()
 
-    expect(wrapper.findAll('.plugin-row__category').map((one) => one.text())).toStrictEqual([
-      'Editors /',
-      'Views /',
-      'Views /',
-      'Other /',
-    ])
     expect(listNames(wrapper)).toStrictEqual(['Notes', 'Agent Chat', 'File Tree', 'Offered Reader'])
   })
 
@@ -52,7 +53,7 @@ describe('PluginsList', () => {
     expect(listNames(wrapper)).toStrictEqual(['Agent Chat'])
 
     await wrapper.find('input[type="search"]').setValue('zzz')
-    expect(wrapper.text()).toContain('No plugins found.')
+    expect(wrapper.text()).toContain('No plugins match “zzz”')
   })
 
   it('filters by feature from the manifest, and by category', async () => {
@@ -95,32 +96,52 @@ describe('PluginsList', () => {
     expect(wrapper.emitted('update:query')).toStrictEqual([['tree']])
   })
 
-  it('emits select-plugin with the id of the row, and system for the system row', async () => {
+  it('emits select-plugin with the id of the row, and the page of a tile', async () => {
     const wrapper = mountList()
 
     wrapper.findAllComponents(PluginRow)[0]?.vm.$emit('select-plugin')
-    await wrapper.find('.system-row').trigger('click')
+    await wrapper.get('button[aria-label="System"]').trigger('click')
+    await wrapper.get('button[aria-label="Connections"]').trigger('click')
 
-    expect(wrapper.emitted('select-plugin')).toStrictEqual([['sample.notes'], ['system']])
+    expect(wrapper.emitted('select-plugin')).toStrictEqual([
+      ['sample.notes'],
+      ['system'],
+      ['connections'],
+    ])
   })
 
-  it('shows a Connections row with a description and emits connections for it', async () => {
-    const wrapper = mountList()
+  it('keeps both tiles while the query matches no plugin', () => {
+    const wrapper = mountList({ query: 'zzz' })
 
-    const row = wrapper.find('.connections-row')
-    await row.trigger('click')
-
-    expect(row.find('.plugin-row__name').text()).toBe('Connections')
-    expect(row.find('.plugin-row__description').text()).toBe(
-      'Services and programs for plugin requests.',
-    )
-    expect(wrapper.emitted('select-plugin')).toStrictEqual([['connections']])
+    expect(wrapper.find('button[aria-label="System"]').exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Connections"]').exists()).toBe(true)
   })
 
-  it('hides the Connections row when the query matches nothing about connections', () => {
+  it('draws a stopped plugin as a button named for it and described by the reason', async () => {
+    const start = createHealth('start', 'error', 'Model missing')
+    const wrapper = mountList({ health: { 'sample.tree': [start] } })
+
+    const card = wrapper.get('button[aria-label="File Tree stopped."]')
+    const reason = wrapper.get(`#${card.attributes('aria-describedby')}`)
+    expect(reason.text()).toBe('Model missing')
+    await card.trigger('click')
+
+    expect(wrapper.emitted('select-plugin')).toStrictEqual([['sample.tree']])
+  })
+
+  it('draws no stopped card for a plugin whose health holds no failed start', () => {
+    const quota = createHealth('quota', 'warning', 'Half used')
+    const wrapper = mountList({ health: { 'sample.tree': [quota] } })
+
+    expect(wrapper.find('button[aria-label="File Tree stopped."]').exists()).toBe(false)
+  })
+
+  it('clears the query with the clear button', async () => {
     const wrapper = mountList({ query: 'notes' })
 
-    expect(wrapper.find('.connections-row').exists()).toBe(false)
+    await wrapper.get('button[aria-label="Clear search"]').trigger('click')
+
+    expect(wrapper.emitted('update:query')).toStrictEqual([['']])
   })
 
   it('emits toggle-enabled with the id and the new state', () => {
