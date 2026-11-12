@@ -16,6 +16,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	connectionuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 )
 
 // The plugins and the types of the fake provider.
@@ -415,4 +416,9 @@ type Entry struct {
 
 func newEntry(created connectionuse.Entry) Entry {
 	return Entry{ID: created.ID, Name: created.Name, Revision: created.Revision, Fields: created.Fields}
+}
+
+// GetLookups returns where the calls under test find the connections of the world.
+func (w *World) GetLookups() modelcall.Connections {
+	return modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows}
 }

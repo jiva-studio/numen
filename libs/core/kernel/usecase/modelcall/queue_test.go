@@ -34,7 +34,7 @@ func newQueueSetup(t *testing.T, parallelRequests int) *queueSetup {
 	}
 	return &queueSetup{
 		world: w, entry: entry,
-		calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
+		calls: modelcall.NewCalls(w.GetLookups(), w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
 	}
 }
 
@@ -182,7 +182,7 @@ func TestACallOfAConnectionWithNoLimitIsNeverQueued(t *testing.T) {
 	w := modelcalltest.New()
 	entry := w.AddServer(t, "First", addressOne, keyOne)
 	w.Rows.Set(consumerID, "complete", modelcalltest.Row(entry, "m"))
-	s := &queueSetup{world: w, calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside)}
+	s := &queueSetup{world: w, calls: modelcall.NewCalls(w.GetLookups(), w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside)}
 	w.Provider.Block(addressOne)
 	var calls []<-chan error
 	for _, text := range []string{"a", "b", "c", "d", "e"} {
