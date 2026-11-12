@@ -92,7 +92,7 @@ const overcrowded: PlexNeighborhood = neighborhood('Everything, again', [
 ])
 
 /** Not Latin, far too long, nothing to break at, and nothing at all. */
-export const awkwardLabels: PlexNeighborhood = neighborhood(
+const awkwardLabels: PlexNeighborhood = neighborhood(
   'Заметка про сарай с довольно длинным названием, которое не влезает',
   [
     { id: 'parent-0', title: 'बगीचा', relation: 'parent' },

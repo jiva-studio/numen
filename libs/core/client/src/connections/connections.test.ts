@@ -138,7 +138,6 @@ describe('createConnectionClient', () => {
         secretKeysSet: ['apiKey'],
         isTypeAvailable: true,
         isComplete: true,
-        isPrivateNetworkAllowed: false,
         uses: [
           {
             pluginId: 'md.numen.tools.proofreading',
@@ -165,7 +164,6 @@ describe('createConnectionClient', () => {
               ]),
             ),
             secrets: request.secrets,
-            isPrivateNetworkAllowed: request.isPrivateNetworkAllowed,
           })
           return Promise.resolve(
             create(CreateProviderConnectionResponseSchema, { connection: { id: 'c00000002' } }),
@@ -179,7 +177,6 @@ describe('createConnectionClient', () => {
       name: 'N',
       fields: { baseUrl: 'https://a.example', parallelRequests: 2, stream: false },
       secrets: { apiKey: 'sk-1' },
-      isPrivateNetworkAllowed: true,
     })
 
     expect(answer.ok).toBe(true)
@@ -189,7 +186,6 @@ describe('createConnectionClient', () => {
         name: 'N',
         fields: { baseUrl: 'https://a.example', parallelRequests: 2, stream: false },
         secrets: { apiKey: 'sk-1' },
-        isPrivateNetworkAllowed: true,
       },
     ])
   })
@@ -215,7 +211,6 @@ describe('createConnectionClient', () => {
       name: 'N',
       fields: {},
       secrets: {},
-      isPrivateNetworkAllowed: false,
     })
 
     expect(revisions).toStrictEqual([3])
@@ -246,7 +241,6 @@ describe('createConnectionClient', () => {
         name: '',
         fields: {},
         secrets: {},
-        isPrivateNetworkAllowed: false,
       })
 
       expect(answer).toStrictEqual({ ok: false, error: { errorCode: expected, detail: 'why' } })
