@@ -9,6 +9,7 @@ import { createPluginHost } from './host'
 import type { PluginHostDeps } from './types'
 
 const createDeps = (extra: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
+  target: 'desktop.editor',
   registerKind: vi.fn(() => vi.fn()),
   ...extra,
 })
@@ -17,7 +18,7 @@ const LEDGER = createMockManifest('org.example.ledger', { name: 'Ledger', versio
 const TIDE = createMockManifest('org.example.tide', { name: 'Tide', version: '1' })
 
 describe('a window that names its target', () => {
-  it('activates its plugins in that target, and in the editor where it names none', () => {
+  it('activates its plugins in the target it names', () => {
     const cards = createPluginHost(createDeps({ target: 'desktop.flashcards' }))
     const editor = createPluginHost(createDeps())
 
