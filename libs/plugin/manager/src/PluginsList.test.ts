@@ -121,7 +121,7 @@ describe('PluginsList', () => {
     const start = createHealth('start', 'error', 'Model missing')
     const wrapper = mountList({ health: { 'sample.tree': [start] } })
 
-    const card = wrapper.get('button[aria-label="File Tree stopped."]')
+    const card = wrapper.get('button.plugins-list__alarm[aria-label="File Tree"]')
     const reason = wrapper.get(`#${card.attributes('aria-describedby')}`)
     expect(reason.text()).toBe('Model missing')
     await card.trigger('click')
@@ -129,11 +129,13 @@ describe('PluginsList', () => {
     expect(wrapper.emitted('select-plugin')).toStrictEqual([['sample.tree']])
   })
 
-  it('draws no stopped card for a plugin whose health holds no failed start', () => {
+  it('draws a warning of a plugin as a card too, marked as a warning', () => {
     const quota = createHealth('quota', 'warning', 'Half used')
     const wrapper = mountList({ health: { 'sample.tree': [quota] } })
 
-    expect(wrapper.find('button[aria-label="File Tree stopped."]').exists()).toBe(false)
+    const card = wrapper.get('button.plugins-list__alarm[aria-label="File Tree"]')
+    expect(card.classes()).toContain('plugins-list__alarm--warning')
+    expect(wrapper.get(`#${card.attributes('aria-describedby')}`).text()).toBe('Half used')
   })
 
   it('clears the query with the clear button', async () => {

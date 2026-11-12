@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * The card of a plugin the host suspended: why it stopped, a retry, and the error the host recorded.
+ * A health item of a plugin on its page: what does not work, the action that fixes it, and the
+ * detail the host recorded.
  */
 import { ref } from 'vue'
 import { TriangleAlert } from '@lucide/vue'
@@ -10,18 +11,19 @@ import { PLUGIN_WORDS as words } from './words'
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   item: PluginHealth
+  actionLabel: string
 }>()
 
 const emit = defineEmits<{
-  (e: 'retry'): void
+  (e: 'run-action'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const isDetailExpanded = ref(false)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onRetry(): void {
-  emit('retry')
+function onRunAction(): void {
+  emit('run-action')
 }
 
 function onToggleDetail(): void {
@@ -30,19 +32,28 @@ function onToggleDetail(): void {
 </script>
 
 <template>
-  <div class="settings-card plugin-stopped" role="group" :aria-label="words.pluginState.stopped">
-    <TriangleAlert class="plugin-stopped__icon" :size="20" :stroke-width="1.75" aria-hidden="true" />
-    <div class="plugin-stopped__text">
-      <span class="plugin-stopped__reason">{{ props.item.text }}</span>
-      <code v-if="isDetailExpanded" class="plugin-stopped__detail">{{ props.item.detail }}</code>
-      <span class="plugin-stopped__actions">
-        <button type="button" class="plugin-stopped__action" @click="onRetry">
-          {{ words.pluginRetry }}
+  <div
+    class="settings-card plugin-notice"
+    :class="`plugin-notice--${props.item.severity}`"
+    :role="props.item.severity === 'error' ? 'alert' : 'status'"
+  >
+    <TriangleAlert class="plugin-notice__icon" :size="20" :stroke-width="1.75" aria-hidden="true" />
+    <div class="plugin-notice__text">
+      <span class="plugin-notice__reason">{{ props.item.text }}</span>
+      <code v-if="isDetailExpanded" class="plugin-notice__detail">{{ props.item.detail }}</code>
+      <span class="plugin-notice__actions">
+        <button
+          v-if="props.actionLabel"
+          type="button"
+          class="plugin-notice__action"
+          @click="onRunAction"
+        >
+          {{ props.actionLabel }}
         </button>
         <button
           v-if="props.item.detail"
           type="button"
-          class="plugin-stopped__action"
+          class="plugin-notice__action"
           :aria-expanded="isDetailExpanded"
           @click="onToggleDetail"
         >
@@ -54,7 +65,7 @@ function onToggleDetail(): void {
 </template>
 
 <style scoped>
-.plugin-stopped {
+.plugin-notice {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
@@ -62,13 +73,17 @@ function onToggleDetail(): void {
   color: var(--numen-ink);
 }
 
-.plugin-stopped__icon {
+.plugin-notice__icon {
   flex: none;
   margin-block-start: 0.0625rem;
+  color: var(--numen-caution-fg);
+}
+
+.plugin-notice--error .plugin-notice__icon {
   color: var(--numen-alarm);
 }
 
-.plugin-stopped__text {
+.plugin-notice__text {
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -76,11 +91,11 @@ function onToggleDetail(): void {
   min-inline-size: 0;
 }
 
-.plugin-stopped__reason {
+.plugin-notice__reason {
   overflow-wrap: anywhere;
 }
 
-.plugin-stopped__detail {
+.plugin-notice__detail {
   margin-block-start: 0.375rem;
   color: var(--numen-hushed);
   font-family: var(--numen-font-mono);
@@ -89,14 +104,14 @@ function onToggleDetail(): void {
   white-space: pre-wrap;
 }
 
-.plugin-stopped__actions {
+.plugin-notice__actions {
   display: flex;
   font-size: var(--numen-text-2);
   gap: 1rem;
   margin-block-start: 0.375rem;
 }
 
-.plugin-stopped__action {
+.plugin-notice__action {
   padding: 0;
   border: none;
   background: none;
@@ -106,7 +121,7 @@ function onToggleDetail(): void {
   cursor: pointer;
 }
 
-.plugin-stopped__action:hover {
+.plugin-notice__action:hover {
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }

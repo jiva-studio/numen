@@ -12,7 +12,7 @@
  * when it is drawn and whenever it becomes focused.
  */
 import { computed, onMounted, useTemplateRef, watch, type VNode } from 'vue'
-import { RotateCcw } from '@lucide/vue'
+import { RotateCcw, TriangleAlert } from '@lucide/vue'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -69,11 +69,17 @@ function scrollIntoView(): void {
   <div
     ref="row"
     class="settings__row"
-    :class="{ 'settings__row--marked': props.isMarked }"
     :data-marked="props.isMarked ? '' : undefined"
   >
     <div class="settings__label">
       <span :id="nameId" class="settings__name">{{ props.name }}</span>
+      <TriangleAlert
+        v-if="props.isMarked"
+        class="settings__mark"
+        :size="14"
+        :stroke-width="1.75"
+        aria-hidden="true"
+      />
       <button
         v-if="props.isChanged"
         type="button"
@@ -108,11 +114,9 @@ function scrollIntoView(): void {
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
-.settings__row--marked {
-  --mark-width: 0.1875rem;
-  --mark-pad: 0.5rem;
-  padding-inline-start: var(--mark-pad);
-  border-inline-start: var(--mark-width) solid var(--numen-alarm);
+.settings__mark {
+  flex: none;
+  color: var(--numen-alarm);
 }
 
 .settings__row:last-child {

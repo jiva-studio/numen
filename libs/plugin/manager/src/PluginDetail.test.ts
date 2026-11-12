@@ -4,8 +4,7 @@ import { mount } from '@vue/test-utils'
 import { Button, KeyCap, Switch } from '@numen/ui'
 import PluginDetail from './PluginDetail.vue'
 import PluginData from './PluginData.vue'
-import PluginHealthBar from './PluginHealthBar.vue'
-import PluginStopped from './PluginStopped.vue'
+import PluginNotice from './PluginNotice.vue'
 import type { PluginContribution, PluginHealth } from './pluginInfo'
 import type { PluginDetailProps } from './PluginDetail.types'
 import { createAvailablePlugin, createManagedPlugin } from './testing/managed'
@@ -174,11 +173,11 @@ describe('PluginDetail', () => {
 
   it('draws the failure card of a suspended plugin with its detail behind a toggle', async () => {
     const wrapper = mountDetail({ health: [health('start', 'error', 'exec error')] })
-    const card = wrapper.getComponent(PluginStopped)
+    const card = wrapper.getComponent(PluginNotice)
 
     expect(card.text()).toContain('The start does not work')
     expect(card.text()).not.toContain('exec error')
-    expect(wrapper.findComponent(PluginHealthBar).exists()).toBe(false)
+    expect(wrapper.findAllComponents(PluginNotice)).toHaveLength(1)
     expect(wrapper.text()).toContain('Stopped')
 
     const [retry, details] = card.findAll('button')
@@ -191,21 +190,21 @@ describe('PluginDetail', () => {
   })
 
   it('offers no details toggle for a failure without a detail', () => {
-    const card = mountDetail({ health: [health('start', 'error')] }).getComponent(PluginStopped)
+    const card = mountDetail({ health: [health('start', 'error')] }).getComponent(PluginNotice)
 
     expect(card.findAll('button').map((one) => one.text())).toStrictEqual(['Retry'])
   })
 
-  it('draws the bar of the worst item and emits its fix', async () => {
+  it('draws the notice of the worst item and emits its fix', async () => {
     const wrapper = mountDetail({
       health: [health('quota', 'warning'), health('connection', 'error', 'No connection to ask.')],
     })
-    const bar = wrapper.getComponent(PluginHealthBar)
+    const bar = wrapper.getComponent(PluginNotice)
 
     expect(bar.attributes('role')).toBe('alert')
     expect(bar.text()).toContain('The connection does not work')
     expect(bar.text()).not.toContain('The quota does not work')
-    await bar.getComponent(Button).trigger('click')
+    await bar.get('button').trigger('click')
 
     expect(wrapper.emitted('run-action')).toStrictEqual([['connection']])
   })

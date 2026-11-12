@@ -13,9 +13,8 @@ import PluginContributions from './PluginContributions.vue'
 import PluginData from './PluginData.vue'
 import type { PluginDetailProps } from './PluginDetail.types'
 import PluginHeader from './PluginHeader.vue'
-import PluginHealthBar from './PluginHealthBar.vue'
 import PluginSettingsCard from './PluginSettingsCard.vue'
-import PluginStopped from './PluginStopped.vue'
+import PluginNotice from './PluginNotice.vue'
 import PluginTabs from './PluginTabs.vue'
 import { getReadmeText } from './readme'
 import { getPluginState, getStartItem, getWorstItem } from './state'
@@ -108,8 +107,18 @@ function onRunAction(key: string): void {
       @install="onInstall"
     />
 
-    <PluginStopped v-if="startItem" :item="startItem" @retry="onRetry" />
-    <PluginHealthBar v-else-if="worstItem" :item="worstItem" @run-action="onRunAction" />
+    <PluginNotice
+      v-if="startItem"
+      :item="startItem"
+      :action-label="words.pluginRetry"
+      @run-action="onRetry"
+    />
+    <PluginNotice
+      v-else-if="worstItem"
+      :item="worstItem"
+      :action-label="worstItem.actionLabel"
+      @run-action="onRunAction(worstItem.key)"
+    />
 
     <PluginTabs v-model="activeTab" :tabs="tabs" :label="words.pluginSections" :id-base="idBase" />
 

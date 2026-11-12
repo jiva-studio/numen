@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * The list of plugins: the System and Connections pages as two tiles, a card for each stopped
- * plugin, then the search field and the plugin rows that match it.
+ * The list of plugins: the System and Connections pages as two tiles, a card for each plugin with
+ * a health item (its failed start first, else its worst item), then the search field and the plugin
+ * rows that match it.
  */
 import { computed, useTemplateRef } from 'vue'
 import { ChevronRight, Search, TriangleAlert, X } from '@lucide/vue'
@@ -10,7 +11,7 @@ import PluginRow from './PluginRow.vue'
 import { getFilteredPluginItems, parsePluginQuery, type PluginFilterContext } from './filter'
 import type { PluginHealth } from './pluginInfo'
 import type { ManagedPlugin } from './plugins'
-import { getStartItem } from './state'
+import { getStartItem, getWorstItem } from './state'
 import { PLUGIN_WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -34,9 +35,10 @@ const parsedQuery = computed(() => parsePluginQuery(searchQuery.value))
 const filteredPlugins = computed(() =>
   getFilteredPluginItems(props.plugins, parsedQuery.value, filterContext),
 )
-const stoppedPlugins = computed(() =>
+const troubledPlugins = computed(() =>
   props.plugins.flatMap((plugin) => {
-    const item = getStartItem(props.health?.[plugin.id] ?? [])
+    const health = props.health?.[plugin.id] ?? []
+    const item = getStartItem(health) ?? getWorstItem(health)
     return item ? [{ plugin, item }] : []
   }),
 )
@@ -83,17 +85,18 @@ function getReasonId(pluginId: string): string {
     </div>
 
     <button
-      v-for="{ plugin, item } in stoppedPlugins"
-      :key="`stopped-${plugin.id}`"
+      v-for="{ plugin, item } in troubledPlugins"
+      :key="`health-${plugin.id}`"
       type="button"
       class="settings-card plugins-list__alarm"
-      :aria-label="words.pluginStoppedBanner(plugin.name)"
+      :class="`plugins-list__alarm--${item.severity}`"
+      :aria-label="plugin.name"
       :aria-describedby="getReasonId(plugin.id)"
       @click="onSelectPlugin(plugin.id)"
     >
       <TriangleAlert class="plugins-list__alarm-icon" :size="20" aria-hidden="true" />
       <span class="plugins-list__alarm-text">
-        <span class="plugins-list__alarm-name">{{ words.pluginStoppedBanner(plugin.name) }}</span>
+        <span class="plugins-list__alarm-name">{{ plugin.name }}</span>
         <span :id="getReasonId(plugin.id)">{{ item.text }}</span>
       </span>
       <ChevronRight class="plugins-list__chevron" :size="16" aria-hidden="true" />
@@ -176,6 +179,10 @@ function getReasonId(pluginId: string): string {
 
 .plugins-list__alarm:focus-visible {
   outline: var(--numen-stroke) solid var(--numen-accent);
+}
+
+.plugins-list__alarm--warning .plugins-list__alarm-icon {
+  color: var(--numen-caution-fg);
 }
 
 .plugins-list__alarm-icon {

@@ -66,7 +66,6 @@ export const PLUGIN_WORDS = {
   clearSearch: 'Clear search',
   connections: 'Connections',
   connectionsDetail: 'Services and programs for plugins',
-  pluginStoppedBanner: (name: string) => `${name} stopped.`,
   /** The sections of a plugin page, in the order of its tabs. */
   pluginTabs: { settings: 'Settings', about: 'About', contributions: 'Contributes', data: 'Data' },
   pluginSections: 'Sections',
