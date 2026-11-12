@@ -11,7 +11,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
+	"github.com/jiva-studio/numen/libs/atomicfile"
 )
 
 func unpack(archive, name, pos string) error {

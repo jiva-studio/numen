@@ -1,6 +1,7 @@
 package keychain
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
@@ -81,7 +83,7 @@ func (s *Store) removeFromFile(ctx context.Context, name string) error {
 	})
 }
 
-func (s *Store) writeEntries(entries map[string]string) (err error) {
+func (s *Store) writeEntries(entries map[string]string) error {
 	content, err := json.Marshal(entries)
 	if err != nil {
 		return fmt.Errorf("write the credentials file: %w", err)
@@ -94,33 +96,8 @@ func (s *Store) writeEntries(entries map[string]string) (err error) {
 	if err := os.Chmod(folder, 0o700); err != nil {
 		return fmt.Errorf("write the credentials file: %w", err)
 	}
-	tmp, err := os.CreateTemp(folder, "."+credentialsFile+".*")
-	if err != nil {
-		return fmt.Errorf("write the credentials file: %w", err)
-	}
-	defer func() {
-		if removeErr := os.Remove(tmp.Name()); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
-			err = errors.Join(err, removeErr)
-		}
-	}()
-	if err := writeTemporaryFile(tmp, content); err != nil {
-		return fmt.Errorf("write the credentials file: %w", err)
-	}
-	if err := os.Rename(tmp.Name(), target); err != nil {
+	if err := atomicfile.WriteFile(target, bytes.NewReader(content), 0o600); err != nil {
 		return fmt.Errorf("write the credentials file: %w", err)
 	}
 	return nil
-}
-
-func writeTemporaryFile(tmp *os.File, content []byte) error {
-	if _, err := tmp.Write(content); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	if err := tmp.Sync(); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	if err := tmp.Chmod(0o600); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	return tmp.Close()
 }

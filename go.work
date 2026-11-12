@@ -5,6 +5,7 @@ use (
 	./apps/desktop/build/pgonorm
 	./apps/desktop/build/tools
 	./apps/mobile
+	./libs/atomicfile
 	./libs/core/kernel
 	./libs/note
 	./libs/plugin/catalog
@@ -37,6 +38,7 @@ use (
 )
 
 replace (
+	github.com/jiva-studio/numen/libs/atomicfile v0.0.0 => ./libs/atomicfile
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0 => ./libs/core/kernel
 	github.com/jiva-studio/numen/libs/note v0.0.0 => ./libs/note
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0 => ./libs/plugin/catalog

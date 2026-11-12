@@ -43,6 +43,8 @@ go_rules: &go_rules
   - .github/actions/govulncheck/**
 protocol_lib: &protocol_lib
   - libs/core/protocol/**
+atomicfile_lib: &atomicfile_lib
+  - libs/atomicfile/**
 notes_lib: &notes_lib
   - libs/note/**
 core_lib: &core_lib
@@ -68,6 +70,7 @@ go_base: &go_base
   - *go_workspace
   - *go_rules
   - *protocol_lib
+  - *atomicfile_lib
   - *notes_lib
   - *core_lib
   - .github/workflows/go.yml
@@ -80,6 +83,7 @@ plugins_all: &plugins_all
   - *ts_config
   - *go_rules
   - *protocol_lib
+  - *atomicfile_lib
   - *notes_lib
   - *sdk_go_lib
   - *sdk_ts_lib
@@ -112,6 +116,7 @@ sdk_go:
   - *go_workspace
   - *go_rules
   - *protocol_lib
+  - *atomicfile_lib
   - *notes_lib
   - *sdk_go_lib
   - .github/workflows/go.yml

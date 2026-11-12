@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/atomicfile"
 )
 
 // readyName is the marker file whose presence means the folder next to it contains a complete dependency.
@@ -38,12 +40,14 @@ func isReady(dir string) bool {
 	return err == nil
 }
 
-func writeReadyMarker(ctx context.Context, dir, primary, sum string) error {
-	tmp := filepath.Join(dir, readyName+".tmp")
-	if err := os.WriteFile(tmp, []byte(primary+"\n"+sum+"\n"), 0o644); err != nil {
+func writeReadyMarker(ctx context.Context, dir, primary, sum string) (err error) {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
 		return err
 	}
-	return renameWithRetry(ctx, tmp, filepath.Join(dir, readyName), newDefaultBackoff())
+	defer func() { err = errors.Join(err, root.Close()) }()
+	_, err = atomicfile.Replace(ctx, root, readyName, strings.NewReader(primary+"\n"+sum+"\n"), 0o644)
+	return err
 }
 
 func readReadyMarker(dir string) (name, sum string, err error) {
@@ -103,6 +107,11 @@ func isAccessDenied(err error) bool {
 	return runtime.GOOS == "windows" && errors.Is(err, fs.ErrPermission)
 }
 
-func renameWithRetry(ctx context.Context, from, to string, policy backoff) error {
-	return retry(ctx, policy, isAccessDenied, func() error { return os.Rename(from, to) })
+func renameInFolder(ctx context.Context, from, to string) (err error) {
+	root, err := os.OpenRoot(filepath.Dir(from))
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, root.Close()) }()
+	return atomicfile.Rename(ctx, root, filepath.Base(from), filepath.Base(to))
 }

@@ -16,7 +16,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
+	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -137,7 +137,7 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) (
 		return err
 	}
 	defer closeAndJoin(&err, root)
-	if err := atomicfile.CreateParents(root, filepath.Dir(name), path); err != nil {
+	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
 
@@ -184,7 +184,7 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 	case !errors.Is(err, fs.ErrNotExist):
 		return err
 	}
-	if err := atomicfile.CreateParents(root, filepath.Dir(name), path); err != nil {
+	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
 	return streamReplace(ctx, root, name, content)
@@ -237,4 +237,14 @@ func checkMoveTarget(root *os.Root, leaves, arrives, from, to string) error {
 		return fmt.Errorf("move %s to %s: %w", from, to, vault.ErrAlreadyExists)
 	}
 	return nil
+}
+
+// createParents creates the folders above a name, and reports a file occupying
+// the place of one of them as ErrAlreadyExists.
+func createParents(root *os.Root, dir, path string) error {
+	err := root.MkdirAll(dir, 0o755)
+	if errors.Is(err, fs.ErrExist) {
+		return fmt.Errorf("make %s: %w", path, vault.ErrAlreadyExists)
+	}
+	return err
 }

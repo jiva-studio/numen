@@ -11,7 +11,7 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
+	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 

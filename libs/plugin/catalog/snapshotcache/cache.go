@@ -2,6 +2,7 @@
 package snapshotcache
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -11,6 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -81,7 +83,7 @@ func (c *Cache) Read(ctx context.Context) (catalog.Snapshot, error) {
 
 // Write replaces the file with the snapshot. The file is renamed into place, so a reader sees the
 // old snapshot or the new one.
-func (c *Cache) Write(ctx context.Context, snapshot catalog.Snapshot) (err error) {
+func (c *Cache) Write(ctx context.Context, snapshot catalog.Snapshot) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -97,28 +99,8 @@ func (c *Cache) Write(ctx context.Context, snapshot catalog.Snapshot) (err error
 	if err := os.MkdirAll(filepath.Dir(c.path), 0o700); err != nil {
 		return fmt.Errorf("create the snapshot folder: %w", err)
 	}
-	temporary, err := os.CreateTemp(filepath.Dir(c.path), ".snapshot-*")
-	// gomutants:disable-next-line BRANCH_IF reason="CreateTemp in freshly created writable folder succeeds unless OS filesystem fails"
-	if err != nil {
-		return fmt.Errorf("create a snapshot file: %w", err)
-	}
-	defer func() {
-		if err != nil {
-			if removeErr := os.Remove(temporary.Name()); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
-				err = errors.Join(err, removeErr)
-			}
-		}
-	}()
-	// gomutants:disable-next-line BRANCH_IF reason="writing to local temp file succeeds unless disk is full"
-	if _, err := temporary.Write(data); err != nil {
-		return errors.Join(fmt.Errorf("write the snapshot: %w", err), temporary.Close())
-	}
-	// gomutants:disable-next-line BRANCH_IF reason="closing local temp file succeeds unless hardware I/O fails"
-	if err := temporary.Close(); err != nil {
-		return fmt.Errorf("close the snapshot: %w", err)
-	}
-	if err := os.Rename(temporary.Name(), c.path); err != nil {
-		return fmt.Errorf("move the snapshot into place: %w", err)
+	if err := atomicfile.WriteFile(c.path, bytes.NewReader(data), 0o600); err != nil {
+		return fmt.Errorf("write the snapshot: %w", err)
 	}
 	return nil
 }

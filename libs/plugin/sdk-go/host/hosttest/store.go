@@ -1,6 +1,7 @@
 package hosttest
 
 import (
+	"bytes"
 	"errors"
 	"io/fs"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
@@ -161,17 +163,8 @@ func (d disk) write(filePath string, content []byte) (domain.FileStat, error) {
 		return domain.FileStat{}, err
 	}
 	// A save is a rename over the target name, so permission to write is decided by the folder containing the name.
-	temp, err := os.CreateTemp(filepath.Dir(target), ".write-*")
-	if err != nil {
+	if err := atomicfile.WriteFile(target, bytes.NewReader(content), 0o600); err != nil {
 		return domain.FileStat{}, err
-	}
-	_, werr := temp.Write(content)
-	cerr := temp.Close()
-	if err := errors.Join(werr, cerr); err != nil {
-		return domain.FileStat{}, removeAfterFailure(temp.Name(), err)
-	}
-	if err := os.Rename(temp.Name(), target); err != nil {
-		return domain.FileStat{}, removeAfterFailure(temp.Name(), err)
 	}
 	return d.stat(filePath)
 }
@@ -196,13 +189,6 @@ func (d disk) create(filePath string, content []byte) (domain.FileStat, error) {
 		return domain.FileStat{}, err
 	}
 	return d.stat(filePath)
-}
-
-func removeAfterFailure(name string, cause error) error {
-	if err := os.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return errors.Join(cause, err)
-	}
-	return cause
 }
 
 func (d disk) remove(filePath string) error {

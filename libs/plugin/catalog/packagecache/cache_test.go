@@ -216,7 +216,7 @@ func TestAnEndedContextStopsTheWrite(t *testing.T) {
 		t.Errorf("Remove canceled = %v", err)
 	}
 
-	// Cancel during copyContext and reader error during copyContext.
+	// Cancel during the copy and reader error during the copy.
 	midCtx, midCancel := context.WithCancel(t.Context())
 	cancelingReader := &funcReader{fn: func(p []byte) (int, error) {
 		midCancel()

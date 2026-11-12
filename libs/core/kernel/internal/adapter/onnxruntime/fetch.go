@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
+	"github.com/jiva-studio/numen/libs/atomicfile"
 )
 
 const (

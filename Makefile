@@ -4,6 +4,7 @@
 
 # ---------------------------------- Modules -----------------------------------
 CORE     := libs/core/kernel
+ATOMICFILE := libs/atomicfile
 NOTE    := libs/note
 PLUGIN_CATALOG := libs/plugin/catalog
 UI       := libs/ui/components
@@ -82,7 +83,7 @@ install: ## fetch all workspace dependencies
 	$(INSTALL)
 
 .PHONY: compile
-compile: lib_core_compile lib_note_compile lib_plugin_catalog_compile lib_protocol_compile lib_ui_components_compile lib_plugin_sdk_compile lib_core_client_compile lib_workbench_compile lib_plugin_loader_compile lib_plugin_manager_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
+compile: lib_core_compile lib_atomicfile_compile lib_note_compile lib_plugin_catalog_compile lib_protocol_compile lib_ui_components_compile lib_plugin_sdk_compile lib_core_client_compile lib_workbench_compile lib_plugin_loader_compile lib_plugin_manager_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
 
 .PHONY: build
 build: interface lib_core_build app_desktop_build ## build all application artifacts
@@ -186,6 +187,23 @@ lib_core_lint: ## run linters for core
 .PHONY: lib_core_vulncheck
 lib_core_vulncheck: ## scan core dependencies for vulnerabilities
 	cd $(CORE) && go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+# ----------------------------- Lib: Atomic File ------------------------------
+.PHONY: lib_atomicfile_build
+lib_atomicfile_build: ## build the Go library that replaces a file whole or not at all
+	cd $(ATOMICFILE) && go build ./...
+
+.PHONY: lib_atomicfile_compile
+lib_atomicfile_compile: lib_atomicfile_build
+
+.PHONY: lib_atomicfile_test
+lib_atomicfile_test: ## run atomic file tests
+	cd $(ATOMICFILE) && go test ./... $(GO_TEST_FLAGS)
+
+.PHONY: lib_atomicfile_lint
+lib_atomicfile_lint: ## run linters for atomic file
+	cd $(ATOMICFILE) && go vet ./...
+	cd $(ATOMICFILE) && golangci-lint run ./...
 
 # -------------------------------- Lib: Notes ---------------------------------
 .PHONY: lib_note_build

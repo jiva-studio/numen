@@ -1,12 +1,15 @@
 package cache
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
+
+	"github.com/jiva-studio/numen/libs/atomicfile"
 )
 
 func (c *Cache[V]) cachePath() (string, error) {
@@ -144,27 +147,7 @@ func (c *Cache[V]) storeDiskEntry(key string, val V) error {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
-	return writeFileAtomic(dir, path, data)
-}
-
-func writeFileAtomic(dir, path string, data []byte) error {
-	tmp, err := os.CreateTemp(dir, ".cache-*.tmp")
-	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
-	if err != nil {
-		return err
-	}
-	tmpName := tmp.Name()
-	_, writeErr := tmp.Write(data)
-	closeErr := tmp.Close()
-	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
-	if err := errors.Join(writeErr, closeErr); err != nil {
-		return errors.Join(err, os.Remove(tmpName))
-	}
-	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
-	if err := os.Rename(tmpName, path); err != nil {
-		return errors.Join(err, os.Remove(tmpName))
-	}
-	return nil
+	return atomicfile.WriteFile(path, bytes.NewReader(data), 0o600)
 }
 
 func isPersistable[V any](val V) bool {

@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
+	"github.com/jiva-studio/numen/libs/atomicfile"
 )
 
 // claimSuffix names the file a claim on a name is held on. It outlives the
@@ -238,7 +238,7 @@ type Listed struct {
 
 // Rename moves what is under one name to another, replacing what the other held. Both names are
 // in the store, and the file lands under the new name whole.
-func (d *DerivedStore) Rename(_ context.Context, from, to string) (err error) {
+func (d *DerivedStore) Rename(ctx context.Context, from, to string) (err error) {
 	source, err := d.getPath(from)
 	if err != nil {
 		return err
@@ -256,7 +256,7 @@ func (d *DerivedStore) Rename(_ context.Context, from, to string) (err error) {
 	if err != nil {
 		return err
 	}
-	if err := root.Rename(oldPos, newPos); err != nil {
+	if err := atomicfile.Rename(ctx, root, oldPos, newPos); err != nil {
 		return wrapLockedByAnother(err)
 	}
 	return atomicfile.SyncDirectory(root, filepath.Dir(newPos))

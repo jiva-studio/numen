@@ -50,8 +50,8 @@ test("a library that reaches an application or a plugin is reported", () => {
   assert.match(found[0].symbol, /outside libs/);
 });
 
-test("the plugin SDK family may reach the notes library and the protocol", () => {
-  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/plugin/sdk-go"], ["libs/note", "libs/core/protocol"]);
+test("the plugin SDK family may reach the atomic file library, the notes library and the protocol", () => {
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/plugin/sdk-go"], ["libs/atomicfile", "libs/note", "libs/core/protocol"]);
   const libraries = [
     library("libs/note"),
     library("libs/core/protocol"),

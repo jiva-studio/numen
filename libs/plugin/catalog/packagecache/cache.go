@@ -11,12 +11,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"hash"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 
+	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 )
 
@@ -55,7 +57,7 @@ func (c *Cache) pathOf(checksum string) (string, error) {
 
 // Put stores the content under the checksum after hashing it. Content whose hash differs is
 // refused with catalog.ErrChecksumMismatch and leaves no file.
-func (c *Cache) Put(ctx context.Context, checksum string, content io.Reader) (err error) {
+func (c *Cache) Put(ctx context.Context, checksum string, content io.Reader) error {
 	destination, err := c.pathOf(checksum)
 	if err != nil {
 		return err
@@ -66,34 +68,12 @@ func (c *Cache) Put(ctx context.Context, checksum string, content io.Reader) (er
 	if err := os.MkdirAll(c.dir, 0o700); err != nil {
 		return fmt.Errorf("create the package cache folder: %w", err)
 	}
-	temporary, err := os.CreateTemp(c.dir, ".incoming-*")
-	// gomutants:disable-next-line BRANCH_IF reason="CreateTemp in freshly created writable cache dir succeeds unless OS filesystem fails"
-	if err != nil {
-		return fmt.Errorf("create a package file: %w", err)
-	}
-	defer func() {
-		if err != nil {
-			// gomutants:disable-next-line STATEMENT_REMOVE reason="removeIfPresent side effect is verified and returns nil on success"
-			err = errors.Join(err, removeIfPresent(temporary.Name()))
+	checked := &checkedReader{getContextError: ctx.Err, content: content, hash: sha256.New(), checksum: checksum}
+	if err := atomicfile.WriteFile(destination, checked, 0o600); err != nil {
+		if errors.Is(err, catalog.ErrChecksumMismatch) {
+			return err
 		}
-	}()
-	hash := sha256.New()
-	if err := copyContext(ctx, io.MultiWriter(temporary, hash), content); err != nil {
-		return errors.Join(fmt.Errorf("write the package: %w", err), temporary.Close())
-	}
-	if got := hex.EncodeToString(hash.Sum(nil)); got != checksum {
-		return errors.Join(fmt.Errorf("%w: content hashes to %s, stored under %s", catalog.ErrChecksumMismatch, got, checksum), temporary.Close())
-	}
-	// gomutants:disable-next-line BRANCH_IF reason="Sync on open local temp file succeeds unless hardware I/O fails"
-	if err := temporary.Sync(); err != nil {
-		return errors.Join(fmt.Errorf("flush the package: %w", err), temporary.Close())
-	}
-	// gomutants:disable-next-line BRANCH_IF reason="Close on synced local temp file succeeds unless hardware I/O fails"
-	if err := temporary.Close(); err != nil {
-		return fmt.Errorf("close the package: %w", err)
-	}
-	if err := os.Rename(temporary.Name(), destination); err != nil {
-		return fmt.Errorf("move the package into place: %w", err)
+		return fmt.Errorf("write the package: %w", err)
 	}
 	return nil
 }
@@ -148,30 +128,26 @@ func removeIfPresent(path string) error {
 	return nil
 }
 
-// copyChunkSize is the number of bytes copied between two checks of the context.
-//
-// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="chunk buffer size does not affect copied stream"
-const copyChunkSize = 64 * 1024
+// checkedReader reads the content under a context, hashes what it reads, and at the end of the
+// content fails with ErrChecksumMismatch when the hash is not the checksum, so a write from it
+// stops before the file is put in place.
+type checkedReader struct {
+	getContextError func() error
+	content         io.Reader
+	hash            hash.Hash
+	checksum        string
+}
 
-func copyContext(ctx context.Context, destination io.Writer, source io.Reader) error {
-	buffer := make([]byte, copyChunkSize)
-	for {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		count, readErr := source.Read(buffer)
-		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="writing zero bytes to MultiWriter is a no-op"
-		if count > 0 {
-			// gomutants:disable-next-line BRANCH_IF reason="writing to local temp file and sha256 hash succeeds unless disk is full"
-			if _, writeErr := destination.Write(buffer[:count]); writeErr != nil {
-				return writeErr
-			}
-		}
-		if errors.Is(readErr, io.EOF) {
-			return nil
-		}
-		if readErr != nil {
-			return readErr
+func (r *checkedReader) Read(buffer []byte) (int, error) {
+	if err := r.getContextError(); err != nil {
+		return 0, err
+	}
+	count, err := r.content.Read(buffer)
+	r.hash.Write(buffer[:count])
+	if errors.Is(err, io.EOF) {
+		if got := hex.EncodeToString(r.hash.Sum(nil)); got != r.checksum {
+			return count, fmt.Errorf("%w: content hashes to %s, stored under %s", catalog.ErrChecksumMismatch, got, r.checksum)
 		}
 	}
+	return count, err
 }

@@ -15,7 +15,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/atomicfile"
+	"github.com/jiva-studio/numen/libs/atomicfile"
 )
 
 // VaultWriter changes one vault on disk.
@@ -78,15 +78,14 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 		return domain.FileStat{}, err
 	}
 
-	if err := atomicfile.CreateParents(root, filepath.Dir(name), path); err != nil {
+	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return domain.FileStat{}, err
 	}
-	contentVal, err := atomicfile.Replace(ctx, root, name, bytes.NewReader(content), mode)
+	written, err := atomicfile.Replace(ctx, root, name, bytes.NewReader(content), mode)
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	contentVal.Path = path
-	return contentVal, nil
+	return domain.FileStat{Path: path, Size: written.Size, ModTime: written.ModTime}, nil
 }
 
 func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
@@ -125,7 +124,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
 		return err
 	}
 
-	if err := atomicfile.CreateParents(root, filepath.Dir(arrives), to); err != nil {
+	if err := createParents(root, filepath.Dir(arrives), to); err != nil {
 		return err
 	}
 	return atomicfile.Rename(ctx, root, leaves, arrives)
@@ -178,7 +177,7 @@ func (w *VaultWriter) MakeFolder(ctx context.Context, path string) (err error) {
 	case err != nil && !errors.Is(err, fs.ErrNotExist):
 		return err
 	}
-	return atomicfile.CreateParents(root, name, path)
+	return createParents(root, name, path)
 }
 
 func (w *VaultWriter) Remove(ctx context.Context, path string) (err error) {

@@ -13,6 +13,7 @@ require (
 	cel.dev/cel-go v0.32.0 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
+	github.com/jiva-studio/numen/libs/atomicfile v0.0.0 // indirect
 	github.com/jiva-studio/numen/libs/core/protocol v0.0.0 // indirect
 	github.com/jiva-studio/numen/libs/note v0.0.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
@@ -29,3 +30,5 @@ replace (
 	github.com/jiva-studio/numen/libs/note => ../../../../libs/note
 	github.com/jiva-studio/numen/libs/plugin/catalog => ../../../../libs/plugin/catalog
 )
+
+replace github.com/jiva-studio/numen/libs/atomicfile => ../../../../libs/atomicfile

@@ -52,7 +52,7 @@ jobs:
       - name: Lint the core libraries
         run: |
           set -euo pipefail
-          for module in libs/core/kernel libs/note libs/plugin/catalog libs/core/protocol tools/checks/structure/go; do
+          for module in libs/core/kernel libs/atomicfile libs/note libs/plugin/catalog libs/core/protocol tools/checks/structure/go; do
             echo "::group::$module"
             (
               cd "$module"
@@ -133,7 +133,7 @@ jobs:
           RACE: ${{ matrix.race && '-race' || '' }}
         run: |
           set -euo pipefail
-          for module in libs/core/kernel libs/note libs/plugin/catalog; do
+          for module in libs/core/kernel libs/atomicfile libs/note libs/plugin/catalog; do
             echo "::group::$module"
             (cd "$module" && go test ${RACE:+"$RACE"} ./...)
             echo "::endgroup::"

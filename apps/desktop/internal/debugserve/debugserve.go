@@ -5,6 +5,7 @@
 package debugserve
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -23,6 +24,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/atomicfile"
 )
 
 // Clock gets the current time.
@@ -168,17 +171,5 @@ func generateSelfSignedCert(clock Clock) (tls.Certificate, error) {
 }
 
 func writePEMFile(path, blockType string, der []byte) error {
-	part := path + ".part"
-	if err := os.Remove(part); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-	file, err := os.OpenFile(part, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
-	if err != nil {
-		return err
-	}
-	_, err = file.Write(pem.EncodeToMemory(&pem.Block{Type: blockType, Bytes: der}))
-	if err := errors.Join(err, file.Close()); err != nil {
-		return err
-	}
-	return os.Rename(part, path)
+	return atomicfile.WriteFile(path, bytes.NewReader(pem.EncodeToMemory(&pem.Block{Type: blockType, Bytes: der})), 0o600)
 }

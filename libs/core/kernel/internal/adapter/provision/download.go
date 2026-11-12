@@ -65,7 +65,7 @@ func (t transfer) fetch(ctx context.Context) error {
 		}
 		return err
 	}
-	return renameWithRetry(ctx, part, t.dest, t.backoff)
+	return renameInFolder(ctx, part, t.dest)
 }
 
 func claimPartial(dir string) (string, error) {

@@ -12,7 +12,7 @@ func getWaits() []time.Duration {
 
 // Rename moves a file over another, waiting out a handle that another process
 // holds on it. A backup reader, a search indexer and a virus scanner each open
-// a note for short periods, and the file is locked while they do.
+// a file for short periods, and the file is locked while they do.
 // Both names are inside the root, so neither end of the move can be redirected
 // outside it by a link.
 func Rename(ctx context.Context, root *os.Root, from, to string) error {

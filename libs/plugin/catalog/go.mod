@@ -5,6 +5,7 @@ go 1.26.11
 require (
 	cel.dev/cel-go v0.32.0
 	github.com/jiva-studio/numen/libs/note v0.0.0
+	github.com/jiva-studio/numen/libs/atomicfile v0.0.0
 	github.com/jiva-studio/numen/libs/core/protocol v0.0.0
 	google.golang.org/protobuf v1.36.12
 )
@@ -23,3 +24,5 @@ replace (
 	github.com/jiva-studio/numen/libs/note => ../../note
 	github.com/jiva-studio/numen/libs/core/protocol => ../../core/protocol
 )
+
+replace github.com/jiva-studio/numen/libs/atomicfile => ../../../libs/atomicfile
