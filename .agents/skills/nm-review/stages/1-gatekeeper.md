@@ -75,7 +75,7 @@ The core, the core protocol and the shared SDK are a microkernel ([`architecture
 - Model pooling, handling, the source model and the token limit in the core belong to engines-embeddings; the core knows a search source by its opaque recipe, width and chunk size.
 - The `app:link.*` commands of the media importer in the shared command catalog `libs/core/protocol/commands.json` belong to the manifest of that plugin.
 
-The same holds for an operation of connections: its name, rows, priority, queue, cancel, outcome and frames are the core's; its payload shape is a contract in `libs/plugin/sdk-go/contracts/<name>` and `libs/plugin/sdk-ts/src/contracts/<name>`. `go/single-consumer` and `ts/contracts-imports` catch the cases a structure shows; the question above catches a field or a name that one plugin needs inside a type the core already has.
+The same holds for an operation of connections: its name, rows, priority, queue, cancel, outcome and frames are the core's; its payload shape is a contract in `libs/plugin/sdk-go/contracts/<name>` and `libs/plugin/sdk-ts/src/contracts/<name>`. `go/dead-exports` and `ts/contracts-imports` catch the cases a structure shows; the question above catches a field or a name that one plugin needs inside a type the core already has.
 
 ### Go — core, adapters, the desktop host
 

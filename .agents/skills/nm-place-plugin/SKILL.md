@@ -145,7 +145,7 @@ A component of general use belongs in `@numen/ui` (what plugins need goes into `
 ## When something belongs in the SDK, is copied, or stays in the core
 
 - A helper that several plugins need is copied into each. The number of plugins that use it moves nothing into the SDK, `@numen/ui` or a shared package.
-- The shared SDK holds the contract between a plugin and the host: a host call and its types, the lifecycle of the server, the generic connection, search source, health and tool clients, a testing harness. Its exports serve plugins of more than one family (`go/single-consumer`), and it holds no engine, agent program or runtime.
+- The shared SDK holds the contract between a plugin and the host: a host call and its types, the lifecycle of the server, the generic connection, search source, health and tool clients, a testing harness. Its exports serve plugins of more than one family, each has a consumer outside tests (`go/dead-exports`), and it holds no engine, agent program or runtime.
 - The shape of an operation is a contract in `plugin/sdk-go/contracts/<name>` and `sdk-ts/src/contracts/<name>`: protobuf messages, a typed client and a typed provider adapter. Plugins and applications import a contract; the core, the core protocol and the rest of the SDK never do (`ts/contracts-imports`).
 - The SDK lacks a call when the plugin reads an environment variable the host sets without an SDK function, builds a path the host owns, calls a host service without an SDK client, or parses a format the host defines (a note, a manifest, a vault path). The plugin needs that call from the SDK; it does not copy the parsing.
 - A change to the SDK reaches both SDKs: a call or field in `libs/plugin/sdk-go` is in `libs/plugin/sdk-ts` too, with the mapping in `libs/plugin/loader`. Event names are verb-object (`run-command`), booleans are `is…`, lists are plural nouns, spelling is American.
@@ -161,7 +161,7 @@ Ask of every new package, type, RPC or export of the core, the core protocol (`l
 - The core held the model fields of a search source (pooling, handling, the model it came from, the token limit). A source now describes itself by an opaque recipe, a vector width and a chunk size; the model stays in engines-embeddings.
 - The shared command catalog `libs/core/protocol/commands.json` held the `app:link.*` commands of the media importer. They are commands of that plugin's manifest now.
 
-`go/single-consumer` fails on an RPC or an SDK export that one plugin or one family uses, and `ts/contracts-imports` fails on a library outside `contracts/` that imports a contract.
+`go/dead-exports` fails on an RPC or an SDK export that nothing outside tests uses, and `ts/contracts-imports` fails on a library outside `contracts/` that imports a contract.
 
 ## Permissions
 

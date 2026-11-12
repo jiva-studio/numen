@@ -1,4 +1,4 @@
-package singleconsumer
+package deadexports
 
 import (
 	"encoding/json"
@@ -508,7 +508,7 @@ type tsOutput struct {
 // collectTSUsage runs uses.mjs, beside this file, over the TypeScript and Vue sources of the tree.
 func collectTSUsage(t *testing.T, l layout) (usage, tsOutput) {
 	t.Helper()
-	script := filepath.Join(getRealDir(t, load.RepoRootDir), "tools", "checks", "structure", "go", "single-consumer", "uses.mjs")
+	script := filepath.Join(getRealDir(t, load.RepoRootDir), "tools", "checks", "structure", "go", "dead-exports", "uses.mjs")
 	args := append([]string{script, l.root, l.protocolDir, l.sdkTSDir}, l.libraryDirs...)
 	command := exec.CommandContext(t.Context(), "node", args...)
 	command.Stderr = os.Stderr
@@ -586,21 +586,14 @@ func getItemFile(one item) string {
 	return file
 }
 
-// finding is an item with one consumer, one family of plugins, or none.
+// finding is an item that nothing outside tests uses.
 type finding struct {
 	name     string
 	position string
-	verdict  string
 }
 
 func (f finding) String() string {
-	return f.position + ": " + f.name + ": " + f.verdict
-}
-
-// getFamily is the part of a plugin folder before its first dash: agents, engines, views, readers, tools.
-func getFamily(plugin string) string {
-	family, _, _ := strings.Cut(plugin, "-")
-	return family
+	return f.position + ": " + f.name + ": used by nothing outside tests: dead"
 }
 
 // getConsumers propagates the consumers along the edges until nothing changes.
@@ -662,20 +655,29 @@ func getConsumers(parts []usage, l layout) map[string]map[string]bool {
 	return consumers
 }
 
-// findSingleConsumers lists every item used by nothing outside tests, or only by one plugin or the
-// plugins of one family.
-func findSingleConsumers(parts []usage, l layout) []finding {
+// isGeneratedContract reports a file generated from a contract of an SDK: a `*.pb.go` or `*_pb.ts`
+// file under a `contracts` directory, whose declarations protoc writes for the whole message set.
+func isGeneratedContract(rel string) bool {
+	if !strings.HasSuffix(rel, ".pb.go") && !strings.HasSuffix(rel, "_pb.ts") {
+		return false
+	}
+	return slices.Contains(strings.Split(path.Dir(rel), "/"), "contracts")
+}
+
+// findDeadExports lists every item that nothing outside tests uses.
+func findDeadExports(parts []usage, l layout) []finding {
 	consumers := getConsumers(parts, l)
 	var found []finding
 	seen := map[string]bool{}
 	for _, part := range parts {
 		for _, one := range part.items {
-			if seen[one.Key] || (!strings.HasPrefix(one.Key, "rpc:") && isTestPath(getItemFile(one))) {
+			file := getItemFile(one)
+			if seen[one.Key] || (!strings.HasPrefix(one.Key, "rpc:") && (isTestPath(file) || isGeneratedContract(file))) {
 				continue
 			}
 			seen[one.Key] = true
-			if verdict := getVerdict(consumers[one.Key]); verdict != "" {
-				found = append(found, finding{name: one.Name, position: one.Position, verdict: verdict})
+			if len(consumers[one.Key]) == 0 {
+				found = append(found, finding{name: one.Name, position: one.Position})
 			}
 		}
 	}
@@ -683,31 +685,7 @@ func findSingleConsumers(parts []usage, l layout) []finding {
 	return found
 }
 
-func getVerdict(consumers map[string]bool) string {
-	if len(consumers) == 0 {
-		return "used by nothing outside tests: dead"
-	}
-	var plugins []string
-	families := map[string]bool{}
-	for consumer := range consumers {
-		plugin, ok := strings.CutPrefix(consumer, "plugin ")
-		if !ok {
-			return ""
-		}
-		plugins = append(plugins, plugin)
-		families[getFamily(plugin)] = true
-	}
-	slices.Sort(plugins)
-	if len(plugins) == 1 {
-		return "used only by plugin " + plugins[0] + ": belongs to that plugin"
-	}
-	if len(families) == 1 {
-		return "used only by the " + getFamily(plugins[0]) + "-* plugins (" + strings.Join(plugins, ", ") + "): belongs to that family"
-	}
-	return ""
-}
-
-func checkSingleConsumers(t *testing.T, workspace load.WorkspacePackages) {
+func checkDeadExports(t *testing.T, workspace load.WorkspacePackages) {
 	t.Helper()
 	l := newRepositoryLayout(t)
 	var modules [][]*packages.Package
@@ -730,7 +708,7 @@ func checkSingleConsumers(t *testing.T, workspace load.WorkspacePackages) {
 	if counts["rpc"] == 0 || counts["go"] == 0 || counts["ts"] == 0 || rpcUses == 0 || read.Packages == 0 || read.Files == 0 {
 		t.Fatalf("%v items, %d uses of an RPC, %d TypeScript packages and %d files: the rule is checked against nothing", counts, rpcUses, read.Packages, read.Files)
 	}
-	for _, one := range findSingleConsumers([]usage{goUsage, tsUsage}, l) {
+	for _, one := range findDeadExports([]usage{goUsage, tsUsage}, l) {
 		t.Error(one)
 	}
 }
