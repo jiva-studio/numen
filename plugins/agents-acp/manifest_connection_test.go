@@ -19,9 +19,14 @@ type connectionField struct {
 }
 
 type connectionShape struct {
-	Services    []string `json:"services"`
-	Targets     []string `json:"targets"`
-	Contributes struct {
+	Services     []string `json:"services"`
+	Capabilities []string `json:"capabilities"`
+	Targets      []string `json:"targets"`
+	Contributes  struct {
+		Operations []struct {
+			Name  string `json:"name"`
+			Title string `json:"title"`
+		} `json:"operations"`
 		ConnectionTypes []struct {
 			ID         string            `json:"id"`
 			Title      string            `json:"title"`
@@ -46,55 +51,70 @@ func readConnectionShape(t *testing.T) connectionShape {
 	return shape
 }
 
-func TestManifestProvidesOneTypeThatCompletesWithAProgramFieldAndNoKey(t *testing.T) {
+func TestManifestProvidesTheTypesOfACPProgramsThatCompleteAndRunTasks(t *testing.T) {
 	types := readConnectionShape(t).Contributes.ConnectionTypes
-	if len(types) != 1 || types[0].ID != "acp" || types[0].Title != "ACP agent" {
-		t.Fatalf("types = %+v, want the type acp alone", types)
-	}
-	if !slices.Equal(types[0].Operations, []string{"llm.complete", "llm.models", "llm.reasoning"}) {
-		t.Errorf("operations = %v, want llm.complete with the lists of models and reasoning levels", types[0].Operations)
-	}
-	var keys []string
-	for _, field := range types[0].Fields {
-		keys = append(keys, field.Key)
-		if field.Type == "secret" {
-			t.Errorf("field %q is a secret: the type holds no key", field.Key)
+	var ids []string
+	for _, one := range types {
+		ids = append(ids, one.ID+"="+one.Title)
+		if !slices.Equal(one.Operations, []string{"llm.complete", "llm.models", "llm.reasoning", "acp.task"}) {
+			t.Errorf("%s: operations = %v, want llm.complete, the lists of models and reasoning levels, and acp.task", one.ID, one.Operations)
+		}
+		var keys []string
+		for _, field := range one.Fields {
+			keys = append(keys, field.Key)
+			if field.Type == "secret" {
+				t.Errorf("%s: field %q is a secret: the type holds no key", one.ID, field.Key)
+			}
+		}
+		if !slices.Equal(keys, []string{"program", "parallelRequests"}) {
+			t.Errorf("%s: fields = %v, want the program and then the parallel requests", one.ID, keys)
 		}
 	}
-	if !slices.Equal(keys, []string{"program", "parallelRequests"}) {
-		t.Errorf("fields = %v, want the program and then the parallel requests", keys)
+	want := []string{"acp=ACP agent", "claude-code=Claude Code", "codex=OpenAI Codex", "antigravity=Antigravity"}
+	if !slices.Equal(ids, want) {
+		t.Fatalf("types = %v, want %v", ids, want)
 	}
 }
 
-// The program is the one thing a person chooses when saving the connection.
-func TestTheProgramIsAFileThatIsRequired(t *testing.T) {
-	types := readConnectionShape(t).Contributes.ConnectionTypes
-	if len(types) != 1 || len(types[0].Fields) == 0 {
-		t.Fatalf("types = %+v", types)
-	}
-	if program := types[0].Fields[0]; program.Key != "program" || program.Type != "file" || !program.IsRequired {
-		t.Errorf("first field = %+v, want the required file field program", program)
+// The program is a file. The type acp names no program of its own, so a person chooses one; the others
+// find their known program where the field is empty.
+func TestTheProgramIsAFileThatOnlyTheTypeACPRequires(t *testing.T) {
+	for _, one := range readConnectionShape(t).Contributes.ConnectionTypes {
+		if len(one.Fields) == 0 {
+			t.Fatalf("%s has no fields", one.ID)
+		}
+		program := one.Fields[0]
+		if program.Key != "program" || program.Type != "file" || program.IsRequired != (one.ID == "acp") {
+			t.Errorf("%s: first field = %+v, want the file field program, required for acp alone", one.ID, program)
+		}
 	}
 }
 
 func TestOneRequestRunsAtATimeAndAtMostEight(t *testing.T) {
-	types := readConnectionShape(t).Contributes.ConnectionTypes
-	if len(types) != 1 || len(types[0].Fields) != 2 {
-		t.Fatalf("types = %+v, want one type with two fields", types)
-	}
-	parallel := types[0].Fields[1]
-	if parallel.Type != "number" || parallel.Default == nil || *parallel.Default != 1 || parallel.Min == nil || *parallel.Min != 1 ||
-		parallel.Max == nil || *parallel.Max != 8 || parallel.Step == nil || *parallel.Step != 1 {
-		t.Errorf("parallelRequests = %+v, want a number defaulting to 1 from 1 to 8 by 1", parallel)
+	for _, one := range readConnectionShape(t).Contributes.ConnectionTypes {
+		if len(one.Fields) != 2 {
+			t.Fatalf("%s: fields = %+v, want two", one.ID, one.Fields)
+		}
+		parallel := one.Fields[1]
+		if parallel.Type != "number" || parallel.Default == nil || *parallel.Default != 1 || parallel.Min == nil || *parallel.Min != 1 ||
+			parallel.Max == nil || *parallel.Max != 8 || parallel.Step == nil || *parallel.Step != 1 {
+			t.Errorf("%s: parallelRequests = %+v, want a number defaulting to 1 from 1 to 8 by 1", one.ID, parallel)
+		}
 	}
 }
 
-func TestManifestDeclaresTheProviderServiceAndTheAgentService(t *testing.T) {
-	services := readConnectionShape(t).Services
-	for _, want := range []string{"numen.v1.AgentService", "numen.v1.ProviderService"} {
-		if !slices.Contains(services, want) {
-			t.Errorf("services = %v, want %s among them", services, want)
-		}
+// The plugin serves its connection types and nothing else: it is no agent provider of the host.
+func TestManifestDeclaresTheProviderServiceAlone(t *testing.T) {
+	shape := readConnectionShape(t)
+	if !slices.Equal(shape.Services, []string{"numen.v1.ProviderService"}) || len(shape.Capabilities) != 0 {
+		t.Errorf("services = %v, capabilities = %v, want the provider service alone", shape.Services, shape.Capabilities)
+	}
+}
+
+func TestManifestTitlesTheOperationOfTasks(t *testing.T) {
+	operations := readConnectionShape(t).Contributes.Operations
+	if len(operations) != 1 || operations[0].Name != "acp.task" || operations[0].Title != "run agent tasks" {
+		t.Errorf("operations = %+v, want acp.task titled run agent tasks", operations)
 	}
 }
 
@@ -126,15 +146,16 @@ func TestThePluginRunsInDesktopWindowsAlone(t *testing.T) {
 
 // A row names the model, from the list the program offers, and a reasoning level of that model.
 func TestARowHoldsAModelAndAReasoningLevelListedByTheProvider(t *testing.T) {
-	types := readConnectionShape(t).Contributes.ConnectionTypes
-	if len(types) != 1 || len(types[0].RowFields) != 2 {
-		t.Fatalf("types = %+v, want one type with two row fields", types)
-	}
-	model, reasoning := types[0].RowFields[0], types[0].RowFields[1]
-	if model.Key != "model" || !model.IsRequired || model.OptionsFrom != "llm.models" {
-		t.Errorf("first row field = %+v, want the required model listed by llm.models", model)
-	}
-	if reasoning.Key != "reasoning" || reasoning.IsRequired || reasoning.OptionsFrom != "llm.reasoning" {
-		t.Errorf("second row field = %+v, want the optional reasoning listed by llm.reasoning", reasoning)
+	for _, one := range readConnectionShape(t).Contributes.ConnectionTypes {
+		if len(one.RowFields) != 2 {
+			t.Fatalf("%s: row fields = %+v, want two", one.ID, one.RowFields)
+		}
+		model, reasoning := one.RowFields[0], one.RowFields[1]
+		if model.Key != "model" || !model.IsRequired || model.OptionsFrom != "llm.models" {
+			t.Errorf("%s: first row field = %+v, want the required model listed by llm.models", one.ID, model)
+		}
+		if reasoning.Key != "reasoning" || reasoning.IsRequired || reasoning.OptionsFrom != "llm.reasoning" {
+			t.Errorf("%s: second row field = %+v, want the optional reasoning listed by llm.reasoning", one.ID, reasoning)
+		}
 	}
 }

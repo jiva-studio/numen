@@ -5,21 +5,28 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
 const (
 	protocolVersion = 1
-	// maxAnswerBytes is the most text an answer may hold.
-	maxAnswerBytes = 4 << 20
 	// methodNotFound is the JSON-RPC error code for a method the client does not serve.
 	methodNotFound = -32601
-	// methodSessionClose is the JSON-RPC method that ends a session.
-	methodSessionClose = "session/close"
+
+	methodPrompt  = "session/prompt"
+	methodCancel  = "session/cancel"
+	methodClose   = "session/close"
+	methodSetting = "session/set_config_option"
+
+	// cancelGrace is how long a canceled turn waits for the program to end it before the program is
+	// stopped.
+	cancelGrace = 2 * time.Second
+	// closeLimit is how long the program has to end a session before it is stopped.
+	closeLimit = 5 * time.Second
 
 	// JSON object keys and values of the protocol that more than one message uses.
 	keyName      = "name"
@@ -30,8 +37,8 @@ const (
 )
 
 var (
-	errAnswerTooLarge = errors.New("the agent's answer is too large")
-	errNoModelChoice  = errors.New("the agent offers no choice of model")
+	errNoModelChoice = errors.New("the agent offers no choice of model")
+	errNoHTTPServers = errors.New("the agent takes no MCP server over HTTP")
 )
 
 // Process is an agent program the client talks to line by line.
@@ -44,70 +51,93 @@ type Process interface {
 	Close() error
 }
 
-// Launcher starts the program of an agent in a folder of its own.
+// Launcher starts the program of an agent in a folder of its own. The program runs until ctx ends or
+// the process is closed.
 type Launcher interface {
 	Launch(ctx context.Context, program string, command []string) (Process, error)
 }
 
-// Session is one ACP session with an agent started for it alone. It grants the permission to call
-// one of the tools of the run and rejects every other request of the agent.
+// Server is an MCP server over HTTP that the session offers the agent, with the token it is reached with.
+type Server struct {
+	Name  string
+	URL   string
+	Token string
+}
+
+// Start is what a session is opened with: the command of the program, the MCP servers of the session and
+// the _meta of session/new, nil for none.
+type Start struct {
+	Command []string
+	Servers []Server
+	Meta    map[string]any
+}
+
+// Handler receives the updates of a turn and decides the permission requests of the agent.
+type Handler interface {
+	HandleUpdate(update Update) error
+	// IsAllowed reports whether the agent may call the tool of the name.
+	IsAllowed(tool string) bool
+}
+
+// Session is one ACP session with an agent program started for it alone. It grants a permission only
+// where the handler of the turn allows the tool, and rejects every other request of the agent.
 type Session struct {
 	proc           Process
 	program        string
+	sendMu         sync.Mutex
 	nextID         int
 	id             string
 	canClose       bool
 	hasHTTPServers bool
-	tools          Tools
 	models         []Model
 	current        string
 	modelOption    string
 	thoughtOption  string
-	thoughtLevels  []reasoning.Level
+	thoughtLevels  []Level
 	thoughtCurrent string
-	answer         strings.Builder
-	calls          map[string]*trackedCall
-	words          map[string]toolcall.Declaration
-	report         func(*agentrun.Response) error
+	names          map[string]string
+	stopOnce       sync.Once
+	stopErr        error
+	isStopped      atomic.Bool
 }
 
-// Open starts the agent and opens a session with it.
-func Open(ctx context.Context, launcher Launcher, program string, command []string, tools Tools) (*Session, error) {
-	proc, err := launcher.Launch(ctx, program, command)
+// Open starts the program and opens a session with it. The program outlives ctx, which bounds the
+// opening alone; Close ends it.
+func Open(ctx context.Context, launcher Launcher, start Start) (*Session, error) {
+	if len(start.Command) == 0 {
+		return nil, errors.New("no command starts the agent")
+	}
+	program := getProgramName(start.Command[0])
+	proc, err := launcher.Launch(context.WithoutCancel(ctx), program, start.Command)
 	if err != nil {
 		return nil, err
 	}
 	s := &Session{
-		proc: proc, program: program, nextID: 0, id: "", canClose: false, hasHTTPServers: false,
-		tools:  tools,
+		proc: proc, program: program, sendMu: sync.Mutex{}, nextID: 0, id: "", canClose: false, hasHTTPServers: false,
 		models: nil, current: "", modelOption: "",
 		thoughtOption: "", thoughtLevels: nil, thoughtCurrent: "",
-		answer: strings.Builder{},
-		calls:  map[string]*trackedCall{},
-		words:  nil, report: nil,
+		names:    map[string]string{},
+		stopOnce: sync.Once{}, stopErr: nil, isStopped: atomic.Bool{},
 	}
-	if err := s.initialize(); err != nil {
-		return nil, errors.Join(err, s.Close())
+	if err := s.initialize(ctx); err != nil {
+		return nil, errors.Join(err, s.stop())
 	}
-	if err := s.create(); err != nil {
-		return nil, errors.Join(err, s.Close())
+	if len(start.Servers) > 0 && !s.hasHTTPServers {
+		return nil, errors.Join(fmt.Errorf("%w: %s", errNoHTTPServers, program), s.stop())
+	}
+	if err := s.create(ctx, start); err != nil {
+		return nil, errors.Join(err, s.stop())
 	}
 	return s, nil
 }
 
-// SetReporter makes the session report each tool call of the agent to report, shown by the
-// declaration of its tool in words.
-func (s *Session) SetReporter(words map[string]toolcall.Declaration, report func(*agentrun.Response) error) {
-	s.words, s.report = words, report
-}
-
-// GetListing returns the models the agent reported for the session, and the depths of the current one.
+// GetListing returns the models the agent reported for the session, and the levels of the current one.
 func (s *Session) GetListing() Listing {
 	return Listing{Models: s.models, Current: s.current, Levels: s.thoughtLevels, Level: s.thoughtCurrent}
 }
 
 // SetModel makes the agent answer with model. An empty model or the current one changes nothing.
-func (s *Session) SetModel(model string) error {
+func (s *Session) SetModel(ctx context.Context, model string) error {
 	if model == "" || model == s.current {
 		return nil
 	}
@@ -119,11 +149,9 @@ func (s *Session) SetModel(model string) error {
 	}
 	var err error
 	if s.modelOption != "" {
-		_, err = s.call("session/set_config_option", map[string]any{
-			keySessionID: s.id, "configId": s.modelOption, keyValue: model,
-		})
+		_, err = s.call(ctx, methodSetting, map[string]any{keySessionID: s.id, "configId": s.modelOption, keyValue: model}, nil)
 	} else {
-		_, err = s.call("session/set_model", map[string]any{keySessionID: s.id, "modelId": model})
+		_, err = s.call(ctx, "session/set_model", map[string]any{keySessionID: s.id, "modelId": model}, nil)
 	}
 	if err != nil {
 		return err
@@ -133,13 +161,11 @@ func (s *Session) SetModel(model string) error {
 }
 
 // SetReasoning makes the agent think at level. A level the agent does not report changes nothing.
-func (s *Session) SetReasoning(level string) error {
-	if level == "" || level == s.thoughtCurrent || !reasoning.Contains(s.thoughtLevels, level) {
+func (s *Session) SetReasoning(ctx context.Context, level string) error {
+	if level == "" || level == s.thoughtCurrent || !containsLevel(s.thoughtLevels, level) {
 		return nil
 	}
-	if _, err := s.call("session/set_config_option", map[string]any{
-		keySessionID: s.id, "configId": s.thoughtOption, keyValue: level,
-	}); err != nil {
+	if _, err := s.call(ctx, methodSetting, map[string]any{keySessionID: s.id, "configId": s.thoughtOption, keyValue: level}, nil); err != nil {
 		return err
 	}
 	s.thoughtCurrent = level
@@ -155,39 +181,56 @@ func (s *Session) hasModel(model string) bool {
 	return false
 }
 
-// Ask sends the system text and the prompt as one turn and returns the answer of the agent.
-func (s *Session) Ask(system, prompt string) (string, error) {
-	var blocks []map[string]any
-	for _, text := range []string{system, prompt} {
+// Prompt sends the texts as one turn, passes each update of the turn to handler, and returns the stop
+// reason of the program. When ctx ends, the turn is canceled with session/cancel and the program is
+// stopped if it does not end the turn within a grace period. The error of a failed HandleUpdate is
+// returned as it is; the session is not usable after an error.
+func (s *Session) Prompt(ctx context.Context, texts []string, handler Handler) (StopReason, error) {
+	blocks := make([]map[string]any, 0, len(texts))
+	for _, text := range texts {
 		if text != "" {
 			blocks = append(blocks, map[string]any{"type": keyText, keyText: text})
 		}
 	}
-	s.answer.Reset()
-	result, err := s.call("session/prompt", map[string]any{keySessionID: s.id, "prompt": blocks})
+	result, err := s.call(ctx, methodPrompt, map[string]any{keySessionID: s.id, "prompt": blocks}, handler)
 	if err != nil {
 		return "", err
 	}
 	var reply struct {
-		StopReason string `json:"stopReason"`
+		StopReason StopReason `json:"stopReason"`
 	}
 	if err := json.Unmarshal(result, &reply); err != nil {
 		return "", fmt.Errorf("read the end of the turn of %s: %w", s.program, err)
 	}
-	switch reply.StopReason {
-	case "rejected":
-		return "", fmt.Errorf("%s rejected the prompt", s.program)
-	case "canceled":
-		return "", fmt.Errorf("%s canceled the turn", s.program)
-	}
-	return strings.TrimSpace(s.answer.String()), nil
+	return reply.StopReason, nil
 }
 
 // Close ends the session, then the program.
 func (s *Session) Close() error {
 	var err error
-	if s.canClose && s.id != "" {
-		_, err = s.call(methodSessionClose, map[string]any{keySessionID: s.id})
+	if s.canClose && s.id != "" && !s.isStopped.Load() {
+		ctx, cancel := context.WithTimeout(context.Background(), closeLimit)
+		_, err = s.call(ctx, methodClose, map[string]any{keySessionID: s.id}, nil)
+		cancel()
 	}
-	return errors.Join(err, s.proc.Close())
+	return errors.Join(err, s.stop())
+}
+
+// Stop ends the program without ending the session first; a turn that runs ends with an error.
+func (s *Session) Stop() error {
+	return s.stop()
+}
+
+// stop ends the program once, from whichever goroutine comes first.
+func (s *Session) stop() error {
+	s.stopOnce.Do(func() {
+		s.isStopped.Store(true)
+		s.stopErr = s.proc.Close()
+	})
+	return s.stopErr
+}
+
+func getProgramName(path string) string {
+	base := filepath.Base(path)
+	return strings.TrimSuffix(base, filepath.Ext(base))
 }

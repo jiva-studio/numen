@@ -1,5 +1,5 @@
 // Package completion answers the completion requests of a connection in one session of the ACP
-// agent the connection names, and lists the models and reasoning levels the agent reports.
+// program the connection names, and lists the models and reasoning levels the program reports.
 package completion
 
 import (
@@ -22,14 +22,14 @@ const (
 	roleUser            = "user"
 	roleAssistant       = "assistant"
 	defaultRequestLimit = 120 * time.Second
+	// maxAnswerBytes is the most text an answer may hold.
+	maxAnswerBytes = 4 << 20
 )
 
-var errNoQuestion = errors.New("the request holds no message to answer")
-
-// Answerer runs one session of an agent and returns its text.
-type Answerer interface {
-	Answer(ctx context.Context, agent agents.Agent, model, reasoning, system, prompt string) (string, error)
-}
+var (
+	errNoQuestion     = errors.New("the request holds no message to answer")
+	errAnswerTooLarge = errors.New("the answer of the program is too large")
+)
 
 // Listings reads the models an agent reports.
 type Listings interface {
@@ -42,7 +42,7 @@ type LookPath func(program string) (string, error)
 // Dependencies are what a Completion needs.
 type Dependencies struct {
 	Settings *settings.Settings
-	Answerer Answerer
+	Launcher acp.Launcher
 	Listings Listings
 	LookPath LookPath
 }
@@ -54,7 +54,7 @@ type Completion struct {
 
 // New creates a Completion, and refuses dependencies that are missing.
 func New(deps Dependencies) (*Completion, error) {
-	if deps.Settings == nil || deps.Answerer == nil || deps.Listings == nil {
+	if deps.Settings == nil || deps.Launcher == nil || deps.Listings == nil {
 		return nil, errors.New("completion: every dependency is required")
 	}
 	return &Completion{deps: deps}, nil
@@ -78,7 +78,7 @@ func (c *Completion) Complete(
 	limited, cancel := context.WithTimeout(ctx, c.getRequestLimit())
 	defer cancel()
 
-	text, runErr := c.deps.Answerer.Answer(limited, agent, call.Options[llm.OptionModel], call.Options[llm.OptionReasoning], system, prompt)
+	text, runErr := c.answer(limited, agent, call, []string{system, prompt})
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -90,6 +90,49 @@ func (c *Completion) Complete(
 	}
 	return &llm.CompleteResult{Text: text}, nil
 }
+
+// answer runs one session of the program with the model and the reasoning of the call and returns the
+// text of the turn. The session is offered no tool, and a turn the program does not end is a failure.
+func (c *Completion) answer(ctx context.Context, agent agents.Agent, call connection.Call, texts []string) (text string, err error) {
+	session, err := acp.Open(ctx, c.deps.Launcher, acp.Start{Command: agent.Command, Servers: nil, Meta: agent.GetAnswerMeta()})
+	if err != nil {
+		return "", err
+	}
+	defer func() { err = errors.Join(err, session.Close()) }()
+	if err := session.SetModel(ctx, call.Options[llm.OptionModel]); err != nil {
+		return "", err
+	}
+	if err := session.SetReasoning(ctx, call.Options[llm.OptionReasoning]); err != nil {
+		return "", err
+	}
+	answer := &collector{text: strings.Builder{}}
+	reason, err := session.Prompt(ctx, texts, answer)
+	if err != nil {
+		return "", err
+	}
+	if reason != acp.StopEndTurn && reason != acp.StopMaxTokens && reason != acp.StopMaxTurnRequests {
+		return "", fmt.Errorf("the program ended the turn with %q", reason)
+	}
+	return strings.TrimSpace(answer.text.String()), nil
+}
+
+// collector keeps the text of a turn and refuses every tool.
+type collector struct {
+	text strings.Builder
+}
+
+func (c *collector) HandleUpdate(update acp.Update) error {
+	if update.Chunk == nil {
+		return nil
+	}
+	if c.text.Len()+len(update.Chunk.Text) > maxAnswerBytes {
+		return errAnswerTooLarge
+	}
+	c.text.WriteString(update.Chunk.Text)
+	return nil
+}
+
+func (*collector) IsAllowed(string) bool { return false }
 
 // ListModels lists the models the program the call names reports.
 func (c *Completion) ListModels(ctx context.Context, call connection.Call, _ []string) ([]connection.Option, error) {
@@ -134,17 +177,14 @@ func (c *Completion) readListing(ctx context.Context, call connection.Call) (acp
 }
 
 func (c *Completion) getCallAgent(call connection.Call) (agents.Agent, error) {
-	program := strings.TrimSpace(call.Fields[fieldProgram])
-	if program == "" {
-		return agents.Agent{}, connection.NewStopError(connection.ReasonInvalidRequest)
+	agent, err := agents.Find(call.Type, call.Fields[fieldProgram], c.deps.LookPath)
+	if errors.Is(err, agents.ErrNoProgram) {
+		return agent, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
-	if c.deps.LookPath == nil {
-		return agents.Agent{}, connection.NewTryNextError(connection.ReasonUnavailable, 0)
+	if err != nil {
+		return agent, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
-	if _, err := c.deps.LookPath(program); err != nil {
-		return agents.Agent{}, connection.NewTryNextError(connection.ReasonUnavailable, 0)
-	}
-	return agents.NewFromProgram(program), nil
+	return agent, nil
 }
 
 func (c *Completion) getRequestLimit() time.Duration {

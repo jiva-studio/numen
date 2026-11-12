@@ -2,6 +2,7 @@ package completion
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -11,10 +12,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/settings"
 )
 
-type fakeAnswerer struct{}
+// absentLauncher starts no program.
+type absentLauncher struct{}
 
-func (fakeAnswerer) Answer(context.Context, agents.Agent, string, string, string, string) (string, error) {
-	return "", nil
+func (absentLauncher) Launch(context.Context, string, []string) (acp.Process, error) {
+	return nil, errors.New("no program starts here")
 }
 
 type fakeListings struct{}
@@ -24,7 +26,7 @@ func (fakeListings) GetListing(context.Context, agents.Agent) acp.Listing { retu
 func TestRequestLimitIsTheSettingElseTwoMinutes(t *testing.T) {
 	values := new(settings.Settings)
 	subject, err := New(Dependencies{
-		Settings: values, Answerer: fakeAnswerer{}, Listings: fakeListings{},
+		Settings: values, Launcher: absentLauncher{}, Listings: fakeListings{},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -49,11 +51,11 @@ func TestNewRefusesMissingDependencies(t *testing.T) {
 }
 
 func TestAProgramIsUnreachableWhenNoLookupIsGiven(t *testing.T) {
-	subject, err := New(Dependencies{Settings: new(settings.Settings), Answerer: fakeAnswerer{}, Listings: fakeListings{}})
+	subject, err := New(Dependencies{Settings: new(settings.Settings), Launcher: absentLauncher{}, Listings: fakeListings{}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = subject.getCallAgent(connection.Call{Fields: map[string]string{"program": "agent"}})
+	_, err = subject.getCallAgent(connection.Call{Type: "acp", Fields: map[string]string{"program": "agent"}})
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Errorf("getCallAgent = %v, want try the next", err)
 	}

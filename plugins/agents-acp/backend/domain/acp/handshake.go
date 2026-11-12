@@ -1,19 +1,20 @@
 package acp
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 )
 
-func (s *Session) initialize() error {
-	result, err := s.call("initialize", map[string]any{
+func (s *Session) initialize(ctx context.Context) error {
+	result, err := s.call(ctx, "initialize", map[string]any{
 		"protocolVersion": protocolVersion,
 		"clientCapabilities": map[string]any{
 			"fs":       map[string]any{"readTextFile": false, "writeTextFile": false},
 			"terminal": false,
 		},
 		"clientInfo": map[string]any{keyName: "numen", "title": "Numen", "version": "1.0.0"},
-	})
+	}, nil)
 	if err != nil {
 		return err
 	}
@@ -36,12 +37,12 @@ func (s *Session) initialize() error {
 	return nil
 }
 
-func (s *Session) create() error {
-	servers, err := s.listServers()
-	if err != nil {
-		return err
+func (s *Session) create(ctx context.Context, start Start) error {
+	params := map[string]any{"cwd": s.proc.Dir(), "mcpServers": listServers(start.Servers)}
+	if start.Meta != nil {
+		params["_meta"] = start.Meta
 	}
-	result, err := s.call("session/new", map[string]any{"cwd": s.proc.Dir(), "mcpServers": servers})
+	result, err := s.call(ctx, "session/new", params, nil)
 	if err != nil {
 		return err
 	}
@@ -71,6 +72,19 @@ func (s *Session) create() error {
 		}
 	}
 	return nil
+}
+
+func listServers(servers []Server) []any {
+	listed := make([]any, 0, len(servers))
+	for _, one := range servers {
+		listed = append(listed, map[string]any{
+			"type":    "http",
+			keyName:   one.Name,
+			"url":     one.URL,
+			"headers": []map[string]string{{keyName: "Authorization", keyValue: "Bearer " + one.Token}},
+		})
+	}
+	return listed
 }
 
 func (s *Session) readConfigOptions(options []configOption) {

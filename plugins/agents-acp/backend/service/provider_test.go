@@ -15,22 +15,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/process"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/task"
 )
-
-func fakeProgram(t *testing.T, behavior string) (string, string) {
-	t.Helper()
-	record := filepath.Join(t.TempDir(), "record")
-	program := agenttest.WriteScript(t, "fake-agent",
-		"exec "+agenttest.QuoteShell(os.Args[0])+" fake-acp "+behavior+" "+agenttest.QuoteShell(record)+"\n")
-	return program, record
-}
 
 func programCall(program string) connection.Call {
 	return connection.Call{Type: "acp", Fields: map[string]string{"program": program}}
@@ -83,6 +77,7 @@ func TestCompleteAsksTheProgramForTheModelAndTheLevelOfTheCall(t *testing.T) {
 
 // The session offers the program no file system and no terminal, no server of tools, and the client
 // answers every permission request with a refusal, so a write the program attempts is refused.
+// A request that offers an option to reject is answered with it, and one that offers none as cancelled.
 func TestACompleteCallRefusesEveryWriteOfTheProgram(t *testing.T) {
 	program, record := fakeProgram(t, "write")
 
@@ -104,15 +99,19 @@ func TestACompleteCallRefusesEveryWriteOfTheProgram(t *testing.T) {
 		t.Errorf("the session was given the servers %v", servers)
 	}
 	replies := observed["reply"]
-	if len(replies) < 2 {
-		t.Fatalf("the agent had %d replies, want the answers to the permission and to the write", len(replies))
+	if len(replies) < 3 {
+		t.Fatalf("the agent had %d replies, want the answers to the permissions and to the write", len(replies))
 	}
 	outcome, err := json.Marshal(replies[0]["result"])
-	if err != nil || string(outcome) != `{"outcome":{"outcome":"canceled"}}` {
-		t.Errorf("the permission to write was answered %s, %v, want a refusal", outcome, err)
+	if err != nil || string(outcome) != `{"outcome":{"optionId":"no","outcome":"selected"}}` {
+		t.Errorf("the permission to write was answered %s, %v, want the option that rejects", outcome, err)
 	}
 	if replies[1]["result"] != nil || replies[1]["error"] == nil {
 		t.Errorf("the write was answered %v, want an error", replies[1])
+	}
+	outcome, err = json.Marshal(replies[2]["result"])
+	if err != nil || string(outcome) != `{"outcome":{"outcome":"cancelled"}}` {
+		t.Errorf("a permission without an option to reject was answered %s, %v, want cancelled", outcome, err)
 	}
 }
 
@@ -268,10 +267,10 @@ func TestListingTheModelsOfAProgramThatIsNotThereIsUnreachable(t *testing.T) {
 	}
 }
 
-func TestTheProviderServesCompleteAndTheListsOfModelsAndReasoningLevels(t *testing.T) {
+func TestTheProviderServesCompleteTheListsOfModelsAndReasoningLevelsAndTasks(t *testing.T) {
 	provider := newTestServer(t).Provider()
 	served := slices.Sorted(maps.Keys(provider))
-	want := []string{llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
+	want := []string{acp.OperationTask, llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
 	if !slices.Equal(served, want) {
 		t.Errorf("operations = %v, want %v", served, want)
 	}
@@ -326,9 +325,23 @@ func quoteJSON(s string) string {
 
 func newTestServer(t *testing.T) *agentServer {
 	t.Helper()
-	svc, err := newAgentServer(process.LookPath, process.Launcher{}, clock.System{}, false)
+	return newTestServerWith(t, nil, clock.System{})
+}
+
+// newTestServerWith builds the plugin over the programs of the machine, with the tools of host and the
+// clock.
+func newTestServerWith(t *testing.T, host task.Tools, source cache.Clock) *agentServer {
+	t.Helper()
+	svc, err := newAgentServer(machine{
+		lookPath: process.LookPath, launcher: process.Launcher{}, tools: host, clock: source, isAsync: false,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		if err := svc.tasks.Close(); err != nil {
+			t.Log(err)
+		}
+	})
 	return svc
 }

@@ -2,15 +2,20 @@ package service
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // TestMain runs the test binary as a fake ACP agent when it is started as one, and the tests of m
@@ -30,10 +35,25 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func startFakeAgent(t *testing.T, behavior string) (command []string, record string) {
+// fakeProgram writes a program that runs the test binary as a fake ACP agent of the behavior, and returns
+// its path and the file the agent records the messages it read in.
+func fakeProgram(t *testing.T, behavior string) (program, record string) {
 	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("the fake program is a shell script")
+	}
 	record = filepath.Join(t.TempDir(), "record")
-	return []string{os.Args[0], "fake-acp", behavior, record}, record
+	program = filepath.Join(t.TempDir(), "fake-agent")
+	script := "#!/bin/sh\nexec " + quoteShell(os.Args[0]) + " fake-acp " + behavior + " " + quoteShell(record) + "\n"
+	if err := os.WriteFile(program, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return program, record
+}
+
+// quoteShell wraps a text in single quotes for a shell script.
+func quoteShell(text string) string {
+	return "'" + strings.ReplaceAll(text, "'", `'\''`) + "'"
 }
 
 func readRecord(t *testing.T, record string) map[string][]map[string]any {
@@ -96,6 +116,9 @@ type fakeAgent struct {
 	lines    *bufio.Scanner
 	record   io.Writer
 	err      error
+	pending  any
+	mcpURL   string
+	mcpToken string
 }
 
 func (a *fakeAgent) recordFolder() {
@@ -147,12 +170,18 @@ func (a *fakeAgent) handle() {
 	switch message["method"] {
 	case "initialize":
 		capabilities := map[string]any{"sessionCapabilities": map[string]any{"close": map[string]any{}}}
-		if a.behavior == "tools" {
+		if a.behavior != "no-http" {
 			capabilities["mcpCapabilities"] = map[string]any{"http": true}
 		}
 		a.send(map[string]any{"id": id, "result": map[string]any{"protocolVersion": 1, "agentCapabilities": capabilities}})
 	case "session/new":
+		a.keepServer(message)
 		a.send(map[string]any{"id": id, "result": a.getSession()})
+	case "session/cancel":
+		if a.pending != nil {
+			a.send(map[string]any{"id": a.pending, "result": map[string]any{"stopReason": "cancelled"}})
+			a.pending = nil
+		}
 	case "session/prompt":
 		a.answerPrompt(id)
 	case "session/set_config_option":
@@ -200,10 +229,19 @@ func (a *fakeAgent) getSession() map[string]any {
 }
 
 func (a *fakeAgent) answerPrompt(id any) {
-	if a.behavior == "hang" {
+	switch a.behavior {
+	case "hang":
+		a.pending = id
 		return
-	}
-	if a.behavior == "tools" {
+	case "stream":
+		a.streamAnswer()
+		a.send(map[string]any{"id": id, "result": map[string]any{"stopReason": "end_turn"}})
+		return
+	case "mcp":
+		a.callServedTool()
+		a.send(map[string]any{"id": id, "result": map[string]any{"stopReason": "end_turn"}})
+		return
+	case "tools":
 		a.callTools()
 	}
 	if a.behavior == "write" {
@@ -226,7 +264,7 @@ func (a *fakeAgent) answerPrompt(id any) {
 	}
 	stopReason := "end_turn"
 	if a.behavior == "refuse" {
-		stopReason = "rejected"
+		stopReason = "refusal"
 	}
 	a.send(map[string]any{"id": id, "result": map[string]any{"stopReason": stopReason}})
 }
@@ -249,13 +287,115 @@ func (a *fakeAgent) callTools() {
 	a.askPermission("t1", map[string]any{"toolCallId": "c1", "name": "run_shell_command", "title": "mcp__numen__note_read"})
 	a.askPermission("t2", map[string]any{"toolCallId": "c2", "title": "mcp__numen__note_read"})
 	a.askPermission("t3", map[string]any{"toolCallId": "c3", "name": "mcp__numen__note_read", "title": "Read"})
+	a.askPermission("t4", map[string]any{"toolCallId": "c4", "title": "mcp.numen.note_read", "rawInput": map[string]any{
+		"server": "numen", "tool": "note_read", "arguments": map[string]any{"path": "Garden.md"},
+	}})
+	a.askPermission("t5", map[string]any{"toolCallId": "c5", "title": "mcp.orchard.note_read", "rawInput": map[string]any{
+		"server": "orchard", "tool": "note_read", "arguments": map[string]any{"path": "Garden.md"},
+	}})
 }
+
+// keepServer keeps the address and the token of the MCP server the session is offered.
+func (a *fakeAgent) keepServer(message map[string]any) {
+	params, _ := message["params"].(map[string]any)
+	servers, _ := params["mcpServers"].([]any)
+	if len(servers) == 0 {
+		return
+	}
+	server, _ := servers[0].(map[string]any)
+	a.mcpURL, _ = server["url"].(string)
+	headers, _ := server["headers"].([]any)
+	if len(headers) > 0 {
+		header, _ := headers[0].(map[string]any)
+		value, _ := header["value"].(string)
+		a.mcpToken = strings.TrimPrefix(value, "Bearer ")
+	}
+}
+
+// streamAnswer answers in two pieces with a plan between them.
+func (a *fakeAgent) streamAnswer() {
+	a.update(map[string]any{"sessionUpdate": "agent_message_chunk", "content": map[string]any{"type": "text", "text": "Raised "}})
+	a.update(map[string]any{"sessionUpdate": "plan", "entries": []map[string]any{
+		{"content": "Read the garden note", "priority": "high", "status": "pending"},
+	}})
+	a.update(map[string]any{"sessionUpdate": "agent_message_chunk", "content": map[string]any{"type": "text", "text": "beds."}})
+}
+
+// callServedTool calls note_read of the served tools the way Claude Code reports it, and answers with
+// what the tool returned.
+func (a *fakeAgent) callServedTool() {
+	meta := map[string]any{"claudeCode": map[string]any{"toolName": "mcp__numen__note_read"}}
+	a.update(map[string]any{
+		"sessionUpdate": "tool_call", "toolCallId": "c1", "title": "mcp__numen__note_read", "kind": "other",
+		"status": "pending", "rawInput": map[string]any{"path": "Garden.md"}, "_meta": meta,
+	})
+	reply := a.askPermission("t1", map[string]any{"toolCallId": "c1", "_meta": meta})
+	result, _ := reply["result"].(map[string]any)
+	outcome, _ := result["outcome"].(map[string]any)
+	if outcome["optionId"] != "once" {
+		a.update(map[string]any{"sessionUpdate": "tool_call_update", "toolCallId": "c1", "status": "failed"})
+		return
+	}
+	text, err := a.callMCPTool("note_read", map[string]any{"path": "Garden.md"})
+	a.fail(err)
+	a.update(map[string]any{
+		"sessionUpdate": "tool_call_update", "toolCallId": "c1", "status": "completed", "rawOutput": map[string]any{"text": text},
+	})
+	a.update(map[string]any{"sessionUpdate": "agent_message_chunk", "content": map[string]any{"type": "text", "text": text}})
+}
+
+// callMCPTool lists the tools of the MCP server of the session, records their names, and calls one.
+func (a *fakeAgent) callMCPTool(name string, arguments map[string]any) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	token := a.mcpToken
+	client := &http.Client{Transport: roundTripper(func(req *http.Request) (*http.Response, error) {
+		req.Header.Set("Authorization", "Bearer "+token)
+		return http.DefaultTransport.RoundTrip(req)
+	})}
+	session, err := mcp.NewClient(&mcp.Implementation{Name: "fake-agent", Version: "1"}, nil).
+		Connect(ctx, &mcp.StreamableClientTransport{Endpoint: a.mcpURL, HTTPClient: client, DisableStandaloneSSE: true}, nil)
+	if err != nil {
+		return "", err
+	}
+	defer func() { a.fail(session.Close()) }()
+	listed, err := session.ListTools(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	var names []string
+	for _, one := range listed.Tools {
+		names = append(names, one.Name)
+	}
+	raw, err := json.Marshal(map[string]any{"method": "mcp/tools", "names": names})
+	if err != nil {
+		return "", err
+	}
+	if _, err := fmt.Fprintf(a.record, "%s\n", raw); err != nil {
+		return "", err
+	}
+	result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: name, Arguments: arguments})
+	if err != nil {
+		return "", err
+	}
+	var text string
+	for _, content := range result.Content {
+		if one, isText := content.(*mcp.TextContent); isText {
+			text += one.Text
+		}
+	}
+	return text, nil
+}
+
+type roundTripper func(*http.Request) (*http.Response, error)
+
+func (f roundTripper) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
 
 func (a *fakeAgent) update(update map[string]any) {
 	a.send(map[string]any{"method": "session/update", "params": map[string]any{"sessionId": "s1", "update": update}})
 }
 
-func (a *fakeAgent) askPermission(id string, toolCall map[string]any) {
+func (a *fakeAgent) askPermission(id string, toolCall map[string]any) map[string]any {
 	a.send(map[string]any{"id": id, "method": "session/request_permission", "params": map[string]any{
 		"sessionId": "s1", "toolCall": toolCall,
 		"options": []map[string]any{
@@ -264,7 +404,7 @@ func (a *fakeAgent) askPermission(id string, toolCall map[string]any) {
 			{"optionId": "no", "name": "Reject", "kind": "reject_once"},
 		},
 	}})
-	a.read()
+	return a.read()
 }
 
 func getField[T any](t *testing.T, object any, key string) T {

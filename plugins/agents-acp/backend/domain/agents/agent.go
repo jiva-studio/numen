@@ -1,4 +1,5 @@
-// Package agents knows the ACP agents the plugin can run and where the command of each comes from.
+// Package agents knows the connection types of the plugin: the command that starts the ACP server of
+// each, and the options of the session a type needs.
 package agents
 
 import (
@@ -6,124 +7,135 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/acp"
 )
 
-// ProgramPrefix marks the programs of the settings that serve ACP. The rest of the name is the
-// program a completion model names.
-const ProgramPrefix = "acp:"
+// The connection types of the plugin.
+const (
+	TypeACP         = "acp"
+	TypeClaudeCode  = "claude-code"
+	TypeCodex       = "codex"
+	TypeAntigravity = "antigravity"
+)
 
-// acpSubcommand is the argument that starts the ACP server of an agent.
+// acpSubcommand is the argument that starts the ACP server of several agents.
 const acpSubcommand = "acp"
 
-// defaultProgram is the program name of an agent whose executable gives no name.
-const defaultProgram = "acp"
+// claudeWebSearch is the one built-in tool of Claude Code a task may use.
+const claudeWebSearch = "WebSearch"
 
-// ErrNotInstalled is the reason a task names an agent that no command starts.
-var ErrNotInstalled = errors.New("the ACP agent is not installed")
+// claudeTaskTurns is how many times Claude Code may go round on one task.
+const claudeTaskTurns = 100
 
-// Agent is an agent that serves the Agent Client Protocol over its standard streams.
+var (
+	// ErrNoProgram is the reason a connection names no program where its type requires one.
+	ErrNoProgram = errors.New("the connection names no program")
+	// ErrNotFound is the reason the program of a connection is not on the machine.
+	ErrNotFound = errors.New("the program of the connection is not on the machine")
+)
+
+// Agent is a program that serves the Agent Client Protocol over its standard streams.
 type Agent struct {
-	Program string
-	Title   string
+	Type    string
 	Command []string
 }
 
-type known struct {
-	program string
-	title   string
-	binary  string
-	args    []string
-}
-
-func getKnownAgents() []known {
-	return []known{
-		{program: "claude-code", title: "Claude Code (ACP)", binary: "claude-code-acp", args: nil},
-		{program: "codex", title: "Codex (ACP)", binary: "codex-acp", args: nil},
-		{program: "cursor-agent", title: "Cursor Agent", binary: "cursor-agent", args: []string{acpSubcommand}},
-		{program: "gemini", title: "Gemini CLI", binary: "gemini", args: []string{"--acp"}},
-		{program: "goose", title: "Goose", binary: "goose", args: []string{acpSubcommand}},
-		{program: "kimi", title: "Kimi CLI", binary: "kimi", args: []string{acpSubcommand}},
-		{program: "opencode", title: "OpenCode", binary: "opencode", args: []string{acpSubcommand}},
-		{program: "qwen", title: "Qwen Code", binary: "qwen", args: []string{"--acp"}},
+// getKnownBinaries lists the executables a type finds on the PATH where the connection names none, in
+// the order they are looked for.
+func getKnownBinaries(connectionType string) []string {
+	switch connectionType {
+	case TypeClaudeCode:
+		return []string{"claude-agent-acp", "claude-code-acp"}
+	case TypeCodex:
+		return []string{"codex-acp"}
+	case TypeAntigravity:
+		return []string{"agy"}
 	}
+	return nil
 }
 
-// FindInstalled lists the known agents whose binary lookPath finds. A nil lookPath finds none.
-func FindInstalled(lookPath func(string) (string, error)) []Agent {
-	if lookPath == nil {
+// getArguments returns the arguments that start the ACP server of the executable of a type.
+func getArguments(connectionType, executable string) []string {
+	if connectionType == TypeAntigravity {
+		return []string{acpSubcommand}
+	}
+	if connectionType != TypeACP {
 		return nil
 	}
-	var agents []Agent
-	for _, candidate := range getKnownAgents() {
-		binaryPath, err := lookPath(candidate.binary)
-		if err != nil || binaryPath == "" {
+	base := filepath.Base(executable)
+	switch strings.TrimSuffix(base, filepath.Ext(base)) {
+	case "cursor-agent", "goose", "kimi", "opencode", "agy":
+		return []string{acpSubcommand}
+	case "gemini", "qwen":
+		return []string{"--acp"}
+	}
+	return nil
+}
+
+// Find returns the agent of a connection of the type with the program field. An empty program is the
+// first known binary of the type that lookPath finds; the type acp requires a program. A nil lookPath
+// finds nothing.
+func Find(connectionType, program string, lookPath func(string) (string, error)) (Agent, error) {
+	program = strings.TrimSpace(program)
+	candidates := []string{program}
+	if program == "" {
+		candidates = getKnownBinaries(connectionType)
+	}
+	if len(candidates) == 0 {
+		return Agent{Type: connectionType, Command: nil}, ErrNoProgram
+	}
+	if lookPath == nil {
+		return Agent{Type: connectionType, Command: nil}, ErrNotFound
+	}
+	for _, candidate := range candidates {
+		found, err := lookPath(candidate)
+		if err != nil || found == "" {
 			continue
 		}
-		command := append([]string{binaryPath}, candidate.args...)
-		agents = append(agents, Agent{Program: candidate.program, Title: candidate.title, Command: command})
+		return Agent{Type: connectionType, Command: append([]string{found}, getArguments(connectionType, candidate)...)}, nil
 	}
-	return agents
+	return Agent{Type: connectionType, Command: nil}, ErrNotFound
 }
 
-// GetFromCommands lists the agents the settings name: the programs that carry ProgramPrefix and
-// hold a command line, sorted by name.
-func GetFromCommands(commands map[string][]string) []Agent {
-	var agents []Agent
-	for name, command := range commands {
-		program, isACP := strings.CutPrefix(name, ProgramPrefix)
-		if !isACP || program == "" || len(command) == 0 {
-			continue
-		}
-		agents = append(agents, Agent{Program: program, Title: program, Command: command})
-	}
-	sortByProgram(agents)
-	return agents
+// GetKey returns what tells the programs of two agents apart.
+func (a Agent) GetKey() string {
+	return a.Type + "\x00" + strings.Join(a.Command, "\x00")
 }
 
-// GetProgramName returns the name of the program an executable file holds.
-func GetProgramName(path string) string {
-	base := filepath.Base(path)
-	name := strings.TrimSuffix(base, filepath.Ext(base))
-	if name == "" {
-		return defaultProgram
+// GetTaskMeta returns the _meta of session/new for a task whose tools the session serves under served.
+// Claude Code gets its own tools turned off but web search, the served tools allowed without asking, no
+// settings, hooks or skills read, and a limit of turns; other types get none.
+func (a Agent) GetTaskMeta(served []string) map[string]any {
+	if a.Type != TypeClaudeCode {
+		return nil
 	}
-	return name
+	allowed := []string{claudeWebSearch}
+	for _, name := range served {
+		allowed = append(allowed, "mcp__"+acp.ServerName+"__"+name)
+	}
+	slices.Sort(allowed)
+	return writeClaudeOptions(map[string]any{
+		"tools":          []string{claudeWebSearch},
+		"allowedTools":   allowed,
+		"settingSources": []string{},
+		"maxTurns":       claudeTaskTurns,
+	})
 }
 
-// ParsePaths reads the executable paths of the setting, one on a line.
-func ParsePaths(value string) []string {
-	var paths []string
-	for one := range strings.SplitSeq(value, "\n") {
-		entry := strings.TrimSpace(one)
-		if entry != "" {
-			paths = append(paths, entry)
-		}
+// GetAnswerMeta returns the _meta of session/new for a session that answers with no tool: Claude Code
+// gets every tool of its own turned off, no settings read and one turn; other types get none.
+func (a Agent) GetAnswerMeta() map[string]any {
+	if a.Type != TypeClaudeCode {
+		return nil
 	}
-	return paths
+	return writeClaudeOptions(map[string]any{
+		"tools":          []string{},
+		"settingSources": []string{},
+		"maxTurns":       1,
+	})
 }
 
-func createCustomAgent(execPath string, isMulti bool) Agent {
-	baseName := GetProgramName(execPath)
-	for _, candidate := range getKnownAgents() {
-		if candidate.binary == baseName {
-			program := defaultProgram
-			if isMulti {
-				program = candidate.program
-			}
-			return Agent{Program: program, Title: candidate.title, Command: append([]string{execPath}, candidate.args...)}
-		}
-	}
-	if isMulti {
-		return Agent{Program: baseName, Title: baseName, Command: []string{execPath}}
-	}
-	return Agent{Program: defaultProgram, Title: "ACP Agent", Command: []string{execPath}}
-}
-
-func sortByProgram(agents []Agent) {
-	slices.SortFunc(agents, func(a, b Agent) int { return strings.Compare(a.Program, b.Program) })
-}
-
-// NewFromProgram returns the agent that starts the program at path, the only agent of a connection.
-func NewFromProgram(path string) Agent {
-	return createCustomAgent(path, false)
+func writeClaudeOptions(options map[string]any) map[string]any {
+	return map[string]any{"claudeCode": map[string]any{"options": options}}
 }
