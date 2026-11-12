@@ -371,8 +371,6 @@ func TestNoSecretPassesAsARuntimeVariable(t *testing.T) {
 	}
 }
 
-// createFolderOutsideTemp makes a folder under the package folder, because the system temporary
-// folders are refused as a working directory.
 func createFolderOutsideTemp(t *testing.T, name string) string {
 	t.Helper()
 	dir, err := os.MkdirTemp(".", name+"-")

@@ -190,7 +190,6 @@ func stripComments(s string) string {
 	return b.String()
 }
 
-// removeIndexFiles deletes the index and the files SQLite keeps beside it.
 func removeIndexFiles(file string) error {
 	for _, name := range []string{file, file + "-wal", file + "-shm"} {
 		if err := os.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {

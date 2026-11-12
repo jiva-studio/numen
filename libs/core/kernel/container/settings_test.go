@@ -249,7 +249,7 @@ func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 }
 
 // A configuration copied before the settings were applied keeps the plan it had.
-func TestApplyingSettingsLeavesTheConfigurationItWasCalledOnAlone(t *testing.T) {
+func TestApplySettingsKeepsTheOriginalConfiguration(t *testing.T) {
 	response := DefaultSettings()
 	response.Performance = hardware.Performance{Profile: settingsdomain.ProfileEco}
 	before := NewConfig(Config{})

@@ -70,7 +70,7 @@ func writeAssetFile(t *testing.T, path, content string) {
 	}
 }
 
-func TestAssetsAreServedUnderTheTypeOfTheirExtension(t *testing.T) {
+func TestAssetHeadersFollowTheExtension(t *testing.T) {
 	cases := []struct {
 		name, wantType string
 		wantDownload   bool

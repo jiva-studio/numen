@@ -51,7 +51,8 @@ type Machine struct {
 }
 
 // Config is what the user may point somewhere else. Empty fields mean the platform's own locations. What the
-// parts of one installation share and what the settings and the open vault give it is in Resources.
+// parts of one installation share and what the settings and the open vault give it is in Resources. The machine plan the settings resolved is a
+// value of the Config itself, so ApplySettings changes no Config that was copied before it.
 type Config struct {
 	Paths
 
@@ -73,8 +74,6 @@ type Config struct {
 
 	Resources *Resources
 
-	// machine is what the settings last resolved for the hardware. It belongs to this value, and
-	// ApplySettings returns a Config that holds a new one.
 	machine Machine
 }
 

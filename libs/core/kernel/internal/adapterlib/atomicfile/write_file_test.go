@@ -63,7 +63,7 @@ func TestWriteFileKeepsTheOldFileWhenTheSourceFails(t *testing.T) {
 	}
 }
 
-func TestWriteFileLeavesNoFileWhenTheFirstWriteFails(t *testing.T) {
+func TestWriteFileLeavesNothingWhenTheSourceFailsFirst(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "state.json")
 	if err := atomicfile.WriteFile(context.Background(), path, iotest.ErrReader(errors.New("unreadable")), 0o600); err == nil {

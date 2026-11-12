@@ -27,8 +27,6 @@ var shownTypes = map[string]string{
 	".pdf":  "application/pdf",
 }
 
-// setAssetHeaders sets the type of a vault file and the headers that keep the browser to it. A file
-// of any other kind is served as bytes to download.
 func setAssetHeaders(head http.Header, name string) {
 	head.Set("X-Content-Type-Options", "nosniff")
 	shown, isShown := shownTypes[strings.ToLower(filepath.Ext(name))]
