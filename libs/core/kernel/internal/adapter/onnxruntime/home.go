@@ -37,7 +37,7 @@ func FromEnvironment(clock machineport.Clock) Config {
 }
 
 // EnvMockML names the variable that runs the plugins on mock models.
-const EnvMockML = "NUMEN_MOCK_ML"
+const EnvMockML = "NUMEN_TEST_MOCK_ML"
 
 // IsMockML reports whether EnvMockML runs the plugins on mock models.
 func IsMockML() bool { return os.Getenv(EnvMockML) == "true" }

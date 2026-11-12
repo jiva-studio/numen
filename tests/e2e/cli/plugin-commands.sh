@@ -23,7 +23,7 @@ cp "$repo/tests/e2e/desktop/fixtures/flywheel.pdf" "$work/vault/books/flywheel.p
 # The home, config and cache folders are the run's own. On mock models the host hands each
 # dependency a plugin declares as an empty placeholder, so nothing is fetched.
 export HOME="$work" XDG_CONFIG_HOME="$work/config" XDG_CACHE_HOME="$work/cache"
-export NUMEN_MOCK_ML=true NUMEN_PLUGINS_PATH="$repo/plugins"
+export NUMEN_TEST_MOCK_ML=true NUMEN_PLUGINS_PATH="$repo/plugins"
 export HTTP_PROXY="http://127.0.0.1:$pages_port" NO_PROXY=127.0.0.1
 
 # The address the import fetches, served by a local stand-in through the proxy.

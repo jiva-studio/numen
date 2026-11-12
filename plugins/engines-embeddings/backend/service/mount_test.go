@@ -34,7 +34,7 @@ func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
 }
 
 func TestMountRegistersCloseCallback(t *testing.T) {
-	t.Setenv("NUMEN_MOCK_ML", "true")
+	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	s := server.New(server.WithToken("token"))
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount: %v", err)

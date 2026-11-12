@@ -10,7 +10,7 @@ test.describe('Start-up while the embeddings model is still opening', () => {
   let server: OwnServer
 
   test.beforeAll(async () => {
-    server = await startOwnServer([], { env: { NUMEN_MOCK_OPEN_HOLD_MS: String(MODEL_OPEN_MS) } })
+    server = await startOwnServer([], { env: { NUMEN_TEST_MOCK_OPEN_HOLD_MS: String(MODEL_OPEN_MS) } })
   })
 
   test.afterAll(async () => {

@@ -338,7 +338,7 @@ func TestTheRemovedProviderSettingIsIgnored(t *testing.T) {
 }
 
 func TestTheMockModelServesTheLocalSourceOnly(t *testing.T) {
-	t.Setenv("NUMEN_MOCK_ML", "true")
+	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(host)
 

@@ -20,7 +20,7 @@ func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 }
 
 func TestTheHandlerAnswersWithTheModelTheEnvironmentNames(t *testing.T) {
-	t.Setenv("NUMEN_MOCK_ML", "true")
+	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	h := handler{model: newServer(nil)}
 
 	info, err := h.GetModelInfo(t.Context())

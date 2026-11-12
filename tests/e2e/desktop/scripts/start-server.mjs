@@ -331,7 +331,7 @@ const child = spawn(
       XDG_DATA_HOME: testDataDir,
       XDG_STATE_HOME: testStateDir,
       HOME: testHomeDir,
-      NUMEN_MOCK_ML: 'true',
+      NUMEN_TEST_MOCK_ML: 'true',
       NUMEN_PLUGINS_PATH: pluginsPath,
       NUMEN_DEBUG_TLS_CERT: certificateFile,
       NUMEN_DEBUG_TLS_KEY: keyFile,

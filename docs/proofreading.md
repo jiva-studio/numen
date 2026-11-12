@@ -131,4 +131,4 @@ A line that two batches of a transcript both replied to is taken from the batch 
 
 ## Without a model
 
-With `NUMEN_MOCK_ML=true`, as `-debug-mock-ml` and the end-to-end tests set it, the plugin calls no model. The mock proofreader replies to every numbered line with `[proofread]` after its words, and the gates treat that reply as any other: a short line of a recognition, where the mark changes the letters by more than `maxEditDistance`, stays as it was read.
+With `NUMEN_TEST_MOCK_ML=true`, as `-debug-mock-ml` and the end-to-end tests set it, the plugin calls no model. The mock proofreader replies to every numbered line with `[proofread]` after its words, and the gates treat that reply as any other: a short line of a recognition, where the mark changes the letters by more than `maxEditDistance`, stays as it was read.

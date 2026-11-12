@@ -11,7 +11,7 @@ import (
 
 // EnvMockML names the variable that has the plugin answer with the mock proofreader where its settings
 // hold no connection; with a connection the plugin asks it.
-const EnvMockML = "NUMEN_MOCK_ML"
+const EnvMockML = "NUMEN_TEST_MOCK_ML"
 
 const mockEnabled = "true"
 

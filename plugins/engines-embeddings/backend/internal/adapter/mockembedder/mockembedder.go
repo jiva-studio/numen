@@ -41,14 +41,14 @@ const MockHoldWord = "numenmockhold"
 
 // holdFileVariable names a file that holds every call of the mock while the file exists.
 // End-to-end tests create it to keep a vector pass open, and remove it to let the pass end.
-const holdFileVariable = "NUMEN_MOCK_EMBED_HOLD_FILE"
+const holdFileVariable = "NUMEN_TEST_MOCK_EMBED_HOLD_FILE"
 
 // holdPollInterval is how often a held call looks for the hold file again.
 const holdPollInterval = 50 * time.Millisecond
 
 // Embed returns one unit vector per text. A batch with a text that contains
 // MockHoldWord returns only when ctx ends, with its error. While the file named by the
-// variable NUMEN_MOCK_EMBED_HOLD_FILE exists, a batch waits for the file to go or for ctx to end.
+// variable NUMEN_TEST_MOCK_EMBED_HOLD_FILE exists, a batch waits for the file to go or for ctx to end.
 func (m Embedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	m.record(texts)
 	if slices.ContainsFunc(texts, isHeld) {

@@ -201,7 +201,7 @@ export class Server {
     const proxyAddress = this.services.proxy.address() as net.AddressInfo
     const editorEnv =
       this.options.application === 'editor'
-        ? { NUMEN_MOCK_ML: 'true', HTTP_PROXY: `http://${HOST}:${proxyAddress.port}`, NO_PROXY: HOST }
+        ? { NUMEN_TEST_MOCK_ML: 'true', HTTP_PROXY: `http://${HOST}:${proxyAddress.port}`, NO_PROXY: HOST }
         : {}
     const child = spawn(BINARIES[this.options.application], [`-debug-http-addr=${HOST}:0`, ...flags], {
       stdio: ['ignore', 'pipe', log],
@@ -216,7 +216,7 @@ export class Server {
         XDG_RUNTIME_DIR: path.join(this.state, 'home', 'run'),
         DBUS_SESSION_BUS_ADDRESS: '',
         ...editorEnv,
-        NUMEN_MOCK_EMBED_HOLD_FILE: path.join(this.state, 'embedding-hold'),
+        NUMEN_TEST_MOCK_EMBED_HOLD_FILE: path.join(this.state, 'embedding-hold'),
         NUMEN_PLUGINS_PATH: path.join(REPO_ROOT, 'plugins'),
         NUMEN_DEBUG_TLS_CERT: certificate,
         NUMEN_DEBUG_TLS_KEY: path.join(this.state, 'key.pem'),
