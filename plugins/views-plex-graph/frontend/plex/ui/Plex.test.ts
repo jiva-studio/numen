@@ -187,7 +187,9 @@ describe('how wide a box is drawn', () => {
     const context = {
       font: '',
       measureText: (text: string) =>
-        ({ width: (text.length * 7 * (Number.parseFloat(context.font) || 13)) / 13 }) as TextMetrics,
+        ({
+          width: (text.length * 7 * (Number.parseFloat(context.font) || 13)) / 13,
+        }) as TextMetrics,
     }
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
       context as unknown as CanvasRenderingContext2D,

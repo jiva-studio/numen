@@ -141,9 +141,7 @@ function getType(probe: Probe): PlexType {
 }
 
 const sameType = (one: PlexType, other: PlexType): boolean =>
-  one.font === other.font &&
-  one.labelFont === other.labelFont &&
-  one.gap === other.gap
+  one.font === other.font && one.labelFont === other.labelFont && one.gap === other.gap
 
 function createMetrics(type: PlexType, { padding, beside }: TitleRoom): PlexMetrics | undefined {
   const context = getMeasuringContext()

@@ -258,7 +258,9 @@ describe('a theme changed under a plex already standing', () => {
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => withIcon(18), readThemeType))
+    const { value: measures, stop } = scoped(() =>
+      useTitleWidths(() => withIcon(18), readThemeType),
+    )
 
     expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20 + 18 + 6)
 
@@ -274,7 +276,9 @@ describe('a theme changed under a plex already standing', () => {
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => NOTHING_BESIDE, readThemeType))
+    const { value: measures, stop } = scoped(() =>
+      useTitleWidths(() => NOTHING_BESIDE, readThemeType),
+    )
 
     const first = measures.value
     for (const ring of observers) ring()
@@ -299,7 +303,9 @@ describe('a theme changed under a plex already standing', () => {
     stubCanvas()
     stubStyles()
     setTheme()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => NOTHING_BESIDE, readThemeType))
+    const { value: measures, stop } = scoped(() =>
+      useTitleWidths(() => NOTHING_BESIDE, readThemeType),
+    )
 
     expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
     expect(document.body.children).toHaveLength(0)
@@ -454,7 +460,9 @@ describe('a theme changed in one token under a plex already standing', () => {
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => NOTHING_BESIDE, readThemeType))
+    const { value: measures, stop } = scoped(() =>
+      useTitleWidths(() => NOTHING_BESIDE, readThemeType),
+    )
     const first = measures.value
 
     setTheme(tokens)
