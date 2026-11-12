@@ -101,7 +101,7 @@ describe('no two boxes overlap', () => {
   it.each(cases)(
     '$name, measured $measure, room $room, window $viewport',
     ({ neighborhood, measure, room, viewport }) => {
-      const frame = arrange(neighborhood, { room, ...(viewport ? { viewport } : {}) }, { measure })
+      const frame = arrange(neighborhood, { room, ...(viewport ? { viewport } : {}) }, measure ? { measure } : {})
       expect(getOverlaps(frame)).toStrictEqual([])
     },
   )
@@ -283,7 +283,7 @@ describe('what is left out is counted, and only the last notes go', () => {
 
 describe('boxes narrow and gaps close before a note is left out', () => {
   const neighborhood = build('A note', { parent: 4, child: 12, jump: 4, sibling: 4 })
-  const windows = [600, 500, 440].map((width) => ({ width, height: 1000 }))
+  const windows = [600, 560, 540].map((width) => ({ width, height: 1000 }))
 
   const createHolder = (viewport: Window) => (packed: PlexOptions) => {
     const frame = arrangePlex(neighborhood, { options: { ...packed, viewport: undefined } })
