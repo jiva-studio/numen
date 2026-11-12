@@ -200,10 +200,14 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
         tab.error = null
       }
     }
-    await Promise.all(Array.from(tabs.keys()).map((id) => writeTab(id).catch(() => markUnreachable(id))))
+    await Promise.all(
+      Array.from(tabs.keys()).map((id) => writeTab(id).catch(() => markUnreachable(id))),
+    )
     const unsavedTabs = Array.from(tabs.values()).filter(isUnsavedTab)
     if (unsavedTabs.length > 0) {
-      throw new Error(`The text of ${unsavedTabs.map((tab) => tab.path).join(', ')} was not written`)
+      throw new Error(
+        `The text of ${unsavedTabs.map((tab) => tab.path).join(', ')} was not written`,
+      )
     }
   }
 

@@ -11,13 +11,11 @@ type FlushedNotes = Pick<ReturnType<typeof openNotes>, 'flush' | 'getUnsavedTabs
 export function createNoteFlushHandler(notes: FlushedNotes): FlushHandler {
   return async () => {
     await notes.flush()
-    return notes.getUnsavedTabs().map(
-      (note): Conflict => ({
-        note,
-        // The run of the handlers that follows writes the text again.
-        keep: () => Promise.resolve(),
-        take: () => Promise.resolve(notes.take(note)),
-      }),
-    )
+    return notes.getUnsavedTabs().map((note): Conflict => ({
+      note,
+      // The run of the handlers that follows writes the text again.
+      keep: () => Promise.resolve(),
+      take: () => Promise.resolve(notes.take(note)),
+    }))
   }
 }

@@ -32,7 +32,6 @@ interface NoteStoreContext {
   dispatch: (id: string, event: Event) => void
 }
 
-/** Answers every close waiting on the note. */
 function answerClosing(context: NoteStoreContext, id: string, removed: boolean): void {
   const waiting = context.closeCallbacks.get(id) ?? []
   context.closeCallbacks.delete(id)

@@ -921,7 +921,7 @@ describe('a flush is requested for a stuck tab', () => {
     expect(getState(next.tab)).toBe('stuck')
   })
 
-  it('gives up the unwritten text when the person takes the file\'s', () => {
+  it("gives up the unwritten text when the person takes the file's", () => {
     const next = transitionTab(stuck('tooLarge'), { kind: 'takeFile' })
 
     expect(next.effects).toEqual([{ kind: 'cancelTimer' }, { kind: 'replace', body: 'one' }])
