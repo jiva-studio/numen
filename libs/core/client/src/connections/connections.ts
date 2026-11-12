@@ -35,8 +35,8 @@ export interface ConnectionFieldInfo {
   readonly min?: number
   readonly max?: number
   readonly step?: number
-  /** The operation of the type that lists the values of a row field; empty for none. */
-  readonly optionsFrom: string
+  /** The operation of the type that lists the values of a row field. */
+  readonly optionsFrom?: string
 }
 
 /** A kind of connection one plugin provides. */
@@ -196,7 +196,7 @@ const readField = (field: ManifestConnectionField): ConnectionFieldInfo => {
     ...(field.min === undefined ? {} : { min: field.min }),
     ...(field.max === undefined ? {} : { max: field.max }),
     ...(field.step === undefined ? {} : { step: field.step }),
-    optionsFrom: field.optionsFrom,
+    ...(field.optionsFrom === '' ? {} : { optionsFrom: field.optionsFrom }),
   }
 }
 
