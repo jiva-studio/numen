@@ -35,6 +35,9 @@ export const TOLERANCE = 0.5
 const WALK_STEPS = 400
 
 /** The offsets, in cells across the direction, tried at each step of the walk. */
+/** Costs are compared to this many parts of a box. */
+const COST_PRECISION = 1e6
+
 const WALK_OFFSETS = [0, 1, -1, 2, -2, 3, -3] as const
 
 export function isFree(spot: Spot, taken: readonly Spot[], gaps: Gaps): boolean {
@@ -49,11 +52,15 @@ export function findFreeSpot(taken: readonly Spot[], request: SpotRequest): Spot
   const { middle, size, gaps } = request
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
-  // Candidates cost the same only in a tie, and a sort that is stable keeps their order.
+  // Costs are rounded before they are compared, so floating-point error does not
+  // decide a tie. Of equal costs the one nearer the start wins, which fills a
+  // group across its axis before it goes deeper; a stable sort keeps the
+  // candidate order for the rest.
   const ranked = listCandidates(request)
-    .map((point) => ({ point, cost: measureCost(point, request) }))
-    .filter((each) => Number.isFinite(each.cost))
-    .sort((a, b) => a.cost - b.cost)
+    .map((point) => ({ point, along: measureAlong(point, request) }))
+    .filter((each) => each.along >= -TOLERANCE)
+    .map((each) => ({ ...each, cost: Math.round(measureCost(each.point, request) * COST_PRECISION) }))
+    .sort((a, b) => a.cost - b.cost || a.along - b.along)
 
   for (const { point } of ranked) {
     const spot = toSpot(point)
@@ -85,11 +92,15 @@ function listCandidates(request: SpotRequest): Vector[] {
   return candidates
 }
 
-/** The distance to the middle counted in boxes, or infinity for a point nearer the focus than the start. */
+/** How far a point is from the start, along the direction. Below nothing it is nearer the focus than the start. */
+function measureAlong(point: Vector, request: SpotRequest): number {
+  const { start, direction } = request
+  return (point.x - start.x) * direction.x + (point.y - start.y) * direction.y
+}
+
+/** The distance to the middle counted in boxes. */
 function measureCost(point: Vector, request: SpotRequest): number {
-  const { start, middle, direction, size, gaps } = request
-  const along = (point.x - start.x) * direction.x + (point.y - start.y) * direction.y
-  if (along < -TOLERANCE) return Infinity
+  const { middle, size, gaps } = request
   return Math.hypot(
     (point.x - middle.x) / (size.width + gaps.gap),
     (point.y - middle.y) / (size.height + gaps.lineGap),
