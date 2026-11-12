@@ -557,7 +557,11 @@ type ManifestConnectionType struct {
 	Fields []*ManifestConnectionField `protobuf:"bytes,5,rep,name=fields,proto3" json:"fields,omitempty"`
 	// row_fields are the values a row that names a connection of the type holds besides the connection,
 	// such as a model. The core hands them to the provider as the options of the call.
-	RowFields     []*ManifestConnectionField `protobuf:"bytes,6,rep,name=row_fields,json=rowFields,proto3" json:"row_fields,omitempty"`
+	RowFields []*ManifestConnectionField `protobuf:"bytes,6,rep,name=row_fields,json=rowFields,proto3" json:"row_fields,omitempty"`
+	// is_built_in makes the core list one connection of the type while the plugin is enabled, with the
+	// type id as its id and no field set. It is not stored and cannot be deleted. Only a type with no
+	// required field that is not fixed declares it.
+	IsBuiltIn     bool `protobuf:"varint,7,opt,name=is_built_in,json=builtIn,proto3" json:"is_built_in,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -632,6 +636,13 @@ func (x *ManifestConnectionType) GetRowFields() []*ManifestConnectionField {
 		return x.RowFields
 	}
 	return nil
+}
+
+func (x *ManifestConnectionType) GetIsBuiltIn() bool {
+	if x != nil {
+		return x.IsBuiltIn
+	}
+	return false
 }
 
 // ManifestOperation titles an operation a connection type serves.
@@ -2407,7 +2418,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x04when\x18\x04 \x01(\tR\x04when\x1a9\n" +
 	"\vValuesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xfd\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x9b\x02\n" +
 	"\x16ManifestConnectionType\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -2417,7 +2428,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"operations\x129\n" +
 	"\x06fields\x18\x05 \x03(\v2!.numen.v1.ManifestConnectionFieldR\x06fields\x12@\n" +
 	"\n" +
-	"row_fields\x18\x06 \x03(\v2!.numen.v1.ManifestConnectionFieldR\trowFields\"=\n" +
+	"row_fields\x18\x06 \x03(\v2!.numen.v1.ManifestConnectionFieldR\trowFields\x12\x1c\n" +
+	"\vis_built_in\x18\a \x01(\bR\abuiltIn\"=\n" +
 	"\x11ManifestOperation\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\"\xd6\x03\n" +
