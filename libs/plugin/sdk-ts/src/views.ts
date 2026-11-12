@@ -32,11 +32,10 @@ export interface MountedView extends Disposable {
 // CONVERSATION is the capability of a view that holds one conversation with an agent.
 export const CONVERSATION = 'conversation'
 
-// ConversationContext is what a plugin passes the conversation view it mounts.
+// ConversationContext is what a plugin passes the conversation view it mounts. The view runs its tasks on
+// the connections of the mounting plugin and calls the tools of a task with the keys of toolContext.
 export interface ConversationContext {
-  // The connections of the mounting plugin the view runs its tasks on.
   readonly connections: ConnectionHost
-  // The keys the tools of a task are called with.
   readonly toolContext?: Readonly<Record<string, string>>
   readonly vault?: string
   readonly placeholder?: string

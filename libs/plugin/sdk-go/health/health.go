@@ -73,7 +73,6 @@ type Client struct {
 	rpc numenv1connect.PluginHealthServiceClient
 }
 
-// NewClient returns the client of the host at the endpoint.
 func NewClient(endpoint hostcall.Endpoint) *Client {
 	return NewClientOver(hostcall.HTTPClient(), endpoint)
 }

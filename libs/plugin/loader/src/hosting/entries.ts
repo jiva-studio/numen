@@ -47,10 +47,6 @@ function undoSteps(steps: readonly (() => void)[]): void {
   for (const undo of [...steps].reverse()) undo()
 }
 
-/**
- * Registers the reader of each extension the reader opens, pushing the undoing of each onto cleanups.
- * A window that opens no tab for a plugin or reads no extension registers none.
- */
 function registerReaderExtensions(
   deps: PluginHostDeps,
   item: PluginItemRegistration<ReaderRegistration>,
