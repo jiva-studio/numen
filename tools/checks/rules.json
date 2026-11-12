@@ -13,8 +13,7 @@
     "slow": "takes tens of seconds or more; type-checks the workspace or starts a linter or bundler",
     "needs-nix": "needs a tool of the nix shell: golangci-lint, buf",
     "security": "guards an isolation boundary between plugins, or between a plugin and the core",
-    "gate": "wide paths; runs whenever anything in its area changes, and before every merge",
-    "advisory": "reports findings for a decision and is not yet a rule; the CI runs are meant to leave it out with EXCLUDE=advisory"
+    "gate": "wide paths; runs whenever anything in its area changes, and before every merge"
   },
   "checks": [
     {
@@ -769,8 +768,7 @@
         "go",
         "library",
         "plugin",
-        "slow",
-        "advisory"
+        "slow"
       ],
       "selftest": "structure/go/single-consumer/check_test.go",
       "runner": "go",
@@ -1021,8 +1019,7 @@
         "ts",
         "library",
         "plugin",
-        "fast",
-        "advisory"
+        "fast"
       ],
       "selftest": "structure/ts/contracts-imports/check.test.mjs",
       "runner": "verifiers",
