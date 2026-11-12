@@ -37,12 +37,9 @@ Feature: Search documents
         | assets/sample.epub | sample.epub |
       When the person searches the vault for "reflowable epub reader"
       Then the search result "assets/sample.epub" in the group "Text" has only the following actions:
-        | action                                    |
-        | Open the document here                    |
-        | Create note “reflowable epub reader”      |
-        | Create as child “reflowable epub reader”  |
-        | Create as parent “reflowable epub reader” |
-        | Create as jump “reflowable epub reader”   |
+        | action |
+        | Open the document here |
+        | Create note “reflowable epub reader” |
 
     Scenario: A book passage is opened with its action
       Given the vault has the following:
