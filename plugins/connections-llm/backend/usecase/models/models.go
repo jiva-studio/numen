@@ -71,9 +71,13 @@ func (m *Models) ListModels(ctx context.Context, call connection.Call, operation
 		return m.gateway.ListModels(ctx, call, limit, operations)
 	}
 	key := getListKey(call, operations)
-	if _, isKept, _ := m.lists.Get(ctx, key, nil); isKept {
-		list, _, err := m.lists.Get(ctx, key, load)
-		return list, err
+	_, isKept, err := m.lists.Get(ctx, key, nil)
+	if err != nil {
+		return nil, err
+	}
+	if isKept {
+		kept, _, keptErr := m.lists.Get(ctx, key, load)
+		return kept, keptErr
 	}
 	list, err := load(ctx)
 	if err != nil {
