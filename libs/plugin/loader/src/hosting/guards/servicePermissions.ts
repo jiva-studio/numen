@@ -152,7 +152,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
   },
   vault: {
     notes: {
-      getNeighborhood: requirePermissionsAsync(READ),
+      listRelatedNotes: requirePermissionsAsync(READ),
       getHeadings: requirePermissionsAsync(READ),
       findNotes: requirePermissionsAsync(READ),
       createUntitledNote: requirePermissionsAsync(WRITE),

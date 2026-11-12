@@ -24,14 +24,14 @@ type proseCalls interface {
 	) (*connect.Response[v1.RenameNoteResponse], error)
 }
 
-// outlineCalls are the calls the Outline part answers: it answers the note a vault opens on, the neighborhood of a note and the headings of notes.
+// outlineCalls are the calls the Outline part answers: it answers the note a vault opens on, the related notes of a note and the headings of notes.
 type outlineCalls interface {
 	GetOpeningNote(
 		ctx context.Context, _ *connect.Request[v1.GetOpeningNoteRequest],
 	) (*connect.Response[v1.GetOpeningNoteResponse], error)
-	GetNeighborhood(
-		ctx context.Context, r *connect.Request[v1.GetNeighborhoodRequest],
-	) (*connect.Response[v1.GetNeighborhoodResponse], error)
+	ListRelatedNotes(
+		ctx context.Context, r *connect.Request[v1.ListRelatedNotesRequest],
+	) (*connect.Response[v1.ListRelatedNotesResponse], error)
 	ListHeadings(
 		ctx context.Context,
 		r *connect.Request[v1.ListHeadingsRequest],

@@ -6,21 +6,14 @@
  */
 import { ref } from 'vue'
 import { asFailure, asValue, NOTE_TYPE, type Connection, type LinkMarker } from '@numen/plugin-sdk'
-import type {
-  PlexEditor,
-  PlexView,
-  Neighborhood,
-  NoteType,
-  PathRename,
-  PlexRelation,
-} from '../types'
+import type { PlexEditor, PlexView, NoteGraph, NoteType, PathRename, PlexRelation } from '../types'
 
 /** A tick that lets whatever a gesture requested from the vault resolve. */
 export const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 export type Types = Record<string, NoteType>
 
-export interface RelatedNeighborSpec {
+export interface RelatedNoteSpec {
   path: string
   relation?: PlexRelation
   through?: string
@@ -32,7 +25,7 @@ export interface RelatedNeighborSpec {
   type?: NoteType
 }
 
-export type NeighborSpec = string | RelatedNeighborSpec
+export type RelatedNoteInput = string | RelatedNoteSpec
 
 const toSide = (label: string | undefined, marker: LinkMarker | undefined) =>
   label === undefined && marker === undefined
@@ -40,34 +33,34 @@ const toSide = (label: string | undefined, marker: LinkMarker | undefined) =>
     : { label: label ?? '', marker: marker ?? null, reason: '' }
 
 /**
- * The line a neighbor is drawn by, as the vault answers it: from a parent to
- * its child, and from the neighbor to the focus for a jump.
+ * The line a related note is drawn by, as the vault answers it: from a parent to
+ * its child, and from the related note to the focus for a jump.
  */
-export const createLine = (focus: string, spec: RelatedNeighborSpec): Connection => {
+export const createLine = (focus: string, spec: RelatedNoteSpec): Connection => {
   const relation = spec.relation ?? 'child'
   const named = relation === 'sibling' ? (spec.through ?? '') : focus
   const ownSide = toSide(spec.label, spec.marker)
-  const neighborSide = toSide(spec.reverseLabel, spec.reverseMarker)
+  const relatedSide = toSide(spec.reverseLabel, spec.reverseMarker)
   const isNamedFirst = relation === 'child' || relation === 'sibling'
   return {
     first: isNamedFirst ? named : spec.path,
     second: isNamedFirst ? spec.path : named,
     role: relation === 'jump' ? 'jump' : 'child',
     type: '',
-    firstSide: isNamedFirst ? ownSide : neighborSide,
-    secondSide: isNamedFirst ? neighborSide : ownSide,
+    firstSide: isNamedFirst ? ownSide : relatedSide,
+    secondSide: isNamedFirst ? relatedSide : ownSide,
   }
 }
 
-const createNeighborhood = (
+const createNoteGraph = (
   focus: string,
-  neighbors: readonly NeighborSpec[] = [],
+  relatedNotes: readonly RelatedNoteInput[] = [],
   types: Types = {},
   lines: readonly Connection[] = [],
-): Neighborhood => {
-  const specs = neighbors.map((item) => (typeof item === 'string' ? { path: item } : item))
+): NoteGraph => {
+  const specs = relatedNotes.map((item) => (typeof item === 'string' ? { path: item } : item))
   const focusKind = types[focus]
-  const neighborhood: Neighborhood = {
+  const noteGraph: NoteGraph = {
     focus: { path: focus, title: focus.replace(/\.md$/, '') },
     focusType: focusKind ?? NOTE_TYPE,
     related: specs.map((spec) => ({
@@ -79,21 +72,19 @@ const createNeighborhood = (
     })),
     connections: [...specs.map((spec) => createLine(focus, spec)), ...lines],
   }
-  return focusKind ? { ...neighborhood, focusTabKind: focusKind } : neighborhood
+  return focusKind ? { ...noteGraph, focusTabKind: focusKind } : noteGraph
 }
 
 /** A plex standing on a note, which records every note it was sent to. `lines` join notes other than the focus. */
 export const viewOn = (
   initialPath: string,
-  neighbors: readonly NeighborSpec[] = [],
+  relatedNotes: readonly RelatedNoteInput[] = [],
   types: Types = {},
   lines: readonly Connection[] = [],
 ) => {
   const went: string[] = []
   const view: PlexView = {
-    neighborhood: ref<Neighborhood | null>(
-      createNeighborhood(initialPath, neighbors, types, lines),
-    ),
+    noteGraph: ref<NoteGraph | null>(createNoteGraph(initialPath, relatedNotes, types, lines)),
     here: ref(initialPath),
     error: ref(''),
     nextPath: ref(''),
@@ -101,9 +92,9 @@ export const viewOn = (
     go: async (path: string) => {
       went.push(path)
       view.here.value = path
-      view.neighborhood.value = createNeighborhood(
+      view.noteGraph.value = createNoteGraph(
         path,
-        path === initialPath ? neighbors : [],
+        path === initialPath ? relatedNotes : [],
         types,
         path === initialPath ? lines : [],
       )

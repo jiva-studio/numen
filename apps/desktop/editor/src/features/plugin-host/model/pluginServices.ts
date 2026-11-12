@@ -17,7 +17,7 @@ import type {
   WorkspaceIcons,
 } from '@numen/plugin-loader'
 import type { FileOpeners } from '@/entities/tab'
-import { getNeighborhood, listHeadings, type NoteCreator } from '@/entities/note'
+import { listRelatedNotes, listHeadings, type NoteCreator } from '@/entities/note'
 import { getFileKinds } from '@/entities/file'
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
@@ -136,7 +136,7 @@ const FOUND_LIMIT = 20
 
 export function createVaultNotes({ search, making, pluginNotes }: VaultNotesDeps): VaultNotes {
   return {
-    getNeighborhood: (path) => getNeighborhood(path),
+    listRelatedNotes: (path) => listRelatedNotes(path),
     getHeadings: (paths) => listHeadings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),

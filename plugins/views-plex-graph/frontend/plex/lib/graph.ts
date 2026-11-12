@@ -1,19 +1,19 @@
-import type { PlexNeighborhood, PlexNode } from '../../types'
+import type { PlexGraph, PlexNode } from '../../types'
 
 /**
- * Check the two invariants and return the focus. Throws: a neighborhood that
+ * Check the two invariants and return the focus. Throws: a graph that
  * breaks either is a caller with a bug, not a state to be rendered.
  */
-export function assertNeighborhood(neighborhood: PlexNeighborhood): PlexNode {
-  const focused = neighborhood.nodes.filter((node) => node.relation === 'focus')
+export function assertGraph(graph: PlexGraph): PlexNode {
+  const focused = graph.nodes.filter((node) => node.relation === 'focus')
   const focus = focused[0]
 
   if (focus === undefined) {
-    throw new Error('A plex neighborhood needs a node with the focus relation')
+    throw new Error('A plex graph needs a node with the focus relation')
   }
   if (focused.length > 1) {
     throw new Error(
-      `A plex neighborhood has one focus, not ${focused.length}: ` +
+      `A plex graph has one focus, not ${focused.length}: ` +
         focused.map((node) => node.id).join(', '),
     )
   }
@@ -24,7 +24,7 @@ export function assertNeighborhood(neighborhood: PlexNeighborhood): PlexNode {
   // would be ambiguous.
   const observed = new Set<string>()
   const repeated = new Set<string>()
-  for (const node of neighborhood.nodes) {
+  for (const node of graph.nodes) {
     if (observed.has(node.id)) repeated.add(node.id)
     observed.add(node.id)
   }

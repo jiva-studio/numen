@@ -39,7 +39,7 @@ const createServices = () => {
     messages: { showError: vi.fn() },
   } as unknown as WorkspaceHost
   const notes = {
-    getNeighborhood: vi.fn(() => Promise.resolve({ path: 'Notes/Example.md' })),
+    listRelatedNotes: vi.fn(() => Promise.resolve({ path: 'Notes/Example.md' })),
     getHeadings: vi.fn(() => Promise.resolve(new Map())),
     findNotes: vi.fn(() => Promise.resolve([])),
     read: vi.fn(() => Promise.resolve({ body: 'Example prose.' })),
@@ -106,7 +106,7 @@ const NOTE_WRITES: Record<string, Call> = {
 }
 
 const NOTE_READS: Record<string, Call> = {
-  getNeighborhood: (c) => c.vault.notes!.getNeighborhood('Notes/Example.md'),
+  listRelatedNotes: (c) => c.vault.notes!.listRelatedNotes('Notes/Example.md'),
   getHeadings: (c) => c.vault.notes!.getHeadings(['Notes/Example.md']),
   findNotes: (c) => c.vault.notes!.findNotes('Example', 5),
   read: (c) => c.vault.notes!.read('Notes/Example.md'),

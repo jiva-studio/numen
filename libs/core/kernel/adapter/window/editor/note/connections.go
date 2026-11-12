@@ -152,7 +152,7 @@ func (h *Links) CreateRelatedNote(
 	if !ok {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no link has this marker"))
 	}
-	made, err := h.createRelated.Execute(ctx, showing, domain.RelatedNote{
+	made, err := h.createRelated.Execute(ctx, showing, domain.NewRelatedNote{
 		From: r.Msg.GetFrom(), Role: role, Title: r.Msg.GetTitle(), Type: r.Msg.GetType(), Marker: marker,
 	})
 	indexOutdated := h.writes.IsIndexOutdated(err)

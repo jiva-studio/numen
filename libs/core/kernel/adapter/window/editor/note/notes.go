@@ -143,26 +143,26 @@ func (h *Outline) GetOpeningNote(
 	return connect.NewResponse(out), nil
 }
 
-func (h *Outline) GetNeighborhood(
-	ctx context.Context, r *connect.Request[v1.GetNeighborhoodRequest],
-) (*connect.Response[v1.GetNeighborhoodResponse], error) {
+func (h *Outline) ListRelatedNotes(
+	ctx context.Context, r *connect.Request[v1.ListRelatedNotesRequest],
+) (*connect.Response[v1.ListRelatedNotesResponse], error) {
 	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.getNeighborhood.Execute(ctx, showing, r.Msg.GetPath())
+	found, err := h.getRelatedNotes.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	types, tabKinds := found.Types, found.TabKinds
 
-	out := &v1.GetNeighborhoodResponse{
+	out := &v1.ListRelatedNotesResponse{
 		Focus:        convertNoteToWire(found.Focus),
 		FocusType:    convertNoteTypeToWire(types[found.Focus.Path]),
 		FocusTabKind: tabKinds[found.Focus.Path],
 	}
 	for _, related := range found.Related {
-		out.Related = append(out.Related, &v1.Neighbor{
+		out.Related = append(out.Related, &v1.RelatedNote{
 			Note:     convertNoteToWire(related.NoteRef),
 			Relation: convertRelationToWire(related.Relation),
 			Type:     convertNoteTypeToWire(types[related.Path]),

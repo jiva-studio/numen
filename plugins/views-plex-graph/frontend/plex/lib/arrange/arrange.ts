@@ -1,5 +1,5 @@
 /**
- * Turn a neighborhood into a frame: canPlace, place, route.
+ * Turn a graph into a frame: canPlace, place, route.
  *
  * Pure — the same inputs give the same numbers on any machine. Nothing here
  * reads the clock, measures text or touches the DOM: the width of a title is
@@ -7,7 +7,7 @@
  */
 import type { LabelType } from '../edge'
 import { getExtent, type PlexFrame } from '../frame'
-import { assertNeighborhood } from '../neighborhood'
+import { assertGraph } from '../graph'
 import type { PlacedNode } from '../node'
 import { RELATION_NAMES } from '../relation'
 import { measureCrowding } from './layout/crowding'
@@ -23,7 +23,7 @@ import {
 import { routeEdges, createRouting } from './edges/routing'
 import { findSpacing, type Spacing } from './layout/spacing'
 import { separateTitles } from './edges/titles'
-import type { PlexNeighborhood, PlexNode, PlexRelation } from '../../../types'
+import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
 
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
@@ -34,12 +34,12 @@ export interface ArrangeInput {
 }
 
 export function arrangePlex(
-  neighborhood: PlexNeighborhood,
+  graph: PlexGraph,
   { options, placement = rowsAndColumns, measure, measureLabel, labelType }: ArrangeInput = {},
 ): PlexFrame {
   const request = applyRoom(resolveOptions(options))
-  const focusNode = assertNeighborhood(neighborhood)
-  const counts = countRelations(neighborhood.nodes)
+  const focusNode = assertGraph(graph)
+  const counts = countRelations(graph.nodes)
 
   // Packed as closely as this window needs and no closer, so a box narrows
   // and a gap closes before a relation is given up.
@@ -58,7 +58,7 @@ export function arrangePlex(
 
   const limits = getLimits(resolved, counts)
 
-  const { nodesByRelation, overflow } = canPlace(neighborhood.nodes, limits)
+  const { nodesByRelation, overflow } = canPlace(graph.nodes, limits)
 
   // Admission is settled at that packing, and the gaps then expand into the
   // remaining space. The expansion is measured against the arrangement itself, so
@@ -77,11 +77,7 @@ export function arrangePlex(
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
   const edgeRouting = createRouting(resolved, measureLabel, labelType)
-  const edges = separateTitles(
-    routeEdges(neighborhood.edges, byId, edgeRouting),
-    nodes,
-    edgeRouting,
-  )
+  const edges = separateTitles(routeEdges(graph.edges, byId, edgeRouting), nodes, edgeRouting)
 
   return { nodes, edges, extent: getExtent(nodes), overflow }
 }

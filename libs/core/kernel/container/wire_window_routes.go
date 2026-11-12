@@ -153,7 +153,7 @@ func mountNote(w *windowWiring) {
 	outlining := notewindow.NewOutline(
 		state,
 		query.NewGetOpeningNote(w.db.NoteQueries()),
-		query.NewGetNeighborhoodView(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
+		query.NewGetRelatedNotesView(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
 		query.NewListHeadings(w.db.NoteQueries()),
 	)
 	links := notewindow.NewLinks(

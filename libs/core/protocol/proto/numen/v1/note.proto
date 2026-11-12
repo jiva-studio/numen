@@ -4,7 +4,7 @@ syntax = "proto3";
 //
 // A note is addressed by the path it is filed under, which is what the vault
 // calls it. What is here is what a note holds and what it is joined to: its
-// prose, its headings, its neighborhood, the addresses written in it, and
+// prose, its headings, its related notes, the addresses written in it, and
 // every way of writing one. Where a note sits among the vault's other files is
 // file.proto.
 package numen.v1;
@@ -20,8 +20,8 @@ service NoteService {
   // answers with nothing until a scan has stored something.
   rpc GetOpeningNote(GetOpeningNoteRequest) returns (GetOpeningNoteResponse);
 
-  // GetNeighborhood is one note and everything joined to it.
-  rpc GetNeighborhood(GetNeighborhoodRequest) returns (GetNeighborhoodResponse);
+  // ListRelatedNotes lists the notes related to one note, and the note itself.
+  rpc ListRelatedNotes(ListRelatedNotesRequest) returns (ListRelatedNotesResponse);
 
   // ResolveAddresses answers where addresses written in one note land.
   rpc ResolveAddresses(ResolveAddressesRequest) returns (ResolveAddressesResponse);
@@ -106,20 +106,20 @@ message GetOpeningNoteResponse {
   optional Note note = 1;
 }
 
-message GetNeighborhoodRequest {
+message ListRelatedNotesRequest {
   string path = 1;
 }
 
-message GetNeighborhoodResponse {
+message ListRelatedNotesResponse {
   Note focus = 1;
-  repeated Neighbor related = 2;
+  repeated RelatedNote related = 2;
 
   // The `type` key of the frontmatter of the note in focus, so a client draws a note as
   // what it is. Empty for an ordinary note.
   string focus_type = 3;
 
   // One connection for every line the client draws: a pair of the drawn notes
-  // (the focus and its neighbors) that a record joins, whether the focus is one
+  // (the focus and its related notes) that a record joins, whether the focus is one
   // of them or not. A hierarchical connection has the parent as first and the
   // child as second, and each side holds the label and the marker of the record
   // written in that note.
@@ -140,9 +140,9 @@ enum Relation {
   RELATION_SIBLING = 4;
 }
 
-// Neighbor is one note joined to the one in focus. The records that join notes
-// are in GetNeighborhoodResponse.connections.
-message Neighbor {
+// RelatedNote is one note joined to the one in focus. The records that join notes
+// are in ListRelatedNotesResponse.connections.
+message RelatedNote {
   Note note = 1;
   Relation relation = 2;
 

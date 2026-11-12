@@ -72,8 +72,8 @@ func (a *pathLookup) GetNotes(_ context.Context, _ domain.VaultID, paths []strin
 	return out, nil
 }
 
-func showGraph(g graph, refs *pathLookup, focus string) (domain.Neighborhood, error) {
-	return query.NewShowNeighborhood(g, refs).Execute(
+func showGraph(g graph, refs *pathLookup, focus string) (domain.NoteGraph, error) {
+	return query.NewListRelatedNotes(g, refs).Execute(
 		context.Background(), domain.Vault{ID: graphVault}, focus)
 }
 
@@ -114,8 +114,8 @@ func TestOnlyTheOtherChildrenOfAParentAreSiblings(t *testing.T) {
 	}
 }
 
-// Whatever fails in finding the neighbors is the answer.
-func TestANeighborhoodThatCannotBeFoundReturnsWhy(t *testing.T) {
+// Whatever fails in finding the related notes is the answer.
+func TestRelatedNotesThatCannotBeFoundReturnWhy(t *testing.T) {
 	t.Parallel()
 	boom := errors.New("the index would not answer")
 	parentOfF := map[string][]domain.ResolvedLink{"F.md": {createOutgoingLink("P.md", domain.RoleParent, "")}}
@@ -148,9 +148,9 @@ func TestANeighborhoodThatCannotBeFoundReturnsWhy(t *testing.T) {
 	}
 }
 
-// A note unknown to the vault is the center of no neighborhood, regardless of
+// A note unknown to the vault is the center of no related notes, regardless of
 // which notes link to it.
-func TestANoteTheVaultDoesNotKnowHasNoNeighborhood(t *testing.T) {
+func TestANoteTheVaultDoesNotKnowHasNoRelatedNotes(t *testing.T) {
 	t.Parallel()
 	g := graph{out: map[string][]domain.ResolvedLink{"F.md": {createOutgoingLink("C.md", domain.RoleChild, "")}}}
 
