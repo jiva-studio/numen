@@ -131,7 +131,7 @@ describe('where the relations sit', () => {
 })
 
 describe('a box is as wide as its title needs', () => {
-  const { minWidth, nodeSize, focusSize, gap, lineGap, maxPerLine } = DEFAULT_OPTIONS
+  const { minWidth, nodeSize, focusSize, focusScale, gap, lineGap, maxPerLine } = DEFAULT_OPTIONS
 
   it('draws every box at its widest when nothing was measured', () => {
     const layout = arrangePlex(graphs.typical)
@@ -142,13 +142,13 @@ describe('a box is as wide as its title needs', () => {
   it('gives each box the width it was measured at', () => {
     const measurable = createGraph('child', 'Domain', 'Use case', 'Aggregate', 'Repository')
     const layout = arrangePlex(measurable, { measure: byTitle })
-    for (const node of layout.nodes) expect(node.width).toBe(byTitle(node))
+    for (const node of getNodesByRelation(layout, 'child')) expect(node.width).toBe(byTitle(node))
   })
 
-  it('sizes the focus to its title as it sizes any other box', () => {
+  it('sizes the focus to its title as any other box, made larger by the focus scale', () => {
     const layout = arrangePlex(createGraph('child', 'Port'), { measure: byTitle })
     const focus = getFocus(layout)
-    expect(focus.width).toBe(byTitle(focus))
+    expect(focus.width).toBeCloseTo(byTitle(focus) * focusScale, 6)
     expect(focus.width).toBeLessThan(focusSize.width)
   })
 
@@ -160,7 +160,7 @@ describe('a box is as wide as its title needs', () => {
 
   it('gives a title that measures next to nothing the minimum', () => {
     const layout = arrangePlex(createGraph('child', '', 'A'), { measure: () => 0 })
-    expect(getFocus(layout).width).toBe(minWidth)
+    expect(getFocus(layout).width).toBeCloseTo(minWidth * focusScale, 6)
     for (const node of getNodesByRelation(layout, 'child')) expect(node.width).toBe(minWidth)
   })
 
@@ -448,7 +448,7 @@ describe('the options are honoured', () => {
   it('takes a curve setting without receiving the size of a box', () => {
     // Tuning a curve should not need to know the size of a box.
     const straighter = arrangePlex(graphs.typical, {
-      options: { routing: { curvature: 0 } },
+      options: { routing: { curvature: 0.01 } },
     })
     const edge = straighter.edges[0]!
     expect(edge.control1.y - edge.fromPoint.y).toBe(DEFAULT_OPTIONS.routing.minReach)

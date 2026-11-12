@@ -4,6 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { createBackendHandlers } from './backendHandlers'
+import { formatError } from '@/shared/api/errors'
 
 const TARGET = { path: 'talks/a.mp3', title: 'a', isFolder: false, others: [], tab: '' }
 
@@ -64,7 +65,7 @@ describe('createBackendHandlers', () => {
         command: 'app:file.createText',
         target: TARGET,
       }),
-    ).rejects.toThrow('no audio')
+    ).rejects.toSatisfy((error) => formatError(error) === 'no audio')
 
     expect(deps.writeMessage).not.toHaveBeenCalled()
     expect(deps.openFile).not.toHaveBeenCalled()

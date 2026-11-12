@@ -9,6 +9,8 @@ import Plex from './Plex.vue'
 import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
 import type { Viewport } from '@numen/ui'
 import { graphs } from '../fixtures/graphs'
+import { stubClock } from '../../fixtures/clock'
+import type { PlexGraph } from '../../types'
 
 const mountPlex = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) =>
   mount(Plex, {
@@ -166,22 +168,30 @@ describe('how wide a box is drawn', () => {
     plex.findAll('.plex__node--child .plex__box').map((box) => box.attributes('width'))
 
   /** The type the page is set in, which a theme may rewrite at any moment. */
-  let theme = { size: 13, padding: 10, gap: 6, label: 10 }
+  let theme = { size: 13, gap: 6, label: 10 }
 
   const readThemeType = () => ({
     font: `${theme.size}px Test Sans`,
     labelFont: `${theme.label}px Test Sans`,
-    padding: theme.padding,
     gap: theme.gap,
   })
 
-  /** A canvas that measures by the character. jsdom has none of its own. */
+  /**
+   * A canvas that measures by the character, seven pixels each at 13 pixels and more in a
+   * larger type. jsdom has none of its own.
+   */
   const stubCanvas = () => {
     vi.stubGlobal('CanvasRenderingContext2D', class {})
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    const context = {
       font: '',
-      measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
-    } as unknown as CanvasRenderingContext2D)
+      measureText: (text: string) =>
+        ({
+          width: (text.length * 7 * (Number.parseFloat(context.font) || 13)) / 13,
+        }) as TextMetrics,
+    }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      context as unknown as CanvasRenderingContext2D,
+    )
   }
 
   /** A window that reports a size change when a test triggers it. */
@@ -205,7 +215,7 @@ describe('how wide a box is drawn', () => {
   afterEach(() => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
-    theme = { size: 13, padding: 10, gap: 6, label: 10 }
+    theme = { size: 13, gap: 6, label: 10 }
     document.body.replaceChildren()
   })
 
@@ -257,7 +267,7 @@ describe('how wide a box is drawn', () => {
     const plex = mountPlex({ readType: readThemeType })
     const painted = boxes(plex)
 
-    theme = { ...theme, size: 20, padding: 24 }
+    theme = { ...theme, size: 26 }
     for (const ring of rings) ring()
     await nextTick()
 
@@ -337,5 +347,154 @@ describe('how much room the plex has', () => {
     })
     plex.unmount()
     expect(stop).toHaveBeenCalledOnce()
+  })
+})
+
+/** A focus with one parent and one child, the smallest plex with every kind of line. */
+const FAMILY: PlexGraph = {
+  nodes: [
+    { id: 'focus', title: 'Watershed', relation: 'focus' },
+    { id: 'parent-0', title: 'Hydrology', relation: 'parent' },
+    { id: 'child-0', title: 'River delta', relation: 'child' },
+  ],
+  edges: [
+    { from: 'parent-0', to: 'focus' },
+    { from: 'focus', to: 'child-0' },
+  ],
+}
+
+describe('Pill background', () => {
+  it('draws no pill on any node when it is off, the focus included', () => {
+    const plex = mountPlex({ graph: FAMILY, showPills: false })
+
+    expect(plex.findAll('.plex__node')).toHaveLength(3)
+    expect(plex.findAll('.plex__box')).toHaveLength(0)
+  })
+
+  it('draws every node as a dot and its title when it is off', () => {
+    const plex = mountPlex({ graph: FAMILY, showPills: false })
+
+    for (const node of plex.findAll('.plex__node')) {
+      expect(node.findAll('.plex__dot')).toHaveLength(1)
+      expect(node.find('.plex__title-text').exists()).toBe(true)
+    }
+    expect(plex.findAll('.plex__title-text').map((title) => title.text())).toStrictEqual(
+      expect.arrayContaining(['Watershed', 'Hydrology', 'River delta']),
+    )
+  })
+
+  it('draws the pills again once it is switched back on', async () => {
+    const plex = mountPlex({ graph: FAMILY, showPills: false })
+
+    await plex.setProps({ showPills: true })
+
+    expect(plex.findAll('.plex__box')).toHaveLength(3)
+    expect(plex.findAll('.plex__dot')).toHaveLength(0)
+  })
+
+  it('still travels to a note pressed on its title when it is off', async () => {
+    const plex = mountPlex({ graph: FAMILY, showPills: false })
+
+    await plex.get('[aria-label^="River delta"] .plex__title-text').trigger('click')
+
+    expect(plex.emitted('activate')).toStrictEqual([['child-0']])
+  })
+
+  it('still asks for the menu of a note right-clicked on its title when it is off', () => {
+    const plex = mountPlex({ graph: FAMILY, showPills: false })
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 })
+
+    plex.get('[aria-label^="Hydrology"] .plex__title-text').element.dispatchEvent(event)
+
+    expect((plex.emitted('menu') as unknown[][] | undefined)?.map(([id]) => id)).toStrictEqual([
+      'parent-0',
+    ])
+  })
+})
+
+describe('the pill padding and the focus size, measured', () => {
+  const ONE_CHILD: PlexGraph = {
+    nodes: [
+      { id: 'focus', title: 'Port wine', relation: 'focus' },
+      { id: 'child-0', title: 'Watershed ab', relation: 'child' },
+    ],
+    edges: [{ from: 'focus', to: 'child-0' }],
+  }
+
+  /** The theme's own padding, which the plex no longer takes. */
+  const readThemeType = () => ({
+    font: '13px Test Sans',
+    labelFont: '10px Test Sans',
+    padding: 10,
+    gap: 6,
+  })
+
+  const stubCanvas = () => {
+    vi.stubGlobal('CanvasRenderingContext2D', class {})
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      font: '',
+      measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
+    } as unknown as CanvasRenderingContext2D)
+  }
+
+  const getWidth = (plex: ReturnType<typeof mountPlex>, relation: string) =>
+    Number(plex.get(`.plex__node--${relation} .plex__box`).attributes('width'))
+
+  const getHeight = (plex: ReturnType<typeof mountPlex>, relation: string) =>
+    Number(plex.get(`.plex__node--${relation} .plex__box`).attributes('height'))
+
+  const mountWithMeasure = (options: Record<string, unknown>) =>
+    mountPlex({ graph: ONE_CHILD, readType: readThemeType, options })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+    document.body.replaceChildren()
+  })
+
+  it('widens a box by twice the difference in Pill padding, sides', () => {
+    stubCanvas()
+    const narrow = getWidth(mountWithMeasure({ padding: { inline: 4, block: 9.25 } }), 'child')
+    const wide = getWidth(mountWithMeasure({ padding: { inline: 20, block: 9.25 } }), 'child')
+
+    expect(wide - narrow).toBeCloseTo(32, 6)
+  })
+
+  it('grows a short focus title in width and height, and leaves the neighbor as it was', () => {
+    stubCanvas()
+    const small = mountWithMeasure({ focusScale: 1 })
+    const large = mountWithMeasure({ focusScale: 2 })
+
+    expect(getWidth(large, 'focus')).toBeCloseTo(2 * getWidth(small, 'focus'), 6)
+    expect(getHeight(large, 'focus')).toBeCloseTo(2 * getHeight(small, 'focus'), 6)
+    expect(getWidth(large, 'child')).toBe(getWidth(small, 'child'))
+    expect(getHeight(large, 'child')).toBe(getHeight(small, 'child'))
+  })
+})
+
+describe('Animation', () => {
+  it('is moving just before the length it is given and has stopped at that length', async () => {
+    const time = stubClock()
+    const plex = mountPlex({ duration: 1000, clock: time.clock })
+
+    await plex.setProps({ graph: graphs.leaf })
+    time.tick(0)
+    time.tick(900)
+    expect(plex.vm.isMoving).toBe(true)
+
+    time.tick(1000)
+    await nextTick()
+    expect(plex.vm.isMoving).toBe(false)
+  })
+
+  it('jumps to the next note with no movement at 0', async () => {
+    const time = stubClock()
+    const plex = mountPlex({ duration: 0, clock: time.clock })
+
+    await plex.setProps({ graph: graphs.leaf })
+
+    expect(plex.vm.isMoving).toBe(false)
+    expect(plex.find('[aria-label="Inbox, parent"]').exists()).toBe(true)
+    expect(plex.find('[aria-label^="Domain"]').exists()).toBe(false)
   })
 })

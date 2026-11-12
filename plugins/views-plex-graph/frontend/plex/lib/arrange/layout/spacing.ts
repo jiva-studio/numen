@@ -39,12 +39,17 @@ export function findSpacing(
   const { viewport } = options
   if (!viewport || options.spread <= 1 || !canFit(activeSet, viewport)) return activeSet
 
+  // The room around a box is part of every gap, and stays as it is while the rest opens.
+  const kept = 2 * options.room
+  const openGap = (opening: keyof Spacing, factor: number) =>
+    kept + (activeSet[opening] - kept) * factor
+
   let spacing = activeSet
   for (const opening of OPENS) {
     const factor = findWidestFactor(options.spread, (candidate) =>
-      canFit({ ...spacing, [opening]: activeSet[opening] * candidate }, viewport),
+      canFit({ ...spacing, [opening]: openGap(opening, candidate) }, viewport),
     )
-    spacing = { ...spacing, [opening]: activeSet[opening] * factor }
+    spacing = { ...spacing, [opening]: openGap(opening, factor) }
   }
   return spacing
 }

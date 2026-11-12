@@ -152,6 +152,19 @@ export interface PlexNotesDeps {
   searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
 }
 
+/** How the plex is drawn, as the plugin settings hold it, followed as they change. */
+export interface PlexLook {
+  readonly showPills: Readonly<Ref<boolean>>
+  readonly pillPaddingSides: Readonly<Ref<number>>
+  readonly pillPaddingEnds: Readonly<Ref<number>>
+  readonly focusSize: Readonly<Ref<number>>
+  readonly animationLength: Readonly<Ref<number>>
+  readonly lineThickness: Readonly<Ref<number>>
+  readonly outlineThickness: Readonly<Ref<number>>
+  readonly lineCurvature: Readonly<Ref<number>>
+  readonly noteRoom: Readonly<Ref<number>>
+}
+
 /** Dependencies for plex tab state. */
 export interface PlexTabDeps {
   readonly tabId: string
@@ -161,6 +174,7 @@ export interface PlexTabDeps {
   readonly window: PlexWindowDeps
   readonly menu: PlexMenuDeps
   readonly notes: PlexNotesDeps
+  readonly look: PlexLook
 }
 
 export interface PlexViewState {
@@ -225,6 +239,7 @@ export interface PlexLinkInspectorState {
 /** What one plex tab holds. */
 export interface PlexTabState {
   readonly canvas: PlexViewState
+  readonly look: PlexLook
   readonly menu: PlexMenuState
   readonly headings: PlexHeadingsState
   readonly nodes: PlexNodeActions

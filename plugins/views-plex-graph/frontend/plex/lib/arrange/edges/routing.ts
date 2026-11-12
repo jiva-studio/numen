@@ -10,7 +10,7 @@ import {
   type PlacedEdge,
 } from '../../edge'
 import type { PlacedNode, Position } from '../../node'
-import { isVertical, type PlexOptions, type RoutingOptions } from '../options'
+import { DEFAULT_OPTIONS, isVertical, type PlexOptions, type RoutingOptions } from '../options'
 import type { EdgeLabel, PlexEdge, PlexNodeRelation } from '../../../../types'
 
 /** `auto` means take the axis from the geometry. */
@@ -232,7 +232,8 @@ function straightBetween(
   const secondGate = getEdgeAnchor(second, isVertical ? 'top' : 'left')
 
   const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
-  const reach = Math.max(routing.tuning.minReach, Math.abs(span) * routing.tuning.curvature)
+  const { curvature, minReach } = routing.tuning
+  const reach = curvature > 0 ? Math.max(minReach, Math.abs(span) * curvature) : 0
 
   return {
     fromPoint: firstGate,
@@ -256,7 +257,10 @@ function bowBetween(
   const side = isNegative ? negative : positive
   const firstGate = getEdgeAnchor(first, side)
   const secondGate = getEdgeAnchor(second, side)
-  const reach = isNegative ? -routing.tuning.minRun : routing.tuning.minRun
+  // The bow is minRun deep at the default curvature and flat at 0.
+  const { curvature, minRun } = routing.tuning
+  const depth = (minRun * curvature) / DEFAULT_OPTIONS.routing.curvature
+  const reach = isNegative ? -depth : depth
   const getBowControl = (gate: Position): Position =>
     isColumn ? { x: gate.x + reach, y: gate.y } : { x: gate.x, y: gate.y + reach }
   return {

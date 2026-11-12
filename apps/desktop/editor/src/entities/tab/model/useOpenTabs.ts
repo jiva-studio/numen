@@ -3,6 +3,7 @@
  */
 import { computed, ref, watch, type Component, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
+import { getPanes } from '@numen/workbench'
 import { findTabKindIcon } from '../lib/icons'
 import { writeOpenTabs as writeOpenTabsToCore } from '../api/saved-tabs'
 import type { OpenTabs, SavedTab, Tab } from '../lib/tab'
@@ -49,10 +50,24 @@ export function useOpenTabs({
   const isTakingText = (id: string): boolean =>
     windowTabs.tabs.getTab(id)?.kind.events?.receiveText !== undefined
 
-  /** The tab in front, and the last one that takes no text where the one in front does. */
+  /** Whether a tab is of a kind that serves the other tabs, such as the files of the vault. */
+  const isTool = (id: string): boolean => windowTabs.tabs.getTab(id)?.kind.display?.isTool === true
+
+  /**
+   * The tab in front. Where that is a tool, the tab of another pane that shows and was shown last,
+   * because the core keeps one active tab per window and a tool is only what the person worked
+   * from. Where the tab in front takes text, the last tab that takes no text.
+   */
   const getActiveTabId = (): string => {
     const frontTab = windowTabs.groups.handle.front()
-    if (frontTab && !isTakingText(frontTab.id)) return frontTab.id
+    if (frontTab && !isTakingText(frontTab.id)) {
+      if (!isTool(frontTab.id)) return frontTab.id
+      const shown = new Set(getPanes(windowTabs.panes.layout.value.root).map((one) => one.active))
+      const beside = [...windowTabs.tabs.tabs.value]
+        .reverse()
+        .find((one) => shown.has(one.id) && !isTool(one.id) && !isTakingText(one.id))
+      return beside?.id ?? frontTab.id
+    }
     const nextTabs = [...windowTabs.tabs.tabs.value].reverse().find((one) => !isTakingText(one.id))
     return nextTabs?.id ?? frontTab?.id ?? ''
   }

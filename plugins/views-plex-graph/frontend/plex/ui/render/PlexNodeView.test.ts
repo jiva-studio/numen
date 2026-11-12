@@ -622,3 +622,72 @@ describe('the headings a node hangs', () => {
     expect(first()).toBe('Heading 0')
   })
 })
+
+describe('a node with Pill background off', () => {
+  const RELATIONS: readonly PlexNodeRelation[] = ['focus', 'parent', 'child', 'jump', 'sibling']
+
+  const mountBare = (overrides: Partial<PlacedNode> = {}, props: Record<string, unknown> = {}) =>
+    mount(PlexNodeView, { props: { node: createNode(overrides), showPills: false, ...props } })
+
+  it('draws no pill, the focus included', () => {
+    for (const relation of RELATIONS) {
+      expect(mountBare({ relation }).find('.plex__box').exists(), relation).toBe(false)
+    }
+  })
+
+  it('draws a dot and its title instead', () => {
+    for (const relation of RELATIONS) {
+      const node = mountBare({ relation, title: 'Hydrology' })
+      expect(node.findAll('.plex__dot'), relation).toHaveLength(1)
+      expect(node.get('.plex__title-text').text()).toBe('Hydrology')
+    }
+  })
+
+  it('keeps an area the size of its box that answers the pointer', () => {
+    const node = mountBare({ width: 200, height: 50 })
+    const areas = node
+      .findAll('rect:not(.plex__box)')
+      .filter(
+        (rect) =>
+          Number(rect.attributes('width')) === 200 && Number(rect.attributes('height')) === 50,
+      )
+
+    expect(areas.length).toBeGreaterThan(0)
+  })
+
+  it('is chosen by a press on its title', async () => {
+    const node = mountBare()
+    await node.get('.plex__title-text').trigger('click')
+    expect(node.emitted('activate')).toHaveLength(1)
+  })
+
+  it('asks for its menu on a right-click on its title', () => {
+    const node = mountBare()
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 })
+    node.get('.plex__title-text').element.dispatchEvent(event)
+    expect(node.emitted('menu')).toHaveLength(1)
+  })
+
+  it('still marks the note a link would be made to, and draws its ring', () => {
+    const target = mountBare({}, { gestureRole: 'target' })
+    const open = mountBare({}, { gestureRole: 'open' })
+
+    expect(target.classes()).toContain('plex__node--target')
+    expect(target.findAll('rect').length).toBeGreaterThan(open.findAll('rect').length)
+  })
+
+  it('draws the dashed outline of a note about to be made', () => {
+    const ghost = mountBare({ title: 'child' }, { gestureRole: 'ghost' })
+    expect(ghost.find('.plex__box').exists()).toBe(true)
+  })
+})
+
+describe('a node with Pill background on', () => {
+  it('draws its pill and no dot, as it does when nothing is set', () => {
+    for (const props of [{ showPills: true }, {}]) {
+      const node = mount(PlexNodeView, { props: { node: createNode(), ...props } })
+      expect(node.find('.plex__box').exists()).toBe(true)
+      expect(node.find('.plex__dot').exists()).toBe(false)
+    }
+  })
+})

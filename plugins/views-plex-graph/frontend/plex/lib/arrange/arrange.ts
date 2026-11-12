@@ -11,6 +11,7 @@ import { assertGraph } from '../graph'
 import type { PlacedNode } from '../node'
 import { RELATION_NAMES } from '../relation'
 import { measureCrowding } from './layout/crowding'
+import { applyRoom } from './look'
 import { getLimits, type Limits } from './layout/limits'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
 import {
@@ -36,7 +37,7 @@ export function arrangePlex(
   graph: PlexGraph,
   { options, placement = rowsAndColumns, measure, measureLabel, labelType }: ArrangeInput = {},
 ): PlexFrame {
-  const request = resolveOptions(options)
+  const request = applyRoom(resolveOptions(options))
   const focusNode = assertGraph(graph)
   const counts = countRelations(graph.nodes)
 
@@ -86,9 +87,12 @@ function createWidthLookup(
   measure: ((node: PlexNode) => number) | undefined,
 ): Widths {
   return (node) => {
-    const widest = node.relation === 'focus' ? options.focusSize.width : options.nodeSize.width
+    const isFocus = node.relation === 'focus'
+    const widest = isFocus ? options.focusSize.width : options.nodeSize.width
     if (!measure) return widest
-    return Math.min(widest, Math.max(options.minWidth, measure(node)))
+    // The focus pill is the box its title would have as a neighbor, made larger.
+    const box = Math.max(options.minWidth, measure(node))
+    return Math.min(widest, isFocus ? box * options.focusScale : box)
   }
 }
 

@@ -30,6 +30,7 @@ export function packOptions(options: PlexOptions, tightness: number): PlexOption
     gap: lerp(options.gap * squeeze, options.gap, tightness),
     lineGap: lerp(options.lineGap * squeeze, options.lineGap, tightness),
     focusGap: lerp(options.focusGap * squeeze, options.focusGap, tightness),
+    room: lerp(options.room * squeeze, options.room, tightness),
   }
 }
 

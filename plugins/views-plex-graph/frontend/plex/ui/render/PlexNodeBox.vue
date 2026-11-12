@@ -13,6 +13,8 @@ const props = defineProps<{
   node: PlacedNode
   box: WideBox
   isGhost: boolean
+  isTarget: boolean
+  showPills: boolean
 }>()
 
 defineSlots<{
@@ -33,6 +35,9 @@ const startsAt = computed(() => props.box.offset - props.box.width / 2)
 /** Where the box begins down, which is half its height above the middle. */
 const startsDown = computed(() => -props.node.height / 2)
 
+/** A ghost keeps its dashed outline whether or not the other nodes have pills. */
+const hasPill = computed(() => props.showPills || props.isGhost)
+
 function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   return (
     !!vnodes &&
@@ -47,9 +52,35 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
 </script>
 
 <template>
-  <rect class="plex__box" :x="startsAt" :y="startsDown" :width="box.width" :height="node.height" />
+  <rect
+    v-if="hasPill"
+    class="plex__box"
+    :x="startsAt"
+    :y="startsDown"
+    :width="box.width"
+    :height="node.height"
+  />
+  <template v-else>
+    <!-- Without a pill the node still answers the pointer over the whole of its box. -->
+    <rect
+      class="plex__area"
+      :x="startsAt"
+      :y="startsDown"
+      :width="box.width"
+      :height="node.height"
+    />
+    <rect
+      v-if="isTarget"
+      class="plex__ring"
+      :x="startsAt"
+      :y="startsDown"
+      :width="box.width"
+      :height="node.height"
+    />
+  </template>
   <foreignObject :x="startsAt" :y="startsDown" :width="box.width" :height="node.height">
-    <div class="plex__title" :class="{ 'caps-numen': $host }">
+    <div class="plex__title" :class="{ 'caps-numen': $host, 'plex__title--bare': !hasPill }">
+      <span v-if="!hasPill" class="plex__dot" aria-hidden="true" />
       <!-- Whatever stands for the thing a node addresses. The plex has no
            way to know what that is, so it is handed one. -->
       <span v-if="hasIcon" class="plex__icon" aria-hidden="true">
@@ -68,7 +99,7 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   rx: var(--radius);
   fill: var(--numen-raised);
   stroke: var(--relation-hue);
-  stroke-width: var(--numen-stroke);
+  stroke-width: var(--plex-outline);
   transition:
     fill var(--numen-motion-hover) var(--numen-easing),
     stroke var(--plex-move) var(--numen-easing);
@@ -82,7 +113,7 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   align-items: center;
   justify-content: center;
   gap: var(--numen-node-gap);
-  padding-inline: var(--numen-node-padding);
+  padding-inline: var(--plex-pad-inline);
   box-sizing: border-box;
   color: var(--numen-ink);
   font-family: var(--numen-font-sans);
@@ -92,6 +123,26 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   user-select: none;
   -webkit-user-select: none;
   transition: color var(--plex-move) var(--numen-easing);
+}
+
+/* The area is filled with nothing, which still takes the pointer: `fill: none` would not. */
+.plex__area {
+  fill: transparent;
+}
+
+.plex__ring {
+  rx: var(--radius);
+  fill: none;
+  stroke: var(--numen-ring);
+  stroke-width: var(--numen-ring-width);
+}
+
+.plex__dot {
+  flex: none;
+  inline-size: var(--plex-dot);
+  block-size: var(--plex-dot);
+  border-radius: 50%;
+  background: var(--relation-hue);
 }
 
 .plex__icon {

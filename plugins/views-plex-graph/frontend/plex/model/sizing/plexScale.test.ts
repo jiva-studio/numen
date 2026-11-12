@@ -35,8 +35,10 @@ describe('a label half again as large', () => {
   })
 
   it('is retained by a box half again as large', () => {
-    expect(larger.nodeSize).toStrictEqual({ width: 216, height: 54 })
-    expect(larger.focusSize).toStrictEqual({ width: 264, height: 66 })
+    expect(larger.nodeSize.width).toBeCloseTo(DEFAULT_OPTIONS.nodeSize.width * HALF_AGAIN, 6)
+    expect(larger.nodeSize.height).toBeCloseTo(DEFAULT_OPTIONS.nodeSize.height * HALF_AGAIN, 6)
+    expect(larger.focusSize.width).toBeCloseTo(DEFAULT_OPTIONS.focusSize.width * HALF_AGAIN, 6)
+    expect(larger.focusSize.height).toBeCloseTo(DEFAULT_OPTIONS.focusSize.height * HALF_AGAIN, 6)
   })
 
   it('is cleared by every length between the boxes', () => {
@@ -64,10 +66,13 @@ describe('a label half again as large', () => {
         .filter(([name, value]) => typeof value === 'number' && name !== 'curvature')
         .filter(
           ([name]) =>
-            !['maxPerLine', 'maxLines', 'maxHeadings', 'spread', 'squeeze'].includes(name),
+            !['maxPerLine', 'maxLines', 'maxHeadings', 'spread', 'squeeze', 'focusScale'].includes(
+              name,
+            ),
         )
         .map(([, value]) => value as number)
         .concat([options.nodeSize, options.focusSize].flatMap((size) => [size.width, size.height]))
+        .concat([options.padding.inline, options.padding.block])
 
     const was = lengths(DEFAULT_OPTIONS)
     const now = lengths(larger)
@@ -79,6 +84,7 @@ describe('a label half again as large', () => {
     expect(larger.maxPerLine).toBe(DEFAULT_OPTIONS.maxPerLine)
     expect(larger.maxLines).toBe(DEFAULT_OPTIONS.maxLines)
     expect(larger.maxHeadings).toBe(DEFAULT_OPTIONS.maxHeadings)
+    expect(larger.focusScale).toBe(DEFAULT_OPTIONS.focusScale)
     expect(larger.routing.curvature).toBe(DEFAULT_OPTIONS.routing.curvature)
     expect(larger.spread).toBe(DEFAULT_OPTIONS.spread)
     expect(larger.squeeze).toBe(DEFAULT_OPTIONS.squeeze)

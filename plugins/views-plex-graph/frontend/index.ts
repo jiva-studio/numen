@@ -3,6 +3,7 @@ import PlexGraphView from './ui/PlexGraphView.vue'
 import { createPlexKind, PLEX } from './model/kind'
 import { usePlexView } from './model/usePlexView'
 import { readNesting } from './model/nesting'
+import { readLook } from './model/look'
 
 export { PlexGraphView, PlexGraphView as PlexTab }
 export { createPlexKind, PLEX } from './model/kind'
@@ -27,6 +28,7 @@ export function activate(context: PluginContext): void {
       notes,
       relations,
       nesting: readNesting(context),
+      look: readLook(context),
     },
     () => usePlexView({ listRelatedNotes: (path) => notes.listRelatedNotes(path) }),
     PlexGraphView,
