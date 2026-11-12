@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/acp"
 )
 
@@ -62,8 +63,7 @@ func (Launcher) Launch(ctx context.Context, program string, command []string) (a
 		program:  program,
 	}
 	child.cmd.Dir = dir
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="exec.Cmd uses os.Environ when Env is nil."
-	child.cmd.Env = os.Environ()
+	child.cmd.Env = hostcall.GetChildEnvironment()
 	child.cmd.Stderr = child.stderr
 	Supervise(child.cmd)
 	if err := child.start(); err != nil {

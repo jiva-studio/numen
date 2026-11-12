@@ -104,6 +104,10 @@ core:
   - tools/build-plugin-index/**
   - tools/checks/structure/go/**
   - '!**/*.md'
+atomicfile:
+  - *atomicfile_lib
+  - .github/workflows/go.yml
+  - '!**/*.md'
 protocol:
   - *ci_router
   - *go_workspace
