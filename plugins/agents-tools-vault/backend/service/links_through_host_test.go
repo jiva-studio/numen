@@ -7,10 +7,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
@@ -46,7 +46,7 @@ type linkHostVault struct {
 	calls *linkCalls
 }
 
-func (l linkHostVault) With(domain.VaultID) host.Vault { return l }
+func (l linkHostVault) With(domain.VaultID) linkHostVault { return l }
 
 func (l linkHostVault) AddLinks(ctx context.Context, additions []host.LinkAddition) ([]host.LinkAdded, error) {
 	l.calls.mu.Lock()
@@ -84,7 +84,7 @@ func newLinkHostVault(t *testing.T) (*hosttest.Vault, *linkCalls, *tools.Registr
 	t.Helper()
 	v, _ := newLinkedGeologyVault(t)
 	calls := &linkCalls{}
-	registry, err := service.New(linkHostVault{Vault: v, calls: calls}).Registry()
+	registry, err := service.New(linkHostVault{Vault: v, calls: calls}.vaults()).Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -380,5 +380,12 @@ func TestLinkRemoveRejectsAnUnknownRoleBeforeCallingTheHost(t *testing.T) {
 	}
 	if len(calls.removals) != 0 {
 		t.Errorf("the host received %+v, want no call for an unknown role", calls.removals)
+	}
+}
+
+func (l linkHostVault) vaults() func(domain.VaultID) service.Vault {
+	return func(id domain.VaultID) service.Vault {
+		on := l.With(id)
+		return service.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Arranger: on, Editor: on, Selector: on}
 	}
 }

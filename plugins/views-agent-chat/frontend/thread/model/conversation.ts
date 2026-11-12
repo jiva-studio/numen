@@ -8,10 +8,10 @@
  * them all as one.
  */
 import { computed, ref, shallowRef, type Ref } from 'vue'
-import { onNextFrame, type Paint } from '@numen/ui'
+import { onNextFrame, reportFailure, type Caught, type Paint } from '@numen/ui'
 import { createAnswer, type Answer } from './answer'
 import { createWorkLine, type WorkLine } from './work'
-import type { Turn } from '../lib/turn'
+import type { Turn } from '../../types'
 import type { AgentPort, AgentQuery, AgentStep, SourceLocation } from '@numen/plugin-sdk'
 
 /** The words the panel sets up itself. */
@@ -21,7 +21,7 @@ export interface ConversationStrings {
   readonly nothing: string
 }
 
-export interface AskOptions {
+interface AskOptions {
   readonly agentId?: string
   readonly modelId?: string
   readonly reasoning?: string
@@ -109,7 +109,9 @@ export function useConversation(options: ConversationOptions): Conversation {
 }
 
 function closeAgentConversation(agent: AgentPort, conversation: string): void {
-  new Promise<void>((resolve) => resolve(agent.finish(conversation))).catch(() => undefined)
+  new Promise<void>((resolve) => resolve(agent.finish(conversation))).catch((error: Caught) => {
+    reportFailure(error)
+  })
 }
 
 interface SettleTurnOptions {
@@ -209,7 +211,7 @@ function applyAgentStep(step: AgentStep, context: StepContext): void {
       if (step.text === '') break
       calls.clear()
       work.setWaiting(false)
-      if (!answer.isOpen()) work.takeDown()
+      if (!answer.isOpen()) work.dropWorkLine()
       answer.say(step.text)
       break
     case 'toolCall':
@@ -231,7 +233,7 @@ function applyAgentStep(step: AgentStep, context: StepContext): void {
     case 'thinking':
       calls.clear()
       answer.settle()
-      work.takeDown()
+      work.dropWorkLine()
       work.setWaiting(true)
       break
     case 'stopped':

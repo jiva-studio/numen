@@ -5,9 +5,9 @@
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import type { Curve } from '../types'
+import type { Curve } from '../../lib/presets'
 import { mountPresetTab, heights, point } from '../fixtures'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
 
 // Past the target day of the goal, the preset schedules nothing: no card is
 // answered and the pile grows. Every series stops at that day.
@@ -143,7 +143,7 @@ describe('the plot of what remains overdue', () => {
 
   // The area a plot is drawn in is the same box in every state, so nothing under
   // the plot moves when the response arrives.
-  it('holds one room for the plot, waiting, drawn and empty areNeighbourhoodsEqual', () => {
+  it('holds one room for the plot, waiting, drawn and empty areNeighborhoodsEqual', () => {
     const room = (overrides: Partial<Curve> = {}) =>
       mountPresetTab(overrides)
         .tab.findAll('[data-control="room"]')

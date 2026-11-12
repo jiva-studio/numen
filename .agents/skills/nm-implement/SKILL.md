@@ -35,19 +35,19 @@ flowchart TD
    - Backend (Go): [`.agents/rules/coding-style-backend.md`](../../rules/coding-style-backend.md)
    - Frontend (Vue/TS): [`.agents/rules/coding-style-frontend.md`](../../rules/coding-style-frontend.md)
    - Architecture & Layers: [`.agents/rules/architecture.md`](../../rules/architecture.md)
-   - Rule 13 of `AGENTS.md`: plain technical names — nouns for values (`entries`, `request`, `draft`), base-form verbs for functions (`listCommands`). Run `node tools/lint-narrative/scan.mjs <files>` before committing.
+   - Rule 13 of `AGENTS.md`: plain technical names — nouns for values (`entries`, `request`, `draft`), base-form verbs for functions (`listCommands`). Run `make lint_narrative` before committing.
 
 ---
 
 ## Step-by-Step Execution
 
 ### Step 1: Read Spec & Verify Initial State
-- Read `.agents/tasks/<slug>/spec.md` (or the task description).
+- Read `spec.md` in the task folder (or the task description).
 - Verify the red acceptance tests exist and fail with expected errors using a targeted test runner.
 
 ### Step 2: Implement Code (Fast Inner Loop)
 - Match the style of surrounding files.
-- Place files on their correct architectural layer.
+- Place files on their correct architectural layer. Load the placement skill the spec names for each area ([`nm-place-core`](../nm-place-core/SKILL.md), [`nm-place-window`](../nm-place-window/SKILL.md), [`nm-place-plugin`](../nm-place-plugin/SKILL.md) or [`nm-place-library`](../nm-place-library/SKILL.md)) before writing code, and place every file as it says.
 - Use imperative verb phrases for function names and predicate phrases (`is...`, `has...`) for booleans.
 - **Fast feedback loop during edits:**
   - **Frontend:** `npx vitest related <changed-file> --run --project unit` or `npx vitest run --changed --project unit` (without `--run`, vitest waits in watch mode)
@@ -57,14 +57,14 @@ flowchart TD
 
 From the touched module:
 
-**Go modules (`libs/core`, `apps`):**
+**Go modules (`libs/core/kernel`, `apps`):**
 ```bash
 go vet ./...
 go test ./...
-go test ./container/...        # in libs/core (architecture check)
+make checks CHANGED=1          # the checks whose files the change touches
 ```
 
-**Frontend modules (`apps/desktop/*`, `libs/ui/core`):**
+**Frontend modules (`apps/desktop/*`, `libs/ui/components`):**
 ```bash
 npm run lint
 npm run typecheck
@@ -72,7 +72,7 @@ npm run test:unit
 npm run format:check   # a change that is not Prettier-clean is rejected
 ```
 
-*(Note: If touching `@numen/ui`, run `npm run build` in `libs/ui/core` before running desktop window suites).*
+*(Note: If touching `@numen/ui`, run `npm run build` in `libs/ui/components` before running desktop window suites).*
 
 ---
 

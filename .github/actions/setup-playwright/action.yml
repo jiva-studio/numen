@@ -37,9 +37,9 @@ runs:
         PACKAGES: ${{ inputs.packages }}
       run: |
         sudo rm -f /var/lib/man-db/auto-update
-        npx playwright install-deps $BROWSERS
+        .github/scripts/apt-retry.sh npx playwright install-deps $BROWSERS
         if [ -n "$PACKAGES" ]; then
-          sudo apt-get install -y --no-install-recommends \
+          .github/scripts/apt-retry.sh sudo apt-get install -y --no-install-recommends \
             -o Dpkg::Options::=--force-unsafe-io \
             $PACKAGES
         fi

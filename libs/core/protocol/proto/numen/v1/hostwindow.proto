@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/workspace.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// HostWindowService exposes the main window of the plugin's vault to plugins.
+// Every call needs window:focus. A host with no window returns HOST_WINDOW_ERROR_CODE_NO_WINDOW.
+// With several windows, the main window of the vault is used.
+service HostWindowService {
+  // FocusNote makes a note the current one, and the neighborhood view is centered on it.
+  rpc FocusNote(FocusNoteRequest) returns (FocusNoteResponse);
+  // FocusPassages opens a file, scrolls to the first passage and highlights all passages. No
+  // passages opens the file at its beginning.
+  rpc FocusPassages(FocusPassagesRequest) returns (FocusPassagesResponse);
+  // ReadOpenTabs returns the tabs the window last reported, and the active one.
+  rpc ReadOpenTabs(HostWindowServiceReadOpenTabsRequest) returns (HostWindowServiceReadOpenTabsResponse);
+  // ActivateTab makes the open tab with the id the active tab of the window, and returns the tab and
+  // the active id as the window reports them after the activation.
+  rpc ActivateTab(ActivateTabRequest) returns (ActivateTabResponse);
+}
+
+// HostWindowErrorCode is the reason a window call was not served. UNSPECIFIED means success.
+enum HostWindowErrorCode {
+  HOST_WINDOW_ERROR_CODE_UNSPECIFIED = 0;
+  // NO_WINDOW means the host has no window.
+  HOST_WINDOW_ERROR_CODE_NO_WINDOW = 1;
+  // NOT_FOUND means a path with no note or file in the vault, or a tab id with no tab in the window.
+  HOST_WINDOW_ERROR_CODE_NOT_FOUND = 2;
+}
+
+message FocusNoteRequest {
+  string path = 1;
+}
+
+message FocusNoteResponse {
+  HostWindowErrorCode error = 1;
+  string path = 2;
+  string title = 3;
+  // Id is the note's stable identifier, empty for a note written outside the application.
+  string id = 4;
+}
+
+// A PassageSpan is a byte range in a file's text version, as a passage search returns it.
+message PassageSpan {
+  int32 start = 1;
+  int32 length = 2;
+}
+
+message FocusPassagesRequest {
+  string path = 1;
+  repeated PassageSpan passages = 2;
+}
+
+message FocusPassagesResponse {
+  HostWindowErrorCode error = 1;
+}
+
+// An OpenTab is a tab of the window as a plugin reads it.
+message OpenTab {
+  // Id is what the window calls this tab, which the active id names.
+  string id = 1;
+
+  // Kind is the registered name of the tab kind.
+  string kind = 2;
+
+  // Path is the file the tab holds, relative to the vault, and empty for a tab
+  // holding no file.
+  string path = 3;
+
+  // Title is what the tab is called, as the person reads it.
+  string title = 4;
+
+  // Place is the place the reader of the tab reported; unset for a tab whose
+  // kind reports none.
+  TabPlace place = 5;
+}
+
+message HostWindowServiceReadOpenTabsRequest {}
+
+message HostWindowServiceReadOpenTabsResponse {
+  HostWindowErrorCode error = 1;
+  repeated OpenTab tabs = 2;
+  string active_id = 3;
+}
+
+message ActivateTabRequest {
+  string tab_id = 1;
+}
+
+message ActivateTabResponse {
+  HostWindowErrorCode error = 1;
+  OpenTab tab = 2;
+  string active_id = 3;
+}

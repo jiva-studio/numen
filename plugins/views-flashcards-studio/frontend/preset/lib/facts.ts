@@ -2,7 +2,7 @@
  * Which facts the preset tab states about a place on the curve and about the
  * material, and in what order. How a fact is worded is `words.ts`.
  */
-import type { Goal } from '../types'
+import type { Goal } from '../../lib/presets'
 
 /** What a place on the curve buys. */
 export interface BuyInput {

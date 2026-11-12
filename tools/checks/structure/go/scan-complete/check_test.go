@@ -1,0 +1,257 @@
+// Package scancomplete is the check `go/scan-complete`, run on the tree with the planted violations that prove it.
+package scancomplete
+
+import (
+	"os"
+	"slices"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
+)
+
+// The layers are the folders domain, port, usecase, adapter, internal/adapter, internal/adapterlib,
+// internal/testsupport and container. A package belongs to exactly one, so a new folder cannot sit outside
+// every rule that reads a layer. The pure packages that belong to none are listed with the reason each needs
+// no layer: they hold no scenario and no port, they compute over values or hand out a grant.
+func TestEveryKernelPackageBelongsToOneKnownLayer(t *testing.T) {
+	dirs, err := listProductionDirs("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	helpers := getHelperPackages()
+	for _, one := range getUnplacedPackages(dirs, helpers) {
+		t.Error(one)
+	}
+
+	// Every helper must exist, or its entry hides a package that is gone and may return unseen.
+	for helper, reason := range helpers {
+		if !slices.Contains(dirs, helper) || reason == "" {
+			t.Errorf("the helper %s is not a package of the kernel or has no reason", helper)
+		}
+	}
+}
+
+// TestProductionDirs_ListsThePlantedPackages verifies that the walk lists the folders that hold
+// production Go files and skips test files and testdata, and fails on a tree without one.
+func TestProductionDirs_ListsThePlantedPackages(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"usecase/note/note.go":       "package note\n",
+		"usecase/note/note_test.go":  "package note\n",
+		"usecase/only/only_test.go":  "package only\n",
+		"usecase/data/testdata/x.go": "package x\n",
+	})
+	dirs, err := listProductionDirs(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"usecase/note"}; !slices.Equal(dirs, want) {
+		t.Errorf("the walk lists %v, want %v", dirs, want)
+	}
+	if _, err := listProductionDirs(t.TempDir()); err == nil {
+		t.Error("a tree without a Go package passed")
+	}
+}
+
+// TestUseCaseImports_ListsThePlantedEdge verifies that the use case imports are read from a loaded
+// package: a scenario that imports an adapter is listed with that edge.
+func TestUseCaseImports_ListsThePlantedEdge(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"adapter/index/index.go": "package index\n",
+		"usecase/note/note.go":   "package note\n\nimport _ \"fixture/adapter/index\"\n",
+	})
+	imports, read := getUseCaseImports(load.LoadFixture(t, dir), "fixture")
+	if read != 1 || !slices.Equal(imports["usecase/note"], []string{"adapter/index"}) {
+		t.Errorf("read %d use case packages with imports %v, want the edge to adapter/index", read, imports)
+	}
+}
+
+// A package outside every group fails, a package in a helper entry passes, and adapter and adapterlib are
+// separate groups although one name is the prefix of the other.
+func TestScanRule_RejectsAPackageOutsideEveryGroup(t *testing.T) {
+	helpers := map[string]string{"internal/csp": "policy string"}
+	got := getUnplacedPackages([]string{
+		"domain/theme", "port", "port/noteport", "usecase/note/query", "adapter/window/editor", "internal/adapter/clock",
+		"internal/adapterlib/wire", "internal/testsupport/indexfake", "container", "internal/csp",
+		"internal/vaultreading", "internal/adapterx", "scratch", "internal/csp/sub",
+	}, helpers)
+	want := []string{
+		`internal/vaultreading is in "" groups, want exactly one`,
+		`internal/adapterx is in "" groups, want exactly one`,
+		`scratch is in "" groups, want exactly one`,
+		`internal/csp/sub is in "" groups, want exactly one`,
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("the rule rejects %v, want %v", got, want)
+	}
+}
+
+func TestUseCaseImportRule_RejectsASharedPackageOutsideDomainPortAndHelpers(t *testing.T) {
+	helpers := map[string]string{"internal/text": "ranges"}
+	got := getBadUseCaseImports(map[string][]string{
+		"usecase/note": {"domain/theme", "port/noteport", "internal/text", "internal/vaultreading", "adapter/index", "usecase/note/query"},
+	}, helpers)
+	want := []string{
+		"usecase/note imports adapter/index (adapter): a use case imports the domain, ports and its own helpers",
+		`usecase/note imports internal/vaultreading (): a use case imports the domain, ports and its own helpers`,
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("the rule rejects %v, want %v", got, want)
+	}
+}
+
+func TestUseCasesImportOnlyDomainAndPorts(t *testing.T) {
+	if testing.Short() {
+		t.Skip("loads and type-checks the modules of the workspace")
+	}
+	checkUseCasesImportOnlyDomainAndPorts(t, load.Workspace(t, "libs/core/kernel"))
+}
+
+// A pure helper package is a leaf: it imports no port, no use case and no technology package, and exports no type
+// whose methods change its state. A helper that does is an adapter or a use case under a helper's name.
+// A package of internal/testsupport implements ports and holds state by design: it may import ports and use
+// cases, and still reaches no technology. A package of internal/adapterlib is shared adapter code: it may reach
+// technology, import ports and hold state, and imports no use case and no adapter.
+func TestHelperPackagesImportNothingAndKeepNoState(t *testing.T) {
+	if testing.Short() {
+		t.Skip("loads and type-checks the modules of the workspace")
+	}
+	pkgs := load.GetModulePackages(t, load.Workspace(t, "libs/core/kernel"), "libs/core/kernel")
+	helpers := getHelperPackages()
+	found, read := getHelperFindings(pkgs, load.CoreImportPath, helpers)
+	for _, one := range found {
+		t.Error(one)
+	}
+	for _, one := range getHelperReasonFindings(pkgs, load.CoreImportPath, helpers) {
+		t.Error(one)
+	}
+	if read == 0 {
+		t.Fatal("no helper package read: the rule is checked against nothing")
+	}
+}
+
+// The rule refuses a helper that imports a port, a use case or a technology package and one that exports a type
+// whose method assigns to a field, increments, deletes from a map or writes through its receiver; it lets
+// through a pure function, a method that only reads, and a type of another layer.
+func TestHelperRule_RejectsAHelperWithStateOrOutsideImports(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"port/noteport/noteport.go": "package noteport\n\ntype Reader interface{ Read() string }\n",
+		"usecase/find/find.go":      "package find\n\ntype Find struct{}\n",
+		"internal/vector/p.go": `package pure
+
+func Add(a, b int) int { return a + b }
+
+type Range struct{ A, B int }
+
+func (r Range) Len() int { return r.B - r.A }
+
+func (r *Range) Size() int {
+	local := r.B
+	local++
+	return local
+}
+`,
+		"internal/text/bus.go": `package bus
+
+type Bus struct {
+	subscribers map[string]int
+	count       int
+	last        *int
+}
+
+func (b *Bus) Subscribe(id string) { b.subscribers[id] = 1 }
+func (b *Bus) Count()              { b.count++ }
+func (b *Bus) Forget(id string)    { delete(b.subscribers, id) }
+func (b *Bus) Peek() int           { return b.count }
+func (b *Bus) Store(v int)         { *b.last = v }
+
+type Reset struct{ n int }
+
+func (r *Reset) Zero() { *r = Reset{} }
+
+type hidden struct{ n int }
+
+func (h *hidden) Add() { h.n++ }
+`,
+		"internal/chunking/reach.go": `package reach
+
+import (
+	"os"
+
+	"fixture/port/noteport"
+	"fixture/usecase/find"
+)
+
+var _ = os.Args
+var _ noteport.Reader
+var _ find.Find
+`,
+		"internal/testsupport/fake/fake.go": `package fake
+
+import "fixture/port/noteport"
+
+type Reader struct{ n int }
+
+func (r *Reader) Read() string { r.n++; return "" }
+
+var _ noteport.Reader = (*Reader)(nil)
+`,
+		"internal/testsupport/tech/tech.go": "package tech\n\nimport \"os\"\n\nvar _ = os.Args\n",
+		"internal/csp/csp.go":               "package csp\n\nfunc Build() {}\n\ntype Mutable struct{ n int }\n\nfunc (m *Mutable) Set() { m.n = 1 }\n",
+		"adapter/index/index.go":            "package index\n\ntype Index struct{ n int }\n\nfunc (i *Index) Set() { i.n = 1 }\n",
+		"internal/adapterlib/state/state.go": "package state\n\nimport (\n\t\"os\"\n\n\t\"fixture/port/noteport\"\n)\n\n" +
+			"type Hub struct{ n int }\n\nfunc (h *Hub) Add() { h.n++ }\n\nvar _ = os.Args\nvar _ noteport.Reader\n",
+		"internal/adapterlib/reach/reach.go": "package reach\n\nimport (\n\t_ \"fixture/adapter/index\"\n\t_ \"fixture/internal/adapter/clock\"\n\t_ \"fixture/usecase/find\"\n)\n",
+		"internal/adapter/clock/clock.go":    "package clock\n\nfunc Now() int { return 0 }\n",
+	})
+	found, read := getHelperFindings(load.LoadFixture(t, dir), "fixture", map[string]string{
+		"internal/csp": "builds the policy", "internal/vector": "vectors", "internal/text": "text", "internal/chunking": "chunks",
+	})
+	want := []string{
+		"internal/adapterlib/reach imports adapter/index: shared adapter code depends on no other adapter",
+		"internal/adapterlib/reach imports internal/adapter/clock: shared adapter code depends on no other adapter",
+		"internal/adapterlib/reach imports usecase/find: shared adapter code depends on no use case",
+		"internal/chunking imports os: a helper reaches no technology",
+		"internal/chunking imports port/noteport: a helper depends on no port and no use case",
+		"internal/chunking imports usecase/find: a helper depends on no port and no use case",
+		"internal/csp exports Mutable.Set, which changes the state of its receiver: a helper holds no state",
+		"internal/testsupport/tech imports os: a helper reaches no technology",
+		"internal/text exports Bus.Count, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Bus.Forget, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Bus.Store, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Bus.Subscribe, which changes the state of its receiver: a helper holds no state",
+		"internal/text exports Reset.Zero, which changes the state of its receiver: a helper holds no state",
+	}
+	if !slices.Equal(found, want) {
+		t.Errorf("the rule rejects\n%s\nwant\n%s", strings.Join(found, "\n"), strings.Join(want, "\n"))
+	}
+	if read != 8 {
+		t.Errorf("%d helper packages read, want 8", read)
+	}
+}
+
+// A reason that shares no word with the name, the documentation and the exported identifiers of its package
+// describes another package, or none.
+func TestHelperRule_RejectsAReasonThatNamesNothingOfThePackage(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"internal/ranges/ranges.go": "// Package ranges works on byte ranges of text.\npackage ranges\n\nfunc Overlap() {}\n",
+		"internal/colors/colors.go": "package colors\n\nfunc MixHue() {}\n",
+	})
+	helpers := map[string]string{
+		"internal/ranges":  "byte-range arithmetic over text",
+		"internal/colors":  "a reason that is a sentence",
+		"internal/missing": "gone",
+	}
+	got := getHelperReasonFindings(load.LoadFixture(t, dir), "fixture", helpers)
+	want := []string{
+		"the helper internal/missing is not a package of the kernel",
+		"the reason of the helper internal/colors names nothing the package declares or documents: a reason that is a sentence",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("the rule rejects %v, want %v", got, want)
+	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
+}

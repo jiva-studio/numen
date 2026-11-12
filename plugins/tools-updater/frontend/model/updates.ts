@@ -6,7 +6,7 @@
  * interval the setting names.
  */
 import { computed, ref, type ComputedRef, type Ref } from 'vue'
-import type { AppInfo, Result } from '@numen/plugin-sdk'
+import type { ApiError, AppInfo, JsonValue, Result } from '@numen/plugin-sdk'
 import type { UpdateApi } from '../api/wire'
 import type { Status, Update } from '../api/updater'
 
@@ -23,36 +23,40 @@ const MS_PER_HOUR = 60 * 60 * 1000
 
 /** Starts and stops the waits between checks. */
 export interface Timer {
-  set(run: () => void, delayMs: number): unknown
-  clear(handle: unknown): void
+  set(run: () => void, delayMs: number): number
+  clear(handle: number): void
 }
 
 export interface UpdateDeps {
   readonly api: UpdateApi
   readonly app: AppInfo
   readonly openExternal: (url: string) => Promise<Result<null>>
-  readonly getIntervalHours: () => unknown
+  readonly getIntervalHours: () => JsonValue | undefined
   readonly timer: Timer
 }
 
 export interface Updates {
   readonly status: Readonly<Ref<Status>>
   readonly announced: ComputedRef<Update | null>
-  /** Checks now and keeps checking at the interval of the setting. */
-  start(): void
-  /** Ends the waits between checks. */
-  stop(): void
-  /** Waits out the interval of the setting again, counting from now. */
-  reschedule(): void
-  /** Checks after a short wait, for a change of the feed. */
-  checkSoon(): void
-  dismiss(): void
-  openDownload(): Promise<Result<null>>
-  openNotes(): Promise<Result<null>>
+  readonly schedule: {
+    /** Checks now and keeps checking at the interval of the setting. */
+    start(): void
+    /** Ends the waits between checks. */
+    stop(): void
+    /** Waits out the interval of the setting again, counting from now. */
+    reschedule(): void
+    /** Checks after a short wait, for a change of the feed. */
+    checkSoon(): void
+  }
+  readonly announcement: {
+    dismiss(): void
+    openDownload(): Promise<Result<null>>
+    openNotes(): Promise<Result<null>>
+  }
 }
 
 /** The wait between two checks the setting names; the default where it holds no usable number. */
-export function getIntervalMs(hours: unknown): number {
+export function getIntervalMs(hours: JsonValue | undefined): number {
   const count = typeof hours === 'number' ? hours : Number(hours)
   return (Number.isFinite(count) && count >= 1 ? count : DEFAULT_INTERVAL_HOURS) * MS_PER_HOUR
 }
@@ -60,7 +64,7 @@ export function getIntervalMs(hours: unknown): number {
 export function createUpdates(deps: UpdateDeps): Updates {
   const status = ref<Status>({ state: 'unchecked' })
   const dismissedVersion = ref('')
-  let handle: unknown
+  let handle: number | undefined
   let isStopped = true
   let failureCount = 0
 
@@ -91,7 +95,7 @@ export function createUpdates(deps: UpdateDeps): Updates {
     wait(getRetryDelay())
   }
 
-  const settle = (result: Result<Status, unknown>) => {
+  const settle = (result: Result<Status, ApiError>) => {
     if (isStopped) return
     if (!result.ok || result.value.state === 'unreachable') {
       retry()
@@ -112,25 +116,29 @@ export function createUpdates(deps: UpdateDeps): Updates {
   return {
     status,
     announced,
-    start: () => {
-      isStopped = false
-      failureCount = 0
-      runCheck()
+    schedule: {
+      start: () => {
+        isStopped = false
+        failureCount = 0
+        runCheck()
+      },
+      stop: () => {
+        isStopped = true
+        clearWait()
+      },
+      reschedule: () => wait(getIntervalMs(deps.getIntervalHours())),
+      checkSoon: () => {
+        failureCount = 0
+        status.value = { state: 'unchecked' }
+        wait(SETTLE_DELAY_MS)
+      },
     },
-    stop: () => {
-      isStopped = true
-      clearWait()
+    announcement: {
+      dismiss: () => {
+        dismissedVersion.value = status.value.update?.version ?? ''
+      },
+      openDownload: () => open(announced.value?.downloadUrl),
+      openNotes: () => open(announced.value?.notesUrl),
     },
-    reschedule: () => wait(getIntervalMs(deps.getIntervalHours())),
-    checkSoon: () => {
-      failureCount = 0
-      status.value = { state: 'unchecked' }
-      wait(SETTLE_DELAY_MS)
-    },
-    dismiss: () => {
-      dismissedVersion.value = status.value.update?.version ?? ''
-    },
-    openDownload: () => open(announced.value?.downloadUrl),
-    openNotes: () => open(announced.value?.notesUrl),
   }
 }

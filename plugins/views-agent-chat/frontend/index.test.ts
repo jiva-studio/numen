@@ -17,7 +17,7 @@ const createContext = () => {
 const createWindow = () => {
   let getKinds = (): readonly TabKindRegistration[] => []
   const tabOpens: (readonly [string, string])[] = []
-  const tabs: { kind: string; state: unknown }[] = []
+  const tabs: { kind: string; state: object }[] = []
   const navigateTab = async (kind: string, path: string): Promise<string> => {
     const registration = getKinds().find((one) => one.kind === kind)!
     const last = tabs.filter((one) => one.kind === kind).at(-1)
@@ -74,7 +74,7 @@ describe('view-agent-chat plugin', () => {
 
     ctx.dispose()
 
-    expect(ctx.subscriptions).toHaveLength(0)
+    expect(ctx.plugin.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredViews()).toHaveLength(0)
   })
@@ -84,12 +84,12 @@ describe('view-agent-chat plugin', () => {
     activate(ctx)
     const kind = ctx.getRegisteredTabKinds()[0]!
 
-    const first = kind.open!('', 'agent:1') as { userQuestion: { value: string } }
-    const second = kind.open!('', 'agent:2') as { userQuestion: { value: string } }
+    const first = kind.open!('', 'agent:1') as { draft: { userQuestion: { value: string } } }
+    const second = kind.open!('', 'agent:2') as { draft: { userQuestion: { value: string } } }
     kind.receiveText!(first, 'what is this?')
 
-    expect(first.userQuestion.value).toBe('what is this?')
-    expect(second.userQuestion.value).toBe('')
+    expect(first.draft.userQuestion.value).toBe('what is this?')
+    expect(second.draft.userQuestion.value).toBe('')
   })
 
   it('opens one conversation however many times the command runs', async () => {
@@ -152,7 +152,7 @@ describe('view-agent-chat plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(4)
+    expect(ctx.plugin.subscriptions).toHaveLength(4)
   })
 
   it('refuses to activate in a window that offers no workspace or agent', () => {

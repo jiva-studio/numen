@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, useId, useTemplateRef } from 'vue'
-import { createRefRegistry } from '@numen/ui'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
@@ -10,14 +9,15 @@ import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
 import { getDraggedShape, getPendingThread, getReachGhost, getReachThread } from './threads'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { getRelationName } from '../../lib/relation'
-import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
+import { DEFAULT_BEHAVIOR } from '../../model/behavior'
+import { useNodeViews } from '../../model/useNodeViews'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
   showEdgeLabels: true,
   canReach: true,
   relationName: getRelationName,
-  behaviour: () => DEFAULT_BEHAVIOUR,
+  behavior: () => DEFAULT_BEHAVIOR,
   gestureFrom: null,
   gestureAt: null,
   gestureOutcome: null,
@@ -32,16 +32,17 @@ const emit = defineEmits<PlexViewEvents>()
 
 defineSlots<PlexDrawnSlots>()
 
+defineExpose({
+  get svg() {
+    return svg.value
+  },
+  focusNode: (id: string) => focusNode(id),
+})
+
 /* --------------------------------- State ---------------------------------- */
 const svg = useTemplateRef<SVGSVGElement>('svg')
 
-const views = new Map<string, { focus: () => void }>()
-const { getRef: holdNode } = createRefRegistry<string>((id, view) => {
-  if (view) views.set(id, view as { focus: () => void })
-  else views.delete(id)
-})
-
-defineExpose({ svg, focusNode: (id: string) => views.get(id)?.focus() })
+const { holdNode, focusNode } = useNodeViews()
 
 const viewBox = computed(() => {
   const { width, height } = props.viewport
@@ -107,7 +108,7 @@ const getRole = (node: PlacedNode): GestureRole => {
     :viewBox="viewBox"
     preserveAspectRatio="xMidYMid meet"
     role="group"
-    aria-label="Neighbourhood"
+    aria-label="Neighborhood"
   >
     <defs v-if="showEdgeLabels">
       <template v-for="line in lines" :key="`along:${line.key}`">
@@ -146,7 +147,7 @@ const getRole = (node: PlacedNode): GestureRole => {
       :gesture-role="getRole(node)"
       :wide="widen?.(node) ?? null"
       :hung="hung?.(node) ?? null"
-      :behaviour="behaviour"
+      :behavior="behavior"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"
@@ -192,9 +193,10 @@ const getRole = (node: PlacedNode): GestureRole => {
 }
 
 .plex__edge-hit {
+  --edge-hit-stroke-width: 0.875rem;
   fill: none;
   stroke: transparent;
-  stroke-width: 14px;
+  stroke-width: var(--edge-hit-stroke-width);
   pointer-events: stroke;
 }
 

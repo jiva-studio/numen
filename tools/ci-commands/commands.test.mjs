@@ -80,15 +80,15 @@ test('a plugin is read with its settings, declared and registered commands', () 
         },
         {
           'index.ts': [
-            'context.registerCommand({',
+            'context.register.command({',
             "  id: 'lamp.create',",
             '  handler: () => undefined,',
             '})',
-            'context.registerCommand({',
+            'context.register.command({',
             "  id: 'wick.trim',",
             '  handler: () => undefined,',
             '})',
-            'context.registerCommand({',
+            'context.register.command({',
             "  id: 'app:file.createText',",
             '  handler: () => undefined,',
             '})',
@@ -152,7 +152,7 @@ test('a key the window cannot draw is refused', () =>
         },
         {
           'index.ts':
-            "context.registerCommand({\n  id: 'ring.create',\n  handler: () => undefined,\n})\n",
+            "context.register.command({\n  id: 'ring.create',\n  handler: () => undefined,\n})\n",
         },
       ),
     (at) =>
@@ -181,7 +181,7 @@ test('a command the frontend registers and the manifest does not declare is refu
         },
         {
           'index.ts':
-            "context.registerCommand({\n  id: 'beat.create',\n  handler: () => undefined,\n})\n",
+            "context.register.command({\n  id: 'beat.create',\n  handler: () => undefined,\n})\n",
         },
       ),
     (at) =>
@@ -204,7 +204,7 @@ test('a registration this cannot read an id out of is refused', () =>
           targets: ['desktop.editor'],
           frontend: { entrypoint: 'dist/index.js' },
         },
-        { 'index.ts': 'context.registerCommand({\n  handler: () => undefined,\n})\n' },
+        { 'index.ts': 'context.register.command({\n  handler: () => undefined,\n})\n' },
       ),
     (at) =>
       assert.rejects(getPluginCommands('desktop.editor', at), {
@@ -257,7 +257,7 @@ test('a registration whose options sit in a constant is read', () =>
           'index.ts': [
             "const options = { id: 'reed.cut', handler: () => undefined }",
             'export const activate = (context) => {',
-            '    context.registerCommand(options)',
+            '    context.register.command(options)',
             '}',
           ].join('\n'),
         },
@@ -281,7 +281,7 @@ test('a registration in a file other than index.ts is read', () =>
           targets: ['desktop.editor'],
           frontend: { entrypoint: 'dist/index.js' },
         },
-        { 'index.ts': '', 'commands.ts': "context.registerCommand({ id: 'pipe.blow', handler })" },
+        { 'index.ts': '', 'commands.ts': "context.register.command({ id: 'pipe.blow', handler })" },
       ),
     (at) =>
       assert.rejects(getPluginCommands('desktop.editor', at), {

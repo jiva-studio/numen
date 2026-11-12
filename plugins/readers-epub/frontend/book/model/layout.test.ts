@@ -9,13 +9,24 @@ import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick, reactive, ref, shallowRef } from 'vue'
 
+import type { useBookColumns } from './columns'
 import { useBookLayout } from './layout'
+import type { useBookTurns } from './turns'
 import type { BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
+type BookColumns = ReturnType<typeof useBookColumns>
+type BookTurns = ReturnType<typeof useBookTurns>
+
 const fake = vi.hoisted(() => ({
   frames: [] as Array<() => void>,
-  columns: {} as Record<string, unknown>,
+  columns: {} as {
+    sizing: object
+    runMarks: object
+    laid: object
+    isStood: unknown
+    readColumns: unknown
+  },
   turns: {} as Record<string, unknown>,
 }))
 
@@ -25,9 +36,6 @@ vi.mock('@numen/ui', async (importOriginal) => ({
     fake.frames.push(run)
   },
 }))
-vi.mock('./columns', () => ({ useBookColumns: () => fake.columns }))
-/** The place the running turn of the paper goes to when the paper is copied. */
-vi.mock('./turns', () => ({ useBookTurns: () => fake.turns, getTurnTarget: () => -900 }))
 
 const KEPT = 77
 const SPREAD_OF = (pos: number) => pos + 1000
@@ -35,36 +43,50 @@ const SPREAD_OF = (pos: number) => pos + 1000
 const setUp = () => {
   fake.frames.length = 0
   fake.columns = {
-    textSize: ref(1),
-    viewport: ref({ width: 300, height: 200 }),
-    isMeasured: ref(true),
+    sizing: {
+      textSize: ref(1),
+      viewport: ref({ width: 300, height: 200 }),
+      isMeasured: ref(true),
+      setting: ref({}),
+      measure: vi.fn(),
+    },
+    runMarks: {
+      marks: shallowRef([]),
+      findFragmentOffset: vi.fn(),
+      markRuns: vi.fn(),
+      markCopy: vi.fn(),
+      unmarkCopy: vi.fn(),
+    },
+    laid: { flow: ref({}), spreadCount: ref(5) },
     isStood: ref(false),
-    flow: ref({}),
-    spreadCount: ref(5),
-    setting: ref({}),
-    marks: shallowRef([]),
-    measure: vi.fn(),
     readColumns: vi.fn(),
-    findFragmentOffset: vi.fn(),
-    markRuns: vi.fn(),
-    markCopy: vi.fn(),
-    unmarkCopy: vi.fn(),
   }
   fake.turns = {
-    front: ref({}),
-    leftInChapter: ref(0),
-    stand: vi.fn(),
-    enterSpread: vi.fn(),
-    getKeptOffset: vi.fn(() => KEPT),
-    keepOffset: vi.fn(),
-    getSpreadOf: vi.fn(SPREAD_OF),
-    turn: vi.fn(),
-    standing: ref(0),
+    position: { front: ref({}), leftInChapter: ref(0), standing: ref(0) },
+    moves: {
+      stand: vi.fn(),
+      enterSpread: vi.fn(),
+      getKeptOffset: vi.fn(() => KEPT),
+      keepOffset: vi.fn(),
+      getSpreadOf: vi.fn(SPREAD_OF),
+      turn: vi.fn(),
+    },
   }
 }
 
+const flatten = (parts: unknown): Record<string, unknown> =>
+  Object.assign({}, ...Object.values(parts as Record<string, object>))
+
 const columns = () =>
-  fake.columns as {
+  ({
+    ...flatten({
+      sizing: fake.columns.sizing,
+      runMarks: fake.columns.runMarks,
+      laid: fake.columns.laid,
+    }),
+    isStood: fake.columns.isStood,
+    readColumns: fake.columns.readColumns,
+  }) as {
     viewport: { value: { width: number; height: number } }
     textSize: { value: number }
     isMeasured: { value: boolean }
@@ -78,7 +100,7 @@ const columns = () =>
   }
 
 const turns = () =>
-  fake.turns as {
+  flatten(fake.turns) as {
     stand: ReturnType<typeof vi.fn>
     enterSpread: ReturnType<typeof vi.fn>
     turn: ReturnType<typeof vi.fn>
@@ -129,7 +151,7 @@ const room = (options: Options = {}) => {
   const holder = document.createElement('div')
   const leaving = shallowRef<HTMLElement | null>(holder)
   const onMove = vi.fn()
-  const takeLed = vi.fn(() => options.led)
+  const takeLedLink = vi.fn(() => options.led)
   let layout!: ReturnType<typeof useBookLayout>
   const wrapper = mount(
     defineComponent({
@@ -140,14 +162,15 @@ const room = (options: Options = {}) => {
           leaving,
           props,
           onMove,
-          takeLed,
-          getEdge: () => 0,
+          takeLedLink,
+          column: fake.columns as unknown as BookColumns,
+          turns: fake.turns as unknown as BookTurns,
         })
         return () => null
       },
     }),
   )
-  return { wrapper, props, box, text, holder, onMove, takeLed, layout: () => layout }
+  return { wrapper, props, box, text, holder, onMove, takeLedLink, layout: () => layout }
 }
 
 beforeEach(setUp)
@@ -163,7 +186,7 @@ describe('setting the columns', () => {
     turns().stand.mockClear()
     fake.frames.length = 0
 
-    layout().settle(() => 40)
+    layout().settling.settle(() => 40)
 
     expect(columns().measure).toHaveBeenCalledTimes(1)
     flushFrames()
@@ -178,7 +201,7 @@ describe('setting the columns', () => {
     const { layout } = room()
     columns().measure.mockClear()
 
-    layout().settle(() => 40)
+    layout().settling.settle(() => 40)
 
     expect(columns().measure).toHaveBeenCalledTimes(1)
     expect(fake.frames).toHaveLength(0)
@@ -189,7 +212,7 @@ describe('setting the columns', () => {
     const { layout } = room({ hasArea: false })
     fake.frames.length = 0
 
-    layout().settle(() => 40)
+    layout().settling.settle(() => 40)
     flushFrames()
 
     expect(columns().readColumns).not.toHaveBeenCalled()
@@ -201,7 +224,7 @@ describe('setting the columns', () => {
     const { layout } = room({ hasPaper: false })
     fake.frames.length = 0
 
-    layout().settle(() => 40)
+    layout().settling.settle(() => 40)
     flushFrames()
 
     expect(columns().readColumns).not.toHaveBeenCalled()
@@ -216,7 +239,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(150)
     fake.frames.length = 0
 
-    layout().settle(() => 40, { path: 'ch1.xhtml', fragment: 'here' })
+    layout().settling.settle(() => 40, { path: 'ch1.xhtml', fragment: 'here' })
     flushFrames()
 
     expect(columns().findFragmentOffset).toHaveBeenCalledWith('here')
@@ -230,7 +253,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(0)
     fake.frames.length = 0
 
-    layout().settle(() => 40, { path: '', fragment: 'top' })
+    layout().settling.settle(() => 40, { path: '', fragment: 'top' })
     flushFrames()
 
     expect(columns().findFragmentOffset).toHaveBeenCalledWith('top')
@@ -243,7 +266,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(150)
     fake.frames.length = 0
 
-    layout().settle(() => 40, { path: 'ch2.xhtml', fragment: 'here' })
+    layout().settling.settle(() => 40, { path: 'ch2.xhtml', fragment: 'here' })
     flushFrames()
 
     expect(columns().findFragmentOffset).not.toHaveBeenCalled()
@@ -256,7 +279,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(undefined)
     fake.frames.length = 0
 
-    layout().settle(() => 40, { path: '', fragment: 'missing' })
+    layout().settling.settle(() => 40, { path: '', fragment: 'missing' })
     flushFrames()
 
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(40), 'auto')
@@ -267,7 +290,7 @@ describe('the place a link led to', () => {
     const { layout, onMove } = room()
     fake.frames.length = 0
 
-    layout().settle(() => 40)
+    layout().settling.settle(() => 40)
     flushFrames()
 
     expect(columns().findFragmentOffset).not.toHaveBeenCalled()
@@ -356,7 +379,7 @@ describe('the room or the type changing size', () => {
       columns().viewport.value = { width: 301, height: 200 }
     })
 
-    layout().settle(() => 40)
+    layout().settling.settle(() => 40)
     await nextTick()
     flushAllFrames()
 
@@ -376,7 +399,7 @@ describe('the room or the type changing size', () => {
 
 describe('another document being opened', () => {
   it('starts at the first spread and is set at the offset requested for', async () => {
-    const { props, takeLed } = room()
+    const { props, takeLedLink } = room()
     turns().standing.value = 3
     columns().measure.mockClear()
     fake.frames.length = 0
@@ -385,7 +408,7 @@ describe('another document being opened', () => {
     props.markup = '<p>two</p>'
     await nextTick()
 
-    expect(takeLed).toHaveBeenCalledTimes(1)
+    expect(takeLedLink).toHaveBeenCalledTimes(1)
     expect(turns().standing.value).toBe(0)
     expect(columns().measure).toHaveBeenCalledTimes(1)
     flushFrames()
@@ -661,22 +684,22 @@ describe('the layout being mounted', () => {
 describe('the page counter of a document just drawn', () => {
   const pageOf = (page: number) => ({ page, pages: 40 })
   const setFront = (page: number) => {
-    ;(fake.turns['front'] as { value: unknown }).value = pageOf(page)
+    ;(turns() as unknown as { front: { value: unknown } }).front.value = pageOf(page)
   }
 
   it('stays on the page before it until the columns stand at their spread', async () => {
     const { layout, props } = room()
     flushFrames()
     setFront(48)
-    expect(layout().front.value).toStrictEqual(pageOf(48))
+    expect(layout().position.front.value).toStrictEqual(pageOf(48))
 
     props.markup = '<p>the document before</p>'
     await nextTick()
     setFront(1)
 
-    expect(layout().front.value).toStrictEqual(pageOf(48))
+    expect(layout().position.front.value).toStrictEqual(pageOf(48))
     flushFrames()
-    expect(layout().front.value).toStrictEqual(pageOf(1))
+    expect(layout().position.front.value).toStrictEqual(pageOf(1))
   })
 
   it('stays on the page before it when the span arrives before the markup', () => {
@@ -687,7 +710,7 @@ describe('the page counter of a document just drawn', () => {
     props.span = { start: 200, end: 300 }
     setFront(1)
 
-    expect(layout().front.value).toStrictEqual(pageOf(48))
+    expect(layout().position.front.value).toStrictEqual(pageOf(48))
   })
 
   it('follows a turn made once the columns stand', () => {
@@ -696,7 +719,7 @@ describe('the page counter of a document just drawn', () => {
 
     setFront(7)
 
-    expect(layout().front.value).toStrictEqual(pageOf(7))
+    expect(layout().position.front.value).toStrictEqual(pageOf(7))
   })
 })
 
@@ -706,9 +729,9 @@ describe('the text set again for a picture or a face that arrives', () => {
     flushFrames()
     turns().stand.mockClear()
 
-    layout().settleKept()
-    layout().settleKept()
-    layout().settleKept()
+    layout().settling.settleKept()
+    layout().settling.settleKept()
+    layout().settling.settleKept()
     flushFrames()
     flushFrames()
 
@@ -753,7 +776,7 @@ describe('the columns of a document with a picture that has not arrived', () => 
     columns().readColumns.mockClear()
     turns().stand.mockClear()
 
-    layout().settle(() => 40)
+    layout().settling.settle(() => 40)
     flushFrames()
 
     expect(columns().readColumns).not.toHaveBeenCalled()
@@ -768,7 +791,7 @@ describe('the columns of a document with a picture that has not arrived', () => 
     const picture = appendImage(text)
     columns().readColumns.mockClear()
 
-    layout().settle(() => 40)
+    layout().settling.settle(() => 40)
     flushFrames()
     picture.dispatchEvent(new Event('error'))
 
@@ -782,6 +805,8 @@ describe('a page turned into the adjacent document', () => {
     const { props, layout, text } = setup
     flushFrames()
     text.innerHTML = '<p data-offset="190">one</p>'
+    // The place the running turn of the paper goes to when the paper is copied.
+    text.style.translate = '-900px 0'
     turns().turn.mockReturnValue(200)
     layout().turn('next')
     props.at = offset

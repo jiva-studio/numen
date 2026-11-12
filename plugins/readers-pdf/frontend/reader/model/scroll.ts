@@ -11,26 +11,35 @@ import { Hand, getWheelOffset } from '../lib/hand'
 /** How near the row has to be to count as standing where it was sent, in CSS pixels. */
 const THERE = 1
 
+/** What the strip is doing, how to move it, and the pointer and wheel handlers that move it. */
 export interface PanScroll {
-  readonly along: Ref<number>
-  readonly isDragging: Ref<boolean>
-  readonly getScrollOffset: () => number
-  readonly send: (to: number, how: ScrollBehavior) => void
-  readonly restore: () => void
-  readonly isMoved: () => boolean
-  readonly isStill: () => boolean
-  readonly onPointerDown: (event: PointerEvent) => void
-  readonly onPointerMove: (event: PointerEvent) => void
-  readonly letGo: (event: PointerEvent) => void
+  readonly state: {
+    readonly offset: Ref<number>
+    readonly isDragging: Ref<boolean>
+  }
+  readonly moves: {
+    readonly getScrollOffset: () => number
+    readonly send: (to: number, how: ScrollBehavior) => void
+    readonly restore: () => void
+    readonly isMoved: () => boolean
+    readonly isStill: () => boolean
+  }
+  readonly drag: {
+    readonly onPointerDown: (event: PointerEvent) => void
+    readonly onPointerMove: (event: PointerEvent) => void
+    readonly letGo: (event: PointerEvent) => void
+  }
   readonly onWheel: (event: WheelEvent) => void
 }
 
-function followPointer(element: HTMLElement | null, event: PointerEvent): void {
-  if (!element || element.hasPointerCapture(event.pointerId)) return
+function followPointer(element: HTMLElement | null, event: PointerEvent): boolean {
+  if (!element) return false
+  if (element.hasPointerCapture(event.pointerId)) return true
   try {
     element.setPointerCapture(event.pointerId)
+    return true
   } catch {
-    // The pointer stays captured by the strip while it is over the scroll area.
+    return false
   }
 }
 
@@ -131,7 +140,7 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
     return true
   }
 
-  const { onPointerDown, onPointerMove, letGo } = createPointerDrag(area, isDragging, () => {
+  const drag = createPointerDrag(area, isDragging, () => {
     heading = undefined
   })
 
@@ -141,16 +150,9 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
   }
 
   const state: PanScroll = {
-    along: axisOffset,
-    isDragging,
-    getScrollOffset,
-    send,
-    restore,
-    isMoved,
-    isStill,
-    onPointerDown,
-    onPointerMove,
-    letGo,
+    state: { offset: axisOffset, isDragging },
+    moves: { getScrollOffset, send, restore, isMoved, isStill },
+    drag,
     onWheel,
   }
   return state

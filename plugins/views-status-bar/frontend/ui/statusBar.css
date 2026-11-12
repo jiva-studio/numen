@@ -1,9 +1,13 @@
 .status-bar {
+  --bar-height: 1.375rem;
+  --group-gap: 0.5rem;
+  --entry-gap: 0.25rem;
+  --entry-pad-inline: 0.5rem;
   position: relative;
   display: flex;
   align-items: center;
-  height: 1.375rem;
-  min-height: 1.375rem;
+  height: var(--bar-height);
+  min-height: var(--bar-height);
   background: var(--numen-surface);
   border-top: 1px solid var(--numen-rule);
   color: var(--numen-ink);
@@ -23,15 +27,15 @@
 }
 
 .status-bar__gap {
-  inline-size: 0.5rem;
+  inline-size: var(--group-gap);
 }
 
 .status-bar__entry {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--entry-gap);
   height: 100%;
-  padding: 0 0.5rem;
+  padding: 0 var(--entry-pad-inline);
   background: transparent;
   border: none;
   border-radius: var(--numen-radius-tight);

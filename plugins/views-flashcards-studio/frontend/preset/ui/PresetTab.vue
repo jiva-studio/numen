@@ -4,8 +4,8 @@
  */
 import PresetSettings from './preset-settings/PresetSettings.vue'
 import { PresetGoal } from './preset-goal'
-import type { PresetTabState } from '../types'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
+import type { PresetTabState } from '../model/types'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: PresetTabState }>()
@@ -13,10 +13,10 @@ const props = defineProps<{ state: PresetTabState }>()
 // --- State ---
 // The tab's state outlives this component, so its value is bound once here
 // and the template unwraps it.
-const { hasExternalChange, problems, errorMessage } = props.state
+const { hasExternalChange, problems, errorMessage } = props.state.status
 
 function onRefresh() {
-  props.state.reload()
+  props.state.actions.reload()
 }
 
 // --- Helpers ---

@@ -93,7 +93,7 @@ func TestPluginValidate_AllowedPermissionsAndNetworkAlias(t *testing.T) {
   "id": "md.numen.valid",
   "name": "Valid",
   "version": "1.0.0",
-  "permissions": ["vault:read", "vault:write", "network", "network:outbound"]
+  "permissions": ["vault:read", "vault:write", "network", "link:open"]
 }`
 	if err := os.WriteFile(manifestPath, []byte(manifest), 0o644); err != nil {
 		t.Fatal(err)
@@ -178,7 +178,12 @@ func TestPluginPackage_Success(t *testing.T) {
 	if _, err := Package(pluginDir, archivePath, failingWriter{}); !errors.Is(err, errWriteFailed) || !strings.Contains(err.Error(), "report bundle:") {
 		t.Errorf("expected wrapped report bundle error, got %v", err)
 	}
-	if _, err := Package(filepath.Join(tmpDir, "missing"), archivePath, &bytes.Buffer{}); !errors.Is(err, fs.ErrNotExist) || strings.Contains(err.Error(), "validate plugin:") {
+	if _, err := Package(
+		filepath.Join(tmpDir, "missing"),
+		archivePath,
+		&bytes.Buffer{},
+	); !errors.Is(err, fs.ErrNotExist) ||
+		strings.Contains(err.Error(), "validate plugin:") {
 		t.Errorf("expected direct resolveManifestPath error without validate prefix, got %v", err)
 	}
 	emptyDir := t.TempDir()
@@ -319,18 +324,33 @@ func TestPluginCLI_Run(t *testing.T) {
 
 	// Validate error cases
 	stderr.Reset()
-	if got := Run([]string{"validate"}, &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "plugin path is required") || !strings.Contains(stderr.String(), "usage: numen plugin validate <path>") {
+	if got := Run(
+		[]string{"validate"},
+		&stdout,
+		&stderr,
+	); got != 1 || !strings.Contains(stderr.String(), "plugin path is required") ||
+		!strings.Contains(stderr.String(), "usage: numen plugin validate <path>") {
 		t.Errorf("Run(validate) = %d, stderr = %q", got, stderr.String())
 	}
 	if got := Run([]string{"validate"}, &stdout, failingWriter{}); got != 1 {
 		t.Errorf("Run(validate) with failing stderr = %d, want 1", got)
 	}
 	stderr.Reset()
-	if got := Run([]string{"validate", "--unknown-flag", pluginPath}, &stdout, &stderr); got != 1 || stderr.Len() == 0 || strings.Contains(stderr.String(), "plugin path is required") {
+	if got := Run(
+		[]string{"validate", "--unknown-flag", pluginPath},
+		&stdout,
+		&stderr,
+	); got != 1 || stderr.Len() == 0 ||
+		strings.Contains(stderr.String(), "plugin path is required") {
 		t.Errorf("Run(validate --unknown-flag) = %d, stderr = %q", got, stderr.String())
 	}
 	stderr.Reset()
-	if got := Run([]string{"validate", filepath.Join(tmpDir, "missing")}, &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "validation failed:") {
+	if got := Run(
+		[]string{"validate", filepath.Join(tmpDir, "missing")},
+		&stdout,
+		&stderr,
+	); got != 1 ||
+		!strings.Contains(stderr.String(), "validation failed:") {
 		t.Errorf("Run(validate missing) = %d, stderr = %q", got, stderr.String())
 	}
 	if got := Run([]string{"validate", pluginPath}, failingWriter{}, &stderr); got != 1 {
@@ -338,22 +358,42 @@ func TestPluginCLI_Run(t *testing.T) {
 	}
 	badDir := writeManifestFile(t, `{"id":"bad","name":"B","version":"1.0.0"}`)
 	stderr.Reset()
-	if got := Run([]string{"validate", badDir}, &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "validation errors:") || !strings.Contains(stderr.String(), "reverse-DNS") {
+	if got := Run(
+		[]string{"validate", badDir},
+		&stdout,
+		&stderr,
+	); got != 1 || !strings.Contains(stderr.String(), "validation errors:") ||
+		!strings.Contains(stderr.String(), "reverse-DNS") {
 		t.Errorf("Run(validate bad) = %d, stderr = %q", got, stderr.String())
 	}
 	twoIssuesDir := writeManifestFile(t, `{"id":"bad","name":"B","version":"1.0"}`)
 	stderr.Reset()
-	if got := Run([]string{"validate", twoIssuesDir}, &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "reverse-DNS") || !strings.Contains(stderr.String(), "semver") {
+	if got := Run(
+		[]string{"validate", twoIssuesDir},
+		&stdout,
+		&stderr,
+	); got != 1 || !strings.Contains(stderr.String(), "reverse-DNS") ||
+		!strings.Contains(stderr.String(), "semver") {
 		t.Errorf("Run(validate twoIssues) = %d, stderr = %q", got, stderr.String())
 	}
 
 	// Package error cases
 	stderr.Reset()
-	if got := Run([]string{"package"}, &stdout, &stderr); got != 1 || !strings.Contains(stderr.String(), "error: plugin path is required") || !strings.Contains(stderr.String(), "usage: numen plugin package <path> [--out=<archive>]") {
+	if got := Run(
+		[]string{"package"},
+		&stdout,
+		&stderr,
+	); got != 1 || !strings.Contains(stderr.String(), "error: plugin path is required") ||
+		!strings.Contains(stderr.String(), "usage: numen plugin package <path> [--out=<archive>]") {
 		t.Errorf("Run(package) = %d, stderr = %q", got, stderr.String())
 	}
 	stderr.Reset()
-	if got := Run([]string{"package", "--unknown-flag", pluginPath}, &stdout, &stderr); got != 1 || stderr.Len() == 0 || strings.Contains(stderr.String(), "plugin path is required") {
+	if got := Run(
+		[]string{"package", "--unknown-flag", pluginPath},
+		&stdout,
+		&stderr,
+	); got != 1 || stderr.Len() == 0 ||
+		strings.Contains(stderr.String(), "plugin path is required") {
 		t.Errorf("Run(package --unknown-flag) = %d, stderr = %q", got, stderr.String())
 	}
 	stderr.Reset()
@@ -404,12 +444,32 @@ func TestPluginValidate_ReportsCoreRules(t *testing.T) {
 		{"single segment id", `{"id":"foo","name":"X","version":"1.0.0"}`, "reverse-DNS"},
 		{"newer protocol", `{"id":"md.numen.x","name":"X","version":"1.0.0","protocol":99}`, "protocol"},
 		{"capability no host resolves", `{"id":"md.numen.x","name":"X","version":"1.0.0","capabilities":["agent"]}`, "invalid capability"},
-		{"wildcard activation event", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"activationEvents":["*"]}`, "invalid activation event"},
-		{"unknown activation event", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"activationEvents":["onCommand:run"]}`, "invalid activation event"},
+		{
+			"wildcard activation event",
+			`{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"activationEvents":["*"]}`,
+			"invalid activation event",
+		},
+		{
+			"unknown activation event",
+			`{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"activationEvents":["onCommand:run"]}`,
+			"invalid activation event",
+		},
 		{"setting without title", `{"id":"md.numen.x","name":"X","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, "title"},
-		{"command id in capitals", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"Run","title":"Run"}]}}`, "each in camelCase"},
-		{"command condition that names no variable", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"note.run","title":"Run","when":"target.isRemote"}]}}`, `"note.run": when:`},
-		{"command argument of no type", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"run","title":"Run","arguments":[{"name":"n","title":"N","type":"int"}]}]}}`, "invalid command argument"},
+		{
+			"command id in capitals",
+			`{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"Run","title":"Run"}]}}`,
+			"each in camelCase",
+		},
+		{
+			"command condition that names no variable",
+			`{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"note.run","title":"Run","when":"target.isRemote"}]}}`,
+			`"note.run": when:`,
+		},
+		{
+			"command argument of no type",
+			`{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"contributes":{"commands":[{"id":"run","title":"Run","arguments":[{"name":"n","title":"N","type":"int"}]}]}}`,
+			"invalid command argument",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

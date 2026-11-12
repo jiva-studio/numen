@@ -1,14 +1,14 @@
 {
   "id": "md.numen.agents.codex",
   "name": "OpenAI Codex Agent",
-  "version": "2026.11.9",
+  "version": "2026.11.10",
   "protocol": 1,
   "description": "OpenAI Codex assistant for chat and note editing",
   "capabilities": ["ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": { "category": "agents" },
   "permissions": [
-    "network:outbound",
+    "link:open",
     "vault:read",
     "vault:write",
     "vault:manage",

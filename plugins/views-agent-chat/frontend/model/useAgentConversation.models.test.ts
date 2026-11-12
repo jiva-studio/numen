@@ -37,13 +37,15 @@ const open = (models: readonly Model[] = [], settings: Record<string, string> = 
     openFileAdjacent: () => undefined,
     resolveLinks: async () => [],
     unreachable: () => '',
-    getSetting: (path) => settings[path.join('/')],
-    getModelsAt: (categoryPath) =>
-      models.filter((one) => one.nameAt.join('/') === categoryPath.join('/')),
+    settings: {
+      getSetting: (path) => settings[path.join('/')],
+      getModelsAt: (categoryPath) =>
+        models.filter((one) => one.nameAt.join('/') === categoryPath.join('/')),
+    },
   })
 
 const proposed = (state: ReturnType<typeof open>) => [
-  ...new Set(state.modelOptions.value.map((one) => one.agentId)),
+  ...new Set(state.models.modelOptions.value.map((one) => one.agentId)),
 ]
 
 const LISTED = [
@@ -58,7 +60,7 @@ describe('the model an agent tab starts on', () => {
   it('is the one kept for the agent that was kept', () => {
     const state = open(LISTED, { 'app/agent/use': 'omega', 'app/agent/omega/model': 'omega-one' })
 
-    expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual([
+    expect([state.models.selectedAgentId.value, state.models.selectedModelId.value]).toEqual([
       'omega',
       'omega-one',
     ])
@@ -67,7 +69,7 @@ describe('the model an agent tab starts on', () => {
   it('is the default of the agent kept where the model kept is not listed', () => {
     const state = open(LISTED, { 'app/agent/use': 'zeta', 'app/agent/zeta/model': 'no-such-model' })
 
-    expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual([
+    expect([state.models.selectedAgentId.value, state.models.selectedModelId.value]).toEqual([
       'zeta',
       'zeta-large',
     ])
@@ -76,7 +78,7 @@ describe('the model an agent tab starts on', () => {
   it('is the first model offered where no agent was kept', () => {
     const state = open(LISTED)
 
-    expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual([
+    expect([state.models.selectedAgentId.value, state.models.selectedModelId.value]).toEqual([
       'zeta',
       'zeta-small',
     ])
@@ -85,7 +87,10 @@ describe('the model an agent tab starts on', () => {
   it('is empty where nothing is listed', () => {
     const state = open([], { 'app/agent/use': 'zeta' })
 
-    expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual(['', ''])
+    expect([state.models.selectedAgentId.value, state.models.selectedModelId.value]).toEqual([
+      '',
+      '',
+    ])
   })
 })
 
@@ -93,7 +98,7 @@ describe('the models an agent tab offers', () => {
   it('carry the name, title and default the core lists', () => {
     const state = open(LISTED)
 
-    expect(state.modelOptions.value.filter((one) => one.agentId === 'zeta')).toEqual([
+    expect(state.models.modelOptions.value.filter((one) => one.agentId === 'zeta')).toEqual([
       expect.objectContaining({ modelId: 'zeta-small', modelTitle: 'ZETA-SMALL' }),
       expect.objectContaining({ modelId: 'zeta-large', modelTitle: 'ZETA-LARGE', isDefault: true }),
     ])
@@ -105,7 +110,7 @@ describe('the models an agent tab offers', () => {
       model(['app', 'agent', 'zeta', 'model'], 'my-zeta'),
     ])
 
-    expect(state.modelOptions.value.map((one) => one.modelId)).toEqual(['my-zeta'])
+    expect(state.models.modelOptions.value.map((one) => one.modelId)).toEqual(['my-zeta'])
   })
 })
 
@@ -135,7 +140,7 @@ describe('the agents an agent tab offers', () => {
       model(['editor', 'font'], 'zeta'),
     ])
 
-    expect(state.modelOptions.value.map((one) => one.modelId)).toEqual(['zeta-small'])
+    expect(state.models.modelOptions.value.map((one) => one.modelId)).toEqual(['zeta-small'])
   })
 })
 
@@ -148,7 +153,7 @@ describe('an agent that reports no models', () => {
       model(['app', 'agent', 'omega', 'model'], '', 'present', true),
     ])
 
-    expect(state.modelOptions.value.map((one) => [one.agentId, one.modelId])).toEqual([
+    expect(state.models.modelOptions.value.map((one) => [one.agentId, one.modelId])).toEqual([
       ['zeta', 'zeta-small'],
       ['omega', ''],
     ])
@@ -162,8 +167,11 @@ describe('an agent that reports no models', () => {
       model(['app', 'agent', 'omega', 'model'], '', 'present', true),
     ])
 
-    state.selectModel(state.modelOptions.value[1]!)
+    state.models.selectModel(state.models.modelOptions.value[1]!)
 
-    expect([state.selectedAgentId.value, state.selectedModelId.value]).toEqual(['omega', ''])
+    expect([state.models.selectedAgentId.value, state.models.selectedModelId.value]).toEqual([
+      'omega',
+      '',
+    ])
   })
 })

@@ -5,7 +5,7 @@ import { mount } from '@vue/test-utils'
 import type { Component } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Thread from './Thread.vue'
-import type { Turn } from '../lib/turn'
+import type { Turn } from '../../types'
 
 const { renderSpy } = vi.hoisted(() => ({ renderSpy: vi.fn() }))
 
@@ -25,7 +25,7 @@ vi.mock('@numen/ui', async (importOriginal) => {
   return { ...original, Prose }
 })
 
-const createResponded = (id: string, text: string, unresolved?: readonly string[]): Turn =>
+const createRespondedTurn = (id: string, text: string, unresolved?: readonly string[]): Turn =>
   unresolved === undefined
     ? { id, voice: 'response', text }
     : { id, voice: 'response', text, unresolved }
@@ -37,14 +37,14 @@ beforeEach(() => renderSpy.mockClear())
 
 describe('a reply arriving in the last turn', () => {
   it('draws only the turn it arrives in', async () => {
-    const earlier = [createResponded('1', 'first'), createResponded('2', 'second')]
+    const earlier = [createRespondedTurn('1', 'first'), createRespondedTurn('2', 'second')]
     const wrapper = mount(Thread, {
-      props: { turns: [...earlier, createResponded('3', 'th')] },
+      props: { turns: [...earlier, createRespondedTurn('3', 'th')] },
     })
     renderSpy.mockClear()
 
-    await wrapper.setProps({ turns: [...earlier, createResponded('3', 'thi')] })
-    await wrapper.setProps({ turns: [...earlier, createResponded('3', 'thir')] })
+    await wrapper.setProps({ turns: [...earlier, createRespondedTurn('3', 'thi')] })
+    await wrapper.setProps({ turns: [...earlier, createRespondedTurn('3', 'thir')] })
 
     expect(countRenders('first')).toBe(0)
     expect(countRenders('second')).toBe(0)
@@ -54,12 +54,12 @@ describe('a reply arriving in the last turn', () => {
 
   it('draws a turn again when its unresolved addresses change', async () => {
     const wrapper = mount(Thread, {
-      props: { turns: [createResponded('1', 'first', ['name://Nowhere'])] },
+      props: { turns: [createRespondedTurn('1', 'first', ['name://Nowhere'])] },
     })
     renderSpy.mockClear()
 
     await wrapper.setProps({
-      turns: [createResponded('1', 'first', ['name://Nowhere', 'name://Elsewhere'])],
+      turns: [createRespondedTurn('1', 'first', ['name://Nowhere', 'name://Elsewhere'])],
     })
 
     expect(countRenders('first')).toBe(1)

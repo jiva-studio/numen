@@ -9,16 +9,16 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
 // The vault list shown to the user is built from the first message, and
 // counting a vault reads every deck in it. The vaults therefore arrive with
 // their name and location, with no count and no deck information.
 func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
-	handler, target := newAPI(t, getDeck(), getOther())
+	handler, target := newAPI(t, getDeck(), getOtherVault())
 
 	stream, err := newFlashcardsClient(t, handler).WatchCardsDue(
 		t.Context(), &api.WatchCardsDueRequest{})
@@ -54,7 +54,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 // Each vault's count is a message of its own, so a vault of fifty thousand
 // cards holds up nothing but itself.
 func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
-	handler, target := newAPI(t, getDeck(), getOther())
+	handler, target := newAPI(t, getDeck(), getOtherVault())
 
 	// The vaults are read when the window opens them, and what a count evaluates to
 	// is what is under test here.
@@ -98,7 +98,7 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 // the day has not.
 func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 	handler, _ := newAPI(t, getDeck())
-	handler.scenarios().day = review.Day{Starts: 4 * time.Hour, In: time.UTC}
+	handler.flash().Day = review.Day{Starts: 4 * time.Hour, In: time.UTC}
 
 	for name, c := range map[string]struct {
 		currentTime time.Time
@@ -207,7 +207,7 @@ func BenchmarkWatchCardsDue(b *testing.B) {
 	// The schedule caches are filled before the clock starts, which is what a
 	// person's second opening of a day costs.
 	for _, v := range all {
-		if _, err := handler.scenarios().flash.CardsDue.Execute(ctx, v); err != nil {
+		if _, err := handler.flash().Counts.CardsDue.Execute(ctx, v); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -297,7 +297,7 @@ func benchAnswers(b *testing.B, handler *API, v domain.Vault, cards, days, perDa
 	card := 0
 	for day := range days {
 		when := pos.Add(time.Duration(day) * 24 * time.Hour)
-		run, err := handler.scenarios().flash.Log.Open(ctx, v, when)
+		run, err := handler.flash().Reviews.Log.Open(ctx, v, when)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -4,7 +4,7 @@
  * The window is absent: the tab's data is fabricated, and every action the tab
  * requested is recorded in order.
  */
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../lib/stop'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
@@ -17,8 +17,8 @@ import {
   type PresetCounts,
   type Settings,
   type SettingsBounds,
-  type PresetTabState,
-} from '../types'
+} from '../../lib/presets'
+import type { PresetTabState } from '../model/types'
 
 /**
  * The range of each setting, as the application returns it on a read. A test
@@ -103,7 +103,7 @@ const getCounts = (one: Curve): PresetCounts | null =>
     ? { decks: one.decks, cards: one.cards, overdue: one.overdue, unbegun: one.unbegun }
     : null
 
-export interface TabFixtureOptions {
+interface TabFixtureOptions {
   isWaiting?: boolean
   counts?: PresetCounts | null
 }
@@ -119,32 +119,38 @@ const createTab = (
   const state: PresetTabState = {
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, ...settings }),
-    curve: shallowRef(curve(overrides)),
-    material: shallowRef(counts === undefined ? getCounts(curve(overrides)) : counts),
-    place,
-    isWaiting: ref(isWaiting),
     bounds: shallowRef(BOUNDS),
-    problems: shallowRef([]),
-    stopped: ref(StopReason.NOTHING),
-    errorMessage: ref(''),
-    hasExternalChange: ref(false),
-    reload: () => {
-      isDone.push('reload')
+    curves: {
+      curve: shallowRef(curve(overrides)),
+      material: shallowRef(counts === undefined ? getCounts(curve(overrides)) : counts),
+      place,
+      isWaiting: ref(isWaiting),
     },
-    chooseGoal: (goal) => {
-      isDone.push(`choose ${goal}`)
+    status: {
+      problems: shallowRef([]),
+      stopped: ref(StopReason.NOTHING),
+      errorMessage: ref(''),
+      hasExternalChange: ref(false),
     },
-    moveSlider: (pos) => {
-      place.value = pos
-      isDone.push(`move ${pos}`)
+    actions: {
+      reload: () => {
+        isDone.push('reload')
+      },
+      chooseGoal: (goal) => {
+        isDone.push(`choose ${goal}`)
+      },
+      moveSlider: (pos) => {
+        place.value = pos
+        isDone.push(`move ${pos}`)
+      },
+      flushPending: () => {
+        isDone.push('flushPending')
+      },
+      updateSetting: (field, value) => {
+        isDone.push(`type ${field} ${value}`)
+      },
+      close: () => undefined,
     },
-    flushPending: () => {
-      isDone.push('flushPending')
-    },
-    updateSetting: (field, value) => {
-      isDone.push(`type ${field} ${value}`)
-    },
-    close: () => undefined,
   }
   return { state, recorded: isDone }
 }
@@ -158,4 +164,4 @@ const mountPresetTab = (
   return { ...one, tab: mount(PresetTab, { props: { state: one.state } }) }
 }
 
-export { getCounts, curve, mountPresetTab, heights, point, rows, createTab }
+export { curve, mountPresetTab, heights, point, rows, createTab }

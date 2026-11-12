@@ -1,40 +1,14 @@
 /**
  * Search hit lookup, item formatting, and the command a chosen action of a hit runs.
  */
-import type { PaletteItem } from '@numen/shell'
-import type { Selector, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
+import type { PaletteItem } from '@numen/workbench'
+import type { Selector, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { NoteType } from '@/entities/file'
-import { COMMAND, ROW } from '@/shared/commandIds'
-import type { TextRange } from '@/shared/textRange'
+import { COMMAND, ROW } from '@/shared/model/command'
+import type { NameMatch, Passage } from '../../lib/search/types'
 import type { Words } from './search'
 
-/**
- * One name that matched: a note title or an internal heading.
- */
-export interface NameMatch {
-  path: string
-  title: string
-  heading: string
-  line: number
-  at: readonly TextRange[]
-  type: NoteType
-  tabKind?: string
-}
-
-/** One passage: the text around a hit, and where it came from. */
-export interface Passage {
-  path: string
-  title: string
-  isNote: boolean
-  type: NoteType
-  tabKind?: string
-  selector: Selector | null
-  text: string
-  start: number
-  length: number
-  line: number
-  at: readonly TextRange[]
-}
+export type { NameMatch, Passage }
 
 /** The entries of the slot of a search result, over the note of a result, in the order drawn. */
 export interface SearchMenuDeps {
@@ -45,11 +19,7 @@ export interface SearchMenuDeps {
  * no line at all.
  */
 export interface SearchHit {
-  path: string
-  title: string
-  line: number
-  start: number
-  length: number
+  spot: HitSpot
   actionIds: readonly string[]
   type: NoteType | null
   tabKind?: string
@@ -57,6 +27,15 @@ export interface SearchHit {
   creationIds?: readonly string[]
   actionValues?: Readonly<Record<string, Readonly<Record<string, string>>>>
   actionCommands?: Readonly<Record<string, string>>
+}
+
+/** Where a hit is: its file, the title shown for it, and the line and the span of the text found. */
+interface HitSpot {
+  path: string
+  title: string
+  line: number
+  start: number
+  length: number
 }
 
 /** One item as it is drawn, beside at its current position and what it offers. */
@@ -125,18 +104,11 @@ export function createNameItem(
           detail: one.title,
           actions: atHeading.actions,
         },
-        hit: {
-          path: one.path,
-          title: one.title,
-          line: one.line,
-          start: 0,
-          length: 0,
-          actionIds: atHeading.actionIds,
-          ...atHeading.valuesOfHit,
-          type: one.type,
-          ...(one.tabKind ? { tabKind: one.tabKind } : {}),
-          selector: null,
-        },
+        hit: getNoteHit(
+          { path: one.path, title: one.title, line: one.line, start: 0, length: 0 },
+          atHeading,
+          one,
+        ),
       }
     : {
         item: {
@@ -145,19 +117,47 @@ export function createNameItem(
           at: one.at,
           actions: byName.actions,
         },
-        hit: {
-          path: one.path,
-          title: one.title,
-          line: -1,
-          start: 0,
-          length: 0,
-          actionIds: byName.actionIds,
-          ...byName.valuesOfHit,
-          type: one.type,
-          ...(one.tabKind ? { tabKind: one.tabKind } : {}),
-          selector: null,
-        },
+        hit: getNoteHit(
+          { path: one.path, title: one.title, line: -1, start: 0, length: 0 },
+          byName,
+          one,
+        ),
       }
+}
+
+function getNoteHit(
+  spot: HitSpot,
+  note: ReturnType<typeof createNoteActions>,
+  found: Pick<NameMatch, 'type' | 'tabKind'>,
+): SearchHit {
+  return {
+    spot,
+    actionIds: note.actionIds,
+    ...note.valuesOfHit,
+    type: found.type,
+    ...(found.tabKind ? { tabKind: found.tabKind } : {}),
+    selector: null,
+  }
+}
+
+function createNotePassageHit(one: Passage, note: ReturnType<typeof createNoteActions>): SearchHit {
+  const spot = {
+    path: one.path,
+    title: one.title,
+    line: one.line,
+    start: one.start,
+    length: one.length,
+  }
+  return getNoteHit(spot, note, one)
+}
+
+function createDocumentPassageHit(one: Passage, actionIds: readonly string[]): SearchHit {
+  return {
+    spot: { path: one.path, title: one.title, line: -1, start: one.start, length: one.length },
+    actionIds,
+    type: null,
+    selector: one.selector,
+  }
 }
 
 export function createPassageItem(
@@ -176,18 +176,12 @@ export function createPassageItem(
       detailAt: one.at,
       actions: one.isNote ? note.actions : document,
     },
-    hit: {
-      path: one.path,
-      title: one.title,
-      line: one.isNote ? one.line : -1,
-      start: one.start,
-      length: one.length,
-      actionIds: one.isNote ? note.actionIds : document.map((each) => each.id),
-      ...(one.isNote ? note.valuesOfHit : {}),
-      type: one.isNote ? one.type : null,
-      ...(one.isNote && one.tabKind ? { tabKind: one.tabKind } : {}),
-      selector: one.isNote ? null : one.selector,
-    },
+    hit: one.isNote
+      ? createNotePassageHit(one, note)
+      : createDocumentPassageHit(
+          one,
+          document.map((each) => each.id),
+        ),
   }
 }
 
@@ -206,11 +200,12 @@ export interface ResultChoice {
 }
 
 function resolveNoteChoice(result: SearchHit, action: string): ResultChoice {
-  const place = { path: result.path, file: result.path, title: result.title }
+  const { path, title, line } = result.spot
+  const place = { path, file: path, title }
   const values = result.actionValues?.[action]
   return {
     command: result.actionCommands?.[action] ?? action,
-    over: result.line >= 0 ? { ...place, line: result.line } : place,
+    over: line >= 0 ? { ...place, line } : place,
     input: '',
     ...(values ? { values } : {}),
   }
@@ -236,7 +231,7 @@ export function resolveChoice(
   }
   if (result.type === null) {
     if (action !== ROW.openDocument) return null
-    const place = { path: '', file: result.path, title: result.title }
+    const place = { path: '', file: result.spot.path, title: result.spot.title }
     return {
       command: action,
       over: result.selector ? { ...place, selector: result.selector } : place,

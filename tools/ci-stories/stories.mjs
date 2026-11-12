@@ -20,9 +20,9 @@ import { modules, root } from '../shared/modules.mjs'
  * beside it, and the plugins', which draws every plugin's frontend.
  */
 export const BOOKS = {
-  ui: 'libs/ui/core',
-  shell: 'libs/ui/shell',
-  plugins: 'libs/plugin-sdk-ts/stories',
+  ui: 'libs/ui/components',
+  shell: 'libs/ui/workbench',
+  plugins: 'libs/plugin/sdk-ts/stories',
 }
 
 /**

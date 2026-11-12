@@ -11,7 +11,7 @@ import PlexNodeHandle from './PlexNodeHandle.vue'
 import PlexNodeHeadings from './PlexNodeHeadings.vue'
 import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
 import { useHoverFocus } from '../../model/interaction/hoverFocus'
-import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
+import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useOpenBox } from '../../model/sizing/expansion'
 import { useNodePress } from '../../model/interaction/press'
 import { createAriaLabel, type Position } from '../../lib/node'
@@ -21,13 +21,16 @@ const props = withDefaults(defineProps<PlexNodeProps>(), {
   gestureRole: 'open',
   wide: null,
   hung: null,
-  behaviour: () => DEFAULT_BEHAVIOUR,
+  behavior: () => DEFAULT_BEHAVIOR,
 })
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<PlexNodeEvents>()
 
 defineSlots<PlexDrawnSlots>()
+
+/** Restores keyboard focus to this node's group when it was lost. */
+defineExpose({ focus: () => group.value?.focus() })
 
 /* --------------------------------- State ---------------------------------- */
 const group = useTemplateRef<SVGGElement>('group')
@@ -41,7 +44,8 @@ const press = useNodePress(props, getMiddle, {
   menu: (pos, trigger) => emit('menu', pos, trigger),
 })
 
-const { isGhost, canStop, isAnnounced, listening } = press
+const { isGhost, canStop, isAnnounced } = press.role
+const { listening } = press
 
 /**
  * Whether the handle is shown: while the pointer is over the node, or while
@@ -49,7 +53,7 @@ const { isGhost, canStop, isAnnounced, listening } = press
  */
 const hasDropTarget = computed(
   () =>
-    props.behaviour.reaching.hasHandle &&
+    props.behavior.reaching.hasHandle &&
     props.node.opacity >= 1 &&
     (props.gestureRole === 'source' || (props.gestureRole === 'open' && hoverFocus.isOn.value)),
 )
@@ -77,8 +81,8 @@ const { open, box, handle } = useOpenBox({
   node: () => props.node,
   wide: () => props.wide,
   on: () => openPosition.value,
-  delay: () => props.behaviour.expansionDelay,
-  clock: props.behaviour.clock,
+  delay: () => props.behavior.expansionDelay,
+  clock: props.behavior.clock,
 })
 
 /**
@@ -89,7 +93,7 @@ const hue = computed(() => ({
 }))
 
 /* --------------------------------- Hooks ---------------------------------- */
-// A box that has begun to open is already over its neighbours.
+// A box that has begun to open is already over its neighbors.
 watch(
   () => open.value > 0,
   (now) => emit('settle', now),
@@ -102,9 +106,6 @@ function getMiddle(): Position | null {
   const rect = measureRect(element)
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
 }
-
-/** Restores keyboard focus to this node's group when it was lost. */
-defineExpose({ focus: () => group.value?.focus() })
 </script>
 
 <template>
@@ -119,10 +120,10 @@ defineExpose({ focus: () => group.value?.focus() })
     :role="role"
     :class="[`plex__node--${node.relation}`, `plex__node--${gestureRole}`]"
     :aria-label="isGhost ? undefined : createAriaLabel(node)"
-    @click="press.onClick"
-    @dblclick="press.onDoubleClick"
-    @contextmenu="press.onContextMenu"
-    @keydown="press.onKeyDown"
+    @click="press.handlers.onClick"
+    @dblclick="press.handlers.onDoubleClick"
+    @contextmenu="press.handlers.onContextMenu"
+    @keydown="press.handlers.onKeyDown"
     v-on="listening"
     @pointerenter="hoverFocus.onPointerEnter"
     @pointerleave="hoverFocus.onPointerLeave"

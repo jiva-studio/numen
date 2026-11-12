@@ -7,13 +7,15 @@
  *
  * Every value here is invented.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { JsonObject } from '@/shared/api/json'
+import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { Select, Switch } from '@numen/ui'
 
 import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
-import { getSettingAt as at } from '@/entities/settings'
+import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
+import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from '../types'
 import { WORDS as words } from '../words'
@@ -106,35 +108,23 @@ const SHELL: readonly PluginSettingInfo[] = [
 ]
 
 const createTab = (
-  file: Record<string, unknown> = {},
+  file: JsonObject = {},
   plugins: readonly PluginInfo[] = [],
   app: readonly PluginSettingInfo[] = SHELL,
 ) => {
   const content: SettingEdit[] = []
-  const installation: Installation = {
+  const installation: Installation = createInstallation({
     getSetting: (path) => at(file, path),
     getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
     write: (response) => {
       content.push(...response)
     },
-    file: ref('/numen.json'),
-    createSecret: vi.fn(async () => 's00000001'),
-    renameSecret: vi.fn(),
-    writeSecret: vi.fn(),
-    deleteSecret: vi.fn(),
-    deleteSecretGroup: vi.fn(),
-    moveSecret: vi.fn(),
-    renameSecretGroup: vi.fn(),
-    allowPluginSecret: vi.fn(),
-    denyPluginSecret: vi.fn(),
-    retryPlugin: vi.fn(),
-    choosePath: vi.fn(async () => ''),
     plugins: ref(plugins),
     app: ref(app),
-  }
+  })
   const initialSearchQuery = ref('')
   const tab = mount(SettingsTab, {
-    props: { state: { installation, initialSearchQuery } },
+    props: { state: createSettingsState(installation, { initialSearchQuery }) },
     attachTo: document.body,
   })
   mountedWrappers.push(tab)

@@ -1,0 +1,61 @@
+/**
+ * The two searches of the palette, asked of the core and read into the palette's own types.
+ */
+import { getNames, SEARCH_MODE, type SearchModeCode } from '@numen/core-client'
+import type { Selector } from '@numen/plugin-loader'
+import { search } from '@/shared/api/clients'
+import { mapNoteType, mapRange } from '@/shared/api/wire'
+import type { SearchDeps, SearchMode } from '../lib/search/types'
+import type { JsonObject, JsonValue } from '@/shared/api/json'
+
+const queryModes: Record<SearchModeCode, SearchMode | null> = {
+  [SEARCH_MODE.UNSPECIFIED]: null,
+  [SEARCH_MODE.HYBRID]: 'hybrid',
+  [SEARCH_MODE.WORDS]: 'words',
+  [SEARCH_MODE.MEANING]: 'meaning',
+  [SEARCH_MODE.NAMES]: 'names',
+}
+
+const modes = getNames<SearchMode, SearchModeCode>(queryModes)
+
+const parseSelector = (json: string): Selector | null => {
+  try {
+    const value: JsonValue = JSON.parse(json)
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+      ? (value as JsonObject)
+      : null
+  } catch {
+    return null
+  }
+}
+
+export const searchCore: SearchDeps = {
+  names: async (query, limit) => {
+    const answer = await search.searchNames({ query, limit })
+    return answer.found.map((one) => ({
+      path: one.note?.path ?? '',
+      title: one.note?.title ?? '',
+      heading: one.heading?.text ?? '',
+      line: one.heading?.line ?? -1,
+      at: one.ranges.map(mapRange),
+      type: mapNoteType(one.type),
+      ...(one.tabKind ? { tabKind: one.tabKind } : {}),
+    }))
+  },
+  search: async (query, mode, limit) => {
+    const answer = await search.searchPassages({ query, limit, mode: modes[mode] })
+    return answer.found.map((one) => ({
+      path: one.path,
+      title: one.note?.title ?? '',
+      isNote: one.note !== undefined,
+      type: mapNoteType(one.type),
+      ...(one.tabKind ? { tabKind: one.tabKind } : {}),
+      selector: parseSelector(one.selector),
+      text: one.text,
+      start: one.range?.start ?? 0,
+      length: (one.range?.end ?? 0) - (one.range?.start ?? 0),
+      line: one.line,
+      at: one.ranges.map(mapRange),
+    }))
+  },
+}

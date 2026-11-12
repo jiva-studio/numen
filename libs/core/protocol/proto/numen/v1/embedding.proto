@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// EmbeddingService calculates dense vector embeddings for text passages.
+service EmbeddingService {
+  // GetEmbeddingModel returns identity and configuration of the active embedding model.
+  rpc GetEmbeddingModel(GetEmbeddingModelRequest) returns (GetEmbeddingModelResponse);
+
+
+  // EmbedBatch computes vector embeddings for a list of texts.
+  rpc EmbedBatch(EmbedBatchRequest) returns (EmbedBatchResponse);
+}
+
+message GetEmbeddingModelRequest {}
+
+message GetEmbeddingModelResponse {
+  string name = 1;
+  int32 dimensions = 2;
+  int32 max_tokens = 3;
+  string pooling = 4;
+  string from = 5;
+  int32 concurrency = 6;
+
+  // The similarity a passage starts out having to reach to answer a query under
+  // this model, zero when the plugin knows none.
+  double floor_hint = 7;
+
+  // The fewest bytes a piece of text has to hold to be given a vector.
+  // Shorter pieces are searched by their words only. Zero embeds every piece.
+  // It is not part of the model's identity: changing it makes no vector stale.
+  int32 min_chunk_length = 8;
+
+  // A short hash of what the plugin does to a text before the model reads it and to the output
+  // after: the prefixes, the model file, the token limit and the normalization. Two models of
+  // one name that differ in it make vectors that cannot be compared, so it is part of the
+  // identity. Empty when the plugin holds no such settings.
+  string handling = 9;
+
+  // The most tokens one chunk of a note or of a file text may hold, which the core cuts at. It is
+  // a setting of the plugin and never exceeds max_tokens where max_tokens is known. It is not part
+  // of the model's identity: a vector made for a text is the same whatever the chunk size, so
+  // changing it makes no vector stale, only the notes are cut again. Zero when the plugin names
+  // none, and the core cuts at its default.
+  int32 chunk_tokens = 10;
+}
+
+// EmbedRole is what a text is embedded for. A model that tells a question from the passage that
+// answers it reads the two with different prefixes.
+enum EmbedRole {
+  // EMBED_ROLE_UNSPECIFIED is a document.
+  EMBED_ROLE_UNSPECIFIED = 0;
+  EMBED_ROLE_DOCUMENT = 1;
+  EMBED_ROLE_QUERY = 2;
+}
+
+
+message FloatVector {
+  repeated float values = 1;
+}
+
+message EmbedBatchRequest {
+  repeated string texts = 1;
+
+  // What the texts are embedded for. Unset embeds documents.
+  EmbedRole role = 2;
+}
+
+message EmbedBatchResponse {
+  repeated FloatVector vectors = 1;
+}

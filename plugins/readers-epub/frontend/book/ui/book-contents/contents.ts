@@ -6,12 +6,7 @@
  * without a browser.
  */
 
-/** One line of a book's contents: a name, and where it begins. */
-export interface ContentsEntry {
-  readonly title: string
-  readonly at: number
-  readonly level: number
-}
+import type { ContentsEntry } from '../../../types'
 
 /**
  * Which line holds an offset: the last one beginning at or before it, and none

@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
 // GetEpoch returns the moment that the clock of a test reports.
@@ -29,6 +30,11 @@ type Queries struct {
 	hostports.Notes
 	hostports.Links
 	hostports.Problems
+}
+
+// Folders gives the plugin folder in the store of the vault with an identity, seen from the vault.
+func Folders(host *hosttest.Vault) func(domain.VaultID) ports.HostFolder {
+	return func(id domain.VaultID) ports.HostFolder { return host.Store().With(id) }
 }
 
 // Env is a vault written to a folder of the test's own, and the ports over it.
@@ -55,13 +61,13 @@ func createVaultName(tb testing.TB) string {
 
 // Of is the ports over a vault the test made.
 func Of(host *hosttest.Vault) Env {
-	ports := hostports.New(host, host.Store())
+	ports := hostports.New(Vaults(host), Folders(host))
 	return Env{
 		Host:    host,
 		Store:   host.Store(),
 		Vault:   host.Vault(),
 		Ports:   ports,
-		Queries: Queries{Notes: hostports.Notes{Vault: host}, Links: hostports.Links{Vault: host}, Problems: hostports.Problems{Vault: host}},
+		Queries: Queries{Notes: hostports.Notes{Vaults: Vaults(host)}, Links: hostports.Links{Vaults: Vaults(host)}, Problems: hostports.Problems{Vaults: Vaults(host)}},
 	}
 }
 
@@ -78,12 +84,12 @@ type Installation struct {
 func NewInstallation() Installation {
 	host := hosttest.New("installation")
 	host.Hide()
-	ports := hostports.New(host, host.Store())
+	ports := hostports.New(Vaults(host), Folders(host))
 	return Installation{
 		vaults:  map[domain.VaultID]*hosttest.Vault{},
 		Host:    host,
 		Ports:   ports,
-		Queries: Queries{Notes: hostports.Notes{Vault: host}, Links: hostports.Links{Vault: host}, Problems: hostports.Problems{Vault: host}},
+		Queries: Queries{Notes: hostports.Notes{Vaults: Vaults(host)}, Links: hostports.Links{Vaults: Vaults(host)}, Problems: hostports.Problems{Vaults: Vaults(host)}},
 	}
 }
 
@@ -114,4 +120,12 @@ func WaitFor(tb testing.TB, condition func() bool) {
 		time.Sleep(step)
 	}
 	tb.Fatal("it never came to be so")
+}
+
+// Vaults gives the ports' calls on the vault of v with an identity; the empty identity is v itself.
+func Vaults(v *hosttest.Vault) func(domain.VaultID) ports.HostVault {
+	return func(id domain.VaultID) ports.HostVault {
+		on := v.With(id)
+		return ports.HostVault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
+	}
 }

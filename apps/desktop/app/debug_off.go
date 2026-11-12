@@ -7,14 +7,12 @@ import (
 	"flag"
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 // DebugOptions holds test settings for debug builds.
 type DebugOptions struct{}
 
-// RegisterDebugFlags registers debug flags on the flag set.
 func RegisterDebugFlags(*flag.FlagSet, *Options) {}
 
 func (d *DebugOptions) apply(*container.Config) error { return nil }
@@ -26,7 +24,7 @@ func (d *DebugOptions) isServingHTTP() bool {
 }
 
 func (d *DebugOptions) serveHTTP(
-	context.Context, container.Config, *editor.Installation, http.Handler,
+	context.Context, container.Config, *container.OpenedWindow, http.Handler,
 ) error {
 	return nil
 }

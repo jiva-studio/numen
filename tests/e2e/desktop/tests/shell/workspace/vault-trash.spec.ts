@@ -11,7 +11,7 @@ import {
   createUniqueTitle,
   destroyNote,
   destroyTrashed,
-  findTrashed,
+  findTrashedNotes,
   getNoteTab,
   isSyncingTitles,
   listFilePaths,
@@ -62,7 +62,7 @@ test.describe('Removing and renaming a note', () => {
       await expect(await openTaskList(page)).toContainText(`Broken links in: ${linker}`)
       expect((await readNote(request, target)).error).toBe('ERROR_CODE_NOT_FOUND')
       expect(await listFilePaths(request, 'notes')).not.toContain(target)
-      expect(await findTrashed(request, `${targetTitle}.md`)).toHaveLength(1)
+      expect(await findTrashedNotes(request, `${targetTitle}.md`)).toHaveLength(1)
       expect(await readVaultFile(request, linker)).toContain(targetTitle)
     } finally {
       await destroyNote(request, linker)

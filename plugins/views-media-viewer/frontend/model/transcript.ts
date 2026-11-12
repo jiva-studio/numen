@@ -4,14 +4,14 @@
  * player while there is no media, and whether its text can be created.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/plugin-sdk'
-import { findCueAt, getText, type Cue } from '../lib/cues'
+import { formatErrorMessage, type Caught } from '@numen/plugin-sdk'
+import { findCueAt, getText } from '../lib/cues'
 import { useTranscriptDraft } from './draft'
 import { useTranscriptLines } from './lines'
 import { usePlayback } from './playback'
 import { createMediaTypeProbe, player, type MediaTypeProbe, type Player } from './player'
 import { recordings as servedRecordings } from '../api/wire'
-import type { Recordings, TextRange } from '../types'
+import type { Recordings, TextRange, Cue } from '../types'
 import { WORDS } from '../words'
 
 export type TranscriptState = ReturnType<typeof useTranscript>
@@ -51,7 +51,7 @@ export function useTranscript(
   const plays = how.plays ?? createMediaTypeProbe()
 
   let isOpen = true
-  const checkOpen = () => isOpen
+  const getOpenState = () => isOpen
 
   const cues = shallowRef<readonly Cue[]>([])
   /** Whether the live text has no times, such as an article: it is shown as it is and not edited. */
@@ -65,13 +65,13 @@ export function useTranscript(
   const isEditable = computed(() => !isWorking.value && !isArticle.value)
   const requests = createRequestGuard()
 
-  const playback = usePlayback(audioPlayer, plays, checkOpen)
+  const playback = usePlayback(audioPlayer, plays, getOpenState)
   const draft = useTranscriptDraft({
     cues,
     isEditable,
     error,
     idleMs,
-    isOpen: checkOpen,
+    isOpen: getOpenState,
     write: (next) => recordings.writeTranscript(path, next),
   })
   const lines = useTranscriptLines(cues, draft.prose)
@@ -86,7 +86,7 @@ export function useTranscript(
         recordings.canCreateText(path),
       ])
       if (!mine.isLatest()) return
-      playback.setSource(source)
+      playback.source.setSource(source)
       pageUrl.value = source.pageUrl
       cues.value = transcriptCues
       isArticle.value = transcriptCues.length === 0 && article !== ''
@@ -104,7 +104,7 @@ export function useTranscript(
   const firstRead = readRecording()
 
   /** Shows the failure of an operation that ran in the background. */
-  const reportFailure = (err: unknown) => {
+  const reportFailure = (err: Caught) => {
     if (isOpen) error.value = formatErrorMessage(err)
   }
 
@@ -118,7 +118,7 @@ export function useTranscript(
   const stopChanges = recordings.watchChanges(path, () => {
     if (isOpen) readRecording().catch(reportFailure)
   })
-  const stopWatching = () => {
+  const stopWatchingTranscript = () => {
     stopWorking()
     stopChanges()
   }
@@ -139,7 +139,7 @@ export function useTranscript(
     }
   }
 
-  const current = computed(() => findCueAt(lines.spans.value, playback.now.value))
+  const current = computed(() => findCueAt(lines.spans.value, playback.progress.now.value))
   const note = computed(() => {
     if (lines.times.value.length) return ''
     return isWorking.value ? WORDS.transcribing : WORDS.silence
@@ -176,7 +176,7 @@ export function useTranscript(
     draft.keep().catch(reportFailure)
     playback.controls.pause()
     isOpen = false
-    stopWatching()
+    stopWatchingTranscript()
     requests.close()
     cues.value = []
     draft.stop()
@@ -184,7 +184,6 @@ export function useTranscript(
 
   return {
     path,
-    reportFailure,
     playback,
     draft,
     lines,
@@ -214,6 +213,6 @@ export function useTranscript(
       start: createText,
     },
     navigation: { seekToSpans, goToLine },
-    close,
+    lifecycle: { reportFailure, close },
   }
 }

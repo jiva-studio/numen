@@ -5,8 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
@@ -15,7 +16,7 @@ func setupTestVault() (*hosttest.Vault, *service.Tools) {
 	v.File("Entropy.md", "---\nid: 01H7X1234567890ABCDEFGHJK\ntitle: Entropy Concept\n---\n# Entropy\nEntropy is thermodynamic disorder.\n## Second Law\nEntropy increases.\nSee also [[Heat]].")
 	v.File("Heat.md", "# Heat\nHeat flows from hot to cold.\nReferences [[Entropy]].")
 	v.File("data.txt", "line 1\nline 2\nline 3\n")
-	return v, service.New(v)
+	return v, service.New(vaultsOf(v))
 }
 
 func TestNoteRead(t *testing.T) {
@@ -42,7 +43,7 @@ func TestNoteRead(t *testing.T) {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
-	var out service.NoteReadOutput
+	var out api.NoteReadOutput
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
@@ -73,7 +74,7 @@ func TestNoteRead(t *testing.T) {
 	if res2.GetResult().GetIsError() {
 		t.Fatalf("tool refused for Heat: %s", res2.GetResult().GetText())
 	}
-	var out2 service.NoteReadOutput
+	var out2 api.NoteReadOutput
 	if err := json.Unmarshal(res2.GetResult().GetStructured(), &out2); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
@@ -103,7 +104,7 @@ func TestNoteWrite(t *testing.T) {
 	if res.GetResult().GetIsError() {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
-	var writeOut service.NoteWriteOutput
+	var writeOut api.NoteWriteOutput
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &writeOut); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
@@ -166,7 +167,7 @@ func TestNoteHeadingListReturnsHeadings(t *testing.T) {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
-	var out service.NoteHeadingListOutput
+	var out api.NoteHeadingListOutput
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
@@ -197,7 +198,7 @@ func testSearchQuery(t *testing.T, registry *tools.Registry, toolName string) {
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
-	var out service.NoteSearchOutput
+	var out api.NoteSearchOutput
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
@@ -230,7 +231,7 @@ func TestNoteSearch(t *testing.T) {
 	testSearchQuery(t, registry, "note_search")
 }
 
-func testNeighbourhoodQuery(t *testing.T, registry *tools.Registry, toolName string) {
+func testNeighborhoodQuery(t *testing.T, registry *tools.Registry, toolName string) {
 	t.Helper()
 	callReq := tools.Call{
 		VaultID:   testVault,
@@ -245,7 +246,7 @@ func testNeighbourhoodQuery(t *testing.T, registry *tools.Registry, toolName str
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
-	var out service.LinkListOutput
+	var out api.LinkListOutput
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
@@ -258,14 +259,14 @@ func testNeighbourhoodQuery(t *testing.T, registry *tools.Registry, toolName str
 	}
 }
 
-func TestNoteNeighbourhood(t *testing.T) {
+func TestNoteNeighborhood(t *testing.T) {
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
 
-	testNeighbourhoodQuery(t, registry, "link_list")
+	testNeighborhoodQuery(t, registry, "link_list")
 }
 
 func testVaultInfoQuery(t *testing.T, registry *tools.Registry, toolName string) {
@@ -283,7 +284,7 @@ func testVaultInfoQuery(t *testing.T, registry *tools.Registry, toolName string)
 		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
-	var out service.VaultInfoOutput
+	var out api.VaultInfoOutput
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
@@ -420,7 +421,7 @@ func TestACallWorksTheVaultItNames(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var out service.NoteReadOutput
+	var out api.NoteReadOutput
 	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil || out.Path != "Beds.md" {
 		t.Errorf("the call read %s (%v)", res.GetResult().GetText(), err)
 	}

@@ -5,14 +5,17 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import type { PaletteGroup } from '@numen/shell'
-import type { SlotCommand } from '@numen/plugin-host'
-import { WORDS as words } from '@/shared/words'
-import { createCommands } from '../lib/commands/table'
+import type { PaletteGroup } from '@numen/workbench'
+import type { SlotCommand } from '@numen/plugin-loader'
+import { WORDS as windowWords } from '@/shared/ui/words'
+import { PALETTE_WORDS } from '../words'
+import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from './palette/runSupport'
-import { useCommandPalette } from './palette/palette'
+import { createCommandPalette } from './palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from './search/search'
-import type { CommandTarget } from '../types'
+import type { CommandTarget } from '@/shared/model/command'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 const ATLAS = 'org.example.atlas'
 const SHOW: SlotCommand = {
@@ -102,20 +105,21 @@ const searchFor = async (
 }
 
 const listCommands = (target: CommandTarget) => {
-  const commands = useCommandPalette(
-    { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+  const commands = createCommandPalette({
+    core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
     words,
-    () => target,
-    { getTitle: () => '', getTabAt: () => null },
-    { getStepGroups: () => [], previewItem: () => undefined },
-    runSupport(),
-  )
-  commands.setOpen(true)
+    at: () => target,
+    knows: { getTitle: () => '', getTabAt: () => null },
+    lists: { getStepGroups: () => [], previewItem: () => undefined },
+    runs: runSupport(),
+    getCommands: createAppCommands,
+  })
+  commands.palette.setOpen(true)
   return commands
 }
 
 describe('the actions of the palette', () => {
-  const commandIds = new Set([...createCommands(words).map((one) => one.id), SHOW.command])
+  const commandIds = new Set([...createAppCommands().map((one) => one.id), SHOW.command])
 
   const expectCommands = (ids: readonly string[]) => {
     expect(ids.length).toBeGreaterThan(0)
@@ -123,11 +127,11 @@ describe('the actions of the palette', () => {
   }
 
   it('are commands in the list of commands over a note', () => {
-    expectCommands(collectActionIds(listCommands(inFront).groups.value))
+    expectCommands(collectActionIds(listCommands(inFront).view.groups.value))
   })
 
   it('are commands in the list of commands over a window with no note', () => {
-    expectCommands(collectActionIds(listCommands(nothingInFront).groups.value))
+    expectCommands(collectActionIds(listCommands(nothingInFront).view.groups.value))
   })
 
   it('are commands on the rows of a note found by name, by heading and by a passage', async () => {
@@ -227,11 +231,15 @@ describe('the source of the editor', () => {
   })
 
   it('runs a chosen result in the field only through the choice it is handed', () => {
-    const field = sources['/src/features/command-palette/ui/CommandPalette.vue'] ?? ''
+    const view = sources['/src/features/command-palette/ui/CommandPalette.vue'] ?? ''
+    const field = sources['/src/features/command-palette/model/usePaletteInput.ts'] ?? ''
 
     expect(field).not.toBe('')
-    expect(field).not.toMatch(/CREATE_NOTE/)
-    expect(field).not.toMatch(/item\s*===/)
+    for (const text of [view, field]) {
+      expect(text).not.toMatch(/CREATE_NOTE/)
+      expect(text).not.toMatch(/item\s*===/)
+    }
+    expect(view).not.toMatch(/runInvocation\(/)
     expect(field.match(/runInvocation\(/g) ?? []).toHaveLength(1)
   })
 })

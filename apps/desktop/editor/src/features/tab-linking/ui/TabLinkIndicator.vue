@@ -37,16 +37,18 @@ const iconStyle = computed(() => ({
 
 <style scoped>
 .tab-link-indicator {
+  --pad-start: 0.125rem;
   display: inline-flex;
   align-items: center;
-  padding-inline-start: 2px;
+  padding-inline-start: var(--pad-start);
   user-select: none;
   -webkit-user-select: none;
 }
 
 .tab-link-indicator__icon {
-  inline-size: 0.85rem;
-  block-size: 0.85rem;
+  --size: 0.85rem;
+  inline-size: var(--size);
+  block-size: var(--size);
   stroke-width: 2.25;
 }
 </style>

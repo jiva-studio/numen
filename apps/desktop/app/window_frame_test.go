@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 )
 
 func hasSystemFrame() bool { return runtime.GOOS == "darwin" }
@@ -27,7 +27,7 @@ func TestMainWindowOptions_DropsSystemFrame(t *testing.T) {
 func TestSecondaryWindowOptions_DropsSystemFrame(t *testing.T) {
 	opened, _ := windowOn(t)
 
-	got := getSecondaryWindowOptions(opened, editor.DetachedTab{ID: "a", X: 10, Y: 20})
+	got := getSecondaryWindowOptions(opened, windowdomain.DetachedTab{ID: "a", X: 10, Y: 20})
 
 	if got.Frameless == hasSystemFrame() {
 		t.Errorf("frameless = %v on %s", got.Frameless, runtime.GOOS)
@@ -40,7 +40,7 @@ func TestSecondaryWindowOptions_DropsSystemFrame(t *testing.T) {
 func TestSecondaryWindowOptions_UsesDetachedSize(t *testing.T) {
 	opened, _ := windowOn(t)
 
-	got := getSecondaryWindowOptions(opened, editor.DetachedTab{ID: "a", Width: 640, Height: 480})
+	got := getSecondaryWindowOptions(opened, windowdomain.DetachedTab{ID: "a", Width: 640, Height: 480})
 
 	if got.Width != 640 || got.Height != 480 {
 		t.Errorf("size = %dx%d, want 640x480", got.Width, got.Height)
@@ -50,7 +50,7 @@ func TestSecondaryWindowOptions_UsesDetachedSize(t *testing.T) {
 func TestSecondaryWindowOptions_UsesDefaultSizeWithoutOne(t *testing.T) {
 	opened, _ := windowOn(t)
 
-	got := getSecondaryWindowOptions(opened, editor.DetachedTab{ID: "a"})
+	got := getSecondaryWindowOptions(opened, windowdomain.DetachedTab{ID: "a"})
 
 	if got.Width != 1280 || got.Height != 860 {
 		t.Errorf("size = %dx%d, want 1280x860", got.Width, got.Height)

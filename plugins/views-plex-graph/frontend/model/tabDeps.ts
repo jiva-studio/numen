@@ -37,36 +37,42 @@ export function createPlexTabDeps(
       saveConnection: (connection) => relations.saveConnection(connection),
       removeConnection: (first, second, type) => relations.removeConnection(first, second, type),
     },
-    isReady: workspace.isReady,
-    isNesting: nesting.isNesting,
-    headings: nesting.headings,
-    openNote: (path, options) => {
-      const title = options?.title ?? ''
-      if (options?.line === undefined && workspace.syncPath(id, path, title)) return
-      workspace.openFile(path, {
-        title,
-        ...(options?.showing ? { placement: options.showing } : {}),
-        ...(options?.line === undefined ? {} : { line: options.line }),
-      })
-    },
-    onSelectPath: (path, title) => {
-      workspace.syncPath(id, path, title ?? '')
-    },
-    readHeadings: (paths) => notes.getHeadings(paths),
-    getMenuEntries: (target) => slots?.getEntries(SLOT.plexGraphContext, target) ?? [],
-    listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
-    runCommand: (command, target, itemId, values) =>
-      commands?.run(command, target, itemId, values) ?? Promise.resolve(''),
-    getNoteIcon: (tabKind) =>
-      workspace.getEntryIcon(
-        { path: '', name: '', isFolder: false, isNote: true, type: '', tabKind },
-        false,
-      ),
-    openingPath: workspace.openingPath,
-    readOpeningPath: () => workspace.readOpeningPath(),
-    dragged: workspace.draggedPaths,
-    showMessage: (text) => workspace.showError(text),
     creatable: relations.roles,
-    searchNames: (query, limit) => notes.findNotes(query, limit),
+    window: {
+      isReady: workspace.window.isReady,
+      openingPath: workspace.window.openingPath,
+      dragged: workspace.dragged.paths,
+      openNote: (path, options) => {
+        const title = options?.title ?? ''
+        if (options?.line === undefined && workspace.files.syncPath(id, path, title)) return
+        workspace.files.open(path, {
+          title,
+          ...(options?.showing ? { placement: options.showing } : {}),
+          ...(options?.line === undefined ? {} : { line: options.line }),
+        })
+      },
+      onSelectPath: (path, title) => {
+        workspace.files.syncPath(id, path, title ?? '')
+      },
+      getNoteIcon: (tabKind) =>
+        workspace.icons.getEntry(
+          { path: '', name: '', isFolder: false, isNote: true, type: '', tabKind },
+          false,
+        ),
+      showMessage: (text) => workspace.messages.showError(text),
+      readOpeningPath: () => workspace.window.readOpeningPath(),
+    },
+    menu: {
+      getMenuEntries: (target) => slots?.getEntries(SLOT.plexGraphContext, target) ?? [],
+      listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
+      runCommand: (command, target, itemId, values) =>
+        commands?.run(command, target, itemId, values) ?? Promise.resolve(''),
+    },
+    notes: {
+      isNesting: nesting.isNesting,
+      headings: nesting.headings,
+      readHeadings: (paths) => notes.getHeadings(paths),
+      searchNames: (query, limit) => notes.findNotes(query, limit),
+    },
   }
 }

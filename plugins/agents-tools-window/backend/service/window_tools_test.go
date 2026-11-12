@@ -8,11 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/preview"
 )
 
 // The invented vault: a note, a bird guide, a book and a recorded talk.
@@ -33,7 +35,7 @@ type windowTools struct {
 func newWindowTools(t *testing.T) windowTools {
 	t.Helper()
 	vault := hosttest.New(testVault)
-	vault.File(notePath, "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Grey Heron\n---\nHerons fish at dusk.")
+	vault.File(notePath, "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Gray Heron\n---\nHerons fish at dusk.")
 	vault.File(guidePath, pdfBytes)
 	vault.File(bookPath, "PK\x03\x04epub body")
 	vault.File(talkPath, "ID3\x00\x03audio")
@@ -45,7 +47,7 @@ func newWindowTools(t *testing.T) windowTools {
 func newRegistry(t *testing.T, on service.Host) *tools.Registry {
 	t.Helper()
 	registry := tools.New()
-	manager := service.NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	manager := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	if err := service.RegisterTools(registry, manager, on); err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +180,7 @@ func TestNoteFocusReturnsTheFocusedNoteAndMovesTheWindowToIt(t *testing.T) {
 	if failure := w.call(t, "note_focus", `{"path":"notes/Heron.md"}`, nil, &out); failure != "" {
 		t.Fatal(failure)
 	}
-	if out.Note.Path != notePath || out.Note.Title != "Grey Heron" || out.Note.ID != "01H7X1234567890ABCDEFGHJKM" {
+	if out.Note.Path != notePath || out.Note.Title != "Gray Heron" || out.Note.ID != "01H7X1234567890ABCDEFGHJKM" {
 		t.Errorf("note %+v", out.Note)
 	}
 	if focused := w.window.GetFocusedNotes(); !slices.Equal(focused, []string{notePath}) {
@@ -257,7 +259,7 @@ func (w windowTools) readTabs(t *testing.T, tabs []host.OpenTab, activeID string
 func TestWindowTabListReturnsTheTabsOfTheWindow(t *testing.T) {
 	w := newWindowTools(t)
 	out := w.readTabs(t, []host.OpenTab{
-		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"},
+		{ID: "tab-1", Kind: "note", Path: notePath, Title: "Gray Heron"},
 		{ID: "tab-2", Kind: "reader:reader-pdf", Path: guidePath, Title: "Bird Guide", Place: &host.TabPlace{Page: 4, PageCount: 120}},
 	}, "tab-2")
 
@@ -265,7 +267,7 @@ func TestWindowTabListReturnsTheTabsOfTheWindow(t *testing.T) {
 		t.Fatalf("returned %+v", out)
 	}
 	first, second := out.Tabs[0], out.Tabs[1]
-	if first.TabID != "tab-1" || first.Kind != "note" || first.Path != notePath || first.Title != "Grey Heron" || first.IsActive {
+	if first.TabID != "tab-1" || first.Kind != "note" || first.Path != notePath || first.Title != "Gray Heron" || first.IsActive {
 		t.Errorf("the first tab is %+v", first)
 	}
 	requirePlace(t, "the note tab", first.Place, "")
@@ -340,8 +342,8 @@ func TestWindowTabListReturnsNoErrorForAnyTab(t *testing.T) {
 			t.Errorf("the tab %s returns the error %s", tab["tabId"], message)
 		}
 	}
-	if _, hasError := reflect.TypeFor[service.TabInfo]().FieldByName("Error"); hasError {
-		t.Error("service.TabInfo has the field Error; a tab whose reader reported no place has no place and no error")
+	if _, hasError := reflect.TypeFor[api.TabInfo]().FieldByName("Error"); hasError {
+		t.Error("api.TabInfo has the field Error; a tab whose reader reported no place has no place and no error")
 	}
 }
 
@@ -353,7 +355,7 @@ func TestWindowToolsHostHasNoTextVersions(t *testing.T) {
 
 func TestWindowTabListUsesTheCallFocusWithoutAWindow(t *testing.T) {
 	w := newWindowTools(t)
-	w.window.SetOpenTabs([]host.OpenTab{{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"}}, "tab-1")
+	w.window.SetOpenTabs([]host.OpenTab{{ID: "tab-1", Kind: "note", Path: notePath, Title: "Gray Heron"}}, "tab-1")
 	w.window.SetNoWindow()
 
 	var out tabsOutput
@@ -376,7 +378,7 @@ func TestWindowTabListUsesTheCallFocusWithoutAWindow(t *testing.T) {
 
 func TestWindowTabListPrefersWindowTabsToTheCallFocus(t *testing.T) {
 	w := newWindowTools(t)
-	w.window.SetOpenTabs([]host.OpenTab{{ID: "tab-1", Kind: "note", Path: notePath, Title: "Grey Heron"}}, "tab-1")
+	w.window.SetOpenTabs([]host.OpenTab{{ID: "tab-1", Kind: "note", Path: notePath, Title: "Gray Heron"}}, "tab-1")
 
 	var out tabsOutput
 	if failure := w.call(t, "window_tab_list", `{}`, map[string]string{"focus": "notes/Inferred.md"}, &out); failure != "" {

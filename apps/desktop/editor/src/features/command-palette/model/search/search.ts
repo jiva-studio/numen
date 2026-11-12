@@ -2,11 +2,11 @@
  * Palette search coordination, debouncing, and group management.
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
-import type { PaletteGroup } from '@numen/shell'
-import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
+import type { PaletteGroup } from '@numen/workbench'
+import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { InFlightRequest } from '@numen/ui'
-import { useDebouncedSearch, type Wait } from '@/shared/search'
-import type { IndexCoverage } from '@/shared/notices/coverage'
+import { useDebouncedSearch, type Wait } from './debounced'
+import type { IndexCoverage } from '@/shared/model/notices/coverage'
 import {
   createNameItem,
   createPassageItem,
@@ -18,33 +18,12 @@ import {
   type SearchMenuDeps,
   type SearchRow,
 } from './lookup'
-import type { TextRange } from '@/shared/textRange'
+import type { SearchDeps } from '../../lib/search/types'
 import { getCreateNoteActions } from '../../lib/entries/entries'
-import type { CommandTarget } from '../../types'
+import type { CommandTarget } from '@/shared/model/command'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
-export type {
-  TextRange,
-  NameMatch,
-  Passage,
-  SearchHit,
-  SearchRow,
-  SearchGroup,
-  ResultChoice,
-  SearchMenuDeps,
-}
-
-/**
- * How a text search is run. Each mode has its own ordering, and `hybrid`
- * combines all of them in one ranking.
- */
-export type SearchMode = 'hybrid' | 'words' | 'meaning' | 'names'
-
-/** The two queries the palette makes of the vault. */
-export interface SearchDeps {
-  names(query: string, limit: number): Promise<readonly NameMatch[]>
-  search(query: string, mode: SearchMode, limit: number): Promise<readonly Passage[]>
-}
+export type { NameMatch, Passage, SearchHit, SearchGroup, ResultChoice, SearchDeps }
 
 /** The text a palette group shows when it is empty. */
 export interface EmptyWords {
@@ -264,7 +243,7 @@ function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
 
   const findHitFile = (item: string): string | null => {
     const searchHit = getHits().get(item)
-    return searchHit && searchHit.type === null ? searchHit.path : null
+    return searchHit && searchHit.type === null ? searchHit.spot.path : null
   }
 
   return { findTabKind, findHitFile }

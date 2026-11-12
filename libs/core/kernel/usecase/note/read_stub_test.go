@@ -1,0 +1,145 @@
+package note_test
+
+import (
+	"context"
+	"errors"
+	"io/fs"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+)
+
+// statedReader is a vault that returns a configured result for a stat and a
+// read.
+type statedReader struct {
+	vaultport.VaultReader
+	ref     domain.FileStat
+	statErr error
+	raw     []byte
+	readErr error
+}
+
+func (r statedReader) StatFile(context.Context, string) (domain.FileStat, error) {
+	return r.ref, r.statErr
+}
+
+func (r statedReader) Read(context.Context, string) ([]byte, error) {
+	return r.raw, r.readErr
+}
+
+type statedReaders struct{ reader statedReader }
+
+func (r statedReaders) Open(domain.Vault) (vaultport.VaultReader, error) { return r.reader, nil }
+
+func readStatedContents(t *testing.T, reader statedReader) (edit.Contents, error) {
+	t.Helper()
+	return note.NewRead(statedReaders{reader: reader}).Execute(t.Context(), domain.Vault{}, "Entropy.md")
+}
+
+const ceiling = 1048576
+
+func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
+	t.Parallel()
+	body := []byte("# Entropy\n")
+
+	atCeiling, err := readStatedContents(t, statedReader{
+		ref: domain.FileStat{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling},
+		raw: body,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if atCeiling.Outcome != edit.Ok {
+		t.Errorf("a note of exactly the ceiling is %q", atCeiling.Outcome)
+	}
+
+	finished, err := readStatedContents(t, statedReader{
+		ref: domain.FileStat{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling + 1},
+		raw: body,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if finished.Outcome != edit.TooLarge {
+		t.Errorf("a note one byte over the ceiling is %q", finished.Outcome)
+	}
+	if finished.Body != "" {
+		t.Errorf("a note over the ceiling came back with prose: %q", finished.Body)
+	}
+}
+
+func TestAVaultThatCannotSayWhatIsAtAPathIsAnError(t *testing.T) {
+	t.Parallel()
+	broken := errors.New("the disk is gone")
+
+	got, err := readStatedContents(t, statedReader{statErr: broken, raw: []byte("# Entropy\n")})
+	if !errors.Is(err, broken) {
+		t.Fatalf("want the vault's own error, got %v", err)
+	}
+	if got != (edit.Contents{}) {
+		t.Errorf("an error came back with contents: %+v", got)
+	}
+}
+
+// A file that appears between the question and the read is answered by its
+func TestRead_FileAppearingAfterLookupIsNotNote(t *testing.T) {
+	t.Parallel()
+
+	got, err := readStatedContents(t, statedReader{statErr: fs.ErrNotExist, raw: []byte("# Entropy\n")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Outcome != edit.NotANote {
+		t.Errorf("want not a note, got %q", got.Outcome)
+	}
+	if got.Body != "" {
+		t.Errorf("a file the vault does not hold as a note came back with prose: %q", got.Body)
+	}
+}
+
+func TestAReadThatFailsAfterAMissingStatIsAnError(t *testing.T) {
+	t.Parallel()
+	broken := errors.New("the disk is gone")
+
+	_, err := readStatedContents(t, statedReader{statErr: fs.ErrNotExist, readErr: broken})
+	if !errors.Is(err, broken) {
+		t.Fatalf("want the vault's own error, got %v", err)
+	}
+	if err != nil && !strings.Contains(err.Error(), "Entropy.md") {
+		t.Errorf("the error does not say which note: %v", err)
+	}
+}
+
+type unopenableReaders struct{ err error }
+
+func (r unopenableReaders) Open(domain.Vault) (vaultport.VaultReader, error) { return nil, r.err }
+
+func TestAVaultThatCannotBeOpenedIsAnError(t *testing.T) {
+	t.Parallel()
+	broken := errors.New("the vault is gone")
+
+	got, err := note.NewRead(unopenableReaders{err: broken}).Execute(t.Context(), domain.Vault{}, "Entropy.md")
+	if !errors.Is(err, broken) {
+		t.Fatalf("want the vault's own error, got %v", err)
+	}
+	if got != (edit.Contents{}) {
+		t.Errorf("an error came back with contents: %+v", got)
+	}
+}
+
+func TestRead_PathRejectedByVaultIsNotNote(t *testing.T) {
+	t.Parallel()
+
+	got, err := readStatedContents(t, statedReader{statErr: edit.ErrNotANote, raw: []byte("# Entropy\n")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Outcome != edit.NotANote || got.Path != "Entropy.md" || got.Body != "" {
+		t.Errorf("want not a note at Entropy.md with no prose, got %+v", got)
+	}
+}

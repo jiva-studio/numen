@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 )
 
 // lockSuffix is added to the name of the credentials file to name the file its writers lock, which
@@ -41,7 +41,7 @@ func (s *Store) changeEntries(ctx context.Context, work func() error) (err error
 	return work()
 }
 
-func lockFile(ctx context.Context, wait machinecontract.Wait, path string) (*os.File, error) {
+func lockFile(ctx context.Context, wait machine.Wait, path string) (*os.File, error) {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
 		return nil, err

@@ -56,7 +56,7 @@ function getRowsInFolder(
 interface FolderListingResult {
   folder: string
   entries?: readonly Entry[]
-  error?: unknown
+  error?: string
 }
 
 function mergeFolderListings(
@@ -68,7 +68,7 @@ function mergeFolderListings(
   let error = ''
   for (const listing of listings) {
     if (listing.error !== undefined) {
-      error = formatErrorMessage(listing.error)
+      error = listing.error
     } else if (listing.entries && !isSameEntries(next.get(listing.folder), listing.entries)) {
       next.set(listing.folder, listing.entries)
       isChanged = true
@@ -96,8 +96,10 @@ interface TreeRefreshDeps {
   errorMessage: Ref<string>
   isLoaded: Ref<boolean>
   selectedPaths: ShallowRef<readonly string[]>
-  isFolderOpen: (folder: string) => boolean
-  getEntryAt: (path: string) => Entry | null
+  lookup: {
+    isFolderOpen: (folder: string) => boolean
+    getEntryAt: (path: string) => Entry | null
+  }
   isAlive: () => boolean
 }
 
@@ -109,8 +111,7 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
     errorMessage,
     isLoaded,
     selectedPaths,
-    isFolderOpen,
-    getEntryAt,
+    lookup: { isFolderOpen, getEntryAt },
     isAlive,
   } = deps
 
@@ -120,7 +121,7 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
         try {
           return { folder, entries: await core.list(folder) }
         } catch (err) {
-          return { folder, error: err }
+          return { folder, error: formatErrorMessage(err) }
         }
       }),
     )
@@ -156,7 +157,7 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
     await loadFolders([...folders])
   }
 
-  return { loadFolders, loadFolder, refresh, refreshChanged }
+  return { loadFolder, refresh, refreshChanged }
 }
 
 function createFolderOperations(
@@ -184,7 +185,7 @@ function createFolderOperations(
     else await openFolder(folder)
   }
 
-  return { isFolderOpen, openFolder, closeFolder, toggleFolder }
+  return { openFolder, closeFolder, toggleFolder }
 }
 
 function initTreeState() {
@@ -225,8 +226,7 @@ export function createFileTree(core: Folders): FileTree {
   const refreshControl = createTreeRefresh({
     core,
     ...state,
-    isFolderOpen: queries.isFolderOpen,
-    getEntryAt: queries.getEntryAt,
+    lookup: queries,
     isAlive: () => isAlive,
   })
 
@@ -247,20 +247,18 @@ export function createFileTree(core: Folders): FileTree {
   }
 
   return {
-    ...queries,
-    selectedPaths: state.selectedPaths,
-    errorMessage: state.errorMessage,
-    isLoaded: state.isLoaded,
-    loadFolder: refreshControl.loadFolder,
-    openFolder: folderOps.openFolder,
-    closeFolder: folderOps.closeFolder,
-    toggleFolder: folderOps.toggleFolder,
+    state: {
+      selectedPaths: state.selectedPaths,
+      errorMessage: state.errorMessage,
+      isLoaded: state.isLoaded,
+    },
+    queries,
+    folders: folderOps,
+    sync: refreshControl,
     selectPaths: (paths: readonly string[]) => {
       state.selectedPaths.value = paths
     },
     revealPath,
-    refresh: refreshControl.refresh,
-    refreshChanged: refreshControl.refreshChanged,
     close,
   }
 }

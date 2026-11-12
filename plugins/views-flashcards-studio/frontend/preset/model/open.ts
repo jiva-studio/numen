@@ -1,25 +1,25 @@
 /**
  * Tab state and coordinator for an open flashcard preset.
  */
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../lib/stop'
 import { ref, shallowRef, type Ref } from 'vue'
-import { formatErrorMessage, type MessageWriter } from '@numen/plugin-sdk'
+import { formatErrorMessage, type MessageWriter, type Caught } from '@numen/plugin-sdk'
 import {
   DEFAULTS,
-  type Field,
   type Goal,
   type Presets,
-  type PresetTabState,
   type Settings,
   type SettingsBounds,
-  type SettingValue,
-} from '../types'
+} from '../../lib/presets'
 import { produceSchedule } from '../lib/curve'
 import { getShapeKey, getGoalField } from '../lib/fields'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
 import { applyGoal, applyTypedSetting, findGridIndex, reconcileSettings } from '../lib/settings'
 import { createCurveState, updateCurves, type CurveState } from './curves'
 import { canCloseTab, createWriteQueue, requestWrite, type WriteQueue } from './writeQueue'
+import type { PresetTabState } from './types'
+import type { Field } from '../lib/fields'
+import type { SettingValue } from '../lib/settings'
 
 /** State held by one open preset tab. */
 export interface OpenPreset {
@@ -53,31 +53,31 @@ export interface ReadPresetContext {
 export const readPreset = async (one: OpenPreset, context: ReadPresetContext): Promise<void> => {
   const { core, bounds, titles, today } = context
   const queue = one.writeQueue
-  const pendingRead = queue.order.beginRead()
+  const pendingRead = queue.inflight.order.beginRead()
   let answer
   try {
     answer = await core.read(one.path.value)
   } catch {
     // The window states what failed; the error returned by the call adds nothing the user can act on.
-    one.writeQueue.errorMessage.value = words.unreachable
-    one.curves.isWaiting.value = false
+    one.writeQueue.status.errorMessage.value = words.unreachable
+    one.curves.current.isWaiting.value = false
     return
   }
   // A read that overlapped a write may predate it; the file change the write
   // makes starts a read that does not.
-  if (!queue.order.isReadAfterWrites(pendingRead)) return
-  one.writeQueue.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
-  one.writeQueue.hasExternalChange.value = false
-  one.curves.answers.clear()
+  if (!queue.inflight.order.isReadAfterWrites(pendingRead)) return
+  one.writeQueue.status.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
+  one.writeQueue.status.hasExternalChange.value = false
+  one.curves.requests.answers.clear()
   const readItem = answer.ok ? answer.value.preset : null
   if (answer.ok) {
-    one.writeQueue.revision = answer.value.at
+    one.writeQueue.unsaved.revision = answer.value.at
     bounds.value = answer.value.bounds
   }
   if (!readItem) {
     one.problems.value = []
     one.stopped.value = StopReason.NOTHING
-    one.curves.isWaiting.value = false
+    one.curves.current.isWaiting.value = false
     return
   }
   if (readItem.title) titles.set(one.path.value, readItem.title)
@@ -86,7 +86,7 @@ export const readPreset = async (one: OpenPreset, context: ReadPresetContext): P
   one.settings.value = reconcileSettings(
     readItem.settings,
     one.settings.value,
-    one.writeQueue.dirtyFields,
+    one.writeQueue.unsaved.dirtyFields,
   )
   await updateCurves(one.curves, {
     path: one.path.value,
@@ -95,7 +95,7 @@ export const readPreset = async (one: OpenPreset, context: ReadPresetContext): P
     bounds: bounds.value,
     today,
     setErrorMessage: (msg) => {
-      one.writeQueue.errorMessage.value = msg
+      one.writeQueue.status.errorMessage.value = msg
     },
   })
 }
@@ -113,7 +113,7 @@ export interface PresetStateContext {
 /** Shows the failure of an operation that runs in the background. */
 export const createFailureReporter =
   (context: { readonly writeMessage: MessageWriter }) =>
-  (error: unknown): void => {
+  (error: Caught): void => {
     context.writeMessage(formatErrorMessage(error), 'error')
   }
 
@@ -121,8 +121,8 @@ const createGoalChooser = (one: OpenPreset, context: PresetStateContext) => (goa
   const was = one.settings.value
   if (goal === was.goal) return
   one.settings.value = applyGoal(was, goal, context.today())
-  one.writeQueue.dirtyFields.add('goal')
-  if (one.settings.value.byDate !== was.byDate) one.writeQueue.dirtyFields.add('byDate')
+  one.writeQueue.unsaved.dirtyFields.add('goal')
+  if (one.settings.value.byDate !== was.byDate) one.writeQueue.unsaved.dirtyFields.add('byDate')
   requestWrite(one.writeQueue, {
     path: one.path.value,
     settings: one.settings.value,
@@ -136,7 +136,7 @@ const createGoalChooser = (one: OpenPreset, context: PresetStateContext) => (goa
     bounds: context.bounds.value,
     today: context.today(),
     setErrorMessage: (msg) => {
-      one.writeQueue.errorMessage.value = msg
+      one.writeQueue.status.errorMessage.value = msg
     },
   }).catch(createFailureReporter(context))
 }
@@ -145,13 +145,13 @@ const createSettingUpdater =
   (one: OpenPreset, context: PresetStateContext) => (field: Field, value: SettingValue) => {
     const was = one.settings.value
     one.settings.value = applyTypedSetting(was, { field, value }, context.bounds.value)
-    if (one.settings.value !== was) one.writeQueue.dirtyFields.add(field)
+    if (one.settings.value !== was) one.writeQueue.unsaved.dirtyFields.add(field)
 
     if (field === getGoalField(one.settings.value.goal)) {
-      const place = findGridIndex(one.curves.curve.value.grid, value, context.today())
-      if (place >= 0) one.curves.place.value = place
+      const place = findGridIndex(one.curves.current.curve.value.grid, value, context.today())
+      if (place >= 0) one.curves.current.place.value = place
     }
-    if (getShapeKey(one.settings.value) !== one.curves.shape) {
+    if (getShapeKey(one.settings.value) !== one.curves.drawing.shape) {
       updateCurves(one.curves, {
         path: one.path.value,
         getSettings: () => one.settings.value,
@@ -159,7 +159,7 @@ const createSettingUpdater =
         bounds: context.bounds.value,
         today: context.today(),
         setErrorMessage: (msg) => {
-          one.writeQueue.errorMessage.value = msg
+          one.writeQueue.status.errorMessage.value = msg
         },
       }).catch(createFailureReporter(context))
     }
@@ -168,12 +168,12 @@ const createSettingUpdater =
 const createSliderMover = (one: OpenPreset, context: PresetStateContext) => (place: number) => {
   const was = one.settings.value
   one.settings.value = produceSchedule(was, place, {
-    curve: one.curves.curve.value,
+    curve: one.curves.current.curve.value,
     today: context.today(),
     within: context.bounds.value,
   })
-  one.curves.place.value = place
-  one.writeQueue.dirtyFields.add(getGoalField(one.curves.curve.value.goal))
+  one.curves.current.place.value = place
+  one.writeQueue.unsaved.dirtyFields.add(getGoalField(one.curves.current.curve.value.goal))
 }
 
 const createTabCloser = (one: OpenPreset, context: PresetStateContext) => (tab: string) => {
@@ -199,33 +199,39 @@ export const createPresetState = (
 ): PresetTabState => ({
   id,
   settings: one.settings,
-  curve: one.curves.curve,
-  material: one.curves.material,
-  place: one.curves.place,
-  isWaiting: one.curves.isWaiting,
   bounds: context.bounds,
-  problems: one.problems,
-  stopped: one.stopped,
-  errorMessage: one.writeQueue.errorMessage,
-  hasExternalChange: one.writeQueue.hasExternalChange,
-  reload: () => {
-    readPreset(one, {
-      core: context.core,
-      bounds: context.bounds,
-      titles: context.titles,
-      today: context.today(),
-    }).catch(createFailureReporter(context))
+  curves: {
+    curve: one.curves.current.curve,
+    material: one.curves.current.material,
+    place: one.curves.current.place,
+    isWaiting: one.curves.current.isWaiting,
   },
-  chooseGoal: createGoalChooser(one, context),
-  moveSlider: createSliderMover(one, context),
-  flushPending: () => {
-    requestWrite(one.writeQueue, {
-      path: one.path.value,
-      settings: one.settings.value,
-      core: context.core,
-      writeMessage: context.writeMessage,
-    }).catch(createFailureReporter(context))
+  status: {
+    problems: one.problems,
+    stopped: one.stopped,
+    errorMessage: one.writeQueue.status.errorMessage,
+    hasExternalChange: one.writeQueue.status.hasExternalChange,
   },
-  updateSetting: createSettingUpdater(one, context),
-  close: createTabCloser(one, context),
+  actions: {
+    reload: () => {
+      readPreset(one, {
+        core: context.core,
+        bounds: context.bounds,
+        titles: context.titles,
+        today: context.today(),
+      }).catch(createFailureReporter(context))
+    },
+    chooseGoal: createGoalChooser(one, context),
+    moveSlider: createSliderMover(one, context),
+    flushPending: () => {
+      requestWrite(one.writeQueue, {
+        path: one.path.value,
+        settings: one.settings.value,
+        core: context.core,
+        writeMessage: context.writeMessage,
+      }).catch(createFailureReporter(context))
+    },
+    updateSetting: createSettingUpdater(one, context),
+    close: createTabCloser(one, context),
+  },
 })

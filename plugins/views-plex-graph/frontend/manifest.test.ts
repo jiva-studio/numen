@@ -52,6 +52,21 @@ describe('the manifest', () => {
     ])
   })
 
+  it('places showing the note in front in the plex among the commands of the palette over a note', () => {
+    expect(
+      (manifest.contributes.slots ?? []).filter((one) => one.slot === 'palette.note'),
+    ).toStrictEqual([
+      {
+        slot: 'palette.note',
+        command: 'app:file.reveal',
+        values: { kind: 'plex' },
+        title: 'Show in plex',
+        icon: 'waypoints',
+        when: 'target.isNote',
+      },
+    ])
+  })
+
   it('declares the command the title bar shows with the title and the icon of a graph', () => {
     expect(manifest.contributes.commands.find((one) => one.id === 'graph.open')).toMatchObject({
       title: 'Open plex graph',

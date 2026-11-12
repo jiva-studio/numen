@@ -32,7 +32,7 @@ function findLoneSeparators(row: readonly FitEntry[], hiddenKeys: ReadonlySet<st
   return lone
 }
 
-function getHidden(rows: readonly (readonly FitEntry[])[], hiddenKeys: ReadonlySet<string>) {
+function getHiddenEntries(rows: readonly (readonly FitEntry[])[], hiddenKeys: ReadonlySet<string>) {
   const all = new Set(hiddenKeys)
   for (const row of rows) for (const key of findLoneSeparators(row, hiddenKeys)) all.add(key)
   return all
@@ -43,7 +43,7 @@ function measureDrawn(
   hiddenKeys: ReadonlySet<string>,
   moreWidth: number,
 ): number {
-  const all = getHidden(rows, hiddenKeys)
+  const all = getHiddenEntries(rows, hiddenKeys)
   let width = 0
   let hasMore = false
   for (const entry of rows.flat()) {
@@ -76,7 +76,7 @@ export function fitBar(
     }
   }
   return {
-    hidden: getHidden(rows, removals),
+    hidden: getHiddenEntries(rows, removals),
     overflow: rows
       .flat()
       .filter((one) => isMovable(one) && removals.has(one.key))

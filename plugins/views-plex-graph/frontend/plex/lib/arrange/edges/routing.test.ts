@@ -14,19 +14,10 @@ import {
   routeEdges,
   createRouting,
 } from './routing'
-import { neighbourhoods } from '../../../fixtures/neighbourhoods'
-import {
-  ARROW_LENGTH,
-  getArrow,
-  getHeading,
-  getLength,
-  createPointOnCurve,
-  type EdgeArrow,
-  type PlexEdge,
-} from '../../edge'
-import type { PlexNeighbourhood } from '../../neighbourhood'
+import { neighborhoods } from '../../../fixtures/neighborhoods'
+import { ARROW_LENGTH, getArrow, getHeading, getLength, createPointOnCurve } from '../../edge'
 import type { PlacedNode } from '../../node'
-import type { PlexNodeRelation } from '../../relation'
+import type { EdgeArrow, PlexEdge, PlexNeighborhood, PlexNodeRelation } from '../../../../types'
 
 /** The ink of the label font, as the window measures it. */
 const TYPE = { ascent: 9, descent: 3, xHeight: 6 }
@@ -41,7 +32,7 @@ const getFocus = (frame: { nodes: readonly PlacedNode[] }) => {
 }
 describe('edges', () => {
   it('leaves the focus by one gate and arrives at the top of each child', () => {
-    const layout = arrangePlex(neighbourhoods.typical)
+    const layout = arrangePlex(neighborhoods.typical)
     const focus = getFocus(layout)
     const children = getNodesByRelation(layout, 'child')
 
@@ -57,7 +48,7 @@ describe('edges', () => {
   })
 
   it('sets off and arrives along the axis, never across it', () => {
-    const layout = arrangePlex(neighbourhoods.typical)
+    const layout = arrangePlex(neighborhoods.typical)
     const outermost = getNodesByRelation(layout, 'child').reduce((a, b) =>
       Math.abs(a.x) > Math.abs(b.x) ? a : b,
     )
@@ -73,7 +64,7 @@ describe('edges', () => {
   })
 
   it('runs sideways for a relation that runs sideways', () => {
-    const layout = arrangePlex(neighbourhoods.typical)
+    const layout = arrangePlex(neighborhoods.typical)
     const focus = getFocus(layout)
     const jump = getNodesByRelation(layout, 'jump')[0]!
     const edge = layout.edges.find((e) => e.from === jump.id)!
@@ -84,8 +75,8 @@ describe('edges', () => {
     expect(edge.control2.y).toBe(edge.toPoint.y)
   })
 
-  it('starts and ends on a border, not in a centre', () => {
-    const layout = arrangePlex(neighbourhoods.typical)
+  it('starts and ends on a border, not in a center', () => {
+    const layout = arrangePlex(neighborhoods.typical)
     const byId = new Map(layout.nodes.map((node) => [node.id, node]))
 
     for (const edge of layout.edges) {
@@ -109,7 +100,7 @@ describe('edges', () => {
   it('joins two nodes on the same line with no room between them by a bow, not through the boxes', () => {
     // The relation is vertical, there is no vertical space between them, and the
     // gap beside them is too small for a line to carry its words and heads.
-    const layout = arrangePlex(neighbourhoods.diamond)
+    const layout = arrangePlex(neighborhoods.diamond)
     const edge = layout.edges.find((e) => e.from === 'parent-0' && e.to === 'parent-1')
     expect(edge).toBeDefined()
     expect(edge!.labels?.[0]?.text).toBe('contains')
@@ -124,7 +115,7 @@ describe('edges', () => {
   })
 
   it('takes the heading from the curve, and not from the relation', () => {
-    const layout = arrangePlex(neighbourhoods.typical)
+    const layout = arrangePlex(neighborhoods.typical)
 
     // A sibling is below a parent, and its line runs left to right.
     for (const sibling of getNodesByRelation(layout, 'sibling')) {
@@ -141,7 +132,7 @@ describe('edges', () => {
 
   it('takes a curve running up the page the other way round', () => {
     // A parent is above the focus, and the line is written from it downwards.
-    const layout = arrangePlex(neighbourhoods.typical)
+    const layout = arrangePlex(neighborhoods.typical)
     const down = layout.edges.find((e) => e.to === 'focus' && e.from === 'parent-0')!
     expect(down.fromPoint.y).toBeLessThan(down.toPoint.y)
     expect(getHeading(down, MIDDLE)).toBe('along')
@@ -186,7 +177,7 @@ describe('edges', () => {
  * to it. The stored text is unchanged; the rendered text is the truncation.
  */
 describe('a title cut to the line it is set on', () => {
-  const sideways: PlexNeighbourhood = {
+  const sideways: PlexNeighborhood = {
     nodes: [
       { id: 'focus', title: 'Here', relation: 'focus' },
       { id: 'aside', title: 'Aside', relation: 'jump' },
@@ -545,7 +536,10 @@ describe('the run of a line between two boxes', () => {
   })
 
   it('holds the leaving direction for a fraction of the gap between the gates', () => {
-    const half = { ...edgeRouting, curvature: 0.5, minReach: 0 }
+    const half = {
+      ...edgeRouting,
+      tuning: { ...edgeRouting.tuning, curvature: 0.5, minReach: 0 },
+    }
     const edge = route(box('a', 'child', 0, 0), box('b', 'child', 0, 200), half)
 
     // The gates are 160 apart, so each control is offset 80 from its gate.
@@ -568,7 +562,7 @@ describe('the run of a line between two boxes', () => {
 
 /**
  * The position of a label along its line is decided by how many labels the line
- * carries: one is centred, two are set at opposite ends. The arrowheads do not
+ * carries: one is centered, two are set at opposite ends. The arrowheads do not
  * enter into it.
  */
 describe('the position of a label', () => {
@@ -666,11 +660,11 @@ describe('the position of a label', () => {
     const measureLabel = (words: string) => 6 * [...words].length
     let measured = 0
 
-    for (const [name, neighbourhood] of Object.entries(neighbourhoods)) {
+    for (const [name, neighborhood] of Object.entries(neighborhoods)) {
       const frame = arrangePlex(
         {
-          ...neighbourhood,
-          edges: neighbourhood.edges.map((edge) => ({
+          ...neighborhood,
+          edges: neighborhood.edges.map((edge) => ({
             ...edge,
             labels: [{ text: 'guides' }, { text: 'shelters' }],
           })),
@@ -708,7 +702,7 @@ describe('the position of a label', () => {
     // The baseline is half the height of an x below the line, whatever else the font does.
     expect(getRise(0, TYPE)).toBe(3)
     expect(getRise(0, { ascent: 20, descent: 1, xHeight: 8 })).toBe(4)
-    // A label beside the line is centred by the middle of its ink, from capital to descender.
+    // A label beside the line is centered by the middle of its ink, from capital to descender.
     expect(getRise(-1, TYPE)).toBe((9 - 3) / 2)
     expect(getRise(1, { ascent: 10, descent: 4, xHeight: 6 })).toBe(3)
     // So the near edge of the ink is the gap from the line, on each side.
@@ -769,7 +763,7 @@ describe('the position of a label', () => {
     expect([first!.heading, second!.heading]).toEqual(['along', 'against'])
   })
 
-  it('reads the one label of a line along the way that is readable, centred and on the line', () => {
+  it('reads the one label of a line along the way that is readable, centered and on the line', () => {
     const measured = createRouting(DEFAULT_OPTIONS, undefined, TYPE)
     const edge = { from: 'lighthouse', to: 'harbour', labels: [{ text: 'guides' }] }
     const [only] = routeEdge(edge, byId, measured)!.titles

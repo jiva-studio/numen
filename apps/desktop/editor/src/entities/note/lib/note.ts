@@ -1,10 +1,10 @@
-import type { Result } from '@numen/core-client'
-import type { NoteNeighbourhood } from '@numen/plugin-host'
-import type { ErrorCode } from '@/shared/errors'
-import type { TextRange } from '@/shared/textRange'
+import type { Result } from '@/shared/lib/result'
+import type { NoteNeighborhood } from '@numen/plugin-loader'
+import type { ErrorCode } from '@/shared/api/errors'
+import type { TextRange } from '@/shared/lib/textRange'
 import type { MoveResult } from '@/shared/model/fileTypes'
 
-export type { NoteRelation } from '@numen/plugin-host'
+export type { NoteRelation } from '@numen/plugin-loader'
 
 /** The prose returned by a read, with the file identity returned alongside it. */
 export interface NoteContents {
@@ -25,10 +25,10 @@ export interface NoteEdit {
 }
 
 /**
- * A neighbourhood of a note, as the vault answers one: the note in focus, and
+ * A neighborhood of a note, as the vault answers one: the note in focus, and
  * the notes joined to it. A note the window has no relation for is not one of them.
  */
-export type Neighbourhood = NoteNeighbourhood
+export type Neighborhood = NoteNeighborhood
 
 /** One heading inside a note, which is one of the parts the note divides into. */
 export interface NoteHeading {
@@ -41,7 +41,7 @@ export interface NoteHeading {
  * Why a note was not read or not written. `changed` means the file contains
  * prose that has not been loaded, which stops a write.
  */
-export type NoteFailure = ErrorCode | 'changed'
+type NoteFailure = ErrorCode | 'changed'
 
 /**
  * What a read returned. The words for a failure belong to whatever shows
@@ -59,7 +59,7 @@ export interface NewNote {
 }
 
 /** A note renamed, and what its file did. */
-export interface RenamedNote {
+interface RenamedNote {
   readonly path: string
   readonly title: string
   readonly hasFrontmatter: boolean
@@ -68,11 +68,3 @@ export interface RenamedNote {
 
 /** What renaming a note returned. */
 export type RenameResult = Result<RenamedNote, NoteFailure>
-
-export interface RemovedNote {
-  readonly trashed: string
-  readonly dangling: readonly string[]
-}
-
-/** What removing a note returned. */
-export type RemoveResult = Result<RemovedNote, ErrorCode>

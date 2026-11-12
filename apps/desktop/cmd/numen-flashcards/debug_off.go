@@ -7,7 +7,7 @@ import (
 	"flag"
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 // debugOptions are the settings of a test run, which a release build has none of.

@@ -1,7 +1,8 @@
 /**
  * Save timers, flush coordination, and read/write execution for open notes.
  */
-import type { Notes, NoteResult, WriteResult as CoreWriteResult } from './types'
+import { readNote, writeNote } from '../../api/notes'
+import type { NoteResult, WriteResult as CoreWriteResult } from './types'
 import type { Event, NoteBaseline, NoteErrorCode, ReadResult, WriteResult } from './tab'
 
 /** The codes a tab holds as its own. */
@@ -74,7 +75,7 @@ function createQueueTimers(dispatch: NoteQueueDeps['dispatch']) {
   return { startTimer, cancelTimer }
 }
 
-export function createNoteQueue(core: Notes, deps: NoteQueueDeps) {
+export function createNoteQueue(deps: NoteQueueDeps) {
   const { dispatch, hasTab, resumeClosing } = deps
   const { startTimer, cancelTimer } = createQueueTimers(dispatch)
   const flushWaiters = new Map<string, () => void>()
@@ -95,7 +96,7 @@ export function createNoteQueue(core: Notes, deps: NoteQueueDeps) {
   const readItem = async (id: string, path: string, generation: number): Promise<void> => {
     let reply: NoteResult
     try {
-      reply = await core.read(path)
+      reply = await readNote(path)
     } catch {
       dispatch(id, { kind: 'read', generation, answer: { kind: 'error', error: 'unreachable' } })
       return
@@ -104,14 +105,13 @@ export function createNoteQueue(core: Notes, deps: NoteQueueDeps) {
   }
 
   const write = async (id: string, request: NoteWriteRequest): Promise<void> => {
-    let reply: CoreWriteResult
+    let answer: WriteResult
     try {
-      reply = await core.write(request.path, request.body, request.baseline)
+      answer = toWriteResult(await writeNote(request.path, request.body, request.baseline))
     } catch {
-      dispatch(id, { kind: 'written', answer: { kind: 'error', error: 'unreachable' } })
-      return
+      answer = { kind: 'error', error: 'unreachable' }
     }
-    dispatch(id, { kind: 'written', answer: toWriteResult(reply) })
+    dispatch(id, { kind: 'written', answer })
     resumeClosing(id)
   }
 

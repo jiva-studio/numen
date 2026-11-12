@@ -1,3 +1,3 @@
-// Package service serves the readers-pdf plugin: it reads PDF documents, serves their pages as images
-// and writes their text layer as versions.
+// Package service mounts the readers-pdf plugin: it builds the adapters and use cases and answers the
+// JSON methods and the page route.
 package service

@@ -11,7 +11,7 @@ const STATUS_BAR = 'md.numen.views.statusBar'
 const DEFAULT_OFF = (
   JSON.parse(
     fs.readFileSync(
-      new URL('../../../../../../libs/core/adapter/settings/plugins.json', import.meta.url),
+      new URL('../../../../../../libs/core/kernel/adapter/settings/plugins.json', import.meta.url),
       'utf8',
     ),
   ) as { off: readonly string[] }

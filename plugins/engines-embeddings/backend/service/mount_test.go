@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 // The handler of a host that links the plugin in embeds with the base URL and
@@ -45,34 +45,21 @@ func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) 
 	}
 }
 
-// The model is read while Configure changes it.
-func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
-	srv := newEmbeddingServer()
-	isDone := make(chan struct{})
-	go func() {
-		defer close(isDone)
-		for range 200 {
-			srv.updateConfig(map[string]string{"model": "bge-m3"}, nil)
-		}
-	}()
-
-	for range 200 {
-		if _, err := srv.GetModelInfo(t.Context()); err != nil {
-			t.Fatal(err)
-		}
+func TestMountRegistersCloseCallback(t *testing.T) {
+	t.Setenv("NUMEN_MOCK_ML", "true")
+	s := server.New(server.WithToken("token"))
+	if err := Mount(s); err != nil {
+		t.Fatalf("Mount: %v", err)
 	}
-	<-isDone
+	if err := s.Close(); err != nil {
+		t.Fatalf("s.Close: %v", err)
+	}
 }
 
-// A dimension or a token limit the model answer cannot hold is not taken from the environment.
-func TestAnOverrideAboveWhatTheAnswerContainsIsIgnored(t *testing.T) {
-	want := newEmbeddingServer().modelInfo
-	t.Setenv("NUMEN_EMBEDDING_DIMENSIONS", "4294967296")
-	t.Setenv("NUMEN_EMBEDDING_MAX_TOKENS", "4294967296")
-
-	got := newEmbeddingServer().modelInfo
-
-	if got.Dimensions != want.Dimensions || got.MaxTokens != want.MaxTokens {
-		t.Fatalf("dimensions %d and tokens %d, want %d and %d", got.Dimensions, got.MaxTokens, want.Dimensions, want.MaxTokens)
+func keysOf(values ...string) server.Secrets {
+	list := make([]server.Secret, 0, len(values))
+	for i, value := range values {
+		list = append(list, server.Secret{ID: "s0000000" + string(rune('1'+i)), Name: "Key", Group: "openrouter", Value: value})
 	}
+	return server.Secrets{server.SecretAPIKey: list}
 }

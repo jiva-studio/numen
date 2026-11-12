@@ -24,7 +24,7 @@ const fail = (message) => {
  * The text from the bracket at `at` to the one that closes it, and how many
  * braces open directly inside it.
  */
-export const readBracketed = (source, at) => {
+export const readBracketedText = (source, at) => {
   let depth = 0
   let entries = 0
   let quote = null
@@ -78,7 +78,10 @@ const findWordsObject = (sourceFile) => {
   for (const statement of sourceFile.statements) {
     if (!ts.isVariableStatement(statement)) continue
     for (const declaration of statement.declarationList.declarations) {
-      if (ts.isIdentifier(declaration.name) && declaration.name.text === 'WORDS') {
+      if (
+        ts.isIdentifier(declaration.name) &&
+        (declaration.name.text === 'WORDS' || declaration.name.text === 'PALETTE_WORDS')
+      ) {
         const initializer = unwrapExpression(declaration.initializer)
         if (initializer && ts.isObjectLiteralExpression(initializer)) return initializer
       }
@@ -307,7 +310,7 @@ const readManifests = (plugins) => {
 }
 
 /**
- * The ids one plugin's frontend registers a handler for. Every `registerCommand` call of the
+ * The ids one plugin's frontend registers a handler for. Every `register.command` call of the
  * frontend's sources is read; one this cannot read an id out of is refused.
  */
 const readRegisteredIds = (at, name) =>

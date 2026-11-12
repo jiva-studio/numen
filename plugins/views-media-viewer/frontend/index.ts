@@ -1,7 +1,7 @@
 import { AudioLines } from '@lucide/vue'
 import { definePlugin, getFileStem, type PluginContext } from '@numen/plugin-sdk'
-import RecordingTab from './RecordingTab.vue'
-import MediaRecordingTab from './MediaRecordingTab.vue'
+import RecordingTab from './ui/RecordingTab.vue'
+import MediaRecordingTab from './ui/MediaRecordingTab.vue'
 import { bindCommands, bindNotes, bindTexts, refreshRecordings, setTaskHost } from './api/wire'
 
 export { RecordingTab, MediaRecordingTab }
@@ -18,12 +18,12 @@ interface MediaTabState {
 }
 
 export function activate(context: PluginContext): void {
-  setTaskHost(context.tasks)
-  bindTexts(context.texts)
-  bindNotes(context.notes)
-  bindCommands(context.commands)
-  context.onVaultChange?.((event) => refreshRecordings(event.paths ?? []))
-  context.registerReader({
+  setTaskHost(context.work.tasks)
+  bindTexts(context.vault.texts)
+  bindNotes(context.vault.notes)
+  bindCommands(context.ui.commands)
+  context.events.onVaultChange?.((event) => refreshRecordings(event.paths ?? []))
+  context.register.reader({
     id: 'media-viewer',
     component: RecordingTab,
     title: 'Audio Player',
@@ -31,13 +31,13 @@ export function activate(context: PluginContext): void {
     capabilities: ['recording', 'media', 'audio'],
   })
 
-  context.registerTabKind({
+  context.register.tabKind({
     kind: RECORDER,
     component: MediaRecordingTab,
     title: 'Record Audio',
   })
 
-  context.registerTabKind<MediaTabState>({
+  context.register.tabKind<MediaTabState>({
     kind: MEDIA,
     component: RecordingTab,
     open: (path) => ({ path }),
@@ -47,10 +47,10 @@ export function activate(context: PluginContext): void {
     getOpenTab: (state) => ({ path: state.path }),
   })
 
-  context.registerCommand({
+  context.register.command({
     id: 'recording.create',
     handler: async () => {
-      await context.openTab?.(RECORDER)
+      await context.tabs.open?.(RECORDER)
     },
   })
 }

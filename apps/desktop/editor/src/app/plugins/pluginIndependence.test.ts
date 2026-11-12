@@ -4,7 +4,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { useWindowTabs } from '@/entities/tab'
+import { createTestTabs } from '@/testing/tabs'
 import { mockVaultState } from '@/testing/answers'
 import { getTabs, mountWindow } from '@/testing/window'
 
@@ -96,10 +96,10 @@ describe('restoring a session with a disabled plugin', () => {
   })
 
   it('restores a disabled plugin tab in windowTabs directly without throwing', async () => {
-    const window = useWindowTabs()
-    const id = await window.createTab('disabled-plugin', '/docs/sample.pdf')
+    const window = createTestTabs()
+    const id = await window.tabs.createTab('disabled-plugin', '/docs/sample.pdf')
 
     expect(id).toBe('disabled-plugin:/docs/sample.pdf')
-    expect(window.tabs.value).toEqual([{ id, title: 'sample.pdf' }])
+    expect(window.tabs.tabs.value).toEqual([{ id, title: 'sample.pdf' }])
   })
 })

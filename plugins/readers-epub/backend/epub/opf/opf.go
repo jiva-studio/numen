@@ -87,7 +87,7 @@ func readPackageMetadata(read *Package, doc *rawPackageDocument) {
 	for _, entry := range doc.Metadata.Entries {
 		if entry.XMLName.Local == "title" && isTitleNamespace(entry.XMLName.Space) &&
 			read.Title == "" {
-			read.Title = words.NormaliseSpaces(entry.Value)
+			read.Title = words.NormalizeSpaces(entry.Value)
 		}
 		if entry.XMLName.Local == "meta" && entry.Refines == "" &&
 			entry.Property == "rendition:layout" {

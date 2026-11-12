@@ -96,11 +96,14 @@ function onInputKeyDown(event: KeyboardEvent) {
 
 <style scoped>
 .plex-link-row {
+  --plex-link-row-gap: 0.375rem;
+  --plex-link-row-block-size: 2.125rem;
+  --plex-link-row-padding-inline: 0.375rem;
   display: flex;
   align-items: center;
-  gap: 0.375rem;
-  block-size: 2.125rem;
-  padding-inline: 0.375rem;
+  gap: var(--plex-link-row-gap);
+  block-size: var(--plex-link-row-block-size);
+  padding-inline: var(--plex-link-row-padding-inline);
   background: var(--numen-field-bg);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);
@@ -112,11 +115,13 @@ function onInputKeyDown(event: KeyboardEvent) {
 }
 .plex-link-row__dir-btn,
 .plex-link-row__delete-btn {
+  --dir-btn-inline-size: 1.5rem;
+  --dir-btn-block-size: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
+  inline-size: var(--dir-btn-inline-size);
+  block-size: var(--dir-btn-block-size);
   background: transparent;
   color: var(--numen-hushed);
   border: none;
@@ -134,21 +139,26 @@ function onInputKeyDown(event: KeyboardEvent) {
 }
 .plex-link-row__dir-btn:focus-visible,
 .plex-link-row__delete-btn:focus-visible {
+  --dir-btn-focus-visible-outline-offset: 0.0625rem;
   outline: var(--numen-stroke) solid var(--numen-ring);
-  outline-offset: 1px;
+  outline-offset: var(--dir-btn-focus-visible-outline-offset);
 }
 .plex-link-row__delete-btn:hover {
   background: transparent;
   color: var(--numen-alarm);
 }
 .plex-link-row__icon {
-  inline-size: 0.95rem;
-  block-size: 0.95rem;
+  --icon-inline-size: 0.95rem;
+  --icon-block-size: 0.95rem;
+  inline-size: var(--icon-inline-size);
+  block-size: var(--icon-block-size);
   stroke-width: 2;
 }
 .plex-link-row__icon--trash {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
+  --icon-trash-inline-size: 0.875rem;
+  --icon-trash-block-size: 0.875rem;
+  inline-size: var(--icon-trash-inline-size);
+  block-size: var(--icon-trash-block-size);
   opacity: 0.6;
   transition: opacity var(--numen-motion-hover) ease;
 }
@@ -156,6 +166,7 @@ function onInputKeyDown(event: KeyboardEvent) {
   opacity: 1;
 }
 .plex-link-row__input {
+  --input-padding: 0.25rem;
   flex: 1;
   min-inline-size: 0;
   block-size: 100%;
@@ -165,7 +176,7 @@ function onInputKeyDown(event: KeyboardEvent) {
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
   outline: none;
-  padding: 0 0.25rem;
+  padding: 0 var(--input-padding);
 }
 .plex-link-row__input::placeholder {
   color: var(--numen-hushed);

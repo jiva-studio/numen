@@ -143,7 +143,7 @@ const waitForSettledLayout = async (canvasElement: HTMLElement) => {
   const readState = () => {
     const paper = getPaper(canvasElement)
     const copies = getCopyHolder(canvasElement).childElementCount
-    return `${paper.style.translate}|${paper.scrollWidth}|${copies}`
+    return `${paper.getBoundingClientRect().left}|${paper.scrollWidth}|${copies}`
   }
   let last = readState()
   let stableFrameCount = 0
@@ -177,7 +177,6 @@ const isOverlapping = (a: DOMRect, b: DOMRect) =>
 
 interface CopyFrame {
   readonly isOverlapping: boolean
-  readonly visibleWidth: number
 }
 
 const recordCopyFrames = (canvasElement: HTMLElement) => {
@@ -193,12 +192,6 @@ const recordCopyFrames = (canvasElement: HTMLElement) => {
         : getLinesInArea(paper, box)
       frames.push({
         isOverlapping: oldLines.some((a) => newLines.some((b) => isOverlapping(a, b))),
-        visibleWidth: Math.max(
-          0,
-          ...oldLines.map(
-            (rect) => Math.min(rect.right, box.right) - Math.max(rect.left, box.left),
-          ),
-        ),
       })
     }
     frame = requestAnimationFrame(read)
@@ -237,7 +230,7 @@ export const TwoQuickForwardTurnsAcrossSectionsDoNotOverlap: Story = {
 
 /**
  * A second backward press while the first turn still runs crosses into the previous section: the
- * copy of the old page ends outside the area.
+ * copy of the old page never overlaps the new page and is removed when the turn ends.
  */
 export const TwoQuickBackwardTurnsAcrossSectionsMoveCopyOut: Story = {
   decorators: [WIDE],
@@ -246,7 +239,6 @@ export const TwoQuickBackwardTurnsAcrossSectionsMoveCopyOut: Story = {
     await waitForSettledLayout(canvasElement)
     pressKey('ArrowRight')
     await waitForSettledLayout(canvasElement)
-    const width = getArea(canvasElement).clientWidth
 
     const recorded = recordCopyFrames(canvasElement)
     pressKey('ArrowLeft')
@@ -259,7 +251,11 @@ export const TwoQuickBackwardTurnsAcrossSectionsMoveCopyOut: Story = {
 
     await expect(recorded.frames.length).toBeGreaterThan(1)
     await expect(recorded.frames.filter((frame) => frame.isOverlapping)).toHaveLength(0)
-    await expect(recorded.frames.at(-1)!.visibleWidth).toBeLessThan(width * 0.05)
+    await waitFor(
+      async () => await expect(getCopyHolder(canvasElement).childElementCount).toBe(0),
+      { timeout: BROWSER_TIMEOUT },
+    )
+    await expect(getFrontOffset(canvasElement)).toBeLessThan(LONG_FIRST.span.end)
   },
 }
 

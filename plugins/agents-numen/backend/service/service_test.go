@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 const testToken = "plugin-token"
@@ -105,41 +105,6 @@ func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 	}
 	if programs := res; len(programs) != 1 || len(programs[0].Models) != 2 {
 		t.Errorf("the programs are %+v", programs)
-	}
-}
-
-func TestConfigure_SetsTemperatureAndMaxTokens(t *testing.T) {
-	var receivedBody map[string]any
-	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/chat/completions" {
-			decodeJSON(t, r.Body, &receivedBody)
-			encodeJSON(t, w, map[string]any{
-				"choices": []map[string]any{
-					{"message": map[string]any{"role": "assistant", "content": "hi"}},
-				},
-			})
-			return
-		}
-		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
-	}))
-	defer chat.Close()
-
-	s := &Server{Client: chat.Client()}
-	s.Configure(map[string]string{
-		"baseUrl":     chat.URL,
-		"temperature": "0.5",
-		"maxTokens":   "2048",
-	})
-	c := s.getChat()
-	_, _, err := c.send(t.Context(), "m1", effort{}, []message{{Role: "user", Content: new("hello")}}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if temp, ok := receivedBody["temperature"].(float64); !ok || temp != 0.5 {
-		t.Errorf("expected temperature 0.5, got %v", receivedBody["temperature"])
-	}
-	if maxT, ok := receivedBody["max_tokens"].(float64); !ok || int(maxT) != 2048 {
-		t.Errorf("expected max_tokens 2048, got %v", receivedBody["max_tokens"])
 	}
 }
 

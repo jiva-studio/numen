@@ -4,17 +4,25 @@
  * A test declares the application's responses in `vaultState`, reads the requests it
  * received from the recorded log, and mounts the window with `mountWindow`.
  */
-import './vaultMock'
-import { readWindowTasks } from './moduleMocks'
-import { afterEach } from 'vitest'
+import { afterEach, beforeEach } from 'vitest'
+import { installCoreAnswers } from '@numen/core-client/testing'
+import { fileAnswers } from './mocks/file'
+import { noteAnswers } from './mocks/note'
+import { pluginAnswers } from './mocks/plugin'
+import { searchAnswers } from './mocks/search'
+import { vaultAnswers } from './mocks/vault'
+import { settingsAnswers } from './mocks/settings'
+import { tabAnswers } from './mocks/tab'
+import { readWindowTasks, windowAnswers } from './mocks/window'
+import { mergeAnswers } from './mergeAnswers'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { getPanes, WorkspaceLayout, type Workspace } from '@numen/shell'
+import { WorkspaceLayout } from '@numen/workbench'
+import type { PluginHost } from '@numen/plugin-loader'
 import { requests, forgetRequests } from './requests'
 import {
-  folders,
+  changed,
   forgetAnswers,
   mockVaultList,
-  maker,
   nameAnswer,
   outside,
   passageAnswer,
@@ -22,8 +30,10 @@ import {
   sourceAnswer,
 } from './answers'
 import { book, editor, reader } from './stubs'
+import { openNoteTab, registerNoteTabs } from './mocks/noteTabs'
+import type { WindowParts } from '@/app/window/createWindow'
 
-const App = (await import('@/app/shell/App.vue')).default
+const Root = (await import('@/app/createRoot')).createRoot()
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
@@ -36,14 +46,32 @@ const DEBOUNCE = 200
  */
 const windows: { unmount(): void }[] = []
 
+let restoreCore: () => void = () => undefined
+
+beforeEach(() => {
+  restoreCore = installCoreAnswers(
+    mergeAnswers(
+      vaultAnswers,
+      windowAnswers,
+      settingsAnswers,
+      noteAnswers,
+      fileAnswers,
+      tabAnswers,
+      pluginAnswers,
+      searchAnswers,
+    ),
+  )
+})
+
 afterEach(() => {
   for (const window of windows.splice(0)) window.unmount()
+  restoreCore()
   forgetAnswers()
   forgetRequests()
 })
 
-async function mountWindow() {
-  const window = mount(App, {
+function mountStartingWindow() {
+  const window = mount(Root, {
     global: {
       // A stub is named by the binding the component is drawn through, and the
       // window's command palette draws the library's under `Palette`.
@@ -62,6 +90,12 @@ async function mountWindow() {
     attachTo: document.body,
   })
   windows.push(window)
+  lastHost = getWindowParts(window).pluginHost
+  return window
+}
+
+async function mountWindow() {
+  const window = mountStartingWindow()
   await settle()
   await settle()
   await new Promise((isDone) => setTimeout(isDone, 50))
@@ -69,36 +103,61 @@ async function mountWindow() {
 }
 
 async function mountWindowWithPalette() {
-  const window = mount(App, {
+  const window = mount(Root, {
     global: {
       stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Book: book, Tree: true },
     },
     attachTo: document.body,
   })
   windows.push(window)
+  lastHost = getWindowParts(window).pluginHost
   await settle()
   await settle()
   await settle()
   return window
 }
 
+/** The plugin host of the window mounted last, whose tasks the cards of the window list. */
+let lastHost: PluginHost | undefined
+
 const cards = (): readonly string[] =>
-  readWindowTasks()
+  readWindowTasks(lastHost)
     .filter((task) => task.state === 'failed')
     .map((task) => [task.label, task.about].filter(Boolean).join(' '))
 
-const nodeInPlex = (window: VueWrapper): string => {
-  const state = window.findComponent({ name: 'PlexTab' }).props('state') as {
-    picture: { value: { nodes: readonly { id: string }[] } | null }
+const hasWindowParts = (vm: object): vm is { parts: WindowParts } => 'parts' in vm
+
+const getWindowParts = (window: VueWrapper) => {
+  if (!hasWindowParts(window.vm)) throw new Error('The mounted window has no parts')
+  const { parts } = window.vm
+  return {
+    tabs: parts.tabs,
+    palette: {
+      getTarget: parts.getTarget,
+      runCommand: parts.palettes.palette.runs.runCommand,
+      commandDeps: parts.palettes.commandDeps,
+    },
+    pluginHost: parts.views.pluginHost,
   }
-  return state.picture.value?.nodes[0]?.id ?? ''
 }
 
-const getLayout = (window: VueWrapper): Workspace =>
-  window.findComponent(WorkspaceLayout).props('modelValue')
+const getPaletteField = (): HTMLInputElement | null =>
+  document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 
-const paneKinds = (window: VueWrapper): readonly (readonly string[])[] =>
-  getPanes(getLayout(window).root).map((one) => one.tabs.map((tab) => tab.split(':')[0] ?? ''))
+const typeInPalette = async (text: string): Promise<void> => {
+  const into = getPaletteField()
+  if (!into) return
+  into.value = text
+  into.dispatchEvent(new Event('input'))
+  await settle()
+}
+
+const submitPalette = async (): Promise<void> => {
+  getPaletteField()?.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+  )
+  await settle()
+}
 
 const getTabs = (window: VueWrapper): readonly { id: string; title: string }[] =>
   window.findComponent(WorkspaceLayout).props('tabs')
@@ -106,24 +165,23 @@ const getTabs = (window: VueWrapper): readonly { id: string; title: string }[] =
 export {
   requests,
   cards,
-  maker,
+  changed,
+  getWindowParts,
+  submitPalette,
+  typeInPalette,
   DEBOUNCE,
   mountWindow,
+  mountStartingWindow,
   mountWindowWithPalette,
-  editor,
-  folders,
-  getLayout,
-  mockVaultList,
   nameAnswer,
-  nodeInPlex,
   outside,
-  paneKinds,
   passageAnswer,
-  reader,
   mockVaultState,
   mockVaultState as vaultState,
   mockVaultList as listed,
   settle,
   sourceAnswer,
   getTabs,
+  openNoteTab,
+  registerNoteTabs,
 }

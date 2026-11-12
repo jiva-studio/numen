@@ -1,6 +1,6 @@
 import { onScopeDispose, readonly, shallowRef, watch, type Ref } from 'vue'
 import { getMonotonicNow } from '@numen/ui'
-import { createChipDisplay, IDLE_CHIP, type ChipState } from '../lib/chipDisplay'
+import { createChipDisplay, IDLE_CHIP, type ChipState } from '../model/chipDisplay'
 
 /** The chip state to draw for the live one, delayed by createChipDisplay; its timers end with the scope. */
 export function useChipDisplay(

@@ -3,8 +3,9 @@
  * An identity is resolved by the store holding it, and an identity no store holds
  * resolves to nothing.
  */
-import type { Selector } from '@numen/plugin-host'
-import type { CommandPlace, Notes, Store } from '../../types'
+import type { Selector } from '@numen/plugin-loader'
+import type { Store } from '../../types'
+import type { CommandPlace, Notes } from '@/shared/model/command'
 
 /** What opens a file: in the current tab or beside it, at a line of the note where one is given. */
 export interface NoteOpeners {
@@ -13,7 +14,7 @@ export interface NoteOpeners {
     title: string,
     options:
       'current' | 'split' | { where: 'current' | 'split'; line?: number; selector?: Selector },
-  ): unknown
+  ): void
 }
 
 const createPlacement = (
@@ -23,11 +24,12 @@ const createPlacement = (
   const line = place?.line
   const selector = place?.selector
   if (line === undefined && selector === undefined) return placement
-  return {
+  const target: { where: 'current' | 'split'; line?: number; selector?: Selector } = {
     where: placement,
-    ...(line === undefined ? {} : { line }),
-    ...(selector === undefined ? {} : { selector }),
   }
+  if (line !== undefined) target.line = line
+  if (selector !== undefined) target.selector = selector
+  return target
 }
 
 export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners): Notes => {

@@ -1,0 +1,149 @@
+/**
+ * The conversation and the field it is carried on with, in one piece.
+ *
+ * Where the two are judged against each other: whether the composer stays put
+ * under a thread that scrolls, whether the field growing takes its height from
+ * the conversation, whether one type size holds across both.
+ */
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, userEvent, within } from 'storybook/test'
+import { onScopeDispose, ref } from 'vue'
+import Agent from './Agent.vue'
+import type { Turn } from '../types'
+import { frameStory } from '../fixtures/frame'
+import { LONG, MULTILINE, RUSSIAN } from '../fixtures/prose'
+
+const meta = {
+  title: 'Chat/Agent',
+  decorators: [frameStory],
+  parameters: { layout: 'fullscreen' },
+} satisfies Meta
+
+export default meta
+type Story = StoryObj<typeof meta>
+type Render = NonNullable<Story['render']>
+
+const createRequestedTurn = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
+const createRespondedTurn = (id: string, text: string): Turn => ({ id, voice: 'response', text })
+
+/**
+ * The thread takes what height is left and scrolls inside it; the composer
+ * takes what it needs and is written over the foot of it.
+ */
+const TEMPLATE = `
+  <Agent
+    v-model="text"
+    class="h-full"
+    :turns="turns"
+    :is-answer-pending="isAnswerPending"
+    placeholder="Ask about the vault"
+    @submit="onSubmit"
+    @stop="onStop"
+  />
+`
+
+const conversation =
+  (start: readonly Turn[]): Render =>
+  () => ({
+    components: { Agent },
+    setup() {
+      const turns = ref<Turn[]>([...start])
+      const text = ref('')
+      const isAnswerPending = ref(false)
+      let next = start.length
+      let tick: ReturnType<typeof setInterval> | undefined
+
+      /** What has arrived so far, put back in place of what was there. */
+      const putTurn = (id: string, soFar: string, isDone: boolean) => {
+        const index = turns.value.findIndex((turn) => turn.id === id)
+        if (index < 0) return
+        turns.value[index] = isDone
+          ? { id, voice: 'response', text: soFar }
+          : { id, voice: 'response', text: soFar, state: 'arriving' }
+      }
+
+      const settle = () => {
+        clearInterval(tick)
+        tick = undefined
+        isAnswerPending.value = false
+      }
+
+      const onSubmit = (message: string) => {
+        turns.value.push(createRequestedTurn(`${next++}`, message))
+        text.value = ''
+        isAnswerPending.value = true
+
+        const id = `${next++}`
+        turns.value.push({ id, voice: 'response', text: '', state: 'arriving' })
+
+        const reply = `You asked about “${message}”. ${LONG}`
+        let offset = 0
+        tick = setInterval(() => {
+          offset = Math.min(reply.length, offset + 3)
+          const isDone = offset === reply.length
+          putTurn(id, reply.slice(0, offset), isDone)
+          if (isDone) settle()
+        }, 16)
+      }
+
+      /** Given up on: what had arrived stays, and nothing more comes. */
+      const onStop = () => {
+        const last = turns.value.at(-1)
+        if (last?.state === 'arriving') putTurn(last.id, last.text, true)
+        settle()
+      }
+
+      onScopeDispose(settle)
+
+      return { turns, text, isAnswerPending, onSubmit, onStop }
+    },
+    template: TEMPLATE,
+  })
+
+/** Type into it and press Enter. */
+export const Playground: Story = {
+  render: conversation([
+    createRequestedTurn('1', 'What does a plex draw?'),
+    createRespondedTurn('2', 'One node in focus, and everything else placed by its relation.'),
+    createRequestedTurn('3', 'And where do the relations come from?'),
+    createRespondedTurn('4', MULTILINE),
+  ]),
+}
+
+/** Opened on nothing, which is what a new conversation is. */
+export const Fresh: Story = {
+  render: conversation([]),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const field = canvas.getByRole('textbox')
+    await userEvent.click(field)
+    await userEvent.type(field, 'what is a relation')
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.getByText('what is a relation')).toBeInTheDocument()
+    await expect((field as HTMLTextAreaElement).value).toBe('')
+  },
+}
+
+/**
+ * A long conversation, so the composer is under a thread that scrolls and the
+ * words run on underneath it.
+ */
+export const LongConversation: Story = {
+  render: conversation(
+    Array.from({ length: 60 }, (_, index) =>
+      index % 2 === 0
+        ? createRequestedTurn(`${index}`, `Question ${index / 2 + 1}. ${RUSSIAN}`)
+        : createRespondedTurn(`${index}`, `Answer ${(index + 1) / 2}. ${LONG}`),
+    ),
+  ),
+  play: async ({ canvasElement }) => {
+    const composer = canvasElement.querySelector('.composer')!
+    await expect(composer).toBeInTheDocument()
+
+    // The field takes lines typed into it.
+    const field = canvasElement.querySelector('textarea') as HTMLTextAreaElement
+    await userEvent.click(field)
+    await userEvent.keyboard('one{Shift>}{Enter}{/Shift}two{Shift>}{Enter}{/Shift}three')
+    await expect(field.value).toBe('one\ntwo\nthree')
+  },
+}

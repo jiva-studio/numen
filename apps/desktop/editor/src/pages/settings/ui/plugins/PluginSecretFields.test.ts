@@ -9,7 +9,12 @@ import { getServiceInfo } from '@numen/core-client'
 import { mount } from '@vue/test-utils'
 import PluginDetail from './PluginDetail.vue'
 import SettingsTab from '../SettingsTab.vue'
-import { createInstallation, createPluginInfo, createSecretAnswer } from '@/testing/installation'
+import {
+  createInstallation,
+  createPluginInfo,
+  createSecretAnswer,
+  createSettingsState,
+} from '@/pages/settings/testing/installation'
 import {
   click,
   dispose,
@@ -59,7 +64,7 @@ const mountDetail = (secrets = [WORK, HOME, CHAT, SPARE, MINE]) => {
   })
   const wrapper = mount(SettingsTab, {
     attachTo: document.body,
-    props: { state: { installation, initialPluginId } },
+    props: { state: createSettingsState(installation, { initialPluginId }) },
   })
   return { installation, initialPluginId, wrapper }
 }
@@ -131,8 +136,8 @@ describe('the secret field of a declaration', () => {
     expect(fieldOf('API key').querySelectorAll('input')).toHaveLength(0)
     expect(maskedInputs()).toHaveLength(0)
     await openMenu('API key')
-    expect(installation.createSecret).not.toHaveBeenCalled()
-    expect(installation.writeSecret).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.createSecret).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.writeSecret).not.toHaveBeenCalled()
     dispose(wrapper)
   })
 
@@ -181,7 +186,7 @@ describe('the secret field of a declaration', () => {
     const { installation, wrapper } = mountDetail()
     await openMenu('API key')
     await click(menuItem('Spare'))
-    expect(installation.allowPluginSecret).toHaveBeenCalledExactlyOnceWith(
+    expect(installation.secrets.access.allowPluginSecret).toHaveBeenCalledExactlyOnceWith(
       SPARE.id,
       PLUGIN,
       'apiKey',
@@ -194,7 +199,7 @@ describe('the secret field of a declaration', () => {
     const { installation, wrapper } = mountDetail()
     await openMenu('API key')
     await click(menuItem('Chat'))
-    expect(installation.denyPluginSecret).toHaveBeenCalledExactlyOnceWith(
+    expect(installation.secrets.access.denyPluginSecret).toHaveBeenCalledExactlyOnceWith(
       CHAT.id,
       PLUGIN,
       'apiKey',
@@ -207,7 +212,7 @@ describe('the secret field of a declaration', () => {
     const { installation, wrapper } = mountDetail()
     await openMenu('Organization')
     await click(menuItem('Work'))
-    expect(installation.allowPluginSecret).toHaveBeenCalledExactlyOnceWith(
+    expect(installation.secrets.access.allowPluginSecret).toHaveBeenCalledExactlyOnceWith(
       WORK.id,
       PLUGIN,
       'orgId',
@@ -239,7 +244,12 @@ describe('the page of a plugin', () => {
     })
     const wrapper = mount(PluginDetail, {
       attachTo: document.body,
-      props: { state: { installation }, plugin },
+      props: {
+        settings: installation.settings,
+        manager: installation.plugin,
+        choices: installation.secrets,
+        plugin,
+      },
     })
     expect(root().querySelectorAll(SELECT)).toHaveLength(3)
     dispose(wrapper)

@@ -4,7 +4,7 @@ A person pastes an address into the palette and gets a link: a note of type `lin
 
 ## The gesture
 
-**Import link** in the palette is the shared command `app:link.import`, which the plugin handles. The command declares its argument `address` in `libs/protocol/commands.json`; the palette asks for it, and the plugin creates a note for it, named after the address:
+**Import link** in the palette is the shared command `app:link.import`, which the plugin handles. The command declares its argument `address` in `libs/core/protocol/commands.json`; the palette asks for it, and the plugin creates a note for it, named after the address:
 
 ```markdown
 ---

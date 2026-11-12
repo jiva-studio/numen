@@ -1,0 +1,80 @@
+package cli
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/jiva-studio/numen/libs/note/domain"
+)
+
+type linksCommand struct {
+	session Session
+}
+
+func (linksCommand) Name() string { return "links" }
+
+func (linksCommand) Synopsis() string {
+	return "  numen-cli links <vault> <note>               what a note points at, and what points at it"
+}
+
+func (c linksCommand) Run(ctx context.Context, term terminal, args []string) error {
+	if len(args) != 2 {
+		return errors.New("usage: numen-cli links <vault> <note>")
+	}
+	indexed, err := c.session.OpenIndexed(ctx, IndexOptions{})
+	if err != nil {
+		return err
+	}
+
+	links, err := indexed.Links.ExecuteByName(ctx, args[0], args[1])
+	if err != nil {
+		return err
+	}
+
+	r := newReporter(term.out)
+	if len(links.Links) == 0 && len(links.Backlinks) == 0 {
+		r.Println("no links either way")
+		return r.Err()
+	}
+	if len(links.Links) > 0 {
+		r.Println("points at:")
+		for _, l := range links.Links {
+			r.Printf("  %s\n", describeLink(links.Vault, l))
+		}
+	}
+	if len(links.Backlinks) > 0 {
+		r.Println("pointed at by:")
+		for _, l := range links.Backlinks {
+			r.Printf("  %-10s %s\n", l.Role, l.From)
+		}
+	}
+	return r.Err()
+}
+
+func describeLink(from domain.Vault, l domain.ResolvedLink) string {
+	where := l.To
+	switch {
+	case where == "" && l.Target.Scheme == domain.SchemeName:
+		where = l.Target.Value + "  (nothing by that name)"
+	case where == "" && l.Target.Scheme == domain.SchemeNote:
+		// Neither resolved nor broken: no connected vault holds it, and which
+		// of the two it is cannot be known from here.
+		where = l.Target.String() + "  (no connected vault holds this note)"
+	case where == "":
+		where = l.Target.String()
+	case l.IsAmbiguous:
+		where += "  (several notes answer to that name)"
+	}
+	if vault, crossed := l.InVault(from.ID); crossed {
+		where += "  (in another vault: " + string(vault) + ")"
+	}
+	line := fmt.Sprintf("%-10s %s", l.Role, where)
+	if l.Type != "" {
+		line += "  [" + l.Type + "]"
+	}
+	if l.Why != "" {
+		line += "  — " + l.Why
+	}
+	return line
+}

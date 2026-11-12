@@ -1,7 +1,8 @@
 // Package bind exposes the core to the mobile platform.
 //
 // One call starts a server on the loopback interface and returns its listening
-// port. All requests to it follow the schema in libs/protocol, the same
+// port. Every request to it must carry the token that Token returns as a bearer
+// credential. The requests follow the schema in libs/core/protocol, the same
 // schema the desktop window uses.
 package bind
 
@@ -19,10 +20,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 // Core holds the one server the platform starts. Starting again while active
@@ -37,9 +37,10 @@ func NewCore() *Core { return &Core{} }
 
 type runningCore struct {
 	port   int
+	token  string
 	isDown atomic.Bool
 	stop   context.CancelFunc
-	opened *editor.Installation
+	opened *container.OpenedWindow
 	server *http.Server
 }
 
@@ -74,12 +75,7 @@ func (c *Core) Start(dir string) (int, error) {
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	made, err := cfg.GetEditorAssembly(ctx)
-	if err != nil {
-		stop()
-		return 0, err
-	}
-	opened, err := editor.Open(ctx, made, filed, os.Stderr)
+	opened, err := container.OpenWindow(cfg, ctx, filed, os.Stderr)
 	if err != nil {
 		stop()
 		return 0, err
@@ -90,11 +86,9 @@ func (c *Core) Start(dir string) (int, error) {
 	// folder cannot be created, only the default theme is loaded. A theme
 	// named in the settings that is missing from the catalog is reported on
 	// the platform log.
-	themes, wrong := cfg.Themes(opened.SayTheme)
-	if wrong != nil {
+	if wrong := container.SetThemes(cfg, opened.Installation, container.Scales{}, opened.RecordThemeWarning); wrong != nil {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
-	opened.Services.Themes = themes
 	listener, err := listenLocal(ctx)
 	if err != nil {
 		stop()
@@ -106,17 +100,22 @@ func (c *Core) Start(dir string) (int, error) {
 	// phone, so only those three services are mounted. The settings file, which
 	// contains the model API keys, and the files on disk next to the notes
 	// (books and the model sets that run over them) are not served.
-	server := &http.Server{
-		ReadHeaderTimeout: readHeaderTimeout,
-		Handler: allowOrigin(opened.Services.NewHandler(
-			http.NotFoundHandler(),
-			numenv1connect.VaultServiceName,
-			numenv1connect.NoteServiceName,
-			numenv1connect.FileServiceName,
-		)),
+	handler, token, err := opened.NewLocalHandler(
+		http.NotFoundHandler(),
+		numenv1connect.VaultServiceName,
+		numenv1connect.NoteServiceName,
+		numenv1connect.FileServiceName,
+	)
+	if err != nil {
+		stop()
+		return 0, errors.Join(err, listener.Close(), opened.Close())
 	}
+	// The preflight of the browser carries no credentials, so the origin policy stands outside the
+	// token check.
+	server := &http.Server{ReadHeaderTimeout: readHeaderTimeout, Handler: allowOrigin(handler)}
 	c.running = &runningCore{
 		port:   listener.port,
+		token:  token,
 		stop:   stop,
 		opened: opened,
 		server: server,
@@ -182,6 +181,17 @@ func (c *Core) Stop() error {
 	return err
 }
 
+// Token returns the secret every request to the server must carry as a bearer credential, or the
+// empty string when none is running. It is new on every start.
+func (c *Core) Token() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.running == nil || c.running.isDown.Load() {
+		return ""
+	}
+	return c.running.token
+}
+
 // Port returns the listening port of the server, or zero when none is running.
 func (c *Core) Port() int {
 	c.mu.Lock()
@@ -194,36 +204,22 @@ func (c *Core) Port() int {
 
 func makeConfig(dir string, out io.Writer) container.Config {
 	return container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(dir, "index.db"),
-		RegistryPath: filepath.Join(dir, "vaults.json"),
-		ThemesPath:   filepath.Join(dir, "themes"),
-		Resources:    container.NewResources(),
+		Resources: container.NewResources(),
 		ErrorHandler: func(err error) {
 			if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
 				return
 			}
 		},
+		Paths: container.Paths{IndexPath: filepath.Join(dir, "index.db"), RegistryPath: filepath.Join(dir, "vaults.json"), ThemesPath: filepath.Join(dir, "themes")},
 	})
 }
 
 func registerVault(cfg container.Config, root string) (string, error) {
-	registry, err := cfg.Registry()
+	registered, err := cfg.EnsureVault(root, "numen", false)
 	if err != nil {
 		return "", err
 	}
-	if resolved, err := filepath.EvalSymlinks(root); err == nil {
-		root = resolved
-	}
-	if target, found, err := registry.FindVault(root); err != nil {
-		return "", err
-	} else if found {
-		return target.Path, nil
-	}
-	added, err := cfg.AddVault(registry, root, "numen")
-	if err != nil {
-		return "", err
-	}
-	return added.Path, nil
+	return registered.Path, nil
 }
 
 // Page is the origin from which the platform serves this application's page:
@@ -240,7 +236,7 @@ func allowOrigin(next http.Handler) http.Handler {
 		head.Set("Access-Control-Allow-Origin", Page)
 		head.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 		head.Set("Access-Control-Allow-Headers", strings.Join([]string{
-			"Content-Type", "Connect-Protocol-Version", "Connect-Timeout-Ms",
+			"Authorization", "Content-Type", "Connect-Protocol-Version", "Connect-Timeout-Ms",
 			"Connect-Accept-Encoding", "Connect-Content-Encoding", "X-User-Agent",
 		}, ", "))
 		head.Set("Access-Control-Expose-Headers", strings.Join([]string{

@@ -15,8 +15,8 @@ export const REFRESH_MS = 2_000
 
 /** Starts and stops the waits between asks. */
 export interface Timer {
-  set(run: () => void, delayMs: number): unknown
-  clear(handle: unknown): void
+  set(run: () => void, delayMs: number): number
+  clear(handle: number): void
 }
 
 /** Whether the window is in use, and the call to make when it becomes so. */
@@ -47,7 +47,7 @@ export interface IndexStats {
 export function createIndexStats(deps: StatsDeps): IndexStats {
   const stats = ref<Stats | null>(null)
   const phase = ref<Phase>('loading')
-  let handle: unknown
+  let handle: number | undefined
   let isStopped = true
   let isAsking = false
   let stopWatching: (() => void) | undefined

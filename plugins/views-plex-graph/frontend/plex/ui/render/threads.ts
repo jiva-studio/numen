@@ -8,7 +8,7 @@
 import { createThreadPath, type Drop, type Size } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
 import { ghostNode, getHandle, type PlacedNode, type Position } from '../../lib/node'
-import type { PlexRelation } from '../../lib/relation'
+import type { PlexRelation } from '../../../types'
 
 type Thread = ReturnType<typeof createThreadPath>
 

@@ -6,8 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 
-import { getSettingAt as at } from '@/entities/settings'
-import { createInstallation, createPluginInfo } from '@/testing/installation'
+import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
+import {
+  createInstallation,
+  createPluginInfo,
+  createSettingsState,
+} from '@/pages/settings/testing/installation'
 import SettingsTab from '../SettingsTab.vue'
 
 const PATH_SETTING = {
@@ -26,7 +30,7 @@ const FILE = {
   [SECOND.id]: { executablePath: '/opt/second/bin/second-cli' },
 }
 
-const createHeld = <T>() => {
+const createHeldAnswers = <T>() => {
   const answers = new Map<string, (value: T) => void>()
   const call = (pluginId: string) =>
     new Promise<T>((resolve) => {
@@ -53,8 +57,8 @@ afterEach(() => {
 
 describe('the page of a plugin opened after another', () => {
   it('never shows a value of the plugin shown before', async () => {
-    const fileCounts = createHeld<number>()
-    const readmes = createHeld<string>()
+    const fileCounts = createHeldAnswers<number>()
+    const readmes = createHeldAnswers<string>()
     vi.stubGlobal('fetch', async (url: string) => {
       const pluginId = url.split('/')[2] ?? ''
       const text = await readmes.call(pluginId)
@@ -67,7 +71,7 @@ describe('the page of a plugin opened after another', () => {
       getPluginData: (pluginId) => fileCounts.call(pluginId),
     })
     const wrapper = mount(SettingsTab, {
-      props: { state: { installation, initialPluginId } },
+      props: { state: createSettingsState(installation, { initialPluginId }) },
       attachTo: document.body,
     })
     const history: string[] = []

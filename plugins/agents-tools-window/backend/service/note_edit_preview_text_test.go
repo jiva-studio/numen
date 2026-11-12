@@ -14,7 +14,7 @@ type editPreviewAnswer struct {
 
 func TestNoteEditPreviewWithProposedTextDiffsAgainstTheNote(t *testing.T) {
 	w := newWindowTools(t)
-	proposed := "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Grey Heron\n---\nHerons fish at dawn."
+	proposed := "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Gray Heron\n---\nHerons fish at dawn."
 
 	var answer editPreviewAnswer
 	if failure := w.call(t, "note_edit_preview", `{"path":"`+notePath+`","proposedText":`+encodeJSONString(t, proposed)+`}`, nil, &answer); failure != "" {

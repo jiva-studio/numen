@@ -8,19 +8,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
+func waitForIndex(t *testing.T, queries *query.Scenarios, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
-		displayed, err := opened.Queries().GetNotes(t.Context(), v.ID, []string{path})
+		titles, err := queries.Browse.GetTitles.Execute(t.Context(), v, []string{path})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, target := displayed[path]; target {
+		if len(titles.Missing) == 0 {
 			return
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -32,21 +32,21 @@ func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, pat
 // case the window does, and the tools pass the one setting to it.
 func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
-		sync     note.SyncTitleAndFilename
+		sync     naming.SyncTitleAndFilename
 		filename string
 	}{
 		"one name":   {sync: true, filename: "Disorder.md"},
 		"told apart": {sync: false, filename: "Entropy.md"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			opened, cfg := windowOn(t)
+			opened, cfg, cases := windowWithCases(t)
 			response := fmt.Sprintf(`{"app":{"naming":{"syncTitleAndFilename":%v}}}`, bool(c.sync))
 			if err := os.WriteFile(
 				filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json"), []byte(response), 0o644,
 			); err != nil {
 				t.Fatal(err)
 			}
-			v := opened.GetCurrentVault()
+			v := opened.State.GetCurrentVault()
 			raw := "---\ntitle: Entropy\n---\nA measure.\n"
 			if err := os.WriteFile(
 				filepath.Join(v.Path, "Entropy.md"), []byte(raw), 0o644,
@@ -55,10 +55,10 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 			}
 			// The note is in the index before it is renamed. A rename racing the
 			// walk that first reads the file files it at two paths at once.
-			waitForIndex(t, opened, v, "Entropy.md")
+			waitForIndex(t, cases.Queries, v, "Entropy.md")
 
-			notes := opened.Notes().ShowEdits(opened.State.GetWindow())
-			renamed, err := notes.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
+			notes := cases.Notes
+			renamed, err := notes.Place.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -7,12 +7,7 @@
  * proportion to the characters on each side of the split.
  */
 
-/** One cue: its text and the milliseconds it covers. */
-export interface Cue {
-  readonly text: string
-  readonly from: number
-  readonly to: number
-}
+import type { Cue } from '../types'
 
 /**
  * The index of the cue active at a millisecond, or the last cue before it when

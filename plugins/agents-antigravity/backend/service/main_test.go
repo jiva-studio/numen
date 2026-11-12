@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
 )
 
 func withoutAgentsAnywhere(t *testing.T) {
@@ -26,7 +26,7 @@ func TestTheProgramListNamesAntigravityWithoutModels(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", bin)
-	client := agenttest.Serve(t, &agentServer{})
+	client := serveAgent(t, newAgentServer(false))
 
 	programs, err := client.GetPrograms(t.Context(), nil)
 	if err != nil {
@@ -45,7 +45,7 @@ func TestTheProgramListNamesAntigravityWithoutModels(t *testing.T) {
 // A command line the installation set counts as the program being installed.
 func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	withoutAgentsAnywhere(t)
-	client := agenttest.Serve(t, &agentServer{})
+	client := serveAgent(t, newAgentServer(false))
 
 	programs, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{{Program: "antigravity", Command: []string{"/opt/agy"}}})
 	if err != nil {
@@ -61,7 +61,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 	root := t.TempDir()
 	script, read := agenttest.RecordingProgram(t, "agy")
 
-	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.Request{
+	agenttest.Ask(t, serveAgent(t, newAgentServer(false)), &agentrun.Request{
 		Prompt:  "the question",
 		Command: []string{script, "--first"},
 		Root:    root,
@@ -86,7 +86,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 // A home that cannot be set up is reported to the stream as the reason the run stopped.
 func TestAskAgentReportsAHomeThatCannotBeSetUp(t *testing.T) {
 	setUnusableTempDir(t)
-	stream, err := agenttest.Serve(t, &agentServer{}).Ask(t.Context(), &agentrun.Request{
+	stream, err := serveAgent(t, newAgentServer(false)).Ask(t.Context(), &agentrun.Request{
 		Command:  []string{"agy"},
 		ToolsURL: "http://127.0.0.1:1/mcp",
 	})
@@ -127,7 +127,7 @@ func TestAskAgent_NoToolsWhenRequestToolsEmpty(t *testing.T) {
 			"cat \"$HOME/.gemini/config/mcp_config.json\" > "+agenttest.QuoteShell(out+".mcp")+"\n"+
 			"cat \"$HOME/.gemini/config/config.json\" > "+agenttest.QuoteShell(out+".cfg")+"\n")
 
-	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.Request{
+	agenttest.Ask(t, serveAgent(t, newAgentServer(false)), &agentrun.Request{
 		Prompt:       "the question",
 		Instructions: "be brief",
 		Command:      []string{script},
@@ -164,4 +164,9 @@ func TestAskAgent_NoToolsWhenRequestToolsEmpty(t *testing.T) {
 	if agenttest.IsDir(strings.TrimSpace(string(dir)), root) {
 		t.Errorf("started in %q, the folder the request names", dir)
 	}
+}
+
+func serveAgent(t *testing.T, agent *agentServer) *agentrun.Client {
+	t.Helper()
+	return agenttest.Serve(t, agent, agent)
 }

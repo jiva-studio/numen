@@ -10,9 +10,9 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 const (
@@ -65,7 +65,7 @@ func newReadTool(name string) *tools.ToolInfo {
 	}
 }
 
-func openSession(t *testing.T, srv *Server) string {
+func openSession(t *testing.T, srv *testServer) string {
 	t.Helper()
 	serverSide, clientSide := sdk.NewInMemoryTransports()
 	if _, err := srv.GetMCPServer().Connect(t.Context(), serverSide, nil); err != nil {

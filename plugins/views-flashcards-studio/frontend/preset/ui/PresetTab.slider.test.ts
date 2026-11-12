@@ -8,11 +8,11 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
-import { NO_CURVE_POINT, type Point } from '../types'
+import { NO_CURVE_POINT, type Point } from '../../lib/presets'
 import { clearBacklog } from '../lib/curve'
 import { PLOT_BOTTOM } from '../lib/plot'
 import { mountPresetTab, heights, point, createTab } from '../fixtures'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
 
 describe('the one slider', () => {
   it('is the curve itself, and one stop on the way round the screen', () => {

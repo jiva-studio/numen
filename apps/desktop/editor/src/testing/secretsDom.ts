@@ -13,8 +13,7 @@ export const nameOf = (element: Element): string =>
   element.getAttribute('title') ??
   element.textContent.replace(/\s+/g, ' ').trim()
 
-/** Every button, or element with the role button, in a scope. */
-export const buttons = (scope: ParentNode = root()): HTMLElement[] =>
+const buttons = (scope: ParentNode = root()): HTMLElement[] =>
   Array.from(scope.querySelectorAll<HTMLElement>('button, [role="button"]'))
 
 /** The buttons in a scope whose accessible name matches. */
@@ -32,8 +31,7 @@ export const findButton = (pattern: RegExp, scope: ParentNode = root()): HTMLEle
   return found[0] as HTMLElement
 }
 
-/** Every smallest element in a scope that holds the text, in document order. */
-export const findTexts = (text: string | RegExp, scope: ParentNode = root()): HTMLElement[] => {
+const findTexts = (text: string | RegExp, scope: ParentNode = root()): HTMLElement[] => {
   const matches = (element: Element): boolean => {
     const own = Array.from(element.childNodes)
       .filter((node) => node.nodeType === Node.TEXT_NODE)
@@ -87,7 +85,6 @@ export function dispose(wrapper: VueWrapper): void {
   document.body.innerHTML = ''
 }
 
-/** The text inputs in a scope. */
 export const textInputs = (scope: ParentNode = root()): HTMLInputElement[] =>
   Array.from(scope.querySelectorAll<HTMLInputElement>('input[type="text"]'))
 

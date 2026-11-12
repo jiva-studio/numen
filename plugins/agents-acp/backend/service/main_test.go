@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 func TestLifecycleServer(t *testing.T) {

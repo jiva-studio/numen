@@ -4,21 +4,20 @@ import {
   getLength,
   type EdgeCurve,
   type EdgeHeading,
-  type EdgeLabel,
   type EdgeSide,
   type EdgeTitle,
   type LabelType,
   type PlacedEdge,
-  type PlexEdge,
 } from '../../edge'
 import type { PlacedNode, Position } from '../../node'
-import type { PlexNodeRelation } from '../../relation'
 import { isVertical, type PlexOptions, type RoutingOptions } from '../options'
+import type { EdgeLabel, PlexEdge, PlexNodeRelation } from '../../../../types'
 
 /** `auto` means take the axis from the geometry. */
-export type Axis = 'vertical' | 'horizontal' | 'auto'
+type Axis = 'vertical' | 'horizontal' | 'auto'
 
-export interface Routing extends RoutingOptions {
+export interface Routing {
+  readonly tuning: RoutingOptions
   readonly getAxis: (node: { relation: PlexNodeRelation }) => Axis
   readonly labelWidth?: ((label: string) => number) | undefined
   readonly labelType: LabelType
@@ -41,7 +40,7 @@ export function createRouting(
   labelType: LabelType = NO_TYPE,
 ): Routing {
   return {
-    ...options.routing,
+    tuning: options.routing,
     labelWidth: measureLabel,
     labelType,
     getAxis: (node) => {
@@ -63,7 +62,7 @@ const NEAR_END = 0.2
 /**
  * Where each of `count` labels of one line is set, as a fraction of the line's
  * length from its `from` end, in the order the labels are written: the first
- * is the record of the `from` note. One label is centred. Several are spread
+ * is the record of the `from` note. One label is centered. Several are spread
  * from near the start to near the end, so each reads as belonging to its own end.
  */
 export const getLabelPositions = (count: number): number[] => {
@@ -82,15 +81,15 @@ export const getLabelPositions = (count: number): number[] => {
 export const LABEL_GAP = 2
 
 /**
- * How far from the line the centre of a title is: nothing for a title on the line, whose
- * lowercase letters are centred on it; else half of the depth of the ink and the gap, so the
+ * How far from the line the center of a title is: nothing for a title on the line, whose
+ * lowercase letters are centered on it; else half of the depth of the ink and the gap, so the
  * near edge of the letters is `LABEL_GAP` from the line.
  */
 export const getShift = (side: EdgeSide, type: LabelType): number =>
   side * (getDepth(type) / 2 + LABEL_GAP)
 
 /**
- * How far below the centre of a title its baseline is, across the line. The centre of a title
+ * How far below the center of a title its baseline is, across the line. The center of a title
  * on the line is the middle of the x-height band, of a title beside it the middle of the ink
  * from capital to descender. The baseline is set by this alone, so no engine's own
  * idea of a middle decides where the letters stand.
@@ -233,7 +232,7 @@ function straightBetween(
   const secondGate = getEdgeAnchor(second, isVertical ? 'top' : 'left')
 
   const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
-  const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)
+  const reach = Math.max(routing.tuning.minReach, Math.abs(span) * routing.tuning.curvature)
 
   return {
     fromPoint: firstGate,
@@ -257,7 +256,7 @@ function bowBetween(
   const side = isNegative ? negative : positive
   const firstGate = getEdgeAnchor(first, side)
   const secondGate = getEdgeAnchor(second, side)
-  const reach = isNegative ? -routing.minRun : routing.minRun
+  const reach = isNegative ? -routing.tuning.minRun : routing.tuning.minRun
   const getBowControl = (gate: Position): Position =>
     isColumn ? { x: gate.x + reach, y: gate.y } : { x: gate.x, y: gate.y + reach }
   return {
@@ -275,8 +274,8 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
     from.relation !== 'focus' &&
     to.relation !== 'focus' &&
     run >= 0 &&
-    run < routing.minRun &&
-    getRun(from, to, !isVertical) < routing.minRun
+    run < routing.tuning.minRun &&
+    getRun(from, to, !isVertical) < routing.tuning.minRun
 
   const fromFirst = isVertical ? from.y <= to.y : from.x <= to.x
   const [first, second] = fromFirst ? [from, to] : [to, from]
@@ -291,8 +290,8 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
 
 function createTitles(edge: PlexEdge, curve: EdgeCurve, routing: Routing): EdgeTitle[] {
   const labels = (edge.labels ?? []).filter((label) => label.text)
-  const room =
-    (getLength(curve) - (edge.arrows?.length ? 2 * routing.arrowClearance : 0)) / labels.length
+  const clearance = edge.arrows?.length ? 2 * routing.tuning.arrowClearance : 0
+  const room = (getLength(curve) - clearance) / labels.length
   const { labelWidth } = routing
   const places = getLabelPlaces(labels)
   return labels.map((label, index) => {
@@ -329,9 +328,8 @@ export function routeEdge(
   const to = byId.get(edge.to)
   if (!from || !to || from === to) return null
 
-  const routingOptions =
-    'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
-  const opacity = 'curvature' in routingOrOptions ? 1 : (routingOrOptions.opacity ?? 1)
+  const routingOptions = 'tuning' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const opacity = 'tuning' in routingOrOptions ? 1 : (routingOrOptions.opacity ?? 1)
 
   const curve = curveBetween(from, to, routingOptions)
 
@@ -354,10 +352,9 @@ export function routeEdges(
   byId: ReadonlyMap<string, PlacedNode>,
   routingOrOptions: Routing | RouteEdgesOptions,
 ): PlacedEdge[] {
-  const routingOptions =
-    'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const routingOptions = 'tuning' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const getOpacity =
-    'curvature' in routingOrOptions ? () => 1 : (routingOrOptions.opacity ?? (() => 1))
+    'tuning' in routingOrOptions ? () => 1 : (routingOrOptions.opacity ?? (() => 1))
 
   return edges
     .map((edge) => routeEdge(edge, byId, { routing: routingOptions, opacity: getOpacity(edge) }))

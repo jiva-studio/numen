@@ -6,19 +6,26 @@
  * ranges were added to which entry for which book.
  */
 import { mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick, reactive, shallowRef } from 'vue'
 
 import type { TextRange } from '@numen/ui'
 import type { SettledBookProps } from '../lib/props'
-import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
+import { HIGHLIGHT, OTHER_HIGHLIGHT } from './highlight'
 import { useBookMarks } from './marks'
 
-vi.mock('../lib/highlight', async (original) => ({
-  ...(await original<typeof import('../lib/highlight')>()),
-  highlight: vi.fn(),
-  unhighlight: vi.fn(),
-}))
+/** What the registry holds for an entry: the ranges of every book that marked it. */
+class FakeHighlight {
+  readonly ranges: readonly Range[]
+  constructor(...ranges: Range[]) {
+    this.ranges = ranges
+  }
+}
+
+const registry = new Map<string, FakeHighlight>()
+
+const getMarkedEntries = (entry: string): string[] =>
+  (registry.get(entry)?.ranges ?? []).map((range) => range.toString())
 
 const MARKUP = '<p><span data-offset="0">abcdef</span><span data-offset="6">ghijkl</span></p>'
 
@@ -31,6 +38,17 @@ const createPaper = (markup: string, left: readonly number[] = []): HTMLElement 
     run.getClientRects = () => [{ left: pos }] as unknown as DOMRectList
   })
   return paper
+}
+
+interface Unmountable {
+  unmount(): void
+}
+
+const mounted = new Set<Unmountable>()
+
+const unmount = (wrapper: Unmountable) => {
+  mounted.delete(wrapper)
+  wrapper.unmount()
 }
 
 const setUp = (
@@ -49,13 +67,20 @@ const setUp = (
       },
     }),
   )
+  mounted.add(wrapper)
   return { props, state, wrapper, marks }
 }
 
-const getText = (call: unknown[]): string[] => (call[2] as Range[]).map((range) => range.toString())
+beforeEach(() => {
+  vi.stubGlobal('CSS', { highlights: registry })
+  vi.stubGlobal('Highlight', FakeHighlight)
+})
 
 afterEach(() => {
-  vi.clearAllMocks()
+  for (const wrapper of mounted) wrapper.unmount()
+  mounted.clear()
+  registry.clear()
+  vi.unstubAllGlobals()
   document.body.replaceChildren()
 })
 
@@ -114,25 +139,18 @@ describe('the runs marked', () => {
 
     marks.markRuns()
 
-    expect(vi.mocked(highlight).mock.calls.map(getText)).toStrictEqual([[], []])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual([])
+    expect(getMarkedEntries(OTHER_HIGHLIGHT)).toStrictEqual([])
   })
 
   it('put the highlights and the others each into their own entry', () => {
-    const { marks, props } = setUp(
-      createPaper(MARKUP),
-      [{ start: 1, end: 3 }],
-      [{ start: 7, end: 10 }],
-    )
+    const { marks } = setUp(createPaper(MARKUP), [{ start: 1, end: 3 }], [{ start: 7, end: 10 }])
     marks.gather()
 
     marks.markRuns()
 
-    const calls = vi.mocked(highlight).mock.calls
-    expect(calls.map((call) => [call[0], call[1]])).toStrictEqual([
-      [HIGHLIGHT, props],
-      [OTHER_HIGHLIGHT, props],
-    ])
-    expect(calls.map(getText)).toStrictEqual([['bc'], ['hij']])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc'])
+    expect(getMarkedEntries(OTHER_HIGHLIGHT)).toStrictEqual(['hij'])
   })
 
   it('are marked again when the highlights change', async () => {
@@ -142,9 +160,8 @@ describe('the runs marked', () => {
     state.highlights = [{ start: 0, end: 2 }]
     await nextTick()
 
-    expect(
-      vi.mocked(highlight).mock.calls.map((call) => [call[0], ...getText(call)]),
-    ).toStrictEqual([[HIGHLIGHT, 'ab'], [OTHER_HIGHLIGHT]])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['ab'])
+    expect(getMarkedEntries(OTHER_HIGHLIGHT)).toStrictEqual([])
   })
 
   it('are marked again when the other highlights change', async () => {
@@ -154,56 +171,60 @@ describe('the runs marked', () => {
     state.otherHighlights = [{ start: 6, end: 8 }]
     await nextTick()
 
-    expect(
-      vi.mocked(highlight).mock.calls.map((call) => [call[0], ...getText(call)]),
-    ).toStrictEqual([[HIGHLIGHT], [OTHER_HIGHLIGHT, 'gh']])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual([])
+    expect(getMarkedEntries(OTHER_HIGHLIGHT)).toStrictEqual(['gh'])
   })
 
   it('are removed when the book is disposed', () => {
-    const { wrapper, props } = setUp(createPaper(MARKUP))
+    const { marks, wrapper } = setUp(createPaper(MARKUP), [{ start: 1, end: 3 }])
+    marks.gather()
+    marks.markRuns()
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc'])
 
-    wrapper.unmount()
+    unmount(wrapper)
 
-    expect(unhighlight).toHaveBeenCalledExactlyOnceWith(props)
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual([])
   })
 })
 
 describe('the runs of a copy of the paper marked', () => {
-  it('put the highlights over the runs of the copy under the copy as key', () => {
+  it('put the highlights over the runs of the copy', () => {
     const { marks } = setUp(createPaper(MARKUP), [{ start: 1, end: 3 }], [{ start: 7, end: 10 }])
     const copy = createPaper(MARKUP)
 
     marks.markCopy(copy)
 
-    const calls = vi.mocked(highlight).mock.calls
-    expect(calls.map((call) => [call[0], call[1]])).toStrictEqual([
-      [HIGHLIGHT, copy],
-      [OTHER_HIGHLIGHT, copy],
-    ])
-    expect(calls.map(getText)).toStrictEqual([['bc'], ['hij']])
-    for (const call of calls) {
-      for (const range of call[2]) expect(copy.contains(range.commonAncestorContainer)).toBe(true)
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc'])
+    expect(getMarkedEntries(OTHER_HIGHLIGHT)).toStrictEqual(['hij'])
+    for (const entry of [HIGHLIGHT, OTHER_HIGHLIGHT]) {
+      for (const range of registry.get(entry)?.ranges ?? []) {
+        expect(copy.contains(range.commonAncestorContainer)).toBe(true)
+      }
     }
   })
 
-  it('are removed once when the copy is unmarked twice', () => {
-    const { marks } = setUp(createPaper(MARKUP))
+  it('are removed, and only those of the copy, when the copy is unmarked twice', () => {
+    const { marks } = setUp(createPaper(MARKUP), [{ start: 1, end: 3 }])
+    marks.gather()
+    marks.markRuns()
     const copy = createPaper(MARKUP)
     marks.markCopy(copy)
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc', 'bc'])
 
     marks.unmarkCopy(copy)
     marks.unmarkCopy(copy)
 
-    expect(unhighlight).toHaveBeenCalledExactlyOnceWith(copy)
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc'])
   })
 
   it('are removed when the component is unmounted', () => {
-    const { wrapper, marks, props } = setUp(createPaper(MARKUP))
+    const { wrapper, marks } = setUp(createPaper(MARKUP), [{ start: 1, end: 3 }])
     const copy = createPaper(MARKUP)
     marks.markCopy(copy)
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual(['bc'])
 
-    wrapper.unmount()
+    unmount(wrapper)
 
-    expect(vi.mocked(unhighlight).mock.calls).toStrictEqual([[props], [copy]])
+    expect(getMarkedEntries(HIGHLIGHT)).toStrictEqual([])
   })
 })

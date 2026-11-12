@@ -156,6 +156,9 @@ export const readSettledWidth = async (element: Locator): Promise<number> => {
   return widths.at(-1) ?? 0
 }
 
-/** The font size the browser computed for an element, in CSS pixels. */
-export const readComputedFontSize = async (element: Locator): Promise<number> =>
-  element.evaluate((one) => Number.parseFloat(getComputedStyle(one).fontSize))
+/** The height of an element as laid out, in CSS pixels. */
+export const readHeight = async (element: Locator): Promise<number> =>
+  element.evaluate((one) => one.getBoundingClientRect().height)
+
+/** The first line of text of an editor: a box whose height follows the size of the text. */
+export const getFirstLine = (editor: Locator): Locator => editor.locator('.cm-line').first()

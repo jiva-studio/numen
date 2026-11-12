@@ -51,6 +51,21 @@ describe('the manifest', () => {
     ])
   })
 
+  it('places showing the note in front in the file tree among the commands of the palette over a note', () => {
+    expect(
+      (manifest.contributes.slots ?? []).filter((one) => one.slot === 'palette.note'),
+    ).toStrictEqual([
+      {
+        slot: 'palette.note',
+        command: 'app:file.reveal',
+        values: { kind: 'files' },
+        title: 'Show in file tree',
+        icon: 'folder-open',
+        when: 'target.isNote',
+      },
+    ])
+  })
+
   it('declares the command the title bar shows with the title and the icon of a folder tree', () => {
     expect(manifest.contributes.commands.find((one) => one.id === 'tree.open')).toMatchObject({
       title: 'Open file tree',

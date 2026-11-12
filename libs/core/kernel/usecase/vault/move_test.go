@@ -1,0 +1,286 @@
+package vault_test
+
+import (
+	"context"
+	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/note/domain"
+)
+
+// filing is a scanned vault whose files can be moved about, with the index kept
+// up to date as a real caller keeps it.
+type filing struct {
+	db      *container.Index
+	vault   domain.Vault
+	index   func(ctx context.Context, v domain.Vault, paths []string) error
+	readers *countingReaders
+	went    *[]domain.Move
+}
+
+func openFiling(t *testing.T, notes map[string]string) filing {
+	t.Helper()
+	v := vaultfixture.NewVault(t, notes)
+	db := openIndex(t)
+	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+	readers := &countingReaders{VaultReaders: vaultreader.Readers{}}
+	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.Sources(), db.Sources(), testsupport.NewClock())
+	return filing{
+		db:      db,
+		vault:   v,
+		readers: readers,
+		went:    &[]domain.Move{},
+		index: func(ctx context.Context, v domain.Vault, paths []string) error {
+			_, err := refresh.Execute(ctx, v, paths)
+			return err
+		},
+	}
+}
+
+func (f filing) move() vaults.Move { return f.newMove(true) }
+
+func (f filing) moveApart() vaults.Move { return f.newMove(false) }
+
+func (f filing) newMove(preserved naming.SyncTitleAndFilename) vaults.Move {
+	notes := note.NewMove(note.MoveDeps{
+		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
+		Links: f.db.NoteQueries(), Names: f.db.NoteQueries(), Sources: f.db.Sources(), Index: f.index, Now: testsupport.NewClock(),
+		Sync: func() naming.SyncTitleAndFilename { return preserved },
+		Drawing: func(_ context.Context, _ domain.Vault, went domain.Move) error {
+			*f.went = append(*f.went, went)
+			return nil
+		},
+	})
+	return vaults.NewMove(
+		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
+		f.db.NoteQueries(), f.db.Sources(), f.db.Sources(), notes,
+	)
+}
+
+func (f filing) resolves(t *testing.T, in string) string {
+	t.Helper()
+	found, err := f.db.NoteQueries().GetLinks(t.Context(), f.vault.ID, in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 {
+		t.Fatalf("%s holds %d links, want one: %+v", in, len(found), found)
+	}
+	return found[0].To
+}
+
+func (f filing) read(t *testing.T, path string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(f.vault.Path, filepath.FromSlash(path)))
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	return string(raw)
+}
+
+// A folder moves with everything under it, whatever the file type. The notes are
+// filed at their new paths, and links written by name follow them.
+func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
+	t.Parallel()
+	f := openFiling(t, map[string]string{
+		"physics/Entropy.md": "# Entropy\n",
+		"physics/Heat.md":    "# Heat\n",
+		"ByName.md":          "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# By name\n",
+		"ByPath.md":          "---\nlinks:\n  - to: physics/Heat.md\n    role: parent\n---\n# By path\n",
+	})
+	vaultfixture.WriteBook(t, f.vault.Path, "physics/A Book.epub")
+	byName := f.read(t, "ByName.md")
+
+	moved, err := f.move().Execute(t.Context(), f.vault, "physics", "science/physics")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !moved.IsMoved {
+		t.Fatal("the folder did not land")
+	}
+
+	for _, path := range []string{"science/physics/Entropy.md", "science/physics/Heat.md", "science/physics/A Book.epub"} {
+		if _, err := os.Stat(filepath.Join(f.vault.Path, filepath.FromSlash(path))); err != nil {
+			t.Errorf("%s did not arrive: %v", path, err)
+		}
+	}
+
+	if got := f.resolves(t, "ByName.md"); got != "science/physics/Entropy.md" {
+		t.Errorf("the link written by name reaches %q", got)
+	}
+	if got := f.read(t, "ByName.md"); got != byName {
+		t.Errorf("a link that was not broken was rewritten\n want %q\n  got %q", byName, got)
+	}
+
+	if got := f.resolves(t, "ByPath.md"); got != "science/physics/Heat.md" {
+		t.Errorf("the link written by the path it had reaches %q", got)
+	}
+	if len(moved.Repaired) != 0 {
+		t.Errorf("a name reaches its note wherever it is, so nothing is repaired: %v", moved.Repaired)
+	}
+}
+
+func (f filing) sources(t *testing.T, path string) []string {
+	t.Helper()
+	found, err := f.db.Sources().GetSourcesUnder(t.Context(), f.vault.ID, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := make([]string, 0, len(found))
+	for _, ref := range found {
+		out = append(out, ref.Path)
+	}
+	return out
+}
+
+// What the vault holds under a path is read from the index, and it matches what
+// walking the folder gives.
+func TestWhatIsBelowAPathIsWhatAWalkFinds(t *testing.T) {
+	t.Parallel()
+	f := openFiling(t, map[string]string{
+		"physics/Entropy.md":      "# Entropy\n",
+		"physics/heat/Heat.md":    "# Heat\n",
+		"physics/heat/Carnot.md":  "# Carnot\n",
+		"physics-old/Stray.md":    "# Stray\n",
+		"chemistry/Reactions.md":  "# Reactions\n",
+		".trash/physics/Older.md": "# Older\n",
+		"physics/.hidden/Kept.md": "# Kept\n",
+		"physics/Notes.txt":       "a list\n",
+	})
+
+	// The folder holds the two notes and the folder under it, and neither the
+	// hidden folder, the file of no kind, the sibling nor the trash.
+	if got := f.sources(t, "physics"); len(got) != 3 {
+		t.Fatalf("the folder holds %v, and this test compares what is in it", got)
+	}
+	for _, path := range []string{"physics", "physics/heat", "physics/Entropy.md", "chemistry"} {
+		want := walkSources(t, f, path)
+		if got := f.sources(t, path); !slices.Equal(got, want) {
+			t.Errorf("the index holds %v under %s, and a walk finds %v", got, path, want)
+		}
+	}
+}
+
+func walkSources(t *testing.T, f filing, path string) []string {
+	t.Helper()
+	reader, err := vaultreader.Readers{}.Open(f.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []string
+	if err := reader.WalkFiles(t.Context(), func(ref domain.FileStat) error {
+		if ref.Kind == domain.KindNote && (ref.Path == path || strings.HasPrefix(ref.Path, path+"/")) {
+			out = append(out, ref.Path)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	slices.Sort(out)
+	return out
+}
+
+// A moved folder is filed at its new path, and what was derived from each source
+// is still that source's. The file contents are unchanged, so none is opened.
+func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
+	t.Parallel()
+	f := openFiling(t, map[string]string{
+		"physics/Entropy.md":   "# Entropy\n\nA measure of disorder.\n",
+		"physics/heat/Heat.md": "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
+		"physics-old/Stray.md": "# Stray\n",
+	})
+	f.readers.reads = 0
+
+	if _, err := f.move().Execute(t.Context(), f.vault, "physics", "science/physics"); err != nil {
+		t.Fatal(err)
+	}
+
+	if read := f.readers.reads; read != 0 {
+		t.Errorf("the move read %d files, and a file that moved says what it said", read)
+	}
+
+	want := []string{"science/physics/Entropy.md", "science/physics/heat/Heat.md"}
+	if got := f.sources(t, "science/physics"); !slices.Equal(got, want) {
+		t.Errorf("the index files the folder as %v, want %v", got, want)
+	}
+	if got := f.sources(t, "physics"); len(got) != 0 {
+		t.Errorf("the index still files %v under the folder it left", got)
+	}
+	if got := f.sources(t, "physics-old"); !slices.Equal(got, []string{"physics-old/Stray.md"}) {
+		t.Errorf("a folder whose name begins with the one that moved traveled: %v", got)
+	}
+
+	// The chunks are still the source's, so a search answers with the note at
+	// the path it is filed under now.
+	searching := search.New(search.Index{Passages: f.db.ChunkSearch()}, vaultreader.Readers{}, nil, nil, nil, nil)
+	found, err := searching.Execute(t.Context(), f.vault, "disorder", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || found[0].Source != "science/physics/Entropy.md" {
+		t.Errorf("the passages of the note that moved are %+v", found)
+	}
+	if got := f.resolves(t, "science/physics/heat/Heat.md"); got != "science/physics/Entropy.md" {
+		t.Errorf("the link inside the folder reaches %q", got)
+	}
+}
+
+// A move to a taken destination fails, and nothing has moved when the caller is
+// notified.
+func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
+	t.Parallel()
+	f := openFiling(t, map[string]string{
+		"physics/Entropy.md":     "# Entropy\n",
+		"archive/physics/Old.md": "# Old\n",
+	})
+
+	moved, err := f.move().Execute(t.Context(), f.vault, "physics", "archive/physics")
+	if !errors.Is(err, vaultdomain.ErrAlreadyExists) {
+		t.Fatalf("want ErrAlreadyExists, got %v", err)
+	}
+	if moved.IsMoved {
+		t.Error("the move says it landed")
+	}
+	if moved.From != "physics" || moved.To != "archive/physics" {
+		t.Errorf("the rejection names the move as %q to %q", moved.From, moved.To)
+	}
+	if _, err := os.Stat(filepath.Join(f.vault.Path, "physics", "Entropy.md")); err != nil {
+		t.Errorf("the note did not stay where it was: %v", err)
+	}
+	if got := f.read(t, "archive/physics/Old.md"); got != "# Old\n" {
+		t.Errorf("what was already there was written over:\n%s", got)
+	}
+}
+
+// One file moves by the same use case, and a book is a file like any other.
+func TestABookMovesOnItsOwn(t *testing.T) {
+	t.Parallel()
+	f := openFiling(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	vaultfixture.WriteBook(t, f.vault.Path, "A Book.epub")
+
+	if _, err := f.move().Execute(t.Context(), f.vault, "A Book.epub", "library/A Book.epub"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(f.vault.Path, "library", "A Book.epub")); err != nil {
+		t.Errorf("the book did not arrive: %v", err)
+	}
+	if _, err := os.Lstat(filepath.Join(f.vault.Path, "A Book.epub")); err == nil {
+		t.Error("the book is still where it was")
+	}
+}

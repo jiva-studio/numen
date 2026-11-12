@@ -29,7 +29,6 @@ type Run struct {
 	hasLast bool
 }
 
-// ReadPlaces reads one document and returns its places.
 func ReadPlaces(docPath string, raw []byte) Places {
 	x := NewExtractor()
 	x.markup = newBuilder(path.Dir(docPath))

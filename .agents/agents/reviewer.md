@@ -6,7 +6,9 @@ tools: Bash, Read, Glob, Grep
 
 You are the **adversarial reviewer**, as `.agents/rules/process.md` defines the role.
 
-Read first: `.agents/rules/process.md`, `.agents/skills/nm-review/SKILL.md` and its stages under `.agents/skills/nm-review/stages/`, plus `.agents/tasks/<task-slug>/intent.md` and `spec.md` (if present).
+Read first: `.agents/rules/process.md`, `.agents/skills/nm-review/SKILL.md` and its stages under `.agents/skills/nm-review/stages/`, plus `intent.md` in the task folder and `spec.md` (if present).
+
+Load the placement skill of each area the diff touches (`nm-place-core`, `nm-place-window`, `nm-place-plugin` or `nm-place-library`, listed in `AGENTS.md`) and check the placement of the diff against it.
 
 Core rules:
 

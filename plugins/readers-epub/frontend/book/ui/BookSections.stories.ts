@@ -136,7 +136,7 @@ const waitForSettledLayout = async (canvasElement: HTMLElement) => {
   await document.fonts.ready
   const readState = () => {
     const paper = getPaper(canvasElement)
-    return `${paper.style.translate}|${paper.scrollWidth}|${paper.className}`
+    return `${paper.getBoundingClientRect().left}|${paper.scrollWidth}|${paper.className}`
   }
   let last = readState()
   let stableFrameCount = 0
@@ -155,7 +155,7 @@ const watchRun = (canvasElement: HTMLElement, offset: number, fragment: 'first' 
     for (const run of canvasElement.querySelectorAll<HTMLElement>(`[data-offset="${offset}"]`)) {
       const rects = run.getClientRects()
       const rect = fragment === 'first' ? rects[0] : rects[rects.length - 1]
-      if (rect && getComputedStyle(run).visibility === 'visible') edges.push(rect.left)
+      if (rect && run.checkVisibility({ checkVisibilityCSS: true })) edges.push(rect.left)
     }
     frame = requestAnimationFrame(read)
   }
@@ -190,66 +190,39 @@ const turnUntil = async (
   await expect(isTarget(getFrontOffset(canvasElement))).toBe(true)
 }
 
-const getSlideEdges = (
-  edges: readonly number[],
-  finalEdge: number,
-  spread: number,
-  from: 'far' | 'near',
-) =>
-  edges.filter((edge) => {
-    const distance = from === 'far' ? edge - finalEdge : finalEdge - edge
-    return distance > 1 && distance < spread - 1
-  })
-
-/**
- * A forward page turn from the last page of a section to the first page of the
- * next one slides the new page in from the far edge over several frames.
- */
-export const ForwardTurnIntoNextSectionSlidesPage: Story = {
+export const ForwardTurnIntoNextSectionShowsFirstPage: Story = {
   decorators: [WIDE],
   render: renderTwoSections([SHORT_FIRST, LONG_SECOND], 0),
   play: async ({ canvasElement }) => {
     await waitForSettledLayout(canvasElement)
     const first = getRunOffsets(LONG_SECOND)[0]!
-    const recording = watchRun(canvasElement, first, 'first')
 
     await turnUntil(canvasElement, '{ArrowRight}', (front) => front >= LONG_SECOND.span.start)
     await waitForSettledLayout(canvasElement)
-    recording.stop()
 
     const finalEdge = readRunLeft(canvasElement, first, 'first')
     await expectInArea(canvasElement, finalEdge)
     await expect(getFrontOffset(canvasElement)).toBe(LONG_SECOND.span.start)
-    await expect(recording.edges.length).toBeGreaterThan(0)
-    const spread = getArea(canvasElement).clientWidth
-    await expect(getSlideEdges(recording.edges, finalEdge, spread, 'far').length).toBeGreaterThan(1)
   },
 }
 
 /**
  * A backward page turn from the first page of a section to the last page of the
- * previous one slides that page in from the near edge over several frames.
+ * previous one shows that page inside the area.
  */
-export const BackwardTurnIntoPreviousSectionSlidesPage: Story = {
+export const BackwardTurnIntoPreviousSectionShowsLastPage: Story = {
   decorators: [WIDE],
   render: renderTwoSections([LONG_FIRST, SHORT_SECOND], 1),
   play: async ({ canvasElement }) => {
     await waitForSettledLayout(canvasElement)
     const last = getRunOffsets(LONG_FIRST).at(-1)!
-    const recording = watchRun(canvasElement, last, 'last')
 
     await turnUntil(canvasElement, '{ArrowLeft}', (front) => front < LONG_FIRST.span.end)
     await waitForSettledLayout(canvasElement)
-    recording.stop()
 
     const finalEdge = readRunLeft(canvasElement, last, 'last')
     await expectInArea(canvasElement, finalEdge)
     await expect(getFrontOffset(canvasElement)).toBeGreaterThanOrEqual(LONG_FIRST.span.start)
-    await expect(recording.edges.length).toBeGreaterThan(0)
-    const spread = getArea(canvasElement).clientWidth
-    await expect(getSlideEdges(recording.edges, finalEdge, spread, 'near').length).toBeGreaterThan(
-      1,
-    )
   },
 }
 

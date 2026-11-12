@@ -98,18 +98,18 @@ describe('the tree as it opens', () => {
     const { core } = vault()
     const list = createFileTree(core)
 
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
-    expect(paths(list.rows.value)).toStrictEqual(['physics', 'notes', 'Cover.png'])
+    expect(paths(list.queries.rows.value)).toStrictEqual(['physics', 'notes', 'Cover.png'])
   })
 
   it('draws every file the vault holds, and not only its notes', async () => {
     const { core } = vault()
     const list = createFileTree(core)
 
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
-    expect(paths(list.rows.value)).toContain('Cover.png')
+    expect(paths(list.queries.rows.value)).toContain('Cover.png')
   })
 })
 
@@ -117,10 +117,10 @@ describe('a folder opened', () => {
   it('is read, and its contents are drawn inside it', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
 
-    expect(paths(list.rows.value)).toStrictEqual([
+    expect(paths(list.queries.rows.value)).toStrictEqual([
       'physics',
       'physics/heat',
       'physics/Entropy.md',
@@ -132,11 +132,11 @@ describe('a folder opened', () => {
   it('is read again every time it opens', async () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
-    list.closeFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
+    list.folders.closeFolder('physics')
 
-    await list.openFolder('physics')
+    await list.folders.openFolder('physics')
 
     expect(requests.filter((one) => one === 'physics')).toHaveLength(2)
   })
@@ -146,35 +146,35 @@ describe('a folder closed', () => {
   it('draws nothing under it', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
 
-    list.closeFolder('physics')
+    list.folders.closeFolder('physics')
 
-    expect(paths(list.rows.value)).toStrictEqual(['physics', 'notes', 'Cover.png'])
+    expect(paths(list.queries.rows.value)).toStrictEqual(['physics', 'notes', 'Cover.png'])
   })
 
   it('keeps the folders open inside it, so they are drawn again where it opens', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
-    await list.openFolder('physics/heat')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
+    await list.folders.openFolder('physics/heat')
 
-    list.closeFolder('physics')
-    await list.openFolder('physics')
+    list.folders.closeFolder('physics')
+    await list.folders.openFolder('physics')
 
-    expect(paths(list.rows.value)).toContain('physics/heat/Kelvin.md')
+    expect(paths(list.queries.rows.value)).toContain('physics/heat/Kelvin.md')
   })
 
   it('is never the root, which is the tree itself', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
-    list.closeFolder(ROOT)
+    list.folders.closeFolder(ROOT)
 
-    expect(list.rows.value).toHaveLength(3)
+    expect(list.queries.rows.value).toHaveLength(3)
   })
 })
 
@@ -182,11 +182,11 @@ describe('a change the vault reports', () => {
   it('reads parent directory of target path', async () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
     requests.length = 0
 
-    await list.refreshChanged(['physics/Entropy.md'])
+    await list.sync.refreshChanged(['physics/Entropy.md'])
 
     expect(requests).toStrictEqual(['physics'])
   })
@@ -194,12 +194,12 @@ describe('a change the vault reports', () => {
   it('leaves every other open folder alone', async () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
-    await list.openFolder('notes')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
+    await list.folders.openFolder('notes')
     requests.length = 0
 
-    await list.refreshChanged(['physics/Entropy.md'])
+    await list.sync.refreshChanged(['physics/Entropy.md'])
 
     expect(requests).not.toContain('notes')
   })
@@ -207,10 +207,10 @@ describe('a change the vault reports', () => {
   it('reads nothing for a path inside a folder that is closed', async () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     requests.length = 0
 
-    await list.refreshChanged(['physics/heat/Kelvin.md'])
+    await list.sync.refreshChanged(['physics/heat/Kelvin.md'])
 
     expect(requests).toStrictEqual([])
   })
@@ -218,24 +218,24 @@ describe('a change the vault reports', () => {
   it('reads the open folder above a folder it draws no row for', async () => {
     const { core, requests, puts } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     puts(ROOT, folder('trips'))
     requests.length = 0
 
-    await list.refreshChanged(['trips/Kyoto.md'])
+    await list.sync.refreshChanged(['trips/Kyoto.md'])
 
     expect(requests).toStrictEqual([ROOT])
-    expect(paths(list.rows.value)).toContain('trips')
+    expect(paths(list.queries.rows.value)).toContain('trips')
   })
 
   it('reads every open folder when it is empty at all', async () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
     requests.length = 0
 
-    await list.refreshChanged([])
+    await list.sync.refreshChanged([])
 
     expect([...requests].sort()).toStrictEqual([ROOT, 'physics'])
   })
@@ -243,12 +243,12 @@ describe('a change the vault reports', () => {
   it('reads the folder a file left and the folder it arrived in', async () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
-    await list.openFolder('notes')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
+    await list.folders.openFolder('notes')
     requests.length = 0
 
-    await list.refreshChanged([], [{ from: 'physics/Entropy.md', to: 'notes/Entropy.md' }])
+    await list.sync.refreshChanged([], [{ from: 'physics/Entropy.md', to: 'notes/Entropy.md' }])
 
     expect([...requests].sort()).toStrictEqual(['notes', 'physics'])
   })
@@ -256,13 +256,13 @@ describe('a change the vault reports', () => {
   it('leaves each chosen row chosen at where it went', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
     list.selectPaths(['physics/Entropy.md', 'Cover.png'])
 
-    await list.refreshChanged([], [{ from: 'physics/Entropy.md', to: 'notes/Entropy.md' }])
+    await list.sync.refreshChanged([], [{ from: 'physics/Entropy.md', to: 'notes/Entropy.md' }])
 
-    expect(list.selectedPaths.value).toStrictEqual(['notes/Entropy.md', 'Cover.png'])
+    expect(list.state.selectedPaths.value).toStrictEqual(['notes/Entropy.md', 'Cover.png'])
   })
 })
 
@@ -270,22 +270,22 @@ describe('the window returning to the front', () => {
   it('reads every open folder, and turns up what nothing reported', async () => {
     const { core, puts } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
     puts('physics', file('physics/Diagram.png', { isNote: false }))
 
-    await list.refresh()
+    await list.sync.refresh()
 
-    expect(paths(list.rows.value)).toContain('physics/Diagram.png')
+    expect(paths(list.queries.rows.value)).toContain('physics/Diagram.png')
   })
 
   it('reads no folder that is closed', async () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     requests.length = 0
 
-    await list.refresh()
+    await list.sync.refresh()
 
     expect(requests).toStrictEqual([ROOT])
   })
@@ -295,7 +295,7 @@ describe('the tree walked down to a path', () => {
   it('opens each folder above it, from the root down', async () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     requests.length = 0
 
     await list.revealPath('physics/heat/Kelvin.md')
@@ -306,22 +306,22 @@ describe('the tree walked down to a path', () => {
   it('draws the path it was walked down to', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     await list.revealPath('physics/heat/Kelvin.md')
 
-    expect(paths(list.rows.value)).toContain('physics/heat/Kelvin.md')
+    expect(paths(list.queries.rows.value)).toContain('physics/heat/Kelvin.md')
   })
 
   it('leaves the path the whole of what is chosen', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     list.selectPaths(['Cover.png'])
 
     await list.revealPath('physics/heat/Kelvin.md')
 
-    expect(list.selectedPaths.value).toStrictEqual(['physics/heat/Kelvin.md'])
+    expect(list.state.selectedPaths.value).toStrictEqual(['physics/heat/Kelvin.md'])
   })
 })
 
@@ -333,11 +333,11 @@ describe('a folder that could not be read', () => {
       },
     })
 
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
-    expect(list.errorMessage.value).toContain('Numen is not responding')
-    expect(list.errorMessage.value).not.toContain('the vault is not there')
-    expect(list.rows.value).toStrictEqual([])
+    expect(list.state.errorMessage.value).toContain('Numen is not responding')
+    expect(list.state.errorMessage.value).not.toContain('the vault is not there')
+    expect(list.queries.rows.value).toStrictEqual([])
   })
 })
 
@@ -345,22 +345,22 @@ describe('a tab that has closed', () => {
   it('draws nothing of what it was given after it closed', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     list.close()
 
-    expect(list.rows.value).toStrictEqual([])
+    expect(list.queries.rows.value).toStrictEqual([])
   })
 
   it('keeps nothing a question answers with after it closed', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    const pendingOpen = list.openFolder(ROOT)
+    const pendingOpen = list.folders.openFolder(ROOT)
     list.close()
 
     await pendingOpen
 
-    expect(list.rows.value).toStrictEqual([])
+    expect(list.queries.rows.value).toStrictEqual([])
   })
 })
 
@@ -369,24 +369,24 @@ describe('the refresh of every open folder', () => {
   const openTree = async (folders?: Record<string, readonly Entry[]>) => {
     const one = vault(folders)
     const list = createFileTree(one.core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
-    await list.openFolder('notes')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
+    await list.folders.openFolder('notes')
     let redrawn = 0
-    watch(list.rows, () => redrawn++, { flush: 'sync' })
+    watch(list.queries.rows, () => redrawn++, { flush: 'sync' })
     return { ...one, list, redrawn: () => redrawn }
   }
 
   it('draws the rows once for all the folders it listed', async () => {
     const { list, redrawn, requests } = await openTree()
     requests.length = 0
-    const rowsBefore = list.rows.value
+    const rowsBefore = list.queries.rows.value
 
-    await list.refresh()
+    await list.sync.refresh()
 
     expect(requests).toHaveLength(3)
     expect(redrawn()).toBe(0)
-    expect(list.rows.value).toBe(rowsBefore)
+    expect(list.queries.rows.value).toBe(rowsBefore)
   })
 
   it('draws the rows once when several folders changed', async () => {
@@ -394,24 +394,24 @@ describe('the refresh of every open folder', () => {
     puts(ROOT, file('Extra.md'))
     puts('notes', file('notes/Later.md'))
 
-    await list.refresh()
+    await list.sync.refresh()
 
     expect(redrawn()).toBe(1)
-    expect(paths(list.rows.value)).toContain('Extra.md')
-    expect(paths(list.rows.value)).toContain('notes/Later.md')
+    expect(paths(list.queries.rows.value)).toContain('Extra.md')
+    expect(paths(list.queries.rows.value)).toContain('notes/Later.md')
   })
 
   it('replaces the entries of the folder that changed and keeps the others', async () => {
     const { list, puts } = await openTree()
-    const physics = list.getEntriesInFolder('physics')
-    const root = list.getEntriesInFolder(ROOT)
+    const physics = list.queries.getEntriesInFolder('physics')
+    const root = list.queries.getEntriesInFolder(ROOT)
     puts('notes', file('notes/Later.md'))
 
-    await list.refresh()
+    await list.sync.refresh()
 
-    expect(list.getEntriesInFolder('notes')).toHaveLength(2)
-    expect(list.getEntriesInFolder('physics')).toBe(physics)
-    expect(list.getEntriesInFolder(ROOT)).toBe(root)
+    expect(list.queries.getEntriesInFolder('notes')).toHaveLength(2)
+    expect(list.queries.getEntriesInFolder('physics')).toBe(physics)
+    expect(list.queries.getEntriesInFolder(ROOT)).toBe(root)
   })
 
   it('keeps the entries of a folder that failed and takes the others', async () => {
@@ -423,18 +423,18 @@ describe('the refresh of every open folder', () => {
         return one.core.list(folderPath)
       },
     })
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
-    await list.openFolder('notes')
-    const cachedEntries = list.getEntriesInFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
+    await list.folders.openFolder('notes')
+    const cachedEntries = list.queries.getEntriesInFolder('physics')
     one.puts('notes', file('notes/Later.md'))
     isFailing = true
 
-    await list.refresh()
+    await list.sync.refresh()
 
-    expect(list.getEntriesInFolder('physics')).toBe(cachedEntries)
-    expect(list.getEntriesInFolder('notes')).toHaveLength(2)
-    expect(list.errorMessage.value).not.toBe('')
+    expect(list.queries.getEntriesInFolder('physics')).toBe(cachedEntries)
+    expect(list.queries.getEntriesInFolder('notes')).toHaveLength(2)
+    expect(list.state.errorMessage.value).not.toBe('')
   })
 })
 
@@ -443,18 +443,18 @@ describe('a tree before anything is requested of it', () => {
     const { core } = vault()
     const list = createFileTree(core)
 
-    expect(list.selectedPaths.value).toStrictEqual([])
-    expect(list.errorMessage.value).toBe('')
-    expect(list.openRows.value).toStrictEqual([ROOT])
-    expect(list.isFolderOpen(ROOT)).toBe(true)
-    expect(list.getEntriesInFolder('unloaded')).toStrictEqual([])
+    expect(list.state.selectedPaths.value).toStrictEqual([])
+    expect(list.state.errorMessage.value).toBe('')
+    expect(list.queries.openRows.value).toStrictEqual([ROOT])
+    expect(list.queries.isFolderOpen(ROOT)).toBe(true)
+    expect(list.queries.getEntriesInFolder('unloaded')).toStrictEqual([])
   })
 
   it('reads the root when every open folder is refreshed', async () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
 
-    await list.refresh()
+    await list.sync.refresh()
 
     expect(requests).toStrictEqual([ROOT])
   })
@@ -464,12 +464,12 @@ describe('a tab that has closed, requested for more', () => {
   it('leaves only the root open', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    await list.openFolder('physics')
+    await list.folders.openFolder('physics')
 
     list.close()
 
-    expect(list.openRows.value).toStrictEqual([ROOT])
-    expect(list.isFolderOpen(ROOT)).toBe(true)
+    expect(list.queries.openRows.value).toStrictEqual([ROOT])
+    expect(list.queries.isFolderOpen(ROOT)).toBe(true)
   })
 
   it('opens no folder and reads none', async () => {
@@ -477,9 +477,9 @@ describe('a tab that has closed, requested for more', () => {
     const list = createFileTree(core)
     list.close()
 
-    await list.openFolder('physics')
+    await list.folders.openFolder('physics')
 
-    expect(list.isFolderOpen('physics')).toBe(false)
+    expect(list.queries.isFolderOpen('physics')).toBe(false)
     expect(requests).toStrictEqual([])
   })
 
@@ -499,7 +499,7 @@ describe('a tab that has closed, requested for more', () => {
 
     await list.revealPath('physics/Entropy.md')
 
-    expect(list.selectedPaths.value).toStrictEqual([])
+    expect(list.state.selectedPaths.value).toStrictEqual([])
   })
 })
 
@@ -508,10 +508,10 @@ describe('the root folder closed', () => {
     const { core } = vault()
     const list = createFileTree(core)
 
-    list.closeFolder(ROOT)
+    list.folders.closeFolder(ROOT)
 
-    expect(list.isFolderOpen(ROOT)).toBe(true)
-    expect(list.openRows.value).toStrictEqual([ROOT])
+    expect(list.queries.isFolderOpen(ROOT)).toBe(true)
+    expect(list.queries.openRows.value).toStrictEqual([ROOT])
   })
 })
 
@@ -520,20 +520,20 @@ describe('a folder toggled', () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
 
-    await list.toggleFolder('physics')
+    await list.folders.toggleFolder('physics')
 
-    expect(list.isFolderOpen('physics')).toBe(true)
+    expect(list.queries.isFolderOpen('physics')).toBe(true)
     expect(requests).toContain('physics')
   })
 
   it('shuts where it was open', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    await list.openFolder('physics')
+    await list.folders.openFolder('physics')
 
-    await list.toggleFolder('physics')
+    await list.folders.toggleFolder('physics')
 
-    expect(list.isFolderOpen('physics')).toBe(false)
+    expect(list.queries.isFolderOpen('physics')).toBe(false)
   })
 })
 
@@ -546,13 +546,13 @@ describe('a folder that could not be read, then read', () => {
         return []
       },
     })
-    await list.openFolder(ROOT)
-    expect(list.errorMessage.value).not.toBe('')
+    await list.folders.openFolder(ROOT)
+    expect(list.state.errorMessage.value).not.toBe('')
 
     fails = false
-    await list.refresh()
+    await list.sync.refresh()
 
-    expect(list.errorMessage.value).toBe('')
+    expect(list.state.errorMessage.value).toBe('')
   })
 })
 
@@ -570,13 +570,13 @@ describe('a listing that changes in one field of one entry', () => {
   it.each(changes)('is drawn again where the %s changed', async (_field, overrides) => {
     let listing: readonly Entry[] = [first, second]
     const list = createFileTree({ list: async () => listing })
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     const changed = { ...second, ...overrides }
     listing = [first, changed]
 
-    await list.refresh()
+    await list.sync.refresh()
 
-    expect(list.getEntriesInFolder(ROOT)).toStrictEqual([first, changed])
+    expect(list.queries.getEntriesInFolder(ROOT)).toStrictEqual([first, changed])
   })
 })
 
@@ -584,11 +584,11 @@ describe('the folder a change is drawn in', () => {
   it('is an open folder the listing above does not name', async () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('ghost')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('ghost')
     requests.length = 0
 
-    await list.refreshChanged(['ghost/Note.md'])
+    await list.sync.refreshChanged(['ghost/Note.md'])
 
     expect(requests).toStrictEqual(['ghost'])
   })
@@ -596,13 +596,13 @@ describe('the folder a change is drawn in', () => {
   it('leaves the chosen rows as they were where nothing was renamed', async () => {
     const { core } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     list.selectPaths(['Cover.png'])
-    const selected = list.selectedPaths.value
+    const selected = list.state.selectedPaths.value
 
-    await list.refreshChanged(['Cover.png'])
+    await list.sync.refreshChanged(['Cover.png'])
 
-    expect(list.selectedPaths.value).toBe(selected)
+    expect(list.state.selectedPaths.value).toBe(selected)
   })
 })
 
@@ -610,11 +610,11 @@ describe('a change the vault reports without naming anything', () => {
   it('reads every open folder when called with no arguments', async () => {
     const { core, requests } = vault()
     const list = createFileTree(core)
-    await list.openFolder(ROOT)
-    await list.openFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
     requests.length = 0
 
-    await list.refreshChanged()
+    await list.sync.refreshChanged()
 
     expect(requests.sort()).toStrictEqual([ROOT, 'physics'])
   })

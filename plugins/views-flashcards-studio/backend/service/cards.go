@@ -2,114 +2,60 @@ package service
 
 import (
 	"context"
-	"errors"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/cardwire"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/apierror"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/cardwire"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/filewire"
 )
 
 // cardsHandler answers about the decks and card models a vault is arranged into.
 type cardsHandler struct {
-	*Backend
+	*vaultSession
+	cards cards.Scenarios
 }
 
-// ListCardModels returns the card models of the vault, with each title and field
-// list. A vault with more card models than the limit returns that many, and
-// reports the total.
-func (h *cardsHandler) ListCardModels(
-	ctx context.Context, req *api.ListCardModelsRequest,
-) (*api.ListCardModelsResponse, error) {
+func (b *Backend) newCardsHandler() *cardsHandler {
+	return &cardsHandler{
+		vaultSession: b.vaultSession,
+		cards:        cards.NewScenarios(b.getCardsConfig()),
+	}
+}
+
+func (h *cardsHandler) ListCardModels(ctx context.Context, req *api.ListCardModelsRequest) (*api.ListCardModelsResponse, error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
-	target, count, err := h.scenarios().cards.List.Execute(ctx, showing, getCardModelLimit(req.Limit))
-	if err != nil {
-		return nil, newError(server.CodeInternal, err)
-	}
-
-	summaries := make([]*api.CardModelSummary, 0, len(target))
-	for _, cardModel := range target {
-		summaries = append(summaries, cardwire.NewWireSummary(cardModel))
-	}
-	return &api.ListCardModelsResponse{CardModels: summaries, Total: int32(count)}, nil
+	found, total, err := h.cards.List.Execute(ctx, showing, cardwire.GetLimit(req.Limit))
+	return cardwire.NewListResponse(found, total, err)
 }
 
-func getCardModelLimit(limit int32) int {
-	if limit <= 0 || limit > cardwire.MaxCardModels {
-		return cardwire.MaxCardModels
-	}
-	return int(limit)
-}
-
-// CreateCardModel puts a card model declaring these fields in the vault, showing no
-// template.
-func (h *cardsHandler) CreateCardModel(
-	ctx context.Context, req *api.CreateCardModelRequest,
-) (*api.CreateCardModelResponse, error) {
+func (h *cardsHandler) CreateCardModel(ctx context.Context, req *api.CreateCardModelRequest) (*api.CreateCardModelResponse, error) {
 	made, code, indexOutdated, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = req.Fields
-		return h.scenarios().cards.Create.CardModel(ctx, showing, in)
+		return h.cards.Create.CardModel(ctx, showing, in)
 	}, req.Title, req.Path)
 	if err != nil {
 		return nil, err
 	}
-	return &api.CreateCardModelResponse{
-		Path: made.Path, Error: code, IsIndexOutdated: indexOutdated,
-	}, nil
+	return &api.CreateCardModelResponse{Path: made.Path, Error: code, IsIndexOutdated: indexOutdated}, nil
 }
 
-// CreateDeck puts a deck of no cards in the vault.
-func (h *cardsHandler) CreateDeck(
-	ctx context.Context, req *api.CreateDeckRequest,
-) (*api.CreateDeckResponse, error) {
+func (h *cardsHandler) CreateDeck(ctx context.Context, req *api.CreateDeckRequest) (*api.CreateDeckResponse, error) {
 	made, code, indexOutdated, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
-		return h.scenarios().cards.Create.Deck(ctx, showing, in)
+		return h.cards.Create.Deck(ctx, showing, in)
 	}, req.Title, req.Path)
 	if err != nil {
 		return nil, err
 	}
-	return &api.CreateDeckResponse{
-		Path: made.Path, Error: code, IsIndexOutdated: indexOutdated,
-	}, nil
+	return &api.CreateDeckResponse{Path: made.Path, Error: code, IsIndexOutdated: indexOutdated}, nil
 }
 
-func (b *Backend) createCardNote(
-	ctx context.Context, create func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
-) (cards.CreateNoteResult, api.ErrorCode, bool, error) {
-	showing, err := b.getCurrentVault(ctx)
-	if err != nil {
-		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, err
-	}
-	made, err := create(showing, cards.New{Title: title, Body: "", Path: folder, Fields: nil, Templates: nil})
-	if err == nil || errors.Is(err, note.ErrIndexOutdated) {
-		// The file is on disk under that name and nothing renumbers a second
-		// attempt, so the path is the only way back to it.
-		// gomutants:disable-next-line RETURN_ZERO reason="ErrorCodeUnspecified is the zero value of ErrorCode."
-		return made, api.ErrorCodeUnspecified, isIndexOutdated(err), nil
-	}
-	if errors.Is(err, cards.ErrNoFields) {
-		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, newError(server.CodeInvalidArgument, err)
-	}
-	reason, ok := getErrorCode(err)
-	if !ok {
-		// gomutants:disable-next-line RETURN_ZERO reason="ErrorCodeUnspecified is the zero value of ErrorCode."
-		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, newError(getCode(err), err)
-	}
-	// gomutants:disable-next-line RETURN_ZERO reason="Empty struct literal equals the zero value."
-	return cards.CreateNoteResult{Path: "", ID: "", Title: ""}, reason, false, nil
-}
-
-// RenameCardModelField renames one field of a card model, in the card model and
-// in every card of every deck that the card model generates. A card model that
-// still matches what the client read is written; a card model that changed is
-// left unchanged and the response reports the change.
 func (h *cardsHandler) RenameCardModelField(
 	ctx context.Context, req *api.RenameCardModelFieldRequest,
 ) (*api.RenameCardModelFieldResponse, error) {
@@ -117,168 +63,53 @@ func (h *cardsHandler) RenameCardModelField(
 	if err != nil {
 		return nil, err
 	}
-	renamed, err := h.scenarios().cards.RenameField.Execute(ctx, showing, cards.Rename{
-		CardModel: req.Path, From: req.From, To: req.To,
-		FileStat: readFileStat(req.Baseline),
+	renamed, err := h.cards.RenameField.Execute(ctx, showing, cards.Rename{
+		CardModel: req.Path, From: req.From, To: req.To, FileStat: filewire.GetStat(req.Baseline),
 	})
-	if err == nil || errors.Is(err, note.ErrIndexOutdated) {
-		out := cardwire.NewRenameResponse(renamed, writeFileStat(renamed.CardModel))
-		out.IsIndexOutdated = isIndexOutdated(err)
-		return out, nil
-	}
-	// The name a rename is given is the client's: one the card model does not
-	// declare, and one it already declares, are both a name to correct.
-	if errors.Is(err, format.ErrNoSuchField) || errors.Is(err, format.ErrFieldTaken) {
-		return nil, newError(server.CodeInvalidArgument, err)
-	}
-	reason, ok := getErrorCode(err)
-	if !ok {
-		return nil, newError(getCode(err), err)
-	}
-	return &api.RenameCardModelFieldResponse{
-		Decks: nil, Cards: 0, NotWritten: nil, Error: reason, At: nil, IsIndexOutdated: false,
-	}, nil
+	return cardwire.ConvertRename(renamed, err)
 }
 
-// ReadCardModel is the fields and the templates of one card model.
-func (h *cardsHandler) ReadCardModel(
-	ctx context.Context, req *api.ReadCardModelRequest,
-) (*api.ReadCardModelResponse, error) {
+func (h *cardsHandler) ReadCardModel(ctx context.Context, req *api.ReadCardModelRequest) (*api.ReadCardModelResponse, error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.scenarios().cards.Read.CardModel(ctx, showing, req.Path)
-	if err != nil {
-		return nil, newError(getCode(err), err)
-	}
-
-	out := &api.ReadCardModelResponse{CardModel: nil, Error: api.ErrorCodeUnspecified, At: nil}
-	if code, ok := errorCodeOfCardModel(found.Outcome, found.Type); ok {
-		out.Error = code
-		return out, nil
-	}
-	title := h.getTitle(ctx, showing, found.Path)
-	out.CardModel = cardwire.NewWireCardModel(found.Path, title, found.Body)
-	// What the file was when this came out of it, for the client to present
-	// when it writes the card model back.
-	out.At = writeFileStat(found.FileStat)
-	return out, nil
+	found, err := h.cards.Read.CardModel(ctx, showing, req.Path)
+	return cardwire.NewReadCardModelResponse(found, err, h.newTitler(ctx, showing))
 }
 
-// ReadDeck is the cards of one deck, in the order they stand in the file.
-func (h *cardsHandler) ReadDeck(
-	ctx context.Context, req *api.ReadDeckRequest,
-) (*api.ReadDeckResponse, error) {
+func (h *cardsHandler) ReadDeck(ctx context.Context, req *api.ReadDeckRequest) (*api.ReadDeckResponse, error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.scenarios().cards.Read.Deck(ctx, showing, req.Path)
-	if err != nil {
-		return nil, newError(getCode(err), err)
-	}
-
-	out := &api.ReadDeckResponse{Deck: nil, Error: api.ErrorCodeUnspecified, At: nil, Bound: 0}
-	if code, ok := errorCodeOfDeck(found.Outcome, found.Type); ok {
-		out.Error = code
-		// 		// The bound is sent with the error code, so the interface names it
-		// 		// without storing a number of its own.
-		if code == api.ErrorCodeDeckTooLarge {
-			out.Bound = cards.MaxBytes
-		}
-		return out, nil
-	}
-	title := h.getTitle(ctx, showing, found.Path)
-	out.Deck = cardwire.NewWireDeck(found.Path, title, found.Body, found.CardModels)
-	out.At = writeFileStat(found.FileStat)
-	return out, nil
+	found, err := h.cards.Read.Deck(ctx, showing, req.Path)
+	return cardwire.NewReadDeckResponse(found, err, h.newTitler(ctx, showing))
 }
 
-// WriteDeck writes cards into a deck. A deck that still matches what the client
-// read is overwritten; a deck that changed is left unchanged and the response
-// reports the change.
-func (h *cardsHandler) WriteDeck(
-	ctx context.Context, req *api.WriteDeckRequest,
-) (*api.WriteDeckResponse, error) {
+func (h *cardsHandler) WriteDeck(ctx context.Context, req *api.WriteDeckRequest) (*api.WriteDeckResponse, error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
 	body, err := format.DeckBody(cardwire.NewDeck(req))
 	if err != nil {
-		return nil, newError(server.CodeInvalidArgument, err)
+		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	wrote, err := h.scenarios().cards.Write.Deck(ctx, showing, req.Path, body, readFileStat(req.Baseline))
-	// 	// A write that reached the vault has happened, so the response carries the
-	// 	// file stat the client presents at its next save, and reports where the
-	// 	// index did not follow.
-	indexOutdated := isIndexOutdated(err)
-	if err == nil || indexOutdated {
-		return &api.WriteDeckResponse{
-			Error: api.ErrorCodeUnspecified, At: writeFileStat(wrote.FileStat), Bound: 0, IsIndexOutdated: indexOutdated,
-		}, nil
-	}
-	if errors.Is(err, note.ErrTooLarge) {
-		code := api.ErrorCodeDeckTooLarge
-		return &api.WriteDeckResponse{
-			Error: code, At: nil, Bound: cards.MaxBytes, IsIndexOutdated: false,
-		}, nil
-	}
-	reason, ok := getErrorCode(err)
-	if !ok {
-		return nil, newError(getCode(err), err)
-	}
-	return &api.WriteDeckResponse{Error: reason, At: nil, Bound: 0, IsIndexOutdated: false}, nil
+	wrote, err := h.cards.Write.Deck(ctx, showing, req.Path, body, filewire.GetStat(req.Baseline))
+	return cardwire.NewWriteDeckResponse(wrote.FileStat, err)
 }
 
-// WriteCardModel writes fields and templates into a card model. A card model that
-// still matches what the client read is overwritten; a card model that changed is
-// left unchanged and the response reports the change.
-func (h *cardsHandler) WriteCardModel(
-	ctx context.Context, req *api.WriteCardModelRequest,
-) (*api.WriteCardModelResponse, error) {
+func (h *cardsHandler) WriteCardModel(ctx context.Context, req *api.WriteCardModelRequest) (*api.WriteCardModelResponse, error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
-	body, err := format.CardModelBody(
-		req.Preamble, cardwire.NewTemplates(req.Templates), req.Tail)
+	body, err := format.CardModelBody(req.Preamble, cardwire.NewTemplates(req.Templates), req.Tail)
 	// gomutants:disable-next-line BRANCH_IF reason="CardModelBody normalizes template names to a single heading line."
 	if err != nil {
-		return nil, newError(server.CodeInvalidArgument, err)
+		return nil, apierror.NewError(server.CodeInvalidArgument, err)
 	}
-	pos, err := h.scenarios().cards.Write.CardModel(
-		ctx, showing, req.Path, body, req.Fields, readFileStat(req.Baseline))
-	// 	// A write that reached the vault has happened, so the response carries the
-	// 	// file stat the client presents at its next save, and reports where the
-	// 	// index did not follow.
-	indexOutdated := isIndexOutdated(err)
-	if err == nil || indexOutdated {
-		return &api.WriteCardModelResponse{
-			Error: api.ErrorCodeUnspecified, At: writeFileStat(pos), IsIndexOutdated: indexOutdated,
-		}, nil
-	}
-	reason, ok := getErrorCode(err)
-	if !ok {
-		return nil, newError(getCode(err), err)
-	}
-	return &api.WriteCardModelResponse{Error: reason, At: nil, IsIndexOutdated: false}, nil
-}
-
-func errorCodeOfDeck(o note.ReadOutcome, is domain.NoteType) (api.ErrorCode, bool) {
-	if o == note.TooLarge {
-		return api.ErrorCodeDeckTooLarge, true
-	}
-	if o == note.Ok && is != format.TypeDeck {
-		return api.ErrorCodeNotADeck, true
-	}
-	return convertOutcomeToErrorCode(o)
-}
-
-func errorCodeOfCardModel(o note.ReadOutcome, is domain.NoteType) (api.ErrorCode, bool) {
-	if o == note.Ok && is != format.TypeCardModel {
-		return api.ErrorCodeNotACardModel, true
-	}
-	return convertOutcomeToErrorCode(o)
+	pos, err := h.cards.Write.CardModel(ctx, showing, req.Path, body, req.Fields, filewire.GetStat(req.Baseline))
+	return cardwire.NewWriteCardModelResponse(pos, err)
 }

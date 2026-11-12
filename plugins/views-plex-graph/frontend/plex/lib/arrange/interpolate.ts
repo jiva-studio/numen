@@ -5,12 +5,13 @@
  * Nodes are matched by identifier alone; nothing here depends on what a node
  * represents.
  */
-import { edgeKey, type PlacedEdge, type PlexEdge } from '../edge'
+import { edgeKey, type PlacedEdge } from '../edge'
 import type { PlexFrame } from '../frame'
 import type { PlacedNode, Position } from '../node'
 import { clamp01, lerp, lerpExtent } from './math'
 import { resolveOptions, type PlexOptionsInput } from './options'
 import { routeEdges, createRouting, type Routing } from './edges/routing'
+import type { PlexEdge } from '../../../types'
 
 /** What a settled arrangement specifies for the title an edge carries. */
 type Title = Pick<PlacedEdge, 'titles'>

@@ -12,8 +12,9 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "paths": {
-      "@numen/core-client": ["../../libs/core-client/src/index.ts"],
-      "@numen/core-client/*": ["../../libs/core-client/src/*"]
+      "@numen/core-client": ["../../libs/core/client/src/index.ts"],
+      "@numen/core-client/*": ["../../libs/core/client/src/*"],
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "*.config.ts"]

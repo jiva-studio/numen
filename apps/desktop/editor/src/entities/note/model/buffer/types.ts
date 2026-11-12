@@ -1,11 +1,10 @@
 /**
  * Domain types for open notes and their storage.
  */
-import type { Result } from '@numen/core-client'
-import type { NoteBaseline, NoteErrorCode, State, DEFAULT_WRITE_LIMITS } from './tabState'
+import type { Result } from '@/shared/lib/result'
+import type { NoteErrorCode, State, DEFAULT_WRITE_LIMITS } from './tabState'
 
 import type { NoteContents } from '../../lib/note'
-export type { NoteContents }
 
 /**
  * What a read returned: the contents, or the code of why there are none.
@@ -25,14 +24,6 @@ export interface OpenNote {
   readonly body: string
   readonly state: State
   readonly error: NoteErrorCode | null
-}
-
-/**
- * The core as a tab reads and writes through it.
- */
-export interface Notes {
-  read(path: string): Promise<NoteResult>
-  write(path: string, body: string, observed: NoteBaseline | null): Promise<WriteResult>
 }
 
 export interface ConflictWords {

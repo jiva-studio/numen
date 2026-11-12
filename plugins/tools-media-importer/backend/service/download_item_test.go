@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 )
 
 func TestDownloadMediaDownloadsTheItemPicked(t *testing.T) {

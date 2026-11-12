@@ -8,7 +8,7 @@ import type { Installation } from './types'
 import { WORDS as words } from './words'
 import { SETTINGS } from '@/entities/tab'
 import type { WindowHandle } from '@/entities/tab'
-import { createInstallation } from '@/testing/installation'
+import { createInstallation } from '@/pages/settings/testing/installation'
 
 const window_ = () => {
   const openedTab: string[] = []
@@ -37,7 +37,7 @@ describe('the settings tab', () => {
 
   it('is a tool that no window opens with', () => {
     const settings = useSettingsTab(window_().handle, installation(), vi.fn())
-    expect(settings.kind.isTool).toBe(true)
+    expect(settings.kind.display?.isTool).toBe(true)
     expect(settings.kind).not.toHaveProperty('placement')
   })
 
@@ -51,8 +51,8 @@ describe('the settings tab', () => {
   it('is one tab to a window, whatever it is opened on', () => {
     const settings = useSettingsTab(window_().handle, installation(), vi.fn())
     expect(settings.kind.kind).toBe(SETTINGS)
-    expect(settings.kind.identity?.('anything')).toBe(SETTINGS)
-    expect(settings.kind.identity?.('something else')).toBe(SETTINGS)
+    expect(settings.kind.address?.identity?.('anything')).toBe(SETTINGS)
+    expect(settings.kind.address?.identity?.('something else')).toBe(SETTINGS)
   })
 
   it('is put in front when the window is requested to show it', () => {

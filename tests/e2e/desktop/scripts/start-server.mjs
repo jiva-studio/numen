@@ -195,8 +195,8 @@ function cleanup() {
   standIns.close()
   try {
     fs.rmSync(tmpVault, { recursive: true, force: true })
-  } catch {
-    // Ignore cleanup errors on busy files.
+  } catch (error) {
+    console.warn(`could not remove ${tmpVault}: ${error.message}`)
   }
 }
 
@@ -280,7 +280,7 @@ const callCore = (method, body, isStream) =>
   })
 
 /** Whether the vault is read, every chunk has its vector, and no task of the window is running. */
-const readIdle = async () => {
+const readIdleState = async () => {
   const state = await callCore('VaultService/GetVaultState', {}, false)
   const window = await callCore('WindowService/WatchTasks', { window: 'editor' }, true)
   return (
@@ -350,7 +350,7 @@ while (idleReads < 4) {
     child.kill('SIGTERM')
     break
   }
-  idleReads = (await readIdle()) ? idleReads + 1 : 0
+  idleReads = (await readIdleState()) ? idleReads + 1 : 0
   await new Promise((resolve) => setTimeout(resolve, 250))
 }
 console.log(`numen e2e: the vault is indexed after ${(Date.now() - startedAt) / 1000} s`)

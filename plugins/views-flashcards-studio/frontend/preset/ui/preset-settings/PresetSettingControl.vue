@@ -4,10 +4,8 @@
  */
 import { computed } from 'vue'
 import { NumberField, SegmentedControl, Select, Slider, Switch } from '@numen/ui'
-import { WeekdayChips, WEEK, type Day } from '../../../ui/weekday-chips'
+import { WeekdayChips, WEEK, type Day } from '../weekday-chips'
 import {
-  type PresetTabState,
-  type SettingValue,
   BUDGET_UNITS,
   LOADS,
   RULES,
@@ -15,9 +13,11 @@ import {
   getLoadOn,
   setLoadOn,
   type BudgetUnit,
-} from '../../types'
+} from '../../../lib/presets'
 import { getFieldCount, getFieldLimits, getFieldValue, type Field } from '../../lib/fields'
-import { WORDS as words } from '../../words'
+import { WORDS as words } from '../../lib/words'
+import type { PresetTabState } from '../../model/types'
+import type { SettingValue } from '../../lib/settings'
 
 // --- Props & Emits ---
 const props = defineProps<{
@@ -50,20 +50,20 @@ function onSelectRule(rule: string) {
 
 function onFieldType(field: Field, value: number | null) {
   if (value === null) return
-  props.state.updateSetting(field, getFieldValue(field, value))
+  props.state.actions.updateSetting(field, getFieldValue(field, value))
 }
 
 function onFieldCommit() {
-  props.state.flushPending()
+  props.state.actions.flushPending()
 }
 
 function onChooseSetting(field: Field, value: SettingValue) {
-  props.state.updateSetting(field, value)
-  props.state.flushPending()
+  props.state.actions.updateSetting(field, value)
+  props.state.actions.flushPending()
 }
 
 function onUpdateSlider(field: Field, share: number) {
-  props.state.updateSetting(field, share)
+  props.state.actions.updateSetting(field, share)
 }
 
 function onToggleEvenLoad(on: boolean) {

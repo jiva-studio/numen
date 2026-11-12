@@ -3,7 +3,6 @@
  */
 import { computed, watch, type Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
-import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '../plex'
 import {
   formatErrorMessage,
   getFileName,
@@ -11,41 +10,40 @@ import {
   NOTE_TYPE,
   useSlotMenu,
   type CommandTarget,
+  type Caught,
 } from '@numen/plugin-sdk'
-import { convertNeighbourhood, getNoteTypes, getTabKinds } from '../lib/picture'
+import { convertNeighborhood, getNoteTypes, getTabKinds } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
 import { CREATE_NOTE } from '../lib/commands'
 import { WORDS as words } from '../words'
 import type {
-  LinkInspectorRequest,
   MenuRequest,
-  PlexEditor,
   PlexTabDeps,
   PlexTabState,
   QuickLinkRequest,
   PlexView,
   PathRename,
   NoteType,
+  PlexNeighborhood,
+  PlexRelation,
+  PlexDestination,
 } from '../types'
 import { useLinkInspector } from './useLinkInspector'
 import { useQuickLink } from './useQuickLink'
 import { usePlexHeadings } from './usePlexHeadings'
 
-export type {
-  LinkInspectorRequest,
-  MenuRequest,
-  PlexEditor,
-  PlexTabDeps,
-  PlexTabState,
-  QuickLinkRequest,
-}
+export type { PlexTabDeps, PlexTabState }
 
-function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof createNodeIdMap>) {
-  const picture = computed<PlexNeighbourhood | null>(() => {
-    const neighbourhood = view.neighbourhood.value
-    if (!deps.isReady.value || !neighbourhood) return null
-    return convertNeighbourhood(neighbourhood, map.getNodeId)
+function usePlexPicture(
+  view: PlexView,
+  deps: PlexTabDeps,
+  map: ReturnType<typeof createNodeIdMap>,
+) {
+  const picture = computed<PlexNeighborhood | null>(() => {
+    const neighborhood = view.neighborhood.value
+    if (!deps.window.isReady.value || !neighborhood) return null
+    return convertNeighborhood(neighborhood, map.getNodeId)
   })
 
   // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
@@ -63,41 +61,45 @@ function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof 
 
   const empty = computed(
     () =>
-      deps.isReady.value &&
+      deps.window.isReady.value &&
       !view.here.value &&
-      !deps.openingPath.value &&
-      !view.neighbourhood.value,
+      !deps.window.openingPath.value &&
+      !view.neighborhood.value,
   )
 
   const dragged = computed<readonly string[]>(() => {
     const here = view.here.value
-    if (!deps.isReady.value || !view.neighbourhood.value || !here) return []
-    return deps.dragged.value.filter((path) => path !== here)
+    if (!deps.window.isReady.value || !view.neighborhood.value || !here) return []
+    return deps.window.dragged.value.filter((path) => path !== here)
   })
 
+  return { view, picture, empty, dragged, creatable: deps.creatable }
+}
+
+function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap>) {
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
-    const neighbourhood = view.neighbourhood.value
-    return neighbourhood ? getNoteTypes(neighbourhood) : new Map()
+    const neighborhood = view.neighborhood.value
+    return neighborhood ? getNoteTypes(neighborhood) : new Map()
   })
 
   const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? NOTE_TYPE
 
   const tabKinds = computed<ReadonlyMap<string, string>>(() => {
-    const neighbourhood = view.neighbourhood.value
-    return neighbourhood ? getTabKinds(neighbourhood) : new Map()
+    const neighborhood = view.neighborhood.value
+    return neighborhood ? getTabKinds(neighborhood) : new Map()
   })
 
   const getTabKind = (node: string): string | undefined => tabKinds.value.get(map.getNodePath(node))
 
-  const activePaths = computed<readonly string[]>(() => {
-    const neighbourhood = view.neighbourhood.value
-    if (!neighbourhood) return []
-    const paths = [neighbourhood.focus.path]
-    for (const related of neighbourhood.related) paths.push(related.path)
+  const shownPaths = computed<readonly string[]>(() => {
+    const neighborhood = view.neighborhood.value
+    if (!neighborhood) return []
+    const paths = [neighborhood.focus.path]
+    for (const related of neighborhood.related) paths.push(related.path)
     return paths.filter(Boolean)
   })
 
-  return { picture, empty, dragged, types, getType, getTabKind, drawn: activePaths }
+  return { types, getType, getTabKind, shownPaths }
 }
 
 function createPlexNodeActions(options: {
@@ -111,16 +113,12 @@ function createPlexNodeActions(options: {
   const activate = (node: string) => {
     const path = map.getNodePath(node)
     if (path) {
-      view.go(path).catch((error: unknown) => deps.showMessage(formatErrorMessage(error)))
-      deps.onSelectPath?.(path, getName(path))
+      view.go(path).catch((error: Caught) => deps.window.showMessage(formatErrorMessage(error)))
+      deps.window.onSelectPath?.(path, getName(path))
     }
   }
 
-  const createNode = async (
-    from: string,
-    relation: PlexRelation,
-    pos?: { x: number; y: number },
-  ) => {
+  const addNode = async (from: string, relation: PlexRelation, pos?: { x: number; y: number }) => {
     if (pos) {
       openQuickLink({ from, relation, at: pos })
       return
@@ -129,7 +127,7 @@ function createPlexNodeActions(options: {
     const role = findRole(deps.creatable, relation)
     if (!path || !role) return
     const made = await deps.editor.createRelated({ from: path, role })
-    if (!made.ok) return deps.showMessage(getRelationErrorWords(made.error))
+    if (!made.ok) return deps.window.showMessage(getRelationErrorWords(made.error))
     await view.go(path)
   }
 
@@ -139,7 +137,7 @@ function createPlexNodeActions(options: {
     const role = findRole(deps.creatable, relation)
     if (!one || !other || !role) return
     const joined = await deps.editor.join(one, other, { role })
-    if (!joined.ok) return deps.showMessage(getRelationErrorWords(joined.error))
+    if (!joined.ok) return deps.window.showMessage(getRelationErrorWords(joined.error))
     await view.go(one)
   }
 
@@ -157,22 +155,27 @@ function createPlexNodeActions(options: {
       else notJoined.push(getName(path))
     }
 
-    if (notJoined.length > 0) deps.showMessage(`${words.notJoined} ${notJoined.join(', ')}`)
+    if (notJoined.length > 0) deps.window.showMessage(`${words.notJoined} ${notJoined.join(', ')}`)
     if (hasJoinedAny) await view.go(here)
   }
 
   const openNode = (node: string, how: PlexDestination = 'current') => {
     const path = map.getNodePath(node)
-    if (path) deps.openNote(path, { title: getName(path), showing: how })
+    if (path) deps.window.openNote(path, { title: getName(path), showing: how })
+  }
+
+  const followMoves = (renames: readonly PathRename[]) => {
+    view.followMoves(renames)
+    map.updateRenamedNodes(renames)
   }
 
   const openHeading = (node: string, heading: string) => {
     const path = map.getNodePath(node)
     if (!path || !/^\d+$/.test(heading)) return
-    deps.openNote(path, { title: getName(path), showing: 'current', line: Number(heading) })
+    deps.window.openNote(path, { title: getName(path), showing: 'current', line: Number(heading) })
   }
 
-  return { activate, createNode, joinNodes, dropNodes, openNode, openHeading }
+  return { activate, addNode, joinNodes, dropNodes, openNode, openHeading, followMoves, getName }
 }
 
 /** The words of the rows the menu on a node writes itself. */
@@ -189,16 +192,18 @@ function usePlexMenu(options: {
   tabDeps: PlexTabDeps
   getName: (path: string) => string
   getType: (node: string) => NoteType
+  getTabKind: (node: string) => string | undefined
   showCreated: (path: string) => Promise<void>
+  dismissOthers: () => void
 }) {
-  const { map, tabDeps: deps, getName, getType, showCreated } = options
-  const reportFailure = (error: unknown): void => deps.showMessage(formatErrorMessage(error))
+  const { map, tabDeps: deps, getName, getType, getTabKind, showCreated, dismissOthers } = options
+  const reportFailure = (error: Caught): void => deps.window.showMessage(formatErrorMessage(error))
   const nodeMenu = useSlotMenu<NodeMenuTarget>({
-    listItems: (command, { target }) => deps.listItems(command, target),
+    listItems: (command, { target }) => deps.menu.listItems(command, target),
     words: MENU_WORDS,
     onError: reportFailure,
   })
-  const menu = computed(() => nodeMenu.target.value?.request ?? null)
+  const request = computed(() => nodeMenu.target.value?.request ?? null)
   const menuItems = computed<readonly MenuItem[]>(() => nodeMenu.menu.value?.items ?? [])
 
   const getNodeTarget = (node: string, path: string): CommandTarget => {
@@ -218,19 +223,27 @@ function usePlexMenu(options: {
 
   const close = () => nodeMenu.close()
 
-  const openMenu = (request: MenuRequest) => {
+  const dismiss = () => {
     close()
-    const path = request.node === null ? '' : map.getNodePath(request.node)
-    if (request.node !== null && !path) return
+    dismissOthers()
+  }
+
+  const openMenu = (menuRequest: MenuRequest) => {
+    close()
+    const path = menuRequest.node === null ? '' : map.getNodePath(menuRequest.node)
+    if (menuRequest.node !== null && !path) return
     const target =
-      request.node === null ? getCanvasTarget() : getNodeTarget(request.node, path ?? '')
-    nodeMenu.open(() => ({ target: { request, target }, entries: deps.getMenuEntries(target) }))
+      menuRequest.node === null ? getCanvasTarget() : getNodeTarget(menuRequest.node, path ?? '')
+    nodeMenu.open(() => ({
+      target: { request: menuRequest, target },
+      entries: deps.menu.getMenuEntries(target),
+    }))
   }
 
   const chooseMenuItem = (id: string) => {
     const choice = nodeMenu.pick(id)
     if (!choice) return
-    deps
+    deps.menu
       .runCommand(choice.command, choice.target.target, choice.itemId, choice.values)
       .then((made) => (choice.command === CREATE_NOTE && made ? showCreated(made) : undefined))
       .catch(reportFailure)
@@ -240,89 +253,57 @@ function usePlexMenu(options: {
   const getMenuIcon = (id: string): Component | null =>
     (nodeMenu.getIcon(id) as Component | undefined) ?? null
 
-  return { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon, close }
+  /** The icon a node is shownPaths with, and nothing for an ordinary note. */
+  const getNodeIcon = (node: string): Component | null => {
+    const tabKind = getTabKind(node)
+    return tabKind === undefined ? null : deps.window.getNoteIcon(tabKind)
+  }
+
+  return { request, menuItems, getMenuIcon, getNodeIcon, openMenu, dismiss, chooseMenuItem }
 }
 
-function getPlexNodeName(neighbourhood: PlexView['neighbourhood']['value'], path: string): string {
-  if (neighbourhood?.focus.path === path && neighbourhood.focus.title)
-    return neighbourhood.focus.title
-  const foundNode = neighbourhood?.related.find((one) => one.path === path)
+function getPlexNodeName(neighborhood: PlexView['neighborhood']['value'], path: string): string {
+  if (neighborhood?.focus.path === path && neighborhood.focus.title) return neighborhood.focus.title
+  const foundNode = neighborhood?.related.find((one) => one.path === path)
   return foundNode?.title || getFileName(path).replace(/\.md$/, '')
 }
 
 export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
-  const {
-    picture,
-    empty,
-    dragged,
-    types,
-    getType,
-    getTabKind,
-    drawn: drawnNodes,
-  } = usePlexImage(view, deps, map)
+  const canvas = usePlexPicture(view, deps, map)
+  const { types, getType, getTabKind, shownPaths } = usePlexNoteKinds(view, map)
 
-  const getName = (path: string): string => getPlexNodeName(view.neighbourhood.value, path)
-  const quickLinkModel = useQuickLink(view, deps, map)
-  const { readHeadings, getHeadings } = usePlexHeadings(drawnNodes, types, deps, map)
-  const linkInspectorModel = useLinkInspector(
+  const getName = (path: string): string => getPlexNodeName(view.neighborhood.value, path)
+  const quickLink = useQuickLink(view, deps, map)
+  const headings = usePlexHeadings(shownPaths, types, deps, map)
+  const inspector = useLinkInspector(
     view,
-    { editor: deps.editor, showMessage: deps.showMessage },
+    { editor: deps.editor, showMessage: deps.window.showMessage },
     map,
     getName,
   )
 
-  const nodeActions = createPlexNodeActions({
+  const nodes = createPlexNodeActions({
     view,
     tabDeps: deps,
     map,
     getName,
-    openQuickLink: quickLinkModel.openQuickLink,
+    openQuickLink: quickLink.openQuickLink,
   })
-  const { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon, close } = usePlexMenu({
+  const menu = usePlexMenu({
     map,
     tabDeps: deps,
     getName,
     getType,
+    getTabKind,
     showCreated: (path) => view.go(path),
+    dismissOthers: () => {
+      quickLink.dismissQuickLink()
+      inspector.dismissLinkInspector()
+    },
   })
 
-  const reportFailure = (error: unknown): void => deps.showMessage(formatErrorMessage(error))
+  const reportFailure = (error: Caught): void => deps.window.showMessage(formatErrorMessage(error))
 
-  const tabState: PlexTabState = {
-    view,
-    reportFailure,
-    picture,
-    empty,
-    dragged,
-    menu,
-    menuItems,
-    getMenuIcon,
-    getNodeIcon: (node: string) => {
-      const tabKind = getTabKind(node)
-      return tabKind === undefined ? null : deps.getNoteIcon(tabKind)
-    },
-    creatable: deps.creatable,
-    getType,
-    getHeadings,
-    maxHeadings: deps.headings,
-    readHeadings,
-    openMenu,
-    dismiss: () => {
-      close()
-      quickLinkModel.dismissQuickLink()
-      linkInspectorModel.dismissLinkInspector()
-    },
-    chooseMenuItem,
-    followMoves: (renames: readonly PathRename[]) => {
-      view.followMoves(renames)
-      map.updateRenamedNodes(renames)
-    },
-    getName,
-    ...quickLinkModel,
-    ...linkInspectorModel,
-    ...nodeActions,
-  }
-
-  return tabState
+  return { reportFailure, canvas, menu, headings, nodes, quickLink, inspector }
 }

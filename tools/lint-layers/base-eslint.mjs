@@ -3,6 +3,203 @@ import globals from 'globals'
 import pluginVue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
 import prettier from 'eslint-config-prettier'
+import numenRules from './numen-rules.mjs'
+
+/** The variable a name refers to from a node, or null. */
+function findScopeVariable(context, node, name) {
+  for (let scope = context.sourceCode.getScope(node); scope; scope = scope.upper) {
+    const variable = scope.set.get(name)
+    if (variable) return variable
+  }
+  return null
+}
+
+const noMockOfSubjectSliceRule = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Forbid vi.mock or vi.spyOn of a module or value in the same slice as the test: a test that replaces its own slice verifies the replacement',
+    },
+    messages: {
+      mocksOwnSlice:
+        'vi.mock("{{specifier}}") replaces a module of the slice "{{slice}}" that this test verifies. Use the real module and fake only what lies outside the slice (a transport, a port).',
+      spiesOnOwnSlice:
+        'vi.spyOn({{target}}) spies on a value from the slice "{{slice}}" that this test verifies. Use the real module and fake only what lies outside the slice (a transport, a port).',
+    },
+    schema: [],
+  },
+  create(context) {
+    const SLICED_LAYERS = new Set(['entities', 'features', 'pages', 'widgets', 'app', 'shared'])
+    const filename = (context.filename ?? '').replaceAll('\\', '/')
+    const root = /^(.*\/(?:src|frontend))\//.exec(filename)
+    if (!root) return {}
+    const rootDir = root[1]
+    const slice = getSlice(filename)
+
+    function getSlice(file) {
+      const parts = file.slice(rootDir.length + 1).split('/')
+      const length = SLICED_LAYERS.has(parts[0]) ? 2 : 1
+      return parts.length > length ? parts.slice(0, length).join('/') : '.'
+    }
+
+    function resolve(specifier) {
+      if (specifier.startsWith('@/')) return `${rootDir}/${specifier.slice(2)}`
+      if (!specifier.startsWith('.')) return null
+      const parts = `${filename.slice(0, filename.lastIndexOf('/'))}/${specifier}`.split('/')
+      const out = []
+      for (const part of parts) {
+        if (part === '..') out.pop()
+        else if (part !== '.') out.push(part)
+      }
+      return out.join('/')
+    }
+
+    function isOwnSliceSpecifier(specifier) {
+      if (typeof specifier !== 'string') return false
+      const target = resolve(specifier)
+      if (!target || !target.startsWith(`${rootDir}/`)) return false
+      return getSlice(`${target}/x`) === slice || getSlice(target) === slice
+    }
+
+    function getRootIdentifier(node) {
+      let current = node
+      while (current?.type === 'MemberExpression') current = current.object
+      return current?.type === 'Identifier' ? current : null
+    }
+
+    function isSpySubjectImport(def) {
+      const specifier = def.parent?.source?.value
+      if (!isOwnSliceSpecifier(specifier)) return false
+      if (def.node?.type === 'ImportNamespaceSpecifier') return true
+      const target = resolve(specifier)
+      if (!target) return false
+      const targetStem = target.slice(target.lastIndexOf('/') + 1).replace(/\.[a-z]+$/i, '')
+      const fileBase = filename.slice(filename.lastIndexOf('/') + 1)
+      return targetStem === 'index' || fileBase.startsWith(`${targetStem}.`)
+    }
+
+    function resolveFunctionBody(identifier) {
+      const fnVar = findScopeVariable(context, identifier, identifier.name)
+      for (const fnDef of fnVar?.defs ?? []) {
+        if (fnDef.type === 'FunctionName') return fnDef.node.body
+        if (
+          fnDef.type === 'Variable' &&
+          (fnDef.node.init?.type === 'ArrowFunctionExpression' ||
+            fnDef.node.init?.type === 'FunctionExpression')
+        ) {
+          return fnDef.node.init.body
+        }
+      }
+      return null
+    }
+
+    function findObjectPropertyInit(node, propName) {
+      if (!node || typeof node !== 'object') return null
+      if (node.type === 'AwaitExpression') return findObjectPropertyInit(node.argument, propName)
+      if (node.type === 'ObjectExpression') {
+        for (const prop of node.properties) {
+          if (prop.type === 'Property' && prop.key?.name === propName) return prop.value
+        }
+        return null
+      }
+      if (node.type === 'BlockStatement') {
+        for (const stmt of node.body) {
+          if (stmt.type === 'ReturnStatement') {
+            const found = findObjectPropertyInit(stmt.argument, propName)
+            if (found) return found
+          }
+        }
+      }
+      return null
+    }
+
+    function isExpressionFromOwnSlice(expr, seen) {
+      if (!expr || typeof expr !== 'object') return false
+      const unwrapped = expr.type === 'AwaitExpression' ? expr.argument : expr
+      const rootId =
+        unwrapped?.type === 'CallExpression'
+          ? getRootIdentifier(unwrapped.callee)
+          : getRootIdentifier(unwrapped)
+      if (!rootId) return false
+      if (isFromOwnSlice(rootId, seen)) return true
+      const body = resolveFunctionBody(rootId)
+      return Boolean(body && returnsOwnSlice(body, seen))
+    }
+
+    function isFromOwnSlice(identifier, seen = new Set()) {
+      const variable = findScopeVariable(context, identifier, identifier.name)
+      if (!variable || seen.has(variable)) return false
+      seen.add(variable)
+      for (const def of variable.defs) {
+        if (def.type === 'ImportBinding') {
+          if (isSpySubjectImport(def)) return true
+          continue
+        }
+        if (def.type !== 'Variable') continue
+        if (def.node.id.type === 'Identifier') {
+          if (isExpressionFromOwnSlice(def.node.init, seen)) return true
+          continue
+        }
+        if (def.node.id.type === 'ObjectPattern') {
+          const prop = def.node.id.properties.find(
+            (p) => p.type === 'Property' && p.value?.name === identifier.name,
+          )
+          const propName = prop?.key?.name
+          const unwrapped =
+            def.node.init?.type === 'AwaitExpression' ? def.node.init.argument : def.node.init
+          const calleeId =
+            unwrapped?.type === 'CallExpression' ? getRootIdentifier(unwrapped.callee) : null
+          const body = calleeId ? resolveFunctionBody(calleeId) : unwrapped
+          const propInit = propName && body ? findObjectPropertyInit(body, propName) : null
+          if (propInit && isExpressionFromOwnSlice(propInit, seen)) return true
+        }
+      }
+      return false
+    }
+
+    function returnsOwnSlice(node, seen) {
+      if (!node || typeof node !== 'object') return false
+      if (node.type === 'CallExpression' || node.type === 'AwaitExpression') {
+        return isExpressionFromOwnSlice(node, new Set(seen))
+      }
+      if (node.type === 'BlockStatement') {
+        return node.body.some(
+          (stmt) => stmt.type === 'ReturnStatement' && returnsOwnSlice(stmt.argument, seen),
+        )
+      }
+      return false
+    }
+
+    return {
+      'CallExpression[callee.object.name="vi"][callee.property.name=/^(mock|doMock)$/]'(node) {
+        const specifier = node.arguments[0]?.value
+        if (isOwnSliceSpecifier(specifier)) {
+          context.report({ node, messageId: 'mocksOwnSlice', data: { specifier, slice } })
+        }
+      },
+      'CallExpression[callee.object.name="vi"][callee.property.name="spyOn"]'(node) {
+        const target = node.arguments[0]
+        const rootId = getRootIdentifier(target)
+        if (rootId && isFromOwnSlice(rootId)) {
+          context.report({
+            node,
+            messageId: 'spiesOnOwnSlice',
+            data: { target: context.sourceCode.getText(target), slice },
+          })
+        }
+      },
+    }
+  },
+}
+
+const numenPlugin = {
+  ...numenRules,
+  rules: {
+    ...numenRules.rules,
+    'no-mock-of-subject-slice': noMockOfSubjectSliceRule,
+  },
+}
 
 /** The globals a pure core is not allowed to reach for, and the port for each. */
 export const lifetimes = [
@@ -159,709 +356,10 @@ export function createStrictScriptRules() {
   }
 }
 
-/**
- * Custom rule: Enforce extracting large props interfaces into a separate *.types.ts file.
- */
-const SECTION_ORDER = {
-  props: 1,
-  'props & emits': 1,
-  'props and emits': 1,
-  events: 2,
-  emits: 2,
-  state: 3,
-  hooks: 4,
-  lifecycle: 4,
-  handlers: 5,
-  helpers: 6,
-}
+export { numenPlugin }
 
-/** Returns the name of a `--- Name ---` banner comment, or null when the comment is not a banner. */
-function getBannerName(comment) {
-  const match = /^-{3,}([^-]+)-{3,}$/.exec(comment.trim())
-  const name = match?.[1].trim()
-  return name && /^[A-Za-z &]+$/.test(name) ? name : null
-}
-
-function stripBlockComments(text) {
-  let result = ''
-  let cursor = 0
-  while (cursor < text.length) {
-    const open = text.indexOf('/*', cursor)
-    if (open === -1) {
-      result += text.slice(cursor)
-      break
-    }
-    result += text.slice(cursor, open)
-    const close = text.indexOf('*/', open + 2)
-    if (close === -1) break
-    cursor = close + 2
-  }
-  return result
-}
-
-function getScriptBody(sourceCode, script) {
-  if (script.startTag && script.endTag) {
-    return sourceCode.text.slice(script.startTag.range[1], script.endTag.range[0])
-  }
-  const text = sourceCode.getText(script)
-  const openEnd = text.indexOf('>')
-  const closeStart = text.lastIndexOf('<')
-  if (openEnd === -1 || closeStart <= openEnd) return text
-  return text.slice(openEnd + 1, closeStart)
-}
-
-function countScriptCodeLines(sourceCode, script) {
-  const stripped = stripBlockComments(getScriptBody(sourceCode, script))
-  return stripped.split('\n').filter((l) => {
-    const t = l.trim()
-    return t.length > 0 && !t.startsWith('//')
-  }).length
-}
-
-/**
- * Custom rules for Numen project conventions:
- * 1. max-inline-props: Enforce extracting large props interfaces (> 6 fields) into *.types.ts.
- * 2. vue-script-sections: Enforce section banners and canonical order (AGENTS.md rule 4).
- * 3. max-script-lines: Enforce max lines of executable code in <script> (ignoring comments/banners).
- */
-const numenPlugin = {
-  rules: {
-    'max-inline-props': {
-      meta: {
-        type: 'problem',
-        docs: {
-          description:
-            'Enforce extracting large props interfaces (> 6 fields) into a separate types file',
-        },
-        schema: [
-          {
-            type: 'object',
-            properties: {
-              max: {
-                type: 'integer',
-                minimum: 1,
-              },
-            },
-            additionalProperties: false,
-          },
-        ],
-        messages: {
-          tooManyProps:
-            'defineProps has {{count}} inline fields (max: {{max}}). Extract props into a separate *.types.ts file.',
-        },
-      },
-      create(context) {
-        const max = context.options[0]?.max ?? 6
-        return {
-          'CallExpression[callee.name="defineProps"] > TSTypeParameterInstantiation > TSTypeLiteral'(
-            node,
-          ) {
-            const count = node.members?.length || 0
-            if (count > max) {
-              context.report({
-                node,
-                messageId: 'tooManyProps',
-                data: { count, max },
-              })
-            }
-          },
-        }
-      },
-    },
-
-    'vue-script-sections': {
-      meta: {
-        type: 'layout',
-        docs: {
-          description: 'Enforce section structure and canonical order in Vue SFC script block',
-        },
-        messages: {
-          missingSections:
-            'Script has {{count}} lines of code but no section banners. Group script into sections: Props -> Events -> State -> Hooks -> Handlers -> Helpers.',
-          unknownSection:
-            'Unknown section banner "{{name}}". Canonical sections: Props, Events, Props & Emits, State, Hooks, Handlers, Helpers.',
-          outOfOrder:
-            'Section "{{name}}" should not appear after "{{prevName}}". Canonical order: Props -> Events -> State -> Hooks -> Handlers -> Helpers.',
-        },
-        schema: [
-          {
-            type: 'object',
-            properties: {
-              minCodeLines: { type: 'integer', minimum: 1 },
-            },
-            additionalProperties: false,
-          },
-        ],
-      },
-      create(context) {
-        const minCodeLines = context.options[0]?.minCodeLines ?? 35
-        return {
-          Program() {
-            const docFrag = context.sourceCode.parserServices.getDocumentFragment?.()
-            const script = docFrag?.children?.find(
-              (c) => c.type === 'VElement' && c.name === 'script',
-            )
-            if (!script) return
-
-            const scriptStart = script.loc.start.line
-            const scriptEnd = script.loc.end.line
-
-            const comments = context.sourceCode
-              .getAllComments()
-              .filter((c) => c.loc.start.line >= scriptStart && c.loc.end.line <= scriptEnd)
-
-            const codeLines = countScriptCodeLines(context.sourceCode, script)
-
-            const banners = []
-            for (const comment of comments) {
-              const name = getBannerName(comment.value)
-              if (name !== null) {
-                banners.push({
-                  node: comment,
-                  name,
-                  line: comment.loc.start.line,
-                })
-              }
-            }
-
-            if (codeLines > minCodeLines && banners.length === 0) {
-              context.report({
-                node: script,
-                messageId: 'missingSections',
-                data: { count: codeLines },
-              })
-            }
-
-            let lastRank = 0
-            let lastName = ''
-            for (const b of banners) {
-              const rank = SECTION_ORDER[b.name.toLowerCase()]
-              if (!rank) {
-                context.report({
-                  node: b.node,
-                  messageId: 'unknownSection',
-                  data: { name: b.name },
-                })
-                continue
-              }
-              if (rank < lastRank) {
-                context.report({
-                  node: b.node,
-                  messageId: 'outOfOrder',
-                  data: { name: b.name, prevName: lastName },
-                })
-              }
-              lastRank = rank
-              lastName = b.name
-            }
-          },
-        }
-      },
-    },
-
-    'max-script-lines': {
-      meta: {
-        type: 'problem',
-        docs: {
-          description:
-            'Enforce maximum lines of executable code in <script> (excluding comments and blanks)',
-        },
-        messages: {
-          tooManyLines:
-            'Script has {{count}} executable code lines (max: {{max}}). Decompose into composables or sub-components.',
-        },
-        schema: [
-          {
-            type: 'object',
-            properties: {
-              max: { type: 'integer', minimum: 1 },
-            },
-            additionalProperties: false,
-          },
-        ],
-      },
-      create(context) {
-        const max = context.options[0]?.max ?? 100
-        return {
-          Program() {
-            const docFrag = context.sourceCode.parserServices.getDocumentFragment?.()
-            const script = docFrag?.children?.find(
-              (c) => c.type === 'VElement' && c.name === 'script',
-            )
-            if (!script) return
-
-            const codeLines = countScriptCodeLines(context.sourceCode, script)
-
-            if (codeLines > max) {
-              context.report({
-                node: script,
-                messageId: 'tooManyLines',
-                data: { count: codeLines, max },
-              })
-            }
-          },
-        }
-      },
-    },
-
-    'boolean-prop-naming': {
-      meta: {
-        type: 'suggestion',
-        docs: {
-          description:
-            'Enforce boolean props to use is/has/can prefix according to AGENTS.md rule 6',
-        },
-        messages: {
-          invalidBooleanPrefix:
-            'Boolean prop "{{name}}" must use prefix is/has/can (e.g. is{{capitalized}}).',
-        },
-      },
-      create(context) {
-        return {
-          'CallExpression[callee.name="defineProps"] > TSTypeParameterInstantiation > TSTypeLiteral > TSPropertySignature'(
-            node,
-          ) {
-            const name = node.key?.name || node.key?.value
-            if (!name) return
-
-            const typeAnnotation = node.typeAnnotation?.typeAnnotation
-            if (!typeAnnotation) return
-
-            let isBoolean = typeAnnotation.type === 'TSBooleanKeyword'
-            if (typeAnnotation.type === 'TSUnionType') {
-              isBoolean = typeAnnotation.types.some((t) => t.type === 'TSBooleanKeyword')
-            }
-
-            if (isBoolean && name !== 'modelValue' && !/^(is|has|can)[A-Z]/.test(name)) {
-              const capitalized = name.charAt(0).toUpperCase() + name.slice(1)
-              context.report({
-                node: node.key,
-                messageId: 'invalidBooleanPrefix',
-                data: { name, capitalized },
-              })
-            }
-          },
-        }
-      },
-    },
-
-    'handler-naming': {
-      meta: {
-        type: 'suggestion',
-        docs: {
-          description:
-            'Enforce event handler naming on<Action> and forbid handle... prefix (AGENTS.md rule 3)',
-        },
-        messages: {
-          invalidHandlerName:
-            'Event handler "{{name}}" must start with "on" in PascalCase (e.g. on{{capitalized}}). Patterns like "handle..." are forbidden by AGENTS.md rule 3.',
-        },
-      },
-      create(context) {
-        let handlersStart = -1
-        let handlersEnd = Infinity
-
-        const checkHandlerName = (node) => {
-          const line = node.loc.start.line
-          if (line <= handlersStart || line >= handlersEnd) return
-          const name = node.id.name
-          if (/^on[A-Z]/.test(name)) return
-          const cleaned = name.replace(/^handle/, '')
-          const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
-          context.report({ node: node.id, messageId: 'invalidHandlerName', data: { name, capitalized } })
-        }
-
-        return {
-          Program() {
-            const docFrag = context.sourceCode.parserServices.getDocumentFragment?.()
-            const script = docFrag?.children?.find(
-              (c) => c.type === 'VElement' && c.name === 'script',
-            )
-            if (!script) return
-
-            const comments = context.sourceCode
-              .getAllComments()
-              .filter(
-                (c) =>
-                  c.loc.start.line >= script.loc.start.line &&
-                  c.loc.end.line <= script.loc.end.line,
-              )
-
-            for (let i = 0; i < comments.length; i++) {
-              const c = comments[i]
-              if (getBannerName(c.value)?.toLowerCase() === 'handlers') {
-                handlersStart = c.loc.end.line
-                for (let j = i + 1; j < comments.length; j++) {
-                  if (getBannerName(comments[j].value) !== null) {
-                    handlersEnd = comments[j].loc.start.line
-                    break
-                  }
-                }
-                if (handlersEnd === Infinity) {
-                  handlersEnd = script.loc.end.line
-                }
-                break
-              }
-            }
-          },
-
-          FunctionDeclaration(node) {
-            if (!node.id || handlersStart === -1) return
-            checkHandlerName(node)
-          },
-
-          VariableDeclarator(node) {
-            if (!node.id || handlersStart === -1) return
-            const isFn =
-              node.init?.type === 'ArrowFunctionExpression' ||
-              node.init?.type === 'FunctionExpression'
-            if (isFn) checkHandlerName(node)
-          },
-        }
-      },
-    },
-
-    'max-composable-return-properties': {
-      meta: {
-        type: 'problem',
-        docs: {
-          description:
-            'Enforce maximum number of properties returned from a composable to avoid God-composables',
-        },
-        messages: {
-          tooManyReturnedProperties:
-            'Composable "{{name}}" returns {{count}} properties (max: {{max}}). Decompose into smaller focused composables.',
-        },
-        schema: [
-          {
-            type: 'object',
-            properties: {
-              max: { type: 'integer', minimum: 1 },
-            },
-            additionalProperties: false,
-          },
-        ],
-      },
-      create(context) {
-        const max = context.options[0]?.max ?? 8
-
-        // Check if file is a composable file (e.g. use*.ts) or function is use*
-        function checkReturnObject(node, fnName) {
-          if (!fnName || !/^use[A-Z]/.test(fnName)) return
-          let count = 0
-          for (const prop of node.properties) {
-            if (prop.type === 'Property') {
-              count++
-            } else if (prop.type === 'SpreadElement') {
-              // Spreading another object/state counts as multiple properties (at least 2)
-              count += 2
-            }
-          }
-          if (count > max) {
-            context.report({
-              node,
-              messageId: 'tooManyReturnedProperties',
-              data: { name: fnName, count, max },
-            })
-          }
-        }
-
-        return {
-          'FunctionDeclaration:exit'(node) {
-            const fnName = node.id?.name
-            if (!fnName || !/^use[A-Z]/.test(fnName)) return
-            const body = node.body
-            if (!body || body.type !== 'BlockStatement') return
-            for (const stmt of body.body) {
-              if (
-                stmt.type === 'ReturnStatement' &&
-                stmt.argument?.type === 'ObjectExpression'
-              ) {
-                checkReturnObject(stmt.argument, fnName)
-              }
-            }
-          },
-
-          'VariableDeclarator:exit'(node) {
-            const fnName = node.id?.name
-            if (!fnName || !/^use[A-Z]/.test(fnName)) return
-            const init = node.init
-            if (!init) return
-            if (
-              init.type === 'ArrowFunctionExpression' ||
-              init.type === 'FunctionExpression'
-            ) {
-              if (init.body.type === 'ObjectExpression') {
-                checkReturnObject(init.body, fnName)
-              } else if (init.body.type === 'BlockStatement') {
-                for (const stmt of init.body.body) {
-                  if (
-                    stmt.type === 'ReturnStatement' &&
-                    stmt.argument?.type === 'ObjectExpression'
-                  ) {
-                    checkReturnObject(stmt.argument, fnName)
-                  }
-                }
-              }
-            }
-          },
-        }
-      },
-    },
-
-    'enforce-vue-reactivity-in-composable': {
-      meta: {
-        type: 'suggestion',
-        docs: {
-          description:
-            'Enforce that any use* function contains Vue reactivity primitives, or rename to create*',
-        },
-        messages: {
-          missingReactivity:
-            'Function "{{name}}" starts with "use" but contains no Vue reactivity primitives (ref, computed, watch, etc.). Rename to create{{suffix}} or pure service.',
-        },
-      },
-      create(context) {
-        const REACTIVITY_NAMES = new Set([
-          'ref',
-          'shallowRef',
-          'computed',
-          'watch',
-          'watchEffect',
-          'watchSyncEffect',
-          'watchPostEffect',
-          'reactive',
-          'shallowReactive',
-          'toRef',
-          'toRefs',
-          'toValue',
-          'onMounted',
-          'onUnmounted',
-          'onBeforeMount',
-          'onBeforeUnmount',
-          'onUpdated',
-          'onBeforeUpdate',
-          'onScopeDispose',
-          'provide',
-          'inject',
-          'useTemplateRef',
-        ])
-
-        function checkFunction(node, name) {
-          if (!name || !/^use[A-Z]/.test(name)) return
-          let hasReactivity = false
-
-          // Traverse descendants to find reactivity calls or other use* calls
-          function inspect(n) {
-            if (!n || hasReactivity) return
-            if (n.type === 'CallExpression') {
-              let calleeName = ''
-              if (n.callee.type === 'Identifier') {
-                calleeName = n.callee.name
-              } else if (
-                n.callee.type === 'MemberExpression' &&
-                n.callee.property.type === 'Identifier'
-              ) {
-                calleeName = n.callee.property.name
-              }
-              if (
-                REACTIVITY_NAMES.has(calleeName) ||
-                /^use[A-Z]/.test(calleeName)
-              ) {
-                hasReactivity = true
-                return
-              }
-            }
-            for (const key of Object.keys(n)) {
-              if (key === 'parent') continue
-              const child = n[key]
-              if (Array.isArray(child)) {
-                for (const c of child) {
-                  if (c && typeof c === 'object' && c.type) inspect(c)
-                }
-              } else if (child && typeof child === 'object' && child.type) {
-                inspect(child)
-              }
-            }
-          }
-
-          inspect(node.body)
-
-          if (!hasReactivity) {
-            const suffix = name.slice(3)
-            context.report({
-              node: node.id || node,
-              messageId: 'missingReactivity',
-              data: { name, suffix },
-            })
-          }
-        }
-
-        return {
-          FunctionDeclaration(node) {
-            if (node.id) checkFunction(node, node.id.name)
-          },
-          VariableDeclarator(node) {
-            if (
-              node.id?.type === 'Identifier' &&
-              (node.init?.type === 'ArrowFunctionExpression' ||
-                node.init?.type === 'FunctionExpression')
-            ) {
-              checkFunction(node.init, node.id.name)
-            }
-          },
-        }
-      },
-    },
-
-    'no-double-type-assertion': {
-      meta: {
-        type: 'problem',
-        docs: {
-          description:
-            'Forbid fake double type assertions (e.g. as unknown as T, as any as T) to prevent AI type-safety bypasses',
-        },
-        messages: {
-          forbiddenDoubleAssertion:
-            'Double type assertion ("as unknown as T" / "as any as T") is forbidden. Fix the underlying type signature instead of forcing a cast.',
-        },
-      },
-      create(context) {
-        return {
-          TSAsExpression(node) {
-            if (node.expression?.type === 'TSAsExpression') {
-              const innerType = node.expression.typeAnnotation?.type
-              if (
-                innerType === 'TSUnknownKeyword' ||
-                innerType === 'TSAnyKeyword'
-              ) {
-                context.report({
-                  node,
-                  messageId: 'forbiddenDoubleAssertion',
-                })
-              }
-            }
-          },
-        }
-      },
-    },
-
-    'thin-computed': {
-      meta: {
-        type: 'problem',
-        docs: {
-          description:
-            'Enforce that computed properties in Vue components remain thin projections without loops, sorting, or multi-step business logic',
-        },
-        messages: {
-          tooManyStatements:
-            'computed() has {{count}} statements (max: {{max}}). Extract data transformations and business logic into a pure module.',
-          forbiddenBranch:
-            'Branching ({{kind}}) inside computed() in a .vue file is forbidden. Move conditional business logic into a composable or pure module.',
-          forbiddenLoop:
-            'Loops inside computed() in a .vue file are forbidden. Move iteration and data transformation into a pure module.',
-          forbiddenTransform:
-            'Array .{{method}}() inside computed() in a .vue file is forbidden. Move sorting, filtering, and reduction into a pure module.',
-        },
-        schema: [
-          {
-            type: 'object',
-            properties: {
-              maxStatements: { type: 'integer', minimum: 1 },
-            },
-            additionalProperties: false,
-          },
-        ],
-      },
-      create(context) {
-        const maxStatements = context.options[0]?.maxStatements ?? 3
-        const LOOP_TYPES = new Set([
-          'ForStatement',
-          'ForInStatement',
-          'ForOfStatement',
-          'WhileStatement',
-          'DoWhileStatement',
-        ])
-        const FORBIDDEN_ARRAY_METHODS = new Set(['sort', 'reduce', 'some', 'every'])
-
-        function inspectBody(node, state) {
-          if (!node) return
-          if (node.type === 'SwitchStatement') {
-            context.report({
-              node,
-              messageId: 'forbiddenBranch',
-              data: { kind: 'switch' },
-            })
-            return
-          }
-          if (node.type === 'IfStatement') {
-            state.ifCount += 1
-            if (state.ifCount > 1) {
-              context.report({
-                node,
-                messageId: 'forbiddenBranch',
-                data: { kind: 'multiple if statements' },
-              })
-            }
-          }
-          if (LOOP_TYPES.has(node.type)) {
-            context.report({
-              node,
-              messageId: 'forbiddenLoop',
-            })
-            return
-          }
-          if (
-            node.type === 'CallExpression' &&
-            node.callee?.type === 'MemberExpression' &&
-            node.callee.property?.type === 'Identifier' &&
-            FORBIDDEN_ARRAY_METHODS.has(node.callee.property.name)
-          ) {
-            context.report({
-              node: node.callee.property,
-              messageId: 'forbiddenTransform',
-              data: { method: node.callee.property.name },
-            })
-          }
-          for (const key of Object.keys(node)) {
-            if (key === 'parent') continue
-            const child = node[key]
-            if (Array.isArray(child)) {
-              for (const item of child) {
-                if (item && typeof item === 'object' && item.type) inspectBody(item, state)
-              }
-            } else if (child && typeof child === 'object' && child.type) {
-              inspectBody(child, state)
-            }
-          }
-        }
-
-        return {
-          'CallExpression[callee.name="computed"]'(node) {
-            const arg = node.arguments?.[0]
-            if (!arg) return
-            const fn =
-              arg.type === 'ArrowFunctionExpression' || arg.type === 'FunctionExpression'
-                ? arg
-                : null
-            if (!fn) return
-            if (fn.body?.type === 'BlockStatement') {
-              const count = fn.body.body.length
-              if (count > maxStatements) {
-                context.report({
-                  node,
-                  messageId: 'tooManyStatements',
-                  data: { count, max: maxStatements },
-                })
-              }
-            }
-            inspectBody(fn.body, { ifCount: 0 })
-          },
-        }
-      },
-    },
-  },
-}
+/** The rule is shared with configurations that do not build on createBaseConfig. */
+export const maxComposableReturnProperties = numenPlugin.rules['max-composable-return-properties']
 
 /**
  * Returns the unified base ESLint flat configuration array for Vue 3 + TypeScript projects.
@@ -922,13 +420,16 @@ export function createBaseConfig(dirname, options = {}) {
         ],
         'vue/multi-word-component-names': 'off',
         'max-depth': ['error', 3],
-        complexity: ['error', 12],
+        complexity: ['error', 10],
+        'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
         'max-params': ['error', 4],
         'max-lines-per-function': ['error', { max: 80, skipBlankLines: true, skipComments: true, IIFEs: true }],
         'max-statements': ['error', 50],
         'numen/max-composable-return-properties': ['error', { max: 8 }],
         'numen/enforce-vue-reactivity-in-composable': 'error',
         'numen/no-double-type-assertion': 'error',
+        'numen/no-unknown': 'error',
+        'numen/no-comment-only-catch': 'error',
         '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/consistent-type-assertions': [
           'error',
@@ -956,7 +457,7 @@ export function createBaseConfig(dirname, options = {}) {
       },
       rules: {
         'numen/max-inline-props': ['error', { max: 6 }],
-        'numen/vue-script-sections': ['error', { minCodeLines: 35 }],
+        'numen/vue-script-sections': 'error',
         'numen/max-script-lines': ['error', { max: 100 }],
         'numen/thin-computed': ['error', { maxStatements: 3 }],
         'numen/boolean-prop-naming': 'error',
@@ -1061,14 +562,7 @@ export function createBaseConfig(dirname, options = {}) {
             ],
           },
         ],
-        'no-restricted-globals': [
-          'error',
-          { name: 'window', message: 'lib/ is pure TypeScript and must not access DOM window' },
-          { name: 'document', message: 'lib/ is pure TypeScript and must not access DOM document' },
-          { name: 'navigator', message: 'lib/ is pure TypeScript and must not access browser navigator' },
-          { name: 'localStorage', message: 'lib/ is pure TypeScript and must not access localStorage' },
-          { name: 'sessionStorage', message: 'lib/ is pure TypeScript and must not access sessionStorage' },
-        ],
+        'numen/pure-segment': 'error',
       },
     },
 
@@ -1136,9 +630,12 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-composable-return-properties': 'off',
         'numen/enforce-vue-reactivity-in-composable': 'off',
         'numen/no-double-type-assertion': 'off',
+        'numen/no-unknown': 'off',
+        'numen/no-comment-only-catch': 'off',
         '@typescript-eslint/consistent-type-assertions': 'off',
         'max-depth': 'off',
         complexity: 'off',
+        'max-lines': 'off',
         'max-params': 'off',
         'max-lines-per-function': 'off',
         'max-statements': 'off',
@@ -1148,9 +645,21 @@ export function createBaseConfig(dirname, options = {}) {
     {
       files: ['**/*.spec.ts', '**/testing/**', '**/fixtures/**'],
       rules: {
+        'max-lines': 'off',
+        'numen/max-composable-return-properties': 'off',
         'max-lines-per-function': 'off',
         'max-statements': 'off',
       },
+    },
+
+    {
+      files: ['**/*.test.ts', '**/*.spec.ts', '**/*.stories.ts', '**/testing/**/*.ts', '**/fixtures/**/*.ts'],
+      rules: { 'numen/no-style-declaration-read': 'error' },
+    },
+
+    {
+      files: ['**/*.test.ts'],
+      rules: { 'numen/no-mock-of-subject-slice': 'error' },
     },
 
     prettier,
@@ -1158,8 +667,8 @@ export function createBaseConfig(dirname, options = {}) {
 }
 
 /**
- * The flat configuration of a TypeScript library without Vue (`libs/core-client`,
- * `libs/plugin-host-ts`): the strict rules, the size limits, the package boundary and the
+ * The flat configuration of a TypeScript library without Vue (`libs/core/client`,
+ * `libs/plugin/loader`): the strict rules, the size limits, the package boundary and the
  * determinism of its sources.
  *
  * @param {string} dirname The import.meta.dirname of the package
@@ -1172,6 +681,7 @@ export function createPlainLibraryConfig(dirname) {
     js.configs.recommended,
     ...tseslint.configs.recommended,
     {
+      plugins: { numen: numenPlugin },
       languageOptions: {
         globals: globals.browser,
         parserOptions: {
@@ -1191,6 +701,7 @@ export function createPlainLibraryConfig(dirname) {
     {
       ...sources,
       rules: {
+        'numen/no-unknown': 'error',
         'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
         'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
         complexity: ['error', 10],
@@ -1222,6 +733,8 @@ export function createPlainLibraryConfig(dirname) {
     {
       files: ['**/*.test.ts', '**/*.spec.ts'],
       rules: {
+        'numen/no-style-declaration-read': 'error',
+        'numen/no-mock-of-subject-slice': 'error',
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
         '@typescript-eslint/no-unnecessary-condition': 'off',
@@ -1233,4 +746,16 @@ export function createPlainLibraryConfig(dirname) {
     },
     prettier,
   ]
+}
+
+/**
+ * The recommended rules of `eslint-plugin-storybook` for story files, with `csf-component` off: the link from a
+ * story to its component is the import graph (`public-component-has-story`), and a screen story has no single
+ * component.
+ *
+ * @param {{ configs: Record<string, Array> }} storybook The `eslint-plugin-storybook` module, imported by the package that declares it
+ * @returns {Array}
+ */
+export function createStoryConfig(storybook) {
+  return [...storybook.configs['flat/recommended'], { files: ['**/*.stories.ts'], rules: { 'storybook/csf-component': 'off' } }]
 }

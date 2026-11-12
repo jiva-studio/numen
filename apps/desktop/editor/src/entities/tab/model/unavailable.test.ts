@@ -1,70 +1,46 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
-import { flushPromises, mount } from '@vue/test-utils'
-import { CATALOG_INCOMPATIBILITY, CATALOG_STATE } from '@numen/core-client'
-import {
-  createMockCatalogEntry,
-  createMockPluginCatalog,
-  type MockCatalogEntryOptions,
-} from '@numen/core-client/testing'
-import { createDeferred } from '@/testing/deferred'
-import { createUnavailableKind, type UnavailableServices } from './unavailable'
-import { getUnavailableView } from './unavailableView'
+import { createMockCatalogEntry } from '@numen/core-client/testing'
+import { answerTabKinds } from '@/testing/tabCatalog'
+import UnavailablePane from '../ui/UnavailablePane.vue'
+import { createUnavailableKind, type UnavailableState } from './unavailable'
 
-const notesOptions: MockCatalogEntryOptions = {
-  name: 'Notes',
-  feature: 'Markdown notes',
-  tabKinds: ['reader:viewer'],
-  state: CATALOG_STATE.DISABLED,
-}
-
-const createServices = (
-  options: MockCatalogEntryOptions | null = notesOptions,
-  extra: Partial<UnavailableServices> = {},
-): UnavailableServices => ({
-  catalog: createMockPluginCatalog(
-    options === null ? [] : [createMockCatalogEntry('sample.notes', options)],
-  ),
-  ...extra,
-})
-
-const mountPane = async (services: UnavailableServices, kindName = 'reader:viewer') => {
-  const kind = createUnavailableKind(kindName, undefined, services)
-  const view = mount(kind.pane, { props: { state: kind.open('cards/Place.md', 'tab') } })
-  await flushPromises()
-  return view
-}
+const waitForAnswer = (state: unknown) =>
+  vi.waitFor(() => expect((state as UnavailableState).lookup.value.status).not.toBe('pending'))
 
 describe('createUnavailableKind', () => {
   it('keeps the name of the missing kind and what the tab stood on', () => {
-    const kind = createUnavailableKind('reader:viewer')
+    const kind = createUnavailableKind(UnavailablePane, 'reader:viewer')
 
     const state = kind.open('/a.bin', 'tab')
 
     expect(kind.kind).toBe('reader:viewer')
-    expect(kind.getOpenTab?.(state)).toEqual({ path: '/a.bin' })
-    expect(kind.identity?.('/a.bin')).toBe('/a.bin')
+    expect(kind.address?.getOpenTab?.(state)).toEqual({ path: '/a.bin' })
+    expect(kind.address?.identity?.('/a.bin')).toBe('/a.bin')
   })
 
   it('keeps the state the plugin saved for the tab', () => {
-    const kind = createUnavailableKind('reader:viewer')
+    const kind = createUnavailableKind(UnavailablePane, 'reader:viewer')
 
     const state = kind.open('a.bin', 'tab', { page: 4 })
 
-    expect(kind.getState?.(state)).toEqual({ page: 4 })
+    expect(kind.address?.getState?.(state)).toEqual({ page: 4 })
     expect(kind.getTitle?.(state)).toBe('a.bin')
   })
 
   it('keeps the original tab title when provided', () => {
     const icon = { name: 'FilesIcon' }
-    const kind = createUnavailableKind('files', { title: 'Files', icon })
+    const kind = createUnavailableKind(UnavailablePane, 'files', { title: 'Files', icon })
 
-    expect(kind.icon).toBe(icon)
+    expect(kind.display?.icon).toBe(icon)
     expect(kind.getTitle?.(kind.open('', 'tab'))).toBe('Files')
   })
 
+  it('draws the tab with the pane it is given', () => {
+    expect(createUnavailableKind(UnavailablePane, 'files').pane).toBe(UnavailablePane)
+  })
+
   it('names a tab with no path and no title after the kind the catalog declares once it answers', async () => {
-    const catalog = createMockPluginCatalog([
+    const lookups = answerTabKinds([
       createMockCatalogEntry('sample.decks', {
         tabKinds: [
           { kind: 'other', title: 'Other' },
@@ -72,302 +48,35 @@ describe('createUnavailableKind', () => {
         ],
       }),
     ])
-    const kind = createUnavailableKind('deck', undefined, { catalog })
+    const kind = createUnavailableKind(UnavailablePane, 'deck')
     const state = kind.open('', 'tab')
     expect(kind.getTitle?.(state)).toBe('deck')
 
-    await flushPromises()
+    await waitForAnswer(state)
 
     expect(kind.getTitle?.(state)).toBe('Deck')
-    expect(catalog.getAskedKinds()).toStrictEqual(['deck'])
+    expect(lookups).toStrictEqual(['deck'])
+  })
 
-    // Falls back to kind when contributes is undefined or tabKind is not in contributes.tabKinds
-    const entryWithoutContributes = {
-      ...createMockCatalogEntry('sample.bare'),
-      contributes: undefined,
-    }
-    const bareCatalog = {
-      ...createMockPluginCatalog(),
-      findByTabKind: async () => ({
-        ok: true as const,
-        value: { entry: entryWithoutContributes, sourceErrors: [] },
-      }),
-    }
-    const bareKind = createUnavailableKind('bare', undefined, { catalog: bareCatalog })
-    const bareState = bareKind.open('', 'tab')
-    await flushPromises()
-    expect(bareKind.getTitle?.(bareState)).toBe('bare')
+  it('names a tab after its kind where the catalog declares no title for it', async () => {
+    answerTabKinds([createMockCatalogEntry('sample.bare', { tabKinds: ['bare'] })])
+    const kind = createUnavailableKind(UnavailablePane, 'bare')
+    const state = kind.open('', 'tab')
 
-    const unmatchedCatalog = createMockPluginCatalog([
+    await waitForAnswer(state)
+
+    expect(kind.getTitle?.(state)).toBe('bare')
+  })
+
+  it('names a tab after its kind where no plugin declares the kind', async () => {
+    answerTabKinds([
       createMockCatalogEntry('sample.other', { tabKinds: [{ kind: 'other', title: 'Other' }] }),
     ])
-    const unmatchedEntry = createMockCatalogEntry('sample.other', {
-      tabKinds: [{ kind: 'other', title: 'Other' }],
-    })
-    const mismatchKind = createUnavailableKind('missing-kind', undefined, {
-      catalog: {
-        ...unmatchedCatalog,
-        findByTabKind: async () => ({
-          ok: true as const,
-          value: { entry: unmatchedEntry, sourceErrors: [] },
-        }),
-      },
-    })
-    const mismatchState = mismatchKind.open('', 'tab')
-    await flushPromises()
-    expect(mismatchKind.getTitle?.(mismatchState)).toBe('missing-kind')
-  })
-})
+    const kind = createUnavailableKind(UnavailablePane, 'missing-kind')
+    const state = kind.open('', 'tab')
 
-describe('the pane of a tab whose plugin is disabled', () => {
-  it('names the feature and the plugin from the catalog and omits the raw file path', async () => {
-    const view = await mountPane(createServices())
+    await waitForAnswer(state)
 
-    expect(view.text()).toContain('Plugin disabled')
-    expect(view.text()).toContain('The plugin for Markdown notes is disabled.')
-    expect(view.text()).not.toContain('cards/Place.md')
-    expect(view.find('button').text()).toBe('Enable Notes')
-  })
-
-  it('enables the plugin the catalog names when the button is clicked', async () => {
-    const enablePlugin = vi.fn(() => Promise.resolve())
-    const view = await mountPane(createServices(notesOptions, { enablePlugin }))
-
-    await view.find('button').trigger('click')
-
-    expect(enablePlugin).toHaveBeenCalledWith('sample.notes')
-    expect(view.find('button').text()).toBe('Enabling Notes…')
-    expect(view.find('button').attributes('disabled')).toBeDefined()
-  })
-
-  it('shows why enabling failed and offers the button again', async () => {
-    const enablePlugin = vi.fn(() => Promise.reject(new Error('write failed')))
-    const view = await mountPane(createServices(notesOptions, { enablePlugin }))
-
-    await view.find('button').trigger('click')
-    await flushPromises()
-
-    expect(view.find('[role="alert"]').exists()).toBe(true)
-    expect(view.find('button').text()).toBe('Enable Notes')
-  })
-})
-
-describe('the pane of a tab whose plugin is not installed', () => {
-  it('offers to install it and opens the plugin on click', async () => {
-    const openPlugin = vi.fn()
-    const view = await mountPane(
-      createServices({ ...notesOptions, state: CATALOG_STATE.AVAILABLE }, { openPlugin }),
-    )
-
-    expect(view.text()).toContain('Plugin not installed')
-    expect(view.text()).toContain('The plugin for Markdown notes is not installed.')
-    expect(view.find('button').text()).toBe('Install Notes')
-
-    await view.find('button').trigger('click')
-
-    expect(openPlugin).toHaveBeenCalledWith('sample.notes')
-  })
-})
-
-describe('the pane of a tab whose plugin is installed but not running', () => {
-  it('opens the plugin so the person can see why', async () => {
-    const openPlugin = vi.fn()
-    const view = await mountPane(
-      createServices({ ...notesOptions, state: CATALOG_STATE.INSTALLED }, { openPlugin }),
-    )
-
-    expect(view.text()).toContain('Plugin not running')
-    expect(view.find('button').text()).toBe('Open Settings')
-
-    await view.find('button').trigger('click')
-
-    expect(openPlugin).toHaveBeenCalledWith('sample.notes')
-  })
-})
-
-describe('the pane of a tab whose plugin cannot run here', () => {
-  it('states the requirement and offers no enable action', async () => {
-    const enablePlugin = vi.fn(() => Promise.resolve())
-    const view = await mountPane(
-      createServices(
-        {
-          ...notesOptions,
-          incompatibility: CATALOG_INCOMPATIBILITY.PROTOCOL,
-          incompatibilityDetail: 'needs 2.0',
-        },
-        { enablePlugin },
-      ),
-    )
-
-    expect(view.text()).toContain('Plugin incompatible')
-    expect(view.text()).toContain('Notes cannot run in this application: needs 2.0')
-    expect(view.find('button').text()).toBe('Open Settings')
-    expect(enablePlugin).not.toHaveBeenCalled()
-  })
-})
-
-describe('the pane of a tab no plugin in the catalog provides', () => {
-  it('says the plugin is disabled or missing and opens the settings', async () => {
-    const openPlugin = vi.fn()
-    const view = await mountPane(createServices(null, { openPlugin }))
-
-    expect(view.text()).toContain('Plugin unavailable')
-    expect(view.text()).toContain('The plugin for this tab is disabled or missing.')
-
-    await view.find('button').trigger('click')
-
-    expect(openPlugin).toHaveBeenCalledWith(undefined)
-  })
-
-  it('is the same without a catalog', async () => {
-    const view = await mountPane({})
-
-    expect(view.text()).toContain('Plugin unavailable')
-  })
-})
-
-describe('getUnavailableView', () => {
-  it('has no view while the catalog has not answered', () => {
-    expect(getUnavailableView({ status: 'pending' }, false)).toBeUndefined()
-  })
-
-  it('names no plugin for a kind the catalog does not know', () => {
-    expect(getUnavailableView({ status: 'missing' }, false)).toMatchObject({
-      heading: 'Plugin unavailable',
-      action: 'inspect',
-      pluginId: undefined,
-    })
-  })
-
-  it('returns the view action and message for incompatible, available, and not-running entries', () => {
-    const incompatible = createMockCatalogEntry('sample.notes', {
-      ...notesOptions,
-      incompatibility: CATALOG_INCOMPATIBILITY.PROTOCOL,
-      incompatibilityDetail: 'needs 2.0',
-    })
-    expect(getUnavailableView({ status: 'found', entry: incompatible }, false)).toStrictEqual({
-      heading: 'Plugin incompatible',
-      message: 'Notes cannot run in this application: needs 2.0',
-      action: 'inspect',
-      actionText: 'Open Settings',
-      pluginId: 'sample.notes',
-    })
-
-    const available = {
-      ...createMockCatalogEntry('sample.notes', {
-        ...notesOptions,
-        state: CATALOG_STATE.AVAILABLE,
-      }),
-      contributes: undefined,
-    }
-    expect(getUnavailableView({ status: 'found', entry: available }, false)).toStrictEqual({
-      heading: 'Plugin not installed',
-      message: 'The plugin for Notes is not installed.',
-      action: 'install',
-      actionText: 'Install Notes',
-      pluginId: 'sample.notes',
-    })
-
-    const notRunning = createMockCatalogEntry('sample.notes', {
-      ...notesOptions,
-      state: CATALOG_STATE.INSTALLED,
-    })
-    expect(getUnavailableView({ status: 'found', entry: notRunning }, false)).toStrictEqual({
-      heading: 'Plugin not running',
-      message: 'The plugin for Markdown notes is not running.',
-      action: 'inspect',
-      actionText: 'Open Settings',
-      pluginId: 'sample.notes',
-    })
-  })
-})
-
-describe('the pane while the catalog has not answered', () => {
-  /** A catalog whose answer about a kind waits until the test opens the gate. */
-  const createSlowServices = () => {
-    const gate = createDeferred<void>()
-    const catalog = createMockPluginCatalog([createMockCatalogEntry('sample.notes', notesOptions)])
-    const services: UnavailableServices = {
-      catalog: {
-        ...catalog,
-        findByTabKind: async (kind) => {
-          await gate.promise
-          return catalog.findByTabKind(kind)
-        },
-      },
-    }
-    return { gate, services }
-  }
-
-  it('shows the loading state and no placeholder text until the answer arrives', async () => {
-    const { gate, services } = createSlowServices()
-    const kind = createUnavailableKind('reader:viewer', undefined, services)
-    const host = document.createElement('div')
-    document.body.append(host)
-    const texts: string[] = []
-    const observer = new MutationObserver(() => texts.push(host.textContent ?? ''))
-    observer.observe(host, { childList: true, subtree: true, characterData: true })
-    const view = mount(kind.pane, {
-      props: { state: kind.open('cards/Place.md', 'tab') },
-      attachTo: host,
-    })
-    await flushPromises()
-
-    expect(view.find('[aria-busy="true"]').exists()).toBe(true)
-    expect(view.find('h3').exists()).toBe(false)
-    expect(view.find('button').exists()).toBe(false)
-
-    gate.answer()
-    await flushPromises()
-    observer.disconnect()
-
-    expect(view.find('h3').text()).toBe('Plugin disabled')
-    expect(view.find('button').text()).toBe('Enable Notes')
-    expect(texts.length).toBeGreaterThan(0)
-    expect(texts.filter((text) => text.includes('Plugin unavailable'))).toStrictEqual([])
-    expect(texts.filter((text) => text.includes('Open Settings'))).toStrictEqual([])
-    view.unmount()
-    host.remove()
-  })
-
-  it('shows the missing-plugin text when the lookup fails', async () => {
-    const services: UnavailableServices = {
-      catalog: {
-        ...createMockPluginCatalog(),
-        findByTabKind: () => Promise.reject(new Error('core gone')),
-      },
-    }
-
-    const view = await mountPane(services)
-
-    expect(view.find('h3').text()).toBe('Plugin unavailable')
-  })
-})
-
-describe('the placeholder while its plugin starts', () => {
-  it('says the plugin is starting until its own plugin has started, and then what the catalog says of it', async () => {
-    const starting = ref<ReadonlySet<string>>(new Set(['sample.notes', 'sample.other']))
-    const view = await mountPane(
-      createServices(notesOptions, { isPluginStarting: (id) => starting.value.has(id) }),
-    )
-
-    expect(view.find('[data-starting]').exists()).toBe(true)
-    expect(view.text()).toContain('Starting the plugin')
-    expect(view.text()).not.toContain('Plugin disabled')
-
-    starting.value = new Set(['sample.other'])
-    await flushPromises()
-
-    expect(view.find('[data-starting]').exists()).toBe(false)
-    expect(view.text()).toContain('Plugin disabled')
-  })
-
-  it('does not wait for other plugins that are still starting', async () => {
-    const view = await mountPane(
-      createServices(notesOptions, { isPluginStarting: (id) => id === 'sample.other' }),
-    )
-
-    expect(view.find('[data-starting]').exists()).toBe(false)
-    expect(view.text()).toContain('Plugin disabled')
+    expect(kind.getTitle?.(state)).toBe('missing-kind')
   })
 })

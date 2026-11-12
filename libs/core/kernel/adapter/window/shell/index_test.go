@@ -1,0 +1,173 @@
+package shell
+
+import (
+	"context"
+	"errors"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"connectrpc.com/connect"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/note/domain"
+)
+
+func getUnreadVault() domain.Vault {
+	return domain.Vault{ID: "unread", Name: "Sanskrit", Path: "/vaults/Sanskrit"}
+}
+
+// A vault being read is work the window reports, named by the vault it is on
+// and by how far it has got. A window session on a blank frame reads as broken.
+func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
+	api := newAPI(t)
+	blockCh := make(chan struct{})
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
+		<-blockCh
+		return nil
+	})
+
+	state, err := api.EnsureIndexed(t.Context(), getUnreadVault())
+	if err != nil || state.Status != plugin.Indexing || state.Reason != "" {
+		t.Fatalf("the vault came back %+v (%v)", state, err)
+	}
+	testsupport.WaitFor(t, func() bool {
+		for _, item := range api.Window.Tasks.List() {
+			if item.Title == "Indexing the vault" && item.About == "Sanskrit" && item.IsUserStarted {
+				return true
+			}
+		}
+		return false
+	})
+
+	// The indexing ends, and the work goes with it.
+	close(blockCh)
+	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasks.List()) == 0 })
+}
+
+// A vault the index already holds is rendered from its contents, so re-indexing
+// it is displayed only once it has lasted. An instant walk is not reported.
+func TestEnsureIndexed_ShortReindexCreatesNoTask(t *testing.T) {
+	target := domain.Vault{ID: "member", Name: "Member"}
+	api := newAPI(t, target)
+	blockCh := make(chan struct{})
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
+		<-blockCh
+		return nil
+	})
+
+	if _, err := api.EnsureIndexed(t.Context(), target); err != nil {
+		t.Fatal(err)
+	}
+	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasks.List()) == 1 })
+
+	if pos := api.Window.Tasks.List()[0]; pos.IsUserStarted {
+		t.Errorf("indexing a vault the index carries came back as work asked for: %+v", pos)
+	}
+	close(blockCh)
+}
+
+// A failed indexing reports why in the vault's own state, and is not restarted
+// repeatedly by the counts that follow.
+func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
+	api := newAPI(t)
+	var tried atomic.Int64
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
+		tried.Add(1)
+		return errors.New("the folder is not there")
+	})
+	ask := func() plugin.IndexState {
+		state, err := api.EnsureIndexed(t.Context(), getUnreadVault())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return state
+	}
+
+	testsupport.WaitFor(t, func() bool { return ask().Reason == "the folder is not there" })
+	if state := ask(); state.Status != plugin.IndexFailed {
+		t.Errorf("a vault that could not be read stands as %+v", state)
+	}
+	if got := tried.Load(); got != 1 {
+		t.Errorf("the vault was read %d times", got)
+	}
+
+	// The vault moved underneath the window, which is what lets it be tried again.
+	api.ClearIndexFailure(getUnreadVault().ID)
+	ask()
+	testsupport.WaitFor(t, func() bool { return tried.Load() == 2 })
+}
+
+// A window that reads no vault reports that the index does not hold a vault it lacks.
+func TestAVaultTheIndexDoesNotCarryIsUnreadWhereNothingReadsIt(t *testing.T) {
+	api := newAPI(t)
+
+	state, err := api.EnsureIndexed(t.Context(), getUnreadVault())
+
+	if err != nil || state.Status != plugin.IndexFailed || state.Reason == "" {
+		t.Errorf("a vault nothing reads stands as %+v (%v)", state, err)
+	}
+}
+
+// The list of work is answered whether or not the window keeps one, so the page
+// has one thing to listen to.
+func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
+	api := newAPI(t)
+	api.Window.Tasks = nil
+
+	stream, err := newWindowClient(t, api).WatchTasks(
+		t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: testWindow}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testsupport.CloseAfter(t, stream)
+
+	if !stream.Receive() {
+		t.Fatalf("nothing was said: %v", stream.Err())
+	}
+	if response := stream.Msg().GetTasks(); len(response) != 0 {
+		t.Errorf("a window doing nothing said %+v", response)
+	}
+}
+
+func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
+	api := newAPI(t)
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
+		return errors.New("the folder is not there")
+	})
+
+	if _, err := api.EnsureIndexed(t.Context(), getUnreadVault()); err != nil {
+		t.Fatal(err)
+	}
+	testsupport.WaitFor(t, func() bool {
+		for _, item := range api.Window.Tasks.List() {
+			if item.Title == "Indexing the vault" && item.Error == "the folder is not there" {
+				return true
+			}
+		}
+		return false
+	})
+}
+
+// A vault read wakes every waiter notified of a move.
+func TestAVaultReadWakesTheListeners(t *testing.T) {
+	api := newAPI(t)
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
+	moves, err := api.WatchMoves(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := api.EnsureIndexed(t.Context(), getUnreadVault()); err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case <-moves:
+	case <-time.After(testsupport.Patience):
+		t.Fatal("nobody received the vault was read")
+	}
+}

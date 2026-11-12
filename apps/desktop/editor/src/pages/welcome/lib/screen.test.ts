@@ -8,8 +8,8 @@
 import { describe, expect, it } from 'vitest'
 import { keyChord } from '@numen/ui'
 import type { VaultList, Vault } from '@/entities/vault'
-import { findChordKeys } from '@/features/command-palette'
-import { COMMAND } from '@/shared/commandIds'
+import { createRowKeys } from '@/shared/model/command'
+import { COMMAND } from '@/shared/model/command'
 import {
   COMMANDS,
   createVaultRows,
@@ -145,7 +145,7 @@ describe('the keystroke drawn on a way', () => {
     )?.keys
 
   it('is the one the table binds to that command', () => {
-    expect(getKeys(COMMAND.createNote)).toStrictEqual(findChordKeys(COMMAND.createNote, APPLE))
+    expect(getKeys(COMMAND.createNote)).toStrictEqual(createRowKeys(COMMAND.createNote, APPLE).keys)
     expect(getKeys('org.example.sample:graph.run')).toStrictEqual(CONTRIBUTED[0]!.keys)
   })
 

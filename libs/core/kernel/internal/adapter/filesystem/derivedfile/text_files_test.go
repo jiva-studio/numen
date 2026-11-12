@@ -1,0 +1,52 @@
+package derivedfile_test
+
+import (
+	"errors"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
+)
+
+const transcriber = "org.example.transcription"
+
+func TestWriteThenReadKeepsTheSegmentsAndTheHash(t *testing.T) {
+	root := t.TempDir()
+	files, err := derivedfile.TextStores{}.Open(domain.Vault{ID: "v", Path: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	segments := []domain.TextSegment{{Text: "Good morning.", Selector: `{"t":[0,1.5]}`}}
+	hash, err := files.WriteTextFile(t.Context(), transcriber, "a.jsonl", segments)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(filepath.Join(root, ".numen", transcriber, "a.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hash != domain.HashContent(raw) {
+		t.Fatalf("hash %s is not the hash of the file", hash)
+	}
+	got, err := files.ReadTextFile(t.Context(), transcriber, "a.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.TextHash != hash || len(got.Segments) != 1 || got.Segments[0] != segments[0] {
+		t.Fatalf("read %+v", got)
+	}
+}
+
+func TestReadTextFileRejectsANameOutsideThePluginFolder(t *testing.T) {
+	files, err := derivedfile.TextStores{}.Open(domain.Vault{ID: "v", Path: t.TempDir()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := files.ReadTextFile(t.Context(), transcriber, "../core/x.jsonl"); err == nil || errors.Is(err, text.ErrNoText) {
+		t.Fatalf("a name with a slash: got %v, want a refusal", err)
+	}
+}

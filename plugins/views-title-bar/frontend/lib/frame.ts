@@ -1,4 +1,4 @@
-import type { AppInfo } from '@numen/plugin-sdk'
+import type { AppInfo, JsonValue } from '@numen/plugin-sdk'
 
 /**
  * Who draws the window buttons and where: the bar at the right (`windows`), the bar as three
@@ -14,7 +14,7 @@ export type ButtonsSetting = 'windows' | 'mac' | 'none'
 export const BUTTONS_SETTING = 'buttons'
 
 /** A value of the setting `buttons`; a missing or unknown value is the Windows one. */
-export function readButtonsSetting(value: unknown): ButtonsSetting {
+export function readButtonsSetting(value: JsonValue | undefined): ButtonsSetting {
   return value === 'mac' || value === 'none' ? value : 'windows'
 }
 
@@ -22,7 +22,7 @@ export function readButtonsSetting(value: unknown): ButtonsSetting {
 export const HIDE_IN_FULLSCREEN_SETTING = 'hideInFullscreen'
 
 /** A value of the setting `hideInFullscreen`; only `true` turns it on. */
-export function readHideInFullscreenSetting(value: unknown): boolean {
+export function readHideInFullscreenSetting(value: JsonValue | undefined): boolean {
   return value === true
 }
 
@@ -40,13 +40,13 @@ export function getControls(platform: AppInfo['platform'], buttons: ButtonsSetti
 }
 
 /** The width of the three window buttons the bar draws at its end in the Windows style, in pixels. */
-export const WINDOWS_CONTROLS_WIDTH = 132
+const WINDOWS_CONTROLS_WIDTH = 132
 
 /** The width of the three circles the bar draws at its start in the mac style, in pixels. */
-export const MAC_CIRCLES_WIDTH = 76
+const MAC_CIRCLES_WIDTH = 76
 
 /** The width the bar keeps at its start for the system buttons of macOS, in pixels. */
-export const MAC_INSET_WIDTH = 80
+const MAC_INSET_WIDTH = 80
 
 /** The widths the window buttons take at the start and at the end of the bar, in pixels. */
 export function getControlsRoom(

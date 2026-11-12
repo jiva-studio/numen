@@ -3,9 +3,8 @@
  * cue's span in seconds in the segment's selector `t`.
  */
 import type { LiveText, TextSegment, VaultTexts } from '@numen/plugin-sdk'
-import type { Cue } from '../lib/cues'
 import { getSelectorSpan } from '../lib/place'
-import type { Recordings, TextRange } from '../types'
+import type { Recordings, TextRange, Cue } from '../types'
 
 /** The cues of a live text: its segments that name a span of the recording. */
 export const getCues = (segments: readonly TextSegment[]): readonly Cue[] =>
@@ -54,7 +53,7 @@ const isTimed = (live: LiveText): boolean =>
 export const createTranscripts = (
   getTexts: () => VaultTexts | undefined,
 ): Pick<Recordings, 'readTranscript' | 'readArticle' | 'writeTranscript' | 'findCueTime'> => {
-  const readLive = async (path: string): Promise<LiveText | null> => {
+  const readLiveText = async (path: string): Promise<LiveText | null> => {
     const texts = getTexts()
     if (texts === undefined) return null
     const live = await texts.readLiveText(path)
@@ -62,7 +61,7 @@ export const createTranscripts = (
   }
   return {
     readTranscript: async (path) => {
-      const live = await readLive(path)
+      const live = await readLiveText(path)
       return live === null ? [] : getCues(live.segments)
     },
     readArticle: async (path) => {
@@ -72,7 +71,7 @@ export const createTranscripts = (
     },
     writeTranscript: async (path, cues) => {
       const texts = getTexts()
-      const live = await readLive(path)
+      const live = await readLiveText(path)
       if (texts === undefined || live === null) {
         throw new Error(`${path} has no transcript to edit`)
       }
@@ -80,7 +79,7 @@ export const createTranscripts = (
       if (!edit.ok) throw new Error(`the edit of ${path} was not saved: ${edit.error}`)
     },
     findCueTime: async (path, span) => {
-      const live = await readLive(path)
+      const live = await readLiveText(path)
       return live === null ? null : findSegmentTime(live.segments, span)
     },
   }

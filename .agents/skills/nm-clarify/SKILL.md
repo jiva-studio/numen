@@ -30,6 +30,8 @@ flowchart TD
 - ❌ **No HTTP methods or API routes** (`GET /...`, `POST /...`).
 - ✅ **ONLY user journeys, business goals, UX workflows, limits, non-goals, and invariants.**
 
+The area of the product the task touches is stated in the words of the product; `/nm-specify` names the placement skill for that area in the blast radius.
+
 Technical decisions, interfaces, file mappings, and data structures belong exclusively to `/nm-specify`.
 
 ---
@@ -58,9 +60,9 @@ Formulate concise questions covering the **5 essential lenses**:
 
 ---
 
-## Step 3: Author `.agents/tasks/<slug>/intent.md`
+## Step 3: Author `intent.md` in the task folder
 
-Generate `.agents/tasks/<slug>/intent.md` strictly reflecting the agreed answers:
+Generate `intent.md` in the task folder strictly reflecting the agreed answers:
 
 ```markdown
 # Intent: <Title>
@@ -104,5 +106,5 @@ Generate `.agents/tasks/<slug>/intent.md` strictly reflecting the agreed answers
 
 Prompt the user clearly with the next step:
 
-> 🎯 **Intent saved in `.agents/tasks/<slug>/intent.md`.**  
+> 🎯 **Intent saved in `intent.md` in the task folder.**  
 > _Next step:_ Run `/nm-specify` to analyze the codebase, define interfaces, map blast radius, and generate acceptance criteria.

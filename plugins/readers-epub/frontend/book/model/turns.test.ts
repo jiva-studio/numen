@@ -21,10 +21,8 @@ const MARKS: readonly Mark[] = [
   { at: 300, x: 3000 },
 ]
 
-const paperWithStyle = () => {
+const recordStyle = (element: HTMLElement, translate = ''): string[] => {
   const writes: string[] = []
-  const paper = document.createElement('div')
-  let translate = ''
   const style = {
     get translate() {
       return translate
@@ -37,11 +35,17 @@ const paperWithStyle = () => {
       writes.push(`transition [${value}]`)
     },
   }
-  Object.defineProperty(paper, 'style', { value: style })
+  Object.defineProperty(element, 'style', { value: style })
+  return writes
+}
+
+const paperWithStyle = () => {
+  const paper = document.createElement('div')
+  const writes = recordStyle(paper)
   return { paper, writes }
 }
 
-const setUp = (marks: readonly Mark[] = MARKS, offset = 0, rendered = true) => {
+const setUp = (marks: readonly Mark[] = MARKS, offset = 0, rendered = true, duration?: number) => {
   const { paper, writes } = paperWithStyle()
   const props = {
     book: { start: 0, end: 400 },
@@ -56,6 +60,7 @@ const setUp = (marks: readonly Mark[] = MARKS, offset = 0, rendered = true) => {
     spreadCount: computed(() => 4),
     marks: shallowRef(marks),
     onMove,
+    ...(duration !== undefined ? { getDuration: () => duration } : {}),
   })
   return { turns, writes, onMove, paper }
 }
@@ -63,11 +68,11 @@ const setUp = (marks: readonly Mark[] = MARKS, offset = 0, rendered = true) => {
 describe('how much of the chapter is still to come', () => {
   it('is the columns after the spread in front', () => {
     const { turns } = setUp()
-    expect(turns.leftInChapter.value).toBe(3)
+    expect(turns.position.leftInChapter.value).toBe(3)
 
-    turns.stand(1, 'auto')
+    turns.moves.stand(1, 'auto')
 
-    expect(turns.leftInChapter.value).toBe(2)
+    expect(turns.position.leftInChapter.value).toBe(2)
   })
 })
 
@@ -75,17 +80,17 @@ describe('putting a spread in front', () => {
   it('keeps the spread within the document', () => {
     const { turns } = setUp()
 
-    turns.stand(10, 'auto')
-    expect(turns.standing.value).toBe(3)
+    turns.moves.stand(10, 'auto')
+    expect(turns.position.standing.value).toBe(3)
 
-    turns.stand(-2, 'auto')
-    expect(turns.standing.value).toBe(0)
+    turns.moves.stand(-2, 'auto')
+    expect(turns.position.standing.value).toBe(0)
   })
 
   it('carries the columns to the spread at once, with no frames between', () => {
     const { turns, writes } = setUp()
 
-    turns.stand(2, 'auto')
+    turns.moves.stand(2, 'auto')
 
     expect(writes).toStrictEqual(['translate -2000px 0'])
   })
@@ -93,7 +98,7 @@ describe('putting a spread in front', () => {
   it('carries the columns at once where the motion lasts no time', () => {
     const { turns, writes } = setUp()
 
-    turns.stand(2, 'smooth')
+    turns.moves.stand(2, 'smooth')
 
     expect(writes).toStrictEqual(['translate -2000px 0'])
   })
@@ -101,8 +106,8 @@ describe('putting a spread in front', () => {
   it('counts the spread without a drawn document', () => {
     const { turns, writes } = setUp(MARKS, 0, false)
 
-    expect(() => turns.stand(2, 'auto')).not.toThrow()
-    expect(turns.standing.value).toBe(2)
+    expect(() => turns.moves.stand(2, 'auto')).not.toThrow()
+    expect(turns.position.standing.value).toBe(2)
     expect(writes).toStrictEqual([])
   })
 })
@@ -111,7 +116,7 @@ describe('going to a spread', () => {
   it('carries the columns and says what remains in front', () => {
     const { turns, writes, onMove } = setUp()
 
-    turns.goTo(1)
+    turns.moves.goTo(1)
 
     expect(writes).toStrictEqual(['translate -1000px 0'])
     expect(onMove).toHaveBeenCalledExactlyOnceWith(100)
@@ -120,7 +125,7 @@ describe('going to a spread', () => {
   it('says nothing where the offset in front is the one already retained', () => {
     const { turns, onMove } = setUp(MARKS, 100)
 
-    turns.goTo(1)
+    turns.moves.goTo(1)
 
     expect(onMove).not.toHaveBeenCalled()
   })
@@ -128,7 +133,7 @@ describe('going to a spread', () => {
   it('says nothing where no run remains in the spread', () => {
     const { turns, onMove } = setUp(MARKS.slice(0, 2))
 
-    turns.goTo(3)
+    turns.moves.goTo(3)
 
     expect(onMove).not.toHaveBeenCalled()
   })
@@ -138,36 +143,36 @@ describe('the offset kept in front', () => {
   it('is that of the first run in the spread in front', () => {
     const { turns } = setUp(MARKS, 7)
 
-    turns.stand(2, 'auto')
+    turns.moves.stand(2, 'auto')
 
-    expect(turns.getKeptOffset()).toBe(200)
+    expect(turns.moves.getKeptOffset()).toBe(200)
   })
 
   it('is the offset retained where no run remains in the spread in front', () => {
     const { turns } = setUp(MARKS.slice(0, 2), 7)
 
-    turns.stand(3, 'auto')
+    turns.moves.stand(3, 'auto')
 
-    expect(turns.getKeptOffset()).toBe(7)
+    expect(turns.moves.getKeptOffset()).toBe(7)
   })
 
   it('is the offset passed to keepOffset while its spread is in front', () => {
     const { turns } = setUp()
 
-    turns.stand(2, 'auto')
-    turns.keepOffset(250)
+    turns.moves.stand(2, 'auto')
+    turns.moves.keepOffset(250)
 
-    expect(turns.getKeptOffset()).toBe(250)
+    expect(turns.moves.getKeptOffset()).toBe(250)
   })
 
   it('is the first run of the spread in front once the kept offset is turned away from', () => {
     const { turns } = setUp()
 
-    turns.stand(2, 'auto')
-    turns.keepOffset(250)
-    turns.stand(0, 'auto')
+    turns.moves.stand(2, 'auto')
+    turns.moves.keepOffset(250)
+    turns.moves.stand(0, 'auto')
 
-    expect(turns.getKeptOffset()).toBe(0)
+    expect(turns.moves.getKeptOffset()).toBe(0)
   })
 })
 
@@ -186,9 +191,6 @@ describe('a turn drawn frame by frame', () => {
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
       queue[id - 1] = () => undefined
     })
-    vi.spyOn(window, 'getComputedStyle').mockReturnValue({
-      getPropertyValue: () => `${MOTION_MS}ms`,
-    } as unknown as CSSStyleDeclaration)
     const frame = () => {
       now += 20
       queue.shift()?.(now)
@@ -204,11 +206,11 @@ describe('a turn drawn frame by frame', () => {
 
   it('moves the columns toward the spread on every frame and ends exactly on it', () => {
     const { frame } = setUpFrames()
-    const { turns, writes } = setUp()
-    turns.stand(0, 'auto')
+    const { turns, writes } = setUp(MARKS, 0, true, MOTION_MS)
+    turns.moves.stand(0, 'auto')
     writes.length = 0
 
-    turns.stand(1, 'smooth')
+    turns.moves.stand(1, 'smooth')
     for (let index = 0; index < 20; index += 1) frame()
 
     const places = moved(writes)
@@ -223,11 +225,11 @@ describe('a turn drawn frame by frame', () => {
 
   it('writes nothing after the last frame', () => {
     const { frame } = setUpFrames()
-    const { turns, writes } = setUp()
-    turns.stand(0, 'auto')
+    const { turns, writes } = setUp(MARKS, 0, true, MOTION_MS)
+    turns.moves.stand(0, 'auto')
     writes.length = 0
 
-    turns.stand(1, 'smooth')
+    turns.moves.stand(1, 'smooth')
     for (let index = 0; index < 20; index += 1) frame()
     const count = writes.length
     for (let index = 0; index < 5; index += 1) frame()
@@ -238,14 +240,14 @@ describe('a turn drawn frame by frame', () => {
 
   it('goes on from where the columns stand when another turn is made, and never goes back', () => {
     const { frame } = setUpFrames()
-    const { turns, writes } = setUp()
-    turns.stand(0, 'auto')
+    const { turns, writes } = setUp(MARKS, 0, true, MOTION_MS)
+    turns.moves.stand(0, 'auto')
     writes.length = 0
 
-    turns.stand(1, 'smooth')
+    turns.moves.stand(1, 'smooth')
     frame()
     frame()
-    turns.stand(2, 'smooth')
+    turns.moves.stand(2, 'smooth')
     for (let index = 0; index < 20; index += 1) frame()
 
     const places = moved(writes)
@@ -258,13 +260,13 @@ describe('a turn drawn frame by frame', () => {
 
   it('puts the columns where an unsmooth stand says, and ends a turn under way', () => {
     const { frame } = setUpFrames()
-    const { turns, writes } = setUp()
-    turns.stand(0, 'auto')
+    const { turns, writes } = setUp(MARKS, 0, true, MOTION_MS)
+    turns.moves.stand(0, 'auto')
     writes.length = 0
 
-    turns.stand(1, 'smooth')
+    turns.moves.stand(1, 'smooth')
     frame()
-    turns.stand(3, 'auto')
+    turns.moves.stand(3, 'auto')
     const count = writes.length
     for (let index = 0; index < 20; index += 1) frame()
 
@@ -275,11 +277,11 @@ describe('a turn drawn frame by frame', () => {
 
   it('moves the columns across frames when the thread blocks before the first frame', () => {
     const { frame, advance } = setUpFrames()
-    const { turns, writes } = setUp()
-    turns.stand(0, 'auto')
+    const { turns, writes } = setUp(MARKS, 0, true, MOTION_MS)
+    turns.moves.stand(0, 'auto')
     writes.length = 0
 
-    turns.stand(1, 'smooth')
+    turns.moves.stand(1, 'smooth')
     advance(260)
     for (let index = 0; index < 20; index += 1) frame()
 
@@ -308,66 +310,66 @@ describe('the curve of a turn', () => {
 })
 
 describe('a spread entered from the adjacent document', () => {
-  const createLeaving = (translate: string, target = Number.parseFloat(translate)) => {
+  const createLeavingSpread = (translate: string, target = Number.parseFloat(translate)) => {
     const holder = document.createElement('div')
     const copy = document.createElement('div')
-    copy.style.translate = translate
+    const copyWrites = recordStyle(copy, translate)
     holder.append(copy)
     const leaving: LeavingSpread = { copy, target, remove: vi.fn(() => copy.remove()) }
-    return { holder, leaving }
+    return { holder, leaving, copyWrites }
   }
 
   it('starts one spread past the far edge and moves the copy out after a forward turn', () => {
     const { turns, writes } = setUp()
-    const { holder, leaving } = createLeaving('-5000px 0')
+    const { holder, leaving, copyWrites } = createLeavingSpread('-5000px 0')
 
-    turns.enterSpread(0, 'next', leaving)
+    turns.moves.enterSpread(0, 'next', leaving)
 
-    expect(turns.standing.value).toBe(0)
+    expect(turns.position.standing.value).toBe(0)
     expect(writes).toStrictEqual(['translate 1000px 0', 'translate 0px 0'])
-    expect(leaving.copy.style.translate).toBe('-6000px 0')
+    expect(copyWrites).toStrictEqual(['translate -5000px 0', 'translate -6000px 0'])
     expect(leaving.remove).toHaveBeenCalledOnce()
     expect(holder.children).toHaveLength(0)
   })
 
   it('starts one spread on the near side after a backward turn', () => {
     const { turns, writes } = setUp()
-    const { leaving } = createLeaving('0px 0')
+    const { leaving, copyWrites } = createLeavingSpread('0px 0')
 
-    turns.enterSpread(3, 'back', leaving)
+    turns.moves.enterSpread(3, 'back', leaving)
 
-    expect(turns.standing.value).toBe(3)
+    expect(turns.position.standing.value).toBe(3)
     expect(writes).toStrictEqual(['translate -4000px 0', 'translate -3000px 0'])
-    expect(leaving.copy.style.translate).toBe('1000px 0')
+    expect(copyWrites).toStrictEqual(['translate 0px 0', 'translate 1000px 0'])
   })
 
   it('carries a copy taken during a forward turn one spread past where that turn went', () => {
     const { turns, writes } = setUp()
-    const { leaving } = createLeaving('-2600px 0', -3000)
+    const { leaving, copyWrites } = createLeavingSpread('-2600px 0', -3000)
 
-    turns.enterSpread(0, 'next', leaving)
+    turns.moves.enterSpread(0, 'next', leaving)
 
     expect(writes).toStrictEqual(['translate 1400px 0', 'translate 0px 0'])
-    expect(leaving.copy.style.translate).toBe('-4000px 0')
+    expect(copyWrites).toStrictEqual(['translate -2600px 0', 'translate -4000px 0'])
   })
 
   it('carries a copy taken during a backward turn one spread past where that turn went', () => {
     const { turns, writes } = setUp()
-    const { leaving } = createLeaving('-1400px 0', -1000)
+    const { leaving, copyWrites } = createLeavingSpread('-1400px 0', -1000)
 
-    turns.enterSpread(3, 'back', leaving)
+    turns.moves.enterSpread(3, 'back', leaving)
 
     expect(writes).toStrictEqual(['translate -4400px 0', 'translate -3000px 0'])
-    expect(leaving.copy.style.translate).toBe('0px 0')
+    expect(copyWrites).toStrictEqual(['translate -1400px 0', 'translate 0px 0'])
   })
 
   it('removes the copy without a drawn document', () => {
     const { turns } = setUp(MARKS, 0, false)
-    const { holder, leaving } = createLeaving('0px 0')
+    const { holder, leaving } = createLeavingSpread('0px 0')
 
-    turns.enterSpread(1, 'next', leaving)
+    turns.moves.enterSpread(1, 'next', leaving)
 
-    expect(turns.standing.value).toBe(1)
+    expect(turns.position.standing.value).toBe(1)
     expect(leaving.remove).toHaveBeenCalledOnce()
     expect(holder.children).toHaveLength(0)
   })
@@ -391,17 +393,14 @@ describe('the place a turn goes to', () => {
       queue.push(callback)
       return queue.length
     })
-    vi.spyOn(window, 'getComputedStyle').mockReturnValue({
-      getPropertyValue: () => '200ms',
-    } as unknown as CSSStyleDeclaration)
-    const { turns, paper } = setUp()
-    turns.stand(0, 'auto')
+    const { turns, paper, writes } = setUp(MARKS, 0, true, 200)
+    turns.moves.stand(0, 'auto')
 
-    turns.stand(2, 'smooth')
+    turns.moves.stand(2, 'smooth')
     now += 20
     queue.shift()?.(now)
 
-    expect(Number.parseFloat(paper.style.translate)).toBeGreaterThan(-2000)
+    expect(Number.parseFloat(writes.at(-1)?.replace('translate ', '') ?? '')).toBeGreaterThan(-2000)
     expect(getTurnTarget(paper)).toBe(-2000)
     vi.restoreAllMocks()
   })

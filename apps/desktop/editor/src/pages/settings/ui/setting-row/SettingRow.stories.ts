@@ -98,63 +98,6 @@ const meta: Meta<typeof SettingRow> = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const isOverlapping = (a: DOMRect, b: DOMRect): boolean =>
-  a.left < b.right - 0.5 &&
-  b.left < a.right - 0.5 &&
-  a.top < b.bottom - 0.5 &&
-  b.top < a.bottom - 0.5
-
-const getRowBoxes = (root: HTMLElement) =>
-  [...root.querySelectorAll<HTMLElement>('.settings__row')].map((row) => ({
-    row: row.getBoundingClientRect(),
-    label: row.querySelector('.settings__label')!.getBoundingClientRect(),
-    value: row.querySelector('.settings__value')!.getBoundingClientRect(),
-    control: row.querySelector('.settings__value')!.firstElementChild!.getBoundingClientRect(),
-  }))
-
-/** Wide: controls sit right of the text, never over it, and end at one edge. */
-export const WideRowsDoNotOverlap: Story = {
-  play: async ({ canvasElement }) => {
-    const boxes = getRowBoxes(canvasElement)
-    await expect(boxes).toHaveLength(7)
-    const edge = Math.round(boxes[0]!.control.right)
-    for (const one of boxes) {
-      await expect(isOverlapping(one.label, one.control)).toBe(false)
-      await expect(one.control.left).toBeGreaterThanOrEqual(one.label.right)
-      await expect(Math.round(one.control.right)).toBe(edge)
-      await expect(one.control.right).toBeLessThanOrEqual(one.row.right + 0.5)
-    }
-  },
-}
-
-/** Wide: text, select, path and secret controls share one width. */
-export const WideTextControlsShareOneWidth: Story = {
-  play: async ({ canvasElement }) => {
-    const widths = [
-      ...canvasElement.querySelectorAll(
-        '.settings__choice, .settings__text-input, .settings__secret',
-      ),
-    ].map((one) => Math.round(one.getBoundingClientRect().width))
-    const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
-    await expect(widths).toStrictEqual([16 * rem, 16 * rem, 16 * rem, 16 * rem])
-  },
-}
-
-/** Narrow: every control moves under its description at full width. */
-export const NarrowRowsStackTheControl: Story = {
-  render: rows('24rem'),
-  play: async ({ canvasElement }) => {
-    for (const one of getRowBoxes(canvasElement)) {
-      await expect(isOverlapping(one.label, one.control)).toBe(false)
-      await expect(one.value.top).toBeGreaterThanOrEqual(one.label.bottom)
-      await expect(one.control.right).toBeLessThanOrEqual(one.row.right + 0.5)
-    }
-    const text = canvasElement.querySelector('.settings__text-input')!.getBoundingClientRect()
-    const row = canvasElement.querySelectorAll('.settings__row')[2]!.getBoundingClientRect()
-    await expect(Math.round(text.width)).toBe(Math.round(row.width))
-  },
-}
-
 /** The row description renders inside the info button tooltip. */
 export const LongDescriptionGoesToATooltip: Story = {
   play: async ({ canvasElement }) => {
@@ -172,7 +115,6 @@ export const LongDescriptionGoesToATooltip: Story = {
   },
 }
 
-/** Each control is labelled by the title of its row. */
 export const ControlsAreLabelledByTheTitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

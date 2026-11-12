@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
 )
 
 // The handler a host that links the plugin in serves answers the agent service with the token it

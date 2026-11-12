@@ -8,7 +8,7 @@ import { readSettledWidth } from '../../support/layout.js'
 const PAGES = '**/plugin/md.numen.readers.pdf/pages/**'
 
 export const getPageIndex = (url: string): number => Number(/pages\/(\d+)/.exec(url)?.[1])
-export const getWide = (url: string): number =>
+export const getWidePageWidth = (url: string): number =>
   Number(new URL(url, 'https://x').searchParams.get('wide'))
 
 /** Page requests are held until the test releases them, so a test sees what the window shows meanwhile. */

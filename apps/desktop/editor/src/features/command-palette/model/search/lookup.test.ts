@@ -2,7 +2,7 @@
  * The target of a search hit, and where choosing one navigates the user.
  */
 import { describe, expect, it } from 'vitest'
-import { COMMAND, ROW } from '@/shared/commandIds'
+import { COMMAND, ROW } from '@/shared/model/command'
 import {
   createNameItem,
   createPassageItem,
@@ -57,16 +57,20 @@ const createPassage = (overrides: Partial<Passage> = {}): Passage => ({
   ...overrides,
 })
 
-const createHit = (overrides: Partial<SearchHit> = {}): SearchHit => ({
-  path: 'physics/Ontology.md',
-  title: 'Ontology',
-  line: -1,
-  start: 0,
-  length: 0,
-  actionIds: [OPEN_NOTE],
-  type: 'note',
-  selector: null,
-  ...overrides,
+/** The fields of a hit, flat: where it is found, the ids of its actions, its type and selector. */
+type HitFields = Partial<SearchHit['spot']> &
+  Partial<Pick<SearchHit, 'type' | 'selector'>> & { actionIds?: readonly string[] }
+
+const createHit = ({
+  actionIds = [OPEN_NOTE],
+  type = 'note',
+  selector = null,
+  ...spot
+}: HitFields = {}): SearchHit => ({
+  spot: { path: 'physics/Ontology.md', title: 'Ontology', line: -1, start: 0, length: 0, ...spot },
+  actionIds,
+  type,
+  selector,
 })
 
 describe('a note found by its title', () => {

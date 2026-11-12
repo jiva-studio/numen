@@ -7,12 +7,13 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 import { File } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
-import { findIcon } from '@/shared/icons'
-import { COMMAND } from '@/shared/commandIds'
-import { WORDS as words } from '@/shared/words'
-import { createCommands } from '../../lib/commands/commands'
+import { type Command } from '@/entities/command'
+import { findIcon, COMMAND, type CommandTarget } from '@/shared/model/command'
+import { WORDS as windowWords } from '@/shared/ui/words'
+import { PALETTE_WORDS } from '../../words'
+import { createAppCommands } from '@/testing/appCommands'
 import type { PendingStep } from '../../lib/step/step'
-import type { Command, CommandTarget, PaletteLists } from '../../types'
+import type { PaletteLists } from '../../types'
 import type { Commands } from '../palette/palette'
 import { runSupport } from '../palette/runSupport'
 import { findRowIcon } from '../rowIcons'
@@ -20,6 +21,8 @@ import type { SearchState } from '../search/search'
 import { createStepGroups } from './stepGroups'
 import type { ViewState } from './viewState'
 import { getPaletteView } from './view'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 const front = (overrides: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
@@ -63,7 +66,7 @@ const getNoteGroup = (view: ReturnType<typeof createView>, target: CommandTarget
   view.createGroups(null, target, typed).find((group) => group.id === 'note')
 
 describe('the commands as the words typed leave them', () => {
-  const view = createView(createCommands(words))
+  const view = createView(createAppCommands())
 
   it('lights nothing where nothing is typed', () => {
     const readItem = getNoteGroup(view, front(), '')?.items.find(
@@ -131,7 +134,7 @@ describe('the command reached on the same row', () => {
 })
 
 describe('empty command groups', () => {
-  const view = createView(createCommands(words))
+  const view = createView(createAppCommands())
 
   it('omits groups that hold no commands', () => {
     expect(getNoteGroup(view, front({ isReady: false }), '')).toBeUndefined()
@@ -278,9 +281,11 @@ describe('findRowIcon', () => {
 
   it('resolves command and note icons when commands palette is open', () => {
     const commands = {
-      open: ref(true),
-      findTabKind: (id: string) => (id === 'n1' ? 'sample' : null),
-      findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined),
+      palette: { open: ref(true) },
+      view: {
+        findTabKind: (id: string) => (id === 'n1' ? 'sample' : null),
+        findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined),
+      },
     } as unknown as Commands
     const search = {
       reads: { findTabKind: () => 'form', findHitFile: () => 'doc.pdf' },
@@ -293,9 +298,8 @@ describe('findRowIcon', () => {
 
   it('resolves search note type, and file hit icons when commands palette is closed', () => {
     const commands = {
-      open: ref(false),
-      findTabKind: () => 'sample',
-      findCommandIcon: () => customIcon,
+      palette: { open: ref(false) },
+      view: { findTabKind: () => 'sample', findCommandIcon: () => customIcon },
     } as unknown as Commands
     const search = {
       reads: {
@@ -318,7 +322,10 @@ describe('the icon of the command that opens a document', () => {
   })
 
   it('is the icon of the command the row of a document offers', () => {
-    const commands = { open: ref(true), findTabKind: () => null, findCommandIcon: () => null }
+    const commands = {
+      palette: { open: ref(true) },
+      view: { findTabKind: () => null, findCommandIcon: () => null },
+    }
     const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
 
     expect(
@@ -332,7 +339,7 @@ describe('the icon of the command that opens a document', () => {
 })
 
 describe('the two choices of the confirmation that empties the trash', () => {
-  const emptyTrash = createCommands(words).find((one) => one.id === COMMAND.emptyTrash)
+  const emptyTrash = createAppCommands().find((one) => one.id === COMMAND.emptyTrash)
 
   it('are both drawn with an icon', () => {
     const groups = createStepGroups({
@@ -344,7 +351,10 @@ describe('the two choices of the confirmation that empties the trash', () => {
       command: emptyTrash as Command,
       on: front(),
     }
-    const commands = { open: ref(true), findTabKind: () => null, findCommandIcon: () => null }
+    const commands = {
+      palette: { open: ref(true) },
+      view: { findTabKind: () => null, findCommandIcon: () => null },
+    }
     const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
 
     const items = groups.getConfirmGroup(step, '').items

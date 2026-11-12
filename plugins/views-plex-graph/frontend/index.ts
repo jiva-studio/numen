@@ -1,18 +1,19 @@
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import PlexGraphView from './PlexGraphView.vue'
-import { createPlexKind, PLEX } from './kind'
+import PlexGraphView from './ui/PlexGraphView.vue'
+import { createPlexKind, PLEX } from './model/kind'
 import { usePlexView } from './model/usePlexView'
 import { readNesting } from './model/nesting'
 
 export { PlexGraphView, PlexGraphView as PlexTab }
-export { createPlexKind, PLEX } from './kind'
+export { createPlexKind, PLEX } from './model/kind'
 export { createPlexTab } from './model/usePlexTab'
 export { usePlexView } from './model/usePlexView'
 export * from './types'
 export * from './words'
 
 export function activate(context: PluginContext): void {
-  const { workspace, notes, relations } = context
+  const { workspace } = context.ui
+  const { notes, relations } = context.vault
   if (!workspace || !notes || !relations) {
     throw new Error(
       'a plex needs the window it is drawn in, the notes of the vault and their relationships',
@@ -21,21 +22,22 @@ export function activate(context: PluginContext): void {
   const plexes = createPlexKind(
     {
       workspace,
-      ...(context.commands ? { commands: context.commands } : {}),
-      ...(context.slots ? { slots: context.slots } : {}),
+      ...(context.ui.commands ? { commands: context.ui.commands } : {}),
+      slots: context.ui.slots,
       notes,
       relations,
       nesting: readNesting(context),
     },
-    () => usePlexView({ neighbourhood: (path) => notes.getNeighbourhood(path) }),
+    () => usePlexView({ neighborhood: (path) => notes.getNeighborhood(path) }),
+    PlexGraphView,
   )
-  context.registerTabKind(plexes.kind)
-  context.onVaultChange((event) => plexes.refresh(event))
+  context.register.tabKind(plexes.kind)
+  context.events.onVaultChange((event) => plexes.refresh(event))
 
-  context.registerCommand({
+  context.register.command({
     id: 'graph.open',
     handler: async (note) => {
-      await context.navigateTab?.(PLEX, note.path)
+      await context.tabs.navigate?.(PLEX, note.path)
     },
   })
 }

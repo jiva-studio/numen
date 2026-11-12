@@ -10,13 +10,15 @@ import type {
   Rule,
   Settings,
   SettingsBounds,
-  SettingValue,
-} from '../types'
-import { clamp, findNearest } from './curve'
+} from '../../lib/presets'
+import { clamp, findNearestGridValue } from './curve'
 import type { Field } from './fields'
 
+/** What a setting of a preset holds. */
+export type SettingValue = number | string | boolean | Load
+
 /** How far off the day a goal of a date opens on, where the file names none. */
-export const DATE_GOAL_OFFSET_DAYS = 30
+const DATE_GOAL_OFFSET_DAYS = 30
 
 /** Whether the value is a valid load record with daily numeric shares. */
 export const isLoad = (value: SettingValue): value is Load =>
@@ -34,6 +36,14 @@ export const clampShares = (load: Load, within: Bounds | undefined): Load => {
 
 type MutableSettings = { -readonly [field in keyof Settings]: Settings[field] }
 
+const copyField = <Field extends keyof Settings>(
+  target: MutableSettings,
+  field: Field,
+  source: Settings,
+): void => {
+  target[field] = source[field]
+}
+
 /** Reconciles newly read settings with unwritten local edits. */
 export const reconcileSettings = (
   readItem: Settings,
@@ -43,7 +53,7 @@ export const reconcileSettings = (
   if (dirtyFields.size === 0) return readItem
   const out: MutableSettings = { ...readItem }
   for (const field of dirtyFields) {
-    ;(out as Record<keyof Settings, unknown>)[field] = was[field]
+    copyField(out, field, was)
   }
   return out
 }
@@ -123,10 +133,10 @@ export const findGridIndex = (
   value: SettingValue,
   today: string,
 ): number => {
-  if (typeof value === 'number') return findNearest(grid, value)
+  if (typeof value === 'number') return findNearestGridValue(grid, value)
   // Stryker disable next-line ConditionalExpression: Non-string values evaluate to false in isDay.
   if (typeof value === 'string' && isDay(value)) {
-    return findNearest(grid, daysBetween(today, value))
+    return findNearestGridValue(grid, daysBetween(today, value))
   }
   return -1
 }

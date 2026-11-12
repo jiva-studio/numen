@@ -1,8 +1,8 @@
 name: "Build the UI libraries"
-description: "Builds libs/ui/core, and libs/ui/shell when asked, or restores the build that an earlier job made from the same sources"
+description: "Builds libs/ui/components, and libs/ui/workbench when asked, or restores the build that an earlier job made from the same sources"
 inputs:
   shell:
-    description: "Also build libs/ui/shell"
+    description: "Also build libs/ui/workbench"
     required: false
     default: "false"
 runs:
@@ -10,27 +10,27 @@ runs:
   steps:
     # A build is a function of the sources of the library, the lock file and the Node release, so
     # every job of every workflow that reads the same sources takes the first one's result.
-    - name: Restore the build of libs/ui/core
+    - name: Restore the build of libs/ui/components
       id: core
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: libs/ui/core/dist
-        key: ui-core-dist-${{ runner.os }}-${{ hashFiles('.node-version', 'package-lock.json', 'tsconfig.base.json', 'libs/ui/core/package.json', 'libs/ui/core/tsconfig*.json', 'libs/ui/core/vite.config.ts', 'libs/ui/core/src/**', 'libs/ui/core/.storybook/**') }}
+        path: libs/ui/components/dist
+        key: ui-components-dist-${{ runner.os }}-${{ hashFiles('.node-version', 'package-lock.json', 'tsconfig.base.json', 'libs/ui/components/package.json', 'libs/ui/components/tsconfig*.json', 'libs/ui/components/vite.config.ts', 'libs/ui/components/src/**', 'libs/ui/components/.storybook/**') }}
 
-    - name: Build libs/ui/core
+    - name: Build libs/ui/components
       if: steps.core.outputs.cache-hit != 'true'
       shell: bash
-      run: npm run build --prefix libs/ui/core
+      run: npm run build --prefix libs/ui/components
 
-    - name: Restore the build of libs/ui/shell
+    - name: Restore the build of libs/ui/workbench
       id: shell
       if: inputs.shell == 'true'
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: libs/ui/shell/dist
-        key: ui-shell-dist-${{ runner.os }}-${{ hashFiles('.node-version', 'package-lock.json', 'tsconfig.base.json', 'libs/ui/core/package.json', 'libs/ui/core/vite.config.ts', 'libs/ui/core/src/**', 'libs/ui/core/.storybook/**', 'libs/ui/shell/package.json', 'libs/ui/shell/tsconfig*.json', 'libs/ui/shell/vite.config.ts', 'libs/ui/shell/src/**', 'libs/ui/shell/.storybook/**') }}
+        path: libs/ui/workbench/dist
+        key: ui-workbench-dist-${{ runner.os }}-${{ hashFiles('.node-version', 'package-lock.json', 'tsconfig.base.json', 'libs/ui/components/package.json', 'libs/ui/components/vite.config.ts', 'libs/ui/components/src/**', 'libs/ui/components/.storybook/**', 'libs/ui/workbench/package.json', 'libs/ui/workbench/tsconfig*.json', 'libs/ui/workbench/vite.config.ts', 'libs/ui/workbench/src/**', 'libs/ui/workbench/.storybook/**') }}
 
-    - name: Build libs/ui/shell
+    - name: Build libs/ui/workbench
       if: inputs.shell == 'true' && steps.shell.outputs.cache-hit != 'true'
       shell: bash
-      run: npm run build --prefix libs/ui/shell
+      run: npm run build --prefix libs/ui/workbench

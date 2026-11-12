@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 const listenerMCPToken = "listener-mcp-token"

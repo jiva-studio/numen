@@ -5,12 +5,11 @@
  * note can be nested under as it is made. Each action is the id of the command
  * that makes the note.
  */
-import { COMMAND } from '@/shared/commandIds'
-import type { CommandTarget } from '../../types'
+import { COMMAND, type CommandTarget } from '@/shared/model/command'
 import type { Words } from '../../words'
 
 /** The words of the actions that create a note. */
-export type CreateNoteWords = Pick<Words, 'creates' | 'asChild' | 'asParent' | 'asJump'>
+type CreateNoteWords = Pick<Words, 'creates' | 'asChild' | 'asParent' | 'asJump'>
 
 /** What the actions that create a note are made from. */
 export interface CreateNoteOptions {
@@ -19,7 +18,6 @@ export interface CreateNoteOptions {
   readonly target: CommandTarget
 }
 
-/** One action that creates a note. */
 export interface CreateNoteAction {
   readonly id: string
   readonly text: string

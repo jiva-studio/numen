@@ -7,22 +7,12 @@
 import { computed, onBeforeUnmount, ref, useTemplateRef, type Component } from 'vue'
 import { ChevronUp } from '@lucide/vue'
 import { Menu, measureRect, type MenuTrigger } from '@numen/ui'
-import { useSlotMenu, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
 import { WORDS } from '../lib/entries'
+import { BAR, useBarSlotMenu } from '../model/useBarSlotMenu'
+import type { SlotMenuButtonProps } from './SlotMenuButton.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = withDefaults(
-  defineProps<{
-    entries: readonly SlotItem[]
-    label: string
-    icon?: unknown
-    tooltip?: string
-    isItemList?: boolean
-    listItems: (command: string) => Promise<readonly CommandItem[]>
-    reportError?: ((error: unknown) => void) | undefined
-  }>(),
-  { isItemList: false },
-)
+const props = withDefaults(defineProps<SlotMenuButtonProps>(), { isItemList: false })
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
@@ -33,12 +23,10 @@ const emit = defineEmits<{
 const button = useTemplateRef<HTMLElement>('button')
 const trigger = ref<MenuTrigger>('pointer')
 const anchor = ref({ x: 0, y: 0 })
-/** The bar passes no target of its own; the window runs a bar entry over the front tab. */
-const BAR = 'bar'
-const slotMenu = useSlotMenu<typeof BAR>({
-  listItems: (command) => props.listItems(command),
+const slotMenu = useBarSlotMenu({
+  getListItems: () => props.listItems,
+  getReportError: () => props.reportError,
   words: WORDS,
-  onError: (error) => props.reportError?.(error),
 })
 const rows = computed(() => {
   const items = slotMenu.menu.value?.items ?? []
@@ -92,7 +80,7 @@ function getIcon(id: string): Component | undefined {
     :title="tooltip ?? label"
     @click="onToggle"
   >
-    <component :is="icon as Component" v-if="icon" :size="14" aria-hidden="true" />
+    <component :is="icon" v-if="icon" :size="14" aria-hidden="true" />
     <template v-if="!icon || !isItemList">{{ label }}</template>
     <ChevronUp :size="12" aria-hidden="true" />
   </button>

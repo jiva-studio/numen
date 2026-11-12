@@ -13,17 +13,17 @@ import ts from 'typescript'
 import {
   ManifestCommandSchema,
   ManifestTabKindSchema,
-} from '../../libs/protocol/src/numen/v1/manifest_pb.ts'
+} from '../../libs/core/protocol/src/numen/v1/manifest_pb.ts'
 import { parseManifest, readPluginManifests } from './manifests.mjs'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const EDITOR_SRC = join(ROOT, 'apps/desktop/editor/src')
-const SLOTS = JSON.parse(readFileSync(join(ROOT, 'libs/protocol/slots.json'), 'utf8')).slots.map(
+const SLOTS = JSON.parse(readFileSync(join(ROOT, 'libs/core/protocol/slots.json'), 'utf8')).slots.map(
   (one) => one.name,
 )
 const APP_PREFIX = 'app:'
 const SHARED_COMMANDS = new Set(
-  JSON.parse(readFileSync(join(ROOT, 'libs/protocol/commands.json'), 'utf8')).commands.map(
+  JSON.parse(readFileSync(join(ROOT, 'libs/core/protocol/commands.json'), 'utf8')).commands.map(
     (one) => one.id,
   ),
 )
@@ -57,7 +57,7 @@ const getPropertyName = (property) =>
 
 /** The commands the editor provides, by full id, with whether the table gives each an icon name. */
 const readEditorCommands = () => {
-  const idsPath = join(EDITOR_SRC, 'shared/commandIds.ts')
+  const idsPath = join(EDITOR_SRC, 'shared/model/command/ids.ts')
   const idsFile = ts.createSourceFile(
     idsPath,
     readFileSync(idsPath, 'utf8'),
@@ -89,7 +89,7 @@ const readEditorCommands = () => {
   }
 
   const withIcon = new Set()
-  for (const file of listSources(join(EDITOR_SRC, 'features/command-palette/lib'), ['.ts'])) {
+  for (const file of listSources(join(EDITOR_SRC, 'features'), ['.ts'])) {
     const sourceFile = ts.createSourceFile(
       file,
       readFileSync(file, 'utf8'),
@@ -173,7 +173,7 @@ const readStringLiterals = (file) => {
   return literals
 }
 
-/** The member names of a TypeScript interface declaration in `file`. */
+/** The member names of a TypeScript interface declaration in `file`, with those of the interfaces it extends in the same file. */
 const readInterfaceFields = (file, name) => {
   const sourceFile = ts.createSourceFile(
     file,
@@ -181,20 +181,32 @@ const readInterfaceFields = (file, name) => {
     ts.ScriptTarget.Latest,
     true,
   )
-  for (const statement of sourceFile.statements) {
-    if (ts.isInterfaceDeclaration(statement) && statement.name.text === name) {
-      return statement.members
-        .map((member) => (member.name && ts.isIdentifier(member.name) ? member.name.text : ''))
-        .filter(Boolean)
+  const interfaces = new Map(
+    sourceFile.statements
+      .filter((statement) => ts.isInterfaceDeclaration(statement))
+      .map((statement) => [statement.name.text, statement]),
+  )
+  const collect = (interfaceName, seen) => {
+    const declaration = interfaces.get(interfaceName)
+    if (!declaration || seen.has(interfaceName)) {
+      return []
     }
+    seen.add(interfaceName)
+    const own = declaration.members
+      .map((member) => (member.name && ts.isIdentifier(member.name) ? member.name.text : ''))
+      .filter(Boolean)
+    const inherited = (declaration.heritageClauses ?? [])
+      .flatMap((clause) => clause.types)
+      .flatMap((type) => collect(type.expression.getText(sourceFile), seen))
+    return [...own, ...inherited]
   }
-  return []
+  return collect(name, new Set())
 }
 
 test('neither the host module nor the window names a plugin', () => {
   const pluginIds = new Set(readPluginManifests().map(({ document }) => document.id))
   const files = [
-    join(ROOT, 'libs/plugin-host-ts/src/slots/slotRegistry.ts'),
+    join(ROOT, 'libs/plugin/loader/src/slots/slotRegistry.ts'),
     ...readEditorSources(),
   ]
   for (const file of files) {
@@ -231,7 +243,7 @@ test('no source records where a note found by its name is shown', () => {
   assert.deepEqual(warnings, ['unknown key "contributes.tabKinds[0].isNoteDestination"'])
 
   const sdkFields = readInterfaceFields(
-    join(ROOT, 'libs/plugin-sdk-ts/src/types.ts'),
+    join(ROOT, 'libs/plugin/sdk-ts/src/types.ts'),
     'TabKindRegistration',
   )
   assert.ok(sdkFields.includes('kind'))
@@ -247,7 +259,7 @@ test('a command declaration says nothing of where it is shown', () => {
   }
 
   const sdkFields = readInterfaceFields(
-    join(ROOT, 'libs/plugin-sdk-ts/src/types.ts'),
+    join(ROOT, 'libs/plugin/sdk-ts/src/types.ts'),
     'CommandRegistration',
   )
   assert.ok(sdkFields.includes('id'))
@@ -334,7 +346,7 @@ test('the plugin documentation describes slots', () => {
 
 test('the window frame of the shell names no plugin', () => {
   const pluginIds = new Set(readPluginManifests().map(({ document }) => document.id))
-  const folder = join(ROOT, 'libs/ui/shell/src/features/window-frame')
+  const folder = join(ROOT, 'libs/ui/workbench/src/features/window-frame')
   for (const file of listSources(folder, ['.ts', '.vue'])) {
     for (const literal of readStringLiterals(file)) {
       assert.ok(

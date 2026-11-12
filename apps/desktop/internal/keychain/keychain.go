@@ -13,8 +13,8 @@ import (
 
 	"github.com/zalando/go-keyring"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // service is the name every key of this application is kept under.
@@ -42,7 +42,7 @@ const credentialsProbeTimeout = 2 * time.Second
 type Store struct {
 	dir     string
 	writer  chan struct{}
-	wait    machinecontract.Wait
+	wait    machine.Wait
 	backend keychainBackend
 
 	mu           sync.Mutex
@@ -80,7 +80,7 @@ type probeCall struct {
 // NewStore returns a store that keeps keys in the system keychain, and in
 // <dir>/credentials/credentials.json where the keychain cannot be reached. dir is the folder of
 // the settings file.
-func NewStore(dir string, wait machinecontract.Wait) *Store {
+func NewStore(dir string, wait machine.Wait) *Store {
 	return &Store{dir: dir, wait: wait, writer: make(chan struct{}, 1)}
 }
 
@@ -130,7 +130,7 @@ func (s *Store) removeStaleCopy(ctx context.Context, name string) error {
 	if _, err := os.Stat(s.getCredentialsFile()); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
-	if err := s.removeFromFile(ctx, name); err != nil && !errors.Is(err, pluginport.ErrNoKey) {
+	if err := s.removeFromFile(ctx, name); err != nil && !errors.Is(err, plugin.ErrNoKey) {
 		return err
 	}
 	return nil
@@ -151,7 +151,7 @@ func (s *Store) DeleteKey(ctx context.Context, name string) error {
 		_, err := await(ctx, func() (struct{}, error) { return struct{}{}, s.getBackend().Delete(name) })
 		if err = mapError(name, err); err == nil {
 			hasRemoved = true
-		} else if !errors.Is(err, pluginport.ErrNoKey) {
+		} else if !errors.Is(err, plugin.ErrNoKey) {
 			failures = append(failures, err)
 		}
 	}
@@ -159,7 +159,7 @@ func (s *Store) DeleteKey(ctx context.Context, name string) error {
 		switch err := s.removeFromFile(ctx, name); {
 		case err == nil:
 			hasRemoved = true
-		case !errors.Is(err, pluginport.ErrNoKey):
+		case !errors.Is(err, plugin.ErrNoKey):
 			failures = append(failures, err)
 		}
 	}
@@ -167,7 +167,7 @@ func (s *Store) DeleteKey(ctx context.Context, name string) error {
 		return errors.Join(failures...)
 	}
 	if !hasRemoved {
-		return fmt.Errorf("%w: %q", pluginport.ErrNoKey, name)
+		return fmt.Errorf("%w: %q", plugin.ErrNoKey, name)
 	}
 	return nil
 }
@@ -273,8 +273,8 @@ func mapError(name string, err error) error {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
 	case errors.Is(err, keyring.ErrNotFound):
-		return fmt.Errorf("%w: %q", pluginport.ErrNoKey, name)
+		return fmt.Errorf("%w: %q", plugin.ErrNoKey, name)
 	default:
-		return fmt.Errorf("%w: %w", pluginport.ErrNoKeyStore, err)
+		return fmt.Errorf("%w: %w", plugin.ErrNoKeyStore, err)
 	}
 }

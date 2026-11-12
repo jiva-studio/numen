@@ -3,14 +3,14 @@ package service
 import (
 	"context"
 	"errors"
-	"slices"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/linkimport"
 )
 
 // linkServer serves the importer API over the links of the vault the host shows.
@@ -64,31 +64,12 @@ func (s linkServer) copyMedia(ctx context.Context, req api.CopyMediaRequest) (ap
 	if err != nil {
 		return api.CopyMediaResponse{}, err
 	}
-	media := download.MediaVideo
-	if req.Kind == string(download.MediaAudio) {
-		media = download.MediaAudio
-	}
+	media, _ := download.ParseMedia(req.Kind)
 	s.links.StartCopy(ctx, found, media)
 	return api.CopyMediaResponse{}, nil
 }
 
 func (s linkServer) createLinks(ctx context.Context, req api.CreateLinksRequest) (api.CreateLinksResponse, error) {
-	out := api.CreateLinksResponse{Paths: []string{}, Failed: []string{}}
-	for _, raw := range req.URLs {
-		made, isFound, err := s.links.FindOrCreate(ctx, "", req.Folder, raw)
-		if errors.Is(err, address.ErrNotAURL) {
-			continue
-		}
-		if err != nil {
-			out.Failed = append(out.Failed, raw)
-			continue
-		}
-		if !isFound {
-			s.links.StartFetch(ctx, made)
-		}
-		if !slices.Contains(out.Paths, made.Path) {
-			out.Paths = append(out.Paths, made.Path)
-		}
-	}
-	return out, nil
+	paths, failed := linkimport.New(s.links).CreateLinks(ctx, req.Folder, req.URLs)
+	return api.CreateLinksResponse{Paths: paths, Failed: failed}, nil
 }

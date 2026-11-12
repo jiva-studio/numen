@@ -1,7 +1,7 @@
 package service_test
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"os"
 	"path/filepath"
 	"slices"
@@ -20,7 +20,8 @@ import (
 // scheduling is a vault with the notes given in it, and a client asking about
 // its presets the way the window does.
 type scheduling struct {
-	client service.PresetsAPI
+	reads  api.PresetReadAPI
+	writes api.PresetWriteAPI
 	root   string
 }
 
@@ -28,10 +29,11 @@ func newScheduling(t *testing.T, notes map[string]string) *scheduling {
 	t.Helper()
 
 	env := vaulttest.New(t, notes)
-	backend := service.New(service.Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock()})
+	backend := service.New(service.Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 
 	return &scheduling{
-		client: backend.Presets(),
+		reads:  backend.Handlers().PresetReads,
+		writes: backend.Handlers().PresetWrites,
 		root:   env.Vault.Path,
 	}
 }
@@ -47,7 +49,7 @@ const roots = "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    typ
 
 const terms = "---\ntype: deck\n---\n\n## Term ^3f4g5h6j7k\n"
 
-func getPointed() map[string]string {
+func getPointedVault() map[string]string {
 	return map[string]string{
 		"Sanskrit.md":    sanskrit,
 		"decks/Roots.md": roots,
@@ -73,11 +75,11 @@ func settings() *api.Settings {
 // TestASettingOutsideItsBoundsIsNotWritten. A retention target outside what
 // memory does is a number to correct, and the file is not opened to find out.
 func TestASettingOutsideItsBoundsIsNotSaved(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
 	targetSettings := settings()
 	targetSettings.Retention = 1.5
-	_, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
+	_, err := f.writes.WritePreset(t.Context(), &api.WritePresetRequest{
 		Path: "Sanskrit.md", Settings: targetSettings,
 	})
 	if code := codeOf(err); code != server.CodeInvalidArgument {
@@ -89,9 +91,9 @@ func TestASettingOutsideItsBoundsIsNotSaved(t *testing.T) {
 }
 
 func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
-	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{
+	read, err := f.reads.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "Sanskrit.md",
 	})
 	if err != nil {
@@ -104,7 +106,7 @@ func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) 
 
 	targetSettings := settings()
 	targetSettings.MinutesADay = 35
-	answer, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
+	answer, err := f.writes.WritePreset(t.Context(), &api.WritePresetRequest{
 		Path: "Sanskrit.md", Settings: targetSettings, Baseline: read.At,
 	})
 	if err != nil {
@@ -119,9 +121,9 @@ func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) 
 }
 
 func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
-	answer, err := f.client.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
+	answer, err := f.reads.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
 	})
 	if err != nil {
@@ -155,7 +157,7 @@ func TestADeckWhosePresetLinkHasNoRoleIsReportedSo(t *testing.T) {
 			"## Root ^k7m2xq9fzp\n",
 	})
 
-	answer, err := f.client.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
+	answer, err := f.reads.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
 		Deck: "decks/Roots.md",
 	})
 	if err != nil {
@@ -179,7 +181,7 @@ const counting = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
 func TestWhatABudgetCountsSurvivesAReadAndAWrite(t *testing.T) {
 	f := newScheduling(t, map[string]string{"Shows.md": counting})
 
-	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{
+	read, err := f.reads.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "Shows.md",
 	})
 	if err != nil {
@@ -190,7 +192,7 @@ func TestWhatABudgetCountsSurvivesAReadAndAWrite(t *testing.T) {
 		t.Fatalf("the preset was read as counting %v", presetSettings.Counts)
 	}
 
-	if _, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
+	if _, err := f.writes.WritePreset(t.Context(), &api.WritePresetRequest{
 		Path: "Shows.md", Settings: presetSettings, Baseline: read.At,
 	}); err != nil {
 		t.Fatal(err)
@@ -206,7 +208,7 @@ func TestChangingWhatABudgetCountsIsSaved(t *testing.T) {
 	cards := strings.Replace(counting, "counts: shows", "counts: cards", 1)
 	f := newScheduling(t, map[string]string{"Shows.md": cards})
 
-	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{
+	read, err := f.reads.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "Shows.md",
 	})
 	if err != nil {
@@ -215,7 +217,7 @@ func TestChangingWhatABudgetCountsIsSaved(t *testing.T) {
 	presetSettings := read.Preset.Settings
 	presetSettings.Counts = api.BudgetUnitShows
 
-	if _, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
+	if _, err := f.writes.WritePreset(t.Context(), &api.WritePresetRequest{
 		Path: "Shows.md", Settings: presetSettings, Baseline: read.At,
 	}); err != nil {
 		t.Fatal(err)
@@ -224,7 +226,7 @@ func TestChangingWhatABudgetCountsIsSaved(t *testing.T) {
 		t.Errorf("the preset on disk is now %q", raw)
 	}
 
-	again, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{
+	again, err := f.reads.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "Shows.md",
 	})
 	if err != nil {
@@ -243,7 +245,7 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 
 	targetSettings := settings()
 	targetSettings.Counts = api.BudgetUnitUnspecified
-	_, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
+	_, err := f.writes.WritePreset(t.Context(), &api.WritePresetRequest{
 		Path: "Shows.md", Settings: targetSettings,
 	})
 	if code := codeOf(err); code != server.CodeInvalidArgument {
@@ -258,9 +260,9 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 // setting to the suggested setting, so a curve missing either place cannot be
 // drawn.
 func TestACurveReachesBackWithItsTwoPlaces(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
-	answer, err := f.client.ComputeCurve(t.Context(), &api.ComputeCurveRequest{
+	answer, err := f.reads.ComputeCurve(t.Context(), &api.ComputeCurveRequest{
 		Path: "Sanskrit.md", Settings: settings(),
 	})
 	if err != nil {
@@ -300,7 +302,7 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 		"decks/Roots.md":  roots,
 	})
 
-	answer, err := f.client.ListPresets(t.Context(), &api.ListPresetsRequest{})
+	answer, err := f.reads.ListPresets(t.Context(), &api.ListPresetsRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,9 +322,9 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 // and has the preset type from the moment it exists. It writes none of its
 // settings, so every setting takes its default.
 func TestAPresetMadeIsAPresetToRead(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
-	made, err := f.client.CreatePreset(t.Context(), &api.CreatePresetRequest{
+	made, err := f.writes.CreatePreset(t.Context(), &api.CreatePresetRequest{
 		Title: "Prosody", Path: "presets",
 	})
 	if err != nil {
@@ -344,7 +346,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 		}
 	}
 
-	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{
+	read, err := f.reads.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "presets/Prosody.md",
 	})
 	if err != nil {
@@ -383,15 +385,15 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 // TestAPresetMadeIsOneTheVaultLists. The list a deck's preset is chosen from
 // holds a preset the moment it is made.
 func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
-	if _, err := f.client.CreatePreset(t.Context(), &api.CreatePresetRequest{
+	if _, err := f.writes.CreatePreset(t.Context(), &api.CreatePresetRequest{
 		Title: "Prosody", Path: "presets",
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	answer, err := f.client.ListPresets(t.Context(), &api.ListPresetsRequest{})
+	answer, err := f.reads.ListPresets(t.Context(), &api.ListPresetsRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -407,9 +409,9 @@ func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 // TestADeckIsPutOnAPresetAndTakenOffAgain. Choosing a preset writes the deck's
 // one entry, and choosing the defaults takes it out.
 func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
-	placed, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
+	placed, err := f.writes.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Sanskrit.md",
 	})
 	if err != nil {
@@ -422,7 +424,7 @@ func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
 		t.Error("the write says nothing about the file it made")
 	}
 
-	read, err := f.client.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
+	read, err := f.reads.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
 	})
 	if err != nil {
@@ -436,7 +438,7 @@ func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
 	}
 
 	// The file stat the write answered with is what the next write presents.
-	off, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
+	off, err := f.writes.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Baseline: placed.At,
 	})
 	if err != nil {
@@ -449,7 +451,7 @@ func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
 		t.Errorf("the deck still names a preset: %q", onDiskContent)
 	}
 
-	again, err := f.client.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
+	again, err := f.reads.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
 	})
 	if err != nil {
@@ -469,7 +471,7 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 		"decks/Terms.md": terms,
 	})
 
-	answer, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
+	answer, err := f.writes.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Grammar.md",
 	})
 	if err != nil {
@@ -485,9 +487,9 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 
 // TestSchedulingAPresetThatIsNotThere. A path the vault holds no note at is
 func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
-	answer, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
+	answer, err := f.writes.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Pali.md",
 	})
 	if err != nil {
@@ -504,9 +506,9 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 // TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead: a concurrent
 // edit of the deck takes precedence over a client holding an outdated read.
 func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
-	f := newScheduling(t, getPointed())
+	f := newScheduling(t, getPointedVault())
 
-	read, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
+	read, err := f.writes.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Roots.md", Preset: "Sanskrit.md",
 	})
 	if err != nil {
@@ -518,7 +520,7 @@ func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	answer, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
+	answer, err := f.writes.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Roots.md", Baseline: read.At,
 	})
 	if err != nil {

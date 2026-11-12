@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { createPluginInfo, createSecretAnswer } from '@/testing/installation'
+import { createPluginInfo, createSecretAnswer } from '@/pages/settings/testing/installation'
+import { WORDS } from '../words'
 import {
   createPageSections,
   getMenuSecrets,
   getSectionDeclarations,
   getDeclarations,
-  getReaderNames,
+  getDeletionText,
   hasGroupSecrets,
   type Declaration,
 } from './secretSections'
@@ -36,7 +37,7 @@ describe('the sections of the page', () => {
   )
 
   it('keep the order the core gave and add the groups of the window after them', () => {
-    const sections = createPageSections(core.secretSections?.value ?? [], ['mine'], new Map())
+    const sections = createPageSections(core.sections?.value ?? [], ['mine'], new Map())
     expect(sections.map((one) => [one.group, one.isAsked, one.secrets.length])).toStrictEqual([
       ['openai', true, 0],
       ['openrouter', true, 1],
@@ -47,11 +48,7 @@ describe('the sections of the page', () => {
   })
 
   it('get the state of each value, and none for a secret with no state', () => {
-    const sections = createPageSections(
-      core.secretSections?.value ?? [],
-      [],
-      new Map([['s1', true]]),
-    )
+    const sections = createPageSections(core.sections?.value ?? [], [], new Map([['s1', true]]))
     const secrets = sections.flatMap((one) => one.secrets)
     expect(secrets.map((one) => [one.id, one.hasValue])).toStrictEqual([
       ['s3', false],
@@ -62,7 +59,7 @@ describe('the sections of the page', () => {
 
   it('list a group of the window once, and not where the core has it', () => {
     const sections = createPageSections(
-      core.secretSections?.value ?? [],
+      core.sections?.value ?? [],
       ['alpha', 'new', 'new'],
       new Map(),
     )
@@ -81,7 +78,7 @@ describe('the menu of a declaration', () => {
     [plugin],
     [secret('s1', 'Work', 'openrouter'), secret('s2', 'Chat', 'openai'), secret('s3', 'Mine', 'x')],
   )
-  const sections = answer.secretSections?.value ?? []
+  const sections = answer.sections?.value ?? []
   const menus = [
     { pluginId: 'md.numen.sample', name: 'apiKey', group: 'openrouter', secrets: [WORK, CHAT] },
   ]
@@ -118,8 +115,9 @@ describe('the readers of a secret', () => {
       ...secret('s1', 'Work', 'openrouter'),
       allowed: [{ pluginId: 'md.numen.sample', name: 'apiKey', group: 'openrouter' }],
     }
-    expect(getReaderNames(allowed, [plugin])).toStrictEqual(['Sample'])
-    expect(getReaderNames(allowed, [])).toStrictEqual(['md.numen.sample'])
+    const target = { kind: 'secret', secret: allowed } as const
+    expect(getDeletionText(target, [plugin])).toBe(WORDS.secretDeleteAsking('Work', ['Sample']))
+    expect(getDeletionText(target, [])).toBe(WORDS.secretDeleteAsking('Work', ['md.numen.sample']))
   })
 })
 

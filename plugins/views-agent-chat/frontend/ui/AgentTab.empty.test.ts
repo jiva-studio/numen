@@ -25,10 +25,12 @@ const mountTab = () => {
       openFileAdjacent: () => undefined,
       resolveLinks: async () => [],
       unreachable: () => '',
-      openSettings,
-      getModelsAt: (path) => {
-        if (!hasAgent.value) return []
-        return path.join('/') === 'app/agent/use' ? [AGENT] : [MODEL]
+      settings: {
+        openSettings,
+        getModelsAt: (path) => {
+          if (!hasAgent.value) return []
+          return path.join('/') === 'app/agent/use' ? [AGENT] : [MODEL]
+        },
       },
     },
   )

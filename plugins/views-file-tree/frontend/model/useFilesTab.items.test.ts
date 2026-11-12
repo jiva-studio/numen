@@ -42,30 +42,36 @@ const setUp = async (answer: () => Promise<readonly CommandItem[]>) => {
   let release: (() => void) | null = null
   const list = createFileTree({ list: async () => [entry('Scan.pdf')] })
   const one = useFilesTab(list, {
-    getEntryIcon: () => ({}),
-    openEntry: () => undefined,
-    getMenuEntries: () => [VERSIONS, { kind: 'separator', key: 'separator/1' }, TRASH],
-    listItems: async (command, target) => {
-      choiceRequests.push([command, target])
-      await new Promise<void>((done) => {
-        release = done
-      })
-      return answer()
+    window: {
+      getEntryIcon: () => ({}),
+      openEntry: () => undefined,
+      setDraggedPaths: () => undefined,
+      showError: (text) => {
+        errors.push(text)
+      },
     },
-    runCommand: async (command, target, choice) => {
-      runs.push([command, target, choice])
-      return ''
+    menu: {
+      getMenuEntries: () => [VERSIONS, { kind: 'separator', key: 'separator/1' }, TRASH],
+      listItems: async (command, target) => {
+        choiceRequests.push([command, target])
+        await new Promise<void>((done) => {
+          release = done
+        })
+        return answer()
+      },
+      runCommand: async (command, target, choice) => {
+        runs.push([command, target, choice])
+        return ''
+      },
     },
-    movePath: async () => undefined,
-    setDraggedPaths: () => undefined,
-    canDropData: () => false,
-    dropData: async () => [],
-    showError: (text) => {
-      errors.push(text)
+    transfer: {
+      movePath: async () => undefined,
+      canDropData: () => false,
+      dropData: async () => [],
     },
   })
-  await list.openFolder(ROOT)
-  one.openMenu({ path: 'Scan.pdf', at: { x: 0, y: 0 } })
+  await list.folders.openFolder(ROOT)
+  one.menu.open({ path: 'Scan.pdf', at: { x: 0, y: 0 } })
   const answerChoices = async () => {
     release?.()
     await settle()
@@ -74,8 +80,8 @@ const setUp = async (answer: () => Promise<readonly CommandItem[]>) => {
 }
 
 const getChildren = (one: Awaited<ReturnType<typeof setUp>>['one']) =>
-  one
-    .getMenuItems('Scan.pdf')
+  one.menu
+    .getItems('Scan.pdf')
     .find((item) => item.id === VERSIONS.key)
     ?.children?.map((child) => ({ text: child.text, isDisabled: child.isDisabled ?? false }))
 
@@ -113,16 +119,16 @@ describe('a command of the menu that offers choices', () => {
 
     await answerChoices()
 
-    expect(one.getMenuItems('Scan.pdf').some((item) => item.id === VERSIONS.key)).toBe(false)
+    expect(one.menu.getItems('Scan.pdf').some((item) => item.id === VERSIONS.key)).toBe(false)
   })
 
   it('runs the command over the row with the id of the choice picked', async () => {
     const { one, runs, answerChoices } = await setUp(async () => CHOICES)
     await answerChoices()
-    const picked = one.getMenuItems('Scan.pdf').find((item) => item.id === VERSIONS.key)!
+    const picked = one.menu.getItems('Scan.pdf').find((item) => item.id === VERSIONS.key)!
       .children![1]!.id
 
-    one.chooseMenuItem(picked)
+    one.menu.choose(picked)
 
     expect(runs).toStrictEqual([
       [
@@ -137,12 +143,12 @@ describe('a command of the menu that offers choices', () => {
     const { one, runs, errors, answerChoices } = await setUp(async () => {
       throw new Error('the plugin is gone')
     })
-    const loading = one.getMenuItems('Scan.pdf').find((item) => item.id === VERSIONS.key)!
+    const loading = one.menu.getItems('Scan.pdf').find((item) => item.id === VERSIONS.key)!
       .children![0]!.id
 
     await answerChoices()
-    expect(one.getMenuItems('Scan.pdf').some((item) => item.id === VERSIONS.key)).toBe(false)
-    one.chooseMenuItem(loading)
+    expect(one.menu.getItems('Scan.pdf').some((item) => item.id === VERSIONS.key)).toBe(false)
+    one.menu.choose(loading)
 
     expect(runs).toStrictEqual([])
     expect(errors).toHaveLength(1)
@@ -157,10 +163,10 @@ describe('the menu of a row whose commands offer items', () => {
   it('is not shown while the items are read, and is shown once they are', async () => {
     const { one, answerChoices } = await setUp(async () => CHOICES)
 
-    expect(one.menu.value).toBeNull()
+    expect(one.menu.request.value).toBeNull()
     await answerChoices()
 
-    expect(one.menu.value?.path).toBe('Scan.pdf')
+    expect(one.menu.request.value?.path).toBe('Scan.pdf')
   })
 
   it('is shown with its loading row once the hold has passed', async () => {
@@ -169,7 +175,7 @@ describe('the menu of a row whose commands offer items', () => {
 
     await vi.advanceTimersByTimeAsync(150)
 
-    expect(one.menu.value?.path).toBe('Scan.pdf')
+    expect(one.menu.request.value?.path).toBe('Scan.pdf')
     expect(getChildren(one)).toStrictEqual([{ text: WORDS.loadingItems, isDisabled: true }])
   })
 
@@ -179,6 +185,6 @@ describe('the menu of a row whose commands offer items', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await answerChoices()
 
-    expect(one.menu.value).toBeNull()
+    expect(one.menu.request.value).toBeNull()
   })
 })

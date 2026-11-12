@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
 // The fake pages the importer's tool is tested against, in addition to videoAddress.
@@ -84,7 +84,7 @@ func (s fakeSites) Download(ctx context.Context, address string, media download.
 // textVault is the vault whose texts compare versions with the notes it makes, as the host's texts
 // read the vault's files.
 type textVault struct {
-	host.Vault
+	*hosttest.Vault
 	texts *hosttest.Texts
 	all   map[domain.VaultID]*hosttest.Texts
 }
@@ -99,7 +99,17 @@ func (v textVault) Create(ctx context.Context, path string, content []byte) erro
 	return nil
 }
 
-func (v textVault) With(id domain.VaultID) host.Vault {
+func (v textVault) vaults() func(domain.VaultID) link.Vault {
+	return func(id domain.VaultID) link.Vault {
+		if id == "" {
+			return link.Vault{Files: v, Writer: v}
+		}
+		on := v.With(id)
+		return link.Vault{Files: on, Writer: on}
+	}
+}
+
+func (v textVault) With(id domain.VaultID) textVault {
 	return textVault{Vault: v.Vault.With(id), texts: v.all[id], all: v.all}
 }
 
@@ -122,18 +132,15 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 	texts.SetStore(PluginID, store)
 	chemistry := hosttest.New("Chemistry")
 	vault.Beside(chemistry)
-	chemTexts, isTexts := texts.With("Chemistry").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of Chemistry are not hosttest texts")
-	}
+	chemTexts := texts.With("Chemistry")
 	chemTexts.SetStore(PluginID, chemistry.Store())
 
-	sites := fakeSites{video: download.NewMock(), release: release}
+	sites := fakeSites{video: download.NewMock(webpage.New()), release: release}
 	hosted := link.Host{
-		Vault: textVault{
+		Vaults: textVault{
 			Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts, "Chemistry": chemTexts},
-		},
-		Store: store, Texts: texts, Queue: hosttest.NewQueue(),
+		}.vaults(),
+		Store: foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),
 		Clock: clock.NewFake(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
@@ -269,8 +276,8 @@ func TestURLImportRequiresOutboundNetwork(t *testing.T) {
 	if len(listing.Tools) != 1 {
 		t.Fatalf("the registry lists %+v, want url_import alone", listing.Tools)
 	}
-	if requires := listing.Tools[0].GetRequires(); !slices.Contains(requires, "network:outbound") {
-		t.Errorf("url_import requires %q, want network:outbound among them", requires)
+	if requires := listing.Tools[0].GetRequires(); !slices.Contains(requires, "link:open") {
+		t.Errorf("url_import requires %q, want link:open among them", requires)
 	}
 }
 

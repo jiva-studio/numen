@@ -7,7 +7,7 @@
  */
 
 /** The scheme a link to somewhere in the vault carries. */
-export const LINK_SCHEME = 'numen:'
+const LINK_SCHEME = 'numen:'
 
 /** Somewhere in the vault: a file, and the span of its text meant. */
 export interface LinkTarget {

@@ -4,7 +4,9 @@ name: CI
 # touches from .github/filters.yml; a manual run takes every area. Each called workflow runs the
 # jobs of its areas. The CI job is the one required check.
 on:
+  # A new title is checked again, so `edited` is listed beside the default types.
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   # Windows and macOS runners cost two and ten times a Linux one, so a manual run asks for them.
   workflow_dispatch:
     inputs:

@@ -1,0 +1,47 @@
+package vault
+
+import (
+	"context"
+	"sync"
+
+	"github.com/jiva-studio/numen/libs/note/domain"
+)
+
+// Walks is the vaults being walked, a turn each.
+//
+// It belongs to whatever the walks are written into: two indexes are two sets
+// of turns, and a set goes when the thing holding it goes.
+type Walks struct {
+	mu    sync.Mutex
+	turns map[domain.VaultID]chan struct{}
+}
+
+func (w *Walks) turn(vaultID domain.VaultID) chan struct{} {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.turns == nil {
+		w.turns = map[domain.VaultID]chan struct{}{}
+	}
+	target, found := w.turns[vaultID]
+	if !found {
+		target = make(chan struct{}, 1)
+		w.turns[vaultID] = target
+	}
+	return target
+}
+
+func (w *Walks) startOne(ctx context.Context, vaultID domain.VaultID) (func(), error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if w == nil {
+		return func() {}, nil
+	}
+	turn := w.turn(vaultID)
+	select {
+	case turn <- struct{}{}:
+		return func() { <-turn }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}

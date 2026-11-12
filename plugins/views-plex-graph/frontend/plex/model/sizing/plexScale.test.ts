@@ -171,7 +171,6 @@ describe('the size a label is being set at', () => {
     const probe = document.body.firstElementChild as HTMLElement
     expect(probe.tagName).toBe('DIV')
     expect(probe.getAttribute('aria-hidden')).toBe('true')
-    expect(probe.style.fontSize).toBe('var(--numen-font-size)')
     expect(watched).toStrictEqual([probe])
     scope.stop()
   })

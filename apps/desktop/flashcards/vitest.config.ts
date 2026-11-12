@@ -5,10 +5,10 @@
  */
 import { coverageConfigDefaults, defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
-import { createWindowAliases } from '@numen/shell/vite'
+import { createWindowAliases } from '@numen/workbench/vite'
 
 const alias = createWindowAliases(import.meta.url, {
-  '@numen/core-client/testing': '../../../libs/core-client/src/testing/index.ts',
+  '@numen/core-client/testing': '../../../libs/core/client/src/testing/index.ts',
 })
 
 export default defineConfig({

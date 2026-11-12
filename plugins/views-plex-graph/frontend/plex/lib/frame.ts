@@ -1,6 +1,6 @@
 import type { PlacedEdge } from './edge'
 import type { PlacedNode } from './node'
-import type { PlexRelation } from './relation'
+import type { PlexRelation } from '../../types'
 
 /** The box every placed node fits inside. */
 export interface Extent {

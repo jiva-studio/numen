@@ -10,22 +10,25 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/chatapi"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/usecase/answer"
 )
 
 func TestStream_EmitsReplyChunksInOrder(t *testing.T) {
-	model := &fakeChat{replies: []message{newTextReply("Water the garden today.")}}
-	s := newServer(model.serve(t).URL)
+	model := &fakeChat{replies: []conversation.Message{newTextReply("Water the garden today.")}}
+	s := newServer(t, model.serve(t).URL)
 	task := newTask("", "Plan?")
 	task.Conversation = "talk-1"
 
 	steps := ask(t, s, task)
 	ask(t, s, task)
 
-	if got, want := getSpoken(steps), []string{"Water ", "the ", "garden ", "today."}; !slices.Equal(got, want) {
+	if got, want := getSpokenTexts(steps), []string{"Water ", "the ", "garden ", "today."}; !slices.Equal(got, want) {
 		t.Errorf("said %q, want %q", got, want)
 	}
-	if got := describeSteps(steps); got != "model said stopped" || steps[len(steps)-1].GetStopped() != reasonDone {
+	if got := describeSteps(steps); got != "model said stopped" || steps[len(steps)-1].GetStopped() != answer.ReasonDone {
 		t.Errorf("steps are %q", got)
 	}
 	requests := model.getRequests()
@@ -49,10 +52,10 @@ func TestStreamedToolCallFragmentsAreAssembledByIndex(t *testing.T) {
 			`{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}`,
 			`[DONE]`,
 		},
-		replies: []message{newTextReply("Both read.")},
+		replies: []conversation.Message{newTextReply("Both read.")},
 	}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask(vault.serve(t), "Read A and B."))
 
@@ -82,11 +85,11 @@ func TestAStreamedReplySplitOffAtItsLengthLimitCallsNoTool(t *testing.T) {
 		`[DONE]`,
 	}}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask(vault.serve(t), "Read."))
 
-	if got := describeSteps(steps); got != "model said stopped" || steps[len(steps)-1].GetStopped() != reasonCut {
+	if got := describeSteps(steps); got != "model said stopped" || steps[len(steps)-1].GetStopped() != answer.ReasonCut {
 		t.Errorf("steps are %q, stopped %q", got, steps[len(steps)-1].GetStopped())
 	}
 	if calls := vault.getCalls(); len(calls) != 0 {
@@ -99,7 +102,7 @@ func TestAnErrorInTheStreamStopsTheRunWithItsReason(t *testing.T) {
 		`{"choices":[{"delta":{"content":"The plan "}}]}`,
 		`{"error":{"message":"the provider is overloaded","code":502}}`,
 	}}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Plan?"))
 
@@ -113,27 +116,27 @@ func TestAnErrorInTheStreamStopsTheRunWithItsReason(t *testing.T) {
 
 func TestAStreamThatEndsBeforeTheReplyStopsTheRun(t *testing.T) {
 	model := &fakeChat{script: []string{`{"choices":[{"delta":{"content":"The plan "}}]}`}}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Plan?"))
 
-	if reason := steps[len(steps)-1].GetStopped(); reason != errStreamEnded.Error() {
+	if reason := steps[len(steps)-1].GetStopped(); reason != chatapi.ErrStreamEnded.Error() {
 		t.Errorf("stopped %q", reason)
 	}
 }
 
 func TestAStreamCompletedWithNoReasonToStopStopsTheRun(t *testing.T) {
 	model := &fakeChat{script: []string{`{"choices":[{"delta":{"content":"The plan "}}]}`, `[DONE]`}}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Plan?"))
 
-	if reason := steps[len(steps)-1].GetStopped(); reason != errStreamEnded.Error() {
+	if reason := steps[len(steps)-1].GetStopped(); reason != chatapi.ErrStreamEnded.Error() {
 		t.Errorf("stopped %q", reason)
 	}
 }
 
-func TestACancelledRunStopsReadingTheStream(t *testing.T) {
+func TestACanceledRunStopsReadingTheStream(t *testing.T) {
 	released := make(chan struct{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		writeEvents(t, w, []string{`{"choices":[{"delta":{"content":"The plan "}}]}`})
@@ -141,7 +144,7 @@ func TestACancelledRunStopsReadingTheStream(t *testing.T) {
 		close(released)
 	}))
 	defer srv.Close()
-	s := newServer(srv.URL)
+	s := newServer(t, srv.URL)
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
@@ -171,7 +174,7 @@ func TestAStepThatCannotBeSentEndsTheStream(t *testing.T) {
 		close(hungUp)
 	}))
 	defer srv.Close()
-	s := newServer(srv.URL)
+	s := newServer(t, srv.URL)
 	removed := errors.New("the window is gone")
 
 	pieces := 0
@@ -192,17 +195,17 @@ func TestAStepThatCannotBeSentEndsTheStream(t *testing.T) {
 func TestStream_FallsBackToUnstreamedOnRejection(t *testing.T) {
 	model := &fakeChat{
 		rejectsStream: true,
-		replies:       []message{newCallReply("c", "note_read", `{"path":"A.md"}`), newTextReply("Water the garden.")},
+		replies:       []conversation.Message{newCallReply("c", "note_read", `{"path":"A.md"}`), newTextReply("Water the garden.")},
 	}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask(vault.serve(t), "Plan?"))
 
 	if got := describeSteps(steps); got != "model call finished model said stopped" {
 		t.Fatalf("steps are %q", got)
 	}
-	if got := getSpoken(steps); !slices.Equal(got, []string{"Water the garden."}) {
+	if got := getSpokenTexts(steps); !slices.Equal(got, []string{"Water the garden."}) {
 		t.Errorf("said %q", got)
 	}
 	var streamed []bool
@@ -216,22 +219,22 @@ func TestStream_FallsBackToUnstreamedOnRejection(t *testing.T) {
 
 func TestABadRequestIsReportedWhenTheUnstreamedOneFailsToo(t *testing.T) {
 	model := &fakeChat{status: http.StatusBadRequest}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Plan?"))
 
-	if reason := steps[len(steps)-1].GetStopped(); !strings.Contains(reason, "400") || strings.Contains(reason, errStreamRejected.Error()) {
+	if reason := steps[len(steps)-1].GetStopped(); !strings.Contains(reason, "400") || strings.Contains(reason, conversation.ErrStreamRejected.Error()) {
 		t.Errorf("stopped %q", reason)
 	}
 }
 
 func TestStream_EmitsWholeReplyWhenAPIIgnoresStreaming(t *testing.T) {
-	model := &fakeChat{ignoresStream: true, replies: []message{newTextReply("Water the garden.")}}
-	s := newServer(model.serve(t).URL)
+	model := &fakeChat{ignoresStream: true, replies: []conversation.Message{newTextReply("Water the garden.")}}
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Plan?"))
 
-	if got := getSpoken(steps); !slices.Equal(got, []string{"Water the garden."}) {
+	if got := getSpokenTexts(steps); !slices.Equal(got, []string{"Water the garden."}) {
 		t.Errorf("said %q", got)
 	}
 	if requests := model.getRequests(); len(requests) != 1 || !requests[0].Stream {
@@ -241,9 +244,9 @@ func TestStream_EmitsWholeReplyWhenAPIIgnoresStreaming(t *testing.T) {
 
 func TestAStreamedToolCallAtAnImpossibleIndexStopsTheRun(t *testing.T) {
 	model := &fakeChat{script: []string{
-		fmt.Sprintf(`{"choices":[{"delta":{"tool_calls":[{"index":%d,"id":"c","function":{"name":"note_read"}}]}}]}`, maxStreamedCalls),
+		fmt.Sprintf(`{"choices":[{"delta":{"tool_calls":[{"index":%d,"id":"c","function":{"name":"note_read"}}]}}]}`, chatapi.MaxStreamedCalls),
 	}}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Read."))
 

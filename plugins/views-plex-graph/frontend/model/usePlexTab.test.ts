@@ -11,14 +11,7 @@ import { createPlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab
 import type { CommandTarget, SlotCommand, SlotItem } from '@numen/plugin-sdk'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
-import {
-  createLine,
-  createVault,
-  settle,
-  viewOn,
-  type Types,
-  type NeighbourSpec,
-} from '../fixtures'
+import { createLine, createVault, settle, viewOn, type Types, type NeighborSpec } from '../fixtures'
 import type { NoteHeading, NoteRelation, PathRename } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
 
@@ -55,36 +48,48 @@ const NODE_MENU: readonly SlotItem[] = [
   createEntry('app:file.remove'),
 ]
 
-const createDeps = (
-  editor: PlexTabDeps['editor'],
-  overrides: Partial<PlexTabDeps> = {},
-): PlexTabDeps => ({
+/** What a test replaces of the deps, a part at a time. */
+interface DepsOverrides {
+  readonly window?: Partial<PlexTabDeps['window']>
+  readonly menu?: Partial<PlexTabDeps['menu']>
+  readonly notes?: Partial<PlexTabDeps['notes']>
+}
+
+const createDeps = (editor: PlexTabDeps['editor'], overrides: DepsOverrides = {}): PlexTabDeps => ({
   editor,
-  isReady: ref(true),
-  isNesting: ref(true),
   tabId: 'plex:1',
-  headings: ref(6),
-  openNote: () => undefined,
-  readHeadings: async () => new Map(),
-  getMenuEntries: () => [],
-  listItems: async () => [],
-  getNoteIcon: () => null,
-  runCommand: async () => '',
-  openingPath: ref(''),
-  readOpeningPath: async () => '',
-  dragged: ref([]),
-  showMessage: () => undefined,
   creatable: ['parent', 'child', 'jump'],
-  ...overrides,
+  window: {
+    isReady: ref(true),
+    openNote: () => undefined,
+    getNoteIcon: () => null,
+    openingPath: ref(''),
+    readOpeningPath: async () => '',
+    dragged: ref([]),
+    showMessage: () => undefined,
+    ...overrides.window,
+  },
+  menu: {
+    getMenuEntries: () => [],
+    listItems: async () => [],
+    runCommand: async () => '',
+    ...overrides.menu,
+  },
+  notes: {
+    isNesting: ref(true),
+    headings: ref(6),
+    readHeadings: async () => new Map(),
+    ...overrides.notes,
+  },
 })
 
 const tab = (
   targetPath: string,
-  neighbours: readonly NeighbourSpec[] = [],
+  neighbors: readonly NeighborSpec[] = [],
   takes = true,
   types: Types = {},
 ) => {
-  const plex = viewOn(targetPath, neighbours, types)
+  const plex = viewOn(targetPath, neighbors, types)
   const vault = createVault(takes)
   const openedCalls: [string, string, string][] = []
   const request: string[] = []
@@ -105,34 +110,40 @@ const tab = (
   const requestedHeadings: (readonly string[])[] = []
   const deps: PlexTabDeps = {
     editor: vault.editor,
-    isReady: ref(true),
-    isNesting,
     tabId: 'plex:1',
-    headings: ref(6),
-    openNote: (path, options) => {
-      openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current'])
-      if (options?.line !== undefined) entered.push([path, options.line])
-    },
-    // The vault answers only for the notes it was queried about.
-    readHeadings: async (paths) => {
-      requestedHeadings.push(paths)
-      return new Map([...divides.value].filter(([path]) => paths.includes(path)))
-    },
-    getMenuEntries: (target) => {
-      menuTargets.push(target)
-      return target.isFolder ? CANVAS_MENU : NODE_MENU
-    },
-    listItems: async () => [],
-    getNoteIcon: (tabKind) => (tabKind === 'sample' ? SAMPLE_ICON : null),
-    runCommand: async (id, target) => {
-      ran.push([id, target.path, target.title])
-      return id === 'app:note.create' ? created.value : ''
-    },
-    openingPath: ref('Opening.md'),
-    readOpeningPath: async () => 'Opening.md',
-    dragged: dragging,
-    showMessage: (text) => messages.push(text),
     creatable: ['parent', 'child', 'jump'],
+    window: {
+      isReady: ref(true),
+      openNote: (path, options) => {
+        openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current'])
+        if (options?.line !== undefined) entered.push([path, options.line])
+      },
+      getNoteIcon: (tabKind) => (tabKind === 'sample' ? SAMPLE_ICON : null),
+      openingPath: ref('Opening.md'),
+      readOpeningPath: async () => 'Opening.md',
+      dragged: dragging,
+      showMessage: (text) => messages.push(text),
+    },
+    menu: {
+      getMenuEntries: (target) => {
+        menuTargets.push(target)
+        return target.isFolder ? CANVAS_MENU : NODE_MENU
+      },
+      listItems: async () => [],
+      runCommand: async (id, target) => {
+        ran.push([id, target.path, target.title])
+        return id === 'app:note.create' ? created.value : ''
+      },
+    },
+    notes: {
+      isNesting,
+      headings: ref(6),
+      // The vault answers only for the notes it was queried about.
+      readHeadings: async (paths) => {
+        requestedHeadings.push(paths)
+        return new Map([...divides.value].filter(([path]) => paths.includes(path)))
+      },
+    },
   }
   const state = createPlexTab(plex.view, deps)
   /** The label of a note in the graph, which a gesture on it carries. */
@@ -158,13 +169,13 @@ const tab = (
 }
 
 const getNode = (state: PlexTabState, title: string): string =>
-  state.picture.value?.nodes.find((node) => node.title === title)?.id ?? ''
+  state.canvas.picture.value?.nodes.find((node) => node.title === title)?.id ?? ''
 
 describe('a note made from a node', () => {
   it('remains the plex on the node it was made from', async () => {
     const one = tab('Root.md', ['Child.md'])
 
-    await one.state.createNode(one.node('Child.md'), 'child')
+    await one.state.nodes.addNode(one.node('Child.md'), 'child')
 
     expect(one.made).toEqual([['Child.md', 'child']])
     expect(one.went).toEqual(['Child.md'])
@@ -173,16 +184,16 @@ describe('a note made from a node', () => {
   it('leaves the plex where it is when that node is the focus', async () => {
     const one = tab('Root.md')
 
-    await one.state.createNode(one.node('Root.md'), 'child')
+    await one.state.nodes.addNode(one.node('Root.md'), 'child')
 
     expect(one.went).toEqual(['Root.md'])
-    expect(one.state.view.here.value).toBe('Root.md')
+    expect(one.state.canvas.view.here.value).toBe('Root.md')
   })
 
   it('travels nowhere when the vault made nothing', async () => {
     const one = tab('Root.md', ['Child.md'], false)
 
-    await one.state.createNode(one.node('Child.md'), 'parent')
+    await one.state.nodes.addNode(one.node('Child.md'), 'parent')
 
     expect(one.went).toEqual([])
   })
@@ -192,7 +203,7 @@ describe('two notes a line was drawn between', () => {
   it('remains the plex on the note the line was drawn from', async () => {
     const one = tab('Root.md', ['Child.md', 'Other.md'])
 
-    await one.state.joinNodes(one.node('Child.md'), one.node('Other.md'), 'jump')
+    await one.state.nodes.joinNodes(one.node('Child.md'), one.node('Other.md'), 'jump')
 
     expect(one.joined).toEqual([['Child.md', 'Other.md', 'jump']])
     expect(one.went).toEqual(['Child.md'])
@@ -201,7 +212,7 @@ describe('two notes a line was drawn between', () => {
   it('travels nowhere when nothing was written', async () => {
     const one = tab('Root.md', ['Child.md'], false)
 
-    await one.state.joinNodes(one.node('Child.md'), one.node('Root.md'), 'jump')
+    await one.state.nodes.joinNodes(one.node('Child.md'), one.node('Root.md'), 'jump')
 
     expect(one.went).toEqual([])
   })
@@ -216,19 +227,19 @@ describe('the menu on a node', () => {
 
   it('passes the command the note it was requested for on, called what the picture calls it', () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.openMenu(createMenuRequest(one.node('Child.md')))
+    one.state.menu.openMenu(createMenuRequest(one.node('Child.md')))
 
-    one.state.chooseMenuItem(OPEN_ROW)
+    one.state.menu.chooseMenuItem(OPEN_ROW)
 
     expect(one.ran).toEqual([['app:file.open', 'Child.md', 'Child']])
-    expect(one.state.menu.value).toBeNull()
+    expect(one.state.menu.request.value).toBeNull()
   })
 
   it('draws the entries of the slot over the note of the node, and runs nothing it does not offer', () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.openMenu(createMenuRequest(one.node('Child.md')))
+    one.state.menu.openMenu(createMenuRequest(one.node('Child.md')))
 
-    expect(one.state.menuItems.value.map((item) => [item.id, item.group])).toStrictEqual([
+    expect(one.state.menu.menuItems.value.map((item) => [item.id, item.group])).toStrictEqual([
       ['org.example.sample/command/app:file.open', '0'],
       ['org.example.sample/command/org.example.sample:share.run', '1'],
       ['org.example.sample/command/app:file.remove', '2'],
@@ -236,50 +247,50 @@ describe('the menu on a node', () => {
     expect(one.menuTargets).toStrictEqual([
       { path: 'Child.md', title: 'Child', isFolder: false, others: [], tab: '' },
     ])
-    one.state.chooseMenuItem('constructor')
-    one.state.openMenu(createMenuRequest(one.node('Child.md')))
-    one.state.chooseMenuItem('org.example.sample/command/org.example.sample:share.run')
+    one.state.menu.chooseMenuItem('constructor')
+    one.state.menu.openMenu(createMenuRequest(one.node('Child.md')))
+    one.state.menu.chooseMenuItem('org.example.sample/command/org.example.sample:share.run')
 
     expect(one.ran).toEqual([['org.example.sample:share.run', 'Child.md', 'Child']])
   })
 
   it('does not offer a new note over a node', () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.openMenu(createMenuRequest(one.node('Child.md')))
+    one.state.menu.openMenu(createMenuRequest(one.node('Child.md')))
 
-    expect(one.state.menuItems.value.map((item) => item.id)).not.toContain(NEW_NOTE_ROW)
+    expect(one.state.menu.menuItems.value.map((item) => item.id)).not.toContain(NEW_NOTE_ROW)
   })
 
   it('passes the note type of a node that is not a plain note', () => {
     const one = tab('Root.md', ['Sample.md'], true, { 'Sample.md': 'sample' })
-    one.state.openMenu(createMenuRequest(one.node('Sample.md')))
+    one.state.menu.openMenu(createMenuRequest(one.node('Sample.md')))
 
     expect(one.menuTargets.at(-1)).toMatchObject({ path: 'Sample.md', noteType: 'sample' })
   })
 
   it('draws a row with the icon of its entry, and none without one', () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.openMenu(createMenuRequest(one.node('Child.md')))
+    one.state.menu.openMenu(createMenuRequest(one.node('Child.md')))
 
-    expect(one.state.getMenuIcon('org.example.sample/command/app:file.open')).toBe(SHARE_ICON)
-    expect(one.state.getMenuIcon('org.example.sample/command/app:file.remove')).toBeNull()
+    expect(one.state.menu.getMenuIcon('org.example.sample/command/app:file.open')).toBe(SHARE_ICON)
+    expect(one.state.menu.getMenuIcon('org.example.sample/command/app:file.remove')).toBeNull()
   })
 
   it('does nothing when it relies on nothing', () => {
     const one = tab('Root.md')
 
-    one.state.chooseMenuItem(OPEN_ROW)
+    one.state.menu.chooseMenuItem(OPEN_ROW)
 
     expect(one.ran).toEqual([])
   })
 
   it('goes when the picture under it does', () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.openMenu(createMenuRequest(one.node('Child.md')))
+    one.state.menu.openMenu(createMenuRequest(one.node('Child.md')))
 
-    one.state.dismiss()
+    one.state.menu.dismiss()
 
-    expect(one.state.menu.value).toBeNull()
+    expect(one.state.menu.request.value).toBeNull()
   })
 })
 
@@ -288,9 +299,9 @@ describe('the menu on a node', () => {
  * them is a plex to offer a note over.
  */
 describe('a plex drawing nothing', () => {
-  const plex = (overrides: Partial<PlexTabDeps>) => {
+  const plex = (overrides: DepsOverrides) => {
     const view = {
-      neighbourhood: ref(null),
+      neighborhood: ref(null),
       here: ref(''),
       error: ref(''),
       go: async () => undefined,
@@ -301,19 +312,31 @@ describe('a plex drawing nothing', () => {
   }
 
   it('is an empty vault where the vault is read and opens with no note', () => {
-    expect(plex({}).empty.value).toBe(true)
+    expect(plex({}).canvas.empty.value).toBe(true)
   })
 
   it('is not an empty vault where the vault could not be opened', () => {
-    expect(plex({ isReady: ref(false) }).empty.value).toBe(false)
+    expect(
+      plex({
+        window: {
+          isReady: ref(false),
+        },
+      }).canvas.empty.value,
+    ).toBe(false)
   })
 
   it('is not an empty vault while the first answer is on its way', () => {
-    expect(plex({ openingPath: ref('Opening.md') }).empty.value).toBe(false)
+    expect(
+      plex({
+        window: {
+          openingPath: ref('Opening.md'),
+        },
+      }).canvas.empty.value,
+    ).toBe(false)
   })
 
   it('is not an empty vault once the plex relies on a note', () => {
-    expect(tab('Root.md').state.empty.value).toBe(false)
+    expect(tab('Root.md').state.canvas.empty.value).toBe(false)
   })
 })
 
@@ -323,7 +346,7 @@ describe('the menu of a place with no node', () => {
   it('asks for the entries over the vault root of its own tab', () => {
     const one = tab('Root.md')
 
-    one.state.openMenu(request)
+    one.state.menu.openMenu(request)
 
     expect(one.menuTargets).toStrictEqual([
       { path: '', title: '', isFolder: true, others: [], tab: 'plex:1' },
@@ -332,39 +355,39 @@ describe('the menu of a place with no node', () => {
 
   it('draws the entries the slot holds over the canvas', () => {
     const one = tab('Root.md')
-    one.state.openMenu(request)
+    one.state.menu.openMenu(request)
 
-    expect(one.state.menuItems.value.map((item) => item.id)).toStrictEqual([NEW_NOTE_ROW])
+    expect(one.state.menu.menuItems.value.map((item) => item.id)).toStrictEqual([NEW_NOTE_ROW])
   })
 
   it('runs the command of the row over the canvas target, and closes the menu', async () => {
     const one = tab('Root.md')
-    one.state.openMenu(request)
+    one.state.menu.openMenu(request)
 
-    one.state.chooseMenuItem(NEW_NOTE_ROW)
+    one.state.menu.chooseMenuItem(NEW_NOTE_ROW)
     await settle()
 
     expect(one.ran).toStrictEqual([['app:note.create', '', '']])
-    expect(one.state.menu.value).toBeNull()
+    expect(one.state.menu.request.value).toBeNull()
   })
 
   it('shows the note the run made', async () => {
     const one = tab('Root.md')
-    one.state.openMenu(request)
+    one.state.menu.openMenu(request)
 
-    one.state.chooseMenuItem(NEW_NOTE_ROW)
+    one.state.menu.chooseMenuItem(NEW_NOTE_ROW)
     await settle()
 
     expect(one.went).toStrictEqual(['Untitled note 1.md'])
-    expect(one.state.view.here.value).toBe('Untitled note 1.md')
+    expect(one.state.canvas.view.here.value).toBe('Untitled note 1.md')
   })
 
   it('shows nothing where the run made no note', async () => {
     const one = tab('Root.md')
     one.created.value = ''
-    one.state.openMenu(request)
+    one.state.menu.openMenu(request)
 
-    one.state.chooseMenuItem(NEW_NOTE_ROW)
+    one.state.menu.chooseMenuItem(NEW_NOTE_ROW)
     await settle()
 
     expect(one.went).toStrictEqual([])
@@ -373,15 +396,17 @@ describe('the menu of a place with no node', () => {
 
 describe('what a note in the picture is called', () => {
   it('is the title the vault gave the focus', () => {
-    expect(tab('Root.md').state.getName('Root.md')).toBe('Root')
+    expect(tab('Root.md').state.nodes.getName('Root.md')).toBe('Root')
   })
 
   it('is the title of a note around it', () => {
-    expect(tab('Root.md', ['Deep/Child.md']).state.getName('Deep/Child.md')).toBe('Deep/Child')
+    expect(tab('Root.md', ['Deep/Child.md']).state.nodes.getName('Deep/Child.md')).toBe(
+      'Deep/Child',
+    )
   })
 
   it('is the file it is filed under, for a note the picture does not name', () => {
-    expect(tab('Root.md').state.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
+    expect(tab('Root.md').state.nodes.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
   })
 })
 
@@ -391,14 +416,16 @@ describe('the picture', () => {
     const state = createPlexTab(
       plex.view,
       createDeps(createVault().editor, {
-        isReady: ref(false),
-        dragged: ref(['Entropy.md']),
+        window: {
+          isReady: ref(false),
+          dragged: ref(['Entropy.md']),
+        },
       }),
     )
 
-    expect(state.picture.value).toBeNull()
+    expect(state.canvas.picture.value).toBeNull()
     // Nothing is drawn, so nothing can be dragged onto it.
-    expect(state.dragged.value).toStrictEqual([])
+    expect(state.canvas.dragged.value).toStrictEqual([])
   })
 })
 
@@ -406,7 +433,7 @@ describe('notes dragged in and dropped over the picture', () => {
   it('writes the link into the note the plex relies on, naming the dragged one second', async () => {
     const one = tab('Root.md', ['Child.md'])
 
-    await one.state.dropNodes(['physics/Entropy.md'], 'child')
+    await one.state.nodes.dropNodes(['physics/Entropy.md'], 'child')
 
     expect(one.joined).toEqual([['Root.md', 'physics/Entropy.md', 'child']])
     expect(one.went).toEqual(['Root.md'])
@@ -415,7 +442,7 @@ describe('notes dragged in and dropped over the picture', () => {
   it('writes one for each of them, to the one note in the one relation', async () => {
     const one = tab('Root.md')
 
-    await one.state.dropNodes(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
+    await one.state.nodes.dropNodes(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
 
     expect(one.joined).toEqual([
       ['Root.md', 'Entropy.md', 'child'],
@@ -428,8 +455,8 @@ describe('notes dragged in and dropped over the picture', () => {
   it('takes the relation the drag named, whichever it was', async () => {
     const one = tab('Root.md')
 
-    await one.state.dropNodes(['Entropy.md'], 'parent')
-    await one.state.dropNodes(['Heat.md'], 'jump')
+    await one.state.nodes.dropNodes(['Entropy.md'], 'parent')
+    await one.state.nodes.dropNodes(['Heat.md'], 'jump')
 
     expect(one.joined).toEqual([
       ['Root.md', 'Entropy.md', 'parent'],
@@ -441,7 +468,7 @@ describe('notes dragged in and dropped over the picture', () => {
     const one = tab('Root.md')
     one.notJoinedPaths.add('Kelvin.md')
 
-    await one.state.dropNodes(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
+    await one.state.nodes.dropNodes(['Entropy.md', 'Kelvin.md', 'Heat.md'], 'child')
 
     expect(one.joined).toEqual([
       ['Root.md', 'Entropy.md', 'child'],
@@ -455,7 +482,7 @@ describe('notes dragged in and dropped over the picture', () => {
   it('says every one of them where the vault would write none, and travels nowhere', async () => {
     const one = tab('Root.md', [], false)
 
-    await one.state.dropNodes(['Entropy.md', 'Heat.md'], 'child')
+    await one.state.nodes.dropNodes(['Entropy.md', 'Heat.md'], 'child')
 
     expect(one.messages).toEqual([`${words.notJoined} Entropy, Heat`])
     expect(one.went).toEqual([])
@@ -464,7 +491,7 @@ describe('notes dragged in and dropped over the picture', () => {
   it('joins nothing where the plex has nowhere to stand', async () => {
     const one = tab('')
 
-    await one.state.dropNodes(['Entropy.md'], 'child')
+    await one.state.nodes.dropNodes(['Entropy.md'], 'child')
 
     expect(one.joined).toEqual([])
     expect(one.messages).toEqual([])
@@ -473,7 +500,7 @@ describe('notes dragged in and dropped over the picture', () => {
   it('leaves the note the plex relies on out, and joins the rest', async () => {
     const one = tab('Root.md')
 
-    await one.state.dropNodes(['Root.md', 'Entropy.md'], 'child')
+    await one.state.nodes.dropNodes(['Root.md', 'Entropy.md'], 'child')
 
     expect(one.joined).toEqual([['Root.md', 'Entropy.md', 'child']])
     expect(one.messages).toEqual([])
@@ -485,18 +512,21 @@ describe('what the picture draws a line to', () => {
     const one = tab('Root.md')
     one.dragging.value = ['physics/Entropy.md', 'physics/Kelvin.md']
 
-    expect(one.state.dragged.value).toStrictEqual(['physics/Entropy.md', 'physics/Kelvin.md'])
+    expect(one.state.canvas.dragged.value).toStrictEqual([
+      'physics/Entropy.md',
+      'physics/Kelvin.md',
+    ])
   })
 
   it('is nothing while the window is dragging none', () => {
-    expect(tab('Root.md').state.dragged.value).toStrictEqual([])
+    expect(tab('Root.md').state.canvas.dragged.value).toStrictEqual([])
   })
 
   it('leaves out the note the plex relies on, and keeps the rest', () => {
     const one = tab('Root.md')
     one.dragging.value = ['Root.md', 'Entropy.md']
 
-    expect(one.state.dragged.value).toStrictEqual(['Entropy.md'])
+    expect(one.state.canvas.dragged.value).toStrictEqual(['Entropy.md'])
   })
 })
 
@@ -508,9 +538,9 @@ describe('the headings a node nests', () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4), heading('Cold', 9, 2)]]])
 
-    await one.state.readHeadings()
+    await one.state.headings.readHeadings()
 
-    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.headings.getHeadings(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
       { id: '9', text: 'Cold', level: 2 },
     ])
@@ -520,30 +550,30 @@ describe('the headings a node nests', () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
-    await one.state.readHeadings()
+    await one.state.headings.readHeadings()
 
-    expect(one.state.getHeadings(one.node('Root.md'))).toStrictEqual([])
+    expect(one.state.headings.getHeadings(one.node('Root.md'))).toStrictEqual([])
   })
 
   it('are each named by the line it relies on', async () => {
     const one = tab('Root.md')
     one.divides.value = new Map([['Root.md', [heading('Heat', 12)]]])
 
-    await one.state.readHeadings()
+    await one.state.headings.readHeadings()
 
-    expect(one.state.getHeadings(one.node('Root.md')).map((heading) => heading.id)).toStrictEqual([
-      '12',
-    ])
+    expect(
+      one.state.headings.getHeadings(one.node('Root.md')).map((heading) => heading.id),
+    ).toStrictEqual(['12'])
   })
 
   it('are requested for again once the plex remains somewhere else', async () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Other.md', [heading('Heat', 4)]]])
 
-    await one.state.view.go('Other.md')
+    await one.state.canvas.view.go('Other.md')
     await settle()
 
-    expect(one.state.getHeadings(one.node('Other.md'))).toStrictEqual([
+    expect(one.state.headings.getHeadings(one.node('Other.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
@@ -554,34 +584,38 @@ describe('the headings a node nests', () => {
     const answers: ((target: ReadonlyMap<string, readonly NoteHeading[]>) => void)[] = []
     const one = tab('Root.md')
     const plex = createPlexTab(
-      one.state.view,
+      one.state.canvas.view,
       createDeps(createVault().editor, {
-        readHeadings: () => new Promise((isDone) => answers.push(isDone)),
-        openingPath: ref('Root.md'),
-        readOpeningPath: async () => 'Root.md',
+        window: {
+          openingPath: ref('Root.md'),
+          readOpeningPath: async () => 'Root.md',
+        },
+        notes: {
+          readHeadings: () => new Promise((isDone) => answers.push(isDone)),
+        },
       }),
     )
     const node = () => getNode(plex, 'Root')
 
     // The graph queries once when built, and that response stays pending.
     const request = answers.length
-    const reads = [plex.readHeadings(), plex.readHeadings()]
+    const reads = [plex.headings.readHeadings(), plex.headings.readHeadings()]
     answers[request + 1]?.(new Map([['Root.md', [heading('Fresh', 2)]]]))
     answers[request]?.(new Map([['Root.md', [heading('Stale', 1)]]]))
     await Promise.all(reads)
     await settle()
 
-    expect(plex.getHeadings(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
+    expect(plex.headings.getHeadings(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
   })
 
   it('are none for every node while the setting is off', async () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
-    await one.state.readHeadings()
+    await one.state.headings.readHeadings()
     one.isNesting.value = false
 
-    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([])
-    expect(one.state.getHeadings(one.node('Root.md'))).toStrictEqual([])
+    expect(one.state.headings.getHeadings(one.node('Child.md'))).toStrictEqual([])
+    expect(one.state.headings.getHeadings(one.node('Root.md'))).toStrictEqual([])
   })
 
   it('are not requested of the vault at all while the setting is off', async () => {
@@ -589,7 +623,7 @@ describe('the headings a node nests', () => {
     one.isNesting.value = false
     one.requestedHeadings.length = 0
 
-    await one.state.readHeadings()
+    await one.state.headings.readHeadings()
 
     expect(one.requestedHeadings).toStrictEqual([])
   })
@@ -599,9 +633,9 @@ describe('the headings a node nests', () => {
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
     one.requestedHeadings.length = 0
 
-    await one.state.readHeadings()
+    await one.state.headings.readHeadings()
 
-    expect(one.state.getHeadings(one.node('Animals.md'))).toStrictEqual([])
+    expect(one.state.headings.getHeadings(one.node('Animals.md'))).toStrictEqual([])
     expect(one.requestedHeadings).toStrictEqual([['Root.md']])
   })
 
@@ -610,9 +644,9 @@ describe('the headings a node nests', () => {
     one.divides.value = new Map([['Animal.md', [heading('Front', 4)]]])
     one.requestedHeadings.length = 0
 
-    await one.state.readHeadings()
+    await one.state.headings.readHeadings()
 
-    expect(one.state.getHeadings(one.node('Animal.md'))).toStrictEqual([])
+    expect(one.state.headings.getHeadings(one.node('Animal.md'))).toStrictEqual([])
     expect(one.requestedHeadings).toStrictEqual([['Root.md']])
   })
 
@@ -622,9 +656,9 @@ describe('the headings a node nests', () => {
     })
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
-    await one.state.readHeadings()
+    await one.state.headings.readHeadings()
 
-    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.headings.getHeadings(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
@@ -634,9 +668,9 @@ describe('the headings a node nests', () => {
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
     one.requestedHeadings.length = 0
 
-    await one.state.readHeadings()
+    await one.state.headings.readHeadings()
 
-    expect(one.state.getHeadings(one.node('Animals.md'))).toStrictEqual([])
+    expect(one.state.headings.getHeadings(one.node('Animals.md'))).toStrictEqual([])
     expect(one.requestedHeadings).toStrictEqual([])
   })
 
@@ -647,12 +681,12 @@ describe('the headings a node nests', () => {
 
     one.isNesting.value = false
     await settle()
-    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([])
+    expect(one.state.headings.getHeadings(one.node('Child.md'))).toStrictEqual([])
 
     one.isNesting.value = true
     await settle()
 
-    expect(one.state.getHeadings(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.headings.getHeadings(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
@@ -662,7 +696,7 @@ describe('a heading of a node chosen', () => {
   it('opens the note it remains in, and puts the keyboard on its line', () => {
     const one = tab('Root.md')
 
-    one.state.openHeading(one.node('Root.md'), '12')
+    one.state.nodes.openHeading(one.node('Root.md'), '12')
 
     expect(one.opened).toStrictEqual([['Root.md', 'Root', 'current']])
     expect(one.entered).toStrictEqual([['Root.md', 12]])
@@ -671,7 +705,7 @@ describe('a heading of a node chosen', () => {
   it('opens the note the node remains for, the focus being another one', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.openHeading(one.node('Child.md'), '7')
+    one.state.nodes.openHeading(one.node('Child.md'), '7')
 
     expect(one.opened).toStrictEqual([['Child.md', 'Child', 'current']])
     expect(one.entered).toStrictEqual([['Child.md', 7]])
@@ -680,16 +714,16 @@ describe('a heading of a node chosen', () => {
   it('remains the plex where it stood', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.openHeading(one.node('Child.md'), '7')
+    one.state.nodes.openHeading(one.node('Child.md'), '7')
 
     expect(one.went).toStrictEqual([])
-    expect(one.state.view.here.value).toBe('Root.md')
+    expect(one.state.canvas.view.here.value).toBe('Root.md')
   })
 
   it('opens nothing for a heading naming no line, which is the one standing for the rest', () => {
     const one = tab('Root.md')
 
-    one.state.openHeading(one.node('Root.md'), '')
+    one.state.nodes.openHeading(one.node('Root.md'), '')
 
     expect(one.opened).toStrictEqual([])
     expect(one.entered).toStrictEqual([])
@@ -697,12 +731,12 @@ describe('a heading of a node chosen', () => {
 })
 
 /** A note beside another: where it is located, and the note it comes through. */
-type NeighbourRow = readonly [path: string, relation: NoteRelation, through?: string]
+type NeighborRow = readonly [path: string, relation: NoteRelation, through?: string]
 
 const getNoteTitle = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/, '')
 
-const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[] = []) => {
-  let relatedItems = initialNeighbours.map(([path, relation, through]) => ({
+const inVault = async (focus: string, initialNeighbors: readonly NeighborRow[] = []) => {
+  let relatedItems = initialNeighbors.map(([path, relation, through]) => ({
     path,
     relation,
     through: through ?? '',
@@ -717,7 +751,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
   const ran: [string, string, string][] = []
 
   const view = viewing({
-    neighbourhood: async (path) => {
+    neighborhood: async (path) => {
       request.push(path)
       if (pendingGate) await pendingGate
       return {
@@ -736,19 +770,23 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
   const state = createPlexTab(
     view,
     createDeps(vault.editor, {
-      openNote: (path, options) =>
-        openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current']),
-      getMenuEntries: () => NODE_MENU,
-      runCommand: async (id, target) => {
-        ran.push([id, target.path, target.title])
-        return ''
+      window: {
+        openNote: (path, options) =>
+          openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current']),
+      },
+      menu: {
+        getMenuEntries: () => NODE_MENU,
+        runCommand: async (id, target) => {
+          ran.push([id, target.path, target.title])
+          return ''
+        },
       },
     }),
   )
   await view.go(focus)
 
   /** The current graph, which a rendered window reads. */
-  const picture = () => state.picture.value
+  const picture = () => state.canvas.picture.value
   /** The label of the note shown by this title. */
   const node = (title: string) => getNode(state, title)
   const nodes = () => (picture()?.nodes ?? []).map((one) => `${one.relation} ${one.id}`)
@@ -762,7 +800,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
       path: getRenamedPath(renamed, one.path) || one.path,
       through: getRenamedPath(renamed, one.through) || one.through,
     }))
-    state.followMoves(renamed)
+    state.nodes.followMoves(renamed)
   }
   /** A move, followed by a new graph request. */
   const moveFilesAndReload = async (...renamed: readonly PathRename[]) => {
@@ -770,7 +808,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
     await view.go(view.here.value)
   }
   /** The user navigates to another note, which is a graph of its own. */
-  const goToNote = async (path: string, ...now: readonly NeighbourRow[]) => {
+  const goToNote = async (path: string, ...now: readonly NeighborRow[]) => {
     relatedItems = now.map(([at, relation, through]) => ({
       path: at,
       relation,
@@ -910,7 +948,7 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    one.state.activate(one.node('Heat'))
+    one.state.nodes.activate(one.node('Heat'))
 
     expect(one.requested.at(-1)).toBe('physics/Heat.md')
   })
@@ -919,7 +957,7 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    one.state.openNode(one.node('Heat'), 'split')
+    one.state.nodes.openNode(one.node('Heat'), 'split')
 
     expect(one.opened).toStrictEqual([['physics/Heat.md', 'Heat', 'split']])
   })
@@ -928,8 +966,8 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    one.state.openMenu({ node: one.node('Heat'), at: { x: 1, y: 2 }, opening: 'pointer' })
-    one.state.chooseMenuItem(OPEN_ROW)
+    one.state.menu.openMenu({ node: one.node('Heat'), at: { x: 1, y: 2 }, opening: 'pointer' })
+    one.state.menu.chooseMenuItem(OPEN_ROW)
 
     expect(one.ran).toStrictEqual([['app:file.open', 'physics/Heat.md', 'Heat']])
   })
@@ -938,7 +976,7 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    await one.state.createNode(one.node('Heat'), 'child')
+    await one.state.nodes.addNode(one.node('Heat'), 'child')
 
     expect(one.made).toStrictEqual([['physics/Heat.md', 'child']])
   })
@@ -947,7 +985,7 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    await one.state.joinNodes(one.node('Heat'), one.node('Root'), 'jump')
+    await one.state.nodes.joinNodes(one.node('Heat'), one.node('Root'), 'jump')
 
     expect(one.joined).toStrictEqual([['physics/Heat.md', 'Root.md', 'jump']])
   })
@@ -958,12 +996,12 @@ describe('a gesture the plex reports', () => {
     const request = one.requested.length
 
     for (const node of ['Heat.md', 'Root.md', 'nothing']) {
-      one.state.activate(node)
-      one.state.openNode(node, 'current')
-      one.state.openMenu({ node, at: { x: 1, y: 2 }, opening: 'pointer' })
-      one.state.chooseMenuItem(OPEN_ROW)
-      await one.state.createNode(node, 'child')
-      await one.state.joinNodes(node, one.node('Root'), 'jump')
+      one.state.nodes.activate(node)
+      one.state.nodes.openNode(node, 'current')
+      one.state.menu.openMenu({ node, at: { x: 1, y: 2 }, opening: 'pointer' })
+      one.state.menu.chooseMenuItem(OPEN_ROW)
+      await one.state.nodes.addNode(node, 'child')
+      await one.state.nodes.joinNodes(node, one.node('Root'), 'jump')
     }
 
     expect(one.requested).toHaveLength(request)
@@ -988,7 +1026,7 @@ describe('a plex that travelled', () => {
     // A node is invalid after two navigations, so a drag on it issues no vault
     // query.
     await one.goToNote('Warm.md', ['Fire.md', 'child'])
-    for (const node of initialNodeIds) one.state.activate(node)
+    for (const node of initialNodeIds) one.state.nodes.activate(node)
     expect(one.requested.at(-1)).toBe('Warm.md')
   })
 
@@ -1043,16 +1081,16 @@ describe('what a node remains for', () => {
       'Form.md': 'form',
     })
 
-    expect(one.state.getType(one.node('Sample.md'))).toBe('sample')
-    expect(one.state.getType(one.node('Form.md'))).toBe('form')
-    expect(one.state.getType(one.node('Root.md'))).toBe('note')
+    expect(one.state.headings.getType(one.node('Sample.md'))).toBe('sample')
+    expect(one.state.headings.getType(one.node('Form.md'))).toBe('form')
+    expect(one.state.headings.getType(one.node('Root.md'))).toBe('note')
   })
 
   it('is drawn with the icon of the tab kind the core chose for it, and a note it reports none for with none', () => {
     const one = tab('Root.md', ['Sample.md'], true, { 'Sample.md': 'sample' })
 
-    expect(one.state.getNodeIcon(one.node('Sample.md'))).toBe(SAMPLE_ICON)
-    expect(one.state.getNodeIcon(one.node('Root.md'))).toBeNull()
+    expect(one.state.menu.getNodeIcon(one.node('Sample.md'))).toBe(SAMPLE_ICON)
+    expect(one.state.menu.getNodeIcon(one.node('Root.md'))).toBeNull()
   })
 })
 
@@ -1061,9 +1099,9 @@ describe('quick-link popover from a node handle', () => {
     const one = tab('Root.md', ['Child.md'])
     const childNode = one.node('Child.md')
 
-    await one.state.createNode(childNode, 'child', { x: 450, y: 320 })
+    await one.state.nodes.addNode(childNode, 'child', { x: 450, y: 320 })
 
-    expect(one.state.quickLink.value).toStrictEqual({
+    expect(one.state.quickLink.quickLink.value).toStrictEqual({
       from: childNode,
       relation: 'child',
       at: { x: 450, y: 320 },
@@ -1072,25 +1110,25 @@ describe('quick-link popover from a node handle', () => {
 
   it('dismisses quick link popover cleanly on dismiss', async () => {
     const one = tab('Root.md')
-    one.state.openQuickLink({
+    one.state.quickLink.openQuickLink({
       from: one.node('Root.md'),
       relation: 'parent',
       at: { x: 100, y: 200 },
     })
 
-    one.state.dismissQuickLink()
+    one.state.quickLink.dismissQuickLink()
 
-    expect(one.state.quickLink.value).toBeNull()
+    expect(one.state.quickLink.quickLink.value).toBeNull()
   })
 
   it('creates new note and navigates to it when confirmed with title and navigation enabled', async () => {
     const one = tab('Root.md')
     const rootNode = one.node('Root.md')
-    one.state.openQuickLink({ from: rootNode, relation: 'child', at: { x: 100, y: 200 } })
+    one.state.quickLink.openQuickLink({ from: rootNode, relation: 'child', at: { x: 100, y: 200 } })
 
-    await one.state.confirmQuickLink('SubTopic', false)
+    await one.state.quickLink.confirmQuickLink('SubTopic', false)
 
-    expect(one.state.quickLink.value).toBeNull()
+    expect(one.state.quickLink.quickLink.value).toBeNull()
     expect(one.made).toEqual([['Root.md', 'child']])
     expect(one.went).toEqual(['SubTopic.md'])
   })
@@ -1098,22 +1136,22 @@ describe('quick-link popover from a node handle', () => {
   it('joins existing note and navigates to it when confirmed as existing note', async () => {
     const one = tab('Root.md', ['Other.md'])
     const rootNode = one.node('Root.md')
-    one.state.openQuickLink({ from: rootNode, relation: 'jump', at: { x: 100, y: 200 } })
+    one.state.quickLink.openQuickLink({ from: rootNode, relation: 'jump', at: { x: 100, y: 200 } })
 
-    await one.state.confirmQuickLink('Other.md', true)
+    await one.state.quickLink.confirmQuickLink('Other.md', true)
 
-    expect(one.state.quickLink.value).toBeNull()
+    expect(one.state.quickLink.quickLink.value).toBeNull()
     expect(one.joined).toEqual([['Root.md', 'Other.md', 'jump']])
     expect(one.went).toEqual(['Other.md'])
   })
 
   it('remains on source note when navigation on create is disabled', async () => {
     const one = tab('Root.md')
-    one.state.isNavigatingOnCreate.value = false
+    one.state.quickLink.isNavigatingOnCreate.value = false
     const rootNode = one.node('Root.md')
-    one.state.openQuickLink({ from: rootNode, relation: 'child', at: { x: 100, y: 200 } })
+    one.state.quickLink.openQuickLink({ from: rootNode, relation: 'child', at: { x: 100, y: 200 } })
 
-    await one.state.confirmQuickLink('SubTopic', false)
+    await one.state.quickLink.confirmQuickLink('SubTopic', false)
 
     expect(one.made).toEqual([['Root.md', 'child']])
     expect(one.went).toEqual(['Root.md'])
@@ -1121,11 +1159,11 @@ describe('quick-link popover from a node handle', () => {
 
   it('joins existing note and stays on source note when navigation is disabled', async () => {
     const one = tab('Root.md', ['Other.md'])
-    one.state.isNavigatingOnCreate.value = false
+    one.state.quickLink.isNavigatingOnCreate.value = false
     const rootNode = one.node('Root.md')
-    one.state.openQuickLink({ from: rootNode, relation: 'jump', at: { x: 100, y: 200 } })
+    one.state.quickLink.openQuickLink({ from: rootNode, relation: 'jump', at: { x: 100, y: 200 } })
 
-    await one.state.confirmQuickLink('Other.md', true)
+    await one.state.quickLink.confirmQuickLink('Other.md', true)
 
     expect(one.joined).toEqual([['Root.md', 'Other.md', 'jump']])
     expect(one.went).toEqual(['Root.md'])
@@ -1133,12 +1171,12 @@ describe('quick-link popover from a node handle', () => {
 
   it('ignores confirmQuickLink when title is empty or quick link is inactive', async () => {
     const one = tab('Root.md')
-    await one.state.confirmQuickLink('', false)
+    await one.state.quickLink.confirmQuickLink('', false)
     expect(one.made).toEqual([])
 
     const rootNode = one.node('Root.md')
-    one.state.openQuickLink({ from: rootNode, relation: 'child', at: { x: 100, y: 200 } })
-    await one.state.confirmQuickLink('   ', false)
+    one.state.quickLink.openQuickLink({ from: rootNode, relation: 'child', at: { x: 100, y: 200 } })
+    await one.state.quickLink.confirmQuickLink('   ', false)
     expect(one.made).toEqual([])
   })
 
@@ -1149,40 +1187,46 @@ describe('quick-link popover from a node handle', () => {
     const stateWithSearch = createPlexTab(
       plex.view,
       createDeps(vault.editor, {
-        openingPath: ref('Opening.md'),
-        readOpeningPath: async () => 'Opening.md',
-        searchNames: searchMock,
+        window: {
+          openingPath: ref('Opening.md'),
+          readOpeningPath: async () => 'Opening.md',
+        },
+        notes: {
+          searchNames: searchMock,
+        },
       }),
     )
 
-    const results = await stateWithSearch.searchNotes('test')
+    const results = await stateWithSearch.quickLink.searchNotes('test')
     expect(searchMock).toHaveBeenCalledWith('test')
     expect(results).toEqual([{ path: 'Note.md', title: 'Note' }])
 
     const stateNoSearch = createPlexTab(
       plex.view,
       createDeps(vault.editor, {
-        openingPath: ref('Opening.md'),
-        readOpeningPath: async () => 'Opening.md',
+        window: {
+          openingPath: ref('Opening.md'),
+          readOpeningPath: async () => 'Opening.md',
+        },
       }),
     )
-    expect(await stateNoSearch.searchNotes('test')).toEqual([])
+    expect(await stateNoSearch.quickLink.searchNotes('test')).toEqual([])
   })
 
   it('handles openLinkInspector with invalid pair formats gracefully', async () => {
     const { state } = tab('Focus.md', ['Child.md'])
     await settle()
 
-    await state.openLinkInspector('invalidSingleToken', { x: 0, y: 0 })
-    expect(state.linkInspector.value).toBeNull()
+    await state.inspector.openLinkInspector('invalidSingleToken', { x: 0, y: 0 })
+    expect(state.inspector.linkInspector.value).toBeNull()
 
-    await state.openLinkInspector('unknown1 unknown2', { x: 0, y: 0 })
-    expect(state.linkInspector.value).toBeNull()
+    await state.inspector.openLinkInspector('unknown1 unknown2', { x: 0, y: 0 })
+    expect(state.inspector.linkInspector.value).toBeNull()
   })
 
   it('searches notes via searchNotes method', async () => {
     const { state } = tab('Focus.md', ['Child.md'])
-    const emptyResults = await state.searchNotes('query')
+    const emptyResults = await state.quickLink.searchNotes('query')
     expect(emptyResults).toEqual([])
   })
 
@@ -1190,45 +1234,49 @@ describe('quick-link popover from a node handle', () => {
     const { state, node, opened, entered } = tab('Focus.md', ['Child.md'])
     const focusId = node('Focus')
 
-    state.openHeading(focusId, 'not-a-number')
+    state.nodes.openHeading(focusId, 'not-a-number')
     expect(entered).toEqual([])
     expect(opened).toEqual([])
 
-    state.openHeading('nonexistent', '1')
+    state.nodes.openHeading('nonexistent', '1')
     expect(entered).toEqual([])
   })
 
   it('confirms quick link with whitespace title or inactive state without error', async () => {
     const { state } = tab('Focus.md', ['Child.md'])
-    await state.confirmQuickLink('  ', false)
-    expect(state.quickLink.value).toBeNull()
+    await state.quickLink.confirmQuickLink('  ', false)
+    expect(state.quickLink.quickLink.value).toBeNull()
   })
 })
 
 describe('createPlexTab edge cases and helpers', () => {
   it('covers openHeading edge cases, dismissals and menu choices', async () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.openHeading('unknown-node', '12')
-    one.state.openHeading(one.node('Root.md'), 'not-a-number')
+    one.state.nodes.openHeading('unknown-node', '12')
+    one.state.nodes.openHeading(one.node('Root.md'), 'not-a-number')
 
-    one.state.openQuickLink({ from: one.node('Root.md'), relation: 'child', at: { x: 10, y: 10 } })
-    expect(one.state.quickLink.value).not.toBeNull()
+    one.state.quickLink.openQuickLink({
+      from: one.node('Root.md'),
+      relation: 'child',
+      at: { x: 10, y: 10 },
+    })
+    expect(one.state.quickLink.quickLink.value).not.toBeNull()
     const pair = `${one.node('Root.md')} ${one.node('Child.md')}`
-    await one.state.openLinkInspector(pair, { x: 10, y: 10 })
-    expect(one.state.linkInspector.value).not.toBeNull()
+    await one.state.inspector.openLinkInspector(pair, { x: 10, y: 10 })
+    expect(one.state.inspector.linkInspector.value).not.toBeNull()
 
-    one.state.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
-    one.state.dismiss()
-    expect(one.state.menu.value).toBeNull()
-    expect(one.state.quickLink.value).toBeNull()
-    expect(one.state.linkInspector.value).toBeNull()
+    one.state.menu.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
+    one.state.menu.dismiss()
+    expect(one.state.menu.request.value).toBeNull()
+    expect(one.state.quickLink.quickLink.value).toBeNull()
+    expect(one.state.inspector.linkInspector.value).toBeNull()
 
-    one.state.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
-    one.state.chooseMenuItem('other-id')
-    expect(one.state.menu.value).toBeNull()
+    one.state.menu.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
+    one.state.menu.chooseMenuItem('other-id')
+    expect(one.state.menu.request.value).toBeNull()
 
-    expect(one.state.empty.value).toBe(false)
-    expect(one.state.dragged.value).toEqual([])
+    expect(one.state.canvas.empty.value).toBe(false)
+    expect(one.state.canvas.dragged.value).toEqual([])
   })
 })
 
@@ -1237,9 +1285,9 @@ describe('what a plex keeps calling a note', () => {
     const one = tab('Root.md', ['Child.md', 'Other.md'])
     const other = one.node('Other.md')
 
-    await one.state.view.go('Child.md')
+    await one.state.canvas.view.go('Child.md')
     await settle()
-    await one.state.view.go('Root.md')
+    await one.state.canvas.view.go('Root.md')
     await settle()
 
     expect(one.node('Other.md')).toBe(other)
@@ -1250,7 +1298,7 @@ describe('the notes a plex asks the vault for the headings of', () => {
   it('are none while the plex draws nothing', async () => {
     const one = tab('Root.md')
 
-    one.state.view.neighbourhood.value = null
+    one.state.canvas.view.neighborhood.value = null
     await settle()
 
     expect(one.requestedHeadings).toStrictEqual([['Root.md']])
@@ -1266,9 +1314,9 @@ describe('the notes a plex asks the vault for the headings of', () => {
 describe('a quick link confirmed', () => {
   it('writes nothing from a node the picture never drew', async () => {
     const one = tab('Root.md', ['Other.md'])
-    one.state.openQuickLink({ from: 'nowhere', relation: 'jump', at: { x: 1, y: 2 } })
+    one.state.quickLink.openQuickLink({ from: 'nowhere', relation: 'jump', at: { x: 1, y: 2 } })
 
-    await one.state.confirmQuickLink('Other.md', true)
+    await one.state.quickLink.confirmQuickLink('Other.md', true)
 
     expect(one.joined).toStrictEqual([])
     expect(one.went).toStrictEqual([])
@@ -1276,9 +1324,13 @@ describe('a quick link confirmed', () => {
 
   it('remains where it stood when the vault wrote no link to the note', async () => {
     const one = tab('Root.md', ['Other.md'], false)
-    one.state.openQuickLink({ from: one.node('Root.md'), relation: 'jump', at: { x: 1, y: 2 } })
+    one.state.quickLink.openQuickLink({
+      from: one.node('Root.md'),
+      relation: 'jump',
+      at: { x: 1, y: 2 },
+    })
 
-    await one.state.confirmQuickLink('Other.md', true)
+    await one.state.quickLink.confirmQuickLink('Other.md', true)
 
     expect(one.joined).toStrictEqual([['Root.md', 'Other.md', 'jump']])
     expect(one.went).toStrictEqual([])
@@ -1286,9 +1338,13 @@ describe('a quick link confirmed', () => {
 
   it('remains where it stood when the vault made no note', async () => {
     const one = tab('Root.md', [], false)
-    one.state.openQuickLink({ from: one.node('Root.md'), relation: 'child', at: { x: 1, y: 2 } })
+    one.state.quickLink.openQuickLink({
+      from: one.node('Root.md'),
+      relation: 'child',
+      at: { x: 1, y: 2 },
+    })
 
-    await one.state.confirmQuickLink('Compost', false)
+    await one.state.quickLink.confirmQuickLink('Compost', false)
 
     expect(one.made).toStrictEqual([['Root.md', 'child']])
     expect(one.went).toStrictEqual([])
@@ -1298,23 +1354,25 @@ describe('a quick link confirmed', () => {
 describe('what a note is called where the picture names it nowhere', () => {
   it('is the file it is filed under while the plex draws nothing', () => {
     const one = tab('Root.md')
-    one.state.view.neighbourhood.value = null
+    one.state.canvas.view.neighborhood.value = null
 
-    expect(one.state.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
+    expect(one.state.nodes.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
   })
 
   it('is the file it is filed under alongside the notes the picture does name', () => {
-    expect(tab('Root.md', ['Child.md']).state.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
+    expect(tab('Root.md', ['Child.md']).state.nodes.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
   })
 
   it('loses only the extension at the end of the file name', () => {
-    expect(tab('Root.md').state.getName('Deep/Readme.md copy.md')).toBe('Readme.md copy')
+    expect(tab('Root.md').state.nodes.getName('Deep/Readme.md copy.md')).toBe('Readme.md copy')
   })
 })
 
 describe('what a node the picture never drew remains for', () => {
   it('is a note', () => {
-    expect(tab('Root.md', [], true, { 'Root.md': 'sample' }).state.getType('nowhere')).toBe('note')
+    expect(
+      tab('Root.md', [], true, { 'Root.md': 'sample' }).state.headings.getType('nowhere'),
+    ).toBe('note')
   })
 })
 
@@ -1322,7 +1380,7 @@ describe('a node opened', () => {
   it('opens its note here unless told where', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.openNode(one.node('Child.md'))
+    one.state.nodes.openNode(one.node('Child.md'))
 
     expect(one.opened).toStrictEqual([['Child.md', 'Child', 'current']])
   })
@@ -1330,8 +1388,8 @@ describe('a node opened', () => {
   it('opens nothing for a heading whose name is not wholly a line number', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.openHeading(one.node('Child.md'), 'a12')
-    one.state.openHeading(one.node('Child.md'), '12a')
+    one.state.nodes.openHeading(one.node('Child.md'), 'a12')
+    one.state.nodes.openHeading(one.node('Child.md'), '12a')
 
     expect(one.opened).toStrictEqual([])
     expect(one.entered).toStrictEqual([])

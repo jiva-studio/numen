@@ -6,15 +6,15 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"slices"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/environment"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
 // The handler a host that links the plugin in answers the importer API with the token it was
@@ -125,11 +125,11 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Verify NewHandler forwards EnvMockML == "true" vs "false".
+	// Verify NewHandler forwards the mock variable == "true" vs "false".
 	mockHandler, err := NewHandler(map[string]string{
-		"NUMEN_PLUGIN_TOKEN": "tok",
-		"NUMEN_HOST_PORT":    "1",
-		EnvMockML:            "true",
+		"NUMEN_PLUGIN_TOKEN":          "tok",
+		"NUMEN_HOST_PORT":             "1",
+		environment.MockModelVariable: "true",
 	})
 	if err != nil || mockHandler == nil {
 		t.Fatalf("NewHandler(mock): %v", err)
@@ -159,52 +159,5 @@ func TestToAPIErrorMapsLinkErrors(t *testing.T) {
 	other := errors.New("the disk is full")
 	if !errors.Is(toAPIError(other), other) {
 		t.Error("an unmapped error is changed")
-	}
-}
-
-// The settings name the programs, the captions and how large a copy may be.
-func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
-	fMock := newFetchers(true)
-	if fMock.getFetcher() == nil || fMock.getFetcher().GetDownloadModel(videoAddress).Tool != "mock" {
-		t.Fatalf("mock fetcher = %+v", fMock.getFetcher())
-	}
-	f := newFetchers(false)
-	if f.getFetcher() == nil || f.getFetcher().GetDownloadModel(videoAddress).Tool == "mock" {
-		t.Fatalf("real fetcher = %+v", f.getFetcher())
-	}
-	if f.getSettings().CopyMaxSize != 500<<20 {
-		t.Errorf("default CopyMaxSize = %d, want %d", f.getSettings().CopyMaxSize, 500<<20)
-	}
-	before := f.getFetcher()
-	f.updateConfig(map[string]string{
-		"ytDlp": "/custom/yt-dlp", "ffmpeg": "/custom/ffmpeg",
-		"captions": " sa, en ,", "automaticCaptions": "false", "copyMaxSizeMb": "20",
-	})
-	if f.getFetcher() == before || f.getFetcher() == nil || f.getFetcher().GetDownloadModel(videoAddress).Tool != "yt-dlp" {
-		t.Error("updateConfig did not reopen current fetcher")
-	}
-	if !slices.Equal(f.cfg.Video.Command, []string{"/custom/yt-dlp"}) || !slices.Equal(f.cfg.Sound.Command, []string{"/custom/ffmpeg"}) {
-		t.Errorf("the programs are %v and %v", f.cfg.Video.Command, f.cfg.Sound.Command)
-	}
-	settings := f.getSettings()
-	if !slices.Equal(settings.Captions, []string{"sa", "en"}) || settings.IsAutomatic || settings.CopyMaxSize != 20<<20 {
-		t.Errorf("the settings are %+v", settings)
-	}
-	f.updateConfig(map[string]string{"ytDlp": "", "ffmpeg": "", "copyMaxSizeMb": "many"})
-	if len(f.cfg.Video.Command) != 0 || len(f.cfg.Sound.Command) != 0 || f.getSettings().CopyMaxSize != 20<<20 {
-		t.Errorf("cleared settings leave %v, %v and %d", f.cfg.Video.Command, f.cfg.Sound.Command, f.getSettings().CopyMaxSize)
-	}
-	f.updateConfig(map[string]string{"copyMaxSizeMb": "-1"})
-	if f.getSettings().CopyMaxSize != 20<<20 {
-		t.Errorf("negative size changed CopyMaxSize to %d", f.getSettings().CopyMaxSize)
-	}
-	f.updateConfig(map[string]string{"copyMaxSizeMb": "0"})
-	if f.getSettings().CopyMaxSize != 0 {
-		t.Errorf("zero size left CopyMaxSize = %d, want 0", f.getSettings().CopyMaxSize)
-	}
-	f.updateConfig(map[string]string{"copyMaxSizeMb": "20"})
-	f.updateConfig(map[string]string{"copyMaxSizeMb": "4611686018427387904"})
-	if f.getSettings().CopyMaxSize != 0 {
-		t.Errorf("64-bit size parse failed: CopyMaxSize = %d, want 0", f.getSettings().CopyMaxSize)
 	}
 }

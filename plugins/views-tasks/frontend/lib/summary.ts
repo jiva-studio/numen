@@ -16,8 +16,8 @@ const isActive = (task: BackgroundTask): boolean =>
 
 /** The percent of its total a task has done; undefined for a task without a total. */
 export function getProgress(task: BackgroundTask): number | undefined {
-  if (task.total <= 0) return undefined
-  return Math.round((task.done / task.total) * 100)
+  if (task.progress.total <= 0) return undefined
+  return Math.round((task.progress.completedCount / task.progress.total) * 100)
 }
 
 export function summarizeTasks(tasks: readonly BackgroundTask[]): TaskSummary {

@@ -1,6 +1,7 @@
 package keychain
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -9,7 +10,8 @@ import (
 	"os"
 	"path/filepath"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/atomicfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // The fallback file is a flat JSON object keyed by the same entry names as the keychain.
@@ -51,7 +53,7 @@ func (s *Store) readFromFile(name string) (string, error) {
 	}
 	key, found := entries[name]
 	if !found {
-		return "", fmt.Errorf("%w: %q", pluginport.ErrNoKey, name)
+		return "", fmt.Errorf("%w: %q", plugin.ErrNoKey, name)
 	}
 	return key, nil
 }
@@ -74,14 +76,14 @@ func (s *Store) removeFromFile(ctx context.Context, name string) error {
 			return err
 		}
 		if _, found := entries[name]; !found {
-			return fmt.Errorf("%w: %q", pluginport.ErrNoKey, name)
+			return fmt.Errorf("%w: %q", plugin.ErrNoKey, name)
 		}
 		delete(entries, name)
 		return s.writeEntries(entries)
 	})
 }
 
-func (s *Store) writeEntries(entries map[string]string) (err error) {
+func (s *Store) writeEntries(entries map[string]string) error {
 	content, err := json.Marshal(entries)
 	if err != nil {
 		return fmt.Errorf("write the credentials file: %w", err)
@@ -94,33 +96,8 @@ func (s *Store) writeEntries(entries map[string]string) (err error) {
 	if err := os.Chmod(folder, 0o700); err != nil {
 		return fmt.Errorf("write the credentials file: %w", err)
 	}
-	tmp, err := os.CreateTemp(folder, "."+credentialsFile+".*")
-	if err != nil {
-		return fmt.Errorf("write the credentials file: %w", err)
-	}
-	defer func() {
-		if removeErr := os.Remove(tmp.Name()); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
-			err = errors.Join(err, removeErr)
-		}
-	}()
-	if err := writeTemporary(tmp, content); err != nil {
-		return fmt.Errorf("write the credentials file: %w", err)
-	}
-	if err := os.Rename(tmp.Name(), target); err != nil {
+	if err := atomicfile.WriteFile(target, bytes.NewReader(content), 0o600); err != nil {
 		return fmt.Errorf("write the credentials file: %w", err)
 	}
 	return nil
-}
-
-func writeTemporary(tmp *os.File, content []byte) error {
-	if _, err := tmp.Write(content); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	if err := tmp.Sync(); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	if err := tmp.Chmod(0o600); err != nil {
-		return errors.Join(err, tmp.Close())
-	}
-	return tmp.Close()
 }

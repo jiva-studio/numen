@@ -5,7 +5,8 @@
  * read the secret, or stops it.
  */
 import { computed } from 'vue'
-import { MultiSelect, type SelectChoice } from '@numen/ui'
+import type { SelectChoice } from '../../types'
+import { MultiSelect } from '../multi-select'
 import { isAllowed, type Secret } from '@/entities/settings'
 import type { Declaration } from '../../lib/secretSections'
 import { WORDS as words } from '../../words'

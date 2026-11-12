@@ -5,10 +5,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
 
-// The plugin declares the ONNX Runtime as a runtime dependency.
 func TestManifestDeclaresONNXRuntimeDependency(t *testing.T) {
 	var manifest struct {
 		Dependencies []struct {
@@ -102,7 +101,7 @@ type manifestOption struct {
 }
 
 // The local models of the settings are the curated profiles of the plugin, in the order of the table,
-// and the model setting defaults to the default model. Edit manifest.json to match backend/engine/profiles.json.
+// and the model setting defaults to the default model. Edit manifest.json to match backend/domain/model/profiles.json.
 func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.T) {
 	var manifest struct {
 		Settings []struct {
@@ -116,7 +115,7 @@ func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	profiles, err := engine.GetShippedProfiles()
+	profiles, err := model.GetShippedProfiles()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,8 +127,8 @@ func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.
 		if setting.Key != "model" {
 			continue
 		}
-		if setting.Default != any(engine.DefaultModel) {
-			t.Errorf("model defaults to %q, want %q", setting.Default, engine.DefaultModel)
+		if setting.Default != any(model.DefaultModel) {
+			t.Errorf("model defaults to %q, want %q", setting.Default, model.DefaultModel)
 		}
 		if got := setting.OptionsBy.Options["local"]; !slices.Equal(got, want) {
 			t.Errorf("local models = %+v, want the curated profiles %+v", got, want)

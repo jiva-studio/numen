@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 // RegisterVault puts the folder at vaultPath in the installation's list of vaults, where it is a
@@ -31,17 +31,6 @@ func RegisterVault(cfg container.Config, vaultPath string) error {
 	if !info.IsDir() {
 		return nil
 	}
-	reg, err := cfg.Registry()
-	if err != nil {
-		return err
-	}
-	_, found, err := reg.FindVault(abs)
-	if err != nil || found {
-		return err
-	}
-	v, err := cfg.AddVault(reg, abs, filepath.Base(abs))
-	if err != nil {
-		return err
-	}
-	return reg.RecordOpened(v.ID)
+	_, err = cfg.EnsureVault(abs, filepath.Base(abs), true)
+	return err
 }

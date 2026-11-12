@@ -6,18 +6,16 @@
  * The two share a field, and which one is active determines what is drawn in it
  * and what a keystroke in it means. The keys of the window open and close each.
  */
-import { computed } from 'vue'
 import { Search } from '@lucide/vue'
-import { Palette, type ActionWords } from '@numen/shell'
-import { isCommandPrefixTyped } from '../lib/commands/commands'
-import type { CommandDeps } from '../model/handlers/deps'
-import type { CommandTarget } from '../types'
+import { Palette, type ActionWords } from '@numen/workbench'
+import type { CommandDeps } from '@/shared/model/command'
+import type { CommandTarget } from '@/shared/model/command'
 import type { Commands } from '../model/palette/palette'
-import { runInvocation } from '../model/handlers/handlers'
 import type { ResultChoice, SearchState } from '../model/search/search'
 import { findRowIcon, type FileIcons } from '../model/rowIcons'
-import { ANSWER_WORDS } from '../words'
-import { WORDS as words } from '@/shared/words'
+import { usePaletteInput } from '../model/usePaletteInput'
+import { WORDS as windowWords } from '@/shared/ui/words'
+import { PALETTE_WORDS } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -29,6 +27,8 @@ const props = defineProps<{
   runChoice: (choice: ResultChoice) => void
 }>()
 
+const words = { ...windowWords, ...PALETTE_WORDS }
+
 /* --------------------------------- State ---------------------------------- */
 const actionWords: ActionWords = {
   name: words.actions,
@@ -36,67 +36,13 @@ const actionWords: ActionWords = {
   silence: words.noAction,
 }
 
-/** What the palette draws: the commands while they are open, the search under. */
-const field = computed(() =>
-  props.commands.open.value
-    ? {
-        open: true,
-        isBusy: false,
-        typed: props.commands.typed.value,
-        groups: props.commands.groups.value,
-        crumb: props.commands.crumb.value,
-        step: props.commands.step.value,
-        opensOn: props.commands.opensOn.value,
-        placeholder: props.commands.placeholder.value,
-      }
-    : {
-        open: props.search.open.value,
-        isBusy: props.search.status.isBusy.value,
-        typed: props.search.typed.value,
-        groups: props.search.groups.value,
-        crumb: '',
-        step: '',
-        opensOn: '',
-        placeholder: words.find,
-      },
-)
-
-/* -------------------------------- Handlers -------------------------------- */
-async function onTyping(text: string) {
-  if (props.commands.open.value) return await props.commands.setTyped(text)
-  if (!isCommandPrefixTyped(props.search.typed.value, text))
-    return await props.search.setTyped(text)
-  const setSearchOpen = props.search.setOpen
-  const setCommandsOpen = props.commands.setOpen
-  setSearchOpen(false)
-  setCommandsOpen(true)
-}
-
-async function onChoose(item: string, action: string) {
-  const setSearchOpen = props.search.setOpen
-  const setCommandsOpen = props.commands.setOpen
-  if (props.commands.open.value) {
-    const invocation = props.commands.chooseItem(item, action)
-    if (!invocation) return
-    setCommandsOpen(false)
-    await runInvocation(invocation, props.doing, ANSWER_WORDS)
-    return
-  }
-  const choice = props.search.chooseResult(item, action)
-  setSearchOpen(false)
-  if (choice) props.runChoice(choice)
-}
-
-function onDismiss() {
-  if (props.commands.open.value) props.commands.leaveStep()
-  else props.search.setOpen(false)
-}
-
-function onBack() {
-  if (props.commands.open.value && props.commands.goBack()) {
-    props.search.setOpen(true)
-  }
-}
+const { field, type, choose, dismiss, goBack } = usePaletteInput({
+  commands: props.commands,
+  search: props.search,
+  doing: props.doing,
+  runChoice: props.runChoice,
+  findPlaceholder: () => words.find,
+})
 
 /* -------------------------------- Helpers --------------------------------- */
 function getRowIcon(id: string) {
@@ -116,21 +62,21 @@ function getRowIcon(id: string) {
     :opens-on="field.opensOn"
     :name="words.find"
     :action-words="actionWords"
-    @update:model-value="onTyping"
-    @choose="onChoose"
-    @light="commands.previewItem"
-    @back="onBack"
-    @dismiss="onDismiss"
+    @update:model-value="type"
+    @choose="choose"
+    @light="commands.palette.previewItem"
+    @back="goBack"
+    @dismiss="dismiss"
   >
     <template #icon="{ id }">
       <component :is="getRowIcon(id)" v-if="getRowIcon(id)" class="command-icon" />
     </template>
-    <template v-if="!commands.open.value && search.status.isNothingFound.value" #silence>
+    <template v-if="!commands.palette.open.value && search.status.isNothingFound.value" #silence>
       <span class="nothing-found">
         <Search class="nothing-found__icon" data-palette="nothing-icon" aria-hidden="true" />
-        <span class="nothing-found__text" data-palette="nothing-text">{{
-          words.nothingFound(search.typed.value.trim())
-        }}</span>
+        <span class="nothing-found__text" data-palette="nothing-text">
+          {{ words.nothingFound(search.typed.value.trim()) }}
+        </span>
       </span>
     </template>
   </Palette>
@@ -138,18 +84,21 @@ function getRowIcon(id: string) {
 
 <style scoped>
 .nothing-found {
+  --gap: 0.5rem;
+  --pad-block: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--gap);
   align-items: center;
-  padding-block: 1.5rem;
+  padding-block: var(--pad-block);
   text-align: center;
 }
 
 .nothing-found__icon {
+  --size: 1.5rem;
   flex: none;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
+  inline-size: var(--size);
+  block-size: var(--size);
   stroke-width: 1.75;
 }
 

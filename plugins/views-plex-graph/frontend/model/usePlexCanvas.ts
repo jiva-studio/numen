@@ -28,9 +28,9 @@ export function usePlexCanvas(options: PlexCanvasOptions) {
   }
 
   function onContextMenu(event: MouseEvent) {
-    if (!state.empty.value) return
+    if (!state.canvas.empty.value) return
     event.preventDefault()
-    state.openMenu({
+    state.menu.openMenu({
       node: null,
       at: { x: event.clientX, y: event.clientY },
       opening: 'pointer',
@@ -40,13 +40,13 @@ export function usePlexCanvas(options: PlexCanvasOptions) {
   function onEdgeMenu(pair: string, position: { x: number; y: number }) {
     const rect = measureRect(rootElement.value)
     const anchor = rect ? { x: position.x - rect.left, y: position.y - rect.top } : position
-    state.openLinkInspector(pair, anchor).catch(state.reportFailure)
+    state.inspector.openLinkInspector(pair, anchor).catch(state.reportFailure)
   }
 
   function closeMenu(id?: string) {
-    const node = state.menu.value?.node ?? null
-    if (id === undefined) state.dismiss()
-    else state.chooseMenuItem(id)
+    const node = state.menu.request.value?.node ?? null
+    if (id === undefined) state.menu.dismiss()
+    else state.menu.chooseMenuItem(id)
     if (node !== null) picture.value?.focusNode(node)
   }
 

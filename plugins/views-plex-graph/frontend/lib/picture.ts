@@ -1,38 +1,40 @@
 /**
- * A neighbourhood of a vault, as something the plex can draw.
+ * A neighborhood of a vault, as something the plex can draw.
  *
  * This is the only file that depends on both sides. The plex receives nodes with
  * a relation and edges between them and has no concept of a note; the schema
  * has no concept of drawing.
  */
 import type { Connection, ConnectionSide } from '@numen/plugin-sdk'
-import type { Neighbourhood, NoteHeading, NoteType } from '../types'
 import type {
+  Neighborhood,
+  NoteHeading,
+  NoteType,
   EdgeArrow,
   EdgeLabel,
   PlexEdge,
-  PlexNeighbourhood,
+  PlexNeighborhood,
   PlexNode,
   PlexHeading,
-} from '../plex'
+} from '../types'
 
 /**
  * plex draws a note of a plugin-declared type with that type's icon.
  */
-export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteType> {
+export function getNoteTypes(neighborhood: Neighborhood): ReadonlyMap<string, NoteType> {
   const found = new Map<string, NoteType>()
-  const focus = neighbourhood.focus.path
-  if (focus) found.set(focus, neighbourhood.focusType)
-  for (const related of neighbourhood.related) found.set(related.path, related.type)
+  const focus = neighborhood.focus.path
+  if (focus) found.set(focus, neighborhood.focusType)
+  for (const related of neighborhood.related) found.set(related.path, related.type)
   return found
 }
 
-/** The tab kind the core chose for each note of the neighbourhood, where it reports one. */
-export function getTabKinds(neighbourhood: Neighbourhood): ReadonlyMap<string, string> {
+/** The tab kind the core chose for each note of the neighborhood, where it reports one. */
+export function getTabKinds(neighborhood: Neighborhood): ReadonlyMap<string, string> {
   const found = new Map<string, string>()
-  const { focus, focusTabKind } = neighbourhood
+  const { focus, focusTabKind } = neighborhood
   if (focus.path && focusTabKind) found.set(focus.path, focusTabKind)
-  for (const related of neighbourhood.related) {
+  for (const related of neighborhood.related) {
     if (related.tabKind) found.set(related.path, related.tabKind)
   }
   return found
@@ -71,39 +73,36 @@ function createEdge(connection: Connection, token: (path: string) => string): Pl
   const records = getRecords(connection)
   const labels = getEdgeLabels(records)
   const arrows = records.filter(isPointing).map((record) => record.end)
-  return {
-    from: token(connection.first),
-    to: token(connection.second),
-    ...(labels.length > 0 ? { labels } : {}),
-    ...(arrows.length > 0 ? { arrows } : {}),
-  }
+  const edge: PlexEdge = { from: token(connection.first), to: token(connection.second) }
+  const withLabels = labels.length > 0 ? { ...edge, labels } : edge
+  return arrows.length > 0 ? { ...withLabels, arrows } : withLabels
 }
 
 /**
  * A node is drawn under the token its note holds, as is each end of an edge; the caller supplies a note's token.
- * Every line is drawn from one connection of the neighbourhood, whichever notes it joins.
+ * Every line is drawn from one connection of the neighborhood, whichever notes it joins.
  * An arrowhead is drawn at each end whose record carries a marker, and nowhere else.
  * Labels are set by how many records there are, not by the arrowheads.
  */
-export function convertNeighbourhood(
-  neighbourhood: Neighbourhood,
+export function convertNeighborhood(
+  neighborhood: Neighborhood,
   token: (path: string) => string,
-): PlexNeighbourhood {
+): PlexNeighborhood {
   const focus: PlexNode = {
-    id: token(neighbourhood.focus.path),
-    title: neighbourhood.focus.title,
+    id: token(neighborhood.focus.path),
+    title: neighborhood.focus.title,
     relation: 'focus',
   }
 
   const nodes: PlexNode[] = [focus]
   /** The path of every note this picture draws, the note in focus included. */
-  const visiblePaths = new Set<string>([neighbourhood.focus.path])
-  for (const related of neighbourhood.related) {
+  const visiblePaths = new Set<string>([neighborhood.focus.path])
+  for (const related of neighborhood.related) {
     visiblePaths.add(related.path)
     nodes.push({ id: token(related.path), title: related.title, relation: related.relation })
   }
 
-  const edges = neighbourhood.connections
+  const edges = neighborhood.connections
     .filter(({ first, second }) => visiblePaths.has(first) && visiblePaths.has(second))
     .map((connection) => createEdge(connection, token))
 
@@ -136,13 +135,13 @@ const areConnectionsEqual = (one: Connection, other: Connection): boolean =>
   areSidesEqual(one.secondSide, other.secondSide)
 
 /**
- * Whether two neighbourhoods draw one graph: the same note in focus, the same joined notes in arrival order,
+ * Whether two neighborhoods draw one graph: the same note in focus, the same joined notes in arrival order,
  * and the same lines with the label and arrowhead of each record.
- * A vault that changed elsewhere returns a neighbourhood equal to the one on screen, and an equal graph is left unchanged.
+ * A vault that changed elsewhere returns a neighborhood equal to the one on screen, and an equal graph is left unchanged.
  */
-export function areNeighbourhoodsEqual(
-  one: Neighbourhood | null,
-  other: Neighbourhood | null,
+export function areNeighborhoodsEqual(
+  one: Neighborhood | null,
+  other: Neighborhood | null,
 ): boolean {
   if (one === null || other === null) return one === other
   if (one.focus.path !== other.focus.path) return false

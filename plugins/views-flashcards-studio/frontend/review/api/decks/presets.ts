@@ -1,0 +1,82 @@
+/** What the application answers about the preset one deck is scheduled by. */
+import { StopReason } from '../../../lib/stop'
+import { asFailure, asValue, type Result } from '@numen/plugin-sdk'
+import { formatErrorCodeMessage } from '../../../lib/wire/errors'
+import { parseSettings } from '../../../lib/wire/settings'
+import type { SettingsMessage } from '../../../lib/wire/settings'
+
+import type { Settings } from '../../lib/decks/types'
+import type { ErrorCode } from '../../../lib/wire/notes'
+
+/**
+ * What the application answers about the presets of a vault. Every question
+ * names the vault it is about, the same way an answer names the one it is
+ * written to.
+ */
+export interface PresetsClient {
+  getVaultDeckPreset(params: { vault: string; deck: string }): Promise<{
+    preset?:
+      | {
+          path: string
+          title: string
+          settings?: SettingsMessage | undefined
+          problems: readonly string[]
+          stopsOn: StopReason
+        }
+      | undefined
+    error?: ErrorCode | undefined
+  }>
+}
+
+/** What was answered about one deck's preset. */
+export interface DeckPreset {
+  readonly activePreset: {
+    path: string
+    name: string
+    settings: Settings
+    problems: readonly string[]
+    stopsOn: StopReason
+  }
+  readonly settings: {
+    path: string
+    name: string
+    settings: Settings
+    problems: readonly string[]
+    stopsOn: StopReason
+  }
+}
+
+/** The preset a deck is scheduled by, or why it was not read, in words to show. */
+export type DeckPresetResult = Result<DeckPreset, string>
+
+/** What is shown of a preset the window has no other reason to give for. */
+export const PRESET_UNREADABLE_MESSAGE = 'the settings of this preset could not be read'
+
+/** The preset one deck is scheduled by, or why it could not be read. */
+export const readDeckPreset = async (
+  presets: PresetsClient,
+  vault: string,
+  deck: string,
+): Promise<DeckPresetResult> => {
+  try {
+    const answer = await presets.getVaultDeckPreset({ vault, deck })
+    const settings = answer.preset?.settings
+    if (!answer.preset || !settings) {
+      return asFailure(formatErrorCodeMessage(answer.error) || PRESET_UNREADABLE_MESSAGE)
+    }
+    const preset = {
+      path: answer.preset.path,
+      name: answer.preset.title,
+      settings: parseSettings(settings),
+      problems: answer.preset.problems,
+      stopsOn: answer.preset.stopsOn,
+    }
+    return asValue({
+      activePreset: preset,
+      settings: preset,
+    })
+  } catch {
+    // whose settings would not read, and that is what is drawn.
+    return asFailure(PRESET_UNREADABLE_MESSAGE)
+  }
+}

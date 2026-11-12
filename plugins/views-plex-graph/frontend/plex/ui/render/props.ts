@@ -2,15 +2,15 @@
  * Props and events of the plex drawing: the edge layer between nodes, and one
  * node.
  */
+import type { VNode } from 'vue'
 import type { MenuTrigger } from '@numen/ui'
 import type { Drop } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
 import type { NodeHeadings } from '../../lib/inside'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
-import type { PlexRelation } from '../../lib/relation'
 import type { WideBox } from '../../model/sizing/expansion'
-import type { PlexBehaviour } from '../../model/behaviour'
-import type { PlexDestination } from '../../model/interaction/destination'
+import type { PlexBehavior } from '../../model/behavior'
+import type { PlexRelation, PlexDestination } from '../../../types'
 
 export interface PlexPending {
   from: string
@@ -26,7 +26,7 @@ export interface PlexViewProps {
   relationName?: (relation: PlexRelation) => string
   widen?: ((node: PlacedNode) => WideBox | null) | undefined
   hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
-  behaviour?: PlexBehaviour
+  behavior?: PlexBehavior
   gestureFrom?: string | null
   gestureAt?: Position | null
   gestureOutcome?: Drop | null
@@ -58,7 +58,7 @@ export interface PlexNodeProps {
   gestureRole?: GestureRole
   wide?: WideBox | null
   hung?: NodeHeadings | null
-  behaviour?: PlexBehaviour
+  behavior?: PlexBehavior
 }
 
 export interface PlexNodeEvents {
@@ -76,7 +76,7 @@ export interface PlexNodeEvents {
   (event: 'ask'): void
   /**
    * A menu was requested on this node, with its position and trigger. A key
-   * press has no pointer position, so the centre of the box is used.
+   * press has no pointer position, so the center of the box is used.
    */
   (event: 'menu', point: Position, trigger: MenuTrigger): void
   /**
@@ -90,5 +90,5 @@ export interface PlexNodeEvents {
 
 export interface PlexDrawnSlots {
   /** Content drawn next to a node's title. */
-  icon?(props: { node: PlacedNode }): unknown
+  icon?(props: { node: PlacedNode }): VNode[]
 }

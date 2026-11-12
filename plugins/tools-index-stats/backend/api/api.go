@@ -5,7 +5,6 @@ package api
 // Service is the service name the manifest declares.
 const Service = "md.numen.tools.index.stats"
 
-// MethodGetStats is the one method of the service.
 const MethodGetStats = "GetStats"
 
 // Kind is the sort of source the file type of a source tells.

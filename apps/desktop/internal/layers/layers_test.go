@@ -16,13 +16,13 @@ import (
 )
 
 // core is what every package of the core is named under.
-const core = "github.com/jiva-studio/numen/libs/core/"
+const core = "github.com/jiva-studio/numen/libs/core/kernel/"
 
 // apps is what every application is named under.
 const apps = "github.com/jiva-studio/numen/apps/"
 
 func isAssembled(pkg string) bool {
-	return pkg == "container" || pkg == "domain" || pkg == "port" ||
+	return pkg == "container" || pkg == "domain" || strings.HasPrefix(pkg, "domain/") || pkg == "port" ||
 		strings.HasPrefix(pkg, "port/") ||
 		strings.HasPrefix(pkg, "adapter/") ||
 		isContract(pkg)
@@ -39,7 +39,7 @@ type standing struct {
 	file    *ast.File
 }
 
-func getNamed() []string {
+func getRequiredFiles() []string {
 	return []string{
 		"desktop/cmd/numen/main.go",
 		"desktop/internal/platform/platform.go",
@@ -83,7 +83,7 @@ func readSources(t *testing.T) []standing {
 	if len(found) < 20 {
 		t.Fatalf("%d files read: the walk is not reading the applications", len(found))
 	}
-	for _, one := range getNamed() {
+	for _, one := range getRequiredFiles() {
 		if !slices.ContainsFunc(found, func(target standing) bool { return target.relPath == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
 		}
@@ -93,7 +93,7 @@ func readSources(t *testing.T) []standing {
 
 // An application is served by the core and does none of its work, and no
 // application imports another: what two of them share is a library.
-func TestNoApplicationDoesTheCoresWork(t *testing.T) {
+func TestApplicationsDoNotImportCoreInternals(t *testing.T) {
 	var wrong []string
 	var read int
 	for _, target := range readSources(t) {
@@ -115,7 +115,7 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 			case strings.HasPrefix(to, apps):
 				read++
 				reaches := strings.TrimPrefix(to, apps)
-				if application(reaches) == application(from) {
+				if getApplication(reaches) == getApplication(from) {
 					continue
 				}
 				wrong = append(wrong, from+" reaches "+reaches+
@@ -134,19 +134,19 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 	}
 }
 
-func getLogging() map[string]bool {
+func getLoggerPackages() map[string]bool {
 	return map[string]bool{
 		"log": true, "slog": true, "logrus": true, "zap": true,
 		"zerolog": true, "logr": true, "glog": true, "klog": true,
 	}
 }
 
-func logs(to string) bool { return getLogging()[to[strings.LastIndex(to, "/")+1:]] }
+func isLoggerPackage(to string) bool { return getLoggerPackages()[to[strings.LastIndex(to, "/")+1:]] }
 
 // Nothing here logs. An entry point names the process's own streams, and the
 // one line it writes to standard error is for a terminal; everything the user
 // has to act on is shown in the window. A logger would write to neither.
-func TestNoApplicationLogs(t *testing.T) {
+func TestApplicationsDoNotImportLoggers(t *testing.T) {
 	var wrong []string
 	for _, target := range readSources(t) {
 		for _, one := range target.file.Imports {
@@ -154,7 +154,7 @@ func TestNoApplicationLogs(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if logs(to) {
+			if isLoggerPackage(to) {
 				wrong = append(wrong, target.relPath+" imports "+to)
 			}
 		}
@@ -172,7 +172,7 @@ func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
 		"logic", "text/template", core + "domain",
 	} {
-		if logs(to) {
+		if isLoggerPackage(to) {
 			violations = append(violations, to)
 		}
 	}
@@ -187,7 +187,7 @@ func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 // writes `var _ port.X = …` names the need it satisfies, which puts the binding
 // in two places: when the port grows a method, this fails to compile where
 // nothing yet requires that method.
-func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
+func TestApplicationsDoNotClaimSatisfiedPorts(t *testing.T) {
 	var wrong []string
 	for _, target := range readSources(t) {
 		for _, one := range getClaimedPorts(target.file) {
@@ -258,7 +258,7 @@ func getPackage(root, path string) string {
 	return filepath.ToSlash(target)
 }
 
-func application(pkg string) string {
+func getApplication(pkg string) string {
 	target, _, _ := strings.Cut(pkg, "/")
 	return target
 }

@@ -5,7 +5,7 @@
  * names, under a Name label, only while the group holds more than one secret. Adding a secret
  * puts the focus into the new row, and discarding one returns it to the button that adds.
  */
-import { computed, nextTick, useId, useTemplateRef } from 'vue'
+import { computed, useId, useTemplateRef } from 'vue'
 import { getFirstSecretName, getMoveTarget, type Secret } from '@/entities/settings'
 import {
   getSectionDeclarations,
@@ -13,6 +13,7 @@ import {
   type SecretSection,
 } from '../../lib/secretSections'
 import type { SecretDraft } from '../../model/secretDrafts'
+import { runAfterRender } from '../../model/afterRender'
 import SecretColumnLabels from './SecretColumnLabels.vue'
 import SecretDraftRow from './SecretDraftRow.vue'
 import SecretRow from './SecretRow.vue'
@@ -56,10 +57,9 @@ function onMove(index: number, direction: 'up' | 'down'): void {
   if (target) emit('move', target.id, target.beforeId)
 }
 
-async function onDiscard(id: number): Promise<void> {
+function onDiscard(id: number): void {
   emit('discard', id)
-  await nextTick()
-  title.value?.focusAdd()
+  runAfterRender(() => title.value?.focusAdd())
 }
 </script>
 
@@ -118,10 +118,11 @@ async function onDiscard(id: number): Promise<void> {
 
 <style scoped>
 .secret-section {
+  --pad: 0.875rem 1rem;
   display: flex;
   flex-direction: column;
   margin-block-end: calc(var(--settings-apart) / 2);
-  padding: 0.875rem 1rem;
+  padding: var(--pad);
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius);
   background-color: var(--numen-raised);

@@ -1,7 +1,7 @@
 /** The actions a search result actionIds: opening the note, then the entries plugins place in its menu. */
 import { describe, expect, it } from 'vitest'
-import { COMMAND, ROW } from '@/shared/commandIds'
-import type { SlotCommand } from '@numen/plugin-host'
+import { COMMAND, ROW } from '@/shared/model/command'
+import type { SlotCommand } from '@numen/plugin-loader'
 import {
   createNameItem,
   createPassageItem,
@@ -171,19 +171,23 @@ describe('a passage found in a file that is no note', () => {
 })
 
 describe('the command an action of a result runs', () => {
-  const createHit = (overrides: Partial<SearchHit> = {}): SearchHit => ({
-    path: 'reef/Coral.md',
-    title: 'Coral',
-    line: 3,
-    start: 12,
-    length: 4,
-    actionIds: [openId, showId, otherId],
-    type: 'sample',
-    selector: null,
-    ...overrides,
+  /** The fields of a hit, flat: where it is found, the ids of its actions, its type and selector. */
+  type HitFields = Partial<SearchHit['spot']> &
+    Partial<Pick<SearchHit, 'type' | 'selector'>> & { actionIds?: readonly string[] }
+
+  const createHit = ({
+    actionIds = [openId, showId, otherId],
+    type = 'sample',
+    selector = null,
+    ...spot
+  }: HitFields = {}): SearchHit => ({
+    spot: { path: 'reef/Coral.md', title: 'Coral', line: 3, start: 12, length: 4, ...spot },
+    actionIds,
+    type,
+    selector,
   })
 
-  const createDocument = (overrides: Partial<SearchHit> = {}): SearchHit =>
+  const createDocument = (overrides: HitFields = {}): SearchHit =>
     createHit({
       path: 'library/a.bin',
       title: '',

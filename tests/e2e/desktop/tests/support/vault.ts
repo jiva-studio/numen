@@ -6,6 +6,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { expect, type APIRequestContext, type Locator, type Page } from 'playwright/test'
+import type { JsonObject, JsonValue } from './json.js'
 
 import os from 'node:os'
 
@@ -39,14 +40,14 @@ export const callRPC = async (
   request: APIRequestContext,
   method: string,
   data: object,
-): Promise<Record<string, unknown>> => {
+): Promise<JsonObject> => {
   const answer = await request.post(`/numen.v1.${method}`, {
     data,
     headers: { 'Content-Type': 'application/json' },
   })
   const text = await answer.text()
   if (!answer.ok()) throw new Error(`${method} answered ${answer.status()}: ${text}`)
-  return text ? (JSON.parse(text) as Record<string, unknown>) : {}
+  return text ? (JSON.parse(text) as JsonObject) : {}
 }
 
 /** One link a note is made with, as CreateNote takes it. */
@@ -107,8 +108,7 @@ export interface Entry {
   readonly isFolder: boolean
 }
 
-/** What one folder of the vault holds, by path. Empty is the root. */
-export const listFiles = async (request: APIRequestContext, folder = ''): Promise<Entry[]> => {
+const listFiles = async (request: APIRequestContext, folder = ''): Promise<Entry[]> => {
   const answer = await callRPC(request, 'FileService/ListFiles', { path: folder })
   return ((answer['entries'] as Partial<Entry>[] | undefined) ?? []).map((one) => ({
     path: one.path ?? '',
@@ -162,7 +162,7 @@ export const destroyIndexedNote = async (
 }
 
 /** The files under the vault's `.trash` folder whose name is `name`, as paths of the vault. */
-export const findTrashed = (request: APIRequestContext, name: string): Promise<string[]> =>
+export const findTrashedNotes = (request: APIRequestContext, name: string): Promise<string[]> =>
   new Promise((resolve) => {
     const trash = path.join(getVaultPath(), '.trash')
     if (!fs.existsSync(trash)) {
@@ -180,11 +180,11 @@ export const findTrashed = (request: APIRequestContext, name: string): Promise<s
 /** Takes the files of the vault's trash named `name` off the disk. */
 export const destroyTrashed = async (request: APIRequestContext, name: string): Promise<void> => {
   const vault = getVaultPath()
-  for (const one of await findTrashed(request, name)) fs.rmSync(path.join(vault, one))
+  for (const one of await findTrashedNotes(request, name)) fs.rmSync(path.join(vault, one))
 }
 
 /** One record a connection holds: the role it was written with, its type, label and marker. */
-export interface ConnectionRecord {
+interface ConnectionRecord {
   readonly role?: string
   readonly type?: string
   readonly label?: string
@@ -268,7 +268,7 @@ export const removeVault = async (request: APIRequestContext, id: string): Promi
 export const writeSetting = async (
   request: APIRequestContext,
   keyPath: readonly string[],
-  value: unknown,
+  value: JsonValue | undefined,
 ): Promise<void> => {
   await callRPC(request, 'SettingsService/WriteSettings', {
     settings: [{ at: keyPath, value: JSON.stringify(value) }],
@@ -276,17 +276,14 @@ export const writeSetting = async (
 }
 
 /** Every setting in force, as the core answers them. */
-export const readSettings = async (request: APIRequestContext): Promise<Record<string, unknown>> =>
+export const readSettings = async (request: APIRequestContext): Promise<JsonObject> =>
   JSON.parse(
     String((await callRPC(request, 'SettingsService/GetSettings', {}))['written'] ?? '{}'),
-  ) as Record<string, unknown>
+  ) as JsonObject
 
 /** The values stored under an owner of numen.json: `app` or a plugin id. */
-export const readOwner = async (
-  request: APIRequestContext,
-  owner: string,
-): Promise<Record<string, unknown>> =>
-  ((await readSettings(request))[owner] ?? {}) as Record<string, unknown>
+export const readOwner = async (request: APIRequestContext, owner: string): Promise<JsonObject> =>
+  ((await readSettings(request))[owner] ?? {}) as JsonObject
 
 /** Whether a note's title and the name of its file are kept as one name. */
 export const isSyncingTitles = async (request: APIRequestContext): Promise<boolean> =>
@@ -297,8 +294,7 @@ export const isSyncingTitles = async (request: APIRequestContext): Promise<boole
 export const createUniqueTitle = (words: string): string =>
   `${words} ${Math.random().toString(36).slice(2, 7)}`
 
-/** The row of the files tab for the path, with the folder above it opened. */
-export const revealTreeRow = async (page: Page, filePath: string): Promise<Locator> => {
+const revealTreeRow = async (page: Page, filePath: string): Promise<Locator> => {
   await page.getByRole('tab', { name: /^Files/ }).click()
   const folder = path.posix.dirname(filePath)
   if (folder !== '.') {

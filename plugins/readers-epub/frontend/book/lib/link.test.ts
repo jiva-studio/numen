@@ -1,19 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { isExternalHref, parseBookLink } from './link'
 
+const HERE = 'http://numen.test/index.html'
+
 describe('whether a link leads out of the window', () => {
   it('leads out of it where the address names another place', () => {
-    expect(isExternalHref('https://example.invalid/away')).toBe(true)
+    expect(isExternalHref('https://example.invalid/away', HERE)).toBe(true)
   })
 
   it('leads nowhere outward, where the address is one the window serves', () => {
-    expect(isExternalHref('OEBPS/second.xhtml#alpha')).toBe(false)
-    expect(isExternalHref('#alpha')).toBe(false)
+    expect(isExternalHref('OEBPS/second.xhtml#alpha', HERE)).toBe(false)
+    expect(isExternalHref('#alpha', HERE)).toBe(false)
   })
 
   it('leads nowhere outward, where the href is no address at all', () => {
     // An invalid href is resolved against the book itself.
-    expect(isExternalHref('::')).toBe(false)
+    expect(isExternalHref('::', HERE)).toBe(false)
   })
 })
 

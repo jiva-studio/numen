@@ -7,9 +7,10 @@ import { getErrorMessage, getInitialManual } from './present'
 import type { FloorClient, FloorProbeResult, FloorState, Wait } from './types'
 import { createFloorClient } from '../api/wire'
 import { sleep } from './wait'
+import type { Caught } from '@numen/plugin-sdk'
 
 /** The pause after the last slider move before the value is written. */
-export const SLIDER_DEBOUNCE_MS = 300
+const SLIDER_DEBOUNCE_MS = 300
 
 export interface UseFloorOptions {
   client?: FloorClient
@@ -143,30 +144,14 @@ export function useFloor(options: UseFloorOptions) {
   }
 
   /** Shows a failure that no action of this model handled itself. */
-  function reportFailure(error: unknown): void {
+  function reportFailure(error: Caught): void {
     if (!isDisposed) actionError.value = getErrorMessage(error)
   }
 
   return {
-    state,
-    status,
-    loadError,
-    actionError,
-    isCalibrating,
-    isBusy,
-    isTooFew,
-    isManual,
-    manualValue,
-    probeResult,
-    probeError,
-    isProbing,
-    load,
-    calibrate,
-    setMode,
-    setManualFloor,
-    probe,
-    reportFailure,
+    threshold: { state, isManual, manualValue, isTooFew },
+    progress: { status, loadError, actionError, isCalibrating, isBusy },
+    probing: { probeResult, probeError, isProbing },
+    actions: { load, calibrate, setMode, setManualFloor, probe, reportFailure },
   }
 }
-
-export type FloorModel = ReturnType<typeof useFloor>

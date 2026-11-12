@@ -100,13 +100,18 @@ jobs:
       - name: Take the review rules from main
         run: |
           set -euo pipefail
-          rm -rf .agents .claude/skills tools/lint-narrative
-          git restore --source=origin/main --worktree -- .agents .claude/skills AGENTS.md tools/lint-narrative tools/shared/tools.mjs
+          # The text checks sit in tools/checks, and in tools/lint-narrative on a main from before that move.
+          paths=(.agents .claude/skills AGENTS.md tools/shared/tools.mjs)
+          for tool in tools/checks tools/lint-narrative; do
+            if git cat-file -e "origin/main:$tool" 2>/dev/null; then paths+=("$tool"); fi
+          done
+          rm -rf .agents .claude/skills tools/checks tools/lint-narrative
+          git restore --source=origin/main --worktree -- "${paths[@]}"
 
       - if: env.MODE == 'full'
         uses: ./.github/actions/setup-go
         with:
-          go-version-file: libs/core/go.mod
+          go-version-file: libs/core/kernel/go.mod
           cache-key: core-test-plain
 
       - if: env.MODE == 'full'
@@ -134,7 +139,7 @@ jobs:
             This run is a quick review of pull request #${{ env.PR_NUMBER }} in CI. Base branch: `${{ env.BASE_REF }}` (${{ env.BASE_SHA }}). Head commit: ${{ env.REVIEWED_SHA }}. Review only the diff of the pull request (`git diff ${{ env.BASE_SHA }}...${{ env.REVIEWED_SHA }}`) and stop with an error if `git rev-parse HEAD` is not ${{ env.REVIEWED_SHA }}. Do not review uncommitted working-tree changes. The pull request's CI runs the linters and the test suites. Run no gates and no tests, and install nothing: judge every stage by reading the code, and mark each proof "by reading".
             Write the report to review-report.md in the workspace root. Write one word to review-verdict.txt: APPROVED, CHANGES_REQUESTED or REJECTED.
           claude_args: >-
-            --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(node tools/lint-narrative/scan.mjs:*)"
+            --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(node tools/checks/style/names/check.mjs:*),Bash(node tools/lint-narrative/scan.mjs:*)"
 
       - name: Full review
         if: env.MODE == 'full'
@@ -147,7 +152,7 @@ jobs:
             This run is a full review of pull request #${{ env.PR_NUMBER }} in CI. Base branch: `${{ env.BASE_REF }}` (${{ env.BASE_SHA }}). Head commit: ${{ env.REVIEWED_SHA }}. Review only the diff of the pull request (`git diff ${{ env.BASE_SHA }}...${{ env.REVIEWED_SHA }}`) and stop with an error if `git rev-parse HEAD` is not ${{ env.REVIEWED_SHA }}. Do not review uncommitted working-tree changes. The pull request's CI runs the linters and the test suites, so run no gates and no whole suites. Go, the Node modules and the built UI libraries are installed. In stage 3, prove or disprove each hypothesis with a test you write next to the code, and run only that test: `go test -run <name> ./<package>` from the module directory, or `npx vitest run <file>` from the package directory.
             Write the report to review-report.md in the workspace root. Write one word to review-verdict.txt: APPROVED, CHANGES_REQUESTED or REJECTED.
           claude_args: >-
-            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(cd:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(go test:*),Bash(npx vitest run:*),Bash(node tools/lint-narrative/scan.mjs:*)"
+            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(cd:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(go test:*),Bash(npx vitest run:*),Bash(node tools/checks/style/names/check.mjs:*),Bash(node tools/lint-narrative/scan.mjs:*)"
 
       - name: Submit the review
         run: |

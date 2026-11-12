@@ -1,0 +1,35 @@
+import { PLUGIN_FAILURE_WORDS } from '@/entities/plugin'
+import { formatError, type Caught } from '@/shared/api/errors'
+import type { MessageLog } from '@/shared/model/notices/messages'
+
+/** What a plugin's problems are written as: the name of the plugin, then the problem, in the log of the plugin. */
+export function createPluginReports(
+  log: Pick<MessageLog, 'getWriter'>,
+  getPluginName: (pluginId: string) => string,
+) {
+  const write = (pluginId: string, text: string, severity: 'warning' | 'error') =>
+    log.getWriter(`plugin:${pluginId}`)(text, severity)
+  return {
+    writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') =>
+      write(pluginId, `${getPluginName(pluginId)}: ${message}`, severity),
+    reportViewIssue: (pluginId: string, message: string) =>
+      write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'error'),
+    reportCommandIssue: (pluginId: string, message: string) =>
+      write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'warning'),
+    reportError: (pluginId: string, error: Caught) =>
+      write(
+        pluginId,
+        PLUGIN_FAILURE_WORDS.error(getPluginName(pluginId), formatError(error)),
+        'error',
+      ),
+    reportLoadError: (pluginId: string, error: Caught) =>
+      write(
+        pluginId,
+        PLUGIN_FAILURE_WORDS.stopped(
+          getPluginName(pluginId),
+          `${PLUGIN_FAILURE_WORDS.loadFailed}: ${formatError(error)}`,
+        ),
+        'error',
+      ),
+  }
+}

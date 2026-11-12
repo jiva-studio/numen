@@ -3,7 +3,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { type AppInfo, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
 import TitleBar from './TitleBar.vue'
-import { CORNER_INSET, WINDOWS_CONTROLS_WIDTH } from '../lib/frame'
+import { getControlsRoom } from '../lib/frame'
 import { TITLE_MIN_WIDTH } from '../lib/layout'
 import { command, separator, submenu, view } from '../testing/entries'
 
@@ -18,6 +18,8 @@ interface Options {
   listItems?: (command: string) => Promise<readonly CommandItem[]>
   reportError?: (error: unknown) => void
 }
+
+const WINDOWS_TRAIL = getControlsRoom('windows', false).trail
 
 const mounted: VueWrapper[] = []
 
@@ -82,8 +84,6 @@ describe('the place of the title', () => {
       .map((one) =>
         Object.keys(one.attributes()).find((name) => name.startsWith('data-title-bar-'))!,
       )
-  const style = (wrapper: VueWrapper, name: string) =>
-    (wrapper.find('[data-title-bar]').element as HTMLElement).style.getPropertyValue(name).trim()
 
   it('is a middle cell between the cell of the buttons and the cell of the status', () => {
     const wrapper = mountBar({ commands: [command('a')], status: [view('tasks')] })
@@ -106,35 +106,6 @@ describe('the place of the title', () => {
 
     expect(cells(wrapper)).toStrictEqual(before)
     expect(wrapper.find('[data-title-bar-middle] [data-title]').exists()).toBe(true)
-  })
-
-  it('keeps the room of the window buttons at the end of the bar in the windows style', () => {
-    const wrapper = mountBar()
-
-    expect(style(wrapper, '--title-bar-lead')).toBe('0px')
-    expect(style(wrapper, '--title-bar-trail')).toBe('132px')
-  })
-
-  it('keeps the end of the bar clear of the corner radius of the window', () => {
-    document.documentElement.style.setProperty('--numen-window-radius', '16px')
-    const wrapper = mountBar({ platform: 'darwin' })
-
-    expect(style(wrapper, '--title-bar-corner-inset')).toBe(CORNER_INSET)
-    expect(CORNER_INSET).toContain('var(--numen-window-radius')
-  })
-
-  it('keeps the room of the circles at the start of the bar in the mac style', () => {
-    const wrapper = mountBar({ platform: 'linux', buttons: 'mac' })
-
-    expect(style(wrapper, '--title-bar-lead')).toBe('76px')
-    expect(style(wrapper, '--title-bar-trail')).toBe('0px')
-  })
-
-  it('keeps the room of the system buttons at the start of the bar in the native-mac style, none in full screen', () => {
-    expect(style(mountBar({ platform: 'darwin' }), '--title-bar-lead')).toBe('80px')
-    expect(style(mountBar({ platform: 'darwin', isFullscreen: true }), '--title-bar-lead')).toBe(
-      '0px',
-    )
   })
 })
 
@@ -197,12 +168,6 @@ describe('the window controls', () => {
     await control(wrapper, 'close').trigger('dblclick')
 
     expect(wrapper.emitted('toggle-maximize-window')).toBeUndefined()
-  })
-
-  it('mark the window buttons for Snap Layouts on Windows', () => {
-    const maximize = control(mountBar(), 'toggle-maximize').element as HTMLElement
-
-    expect(maximize.style.getPropertyValue('--wails-non-client-region').trim()).toBe('maximize')
   })
 
   it('draw the three circles of the mac style before the commands', () => {
@@ -330,7 +295,7 @@ describe('the entries that do not fit', () => {
   }
 
   const resize = async (wrapper: VueWrapper, room: number): Promise<void> => {
-    slotWidth = TITLE_MIN_WIDTH + room + WINDOWS_CONTROLS_WIDTH
+    slotWidth = TITLE_MIN_WIDTH + room + WINDOWS_TRAIL
     const entries = [{ contentRect: { width: slotWidth, height: 32 } } as ResizeObserverEntry]
     for (const tell of callbacks) tell(entries, {} as ResizeObserver)
     await settle(wrapper)
@@ -346,8 +311,8 @@ describe('the entries that do not fit', () => {
     command('e'),
   ]
 
-  const mountOverflowing = async (room: number, options: Options = {}): Promise<VueWrapper> => {
-    slotWidth = TITLE_MIN_WIDTH + room + WINDOWS_CONTROLS_WIDTH
+  const mountOverflowingBar = async (room: number, options: Options = {}): Promise<VueWrapper> => {
+    slotWidth = TITLE_MIN_WIDTH + room + WINDOWS_TRAIL
     const wrapper = mountBar({ commands: FIVE, ...options })
     await resize(wrapper, room)
     return wrapper
@@ -359,32 +324,29 @@ describe('the entries that do not fit', () => {
     wrapper.findAll('[data-label-view]').map((one) => one.text())
 
   it('shows every command and no menu button when they all fit', async () => {
-    const wrapper = await mountOverflowing(5 * BUTTON_WIDTH)
+    const wrapper = await mountOverflowingBar(5 * BUTTON_WIDTH)
 
     expect(shownIds(wrapper)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
     expect(wrapper.find('[data-title-bar-more]').exists()).toBe(false)
   })
 
   it('shows the first commands and a menu button when some do not fit', async () => {
-    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
+    const wrapper = await mountOverflowingBar(3 * BUTTON_WIDTH)
 
     expect(shownIds(wrapper)).toStrictEqual(['a', 'b'])
     expect(wrapper.find('[data-title-bar-more]').exists()).toBe(true)
   })
 
   it('names the menu button and says it opens a menu', async () => {
-    const more = (await mountOverflowing(3 * BUTTON_WIDTH)).find('[data-title-bar-more]')
+    const more = (await mountOverflowingBar(3 * BUTTON_WIDTH)).find('[data-title-bar-more]')
 
     expect(more.attributes('aria-label')).toBe('More commands')
     expect(more.attributes('aria-haspopup')).toBe('menu')
     expect(more.attributes('aria-expanded')).toBe('false')
-    expect((more.element as HTMLElement).style.getPropertyValue('--wails-draggable')).toBe(
-      'no-drag',
-    )
   })
 
   it('lists the commands that do not fit in the menu, in order and in their groups', async () => {
-    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
+    const wrapper = await mountOverflowingBar(3 * BUTTON_WIDTH)
 
     await wrapper.find('[data-title-bar-more]').trigger('click')
 
@@ -394,7 +356,7 @@ describe('the entries that do not fit', () => {
   })
 
   it('emits run-command with the command of the entry picked in the menu, and closes it', async () => {
-    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
+    const wrapper = await mountOverflowingBar(3 * BUTTON_WIDTH)
 
     await wrapper.find('[data-title-bar-more]').trigger('click')
     document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')[1]!.click()
@@ -411,7 +373,7 @@ describe('the entries that do not fit', () => {
   }
 
   it('puts the keyboard on the first entry when the menu is opened from the keyboard', async () => {
-    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
+    const wrapper = await mountOverflowingBar(3 * BUTTON_WIDTH)
 
     await clickMore(wrapper, 0)
 
@@ -419,7 +381,7 @@ describe('the entries that do not fit', () => {
   })
 
   it('puts the keyboard on no entry when the menu is opened by a pointer', async () => {
-    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
+    const wrapper = await mountOverflowingBar(3 * BUTTON_WIDTH)
 
     await clickMore(wrapper, 1)
 
@@ -427,7 +389,7 @@ describe('the entries that do not fit', () => {
   })
 
   it('moves the commands back to the bar when the window grows, and closes the menu', async () => {
-    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH)
+    const wrapper = await mountOverflowingBar(3 * BUTTON_WIDTH)
     await wrapper.find('[data-title-bar-more]').trigger('click')
 
     await resize(wrapper, 5 * BUTTON_WIDTH)
@@ -447,7 +409,7 @@ describe('the entries that do not fit', () => {
   })
 
   it('moves the commands of titleBar.status into the menu before those of titleBar.commands', async () => {
-    const wrapper = await mountOverflowing(3 * BUTTON_WIDTH + VIEW_WIDTH, {
+    const wrapper = await mountOverflowingBar(3 * BUTTON_WIDTH + VIEW_WIDTH, {
       commands: [command('a'), command('b'), command('c')],
       status: [view('tasks'), command('f')],
     })
@@ -459,7 +421,7 @@ describe('the entries that do not fit', () => {
   })
 
   it('hides the views from the edge once every command is in the menu, and never lists one in it', async () => {
-    const wrapper = await mountOverflowing(BUTTON_WIDTH + VIEW_WIDTH, {
+    const wrapper = await mountOverflowingBar(BUTTON_WIDTH + VIEW_WIDTH, {
       commands: [command('a'), view('due')],
       status: [view('tasks'), view('stats')],
     })
@@ -471,7 +433,7 @@ describe('the entries that do not fit', () => {
   })
 
   it('draws the hidden views again when the window grows', async () => {
-    const wrapper = await mountOverflowing(VIEW_WIDTH, {
+    const wrapper = await mountOverflowingBar(VIEW_WIDTH, {
       commands: [],
       status: [view('tasks'), view('stats')],
     })

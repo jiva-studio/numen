@@ -5,24 +5,24 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
-import { usePlexView, type Neighbours } from './usePlexView'
-import type { Neighbourhood } from '../types'
+import { usePlexView, type Neighbors } from './usePlexView'
+import type { Neighborhood } from '../types'
 
-const answer = (path: string): Neighbourhood => ({
+const answer = (path: string): Neighborhood => ({
   focus: { path, title: path },
   focusType: 'note',
   related: [],
   connections: [],
 })
 
-const createEmptyNeighbourhood = (): Neighbourhood => ({
+const createEmptyNeighborhood = (): Neighborhood => ({
   focus: { path: '', title: '' },
   focusType: 'note',
   related: [],
   connections: [],
 })
 
-const fake = (neighbourhood: Neighbours['neighbourhood']): Neighbours => ({ neighbourhood })
+const fake = (neighborhood: Neighbors['neighborhood']): Neighbors => ({ neighborhood })
 
 describe('a plex still being read', () => {
   it('says so until the first answer lands, and no longer', async () => {
@@ -91,7 +91,7 @@ describe('two questions in flight', () => {
     await Promise.all([slow, fast])
 
     expect(plex.here.value).toBe('Fast')
-    expect(plex.neighbourhood.value?.focus.path).toBe('Fast')
+    expect(plex.neighborhood.value?.focus.path).toBe('Fast')
   })
 })
 
@@ -135,7 +135,7 @@ describe('a note that moved while a question was in flight', () => {
     await goPromise
 
     expect(plex.here.value).toBe('moved/Note.md')
-    expect(plex.neighbourhood.value?.focus.path).toBe('Note.md')
+    expect(plex.neighborhood.value?.focus.path).toBe('Note.md')
   })
 
   it('holds on to an answer about a note nothing moved', async () => {
@@ -162,7 +162,7 @@ describe('the note in focus goes away', () => {
   it('says so, keeps what it is showing, and can return to it', async () => {
     let holds = true
     const plex = usePlexView(
-      fake(async (path) => (holds ? answer(path) : createEmptyNeighbourhood())),
+      fake(async (path) => (holds ? answer(path) : createEmptyNeighborhood())),
     )
 
     await plex.go('Note.md')
@@ -173,7 +173,7 @@ describe('the note in focus goes away', () => {
     expect(plex.error.value).toContain('Note.md')
     // The requested path is kept, so the user can return to it.
     expect(plex.here.value).toBe('Note.md')
-    expect(plex.neighbourhood.value?.focus.path).toBe('Note.md')
+    expect(plex.neighborhood.value?.focus.path).toBe('Note.md')
 
     holds = true
     await plex.go('Note.md')
@@ -186,7 +186,7 @@ describe('a plex whose tab has closed', () => {
     const plex = usePlexView(
       fake(async () => {
         await new Promise((resolve) => setTimeout(resolve, 0))
-        return createEmptyNeighbourhood()
+        return createEmptyNeighborhood()
       }),
     )
 
@@ -225,8 +225,8 @@ describe('two plexes', () => {
 
     expect(one.here.value).toBe('One.md')
     expect(two.here.value).toBe('Two.md')
-    expect(one.neighbourhood.value?.focus.path).toBe('One.md')
-    expect(two.neighbourhood.value?.focus.path).toBe('Two.md')
+    expect(one.neighborhood.value?.focus.path).toBe('One.md')
+    expect(two.neighborhood.value?.focus.path).toBe('Two.md')
   })
 })
 
@@ -234,11 +234,11 @@ describe('a vault that changed somewhere else', () => {
   it('leaves the picture on screen standing, answer for answer', async () => {
     const plex = usePlexView(fake(async (path) => answer(path)))
     await plex.go('Entropy.md')
-    const previous = plex.neighbourhood.value
+    const previous = plex.neighborhood.value
 
     await plex.go('Entropy.md')
 
-    expect(plex.neighbourhood.value).toBe(previous)
+    expect(plex.neighborhood.value).toBe(previous)
   })
 
   it('draws again where what is around the note is different', async () => {
@@ -257,13 +257,13 @@ describe('a vault that changed somewhere else', () => {
       })),
     )
     await plex.go('Entropy.md')
-    const initial = plex.neighbourhood.value
+    const initial = plex.neighborhood.value
 
     related = ['Heat.md']
     await plex.go('Entropy.md')
 
-    expect(plex.neighbourhood.value).not.toBe(initial)
-    expect(plex.neighbourhood.value?.related).toHaveLength(1)
+    expect(plex.neighborhood.value).not.toBe(initial)
+    expect(plex.neighborhood.value?.related).toHaveLength(1)
   })
 })
 
@@ -305,7 +305,7 @@ describe('a note the vault does not hold yet', () => {
   it('is kept as the missing path until an answer holds it', async () => {
     const indexed = new Set<string>()
     const plex = usePlexView(
-      fake(async (path) => (indexed.has(path) ? answer(path) : createEmptyNeighbourhood())),
+      fake(async (path) => (indexed.has(path) ? answer(path) : createEmptyNeighborhood())),
     )
 
     await plex.go('Quantum.md')

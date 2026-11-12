@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/linkimport"
 )
 
 // The instruction sentences of url_import: when to call it and what it returns.
@@ -21,14 +21,12 @@ const (
 
 var errNoVault = errors.New("the call names no vault")
 
-// URLImportInput is the input of the url_import tool.
 type URLImportInput struct {
 	URL                 string `json:"url" jsonschema:"the http or https address to import"`
 	Folder              string `json:"folder,omitempty" jsonschema:"the folder of a new link note, relative to the vault root; the root by default"`
 	ShouldDownloadVideo bool   `json:"downloadVideo,omitempty" jsonschema:"also download the video at the address to this disk; the download is large, so set it only when the video is needed offline"`
 }
 
-// URLImportOutput is the output of the url_import tool.
 type URLImportOutput struct {
 	Path           string `json:"path" jsonschema:"the link note of the address, created or found, relative to the vault root"`
 	Title          string `json:"title,omitempty" jsonschema:"the title of the page or the video"`
@@ -45,7 +43,6 @@ type Tools struct {
 	links *link.Links
 }
 
-// NewTools returns the tools for the links.
 func NewTools(links *link.Links) *Tools {
 	return &Tools{links: links}
 }
@@ -67,7 +64,7 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Effect:       tools.ReadWrite,
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{importerUseSentence, importerFetchSentence, importerOwnNotesSentence, importerDownloadSentence},
-		Requires:     []string{host.PermissionNetworkOutbound},
+		Requires:     []string{host.PermissionLinkOpen},
 	}, t.importURL)
 	if err != nil {
 		return nil, err
@@ -80,45 +77,11 @@ func (t *Tools) importURL(ctx context.Context, in URLImportInput) (URLImportOutp
 	if vault == "" {
 		return URLImportOutput{}, errNoVault
 	}
-	made, _, err := t.links.FindOrCreate(ctx, vault, in.Folder, in.URL)
+	made, err := linkimport.New(t.links).ImportURL(ctx, linkimport.Request{
+		Vault: vault, Folder: in.Folder, URL: in.URL, ShouldDownloadVideo: in.ShouldDownloadVideo,
+	})
 	if err != nil {
 		return URLImportOutput{}, err
 	}
-	out := URLImportOutput{
-		Path: made.Path, Title: "", Producer: "", Bytes: 0, HasText: false, Error: "", DownloadTaskID: "", DownloadError: "",
-	}
-	if err := t.fetchText(ctx, made, &out); err != nil {
-		out.Error = err.Error()
-	}
-	if in.ShouldDownloadVideo {
-		t.startDownload(ctx, made, &out)
-	}
-	return out, nil
-}
-
-func (t *Tools) fetchText(ctx context.Context, made link.Link, out *URLImportOutput) error {
-	fetchErr := t.links.FetchText(ctx, made)
-	return errors.Join(fetchErr, t.readText(ctx, made, out))
-}
-
-func (t *Tools) readText(ctx context.Context, made link.Link, out *URLImportOutput) error {
-	text, err := t.links.ReadArticle(ctx, made)
-	if err != nil || text == "" {
-		return err
-	}
-	info, err := t.links.GetTextInfo(ctx, made)
-	if err != nil {
-		return err
-	}
-	out.Title, out.Producer, out.HasText, out.Bytes = info.Title, info.Producer, true, len(text)
-	return nil
-}
-
-func (t *Tools) startDownload(ctx context.Context, made link.Link, out *URLImportOutput) {
-	if !t.links.IsCopyable(made.Address) {
-		out.DownloadError = link.ErrNotCopyable.Error()
-		return
-	}
-	t.links.StartCopy(ctx, made, download.MediaVideo)
-	out.DownloadTaskID = link.GetCopyTaskID(made.Vault, made.Path)
+	return URLImportOutput(made), nil
 }

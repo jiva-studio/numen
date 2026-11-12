@@ -5,11 +5,11 @@
  * group is renamed in place; a name that is too long or is the name of another group is refused
  * with an alert and the field stays open.
  */
-import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
-import { getServiceInfo } from '@numen/core-client'
 import { Button, type MenuItem } from '@numen/ui'
-import { MAX_NAME_LENGTH, isGroupNameTaken, isNameTooLong, trimName } from '@/entities/settings'
+import { getServiceInfo } from '@/entities/settings'
+import { useGroupRename } from '../../model/useGroupRename'
 import { WORDS as words } from '../../words'
 import SecretInput from './SecretInput.vue'
 import SecretMenu from './SecretMenu.vue'
@@ -29,65 +29,41 @@ const emit = defineEmits<{
   (e: 'delete-group', opener: HTMLElement): void
 }>()
 
+defineExpose({
+  focusAdd: () => (addButton.value?.$el as HTMLElement | undefined)?.focus(),
+})
+
 /* --------------------------------- State ---------------------------------- */
 const items: readonly MenuItem[] = [
   { id: 'rename', text: words.secretGroupRename },
   { id: 'delete', text: words.secretGroupDelete },
 ]
-const isRenaming = ref(false)
-const draftName = ref('')
-const nameProblem = ref<'' | 'long' | 'taken'>('')
 const info = computed(() => getServiceInfo(props.group))
 const nameInput = useTemplateRef<InstanceType<typeof SecretInput>>('nameInput')
 const addButton = useTemplateRef<InstanceType<typeof Button>>('addButton')
-
-defineExpose({
-  focusAdd: () => (addButton.value?.$el as HTMLElement | undefined)?.focus(),
-})
-
-onMounted(async () => {
-  if (props.isNew) await onStartRename()
+const {
+  isRenaming,
+  draftName,
+  nameProblem,
+  startRename,
+  commitRename,
+  cancelRename,
+  getNameProblemText,
+} = useGroupRename({
+  getGroup: () => props.group,
+  getGroups: () => props.groups,
+  isNew: () => props.isNew,
+  focusName: () => {
+    nameInput.value?.focus()
+    nameInput.value?.select()
+  },
+  emitRename: (name) => emit('rename', name),
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-async function onStartRename(): Promise<void> {
-  draftName.value = props.group
-  nameProblem.value = ''
-  isRenaming.value = true
-  await nextTick()
-  nameInput.value?.focus()
-  nameInput.value?.select()
-}
-
-function onCommitRename(): void {
-  if (!isRenaming.value) return
-  const name = trimName(draftName.value)
-  nameProblem.value = getNameProblem(name)
-  if (nameProblem.value !== '') return
-  isRenaming.value = false
-  if (name !== '' && name !== props.group) emit('rename', name)
-}
-
-function onCancelRename(): void {
-  isRenaming.value = false
-  nameProblem.value = ''
-}
-
-async function onChoose(id: string, opener: HTMLElement): Promise<void> {
-  if (id === 'rename') await onStartRename()
+function onChoose(id: string, opener: HTMLElement): void {
+  if (id === 'rename') startRename()
   else emit('delete-group', opener)
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function getNameProblem(name: string): '' | 'long' | 'taken' {
-  if (isNameTooLong(name)) return 'long'
-  return isGroupNameTaken(props.groups, props.group, name) ? 'taken' : ''
-}
-
-function getNameProblemText(): string {
-  return nameProblem.value === 'long'
-    ? words.secretGroupTooLong(MAX_NAME_LENGTH)
-    : words.secretGroupTaken(trimName(draftName.value))
 }
 </script>
 
@@ -101,10 +77,10 @@ function getNameProblemText(): string {
         type="text"
         :aria-label="words.secretGroupRenameName"
         :aria-invalid="nameProblem !== ''"
-        @keydown.enter="onCommitRename"
-        @keydown.esc="onCancelRename"
-        @change="onCommitRename"
-        @blur="onCommitRename"
+        @keydown.enter="commitRename"
+        @keydown.esc="cancelRename"
+        @change="commitRename"
+        @blur="commitRename"
       />
       <p v-if="nameProblem !== ''" role="alert" class="secret-title__refusal">
         {{ getNameProblemText() }}
@@ -129,18 +105,22 @@ function getNameProblemText(): string {
 
 <style scoped>
 .secret-title {
+  --gap: 0.25rem;
+  --pad-end: 0.375rem;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding-block-end: 0.375rem;
+  gap: var(--gap);
+  padding-block-end: var(--pad-end);
 }
 
 .secret-title__text {
-  margin-inline-end: 0.5rem;
+  --margin-end: 0.5rem;
+  --gap: 0.125rem;
+  margin-inline-end: var(--margin-end);
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--gap);
   min-inline-size: 0;
 }
 

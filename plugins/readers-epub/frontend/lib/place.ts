@@ -4,7 +4,6 @@
  */
 import type { Selector } from '@numen/plugin-sdk'
 
-/** The selector of a CFI. */
 export const createCfiSelector = (cfi: string): Selector => ({ cfi })
 
 /** The CFI a selector names, and null where it names none. */

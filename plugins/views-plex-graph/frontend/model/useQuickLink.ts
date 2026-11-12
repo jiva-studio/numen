@@ -22,8 +22,8 @@ export function useQuickLink(view: PlexView, deps: PlexTabDeps, map: NodeIdMap) 
   const searchNotes = async (
     query: string,
   ): Promise<readonly { path: string; title: string }[]> => {
-    if (!deps.searchNames) return []
-    const results = await deps.searchNames(query)
+    if (!deps.notes.searchNames) return []
+    const results = await deps.notes.searchNames(query)
     return results.map((item) => ({ path: item.path, title: item.title }))
   }
 
@@ -40,13 +40,13 @@ export function useQuickLink(view: PlexView, deps: PlexTabDeps, map: NodeIdMap) 
 
     if (isExisting) {
       const joined = await deps.editor.join(fromPath, titleOrPath, { role })
-      if (!joined.ok) return deps.showMessage(getRelationErrorWords(joined.error))
+      if (!joined.ok) return deps.window.showMessage(getRelationErrorWords(joined.error))
       await view.go(isNavigatingOnCreate.value ? titleOrPath : fromPath)
     } else {
       const title = titleOrPath.trim()
       if (!title) return
       const created = await deps.editor.createRelated({ from: fromPath, role, title })
-      if (!created.ok) return deps.showMessage(getRelationErrorWords(created.error))
+      if (!created.ok) return deps.window.showMessage(getRelationErrorWords(created.error))
       await view.go(isNavigatingOnCreate.value ? created.value : fromPath)
     }
   }

@@ -3,35 +3,42 @@
  * saves after typing stops, so the latest edits exist only in its buffer; the
  * application requests them over a stream this page subscribes to while rendered.
  * Text that cannot be written raises a conflict, and the window stays open
- * until every conflict is resolved.
+ * until every conflict is resolved. A handler that fails leaves the flush
+ * unwritten too, so a quit never reports text written that no handler confirmed.
  */
 import { shallowRef, type Ref } from 'vue'
 import { createFollower } from '@numen/ui'
 
 /** Outcome of a flush: everything written, or a user decision pending. */
-export type FlushResult = 'written' | 'unsaved'
+type FlushResult = 'written' | 'unsaved'
 
 /** What the flush needs of the core. */
 export interface FlushDeps {
   watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
-  reportFlush(token: string, result?: FlushResult): Promise<unknown>
+  reportFlush(token: string, result?: FlushResult): Promise<void>
 }
 
-/** Somewhere unwritten work is held, which the flush calls and waits for. */
-export type FlushHandler = () => Promise<unknown>
+/**
+ * Somewhere unwritten work is held, which the flush calls and waits for. It
+ * answers the conflicts of the text it could not write, and nothing when all
+ * of it is written.
+ */
+export type FlushHandler = () => Promise<void | readonly Conflict[]>
 
-/** Text a file moved out from under, and the two ways of settling it. */
+type HandlerResults = PromiseSettledResult<void | readonly Conflict[]>[]
+
+/** Text that is not written, and the two ways of settling it. */
 export interface Conflict {
   readonly note: string
-  readonly keep: () => Promise<unknown>
-  readonly take: () => Promise<unknown>
+  readonly keep: () => Promise<void>
+  readonly take: () => Promise<void>
 }
 
 /** A conflict as presented to the user. */
 export interface ConflictPrompt {
   readonly note: string
-  readonly keep: () => Promise<unknown>
-  readonly take: () => Promise<unknown>
+  readonly keep: () => Promise<void>
+  readonly take: () => Promise<void>
   readonly later: () => void
 }
 
@@ -81,14 +88,16 @@ function createFlushReporter(
 ) {
   let underVal: string | null = null
   let lastResult: FlushResult | null = null
-  let writing: Promise<unknown> | null = null
+  let writing: Promise<HandlerResults> | null = null
+  let failed = false
+  let dropHeld: (() => void)[] = []
 
   async function report() {
     const token = underVal
     if (token === null) return
     const all = registry.refresh()
-    if (all.length === 0 && writing !== null) return
-    const result: FlushResult = all.length > 0 ? 'unsaved' : 'written'
+    if (all.length === 0 && !failed && writing !== null) return
+    const result: FlushResult = all.length > 0 || failed ? 'unsaved' : 'written'
     if (result === lastResult) return
     lastResult = result
     await core.reportFlush(token, result)
@@ -103,19 +112,50 @@ function createFlushReporter(
     report().catch(forgetResult)
   }
 
+  /** Settles a conflict the handlers raised, and calls the handlers again to see what is left. */
+  const retrying = (one: Conflict): Conflict => ({
+    note: one.note,
+    keep: async () => {
+      await one.keep()
+      startWrites()
+    },
+    take: async () => {
+      await one.take()
+      startWrites()
+    },
+  })
+
+  /** Replaces what the last run of the handlers left unwritten with what this one did. */
+  function adopt(results: HandlerResults) {
+    for (const drop of dropHeld) drop()
+    dropHeld = []
+    failed = results.some((one) => one.status === 'rejected')
+    for (const one of results) {
+      if (one.status !== 'fulfilled' || one.value === undefined) continue
+      for (const conflict of one.value) dropHeld.push(registry.raise(retrying(conflict)))
+    }
+  }
+
+  function startWrites() {
+    const pendingWrites = Promise.allSettled(
+      [...handlers].map((one) => new Promise<void | readonly Conflict[]>((done) => done(one()))),
+    )
+    writing = pendingWrites
+    pendingWrites
+      .then((results) => {
+        if (writing !== pendingWrites) return
+        writing = null
+        adopt(results)
+        reportInBackground()
+      })
+      .catch(forgetResult)
+  }
+
   async function answer(token: string) {
     underVal = token
     lastResult = null
     registry.clearPut()
-    const pendingWrites = Promise.allSettled([...handlers].map((one) => one()))
-    writing = pendingWrites
-    pendingWrites
-      .then(() => {
-        if (writing !== pendingWrites) return
-        writing = null
-        reportInBackground()
-      })
-      .catch(forgetResult)
+    startWrites()
     await report()
   }
 
@@ -123,12 +163,13 @@ function createFlushReporter(
     underVal = null
     lastResult = null
     writing = null
+    failed = false
   }
 
   return { answer, report, reportInBackground, reset }
 }
 
-export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
+export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<void> = sleep) {
   const handlers = new Set<FlushHandler>()
   let open = true
   const abortController = new AbortController()
@@ -173,4 +214,4 @@ export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<u
   }
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

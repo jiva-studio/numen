@@ -5,14 +5,14 @@
   "type": "module",
   "description": "The page the product is read about on. Knows nothing about a vault.",
   "scripts": {
-    "test": "node --test tools/demo-commands.test.mjs",
+    "test": "node --test tools/demo-fixtures.test.mjs",
     "predev": "npm run prebuild",
     "dev": "astro dev",
-    "prebuild": "npm run build --prefix ../../libs/ui/core && npm run build --prefix ../../libs/ui/shell",
+    "prebuild": "npm run build --prefix ../../libs/ui/components && npm run build --prefix ../../libs/ui/workbench",
     "build": "astro build",
     "preview": "astro preview",
-    "pretypecheck": "npm run build --prefix ../../libs/ui/core && npm run build --prefix ../../libs/ui/shell",
-    "typecheck": "astro check",
+    "pretypecheck": "npm run build --prefix ../../libs/ui/components && npm run build --prefix ../../libs/ui/workbench",
+    "typecheck": "astro check && vue-tsc --noEmit",
     "lint": "eslint .",
     "stories:check": "node tools/stories.mjs",
     "shoot": "node tools/shoot.mjs"
@@ -20,22 +20,21 @@
   "dependencies": {
     "@fontsource-variable/nunito-sans": "^5.3.0",
     "@lucide/vue": "^1.66.0",
-    "@numen/core-client": "*",
-    "@numen/plugin-host": "*",
     "@numen/ui": "*",
+    "@numen/workbench": "*",
     "astro": "^7.4.4",
     "sharp": "^0.35.5",
     "vue": "^3.5.44"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
-    "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^6.0.10",
     "eslint": "^10.14.0",
     "eslint-plugin-astro": "^3.1.0",
     "globals": "^17.14.0",
     "playwright": "^1.64.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.1"
+    "typescript-eslint": "^8.72.1",
+    "vue-tsc": "^3.3.14"
   }
 }

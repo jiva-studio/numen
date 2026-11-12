@@ -7,25 +7,9 @@
  */
 import { describe, expect, it } from 'vitest'
 import { FileText, SlidersHorizontal } from '@lucide/vue'
-import { getPanes } from '@numen/shell'
+import { getPanes } from '@numen/workbench'
 import { findTabKindIcon } from './icons'
-import { NOTE, SETTINGS, createWorkspace, generateId } from './workspace'
-
-describe('the identity a tab is filed under', () => {
-  it('is a new one every time, so a second of a kind is a second tab', () => {
-    const names = [generateId(NOTE), generateId(NOTE), generateId(NOTE)]
-
-    expect(new Set(names).size).toBe(3)
-  })
-
-  it('is never the name of a tab of another kind', () => {
-    expect(generateId(NOTE)).not.toBe(generateId(SETTINGS))
-  })
-
-  it('says what kind of thing the tab holds', () => {
-    expect(generateId(SETTINGS).startsWith(`${SETTINGS}:`)).toBe(true)
-  })
-})
+import { NOTE, SETTINGS, createWorkspace } from './workspace'
 
 describe('the kinds a tab is filed under', () => {
   const kinds = [NOTE, SETTINGS]
@@ -36,14 +20,6 @@ describe('the kinds a tab is filed under', () => {
 
   it('are each their own, so two kinds never share an identity', () => {
     expect(new Set(kinds).size).toBe(kinds.length)
-  })
-})
-
-describe('the name a conversation is answered under', () => {
-  it('is a new one for every conversation opened', () => {
-    const names = [generateId('agent'), generateId('agent'), generateId('agent')]
-
-    expect(new Set(names).size).toBe(3)
   })
 })
 

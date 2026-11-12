@@ -98,32 +98,22 @@ export const getPluginTokens = (dir) => {
 /** The path under the e2e folder that a scope token names. */
 const getTokenPath = (token) => `tests/${token.includes('/') ? token : `plugins/${token}/`}`
 
-/** The scope of the changed files. */
-export const getScope = (files) => {
-  const tokens = new Set()
-  let isTested = false
-  for (const file of files) {
-    if (!isDesktopInput(file)) continue
-    isTested = true
-    const folder = /^tests\/e2e\/desktop\/tests\/plugins\/([^/]+)\//.exec(file)
-    const spec = /^tests\/e2e\/desktop\/tests\/(shell\/|scenarios\/.+\.spec\.ts$)/.exec(file)
-    const plugin = /^plugins\/([^/]+)\//.exec(file)
-    if (folder) {
-      tokens.add(folder[1])
-    } else if (spec) {
-      tokens.add(spec[1])
-    } else if (file.startsWith('tests/e2e/desktop/flashcards/')) {
-      tokens.add(FLASHCARDS)
-    } else if (
-      plugin &&
-      fs.existsSync(path.join(repoRoot, 'plugins', plugin[1], 'manifest.json'))
-    ) {
-      for (const one of getPluginTokens(plugin[1])) tokens.add(one)
-    } else {
-      return 'all'
-    }
+/** The scope tokens one changed file adds, or null where the file needs every test. */
+const getFileTokens = (file) => {
+  const folder = /^tests\/e2e\/desktop\/tests\/plugins\/([^/]+)\//.exec(file)
+  if (folder) return [folder[1]]
+  const spec = /^tests\/e2e\/desktop\/tests\/(shell\/|scenarios\/.+\.spec\.ts$)/.exec(file)
+  if (spec) return [spec[1]]
+  if (file.startsWith('tests/e2e/desktop/flashcards/')) return [FLASHCARDS]
+  const plugin = /^plugins\/([^/]+)\//.exec(file)
+  if (plugin && fs.existsSync(path.join(repoRoot, 'plugins', plugin[1], 'manifest.json'))) {
+    return getPluginTokens(plugin[1])
   }
-  if (tokens.size === 0) return isTested ? 'shell/' : 'none'
+  return null
+}
+
+/** The tokens in the order they are run, without the ones a folder token already holds. */
+const joinTokens = (tokens) => {
   const folders = [...tokens].map(getTokenPath).filter((one) => one.endsWith('/'))
   return [...tokens]
     .filter(
@@ -134,6 +124,21 @@ export const getScope = (files) => {
     )
     .sort((a, b) => a.localeCompare(b))
     .join(' ')
+}
+
+/** The scope of the changed files. */
+export const getScope = (files) => {
+  const tokens = new Set()
+  let isTested = false
+  for (const file of files) {
+    if (!isDesktopInput(file)) continue
+    isTested = true
+    const added = getFileTokens(file)
+    if (added === null) return 'all'
+    for (const one of added) tokens.add(one)
+  }
+  if (tokens.size === 0) return isTested ? 'shell/' : 'none'
+  return joinTokens(tokens)
 }
 
 /**

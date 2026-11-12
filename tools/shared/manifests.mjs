@@ -1,7 +1,7 @@
 /**
  * The one place the tools read a plugin's manifest.json.
  *
- * A manifest is read against the schema generated from `libs/protocol/proto/numen/v1/manifest.proto`:
+ * A manifest is read against the schema generated from `libs/core/protocol/proto/numen/v1/manifest.proto`:
  * a value of the wrong type is an error, and a key the schema does not name is left out of the message
  * and listed as a warning. Every tool takes the parsed message, the JSON document and the warnings
  * from here and parses nothing itself.
@@ -13,7 +13,7 @@ import { fromJson } from '@bufbuild/protobuf'
 import {
   ManifestSchema,
   ManifestSettingOptionSchema,
-} from '../../libs/protocol/src/numen/v1/manifest_pb.ts'
+} from '../../libs/core/protocol/src/numen/v1/manifest_pb.ts'
 
 /** The name of the file a plugin declares itself in. */
 export const MANIFEST_FILE = 'manifest.json'

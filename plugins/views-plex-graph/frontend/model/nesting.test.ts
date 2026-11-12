@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import type { JsonValue } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
 import {
   DEFAULT_HEADING_LIMIT,
@@ -11,7 +12,7 @@ import {
   readNesting,
 } from './nesting'
 
-const createContext = (initialSettings: Record<string, unknown> = {}) =>
+const createContext = (initialSettings: Record<string, JsonValue> = {}) =>
   createMockPluginContext({ pluginId: 'md.numen.views.plex.graph', initialSettings })
 
 describe('readNesting', () => {

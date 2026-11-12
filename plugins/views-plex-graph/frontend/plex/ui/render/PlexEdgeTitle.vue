@@ -62,7 +62,8 @@ const LAYERS = ['halo', 'letters'] as const
 }
 
 .plex__edge-title--lifted .plex__edge-label--halo {
-  stroke-width: 6px;
+  --edge-label-halo-stroke-width: 0.375rem;
+  stroke-width: var(--edge-label-halo-stroke-width);
 }
 
 .plex__edge-title--lifted .plex__edge-label--letters {

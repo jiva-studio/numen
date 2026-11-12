@@ -10,7 +10,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 func TestSearchToolsListHasOnlyNoteSearch(t *testing.T) {

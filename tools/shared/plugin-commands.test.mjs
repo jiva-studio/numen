@@ -128,7 +128,7 @@ test('findPluginCommandMismatches reports a declared command with no handler', (
           },
         },
         frontend: {
-          'index.ts': "context.registerCommand({ id: 'sample.open', handler: () => undefined })\n",
+          'index.ts': "context.register.command({ id: 'sample.open', handler: () => undefined })\n",
         },
       })
     },
@@ -173,8 +173,8 @@ test('findPluginCommandMismatches reports a frontend command registration missin
         },
         frontend: {
           'index.ts': [
-            "context.registerCommand({ id: 'sample.open', handler: () => undefined })",
-            "context.registerCommand({ id: 'sample.typo', handler: () => undefined })",
+            "context.register.command({ id: 'sample.open', handler: () => undefined })",
+            "context.register.command({ id: 'sample.typo', handler: () => undefined })",
           ].join('\n'),
         },
       })
@@ -202,7 +202,7 @@ test('findPluginCommandMismatches reports a backend command registration missing
         backend: {
           'commands.go': [
             'package service',
-            'import "github.com/jiva-studio/numen/libs/plugin-sdk-go/command"',
+            'import "github.com/jiva-studio/numen/libs/plugin/sdk-go/command"',
             'func newCommands() *command.Registry {',
             '\tcommands := command.New()',
             '\t_ = commands.Add("sample.run", nil)',

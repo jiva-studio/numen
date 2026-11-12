@@ -25,16 +25,18 @@ const open = (hasAgent = ref(false), openSettings = vi.fn()) =>
     openFileAdjacent: () => undefined,
     resolveLinks: async () => [],
     unreachable: () => '',
-    openSettings,
-    getModelsAt: (path) => {
-      if (!hasAgent.value) return []
-      return path.join('/') === 'app/agent/use' ? [AGENT] : [MODEL]
+    settings: {
+      openSettings,
+      getModelsAt: (path) => {
+        if (!hasAgent.value) return []
+        return path.join('/') === 'app/agent/use' ? [AGENT] : [MODEL]
+      },
     },
   })
 
 describe('an agent tab with no agent', () => {
   it('reports that no agent is set up', () => {
-    expect(open().isAgentMissing.value).toBe(true)
+    expect(open().agent.isAgentMissing.value).toBe(true)
   })
 
   it('turns the missing flag off when an agent appears and on again when it disappears', async () => {
@@ -43,17 +45,17 @@ describe('an agent tab with no agent', () => {
 
     hasAgent.value = true
     await nextTick()
-    expect(state.isAgentMissing.value).toBe(false)
+    expect(state.agent.isAgentMissing.value).toBe(false)
 
     hasAgent.value = false
     await nextTick()
-    expect(state.isAgentMissing.value).toBe(true)
+    expect(state.agent.isAgentMissing.value).toBe(true)
   })
 
   it('asks the window for the settings', () => {
     const openSettings = vi.fn()
 
-    open(ref(false), openSettings).openSettings()
+    open(ref(false), openSettings).agent.openSettings()
 
     expect(openSettings).toHaveBeenCalledTimes(1)
   })

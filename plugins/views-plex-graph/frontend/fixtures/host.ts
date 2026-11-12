@@ -38,37 +38,41 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
   }
 
   const workspace: WorkspaceHost = {
-    isReady: ref(true),
-    openingPath,
-    readOpeningPath: async () => {
-      request.opening.push(openingPath.value)
-      return openingPath.value
+    window: {
+      isReady: ref(true),
+      openingPath,
+      readOpeningPath: async () => {
+        request.opening.push(openingPath.value)
+        return openingPath.value
+      },
+      getToday: () => '2026-01-01',
     },
-    draggedPaths: ref([]),
-    setDraggedPaths: () => undefined,
-    openFile: (path, options) => {
-      recorded.opened.push([path, options])
+    dragged: { paths: ref([]), setPaths: () => undefined },
+    files: {
+      open: (path, options) => {
+        recorded.opened.push([path, options])
+      },
+      openAt: () => undefined,
+      syncPath: (tabId, path, title) => {
+        recorded.synced.push([tabId, path, title])
+        return linked[tabId] ?? false
+      },
     },
-    openFileAt: () => undefined,
+    messages: {
+      showError: (text) => {
+        recorded.errors.push(text)
+      },
+      getWriter: () => () => undefined,
+    },
+    icons: { getCommand: () => null, getEntry: () => ({}) },
     getNoteInFocus: () => ({ path: '', title: '' }),
-    syncPath: (tabId, path, title) => {
-      recorded.synced.push([tabId, path, title])
-      return linked[tabId] ?? false
-    },
     ask: (text) => {
       recorded.questions.push(text)
     },
-    showError: (text) => {
-      recorded.errors.push(text)
-    },
-    getMessageWriter: () => () => undefined,
-    getToday: () => '2026-01-01',
-    getCommandIcon: () => null,
-    getEntryIcon: () => ({}),
   }
 
   const notes: VaultNotes = {
-    getNeighbourhood: async (path) => ({
+    getNeighborhood: async (path) => ({
       focus: { path, title: path.replace(/\.md$/, '') },
       focusType: NOTE_TYPE,
       related: [],

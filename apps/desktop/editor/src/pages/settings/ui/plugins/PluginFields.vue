@@ -4,27 +4,42 @@
  * number inputs, sliders, selects, paths, secrets, and text fields. A setting or
  * secret whose condition fails is not shown, and keeps its value.
  */
-import { computed, ref } from 'vue'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
 import PluginSecretField from './PluginSecret.vue'
 import SettingsViews from './SettingsViews.vue'
-import type { SettingsTabState } from '../../types'
-import { createSettingFields, type PluginInfo, type PluginSettingInfo } from '@/entities/settings'
-import { createEnumFields, getValueInForce } from '../../lib/enums'
-import { appendPathEntry, createTextDrafts, removePathEntry } from '../../model/drafts'
+import type { InstallationSettings, PluginFieldsHost, SecretChoices } from '../../types'
+import type { PluginInfo } from '@/entities/settings'
+import { useEnumFields, usePluginFields, usePluginPaths } from '../../model/usePluginFields'
 import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  state: SettingsTabState
+  settings: InstallationSettings
+  host: PluginFieldsHost
+  choices: SecretChoices
   plugin: PluginInfo
 }>()
 
+const emit = defineEmits<{
+  (e: 'open-secrets'): void
+}>()
+
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
-const fields = createSettingFields(() => props.state.installation)
+const fieldDeps = {
+  getSettings: () => props.settings,
+  getHost: () => props.host,
+  getPlugin: () => props.plugin,
+}
+const fields = usePluginFields(fieldDeps)
+const {
+  getBooleanSetting,
+  getNumberSetting,
+  getStringSetting,
+  setSetting: onSettingChange,
+} = fields
+const { getDraft, setDraft, writeDraft } = fields
 const {
   getEnumOptions,
   getEnumChoices,
@@ -32,78 +47,24 @@ const {
   getShownSettings,
   getTopSecrets,
   getSecretsAfter,
-} = createEnumFields(
-  () => props.plugin,
-  readSetting,
-  isKeyRequested,
-  () => props.state.installation.getPlatform?.() ?? '',
-)
-
-function isKeyRequested(key: string): boolean {
-  return installation.value.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false
-}
-
-/** Why a path setting did not accept the path last chosen, by key. */
-const pathProblems = ref<Record<string, string>>({})
-const { getDraft, setDraft, writeDraft } = createTextDrafts(onSettingChange)
-
-/* -------------------------------- Handlers -------------------------------- */
-function onSettingChange(key: string, value: unknown): void {
-  fields.setValue([props.plugin.id, ...key.split('.')], value)
-}
-
-async function onPathChoose(setting: PluginSettingInfo): Promise<void> {
-  const pluginId = props.plugin.id
-  const previous = getStringSetting(setting.key, setting.default)
-  const problem = await installation.value.choosePath(pluginId, setting.key)
-  if (props.plugin.id !== pluginId) return
-  pathProblems.value = { ...pathProblems.value, [setting.key]: problem }
-  if (problem === '' && previous !== '' && hasManyPaths(setting)) {
-    onSettingChange(setting.key, appendPathEntry(previous, getStringSetting(setting.key, '')))
-  }
-}
-
-function onPathClear(setting: PluginSettingInfo, targetPath?: string): void {
-  pathProblems.value = { ...pathProblems.value, [setting.key]: '' }
-  const current = getStringSetting(setting.key, setting.default)
-  onSettingChange(setting.key, removePathEntry(current, targetPath))
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function hasManyPaths(setting: PluginSettingInfo): boolean {
-  return setting.type === 'file' && setting.multiple === true
-}
-
-function readSetting(key: string): unknown {
-  return installation.value.getSetting([props.plugin.id, ...key.split('.')])
-}
-
-function getValue(key: string): unknown {
-  const setting = props.plugin.settings.find((one) => one.key === key)
-  if (!setting) return readSetting(key)
-  return getValueInForce(setting, readSetting, isKeyRequested)
-}
-
-function getBooleanSetting(key: string, fallback: unknown): boolean {
-  const val = getValue(key) ?? fallback
-  return typeof val === 'boolean' ? val : Boolean(fallback)
-}
-
-function getNumberSetting(key: string, fallback: unknown): number {
-  const val = getValue(key) ?? fallback
-  return typeof val === 'number' ? val : Number(fallback ?? 0)
-}
-
-function getStringSetting(key: string, fallback: unknown): string {
-  const val = getValue(key) ?? fallback
-  return typeof val === 'string' ? val : String(fallback ?? '')
-}
+} = useEnumFields(fieldDeps)
+const {
+  problems: pathProblems,
+  hasManyPaths,
+  choosePath: onPathChoose,
+  clearPath: onPathClear,
+} = usePluginPaths(fieldDeps, fields)
 </script>
 
 <template>
-  <SettingsViews :state="props.state" :plugin="props.plugin" />
+  <SettingsViews :settings="props.settings" :host="props.host" :plugin="props.plugin" />
 
-  <PluginSecretField :state="state" :plugin="plugin" :secrets="getTopSecrets()" />
+  <PluginSecretField
+    :choices="props.choices"
+    :plugin="plugin"
+    :secrets="getTopSecrets()"
+    @open-secrets="emit('open-secrets')"
+  />
 
   <template v-for="setting in getShownSettings()" :key="setting.key">
     <SettingRow
@@ -204,7 +165,12 @@ function getStringSetting(key: string, fallback: unknown): string {
       />
     </SettingRow>
 
-    <PluginSecretField :state="state" :plugin="plugin" :secrets="getSecretsAfter(setting.key)" />
+    <PluginSecretField
+      :choices="props.choices"
+      :plugin="plugin"
+      :secrets="getSecretsAfter(setting.key)"
+      @open-secrets="emit('open-secrets')"
+    />
   </template>
 </template>
 
@@ -215,9 +181,10 @@ function getStringSetting(key: string, fallback: unknown): string {
 }
 
 .settings__slider-container {
+  --gap: 0.75rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--gap);
   inline-size: var(--settings-choice);
 }
 
@@ -227,10 +194,11 @@ function getStringSetting(key: string, fallback: unknown): string {
 }
 
 .settings__slider-value {
+  --min-width: 2.5rem;
   font-size: var(--numen-text-2);
   color: var(--numen-ink);
   font-variant-numeric: tabular-nums;
-  min-inline-size: 2.5rem;
+  min-inline-size: var(--min-width);
   text-align: end;
 }
 
@@ -250,10 +218,11 @@ function getStringSetting(key: string, fallback: unknown): string {
 }
 
 .settings__text-input {
+  --pad: 0.25rem 0.625rem;
   box-sizing: border-box;
   inline-size: var(--settings-choice);
   block-size: var(--numen-action-size);
-  padding: 0.25rem 0.625rem;
+  padding: var(--pad);
   background-color: var(--numen-field-bg);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);

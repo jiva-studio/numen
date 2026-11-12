@@ -1,18 +1,19 @@
-go 1.26.10
+go 1.26.11
 
 use (
 	./apps/desktop
 	./apps/desktop/build/pgonorm
 	./apps/desktop/build/tools
 	./apps/mobile
-	./libs/core
-	./libs/notes
-	./libs/plugin-catalog
-	./libs/plugin-sdk-go
-	./libs/plugin-sdk-go/agent
-	./libs/plugin-sdk-go/host
-	./libs/plugin-sdk-go/wasm
-	./libs/protocol
+	./libs/atomicfile
+	./libs/core/kernel
+	./libs/note
+	./libs/plugin/catalog
+	./libs/plugin/sdk-go
+	./libs/plugin/sdk-go/agent
+	./libs/plugin/sdk-go/host
+	./libs/plugin/sdk-go/wasm
+	./libs/core/protocol
 	./plugins/agents-acp
 	./plugins/agents-antigravity
 	./plugins/agents-claude
@@ -32,16 +33,18 @@ use (
 	./plugins/tools-search-relevance
 	./plugins/tools-updater
 	./plugins/views-flashcards-studio
-	./tools/lint-comments
+	./tools/checks/structure/go
+	./tools/checks/style/comments
 )
 
 replace (
-	github.com/jiva-studio/numen/libs/core v0.0.0 => ./libs/core
-	github.com/jiva-studio/numen/libs/notes v0.0.0 => ./libs/notes
-	github.com/jiva-studio/numen/libs/plugin-catalog v0.0.0 => ./libs/plugin-catalog
-	github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0 => ./libs/plugin-sdk-go
-	github.com/jiva-studio/numen/libs/plugin-sdk-go/agent v0.0.0 => ./libs/plugin-sdk-go/agent
-	github.com/jiva-studio/numen/libs/plugin-sdk-go/host v0.0.0 => ./libs/plugin-sdk-go/host
-	github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm v0.0.0 => ./libs/plugin-sdk-go/wasm
-	github.com/jiva-studio/numen/libs/protocol v0.0.0 => ./libs/protocol
+	github.com/jiva-studio/numen/libs/atomicfile v0.0.0 => ./libs/atomicfile
+	github.com/jiva-studio/numen/libs/core/kernel v0.0.0 => ./libs/core/kernel
+	github.com/jiva-studio/numen/libs/note v0.0.0 => ./libs/note
+	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0 => ./libs/plugin/catalog
+	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0 => ./libs/plugin/sdk-go
+	github.com/jiva-studio/numen/libs/plugin/sdk-go/agent v0.0.0 => ./libs/plugin/sdk-go/agent
+	github.com/jiva-studio/numen/libs/plugin/sdk-go/host v0.0.0 => ./libs/plugin/sdk-go/host
+	github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm v0.0.0 => ./libs/plugin/sdk-go/wasm
+	github.com/jiva-studio/numen/libs/core/protocol v0.0.0 => ./libs/core/protocol
 )

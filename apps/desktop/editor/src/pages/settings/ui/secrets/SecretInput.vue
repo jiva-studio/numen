@@ -7,12 +7,12 @@ import { useTemplateRef } from 'vue'
 
 const model = defineModel<string>({ default: '' })
 
-const input = useTemplateRef<HTMLInputElement>('input')
-
 defineExpose({
   focus: () => input.value?.focus(),
   select: () => input.value?.select(),
 })
+
+const input = useTemplateRef<HTMLInputElement>('input')
 </script>
 
 <template>
@@ -21,11 +21,12 @@ defineExpose({
 
 <style scoped>
 .secret-input {
+  --pad: 0.25rem 0.625rem;
   box-sizing: border-box;
   inline-size: 100%;
   min-inline-size: 0;
   block-size: var(--numen-action-size);
-  padding: 0.25rem 0.625rem;
+  padding: var(--pad);
   background-color: var(--numen-field-bg);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);

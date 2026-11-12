@@ -4,7 +4,10 @@
 import { defineComponent, h } from 'vue'
 import { requests } from './requests'
 
-const createStub = (name: string, answers: Record<string, unknown>) =>
+const createStub = (
+  name: string,
+  answers: Record<string, (...args: never[]) => boolean | number | undefined>,
+) =>
   defineComponent({
     name,
     setup: (_, { expose }) => {
@@ -40,3 +43,6 @@ export const book = createStub('Book', {
     return event.key.startsWith('Arrow')
   },
 })
+
+/** A component that draws nothing, for a registration whose component a test never mounts. */
+export const blank = createStub('Blank', {})

@@ -5,39 +5,24 @@
  * the vaults this installation holds, and `folders` what each folder holds.
  */
 import type { Entry } from '@/entities/file'
-import type { OpenTabs, Tab } from '@/entities/tab'
+import type { Tab } from '@/entities/tab'
 import type { PluginSettingInfo } from '@/entities/settings'
+import type { JsonObject, JsonValue } from '@/shared/api/json'
 
 interface MockVaultState {
   isReady: boolean
   error: string
   detachError: string
   opening: string | null
-  names: {
-    path: string
-    title: string
-    heading: string
-    line: number
-    at: []
-    type: string
-  }[]
-  passages: {
-    path: string
-    title: string
-    isNote: boolean
-    text: string
-    start: number
-    length: number
-    line: number
-    at: []
-    type: string
-    selector: Record<string, unknown> | null
-  }[]
-  savedTabs: OpenTabs
+  names: ReturnType<typeof nameAnswer>[]
+  passages: (ReturnType<typeof passageAnswer> | ReturnType<typeof sourceAnswer>)[]
+  savedTabs: { readonly tabs: readonly Tab[]; readonly activeId: string }
   detachedTab: Tab | null
   types: Record<string, string>
+  tabKind: string
   embedded: number
   listable: boolean
+  isOpenRefused: boolean
   writeError: string
   app: readonly PluginSettingInfo[]
   applied: string
@@ -63,10 +48,13 @@ export const mockVaultState: MockVaultState = {
    * entry is an ordinary note.
    */
   types: {},
+  /** The kind of tab a plugin registered for the notes, or none. */
+  tabKind: '',
   /** How many of the spans the index holds carry a vector. */
   embedded: 0,
   /** Whether the list of vaults answers at all. */
   listable: true,
+  isOpenRefused: false,
   /** Why the settings were not written, which is a size outside its bounds. */
   writeError: '',
   app: [],
@@ -79,36 +67,6 @@ export const mockVaultState: MockVaultState = {
 export const mockVaultList = {
   vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }],
   showing: 'physics',
-}
-
-export { mockVaultState as vaultState, mockVaultList as listed }
-
-/** One command a plugin declares, as the list the core answers carries it. */
-interface DeclaredAnswer {
-  pluginId: string
-  id: string
-  title: string
-  icon?: string
-  scope?: 'note'
-  contentTypes: string[]
-  extensions: string[]
-  arguments: []
-}
-
-/** One entry a plugin places in a slot, as the list the core answers carries it. */
-interface PlacementAnswer {
-  pluginId: string
-  slot: string
-  command?: string
-  view?: string
-  group?: string
-  order?: number
-}
-
-/** What the plugins declare and place. */
-export const declared = {
-  commands: [] as DeclaredAnswer[],
-  slots: [] as PlacementAnswer[],
 }
 
 /** What each folder of the vault holds, as a listing answers it. */
@@ -133,7 +91,11 @@ export const folders: Record<string, readonly Entry[]> = {
 /** Whether the file at a path is a note, and which type, as the vault answers it. */
 export const getFileKind = (path: string) => {
   if (!/\.(md|note)$/u.test(path)) return { isNote: false, type: 'note' as const }
-  return { isNote: true, type: mockVaultState.types[path] ?? ('note' as const) }
+  return {
+    isNote: true,
+    type: mockVaultState.types[path] ?? ('note' as const),
+    tabKind: mockVaultState.tabKind,
+  }
 }
 
 /** A stream that stays open, so nothing the window follows ever ends. */
@@ -171,12 +133,39 @@ export const outside = (() => {
   }
 })()
 
+/** The changes to the files of the vault that the core reports, and the stream the window receives them on. */
+export const changed = (() => {
+  interface Change {
+    paths: string[]
+    renamed: { from: string; to: string }[]
+  }
+  const queue: Change[] = []
+  let wake: (() => void) | null = null
+  async function* stream() {
+    for (;;) {
+      while (queue.length > 0) yield { reload: false, versionPaths: [], ...queue.shift()! }
+      await new Promise<void>((woken) => {
+        wake = woken
+      })
+    }
+  }
+  return {
+    report: (change: Change) => {
+      queue.push(change)
+      wake?.()
+      wake = null
+    },
+    forget: () => queue.splice(0),
+    stream,
+  }
+})()
+
 /**
  * The vault's creation of a note of a plugin type: the file is named after the
  * title, and the vault chooses the extension, not the caller. The extension is
  * not markdown, so a window that builds the path itself does not match it.
  */
-export const maker = (() => {
+const maker = (() => {
   const filed = new Set<string>()
   /** Whether the vault is reachable. */
   let reached = true
@@ -199,37 +188,36 @@ export const maker = (() => {
   }
 })()
 
-/** One name the vault answers a search with, of a note of some kind. */
+/** One name the vault answers a search with, of a note of some kind, as the core sends it. */
 export const nameAnswer = (path: string, title: string, type: string = 'note') => ({
-  path,
-  title,
-  heading: '',
-  line: -1,
-  at: [] as [],
+  note: { path, title },
+  ranges: [] as [],
   type,
   ...(type === 'note' ? {} : { tabKind: type }),
 })
 
-/** One passage the search answers with, read out of a note of some kind. */
+/** One passage the search answers with, read out of a note of some kind, as the core sends it. */
 export const passageAnswer = (path: string, title: string, type: string = 'note') => ({
   path,
-  title,
-  isNote: true,
+  note: { path, title },
   text: 'what it says',
-  start: 0,
-  length: 4,
+  range: { start: 0, end: 4 },
   line: 3,
-  at: [] as [],
+  ranges: [] as [],
   type,
   ...(type === 'note' ? {} : { tabKind: type }),
-  selector: null as Record<string, unknown> | null,
+  selector: '',
 })
 
 /** One passage read out of a file that is no note, at a place its selector names. */
-export const sourceAnswer = (path: string, selector: Record<string, unknown>) => ({
-  ...passageAnswer(path, ''),
-  isNote: false,
-  selector,
+export const sourceAnswer = (path: string, selector: JsonObject) => ({
+  path,
+  text: 'what it says',
+  range: { start: 0, end: 4 },
+  line: 3,
+  ranges: [] as [],
+  type: 'note',
+  selector: JSON.stringify(selector),
 })
 
 /** Everything answered back where it opens, which is where every test begins. */
@@ -241,18 +229,19 @@ export const forgetAnswers = () => {
   mockVaultState.savedTabs = { tabs: [], activeId: '' }
   mockVaultState.detachedTab = null
   mockVaultState.types = {}
+  mockVaultState.tabKind = ''
   mockVaultState.embedded = 0
   mockVaultState.listable = true
+  mockVaultState.isOpenRefused = false
   mockVaultState.writeError = ''
   mockVaultState.app = []
   mockVaultState.detachError = ''
   mockVaultState.applied = 'preset:numen'
   mockVaultState.mode = 'system'
   mockVaultState.sizes = { interfaceScale: 1, textScale: 1 }
-  declared.commands = []
-  declared.slots = []
   maker.forget()
   outside.forget()
+  changed.forget()
   mockVaultList.vaults = [
     { id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false },
   ]
@@ -267,7 +256,7 @@ const THEME_OPTIONS = [
 
 /** A declared setting with the value in force and the options the mocked application resolves. */
 export const getSettingInForce = (setting: PluginSettingInfo): PluginSettingInfo => {
-  const values: Record<string, unknown> = {
+  const values: Record<string, JsonValue> = {
     'appearance.theme': mockVaultState.applied,
     'appearance.mode': mockVaultState.mode,
     'appearance.interfaceScale': mockVaultState.sizes.interfaceScale,
@@ -282,7 +271,7 @@ export const getSettingInForce = (setting: PluginSettingInfo): PluginSettingInfo
 }
 
 /** The state of the mocked application after a setting was written. */
-export const keepSetting = (path: string, value: unknown): void => {
+export const keepSetting = (path: string, value: JsonValue): void => {
   if (path === 'app.appearance.theme') mockVaultState.applied = String(value)
   if (path === 'app.appearance.mode') mockVaultState.mode = value as typeof mockVaultState.mode
   if (path === 'app.appearance.interfaceScale') {

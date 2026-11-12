@@ -1,26 +1,26 @@
 # Backend (Go) Coding Style & Guidelines
 
-The standards for Go code in numen: `libs/core`, `libs/protocol`, `apps/desktop`, `apps/mobile`. The architecture these serve is in [`architecture.md`](./architecture.md).
+The standards for Go code in numen: `libs/core/kernel`, `libs/core/protocol`, `apps/desktop`, `apps/mobile`. The architecture these serve is in [`architecture.md`](./architecture.md).
 
 ---
 
 ## 1. Module structure
 
 ```text
-libs/core/            # the hexagon — its own module
+libs/core/kernel/            # the hexagon — its own module
 ├── port/             # the interfaces use cases require
 ├── usecase/          # one business scenario each
 ├── adapter/          # cli, index, settings, window
 ├── container/        # the composition root
 └── internal/         # not nameable from outside the module
-libs/notes/           # the domain: entities, value objects, identifiers, invariants
-libs/protocol/        # generated from the schema — never hand-edited
+libs/note/           # the domain: entities, value objects, identifiers, invariants
+libs/core/protocol/        # generated from the schema — never hand-edited
 apps/desktop/         # the window's host: cmd/ and internal/
 ```
 
 `go.work` joins the modules for development. Each module is built and tested from its own directory.
 
-**Identifiers live in `libs/notes/domain/`**: `NoteID`, `VaultID`, `CardFaceID`. Any field named `*Time` in `domain/` or `port/` is a `time.Time` — `MTime` on raw file metadata is the one unix-timestamp exception.
+**Identifiers live in `libs/note/domain/`**: `NoteID`, `VaultID`, `CardFaceID`. Any field named `*Time` in `domain/` or `port/` is a `time.Time` — `MTime` on raw file metadata is the one unix-timestamp exception.
 
 ---
 
@@ -45,13 +45,13 @@ apps/desktop/         # the window's host: cmd/ and internal/
 ### Interfaces
 
 - Declared by the code that needs them, not next to the code that satisfies them.
-- Small — one to three methods. An interface with one implementation and eight methods is a struct with an interface name that overstates what it does.
+- Small: at most five methods (the lint limit) and three where practical. An interface with one implementation and eight methods is a struct with an interface name that overstates what it does.
 - Accepted as parameters, returned as concrete types.
 - Not introduced "for testing" when the concrete type is already testable.
 
 ### Constructors
 
-- Sealed `New*` constructors that validate every required dependency.
+- `New*` constructors take their dependencies and return the concrete type. They do not validate them and return no error; a dependency that may be absent is an optional field or a separate type. No `With*` method changes a value after construction.
 - `New…` for constructors, `make` for built-in allocation. Both are idiomatic here.
 - No package-level mutable state, and no `init()` doing work beyond building a constant table.
 
@@ -76,7 +76,7 @@ apps/desktop/         # the window's host: cmd/ and internal/
 ## 3. Naming and API surface
 
 - No stutter: `filesystem.VaultReader`, not `filesystem.FilesystemVaultReader`.
-- Functions and methods are imperative verb phrases (`ReadVault`, `WriteNote`) or predicates (`IsExpired`, `HasTranscript`). Never third-person singular, never a past participle, never a literary metaphor where a standard engineering term exists.
+- Functions and methods are imperative verb phrases (`ReadVault`, `WriteNote`) or predicates (`IsExpired`, `HasTranscript`). Never third-person singular, never a past participle, never a literary metaphor where a standard engineering term exists. A verb with one bare participle or adjective and no object (`getActive`, `getEmitted`, `createResponded`) says nothing about what it returns: name the object (`getActiveTab`, `getEmittedEvents`) or use a predicate. The names check refuses it.
 - Variables and parameters must use standard engineering nouns. Never use irregular past participles (`held`, `said`, `asked`, `written`, `done`, `kept`) or bare prepositions (`beside`, `under`, `behind`) as variable names. See Rule 13 of `AGENTS.md`.
 - Exported identifiers documented, starting with the identifier's own name.
 - `internal/` by default; exported only what something outside actually uses.
@@ -107,9 +107,9 @@ A comment describes the active behavior, invariant, or constraint. It does not a
 Per module, from its own directory:
 
 ```bash
-cd libs/core     && gofmt -l . && go vet ./... && go test ./...
+cd libs/core/kernel     && gofmt -l . && go vet ./... && go test ./...
 cd apps/desktop  && gofmt -l ./cmd ./internal && go vet ./... && go test ./...
-cd libs/protocol && buf lint && npm run generate
+cd libs/core/protocol && buf lint && npm run generate
 ```
 
 - The schema is never hand-edited. Change the `.proto`, run `make generate`, commit what comes out; `make generate-check` fails when the two drift.

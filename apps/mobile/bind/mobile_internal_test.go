@@ -23,7 +23,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 func startIn(t *testing.T, core *Core, dir string) int {
@@ -254,7 +254,7 @@ func TestStart_InstallsThemesForWindow(t *testing.T) {
 	startIn(t, core, t.TempDir())
 	core.mu.Lock()
 	defer core.mu.Unlock()
-	if core.running.opened.Services.Themes == nil {
+	if core.running.opened.GetThemes() == nil {
 		t.Error("the installation holds no themes")
 	}
 }

@@ -1,0 +1,35 @@
+/**
+ * What a deck tab does to the deck it holds, handed on to be stored.
+ */
+import { describe, expect, it, vi } from 'vitest'
+import { dropCard, type BufferCard, type BufferDeck } from '../../lib/deck/deck'
+import { createDeckTabActions } from './deckTabActions'
+
+const card = (id: string): BufferCard => ({
+  id,
+  cardId: '',
+  section: null,
+  heading: id,
+  cardModelLink: 'Animal',
+  cardModelPath: 'Animal.md',
+  preamble: '',
+  values: [],
+})
+
+const DECK: BufferDeck = { preamble: '', cards: [card('a'), card('b')], sections: [], tail: '' }
+
+describe('a card moved', () => {
+  it('is stored as the deck with the card moved to where it was dropped', () => {
+    const updateDeck = vi.fn<(id: string, deck: BufferDeck) => void>()
+    const actions = createDeckTabActions('tab', {
+      getDeck: () => DECK,
+      updateDeck,
+      getCardModelChoices: () => [],
+    })
+
+    actions.moveCard('a', null)
+
+    expect(updateDeck).toHaveBeenCalledWith('tab', dropCard(DECK, 'a', null))
+    expect(updateDeck.mock.calls[0]?.[1].cards.map((one) => one.id)).toStrictEqual(['b', 'a'])
+  })
+})

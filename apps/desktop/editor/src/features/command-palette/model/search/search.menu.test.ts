@@ -1,9 +1,8 @@
 /** The menu of a search result as the palette draws it and answers a choice from it. */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import type { SlotCommand, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
-import { COMMAND, ROW } from '@/shared/commandIds'
-import type { CommandTarget } from '../../types'
+import type { SlotCommand, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
+import { COMMAND, ROW, type CommandTarget } from '@/shared/model/command'
 import { useSearch, type NameMatch, type Passage, type SearchDeps, type Words } from './search'
 
 const WORDS: Words = {

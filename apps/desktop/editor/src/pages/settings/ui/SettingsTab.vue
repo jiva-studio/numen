@@ -3,86 +3,65 @@
  * The settings tab: every numen.json setting the user can change, grouped by
  * the part of the application it governs.
  */
-import { computed, ref, watch } from 'vue'
 import type { SettingsTabState } from '../types'
-import type { PluginInfo } from '@/entities/settings'
+import { useSettingsTab } from '../model/useSettingsTab'
 import SystemDetail from './SystemDetail.vue'
 import SecretsPage from './secrets/SecretsPage.vue'
-import { createManagedFromEntries } from '@/shared/pluginListing'
 import { AvailablePluginDetail, PluginsList, PluginDetail } from './plugins'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: SettingsTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const initialPluginId = props.state.initialPluginId
-const selectedPluginId = ref<string | null>(initialPluginId?.value ?? null)
-
-watch(
-  () => initialPluginId?.value,
-  (newId) => {
-    if (newId !== undefined) {
-      selectedPluginId.value = newId
-    }
-  },
-)
-
-const plugins = computed<readonly PluginInfo[]>(() => props.state.installation.plugins?.value ?? [])
-const uninstalled = computed(() =>
-  createManagedFromEntries([], props.state.installation.catalog?.value ?? []).find(
-    (one) => one.id === selectedPluginId.value,
-  ),
-)
-/**
- * The plugin of the open page, as the last read that match it gave it. A read that does not list
- * it, or lists nothing, does not close the page.
- */
-let lastSelected: PluginInfo | undefined
-const selectedPlugin = computed<PluginInfo | undefined>(() => {
-  const match = plugins.value.find((one) => one.id === selectedPluginId.value)
-  if (match) lastSelected = match
-  return match ?? (lastSelected?.id === selectedPluginId.value ? lastSelected : undefined)
-})
-
-/* -------------------------------- Handlers -------------------------------- */
-function onSelectPlugin(pluginId: string): void {
-  selectedPluginId.value = pluginId
-  if (initialPluginId) {
-    initialPluginId.value = pluginId
-  }
-}
-
-function onBack(): void {
-  selectedPluginId.value = null
-  if (initialPluginId) {
-    initialPluginId.value = null
-  }
-}
+const { installation, initialSearchQuery } = props.state
+const {
+  selectedPluginId,
+  plugins,
+  uninstalled,
+  selectedPlugin,
+  selectPlugin,
+  updateQuery,
+  goBack,
+} = useSettingsTab(props.state)
 </script>
 
 <template>
   <div class="settings">
     <div class="settings__page">
       <div class="settings__main">
-        <SystemDetail v-if="selectedPluginId === 'system'" :state="props.state" @back="onBack" />
+        <SystemDetail
+          v-if="selectedPluginId === 'system'"
+          :settings="installation.settings"
+          :manager="installation.plugin"
+          :choices="installation.secrets"
+          @back="goBack"
+          @open-secrets="selectPlugin('secrets')"
+        />
         <SecretsPage
           v-else-if="selectedPluginId === 'secrets'"
-          :state="props.state"
-          @back="onBack"
+          :secrets="installation.secrets"
+          :plugins="plugins"
+          @back="goBack"
         />
         <PluginDetail
           v-else-if="selectedPlugin"
           :key="selectedPlugin.id"
-          :state="props.state"
+          :settings="installation.settings"
+          :manager="installation.plugin"
+          :choices="installation.secrets"
           :plugin="selectedPlugin"
-          @back="onBack"
+          @back="goBack"
+          @open-secrets="selectPlugin('secrets')"
         />
-        <AvailablePluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="onBack" />
+        <AvailablePluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="goBack" />
         <PluginsList
           v-else
-          :state="props.state"
+          :settings="installation.settings"
+          :catalog="installation.plugin.catalog.value"
+          :query="initialSearchQuery"
           :plugins="plugins"
-          @select-plugin="onSelectPlugin"
+          @select-plugin="selectPlugin"
+          @update:query="updateQuery"
         />
       </div>
     </div>

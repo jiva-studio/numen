@@ -12,7 +12,7 @@ export interface Deferred<T> {
 
 export function createDeferred<T>(): Deferred<T> {
   let answer!: (value: T) => void
-  let fail!: (error: unknown) => void
+  let fail!: (error: Error) => void
   const promise = new Promise<T>((resolve, reject) => {
     answer = resolve
     fail = reject

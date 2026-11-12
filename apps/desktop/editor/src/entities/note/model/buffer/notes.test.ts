@@ -2,13 +2,19 @@ import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from './results'
 import { computed, watch } from 'vue'
 
-import { openNotes, type Notes } from './notes'
+import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
+import { openNotes as openNotesOn, type OpenNotesOptions } from './notes'
+
+const openNotes = (core: Partial<Notes>, how?: OpenNotesOptions) => {
+  answerNotes(core)
+  return openNotesOn(how)
+}
 
 function rethrow(error: unknown): never {
   throw error
 }
 
-const statFile = (body: string): string => `at:${body}`
+const statFile = (body: string): string => `1 1 at:${body}`
 
 function fake(overrides: Partial<Notes> = {}) {
   const files = new Map<string, string>()
@@ -39,8 +45,11 @@ function fake(overrides: Partial<Notes> = {}) {
   return { core, files, wrote }
 }
 
+/** The timer of the machine, kept from the fake timers some tests install. */
+const turn = globalThis.setTimeout
+
 const settle = async () => {
-  for (let i = 0; i < 8; i++) await Promise.resolve()
+  for (let i = 0; i < 4; i++) await new Promise((resolve) => turn(resolve, 0))
 }
 
 const quick = { quiet: 1, bound: 5 }
@@ -235,7 +244,68 @@ describe('closing', () => {
     await notes.flush()
 
     expect(wrote.map((w) => w.path).sort()).toEqual(['a.md', 'b.md'])
-    expect(notes.getOpenIds()).toEqual([])
+    expect(notes.getUnsavedTabs()).toEqual([])
+  })
+
+  it('by a flush names a note whose text the vault would not take', async () => {
+    const { core, files } = fake({ write: async () => asFailure('tooLarge') })
+    files.set('a.md', 'a')
+    files.set('b.md', 'b')
+    const notes = openNotes(core, { limits: quick })
+    notes.open('a.md')
+    notes.open('b.md')
+    await settle()
+
+    notes.setBody('a.md', 'a changed')
+
+    await notes.flush()
+
+    expect(notes.getUnsavedTabs()).toEqual(['a.md'])
+    expect(notes.getOpenNote('a.md').body).toBe('a changed')
+  })
+
+  it('by a flush does not discard the text on a second flush', async () => {
+    const { core, files } = fake({ write: async () => asFailure('unreachable') })
+    files.set('a.md', 'a')
+    const notes = openNotes(core, { limits: quick })
+    notes.open('a.md')
+    await settle()
+    notes.setBody('a.md', 'a changed')
+    await notes.flush()
+
+    await notes.flush()
+
+    expect(notes.getUnsavedTabs()).toEqual(['a.md'])
+    expect(notes.has('a.md')).toBe(true)
+  })
+
+  it('returns the same result for two closes of one note', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'one')
+    const notes = openNotes(core, { limits: quick })
+    notes.open('Heat.md')
+    await settle()
+    notes.setBody('Heat.md', 'one two')
+
+    const answers = await Promise.all([notes.close('Heat.md'), notes.close('Heat.md')])
+
+    expect(answers).toEqual([true, true])
+  })
+
+  it('answers a close whose write threw', async () => {
+    const { core, files } = fake({
+      write: async () => {
+        throw new Error('down')
+      },
+    })
+    files.set('Heat.md', 'one')
+    const notes = openNotes(core, { limits: quick })
+    notes.open('Heat.md')
+    await settle()
+    notes.setBody('Heat.md', 'one two')
+
+    expect(await notes.close('Heat.md')).toBe(false)
+    expect(notes.getOpenNote('Heat.md').state).toBe('stuck')
   })
 })
 
@@ -738,7 +808,7 @@ describe('an id the store does not hold', () => {
       state: 'loading',
       error: null,
     })
-    expect(notes.getFilePath('ghost.md')).toBe('')
+    expect(notes.getRevision('ghost.md')).toBe('')
     expect(notes.getErrorMessage('ghost.md')).toBe('')
   })
 })
@@ -858,7 +928,7 @@ describe('closing a note', () => {
         return asValue({ body: '', at: statFile(body) })
       },
     }
-    const notes = openNotes(core, { limits: quick })
+    const notes = openNotes(core, { limits: { quiet: 10_000, bound: 50_000 } })
     notes.open('Heat.md')
     await settle()
     notes.setBody('Heat.md', 'one two')

@@ -12,13 +12,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/wasm"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/document"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/launch"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
 const (
@@ -30,17 +32,17 @@ const (
 	workDeadline = 5 * time.Minute
 )
 
-// blockingRecogniser reads pages as the mock does, but each page waits until release is closed. The
+// blockingRecognizer reads pages as the mock does, but each page waits until release is closed. The
 // first page it reads closes startCh.
-type blockingRecogniser struct {
-	engine.MockRecogniser
+type blockingRecognizer struct {
+	engine.MockRecognizer
 	startCh   chan struct{}
 	startOnce *sync.Once
 	release   chan struct{}
 	failure   error
 }
 
-func (r blockingRecogniser) Recognize(ctx context.Context, page image.Image) ([]recognition.Block, error) {
+func (r blockingRecognizer) Recognize(ctx context.Context, page image.Image) ([]recognition.Block, error) {
 	r.startOnce.Do(func() { close(r.startCh) })
 	select {
 	case <-r.release:
@@ -50,7 +52,7 @@ func (r blockingRecogniser) Recognize(ctx context.Context, page image.Image) ([]
 	if r.failure != nil {
 		return nil, r.failure
 	}
-	return r.MockRecogniser.Recognize(ctx, page)
+	return r.MockRecognizer.Recognize(ctx, page)
 }
 
 // recordingQueue is the queue in memory that sends the id of every task that ends on doneCh, and
@@ -94,6 +96,14 @@ func (q recordingQueue) ReportTask(ctx context.Context, task host.Task) error {
 	return q.Queue.ReportTask(ctx, task)
 }
 
+func foldersOf(store *hosttest.Store) func(domain.VaultID) recognition.Folder {
+	return func(id domain.VaultID) recognition.Folder { return store.With(id) }
+}
+
+func textsOf(texts *hosttest.Texts) func(domain.VaultID) host.TextVersions {
+	return func(id domain.VaultID) host.TextVersions { return texts.With(id) }
+}
+
 // toolFixture is the recognition tool over the open vault Physics with the scan, and the vault
 // Chemistry with a scan of its own.
 type toolFixture struct {
@@ -102,11 +112,12 @@ type toolFixture struct {
 	chemistry    *hosttest.Vault
 	chemTexts    *hosttest.Texts
 	queue        recordingQueue
-	recogniser   blockingRecogniser
+	recognizer   blockingRecognizer
 	openCount    atomic.Int32
 	recognitions *recognition.Recognition
-	tools        *Tools
+	launcher     *launch.Launcher
 	registry     *tools.Registry
+	ended        map[string]bool
 }
 
 // chemistryScan is the scan stored only in the vault Chemistry.
@@ -114,7 +125,7 @@ const chemistryScan = "papers/titration.pdf"
 
 func newToolFixture(t *testing.T) *toolFixture {
 	t.Helper()
-	raw, err := os.ReadFile("../document/testdata/scan.pdf")
+	raw, err := os.ReadFile("../internal/adapter/document/testdata/scan.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,25 +138,24 @@ func newToolFixture(t *testing.T) *toolFixture {
 	chemistry := hosttest.New("Chemistry")
 	vault.Beside(chemistry)
 	chemistry.File(chemistryScan, string(raw))
-	chemTexts, isTexts := texts.With("Chemistry").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of Chemistry are not hosttest texts")
-	}
+	chemTexts := texts.With("Chemistry")
 	chemTexts.SetStore(PluginID, chemistry.Store())
 	chemTexts.File(chemistryScan, raw)
 
 	s := &toolFixture{
+		ended: map[string]bool{},
 		vault: vault, texts: texts, chemistry: chemistry, chemTexts: chemTexts,
 		queue: recordingQueue{Queue: hosttest.NewQueue(), doneCh: make(chan string, 64), calls: &queueCalls{}},
-		recogniser: blockingRecogniser{
+		recognizer: blockingRecognizer{
 			startCh: make(chan struct{}), startOnce: &sync.Once{}, release: make(chan struct{}),
 		},
 	}
+	documents := document.NewReader()
 	recognitions, err := recognition.New(
-		recognition.Host{Vault: vault, Store: vault.Store(), Texts: texts, Queue: s.queue},
-		func(context.Context) (recognition.Recogniser, error) {
+		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: foldersOf(vault.Store()), Texts: textsOf(texts), Queue: s.queue, Documents: documents},
+		func(context.Context) (recognition.Recognizer, error) {
 			s.openCount.Add(1)
-			return s.recogniser, nil
+			return s.recognizer, nil
 		},
 	)
 	if err != nil {
@@ -158,12 +168,12 @@ func newToolFixture(t *testing.T) *toolFixture {
 				t.Error(err)
 			}
 		})
-		recognitions.SetCompilationCache(compilation)
+		documents.SetCompilationCache(compilation)
 	}
 	s.recognitions = recognitions
-	s.tools = NewTools(recognitions)
-	t.Cleanup(s.tools.Close)
-	s.registry, err = s.tools.Registry()
+	s.launcher = launch.New(recognitions, PluginID)
+	t.Cleanup(s.launcher.Close)
+	s.registry, err = newToolRegistry(s.launcher)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,24 +218,22 @@ func (s *toolFixture) recognize(t *testing.T, vault, path string) RecognitionCre
 	return out
 }
 
-func (s *toolFixture) waitStarted(t *testing.T) {
+func (s *toolFixture) waitUntilStarted(t *testing.T) {
 	t.Helper()
 	select {
-	case <-s.recogniser.startCh:
+	case <-s.recognizer.startCh:
 	case <-time.After(workDeadline):
 		t.Fatalf("no page was read within %v; tasks %+v", workDeadline, s.queue.ListTasks())
 	}
 }
 
-func (s *toolFixture) waitFinished(t *testing.T, id string) {
+func (s *toolFixture) waitUntilFinished(t *testing.T, id string) {
 	t.Helper()
 	deadline := time.After(workDeadline)
-	for {
+	for !s.ended[id] {
 		select {
 		case got := <-s.queue.doneCh:
-			if got == id {
-				return
-			}
+			s.ended[got] = true
 		case <-deadline:
 			t.Fatalf("the task %s did not end within %v; tasks %+v", id, workDeadline, s.queue.ListTasks())
 		}
@@ -273,7 +281,7 @@ func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 	if out != want {
 		t.Fatalf("recognition_create returned %+v, want %+v", out, want)
 	}
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 	if tasks := s.queue.ListTasks(); !isListed(tasks, want.TaskID) {
 		t.Errorf("the tasks %+v do not list %s while the recognition runs", tasks, want.TaskID)
 	}
@@ -281,19 +289,19 @@ func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 		t.Error("the text version exists before the recognition ended")
 	}
 
-	close(s.recogniser.release)
-	s.waitFinished(t, want.TaskID)
-	s.tools.Close()
+	close(s.recognizer.release)
+	s.waitUntilFinished(t, want.TaskID)
+	s.launcher.Close()
 
 	if !hasRecognition(t, s.texts, scanPath) {
 		t.Error("the recognition ended and the scan has no text version")
 	}
 }
 
-func TestRecognitionCreateOfAScanBeingRecognisedReportsItRunning(t *testing.T) {
+func TestRecognitionCreateOfAScanBeingRecognizedReportsItRunning(t *testing.T) {
 	s := newToolFixture(t)
 	first := s.recognize(t, "Physics", scanPath)
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 
 	second := s.recognize(t, "Physics", scanPath)
 
@@ -301,8 +309,8 @@ func TestRecognitionCreateOfAScanBeingRecognisedReportsItRunning(t *testing.T) {
 	if second != want {
 		t.Errorf("the second call returned %+v, want %+v", second, want)
 	}
-	close(s.recogniser.release)
-	s.waitFinished(t, first.TaskID)
+	close(s.recognizer.release)
+	s.waitUntilFinished(t, first.TaskID)
 }
 
 func TestRecognitionCreateRejectsAFileNotInTheVault(t *testing.T) {
@@ -329,7 +337,7 @@ func (s *toolFixture) putRecognition(t *testing.T) domain.TextVersion {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const file = "scan-recognised.jsonl"
+	const file = "scan-recognized.jsonl"
 	segments := []domain.TextSegment{{Text: "Ohm measured the current through a copper wire.\n"}}
 	if err := host.WriteText(t.Context(), s.vault.Store(), file, segments); err != nil {
 		t.Fatal(err)
@@ -353,8 +361,8 @@ func (s *toolFixture) putRecognition(t *testing.T) domain.TextVersion {
 
 func (s *toolFixture) checkNoRun(t *testing.T) {
 	t.Helper()
-	close(s.recogniser.release)
-	s.tools.Close()
+	close(s.recognizer.release)
+	s.launcher.Close()
 	if reported, turns := s.queue.calls.getCounts(); reported != 0 || turns != 0 {
 		t.Errorf("a run reported %d tasks and requested %d turns, want none", reported, turns)
 	}
@@ -362,11 +370,11 @@ func (s *toolFixture) checkNoRun(t *testing.T) {
 		t.Errorf("%d tasks ended, want none", ended)
 	}
 	if count := s.openCount.Load(); count != 0 {
-		t.Errorf("the recogniser was opened %d times, want never", count)
+		t.Errorf("the recognizer was opened %d times, want never", count)
 	}
 }
 
-func TestRecognitionCreateOfRecognisedScanReturnsItsVersion(t *testing.T) {
+func TestRecognitionCreateOfRecognizedScanReturnsItsVersion(t *testing.T) {
 	s := newToolFixture(t)
 	version := s.putRecognition(t)
 
@@ -383,7 +391,7 @@ func TestRecognitionCreateOfRecognisedScanReturnsItsVersion(t *testing.T) {
 
 func TestRecognitionCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 	s := newToolFixture(t)
-	close(s.recogniser.release)
+	close(s.recognizer.release)
 	if _, err := s.recognitions.Recognize(t.Context(), recognition.Request{
 		Vault: "Physics", Path: scanPath,
 	}); err != nil {
@@ -472,8 +480,8 @@ func TestRecognitionCreateOfALiveProofreadOfTheScanStartsTheRun(t *testing.T) {
 	if out != want {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)
 	}
-	close(s.recogniser.release)
-	s.tools.Close()
+	close(s.recognizer.release)
+	s.launcher.Close()
 }
 
 func TestRecognitionCreateRejectsACallWithoutAVault(t *testing.T) {
@@ -488,7 +496,7 @@ func TestRecognitionCreateRejectsACallWithoutAVault(t *testing.T) {
 	}
 }
 
-func TestRecognitionCreateRecognisesInTheNamedVault(t *testing.T) {
+func TestRecognitionCreateRecognizesInTheNamedVault(t *testing.T) {
 	s := newToolFixture(t)
 
 	inShown := invokeAtOnce(t, s.registry, tools.Call{
@@ -502,9 +510,9 @@ func TestRecognitionCreateRecognisesInTheNamedVault(t *testing.T) {
 	if out.State != "started" || out.TaskID != "recognize:Chemistry:"+chemistryScan {
 		t.Fatalf("recognition_create in Chemistry returned %+v", out)
 	}
-	close(s.recogniser.release)
-	s.waitFinished(t, out.TaskID)
-	s.tools.Close()
+	close(s.recognizer.release)
+	s.waitUntilFinished(t, out.TaskID)
+	s.launcher.Close()
 
 	if !hasRecognition(t, s.chemTexts, chemistryScan) {
 		t.Error("Chemistry has no text version of its scan")
@@ -527,7 +535,7 @@ func TestRecognitionCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
 	if want := (RecognitionCreateOutput{TaskID: "recognize:Physics:" + scanPath, Path: scanPath, State: "started"}); first != want {
 		t.Fatalf("first call returned %+v, want %+v", first, want)
 	}
-	s.waitStarted(t)
+	s.waitUntilStarted(t)
 
 	again := s.recognize(t, "Physics", scanPath)
 	if want := (RecognitionCreateOutput{TaskID: first.TaskID, Path: scanPath, State: "running"}); again != want {
@@ -550,10 +558,10 @@ func TestRecognitionCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
 		t.Errorf("tasks %+v, want both %s and %s", tasks, first.TaskID, second.TaskID)
 	}
 
-	close(s.recogniser.release)
-	s.waitFinished(t, first.TaskID)
-	s.waitFinished(t, second.TaskID)
-	s.tools.Close()
+	close(s.recognizer.release)
+	s.waitUntilFinished(t, first.TaskID)
+	s.waitUntilFinished(t, second.TaskID)
+	s.launcher.Close()
 
 	if !hasRecognition(t, s.texts, scanPath) || !hasRecognition(t, s.chemTexts, scanPath) {
 		t.Error("one of the two vaults has no recognition after both runs ended")
@@ -610,11 +618,11 @@ func (c *readCounts) getCounts() (scan, versions int) {
 
 // countingVault is the vault whose file reads are counted as reads of the scan.
 type countingVault struct {
-	host.Vault
+	*hosttest.Vault
 	counts *readCounts
 }
 
-func (v countingVault) With(id domain.VaultID) host.Vault {
+func (v countingVault) With(id domain.VaultID) countingVault {
 	return countingVault{Vault: v.Vault.With(id), counts: v.counts}
 }
 
@@ -625,61 +633,45 @@ func (v countingVault) Read(ctx context.Context, path string) ([]byte, domain.Fi
 
 // countingStore is the plugin's folder, which has its version files, with each read counted.
 type countingStore struct {
-	host.Store
+	recognition.Folder
 	counts *readCounts
-}
-
-func (s countingStore) With(id domain.VaultID) host.Store {
-	return countingStore{Store: s.Store.With(id), counts: s.counts}
 }
 
 func (s countingStore) Read(ctx context.Context, name string) ([]byte, error) {
 	s.counts.addVersion()
-	return s.Store.Read(ctx, name)
-}
-
-// countingTexts is the host's texts with each read of a version's contents counted.
-type countingTexts struct {
-	host.Texts
-	counts *readCounts
-}
-
-func (t countingTexts) With(id domain.VaultID) host.Texts {
-	return countingTexts{Texts: t.Texts.With(id), counts: t.counts}
-}
-
-func (t countingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
-	t.counts.addVersion()
-	return t.Texts.ReadText(ctx, path, id, cursor)
+	return s.Folder.Read(ctx, name)
 }
 
 func (s *toolFixture) countReads(t *testing.T) *readCounts {
 	t.Helper()
 	counts := &readCounts{}
+	counted := countingVault{Vault: s.vault, counts: counts}
 	recognitions, err := recognition.New(
 		recognition.Host{
-			Vault: countingVault{Vault: s.vault, counts: counts}, Store: countingStore{Store: s.vault.Store(), counts: counts},
-			Texts: countingTexts{Texts: s.texts, counts: counts}, Queue: s.queue,
+			Vaults: func(id domain.VaultID) recognition.Files { return counted.With(id) }, Store: func(id domain.VaultID) recognition.Folder {
+				return countingStore{Folder: s.vault.Store().With(id), counts: counts}
+			},
+			Texts: textsOf(s.texts), Queue: s.queue, Documents: document.NewReader(),
 		},
-		func(context.Context) (recognition.Recogniser, error) {
+		func(context.Context) (recognition.Recognizer, error) {
 			s.openCount.Add(1)
-			return s.recogniser, nil
+			return s.recognizer, nil
 		},
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	s.recognitions = recognitions
-	s.tools = NewTools(recognitions)
-	t.Cleanup(s.tools.Close)
-	s.registry, err = s.tools.Registry()
+	s.launcher = launch.New(recognitions, PluginID)
+	t.Cleanup(s.launcher.Close)
+	s.registry, err = newToolRegistry(s.launcher)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return counts
 }
 
-func TestRecognitionCreateOfARecognisedScanReadsNoFile(t *testing.T) {
+func TestRecognitionCreateOfARecognizedScanReadsNoFile(t *testing.T) {
 	s := newToolFixture(t)
 	version := s.putRecognition(t)
 	counts := s.countReads(t)

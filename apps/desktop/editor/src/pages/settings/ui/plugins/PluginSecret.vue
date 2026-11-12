@@ -6,30 +6,32 @@
 import { computed } from 'vue'
 import type { PluginInfo, SecretDeclaration, Secret } from '@/entities/settings'
 import { getDeclaration } from '../../lib/secretSections'
-import type { SettingsTabState } from '../../types'
+import type { SecretChoices } from '../../types'
 import { SecretField } from '../secret-field'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  state: SettingsTabState
+  choices: SecretChoices
   plugin: PluginInfo
   secrets: readonly SecretDeclaration[]
 }>()
 
+const emit = defineEmits<{
+  (e: 'open-secrets'): void
+}>()
+
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
-const sections = computed(() => installation.value.secretSections?.value ?? [])
-const menus = computed(() => installation.value.secretMenus?.value ?? [])
+const sections = computed(() => props.choices.sections.value)
+const menus = computed(() => props.choices.menus.value)
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle(secret: SecretDeclaration, chosen: Secret, isAllowed: boolean): void {
   const { pluginId, name, group } = getDeclaration(props.plugin, secret)
-  if (isAllowed) installation.value.allowPluginSecret(chosen.id, pluginId, name, group)
-  else installation.value.denyPluginSecret(chosen.id, pluginId, name, group)
+  if (isAllowed) props.choices.access.allowPluginSecret(chosen.id, pluginId, name, group)
+  else props.choices.access.denyPluginSecret(chosen.id, pluginId, name, group)
 }
 
 function onOpenSecrets(): void {
-  const target = props.state.initialPluginId
-  if (target) target.value = 'secrets'
+  emit('open-secrets')
 }
 </script>
 

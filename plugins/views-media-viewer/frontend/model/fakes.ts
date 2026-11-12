@@ -1,7 +1,6 @@
 /** A recording and its transcript, held in memory for the tests of a recording tab. */
 import { ref } from 'vue'
-import type { Cue } from '../lib/cues'
-import type { Recordings } from '../types'
+import type { Recordings, Cue } from '../types'
 import type { Player } from './player'
 
 export const TALK_URL = 'http://127.0.0.1:1/token/v/talks/Ants.mp3'
@@ -74,11 +73,7 @@ export function createPlayer() {
   const surfaces: HTMLElement[] = []
   const released: HTMLElement[] = []
   const player: Player = {
-    url,
-    position,
-    duration: ref(0),
-    isPlaying: ref(false),
-    error: ref(''),
+    state: { url, position, duration: ref(0), isPlaying: ref(false), error: ref('') },
     load: (next) => {
       url.value = next
     },
@@ -92,11 +87,13 @@ export function createPlayer() {
       seeks.push([next, ms])
     },
     getDuration: async () => 0,
-    attach: (container) => {
-      surfaces.push(container)
-    },
-    release: (container) => {
-      released.push(container)
+    surface: {
+      attach: (container) => {
+        surfaces.push(container)
+      },
+      release: (container) => {
+        released.push(container)
+      },
     },
   }
   return { player, seeks, surfaces, released }

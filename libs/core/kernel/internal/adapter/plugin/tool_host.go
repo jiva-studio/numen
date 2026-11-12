@@ -1,0 +1,42 @@
+package plugin
+
+import (
+	"context"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+)
+
+// toolActivator starts a plugin for the catalog of tools and holds it.
+type toolActivator interface {
+	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
+	Release(pluginID string)
+}
+
+// pluginInfoLister lists the plugins the host knows.
+type pluginInfoLister interface {
+	GetPluginInfos() []plugindomain.Info
+}
+
+// ToolHost is what the catalog of tools starts plugins and lists them through.
+type ToolHost struct {
+	activation toolActivator
+	registry   pluginInfoLister
+}
+
+// NewToolHost returns the host the catalog of tools works over.
+func NewToolHost(activation toolActivator, registry pluginInfoLister) ToolHost {
+	return ToolHost{activation: activation, registry: registry}
+}
+
+// EnsureActive starts the plugin if it is not running and holds it.
+func (h ToolHost) EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error) {
+	return h.activation.EnsureActive(ctx, pluginID)
+}
+
+// Release gives up the hold EnsureActive took.
+func (h ToolHost) Release(pluginID string) { h.activation.Release(pluginID) }
+
+// GetPluginInfos lists the plugins the host knows.
+func (h ToolHost) GetPluginInfos() []plugindomain.Info { return h.registry.GetPluginInfos() }

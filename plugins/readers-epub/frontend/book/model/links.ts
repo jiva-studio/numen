@@ -6,6 +6,7 @@
  * A link to another document of the book names a location inside markup that has
  * not been rendered yet, so the link is held until that document is available.
  */
+import { win } from '@numen/ui'
 import { isExternalHref, parseBookLink, type BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
@@ -15,11 +16,11 @@ export interface BookLinkReporter {
   readonly reportFollow: (path: string) => void
 }
 
-export function createBookLinks(props: SettledBookProps, listeners: BookLinkReporter) {
+export function useBookLinks(props: SettledBookProps, listeners: BookLinkReporter) {
   /** Where a link targetLink, held until the document holding that place is drawn. */
   let targetLink: BookLink | undefined
 
-  const takeLed = (): BookLink | undefined => {
+  const takeLedLink = (): BookLink | undefined => {
     const place = targetLink
     targetLink = undefined
     return place
@@ -35,7 +36,7 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkRepo
     const href = link.getAttribute('href') as string
 
     press.preventDefault()
-    if (isExternalHref(href)) return
+    if (isExternalHref(href, win.location.href)) return
 
     const place = parseBookLink(href)
     if (place.path !== '' && place.path !== props.path) {
@@ -46,5 +47,5 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkRepo
     listeners.reportMove(findFragmentOffset(place.fragment) ?? props.span.start)
   }
 
-  return { takeLed, follow }
+  return { takeLedLink, follow }
 }

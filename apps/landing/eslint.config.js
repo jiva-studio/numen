@@ -1,11 +1,12 @@
-// Correctness checks for the site: the frontmatter of each page and the node
-// scripts that name the stories and take the screenshots. Formatting is not
-// checked: it is applied manually, and a formatting rule would rewrite files.
+// Correctness checks for the site on the shared base: the frontmatter of each page, the demo
+// window and the node scripts that name the stories and take the screenshots.
+// Formatting is not checked: it is applied manually, and a formatting rule
+// would rewrite files.
 
-import js from '@eslint/js'
 import globals from 'globals'
 import astro from 'eslint-plugin-astro'
 import tseslint from 'typescript-eslint'
+import { createBaseConfig, createStrictScriptRules } from '../../tools/lint-layers/base-eslint.mjs'
 
 /** A parameter that is named and unused is part of a required signature; a leading underscore marks it. */
 const unused = [
@@ -14,24 +15,34 @@ const unused = [
 ]
 
 export default tseslint.config(
-  { ignores: ['dist/**', '.astro/**', 'node_modules/**'] },
+  ...createBaseConfig(import.meta.dirname, {
+    extraIgnores: ['.astro/**'],
+    defaultProject: ['eslint.config.js'],
+  }),
 
-  js.configs.recommended,
-  // The frontmatter is TypeScript, and nothing else in this package is.
-  ...tseslint.configs.recommended.map((one) => ({ ...one, files: ['**/*.ts', '**/*.astro'] })),
   astro.configs.recommended,
 
   {
     files: ['**/*.astro'],
-    rules: {
-      'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': unused,
+    languageOptions: {
+      parserOptions: { projectService: false, project: true, tsconfigRootDir: import.meta.dirname },
     },
   },
 
+  // The node scripts are plain JavaScript outside tsconfig.json: no type information.
   {
+    ...tseslint.configs.disableTypeChecked,
     files: ['**/*.mjs'],
-    languageOptions: { globals: globals.node },
-    rules: { 'no-unused-vars': unused },
+    languageOptions: {
+      ...tseslint.configs.disableTypeChecked.languageOptions,
+      globals: globals.node,
+      parserOptions: { projectService: false },
+    },
+    rules: {
+      ...tseslint.configs.disableTypeChecked.rules,
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-unused-vars': unused,
+      ...createStrictScriptRules(),
+    },
   },
 )

@@ -23,9 +23,10 @@ withDefaults(
 
 <style scoped>
 .tool-call__mark {
+  --mark-size: 0.45em;
   flex: none;
-  inline-size: 0.45em;
-  block-size: 0.45em;
+  inline-size: var(--mark-size);
+  block-size: var(--mark-size);
   border-radius: var(--numen-radius-pill);
   background: currentColor;
   opacity: 0.4;

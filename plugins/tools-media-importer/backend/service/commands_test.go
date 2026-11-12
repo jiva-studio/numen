@@ -8,13 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
 // videoAddress is an address the mock downloader takes for a video site.
@@ -26,9 +27,16 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
-	hosted := link.Host{PluginID: PluginID, Vault: vault, Store: store, Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{
+		PluginID: PluginID,
+		Vaults:   vaultsOf(vault),
+		Store:    foldersOf(vault),
+		Texts:    textsOf(texts),
+		Queue:    hosttest.NewQueue(),
+		Clock:    clock.NewFake(time.Unix(1_700_000_000, 0)),
+	}
 	links := link.New(hosted,
-		func() link.Fetcher { return download.NewMock() },
+		func() link.Fetcher { return download.NewMock(webpage.New()) },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
 	return links, store, hosted
@@ -171,11 +179,9 @@ func (f *configurableFetcher) Download(ctx context.Context, _ string, _ download
 }
 
 type errListStore struct {
-	host.Store
+	*hosttest.Store
 	listErr error
 }
-
-func (s *errListStore) With(domain.VaultID) host.Store { return s }
 
 func (s *errListStore) List(ctx context.Context) ([]host.StoreFile, error) {
 	if s.listErr != nil {
@@ -184,19 +190,19 @@ func (s *errListStore) List(ctx context.Context) ([]host.StoreFile, error) {
 	return s.Store.List(ctx)
 }
 
-func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
-	if got := describeSize((1 << 20) - 1); got != "1048575 bytes" {
-		t.Errorf("describeSize(1MB-1) = %q, want %q", got, "1048575 bytes")
-	}
-	if got := describeSize(1 << 20); got != "1 MB" {
-		t.Errorf("describeSize(1MB) = %q, want %q", got, "1 MB")
-	}
-
+func TestCommandErrorPaths(t *testing.T) {
 	vault := hosttest.New("Mills")
 	es := &errListStore{Store: vault.Store()}
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, vault.Store())
-	hosted := link.Host{PluginID: PluginID, Vault: vault, Store: es, Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{
+		PluginID: PluginID,
+		Vaults:   vaultsOf(vault),
+		Store:    func(domain.VaultID) link.Folder { return link.Folder{Files: es, Writer: es} },
+		Texts:    textsOf(texts),
+		Queue:    hosttest.NewQueue(),
+		Clock:    clock.NewFake(time.Unix(1_700_000_000, 0)),
+	}
 	cf := &configurableFetcher{}
 	links := link.New(hosted,
 		func() link.Fetcher { return cf },
@@ -269,7 +275,14 @@ func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Regi
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, vault.Store())
 	queue := hosttest.NewQueue()
-	hosted := link.Host{PluginID: PluginID, Vault: vault, Store: vault.Store(), Texts: texts, Queue: queue, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{
+		PluginID: PluginID,
+		Vaults:   vaultsOf(vault),
+		Store:    foldersOf(vault),
+		Texts:    textsOf(texts),
+		Queue:    queue,
+		Clock:    clock.NewFake(time.Unix(1_700_000_000, 0)),
+	}
 	links := link.New(hosted,
 		func() link.Fetcher { return cf },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })

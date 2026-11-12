@@ -1,0 +1,272 @@
+/**
+ * Every situation a number field has to survive. Also the test corpus: each
+ * story is run in a browser by `@storybook/addon-vitest`.
+ *
+ * The awkward ones are what is typed into it: nothing, a word, a number far
+ * past the bounds, and digits that are not the ones this file is written in.
+ */
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, fn, userEvent, within } from 'storybook/test'
+import { ref } from 'vue'
+import NumberField from './NumberField.vue'
+
+interface Knobs {
+  value: number | null
+  min: number
+  max: number
+  step: number
+  isDisabled: boolean
+  placeholder: string
+  onCommit?: (value: number | null) => void
+}
+
+const meta: Meta<Knobs> = {
+  title: 'Controls/Number field',
+  component: NumberField,
+  parameters: { layout: 'centered' },
+  argTypes: {
+    value: { control: 'number' },
+    min: { control: 'number' },
+    max: { control: 'number' },
+    step: { control: 'number' },
+    isDisabled: { control: 'boolean' },
+    placeholder: { control: 'text' },
+  },
+  args: {
+    value: 20,
+    min: 0,
+    max: 240,
+    step: 1,
+    isDisabled: false,
+    placeholder: 'Minutes',
+  },
+  render: (args) => ({
+    components: { NumberField },
+    setup: () => {
+      const value = ref<number | null>(args.value)
+      return { args, value }
+    },
+    template: `
+      <div style="padding: 2rem; inline-size: 12rem">
+        <NumberField
+          v-model="value"
+          aria-label="Minutes a day"
+          :min="args.min"
+          :max="args.max"
+          :step="args.step"
+          :is-disabled="args.isDisabled"
+          :placeholder="args.placeholder"
+          @commit="args.onCommit?.($event)"
+        />
+      </div>
+    `,
+  }),
+}
+
+export default meta
+type Story = StoryObj<Knobs>
+
+const field = (canvas: HTMLElement): HTMLInputElement => {
+  const found = canvas.querySelector<HTMLInputElement>('input')
+  if (!found) throw new Error('no field')
+  return found
+}
+
+/** A field with a user-set number. */
+export const ANumberField: Story = {}
+
+/** Nothing typed yet, so the words stand in for the number. */
+export const Empty: Story = { args: { value: null } }
+
+/** The number at the floor of its bounds. */
+export const AtTheFloor: Story = { args: { value: 0 } }
+
+/** The number at the ceiling of its bounds. */
+export const AtTheCeiling: Story = { args: { value: 240 } }
+
+/**
+ * A value outside the bounds. It is clamped to the bounds and not marked
+ * invalid, because the user did not type it.
+ */
+export const PastTheCeiling: Story = {
+  args: { value: 900, max: 240 },
+  play: async ({ canvasElement }) => {
+    const input = field(canvasElement)
+    await expect(input.value).toBe('240')
+    await expect(input.getAttribute('aria-valuenow')).toBe('240')
+    await expect(input.getAttribute('aria-invalid')).toBeNull()
+  },
+}
+
+/** More digits than the field is wide. */
+export const FarTooMany: Story = { args: { value: 123456789, max: 999999999 } }
+
+/** A field that cannot be edited. */
+export const Disabled: Story = { args: { isDisabled: true } }
+
+/** Words in another script standing in for the number. */
+export const OtherScripts: Story = { args: { value: null, placeholder: 'Минут в день' } }
+
+/** The typed text is kept as typed, and no number is emitted. */
+export const KeepsWhatWasTyped: Story = {
+  args: { value: null },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const input = field(canvasElement)
+
+    await userEvent.click(input)
+    await userEvent.keyboard('12x')
+
+    await expect(input.value).toBe('12x')
+    await expect(input.getAttribute('aria-invalid')).toBe('true')
+    await expect(canvas.getByRole('spinbutton')).toBe(input)
+  },
+}
+
+/** The typed number is emitted once, when the field is left. */
+export const CommitsTheTypedNumber: Story = {
+  args: { value: null, onCommit: fn() },
+  play: async ({ canvasElement, args }) => {
+    const input = field(canvasElement)
+
+    await userEvent.click(input)
+    await userEvent.keyboard('45')
+    await expect(args.onCommit).not.toHaveBeenCalled()
+
+    await userEvent.tab()
+    await expect(args.onCommit).toHaveBeenCalledTimes(1)
+    await expect(args.onCommit).toHaveBeenCalledWith(45)
+  },
+}
+
+/** A number past the ceiling is marked, and leaving the field brings it in. */
+export const BoundedOnTheWayOut: Story = {
+  play: async ({ canvasElement }) => {
+    const input = field(canvasElement)
+
+    await userEvent.clear(input)
+    await userEvent.type(input, '900')
+    await expect(input.getAttribute('aria-invalid')).toBe('true')
+
+    await userEvent.tab()
+    await expect(input.value).toBe('240')
+    await expect(input.getAttribute('aria-invalid')).toBeNull()
+  },
+}
+
+const pressKeys = async (
+  canvasElement: HTMLElement,
+  steps: readonly (readonly [keys: string, value: string])[],
+) => {
+  const input = field(canvasElement)
+  await userEvent.click(input)
+  for (const [keys, value] of steps) {
+    await userEvent.keyboard(keys)
+    await expect(input.value).toBe(value)
+  }
+}
+
+/** The arrow keys move the number one step, and stop at the bounds. */
+export const ArrowKeysStep: Story = {
+  args: { value: 1, step: 5, min: 0, max: 20 },
+  play: ({ canvasElement }) =>
+    pressKeys(canvasElement, [
+      ['{ArrowUp}', '5'],
+      ['{ArrowUp}', '10'],
+      ['{ArrowDown}{ArrowDown}', '0'],
+      ['{ArrowDown}', '0'],
+    ]),
+}
+
+/** The page keys move ten steps, and home and end take the number to the ends. */
+export const TheEndsAreOneKeyAway: Story = {
+  args: { value: 100, step: 5, min: 0, max: 240 },
+  play: ({ canvasElement }) =>
+    pressKeys(canvasElement, [
+      ['{PageUp}', '150'],
+      ['{PageDown}{PageDown}', '50'],
+      ['{End}', '240'],
+      ['{Home}', '0'],
+    ]),
+}
+
+export const ARefusedLineIsReadOut: Story = {
+  args: { value: null },
+  play: async ({ canvasElement }) => {
+    const input = field(canvasElement)
+
+    await userEvent.click(input)
+    await userEvent.keyboard('twenty')
+
+    await expect(input.getAttribute('aria-invalid')).toBe('true')
+    await expect(input.getAttribute('aria-valuenow')).toBeNull()
+    await expect(input.getAttribute('aria-valuetext')).toBe('twenty')
+  },
+}
+
+/** The number taken away from outside, with a line standing in the field that is none. */
+export const TakenAwayUnderARefusedLine: Story = {
+  render: (args) => ({
+    components: { NumberField },
+    setup: () => {
+      const value = ref<number | null>(args.value)
+      return { args, value }
+    },
+    template: `
+      <div style="display: flex; gap: 0.625rem; padding: 2rem; inline-size: 16rem">
+        <NumberField v-model="value" aria-label="Minutes a day" :min="args.min" :max="args.max" />
+        <!-- The field keeps the keyboard, so what empties it is not its leaving. -->
+        <button type="button" data-slot="empties" @mousedown.prevent @click="value = null">
+          Empty it
+        </button>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const input = field(canvasElement)
+
+    await userEvent.click(input)
+    await userEvent.keyboard('twenty')
+    await expect(input.getAttribute('aria-invalid')).toBe('true')
+
+    const empties = canvasElement.querySelector<HTMLElement>('[data-slot="empties"]')
+    await userEvent.click(empties as HTMLElement)
+
+    await expect(input.value).toBe('')
+    await expect(input.getAttribute('aria-invalid')).toBeNull()
+  },
+}
+
+/** The field is keyboard-focusable and exposes its value to screen readers. */
+export const TheKeyboardReachesIt: Story = {
+  play: async ({ canvasElement }) => {
+    const input = field(canvasElement)
+
+    await userEvent.tab()
+    await expect(document.activeElement).toBe(input)
+
+    await expect(input.getAttribute('aria-valuemin')).toBe('0')
+    await expect(input.getAttribute('aria-valuemax')).toBe('240')
+    await expect(input.getAttribute('aria-valuenow')).toBe('20')
+  },
+}
+
+/** A label written beside the field names it, through the id it is given. */
+export const NamedByItsLabel: Story = {
+  render: (args) => ({
+    components: { NumberField },
+    setup: () => ({ args, value: ref<number | null>(args.value) }),
+    template: `
+      <div style="padding: 2rem; inline-size: 12rem">
+        <label for="minutes-a-day">Minutes a day</label>
+        <NumberField id="minutes-a-day" v-model="value" :min="args.min" :max="args.max" />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('spinbutton', { name: 'Minutes a day' })).toBe(
+      field(canvasElement),
+    )
+  },
+}

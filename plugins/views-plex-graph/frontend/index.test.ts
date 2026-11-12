@@ -20,7 +20,7 @@ const createContext = () => {
 const createWindow = () => {
   let getKinds = (): readonly TabKindRegistration[] => []
   const tabOpens: (readonly [string, string])[] = []
-  const tabs: { kind: string; state: unknown }[] = []
+  const tabs: { kind: string; state: object }[] = []
   const navigateTab = async (kind: string, path: string): Promise<string> => {
     const registration = getKinds().find((one) => one.kind === kind)!
     const last = tabs.filter((one) => one.kind === kind).at(-1)
@@ -54,10 +54,10 @@ describe('view-plex-graph plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(5)
+    expect(ctx.plugin.subscriptions).toHaveLength(5)
 
     ctx.dispose()
-    expect(ctx.subscriptions).toHaveLength(0)
+    expect(ctx.plugin.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
@@ -123,7 +123,7 @@ describe('view-plex-graph plugin', () => {
     await settle()
 
     const state = strip.tabs[0]!.state as PlexTabState
-    expect(state.view.here.value).toBe('Other.md')
+    expect(state.canvas.view.here.value).toBe('Other.md')
   })
 
   it('shows the active note in the plex it opens', async () => {
@@ -162,7 +162,7 @@ describe('view-plex-graph plugin', () => {
     await settle()
 
     const state = strip.tabs[0]!.state as PlexTabState
-    expect(state.view.here.value).toBe('Other.md')
+    expect(state.canvas.view.here.value).toBe('Other.md')
   })
 
   it('registers no command that makes a note', () => {
@@ -180,7 +180,7 @@ describe('view-plex-graph plugin', () => {
     await settle()
     requested.headings.length = 0
 
-    ctx.emitVaultChange({ paths: ['One.md'] })
+    ctx.events.emitVaultChange({ paths: ['One.md'] })
     await settle()
     await settle()
 
@@ -206,7 +206,7 @@ describe('view-plex-graph plugin', () => {
     await settle()
 
     expect(requested.headings.length).toBeGreaterThan(0)
-    expect(state.maxHeadings.value).toBe(3)
+    expect(state.headings.maxHeadings.value).toBe(3)
   })
 
   it('refuses to activate in a window that offers no workspace, notes or relationships', () => {

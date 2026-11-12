@@ -1,5 +1,5 @@
 /**
- * The command registrations of a plugin frontend (`registerCommand`) and backend (`Registry.Add`).
+ * The command registrations of a plugin frontend (`register.command`) and backend (`Registry.Add`).
  *
  * Frontend registrations are read from TypeScript syntax trees; backend registrations are read
  * with `go/ast` through `backend_commands.go`.
@@ -16,7 +16,7 @@ export const UNREADABLE_FIELD = '<unreadable>'
 
 const SHARED_DIR = fileURLToPath(new URL('.', import.meta.url))
 const COMMAND_CONSTANTS_FILE = fileURLToPath(
-  new URL('../../libs/plugin-sdk-go/command/shared_commands.go', import.meta.url),
+  new URL('../../libs/plugin/sdk-go/command/shared_commands.go', import.meta.url),
 )
 
 const unwrap = (node) =>
@@ -74,11 +74,13 @@ const getPropertyName = (property) => {
 }
 
 const isRegisterCommand = (callee) =>
-  (ts.isIdentifier(callee) && callee.text === 'registerCommand') ||
-  (ts.isPropertyAccessExpression(callee) && callee.name.text === 'registerCommand')
+  ts.isPropertyAccessExpression(callee) &&
+  callee.name.text === 'command' &&
+  ((ts.isIdentifier(callee.expression) && callee.expression.text === 'register') ||
+    (ts.isPropertyAccessExpression(callee.expression) && callee.expression.name.text === 'register'))
 
 /**
- * Every `registerCommand` call of the source, as `{ fields, id }`: the names of the options the call
+ * Every `register.command` call of the source, as `{ fields, id }`: the names of the options the call
  * passes, and the id, or undefined where it is not a string this can read.
  *
  * @param {string} source - the text of a TypeScript file
@@ -123,7 +125,7 @@ export const listSources = (dir) =>
       return isSource(entry.name) ? [path] : []
     })
 
-/** Every `registerCommand` call under a frontend folder, as `{ file, fields, id }`. */
+/** Every `register.command` call under a frontend folder, as `{ file, fields, id }`. */
 export const listRegistrations = (frontendDir) =>
   listSources(frontendDir).flatMap((file) =>
     readRegistrations(readFileSync(file, 'utf8'), file).map((call) => ({ file, ...call })),

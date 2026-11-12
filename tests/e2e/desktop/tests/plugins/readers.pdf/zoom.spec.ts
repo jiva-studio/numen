@@ -1,7 +1,7 @@
 import { test, expect } from '../../support/test.js'
 import { observeFor } from '../../support/browser.js'
 import { readWidth } from '../../support/layout.js'
-import { getPageIndex, getWide, holdPageRequests, openPages, readNaturalWidth } from './zoom.js'
+import { getPageIndex, getWidePageWidth, holdPageRequests, openPages, readNaturalWidth } from './zoom.js'
 
 /** Longer than the debounce of the width a page is requested at. */
 const DEBOUNCE_MS = 150
@@ -41,9 +41,9 @@ test.describe('PDF reader zoom', () => {
     await page.getByRole('button', { name: 'Zoom in' }).click()
     await expect.poll(() => pending.requested.length).toBeGreaterThan(firstUrls.length)
 
-    const latest = pending.requested.slice(firstUrls.length).map((one) => getWide(one.url()))
+    const latest = pending.requested.slice(firstUrls.length).map((one) => getWidePageWidth(one.url()))
     expect(new Set(latest).size).toBe(1)
-    expect(latest[0]).toBeGreaterThan(getWide(firstUrls[0]!))
+    expect(latest[0]).toBeGreaterThan(getWidePageWidth(firstUrls[0]!))
     pending.release()
     const picture = page.locator('.reader__page[data-page="0"] .reader__picture')
     await expect.poll(() => readNaturalWidth(picture)).toBe(latest[0])

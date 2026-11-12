@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/usecase/proofread"
 )
 
-func newProofreadCommand(proofreading *Proofreading) command.Run {
+func newProofreadCommand(run *proofread.Proofreading) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		source := domain.TextVersionID(req.Arguments.GetString(command.ArgumentVersion))
-		res, err := proofreading.Proofread(ctx, Request{Vault: "", Path: req.Path, Source: source})
+		res, err := run.Proofread(ctx, proofread.Request{Vault: "", Path: req.Path, Source: source})
 		if err != nil {
 			return command.Result{}, err
 		}

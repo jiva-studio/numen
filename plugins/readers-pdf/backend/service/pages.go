@@ -1,102 +1,61 @@
 package service
 
 import (
-	"bytes"
-	"context"
 	"errors"
 	"fmt"
-	"image/jpeg"
 	"net/http"
-	"os"
-	"strconv"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/document"
 )
 
 // pagesPattern is the route under the plugin route that serves the page images.
 // The window requests /plugin/md.numen.readers.pdf/pages/<index>?path=<vault path>.
 const pagesPattern = "pages/{page}"
 
-// mostPixels is the most pixels one page image has. A page asked for wider is drawn as wide as fits,
-// and the window scales the image up.
-const mostPixels = 1 << 24
-
 // PageServer draws the pages of the PDF files in a vault as JPEG images.
 type PageServer struct {
-	files   host.Vault
-	workers *pdf.Workers
+	reader *document.Reader
+	report func(what string, err error)
 }
 
-// NewPageServer returns a PageServer that reads files from files and draws them on the workers.
-func NewPageServer(files host.Vault, workers *pdf.Workers) *PageServer {
-	return &PageServer{files: files, workers: workers}
+// NewPageServer returns a PageServer that draws the pages reader reads. A failure to write a page goes to
+// report.
+func NewPageServer(reader *document.Reader, report func(what string, err error)) *PageServer {
+	return &PageServer{reader: reader, report: report}
 }
 
 // ServeHTTP answers a request for one page: the index is the path value "page", counted from zero,
 // the file is the query parameter "path", relative to the vault the Numen-Vault header names, and the
 // query parameter "wide" is how many pixels across the page is drawn.
 func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	index, err := strconv.Atoi(r.PathValue("page"))
-	if err != nil || index < 0 {
-		http.Error(w, "invalid page", http.StatusBadRequest)
-		return
-	}
-	path := r.URL.Query().Get("path")
-	if path == "" {
-		http.Error(w, "path required", http.StatusBadRequest)
-		return
-	}
-	pixelWidth, err := strconv.Atoi(r.URL.Query().Get("wide"))
-	// gomutants:disable-next-line EXPRESSION_REMOVE reason="strconv.Atoi returns pixelWidth 0 on parse failure"
-	if err != nil || pixelWidth <= 0 {
-		http.Error(w, "invalid wide", http.StatusBadRequest)
-		return
-	}
-	raw, _, err := getVault(s.files, r.Header).Read(r.Context(), path)
+	query := r.URL.Query()
+	page, err := document.ParsePageRequest(r.PathValue("page"), query.Get("path"), query.Get("wide"))
 	if err != nil {
-		http.Error(w, err.Error(), getStatus(err))
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	// A window that asked for another width, or left the page, no longer wants this one.
-	// gomutants:disable-next-line BRANCH_IF reason="vault.Read already rejects canceled contexts before reaching this check"
-	if err := r.Context().Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusRequestTimeout)
-		return
-	}
-	image, err := renderPage(r.Context(), s.workers, raw, index, pixelWidth)
+	image, err := s.reader.RenderPage(r.Context(), host.GetRequestVault(r.Header), page.Path, page.Index, page.PixelWidth)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		http.Error(w, err.Error(), getPageStatus(err))
 		return
 	}
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	if _, err := w.Write(image); err != nil {
-		fmt.Fprintf(os.Stderr, "readers-pdf: write the page %d of %s: %v\n", index, path, err)
+		s.report(fmt.Sprintf("write the page %d of %s", page.Index, page.Path), err)
 	}
 }
 
-func renderPage(ctx context.Context, workers *pdf.Workers, raw []byte, index, pixelWidth int) (encoded []byte, err error) {
-	scan, err := workers.OpenBytes(raw)
-	if err != nil {
-		return nil, err
+func getPageStatus(err error) int {
+	var render *document.RenderError
+	var gaveUp *document.GaveUpError
+	switch {
+	case errors.As(err, &render):
+		return http.StatusUnprocessableEntity
+	case errors.As(err, &gaveUp):
+		return http.StatusRequestTimeout
+	default:
+		return getStatus(err)
 	}
-	defer func() { err = errors.Join(err, scan.Close()) }()
-	// The wait for a worker can outlast the window's interest in the page.
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-	fitting, err := scan.GetFittingWidth(index, pixelWidth, mostPixels)
-	if err != nil {
-		return nil, err
-	}
-	drawing, err := scan.RenderPageAtWidth(index, fitting, mostPixels)
-	if err != nil {
-		return nil, err
-	}
-	var out bytes.Buffer
-	if err := jpeg.Encode(&out, drawing, &jpeg.Options{Quality: 85}); err != nil {
-		return nil, err
-	}
-	return out.Bytes(), nil
 }

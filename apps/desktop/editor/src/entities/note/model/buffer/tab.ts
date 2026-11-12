@@ -36,11 +36,11 @@ export const transitionTab = (
     case 'changed':
       return applyChange(tab, event.paths, event.renamed)
     default:
-      return applyRequested(tab, event.kind)
+      return applyRequestedKind(tab, event.kind)
   }
 }
 
-const applyRequested = (tab: Tab, kind: RequestedKind): Transition => {
+const applyRequestedKind = (tab: Tab, kind: RequestedKind): Transition => {
   switch (kind) {
     // Stryker disable next-line ConditionalExpression,BlockStatement: Falling through to save performs the same transition.
     case 'timerFired':
@@ -60,16 +60,16 @@ const applyRequested = (tab: Tab, kind: RequestedKind): Transition => {
 
 const keepTab = (tab: Tab): Transition => ({ tab, effects: [] })
 
-const applyBody = (tab: Tab, body: string, filePath: string | null): Transition => ({
-  tab: { ...tab, savedText: body, filePath, editorText: body, since: null },
+const applyBody = (tab: Tab, body: string, revision: string | null): Transition => ({
+  tab: { ...tab, savedText: body, revision, editorText: body, since: null },
   effects: body === tab.editorText ? [] : [{ kind: 'replace', body }],
 })
 
 const getBaseline = (tab: Tab): NoteBaseline | null =>
   // Stryker disable next-line ConditionalExpression: Unsaved transitions require non-null written.
-  tab.savedText === null || tab.filePath === null
+  tab.savedText === null || tab.revision === null
     ? null
-    : { prose: tab.savedText, stat: tab.filePath }
+    : { prose: tab.savedText, stat: tab.revision }
 
 const beginWrite = (tab: Tab, baseline: NoteBaseline | null): Transition => ({
   tab: { ...tab, pendingWrite: tab.editorText, hasPendingWrite: false, isStale: false },
@@ -157,7 +157,7 @@ const applyWrite = (tab: Tab, answer: WriteResult): Transition => {
   const content: Tab = {
     ...tab,
     savedText: tab.pendingWrite,
-    filePath: answer.at,
+    revision: answer.at,
     pendingWrite: null,
     since: null,
     isDeleted: false,
@@ -186,8 +186,20 @@ const applySave = (tab: Tab): Transition => {
   return keepTab(tab)
 }
 
+/**
+ * A tab whose dirty text is not in the vault: an error stopped it for a reason another attempt may
+ * clear, or its file was deleted and writing it would make the file again, which only the person decides.
+ */
+export const isUnsavedTab = (tab: Tab): boolean =>
+  isDirty(tab) && ((getState(tab) === 'stuck' && isRetryable(tab)) || getState(tab) === 'gone')
+
 const applyFlush = (tab: Tab): Transition => {
   const state = getState(tab)
+  // A deleted file is not written back by a flush: only the person decides to make it again.
+  if (state === 'stuck' && isUnsavedTab(tab)) {
+    const going = beginWrite({ ...tab, error: null }, getBaseline(tab))
+    return { tab: going.tab, effects: [{ kind: 'cancelTimer' }, ...going.effects] }
+  }
   if (state === 'unsaved') {
     const going = beginWrite(tab, getBaseline(tab))
     return { tab: going.tab, effects: [{ kind: 'cancelTimer' }, ...going.effects] }
@@ -206,6 +218,12 @@ const applyKeep = (tab: Tab): Transition => {
 
 const applyTake = (tab: Tab): Transition => {
   const state = getState(tab)
+  if (isUnsavedTab(tab) && tab.savedText !== null) {
+    return {
+      tab: { ...tab, editorText: tab.savedText, error: null, since: null },
+      effects: [{ kind: 'cancelTimer' }, { kind: 'replace', body: tab.savedText }],
+    }
+  }
   if (state !== 'stale') return keepTab(tab)
   const nextReading = tab.reading + 1
   return {
@@ -213,6 +231,9 @@ const applyTake = (tab: Tab): Transition => {
     effects: [{ kind: 'read', path: tab.path, generation: nextReading }],
   }
 }
+
+const isHoldingText = (tab: Tab): boolean =>
+  getState(tab) === 'stale' || (getState(tab) === 'gone' && isDirty(tab))
 
 const applyClose = (tab: Tab): Transition => {
   const state = getState(tab)
@@ -225,7 +246,7 @@ const applyClose = (tab: Tab): Transition => {
   }
   // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: Loading state returns close effect either way.
   if (state === 'loading') return { tab, effects: [{ kind: 'close' }] }
-  if (state === 'stale') return { tab, effects: [{ kind: 'keepOpen' }] }
+  if (isHoldingText(tab)) return { tab, effects: [{ kind: 'keepOpen' }] }
   if (state === 'unsaved') {
     const going = beginWrite(tab, getBaseline(tab))
     return { tab: going.tab, effects: [...going.effects, { kind: 'keepOpen' }] }

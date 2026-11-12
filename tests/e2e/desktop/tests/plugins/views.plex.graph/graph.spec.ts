@@ -13,10 +13,10 @@ test.describe('Plex Graph Interaction', () => {
     await expect(thermoNode).toBeVisible()
     await expect(entropyNode).toBeVisible()
 
-    // Click on Entropy node to refocus the graph neighbourhood
+    // Click on Entropy node to refocus the graph neighborhood
     await entropyNode.click()
 
-    // After clicking Entropy, it remains visible in the neighbourhood
+    // After clicking Entropy, it remains visible in the neighborhood
     await expect(entropyNode).toBeVisible()
   })
 })

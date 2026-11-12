@@ -68,15 +68,9 @@ function stopTurn(text: HTMLElement): void {
   runningTurns.delete(text)
 }
 
-function translatePaper(
-  text: HTMLElement,
-  to: string,
-  how: 'smooth' | 'auto',
-  onEnd?: () => void,
-): void {
+function translatePaper(text: HTMLElement, to: string, duration: number, onEnd?: () => void): void {
   if (runningTurns.get(text)?.to === to) return
   stopTurn(text)
-  const duration = how === 'smooth' ? getTurnDuration(text) : 0
   const from = Number.parseFloat(text.style.translate)
   const target = Number.parseFloat(to)
   if (duration <= 0 || !Number.isFinite(from) || from === target) {
@@ -110,11 +104,13 @@ export interface BookTurnsOptions {
   readonly spreadCount: ComputedRef<number>
   readonly marks: Readonly<ShallowRef<readonly Mark[]>>
   readonly onMove: (pos: number) => void
+  readonly getDuration?: (text: HTMLElement) => number
 }
 
 /** `onMove` is called when the current offset changes. */
 export function useBookTurns(options: BookTurnsOptions) {
   const activeSpread = ref(0)
+  const getDuration = options.getDuration ?? getTurnDuration
 
   const front = computed(() =>
     createPages({
@@ -134,7 +130,7 @@ export function useBookTurns(options: BookTurnsOptions) {
     activeSpread.value = Math.min(Math.max(spread, 0), Math.max(options.spreadCount.value - 1, 0))
     if (!options.paper.value) return
     const to = `${-getSpreadStart(options.flow.value, activeSpread.value)}px 0`
-    translatePaper(options.paper.value, to, how)
+    translatePaper(options.paper.value, to, how === 'smooth' ? getDuration(options.paper.value) : 0)
   }
 
   const enterSpread = (
@@ -154,10 +150,15 @@ export function useBookTurns(options: BookTurnsOptions) {
     const remaining = leaving ? from - leaving.target : 0
     stopTurn(text)
     text.style.translate = `${rest + step + remaining}px 0`
-    translatePaper(text, `${rest}px 0`, 'smooth')
+    translatePaper(text, `${rest}px 0`, getDuration(text))
     if (!leaving) return
     leaving.copy.style.translate = `${from}px 0`
-    translatePaper(leaving.copy, `${leaving.target - step}px 0`, 'smooth', leaving.remove)
+    translatePaper(
+      leaving.copy,
+      `${leaving.target - step}px 0`,
+      getDuration(leaving.copy),
+      leaving.remove,
+    )
   }
 
   const announce = () => {
@@ -204,15 +205,7 @@ export function useBookTurns(options: BookTurnsOptions) {
   }
 
   return {
-    standing: activeSpread,
-    front,
-    leftInChapter,
-    stand,
-    enterSpread,
-    goTo,
-    getKeptOffset,
-    keepOffset,
-    getSpreadOf,
-    turn,
+    position: { standing: activeSpread, front, leftInChapter },
+    moves: { stand, enterSpread, goTo, getKeptOffset, keepOffset, getSpreadOf, turn },
   }
 }

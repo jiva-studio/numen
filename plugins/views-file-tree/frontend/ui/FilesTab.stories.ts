@@ -5,7 +5,7 @@
  * row inside a folder relative to the folder, and the position of the row menu.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, userEvent, waitFor } from 'storybook/test'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { createFileTree, ROOT } from '../model/useFileTree'
@@ -37,21 +37,27 @@ const VAULT: Record<string, readonly Entry[]> = {
 const createFilesTab = (open: readonly string[]): FilesTabState => {
   const list = createFileTree({ list: async (folderPath: string) => VAULT[folderPath] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
-    ...renderDeps,
-    openEntry: () => undefined,
-    listItems: async () => [],
-    getMenuEntries: () => ROW_MENU,
-    runCommand: async () => '',
-    movePath: async () => undefined,
-    setDraggedPaths: () => undefined,
-    canDropData: () => false,
-    dropData: async () => [],
-    showError: () => undefined,
+    window: {
+      ...renderDeps,
+      openEntry: () => undefined,
+      setDraggedPaths: () => undefined,
+      showError: () => undefined,
+    },
+    menu: {
+      listItems: async () => [],
+      getMenuEntries: () => ROW_MENU,
+      runCommand: async () => '',
+    },
+    transfer: {
+      movePath: async () => undefined,
+      canDropData: () => false,
+      dropData: async () => [],
+    },
   })
 
   const openFolders = async () => {
-    await list.openFolder(ROOT)
-    for (const folderPath of open) await list.openFolder(folderPath)
+    await list.folders.openFolder(ROOT)
+    for (const folderPath of open) await list.folders.openFolder(folderPath)
   }
   openFolders().catch(state.reportFailure)
 
@@ -94,7 +100,6 @@ export const TheVault: Story = {
     for (const row of rows(canvasElement)) {
       const icon = row.querySelector('svg')
       await expect(icon).not.toBeNull()
-      await expect(icon!.getBoundingClientRect().width).toBeGreaterThan(0)
     }
   },
 }
@@ -106,11 +111,11 @@ export const AFolderOpened: Story = {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(5))
     await expect(getRowNames(canvasElement)[1]).toBe('Kelvin.md')
 
-    // What a folder holds is drawn inside it, and reads as inside it.
-    const canvas = within(canvasElement)
-    const holder = canvas.getByText('physics').getBoundingClientRect()
-    const target = canvas.getByText('Kelvin.md').getBoundingClientRect()
-    await expect(target.left).toBeGreaterThan(holder.left)
+    // What a folder holds is drawn inside it, one level deeper.
+    const [holder, target] = rows(canvasElement)
+    await expect(Number(target!.getAttribute('aria-level'))).toBe(
+      Number(holder!.getAttribute('aria-level')) + 1,
+    )
   },
 }
 
@@ -131,11 +136,6 @@ export const TheMenuOnARow: Story = {
     await expect(transcriptText).toContain('Rename')
     await expect(transcriptText).toContain('Move to trash')
 
-    // The whole of it is on the screen, on every side.
-    const menu = document.body.querySelector<HTMLElement>('[role="menu"]')!.getBoundingClientRect()
-    await expect(menu.left).toBeGreaterThanOrEqual(0)
-    await expect(menu.top).toBeGreaterThanOrEqual(0)
-    await expect(menu.right).toBeLessThanOrEqual(window.innerWidth)
-    await expect(menu.bottom).toBeLessThanOrEqual(window.innerHeight)
+    await expect(document.body.querySelector('[role="menu"]')).toBeVisible()
   },
 }

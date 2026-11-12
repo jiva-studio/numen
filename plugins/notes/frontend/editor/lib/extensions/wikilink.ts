@@ -3,7 +3,7 @@
  *
  * `[[name]]` is the written form and `note://<identifier>` the auxiliary one. An alias after `|`
  * and a fragment after `#` are not part of the address. The core reads the same brackets from the
- * corpus in `libs/protocol/testdata`.
+ * corpus in `libs/core/protocol/testdata`.
  */
 
 /** A scheme is letters, digits, `+`, `-` and `.`, written before the `://`. */

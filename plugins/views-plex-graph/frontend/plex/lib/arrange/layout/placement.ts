@@ -1,7 +1,7 @@
-import type { PlacedNode, PlexNode } from '../../node'
-import type { PlexRelation } from '../../relation'
+import type { PlacedNode } from '../../node'
 import type { Limits, RoleLimits } from './limits'
 import { isVertical, type Direction, type PlexOptions } from '../options'
+import type { PlexNode, PlexRelation } from '../../../../types'
 
 /** The nodes included in the graph, grouped by relation. */
 export type NodesByRelation = Readonly<Partial<Record<PlexRelation, readonly PlexNode[]>>>
@@ -9,7 +9,7 @@ export type NodesByRelation = Readonly<Partial<Record<PlexRelation, readonly Ple
 /** How wide a node's box is drawn, clamped before a strategy is called. */
 export type Widths = (node: PlexNode) => number
 
-export interface PlacementContext {
+interface PlacementContext {
   readonly options: PlexOptions
   readonly limits: Limits
   readonly width: Widths

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createAnswer } from './answer'
-import type { Turn } from '../lib/turn'
+import type { Turn } from '../../types'
 
 const create = () => {
   const sendTurn = vi.fn<(turn: Turn) => void>()

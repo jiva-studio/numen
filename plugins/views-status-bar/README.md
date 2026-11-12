@@ -14,4 +14,4 @@ The plugin is disabled by default. Disabled, the window has no bar at the bottom
 
 ## How It Works
 
-The manifest places the view `bar` in the slot `statusBar` of `contributes.slots`, and the frontend registers it with `registerSlotView`. The bar reads the entries of the slots `statusBar.left` and `statusBar.right` through `context.slots` and runs their commands with `context.slots.runCommand`. Entries of a group stand together, and a gap divides two groups.
+The manifest places the view `bar` in the slot `statusBar` of `contributes.slots`, and the frontend registers it with `register.slotView`. The bar reads the entries of the slots `statusBar.left` and `statusBar.right` through `context.ui.slots` and runs their commands with `context.ui.slots.runCommand`. Entries of a group stand together, and a gap divides two groups.

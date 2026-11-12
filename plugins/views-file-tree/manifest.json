@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.file.tree",
   "name": "File Tree Explorer",
-  "version": "2026.11.14",
+  "version": "2026.11.15",
   "protocol": 1,
   "description": "Sidebar file browser for managing notes, books, and recordings",
   "capabilities": [],
@@ -38,6 +38,14 @@
         "icon": "folder-open",
         "group": "navigate",
         "order": 30,
+        "when": "target.isNote"
+      },
+      {
+        "slot": "palette.note",
+        "command": "app:file.reveal",
+        "values": { "kind": "files" },
+        "title": "Show in file tree",
+        "icon": "folder-open",
         "when": "target.isNote"
       },
       { "slot": "titleBar.commands", "command": "tree.open", "group": "navigate", "order": 10 },

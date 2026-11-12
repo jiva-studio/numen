@@ -4,16 +4,15 @@
     "files": "error",
     "dependencies": "error",
     "unlisted": "error",
-    "exports": "warn",
-    "types": "warn"
+    "exports": "error",
+    "types": "error"
   },
   "ignoreWorkspaces": [
     ".",
-    "libs/protocol",
     "tools/*"
   ],
   "workspaces": {
-    "libs/ui/core": {
+    "libs/ui/components": {
       "entry": [
         "src/index.ts!",
         "src/**/*.stories.ts",
@@ -21,11 +20,11 @@
         ".storybook/**/*.{ts,js}"
       ],
       "project": [
-        "src/**/*.{ts,vue,mdx,css}",
+        "src/**/*.{ts,vue,mdx,css}!",
         ".storybook/**/*.{ts,js}"
       ]
     },
-    "libs/ui/shell": {
+    "libs/ui/workbench": {
       "entry": [
         "src/index.ts!",
         "src/**/*.stories.ts",
@@ -33,35 +32,52 @@
         ".storybook/**/*.{ts,js}"
       ],
       "project": [
-        "src/**/*.{ts,vue,mdx,css}",
+        "src/**/*.{ts,vue,mdx,css}!",
         ".storybook/**/*.{ts,js}"
       ]
     },
-    "libs/core-client": {
+    "libs/core/protocol": {
+      "entry": [
+        "index.ts!",
+        "capabilities.ts!",
+        "src/numen/v1/*_pb.ts!",
+        "tools/*.mjs!"
+      ],
+      "project": [
+        "**/*.{ts,mjs}!"
+      ],
+      "ignoreBinaries": [
+        "buf"
+      ],
+      "ignoreDependencies": [
+        "@bufbuild/protoc-gen-es"
+      ]
+    },
+    "libs/core/client": {
       "entry": [
         "src/**/*.test.ts"
       ],
       "project": [
-        "src/**/*.ts"
+        "src/**/*.ts!"
       ]
     },
-    "libs/plugin-host-ts": {
+    "libs/plugin/loader": {
       "entry": [
         "src/**/*.test.ts"
       ],
       "project": [
-        "src/**/*.ts"
+        "src/**/*.ts!"
       ]
     },
-    "libs/plugin-manager": {
+    "libs/plugin/manager": {
       "entry": [
         "src/**/*.test.ts"
       ],
       "project": [
-        "src/**/*.{ts,vue}"
+        "src/**/*.{ts,vue}!"
       ]
     },
-    "libs/plugin-sdk-ts": {
+    "libs/plugin/sdk-ts": {
       "entry": [
         "src/**/*.test.ts",
         "test/**/*.test.ts",
@@ -69,7 +85,7 @@
         "stories/.storybook/**/*.{ts,js}"
       ],
       "project": [
-        "src/**/*.{ts,vue}",
+        "src/**/*.{ts,vue}!",
         "test/**/*.ts",
         "stories/**/*.{ts,js}"
       ]
@@ -78,28 +94,30 @@
       "entry": [
         "src/**/*.stories.ts",
         "src/**/*.test.ts",
-        ".storybook/**/*.{ts,js}"
+        ".storybook/**/*.{ts,js}",
+        "src/main.ts!"
       ],
       "project": [
-        "src/**/*.{ts,vue}",
+        "src/**/*.{ts,vue}!",
         ".storybook/**/*.{ts,js}"
       ]
     },
     "apps/desktop/flashcards": {
       "entry": [
-        "src/**/*.test.ts"
+        "src/**/*.test.ts",
+        "src/main.ts!"
       ],
       "project": [
-        "src/**/*.{ts,vue}"
+        "src/**/*.{ts,vue}!"
       ]
     },
     "apps/mobile": {
       "entry": [
-        "src/main.ts",
+        "src/main.ts!",
         "src/**/*.test.ts"
       ],
       "project": [
-        "src/**/*.{ts,vue}"
+        "src/**/*.{ts,vue}!"
       ],
       "ignoreDependencies": [
         "vue-router"
@@ -107,11 +125,11 @@
     },
     "apps/docs": {
       "entry": [
-        "tools/*.mjs"
+        "tools/*.mjs!"
       ],
       "project": [
-        "src/**/*.{ts,astro,vue}",
-        "tools/**/*.mjs"
+        "src/**/*.{ts,astro,vue}!",
+        "tools/**/*.mjs!"
       ],
       "ignoreDependencies": [
         "@fontsource-variable/newsreader",
@@ -121,11 +139,11 @@
     },
     "apps/landing": {
       "entry": [
-        "tools/*.mjs"
+        "tools/*.mjs!"
       ],
       "project": [
-        "src/**/*.{ts,astro,vue}",
-        "tools/**/*.mjs"
+        "src/**/*.{ts,astro,vue}!",
+        "tools/**/*.mjs!"
       ],
       "paths": {
         "@editor-features/*": [
@@ -134,11 +152,11 @@
         "@plugins/*": [
           "../../plugins/*"
         ],
-        "@numen/ui-shell": [
-          "../../libs/ui/shell/src/index.ts"
+        "@numen/workbench": [
+          "../../libs/ui/workbench/src/index.ts"
         ],
-        "@numen/ui-shell/styles.css": [
-          "../../libs/ui/shell/src/styles.css"
+        "@numen/workbench/styles.css": [
+          "../../libs/ui/workbench/src/styles.css"
         ]
       }
     },
@@ -163,12 +181,12 @@
     },
     "plugins/*": {
       "entry": [
-        "frontend/index.ts",
+        "frontend/index.ts!",
         "frontend/**/*.stories.ts",
         "frontend/**/*.test.ts"
       ],
       "project": [
-        "frontend/**/*.{ts,vue}"
+        "frontend/**/*.{ts,vue}!"
       ]
     }
   }

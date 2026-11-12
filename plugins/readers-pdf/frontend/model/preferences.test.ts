@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { JsonValue } from '@numen/plugin-sdk'
 import {
   bindPDFReaderPreferences,
   readPDFReaderPreferences,
@@ -7,7 +8,7 @@ import {
 
 describe('the PDF reader settings', () => {
   it('reads the default zoom the settings name', () => {
-    const settings: Record<string, unknown> = { defaultZoom: 'width' }
+    const settings: Record<string, JsonValue> = { defaultZoom: 'width' }
 
     expect(readPDFReaderPreferences((key) => settings[key])).toStrictEqual({ defaultZoom: 'width' })
   })
@@ -20,10 +21,12 @@ describe('the PDF reader settings', () => {
   it('follows a change of the default zoom', () => {
     const handlers = new Map<string, (value: unknown) => void>()
     bindPDFReaderPreferences({
-      getSetting: <T>() => '100%' as T,
-      onSettingChange: <T>(key: string, handler: (value: T) => void) => {
-        handlers.set(key, handler as (value: unknown) => void)
-        return { dispose: () => handlers.delete(key) }
+      settings: {
+        get: <T>() => '100%' as T,
+        onChange: <T>(key: string, handler: (value: T) => void) => {
+          handlers.set(key, handler as (value: unknown) => void)
+          return { dispose: () => handlers.delete(key) }
+        },
       },
     })
     expect(readerPreferences.defaultZoom).toBe('100%')

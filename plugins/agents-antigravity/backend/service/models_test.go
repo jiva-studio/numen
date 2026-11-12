@@ -3,30 +3,10 @@ package service
 import (
 	"slices"
 	"testing"
-	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
 )
-
-func TestTheModelsAreTheLinesThatHoldANameAndATitle(t *testing.T) {
-	got := parseAntigravityModels([]byte(
-		"Fetching available models...\n" +
-			"\r⠋ Fetching available models...\rgemini-4-argon-high     Gemini 4 Argon (High)\n" +
-			"m-high\tModel (High)\n" +
-			"bare\t\n" +
-			"\tno name\n" +
-			"m-low\tModel (Low)\n"))
-	want := []antigravityModel{
-		{"gemini-4-argon-high", "Gemini 4 Argon (High)"},
-		{"m-high", "Model (High)"},
-		{"bare", "bare"},
-		{"m-low", "Model (Low)"},
-	}
-	if !slices.Equal(got, want) {
-		t.Errorf("the models are %v, want %v", got, want)
-	}
-}
 
 // The program list holds the models the installed program lists with "models", whatever the
 // settings once named.
@@ -35,7 +15,7 @@ func TestGetAgentPrograms_ModelListGroupedByLevel(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	script := agenttest.WriteScript(t, "agy",
 		`if [ "$1" = models ]; then printf 'Fetching available models...\nm-high\tModel (High)\nm-low\tModel (Low)\n'; fi`+"\n")
-	client := agenttest.Serve(t, &agentServer{})
+	client := serveAgent(t, newAgentServer(false))
 
 	got, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{{Program: "antigravity", Command: []string{script}}})
 	if err != nil {
@@ -58,7 +38,7 @@ func TestGetAgentPrograms_ModelListFailure(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	script := agenttest.WriteScript(t, "agy", "exit 1\n")
-	client := agenttest.Serve(t, &agentServer{})
+	client := serveAgent(t, newAgentServer(false))
 
 	got, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{{Program: "antigravity", Command: []string{script}}})
 	if err != nil {
@@ -86,7 +66,7 @@ func TestTheLevelOfARequestChoosesTheListedModel(t *testing.T) {
 	}
 	for _, one := range cases {
 		req := &agentrun.Request{Model: one.model, Reasoning: one.reasoning, Command: []string{script}}
-		(&agentServer{}).resolveModel(t.Context(), req)
+		newAgentServer(false).catalog.ResolveModel(t.Context(), req)
 		if req.Model != one.want {
 			t.Errorf("model %q at %q became %q, want %q", one.model, one.reasoning, req.Model, one.want)
 		}
@@ -111,7 +91,7 @@ esac
 
 func askStub(t *testing.T, script, model, level string) (said, stopReason string) {
 	t.Helper()
-	stream, err := agenttest.Serve(t, &agentServer{}).Ask(t.Context(), &agentrun.Request{
+	stream, err := serveAgent(t, newAgentServer(false)).Ask(t.Context(), &agentrun.Request{
 		Command: []string{script}, Model: model, Reasoning: level, Prompt: "q",
 	})
 	if err != nil {
@@ -162,36 +142,5 @@ func TestAFamilyOfOneListedModelRunsThatModel(t *testing.T) {
 
 	if response != "ran solo" || stopReason != "" {
 		t.Errorf("said %q and stopReason %q", response, stopReason)
-	}
-}
-
-func TestModelConstantsAndLineSplitting(t *testing.T) {
-	if modelListLimit != 15*time.Second {
-		t.Errorf("modelListLimit = %v, want 15s", modelListLimit)
-	}
-	if failureBackoff != 30*time.Second {
-		t.Errorf("failureBackoff = %v, want 30s", failureBackoff)
-	}
-
-	// Leading '\r' at index 0, double-space with empty name, double-space with spaces in name, and double-space with empty title.
-	got := parseAntigravityModels([]byte(
-		"\rcr-at-zero\tCR Zero\n" +
-			"   leading-spaces-only\n" +
-			"has space  Not A Model ID\n" +
-			"space-bare  \n"))
-	want := []antigravityModel{
-		{Name: "cr-at-zero", Title: "CR Zero"},
-		{Name: "space-bare", Title: "space-bare"},
-	}
-	if !slices.Equal(got, want) {
-		t.Errorf("parseAntigravityModels edge cases = %v, want %v", got, want)
-	}
-
-	// listAntigravityModels passes extra arguments before "models".
-	models, err := listAntigravityModels(t.Context(), []string{
-		"/bin/sh", "-c", `if [ "$1" != "--extra" ] || [ "$2" != "models" ]; then exit 2; fi; printf 'm1\tModel 1\n'`, "sh", "--extra",
-	})
-	if err != nil || len(models) != 1 || models[0].Name != "m1" {
-		t.Fatalf("listAntigravityModels with extra args = (%v, %v)", models, err)
 	}
 }

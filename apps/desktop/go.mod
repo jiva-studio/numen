@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/apps/desktop
 
-go 1.26.10
+go 1.26.11
 
 require (
 	connectrpc.com/connect v1.21.1 // indirect
@@ -29,7 +29,7 @@ require (
 	github.com/godbus/dbus/v5 v5.2.4
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/jiva-studio/numen/libs/protocol v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/core/protocol v0.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
@@ -51,17 +51,20 @@ require (
 	modernc.org/memory v1.12.1 // indirect
 )
 
-replace github.com/jiva-studio/numen/libs/protocol => ../../libs/protocol
+replace github.com/jiva-studio/numen/libs/core/protocol => ../../libs/core/protocol
 
 require (
-	github.com/jiva-studio/numen/libs/core v0.0.0
-	github.com/jiva-studio/numen/libs/notes v0.0.0
-	github.com/jiva-studio/numen/libs/plugin-catalog v0.0.0
+	github.com/jiva-studio/numen/libs/core/kernel v0.0.0
+	github.com/jiva-studio/numen/libs/atomicfile v0.0.0
+	github.com/jiva-studio/numen/libs/note v0.0.0
+	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0
 	github.com/zalando/go-keyring v0.2.8
 )
 
-replace github.com/jiva-studio/numen/libs/plugin-catalog => ../../libs/plugin-catalog
+replace github.com/jiva-studio/numen/libs/plugin/catalog => ../../libs/plugin/catalog
 
-replace github.com/jiva-studio/numen/libs/core => ../../libs/core
+replace github.com/jiva-studio/numen/libs/core/kernel => ../../libs/core/kernel
 
-replace github.com/jiva-studio/numen/libs/notes => ../../libs/notes
+replace github.com/jiva-studio/numen/libs/note => ../../libs/note
+
+replace github.com/jiva-studio/numen/libs/atomicfile => ../../libs/atomicfile

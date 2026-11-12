@@ -27,7 +27,7 @@ if [ -n "$GO_FILES" ]; then
 fi
 
 # 3. Fast architecture & boundary gates
-"$root/libs/core/adapter/index/migration-forward-only.sh" --self-test || exit 1
+"$root/libs/core/kernel/adapter/index/migration-forward-only.sh" --self-test || exit 1
 
 PRETTIER_FILES=$(echo "$STAGED_FILES" | grep -E '\.(ts|vue|json|css)$' || true)
 if [ -n "$PRETTIER_FILES" ]; then
@@ -39,7 +39,7 @@ fi
 FRONTEND_STAGED=$(echo "$STAGED_FILES" | grep -E '\.(ts|vue)$' || true)
 if [ -n "$FRONTEND_STAGED" ] && [ -x "$root/node_modules/.bin/eslint" ]; then
   # every package with an ESLint config: a library, an application or a plugin that is added is checked as it is
-  ESLINT_PKGS=$(cd "$root" && for dir in libs/*/ libs/ui/*/ apps/*/ apps/desktop/*/ plugins/*/; do dir=${dir%/}; ls "$dir"/eslint.config.* >/dev/null 2>&1 && echo "$dir"; done)
+  ESLINT_PKGS=$(cd "$root" && for dir in libs/*/ libs/core/*/ libs/plugin/*/ libs/ui/*/ apps/*/ apps/desktop/*/ plugins/*/; do dir=${dir%/}; ls "$dir"/eslint.config.* >/dev/null 2>&1 && echo "$dir"; done)
   for pkg in $ESLINT_PKGS; do
     PKG_FILES=$(echo "$FRONTEND_STAGED" | grep "^${pkg}/" | sed "s|^${pkg}/||" || true)
     if [ -n "$PKG_FILES" ] && [ -d "$root/$pkg" ]; then
@@ -52,14 +52,14 @@ if [ -n "$FRONTEND_STAGED" ] && [ -x "$root/node_modules/.bin/eslint" ]; then
 fi
 
 # 5. Comments on fields and properties and doc comments on unexported functions in staged files
-if ! COMMENTS_REPORT=$(node "$root/tools/lint-comments/check.mjs" --staged 2>&1); then
+if ! COMMENTS_REPORT=$(node "$root/tools/checks/style/comments/check.mjs" --staged 2>&1); then
   echo "$COMMENTS_REPORT"
   echo "❌ Error: staged files contain comments that the name and type already state (see AGENTS.md §1)."
   exit 1
 fi
 
 # 6. Narrative identifiers, test names and comments in staged files
-if ! NARRATIVE_REPORT=$(node "$root/tools/lint-narrative/scan.mjs" "$root" --staged --check 2>&1); then
+if ! NARRATIVE_REPORT=$(node "$root/tools/checks/style/names/check.mjs" "$root" --staged --check 2>&1); then
   echo "$NARRATIVE_REPORT"
   echo "❌ Error: staged files contain narrative identifiers, test names or comments (see AGENTS.md §13)."
   exit 1

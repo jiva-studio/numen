@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 )
 
 // The invented shelves: "Bücher" with its ü as one character (NFC) as the vault stores it, and as u

@@ -1,7 +1,8 @@
-import { RELATION_NAMES, type PlexRelation } from '../../relation'
+import { RELATION_NAMES } from '../../relation'
 import { getLimits } from './limits'
 import { lerp } from '../math'
 import type { PlexOptions } from '../options'
+import type { PlexRelation } from '../../../../types'
 
 /** How many of each relation arrived. */
 export type RelationCounts = Readonly<Record<PlexRelation, number>>
@@ -33,7 +34,7 @@ export function packOptions(options: PlexOptions, tightness: number): PlexOption
 }
 
 /**
- * How tightly this neighbourhood must be packed for the window to hold all of it: the loosest packing that fits every node, and the tightest one when no packing does.
+ * How tightly this neighborhood must be packed for the window to hold all of it: the loosest packing that fits every node, and the tightest one when no packing does.
  * A box narrows and a gap closes before a relation is dropped, since a reader can act on a node drawn small but not on one that is not drawn.
  */
 export function measureCrowding(options: PlexOptions, counts: RelationCounts): PlexOptions {

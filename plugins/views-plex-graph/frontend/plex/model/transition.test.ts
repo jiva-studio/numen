@@ -3,19 +3,19 @@ import { effectScope, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { usePlexTransition as baseUsePlexTransition, type Clock } from './transition'
 import { rowsAndColumns, type ArrangeInput } from '../lib/arrange'
-import { neighbourhoods } from '../fixtures/neighbourhoods'
+import { neighborhoods } from '../fixtures/neighborhoods'
 import { stubClock } from '../../fixtures/clock'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlacedNode } from '../lib/node'
+import type { PlexNeighborhood } from '../../types'
 
 const usePlexTransition = (
-  neighbourhood: () => PlexNeighbourhood,
+  neighborhood: () => PlexNeighborhood,
   input: () => ArrangeInput | undefined,
   duration: () => number,
   clock?: Clock,
 ) =>
   baseUsePlexTransition(
-    neighbourhood,
+    neighborhood,
     input,
     clock !== undefined ? { duration, clock } : { duration },
   )
@@ -32,7 +32,7 @@ const getNode = (nodes: readonly PlacedNode[], id: string) => nodes.find((node) 
 describe('a movement stepped by hand', () => {
   it('starts where it was and arrives where it was sent', async () => {
     const world = stubClock()
-    const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
+    const current = ref<PlexNeighborhood>(neighborhoods.typical)
 
     const { frame, isMoving } = inScope(() =>
       usePlexTransition(
@@ -46,7 +46,7 @@ describe('a movement stepped by hand', () => {
     expect(isMoving.value).toBe(false)
     expect(getNode(frame.value.nodes, 'child-0')).toBeDefined()
 
-    current.value = neighbourhoods.leaf
+    current.value = neighborhoods.leaf
     await Promise.resolve()
 
     world.tick(0)
@@ -66,7 +66,7 @@ describe('a movement stepped by hand', () => {
   it('measures from the first frame, not from when it was requested', async () => {
     // A backgrounded tab hands the first callback a stale timestamp.
     const world = stubClock()
-    const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
+    const current = ref<PlexNeighborhood>(neighborhoods.typical)
     const { isMoving } = inScope(() =>
       usePlexTransition(
         () => current.value,
@@ -76,7 +76,7 @@ describe('a movement stepped by hand', () => {
       ),
     )
 
-    current.value = neighbourhoods.leaf
+    current.value = neighborhoods.leaf
     await Promise.resolve()
 
     world.tick(10_000) // first frame, long after the request
@@ -89,7 +89,7 @@ describe('a movement stepped by hand', () => {
 
   it('re-aims mid-movement and not queueing', async () => {
     const world = stubClock()
-    const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
+    const current = ref<PlexNeighborhood>(neighborhoods.typical)
     const { frame } = inScope(() =>
       usePlexTransition(
         () => current.value,
@@ -99,12 +99,12 @@ describe('a movement stepped by hand', () => {
       ),
     )
 
-    current.value = neighbourhoods.leaf
+    current.value = neighborhoods.leaf
     await Promise.resolve()
     world.tick(0)
     world.tick(100)
 
-    current.value = neighbourhoods.diamond
+    current.value = neighborhoods.diamond
     await Promise.resolve()
     expect(world.cancelled.length).toBeGreaterThan(0)
 
@@ -117,7 +117,7 @@ describe('a movement stepped by hand', () => {
 describe('when nothing should move', () => {
   it('arrives at once when it is given no time to move in', async () => {
     const world = stubClock()
-    const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
+    const current = ref<PlexNeighborhood>(neighborhoods.typical)
     const { frame, isMoving } = inScope(() =>
       usePlexTransition(
         () => current.value,
@@ -127,7 +127,7 @@ describe('when nothing should move', () => {
       ),
     )
 
-    current.value = neighbourhoods.leaf
+    current.value = neighborhoods.leaf
     await Promise.resolve()
 
     expect(world.pending).toBe(false)
@@ -137,7 +137,7 @@ describe('when nothing should move', () => {
 
   it('arrives at once when given no time', async () => {
     const world = stubClock()
-    const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
+    const current = ref<PlexNeighborhood>(neighborhoods.typical)
     const { frame } = inScope(() =>
       usePlexTransition(
         () => current.value,
@@ -147,7 +147,7 @@ describe('when nothing should move', () => {
       ),
     )
 
-    current.value = neighbourhoods.leaf
+    current.value = neighborhoods.leaf
     await Promise.resolve()
 
     expect(world.pending).toBe(false)
@@ -161,7 +161,7 @@ describe('a change to the arrangement is a movement too', () => {
     const input = ref({ options: { maxPerLine: 5 } })
     const { isMoving } = inScope(() =>
       usePlexTransition(
-        () => neighbourhoods.crowded,
+        () => neighborhoods.crowded,
         () => input.value,
         () => 400,
         world.clock,
@@ -178,7 +178,7 @@ describe('a change to the arrangement is a movement too', () => {
 describe('when the component is disposed', () => {
   it('stops asking to be called back', async () => {
     const world = stubClock()
-    const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
+    const current = ref<PlexNeighborhood>(neighborhoods.typical)
     const scope = effectScope()
     scope.run(() =>
       usePlexTransition(
@@ -189,7 +189,7 @@ describe('when the component is disposed', () => {
       ),
     )
 
-    current.value = neighbourhoods.leaf
+    current.value = neighborhoods.leaf
     await Promise.resolve()
     world.tick(0)
     expect(world.pending).toBe(true)
@@ -255,7 +255,7 @@ describe('what counts as a change to the arrangement', () => {
     const input = ref<ArrangeInput>(base)
     const { isMoving } = inScope(() =>
       usePlexTransition(
-        () => neighbourhoods.typical,
+        () => neighborhoods.typical,
         () => input.value,
         () => 400,
         world.clock,
@@ -273,7 +273,7 @@ describe('what counts as a change to the arrangement', () => {
     const input = ref<ArrangeInput>(base)
     const { isMoving } = inScope(() =>
       usePlexTransition(
-        () => neighbourhoods.typical,
+        () => neighborhoods.typical,
         () => input.value,
         () => 400,
         world.clock,
@@ -291,7 +291,7 @@ describe('what counts as a change to the arrangement', () => {
     const input = ref<ArrangeInput>({})
     const { isMoving } = inScope(() =>
       usePlexTransition(
-        () => neighbourhoods.typical,
+        () => neighborhoods.typical,
         () => input.value,
         () => 400,
         world.clock,
@@ -309,7 +309,7 @@ describe('what counts as a change to the arrangement', () => {
     const input = ref<ArrangeInput>({ options: { gap: 10 } })
     const { isMoving } = inScope(() =>
       usePlexTransition(
-        () => neighbourhoods.typical,
+        () => neighborhoods.typical,
         () => input.value,
         () => 400,
         world.clock,
@@ -326,7 +326,7 @@ describe('what counts as a change to the arrangement', () => {
 describe('a movement that was not requested', () => {
   it('does not cancel a callback when nothing was waiting for one', async () => {
     const world = stubClock()
-    const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
+    const current = ref<PlexNeighborhood>(neighborhoods.typical)
     inScope(() =>
       usePlexTransition(
         () => current.value,
@@ -336,7 +336,7 @@ describe('a movement that was not requested', () => {
       ),
     )
 
-    current.value = neighbourhoods.leaf
+    current.value = neighborhoods.leaf
     await Promise.resolve()
 
     expect(world.cancelled).toEqual([])
@@ -347,7 +347,7 @@ describe('a movement that was not requested', () => {
     const scope = effectScope()
     scope.run(() =>
       usePlexTransition(
-        () => neighbourhoods.typical,
+        () => neighborhoods.typical,
         () => undefined,
         () => 400,
         world.clock,

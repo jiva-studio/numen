@@ -1,6 +1,7 @@
 import { clamp } from '@numen/ui'
-import { RELATION_NAMES, type PlexRelation } from '../../relation'
+import { RELATION_NAMES } from '../../relation'
 import { isVertical, type PlexOptions } from '../options'
+import type { PlexRelation } from '../../../../types'
 
 /** How one relation wraps: how many along a line, and how many lines. */
 export interface RoleLimits {

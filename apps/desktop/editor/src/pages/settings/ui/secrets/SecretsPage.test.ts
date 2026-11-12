@@ -6,7 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, ref, type Ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import SettingsTab from '../SettingsTab.vue'
-import { createInstallation, createPluginInfo, createSecretAnswer } from '@/testing/installation'
+import {
+  createInstallation,
+  createPluginInfo,
+  createSecretAnswer,
+  createSettingsState,
+} from '@/pages/settings/testing/installation'
 import {
   addSecret,
   chooseGroupAction,
@@ -102,17 +107,15 @@ const mountPage = (
   })
   const wrapper = mount(SettingsTab, {
     attachTo: document.body,
-    props: { state: { installation, initialPluginId: ref('secrets') } },
+    props: { state: createSettingsState(installation, { initialPluginId: ref('secrets') }) },
   })
   return { installation, wrapper }
 }
 
 const liveAnswer = (stored: Ref<ReturnType<typeof secret>[]>) => ({
-  secretSections: computed(() => createSecretAnswer([], stored.value).secretSections?.value ?? []),
-  secretMenus: ref([]),
-  secretStates: computed(
-    () => createSecretAnswer([], stored.value).secretStates?.value ?? new Map(),
-  ),
+  sections: computed(() => createSecretAnswer([], stored.value).sections?.value ?? []),
+  menus: ref([]),
+  states: computed(() => createSecretAnswer([], stored.value).states?.value ?? new Map()),
 })
 
 const mountBare = (
@@ -177,7 +180,7 @@ describe('the sections of the page', () => {
   it('stores the empty secret under its group on the first entry of a value', async () => {
     const { installation, wrapper } = mountPage()
     await enterText(maskedInputs(rowOf('OpenAI'))[0] as HTMLInputElement, 'made-up-first-value')
-    expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledExactlyOnceWith(
       'openai',
       'OpenAI',
       'made-up-first-value',
@@ -203,10 +206,10 @@ describe('the rows of a group', () => {
   it('moves a secret up before the one above it and down after the one below it', async () => {
     const { installation, wrapper } = mountPage()
     await chooseRowAction(rowOf('Home'), /move up/i)
-    expect(installation.moveSecret).toHaveBeenLastCalledWith(HOME.id, WORK.id)
+    expect(installation.secrets.edit.moveSecret).toHaveBeenLastCalledWith(HOME.id, WORK.id)
 
     await chooseRowAction(rowOf('Work'), /move down/i)
-    expect(installation.moveSecret).toHaveBeenLastCalledWith(WORK.id, '')
+    expect(installation.secrets.edit.moveSecret).toHaveBeenLastCalledWith(WORK.id, '')
     dispose(wrapper)
   })
 
@@ -244,14 +247,20 @@ describe('the rows of a group', () => {
     const { installation, wrapper } = mountPage()
     expect(findButtons(/rename/i, rowOf('Work'))).toHaveLength(0)
     await typeName(findNameInput('Work') as HTMLInputElement, 'Office')
-    expect(installation.renameSecret).toHaveBeenCalledExactlyOnceWith(WORK.id, 'Office')
+    expect(installation.secrets.edit.renameSecret).toHaveBeenCalledExactlyOnceWith(
+      WORK.id,
+      'Office',
+    )
     dispose(wrapper)
   })
 
   it('trims the name of a secret as the core does', async () => {
     const { installation, wrapper } = mountPage()
     await typeName(findNameInput('Work') as HTMLInputElement, '\u0085Office\u0085')
-    expect(installation.renameSecret).toHaveBeenCalledExactlyOnceWith(WORK.id, 'Office')
+    expect(installation.secrets.edit.renameSecret).toHaveBeenCalledExactlyOnceWith(
+      WORK.id,
+      'Office',
+    )
     dispose(wrapper)
   })
 })
@@ -277,7 +286,10 @@ describe('the value of a secret', () => {
   it('writes a value entered over a stored one', async () => {
     const { installation, wrapper } = mountPage([WORK])
     await enterText(maskedInputs(rowOf('Work'))[0] as HTMLInputElement, 'made-up-new-value')
-    expect(installation.writeSecret).toHaveBeenCalledExactlyOnceWith(WORK.id, 'made-up-new-value')
+    expect(installation.secrets.edit.writeSecret).toHaveBeenCalledExactlyOnceWith(
+      WORK.id,
+      'made-up-new-value',
+    )
     dispose(wrapper)
   })
 
@@ -286,7 +298,7 @@ describe('the value of a secret', () => {
     const input = maskedInputs(rowOf('OpenAI'))[0] as HTMLInputElement
     await enterText(input, 'made-up-value-that-must-not-stay')
 
-    expect(installation.createSecret).toHaveBeenCalledOnce()
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledOnce()
     expect(input.value).toBe('')
     expect(root().innerHTML).not.toContain('made-up-value-that-must-not-stay')
     dispose(wrapper)
@@ -332,14 +344,14 @@ describe('the plugins that may read a secret', () => {
     expect(isMarked(optionOf('Proofreading'))).toBe(false)
 
     await click(optionOf('Proofreading'))
-    expect(installation.allowPluginSecret).toHaveBeenLastCalledWith(
+    expect(installation.secrets.access.allowPluginSecret).toHaveBeenLastCalledWith(
       WORK.id,
       PROOFREADING,
       'apiKey',
       'openrouter',
     )
     await click(optionOf('Embeddings'))
-    expect(installation.denyPluginSecret).toHaveBeenLastCalledWith(
+    expect(installation.secrets.access.denyPluginSecret).toHaveBeenLastCalledWith(
       WORK.id,
       EMBEDDINGS,
       'apiKey',
@@ -365,12 +377,12 @@ describe('deleting a secret', () => {
     const { installation, wrapper } = mountPage()
     await chooseRowAction(rowOf('Work'), /^delete$/i)
 
-    expect(installation.deleteSecret).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.deleteSecret).not.toHaveBeenCalled()
     expect(getDialog().textContent).toContain('Embeddings')
     expect(getDialog().textContent).not.toContain('Proofreading')
 
     await click(findButton(/^delete$/i, getDialog()))
-    expect(installation.deleteSecret).toHaveBeenCalledExactlyOnceWith(WORK.id)
+    expect(installation.secrets.edit.deleteSecret).toHaveBeenCalledExactlyOnceWith(WORK.id)
     dispose(wrapper)
   })
 
@@ -384,7 +396,7 @@ describe('deleting a secret', () => {
 
   it('reads the states of the values when the page opens', () => {
     const { installation, wrapper } = mountPage()
-    expect(installation.loadSecretStates).toHaveBeenCalledOnce()
+    expect(installation.secrets.loadStates).toHaveBeenCalledOnce()
     dispose(wrapper)
   })
 
@@ -392,8 +404,8 @@ describe('deleting a secret', () => {
     const { installation, wrapper } = mountPage()
     await chooseGroupAction(/delete group/i, sectionOf('travel'))
     await click(findButton(/^delete$/i, getDialog()))
-    expect(installation.deleteSecretGroup).toHaveBeenCalledExactlyOnceWith('travel')
-    expect(installation.deleteSecret).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.deleteSecretGroup).toHaveBeenCalledExactlyOnceWith('travel')
+    expect(installation.secrets.edit.deleteSecret).not.toHaveBeenCalled()
     dispose(wrapper)
   })
 
@@ -401,7 +413,7 @@ describe('deleting a secret', () => {
     const { installation, wrapper } = mountPage()
     await chooseRowAction(rowOf('Work'), /^delete$/i)
     await click(findButton(/cancel/i, getDialog()))
-    expect(installation.deleteSecret).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.deleteSecret).not.toHaveBeenCalled()
     dispose(wrapper)
   })
 
@@ -434,7 +446,7 @@ describe('adding a secret to a group', () => {
     await addSecret(sectionOf('OpenRouter'))
     expect(findNameInput('OpenRouter V1')).not.toBeNull()
     await enterText(maskedInputs(rowOf('OpenRouter V1'))[0] as HTMLInputElement, 'made-up-value')
-    expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledExactlyOnceWith(
       'openrouter',
       'OpenRouter V1',
       'made-up-value',
@@ -447,7 +459,7 @@ describe('adding a secret to a group', () => {
     await addSecret(sectionOf('OpenRouter'))
     await typeName(findNameInput('OpenRouter V1') as HTMLInputElement, 'Staging')
     await enterText(maskedInputs(rowOf('Staging'))[0] as HTMLInputElement, 'made-up-staging-value')
-    expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledExactlyOnceWith(
       'openrouter',
       'Staging',
       'made-up-staging-value',
@@ -528,7 +540,7 @@ describe('the name of a new secret', () => {
     await click(findButton(/add group/i))
     await typeGroup('Local Llama')
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-llama-value')
-    expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledExactlyOnceWith(
       'Local Llama',
       'Default',
       'made-up-llama-value',
@@ -540,7 +552,7 @@ describe('the name of a new secret', () => {
     const { installation, wrapper } = mountBare([secret('s00000001', 'Default', 'Local Llama')])
     await addSecret()
     await enterText(lastMasked(), 'made-up-second-value')
-    expect(installation.createSecret).toHaveBeenCalledWith(
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledWith(
       'Local Llama',
       'Default V1',
       'made-up-second-value',
@@ -555,7 +567,7 @@ describe('the name of a new secret', () => {
     ])
     await addSecret()
     await enterText(lastMasked(), 'made-up-third-value')
-    expect(installation.createSecret).toHaveBeenCalledWith(
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledWith(
       'Local Llama',
       'Default V2',
       'made-up-third-value',
@@ -647,7 +659,7 @@ describe('adding a group', () => {
     expect(document.activeElement).toBe(input)
     expect(input.selectionStart).toBe(0)
     expect(input.selectionEnd).toBe('New group'.length)
-    expect(installation.createSecret).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.createSecret).not.toHaveBeenCalled()
     dispose(wrapper)
   })
 
@@ -665,10 +677,10 @@ describe('adding a group', () => {
     const { installation, wrapper } = mountBare()
     await click(findButton(/add group/i))
     await typeGroup('Local Llama')
-    expect(installation.renameSecretGroup).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.renameSecretGroup).not.toHaveBeenCalled()
     expect(findText('Local Llama')?.tagName).toBe('H2')
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-llama-value')
-    expect(installation.createSecret).toHaveBeenCalledExactlyOnceWith(
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledExactlyOnceWith(
       'Local Llama',
       'Default',
       'made-up-llama-value',
@@ -696,7 +708,10 @@ describe('the name of a group', () => {
     const travel = sectionOf('travel')
     await chooseGroupAction(/rename group/i, travel)
     await enterText(travel.querySelector('input[type="text"]') as HTMLInputElement, 'holidays')
-    expect(installation.renameSecretGroup).toHaveBeenCalledExactlyOnceWith('travel', 'holidays')
+    expect(installation.secrets.edit.renameSecretGroup).toHaveBeenCalledExactlyOnceWith(
+      'travel',
+      'holidays',
+    )
     dispose(wrapper)
   })
 
@@ -705,7 +720,7 @@ describe('the name of a group', () => {
     await click(findButton(/add group/i))
     await typeGroup('g'.repeat(65))
     expect(findText('New group')?.tagName).toBe('H2')
-    expect(installation.createSecret).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.createSecret).not.toHaveBeenCalled()
     dispose(wrapper)
   })
 
@@ -714,7 +729,7 @@ describe('the name of a group', () => {
     await click(findButton(/add group/i))
     await typeGroup('g'.repeat(64))
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
-    expect(installation.createSecret).toHaveBeenCalledWith(
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledWith(
       'g'.repeat(64),
       'Default',
       'made-up-value',
@@ -727,7 +742,7 @@ describe('the name of a group', () => {
     const travel = sectionOf('travel')
     await chooseGroupAction(/rename group/i, travel)
     await enterText(travel.querySelector('input[type="text"]') as HTMLInputElement, 'openrouter')
-    expect(installation.renameSecretGroup).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.renameSecretGroup).not.toHaveBeenCalled()
     expect(travel.querySelector('[role="alert"]')?.textContent?.trim()).toBe(
       'A group named openrouter already exists.',
     )
@@ -738,7 +753,7 @@ describe('the name of a group', () => {
     const { installation, wrapper } = mountBare([MINE])
     await click(findButton(/add group/i))
     await typeGroup('travel')
-    expect(installation.renameSecretGroup).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.renameSecretGroup).not.toHaveBeenCalled()
     expect(root().querySelector('[role="alert"]')?.textContent).toContain('travel')
     dispose(wrapper)
   })
@@ -748,7 +763,11 @@ describe('the name of a group', () => {
     await click(findButton(/add group/i))
     await typeGroup('\u0085abc')
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
-    expect(installation.createSecret).toHaveBeenCalledWith('abc', 'Default', 'made-up-value')
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledWith(
+      'abc',
+      'Default',
+      'made-up-value',
+    )
     dispose(wrapper)
   })
 
@@ -757,7 +776,11 @@ describe('the name of a group', () => {
     await click(findButton(/add group/i))
     await typeGroup('﻿abc')
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
-    expect(installation.createSecret).toHaveBeenCalledWith('﻿abc', 'Default', 'made-up-value')
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledWith(
+      '﻿abc',
+      'Default',
+      'made-up-value',
+    )
     dispose(wrapper)
   })
 })

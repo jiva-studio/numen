@@ -8,7 +8,7 @@ import { getGoShardOf, keepFiles, mergeGoCaches, mergeStrykerReports } from './c
 import { groupByLine, isTargetIssue, planIssue, readCount, readKeys, renderBody } from './issue.mjs'
 import { findTarget, formatSurvivors, getRunName, renderVitestConfig } from './mutate.mjs'
 import { listShards } from './shards.mjs'
-import { getOriginal, readMutants, summarize } from './report.mjs'
+import { getOriginalText, readMutants, summarize } from './report.mjs'
 import {
   findTestdata,
   getShardCount,
@@ -21,15 +21,15 @@ import {
   pickShard,
 } from './targets.mjs'
 
-const go = { name: 'libs-core', kind: 'go', at: 'libs/core', shards: 1, testdata: [] }
-const ts = { name: 'libs-ui', kind: 'ts', at: 'libs/ui/core', shards: 1, testdata: [] }
+const go = { name: 'libs-core-kernel', kind: 'go', at: 'libs/core/kernel', shards: 1, testdata: [] }
+const ts = { name: 'libs-ui', kind: 'ts', at: 'libs/ui/components', shards: 1, testdata: [] }
 
 const at = (line, column, endColumn) => ({
   start: { line, column },
   end: { line, column: endColumn },
 })
 
-const report = (source, mutants, key = 'libs/ui/core/src/lib/span.ts') => ({
+const report = (source, mutants, key = 'libs/ui/components/src/lib/span.ts') => ({
   files: { [key]: { source, mutants } },
 })
 
@@ -65,29 +65,29 @@ test('a folder holding a Go module and a package names both by kind', () => {
   const named = nameTargets([
     { kind: 'go', at: 'apps/mobile' },
     { kind: 'ts', at: 'apps/mobile' },
-    { kind: 'go', at: 'libs/core' },
+    { kind: 'go', at: 'libs/core/kernel' },
   ])
   assert.deepEqual(
     named.map((one) => one.name),
-    ['apps-mobile-go', 'apps-mobile-ts', 'libs-core'],
+    ['apps-mobile-go', 'apps-mobile-ts', 'libs-core-kernel'],
   )
 })
 
 test('test data outside the package is found from the paths its tests import', () => {
   const tests = [
     {
-      path: 'libs/ui/core/src/shared/lib/text/address.test.ts',
+      path: 'libs/ui/components/src/shared/lib/text/address.test.ts',
       source:
-        "import cases from '../../../../../../protocol/testdata/addresses.json'\nimport { read } from './address'\nimport raw from '../../../../../../protocol/testdata/html/spine.html?raw'",
+        "import cases from '../../../../../../core/protocol/testdata/addresses.json'\nimport { read } from './address'\nimport raw from '../../../../../../core/protocol/testdata/html/spine.html?raw'",
     },
   ]
-  assert.deepEqual(findTestdata('libs/ui/core', tests), ['libs/protocol/testdata'])
+  assert.deepEqual(findTestdata('libs/ui/components', tests), ['libs/core/protocol/testdata'])
 })
 
 test('the tree yields the core module and the components package, with what their tests read', () => {
   const found = getTargets()
-  const core = found.find((one) => one.at === 'libs/core')
-  const ui = found.find((one) => one.at === 'libs/ui/core')
+  const core = found.find((one) => one.at === 'libs/core/kernel')
+  const ui = found.find((one) => one.at === 'libs/ui/components')
   assert.equal(core?.kind, 'go')
   assert.ok(core.shards > 1)
   assert.equal(ui?.kind, 'ts')
@@ -102,12 +102,12 @@ test('the generated Vitest config keeps the projects that do not run in a browse
 })
 
 test('source under test is told apart from tests, stories and barrels', () => {
-  assert.equal(isMutatedSource('libs/ui/core/src/lib/span.ts'), true)
-  assert.equal(isMutatedSource('libs/ui/core/src/lib/span.test.ts'), false)
-  assert.equal(isMutatedSource('libs/ui/core/src/lib/span.stories.ts'), false)
-  assert.equal(isMutatedSource('libs/ui/core/src/lib/index.ts'), false)
+  assert.equal(isMutatedSource('libs/ui/components/src/lib/span.ts'), true)
+  assert.equal(isMutatedSource('libs/ui/components/src/lib/span.test.ts'), false)
+  assert.equal(isMutatedSource('libs/ui/components/src/lib/span.stories.ts'), false)
+  assert.equal(isMutatedSource('libs/ui/components/src/lib/index.ts'), false)
   assert.equal(isMutatedSource('apps/desktop/editor/src/main.ts'), false)
-  assert.equal(isMutatedSource('libs/ui/core/src/lib/Span.vue'), false)
+  assert.equal(isMutatedSource('libs/ui/components/src/lib/Span.vue'), false)
   assert.equal(isMutatedGo('usecase/note/open.go'), true)
   assert.equal(isMutatedGo('usecase/note/open_test.go'), false)
   assert.equal(isMutatedGo('usecase/note/testdata/case.go'), false)
@@ -115,22 +115,24 @@ test('source under test is told apart from tests, stories and barrels', () => {
   assert.equal(isMutatedGo('agentrun/agenttest/agenttest.go'), false)
   assert.equal(isMutatedGo('plugintest/messages.go'), false)
   assert.equal(isMutatedSource('apps/desktop/editor/src/testing/answers.ts'), false)
-  assert.equal(isMutatedSource('libs/ui/core/src/features/plex/fixtures/build.ts'), false)
-  assert.equal(isMutatedSource('libs/ui/core/src/shared/fixtures/clock.ts'), false)
+  assert.equal(isMutatedSource('libs/ui/components/src/features/plex/fixtures/build.ts'), false)
+  assert.equal(isMutatedSource('libs/ui/components/src/shared/fixtures/clock.ts'), false)
   assert.equal(isMutatedGo('usecase/note/fixtures/case.go'), false)
 })
 
 test('the sandbox keeps the package and its test data and drops their siblings', () => {
-  assert.deepEqual(keepOnly(['libs/ui/core', 'libs/protocol/testdata']), [
+  assert.deepEqual(keepOnly(['libs/ui/components', 'libs/core/protocol/testdata']), [
     '/*',
     '!/libs',
     '/libs/*',
     '!/libs/ui',
     '/libs/ui/*',
-    '!/libs/ui/core',
-    '!/libs/protocol',
-    '/libs/protocol/*',
-    '!/libs/protocol/testdata',
+    '!/libs/ui/components',
+    '!/libs/core',
+    '/libs/core/*',
+    '!/libs/core/protocol',
+    '/libs/core/protocol/*',
+    '!/libs/core/protocol/testdata',
   ])
 })
 
@@ -138,9 +140,9 @@ test('the sandbox keeps the package and its test data and drops their siblings',
 
 test('the replaced text is read from the source, across lines too', () => {
   const source = 'const a = 1\nif (width > limit) {\n  grow(\n    width)\n}\n'
-  assert.equal(getOriginal(source, at(2, 5, 18)), 'width > limit')
+  assert.equal(getOriginalText(source, at(2, 5, 18)), 'width > limit')
   assert.equal(
-    getOriginal(source, { start: { line: 3, column: 3 }, end: { line: 4, column: 11 } }),
+    getOriginalText(source, { start: { line: 3, column: 3 }, end: { line: 4, column: 11 } }),
     'grow( width)',
   )
 })
@@ -159,7 +161,7 @@ test('a mutant keeps its key when lines are added above it', () => {
     report('// a note\n\nif (width > limit) {}\n', [{ ...mutant, location: at(3, 5, 18) }]),
   ])
   assert.equal(before[0].key, after[0].key)
-  assert.equal(before[0].path, 'libs/ui/core/src/lib/span.ts')
+  assert.equal(before[0].path, 'libs/ui/components/src/lib/span.ts')
   assert.equal(after[0].line, 3)
 })
 
@@ -192,7 +194,7 @@ test('a Go mutant is placed by the module path its id carries', () => {
       'cardid.go',
     ),
   ])
-  assert.equal(one.path, 'libs/core/internal/cardid/cardid.go')
+  assert.equal(one.path, 'libs/core/kernel/internal/cardid/cardid.go')
 })
 
 test('efficacy counts killed and timed-out mutants against the survivors only', () => {
@@ -207,7 +209,7 @@ test('efficacy counts killed and timed-out mutants against the survivors only', 
 
 const survivor = (key) => ({
   key,
-  path: 'libs/ui/core/src/lib/span.ts',
+  path: 'libs/ui/components/src/lib/span.ts',
   line: 4,
   mutator: 'EqualityOperator',
   original: 'a > b',
@@ -280,7 +282,7 @@ test('the matrix names each shard as the run names its report', () => {
 })
 
 test('the body lists one survivor per line and counts the rest of that line', () => {
-  const on = (key, line, path = 'libs/ui/core/src/lib/span.ts') => ({
+  const on = (key, line, path = 'libs/ui/components/src/lib/span.ts') => ({
     ...survivor(key),
     line,
     path,
@@ -322,14 +324,14 @@ test('a file is mutated with the deepest target of its kind that holds it', () =
   assert.equal(findTarget(targets, 'apps/desktop/internal/a.go').name, 'apps-desktop')
   assert.equal(findTarget(targets, 'apps/mobile/bind/a.go').name, 'apps-mobile-go')
   assert.equal(findTarget(targets, 'apps/mobile/src/a.ts').name, 'apps-mobile-ts')
-  assert.throws(() => findTarget(targets, 'libs/plugin-sdk-ts/src/a.ts'))
+  assert.throws(() => findTarget(targets, 'libs/plugin/sdk-ts/src/a.ts'))
 })
 
 test('the mutants a file run prints are the unnoticed ones, in line order', () => {
   const one = (line, status) => ({ ...survivor('aaaaaa1111'), line, status })
   assert.deepEqual(formatSurvivors([one(9, 'Survived'), one(3, 'Killed'), one(4, 'NoCoverage')]), [
-    'libs/ui/core/src/lib/span.ts:4 not covered EqualityOperator: a > b → a >= b',
-    'libs/ui/core/src/lib/span.ts:9 survived EqualityOperator: a > b → a >= b',
+    'libs/ui/components/src/lib/span.ts:4 not covered EqualityOperator: a > b → a >= b',
+    'libs/ui/components/src/lib/span.ts:9 survived EqualityOperator: a > b → a >= b',
   ])
 })
 
@@ -402,11 +404,11 @@ test('a Go cache written under another toolchain is dropped from the merge', () 
 
 /** Repository-relative TypeScript files, the first held by shard 1 of 2 and the second by shard 2. */
 const findTsFiles = () => {
-  const files = Array.from({ length: 20 }, (_, index) => `libs/ui/core/src/lib/file${index}.ts`)
+  const files = Array.from({ length: 20 }, (_, index) => `libs/ui/components/src/lib/file${index}.ts`)
   return [1, 2].map((index) => files.find((file) => getShardOf(file, 2) === index))
 }
 
-const TESTS = 'libs/ui/core/src/lib/span.test.ts'
+const TESTS = 'libs/ui/components/src/lib/span.test.ts'
 const TEST_SOURCE = "it('grows', () => {})\nit('shrinks', () => {})\n"
 
 /** A Stryker report whose tests are numbered in the order given. */

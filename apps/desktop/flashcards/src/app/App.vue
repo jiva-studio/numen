@@ -6,32 +6,34 @@
  */
 import type { Component } from 'vue'
 import '@numen/ui/styles.css'
-import '@numen/shell/styles.css'
-import { Palette } from '@numen/shell'
-import { SlotViewHost } from '@numen/plugin-host'
+import '@numen/workbench/styles.css'
+import { Palette } from '@numen/workbench'
+import { SlotViewHost } from '@numen/plugin-loader'
 import { LoadingIndicator } from '@numen/ui'
-import { WORDS } from '@/shared/words'
-import VaultChooser from './VaultChooser.vue'
-import { useShell, type ShellDeps } from './useShell'
+import { APPEARANCE_WORDS } from '@/features/appearance'
+import { VaultChooser } from '@/pages/vault-chooser'
+import type { WindowParts } from './window/createWindow'
+import { WORDS } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  deps?: ShellDeps
+  parts: WindowParts
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell(props.deps)
+const { tabs, vaults, plugins, titleBarView, mountView, appearance } = props.parts
+const { front, tab, openTab } = tabs
 </script>
 
 <template>
   <!-- The window is drawn once the plugins have started or the wait for them has passed, so the
        layout does not move when the bar is drawn. -->
   <LoadingIndicator v-if="!plugins.isStarted.value" class="starting" :label="WORDS.appName" />
-  <SlotViewHost v-else :view="plugins.titleBarView.value" />
+  <SlotViewHost v-else :view="titleBarView" />
   <main
     v-if="plugins.isStarted.value"
     class="window"
-    :class="{ 'window--below-bar': plugins.titleBarView.value }"
+    :class="{ 'window--below-bar': titleBarView }"
   >
     <component
       :is="tab.view.registration.component as Component"
@@ -59,8 +61,8 @@ const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell
     v-model="appearance.query.value"
     :groups="appearance.groups.value"
     :is-open="appearance.isOpen.value"
-    :placeholder="WORDS.palettePlaceholder"
-    :name="WORDS.paletteName"
+    :placeholder="APPEARANCE_WORDS.palettePlaceholder"
+    :name="APPEARANCE_WORDS.paletteName"
     @choose="appearance.onChoose"
     @dismiss="appearance.onDismiss"
   />

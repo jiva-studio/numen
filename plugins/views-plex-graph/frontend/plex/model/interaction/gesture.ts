@@ -8,7 +8,7 @@ import { resolveDrop, getRelationWithoutDirection, type Drop } from '../../lib/a
 import type { PlexOptions } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
 import type { Position } from '../../lib/node'
-import type { PlexRelation } from '../../lib/relation'
+import type { PlexRelation } from '../../../types'
 
 export interface Gesture {
   readonly from: Ref<string | null>
@@ -58,23 +58,24 @@ interface GestureListenerHandlers {
   readonly onCancel: () => void
 }
 
-function releasePointer(element: SVGSVGElement | null, pointerId: number | null): void {
-  if (element && pointerId !== null) {
-    try {
-      // Stryker disable next-line OptionalChaining: a missing method throws a TypeError, which the catch below absorbs
-      element.releasePointerCapture?.(pointerId)
-    } catch {
-      // Never held it; nothing to release.
-    }
+function releasePointer(element: SVGSVGElement | null, pointerId: number | null): boolean {
+  if (!element || pointerId === null) return false
+  try {
+    // Stryker disable next-line OptionalChaining: a missing method throws a TypeError, which the catch below absorbs
+    element.releasePointerCapture?.(pointerId)
+    return true
+  } catch {
+    return false
   }
 }
 
-function capturePointer(element: SVGSVGElement, pointerId: number): void {
+function capturePointer(element: SVGSVGElement, pointerId: number): boolean {
   try {
     // Stryker disable next-line OptionalChaining: a missing method throws a TypeError, which the catch below absorbs
     element.setPointerCapture?.(pointerId)
+    return true
   } catch {
-    // Nothing to hold on to; the listeners below still follow it.
+    return false
   }
 }
 

@@ -1,5 +1,5 @@
 /** Invented slot entries for the tests and the stories of the bar. Not shipped. */
-import { h, markRaw, type FunctionalComponent } from 'vue'
+import { h, markRaw, type Component, type FunctionalComponent } from 'vue'
 import type { SlotCommand, SlotItem, SlotSeparator, SlotSubmenu, SlotView } from '@numen/plugin-sdk'
 
 const TIDE = 'org.example.tide'
@@ -23,7 +23,13 @@ export const command = (id: string, extra: Partial<SlotCommand> = {}): SlotComma
 const createLabelView = (text: string): FunctionalComponent =>
   markRaw(() => h('span', { 'data-label-view': text }, text))
 
-export const view = (id: string, component: unknown = createLabelView(id)): SlotView => ({
+/** A command the bar draws without an icon. */
+export const commandWithoutIcon = (id: string): SlotCommand => {
+  const { icon: _icon, ...rest } = command(id)
+  return rest
+}
+
+export const view = (id: string, component: Component = createLabelView(id)): SlotView => ({
   kind: 'view',
   key: `${REEF}/view/${id}`,
   pluginId: REEF,

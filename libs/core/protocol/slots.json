@@ -1,0 +1,62 @@
+{
+  "//": "The slots of a window. A plugin fills them with the entries of contributes.slots; it declares no slot of its own, only submenus. tools/slots.mjs writes the Go and TypeScript lists from this file.",
+  "slots": [
+    {
+      "name": "titleBar",
+      "isWindow": true,
+      "owner": "the window",
+      "about": "the bar at the top of a window; one view, the plugin of the title bar"
+    },
+    {
+      "name": "statusBar",
+      "isWindow": true,
+      "owner": "the window",
+      "about": "the bar at the bottom of a window; one view, the plugin of the status bar"
+    },
+    {
+      "name": "titleBar.commands",
+      "owner": "the plugin of the title bar",
+      "about": "the buttons of the title bar"
+    },
+    {
+      "name": "titleBar.status",
+      "owner": "the plugin of the title bar",
+      "about": "the views of the title bar, after its title"
+    },
+    {
+      "name": "statusBar.left",
+      "owner": "the plugin of the status bar",
+      "about": "the start of the status bar"
+    },
+    {
+      "name": "statusBar.right",
+      "owner": "the plugin of the status bar",
+      "about": "the end of the status bar"
+    },
+    {
+      "name": "fileTree.context",
+      "owner": "the plugin of the file tree",
+      "about": "the menu of a row of the file tree, over its file or folder"
+    },
+    {
+      "name": "tabStrip.context",
+      "owner": "the tab strip of the window",
+      "about": "the menu of a tab, over the file of the tab"
+    },
+    {
+      "name": "plexGraph.context",
+      "owner": "the plugin of the plex graph",
+      "about": "the menu of a node of the plex graph, over its note"
+    },
+    {
+      "name": "palette.searchResult",
+      "owner": "the palette",
+      "about": "the actions of a search result that is a note, over that note"
+    },
+    {
+      "name": "palette.note",
+      "owner": "the palette",
+      "about": "the commands of the palette over the note in front"
+    }
+  ]
+}

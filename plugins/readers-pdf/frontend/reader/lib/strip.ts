@@ -6,6 +6,7 @@
  * test evaluates them without a browser.
  */
 import type { Size } from '@numen/ui'
+import type { Fit } from '../../types'
 import { getPageNavigationAction } from '@numen/ui'
 
 export interface Rect {
@@ -46,7 +47,7 @@ export const GAP = 16
  * The default page size, used for pages whose size is unknown. A document
  * reports its page sizes, and a document that has not reported yet is still laid out.
  */
-export const UPRIGHT: Page = { width: 612, height: 792 }
+const UPRIGHT: Page = { width: 612, height: 792 }
 
 /**
  * How far beyond the viewport edge pages are drawn, as a fraction of the
@@ -121,8 +122,8 @@ export function getPagesWithin(
 }
 
 /**
- * The current page: the last page that begins at or before the vertical centre
- * line of the viewport. A centre line in the gap after a page belongs to that
+ * The current page: the last page that begins at or before the vertical center
+ * line of the viewport. A center line in the gap after a page belongs to that
  * page.
  */
 export function getCurrentPage(row: Row, viewport: Size, offset: number): number {
@@ -151,8 +152,8 @@ export function getScrollTarget(row: Row, viewport: Size, page: number): number 
   const begins = row.starts[page]
   const width = row.widths[page]
   if (leftEdge === undefined || begins === undefined || width === undefined) return undefined
-  const isCentreOnPage = leftEdge + viewport.width / 2 < begins + width
-  const target = isCentreOnPage ? leftEdge : Math.round(begins + width / 2 - viewport.width / 2)
+  const isCenterOnPage = leftEdge + viewport.width / 2 < begins + width
+  const target = isCenterOnPage ? leftEdge : Math.round(begins + width / 2 - viewport.width / 2)
   const furthest = Math.max(row.length - viewport.width, 0)
   return Math.min(Math.max(target, 0), furthest)
 }
@@ -203,12 +204,6 @@ export function clampZoom(zoom: number): number {
   return Math.min(Math.max(zoom, FURTHEST), CLOSEST)
 }
 
-/**
- * How a document is drawn when it opens: a whole page in the viewport, a page as wide
- * as the viewport, or a page at its printed size.
- */
-export type Fit = 'page' | 'width' | '100%'
-
 /** CSS pixels per point of a page: 96 CSS pixels and 72 points to the inch. */
 const PIXELS_PER_POINT = 96 / 72
 
@@ -244,7 +239,7 @@ export interface Anchor {
   readonly fraction: number
 }
 
-/** The point of the row under the centre line of the viewport. */
+/** The point of the row under the center line of the viewport. */
 export function getAnchor(row: Row, viewport: Size, offset: number): Anchor | undefined {
   if (row.starts.length === 0) return undefined
   const page = getCurrentPage(row, viewport, offset)
@@ -252,7 +247,7 @@ export function getAnchor(row: Row, viewport: Size, offset: number): Anchor | un
   return { page, fraction: (offset + viewport.width / 2 - row.starts[page]!) / width }
 }
 
-/** How far the row is scrolled to put the anchor under the centre line, held inside the row. */
+/** How far the row is scrolled to put the anchor under the center line, held inside the row. */
 export function getAnchorScroll(row: Row, viewport: Size, anchor: Anchor): number | undefined {
   const begins = row.starts[anchor.page]
   const width = row.widths[anchor.page]
@@ -261,12 +256,12 @@ export function getAnchorScroll(row: Row, viewport: Size, anchor: Anchor): numbe
   return Math.min(Math.max(target, 0), Math.max(row.length - viewport.width, 0))
 }
 
-/** The share of the page height that is above the centre line of the viewport. */
+/** The share of the page height that is above the center line of the viewport. */
 export function getAcrossShare(row: Row, viewport: Size, offset: number): number {
   return row.height <= 0 ? 0.5 : (offset + viewport.height / 2 - GAP) / row.height
 }
 
-/** How far the row is scrolled across to put that share of the page height under the centre line. */
+/** How far the row is scrolled across to put that share of the page height under the center line. */
 export function getAcrossScroll(row: Row, viewport: Size, share: number): number {
   const target = Math.round(GAP + share * row.height - viewport.height / 2)
   return Math.min(Math.max(target, 0), Math.max(row.height + 2 * GAP - viewport.height, 0))

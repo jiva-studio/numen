@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.11.16",
+  "version": "2026.11.17",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
@@ -33,6 +33,14 @@
         "icon": "waypoints",
         "group": "navigate",
         "order": 20,
+        "when": "target.isNote"
+      },
+      {
+        "slot": "palette.note",
+        "command": "app:file.reveal",
+        "values": { "kind": "plex" },
+        "title": "Show in plex",
+        "icon": "waypoints",
         "when": "target.isNote"
       },
       { "slot": "titleBar.commands", "command": "graph.open", "group": "navigate", "order": 20 },

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 func decodeAnswer(t *testing.T, structured []byte) map[string]any {

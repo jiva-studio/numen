@@ -2,13 +2,12 @@
  * Frontend entrypoint for the Search Relevance plugin: the search relevance settings view.
  */
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import FloorPanel from './floor/ui/FloorPanel.vue'
+import { FloorPanel } from './floor'
 
-export { FloorPanel }
-export { useFloor } from './floor/model/useFloor'
+export { FloorPanel, useFloor } from './floor'
 
 export function activate(context: PluginContext): void {
-  context.registerSettingsView({ id: 'floor', component: FloorPanel })
+  context.register.settingsView({ id: 'floor', component: FloorPanel })
 }
 
 export function deactivate(): void {

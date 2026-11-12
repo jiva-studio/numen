@@ -1,7 +1,8 @@
 import { computed, ref, watch } from 'vue'
 import { createArrowTransform, createPath, createReadingPath } from '../../lib/arrange'
-import { edgeKey, type EdgeArrow, type PlacedEdge } from '../../lib/edge'
+import { edgeKey, type PlacedEdge } from '../../lib/edge'
 import type { PlexFrame } from '../../lib/frame'
+import type { EdgeArrow } from '../../../types'
 
 /** Rendered edge line with its SVG path, arrowheads, and titles. */
 export interface EdgeLine {
@@ -14,7 +15,7 @@ export interface EdgeLine {
 }
 
 /** Positioned title along an edge line. */
-export interface TitleLine {
+interface TitleLine {
   readonly words: string
   readonly path: string
   readonly line: string

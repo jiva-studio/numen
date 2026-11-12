@@ -5,19 +5,14 @@
  * list of vaults. When the room is short, the commands go into the menu button and the views are
  * hidden from the end of the bar.
  */
-import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { Ellipsis } from '@lucide/vue'
-import { SearchableListPopup, measureRect, type ListItem } from '@numen/ui'
-import {
-  SLOT,
-  type AppInfo,
-  type CommandItem,
-  type SlotItem,
-  type VaultsState,
-} from '@numen/plugin-sdk'
-import { CORNER_INSET, getControls, getControlsRoom, type ButtonsSetting } from '../lib/frame'
+import { SearchableListPopup } from '@numen/ui'
+import { SLOT, type SlotItem } from '@numen/plugin-sdk'
+import { CORNER_INSET, getControls, getControlsRoom } from '../lib/frame'
 import { formatTitle } from '../lib/title'
 import { TITLE_BAR_WORDS } from '../lib/words'
+import { useVaultList } from '../model/useVaultList'
 import MacButtonsInset from './frame/MacButtonsInset.vue'
 import WindowControls from './frame/WindowControls.vue'
 import WindowDragArea from './frame/WindowDragArea.vue'
@@ -27,37 +22,20 @@ import { getFitKey, useBarFit, type BarRow } from './useBarFit'
 import { useToolbarFocus } from './useToolbarFocus'
 import './frame/frame.css'
 import './titleBar.css'
-
-/** The id of the last row of the list; its NUL character keeps it apart from every vault id. */
-const CREATE_VAULT_ROW = '\u0000create-vault'
+import type { TitleBarProps } from './TitleBar.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = withDefaults(
-  defineProps<{
-    appName: string
-    platform?: AppInfo['platform']
-    buttons?: ButtonsSetting
-    isMaximized?: boolean
-    isFullscreen?: boolean
-    vaults?: VaultsState
-    commands?: readonly SlotItem[]
-    status?: readonly SlotItem[]
-    canCreateVault?: boolean
-    listItems?: (command: string) => Promise<readonly CommandItem[]>
-    reportError?: ((error: unknown) => void) | undefined
-  }>(),
-  {
-    platform: 'windows',
-    buttons: 'windows',
-    isMaximized: false,
-    isFullscreen: false,
-    vaults: () => ({ vaults: [], current: null }),
-    commands: () => [],
-    status: () => [],
-    canCreateVault: false,
-    listItems: async () => [],
-  },
-)
+const props = withDefaults(defineProps<TitleBarProps>(), {
+  platform: 'windows',
+  buttons: 'windows',
+  isMaximized: false,
+  isFullscreen: false,
+  vaults: () => ({ vaults: [], current: null }),
+  commands: () => [],
+  status: () => [],
+  canCreateVault: false,
+  listItems: () => Promise.resolve([]),
+})
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
@@ -104,57 +82,15 @@ const overflow = computed<readonly SlotItem[]>(() => {
 })
 
 const trigger = useTemplateRef<HTMLElement>('trigger')
-const isOpen = ref(false)
-const anchor = ref({ x: 0, y: 0 })
-const triggerWidth = ref(0)
-const hasVaults = computed(() => props.vaults.current !== null && props.vaults.vaults.length > 0)
-const isListOpen = computed(() => isOpen.value && hasVaults.value)
-const items = computed<readonly ListItem[]>(() => [
-  ...props.vaults.vaults.map(({ id, name }) => ({ id, text: name })),
-  ...(props.canCreateVault
-    ? [{ id: CREATE_VAULT_ROW, text: TITLE_BAR_WORDS.createVault, hasSeparator: true }]
-    : []),
-])
-const current = computed(() => props.vaults.current?.id ?? null)
-
-/* --------------------------------- Hooks ---------------------------------- */
-// Registered before the list is drawn, so it runs before the list's own press outside: a press of
-// the title is the title's to answer, which closes the list through the click that follows.
-watch(
-  isListOpen,
-  (open) => {
-    if (open) globalThis.addEventListener('pointerdown', onPressTitle, true)
-    else globalThis.removeEventListener('pointerdown', onPressTitle, true)
-  },
-  { flush: 'sync' },
-)
-
-onBeforeUnmount(() => globalThis.removeEventListener('pointerdown', onPressTitle, true))
+const { hasVaults, isListOpen, popup, toggle, select, close } = useVaultList({
+  trigger,
+  getVaults: () => props.vaults,
+  canCreate: () => props.canCreateVault,
+  onCreate: () => emit('create-vault'),
+  onSwitch: (id) => emit('switch-vault', id),
+})
 
 /* -------------------------------- Handlers -------------------------------- */
-function onToggleList(): void {
-  if (isOpen.value) {
-    isOpen.value = false
-    return
-  }
-  const box = measureRect(trigger.value)
-  anchor.value = { x: box?.left ?? 0, y: box?.bottom ?? 0 }
-  triggerWidth.value = box?.width ?? 0
-  isOpen.value = true
-}
-
-function onSwitchVault(id: string): void {
-  isOpen.value = false
-  if (id === CREATE_VAULT_ROW) emit('create-vault')
-  else if (id !== current.value) emit('switch-vault', id)
-}
-
-function onPressTitle(event: Event): void {
-  if (event.target instanceof Node && trigger.value?.contains(event.target)) {
-    event.stopImmediatePropagation()
-  }
-}
-
 function onDoubleClick(event: MouseEvent): void {
   if (event.target instanceof Element && event.target.closest('button, [data-title-bar-entry]')) {
     return
@@ -246,7 +182,7 @@ function onRunCommand(
           :aria-expanded="isListOpen"
           :title="fullTitle"
           style="--wails-draggable: no-drag"
-          @click="onToggleList"
+          @click="toggle"
         >
           {{ fullTitle }}
         </button>
@@ -269,16 +205,13 @@ function onRunCommand(
 
     <SearchableListPopup
       v-if="isListOpen"
-      :items="items"
-      :model-value="current"
+      v-bind="popup"
       :label="TITLE_BAR_WORDS.switcher"
       :placeholder="TITLE_BAR_WORDS.search"
       :empty-text="TITLE_BAR_WORDS.nothing"
-      :at="anchor"
-      :asking="triggerWidth"
       :from="trigger"
-      @select="onSwitchVault"
-      @close="isOpen = false"
+      @select="select"
+      @close="close"
     />
 
     <WindowControls

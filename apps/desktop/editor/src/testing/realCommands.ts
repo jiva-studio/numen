@@ -3,19 +3,41 @@
  * the manifests of the plugins declare, the palette model, the runner and the handler table. Only
  * the edge is a double: the navigation of a tab and the events the core is notified of.
  */
+import { ref } from 'vue'
+import { runInBackground } from '@numen/ui'
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { createPluginHost, type DeclaredSlotEntry, type PluginHost } from '@numen/plugin-loader'
 import {
-  createPluginHost,
-  createWhenReader,
-  getWhenValues,
-  type DeclaredSlotEntry,
-  type PluginHost,
-} from '@numen/plugin-host'
-import { createCommands, runSupport, type CommandTarget } from '@/features/command-palette'
-import { createSlotCommandFinder } from '@/app/commands/pluginSlots'
-import { useCommands, type CommandsDepsOptions } from '@/app/commands/useCommands'
-import { WORDS } from '@/shared/words'
+  createCommandDeps,
+  createSearchRequests,
+  createWindowPalette,
+  runSupport,
+  type NoteLookup,
+  type PaletteLists,
+} from '@/features/command-palette'
+import {
+  createCommandRegistry,
+  type CommandRegistry,
+  type CommandTarget,
+  type Notes,
+  type RunSupport,
+} from '@/shared/model/command'
+import type { Command } from '@/entities/command'
+import type { FileKind } from '@/entities/file'
+import type { SettingsStore } from '@/entities/settings'
+import type { WindowTabs } from '@/entities/tab'
+import type { IndexCoverage } from '@/shared/model/notices/coverage'
+import type { MessageWriter } from '@/shared/model/notices/messages'
+import { useDeclaredCommands, watchCommandLists } from '@/features/plugin-commands'
+import { createSearchMenu, createWindowSlots } from '@/features/plugin-host'
+import { createPluginPalette } from '@/app/window/createPluginPalette'
+import { getVaultList } from '@/features/window-display'
+import { createAppKeyRunner, createKeyHandler, syncKeybindings } from '@/features/hotkeys'
+import { collectFeatureCommands } from '@/app/window/createFeatureCommands'
+import { WORDS } from '@/shared/ui/words'
+import { createNoteWriter } from '@/entities/note'
+import { createAppCommands } from './appCommands'
 
 export interface ManifestKeybinding {
   readonly key: string
@@ -24,7 +46,7 @@ export interface ManifestKeybinding {
   readonly when?: string
 }
 
-export interface ManifestSlot {
+interface ManifestSlot {
   readonly slot: string
   readonly command?: string
   readonly values?: Readonly<Record<string, string>>
@@ -33,7 +55,7 @@ export interface ManifestSlot {
 export interface PluginManifest {
   readonly id: string
   readonly contributes: {
-    readonly slots?: readonly (ManifestSlot & Record<string, unknown>)[]
+    readonly slots?: readonly (ManifestSlot & { readonly icon?: string })[]
     readonly keybindings?: readonly ManifestKeybinding[] | undefined
   }
 }
@@ -42,7 +64,9 @@ const PLUGINS_DIRECTORY = resolve(import.meta.dirname, '../../../../../plugins')
 
 /** The manifest of the plugin in the folder, read from its JSON file. */
 export const readManifest = (folder: string): PluginManifest =>
-  JSON.parse(readFileSync(resolve(PLUGINS_DIRECTORY, folder, 'manifest.json'), 'utf8')) as PluginManifest
+  JSON.parse(
+    readFileSync(resolve(PLUGINS_DIRECTORY, folder, 'manifest.json'), 'utf8'),
+  ) as PluginManifest
 
 /** The manifests of every plugin of the repository. */
 export const readAllManifests = (): readonly PluginManifest[] =>
@@ -84,63 +108,149 @@ const toSlotEntries = (manifests: readonly PluginManifest[]): DeclaredSlotEntry[
     }),
   )
 
-const createHost = (parts: RealWindowParts): PluginHost => {
-  const whenReader = createWhenReader()
-  const getValues = (target: Parameters<typeof getWhenValues>[0]['target']) =>
-    getWhenValues({ window: windowValues, target, contentTypes: {} })
+const createHost = (
+  parts: RealWindowParts,
+  declaredCommands: ReturnType<typeof useDeclaredCommands>,
+): PluginHost => {
   const entries = toSlotEntries(parts.manifests)
+  const slots = createWindowSlots({
+    declaredCommands,
+    facts: { getAppCommands: () => createAppCommands(), getValues: () => windowValues },
+    writeIssue: () => undefined,
+  })
   const host = createPluginHost({
+    ...slots.hostDeps,
     registerKind: () => () => undefined,
     registerExtensionReader: () => () => undefined,
     openTab: () => Promise.resolve('tab-1'),
-    getSlotWhenValues: getValues,
     getSlotEntries: () => entries,
-    findSlotCommand: createSlotCommandFinder({
-      getPluginCommands: () => [],
-      getDeclaredCommands: () => [],
-      getEditorCommands: () => createCommands(WORDS),
-      getWhenValues: getValues,
-      whenReader,
-    }),
   })
   for (const manifest of parts.manifests) {
-    host.registerKeybindings(manifest.id, manifest.contributes.keybindings ?? [])
+    host.keybindings.registerKeybindings(manifest.id, manifest.contributes.keybindings ?? [])
   }
   return host
 }
 
-const createCore = (emitEvent: RealWindowParts['emitEvent']) => {
-  const base = {
-    fileKinds: (paths: readonly string[]) =>
-      Promise.resolve(new Map(paths.map((one) => [one, { type: 'note' }]))),
-    ...(emitEvent ? { emitEvent } : {}),
+const toOptions = (options: object): ComposeOptions => options as ComposeOptions
+
+/** What the commands of the test window are made from. */
+interface ComposeOptions {
+  readonly windowTabs: WindowTabs
+  readonly getTarget: () => CommandTarget
+  readonly knows: NoteLookup
+  readonly paletteLists: PaletteLists
+  readonly runs: RunSupport
+  readonly registry: CommandRegistry
+  readonly coverage: () => IndexCoverage
+  readonly reached: Notes
+  readonly settings: Pick<SettingsStore, 'read' | 'state'>
+  readonly writeMessage: MessageWriter
+  readonly pluginHost: PluginHost
+  readonly settingPalette: {
+    getCommands(): readonly Command[]
+    choose(command: string, item: string): Promise<void>
   }
-  return new Proxy<Record<string, unknown>>(base, {
-    get: (target, name: string) => target[name] ?? (() => Promise.resolve([])),
-  })
+  readonly declaredCommands: ReturnType<typeof useDeclaredCommands>
+  readonly itemLists: {
+    fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
+  }
+  readonly emitEvent?: ((event: string) => void) | undefined
 }
 
-const toDeps = (options: object): CommandsDepsOptions => options as CommandsDepsOptions
+function composeCommands(options: ComposeOptions, appCommands: readonly Command[]) {
+  const { pluginHost, registry, declaredCommands, writeMessage, settings, windowTabs, getTarget } =
+    options
+  const searchRequests = createSearchRequests()
+  const commandDeps = createCommandDeps({
+    windowTabs: options.windowTabs,
+    reached: options.reached,
+    settingPalette: options.settingPalette,
+    runs: options.runs,
+    registry,
+    writeMessage,
+    search: searchRequests.request,
+    emitEvent: options.emitEvent,
+  })
+  const pluginPalette = createPluginPalette({
+    pluginHost,
+    declaredCommands,
+    itemLists: options.itemLists,
+    commandDeps,
+    registry,
+    appCommands,
+    getTarget,
+    windowSettings: { settingPalette: options.settingPalette, paletteLists: options.paletteLists },
+  })
+  const { search, commands, paletteSwitch, runs } = createWindowPalette({
+    commandDeps,
+    getTarget,
+    knows: options.knows,
+    plugin: pluginPalette.plugin,
+    searchRequests,
+    searchOptions: { coverage: options.coverage, menu: createSearchMenu(pluginHost.slots) },
+    getVaultList,
+  })
+  watchCommandLists(
+    {
+      declaredCommands,
+      writeMessage,
+      plugins: settings.state.plugins,
+      getCommittedSetting: settings.read.getCommittedSetting,
+    },
+    commands.palette.open,
+  )
+  syncKeybindings(
+    pluginHost.keybindings,
+    declaredCommands.contributions.keybindings,
+    settings.state.plugins,
+  )
+  const onKeyDown = createKeyHandler({
+    windowTabs,
+    getTarget,
+    handleShortcut: pluginPalette.plugin.pluginCommands.handleShortcut,
+    runApp: createAppKeyRunner({
+      toggleSearch: paletteSwitch.toggleSearch,
+      toggleCommands: paletteSwitch.toggleCommands,
+      runCommand: runs.runCommand,
+      runWithValues: runs.runWithValues,
+      getTarget,
+    }),
+  })
+  return {
+    palette: search,
+    commands,
+    commandDeps,
+    pluginRuns: { items: pluginPalette.sources.items, runCommandToEnd: runs.runCommandToEnd },
+    runChoice: runs.runChoice,
+    onKeyDown,
+  }
+}
 
 /** The commands of a window over the note, whose tab navigation is `parts.navigateTab`. */
 export function createRealWindow(parts: RealWindowParts) {
   const messages: string[] = []
-  const pluginHost = createHost(parts)
+  const registry = createCommandRegistry()
+  const declaredCommands = useDeclaredCommands({
+    registry,
+    list: () => Promise.resolve({ commands: [], slots: [] }),
+  })
+  const pluginHost = createHost(parts, declaredCommands)
   const options = {
-    core: createCore(parts.emitEvent),
-    words: WORDS,
+    emitEvent: parts.emitEvent,
     windowTabs: {
-      onKeyPress: () => false,
-      navigateTab: parts.navigateTab,
-      openTabOfKind: () => Promise.resolve(),
-      requestClose: () => undefined,
-      tabs: { value: [] },
-      getTab: () => undefined,
+      panes: { onKeyPress: () => false, requestClose: () => undefined },
+      tabs: {
+        navigateTab: parts.navigateTab,
+        openTabOfKind: () => Promise.resolve(),
+        tabs: { value: [] },
+        getTab: () => undefined,
+      },
     },
     getTarget: () => NOTE,
     knows: { getTitle: () => '', getTabAt: () => null },
     paletteLists: { getStepGroups: () => [], previewItem: () => undefined },
     runs: runSupport(),
+    registry,
     coverage: () => ({}),
     reached: {
       getTabAt: () => null,
@@ -150,10 +260,54 @@ export function createRealWindow(parts: RealWindowParts) {
       close: () => undefined,
       openFile: () => undefined,
     },
-    rest: {},
+    settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
     writeMessage: (text: string) => messages.push(text),
     pluginHost,
-    slots: pluginHost.slots,
+    settingPalette: { getCommands: () => [], choose: () => Promise.resolve() },
+    declaredCommands,
+    itemLists: { fileKinds: () => Promise.resolve(new Map()) },
   }
-  return { pluginHost, messages, used: useCommands(toDeps(options)) }
+  const noLinks = {
+    tabs: [],
+    windows: [],
+    linkTabs: () => undefined,
+    unlinkTab: () => undefined,
+    getGroupOf: () => null,
+  }
+  const features = collectFeatureCommands(
+    {
+      notes: {
+        making: createNoteWriter(() => undefined),
+        notes: options.reached,
+        navigator: {
+          travel: () => Promise.resolve(),
+          leave: () => Promise.resolve(),
+          getOpeningNote: () => '',
+          showTab: (kind, path) => runInBackground(parts.navigateTab(kind, path), () => undefined),
+        },
+        writeMessage: options.writeMessage,
+      },
+      files: { notes: options.reached, writeMessage: options.writeMessage },
+      vaults: {
+        tabsHold: { pause: () => Promise.resolve(), resume: () => undefined },
+        setVaultName: () => undefined,
+        reload: () => undefined,
+        writeMessage: options.writeMessage,
+      },
+      tabs: {
+        tabLinks: noLinks,
+        getTabs: () => [],
+        getKind: () => undefined,
+        isLinkable: () => false,
+        isAsking: () => false,
+        detach: () => undefined,
+        move: () => undefined,
+      },
+      versions: { listItems: () => Promise.resolve([]), writeMessage: options.writeMessage },
+    },
+    WORDS,
+  )
+  registry.registerAll(features.handlers)
+  const used = composeCommands(toOptions(options), features.commands)
+  return { pluginHost, messages, used }
 }

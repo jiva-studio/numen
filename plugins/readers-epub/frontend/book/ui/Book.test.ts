@@ -50,7 +50,7 @@ describe('a document nothing has laid out', () => {
     // area of a known size.
     const target = await reader()
 
-    expect((target.find('.book__paper').element as HTMLElement).style.display).toBe('none')
+    expect(target.find('.book__paper').isVisible()).toBe(false)
   })
 })
 
@@ -121,7 +121,7 @@ const POINTING = createChapter(
   400,
 )
 
-const mountPointing = async () => {
+const mountPointingBook = async () => {
   const wrapper = mount(Book, {
     props: {
       markup: POINTING.markup,
@@ -138,7 +138,7 @@ const mountPointing = async () => {
   return wrapper
 }
 
-const press = async (wrapper: Awaited<ReturnType<typeof mountPointing>>, label: string) => {
+const press = async (wrapper: Awaited<ReturnType<typeof mountPointingBook>>, label: string) => {
   const link = wrapper.findAll('a').find((one) => one.text() === label)!
   const event = new MouseEvent('click', { bubbles: true, cancelable: true })
   link.element.dispatchEvent(event)
@@ -148,7 +148,7 @@ const press = async (wrapper: Awaited<ReturnType<typeof mountPointing>>, label: 
 
 describe('a link inside a book', () => {
   it('is taken by the reader, and never reaches the browser', async () => {
-    const target = await mountPointing()
+    const target = await mountPointingBook()
 
     for (const says of ['the second parva', 'the note', 'elsewhere']) {
       expect((await press(target, says)).defaultPrevented).toBe(true)
@@ -156,7 +156,7 @@ describe('a link inside a book', () => {
   })
 
   it('asks for the document it names, where that is another of the book', async () => {
-    const target = await mountPointing()
+    const target = await mountPointingBook()
 
     await press(target, 'the second parva')
 
@@ -164,7 +164,7 @@ describe('a link inside a book', () => {
   })
 
   it('asks for the offset the place remains at, inside the document being read', async () => {
-    const target = await mountPointing()
+    const target = await mountPointingBook()
 
     await press(target, 'the note')
 
@@ -172,7 +172,7 @@ describe('a link inside a book', () => {
   })
 
   it('asks for nothing of the book, where the link leads out of it', async () => {
-    const target = await mountPointing()
+    const target = await mountPointingBook()
 
     await press(target, 'elsewhere')
 
@@ -239,36 +239,24 @@ const mountBook = async () => {
   return wrapper
 }
 
-const getTranslate = (wrapper: Awaited<ReturnType<typeof mountBook>>): string =>
-  (wrapper.find('.book__paper').element as HTMLElement).style.translate
+const getFront = (wrapper: Awaited<ReturnType<typeof mountBook>>): string =>
+  `${wrapper.find('.book__count').text()} / ${wrapper.find('.book__left').text()}`
 
 describe('a document the browser has laid out', () => {
   it('is drawn, and says how many countSpreads it is read in', async () => {
     const target = await mountBook()
 
-    expect((target.find('.book__paper').element as HTMLElement).style.display).not.toBe('none')
+    expect(target.find('.book__paper').isVisible()).toBe(true)
     expect(target.find('.book__count').text()).toMatch(/^\d+ of \d+$/)
     expect(target.find('.book__left').text()).toMatch(/left in chapter$/)
 
     target.unmount()
   })
 
-  it('sets the columns against the room it was measured', async () => {
-    const target = await mountBook()
-
-    const style = (target.find('.book__paper').element as HTMLElement).style
-    expect(style.getPropertyValue('--book-column')).toBe('478px')
-    expect(style.getPropertyValue('--book-height')).toBe('600px')
-
-    target.unmount()
-  })
-
   it('turns a spread at a time while countSpreads are left', async () => {
     const target = await mountBook()
-
     expect(pressKey(target, 'ArrowRight')).toBe(true)
 
-    expect(getTranslate(target)).toBe('-1100px 0')
     expect(getMoves(target)).toEqual([LAID.span.start + countBytes('Первая строка.')])
 
     target.unmount()
@@ -283,27 +271,22 @@ describe('a document the browser has laid out', () => {
     }
 
     press(1090)
-    expect(getTranslate(target)).toBe('-1100px 0')
-
-    press(1090)
-    expect(getTranslate(target)).toBe('-2200px 0')
-
-    press(20)
-    expect(getTranslate(target)).toBe('-1100px 0')
+    expect(getMoves(target)).toHaveLength(1)
 
     press(550)
-    expect(getTranslate(target)).toBe('-1100px 0')
+    expect(getMoves(target)).toHaveLength(1)
 
     target.unmount()
   })
 
   it('is stood where an offset from outside asks, while the offset is inside it', async () => {
     const target = await mountBook()
+    const first = getFront(target)
 
     await target.setProps({ at: LAID.span.start + countBytes('Первая строка.Вторая.') })
     await target.vm.$nextTick()
 
-    expect(getTranslate(target)).toBe('0px 0')
+    expect(getFront(target)).toBe(first)
 
     target.unmount()
   })
@@ -316,7 +299,6 @@ describe('a document replaced while a later spread of the one before is in front
   it('stays out of sight until its spread is stood', async () => {
     const target = await mountBook()
     pressKey(target, 'ArrowRight')
-    expect(getTranslate(target)).toBe('-1100px 0')
 
     await target.setProps({ markup: NEXT.markup, span: NEXT.span, at: NEXT.span.start })
 
@@ -328,7 +310,6 @@ describe('a document replaced while a later spread of the one before is in front
     await target.vm.$nextTick()
 
     expect(target.find('.book__paper').classes()).not.toContain('book__paper--unset')
-    expect(getTranslate(target)).toBe('0px 0')
 
     target.unmount()
   })

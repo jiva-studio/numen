@@ -8,6 +8,7 @@ import { getMonotonicNow } from '@numen/ui'
 import {
   openTab,
   getState,
+  isUnsavedTab,
   transitionTab,
   DEFAULT_WRITE_LIMITS,
   type Effect,
@@ -15,7 +16,7 @@ import {
   type Move,
   type Tab,
 } from './tab'
-import type { OpenNote, Notes, OpenNotesOptions } from './types'
+import type { OpenNote, OpenNotesOptions } from './types'
 import { createNoteQueue } from './queue'
 import { createConflictCoordinator } from './conflict'
 
@@ -25,18 +26,23 @@ interface NoteStoreContext {
   tabs: Map<string, Tab>
   bodies: Map<string, string>
   reportedIds: Set<string>
-  closeCallbacks: Map<string, (removed: boolean) => void>
+  closeCallbacks: Map<string, ((removed: boolean) => void)[]>
   queue: ReturnType<typeof createNoteQueue>
   onReplaced: (path: string) => void
   dispatch: (id: string, event: Event) => void
+}
+
+function answerClosing(context: NoteStoreContext, id: string, removed: boolean): void {
+  const waiting = context.closeCallbacks.get(id) ?? []
+  context.closeCallbacks.delete(id)
+  for (const answer of waiting) answer(removed)
 }
 
 function discardTab(context: NoteStoreContext, id: string): void {
   context.queue.discard(id)
   context.tabs.delete(id)
   context.bodies.delete(id)
-  context.closeCallbacks.get(id)?.(true)
-  context.closeCallbacks.delete(id)
+  answerClosing(context, id, true)
   context.reportedIds.delete(id)
 }
 
@@ -89,10 +95,8 @@ function executeEffect(context: NoteStoreContext, id: string, effect: Effect): v
     case 'close':
       discardTab(context, id)
       return
-    case 'read':
-    case 'write':
-    case 'startTimer':
-    case 'cancelTimer':
+    default:
+      // The queue effects are carried out above.
       return
   }
 }
@@ -107,28 +111,26 @@ function applyTabTransition(
 
   const isKeptOpen = next.effects.some((effect) => effect.kind === 'keepOpen')
   const isWriting = next.effects.some((effect) => effect.kind === 'write')
-  // Stryker disable next-line OptionalChaining: closeCallbacks entry is deleted only after close dispatch completes.
-  if (isKeptOpen && !isWriting) context.closeCallbacks.get(id)?.(false)
+  if (isKeptOpen && !isWriting) answerClosing(context, id, false)
 
   if (next.tab.pendingWrite === null) context.queue.resolveFlush(id)
 }
 
 function createNoteStoreContext(
-  core: Notes,
   limits: Parameters<typeof transitionTab>[2],
   onReplaced: (path: string) => void,
 ) {
   const tabs = shallowReactive(new Map<string, Tab>())
   const bodies = shallowReactive(new Map<string, string>())
   const reportedIds = new Set<string>()
-  const closeCallbacks = new Map<string, (removed: boolean) => void>()
+  const closeCallbacks = new Map<string, ((removed: boolean) => void)[]>()
 
   const context: NoteStoreContext = {
     tabs,
     bodies,
     reportedIds,
     closeCallbacks,
-    queue: createNoteQueue(core, {
+    queue: createNoteQueue({
       dispatch: (id, event) => dispatch(id, event),
       hasTab: (id) => tabs.has(id),
       resumeClosing: (id) => {
@@ -149,13 +151,13 @@ function createNoteStoreContext(
   return { context, dispatch }
 }
 
-export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
+export function openNotes(how: OpenNotesOptions = {}) {
   const limits = how.limits ?? DEFAULT_WRITE_LIMITS
   // Without a listener, a replaced body needs no notification.
   const onReplaced = how.onReplaced ?? (() => undefined)
   const now = how.now ?? getMonotonicNow
 
-  const { context, dispatch } = createNoteStoreContext(core, limits, onReplaced)
+  const { context, dispatch } = createNoteStoreContext(limits, onReplaced)
   const { tabs, bodies, queue, reportedIds, closeCallbacks } = context
 
   const conflicts = createConflictCoordinator(dispatch, (id) => tabs.get(id))
@@ -168,7 +170,13 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
         discardTab(context, id)
         return isDone(true)
       }
-      closeCallbacks.set(id, isDone)
+      const waiting = closeCallbacks.get(id)
+      if (waiting) {
+        // A close already under way answers this one too.
+        waiting.push(isDone)
+        return
+      }
+      closeCallbacks.set(id, [isDone])
       dispatch(id, { kind: 'close' })
     })
 
@@ -184,7 +192,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     flushPending: queue.flushPending,
     getPath: (id: string): string => tabs.get(id)?.path ?? id,
     has: (id: string): boolean => tabs.has(id),
-    getFilePath: (id: string): string => tabs.get(id)?.filePath ?? '',
+    getRevision: (id: string): string => tabs.get(id)?.revision ?? '',
     setBody: (id: string, body: string) => {
       bodies.set(id, body)
       dispatch(id, { kind: 'edited', body, at: now() })
@@ -207,9 +215,16 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     getOpenIds,
     getErrorMessage: conflicts.getErrorMessage,
     stale: conflicts.stale,
-    flush: async () => {
-      await Promise.all(getOpenIds().map(close))
+    /** Writes what every open note holds, trying again the notes an error stopped. */
+    flush: async (): Promise<void> => {
+      await Promise.all(getOpenIds().map(queue.flushPending))
     },
+    /** The notes whose text an error stopped from being written, which another try may still write. */
+    getUnsavedTabs: (): readonly string[] =>
+      getOpenIds().filter((id) => {
+        const tab = tabs.get(id)
+        return tab !== undefined && isUnsavedTab(tab)
+      }),
     tabs,
   }
 }

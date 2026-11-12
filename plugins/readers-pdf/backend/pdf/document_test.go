@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 )
 
 type recordingTimer struct {
@@ -169,22 +169,22 @@ func TestDocumentTextInvalidPageIndex(t *testing.T) {
 }
 
 func TestGetRuntimeConfigAndTimerLifecycle(t *testing.T) {
-	w := NewWorkers()
-	if cfg := w.getRuntimeConfig(); cfg != nil {
+	if cfg := NewWorkers(Options{Report: failOnReport(t), CompilationCache: nil, AfterFunc: nil, Workers: 0, IdleWorkers: 0}).getRuntimeConfig(); cfg != nil {
 		t.Fatalf("expected nil RuntimeConfig when compilation cache is nil, got %v", cfg)
-	}
-	w.SetCompilationCache(newCompilation(t))
-	if cfg := w.getRuntimeConfig(); cfg == nil {
-		t.Fatal("expected non-nil RuntimeConfig when compilation cache is set")
 	}
 
 	var timers []*recordingTimer
-	w.SetIdleWorkers(2)
-	w.SetAfterFunc(func(_ time.Duration, _ func()) Timer {
-		tr := &recordingTimer{}
-		timers = append(timers, tr)
-		return tr
+	w := NewWorkers(Options{
+		Report: failOnReport(t), CompilationCache: newCompilation(t), Workers: 0, IdleWorkers: 2,
+		AfterFunc: func(_ time.Duration, _ func()) Timer {
+			tr := &recordingTimer{}
+			timers = append(timers, tr)
+			return tr
+		},
 	})
+	if cfg := w.getRuntimeConfig(); cfg == nil {
+		t.Fatal("expected non-nil RuntimeConfig when compilation cache is set")
+	}
 	raw, err := os.ReadFile("testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)

@@ -12,7 +12,7 @@ import (
 	"github.com/godbus/dbus/v5"
 	"github.com/zalando/go-keyring"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 func useReachableSessionBus(t *testing.T) {
@@ -82,10 +82,10 @@ func TestAKeychainThatFailsIsNotReplacedByTheFile(t *testing.T) {
 		keyring.MockInitWithError(failure)
 		dir := t.TempDir()
 		store := newTestStore(dir)
-		if err := store.SetKey(t.Context(), entryName, valueOne); !errors.Is(err, pluginport.ErrNoKeyStore) {
+		if err := store.SetKey(t.Context(), entryName, valueOne); !errors.Is(err, plugin.ErrNoKeyStore) {
 			t.Errorf("%s: SetKey returned %v, want ErrNoKeyStore", name, err)
 		}
-		if _, err := store.GetKey(t.Context(), entryName); !errors.Is(err, pluginport.ErrNoKeyStore) {
+		if _, err := store.GetKey(t.Context(), entryName); !errors.Is(err, plugin.ErrNoKeyStore) {
 			t.Errorf("%s: GetKey returned %v, want ErrNoKeyStore", name, err)
 		}
 		if _, err := os.Stat(credentialsPath(dir)); !errors.Is(err, fs.ErrNotExist) {

@@ -1,0 +1,101 @@
+---
+import { DOCS, DOWNLOAD, FORUM, GITHUB } from './site'
+---
+
+<header class="site-header">
+  <a class="brand" href="/">
+    <img class="brand-logo" src="/favicon.svg" width="42" height="42" alt="" />
+    <span class="brand-copy">
+      <span class="brand-name">numen</span>
+      <span class="brand-sub">The Second Brain</span>
+    </span>
+  </a>
+
+  <nav aria-label="Primary navigation" data-i18n-aria="aria_nav">
+    <a href={DOCS} data-i18n="nav_docs">Docs</a>
+    <a href={FORUM} data-i18n="nav_forum">Forum</a>
+    <a href={DOWNLOAD} data-i18n="nav_download">Download</a>
+    <a href={GITHUB} target="_blank" rel="noopener">GitHub</a>
+  </nav>
+
+  <div class="header-right">
+    <button
+      type="button"
+      class="theme-toggle"
+      id="theme-toggle"
+      aria-label="Toggle theme"
+      data-i18n-aria="aria_theme"
+    >
+      <span class="theme-toggle__thumb" aria-hidden="true"></span>
+      <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4.5" />
+          <path
+            d="M12 2.5v2.2M12 19.3v2.2M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"
+          />
+        </svg>
+      </span>
+      <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z" />
+        </svg>
+      </span>
+    </button>
+
+    <div class="lang-dropdown" id="lang-dropdown">
+      <button
+        type="button"
+        class="lang-dropdown__btn"
+        id="lang-dropdown-btn"
+        aria-haspopup="listbox"
+        aria-expanded="false"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <path
+            d="M3.6 9h16.8M3.6 15h16.8M12 3a14.5 14.5 0 0 0 0 18M12 3a14.5 14.5 0 0 1 0 18"
+          />
+        </svg>
+        <span id="lang-current-label">EN</span>
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M4.5 6.5 8 10l3.5-3.5" />
+        </svg>
+      </button>
+
+      <div class="lang-dropdown__menu" id="lang-menu" role="listbox" hidden>
+        <button
+          type="button"
+          class="lang-dropdown__item"
+          role="option"
+          data-lang="en"
+          aria-selected="true"
+        >
+          <span>English</span>
+          <span class="lang-dropdown__code">EN</span>
+        </button>
+        <button
+          type="button"
+          class="lang-dropdown__item"
+          role="option"
+          data-lang="ru"
+          aria-selected="false"
+        >
+          <span>Русский</span>
+          <span class="lang-dropdown__code">RU</span>
+        </button>
+        <button
+          type="button"
+          class="lang-dropdown__item"
+          role="option"
+          data-lang="sr"
+          aria-selected="false"
+        >
+          <span>Srpski</span>
+          <span class="lang-dropdown__code">SR</span>
+        </button>
+      </div>
+    </div>
+
+    <a class="button button-small" href={DOWNLOAD} data-i18n="nav_download">Download</a>
+  </div>
+</header>

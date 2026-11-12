@@ -1,0 +1,353 @@
+import { describe, expect, it, vi } from 'vitest'
+import { asFailure, asValue, isUnsavedBuffersError } from '@numen/plugin-sdk'
+import { openNotes } from './notes'
+import type { NoteResult, Notes } from '../../lib/buffer/types'
+
+describe('openNotes for flashcards studio', () => {
+  it('opens note and loads body asynchronously', async () => {
+    const notes: Notes = {
+      read: vi.fn(async (_path) => asValue({ body: 'deck content', at: 'v1' })),
+      write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
+    }
+    const store = openNotes(notes)
+
+    store.open('tab-1', 'Animals.md')
+    expect(store.getOpenIds()).toStrictEqual(['tab-1'])
+    expect(store.getPath('tab-1')).toBe('Animals.md')
+    expect(store.getOpenNote('tab-1').state).toBe('loading')
+
+    await vi.waitFor(() => {
+      expect(store.getOpenNote('tab-1').state).toBe('clean')
+    })
+
+    expect(store.getOpenNote('tab-1').body).toBe('deck content')
+    expect(store.getFilePath('tab-1')).toBe('v1')
+  })
+
+  it('takes no edit while the file is read, so the read replaces nothing', async () => {
+    let answerRead = (): void => undefined
+    const notes: Notes = {
+      read: vi.fn(
+        () =>
+          new Promise<NoteResult>((resolve) => {
+            answerRead = () => resolve(asValue({ body: 'deck content', at: 'v1' }))
+          }),
+      ),
+      write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
+    }
+    const store = openNotes(notes)
+
+    store.open('tab-1', 'Animals.md')
+    store.setBody('tab-1', 'typed before the read')
+    expect(store.getOpenNote('tab-1')).toMatchObject({ body: '', state: 'loading' })
+
+    answerRead()
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+    await store.flush()
+    expect(store.getOpenNote('tab-1').body).toBe('deck content')
+    expect(notes.write).not.toHaveBeenCalled()
+  })
+
+  it('takes no edit where the first read failed', async () => {
+    const notes: Notes = {
+      read: vi.fn(async () => asFailure('notADeck')),
+      write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
+    }
+    const store = openNotes(notes)
+
+    store.open('tab-1', 'bad.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('error'))
+    store.setBody('tab-1', 'typed after the read failed')
+    await store.flush()
+
+    expect(store.getOpenNote('tab-1')).toMatchObject({ body: '', state: 'error', isRead: false })
+    expect(notes.write).not.toHaveBeenCalled()
+  })
+
+  it('is read once a read answered with the body', async () => {
+    const notes: Notes = {
+      read: vi.fn(async () => asValue({ body: 'deck content', at: 'v1' })),
+      write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
+    }
+    const store = openNotes(notes)
+
+    store.open('tab-1', 'Animals.md')
+    expect(store.getOpenNote('tab-1').isRead).toBe(false)
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').isRead).toBe(true))
+  })
+
+  it('writes an edit made after a write failed with a retryable error', async () => {
+    const write = vi
+      .fn<Notes['write']>()
+      .mockResolvedValueOnce(asFailure('unreachable'))
+      .mockResolvedValue(asValue({ body: '', at: 'v2' }))
+    const notes: Notes = { read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })), write }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+
+    store.setBody('tab-1', 'first edit')
+    await store.flushPending('tab-1')
+    expect(store.getOpenNote('tab-1')).toMatchObject({ state: 'error', error: 'unreachable' })
+
+    store.setBody('tab-1', 'second edit')
+    expect(store.getOpenNote('tab-1')).toMatchObject({ state: 'unsaved', error: null })
+    await store.flushPending('tab-1')
+
+    expect(write).toHaveBeenLastCalledWith('Decks.md', 'second edit', {
+      prose: 'initial',
+      stat: 'v1',
+    })
+    expect(store.getOpenNote('tab-1').state).toBe('clean')
+  })
+
+  it('keeps a write error that an edit cannot fix, and writes nothing', async () => {
+    const write = vi.fn<Notes['write']>().mockResolvedValue(asFailure('notADeck'))
+    const notes: Notes = { read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })), write }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+
+    store.setBody('tab-1', 'first edit')
+    await store.flushPending('tab-1')
+    store.setBody('tab-1', 'second edit')
+    await store.flushPending('tab-1')
+
+    expect(store.getOpenNote('tab-1')).toMatchObject({ state: 'error', error: 'notANote' })
+    expect(write).toHaveBeenCalledTimes(1)
+  })
+
+  it('marks error when read fails or throws', async () => {
+    const notes: Notes = {
+      read: vi.fn(async () => asFailure('notADeck')),
+      write: vi.fn(async () => asValue({ body: '', at: '' })),
+    }
+    const store = openNotes(notes)
+
+    store.open('tab-1', 'bad.md')
+    await vi.waitFor(() => {
+      expect(store.getOpenNote('tab-1').state).toBe('error')
+    })
+    expect(store.getOpenNote('tab-1').error).toBe('notANote')
+
+    // Thrown error
+    const failingNotes: Notes = {
+      read: vi.fn(async () => {
+        throw new Error('network down')
+      }),
+      write: vi.fn(async () => asValue({ body: '', at: '' })),
+    }
+    const store2 = openNotes(failingNotes)
+    store2.open('tab-2', 'down.md')
+    await vi.waitFor(() => {
+      expect(store2.getOpenNote('tab-2').state).toBe('error')
+    })
+    expect(store2.getOpenNote('tab-2').error).toBe('unreachable')
+  })
+
+  it('transitions to unsaved and writes on flush', async () => {
+    const writes: Array<{ path: string; body: string }> = []
+    const notes: Notes = {
+      read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })),
+      write: vi.fn(async (path, body) => {
+        writes.push({ path, body })
+        return asValue({ body: '', at: 'v2' })
+      }),
+    }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+
+    store.setBody('tab-1', 'updated body')
+    expect(store.getOpenNote('tab-1').state).toBe('unsaved')
+
+    await store.flushPending('tab-1')
+    expect(store.getOpenNote('tab-1').state).toBe('clean')
+    expect(writes).toHaveLength(1)
+    expect(writes[0]?.body).toBe('updated body')
+  })
+
+  it('rejects the flush while the vault would not take the text, and writes it on the next', async () => {
+    let isDown = true
+    const notes: Notes = {
+      read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })),
+      write: vi.fn(async () => (isDown ? asFailure('tooLarge') : asValue({ body: '', at: 'v2' }))),
+    }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+    store.setBody('tab-1', 'updated body')
+
+    await expect(store.flush()).rejects.toThrow('Decks.md')
+    expect(store.getOpenNote('tab-1')).toMatchObject({ state: 'error', body: 'updated body' })
+
+    isDown = false
+    await store.flush()
+
+    expect(store.getOpenNote('tab-1').state).toBe('clean')
+  })
+
+  it('rejects the flush with the notes it could not write, and the ways to settle them', async () => {
+    let isDown = true
+    const written: string[] = []
+    const notes: Notes = {
+      read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })),
+      write: vi.fn(async (_path: string, body: string) => {
+        if (isDown) return asFailure('unreachable')
+        written.push(body)
+        return asValue({ body: '', at: 'v2' })
+      }),
+    }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+    store.setBody('tab-1', 'updated body')
+
+    const error: unknown = await store.flush().catch((caught: unknown) => caught)
+
+    expect(isUnsavedBuffersError(error)).toBe(true)
+    const unsaved = isUnsavedBuffersError(error) ? error.unsaved : []
+    expect(unsaved.map((one) => one.name)).toEqual(['Decks.md'])
+
+    isDown = false
+    await unsaved[0]?.keep()
+
+    expect(written).toEqual(['updated body'])
+    expect(store.getOpenNote('tab-1').state).toBe('clean')
+  })
+
+  it('marks stale on write conflict and handles keepMine and takeFile', async () => {
+    let writeCount = 0
+    let readCount = 0
+    const onReplaced = vi.fn()
+    const notes: Notes = {
+      read: vi.fn(async () => {
+        readCount++
+        return asValue({
+          body: readCount === 1 ? 'initial' : 'file from disk',
+          at: `v${readCount}`,
+        })
+      }),
+      write: vi.fn(async (_path, _body, _observed) => {
+        writeCount++
+        if (writeCount === 1) {
+          return asFailure('changed')
+        }
+        return asValue({ body: '', at: 'v3' })
+      }),
+    }
+
+    const store = openNotes(notes, { onReplaced })
+    store.open('tab-1', 'Decks.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+
+    store.setBody('tab-1', 'my local edit')
+    await store.flush()
+
+    expect(store.getOpenNote('tab-1').state).toBe('stale')
+    expect(store.stale('tab-1')).not.toBeNull()
+
+    // With an out-of-date buffer, close leaves the tab open
+    const closedWhileStale = await store.close('tab-1')
+    expect(closedWhileStale).toBe(false)
+    expect(store.getOpenIds()).toHaveLength(1)
+
+    // keepMine forces write
+    await store.keep('tab-1')
+    await vi.waitFor(() => {
+      expect(store.getOpenNote('tab-1').state).toBe('clean')
+    })
+    expect(writeCount).toBe(2)
+
+    // takeFile re-reads
+    await store.take('tab-1')
+    await vi.waitFor(() => {
+      expect(store.getOpenNote('tab-1').body).toBe('file from disk')
+    })
+    expect(onReplaced).toHaveBeenCalledWith('Decks.md')
+
+    // Now clean, close succeeds
+    const closed = await store.close('tab-1')
+    expect(closed).toBe(true)
+    expect(store.getOpenIds()).toHaveLength(0)
+  })
+
+  it('handles renames and external modifications in applyPathChanges', async () => {
+    const notes: Notes = {
+      read: vi.fn(async () => asValue({ body: 'disk text', at: 'v1' })),
+      write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
+    }
+    const store = openNotes(notes)
+    store.open('tab-1', 'Old.md')
+    await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+
+    // Rename
+    store.applyPathChanges([], [{ from: 'Old.md', to: 'New.md' }])
+    expect(store.getPath('tab-1')).toBe('New.md')
+
+    // Modified on disk when unsaved -> stale
+    store.setBody('tab-1', 'unsaved changes')
+    store.applyPathChanges(['New.md'])
+    expect(store.getOpenNote('tab-1').state).toBe('stale')
+  })
+
+  it('writes the body set once the edits pause, with no flush requested', async () => {
+    vi.useFakeTimers()
+    try {
+      const writes: string[] = []
+      const notes: Notes = {
+        read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })),
+        write: vi.fn(async (_path, body) => {
+          writes.push(body)
+          return asValue({ body: '', at: 'v2' })
+        }),
+      }
+      const store = openNotes(notes, { limits: { debounceMs: 100, maxWaitMs: 1000 } })
+      store.open('tab-1', 'Decks.md')
+      await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+
+      store.setBody('tab-1', 'first edit')
+      store.setBody('tab-1', 'second edit')
+      expect(writes).toStrictEqual([])
+      await vi.advanceTimersByTimeAsync(100)
+
+      expect(writes).toStrictEqual(['second edit'])
+      expect(store.getOpenNote('tab-1').state).toBe('clean')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps an edit made while a write is in flight unsaved, and writes it next', async () => {
+    vi.useFakeTimers()
+    try {
+      const writes: string[] = []
+      let finishWrite = (): void => undefined
+      const notes: Notes = {
+        read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })),
+        write: vi.fn(async (_path, body) => {
+          writes.push(body)
+          if (writes.length === 1) await new Promise<void>((resolve) => (finishWrite = resolve))
+          return asValue({ body: '', at: `v${writes.length + 1}` })
+        }),
+      }
+      const store = openNotes(notes, { limits: { debounceMs: 100, maxWaitMs: 1000 } })
+      store.open('tab-1', 'Decks.md')
+      await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+      store.setBody('tab-1', 'first edit')
+      await vi.advanceTimersByTimeAsync(100)
+      expect(store.getOpenNote('tab-1').state).toBe('saving')
+
+      store.setBody('tab-1', 'second edit')
+      finishWrite()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(store.getOpenNote('tab-1').state).toBe('unsaved')
+      await vi.advanceTimersByTimeAsync(100)
+
+      expect(writes).toStrictEqual(['first edit', 'second edit'])
+      expect(store.getOpenNote('tab-1').state).toBe('clean')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})

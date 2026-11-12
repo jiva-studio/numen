@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -18,9 +17,16 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/endpoint"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/chatapi"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/vaulttools"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/usecase/answer"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/usecase/catalog"
 )
 
 const vaultToken = "vault-token"
@@ -28,11 +34,11 @@ const vaultToken = "vault-token"
 // sentRequest is what the fake chat API was sent.
 type sentRequest struct {
 	Auth            string
-	Model           string         `json:"model"`
-	Messages        []message      `json:"messages"`
-	Tools           []functionTool `json:"tools"`
-	Stream          bool           `json:"stream"`
-	ReasoningEffort string         `json:"reasoning_effort"`
+	Model           string                      `json:"model"`
+	Messages        []conversation.Message      `json:"messages"`
+	Tools           []conversation.FunctionTool `json:"tools"`
+	Stream          bool                        `json:"stream"`
+	ReasoningEffort string                      `json:"reasoning_effort"`
 	Reasoning       *struct {
 		Effort string `json:"effort"`
 	} `json:"reasoning"`
@@ -44,7 +50,7 @@ type sentRequest struct {
 // a streaming request 400 Bad Request, and ignoresStream answers it with the whole reply.
 type fakeChat struct {
 	mu            sync.Mutex
-	replies       []message
+	replies       []conversation.Message
 	script        []string
 	status        int
 	finish        string
@@ -113,7 +119,7 @@ func (f *fakeChat) serve(t *testing.T) *httptest.Server {
 	return srv
 }
 
-func (f *fakeChat) getPieces(reply message) []string {
+func (f *fakeChat) getPieces(reply conversation.Message) []string {
 	var events []string
 	addDelta := func(delta map[string]any, finish any) {
 		event, err := json.Marshal(map[string]any{"choices": []map[string]any{{"delta": delta, "finish_reason": finish}}})
@@ -183,14 +189,14 @@ func (f *fakeChat) getRequests() []sentRequest {
 	return append([]sentRequest(nil), f.requests...)
 }
 
-func newCallReply(id, tool, args string) message {
-	call := toolCall{ID: id, Type: "function"}
+func newCallReply(id, tool, args string) conversation.Message {
+	call := conversation.ToolCall{ID: id, Type: "function"}
 	call.Function.Name, call.Function.Arguments = tool, args
-	return message{Role: "assistant", ToolCalls: []toolCall{call}}
+	return conversation.Message{Role: "assistant", ToolCalls: []conversation.ToolCall{call}}
 }
 
-func newTextReply(text string) message {
-	return message{Role: "assistant", Content: new(text)}
+func newTextReply(text string) conversation.Message {
+	return conversation.Message{Role: "assistant", Content: new(text)}
 }
 
 // fakeVault is a tool server with two tools, behind the token, that keeps the arguments of every
@@ -247,7 +253,7 @@ func newTask(url, prompt string) *agentrun.Request {
 	}
 }
 
-func ask(t *testing.T, s *Server, task *agentrun.Request) []*agentrun.Response {
+func ask(t *testing.T, s *agent, task *agentrun.Request) []*agentrun.Response {
 	t.Helper()
 	var steps []*agentrun.Response
 	if err := s.Ask(t.Context(), task, func(r *agentrun.Response) error {
@@ -280,7 +286,7 @@ func describeSteps(steps []*agentrun.Response) string {
 	return strings.Join(words, " ")
 }
 
-func getSpoken(steps []*agentrun.Response) []string {
+func getSpokenTexts(steps []*agentrun.Response) []string {
 	var response []string
 	for _, one := range steps {
 		if text := one.GetText(); text != "" {
@@ -291,13 +297,23 @@ func getSpoken(steps []*agentrun.Response) []string {
 }
 
 func keySecrets(value string) server.Secrets {
-	return server.Secrets{SettingAPIKey: {{ID: "s00000001", Name: "Work", Group: "openrouter", Value: value}}}
+	return server.Secrets{settings.KeyAPIKey: {{ID: "s00000001", Name: "Work", Group: "openrouter", Value: value}}}
 }
 
-func newServer(chatURL string) *Server {
-	s := &Server{}
-	s.Configure(map[string]string{SettingBaseURL: chatURL, SettingModel: "m1"})
-	s.ApplySecrets(keySecrets("host-key"))
+func newTestAgent(t *testing.T, opts ...chatapi.Option) *agent {
+	t.Helper()
+	a, err := newAgent(opts...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return a
+}
+
+func newServer(t *testing.T, chatURL string) *agent {
+	t.Helper()
+	s := newTestAgent(t)
+	s.configure(map[string]string{settings.KeyBaseURL: chatURL, settings.KeyModel: "m1"})
+	s.applySecrets(keySecrets("host-key"))
 	return s
 }
 
@@ -310,7 +326,7 @@ func assertToolSteps(t *testing.T, steps []*agentrun.Response) {
 	if call.Tool != "Read a note" || call.Kind != "read" || call.Call != "call-1" || call.Path != "Plan.md" {
 		t.Errorf("the call is %+v", call)
 	}
-	if response, last := strings.Join(getSpoken(steps), ""), steps[len(steps)-1]; response != "Water the garden." || last.GetStopped() != reasonDone {
+	if response, last := strings.Join(getSpokenTexts(steps), ""), steps[len(steps)-1]; response != "Water the garden." || last.GetStopped() != answer.ReasonDone {
 		t.Errorf("the answer is %q, stopped %q", response, last.GetStopped())
 	}
 }
@@ -334,9 +350,9 @@ func assertToolRequests(t *testing.T, requests []sentRequest) {
 }
 
 func TestAToolTheModelCallsRunsAndItsResultIsFedBack(t *testing.T) {
-	model := &fakeChat{replies: []message{newCallReply("call-1", "note_read", `{"path":"Plan.md"}`), newTextReply("Water the garden.")}}
+	model := &fakeChat{replies: []conversation.Message{newCallReply("call-1", "note_read", `{"path":"Plan.md"}`), newTextReply("Water the garden.")}}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask(vault.serve(t), "What is the plan?"))
 	assertToolSteps(t, steps)
@@ -349,9 +365,9 @@ func TestAToolTheModelCallsRunsAndItsResultIsFedBack(t *testing.T) {
 }
 
 func TestAModelThatPreservesCallingToolsStopsAtTheTurnLimit(t *testing.T) {
-	model := &fakeChat{replies: []message{newCallReply("c", "note_read", `{"path":"A.md"}`)}}
+	model := &fakeChat{replies: []conversation.Message{newCallReply("c", "note_read", `{"path":"A.md"}`)}}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 	task := newTask(vault.serve(t), "Read forever.")
 	task.MaxSteps = 2
 
@@ -360,7 +376,7 @@ func TestAModelThatPreservesCallingToolsStopsAtTheTurnLimit(t *testing.T) {
 	if got := describeSteps(steps); got != "model call finished model call finished stopped" {
 		t.Fatalf("steps are %q", got)
 	}
-	if steps[len(steps)-1].GetStopped() != reasonTurns {
+	if steps[len(steps)-1].GetStopped() != answer.ReasonTurns {
 		t.Errorf("stopped %q", steps[len(steps)-1].GetStopped())
 	}
 	if len(model.getRequests()) != 2 {
@@ -370,7 +386,7 @@ func TestAModelThatPreservesCallingToolsStopsAtTheTurnLimit(t *testing.T) {
 
 func TestAFailureOfTheChatAPIStopsTheRunWithItsReason(t *testing.T) {
 	model := &fakeChat{status: http.StatusUnauthorized}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Hello?"))
 
@@ -383,8 +399,8 @@ func TestAFailureOfTheChatAPIStopsTheRunWithItsReason(t *testing.T) {
 }
 
 func TestHarness_UnreachableVaultStopsRunBeforeModelCall(t *testing.T) {
-	model := &fakeChat{replies: []message{newTextReply("hi")}}
-	s := newServer(model.serve(t).URL)
+	model := &fakeChat{replies: []conversation.Message{newTextReply("hi")}}
+	s := newServer(t, model.serve(t).URL)
 	nowhere := httptest.NewServer(http.NotFoundHandler())
 	defer nowhere.Close()
 	task := newTask(nowhere.URL, "Hello?")
@@ -401,28 +417,28 @@ func TestHarness_UnreachableVaultStopsRunBeforeModelCall(t *testing.T) {
 
 func TestTheKeyIsTheOneConfigurePassesOverAndNoneIsSentWithoutOne(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "env-key")
-	model := &fakeChat{replies: []message{newTextReply("hi")}}
-	s := &Server{}
-	s.Configure(map[string]string{SettingBaseURL: model.serve(t).URL})
+	model := &fakeChat{replies: []conversation.Message{newTextReply("hi")}}
+	s := newTestAgent(t)
+	s.configure(map[string]string{settings.KeyBaseURL: model.serve(t).URL})
 
 	ask(t, s, newTask("", "Hello?"))
-	s.ApplySecrets(keySecrets("host-key"))
+	s.applySecrets(keySecrets("host-key"))
 	ask(t, s, newTask("", "Hello?"))
-	s.ApplySecrets(server.Secrets{SettingAPIKey: {}})
+	s.applySecrets(server.Secrets{settings.KeyAPIKey: {}})
 	ask(t, s, newTask("", "Hello?"))
 
 	requests := model.getRequests()
 	if requests[0].Auth != "" || requests[1].Auth != "Bearer host-key" || requests[2].Auth != "" {
 		t.Errorf("authorization was %q, %q, %q", requests[0].Auth, requests[1].Auth, requests[2].Auth)
 	}
-	if requests[0].Model != defaultModel {
+	if requests[0].Model != settings.DefaultModel {
 		t.Errorf("the model asked was %q", requests[0].Model)
 	}
 }
 
 func TestHarness_ConversationContinuesUntilFinished(t *testing.T) {
-	model := &fakeChat{replies: []message{newTextReply("Noted.")}}
-	s := newServer(model.serve(t).URL)
+	model := &fakeChat{replies: []conversation.Message{newTextReply("Noted.")}}
+	s := newServer(t, model.serve(t).URL)
 	task := newTask("", "Remember the garden.")
 	task.Conversation = "talk-1"
 
@@ -446,14 +462,14 @@ func TestHarness_ConversationContinuesUntilFinished(t *testing.T) {
 
 func TestTheProgramIsInstalledWhileTheChatAPIListsItsModels(t *testing.T) {
 	model := &fakeChat{models: []string{"m0", "m1"}}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	res, err := s.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	program := res[0]
-	if program.Name != ProgramName || !program.IsInstalled || !program.LimitsTools || len(program.Models) != 2 {
+	if program.Name != catalog.ProgramName || !program.IsInstalled || !program.LimitsTools || len(program.Models) != 2 {
 		t.Fatalf("the program is %+v", program)
 	}
 	if program.Models[0].IsDefault || !program.Models[1].IsDefault || program.Models[1].Title != "M1" {
@@ -467,7 +483,7 @@ func TestTheProgramIsInstalledWhileTheChatAPIListsItsModels(t *testing.T) {
 
 func TestTheProgramIsNotInstalledWhileTheChatAPIRejects(t *testing.T) {
 	model := &fakeChat{status: http.StatusUnauthorized}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	res, err := s.GetPrograms(t.Context(), nil)
 	if err != nil {
@@ -483,11 +499,11 @@ func TestTheProgramIsNotInstalledWhileTheChatAPIRejects(t *testing.T) {
 }
 
 func TestAskAgentStreamsTheStepsOverConnect(t *testing.T) {
-	model := &fakeChat{replies: []message{newCallReply("call-1", "note_read", `{"path":"Plan.md"}`), newTextReply("Done.")}}
+	model := &fakeChat{replies: []conversation.Message{newCallReply("call-1", "note_read", `{"path":"Plan.md"}`), newTextReply("Done.")}}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 	mux := http.NewServeMux()
-	mux.Handle(agentrun.NewHandler(s))
+	mux.Handle(agentrun.NewHandler(s, s))
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
@@ -509,20 +525,20 @@ func TestAskAgentStreamsTheStepsOverConnect(t *testing.T) {
 
 func TestAnAnswerSplitOffAtItsLengthLimitIsReportedSo(t *testing.T) {
 	reply := newTextReply("The plan is to")
-	model := &fakeChat{replies: []message{reply}, finish: "length"}
-	s := newServer(model.serve(t).URL)
+	model := &fakeChat{replies: []conversation.Message{reply}, finish: "length"}
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Plan?"))
 
-	if got := describeSteps(steps); got != "model said stopped" || steps[len(steps)-1].GetStopped() != reasonCut {
+	if got := describeSteps(steps); got != "model said stopped" || steps[len(steps)-1].GetStopped() != answer.ReasonCut {
 		t.Errorf("steps are %q, stopped %q", got, steps[len(steps)-1].GetStopped())
 	}
 }
 
 func TestACallWithNoArgumentsIsReportedBackWithAnEmptyObject(t *testing.T) {
-	model := &fakeChat{replies: []message{newCallReply("c", "note_read", ""), newTextReply("ok")}}
+	model := &fakeChat{replies: []conversation.Message{newCallReply("c", "note_read", ""), newTextReply("ok")}}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	ask(t, s, newTask(vault.serve(t), "Read."))
 
@@ -536,57 +552,47 @@ func TestACallWithNoArgumentsIsReportedBackWithAnEmptyObject(t *testing.T) {
 }
 
 func TestAKeyIsNotSentOverPlainHTTPToAnotherMachine(t *testing.T) {
-	s := &Server{}
-	s.Configure(map[string]string{SettingBaseURL: "http://192.0.2.1/v1"})
-	s.ApplySecrets(keySecrets("host-key"))
+	s := newTestAgent(t)
+	s.configure(map[string]string{settings.KeyBaseURL: "http://192.0.2.1/v1"})
+	s.applySecrets(keySecrets("host-key"))
 
 	steps := ask(t, s, newTask("", "Hello?"))
 
-	if reason := steps[len(steps)-1].GetStopped(); reason != errPlainKey.Error() {
+	if reason := steps[len(steps)-1].GetStopped(); reason != chatapi.ErrPlainKey.Error() {
 		t.Errorf("stopped %q", reason)
 	}
 }
 
-func TestAKeyIsNotFollowedToPlainHTTP(t *testing.T) {
-	err := refuseDowngrade(httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://192.0.2.1/v1/models", nil), nil)
-	if err == nil {
-		t.Error("a redirect to plain http was followed")
-	}
-	if err := refuseDowngrade(httptest.NewRequestWithContext(t.Context(), http.MethodGet, "https://example.com/v1/models", nil), nil); err != nil {
-		t.Errorf("a redirect to https failed: %v", err)
-	}
-}
-
 func TestTheVaultTokenIsNotSentOverPlainHTTPToAnotherMachine(t *testing.T) {
-	model := &fakeChat{replies: []message{newTextReply("hi")}}
-	s := newServer(model.serve(t).URL)
+	model := &fakeChat{replies: []conversation.Message{newTextReply("hi")}}
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask("http://192.0.2.1/mcp", "Hello?"))
 
-	if len(steps) != 1 || !strings.Contains(steps[0].GetStopped(), errPlainToken.Error()) {
+	if len(steps) != 1 || !strings.Contains(steps[0].GetStopped(), vaulttools.ErrPlainToken.Error()) {
 		t.Errorf("steps are %v", steps)
 	}
 }
 
 func TestHarness_FailedListingIsRequeried(t *testing.T) {
 	model := &fakeChat{status: http.StatusServiceUnavailable, models: []string{"m1"}}
-	s := newServer(model.serve(t).URL)
-	if _, err := s.listModels(t.Context()); err == nil {
+	s := newServer(t, model.serve(t).URL)
+	if _, err := s.catalog.ListModels(t.Context()); err == nil {
 		t.Fatal("a refusing chat API listed models")
 	}
 	model.mu.Lock()
 	model.status = 0
 	model.mu.Unlock()
 
-	if models, err := s.listModels(t.Context()); err != nil || len(models) != 1 {
+	if models, err := s.catalog.ListModels(t.Context()); err != nil || len(models) != 1 {
 		t.Errorf("the second listing is %v, %v", models, err)
 	}
 }
 
 // A task names the model it is answered by, else the configured one answers.
 func TestATaskNamesTheModelThatAnswersIt(t *testing.T) {
-	model := &fakeChat{replies: []message{newTextReply("the answer")}}
-	s := newServer(model.serve(t).URL)
+	model := &fakeChat{replies: []conversation.Message{newTextReply("the answer")}}
+	s := newServer(t, model.serve(t).URL)
 
 	task := newTask("", "why?")
 	task.Tools, task.ToolDeclarations, task.Model = nil, nil, "routed"
@@ -604,13 +610,13 @@ func TestATaskNamesTheModelThatAnswersIt(t *testing.T) {
 }
 
 func TestASplitOffReplyCallsNoTool(t *testing.T) {
-	model := &fakeChat{replies: []message{newCallReply("c", "note_read", "")}, finish: "length"}
+	model := &fakeChat{replies: []conversation.Message{newCallReply("c", "note_read", "")}, finish: "length"}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask(vault.serve(t), "Read."))
 
-	if got := describeSteps(steps); got != "model stopped" || steps[1].GetStopped() != reasonCut {
+	if got := describeSteps(steps); got != "model stopped" || steps[1].GetStopped() != answer.ReasonCut {
 		t.Errorf("steps are %q", got)
 	}
 	if calls := vault.getCalls(); len(calls) != 0 {
@@ -621,20 +627,20 @@ func TestASplitOffReplyCallsNoTool(t *testing.T) {
 func TestTheVaultTokenIsNotFollowedToPlainHTTP(t *testing.T) {
 	redirecting := httptest.NewServer(http.RedirectHandler("http://192.0.2.1/mcp", http.StatusTemporaryRedirect))
 	defer redirecting.Close()
-	model := &fakeChat{replies: []message{newTextReply("hi")}}
-	s := newServer(model.serve(t).URL)
+	model := &fakeChat{replies: []conversation.Message{newTextReply("hi")}}
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask(redirecting.URL, "Hello?"))
 
-	if len(steps) != 1 || !strings.Contains(steps[0].GetStopped(), errDowngrade.Error()) {
+	if len(steps) != 1 || !strings.Contains(steps[0].GetStopped(), endpoint.ErrDowngrade.Error()) {
 		t.Errorf("steps are %v", steps)
 	}
 }
 
 func TestAStepThatCannotBeSentEndsTheRunWithItsError(t *testing.T) {
-	model := &fakeChat{replies: []message{newCallReply("c", "note_read", `{"path":"A.md"}`), newTextReply("ok")}}
+	model := &fakeChat{replies: []conversation.Message{newCallReply("c", "note_read", `{"path":"A.md"}`), newTextReply("ok")}}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 	removed := errors.New("the window closed")
 	dispatched := 0
 
@@ -657,17 +663,17 @@ func TestAStepThatCannotBeSentEndsTheRunWithItsError(t *testing.T) {
 // A task that names no tool is one answer: the model is offered no tool, and the vault is not
 // connected to, whatever endpoint the task holds.
 func TestRunTask_NoToolsWhenTaskNamesNone(t *testing.T) {
-	model := &fakeChat{replies: []message{newTextReply("the answer")}}
+	model := &fakeChat{replies: []conversation.Message{newTextReply("the answer")}}
 	var connected atomic.Bool
 	vault := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { connected.Store(true) }))
 	t.Cleanup(vault.Close)
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 	task := newTask(vault.URL, "why?")
 	task.Tools, task.ToolDeclarations = nil, nil
 
 	steps := ask(t, s, task)
 
-	if got := strings.Join(getSpoken(steps), ""); got != "the answer" {
+	if got := strings.Join(getSpokenTexts(steps), ""); got != "the answer" {
 		t.Errorf("the answer is %q", got)
 	}
 	if connected.Load() {
@@ -689,8 +695,8 @@ func (r refusingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 
 func TestARemoteChatAPIWithNoKeyStopsTheRunBeforeAnyRequest(t *testing.T) {
 	for _, base := range []string{"", "https://api.example.com/v1"} {
-		s := &Server{Client: &http.Client{Transport: refusingTransport{t}}}
-		s.Configure(map[string]string{SettingBaseURL: base})
+		s := newTestAgent(t, chatapi.WithHTTPClient(&http.Client{Transport: refusingTransport{t}}))
+		s.configure(map[string]string{settings.KeyBaseURL: base})
 
 		steps := ask(t, s, newTask("", "Hello?"))
 
@@ -701,29 +707,21 @@ func TestARemoteChatAPIWithNoKeyStopsTheRunBeforeAnyRequest(t *testing.T) {
 }
 
 func TestHarness_LocalChatAPIWithoutKeyIsCalled(t *testing.T) {
-	model := &fakeChat{replies: []message{newTextReply("hi")}}
-	s := &Server{}
-	s.Configure(map[string]string{SettingBaseURL: model.serve(t).URL})
+	model := &fakeChat{replies: []conversation.Message{newTextReply("hi")}}
+	s := newTestAgent(t)
+	s.configure(map[string]string{settings.KeyBaseURL: model.serve(t).URL})
 
 	steps := ask(t, s, newTask("", "Hello?"))
 
-	if reason := steps[len(steps)-1].GetStopped(); reason != reasonDone {
+	if reason := steps[len(steps)-1].GetStopped(); reason != answer.ReasonDone {
 		t.Errorf("stopped %q", reason)
-	}
-	for _, host := range []string{"localhost", "127.0.0.1", "::1"} {
-		if !isLocalHost(host) {
-			t.Errorf("%s is not local", host)
-		}
-	}
-	if isLocalHost("api.example.com") {
-		t.Error("a remote host is local")
 	}
 }
 
 func TestARefusedKeyIsReportedWithWhereToSetIt(t *testing.T) {
 	for _, status := range []int{http.StatusUnauthorized, http.StatusForbidden} {
 		model := &fakeChat{status: status}
-		s := newServer(model.serve(t).URL)
+		s := newServer(t, model.serve(t).URL)
 
 		steps := ask(t, s, newTask("", "Hello?"))
 
@@ -736,7 +734,7 @@ func TestARefusedKeyIsReportedWithWhereToSetIt(t *testing.T) {
 
 func TestAnAnswerOtherThanARefusedKeyAddsNoHint(t *testing.T) {
 	model := &fakeChat{status: http.StatusInternalServerError}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	steps := ask(t, s, newTask("", "Hello?"))
 
@@ -750,7 +748,7 @@ func TestGetModels_ReasoningParameterYieldsLevels(t *testing.T) {
 		models:     []string{"thinker", "router", "plain"},
 		parameters: map[string][]string{"thinker": {"temperature", "reasoning_effort"}, "router": {"reasoning"}},
 	}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 
 	res, err := s.GetPrograms(t.Context(), nil)
 	if err != nil {
@@ -780,11 +778,11 @@ func TestTheLevelOfATaskGoesInTheFieldTheModelListsOrNowhere(t *testing.T) {
 	}
 	for _, one := range cases {
 		model := &fakeChat{
-			replies:    []message{newTextReply("hi")},
+			replies:    []conversation.Message{newTextReply("hi")},
 			models:     []string{"thinker", "router", "plain"},
 			parameters: map[string][]string{"thinker": {"reasoning_effort"}, "router": {"reasoning"}},
 		}
-		s := newServer(model.serve(t).URL)
+		s := newServer(t, model.serve(t).URL)
 		task := newTask("", "Hello?")
 		task.Model, task.Reasoning = one.model, one.level
 		task.Tools, task.ToolsURL = nil, ""
@@ -803,57 +801,9 @@ func TestTheLevelOfATaskGoesInTheFieldTheModelListsOrNowhere(t *testing.T) {
 	}
 }
 
-// openrouter-models.json holds three entries of the listing OpenRouter serves without a key: a model
-// that names its depths, one that lists the fields and no depths, and one that lists neither.
-func TestTheDepthsAModelConsumesAreReadFromTheListingOfTheChatAPI(t *testing.T) {
-	raw, err := os.ReadFile("testdata/openrouter-models.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		if _, err := w.Write(raw); err != nil {
-			t.Error(err)
-		}
-	}))
-	t.Cleanup(srv.Close)
-
-	models, err := chat{baseURL: srv.URL, client: srv.Client()}.listModels(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	byName := map[string]model{}
-	for _, one := range models {
-		byName[one.Name] = one
-	}
-	luna := byName["openai/gpt-5.6-luna"]
-	var names []string
-	for _, one := range luna.ReasoningLevels {
-		names = append(names, one.Name)
-	}
-	if !slices.Equal(names, []string{"low", "medium", "high", "xhigh", "max"}) || luna.DefaultReasoning != "medium" {
-		t.Errorf("the model names %v and %q", names, luna.DefaultReasoning)
-	}
-	if luna.ReasoningField != fieldReasoningEffort {
-		t.Errorf("the field is %q", luna.ReasoningField)
-	}
-	router := byName["typesafe/jev-router"]
-	if len(router.ReasoningLevels) != len(getCommonLevels()) || router.DefaultReasoning != "" {
-		t.Errorf("a model of fields and no depths offers %v", router.ReasoningLevels)
-	}
-	if unreasoningModel := byName["unbiased/pareto-26.10"]; len(unreasoningModel.ReasoningLevels) != 0 || unreasoningModel.ReasoningField != "" {
-		t.Errorf("a model of no reasoning offers %v", unreasoningModel)
-	}
-	if request := newEffort(luna, "max"); request.level != "max" {
-		t.Errorf("a depth the model names failed")
-	}
-	if requestVal := newEffort(router, "max"); requestVal.level != "" {
-		t.Errorf("a depth the model does not name was asked")
-	}
-}
-
 // Any MCP tool from any connected MCP server can be called without requiring or stripping prefixes.
 func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
-	model := &fakeChat{replies: []message{newCallReply("call-custom", "custom_remote_tool", `{"query":"test"}`), newTextReply("Result received.")}}
+	model := &fakeChat{replies: []conversation.Message{newCallReply("call-custom", "custom_remote_tool", `{"query":"test"}`), newTextReply("Result received.")}}
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "custom", Version: "1"}, nil)
 	var calledWith string
 	mcpServer.AddTool(&sdk.Tool{Name: "custom_remote_tool", Description: "A custom MCP tool", InputSchema: map[string]any{"type": "object"}},
@@ -871,7 +821,7 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 	task := &agentrun.Request{
 		Prompt:       "Run custom tool",
 		Instructions: "Follow instructions",
@@ -883,7 +833,7 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 	if calledWith != `{"query":"test"}` {
 		t.Errorf("custom tool was called with %q, want %q", calledWith, `{"query":"test"}`)
 	}
-	if response := strings.Join(getSpoken(steps), ""); response != "Result received." {
+	if response := strings.Join(getSpokenTexts(steps), ""); response != "Result received." {
 		t.Errorf("the answer is %q, want %q", response, "Result received.")
 	}
 }
@@ -891,9 +841,9 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 // The context of the task is passed to every tool the model calls as the `_meta` of
 // the call.
 func TestTheContextOfATaskIsTheMetaOfEveryCall(t *testing.T) {
-	model := &fakeChat{replies: []message{newCallReply("call-1", "note_read", `{"path":"Plan.md"}`), newTextReply("ok")}}
+	model := &fakeChat{replies: []conversation.Message{newCallReply("call-1", "note_read", `{"path":"Plan.md"}`), newTextReply("ok")}}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
+	s := newServer(t, model.serve(t).URL)
 	task := newTask(vault.serve(t), "What is on this card?")
 	task.Context = map[string]string{"md.example.cards/card": "k7"}
 
@@ -907,14 +857,14 @@ func TestTheContextOfATaskIsTheMetaOfEveryCall(t *testing.T) {
 }
 
 func TestTheMaxStepsSettingLimitsATaskThatNamesNoLimit(t *testing.T) {
-	model := &fakeChat{replies: []message{newCallReply("c", "note_read", `{"path":"A.md"}`)}}
+	model := &fakeChat{replies: []conversation.Message{newCallReply("c", "note_read", `{"path":"A.md"}`)}}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
-	s.Configure(map[string]string{SettingMaxSteps: "3"})
+	s := newServer(t, model.serve(t).URL)
+	s.configure(map[string]string{settings.KeyMaxSteps: "3"})
 
 	steps := ask(t, s, newTask(vault.serve(t), "Read forever."))
 
-	if steps[len(steps)-1].GetStopped() != reasonTurns {
+	if steps[len(steps)-1].GetStopped() != answer.ReasonTurns {
 		t.Errorf("stopped %q", steps[len(steps)-1].GetStopped())
 	}
 	if len(model.getRequests()) != 3 {
@@ -923,10 +873,10 @@ func TestTheMaxStepsSettingLimitsATaskThatNamesNoLimit(t *testing.T) {
 }
 
 func TestATaskLimitOverridesTheMaxStepsSetting(t *testing.T) {
-	model := &fakeChat{replies: []message{newCallReply("c", "note_read", `{"path":"A.md"}`)}}
+	model := &fakeChat{replies: []conversation.Message{newCallReply("c", "note_read", `{"path":"A.md"}`)}}
 	vault := &fakeVault{}
-	s := newServer(model.serve(t).URL)
-	s.Configure(map[string]string{SettingMaxSteps: "5"})
+	s := newServer(t, model.serve(t).URL)
+	s.configure(map[string]string{settings.KeyMaxSteps: "5"})
 	task := newTask(vault.serve(t), "Read forever.")
 	task.MaxSteps = 2
 

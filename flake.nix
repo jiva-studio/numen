@@ -46,16 +46,16 @@
         lib.removePrefix prefix (lib.findFirst (lib.hasPrefix prefix) "" (map lib.trim (readLines file)));
 
       # The versions CI runs. Go and Node are read from go.work and
-      # .node-version, the Go plugins from the tool block of libs/protocol/go.mod;
+      # .node-version, the Go plugins from the tool block of libs/core/protocol/go.mod;
       # golangci-lint and buf are also named in .github/workflows, and
-      # golangci-lint in tools/lint-layers/checks/tools.mjs.
+      # golangci-lint in tools/checks/lib/golangci.mjs.
       versions = {
         go = findVersion ./go.work "go ";
         node = lib.trim (builtins.readFile ./.node-version);
         golangci-lint = "2.14.0";
         buf = "1.72.0";
-        protoc-gen-go = findVersion ./libs/protocol/go.mod "google.golang.org/protobuf v";
-        protoc-gen-connect-go = findVersion ./libs/protocol/go.mod "connectrpc.com/connect v";
+        protoc-gen-go = findVersion ./libs/core/protocol/go.mod "google.golang.org/protobuf v";
+        protoc-gen-connect-go = findVersion ./libs/core/protocol/go.mod "connectrpc.com/connect v";
       };
 
       # Fails evaluation when a tool is not at the version CI runs.
@@ -70,10 +70,10 @@
         let
           go = pkgs.go_1_26.overrideAttrs (
             finalAttrs: _: {
-              version = "1.26.10";
+              version = "1.26.11";
               src = pkgs.fetchurl {
                 url = "https://go.dev/dl/go${finalAttrs.version}.src.tar.gz";
-                hash = "sha256-/WPog7ovK/ypPBZGsx6+9j4rHk0rMXyXidl2po2B828=";
+                hash = "sha256-1EEBsP8n7SpMda1GwXucdDWSCeLrLKfJ32y0/baOGWk=";
               };
             }
           );
@@ -120,7 +120,7 @@
       };
 
       # protoc-gen-es is the one in node_modules, at the version of package-lock.json;
-      # libs/protocol/buf.gen.yaml runs it from there. The flake a release hands
+      # libs/core/protocol/buf.gen.yaml runs it from there. The flake a release hands
       # out (release.yml) carries no go.work, and so no devShell.
       devShells = lib.optionalAttrs (builtins.pathExists ./go.work) (
         lib.genAttrs devSystems (

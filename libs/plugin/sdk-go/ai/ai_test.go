@@ -1,0 +1,240 @@
+package ai
+
+import (
+	"context"
+	"errors"
+	"net"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"testing"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+)
+
+type fakeHost struct {
+	numenv1connect.UnimplementedHostServiceHandler
+	code   v1.CompletionErrorCode
+	detail string
+	answer *v1.CompletionAnswer
+	got    *v1.CompletionQuestion
+	auth   string
+}
+
+func (f *fakeHost) Complete(_ context.Context, req *connect.Request[v1.HostServiceCompleteRequest]) (*connect.Response[v1.HostServiceCompleteResponse], error) {
+	f.got = req.Msg.GetQuestion()
+	f.auth = req.Header().Get("Authorization")
+	return connect.NewResponse(&v1.HostServiceCompleteResponse{Answer: f.answer, Error: f.code, Detail: f.detail}), nil
+}
+
+func startHost(t *testing.T, h *fakeHost) *httptest.Server {
+	t.Helper()
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewHostServiceHandler(h))
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+func newQuestion() *Question {
+	return &Question{
+		Purpose: "proofreading",
+		Messages: []Message{
+			{Role: "user", Text: "fix this"},
+		},
+	}
+}
+
+func TestClientCompleteSendsQuestionAndTokenAndReturnsText(t *testing.T) {
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "fixed"}}
+	srv := startHost(t, host)
+
+	text, err := NewClient(srv.Client(), srv.URL, "secret").Complete(t.Context(), newQuestion())
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if text != "fixed" {
+		t.Errorf("got %q, want %q", text, "fixed")
+	}
+	if host.auth != "Bearer secret" {
+		t.Errorf("got authorization %q, want %q", host.auth, "Bearer secret")
+	}
+	if host.got.GetPurpose() != "proofreading" || host.got.GetMessages()[0].GetText() != "fix this" {
+		t.Errorf("host received %v", host.got)
+	}
+}
+
+func TestClientCompleteOmitsAuthorizationWithoutToken(t *testing.T) {
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "ok"}}
+	srv := startHost(t, host)
+
+	if _, err := NewClient(srv.Client(), srv.URL, "").Complete(t.Context(), newQuestion()); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if host.auth != "" {
+		t.Errorf("got authorization %q, want none", host.auth)
+	}
+}
+
+func TestClientCompleteReturnsErrNoAnswerWhenHostSendsNone(t *testing.T) {
+	srv := startHost(t, &fakeHost{})
+
+	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
+
+	if !errors.Is(err, ErrNoAnswer) {
+		t.Fatalf("got %v, want ErrNoAnswer", err)
+	}
+}
+
+func TestClientCompleteReturnsTransportError(t *testing.T) {
+	srv := httptest.NewServer(http.NotFoundHandler())
+	t.Cleanup(srv.Close)
+
+	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
+
+	if !errors.As(err, new(*connect.Error)) {
+		t.Fatalf("got %v, want a connect error", err)
+	}
+}
+
+func TestCompleteReadsHostFromEnvironment(t *testing.T) {
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "env"}}
+	srv := startHost(t, host)
+	t.Setenv(HostPortEnv, strconv.Itoa(getPort(t, srv)))
+	t.Setenv(PluginTokenEnv, "tok")
+
+	text, err := Complete(t.Context(), newQuestion())
+
+	if err != nil || text != "env" {
+		t.Fatalf("got %q, %v", text, err)
+	}
+	if host.auth != "Bearer tok" {
+		t.Errorf("got authorization %q", host.auth)
+	}
+}
+
+func TestCompleteFailsWithoutHostPort(t *testing.T) {
+	t.Setenv(HostPortEnv, "")
+
+	_, err := Complete(t.Context(), newQuestion())
+
+	if !errors.Is(err, ErrNoHost) {
+		t.Fatalf("got %v, want ErrNoHost", err)
+	}
+}
+
+func TestClientCompleteReturnsErrorOfHost(t *testing.T) {
+	cases := map[v1.CompletionErrorCode]error{
+		v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:    ErrNoRoute,
+		v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE: ErrUnavailable,
+	}
+	for code, want := range cases {
+		srv := startHost(t, &fakeHost{code: code})
+
+		_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
+
+		if !errors.Is(err, want) || err.Error() != want.Error() {
+			t.Errorf("%v: got %v, want %v", code, err, want)
+		}
+	}
+}
+
+func TestQuestionAndMessageAccessorsHandleNilAndValues(t *testing.T) {
+	var nilQuestion *Question
+	if nilQuestion.GetPurpose() != "" || nilQuestion.GetMessages() != nil || toProtoQuestion(nilQuestion) != nil {
+		t.Fatalf("nil question returned non-empty values")
+	}
+	q := newQuestion()
+	if q.GetPurpose() != "proofreading" || len(q.GetMessages()) != 1 {
+		t.Fatalf("got purpose=%q messages=%v", q.GetPurpose(), q.GetMessages())
+	}
+	msg := q.GetMessages()[0]
+	if msg.GetRole() != "user" || msg.GetText() != "fix this" {
+		t.Fatalf("got role=%q text=%q", msg.GetRole(), msg.GetText())
+	}
+}
+
+func TestReadErrorWalksEveryCode(t *testing.T) {
+	observed := map[error]v1.CompletionErrorCode{}
+	for value := range v1.CompletionErrorCode_name {
+		code := v1.CompletionErrorCode(value)
+		err := readRefusal(code, "")
+		if code == v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED {
+			if err != nil {
+				t.Errorf("unspecified must be no error, got %v", err)
+			}
+			continue
+		}
+		if err == nil || err.Error() == "" {
+			t.Fatalf("%v has no error", code)
+		}
+		if other, dup := observed[err]; dup {
+			t.Errorf("%v and %v share an error", code, other)
+		}
+		observed[err] = code
+	}
+	if err := readRefusal(v1.CompletionErrorCode(99), ""); err == nil {
+		t.Error("an unknown code must be an error")
+	}
+}
+
+// A client created from the variables of a linked plugin queries the host they
+// name, and reads nothing from the environment.
+func TestClientFromVarsReadsTheHostFromItsVariables(t *testing.T) {
+	host := &fakeHost{answer: &v1.CompletionAnswer{Text: "fixed"}}
+	srv := startHost(t, host)
+	t.Setenv(HostPortEnv, "")
+	t.Setenv(PluginTokenEnv, "process-token")
+
+	client, err := NewClientFromVars(map[string]string{
+		HostPortEnv:    strconv.Itoa(getPort(t, srv)),
+		PluginTokenEnv: "linked-token",
+	})
+	if err != nil {
+		t.Fatalf("NewClientFromVars: %v", err)
+	}
+	text, err := client.Complete(t.Context(), newQuestion())
+	if err != nil || text != "fixed" {
+		t.Fatalf("Complete = %q, %v", text, err)
+	}
+	if host.auth != "Bearer linked-token" {
+		t.Errorf("authorization = %q, want the token of the variables", host.auth)
+	}
+}
+
+func TestClientFromVarsFailsWithoutHostPort(t *testing.T) {
+	if _, err := NewClientFromVars(map[string]string{PluginTokenEnv: "tok"}); !errors.Is(err, ErrNoHost) {
+		t.Fatalf("got %v, want ErrNoHost", err)
+	}
+}
+
+// The detail the host provides is preserved after the rejection, and the error
+// is still the one the code names.
+func TestClientCompleteStatesTheDetailOfTheHost(t *testing.T) {
+	srv := startHost(t, &fakeHost{
+		code:   v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE,
+		detail: "the agent stopped: invalid model selection",
+	})
+
+	_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
+
+	if !errors.Is(err, ErrUnavailable) {
+		t.Fatalf("got %v, want ErrUnavailable", err)
+	}
+	if want := "ai: routed agent did not answer: the agent stopped: invalid model selection"; err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+}
+
+func getPort(t *testing.T, srv *httptest.Server) int {
+	t.Helper()
+	addr, isTCP := srv.Listener.Addr().(*net.TCPAddr)
+	if !isTCP {
+		t.Fatalf("listener address %s is not a TCP address", srv.Listener.Addr())
+	}
+	return addr.Port
+}

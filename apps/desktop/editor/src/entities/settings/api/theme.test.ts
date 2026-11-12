@@ -5,12 +5,10 @@
  * Everything else passes a message through unchanged, and the schema defines their
  * shape.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
-
-vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
-
-vi.mock('@/shared/clients', () => ({ theme: request }))
+import { installCoreAnswers } from '@numen/core-client/testing'
+import { themes } from './theme'
 
 const request = {
   listThemes: vi.fn(),
@@ -18,7 +16,15 @@ const request = {
   watchThemes: vi.fn(),
 }
 
-const { themes } = await import('./theme')
+let restore: () => void
+
+beforeEach(() => {
+  restore = installCoreAnswers({ theme: request })
+})
+
+afterEach(() => {
+  restore()
+})
 
 const createAnswer = (overrides: Record<string, unknown> = {}) => ({
   themes: [],
@@ -76,7 +82,7 @@ describe('every theme there is', () => {
   })
 })
 
-describe('which half of a colour pair is read', () => {
+describe('which half of a color pair is read', () => {
   it('is returned in the window’s own words', async () => {
     for (const [mode, word] of [
       [THEME_MODE.LIGHT, 'light'],
@@ -126,7 +132,7 @@ describe('the rest of what is requested', () => {
   it('returns the text of a theme’s file currently', async () => {
     request.readTheme.mockResolvedValue({ css: ':root { --numen-surface: black }' })
     expect(await themes.readTheme('own/Dusk.css')).toBe(':root { --numen-surface: black }')
-    expect(request.readTheme.mock.calls[0]?.[0]).toEqual({ name: 'own/Dusk.css' })
+    expect(request.readTheme.mock.calls[0]?.[0]).toMatchObject({ name: 'own/Dusk.css' })
   })
 
   it('names the themes the person’s folder changed, as they land', async () => {
@@ -142,15 +148,23 @@ describe('the rest of what is requested', () => {
     expect(receivedThemes).toEqual([['own/Dusk.css'], ['own/Dusk.css', 'own/Dawn.css']])
   })
 
-  it('is requested for under the signal it was given', async () => {
-    request.watchThemes.mockImplementation(async function* () {
-      yield* [] as string[][]
+  it('stops the request where the signal it was given is aborted', async () => {
+    let requestSignal: AbortSignal | undefined
+    request.watchThemes.mockImplementation(async function* (_request, context) {
+      requestSignal = context.signal
+      await new Promise((resolve) => context.signal.addEventListener('abort', resolve))
+      yield* [] as { names: string[] }[]
     })
     const controller = new AbortController()
 
-    const receivedThemes: (readonly string[])[] = []
-    for await (const names of themes.watchThemes(controller.signal)) receivedThemes.push(names)
+    const received: (readonly string[])[] = []
+    const readTask = (async () => {
+      for await (const names of themes.watchThemes(controller.signal)) received.push(names)
+    })()
+    await vi.waitFor(() => expect(requestSignal).toBeDefined())
+    controller.abort()
 
-    expect(request.watchThemes).toHaveBeenLastCalledWith({}, { signal: controller.signal })
+    await vi.waitFor(() => expect(requestSignal?.aborted).toBe(true))
+    await readTask.catch(() => undefined)
   })
 })

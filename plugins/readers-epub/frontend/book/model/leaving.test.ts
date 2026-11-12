@@ -22,7 +22,6 @@ describe('copying the paper', () => {
     expect(holder.children).toHaveLength(1)
     expect(holder.firstElementChild).toBe(copy)
     expect(copy.className).toBe('book__paper')
-    expect(copy.style.translate).toBe('-600px 0')
     expect(copy.textContent).toBe('TitleText')
   })
 

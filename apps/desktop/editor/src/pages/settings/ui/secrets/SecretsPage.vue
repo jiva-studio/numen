@@ -3,116 +3,68 @@
  * The page of secrets: every secret by group, in priority order, with the plugin declarations that
  * may read it. A value is entered here once and is never shown again.
  */
-import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
+import { useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
-import { Button, ConfirmDialog } from '@numen/ui'
-import {
-  getFirstSecretName,
-  getNewGroupName,
-  getNextSecretName,
-  type Secret,
-} from '@/entities/settings'
-import {
-  createPageSections,
-  getDeclarations,
-  type Declaration,
-  type SecretSection as SectionData,
-} from '../../lib/secretSections'
-import type { SettingsTabState } from '../../types'
-import { useSecretDeletion } from '../../model/secretDeletion'
-import { useSecretDrafts } from '../../model/secretDrafts'
+import { Button } from '@numen/ui'
+import type { PluginInfo, Secret } from '@/entities/settings'
+import type { Declaration, SecretSection as SectionData } from '../../lib/secretSections'
+import { runAfterRender } from '../../model/afterRender'
+import { useSecretsPage } from '../../model/useSecretsPage'
+import type { InstallationSecrets } from '../../types'
 import { WORDS as words } from '../../words'
+import { ConfirmDialog } from '../confirm-dialog'
 import SecretSection from './SecretSection.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{ state: SettingsTabState }>()
+const props = defineProps<{
+  secrets: InstallationSecrets
+  plugins: readonly PluginInfo[]
+}>()
 
 const emit = defineEmits<{
   (e: 'back'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
-const plugins = computed(() => installation.value.plugins?.value ?? [])
-const credentialsPath = computed(() => installation.value.credentialsPath?.value ?? '')
-const drafts = useSecretDrafts()
-/** The group whose name is edited as it appears. */
-const newGroup = ref('')
 const addGroupButton = useTemplateRef<InstanceType<typeof Button>>('addGroupButton')
-const sections = computed(() =>
-  createPageSections(
-    installation.value.secretSections?.value ?? [],
-    drafts.emptyGroups.value,
-    installation.value.secretStates?.value ?? new Map(),
-  ),
-)
-const groups = computed(() => sections.value.map((one) => one.group))
-const declarations = computed(() => getDeclarations(plugins.value))
-const deletion = useSecretDeletion(
-  (id) => installation.value.deleteSecret(id),
-  (group) => installation.value.deleteSecretGroup(group),
-  () => plugins.value,
-)
-
-onMounted(() => installation.value.loadSecretStates?.())
+const { credentialsPath, drafts, newGroup, sections, groups, declarations, deletion, actions } =
+  useSecretsPage({
+    getSecrets: () => props.secrets,
+    getPlugins: () => props.plugins,
+  })
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAdd(group: string): void {
-  drafts.addDraft(group, getNextSecretName(group, getNamesInGroup(group)))
+  actions.addSecret(group)
 }
 
 function onAddGroup(): void {
-  newGroup.value = getNewGroupName(groups.value)
-  drafts.addEmptyGroup(newGroup.value)
+  actions.addGroup()
 }
 
 function onRenameGroup(section: SectionData, name: string): void {
-  newGroup.value = ''
-  if (section.secrets.length > 0) installation.value.renameSecretGroup(section.group, name)
-  else drafts.renameEmptyGroup(section.group, name)
+  actions.renameGroup(section, name)
 }
 
-async function onCreate(
-  group: string,
-  name: string,
-  value: string,
-  draftId?: number,
-): Promise<boolean> {
-  const id = await installation.value.createSecret(group, name, value)
-  if (id === '') return false
-  if (draftId !== undefined) drafts.discardDraft(draftId)
-  drafts.removeEmptyGroup(group)
-  return true
+function onCreate(group: string, name: string, value: string, draftId?: number): Promise<boolean> {
+  return actions.saveSecret(group, name, value, draftId)
 }
 
 function onToggle(secret: Secret, declaration: Declaration, isAllowed: boolean): void {
-  const { pluginId, name, group } = declaration
-  if (isAllowed) installation.value.allowPluginSecret(secret.id, pluginId, name, group)
-  else installation.value.denyPluginSecret(secret.id, pluginId, name, group)
+  actions.toggleDeclaration(secret, declaration, isAllowed)
 }
 
 function onAskDelete(secret: Secret, opener: HTMLElement): void {
   deletion.ask({ kind: 'secret', secret }, opener)
 }
 
-async function onAskDeleteGroup(section: SectionData, opener: HTMLElement): Promise<void> {
+function onAskDeleteGroup(section: SectionData, opener: HTMLElement): void {
   if (section.secrets.length > 0) {
     deletion.ask({ kind: 'group', section }, opener)
     return
   }
   drafts.removeEmptyGroup(section.group)
-  await nextTick()
-  ;(addGroupButton.value?.$el as HTMLElement | undefined)?.focus()
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function getNamesInGroup(group: string): readonly string[] {
-  const section = sections.value.find((one) => one.group === group)
-  return [
-    ...(section?.secrets.map((one) => one.name) ?? []),
-    ...(section?.secrets.length === 0 ? [getFirstSecretName(group)] : []),
-    ...drafts.getDrafts(group).map((one) => one.name),
-  ]
+  runAfterRender(() => (addGroupButton.value?.$el as HTMLElement | undefined)?.focus())
 }
 </script>
 
@@ -138,9 +90,9 @@ function getNamesInGroup(group: string): readonly string[] {
       @add="onAdd(section.group)"
       @rename-group="(name) => onRenameGroup(section, name)"
       @discard="drafts.discardDraft"
-      @move="(id, beforeId) => installation.moveSecret(id, beforeId)"
-      @rename="(id, name) => installation.renameSecret(id, name)"
-      @write="(id, value) => installation.writeSecret(id, value)"
+      @move="actions.moveSecret"
+      @rename="actions.renameSecret"
+      @write="actions.writeSecret"
       @delete="onAskDelete"
       @delete-group="(opener) => onAskDeleteGroup(section, opener)"
       @toggle="onToggle"
@@ -180,8 +132,9 @@ function getNamesInGroup(group: string): readonly string[] {
 }
 
 .secrets-page__back {
+  --margin-end: 0.75rem;
   align-self: flex-start;
-  margin-block-end: 0.75rem;
+  margin-block-end: var(--margin-end);
 }
 
 .secrets-page__where {

@@ -3,19 +3,16 @@ package service
 import (
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 // Mount registers the plugin's services on s.
 func Mount(s *server.Server) error {
-	agent := new(agentServer)
-	agent.codexModels.isAsync = true
-	agent.codexModels.clock = clock.System{}
+	agent := newAgentServer(true)
 	s.OnClose(agent.Close)
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agent.applyConfig(values) })
-	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
+	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agent.settings.Apply(values) })
+	s.Register(agentrun.NewHandler(agent, agent, s.HandlerOptions()...))
 	return nil
 }
 

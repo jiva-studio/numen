@@ -4,47 +4,34 @@
  * vault once and is not kept here.
  */
 import { shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/core-client'
-import type { MessageWriter } from '@/shared/notices/messages'
+import { formatError } from '@/shared/api/errors'
+import type { MessageWriter } from '@/shared/model/notices/messages'
+import * as secretsApi from '../api/secrets'
 
 /** The messages this module shows in the window. */
-export interface SecretWords {
+interface SecretWords {
   readonly secretFailed: string
-}
-
-/** The vault operations this module uses. */
-export interface SecretDeps {
-  createSecret(group: string, name: string, value: string): Promise<string>
-  renameSecret(id: string, name: string): Promise<void>
-  writeSecret(id: string, value: string): Promise<void>
-  deleteSecret(id: string): Promise<void>
-  deleteSecretGroup(group: string): Promise<void>
-  listSecretStates(): Promise<ReadonlyMap<string, boolean>>
-  moveSecret(id: string, beforeId: string): Promise<void>
-  renameSecretGroup(group: string, name: string): Promise<void>
-  allowPluginSecret(secretId: string, pluginId: string, name: string, group: string): Promise<void>
-  denyPluginSecret(secretId: string, pluginId: string, name: string, group: string): Promise<void>
 }
 
 /**
  * The messages this module shows, and how the settings are read again afterwards.
  */
-export interface SecretOptions {
+interface SecretOptions {
   readonly words: SecretWords
   readonly notify: MessageWriter
   readonly refresh: () => Promise<void>
 }
 
-export function createSecretStore(core: SecretDeps, { words, notify, refresh }: SecretOptions) {
+export function createSecretStore({ words, notify, refresh }: SecretOptions) {
   /** Whether each secret has a value on this machine, as the core last reported it. */
   const states = shallowRef<ReadonlyMap<string, boolean>>(new Map())
 
   /** Reads which secrets have a value. A failed read keeps the states as they were. */
   const loadStates = async (): Promise<void> => {
     try {
-      states.value = await core.listSecretStates()
+      states.value = await secretsApi.listSecretStates()
     } catch (caughtError) {
-      notify(`${words.secretFailed} ${formatErrorMessage(caughtError)}`, 'error')
+      notify(`${words.secretFailed} ${formatError(caughtError)}`, 'error')
     }
   }
 
@@ -62,63 +49,67 @@ export function createSecretStore(core: SecretDeps, { words, notify, refresh }: 
     try {
       answer = await operation()
     } catch (caughtError) {
-      notify(`${words.secretFailed} ${formatErrorMessage(caughtError)}`, 'error')
+      notify(`${words.secretFailed} ${formatError(caughtError)}`, 'error')
     }
     await refresh()
     if (changesValue) await loadStates()
     return answer
   }
 
-  const runVoid = (operation: () => Promise<void>, changesValue = false): Promise<void> =>
+  const runVoidOperation = (operation: () => Promise<void>, changesValue = false): Promise<void> =>
     run(operation, undefined, changesValue)
 
   /** A secret created with its value. It resolves to its id, and to an empty text where nothing was created. An empty value creates nothing. */
   const createSecret = (group: string, name: string, value: string): Promise<string> =>
-    value === '' ? Promise.resolve('') : run(() => core.createSecret(group, name, value), '', true)
+    value === ''
+      ? Promise.resolve('')
+      : run(() => secretsApi.createSecret(group, name, value), '', true)
 
   const renameSecret = (id: string, name: string): Promise<void> =>
-    runVoid(() => core.renameSecret(id, name))
+    runVoidOperation(() => secretsApi.renameSecret(id, name))
 
   /** The value of a secret replaced. An empty value changes nothing. */
   const writeSecret = (id: string, value: string): Promise<void> =>
-    value === '' ? Promise.resolve() : runVoid(() => core.writeSecret(id, value), true)
+    value === '' ? Promise.resolve() : runVoidOperation(() => secretsApi.writeSecret(id, value), true)
 
-  const deleteSecret = (id: string): Promise<void> => runVoid(() => core.deleteSecret(id), true)
+  const deleteSecret = (id: string): Promise<void> =>
+    runVoidOperation(() => secretsApi.deleteSecret(id), true)
 
   const deleteSecretGroup = (group: string): Promise<void> =>
-    runVoid(() => core.deleteSecretGroup(group), true)
+    runVoidOperation(() => secretsApi.deleteSecretGroup(group), true)
 
   const moveSecret = (id: string, beforeId: string): Promise<void> =>
-    runVoid(() => core.moveSecret(id, beforeId))
+    runVoidOperation(() => secretsApi.moveSecret(id, beforeId))
 
   const renameSecretGroup = (group: string, name: string): Promise<void> =>
-    runVoid(() => core.renameSecretGroup(group, name))
+    runVoidOperation(() => secretsApi.renameSecretGroup(group, name))
 
   const allowPluginSecret = (
     secretId: string,
     pluginId: string,
     name: string,
     group: string,
-  ): Promise<void> => runVoid(() => core.allowPluginSecret(secretId, pluginId, name, group))
+  ): Promise<void> => runVoidOperation(() => secretsApi.allowPluginSecret(secretId, pluginId, name, group))
 
   const denyPluginSecret = (
     secretId: string,
     pluginId: string,
     name: string,
     group: string,
-  ): Promise<void> => runVoid(() => core.denyPluginSecret(secretId, pluginId, name, group))
+  ): Promise<void> => runVoidOperation(() => secretsApi.denyPluginSecret(secretId, pluginId, name, group))
 
   return {
-    createSecret,
-    renameSecret,
-    writeSecret,
     states,
     loadStates,
-    deleteSecret,
-    deleteSecretGroup,
-    moveSecret,
-    renameSecretGroup,
-    allowPluginSecret,
-    denyPluginSecret,
+    edit: {
+      createSecret,
+      renameSecret,
+      writeSecret,
+      deleteSecret,
+      deleteSecretGroup,
+      moveSecret,
+      renameSecretGroup,
+    },
+    access: { allowPluginSecret, denyPluginSecret },
   }
 }

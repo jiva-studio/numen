@@ -1,0 +1,160 @@
+/** The presets of a vault, as the window requests them and as the schema defines them. */
+import { asFailure, asValue } from '@numen/plugin-sdk'
+import { formatFingerprint, parseFingerprint } from './fingerprint'
+import { findErrorCode, isStaleAnswer } from '../lib/wire/errors'
+import { formatSettings, parseSettings } from '../lib/wire/settings'
+import { goalOf } from '../lib/wire/goal'
+import type {
+  Curve as CurveMessage,
+  CurvePoint as CurvePointMessage,
+  GetDeckPresetResponse,
+  Point as PointMessage,
+  Preset as PresetMessage,
+  ReadPresetResponse,
+  SettingsBounds as SettingsBoundsMessage,
+} from '../lib/wire/schedule'
+import { presetsService } from './clients'
+import {
+  DEFAULTS,
+  NO_CURVE_POINT,
+  type Bounds,
+  type Curve,
+  type CurvePoint,
+  type Point,
+  type Preset,
+  type Presets,
+  type PresetReadResult,
+  type SettingsBounds,
+} from '../lib/presets'
+
+/** The same requests, in the shape the window uses. */
+export const presets: Presets = {
+  read: async (path) => parseRead(await presetsService.readPreset({ path })),
+  getDeckPreset: async (deck) => parseRead(await presetsService.getDeckPreset({ deck })),
+  list: async () =>
+    (await presetsService.listPresets({})).presets.map((one) => ({
+      path: one.path,
+      title: one.title,
+    })),
+  createPreset: async (title, folder) => {
+    const answer = await presetsService.createPreset({ title, path: folder })
+    const error = findErrorCode(answer)
+    return error ? asFailure(error) : asValue({ path: answer.path })
+  },
+  scheduleDeck: async (deck, preset, observed) => {
+    const answer = await presetsService.scheduleDeck({
+      deck,
+      preset,
+      ...(observed === '' ? {} : { baseline: parseFingerprint(observed) }),
+    })
+    const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
+    if (code) return asFailure(code)
+    return asValue({ at: formatFingerprint(answer.at) ?? '' })
+  },
+  write: async (path, settings, observed) => {
+    const answer = await presetsService.writePreset({
+      path,
+      settings: formatSettings(settings),
+      ...(observed === '' ? {} : { baseline: parseFingerprint(observed) }),
+    })
+    const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
+    if (code) return asFailure(code)
+    return asValue({ at: formatFingerprint(answer.at) ?? '' })
+  },
+  curve: async (path, settings) => {
+    const answer = await presetsService.computeCurve({
+      path,
+      settings: formatSettings(settings),
+    })
+    return parseCurve(answer.curve)
+  },
+}
+
+const parseRead = (answer: ReadPresetResponse | GetDeckPresetResponse): PresetReadResult => {
+  const error = findErrorCode(answer)
+  if (error) return asFailure(error)
+  return asValue({
+    preset: answer.preset ? parsePreset(answer.preset) : null,
+    at: formatFingerprint(answer.at) ?? '',
+    bounds: parseSettingsBounds(answer.bounds),
+  })
+}
+
+const parseSettingsBounds = (all: SettingsBoundsMessage | undefined): SettingsBounds => {
+  const out: { -readonly [field in keyof SettingsBounds]: Bounds } = {}
+  if (all === undefined) return out
+  if (all.minutesADay) out.minutesADay = parseBounds(all.minutesADay)
+  if (all.newADay) out.newADay = parseBounds(all.newADay)
+  if (all.reviewsADay) out.reviewsADay = parseBounds(all.reviewsADay)
+  if (all.retention) out.retention = parseBounds(all.retention)
+  if (all.backlog) out.backlog = parseBounds(all.backlog)
+  if (all.interval) out.interval = parseBounds(all.interval)
+  if (all.load) out.load = parseBounds(all.load)
+  return out
+}
+
+const parseBounds = (bounds: Bounds): Bounds => ({
+  min: bounds.min,
+  max: bounds.max,
+})
+
+const parsePreset = (one: PresetMessage): Preset => ({
+  path: one.path,
+  title: one.title,
+  settings: parseSettings(one.settings),
+  problems: one.problems,
+  stops: one.stops,
+  stopsOn: one.stopsOn,
+})
+
+const parsePoint = (one: PointMessage): Point => ({
+  reviews: one.reviews,
+  minutes: one.minutes,
+  retained: one.retained,
+  due: one.due,
+  through: one.through,
+  canLearnEveryCard: one.isEnough,
+  closed: one.closed,
+  clears: one.clears,
+  learned: one.learned,
+  ...(one.learns === undefined ? {} : { learns: one.learns }),
+  short: one.short,
+  backlog: one.backlog,
+})
+
+/** The curve of an answer that carries none: nothing drawn, over nothing. */
+const NO_CURVE: Curve = {
+  goal: DEFAULTS.goal,
+  grid: [],
+  days: [],
+  at: [],
+  now: NO_CURVE_POINT,
+  suggested: NO_CURVE_POINT,
+  decks: 0,
+  cards: 0,
+  overdue: 0,
+  unbegun: 0,
+  isValid: true,
+  isHonest: true,
+}
+
+const parseCurve = (curve: CurveMessage | undefined): Curve =>
+  curve === undefined
+    ? NO_CURVE
+    : {
+        goal: goalOf[curve.goal] ?? DEFAULTS.goal,
+        grid: curve.grid,
+        days: curve.days,
+        at: curve.at.map(parsePoint),
+        now: parseCurvePoint(curve.now),
+        suggested: parseCurvePoint(curve.suggested),
+        decks: curve.decks,
+        cards: curve.cards,
+        overdue: curve.overdue,
+        unbegun: curve.unbegun,
+        isValid: true,
+        isHonest: true,
+      }
+
+const parseCurvePoint = (place: CurvePointMessage | undefined): CurvePoint =>
+  place === undefined ? NO_CURVE_POINT : { index: place.at, value: place.value, day: place.day }

@@ -7,9 +7,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/core-client'
 
-import { openNotes, type Notes } from '@/entities/note'
-import { createFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flush'
-import type { NoteResult } from '@/entities/note'
+import { openNotes } from '@/entities/note'
+import { answerNotes, type NoteAnswer } from '@/testing/noteCore'
+import { createFileFlush, type Conflict, type FlushDeps } from './flush'
+import { createNoteFlushHandler } from './noteFlush'
+
+type FlushResult = NonNullable<Parameters<FlushDeps['reportFlush']>[1]>
 
 function rethrow(error: unknown): never {
   throw error
@@ -51,20 +54,22 @@ function createFakeCore(getQuits: () => AsyncIterable<{ token: string; flush: bo
   /** Writes wait here until a test lets them through. */
   let pendingWriteResolve: (() => void) | null = null
 
-  const core: Notes & FlushDeps = {
+  const core: FlushDeps = {
     watchQuit: getQuits,
     reportFlush: async (token: string, result: FlushResult = 'written') => {
       reportedResults.push({ token, result })
     },
-    read: async (path): Promise<NoteResult> =>
+  }
+  answerNotes({
+    read: async (path): Promise<NoteAnswer> =>
       files.has(path) ? asValue({ body: files.get(path) ?? '' }) : asFailure('notFound'),
-    write: async (path, body): Promise<NoteResult> => {
+    write: async (path, body): Promise<NoteAnswer> => {
       if (pendingWriteResolve) await new Promise<void>((through) => (pendingWriteResolve = through))
       writtenFiles.push({ path, body })
       files.set(path, body)
       return asValue({ body: '' })
     },
-  }
+  })
   return {
     core,
     files,
@@ -115,9 +120,9 @@ describe('a page requested to write its unsaved changes', () => {
   it('writes an unsaved tab and only then says it has', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const notes = openNotes(fakeCore.core)
+    const notes = openNotes()
     const going = createFileFlush(fakeCore.core)
-    going.addHandler(notes.flush)
+    going.addHandler(createNoteFlushHandler(notes))
     going.start().catch(rethrow)
 
     notes.open('Note.md')
@@ -139,9 +144,9 @@ describe('a page requested to write its unsaved changes', () => {
   it('does not answer while its pending write is still in the air', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const notes = openNotes(fakeCore.core)
+    const notes = openNotes()
     const going = createFileFlush(fakeCore.core)
-    going.addHandler(notes.flush)
+    going.addHandler(createNoteFlushHandler(notes))
     going.start().catch(rethrow)
 
     notes.open('Note.md')
@@ -164,9 +169,9 @@ describe('a page requested to write its unsaved changes', () => {
   it('says nothing until the application asks', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const notes = openNotes(fakeCore.core)
+    const notes = openNotes()
     const going = createFileFlush(fakeCore.core)
-    going.addHandler(notes.flush)
+    going.addHandler(createNoteFlushHandler(notes))
     going.start().catch(rethrow)
 
     notes.open('Note.md')
@@ -185,13 +190,74 @@ describe('a page requested to write its unsaved changes', () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
     const going = createFileFlush(fakeCore.core)
-    going.addHandler(openNotes(fakeCore.core).flush)
+    going.addHandler(createNoteFlushHandler(openNotes()))
     going.start().catch(rethrow)
 
     mockStream.send({ token: '0', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults).toEqual([{ token: '0', result: 'written' }])
+  })
+})
+
+describe('a page holding text of a note whose file was deleted', () => {
+  async function createGoneNote() {
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const notes = openNotes()
+    const going = createFileFlush(fakeCore.core)
+    going.addHandler(createNoteFlushHandler(notes))
+    going.start().catch(rethrow)
+
+    fakeCore.files.set('Gone.md', 'what was saved')
+    notes.open('Gone.md')
+    await settle()
+    fakeCore.files.delete('Gone.md')
+    notes.applyPathChanges(['Gone.md'])
+    await settle()
+    notes.setBody('Gone.md', 'typed after the file went')
+    return { mockStream, fakeCore, notes, going }
+  }
+
+  it('stops the quit and names the note, writing nothing by itself', async () => {
+    const { mockStream, fakeCore, notes, going } = await createGoneNote()
+
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+
+    expect(fakeCore.writtenFiles.filter((one) => one.path === 'Gone.md')).toEqual([])
+    expect(fakeCore.reportedResults).toEqual([{ token: '1', result: 'unsaved' }])
+    expect(going.conflicts.value.map((one) => one.note)).toEqual(['Gone.md'])
+    expect(await notes.close('Gone.md')).toBe(false)
+    expect(notes.getOpenNote('Gone.md').body).toBe('typed after the file went')
+  })
+
+  it('writes the text as the file again when the person keeps it, and then lets the quit go', async () => {
+    const { mockStream, fakeCore, going } = await createGoneNote()
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+
+    await going.conflicts.value[0]?.keep()
+    await settle()
+
+    expect(fakeCore.writtenFiles.filter((one) => one.path === 'Gone.md')).toEqual([
+      { path: 'Gone.md', body: 'typed after the file went' },
+    ])
+    expect(going.conflicts.value).toEqual([])
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '1', result: 'written' })
+  })
+
+  it('drops the text when the person discards it, and then lets the quit go', async () => {
+    const { mockStream, fakeCore, notes, going } = await createGoneNote()
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+
+    await going.conflicts.value[0]?.take()
+    await settle()
+
+    expect(fakeCore.writtenFiles.filter((one) => one.path === 'Gone.md')).toEqual([])
+    expect(notes.getOpenNote('Gone.md').body).toBe('what was saved')
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '1', result: 'written' })
   })
 })
 
@@ -214,9 +280,9 @@ describe('a page holding text the file changed under', () => {
   it('says so before its pending writes have landed', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const notes = openNotes(fakeCore.core)
+    const notes = openNotes()
     const going = createFileFlush(fakeCore.core)
-    going.addHandler(notes.flush)
+    going.addHandler(createNoteFlushHandler(notes))
     const note = createConflict('Held.md')
     note.raise(going.raise)
 
@@ -478,7 +544,7 @@ describe('writes pending at an earlier request', () => {
 
 describe('a page that is closed', () => {
   /** A core whose quit stream is the mock one, and which keeps what it was given to listen with. */
-  const createListening = () => {
+  const createListeningCore = () => {
     const mockStream = createMockStream()
     const signals: AbortSignal[] = []
     const core: FlushDeps = {
@@ -492,7 +558,7 @@ describe('a page that is closed', () => {
   }
 
   it('releases the stream it listens on', async () => {
-    const { signals, core } = createListening()
+    const { signals, core } = createListeningCore()
     const going = createFileFlush(
       core,
       vi.fn(() => Promise.resolve()),
@@ -506,7 +572,7 @@ describe('a page that is closed', () => {
   })
 
   it('does not listen again once the stream has ended', async () => {
-    const { mockStream, signals, core } = createListening()
+    const { mockStream, signals, core } = createListeningCore()
     const going = createFileFlush(
       core,
       vi.fn(() => Promise.resolve()),
@@ -544,5 +610,120 @@ describe('a quit stream that ended', () => {
 
     expect(listens).toBe(2)
     going.close()
+  })
+})
+
+describe('a page holding text the vault would not take', () => {
+  /** A vault whose writes fail as long as `refusing` is set. */
+  const createRefusingVault = (refusing: { code: string | null }) => {
+    const files = new Map<string, string>([['Tides.md', 'high tide at six']])
+    answerNotes({
+      read: async (path): Promise<NoteAnswer> =>
+        asValue({ body: files.get(path) ?? '', at: `1 1 at:${files.get(path) ?? ''}` }),
+      write: async (path, body): Promise<NoteAnswer> => {
+        if (refusing.code !== null) return asFailure(refusing.code)
+        files.set(path, body)
+        return asValue({ body: '', at: `1 1 at:${body}` })
+      },
+    })
+    return files
+  }
+
+  const quitWith = async (code: string) => {
+    const refusing = { code: code as string | null }
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const files = createRefusingVault(refusing)
+    const notes = openNotes()
+    const going = createFileFlush(fakeCore.core)
+    going.addHandler(createNoteFlushHandler(notes))
+    going.start().catch(rethrow)
+    notes.open('Tides.md')
+    await settle()
+    notes.setBody('Tides.md', 'high tide at six, low at noon')
+    // The first save fails by itself, as it would in the minutes before the quit.
+    notes.save('Tides.md')
+    await settle()
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+    return { refusing, files, mockStream, fakeCore, notes, going }
+  }
+
+  it.each(['tooLarge', 'bodyUnwritable', 'unreachable'])(
+    'does not say it has written when the vault answers %s',
+    async (code) => {
+      const { fakeCore, going } = await quitWith(code)
+
+      expect(fakeCore.reportedResults).toEqual([{ token: '1', result: 'unsaved' }])
+      expect(going.conflicts.value.map((one) => one.note)).toEqual(['Tides.md'])
+    },
+  )
+
+  it('says it has written once the vault takes the text on another try', async () => {
+    const { refusing, files, mockStream, fakeCore, going } = await quitWith('unreachable')
+
+    refusing.code = null
+    await going.conflicts.value[0]?.keep()
+    await settle()
+
+    expect(files.get('Tides.md')).toBe('high tide at six, low at noon')
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '1', result: 'written' })
+    expect(going.conflicts.value).toEqual([])
+    mockStream.end()
+  })
+
+  it('says it has written once the person gives the text up', async () => {
+    const { files, fakeCore, notes, going } = await quitWith('tooLarge')
+
+    await going.conflicts.value[0]?.take()
+    await settle()
+
+    expect(files.get('Tides.md')).toBe('high tide at six')
+    expect(notes.getOpenNote('Tides.md').body).toBe('high tide at six')
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '1', result: 'written' })
+  })
+
+  it('stays unsaved when the retry fails again', async () => {
+    const { fakeCore, going } = await quitWith('unreachable')
+
+    await going.conflicts.value[0]?.keep()
+    await settle()
+
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '1', result: 'unsaved' })
+    expect(going.conflicts.value.map((one) => one.note)).toEqual(['Tides.md'])
+  })
+
+  it('asks again at the next quit, and does not drop the text', async () => {
+    const { mockStream, fakeCore, notes } = await quitWith('unreachable')
+
+    mockStream.send({ token: '2', flush: true })
+    await settle()
+
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '2', result: 'unsaved' })
+    expect(notes.getOpenNote('Tides.md').body).toBe('high tide at six, low at noon')
+  })
+})
+
+describe('a handler that fails', () => {
+  it('leaves the quit unsaved instead of written', async () => {
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = createFileFlush(fakeCore.core)
+    let calls = 0
+    going.addHandler(async () => {
+      calls += 1
+      if (calls === 1) throw new Error('the buffer would not write')
+    })
+    going.start().catch(rethrow)
+
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+
+    expect(fakeCore.reportedResults).toEqual([{ token: '1', result: 'unsaved' }])
+
+    mockStream.send({ token: '2', flush: true })
+    await settle()
+
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '2', result: 'written' })
   })
 })

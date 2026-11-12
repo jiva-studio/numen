@@ -1,0 +1,1 @@
+export { createNamedIcon } from './create'

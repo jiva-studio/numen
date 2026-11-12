@@ -11,14 +11,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/floorrecords"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/service"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
 const (
@@ -71,7 +73,7 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	setNotes(vault, 25)
 	queue := hosttest.NewQueue()
 	app := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()},
+		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  queue,
 	}, clock.NewFake(getMeasuredAt()))
 
@@ -288,9 +290,9 @@ func TestAFailedMeasurementIsListedAsATaskAndAFinishedOneRemovesIt(t *testing.T)
 		t.Errorf("tasks %v, want the failure taken out", tasks)
 	}
 
-	cancelledCtx, cancel := context.WithCancel(ctx)
+	canceledCtx, cancel := context.WithCancel(ctx)
 	cancel()
-	if err := f.app.HandleEvent(cancelledCtx, event); !errors.Is(err, context.Canceled) {
+	if err := f.app.HandleEvent(canceledCtx, event); !errors.Is(err, context.Canceled) {
 		t.Errorf("canceled event gave %v, want context.Canceled", err)
 	}
 	if tasks := f.queue.ListTasks(); len(tasks) != 0 {
@@ -332,10 +334,10 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		name  string
 		hosts service.Hosts
 	}{
-		{"missing search", service.Hosts{Floors: relevance.Host{Vault: vault, Store: vault.Store()}, Queue: queue}},
-		{"missing vault", service.Hosts{Floors: relevance.Host{Search: search, Store: vault.Store()}, Queue: queue}},
-		{"missing store", service.Hosts{Floors: relevance.Host{Search: search, Vault: vault}, Queue: queue}},
-		{"missing queue", service.Hosts{Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()}}},
+		{"missing search", service.Hosts{Floors: relevance.Host{Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, Queue: queue}},
+		{"missing vault", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Store: foldersOf(vault)}, Queue: queue}},
+		{"missing store", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }}, Queue: queue}},
+		{"missing queue", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			app := service.NewAppOver(tc.hosts, clk)
@@ -354,7 +356,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	setNotes(vault, 25)
 
 	appReportFail := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()},
+		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, reportErr: errReport},
 	}, clk)
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appReportFail.Mount); err != nil {
@@ -368,7 +370,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 
 	search.FailEmbedding(nil)
 	appFinishFail := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()},
+		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, finishErr: errFinish},
 	}, clk)
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {
@@ -384,4 +386,15 @@ func TestAnEventBeforeTheAppIsMountedIsIgnored(t *testing.T) {
 	if err := app.HandleEvent(t.Context(), host.GetVectorsReadyEvent("physics")); err != nil {
 		t.Errorf("got %v, want the event ignored", err)
 	}
+}
+
+func searchOf(search *hosttest.Search) func(domain.VaultID) relevance.Search {
+	return func(id domain.VaultID) relevance.Search {
+		on := search.With(id)
+		return relevance.Search{Index: on, Policy: on}
+	}
+}
+
+func foldersOf(vault *hosttest.Vault) func(domain.VaultID) relevance.Records {
+	return func(id domain.VaultID) relevance.Records { return floorrecords.New(vault.Store().With(id)) }
 }

@@ -1,0 +1,111 @@
+<script setup lang="ts">
+/**
+ * One named group of the list: its name, its rows, and the empty-state message
+ * shown when it returned nothing.
+ *
+ * A group still loading shows that beside its name. `data-palette` names each
+ * part: `title` and `silence`.
+ */
+import { computed, type ComponentPublicInstance, type VNode } from 'vue'
+import { Spinner } from '@numen/ui'
+import { PaletteRow } from '../palette-row'
+import { optionId, type PlacedGroup } from '../../../lib/place'
+
+const props = defineProps<{
+  placed: PlacedGroup
+  here: number
+  uid: string
+}>()
+
+const emit = defineEmits<{
+  /** The pointer crossed a row: its number, and the move that took it there. */
+  (event: 'point-at', pos: number, hasMoved: PointerEvent): void
+  /** A row was activated: its index, and whether the second action was requested. */
+  (event: 'choose', pos: number, second: boolean): void
+}>()
+
+defineSlots<{
+  /** What is drawn before a row's words. */
+  icon(props: { id: string }): VNode[]
+}>()
+
+defineExpose({ reveal })
+
+/** The rows as rendered, each paired with its item. */
+const itemElements = new Map<string, HTMLElement>()
+
+const hold = (item: string, row: Element | ComponentPublicInstance | null): void => {
+  const element = row && '$el' in row ? (row.$el as HTMLElement) : (row as HTMLElement | null)
+  if (element) itemElements.set(item, element)
+  else itemElements.delete(item)
+}
+
+/** What this group's name is addressed by, which the list points at. */
+const titleId = computed(() => `${props.uid}-group-${props.placed.group.id}`)
+
+const rowId = (pos: number): string => optionId(props.uid, pos)
+
+function reveal(item: string): void {
+  itemElements.get(item)?.scrollIntoView({ block: 'nearest' })
+}
+</script>
+
+<template>
+  <section
+    class="palette__group"
+    role="group"
+    :aria-labelledby="titleId"
+    :aria-busy="placed.group.isWorking || undefined"
+  >
+    <p
+      :id="titleId"
+      class="palette__title caps-numen text-small text-hushed flex items-center gap-1.5"
+      data-palette="title"
+    >
+      <span>{{ placed.group.title }}</span>
+      <!-- More of this group is on its way. -->
+      <Spinner v-if="placed.group.isWorking" />
+    </p>
+
+    <PaletteRow
+      v-for="row in placed.items"
+      :ref="(element) => hold(row.item.id, element)"
+      :key="row.item.id"
+      :row="row"
+      :id="rowId(row.at)"
+      :is-current="row.at === here"
+      @point-at="(moved) => emit('point-at', row.at, moved)"
+      @choose="(second) => emit('choose', row.at, second)"
+    >
+      <template v-if="$slots.icon" #icon="{ id }">
+        <slot name="icon" :id="id" />
+      </template>
+    </PaletteRow>
+
+    <p
+      v-if="!placed.items.length && placed.group.silence"
+      class="palette__silence text-hushed px-2 py-1.5"
+      data-palette="silence"
+    >
+      {{ placed.group.silence }}
+    </p>
+  </section>
+</template>
+
+<style scoped>
+.palette__group + .palette__group {
+  margin-block-start: var(--numen-panel-gap);
+}
+
+/* The group's name is small print over what it names. */
+.palette__title {
+  --pad: 0.15rem 0.5rem;
+
+  margin: 0;
+  padding: var(--pad);
+}
+
+.palette__silence {
+  margin: 0;
+}
+</style>

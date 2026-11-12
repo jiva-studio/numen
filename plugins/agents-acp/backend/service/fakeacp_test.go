@@ -13,7 +13,8 @@ import (
 	"time"
 )
 
-// TestMain runs the test binary as a fake ACP agent when it is started as one.
+// TestMain runs the test binary as a fake ACP agent when it is started as one, and the tests of m
+// otherwise.
 func TestMain(m *testing.M) {
 	if len(os.Args) > 1 && os.Args[1] == "fake-acp" {
 		time.AfterFunc(4*time.Second, func() { os.Exit(0) })
@@ -29,14 +30,10 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func fakeACPAgent(t *testing.T, program, behavior string) (acpAgent, string) {
+func startFakeAgent(t *testing.T, behavior string) (command []string, record string) {
 	t.Helper()
-	record := filepath.Join(t.TempDir(), "record")
-	return acpAgent{
-		Program: program,
-		Title:   "Fake " + program,
-		Command: []string{os.Args[0], "fake-acp", behavior, record},
-	}, record
+	record = filepath.Join(t.TempDir(), "record")
+	return []string{os.Args[0], "fake-acp", behavior, record}, record
 }
 
 func readRecord(t *testing.T, record string) map[string][]map[string]any {
@@ -247,4 +244,20 @@ func (a *fakeAgent) askPermission(id string, toolCall map[string]any) {
 		},
 	}})
 	a.read()
+}
+
+func getField[T any](t *testing.T, object any, key string) T {
+	t.Helper()
+	var zero T
+	fields, ok := object.(map[string]any)
+	if !ok {
+		t.Fatalf("%T is not a JSON object", object)
+		return zero
+	}
+	value, ok := fields[key].(T)
+	if !ok {
+		t.Fatalf("%q holds %T, want %T", key, fields[key], zero)
+		return zero
+	}
+	return value
 }

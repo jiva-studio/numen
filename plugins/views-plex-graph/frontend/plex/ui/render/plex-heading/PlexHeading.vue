@@ -45,6 +45,7 @@ const headingStyle = computed(() => ({
    `transform` — is drawn at the page's origin in WebKit, which is the engine
    the window is drawn in. */
 .plex__heading {
+  --heading-border-radius: 0.1875rem;
   block-size: 100%;
   font-family: var(--numen-font-sans);
   font-size: var(--numen-edge-label-size);
@@ -55,7 +56,7 @@ const headingStyle = computed(() => ({
   align-items: center;
   box-sizing: border-box;
   padding-inline-end: var(--numen-node-padding);
-  border-radius: 0.1875rem;
+  border-radius: var(--heading-border-radius);
   cursor: pointer;
   transition: background var(--numen-motion-hover) var(--numen-easing);
 }

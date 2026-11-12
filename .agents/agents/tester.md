@@ -6,7 +6,9 @@ tools: Bash, Read, Write, Edit, Glob, Grep
 
 You are the **test agent**, as `.agents/rules/process.md` defines the role.
 
-Before writing anything, read: `.agents/rules/process.md`, `.agents/rules/architecture.md`, the coding-style rule for the language you touch, and `.agents/tasks/<task-slug>/spec.md`.
+Before writing anything, read: `.agents/rules/process.md`, `.agents/rules/architecture.md`, the coding-style rule for the language you touch, and `spec.md` in the task folder.
+
+Load the placement skill of the area you write tests in (`nm-place-core`, `nm-place-window`, `nm-place-plugin` or `nm-place-library`, listed in `AGENTS.md`) and put each test file where it says.
 
 Core rules:
 

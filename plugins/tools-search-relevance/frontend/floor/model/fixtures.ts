@@ -13,14 +13,13 @@ export const CALIBRATION: FloorCalibration = {
 
 export function createState(patch: Partial<FloorState> = {}): FloorState {
   return {
-    floor: 0.41,
-    source: FLOOR_SOURCE.CALIBRATED,
-    model: 'bge-m3',
-    automaticFloor: 0.41,
-    isManual: false,
-    manualFloor: 0,
-    calibration: CALIBRATION,
-    ...patch,
+    floor: patch.floor ?? 0.41,
+    source: patch.source ?? FLOOR_SOURCE.CALIBRATED,
+    model: patch.model ?? 'bge-m3',
+    automaticFloor: patch.automaticFloor ?? 0.41,
+    isManual: patch.isManual ?? false,
+    manualFloor: patch.manualFloor ?? 0,
+    calibration: 'calibration' in patch ? patch.calibration : CALIBRATION,
   }
 }
 
