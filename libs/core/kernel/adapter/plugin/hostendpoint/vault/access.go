@@ -84,7 +84,7 @@ type Connections interface {
 type RelatedNotes interface {
 	// CreateInRelation returns the path of the note it created, which is set when
 	// the note exists even if the error is not nil.
-	CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error)
+	CreateInRelation(ctx context.Context, in domain.NewRelatedNote) (string, error)
 }
 
 // Watch follows the changes of the vault.

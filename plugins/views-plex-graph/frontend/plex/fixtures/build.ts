@@ -1,6 +1,6 @@
 import { RELATION_NAMES } from '../lib/relation'
 import { createName } from './names'
-import type { PlexEdge, PlexNeighborhood, PlexNode, PlexRelation } from '../../types'
+import type { PlexEdge, PlexGraph, PlexNode, PlexRelation } from '../../types'
 
 export type RelationCounts = Readonly<Partial<Record<PlexRelation, number>>>
 
@@ -17,8 +17,8 @@ const RELATION: Record<PlexRelation, string> = {
   sibling: 'contains',
 }
 
-/** A neighborhood of the requested size, for turning knobs against. */
-export function build(title: string, counts: RelationCounts): PlexNeighborhood {
+/** A graph of the requested size, for turning knobs against. */
+export function build(title: string, counts: RelationCounts): PlexGraph {
   return buildAround({ id: 'focus', title }, null, counts)
 }
 
@@ -31,7 +31,7 @@ export function buildAround(
   focus: TitledNode,
   from: TitledNode | null,
   counts: RelationCounts,
-): PlexNeighborhood {
+): PlexGraph {
   let nameIndex = 0
   const invented: PlexNode[] = RELATION_NAMES.flatMap((relation) =>
     Array.from({ length: counts[relation] ?? 0 }, (_, index) => ({
@@ -45,7 +45,7 @@ export function buildAround(
   //
   // It is also removed from the generated nodes: from the parent's side, the
   // node navigated from is one of the children about to be generated, and it
-  // already has an identifier. A plex rejects a neighborhood that contains the
+  // already has an identifier. A plex rejects a graph that contains the
   // same node twice.
   const others = from ? invented.filter((node) => node.id !== from.id) : invented
 

@@ -41,7 +41,7 @@ type memoryVault struct {
 	connectionErr error
 	joined        []domain.Side
 	removedSides  []string
-	created       []domain.RelatedNote
+	created       []domain.NewRelatedNote
 }
 
 func newMemoryVault(files map[string]string) *memoryVault {
@@ -233,7 +233,7 @@ func (m *memoryVault) Join(_ context.Context, _, _ string, side domain.Side) err
 	return m.connectionErr
 }
 
-func (m *memoryVault) CreateInRelation(_ context.Context, in domain.RelatedNote) (string, error) {
+func (m *memoryVault) CreateInRelation(_ context.Context, in domain.NewRelatedNote) (string, error) {
 	m.created = append(m.created, in)
 	return "samples/Untitled note.md", m.connectionErr
 }

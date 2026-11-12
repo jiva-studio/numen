@@ -40,26 +40,26 @@ type NoteRef struct {
 	ID    string
 }
 
-// Neighbor is a note and its relation to the note in focus. The
-// records that join it to other notes are in Neighborhood.Connections.
-type Neighbor struct {
+// RelatedNote is a note and its relation to the note in focus. The
+// records that join it to other notes are in NoteGraph.Connections.
+type RelatedNote struct {
 	NoteRef
 	Relation Relation
 }
 
-// Neighborhood is one note and everything joined to it, seen from that note.
-type Neighborhood struct {
+// NoteGraph is one note and everything joined to it, seen from that note.
+type NoteGraph struct {
 	Focus   NoteRef
-	Related []Neighbor
+	Related []RelatedNote
 
 	Connections []Connection
 }
 
-// AddNeighbor adds a note under its relation. The focus is not related to itself.
-func (n *Neighborhood) AddNeighbor(note NoteRef, neighbor Neighbor) {
+// AddRelatedNote adds a note under its relation. The focus is not related to itself.
+func (n *NoteGraph) AddRelatedNote(note NoteRef, related RelatedNote) {
 	if note.Path == n.Focus.Path {
 		return
 	}
-	neighbor.NoteRef = note
-	n.Related = append(n.Related, neighbor)
+	related.NoteRef = note
+	n.Related = append(n.Related, related)
 }

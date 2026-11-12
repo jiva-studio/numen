@@ -8,13 +8,13 @@ import { nextTick } from 'vue'
 import Plex from './Plex.vue'
 import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
 import type { Viewport } from '@numen/ui'
-import { neighborhoods } from '../fixtures/neighborhoods'
+import { graphs } from '../fixtures/graphs'
 import { stubClock } from '../../fixtures/clock'
-import type { PlexNeighborhood } from '../../types'
+import type { PlexGraph } from '../../types'
 
 const mountPlex = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) =>
   mount(Plex, {
-    props: { neighborhood: neighborhoods.typical, duration: 0, ...props },
+    props: { graph: graphs.typical, duration: 0, ...props },
     attachTo: document.body,
   })
 
@@ -99,9 +99,7 @@ describe('what a screen reader and a keyboard are given', () => {
     // The focus cannot be chosen but is still a stop: a menu is requested from
     // wherever the keyboard is.
     const plex = mountPlex()
-    expect(plex.findAll('.plex__node[tabindex="0"]')).toHaveLength(
-      neighborhoods.typical.nodes.length,
-    )
+    expect(plex.findAll('.plex__node[tabindex="0"]')).toHaveLength(graphs.typical.nodes.length)
     expect(plex.findAll('.plex__node[tabindex="-1"]')).toHaveLength(0)
   })
 
@@ -113,20 +111,20 @@ describe('what a screen reader and a keyboard are given', () => {
   })
 
   it('still names a node whose title is empty', () => {
-    const plex = mountPlex({ neighborhood: neighborhoods.awkwardLabels })
+    const plex = mountPlex({ graph: graphs.awkwardLabels })
     expect(plex.find('[aria-label="Untitled, child"]').exists()).toBe(true)
   })
 
   it('keeps the full title in the accessible name when the box truncates it', () => {
     const long = 'Supercalifragilisticexpialidociousandthensomemore'
-    const plex = mountPlex({ neighborhood: neighborhoods.awkwardLabels })
+    const plex = mountPlex({ graph: graphs.awkwardLabels })
     expect(plex.find(`[aria-label="${long}, child"]`).exists()).toBe(true)
   })
 })
 
 describe('what did not fit', () => {
   it('says so and not hiding it', () => {
-    const plex = mountPlex({ neighborhood: neighborhoods.overcrowded })
+    const plex = mountPlex({ graph: graphs.overcrowded })
     const status = plex.get('[role="status"]').text()
 
     // How much fits depends on the window, so the sentence is checked against what
@@ -148,7 +146,7 @@ describe('what did not fit', () => {
   it('passes the counts over, so the words are not the plex to choose', () => {
     // Knowing English is the same mistake as knowing the domain, one step down.
     const plex = mount(Plex, {
-      props: { neighborhood: neighborhoods.overcrowded, duration: 0 },
+      props: { graph: graphs.overcrowded, duration: 0 },
       slots: {
         overflow: `<template #default="{ overflow }">спрятано: {{ overflow.length }}</template>`,
       },
@@ -158,7 +156,7 @@ describe('what did not fit', () => {
 
   it('can be kept quiet by a slot that draws nothing', () => {
     const plex = mount(Plex, {
-      props: { neighborhood: neighborhoods.overcrowded, duration: 0 },
+      props: { graph: graphs.overcrowded, duration: 0 },
       slots: { overflow: '<span class="hushed" />' },
     })
     expect(plex.get('[role="status"]').text()).toBe('')
@@ -281,19 +279,19 @@ describe('how wide a box is drawn', () => {
   })
 })
 
-describe('being given the next neighborhood', () => {
+describe('being given the next graph', () => {
   it('arrives at once when there is no movement to make', async () => {
     const plex = mountPlex()
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(true)
 
-    await plex.setProps({ neighborhood: neighborhoods.leaf })
+    await plex.setProps({ graph: graphs.leaf })
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(false)
     expect(plex.find('[aria-label="Inbox, parent"]').exists()).toBe(true)
   })
 
   it('sets off and not jumping when it has time to move', async () => {
     const plex = mountPlex({ duration: 400 })
-    await plex.setProps({ neighborhood: neighborhoods.leaf })
+    await plex.setProps({ graph: graphs.leaf })
 
     // Still showing the old picture: on its way, not replaced.
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(true)
@@ -302,15 +300,15 @@ describe('being given the next neighborhood', () => {
 
   it('remains still when it has nowhere left to go', async () => {
     const plex = mountPlex()
-    await plex.setProps({ neighborhood: neighborhoods.leaf })
+    await plex.setProps({ graph: graphs.leaf })
     expect(plex.vm.isMoving).toBe(false)
   })
 
-  it('re-aims at the newest neighborhood and not queueing them', async () => {
+  it('re-aims at the newest graph and not queueing them', async () => {
     const plex = mountPlex({ duration: 400 })
-    await plex.setProps({ neighborhood: neighborhoods.leaf })
-    await plex.setProps({ neighborhood: neighborhoods.root })
-    await plex.setProps({ neighborhood: neighborhoods.diamond, duration: 0 })
+    await plex.setProps({ graph: graphs.leaf })
+    await plex.setProps({ graph: graphs.root })
+    await plex.setProps({ graph: graphs.diamond, duration: 0 })
 
     // Four clicks in a second end at the fourth, not at a queue of three.
     expect(plex.find('[aria-label^="Recursive CTE"]').exists()).toBe(true)
@@ -353,7 +351,7 @@ describe('how much room the plex has', () => {
 })
 
 /** A focus with one parent and one child, the smallest plex with every kind of line. */
-const FAMILY: PlexNeighborhood = {
+const FAMILY: PlexGraph = {
   nodes: [
     { id: 'focus', title: 'Watershed', relation: 'focus' },
     { id: 'parent-0', title: 'Hydrology', relation: 'parent' },
@@ -367,14 +365,14 @@ const FAMILY: PlexNeighborhood = {
 
 describe('Pill background', () => {
   it('draws no pill on any node when it is off, the focus included', () => {
-    const plex = mountPlex({ neighborhood: FAMILY, showPills: false })
+    const plex = mountPlex({ graph: FAMILY, showPills: false })
 
     expect(plex.findAll('.plex__node')).toHaveLength(3)
     expect(plex.findAll('.plex__box')).toHaveLength(0)
   })
 
   it('draws every node as a dot and its title when it is off', () => {
-    const plex = mountPlex({ neighborhood: FAMILY, showPills: false })
+    const plex = mountPlex({ graph: FAMILY, showPills: false })
 
     for (const node of plex.findAll('.plex__node')) {
       expect(node.findAll('.plex__dot')).toHaveLength(1)
@@ -386,7 +384,7 @@ describe('Pill background', () => {
   })
 
   it('draws the pills again once it is switched back on', async () => {
-    const plex = mountPlex({ neighborhood: FAMILY, showPills: false })
+    const plex = mountPlex({ graph: FAMILY, showPills: false })
 
     await plex.setProps({ showPills: true })
 
@@ -395,7 +393,7 @@ describe('Pill background', () => {
   })
 
   it('still travels to a note pressed on its title when it is off', async () => {
-    const plex = mountPlex({ neighborhood: FAMILY, showPills: false })
+    const plex = mountPlex({ graph: FAMILY, showPills: false })
 
     await plex.get('[aria-label^="River delta"] .plex__title-text').trigger('click')
 
@@ -403,7 +401,7 @@ describe('Pill background', () => {
   })
 
   it('still asks for the menu of a note right-clicked on its title when it is off', () => {
-    const plex = mountPlex({ neighborhood: FAMILY, showPills: false })
+    const plex = mountPlex({ graph: FAMILY, showPills: false })
     const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 })
 
     plex.get('[aria-label^="Hydrology"] .plex__title-text').element.dispatchEvent(event)
@@ -415,7 +413,7 @@ describe('Pill background', () => {
 })
 
 describe('the pill padding and the focus size, measured', () => {
-  const ONE_CHILD: PlexNeighborhood = {
+  const ONE_CHILD: PlexGraph = {
     nodes: [
       { id: 'focus', title: 'Port wine', relation: 'focus' },
       { id: 'child-0', title: 'Watershed ab', relation: 'child' },
@@ -446,7 +444,7 @@ describe('the pill padding and the focus size, measured', () => {
     Number(plex.get(`.plex__node--${relation} .plex__box`).attributes('height'))
 
   const mountWithMeasure = (options: Record<string, unknown>) =>
-    mountPlex({ neighborhood: ONE_CHILD, readType: readThemeType, options })
+    mountPlex({ graph: ONE_CHILD, readType: readThemeType, options })
 
   afterEach(() => {
     vi.restoreAllMocks()
@@ -479,7 +477,7 @@ describe('Animation', () => {
     const time = stubClock()
     const plex = mountPlex({ duration: 1000, clock: time.clock })
 
-    await plex.setProps({ neighborhood: neighborhoods.leaf })
+    await plex.setProps({ graph: graphs.leaf })
     time.tick(0)
     time.tick(900)
     expect(plex.vm.isMoving).toBe(true)
@@ -493,7 +491,7 @@ describe('Animation', () => {
     const time = stubClock()
     const plex = mountPlex({ duration: 0, clock: time.clock })
 
-    await plex.setProps({ neighborhood: neighborhoods.leaf })
+    await plex.setProps({ graph: graphs.leaf })
 
     expect(plex.vm.isMoving).toBe(false)
     expect(plex.find('[aria-label="Inbox, parent"]').exists()).toBe(true)

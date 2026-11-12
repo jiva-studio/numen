@@ -9,17 +9,17 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
-// ShowNeighborhood gathers one note and everything joined to it.
+// ListRelatedNotes gathers the notes related to one note, and the note itself.
 //
 // A link is written at one end and answered at both, so a note's parents are
 // found partly in what it points at and partly in what points at it. Siblings
 // are written nowhere: they are the other children of a shared parent.
-type ShowNeighborhood struct {
+type ListRelatedNotes struct {
 	links noteport.LinkQueries
 	notes RefQueries
 }
 
-// RefQueries is the single query a neighborhood makes about the notes it found:
+// RefQueries is the single query the related-notes lookup makes about the notes it found:
 // what is needed to display each of them.
 type RefQueries interface {
 	// GetNotes returns what is needed to display a note, for the given paths. Paths
@@ -28,62 +28,62 @@ type RefQueries interface {
 	GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
 }
 
-// NewShowNeighborhood builds the neighborhood of one note: where its links lead,
+// NewListRelatedNotes builds the related notes of one note: where its links lead,
 // and what is needed to display each linked note.
 //
 // The notes are queried once, after every link has been followed.
-func NewShowNeighborhood(links noteport.LinkQueries, notes RefQueries) ShowNeighborhood {
-	return ShowNeighborhood{links: links, notes: notes}
+func NewListRelatedNotes(links noteport.LinkQueries, notes RefQueries) ListRelatedNotes {
+	return ListRelatedNotes{links: links, notes: notes}
 }
 
-func (u ShowNeighborhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighborhood, error) {
+func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteGraph, error) {
 	cache := &linkCache{queries: u.links, vault: v}
-	center, err := u.getNeighbors(ctx, cache, path)
+	center, err := u.getRelatedNotes(ctx, cache, path)
 	if err != nil {
-		return domain.Neighborhood{}, err
+		return domain.NoteGraph{}, err
 	}
 
 	if err := u.addSiblings(ctx, cache, center); err != nil {
-		return domain.Neighborhood{}, err
+		return domain.NoteGraph{}, err
 	}
 	center.remove(path)
 
-	neighbor := center.getAll()
-	paths := make([]string, 0, len(neighbor)+1)
+	related := center.getAll()
+	paths := make([]string, 0, len(related)+1)
 	paths = append(paths, path)
-	for _, s := range neighbor {
+	for _, s := range related {
 		paths = append(paths, s.Path)
 	}
 	notes, err := u.notes.GetNotes(ctx, v.ID, paths)
 	if err != nil {
-		return domain.Neighborhood{}, err
+		return domain.NoteGraph{}, err
 	}
 
 	focus, recognized := notes[path]
 	if !recognized {
-		return domain.Neighborhood{}, nil
+		return domain.NoteGraph{}, nil
 	}
-	out := domain.Neighborhood{Focus: focus}
+	out := domain.NoteGraph{Focus: focus}
 	visible := []string{path}
-	for _, s := range neighbor {
+	for _, s := range related {
 		if note, recognizedVal := notes[s.Path]; recognizedVal {
-			out.AddNeighbor(note, s)
+			out.AddRelatedNote(note, s)
 			visible = append(visible, s.Path)
 		}
 	}
 	out.Connections, err = getConnections(ctx, cache, visible)
 	if err != nil {
-		return domain.Neighborhood{}, err
+		return domain.NoteGraph{}, err
 	}
 	return out, nil
 }
 
-func (u ShowNeighborhood) addSiblings(ctx context.Context, cache *linkCache, targetSet *neighborSet) error {
+func (u ListRelatedNotes) addSiblings(ctx context.Context, cache *linkCache, targetSet *relatedNoteSet) error {
 	for _, parent := range targetSet.getAll() {
 		if parent.Relation != domain.RelationParent {
 			continue
 		}
-		theirs, err := u.getNeighbors(ctx, cache, parent.Path)
+		theirs, err := u.getRelatedNotes(ctx, cache, parent.Path)
 		if err != nil {
 			return err
 		}
@@ -91,7 +91,7 @@ func (u ShowNeighborhood) addSiblings(ctx context.Context, cache *linkCache, tar
 			if sibling.Relation != domain.RelationChild {
 				continue
 			}
-			targetSet.add(domain.Neighbor{
+			targetSet.add(domain.RelatedNote{
 				NoteRef:  domain.NoteRef{Path: sibling.Path},
 				Relation: domain.RelationSibling,
 			})
@@ -100,8 +100,8 @@ func (u ShowNeighborhood) addSiblings(ctx context.Context, cache *linkCache, tar
 	return nil
 }
 
-func (u ShowNeighborhood) getNeighbors(ctx context.Context, cache *linkCache, path string) (*neighborSet, error) {
-	found := &neighborSet{}
+func (u ListRelatedNotes) getRelatedNotes(ctx context.Context, cache *linkCache, path string) (*relatedNoteSet, error) {
+	found := &relatedNoteSet{}
 
 	links, err := cache.get(ctx, path)
 	if err != nil {
@@ -115,7 +115,7 @@ func (u ShowNeighborhood) getNeighbors(ctx context.Context, cache *linkCache, pa
 			continue
 		}
 		if relation, navigable := getRelation(l.Role); navigable {
-			found.add(domain.Neighbor{
+			found.add(domain.RelatedNote{
 				NoteRef:  domain.NoteRef{Path: l.To},
 				Relation: relation,
 			})
@@ -133,7 +133,7 @@ func (u ShowNeighborhood) getNeighbors(ctx context.Context, cache *linkCache, pa
 		if !navigable {
 			continue
 		}
-		found.add(domain.Neighbor{
+		found.add(domain.RelatedNote{
 			NoteRef:  domain.NoteRef{Path: l.From},
 			Relation: relation,
 		})
@@ -167,32 +167,32 @@ func getOppositeRole(role domain.LinkRole) domain.LinkRole {
 	}
 }
 
-// neighborSet collects notes in discovery order: the links this note declares, in
+// relatedNoteSet collects notes in discovery order: the links this note declares, in
 // declaration order; then the links that point at it, in query order; then the
 // siblings of each parent. The order is part of the result, because it is the
 // drawing order, and it is total, so the same vault always gives the same layout.
-type neighborSet struct {
-	order      []domain.Neighbor
+type relatedNoteSet struct {
+	order      []domain.RelatedNote
 	targetPath map[string]int
 }
 
-func (s *neighborSet) add(neighbor domain.Neighbor) {
+func (s *relatedNoteSet) add(related domain.RelatedNote) {
 	if s.targetPath == nil {
 		s.targetPath = map[string]int{}
 	}
-	i, exists := s.targetPath[neighbor.Path]
+	i, exists := s.targetPath[related.Path]
 	if !exists {
-		s.targetPath[neighbor.Path] = len(s.order)
-		s.order = append(s.order, neighbor)
+		s.targetPath[related.Path] = len(s.order)
+		s.order = append(s.order, related)
 		return
 	}
-	if domain.GetRelationRank(neighbor.Relation) < domain.GetRelationRank(s.order[i].Relation) {
-		s.order[i] = neighbor
+	if domain.GetRelationRank(related.Relation) < domain.GetRelationRank(s.order[i].Relation) {
+		s.order[i] = related
 	}
 }
 
-func (s *neighborSet) remove(path string) {
-	s.order = slices.DeleteFunc(s.order, func(n domain.Neighbor) bool { return n.Path == path })
+func (s *relatedNoteSet) remove(path string) {
+	s.order = slices.DeleteFunc(s.order, func(n domain.RelatedNote) bool { return n.Path == path })
 }
 
-func (s *neighborSet) getAll() []domain.Neighbor { return s.order }
+func (s *relatedNoteSet) getAll() []domain.RelatedNote { return s.order }

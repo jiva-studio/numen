@@ -6,10 +6,10 @@ import { easeOut } from './math'
 import { MIDDLE } from './edges/routing'
 import { ARROW_LENGTH, getHeading, getLength, createPointOnCurve } from '../edge'
 import type { PlexFrame } from '../frame'
-import type { PlexNeighborhood } from '../../../types'
+import type { PlexGraph } from '../../../types'
 
 /** Focus on `focus`, with two children and one parent. */
-const before: PlexNeighborhood = {
+const before: PlexGraph = {
   nodes: [
     { id: 'focus', title: 'Start', relation: 'focus' },
     { id: 'up', title: 'Above', relation: 'parent' },
@@ -27,7 +27,7 @@ const before: PlexNeighborhood = {
  * `a` was chosen. Three children, not two: with two on each side every new
  * relation has a twin at the old coordinates and a distance test compares 0 to 0.
  */
-const after: PlexNeighborhood = {
+const after: PlexGraph = {
   nodes: [
     { id: 'a', title: 'A', relation: 'focus' },
     { id: 'focus', title: 'Start', relation: 'parent' },
@@ -223,9 +223,9 @@ describe('the edges follow the boxes', () => {
  */
 describe('the title a line carries while the picture moves', () => {
   const getEdgeKey = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`
-  const withLabels = (neighborhood: PlexNeighborhood): PlexNeighborhood => ({
-    ...neighborhood,
-    edges: neighborhood.edges.map((edge) => ({ ...edge, labels: [{ text: 'contains' }] })),
+  const withLabels = (graph: PlexGraph): PlexGraph => ({
+    ...graph,
+    edges: graph.edges.map((edge) => ({ ...edge, labels: [{ text: 'contains' }] })),
   })
   const from = arrangePlex(withLabels(before))
   const to = arrangePlex(withLabels(after))
@@ -251,11 +251,11 @@ describe('the title a line carries while the picture moves', () => {
   it('holds the words a settled line was cut to', () => {
     // Wide letters and a long label, so the cut is well short of the whole.
     const measureLabelWidth = (label: string) => 30 * [...label].length
-    const arrangeWithLabels = (neighborhood: PlexNeighborhood) =>
+    const arrangeWithLabels = (graph: PlexGraph) =>
       arrangePlex(
         {
-          ...neighborhood,
-          edges: neighborhood.edges.map((edge) => ({
+          ...graph,
+          edges: graph.edges.map((edge) => ({
             ...edge,
             labels: [{ text: 'the scene in the assembly' }],
           })),
@@ -279,11 +279,11 @@ describe('the title a line carries while the picture moves', () => {
 
     // A window that wraps the fan, at the default settings: the test targets a
     // title moving off the middle, not the amount of spare space in the window.
-    const arrangeWithTitles = (neighborhood: PlexNeighborhood) =>
+    const arrangeWithTitles = (graph: PlexGraph) =>
       arrangePlex(
         {
-          ...neighborhood,
-          edges: neighborhood.edges.map((edge) => ({ ...edge, labels: [{ text: 'contains' }] })),
+          ...graph,
+          edges: graph.edges.map((edge) => ({ ...edge, labels: [{ text: 'contains' }] })),
         },
         {
           measureLabel: measureLabelWidth,
@@ -292,7 +292,7 @@ describe('the title a line carries while the picture moves', () => {
       )
 
     // A fan wide enough that its titles cannot all keep the middle.
-    const fanned: PlexNeighborhood = {
+    const fanned: PlexGraph = {
       nodes: [
         ...after.nodes,
         { id: 'a4', title: 'A four', relation: 'child' },
@@ -355,9 +355,9 @@ describe('the title a line carries while the picture moves', () => {
 })
 
 describe('the arrow a line carries while the picture moves', () => {
-  const markArrows = (neighborhood: PlexNeighborhood): PlexNeighborhood => ({
-    ...neighborhood,
-    edges: neighborhood.edges.map((edge) =>
+  const markArrows = (graph: PlexGraph): PlexGraph => ({
+    ...graph,
+    edges: graph.edges.map((edge) =>
       edge.to === 'a' ? { ...edge, arrows: ['to' as const] } : edge,
     ),
   })
@@ -427,14 +427,14 @@ describe('a line whose ends swap', () => {
     // A jump is the same relationship from either end, so travelling along one
     // turns `there → here` into `here → there`. Read as two lines, the one the
     // reader is following is the one that fades out.
-    const here: PlexNeighborhood = {
+    const here: PlexGraph = {
       nodes: [
         { id: 'here', title: 'Here', relation: 'focus' },
         { id: 'across', title: 'Across', relation: 'jump' },
       ],
       edges: [{ from: 'across', to: 'here' }],
     }
-    const acrossRoute: PlexNeighborhood = {
+    const acrossRoute: PlexGraph = {
       nodes: [
         { id: 'across', title: 'Across', relation: 'focus' },
         { id: 'here', title: 'Here', relation: 'jump' },

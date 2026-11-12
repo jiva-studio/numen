@@ -30,7 +30,7 @@ type noteJoiner interface {
 }
 
 type relatedNoteCreator interface {
-	Execute(ctx context.Context, v domain.Vault, in domain.RelatedNote) (note.CreateResult, error)
+	Execute(ctx context.Context, v domain.Vault, in domain.NewRelatedNote) (note.CreateResult, error)
 }
 
 // Connections is what the host works the relationships between notes through. A call whose use case is
@@ -101,7 +101,7 @@ func (c Connections) Join(ctx context.Context, from, to string, side domain.Side
 }
 
 // CreateInRelation creates a note in a relationship to another and returns its path.
-func (c Connections) CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error) {
+func (c Connections) CreateInRelation(ctx context.Context, in domain.NewRelatedNote) (string, error) {
 	v, err := c.openConnections(c.Creator == nil)
 	if err != nil {
 		return "", err

@@ -1,5 +1,5 @@
 /**
- * The state of one plex: the neighborhood it shows and how it navigates.
+ * The state of one plex: the related notes it shows and how it navigates.
  *
  * A plex tab holds one of these and nothing else: the vault is read once for
  * the whole window, and notifies every plex when to query again.
@@ -7,18 +7,18 @@
 import { ref } from 'vue'
 import { formatErrorMessage, getRenamedPath } from '@numen/plugin-sdk'
 import { createRequestGuard } from '@numen/ui'
-import { areNeighborhoodsEqual } from '../lib/picture'
-import type { Neighborhood, PathRename } from '../types'
+import { areNoteGraphsEqual } from '../lib/picture'
+import type { NoteGraph, PathRename } from '../types'
 
-/** The one query a plex makes of the vault: the neighbors of a note. */
-export interface Neighbors {
-  neighborhood(path: string): Promise<Neighborhood>
+/** The one query a plex makes of the vault: the related notes of a note. */
+export interface RelatedNoteQueries {
+  listRelatedNotes(path: string): Promise<NoteGraph>
 }
 
 export type PlexView = ReturnType<typeof usePlexView>
 
-export function usePlexView(core: Neighbors) {
-  const neighborhood = ref<Neighborhood | null>(null)
+export function usePlexView(core: RelatedNoteQueries) {
+  const noteGraph = ref<NoteGraph | null>(null)
   /** The note this plex shows, as requested. */
   const here = ref('')
   /** What this plex could not show, in words the window sets up for it. */
@@ -31,7 +31,7 @@ export function usePlexView(core: Neighbors) {
   const nextPath = ref('')
 
   /**
-   * Whether the first neighborhood is still on its way. An empty plex and one
+   * Whether the first note graph is still on its way. An empty plex and one
    */
   const isLoading = ref(true)
 
@@ -43,7 +43,7 @@ export function usePlexView(core: Neighbors) {
     const mine = guard.acquireRequest()
     nextPath.value = path
     try {
-      const answer = await core.neighborhood(path)
+      const answer = await core.listRelatedNotes(path)
       if (!mine.isCurrent) return
       if (!answer.focus.path) {
         error.value = `${path} is not in the vault`
@@ -52,7 +52,7 @@ export function usePlexView(core: Neighbors) {
       error.value = ''
       nextPath.value = ''
       here.value = path
-      if (!areNeighborhoodsEqual(neighborhood.value, answer)) neighborhood.value = answer
+      if (!areNoteGraphsEqual(noteGraph.value, answer)) noteGraph.value = answer
     } catch (caughtError) {
       if (!mine.isCurrent) return
       nextPath.value = ''
@@ -73,5 +73,5 @@ export function usePlexView(core: Neighbors) {
     guard.close()
   }
 
-  return { neighborhood, here, error, nextPath, isLoading, go, followMoves, close }
+  return { noteGraph, here, error, nextPath, isLoading, go, followMoves, close }
 }

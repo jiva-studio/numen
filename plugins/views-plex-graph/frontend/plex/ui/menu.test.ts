@@ -8,16 +8,16 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
 import { build } from '../fixtures/build'
-import { neighborhoods } from '../fixtures/neighborhoods'
+import { graphs } from '../fixtures/graphs'
 
-const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
-const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.relation === 'child')!.title
+const GRAPH = build('A node', { parent: 1, child: 2, jump: 1 })
+const A_CHILD = GRAPH.nodes.find((n) => n.relation === 'child')!.title
 
 type PlexProps = InstanceType<typeof Plex>['$props']
 
 const mountPlex = (props: Partial<PlexProps> = {}) =>
   mount(Plex, {
-    props: { neighborhood: NEIGHBOURHOOD, duration: 0, ...props },
+    props: { graph: GRAPH, duration: 0, ...props },
     attachTo: document.body,
   })
 
@@ -206,14 +206,14 @@ describe('asking for a menu from the keyboard', () => {
 
 describe('when the picture moves under a menu', () => {
   it('says a menu requested for on a node has nothing left to stand on', async () => {
-    // The neighborhood is re-fetched on every change and the nodes travel to
+    // The graph is re-fetched on every change and the nodes travel to
     // new relations; a menu is anchored where one of them was.
     const plex = mountPlex()
-    await plex.setProps({ neighborhood: neighborhoods.leaf })
+    await plex.setProps({ graph: graphs.leaf })
     expect(plex.emitted('dismiss')).toHaveLength(1)
   })
 
-  it('says nothing while the neighborhood remains still', async () => {
+  it('says nothing while the graph remains still', async () => {
     const plex = mountPlex()
     await plex.setProps({ duration: 200 })
     expect(plex.emitted('dismiss')).toBeUndefined()
