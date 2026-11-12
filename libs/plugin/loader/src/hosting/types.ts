@@ -2,7 +2,6 @@
  * Types and interfaces for the plugin subsystem.
  */
 import type {
-  AgentHost,
   AppInfo,
   BackgroundTaskHost,
   BufferHost,
@@ -153,7 +152,6 @@ export interface PluginHostDeps {
   readonly getNotes?: () => VaultNotes | undefined
   readonly getRelations?: () => VaultRelations | undefined
   readonly getFiles?: () => VaultFiles | undefined
-  readonly getAgent?: () => AgentHost | undefined
   readonly getCommands?: () => CommandsHost | undefined
   readonly getVaults?: () => VaultsHost | undefined
   readonly getWindow?: () => WindowHost | undefined
@@ -286,12 +284,11 @@ export interface ContextVaultHost {
 }
 
 /**
- * The services of the window itself: its workspace, commands, notices, tasks, connections, slots and agent. A
- * service the window lacks answers undefined.
+ * The services of the window itself: its workspace, commands, notices, tasks, connections and slots. A service
+ * the window lacks answers undefined.
  */
 export interface ContextWindowHost {
   readonly getWorkspace: () => WorkspaceHost | undefined
-  readonly getAgent: () => AgentHost | undefined
   readonly getCommands: () => CommandsHost | undefined
   readonly isCommandListed: (command: string) => boolean
   readonly getCommandPermission?: (command: string) => string | undefined

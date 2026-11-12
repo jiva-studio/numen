@@ -4,7 +4,7 @@ import { CONVERSATION, NOTE_EDITOR, VAULT_SUMMARY, type ViewCapability } from '@
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
 import type { PluginHostDeps } from './types'
-import { STUB_AGENT } from '../testing/stubComponent'
+import { STUB_CONNECTIONS } from '../testing/stubComponent'
 
 const READ_WRITE = ['vault:read', 'vault:write']
 
@@ -34,14 +34,14 @@ const createView = (owner: string, received: string[]): Component =>
     props: { context: { type: Object, required: true } },
     setup(props) {
       received.push(owner)
-      return () => h('p', `${owner}: ${(props.context as { focus: string }).focus}`)
+      return () => h('p', `${owner}: ${(props.context as { vault: string }).vault}`)
     },
   })
 
 const mountConversation = (
   plugin: ReturnType<ReturnType<typeof createHost>['createPlugin']>,
   element: HTMLElement,
-) => plugin.ui.mountView(CONVERSATION, element, { agent: STUB_AGENT, focus: 'Notes/Secret.md' })
+) => plugin.ui.mountView(CONVERSATION, element, { connections: STUB_CONNECTIONS, vault: 'roots' })
 
 describe('a plugin that registers a view for other plugins', () => {
   it('is refused a capability its manifest does not list', () => {
@@ -104,7 +104,7 @@ describe('a plugin that registers a view for other plugins', () => {
     mountConversation(createPlugin('md.numen.mounter'), element)
 
     expect(received).toStrictEqual(['chat'])
-    expect(element.textContent).toBe('chat: Notes/Secret.md')
+    expect(element.textContent).toBe('chat: roots')
   })
 
   it('may register the capability once the plugin that drew it is disposed', () => {
@@ -122,12 +122,10 @@ describe('a plugin that registers a view for other plugins', () => {
       component: createView('next', []),
     })
 
-    expect(element.textContent).toBe('next: Notes/Secret.md')
+    expect(element.textContent).toBe('next: roots')
   })
 
   it.each<[ViewCapability, string[], string]>([
-    [CONVERSATION, ['vault:read'], 'vault:write'],
-    [CONVERSATION, [], 'vault:read'],
     [NOTE_EDITOR, ['vault:read'], 'vault:write'],
     [NOTE_EDITOR, [], 'vault:read'],
     [VAULT_SUMMARY, [], 'vault:read'],
@@ -142,8 +140,7 @@ describe('a plugin that registers a view for other plugins', () => {
       })
       const element = document.createElement('div')
       createPlugin('md.numen.mounter').ui.mountView(capability, element, {
-        agent: STUB_AGENT,
-        focus: '',
+        connections: STUB_CONNECTIONS,
         path: 'Notes/Secret.md',
         vault: 'roots',
       })
@@ -162,7 +159,7 @@ describe('a plugin that registers a view for other plugins', () => {
   it('registers a view of each kind for a plugin that holds the permissions of the kind', () => {
     const { createPlugin } = createHost()
     const cases = [
-      [CONVERSATION, READ_WRITE],
+      [CONVERSATION, []],
       [NOTE_EDITOR, READ_WRITE],
       [VAULT_SUMMARY, ['vault:read']],
     ] as const
@@ -242,6 +239,6 @@ describe('a plugin that registers a view for other plugins', () => {
     })
 
     expect(received).toStrictEqual(['chat'])
-    expect(element.textContent).toBe('chat: Notes/Secret.md')
+    expect(element.textContent).toBe('chat: roots')
   })
 })

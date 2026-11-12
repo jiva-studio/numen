@@ -1,6 +1,5 @@
 import type { Component, Ref } from 'vue'
 import type { FileConflict } from './buffers'
-import type { AgentHost } from './agent'
 import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
@@ -314,9 +313,8 @@ export interface PluginUi {
   ): MountedView
 }
 
-// PluginWork is the agent and the background work of the core.
+// PluginWork is the connections and the background work of the core.
 export interface PluginWork {
-  readonly agent?: AgentHost
   readonly connections?: ConnectionHost
   readonly tasks?: TaskHost
   readonly backgroundTasks?: BackgroundTaskHost

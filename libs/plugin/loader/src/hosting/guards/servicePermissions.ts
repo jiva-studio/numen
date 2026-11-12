@@ -167,6 +167,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       join: requirePermissionsAsync(WRITE),
       createRelated: requirePermissionsAsync(WRITE),
       listBacklinks: requirePermissionsAsync(READ),
+      resolveLinks: requirePermissionsAsync(READ),
     },
     files: {
       list: requirePermissionsAsync(READ),
@@ -214,7 +215,6 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
         getEntry: requireNothing('an icon is drawn from the entry the plugin passes'),
       },
       getNoteInFocus: requirePermissions(READ),
-      ask: requirePermissions(WRITE),
     },
     window: {
       getState: requireNothing('the maximized and fullscreen flags of the window'),
@@ -248,18 +248,6 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
   work: {
     connections: {
       call: requireNothing(CONNECTION_GRANT),
-    },
-    agent: {
-      ask: requirePermissions(WRITE),
-      finish: explain(
-        requirePermissionsAsync(WRITE),
-        'it ends a conversation the agent holds, as ask starts one',
-      ),
-      resolveLinks: requirePermissionsAsync(READ),
-      getUnreachable: requireNothing('why no agent can be reached, which holds no vault data'),
-      getSetting: requirePermissions(READ),
-      writeSetting: requirePermissionsAsync(WRITE),
-      getModelsAt: requirePermissions(READ),
     },
     tasks: {
       watch: requireNothing('the tasks the plugin itself reported'),

@@ -53,6 +53,18 @@ export interface ConnectionTypeInfo {
   readonly isAvailable: boolean
 }
 
+/** An operation a plugin titles: `title` completes "This type cannot ...". */
+export interface ConnectionOperationInfo {
+  readonly name: string
+  readonly title: string
+}
+
+/** The kinds of connection the plugins provide, and the titles the plugins give operations. */
+export interface ConnectionTypeList {
+  readonly types: readonly ConnectionTypeInfo[]
+  readonly operations: readonly ConnectionOperationInfo[]
+}
+
 /** A setting of rows of a plugin that names a connection. */
 export interface ConnectionUse {
   readonly pluginId: string
@@ -119,7 +131,7 @@ export type ConnectionRpc = Pick<
 
 /** The connections of the application. A call that cannot reach the core throws. */
 export interface ConnectionClient {
-  listTypes(): Promise<readonly ConnectionTypeInfo[]>
+  listTypes(): Promise<ConnectionTypeList>
   list(): Promise<readonly ConnectionInfo[]>
   create(draft: ConnectionDraft): Promise<Result<ConnectionInfo, ConnectionFailure>>
   update(change: ConnectionChange): Promise<Result<ConnectionInfo, ConnectionFailure>>
@@ -279,7 +291,13 @@ const readAnswer = (answer: {
 
 /** The connections managed through a ProviderConnectionService client. */
 export const createConnectionClient = (rpc: ConnectionRpc): ConnectionClient => ({
-  listTypes: async () => (await rpc.listProviderConnectionTypes({})).types.map(readType),
+  listTypes: async () => {
+    const answer = await rpc.listProviderConnectionTypes({})
+    return {
+      types: answer.types.map(readType),
+      operations: answer.operations.map(({ name, title }) => ({ name, title })),
+    }
+  },
   list: async () => (await rpc.listProviderConnections({})).connections.map(readConnection),
   create: async (draft) =>
     readAnswer(

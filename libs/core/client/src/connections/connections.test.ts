@@ -64,6 +64,7 @@ const createRpc = (overrides: Partial<ConnectionRpc> = {}): ConnectionRpc => ({
             ],
           },
         ],
+        operations: [{ name: 'llm.embed', title: 'embed text' }],
       }),
     ),
   listProviderConnections: () =>
@@ -110,7 +111,7 @@ const createRpc = (overrides: Partial<ConnectionRpc> = {}): ConnectionRpc => ({
 
 describe('createConnectionClient', () => {
   it('lists the types with the fields their forms are built from', async () => {
-    const types = await createConnectionClient(createRpc()).listTypes()
+    const { types } = await createConnectionClient(createRpc()).listTypes()
 
     expect(types).toHaveLength(1)
     const [type] = types
@@ -137,6 +138,12 @@ describe('createConnectionClient', () => {
     expect(type?.rowFields).toStrictEqual([
       expect.objectContaining({ key: 'model', isRequired: true, optionsFrom: 'llm.models' }),
     ])
+  })
+
+  it('lists the titles the plugins give operations', async () => {
+    const { operations } = await createConnectionClient(createRpc()).listTypes()
+
+    expect(operations).toStrictEqual([{ name: 'llm.embed', title: 'embed text' }])
   })
 
   it('lists the connections with plain values', async () => {

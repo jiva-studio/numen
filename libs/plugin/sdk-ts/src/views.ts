@@ -1,12 +1,12 @@
 import type { Component } from 'vue'
-import type { AgentPort } from './agent'
+import type { ConnectionHost } from './connections'
 import type { Disposable } from './types'
 
 // ViewRegistration declares a view another plugin mounts by its capability, without knowing which
 // plugin draws it. The manifest lists the capability under `contributes.viewCapabilities`, only one
 // plugin draws a capability, and the plugin holds the permissions its context gives the view
-// (conversation and note-editor: vault:read and vault:write; vault-summary: vault:read). Otherwise
-// `register.view` throws.
+// (note-editor: vault:read and vault:write; vault-summary: vault:read; conversation: none).
+// Otherwise `register.view` throws.
 export interface ViewRegistration {
   readonly capability: ViewCapability
   readonly component: Component
@@ -34,10 +34,12 @@ export const CONVERSATION = 'conversation'
 
 // ConversationContext is what a plugin passes the conversation view it mounts.
 export interface ConversationContext {
-  readonly agent: AgentPort
-  readonly focus: string
+  // The connections of the mounting plugin the view runs its tasks on.
+  readonly connections: ConnectionHost
+  // The keys the tools of a task are called with.
+  readonly toolContext?: Readonly<Record<string, string>>
+  readonly vault?: string
   readonly placeholder?: string
-  readonly getUnreachable?: () => string
 }
 
 // VAULT_SUMMARY is the capability of a view shown next to a vault on the list a window offers to

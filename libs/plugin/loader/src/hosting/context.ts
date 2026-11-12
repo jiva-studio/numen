@@ -20,7 +20,6 @@ import { isUnsavedBuffersError, UnsavedBuffersError } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
 import { limitCommands } from './guards/commandRun'
-import { limitAgentSettings } from './guards/agentSettings'
 import { checkPermission, type PermissionTarget, type RequirePermission } from './guards/permission'
 import {
   createMountView,
@@ -159,9 +158,7 @@ function createUiService(
 
 function createWork(pluginId: string, host: PluginContextHost): PluginWork {
   const { window: work } = host
-  const agent = work.getAgent()
   return pickDefinedParts<PluginWork>({
-    agent: agent && limitAgentSettings(agent),
     tasks: work.getTasks(pluginId),
     backgroundTasks: work.getBackgroundTasks(),
     connections: work.getConnections(pluginId),

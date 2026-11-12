@@ -9,7 +9,6 @@ export {
   SHARED_COMMANDS,
   SLOT,
   VAULT_SUMMARY,
-  createMockAgentHost,
   createSlotMenu,
   formatFingerprint,
   getRelationErrorWords,
@@ -21,8 +20,6 @@ export {
   useSlotMenu,
 } from '@numen/plugin-sdk'
 export type {
-  AgentHost,
-  AgentPort,
   BackgroundTask,
   BackgroundTaskAction,
   BackgroundTaskAllowed,
@@ -40,6 +37,7 @@ export type {
   CommandsHost,
   CommandRegistration,
   Connection,
+  ConnectionHost,
   ConnectionRole,
   ConnectionSide,
   Disposable,

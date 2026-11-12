@@ -3,7 +3,6 @@
  */
 import { createClient, type Client, type Transport } from '@connectrpc/connect'
 import {
-  AgentService,
   CommandErrorCode,
   CommandService,
   ErrorCode as ProtoErrorCode,
@@ -15,7 +14,6 @@ import {
   NoteService,
   Origin,
   PluginService,
-  Presence,
   Relation,
   Role,
   SearchMode,
@@ -41,7 +39,6 @@ export const getNoteClient = (customTransport: Transport = transport) =>
   createClient(NoteService, customTransport)
 
 export const vault = createVaultClient()
-export const agentService = createClient(AgentService, transport)
 export const workspace = createClient(WorkspaceService, transport)
 /** The workspace client for a request that must complete after the page unloads. */
 export const keepaliveWorkspace = createClient(WorkspaceService, keepaliveTransport)
@@ -70,9 +67,6 @@ export type NoteRelationCode = Relation
 
 export const FLUSH_RESULT = FlushResult
 export type FlushResultCode = FlushResult
-
-export const MODEL_PRESENCE = Presence
-export type ModelPresenceCode = Presence
 
 export const SEARCH_MODE = SearchMode
 export type SearchModeCode = SearchMode

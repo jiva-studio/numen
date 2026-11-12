@@ -18,7 +18,6 @@ import type {
   JsonValue,
   VaultChangeEvent,
 } from '../types'
-import type { AgentHost } from '../agent'
 import type { BufferHost } from '../buffers'
 import type { NoticeHost } from '../notices'
 import type { VaultTexts } from '../texts'
@@ -75,7 +74,6 @@ export interface MockContextInit {
   readonly notes?: VaultNotes
   readonly relations?: VaultRelations
   readonly files?: VaultFiles
-  readonly agent?: AgentHost
   readonly buffers?: BufferHost
   readonly texts?: VaultTexts
   readonly notices?: NoticeHost
@@ -296,7 +294,6 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
       mountView,
     },
     work: {
-      ...pickDefinedParts<Pick<PluginWork, 'agent'>>({ agent: init.agent }),
       backgroundTasks: createMockBackgroundTaskHost(),
     },
 
