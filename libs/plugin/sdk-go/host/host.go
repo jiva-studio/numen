@@ -65,15 +65,6 @@ type IndexState struct {
 	Reason string
 }
 
-// Change is what a watch reports: the files that changed, or that the host now shows another vault and
-// the watch must restart. Err is set only on the last change before the channel closes, when the watch
-// ended on a failure.
-type Change struct {
-	Paths          []string
-	IsVaultChanged bool
-	Err            error
-}
-
 // Move is what a watch of moves reports: that something moved in some vault. Err is set only on the
 // last move before the channel closes, when the watch ended on a failure.
 type Move struct {
@@ -101,9 +92,6 @@ type VaultIndex interface {
 	// Scan updates the index for the files named.
 	Scan(ctx context.Context, paths []string) error
 	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
-	// Watch reports the files that changed until ctx is done. It returns once the watch is active, and
-	// the channel closes when the watch ends.
-	Watch(ctx context.Context) (<-chan Change, error)
 }
 
 // FileRange is a ranged read of a file: the text, where it begins in the file, and the file stat of

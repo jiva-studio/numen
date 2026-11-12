@@ -31,7 +31,6 @@ type Vault struct {
 	cache      map[string][]byte
 	locked     chan struct{}
 	scanned    [][]string
-	watches    []chan host.Change
 	unknown    bool
 	isMissing  bool
 	state      host.IndexState
@@ -47,8 +46,6 @@ var (
 	_ host.FileWriter    = (*Vault)(nil)
 	_ host.NoteLookup    = (*Vault)(nil)
 	_ host.LinkLookup    = (*Vault)(nil)
-	_ host.NoteArranger  = (*Vault)(nil)
-	_ host.LinkEditor    = (*Vault)(nil)
 	_ host.CacheStore    = (*Vault)(nil)
 )
 
@@ -200,16 +197,6 @@ func (v *Vault) Content(filePath string) (string, bool) {
 	return string(content), err == nil
 }
 
-// Touch notifies the watches of the files, as the host does when files changed outside the plugin.
-func (v *Vault) Touch(paths ...string) {
-	v.world.mu.Lock()
-	watches := append([]chan host.Change(nil), v.watches...)
-	v.world.mu.Unlock()
-	for _, w := range watches {
-		w <- host.Change{Paths: paths}
-	}
-}
-
 func (v *Vault) check(ctx context.Context, filePath string) error {
 	if err := v.gate(ctx); err != nil {
 		return err
@@ -324,33 +311,6 @@ func (v *Vault) WriteCache(ctx context.Context, name string, content []byte) err
 	}
 	v.cache[name] = append([]byte(nil), content...)
 	return nil
-}
-
-func (v *Vault) Watch(ctx context.Context) (<-chan host.Change, error) {
-	v.world.mu.Lock()
-	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
-		return nil, err
-	}
-	in := make(chan host.Change, 16)
-	out := make(chan host.Change)
-	v.watches = append(v.watches, in)
-	go func() {
-		defer close(out)
-		for {
-			select {
-			case c := <-in:
-				select {
-				case out <- c:
-				case <-ctx.Done():
-					return
-				}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-	return out, nil
 }
 
 func (v *Vault) WatchMoves(ctx context.Context) (<-chan host.Move, error) {
