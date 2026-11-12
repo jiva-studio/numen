@@ -59,7 +59,9 @@ function createBuffers(pluginId: string, buffers: BufferHost, add: Track): Buffe
     track: (open) =>
       add(
         buffers.track(
-          Object.assign(Object.create(open) as FileBuffers, { flush: nameUnsaved(pluginId, open.flush) }),
+          Object.assign(Object.create(open) as FileBuffers, {
+            flush: nameUnsaved(pluginId, open.flush),
+          }),
         ),
       ),
     addFlushHandler: (handler) => add(buffers.addFlushHandler(nameUnsaved(pluginId, handler))),
