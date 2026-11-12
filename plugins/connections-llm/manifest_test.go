@@ -2,6 +2,7 @@ package connectionsllm
 
 import (
 	"encoding/json"
+	"maps"
 	"slices"
 	"testing"
 )
@@ -33,7 +34,11 @@ type manifestShape struct {
 		Entrypoint string `json:"entrypoint"`
 	} `json:"backend"`
 	Contributes struct {
-		Category        string           `json:"category"`
+		Category   string `json:"category"`
+		Operations []struct {
+			Name  string `json:"name"`
+			Title string `json:"title"`
+		} `json:"operations"`
 		ConnectionTypes []connectionType `json:"connectionTypes"`
 	} `json:"contributes"`
 	Settings []struct {
@@ -173,5 +178,25 @@ func TestManifestAsksForNoPermission(t *testing.T) {
 	}
 	if len(manifest.Permissions) != 0 {
 		t.Errorf("permissions = %v, want none", manifest.Permissions)
+	}
+}
+
+// The window says which operation a type cannot carry out by its title, so every operation of the
+// contract of the plugin has one.
+func TestEveryLLMOperationHasATitle(t *testing.T) {
+	titles := map[string]string{}
+	for _, one := range readManifest(t).Contributes.Operations {
+		titles[one.Name] = one.Title
+	}
+	want := map[string]string{
+		"llm.complete":  "complete text",
+		"llm.chat":      "chat",
+		"llm.embed":     "embed text",
+		"llm.profile":   "describe a model",
+		"llm.models":    "list models",
+		"llm.reasoning": "list reasoning levels",
+	}
+	if !maps.Equal(titles, want) {
+		t.Errorf("titles = %v, want %v", titles, want)
 	}
 }

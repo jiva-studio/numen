@@ -1,7 +1,9 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"io"
@@ -15,22 +17,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/process"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/task"
 )
-
-func fakeProgram(t *testing.T, behavior string) (string, string) {
-	t.Helper()
-	record := filepath.Join(t.TempDir(), "record")
-	program := agenttest.WriteScript(t, "fake-agent",
-		"exec "+agenttest.QuoteShell(os.Args[0])+" fake-acp "+behavior+" "+agenttest.QuoteShell(record)+"\n")
-	return program, record
-}
 
 func programCall(program string) connection.Call {
 	return connection.Call{Type: "acp", Fields: map[string]string{"program": program}}
@@ -83,6 +79,7 @@ func TestCompleteAsksTheProgramForTheModelAndTheLevelOfTheCall(t *testing.T) {
 
 // The session offers the program no file system and no terminal, no server of tools, and the client
 // answers every permission request with a refusal, so a write the program attempts is refused.
+// A request that offers an option to reject is answered with it, and one that offers none with an error.
 func TestACompleteCallRefusesEveryWriteOfTheProgram(t *testing.T) {
 	program, record := fakeProgram(t, "write")
 
@@ -104,15 +101,18 @@ func TestACompleteCallRefusesEveryWriteOfTheProgram(t *testing.T) {
 		t.Errorf("the session was given the servers %v", servers)
 	}
 	replies := observed["reply"]
-	if len(replies) < 2 {
-		t.Fatalf("the agent had %d replies, want the answers to the permission and to the write", len(replies))
+	if len(replies) < 3 {
+		t.Fatalf("the agent had %d replies, want the answers to the permissions and to the write", len(replies))
 	}
 	outcome, err := json.Marshal(replies[0]["result"])
-	if err != nil || string(outcome) != `{"outcome":{"outcome":"canceled"}}` {
-		t.Errorf("the permission to write was answered %s, %v, want a refusal", outcome, err)
+	if err != nil || string(outcome) != `{"outcome":{"optionId":"no","outcome":"selected"}}` {
+		t.Errorf("the permission to write was answered %s, %v, want the option that rejects", outcome, err)
 	}
 	if replies[1]["result"] != nil || replies[1]["error"] == nil {
 		t.Errorf("the write was answered %v, want an error", replies[1])
+	}
+	if replies[2]["result"] != nil || replies[2]["error"] == nil {
+		t.Errorf("a permission without an option to reject was answered %v, want an error", replies[2])
 	}
 }
 
@@ -268,17 +268,17 @@ func TestListingTheModelsOfAProgramThatIsNotThereIsUnreachable(t *testing.T) {
 	}
 }
 
-func TestTheProviderServesCompleteAndTheListsOfModelsAndReasoningLevels(t *testing.T) {
+func TestTheProviderServesCompleteTheListsOfModelsAndReasoningLevelsAndTasks(t *testing.T) {
 	provider := newTestServer(t).Provider()
 	served := slices.Sorted(maps.Keys(provider))
-	want := []string{llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
+	want := []string{acp.OperationTask, llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
 	if !slices.Equal(served, want) {
 		t.Errorf("operations = %v, want %v", served, want)
 	}
 }
 
 func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
-	program, _ := fakeProgram(t, "plain")
+	program, _ := fakeProgram(t, "config")
 	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"})
 	if err != nil {
 		t.Fatal(err)
@@ -290,14 +290,36 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	body := `{"call":{"type":"acp","fields":{"program":` + quoteJSON(program) + `}},"messages":[{"role":"user","text":"why?"}]}`
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.ProviderService/Complete", strings.NewReader(body))
+	// The plugin reads the models of a program in the background and lists none until they are read.
+	var answer []byte
+	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(20 * time.Millisecond) {
+		answer = callModels(t, web.URL, program)
+		// The done frame is the encoded list of options, which holds the titles as they are.
+		if bytes.Contains(readDone(t, answer), []byte("Model Two")) {
+			return
+		}
+	}
+	t.Errorf("the service answered %q", answer)
+}
+
+// callModels calls llm.models of the program on the provider service at url, as a streaming Connect call
+// with the token of the plugin, and returns the body of the answer.
+func callModels(t *testing.T, url, program string) []byte {
+	t.Helper()
+	body, err := json.Marshal(map[string]any{
+		"operation": llm.OperationModels,
+		"call":      map[string]any{"type": "acp", "fields": map[string]string{"program": program}},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	request.Header.Set("Content-Type", "application/json")
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url+"/numen.v1.ProviderService/Call", bytes.NewReader(writeEnvelope(0, body)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/connect+json")
 	request.Header.Set("Authorization", "Bearer tok")
-	response, err := web.Client().Do(request)
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -306,29 +328,63 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-
 	answer, err := io.ReadAll(response.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if response.StatusCode != http.StatusOK || string(answer) != `{"text":"the answer"}` {
-		t.Errorf("the service answered %d %q", response.StatusCode, answer)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("the service answered %d %q", response.StatusCode, answer)
 	}
+	return answer
 }
 
-func quoteJSON(s string) string {
-	raw, err := json.Marshal(s)
-	if err != nil {
-		return `""`
+// writeEnvelope frames a message of a streaming Connect call.
+func writeEnvelope(flags byte, message []byte) []byte {
+	framed := make([]byte, 5, 5+len(message))
+	framed[0] = flags
+	binary.BigEndian.PutUint32(framed[1:], uint32(len(message)))
+	return append(framed, message...)
+}
+
+// readDone returns the done frame of the streaming Connect answer, or nil where it holds none.
+func readDone(t *testing.T, answer []byte) []byte {
+	t.Helper()
+	for len(answer) >= 5 {
+		size := binary.BigEndian.Uint32(answer[1:5])
+		if uint32(len(answer)-5) < size {
+			return nil
+		}
+		message := answer[5 : 5+size]
+		answer = answer[5+size:]
+		var frame struct {
+			Done []byte `json:"done"`
+		}
+		if json.Unmarshal(message, &frame) == nil && frame.Done != nil {
+			return frame.Done
+		}
 	}
-	return string(raw)
+	return nil
 }
 
 func newTestServer(t *testing.T) *agentServer {
 	t.Helper()
-	svc, err := newAgentServer(process.LookPath, process.Launcher{}, clock.System{}, false)
+	return newTestServerWith(t, nil, clock.System{})
+}
+
+// newTestServerWith builds the plugin over the programs of the machine, with the tools of host and the
+// clock.
+func newTestServerWith(t *testing.T, host task.Tools, source cache.Clock) *agentServer {
+	t.Helper()
+	svc, err := newAgentServer(machine{
+		lookPath: process.LookPath, launcher: process.Launcher{}, tools: host, clock: source, isAsync: false,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		if err := svc.tasks.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Log(err)
+		}
+	})
 	return svc
 }
