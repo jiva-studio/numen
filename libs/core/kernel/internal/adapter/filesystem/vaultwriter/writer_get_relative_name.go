@@ -239,8 +239,6 @@ func checkMoveTarget(root *os.Root, leaves, arrives, from, to string) error {
 	return nil
 }
 
-// createParents creates the folders above a name, and reports a file occupying
-// the place of one of them as ErrAlreadyExists.
 func createParents(root *os.Root, dir, path string) error {
 	err := root.MkdirAll(dir, 0o755)
 	if errors.Is(err, fs.ErrExist) {

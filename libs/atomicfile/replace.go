@@ -49,6 +49,8 @@ func WriteFile(path string, from io.Reader, mode fs.FileMode) (err error) {
 // before the rename, so a power loss leaves the old file or the new one. The
 // stat comes from the temporary file's descriptor; the rename carries the file
 // across whole, so size and modification time are the target's.
+// The temporary name is the target name cut on a rune boundary to fit the limit of a path component,
+// so a target whose name fills the limit can still be written.
 func Replace(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode) (Stat, error) {
 	return replace(root, target, from, mode, func(from, to string) error { return Rename(ctx, root, from, to) })
 }
@@ -90,10 +92,6 @@ func replace(root *os.Root, target string, from io.Reader, mode fs.FileMode, ren
 	return stat, SyncDirectory(root, dir)
 }
 
-// getTempPattern returns the pattern a temporary file next to a target is
-// created under. The name is cut on a rune boundary, leaving space for the
-// leading dot and for the digits that replace the star; the rename uses the full
-// name.
 func getTempPattern(name string) string {
 	const room = len(".") + len(".") + 10
 	for len(name)+room > nameMax {
@@ -103,9 +101,6 @@ func getTempPattern(name string) string {
 	return "." + name + ".*"
 }
 
-// createTempFile creates a file next to a target, under the root's own handle.
-// It is os.CreateTemp for a root: the name is unique to the creating call and
-// is claimed by creating the file, not by checking for it first.
 func createTempFile(root *os.Root, dir, pattern string) (*os.File, string, error) {
 	prefix, suffix, _ := strings.Cut(pattern, "*")
 	for range 10_000 {

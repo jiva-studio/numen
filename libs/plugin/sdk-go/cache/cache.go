@@ -375,6 +375,15 @@ func (c *Cache[V]) executeLoad(ctx context.Context, load func(context.Context) (
 }
 
 func (c *Cache[V]) finishLoad(ctx context.Context, key string, inflight *call[V], val V, err error) (V, bool, error) {
+	if err == nil {
+		// The value is written before it is visible, so a reader that sees it finds it on disk.
+		c.mu.Lock()
+		shouldWrite := c.shouldUseDiskLocked()
+		c.mu.Unlock()
+		if shouldWrite {
+			c.writeDiskEntry(key, val)
+		}
+	}
 	now := c.getNow()
 	c.mu.Lock()
 	delete(c.inFlight, key)
@@ -392,13 +401,9 @@ func (c *Cache[V]) finishLoad(ctx context.Context, key string, inflight *call[V]
 	c.entries[key] = entry[V]{value: val, fetchedAt: now}
 	delete(c.failed, key)
 	delete(c.failedAt, key)
-	shouldWrite := c.shouldUseDiskLocked()
 	inflight.value = val
 	close(inflight.readyCh)
 	c.mu.Unlock()
-	if shouldWrite {
-		c.writeDiskEntry(key, val)
-	}
 	return val, true, nil
 }
 

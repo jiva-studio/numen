@@ -12,7 +12,7 @@ import (
 // rename over a file opened without a delete share, and programs that do this
 // (the search indexer, a backup reader, a virus scanner) release the file
 // within moments.
-func TestRenameWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
+func TestRenameRetriesWhileAHandleIsHeld(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "state.json")
 	if err := os.WriteFile(target, []byte("the old content\n"), 0o644); err != nil {
