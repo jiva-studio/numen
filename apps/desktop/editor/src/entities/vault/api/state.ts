@@ -1,7 +1,7 @@
 /**
  * The state of the open vault and the changes made to it.
  */
-import { agentService, vault } from '@/shared/api/clients'
+import { vault } from '@/shared/api/clients'
 import type { VaultChange, VaultState } from '../lib/vault'
 
 interface ScanState {
@@ -26,14 +26,6 @@ export async function getVaultState(): Promise<VaultState> {
     scan: parseScan(state.scan),
     coverage: state.coverage?.text ?? '',
   }
-}
-
-/**
- * Why an agent cannot be reached, or an empty string when it can. Which agent answers is
- * determined by the installation, so the check is made on the agent.
- */
-export async function getAgentUnreachable(): Promise<string> {
-  return (await agentService.getAgentState({})).unreachable
 }
 
 /** The changes made to the files of the open vault, until the caller aborts the signal. */

@@ -1,5 +1,10 @@
 import type { JsonObject, JsonValue } from '@/shared/api/json'
-import type { ConnectionFieldInfo, ConnectionInfo, ConnectionTypeInfo } from './types'
+import type {
+  ConnectionFieldInfo,
+  ConnectionInfo,
+  ConnectionTypeInfo,
+  OperationTitles,
+} from './types'
 
 /**
  * A row as the core stores it: a connection and the values of the row fields of its type, such as a
@@ -19,6 +24,7 @@ export interface RowDraft extends StoredRow {
 export interface UsabilityWords {
   readonly unavailable: string
   readonly incomplete: string
+  // Takes the title of the operation, or its name where no plugin titles it.
   readonly cannot: (operation: string) => string
 }
 
@@ -109,12 +115,15 @@ export function getConnectionUsability(
   type: ConnectionTypeInfo | undefined,
   operations: readonly string[],
   words: UsabilityWords,
+  operationTitles: OperationTitles,
 ): Usability {
   if (!connection.isTypeAvailable || type === undefined || !type.isAvailable) {
     return { isUsable: false, reason: words.unavailable }
   }
   const missing = operations.find((one) => !type.operations.includes(one))
-  if (missing !== undefined) return { isUsable: false, reason: words.cannot(missing) }
+  if (missing !== undefined) {
+    return { isUsable: false, reason: words.cannot(operationTitles[missing] ?? missing) }
+  }
   if (!connection.isComplete) return { isUsable: false, reason: words.incomplete }
   return { isUsable: true, reason: '' }
 }

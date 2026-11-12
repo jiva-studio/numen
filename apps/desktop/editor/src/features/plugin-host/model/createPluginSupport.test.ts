@@ -3,7 +3,6 @@ import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { nextTick, ref } from 'vue'
 import {
   DEFAULT_PLUGIN_ENABLED,
-  type AgentHost,
   type PluginContext,
   type WorkspaceHost,
 } from '@numen/plugin-loader'
@@ -27,7 +26,6 @@ const createSupport = () => {
     rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
     getServices: () => ({
       workspace: { getNoteInFocus: () => ({ path: '', title: '' }) } as unknown as WorkspaceHost,
-      agent: { finish: () => Promise.resolve(), getModelsAt: () => [] } as unknown as AgentHost,
     }),
   })
   return { windowTabs, support }
@@ -420,7 +418,6 @@ describe('the plugins the window loads', () => {
     const notes = { read: vi.fn() } as never
     const relations = { roles: [] } as never
     const files = { list: vi.fn() } as never
-    const agent = { finish: vi.fn() } as unknown as AgentHost
     const buffers = { register: vi.fn() } as never
     const noteBuffer = { open: vi.fn() } as never
     const settings = ref<Record<string, unknown>>({ fontSize: 14 })
@@ -448,7 +445,6 @@ describe('the plugins the window loads', () => {
         notes,
         relations,
         files,
-        agent,
         buffers,
         noteBuffer,
         taskList,
@@ -491,7 +487,6 @@ describe('the plugins the window loads', () => {
     expect(ctx.vault.notes).toBeDefined()
     expect(ctx.vault.relations).toBeDefined()
     expect(ctx.vault.files).toBeDefined()
-    expect(ctx.work.agent).toBeDefined()
     expect(ctx.vault.buffers).toBeDefined()
     expect(ctx.work.tasks).toBeDefined()
     expect(ctx.vault.texts).toBeDefined()

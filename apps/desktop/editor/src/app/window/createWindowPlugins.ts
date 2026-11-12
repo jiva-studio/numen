@@ -59,8 +59,6 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     ...createPluginAccess({
       making: editing.making,
       pluginNotes,
-      window,
-      rest,
       getTarget,
       hostPort,
     }),

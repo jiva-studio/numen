@@ -9,13 +9,22 @@ import type {
   ConnectionDraft,
   ConnectionFailure,
   ConnectionInfo,
-  ConnectionTypeInfo,
+  ConnectionTypeList,
   RowOption,
 } from '../lib/types'
 
-/** Every kind of connection the installed plugins provide, available or not. */
-export const listConnectionTypes = async (): Promise<readonly ConnectionTypeInfo[]> =>
-  (await connections.listTypes()).map((one) => ({ ...one }))
+/**
+ * Every kind of connection the installed plugins provide, available or not, and the titles of the
+ * operations; the first title of a name counts.
+ */
+export const listConnectionTypes = async (): Promise<ConnectionTypeList> => {
+  const { types, operations } = await connections.listTypes()
+  const operationTitles: Record<string, string> = {}
+  for (const { name, title } of operations) {
+    if (title !== '' && !(name in operationTitles)) operationTitles[name] = title
+  }
+  return { types: types.map((one) => ({ ...one })), operationTitles }
+}
 
 /** Every connection, in the order it was made. */
 export const listConnections = async (): Promise<readonly ConnectionInfo[]> =>

@@ -1,7 +1,7 @@
 /**
  * Every setting as the vault holds it, with the value a control requested shown from the request
- * until the vault reads it back; the models a setting that names one can be set to; and settings
- * written at their current position, one batch at a time.
+ * until the vault reads it back; and settings written at their current position, one batch at a
+ * time.
  */
 import { ref, shallowRef } from 'vue'
 import { formatError } from '@/shared/api/errors'
@@ -9,7 +9,6 @@ import type { JsonObject, JsonValue } from '@/shared/api/json'
 import { createRemoteValues } from './remoteValues'
 import type {
   Configuration,
-  Model,
   PluginInfo,
   PluginSettingInfo,
   SettingEdit,
@@ -99,9 +98,8 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
   const target = shallowRef<JsonValue>({})
 
-  /** The file the settings stand in, and the models the settings offer. */
+  /** The file the settings stand in. */
   const path = ref('')
-  const models = shallowRef<readonly Model[]>([])
   const plugins = shallowRef<readonly PluginInfo[]>([])
   const app = shallowRef<readonly PluginSettingInfo[]>([])
 
@@ -118,7 +116,6 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
     requested.takeRead(pendingRead, () => {
       target.value = read.file
       path.value = answer.path
-      models.value = answer.models
       plugins.value = answer.plugins ?? []
       app.value = answer.app ?? []
     })
@@ -146,10 +143,6 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
     return value !== undefined ? value : getDeclaredDefault(app.value, plugins.value, path)
   }
 
-  /** The models one setting can be set to, in the order they are offered. */
-  const getModelsAt = (path: readonly string[]): readonly Model[] =>
-    models.value.filter((one) => one.namedAt.join('.') === path.join('.'))
-
   const writeSettings = async (edits: readonly SettingEdit[]): Promise<void> => {
     if (edits.length === 0) return
     say('')
@@ -172,8 +165,8 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
 
   return {
     start,
-    state: { target, path, models, plugins, app },
-    read: { getSetting, getCommittedSetting, isPending, isRequested, getModelsAt },
+    state: { target, path, plugins, app },
+    read: { getSetting, getCommittedSetting, isPending, isRequested },
     write: { writeSettings, writeSetting },
   }
 }

@@ -59,7 +59,6 @@ const create = () => {
     getSettings: vi.fn(async () => ({
       written: JSON.stringify(file.current),
       path: '/config/numen.json',
-      models: [],
       plugins: [],
       app: [],
     })),

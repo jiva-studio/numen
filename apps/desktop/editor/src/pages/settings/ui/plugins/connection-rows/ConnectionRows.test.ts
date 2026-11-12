@@ -123,6 +123,7 @@ const mountRows = (options: Options = {}) => {
   const installation = createInstallation({
     list: ref(options.connections ?? [EMBED_ONLY, WORK, RETIRED, HOME]),
     types: ref([SERVICE, EMBEDDER]),
+    operationTitles: ref({ 'llm.complete': 'complete text' }),
     listRowOptions,
     ...(options.countNotes ? { countNotes: options.countNotes } : {}),
     ...(options.create ? { create: options.create } : {}),
@@ -292,7 +293,7 @@ describe('the rows of a setting of connections', () => {
       true,
       false,
     ])
-    expect(choices[2]?.detail).toBe('This type cannot llm.complete')
+    expect(choices[2]?.detail).toBe('This type cannot complete text')
     expect(choices[3]?.detail).toBe('Type unavailable')
     dispose(wrapper)
   })
@@ -357,7 +358,7 @@ describe('the rows of a setting of connections', () => {
     const { wrapper } = mountRows({ value: [row(EMBED_ONLY.id, 'any')] })
     await flushPromises()
 
-    expect(root().textContent).toContain('This type cannot llm.complete')
+    expect(root().textContent).toContain('This type cannot complete text')
     dispose(wrapper)
   })
 

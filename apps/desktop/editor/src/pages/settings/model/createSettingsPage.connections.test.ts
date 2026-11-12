@@ -43,7 +43,7 @@ afterEach(() => {
 
 describe('the connections in the settings tab', () => {
   it('are read when the page asks, and listed in the installation', async () => {
-    vi.spyOn(connections, 'listTypes').mockResolvedValue([])
+    vi.spyOn(connections, 'listTypes').mockResolvedValue({ types: [], operations: [] })
     const list = vi.spyOn(connections, 'list').mockResolvedValue([connection])
     const { connections: installed } = createSettings().configured.state.installation
 

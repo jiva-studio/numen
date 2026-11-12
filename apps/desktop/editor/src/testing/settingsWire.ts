@@ -3,25 +3,20 @@
  * through the real client over the router transport: this file encodes the answers the way the
  * core sends them and decodes the requests the way the core reads them.
  */
-import { MODEL_PRESENCE, type ModelPresenceCode } from '@numen/core-client'
 import { installCoreAnswers, type CoreAnswers } from '@numen/core-client/testing'
 import type { PluginSettingCondition } from '@numen/plugin-manager'
 import type {
-  Model,
   PluginInfo,
   PluginSettingInfo,
   PluginSettingOption,
   SettingEdit,
 } from '@/entities/settings'
 
-type Presence = Model['presence']
-
-/** Every setting in effect and the models offered, as a test core answers them. */
+/** Every setting in effect, as a test core answers them. */
 interface Configuration {
   readonly jsonContent?: string | undefined
   readonly written: string
   readonly path: string
-  readonly models: readonly Model[]
   readonly plugins?: readonly PluginInfo[] | undefined
   readonly app?: readonly PluginSettingInfo[] | undefined
 }
@@ -83,24 +78,6 @@ export const toWireSetting = (setting: PluginSettingInfo) => ({
   valueJson: JSON.stringify(setting.value),
 })
 
-const PRESENCE: Record<Presence, ModelPresenceCode> = {
-  present: MODEL_PRESENCE.PRESENT,
-  'not fetched': MODEL_PRESENCE.NOT_FETCHED,
-  'nothing to fetch': MODEL_PRESENCE.NOTHING_TO_FETCH,
-}
-
-const toWireModel = (model: Model) => ({
-  namedAt: [...model.namedAt],
-  name: model.name,
-  title: model.title,
-  group: model.group,
-  isDefault: model.isDefault,
-  writes: model.writes.map((one) => ({ at: [...one.at], value: one.value })),
-  presence: PRESENCE[model.presence],
-  reasoningLevels: model.reasoningLevels ?? [],
-  defaultReasoning: model.defaultReasoning ?? '',
-})
-
 const toWirePlugin = (plugin: PluginInfo) => ({
   id: plugin.id,
   name: plugin.name,
@@ -127,7 +104,6 @@ const toWirePlugin = (plugin: PluginInfo) => ({
 const toWireConfiguration = (answer: Configuration) => ({
   written: answer.written,
   path: answer.path,
-  models: answer.models.map(toWireModel),
   plugins: (answer.plugins ?? []).map(toWirePlugin),
   app: (answer.app ?? []).map(toWireSetting),
 })

@@ -42,6 +42,18 @@ export interface ConnectionTypeInfo {
   readonly isAvailable: boolean
 }
 
+/**
+ * The titles the plugins give operations, by operation name; each completes "This type cannot ...".
+ * An operation no plugin titles is not in it.
+ */
+export type OperationTitles = Readonly<Record<string, string>>
+
+/** The kinds of connection the plugins provide, and the titles of the operations. */
+export interface ConnectionTypeList {
+  readonly types: readonly ConnectionTypeInfo[]
+  readonly operationTitles: OperationTitles
+}
+
 /** A setting of rows of a plugin that names a connection. */
 interface ConnectionUse {
   readonly pluginId: string

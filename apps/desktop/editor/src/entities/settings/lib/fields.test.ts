@@ -2,27 +2,16 @@
  * The settings file read and written by key path.
  */
 import { describe, expect, it } from 'vitest'
-import type { Model, SettingEdit } from './configuration'
+import type { SettingEdit } from './configuration'
 import { createSettingFields } from './fields'
 import type { JsonValue } from '@/shared/api/json'
 
 const AT = ['agent', 'model']
 
-const createModel = (name: string, writes: readonly SettingEdit[]): Model => ({
-  namedAt: AT,
-  name,
-  title: name,
-  group: '',
-  isDefault: false,
-  writes,
-  presence: 'nothing to fetch',
-})
-
-const setup = (target: Record<string, JsonValue> = {}, models: readonly Model[] = []) => {
+const setup = (target: Record<string, JsonValue> = {}) => {
   const content: SettingEdit[][] = []
   const fields = createSettingFields(() => ({
     getSetting: (path) => target[path.join('.')],
-    getModels: () => models,
     write: (edits) => content.push([...edits]),
   }))
   return { fields, recordedEdits: content }
@@ -62,18 +51,5 @@ describe('what is written back', () => {
       [{ at: ['agent', 'steps'], value: '5' }],
       [{ at: AT, value: '"opus"' }],
     ])
-  })
-
-  it('is the writes of a preset where the name is one', () => {
-    const writes = [{ at: AT, value: '"preset-x-value"' }]
-    const { fields, recordedEdits } = setup({}, [createModel('x', writes)])
-    fields.chooseModel(AT, 'x')
-    expect(recordedEdits).toStrictEqual([writes])
-  })
-
-  it('is the name itself where it is no preset', () => {
-    const { fields, recordedEdits } = setup({}, [createModel('x', [])])
-    fields.chooseModel(AT, 'mine')
-    expect(recordedEdits).toStrictEqual([[{ at: AT, value: '"mine"' }]])
   })
 })

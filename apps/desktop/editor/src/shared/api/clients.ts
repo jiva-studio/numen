@@ -2,7 +2,6 @@
  * Every client the window talks to the application through.
  */
 export {
-  agentService,
   files,
   notes,
   pluginCommands,

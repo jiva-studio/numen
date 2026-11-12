@@ -3,27 +3,14 @@
  * operations on a plugin that belong to its page. Each answer is mapped into the types of this
  * entity.
  */
-import { MODEL_PRESENCE, type ModelPresenceCode } from '@numen/core-client'
 import { settingsService } from '@/shared/api/clients'
 import type { JsonValue } from '@/shared/api/json'
 import type {
   Configuration,
   PluginSettingCondition,
   PluginSettingInfo,
-  Presence,
   SettingEdit,
 } from '../lib/configuration'
-
-/**
- * What a model's files are on this machine, in the words the window uses. Keyed by the schema, so
- * a presence added to it has to be given a word here before this compiles.
- */
-const PRESENCE: Record<ModelPresenceCode, Presence> = {
-  [MODEL_PRESENCE.UNSPECIFIED]: 'nothing to fetch',
-  [MODEL_PRESENCE.PRESENT]: 'present',
-  [MODEL_PRESENCE.NOT_FETCHED]: 'not fetched',
-  [MODEL_PRESENCE.NOTHING_TO_FETCH]: 'nothing to fetch',
-}
 
 const readOption = (one: { value: string; title: string; detail: string; when: string }) => ({
   value: one.value,
@@ -90,23 +77,12 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
   }
 }
 
-/** Every setting currently, and the models the settings offer. */
+/** Every setting currently. */
 export const getSettings = async (): Promise<Configuration> => {
   const answer = await settingsService.getSettings({})
   return {
     written: answer.written,
     path: answer.path,
-    models: answer.models.map((one) => ({
-      namedAt: one.namedAt,
-      name: one.name,
-      title: one.title,
-      group: one.group,
-      isDefault: one.isDefault,
-      writes: one.writes.map((w) => ({ at: w.at, value: w.value })),
-      presence: PRESENCE[one.presence],
-      reasoningLevels: one.reasoningLevels.map((l) => ({ name: l.name, title: l.title })),
-      defaultReasoning: one.defaultReasoning,
-    })),
     plugins: answer.plugins.map((p) => ({
       id: p.id,
       name: p.name,

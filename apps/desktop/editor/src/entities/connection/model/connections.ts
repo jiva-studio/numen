@@ -19,12 +19,14 @@ import type {
   ConnectionFailure,
   ConnectionInfo,
   ConnectionTypeInfo,
+  OperationTitles,
 } from '../lib/types'
 import { CONNECTION_WORDS } from '../words'
 
 export function createConnectionStore(notify: MessageWriter) {
   const connections = shallowRef<readonly ConnectionInfo[]>([])
   const types = shallowRef<readonly ConnectionTypeInfo[]>([])
+  const operationTitles = shallowRef<OperationTitles>({})
   let hasLoaded = false
 
   /** Reads the types and the connections again. A failed read keeps what the store held. */
@@ -35,7 +37,8 @@ export function createConnectionStore(notify: MessageWriter) {
         listConnectionTypes(),
         listConnections(),
       ])
-      types.value = readTypes
+      types.value = readTypes.types
+      operationTitles.value = readTypes.operationTitles
       connections.value = readConnections
       notify('')
     } catch (caughtError) {
@@ -64,6 +67,7 @@ export function createConnectionStore(notify: MessageWriter) {
   return {
     connections,
     types,
+    operationTitles,
     load,
     reload,
     create: (draft: ConnectionDraft) => run(() => createConnection(draft)),

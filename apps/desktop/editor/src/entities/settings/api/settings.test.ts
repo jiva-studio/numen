@@ -3,7 +3,6 @@
  * hands the vault to write.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MODEL_PRESENCE } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import * as settingsApi from './settings'
 
@@ -21,7 +20,6 @@ const request = {
 const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
   path: '/vault/.numen/settings.json',
-  models: [],
   plugins: [],
   app: [],
   ...overrides,
@@ -42,42 +40,6 @@ afterEach(() => {
 })
 
 describe('every setting', () => {
-  it('arrives with each model the settings offer, and whether its files are here', async () => {
-    const model = {
-      namedAt: ['indexing', 'model', 'name'],
-      name: 'e5-small-int8',
-      title: 'E5 small',
-      group: 'On this machine',
-      isDefault: true,
-      writes: [{ at: ['indexing', 'model', 'name'], value: '"e5-small-int8"', extra: 1 }],
-      presence: MODEL_PRESENCE.NOT_FETCHED,
-      reasoningLevels: [{ name: 'high', title: 'High' }],
-      defaultReasoning: 'high',
-      extra: 'not the window’s',
-    }
-    request.getSettings.mockResolvedValue(answer({ a: 1 }, { models: [model] }))
-
-    expect(await core.getSettings()).toStrictEqual({
-      written: '{"a":1}',
-      path: '/vault/.numen/settings.json',
-      models: [
-        {
-          namedAt: ['indexing', 'model', 'name'],
-          name: 'e5-small-int8',
-          title: 'E5 small',
-          group: 'On this machine',
-          isDefault: true,
-          writes: [{ at: ['indexing', 'model', 'name'], value: '"e5-small-int8"' }],
-          presence: 'not fetched',
-          reasoningLevels: [{ name: 'high', title: 'High' }],
-          defaultReasoning: 'high',
-        },
-      ],
-      plugins: [],
-      app: [],
-    })
-  })
-
   it('arrives with active plugins and their declarative settings', async () => {
     request.getSettings.mockResolvedValue(
       answer(

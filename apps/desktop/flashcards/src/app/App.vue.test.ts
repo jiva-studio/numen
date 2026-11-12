@@ -18,7 +18,6 @@ async function* waits(): AsyncGenerator<never> {
 /** What the core is asked, and what it answers, during a test. */
 const wire = {
   waits,
-  agentSignals: [] as AbortSignal[],
   resolveAddresses: vi.fn(),
   getPlugins: vi.fn(),
   listVaults: vi.fn(),
@@ -39,12 +38,6 @@ let restoreCore: () => void
 
 const answerCore = (): (() => void) =>
   installCoreHandlers({
-    getAgentState: async (_request: unknown, context: { signal: AbortSignal }) => {
-      wire.agentSignals.push(context.signal)
-      return { unreachable: '' }
-    },
-    askAgent: wire.waits,
-    finishConversation: async () => ({}),
     resolveAddresses: (request: unknown) => wire.resolveAddresses(request),
     getPlugins: (request: unknown) => wire.getPlugins(request),
     listVaults: (request: unknown) => wire.listVaults(request),
@@ -156,7 +149,6 @@ afterEach(() => {
   wire.requestedTasks.length = 0
   wire.taskSignals.length = 0
   wire.themeSignals.length = 0
-  wire.agentSignals.length = 0
   vi.useRealTimers()
 })
 
@@ -211,7 +203,7 @@ describe('App', () => {
   })
 
   it('records failed plugins, resolves links through the note service, and cleans up on unmount', async () => {
-    let agentHost: { resolveLinks: (text: string, vault: string) => Promise<unknown> } | undefined
+    let relations: { resolveLinks: (text: string, vault: string) => Promise<unknown> } | undefined
     serveCore(['md.numen.broken', 'md.numen.closing'])
     let shellDefault: ReturnType<typeof createWindow> | undefined
     const defaultWrapper = mount(
@@ -224,13 +216,13 @@ describe('App', () => {
             }) as unknown as typeof fetch,
             dynamicImport: async () => ({
               activate: (ctx: {
-                work: {
-                  agent?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
+                vault: {
+                  relations?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
                 }
                 plugin: { subscriptions: { dispose: () => void }[] }
                 register: { tabKind: (one: unknown) => void }
               }) => {
-                agentHost = ctx.work.agent
+                relations = ctx.vault.relations
                 ctx.plugin.subscriptions.push({
                   dispose: () => {
                     throw new Error('close failure')
@@ -255,12 +247,11 @@ describe('App', () => {
     expect(
       document.head.querySelector('link[data-plugin-id="md.numen.closing"]')?.getAttribute('href'),
     ).toBe('/plugin/md.numen.closing/dist/styles.css')
-    await agentHost?.resolveLinks('[[Note]]', 'physics')
+    await relations?.resolveLinks('[[Note]]', 'physics')
     expect(wire.resolveAddresses).toHaveBeenCalled()
 
     defaultWrapper.unmount()
     await flushPromises()
-    expect(wire.agentSignals.at(-1)?.aborted).toBe(true)
     expect(shellDefault?.plugins.failures.value).toContain(
       formatErrorMessage(new Error('close failure')),
     )

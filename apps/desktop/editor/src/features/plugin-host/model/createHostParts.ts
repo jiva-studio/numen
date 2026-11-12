@@ -68,11 +68,11 @@ export function createTabActionParts(deps: {
   }
 }
 
-/** The notes, links, files, agent, commands, vaults and window the window gives a plugin. */
+/** The notes, links, files, commands, vaults and window the window gives a plugin. */
 export function createVaultServiceParts(deps: {
   readonly services: Pick<
     PluginServices,
-    'workspace' | 'notes' | 'relations' | 'files' | 'agent' | 'commands' | 'vaults' | 'window'
+    'workspace' | 'notes' | 'relations' | 'files' | 'commands' | 'vaults' | 'window'
   >
 }): HostParts {
   const { services } = deps
@@ -81,7 +81,6 @@ export function createVaultServiceParts(deps: {
     getNotes: () => services.notes,
     getRelations: () => services.relations,
     getFiles: () => services.files,
-    getAgent: () => services.agent,
     getCommands: () => services.commands,
     getVaults: () => services.vaults,
     getWindow: () => services.window,

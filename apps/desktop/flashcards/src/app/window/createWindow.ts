@@ -4,7 +4,6 @@
  * order they depend on each other: the notices and the tabs first, then the services made from
  * them, then the host the services are given to.
  */
-import { onUnmounted } from 'vue'
 import {
   createPluginLoader,
   createWindowHost,
@@ -12,7 +11,6 @@ import {
   type PluginLoaderDeps,
 } from '@numen/plugin-loader'
 import { createNoticeQueue, loadFrameRuntime, useWindowFrame } from '@numen/workbench'
-import { createWindowAgent } from '@/entities/agent'
 import { createWindowCommands } from '@/entities/plugin'
 import { createWindowTabs } from '@/entities/tab'
 import { createVaultsHost, useVaults } from '@/entities/vault'
@@ -31,13 +29,11 @@ export function createWindow(deps: WindowDeps = {}) {
   const notices = createNoticeQueue()
   const tabs = createWindowTabs()
   const frame = useWindowFrame(loadFrameRuntime)
-  const windowAgent = createWindowAgent()
   const { vaults, isListing } = useVaults((text) => notices.show(WINDOW_SOURCE, text, 'error'))
   const backgroundTasks = useWindowTasks(notices)
   const { host, mountView, titleBarView } = createShellHost({
     tabs,
     notices,
-    agent: windowAgent.agent,
     getPlatform: () => frame.platform.value,
     services: {
       commands: createWindowCommands(),
@@ -59,8 +55,6 @@ export function createWindow(deps: WindowDeps = {}) {
   const start = useAppStart(loader)
   useWindowKeys({ tabs, vaults })
   const appearance = useAppearance(notices)
-
-  onUnmounted(() => windowAgent.dispose())
 
   usePluginStyles(() => tabs.frontPlugins.value)
 

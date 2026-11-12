@@ -9,6 +9,12 @@ import type {
   ConnectionInfo,
   ConnectionTypeInfo,
 } from '../lib/types'
+
+/** What the core lists of the types. */
+interface TypeList {
+  readonly types: readonly ConnectionTypeInfo[]
+  readonly operations: readonly { readonly name: string; readonly title: string }[]
+}
 import { createConnectionStore } from './connections'
 
 const asValue = <T>(value: T): Result<T, ConnectionFailure> => ({ ok: true, value })
@@ -19,7 +25,7 @@ const asFailure = (error: ConnectionFailure): Result<never, ConnectionFailure> =
 
 /** The calls of the connection client, which a test answers. */
 interface ConnectionClient {
-  listTypes(): Promise<readonly ConnectionTypeInfo[]>
+  listTypes(): Promise<TypeList>
   list(): Promise<readonly ConnectionInfo[]>
   create(draft: ConnectionDraft): Promise<Result<ConnectionInfo, ConnectionFailure>>
   update(change: ConnectionChange): Promise<Result<ConnectionInfo, ConnectionFailure>>
@@ -44,7 +50,7 @@ const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => 
 })
 
 const createClient = (overrides: Partial<ConnectionClient> = {}): ConnectionClient => ({
-  listTypes: () => Promise.resolve([]),
+  listTypes: () => Promise.resolve({ types: [], operations: [] }),
   list: () => Promise.resolve([connection()]),
   create: () => Promise.resolve(asValue(connection({ id: 'c00000002' }))),
   update: () => Promise.resolve(asValue(connection({ revision: 2 }))),
@@ -69,6 +75,26 @@ describe('createConnectionStore', () => {
     await store.load()
 
     expect(store.connections.value.map((one) => one.name)).toStrictEqual(['Work'])
+  })
+
+  it('keeps the first title of each operation and leaves out an empty one', async () => {
+    const { store } = createStore(
+      createClient({
+        listTypes: () =>
+          Promise.resolve({
+            types: [],
+            operations: [
+              { name: 'acp.task', title: 'run agent tasks' },
+              { name: 'acp.task', title: 'do tasks' },
+              { name: 'llm.chat', title: '' },
+            ],
+          }),
+      }),
+    )
+
+    await store.load()
+
+    expect(store.operationTitles.value).toStrictEqual({ 'acp.task': 'run agent tasks' })
   })
 
   it('reports a failed read and keeps the connections', async () => {

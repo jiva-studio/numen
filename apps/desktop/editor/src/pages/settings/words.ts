@@ -77,7 +77,8 @@ export const WORDS = {
   connectionRowsCancelled: 'Move cancelled.',
   connectionRowsOptionsFailed: (title: string, detail: string) =>
     `The values of ${title} could not be listed: ${detail}`,
-  connectionCannot: (operation: string) => `This type cannot ${operation}`,
+  /** title: what a plugin titles the operation, or its name. */
+  connectionCannot: (title: string) => `This type cannot ${title}`,
   /** The label of the action that opens a plugin's settings. */
   configure: 'Configure',
   /** A plugin's setting of type file or folder. */
