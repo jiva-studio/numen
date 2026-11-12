@@ -115,26 +115,6 @@ func (c *Client) Clear(ctx context.Context, key string) error {
 	return err
 }
 
-// Report puts the item in the list of the host the process was started for. It returns
-// hostcall.ErrNoHost where the environment names no host.
-func Report(ctx context.Context, item Item) error {
-	client, err := NewClientFromEnv()
-	if err != nil {
-		return err
-	}
-	return client.Report(ctx, item)
-}
-
-// Clear takes the item under the key out of the list of the host the process was started for. It
-// returns hostcall.ErrNoHost where the environment names no host.
-func Clear(ctx context.Context, key string) error {
-	client, err := NewClientFromEnv()
-	if err != nil {
-		return err
-	}
-	return client.Clear(ctx, key)
-}
-
 func writeItem(item Item) *v1.HealthItem {
 	out := &v1.HealthItem{Key: item.Key, Severity: writeSeverity(item.Severity), Text: item.Text, Detail: item.Detail}
 	if item.Action != nil {
