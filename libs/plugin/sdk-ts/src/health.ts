@@ -36,7 +36,6 @@ export interface HealthHost {
   clear(key: string): Promise<void>
 }
 
-// SETTINGS_OPEN_COMMAND is the command that opens the settings of the plugin.
 export const SETTINGS_OPEN_COMMAND = 'app:settings.open'
 
 // openSettings is the action that opens the settings of the plugin, with the setting of the key

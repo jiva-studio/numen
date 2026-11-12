@@ -23,7 +23,6 @@ export interface WorkTask {
   }
   readonly isCancellable: boolean
   readonly kind: 'work' | 'notice'
-  /** The fix of a failed task, which the host runs by the id of the task. */
   readonly action?: BackgroundTaskAction | undefined
 }
 
