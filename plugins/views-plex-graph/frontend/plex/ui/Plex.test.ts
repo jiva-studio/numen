@@ -445,7 +445,7 @@ describe('the pill padding and the focus size, measured', () => {
   const getHeight = (plex: ReturnType<typeof mountPlex>, relation: string) =>
     Number(plex.get(`.plex__node--${relation} .plex__box`).attributes('height'))
 
-  const mountMeasured = (options: Record<string, unknown>) =>
+  const mountWithMeasure = (options: Record<string, unknown>) =>
     mountPlex({ neighborhood: ONE_CHILD, readType: readThemeType, options })
 
   afterEach(() => {
@@ -456,16 +456,16 @@ describe('the pill padding and the focus size, measured', () => {
 
   it('widens a box by twice the difference in Pill padding, sides', () => {
     stubCanvas()
-    const narrow = getWidth(mountMeasured({ padding: { inline: 4, block: 9.25 } }), 'child')
-    const wide = getWidth(mountMeasured({ padding: { inline: 20, block: 9.25 } }), 'child')
+    const narrow = getWidth(mountWithMeasure({ padding: { inline: 4, block: 9.25 } }), 'child')
+    const wide = getWidth(mountWithMeasure({ padding: { inline: 20, block: 9.25 } }), 'child')
 
     expect(wide - narrow).toBeCloseTo(32, 6)
   })
 
   it('grows a short focus title in width and height, and leaves the neighbor as it was', () => {
     stubCanvas()
-    const small = mountMeasured({ focusScale: 1 })
-    const large = mountMeasured({ focusScale: 2 })
+    const small = mountWithMeasure({ focusScale: 1 })
+    const large = mountWithMeasure({ focusScale: 2 })
 
     expect(getWidth(large, 'focus')).toBeCloseTo(2 * getWidth(small, 'focus'), 6)
     expect(getHeight(large, 'focus')).toBeCloseTo(2 * getHeight(small, 'focus'), 6)

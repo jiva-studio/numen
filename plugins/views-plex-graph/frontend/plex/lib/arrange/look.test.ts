@@ -9,7 +9,6 @@ import type { PlacedNode } from '../node'
 import type { PlexFrame } from '../frame'
 import type { PlexNeighborhood, PlexNode } from '../../../types'
 
-/** A title measured at seven pixels a character, inside forty pixels of padding and icon. */
 const byTitle = (node: PlexNode): number => 40 + node.title.length * 7
 
 const LARGE = { width: 1200, height: 800 }
@@ -94,7 +93,6 @@ const countOverlaps = (frame: PlexFrame): number =>
     0,
   )
 
-/** The empty space between each child and the next one on its line. */
 const getChildGaps = (frame: PlexFrame): number[] => {
   const children = frame.nodes.filter((node) => node.relation === 'child')
   const byLine = new Map<number, PlacedNode[]>()

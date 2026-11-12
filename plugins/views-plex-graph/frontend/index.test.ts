@@ -277,7 +277,7 @@ describe('the look of an open plex', () => {
     })
   })
 
-  it('hands the open plex the default look where nothing is set', async () => {
+  it('gives the open plex the default look where nothing is set', async () => {
     const { getPlex } = await openPlex()
 
     expect(getPlex().props('showPills')).toBe(true)
@@ -306,7 +306,7 @@ describe('the look of an open plex', () => {
     expect(tab.findAll('.plex__box').length).toBeGreaterThan(0)
   })
 
-  it('hands every changed setting to the plex that is already open', async () => {
+  it('passes every changed setting to the plex that is already open', async () => {
     const { ctx, getPlex } = await openPlex()
 
     ctx.setSetting('animationLength', 1000)
@@ -330,7 +330,7 @@ describe('the look of an open plex', () => {
     })
   })
 
-  it('hands the line thickness to the lines and the outline thickness to the pills, each its own', async () => {
+  it('passes the line thickness to the lines and the outline thickness to the pills', async () => {
     const { ctx, getPlex } = await openPlex({ lineThickness: 3, outlineThickness: 1 })
     expect([getPlex().props('lineWidth'), getPlex().props('outlineWidth')]).toStrictEqual([3, 1])
 
@@ -350,7 +350,7 @@ describe('the look of an open plex', () => {
     expect(getPlex().props('duration')).toBe(0)
   })
 
-  it('keeps the heading settings beside the look', async () => {
+  it('keeps the heading settings next to the look settings', async () => {
     const { ctx, state } = await openPlex({ showPills: false })
 
     ctx.setSetting('headingLimit', 3)
