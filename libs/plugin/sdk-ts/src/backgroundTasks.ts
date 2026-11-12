@@ -30,7 +30,6 @@ export interface BackgroundTask {
   readonly progress: BackgroundTaskProgress
   readonly error: string
   readonly allowed: BackgroundTaskAllowed
-  // The label of the fix a failed task offers; empty where it offers none.
   readonly actionLabel: string
 }
 

@@ -44,7 +44,6 @@ func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	}
 }
 
-// hasCode reports whether err is the failure of a call with the code, which prints the code first.
 func hasCode(err error, code rpcerror.Code) bool {
 	return err != nil && strings.HasPrefix(err.Error(), code.String()+": ")
 }

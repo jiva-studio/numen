@@ -1679,7 +1679,6 @@ func readVaultFile(t *testing.T, env vaulttest.Env, path string) string {
 
 func newSchedulerAt(retention float64) review.Scheduler { return review.NewFSRSAt(retention) }
 
-// newFakeClock is a clock that reports start until the test moves it.
 func newFakeClock(start time.Time) *clock.Fake {
 	source := new(clock.Fake)
 	source.Set(start)

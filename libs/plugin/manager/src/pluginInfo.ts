@@ -91,7 +91,6 @@ export interface PluginInfo {
   readonly readers?: readonly PluginReader[]
   readonly settingsViews?: readonly PluginSettingsViewInfo[]
   readonly contributions?: readonly PluginContribution[]
-  /** Whether the plugin is off while its settings hold no enabled value. */
   readonly isOffByDefault?: boolean
 }
 

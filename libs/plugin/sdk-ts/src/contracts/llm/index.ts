@@ -36,7 +36,6 @@ export const OPERATION_REASONING = 'llm.reasoning'
 export const OPTION_MODEL = 'model'
 export const OPTION_REASONING = 'reasoning'
 
-// collectCall reads a call to its end and returns its done payload, or the error of the call.
 const collectCall = async (
   host: ConnectionHost,
   operation: string,

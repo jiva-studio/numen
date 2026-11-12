@@ -399,12 +399,10 @@ func foldersOf(vault *hosttest.Vault) func(domain.VaultID) relevance.Records {
 	return func(id domain.VaultID) relevance.Records { return floorrecords.New(vault.Store().With(id)) }
 }
 
-// getReadyEvent is the event the host emits once the search source has indexed the vault.
 func getReadyEvent(vault string) string {
 	return "onSearchSourceReady:" + vault
 }
 
-// newFakeClock is a clock that reports start until the test moves it.
 func newFakeClock(start time.Time) *clock.Fake {
 	source := new(clock.Fake)
 	source.Set(start)

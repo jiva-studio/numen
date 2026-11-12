@@ -9,8 +9,8 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.agents.acp',
     name: 'ACP Agents',
-    version: '2026.11.15',
-    description: 'External AI assistants via the Agent Client Protocol: Claude Code, Codex, Antigravity and any other ACP program',
+    version: '2026.11.13',
+    description: 'External AI assistants via the Agent Client Protocol, such as Gemini CLI, OpenCode and Goose',
     isActive: true,
     hasFrontend: false,
     hasBackend: true,
@@ -37,16 +37,98 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
             detail: 'acp',
             keys: '',
           },
+        ],
+      },
+      {
+        kind: 'operations',
+        items: [
           {
-            text: 'Claude Code',
-            detail: 'claude-code',
+            text: 'run agent tasks',
+            detail: 'acp.task',
+            keys: '',
+          },
+        ],
+      },
+      {
+        kind: 'permissions',
+        items: [
+          {
+            text: 'link:open',
+            detail: '',
             keys: '',
           },
           {
-            text: 'OpenAI Codex',
-            detail: 'codex',
+            text: 'vault:read',
+            detail: '',
             keys: '',
           },
+          {
+            text: 'vault:write',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'vault:manage',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'window:focus',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'index:read',
+            detail: '',
+            keys: '',
+          },
+        ],
+      },
+      {
+        kind: 'services',
+        items: [
+          {
+            text: 'numen.v1.ProviderService',
+            detail: '',
+            keys: '',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'md.numen.agents.antigravity',
+    name: 'Antigravity Agent',
+    version: '2026.11.12',
+    description: 'Google Antigravity AI assistant for chat and note editing',
+    isActive: true,
+    hasFrontend: false,
+    hasBackend: true,
+    capabilities: [],
+    settings: [
+      {
+        key: 'executablePath',
+        type: 'file',
+        title: 'Executable Path',
+        description: 'Path to the Antigravity CLI executable. Empty finds it automatically.',
+        default: '',
+      },
+      {
+        key: 'requestTimeout',
+        type: 'number',
+        title: 'Request timeout',
+        description: 'Seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds.',
+        default: undefined,
+        min: 1,
+        max: 3600,
+        step: 1,
+      },
+    ],
+    settingsViews: [],
+    contributions: [
+      {
+        kind: 'connectionTypes',
+        items: [
           {
             text: 'Antigravity',
             detail: 'antigravity',
@@ -112,9 +194,210 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
     ],
   },
   {
+    id: 'md.numen.agents.claude',
+    name: 'Claude Code Agent',
+    version: '2026.11.11',
+    description: 'Anthropic Claude Code assistant for chat and note editing',
+    isActive: true,
+    hasFrontend: false,
+    hasBackend: true,
+    capabilities: [],
+    settings: [
+      {
+        key: 'executablePath',
+        type: 'file',
+        title: 'Executable Path',
+        description: 'Path to the Claude Code CLI executable. Empty finds it automatically.',
+        default: '',
+      },
+      {
+        key: 'readsHooksAndSkills',
+        type: 'boolean',
+        title: 'Hooks & skills',
+        description: 'Let Claude Code read the hooks, skills, standing instructions in CLAUDE.md and plugins configured for this person. Off. A hook is a shell command Claude Code runs itself. What a vault contains is never read.',
+        default: false,
+      },
+      {
+        key: 'requestTimeout',
+        type: 'number',
+        title: 'Request timeout',
+        description: 'Seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds.',
+        default: undefined,
+        min: 1,
+        max: 3600,
+        step: 1,
+      },
+    ],
+    settingsViews: [],
+    contributions: [
+      {
+        kind: 'connectionTypes',
+        items: [
+          {
+            text: 'Claude Code',
+            detail: 'claude-code',
+            keys: '',
+          },
+        ],
+      },
+      {
+        kind: 'operations',
+        items: [
+          {
+            text: 'run agent tasks',
+            detail: 'acp.task',
+            keys: '',
+          },
+        ],
+      },
+      {
+        kind: 'permissions',
+        items: [
+          {
+            text: 'link:open',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'vault:read',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'vault:write',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'vault:manage',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'window:focus',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'index:read',
+            detail: '',
+            keys: '',
+          },
+        ],
+      },
+      {
+        kind: 'services',
+        items: [
+          {
+            text: 'numen.v1.ProviderService',
+            detail: '',
+            keys: '',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'md.numen.agents.codex',
+    name: 'OpenAI Codex Agent',
+    version: '2026.11.12',
+    description: 'OpenAI Codex assistant for chat and note editing',
+    isActive: true,
+    hasFrontend: false,
+    hasBackend: true,
+    capabilities: [],
+    settings: [
+      {
+        key: 'executablePath',
+        type: 'file',
+        title: 'Executable Path',
+        description: 'Path to the OpenAI Codex CLI executable. Empty finds it automatically.',
+        default: '',
+      },
+      {
+        key: 'requestTimeout',
+        type: 'number',
+        title: 'Request timeout',
+        description: 'Seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds.',
+        default: undefined,
+        min: 1,
+        max: 3600,
+        step: 1,
+      },
+    ],
+    settingsViews: [],
+    contributions: [
+      {
+        kind: 'connectionTypes',
+        items: [
+          {
+            text: 'OpenAI Codex',
+            detail: 'codex',
+            keys: '',
+          },
+        ],
+      },
+      {
+        kind: 'operations',
+        items: [
+          {
+            text: 'run agent tasks',
+            detail: 'acp.task',
+            keys: '',
+          },
+        ],
+      },
+      {
+        kind: 'permissions',
+        items: [
+          {
+            text: 'link:open',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'vault:read',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'vault:write',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'vault:manage',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'window:focus',
+            detail: '',
+            keys: '',
+          },
+          {
+            text: 'index:read',
+            detail: '',
+            keys: '',
+          },
+        ],
+      },
+      {
+        kind: 'services',
+        items: [
+          {
+            text: 'numen.v1.ProviderService',
+            detail: '',
+            keys: '',
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: 'md.numen.agents.mcp.server',
     name: 'Model Context Protocol Server',
-    version: '2026.11.16',
+    version: '2026.11.14',
     description: 'Connects external AI apps to your open vault',
     isActive: true,
     hasFrontend: false,
@@ -201,7 +484,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.agents.numen',
     name: 'Numen Agent',
-    version: '2026.11.13',
+    version: '2026.11.11',
     description: 'Built-in AI assistant that chats through a connection to OpenRouter, OpenAI or an OpenAI-compatible server',
     isActive: true,
     hasFrontend: false,
@@ -403,7 +686,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.connections.llm',
     name: 'Language model services',
-    version: '2026.11.3',
+    version: '2026.11.1',
     description: 'Connects Numen to OpenRouter, OpenAI and OpenAI-compatible servers for completions, chat and embeddings',
     isActive: true,
     hasFrontend: false,
@@ -493,7 +776,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.engines.embeddings',
     name: 'Vector Embeddings',
-    version: '2026.11.14',
+    version: '2026.11.13',
     description: 'Meaning-based search across your notes, books, and recordings',
     isActive: true,
     hasFrontend: false,
@@ -628,7 +911,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.engines.ocr',
     name: 'Document OCR',
-    version: '2026.11.20',
+    version: '2026.11.18',
     description: 'Text recognition for scanned PDFs and images',
     isActive: true,
     hasFrontend: false,
@@ -882,7 +1165,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.engines.transcription',
     name: 'Audio/Video Transcription',
-    version: '2026.11.20',
+    version: '2026.11.18',
     description: 'Offline speech-to-text transcription for audio and video recordings',
     isActive: true,
     hasFrontend: false,
@@ -1050,7 +1333,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.notes',
     name: 'Notes',
-    version: '2026.11.9',
+    version: '2026.11.10',
     description: 'Markdown note editor with live formatting and wikilinks',
     isActive: true,
     hasFrontend: true,
@@ -1139,7 +1422,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.readers.epub',
     name: 'EPUB Book Reader',
-    version: '2026.11.16',
+    version: '2026.11.17',
     description: 'EPUB book reader with highlights and passage links',
     isActive: true,
     hasFrontend: true,
@@ -1485,7 +1768,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.tools.media.importer',
     name: 'Media Importer',
-    version: '2026.11.19',
+    version: '2026.11.17',
     description: 'Saves web articles and downloads online videos for offline playback',
     isActive: true,
     hasFrontend: true,
@@ -1690,7 +1973,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.tools.proofreading',
     name: 'LLM Proofreading',
-    version: '2026.11.12',
+    version: '2026.11.11',
     description: 'Cleans up transcripts and scanned text with a language model',
     isActive: true,
     hasFrontend: false,
@@ -1789,7 +2072,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.tools.search.relevance',
     name: 'Search Relevance',
-    version: '2026.11.8',
+    version: '2026.11.9',
     description: 'Sets how similar a note must be to your search to appear in the results',
     isActive: true,
     hasFrontend: true,
@@ -1848,7 +2131,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.tools.updater',
     name: 'Update Notifier',
-    version: '2026.11.11',
+    version: '2026.11.10',
     description: 'Notifies when a newer build of Numen is published',
     isActive: true,
     hasFrontend: true,
@@ -2032,7 +2315,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.views.file.tree',
     name: 'File Tree Explorer',
-    version: '2026.11.16',
+    version: '2026.11.17',
     description: 'Sidebar file browser for managing notes, books, and recordings',
     isActive: true,
     hasFrontend: true,
@@ -2141,7 +2424,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.views.flashcards.studio',
     name: 'Flashcards Studio',
-    version: '2026.11.20',
+    version: '2026.11.18',
     description: 'Flashcard deck editor, card template designer, and spaced-repetition review',
     isActive: true,
     hasFrontend: true,
@@ -2381,7 +2664,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.views.plex.graph',
     name: 'Plex Graph',
-    version: '2026.11.20',
+    version: '2026.11.19',
     description: 'Interactive visual map of connected notes and topics',
     isActive: true,
     hasFrontend: true,
@@ -2639,7 +2922,7 @@ export const SHIPPED_PLUGINS: readonly PluginInfo[] = [
   {
     id: 'md.numen.views.statusBar',
     name: 'Status bar',
-    version: '2026.11.5',
+    version: '2026.11.4',
     description: 'The bar at the bottom of the window with plugin commands',
     isActive: true,
     hasFrontend: true,
@@ -2793,8 +3076,38 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.agents.acp',
     name: 'ACP Agents',
-    version: '2026.11.15',
-    description: 'External AI assistants via the Agent Client Protocol: Claude Code, Codex, Antigravity and any other ACP program',
+    version: '2026.11.13',
+    description: 'External AI assistants via the Agent Client Protocol, such as Gemini CLI, OpenCode and Goose',
+    category: 'agents',
+    feature: '',
+    tabKinds: [],
+    isAvailable: false,
+  },
+  {
+    id: 'md.numen.agents.antigravity',
+    name: 'Antigravity Agent',
+    version: '2026.11.12',
+    description: 'Google Antigravity AI assistant for chat and note editing',
+    category: 'agents',
+    feature: '',
+    tabKinds: [],
+    isAvailable: false,
+  },
+  {
+    id: 'md.numen.agents.claude',
+    name: 'Claude Code Agent',
+    version: '2026.11.11',
+    description: 'Anthropic Claude Code assistant for chat and note editing',
+    category: 'agents',
+    feature: '',
+    tabKinds: [],
+    isAvailable: false,
+  },
+  {
+    id: 'md.numen.agents.codex',
+    name: 'OpenAI Codex Agent',
+    version: '2026.11.12',
+    description: 'OpenAI Codex assistant for chat and note editing',
     category: 'agents',
     feature: '',
     tabKinds: [],
@@ -2803,7 +3116,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.agents.mcp.server',
     name: 'Model Context Protocol Server',
-    version: '2026.11.16',
+    version: '2026.11.14',
     description: 'Connects external AI apps to your open vault',
     category: 'agents',
     feature: '',
@@ -2813,7 +3126,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.agents.numen',
     name: 'Numen Agent',
-    version: '2026.11.13',
+    version: '2026.11.11',
     description: 'Built-in AI assistant that chats through a connection to OpenRouter, OpenAI or an OpenAI-compatible server',
     category: 'agents',
     feature: '',
@@ -2843,7 +3156,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.connections.llm',
     name: 'Language model services',
-    version: '2026.11.3',
+    version: '2026.11.1',
     description: 'Connects Numen to OpenRouter, OpenAI and OpenAI-compatible servers for completions, chat and embeddings',
     category: 'connections',
     feature: '',
@@ -2853,7 +3166,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.engines.embeddings',
     name: 'Vector Embeddings',
-    version: '2026.11.14',
+    version: '2026.11.13',
     description: 'Meaning-based search across your notes, books, and recordings',
     category: 'engines',
     feature: '',
@@ -2863,7 +3176,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.engines.ocr',
     name: 'Document OCR',
-    version: '2026.11.20',
+    version: '2026.11.18',
     description: 'Text recognition for scanned PDFs and images',
     category: 'engines',
     feature: '',
@@ -2873,7 +3186,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.engines.transcription',
     name: 'Audio/Video Transcription',
-    version: '2026.11.20',
+    version: '2026.11.18',
     description: 'Offline speech-to-text transcription for audio and video recordings',
     category: 'engines',
     feature: '',
@@ -2883,7 +3196,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.notes',
     name: 'Notes',
-    version: '2026.11.9',
+    version: '2026.11.10',
     description: 'Markdown note editor with live formatting and wikilinks',
     category: 'views',
     feature: 'Markdown notes',
@@ -2893,7 +3206,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.readers.epub',
     name: 'EPUB Book Reader',
-    version: '2026.11.16',
+    version: '2026.11.17',
     description: 'EPUB book reader with highlights and passage links',
     category: 'readers',
     feature: 'EPUB books',
@@ -2933,7 +3246,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.tools.media.importer',
     name: 'Media Importer',
-    version: '2026.11.19',
+    version: '2026.11.17',
     description: 'Saves web articles and downloads online videos for offline playback',
     category: 'tools',
     feature: 'media links',
@@ -2943,7 +3256,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.tools.proofreading',
     name: 'LLM Proofreading',
-    version: '2026.11.12',
+    version: '2026.11.11',
     description: 'Cleans up transcripts and scanned text with a language model',
     category: 'tools',
     feature: '',
@@ -2953,7 +3266,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.tools.search.relevance',
     name: 'Search Relevance',
-    version: '2026.11.8',
+    version: '2026.11.9',
     description: 'Sets how similar a note must be to your search to appear in the results',
     category: 'tools',
     feature: '',
@@ -2963,7 +3276,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.tools.updater',
     name: 'Update Notifier',
-    version: '2026.11.11',
+    version: '2026.11.10',
     description: 'Notifies when a newer build of Numen is published',
     category: 'tools',
     feature: '',
@@ -2983,7 +3296,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.views.file.tree',
     name: 'File Tree Explorer',
-    version: '2026.11.16',
+    version: '2026.11.17',
     description: 'Sidebar file browser for managing notes, books, and recordings',
     category: 'views',
     feature: 'file tree',
@@ -2993,7 +3306,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.views.flashcards.studio',
     name: 'Flashcards Studio',
-    version: '2026.11.20',
+    version: '2026.11.18',
     description: 'Flashcard deck editor, card template designer, and spaced-repetition review',
     category: 'views',
     feature: 'flashcards',
@@ -3013,7 +3326,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.views.plex.graph',
     name: 'Plex Graph',
-    version: '2026.11.20',
+    version: '2026.11.19',
     description: 'Interactive visual map of connected notes and topics',
     category: 'views',
     feature: 'plex graph',
@@ -3023,7 +3336,7 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
   {
     id: 'md.numen.views.statusBar',
     name: 'Status bar',
-    version: '2026.11.5',
+    version: '2026.11.4',
     description: 'The bar at the bottom of the window with plugin commands',
     category: 'views',
     feature: '',
@@ -3053,7 +3366,10 @@ export const SHIPPED_CATALOG: readonly CatalogEntry[] = [
 ]
 
 export const SHIPPED_READMES: Readonly<Record<string, string>> = {
-  'md.numen.agents.acp': '# ACP Agents\n\nUse the AI assistants installed on your computer, such as Claude Code, Codex and Antigravity, in the Agent Chat panel and for AI tasks across your vault.\n\n<!-- more -->\n\n## What You Can Do\n\n- **Chat with your favorite AI tools**: Add a connection of the type Claude Code, OpenAI Codex, Antigravity or ACP agent, and choose it as an agent of the chat. The assistant answers in the chat as it writes.\n- **Work directly with your vault**: The assistant can call the tools of your vault, such as searching your notes and reading passages from books and documents. It may call these tools and no others: it reads no file of your computer, runs no command, and of its own tools Claude Code keeps web search alone.\n- **Continue a conversation**: The turns of one chat continue one session of the assistant. A session unused for 30 minutes is closed, and at most 8 are kept.\n- **Any ACP assistant**: The type ACP agent runs any program that implements the Agent Client Protocol, such as `gemini --acp`, `opencode acp`, `cursor-agent acp`, `goose acp`, `kimi acp` and `qwen --acp`. Choose the program of the connection.\n- **Answer requests of other plugins**: A request of another plugin runs in an empty temporary folder, with no tools and without writing to disk.\n\n## Programs\n\nClaude Code, Codex and Antigravity support ACP through an adapter. Leave the program of the connection empty to use the one on your PATH:\n\n- Claude Code: `claude-agent-acp` (npm `@agentclientprotocol/claude-agent-acp`) or `claude-code-acp`.\n- Codex: `codex-acp`.\n- Antigravity: `agy`, started as `agy acp`.\n\n## Settings\n\n- **Request timeout**: Seconds to wait for the program to answer a request from a connection, or to open the session of a task. Without a value, it waits 120 seconds.\n',
+  'md.numen.agents.acp': '# ACP Agents\n\nUse the AI assistants installed on your computer that implement the Agent Client Protocol, such as Gemini CLI, OpenCode, Goose, Cursor Agent, Kimi and Qwen Code, in the Agent Chat panel and for AI tasks across your vault.\n\n<!-- more -->\n\n## What You Can Do\n\n- **Chat with your favorite AI tools**: Add a connection of the type ACP agent, choose its program, and choose the connection as an agent of the chat. The assistant answers in the chat as it writes.\n- **Work directly with your vault**: The assistant can call the tools of your vault, such as searching your notes and reading passages from books and documents. It may call these tools and no others: it reads no file of your computer and runs no command.\n- **Continue a conversation**: The turns of one chat continue one session of the assistant. A session unused for 30 minutes is closed, and at most 8 are kept.\n- **Any ACP assistant**: The connection runs any program that implements the Agent Client Protocol, such as `gemini --acp`, `opencode acp`, `cursor-agent acp`, `goose acp`, `kimi acp` and `qwen --acp`.\n- **Answer requests of other plugins**: A request of another plugin runs in an empty temporary folder, with no tools and without writing to disk.\n\nClaude Code, Codex and Antigravity have plugins of their own: Claude Code Agent, OpenAI Codex Agent and Antigravity Agent.\n\n## Settings\n\n- **Request timeout**: Seconds to wait for the program to answer a request from a connection, or to open the session of a task. Without a value, it waits 120 seconds.\n',
+  'md.numen.agents.antigravity': '# Antigravity Agent\n\nUse Google Antigravity (`agy`) installed on your computer to chat with your vault, search your library, and draft or edit notes.\n\n<!-- more -->\n\n## What You Can Do\n\n- **Chat in the Agent Chat panel**: Add a connection of the type Antigravity, choose its model and level of reasoning in a row of the Agents setting of Agent Chat, and the assistant answers in the chat as it writes.\n- **Ask questions about your library**: Chat with Gemini models through your local Antigravity setup to explore notes, books, PDFs, and recordings with the tools of your vault.\n- **Continue a conversation**: The turns of one chat continue one conversation of Antigravity.\n- **Answer requests of other plugins**: A request from a connection runs the program with no tools, in an empty folder.\n\n## Settings\n\n- **Executable path**: Choose where the `agy` program is located on your computer if it is not found automatically.\n- **Request timeout**: Seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds.\n',
+  'md.numen.agents.claude': '# Claude Code Agent\n\nUse Anthropic Claude Code (`claude`) installed on your computer to answer questions about your vault, summarize sources, and help write notes.\n\n<!-- more -->\n\n## What You Can Do\n\n- **Chat in the Agent Chat panel**: Add a connection of the type Claude Code, choose its model and level of reasoning in a row of the Agents setting of Agent Chat, and Claude answers in the chat as it writes.\n- **Research across your vault**: Use Claude Opus, Sonnet, or Haiku through your Claude Code subscription to search notes, books, and transcripts. Claude Code may call the tools of your vault and the web search; it reads no file of your computer and runs no command.\n- **Continue a conversation**: The turns of one chat continue one session of Claude Code.\n- **Answer requests of other plugins**: A request from a connection runs the program with no tools and without writing to disk.\n\n## Settings\n\n- **Executable path**: Choose the location of the `claude` program on your computer if it is installed in a custom folder.\n- **Hooks & skills**: Allow Claude Code to read your own hooks, skills, standing instructions and plugins. Off by default. What a vault contains is never read.\n- **Request timeout**: Seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds.\n',
+  'md.numen.agents.codex': '# OpenAI Codex Agent\n\nUse the OpenAI Codex assistant (`codex`) installed on your computer to explore your vault, answer questions, and help write notes.\n\n<!-- more -->\n\n## What You Can Do\n\n- **Chat with OpenAI models**: Add a connection of the type OpenAI Codex, choose its model and level of reasoning in a row of the Agents setting of Agent Chat, and Codex answers in the chat.\n- **Search and edit notes**: Let the assistant look up passages across your books and notes and work on them through the tools of your vault.\n- **Answer requests of other plugins**: A request from a connection runs the program with no tools and without writing to disk.\n\n## Settings\n\n- **Executable path**: Select the `codex` program on your computer if it is not detected automatically.\n- **Request timeout**: Seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds.\n',
   'md.numen.agents.mcp.server': '# Model Context Protocol Server\n\nLet external AI apps—such as Claude Desktop, Cursor, or Windsurf—read, search, and work with your open Numen vault.\n\n<!-- more -->\n\n## What You Can Do\n\n- **Use your vault from other AI apps**: Ask an external AI assistant to search your notes, read passages from your books, or create new notes while you work in another app.\n- **Same vault**: Changes and searches apply to the vault that is open in Numen.\n\n## How to Connect\n\nWhile the plugin is enabled, Numen listens on `127.0.0.1` at the plugin\'s **Port** setting (default `3333`), listens on the new port when the setting changes, and starts the MCP server when a client connects:\n\n- **Streamable HTTP endpoint**: `http://127.0.0.1:3333/mcp`\n\nA client authenticates with the header `Authorization: Bearer <token>`, where `<token>` is the value of the plugin\'s **Token** setting on its page in the settings. Numen generates the token, 64 hexadecimal characters, when it first loads the enabled plugin; copy it from the setting into the client configuration. You can replace it with a token of your own, and while the setting is empty the server returns 401 for every request. A changed token takes effect at once. A request sent from a web page whose origin is not `localhost` or a loopback address gets 403.\n\n### Example JSON Configuration (`mcpServers`)\n\nAdd the following entry to your client\'s MCP configuration file (such as `claude_desktop_config.json`, `.cursor/mcp.json`, or `~/.codeium/windsurf/mcp_config.json`), with your token in place of `<token>`:\n\n```json\n{\n  "mcpServers": {\n    "numen": {\n      "type": "http",\n      "url": "http://127.0.0.1:3333/mcp",\n      "headers": { "Authorization": "Bearer <token>" }\n    }\n  }\n}\n```\n',
   'md.numen.agents.numen': '# Numen Agent\n\nBuilt-in AI assistant that chats through a connection to a cloud service (OpenRouter, OpenAI) or to a server on your computer (Ollama, LM Studio).\n\n<!-- more -->\n\n## What You Can Do\n\n- **Chat and research immediately**: Add a connection in Settings, choose it in the Connection setting of this plugin, add a connection of the type Numen agent, choose it in the Agents setting of the agent chat, and start chatting with your vault.\n- **Pick the model**: The row of the setting holds the connection, the model and the reasoning level. The models of the connection are listed, and you can type any model name yourself.\n- **Full vault access**: Can search your notes and books, follow links, and suggest edits in your workspace, with the tools of the other plugins that its permissions allow.\n\n## Settings\n\n- **Parallel requests** (on the Numen agent connection): How many tasks of the connection run at once (1 by default).\n- **Connection**: One row with the connection to chat through, the model and the reasoning level. Only connections that support chat are offered. The address and the key belong to the connection.\n- **Temperature**: How creative or focused the replies should be (`0.0` is more focused, `1.0` is more creative).\n- **Max tokens**: The maximum length of each reply.\n- **Max steps**: How many requests to the model one task may make before it is stopped (25 by default).\n',
   'md.numen.agents.tools.vault': "# Vault Knowledge Tools\n\nAllows AI assistants in Numen to search your library, read notes and books, create or update notes, and explore links between ideas.\n\n<!-- more -->\n\n## What It Enables\n\n- **Smart library search**: Lets the assistant find relevant passages across your notes, books, PDFs, and transcripts—both by exact words and by meaning.\n- **Reading and quoting sources**: Allows the assistant to open specific pages or timestamps so its answers include clickable links back to the original passage.\n- **Creating and organizing notes**: Lets the assistant draft new notes, update existing ones, and connect related notes with links.\n- **Viewing the link graph**: Helps the assistant see which notes link to each other and discover isolated or unlinked notes.\n- **Managing notes and vaults**: Lets the assistant rename and move notes, move them to the vault's trash, change the links in their frontmatter, and add, rename, remove and open vaults.\n",

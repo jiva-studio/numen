@@ -19,8 +19,6 @@ import (
 
 const testToken = "plugin-token"
 
-// startPlugin serves Mount, which reads the host from the environment as a launched process of the
-// plugin does, and returns the address of the plugin.
 func startPlugin(t *testing.T) string {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, "4000")

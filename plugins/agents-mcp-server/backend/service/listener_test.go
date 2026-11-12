@@ -38,8 +38,6 @@ func (b *lockedBuffer) String() string {
 	return b.buf.String()
 }
 
-// serveMounted serves Mount as a launched process of the plugin: the server reads its token from the
-// standard input and writes the ready line to the standard output, which the test holds while New runs.
 func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 	t.Helper()
 	t.Setenv("NUMEN_HOST_PORT", "")

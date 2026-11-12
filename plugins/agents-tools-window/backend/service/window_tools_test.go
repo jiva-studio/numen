@@ -368,7 +368,6 @@ func TestWindowTabListPrefersWindowTabsToTheCallFocus(t *testing.T) {
 	}
 }
 
-// newFakeClock is a clock that reports start until the test moves it.
 func newFakeClock(start time.Time) *clock.Fake {
 	source := new(clock.Fake)
 	source.Set(start)

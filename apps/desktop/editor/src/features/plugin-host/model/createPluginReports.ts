@@ -5,10 +5,6 @@ import type { MessageLog } from '@/shared/model/notices/messages'
 /** The name a call to the core gives its errors, whose text formatError replaces by the code's. */
 const CONNECT_ERROR = 'ConnectError'
 
-/**
- * Why a plugin did not start. A plain Error comes from the loader or from the plugin bundle and
- * keeps its message; formatError would show it as a lost connection.
- */
 const formatLoadError = (error: Caught): string =>
   error instanceof Error && error.name !== CONNECT_ERROR && error.message.trim() !== ''
     ? error.message.trim()

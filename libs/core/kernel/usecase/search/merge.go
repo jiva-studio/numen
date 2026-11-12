@@ -49,7 +49,6 @@ type passageID struct {
 	start, length int
 }
 
-// getLeadingSections gets, per source, the first passage the leading rankings place.
 func getLeadingSections(rankings []Ranking) map[string]domain.Passage {
 	sections := map[string]domain.Passage{}
 	for _, ranking := range rankings {

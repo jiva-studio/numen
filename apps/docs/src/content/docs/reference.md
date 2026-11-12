@@ -47,6 +47,34 @@ The settings of the plugin ACP Agents.
 | --- | --- | --- |
 | `requestTimeout` | a number | seconds to wait for an answer or a new session; empty waits 120. From 1 to 3600. |
 
+### `md.numen.agents.antigravity`
+
+The settings of the plugin Antigravity Agent.
+
+| | | |
+| --- | --- | --- |
+| `executablePath` | text | path to the Antigravity CLI executable. Empty finds it automatically. |
+| `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
+
+### `md.numen.agents.claude`
+
+The settings of the plugin Claude Code Agent.
+
+| | | |
+| --- | --- | --- |
+| `executablePath` | text | path to the Claude Code CLI executable. Empty finds it automatically. |
+| `readsHooksAndSkills` | yes or no | let Claude Code read the hooks, skills, standing instructions in CLAUDE.md and plugins configured for this person. Off. A hook is a shell command Claude Code runs itself. What a vault contains is never read. |
+| `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
+
+### `md.numen.agents.codex`
+
+The settings of the plugin OpenAI Codex Agent.
+
+| | | |
+| --- | --- | --- |
+| `executablePath` | text | path to the OpenAI Codex CLI executable. Empty finds it automatically. |
+| `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
+
 ### `md.numen.agents.mcp.server`
 
 The settings of the plugin Model Context Protocol Server.

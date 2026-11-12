@@ -74,7 +74,6 @@ func (u *Report) checkAction(pluginID string, action *plugin.HealthAction) (*plu
 	return &checked, nil
 }
 
-// listActionIssues gives an app:open-settings action the plugin it opens the settings of.
 func (u *Report) listActionIssues(pluginID string, checked *plugin.HealthAction) ([]error, error) {
 	if !strings.HasPrefix(checked.Command, "app:") {
 		command, isOwn := u.findOwnCommand(pluginID, checked.Command)

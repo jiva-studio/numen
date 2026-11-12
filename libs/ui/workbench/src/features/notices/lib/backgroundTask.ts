@@ -49,7 +49,6 @@ export interface BackgroundTask {
   }
   readonly error: string
   readonly allowed: { readonly cancel: boolean; readonly retry: boolean }
-  /** The label of the fix a failed task offers; empty where it offers none. */
   readonly actionLabel: string
 }
 

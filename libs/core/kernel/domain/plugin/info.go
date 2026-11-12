@@ -19,19 +19,18 @@ const (
 
 // Info describes a discovered plugin and its declarative settings.
 type Info struct {
-	ID            string
-	Name          string
-	Version       string
-	Description   string
-	Capabilities  []string
-	Settings      []Setting
-	IsActive      bool
-	Permissions   []string
-	HasFrontend   bool
-	HasBackend    bool
-	Readers       []ReaderInfo
-	SettingsViews []manifest.SettingsView
-	Contributions []Contribution
-	// IsOffByDefault keeps the plugin off until the person enables it.
+	ID             string
+	Name           string
+	Version        string
+	Description    string
+	Capabilities   []string
+	Settings       []Setting
+	IsActive       bool
+	Permissions    []string
+	HasFrontend    bool
+	HasBackend     bool
+	Readers        []ReaderInfo
+	SettingsViews  []manifest.SettingsView
+	Contributions  []Contribution
 	IsOffByDefault bool
 }

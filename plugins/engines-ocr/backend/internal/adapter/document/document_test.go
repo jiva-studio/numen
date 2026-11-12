@@ -131,7 +131,6 @@ func TestOpenRejectsInvalidBytes(t *testing.T) {
 	}
 }
 
-// closeAndCheck closes c and fails the test when closing returns an error.
 func closeAndCheck(tb testing.TB, c io.Closer) {
 	tb.Helper()
 	if err := c.Close(); err != nil {

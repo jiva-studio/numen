@@ -130,7 +130,6 @@ const APP_SETTINGS: Installation['plugin']['app'] = ref([
   },
 ])
 
-/** The host decides which settings a condition shows; this does it against the values held. */
 const withShownSettings = (plugin: PluginInfo): PluginInfo => {
   const valueOf = (key: string) =>
     VALUES.get(`${plugin.id}/${key}`) ?? plugin.settings.find((one) => one.key === key)?.default
@@ -156,7 +155,6 @@ const createShippedInstallation = (): Installation =>
     items: ref(HEALTH),
   })
 
-/** The settings tab opened on the list. */
 const drawSettings = () =>
   window(
     SETTINGS,
