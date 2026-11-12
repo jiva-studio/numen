@@ -169,15 +169,7 @@ enum HostVaultErrorCode {
   // The path is not a note this vault holds.
   HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;
 
-  // The connection is not one: a role no connection carries, roles that are not
-  // inverse of each other, or a note joined to itself.
-  HOST_VAULT_ERROR_CODE_INVALID_CONNECTION = 9;
-
-  // The connection would put a note above itself in the hierarchy.
-  HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE = 10;
-
-  // Every numbered "Untitled note N" name is taken.
-  HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED = 11;
+  reserved 9 to 11;
 
   // The file is not valid note text.
   HOST_VAULT_ERROR_CODE_NOT_TEXT = 12;
