@@ -6,9 +6,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"slices"
 	"strings"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 )
 
 func getCodexPlaces() []string {
@@ -27,10 +27,10 @@ func getCodexPlaces() []string {
 // IsCodexInstalled checks whether OpenAI Codex CLI is available on this machine.
 func IsCodexInstalled(customPath ...string) bool {
 	if len(customPath) > 0 && customPath[0] != "" {
-		return agentrun.IsRunnable(customPath[0])
+		return isRunnable(customPath[0])
 	}
 	p := FindCodex()
-	return agentrun.IsRunnable(p)
+	return isRunnable(p)
 }
 
 // FindCodex returns the path of the Codex CLI, or the bare name where not found.
@@ -39,7 +39,7 @@ func FindCodex(customPath ...string) string {
 }
 
 func findCodexIn(places []string, customPath ...string) string {
-	if len(customPath) > 0 && agentrun.IsRunnable(customPath[0]) {
+	if len(customPath) > 0 && isRunnable(customPath[0]) {
 		return customPath[0]
 	}
 	if found, err := exec.LookPath("codex"); err == nil {
@@ -54,7 +54,7 @@ func findCodexIn(places []string, customPath ...string) string {
 		if rest, ok := strings.CutPrefix(p, "~/"); ok && home != "" {
 			resolved = filepath.Join(home, rest)
 		}
-		if agentrun.IsRunnable(resolved) {
+		if isRunnable(resolved) {
 			return resolved
 		}
 	}
@@ -67,4 +67,25 @@ type Installation struct{}
 // IsInstalled reports whether the CLI is runnable, at path when given, or where it is found.
 func (Installation) IsInstalled(path string) bool {
 	return IsCodexInstalled(path)
+}
+
+// Find returns the program: the custom path when it is runnable, else the Codex found on this machine,
+// else none.
+func (Installation) Find(customPath string) string {
+	if !IsCodexInstalled(customPath) {
+		return ""
+	}
+	return FindCodex(customPath)
+}
+
+// isRunnable reports whether path is an executable file.
+func isRunnable(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil || info.IsDir() {
+		return false
+	}
+	if runtime.GOOS == "windows" {
+		return slices.Contains([]string{".exe", ".cmd", ".bat"}, strings.ToLower(filepath.Ext(path)))
+	}
+	return info.Mode()&0o111 != 0
 }

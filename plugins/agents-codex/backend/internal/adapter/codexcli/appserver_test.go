@@ -15,8 +15,6 @@ import (
 	"syscall"
 	"testing"
 	"time"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
 )
 
 func TestAskCodexModelsWithEmptyCommand(t *testing.T) {
@@ -28,10 +26,10 @@ func TestAskCodexModelsWithEmptyCommand(t *testing.T) {
 }
 
 func TestAskCodexModelsCommandArguments(t *testing.T) {
-	agenttest.NeedsShell(t)
+	needsShell(t)
 	out := filepath.Join(t.TempDir(), "args")
-	script := agenttest.WriteScript(t, "codex",
-		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+agenttest.QuoteShell(out)+"\n"+
+	script := writeScript(t, "codex",
+		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+quoteShell(out)+"\n"+
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"m1"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
@@ -56,8 +54,8 @@ func TestAskCodexModelsCommandArguments(t *testing.T) {
 // A program that exits as soon as it has listed its models is not reported as killed: on macOS the
 // kill of its exited process group fails.
 func TestACodexThatExitsAfterListingItsModelsListsThem(t *testing.T) {
-	agenttest.NeedsShell(t)
-	script := agenttest.WriteScript(t, "codex",
+	needsShell(t)
+	script := writeScript(t, "codex",
 		"read -r _\n"+
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			"read -r _\nread -r _\n"+
@@ -81,10 +79,10 @@ func TestAskCodexModelsStartFailure(t *testing.T) {
 }
 
 func TestAskCodexModelsStopsCommand(t *testing.T) {
-	agenttest.NeedsShell(t)
+	needsShell(t)
 	pidFile := filepath.Join(t.TempDir(), "pid")
-	script := agenttest.WriteScript(t, "codex",
-		fmt.Sprintf("echo $$ > %s\n", agenttest.QuoteShell(pidFile))+
+	script := writeScript(t, "codex",
+		fmt.Sprintf("echo $$ > %s\n", quoteShell(pidFile))+
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"m1"}]}}'`+"\n"+
 			"while :; do sleep 0.05; done\n")

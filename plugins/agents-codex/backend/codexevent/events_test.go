@@ -1,71 +1,122 @@
 package codexevent
 
 import (
+	"errors"
+	"slices"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 )
 
-type collector struct {
-	steps []*agentrun.Response
+// recorder is a sink that writes down each report as one line.
+type recorder struct {
+	reports []string
+	refusal error
 }
 
-func (c *collector) Send(resp *agentrun.Response) { c.steps = append(c.steps, resp) }
+func (r *recorder) SendText(text string) error {
+	r.reports = append(r.reports, "text "+text)
+	return r.refusal
+}
+
+func (r *recorder) SendToolCall(id, tool, arguments string) error {
+	r.reports = append(r.reports, "call "+id+" "+tool+" "+arguments)
+	return r.refusal
+}
+
+func (r *recorder) SendToolResult(id string, isFailed bool) error {
+	state := "done"
+	if isFailed {
+		state = "failed"
+	}
+	r.reports = append(r.reports, "result "+id+" "+state)
+	return r.refusal
+}
+
+func handleAll(t *testing.T, sink *recorder, events ...map[string]any) {
+	t.Helper()
+	for _, one := range events {
+		if err := Handle(sink, one); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
 
 func TestAnAgentMessageBecomesText(t *testing.T) {
-	var sink collector
+	var sink recorder
 
-	Handle(&sink, map[string]any{"type": "item.completed", "item": map[string]any{"type": "agent_message", "text": "The answer."}})
-	Handle(&sink, map[string]any{"type": "item.completed", "item": map[string]any{"type": "agent_message", "text": ""}})
+	handleAll(t, &sink,
+		map[string]any{"type": "item.completed", "item": map[string]any{"type": "agent_message", "text": "The answer."}},
+		map[string]any{"type": "item.completed", "item": map[string]any{"type": "agent_message", "text": ""}},
+	)
 
-	if len(sink.steps) != 1 || sink.steps[0].GetText() != "The answer." {
-		t.Errorf("steps %v", sink.steps)
+	if !slices.Equal(sink.reports, []string{"text The answer."}) {
+		t.Errorf("reports %q", sink.reports)
 	}
 }
 
 func TestAToolCallStartsAndFinishes(t *testing.T) {
-	var sink collector
+	var sink recorder
 
-	Handle(&sink, map[string]any{"type": "item.started", "item": map[string]any{
-		"type": "mcp_tool_call", "name": "read_note", "arguments": map[string]any{"path": "a.md"},
-	}})
-	Handle(&sink, map[string]any{"type": "item.completed", "item": map[string]any{"type": "mcp_tool_call"}})
+	handleAll(t, &sink,
+		map[string]any{"type": "item.started", "item": map[string]any{
+			"id": "i1", "type": "mcp_tool_call", "name": "read_note", "arguments": map[string]any{"path": "a.md"},
+		}},
+		map[string]any{"type": "item.completed", "item": map[string]any{"id": "i1", "type": "mcp_tool_call", "status": "completed"}},
+	)
 
-	if len(sink.steps) != 2 {
-		t.Fatalf("steps %v", sink.steps)
+	if !slices.Equal(sink.reports, []string{`call i1 read_note {"path":"a.md"}`, "result i1 done"}) {
+		t.Errorf("reports %q", sink.reports)
 	}
-	if call := sink.steps[0].GetToolCall(); call.Tool != "read_note" || call.About != `{"path":"a.md"}` {
-		t.Errorf("tool call is %v", sink.steps[0])
-	}
-	if !sink.steps[1].IsToolFinished() {
-		t.Errorf("expected a finished tool, got %v", sink.steps[1])
+}
+
+func TestAToolCallThatFailedIsReportedSo(t *testing.T) {
+	var sink recorder
+
+	handleAll(t, &sink,
+		map[string]any{"type": "item.completed", "item": map[string]any{"id": "i1", "type": "mcp_tool_call", "status": "failed"}},
+		map[string]any{"type": "item.completed", "item": map[string]any{"id": "i2", "type": "mcp_tool_call", "error": map[string]any{"message": "no"}}},
+	)
+
+	if !slices.Equal(sink.reports, []string{"result i1 failed", "result i2 failed"}) {
+		t.Errorf("reports %q", sink.reports)
 	}
 }
 
 func TestAToolCallNamesItsToolByTheToolField(t *testing.T) {
-	var sink collector
+	var sink recorder
 
-	Handle(&sink, map[string]any{"type": "item.started", "item": map[string]any{
-		"type": "mcp_tool_call", "server": "numen", "tool": "search_notes", "arguments": map[string]any{"q": "x"},
+	handleAll(t, &sink, map[string]any{"type": "item.started", "item": map[string]any{
+		"id": "i1", "type": "mcp_tool_call", "server": "numen", "tool": "search_notes", "arguments": map[string]any{"q": "x"},
 	}})
 
-	if len(sink.steps) != 1 || sink.steps[0].GetToolCall().Tool != "search_notes" {
-		t.Errorf("steps %v", sink.steps)
+	if !slices.Equal(sink.reports, []string{`call i1 search_notes {"q":"x"}`}) {
+		t.Errorf("reports %q", sink.reports)
 	}
 }
 
 func TestOtherEventsSendNothing(t *testing.T) {
-	var sink collector
+	var sink recorder
 
-	Handle(&sink, map[string]any{"type": "item.completed"})
-	Handle(&sink, map[string]any{"type": "item.started", "item": map[string]any{"type": "agent_message", "text": "no"}})
-	Handle(&sink, map[string]any{"type": "other", "item": map[string]any{"type": "mcp_tool_call", "tool": "t"}})
-	Handle(&sink, map[string]any{"type": "item.started", "item": map[string]any{"type": "other"}})
-	Handle(&sink, map[string]any{"type": "item.completed", "item": map[string]any{"type": "other"}})
-	Handle(&sink, map[string]any{"type": "item.completed", "item": map[string]any{"type": "reasoning", "text": "hidden"}})
+	handleAll(t, &sink,
+		map[string]any{"type": "item.completed"},
+		map[string]any{"type": "item.started", "item": map[string]any{"type": "agent_message", "text": "no"}},
+		map[string]any{"type": "other", "item": map[string]any{"type": "mcp_tool_call", "tool": "t"}},
+		map[string]any{"type": "item.started", "item": map[string]any{"type": "other"}},
+		map[string]any{"type": "item.completed", "item": map[string]any{"type": "other"}},
+		map[string]any{"type": "item.completed", "item": map[string]any{"type": "reasoning", "text": "hidden"}},
+	)
 
-	if len(sink.steps) != 0 {
-		t.Errorf("steps %v", sink.steps)
+	if len(sink.reports) != 0 {
+		t.Errorf("reports %q", sink.reports)
+	}
+}
+
+func TestTheErrorOfTheSinkIsReturned(t *testing.T) {
+	sink := recorder{refusal: errors.New("closed")}
+
+	err := Handle(&sink, map[string]any{"type": "item.completed", "item": map[string]any{"type": "agent_message", "text": "x"}})
+
+	if !errors.Is(err, sink.refusal) {
+		t.Errorf("Handle = %v, want the error of the sink", err)
 	}
 }
 

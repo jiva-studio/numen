@@ -6,9 +6,9 @@ Use the OpenAI Codex assistant (`codex`) installed on your computer to explore y
 
 ## What You Can Do
 
-- **Chat with OpenAI models**: Use the models from your local Codex setup inside the Agent Chat panel.
-- **Search and edit notes**: Let the assistant look up passages across your books and notes and suggest edits you can accept or reject.
-- **Answer requests of other plugins**: Add a connection of the type OpenAI Codex, then choose the model and the level of reasoning in a row. A request from a connection runs the program with no tools and without writing to disk.
+- **Chat with OpenAI models**: Add a connection of the type OpenAI Codex, choose its model and level of reasoning in a row of the Agents setting of Agent Chat, and Codex answers in the chat.
+- **Search and edit notes**: Let the assistant look up passages across your books and notes and work on them through the tools of your vault.
+- **Answer requests of other plugins**: A request from a connection runs the program with no tools and without writing to disk.
 
 ## Settings
 

@@ -5,8 +5,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 )
 
 func getPlaces() []string {
@@ -23,10 +21,10 @@ func getPlaces() []string {
 
 func isInstalled(customPath ...string) bool {
 	if len(customPath) > 0 && customPath[0] != "" {
-		return agentrun.IsRunnable(customPath[0])
+		return isRunnable(customPath[0])
 	}
 	found := findProgram()
-	return agentrun.IsRunnable(found)
+	return isRunnable(found)
 }
 
 func findProgram(customPath ...string) string {
@@ -34,7 +32,7 @@ func findProgram(customPath ...string) string {
 }
 
 func findIn(places []string, customPath ...string) string {
-	if len(customPath) > 0 && agentrun.IsRunnable(customPath[0]) {
+	if len(customPath) > 0 && isRunnable(customPath[0]) {
 		return customPath[0]
 	}
 	for _, name := range []string{"agy", "antigravity"} {
@@ -51,7 +49,7 @@ func findIn(places []string, customPath ...string) string {
 		if rest, ok := strings.CutPrefix(p, "~/"); ok && home != "" {
 			resolved = filepath.Join(home, rest)
 		}
-		if agentrun.IsRunnable(resolved) {
+		if isRunnable(resolved) {
 			return resolved
 		}
 	}

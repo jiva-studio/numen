@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/runs"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/task"
 )
 
 // waitDelay is how long the pipes of a killed child are waited for.
@@ -37,15 +37,12 @@ func (Supervisor) Supervise(cmd *exec.Cmd) {
 type Launcher struct{}
 
 // Start starts spec and returns the running process.
-func (Launcher) Start(ctx context.Context, spec runs.Command) (runs.Process, error) {
+func (Launcher) Start(ctx context.Context, spec task.Command) (task.Process, error) {
 	cmd := exec.CommandContext(ctx, spec.Path, spec.Args...)
 	cmd.Dir = spec.Dir
 	env := spec.Env
 	if len(env) == 0 {
 		env = hostcall.GetChildEnvironment()
-	}
-	if spec.Token != "" {
-		env = append(env, "NUMEN_TOKEN="+spec.Token)
 	}
 	cmd.Env = env
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="Supervise sets OS process-group attributes for child cleanup."
