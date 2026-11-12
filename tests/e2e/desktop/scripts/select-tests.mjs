@@ -19,9 +19,9 @@
 // `plan` prints `key=value` lines for $GITHUB_OUTPUT:
 //
 //   desktop=true|false     whether any test of the desktop window runs
-//   acceptance=true|false  whether the acceptance scenarios run
 //   paths=<paths>          the folders and spec files to run, separated by spaces; empty for all
 //   flashcards=true|false  whether the flashcards window's tests run
+//   acceptance=true|false  whether the acceptance scenarios run
 //   matrix=<json>          {"include":[{"engine","shard","shards"}]}: one job per engine and shard
 import fs from 'node:fs'
 import path from 'node:path'
@@ -45,9 +45,9 @@ export const PLUGIN_TESTS = {
   'agents-tools-vault': ['agents.chat'],
   'agents-tools-window': ['agents.chat'],
   'views-agent-chat': ['agents.chat'],
-  'engines-ocr': ['scenarios/recognition.spec.ts'],
+  'engines-ocr': [ACCEPTANCE],
   'engines-transcription': [ACCEPTANCE],
-  'readers-pdf': ['scenarios/recognition.spec.ts'],
+  'readers-pdf': [ACCEPTANCE],
   'tools-media-importer': [ACCEPTANCE],
   'tools-proofreading': [ACCEPTANCE],
   'views-media-viewer': [ACCEPTANCE],
@@ -184,9 +184,9 @@ export const getPlan = (scope) => {
   const flashcards = !paths || paths.includes(getTokenPath(FLASHCARDS))
   return [
     `desktop=${jobs.length > 0}`,
-    `acceptance=${!paths || scope.split(' ').includes(ACCEPTANCE)}`,
     `paths=${(paths ?? []).join(' ')}`,
     `flashcards=${flashcards}`,
+    `acceptance=${!paths || scope.split(' ').includes(ACCEPTANCE)}`,
     `matrix=${JSON.stringify({ include: jobs })}`,
   ]
 }
