@@ -95,7 +95,7 @@ export const endTool = (toolCallId: string, status = ToolCallStatus.COMPLETED): 
 /** The plan of the agent, whole. */
 export const showPlan = (
   ...entries: readonly { readonly content: string; readonly status: PlanEntryStatus }[]
-): FrameInit => ({ update: { case: 'plan', value: { entries } } })
+): FrameInit => ({ update: { case: 'plan', value: { entries: [...entries] } } })
 
 /** A task that ends for a reason. */
 export const stopFor = (reason: StopReason): Result<StopReason, ConnectionError> => ({

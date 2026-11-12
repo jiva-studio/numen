@@ -38,7 +38,7 @@ const createContext = (
   const ctx = createMockPluginContext({
     pluginId: PLUGIN_ID,
     workspace,
-    relations: relations as VaultRelations,
+    relations: relations as unknown as VaultRelations,
     ...(navigateTab ? { navigateTab } : {}),
   })
   const { host } = createAgentConnections(answer)
@@ -201,7 +201,7 @@ describe('view-agent-chat plugin', () => {
         createMockPluginContext({
           pluginId: PLUGIN_ID,
           workspace,
-          relations: relations as VaultRelations,
+          relations: relations as unknown as VaultRelations,
         }),
       ),
     ).toThrow('an agent chat requires a window, its connections and the links of the vault')
