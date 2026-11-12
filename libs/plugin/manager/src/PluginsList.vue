@@ -237,7 +237,8 @@ function getReasonId(pluginId: string): string {
 }
 
 .plugins-list__search::-webkit-search-cancel-button {
-  appearance: none;
+  display: none;
+  -webkit-appearance: none;
 }
 
 .plugins-list__search:focus {
