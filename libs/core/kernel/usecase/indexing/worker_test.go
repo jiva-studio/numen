@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
@@ -60,12 +61,12 @@ func findTask(t *testing.T, r *recorder, id string) *work.Task {
 }
 
 func newPass(
-	made reading, db *WorkerIndex, events Events, embedder searchsourceport.Embedder, recipe string,
+	made reading, db *WorkerIndex, events Events, embedder sourcefake.Embedder, recipe string,
 	v domain.Vault,
 ) *testPass {
 	worker := NewWorker(Config{
-		Reading:  made.ReadWholeVault,
-		Embedder: embedder,
+		Reading: made.ReadWholeVault,
+		Source:  sourcefake.Wrap(embedder),
 		VectorCounts: func(ctx context.Context, v domain.Vault) (int64, int64, error) {
 			return db.Progress.GetProgress(ctx, v.ID, recipe)
 		},
@@ -91,7 +92,7 @@ func cut(t *testing.T, made reading, db *WorkerIndex, v domain.Vault) {
 	}
 }
 
-func fit(t *testing.T, db *WorkerIndex, model searchsourceport.Embedder) {
+func fit(t *testing.T, db *WorkerIndex, model sourcefake.Embedder) {
 	t.Helper()
 	if err := db.Vectors.FitVectors(t.Context(), model.Describe().Width, model.Describe().Recipe()); err != nil {
 		t.Fatal(err)

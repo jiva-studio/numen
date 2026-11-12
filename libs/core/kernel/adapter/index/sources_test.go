@@ -56,7 +56,7 @@ func numberRowsPast2To62(t *testing.T, db *DB) {
 
 func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Passage {
 	t.Helper()
-	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, getBenchModel(), "", 1000)
+	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, getBenchModel().Recipe(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func getUnembeddedPassagesPaged(t *testing.T, db *DB, vault domain.Vault, limit 
 	var visited []domain.Passage
 	cursor := vector.ChunkCursor("")
 	for range 100 {
-		page, next, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, getBenchModel(), cursor, limit)
+		page, next, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, getBenchModel().Recipe(), cursor, limit)
 		if err != nil {
 			t.Fatalf("after cursor %q: %v", cursor, err)
 		}
@@ -156,7 +156,7 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 		}},
 		{vector.ChunkCursor(strconv.FormatInt(getFarFuture().UnixNano(), 10) + ":" + row), []string{"library/far.epub", "library/far.epub"}},
 	} {
-		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel(), item.cursor, 10)
+		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel().Recipe(), item.cursor, 10)
 		if err != nil {
 			t.Errorf("cursor %q: %v", item.cursor, err)
 			continue
@@ -173,7 +173,7 @@ func TestGetUnembeddedChunks_RejectsForeignCursor(t *testing.T) {
 	saveThroughPort(t, db, getFirstVault(), "library/a.epub", getThisYear(), "bread rises", "yeast ferments")
 
 	for _, cursor := range []vector.ChunkCursor{"x", "x:1", "1:x", "x:1:2", "1:x:2", "1:2:x", "1:2:3:4"} {
-		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel(), cursor, 10)
+		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel().Recipe(), cursor, 10)
 		if err == nil {
 			t.Errorf("cursor %q was visited from, and gave %d chunks", cursor, len(page))
 		}
@@ -188,7 +188,7 @@ func TestAWalkOverAClosedIndexFails(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel(), "", 10); err == nil {
+	if _, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel().Recipe(), "", 10); err == nil {
 		t.Error("a walk over a closed index reported nothing unembedded")
 	}
 }

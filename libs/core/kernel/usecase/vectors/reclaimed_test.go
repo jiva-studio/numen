@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 )
 
 // A vector is computed once and reclaimed by every vault that holds the same
@@ -21,7 +22,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 900)), 1)
 
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf, indexfake.GetSecond().ID: shelf}, index, index)
-	embed.Embedder = &faint{dims: dimensions}
+	embed.Source = sourcefake.Wrap(&faint{dims: dimensions})
 	embed.BatchCharacters = 4000
 
 	cutBooks(t, index, shelf, indexfake.GetFirst())

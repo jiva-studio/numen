@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
@@ -107,13 +108,13 @@ func TestCancelMarksTheSourcesInFlight(t *testing.T) {
 				started:  make(chan struct{}, 1),
 			}
 			worker := NewWorker(Config{
-				Reading: func(context.Context, searchsourceport.Embedder, domain.Vault, bool) (ReadWholeVault, error) {
+				Reading: func(context.Context, searchsourceport.Source, domain.Vault, bool) (ReadWholeVault, error) {
 					return NewReadWholeVault(nil, nil, script), nil
 				},
-				Embedder: &fakeEmbedder{dims: 8},
-				Events:   events,
-				Quiet:    time.Hour,
-				After:    time.After,
+				Source: sourcefake.Wrap(&fakeEmbedder{dims: 8}),
+				Events: events,
+				Quiet:  time.Hour,
+				After:  time.After,
 			})
 			p := worker.newPass(worker.NewSession(), domain.Vault{ID: "v1"}, false)
 

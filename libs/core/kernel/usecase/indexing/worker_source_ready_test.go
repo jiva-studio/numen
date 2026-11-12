@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
@@ -20,7 +21,7 @@ func (l *readyLog) report(_ context.Context, v domain.Vault) {
 	l.vaults = append(l.vaults, v.ID)
 }
 
-func readyPass(t *testing.T, openReading openFunc, model searchsourceport.Embedder, log *readyLog) *testPass {
+func readyPass(t *testing.T, openReading openFunc, model sourcefake.Embedder, log *readyLog) *testPass {
 	t.Helper()
 	made, db := openReading(t)
 	fit(t, db, model)

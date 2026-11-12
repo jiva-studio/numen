@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 )
 
 // servedBy is an embedder whose model names the connection it came from: the type of the connection
@@ -39,7 +40,7 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	embed.BatchCharacters = 4000
-	embed.Embedder = narrow
+	embed.Source = sourcefake.Wrap(narrow)
 	if _, err := embed.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +58,7 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 		t.Errorf("calls = %v, want the vectors of every other recipe taken out on a rebuild", fit.calls)
 	}
 
-	embed.Embedder = large
+	embed.Source = sourcefake.Wrap(large)
 	res, err := embed.Execute(ctx, indexfake.GetFirst())
 	if err != nil {
 		t.Fatal(err)

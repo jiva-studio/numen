@@ -29,11 +29,11 @@ func TestWorker(t *testing.T) {
 		}
 		testsupport.CloseAfter(t, db)
 		read := func(
-			ctx context.Context, embedder searchsourceport.Embedder, v domain.Vault, rebuild bool,
+			ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 		) (indexing.ReadWholeVault, error) {
 			request := cfg
 			request.ShouldRebuildIndex = rebuild
-			return container.ReadWholeVault(request, ctx, db, embedder, v)
+			return container.ReadWholeVault(request, ctx, db, source, v)
 		}
 		index := &indexing.WorkerIndex{
 			Vaults: db.Vaults(), Notes: db.Notes(), FileStats: db.NoteQueries(),
