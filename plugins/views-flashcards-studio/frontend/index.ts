@@ -29,8 +29,11 @@ export function activate(context: PluginContext): void {
   if (!workspace) {
     const { notices } = context.ui
     const { close: closeTab } = context.tabs
-    const { agent } = context.work
-    if (!agent) throw new Error('the review needs the agent of the window it is drawn in')
+    const { connections } = context.work
+    const { relations } = context.vault
+    if (!connections || !relations) {
+      throw new Error('the review needs the connections and the links of the window it is drawn in')
+    }
     const counts = createVaultCounts({ reportError: createNotices(notices).reportError })
     context.plugin.subscriptions.push({ dispose: counts.dispose })
     context.register.view(createVaultSummaryView(counts))
@@ -38,7 +41,8 @@ export function activate(context: PluginContext): void {
       createReviewKind({
         counts,
         notices,
-        agent,
+        connections,
+        relations,
         mountView: (capability, element, view) => context.ui.mountView(capability, element, view),
         closeTab: (id) => closeTab(id),
       }),

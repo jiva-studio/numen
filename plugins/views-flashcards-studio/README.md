@@ -13,3 +13,4 @@ Create flashcard decks, design custom card layouts, and review cards with spaced
 ## Settings
 
 - **Day starts at**: The time of day (`04:00` by default) when a new daily review session begins, so late-night reviews still count toward the current day.
+- **Agents**: The connections that answer questions about a card in the review, up to five, tried in order.

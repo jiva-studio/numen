@@ -1,12 +1,17 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
-  createMockAgentHost,
   createMockBufferHost,
   createMockNoticeHost,
   createMockPluginContext,
   createMockTabWindow,
 } from '@numen/plugin-sdk/testing'
-import { VAULT_SUMMARY, type WorkspaceHost } from '@numen/plugin-sdk'
+import {
+  VAULT_SUMMARY,
+  type ConnectionHost,
+  type PluginContext,
+  type VaultRelations,
+  type WorkspaceHost,
+} from '@numen/plugin-sdk'
 import { effectScope } from 'vue'
 import plugin, { activate, DECK, PRESET, REVIEW, CARD_MODEL } from './index'
 
@@ -33,14 +38,30 @@ const createContext = () => {
   return { ctx, writers, buffers, window, closeTab }
 }
 
+/** Connections that no review in these tests calls. */
+const connections: ConnectionHost = {
+  // eslint-disable-next-line require-yield
+  call: async function* () {
+    return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
+  },
+}
+
+const relations = { resolveLinks: async () => [] } as unknown as VaultRelations
+
+/** A mock context of the flashcards window, with the connections of the plugin and the links of the vault. */
+const createReviewContext = (closeTab = vi.fn()) => {
+  const ctx = createMockPluginContext({
+    target: 'desktop.flashcards',
+    notices: createMockNoticeHost(),
+    relations,
+    closeTab,
+  })
+  return { ...ctx, work: { ...ctx.work, connections } } satisfies PluginContext
+}
+
 describe('flashcards-studio plugin', () => {
   it('draws only the review and the summary of each vault in the window of the flashcards target', () => {
-    const ctx = createMockPluginContext({
-      target: 'desktop.flashcards',
-      notices: createMockNoticeHost(),
-      agent: createMockAgentHost(),
-      closeTab: vi.fn(),
-    })
+    const ctx = createReviewContext()
     activate(ctx)
 
     const kinds = ctx.getRegisteredTabKinds()
@@ -51,24 +72,20 @@ describe('flashcards-studio plugin', () => {
     expect(ctx.getRegisteredViews().map((one) => one.capability)).toStrictEqual([VAULT_SUMMARY])
   })
 
-  it('refuses to draw the review in a window that offers no agent', () => {
+  it('refuses to draw the review in a window that offers no connections', () => {
     const ctx = createMockPluginContext({
       target: 'desktop.flashcards',
       notices: createMockNoticeHost(),
+      relations,
       closeTab: vi.fn(),
     })
 
-    expect(() => activate(ctx)).toThrow(/agent/)
+    expect(() => activate(ctx)).toThrow(/connections/)
   })
 
   it('takes the window back to its vaults by closing the review tab', async () => {
     const closeTab = vi.fn()
-    const ctx = createMockPluginContext({
-      target: 'desktop.flashcards',
-      notices: createMockNoticeHost(),
-      agent: createMockAgentHost(),
-      closeTab,
-    })
+    const ctx = createReviewContext(closeTab)
     activate(ctx)
     const kind = ctx.getRegisteredTabKinds()[0]!
     const scope = effectScope()

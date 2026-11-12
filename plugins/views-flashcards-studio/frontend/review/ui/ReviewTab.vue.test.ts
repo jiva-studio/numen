@@ -7,7 +7,8 @@ import { flushPromises, mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { effectScope } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createMockAgentHost, createMockNoticeHost } from '@numen/plugin-sdk/testing'
+import type { ConnectionHost } from '@numen/plugin-sdk'
+import { createMockNoticeHost } from '@numen/plugin-sdk/testing'
 
 const { counted, started, waits } = vi.hoisted(() => ({
   counted: {
@@ -93,6 +94,14 @@ type Review = ReturnType<typeof useReview>
 
 const closers: (() => void)[] = []
 
+/** The connections of the plugin, which no test here calls. */
+const connections: ConnectionHost = {
+  // eslint-disable-next-line require-yield
+  call: async function* () {
+    return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
+  },
+}
+
 const mountReview = async (vault: string) => {
   const counts = createVaultCounts({ reportError: vi.fn() })
   const scope = effectScope()
@@ -101,7 +110,8 @@ const mountReview = async (vault: string) => {
       vault,
       counts,
       notices: createMockNoticeHost(),
-      agent: createMockAgentHost(),
+      connections,
+      relations: { resolveLinks: () => Promise.resolve([]) },
       mountView: mountEmptyView,
       goToVaults: () => undefined,
       getViewport: () => ({ screen: 0, page: 0 }),
