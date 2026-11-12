@@ -339,7 +339,7 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 		{"two names", `["a.b.SampleService","a.b.PresetsService"]`, false},
 		{"the id itself", `["a.b"]`, false},
 		{"a service of the protocol", `["numen.v1.AgentService"]`, false},
-		{"the embedding service of the protocol", `["numen.v1.EmbeddingService"]`, false},
+		{"the embedding service of the protocol", `["numen.v1.SearchSourceService"]`, false},
 		{"the tool service of the protocol", `["numen.v1.PluginToolService"]`, false},
 		{"the provider service of the protocol", `["numen.v1.ProviderService"]`, false},
 		{"a service the core serves", `["numen.v1.NoteService"]`, true},

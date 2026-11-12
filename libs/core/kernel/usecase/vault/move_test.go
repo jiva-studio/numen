@@ -228,7 +228,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 
 	// The chunks are still the source's, so a search answers with the note at
 	// the path it is filed under now.
-	searching := search.New(search.Index{Passages: f.db.ChunkSearch()}, vaultreader.Readers{}, nil, nil, nil, nil)
+	searching := search.New(f.db.ChunkSearch(), vaultreader.Readers{}, nil, nil, nil)
 	found, err := searching.Execute(t.Context(), f.vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)

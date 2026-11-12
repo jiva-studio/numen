@@ -29,21 +29,21 @@ import (
 // restartedPlugin responds to every service a bridge calls, and counts the
 // calls it receives.
 type restartedPlugin struct {
-	numenv1connect.UnimplementedEmbeddingServiceHandler
+	numenv1connect.UnimplementedSearchSourceServiceHandler
 	requested atomic.Int32
 }
 
-func (p *restartedPlugin) GetEmbeddingModel(
-	context.Context, *connect.Request[v1.GetEmbeddingModelRequest],
-) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
-	return connect.NewResponse(&v1.GetEmbeddingModelResponse{}), nil
+func (p *restartedPlugin) DescribeSearchSource(
+	context.Context, *connect.Request[v1.DescribeSearchSourceRequest],
+) (*connect.Response[v1.DescribeSearchSourceResponse], error) {
+	return connect.NewResponse(&v1.DescribeSearchSourceResponse{}), nil
 }
 
-func (p *restartedPlugin) EmbedBatch(
-	context.Context, *connect.Request[v1.EmbedBatchRequest],
-) (*connect.Response[v1.EmbedBatchResponse], error) {
+func (p *restartedPlugin) IndexTexts(
+	context.Context, *connect.Request[v1.IndexTextsRequest],
+) (*connect.Response[v1.IndexTextsResponse], error) {
 	p.requested.Add(1)
-	return connect.NewResponse(&v1.EmbedBatchResponse{}), nil
+	return connect.NewResponse(&v1.IndexTextsResponse{}), nil
 }
 
 type restartedAgent struct {
@@ -62,7 +62,7 @@ func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	t.Helper()
 	plugin := &restartedPlugin{}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(plugin))
+	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(plugin))
 	mux.Handle(numenv1connect.NewAgentServiceHandler(restartedAgent{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(restartedTools{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(wiretest.PluginLifecycle{}))

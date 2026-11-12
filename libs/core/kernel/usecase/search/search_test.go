@@ -267,7 +267,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 }
 
-func (c corpus) searchIn(t *testing.T, v domain.Vault, query string, embedder searchsourceport.Embedder) []domain.Passage {
+func (c corpus) searchIn(t *testing.T, v domain.Vault, query string, embedder sourcefake.Embedder) []domain.Passage {
 	t.Helper()
 	found, err := c.search(embedder).Execute(t.Context(), v, query, search.Parameters{})
 	if err != nil {
@@ -282,7 +282,7 @@ func TestAVaultWithNoVectorsAnswersFromItsWords(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
 
-	for name, embedder := range map[string]searchsourceport.Embedder{
+	for name, embedder := range map[string]sourcefake.Embedder{
 		"with no embedder at all":        nil,
 		"with an embedder and no vector": oneWay{direction: newVector(+1)},
 	} {

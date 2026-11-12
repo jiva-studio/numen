@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -42,14 +43,14 @@ func (c Config) AgentProvider() agentport.AgentProvider { return pluginsAgentPro
 
 func (c Config) CutNotes() chunking.CutNotes { return cutNotes(searchOf(c)) }
 
-func (c Config) Embedder(ctx context.Context) (searchsourceport.Embedder, func() error, error) {
-	return searchEmbedder(searchOf(c), ctx)
+func (c Config) Embedder(ctx context.Context) (searchsourceport.WatchedSource, func() error, error) {
+	return searchSource(searchOf(c), ctx)
 }
 
 func (c Config) EmbedderReady() bool { return embedderReady(searchOf(c)) }
 
-func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking searchsourceport.WatchedEmbedder, closer func() error, why error) {
-	return searchEmbedders(searchOf(c), ctx, tasks)
+func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
+	return searchSources(searchOf(c), ctx, tasks)
 }
 
 func (c Config) GetEditorAgent() agentport.Agent { return getToolProvider(plugins(c)) }
@@ -58,8 +59,8 @@ func (c Config) GetSettingsAgent() agentport.Agent { return getSettingsAgent(plu
 
 func (c Config) Models() func() []settingsdomain.Model { return models(c) }
 
-func (c Config) NewSearchOver(index searchusecase.Index, asking searchsourceport.Embedder, errorHandler func(error)) searchusecase.Search {
-	return newSearchOver(searchOf(c), index, asking, errorHandler)
+func (c Config) NewSearchOver(passages sourceport.PassageQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
+	return newSearchOver(searchOf(c), passages, sources, errorHandler)
 }
 
 func (c Config) OpenGetSettings(provider agentport.AgentProvider) *settings.Get {

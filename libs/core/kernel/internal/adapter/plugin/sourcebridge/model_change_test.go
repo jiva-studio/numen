@@ -18,7 +18,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -40,13 +40,13 @@ func (configurable) Configure(
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 
-func openConfigurableEmbedder(t *testing.T) (*container.PluginRoles, *embedderbridge.Embedder, *mockEmbeddingServer, *atomic.Int32) {
+func openConfigurableEmbedder(t *testing.T) (*container.PluginRoles, *sourcebridge.Source, *mockSourceServer, *atomic.Int32) {
 	t.Helper()
-	mock := &mockEmbeddingServer{}
+	mock := &mockSourceServer{}
 	mock.chunkTokens.Store(256)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(configurable{}))
-	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(mock))
+	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(mock))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	port := wiretest.GetPort(t, server)
@@ -72,21 +72,21 @@ func openConfigurableEmbedder(t *testing.T) (*container.PluginRoles, *embedderbr
 		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
 
-	bridge, err := embedderbridge.Open(t.Context(), pluginhost.Join(host))
+	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(host))
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { testsupport.Close(t, bridge) })
 
 	var announced atomic.Int32
-	bridge.OnModelChange(func() { announced.Add(1) })
+	bridge.OnDescriptionChange(func() { announced.Add(1) })
 	return host, bridge, mock, &announced
 }
 
-func settle(t *testing.T, bridge *embedderbridge.Embedder, mock *mockEmbeddingServer, readsBefore int32) {
+func settle(t *testing.T, bridge *sourcebridge.Source, mock *mockSourceServer, readsBefore int32) {
 	t.Helper()
 	wiretest.WaitUntil(t, "a read of the model after the plugin was configured", func() bool {
-		return mock.getModelCalls.Load() != readsBefore
+		return mock.describeCalls.Load() != readsBefore
 	})
 	bridge.WaitForAnnouncements()
 }
@@ -94,7 +94,7 @@ func settle(t *testing.T, bridge *embedderbridge.Embedder, mock *mockEmbeddingSe
 // A model the plugin reports differently after a setting of its own is announced.
 func TestAModelChangeAfterASettingOfThePluginIsAnnounced(t *testing.T) {
 	host, bridge, mock, announced := openConfigurableEmbedder(t)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
 	mock.modelName.Store("another-model")
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "model", "another-model"); err != nil {
@@ -110,9 +110,9 @@ func TestAModelChangeAfterASettingOfThePluginIsAnnounced(t *testing.T) {
 // A shorter minimum chunk length changes which chunks get a vector, so it is announced.
 func TestAChangeOfTheMinimumChunkLengthIsAnnounced(t *testing.T) {
 	host, bridge, mock, announced := openConfigurableEmbedder(t)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
-	mock.minChunk.Store(7)
+	mock.minText.Store(7)
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "minChunkLength", 7); err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestAChangeOfTheMinimumChunkLengthIsAnnounced(t *testing.T) {
 // A setting of the plugin that leaves its model as it was announces nothing.
 func TestNoModelChangeIsAnnouncedWhenASettingKeepsTheModel(t *testing.T) {
 	host, bridge, mock, announced := openConfigurableEmbedder(t)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "provider", "local"); err != nil {
 		t.Fatal(err)
@@ -141,7 +141,7 @@ func TestNoModelChangeIsAnnouncedWhenASettingKeepsTheModel(t *testing.T) {
 // A setting of another plugin is not read by the bridge and announces nothing.
 func TestASettingOfAnotherPluginAnnouncesNothing(t *testing.T) {
 	host, bridge, mock, announced := openConfigurableEmbedder(t)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
 	if err := updateSetting(t.Context(), host, otherPluginID, "any", "value"); err != nil {
 		t.Fatal(err)
@@ -153,7 +153,7 @@ func TestASettingOfAnotherPluginAnnouncesNothing(t *testing.T) {
 	}
 	settle(t, bridge, mock, reads)
 
-	if got := mock.getModelCalls.Load() - reads; got != 1 {
+	if got := mock.describeCalls.Load() - reads; got != 1 {
 		t.Errorf("the model was read %d times after two writes, want one for the plugin it belongs to", got)
 	}
 	if got := announced.Load(); got != 0 {
@@ -167,10 +167,10 @@ func TestAChangeReadByGetModelFirstIsStillAnnounced(t *testing.T) {
 	host, bridge, mock, announced := openConfigurableEmbedder(t)
 
 	mock.modelName.Store("another-model")
-	if got := bridge.GetModel().Name; got != "another-model" {
+	if got := bridge.Describe().Name; got != "another-model" {
 		t.Fatalf("GetModel reads %q", got)
 	}
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "model", "another-model"); err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +185,7 @@ func TestAChangeReadByGetModelFirstIsStillAnnounced(t *testing.T) {
 func TestTheModelCarriesTheChunkTokensThePluginReports(t *testing.T) {
 	_, bridge, _, _ := openConfigurableEmbedder(t)
 
-	if got := bridge.GetModel().ChunkTokens; got != 256 {
+	if got := bridge.Describe().ChunkTokens; got != 256 {
 		t.Errorf("ChunkTokens = %d, want 256", got)
 	}
 }
@@ -194,11 +194,11 @@ func TestTheModelCarriesTheChunkTokensThePluginReports(t *testing.T) {
 func TestANegativeChunkTokensIsReadAsNone(t *testing.T) {
 	_, bridge, mock, _ := openConfigurableEmbedder(t)
 
-	if got := bridge.GetModel().ChunkTokens; got != 256 {
+	if got := bridge.Describe().ChunkTokens; got != 256 {
 		t.Fatalf("ChunkTokens = %d, want 256", got)
 	}
 	mock.chunkTokens.Store(-5)
-	if got := bridge.GetModel().ChunkTokens; got != 0 {
+	if got := bridge.Describe().ChunkTokens; got != 0 {
 		t.Errorf("ChunkTokens = %d, want 0", got)
 	}
 }
@@ -207,7 +207,7 @@ func TestANegativeChunkTokensIsReadAsNone(t *testing.T) {
 // the listeners read holds the new size.
 func TestAChangeOfTheChunkTokensAloneIsAnnounced(t *testing.T) {
 	host, bridge, mock, announced := openConfigurableEmbedder(t)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
 	mock.chunkTokens.Store(128)
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", 128); err != nil {
@@ -218,7 +218,7 @@ func TestAChangeOfTheChunkTokensAloneIsAnnounced(t *testing.T) {
 	if got := announced.Load(); got != 1 {
 		t.Errorf("the change of the chunk size was announced %d times, want once", got)
 	}
-	if got := bridge.GetModel().ChunkTokens; got != 128 {
+	if got := bridge.Describe().ChunkTokens; got != 128 {
 		t.Errorf("ChunkTokens = %d, want 128", got)
 	}
 }
@@ -226,7 +226,7 @@ func TestAChangeOfTheChunkTokensAloneIsAnnounced(t *testing.T) {
 // A chunk size that stays as it was announces nothing.
 func TestAnUnchangedChunkTokensAnnouncesNothing(t *testing.T) {
 	host, bridge, mock, announced := openConfigurableEmbedder(t)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", 256); err != nil {
 		t.Fatal(err)

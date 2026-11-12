@@ -39,13 +39,11 @@ func serve(t *testing.T, current *showing) numenv1connect.VaultServiceClient {
 
 func TestTheVaultStateAnswersWhatTheWindowKnows(t *testing.T) {
 	client := serve(t, &showing{state: window.VaultState{
-		Vault:         domain.Vault{ID: "v-heron", Name: "Herons", Path: "/vaults/herons"},
-		IsReady:       true,
-		Error:         "the index is locked",
-		WatchError:    "the watch stopped",
-		IsEmbedding:   true,
-		ChunkCount:    40,
-		EmbeddedCount: 12,
+		Vault:      domain.Vault{ID: "v-heron", Name: "Herons", Path: "/vaults/herons"},
+		IsReady:    true,
+		Error:      "the index is locked",
+		WatchError: "the watch stopped",
+		Coverage:   "Semantic index not built yet",
 	}})
 
 	out, err := client.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
@@ -61,7 +59,7 @@ func TestTheVaultStateAnswersWhatTheWindowKnows(t *testing.T) {
 		t.Errorf("the scan is %v", scan)
 	}
 	coverage := got.GetCoverage()
-	if !coverage.GetIsEmbedding() || coverage.GetChunkCount() != 40 || coverage.GetEmbeddedCount() != 12 {
+	if coverage.GetText() != "Semantic index not built yet" {
 		t.Errorf("the coverage is %v", coverage)
 	}
 }

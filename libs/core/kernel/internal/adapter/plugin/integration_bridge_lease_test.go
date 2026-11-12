@@ -20,20 +20,20 @@ import (
 )
 
 type stubEmbeddingServer struct {
-	numenv1connect.UnimplementedEmbeddingServiceHandler
+	numenv1connect.UnimplementedSearchSourceServiceHandler
 }
 
-func (stubEmbeddingServer) GetEmbeddingModel(
-	context.Context, *connect.Request[v1.GetEmbeddingModelRequest],
-) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
-	return connect.NewResponse(&v1.GetEmbeddingModelResponse{}), nil
+func (stubEmbeddingServer) DescribeSearchSource(
+	context.Context, *connect.Request[v1.DescribeSearchSourceRequest],
+) (*connect.Response[v1.DescribeSearchSourceResponse], error) {
+	return connect.NewResponse(&v1.DescribeSearchSourceResponse{}), nil
 }
 
 func newLeaseHost(t *testing.T) *plugintest.LeaseHost {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewAgentServiceHandler(&wiretest.MockAgentServer{}))
-	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(stubEmbeddingServer{}))
+	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(stubEmbeddingServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return &plugintest.LeaseHost{Endpoint: transport.Endpoint{Host: "127.0.0.1", Port: wiretest.GetPort(t, server)}}

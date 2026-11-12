@@ -15,10 +15,10 @@ func TestAListenerThatRegistersAnotherListenerDoesNotBlockTheAnnouncement(t *tes
 	registered := make(chan struct{})
 	second := make(chan struct{}, 4)
 	var once sync.Once
-	bridge.OnModelChange(func() {
+	bridge.OnDescriptionChange(func() {
 		// The listener stays registered, so it runs again on the next change.
 		once.Do(func() {
-			bridge.OnModelChange(func() { second <- struct{}{} })
+			bridge.OnDescriptionChange(func() { second <- struct{}{} })
 			close(registered)
 		})
 	})
@@ -53,9 +53,9 @@ func TestListenersRunAfterTheEmbedderReleasesItsLock(t *testing.T) {
 		model    string
 	}
 	outcomes := make(chan outcome, 1)
-	bridge.OnModelChange(func() {
+	bridge.OnDescriptionChange(func() {
 		unlocked := bridge.IsListenerLockFree()
-		outcomes <- outcome{unlocked: unlocked, model: bridge.GetModel().Name}
+		outcomes <- outcome{unlocked: unlocked, model: bridge.Describe().Name}
 	})
 
 	mock.modelName.Store("another-model")

@@ -25,7 +25,7 @@ func TestAContainerWithoutSettingsEmbedsWithNothing(t *testing.T) {
 		t.Fatalf("want no reason, got %v", why)
 	}
 	if embedder != nil {
-		t.Errorf("got an embedder: %v", embedder.GetModel())
+		t.Errorf("got an embedder: %v", embedder.Describe())
 	}
 	if closer == nil {
 		t.Error("expected non-nil no-op closer")
@@ -132,7 +132,7 @@ func TestAPluginWithoutTheEmbeddingCapabilityIsNotTheProvider(t *testing.T) {
 		"name": "Vectors",
 		"version": "1.0.0",
 		"targets": ["desktop.editor"],
-		"services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/vectors"}
+		"services": ["numen.v1.SearchSourceService"], "backend": {"entrypoint": "bin/vectors"}
 	}`)
 	cfg := container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)})
 

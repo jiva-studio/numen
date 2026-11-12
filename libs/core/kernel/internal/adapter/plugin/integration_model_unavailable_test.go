@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 )
@@ -73,8 +73,8 @@ type modelOpener struct {
 
 func modelOpeners() []modelOpener {
 	return []modelOpener{
-		{"embedder", func(ctx context.Context, h *stubModelHost) error {
-			b, err := embedderbridge.Open(ctx, h)
+		{"search source", func(ctx context.Context, h *stubModelHost) error {
+			b, err := sourcebridge.Open(ctx, h)
 			if b != nil {
 				return errors.New("a bridge was returned with the error")
 			}

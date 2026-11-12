@@ -25,18 +25,18 @@ func (failingActivator) Release(string) {}
 
 // A plugin that cannot be opened after a setting is reported with its id, and no listener runs.
 func TestEmbedderReportsFailedOpenAfterSettingChange(t *testing.T) {
-	b := &Embedder{
+	b := &Source{
 		pluginID: embeddingPluginID,
-		service: bridge.Service[numenv1connect.EmbeddingServiceClient]{
-			Host: failingActivator{}, PluginID: embeddingPluginID, NewClient: numenv1connect.NewEmbeddingServiceClient,
+		service: bridge.Service[numenv1connect.SearchSourceServiceClient]{
+			Host: failingActivator{}, PluginID: embeddingPluginID, NewClient: numenv1connect.NewSearchSourceServiceClient,
 		},
 	}
 	var reports []error
-	b.OnModelReadError(func(err error) { reports = append(reports, err) })
+	b.OnDescriptionReadError(func(err error) { reports = append(reports, err) })
 	ran := 0
-	b.OnModelChange(func() { ran++ })
+	b.OnDescriptionChange(func() { ran++ })
 
-	b.announceModelChange()
+	b.announceDescriptionChange()
 
 	if len(reports) != 1 {
 		t.Fatalf("%d reports for one failed open, want 1", len(reports))

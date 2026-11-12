@@ -19,7 +19,7 @@ type servedBy struct {
 
 func (s servedBy) Describe() searchsource.Description {
 	model := s.embedder.Describe()
-	model.From = s.from
+	model.SourceRecipe = s.from + "|" + model.SourceRecipe
 	return model
 }
 

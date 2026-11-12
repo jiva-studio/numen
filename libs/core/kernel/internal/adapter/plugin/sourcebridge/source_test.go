@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -22,39 +20,51 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
-
-	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
-// The bridge makes query vectors apart from document vectors, which search relies on through the port.
-var _ searchsourceport.QueryEmbedder = (*embedderbridge.Embedder)(nil)
+// The bridge is the search source the core works through, and makes the vectors of queries for calibration.
+var (
+	_ searchsourceport.WatchedSource = (*sourcebridge.Source)(nil)
+	_ searchsourceport.QueryEmbedder = (*sourcebridge.Source)(nil)
+)
 
-type mockEmbeddingServer struct {
-	getModelCalls    atomic.Int32
+// noConnection is the sentence a plugin answers while its settings name no connection.
+const noConnection = "choose a connection in the settings of Vector Embeddings"
+
+type mockSourceServer struct {
+	numenv1connect.UnimplementedSearchSourceServiceHandler
+
+	describeCalls    atomic.Int32
 	modelName        atomic.Value
-	dimensions       atomic.Int32
+	width            atomic.Int32
 	floorHint        atomic.Value
-	minChunk         atomic.Int32
+	minText          atomic.Int32
 	chunkTokens      atomic.Int32
-	handling         atomic.Value
+	recipe           atomic.Value
 	failRead         atomic.Bool
 	failPrecondition atomic.Bool
 
-	mu    sync.Mutex
-	roles []v1.EmbedRole
+	mu      sync.Mutex
+	asked   []string
+	places  []*v1.SearchPlace
+	queries []*v1.SearchSourceServiceSearchPassagesRequest
 }
 
-func (s *mockEmbeddingServer) GetEmbeddingModel(
+func (s *mockSourceServer) DescribeSearchSource(
 	_ context.Context,
-	_ *connect.Request[v1.GetEmbeddingModelRequest],
-) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
-	s.getModelCalls.Add(1)
+	_ *connect.Request[v1.DescribeSearchSourceRequest],
+) (*connect.Response[v1.DescribeSearchSourceResponse], error) {
+	s.describeCalls.Add(1)
 	if s.failPrecondition.Load() {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("no connection serves the operation"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New(noConnection))
 	}
 	if s.failRead.Load() {
 		return nil, connect.NewError(connect.CodeUnavailable, errors.New("the model is not available"))
@@ -63,78 +73,103 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 	if v, ok := s.modelName.Load().(string); ok && v != "" {
 		name = v
 	}
-	dims := int32(384)
-	if d := s.dimensions.Load(); d > 0 {
-		dims = d
+	width := int32(384)
+	if d := s.width.Load(); d > 0 {
+		width = d
 	}
 	hint := 0.0
 	if v, ok := s.floorHint.Load().(float64); ok {
 		hint = v
 	}
-	handling := ""
-	if v, ok := s.handling.Load().(string); ok {
-		handling = v
+	recipe := "test-provider|" + name
+	if v, ok := s.recipe.Load().(string); ok && v != "" {
+		recipe = v
 	}
-	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
-		Handling:       handling,
-		Name:           name,
-		Dimensions:     dims,
-		MaxTokens:      256,
-		Pooling:        "mean",
-		From:           "test-provider",
-		Concurrency:    4,
-		FloorHint:      hint,
-		MinChunkLength: s.minChunk.Load(),
-		ChunkTokens:    s.chunkTokens.Load(),
+	return connect.NewResponse(&v1.DescribeSearchSourceResponse{
+		Name:          name,
+		Recipe:        recipe,
+		Width:         width,
+		Concurrency:   4,
+		FloorHint:     hint,
+		MinTextLength: s.minText.Load(),
+		ChunkTokens:   s.chunkTokens.Load(),
 	}), nil
 }
 
-func (s *mockEmbeddingServer) EmbedBatch(
+func (s *mockSourceServer) IndexTexts(
 	_ context.Context,
-	req *connect.Request[v1.EmbedBatchRequest],
-) (*connect.Response[v1.EmbedBatchResponse], error) {
+	req *connect.Request[v1.IndexTextsRequest],
+) (*connect.Response[v1.IndexTextsResponse], error) {
 	texts := req.Msg.GetTexts()
 	s.mu.Lock()
-	s.roles = append(s.roles, req.Msg.GetRole())
+	s.asked = append(s.asked, "index")
+	s.places = append(s.places, req.Msg.GetPlace())
 	s.mu.Unlock()
 	vectors := make([]*v1.FloatVector, len(texts))
 	for i := range texts {
-		vectors[i] = &v1.FloatVector{
-			Values: []float32{float32(i) * 0.1, 0.5},
-		}
+		vectors[i] = &v1.FloatVector{Values: []float32{float32(i) * 0.1, 0.5}}
 	}
-	return connect.NewResponse(&v1.EmbedBatchResponse{
-		Vectors: vectors,
+	return connect.NewResponse(&v1.IndexTextsResponse{Vectors: vectors}), nil
+}
+
+func (s *mockSourceServer) EmbedQueries(
+	_ context.Context,
+	req *connect.Request[v1.EmbedQueriesRequest],
+) (*connect.Response[v1.EmbedQueriesResponse], error) {
+	s.mu.Lock()
+	s.asked = append(s.asked, "queries")
+	s.mu.Unlock()
+	vectors := make([]*v1.FloatVector, len(req.Msg.GetQueries()))
+	for i := range vectors {
+		vectors[i] = &v1.FloatVector{Values: []float32{1, 0}}
+	}
+	return connect.NewResponse(&v1.EmbedQueriesResponse{Vectors: vectors}), nil
+}
+
+func (s *mockSourceServer) SearchPassages(
+	_ context.Context,
+	req *connect.Request[v1.SearchSourceServiceSearchPassagesRequest],
+) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error) {
+	s.mu.Lock()
+	s.queries = append(s.queries, req.Msg)
+	s.mu.Unlock()
+	return connect.NewResponse(&v1.SearchSourceServiceSearchPassagesResponse{Matches: []*v1.ChunkMatch{
+		{ChunkId: "41", Score: 0.9}, {ChunkId: "7", Score: 0.6},
+	}}), nil
+}
+
+func (s *mockSourceServer) DescribeCoverage(
+	_ context.Context,
+	req *connect.Request[v1.DescribeCoverageRequest],
+) (*connect.Response[v1.DescribeCoverageResponse], error) {
+	return connect.NewResponse(&v1.DescribeCoverageResponse{
+		Text: fmt.Sprintf("%d of %d", req.Msg.GetIndexedCount(), req.Msg.GetChunkCount()),
 	}), nil
 }
 
-func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
+func TestOpenSourceBridgeNoPlugin(t *testing.T) {
 	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", t.TempDir())
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
-	bridge, err := embedderbridge.Open(t.Context(), pluginhost.Join(host))
+	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(host))
 	if err == nil {
-		t.Fatal("expected error when no embedding plugin found, got nil")
+		t.Fatal("expected error when no search source plugin found, got nil")
 	}
 	if bridge != nil {
 		t.Fatalf("expected nil bridge, got %v", bridge)
 	}
 }
 
-func TestEmbedderBridge(t *testing.T) {
-	mockServer := &mockEmbeddingServer{}
-	mockServer.floorHint.Store(0.35)
-	mockServer.minChunk.Store(40)
-	mockServer.handling.Store("1a2b3c4d")
+// startSource runs the mock as the plugin that declares the search source capability.
+func startSource(t *testing.T, mockServer *mockSourceServer) *container.PluginRoles {
+	t.Helper()
 	mux := http.NewServeMux()
 	wiretest.HandlePluginLifecycle(mux)
-	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(mockServer))
-
+	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(mockServer))
 	server := httptest.NewServer(mux)
-	defer server.Close()
-
+	t.Cleanup(server.Close)
 	serverPort := wiretest.GetPort(t, server)
 
 	tmp := t.TempDir()
@@ -142,136 +177,136 @@ func TestEmbedderBridge(t *testing.T) {
 	if err := os.MkdirAll(pDir, 0o755); err != nil {
 		t.Fatalf("mkdir failed: %v", err)
 	}
-
 	manifestText := `{
 		"id": "md.numen.embeddings",
 		"name": "Vector Embeddings",
 		"version": "1.0.0",
 		"capabilities": ["search.source"],
 		"targets": ["desktop.editor"],
-		"services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/embeddings"}
+		"services": ["numen.v1.SearchSourceService"], "backend": {"entrypoint": "bin/embeddings"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifestText), 0o600); err != nil {
 		t.Fatal(err)
 	}
-
 	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-
 	cmd := wiretest.StartSleepProcess(t)
-
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
+	return host
+}
 
+func TestTheBridgeReadsTheDescriptionOfTheSource(t *testing.T) {
+	mockServer := &mockSourceServer{}
+	mockServer.floorHint.Store(0.35)
+	mockServer.minText.Store(40)
+	mockServer.recipe.Store("test-provider|test-model|384|1a2b3c4d")
 	ctx := t.Context()
-	bridge, err := embedderbridge.Open(ctx, pluginhost.Join(host))
+	bridge, err := sourcebridge.Open(ctx, pluginhost.Join(startSource(t, mockServer)))
 	if err != nil {
-		t.Fatalf("OpenEmbedderBridge failed: %v", err)
+		t.Fatalf("Open failed: %v", err)
 	}
 	defer testsupport.Close(t, bridge)
 
-	model := bridge.Describe()
-	if model.Name != "test-model" {
-		t.Errorf("model Name = %q, want test-model", model.Name)
-	}
-	if model.Dimensions != 384 {
-		t.Errorf("model Dimensions = %d, want 384", model.Dimensions)
-	}
-	if model.MaxTokens != 256 {
-		t.Errorf("model MaxTokens = %d, want 256", model.MaxTokens)
-	}
-	if model.Pooling != "mean" {
-		t.Errorf("model Pooling = %q, want mean", model.Pooling)
-	}
-	if model.From != "test-provider" {
-		t.Errorf("model From = %q, want test-provider", model.From)
-	}
-
-	if model.Handling != "1a2b3c4d" {
-		t.Errorf("model Handling = %q, want 1a2b3c4d", model.Handling)
-	}
-	if model.MinChunkLength != 40 {
-		t.Errorf("model MinChunkLength = %d, want 40", model.MinChunkLength)
+	described := bridge.Describe()
+	want := searchsource.Description{Name: "test-model", SourceRecipe: "test-provider|test-model|384|1a2b3c4d", Width: 384, MinTextLength: 40}
+	if described != want {
+		t.Errorf("description %+v, want %+v", described, want)
 	}
 	if hint := bridge.GetFloorHint(ctx); hint != 0.35 {
 		t.Errorf("floor hint = %v, want 0.35", hint)
 	}
-	recipe := model.Recipe()
+	recipe := described.Recipe()
 	mockServer.floorHint.Store(0.42)
-	mockServer.minChunk.Store(0)
-	if refreshed := bridge.Describe(); refreshed.Recipe() != recipe {
-		t.Errorf("a new floor hint changed the recipe: %q, was %q", refreshed.Recipe(), recipe)
-	}
-	if refreshed := bridge.Describe(); refreshed.MinChunkLength != 0 {
-		t.Errorf("a new minimum chunk length reads as %d, want 0", refreshed.MinChunkLength)
+	mockServer.minText.Store(0)
+	if refreshed := bridge.Describe(); refreshed.Recipe() != recipe || refreshed.MinTextLength != 0 {
+		t.Errorf("a new floor hint and shortest text read as %+v, recipe was %q", refreshed, recipe)
 	}
 	if hint := bridge.GetFloorHint(ctx); hint != 0.42 {
-		t.Errorf("floor hint after a read of the model = %v, want 0.42", hint)
+		t.Errorf("floor hint after a read = %v, want 0.42", hint)
 	}
 	mockServer.floorHint.Store(-1.0)
 	bridge.Describe()
 	if hint := bridge.GetFloorHint(ctx); hint != 0 {
 		t.Errorf("a negative floor hint reads as %v, want 0", hint)
 	}
-	mockServer.floorHint.Store(0.0)
-	bridge.Describe()
-	if hint := bridge.GetFloorHint(ctx); hint != 0 {
-		t.Errorf("no floor hint reads as %v, want 0", hint)
-	}
 
-	callsBefore := mockServer.getModelCalls.Load()
+	callsBefore := mockServer.describeCalls.Load()
 	for range 5 {
 		if bridge.Concurrency() != 4 {
 			t.Errorf("concurrency = %d, want 4", bridge.Concurrency())
 		}
 	}
-	callsAfter := mockServer.getModelCalls.Load()
-	if callsBefore != callsAfter {
+	if callsAfter := mockServer.describeCalls.Load(); callsBefore != callsAfter {
 		t.Errorf("Concurrency() made RPC calls: before=%d, after=%d", callsBefore, callsAfter)
 	}
 
-	vectors, err := bridge.Embed(ctx, []string{"first text", "second text"})
-	if err != nil {
-		t.Fatalf("Embed failed: %v", err)
+	mockServer.recipe.Store("test-provider|test-model|384|ffffffff")
+	if refreshed := bridge.Describe(); refreshed.Recipe() == recipe {
+		t.Errorf("another source recipe left the recipe as it was: %q", refreshed.Recipe())
 	}
-	if len(vectors) != 2 {
-		t.Fatalf("expected 2 vectors, got %d", len(vectors))
-	}
-	if len(vectors[0]) != 2 || vectors[0][0] != 0.0 {
-		t.Errorf("unexpected vector[0]: %v", vectors[0])
-	}
-	if len(vectors[1]) != 2 || vectors[1][0] != 0.1 {
-		t.Errorf("unexpected vector[1]: %v", vectors[1])
-	}
+}
 
+func TestTheBridgeHandsTheTextsAndTheQueriesToTheSource(t *testing.T) {
+	mockServer := &mockSourceServer{}
+	ctx := t.Context()
+	bridge, err := sourcebridge.Open(ctx, pluginhost.Join(startSource(t, mockServer)))
+	if err != nil {
+		t.Fatalf("Open failed: %v", err)
+	}
+	defer testsupport.Close(t, bridge)
+	place := searchsource.Place{VaultID: "01PHYSICS", Recipe: bridge.Describe().Recipe()}
+
+	vectors, err := bridge.IndexTexts(ctx, place, []searchsource.Text{{ChunkID: "1", Text: "first text"}, {ChunkID: "2", Path: "book.pdf", VersionID: "v1", Text: "second text"}})
+	if err != nil {
+		t.Fatalf("IndexTexts failed: %v", err)
+	}
+	if len(vectors) != 2 || vectors[0][0] != 0.0 || vectors[1][0] != 0.1 {
+		t.Errorf("vectors %v", vectors)
+	}
+	if empty, err := bridge.IndexTexts(ctx, place, nil); err != nil || empty != nil {
+		t.Errorf("expected nil vectors for empty input, got %v, err=%v", empty, err)
+	}
 	if _, err := bridge.EmbedQueries(ctx, []string{"a question"}); err != nil {
 		t.Fatalf("EmbedQueries failed: %v", err)
 	}
+	matches, err := bridge.SearchPassages(ctx, place, searchsource.Query{Text: "entropy", Limit: 5, Floor: 0.4, PathPrefix: "books/"})
+	if err != nil {
+		t.Fatalf("SearchPassages failed: %v", err)
+	}
+	if want := []searchsource.Match{{ChunkID: "41", Score: 0.9}, {ChunkID: "7", Score: 0.6}}; !slices.Equal(matches, want) {
+		t.Errorf("matches %v, want %v", matches, want)
+	}
+	coverage, err := bridge.DescribeCoverage(ctx, place, searchsource.Counts{Chunks: 12, Indexed: 3})
+	if err != nil || coverage != "3 of 12" {
+		t.Errorf("coverage %q, %v", coverage, err)
+	}
+
 	mockServer.mu.Lock()
-	gotRoles := slices.Clone(mockServer.roles)
-	mockServer.mu.Unlock()
-	if want := []v1.EmbedRole{v1.EmbedRole_EMBED_ROLE_DOCUMENT, v1.EmbedRole_EMBED_ROLE_QUERY}; !slices.Equal(gotRoles, want) {
-		t.Errorf("the plugin was asked for roles %v, want %v", gotRoles, want)
+	defer mockServer.mu.Unlock()
+	if want := []string{"index", "queries"}; !slices.Equal(mockServer.asked, want) {
+		t.Errorf("the plugin was asked %v, want %v", mockServer.asked, want)
 	}
+	if got := mockServer.places[0]; got.GetVaultId() != "01PHYSICS" || got.GetRecipe() != place.Recipe {
+		t.Errorf("the texts were handed with the place %v", got)
+	}
+	if q := mockServer.queries[0]; q.GetQuery() != "entropy" || q.GetLimit() != 5 || q.GetFloor() != 0.4 || q.GetPathPrefix() != "books/" {
+		t.Errorf("the plugin was asked %v", q)
+	}
+}
 
-	empty, err := bridge.Embed(ctx, nil)
-	if err != nil || empty != nil {
-		t.Errorf("expected nil vectors for empty input, got %v, err=%v", empty, err)
-	}
+// A source whose settings name no connection fails to open with the sentence the plugin gives, not with a code.
+func TestASourceTheSettingsDoNotAllowFailsToOpenWithThePlainSentence(t *testing.T) {
+	mockServer := &mockSourceServer{}
+	mockServer.failPrecondition.Store(true)
 
-	mockServer.handling.Store("ffffffff")
-	if refreshed := bridge.Describe(); refreshed.Recipe() == recipe {
-		t.Errorf("a new handling left the recipe as it was: %q", refreshed.Recipe())
-	}
-	mockServer.handling.Store("1a2b3c4d")
-	mockServer.modelName.Store("updated-model")
-	mockServer.dimensions.Store(1024)
-	currentModel := bridge.Describe()
-	if currentModel.Name != "updated-model" || currentModel.Dimensions != 1024 {
-		t.Errorf("GetModel() after update = %+v, want updated-model@1024", currentModel)
+	_, err := sourcebridge.Open(t.Context(), pluginhost.Join(startSource(t, mockServer)))
+
+	if err == nil || err.Error() != noConnection {
+		t.Errorf("err = %v, want %q", err, noConnection)
 	}
 }

@@ -1,15 +1,15 @@
 package sourcebridge_test
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"strings"
 	"testing"
 	"time"
 )
 
-func failureReports(bridge *embedderbridge.Embedder) chan error {
+func failureReports(bridge *sourcebridge.Source) chan error {
 	reports := make(chan error, 8)
-	bridge.OnModelReadError(func(err error) { reports <- err })
+	bridge.OnDescriptionReadError(func(err error) { reports <- err })
 	return reports
 }
 
@@ -17,7 +17,7 @@ func failureReports(bridge *embedderbridge.Embedder) chan error {
 func TestAFailedReadOfTheModelAfterASettingIsReported(t *testing.T) {
 	host, bridge, mock, _ := openConfigurableEmbedder(t)
 	reports := failureReports(bridge)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
 	mock.failRead.Store(true)
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", 128); err != nil {
@@ -42,7 +42,7 @@ func TestAFailedReadOfTheModelAfterASettingIsReported(t *testing.T) {
 func TestNoModelChangeIsAnnouncedWhenTheReadOfTheModelFails(t *testing.T) {
 	host, bridge, mock, announced := openConfigurableEmbedder(t)
 	failureReports(bridge)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
 	mock.modelName.Store("another-model")
 	mock.failRead.Store(true)
@@ -60,7 +60,7 @@ func TestNoModelChangeIsAnnouncedWhenTheReadOfTheModelFails(t *testing.T) {
 func TestTheModelIsTheSameAfterAFailedRead(t *testing.T) {
 	host, bridge, mock, _ := openConfigurableEmbedder(t)
 	failureReports(bridge)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
 	mock.modelName.Store("another-model")
 	mock.failRead.Store(true)
@@ -69,7 +69,7 @@ func TestTheModelIsTheSameAfterAFailedRead(t *testing.T) {
 	}
 	settle(t, bridge, mock, reads)
 
-	if got := bridge.GetModel().Name; got != "test-model" {
+	if got := bridge.Describe().Name; got != "test-model" {
 		t.Errorf("the model is %q after a failed read, want test-model", got)
 	}
 }
@@ -78,7 +78,7 @@ func TestTheModelIsTheSameAfterAFailedRead(t *testing.T) {
 func TestTheNextChangeIsAnnouncedOnceAfterAFailedRead(t *testing.T) {
 	host, bridge, mock, announced := openConfigurableEmbedder(t)
 	failureReports(bridge)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
 	mock.modelName.Store("another-model")
 	mock.failRead.Store(true)
@@ -88,7 +88,7 @@ func TestTheNextChangeIsAnnouncedOnceAfterAFailedRead(t *testing.T) {
 	settle(t, bridge, mock, reads)
 
 	mock.failRead.Store(false)
-	reads = mock.getModelCalls.Load()
+	reads = mock.describeCalls.Load()
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "provider", "local"); err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestTheNextChangeIsAnnouncedOnceAfterAFailedRead(t *testing.T) {
 	if got := announced.Load(); got != 1 {
 		t.Errorf("the model change was announced %d times after the failed read, want once", got)
 	}
-	if got := bridge.GetModel().Name; got != "another-model" {
+	if got := bridge.Describe().Name; got != "another-model" {
 		t.Errorf("the model is %q, want another-model", got)
 	}
 }
@@ -106,7 +106,7 @@ func TestTheNextChangeIsAnnouncedOnceAfterAFailedRead(t *testing.T) {
 func TestASuccessfulReadOfTheModelReportsNoError(t *testing.T) {
 	host, bridge, mock, _ := openConfigurableEmbedder(t)
 	reports := failureReports(bridge)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "provider", "local"); err != nil {
 		t.Fatal(err)
@@ -125,7 +125,7 @@ func TestASuccessfulReadOfTheModelReportsNoError(t *testing.T) {
 func TestASuccessfulReadAfterAFailedReadIsReportedWithNoError(t *testing.T) {
 	host, bridge, mock, _ := openConfigurableEmbedder(t)
 	reports := failureReports(bridge)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 	mock.failRead.Store(true)
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", 128); err != nil {
 		t.Fatal(err)
@@ -133,7 +133,7 @@ func TestASuccessfulReadAfterAFailedReadIsReportedWithNoError(t *testing.T) {
 	settle(t, bridge, mock, reads)
 	<-reports
 
-	reads = mock.getModelCalls.Load()
+	reads = mock.describeCalls.Load()
 	mock.failRead.Store(false)
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", 256); err != nil {
 		t.Fatal(err)
@@ -150,12 +150,12 @@ func TestASuccessfulReadAfterAFailedReadIsReportedWithNoError(t *testing.T) {
 	}
 }
 
-// A plugin whose settings do not allow the read yet, such as a connection source with no row chosen, is not failing:
-// the read is reported with no error, so no failure is shown.
-func TestAReadThatTheSettingsDoNotAllowYetIsNotReportedAsAFailure(t *testing.T) {
+// A plugin whose settings do not allow the read yet, such as a connection source with no row chosen, is reported with the
+// sentence the plugin gives, so the person reads what to do and not a code.
+func TestAReadThatTheSettingsDoNotAllowIsReportedWithThePlainSentence(t *testing.T) {
 	host, bridge, mock, _ := openConfigurableEmbedder(t)
 	reports := failureReports(bridge)
-	reads := mock.getModelCalls.Load()
+	reads := mock.describeCalls.Load()
 
 	mock.failPrecondition.Store(true)
 	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", 128); err != nil {
@@ -165,8 +165,8 @@ func TestAReadThatTheSettingsDoNotAllowYetIsNotReportedAsAFailure(t *testing.T) 
 
 	select {
 	case err := <-reports:
-		if err != nil {
-			t.Errorf("a read the settings do not allow was reported as %v", err)
+		if err == nil || err.Error() != noConnection {
+			t.Errorf("a read the settings do not allow was reported as %v, want %q", err, noConnection)
 		}
 	case <-time.After(time.Second):
 		t.Fatal("the read was not reported")
