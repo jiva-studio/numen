@@ -207,42 +207,23 @@ How a link's address is fetched is set by the Media Importer plugin's settings, 
 
 ## Which agent answers
 
-`app.agent` sets which agent answers in the panel and how each program is run. What an agent may request from a vault is in [Agents](agents.md).
+The agent chat answers through connections, as every other plugin that needs a service. The page of the plugin `md.numen.views.agent.chat` has the setting `connections` with the operation `acp.task`: one row for each agent to try, in order. A row names a connection of an agent type: `md.numen.agents.acp/claude-code`, `md.numen.agents.acp/codex`, `md.numen.agents.acp/antigravity`, `md.numen.agents.acp/acp` (any program that speaks the Agent Client Protocol, by its `program` field) or `md.numen.agents.numen/numen`, and the model and the reasoning level the program offers. With no row the chat says that no agent is set up and offers the page. The flashcard review has a setting of its own, `agentConnections`, for the agent it asks about a card. What an agent may request from a vault is in [Agents](agents.md).
 
 ```json
 {
-  "app": {
-    "agent": {
-      "use": "claude",
-      "claude": {
-        "command": [],
-        "model": ""
-      }
-    }
-  },
-  "md.numen.agents.claude": {
-    "readsHooksAndSkills": false
+  "md.numen.views.agent.chat": {
+    "connections": [{ "connection": "c1f0a9e20", "model": "sonnet", "reasoning": "high" }]
   }
 }
 ```
 
-|                                                 |                                                                                                                                                                                                                                                                                                                                                                            |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `use`                                           | which agent answers. `claude` is Claude Code, used by starting it and reading its output. `numen` is Numen Agent, numen's own: the `md.numen.agents.numen` plugin asks the core for the next turn of a conversation through a connection and calls this vault's tools on behalf of the model. Empty means no agent, and the panel says so.                                 |
-| `claude.command`                                | the command that starts it: the path of the command line program, and any wrapper it is started through. Empty searches the path, then the folders its installers write to. Worth setting for an installation those folders do not cover, and for a machine with several.                                                                                                  |
-| `claude.model`                                  | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty uses that installation's default model. Worth setting because the panel is read while somebody waits.                                                                                                                                                                                       |
-| `md.numen.agents.claude`, `readsHooksAndSkills` | whether it reads the configuration of this machine: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not a request to run one. On, what is configured for this person is read; what a vault contains is rejected either way, since a vault comes from elsewhere. |
-| `numen.model`                                   | which model of the chat API answers. Empty takes the plugin's own `model` setting.                                                                                                                                                                                                                                                                                         |
-
-The Numen Agent chats through one connection: its page has a single row that names a connection that supports chat, the model and the reasoning level. How many requests it may make to the model for one task before it is stopped is the plugin's own setting, `maxSteps` in the object `md.numen.agents.numen`, 25 unless it names another. The temperature and the maximum of tokens are its settings too. The agent counts as installed while a row names a connection. If the stream breaks in the middle of an answer, the text that arrived stays and the agent stops with the name of the connection and the reason; it does not repeat a tool call by itself.
-
-A section is kept whether or not it is in use, so trying another agent temporarily loses no settings.
+The Numen Agent chats through one connection of its own: its page has a single row that names a connection that supports chat, the model and the reasoning level. How many requests it may make to the model for one task before it is stopped is the plugin's own setting, `maxSteps` in the object `md.numen.agents.numen`, 25 unless it names another. The temperature and the maximum of tokens are its settings too. If the stream breaks in the middle of an answer, the text that arrived stays and the turn ends with an error; it does not repeat a tool call by itself.
 
 ## Connections
 
 A connection is a place the core sends requests to for plugins, and the way in: a service you pay for, a server you run, or an agent program on this computer. You enter it once, on the Connections page, the row Connections beside System in the list of settings. A connection has an id, a type, a name, and the fields its type declares, such as an address and a key. The model and the reasoning level are not part of it. The Secrets page stays beside it and is unchanged.
 
-The types come from the plugins. A plugin lists them under `contributes.connectionTypes` in its manifest (see [Plugins](plugins/README.md#manifest-fields)). A type is named `<plugin id>/<type id>`, for example `md.numen.connections.llm/openrouter`. The Add dialog lists the types of the enabled plugins and builds its form from the fields of the chosen type. A type that fixes its address shows none, and a type of an agent program has no field but the name. A connection whose type no enabled plugin provides stays in the list as "Type unavailable"; it is not deleted and the plugins skip it.
+The types come from the plugins. A plugin lists them under `contributes.connectionTypes` in its manifest (see [Plugins](plugins/README.md#manifest-fields)). A type is named `<plugin id>/<type id>`, for example `md.numen.connections.llm/openrouter`. The Add dialog lists the types of the enabled plugins and builds its form from the fields of the chosen type. A type that fixes its address shows none, and a type of an agent program shows the program to start, which may stay empty where the type finds its program on the path. A connection whose type no enabled plugin provides stays in the list as "Type unavailable"; it is not deleted and the plugins skip it.
 
 The name is the text you type, trimmed, at most 64 characters, and unique ignoring case. An empty name is replaced by the title of the type for the first connection of it, and by the title and the lowest free number from 2 for the next ones, such as "OpenRouter 2".
 
