@@ -123,7 +123,6 @@ function createThemeWatcher(deps: {
   preview: ReturnType<typeof createAppearancePreview>
   applyAppearance: () => Promise<void>
   loadAppearance: () => Promise<void>
-  /** The theme and the mode the settings name, as one value that changes with either. */
   getChoice: () => string
   lost: Ref<string>
   wait: (ms: number) => Promise<void>
