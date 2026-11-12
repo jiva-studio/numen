@@ -48,7 +48,7 @@ describe('the open files a command can access', () => {
   })
 })
 
-describe('the tab of a file a command removes', () => {
+describe('the tab to close when a file is removed', () => {
   const FILE = 'cards/Shore birds.md'
 
   const tool: AnyTabKind = {
@@ -78,7 +78,7 @@ describe('the tab of a file a command removes', () => {
     openFile: () => undefined,
   }
 
-  it('is the tab that holds the file, not a tool standing on the same path', async () => {
+  it('is the tab of the file, not a tool tab with the same path', async () => {
     const windowTabs = createTestTabs()
     windowTabs.groups.registerKinds([tool, deck])
     const toolId = await windowTabs.tabs.openTabOfKind('graph')
