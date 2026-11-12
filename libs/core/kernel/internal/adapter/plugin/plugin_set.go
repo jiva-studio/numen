@@ -87,13 +87,14 @@ func (v setView) ordered() []manifest.Discovered {
 
 func (v setView) isEnabled(pluginID string) bool {
 	settings := v.set.values.get(pluginID)
-	if p, ok := v.set.plugins[pluginID]; ok {
+	p, isKnown := v.set.plugins[pluginID]
+	if isKnown {
 		settings = p.Manifest.ResolveSettings(settings)
 	}
 	if val, ok := settings[settingEnabled].(bool); ok {
 		return val
 	}
-	return true
+	return !p.Manifest.IsOffByDefault
 }
 
 func (v setView) settings(pluginID string) map[string]any {

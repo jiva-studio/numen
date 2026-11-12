@@ -35,6 +35,8 @@ message Manifest {
   // contributes is what the plugin adds to the application, known before its
   // frontend is loaded.
   ManifestContributes contributes = 26;
+  // is_off_by_default keeps the plugin off until the person enables it.
+  bool is_off_by_default = 27;
 }
 
 // ManifestContributes lists the contributions a plugin makes to the application.

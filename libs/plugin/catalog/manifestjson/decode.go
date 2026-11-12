@@ -132,6 +132,7 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Services:         wire.GetServices(),
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
 		Contributes:      contributes,
+		IsOffByDefault:   wire.GetIsOffByDefault(),
 	}, nil
 }
 

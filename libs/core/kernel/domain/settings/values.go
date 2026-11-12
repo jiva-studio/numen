@@ -7,7 +7,7 @@ import "strings"
 const AppOwner = "app"
 
 // HostFieldEnabled is the field of the object of a plugin that the host keeps. A plugin that has no
-// stored value for it is enabled.
+// stored value for it is enabled, unless its manifest keeps it off by default.
 const HostFieldEnabled = "enabled"
 
 // ConnectionsKey is the first-level key of the connections section.

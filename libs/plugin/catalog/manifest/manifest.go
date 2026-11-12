@@ -204,7 +204,9 @@ type Manifest struct {
 	Services         []string
 	SettingsViews    []SettingsView
 	Contributes      Contributes
-	Warnings         []string
+	// IsOffByDefault keeps the plugin off until the person enables it.
+	IsOffByDefault bool
+	Warnings       []string
 }
 
 // GetProtocol returns the plugin protocol the manifest declares. An absent protocol is 1.

@@ -164,6 +164,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 - **`protocol`**: The plugin protocol version the plugin was written against. The host uses protocol 1 and rejects a manifest that names a newer one. Absent means 1.
 - **`capabilities`**: The capabilities the host resolves a plugin by (`embedding`, `tools` and `ai.agent.provider`, the marker of an agent plugin that serves tasks and lists the programs it runs). The host refuses any other name when it reads the manifest.
 - **`targets`**: Allowed client environments (`desktop.editor`, `desktop.flashcards`).
+- **`isOffByDefault`**: `true` keeps the plugin off until the person enables it in the settings. Absent means the plugin runs once it is installed.
 - **`activationEvents`**: The events the plugin subscribes to. When the host emits one of them it activates the plugin and passes it the event through `DeliverEvent` when the plugin serves `numen.v1.PluginEventService`; a plugin built on the Go SDK serves it when it passes `server.WithEventHandler`. A plugin that rejects an event returns `error` set to `PLUGIN_EVENT_ERROR_CODE_REFUSED` and its `reason`, and the host reports the rejection with the event and the plugin id. A plugin that declares no activation event starts when called. An event that no plugin declares starts none, and a manifest with any other value (including `*`) is refused:
   - `onStartup` (when the host starts)
   - `onVectorsReady` (after an indexing pass leaves no vector pending, delivered as `onVectorsReady:<vault id>`)

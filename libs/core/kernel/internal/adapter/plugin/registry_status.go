@@ -75,19 +75,20 @@ func (r *Registry) GetPluginInfos() []plugindomain.Info {
 	result := make([]plugindomain.Info, 0, len(ordered))
 	for _, p := range ordered {
 		result = append(result, plugindomain.Info{
-			ID:            p.Manifest.ID,
-			Name:          p.Manifest.Name,
-			Version:       p.Manifest.Version,
-			Description:   p.Manifest.Description,
-			Capabilities:  p.Manifest.Capabilities,
-			Settings:      plugindomain.ListSettings(p.Manifest, v.settings(p.Manifest.ID)),
-			IsActive:      r.sups.IsActive(p.Manifest.ID),
-			Permissions:   p.Manifest.Permissions,
-			Failure:       r.failures.Get(p.Manifest.ID, p.Manifest.Name),
-			HasFrontend:   p.Manifest.HasFrontend(),
-			HasBackend:    p.Manifest.HasBackend(),
-			Readers:       r.readers.ListReaderInfos(enabled, p.Manifest),
-			SettingsViews: slices.Clone(p.Manifest.SettingsViews),
+			ID:             p.Manifest.ID,
+			Name:           p.Manifest.Name,
+			Version:        p.Manifest.Version,
+			Description:    p.Manifest.Description,
+			Capabilities:   p.Manifest.Capabilities,
+			Settings:       plugindomain.ListSettings(p.Manifest, v.settings(p.Manifest.ID)),
+			IsActive:       r.sups.IsActive(p.Manifest.ID),
+			Permissions:    p.Manifest.Permissions,
+			Failure:        r.failures.Get(p.Manifest.ID, p.Manifest.Name),
+			HasFrontend:    p.Manifest.HasFrontend(),
+			HasBackend:     p.Manifest.HasBackend(),
+			Readers:        r.readers.ListReaderInfos(enabled, p.Manifest),
+			SettingsViews:  slices.Clone(p.Manifest.SettingsViews),
+			IsOffByDefault: p.Manifest.IsOffByDefault,
 		})
 	}
 	return result
