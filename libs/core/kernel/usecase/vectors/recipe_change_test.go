@@ -48,7 +48,7 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 	fit := &vectorIndex{}
 	fitter := NewFitIndex(fit, nil)
 	fitter.ShouldRebuildIndex = true
-	if err := fitter.Execute(ctx, large); err != nil {
+	if err := fitter.Execute(ctx, sourcefake.Wrap(large)); err != nil {
 		t.Fatal(err)
 	}
 	if fit.dims != 16 || fit.recipe != large.Describe().Recipe() {

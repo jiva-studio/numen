@@ -63,8 +63,8 @@ func (w wiring) startSession(
 	t.Helper()
 	embedding := opts.embedding
 	worker := indexing.NewWorker(indexing.Config{
-		Reading:  w.readVault(db),
-		Embedder: embedding.GetEmbedder(),
+		Reading: w.readVault(db),
+		Source:  embedding.GetSource(),
 		VectorCounts: func(ctx context.Context, v domain.Vault) (held, embedded int64, err error) {
 			if !embedding.HasProgress() {
 				return 0, 0, indexing.ErrNoProgress
@@ -116,7 +116,7 @@ type testPasses struct {
 }
 
 func (p testPasses) ReadWholeVault(
-	ctx context.Context, embedder searchsourceport.Embedder, v domain.Vault, rebuild bool,
+	ctx context.Context, embedder searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
 	return p.reading.ReadWholeVault(ctx, p.db, embedder, v, rebuild)
 }

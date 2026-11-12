@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -164,7 +164,7 @@ func (r counts) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) e
 	return r.VaultReader.WalkFiles(ctx, fn)
 }
 
-func getVectorProgress(t *testing.T, f *behind, model searchsourceport.Embedder) (target, embedded int64) {
+func getVectorProgress(t *testing.T, f *behind, model sourcefake.Embedder) (target, embedded int64) {
 	t.Helper()
 	target, embedded, err := f.index.Chunks.Progress.GetProgress(t.Context(), f.vault.ID, model.Describe().Recipe())
 	if err != nil {

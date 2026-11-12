@@ -175,7 +175,7 @@ func (w readingParts) OpenVaultWith(
 
 // ReadWholeVault reads the notes, cuts the file texts and makes the vectors of a vault.
 func (w readingParts) ReadWholeVault(
-	ctx context.Context, db *testIndex, embedder searchsourceport.Embedder, v domain.Vault, rebuild bool,
+	ctx context.Context, db *testIndex, embedder searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
 	fit := vectors.NewFitIndex(db.VectorIndex(), nil)
 	fit.ShouldRebuildIndex = rebuild
@@ -209,7 +209,7 @@ func (w readingParts) ReadWholeVault(
 	embed := vectors.NewEmbed(w.GetVaultReaders(), db.Chunks.VectorQueries, db.Chunks.Vectors)
 	embed.Claim = store.NewIndexClaim(derivedCoreFolder + "/indexing")
 	embed.Texts = w.texts
-	embed.Embedder = embedder
+	embed.Source = embedder
 	return indexing.NewReadWholeVault(w.scan(db, rebuild), texts, embed), nil
 }
 

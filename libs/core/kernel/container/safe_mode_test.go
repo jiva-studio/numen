@@ -40,7 +40,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		if embedderReady(searchOf(cfg)) {
 			t.Fatal("expected EmbedderReady to report false in safe mode")
 		}
-		indexing, asking, closer, err := searchEmbedders(searchOf(cfg), ctx, nil)
+		indexing, asking, closer, err := searchSources(searchOf(cfg), ctx, nil)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedders in safe mode, got %v", err)
 		}
@@ -51,7 +51,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		embedder, closer, err := searchEmbedder(searchOf(cfg), ctx)
+		embedder, closer, err := searchSource(searchOf(cfg), ctx)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedder in safe mode, got %v", err)
 		}

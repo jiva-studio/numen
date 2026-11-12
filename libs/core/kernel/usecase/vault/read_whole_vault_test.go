@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -59,7 +60,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	notes := scanner(readers, db)
 	books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
 	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
-	embed.Embedder = pointing{}
+	embed.Source = sourcefake.Wrap(pointing{})
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	if _, err := making.Execute(t.Context(), v, indexing.Reporting{
@@ -119,7 +120,7 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	notes := scanner(readers, db)
 	books := filetext.NewIndex(refusing{}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: refusing{}})
 	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
-	embed.Embedder = unwilling{}
+	embed.Source = sourcefake.Wrap(unwilling{})
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
@@ -151,7 +152,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	books := filetext.NewIndex(timedOut{limit: limitCtx}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: timedOut{limit: limitCtx}})
 	counted := &counting{VaultReaders: readers}
 	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources())
-	embed.Embedder = unwilling{}
+	embed.Source = sourcefake.Wrap(unwilling{})
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(limitCtx, v, indexing.Reporting{})

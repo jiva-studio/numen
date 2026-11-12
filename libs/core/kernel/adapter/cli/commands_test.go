@@ -27,9 +27,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 var errRefused = errors.New("rejected on purpose")
@@ -477,7 +477,7 @@ func (constantEmbedder) Close() error { return nil }
 // scanFixture is a scan of a vault on a real index, with what the test chooses to
 // put in place of an installation's model.
 type scanFixture struct {
-	embedder   searchsourceport.Embedder
+	embedder   sourcefake.Embedder
 	unembedded error
 	summary    error
 	rebuilt    bool
@@ -508,7 +508,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 				if err := db.FitVectors(ctx, width, s.embedder.Describe().Recipe()); err != nil {
 					return cli.Indexed{}, err
 				}
-				embed.Embedder = s.embedder
+				embed.Source = sourcefake.Wrap(s.embedder)
 			}
 			read := indexing.NewReadWholeVaultByName(registry.NewFind(singleVaultList{target}).Execute, preparingRead(indexing.NewReadWholeVault(notes, books, embed)))
 			read.Unembedded = s.unembedded

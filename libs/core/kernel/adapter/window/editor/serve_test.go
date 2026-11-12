@@ -40,8 +40,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -189,7 +189,7 @@ func openingWith(
 	notes map[string]string,
 	watcher vaultport.VaultWatcher,
 	readers vaultport.VaultReaders,
-	embedder searchsourceport.Embedder,
+	embedder sourcefake.Embedder,
 	idleDuration time.Duration,
 ) *behind {
 	t.Helper()
@@ -209,7 +209,7 @@ func openingWith(
 	api.UseNotes()
 	api.state.Runtime.SetVault(v)
 	if embedder != nil {
-		if err := db.VectorIndex().FitVectors(t.Context(), embedder.Describe().Dimensions, embedder.Describe().Recipe()); err != nil {
+		if err := db.VectorIndex().FitVectors(t.Context(), embedder.Describe().Width, embedder.Describe().Recipe()); err != nil {
 			t.Fatal(err)
 		}
 		api.state.Runtime.RecordModel(embedder.Describe().String(), "")
@@ -219,7 +219,7 @@ func openingWith(
 	t.Cleanup(isDone)
 
 	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{
-		embedding: indexing.NewEmbedding(embedder, nil, db.Chunks.Progress), idle: idleDuration, out: io.Discard,
+		embedding: indexing.NewEmbedding(sourcefake.Wrap(embedder), nil, db.Chunks.Progress), idle: idleDuration, out: io.Discard,
 	})
 	t.Cleanup(end)
 

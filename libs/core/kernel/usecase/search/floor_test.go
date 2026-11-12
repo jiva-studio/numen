@@ -3,6 +3,7 @@ package search_test
 import (
 	"context"
 	"errors"
+	"math"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
