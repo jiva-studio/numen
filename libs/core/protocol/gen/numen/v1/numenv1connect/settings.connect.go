@@ -67,8 +67,7 @@ const (
 
 // SettingsServiceClient is a client for the numen.v1.SettingsService service.
 type SettingsServiceClient interface {
-	// GetSettings is every setting of the file, and the models the settings that
-	// name one can be set to.
+	// GetSettings is every setting of the file.
 	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
 	// WriteSettings writes settings into that file. The file is patched as an
 	// object, so every key a person typed keeps its position, and a file the
@@ -201,8 +200,7 @@ func (c *settingsServiceClient) WatchSettings(ctx context.Context, req *connect.
 
 // SettingsServiceHandler is an implementation of the numen.v1.SettingsService service.
 type SettingsServiceHandler interface {
-	// GetSettings is every setting of the file, and the models the settings that
-	// name one can be set to.
+	// GetSettings is every setting of the file.
 	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
 	// WriteSettings writes settings into that file. The file is patched as an
 	// object, so every key a person typed keeps its position, and a file the

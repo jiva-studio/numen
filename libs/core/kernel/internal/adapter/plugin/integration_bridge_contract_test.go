@@ -24,6 +24,9 @@ type bridgeHost interface {
 	sourcebridge.Host
 }
 
+// contractPluginID is the plugin the bridges are opened on.
+const contractPluginID = "md.numen.stub"
+
 // bridgeCall makes one call through an open bridge and reports whether the
 // returned value is the zero value.
 type bridgeCall func(ctx context.Context) (isZero bool, err error)

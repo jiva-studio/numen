@@ -74,117 +74,6 @@ func (ToolEffect) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_tools_proto_rawDescGZIP(), []int{0}
 }
 
-// ToolStep is how a call is shown to a person: as what it does. The zero value
-// leaves it to the tool's effect, a look for a tool that reads and an edit for
-// one that writes.
-type ToolStep int32
-
-const (
-	ToolStep_TOOL_STEP_UNSPECIFIED ToolStep = 0
-	// The call looks for notes.
-	ToolStep_TOOL_STEP_SEARCH ToolStep = 1
-	// The call takes something out of the vault.
-	ToolStep_TOOL_STEP_REMOVE ToolStep = 2
-	// The call files something elsewhere or under another name.
-	ToolStep_TOOL_STEP_MOVE ToolStep = 3
-)
-
-// Enum value maps for ToolStep.
-var (
-	ToolStep_name = map[int32]string{
-		0: "TOOL_STEP_UNSPECIFIED",
-		1: "TOOL_STEP_SEARCH",
-		2: "TOOL_STEP_REMOVE",
-		3: "TOOL_STEP_MOVE",
-	}
-	ToolStep_value = map[string]int32{
-		"TOOL_STEP_UNSPECIFIED": 0,
-		"TOOL_STEP_SEARCH":      1,
-		"TOOL_STEP_REMOVE":      2,
-		"TOOL_STEP_MOVE":        3,
-	}
-)
-
-func (x ToolStep) Enum() *ToolStep {
-	p := new(ToolStep)
-	*p = x
-	return p
-}
-
-func (x ToolStep) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ToolStep) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_tools_proto_enumTypes[1].Descriptor()
-}
-
-func (ToolStep) Type() protoreflect.EnumType {
-	return &file_numen_v1_tools_proto_enumTypes[1]
-}
-
-func (x ToolStep) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ToolStep.Descriptor instead.
-func (ToolStep) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_tools_proto_rawDescGZIP(), []int{1}
-}
-
-// ToolServer is one of the servers the host builds for an agent. The zero value
-// means none was named.
-type ToolServer int32
-
-const (
-	ToolServer_TOOL_SERVER_UNSPECIFIED ToolServer = 0
-	// The server an agent works the whole vault through.
-	ToolServer_TOOL_SERVER_FULL ToolServer = 1
-	// The server an agent answers from, whose every tool reads.
-	ToolServer_TOOL_SERVER_READING ToolServer = 2
-)
-
-// Enum value maps for ToolServer.
-var (
-	ToolServer_name = map[int32]string{
-		0: "TOOL_SERVER_UNSPECIFIED",
-		1: "TOOL_SERVER_FULL",
-		2: "TOOL_SERVER_READING",
-	}
-	ToolServer_value = map[string]int32{
-		"TOOL_SERVER_UNSPECIFIED": 0,
-		"TOOL_SERVER_FULL":        1,
-		"TOOL_SERVER_READING":     2,
-	}
-)
-
-func (x ToolServer) Enum() *ToolServer {
-	p := new(ToolServer)
-	*p = x
-	return p
-}
-
-func (x ToolServer) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ToolServer) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_tools_proto_enumTypes[2].Descriptor()
-}
-
-func (ToolServer) Type() protoreflect.EnumType {
-	return &file_numen_v1_tools_proto_enumTypes[2]
-}
-
-func (x ToolServer) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ToolServer.Descriptor instead.
-func (ToolServer) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_tools_proto_rawDescGZIP(), []int{2}
-}
-
 // ToolErrorCode is why a call was served and not run.
 type ToolErrorCode int32
 
@@ -221,11 +110,11 @@ func (x ToolErrorCode) String() string {
 }
 
 func (ToolErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_tools_proto_enumTypes[3].Descriptor()
+	return file_numen_v1_tools_proto_enumTypes[1].Descriptor()
 }
 
 func (ToolErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_tools_proto_enumTypes[3]
+	return &file_numen_v1_tools_proto_enumTypes[1]
 }
 
 func (x ToolErrorCode) Number() protoreflect.EnumNumber {
@@ -234,7 +123,7 @@ func (x ToolErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ToolErrorCode.Descriptor instead.
 func (ToolErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_tools_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_tools_proto_rawDescGZIP(), []int{1}
 }
 
 type ListToolsRequest struct {
@@ -336,21 +225,15 @@ type PluginTool struct {
 	// What the tool does to the vault. It decides the permission the plugin must
 	// hold and whether the tool is offered where nothing may be changed.
 	Effect ToolEffect `protobuf:"varint,6,opt,name=effect,proto3,enum=numen.v1.ToolEffect" json:"effect,omitempty"`
-	// The agent servers the tool is offered on. None is the full server alone.
-	Servers []ToolServer `protobuf:"varint,7,rep,packed,name=servers,proto3,enum=numen.v1.ToolServer" json:"servers,omitempty"`
-	Step    ToolStep     `protobuf:"varint,8,opt,name=step,proto3,enum=numen.v1.ToolStep" json:"step,omitempty"`
 	// The instructions about this tool, each one sentence of plain English. A
 	// sentence about several tools is attached to each of them with identical
-	// text. An agent server sends an agent the distinct sentences of the tools it
-	// offers, in listing order.
-	Instructions []string `protobuf:"bytes,9,rep,name=instructions,proto3" json:"instructions,omitempty"`
+	// text. Whoever offers the tools to an agent sends it the distinct sentences
+	// of the tools it offers, in listing order.
+	Instructions []string `protobuf:"bytes,7,rep,name=instructions,proto3" json:"instructions,omitempty"`
 	// The permissions the caller must have besides the one of the effect, such
 	// as vault:manage. The host lists and runs the tool only for a caller that
 	// has all of them.
-	Requires []string `protobuf:"bytes,10,rep,name=requires,proto3" json:"requires,omitempty"`
-	// The hints an agent reads about the tool, set by the SDK from the effect,
-	// the step and the required permissions.
-	Hints         *ToolHints `protobuf:"bytes,11,opt,name=hints,proto3" json:"hints,omitempty"`
+	Requires      []string `protobuf:"bytes,8,rep,name=requires,proto3" json:"requires,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -427,20 +310,6 @@ func (x *PluginTool) GetEffect() ToolEffect {
 	return ToolEffect_TOOL_EFFECT_UNSPECIFIED
 }
 
-func (x *PluginTool) GetServers() []ToolServer {
-	if x != nil {
-		return x.Servers
-	}
-	return nil
-}
-
-func (x *PluginTool) GetStep() ToolStep {
-	if x != nil {
-		return x.Step
-	}
-	return ToolStep_TOOL_STEP_UNSPECIFIED
-}
-
 func (x *PluginTool) GetInstructions() []string {
 	if x != nil {
 		return x.Instructions
@@ -455,101 +324,20 @@ func (x *PluginTool) GetRequires() []string {
 	return nil
 }
 
-func (x *PluginTool) GetHints() *ToolHints {
-	if x != nil {
-		return x.Hints
-	}
-	return nil
-}
-
-// ToolHints are the MCP annotations of a tool.
-type ToolHints struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The tool changes nothing: the effect is READ_ONLY.
-	ReadOnly bool `protobuf:"varint,1,opt,name=read_only,json=readOnly,proto3" json:"read_only,omitempty"`
-	// The tool removes something: the effect is READ_WRITE and the step REMOVE.
-	Destructive bool `protobuf:"varint,2,opt,name=destructive,proto3" json:"destructive,omitempty"`
-	// A repeated call with the same arguments has no further effect: the effect is READ_ONLY.
-	Idempotent bool `protobuf:"varint,3,opt,name=idempotent,proto3" json:"idempotent,omitempty"`
-	// The tool reaches outside the machine: requires contains link:open.
-	OpenWorld     bool `protobuf:"varint,4,opt,name=open_world,json=openWorld,proto3" json:"open_world,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ToolHints) Reset() {
-	*x = ToolHints{}
-	mi := &file_numen_v1_tools_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ToolHints) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ToolHints) ProtoMessage() {}
-
-func (x *ToolHints) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_tools_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ToolHints.ProtoReflect.Descriptor instead.
-func (*ToolHints) Descriptor() ([]byte, []int) {
-	return file_numen_v1_tools_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *ToolHints) GetReadOnly() bool {
-	if x != nil {
-		return x.ReadOnly
-	}
-	return false
-}
-
-func (x *ToolHints) GetDestructive() bool {
-	if x != nil {
-		return x.Destructive
-	}
-	return false
-}
-
-func (x *ToolHints) GetIdempotent() bool {
-	if x != nil {
-		return x.Idempotent
-	}
-	return false
-}
-
-func (x *ToolHints) GetOpenWorld() bool {
-	if x != nil {
-		return x.OpenWorld
-	}
-	return false
-}
-
 type CallToolRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The name the plugin listed the tool under.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The arguments, as a JSON object that meets the tool's input schema.
 	Arguments []byte `protobuf:"bytes,2,opt,name=arguments,proto3" json:"arguments,omitempty"`
-	// The context of the AskAgentRequest the call was made under: what the asking
+	// The tool context of the task the call was made under: what the asking
 	// view shows, under keys that start with the id of the plugin that wrote them
 	// and a slash. It is data about the call and no part of the arguments, and it
-	// is empty for a question asked with none, and for a call from a program
-	// outside Numen.
+	// is empty for a task given none.
 	Context map[string]string `protobuf:"bytes,3,rep,name=context,proto3" json:"context,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// The vault the call works, by identity: the one the agent run was started
-	// on, or for a call from a program outside Numen the one the host shows.
-	// Empty where there is none.
+	// The vault the call works, by identity: the one the task was started on.
+	// Empty on a call to the host is the vault the Numen-Vault header names, else
+	// the one the host shows.
 	VaultId       string `protobuf:"bytes,4,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -557,7 +345,7 @@ type CallToolRequest struct {
 
 func (x *CallToolRequest) Reset() {
 	*x = CallToolRequest{}
-	mi := &file_numen_v1_tools_proto_msgTypes[4]
+	mi := &file_numen_v1_tools_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -569,7 +357,7 @@ func (x *CallToolRequest) String() string {
 func (*CallToolRequest) ProtoMessage() {}
 
 func (x *CallToolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_tools_proto_msgTypes[4]
+	mi := &file_numen_v1_tools_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -582,7 +370,7 @@ func (x *CallToolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallToolRequest.ProtoReflect.Descriptor instead.
 func (*CallToolRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_tools_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_tools_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CallToolRequest) GetName() string {
@@ -626,7 +414,7 @@ type CallToolResponse struct {
 
 func (x *CallToolResponse) Reset() {
 	*x = CallToolResponse{}
-	mi := &file_numen_v1_tools_proto_msgTypes[5]
+	mi := &file_numen_v1_tools_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -638,7 +426,7 @@ func (x *CallToolResponse) String() string {
 func (*CallToolResponse) ProtoMessage() {}
 
 func (x *CallToolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_tools_proto_msgTypes[5]
+	mi := &file_numen_v1_tools_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -651,7 +439,7 @@ func (x *CallToolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallToolResponse.ProtoReflect.Descriptor instead.
 func (*CallToolResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_tools_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_tools_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CallToolResponse) GetError() ToolErrorCode {
@@ -685,7 +473,7 @@ type ToolResult struct {
 
 func (x *ToolResult) Reset() {
 	*x = ToolResult{}
-	mi := &file_numen_v1_tools_proto_msgTypes[6]
+	mi := &file_numen_v1_tools_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -697,7 +485,7 @@ func (x *ToolResult) String() string {
 func (*ToolResult) ProtoMessage() {}
 
 func (x *ToolResult) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_tools_proto_msgTypes[6]
+	mi := &file_numen_v1_tools_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -710,7 +498,7 @@ func (x *ToolResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolResult.ProtoReflect.Descriptor instead.
 func (*ToolResult) Descriptor() ([]byte, []int) {
-	return file_numen_v1_tools_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_tools_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ToolResult) GetText() string {
@@ -741,7 +529,7 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\x14numen/v1/tools.proto\x12\bnumen.v1\"\x12\n" +
 	"\x10ListToolsRequest\"?\n" +
 	"\x11ListToolsResponse\x12*\n" +
-	"\x05tools\x18\x01 \x03(\v2\x14.numen.v1.PluginToolR\x05tools\"\x91\x03\n" +
+	"\x05tools\x18\x01 \x03(\v2\x14.numen.v1.PluginToolR\x05tools\"\x8e\x02\n" +
 	"\n" +
 	"PluginTool\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
@@ -749,21 +537,9 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12!\n" +
 	"\finput_schema\x18\x04 \x01(\fR\vinputSchema\x12#\n" +
 	"\routput_schema\x18\x05 \x01(\fR\foutputSchema\x12,\n" +
-	"\x06effect\x18\x06 \x01(\x0e2\x14.numen.v1.ToolEffectR\x06effect\x12.\n" +
-	"\aservers\x18\a \x03(\x0e2\x14.numen.v1.ToolServerR\aservers\x12&\n" +
-	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\x12\"\n" +
-	"\finstructions\x18\t \x03(\tR\finstructions\x12\x1a\n" +
-	"\brequires\x18\n" +
-	" \x03(\tR\brequires\x12)\n" +
-	"\x05hints\x18\v \x01(\v2\x13.numen.v1.ToolHintsR\x05hints\"\x89\x01\n" +
-	"\tToolHints\x12\x1b\n" +
-	"\tread_only\x18\x01 \x01(\bR\breadOnly\x12 \n" +
-	"\vdestructive\x18\x02 \x01(\bR\vdestructive\x12\x1e\n" +
-	"\n" +
-	"idempotent\x18\x03 \x01(\bR\n" +
-	"idempotent\x12\x1d\n" +
-	"\n" +
-	"open_world\x18\x04 \x01(\bR\topenWorld\"\xdc\x01\n" +
+	"\x06effect\x18\x06 \x01(\x0e2\x14.numen.v1.ToolEffectR\x06effect\x12\"\n" +
+	"\finstructions\x18\a \x03(\tR\finstructions\x12\x1a\n" +
+	"\brequires\x18\b \x03(\tR\brequires\"\xdc\x01\n" +
 	"\x0fCallToolRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
 	"\targuments\x18\x02 \x01(\fR\targuments\x12@\n" +
@@ -786,17 +562,7 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"ToolEffect\x12\x1b\n" +
 	"\x17TOOL_EFFECT_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15TOOL_EFFECT_READ_ONLY\x10\x01\x12\x1a\n" +
-	"\x16TOOL_EFFECT_READ_WRITE\x10\x02*e\n" +
-	"\bToolStep\x12\x19\n" +
-	"\x15TOOL_STEP_UNSPECIFIED\x10\x00\x12\x14\n" +
-	"\x10TOOL_STEP_SEARCH\x10\x01\x12\x14\n" +
-	"\x10TOOL_STEP_REMOVE\x10\x02\x12\x12\n" +
-	"\x0eTOOL_STEP_MOVE\x10\x03*X\n" +
-	"\n" +
-	"ToolServer\x12\x1b\n" +
-	"\x17TOOL_SERVER_UNSPECIFIED\x10\x00\x12\x14\n" +
-	"\x10TOOL_SERVER_FULL\x10\x01\x12\x17\n" +
-	"\x13TOOL_SERVER_READING\x10\x02*u\n" +
+	"\x16TOOL_EFFECT_READ_WRITE\x10\x02*u\n" +
 	"\rToolErrorCode\x12\x1f\n" +
 	"\x1bTOOL_ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cTOOL_ERROR_CODE_UNKNOWN_TOOL\x10\x01\x12!\n" +
@@ -817,40 +583,34 @@ func file_numen_v1_tools_proto_rawDescGZIP() []byte {
 	return file_numen_v1_tools_proto_rawDescData
 }
 
-var file_numen_v1_tools_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_numen_v1_tools_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_numen_v1_tools_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_tools_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_tools_proto_goTypes = []any{
 	(ToolEffect)(0),           // 0: numen.v1.ToolEffect
-	(ToolStep)(0),             // 1: numen.v1.ToolStep
-	(ToolServer)(0),           // 2: numen.v1.ToolServer
-	(ToolErrorCode)(0),        // 3: numen.v1.ToolErrorCode
-	(*ListToolsRequest)(nil),  // 4: numen.v1.ListToolsRequest
-	(*ListToolsResponse)(nil), // 5: numen.v1.ListToolsResponse
-	(*PluginTool)(nil),        // 6: numen.v1.PluginTool
-	(*ToolHints)(nil),         // 7: numen.v1.ToolHints
-	(*CallToolRequest)(nil),   // 8: numen.v1.CallToolRequest
-	(*CallToolResponse)(nil),  // 9: numen.v1.CallToolResponse
-	(*ToolResult)(nil),        // 10: numen.v1.ToolResult
-	nil,                       // 11: numen.v1.CallToolRequest.ContextEntry
+	(ToolErrorCode)(0),        // 1: numen.v1.ToolErrorCode
+	(*ListToolsRequest)(nil),  // 2: numen.v1.ListToolsRequest
+	(*ListToolsResponse)(nil), // 3: numen.v1.ListToolsResponse
+	(*PluginTool)(nil),        // 4: numen.v1.PluginTool
+	(*CallToolRequest)(nil),   // 5: numen.v1.CallToolRequest
+	(*CallToolResponse)(nil),  // 6: numen.v1.CallToolResponse
+	(*ToolResult)(nil),        // 7: numen.v1.ToolResult
+	nil,                       // 8: numen.v1.CallToolRequest.ContextEntry
 }
 var file_numen_v1_tools_proto_depIdxs = []int32{
-	6,  // 0: numen.v1.ListToolsResponse.tools:type_name -> numen.v1.PluginTool
-	0,  // 1: numen.v1.PluginTool.effect:type_name -> numen.v1.ToolEffect
-	2,  // 2: numen.v1.PluginTool.servers:type_name -> numen.v1.ToolServer
-	1,  // 3: numen.v1.PluginTool.step:type_name -> numen.v1.ToolStep
-	7,  // 4: numen.v1.PluginTool.hints:type_name -> numen.v1.ToolHints
-	11, // 5: numen.v1.CallToolRequest.context:type_name -> numen.v1.CallToolRequest.ContextEntry
-	3,  // 6: numen.v1.CallToolResponse.error:type_name -> numen.v1.ToolErrorCode
-	10, // 7: numen.v1.CallToolResponse.result:type_name -> numen.v1.ToolResult
-	4,  // 8: numen.v1.PluginToolService.ListTools:input_type -> numen.v1.ListToolsRequest
-	8,  // 9: numen.v1.PluginToolService.CallTool:input_type -> numen.v1.CallToolRequest
-	5,  // 10: numen.v1.PluginToolService.ListTools:output_type -> numen.v1.ListToolsResponse
-	9,  // 11: numen.v1.PluginToolService.CallTool:output_type -> numen.v1.CallToolResponse
-	10, // [10:12] is the sub-list for method output_type
-	8,  // [8:10] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	4, // 0: numen.v1.ListToolsResponse.tools:type_name -> numen.v1.PluginTool
+	0, // 1: numen.v1.PluginTool.effect:type_name -> numen.v1.ToolEffect
+	8, // 2: numen.v1.CallToolRequest.context:type_name -> numen.v1.CallToolRequest.ContextEntry
+	1, // 3: numen.v1.CallToolResponse.error:type_name -> numen.v1.ToolErrorCode
+	7, // 4: numen.v1.CallToolResponse.result:type_name -> numen.v1.ToolResult
+	2, // 5: numen.v1.PluginToolService.ListTools:input_type -> numen.v1.ListToolsRequest
+	5, // 6: numen.v1.PluginToolService.CallTool:input_type -> numen.v1.CallToolRequest
+	3, // 7: numen.v1.PluginToolService.ListTools:output_type -> numen.v1.ListToolsResponse
+	6, // 8: numen.v1.PluginToolService.CallTool:output_type -> numen.v1.CallToolResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_tools_proto_init() }
@@ -863,8 +623,8 @@ func file_numen_v1_tools_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_tools_proto_rawDesc), len(file_numen_v1_tools_proto_rawDesc)),
-			NumEnums:      4,
-			NumMessages:   8,
+			NumEnums:      2,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
