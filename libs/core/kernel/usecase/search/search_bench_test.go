@@ -125,8 +125,8 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	}
 
 	mock := newBenchEmbedder(model)
-	source := sourcefake.Wrap(mock).Over(search.NewFindNearest(db.ChunkSearch()).Execute)
-	embedderUseCase, err := container.Embed(cfg, db, source, v)
+	asking := sourcefake.Wrap(mock).Over(search.NewFindNearest(db.ChunkSearch()).Execute)
+	embedderUseCase, err := container.Embed(cfg, db, asking, v)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -134,7 +134,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 		b.Fatal(err)
 	}
 
-	searchMock := container.NewSearch(cfg, db, source, nil)
+	searchMock := container.NewSearch(cfg, db, asking, nil)
 
 	passages := db.ChunkSearch()
 	candidates, err := passages.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})

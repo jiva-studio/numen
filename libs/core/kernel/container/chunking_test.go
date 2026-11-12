@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 )
 
 // The sizes are part of what a chunk is kept under, and the one thing that
@@ -77,7 +78,7 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 	target.Resources.Chunks.Set(maxTokens)
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
-	_, err = container.ReadWholeVault(target, t.Context(), db, wide{384}, v)
+	_, err = container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(wide{384}), v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +96,7 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), v.ID, wide{384}.Describe(), "", 1000)
+	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), v.ID, wide{384}.Describe().Recipe(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,12 +127,12 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 	})
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
-	if _, err := container.ReadWholeVault(target, t.Context(), db, wide{384}, v); err != nil {
+	if _, err := container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(wide{384}), v); err != nil {
 		t.Fatal(err)
 	}
 	// A width the index cannot be built for prevents anything from becoming
 	// searchable, and it is detected before any vector is requested.
-	_, err = container.ReadWholeVault(target, t.Context(), db, wide{0}, v)
+	_, err = container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(wide{0}), v)
 	if err == nil || !strings.Contains(err.Error(), "not a vector") {
 		t.Fatalf("got %v", err)
 	}

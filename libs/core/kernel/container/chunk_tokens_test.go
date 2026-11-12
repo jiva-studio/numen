@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -266,7 +267,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 	if err := container.UpdateIndex(cfg, db)(t.Context(), v, []string{"Hedge.md"}); err != nil {
 		t.Fatal(err)
 	}
-	read, err := container.ReadWholeVault(cfg, t.Context(), db, unit{"model"}, v)
+	read, err := container.ReadWholeVault(cfg, t.Context(), db, sourcefake.Wrap(unit{"model"}), v)
 	if err != nil {
 		t.Fatal(err)
 	}
