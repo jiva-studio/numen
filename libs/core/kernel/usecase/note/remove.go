@@ -30,18 +30,20 @@ type Remove struct {
 	writers vaultport.FileMovers
 	links   noteport.LinkQueries
 	queries sourceport.SourcesUnder
+	filer   sourceport.VersionMover
 	index   edit.IndexUpdater
 	gate    WriteGate
 }
 
 // NewRemove is what takes a note out of the vault: the vault it is moved
 // within, the links that pointed at it, what the index holds about the files
-// under it, and what updates the index for the path it left, and the gate a removal passes.
+// under it, the filer of the text versions that follow the file into the trash, what updates the index for
+// the path it left, and the gate a removal passes.
 func NewRemove(
-	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, index edit.IndexUpdater,
-	gate WriteGate,
+	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, filer sourceport.VersionMover,
+	index edit.IndexUpdater, gate WriteGate,
 ) Remove {
-	return Remove{writers: writers, links: links, queries: queries, index: index, gate: gate}
+	return Remove{writers: writers, links: links, queries: queries, filer: filer, index: index, gate: gate}
 }
 
 type RemoveResult struct {
@@ -80,6 +82,10 @@ func (u Remove) trash(ctx context.Context, v domain.Vault, path string) (RemoveR
 	}
 	res.Trashed = target
 
+	// The text versions of a recording, a scan or a proofread text travel with
+	// the file, so moving it out of the trash brings them back.
+	filingErr := u.filer.MoveVersions(ctx, v.ID, path, target)
+
 	// The index is updated for what the vault held at each path, and with
 	// the path itself where it held nothing.
 	indexPaths := make([]string, 0, len(went))
@@ -102,7 +108,7 @@ func (u Remove) trash(ctx context.Context, v domain.Vault, path string) (RemoveR
 		}
 		res.Dangling = append(res.Dangling, was.From)
 	}
-	return res, indexErr
+	return res, errors.Join(filingErr, indexErr)
 }
 
 func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources []domain.FileStat) ([]domain.ResolvedLink, error) {

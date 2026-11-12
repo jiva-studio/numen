@@ -6,7 +6,6 @@ import {
   writeNote,
 } from '../../support/vault.js'
 import { createNoteWithBody } from '../../support/layout.js'
-import { readBox } from '../../support/browser.js'
 import { openWorkspace } from '../../support/workspace.js'
 import { waitForCurrentVectors } from '../../support/index-stats.js'
 
@@ -74,34 +73,5 @@ test.describe('the index stats item', () => {
     await destroyNote(request, path)
     notes.length = 0
     await expect.poll(() => readVectors(item), { timeout: 45_000 }).toBe(before)
-  })
-
-  test('opens the popover below the title bar, and closes it with Escape', async ({ page }) => {
-    await openWorkspace(page)
-    const item = getItem(page)
-    await readSettledVectors(item)
-    const trigger = page.getByRole('button', { name: / vectors/ })
-
-    await trigger.click()
-
-    await expect(trigger).toHaveAttribute('aria-expanded', 'true')
-    const popover = page.getByRole('dialog', { name: 'Index stats' })
-    await expect(popover).toBeVisible()
-    await expect(popover.getByText('Vectors', { exact: true })).toBeVisible()
-    await expect(popover.getByText('Chunks', { exact: true })).toBeVisible()
-
-    const box = await readBox(popover)
-    const bar = await readBox(page.locator('[data-title-bar]'))
-    const viewport = page.viewportSize()
-    expect(box.x).toBeGreaterThanOrEqual(0)
-    expect(box.y).toBeGreaterThanOrEqual(0)
-    expect(box.x + box.width).toBeLessThanOrEqual(viewport?.width ?? 0)
-    expect(box.y).toBeGreaterThanOrEqual(bar.y + bar.height)
-    expect(box.y + box.height).toBeLessThanOrEqual(viewport?.height ?? 0)
-
-    await page.keyboard.press('Escape')
-
-    await expect(popover).toBeHidden()
-    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 })

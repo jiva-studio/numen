@@ -194,12 +194,13 @@ const createRows = (agent: string): readonly Command[] => [
     ...withWhen('target.isNote'),
     getFieldText: (target) => target.title,
   },
-  // The note moves to the vault's .trash folder, and restoring it is a move.
+  // The file moves to the vault's .trash folder, and restoring it is a move. Any file can go, a folder
+  // cannot.
   {
     id: COMMAND.removeFile,
     text: NOTE_WORDS.remove,
     group: 'note',
-    ...withWhen('target.isNote'),
+    ...withWhen('target.isNote || target.isFile'),
   },
   {
     id: COMMAND.copyFilePath,

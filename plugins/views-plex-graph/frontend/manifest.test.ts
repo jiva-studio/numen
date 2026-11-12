@@ -16,6 +16,7 @@ const manifest = JSON.parse(
       title: string
       icon?: string
       scope?: string
+      shortcut?: string
       when?: string
     }[]
     slots?: readonly Record<string, unknown>[]
@@ -84,6 +85,14 @@ describe('the manifest', () => {
 
   it('declares no command to show a note, which the window runs as app:file.reveal over the plex', () => {
     expect(manifest.contributes.commands.map((one) => one.id)).toStrictEqual(['graph.open'])
+  })
+})
+
+describe('the shortcut', () => {
+  it('opens the plex on the window key with Shift and X', () => {
+    expect(manifest.contributes.commands.find((one) => one.id === 'graph.open')?.shortcut).toBe(
+      'mod+shift+x',
+    )
   })
 })
 

@@ -1,9 +1,9 @@
 ---
 name: nm-review
-description: Executes the complete, standardized 3-stage code review pipeline (gatekeeper and architecture, then bug hunter, then adversary) for working tree changes, pull requests, branches, or specified paths. Trigger with "/nm-review", "review", "run review", "code review", or when asked to review Go, Vue or TypeScript code.
+description: Executes the standardized code review pipeline (gatekeeper and architecture, then bug hunter, then adversary, plus a feature conformance check) for working tree changes, pull requests, branches, or specified paths. Trigger with "/nm-review", "review", "run review", "code review", or when asked to review Go, Vue or TypeScript code.
 ---
 
-# Unified 3-Stage Code Review Pipeline (`/nm-review`)
+# Unified Code Review Pipeline (`/nm-review`)
 
 This skill orchestrates the sequential review pipeline for the numen repository. It locates the changed files, audits them against `AGENTS.md` and the rules in `.agents/rules/`, hunts for semantic defects across the blast radius, and proves or disproves each hypothesis with a test that runs.
 
@@ -16,6 +16,8 @@ flowchart LR
     Stage1 -->|"Pass"| Stage2["2. Bug Hunter"]
     Stage2 --> Stage3["3. Adversary"]
     Stage3 --> Report["Unified report"]
+    Target --> Conformance["4. Feature conformance"]
+    Conformance --> Report
 ```
 
 ---
@@ -84,7 +86,7 @@ _Guide: [`stages/1-gatekeeper.md`](./stages/1-gatekeeper.md)_
 
 _Guide: [`stages/2-bughunter.md`](./stages/2-bughunter.md)_
 
-1. **Intent & Spec conformance** — if `intent.md` exists in the task folder, verify that no Non-Goals were violated. If `spec.md` exists, verify that all acceptance criteria are covered and the diff does not exceed the blast radius.
+1. **Spec conformance** — if `.agents/tasks/<slug>/scope.md` exists, verify that nothing it excludes was built. If `spec.md` exists, verify that its scenario map is covered and the diff does not exceed the blast radius.
 2. **Blast radius** — callers of every changed function, upstream sources of the state it reads, downstream watchers, renderers and subscribers.
 3. **Defect matrix** — Go concurrency, context and cancellation, error paths, SQL and resources; Vue reactivity, lifecycle leaks, out-of-order responses; boundary and index errors; wire contracts across _A client is generated from the protocol_.
 4. **Proof** — every defect has a concrete scenario: _Given → When → Then_. No vague warnings.
@@ -97,6 +99,16 @@ _Guide: [`stages/3-adversary.md`](./stages/3-adversary.md)_
 2. **Craft and run** — an adjacent `_test.go` or `.spec.ts`, executed. A failing test confirms the defect; a passing one confirms resilience and stays if it covers an edge nobody had covered.
 3. **Mutation check** — for a test guarding a rule, break the rule and check that the test fails. A test that passes either way is worse than no test.
 
+### Stage 4: Feature conformance
+
+The agent receives the diff, the spec and the feature file, and reads; it does not fix. It answers:
+
+1. **Evidence per scenario** — for each scenario of the feature file the diff touches or implements, the test and the code path that satisfy it.
+2. **Scope creep** — behaviour the diff adds that no scenario or spec line asked for.
+3. **Scenarios changed** — the scenarios added, changed or removed in the diff.
+
+The four angles do not depend on each other's output, so they can run in parallel as separate subagents.
+
 ---
 
 ## Report format (mandatory)
@@ -104,8 +116,8 @@ _Guide: [`stages/3-adversary.md`](./stages/3-adversary.md)_
 The report is read on a GitHub pull request and in a terminal. The verdict and the findings come first, and the report shows only what the review did.
 
 1. **Only the report.** No text before or after it.
-2. **Order:** verdict heading, summary, findings by severity, the gates that ran, the list of checks found sound, the footer.
-3. **A check that did not run is left out.** No "N/A" or "not run" rows. When the caller ran no gates, the gates line is omitted, and the footer says in one line what was not run and why.
+2. **Order:** verdict heading, summary, findings by severity, the feature conformance section, the gates that ran, the list of checks found sound, the footer.
+3. **A check that did not run is left out** (the scenario list is always present). No "N/A" or "not run" rows. When the caller ran no gates, the gates line is omitted, and the footer says in one line what was not run and why.
 4. **Lists, not tables.** Wide tables break on GitHub. Status is an emoji (✅ ❌), never a code span.
 5. **"No findings" is a real outcome.** Padding a review with cosmetic remarks wastes the time of everyone who reads it.
 
@@ -137,6 +149,12 @@ Verdict: ❌ Rejected when a gate failed or a CRITICAL finding exists; ⚠️ Ch
 ### 🟡 MEDIUM · <defect title>
 
 …
+
+### Feature conformance
+
+- **Scenarios:** ✅ <scenario title>: <the test and the code path>
+- **Scope creep:** <behaviour no scenario or spec line asked for, or "none">
+- **Scenarios changed in the diff:** <added, changed and removed scenarios, each with its file; "none" when the diff leaves them alone>
 
 **Gates:** ✅ `make lib_core_lint` · ✅ `make lib_core_test` · ❌ `make lib_ui_components_test`
 

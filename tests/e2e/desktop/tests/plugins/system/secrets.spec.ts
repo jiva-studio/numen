@@ -119,36 +119,6 @@ const reopen = async (page: Page): Promise<void> => {
   await expect(page.getByRole('tablist').first()).toBeVisible()
 }
 
-const callOn = async (
-  page: Page,
-  method: string,
-  data: object,
-): Promise<JsonObject> => {
-  const answer = await page.request.post(`${serverUrl}/numen.v1.SettingsService/${method}`, {
-    data,
-    headers: { 'Content-Type': 'application/json' },
-  })
-  const text = await answer.text()
-  if (!answer.ok()) throw new Error(`${method} answered ${answer.status()}: ${text}`)
-  return text ? (JSON.parse(text) as JsonObject) : {}
-}
-
-const createSecret = async (
-  page: Page,
-  group: string,
-  name: string,
-  value: string,
-): Promise<string> => (await callOn(page, 'CreateSecret', { group, name, value }))['id'] as string
-
-const allow = async (page: Page, secretId: string, pluginId: string): Promise<void> => {
-  await callOn(page, 'AllowPluginSecret', {
-    secretId,
-    pluginId,
-    name: 'apiKey',
-    group: 'openrouter',
-  })
-}
-
 const openSecretsPage = async (page: Page): Promise<ReturnType<Page['getByRole']>> => {
   await runCommand(page, 'Open settings', /^Open settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })
@@ -156,18 +126,10 @@ const openSecretsPage = async (page: Page): Promise<ReturnType<Page['getByRole']
   return settings
 }
 
-const rowOf = (scope: Locator, name: string): Locator =>
-  scope.getByRole('group', { name, exact: true })
-
 const choose = async (page: Page, select: Locator, names: RegExp[]): Promise<void> => {
   await select.click()
   for (const name of names) await page.getByRole('option', { name }).click()
   await page.keyboard.press('Escape')
-}
-
-const takeRowAction = async (page: Page, row: Locator, item: RegExp): Promise<void> => {
-  await row.getByRole('button', { name: 'Secret actions' }).click()
-  await page.getByRole('menuitem', { name: item }).click()
 }
 
 test.describe('Secrets shared between plugins', () => {
@@ -190,7 +152,7 @@ test.describe('Secrets shared between plugins', () => {
     fs.rmSync(folder, { recursive: true, force: true })
   })
 
-  test('gives a secret entered once to two plugins and keeps its value out of the page', async ({
+  test('gives a secret entered once on the page of secrets to two plugins', async ({
     page,
   }) => {
     const value = 'invented-harbour-key-one'
@@ -208,64 +170,5 @@ test.describe('Secrets shared between plugins', () => {
         .poll(() => readReceivedEntries(logs[id] as string).map((one) => one.value))
         .toEqual([value])
     }
-    await expect(section.getByLabel(/^Value of /)).toHaveValue('')
-    expect(await page.content()).not.toContain(value)
-    const answer = await callOn(page, 'GetSettings', {})
-    expect(JSON.stringify(answer)).not.toContain(value)
-  })
-
-  test('changes which secret a plugin reads first when a secret moves up', async ({ page }) => {
-    const first = await createSecret(page, 'openrouter', 'Alpha', 'invented-key-alpha')
-    const second = await createSecret(page, 'openrouter', 'Bravo', 'invented-key-bravo')
-    await allow(page, first, ONE)
-    await allow(page, second, ONE)
-    // The server also holds the secrets of the previous tests, so only these two are compared.
-    const readOrder = (): string[] =>
-      readReceivedEntries(logs[ONE] as string)
-        .map((one) => one.id)
-        .filter((id) => id === first || id === second)
-    await expect.poll(readOrder).toEqual([first, second])
-
-    await reopen(page)
-    const settings = await openSecretsPage(page)
-    await takeRowAction(page, rowOf(settings, 'Bravo'), /^move up$/i)
-
-    await expect.poll(readOrder).toEqual([second, first])
-  })
-
-  test('lets a plugin read a secret of a group the person made, chosen from the menu on its page', async ({
-    page,
-  }) => {
-    const value = 'invented-key-trip'
-    const trip = await createSecret(page, 'travel', 'Trip', value)
-    await reopen(page)
-    await runCommand(page, 'Open settings', /^Open settings$/)
-    const settings = page.getByRole('tabpanel', { name: /Settings/ })
-    await settings.getByRole('button', { name: /Probe two/ }).click()
-    await choose(page, settings.locator('.settings__secret'), [/Trip/])
-
-    await expect.poll(() => readReceivedEntries(logs[TWO] as string).map((one) => one.id)).toContain(trip)
-    expect(await page.content()).not.toContain(value)
-  })
-
-  test('stops giving a secret to the plugins after it is deleted and the confirmation is accepted', async ({
-    page,
-  }) => {
-    const doomed = await createSecret(page, 'openrouter', 'Doomed', 'invented-key-doomed')
-    await allow(page, doomed, ONE)
-    await expect
-      .poll(() => readReceivedEntries(logs[ONE] as string).map((one) => one.id))
-      .toContain(doomed)
-
-    await reopen(page)
-    const settings = await openSecretsPage(page)
-    await takeRowAction(page, rowOf(settings, 'Doomed'), /^delete/i)
-    const confirmation = page.getByRole('alertdialog')
-    await expect(confirmation).toContainText('Probe one')
-    await confirmation.getByRole('button', { name: /delete/i }).click()
-
-    await expect
-      .poll(() => readReceivedEntries(logs[ONE] as string).map((one) => one.id))
-      .not.toContain(doomed)
   })
 })

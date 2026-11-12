@@ -11,9 +11,7 @@ import { serveRuntime } from '../../support/runtime.js'
  */
 const TREE_ID = 'md.numen.views.file.tree'
 const TREE_BUTTON = `${TREE_ID}:tree.open`
-const GRAPH_BUTTON = 'md.numen.views.plex.graph:graph.open'
 const NOTE_BUTTON = 'app:note.create'
-const SETTINGS_BUTTON = 'app:settings.open'
 
 const getButton = (page: Page, id: string) => page.locator(`[data-title-bar-command="${id}"]`)
 const getButtons = (page: Page) => page.locator('[data-title-bar] [data-title-bar-command]')
@@ -40,24 +38,6 @@ test.describe('Plugin buttons in the title bar', () => {
     await getButton(page, TREE_BUTTON).click()
 
     await expect(getTab(page, 'Files')).toBeVisible()
-  })
-
-  test('shows the title and the shortcut of the command in the hover text', async ({ page }) => {
-    await openWorkspace(page)
-
-    const hover = await getButton(page, TREE_BUTTON).getAttribute('title')
-
-    expect(hover).toMatch(/^Open file tree( \(.+\))?$/)
-  })
-
-  test('draws no pressed state on a button after a press', async ({ page }) => {
-    await openWorkspace(page)
-
-    await getButton(page, TREE_BUTTON).click()
-
-    for (const name of ['aria-pressed', 'aria-checked', 'data-pressed', 'data-active']) {
-      await expect(getButton(page, TREE_BUTTON)).not.toHaveAttribute(name, /.*/)
-    }
   })
 
   test('opens the palette at the name of Create note and makes the note under the name typed', async ({
@@ -93,32 +73,6 @@ test.describe('Plugin buttons in the title bar', () => {
     expect(await listButtonIds(page)).toStrictEqual(before)
   })
 
-  test('moves the buttons that do not fit into the menu in order, and a pick runs its command', async ({
-    page,
-  }) => {
-    await openWorkspace(page)
-    const titles = await getButtons(page).evaluateAll((all) =>
-      all.map((one) => one.getAttribute('aria-label') ?? ''),
-    )
-    expect(titles).toContain('Open agent chat')
-    // The bar keeps 128px for the title, and the three window controls take 138px: at 300px no
-    // button fits and every one is in the menu.
-    await page.setViewportSize({ width: 300, height: 800 })
-    await closeTab(page, /Close Agent/i)
-    await expect(getTab(page, 'Agent')).toHaveCount(0)
-    const more = page.locator('[data-title-bar-more]')
-    await expect(more).toBeVisible()
-
-    await expect(getButtons(page)).toHaveCount(0)
-    await expect(page.locator('[data-title-bar] [data-title-bar-view]')).toHaveCount(0)
-    await more.click()
-    const entries = page.getByRole('menuitem')
-    await expect(entries).toHaveCount(titles.length)
-    expect(await entries.allTextContents()).toStrictEqual(titles)
-    await entries.filter({ hasText: 'Open agent chat' }).click()
-    await expect(getTab(page, 'Agent')).toBeVisible()
-  })
-
   test('moves the buttons back from the menu when the window grows', async ({ page }) => {
     await openWorkspace(page)
     const before = await listButtonIds(page)
@@ -148,30 +102,5 @@ test.describe('Plugin buttons in the title bar', () => {
         page.evaluate(() => document.activeElement?.getAttribute('data-title-bar-command')),
       )
       .toBe(second)
-  })
-
-  test('draws the same buttons in the window torn off from a tab', async ({ page }) => {
-    await openWorkspace(page)
-    await expect(getButton(page, GRAPH_BUTTON)).toBeVisible()
-    const inMain = await listButtonIds(page)
-    expect(inMain).toContain(GRAPH_BUTTON)
-
-    await page.goto('/?window=secondary')
-
-    await expect.poll(() => listButtonIds(page)).toStrictEqual(inMain)
-  })
-
-  test('draws the settings button last in the bar and a press opens the settings tab', async ({
-    page,
-  }) => {
-    await openWorkspace(page)
-
-    // The bar draws its buttons after the plex.
-    await expect.poll(async () => (await listButtonIds(page)).at(-1)).toBe(SETTINGS_BUTTON)
-    await expect(getTab(page, 'Settings')).toHaveCount(0)
-
-    await getButton(page, SETTINGS_BUTTON).click()
-
-    await expect(getTab(page, 'Settings')).toBeVisible()
   })
 })

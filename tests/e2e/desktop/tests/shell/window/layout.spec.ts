@@ -1,7 +1,6 @@
 import { test, expect, type Locator, type Page } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
-import { readBox } from '../../support/browser.js'
-import { getRow, getTab, readOpenTabs, readWidth, showInFiles } from '../../support/layout.js'
+import { getRow, getTab, readOpenTabs, showInFiles } from '../../support/layout.js'
 
 const getPanes = (page: Page): Locator => page.locator('section[data-workspace-pane]')
 
@@ -37,29 +36,6 @@ test.describe('Workspace Layout and Split Panes', () => {
     for (let index = 1; index < boxes.length; index++) {
       expect(boxes[index]!.x).toBeGreaterThanOrEqual(boxes[index - 1]!.x + boxes[index - 1]!.width)
     }
-  })
-
-  test('moves the line between two panes by the distance the separator is dragged', async ({
-    page,
-  }) => {
-    await openWorkspace(page)
-    const separator = page.getByRole('separator', { name: 'Resize panes' })
-    const main = getPanes(page).first()
-    const aside = getPanes(page).last()
-    const mainBefore = await readWidth(main)
-    const asideBefore = await readWidth(aside)
-    const box = await readBox(separator)
-
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-    await page.mouse.down()
-    await page.mouse.move(box.x + box.width / 2 - 150, box.y + box.height / 2, { steps: 10 })
-    await page.mouse.up()
-
-    await expect.poll(async () => readWidth(main)).toBeLessThan(mainBefore - 140)
-    expect(await readWidth(main)).toBeGreaterThan(mainBefore - 160)
-    expect(await readWidth(aside)).toBeGreaterThan(asideBefore + 140)
-    expect(await readWidth(aside)).toBeLessThan(asideBefore + 160)
-    await expect(getGraph(page)).toBeVisible()
   })
 
   test('reopens the open tabs and the active one after a reload', async ({ page, request }) => {

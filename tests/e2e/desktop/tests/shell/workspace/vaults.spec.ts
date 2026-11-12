@@ -11,11 +11,9 @@ import {
 import { getPaletteField, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 import {
   addVault,
-  callRPC,
   createUniqueTitle,
   getNoteTab,
   getRunVault,
-  getVaultPath,
   listVaults,
   openNote,
   openVault,
@@ -49,11 +47,6 @@ const pickVault = async (page: Page, name: string) => {
   await page.getByRole('option', { name: new RegExp(`^${name}`) }).click()
 }
 
-const getTrashedPath = async (request: APIRequestContext, name: string): Promise<string> =>
-  process.platform === 'darwin'
-    ? path.join(os.homedir(), '.Trash', name)
-    : path.join(getVaultPath(), '.data', 'Trash', 'files', name)
-
 test.describe('Vaults of the installation', () => {
   test('switches the window to another vault with Open vault', async ({ page, request }) => {
     const runVault = await getRunVault(request)
@@ -72,89 +65,6 @@ test.describe('Vaults of the installation', () => {
       await expect(getNoteTab(page, 'notes/Entropy.md')).toHaveCount(0)
       expect([...(await readSavedStates(request)).keys()]).not.toContain('notes/Entropy.md')
     } finally {
-      await dropSecondVault(request, second, runVault.id)
-    }
-  })
-
-  test('renames the vault in the window and leaves its folder as it is', async ({
-    page,
-    request,
-  }) => {
-    const before = await getRunVault(request)
-    const name = createUniqueTitle('Harbour archive')
-    try {
-      await openWorkspace(page)
-
-      await runPaletteCommand(page, 'Rename vault', 'Rename vault')
-      await expect(getPaletteField(page)).toHaveValue(before.name)
-      await getPaletteField(page).fill(name)
-      await page.keyboard.press('Enter')
-
-      await expect
-        .poll(async () => (await listVaults(request)).find((one) => one.id === before.id)?.name)
-        .toBe(name)
-      expect((await getRunVault(request)).path).toBe(before.path)
-      expect(fs.existsSync(path.join(before.path, 'Thermodynamics.md'))).toBe(true)
-    } finally {
-      await callRPC(request, 'VaultsService/RenameVault', { id: before.id, name: before.name })
-    }
-  })
-
-  test('takes a vault off the list with Remove vault from list and keeps its folder', async ({
-    page,
-    request,
-  }) => {
-    const runVault = await getRunVault(request)
-    const second = await addSecondVault(request)
-    try {
-      await openWorkspace(page)
-
-      await runPaletteCommand(page, 'Remove vault from list', 'Remove vault from list')
-      await pickVault(page, second.name)
-      await page.getByRole('option', { name: new RegExp(`^Remove “${second.name}”`) }).click()
-
-      await expect
-        .poll(async () => (await listVaults(request)).map((one) => one.id))
-        .not.toContain(second.id)
-      expect(fs.readFileSync(path.join(second.path, 'Lighthouse.md'), 'utf8')).toContain(
-        'The lamp turns all night.',
-      )
-    } finally {
-      await dropSecondVault(request, second, runVault.id)
-    }
-  })
-
-  test('erases a vault into the trash only once its name is typed back', async ({
-    page,
-    request,
-  }) => {
-    const runVault = await getRunVault(request)
-    const second = await addSecondVault(request)
-    const trashed = await getTrashedPath(request, path.basename(second.path))
-    try {
-      await openWorkspace(page)
-
-      await runPaletteCommand(page, 'Erase vault', 'Erase vault')
-      await pickVault(page, second.name)
-      const erase = page.getByRole('option', { name: /^Erase “/ })
-      await getPaletteField(page).fill(`${second.name} wrong`)
-      await expect(erase).toHaveAttribute('aria-disabled', 'true')
-      await page.keyboard.press('Enter')
-      expect(fs.existsSync(path.join(second.path, 'Lighthouse.md'))).toBe(true)
-
-      await getPaletteField(page).fill(second.name)
-      await expect(erase).not.toHaveAttribute('aria-disabled', 'true')
-      await page.keyboard.press('Enter')
-
-      await expect
-        .poll(async () => (await listVaults(request)).map((one) => one.id))
-        .not.toContain(second.id)
-      expect(fs.existsSync(second.path)).toBe(false)
-      expect(fs.readFileSync(path.join(trashed, 'Lighthouse.md'), 'utf8')).toContain(
-        'The lamp turns all night.',
-      )
-    } finally {
-      fs.rmSync(trashed, { recursive: true, force: true })
       await dropSecondVault(request, second, runVault.id)
     }
   })

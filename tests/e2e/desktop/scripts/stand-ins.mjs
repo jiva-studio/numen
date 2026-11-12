@@ -1,7 +1,7 @@
 import http from 'node:http'
 
 /** The words every chat completion of the stand-in chat API answers with. */
-export const STAND_IN_REPLY = 'The stand-in chat API answered.'
+export const STAND_IN_REPLY = 'The agent answered.'
 
 /** A prompt holding these words is answered after `DELAYED_REPLY_MS`, long enough to press Stop. */
 export const DELAYED_PROMPT = 'Answer after a pause'
@@ -47,15 +47,20 @@ let release = OLD_RELEASE
 
 /** The held replies wait while this gate is closed; each is the function that sends one reply. */
 let isHoldClosed = false
+/** Whether the closed gate holds every reply, and not only the replies to a held prompt. */
+let isHoldAll = false
 const heldReplies = new Set()
 
-const closeHold = (_req, res) => {
-  isHoldClosed = true
-  sendJson(res, 200, { held: heldReplies.size })
-}
+const closeHold = (req, res) =>
+  readBody(req).then((raw) => {
+    isHoldClosed = true
+    isHoldAll = raw.trim() !== '' && JSON.parse(raw).all === true
+    sendJson(res, 200, { held: heldReplies.size })
+  })
 
 const openHold = (_req, res) => {
   isHoldClosed = false
+  isHoldAll = false
   for (const send of heldReplies) send()
   heldReplies.clear()
   sendJson(res, 200, { held: 0 })
@@ -135,7 +140,7 @@ const answerChat = (req, res) =>
         choices: [{ message, finish_reason: calls.length > 0 ? 'tool_calls' : 'stop' }],
       })
     }
-    if (raw.includes(HELD_PROMPT) && isHoldClosed) {
+    if ((isHoldAll || raw.includes(HELD_PROMPT)) && isHoldClosed) {
       heldReplies.add(reply)
       res.on('close', () => heldReplies.delete(reply))
       return
@@ -170,7 +175,7 @@ const routes = new Map([
   ['GET /stand-in/requests', (_req, res) => sendJson(res, 200, Object.fromEntries(requests))],
   [
     'GET /v1/models',
-    (_req, res) => sendJson(res, 200, { data: [{ id: STAND_IN_MODEL, name: 'Stand-in model' }] }),
+    (_req, res) => sendJson(res, 200, { data: [{ id: STAND_IN_MODEL, name: 'Test model' }] }),
   ],
   ['POST /v1/chat/completions', answerChat],
 ])
@@ -196,7 +201,17 @@ const handle = (req, res) => {
  *
  * @returns {Promise<{ updateUrl: string, chatUrl: string, close: () => void }>}
  */
-export const startStandIns = () =>
+export const startStandIns = () => {
+  // A worker starts the stand-ins once per scenario: what an earlier scenario switched does not carry over.
+  release = OLD_RELEASE
+  isHoldClosed = false
+  isHoldAll = false
+  heldReplies.clear()
+  requests.clear()
+  return startServer()
+}
+
+const startServer = () =>
   new Promise((resolve, reject) => {
     const server = http.createServer(handle)
     server.once('error', reject)

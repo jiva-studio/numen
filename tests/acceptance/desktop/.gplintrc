@@ -1,0 +1,22 @@
+{
+  "no-unnamed-features": "error",
+  "no-unnamed-scenarios": "error",
+  "no-dupe-feature-names": "error",
+  "no-dupe-scenario-names": ["error", "in-feature"],
+  "no-empty-background": "error",
+  "no-background-only-scenario": "error",
+  "no-examples-in-scenarios": "error",
+  "no-scenario-outlines-without-examples": "error",
+  "no-superfluous-tags": "error",
+  "no-duplicate-tags": "error",
+  "no-multiple-empty-lines": "error",
+  "no-trailing-spaces": "error",
+  "new-line-at-eof": ["error", "yes"],
+  "indentation": ["error", { "Feature": 0, "Background": 2, "Scenario": 2, "Step": 4, "given": 4, "when": 4, "then": 4, "and": 4, "but": 4 }],
+  "keywords-in-logical-order": "error",
+  "max-scenarios-per-file": ["error", { "maxScenarios": 8 }],
+  "name-length": ["error", { "Feature": 70, "Scenario": 80, "Step": 110 }],
+  "use-and": "error",
+  "required-tags": "off",
+  "file-name": ["error", { "style": "kebab-case" }]
+}

@@ -108,7 +108,7 @@ export interface Entry {
   readonly isFolder: boolean
 }
 
-const listFiles = async (request: APIRequestContext, folder = ''): Promise<Entry[]> => {
+export const listFiles = async (request: APIRequestContext, folder = ''): Promise<Entry[]> => {
   const answer = await callRPC(request, 'FileService/ListFiles', { path: folder })
   return ((answer['entries'] as Partial<Entry>[] | undefined) ?? []).map((one) => ({
     path: one.path ?? '',
@@ -161,26 +161,20 @@ export const destroyIndexedNote = async (
   await expect.poll(() => isIndexedNote(request, notePath), { timeout: 45_000 }).toBe(false)
 }
 
-/** The files under the vault's `.trash` folder whose name is `name`, as paths of the vault. */
-export const findTrashedNotes = (request: APIRequestContext, name: string): Promise<string[]> =>
-  new Promise((resolve) => {
-    const trash = path.join(getVaultPath(), '.trash')
-    if (!fs.existsSync(trash)) {
-      resolve([])
-      return
-    }
-    resolve(
-      fs
-        .readdirSync(trash, { recursive: true, encoding: 'utf8' })
-        .filter((one) => path.basename(one) === name)
-        .map((one) => path.posix.join('.trash', one.split(path.sep).join('/'))),
-    )
-  })
+const findTrashed = (name: string): string[] => {
+  const vault = getVaultPath()
+  const trash = path.join(vault, '.trash')
+  if (!fs.existsSync(trash)) return []
+  return fs
+    .readdirSync(trash, { recursive: true, encoding: 'utf8' })
+    .filter((one) => path.basename(one) === name)
+    .map((one) => path.posix.join('.trash', one.split(path.sep).join('/')))
+}
 
 /** Takes the files of the vault's trash named `name` off the disk. */
-export const destroyTrashed = async (request: APIRequestContext, name: string): Promise<void> => {
+export const destroyTrashed = (name: string): void => {
   const vault = getVaultPath()
-  for (const one of await findTrashedNotes(request, name)) fs.rmSync(path.join(vault, one))
+  for (const one of findTrashed(name)) fs.rmSync(path.join(vault, one))
 }
 
 /** One record a connection holds: the role it was written with, its type, label and marker. */
@@ -285,17 +279,13 @@ export const readSettings = async (request: APIRequestContext): Promise<JsonObje
 export const readOwner = async (request: APIRequestContext, owner: string): Promise<JsonObject> =>
   ((await readSettings(request))[owner] ?? {}) as JsonObject
 
-/** Whether a note's title and the name of its file are kept as one name. */
-export const isSyncingTitles = async (request: APIRequestContext): Promise<boolean> =>
-  ((await readOwner(request, 'app'))['naming'] as { syncTitleAndFilename?: boolean } | undefined)
-    ?.syncTitleAndFilename !== false
-
 /** A title no other test or earlier run uses, so a retry starts from a vault without it. */
 export const createUniqueTitle = (words: string): string =>
   `${words} ${Math.random().toString(36).slice(2, 7)}`
 
-const revealTreeRow = async (page: Page, filePath: string): Promise<Locator> => {
-  await page.getByRole('tab', { name: /^Files/ }).click()
+/** The row of the files tab for the path, with the folder above it opened. */
+export const revealTreeRow = async (page: Page, filePath: string): Promise<Locator> => {
+  await page.getByRole('tab', { name: /^(Linked tab )?Files/ }).click()
   const folder = path.posix.dirname(filePath)
   if (folder !== '.') {
     const parent = page.locator(`[data-tree-row="${folder}"]`)

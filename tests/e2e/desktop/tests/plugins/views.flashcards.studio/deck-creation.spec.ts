@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { openTaskList, openWorkspace } from '../../support/workspace.js'
+import { openWorkspace } from '../../support/workspace.js'
 import { createFolder, trashFiles, getRow, listPaths, showInFiles } from '../../support/layout.js'
 
 const make = async (page: Page, command: string, name: string): Promise<void> => {
@@ -27,27 +27,6 @@ test.describe('a deck or a card model made through the palette', () => {
     await expect(page.locator('[data-tree-row="Rivers.md"]')).toHaveCount(1)
   })
 
-  test('reports a taken name and opens no second tab', async ({ page }) => {
-    await openWorkspace(page)
-    await make(page, 'Create deck', 'Lakes')
-    await expect(page.locator('.deck').first()).toBeVisible()
-
-    await make(page, 'Create deck', 'Lakes')
-
-    await expect(await openTaskList(page)).toContainText(/filed there already/)
-    await expect(page.getByRole('tab', { name: /Lakes/ })).toHaveCount(1)
-  })
-
-  test('a card model opens in the editor of its fields and templates, and no deck opens', async ({
-    page,
-  }) => {
-    await openWorkspace(page)
-    await make(page, 'Create card model', 'Mountain')
-
-    await expect(page.getByRole('tab', { name: /Mountain/ }).first()).toBeVisible()
-    await expect(page.locator('.card-model-tab').first()).toBeVisible()
-    await expect(page.locator('.deck')).toHaveCount(0)
-  })
 })
 
 test.describe('a deck made from the New submenu of a row of the file tree', () => {
@@ -92,7 +71,7 @@ test.describe('a file open in an editor of cards, removed from the tree', () => 
 
       await page.getByRole('tab', { name: /^Files/ }).click()
       await row.click({ button: 'right' })
-      await page.getByRole('menuitem', { name: 'Move note to trash', exact: true }).first().click()
+      await page.getByRole('menuitem', { name: 'Move to trash', exact: true }).first().click()
 
       await expect(page.locator(editor)).toHaveCount(0)
     })

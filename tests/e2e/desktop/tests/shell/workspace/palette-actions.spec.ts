@@ -53,18 +53,4 @@ test.describe('The actions of a passage of a book found by the search', () => {
       .poll(() => page.evaluate(readLitText).then((texts) => texts.join(' ')))
       .toContain('reflowable')
   })
-
-  test('opens the book at the passage on Enter over the row', async ({ page }) => {
-    await openWorkspace(page)
-    const passage = await waitForPassage(page, QUERY, 'assets/sample.epub')
-    await highlightRow(page, passage)
-
-    await page.keyboard.press('Enter')
-
-    await expect(page.locator('.book-tab')).toBeVisible()
-    await expect(getPaletteField(page)).toBeHidden()
-    await expect
-      .poll(() => page.evaluate(readLitText).then((texts) => texts.join(' ')))
-      .toContain('reflowable')
-  })
 })

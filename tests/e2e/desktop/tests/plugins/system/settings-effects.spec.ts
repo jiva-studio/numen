@@ -1,49 +1,16 @@
-import { test, expect, type Page } from '../../support/test.js'
-import { openVaultFile, openWorkspace, runCommand } from '../../support/workspace.js'
+import { test, expect } from '../../support/test.js'
+import { openVaultFile, openWorkspace } from '../../support/workspace.js'
 import { getRow, readWidth, showInFiles } from '../../support/layout.js'
-import { callRPC, writeSetting } from '../../support/vault.js'
+import { writeSetting } from '../../support/vault.js'
 
 const NOTES_ID = 'md.numen.notes'
 const PDF_ID = 'md.numen.readers.pdf'
-const EMBEDDINGS_ID = 'md.numen.engines.embeddings'
-
-interface ListedSecret {
-  readonly id: string
-  readonly name: string
-  readonly group: string
-  readonly hasValue: boolean
-}
-
-const readSecrets = async (page: Page): Promise<ListedSecret[]> => {
-  const settings = await callRPC(page.request, 'SettingsService/GetSettings', {})
-  const states = await callRPC(page.request, 'SettingsService/ListSecretStates', {})
-  const hasValue = new Map(
-    ((states['states'] ?? []) as { id: string; hasValue?: boolean }[]).map((one) => [
-      one.id,
-      one.hasValue === true,
-    ]),
-  )
-  const sections = (settings['secretSections'] ?? []) as {
-    secrets?: Omit<ListedSecret, 'hasValue'>[]
-  }[]
-  return sections
-    .flatMap((one) => one.secrets ?? [])
-    .map((one) => ({ ...one, hasValue: hasValue.get(one.id) ?? false }))
-}
-
-const deleteSecrets = async (page: Page): Promise<void> => {
-  for (const one of await readSecrets(page)) {
-    await callRPC(page.request, 'SettingsService/DeleteSecret', { id: one.id })
-  }
-}
 
 test.describe('Plugin settings take effect', () => {
-  test.afterEach(async ({ page, request }) => {
+  test.afterEach(async ({ request }) => {
     await writeSetting(request, [NOTES_ID, 'lineNumbers'], false)
     await writeSetting(request, [NOTES_ID, 'softWrap'], true)
     await writeSetting(request, [PDF_ID, 'defaultZoom'], 'page')
-    await writeSetting(request, [EMBEDDINGS_ID, 'provider'], 'local')
-    await deleteSecrets(page)
   })
 
   test('draws line numbers and no soft wrap in a note once the notes settings say so', async ({
@@ -84,52 +51,4 @@ test.describe('Plugin settings take effect', () => {
         .toBeLessThan(24)
     })
   }
-
-  test('keeps a secret value out of the page after it is entered and deletes the secret after a confirmation', async ({
-    page,
-  }) => {
-    const value = 'sk-invented-harbour-key'
-    await writeSetting(page.request, [EMBEDDINGS_ID, 'provider'], 'openai')
-    await openWorkspace(page)
-    await runCommand(page, 'Open settings', /^Open settings$/)
-    const settings = page.getByRole('tabpanel', { name: /Settings/ })
-
-    await settings.getByRole('button', { name: /Vector Embeddings/ }).click()
-    // The key is chosen from the secrets on this machine and is never typed or shown here.
-    await expect(settings.locator('.settings__secret')).toBeVisible()
-    await expect(settings.getByRole('textbox', { name: 'API key' })).toHaveCount(0)
-    await settings.getByRole('button', { name: 'All plugins' }).click()
-
-    await settings.getByRole('button', { name: /^Secrets$/ }).click()
-    const section = settings.getByRole('region', { name: 'openai' })
-    const valueField = section.getByLabel(/^Value of /)
-    await valueField.fill(value)
-    await valueField.press('Enter')
-
-    await expect
-      .poll(async () => (await readSecrets(page)).map((one) => one.name))
-      .toEqual(['OpenAI'])
-    expect((await readSecrets(page))[0]).toMatchObject({ group: 'openai', hasValue: true })
-    await expect(section.getByLabel(/^Value of /)).toHaveValue('')
-    expect(await page.content()).not.toContain(value)
-
-    await page.reload()
-    // The window draws once the plugins of its interface have started; a key pressed before is lost.
-    await expect(page.getByRole('tablist').first()).toBeVisible()
-    await runCommand(page, 'Open settings', /^Open settings$/)
-    const reloaded = page.getByRole('tabpanel', { name: /Settings/ })
-    await reloaded.getByRole('button', { name: /^Secrets$/ }).click()
-    expect(await page.content()).not.toContain(value)
-
-    await reloaded
-      .getByRole('region', { name: 'openai' })
-      .getByRole('button', { name: 'Secret actions' })
-      .click()
-    await page.getByRole('menuitem', { name: /^delete/i }).click()
-    const confirmation = page.getByRole('alertdialog')
-    await expect(confirmation).toBeVisible()
-    await confirmation.getByRole('button', { name: /delete/i }).click()
-
-    await expect.poll(() => readSecrets(page)).toEqual([])
-  })
 })

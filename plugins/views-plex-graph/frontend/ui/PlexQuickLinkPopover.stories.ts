@@ -4,7 +4,7 @@
  * The input and the options are one frame, the kit's searchable list.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
 
 type Found = { path: string; title: string }[]
@@ -18,6 +18,9 @@ const LONG: Found = Array.from({ length: 30 }, (_, index) => ({
   path: `notes/shelf-${index}.md`,
   title: `Shelf ${index}`,
 }))
+
+/** Releases the search of the story that holds its answer. */
+let answerSearch: (() => void) | null = null
 
 const meta = {
   title: 'Plex/Quick Link Popover',
@@ -104,6 +107,48 @@ export const ExactMatch: Story = {
     await expect(canvas.queryByRole('option', { name: /^Create/ })).toBeNull()
     await expect(canvas.getAllByRole('option')[0]).toHaveAttribute('aria-selected', 'true')
     await expectOneFrame(canvasElement, true)
+  },
+}
+
+/**
+ * The exact match arrives after the search answers: row 1 changes from Create to the note and
+ * keeps its place and size, and Enter links the note without creating one.
+ */
+export const ExactMatchArrivesLate: Story = {
+  args: {
+    search: () =>
+      new Promise((resolve) => {
+        answerSearch = () => resolve(BOOKS)
+      }),
+    'onSelect-note': fn(),
+    'onCreate-note': fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    answerSearch = null
+    const field = canvas.getByRole('combobox')
+    await userEvent.type(field, 'books')
+    const first = await canvas.findByRole('option', { name: 'Create "books"' })
+    const before = first.getBoundingClientRect()
+
+    await waitFor(() => expect(answerSearch).not.toBeNull())
+    answerSearch!()
+
+    await waitFor(() => expect(canvas.getAllByRole('option')[0]).toHaveTextContent('Books'))
+    await expect(canvas.queryByRole('option', { name: /^Create/ })).toBeNull()
+    const row = canvas.getAllByRole('option')[0]!
+    await expect(row).toHaveAttribute('aria-selected', 'true')
+    const after = row.getBoundingClientRect()
+    await expect([after.top, after.left, after.width, after.height]).toEqual([
+      before.top,
+      before.left,
+      before.width,
+      before.height,
+    ])
+
+    await userEvent.keyboard('{Enter}')
+    await expect(args['onSelect-note']).toHaveBeenCalledWith('notes/books.md')
+    await expect(args['onCreate-note']).not.toHaveBeenCalled()
   },
 }
 

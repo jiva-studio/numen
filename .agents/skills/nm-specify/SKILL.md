@@ -1,31 +1,30 @@
 ---
 name: nm-specify
-description: Translates intent.md into a technical specification in spec.md in the task folder under .agents/tasks, with blast radius matrix, interface contracts, and discrete acceptance criteria. Trigger with "/nm-specify", "spec", "create spec", or "write spec".
+description: Translates a feature file into a technical specification in spec.md in the task folder under .agents/tasks, with interface contracts, blast radius matrix, negative invariants, and a map from each scenario to its layers and tests. Trigger with "/nm-specify", "spec", "create spec", or "write spec".
 ---
 
 # Technical Specification Skill (`/nm-specify`)
 
-The `/nm-specify` skill transforms business intent (`intent.md`) into a precise technical specification (`spec.md`). It maps existing code, prevents hallucinations, defines contracts, outlines the blast radius, and formulates acceptance criteria.
+The `/nm-specify` skill turns the approved feature file (`features/<area>/<name>.feature`) into a technical specification (`spec.md`). The scenarios are the acceptance criteria; the spec has no acceptance criteria section. It maps existing code, defines contracts, outlines the blast radius, and maps each scenario to the layers that implement it and the lower-level tests it needs. `spec.md` and `scope.md` are local files in `.agents/tasks/<slug>/` and are not committed.
 
 ```mermaid
 flowchart TD
-    ReadIntent["1. Read intent.md"] --> Recon["2. Codebase Reconnaissance
+    ReadFeature["1. Read the feature file and scope.md"] --> Recon["2. Codebase Reconnaissance
     (Search existing types & domain models)"]
     Recon --> WriteSpec["3. Author .agents/tasks/<slug>/spec.md
-    (Contracts, Blast Radius, ACs)"]
-    WriteSpec --> Checkpoint{"4. 🧑‍💻 Human Gate
+    (Contracts, Blast Radius, Scenario Map)"]
+    WriteSpec --> Checkpoint{"4. Human Gate
     (Review and approve spec?)"}
     Checkpoint -->|"Approved"| NextStep["5. Handover: Suggest Tester / `/nm-implement`"]
 ```
 
 ---
 
-## Step 1: Locate Active Task and Read Intent
+## Step 1: Locate Active Task and Read the Feature
 
-   - The task folder is named after the task, under the tasks folder of `.agents`.
-   - Example: the task folder
-2. Read `intent.md` in the task folder.
-   - If `intent.md` does not exist, ask the user to run `/nm-clarify` first.
+1. Identify the task directory from arguments or git branch: `.agents/tasks/<slug>`.
+2. Read the feature file the task names, and `.agents/tasks/<slug>/scope.md` if it exists (what the interview found out of scope or limiting that is not a scenario).
+   - If no feature file exists, ask the user to run `/nm-feature` first.
 
 ---
 
@@ -41,14 +40,13 @@ Before proposing new files, types, or methods, search the codebase:
 
 ## Step 3: Author `spec.md` in the task folder
 
-Generate `spec.md` in the task folder with:
-
 ```markdown
 # Specification: <Task Title>
 
 **Task Slug:** `<slug>`
 **Date:** `<YYYY-MM-DD>`
-**Intent:** `intent.md` in the task folder
+**Feature:** `features/<area>/<name>.feature`
+**Scope:** `.agents/tasks/<slug>/scope.md` (if present)
 
 ## 1. Target Architecture & Interfaces
 
@@ -58,41 +56,30 @@ Generate `spec.md` in the task folder with:
 
 ## 2. Blast Radius Matrix
 
-| Package / Path        | File                                | Action (Create/Modify) | Downstream Consumers                   |
-| :-------------------- | :---------------------------------- | :--------------------- | :------------------------------------- |
-| `libs/core/kernel`           | `domain/card.go`                    | Modify                 | `usecase/flashcards`, `adapter/sqlite` |
-| `apps/desktop/editor` | `src/features/deck/ui/DeckView.vue` | Create                 | `pages/DeckPage.vue`                   |
+| Package / Path | File             | Action (Create/Modify) | Downstream Consumers                   |
+| :------------- | :--------------- | :--------------------- | :------------------------------------- |
+| `libs/core/kernel` | `domain/card.go` | Modify                 | `usecase/flashcards`, `adapter/sqlite` |
 
 ## 3. Negative Invariants (Architectural Prohibitions)
 
 - Explicit architectural constraints (e.g. No direct DB access from UI, no god objects, preserve layer arrows).
 
-## 4. Acceptance Criteria
+## 4. Scenario Map
 
-### AC-1: <Title of Behavior 1>
-
-- **Given**: <initial state / preconditions>
-- **When**: <action or event triggered>
-- **Then**: <expected observable outcome>
-
-### AC-2: <Title of Behavior 2>
-
-- **Given**: <initial state / preconditions>
-- **When**: <action or event triggered>
-- **Then**: <expected observable outcome>
+| Scenario (title from the feature file) | Layers that implement it | Lower-level tests it needs (Go, vitest, stories) |
+| :------------------------------------- | :----------------------- | :----------------------------------------------- |
+| A deleted note leaves the vault        | `usecase/notes`, window  | Go use case test, vitest for the list state      |
 ```
 
-> **Important on Test Naming**: Acceptance Criteria (AC-1, AC-2) are requirements tracking identifiers in `spec.md`. When converting them to code, tests must use **pure behavioral sentences** (e.g. `it('rejects card with empty front')` or a Go test named for the behaviour, as in "push rejects a client that is behind the ack") — never prefix test functions with `AC-1` or synthetic tags.
+> **Test naming**: tests use pure behavioral sentences (e.g. `it('rejects card with empty front')`), never tags or scenario numbers.
 
 ---
 
 ## Step 4: Human Checkpoint & Next Step Handover
 
-Present a concise summary of the specification to the user and request confirmation:
-
-> 📐 **Specification created in `spec.md` in the task folder.**
+> **Specification created in `.agents/tasks/<slug>/spec.md`.**
 >
 > - **Blast Radius:** `<N> files touched across <modules>`
-> - **Acceptance Criteria:** `<Count> verifiable behaviors defined`
+> - **Scenarios mapped:** `<Count>`
 >
-> _Please review the specification above. Once approved, proceed to `/nm-implement` (or let `tester` write the red acceptance tests)._
+> _Please review the specification. Once approved, let `tester` write the steps, the driver and the red tests, then run `/nm-implement`._

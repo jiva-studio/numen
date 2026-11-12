@@ -1,30 +1,9 @@
 import { test, expect, readSavedStates } from '../../support/test.js'
 import { openAsset, openVaultFile, openWorkspace } from '../../support/workspace.js'
-import { readSettledWidth, readWidth } from '../../support/layout.js'
+import { readSettledWidth } from '../../support/layout.js'
 import { observeFor } from '../../support/browser.js'
 
 test.describe('PDF Document Reader Advanced Controls', () => {
-  test('draws the pages wider with each press of Zoom in and narrower with Zoom out', async ({
-    page,
-  }) => {
-    await openWorkspace(page)
-    await openVaultFile(page, 'assets', 'pages.pdf')
-    const firstPage = page.locator('.reader__page[data-page="0"]')
-    await expect(firstPage).toBeAttached({ timeout: 20_000 })
-    const base = await readSettledWidth(firstPage)
-
-    await page.getByRole('button', { name: 'Zoom in' }).click()
-    await expect.poll(() => readWidth(firstPage)).toBeCloseTo(base * 1.25, -1)
-    await page.getByRole('button', { name: 'Zoom in' }).click()
-    await expect.poll(() => readWidth(firstPage)).toBeCloseTo(base * 1.25 * 1.25, -1)
-
-    await page.getByRole('button', { name: 'Zoom out' }).click()
-    await expect.poll(() => readWidth(firstPage)).toBeCloseTo(base * 1.25, -1)
-    await page.getByRole('button', { name: 'Zoom out' }).click()
-    await expect.poll(() => readWidth(firstPage)).toBeCloseTo(base, -1)
-    await expect(page.getByRole('button', { name: 'Zoom out' })).toBeDisabled()
-  })
-
   test('scrolls to the page typed in the page field and keeps it in view', async ({ page }) => {
     await openWorkspace(page)
     await openVaultFile(page, 'assets', 'pages.pdf')

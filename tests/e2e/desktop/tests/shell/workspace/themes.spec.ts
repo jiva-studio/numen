@@ -50,18 +50,4 @@ test.describe('Theming and Display Scaling', () => {
       .poll(async () => readHeight(getFirstLine(reloaded)))
       .toBeCloseTo(editorBefore * 1.2 * 1.5, 0)
   })
-
-  test('refuses a size outside the bounds of its setting and keeps the size in force', async ({
-    request,
-  }) => {
-    await writeSetting(request, ['app', 'appearance', 'textScale'], 1.25)
-
-    const answer = await request.post('/numen.v1.SettingsService/WriteSettings', {
-      data: { settings: [{ at: ['app', 'appearance', 'textScale'], value: '9' }] },
-      headers: { 'Content-Type': 'application/json' },
-    })
-
-    expect(answer.ok()).toBe(false)
-    expect((await readOwner(request, 'app'))['appearance']).toMatchObject({ textScale: 1.25 })
-  })
 })

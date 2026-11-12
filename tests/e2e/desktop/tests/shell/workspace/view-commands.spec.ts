@@ -2,28 +2,13 @@ import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 
 /**
- * Every view a plugin draws in a tab of its own, the command that opens it from the palette, and
- * the keystroke the plugin declares for it.
+ * The file tree opens in a tab of its own from the palette and from the keystroke its plugin
+ * declares. The manifests and the handlers of every view are tested in the plugins.
  */
-const VIEWS = [
-  {
-    command: 'Open file tree',
-    query: 'file tree',
-    tab: /^Files/,
-    keys: 'Control+Shift+e',
-  },
-  { command: 'Open agent chat', query: 'agent', tab: /^Agent/, keys: 'Control+Shift+a' },
-  {
-    command: 'Open plex graph',
-    query: 'plex',
-    tab: /^(Thermodynamics|Plex)/,
-    keys: 'Control+Shift+x',
-  },
-  { command: 'Record audio', query: 'record', tab: /^Record Audio/, keys: undefined },
-] as const
+const FILES_TAB = /^Files/
 
-const expectOpened = async (page: Page, name: RegExp, open: () => Promise<void>): Promise<void> => {
-  const tabs = page.getByRole('tab', { name })
+const expectOpened = async (page: Page, open: () => Promise<void>): Promise<void> => {
+  const tabs = page.getByRole('tab', { name: FILES_TAB })
   while ((await tabs.count()) > 0) {
     const count = await tabs.count()
     await tabs.first().click()
@@ -36,20 +21,16 @@ const expectOpened = async (page: Page, name: RegExp, open: () => Promise<void>)
   await expect(tabs).toHaveCount(1)
 }
 
-test.describe('a view a plugin draws in a tab', () => {
-  for (const view of VIEWS) {
-    test(`opens from the palette by "${view.command}"`, async ({ page }) => {
-      await openWorkspace(page)
+test.describe('the file tree in a tab', () => {
+  test('opens from the palette by "Open file tree"', async ({ page }) => {
+    await openWorkspace(page)
 
-      await expectOpened(page, view.tab, () => runPaletteCommand(page, view.query, view.command))
-    })
+    await expectOpened(page, () => runPaletteCommand(page, 'file tree', 'Open file tree'))
+  })
 
-    if (view.keys) {
-      test(`opens by ${view.keys}`, async ({ page }) => {
-        await openWorkspace(page)
+  test('opens by Control+Shift+e', async ({ page }) => {
+    await openWorkspace(page)
 
-        await expectOpened(page, view.tab, () => page.keyboard.press(view.keys))
-      })
-    }
-  }
+    await expectOpened(page, () => page.keyboard.press('Control+Shift+e'))
+  })
 })

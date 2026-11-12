@@ -223,6 +223,16 @@ describe('a deck drawn', () => {
     expect(window.findAll('[data-card]')).toHaveLength(2)
   })
 
+  it('draws each field of a card in a box holding its value', async () => {
+    const { window } = await mountDeck()
+
+    const tile = getTile(window, 'k7m2xq9fzp')
+
+    expect((tile.get('[data-value="Name"]').element as HTMLInputElement).value).toBe('Llama')
+    expect((tile.get('[data-value="Height"]').element as HTMLInputElement).value).toBe('45"')
+    expect(tile.get('[data-cut-of]').text()).toBe('Animal')
+  })
+
   it('offers every card model the vault holds once the plus is pressed', async () => {
     const { window } = await mountDeck()
 
@@ -468,5 +478,22 @@ describe('the preset a deck is scheduled by', () => {
     await window.vm.$nextTick()
 
     expect(window.get('.deck-tab__scheduled').text()).toContain(words.notScheduled)
+  })
+
+  it('closes its menu on Escape and writes nothing', async () => {
+    const { window, tab, appliedPresets } = await mountDeck([], { by: 'Sanskrit.md' })
+    const before = tab.note.value.body
+    await window.get('.deck-tab__choice').trigger('click')
+    expect(document.body.querySelectorAll('.menu__item')).not.toHaveLength(0)
+
+    window.element.ownerDocument.defaultView?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape' }),
+    )
+    await window.vm.$nextTick()
+
+    expect(document.body.querySelectorAll('.menu__item')).toHaveLength(0)
+    expect(window.get('.deck-tab__choice').text()).toContain('Sanskrit')
+    expect(appliedPresets).toStrictEqual([])
+    expect(tab.note.value.body).toBe(before)
   })
 })

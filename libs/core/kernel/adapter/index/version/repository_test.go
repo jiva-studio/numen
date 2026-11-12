@@ -122,3 +122,25 @@ func TestRemovePluginVersionsReturnsWhatItRemoved(t *testing.T) {
 		t.Fatalf("left %v", got)
 	}
 }
+
+func TestGetVersionsUnderListsAFileAndAFolder(t *testing.T) {
+	repo := openRepository(t)
+	save(t, repo,
+		newVersion(".trash/talks/a.mp3", "p.one", "k"),
+		newVersion(".trash/b.pdf", "p.one", "k"),
+		newVersion(".trash-old/c.mp3", "p.one", "k"),
+		newVersion("talks/a.mp3", "p.one", "k"),
+	)
+
+	found, err := repo.GetVersionsUnder(t.Context(), vault, ".trash")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var paths []string
+	for _, v := range found {
+		paths = append(paths, v.Path)
+	}
+	if !slices.Equal(paths, []string{".trash/talks/a.mp3", ".trash/b.pdf"}) {
+		t.Errorf("the trash holds the versions of %v", paths)
+	}
+}

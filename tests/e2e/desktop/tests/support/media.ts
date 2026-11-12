@@ -4,8 +4,8 @@
  * stand-ins' address.
  */
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
-import zlib from 'node:zlib'
 import { expect, type APIRequestContext } from 'playwright/test'
 import { getVaultPath, listFilePaths, readOwner, writeSetting } from './vault.js'
 import type { JsonValue } from './json.js'
@@ -98,95 +98,24 @@ export const getStandInsOrigin = async (request: APIRequestContext): Promise<str
   return new URL(endpoint).origin
 }
 
-/** One chapter of a book: its title in the contents and the paragraph it holds. */
-export interface Chapter {
-  readonly title: string
-  readonly text: string
-}
+const getPageTextsFile = (): string =>
+  path.join(os.tmpdir(), `numen-e2e-page-texts-${process.env.NUMEN_TEST_PORT ?? '3456'}.json`)
 
-/** One file of a zip archive. */
-interface ArchiveEntry {
-  readonly name: string
-  readonly content: string
-}
-
-const createArchive = (entries: readonly ArchiveEntry[]): Buffer => {
-  const parts: Buffer[] = []
-  const directory: Buffer[] = []
-  let offset = 0
-  for (const entry of entries) {
-    const name = Buffer.from(entry.name)
-    const content = Buffer.from(entry.content)
-    const header = Buffer.alloc(30)
-    header.writeUInt32LE(0x04034b50, 0)
-    header.writeUInt16LE(20, 4)
-    header.writeUInt32LE(zlib.crc32(content), 14)
-    header.writeUInt32LE(content.length, 18)
-    header.writeUInt32LE(content.length, 22)
-    header.writeUInt16LE(name.length, 26)
-    const record = Buffer.alloc(46)
-    record.writeUInt32LE(0x02014b50, 0)
-    record.writeUInt16LE(20, 4)
-    record.writeUInt16LE(20, 6)
-    record.writeUInt32LE(zlib.crc32(content), 16)
-    record.writeUInt32LE(content.length, 20)
-    record.writeUInt32LE(content.length, 24)
-    record.writeUInt16LE(name.length, 28)
-    record.writeUInt32LE(offset, 42)
-    directory.push(record, name)
-    parts.push(header, name, content)
-    offset += header.length + name.length + content.length
+const readPageTexts = (): Record<string, string> => {
+  try {
+    return JSON.parse(fs.readFileSync(getPageTextsFile(), 'utf8')) as Record<string, string>
+  } catch {
+    return {}
   }
-  const end = Buffer.alloc(22)
-  end.writeUInt32LE(0x06054b50, 0)
-  end.writeUInt16LE(entries.length, 8)
-  end.writeUInt16LE(entries.length, 10)
-  end.writeUInt32LE(
-    directory.reduce((sum, one) => sum + one.length, 0),
-    12,
-  )
-  end.writeUInt32LE(offset, 16)
-  return Buffer.concat([...parts, ...directory, end])
 }
 
-/** An EPUB 3 book of the chapters, each in a document of its own and listed in its contents. */
-export const createEpub = (title: string, chapters: readonly Chapter[]): Buffer => {
-  const page = (body: string): string =>
-    `<?xml version="1.0" encoding="UTF-8"?>\n<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>${title}</title></head><body>${body}</body></html>`
-  return createArchive([
-    { name: 'mimetype', content: 'application/epub+zip' },
-    {
-      name: 'META-INF/container.xml',
-      content:
-        '<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',
-    },
-    {
-      name: 'OEBPS/content.opf',
-      content: `<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${title}</dc:title><dc:identifier id="id">urn:uuid:${title}</dc:identifier><dc:language>en</dc:language></metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>${chapters
-        .map(
-          (_, index) =>
-            `<item id="c${index}" href="c${index}.xhtml" media-type="application/xhtml+xml"/>`,
-        )
-        .join(
-          '',
-        )}</manifest><spine>${chapters.map((_, index) => `<itemref idref="c${index}"/>`).join('')}</spine></package>`,
-    },
-    {
-      name: 'OEBPS/nav.xhtml',
-      content: page(
-        `<nav epub:type="toc"><ol>${chapters
-          .map((one, index) => `<li><a href="c${index}.xhtml">${one.title}</a></li>`)
-          .join('')}</ol></nav>`,
-      ),
-    },
-    ...chapters.map((one, index) => ({
-      name: `OEBPS/c${index}.xhtml`,
-      content: page(`<h1>${one.title}</h1><p>${one.text}</p>`),
-    })),
-  ])
+/** Makes the page stand-in answer the address with the text in the first paragraph of its page. */
+export const writePageText = (address: string, text: string): void => {
+  fs.writeFileSync(getPageTextsFile(), JSON.stringify({ ...readPageTexts(), [address]: text }))
 }
 
-/** Writes bytes into a file of the vault as a program outside numen would. */
-export const writeVaultBytes = (file: string, bytes: Buffer): void => {
-  fs.writeFileSync(path.join(getVaultPath(), file), bytes)
+/** Makes the page stand-in answer the address with its own page again. */
+export const removePageText = (address: string): void => {
+  const { [address]: _removed, ...remaining } = readPageTexts()
+  fs.writeFileSync(getPageTextsFile(), JSON.stringify(remaining))
 }

@@ -214,3 +214,32 @@ describe('a recording tab that closes', () => {
     expect(tab.content.cues.value).toStrictEqual([])
   })
 })
+
+describe('a line chosen by its time', () => {
+  it('seeks the player to the time of the line', async () => {
+    const { tab, seeks } = open()
+    await tab.content.firstRead
+
+    tab.navigation.goToLine(1)
+
+    expect(seeks.at(-1)).toStrictEqual([TALK_URL, 83_000])
+  })
+
+  it('seeks to the beginning for the first line', async () => {
+    const { tab, seeks } = open()
+    await tab.content.firstRead
+
+    tab.navigation.goToLine(0)
+
+    expect(seeks.at(-1)).toStrictEqual([TALK_URL, 0])
+  })
+
+  it('seeks nowhere for a line the transcript does not have', async () => {
+    const { tab, seeks } = open()
+    await tab.content.firstRead
+
+    tab.navigation.goToLine(5)
+
+    expect(seeks).toStrictEqual([])
+  })
+})

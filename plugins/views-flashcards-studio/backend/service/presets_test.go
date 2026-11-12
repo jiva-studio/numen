@@ -436,6 +436,10 @@ func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
 	if read.Preset.Settings.MinutesADay != 20 {
 		t.Errorf("the settings are %+v", read.Preset.Settings)
 	}
+	want := "- to: Sanskrit\n    role: ref\n    type: preset"
+	if onDiskContent := onDisk(t, f.root, "decks/Terms.md"); !strings.Contains(onDiskContent, want) {
+		t.Errorf("the deck file does not hold the link %q: %q", want, onDiskContent)
+	}
 
 	// The file stat the write answered with is what the next write presents.
 	off, err := f.writes.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
@@ -531,5 +535,35 @@ func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	}
 	if onDiskContent := onDisk(t, f.root, "decks/Roots.md"); onDiskContent != concurrentEdit {
 		t.Errorf("the deck on disk is now %q", onDiskContent)
+	}
+}
+
+// TestWritePresetStoresTheRetentionInTheFile. A retention between the bounds is
+// written into the preset file, and the other settings stay as they were.
+func TestWritePresetStoresTheRetentionInTheFile(t *testing.T) {
+	f := newScheduling(t, getPointed())
+
+	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{Path: "Sanskrit.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	presetSettings := read.Preset.Settings
+	presetSettings.Retention = 0.8
+
+	answer, err := f.client.WritePreset(t.Context(), &api.WritePresetRequest{
+		Path: "Sanskrit.md", Settings: presetSettings, Baseline: read.At,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Error != api.ErrorCodeUnspecified {
+		t.Fatalf("the write failed: %+v", answer)
+	}
+	raw := onDisk(t, f.root, "Sanskrit.md")
+	if !strings.Contains(raw, "retention: 0.8\n") {
+		t.Errorf("the preset on disk is now %q", raw)
+	}
+	if !strings.Contains(raw, "minutes_a_day: 20\n") {
+		t.Errorf("a setting nobody changed was rewritten: %q", raw)
 	}
 }

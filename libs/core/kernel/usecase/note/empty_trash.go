@@ -9,18 +9,27 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// EmptyTrash deletes everything the vault's trash holds.
-type EmptyTrash struct {
-	writers vaultport.TrashEmptiers
-	gate    WriteGate
+// TrashedVersions deletes the text versions that follow files into the trash.
+type TrashedVersions interface {
+	// DeleteUnder deletes the versions of everything under a folder, except those
+	// of the paths in kept and of what lies under them.
+	DeleteUnder(ctx context.Context, v domain.Vault, folder string, kept []string) error
 }
 
-func NewEmptyTrash(writers vaultport.TrashEmptiers, gate WriteGate) EmptyTrash {
-	return EmptyTrash{writers: writers, gate: gate}
+// EmptyTrash deletes everything the vault's trash holds, with the text versions of it.
+type EmptyTrash struct {
+	writers  vaultport.TrashEmptiers
+	versions TrashedVersions
+	gate     WriteGate
+}
+
+func NewEmptyTrash(writers vaultport.TrashEmptiers, versions TrashedVersions, gate WriteGate) EmptyTrash {
+	return EmptyTrash{writers: writers, versions: versions, gate: gate}
 }
 
 // Execute deletes the trash content permanently and returns the paths it could
-// not delete. The trash is not indexed, so the index is left as it is.
+// not delete. The trash is not indexed, so the index is left as it is. The
+// versions of the paths it could not delete stay with them.
 func (u EmptyTrash) Execute(ctx context.Context, v domain.Vault) ([]string, error) {
 	if !u.gate.BeginWrite() {
 		return nil, windowdomain.ErrClosing
@@ -30,5 +39,9 @@ func (u EmptyTrash) Execute(ctx context.Context, v domain.Vault) ([]string, erro
 	if err != nil {
 		return nil, err
 	}
-	return writer.EmptyTrash(ctx)
+	undeleted, err := writer.EmptyTrash(ctx)
+	if err != nil {
+		return undeleted, err
+	}
+	return undeleted, u.versions.DeleteUnder(ctx, v, TrashDir, undeleted)
 }

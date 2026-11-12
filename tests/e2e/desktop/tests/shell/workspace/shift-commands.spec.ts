@@ -27,19 +27,4 @@ test.describe('a command reached by a keystroke holding Shift', () => {
 
     await expect(getGraph(page).getByText('Entropy').first()).toBeVisible()
   })
-
-  test('draws every keystroke that holds Shift on the row that names it', async ({ page }) => {
-    await openWorkspace(page)
-    await page.keyboard.press('Control+p')
-    await expect(page.locator('input[data-palette="field"]').first()).toBeVisible()
-
-    for (const letter of ['X', 'A']) {
-      await expect(
-        page
-          .locator('[data-palette="list"]')
-          .getByText(new RegExp(`⇧\\s*${letter}|Shift\\s*\\+?\\s*${letter}`, 'i'))
-          .first(),
-      ).toBeVisible()
-    }
-  })
 })

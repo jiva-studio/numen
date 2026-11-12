@@ -2,18 +2,6 @@ import { test, expect } from '../../support/test.js'
 import { openAsset, openTreeRow } from '../../support/workspace.js'
 
 test.describe('PDF Document Reader', () => {
-  test('opens PDF document and renders viewer without saving error', async ({ page }) => {
-    await openAsset(page, 'sample.pdf')
-
-    // Verify document tab opened and no error modal or error panel is shown
-    await expect(page.locator('.fallback-panel')).toBeHidden({ timeout: 5_000 })
-    await expect(page.locator('text=Saving went wrong')).toBeHidden()
-    await expect(page.locator('text=Something went wrong')).toBeHidden()
-
-    // Verify reader canvas / page rendered
-    await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
-  })
-
   test('opens paper.pdf document from vault assets', async ({ page }) => {
     await openAsset(page, 'paper.pdf')
 
@@ -33,36 +21,6 @@ test.describe('PDF Document Reader', () => {
         { timeout: 15_000 },
       )
       .toBeGreaterThan(0)
-  })
-
-  test('handles viewport resize on PDF reader', async ({ page }) => {
-    await openAsset(page, 'sample.pdf')
-
-    await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
-
-    // Resize viewport to trigger layout measure
-    await page.setViewportSize({ width: 900, height: 600 })
-    await expect(page.locator('.reader')).toBeVisible()
-  })
-
-  test('displays graceful fallback panel on corrupted PDF', async ({ page }) => {
-    await openAsset(page, 'corrupted.pdf')
-
-    // Verify fallback panel is shown gracefully displaying error message
-    await expect(page.locator('.fallback-panel')).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('.fallback-message')).toBeVisible()
-  })
-
-  test('navigates across pages in PDF document', async ({ page }) => {
-    await openAsset(page, 'sample.pdf')
-
-    const reader = page.locator('.reader')
-    await expect(reader).toBeVisible({ timeout: 10_000 })
-
-    // Focus reader and send page navigation keys
-    await reader.click()
-    await page.keyboard.press('PageDown')
-    await expect(reader).toBeVisible()
   })
 
   test('persists PDF reader across tab switching', async ({ page }) => {

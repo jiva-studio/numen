@@ -170,6 +170,8 @@ desktop_fe:
   - apps/desktop/editor/**
   - apps/desktop/flashcards/**
   - tests/e2e/desktop/**
+  - tests/acceptance/**
+  - features/**
   - tools/ci-stories/**
   - '!**/*.md'
 mobile_fe:

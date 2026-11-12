@@ -110,6 +110,7 @@ fs.writeFileSync(path.join(tmpVault, 'assets', 'corrupted.pdf'), 'INVALID_PDF_HE
 fs.writeFileSync(path.join(tmpVault, 'assets', 'corrupted.epub'), 'INVALID_EPUB_ZIP')
 fs.writeFileSync(path.join(tmpVault, 'assets', 'sample.mp3'), Buffer.alloc(512))
 fs.writeFileSync(path.join(tmpVault, 'assets', 'sample.flac'), Buffer.alloc(512))
+fs.mkdirSync(path.join(tmpVault, 'Saltworks'))
 fs.writeFileSync(
   path.join(tmpVault, 'notes', 'plain.md'),
   'Plain text file opened via markdown editor plugin.',
@@ -202,14 +203,30 @@ function cleanup() {
 
 // The proxy every plain-http fetch of the binary and its plugins goes through. It serves PAGES by
 // host and answers every other host 404, so a page a test imports is never fetched from the network.
-const PAGES = new Map([['tidal-mills.numen.test', path.join(fixturesDir, 'article.html')]])
+// A test can give one address a text of its own: the file below maps the address to the text, and
+// the proxy puts that text in the first paragraph of the page of the host.
+const PAGES = new Map([['numen.dev', path.join(fixturesDir, 'article.html')]])
+const pageTextsFile = path.join(os.tmpdir(), `numen-e2e-page-texts-${port}.json`)
+fs.rmSync(pageTextsFile, { force: true })
+const readPageText = (address) => {
+  try {
+    return JSON.parse(fs.readFileSync(pageTextsFile, 'utf8'))[address]
+  } catch {
+    return undefined
+  }
+}
+const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const pages = http.createServer((req, res) => {
   const page = PAGES.get((req.headers.host ?? '').replace(/:\d+$/, ''))
   if (!page) {
     res.writeHead(404).end()
     return
   }
-  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(fs.readFileSync(page))
+  const text = readPageText(req.url ?? '')
+  const html = fs.readFileSync(page, 'utf8')
+  const body =
+    text === undefined ? html : html.replace(/<p>[\s\S]*?<\/p>/, () => `<p>${escapeHtml(text)}</p>`)
+  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(body)
 })
 // The port is the system's to give: the next port after the server's is another run's server.
 await new Promise((resolve, reject) => {

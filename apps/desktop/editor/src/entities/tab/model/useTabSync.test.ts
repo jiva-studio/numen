@@ -494,3 +494,53 @@ describe('a moved tab that settles without reporting the path', () => {
     expect(sendSync).toHaveBeenLastCalledWith({ sourceTabId: 'files:1', path: 'a.md', title: '' })
   })
 })
+
+describe('a path chosen in the files tab after its link ends', () => {
+  const GROUP: TabLinkGroup = {
+    id: 'group-1',
+    colorIndex: 1,
+    tabs: ['files:1', 'note:weir'],
+    path: '',
+    title: '',
+  }
+
+  /** Links that can end, as the tab-links state does when the person unlinks or closes a tab. */
+  const createEndingLinks = () => {
+    const groups = new Map<string, TabLinkGroup>([[GROUP.id, GROUP]])
+    const links: TabSyncDeps['tabLinks'] = {
+      groups,
+      getGroupOf: (tab) => [...groups.values()].find((one) => one.tabs.includes(tab)) ?? null,
+    }
+    return { links, end: () => groups.clear() }
+  }
+
+  const setupLinked = () => {
+    const navigate = vi.fn<Navigate>()
+    const { links, end } = createEndingLinks()
+    const { sync, sendSync } = setup({ 'files:1': {}, 'note:weir': { navigate } }, links)
+    return { sync, sendSync, navigate, end }
+  }
+
+  it('is left to open a note tab of its own once the person unlinks the files tab', () => {
+    const { sync, sendSync, navigate, end } = setupLinked()
+    expect(sync.syncPathFromTab('files:1', 'notes/Weir.md')).toBe(true)
+    navigate.mockClear()
+    sendSync.mockClear()
+
+    end()
+
+    expect(sync.syncPathFromTab('files:1', 'notes/Flume.md')).toBe(false)
+    expect(navigate).not.toHaveBeenCalled()
+    expect(sendSync).not.toHaveBeenCalled()
+  })
+
+  it('is left to open a note tab of its own once the linked note tab is closed', () => {
+    const { sync, sendSync, navigate, end } = setupLinked()
+
+    end()
+
+    expect(sync.syncPathFromTab('files:1', 'notes/Flume.md')).toBe(false)
+    expect(navigate).not.toHaveBeenCalled()
+    expect(sendSync).not.toHaveBeenCalled()
+  })
+})

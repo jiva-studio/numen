@@ -11,7 +11,7 @@ const manifest = JSON.parse(
 ) as {
   permissions: readonly string[]
   contributes: {
-    commands: readonly { id: string; title: string; icon: string }[]
+    commands: readonly { id: string; title: string; icon: string; shortcut?: string }[]
     slots?: readonly Record<string, unknown>[]
   }
 }
@@ -117,6 +117,12 @@ describe('the menu of a row', () => {
     })
     expect(getCommand('tree.createNote')).toBeUndefined()
     expect(getCommand('tree.createFolder')).toBeUndefined()
+  })
+})
+
+describe('the shortcut', () => {
+  it('opens the file tree on the window key with Shift and E', () => {
+    expect(getCommand('tree.open')?.shortcut).toBe('mod+shift+e')
   })
 })
 

@@ -62,6 +62,12 @@ func (s sources) MoveSources(ctx context.Context, vaultID domain.VaultID, from, 
 	return s.versions.MoveVersions(ctx, vaultID, from, to)
 }
 
+// MoveVersions files the text versions of what was at one path, and of everything
+// under it, at the path it now has.
+func (s sources) MoveVersions(ctx context.Context, vaultID domain.VaultID, from, to string) error {
+	return s.versions.MoveVersions(ctx, vaultID, from, to)
+}
+
 // GetSourcesUnder is every source the vault holds at a path and beneath it.
 func (s queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.FileStat, error) {
 	return s.files.GetSourcesUnder(ctx, vaultID, path)

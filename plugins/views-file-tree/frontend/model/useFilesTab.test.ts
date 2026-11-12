@@ -6,7 +6,7 @@ import type { Entry } from '../types'
 import { useFilesTab } from './useFilesTab'
 import { ROOT, createFileTree } from './useFileTree'
 import type { CommandTarget } from '@numen/plugin-sdk'
-import { NEW_MENU, ROW_MENU, TRASH } from '../fixtures/host'
+import { COPY_PATH, NEW_MENU, ROW_MENU, TRASH } from '../fixtures/host'
 import { WORDS as words } from '../words'
 import { CREATE_FOLDER, CREATE_NOTE } from '../lib/menu'
 
@@ -502,6 +502,14 @@ describe('an item chosen in the menu on a row', () => {
     one.menu.choose(TRASH.key)
 
     expect(recorded).toStrictEqual(['runs app:file.remove Entropy.md Entropy.md'])
+  })
+
+  it('runs the copy of the path over the row the menu was opened on', async () => {
+    const { recorded, one } = await openRowMenu('physics/Kelvin.md')
+
+    one.chooseMenuItem(COPY_PATH.key)
+
+    expect(recorded).toStrictEqual(['runs app:file.copyPath physics/Kelvin.md Kelvin.md'])
   })
 
   it('runs the command of an entry inside a submenu', async () => {
