@@ -9,12 +9,13 @@ const REPO = path.resolve(import.meta.dirname, "../../../../..");
 const roots = [];
 after(() => roots.forEach((dir) => fs.rmSync(dir, { recursive: true, force: true })));
 
-/** A repository of two library files, linked to the installed jscpd. */
+/** A repository of the given files, with the folders every scope reads, linked to the installed jscpd. */
 function createRepo(files) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "duplication-"));
   roots.push(dir);
   fs.mkdirSync(path.join(dir, "plugins"));
   fs.mkdirSync(path.join(dir, "apps"));
+  fs.mkdirSync(path.join(dir, "libs"));
   for (const [name, text] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(dir, name)), { recursive: true });
     fs.writeFileSync(path.join(dir, name), text);
