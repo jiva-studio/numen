@@ -50,13 +50,7 @@ func (s *Session) call(ctx context.Context, method string, params any, handler H
 	for {
 		line, err := s.proc.Receive()
 		if err != nil {
-			if ctxErr := ctx.Err(); ctxErr != nil {
-				return nil, ctxErr
-			}
-			if errors.Is(err, io.EOF) {
-				return nil, s.getExitError(method)
-			}
-			return nil, fmt.Errorf("read %s: %w", s.program, err)
+			return nil, s.getReadError(ctx, method, err)
 		}
 		var message rpcMessage
 		if json.Unmarshal(line, &message) != nil {
@@ -84,22 +78,31 @@ func (s *Session) watch(ctx context.Context, method string) func() {
 			return
 		case <-ctx.Done():
 		}
-		if method == methodPrompt {
-			// A program that cannot be told is stopped after the grace period like one that does not answer.
-			_ = s.send(rpcRequest{JSONRPC: "", ID: nil, Method: methodCancel, Params: map[string]any{keySessionID: s.id}, Result: nil, Error: nil})
-			grace := time.NewTimer(cancelGrace)
-			defer grace.Stop()
-			select {
-			case <-finished:
-				return
-			case <-grace.C:
-			}
+		if method == methodPrompt && s.cancelTurn(finished) {
+			return
 		}
-		_ = s.stop()
+		s.halt()
 	}()
 	return func() {
 		close(finished)
 		<-ended
+	}
+}
+
+// cancelTurn tells the program to cancel the turn and reports whether the turn finished within the grace
+// period. A program that cannot be told is stopped.
+func (s *Session) cancelTurn(finished <-chan struct{}) bool {
+	cancel := rpcRequest{JSONRPC: "", ID: nil, Method: methodCancel, Params: map[string]any{keySessionID: s.id}, Result: nil, Error: nil}
+	if s.send(cancel) != nil {
+		return false
+	}
+	grace := time.NewTimer(cancelGrace)
+	defer grace.Stop()
+	select {
+	case <-finished:
+		return true
+	case <-grace.C:
+		return false
 	}
 }
 
@@ -120,11 +123,15 @@ func (s *Session) handleMessage(msg rpcMessage, targetID, method string, handler
 }
 
 func (s *Session) answerRequest(request rpcMessage, handler Handler) error {
-	reply := rpcRequest{JSONRPC: "", ID: request.ID, Method: "", Params: nil, Result: nil, Error: nil}
+	reply := rpcRequest{
+		JSONRPC: "", ID: request.ID, Method: "", Params: nil, Result: nil,
+		Error: &rpcError{Code: methodNotFound, Message: "numen serves no " + request.Method},
+	}
 	if request.Method == "session/request_permission" {
-		reply.Result = s.answerPermission(request.Params, handler)
-	} else {
-		reply.Error = &rpcError{Code: methodNotFound, Message: "numen serves no " + request.Method}
+		reply.Error = &rpcError{Code: permissionRefused, Message: "numen grants no permission for this request"}
+		if outcome := s.answerPermission(request.Params, handler); outcome != nil {
+			reply.Result, reply.Error = outcome, nil
+		}
 	}
 	if err := s.send(reply); err != nil {
 		return fmt.Errorf("answer %s of %s: %w", request.Method, s.program, err)
@@ -141,6 +148,18 @@ func (s *Session) send(message rpcRequest) error {
 	s.sendMu.Lock()
 	defer s.sendMu.Unlock()
 	return s.proc.Send(raw)
+}
+
+// getReadError returns why the output of the program could not be read: the end of ctx, which stopped
+// the program, or the end or failure of the output.
+func (s *Session) getReadError(ctx context.Context, method string, err error) error {
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return ctxErr
+	}
+	if errors.Is(err, io.EOF) {
+		return s.getExitError(method)
+	}
+	return fmt.Errorf("read %s: %w", s.program, err)
 }
 
 func (s *Session) getExitError(method string) error {

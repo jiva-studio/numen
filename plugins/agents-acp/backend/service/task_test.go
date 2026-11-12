@@ -282,11 +282,11 @@ func TestASessionIdleForThirtyMinutesIsClosed(t *testing.T) {
 		t.Fatal(err)
 	}
 	source.Advance(29 * time.Minute)
-	if err := svc.tasks.CloseIdle(); err != nil || len(readRecord(t, record)["session/close"]) != 0 {
+	if err := svc.tasks.CloseIdle(t.Context()); err != nil || len(readRecord(t, record)["session/close"]) != 0 {
 		t.Fatalf("a session idle for 29 minutes was closed (%v)", err)
 	}
 	source.Advance(time.Minute)
-	if err := svc.tasks.CloseIdle(); err != nil {
+	if err := svc.tasks.CloseIdle(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if closed := len(readRecord(t, record)["session/close"]); closed != 1 {
@@ -315,7 +315,7 @@ func TestThePluginKeepsTheSessionsOfEightConversations(t *testing.T) {
 	if closed := len(readRecord(t, record)["session/close"]); closed != 1 {
 		t.Fatalf("%d sessions were closed for the ninth conversation, want the least recently used one", closed)
 	}
-	if err := svc.tasks.Close(); err != nil {
+	if err := svc.tasks.Close(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if closed := len(readRecord(t, record)["session/close"]); closed != 9 {

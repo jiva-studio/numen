@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/acp"
 )
 
 // The connection types of the plugin.
@@ -27,6 +25,9 @@ const claudeWebSearch = "WebSearch"
 
 // claudeTaskTurns is how many times Claude Code may go round on one task.
 const claudeTaskTurns = 100
+
+// serverName is the name the session offers the tools under, which Claude Code puts before their names.
+const serverName = "numen"
 
 var (
 	// ErrNoProgram is the reason a connection names no program where its type requires one.
@@ -112,7 +113,7 @@ func (a Agent) GetTaskMeta(served []string) map[string]any {
 	}
 	allowed := []string{claudeWebSearch}
 	for _, name := range served {
-		allowed = append(allowed, "mcp__"+acp.ServerName+"__"+name)
+		allowed = append(allowed, "mcp__"+serverName+"__"+name)
 	}
 	slices.Sort(allowed)
 	return writeClaudeOptions(map[string]any{

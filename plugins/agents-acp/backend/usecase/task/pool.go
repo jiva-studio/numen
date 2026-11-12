@@ -17,16 +17,38 @@ const idleLimit = 30 * time.Minute
 
 var errClosed = errors.New("the plugin is stopping")
 
-// pool keeps the sessions of conversations by key.
+// pool keeps the sessions of conversations by key. The errors of closing a session outside closeIdle
+// and close are kept until one of them returns them: a task does not fail on the session of another, nor
+// on its own after its turn has ended.
 type pool struct {
-	clock    Clock
-	mu       sync.Mutex
-	kept     map[string]*conversation
-	isClosed bool
+	clock     Clock
+	mu        sync.Mutex
+	kept      map[string]*conversation
+	isClosed  bool
+	closeErrs error
 }
 
 func newPool(clock Clock) *pool {
-	return &pool{clock: clock, mu: sync.Mutex{}, kept: map[string]*conversation{}, isClosed: false}
+	return &pool{clock: clock, mu: sync.Mutex{}, kept: map[string]*conversation{}, isClosed: false, closeErrs: nil}
+}
+
+// keepError keeps the error of closing a session for the next closeIdle or close.
+func (p *pool) keepError(err error) {
+	if err == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.closeErrs = errors.Join(p.closeErrs, err)
+}
+
+// takeErrors returns the kept errors of closing sessions and keeps none.
+func (p *pool) takeErrors() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	err := p.closeErrs
+	p.closeErrs = nil
+	return err
 }
 
 // acquire returns the conversation of key with its token held, and whether the pool keeps it. A
@@ -50,7 +72,7 @@ func (p *pool) acquire(ctx context.Context, key string) (c *conversation, isNew,
 				p.kept[key] = created
 			}
 			p.mu.Unlock()
-			closeConversation(evicted)
+			p.keepError(closeConversation(ctx, evicted))
 			return created, true, hasRoom, nil
 		}
 		p.mu.Unlock()
@@ -101,7 +123,7 @@ func (p *pool) tryTake(c *conversation) bool {
 
 // release ends the turn of the conversation. A conversation the pool does not keep is taken out and
 // closed, and one whose session broke has its program stopped.
-func (p *pool) release(c *conversation, isKept, isBroken bool) error {
+func (p *pool) release(ctx context.Context, c *conversation, isKept, isBroken bool) {
 	p.mu.Lock()
 	c.lastUsed = p.clock.Now()
 	isClosing := !isKept || isBroken || c.isGone
@@ -114,13 +136,13 @@ func (p *pool) release(c *conversation, isKept, isBroken bool) error {
 	p.mu.Unlock()
 	<-c.turn
 	if isClosing {
-		return c.close(isBroken)
+		p.keepError(c.close(ctx, isBroken))
 	}
-	return nil
 }
 
-// closeIdle closes the conversations that have gone unused for the idle limit.
-func (p *pool) closeIdle() error {
+// closeIdle closes the conversations that have gone unused for the idle limit, and returns the errors
+// of closing sessions since the last call.
+func (p *pool) closeIdle(ctx context.Context) error {
 	now := p.clock.Now()
 	var idle []*conversation
 	p.mu.Lock()
@@ -130,15 +152,15 @@ func (p *pool) closeIdle() error {
 		}
 	}
 	p.mu.Unlock()
-	var err error
+	err := p.takeErrors()
 	for _, one := range idle {
-		err = errors.Join(err, closeConversation(one))
+		err = errors.Join(err, closeConversation(ctx, one))
 	}
 	return err
 }
 
 // close closes every conversation and keeps no other. A conversation whose turn still runs is stopped.
-func (p *pool) close() error {
+func (p *pool) close(ctx context.Context) error {
 	p.mu.Lock()
 	p.isClosed = true
 	kept := p.kept
@@ -154,21 +176,21 @@ func (p *pool) close() error {
 		}
 	}
 	p.mu.Unlock()
-	var err error
+	err := p.takeErrors()
 	for _, one := range idle {
-		err = errors.Join(err, closeConversation(one))
+		err = errors.Join(err, closeConversation(ctx, one))
 	}
 	for _, one := range running {
-		err = errors.Join(err, one.close(true))
+		err = errors.Join(err, one.close(ctx, true))
 	}
 	return err
 }
 
 // closeConversation closes a conversation taken out of the pool whose token the caller holds.
-func closeConversation(c *conversation) error {
+func closeConversation(ctx context.Context, c *conversation) error {
 	if c == nil {
 		return nil
 	}
 	<-c.turn
-	return c.close(false)
+	return c.close(ctx, false)
 }

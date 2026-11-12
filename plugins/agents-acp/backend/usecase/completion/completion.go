@@ -67,7 +67,7 @@ func New(deps Dependencies) (*Completion, error) {
 func (c *Completion) Complete(
 	ctx context.Context, call connection.Call, request *llm.CompleteRequest,
 ) (*llm.CompleteResult, error) {
-	system, prompt, err := splitMessages(request.Messages)
+	system, prompt, err := splitMessages(request.GetMessages())
 	if err != nil {
 		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
@@ -98,7 +98,7 @@ func (c *Completion) answer(ctx context.Context, agent agents.Agent, call connec
 	if err != nil {
 		return "", err
 	}
-	defer func() { err = errors.Join(err, session.Close()) }()
+	defer func() { err = errors.Join(err, session.Close(ctx)) }()
 	if err := session.SetModel(ctx, call.Options[llm.OptionModel]); err != nil {
 		return "", err
 	}
@@ -198,13 +198,13 @@ func splitMessages(messages []*llm.Message) (system, prompt string, err error) {
 	var instructions []string
 	var turns []*llm.Message
 	for _, message := range messages {
-		switch message.Role {
+		switch message.GetRole() {
 		case roleSystem:
-			instructions = append(instructions, message.Text)
+			instructions = append(instructions, message.GetText())
 		case "", roleUser, roleAssistant:
 			turns = append(turns, message)
 		default:
-			return "", "", fmt.Errorf("unknown role %q", message.Role)
+			return "", "", fmt.Errorf("unknown role %q", message.GetRole())
 		}
 	}
 	if len(turns) == 0 {
@@ -215,15 +215,15 @@ func splitMessages(messages []*llm.Message) (system, prompt string, err error) {
 
 func writePrompt(turns []*llm.Message) string {
 	if len(turns) == 1 {
-		return turns[0].Text
+		return turns[0].GetText()
 	}
 	parts := make([]string, 0, len(turns))
 	for _, turn := range turns {
 		role := "User"
-		if turn.Role == roleAssistant {
+		if turn.GetRole() == roleAssistant {
 			role = "Assistant"
 		}
-		parts = append(parts, role+":\n"+turn.Text)
+		parts = append(parts, role+":\n"+turn.GetText())
 	}
 	return strings.Join(parts, "\n\n")
 }

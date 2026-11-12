@@ -14,8 +14,12 @@ const (
 	StopMaxTokens       StopReason = "max_tokens"
 	StopMaxTurnRequests StopReason = "max_turn_requests"
 	StopRefusal         StopReason = "refusal"
-	StopCancelled       StopReason = "cancelled"
 )
+
+// IsCanceled reports whether the program ended the turn because it was canceled.
+func (r StopReason) IsCanceled() bool {
+	return strings.HasPrefix(string(r), "cancel")
+}
 
 // ServerName is the name the MCP server of the tools of a session is offered under.
 const ServerName = "numen"
@@ -121,13 +125,13 @@ func (s *Session) readUpdate(params json.RawMessage, handler Handler) error {
 		SessionID string          `json:"sessionId"`
 		Update    json.RawMessage `json:"update"`
 	}
-	if json.Unmarshal(params, &envelope) != nil || envelope.SessionID != s.id {
+	if !isDecoded(params, &envelope) || envelope.SessionID != s.id {
 		return nil
 	}
 	var head struct {
 		SessionUpdate string `json:"sessionUpdate"`
 	}
-	if json.Unmarshal(envelope.Update, &head) != nil {
+	if !isDecoded(envelope.Update, &head) {
 		return nil
 	}
 	var update *Update
@@ -143,6 +147,12 @@ func (s *Session) readUpdate(params json.RawMessage, handler Handler) error {
 		return nil
 	}
 	return handler.HandleUpdate(*update)
+}
+
+// isDecoded decodes raw into value and reports whether it could; an update the client cannot read is
+// left out.
+func isDecoded(raw json.RawMessage, value any) bool {
+	return json.Unmarshal(raw, value) == nil
 }
 
 func readChunk(raw json.RawMessage) *Update {
@@ -199,7 +209,8 @@ func (s *Session) readToolUpdate(raw json.RawMessage) *Update {
 
 // answerPermission grants a permission once where the handler allows the tool the request names, or,
 // where it names none, the tool the agent reported for the call. It refuses every other request with the
-// option that rejects once, which lets the turn go on.
+// option that rejects once, which lets the turn go on, and returns nil for a request that offers no
+// option to reject.
 func (s *Session) answerPermission(params json.RawMessage, handler Handler) map[string]any {
 	var request struct {
 		SessionID string        `json:"sessionId"`
@@ -209,8 +220,8 @@ func (s *Session) answerPermission(params json.RawMessage, handler Handler) map[
 			Kind     string `json:"kind"`
 		} `json:"options"`
 	}
-	if json.Unmarshal(params, &request) != nil {
-		return selectOption("")
+	if !isDecoded(params, &request) {
+		return nil
 	}
 	kinds := make(map[string]string, len(request.Options))
 	for _, option := range request.Options {
@@ -232,13 +243,10 @@ func (s *Session) answerPermission(params json.RawMessage, handler Handler) map[
 			return selectOption(option)
 		}
 	}
-	return selectOption("")
+	return nil
 }
 
-// selectOption answers a permission request with the option, or as cancelled where there is none.
+// selectOption answers a permission request with the option.
 func selectOption(option string) map[string]any {
-	if option == "" {
-		return map[string]any{keyOutcome: map[string]any{keyOutcome: "cancelled"}}
-	}
 	return map[string]any{keyOutcome: map[string]any{keyOutcome: "selected", "optionId": option}}
 }

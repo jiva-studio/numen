@@ -16,6 +16,9 @@ const (
 	protocolVersion = 1
 	// methodNotFound is the JSON-RPC error code for a method the client does not serve.
 	methodNotFound = -32601
+	// permissionRefused is the JSON-RPC error code for a permission request that offers no option to
+	// reject.
+	permissionRefused = -32000
 
 	methodPrompt  = "session/prompt"
 	methodCancel  = "session/cancel"
@@ -205,12 +208,13 @@ func (s *Session) Prompt(ctx context.Context, texts []string, handler Handler) (
 	return reply.StopReason, nil
 }
 
-// Close ends the session, then the program.
-func (s *Session) Close() error {
+// Close ends the session, then the program. The program has a limited time to end the session, whether
+// ctx has ended or not.
+func (s *Session) Close(ctx context.Context) error {
 	var err error
 	if s.canClose && s.id != "" && !s.isStopped.Load() {
-		ctx, cancel := context.WithTimeout(context.Background(), closeLimit)
-		_, err = s.call(ctx, methodClose, map[string]any{keySessionID: s.id}, nil)
+		closing, cancel := context.WithTimeout(context.WithoutCancel(ctx), closeLimit)
+		_, err = s.call(closing, methodClose, map[string]any{keySessionID: s.id}, nil)
 		cancel()
 	}
 	return errors.Join(err, s.stop())
@@ -221,13 +225,18 @@ func (s *Session) Stop() error {
 	return s.stop()
 }
 
-// stop ends the program once, from whichever goroutine comes first.
+// stop ends the program once, from whichever goroutine comes first, and returns why it failed to end.
 func (s *Session) stop() error {
+	s.halt()
+	return s.stopErr
+}
+
+// halt ends the program once; Close and Stop return the error of its end.
+func (s *Session) halt() {
 	s.stopOnce.Do(func() {
 		s.isStopped.Store(true)
 		s.stopErr = s.proc.Close()
 	})
-	return s.stopErr
 }
 
 func getProgramName(path string) string {

@@ -60,6 +60,6 @@ func (l *Lister) readListing(ctx context.Context, agent agents.Agent) (listing a
 	if err != nil {
 		return acp.Listing{}, err
 	}
-	defer func() { err = errors.Join(err, session.Close()) }()
+	defer func() { err = errors.Join(err, session.Close(ctx)) }()
 	return session.GetListing(), nil
 }

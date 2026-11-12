@@ -5,7 +5,6 @@ go 1.26.11
 require (
 	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
-	google.golang.org/protobuf v1.36.12
 )
 
 require (
@@ -18,4 +17,5 @@ require (
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
+	google.golang.org/protobuf v1.36.12 // indirect
 )

@@ -6,12 +6,13 @@ import (
 	"time"
 )
 
-// Start calls run every period until the returned function is called, which waits for a call in
-// progress to return.
-func Start(period time.Duration, run func()) func() {
+// Start calls run every period until the returned function is called. That function waits for a call in
+// progress to return, and returns the error of the last call that failed.
+func Start(period time.Duration, run func() error) func() error {
 	ticks := time.NewTicker(period)
 	done := make(chan struct{})
 	stopped := make(chan struct{})
+	var lastErr error
 	go func() {
 		defer close(stopped)
 		for {
@@ -19,16 +20,19 @@ func Start(period time.Duration, run func()) func() {
 			case <-done:
 				return
 			case <-ticks.C:
-				run()
+				if err := run(); err != nil {
+					lastErr = err
+				}
 			}
 		}
 	}()
 	var once sync.Once
-	return func() {
+	return func() error {
 		once.Do(func() {
 			ticks.Stop()
 			close(done)
 			<-stopped
 		})
+		return lastErr
 	}
 }

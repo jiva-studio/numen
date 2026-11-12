@@ -63,27 +63,22 @@ func (r *Runner) RunTask(
 	if err != nil {
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
-	// The idle sessions of other conversations are closed even where no ticker runs.
-	_ = r.pool.closeIdle()
-
 	key := ""
 	if request.GetConversation() != "" {
 		key = request.GetConversation() + "\x00" + call.ConnectionID + "\x00" + agent.GetKey()
 	}
 	conv, isNew, isKept, err := r.pool.acquire(ctx, key)
 	if err != nil {
-		return nil, r.readFailure(ctx, err)
+		return nil, readFailure(ctx, err)
 	}
 	if isNew {
 		if err := r.open(ctx, conv, agent); err != nil {
-			// The program of a session that failed to open is stopped either way.
-			_ = r.pool.release(conv, isKept, true)
-			return nil, r.readFailure(ctx, err)
+			r.pool.release(ctx, conv, isKept, true)
+			return nil, readFailure(ctx, err)
 		}
 	}
 	done, isBroken, err := r.runTurn(ctx, conv, call, request, send)
-	// The answer has reached the person, and a session that fails to close is stopped either way.
-	_ = r.pool.release(conv, isKept, isBroken)
+	r.pool.release(ctx, conv, isKept, isBroken)
 	return done, err
 }
 
@@ -93,18 +88,17 @@ func (r *Runner) runTurn(
 	conv.setScope(request.GetToolContext(), request.GetVaultId())
 	session := conv.session
 	if err := session.SetModel(ctx, call.Options[llm.OptionModel]); err != nil {
-		return nil, true, r.readFailure(ctx, err)
+		return nil, true, readFailure(ctx, err)
 	}
 	if err := session.SetReasoning(ctx, call.Options[llm.OptionReasoning]); err != nil {
-		return nil, true, r.readFailure(ctx, err)
+		return nil, true, readFailure(ctx, err)
 	}
 	reason, err := session.Prompt(ctx, conv.writePrompt(request), newTurn(conv.listed, send))
 	conv.isPrompted = true
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, err != nil, ctxErr
 	}
-	var failed *sendError
-	if errors.As(err, &failed) {
+	if failed, isSendError := errors.AsType[*sendError](err); isSendError {
 		return nil, true, failed.err
 	}
 	if err != nil {
@@ -140,11 +134,9 @@ func (r *Runner) open(ctx context.Context, conv *conversation, agent agents.Agen
 		Command: agent.Command, Servers: servers, Meta: agent.GetTaskMeta(conv.listNames()),
 	})
 	if err != nil {
-		// The endpoint serves a session that never opened; nothing waits on its close.
-		_ = closeServed(served)
-		return connection.NewTryNextError(connection.ReasonUnavailable, 0)
+		return errors.Join(connection.NewTryNextError(connection.ReasonUnavailable, 0), closeServed(ctx, served))
 	}
-	return conv.setSession(session, served)
+	return conv.setSession(ctx, session, served)
 }
 
 func listTools(conv *conversation) []*tools.ToolInfo {
@@ -157,7 +149,7 @@ func listTools(conv *conversation) []*tools.ToolInfo {
 
 // readFailure returns the error of a task that could not run: the cancellation of ctx where it ended,
 // else the failure of the connection.
-func (r *Runner) readFailure(ctx context.Context, err error) error {
+func readFailure(ctx context.Context, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
 	}
@@ -177,12 +169,13 @@ func (r *Runner) getOpenLimit() time.Duration {
 	return defaultOpenLimit
 }
 
-// CloseIdle closes the sessions that have gone unused for 30 minutes.
-func (r *Runner) CloseIdle() error {
-	return r.pool.closeIdle()
+// CloseIdle closes the sessions that have gone unused for 30 minutes, and returns the errors of closing
+// sessions since the last call.
+func (r *Runner) CloseIdle(ctx context.Context) error {
+	return r.pool.closeIdle(ctx)
 }
 
-// Close closes every session; a task that still runs ends.
-func (r *Runner) Close() error {
-	return r.pool.close()
+// Close closes every session, and ends a task that still runs.
+func (r *Runner) Close(ctx context.Context) error {
+	return r.pool.close(ctx)
 }

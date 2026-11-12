@@ -17,8 +17,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
@@ -81,7 +79,7 @@ func TestCompleteAsksTheProgramForTheModelAndTheLevelOfTheCall(t *testing.T) {
 
 // The session offers the program no file system and no terminal, no server of tools, and the client
 // answers every permission request with a refusal, so a write the program attempts is refused.
-// A request that offers an option to reject is answered with it, and one that offers none as cancelled.
+// A request that offers an option to reject is answered with it, and one that offers none with an error.
 func TestACompleteCallRefusesEveryWriteOfTheProgram(t *testing.T) {
 	program, record := fakeProgram(t, "write")
 
@@ -113,9 +111,8 @@ func TestACompleteCallRefusesEveryWriteOfTheProgram(t *testing.T) {
 	if replies[1]["result"] != nil || replies[1]["error"] == nil {
 		t.Errorf("the write was answered %v, want an error", replies[1])
 	}
-	outcome, err = json.Marshal(replies[2]["result"])
-	if err != nil || string(outcome) != `{"outcome":{"outcome":"cancelled"}}` {
-		t.Errorf("a permission without an option to reject was answered %s, %v, want cancelled", outcome, err)
+	if replies[2]["result"] != nil || replies[2]["error"] == nil {
+		t.Errorf("a permission without an option to reject was answered %v, want an error", replies[2])
 	}
 }
 
@@ -281,7 +278,7 @@ func TestTheProviderServesCompleteTheListsOfModelsAndReasoningLevelsAndTasks(t *
 }
 
 func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
-	program, _ := fakeProgram(t, "plain")
+	program, _ := fakeProgram(t, "config")
 	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"})
 	if err != nil {
 		t.Fatal(err)
@@ -293,14 +290,9 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	payload, err := proto.Marshal(userMessage("why?"))
-	if err != nil {
-		t.Fatal(err)
-	}
 	body, err := json.Marshal(map[string]any{
-		"operation": llm.OperationComplete,
+		"operation": llm.OperationModels,
 		"call":      map[string]any{"type": "acp", "fields": map[string]string{"program": program}},
-		"payload":   payload,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -325,8 +317,8 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	result := &llm.CompleteResult{}
-	if done := readDone(t, answer); response.StatusCode != http.StatusOK || proto.Unmarshal(done, result) != nil || result.GetText() != "the answer" {
+	// The done frame is the encoded list of options, which holds the titles as they are.
+	if done := readDone(t, answer); response.StatusCode != http.StatusOK || !bytes.Contains(done, []byte("Model Two")) {
 		t.Errorf("the service answered %d %q", response.StatusCode, answer)
 	}
 }
@@ -375,7 +367,7 @@ func newTestServerWith(t *testing.T, host task.Tools, source cache.Clock) *agent
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := svc.tasks.Close(); err != nil {
+		if err := svc.tasks.Close(context.WithoutCancel(t.Context())); err != nil {
 			t.Log(err)
 		}
 	})

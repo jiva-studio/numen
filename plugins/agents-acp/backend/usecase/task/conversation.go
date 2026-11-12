@@ -74,7 +74,7 @@ func (c *conversation) listNames() []string {
 
 // setSession keeps the session and the endpoint that serves it, or closes them when the conversation was
 // closed meanwhile.
-func (c *conversation) setSession(session *acp.Session, served ServedTools) error {
+func (c *conversation) setSession(ctx context.Context, session *acp.Session, served ServedTools) error {
 	c.mu.Lock()
 	isClosed := c.isClosed
 	if !isClosed {
@@ -82,7 +82,7 @@ func (c *conversation) setSession(session *acp.Session, served ServedTools) erro
 	}
 	c.mu.Unlock()
 	if isClosed {
-		return errors.Join(errClosed, session.Close(), closeServed(served))
+		return errors.Join(errClosed, session.Close(ctx), closeServed(ctx, served))
 	}
 	return nil
 }
@@ -127,7 +127,7 @@ func writeNote(note *contract.ContextNote) string {
 
 // close ends the session and the serving of its tools, once. A forced close stops the program without
 // ending the session, which also ends a turn that still runs.
-func (c *conversation) close(isForced bool) error {
+func (c *conversation) close(ctx context.Context, isForced bool) error {
 	c.mu.Lock()
 	if c.isClosed {
 		c.mu.Unlock()
@@ -142,14 +142,14 @@ func (c *conversation) close(isForced bool) error {
 	case isForced:
 		err = session.Stop()
 	default:
-		err = session.Close()
+		err = session.Close(ctx)
 	}
-	return errors.Join(err, closeServed(served))
+	return errors.Join(err, closeServed(ctx, served))
 }
 
-func closeServed(served ServedTools) error {
+func closeServed(ctx context.Context, served ServedTools) error {
 	if served == nil {
 		return nil
 	}
-	return served.Close(context.Background())
+	return served.Close(context.WithoutCancel(ctx))
 }

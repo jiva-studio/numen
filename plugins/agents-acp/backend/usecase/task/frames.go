@@ -97,24 +97,35 @@ func (t *turn) sendTool(update acp.ToolUpdate) error {
 	listed := t.listed[shown.name]
 	title, kind := describeTool(listed, update)
 	content, locations := describeArguments(listed, update)
-	status := readStatus(update.Status)
-	isFinal := status == contract.ToolCallStatus_TOOL_CALL_STATUS_COMPLETED || status == contract.ToolCallStatus_TOOL_CALL_STATUS_FAILED
+	change := toolChange{title: title, kind: kind, status: readStatus(update.Status), content: content, locations: locations}
 	if !isKnown {
-		if status == contract.ToolCallStatus_TOOL_CALL_STATUS_UNSPECIFIED {
-			status = contract.ToolCallStatus_TOOL_CALL_STATUS_PENDING
-		}
-		shown.title, shown.kind = title, kind
-		if err := t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_ToolCall{ToolCall: &contract.ToolCall{
-			ToolCallId: update.ID, Title: title, Kind: kind, Status: status,
-			Content: content, Locations: locations, RawInputJson: string(update.Arguments),
-		}}}); err != nil {
-			return err
-		}
-		if !isFinal {
-			return nil
-		}
+		return t.sendToolStart(shown, update, change)
 	}
-	return t.sendToolUpdate(shown, update, toolChange{title: title, kind: kind, status: status, content: content, locations: locations})
+	return t.sendToolUpdate(shown, update, change)
+}
+
+// sendToolStart sends the tool_call of a call, followed by its end where the first report of the call
+// is its end.
+func (t *turn) sendToolStart(shown *shownCall, update acp.ToolUpdate, change toolChange) error {
+	status := change.status
+	if status == contract.ToolCallStatus_TOOL_CALL_STATUS_UNSPECIFIED {
+		status = contract.ToolCallStatus_TOOL_CALL_STATUS_PENDING
+	}
+	shown.title, shown.kind = change.title, change.kind
+	if err := t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_ToolCall{ToolCall: &contract.ToolCall{
+		ToolCallId: update.ID, Title: change.title, Kind: change.kind, Status: status,
+		Content: change.content, Locations: change.locations, RawInputJson: string(update.Arguments),
+	}}}); err != nil {
+		return err
+	}
+	if !isFinal(change.status) {
+		return nil
+	}
+	return t.sendToolUpdate(shown, update, change)
+}
+
+func isFinal(status contract.ToolCallStatus) bool {
+	return status == contract.ToolCallStatus_TOOL_CALL_STATUS_COMPLETED || status == contract.ToolCallStatus_TOOL_CALL_STATUS_FAILED
 }
 
 // toolChange is what an update of a call may change.
@@ -142,8 +153,7 @@ func (t *turn) sendToolUpdate(shown *shownCall, update acp.ToolUpdate, change to
 	if change.status != contract.ToolCallStatus_TOOL_CALL_STATUS_UNSPECIFIED {
 		frame.Status = &change.status
 	}
-	shown.isFinished = change.status == contract.ToolCallStatus_TOOL_CALL_STATUS_COMPLETED ||
-		change.status == contract.ToolCallStatus_TOOL_CALL_STATUS_FAILED
+	shown.isFinished = isFinal(change.status)
 	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_ToolCallUpdate{ToolCallUpdate: frame}})
 }
 
@@ -266,7 +276,13 @@ func readPlanStatus(status string) contract.PlanEntryStatus {
 	return contract.PlanEntryStatus_PLAN_ENTRY_STATUS_UNSPECIFIED
 }
 
+// stopReasonCanceled is the stop of a canceled turn, number 5 of the contract.
+const stopReasonCanceled contract.StopReason = 5
+
 func writeStopReason(reason acp.StopReason) contract.StopReason {
+	if reason.IsCanceled() {
+		return stopReasonCanceled
+	}
 	switch reason {
 	case acp.StopEndTurn:
 		return contract.StopReason_STOP_REASON_END_TURN
@@ -276,8 +292,6 @@ func writeStopReason(reason acp.StopReason) contract.StopReason {
 		return contract.StopReason_STOP_REASON_MAX_TURN_REQUESTS
 	case acp.StopRefusal:
 		return contract.StopReason_STOP_REASON_REFUSAL
-	case acp.StopCancelled:
-		return contract.StopReason_STOP_REASON_CANCELLED
 	}
 	return contract.StopReason_STOP_REASON_UNSPECIFIED
 }

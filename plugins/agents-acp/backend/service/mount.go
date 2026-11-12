@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -47,13 +49,9 @@ func mountWith(s *server.Server, findHost func() (hostcall.Endpoint, error)) err
 func mount(s *server.Server, agent *agentServer) error {
 	s.SetUpdateConfig(agent.settings.Apply)
 	connection.Mount(s, agent.Provider())
-	stopChecks := ticker.Start(idleCheck, func() {
-		// A session that fails to close has its program stopped either way.
-		_ = agent.tasks.CloseIdle()
-	})
+	stopChecks := ticker.Start(idleCheck, func() error { return agent.tasks.CloseIdle(context.Background()) })
 	s.OnClose(func() error {
-		stopChecks()
-		return agent.tasks.Close()
+		return errors.Join(stopChecks(), agent.tasks.Close(context.Background()))
 	})
 	return nil
 }

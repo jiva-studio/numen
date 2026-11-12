@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // TestMain runs the test binary as a fake ACP agent when it is started as one, and the tests of m
@@ -179,7 +179,7 @@ func (a *fakeAgent) handle() {
 		a.send(map[string]any{"id": id, "result": a.getSession()})
 	case "session/cancel":
 		if a.pending != nil {
-			a.send(map[string]any{"id": a.pending, "result": map[string]any{"stopReason": "cancelled"}})
+			a.send(map[string]any{"id": a.pending, "result": map[string]any{"stopReason": "canceled"}})
 			a.pending = nil
 		}
 	case "session/prompt":
@@ -297,19 +297,34 @@ func (a *fakeAgent) callTools() {
 
 // keepServer keeps the address and the token of the MCP server the session is offered.
 func (a *fakeAgent) keepServer(message map[string]any) {
-	params, _ := message["params"].(map[string]any)
-	servers, _ := params["mcpServers"].([]any)
-	if len(servers) == 0 {
-		return
+	if address, isText := dig(message, "params", "mcpServers", 0, "url").(string); isText {
+		a.mcpURL = address
 	}
-	server, _ := servers[0].(map[string]any)
-	a.mcpURL, _ = server["url"].(string)
-	headers, _ := server["headers"].([]any)
-	if len(headers) > 0 {
-		header, _ := headers[0].(map[string]any)
-		value, _ := header["value"].(string)
+	if value, isText := dig(message, "params", "mcpServers", 0, "headers", 0, "value").(string); isText {
 		a.mcpToken = strings.TrimPrefix(value, "Bearer ")
 	}
+}
+
+// dig returns the value at the path of keys and indexes in a decoded JSON value, or nil where there is
+// none.
+func dig(value any, path ...any) any {
+	for _, step := range path {
+		switch at := step.(type) {
+		case string:
+			object, isObject := value.(map[string]any)
+			if !isObject {
+				return nil
+			}
+			value = object[at]
+		case int:
+			list, isList := value.([]any)
+			if !isList || at >= len(list) {
+				return nil
+			}
+			value = list[at]
+		}
+	}
+	return value
 }
 
 // streamAnswer answers in two pieces with a plan between them.
@@ -330,9 +345,7 @@ func (a *fakeAgent) callServedTool() {
 		"status": "pending", "rawInput": map[string]any{"path": "Garden.md"}, "_meta": meta,
 	})
 	reply := a.askPermission("t1", map[string]any{"toolCallId": "c1", "_meta": meta})
-	result, _ := reply["result"].(map[string]any)
-	outcome, _ := result["outcome"].(map[string]any)
-	if outcome["optionId"] != "once" {
+	if dig(reply, "result", "outcome", "optionId") != "once" {
 		a.update(map[string]any{"sessionUpdate": "tool_call_update", "toolCallId": "c1", "status": "failed"})
 		return
 	}
@@ -353,8 +366,8 @@ func (a *fakeAgent) callMCPTool(name string, arguments map[string]any) (string, 
 		req.Header.Set("Authorization", "Bearer "+token)
 		return http.DefaultTransport.RoundTrip(req)
 	})}
-	session, err := mcp.NewClient(&mcp.Implementation{Name: "fake-agent", Version: "1"}, nil).
-		Connect(ctx, &mcp.StreamableClientTransport{Endpoint: a.mcpURL, HTTPClient: client, DisableStandaloneSSE: true}, nil)
+	session, err := sdk.NewClient(&sdk.Implementation{Name: "fake-agent", Version: "1"}, nil).
+		Connect(ctx, &sdk.StreamableClientTransport{Endpoint: a.mcpURL, HTTPClient: client, DisableStandaloneSSE: true}, nil)
 	if err != nil {
 		return "", err
 	}
@@ -374,13 +387,13 @@ func (a *fakeAgent) callMCPTool(name string, arguments map[string]any) (string, 
 	if _, err := fmt.Fprintf(a.record, "%s\n", raw); err != nil {
 		return "", err
 	}
-	result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: name, Arguments: arguments})
+	result, err := session.CallTool(ctx, &sdk.CallToolParams{Name: name, Arguments: arguments})
 	if err != nil {
 		return "", err
 	}
 	var text string
 	for _, content := range result.Content {
-		if one, isText := content.(*mcp.TextContent); isText {
+		if one, isText := content.(*sdk.TextContent); isText {
 			text += one.Text
 		}
 	}

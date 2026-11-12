@@ -51,7 +51,7 @@ func TestCloseDoesNotWaitForAConnectionThatSentNoRequest(t *testing.T) {
 	if err := served.Close(t.Context()); err != nil {
 		t.Errorf("close reported %v for a connection with no request", err)
 	}
-	if took := time.Now().Sub(started); took >= shutdownLimit/2 {
+	if took := time.Since(started); took >= shutdownLimit/2 {
 		t.Errorf("close took %v", took)
 	}
 }
