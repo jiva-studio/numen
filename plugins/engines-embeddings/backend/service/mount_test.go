@@ -29,7 +29,7 @@ func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
 	}
 
 	if info.Name != "Xenova/bge-m3" || info.Width != 1024 {
-		t.Errorf("model = %s at %d, want Xenova/bge-m3 at 1024", info.Name, info.Dimensions)
+		t.Errorf("model = %s at %d, want Xenova/bge-m3 at 1024", info.Name, info.Width)
 	}
 }
 
