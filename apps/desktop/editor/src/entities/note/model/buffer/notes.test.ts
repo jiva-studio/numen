@@ -241,10 +241,10 @@ describe('closing', () => {
 
     notes.setBody('a.md', 'a changed')
     notes.setBody('b.md', 'b changed')
-    const unwritten = await notes.flush()
+    await notes.flush()
 
     expect(wrote.map((w) => w.path).sort()).toEqual(['a.md', 'b.md'])
-    expect(unwritten).toEqual([])
+    expect(notes.getUnsavedTabs()).toEqual([])
   })
 
   it('by a flush names a note whose text the vault would not take', async () => {
@@ -258,7 +258,9 @@ describe('closing', () => {
 
     notes.setBody('a.md', 'a changed')
 
-    expect(await notes.flush()).toEqual(['a.md'])
+    await notes.flush()
+
+    expect(notes.getUnsavedTabs()).toEqual(['a.md'])
     expect(notes.getOpenNote('a.md').body).toBe('a changed')
   })
 
@@ -271,7 +273,9 @@ describe('closing', () => {
     notes.setBody('a.md', 'a changed')
     await notes.flush()
 
-    expect(await notes.flush()).toEqual(['a.md'])
+    await notes.flush()
+
+    expect(notes.getUnsavedTabs()).toEqual(['a.md'])
     expect(notes.has('a.md')).toBe(true)
   })
 

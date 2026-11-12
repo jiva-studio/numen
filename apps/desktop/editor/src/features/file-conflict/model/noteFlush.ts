@@ -2,7 +2,7 @@ import type { openNotes } from '@/entities/note'
 import type { Conflict, FlushHandler } from './flush'
 
 /** What the flush needs of the notes of a window. */
-type FlushedNotes = Pick<ReturnType<typeof openNotes>, 'flush' | 'take'>
+type FlushedNotes = Pick<ReturnType<typeof openNotes>, 'flush' | 'getUnsavedTabs' | 'take'>
 
 /**
  * Writes the open notes at quit. A note whose text could still not be written is a conflict: the
@@ -10,8 +10,8 @@ type FlushedNotes = Pick<ReturnType<typeof openNotes>, 'flush' | 'take'>
  */
 export function createNoteFlushHandler(notes: FlushedNotes): FlushHandler {
   return async () => {
-    const unwritten = await notes.flush()
-    return unwritten.map(
+    await notes.flush()
+    return notes.getUnsavedTabs().map(
       (note): Conflict => ({
         note,
         // The run of the handlers that follows writes the text again.

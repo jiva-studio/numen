@@ -25,6 +25,8 @@ export interface FlushDeps {
  */
 export type FlushHandler = () => Promise<void | readonly Conflict[]>
 
+type HandlerResults = PromiseSettledResult<void | readonly Conflict[]>[]
+
 /** Text that is not written, and the two ways of settling it. */
 export interface Conflict {
   readonly note: string
@@ -86,7 +88,7 @@ function createFlushReporter(
 ) {
   let underVal: string | null = null
   let lastResult: FlushResult | null = null
-  let writing: Promise<unknown> | null = null
+  let writing: Promise<HandlerResults> | null = null
   let failed = false
   let dropHeld: (() => void)[] = []
 
@@ -124,7 +126,7 @@ function createFlushReporter(
   })
 
   /** Replaces what the last run of the handlers left unwritten with what this one did. */
-  function adopt(results: PromiseSettledResult<void | readonly Conflict[]>[]) {
+  function adopt(results: HandlerResults) {
     for (const drop of dropHeld) drop()
     dropHeld = []
     failed = results.some((one) => one.status === 'rejected')

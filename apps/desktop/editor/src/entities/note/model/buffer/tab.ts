@@ -187,12 +187,12 @@ const applySave = (tab: Tab): Transition => {
 }
 
 /** A tab whose dirty text an error stopped from being written, for a reason another attempt may clear. */
-export const isUnwritable = (tab: Tab): boolean =>
+export const isUnsavedTab = (tab: Tab): boolean =>
   getState(tab) === 'stuck' && isRetryable(tab) && isDirty(tab)
 
 const applyFlush = (tab: Tab): Transition => {
   const state = getState(tab)
-  if (isUnwritable(tab)) {
+  if (isUnsavedTab(tab)) {
     const going = beginWrite({ ...tab, error: null }, getBaseline(tab))
     return { tab: going.tab, effects: [{ kind: 'cancelTimer' }, ...going.effects] }
   }
@@ -214,7 +214,7 @@ const applyKeep = (tab: Tab): Transition => {
 
 const applyTake = (tab: Tab): Transition => {
   const state = getState(tab)
-  if (isUnwritable(tab) && tab.savedText !== null) {
+  if (isUnsavedTab(tab) && tab.savedText !== null) {
     return {
       tab: { ...tab, editorText: tab.savedText, error: null, since: null },
       effects: [{ kind: 'cancelTimer' }, { kind: 'replace', body: tab.savedText }],

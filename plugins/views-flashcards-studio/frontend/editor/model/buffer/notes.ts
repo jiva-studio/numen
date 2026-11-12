@@ -189,21 +189,21 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
   }
 
   /** A tab whose text an error stopped from being written. */
-  const isUnwritten = (tab: BufferTab): boolean =>
+  const isUnsavedTab = (tab: BufferTab): boolean =>
     tab.state === 'error' && tab.baseline !== null && tab.body !== tab.baseline.prose
 
   /** Writes every tab, trying again those a retryable error stopped, and rejects if text stays unwritten. */
   async function flush(): Promise<void> {
     for (const tab of tabs.values()) {
-      if (isUnwritten(tab) && tab.error !== null && RETRYABLE_ERRORS.includes(tab.error)) {
+      if (isUnsavedTab(tab) && tab.error !== null && RETRYABLE_ERRORS.includes(tab.error)) {
         tab.state = 'unsaved'
         tab.error = null
       }
     }
     await Promise.all(Array.from(tabs.keys()).map((id) => writeTab(id).catch(() => markUnreachable(id))))
-    const unwritten = Array.from(tabs.values()).filter(isUnwritten)
-    if (unwritten.length > 0) {
-      throw new Error(`The text of ${unwritten.map((tab) => tab.path).join(', ')} was not written`)
+    const unsavedTabs = Array.from(tabs.values()).filter(isUnsavedTab)
+    if (unsavedTabs.length > 0) {
+      throw new Error(`The text of ${unsavedTabs.map((tab) => tab.path).join(', ')} was not written`)
     }
   }
 

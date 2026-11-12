@@ -8,7 +8,7 @@ import { getMonotonicNow } from '@numen/ui'
 import {
   openTab,
   getState,
-  isUnwritable,
+  isUnsavedTab,
   transitionTab,
   DEFAULT_WRITE_LIMITS,
   type Effect,
@@ -216,15 +216,16 @@ export function openNotes(how: OpenNotesOptions = {}) {
     getOpenIds,
     getErrorMessage: conflicts.getErrorMessage,
     stale: conflicts.stale,
-    /** Writes what every open note holds, and names the notes whose text could still not be written. */
-    flush: async (): Promise<readonly string[]> => {
-      const ids = getOpenIds()
-      await Promise.all(ids.map(queue.flushPending))
-      return ids.filter((id) => {
-        const tab = tabs.get(id)
-        return tab !== undefined && isUnwritable(tab)
-      })
+    /** Writes what every open note holds, trying again the notes an error stopped. */
+    flush: async (): Promise<void> => {
+      await Promise.all(getOpenIds().map(queue.flushPending))
     },
+    /** The notes whose text an error stopped from being written, which another try may still write. */
+    getUnsavedTabs: (): readonly string[] =>
+      getOpenIds().filter((id) => {
+        const tab = tabs.get(id)
+        return tab !== undefined && isUnsavedTab(tab)
+      }),
     tabs,
   }
 }
