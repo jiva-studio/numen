@@ -8,7 +8,7 @@ import { ARROW_LENGTH, getHeading, getLength, createPointOnCurve } from '../edge
 import type { PlexFrame } from '../frame'
 import type { PlexGraph } from '../../../types'
 
-/** Focus on `focus`, with three children and one parent. The first child stands on the axis, and the chosen one is the third, to its left. */
+/** Focus on `focus`, with three children and one parent. The first child is on the axis, and the chosen one is the third, to its left. */
 const before: PlexGraph = {
   nodes: [
     { id: 'focus', title: 'Start', relation: 'focus' },

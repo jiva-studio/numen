@@ -24,7 +24,7 @@ const getSeparation = (frame: PlexFrame): number => {
   return smallest
 }
 
-const getNearest = (frame: PlexFrame): number => Math.min(...children(frame).map((node) => node.y))
+const getNearestY = (frame: PlexFrame): number => Math.min(...children(frame).map((node) => node.y))
 
 const findEscapedNodes = (frame: PlexFrame, viewport: { width: number; height: number }) =>
   frame.nodes.filter(
@@ -45,7 +45,7 @@ describe('a gap is never given less than its setting', () => {
     const frame = arrangePlex(build('A node', { child: 1 }), {
       options: { viewport, spread: 1 },
     })
-    expect(getNearest(frame)).toBe(focusSize.height / 2 + focusGap + nodeSize.height / 2)
+    expect(getNearestY(frame)).toBe(focusSize.height / 2 + focusGap + nodeSize.height / 2)
   })
 })
 
@@ -66,7 +66,7 @@ describe('a gap opens into the room the window leaves', () => {
 
   it('leaves the settings alone when there is no window to measure', () => {
     const frame = arrangePlex(build('A node', { child: 1 }))
-    expect(getNearest(frame)).toBe(focusSize.height / 2 + focusGap + nodeSize.height / 2)
+    expect(getNearestY(frame)).toBe(focusSize.height / 2 + focusGap + nodeSize.height / 2)
   })
 })
 
@@ -75,7 +75,7 @@ describe('the gap an edge crosses opens first', () => {
     const frame = arrangePlex(build('A node', { child: 1 }), {
       options: { viewport: { width: 2400, height: 1400 } },
     })
-    expect(getNearest(frame)).toBeGreaterThan(focusSize.height / 2 + focusGap + nodeSize.height / 2)
+    expect(getNearestY(frame)).toBeGreaterThan(focusSize.height / 2 + focusGap + nodeSize.height / 2)
   })
 })
 

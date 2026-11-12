@@ -68,7 +68,7 @@ describe('the turns of the groups', () => {
   })
 })
 
-describe('what comes back from the placement', () => {
+describe('the result of the placement', () => {
   const focus: PlacedNode = {
     ...node('focus', 'focus'),
     x: 0,

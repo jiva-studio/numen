@@ -15,7 +15,7 @@ const LARGE = { width: 1200, height: 800 }
 
 /**
  * The boxes of the typical graph as the plex drew them before the look settings,
- * with titles measured by `byTitle`: `[id, width, height]`. Where they stand is the
+ * with titles measured by `byTitle`: `[id, width, height]`. Their position is the
  * placement's business and is not pinned here.
  */
 const TODAY: readonly (readonly [string, number, number])[] = [

@@ -28,9 +28,9 @@ const arrange = (
 const inWindow = (viewport: Window, options: Input = {}) => ({ ...options, viewport })
 
 const getFocus = (frame: PlexFrame): PlacedNode => frame.nodes.find((n) => n.relation === 'focus')!
-const getShown = (frame: PlexFrame, relation: PlexNodeRelation): PlacedNode[] =>
+const getShownNodes = (frame: PlexFrame, relation: PlexNodeRelation): PlacedNode[] =>
   frame.nodes.filter((node) => node.relation === relation)
-const getArrived = (graph: PlexGraph, relation: PlexRelation): PlexNode[] =>
+const getArrivedNodes = (graph: PlexGraph, relation: PlexRelation): PlexNode[] =>
   graph.nodes.filter((node) => node.relation === relation)
 const mean = (values: readonly number[]): number =>
   values.reduce((sum, value) => sum + value, 0) / values.length
@@ -53,7 +53,7 @@ const getOutside = (nodes: readonly PlacedNode[], viewport: Window): string[] =>
     .map((node) => node.id)
 
 /** How many groups of values there are when values closer than `tolerance` count as one. */
-function countDistinct(values: readonly number[], tolerance: number): number {
+function countDistinctValues(values: readonly number[], tolerance: number): number {
   const sorted = [...values].sort((a, b) => a - b)
   return sorted.reduce(
     (count, value, index) =>
@@ -112,7 +112,7 @@ describe('no two boxes overlap', () => {
   )
 })
 
-describe('each relation stands on its side of the focus', () => {
+describe('each relation is placed on its own side of the focus', () => {
   const full = build('A note', { parent: 8, child: 20, jump: 8, sibling: 8 })
   const window = { width: 1600, height: 1000 }
 
@@ -127,13 +127,13 @@ describe('each relation stands on its side of the focus', () => {
     const left = focus.x - focus.width / 2
     const right = focus.x + focus.width / 2
 
-    expect(getShown(frame, 'parent').length).toBeGreaterThan(0)
-    for (const node of getShown(frame, 'parent')) expect(node.y + node.height / 2).toBeLessThan(top)
-    for (const node of getShown(frame, 'child'))
+    expect(getShownNodes(frame, 'parent').length).toBeGreaterThan(0)
+    for (const node of getShownNodes(frame, 'parent')) expect(node.y + node.height / 2).toBeLessThan(top)
+    for (const node of getShownNodes(frame, 'child'))
       expect(node.y - node.height / 2).toBeGreaterThan(bottom)
-    for (const node of getShown(frame, 'sibling'))
+    for (const node of getShownNodes(frame, 'sibling'))
       expect(node.x - node.width / 2).toBeGreaterThan(right)
-    for (const node of getShown(frame, 'jump')) expect(node.x + node.width / 2).toBeLessThan(left)
+    for (const node of getShownNodes(frame, 'jump')) expect(node.x + node.width / 2).toBeLessThan(left)
   })
 
   it.each([
@@ -141,11 +141,11 @@ describe('each relation stands on its side of the focus', () => {
     ['eight, twenty, eight and eight', full],
   ])('leans the jumps down in %s', (_name, graph) => {
     const frame = arrange(graph, inWindow(window))
-    expect(mean(getShown(frame, 'jump').map((node) => node.y))).toBeGreaterThan(getFocus(frame).y)
+    expect(mean(getShownNodes(frame, 'jump').map((node) => node.y))).toBeGreaterThan(getFocus(frame).y)
   })
 })
 
-describe('a group never comes nearer the focus than its start', () => {
+describe('a group is never nearer the focus than its start', () => {
   const DIRECTIONS: Record<PlexRelation, readonly [number, number]> = {
     parent: [0, -1],
     child: [0, 1],
@@ -157,8 +157,8 @@ describe('a group never comes nearer the focus than its start', () => {
   it.each(
     RELATION_NAMES.flatMap((relation) => [1, 4, 9, 20].map((count) => ({ relation, count }))),
   )('$count $relation: no node is nearer than the first one alone', ({ relation, count }) => {
-    const alone = getShown(arrange(build('A note', { [relation]: 1 })), relation)[0]!
-    const group = getShown(arrange(build('A note', { [relation]: count })), relation)
+    const alone = getShownNodes(arrange(build('A note', { [relation]: 1 })), relation)[0]!
+    const group = getShownNodes(arrange(build('A note', { [relation]: count })), relation)
     expect(group).toHaveLength(count)
     const start = along(alone, DIRECTIONS[relation])
     for (const node of group)
@@ -172,7 +172,7 @@ describe('a large group is a block, not a line', () => {
     (viewport) => {
       const frame = arrange(build('A note', { child: 9 }), viewport ? { viewport } : {})
       const rows = new Map<number, number>()
-      for (const child of getShown(frame, 'child')) {
+      for (const child of getShownNodes(frame, 'child')) {
         const row = Math.round(child.y)
         rows.set(row, (rows.get(row) ?? 0) + 1)
       }
@@ -186,8 +186,8 @@ describe('a large group is a block, not a line', () => {
     (viewport) => {
       const frame = arrange(build('A note', { sibling: 9 }), viewport ? { viewport } : {})
       expect(
-        countDistinct(
-          getShown(frame, 'sibling').map((node) => node.x),
+        countDistinctValues(
+          getShownNodes(frame, 'sibling').map((node) => node.x),
           10,
         ),
       ).toBeGreaterThanOrEqual(2)
@@ -195,10 +195,10 @@ describe('a large group is a block, not a line', () => {
   )
 })
 
-describe('a larger group stands further out', () => {
+describe('a larger group is placed further out', () => {
   it('moves the middle of the children away from the focus as they grow in number', () => {
     const middles = [1, 4, 9, 16].map((child) =>
-      mean(getShown(arrange(build('A note', { child })), 'child').map((node) => node.y)),
+      mean(getShownNodes(arrange(build('A note', { child })), 'child').map((node) => node.y)),
     )
     for (let i = 1; i < middles.length; i++) expect(middles[i]!).toBeGreaterThan(middles[i - 1]!)
   })
@@ -216,13 +216,13 @@ describe('groups take turns', () => {
   })
 })
 
-describe('a group fills free space beside another', () => {
+describe('a group fills the free space beside another group', () => {
   const window = { width: 1600, height: 1000 }
 
   it('shows twenty-four children and spreads them sideways instead of running down one column', () => {
     const frame = arrange(build('A note', { child: 24 }), inWindow(window))
     const focus = getFocus(frame)
-    const children = getShown(frame, 'child')
+    const children = getShownNodes(frame, 'child')
     expect(frame.overflow.child).toBeUndefined()
     expect(children).toHaveLength(24)
     expect(
@@ -232,8 +232,8 @@ describe('a group fills free space beside another', () => {
 
   it('interlocks the areas of the children and the jumps without overlapping a box', () => {
     const frame = arrange(build('A note', { child: 16, jump: 16 }), inWindow(window))
-    const children = getShown(frame, 'child')
-    const jumps = getShown(frame, 'jump')
+    const children = getShownNodes(frame, 'child')
+    const jumps = getShownNodes(frame, 'jump')
     expect(children.length).toBeGreaterThan(0)
     expect(jumps.length).toBeGreaterThan(0)
     expect(getOverlaps(frame)).toStrictEqual([])
@@ -244,16 +244,16 @@ describe('a group fills free space beside another', () => {
 describe('a long group spreads instead of running into one column', () => {
   it('shows at least twenty of thirty jumps over three columns and three rows', () => {
     const frame = arrange(build('A note', { jump: 30 }), inWindow({ width: 1600, height: 1000 }))
-    const jumps = getShown(frame, 'jump')
+    const jumps = getShownNodes(frame, 'jump')
     expect(jumps.length).toBeGreaterThanOrEqual(20)
     expect(
-      countDistinct(
+      countDistinctValues(
         jumps.map((node) => node.x),
         10,
       ),
     ).toBeGreaterThanOrEqual(3)
     expect(
-      countDistinct(
+      countDistinctValues(
         jumps.map((node) => node.y),
         10,
       ),
@@ -271,8 +271,8 @@ describe('what is left out is counted, and only the last notes go', () => {
   ])('shows the first of each relation in arrival order in %s', (_name, graph) => {
     const frame = arrange(graph, inWindow(tiny))
     for (const relation of RELATION_NAMES) {
-      const arrived = getArrived(graph, relation).map((node) => node.id)
-      const shown = getShown(frame, relation).map((node) => node.id)
+      const arrived = getArrivedNodes(graph, relation).map((node) => node.id)
+      const shown = getShownNodes(frame, relation).map((node) => node.id)
       expect(shown).toStrictEqual(arrived.slice(0, shown.length))
       expect(shown.length + (frame.overflow[relation] ?? 0)).toBe(arrived.length)
     }
@@ -298,13 +298,13 @@ describe('what is left out is counted, and only the last notes go', () => {
 
   it('shows twenty of thirty children without a window, and counts ten', () => {
     const frame = arrange(build('A note', { child: 30 }))
-    expect(getShown(frame, 'child')).toHaveLength(20)
+    expect(getShownNodes(frame, 'child')).toHaveLength(20)
     expect(frame.overflow).toStrictEqual({ child: 10 })
   })
 
   it('shows as many as the caller allows without a window', () => {
     const frame = arrange(build('A note', { child: 30 }), { maxPerCluster: 5 })
-    expect(getShown(frame, 'child')).toHaveLength(5)
+    expect(getShownNodes(frame, 'child')).toHaveLength(5)
     expect(frame.overflow).toStrictEqual({ child: 25 })
   })
 })
@@ -361,7 +361,7 @@ describe('boxes narrow and gaps close before a note is left out', () => {
 describe('gaps open in a roomy window and the arrangement stays inside', () => {
   it('opens the space between neighboring children, by at most the spread', () => {
     const graph = build('A node', { child: 3 })
-    const children = (frame: PlexFrame) => getShown(frame, 'child')
+    const children = (frame: PlexFrame) => getShownNodes(frame, 'child')
     const settings = getSmallestSeparation(children(arrange(graph)))
     const opened = getSmallestSeparation(
       children(arrange(graph, inWindow({ width: 2400, height: 1400 }))),
@@ -392,7 +392,7 @@ describe('siblings join their parent', () => {
   const pairs = frame.edges.map((edge) => `${edge.from} ${edge.to}`)
 
   it('draws a line from a shown parent to each sibling, and none from the focus', () => {
-    for (const sibling of getShown(frame, 'sibling')) {
+    for (const sibling of getShownNodes(frame, 'sibling')) {
       const parents = frame.edges
         .filter((edge) => edge.to === sibling.id)
         .map((edge) => frame.nodes.find((node) => node.id === edge.from)?.relation)
@@ -415,7 +415,7 @@ describe('the same input gives the same picture', () => {
     )
   })
 
-  it('places a node alike whichever relation comes first in the list', () => {
+  it('places a node the same whichever relation is listed first', () => {
     const { typical } = graphs
     const order = (node: PlexNode) =>
       node.relation === 'focus' ? -1 : -RELATION_NAMES.indexOf(node.relation)
@@ -432,15 +432,15 @@ describe('the same input gives the same picture', () => {
   })
 })
 
-describe('the direction of a side comes from the options', () => {
+describe('the direction of a side is set by the options', () => {
   it('puts children above the focus and parents below when told so', () => {
     const frame = arrange(build('A note', { parent: 3, child: 3 }), {
       direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
     })
     const focus = getFocus(frame)
-    for (const child of getShown(frame, 'child'))
+    for (const child of getShownNodes(frame, 'child'))
       expect(child.y + child.height / 2).toBeLessThan(focus.y - focus.height / 2)
-    for (const parent of getShown(frame, 'parent'))
+    for (const parent of getShownNodes(frame, 'parent'))
       expect(parent.y - parent.height / 2).toBeGreaterThan(focus.y + focus.height / 2)
   })
 })
@@ -458,22 +458,22 @@ describe('any placement strategy is admitted by the window', () => {
       ),
     ).toStrictEqual([])
     for (const relation of RELATION_NAMES) {
-      expect(getShown(frame, relation).length + (frame.overflow[relation] ?? 0)).toBe(
-        getArrived(graph, relation).length,
+      expect(getShownNodes(frame, relation).length + (frame.overflow[relation] ?? 0)).toBe(
+        getArrivedNodes(graph, relation).length,
       )
     }
   })
 
   it('still shows some of the 200 children in a 700×600 window with that strategy', () => {
     const frame = arrange(graph, inWindow({ width: 700, height: 600 }), { placement: ring })
-    expect(getShown(frame, 'child').length).toBeGreaterThan(0)
+    expect(getShownNodes(frame, 'child').length).toBeGreaterThan(0)
   })
 
   it('shows as many per relation as the cap allows without a window, whatever the strategy returns', () => {
     const frame = arrange(graph, {}, { placement: ring })
     for (const relation of RELATION_NAMES) {
-      const arrived = getArrived(graph, relation).length
-      expect(getShown(frame, relation)).toHaveLength(Math.min(arrived, DEFAULT_MAX_PER_CLUSTER))
+      const arrived = getArrivedNodes(graph, relation).length
+      expect(getShownNodes(frame, relation)).toHaveLength(Math.min(arrived, DEFAULT_MAX_PER_CLUSTER))
     }
   })
 })
@@ -491,9 +491,9 @@ describe('a big group is cut to what fits, not dropped whole', () => {
 
   it.each(cases)('shows some children of $name in $viewport', ({ graph, viewport }) => {
     const frame = arrange(graph, inWindow(viewport))
-    const shown = getShown(frame, 'child')
+    const shown = getShownNodes(frame, 'child')
     expect(shown.length).toBeGreaterThanOrEqual(1)
-    expect(shown.length + (frame.overflow.child ?? 0)).toBe(getArrived(graph, 'child').length)
+    expect(shown.length + (frame.overflow.child ?? 0)).toBe(getArrivedNodes(graph, 'child').length)
     expect(getOutside(shown, viewport)).toStrictEqual([])
     expect(getOverlaps(frame)).toStrictEqual([])
   })
@@ -505,7 +505,7 @@ describe('a big group is cut to what fits, not dropped whole', () => {
   ])('shows forty children no fewer than twenty in $width×$height', (viewport) => {
     const twenty = arrange(build('A note', { child: 20 }), inWindow(viewport))
     const more = arrange(forty, inWindow(viewport))
-    expect(getShown(more, 'child').length).toBeGreaterThanOrEqual(getShown(twenty, 'child').length)
+    expect(getShownNodes(more, 'child').length).toBeGreaterThanOrEqual(getShownNodes(twenty, 'child').length)
   })
 })
 
