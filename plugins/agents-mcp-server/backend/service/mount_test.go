@@ -39,7 +39,7 @@ func TestMountAndConfigure(t *testing.T) {
 	t.Cleanup(served.Close)
 	hostPort := getServerPort(t, served.URL)
 
-	s := server.New(server.WithPort(0))
+	s := server.New()
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount failed: %v", err)
 	}
@@ -76,7 +76,7 @@ func TestMountFromEnv(t *testing.T) {
 	t.Setenv("NUMEN_HOST_PORT", hostPort)
 	t.Setenv("NUMEN_PLUGIN_TOKEN", "plugin-token")
 
-	s := server.New(server.WithPort(0))
+	s := server.New()
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount with env host failed: %v", err)
 	}

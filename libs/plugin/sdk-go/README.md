@@ -23,7 +23,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 - Host handshake signaling via `NUMEN_READY port=<port>`.
 - Connect-RPC Bearer token authentication interceptor for unary and streaming RPCs.
 - Graceful lifecycle management (`Ping`, `Configure`, `Shutdown`) without unowned goroutines or sleep synchronization.
-- `Configure` is how a plugin receives its settings. The callbacks of `WithConfigure`, `WithUpdateConfig`, `SetConfigure` and `SetUpdateConfig` take the settings as a map of text.
+- `Configure` is how a plugin receives its settings. The callbacks of `SetConfigure` and `SetUpdateConfig` take the settings as a map of text.
 - `WithEventHandler(fn)` mounts `PluginEventService`, so the host delivers to the plugin each event its manifest's `activationEvents` subscribe to. An error the handler returns is reported as the plugin's error for the event, with its text as the reason. A server without one receives no events.
 - No exported identifier of the SDK mentions a type of `libs/core/protocol/gen`. Each package defines its own types and interfaces (`tools.ToolInfo`, `searchsource.Description`, `command.Request`) and converts them to the wire messages in unexported code; the Connect handlers and clients are built inside the package (`tools.NewClient`, and `servertest.NewLifecycleClient` for plugin tests). A plugin compiles against the SDK without importing the protocol. The test `SDKProtocolRule` in `libs/core/kernel/container` rejects a new leak, and each conversion has a round-trip test.
 - Process supervision hooks (stdin EOF detection, OS signals).

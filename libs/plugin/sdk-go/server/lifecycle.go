@@ -15,27 +15,6 @@ const statusOK = "ok"
 // LifecycleOption configures a LifecycleServer instance.
 type LifecycleOption func(*LifecycleServer)
 
-// WithLifecycleConfigure sets the callback executed on Configure RPC.
-func WithLifecycleConfigure(fn func(ctx context.Context, values map[string]string) error) LifecycleOption {
-	return func(s *LifecycleServer) {
-		s.onConfigure = fn
-	}
-}
-
-// WithLifecycleUpdateConfig adapts a configuration map updater to the Configure RPC.
-func WithLifecycleUpdateConfig(fn func(values map[string]string)) LifecycleOption {
-	return func(s *LifecycleServer) {
-		if fn == nil {
-			s.onConfigure = nil
-			return
-		}
-		s.onConfigure = func(_ context.Context, values map[string]string) error {
-			fn(values)
-			return nil
-		}
-	}
-}
-
 // WithLifecycleShutdown sets what the Shutdown RPC runs before it signals termination. The RPC
 // signals termination even when fn fails, and answers the failure.
 func WithLifecycleShutdown(fn func() error) LifecycleOption {

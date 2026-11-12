@@ -3,8 +3,10 @@ package service
 import (
 	"bytes"
 	"context"
+	"io"
 	"net"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"sync"
@@ -37,14 +39,35 @@ func (b *lockedBuffer) String() string {
 	return b.buf.String()
 }
 
+// serveMounted serves Mount as a launched process of the plugin: the server reads its token from the
+// standard input and writes the ready line to the standard output, which the test holds while New runs.
 func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 	t.Helper()
 	t.Setenv("NUMEN_HOST_PORT", "")
 	t.Setenv("NUMEN_PLUGIN_TOKEN", "")
+	t.Setenv("NUMEN_PLUGIN_PORT", "")
 	t.Setenv("MCP_PORT", "")
+	stdinRead, stdinWrite, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stdoutRead, stdoutWrite, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	processStdin, processStdout := os.Stdin, os.Stdout
+	os.Stdin, os.Stdout = stdinRead, stdoutWrite
+	s := server.New()
+	os.Stdin, os.Stdout = processStdin, processStdout
+	if _, err := io.WriteString(stdinWrite, "plugin-token\n"); err != nil {
+		t.Fatal(err)
+	}
 	stdout := &lockedBuffer{}
-	s := server.New(server.WithPort(0), server.WithToken("plugin-token"),
-		server.WithStdout(stdout), server.WithStdin(nil), server.WithSignals())
+	isCopied := make(chan struct{})
+	go func() {
+		defer close(isCopied)
+		_, _ = io.Copy(stdout, stdoutRead)
+	}()
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount failed: %v", err)
 	}
@@ -54,6 +77,15 @@ func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 		s.Lifecycle().TriggerShutdown()
 		if err := <-serveErrCh; err != nil {
 			t.Errorf("Serve: %v", err)
+		}
+		for _, file := range []*os.File{stdinWrite, stdinRead, stdoutWrite} {
+			if err := file.Close(); err != nil {
+				t.Error(err)
+			}
+		}
+		<-isCopied
+		if err := stdoutRead.Close(); err != nil {
+			t.Error(err)
 		}
 	})
 	return s, stdout
