@@ -7,8 +7,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 )
 
 func TestTheIdleWorkersFitTheAvailableMemory(t *testing.T) {
@@ -57,12 +55,12 @@ func TestAnIdleWorkerIsReusedByTheNextDocument(t *testing.T) {
 		t.Fatal(err)
 	}
 	worker := first.worker.GetImplementation()
-	cleanup.Close(t, first)
+	closeAndCheck(t, first)
 	second, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, second)
+	defer closeAndCheck(t, second)
 	if second.worker.GetImplementation() != worker {
 		t.Error("the second document started a new worker, want the first one's")
 	}
@@ -78,12 +76,12 @@ func TestWithNoIdleCountEveryDocumentStartsAWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 	worker := first.worker.GetImplementation()
-	cleanup.Close(t, first)
+	closeAndCheck(t, first)
 	second, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, second)
+	defer closeAndCheck(t, second)
 	if second.worker.GetImplementation() == worker {
 		t.Error("the second document reused a worker, want a new one")
 	}
@@ -105,7 +103,7 @@ func TestTheWorkersAreReleasedAfterTheIdlePeriod(t *testing.T) {
 	if !hasPool(workers) {
 		t.Fatal("the pool was released while a document was open")
 	}
-	cleanup.Close(t, doc)
+	closeAndCheck(t, doc)
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 	for hasPool(workers) && ctx.Err() == nil {
@@ -118,7 +116,7 @@ func TestTheWorkersAreReleasedAfterTheIdlePeriod(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.Close(t, again)
+	closeAndCheck(t, again)
 }
 
 func TestReleasingThePoolClosesEveryWorker(t *testing.T) {
@@ -127,7 +125,7 @@ func TestReleasingThePoolClosesEveryWorker(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.Close(t, doc)
+	closeAndCheck(t, doc)
 	workers.releasePool()
 	if hasPool(workers) {
 		t.Fatal("the pool is still held after it was released")
@@ -146,7 +144,7 @@ func TestAnOpenRacingTheIdleReleaseStartsAFreshPool(t *testing.T) {
 					errs <- err
 					return
 				}
-				cleanup.Close(t, doc)
+				closeAndCheck(t, doc)
 			}
 		})
 	}
@@ -202,7 +200,7 @@ func TestAcquiringDocumentCancelsPendingIdleRelease(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.Close(t, doc)
+	closeAndCheck(t, doc)
 
 	workers.mu.Lock()
 	hasTimer := workers.release != nil
@@ -215,7 +213,7 @@ func TestAcquiringDocumentCancelsPendingIdleRelease(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, again)
+	defer closeAndCheck(t, again)
 
 	workers.mu.Lock()
 	timerStopped := workers.release == nil

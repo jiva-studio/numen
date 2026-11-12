@@ -63,9 +63,8 @@ func checkFailure(t *testing.T, err error, want failureWant) {
 	if isTryNext != want.isTryNext || connection.IsStop(err) == want.isTryNext {
 		t.Fatalf("err = %v: try-next %v, stop %v, want try-next %v", err, isTryNext, connection.IsStop(err), want.isTryNext)
 	}
-	reason, ok := connection.GetReason(err)
-	if !ok || reason != want.reason {
-		t.Errorf("reason = %v, want %v", reason, want.reason)
+	if err.Error() != want.reason.String() {
+		t.Errorf("err = %v, want the reason %v", err, want.reason)
 	}
 	if retryAfter != want.retryAfter {
 		t.Errorf("retryAfter = %v, want %v", retryAfter, want.retryAfter)

@@ -21,7 +21,9 @@ func GetEpoch() time.Time {
 
 // NewClock creates a clock that reports GetEpoch until it is moved.
 func NewClock() *clock.Fake {
-	return clock.NewFake(GetEpoch())
+	source := new(clock.Fake)
+	source.Set(GetEpoch())
+	return source
 }
 
 // Queries answers queries about a vault's notes, links and parse problems from

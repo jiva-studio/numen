@@ -7,8 +7,6 @@ import (
 	"os"
 	"testing"
 	"time"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 )
 
 type recordingTimer struct {
@@ -81,7 +79,7 @@ func TestOpenReaderClosesFileOnSeekError(t *testing.T) {
 			doc, err := newWorkers(t).openReader(fc)
 			if err == nil {
 				if doc != nil {
-					cleanup.Close(t, doc)
+					closeAndCheck(t, doc)
 				}
 				t.Fatal("openReader succeeded, want seek error")
 			}
@@ -143,7 +141,7 @@ func TestDocumentCloseClosesFile(t *testing.T) {
 	if fc.isClosed {
 		t.Error("file should not be closed while document is open")
 	}
-	cleanup.Close(t, doc)
+	closeAndCheck(t, doc)
 	if !fc.isClosed {
 		t.Error("doc.Close() did not close file")
 	}
@@ -158,7 +156,7 @@ func TestDocumentTextInvalidPageIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, doc)
+	defer closeAndCheck(t, doc)
 
 	if got := doc.text(-1); got != "" {
 		t.Errorf("doc.text(-1) = %q, want empty string", got)
@@ -193,7 +191,7 @@ func TestGetRuntimeConfigAndTimerLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.Close(t, doc)
+	closeAndCheck(t, doc)
 	if len(timers) != 1 || timers[0].stopped {
 		t.Fatalf("expected 1 active timer after closing document, got %d", len(timers))
 	}
@@ -204,7 +202,7 @@ func TestGetRuntimeConfigAndTimerLifecycle(t *testing.T) {
 	if !timers[0].stopped {
 		t.Error("expected first timer to be stopped when acquiring pool again")
 	}
-	cleanup.Close(t, doc2)
+	closeAndCheck(t, doc2)
 	if len(timers) != 2 || timers[1].stopped {
 		t.Fatalf("expected 2nd active timer after closing second document, got %d", len(timers))
 	}
@@ -234,5 +232,13 @@ func TestOpenSourceSizeValidation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.Close(t, doc)
+	closeAndCheck(t, doc)
+}
+
+// closeAndCheck closes c and fails the test when closing returns an error.
+func closeAndCheck(tb testing.TB, c io.Closer) {
+	tb.Helper()
+	if err := c.Close(); err != nil {
+		tb.Errorf("close: %v", err)
+	}
 }

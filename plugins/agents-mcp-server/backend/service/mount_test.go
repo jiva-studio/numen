@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -39,7 +38,7 @@ func TestMountAndConfigure(t *testing.T) {
 	t.Cleanup(served.Close)
 	hostPort := getServerPort(t, served.URL)
 
-	s := server.New(server.WithPort(0))
+	s := server.New()
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount failed: %v", err)
 	}
@@ -76,7 +75,7 @@ func TestMountFromEnv(t *testing.T) {
 	t.Setenv("NUMEN_HOST_PORT", hostPort)
 	t.Setenv("NUMEN_PLUGIN_TOKEN", "plugin-token")
 
-	s := server.New(server.WithPort(0))
+	s := server.New()
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount with env host failed: %v", err)
 	}
@@ -187,7 +186,7 @@ func TestStreamableHTTPEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("mcpClient.Connect over Streamable HTTP failed: %v", err)
 	}
-	defer cleanup.Close(t, session)
+	defer closeAndCheck(t, session)
 
 	verifyStreamableToolCall(ctx, t, session)
 }

@@ -162,34 +162,6 @@ const sdk = [
   ]),
   ')',
   '',
-  '// IsSharedCommand reports whether the full id is a shared command of the application.',
-  'func IsSharedCommand(id string) bool {',
-  '\tswitch id {',
-  `\tcase ${commands.map((one) => getGoName(one)).join(', ')}:`,
-  '\t\treturn true',
-  '\t}',
-  '\treturn false',
-  '}',
-  '',
-  '// ListSharedCommands lists the shared commands of the application in the order commands.json',
-  '// declares them, each with the arguments the palette asks for and the host checks for every handler.',
-  'func ListSharedCommands() []SharedCommand {',
-  '\treturn []SharedCommand{',
-  ...commands.flatMap((one) =>
-    (one.arguments ?? []).length === 0
-      ? [`\t\t{ID: ${getGoName(one)}, Title: ${JSON.stringify(one.title)}},`]
-      : [
-          `\t\t{ID: ${getGoName(one)}, Title: ${JSON.stringify(one.title)}, Arguments: []SharedCommandArgument{`,
-          ...one.arguments.map(
-            (argument) =>
-              `\t\t\t{Name: ${JSON.stringify(argument.name)}, Title: ${JSON.stringify(argument.title)}, Type: ${JSON.stringify(argument.type)}, IsRequired: ${argument.required === true}},`,
-          ),
-          '\t\t}},',
-        ],
-  ),
-  '\t}',
-  '}',
-  '',
 ].join('\n')
 
 write('../../../plugin/catalog/manifest/shared_commands.go', go)

@@ -60,7 +60,8 @@ func TestEmbeddingServerEnvOverrides(t *testing.T) {
 
 func TestLifecycleConfigure(t *testing.T) {
 	emb := newEmbeddingServer()
-	life := server.NewLifecycleServer(make(chan struct{}), server.WithLifecycleUpdateConfig(emb.updateConfig))
+	life := server.NewLifecycleServer(make(chan struct{}))
+	life.SetUpdateConfig(emb.updateConfig)
 
 	success, err := life.ApplyConfig(t.Context(), map[string]string{
 		"model": "Xenova/bge-m3",

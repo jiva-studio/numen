@@ -3,7 +3,6 @@ package cache
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -14,29 +13,10 @@ import (
 type Option func(*config)
 
 type config struct {
-	dir            string
-	ttl            time.Duration
 	failureBackoff time.Duration
 	timeout        time.Duration
 	isAsync        bool
-	isDiskEnabled  bool
 	clock          Clock
-	onError        func(error)
-}
-
-// WithErrorHandler sets the function that receives background and disk persistence errors.
-func WithErrorHandler(handler func(error)) Option {
-	return func(c *config) { c.onError = handler }
-}
-
-// WithDir sets an explicit directory for disk cache files.
-func WithDir(dir string) Option {
-	return func(c *config) { c.dir = dir }
-}
-
-// WithTTL sets how long an in-memory entry remains fresh before a refresh is triggered.
-func WithTTL(d time.Duration) Option {
-	return func(c *config) { c.ttl = d }
 }
 
 // WithFailureBackoff sets how long a failed load for a key backs off before retrying.
@@ -49,14 +29,10 @@ func WithTimeout(d time.Duration) Option {
 	return func(c *config) { c.timeout = d }
 }
 
-// WithAsync enables stale-while-revalidate background loading.
+// WithAsync enables background loading. An asynchronous cache with a name also keeps its values on
+// disk, in the cache directory of the plugin, and serves them from there while it loads them again.
 func WithAsync(isAsync bool) Option {
 	return func(c *config) { c.isAsync = isAsync }
-}
-
-// WithDisk enables disk persistence even when asynchronous mode is off.
-func WithDisk(isEnabled bool) Option {
-	return func(c *config) { c.isDiskEnabled = isEnabled }
 }
 
 // Clock gets the current time.
@@ -64,14 +40,9 @@ type Clock interface {
 	Now() time.Time
 }
 
-// WithClock sets the clock used for expiration and failure backoff.
+// WithClock sets the clock used for failure backoff.
 func WithClock(source Clock) Option {
 	return func(c *config) { c.clock = source }
-}
-
-type entry[V any] struct {
-	value     V
-	fetchedAt time.Time
 }
 
 type call[V any] struct {
@@ -85,15 +56,11 @@ type Cache[V any] struct {
 	mu             sync.Mutex
 	diskMu         sync.Mutex
 	name           string
-	dir            string
-	ttl            time.Duration
 	failureBackoff time.Duration
 	timeout        time.Duration
 	isAsync        bool
-	isDiskEnabled  bool
 	clock          Clock
-	onError        func(error)
-	entries        map[string]entry[V]
+	entries        map[string]V
 	failed         map[string]bool
 	failedAt       map[string]time.Time
 	inFlight       map[string]*call[V]
@@ -106,21 +73,17 @@ func New[V any](name string, opts ...Option) *Cache[V] {
 			opt(&cfg)
 		}
 	}
-	// gomutants:disable-next-line reason="the clock is read only when a TTL or a failure backoff is set, and the one test that passes a nil clock sets neither"
+	// gomutants:disable-next-line reason="the clock is read only when a failure backoff is set, and the one test that passes a nil clock sets none"
 	if cfg.clock == nil {
 		cfg.clock = clock.System{}
 	}
 	return &Cache[V]{
 		name:           name,
-		dir:            cfg.dir,
-		ttl:            cfg.ttl,
 		failureBackoff: cfg.failureBackoff,
 		timeout:        cfg.timeout,
 		isAsync:        cfg.isAsync,
-		isDiskEnabled:  cfg.isDiskEnabled,
 		clock:          cfg.clock,
-		onError:        cfg.onError,
-		entries:        make(map[string]entry[V]),
+		entries:        make(map[string]V),
 		failed:         make(map[string]bool),
 		failedAt:       make(map[string]time.Time),
 		inFlight:       make(map[string]*call[V]),
@@ -134,7 +97,7 @@ func (c *Cache[V]) SetAsync(isAsync bool) {
 	c.mu.Unlock()
 }
 
-// SetClock sets the clock used for expiration and failure backoff.
+// SetClock sets the clock used for failure backoff.
 func (c *Cache[V]) SetClock(source Clock) {
 	c.mu.Lock()
 	c.clock = source
@@ -143,10 +106,9 @@ func (c *Cache[V]) SetClock(source Clock) {
 
 // Put stores value under key in memory and on disk when disk persistence is active.
 func (c *Cache[V]) Put(key string, value V) {
-	now := c.getNow()
 	c.mu.Lock()
 	c.ensureMapsLocked()
-	c.entries[key] = entry[V]{value: value, fetchedAt: now}
+	c.entries[key] = value
 	delete(c.failed, key)
 	delete(c.failedAt, key)
 	shouldWrite := c.shouldUseDiskLocked()
@@ -161,8 +123,8 @@ func (c *Cache[V]) Values() map[string]V {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	out := make(map[string]V, len(c.entries))
-	for k, one := range c.entries {
-		out[k] = one.value
+	for k, value := range c.entries {
+		out[k] = value
 	}
 	return out
 }
@@ -174,24 +136,24 @@ func (c *Cache[V]) HasFailed(key string) bool {
 	return c.failed[key]
 }
 
-// Get returns the cached value for key, loading it with load when absent or expired.
+// Get returns the cached value for key, loading it with load when absent.
 func (c *Cache[V]) Get(ctx context.Context, key string, load func(context.Context) (V, error)) (V, bool, error) {
 	c.mu.Lock()
 	c.ensureMapsLocked()
-	current, found := c.entries[key]
-	if found && c.isFreshLocked(current.fetchedAt) {
+	if value, found := c.entries[key]; found {
 		c.mu.Unlock()
-		return current.value, true, nil
+		return value, true, nil
 	}
 	if c.isBackingOffLocked(key) {
 		c.mu.Unlock()
-		return current.value, found, nil
+		var zero V
+		return zero, false, nil
 	}
 	if c.isAsync {
-		value, isFound := c.getAsyncLocked(key, current.value, found, load)
+		value, isFound := c.getAsyncLocked(key, load)
 		return value, isFound, nil
 	}
-	return c.getSyncLocked(ctx, key, found, load)
+	return c.getSyncLocked(ctx, key, load)
 }
 
 func (c *Cache[V]) getNow() time.Time {
@@ -213,7 +175,7 @@ func (c *Cache[V]) getNowLocked() time.Time {
 
 func (c *Cache[V]) ensureMapsLocked() {
 	if c.entries == nil {
-		c.entries = make(map[string]entry[V])
+		c.entries = make(map[string]V)
 	}
 	if c.failed == nil {
 		c.failed = make(map[string]bool)
@@ -226,13 +188,6 @@ func (c *Cache[V]) ensureMapsLocked() {
 	}
 }
 
-func (c *Cache[V]) isFreshLocked(fetchedAt time.Time) bool {
-	if c.ttl <= 0 {
-		return true
-	}
-	return c.getNowLocked().Sub(fetchedAt) < c.ttl
-}
-
 func (c *Cache[V]) isBackingOffLocked(key string) bool {
 	if c.failureBackoff <= 0 || !c.failed[key] {
 		return false
@@ -241,18 +196,10 @@ func (c *Cache[V]) isBackingOffLocked(key string) bool {
 }
 
 func (c *Cache[V]) shouldUseDiskLocked() bool {
-	if c.name == "" {
-		return false
-	}
-	return c.isAsync || c.isDiskEnabled || c.dir != ""
+	return c.name != "" && c.isAsync
 }
 
-func (c *Cache[V]) getAsyncLocked(key string, current V, found bool, load func(context.Context) (V, error)) (V, bool) {
-	if found {
-		c.enqueueAsyncLoadLocked(key, load)
-		c.mu.Unlock()
-		return current, true
-	}
+func (c *Cache[V]) getAsyncLocked(key string, load func(context.Context) (V, error)) (V, bool) {
 	if _, isInFlight := c.inFlight[key]; isInFlight {
 		c.mu.Unlock()
 		var zero V
@@ -270,11 +217,10 @@ func (c *Cache[V]) getAsyncLocked(key string, current V, found bool, load func(c
 func (c *Cache[V]) loadDiskAndRefreshLocked(key string, load func(context.Context) (V, error)) (V, bool) {
 	c.mu.Unlock()
 	diskVal, ok := c.readDiskEntry(key)
-	now := c.getNow()
 	c.mu.Lock()
 	if ok {
 		if _, exists := c.entries[key]; !exists {
-			c.entries[key] = entry[V]{value: diskVal, fetchedAt: now}
+			c.entries[key] = diskVal
 		}
 		c.enqueueAsyncLoadLocked(key, load)
 		c.mu.Unlock()
@@ -282,7 +228,7 @@ func (c *Cache[V]) loadDiskAndRefreshLocked(key string, load func(context.Contex
 	}
 	if latest, exists := c.entries[key]; exists {
 		c.mu.Unlock()
-		return latest.value, true
+		return latest, true
 	}
 	c.enqueueAsyncLoadLocked(key, load)
 	c.mu.Unlock()
@@ -302,48 +248,16 @@ func (c *Cache[V]) enqueueAsyncLoadLocked(key string, load func(context.Context)
 	go func() {
 		bgCtx := context.Background()
 		val, err := c.executeLoad(bgCtx, load)
-		if _, _, loadErr := c.finishLoad(bgCtx, key, inflight, val, err); loadErr != nil {
-			c.reportError(fmt.Errorf("load %q: %w", key, loadErr))
-		}
+		// A failed background load is kept as a failure of the key, which HasFailed reports.
+		_, _, _ = c.finishLoad(bgCtx, key, inflight, val, err)
 	}()
 }
 
-func (c *Cache[V]) getSyncLocked(ctx context.Context, key string, found bool, load func(context.Context) (V, error)) (V, bool, error) {
+func (c *Cache[V]) getSyncLocked(ctx context.Context, key string, load func(context.Context) (V, error)) (V, bool, error) {
 	if inflight, ok := c.inFlight[key]; ok {
 		c.mu.Unlock()
 		return waitInFlight(ctx, inflight)
 	}
-	if !found && c.shouldUseDiskLocked() {
-		return c.loadDiskOrFetchSyncLocked(ctx, key, load)
-	}
-	return c.startSyncLoadLocked(ctx, key, load)
-}
-
-func (c *Cache[V]) loadDiskOrFetchSyncLocked(ctx context.Context, key string, load func(context.Context) (V, error)) (V, bool, error) {
-	c.mu.Unlock()
-	if diskVal, ok := c.readDiskEntry(key); ok {
-		now := c.getNow()
-		c.mu.Lock()
-		if _, exists := c.entries[key]; !exists {
-			c.entries[key] = entry[V]{value: diskVal, fetchedAt: now}
-		}
-		c.mu.Unlock()
-		return diskVal, true, nil
-	}
-	c.mu.Lock()
-	// gomutants:disable-next-line reason="Get checked freshness before it released the lock; this repeats the check after the lock is taken again, and only a load finished in between changes the answer"
-	if current, ok := c.entries[key]; ok && c.isFreshLocked(current.fetchedAt) {
-		c.mu.Unlock()
-		return current.value, true, nil
-	}
-	if inflight, ok := c.inFlight[key]; ok {
-		c.mu.Unlock()
-		return waitInFlight(ctx, inflight)
-	}
-	return c.startSyncLoadLocked(ctx, key, load)
-}
-
-func (c *Cache[V]) startSyncLoadLocked(ctx context.Context, key string, load func(context.Context) (V, error)) (V, bool, error) {
 	inflight := &call[V]{readyCh: make(chan struct{})}
 	c.inFlight[key] = inflight
 	c.mu.Unlock()
@@ -398,17 +312,11 @@ func (c *Cache[V]) finishLoad(ctx context.Context, key string, inflight *call[V]
 		var zero V
 		return zero, false, err
 	}
-	c.entries[key] = entry[V]{value: val, fetchedAt: now}
+	c.entries[key] = val
 	delete(c.failed, key)
 	delete(c.failedAt, key)
 	inflight.value = val
 	close(inflight.readyCh)
 	c.mu.Unlock()
 	return val, true, nil
-}
-
-func (c *Cache[V]) reportError(err error) {
-	if c.onError != nil {
-		c.onError(err)
-	}
 }

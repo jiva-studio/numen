@@ -19,7 +19,7 @@ type lifecycleHandler struct {
 func (h lifecycleHandler) Ping(
 	context.Context, *connect.Request[v1.PingRequest],
 ) (*connect.Response[v1.PingResponse], error) {
-	return connect.NewResponse(writePing(PingResult{Status: statusOK, Protocol: ProtocolVersion})), nil
+	return connect.NewResponse(&v1.PingResponse{Status: statusOK, Protocol: ProtocolVersion}), nil
 }
 
 func (h lifecycleHandler) Shutdown(
@@ -38,18 +38,4 @@ func (h lifecycleHandler) Configure(
 		return nil, err
 	}
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
-}
-
-// PingResult is the answer of a plugin to a ping.
-//
-//numen:api
-type PingResult struct {
-	// Status is "ok" for a healthy plugin.
-	Status string
-	// Protocol is the protocol version the plugin uses.
-	Protocol int32
-}
-
-func writePing(result PingResult) *v1.PingResponse {
-	return &v1.PingResponse{Status: result.Status, Protocol: result.Protocol}
 }

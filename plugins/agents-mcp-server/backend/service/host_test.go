@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -66,7 +66,7 @@ func TestAProgramCallsAVaultToolThroughTheHost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.CloseAfter(t, session)
+	t.Cleanup(func() { closeAndCheck(t, session) })
 
 	listed, err := session.ListTools(t.Context(), nil)
 	if err != nil {
@@ -96,5 +96,13 @@ func TestAProgramCallsAVaultToolThroughTheHost(t *testing.T) {
 		if header != "Bearer plugin-token" {
 			t.Errorf("the host was called with %q", header)
 		}
+	}
+}
+
+// closeAndCheck closes c and fails the test when closing returns an error.
+func closeAndCheck(tb testing.TB, c io.Closer) {
+	tb.Helper()
+	if err := c.Close(); err != nil {
+		tb.Errorf("close: %v", err)
 	}
 }

@@ -9,7 +9,7 @@ import (
 
 func TestStoreKeepsPreviews(t *testing.T) {
 	now := time.Unix(1_700_000_000, 0)
-	store := NewStore(clock.NewFake(now))
+	store := NewStore(newFakeClock(now))
 	if gotNow := store.Now(); !gotNow.Equal(now) {
 		t.Errorf("Now() = %v, want %v", gotNow, now)
 	}
@@ -42,4 +42,11 @@ func TestStoreKeepsPreviews(t *testing.T) {
 	if len(store.List()) != 0 {
 		t.Error("expected empty store after Clear")
 	}
+}
+
+// newFakeClock is a clock that reports start until the test moves it.
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

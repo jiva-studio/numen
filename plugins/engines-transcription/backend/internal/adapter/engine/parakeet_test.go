@@ -1,11 +1,10 @@
 package engine
 
 import (
+	"io"
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/engine/resample"
@@ -33,7 +32,7 @@ func openTranscriber(t *testing.T) (*Transcriber, []byte) {
 	if err != nil {
 		t.Skipf("the models in %s: %v", dir, err)
 	}
-	cleanup.CloseAfter(t, delta)
+	t.Cleanup(func() { closeAndCheck(t, delta) })
 
 	raw, err := os.ReadFile(recorded)
 	if err != nil {
@@ -52,7 +51,7 @@ func TestHearingARecording(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, sound)
+	defer closeAndCheck(t, sound)
 	t.Logf("%s is %d ms", recorded, sound.GetDuration())
 
 	found, err := sound.GetSegments(t.Context(), 0, 0)
@@ -102,4 +101,12 @@ func TestHearingAWholeRecording(t *testing.T) {
 		t.Fatal("the recording said nothing")
 	}
 	t.Logf("%s", text)
+}
+
+// closeAndCheck closes c and fails the test when closing returns an error.
+func closeAndCheck(tb testing.TB, c io.Closer) {
+	tb.Helper()
+	if err := c.Close(); err != nil {
+		tb.Errorf("close: %v", err)
+	}
 }

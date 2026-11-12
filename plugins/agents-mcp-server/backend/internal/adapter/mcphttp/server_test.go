@@ -16,7 +16,6 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 )
 
@@ -72,7 +71,7 @@ func serveOnLoopback(t *testing.T, srv *Server) {
 		t.Fatal(err)
 	}
 	if err := srv.Serve(ln); err != nil {
-		cleanup.Close(t, ln)
+		closeAndCheck(t, ln)
 		t.Fatalf("Serve failed: %v", err)
 	}
 }
@@ -139,7 +138,7 @@ func TestServerCloseClosesConnectionWithoutRequest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, silentConn)
+	defer closeAndCheck(t, silentConn)
 
 	// The server accepts connections in order, so an answer on a later connection means it holds silentConn.
 	client := &http.Client{Transport: &http.Transport{DisableKeepAlives: true}}
@@ -199,7 +198,7 @@ func TestServerCloseKeepsConnectionsThatSentRequest(t *testing.T) {
 	silentConn, silentPeer := net.Pipe()
 	activeConn, activePeer := net.Pipe()
 	for _, c := range []net.Conn{silentConn, silentPeer, activeConn, activePeer} {
-		cleanup.CloseAfter(t, c)
+		t.Cleanup(func() { closeAndCheck(t, c) })
 	}
 
 	srv.trackConn(silentConn, http.StateNew)
@@ -233,8 +232,8 @@ func TestServerClosesConnectionAcceptedAfterClose(t *testing.T) {
 	// connection arrives, so only trackConn can close it.
 	srv.closeNewConns()
 	lateConn, latePeer := net.Pipe()
-	cleanup.CloseAfter(t, lateConn)
-	cleanup.CloseAfter(t, latePeer)
+	t.Cleanup(func() { closeAndCheck(t, lateConn) })
+	t.Cleanup(func() { closeAndCheck(t, latePeer) })
 
 	srv.trackConn(lateConn, http.StateNew)
 
@@ -296,7 +295,7 @@ func TestServerCloseAnswersRequestReadBeforeClose(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, conn)
+	defer closeAndCheck(t, conn)
 	if _, err := conn.Write([]byte("GET /mcp HTTP/1.1\r\nHost: numen.test\r\nConnection: close\r\n\r\n")); err != nil {
 		t.Fatal(err)
 	}
@@ -325,5 +324,13 @@ func TestServerCloseAnswersRequestReadBeforeClose(t *testing.T) {
 	}
 	if err := <-closeErr; err != nil {
 		t.Fatalf("Close: %v", err)
+	}
+}
+
+// closeAndCheck closes c and fails the test when closing returns an error.
+func closeAndCheck(tb testing.TB, c io.Closer) {
+	tb.Helper()
+	if err := c.Close(); err != nil {
+		tb.Errorf("close: %v", err)
 	}
 }
