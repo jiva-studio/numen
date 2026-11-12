@@ -464,6 +464,11 @@ describe('any placement strategy is admitted by the window', () => {
     }
   })
 
+  it('still shows some of the 200 children in a 700×600 window with that strategy', () => {
+    const frame = arrange(graph, inWindow({ width: 700, height: 600 }), { placement: ring })
+    expect(getShown(frame, 'child').length).toBeGreaterThan(0)
+  })
+
   it('shows as many per relation as the cap allows without a window, whatever the strategy returns', () => {
     const frame = arrange(graph, {}, { placement: ring })
     for (const relation of RELATION_NAMES) {
@@ -474,3 +479,47 @@ describe('any placement strategy is admitted by the window', () => {
 })
 
 const DEFAULT_MAX_PER_CLUSTER = 20
+
+describe('a big group is cut to what fits, not dropped whole', () => {
+  const forty = build('A note', { child: 40 })
+  const cases: { name: string; graph: PlexGraph; viewport: Window }[] = [
+    { name: '40 children', graph: forty, viewport: { width: 400, height: 400 } },
+    { name: '40 children', graph: forty, viewport: { width: 700, height: 600 } },
+    { name: 'overcrowded', graph: graphs.overcrowded, viewport: { width: 700, height: 600 } },
+    { name: 'overcrowded', graph: graphs.overcrowded, viewport: { width: 400, height: 400 } },
+  ]
+
+  it.each(cases)('shows some children of $name in $viewport', ({ graph, viewport }) => {
+    const frame = arrange(graph, inWindow(viewport))
+    const shown = getShown(frame, 'child')
+    expect(shown.length).toBeGreaterThanOrEqual(1)
+    expect(shown.length + (frame.overflow.child ?? 0)).toBe(getArrived(graph, 'child').length)
+    expect(getOutside(shown, viewport)).toStrictEqual([])
+    expect(getOverlaps(frame)).toStrictEqual([])
+  })
+
+  it.each([
+    { width: 400, height: 400 },
+    { width: 700, height: 600 },
+    { width: 1200, height: 800 },
+  ])('shows forty children no fewer than twenty in $width×$height', (viewport) => {
+    const twenty = arrange(build('A note', { child: 20 }), inWindow(viewport))
+    const more = arrange(forty, inWindow(viewport))
+    expect(getShown(more, 'child').length).toBeGreaterThanOrEqual(getShown(twenty, 'child').length)
+  })
+})
+
+describe('with no gap no two boxes overlap', () => {
+  it.each([1, 2, 5, 9, 16, 30])('arranges %i children at gap 0 and line gap 0', (child) => {
+    const graph = build('A note', { parent: 3, child, jump: 4, sibling: 2 })
+    for (const viewport of [undefined, { width: 1200, height: 800 }]) {
+      const frame = arrange(graph, {
+        gap: 0,
+        lineGap: 0,
+        room: 0,
+        ...(viewport ? { viewport } : {}),
+      })
+      expect(getOverlaps(frame)).toStrictEqual([])
+    }
+  })
+})

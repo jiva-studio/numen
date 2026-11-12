@@ -1,6 +1,6 @@
 /** Where a box of a cluster goes: the free spot nearest the middle of its group. */
 import { describe, expect, it } from 'vitest'
-import { findFreeSpot, isFree, TOLERANCE } from './freeSpot'
+import { findFreeSpot, isFree, SpotIndex, TOLERANCE } from './freeSpot'
 
 const SIZE = { width: 100, height: 30 }
 const GAPS = { gap: 16, lineGap: 20 }
@@ -81,5 +81,94 @@ describe('the free spot of a group', () => {
 
     expect(isFree(spot, [at(0, 0), ...wall], GAPS)).toBe(true)
     expect(spot.y).toBeGreaterThan(start.y)
+  })
+})
+
+/** A small seeded generator, so the boxes are the same on every run. */
+function createRandom(seed: number): () => number {
+  let state = seed
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0
+    return state / 2 ** 32
+  }
+}
+
+describe('the index agrees with the plain list', () => {
+  const random = createRandom(1837)
+  const between = (low: number, high: number) => low + random() * (high - low)
+  // Boxes up to 200 wide and 90 high, so many cross the 64 unit cell borders.
+  const taken = Array.from({ length: 120 }, () => ({
+    x: between(-400, 400),
+    y: between(-300, 300),
+    width: between(10, 200),
+    height: between(10, 90),
+  }))
+  // Boxes whose edges lie exactly on a cell border.
+  taken.push(
+    { x: 64, y: 64, width: 128, height: 64 },
+    { x: -64, y: 0, width: 64, height: 128 },
+    { x: 0, y: -128, width: 192, height: 20 },
+  )
+  const index = new SpotIndex(taken)
+
+  it.each([GAPS, { gap: 0, lineGap: 0 }, { gap: 70, lineGap: 130 }])(
+    'answers isFree alike for probes everywhere, with gaps %o',
+    (gaps) => {
+      const probes = [
+        ...Array.from({ length: 600 }, () => ({
+          x: between(-500, 500),
+          y: between(-400, 400),
+          width: between(10, 150),
+          height: between(10, 80),
+        })),
+        // On the borders, and one gap from a taken box.
+        ...taken.flatMap((box) => [
+          { x: box.x + (box.width + SIZE.width) / 2 + gaps.gap, y: box.y, ...SIZE },
+          { x: box.x, y: box.y + (box.height + SIZE.height) / 2 + gaps.lineGap, ...SIZE },
+          { x: 64 * Math.round(box.x / 64), y: 64 * Math.round(box.y / 64), ...SIZE },
+        ]),
+      ]
+      for (const probe of probes) {
+        expect(index.isFree(probe, gaps), JSON.stringify(probe)).toBe(isFree(probe, taken, gaps))
+      }
+    },
+  )
+
+  it('finds the same spot from the index and from the list, and the plain list calls it free', () => {
+    for (const [x, y] of [
+      [0, 0],
+      [70, 60],
+      [-130, 40],
+      [200, -150],
+    ] as const) {
+      const request = {
+        start: { x, y },
+        middle: { x, y },
+        direction: { x: 0, y: 1 },
+        size: SIZE,
+        group: [at(x, y)],
+        gaps: GAPS,
+      }
+      const fromIndex = findFreeSpot(index, request)
+      expect(fromIndex).toStrictEqual(findFreeSpot(taken, request))
+      expect(isFree(fromIndex, taken, GAPS)).toBe(true)
+    }
+  })
+})
+
+describe('equal costs', () => {
+  it('are decided by the order of the candidates when along differs by float noise only', () => {
+    const box = at(0, 0)
+    const spot = findFreeSpot([box], {
+      start: { x: 0, y: 0 },
+      middle: { x: 0, y: 0 },
+      direction: { x: 1e-12, y: 1 },
+      size: SIZE,
+      group: [box],
+      gaps: GAPS,
+    })
+    // The candidate on the right is listed before the one on the left.
+    expect(spot.x).toBe(SIZE.width + GAPS.gap)
+    expect(spot.y).toBe(0)
   })
 })
