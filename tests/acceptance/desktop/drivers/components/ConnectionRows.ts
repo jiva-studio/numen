@@ -20,9 +20,7 @@ export class ConnectionRows {
 
   async chooseConnection(row: Locator, name: string): Promise<void> {
     await row.getByRole('button', { name: 'Connection', exact: true }).click()
-    await this.page
-      .getByRole('option', { name: new RegExp(`^${escapeRegExp(name)}`) })
-      .click()
+    await this.page.getByRole('option', { name: new RegExp(`^${escapeRegExp(name)}`) }).click()
   }
 
   /** The model is searched in the list the service gives, and typed when the list does not hold it. */

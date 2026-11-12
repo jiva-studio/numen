@@ -13,7 +13,10 @@ const removeComments = (raw: string): string => {
   let start = text.indexOf(COMMENT_START)
   while (start !== -1) {
     const end = text.indexOf(COMMENT_END, start + COMMENT_START.length)
-    text = end === -1 ? text.slice(0, start) : text.slice(0, start) + text.slice(end + COMMENT_END.length)
+    text =
+      end === -1
+        ? text.slice(0, start)
+        : text.slice(0, start) + text.slice(end + COMMENT_END.length)
     start = text.indexOf(COMMENT_START, Math.max(0, start - COMMENT_START.length + 1))
   }
   return text
