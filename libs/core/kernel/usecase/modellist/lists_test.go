@@ -151,3 +151,17 @@ func TestTheKeyDoesNotLeaveInTheErrorText(t *testing.T) {
 		t.Errorf("err = %v", err)
 	}
 }
+
+func TestAReadThatTakesLongerThanTheReadTimeoutFailsOnceAsUnavailable(t *testing.T) {
+	s := newSetup(t)
+	s.world.Provider.Block(address)
+
+	_, err := s.lists.ListModels(t.Context(), s.entry.ID, "complete")
+
+	if !errors.Is(err, modellist.ErrProviderUnavailable) || !strings.Contains(err.Error(), connection.FailureReasonTimeout.String()) {
+		t.Errorf("err = %v, want unavailable with a timeout", err)
+	}
+	if calls := len(s.world.Provider.Calls()); calls != 1 {
+		t.Errorf("the provider was asked %d times, want once", calls)
+	}
+}

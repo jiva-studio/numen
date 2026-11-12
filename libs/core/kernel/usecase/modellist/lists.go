@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
@@ -14,6 +15,10 @@ import (
 // ErrProviderUnavailable is a provider that cannot be started or that failed the call. The text after
 // the sentinel is the reason, from the enum of reasons and never from a service.
 var ErrProviderUnavailable = errors.New("the provider of the connection is unavailable")
+
+// ReadTimeout is how long a read of the models or the reasoning levels may take. The read is not repeated:
+// the editor shows what it got, or the reason it got nothing.
+const ReadTimeout = 2 * time.Second
 
 // Lists asks the provider of a connection for what the editor offers: the models and the reasoning
 // levels. The connection is the one named, and no cooldown applies.
@@ -34,7 +39,7 @@ func NewLists(
 // list is still accepted by the core. It fails with connection.ErrNotFound, connection.ErrTypeUnavailable,
 // ErrProviderUnavailable or the error of the context.
 func (l *Lists) ListModels(ctx context.Context, connectionID, operation string) ([]modelcall.Model, error) {
-	return ask(ctx, l, connectionID, "", func(provider connectionport.ModelCatalog, call modelcall.ProviderCall) ([]modelcall.Model, error) {
+	return ask(ctx, l, connectionID, "", func(ctx context.Context, provider connectionport.ModelCatalog, call modelcall.ProviderCall) ([]modelcall.Model, error) {
 		return provider.ListModels(ctx, call, operation)
 	})
 }
@@ -42,14 +47,14 @@ func (l *Lists) ListModels(ctx context.Context, connectionID, operation string) 
 // ListReasoningLevels returns the reasoning levels the model of the connection takes. It fails like
 // ListModels.
 func (l *Lists) ListReasoningLevels(ctx context.Context, connectionID, model string) ([]modelcall.ReasoningLevel, error) {
-	return ask(ctx, l, connectionID, model, func(provider connectionport.ModelCatalog, call modelcall.ProviderCall) ([]modelcall.ReasoningLevel, error) {
+	return ask(ctx, l, connectionID, model, func(ctx context.Context, provider connectionport.ModelCatalog, call modelcall.ProviderCall) ([]modelcall.ReasoningLevel, error) {
 		return provider.ListReasoningLevels(ctx, call)
 	})
 }
 
 func ask[T any](
 	ctx context.Context, l *Lists, connectionID, model string,
-	do func(connectionport.ModelCatalog, modelcall.ProviderCall) (T, error),
+	do func(context.Context, connectionport.ModelCatalog, modelcall.ProviderCall) (T, error),
 ) (T, error) {
 	var none T
 	if err := ctx.Err(); err != nil {
@@ -71,8 +76,13 @@ func ask[T any](
 	case err != nil:
 		return none, err
 	}
-	result, err := do(provider, resolved.NewCall(secrets, model, ""))
+	readCtx, stop := context.WithTimeout(ctx, ReadTimeout)
+	defer stop()
+	result, err := do(readCtx, provider, resolved.NewCall(secrets, model, ""))
 	if err != nil {
+		if readCtx.Err() != nil && ctx.Err() == nil {
+			return none, failed(ctx, connection.FailureReasonTimeout)
+		}
 		return none, failed(ctx, readReason(err))
 	}
 	return result, nil
