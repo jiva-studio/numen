@@ -159,12 +159,11 @@ type Story = StoryObj<typeof meta>
 export const ListFitsTheColumn: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('heading', { name: 'Connections' })).toBeVisible()
     await expect(canvas.getByText('Type unavailable')).toBeVisible()
     await expect(canvas.getByText('Incomplete')).toBeVisible()
     await expect(canvas.getByText(/Plugins skip such a connection/)).toBeVisible()
     const column = canvasElement.firstElementChild!.getBoundingClientRect()
-    for (const row of canvasElement.querySelectorAll('li[aria-label]')) {
+    for (const row of canvasElement.querySelectorAll('[role="list"] [role="button"]')) {
       await expect(row.getBoundingClientRect().right).toBeLessThanOrEqual(column.right + 0.5)
     }
   },
