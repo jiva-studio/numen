@@ -140,7 +140,7 @@ func TestTheToolsOfTheHostAreServedToTheProgramAndCalledWithTheContextAndTheVaul
 	host, client := serveGardenHost(t)
 	program, record := fakeProgram(t, "mcp")
 
-	frames, done, err := runTask(t.Context(), newTestServerWith(t, client, clock.System{}), taskCall("claude-code", program), &acp.TaskRequest{
+	frames, done, err := runTask(t.Context(), newTestServerWith(t, client, clock.System{}), taskCall("acp", program), &acp.TaskRequest{
 		Prompt: "How are the beds?", ToolContext: map[string]string{"org.example.garden/bed": "north"}, VaultId: "vault-orchard",
 	})
 
@@ -169,25 +169,18 @@ func TestTheToolsOfTheHostAreServedToTheProgramAndCalledWithTheContextAndTheVaul
 	}
 }
 
-// Claude Code is started with its own tools off but web search, the served tools allowed, and no settings
-// read; the session is offered the endpoint of the tools as its one MCP server.
-func TestClaudeCodeOpensASessionWithTheServedToolsAlone(t *testing.T) {
+// The session is offered the endpoint of the tools as its one MCP server, and no _meta.
+func TestASessionIsOfferedTheEndpointOfTheToolsAlone(t *testing.T) {
 	_, client := serveGardenHost(t)
 	program, record := fakeProgram(t, "mcp")
 
-	if _, _, err := runTask(t.Context(), newTestServerWith(t, client, clock.System{}), taskCall("claude-code", program), &acp.TaskRequest{Prompt: "Plan the beds."}); err != nil {
+	if _, _, err := runTask(t.Context(), newTestServerWith(t, client, clock.System{}), taskCall("acp", program), &acp.TaskRequest{Prompt: "Plan the beds."}); err != nil {
 		t.Fatal(err)
 	}
 
 	params := getField[map[string]any](t, readRecord(t, record)["session/new"][0], "params")
-	meta, err := json.Marshal(params["_meta"])
-	if err != nil {
-		t.Fatal(err)
-	}
-	wantMeta := `{"claudeCode":{"options":{"allowedTools":["WebSearch","mcp__numen__garden_plan","mcp__numen__note_read"],` +
-		`"maxTurns":100,"settingSources":[],"tools":["WebSearch"]}}}`
-	if string(meta) != wantMeta {
-		t.Errorf("the session was opened with %s, want %s", meta, wantMeta)
+	if meta, hasMeta := params["_meta"]; hasMeta {
+		t.Errorf("the session was opened with the _meta %v", meta)
 	}
 	servers := getField[[]any](t, params, "mcpServers")
 	if len(servers) != 1 || getField[string](t, servers[0], "name") != "numen" || getField[string](t, servers[0], "type") != "http" ||
@@ -346,7 +339,6 @@ func TestAProgramThatIsMissingOrFailsIsTriedNext(t *testing.T) {
 
 	for name, call := range map[string]connection.Call{
 		"a missing program":          taskCall("acp", filepath.Join(t.TempDir(), "gone")),
-		"a known binary not on PATH": taskCall("codex", ""),
 		"a program that exits":       taskCall("acp", failing),
 		"a program without HTTP MCP": taskCall("acp", noHTTP),
 	} {

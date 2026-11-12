@@ -6,7 +6,7 @@ The user types a question into the panel beside their notes, and the panel runs 
 
 The tools of this vault: the provider lists the tools of the host its own permissions allow and serves them to the program on an MCP endpoint of its own, on loopback, behind a bearer token, for the length of the session. The program's permission requests are granted for those tools alone; every other request is refused, and the panel shows no prompts. Each call carries the context the asking view gave and the vault it named.
 
-Claude Code is started through its ACP adapter with its own tools off except the web search, and reads no configuration source of this machine or of the vault. A fetch goes to an address given in the text, and a note may have been written by anybody, so the vault's content would decide where the fetch goes; the web fetch is therefore off. Codex and Antigravity run their own tools as their adapters do, and each of their requests for a permission is refused unless it is for a tool of this vault.
+Claude Code is started as `claude -p` with its own tools off except the web search, the tools of this vault allowed without asking, and no configuration source of this machine or of the vault read unless the setting Hooks & skills allows the person's own. A fetch goes to an address given in the text, and a note may have been written by anybody, so the vault's content would decide where the fetch goes; the web fetch is therefore off. Codex is started as `codex exec --json` and Antigravity as its CLI with `--output-format stream-json`; both are given the endpoint of the tools of this vault and run their own tools as their CLIs do.
 
 The Numen Agent calls the tools of the host itself, with no endpoint between.
 
@@ -126,4 +126,4 @@ A client authenticates with the header `Authorization: Bearer <token>`, compared
 
 **A file the agent writes in the vault is read by the user's own agent.** A note it writes stays in the folder, and the user's own agent, started in that folder, reads what is there. Where a note may be written is limited to places a note may live and this application's own folders, so another tool's dot-folder is blocked; the vault's root is not, and a file with the configuration filename of another tool can be written there.
 
-**The options that turn Claude Code's tools off are the adapter's.** They are passed in `_meta.claudeCode.options` of `session/new`, and the adapter can change what it reads in any release without notice. Each release must be checked, and nothing checks it automatically.
+**The flags that turn Claude Code's tools off are the CLI's.** They are `--tools`, `--allowedTools`, `--strict-mcp-config` and `--setting-sources`, and a release of the CLI can change what they mean without notice. Each release must be checked, and nothing checks it automatically.

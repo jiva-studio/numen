@@ -1,0 +1,124 @@
+package reasoning
+
+import "strings"
+
+// Listed is a model as a program lists it.
+type Listed struct {
+	Name  string
+	Title string
+}
+
+// Family is a model the user can choose, with the reasoning depths it supports.
+// A model listed with no depth in its title is a family with no levels.
+type Family struct {
+	// Name is the name tasks use to request the model.
+	Name  string
+	Title string
+	// Levels run from the least reasoning to the most. None where the model offers no choice.
+	Levels []Level
+	// Default is the level the model works at where a task names none.
+	Default string
+
+	variants map[string]string
+}
+
+// GetVariant is the name of the listed model that works at the level, the default level where the
+// family has none of that name.
+func (f Family) GetVariant(level string) string {
+	return f.variants[Normalize(f.Levels, level)]
+}
+
+// SplitTitle reads "Name (Level)" into the name and the level. A title whose parentheses hold no
+// level name is returned whole, with no level.
+func SplitTitle(title string) (string, string) {
+	title = strings.TrimSpace(title)
+	if !strings.HasSuffix(title, ")") {
+		return title, ""
+	}
+	open := strings.LastIndex(title, "(")
+	if open <= 0 {
+		return title, ""
+	}
+	level := strings.TrimSpace(title[open+1 : len(title)-1])
+	base := strings.TrimSpace(title[:open])
+	if !IsKnown(level) {
+		return title, ""
+	}
+	return base, strings.ToLower(level)
+}
+
+// Fold gathers the models that differ by the level in their titles into one family each, in the order
+// the first of each is listed. A title standing alone with a level in it stays as it was listed.
+func Fold(models []Listed) []Family {
+	type group struct {
+		base     string
+		listings []Listed
+		levels   []string
+	}
+	var groups []*group
+	byBase := map[string]*group{}
+	for _, one := range models {
+		base, level := SplitTitle(one.Title)
+		if level == "" {
+			groups = append(groups, &group{base: one.Title, listings: []Listed{one}, levels: []string{""}})
+			continue
+		}
+		found := byBase[base]
+		if found == nil {
+			found = &group{base: base, listings: nil, levels: nil}
+			byBase[base] = found
+			groups = append(groups, found)
+		}
+		found.listings = append(found.listings, one)
+		found.levels = append(found.levels, level)
+	}
+
+	families := make([]Family, 0, len(groups))
+	for _, one := range groups {
+		if len(one.listings) == 1 {
+			only := one.listings[0]
+			families = append(families, Family{
+				Name: only.Name, Title: only.Title, Levels: nil, Default: "", variants: map[string]string{"": only.Name},
+			})
+			continue
+		}
+		families = append(families, newFamily(one.base, one.listings, one.levels))
+	}
+	return families
+}
+
+func newFamily(title string, listings []Listed, names []string) Family {
+	levels := NewLevels(names...)
+	Sort(levels)
+	variants := make(map[string]string, len(listings))
+	for place, one := range listings {
+		variants[names[place]] = one.Name
+	}
+	return Family{
+		Name: getFamilyName(listings, names), Title: title, Levels: levels,
+		Default: GetDefault(levels), variants: variants,
+	}
+}
+
+func getFamilyName(listings []Listed, levels []string) string {
+	shared := ""
+	for place, one := range listings {
+		trimmed, found := strings.CutSuffix(one.Name, "-"+levels[place])
+		if !found || trimmed == "" || (place > 0 && trimmed != shared) {
+			return listings[0].Name
+		}
+		shared = trimmed
+	}
+	return shared
+}
+
+// ResolveModel returns the model a program is started with for the named family
+// and the requested level. A name that is not a family is returned unchanged.
+func ResolveModel(families []Family, model, level string) string {
+	for _, one := range families {
+		if one.Name == model {
+			return one.GetVariant(level)
+		}
+	}
+	return model
+}

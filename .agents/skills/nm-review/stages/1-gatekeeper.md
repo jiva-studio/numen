@@ -71,7 +71,7 @@ Load the placement skill of each area the diff touches ([`nm-place-core`](../../
 
 The core, the core protocol and the shared SDK are a microkernel ([`architecture.md`](../../../rules/architecture.md) §11 (l)). For every package, type, RPC, message, field or export the diff adds to `libs/core/kernel`, `libs/core/protocol`, `libs/core/client`, `libs/plugin/sdk-go` or `libs/plugin/sdk-ts` outside `contracts/`, ask: "Which product domain does this know, and why is it not in a plugin or a contract?" An answer other than "none" is a finding, with the plugin or the contract it belongs in. Examples from the microkernel change:
 
-- The list of agent programs cached in the settings adapter of the core belongs to agents-acp, whose programs are connection types of `acp.task`.
+- The list of agent programs cached in the settings adapter of the core belongs to the agent plugins, whose programs are connection types of `acp.task`.
 - Model pooling, handling, the source model and the token limit in the core belong to engines-embeddings; the core knows a search source by its opaque recipe, width and chunk size.
 - The `app:link.*` commands of the media importer in the shared command catalog `libs/core/protocol/commands.json` belong to the manifest of that plugin.
 

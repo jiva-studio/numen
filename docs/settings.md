@@ -207,7 +207,7 @@ How a link's address is fetched is set by the Media Importer plugin's settings, 
 
 ## Which agent answers
 
-The agent chat answers through connections, as every other plugin that needs a service. The page of the plugin `md.numen.views.agent.chat` has the setting `connections` with the operation `acp.task`: one row for each agent to try, in order. A row names a connection of an agent type: `md.numen.agents.acp/claude-code`, `md.numen.agents.acp/codex`, `md.numen.agents.acp/antigravity`, `md.numen.agents.acp/acp` (any program that implements the Agent Client Protocol, by its `program` field) or `md.numen.agents.numen/numen`, and the model and the reasoning level the program offers. With no row the chat says that no agent is set up and offers the page. The flashcard review has a setting of its own, `agentConnections`, for the agent it asks about a card. What an agent may request from a vault is in [Agents](agents.md).
+The agent chat answers through connections, as every other plugin that needs a service. The page of the plugin `md.numen.views.agent.chat` has the setting `connections` with the operation `acp.task`: one row for each agent to try, in order. A row names a connection of an agent type: `md.numen.agents.claude/claude-code`, `md.numen.agents.codex/codex`, `md.numen.agents.antigravity/antigravity`, `md.numen.agents.acp/acp` (any program that implements the Agent Client Protocol, by its `program` field) or `md.numen.agents.numen/numen`, and the model and the reasoning level the program offers. With no row the chat says that no agent is set up and offers the page. The flashcard review has a setting of its own, `agentConnections`, for the agent it asks about a card. What an agent may request from a vault is in [Agents](agents.md).
 
 ```json
 {
