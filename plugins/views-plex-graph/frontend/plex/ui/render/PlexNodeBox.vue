@@ -99,7 +99,7 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   rx: var(--radius);
   fill: var(--numen-raised);
   stroke: var(--relation-hue);
-  stroke-width: var(--plex-outline, var(--numen-stroke));
+  stroke-width: var(--plex-outline);
   transition:
     fill var(--numen-motion-hover) var(--numen-easing),
     stroke var(--plex-move) var(--numen-easing);
@@ -113,7 +113,7 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   align-items: center;
   justify-content: center;
   gap: var(--numen-node-gap);
-  padding-inline: var(--plex-pad-inline, var(--numen-node-padding));
+  padding-inline: var(--plex-pad-inline);
   box-sizing: border-box;
   color: var(--numen-ink);
   font-family: var(--numen-font-sans);
@@ -139,8 +139,8 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
 
 .plex__dot {
   flex: none;
-  inline-size: var(--plex-dot, 0.375rem);
-  block-size: var(--plex-dot, 0.375rem);
+  inline-size: var(--plex-dot);
+  block-size: var(--plex-dot);
   border-radius: 50%;
   background: var(--relation-hue);
 }

@@ -30,7 +30,7 @@ withDefaults(
 .plex__edge {
   fill: none;
   stroke: var(--numen-edge);
-  stroke-width: var(--plex-line, var(--numen-edge-width));
+  stroke-width: var(--plex-line);
   stroke-linecap: round;
 }
 
