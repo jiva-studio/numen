@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm/llmtest"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/internal/adapter/openaiapi"
+	"github.com/jiva-studio/numen/plugins/connections-llm/backend/usecase/models"
 )
 
 const testKey = "sk-test-key-1234"
@@ -84,7 +85,7 @@ func newTestService(t *testing.T) *testService {
 
 func newTestServiceWith(t *testing.T, source openaiapi.Clock) *testService {
 	t.Helper()
-	built, err := newService(source)
+	built, err := newService(source, models.Lists{Dir: t.TempDir(), Report: func(error) {}})
 	if err != nil {
 		t.Fatal(err)
 	}

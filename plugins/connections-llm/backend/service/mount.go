@@ -1,6 +1,10 @@
 package service
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -19,7 +23,7 @@ type service struct {
 	gateway  *openaiapi.Gateway
 }
 
-func newService(source openaiapi.Clock) (*service, error) {
+func newService(source openaiapi.Clock, lists models.Lists) (*service, error) {
 	gateway := openaiapi.New(source)
 	requestLimits := new(limits.Limits)
 	completions, err := completion.New(gateway, requestLimits)
@@ -30,7 +34,7 @@ func newService(source openaiapi.Clock) (*service, error) {
 	if err != nil {
 		return nil, err
 	}
-	listings, err := models.New(gateway, requestLimits)
+	listings, err := models.New(gateway, requestLimits, lists)
 	if err != nil {
 		return nil, err
 	}
@@ -41,9 +45,14 @@ func newService(source openaiapi.Clock) (*service, error) {
 	}, nil
 }
 
-// Mount serves the provider on the plugin server and takes the settings of the plugin from Configure.
+// Mount serves the provider on the plugin server and takes the settings of the plugin from Configure. The
+// lists of models are kept in the cache directory the host grants, and in memory only where it grants none.
 func Mount(srv *server.Server) error {
-	built, err := newService(clock.System{})
+	dir, err := cache.GetPluginDir()
+	if err != nil {
+		dir = ""
+	}
+	built, err := newService(clock.System{}, models.Lists{Dir: dir, Report: reportListError})
 	if err != nil {
 		return err
 	}
@@ -54,4 +63,9 @@ func Mount(srv *server.Server) error {
 	})
 	connection.Mount(srv, built.provider.roles())
 	return nil
+}
+
+func reportListError(err error) {
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="a diagnostic line on stderr; the list kept before is still answered"
+	fmt.Fprintf(os.Stderr, "list models: %v\n", err)
 }

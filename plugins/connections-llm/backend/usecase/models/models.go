@@ -3,8 +3,14 @@ package models
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"slices"
+	"strings"
+	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/limits"
@@ -14,24 +20,77 @@ import (
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/ports"
 )
 
+// ListLifetime is how long a list of models is used before it is listed again in the background.
+const ListLifetime = 24 * time.Hour
+
+const listsName = "models"
+
 // Models lists what a connection offers.
 type Models struct {
 	gateway ports.Gateway
 	limits  *limits.Limits
+	lists   *cache.Cache[[]connection.Option]
 }
 
-// New returns Models that ask gateway and take the time of a request from limits.
-func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Models, error) {
-	if gateway == nil || requestLimits == nil {
-		return nil, errors.New("models: a gateway and limits are required")
+// Lists is where the lists of models are kept between runs. Dir is the directory of the file, empty to keep
+// them in memory only. Report receives the failures of a list loaded in the background and of the file.
+type Lists struct {
+	Dir    string
+	Report func(error)
+}
+
+// New returns Models that ask gateway, take the time of a request from limits and keep the lists in lists.
+func New(gateway ports.Gateway, requestLimits *limits.Limits, lists Lists) (*Models, error) {
+	if gateway == nil || requestLimits == nil || lists.Report == nil {
+		return nil, errors.New("models: a gateway, limits and a report function are required")
 	}
-	return &Models{gateway: gateway, limits: requestLimits}, nil
+	name := ""
+	if lists.Dir != "" {
+		name = listsName
+	}
+	return &Models{
+		gateway: gateway,
+		limits:  requestLimits,
+		lists: cache.New[[]connection.Option](
+			name,
+			cache.WithDir(lists.Dir),
+			cache.WithDisk(lists.Dir != ""),
+			cache.WithTTL(ListLifetime),
+			cache.WithAsync(true),
+			cache.WithErrorHandler(lists.Report),
+		),
+	}, nil
 }
 
-// ListModels lists the models of the service that fit the operations of a setting of rows.
+// ListModels lists the models of the service that fit the operations of a setting of rows. A list kept from
+// before, also from an earlier run, is returned at once, and one older than ListLifetime is listed again in
+// the background. Only a connection with no kept list waits for the service.
 func (m *Models) ListModels(ctx context.Context, call connection.Call, operations []string) ([]connection.Option, error) {
 	limit := m.limits.Get(call.Type, call.Fields[servicetype.FieldBaseURL], call.Options[llm.OptionModel], operation.List)
-	return m.gateway.ListModels(ctx, call, limit, operations)
+	load := func(ctx context.Context) ([]connection.Option, error) {
+		return m.gateway.ListModels(ctx, call, limit, operations)
+	}
+	key := getListKey(call, operations)
+	if _, isKept, _ := m.lists.Get(ctx, key, nil); isKept {
+		list, _, err := m.lists.Get(ctx, key, load)
+		return list, err
+	}
+	list, err := load(ctx)
+	if err != nil {
+		return nil, err
+	}
+	m.lists.Put(key, list)
+	return list, nil
+}
+
+// getListKey names the list of a connection: its type, its address, the SHA-256 of its key and the
+// operations. The key itself is never part of it.
+func getListKey(call connection.Call, operations []string) string {
+	digest := sha256.Sum256([]byte(call.Secrets[servicetype.SecretAPIKey].Value))
+	sorted := slices.Sorted(slices.Values(operations))
+	return strings.Join([]string{
+		call.Type, call.Fields[servicetype.FieldBaseURL], hex.EncodeToString(digest[:]), strings.Join(sorted, ","),
+	}, "\x00")
 }
 
 // ListReasoningLevels returns the levels the model of the row takes, or none.
