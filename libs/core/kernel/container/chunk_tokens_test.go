@@ -32,6 +32,7 @@ const chunkEmbeddingPluginID = "md.numen.embeddings"
 // chunkingPlugin is an embedding plugin that reports the chunk size in tokens it is given.
 type chunkingPlugin struct {
 	wiretest.PluginLifecycle
+	numenv1connect.UnimplementedSearchSourceServiceHandler
 	tokens atomic.Int32
 }
 
@@ -41,23 +42,23 @@ func (*chunkingPlugin) Configure(
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 
-func (p *chunkingPlugin) GetEmbeddingModel(
-	context.Context, *connect.Request[v1.GetEmbeddingModelRequest],
-) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
-	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
-		Name: "test-model", Dimensions: 8, MaxTokens: 512, Pooling: "mean", From: "test", Concurrency: 1,
+func (p *chunkingPlugin) DescribeSearchSource(
+	context.Context, *connect.Request[v1.DescribeSearchSourceRequest],
+) (*connect.Response[v1.DescribeSearchSourceResponse], error) {
+	return connect.NewResponse(&v1.DescribeSearchSourceResponse{
+		Name: "test-model", Recipe: "test|test-model|8|512|mean|", Width: 8, Concurrency: 1,
 		ChunkTokens: p.tokens.Load(),
 	}), nil
 }
 
-func (*chunkingPlugin) EmbedBatch(
-	_ context.Context, req *connect.Request[v1.EmbedBatchRequest],
-) (*connect.Response[v1.EmbedBatchResponse], error) {
+func (*chunkingPlugin) IndexTexts(
+	_ context.Context, req *connect.Request[v1.IndexTextsRequest],
+) (*connect.Response[v1.IndexTextsResponse], error) {
 	vectors := make([]*v1.FloatVector, len(req.Msg.GetTexts()))
 	for i := range vectors {
 		vectors[i] = &v1.FloatVector{Values: []float32{1, 0, 0, 0, 0, 0, 0, 0}}
 	}
-	return connect.NewResponse(&v1.EmbedBatchResponse{Vectors: vectors}), nil
+	return connect.NewResponse(&v1.IndexTextsResponse{Vectors: vectors}), nil
 }
 
 func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *container.PluginRoles, *chunkingPlugin) {
@@ -66,7 +67,7 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *containe
 	reporter.tokens.Store(tokens)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(reporter))
-	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(reporter))
+	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(reporter))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	port := wiretest.GetPort(t, server)

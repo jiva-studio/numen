@@ -850,9 +850,8 @@ func TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	if reason := state.Msg.GetScan().GetError(); reason != "" {
 		t.Errorf("the window says it could not be read: %s", reason)
 	}
-	if state.Msg.GetCoverage().GetChunkCount() != 0 || state.Msg.GetCoverage().GetEmbeddedCount() != 0 {
-		t.Errorf("the window counted %d chunks and %d of them embedded",
-			state.Msg.GetCoverage().GetChunkCount(), state.Msg.GetCoverage().GetEmbeddedCount())
+	if text := state.Msg.GetCoverage().GetText(); text != "" {
+		t.Errorf("the window says %q of an index nothing builds", text)
 	}
 
 	opening, err := f.vault.GetOpeningNote(t.Context(), connect.NewRequest(&v1.GetOpeningNoteRequest{}))
