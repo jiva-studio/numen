@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -22,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
