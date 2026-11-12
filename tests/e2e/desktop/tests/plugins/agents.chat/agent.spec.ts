@@ -5,7 +5,7 @@ import {
   TOOL_NOTE_TEXT,
   TOOL_PROMPT,
 } from '../../../scripts/stand-ins.mjs'
-import { openWorkspace, waitForWindow } from '../../support/workspace.js'
+import { openWorkspace } from '../../support/workspace.js'
 import { hasVaultFile } from '../../support/media.js'
 import { destroyNote, readVaultFile } from '../../support/vault.js'
 
