@@ -34,26 +34,32 @@ export interface ConversationStrings {
   readonly refusal: string
 }
 
+/** getSourcePath returns the file the line of a turn works on, null where it works on none. */
 export interface Conversation {
   readonly turns: Ref<Turn[]>
   readonly isAnswerPending: Readonly<Ref<boolean>>
   readonly ask: (question: string) => Promise<void>
-  /** The file the line of a turn works on, null where it works on none. */
   readonly getSourcePath: (turn: string) => string | null
   readonly stop: () => void
 }
 
+/**
+ * toolContext is handed to every tool the agent calls; vault is the vault the tools work on, empty for the
+ * vault the window shows.
+ */
 export interface ConversationOptions {
   readonly connections: ConnectionHost
   readonly words: ConversationStrings
   readonly conversation: string
-  /** Handed to every tool the agent calls. */
   readonly toolContext?: Readonly<Record<string, string>> | undefined
-  /** The vault the tools work on; empty is the vault the window shows. */
   readonly vault?: string | undefined
   readonly paint?: Paint | undefined
 }
 
+/**
+ * A failure the answer already ends with marks the answer failed; any other failure goes on a turn of its
+ * own. The work line settles once no tool call is running, and the wait shows again.
+ */
 export function useConversation(options: ConversationOptions): Conversation {
   const { connections, words, conversation, paint = onNextFrame } = options
   const { turns, paths, put, drop, nextId } = useConversationTurns()
@@ -126,7 +132,6 @@ const getStopSentence = (reason: StopReason, words: ConversationStrings): string
   }
 }
 
-/** A failure the answer already ends with marks the answer failed; any other goes on a turn of its own. */
 function putFailure(answer: Answer, message: string, put: (turn: Turn) => void, nextId: () => string) {
   const cleanMessage = message.trim()
   const text = answer.getText().trim()
@@ -266,14 +271,12 @@ interface FrameContext {
   readonly answer: Answer
   readonly work: WorkLine
   readonly plan: PlanTurn
-  /** The tool calls that have not ended, by their ids. */
   readonly calls: Set<string>
 }
 
 const isEnded = (status: ToolCallStatus | undefined): boolean =>
   status === ToolCallStatus.COMPLETED || status === ToolCallStatus.FAILED
 
-/** A call that ended leaves the line settled once no other call is running, and the wait back up. */
 function endCall(id: string, context: FrameContext): void {
   context.calls.delete(id)
   if (context.calls.size > 0) return
@@ -325,7 +328,6 @@ interface FrameRunner {
   readonly plan: PlanTurn
 }
 
-/** Draws the frames of a task as they arrive; the end of the task, or null where it was given up. */
 async function readFrames(
   frames: AsyncGenerator<TaskFrame, Result<TaskDone, ConnectionError>>,
   signal: AbortSignal,

@@ -83,7 +83,9 @@ type Handler interface {
 }
 
 // Session is one ACP session with an agent program started for it alone. It grants a permission only
-// where the handler of the turn allows the tool, and rejects every other request of the agent.
+// where the handler of the turn allows the tool, or, where the request names none, the tool the agent
+// reported for the call. It rejects every other request once, which lets the turn go on. A failed program
+// is reported by the first line of its error output that starts with "error:", else by its last line.
 type Session struct {
 	proc           Process
 	program        string
@@ -220,18 +222,17 @@ func (s *Session) Close(ctx context.Context) error {
 	return errors.Join(err, s.stop())
 }
 
-// Stop ends the program without ending the session first; a turn that runs ends with an error.
+// Stop ends the program without ending the session first; a turn that runs ends with an error. The
+// program is ended once, whichever of Close and Stop comes first, and both return the error of that end.
 func (s *Session) Stop() error {
 	return s.stop()
 }
 
-// stop ends the program once, from whichever goroutine comes first, and returns why it failed to end.
 func (s *Session) stop() error {
 	s.halt()
 	return s.stopErr
 }
 
-// halt ends the program once; Close and Stop return the error of its end.
 func (s *Session) halt() {
 	s.stopOnce.Do(func() {
 		s.isStopped.Store(true)

@@ -85,7 +85,7 @@ func TestASearchAsksThePlaceWithTheVectorOfTheQueryAndAnswersItsChunks(t *testin
 	}
 }
 
-func TestTheCoverageSaysTheIndexIsNotBuiltUntilAChunkHasAVector(t *testing.T) {
+func TestTheCoverageReportsTheIndexAsNotBuiltUntilAChunkHasAVector(t *testing.T) {
 	h := newHandler(newServer(nil), noPlaces, newSourceHealth(noHealth))
 
 	empty, _ := h.DescribeCoverage(t.Context(), searchsource.Place{}, searchsource.Counts{Chunks: 12})

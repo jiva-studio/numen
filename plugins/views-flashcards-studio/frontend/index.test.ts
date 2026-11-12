@@ -48,7 +48,6 @@ const connections: ConnectionHost = {
 
 const relations = { resolveLinks: async () => [] } as unknown as VaultRelations
 
-/** A mock context of the flashcards window, with the connections of the plugin and the links of the vault. */
 const createReviewContext = (closeTab = vi.fn()) => {
   const ctx = createMockPluginContext({
     target: 'desktop.flashcards',

@@ -32,7 +32,9 @@ type openHealth func() (*health.Client, error)
 // sourceHealth reports the source of the vectors as the health item source of the plugin: an error
 // while the settings name a source that cannot answer (no connection, a connection that fails, a local
 // model that is missing), and no item once a call succeeds. The host is called only when that changes,
-// and a process started without a host reports nothing.
+// and a process started without a host reports nothing. A failure other than a precondition of the
+// settings leaves the item as it is. The text of an item starts with an upper case letter and is cut at
+// the limit of the host.
 type sourceHealth struct {
 	open openHealth
 
@@ -44,8 +46,6 @@ func newSourceHealth(open openHealth) *sourceHealth {
 	return &sourceHealth{open: open, mu: sync.Mutex{}, reported: ""}
 }
 
-// observe takes the outcome of a call of the model: a precondition the settings do not meet reports
-// the item, a call that succeeded clears it, and any other failure leaves it as it is.
 func (s *sourceHealth) observe(ctx context.Context, err error) {
 	failure, isPrecondition := errors.AsType[serving.PreconditionError](err)
 	switch {
@@ -86,8 +86,6 @@ func (s *sourceHealth) update(ctx context.Context, text string) {
 	s.reported = text
 }
 
-// getHealthText is the message as a sentence that fits an item: its first letter upper case, cut at the
-// limit of the host.
 func getHealthText(message string) string {
 	if message == "" {
 		return ""

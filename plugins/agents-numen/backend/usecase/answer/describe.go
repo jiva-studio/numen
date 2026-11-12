@@ -7,8 +7,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 )
 
-// describeCall is the tool call frame of a call: the title of the listed tool, its kind by the effect of
-// the tool, what the call is about and the note it works on, read from the arguments.
 func describeCall(listed map[string]conversation.Tool, call conversation.ToolCall) *acp.ToolCall {
 	frame := &acp.ToolCall{
 		ToolCallId:   call.ID,
@@ -34,8 +32,6 @@ func describeCall(listed map[string]conversation.Tool, call conversation.ToolCal
 	return frame
 }
 
-// readSubject reads what a call is about (its query, about or title, else its path) and the path of the
-// note it names, from the arguments the tools of the host use for them.
 func readSubject(arguments string) (about, path string) {
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(arguments), &parsed); err != nil {

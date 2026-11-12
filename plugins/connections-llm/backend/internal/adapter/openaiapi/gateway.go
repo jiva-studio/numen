@@ -21,7 +21,9 @@ type Clock interface {
 	Now() time.Time
 }
 
-// Gateway is the OpenAI API as the use cases see it.
+// Gateway is the OpenAI API as the use cases see it. A request that gets no answer ends with the end of the
+// call where the call has ended, stops for an address the domain refuses, and is unavailable, to try the
+// next connection after, for a service that is unreachable or slow.
 type Gateway struct {
 	clients clients
 	clock   Clock

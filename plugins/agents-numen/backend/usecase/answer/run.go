@@ -30,8 +30,6 @@ type run struct {
 	send        func(*acp.TaskFrame) error
 }
 
-// answer asks the model turn by turn until it answers without a tool call, its answer is cut off or the
-// limit of turns is reached, and returns the transcript and the stop reason.
 func (r *run) answer(ctx context.Context, messages []conversation.Message) ([]conversation.Message, acp.StopReason, error) {
 	for index := range r.turns {
 		var (

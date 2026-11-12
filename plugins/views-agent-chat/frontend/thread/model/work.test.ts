@@ -63,7 +63,7 @@ describe('the line that says what the agent has in hand', () => {
     expect(sendTurn.mock.lastCall?.[0]).not.toHaveProperty('canOpen')
   })
 
-  it('forgets the file when the line comes down', () => {
+  it('clears the file path when the line is removed', () => {
     const { line, drop, paths } = create()
     line.reach({ title: 't', subject: 's', path: 'notes/Orchard.md' })
     line.dropWorkLine()

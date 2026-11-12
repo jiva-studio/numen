@@ -17,9 +17,12 @@ const idleLimit = 30 * time.Minute
 
 var errClosed = errors.New("the plugin is stopping")
 
-// pool keeps the sessions of conversations by key. The errors of closing a session outside closeIdle
+// pool keeps the sessions of conversations by key. The errors of closing a session outside closeIdleConversations
 // and close are kept until one of them returns them: a task does not fail on the session of another, nor
-// on its own after its turn has ended.
+// on its own after its turn has ended. An empty key is a conversation of its own that the pool does not
+// keep, and is closed once its turn ends. A full pool makes room by closing the least recently used idle
+// conversation; when every kept conversation runs a turn, there is no room. A conversation whose session
+// broke has its program stopped when its turn ends.
 type pool struct {
 	clock     Clock
 	mu        sync.Mutex
@@ -32,7 +35,6 @@ func newPool(clock Clock) *pool {
 	return &pool{clock: clock, mu: sync.Mutex{}, kept: map[string]*conversation{}, isClosed: false, closeErrs: nil}
 }
 
-// keepError keeps the error of closing a session for the next closeIdle or close.
 func (p *pool) keepError(err error) {
 	if err == nil {
 		return
@@ -42,7 +44,6 @@ func (p *pool) keepError(err error) {
 	p.closeErrs = errors.Join(p.closeErrs, err)
 }
 
-// takeErrors returns the kept errors of closing sessions and keeps none.
 func (p *pool) takeErrors() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -51,9 +52,6 @@ func (p *pool) takeErrors() error {
 	return err
 }
 
-// acquire returns the conversation of key with its token held, and whether the pool keeps it. A
-// conversation the pool has no session for is new and holds none yet; the caller opens it. An empty key
-// is a conversation of its own that the pool does not keep.
 func (p *pool) acquire(ctx context.Context, key string) (c *conversation, isNew, isKept bool, err error) {
 	if key == "" {
 		return newConversation("", p.clock.Now()), true, false, nil
@@ -91,9 +89,6 @@ func (p *pool) acquire(ctx context.Context, key string) (c *conversation, isNew,
 	}
 }
 
-// makeRoom takes out the least recently used idle conversation when the pool is full, and reports whether
-// there is room. Every conversation of a full pool may be running a turn, and then there is none. The
-// caller holds the lock and closes the one taken out.
 func (p *pool) makeRoom() (*conversation, bool) {
 	if len(p.kept) < maxSessions {
 		return nil, true
@@ -108,8 +103,6 @@ func (p *pool) makeRoom() (*conversation, bool) {
 	return nil, false
 }
 
-// tryTake takes the conversation out of the pool when no turn runs in it. The caller holds the lock and
-// then holds the token of the conversation.
 func (p *pool) tryTake(c *conversation) bool {
 	select {
 	case c.turn <- struct{}{}:
@@ -121,8 +114,6 @@ func (p *pool) tryTake(c *conversation) bool {
 	return true
 }
 
-// release ends the turn of the conversation. A conversation the pool does not keep is taken out and
-// closed, and one whose session broke has its program stopped.
 func (p *pool) release(ctx context.Context, c *conversation, isKept, isBroken bool) {
 	p.mu.Lock()
 	c.lastUsed = p.clock.Now()
@@ -140,9 +131,7 @@ func (p *pool) release(ctx context.Context, c *conversation, isKept, isBroken bo
 	}
 }
 
-// closeIdle closes the conversations that have gone unused for the idle limit, and returns the errors
-// of closing sessions since the last call.
-func (p *pool) closeIdle(ctx context.Context) error {
+func (p *pool) closeIdleConversations(ctx context.Context) error {
 	now := p.clock.Now()
 	var idle []*conversation
 	p.mu.Lock()
@@ -159,7 +148,6 @@ func (p *pool) closeIdle(ctx context.Context) error {
 	return err
 }
 
-// close closes every conversation and keeps no other. A conversation whose turn still runs is stopped.
 func (p *pool) close(ctx context.Context) error {
 	p.mu.Lock()
 	p.isClosed = true
@@ -186,7 +174,6 @@ func (p *pool) close(ctx context.Context) error {
 	return err
 }
 
-// closeConversation closes a conversation taken out of the pool whose token the caller holds.
 func closeConversation(ctx context.Context, c *conversation) error {
 	if c == nil {
 		return nil

@@ -45,7 +45,9 @@ type Server struct{}
 
 var _ task.ToolServer = Server{}
 
-// Endpoint is an MCP server on a loopback port that serves a fixed set of tools behind a token.
+// Endpoint is an MCP server on a loopback port that serves a fixed set of tools behind a token. It answers
+// 403 to a request from an origin outside the machine and 401 to one that does not present the token as a
+// bearer credential.
 type Endpoint struct {
 	url      string
 	token    string
@@ -59,7 +61,10 @@ type Endpoint struct {
 	serveErr error
 }
 
-// Serve starts an endpoint that serves the listed tools and runs each call with invoke.
+// Serve starts an endpoint that serves the listed tools and runs each call with invoke. Every input schema
+// is declared as an object schema; an output schema is declared only where the listing gives an object
+// schema. A read-only tool is declared read-only and idempotent, a read-write one destructive, and one
+// that requires link:open as reaching the open world.
 func (Server) Serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (task.ServedTools, error) {
 	return serve(ctx, listed, invoke)
 }
@@ -114,7 +119,7 @@ func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*
 	return served, nil
 }
 
-// GetURL returns the address of the endpoint.
+// GetURL returns the http address on 127.0.0.1 and the path /mcp where the endpoint answers.
 func (e *Endpoint) GetURL() string { return e.url }
 
 // GetToken returns the token a request presents as a bearer credential.
@@ -174,10 +179,6 @@ func (e *Endpoint) shutdown(ctx context.Context) error {
 	}
 }
 
-// declareTool declares a listed tool to MCP clients. The input schema is always an object schema; the
-// output schema is declared only where the listing gives an object schema. A tool of effect read-only is
-// read-only and idempotent, one of effect read-write destructive, and one that requires link:open reaches
-// the open world.
 func declareTool(listed *tools.ToolInfo) *sdk.Tool {
 	isDestructive := listed.GetEffect() == tools.ReadWrite
 	isOpenWorld := slices.Contains(listed.GetRequires(), host.PermissionLinkOpen)
@@ -275,8 +276,6 @@ func newToken() (string, error) {
 	return hex.EncodeToString(raw), nil
 }
 
-// requireToken answers 403 to a request from an origin outside the machine, 401 to one that does not
-// present the token as a bearer credential, and passes the others to next.
 func requireToken(token string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if origins, hasOrigin := r.Header["Origin"]; hasOrigin && (len(origins) != 1 || !isLoopbackOrigin(origins[0])) {

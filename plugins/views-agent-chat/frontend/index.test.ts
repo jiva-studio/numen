@@ -29,7 +29,6 @@ const createWindow = () => {
   return { tabOpens, tabs, navigateTab, bind }
 }
 
-/** A mock context of the editor, with the connections of the plugin and the links of the vault. */
 const createContext = (
   answer: Parameters<typeof createAgentConnections>[0] = { frames: [say('Twelve.')] },
   navigateTab?: (kind: string, path: string) => Promise<string>,

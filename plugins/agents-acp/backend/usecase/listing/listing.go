@@ -40,7 +40,7 @@ func New(launcher acp.Launcher, source cache.Clock, isAsync bool) (*Lister, erro
 }
 
 // GetListing returns the models the program of the agent reports, from the cache when they are kept. A
-// failed read leaves the last listing of the cache, or none.
+// failed read leaves the last listing of the cache, or none; a session that fails to close fails the read.
 func (l *Lister) GetListing(ctx context.Context, agent agents.Agent) acp.Listing {
 	listing, _, err := l.listings.Get(ctx, agent.GetKey(), func(ctx context.Context) (acp.Listing, error) {
 		return l.readListing(ctx, agent)
@@ -51,8 +51,6 @@ func (l *Lister) GetListing(ctx context.Context, agent agents.Agent) acp.Listing
 	return listing
 }
 
-// readListing opens a session with the program and reads the models it reports. A session that fails to
-// close fails the read.
 func (l *Lister) readListing(ctx context.Context, agent agents.Agent) (listing acp.Listing, err error) {
 	asking, stop := context.WithTimeout(ctx, listLimit)
 	defer stop()
