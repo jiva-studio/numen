@@ -105,7 +105,7 @@ func textReply(text string) conversation.Reply {
 
 func assertUnavailable(t *testing.T, err error) {
 	t.Helper()
-	if reason, isFailure := connection.GetReason(err); !connection.IsStop(err) || !isFailure || reason != connection.ReasonUnavailable {
+	if !connection.IsStop(err) || err.Error() != connection.ReasonUnavailable.String() {
 		t.Errorf("err = %v, want a stop of reason unavailable", err)
 	}
 }

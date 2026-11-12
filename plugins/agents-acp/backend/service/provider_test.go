@@ -171,8 +171,8 @@ func TestAProgramThatIsNotThereIsUnreachable(t *testing.T) {
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
 	}
-	if reason, _ := connection.GetReason(err); reason != connection.ReasonUnavailable {
-		t.Errorf("reason = %v, want unreachable", reason)
+	if err.Error() != connection.ReasonUnavailable.String() {
+		t.Errorf("err = %v, want unavailable", err)
 	}
 }
 
@@ -209,8 +209,8 @@ func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
 	}
-	if reason, _ := connection.GetReason(err); reason != connection.ReasonUnavailable {
-		t.Errorf("reason = %v, want timeout", reason)
+	if err.Error() != connection.ReasonUnavailable.String() {
+		t.Errorf("err = %v, want unavailable", err)
 	}
 }
 

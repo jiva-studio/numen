@@ -359,7 +359,7 @@ func TestAProgramThatIsMissingOrFailsIsTriedNext(t *testing.T) {
 func TestAnACPConnectionWithoutAProgramIsInvalid(t *testing.T) {
 	_, _, err := runTask(t.Context(), newTestServer(t), taskCall("acp", ""), &acp.TaskRequest{Prompt: "Which beds face north?"})
 
-	if reason, _ := connection.GetReason(err); !connection.IsStop(err) || reason != connection.ReasonInvalidRequest {
+	if !connection.IsStop(err) || err.Error() != connection.ReasonInvalidRequest.String() {
 		t.Errorf("RunTask = %v, want a stop for an invalid request", err)
 	}
 }
