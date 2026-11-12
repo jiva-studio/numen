@@ -39,30 +39,43 @@ const getSlotTarget = (one) => one.command || one.view || one.submenu || ''
 
 const getListenerPort = (one) => one.portSetting || (one.port ? String(one.port) : '')
 
+/** The list a manifest holds under a key, each entry made an item; a list it does not hold is empty. */
+const listItems = (source, key, toItem) => (source[key] ?? []).map(toItem)
+
+/** The kinds of contributes, in the order a page lists them, each with how an entry becomes an item. */
+const CONTRIBUTION_KINDS = [
+  ['tabKinds', (one) => titled(one.title, one.kind)],
+  ['readers', (one) => item(one.id, (one.contentTypes ?? []).join(', '))],
+  ['handlers', (one) => titled(one.title, one.command)],
+  ['triggers', (one) => item(one.event, one.command)],
+  ['textKinds', (one) => titled(one.title, one.kind)],
+  ['noteTypes', (one) => item(one.type)],
+  ['themes', (one) => titled(one.name, one.id)],
+  ['slots', (one) => item(one.slot, getSlotTarget(one))],
+  ['listeners', (one) => item(one.name, getListenerPort(one))],
+  ['viewCapabilities', (one) => item(one)],
+  ['dropHandlers', (one) => item((one.types ?? []).join(', '))],
+  ['frameOrigins', (one) => item(one)],
+  ['connectionTypes', (one) => titled(one.title, one.id)],
+  ['operations', (one) => titled(one.title, one.name)],
+]
+
+/** The lists at the top of a manifest that a page shows with the contributions. */
+const MANIFEST_KINDS = [
+  ['permissions', (one) => item(one)],
+  ['dependencies', (one) => item(one.id, one.kind ?? '')],
+  ['services', (one) => item(one)],
+  ['capabilities', (one) => item(one)],
+  ['activationEvents', (one) => item(one)],
+]
+
 const listContributions = (manifest) => {
   const c = manifest.contributes ?? {}
   const sections = [
     ['commands', listCommands(c)],
     ['keybindings', listForeignKeybindings(c)],
-    ['tabKinds', (c.tabKinds ?? []).map((one) => titled(one.title, one.kind))],
-    ['readers', (c.readers ?? []).map((one) => item(one.id, (one.contentTypes ?? []).join(', ')))],
-    ['handlers', (c.handlers ?? []).map((one) => titled(one.title, one.command))],
-    ['triggers', (c.triggers ?? []).map((one) => item(one.event, one.command))],
-    ['textKinds', (c.textKinds ?? []).map((one) => titled(one.title, one.kind))],
-    ['noteTypes', (c.noteTypes ?? []).map((one) => item(one.type))],
-    ['themes', (c.themes ?? []).map((one) => titled(one.name, one.id))],
-    ['slots', (c.slots ?? []).map((one) => item(one.slot, getSlotTarget(one)))],
-    ['listeners', (c.listeners ?? []).map((one) => item(one.name, getListenerPort(one)))],
-    ['viewCapabilities', (c.viewCapabilities ?? []).map((one) => item(one))],
-    ['dropHandlers', (c.dropHandlers ?? []).map((one) => item((one.types ?? []).join(', ')))],
-    ['frameOrigins', (c.frameOrigins ?? []).map((one) => item(one))],
-    ['connectionTypes', (c.connectionTypes ?? []).map((one) => titled(one.title, one.id))],
-    ['operations', (c.operations ?? []).map((one) => titled(one.title, one.name))],
-    ['permissions', (manifest.permissions ?? []).map((one) => item(one))],
-    ['dependencies', (manifest.dependencies ?? []).map((one) => item(one.id, one.kind ?? ''))],
-    ['services', (manifest.services ?? []).map((one) => item(one))],
-    ['capabilities', (manifest.capabilities ?? []).map((one) => item(one))],
-    ['activationEvents', (manifest.activationEvents ?? []).map((one) => item(one))],
+    ...CONTRIBUTION_KINDS.map(([kind, toItem]) => [kind, listItems(c, kind, toItem)]),
+    ...MANIFEST_KINDS.map(([kind, toItem]) => [kind, listItems(manifest, kind, toItem)]),
   ]
   return sections.filter(([, items]) => items.length > 0).map(([kind, items]) => ({ kind, items }))
 }
