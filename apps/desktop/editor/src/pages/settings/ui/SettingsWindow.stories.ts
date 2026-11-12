@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { WorkspaceLayout, pane } from '@numen/workbench'
 import type { Tab, Workspace } from '@numen/workbench'
 import { Settings as SettingsIcon } from '@lucide/vue'
-import { computed, reactive, ref, type Component } from 'vue'
+import { computed, ref, shallowReactive, type Component } from 'vue'
 
 import type { Installation } from '../types'
 import SettingsTab from './SettingsTab.vue'
@@ -85,7 +85,7 @@ const HEALTH: readonly PluginHealthItem[] = [
 ]
 
 /** What numen.json holds: EPUB Book Reader turned off and two values changed from their defaults. */
-const VALUES = reactive(
+const VALUES = shallowReactive(
   new Map<string, JsonValue>([
     ['md.numen.readers.epub/enabled', false],
     ['md.numen.agents.numen/temperature', 0.4],

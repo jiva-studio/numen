@@ -162,7 +162,11 @@ function createHostContextBridge(
     events: createEventBridge(deps, registry),
     tabs: createTabBridge(deps),
     vault: createVaultServiceBridge(deps),
-    window: createWindowServiceBridge(deps, shared.slots, registry.manifests),
+    window: createWindowServiceBridge(deps, {
+      slots: shared.slots,
+      manifests: registry.manifests,
+      readSlotEntries: () => deps.getSlotEntries?.(),
+    }),
   }
 }
 
