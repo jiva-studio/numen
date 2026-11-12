@@ -1,7 +1,6 @@
 package atomicfile_test
 
 import (
-	"context"
 	"errors"
 	"io"
 	"os"
@@ -16,7 +15,7 @@ import (
 func TestWriteFileCreatesAndReplacesWithTheMode(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state.json")
 	for _, content := range []string{"first\n", "second, and longer\n"} {
-		if err := atomicfile.WriteFile(context.Background(), path, strings.NewReader(content), 0o600); err != nil {
+		if err := atomicfile.WriteFile(path, strings.NewReader(content), 0o600); err != nil {
 			t.Fatal(err)
 		}
 		got, err := os.ReadFile(path)
@@ -44,7 +43,7 @@ func TestWriteFileKeepsTheOldFileWhenTheSourceFails(t *testing.T) {
 	}
 	broken := errors.New("the disk went away")
 	source := io.MultiReader(strings.NewReader("half of the new con"), iotest.ErrReader(broken))
-	if err := atomicfile.WriteFile(context.Background(), path, source, 0o600); !errors.Is(err, broken) {
+	if err := atomicfile.WriteFile(path, source, 0o600); !errors.Is(err, broken) {
 		t.Fatalf("error %v, want %v", err, broken)
 	}
 	got, err := os.ReadFile(path)
@@ -63,10 +62,10 @@ func TestWriteFileKeepsTheOldFileWhenTheSourceFails(t *testing.T) {
 	}
 }
 
-func TestWriteFileLeavesNothingWhenTheSourceFailsFirst(t *testing.T) {
+func TestWriteFileFailedNewFileIsAbsent(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "state.json")
-	if err := atomicfile.WriteFile(context.Background(), path, iotest.ErrReader(errors.New("unreadable")), 0o600); err == nil {
+	if err := atomicfile.WriteFile(path, iotest.ErrReader(errors.New("unreadable")), 0o600); err == nil {
 		t.Fatal("a failed read was reported as success")
 	}
 	left, err := os.ReadDir(dir)
@@ -80,7 +79,7 @@ func TestWriteFileLeavesNothingWhenTheSourceFailsFirst(t *testing.T) {
 
 func TestWriteFileReportsAMissingFolder(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "absent", "state.json")
-	if err := atomicfile.WriteFile(context.Background(), path, strings.NewReader("x"), 0o600); !errors.Is(err, os.ErrNotExist) {
+	if err := atomicfile.WriteFile(path, strings.NewReader("x"), 0o600); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("error %v, want a missing folder", err)
 	}
 }

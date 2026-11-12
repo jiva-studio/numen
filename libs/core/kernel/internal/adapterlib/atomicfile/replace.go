@@ -73,7 +73,11 @@ func CreateTempFile(root *os.Root, dir, pattern string) (*os.File, string, error
 // contents are flushed before the rename, so a power loss leaves the old file
 // or the new one. The file stat comes from the temporary file's descriptor;
 // the rename carries the file across whole, so size and modification time are the target's.
-func Replace(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode) (content domain.FileStat, err error) {
+func Replace(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode) (domain.FileStat, error) {
+	return replace(root, target, from, mode, func(from, to string) error { return Rename(ctx, root, from, to) })
+}
+
+func replace(root *os.Root, target string, from io.Reader, mode fs.FileMode, rename func(from, to string) error) (content domain.FileStat, err error) {
 	dir := filepath.Dir(target)
 	tmp, pos, err := CreateTempFile(root, dir, GetTempPattern(filepath.Base(target)))
 	if err != nil {
@@ -103,7 +107,7 @@ func Replace(ctx context.Context, root *os.Root, target string, from io.Reader, 
 	if err := tmp.Close(); err != nil {
 		return domain.FileStat{}, err
 	}
-	if err := Rename(ctx, root, pos, target); err != nil {
+	if err := rename(pos, target); err != nil {
 		return domain.FileStat{}, err
 	}
 	content = domain.FileStat{Size: info.Size(), ModTime: info.ModTime()}

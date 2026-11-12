@@ -2,7 +2,6 @@ package settings
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -338,7 +337,7 @@ func splice(raw []byte, from, to int, with []byte) []byte {
 }
 
 func writeFileAtomically(path string, content []byte) error {
-	return atomicfile.WriteFile(context.Background(), path, bytes.NewReader(content), 0o600)
+	return atomicfile.WriteFile(path, bytes.NewReader(content), 0o600)
 }
 
 func isUnwritable(err error) bool {

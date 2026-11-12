@@ -2,7 +2,6 @@ package vaultconfig
 
 import (
 	"bytes"
-	"context"
 	"crypto/rand"
 	"encoding/json"
 	"errors"
@@ -91,7 +90,7 @@ func Initialize(root, serviceDir string, now time.Time) (Config, error) {
 		return Config{}, err
 	}
 	raw = append(raw, '\n')
-	if err := atomicfile.WriteFile(context.Background(), filepath.Join(dir, configName), bytes.NewReader(raw), 0o644); err != nil {
+	if err := atomicfile.WriteFile(filepath.Join(dir, configName), bytes.NewReader(raw), 0o644); err != nil {
 		return Config{}, err
 	}
 	return c, nil

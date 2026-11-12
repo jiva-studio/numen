@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -70,7 +69,7 @@ func unpackZip(archive, name, pos string) (err error) {
 }
 
 func write(pos string, from io.Reader) error {
-	return atomicfile.WriteFile(context.Background(), pos, from, 0o755)
+	return atomicfile.WriteFile(pos, from, 0o755)
 }
 
 func isLibrary(found, name string) bool {

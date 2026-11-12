@@ -1,7 +1,6 @@
 package atomicfile
 
 import (
-	"context"
 	"errors"
 	"io"
 	"io/fs"
@@ -14,13 +13,14 @@ import (
 // file and no temporary file. The folder of the path must exist.
 //
 // The new file has the mode, whatever the old one had. A from that returns an error before its
-// end, as one does that checks what it read, stops the write.
-func WriteFile(ctx context.Context, path string, from io.Reader, mode fs.FileMode) (err error) {
+// end, as one does that checks what it read, stops the write. A rename that fails because another
+// process holds the target is not tried again; Replace waits that out for the files of a vault.
+func WriteFile(path string, from io.Reader, mode fs.FileMode) (err error) {
 	root, err := os.OpenRoot(filepath.Dir(path))
 	if err != nil {
 		return err
 	}
 	defer func() { err = errors.Join(err, root.Close()) }()
-	_, err = Replace(ctx, root, filepath.Base(path), from, mode)
+	_, err = replace(root, filepath.Base(path), from, mode, root.Rename)
 	return err
 }

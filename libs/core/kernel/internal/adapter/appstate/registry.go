@@ -2,7 +2,6 @@ package appstate
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -66,7 +65,7 @@ func (r *VaultRegistry) save(f registryFile) error {
 		return err
 	}
 	raw = append(raw, '\n')
-	return atomicfile.WriteFile(context.Background(), r.path, bytes.NewReader(raw), privateFileMode)
+	return atomicfile.WriteFile(r.path, bytes.NewReader(raw), privateFileMode)
 }
 
 func (r *VaultRegistry) List() ([]domain.Vault, error) {

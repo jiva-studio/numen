@@ -1,7 +1,6 @@
 package appstate
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,7 +13,7 @@ func TestWriteReportsATargetItCannotRenameOver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := VaultFilesAt(dir).Write(context.Background(), "01HVAULT", []byte("{}")); err == nil {
+	if err := VaultFilesAt(dir).Write(t.Context(), "01HVAULT", []byte("{}")); err == nil {
 		t.Fatal("a folder was replaced by a file")
 	}
 	entries, err := os.ReadDir(dir)

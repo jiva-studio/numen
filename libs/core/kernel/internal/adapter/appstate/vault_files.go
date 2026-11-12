@@ -27,7 +27,7 @@ func (f *VaultFiles) Read(_ context.Context, vaultID domain.VaultID) ([]byte, er
 
 // Write replaces the vault's file whole, so a second window writing the same
 // vault leaves one of the two and never half of both.
-func (f *VaultFiles) Write(ctx context.Context, vaultID domain.VaultID, content []byte) error {
+func (f *VaultFiles) Write(_ context.Context, vaultID domain.VaultID, content []byte) error {
 	pos, err := f.getPath(vaultID)
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func (f *VaultFiles) Write(ctx context.Context, vaultID domain.VaultID, content 
 	if err := os.MkdirAll(filepath.Dir(pos), privateDirMode); err != nil {
 		return err
 	}
-	return atomicfile.WriteFile(ctx, pos, bytes.NewReader(content), privateFileMode)
+	return atomicfile.WriteFile(pos, bytes.NewReader(content), privateFileMode)
 }
 
 func (f *VaultFiles) getPath(vaultID domain.VaultID) (string, error) {

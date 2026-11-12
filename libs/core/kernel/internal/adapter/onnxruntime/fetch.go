@@ -81,7 +81,7 @@ func download(ctx context.Context, client *http.Client, r Release, pos string, o
 		progress: progressWriter{total: answer.ContentLength, onProgress: onProgress},
 		wanted:   r.Sum,
 	}
-	if err := atomicfile.WriteFile(ctx, pos, check, 0o644); err != nil {
+	if err := atomicfile.WriteFile(pos, check, 0o644); err != nil {
 		return fmt.Errorf("fetching %s: %w", r.Address, err)
 	}
 	return nil
