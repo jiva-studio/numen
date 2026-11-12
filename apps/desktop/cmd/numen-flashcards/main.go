@@ -74,7 +74,7 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 
 	api := makeWindowAPI(cfg)
-	started, err := container.OpenFlashcards(cfg, ctx, api, os.Stderr, appName, notifyUser)
+	started, err := container.OpenShell(cfg, ctx, platform.TargetFlashcards, api, os.Stderr, appName, notifyUser)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,6 @@ func run(cfg container.Config, debug debugOptions) error {
 func makeWindowAPI(cfg container.Config) *shell.API {
 	return &shell.API{
 		Agent:                container.GetSettingsAgentHandler(cfg),
-		Window:               shell.NewWindow(platform.TargetFlashcards, nil),
 		GetFrontendPluginIDs: func() []string { return container.GetFrontendPluginIDs(cfg) },
 		GetPluginDir:         func(id string) (string, bool) { return container.GetPluginDir(cfg, id) },
 		PluginServices:       container.GetPluginServices(cfg),

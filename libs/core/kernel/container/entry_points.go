@@ -54,44 +54,45 @@ func connectEditor(ports vaultregistry.Ports, db *Index, opened *windowWiring) (
 	return getOpenedWindow(opened), nil
 }
 
-// Flashcards is what the flashcards application closes when it ends: CloseVaults waits until nothing is still
-// writing to the index, CloseIndex closes it, and Themes is why the themes could not be loaded, or nil.
-type Flashcards struct {
+// Shell is what a shell window closes when it ends: CloseVaults waits until nothing is still writing to the
+// index, CloseIndex closes it, and Themes is why the themes could not be loaded, or nil.
+type Shell struct {
 	CloseVaults func()
 	CloseIndex  func() error
 	Themes      error
 }
 
-// OpenFlashcards opens the registry and the cache, binds the notes, the vault list, the vault indexer, the
-// plugin vault, the change feed and the themes of the flashcards window to api, and tells notify what it
-// cannot follow.
-func OpenFlashcards(c Config,
-	ctx context.Context, api *shell.API, out io.Writer, label string, notify func(message string),
-) (Flashcards, error) {
+// OpenShell opens the registry and the cache, gives api the window of target, binds the notes, the vault list,
+// the vault indexer, the plugin vault, the change feed and the themes of the shell window to api, and tells
+// notify what it cannot follow.
+func OpenShell(c Config,
+	ctx context.Context, target string, api *shell.API, out io.Writer, label string, notify func(message string),
+) (Shell, error) {
 	ports, err := c.registry()
 	if err != nil {
-		return Flashcards{}, err
+		return Shell{}, err
 	}
 	db, err := OpenIndex(c, ctx)
 	if err != nil {
-		return Flashcards{}, err
+		return Shell{}, err
 	}
-	return bindFlashcards(c, ctx, ports, db, api, flashcardsLog{out: out, label: label, notify: notify})
+	api.Window = shell.NewWindow(target, nil)
+	return bindShell(c, ctx, ports, db, api, shellLog{out: out, label: label, notify: notify})
 }
 
-type flashcardsLog struct {
+type shellLog struct {
 	out    io.Writer
 	label  string
 	notify func(message string)
 }
 
-func bindFlashcards(
-	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log flashcardsLog,
-) (Flashcards, error) {
+func bindShell(
+	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log shellLog,
+) (Shell, error) {
 	a := plugins(c)
 	setModelCalls(a, connectionlog.NewLogNotices().ReportSetAside)
 	vaults := openVaults(a.vault, db, log.out, log.label, api.ReportVaultRead)
-	closers := Flashcards{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
+	closers := Shell{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
 	SetShellNotes(api, db)
 	vaultList := vaultregistry.NewList(ports.Vaults)
 	api.Vaults = &vaultList
@@ -101,11 +102,11 @@ func bindFlashcards(
 	if err := installPluginVault(a, ports, db, getNoShownVault, hooks); err != nil {
 		return closers, err
 	}
-	closers.Themes = followFlashcards(a, ctx, api, log.label, log.notify)
+	closers.Themes = followShell(a, ctx, api, log.label, log.notify)
 	return closers, nil
 }
 
-func followFlashcards(a pluginsWiring, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
+func followShell(a pluginsWiring, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
 	changes, err := vaultMoves(a.vault, ctx)
 	if err != nil {
 		notify(label + ": the index is not being followed: " + err.Error())
