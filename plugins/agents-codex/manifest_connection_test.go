@@ -129,7 +129,7 @@ func TestThePluginRunsInDesktopWindowsAlone(t *testing.T) {
 
 // A row may name the model, from the list the program offers, and a reasoning level of that model. A row with
 // no model leaves the choice to the program.
-func TestARowHoldsAModelAndAReasoningLevelListedByTheProvider(t *testing.T) {
+func TestARowNamesAModelAndAReasoningLevelListedByTheProvider(t *testing.T) {
 	types := readConnectionShape(t).Contributes.ConnectionTypes
 	if len(types) != 1 || len(types[0].RowFields) != 2 {
 		t.Fatalf("types = %+v, want one type with two row fields", types)

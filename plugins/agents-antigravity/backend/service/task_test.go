@@ -18,7 +18,7 @@ import (
 // Antigravity calls the tools of the host on the server its home names, and each call runs on the host
 // with the tool context and the vault of the task. What the program reports reaches the chat as the
 // frames of the task, and its calls end with the run.
-func TestATaskStreamsWhatAntigravitySaysAndTheToolsItCalls(t *testing.T) {
+func TestATaskStreamsTheAntigravityTextAndToolCalls(t *testing.T) {
 	host, client := serveGardenHost(t)
 	svc := newAntigravity(t, client, fakeAntigravity(t))
 
@@ -161,7 +161,7 @@ func echoConversation(t *testing.T, dir string) string {
 			"printf '{\"event\":\"init\",\"conversation_id\":\"s-%s\"}\\n' \"$asked\"\n")
 }
 
-func readResumed(t *testing.T, dir, prompt string) []string {
+func readResumeLog(t *testing.T, dir, prompt string) []string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(dir, "resumed-"+prompt))
 	if errors.Is(err, os.ErrNotExist) {
@@ -184,13 +184,13 @@ func TestEachConversationGoesOnInItsOwn(t *testing.T) {
 		}
 	}
 
-	if got := readResumed(t, dir, "left"); !slices.Equal(got, []string{"s-left"}) {
+	if got := readResumeLog(t, dir, "left"); !slices.Equal(got, []string{"s-left"}) {
 		t.Errorf("the first conversation resumed %v", got)
 	}
-	if got := readResumed(t, dir, "right"); got != nil {
+	if got := readResumeLog(t, dir, "right"); got != nil {
 		t.Errorf("the second conversation resumed %v", got)
 	}
-	if got := readResumed(t, dir, "alone"); got != nil {
+	if got := readResumeLog(t, dir, "alone"); got != nil {
 		t.Errorf("a task in no conversation resumed %v", got)
 	}
 }
@@ -207,7 +207,7 @@ func TestAMissingAntigravityIsAFailureToTryTheNextConnectionAfter(t *testing.T) 
 }
 
 // A run that fails says what the program said of it as a message of its own, and stops.
-func TestAFailedRunSaysWhyAndStops(t *testing.T) {
+func TestAFailedRunReportsTheReasonAndStops(t *testing.T) {
 	cases := map[string]struct{ script, want string }{
 		"error result": {
 			`echo '{"event":"result","result":{"status":"ERROR","response":"","error":"Eligibility check failed: 503"}}'` + "\n" +

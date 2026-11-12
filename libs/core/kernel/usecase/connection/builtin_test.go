@@ -75,7 +75,7 @@ func TestABuiltInConnectionCannotBeChangedOrDeleted(t *testing.T) {
 	}
 }
 
-func TestANewConnectionDoesNotTakeTheNameOfABuiltInOne(t *testing.T) {
+func TestANewConnectionCannotUseTheNameOfABuiltInOne(t *testing.T) {
 	f := newBuiltInFixture(t)
 
 	_, err := f.connection.Create.Execute(t.Context(), connection.CreateRequest{

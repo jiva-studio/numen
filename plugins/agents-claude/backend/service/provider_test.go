@@ -254,8 +254,8 @@ func TestTheLevelsOfTheModelOfTheCallAreListedFromTheLeastToTheMost(t *testing.T
 	}
 }
 
-// A level the listed model does not take is not given to the program.
-func TestATaskGivesClaudeNoLevelTheModelDoesNotTake(t *testing.T) {
+// A level the listed model does not offer is not passed to the program.
+func TestATaskPassesNoReasoningLevelTheModelDoesNotOffer(t *testing.T) {
 	svc := newListingClaude(t, filepath.Join(t.TempDir(), "asked"))
 	if _, err := svc.completion.ListModels(t.Context(), completeCall(nil), nil); err != nil {
 		t.Fatal(err)

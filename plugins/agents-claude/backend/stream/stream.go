@@ -24,7 +24,7 @@ type Sink interface {
 	SendToolResult(id string, isFailed bool) error
 }
 
-// Options are what the parser of a stream needs besides the stream and the sink. Record is told the
+// Options are what the parser of a stream needs besides the stream and the sink. Record receives the
 // session the program reports, and ExpectsVault makes the parser report a program that started without
 // the vault.
 type Options struct {

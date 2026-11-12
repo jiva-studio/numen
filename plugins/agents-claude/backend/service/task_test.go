@@ -19,7 +19,7 @@ import (
 // Claude Code calls the tools of the host on the server the plugin serves it, and each call runs on the
 // host with the tool context and the vault of the task. What the program reports reaches the chat as
 // the frames of the task.
-func TestATaskStreamsWhatClaudeSaysAndTheToolsItCalls(t *testing.T) {
+func TestATaskStreamsTheClaudeTextAndToolCalls(t *testing.T) {
 	host, client := serveGardenHost(t)
 	program, record := fakeClaude(t)
 	svc := newClaude(t, client, program)
@@ -216,7 +216,7 @@ func echoSession(t *testing.T, dir string) string {
 			"printf '{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"s-%s\"}\\n' \"$asked\"\n")
 }
 
-func readResumed(t *testing.T, dir, requested string) []string {
+func readResumeLog(t *testing.T, dir, requested string) []string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(dir, "resumed-"+requested))
 	if errors.Is(err, fs.ErrNotExist) {
@@ -239,10 +239,10 @@ func TestEachConversationGoesOnInItsOwnSession(t *testing.T) {
 		}
 	}
 
-	if got := readResumed(t, dir, "left"); !slices.Equal(got, []string{"s-left"}) {
+	if got := readResumeLog(t, dir, "left"); !slices.Equal(got, []string{"s-left"}) {
 		t.Errorf("the first conversation resumed %v", got)
 	}
-	if got := readResumed(t, dir, "right"); !slices.Equal(got, []string{"s-right"}) {
+	if got := readResumeLog(t, dir, "right"); !slices.Equal(got, []string{"s-right"}) {
 		t.Errorf("the second conversation resumed %v", got)
 	}
 }
@@ -256,7 +256,7 @@ func TestATaskInNoConversationResumesNothing(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if got := readResumed(t, dir, "alone"); got != nil {
+	if got := readResumeLog(t, dir, "alone"); got != nil {
 		t.Errorf("a task in no conversation resumed %v", got)
 	}
 }
@@ -273,7 +273,7 @@ func TestAMissingClaudeIsAFailureToTryTheNextConnectionAfter(t *testing.T) {
 }
 
 // A run that fails says what the program said of it as a message of its own, and stops.
-func TestAFailedRunSaysWhyAndStops(t *testing.T) {
+func TestAFailedRunReportsTheReasonAndStops(t *testing.T) {
 	svc := newClaude(t, nil, writeScript(t, "claude", "cat > /dev/null\necho 'error: not signed in' >&2\nexit 2\n"))
 
 	frames, _, err := runTask(t.Context(), svc, taskCall(nil), &acp.TaskRequest{Prompt: "hi"})
@@ -283,7 +283,7 @@ func TestAFailedRunSaysWhyAndStops(t *testing.T) {
 	}
 }
 
-func TestAProgramStartedWithoutTheVaultSaysSoAndStops(t *testing.T) {
+func TestAProgramStartedWithoutTheVaultReportsItAndStops(t *testing.T) {
 	_, client := serveGardenHost(t)
 	svc := newClaude(t, client, writeScript(t, "claude",
 		"cat > /dev/null\nprintf '%s\\n' '{\"type\":\"system\",\"subtype\":\"init\",\"mcp_servers\":[]}'\n"))

@@ -7,8 +7,8 @@ import (
 )
 
 // Sink receives what the events of a run say. A call is reported once its arguments are whole; the
-// program reports no end of a call. Stop is told the reason the program gave for a run that did not
-// finish, and Finish that the program reported its result.
+// program reports no end of a call. Stop receives the reason the program gave for a run that did not
+// finish.
 type Sink interface {
 	SendText(text string) error
 	SendToolCall(tool, arguments string) error

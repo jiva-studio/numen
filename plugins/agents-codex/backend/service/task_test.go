@@ -18,7 +18,7 @@ import (
 // Codex calls the tools of the host on the server the plugin serves it, and each call runs on the host
 // with the tool context and the vault of the task. What the program reports reaches the chat as the
 // frames of the task.
-func TestATaskStreamsWhatCodexSaysAndTheToolsItCalls(t *testing.T) {
+func TestATaskStreamsTheCodexTextAndToolCalls(t *testing.T) {
 	host, client := serveGardenHost(t)
 	svc := newCodex(t, client, fakeCodex(t))
 
@@ -47,7 +47,7 @@ func TestATaskStreamsWhatCodexSaysAndTheToolsItCalls(t *testing.T) {
 // A task with tools runs `codex exec --json` without approvals or a sandbox, in the folder of the
 // plugin, with the server of the tools named on the command line and its token in NUMEN_TOKEN alone.
 // The instruction sentences of the tools come before the prompt.
-func TestATaskGivesCodexTheServerOfTheToolsAndItsTokenInTheEnvironment(t *testing.T) {
+func TestATaskPassesCodexTheToolServerAndItsTokenInTheEnvironment(t *testing.T) {
 	_, client := serveGardenHost(t)
 	dir := t.TempDir()
 	svc := newCodex(t, client, writeScript(t, "codex", recordArgs(dir)))
@@ -165,7 +165,7 @@ func TestAMissingCodexIsAFailureToTryTheNextConnectionAfter(t *testing.T) {
 }
 
 // A run that fails says what the program said of it as a message of its own, and stops.
-func TestAFailedRunSaysWhyAndStops(t *testing.T) {
+func TestAFailedRunReportsTheReasonAndStops(t *testing.T) {
 	svc := newCodex(t, nil, writeScript(t, "codex", "echo 'not signed in' >&2\nexit 2\n"))
 
 	frames, _, err := runTask(t.Context(), svc, taskCall(nil), &acp.TaskRequest{Prompt: "hi"})
@@ -176,7 +176,7 @@ func TestAFailedRunSaysWhyAndStops(t *testing.T) {
 }
 
 // A run that writes nothing but an error says the error, though the program exits well.
-func TestARunThatWritesOnlyAnErrorSaysIt(t *testing.T) {
+func TestARunThatWritesOnlyAnErrorReportsIt(t *testing.T) {
 	svc := newCodex(t, nil, writeScript(t, "codex", "echo 'error: the model is overloaded' >&2\n"))
 
 	frames, _, err := runTask(t.Context(), svc, taskCall(nil), &acp.TaskRequest{Prompt: "hi"})
