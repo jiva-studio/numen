@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { CONVERSATION, type TabKindRegistration, type VaultRelations } from '@numen/plugin-sdk'
+import {
+  CONVERSATION,
+  SETTINGS_OPEN_COMMAND,
+  type TabKindRegistration,
+  type VaultRelations,
+} from '@numen/plugin-sdk'
 import { createMockPluginContext, type MockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { activate, AgentTab, AGENT, ConversationView } from './index'
 import { createAgentConnections, createHost, say } from './fixtures'
@@ -117,8 +122,13 @@ describe('view-agent-chat plugin', () => {
 
     state.openSettings()
 
-    expect(ctx.work.backgroundTasks.getActions()).toStrictEqual([
-      { action: 'openSettings', id: PLUGIN_ID },
+    expect(ctx.ui.commands.getRuns()).toStrictEqual([
+      {
+        command: SETTINGS_OPEN_COMMAND,
+        target: undefined,
+        itemId: undefined,
+        values: { plugin: PLUGIN_ID },
+      },
     ])
   })
 
