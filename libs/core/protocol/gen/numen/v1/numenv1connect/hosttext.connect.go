@@ -36,9 +36,6 @@ const (
 	// HostTextServicePutTextVersionProcedure is the fully-qualified name of the HostTextService's
 	// PutTextVersion RPC.
 	HostTextServicePutTextVersionProcedure = "/numen.v1.HostTextService/PutTextVersion"
-	// HostTextServiceRemoveTextVersionProcedure is the fully-qualified name of the HostTextService's
-	// RemoveTextVersion RPC.
-	HostTextServiceRemoveTextVersionProcedure = "/numen.v1.HostTextService/RemoveTextVersion"
 	// HostTextServiceListTextVersionsProcedure is the fully-qualified name of the HostTextService's
 	// ListTextVersions RPC.
 	HostTextServiceListTextVersionsProcedure = "/numen.v1.HostTextService/ListTextVersions"
@@ -54,8 +51,6 @@ type HostTextServiceClient interface {
 	// folder first; the host reads the file and records its hash. Every put
 	// reindexes the file.
 	PutTextVersion(context.Context, *connect.Request[v1.PutTextVersionRequest]) (*connect.Response[v1.PutTextVersionResponse], error)
-	// RemoveTextVersion removes the record of a version of the calling plugin.
-	RemoveTextVersion(context.Context, *connect.Request[v1.RemoveTextVersionRequest]) (*connect.Response[v1.RemoveTextVersionResponse], error)
 	// ListTextVersions lists the versions of a file and names the live one.
 	ListTextVersions(context.Context, *connect.Request[v1.ListTextVersionsRequest]) (*connect.Response[v1.ListTextVersionsResponse], error)
 	// ReadText returns one page of any version's segments, read by the host from
@@ -80,12 +75,6 @@ func NewHostTextServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(hostTextServiceMethods.ByName("PutTextVersion")),
 			connect.WithClientOptions(opts...),
 		),
-		removeTextVersion: connect.NewClient[v1.RemoveTextVersionRequest, v1.RemoveTextVersionResponse](
-			httpClient,
-			baseURL+HostTextServiceRemoveTextVersionProcedure,
-			connect.WithSchema(hostTextServiceMethods.ByName("RemoveTextVersion")),
-			connect.WithClientOptions(opts...),
-		),
 		listTextVersions: connect.NewClient[v1.ListTextVersionsRequest, v1.ListTextVersionsResponse](
 			httpClient,
 			baseURL+HostTextServiceListTextVersionsProcedure,
@@ -103,20 +92,14 @@ func NewHostTextServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 
 // hostTextServiceClient implements HostTextServiceClient.
 type hostTextServiceClient struct {
-	putTextVersion    *connect.Client[v1.PutTextVersionRequest, v1.PutTextVersionResponse]
-	removeTextVersion *connect.Client[v1.RemoveTextVersionRequest, v1.RemoveTextVersionResponse]
-	listTextVersions  *connect.Client[v1.ListTextVersionsRequest, v1.ListTextVersionsResponse]
-	readText          *connect.Client[v1.ReadTextRequest, v1.ReadTextResponse]
+	putTextVersion   *connect.Client[v1.PutTextVersionRequest, v1.PutTextVersionResponse]
+	listTextVersions *connect.Client[v1.ListTextVersionsRequest, v1.ListTextVersionsResponse]
+	readText         *connect.Client[v1.ReadTextRequest, v1.ReadTextResponse]
 }
 
 // PutTextVersion calls numen.v1.HostTextService.PutTextVersion.
 func (c *hostTextServiceClient) PutTextVersion(ctx context.Context, req *connect.Request[v1.PutTextVersionRequest]) (*connect.Response[v1.PutTextVersionResponse], error) {
 	return c.putTextVersion.CallUnary(ctx, req)
-}
-
-// RemoveTextVersion calls numen.v1.HostTextService.RemoveTextVersion.
-func (c *hostTextServiceClient) RemoveTextVersion(ctx context.Context, req *connect.Request[v1.RemoveTextVersionRequest]) (*connect.Response[v1.RemoveTextVersionResponse], error) {
-	return c.removeTextVersion.CallUnary(ctx, req)
 }
 
 // ListTextVersions calls numen.v1.HostTextService.ListTextVersions.
@@ -136,8 +119,6 @@ type HostTextServiceHandler interface {
 	// folder first; the host reads the file and records its hash. Every put
 	// reindexes the file.
 	PutTextVersion(context.Context, *connect.Request[v1.PutTextVersionRequest]) (*connect.Response[v1.PutTextVersionResponse], error)
-	// RemoveTextVersion removes the record of a version of the calling plugin.
-	RemoveTextVersion(context.Context, *connect.Request[v1.RemoveTextVersionRequest]) (*connect.Response[v1.RemoveTextVersionResponse], error)
 	// ListTextVersions lists the versions of a file and names the live one.
 	ListTextVersions(context.Context, *connect.Request[v1.ListTextVersionsRequest]) (*connect.Response[v1.ListTextVersionsResponse], error)
 	// ReadText returns one page of any version's segments, read by the host from
@@ -158,12 +139,6 @@ func NewHostTextServiceHandler(svc HostTextServiceHandler, opts ...connect.Handl
 		connect.WithSchema(hostTextServiceMethods.ByName("PutTextVersion")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostTextServiceRemoveTextVersionHandler := connect.NewUnaryHandler(
-		HostTextServiceRemoveTextVersionProcedure,
-		svc.RemoveTextVersion,
-		connect.WithSchema(hostTextServiceMethods.ByName("RemoveTextVersion")),
-		connect.WithHandlerOptions(opts...),
-	)
 	hostTextServiceListTextVersionsHandler := connect.NewUnaryHandler(
 		HostTextServiceListTextVersionsProcedure,
 		svc.ListTextVersions,
@@ -180,8 +155,6 @@ func NewHostTextServiceHandler(svc HostTextServiceHandler, opts ...connect.Handl
 		switch r.URL.Path {
 		case HostTextServicePutTextVersionProcedure:
 			hostTextServicePutTextVersionHandler.ServeHTTP(w, r)
-		case HostTextServiceRemoveTextVersionProcedure:
-			hostTextServiceRemoveTextVersionHandler.ServeHTTP(w, r)
 		case HostTextServiceListTextVersionsProcedure:
 			hostTextServiceListTextVersionsHandler.ServeHTTP(w, r)
 		case HostTextServiceReadTextProcedure:
@@ -197,10 +170,6 @@ type UnimplementedHostTextServiceHandler struct{}
 
 func (UnimplementedHostTextServiceHandler) PutTextVersion(context.Context, *connect.Request[v1.PutTextVersionRequest]) (*connect.Response[v1.PutTextVersionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostTextService.PutTextVersion is not implemented"))
-}
-
-func (UnimplementedHostTextServiceHandler) RemoveTextVersion(context.Context, *connect.Request[v1.RemoveTextVersionRequest]) (*connect.Response[v1.RemoveTextVersionResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostTextService.RemoveTextVersion is not implemented"))
 }
 
 func (UnimplementedHostTextServiceHandler) ListTextVersions(context.Context, *connect.Request[v1.ListTextVersionsRequest]) (*connect.Response[v1.ListTextVersionsResponse], error) {
