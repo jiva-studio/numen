@@ -236,7 +236,9 @@ func (b *Embedder) announceModelChange() {
 func (b *Embedder) readModelChange() []func() {
 	b.changeMu.Lock()
 	defer b.changeMu.Unlock()
-	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelRefreshTimeout)
+	// Nobody waits for this read, and a plugin that serves the model through a connection may have to start the
+	// plugin of that connection first, so it gets the time of any read of the model.
+	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelInfoTimeout)
 	defer cancel()
 	client, call, err := b.service.Open(ctx)
 	if err != nil {
