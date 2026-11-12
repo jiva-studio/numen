@@ -18,7 +18,7 @@ import (
 )
 
 func TestSyncGetCachesHitsAndExpiresAfterTTL(t *testing.T) {
-	now := clock.NewFake(time.Unix(1000, 0))
+	now := newFakeClock(time.Unix(1000, 0))
 	var calls int
 	c := cache.New[[]string](
 		"models",
@@ -49,7 +49,7 @@ func TestSyncGetCachesHitsAndExpiresAfterTTL(t *testing.T) {
 }
 
 func TestSyncFailureBackoffSkipsReloadUntilBackoffElapses(t *testing.T) {
-	now := clock.NewFake(time.Unix(2000, 0))
+	now := newFakeClock(time.Unix(2000, 0))
 	var calls int
 	c := cache.New[string](
 		"models",
@@ -85,7 +85,7 @@ func TestSyncFailureBackoffSkipsReloadUntilBackoffElapses(t *testing.T) {
 func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
 	plugintest.GrantStorage(t)
 
-	now := clock.NewFake(time.Unix(3000, 0))
+	now := newFakeClock(time.Unix(3000, 0))
 
 	c := cache.New[[]string](
 		"models",
@@ -404,7 +404,7 @@ func TestCacheZeroValueTimeoutDiskCorruptAndAsyncInFlightEdgeCases(t *testing.T)
 		t.Fatalf("expected deadline from WithTimeout, got err=%v hadDeadline=%v", err, hadDeadline)
 	}
 
-	noTimeoutCache := cache.New[string]("models", cache.WithFailureBackoff(time.Second), cache.WithClock(clock.NewFake(time.Time{})))
+	noTimeoutCache := cache.New[string]("models", cache.WithFailureBackoff(time.Second), cache.WithClock(newFakeClock(time.Time{})))
 	var noDeadline bool
 	if _, _, err := noTimeoutCache.Get(t.Context(), "k", func(ctx context.Context) (string, error) {
 		_, noDeadline = ctx.Deadline()
@@ -450,7 +450,7 @@ func TestCacheZeroValueTimeoutDiskCorruptAndAsyncInFlightEdgeCases(t *testing.T)
 		t.Fatal("expected error handler to be notified of corrupt disk file on Put")
 	}
 
-	now := clock.NewFake(time.Unix(5000, 0))
+	now := newFakeClock(time.Unix(5000, 0))
 	var nilLoadErrs atomic.Int32
 	memAsync := cache.New[string]("", cache.WithAsync(true), cache.WithTTL(time.Second), cache.WithClock(now), cache.WithErrorHandler(func(error) {
 		nilLoadErrs.Add(1)
@@ -565,4 +565,10 @@ func TestCacheZeroValueTimeoutDiskCorruptAndAsyncInFlightEdgeCases(t *testing.T)
 	if len(unnamedErrs) != 0 {
 		t.Fatalf("expected unnamed cache not to attempt disk write, got errors %v", unnamedErrs)
 	}
+}
+
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

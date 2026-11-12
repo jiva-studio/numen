@@ -16,7 +16,7 @@ const getThemeStyle = (page: Page): Promise<string> =>
 
 const openSystemSettings = async (page: Page): Promise<Locator> => {
   await runCommand(page, 'Open settings', /^Open settings$/)
-  const settings = page.getByRole('tabpanel', { name: /Settings/ })
+  const settings = page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
   await settings.getByRole('button', { name: /^System/ }).click()
   return settings
 }

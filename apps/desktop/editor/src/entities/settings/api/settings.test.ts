@@ -3,6 +3,7 @@
  * hands the vault to write.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { PLUGIN_CONTRIBUTION_KIND } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import * as settingsApi from './settings'
 
@@ -40,7 +41,7 @@ afterEach(() => {
 })
 
 describe('every setting', () => {
-  it('arrives with active plugins and their declarative settings', async () => {
+  it('arrives with each plugin, its settings and its contributions of a known kind', async () => {
     request.getSettings.mockResolvedValue(
       answer(
         { a: 1 },
@@ -57,6 +58,17 @@ describe('every setting', () => {
               hasBackend: false,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
               settingsViews: [{ id: 'floor', title: 'Floor' }],
+              contributions: [
+                {
+                  kind: PLUGIN_CONTRIBUTION_KIND.COMMANDS,
+                  items: [{ text: 'Run', detail: 'sample.plugin.run', keys: 'mod+r' }],
+                },
+                { kind: PLUGIN_CONTRIBUTION_KIND.UNSPECIFIED, items: [{ text: 'x' }] },
+                {
+                  kind: PLUGIN_CONTRIBUTION_KIND.TAB_KINDS,
+                  items: [{ text: 'Sample', detail: 'sample' }],
+                },
+              ],
               settings: [
                 {
                   key: 'autoRun',
@@ -110,6 +122,13 @@ describe('every setting', () => {
         hasBackend: false,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],
         settingsViews: [{ id: 'floor', title: 'Floor' }],
+        contributions: [
+          {
+            kind: 'commands',
+            items: [{ text: 'Run', detail: 'sample.plugin.run', keys: 'mod+r' }],
+          },
+          { kind: 'tabKinds', items: [{ text: 'Sample', detail: 'sample', keys: '' }] },
+        ],
         settings: [
           {
             key: 'autoRun',

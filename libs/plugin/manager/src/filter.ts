@@ -51,18 +51,6 @@ const KEY_VALUE_ALIASES: Readonly<Record<string, Readonly<Record<string, FilterQ
   },
 }
 
-const SYSTEM_KEYWORDS = ['system', 'theme', 'appearance', 'window', 'scale', 'naming', 'sync']
-const CONNECTIONS_KEYWORDS = [
-  'connections',
-  'services',
-  'servers',
-  'openrouter',
-  'openai',
-  'keys',
-  'api',
-  'address',
-]
-
 function toSearchStems(value: string): readonly string[] {
   const clean = value.trim().toLowerCase()
   // Stryker disable next-line ArrayDeclaration: an uppercase literal never matches lowercase text
@@ -201,24 +189,6 @@ export function matchesPluginQuery(
   if (!matchesAllQualifiers) return false
 
   return query.terms.every((term) => matchesFreeText(plugin, term))
-}
-
-/** Checks whether the System settings row should be shown for the parsed query. */
-export function matchesSystemRow(query: ParsedPluginQuery): boolean {
-  if (query.qualifiers.length > 0) return false
-  // Stryker disable next-line ConditionalExpression: every() on an empty terms array also returns true
-  if (query.terms.length === 0) return true
-  return query.terms.every((term) =>
-    SYSTEM_KEYWORDS.some((keyword) => keyword.includes(term) || term.includes(keyword)),
-  )
-}
-
-/** Checks whether the Connections row should be shown for the parsed query. */
-export function matchesConnectionsRow(query: ParsedPluginQuery): boolean {
-  if (query.qualifiers.length > 0) return false
-  return query.terms.every((term) =>
-    CONNECTIONS_KEYWORDS.some((keyword) => keyword.includes(term) || term.includes(keyword)),
-  )
 }
 
 function compareItems(a: FlatPluginItem, b: FlatPluginItem): number {

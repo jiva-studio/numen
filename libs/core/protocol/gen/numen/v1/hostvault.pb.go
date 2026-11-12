@@ -40,13 +40,6 @@ const (
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED HostVaultErrorCode = 6
 	// The path is not a note this vault holds.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE HostVaultErrorCode = 8
-	// The connection is not one: a role no connection carries, roles that are not
-	// inverse of each other, or a note joined to itself.
-	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION HostVaultErrorCode = 9
-	// The connection would put a note above itself in the hierarchy.
-	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE HostVaultErrorCode = 10
-	// Every numbered "Untitled note N" name is taken.
-	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED HostVaultErrorCode = 11
 	// The file is not valid note text.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT HostVaultErrorCode = 12
 	// The file exceeds the maximum note size.
@@ -78,9 +71,6 @@ var (
 		5:  "HOST_VAULT_ERROR_CODE_ALREADY_EXISTS",
 		6:  "HOST_VAULT_ERROR_CODE_LOCKED",
 		8:  "HOST_VAULT_ERROR_CODE_NOT_A_NOTE",
-		9:  "HOST_VAULT_ERROR_CODE_INVALID_CONNECTION",
-		10: "HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE",
-		11: "HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED",
 		12: "HOST_VAULT_ERROR_CODE_NOT_TEXT",
 		13: "HOST_VAULT_ERROR_CODE_TOO_LARGE",
 		14: "HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE",
@@ -90,24 +80,21 @@ var (
 		18: "HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED",
 	}
 	HostVaultErrorCode_value = map[string]int32{
-		"HOST_VAULT_ERROR_CODE_UNSPECIFIED":        0,
-		"HOST_VAULT_ERROR_CODE_NO_VAULT":           1,
-		"HOST_VAULT_ERROR_CODE_NOT_FOUND":          2,
-		"HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT":      3,
-		"HOST_VAULT_ERROR_CODE_CONFLICT":           4,
-		"HOST_VAULT_ERROR_CODE_ALREADY_EXISTS":     5,
-		"HOST_VAULT_ERROR_CODE_LOCKED":             6,
-		"HOST_VAULT_ERROR_CODE_NOT_A_NOTE":         8,
-		"HOST_VAULT_ERROR_CODE_INVALID_CONNECTION": 9,
-		"HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE":    10,
-		"HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED":     11,
-		"HOST_VAULT_ERROR_CODE_NOT_TEXT":           12,
-		"HOST_VAULT_ERROR_CODE_TOO_LARGE":          13,
-		"HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE":    14,
-		"HOST_VAULT_ERROR_CODE_UNREADABLE":         15,
-		"HOST_VAULT_ERROR_CODE_INVALID_NAME":       16,
-		"HOST_VAULT_ERROR_CODE_INTERNAL":           17,
-		"HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED":      18,
+		"HOST_VAULT_ERROR_CODE_UNSPECIFIED":     0,
+		"HOST_VAULT_ERROR_CODE_NO_VAULT":        1,
+		"HOST_VAULT_ERROR_CODE_NOT_FOUND":       2,
+		"HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT":   3,
+		"HOST_VAULT_ERROR_CODE_CONFLICT":        4,
+		"HOST_VAULT_ERROR_CODE_ALREADY_EXISTS":  5,
+		"HOST_VAULT_ERROR_CODE_LOCKED":          6,
+		"HOST_VAULT_ERROR_CODE_NOT_A_NOTE":      8,
+		"HOST_VAULT_ERROR_CODE_NOT_TEXT":        12,
+		"HOST_VAULT_ERROR_CODE_TOO_LARGE":       13,
+		"HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE": 14,
+		"HOST_VAULT_ERROR_CODE_UNREADABLE":      15,
+		"HOST_VAULT_ERROR_CODE_INVALID_NAME":    16,
+		"HOST_VAULT_ERROR_CODE_INTERNAL":        17,
+		"HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED":   18,
 	}
 )
 
@@ -4562,7 +4549,7 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\fR\acontent\"H\n" +
 	"\x12WriteCacheResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error*\xd5\x05\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error*\xd8\x04\n" +
 	"\x12HostVaultErrorCode\x12%\n" +
 	"!HOST_VAULT_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eHOST_VAULT_ERROR_CODE_NO_VAULT\x10\x01\x12#\n" +
@@ -4571,18 +4558,14 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x1eHOST_VAULT_ERROR_CODE_CONFLICT\x10\x04\x12(\n" +
 	"$HOST_VAULT_ERROR_CODE_ALREADY_EXISTS\x10\x05\x12 \n" +
 	"\x1cHOST_VAULT_ERROR_CODE_LOCKED\x10\x06\x12$\n" +
-	" HOST_VAULT_ERROR_CODE_NOT_A_NOTE\x10\b\x12,\n" +
-	"(HOST_VAULT_ERROR_CODE_INVALID_CONNECTION\x10\t\x12)\n" +
-	"%HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE\x10\n" +
-	"\x12(\n" +
-	"$HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED\x10\v\x12\"\n" +
+	" HOST_VAULT_ERROR_CODE_NOT_A_NOTE\x10\b\x12\"\n" +
 	"\x1eHOST_VAULT_ERROR_CODE_NOT_TEXT\x10\f\x12#\n" +
 	"\x1fHOST_VAULT_ERROR_CODE_TOO_LARGE\x10\r\x12)\n" +
 	"%HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE\x10\x0e\x12$\n" +
 	" HOST_VAULT_ERROR_CODE_UNREADABLE\x10\x0f\x12&\n" +
 	"\"HOST_VAULT_ERROR_CODE_INVALID_NAME\x10\x10\x12\"\n" +
 	"\x1eHOST_VAULT_ERROR_CODE_INTERNAL\x10\x11\x12'\n" +
-	"#HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED\x10\x12*\x8c\x01\n" +
+	"#HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED\x10\x12\"\x04\b\t\x10\v*\x8c\x01\n" +
 	"\x0eHostIndexState\x12 \n" +
 	"\x1cHOST_INDEX_STATE_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18HOST_INDEX_STATE_INDEXED\x10\x01\x12\x1d\n" +

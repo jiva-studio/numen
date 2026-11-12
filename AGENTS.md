@@ -408,7 +408,7 @@ The plugin model, the SDK rules and the import rules for windows, plugins and li
 16. A failing check is fixed in the code it reports. The check stays as it is, and the code changes until it passes:
     - A type is named from the package that declares it, not from an alias package that re-exports it.
     - An interface stays within the size limit with all its methods, embedded ones included.
-    - Every file and every package is linted and typechecked; a configuration excludes only build output.
+    - Every file and every package is linted and typechecked; a configuration excludes only build output. The duplication check reads code only: declarations (`*.yml`, `go.mod`, `Makefile`, plugin `manifest.json`) repeat by nature and are out of its scope.
     - An exception list stays as it is; the code it would exempt is changed.
     - Logic stays in the folder its layer gives it, where the checks walk.
 17. Every rule that a check enforces is stated in [`.agents/rules/architecture.md`](.agents/rules/architecture.md) with the check's name; a rule with no check is a finding for the gatekeeper.

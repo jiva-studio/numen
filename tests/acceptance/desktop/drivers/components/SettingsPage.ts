@@ -9,11 +9,11 @@ export class SettingsPage {
   constructor(private readonly page: Page) {}
 
   getTab(): Locator {
-    return this.page.getByRole('tab', { name: /^Settings/ })
+    return this.page.getByRole('tab', { name: /^(Linked tab )?Settings Close Settings$/ })
   }
 
   getPanel(): Locator {
-    return this.page.getByRole('tabpanel', { name: /Settings/ })
+    return this.page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
   }
 
   getBackButton(): Locator {

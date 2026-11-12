@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/plugin.proto.
  */
 export const file_numen_v1_plugin: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IjAKDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSEAoIcHJvdG9jb2wYAiABKAUiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSKpBAoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIuCgdvcHRpb25zGAcgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbhIQCgNtaW4YCCABKAFIAIgBARIQCgNtYXgYCSABKAFIAYgBARIRCgRzdGVwGAogASgBSAKIAQESNAoKb3B0aW9uc19ieRgMIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdPcHRpb25zQnkSLgoEd2hlbhgNIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdDb25kaXRpb24SDgoGYWNjZXB0GA4gAygJEgwKBGljb24YDyABKAkSEAoIbXVsdGlwbGUYECABKAgSDwoHcHJldmlldxgRIAEoCBIUCgxvcHRpb25zX2Zyb20YEiABKAkSNQoOYWN0aXZlX29wdGlvbnMYEyADKAsyHS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uEhAKCGlzX3Nob3duGBQgASgIEhIKCnZhbHVlX2pzb24YFSABKAkSEgoKb3BlcmF0aW9ucxgXIAMoCUIGCgRfbWluQgYKBF9tYXhCBwoFX3N0ZXBKBAgWEBciUQoTUGx1Z2luU2V0dGluZ09wdGlvbhINCgV2YWx1ZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZkZXRhaWwYAyABKAkSDAoEd2hlbhgEIAEoCSJGChRQbHVnaW5TZXR0aW5nT3B0aW9ucxIuCgdvcHRpb25zGAEgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbiK5AQoWUGx1Z2luU2V0dGluZ09wdGlvbnNCeRIPCgdzZXR0aW5nGAEgASgJEj4KB29wdGlvbnMYAiADKAsyLS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uc0J5Lk9wdGlvbnNFbnRyeRpOCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEi0KBXZhbHVlGAIgASgLMh4ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbnM6AjgBIjUKFlBsdWdpblNldHRpbmdDb25kaXRpb24SDwoHc2V0dGluZxgBIAEoCRIKCgJpcxgCIAMoCSLFAgoKUGx1Z2luSW5mbxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB3ZlcnNpb24YAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSFAoMY2FwYWJpbGl0aWVzGAUgAygJEikKCHNldHRpbmdzGAYgAygLMhcubnVtZW4udjEuUGx1Z2luU2V0dGluZxIRCglpc19hY3RpdmUYByABKAgSEwoLcGVybWlzc2lvbnMYCCADKAkSFAoMaGFzX2Zyb250ZW5kGAsgASgIEicKB3JlYWRlcnMYDCADKAsyFi5udW1lbi52MS5QbHVnaW5SZWFkZXISNAoOc2V0dGluZ3Nfdmlld3MYDSADKAsyHC5udW1lbi52MS5QbHVnaW5TZXR0aW5nc1ZpZXcSEwoLaGFzX2JhY2tlbmQYDiABKAhKBAgKEAsiLwoSUGx1Z2luU2V0dGluZ3NWaWV3EgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJIi4KDFBsdWdpblJlYWRlchIKCgJpZBgBIAEoCRISCgpleHRlbnNpb25zGAIgAygJIhMKEUdldFBsdWdpbnNSZXF1ZXN0IjsKEkdldFBsdWdpbnNSZXNwb25zZRIlCgdwbHVnaW5zGAEgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbyIkChNEZWxpdmVyRXZlbnRSZXF1ZXN0Eg0KBWV2ZW50GAEgASgJIlUKFERlbGl2ZXJFdmVudFJlc3BvbnNlEi0KBWVycm9yGAEgASgOMh4ubnVtZW4udjEuUGx1Z2luRXZlbnRFcnJvckNvZGUSDgoGcmVhc29uGAIgASgJKmQKFFBsdWdpbkV2ZW50RXJyb3JDb2RlEicKI1BMVUdJTl9FVkVOVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIwofUExVR0lOX0VWRU5UX0VSUk9SX0NPREVfUkVGVVNFRBABMtgBChZQbHVnaW5MaWZlY3ljbGVTZXJ2aWNlEjUKBFBpbmcSFS5udW1lbi52MS5QaW5nUmVxdWVzdBoWLm51bWVuLnYxLlBpbmdSZXNwb25zZRJBCghTaHV0ZG93bhIZLm51bWVuLnYxLlNodXRkb3duUmVxdWVzdBoaLm51bWVuLnYxLlNodXRkb3duUmVzcG9uc2USRAoJQ29uZmlndXJlEhoubnVtZW4udjEuQ29uZmlndXJlUmVxdWVzdBobLm51bWVuLnYxLkNvbmZpZ3VyZVJlc3BvbnNlMlgKDVBsdWdpblNlcnZpY2USRwoKR2V0UGx1Z2lucxIbLm51bWVuLnYxLkdldFBsdWdpbnNSZXF1ZXN0GhwubnVtZW4udjEuR2V0UGx1Z2luc1Jlc3BvbnNlMmMKElBsdWdpbkV2ZW50U2VydmljZRJNCgxEZWxpdmVyRXZlbnQSHS5udW1lbi52MS5EZWxpdmVyRXZlbnRSZXF1ZXN0Gh4ubnVtZW4udjEuRGVsaXZlckV2ZW50UmVzcG9uc2VCRlpEZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL2NvcmUvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IjAKDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSEAoIcHJvdG9jb2wYAiABKAUiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSKpBAoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIuCgdvcHRpb25zGAcgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbhIQCgNtaW4YCCABKAFIAIgBARIQCgNtYXgYCSABKAFIAYgBARIRCgRzdGVwGAogASgBSAKIAQESNAoKb3B0aW9uc19ieRgMIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdPcHRpb25zQnkSLgoEd2hlbhgNIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdDb25kaXRpb24SDgoGYWNjZXB0GA4gAygJEgwKBGljb24YDyABKAkSEAoIbXVsdGlwbGUYECABKAgSDwoHcHJldmlldxgRIAEoCBIUCgxvcHRpb25zX2Zyb20YEiABKAkSNQoOYWN0aXZlX29wdGlvbnMYEyADKAsyHS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uEhAKCGlzX3Nob3duGBQgASgIEhIKCnZhbHVlX2pzb24YFSABKAkSEgoKb3BlcmF0aW9ucxgXIAMoCUIGCgRfbWluQgYKBF9tYXhCBwoFX3N0ZXBKBAgWEBciUQoTUGx1Z2luU2V0dGluZ09wdGlvbhINCgV2YWx1ZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZkZXRhaWwYAyABKAkSDAoEd2hlbhgEIAEoCSJGChRQbHVnaW5TZXR0aW5nT3B0aW9ucxIuCgdvcHRpb25zGAEgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbiK5AQoWUGx1Z2luU2V0dGluZ09wdGlvbnNCeRIPCgdzZXR0aW5nGAEgASgJEj4KB29wdGlvbnMYAiADKAsyLS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uc0J5Lk9wdGlvbnNFbnRyeRpOCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEi0KBXZhbHVlGAIgASgLMh4ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbnM6AjgBIjUKFlBsdWdpblNldHRpbmdDb25kaXRpb24SDwoHc2V0dGluZxgBIAEoCRIKCgJpcxgCIAMoCSKVAwoKUGx1Z2luSW5mbxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB3ZlcnNpb24YAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSFAoMY2FwYWJpbGl0aWVzGAUgAygJEikKCHNldHRpbmdzGAYgAygLMhcubnVtZW4udjEuUGx1Z2luU2V0dGluZxIRCglpc19hY3RpdmUYByABKAgSEwoLcGVybWlzc2lvbnMYCCADKAkSFAoMaGFzX2Zyb250ZW5kGAsgASgIEicKB3JlYWRlcnMYDCADKAsyFi5udW1lbi52MS5QbHVnaW5SZWFkZXISNAoOc2V0dGluZ3Nfdmlld3MYDSADKAsyHC5udW1lbi52MS5QbHVnaW5TZXR0aW5nc1ZpZXcSEwoLaGFzX2JhY2tlbmQYDiABKAgSMwoNY29udHJpYnV0aW9ucxgPIAMoCzIcLm51bWVuLnYxLlBsdWdpbkNvbnRyaWJ1dGlvbhIZChFpc19vZmZfYnlfZGVmYXVsdBgQIAEoCEoECAoQCyJ1ChJQbHVnaW5Db250cmlidXRpb24SLgoEa2luZBgBIAEoDjIgLm51bWVuLnYxLlBsdWdpbkNvbnRyaWJ1dGlvbktpbmQSLwoFaXRlbXMYAiADKAsyIC5udW1lbi52MS5QbHVnaW5Db250cmlidXRpb25JdGVtIkQKFlBsdWdpbkNvbnRyaWJ1dGlvbkl0ZW0SDAoEdGV4dBgBIAEoCRIOCgZkZXRhaWwYAiABKAkSDAoEa2V5cxgDIAEoCSIvChJQbHVnaW5TZXR0aW5nc1ZpZXcSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkiLgoMUGx1Z2luUmVhZGVyEgoKAmlkGAEgASgJEhIKCmV4dGVuc2lvbnMYAiADKAkiEwoRR2V0UGx1Z2luc1JlcXVlc3QiOwoSR2V0UGx1Z2luc1Jlc3BvbnNlEiUKB3BsdWdpbnMYASADKAsyFC5udW1lbi52MS5QbHVnaW5JbmZvIiQKE0RlbGl2ZXJFdmVudFJlcXVlc3QSDQoFZXZlbnQYASABKAkiVQoURGVsaXZlckV2ZW50UmVzcG9uc2USLQoFZXJyb3IYASABKA4yHi5udW1lbi52MS5QbHVnaW5FdmVudEVycm9yQ29kZRIOCgZyZWFzb24YAiABKAkqqQcKFlBsdWdpbkNvbnRyaWJ1dGlvbktpbmQSKAokUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1VOU1BFQ0lGSUVEEAASJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0NPTU1BTkRTEAESKAokUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0tFWUJJTkRJTkdTEAISJgoiUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1RBQl9LSU5EUxADEiQKIFBMVUdJTl9DT05UUklCVVRJT05fS0lORF9SRUFERVJTEAQSJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0hBTkRMRVJTEAUSJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1RSSUdHRVJTEAYSJwojUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1RFWFRfS0lORFMQBxInCiNQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfTk9URV9UWVBFUxAIEiMKH1BMVUdJTl9DT05UUklCVVRJT05fS0lORF9USEVNRVMQCRIiCh5QTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfU0xPVFMQChImCiJQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfTElTVEVORVJTEAsSLgoqUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1ZJRVdfQ0FQQUJJTElUSUVTEAwSKgomUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0RST1BfSEFORExFUlMQDRIqCiZQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfRlJBTUVfT1JJR0lOUxAOEi0KKVBMVUdJTl9DT05UUklCVVRJT05fS0lORF9DT05ORUNUSU9OX1RZUEVTEA8SJwojUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX09QRVJBVElPTlMQEBIoCiRQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfUEVSTUlTU0lPTlMQERIpCiVQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfREVQRU5ERU5DSUVTEBISJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1NFUlZJQ0VTEBMSKQolUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0NBUEFCSUxJVElFUxAUEi4KKlBMVUdJTl9DT05UUklCVVRJT05fS0lORF9BQ1RJVkFUSU9OX0VWRU5UUxAVKmQKFFBsdWdpbkV2ZW50RXJyb3JDb2RlEicKI1BMVUdJTl9FVkVOVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIwofUExVR0lOX0VWRU5UX0VSUk9SX0NPREVfUkVGVVNFRBABMtgBChZQbHVnaW5MaWZlY3ljbGVTZXJ2aWNlEjUKBFBpbmcSFS5udW1lbi52MS5QaW5nUmVxdWVzdBoWLm51bWVuLnYxLlBpbmdSZXNwb25zZRJBCghTaHV0ZG93bhIZLm51bWVuLnYxLlNodXRkb3duUmVxdWVzdBoaLm51bWVuLnYxLlNodXRkb3duUmVzcG9uc2USRAoJQ29uZmlndXJlEhoubnVtZW4udjEuQ29uZmlndXJlUmVxdWVzdBobLm51bWVuLnYxLkNvbmZpZ3VyZVJlc3BvbnNlMlgKDVBsdWdpblNlcnZpY2USRwoKR2V0UGx1Z2lucxIbLm51bWVuLnYxLkdldFBsdWdpbnNSZXF1ZXN0GhwubnVtZW4udjEuR2V0UGx1Z2luc1Jlc3BvbnNlMmMKElBsdWdpbkV2ZW50U2VydmljZRJNCgxEZWxpdmVyRXZlbnQSHS5udW1lbi52MS5EZWxpdmVyRXZlbnRSZXF1ZXN0Gh4ubnVtZW4udjEuRGVsaXZlckV2ZW50UmVzcG9uc2VCRlpEZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL2NvcmUvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.PingRequest
@@ -461,6 +461,21 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
    * @generated from field: bool has_backend = 14;
    */
   hasBackend: boolean;
+
+  /**
+   * What the manifest declares, one entry per section that declares anything, in the order of
+   * PluginContributionKind.
+   *
+   * @generated from field: repeated numen.v1.PluginContribution contributions = 15;
+   */
+  contributions: PluginContribution[];
+
+  /**
+   * Whether the plugin stays off until the person enables it, when its settings hold no enabled value.
+   *
+   * @generated from field: bool is_off_by_default = 16;
+   */
+  isOffByDefault: boolean;
 };
 
 /**
@@ -469,6 +484,67 @@ export type PluginInfo = Message<"numen.v1.PluginInfo"> & {
  */
 export const PluginInfoSchema: GenMessage<PluginInfo> = /*@__PURE__*/
   messageDesc(file_numen_v1_plugin, 11);
+
+/**
+ * PluginContribution is one section of a plugin's manifest and the entries it declares, in the
+ * order the manifest declares them.
+ *
+ * @generated from message numen.v1.PluginContribution
+ */
+export type PluginContribution = Message<"numen.v1.PluginContribution"> & {
+  /**
+   * @generated from field: numen.v1.PluginContributionKind kind = 1;
+   */
+  kind: PluginContributionKind;
+
+  /**
+   * @generated from field: repeated numen.v1.PluginContributionItem items = 2;
+   */
+  items: PluginContributionItem[];
+};
+
+/**
+ * Describes the message numen.v1.PluginContribution.
+ * Use `create(PluginContributionSchema)` to create a new message.
+ */
+export const PluginContributionSchema: GenMessage<PluginContribution> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugin, 12);
+
+/**
+ * PluginContributionItem is one entry of a section of a manifest.
+ *
+ * @generated from message numen.v1.PluginContributionItem
+ */
+export type PluginContributionItem = Message<"numen.v1.PluginContributionItem"> & {
+  /**
+   * The title of the entry, or its id where it declares no title.
+   *
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * The id or the target of the entry as the manifest writes it. Empty where it has none.
+   *
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
+
+  /**
+   * The shortcut of a command or a keybinding as the manifest writes it, such as mod+shift+a. Empty
+   * for every other entry.
+   *
+   * @generated from field: string keys = 3;
+   */
+  keys: string;
+};
+
+/**
+ * Describes the message numen.v1.PluginContributionItem.
+ * Use `create(PluginContributionItemSchema)` to create a new message.
+ */
+export const PluginContributionItemSchema: GenMessage<PluginContributionItem> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugin, 13);
 
 /**
  * PluginSettingsView is a component of a plugin's frontend drawn among its settings.
@@ -496,7 +572,7 @@ export type PluginSettingsView = Message<"numen.v1.PluginSettingsView"> & {
  * Use `create(PluginSettingsViewSchema)` to create a new message.
  */
 export const PluginSettingsViewSchema: GenMessage<PluginSettingsView> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 12);
+  messageDesc(file_numen_v1_plugin, 14);
 
 /**
  * PluginReader is a tab of a plugin's frontend that opens files.
@@ -526,7 +602,7 @@ export type PluginReader = Message<"numen.v1.PluginReader"> & {
  * Use `create(PluginReaderSchema)` to create a new message.
  */
 export const PluginReaderSchema: GenMessage<PluginReader> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 13);
+  messageDesc(file_numen_v1_plugin, 15);
 
 /**
  * @generated from message numen.v1.GetPluginsRequest
@@ -539,7 +615,7 @@ export type GetPluginsRequest = Message<"numen.v1.GetPluginsRequest"> & {
  * Use `create(GetPluginsRequestSchema)` to create a new message.
  */
 export const GetPluginsRequestSchema: GenMessage<GetPluginsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 14);
+  messageDesc(file_numen_v1_plugin, 16);
 
 /**
  * @generated from message numen.v1.GetPluginsResponse
@@ -556,7 +632,7 @@ export type GetPluginsResponse = Message<"numen.v1.GetPluginsResponse"> & {
  * Use `create(GetPluginsResponseSchema)` to create a new message.
  */
 export const GetPluginsResponseSchema: GenMessage<GetPluginsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 15);
+  messageDesc(file_numen_v1_plugin, 17);
 
 /**
  * @generated from message numen.v1.DeliverEventRequest
@@ -575,7 +651,7 @@ export type DeliverEventRequest = Message<"numen.v1.DeliverEventRequest"> & {
  * Use `create(DeliverEventRequestSchema)` to create a new message.
  */
 export const DeliverEventRequestSchema: GenMessage<DeliverEventRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 16);
+  messageDesc(file_numen_v1_plugin, 18);
 
 /**
  * @generated from message numen.v1.DeliverEventResponse
@@ -597,7 +673,132 @@ export type DeliverEventResponse = Message<"numen.v1.DeliverEventResponse"> & {
  * Use `create(DeliverEventResponseSchema)` to create a new message.
  */
 export const DeliverEventResponseSchema: GenMessage<DeliverEventResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 17);
+  messageDesc(file_numen_v1_plugin, 19);
+
+/**
+ * PluginContributionKind is a section of a manifest, named after its key. The zero value means
+ * nothing. KEYBINDINGS lists only the bindings of commands the plugin does not declare; a binding
+ * of a command it declares is the keys of that command.
+ *
+ * @generated from enum numen.v1.PluginContributionKind
+ */
+export enum PluginContributionKind {
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_COMMANDS = 1;
+   */
+  COMMANDS = 1,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_KEYBINDINGS = 2;
+   */
+  KEYBINDINGS = 2,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_TAB_KINDS = 3;
+   */
+  TAB_KINDS = 3,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_READERS = 4;
+   */
+  READERS = 4,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_HANDLERS = 5;
+   */
+  HANDLERS = 5,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_TRIGGERS = 6;
+   */
+  TRIGGERS = 6,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_TEXT_KINDS = 7;
+   */
+  TEXT_KINDS = 7,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_NOTE_TYPES = 8;
+   */
+  NOTE_TYPES = 8,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_THEMES = 9;
+   */
+  THEMES = 9,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_SLOTS = 10;
+   */
+  SLOTS = 10,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_LISTENERS = 11;
+   */
+  LISTENERS = 11,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_VIEW_CAPABILITIES = 12;
+   */
+  VIEW_CAPABILITIES = 12,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_DROP_HANDLERS = 13;
+   */
+  DROP_HANDLERS = 13,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_FRAME_ORIGINS = 14;
+   */
+  FRAME_ORIGINS = 14,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_CONNECTION_TYPES = 15;
+   */
+  CONNECTION_TYPES = 15,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_OPERATIONS = 16;
+   */
+  OPERATIONS = 16,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_PERMISSIONS = 17;
+   */
+  PERMISSIONS = 17,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_DEPENDENCIES = 18;
+   */
+  DEPENDENCIES = 18,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_SERVICES = 19;
+   */
+  SERVICES = 19,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_CAPABILITIES = 20;
+   */
+  CAPABILITIES = 20,
+
+  /**
+   * @generated from enum value: PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS = 21;
+   */
+  ACTIVATION_EVENTS = 21,
+}
+
+/**
+ * Describes the enum numen.v1.PluginContributionKind.
+ */
+export const PluginContributionKindSchema: GenEnum<PluginContributionKind> = /*@__PURE__*/
+  enumDesc(file_numen_v1_plugin, 0);
 
 /**
  * value means it did not.
@@ -622,7 +823,7 @@ export enum PluginEventErrorCode {
  * Describes the enum numen.v1.PluginEventErrorCode.
  */
 export const PluginEventErrorCodeSchema: GenEnum<PluginEventErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_plugin, 0);
+  enumDesc(file_numen_v1_plugin, 1);
 
 /**
  * PluginLifecycleService handles lifecycle, ping, and graceful shutdown for all plugins.

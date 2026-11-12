@@ -125,7 +125,7 @@ func (c *ConfigPush) configureActivated(ctx context.Context, pluginID string) er
 	c.delivery.ClearFirstConfigure(pluginID)
 	c.delivery.Unlock()
 	// A refusal of the plugin is listed as its configure item.
-	if _, isRefused := errors.AsType[*delivery.RefusedError](configureErr); configureErr != nil && !isRefused {
+	if refused, _ := errors.AsType[*delivery.RefusedError](configureErr); configureErr != nil && refused == nil {
 		c.report(fmt.Errorf("push settings to plugin %s: %w", pluginID, configureErr))
 	}
 	return nil

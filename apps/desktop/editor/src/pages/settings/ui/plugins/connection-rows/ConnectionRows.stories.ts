@@ -181,7 +181,7 @@ const render =
       return { value, connections: installation.connections, onChange, plugin: setting({ max }) }
     },
     template: `
-      <div class="numen" style="inline-size:30rem;max-inline-size:100%;padding:1rem;background:var(--numen-surface);--settings-choice:16rem">
+      <div class="numen" style="inline-size:30rem;max-inline-size:100%;padding:1rem;background:var(--numen-surface)">
         <ConnectionRows :setting="plugin" :value="value" :connections="connections" @change="onChange" />
         <output data-testid="written">{{ JSON.stringify(value) }}</output>
       </div>

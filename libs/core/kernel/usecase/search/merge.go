@@ -49,7 +49,8 @@ type passageID struct {
 	start, length int
 }
 
-func collapse(fused []domain.Passage, rankings []Ranking, each, limit int) []domain.Passage {
+// getLeadingSections gets, per source, the first passage the leading rankings place.
+func getLeadingSections(rankings []Ranking) map[string]domain.Passage {
 	sections := map[string]domain.Passage{}
 	for _, ranking := range rankings {
 		if !ranking.IsLeading {
@@ -61,7 +62,11 @@ func collapse(fused []domain.Passage, rankings []Ranking, each, limit int) []dom
 			}
 		}
 	}
+	return sections
+}
 
+func collapse(fused []domain.Passage, rankings []Ranking, each, limit int) []domain.Passage {
+	sections := getLeadingSections(rankings)
 	out := make([]domain.Passage, 0, min(limit, len(fused)))
 	sourceCounts := map[string]int{}
 	seenSources := map[string]bool{}

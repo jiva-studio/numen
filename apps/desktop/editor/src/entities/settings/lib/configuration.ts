@@ -1,6 +1,8 @@
 /** What the settings hold: one setting written at its current position. */
 import type { PluginInfo, PluginSettingInfo } from '@numen/plugin-manager'
 export type {
+  PluginContribution,
+  PluginContributionKind,
   PluginInfo,
   PluginSettingCondition,
   PluginSettingInfo,

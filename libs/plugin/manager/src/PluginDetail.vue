@@ -1,20 +1,24 @@
 <script setup lang="ts">
 /**
- * The page of one plugin: a header card with the README and the enabled switch (or the install
- * button for a plugin that is not installed), the failure card of a suspended plugin or the bar of
- * its worst health item, the settings the application draws in the `settings` slot, and the plugin's data.
+ * The page of one plugin: the breadcrumb bar, the header, the failure of a suspended plugin or the
+ * bar of its worst health item, then the tabs Settings (the tab the page opens on), About,
+ * Contributes and Data. The application draws the settings in the `settings` and `sections` slots;
+ * Data is there only while the plugin keeps files in the vault or their deletion failed.
  */
-import { computed, ref, type VNode } from 'vue'
-import { Button, Prose, Switch } from '@numen/ui'
-import ChevronIcon from './ChevronIcon.vue'
+import { computed, ref, watch, type VNode } from 'vue'
+import { Prose } from '@numen/ui'
+import BreadcrumbBar from './BreadcrumbBar.vue'
+import { formatCategoryLabel, getPluginCategory } from './filter'
+import PluginContributions from './PluginContributions.vue'
 import PluginData from './PluginData.vue'
-import PluginHealthBar from './PluginHealthBar.vue'
-import PluginSettingsCard from './PluginSettingsCard.vue'
-import PluginStopped from './PluginStopped.vue'
 import type { PluginDetailProps } from './PluginDetail.types'
-import { isInstalled } from './plugins'
-import { parsePluginReadme } from './readme'
-import { getStartItem, getWorstItem } from './state'
+import PluginHeader from './PluginHeader.vue'
+import PluginSettingsCard from './PluginSettingsCard.vue'
+import PluginNotice from './PluginNotice.vue'
+import PluginTabs from './PluginTabs.vue'
+import { getReadmeText } from './readme'
+import { getPluginState, getStartItem, getWorstItem } from './state'
+import { FIRST_PLUGIN_TAB, getPanelElementId, getPluginTabs, getTabElementId } from './tabs'
 import { PLUGIN_WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -31,17 +35,37 @@ const emit = defineEmits<{
 
 defineSlots<{
   /** The settings of the plugin, drawn by the application. */
-  settings(): VNode[]
-  /** Sections of the page under the card of the settings, drawn by the application. */
-  sections(): VNode[]
+  settings?(): VNode[]
+  /** Sections of the settings tab under the card of the settings, drawn by the application. */
+  sections?(): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const isExpanded = ref(false)
 const startItem = computed(() => getStartItem(props.health ?? []))
 const worstItem = computed(() => getWorstItem(props.health ?? []))
-const readmeParts = computed(() =>
-  parsePluginReadme(props.readme, props.plugin.id, props.plugin.description),
+const categoryLabel = computed(() => formatCategoryLabel(getPluginCategory(props.plugin)))
+const hasConnectionSettings = computed(
+  () => props.plugin.info?.settings.some((one) => one.type === 'connections') ?? false,
+)
+const contributions = computed(() => props.plugin.info?.contributions ?? [])
+const readmeText = computed(() => getReadmeText(props.readme))
+const state = computed(() =>
+  props.plugin.info ? getPluginState(props.isEnabled, props.health) : 'available',
+)
+const tabs = computed(() => getPluginTabs(props.dataFileCount > 0 || props.problem !== ''))
+const activeTab = ref(FIRST_PLUGIN_TAB)
+const idBase = computed(() => `plugin-${props.plugin.id.replaceAll('.', '-')}`)
+
+/* --------------------------------- Hooks ---------------------------------- */
+watch(tabs, (now) => {
+  if (!now.some((one) => one.id === activeTab.value)) activeTab.value = FIRST_PLUGIN_TAB
+})
+
+watch(
+  () => props.plugin.id,
+  () => {
+    activeTab.value = FIRST_PLUGIN_TAB
+  },
 )
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -53,16 +77,8 @@ function onToggleEnabled(isEnabled: boolean): void {
   emit('toggle-enabled', isEnabled)
 }
 
-function onToggleReadme(): void {
-  isExpanded.value = !isExpanded.value
-}
-
 function onRetry(): void {
   emit('retry')
-}
-
-function onDisable(): void {
-  emit('toggle-enabled', false)
 }
 
 function onInstall(): void {
@@ -80,201 +96,109 @@ function onRunAction(key: string): void {
 
 <template>
   <div class="plugin-detail">
-    <Button variant="ghost" size="small" class="plugin-detail__back" @click="onBack">
-      &larr; {{ words.backToPlugins }}
-    </Button>
-
-    <div class="plugin-detail__header">
-      <h2 class="plugin-detail__title">
-        <span>{{ props.plugin.name }}</span>
-        <span v-if="props.plugin.version" class="plugin-version-badge">
-          v{{ props.plugin.version }}
-        </span>
-      </h2>
-      <div class="plugin-detail__master-switch">
-        <Switch
-          v-if="isInstalled(props.plugin)"
-          :model-value="props.isEnabled"
-          :is-busy="props.isPending ?? false"
-          :aria-label="`${words.pluginEnabled} ${props.plugin.name}`"
-          @update:model-value="onToggleEnabled"
-        />
-        <Button v-else-if="props.canInstall" size="small" @click="onInstall">
-          {{ words.pluginInstall }}
-        </Button>
-        <span v-else class="plugin-detail__absent">{{ words.pluginState.available }}</span>
-      </div>
-
-      <div v-if="readmeParts.summary" class="plugin-detail__description">
-        <Prose :text="readmeParts.summary" />
-      </div>
-
-      <div v-if="isExpanded && readmeParts.more" class="plugin-detail__more">
-        <Prose :text="readmeParts.more" />
-      </div>
-
-      <button
-        v-if="readmeParts.more"
-        type="button"
-        class="plugin-detail__toggle"
-        :aria-expanded="isExpanded"
-        @click="onToggleReadme"
-      >
-        <span>{{ isExpanded ? words.showLess : words.readMore }}</span>
-        <ChevronIcon
-          class="plugin-detail__toggle-icon"
-          :class="{ 'plugin-detail__toggle-icon--open': isExpanded }"
-        />
-      </button>
-    </div>
-
-    <PluginStopped v-if="startItem" :item="startItem" @retry="onRetry" @disable="onDisable" />
-    <PluginHealthBar v-else-if="worstItem" :item="worstItem" @run-action="onRunAction" />
-
-    <PluginSettingsCard v-if="props.hasSettings" class="plugin-detail__settings">
-      <slot name="settings" />
-    </PluginSettingsCard>
-
-    <slot name="sections" />
-
-    <PluginData
-      :plugin-id="props.plugin.id"
-      :plugin-name="props.plugin.name"
-      :file-count="props.dataFileCount"
-      :problem="props.problem"
-      @delete-data="onDeleteData"
+    <BreadcrumbBar :current="categoryLabel" @back="onBack" />
+    <PluginHeader
+      :plugin="props.plugin"
+      :state="state"
+      :is-enabled="props.isEnabled"
+      :is-pending="props.isPending ?? false"
+      :can-install="props.canInstall"
+      @toggle-enabled="onToggleEnabled"
+      @install="onInstall"
     />
+
+    <PluginNotice
+      v-if="startItem"
+      :item="startItem"
+      :action-label="words.pluginRetry"
+      @run-action="onRetry"
+    />
+    <PluginNotice
+      v-else-if="worstItem"
+      :item="worstItem"
+      :action-label="worstItem.actionLabel"
+      @run-action="onRunAction(worstItem.key)"
+    />
+
+    <PluginTabs v-model="activeTab" :tabs="tabs" :label="words.pluginSections" :id-base="idBase" />
+
+    <div
+      :id="getPanelElementId(idBase, activeTab)"
+      class="plugin-detail__panel"
+      role="tabpanel"
+      :aria-labelledby="getTabElementId(idBase, activeTab)"
+    >
+      <template v-if="activeTab === 'settings'">
+        <PluginSettingsCard v-if="props.hasSettings">
+          <slot name="settings" />
+        </PluginSettingsCard>
+        <slot name="sections" />
+        <p v-if="!props.hasSettings && !hasConnectionSettings" class="plugin-detail__nothing">
+          {{ words.noSettings }}
+        </p>
+      </template>
+
+      <template v-else-if="activeTab === 'about'">
+        <div v-if="readmeText" class="settings-card plugin-detail__readme">
+          <Prose :text="readmeText" />
+        </div>
+        <p v-else class="plugin-detail__nothing">{{ props.plugin.description }}</p>
+      </template>
+
+      <template v-else-if="activeTab === 'contributions'">
+        <PluginContributions
+          v-if="contributions.length > 0"
+          :contributions="contributions"
+          :is-apple="props.isApple ?? false"
+        />
+        <p v-else class="plugin-detail__nothing">{{ words.noContributions }}</p>
+      </template>
+
+      <PluginData
+        v-else
+        :plugin-id="props.plugin.id"
+        :plugin-name="props.plugin.name"
+        :file-count="props.dataFileCount"
+        :problem="props.problem"
+        @delete-data="onDeleteData"
+      />
+    </div>
   </div>
 </template>
 
 <style scoped>
 .plugin-detail {
-  --detail-max-size: 54rem;
-  --back-spacing: 0.75rem;
-  --header-row-gap: 0.625rem;
-  --header-pad-block: 0.875rem;
-  --header-pad-inline: 1rem;
-  --header-spacing: 1.25rem;
-  --more-pad: 0.625rem;
-  --toggle-gap: 0.25rem;
-  --toggle-pad-block: 0.125rem;
-  --badge-pad-block: 0.125rem;
-  --badge-pad-inline: 0.4375rem;
-  --badge-offset: 0.375rem;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  max-inline-size: var(--detail-max-size);
-  margin-inline: auto;
+  gap: 1rem;
 }
 
-.plugin-detail__back {
-  align-self: flex-start;
-  margin-block-end: var(--back-spacing);
-}
-
-.plugin-detail__header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: var(--numen-panel-gap);
-  row-gap: var(--header-row-gap);
-  align-items: center;
-  padding: var(--header-pad-block) var(--header-pad-inline);
-  margin-block-end: var(--header-spacing);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  background-color: var(--numen-raised);
-}
-
-.plugin-detail__title {
-  margin: 0;
-  font-size: var(--numen-text-3);
-  font-weight: 600;
-  color: var(--numen-ink);
-}
-
-.plugin-version-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--badge-pad-block) var(--badge-pad-inline);
-  border-radius: var(--numen-radius-pill);
-  background: color-mix(in srgb, var(--numen-accent) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--numen-accent) 40%, transparent);
-  color: var(--numen-ink);
-  font-size: var(--numen-text-1);
-  font-weight: 500;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  vertical-align: middle;
-  margin-inline-start: var(--badge-offset);
-}
-
-.plugin-detail__master-switch {
-  justify-self: end;
+.plugin-detail__panel {
   display: flex;
-  align-items: center;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.plugin-detail__absent {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
-
-.plugin-detail__description {
-  grid-column: 1 / -1;
+.plugin-detail__nothing {
   margin: 0;
+  padding-inline: var(--settings-card-pad);
   color: var(--numen-hushed);
-  font-size: var(--numen-text-2);
 }
 
-.plugin-detail__description :deep(.prose) {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-2);
+.plugin-detail__readme {
+  padding: var(--settings-card-pad);
 }
 
-.plugin-detail__description :deep(p:first-child),
-.plugin-detail__more :deep(:first-child) {
+.plugin-detail__readme :deep(.prose) {
+  max-inline-size: 66ch;
+}
+
+.plugin-detail__readme :deep(.prose > :first-child) {
   margin-block-start: 0;
 }
 
-.plugin-detail__description :deep(p:last-child),
-.plugin-detail__more :deep(:last-child) {
+.plugin-detail__readme :deep(.prose > :last-child) {
   margin-block-end: 0;
-}
-
-.plugin-detail__more {
-  grid-column: 1 / -1;
-  padding-block-start: var(--more-pad);
-  border-block-start: var(--numen-stroke) solid var(--numen-rule);
-  font-size: var(--numen-text-2);
-}
-
-.plugin-detail__toggle {
-  grid-column: 1 / -1;
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--toggle-gap);
-  padding: var(--toggle-pad-block) 0;
-  border: none;
-  background: none;
-  color: var(--numen-hushed);
-  font-family: inherit;
-  font-size: var(--numen-text-1);
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.plugin-detail__toggle:hover {
-  color: var(--numen-ink);
-}
-
-.plugin-detail__toggle-icon {
-  transition: transform var(--numen-motion-hover) ease;
-}
-
-.plugin-detail__toggle-icon--open {
-  transform: rotate(180deg);
 }
 </style>

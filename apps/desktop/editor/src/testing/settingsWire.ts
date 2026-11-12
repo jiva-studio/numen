@@ -3,6 +3,7 @@
  * through the real client over the router transport: this file encodes the answers the way the
  * core sends them and decodes the requests the way the core reads them.
  */
+import { PLUGIN_CONTRIBUTION_KIND } from '@numen/core-client'
 import { installCoreAnswers, type CoreAnswers } from '@numen/core-client/testing'
 import type { PluginSettingCondition } from '@numen/plugin-manager'
 import type {
@@ -78,6 +79,21 @@ export const toWireSetting = (setting: PluginSettingInfo) => ({
   valueJson: JSON.stringify(setting.value),
 })
 
+const toCamelCase = (constant: string): string =>
+  constant.toLowerCase().replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase())
+
+const WIRE_CONTRIBUTION_KINDS = new Map(
+  Object.entries(PLUGIN_CONTRIBUTION_KIND).flatMap(([name, value]) =>
+    typeof value === 'number' ? [[toCamelCase(name), value] as const] : [],
+  ),
+)
+
+const toWireContributions = (plugin: PluginInfo) =>
+  (plugin.contributions ?? []).map((one) => ({
+    kind: WIRE_CONTRIBUTION_KINDS.get(one.kind) ?? PLUGIN_CONTRIBUTION_KIND.UNSPECIFIED,
+    items: one.items.map((item) => ({ text: item.text, detail: item.detail, keys: item.keys })),
+  }))
+
 const toWirePlugin = (plugin: PluginInfo) => ({
   id: plugin.id,
   name: plugin.name,
@@ -89,6 +105,7 @@ const toWirePlugin = (plugin: PluginInfo) => ({
   hasBackend: plugin.hasBackend,
   readers: (plugin.readers ?? []).map((one) => ({ id: one.id, extensions: [...one.extensions] })),
   settingsViews: plugin.settingsViews ?? [],
+  contributions: toWireContributions(plugin),
   settings: plugin.settings.map(toWireSetting),
 })
 

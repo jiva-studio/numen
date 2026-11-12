@@ -54,7 +54,7 @@ The settings of the plugin ACP Agents.
 | | | |
 | --- | --- | --- |
 | `executablePath` | text | installed ACP agents are discovered automatically. Choose one or more custom ACP agent executables to add them. |
-| `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
+| `requestTimeout` | a number | seconds to wait for an answer or a new session; empty waits 120. From 1 to 3600. |
 
 ### `md.numen.agents.antigravity`
 
@@ -90,8 +90,8 @@ The settings of the plugin Model Context Protocol Server.
 
 | | | |
 | --- | --- | --- |
-| `port` | a number | local TCP port on 127.0.0.1 for external MCP clients (Streamable HTTP at /mcp). From 1024 to 65535. |
-| `token` | text | token the host generates on first load; an MCP client sends it in the header Authorization: Bearer <token>, and while it is empty the server rejects every request. |
+| `port` | a number | port on 127.0.0.1 MCP clients connect to, at /mcp. From 1024 to 65535. |
+| `token` | text | bearer token MCP clients send; made on first start. Empty rejects every request. |
 
 ### `md.numen.agents.numen`
 
@@ -99,10 +99,10 @@ The settings of the plugin Numen Agent.
 
 | | | |
 | --- | --- | --- |
-| `connections` | text | the service the agent chats through, with its model and reasoning level. |
-| `temperature` | a number | sampling temperature for model responses (0.0 to 1.0). From 0 to 1. |
-| `maxTokens` | a number | maximum number of tokens to generate per completion. From 256 to 128000. |
-| `maxSteps` | a number | maximum number of requests to the model one task may make before it is stopped. From 1 to 1000. |
+| `connections` | text | chat service, model and reasoning level. |
+| `temperature` | a number | lower is steadier, higher is more varied. From 0 to 1. |
+| `maxTokens` | a number | most tokens one answer may have. From 256 to 128000. |
+| `maxSteps` | a number | most model requests one task may make. From 1 to 1000. |
 
 ### `md.numen.connections.llm`
 
@@ -110,7 +110,7 @@ The settings of the plugin Language model services.
 
 | | | |
 | --- | --- | --- |
-| `requestTimeout` | a number | seconds to wait for a service to answer. Without a value, a completion waits 120 seconds and an embedding 60 seconds. From 1 to 3600. |
+| `requestTimeout` | a number | seconds to wait; empty waits 120, or 60 for embeddings. From 1 to 3600. |
 
 ### `md.numen.engines.embeddings`
 
@@ -119,10 +119,10 @@ The settings of the plugin Vector Embeddings.
 | | | |
 | --- | --- | --- |
 | `source` | text | where texts are turned into vectors. One of `local`, `connection`. |
-| `model` | text | local model identifier. A local model needs a profile: the listed ones ship with the plugin, and a profile file of your own in the profiles folder of the plugin data directory adds more (see the plugin README). Local models are downloaded from Hugging Face. |
-| `connections` | text | the connection and the embedding model that turn texts into vectors. Changing either indexes the vault again. |
-| `minChunkLength` | a number | pieces of text shorter than this many characters get no vector for the search by meaning, so page numbers and running heads do not crowd out real answers. They stay searchable by their words. A note shorter than this is found by its words too. 0 gives every piece a vector. From 0 to 1000. |
-| `chunkTokens` | a number | a note is cut into chunks of at most this many tokens, and each chunk gets a vector. It never exceeds the input limit of the model. A smaller value gives more precise passages and more vectors. A change cuts the notes again; vectors for texts that are unchanged are kept. From 16 to 8192. |
+| `model` | text | local embedding model from Hugging Face; it needs a profile. |
+| `connections` | text | a new connection or model reindexes the vault. |
+| `minChunkLength` | a number | characters a piece needs for a vector; shorter ones are found by words. From 0 to 1000. |
+| `chunkTokens` | a number | largest piece of a note, in tokens, that gets one vector. From 16 to 8192. |
 
 ### `md.numen.engines.ocr`
 
@@ -132,9 +132,9 @@ The settings of the plugin Document OCR.
 | --- | --- | --- |
 | `model` | text | text recognition model. One of `pp-ocrv6-tiny`, `pp-ocrv6-small`, `pp-ocrv5-latin`, `pp-ocrv5-eslav`, `pp-ocrv5-cyrillic`, `pp-ocrv5-devanagari`, `pp-ocrv5-greek`, `custom`. |
 | `customModelPath` | text | paddleOCR text recognition model in ONNX format. |
-| `customDictPath` | text | UTF-8 text, one character per line. Empty for a model that includes its own. |
+| `customDictPath` | text | UTF-8 text, one character per line; empty if the model has its own. |
 | `dpi` | text | resolution a page is rendered at before recognition. One of `150`, `200`, `300`, `400`, `600`. |
-| `recognizeAutomatically` | yes or no | recognize the text of every PDF and image in the vault that has none. A text removed with Delete text is recognized again. |
+| `recognizeAutomatically` | yes or no | recognize every PDF and image in the vault that has no text. |
 
 ### `md.numen.engines.transcription`
 
@@ -142,8 +142,8 @@ The settings of the plugin Audio/Video Transcription.
 
 | | | |
 | --- | --- | --- |
-| `model` | text | speech recognition model downloaded from Hugging Face. Parakeet v3 supports 25 European languages with automatic language detection; Parakeet v2 is English-only. One of `parakeet-tdt-0.6b-v3-int8`, `parakeet-tdt-0.6b-v2-int8`. |
-| `transcribeAutomatically` | yes or no | transcribe every recording in the vault that has no transcript. A transcript removed with Delete text is made again. |
+| `model` | text | from Hugging Face. Parakeet v3: 25 European languages, v2: English only. One of `parakeet-tdt-0.6b-v3-int8`, `parakeet-tdt-0.6b-v2-int8`. |
+| `transcribeAutomatically` | yes or no | transcribe every recording in the vault that has no transcript. |
 
 ### `md.numen.notes`
 
@@ -160,7 +160,7 @@ The settings of the plugin PDF Reader.
 
 | | | |
 | --- | --- | --- |
-| `defaultZoom` | text | initial zoom level when opening a PDF document. One of `page`, `width`, `100%`. |
+| `defaultZoom` | text | zoom a PDF opens at. One of `page`, `width`, `100%`. |
 
 ### `md.numen.tools.media.importer`
 
@@ -170,10 +170,10 @@ The settings of the plugin Media Importer.
 | --- | --- | --- |
 | `ytDlp` | text | path to the yt-dlp program. |
 | `ffmpeg` | text | path to the ffmpeg program. |
-| `captions` | text | caption languages in order of preference, comma-separated. |
+| `captions` | text | preferred caption languages, comma-separated. |
 | `automaticCaptions` | yes or no | use auto-generated captions when a site has no others. |
-| `downloadCaptionsAutomatically` | yes or no | download the captions or the article of every link note that has none. A text removed with Delete text is downloaded again. |
-| `copyMaxSizeMb` | a number | maximum video download size in megabytes; 0 for no limit. From 0 to 100000. |
+| `downloadCaptionsAutomatically` | yes or no | download captions or the article of every link note that has none. |
+| `copyMaxSizeMb` | a number | largest video to download, in MB; 0 for no limit. From 0 to 100000. |
 
 ### `md.numen.tools.proofreading`
 
@@ -181,11 +181,11 @@ The settings of the plugin LLM Proofreading.
 
 | | | |
 | --- | --- | --- |
-| `connections` | text | services and agents that proofread, tried in order. The next one is used when one cannot answer. |
+| `connections` | text | services and agents, tried in order until one answers. |
 | `batchSize` | a number | lines per model request. From 1 to 500. |
-| `overlap` | a number | lines shared by neighbouring batches. From 0 to 100. |
+| `overlap` | a number | lines shared by neighboring batches. From 0 to 100. |
 | `inFlight` | a number | parallel model requests per call. From 1 to 32. |
-| `maxEditDistance` | a number | maximum edit distance of a correction from the original line. From 0 to 1. |
+| `maxEditDistance` | a number | largest edit distance of a correction from its line. From 0 to 1. |
 
 ### `md.numen.tools.updater`
 
@@ -194,8 +194,8 @@ The settings of the plugin Update Notifier.
 | | | |
 | --- | --- | --- |
 | `channel` | text | which builds are announced. One of `stable`, `beta`, `custom`. |
-| `endpoint` | text | required. Address of the latest.json file to ask for the newest build of the Custom channel. The Stable and Beta channels ask their own published feeds. |
-| `checkIntervalHours` | a number | hours between two checks for a newer build. From 1 to 168. |
+| `endpoint` | text | required. Address of latest.json for the Custom channel. |
+| `checkIntervalHours` | a number | hours between two update checks. From 1 to 168. |
 
 ### `md.numen.views.agent.chat`
 
@@ -211,7 +211,7 @@ The settings of the plugin Flashcards Studio.
 
 | | | |
 | --- | --- | --- |
-| `dayStartTime` | text | time a review day starts. Answers before it count toward the day before. HH:MM from 00:00 to 12:00; other values use 04:00. |
+| `dayStartTime` | text | time a review day starts, HH:MM up to 12:00; other values use 04:00. |
 
 ### `md.numen.views.plex.graph`
 
@@ -220,16 +220,16 @@ The settings of the plugin Plex Graph.
 | | | |
 | --- | --- | --- |
 | `nestHeadings` | yes or no | show the headings of a note under its node. |
-| `headingLimit` | a number | maximum number of headings shown under a node. The rest scroll. From 1 to 12. |
-| `showPills` | yes or no | draw a pill behind each title. Off: the title alone, with a dot in the color of its relation. |
-| `pillPaddingSides` | a number | space between a title and the left and right edge of its pill. From 0 to 24. |
-| `pillPaddingEnds` | a number | space between a title and the top and bottom edge of its pill. From 0 to 16. |
-| `focusSize` | a number | how much larger the pill of the note in the middle is. Its title keeps its size. From 1 to 2.5. |
-| `animationLength` | a number | how long moving to another note takes, in milliseconds. 0 moves at once. From 0 to 2000. |
+| `headingLimit` | a number | most headings shown under a node. From 1 to 12. |
+| `showPills` | yes or no | draw a pill behind each title. |
+| `pillPaddingSides` | a number | space beside the title inside its pill. From 0 to 24. |
+| `pillPaddingEnds` | a number | space above and below the title inside its pill. From 0 to 16. |
+| `focusSize` | a number | how much larger the pill of the middle note is. From 1 to 2.5. |
+| `animationLength` | a number | time to move to another note, in ms; 0 is instant. From 0 to 2000. |
 | `lineThickness` | a number | width of the lines between notes, in pixels. From 0.5 to 4. |
 | `outlineThickness` | a number | width of the outline of a pill, in pixels. From 0.5 to 4. |
-| `lineCurvature` | a number | how far a line between two notes bends. 0 is a straight line. From 0 to 1. |
-| `noteRoom` | a number | extra empty space kept around every note. Larger is sparser. From 0 to 40. |
+| `lineCurvature` | a number | how far lines bend; 0 is straight. From 0 to 1. |
+| `noteRoom` | a number | empty space around every note. From 0 to 40. |
 
 ### `md.numen.views.titleBar`
 
@@ -237,6 +237,6 @@ The settings of the plugin Title bar.
 
 | | | |
 | --- | --- | --- |
-| `buttons` | text | where the bar draws the minimize, maximize and close buttons: at the right like Windows, at the left like macOS, or not at all. macOS always keeps the system buttons at the left. On Windows, the buttons at the left lose the Snap Layouts menu. One of `mac`, `windows`, `none`. |
-| `hideInFullscreen` | yes or no | draw no bar while the window is in full screen, so the tabs start at the top of the window. The bar is drawn again when the window leaves full screen. |
+| `buttons` | text | where the bar draws the window buttons; macOS always uses the left. One of `mac`, `windows`, `none`. |
+| `hideInFullscreen` | yes or no | hide the bar while the window is full screen. |
 <!-- END AUTOGEN -->

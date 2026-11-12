@@ -35,7 +35,9 @@ const {
     <div class="settings__page">
       <div class="settings__main">
         <SystemDetail
-          v-if="selectedPluginId === 'system'"
+          v-if="selectedPluginId === 'system' || selectedPluginId === 'appearance'"
+          :key="selectedPluginId"
+          :section="selectedPluginId"
           :settings="installation.settings"
           :manager="installation.plugin"
           :connections="installation.connections"
@@ -76,11 +78,6 @@ const {
 
 <style scoped>
 .settings {
-  --settings-measure: 54rem;
-  --settings-apart: 1.75rem;
-  --settings-near: 0.375rem;
-  --settings-value: 6rem;
-  --settings-choice: 16rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -98,7 +95,7 @@ const {
 }
 
 .settings__main {
-  container-type: inline-size;
+  container: settings / inline-size;
   inline-size: 100%;
   max-inline-size: var(--settings-measure);
   margin-inline: auto;

@@ -110,7 +110,7 @@ const mountPage = (
 }
 
 const rows = (): HTMLElement[] =>
-  Array.from(root().querySelectorAll<HTMLElement>('[role="list"] [role="button"][aria-label]'))
+  Array.from(root().querySelectorAll<HTMLElement>('[role="list"] button[aria-label]'))
 
 const rowOf = (name: string): HTMLElement => {
   const found = rows().find((one) => one.getAttribute('aria-label') === name)
@@ -324,14 +324,13 @@ describe('editing and deleting', () => {
     dispose(wrapper)
   })
 
-  it('opens a row with Enter and with Space from the keyboard', async () => {
+  it('opens a row from its button, which the keyboard reaches', async () => {
     const { wrapper } = mountPage([connection()], [SERVICE])
     await flushPromises()
-    const row = rowOf('Work')
-    expect(row.getAttribute('tabindex')).toBe('0')
+    const row = rowOf('Work') as HTMLButtonElement
+    expect(row.type).toBe('button')
 
-    row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
-    await flushPromises()
+    await click(row)
 
     expect(textInputs(dialog())[0]?.value).toBe('Work')
     dispose(wrapper)
