@@ -14,6 +14,7 @@ func listPluginServedServices() []string {
 		"numen.v1.AgentService",
 		"numen.v1.EmbeddingService",
 		"numen.v1.PluginToolService",
+		"numen.v1.ProviderService",
 	}
 }
 

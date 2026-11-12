@@ -341,6 +341,7 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 		{"a service of the protocol", `["numen.v1.AgentService"]`, false},
 		{"the embedding service of the protocol", `["numen.v1.EmbeddingService"]`, false},
 		{"the tool service of the protocol", `["numen.v1.PluginToolService"]`, false},
+		{"the provider service of the protocol", `["numen.v1.ProviderService"]`, false},
 		{"a service the core serves", `["numen.v1.NoteService"]`, true},
 		{"a service the core serves beside an own one", `["a.b.SampleService","numen.v1.VaultService"]`, true},
 		{"a bare name", `["SampleService"]`, true},
