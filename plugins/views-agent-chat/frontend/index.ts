@@ -1,4 +1,11 @@
-import { CONVERSATION, definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import {
+  CONVERSATION,
+  definePlugin,
+  SETTINGS_OPEN_COMMAND,
+  type Caught,
+  type PluginContext,
+} from '@numen/plugin-sdk'
+import { runInBackground } from '@numen/ui'
 import { useConversation } from './thread'
 import AgentTab from './ui/AgentTab.vue'
 import ConversationView from './ui/ConversationView.vue'
@@ -26,7 +33,7 @@ export function activate(context: PluginContext): void {
     {
       workspace,
       relations,
-      openSettings: () => context.work.backgroundTasks?.openSettings(context.plugin.id),
+      openSettings: () => openPluginSettings(context),
     },
     (deps) =>
       useAgentConversation(
@@ -60,3 +67,13 @@ export function activate(context: PluginContext): void {
 export default definePlugin({
   activate,
 })
+
+/** Opens the settings page of this plugin through the shared command the window handles. */
+function openPluginSettings(context: PluginContext): void {
+  const { commands, notices } = context.ui
+  if (!commands) return
+  const values = { plugin: context.plugin.id }
+  runInBackground(commands.run(SETTINGS_OPEN_COMMAND, undefined, undefined, values), (error: Caught) =>
+    notices.show(error instanceof Error ? error.message : String(error), 'error'),
+  )
+}
