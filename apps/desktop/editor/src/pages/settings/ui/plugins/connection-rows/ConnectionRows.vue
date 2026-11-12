@@ -21,7 +21,7 @@
  * charge for. It is written after a question that names the notes and the connection, and a
  * row that is not complete changes nothing meanwhile.
  */
-import { computed, nextTick, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, useTemplateRef } from 'vue'
 import { Button, runInBackground } from '@numen/ui'
 import { PluginSettingsCard } from '@numen/plugin-manager'
 import { getRowKey, readRows, type StoredRow } from '@/entities/connection'
@@ -36,6 +36,7 @@ import { useConnectionEntries } from '../../../model/useConnectionEntries'
 import { INDEXING_OPERATION, useIndexQuestion } from '../../../model/useIndexQuestion'
 import { useRowDrafts } from '../../../model/useRowDrafts'
 import { useRowOrder } from '../../../model/useRowOrder'
+import { useAutomaticRows } from '../../../model/useAutomaticRows'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
@@ -82,30 +83,15 @@ const { stored, choices, discovered, getReason, getRowFields } = useConnectionEn
   () => operations.value,
 )
 const isSingle = computed(() => limit.value === 1)
-const isAutomatic = computed(
-  () =>
-    props.isDiscovering === true && stored.value.length > 0 && readRows(props.value).length === 0,
-)
-const automaticText = computed(() =>
-  discovered.value.length > 0
-    ? words.connectionRowsAutomatic(discovered.value.map((one) => one.name))
-    : words.connectionRowsNoneServes,
-)
-
-/* A setting of one row shows its row at once, so that its connection is chosen in place, unless it discovers. */
-watch(
-  [() => stored.value.length, () => drafts.value.length, limit, isAutomatic],
-  () => {
-    if (
-      isSingle.value &&
-      !isAutomatic.value &&
-      stored.value.length > 0 &&
-      drafts.value.length === 0
-    )
-      add()
-  },
-  { immediate: true },
-)
+const { isAutomatic, automaticText } = useAutomaticRows({
+  isDiscovering: () => props.isDiscovering === true,
+  getValue: () => props.value,
+  stored,
+  discovered,
+  isSingle,
+  drafts,
+  add,
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAdd(): void {

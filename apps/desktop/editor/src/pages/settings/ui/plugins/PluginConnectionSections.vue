@@ -7,7 +7,7 @@
  */
 import { writeRows, type StoredRow } from '@/entities/connection'
 import type { PluginInfo, PluginSettingInfo } from '@/entities/settings'
-import type { JsonObject } from '@/shared/api/json'
+import type { JsonObject, JsonValue } from '@/shared/api/json'
 import { useEnumFields, usePluginFields } from '../../model/usePluginFields'
 import type { InstallationConnections, InstallationSettings, PluginFieldsHost } from '../../types'
 import ConnectionRows from './connection-rows/ConnectionRows.vue'
@@ -46,7 +46,11 @@ function onDiscover(key: string, isOn: boolean): void {
 /* -------------------------------- Helpers --------------------------------- */
 function getDiscoverChoices(): JsonObject {
   const choices = getValue(DISCOVER_FIELD)
-  return typeof choices === 'object' && choices !== null && !Array.isArray(choices) ? choices : {}
+  return isJsonObject(choices) ? choices : {}
+}
+
+function isJsonObject(value: JsonValue | undefined): value is JsonObject {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function isDiscovering(setting: PluginSettingInfo): boolean {
