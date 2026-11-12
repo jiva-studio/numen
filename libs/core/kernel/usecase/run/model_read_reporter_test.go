@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
-// A failed read of the embedding model is listed as a task with a fixed reason, not the text of the failure.
 func TestAFailedReadOfTheEmbeddingModelIsListedAsATaskWithAFixedReason(t *testing.T) {
 	tasks := run.NewTasks()
 
