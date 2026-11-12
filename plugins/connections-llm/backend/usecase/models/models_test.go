@@ -118,7 +118,7 @@ func TestAListOfModelsOutlivesARestartAndIsAnsweredWhileTheServiceFails(t *testi
 	}
 }
 
-func TestAListOfModelsIsAskedOnceWhileItIsKept(t *testing.T) {
+func TestListModelsCallsTheServiceOncePerKeptList(t *testing.T) {
 	g := &gateway{}
 	subject := newModels(t, g)
 	for range 3 {
@@ -148,7 +148,7 @@ func TestAnotherKeyOrAnotherOperationIsListedApart(t *testing.T) {
 	}
 }
 
-func TestTheKeptListNamesTheDigestOfTheKeyAndNeverTheKey(t *testing.T) {
+func TestTheStoredListHoldsTheKeyDigestAndNotTheKey(t *testing.T) {
 	dir := t.TempDir()
 	if _, err := newModelsIn(t, &gateway{}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
 		t.Fatal(err)
@@ -180,6 +180,6 @@ func TestAFirstListThatFailsReturnsTheFailureAndKeepsNothing(t *testing.T) {
 	g.err = nil
 	list, err := subject.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat})
 	if err != nil || len(list) != 1 || g.calls != 2 {
-		t.Errorf("list = %v, err = %v, calls = %d, want the service asked again", list, err, g.calls)
+		t.Errorf("list = %v, err = %v, calls = %d, want a second call to the service", list, err, g.calls)
 	}
 }

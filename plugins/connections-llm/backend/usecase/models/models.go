@@ -64,7 +64,8 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits, lists Lists) (*Mod
 
 // ListModels lists the models of the service that fit the operations of a setting of rows. A list kept from
 // before, also from an earlier run, is returned at once, and one older than ListLifetime is listed again in
-// the background. Only a connection with no kept list waits for the service.
+// the background. Only a connection with no kept list waits for the service. A list is kept under the type,
+// the address, the SHA-256 of the key and the operations, never under the key.
 func (m *Models) ListModels(ctx context.Context, call connection.Call, operations []string) ([]connection.Option, error) {
 	limit := m.limits.Get(call.Type, call.Fields[servicetype.FieldBaseURL], call.Options[llm.OptionModel], operation.List)
 	load := func(ctx context.Context) ([]connection.Option, error) {
@@ -87,8 +88,6 @@ func (m *Models) ListModels(ctx context.Context, call connection.Call, operation
 	return list, nil
 }
 
-// getListKey names the list of a connection: its type, its address, the SHA-256 of its key and the
-// operations. The key itself is never part of it.
 func getListKey(call connection.Call, operations []string) string {
 	digest := sha256.Sum256([]byte(call.Secrets[servicetype.SecretAPIKey].Value))
 	sorted := slices.Sorted(slices.Values(operations))
