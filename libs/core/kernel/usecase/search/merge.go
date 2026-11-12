@@ -14,8 +14,6 @@ import (
 // 60 is the constant reciprocal rank fusion uses.
 const rankConstant = 60
 
-// merge fuses the rankings of every participant by reciprocal rank fusion. It does not know which
-// participant answered which ranking.
 func merge(rankings ...Ranking) []domain.Passage {
 	score := map[domain.ChunkID]float64{}
 	observed := map[domain.ChunkID]domain.Passage{}
@@ -51,8 +49,6 @@ type passageID struct {
 	start, length int
 }
 
-// collapse keeps at most each passages of one source and limit in all. The first passage a leading
-// ranking places of a source comes before the other passages of that source.
 func collapse(fused []domain.Passage, rankings []Ranking, each, limit int) []domain.Passage {
 	sections := map[string]domain.Passage{}
 	for _, ranking := range rankings {

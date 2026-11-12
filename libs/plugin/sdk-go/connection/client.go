@@ -180,7 +180,6 @@ func (s *callStream) readEnd() error {
 	return ErrStreamEnded
 }
 
-// readFailure turns the failure frame of a call into ErrNoConnection, *AllFailedError or *StoppedError.
 func readFailure(failure *v1.CallFailure) error {
 	failures := failure.GetFailures()
 	switch failure.GetError() {

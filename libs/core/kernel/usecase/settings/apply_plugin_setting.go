@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
-// PluginHealth is the health items of the plugins.
 type PluginHealth interface {
 	RemovePlugin(pluginID string)
 }

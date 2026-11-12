@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health/healthtest"
 )
 
-func TestAReportedItemReachesTheHostAndAClearTakesItOut(t *testing.T) {
+func TestAReportedItemReachesTheHostAndAClearRemovesIt(t *testing.T) {
 	host := healthtest.NewHost(t)
 	client, err := health.NewClientFromVars(host.Vars("token-of-the-plugin"))
 	if err != nil {

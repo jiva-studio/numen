@@ -130,7 +130,6 @@ func rowsJSON(rows ...row) string {
 	return "[" + strings.Join(items, ",") + "]"
 }
 
-// runTask runs acp.task through the operation the plugin serves and returns the frames and the stop reason.
 func runTask(ctx context.Context, t *testing.T, s *agent, task *acp.TaskRequest) ([]*acp.TaskFrame, acp.StopReason, error) {
 	t.Helper()
 	payload, err := proto.Marshal(task)

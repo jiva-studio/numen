@@ -96,8 +96,6 @@ func closeBody(body io.Closer) {
 	}
 }
 
-// classifyTransportError reads a request that got no answer: the end of the call as it is, an address the
-// domain refuses as a stop, and a service that is unreachable or slow as unavailable.
 func classifyTransportError(parent context.Context, err error) error {
 	switch {
 	case parent.Err() != nil:

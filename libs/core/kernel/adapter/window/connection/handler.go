@@ -16,17 +16,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
-// UseCases are the use cases ProviderConnectionService is answered through.
+// UseCases are the use cases ProviderConnectionService is answered through. A nil ListOperationTitles
+// answers no title, and a nil RowOptions answers every list with no options.
 type UseCases struct {
-	Create    *connections.Create
-	Update    *connections.Update
-	Delete    *connections.Delete
-	List      *connections.List
-	ListTypes *connections.ListTypes
-	// ListOperationTitles lists the titles of the operations; nil answers no title.
+	Create              *connections.Create
+	Update              *connections.Update
+	Delete              *connections.Delete
+	List                *connections.List
+	ListTypes           *connections.ListTypes
 	ListOperationTitles *connections.ListOperationTitles
-	// RowOptions lists the values of row fields; nil answers every list with no options.
-	RowOptions *rowoptions.Options
+	RowOptions          *rowoptions.Options
 }
 
 // Handler serves ProviderConnectionService over the use cases on connections.

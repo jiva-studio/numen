@@ -20,11 +20,13 @@ export interface RowDraft extends StoredRow {
   readonly key: string
 }
 
-/** The words a connection that cannot be used is described in. */
+/**
+ * The words a connection that cannot be used is described in. cannot takes the title of the operation, or its
+ * name where no plugin titles it.
+ */
 export interface UsabilityWords {
   readonly unavailable: string
   readonly incomplete: string
-  // Takes the title of the operation, or its name where no plugin titles it.
   readonly cannot: (operation: string) => string
 }
 

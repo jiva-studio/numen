@@ -7,10 +7,12 @@ import { WORDS as words } from '../words'
 import type { ListRowOptions, SelectChoice } from '../types'
 import { INDEXING_OPERATION } from './useIndexQuestion'
 
-/** What a row reads from the provider of its connection and how it answers. */
+/**
+ * What a row reads from the provider of its connection and how it answers. getRowFields returns none while
+ * the row names no connection.
+ */
 export interface RowChoicesSource {
   readonly getRow: () => RowDraft
-  /** The row fields of the type of the connection the row names; none while it names none. */
   readonly getRowFields: () => readonly ConnectionFieldInfo[]
   readonly getOperations: () => readonly string[]
   readonly getListRowOptions: () => ListRowOptions | undefined

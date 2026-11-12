@@ -145,7 +145,7 @@ func TestThePluginRunsInDesktopWindowsAlone(t *testing.T) {
 }
 
 // A row names the model, from the list the program offers, and a reasoning level of that model.
-func TestARowHoldsAModelAndAReasoningLevelListedByTheProvider(t *testing.T) {
+func TestARowStoresAModelAndAReasoningLevelListedByTheProvider(t *testing.T) {
 	for _, one := range readConnectionShape(t).Contributes.ConnectionTypes {
 		if len(one.RowFields) != 2 {
 			t.Fatalf("%s: row fields = %+v, want two", one.ID, one.RowFields)

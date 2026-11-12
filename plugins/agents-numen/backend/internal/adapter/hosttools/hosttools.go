@@ -47,7 +47,8 @@ func FromVariables(vars map[string]string) (*Tools, error) {
 	return New(tools.NewClient(endpoint)), nil
 }
 
-// ListTools lists the tools of the host, in the order of the listing.
+// ListTools returns the tools the permissions of the plugin allow, in the order of the listing; a tool that
+// declares no parameters takes an empty object.
 func (t *Tools) ListTools(ctx context.Context) ([]conversation.Tool, error) {
 	listing, err := t.client.ListTools(ctx)
 	if err != nil {

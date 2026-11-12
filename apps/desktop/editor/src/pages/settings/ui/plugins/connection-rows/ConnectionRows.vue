@@ -115,7 +115,6 @@ function onRowsChange(rows: readonly StoredRow[]): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/* The one row of a setting that names no connection yet asks for one, so the setting is not left empty unnoticed. */
 function getRowReason(connection: string): string {
   if (connection === '' && isSingle.value) return words.connectionRowsChoose
   return getReason(connection)

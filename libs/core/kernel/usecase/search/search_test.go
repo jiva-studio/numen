@@ -135,7 +135,6 @@ func precise(v []float32) []byte {
 	return out
 }
 
-// participants are the search sources over the model of a test, none for no model.
 func (c corpus) participants(model sourcefake.Embedder) []search.Participant {
 	if model == nil {
 		return nil

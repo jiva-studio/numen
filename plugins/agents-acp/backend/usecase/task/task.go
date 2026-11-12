@@ -52,7 +52,8 @@ var _ contract.Runner = (*Runner)(nil)
 // RunTask carries out one prompt turn in the session of the conversation of the request, opened for the
 // turn where the plugin keeps none, and sends the session updates of the turn as frames. A program that
 // cannot be found or does not open a session is a failure to try the next connection after; a turn that
-// fails is a stop. A canceled turn is canceled in the program too.
+// fails is a stop. A canceled turn is canceled in the program too, and the cancellation of ctx is the
+// error of a task that could not run.
 func (r *Runner) RunTask(
 	ctx context.Context, call connection.Call, request *contract.TaskRequest, send func(*contract.TaskFrame) error,
 ) (*contract.TaskDone, error) {
@@ -107,7 +108,6 @@ func (r *Runner) runTurn(
 	return &contract.TaskDone{StopReason: writeStopReason(reason)}, false, nil
 }
 
-// open lists the tools of the host, serves them, and opens the session of the conversation with them.
 func (r *Runner) open(ctx context.Context, conv *conversation, agent agents.Agent) error {
 	if r.deps.Tools != nil {
 		listing, cancel := context.WithTimeout(ctx, listLimit)
@@ -134,7 +134,7 @@ func (r *Runner) open(ctx context.Context, conv *conversation, agent agents.Agen
 		Command: agent.Command, Servers: servers, Meta: agent.GetTaskMeta(conv.listNames()),
 	})
 	if err != nil {
-		return errors.Join(connection.NewTryNextError(connection.ReasonUnavailable, 0), closeServed(ctx, served))
+		return errors.Join(connection.NewTryNextError(connection.ReasonUnavailable, 0), closeServedTools(ctx, served))
 	}
 	return conv.setSession(ctx, session, served)
 }
@@ -147,8 +147,6 @@ func listTools(conv *conversation) []*tools.ToolInfo {
 	return listed
 }
 
-// readFailure returns the error of a task that could not run: the cancellation of ctx where it ended,
-// else the failure of the connection.
 func readFailure(ctx context.Context, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
@@ -172,7 +170,7 @@ func (r *Runner) getOpenLimit() time.Duration {
 // CloseIdle closes the sessions that have gone unused for 30 minutes, and returns the errors of closing
 // sessions since the last call.
 func (r *Runner) CloseIdle(ctx context.Context) error {
-	return r.pool.closeIdle(ctx)
+	return r.pool.closeIdleConversations(ctx)
 }
 
 // Close closes every session, and ends a task that still runs.

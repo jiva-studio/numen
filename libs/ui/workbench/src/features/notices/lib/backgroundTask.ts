@@ -4,7 +4,10 @@
  */
 import type { Severity, TallyUnit } from './tally'
 
-/** One piece of work the application is doing behind the window. */
+/**
+ * One piece of work the application is doing behind the window. source names the plugin that runs it, and
+ * no plugin where the core runs it.
+ */
 export interface WorkTask {
   readonly id: string
   readonly label: string
@@ -15,7 +18,6 @@ export interface WorkTask {
     readonly counting: TallyUnit
   }
   readonly error: string
-  /** Who started it: the plugin that runs it, or none where the core does. */
   readonly source: {
     readonly isUserStarted: boolean
     readonly pluginId: string

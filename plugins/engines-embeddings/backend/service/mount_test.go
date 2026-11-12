@@ -55,7 +55,6 @@ type servedModel struct {
 	Width int32  `json:"width"`
 }
 
-// getModel asks the search source service of the plugin for its description over Connect JSON, as the host does.
 func getModel(t *testing.T, web *httptest.Server) servedModel {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.SearchSourceService/DescribeSearchSource", strings.NewReader("{}"))
@@ -79,7 +78,6 @@ func getModel(t *testing.T, web *httptest.Server) servedModel {
 	return info
 }
 
-// describeStatus asks the search source service of the plugin for its description and returns the HTTP status.
 func describeStatus(t *testing.T, web *httptest.Server) int {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.SearchSourceService/DescribeSearchSource", strings.NewReader("{}"))

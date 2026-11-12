@@ -15,7 +15,6 @@ type provider struct {
 	models     *models.Models
 }
 
-// roles returns the operations of the llm contract the plugin serves.
 func (p *provider) roles() connection.Provider {
 	return llm.Provide(nil, llm.Roles{
 		Completer: p.completion, Chatter: p.completion, Embedder: p.embedding, Profiler: p.embedding,

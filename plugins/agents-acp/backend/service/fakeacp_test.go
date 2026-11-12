@@ -35,8 +35,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// fakeProgram writes a program that runs the test binary as a fake ACP agent of the behavior, and returns
-// its path and the file the agent records the messages it read in.
 func fakeProgram(t *testing.T, behavior string) (program, record string) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
@@ -51,7 +49,6 @@ func fakeProgram(t *testing.T, behavior string) (program, record string) {
 	return program, record
 }
 
-// quoteShell wraps a text in single quotes for a shell script.
 func quoteShell(text string) string {
 	return "'" + strings.ReplaceAll(text, "'", `'\''`) + "'"
 }
@@ -295,7 +292,6 @@ func (a *fakeAgent) callTools() {
 	}})
 }
 
-// keepServer keeps the address and the token of the MCP server the session is offered.
 func (a *fakeAgent) keepServer(message map[string]any) {
 	if address, isText := dig(message, "params", "mcpServers", 0, "url").(string); isText {
 		a.mcpURL = address
@@ -305,8 +301,6 @@ func (a *fakeAgent) keepServer(message map[string]any) {
 	}
 }
 
-// dig returns the value at the path of keys and indexes in a decoded JSON value, or nil where there is
-// none.
 func dig(value any, path ...any) any {
 	for _, step := range path {
 		switch at := step.(type) {
@@ -327,7 +321,6 @@ func dig(value any, path ...any) any {
 	return value
 }
 
-// streamAnswer answers in two pieces with a plan between them.
 func (a *fakeAgent) streamAnswer() {
 	a.update(map[string]any{"sessionUpdate": "agent_message_chunk", "content": map[string]any{"type": "text", "text": "Raised "}})
 	a.update(map[string]any{"sessionUpdate": "plan", "entries": []map[string]any{
@@ -336,8 +329,6 @@ func (a *fakeAgent) streamAnswer() {
 	a.update(map[string]any{"sessionUpdate": "agent_message_chunk", "content": map[string]any{"type": "text", "text": "beds."}})
 }
 
-// callServedTool calls note_read of the served tools the way Claude Code reports it, and answers with
-// what the tool returned.
 func (a *fakeAgent) callServedTool() {
 	meta := map[string]any{"claudeCode": map[string]any{"toolName": "mcp__numen__note_read"}}
 	a.update(map[string]any{
@@ -357,7 +348,6 @@ func (a *fakeAgent) callServedTool() {
 	a.update(map[string]any{"sessionUpdate": "agent_message_chunk", "content": map[string]any{"type": "text", "text": text}})
 }
 
-// callMCPTool lists the tools of the MCP server of the session, records their names, and calls one.
 func (a *fakeAgent) callMCPTool(name string, arguments map[string]any) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

@@ -60,7 +60,6 @@ func Mount(s *server.Server) error {
 	return mount(s, hostmodel.OpenFromEnvironment, getPlaces(host.NewSearchClientFromEnv), health.NewClientFromEnv)
 }
 
-// getPlaces returns the search of the index of the host the connect function reaches, in a vault.
 func getPlaces(connect func() (*host.SearchClient, error)) openPlace {
 	return func(vaultID string) (host.PlaceSearch, error) {
 		client, err := connect()

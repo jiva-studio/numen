@@ -187,7 +187,7 @@ func TestAFailureAfterTheFirstFrameKeepsTheFramesAndBecomesAStopError(t *testing
 	}
 }
 
-func TestAStreamThatEndsWithNeitherADoneNorAFailureIsAnErrorOfNoFailureKind(t *testing.T) {
+func TestAStreamThatEndsWithoutAFinalFrameIsAnErrorOfNoFailureKind(t *testing.T) {
 	provider, _, _ := newBridge(t, &scriptedService{frames: []*v1.ProviderServiceCallResponse{data("partial")}})
 	var frames []string
 
@@ -236,7 +236,7 @@ func TestAnErrorOfTheReceiverEndsTheCallAndIsReturnedAsItIs(t *testing.T) {
 	}
 }
 
-func TestListOptionsSendsTheOperationsOfTheSettingAndReadsTheOptionsOfTheDoneFrame(t *testing.T) {
+func TestListOptionsSendsTheOperationsOfTheSettingAndReadsTheOptionsOfTheFinalFrame(t *testing.T) {
 	listed, err := proto.Marshal(&v1.Options{Options: []*v1.Option{{Value: "m1", Title: "One", Group: "Free"}, {Value: "m2"}}})
 	if err != nil {
 		t.Fatal(err)
@@ -259,7 +259,7 @@ func TestListOptionsSendsTheOperationsOfTheSettingAndReadsTheOptionsOfTheDoneFra
 	}
 }
 
-func TestADoneFrameThatHoldsNoOptionsIsAStopOfAnInvalidRequest(t *testing.T) {
+func TestAFinalFrameWithoutOptionsIsAStopOfAnInvalidRequest(t *testing.T) {
 	provider, _, _ := newBridge(t, &scriptedService{frames: []*v1.ProviderServiceCallResponse{done([]byte{0xff, 0xff})}})
 
 	_, err := provider.ListOptions(t.Context(), "llm.models", modelcall.ProviderCall{}, nil)

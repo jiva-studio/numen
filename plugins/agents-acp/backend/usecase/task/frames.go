@@ -25,7 +25,11 @@ type shownCall struct {
 }
 
 // turn turns the session updates of one prompt turn into the frames of the task, and allows the agent
-// the tools the session serves.
+// the tools the session serves. Pieces of the answer the agent names no message for belong to one message
+// until another update comes between them. The first report of a call is sent as a tool_call, followed by
+// its end where the first report is the end, the others as tool_call_updates, and nothing after the call
+// has finished. A call of a served tool shows the title of the listing, the kind of its effect, its first
+// content and the vault path it works on; any other call shows the title and the kind the agent reports.
 type turn struct {
 	listed       map[string]*tools.ToolInfo
 	send         func(*contract.TaskFrame) error
@@ -59,8 +63,6 @@ func (t *turn) HandleUpdate(update acp.Update) error {
 	return nil
 }
 
-// sendChunk sends a piece of the answer. Pieces the agent names no message for belong to one message until
-// another update comes between them.
 func (t *turn) sendChunk(chunk acp.Chunk) error {
 	id := chunk.MessageID
 	if id == "" {
@@ -79,9 +81,6 @@ func (t *turn) endMessage() {
 	}
 }
 
-// sendTool sends the first report of a call as a tool_call and the others as tool_call_updates, and nothing
-// after the call has finished. A call of a served tool shows the title of the listing, the kind of its
-// effect, what it is about and the vault path it works on.
 func (t *turn) sendTool(update acp.ToolUpdate) error {
 	shown, isKnown := t.calls[update.ID]
 	if !isKnown {
@@ -104,8 +103,6 @@ func (t *turn) sendTool(update acp.ToolUpdate) error {
 	return t.sendToolUpdate(shown, update, change)
 }
 
-// sendToolStart sends the tool_call of a call, followed by its end where the first report of the call
-// is its end.
 func (t *turn) sendToolStart(shown *shownCall, update acp.ToolUpdate, change toolChange) error {
 	status := change.status
 	if status == contract.ToolCallStatus_TOOL_CALL_STATUS_UNSPECIFIED {
@@ -164,8 +161,6 @@ func (t *turn) sendFrame(frame *contract.TaskFrame) error {
 	return nil
 }
 
-// describeTool returns the title and the kind of a call: those of the listing for a served tool, else
-// those the agent reports.
 func describeTool(listed *tools.ToolInfo, update acp.ToolUpdate) (string, contract.ToolKind) {
 	if listed != nil {
 		title := listed.GetTitle()
@@ -188,8 +183,6 @@ func describeTool(listed *tools.ToolInfo, update acp.ToolUpdate) (string, contra
 	return title, kind
 }
 
-// describeArguments returns what the call is about as the first content, and, for a served tool, the vault
-// path it works on. Both are empty where the update holds no arguments.
 func describeArguments(listed *tools.ToolInfo, update acp.ToolUpdate) ([]string, []*contract.ToolCallLocation) {
 	if len(update.Arguments) == 0 {
 		return nil, nil

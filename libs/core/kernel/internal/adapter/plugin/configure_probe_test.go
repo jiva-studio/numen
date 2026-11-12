@@ -218,7 +218,7 @@ func TestTheItemsOfAPluginOutliveAnIdleStopAndGoWhenItIsSwitchedOff(t *testing.T
 	}
 }
 
-func TestSafeModeTakesTheItemsOfEveryPluginOut(t *testing.T) {
+func TestSafeModeRemovesTheItemsOfEveryPlugin(t *testing.T) {
 	host, _ := newConfiguredHost(t)
 	if err := pluginhealth.NewReport(host.Health, host.Registry).Execute(configuredPluginID, plugindomain.HealthItem{Key: "connection", Severity: plugindomain.HealthWarning, Text: "The connection is slow"}); err != nil {
 		t.Fatal(err)

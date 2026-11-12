@@ -472,7 +472,7 @@ func TestTheOperationAndThePayloadReachTheProviderWhole(t *testing.T) {
 	}
 }
 
-func TestTheDataFramesAndTheDonePayloadReachTheConsumerInOrder(t *testing.T) {
+func TestTheDataFramesAndTheFinalPayloadReachTheConsumerInOrder(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
 	s.world.Provider.Script(addressOne, nil, "The answer", " is short.")
 

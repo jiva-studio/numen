@@ -291,7 +291,7 @@ describe('a note made', () => {
     expect(one.actions.at(-1)).toBe('travel Entropy.md')
   })
 
-  it('opens beside the tab the person is in where that kind of tab opens the note', async () => {
+  it('opens the note in a split next to the current tab when that tab kind opens the note', async () => {
     const one = createWindow()
 
     await one.carry(invoke('app:note.createChild', front({ kind: 'page' }), 'Entropy'))

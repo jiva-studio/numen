@@ -57,8 +57,6 @@ func openConfigurableEmbedder(t *testing.T) (*container.PluginRoles, *sourcebrid
 	return host, bridge, mock, &announced
 }
 
-// startConfigurableSource runs the mock as the plugin that declares the search source capability and takes its
-// configuration, beside another plugin.
 func startConfigurableSource(t *testing.T, mock *mockSourceServer) *container.PluginRoles {
 	t.Helper()
 	mux := http.NewServeMux()

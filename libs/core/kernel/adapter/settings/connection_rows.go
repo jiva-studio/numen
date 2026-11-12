@@ -28,7 +28,8 @@ type ConnectionRowsSource struct {
 	Report      func(err error)
 }
 
-// ConnectionRows reads and changes the settings of type connections of the plugins.
+// ConnectionRows reads and changes the settings of type connections of the plugins. A stored row holds the
+// connection under its key, and every other string of the row is an option of the row.
 type ConnectionRows struct{ source ConnectionRowsSource }
 
 // NewConnectionRows returns the rows of the plugins in the source.
@@ -69,8 +70,6 @@ func (r *ConnectionRows) readExistingRows(valueJSON string) ([]connection.Row, e
 	return slices.DeleteFunc(rows, func(row connection.Row) bool { return !exists[row.ConnectionID] }), nil
 }
 
-// readRowsJSON reads the rows of a value: the connection under its key, and every other string as an
-// option of the row.
 func readRowsJSON(valueJSON string) []connection.Row {
 	var stored []map[string]any
 	if valueJSON == "" || json.Unmarshal([]byte(valueJSON), &stored) != nil {

@@ -30,7 +30,7 @@ describe('the conversation view', () => {
 
   // The card a question is about goes to the tools as their context, not into the question, where
   // a name would be read as an instruction.
-  it('hands the tools the context and the vault it was given', async () => {
+  it('passes the tools the context and the vault of the view', async () => {
     const { view, calls } = open({
       toolContext: { 'md.numen.views.flashcards.studio/card': 'k3v9q2m8xa' },
       vault: 'vault-orchard',

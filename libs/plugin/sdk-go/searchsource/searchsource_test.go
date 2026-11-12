@@ -155,7 +155,6 @@ type testClient struct {
 	rpc numenv1connect.SearchSourceServiceClient
 }
 
-// newTestClient creates a client of the search source service served at baseURL.
 func newTestClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) *testClient {
 	return &testClient{rpc: numenv1connect.NewSearchSourceServiceClient(httpClient, baseURL, opts...)}
 }

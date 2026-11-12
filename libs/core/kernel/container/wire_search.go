@@ -203,9 +203,6 @@ func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, 
 	c.PluginHost.Endpoint.SetPluginSearch(access.Access())
 }
 
-// searchSources opens the search source of a window. A source that cannot describe itself yet is opened all
-// the same: the search item of its plugin shows why, and the source joins search and indexing once a
-// configuration of its plugin lets it describe itself.
 func searchSources(c searchWiring, ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
 	report := pluginhealth.NewReportSearchSource(c.PluginHost.Health)
 	source, closeSource, err := searchOpenSource(c, ctx, func(ctx context.Context, host sourcebridge.Host) (*sourcebridge.Source, error) {

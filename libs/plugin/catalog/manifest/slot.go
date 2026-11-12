@@ -182,7 +182,7 @@ func listForeignValueIssues(entry SlotEntry) []error {
 	return wrapSlotIssues(ListAppValueIssues(entry.Command, entry.Values))
 }
 
-// ListAppValueIssues returns an error for each name of values that the app: command does not take,
+// ListAppValueIssues returns an error for each name of values that the app: command does not accept,
 // and for each value of an enum argument that is not one of its options. The arguments are those
 // commands.json declares for the app command and for the shared command of the id.
 func ListAppValueIssues(command string, values map[string]string) []error {

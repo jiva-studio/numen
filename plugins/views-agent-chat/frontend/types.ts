@@ -19,6 +19,10 @@ export interface PlanItem {
   readonly status: PlanStatus
 }
 
+/**
+ * A turn with offersSettings is a failed turn that says no agent is set up, under which the settings are
+ * offered.
+ */
 export interface Turn {
   readonly id: string
   readonly voice: Voice
@@ -26,7 +30,6 @@ export interface Turn {
   readonly subject?: string
   readonly state?: TurnState
   readonly canOpen?: boolean
-  /** A failed turn that says no agent is set up, under which the settings are offered. */
   readonly offersSettings?: boolean
   readonly plan?: readonly PlanItem[]
   readonly unresolved?: readonly string[]

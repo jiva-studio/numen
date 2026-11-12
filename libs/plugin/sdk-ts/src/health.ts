@@ -30,7 +30,7 @@ export interface HealthItem {
 // HealthHost is where a plugin reports its health items.
 export interface HealthHost {
   // Puts the item in the list, or replaces the one under its key. Rejects an item the core refuses:
-  // past the limits, a command the plugin may not run, or values the command does not take.
+  // past the limits, a command the plugin may not run, or values the command does not accept.
   report(item: HealthItem): Promise<void>
   // Takes the item under the key out of the list.
   clear(key: string): Promise<void>

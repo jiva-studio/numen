@@ -38,7 +38,6 @@ const waitForAbort = (signal: AbortSignal | undefined): Promise<void> =>
     signal?.addEventListener('abort', () => resolve(), { once: true })
   })
 
-/** Connections that answer each task with the script `answer` gives for it. */
 export function createAgentConnections(answer: TaskScript | ((request: TaskRequest) => TaskScript)) {
   const calls: { operation: string; request: TaskRequest; options?: ConnectionCallOptions }[] = []
   const host: ConnectionHost = {

@@ -98,8 +98,8 @@ export type SlotCommandFinder = (
   target: CommandTarget | undefined,
 ) => SlotCommandLook | undefined
 
+/** target is the target of the window, which the plugins it activates read as theirs. */
 export interface PluginHostDeps {
-  /** The target of the window, which the plugins it activates read as theirs. */
   readonly target: string
   readonly getContentTypes?: () => Readonly<Record<string, string>>
   readonly getWindowValues?: () => WhenValues

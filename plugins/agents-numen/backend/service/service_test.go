@@ -61,7 +61,6 @@ func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	}
 }
 
-// callTask asks the handler for acp.task over Connect and returns the body of the answer.
 func callTask(t *testing.T, client *http.Client, baseURL string) string {
 	t.Helper()
 	payload, err := proto.Marshal(&acp.TaskRequest{Prompt: "When does the ferry leave?"})

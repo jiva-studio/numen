@@ -294,7 +294,7 @@ export const PluginHealthService: GenService<{
    * ReportHealth puts one item of the plugin in the list, or replaces the one
    * under its key. An item at HEALTH_SEVERITY_OK clears the key. An item past
    * the limits, a key of the core, a command the plugin may not run or values
-   * the command does not take answer INVALID_ARGUMENT.
+   * the command does not accept answer INVALID_ARGUMENT.
    *
    * @generated from rpc numen.v1.PluginHealthService.ReportHealth
    */
