@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // TrashDir is where a removed note is kept. A name beginning with a dot is not
@@ -31,7 +32,7 @@ type Remove struct {
 	links   noteport.LinkQueries
 	queries sourceport.SourcesUnder
 	index   edit.IndexUpdater
-	gate    WriteGate
+	gate    windowport.WriteGate
 }
 
 // NewRemove is what takes a note out of the vault: the vault it is moved
@@ -39,7 +40,7 @@ type Remove struct {
 // under it, and what updates the index for the path it left, and the gate a removal passes.
 func NewRemove(
 	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, index edit.IndexUpdater,
-	gate WriteGate,
+	gate windowport.WriteGate,
 ) Remove {
 	return Remove{writers: writers, links: links, queries: queries, index: index, gate: gate}
 }

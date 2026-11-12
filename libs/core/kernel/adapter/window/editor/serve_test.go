@@ -40,6 +40,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -200,7 +201,7 @@ func openingWith(
 
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock(),
-		note.OpenGate{},
+		windowdomain.OpenGate{},
 	)
 	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(NewState(run.NewTasks(), nil, nil))

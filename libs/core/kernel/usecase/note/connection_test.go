@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -29,7 +30,7 @@ func (c changeFixture) addresses() edit.NameQueries {
 func (c changeFixture) connectionDeps(writers note.NoteWriting) note.ConnectionDeps {
 	return note.ConnectionDeps{
 		Readers: vaultreader.Readers{}, Writers: writers, Index: c.index, Now: testsupport.NewClock(),
-		Links: c.db.NoteQueries(), Names: c.addresses(), Gate: note.OpenGate{},
+		Links: c.db.NoteQueries(), Names: c.addresses(), Gate: windowdomain.OpenGate{},
 	}
 }
 
