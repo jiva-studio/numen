@@ -24,6 +24,7 @@ import { readRows, type StoredRow } from '@/entities/connection'
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
 import type { InstallationConnections } from '../../../types'
+import SettingRow from '../../setting-row/SettingRow.vue'
 import { ConfirmDialog } from '../../confirm-dialog'
 import { WORDS as words } from '../../../words'
 import ConnectionRowEditor from './ConnectionRowEditor.vue'
@@ -121,20 +122,19 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
 
 <template>
   <section class="connection-rows">
-    <div class="connection-rows__head">
-      <h3 class="connection-rows__title">{{ setting.title }}</h3>
-      <Button
-        v-if="stored.length > 0 && !isSingle"
-        variant="outline"
-        :disabled="drafts.length >= limit"
-        @click="onAdd"
-      >
-        <Plus :size="14" aria-hidden="true" />
-        {{ words.connectionAdd }}
-      </Button>
-    </div>
+    <PluginSettingsCard>
+      <SettingRow :at="setting.key" :name="setting.title" detail="">
+        <Button
+          v-if="stored.length > 0 && !isSingle"
+          variant="outline"
+          :disabled="drafts.length >= limit"
+          @click="onAdd"
+        >
+          <Plus :size="14" aria-hidden="true" />
+          {{ words.connectionAdd }}
+        </Button>
+      </SettingRow>
 
-    <PluginSettingsCard v-if="stored.length === 0 || drafts.length > 0">
       <div v-if="stored.length === 0" class="connection-rows__empty">
         <p class="connection-rows__note">{{ words.connectionRowsNone }}</p>
         <Button variant="outline" @click="emit('open-connections')">
@@ -142,7 +142,7 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
         </Button>
       </div>
 
-      <ul v-else ref="list" class="connection-rows__list" :aria-label="setting.title">
+      <ul v-else-if="drafts.length > 0" ref="list" class="connection-rows__list" :aria-label="setting.title">
         <ConnectionRowEditor
           v-for="(row, index) in drafts"
           :key="row.key"
@@ -192,20 +192,6 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
   gap: 0.5rem;
   inline-size: 100%;
   margin-block-start: 1.25rem;
-}
-
-.connection-rows__head {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.connection-rows__title {
-  margin: 0;
-  color: var(--numen-ink);
-  font-size: var(--numen-text-2);
-  font-weight: 500;
 }
 
 .connection-rows__list {
