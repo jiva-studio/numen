@@ -140,14 +140,14 @@ func buildWindow(
 	// A request is one task regardless of how it was issued. The list is created
 	// before any component that reports into it.
 	tasks := run.NewTasks()
-	reportPluginFailures(a, tasks)
+	signalFailureClears(a)
 	reportDependencies(a, tasks)
 	setPluginWork(a, tasks, &run.Lock{})
 	setModelCalls(a, run.NewConnectionNoticeTasks(tasks).Execute)
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.
-	embedder, asking, closeEmbedder, why := searchSources(a.search, ctx, tasks)
+	embedder, asking, closeEmbedder, why := searchSources(a.search, ctx)
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(a, event) })
 	state.SetIndexing(embedding)
@@ -239,6 +239,7 @@ func mountServices(w *windowWiring) {
 	mountConnectionCall(w)
 	mountText(w)
 	mountPlugin(w)
+	mountHealth(w)
 	mountCatalog(w)
 }
 

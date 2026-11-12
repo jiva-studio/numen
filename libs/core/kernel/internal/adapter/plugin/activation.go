@@ -200,9 +200,7 @@ func (a *Activation) settlePluginInState(
 
 // EnsureActive ensures the plugin process is running and returns its endpoint.
 func (a *Activation) EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	endpoint, err := a.ensureActiveDuringDiscovery(ctx, pluginID)
-	a.failures.Deliver()
-	return endpoint, err
+	return a.ensureActiveDuringDiscovery(ctx, pluginID)
 }
 
 func (a *Activation) ensureActiveDuringDiscovery(ctx context.Context, pluginID string) (transport.Endpoint, error) {

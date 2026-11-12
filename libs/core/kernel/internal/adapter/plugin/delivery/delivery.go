@@ -27,11 +27,25 @@ type Snapshot struct {
 	Values     map[string]string
 }
 
-// Host is what the delivery asks the plugin host for.
+// Host is what the delivery asks the plugin host for. RecordConfigureAnswer is given the answer of the
+// plugin to each Configure call it answered: nil where it took the configuration, a *RefusedError where
+// it did not.
 type Host interface {
 	GetSnapshot(pluginID string) (Snapshot, bool, error)
 	ListPluginIDs() []string
 	GetClient(endpoint transport.Endpoint) *http.Client
+	RecordConfigureAnswer(pluginID string, refused *RefusedError)
+}
+
+// RefusedError is a Configure call the plugin answered with an error. Text is the message of the plugin,
+// or the code of the answer where it has none.
+type RefusedError struct {
+	PluginID string
+	Text     string
+}
+
+func (e *RefusedError) Error() string {
+	return fmt.Sprintf("configure plugin %s: %s", e.PluginID, e.Text)
 }
 
 // Delivery gives each running plugin its configuration, and sends it again when the plugin is forced.
@@ -132,7 +146,12 @@ func (d *Delivery) Configure(ctx context.Context, pluginID string) error {
 
 func (d *Delivery) deliver(ctx context.Context, snapshot Snapshot) error {
 	isConfigured, sendErr := d.sendConfigure(ctx, snapshot)
-	d.ledger.recordOutcome(snapshot.PluginID, sendErr, sendErr != nil && isCallerFailure(ctx, sendErr))
+	isCaller := sendErr != nil && isCallerFailure(ctx, sendErr)
+	d.ledger.recordOutcome(snapshot.PluginID, sendErr, isCaller)
+	if !isCaller {
+		refused, _ := errors.AsType[*RefusedError](sendErr)
+		d.host.RecordConfigureAnswer(snapshot.PluginID, refused)
+	}
 	if sendErr == nil && isConfigured {
 		d.watchers.run(snapshot.PluginID)
 	}
@@ -168,12 +187,15 @@ func (d *Delivery) sendConfigure(ctx context.Context, snapshot Snapshot) (bool, 
 	if errors.As(err, &connectErr) && connectErr.Code() == connect.CodeUnimplemented {
 		return false, nil
 	}
-	return false, fmt.Errorf("configure plugin %s: %s", snapshot.PluginID, getConfigureFailureText(err))
+	return false, &RefusedError{PluginID: snapshot.PluginID, Text: getConfigureFailureText(err)}
 }
 
 func getConfigureFailureText(err error) string {
 	if connect.CodeOf(err) == connect.CodeDeadlineExceeded {
 		return "timed out"
+	}
+	if connectErr, isConnect := errors.AsType[*connect.Error](err); isConnect && connectErr.Message() != "" {
+		return connectErr.Message()
 	}
 	return connect.CodeOf(err).String()
 }

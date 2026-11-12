@@ -15,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
@@ -48,11 +47,6 @@ func TestEnsureActive_RefusesPluginWithMismatchedProtocol(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			host := newDiscoveredHost(t)
-			var failedID string
-			var reason string
-			host.Failures.SetOnPluginFailed(func(failed plugindomain.Failure) {
-				failedID, reason = failed.PluginID, failed.Reason
-			})
 			var procs []*os.Process
 			host.Processes.SetLauncher(launchAnsweringPing(t, tc.protocol, &procs))
 
@@ -60,8 +54,8 @@ func TestEnsureActive_RefusesPluginWithMismatchedProtocol(t *testing.T) {
 			if !errors.Is(err, manifest.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("EnsureActive() = %v, want %v naming %q", err, manifest.ErrUnsupportedProtocol, tc.want)
 			}
-			if failedID != "org.example.sample" || reason != lifecycle.DescribeFailure(manifest.ErrUnsupportedProtocol) {
-				t.Fatalf("failure reported for %q with %q, want org.example.sample with the protocol reason", failedID, reason)
+			if items := host.Health.List(); len(items) != 1 || items[0].PluginID != "org.example.sample" || items[0].Text != lifecycle.DescribeFailure(manifest.ErrUnsupportedProtocol) {
+				t.Fatalf("health items = %+v, want org.example.sample with the protocol reason", items)
 			}
 			if err := procs[0].Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) {
 				t.Fatalf("signal the rejected process: %v, want %v", err, os.ErrProcessDone)

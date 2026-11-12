@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -49,8 +48,8 @@ func (c Config) Embedder(ctx context.Context) (searchsourceport.WatchedSource, f
 
 func (c Config) EmbedderReady() bool { return embedderReady(searchOf(c)) }
 
-func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
-	return searchSources(searchOf(c), ctx, tasks)
+func (c Config) Embedders(ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
+	return searchSources(searchOf(c), ctx)
 }
 
 func (c Config) GetEditorAgent() agentport.Agent { return getToolProvider(plugins(c)) }

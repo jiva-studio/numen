@@ -45,7 +45,8 @@ type scanHold interface {
 	releaseScan()
 }
 
-// Discovery finds the plugins in the folders it is given, registers them, and retires the ones that left the disk.
+// Discovery finds the plugins in the folders it is given, registers them, and retires the ones that left the
+// disk with their cache and their health items.
 type Discovery struct {
 	set       discoveredPlugins
 	registrar pluginRegistrar
@@ -55,6 +56,7 @@ type Discovery struct {
 	stopper   pluginStopper
 	listeners listenerControl
 	storage   cacheRemover
+	health    healthRemover
 	report    func(error)
 	dirs      []string
 	target    string
@@ -71,6 +73,7 @@ type DiscoveryDeps struct {
 	Stopper     *supervision.Stopper
 	Listeners   listenerControl
 	Storage     *storage.Storage
+	Health      healthRemover
 	Report      func(error)
 	Dirs        []string
 	Target      string
@@ -80,7 +83,7 @@ type DiscoveryDeps struct {
 func NewDiscovery(d DiscoveryDeps) *Discovery {
 	return &Discovery{
 		set: d.Set, registrar: d.Registrar, scan: d.Scan, mode: d.Mode, sups: d.Supervisors, stopper: d.Stopper, listeners: d.Listeners,
-		storage: d.Storage, report: d.Report, dirs: d.Dirs, target: d.Target,
+		storage: d.Storage, health: d.Health, report: d.Report, dirs: d.Dirs, target: d.Target,
 	}
 }
 
@@ -118,6 +121,7 @@ func (d *Discovery) discoverPlugins() error {
 		d.retirePlugin(id)
 		if !d.set.isOnDisk(id) {
 			d.storage.RemoveCacheDir(id)
+			d.health.RemovePlugin(id)
 		}
 	}
 	return nil

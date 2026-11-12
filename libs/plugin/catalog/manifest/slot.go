@@ -142,11 +142,24 @@ func listSlotEntryIssues(entry SlotEntry, declared map[string]Command) []error {
 }
 
 func listSlotValueIssues(entry SlotEntry, command Command) []error {
+	return wrapSlotIssues(ListDeclaredValueIssues(command, entry.Command, entry.Values))
+}
+
+// ListDeclaredValueIssues returns an error for each name of values that the command, run under the
+// id named, does not declare as an argument.
+func ListDeclaredValueIssues(command Command, named string, values map[string]string) []error {
 	var issues []error
-	for _, name := range slices.Sorted(maps.Keys(entry.Values)) {
+	for _, name := range slices.Sorted(maps.Keys(values)) {
 		if _, isDeclared := command.GetArgument(name); !isDeclared {
-			issues = append(issues, fmt.Errorf("%w: values of command %q name the argument %q, which the command does not declare", ErrInvalidSlotEntry, entry.Command, name))
+			issues = append(issues, fmt.Errorf("values of command %q name the argument %q, which the command does not declare", named, name))
 		}
+	}
+	return issues
+}
+
+func wrapSlotIssues(issues []error) []error {
+	for i, issue := range issues {
+		issues[i] = fmt.Errorf("%w: %w", ErrInvalidSlotEntry, issue)
 	}
 	return issues
 }
@@ -166,8 +179,15 @@ func listForeignValueIssues(entry SlotEntry) []error {
 	if len(entry.Values) == 0 || !strings.HasPrefix(entry.Command, "app:") {
 		return nil
 	}
+	return wrapSlotIssues(ListAppValueIssues(entry.Command, entry.Values))
+}
+
+// ListAppValueIssues returns an error for each name of values that the app: command does not take,
+// and for each value of an enum argument that is not one of its options. The arguments are those
+// commands.json declares for the app command and for the shared command of the id.
+func ListAppValueIssues(command string, values map[string]string) []error {
 	allowed := map[string][]string{}
-	if appArguments, isAppCommand := GetAppCommandArguments(entry.Command); isAppCommand {
+	if appArguments, isAppCommand := GetAppCommandArguments(command); isAppCommand {
 		for _, argument := range appArguments {
 			if argument.Type == SettingTypeEnum {
 				allowed[argument.Name] = argument.Options
@@ -176,17 +196,17 @@ func listForeignValueIssues(entry SlotEntry) []error {
 			}
 		}
 	}
-	for _, argument := range GetSharedCommandArguments(entry.Command) {
+	for _, argument := range GetSharedCommandArguments(command) {
 		allowed[argument.Name] = nil
 	}
 	var issues []error
-	for _, name := range slices.Sorted(maps.Keys(entry.Values)) {
+	for _, name := range slices.Sorted(maps.Keys(values)) {
 		options, isDeclared := allowed[name]
 		switch {
 		case !isDeclared:
-			issues = append(issues, fmt.Errorf("%w: values of command %q name the argument %q, which the command does not take", ErrInvalidSlotEntry, entry.Command, name))
-		case len(options) > 0 && !slices.Contains(options, entry.Values[name]):
-			issues = append(issues, fmt.Errorf("%w: value %q of the argument %q of command %q is not one of %s", ErrInvalidSlotEntry, entry.Values[name], name, entry.Command, strings.Join(options, ", ")))
+			issues = append(issues, fmt.Errorf("values of command %q name the argument %q, which the command does not take", command, name))
+		case len(options) > 0 && !slices.Contains(options, values[name]):
+			issues = append(issues, fmt.Errorf("value %q of the argument %q of command %q is not one of %s", values[name], name, command, strings.Join(options, ", ")))
 		}
 	}
 	return issues

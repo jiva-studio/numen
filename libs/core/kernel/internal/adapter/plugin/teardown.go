@@ -22,6 +22,12 @@ type listenerControl interface {
 	closeAll()
 }
 
+// healthRemover takes health items of the plugins out of their list.
+type healthRemover interface {
+	RemovePlugin(pluginID string)
+	RemoveAll()
+}
+
 // evictionTimer ends the timer that stops the idle plugins.
 type evictionTimer interface {
 	Stop()
@@ -37,6 +43,7 @@ type Teardown struct {
 	evictor   evictionTimer
 	events    eventCloser
 	listeners listenerControl
+	health    healthRemover
 	report    func(error)
 }
 
@@ -48,13 +55,14 @@ type TeardownDeps struct {
 	Evictor     *supervision.Evictor
 	Events      eventCloser
 	Listeners   listenerControl
+	Health      healthRemover
 	Report      func(error)
 }
 
 func NewTeardown(d TeardownDeps) *Teardown {
 	return &Teardown{
 		mode: d.Mode, sups: d.Supervisors, stopper: d.Stopper, evictor: d.Evictor, events: d.Events, listeners: d.Listeners,
-		report: d.Report,
+		health: d.Health, report: d.Report,
 	}
 }
 
@@ -68,10 +76,12 @@ func (t *Teardown) EvictIdle(ctx context.Context, threshold, gracePeriod time.Du
 	return t.stopper.EvictIdle(ctx, threshold, gracePeriod)
 }
 
-// SetSafeMode enables or disables safe recovery mode. Entering it stops every running plugin.
+// SetSafeMode enables or disables safe recovery mode. Entering it stops every running plugin and takes
+// the health items of every plugin out of their list.
 func (t *Teardown) SetSafeMode(enabled bool) {
 	t.mode.setSafe(enabled)
 	if enabled {
+		t.health.RemoveAll()
 		for _, id := range t.sups.ListRunning() {
 			if err := t.stopper.StopPlugin(context.Background(), id); err != nil {
 				t.report(err)

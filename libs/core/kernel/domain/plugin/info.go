@@ -27,7 +27,6 @@ type Info struct {
 	Settings      []Setting
 	IsActive      bool
 	Permissions   []string
-	Failure       *Failure
 	HasFrontend   bool
 	HasBackend    bool
 	Readers       []ReaderInfo

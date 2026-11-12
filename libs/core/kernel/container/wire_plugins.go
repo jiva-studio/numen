@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settingsagent"
@@ -132,6 +133,7 @@ type PluginHost struct {
 	Views               PluginViews
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
+	Health              *pluginhealth.Items
 }
 
 // AdaptPluginHost lends the capabilities of host, the roles of a plugin host the caller made with NewPluginRoles, to the container. The
@@ -170,6 +172,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		Endpoint: lendHostEndpoint(host),
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
 			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,
+			Health: host.Health,
 		}).Execute,
 		Views: PluginViews{
 			Types: plugin.NewConnectionTypes(host.Registry), Infos: host.Registry, Checks: host.Settings,
@@ -177,6 +180,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		},
 		SetStorage:          func(cacheRoot, dataRoot string) { setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry) },
 		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
+		Health:              host.Health,
 	}
 }
 
@@ -193,6 +197,10 @@ func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 		},
 		Tools: func() hostendpoint.PluginTools {
 			return agenttoolsbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), agenttoolsbridge.Full)
+		},
+		Health: hostendpoint.HealthCalls{
+			Report: pluginhealth.NewReport(host.Health, host.Registry),
+			Clear:  pluginhealth.NewClear(host.Health),
 		},
 	}))
 	return services

@@ -83,7 +83,6 @@ func (r *Registry) GetPluginInfos() []plugindomain.Info {
 			Settings:       plugindomain.ListSettings(p.Manifest, v.settings(p.Manifest.ID)),
 			IsActive:       r.sups.IsActive(p.Manifest.ID),
 			Permissions:    p.Manifest.Permissions,
-			Failure:        r.failures.Get(p.Manifest.ID, p.Manifest.Name),
 			HasFrontend:    p.Manifest.HasFrontend(),
 			HasBackend:     p.Manifest.HasBackend(),
 			Readers:        r.readers.ListReaderInfos(enabled, p.Manifest),

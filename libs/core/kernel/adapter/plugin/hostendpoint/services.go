@@ -48,6 +48,26 @@ type Callers struct {
 	Lent         *Services
 	Dependencies func() Dependencies
 	Tools        func() PluginTools
+	Health       HealthCalls
+}
+
+// HealthReport puts a health item in the list as the plugin's. It returns plugin.ErrInvalidHealth for an
+// item the core refuses.
+type HealthReport interface {
+	Execute(pluginID string, item plugin.HealthItem) error
+}
+
+// HealthClear removes the health item of the plugin under the key. It returns plugin.ErrInvalidHealth
+// for a key the plugin cannot clear.
+type HealthClear interface {
+	Execute(pluginID, key string) error
+}
+
+// HealthCalls is what a plugin says about whether it works. A host without them answers that it keeps
+// no health items.
+type HealthCalls struct {
+	Report HealthReport
+	Clear  HealthClear
 }
 
 // TextVersions is the text versions of the vaults, as the plugins that call the host work them.

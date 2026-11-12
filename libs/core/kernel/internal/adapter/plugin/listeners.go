@@ -261,7 +261,6 @@ func (l *Listeners) failListenerBind(pluginID string, err error) {
 		return
 	}
 	l.failures.RecordActivationFailure(pluginID, l.set.getName(pluginID), err)
-	l.failures.Deliver()
 }
 
 func (l *Listeners) clearListenerFailure(pluginID string) {

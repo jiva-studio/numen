@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health/healthtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
@@ -74,4 +76,60 @@ func getModel(t *testing.T, web *httptest.Server) servedModel {
 		t.Fatalf("DescribeSearchSource: %v", err)
 	}
 	return info
+}
+
+// describeStatus asks the search source service of the plugin for its description and returns the HTTP status.
+func describeStatus(t *testing.T, web *httptest.Server) int {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, web.URL+"/numen.v1.SearchSourceService/DescribeSearchSource", strings.NewReader("{}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+linkedToken)
+	res, err := web.Client().Do(req)
+	if err != nil {
+		t.Fatalf("DescribeSearchSource: %v", err)
+	}
+	if err := res.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return res.StatusCode
+}
+
+// A local model the plugin has no profile for is reported to the host as the source item, with the
+// settings of the source as its fix, and the item is cleared once a model it knows answers.
+func TestAMissingLocalModelIsReportedAsTheSourceItemUntilAKnownModelAnswers(t *testing.T) {
+	hostHealth := healthtest.NewHost(t)
+	handler, err := NewHandler(hostHealth.Vars(linkedToken))
+	if err != nil {
+		t.Fatalf("NewHandler: %v", err)
+	}
+	web := httptest.NewServer(handler)
+	defer web.Close()
+	lifecycle := server.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(linkedToken))
+
+	if _, err := lifecycle.Configure(t.Context(), map[string]string{"source": "local", "model": "Example/no-such-model"}); err != nil {
+		t.Fatalf("Configure: %v", err)
+	}
+	if status := describeStatus(t, web); status == http.StatusOK {
+		t.Fatal("a model without a profile was described")
+	}
+	items := hostHealth.List()
+	if len(items) != 1 || items[0].Key != "source" || items[0].Severity != health.Error || items[0].Text == "" {
+		t.Fatalf("items = %+v, want one error item under source", items)
+	}
+	if action := items[0].Action; action == nil || action.Command != "app:settings.open" || action.Values["setting"] != "source" {
+		t.Fatalf("action = %+v, want the settings of the source", items[0].Action)
+	}
+
+	if _, err := lifecycle.Configure(t.Context(), map[string]string{"source": "local", "model": "Xenova/bge-m3"}); err != nil {
+		t.Fatalf("Configure: %v", err)
+	}
+	if status := describeStatus(t, web); status != http.StatusOK {
+		t.Fatalf("DescribeSearchSource answered %d for a known model", status)
+	}
+	if items := hostHealth.List(); len(items) != 0 {
+		t.Errorf("items = %+v after a known model answered, want none", items)
+	}
 }

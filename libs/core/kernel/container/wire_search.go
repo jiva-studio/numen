@@ -21,7 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
@@ -204,12 +204,16 @@ func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, 
 }
 
 // searchSources opens the search source of a window. A source that cannot describe itself yet is opened all
-// the same: the tasks show why, and the source joins search and indexing once a configuration of its plugin
-// lets it describe itself.
-func searchSources(c searchWiring, ctx context.Context, tasks *run.Tasks) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
-	onReadError := run.NewModelReadReporter(tasks)
+// the same: the search item of its plugin shows why, and the source joins search and indexing once a
+// configuration of its plugin lets it describe itself.
+func searchSources(c searchWiring, ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
+	report := pluginhealth.NewReportSearchSource(c.PluginHost.Health)
 	source, closeSource, err := searchOpenSource(c, ctx, func(ctx context.Context, host sourcebridge.Host) (*sourcebridge.Source, error) {
-		return sourcebridge.OpenWatching(ctx, host, onReadError)
+		found, err := host.ResolveCapability(bridge.CapabilitySearchSource)
+		if err != nil {
+			return nil, err
+		}
+		return sourcebridge.OpenWatching(ctx, host, func(readErr error) { report.Execute(found.Manifest.ID, readErr) })
 	})
 	if err != nil {
 		return nil, nil, func() error { return nil }, err

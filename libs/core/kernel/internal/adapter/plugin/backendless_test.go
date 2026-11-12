@@ -53,9 +53,6 @@ func newFrontendOnlyHost(t *testing.T) (*container.PluginRoles, *int) {
 
 func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 	host, launches := newFrontendOnlyHost(t)
-	var failures []plugindomain.Failure
-	host.Failures.SetOnPluginFailed(func(failure plugindomain.Failure) { failures = append(failures, failure) })
-
 	_, err := host.Activation.EnsureActive(t.Context(), "md.numen.views.sketch")
 
 	var unavailable *plugindomain.UnavailableError
@@ -65,13 +62,8 @@ func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 	if *launches != 0 {
 		t.Fatalf("the host launched %d processes for a plugin without a backend", *launches)
 	}
-	if len(failures) != 0 {
-		t.Fatalf("the host reported %v for a plugin without a backend", failures)
-	}
-	for _, info := range host.Registry.GetPluginInfos() {
-		if info.Failure != nil {
-			t.Fatalf("plugin %s is listed as failed: %v", info.ID, info.Failure.Reason)
-		}
+	if items := host.Health.List(); len(items) != 0 {
+		t.Fatalf("the host listed %+v for a plugin without a backend", items)
 	}
 }
 

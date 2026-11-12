@@ -73,7 +73,7 @@ func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 		Paths:              container.Paths{ServiceDir: ".numen"},
 	})
 
-	indexed, _, closeSource, err := target.Embedders(t.Context(), nil)
+	indexed, _, closeSource, err := target.Embedders(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

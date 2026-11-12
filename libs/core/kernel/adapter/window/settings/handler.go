@@ -156,7 +156,6 @@ func NewWirePluginInfos(target []plugin.Info) []*v1.PluginInfo {
 			Settings:      newWirePluginSettings(one.Settings),
 			IsActive:      one.IsActive,
 			Permissions:   one.Permissions,
-			Failure:       newWirePluginFailure(one.Failure),
 			HasFrontend:   one.HasFrontend,
 			HasBackend:    one.HasBackend,
 			Readers:       newWireReaders(one.Readers),
@@ -194,13 +193,6 @@ func newWirePluginSettings(target []plugin.Setting) []*v1.PluginSetting {
 		})
 	}
 	return settings
-}
-
-func newWirePluginFailure(failure *plugin.Failure) *v1.PluginFailure {
-	if failure == nil {
-		return nil
-	}
-	return &v1.PluginFailure{Reason: failure.Reason, Detail: failure.Detail, FailedAtUnixMs: failure.At.UnixMilli()}
 }
 
 // RetryPlugin starts a plugin whose last start failed once more. A plugin that fails
