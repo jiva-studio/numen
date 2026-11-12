@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The list of plugins: the System and Connections pages as two tiles, a card for each plugin with
+ * The list of plugins: the System, Appearance and Connections pages as three tiles, a card for each plugin with
  * a health item (its failed start first, else its worst item), then the search field and the plugin
  * rows that match it.
  */
@@ -44,6 +44,7 @@ const troubledPlugins = computed(() =>
 )
 const TILES = [
   { page: 'system', name: words.systemSettings, detail: words.systemSettingsDetail },
+  { page: 'appearance', name: words.appearanceSettings, detail: words.appearanceSettingsDetail },
   { page: 'connections', name: words.connections, detail: words.connectionsDetail },
 ]
 
@@ -155,7 +156,7 @@ function getReasonId(pluginId: string): string {
 
 .plugins-list__tiles {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
 }
 

@@ -207,7 +207,7 @@ const create = (timing: Timing) => {
   }
   const page = mount(SettingsTab, {
     props: {
-      state: { ...settings.configured.state, initialPluginId: ref<string | null>('system') },
+      state: { ...settings.configured.state, initialPluginId: ref<string | null>('appearance') },
     },
     attachTo: document.body,
   })

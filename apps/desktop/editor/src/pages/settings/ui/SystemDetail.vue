@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * The System page: the breadcrumb bar, every setting the core declares for the owner `app`
- * drawn by the renderer of the plugins, and the path of the numen.json configuration file.
+ * The System or the Appearance page: the breadcrumb bar and the settings the core declares for the
+ * owner `app` that belong to the page, drawn by the renderer of the plugins. Appearance holds the
+ * `appearance.*` settings; System holds the rest and the path of the numen.json configuration file.
  */
 import { computed } from 'vue'
 import { BreadcrumbBar, PluginSettingsCard } from '@numen/plugin-manager'
@@ -15,6 +16,7 @@ const props = defineProps<{
   settings: InstallationSettings
   manager: InstallationPlugin
   connections: InstallationConnections
+  section: 'system' | 'appearance'
 }>()
 
 /* --------------------------------- Events --------------------------------- */
@@ -24,6 +26,8 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const APPEARANCE = 'appearance.'
+
 /** The owner the core declares the settings of the shell under. */
 const owner = computed<PluginInfo>(() => ({
   id: 'app',
@@ -34,7 +38,9 @@ const owner = computed<PluginInfo>(() => ({
   capabilities: [],
   hasFrontend: false,
   hasBackend: false,
-  settings: props.manager.app.value,
+  settings: props.manager.app.value.filter(
+    (one) => one.key.startsWith(APPEARANCE) === (props.section === 'appearance'),
+  ),
 }))
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -45,8 +51,10 @@ function onBack(): void {
 
 <template>
   <div class="system-detail">
-    <BreadcrumbBar :current="words.systemSettings" @back="onBack" />
-
+    <BreadcrumbBar
+      :current="props.section === 'appearance' ? words.appearanceSettings : words.systemSettings"
+      @back="onBack"
+    />
 
     <PluginSettingsCard>
       <PluginFields
@@ -58,7 +66,7 @@ function onBack(): void {
       />
     </PluginSettingsCard>
 
-    <p class="system-detail__file">{{ props.settings.file.value || words.file }}</p>
+    <p v-if="props.section === 'system'" class="system-detail__file">{{ props.settings.file.value || words.file }}</p>
   </div>
 </template>
 

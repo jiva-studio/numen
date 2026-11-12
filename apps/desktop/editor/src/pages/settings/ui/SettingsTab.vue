@@ -35,7 +35,9 @@ const {
     <div class="settings__page">
       <div class="settings__main">
         <SystemDetail
-          v-if="selectedPluginId === 'system'"
+          v-if="selectedPluginId === 'system' || selectedPluginId === 'appearance'"
+          :key="selectedPluginId"
+          :section="selectedPluginId"
           :settings="installation.settings"
           :manager="installation.plugin"
           :connections="installation.connections"
