@@ -37,6 +37,13 @@ describe("the duplication check", () => {
     assert.match(result.details, /host: .*exceeds threshold/);
   });
 
+  it("leaves plugin manifests out, as declarations like the yml files", async () => {
+    const manifest = JSON.stringify({ connectionTypes: Array.from({ length: 3 }, () => ({ operations: ["one", "two", "three"], fields: Array.from({ length: 12 }, (_, i) => ({ key: `field${i}`, type: "string", min: i, max: i * 2 })) })) }, null, 2);
+    const repo = createRepo({ "plugins/board/manifest.json": manifest, "plugins/board/one.ts": createBlock("first", 4) });
+    const result = await runDuplicationCheck({ repoRoot: repo });
+    assert.equal(result.pass, true);
+  });
+
   it("passes two files that share nothing", async () => {
     const repo = createRepo({ "libs/a/one.ts": createBlock("first", 40), "libs/a/two.ts": createBlock("second", 40).replaceAll("scaled", "other").replaceAll("input", "value") });
     const result = await runDuplicationCheck({ repoRoot: repo, threshold: 50 });
