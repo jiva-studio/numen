@@ -74,7 +74,7 @@ type GetVaultStateResponse struct {
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// How far indexing the vault has got.
 	Scan *Scan `protobuf:"bytes,4,opt,name=scan,proto3" json:"scan,omitempty"`
-	// How far searching it by meaning has got.
+	// What the search source says about how far it has indexed the vault.
 	Coverage      *IndexCoverage `protobuf:"bytes,5,opt,name=coverage,proto3" json:"coverage,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -210,21 +210,13 @@ func (x *Scan) GetWatchError() string {
 	return ""
 }
 
-// IndexCoverage is how far searching a vault by meaning has got.
-//
-// A search by meaning is asked of the vectors, and a vault holding none answers
-// embedded yet, and a vault that answers.
+// IndexCoverage is how far the search source has indexed a vault, in its own words.
 type IndexCoverage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// ChunkCount is how many spans of text the index holds, and EmbeddedCount how
-	// many of those carry a vector. Cutting finishes long before embedding does.
-	// Both are zero for a vault nothing has cut yet.
-	ChunkCount    int64 `protobuf:"varint,1,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
-	EmbeddedCount int64 `protobuf:"varint,2,opt,name=embedded_count,json=embeddedCount,proto3" json:"embedded_count,omitempty"`
-	// Embedding reports whether anything is going to turn the spans into vectors.
-	// False for an installation with no model, where the vault is searched by its
-	// words alone.
-	IsEmbedding   bool `protobuf:"varint,3,opt,name=is_embedding,json=isEmbedding,proto3" json:"is_embedding,omitempty"`
+	// Text is what the source tells a person about its index, such as that it is
+	// not built yet. Empty where the source has nothing to say or the
+	// installation has no search source.
+	Text          string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -259,25 +251,11 @@ func (*IndexCoverage) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *IndexCoverage) GetChunkCount() int64 {
+func (x *IndexCoverage) GetText() string {
 	if x != nil {
-		return x.ChunkCount
+		return x.Text
 	}
-	return 0
-}
-
-func (x *IndexCoverage) GetEmbeddedCount() int64 {
-	if x != nil {
-		return x.EmbeddedCount
-	}
-	return 0
-}
-
-func (x *IndexCoverage) GetIsEmbedding() bool {
-	if x != nil {
-		return x.IsEmbedding
-	}
-	return false
+	return ""
 }
 
 type WatchVaultChangesRequest struct {
@@ -464,12 +442,9 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\bis_ready\x18\x01 \x01(\bR\aisReady\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12\x1f\n" +
 	"\vwatch_error\x18\x03 \x01(\tR\n" +
-	"watchError\"z\n" +
-	"\rIndexCoverage\x12\x1f\n" +
-	"\vchunk_count\x18\x01 \x01(\x03R\n" +
-	"chunkCount\x12%\n" +
-	"\x0eembedded_count\x18\x02 \x01(\x03R\rembeddedCount\x12!\n" +
-	"\fis_embedding\x18\x03 \x01(\bR\visEmbedding\"\x1a\n" +
+	"watchError\"#\n" +
+	"\rIndexCoverage\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\"\x1a\n" +
 	"\x18WatchVaultChangesRequest\"\x98\x01\n" +
 	"\x19WatchVaultChangesResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
