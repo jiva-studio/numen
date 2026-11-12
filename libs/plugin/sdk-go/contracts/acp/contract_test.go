@@ -6,42 +6,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp/acptest"
 )
-
-// inProcess is a connection.Caller that runs the operations of a provider in the test.
-type inProcess struct{ provider connection.Provider }
-
-func (c inProcess) Call(ctx context.Context, operation string, payload []byte, _ connection.Priority) (connection.Frames, error) {
-	got := &frames{}
-	got.done, got.err = c.provider[operation](ctx, connection.Call{Type: "claude-code"}, payload, func(data []byte) error {
-		got.data = append(got.data, data)
-		return nil
-	})
-	return got, nil
-}
-
-type frames struct {
-	data [][]byte
-	next int
-	done []byte
-	err  error
-}
-
-func (f *frames) Next() bool {
-	if f.next >= len(f.data) {
-		return false
-	}
-	f.next++
-	return true
-}
-
-func (f *frames) Data() []byte { return f.data[f.next-1] }
-
-func (f *frames) Done() []byte { return f.done }
-
-func (f *frames) Err() error { return f.err }
-
-func (f *frames) Close() error { return nil }
 
 // planner answers a prompt with a plan, a tool call and its update, and a chunk of text.
 type planner struct{ request *acp.TaskRequest }
@@ -64,21 +30,16 @@ func (p *planner) RunTask(_ context.Context, _ connection.Call, request *acp.Tas
 
 func TestATaskStreamsTheSessionUpdatesOfTheTurnAndEndsWithTheStopReason(t *testing.T) {
 	runner := &planner{}
-	caller := inProcess{provider: acp.Provide(nil, runner)}
+	var kinds []string
+	var text string
 
-	stream, err := acp.RunTask(t.Context(), caller, &acp.TaskRequest{
+	done, err := acptest.RunTask(t.Context(), acp.Provide(nil, runner), connection.Call{Type: "claude-code"}, &acp.TaskRequest{
 		Prompt:       "When is the Lisbon trip?",
 		ContextNotes: []*acp.ContextNote{{Path: "Trips/Lisbon.md", Title: "Lisbon"}},
 		Conversation: "conversation-7",
 		ToolContext:  map[string]string{"org.example.trips/trip": "lisbon"},
-	}, connection.PriorityInteractive)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var kinds []string
-	var text string
-	for stream.Next() {
-		switch update := stream.Frame().GetUpdate().(type) {
+	}, func(frame *acp.TaskFrame) error {
+		switch update := frame.GetUpdate().(type) {
 		case *acp.TaskFrame_Plan:
 			kinds = append(kinds, "plan")
 		case *acp.TaskFrame_ToolCall:
@@ -88,17 +49,18 @@ func TestATaskStreamsTheSessionUpdatesOfTheTurnAndEndsWithTheStopReason(t *testi
 		case *acp.TaskFrame_AgentMessageChunk:
 			text += update.AgentMessageChunk.GetText()
 		}
-	}
+		return nil
+	})
 
-	if err := stream.Err(); err != nil {
+	if err != nil {
 		t.Fatal(err)
 	}
 	want := []string{"plan", "tool call Read Trips/Lisbon.md", "update TOOL_CALL_STATUS_COMPLETED"}
 	if len(kinds) != len(want) || kinds[0] != want[0] || kinds[1] != want[1] || kinds[2] != want[2] || text != "Lisbon is in May." {
 		t.Errorf("updates = %v, text = %q", kinds, text)
 	}
-	if stream.Done().GetStopReason() != acp.StopReason_STOP_REASON_END_TURN {
-		t.Errorf("done = %v", stream.Done())
+	if done.GetStopReason() != acp.StopReason_STOP_REASON_END_TURN {
+		t.Errorf("done = %v", done)
 	}
 	if runner.request.GetPrompt() != "When is the Lisbon trip?" || runner.request.GetContextNotes()[0].GetPath() != "Trips/Lisbon.md" ||
 		runner.request.GetConversation() != "conversation-7" || runner.request.GetToolContext()["org.example.trips/trip"] != "lisbon" {
