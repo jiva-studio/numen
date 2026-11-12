@@ -137,10 +137,7 @@ function onRunAction(key: string): void {
         {{ words.noSettings }}
       </p>
 
-      <div
-        v-if="activeTab === 'about' && readmeText"
-        class="settings-card plugin-detail__readme"
-      >
+      <div v-if="activeTab === 'about' && readmeText" class="settings-card plugin-detail__readme">
         <Prose :text="readmeText" />
       </div>
       <p v-else-if="activeTab === 'about'" class="plugin-detail__nothing">

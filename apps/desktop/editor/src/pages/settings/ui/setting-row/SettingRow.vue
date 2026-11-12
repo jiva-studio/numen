@@ -66,11 +66,7 @@ function scrollIntoView(): void {
 </script>
 
 <template>
-  <div
-    ref="row"
-    class="settings__row"
-    :data-marked="props.isMarked ? '' : undefined"
-  >
+  <div ref="row" class="settings__row" :data-marked="props.isMarked ? '' : undefined">
     <div class="settings__label">
       <span :id="nameId" class="settings__name">{{ props.name }}</span>
       <TriangleAlert

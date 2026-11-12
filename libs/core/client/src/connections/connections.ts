@@ -144,7 +144,9 @@ export interface ConnectionClient {
    * The values a row field of the type of a connection can take, as its provider lists them for the
    * values the row holds so far. `operations` are the operations the setting of rows is used for.
    */
-  listRowOptions(request: RowOptionsRequest): Promise<Result<readonly RowOption[], ConnectionFailure>>
+  listRowOptions(
+    request: RowOptionsRequest,
+  ): Promise<Result<readonly RowOption[], ConnectionFailure>>
 }
 
 /** A row field of a connection, the values the row holds so far, and the operations of its setting. */

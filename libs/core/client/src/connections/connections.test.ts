@@ -347,7 +347,14 @@ describe('createConnectionClient', () => {
       }),
     )
 
-    expect(await client.listRowOptions({ connectionId: 'c00000001', field: 'model', options: {}, operations: [] })).toStrictEqual({
+    expect(
+      await client.listRowOptions({
+        connectionId: 'c00000001',
+        field: 'model',
+        options: {},
+        operations: [],
+      }),
+    ).toStrictEqual({
       ok: false,
       error: { errorCode: 'provider_unavailable', detail: 'key rejected' },
     })

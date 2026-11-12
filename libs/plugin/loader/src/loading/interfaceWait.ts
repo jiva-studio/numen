@@ -5,10 +5,7 @@ import { INTERFACE_WAIT_MS } from './limits'
  * a window is drawn. A failure of the work is not this wait's to report. Once the signal aborts, the
  * wait never settles.
  */
-export function waitWithinInterfaceLimit<T>(
-  work: Promise<T>,
-  signal?: AbortSignal,
-): Promise<void> {
+export function waitWithinInterfaceLimit<T>(work: Promise<T>, signal?: AbortSignal): Promise<void> {
   return new Promise<void>((resolve) => {
     if (signal?.aborted) return
     const stop = (): void => clearTimeout(timer)

@@ -274,8 +274,6 @@ describe('PluginData', () => {
   })
 
   it('shows why the data was not deleted', () => {
-    expect(mountData(2, 'permission denied').get('[role="alert"]').text()).toBe(
-      'permission denied',
-    )
+    expect(mountData(2, 'permission denied').get('[role="alert"]').text()).toBe('permission denied')
   })
 })

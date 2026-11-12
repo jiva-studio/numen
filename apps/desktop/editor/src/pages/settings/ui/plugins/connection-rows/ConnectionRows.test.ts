@@ -375,7 +375,11 @@ describe('the rows of a setting of connections', () => {
   })
 
   it('asks for nothing once the one row names a connection', async () => {
-    const { wrapper } = mountRows({ max: 1, operation: 'llm.embed', value: [row(WORK.id, 'alpha')] })
+    const { wrapper } = mountRows({
+      max: 1,
+      operation: 'llm.embed',
+      value: [row(WORK.id, 'alpha')],
+    })
     await flushPromises()
 
     expect(wrapper.findAllComponents(Select)[0]?.props('problem')).toBe('')

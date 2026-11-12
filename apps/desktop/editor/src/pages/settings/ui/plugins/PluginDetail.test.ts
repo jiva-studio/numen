@@ -112,22 +112,16 @@ describe('PluginDetail', () => {
 
   it('renders the failure card, shows its detail and calls retryPlugin', async () => {
     const plugin = createPluginInfo('test.plugin', 'Super Engine')
-    const { wrapper, retryPlugin } = createDetail(
-      plugin,
-      {},
-      undefined,
-      undefined,
-      [
-        {
-          pluginId: 'test.plugin',
-          key: 'start',
-          severity: 'error',
-          text: 'Timed out while starting',
-          detail: 'handshake timeout after 10s',
-          action: { command: 'app:settings.open', values: { plugin: 'test.plugin' }, title: '' },
-        },
-      ],
-    )
+    const { wrapper, retryPlugin } = createDetail(plugin, {}, undefined, undefined, [
+      {
+        pluginId: 'test.plugin',
+        key: 'start',
+        severity: 'error',
+        text: 'Timed out while starting',
+        detail: 'handshake timeout after 10s',
+        action: { command: 'app:settings.open', values: { plugin: 'test.plugin' }, title: '' },
+      },
+    ])
 
     const stoppedCard = wrapper.get('[role="alert"]')
     expect(stoppedCard.text()).toContain('Timed out while starting')

@@ -107,7 +107,10 @@ function createInstallationPluginFiles() {
   }
 }
 
-function createInstallationHealth({ items, commands }: HealthDeps, reportError: (error: Caught) => void) {
+function createInstallationHealth(
+  { items, commands }: HealthDeps,
+  reportError: (error: Caught) => void,
+) {
   return {
     items,
     canRunCommand: (command: string) => commands.getIds().includes(command),

@@ -76,7 +76,9 @@ describe('the commands reach the window', () => {
 
   it('opens the settings at the requested plugin and setting, or the settings tab without an opener', () => {
     const openSettings = vi.fn()
-    createOptions({ navigation: { search: () => undefined, openSettings } }).deps.navigator.openSettings({
+    createOptions({
+      navigation: { search: () => undefined, openSettings },
+    }).deps.navigator.openSettings({
       pluginId: 'org.example.atlas',
       setting: 'source',
     })

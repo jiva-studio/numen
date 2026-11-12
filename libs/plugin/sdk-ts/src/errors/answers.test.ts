@@ -7,12 +7,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import {
-  getAssetUrl,
-  getBytesQuery,
-  retryWhileBusy,
-  formatFingerprint,
-} from './answers'
+import { getAssetUrl, getBytesQuery, retryWhileBusy, formatFingerprint } from './answers'
 
 describe('the file an answer came out of', () => {
   it('arrives back out as the size and modification time it went in with', () => {

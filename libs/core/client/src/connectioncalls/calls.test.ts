@@ -26,7 +26,11 @@ const read = async (generator: AsyncGenerator<Uint8Array, unknown>) => {
 
 const bytes = (text: string) => new TextEncoder().encode(text)
 
-const CHAT_REQUEST = { pluginId: 'md.numen.agents.numen', operation: 'llm.chat', payload: bytes('') }
+const CHAT_REQUEST = {
+  pluginId: 'md.numen.agents.numen',
+  operation: 'llm.chat',
+  payload: bytes(''),
+}
 
 describe('createConnectionCallClient', () => {
   it('sends the call of the plugin with its priority and signal, and yields the frames in order', async () => {
@@ -117,9 +121,7 @@ describe('createConnectionCallClient', () => {
           ),
       }
 
-      const { data, end } = await read(
-        createConnectionCallClient(rpc).call(CHAT_REQUEST),
-      )
+      const { data, end } = await read(createConnectionCallClient(rpc).call(CHAT_REQUEST))
 
       expect(data).toStrictEqual([bytes('partial')])
       expect(end).toStrictEqual({
@@ -136,8 +138,8 @@ describe('createConnectionCallClient', () => {
   it('throws where the stream ends before the call did', async () => {
     const rpc: ConnectionCallRpc = { call: () => streamOf({ case: 'data', value: bytes('cut') }) }
 
-    await expect(
-      read(createConnectionCallClient(rpc).call(CHAT_REQUEST)),
-    ).rejects.toThrow('before the call did')
+    await expect(read(createConnectionCallClient(rpc).call(CHAT_REQUEST))).rejects.toThrow(
+      'before the call did',
+    )
   })
 })

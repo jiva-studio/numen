@@ -26,14 +26,7 @@ const SETTINGS_KEYS = [
   'write',
   'file',
 ]
-const PLUGIN_KEYS = [
-  'plugins',
-  'app',
-  'catalog',
-  'retryPlugin',
-  'choosePath',
-  'getSettingsViews',
-]
+const PLUGIN_KEYS = ['plugins', 'app', 'catalog', 'retryPlugin', 'choosePath', 'getSettingsViews']
 const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
 const HEALTH_KEYS = ['items', 'canRunCommand', 'runCommand']
 const EDITS_KEYS = ['create', 'update', 'delete']

@@ -151,7 +151,12 @@ describe('moveRow', () => {
 describe('getConnectionUsability', () => {
   it('finds a complete connection of a type that serves the operations usable', () => {
     expect(
-      getConnectionUsability(connection(), type(), { ids: ['llm.complete'], titles: TITLES }, reasons),
+      getConnectionUsability(
+        connection(),
+        type(),
+        { ids: ['llm.complete'], titles: TITLES },
+        reasons,
+      ),
     ).toStrictEqual({ isUsable: true, reason: '' })
   })
 
@@ -168,7 +173,12 @@ describe('getConnectionUsability', () => {
       reason: 'This type cannot describe a model',
     })
     expect(
-      getConnectionUsability(connection(), type(), { ids: ['llm.complete', 'llm.chat'], titles: TITLES }, reasons),
+      getConnectionUsability(
+        connection(),
+        type(),
+        { ids: ['llm.complete', 'llm.chat'], titles: TITLES },
+        reasons,
+      ),
     ).toStrictEqual({ isUsable: false, reason: 'This type cannot llm.chat' })
     expect(
       getConnectionUsability(
@@ -179,7 +189,12 @@ describe('getConnectionUsability', () => {
       ),
     ).toStrictEqual({ isUsable: false, reason: 'Type unavailable' })
     expect(
-      getConnectionUsability(connection(), undefined, { ids: ['llm.complete'], titles: TITLES }, reasons),
+      getConnectionUsability(
+        connection(),
+        undefined,
+        { ids: ['llm.complete'], titles: TITLES },
+        reasons,
+      ),
     ).toStrictEqual({
       isUsable: false,
       reason: 'Type unavailable',
