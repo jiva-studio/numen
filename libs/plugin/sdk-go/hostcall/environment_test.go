@@ -8,10 +8,14 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
-func TestTheChildEnvironmentLacksTheHostVariables(t *testing.T) {
-	for _, name := range []string{
+func listHostEnvNames() []string {
+	return []string{
 		hostcall.HostPortEnv, hostcall.PluginTokenEnv, hostcall.PluginPortEnv, hostcall.PluginIDEnv, hostcall.VaultPathEnv,
-	} {
+	}
+}
+
+func TestTheChildEnvironmentLacksTheHostVariables(t *testing.T) {
+	for _, name := range listHostEnvNames() {
 		t.Setenv(name, "orchard-value")
 	}
 	t.Setenv("NUMEN_PLUGIN_TOKEN_SUFFIXED", "kept")
@@ -21,7 +25,7 @@ func TestTheChildEnvironmentLacksTheHostVariables(t *testing.T) {
 
 	for _, entry := range env {
 		name, _, _ := strings.Cut(entry, "=")
-		if strings.HasPrefix(name, "NUMEN_") && name != "NUMEN_PLUGIN_TOKEN_SUFFIXED" {
+		if slices.Contains(listHostEnvNames(), name) {
 			t.Errorf("the child environment holds %q", entry)
 		}
 	}

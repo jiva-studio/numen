@@ -35,6 +35,9 @@ func (Runner) Run(
 	running := exec.CommandContext(ctx, command[0],
 		append(append([]string(nil), command[1:]...), arguments...)...)
 	running.Env = env
+	if env == nil {
+		running.Env = hostcall.GetChildEnvironment()
+	}
 	setProcessGroup(running)
 	var out, response bytes.Buffer
 	running.Stdout, running.Stderr = &out, &response
