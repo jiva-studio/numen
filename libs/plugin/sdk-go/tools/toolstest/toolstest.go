@@ -74,6 +74,8 @@ func writeErrorCode(code tools.ErrorCode) v1.ToolErrorCode {
 		return v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL
 	case tools.ErrorCodeBadArguments:
 		return v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS
+	case tools.ErrorCodeUnspecified:
+		return v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED
 	}
 	return v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED
 }
