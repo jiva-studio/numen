@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/model"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/runs"
 )
@@ -46,7 +46,7 @@ func makeAntigravityCommand(
 		return runs.Command{}, fmt.Errorf("set up the Antigravity home: %w", err)
 	}
 	return runs.Command{
-		Path: binName, Args: args, Dir: "", Env: append(os.Environ(), "HOME="+tempHome), Token: "", Release: clean,
+		Path: binName, Args: args, Dir: "", Env: append(hostcall.GetChildEnvironment(), "HOME="+tempHome), Token: "", Release: clean,
 	}, nil
 }
 
@@ -77,7 +77,7 @@ func makeAnswerCommand(
 		Path:  binName,
 		Args:  args,
 		Dir:   dir,
-		Env:   append(os.Environ(), "HOME="+tempHome),
+		Env:   append(hostcall.GetChildEnvironment(), "HOME="+tempHome),
 		Token: "",
 		Release: func() error {
 			return errors.Join(cleanHome(), cleanDir())

@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
 	"os/exec"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/run"
 )
 
@@ -53,7 +53,7 @@ func (Launcher) Start(ctx context.Context, spec run.Command) (run.Process, error
 	cmd.Dir = spec.Dir
 	env := spec.Env
 	if len(env) == 0 {
-		env = os.Environ()
+		env = hostcall.GetChildEnvironment()
 	}
 	if spec.Token != "" {
 		env = append(env, "NUMEN_TOKEN="+spec.Token)
