@@ -14,12 +14,14 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// ConnectionRowsSource is what the rows of the plugins are read from and written to. Plugins lists
+// ConnectionRowsSource is what the rows of the plugins are read from and written to. Types gives the
+// built-in connections, which a row names as it names a stored one. Plugins lists
 // the plugins with the value in force of each setting. ReadStored reads the settings file as it is
 // stored. Write is the path every write of a setting takes. Report receives the failures of a
 // plugin that cannot be configured.
 type ConnectionRowsSource struct {
 	Connections connectionport.Repository
+	Types       connectionport.Types
 	Plugins     func() []plugin.Info
 	Declared    Declarations
 	ReadStored  func() (File, error)
@@ -65,7 +67,7 @@ func (r *ConnectionRows) readExistingRows(valueJSON string) ([]connection.Row, e
 		return nil, err
 	}
 	exists := make(map[string]bool, len(connections))
-	for _, one := range connections {
+	for _, one := range append(connections, connection.ListBuiltIns(r.source.Types.ListTypes())...) {
 		exists[one.ID] = true
 	}
 	return slices.DeleteFunc(rows, func(row connection.Row) bool { return !exists[row.ConnectionID] }), nil

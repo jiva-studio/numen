@@ -35,7 +35,8 @@ type operation struct {
 }
 
 // Entry is a connection as a window shows it: the fields the type declares, the keys of the secret
-// fields that hold a value for the current address, and no value of a secret.
+// fields that hold a value for the current address, and no value of a secret. IsBuiltIn marks the
+// connection of a built-in type, which is not stored and cannot be changed or deleted.
 type Entry struct {
 	ID              string
 	TypeID          string
@@ -45,6 +46,7 @@ type Entry struct {
 	SecretKeysSet   []string
 	IsTypeAvailable bool
 	IsComplete      bool
+	IsBuiltIn       bool
 	Uses            []connection.Use
 }
 
@@ -134,6 +136,19 @@ func truncateName(name string, limit int) string {
 		return name
 	}
 	return strings.TrimSpace(string(runes[:limit]))
+}
+
+// listConnections returns the stored connections in list order, followed by the built-in ones.
+func (o operation) listConnections() ([]connection.Connection, error) {
+	list, err := o.repository.ListConnections()
+	if err != nil {
+		return nil, err
+	}
+	return append(list, o.listBuiltIns()...), nil
+}
+
+func (o operation) listBuiltIns() []connection.Connection {
+	return connection.ListBuiltIns(o.types.ListTypes())
 }
 
 func (o operation) getAvailableType(typeID string) (connection.Type, error) {
@@ -240,7 +255,7 @@ func (o operation) buildEntry(ctx context.Context, one connection.Connection) (E
 	}
 	entry := Entry{
 		ID: one.ID, TypeID: one.TypeID, Name: one.Name, Revision: one.Revision,
-		Fields: map[string]any{}, Uses: uses,
+		Fields: map[string]any{}, Uses: uses, IsBuiltIn: connection.IsBuiltIn(one.ID),
 	}
 	found, isFound := o.types.GetType(one.TypeID)
 	if !isFound {

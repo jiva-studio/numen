@@ -28,6 +28,7 @@ func openConnectionRows(c pluginsWiring) *settingsadapter.ConnectionRows {
 	s := c.settings
 	return settingsadapter.NewConnectionRows(settingsadapter.ConnectionRowsSource{
 		Connections: openConnectionRepository(s),
+		Types:       c.PluginHost.Views.Types,
 		Plugins:     settingsPlugins(s),
 		Declared:    getDeclarations(s),
 		ReadStored:  settingsStore(s).ReadUncheckedFile,

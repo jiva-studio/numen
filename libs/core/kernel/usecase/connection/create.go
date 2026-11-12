@@ -50,7 +50,7 @@ func (u *Create) Execute(ctx context.Context, request CreateRequest) (Entry, err
 	if err := checkAddress(declared.Declaration, fields, hasKey); err != nil {
 		return Entry{}, err
 	}
-	known, err := u.repository.ListConnections()
+	known, err := u.listConnections()
 	if err != nil {
 		return Entry{}, err
 	}
@@ -90,7 +90,7 @@ func (u *Create) store(ctx context.Context, declared connection.Type, created co
 		written = append(written, key)
 	}
 	err := u.repository.ChangeConnections(func(list []connection.Connection) ([]connection.Connection, error) {
-		if isNameTaken(list, created.Name, "") {
+		if isNameTaken(append(slices.Clone(list), u.listBuiltIns()...), created.Name, "") {
 			return nil, newNameTakenError(created.Name)
 		}
 		if getIndex(list, created.ID) >= 0 {

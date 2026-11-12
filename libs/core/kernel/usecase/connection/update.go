@@ -21,7 +21,8 @@ type UpdateRequest struct {
 	Secrets  map[string]string
 }
 
-// Update changes the name, the fields and the secrets of a connection, and adds 1 to its revision.
+// Update changes the name, the fields and the secrets of a stored connection, and adds 1 to its revision. A
+// built-in connection is not found.
 type Update struct{ operation }
 
 // Execute applies the request to the connection that has the revision the request carries. A change
@@ -30,7 +31,7 @@ type Update struct{ operation }
 func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, error) {
 	u.gate.Lock()
 	defer u.gate.Unlock()
-	list, err := u.repository.ListConnections()
+	list, err := u.listConnections()
 	if err != nil {
 		return Entry{}, err
 	}
@@ -63,7 +64,7 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 			return nil, newNotFoundError(current.ID)
 		case list[position].Revision != current.Revision:
 			return nil, newStaleRevisionError(current.ID)
-		case isNameTaken(list, updated.Name, updated.ID):
+		case isNameTaken(append(slices.Clone(list), u.listBuiltIns()...), updated.Name, updated.ID):
 			return nil, newNameTakenError(updated.Name)
 		}
 		changed := slices.Clone(list)
@@ -86,7 +87,7 @@ func (u *Update) describe(ctx context.Context, updated connection.Connection) (E
 
 func findCurrent(list []connection.Connection, request UpdateRequest) (connection.Connection, error) {
 	index := getIndex(list, request.ID)
-	if index < 0 {
+	if index < 0 || connection.IsBuiltIn(request.ID) {
 		return connection.Connection{}, newNotFoundError(request.ID)
 	}
 	if list[index].Revision != request.Revision {

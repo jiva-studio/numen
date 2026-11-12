@@ -32,6 +32,7 @@ type connectionShape struct {
 			Operations []string          `json:"operations"`
 			Fields     []connectionField `json:"fields"`
 			RowFields  []connectionField `json:"rowFields"`
+			IsBuiltIn  bool              `json:"builtIn"`
 		} `json:"connectionTypes"`
 	} `json:"contributes"`
 	Settings []struct {
@@ -62,6 +63,14 @@ func TestManifestProvidesOneTypeThatCompletesAndRunsTasksWithNoKeyAndNoProgramFi
 		if field.Key != "parallelRequests" {
 			t.Errorf("field %q: the type holds no field but parallelRequests", field.Key)
 		}
+	}
+}
+
+// The type needs no setup, so the core lists its connection while the plugin is enabled.
+func TestTheTypeIsBuiltIn(t *testing.T) {
+	types := readConnectionShape(t).Contributes.ConnectionTypes
+	if len(types) != 1 || !types[0].IsBuiltIn {
+		t.Errorf("types = %+v, want one built-in type", types)
 	}
 }
 
@@ -118,15 +127,16 @@ func TestThePluginRunsInDesktopWindowsAlone(t *testing.T) {
 	}
 }
 
-// A row names the model, from the list the program offers, and a reasoning level of that model.
+// A row may name the model, from the list the program offers, and a reasoning level of that model. A row with
+// no model leaves the choice to the program.
 func TestARowHoldsAModelAndAReasoningLevelListedByTheProvider(t *testing.T) {
 	types := readConnectionShape(t).Contributes.ConnectionTypes
 	if len(types) != 1 || len(types[0].RowFields) != 2 {
 		t.Fatalf("types = %+v, want one type with two row fields", types)
 	}
 	model, reasoning := types[0].RowFields[0], types[0].RowFields[1]
-	if model.Key != "model" || !model.IsRequired || model.OptionsFrom != "llm.models" {
-		t.Errorf("first row field = %+v, want the required model listed by llm.models", model)
+	if model.Key != "model" || model.IsRequired || model.OptionsFrom != "llm.models" {
+		t.Errorf("first row field = %+v, want the optional model listed by llm.models", model)
 	}
 	if reasoning.Key != "reasoning" || reasoning.IsRequired || reasoning.OptionsFrom != "llm.reasoning" {
 		t.Errorf("second row field = %+v, want the optional reasoning listed by llm.reasoning", reasoning)

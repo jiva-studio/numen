@@ -27,7 +27,9 @@ var (
 
 // ConnectionType is a kind of connection a plugin provides. ID is the local part of the type id, and
 // Operations are the names of the operations the type serves. RowFields are the values a row that names
-// a connection of the type holds besides the connection.
+// a connection of the type holds besides the connection. IsBuiltIn makes the core list one connection of the
+// type while the plugin is enabled, with no field set; only a type with no required field that is not fixed
+// declares it.
 type ConnectionType struct {
 	ID          string
 	Title       string
@@ -35,6 +37,7 @@ type ConnectionType struct {
 	Operations  []string
 	Fields      []ConnectionField
 	RowFields   []ConnectionField
+	IsBuiltIn   bool
 }
 
 // ConnectionField is one value a connection of a type holds. FixedValue is held by every connection
@@ -127,6 +130,20 @@ func (m Manifest) listConnectionTypeIssues() []error {
 		issues = append(issues, listConnectionOperationIssues(one)...)
 		issues = append(issues, listConnectionFieldIssues(one)...)
 		issues = append(issues, listRowFieldIssues(one)...)
+		issues = append(issues, listBuiltInIssues(one)...)
+	}
+	return issues
+}
+
+func listBuiltInIssues(t ConnectionType) []error {
+	if !t.IsBuiltIn {
+		return nil
+	}
+	var issues []error
+	for _, field := range t.Fields {
+		if field.IsRequired && field.FixedValue == nil {
+			issues = append(issues, newFieldIssue(t.ID, field, "is required and the type is built in, so no one sets it"))
+		}
 	}
 	return issues
 }

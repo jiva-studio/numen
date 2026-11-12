@@ -47,6 +47,7 @@ const type = (id: string, title: string, operations: readonly string[]): Connect
   fields: [],
   rowFields: ROW_FIELDS,
   isAvailable: true,
+  isBuiltIn: false,
 })
 
 const SERVICE = type('md.numen.sample/service', 'Sample service', ['llm.complete', 'llm.embed'])
@@ -62,6 +63,7 @@ const connection = (overrides: Partial<ConnectionInfo>): ConnectionInfo => ({
   secretKeysSet: [],
   isTypeAvailable: true,
   isComplete: true,
+  isBuiltIn: false,
   uses: [],
   ...overrides,
 })

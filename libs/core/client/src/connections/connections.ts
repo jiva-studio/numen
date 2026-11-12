@@ -43,7 +43,7 @@ export interface ConnectionFieldInfo {
 
 /**
  * A kind of connection one plugin provides. rowFields are the values a row that names a connection of the
- * type holds besides the connection.
+ * type holds besides the connection. A built-in type has one connection the core lists while its plugin is enabled.
  */
 export interface ConnectionTypeInfo {
   readonly id: string
@@ -55,6 +55,7 @@ export interface ConnectionTypeInfo {
   readonly fields: readonly ConnectionFieldInfo[]
   readonly rowFields: readonly ConnectionFieldInfo[]
   readonly isAvailable: boolean
+  readonly isBuiltIn: boolean
 }
 
 /** An operation a plugin titles: `title` completes "This type cannot ...". */
@@ -76,7 +77,10 @@ export interface ConnectionUse {
   readonly operations: readonly string[]
 }
 
-/** A stored connection. */
+/**
+ * A connection: a stored one, or the built-in one of a type that is built in, whose id is the type id and
+ * which cannot be changed or deleted.
+ */
 export interface ConnectionInfo {
   readonly id: string
   readonly typeId: string
@@ -86,6 +90,7 @@ export interface ConnectionInfo {
   readonly secretKeysSet: readonly string[]
   readonly isTypeAvailable: boolean
   readonly isComplete: boolean
+  readonly isBuiltIn: boolean
   readonly uses: readonly ConnectionUse[]
 }
 
@@ -231,6 +236,7 @@ const readType = (type: ProviderConnectionType): ConnectionTypeInfo => ({
   fields: type.fields.map(readField),
   rowFields: type.rowFields.map(readField),
   isAvailable: type.isAvailable,
+  isBuiltIn: type.isBuiltIn,
 })
 
 const readConnection = (connection: ProviderConnection): ConnectionInfo => {
@@ -248,6 +254,7 @@ const readConnection = (connection: ProviderConnection): ConnectionInfo => {
     secretKeysSet: connection.secretKeysSet,
     isTypeAvailable: connection.isTypeAvailable,
     isComplete: connection.isComplete,
+    isBuiltIn: connection.isBuiltIn,
     uses: connection.uses.map((one) => ({
       pluginId: one.pluginId,
       pluginName: one.pluginName,

@@ -99,6 +99,7 @@ func TestAConnectionTypeThatTheApplicationCannotUseIsRefused(t *testing.T) {
 		"parallel requests with a step":  head + `,"fields":[{"key":"parallelRequests","type":"number","title":"P","min":1,"step":0.5}]}`,
 		"parallel requests default low":  head + `,"fields":[{"key":"parallelRequests","type":"number","title":"P","min":2,"step":1,"default":1}]}`,
 		"parallel requests default part": head + `,"fields":[{"key":"parallelRequests","type":"number","title":"P","min":1,"step":1,"default":1.5}]}`,
+		"built in with a required field": head + `,"builtIn":true,"fields":[{"key":"a","type":"secret","title":"A","required":true}]}`,
 	}
 	for name, types := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -106,6 +107,27 @@ func TestAConnectionTypeThatTheApplicationCannotUseIsRefused(t *testing.T) {
 				t.Errorf("err = %v, want ErrInvalidContribution", err)
 			}
 		})
+	}
+}
+
+func TestATypeWithNoRequiredFieldIsBuiltIn(t *testing.T) {
+	m, err := readConnectionTypes(`{"id":"cli","title":"CLI","operations":["acp.task"],"builtIn":true,
+		"rowFields":[{"key":"model","type":"string","title":"Model"}],
+		"fields":[
+			{"key":"baseUrl","type":"string","title":"Address","isAddress":true,"fixedValue":"https://cli.example"},
+			{"key":"parallelRequests","type":"number","title":"Parallel requests","default":1,"min":1,"step":1}]},` +
+		openRouterType)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cli, _ := m.Contributes.GetConnectionType("cli")
+	openRouter, _ := m.Contributes.GetConnectionType("openrouter")
+	if !cli.IsBuiltIn {
+		t.Error("the type that declares builtIn is not built in")
+	}
+	if openRouter.IsBuiltIn {
+		t.Error("the type that does not declare builtIn is built in")
 	}
 }
 

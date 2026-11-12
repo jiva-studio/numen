@@ -13,12 +13,12 @@
         "id": "codex",
         "title": "OpenAI Codex",
         "operations": ["llm.complete", "llm.models", "llm.reasoning", "acp.task"],
+        "builtIn": true,
         "rowFields": [
           {
             "key": "model",
             "type": "string",
             "title": "Model",
-            "required": true,
             "optionsFrom": "llm.models"
           },
           {

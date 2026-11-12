@@ -27,6 +27,7 @@ const createRpc = (overrides: Partial<ConnectionRpc> = {}): ConnectionRpc => ({
             description: 'One key for many models.',
             operations: ['llm.complete', 'llm.embed', 'llm.models'],
             isAvailable: true,
+            isBuiltIn: true,
             rowFields: [
               {
                 key: 'model',
@@ -121,6 +122,7 @@ describe('createConnectionClient', () => {
       title: 'OpenRouter',
       operations: ['llm.complete', 'llm.embed', 'llm.models'],
       isAvailable: true,
+      isBuiltIn: true,
     })
     const [address, key, mode, parallel] = type?.fields ?? []
     expect(address).toMatchObject({
@@ -159,6 +161,7 @@ describe('createConnectionClient', () => {
         secretKeysSet: ['apiKey'],
         isTypeAvailable: true,
         isComplete: true,
+        isBuiltIn: false,
         uses: [
           {
             pluginId: 'md.numen.tools.proofreading',

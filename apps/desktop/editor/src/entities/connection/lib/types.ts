@@ -32,7 +32,7 @@ export interface ConnectionFieldInfo {
 
 /**
  * A kind of connection one plugin provides. rowFields are the values a row that names a connection of the
- * type holds besides the connection.
+ * type holds besides the connection. A built-in type has one connection the core lists while its plugin is enabled.
  */
 export interface ConnectionTypeInfo {
   readonly id: string
@@ -44,6 +44,7 @@ export interface ConnectionTypeInfo {
   readonly fields: readonly ConnectionFieldInfo[]
   readonly rowFields: readonly ConnectionFieldInfo[]
   readonly isAvailable: boolean
+  readonly isBuiltIn: boolean
 }
 
 /**
@@ -65,7 +66,10 @@ interface ConnectionUse {
   readonly operations: readonly string[]
 }
 
-/** A stored connection. */
+/**
+ * A connection: a stored one, or the built-in one of a type that is built in, whose id is the type id and
+ * which cannot be changed or deleted.
+ */
 export interface ConnectionInfo {
   readonly id: string
   readonly typeId: string
@@ -75,6 +79,7 @@ export interface ConnectionInfo {
   readonly secretKeysSet: readonly string[]
   readonly isTypeAvailable: boolean
   readonly isComplete: boolean
+  readonly isBuiltIn: boolean
   readonly uses: readonly ConnectionUse[]
 }
 

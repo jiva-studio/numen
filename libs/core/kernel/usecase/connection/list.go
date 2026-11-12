@@ -11,10 +11,10 @@ import (
 // List reads the connections from the list, without any value of a secret.
 type List struct{ operation }
 
-// Execute returns the connections in list order. A secret counts as set only when its entry in the
+// Execute returns the stored connections in list order, followed by the built-in ones. A secret counts as set only when its entry in the
 // key store holds the fingerprint of the type and the address the connection has now.
 func (u *List) Execute(ctx context.Context) ([]Entry, error) {
-	list, err := u.repository.ListConnections()
+	list, err := u.listConnections()
 	if err != nil {
 		return nil, err
 	}

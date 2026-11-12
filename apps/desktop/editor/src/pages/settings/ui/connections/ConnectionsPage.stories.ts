@@ -51,6 +51,7 @@ const SERVICE: ConnectionTypeInfo = {
   ],
   rowFields: [],
   isAvailable: true,
+  isBuiltIn: false,
 }
 
 const SERVER: ConnectionTypeInfo = {
@@ -96,6 +97,7 @@ const connection = (overrides: Partial<ConnectionInfo>): ConnectionInfo => ({
   secretKeysSet: ['apiKey'],
   isTypeAvailable: true,
   isComplete: true,
+  isBuiltIn: false,
   uses: [],
   ...overrides,
 })

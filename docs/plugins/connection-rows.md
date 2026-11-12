@@ -36,7 +36,7 @@ Deleting a connection removes the rows that name it from every setting of rows, 
 
 ## Discover connections
 
-A setting that declares `discover: true` works with no row. While it holds no row and discovery is on, a call of the plugin for an operation of the setting goes through every connection whose type is available and serves that operation, in the order of the Connections page, each with no row value, so the provider uses its default model. A connection is tried and set aside as a row is. Once the person writes a row, only the rows are used; removing the last row brings discovery back. Agent Chat declares it on its setting of agents, so the chat answers with the agents already on the Connections page.
+A setting that declares `discover: true` works with no row. While it holds no row and discovery is on, a call of the plugin for an operation of the setting goes through every connection whose type is available and serves that operation, in the order of the Connections page, the built-in connections of enabled plugins included (see [built-in types](providers.md#declare-the-types)), each with no row value, so the provider uses its default model. A connection is tried and set aside as a row is. Once the person writes a row, only the rows are used; removing the last row brings discovery back. Agent Chat declares it on its setting of agents, so the chat answers with the agents already on the Connections page.
 
 Discovery is on unless the person turns it off. The choice is kept in the object of the plugin under `discover`, by the key of the setting:
 

@@ -52,6 +52,7 @@ const type = (
   fields,
   rowFields: [],
   isAvailable: true,
+  isBuiltIn: false,
   ...overrides,
 })
 
@@ -88,6 +89,7 @@ const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => 
   secretKeysSet: ['apiKey'],
   isTypeAvailable: true,
   isComplete: true,
+  isBuiltIn: false,
   uses: [],
   ...overrides,
 })
@@ -179,6 +181,25 @@ describe('the page of connections', () => {
     await flushPromises()
 
     expect(rowOf('Work').textContent).toContain('Incomplete')
+    dispose(wrapper)
+  })
+
+  it('marks a built-in connection, which opens no dialog to change or delete it', async () => {
+    const builtIn = connection({
+      id: SERVICE.id,
+      typeId: SERVICE.id,
+      name: 'Sample agent',
+      secretKeysSet: [],
+      isBuiltIn: true,
+    })
+    const { wrapper } = mountPage([connection(), builtIn], [SERVICE])
+    await flushPromises()
+
+    expect(rowOf('Sample agent').textContent).toContain('Built in')
+    expect(rowOf('Work').textContent).not.toContain('Built in')
+    await click(rowOf('Sample agent'))
+
+    expect(root().querySelector('[role="dialog"]')).toBeNull()
     dispose(wrapper)
   })
 

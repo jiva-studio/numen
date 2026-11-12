@@ -26,6 +26,7 @@ export const WORDS = {
   connectionUnavailableDetail:
     '"Type unavailable" means no installed plugin provides this type. Plugins skip such a connection.',
   connectionIncomplete: 'Incomplete',
+  connectionBuiltIn: 'Built in',
   connectionDelete: 'Delete connection',
   connectionDeleteAsking: (name: string, hasKey: boolean) =>
     hasKey ? `Delete "${name}"? Its key is removed from this machine.` : `Delete "${name}"?`,

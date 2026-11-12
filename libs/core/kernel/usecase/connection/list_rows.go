@@ -13,7 +13,7 @@ type ListRows struct {
 
 // Execute returns the rows the person chose for the operation, in their order. Where the person chose none
 // and the setting discovers, it returns a row with no options for each connection whose type is available
-// and serves the operation, in the order of the list of connections.
+// and serves the operation, in the order of the list of connections, the built-in ones last.
 func (u *ListRows) Execute(pluginID, operationName string) ([]connection.Row, error) {
 	setting, err := u.settings.ReadRowSetting(pluginID, operationName)
 	if err != nil {
@@ -22,7 +22,7 @@ func (u *ListRows) Execute(pluginID, operationName string) ([]connection.Row, er
 	if len(setting.Rows) > 0 || !setting.IsDiscovering {
 		return setting.Rows, nil
 	}
-	list, err := u.repository.ListConnections()
+	list, err := u.listConnections()
 	if err != nil {
 		return nil, err
 	}

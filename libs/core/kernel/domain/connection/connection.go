@@ -39,6 +39,24 @@ func (t Type) GetID() string {
 	return manifest.GetConnectionTypeID(t.PluginID, t.Declaration.ID)
 }
 
+// ListBuiltIns returns the connection the core lists for each available type that is built in, in the order
+// of the types. Its id is the type id, its name the title of the type, and it holds no field.
+func ListBuiltIns(types []Type) []Connection {
+	var list []Connection
+	for _, one := range types {
+		if one.IsAvailable && one.Declaration.IsBuiltIn {
+			list = append(list, Connection{ID: one.GetID(), TypeID: one.GetID(), Name: one.Declaration.Title, Fields: map[string]any{}})
+		}
+	}
+	return list
+}
+
+// IsBuiltIn reports whether the id is that of a built-in connection: a type id, which no stored connection has.
+func IsBuiltIn(id string) bool {
+	_, _, isTypeID := manifest.SplitConnectionTypeID(id)
+	return isTypeID
+}
+
 // IsValidName reports whether the text is a name of a connection: not empty, without leading or
 // trailing space, and at most MaxNameLength characters.
 func IsValidName(name string) bool {

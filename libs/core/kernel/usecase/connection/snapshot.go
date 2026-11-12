@@ -18,7 +18,7 @@ type Resolve struct{ operation }
 // Execute returns the connection with the id. It fails with connection.ErrNotFound for an id not in the list and
 // with connection.ErrTypeUnavailable where no enabled plugin provides the type.
 func (u *Resolve) Execute(connectionID string) (connection.Resolved, error) {
-	list, err := u.repository.ListConnections()
+	list, err := u.listConnections()
 	if err != nil {
 		return connection.Resolved{}, err
 	}
@@ -91,7 +91,7 @@ func (u *ReadSecrets) Execute(ctx context.Context, resolved connection.Resolved)
 			return nil, fmt.Errorf("%w: %s", connection.ErrSecretMissing, field.Key)
 		}
 	}
-	list, err := u.repository.ListConnections()
+	list, err := u.listConnections()
 	if err != nil {
 		return nil, err
 	}

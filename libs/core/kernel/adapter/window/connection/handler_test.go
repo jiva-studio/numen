@@ -414,3 +414,33 @@ func TestListProviderConnectionTypesReturnsNoTitleWithoutTheirUseCase(t *testing
 		t.Errorf("operations = %v", got)
 	}
 }
+
+func TestListProviderConnectionsMarksTheConnectionOfABuiltInType(t *testing.T) {
+	types := append(getTypes(), connection.Type{PluginID: "org.example.agents", PluginName: "Kite agent", IsAvailable: true, Declaration: manifest.ConnectionType{
+		ID: "kite", Title: "Kite", Operations: []string{"acp.task"}, IsBuiltIn: true,
+	}})
+	handler := NewHandler(useCasesOf(connectiontest.New(&memoryRepository{}, types, newKeys(), fixedUses{}, func() (string, error) {
+		return "c00000001", nil
+	}), &modelList{}))
+	if _, err := handler.CreateProviderConnection(t.Context(), createRequest("Work")); err != nil {
+		t.Fatal(err)
+	}
+
+	listed, err := handler.ListProviderConnections(t.Context(), connect.NewRequest(&v1.ListProviderConnectionsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	declared, err := handler.ListProviderConnectionTypes(t.Context(), connect.NewRequest(&v1.ListProviderConnectionTypesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := listed.Msg.GetConnections()
+	if len(got) != 2 || got[0].GetIsBuiltIn() || got[1].GetId() != "org.example.agents/kite" || !got[1].GetIsBuiltIn() {
+		t.Errorf("connections = %v, want Work and then the built-in Kite", got)
+	}
+	kinds := declared.Msg.GetTypes()
+	if len(kinds) != 2 || kinds[0].GetIsBuiltIn() || !kinds[1].GetIsBuiltIn() {
+		t.Errorf("types = %v, want only Kite built in", kinds)
+	}
+}

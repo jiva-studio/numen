@@ -29,6 +29,7 @@ const type = (overrides: Partial<ConnectionTypeInfo> = {}): ConnectionTypeInfo =
   ],
   rowFields: [],
   isAvailable: true,
+  isBuiltIn: false,
   ...overrides,
 })
 
@@ -41,6 +42,7 @@ const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => 
   secretKeysSet: [],
   isTypeAvailable: true,
   isComplete: true,
+  isBuiltIn: false,
   uses: [],
   ...overrides,
 })

@@ -20,6 +20,7 @@ const connection: ConnectionInfo = {
   secretKeysSet: [],
   isTypeAvailable: true,
   isComplete: true,
+  isBuiltIn: false,
   uses: [],
 }
 

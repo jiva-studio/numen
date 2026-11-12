@@ -2,7 +2,8 @@
 /**
  * One connection as a row of the list, drawn by the navigation row of the plugin manager: the
  * name, the type as the secondary text (with the address and the plugins that use it), and a chip
- * for the state. The whole row opens the connection for editing.
+ * for the state. The whole row opens the connection for editing. A built-in connection is marked so and
+ * does not open: it has nothing to edit and cannot be deleted.
  */
 import { computed, useTemplateRef } from 'vue'
 import { NavigationRow } from '@numen/plugin-manager'
@@ -42,6 +43,7 @@ const detail = computed(() =>
 
 /* -------------------------------- Handlers -------------------------------- */
 function onEdit(): void {
+  if (props.connection.isBuiltIn) return
   const element = row.value?.$el
   if (element instanceof HTMLElement) emit('edit', element)
 }
@@ -53,9 +55,13 @@ function onEdit(): void {
     category="connections"
     :name="connection.name"
     :detail="detail"
+    :is-tile="connection.isBuiltIn"
     @select="onEdit"
   >
     <template #trail>
+      <span v-if="connection.isBuiltIn" class="connection-row__chip">
+        {{ words.connectionBuiltIn }}
+      </span>
       <span v-if="state === 'unavailable'" class="connection-row__chip connection-row__chip--bad">
         {{ words.connectionUnavailable }}
       </span>
