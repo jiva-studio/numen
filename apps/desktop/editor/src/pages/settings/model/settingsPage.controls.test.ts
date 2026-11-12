@@ -130,7 +130,7 @@ const NORMAL: Timing = {
 
 const say = vi.fn()
 
-const create = (timing: Timing) => {
+const create = (timing: Timing, shown: 'system' | 'appearance') => {
   file.current = {
     app: {
       appearance: { theme: 'preset:numen', mode: 'system', interfaceScale: 1 },
@@ -206,7 +206,7 @@ const create = (timing: Timing) => {
   }
   const page = mount(SettingsTab, {
     props: {
-      state: { ...settings.configured.state, initialPluginId: ref<string | null>('appearance') },
+      state: { ...settings.configured.state, initialPluginId: ref<string | null>(shown) },
     },
     attachTo: document.body,
   })
@@ -238,8 +238,8 @@ const sampleControl = async (read: () => unknown, ms: number): Promise<unknown[]
 const getDistinctValues = (samples: readonly unknown[]): unknown[] =>
   samples.filter((one, index) => index === 0 || one !== samples[index - 1])
 
-const start = async (timing: Timing) => {
-  const made = create(timing)
+const start = async (timing: Timing, shown: 'system' | 'appearance' = 'appearance') => {
+  const made = create(timing, shown)
   const started = made.settings.start()
   await vi.advanceTimersByTimeAsync(200)
   await started
@@ -312,7 +312,7 @@ afterEach(() => {
   document.head.querySelectorAll('style[data-appearance]').forEach((one) => one.remove())
 })
 
-describe('a list of the page System after the person chooses a value', () => {
+describe('a list of the pages System and Appearance after the person chooses a value', () => {
   it.each(ORDERS)('shows only the new mode when %s', async (_, timing) => {
     const { settings, page } = await start(timing)
     expect(getControlValue(page, 'Light or dark', Select)).toBe('system')
@@ -326,7 +326,7 @@ describe('a list of the page System after the person chooses a value', () => {
   })
 
   it.each(ORDERS)('shows only the new performance profile when %s', async (_, timing) => {
-    const { settings, page } = await start(timing)
+    const { settings, page } = await start(timing, 'system')
 
     getRow(page, 'Performance profile').findComponent(Select).vm.$emit('update:modelValue', 'eco')
     const samples = await sampleControl(

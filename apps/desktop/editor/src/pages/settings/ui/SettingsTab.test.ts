@@ -113,6 +113,11 @@ const openSystemSettings = async (tab: Tab) => {
   await nextTick()
 }
 
+const openAppearanceSettings = async (tab: Tab) => {
+  await tab.get('button[aria-label="Appearance"]').trigger('click')
+  await nextTick()
+}
+
 const getButtonNames = (tab: Tab) =>
   tab.findAll('button').map((one) => one.attributes('aria-label'))
 
@@ -138,7 +143,7 @@ describe('the settings tab', () => {
     expect(system.text()).toContain(words.systemSettingsDetail)
   })
 
-  it('draws the Connections tile after System and the plugin rows below them', () => {
+  it('draws the Appearance and Connections tiles after System and the plugin rows below them', () => {
     const samplePlugin: PluginInfo = {
       id: 'test.transcription',
       name: 'Transcription Plugin',
@@ -153,6 +158,7 @@ describe('the settings tab', () => {
     const { tab } = createTab({}, [samplePlugin])
     expect(getButtonNames(tab)).toStrictEqual([
       'System',
+      'Appearance',
       'Connections',
       'Transcription Plugin',
     ])
@@ -160,7 +166,7 @@ describe('the settings tab', () => {
 
   it('opens on the theme the core resolved, in one list with the themes of plugins', async () => {
     const { tab } = createTab()
-    await openSystemSettings(tab)
+    await openAppearanceSettings(tab)
     const theme = findSelect(tab, 'Theme')
     expect(theme.text()).toContain('numen')
 
@@ -173,7 +179,7 @@ describe('the settings tab', () => {
 
   it('writes a theme chosen under the owner app', async () => {
     const { tab, writes } = createTab()
-    await openSystemSettings(tab)
+    await openAppearanceSettings(tab)
     await findSelect(tab, 'Theme').get('[data-slot="select"]').trigger('click')
     await nextTick()
     await nextTick()

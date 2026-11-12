@@ -129,7 +129,7 @@ describe('PluginDetail', () => {
       ],
     )
 
-    const stoppedCard = wrapper.get('[role="group"][aria-label="Stopped"]')
+    const stoppedCard = wrapper.get('[role="alert"]')
     expect(stoppedCard.text()).toContain('Timed out while starting')
     expect(stoppedCard.text()).not.toContain('handshake timeout after 10s')
 
@@ -326,7 +326,7 @@ describe('PluginDetail', () => {
       detail: '',
     }
     const { wrapper } = createDetail(createPluginInfo('a', 'A'), {}, undefined, undefined, [start])
-    const card = wrapper.get('[role="group"][aria-label="Stopped"]')
+    const card = wrapper.get('[role="alert"]')
     expect(card.findAll('button').map((one) => one.text())).toStrictEqual([words.pluginRetry])
   })
 })
@@ -361,13 +361,16 @@ describe('PluginDetail with a health item', () => {
     },
   }
 
-  it('shows the item in a bar and runs its fix with its values', async () => {
+  it('shows the item in a notice with its detail behind a toggle and runs its fix with its values', async () => {
     const { wrapper, runCommand } = createDetail(ATLAS, {}, undefined, undefined, [CONNECTION])
     const bar = wrapper.get('[role="alert"]')
 
     expect(bar.text()).toContain('Choose a connection')
+    expect(bar.text()).not.toContain('The atlas has no connection to ask.')
+    const buttons = bar.findAll('button')
+    await buttons.find((one) => one.text() === words.pluginShowDetails)!.trigger('click')
     expect(bar.text()).toContain('The atlas has no connection to ask.')
-    await bar.find('button').trigger('click')
+    await buttons[0]!.trigger('click')
 
     expect(runCommand).toHaveBeenCalledExactlyOnceWith('app:settings.open', {
       plugin: 'org.example.atlas',
