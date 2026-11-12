@@ -4,10 +4,10 @@
   "version": "2026.11.12",
   "protocol": 1,
   "description": "Meaning-based search across your notes, books, and recordings",
-  "capabilities": ["embedding"],
+  "capabilities": ["search.source"],
   "targets": ["desktop.editor"],
   "contributes": { "category": "engines" },
-  "permissions": ["vault:read", "link:open"],
+  "permissions": ["vault:read", "link:open", "index:read"],
   "dependencies": [
     {
       "id": "onnxruntime",

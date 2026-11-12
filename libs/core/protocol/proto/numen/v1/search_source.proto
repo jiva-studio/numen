@@ -69,7 +69,7 @@ message DescribeSearchSourceResponse {
 // IndexedText is one text the core hands a source: the chunk it was cut as, the path of the source
 // it was cut from relative to the vault, and the text version it was cut from, empty for a note.
 message IndexedText {
-  int64 chunk_id = 1;
+  string chunk_id = 1;
   string path = 2;
   string version_id = 3;
   string text = 4;
@@ -103,7 +103,7 @@ message SearchSourceServiceSearchPassagesRequest {
 
 // ChunkMatch is a chunk the core handed the source with its text, and how well it answers.
 message ChunkMatch {
-  int64 chunk_id = 1;
+  string chunk_id = 1;
   double score = 2;
 }
 

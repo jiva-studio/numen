@@ -8,17 +8,19 @@ import (
 )
 
 // rankConstant flattens the head of a ranking: first place is worth 1/61 and
-// second 1/62, so a chunk both halves placed well outscores one that either half
+// second 1/62, so a chunk two participants placed well outscores one that either
 // placed first alone.
 //
 // 60 is the constant reciprocal rank fusion uses.
 const rankConstant = 60
 
-func merge(rankings ...[]domain.Passage) []domain.Passage {
+// merge fuses the rankings of every participant by reciprocal rank fusion. It does not know which
+// participant answered which ranking.
+func merge(rankings ...Ranking) []domain.Passage {
 	score := map[domain.ChunkID]float64{}
 	observed := map[domain.ChunkID]domain.Passage{}
 	for _, ranking := range rankings {
-		for i, p := range ranking {
+		for i, p := range ranking.Passages {
 			score[p.ChunkID] += 1 / float64(rankConstant+i+1)
 			if _, target := observed[p.ChunkID]; !target {
 				observed[p.ChunkID] = p
@@ -49,11 +51,18 @@ type passageID struct {
 	start, length int
 }
 
-func collapse(fused, named []domain.Passage, each, limit int) []domain.Passage {
+// collapse keeps at most each passages of one source and limit in all. The first passage a leading
+// ranking places of a source comes before the other passages of that source.
+func collapse(fused []domain.Passage, rankings []Ranking, each, limit int) []domain.Passage {
 	sections := map[string]domain.Passage{}
-	for _, p := range named {
-		if _, target := sections[p.Source]; !target {
-			sections[p.Source] = p
+	for _, ranking := range rankings {
+		if !ranking.IsLeading {
+			continue
+		}
+		for _, p := range ranking.Passages {
+			if _, target := sections[p.Source]; !target {
+				sections[p.Source] = p
+			}
 		}
 	}
 

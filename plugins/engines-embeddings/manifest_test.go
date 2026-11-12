@@ -24,8 +24,8 @@ func TestManifestDeclaresONNXRuntimeDependency(t *testing.T) {
 	}
 }
 
-// The core finds the provider by its capability; no window calls the service.
-func TestManifestDeclaresTheEmbeddingCapabilityAndNoWindowService(t *testing.T) {
+// The core finds the search source by its capability; no window calls the service.
+func TestManifestDeclaresTheSearchSourceCapabilityAndNoWindowService(t *testing.T) {
 	var manifest struct {
 		Capabilities     []string `json:"capabilities"`
 		ActivationEvents []string `json:"activationEvents"`
@@ -34,8 +34,8 @@ func TestManifestDeclaresTheEmbeddingCapabilityAndNoWindowService(t *testing.T) 
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(manifest.Capabilities, "embedding") {
-		t.Errorf("capabilities = %v, want embedding", manifest.Capabilities)
+	if !slices.Contains(manifest.Capabilities, "search.source") {
+		t.Errorf("capabilities = %v, want search.source", manifest.Capabilities)
 	}
 	if len(manifest.ActivationEvents) != 0 {
 		t.Errorf("activationEvents = %v, want none", manifest.ActivationEvents)

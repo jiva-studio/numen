@@ -1,9 +1,9 @@
-package embeddingport
+package searchsourceport
 
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 )
 
 // VectorRepository holds the vectors made from chunks.
@@ -14,7 +14,7 @@ type VectorRepository interface {
 	//
 	// Each vector is also stored under the hash of the text it was created from,
 	// so renumbering the chunks does not require re-embedding it.
-	SaveVectors(ctx context.Context, vectors []embedding.Vector) error
+	SaveVectors(ctx context.Context, vectors []vector.Stored) error
 
 	// GetKeptVectors returns, by hash, the vectors already created under the given
 	// recipe for the texts the hashes identify. These vectors are not requested

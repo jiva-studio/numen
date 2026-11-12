@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -26,8 +26,8 @@ type windowWiring struct {
 	a         pluginsWiring
 	ports     registry.Ports
 	db        *Index
-	embedder  embeddingport.Embedder
-	asking    embeddingport.Embedder
+	embedder  searchsourceport.Source
+	asking    searchsourceport.Source
 	inst      *editor.Installation
 	state     *editor.State
 	kinds     tabKinds
@@ -147,7 +147,7 @@ func buildWindow(
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.
-	embedder, asking, closeEmbedder, why := searchEmbedders(a.search, ctx, tasks)
+	embedder, asking, closeEmbedder, why := searchSources(a.search, ctx, tasks)
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(a, event) })
 	state.SetIndexing(embedding)

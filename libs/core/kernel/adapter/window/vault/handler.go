@@ -62,11 +62,7 @@ func (h *Handler) GetVaultState(
 			Error:      state.Error,
 			WatchError: state.WatchError,
 		},
-		Coverage: &v1.IndexCoverage{
-			IsEmbedding:   state.IsEmbedding,
-			ChunkCount:    state.ChunkCount,
-			EmbeddedCount: state.EmbeddedCount,
-		},
+		Coverage: &v1.IndexCoverage{Text: state.Coverage},
 	}), nil
 }
 

@@ -8,6 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
@@ -92,6 +94,10 @@ type PassageSearch interface {
 	// source and every text version: by keywords, and by embedding when the installation has a model.
 	// An installation with no model searches by keywords only.
 	SearchPassages(ctx context.Context, v domain.Vault, q plugin.PassageQuery) ([]domain.Passage, error)
+	// FindNearestPassages returns the small chunks of the vault nearest the vector under the recipe of the
+	// query, nearest first, at or above its floor, else the effective floor of the vault. The recipe
+	// rules of SearchIndex apply.
+	FindNearestPassages(ctx context.Context, v domain.Vault, q sourcedomain.NearestQuery) ([]searchsource.Match, error)
 }
 
 // SearchFloors is the floor a search by meaning applies to the vaults, as the plugins that call the

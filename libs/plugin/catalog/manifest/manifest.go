@@ -76,7 +76,7 @@ func PluginActivationEvents() []string {
 // a plugin by.
 func PluginCapabilities() []string {
 	return []string{
-		"embedding",
+		"search.source",
 		"tools",
 		"ai.agent.provider",
 	}

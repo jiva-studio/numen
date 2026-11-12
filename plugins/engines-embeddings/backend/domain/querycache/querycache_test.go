@@ -1,15 +1,15 @@
-package search_test
+package querycache_test
 
 import (
 	"fmt"
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/querycache"
 )
 
-func TestQueryCacheEmptyGet(t *testing.T) {
-	c := search.NewQueryCache(2)
+func TestCacheEmptyGet(t *testing.T) {
+	c := querycache.New(2)
 	if _, ok := c.Get("recipe1", "query1"); ok {
 		t.Fatal("expected miss on empty cache")
 	}
@@ -18,8 +18,8 @@ func TestQueryCacheEmptyGet(t *testing.T) {
 	}
 }
 
-func TestQueryCacheInsertAndGet(t *testing.T) {
-	c := search.NewQueryCache(2)
+func TestCacheInsertAndGet(t *testing.T) {
+	c := querycache.New(2)
 	vec := []float32{1.0, 2.0, 3.0}
 	c.Put("recipe1", "query1", vec)
 
@@ -39,8 +39,8 @@ func TestQueryCacheInsertAndGet(t *testing.T) {
 	}
 }
 
-func TestQueryCacheEviction(t *testing.T) {
-	c := search.NewQueryCache(2)
+func TestCacheEviction(t *testing.T) {
+	c := querycache.New(2)
 	c.Put("r", "q1", []float32{1})
 	c.Put("r", "q2", []float32{2})
 
@@ -66,8 +66,8 @@ func TestQueryCacheEviction(t *testing.T) {
 	}
 }
 
-func TestQueryCacheUpdateExisting(t *testing.T) {
-	c := search.NewQueryCache(2)
+func TestCacheUpdateExisting(t *testing.T) {
+	c := querycache.New(2)
 	c.Put("r", "q1", []float32{1})
 	c.Put("r", "q2", []float32{2})
 	c.Put("r", "q1", []float32{10})
@@ -81,8 +81,8 @@ func TestQueryCacheUpdateExisting(t *testing.T) {
 	}
 }
 
-func TestQueryCacheConcurrent(t *testing.T) {
-	c := search.NewQueryCache(50)
+func TestCacheConcurrent(t *testing.T) {
+	c := querycache.New(50)
 	var wg sync.WaitGroup
 	for i := range 20 {
 		wg.Add(1)
@@ -99,8 +99,8 @@ func TestQueryCacheConcurrent(t *testing.T) {
 	wg.Wait()
 }
 
-func TestQueryCacheNilSafety(t *testing.T) {
-	var c *search.QueryCache
+func TestCacheNilSafety(t *testing.T) {
+	var c *querycache.Cache
 	if _, ok := c.Get("r", "q"); ok {
 		t.Fatal("expected false on nil cache")
 	}

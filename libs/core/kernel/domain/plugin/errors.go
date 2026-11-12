@@ -53,8 +53,8 @@ var (
 	// within the bound of the call. The error wraps it with the id of the tab.
 	ErrTabNotShown = errors.New("the window did not show the tab in time")
 
-	// ErrNoModel is a search call on an installation that has no embedding model.
-	ErrNoModel = errors.New("the installation has no embedding model")
+	// ErrNoModel is a search call on an installation that has no search source.
+	ErrNoModel = errors.New("the installation has no search source")
 	// ErrRecipeMismatch is a search call that names a recipe other than the one of the model in use.
 	ErrRecipeMismatch = errors.New("the recipe is not the one of the model in use")
 	// ErrInvalidFloor is a floor outside the range above zero and up to one.

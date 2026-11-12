@@ -4,8 +4,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchsource"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
@@ -23,12 +23,12 @@ func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
 		map[string]string{"source": "local", "model": "Xenova/bge-m3"}); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
-	info, err := embedding.NewClient(web.Client(), web.URL, token).GetModelInfo(t.Context())
+	info, err := searchsource.NewClient(web.Client(), web.URL, token).Describe(t.Context())
 	if err != nil {
-		t.Fatalf("GetModelInfo: %v", err)
+		t.Fatalf("Describe: %v", err)
 	}
 
-	if info.Name != "Xenova/bge-m3" || info.Dimensions != 1024 {
+	if info.Name != "Xenova/bge-m3" || info.Width != 1024 {
 		t.Errorf("model = %s at %d, want Xenova/bge-m3 at 1024", info.Name, info.Dimensions)
 	}
 }

@@ -1,4 +1,4 @@
-package embeddingport
+package searchsourceport
 
 import "context"
 

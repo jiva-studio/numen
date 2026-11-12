@@ -3,16 +3,13 @@ package search
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -30,22 +27,20 @@ const defaultExtractors = 4
 const lexicalCandidates = 5
 
 // DefaultFloor is the minimum cosine similarity at which a passage counts as an
-// answer where neither the query, a stored floor nor the model names one.
-// The similarity a model assigns to texts about different subjects is specific
-// to the model, so the value is a starting point.
+// answer where neither the query, a stored floor nor the search source names one.
+// The similarity a source assigns to texts about different subjects is specific
+// to the source, so the value is a starting point.
 const DefaultFloor = 0.30
 
-// FloorSource returns the floor for a vault under an embedding recipe.
-type FloorSource func(ctx context.Context, v domain.Vault, recipe string) float64
-
-// Parameters selects the search modes, the number of candidates each mode keeps
-// and the minimum score a candidate must reach. A mode with no candidates does
-// not run; when no mode is configured, all modes run.
+// Parameters selects the participants of a search, the number of candidates each keeps
+// and the floor the query names. A participant with no candidates does not run; when none is
+// configured, all of them run. Lexical is the words of the index, Named the names of its sections,
+// and Sources every search source a plugin provides.
 type Parameters struct {
 	Limit      int
 	Each       int
 	Lexical    int
-	Dense      int
+	Sources    int
 	Named      int
 	Floor      float64
 	IsGrowing  bool
@@ -60,24 +55,36 @@ func (p Parameters) fill() Parameters {
 	if p.Each <= 0 {
 		p.Each = 1
 	}
-	if p.Lexical <= 0 && p.Dense <= 0 && p.Named <= 0 {
+	if p.Lexical <= 0 && p.Sources <= 0 && p.Named <= 0 {
 		p.Lexical = p.Limit * lexicalCandidates
-		p.Dense = p.Limit
+		p.Sources = p.Limit
 		p.Named = p.Limit
 	}
 	return p
 }
 
-// QueryEmbedder returns one vector per query, made for searching with the query as the question.
-type QueryEmbedder interface {
-	Execute(ctx context.Context, queries []string) ([][]float32, error)
+// Query is what a search asks one participant: the text, the filters, how many passages to rank and
+// the floor the query names, zero where the participant applies its own.
+type Query struct {
+	Text       string
+	Kinds      []domain.SourceKind
+	PathPrefix string
+	Limit      int
+	IsGrowing  bool
+	Floor      float64
 }
 
-// Index is what a search asks of the index: `Passages` answers by words and by section names,
-// `Nearest` answers by meaning.
-type Index struct {
-	Passages sourceport.PassageQueries
-	Nearest  sourceport.NearestQueries
+// Ranking is the answer of one participant: passages best first. In a leading ranking the first
+// passage of a source is shown before the other passages of that source.
+type Ranking struct {
+	Passages  []domain.Passage
+	IsLeading bool
+}
+
+// Participant answers a query with a ranking of passages. The words and the section names of the index
+// are participants of the core; a search source of a plugin is another, and all are merged the same way.
+type Participant interface {
+	Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, error)
 }
 
 // VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
@@ -86,21 +93,17 @@ type VaultFinding = func(nameOrPath string) (domain.Vault, error)
 // VaultPreparing prepares a Search for a vault once it has been found.
 type VaultPreparing = func(ctx context.Context, v domain.Vault) (Search, error)
 
-// Search answers a query within one vault. Without an embedder only the word search runs.
-// Floor gives the floor of a query that names none, under the recipe of the model that embeds it.
+// Search answers a query within one vault. Without a search source only the participants of the core run.
 // Extractors is how many sources are extracted at once; the default holds where it is not positive.
 type Search struct {
 	find         VaultFinding
 	prepare      VaultPreparing
-	passages     sourceport.PassageQueries
-	nearest      FindNearest
+	words        Participant
+	names        Participant
+	sources      []Participant
 	readers      vaultport.VaultReaders
-	embedder     embeddingport.Embedder
-	queries      QueryEmbedder
 	texts        textdomain.Readers
-	Floor        FloorSource
 	errorHandler window.ErrorHandler
-	cache        queryCaching
 	Extractors   int
 }
 
@@ -129,179 +132,105 @@ func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p P
 	return runner.Execute(ctx, v, query, p)
 }
 
-// New returns a search over one vault's index.
-// A nil embedder means the installation has no model: the meaning search does
-// not run and the word search answers alone, since the vector index is optional.
-// A nil `texts` means only notes return their text. `queries` embeds the queries.
-// `errorHandler` receives the error of a search mode that could not answer; nil ignores such errors.
-func New(index Index, readers vaultport.VaultReaders, texts textdomain.Readers, embedder embeddingport.Embedder, queries QueryEmbedder, errorHandler window.ErrorHandler) Search {
+// New returns a search over one vault's index: its words and section names, and the search sources given.
+// No source means the installation has none, and the participants of the core answer alone.
+// A nil `texts` means only notes return their text.
+// `errorHandler` receives the error of a search source that could not answer; nil ignores such errors.
+func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textdomain.Readers, sources []Participant, errorHandler window.ErrorHandler) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}
 	return Search{
-		passages:     index.Passages,
-		nearest:      NewFindNearest(index.Nearest),
+		words:        NewWords(passages),
+		names:        NewNames(passages),
+		sources:      sources,
 		readers:      readers,
-		embedder:     embedder,
-		queries:      queries,
 		texts:        texts,
 		errorHandler: errorHandler,
-		cache:        NewQueryCache(defaultCacheCapacity),
 		Extractors:   defaultExtractors,
 	}
 }
 
-// Execute runs the ways the parameters name, merges their rankings by rank,
+// Execute asks the participants the parameters name, merges their rankings by rank,
 // and returns one passage per document.
-// The orders are the words in a chunk, the meaning of a chunk and the name of
-// the section a chunk opens. A chunk that two of them place well outranks one
-// that any of them placed first alone.
+// A chunk that two of them place well outranks one that any of them placed first alone.
 func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	p = p.fill()
 
-	a, err := u.searchAll(ctx, v, query, p)
+	rankings, err := u.rankAll(ctx, v, query, p)
 	if err != nil {
 		return nil, err
 	}
-	return u.readForQuery(ctx, v, query, collapse(merge(a.getRankings(p)...), a.named, p.Each, p.Limit))
+	return u.readForQuery(ctx, v, query, collapse(merge(rankings...), rankings, p.Each, p.Limit))
 }
 
-// answers is what each half of a search returned.
-type answers struct {
-	lexical  []domain.Passage
-	named    []domain.Passage
-	dense    []domain.Passage
-	hasDense bool
+// asked is one participant a search asks, with the number of passages it ranks and whether its failure
+// fails the search.
+type asked struct {
+	participant Participant
+	limit       int
+	isTolerated bool
 }
 
-func (a *answers) getRankings(p Parameters) [][]domain.Passage {
-	var out [][]domain.Passage
-	if p.Lexical > 0 {
-		out = append(out, a.lexical)
+func (u Search) getAsked(p Parameters) []asked {
+	var out []asked
+	if p.Lexical > 0 && u.words != nil {
+		out = append(out, asked{participant: u.words, limit: p.Lexical})
 	}
-	if p.Named > 0 {
-		out = append(out, a.named)
+	if p.Named > 0 && u.names != nil {
+		out = append(out, asked{participant: u.names, limit: p.Named})
 	}
-	if a.hasDense {
-		out = append(out, a.dense)
+	if p.Sources > 0 {
+		for _, source := range u.sources {
+			out = append(out, asked{participant: source, limit: p.Sources, isTolerated: true})
+		}
 	}
 	return out
 }
 
-func (u Search) searchAll(ctx context.Context, v domain.Vault, query string, p Parameters) (*answers, error) {
-	a := &answers{}
+func (u Search) rankAll(ctx context.Context, v domain.Vault, query string, p Parameters) ([]Ranking, error) {
+	asks := u.getAsked(p)
+	answers := make([]*Ranking, len(asks))
 	g, gctx := errgroup.WithContext(ctx)
-	if p.Lexical > 0 {
-		g.Go(func() error { return u.searchLexical(gctx, v, query, p, a) })
-	}
-	if p.Named > 0 {
-		g.Go(func() error { return u.searchNamed(gctx, v, query, p, a) })
-	}
-	if p.Dense > 0 && u.embedder != nil {
-		g.Go(func() error { return u.searchDense(gctx, v, query, p, a) })
+	for i, one := range asks {
+		g.Go(func() error {
+			ranking, err := u.rank(gctx, v, one, Query{
+				Text: query, Kinds: p.Kinds, PathPrefix: p.PathPrefix, Limit: one.limit, IsGrowing: p.IsGrowing, Floor: p.Floor,
+			})
+			answers[i] = ranking
+			return err
+		})
 	}
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
-	return a, nil
-}
-
-func (u Search) searchLexical(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	found, err := u.passages.FindLexical(ctx, v.ID, sourcedomain.LexicalQuery{Text: query, Kinds: p.Kinds, Limit: p.Lexical, IsGrowing: p.IsGrowing, PathPrefix: p.PathPrefix})
-	if err != nil {
-		return err
-	}
-	a.lexical = found
-	return nil
-}
-
-func (u Search) searchNamed(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	found, err := u.passages.GetNamedPassages(ctx, v.ID, sourcedomain.LexicalQuery{Text: query, Kinds: p.Kinds, Limit: p.Named, IsGrowing: p.IsGrowing, PathPrefix: p.PathPrefix})
-	if err != nil {
-		return err
-	}
-	a.named = found
-	return nil
-}
-
-func (u Search) searchDense(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	found, err := u.findNearestPassages(ctx, v, query, p)
-	switch {
-	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
-		return err
-	case errors.Is(err, errNoVector):
-		u.errorHandler(err)
-		return nil
-	case err != nil:
-		return err
-	default:
-		a.dense = found
-		a.hasDense = true
-		return nil
-	}
-}
-
-// errNoVector reports that the query produced no vector, so the meaning search
-// has nothing to search with.
-var errNoVector = errors.New("the query was not turned into a vector")
-
-func (u Search) findNearestPassages(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-	recipe := u.embedder.GetModel().Recipe()
-	vector, err := u.getQueryVector(ctx, recipe, query)
-	if err != nil {
-		return nil, err
-	}
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-	// A vector is stored under the recipe that produced it, which covers every
-	// property of the model that determines what a vector is. A lookup under any
-	// other recipe finds no vector and this mode returns nothing.
-	return u.nearest.Execute(ctx, v.ID, sourcedomain.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, PathPrefix: p.PathPrefix, Limit: p.Dense, Floor: u.getFloor(ctx, v, recipe, p)})
-}
-
-func (u Search) getQueryVector(ctx context.Context, recipe, query string) ([]float32, error) {
-	if u.cache != nil {
-		if cached, ok := u.cache.Get(recipe, query); ok {
-			return cached, nil
+	out := make([]Ranking, 0, len(answers))
+	for _, one := range answers {
+		if one != nil {
+			out = append(out, *one)
 		}
 	}
-	vectors, err := u.queries.Execute(ctx, []string{query})
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errNoVector, err)
-	}
-	if len(vectors) != 1 {
-		return nil, fmt.Errorf("%w: the embedder answered with %d vectors for one query", errNoVector, len(vectors))
-	}
-	if u.cache != nil {
-		u.cache.Put(recipe, query, vectors[0])
-	}
-	return vectors[0], nil
+	return out, nil
 }
 
-func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p Parameters) float64 {
+func (u Search) rank(ctx context.Context, v domain.Vault, one asked, q Query) (*Ranking, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	ranking, err := one.participant.Rank(ctx, v, q)
 	switch {
-	case p.Floor > 0:
-		return p.Floor
-	case u.Floor != nil:
-		return u.Floor(ctx, v, recipe)
+	case err == nil:
+		return &ranking, nil
+	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+		return nil, err
+	case one.isTolerated:
+		u.errorHandler(err)
+		return nil, nil
 	default:
-		return DefaultFloor
+		return nil, err
 	}
 }
 
@@ -318,8 +247,8 @@ const (
 	Hybrid Mode = iota
 	// Lexical: what is written, matched as words.
 	Lexical
-	// Dense: what the query means, against the vectors the index holds.
-	Dense
+	// Sources: the search sources plugins provide.
+	Sources
 	// ByName: the names of the sections a source divides into.
 	ByName
 )
@@ -332,18 +261,12 @@ func GetTypingParameters(mode Mode, limit int) Parameters {
 	p := Parameters{Limit: limit, IsGrowing: true}.fill()
 	switch mode {
 	case Lexical:
-		p.Dense, p.Named = 0, 0
-	case Dense:
+		p.Sources, p.Named = 0, 0
+	case Sources:
 		p.Lexical, p.Named = 0, 0
 	case ByName:
-		p.Lexical, p.Dense = 0, 0
+		p.Lexical, p.Sources = 0, 0
 	case Hybrid:
 	}
 	return p
-}
-
-// queryCaching keeps the vectors of the queries embedded before.
-type queryCaching interface {
-	Get(recipe, query string) ([]float32, bool)
-	Put(recipe, query string, vector []float32)
 }

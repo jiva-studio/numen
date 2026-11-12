@@ -1,4 +1,4 @@
-package embedderbridge_test
+package sourcebridge_test
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"

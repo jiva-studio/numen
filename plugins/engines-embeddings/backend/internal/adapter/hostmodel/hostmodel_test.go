@@ -71,6 +71,14 @@ func TestFailuresOfTheConnectionsAreConnectionErrors(t *testing.T) {
 	}
 }
 
+func TestNoRowAsksForAConnectionInPlainWords(t *testing.T) {
+	_, err := New(&fakeClient{err: connection.ErrNoConnection}).GetEmbeddingProfile(t.Context())
+
+	if !errors.Is(err, ports.ErrNoConnection) || err.Error() != "choose a connection in the settings of Vector Embeddings" {
+		t.Errorf("err = %v, want the request to choose a connection", err)
+	}
+}
+
 func TestACanceledCallKeepsItsContextError(t *testing.T) {
 	_, err := New(&fakeClient{err: context.Canceled}).Embed(t.Context(), model.RoleDocument, []string{"a"})
 

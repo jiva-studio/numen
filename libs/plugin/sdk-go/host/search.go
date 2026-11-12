@@ -183,6 +183,40 @@ type PassageSearch interface {
 	SearchPassages(ctx context.Context, query PassageQuery) ([]Passage, error)
 }
 
+// PlaceSearch finds the chunks of the place of a search source nearest a vector. It needs the index:read
+// permission. A search source answers a query of the core with it, on the client With the vault of the
+// place; a recipe other than the one of the source in use returns ErrRecipeMismatch.
+type PlaceSearch interface {
+	// FindNearestPassages returns the small chunks nearest the vector under the recipe, nearest first,
+	// at or above the floor of the query, else the effective floor of the vault.
+	FindNearestPassages(ctx context.Context, query NearestQuery) ([]NearestMatch, error)
+}
+
+// NearestQuery is a search of the place of a search source by a vector.
+//
+//numen:api
+type NearestQuery struct {
+	// Recipe is the recipe of the place.
+	Recipe string
+	Vector []float32
+	// Limit is the most chunks to return.
+	Limit int
+	// Kinds are the kinds of source to search, KindNote or KindFile. Empty means every kind.
+	Kinds []domain.SourceKind
+	// PathPrefix limits the search to the sources whose path starts with it, relative to the vault.
+	PathPrefix string
+	// Floor is the cosine similarity a chunk reaches at least; zero applies the floor of the vault.
+	Floor float64
+}
+
+// NearestMatch is a chunk of the place and its cosine similarity with the vector.
+//
+//numen:api
+type NearestMatch struct {
+	ChunkID    string
+	Similarity float64
+}
+
 const (
 	// MaxSearchedPassagesPerSource is the maximum number of passages of one source a
 	// SearchPassages call returns.

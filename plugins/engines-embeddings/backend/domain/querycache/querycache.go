@@ -1,11 +1,12 @@
-package search
+// Package querycache keeps the vectors of the queries embedded before, by recipe.
+package querycache
 
 import (
 	"sync"
 )
 
-// defaultCacheCapacity is how many query embeddings the cache holds.
-const defaultCacheCapacity = 256
+// DefaultCapacity is how many query embeddings the cache holds.
+const DefaultCapacity = 256
 
 type cacheKey struct {
 	recipe string
@@ -19,8 +20,8 @@ type cacheEntry struct {
 	vector []float32
 }
 
-// QueryCache holds query embeddings in memory.
-type QueryCache struct {
+// Cache holds query embeddings in memory.
+type Cache struct {
 	mu       sync.Mutex
 	capacity int
 	entries  map[cacheKey]*cacheEntry
@@ -28,18 +29,18 @@ type QueryCache struct {
 	tail     *cacheEntry
 }
 
-// NewQueryCache creates an LRU cache with the capacity given.
-func NewQueryCache(capacity int) *QueryCache {
+// New creates an LRU cache with the capacity given.
+func New(capacity int) *Cache {
 	if capacity <= 0 {
-		capacity = defaultCacheCapacity
+		capacity = DefaultCapacity
 	}
-	return &QueryCache{
+	return &Cache{
 		capacity: capacity,
 		entries:  make(map[cacheKey]*cacheEntry, capacity),
 	}
 }
 
-func (c *QueryCache) Get(recipe, query string) ([]float32, bool) {
+func (c *Cache) Get(recipe, query string) ([]float32, bool) {
 	if c == nil {
 		return nil, false
 	}
@@ -55,7 +56,7 @@ func (c *QueryCache) Get(recipe, query string) ([]float32, bool) {
 	return entry.vector, true
 }
 
-func (c *QueryCache) Put(recipe, query string, vector []float32) {
+func (c *Cache) Put(recipe, query string, vector []float32) {
 	if c == nil || len(vector) == 0 {
 		return
 	}
@@ -81,7 +82,7 @@ func (c *QueryCache) Put(recipe, query string, vector []float32) {
 }
 
 // Count returns how many entries the cache holds.
-func (c *QueryCache) Count() int {
+func (c *Cache) Count() int {
 	if c == nil {
 		return 0
 	}
@@ -90,7 +91,7 @@ func (c *QueryCache) Count() int {
 	return len(c.entries)
 }
 
-func (c *QueryCache) moveToFront(e *cacheEntry) {
+func (c *Cache) moveToFront(e *cacheEntry) {
 	if c.head == e {
 		return
 	}
@@ -98,7 +99,7 @@ func (c *QueryCache) moveToFront(e *cacheEntry) {
 	c.pushFront(e)
 }
 
-func (c *QueryCache) pushFront(e *cacheEntry) {
+func (c *Cache) pushFront(e *cacheEntry) {
 	e.prev = nil
 	e.next = c.head
 	if c.head != nil {
@@ -110,7 +111,7 @@ func (c *QueryCache) pushFront(e *cacheEntry) {
 	}
 }
 
-func (c *QueryCache) remove(e *cacheEntry) {
+func (c *Cache) remove(e *cacheEntry) {
 	if e.prev != nil {
 		e.prev.next = e.next
 	} else {

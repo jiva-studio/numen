@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 const taskIndexingTexts = "Indexing file texts"
@@ -34,9 +34,9 @@ type Events interface {
 	ReportTexts(v domain.Vault, res vaultreading.IndexResult)
 }
 
-// OpenReading is the three passes over a vault, for the embedder given.
+// OpenReading is the three passes over a vault, for the search source given.
 type OpenReading func(
-	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+	ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (ReadWholeVault, error)
 
 // ReadNotes is the first walk over a vault. It answers how many notes it read.
@@ -54,7 +54,7 @@ type SearchSourceReady func(ctx context.Context, v domain.Vault)
 // Config is what a worker is made from.
 type Config struct {
 	Reading           OpenReading
-	Embedder          embeddingport.Embedder
+	Source            searchsourceport.Source
 	VectorCounts      GetVectorCounts
 	SearchSourceReady SearchSourceReady
 	Events            Events
@@ -69,7 +69,7 @@ type Config struct {
 // vectors; and a file a plugin extended with more text.
 type Worker struct {
 	reading           OpenReading
-	embedder          embeddingport.Embedder
+	source            searchsourceport.Source
 	vectorCounts      GetVectorCounts
 	searchSourceReady SearchSourceReady
 	events            Events
@@ -82,7 +82,7 @@ type Worker struct {
 func NewWorker(cfg Config) *Worker {
 	return &Worker{
 		reading:           cfg.Reading,
-		embedder:          cfg.Embedder,
+		source:            cfg.Source,
 		vectorCounts:      cfg.VectorCounts,
 		searchSourceReady: cfg.SearchSourceReady,
 		events:            cfg.Events,
@@ -107,10 +107,10 @@ func (w *Worker) ClearSkips(paths []string) { w.skips.Clear(paths) }
 func (w *Worker) openReading(
 	ctx context.Context, v domain.Vault, rebuild bool,
 ) (ReadWholeVault, error) {
-	return w.reading(ctx, w.embedder, v, rebuild)
+	return w.reading(ctx, w.source, v, rebuild)
 }
 
-func (w *Worker) hasEmbedder() bool { return w.embedder != nil }
+func (w *Worker) hasSource() bool { return w.source != nil }
 
 func (w *Worker) waitForQuiet() <-chan time.Time { return w.after(w.debounce) }
 

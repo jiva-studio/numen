@@ -5,7 +5,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	hostdomain "github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchsource"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/console"
@@ -50,16 +52,27 @@ func newServer(open ports.OpenModels) *serving.Server {
 	})
 }
 
-// Mount registers the embedding service on s, with the model the environment configures. The
-// embedder closes with s. The model API of the host is the one the environment names.
+// Mount registers the search source service on s, with the model the environment configures. The
+// model closes with s. The model API and the index of the host are the ones the environment names.
 func Mount(s *server.Server) error {
-	return mount(s, hostmodel.OpenFromEnvironment)
+	return mount(s, hostmodel.OpenFromEnvironment, getPlaces(host.NewSearchClientFromEnv))
 }
 
-func mount(s *server.Server, open ports.OpenModels) error {
+// getPlaces returns the search of the index of the host the connect function reaches, in a vault.
+func getPlaces(connect func() (*host.SearchClient, error)) openPlace {
+	return func(vaultID string) (host.PlaceSearch, error) {
+		client, err := connect()
+		if err != nil {
+			return nil, err
+		}
+		return client.With(hostdomain.VaultID(vaultID)), nil
+	}
+}
+
+func mount(s *server.Server, open ports.OpenModels, places openPlace) error {
 	embedSrv := newServer(open)
 	s.SetUpdateConfig(embedSrv.Update)
-	embedding.Mount(s, handler{model: embedSrv})
+	searchsource.Mount(s, newHandler(embedSrv, places))
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server shutdown callback closes internal embedSrv state"
 	s.OnClose(embedSrv.Close)
 	return nil
@@ -70,6 +83,8 @@ func mount(s *server.Server, open ports.OpenModels) error {
 // those variables name.
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return mount(s, hostmodel.OpenFromVariables(vars))
+		return mount(s, hostmodel.OpenFromVariables(vars), getPlaces(func() (*host.SearchClient, error) {
+			return host.NewSearchClientFromVars(vars)
+		}))
 	})
 }

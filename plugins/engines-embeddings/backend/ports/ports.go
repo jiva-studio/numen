@@ -4,6 +4,7 @@ package ports
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
@@ -53,6 +54,10 @@ type Models interface {
 
 // OpenModels connects to the model API of the host.
 type OpenModels func() (Models, error)
+
+// ErrNoConnection is the failure of a call while the settings of the plugin name no connection. Its text is
+// what a person reads in the notice of the indexing.
+var ErrNoConnection = errors.New("choose a connection in the settings of Vector Embeddings")
 
 // ConnectionError is the failure of a call that no connection answered: the plugin has none, every
 // one failed, or one refused the request. Its text names each connection and the reason.

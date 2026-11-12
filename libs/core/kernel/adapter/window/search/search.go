@@ -131,7 +131,7 @@ func ConvertSearchModeFromWire(mode v1.SearchMode) (search.Mode, bool) {
 	case v1.SearchMode_SEARCH_MODE_WORDS:
 		return search.Lexical, true
 	case v1.SearchMode_SEARCH_MODE_MEANING:
-		return search.Dense, true
+		return search.Sources, true
 	case v1.SearchMode_SEARCH_MODE_NAMES:
 		return search.ByName, true
 	case v1.SearchMode_SEARCH_MODE_HYBRID:

@@ -74,9 +74,9 @@ func (w wiring) startSession(
 			return embedding.CountProgress(ctx, v.ID, recipe)
 		},
 		SearchSourceReady: state.Events.EmitSearchSourceReady,
-		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, opts.out),
-		Quiet:        opts.idle,
-		After:        time.After,
+		Events:            windowsession.NewIndexEvents(&state.Runtime, state.Window, opts.out),
+		Quiet:             opts.idle,
+		After:             time.After,
 	})
 	state.Writes.NotifyNoteWritten = worker.WakeNotes
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}

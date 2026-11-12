@@ -12,15 +12,13 @@ type Change struct {
 }
 
 // VaultState is what the window knows about the vault it shows: whether the first scan is done,
-// what stopped it, and how far the vault has been read for meaning.
+// what stopped it, and what the search source says of its index, empty where it says nothing.
 type VaultState struct {
-	Vault         domain.Vault
-	IsReady       bool
-	Error         string
-	WatchError    string
-	IsEmbedding   bool
-	ChunkCount    int64
-	EmbeddedCount int64
+	Vault      domain.Vault
+	IsReady    bool
+	Error      string
+	WatchError string
+	Coverage   string
 }
 
 // DetachedTab is a tab to open in a window of its own. The new window reads the tab by its id.

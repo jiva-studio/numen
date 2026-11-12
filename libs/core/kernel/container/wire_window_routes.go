@@ -24,7 +24,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -255,23 +255,23 @@ func mountVault(w *windowWiring) {
 
 func getReadVault(a pluginsWiring, db *Index) indexing.OpenReading {
 	return func(
-		ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+		ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 	) (indexing.ReadWholeVault, error) {
 		search := a.search
 		search.ShouldRebuildIndex = rebuild
-		return readWholeVault(search, ctx, db, embedder, v, vaultMakeRefresh(a.vault, db, db.Notes()))
+		return readWholeVault(search, ctx, db, source, v, vaultMakeRefresh(a.vault, db, db.Notes()))
 	}
 }
 
 func newIndexWorker(a pluginsWiring, db *Index, state *editor.State, embedding *indexing.Embedding, out io.Writer) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:      getReadVault(a, db),
-		Embedder:     embedding.GetEmbedder(),
-		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
+		Reading:           getReadVault(a, db),
+		Source:            embedding.GetSource(),
+		VectorCounts:      indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
 		SearchSourceReady: state.Events.EmitSearchSourceReady,
-		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
-		Quiet:        indexing.QuietPeriod,
-		After:        clock.System{}.After,
+		Events:            windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
+		Quiet:             indexing.QuietPeriod,
+		After:             clock.System{}.After,
 	})
 }
 

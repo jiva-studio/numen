@@ -37,7 +37,6 @@ func getWalkedMessages() map[protoreflect.FullName]string {
 		"numen.v1.PluginEventErrorCode":        "internal/adapter/plugin: read by readEventRefusal",
 		"numen.v1.Presence":                    "adapter/window/editor: written by the presences table",
 		"numen.v1.Role":                        "internal/adapterlib/wire: round trip through ConvertRoleFromWire and ConvertRoleToWire",
-		"numen.v1.EmbedRole":                   "plugin/sdk-go/embedding: read by readRole and written by writeRole",
 		"numen.v1.Marker":                      "internal/adapterlib/wire: round trip through ConvertMarkerFromWire and ConvertMarkerToWire",
 		"numen.v1.SearchMode":                  "adapter/window/editor: read by modeOf",
 		"numen.v1.SearchFloorSource":           "plugin/sdk-go/host: read by readFloorSource",

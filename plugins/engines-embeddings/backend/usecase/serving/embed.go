@@ -43,6 +43,13 @@ type ModelInfo struct {
 	Handling       string
 }
 
+// GetRecipe is everything about the model that decides what a vector is, as one value: the provider, the
+// name, the width, the token limit, the pooling and the handling. Two vectors of different recipes cannot be
+// compared. The provider comes first: two places serving one name are two sets of vectors.
+func (m ModelInfo) GetRecipe() string {
+	return fmt.Sprintf("%s|%s|%d|%d|%s|%s", m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, m.Handling)
+}
+
 // GetModelInfo returns the model the server serves. It fails with a PreconditionError while the
 // local model cannot be resolved, and while no connection answers for the model of the connections.
 func (s *Server) GetModelInfo(ctx context.Context) (ModelInfo, error) {

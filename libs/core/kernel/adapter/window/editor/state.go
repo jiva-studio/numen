@@ -41,7 +41,7 @@ type State struct {
 	Playing atomic.Pointer[Loopback]
 }
 
-// IndexState is how far the vault has been read for meaning.
+// IndexState is the search source of the window and how far it has indexed the vault.
 type IndexState struct {
 	Embedding *indexing.Embedding
 }
@@ -83,10 +83,9 @@ func (s *State) GetShownVault() (domain.Vault, bool) {
 	return current, current.Path != ""
 }
 
-// SetIndexing sets how far the vault has been read for meaning, and the model it is read under.
-// It is set before any chunk is read: the model name and recipe determine whether
-// a chunk already carries a vector, and tell the window that chunks will be
-// embedded.
+// SetIndexing sets the search source of the window and records its name and recipe.
+// It is set before any chunk is read: the recipe determines whether a chunk already
+// carries a vector.
 func (s *State) SetIndexing(embedding *indexing.Embedding) {
 	s.Indexing.Embedding = embedding
 	s.Runtime.RecordModel(embedding.Describe())
@@ -104,7 +103,7 @@ func (s *State) ReportFloorError(err error) {
 }
 
 // GetVaultState is what the window knows about the vault it shows: whether the first scan is done,
-// what stopped it, and how far the vault has been read for meaning.
+// what stopped it, and what the search source says of its index.
 func (s *State) GetVaultState(ctx context.Context) (window.VaultState, error) {
 	return windowsession.GetVaultState(ctx, &s.Runtime, s.Indexing.Embedding)
 }

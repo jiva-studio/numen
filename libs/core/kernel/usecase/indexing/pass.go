@@ -25,7 +25,7 @@ type pass struct {
 type passEnv interface {
 	openReading(ctx context.Context, v domain.Vault, rebuild bool) (ReadWholeVault, error)
 	planVectors(ctx context.Context, v domain.Vault) vectorPlan
-	hasEmbedder() bool
+	hasSource() bool
 	waitForQuiet() <-chan time.Time
 	notifySearchSourceReady(ctx context.Context, v domain.Vault)
 }
@@ -170,7 +170,7 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 }
 
 func (p *pass) embed(ctx context.Context) {
-	if !p.env.hasEmbedder() {
+	if !p.env.hasSource() {
 		return
 	}
 	plan := p.env.planVectors(ctx, p.v)

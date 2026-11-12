@@ -9,8 +9,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -87,7 +87,7 @@ func (s queries) GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.V
 
 // SaveVectors writes a group: the coarse row of each, and the vector itself
 // where the text it was made from addresses it.
-func (s sources) SaveVectors(ctx context.Context, vectors []embedding.Vector) error {
+func (s sources) SaveVectors(ctx context.Context, vectors []vector.Stored) error {
 	out := make([]chunk.Vector, 0, len(vectors))
 	for _, v := range vectors {
 		row, err := chunk.Row(v.ChunkID)
@@ -97,7 +97,7 @@ func (s sources) SaveVectors(ctx context.Context, vectors []embedding.Vector) er
 		out = append(out, chunk.Vector{
 			Chunk:  row,
 			Hash:   v.Hash,
-			Recipe: v.Model.Recipe(),
+			Recipe: v.Recipe,
 			Value:  v.Value,
 			Coarse: v.Coarse,
 		})
@@ -105,12 +105,12 @@ func (s sources) SaveVectors(ctx context.Context, vectors []embedding.Vector) er
 	return s.write.SaveVectors(ctx, out)
 }
 
-func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, model embedding.Model, after embedding.ChunkCursor, limit int) ([]domain.Passage, embedding.ChunkCursor, error) {
+func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after vector.ChunkCursor, limit int) ([]domain.Passage, vector.ChunkCursor, error) {
 	from, err := parseCursor(after)
 	if err != nil {
 		return nil, "", err
 	}
-	found, err := s.vectors.GetUnembeddedChunks(ctx, vaultID, model.Recipe(), from, limit)
+	found, err := s.vectors.GetUnembeddedChunks(ctx, vaultID, recipe, from, limit)
 	if err != nil {
 		return nil, "", err
 	}
@@ -130,12 +130,12 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 	next := after
 	if len(found) > 0 {
 		last := found[len(found)-1]
-		next = embedding.ChunkCursor(strconv.FormatInt(last.MTime, 10) + ":" + strconv.FormatInt(last.Source, 10) + ":" + strconv.FormatInt(last.Chunk, 10))
+		next = vector.ChunkCursor(strconv.FormatInt(last.MTime, 10) + ":" + strconv.FormatInt(last.Source, 10) + ":" + strconv.FormatInt(last.Chunk, 10))
 	}
 	return out, next, nil
 }
 
-func parseCursor(after embedding.ChunkCursor) (chunk.Cursor, error) {
+func parseCursor(after vector.ChunkCursor) (chunk.Cursor, error) {
 	if after == "" {
 		return chunk.Cursor{MTime: math.MaxInt64, Source: math.MaxInt64}, nil
 	}
@@ -160,7 +160,7 @@ func parseCursor(after embedding.ChunkCursor) (chunk.Cursor, error) {
 	return chunk.Cursor{}, fmt.Errorf("%q is no cursor of this index", after)
 }
 
-func parseCursorNumbers(after embedding.ChunkCursor, parts []string) ([]int64, error) {
+func parseCursorNumbers(after vector.ChunkCursor, parts []string) ([]int64, error) {
 	if len(parts) != 2 && len(parts) != 3 {
 		return nil, fmt.Errorf("%q is no cursor of this index", after)
 	}

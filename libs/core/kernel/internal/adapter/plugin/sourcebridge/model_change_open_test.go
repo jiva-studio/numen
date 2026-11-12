@@ -1,4 +1,4 @@
-package embedderbridge
+package sourcebridge
 
 import (
 	"context"

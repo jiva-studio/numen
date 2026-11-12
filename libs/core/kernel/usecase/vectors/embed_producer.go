@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 func getSources(chunks []domain.Passage) []string {
@@ -28,12 +28,13 @@ func getSources(chunks []domain.Passage) []string {
 
 // preparedBatch is one batch of chunks whose text was read and whose cached vectors were resolved.
 type preparedBatch struct {
-	model       embedding.Model
+	model       searchsource.Description
+	place       searchsource.Place
 	pending     []domain.Passage
 	hashes      [][]byte
-	reused      map[int]embedding.Vector
+	reused      map[int]vector.Stored
 	reusedCount int
-	asking      []string
+	asking      []searchsource.Text
 	askingMap   []int
 	sources     []string
 	id          uint64
@@ -41,8 +42,8 @@ type preparedBatch struct {
 
 // producer reads the chunks that lack vectors and cuts them into batches with the vectors already kept.
 type producer struct {
-	chunks          embeddingport.VectorQueries
-	vectors         embeddingport.VectorRepository
+	chunks          searchsourceport.VectorQueries
+	vectors         searchsourceport.VectorRepository
 	batchCharacters int
 	isSkipped       func(path, hash string) bool
 }
@@ -54,18 +55,18 @@ func newProducer(u Embed, isSkipped func(path, hash string) bool) producer {
 func (u producer) produceBatches(
 	ctx context.Context,
 	v domain.Vault,
-	model embedding.Model,
+	model searchsource.Description,
 	source *extracted,
 	track *tracker,
 	out chan<- preparedBatch,
 ) error {
 	res, mu := track.res, track.mu
-	var after embedding.ChunkCursor
+	var after vector.ChunkCursor
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		pending, next, err := u.chunks.GetUnembeddedChunks(ctx, v.ID, model, after, chunksPerQuery)
+		pending, next, err := u.chunks.GetUnembeddedChunks(ctx, v.ID, model.Recipe(), after, chunksPerQuery)
 		if err != nil {
 			return fmt.Errorf("pending vectors from %s: %w", model, err)
 		}
@@ -85,7 +86,8 @@ func (u producer) produceBatches(
 			return err
 		}
 		sortBySource(chunks, texts)
-		if err := u.sendBatches(ctx, model, chunks, texts, track, out); err != nil {
+		place := searchsource.Place{VaultID: v.ID, Recipe: model.Recipe()}
+		if err := u.sendBatches(ctx, model, place, chunks, texts, track, out); err != nil {
 			return err
 		}
 	}
@@ -93,7 +95,8 @@ func (u producer) produceBatches(
 
 func (u producer) sendBatches(
 	ctx context.Context,
-	model embedding.Model,
+	model searchsource.Description,
+	place searchsource.Place,
 	chunks []domain.Passage,
 	texts []string,
 	track *tracker,
@@ -101,7 +104,7 @@ func (u producer) sendBatches(
 ) error {
 	pos := 0
 	for _, batch := range splitBatches(texts, u.batchCharacters) {
-		prep, err := u.prepareBatch(ctx, model, chunks[pos:pos+len(batch)], batch)
+		prep, err := u.prepareBatch(ctx, model, place, chunks[pos:pos+len(batch)], batch)
 		if err != nil {
 			return err
 		}
@@ -201,7 +204,8 @@ func (u producer) read(
 
 func (u producer) prepareBatch(
 	ctx context.Context,
-	model embedding.Model,
+	model searchsource.Description,
+	place searchsource.Place,
 	pending []domain.Passage,
 	texts []string,
 ) (preparedBatch, error) {
@@ -225,10 +229,11 @@ func (u producer) prepareBatch(
 
 	prep := preparedBatch{
 		model:     model,
+		place:     place,
 		pending:   pending,
 		hashes:    hashes,
-		reused:    make(map[int]embedding.Vector),
-		asking:    make([]string, 0, len(texts)),
+		reused:    make(map[int]vector.Stored),
+		asking:    make([]searchsource.Text, 0, len(texts)),
 		askingMap: make([]int, len(texts)),
 		sources:   getSources(pending),
 	}
@@ -243,15 +248,15 @@ func (u producer) prepareBatch(
 			if key == "" {
 				key = texts[i]
 			}
-			prep.queueText(i, key, texts[i], deduplicated)
+			prep.queueText(i, key, searchsource.Text{ChunkID: pending[i].ChunkID, Path: pending[i].Source, VersionID: pending[i].Producer, Text: texts[i]}, deduplicated)
 			continue
 		}
 		prep.askingMap[i] = -1
-		prep.reused[i] = embedding.Vector{
+		prep.reused[i] = vector.Stored{
 			ChunkID: pending[i].ChunkID,
 			Hash:    hashes[i],
-			Model:   model,
-			Kind:    embedding.QuantizedInt8,
+			Recipe:  recipe,
+			Kind:    vector.QuantizedInt8,
 			Value:   value,
 			Coarse:  vector.Coarse(vector.Dimensions(value)),
 		}
@@ -260,7 +265,7 @@ func (u producer) prepareBatch(
 	return prep, nil
 }
 
-func (p *preparedBatch) queueText(i int, key, value string, visited map[string]int) {
+func (p *preparedBatch) queueText(i int, key string, value searchsource.Text, visited map[string]int) {
 	if visited != nil {
 		if pos, ok := visited[key]; ok {
 			p.askingMap[i] = pos

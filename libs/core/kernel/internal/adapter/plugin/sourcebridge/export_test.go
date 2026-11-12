@@ -1,13 +1,13 @@
-package embedderbridge
+package sourcebridge
 
 // WaitForAnnouncements returns once no announcement of a model change is running.
-func (b *Embedder) WaitForAnnouncements() {
+func (b *Source) WaitForAnnouncements() {
 	b.announceMu.Lock()
 	defer b.announceMu.Unlock()
 }
 
 // IsListenerLockFree reports whether the embedder holds the lock that guards its listeners.
-func (b *Embedder) IsListenerLockFree() bool {
+func (b *Source) IsListenerLockFree() bool {
 	if !b.changeMu.TryLock() {
 		return false
 	}

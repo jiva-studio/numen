@@ -12,27 +12,27 @@ import (
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // chunksPerQuery bounds the number of chunks lacking a vector returned per query.
 const chunksPerQuery = 200
 
-// Embed computes the missing vectors for the chunks of one vault.
+// Embed hands the chunks of one vault that have no vector to the search source, and keeps the vectors it answers.
 //
 // It is resumable because it holds no position: it selects the chunks that have
 // no vector for the current model, so an interrupted run continues by starting
 // another, and a chunk that has a vector is never selected again.
 type Embed struct {
 	readers vaultport.VaultReaders
-	chunks  embeddingport.VectorQueries
-	vectors embeddingport.VectorRepository
+	chunks  searchsourceport.VectorQueries
+	vectors searchsourceport.VectorRepository
 
 	Texts textdomain.Readers
 	Claim vaultport.IndexClaim
 
-	Embedder embeddingport.Embedder
+	Source searchsourceport.Source
 
 	BatchCharacters int
 
@@ -43,8 +43,8 @@ func (u Embed) inferWorkers() int {
 	if u.Concurrency > 0 {
 		return u.Concurrency
 	}
-	if u.Embedder != nil && u.Embedder.Concurrency() > 0 {
-		return u.Embedder.Concurrency()
+	if u.Source != nil && u.Source.Concurrency() > 0 {
+		return u.Source.Concurrency()
 	}
 	return 1
 }
@@ -53,7 +53,7 @@ func (u Embed) inferWorkers() int {
 // lacking a vector for the current model, and the repository where vectors are
 // written.
 func NewEmbed(
-	readers vaultport.VaultReaders, chunks embeddingport.VectorQueries, vectors embeddingport.VectorRepository,
+	readers vaultport.VaultReaders, chunks searchsourceport.VectorQueries, vectors searchsourceport.VectorRepository,
 ) Embed {
 	return Embed{readers: readers, chunks: chunks, vectors: vectors}
 }
@@ -78,7 +78,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (vaultreading.EmbedR
 func (u Embed) run(
 	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
 ) (res vaultreading.EmbedResult, err error) {
-	if u.Embedder == nil {
+	if u.Source == nil {
 		return res, nil
 	}
 
@@ -92,7 +92,7 @@ func (u Embed) run(
 	}
 	defer func() { err = errors.Join(err, release()) }()
 
-	model := u.Embedder.GetModel()
+	model := u.Source.Describe()
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
@@ -126,7 +126,7 @@ func (u Embed) run(
 	})
 	g.Go(func() error {
 		defer close(completedChan)
-		return inferrer{embedder: u.Embedder}.inferBatches(gctx, workers, preparedChan, completedChan)
+		return inferrer{source: u.Source}.inferBatches(gctx, workers, preparedChan, completedChan)
 	})
 	g.Go(func() error {
 		return storer{vectors: u.vectors}.storeBatches(gctx, completedChan, updateProgress)

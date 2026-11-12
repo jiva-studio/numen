@@ -9,6 +9,7 @@
  * With no connection at all, the rows give way to a note and "Open Connections", which asks the
  * settings tab to show the Connections page.
  *
+ * The one row of a setting of one row that names no connection says "Choose a connection".
  * Only a row that names a connection and a model is written. A row added and not yet complete
  * stays on the page.
  *
@@ -113,6 +114,12 @@ function onRowsChange(rows: readonly StoredRow[]): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+/* The one row of a setting that names no connection yet asks for one, so the setting is not left empty unnoticed. */
+function getRowReason(connection: string): string {
+  if (connection === '' && isSingle.value) return words.connectionRowsChoose
+  return getReason(connection)
+}
+
 function isIndexChange(rows: readonly StoredRow[]): boolean {
   const getKey = (one: StoredRow): string => `${one.connection}\0${one.model}`
   const written = readRows(props.value).map(getKey)
@@ -151,7 +158,7 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
           :count="drafts.length"
           :operation="operation"
           :choices="choices"
-          :reason="getReason(row.connection)"
+          :reason="getRowReason(row.connection)"
           :is-single="isSingle"
           :types="props.connections.types.value"
           :create="props.connections.create"

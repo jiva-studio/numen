@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -126,8 +126,8 @@ func reportSearchFallback(errorHandler window.ErrorHandler, err error) {
 	}
 }
 
-func openCLIEmbedder(r *cliRun, a pluginsWiring, ctx context.Context) (embeddingport.Embedder, error) {
-	embedder, closeEmbedder, why := searchEmbedder(a.search, ctx)
+func openCLIEmbedder(r *cliRun, a pluginsWiring, ctx context.Context) (searchsourceport.Source, error) {
+	embedder, closeEmbedder, why := searchSource(a.search, ctx)
 	if closeEmbedder != nil {
 		r.closers = append(r.closers, closeEmbedder)
 	}
