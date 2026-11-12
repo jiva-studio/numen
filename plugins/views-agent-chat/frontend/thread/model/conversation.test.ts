@@ -58,7 +58,7 @@ const getDrawnTurns = (conversation: Drawn) =>
   conversation.turns.value.map((turn) => [turn.voice, turn.text, turn.state])
 
 describe('the request', () => {
-  it('runs one agent task with the question under the name of the conversation, as the person asked it', async () => {
+  it('runs one agent task with the question as typed, under the conversation id', async () => {
     const { conversation, calls } = open({ frames: [say('Two notes.')] })
 
     await conversation.ask('what is here?')
@@ -161,7 +161,7 @@ describe('an answer', () => {
 })
 
 describe('a task that fails', () => {
-  it('says what the connections said, in a failed turn', async () => {
+  it('shows the connection error in a failed turn', async () => {
     const { conversation } = open({
       frames: [],
       end: failWith('all_failed', 'Orchard agent: the program exited'),
@@ -237,7 +237,7 @@ describe('the wait', () => {
     await asked
   })
 
-  it('comes down with the first frame', async () => {
+  it('hides on the first frame', async () => {
     const { hold, release } = createHold()
     const { conversation } = open({ frames: [say('Two')], hold })
     const asked = conversation.ask('what is here?')
@@ -340,7 +340,7 @@ describe('the line about work', () => {
     await asked
   })
 
-  it('comes down when the answer begins', async () => {
+  it('hides when the answer begins', async () => {
     const { conversation } = open({
       frames: [callTool('c1', 'Read note'), endTool('c1'), say('Two notes.')],
     })
@@ -353,7 +353,7 @@ describe('the line about work', () => {
     ])
   })
 
-  it('stands under the answer that began before it, and comes down when the task ends', async () => {
+  it('shows below an answer already started, and hides when the task ends', async () => {
     const { hold, release } = createHold()
     const { conversation } = open({
       frames: [say('First I look.'), callTool('c1', 'Read note'), endTool('c1')],

@@ -231,7 +231,7 @@ function getPropertyTargets(checker, type, name) {
 /**
  * The members of a library that answer a member of an interface of a library: a property of an object
  * literal typed by the interface, or a member of a class that implements or extends it. A consumer that
- * calls the interface member calls whichever member stands behind it, so each pair is a use of the
+ * calls the interface member calls whichever member implements it, so each pair is a use of the
  * answering member by the interface member, as [answer, interface member].
  */
 function listAnswers(checker, node, rel) {
@@ -280,9 +280,9 @@ function getExpectedType(checker, node) {
 }
 
 /**
- * The members of a library or RPCs that a value hands over to a type of another declaration, such as a
- * client of the core client passed where a package declares the calls it makes: the place that hands the
- * value over uses each member the expected type names.
+ * The members of a library or RPCs that a value passes to a type of another declaration, such as a
+ * client of the core client passed where a package declares the calls it makes: the place that passes the
+ * value uses each member the expected type names.
  */
 function listHandedTargets(checker, node) {
   const expected = getExpectedType(checker, node);

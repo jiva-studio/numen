@@ -110,7 +110,6 @@ interface Options {
   readonly value?: JsonValue
   readonly max?: number
   readonly connections?: readonly ConnectionInfo[]
-  /** The list of connections itself, for a test that changes it as the core does. */
   readonly list?: Ref<readonly ConnectionInfo[]>
   readonly listRowOptions?: InstallationConnections['listRowOptions']
   readonly operation?: string
@@ -145,7 +144,6 @@ const mountRows = (options: Options = {}) => {
 const changes = (wrapper: VueWrapper): unknown[] =>
   (wrapper.emitted('change') ?? []).map((one) => one[0])
 
-/** Why the control named `label` cannot serve, as it is announced; empty where nothing is wrong. */
 const problemOf = (label: string): string =>
   root().querySelector(`button[aria-label="${label}"]`)?.getAttribute('aria-description') ?? ''
 

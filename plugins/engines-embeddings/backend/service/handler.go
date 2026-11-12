@@ -22,7 +22,10 @@ const notBuilt = "Semantic index not built yet"
 type openPlace func(vaultID string) (host.PlaceSearch, error)
 
 // handler answers the calls of the search source service with the model server: it turns texts into the
-// vectors the core keeps, and a query into the chunks of the place nearest it.
+// vectors the core keeps, and a query into the chunks of the place nearest it. After each call of the
+// model it sets the health item source: a precondition the settings do not meet (no connection, a
+// connection that fails, a local model that is missing) reports the item with the message, its first
+// letter upper case and cut at maxHealthText; a call that succeeded clears it; any other failure leaves it.
 type handler struct {
 	model   *serving.Server
 	places  openPlace

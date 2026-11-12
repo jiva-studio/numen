@@ -67,16 +67,15 @@ type ToolUpdate struct {
 // rawToolUpdate is the part of a tool_call, a tool_call_update or the tool call of a permission request
 // that the client reads.
 type rawToolUpdate struct {
-	SessionUpdate string          `json:"sessionUpdate"`
-	ToolCallID    string          `json:"toolCallId"`
-	Name          *string         `json:"name"`
-	Title         *string         `json:"title"`
-	Kind          *string         `json:"kind"`
-	Status        *string         `json:"status"`
-	RawInput      json.RawMessage `json:"rawInput"`
-	RawOutput     json.RawMessage `json:"rawOutput"`
-	// ClaudeCodeToolName is the tool Claude Code names in _meta.claudeCode.toolName.
-	ClaudeCodeToolName string `json:"-"`
+	SessionUpdate      string          `json:"sessionUpdate"`
+	ToolCallID         string          `json:"toolCallId"`
+	Name               *string         `json:"name"`
+	Title              *string         `json:"title"`
+	Kind               *string         `json:"kind"`
+	Status             *string         `json:"status"`
+	RawInput           json.RawMessage `json:"rawInput"`
+	RawOutput          json.RawMessage `json:"rawOutput"`
+	ClaudeCodeToolName string          `json:"-"`
 }
 
 // UnmarshalJSON reads the fields and the tool name Claude Code adds under _meta, a key the protocol

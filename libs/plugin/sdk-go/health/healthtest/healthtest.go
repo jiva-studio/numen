@@ -24,7 +24,7 @@ type Host struct {
 	service *service
 }
 
-// service serves the health service and keeps the items it is told.
+// service serves the health service and keeps the items it receives.
 type service struct {
 	numenv1connect.UnimplementedPluginHealthServiceHandler
 

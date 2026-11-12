@@ -273,12 +273,12 @@ function notifyCustomTabShown(
   if (state.path) deps.getWorkspace()?.files.syncPath(id, state.path, state.title)
 }
 
+/** isNoteEditor marks a kind the manifest declares as the editor of the text of a note: its tabs hold the note in the store of open notes. */
 export function createCustomTabKind(
   pluginId: string,
   registration: TabKindRegistration,
   deps?: PluginHostDeps & {
     readonly getContext?: (() => PluginContext | undefined) | undefined
-    /** The manifest declares the kind as the editor of the text of a note: its tabs hold the note in the store of open notes. */
     readonly isNoteEditor?: boolean
   },
 ): AnyTabKind {

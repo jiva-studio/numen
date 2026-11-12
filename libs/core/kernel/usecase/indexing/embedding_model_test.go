@@ -39,7 +39,6 @@ func (silent) Embed(context.Context, []string) ([][]float32, error) { return nil
 
 func (silent) Close() error { return nil }
 
-// watched is the source over the embedder that announces the changes of its model.
 func watched(embedder *announcing) *sourcefake.Source {
 	source := sourcefake.Wrap(embedder)
 	source.Watch = embedder.OnModelChange
