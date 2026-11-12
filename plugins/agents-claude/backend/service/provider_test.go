@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -263,10 +264,12 @@ func TestListingTheModelsOfAMissingClaudeIsUnreachable(t *testing.T) {
 	}
 }
 
-func TestTheProviderFillsTheRolesOfCompleteAndModels(t *testing.T) {
+func TestTheProviderServesCompleteAndTheListsOfModelsAndReasoningLevels(t *testing.T) {
 	provider := newTestAgent(t).Provider()
-	if provider.Completer == nil || provider.Models == nil || provider.Embedder != nil || provider.Profiles != nil {
-		t.Errorf("provider = %+v, want complete and the models alone", provider)
+	served := slices.Sorted(maps.Keys(provider))
+	want := []string{llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
+	if !slices.Equal(served, want) {
+		t.Errorf("operations = %v, want %v", served, want)
 	}
 }
 
