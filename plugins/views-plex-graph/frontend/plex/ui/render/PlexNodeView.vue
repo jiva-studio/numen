@@ -22,6 +22,7 @@ const props = withDefaults(defineProps<PlexNodeProps>(), {
   wide: null,
   hung: null,
   behavior: () => DEFAULT_BEHAVIOR,
+  showPills: true,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -130,7 +131,13 @@ function getMiddle(): Position | null {
     @focusin="hoverFocus.onFocusIn"
     @focusout="hoverFocus.onFocusOut"
   >
-    <PlexNodeBox :node="node" :box="box" :is-ghost="isGhost">
+    <PlexNodeBox
+      :node="node"
+      :box="box"
+      :is-ghost="isGhost"
+      :is-target="gestureRole === 'target'"
+      :show-pills="showPills"
+    >
       <template v-if="$slots.icon" #icon="{ node: drawn }">
         <slot name="icon" :node="drawn" />
       </template>
@@ -205,6 +212,7 @@ function getMiddle(): Position | null {
 .plex__node--ghost :deep(.plex__box) {
   fill: none;
   stroke: var(--relation-hue);
+  stroke-width: var(--numen-stroke);
   stroke-dasharray: var(--ghost-dash);
   transition: none;
 }
@@ -234,5 +242,14 @@ function getMiddle(): Position | null {
 
 .plex__node--focus :deep(.plex__icon) {
   color: inherit;
+}
+
+/* Without its pill the focus is set on the surface, in the ink every other title is in. */
+.plex__node--focus :deep(.plex__title--bare) {
+  color: var(--numen-ink);
+}
+
+.plex__node--focus :deep(.plex__dot) {
+  background: var(--numen-accent);
 }
 </style>

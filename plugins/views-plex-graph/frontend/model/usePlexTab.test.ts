@@ -14,6 +14,7 @@ import { WORDS as words } from '../words'
 import { createLine, createVault, settle, viewOn, type Types, type NeighborSpec } from '../fixtures'
 import type { NoteHeading, NoteRelation, PathRename } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
+import { createDefaultLook } from './look'
 
 /** The icons the window draws a declared command and a note of a declared type with. */
 const SHARE_ICON: Component = { name: 'ShareIcon', render: () => null }
@@ -58,6 +59,7 @@ interface DepsOverrides {
 const createDeps = (editor: PlexTabDeps['editor'], overrides: DepsOverrides = {}): PlexTabDeps => ({
   editor,
   tabId: 'plex:1',
+  look: createDefaultLook(),
   creatable: ['parent', 'child', 'jump'],
   window: {
     isReady: ref(true),
@@ -111,6 +113,7 @@ const tab = (
   const deps: PlexTabDeps = {
     editor: vault.editor,
     tabId: 'plex:1',
+    look: createDefaultLook(),
     creatable: ['parent', 'child', 'jump'],
     window: {
       isReady: ref(true),

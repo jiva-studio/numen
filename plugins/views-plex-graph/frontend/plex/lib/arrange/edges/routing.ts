@@ -232,7 +232,8 @@ function straightBetween(
   const secondGate = getEdgeAnchor(second, isVertical ? 'top' : 'left')
 
   const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
-  const reach = Math.max(routing.tuning.minReach, Math.abs(span) * routing.tuning.curvature)
+  const { curvature, minReach } = routing.tuning
+  const reach = curvature > 0 ? Math.max(minReach, Math.abs(span) * curvature) : 0
 
   return {
     fromPoint: firstGate,

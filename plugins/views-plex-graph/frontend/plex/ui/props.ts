@@ -17,6 +17,12 @@ export interface PlexProps {
   options?: PlexOptionsInput
   placement?: Placement
   showEdgeLabels?: boolean
+  /** Off draws each title without its pill, with a dot in the hue of its relation before it. */
+  showPills?: boolean
+  /** The width of the lines between nodes, in pixels. */
+  lineWidth?: number
+  /** The width of the outline of a pill, in pixels. */
+  outlineWidth?: number
   duration?: number
   clock?: Clock
   viewport?: Viewport

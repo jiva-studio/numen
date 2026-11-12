@@ -305,5 +305,5 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const reportFailure = (error: Caught): void => deps.window.showMessage(formatErrorMessage(error))
 
-  return { reportFailure, canvas, menu, headings, nodes, quickLink, inspector }
+  return { reportFailure, canvas, menu, headings, nodes, quickLink, inspector, look: deps.look }
 }
