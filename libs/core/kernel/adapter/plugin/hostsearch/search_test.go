@@ -432,7 +432,7 @@ func TestAnEmbeddingThatFailsOrChangesTheModelIsRefused(t *testing.T) {
 	}
 
 	f = newFixture()
-	changed := searchsource.Description{Name: "other-model", Width: 4, SourceRecipe: "test"}
+	changed := searchsource.Description{Name: "other-model", Width: 4, SourceRecipe: "other"}
 	f.embedder.switchTo = &changed
 	if _, err := f.search.EmbedTexts(ctx, []string{"a"}); !errors.Is(err, plugin.ErrRecipeMismatch) {
 		t.Errorf("a model that changed during the call gave %v", err)

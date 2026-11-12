@@ -112,7 +112,7 @@ type manifestSetting struct {
 	Description string             `json:"description"`
 	Default     any                `json:"default"`
 	Options     []manifestOption   `json:"options"`
-	Operation   string             `json:"operation"`
+	Operations  []string           `json:"operations"`
 	Max         *float64           `json:"max"`
 	When        *manifestCondition `json:"when"`
 }
@@ -177,15 +177,16 @@ func TestManifestOffersTheLocalModelOrAConnectionAsTheSource(t *testing.T) {
 	}
 }
 
-// The connection of the vectors is one row for the operation embed, shown while the source is a connection.
+// The connection of the vectors is one row for the operations llm.embed and llm.profile, shown while the
+// source is a connection.
 func TestManifestDeclaresOneConnectionRowForEmbed(t *testing.T) {
 	rows, ok := readSettings(t)["connections"]
 	if !ok {
 		t.Fatal("manifest has no connections setting")
 	}
-	if rows.Type != "connections" || rows.Operation != "embed" || rows.Max == nil || *rows.Max != 1 ||
+	if rows.Type != "connections" || !slices.Equal(rows.Operations, []string{"llm.embed", "llm.profile"}) || rows.Max == nil || *rows.Max != 1 ||
 		rows.When == nil || rows.When.Setting != "source" || !slices.Equal(rows.When.Is, []string{"connection"}) {
-		t.Errorf("connections = %+v, want one row for embed shown while the source is a connection", rows)
+		t.Errorf("connections = %+v, want one row for llm.embed and llm.profile shown while the source is a connection", rows)
 	}
 }
 

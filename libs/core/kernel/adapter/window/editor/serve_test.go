@@ -38,6 +38,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -211,11 +212,15 @@ func openingWith(
 		api.state.Runtime.RecordModel(embedder.Describe().String(), "")
 		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, nil, db.Chunks.Progress)
 	}
+	var source searchsourceport.Source
+	if embedder != nil {
+		source = sourcefake.Wrap(embedder)
+	}
 	line, isDone := api.state.Notices.ChangeEvents.Subscribe()
 	t.Cleanup(isDone)
 
 	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{
-		embedding: indexing.NewEmbedding(sourcefake.Wrap(embedder), nil, db.Chunks.Progress), idle: idleDuration, out: io.Discard,
+		embedding: indexing.NewEmbedding(source, nil, db.Chunks.Progress), idle: idleDuration, out: io.Discard,
 	})
 	t.Cleanup(end)
 

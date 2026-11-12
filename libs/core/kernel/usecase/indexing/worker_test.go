@@ -64,9 +64,13 @@ func newPass(
 	made reading, db *WorkerIndex, events Events, embedder sourcefake.Embedder, recipe string,
 	v domain.Vault,
 ) *testPass {
+	var source searchsourceport.Source
+	if embedder != nil {
+		source = sourcefake.Wrap(embedder)
+	}
 	worker := NewWorker(Config{
 		Reading: made.ReadWholeVault,
-		Source:  sourcefake.Wrap(embedder),
+		Source:  source,
 		VectorCounts: func(ctx context.Context, v domain.Vault) (int64, int64, error) {
 			return db.Progress.GetProgress(ctx, v.ID, recipe)
 		},

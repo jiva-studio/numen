@@ -16,7 +16,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
@@ -151,12 +151,15 @@ func (f *showing) findMeaning(t *testing.T, query string) []string {
 	return paths
 }
 
-func (f *showing) hasTaskError(text string) bool {
-	return slices.ContainsFunc(f.installation.State.Window.Tasks.List(), func(task work.Task) bool { return task.Error == text })
+func (f *showing) hasSearchItem(text string) bool {
+	return slices.ContainsFunc(f.cfg.PluginHost.Health.List(), func(item plugindomain.HealthItem) bool {
+		return item.PluginID == gardenSourceID && item.Key == plugindomain.HealthKeySearch && item.Severity == plugindomain.HealthError && item.Text == text
+	})
 }
 
-// A window opened while the search source cannot describe itself shows why; once a setting of its plugin
-// names a connection, the source indexes the vault and answers search in that window, with no reopen.
+// A window opened while the search source cannot describe itself shows why as the search item of its plugin;
+// once a setting of the plugin names a connection, the source indexes the vault and answers search in that
+// window, with no reopen, and the item goes.
 func TestASourceThatDescribesItselfAfterASettingJoinsTheOpenWindow(t *testing.T) {
 	plugin := &connectionSource{}
 	host := startConnectionSource(t, plugin)
@@ -181,8 +184,8 @@ func TestASourceThatDescribesItselfAfterASettingJoinsTheOpenWindow(t *testing.T)
 	f := &showing{client: newQuestionsClient(server.Client(), server.URL), installation: installation, cfg: cfg}
 	f.read(t)
 
-	if !f.hasTaskError(chooseRow) {
-		t.Errorf("the window does not list %q among its tasks: %+v", chooseRow, installation.State.Window.Tasks.List())
+	if !f.hasSearchItem(chooseRow) {
+		t.Errorf("the plugin has no search item %q: %+v", chooseRow, cfg.PluginHost.Health.List())
 	}
 	if found := f.findMeaning(t, "shrubbery"); len(found) != 0 {
 		t.Errorf("a source that has not described itself found %v", found)
@@ -199,7 +202,7 @@ func TestASourceThatDescribesItselfAfterASettingJoinsTheOpenWindow(t *testing.T)
 	if found := f.findMeaning(t, "shrubbery"); !slices.Equal(slices.Compact(found), []string{"Hedge.md"}) {
 		t.Errorf("the source found %v, want Hedge.md", found)
 	}
-	if f.hasTaskError(chooseRow) {
-		t.Errorf("the window still lists %q once the source described itself", chooseRow)
+	if f.hasSearchItem(chooseRow) {
+		t.Errorf("the plugin keeps the search item %q once the source described itself", chooseRow)
 	}
 }
