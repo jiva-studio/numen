@@ -119,6 +119,13 @@ func (r *Runner) RunTask(
 	}()
 	frames := newTurn(indexTools(listed), send)
 	reason, err := r.runProgram(runCtx, cmd, frames)
+	return endTask(ctx, runCtx, frames, reason, err)
+}
+
+// endTask returns how a run that ended with reason and err ends the task: the error of ctx, of the
+// frame that could not be sent or of the run, a stop for a run the plugin ended, the end of the turn,
+// or the reason the run failed sent as a message of its own and a stop.
+func endTask(ctx, runCtx context.Context, frames *turn, reason string, err error) (*contract.TaskDone, error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, ctxErr
 	}
