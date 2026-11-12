@@ -80,14 +80,3 @@ func (f *nearestFake) GetEnclosingPassages(_ context.Context, _ domain.VaultID, 
 	}
 	return out, nil
 }
-
-// noWords is an index that finds nothing by words or by section name.
-type noWords struct{}
-
-func (noWords) FindLexical(context.Context, domain.VaultID, source.LexicalQuery) ([]domain.Passage, error) {
-	return nil, nil
-}
-
-func (noWords) GetNamedPassages(context.Context, domain.VaultID, source.LexicalQuery) ([]domain.Passage, error) {
-	return nil, nil
-}

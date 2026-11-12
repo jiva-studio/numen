@@ -6,32 +6,53 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-var wireContributionKinds = map[plugin.ContributionKind]v1.PluginContributionKind{
-	plugin.ContributionCommands:         v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_COMMANDS,
-	plugin.ContributionKeybindings:      v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_KEYBINDINGS,
-	plugin.ContributionTabKinds:         v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TAB_KINDS,
-	plugin.ContributionReaders:          v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_READERS,
-	plugin.ContributionHandlers:         v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_HANDLERS,
-	plugin.ContributionTriggers:         v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TRIGGERS,
-	plugin.ContributionTextKinds:        v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TEXT_KINDS,
-	plugin.ContributionNoteTypes:        v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_NOTE_TYPES,
-	plugin.ContributionThemes:           v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_THEMES,
-	plugin.ContributionSlots:            v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SLOTS,
-	plugin.ContributionListeners:        v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_LISTENERS,
-	plugin.ContributionViewCapabilities: v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_VIEW_CAPABILITIES,
-	plugin.ContributionDropHandlers:     v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_DROP_HANDLERS,
-	plugin.ContributionFrameOrigins:     v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_FRAME_ORIGINS,
-	plugin.ContributionConnectionTypes:  v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_CONNECTION_TYPES,
-	plugin.ContributionOperations:       v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_OPERATIONS,
-	plugin.ContributionPermissions:      v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_PERMISSIONS,
-	plugin.ContributionDependencies:     v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_DEPENDENCIES,
-	plugin.ContributionServices:         v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SERVICES,
-	plugin.ContributionCapabilities:     v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_CAPABILITIES,
-	plugin.ContributionActivationEvents: v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS,
-}
-
 func convertContributionKind(kind plugin.ContributionKind) v1.PluginContributionKind {
-	return wireContributionKinds[kind]
+	switch kind {
+	case plugin.ContributionCommands:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_COMMANDS
+	case plugin.ContributionKeybindings:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_KEYBINDINGS
+	case plugin.ContributionTabKinds:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TAB_KINDS
+	case plugin.ContributionReaders:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_READERS
+	case plugin.ContributionHandlers:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_HANDLERS
+	case plugin.ContributionTriggers:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TRIGGERS
+	case plugin.ContributionTextKinds:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TEXT_KINDS
+	case plugin.ContributionNoteTypes:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_NOTE_TYPES
+	case plugin.ContributionThemes:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_THEMES
+	case plugin.ContributionSlots:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SLOTS
+	case plugin.ContributionListeners:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_LISTENERS
+	case plugin.ContributionViewCapabilities:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_VIEW_CAPABILITIES
+	case plugin.ContributionDropHandlers:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_DROP_HANDLERS
+	case plugin.ContributionFrameOrigins:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_FRAME_ORIGINS
+	case plugin.ContributionConnectionTypes:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_CONNECTION_TYPES
+	case plugin.ContributionOperations:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_OPERATIONS
+	case plugin.ContributionPermissions:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_PERMISSIONS
+	case plugin.ContributionDependencies:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_DEPENDENCIES
+	case plugin.ContributionServices:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SERVICES
+	case plugin.ContributionCapabilities:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_CAPABILITIES
+	case plugin.ContributionActivationEvents:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS
+	default:
+		return v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED
+	}
 }
 
 func newWireContributions(contributions []plugin.Contribution) []*v1.PluginContribution {
