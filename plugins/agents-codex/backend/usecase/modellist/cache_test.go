@@ -35,7 +35,7 @@ func TestCodexModelCache_Retention(t *testing.T) {
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	cache := newTestCache(clock.NewFake(time.Unix(1000, 0)))
+	cache := newTestCache(newFakeClock(time.Unix(1000, 0)))
 
 	for range 2 {
 		if got := cache.Get(t.Context(), []string{command}); len(got) != 1 || got[0].Name != "gpt-x" {
@@ -58,7 +58,7 @@ func TestAnEndedRequestKeepsNoCodexModels(t *testing.T) {
 		`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	cache := newTestCache(clock.NewFake(time.Unix(1000, 0)))
+	cache := newTestCache(newFakeClock(time.Unix(1000, 0)))
 
 	ended, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -76,7 +76,7 @@ func TestModels_FailedListingIsRequeried(t *testing.T) {
 	needsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	failing := writeScript(t, "codex", "exit 1\n")
-	now := clock.NewFake(time.Unix(1000, 0))
+	now := newFakeClock(time.Unix(1000, 0))
 	cache := newTestCache(now)
 
 	if got := cache.Get(t.Context(), []string{failing}); got != nil {
@@ -134,7 +134,7 @@ func TestGetModelsFailsWhenTheProgramAndTheStoredListGiveNone(t *testing.T) {
 }
 
 func TestACachedListIsKeyedByTheWholeCommandLine(t *testing.T) {
-	now := clock.NewFake(time.Unix(1000, 0))
+	now := newFakeClock(time.Unix(1000, 0))
 	c := newTestCache(now)
 	c.key, c.models, c.isCached = "a b", []agentmodel.Model{{Name: "cached-ab"}}, true
 	c.failedKey, c.failedAt = "fail-cmd", now.Now()
@@ -159,7 +159,7 @@ func TestAnAsynchronousCacheAnswersWithTheStoredListFirst(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(home, ".codex", "models_cache.json"), []byte(`{"models":[{"slug":"disk-m","display_name":"Disk"}]}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	asyncCache := NewCache(codexcli.Models{}, clock.NewFake(time.Unix(1000, 0)), true)
+	asyncCache := NewCache(codexcli.Models{}, newFakeClock(time.Unix(1000, 0)), true)
 	asyncCache.inFlight = map[string]bool{"already": true}
 	asyncCache.startBackgroundFetch(t.Context(), "already", []string{"/nonexistent"})
 	cmd := []string{"/bin/sh", "-c", `read -r _; echo '{"id":1,"result":{}}'; read -r _; read -r _; echo '{"id":2,"result":{"data":[{"model":"bg-m"}]}}'`, "sh"}
@@ -183,4 +183,10 @@ func TestAnAsynchronousCacheAnswersWithTheStoredListFirst(t *testing.T) {
 	if len(bgGot) != 1 || bgGot[0].Name != "bg-m" {
 		t.Fatalf("async cached get = %v, want bg-m", bgGot)
 	}
+}
+
+func newFakeClock(at time.Time) *clock.Fake {
+	fake := &clock.Fake{}
+	fake.Set(at)
+	return fake
 }

@@ -54,8 +54,8 @@ type Runner struct {
 
 	mu       sync.Mutex
 	running  sync.WaitGroup
-	closing  context.Context
-	closeAll context.CancelFunc
+	cancels  map[uint64]context.CancelFunc
+	nextRun  uint64
 	isClosed bool
 	dir      string
 }
@@ -65,9 +65,9 @@ func New(deps Dependencies) (*Runner, error) {
 	if deps.Settings == nil || deps.Finder == nil || deps.Commands == nil || deps.Launcher == nil || deps.ToolServer == nil {
 		return nil, errors.New("task: every dependency but the tools is required")
 	}
-	closing, closeAll := context.WithCancel(context.Background())
 	return &Runner{
-		deps: deps, mu: sync.Mutex{}, running: sync.WaitGroup{}, closing: closing, closeAll: closeAll, isClosed: false, dir: "",
+		deps: deps, mu: sync.Mutex{}, running: sync.WaitGroup{}, cancels: map[uint64]context.CancelFunc{}, nextRun: 0,
+		isClosed: false, dir: "",
 	}, nil
 }
 
@@ -304,9 +304,13 @@ func (r *Runner) begin(ctx context.Context) (context.Context, func(), error) {
 	}
 	r.running.Add(1)
 	runCtx, cancel := context.WithCancel(ctx)
-	stop := context.AfterFunc(r.closing, cancel)
+	r.nextRun++
+	run := r.nextRun
+	r.cancels[run] = cancel
 	return runCtx, func() {
-		stop()
+		r.mu.Lock()
+		delete(r.cancels, run)
+		r.mu.Unlock()
 		cancel()
 		r.running.Done()
 	}, nil
@@ -333,7 +337,9 @@ func (r *Runner) Close() error {
 		return nil
 	}
 	r.isClosed = true
-	r.closeAll()
+	for _, cancel := range r.cancels {
+		cancel()
+	}
 	r.mu.Unlock()
 	r.running.Wait()
 	if r.dir == "" {
