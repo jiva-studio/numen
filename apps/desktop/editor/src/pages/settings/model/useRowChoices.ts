@@ -42,6 +42,7 @@ export function useRowChoices(source: RowChoicesSource) {
   const models = ref<readonly ModelInfo[]>([])
   const levels = ref<readonly ReasoningLevelInfo[]>([])
   const problem = ref('')
+  const levelsProblem = ref('')
   let modelsRequest = 0
   let levelsRequest = 0
 
@@ -87,12 +88,15 @@ export function useRowChoices(source: RowChoicesSource) {
       const request = ++levelsRequest
       const listLevels = source.getListReasoningLevels()
       levels.value = []
+      levelsProblem.value = ''
       if (connection === '' || model === '' || !listLevels) return
       const answer = await readAnswer(listLevels(connection, model))
-      if (request === levelsRequest && answer.ok) levels.value = answer.value
+      if (request !== levelsRequest) return
+      if (answer.ok) levels.value = answer.value
+      else levelsProblem.value = answer.error
     },
     { immediate: true },
   )
 
-  return { modelChoices, levelChoices, problem }
+  return { modelChoices, levelChoices, problem, levelsProblem }
 }

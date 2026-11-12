@@ -32,7 +32,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { modelChoices, levelChoices, problem } = useRowChoices({
+const { modelChoices, levelChoices, problem, levelsProblem } = useRowChoices({
   getRow: () => props.row,
   getOperation: () => props.operation,
   getListModels: () => props.listModels,
@@ -41,6 +41,9 @@ const { modelChoices, levelChoices, problem } = useRowChoices({
 })
 
 const isAdding = ref(false)
+const modelsProblem = computed(() =>
+  problem.value === '' ? '' : `${words.connectionRowsModelsFailed} ${problem.value}`,
+)
 const modelSelect = useTemplateRef<InstanceType<typeof Select>>('modelSelect')
 const connectionChoices = computed<readonly SelectChoice[]>(() => [
   ...props.choices,
@@ -106,6 +109,7 @@ function onReasoningChoose(reasoning: string): void {
         :placeholder="words.connectionRowsChoose"
         :aria-label="words.connectionRowsConnection"
         :search-name="words.searchConnections"
+        :problem="reason"
         is-searchable
         class="connection-rows__select"
         @update:model-value="onConnectionChoose"
@@ -118,6 +122,7 @@ function onReasoningChoose(reasoning: string): void {
         :placeholder="words.connectionRowsModelPlaceholder"
         :aria-label="words.connectionRowsModel"
         :search-name="words.searchModels"
+        :problem="modelsProblem"
         :is-disabled="row.connection === ''"
         is-searchable
         can-enter-custom
@@ -129,6 +134,7 @@ function onReasoningChoose(reasoning: string): void {
         :choices="levelChoices"
         :name="words.connectionRowsReasoning"
         :aria-label="words.connectionRowsReasoning"
+        :problem="levelsProblem"
         :is-disabled="levelChoices.length <= 1 || row.connection === '' || row.model === ''"
         class="connection-rows__select connection-rows__select--narrow"
         @update:model-value="onReasoningChoose"
@@ -156,10 +162,6 @@ function onReasoningChoose(reasoning: string): void {
       @close="isAdding = false"
     />
 
-    <p v-if="reason !== ''" class="connection-rows__problem">{{ reason }}</p>
-    <p v-if="problem !== ''" class="connection-rows__problem">
-      {{ words.connectionRowsModelsFailed }} {{ problem }}
-    </p>
   </li>
 </template>
 
@@ -233,11 +235,4 @@ function onReasoningChoose(reasoning: string): void {
   }
 }
 
-.connection-rows__problem {
-  flex: 1 0 100%;
-  order: 9;
-  margin: 0;
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
-}
 </style>

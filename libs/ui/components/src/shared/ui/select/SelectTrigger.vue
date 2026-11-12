@@ -14,6 +14,8 @@ const props = defineProps<{
   isDisabled: boolean
   isExpanded: boolean
   hasPopup: 'menu' | 'listbox'
+  /** Why the choices are not what they should be; empty where nothing is wrong. */
+  problem?: string
   class?: HTMLAttributes['class']
 }>()
 
@@ -36,6 +38,9 @@ const element = useTemplateRef<HTMLButtonElement>('element')
     :aria-haspopup="hasPopup"
     :aria-expanded="isExpanded"
     :disabled="isDisabled"
+    :title="problem || undefined"
+    :aria-description="problem || undefined"
+    :aria-invalid="problem ? true : undefined"
     :class="
       cn(
         'flex w-full max-w-full min-w-0 items-center justify-between gap-2',
@@ -43,6 +48,7 @@ const element = useTemplateRef<HTMLButtonElement>('element')
         'text-ink text-left font-sans text-base leading-none',
         'ease-numen cursor-pointer transition-colors duration-100 outline-none',
         'hover:border-rule',
+        problem && 'border-alarm hover:border-alarm',
         'focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
