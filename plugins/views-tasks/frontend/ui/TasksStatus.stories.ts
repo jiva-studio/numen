@@ -4,7 +4,7 @@
  * the contrast of the chip as drawn.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, waitFor } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { createTask } from '../testing/tasks'
 import TasksStatus from './TasksStatus.vue'
 
@@ -34,7 +34,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const getChip = (canvasElement: HTMLElement): HTMLElement =>
-  canvasElement.querySelector('.tasks-status__trigger') as HTMLElement
+  within(canvasElement).getByRole('button')
 
 const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
   const chip = getChip(canvasElement)
@@ -110,13 +110,58 @@ export const KeepsItsSize: Story = {
     `,
   }),
   play: async ({ canvasElement }) => {
-    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.tasks-status__trigger')].map(
-      (one) => {
+    const boxes = within(canvasElement)
+      .getAllByRole('button')
+      .map((one) => {
         const { width, height } = one.getBoundingClientRect()
         return { width, height }
-      },
-    )
+      })
     await expect(boxes).toHaveLength(3)
     for (const box of boxes) await expect(box.height).toBe(20)
+  },
+}
+
+const inBar = (place: 'top' | 'bottom') => () => ({
+  components: { TasksStatus },
+  setup: () => ({ RUNNING, FAILED }),
+  template: `
+    <div class="numen" style="block-size: 100vh; background: var(--numen-surface); color: var(--numen-ink); font-family: var(--numen-font-sans)">
+      <div data-view style="position: fixed; ${place}: 6px; right: 320px; display: inline-flex; align-items: center">
+        <TasksStatus :tasks="[...RUNNING, ...FAILED]" />
+      </div>
+    </div>`,
+})
+
+const getViewChip = (canvasElement: HTMLElement): HTMLElement =>
+  within(canvasElement.querySelector<HTMLElement>('[data-view]')!).getAllByRole('button')[0]!
+
+/** A press opens the list of tasks; its close button closes it. */
+export const OpensTheTaskListAndClosesItFromItsButton: Story = {
+  render: inBar('top'),
+  play: async ({ canvasElement }) => {
+    const chip = getViewChip(canvasElement)
+    await userEvent.click(chip)
+    const dialog = await within(document.body).findByRole('dialog', { name: 'Background tasks' })
+    await expect(chip.getAttribute('aria-expanded')).toBe('true')
+    await expect(within(dialog).getByText('The disk is full')).toBeVisible()
+    await userEvent.click(within(dialog).getAllByRole('button', { name: 'Close' })[0]!)
+    await waitFor(() => expect(within(document.body).queryByRole('dialog')).toBeNull())
+    await expect(chip.getAttribute('aria-expanded')).toBe('false')
+  },
+}
+
+/** In a bar at the bottom of the window the list opens above the chip, inside the window. */
+export const OpensTheTaskListAboveAChipAtTheBottom: Story = {
+  render: inBar('bottom'),
+  play: async ({ canvasElement }) => {
+    const chip = getViewChip(canvasElement)
+    await userEvent.click(chip)
+    const dialog = await within(document.body).findByRole('dialog', { name: 'Background tasks' })
+    await waitFor(() =>
+      expect(dialog.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        chip.getBoundingClientRect().top,
+      ),
+    )
+    await expect(dialog.getBoundingClientRect().top).toBeGreaterThanOrEqual(0)
   },
 }

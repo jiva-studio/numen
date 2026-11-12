@@ -56,7 +56,7 @@ test.describe('Start-up with the updater and the index stats', () => {
     await expectWorkspace(page)
     const bar = page.locator('[data-title-bar]')
     await expect(bar.locator('[data-tasks-status]')).toBeVisible()
-    await expect(bar.locator('.index-stats__trigger')).toBeVisible()
+    await expect(bar.locator('button:has(.index-stats__figure)')).toBeVisible()
     expect(errors).toStrictEqual([])
   })
 })

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.statusBar",
   "name": "Status bar",
-  "version": "2026.11.2",
+  "version": "2026.11.3",
   "protocol": 1,
   "description": "Draws a bar at the bottom of the window with the commands and views plugins place at its start and its end",
   "targets": ["desktop.editor"],

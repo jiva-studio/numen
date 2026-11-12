@@ -2,12 +2,13 @@
 /**
  * The title bar indicator of a new release, and the popover with its details.
  */
-import { computed, ref, useTemplateRef, watch } from 'vue'
-import { useMenuDismissal } from '@numen/ui'
+import { computed, ref, watch } from 'vue'
+import { BarChip } from '@numen/ui'
 import type { Update } from './api/updater'
 import { getTooltip } from './model/tooltip'
 import type { Platform } from './types'
 import UpdatePopover from './UpdatePopover.vue'
+import { WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -26,17 +27,17 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const tooltip = computed(() => (props.update ? getTooltip(props.version, props.update) : ''))
-const root = useTemplateRef<HTMLElement>('root')
-const dismissal = useMenuDismissal(root, onClose)
 
-/* --------------------------------- Hooks ---------------------------------- */
-watch(isOpen, (open) => (open ? dismissal.listen() : dismissal.release()))
+/* -------------------------------- Watchers -------------------------------- */
+// A later announcement starts closed, not open as the last one was left.
+watch(
+  () => props.update,
+  (update) => {
+    if (update === null) isOpen.value = false
+  },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onToggle() {
-  isOpen.value = !isOpen.value
-}
-
 function onClose() {
   isOpen.value = false
 }
@@ -58,28 +59,24 @@ function onDismiss() {
 </script>
 
 <template>
-  <div v-if="update" ref="root" class="update-indicator">
-    <button
-      type="button"
-      tabindex="-1"
-      class="update-indicator__trigger"
-      :aria-expanded="isOpen"
-      aria-haspopup="dialog"
-      :aria-label="tooltip"
-      :title="tooltip"
-      @click="onToggle"
-    >
-      <span class="update-indicator__label">v{{ update.version }}</span>
-    </button>
-
-    <UpdatePopover
-      v-if="isOpen && update"
-      :update="update"
-      :platform="platform"
-      @close="onClose"
-      @download="onDownload"
-      @release-notes="onReleaseNotes"
-      @dismiss="onDismiss"
-    />
-  </div>
+  <BarChip
+    v-if="update"
+    v-model:open="isOpen"
+    tone="accent"
+    :label="tooltip"
+    :tooltip="tooltip"
+    :popover-label="words.title"
+  >
+    v{{ update.version }}
+    <template #popover>
+      <UpdatePopover
+        :update="update"
+        :platform="platform"
+        @close="onClose"
+        @download="onDownload"
+        @release-notes="onReleaseNotes"
+        @dismiss="onDismiss"
+      />
+    </template>
+  </BarChip>
 </template>

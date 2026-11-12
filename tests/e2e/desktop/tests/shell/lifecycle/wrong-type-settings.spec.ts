@@ -32,7 +32,7 @@ test.describe('Start-up with old keys and values of the wrong type in the settin
     await expectWorkspaceDrawn(page)
     await expect(page.getByText(/Numen can't start/)).toHaveCount(0)
 
-    await page.locator('.tasks-status__trigger').click()
+    await page.locator('[data-tasks-status] button').click()
     const popover = page.locator('.task-popover')
     await expect(popover).toBeVisible({ timeout: USABLE_WITHIN_MS })
     for (const key of ['importing', 'review', 'plugins', 'md.numen.proofreading']) {

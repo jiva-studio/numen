@@ -2,12 +2,13 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 1.375rem;
-  min-height: 1.375rem;
+  box-sizing: border-box;
+  height: var(--numen-title-bar-height);
+  min-height: var(--numen-title-bar-height);
   background: var(--numen-surface);
   border-top: 1px solid var(--numen-rule);
   color: var(--numen-ink);
-  font-size: var(--numen-text-1);
+  font-size: 13px;
   user-select: none;
   z-index: 30;
 }
@@ -23,15 +24,15 @@
 }
 
 .status-bar__gap {
-  inline-size: 0.5rem;
+  inline-size: 8px;
 }
 
 .status-bar__entry {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 4px;
   height: 100%;
-  padding: 0 0.5rem;
+  padding: 0 8px;
   background: transparent;
   border: none;
   border-radius: var(--numen-radius-tight);
@@ -45,4 +46,31 @@
 .status-bar__entry[aria-expanded='true'] {
   background: var(--numen-raised);
   color: var(--numen-ink);
+}
+
+/* A view is drawn by its plugin: the wrapper only carries the bar gap between two views. A view
+   that draws nothing takes no room. */
+.status-bar__view {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+/* The shell wraps each view in a display: contents span, so a view that draws nothing is a wrapper
+   whose span is empty. It takes no room, and the bar gap sits only between two views that draw
+   something, also with up to two empty views between them. */
+.status-bar__view:has(> [data-slot-view]:empty) {
+  display: none;
+}
+
+.status-bar__view:not(:has(> [data-slot-view]:empty))
+  + .status-bar__view:not(:has(> [data-slot-view]:empty)),
+.status-bar__view:not(:has(> [data-slot-view]:empty))
+  + .status-bar__view:has(> [data-slot-view]:empty)
+  + .status-bar__view:not(:has(> [data-slot-view]:empty)),
+.status-bar__view:not(:has(> [data-slot-view]:empty))
+  + .status-bar__view:has(> [data-slot-view]:empty)
+  + .status-bar__view:has(> [data-slot-view]:empty)
+  + .status-bar__view:not(:has(> [data-slot-view]:empty)) {
+  margin-inline-start: var(--numen-bar-gap);
 }

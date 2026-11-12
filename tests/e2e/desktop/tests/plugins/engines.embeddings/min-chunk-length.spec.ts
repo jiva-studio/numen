@@ -16,7 +16,7 @@ const LONG_BODY =
   'The ferry crosses the estuary at dawn with barley, salted fish and the post for the northern shores.'
 
 const getItem = (page: Parameters<typeof openWorkspace>[0]): Locator =>
-  page.locator('.index-stats__trigger')
+  page.locator('button:has(.index-stats__figure)')
 
 const readVectors = async (item: Locator): Promise<number> => {
   const text = (await item.textContent()) ?? ''

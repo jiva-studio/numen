@@ -4,7 +4,7 @@ test.describe('The task status of the title bar and its list', () => {
   test('opens the list of background tasks on a click of the summary', async ({ page }) => {
     await page.goto('/')
 
-    const trigger = page.locator('.tasks-status__trigger')
+    const trigger = page.locator('[data-tasks-status] button')
     await expect(trigger).toBeVisible()
 
     // Click trigger to open background task popover
@@ -28,9 +28,9 @@ test.describe('The task status of the title bar and its list', () => {
   test('closes the list of background tasks on Escape', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('.tasks-status__trigger')).toBeVisible()
+    await expect(page.locator('[data-tasks-status] button')).toBeVisible()
 
-    const trigger = page.locator('.tasks-status__trigger')
+    const trigger = page.locator('[data-tasks-status] button')
     await trigger.click()
 
     const popover = page.locator('.task-popover')
@@ -47,9 +47,9 @@ test.describe('The task status of the title bar and its list', () => {
   test('closes the list of background tasks with its close button', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('.tasks-status__trigger')).toBeVisible()
+    await expect(page.locator('[data-tasks-status] button')).toBeVisible()
 
-    const trigger = page.locator('.tasks-status__trigger')
+    const trigger = page.locator('[data-tasks-status] button')
     await trigger.click()
 
     const popover = page.locator('.task-popover')

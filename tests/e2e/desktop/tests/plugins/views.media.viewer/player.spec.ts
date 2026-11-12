@@ -116,7 +116,7 @@ test.describe('a link to an address that answers 404', () => {
     expect(added).toEqual([expect.stringMatching(/unreachable\.numen\.test.*tide-tables\.md$/)])
     await downloadText(page)
 
-    await page.locator('.tasks-status__trigger').click()
+    await page.locator('[data-tasks-status] button').click()
     const popover = page.locator('.task-popover')
     const failures = popover
       .locator('.task-item')

@@ -144,7 +144,7 @@ export const expectWorkspaceDrawn = async (page: Page): Promise<void> => {
 
 /** Opens the list of background tasks from the title bar, where a failed action and a warning are listed. */
 export const openTaskList = async (page: Page): Promise<Locator> => {
-  await page.locator('.tasks-status__trigger').click()
+  await page.locator('[data-tasks-status] button').click()
   const popover = page.locator('.task-popover')
   await expect(popover).toBeVisible()
   return popover

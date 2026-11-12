@@ -56,7 +56,9 @@ function onRun(command: string, itemId?: string, values?: Readonly<Record<string
         <component :is="entry.icon as Component" v-if="entry.icon" :size="14" aria-hidden="true" />
         <template v-else>{{ entry.title }}</template>
       </button>
-      <component :is="entry.component as Component" v-else-if="entry.kind === 'view'" />
+      <div v-else-if="entry.kind === 'view'" class="status-bar__view">
+        <component :is="entry.component as Component" />
+      </div>
       <SlotMenuButton
         v-else
         :entries="entry.entries"

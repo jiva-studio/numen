@@ -36,7 +36,7 @@ const expectPassageGone = async (
 
 const expectNoRecognitionRunning = async (page: Page, name: string): Promise<void> => {
   await expect(page.locator('.tasks-status__summary')).not.toHaveText(/^[1-9]\d* active$/)
-  await page.locator('.tasks-status__trigger').click()
+  await page.locator('[data-tasks-status] button').click()
   await expect(page.locator('.task-item').filter({ hasText: name })).toHaveCount(0)
   await page.keyboard.press('Escape')
 }

@@ -28,7 +28,7 @@ function onClose() {
 </script>
 
 <template>
-  <div class="index-popover" role="dialog" aria-modal="false" :aria-label="words.title">
+  <div class="index-popover">
     <div class="index-popover__header">
       <span class="index-popover__title">{{ words.title }}</span>
       <button

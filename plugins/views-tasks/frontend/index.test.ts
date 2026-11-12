@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { DOMWrapper, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
 import { createMockPluginContext, type MockPluginContext } from '@numen/plugin-sdk/testing'
 import { activate, TASKS_VIEW } from './index'
@@ -36,8 +36,11 @@ const mountTasks = (view: Component): VueWrapper => {
   return wrapper
 }
 
+const page = (): DOMWrapper<HTMLElement> => new DOMWrapper(document.body)
+
 const openList = async (wrapper: VueWrapper): Promise<void> => {
-  await wrapper.find('.tasks-status__trigger').trigger('click')
+  await wrapper.find('button[aria-haspopup="dialog"]').trigger('click')
+  await flushPromises()
 }
 
 describe('the manifest', () => {
@@ -79,7 +82,9 @@ describe('the summary', () => {
     const wrapper = mountTasks(view)
 
     expect(wrapper.find('.tasks-status__summary').text()).toBe('Idle')
-    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe('No tasks running')
+    expect(wrapper.find('button[aria-haspopup="dialog"]').attributes('aria-label')).toBe(
+      'No tasks running',
+    )
     expect(wrapper.find('.tasks-status__ring-track').exists()).toBe(true)
     expect(wrapper.find('.tasks-status__ring-fill').exists()).toBe(false)
   })
@@ -96,10 +101,12 @@ describe('the summary', () => {
     context.backgroundTasks.setTasks([running('b'), running('c')])
     await settle(HOLD_MS)
     expect(wrapper.find('.tasks-status__summary').text()).toBe('1 of 3')
-    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe(
+    expect(wrapper.find('button[aria-haspopup="dialog"]').attributes('aria-label')).toBe(
       '1 of 3 tasks done',
     )
-    expect(wrapper.find('.tasks-status__trigger').attributes('title')).toBe('1 of 3 tasks done')
+    expect(wrapper.find('button[aria-haspopup="dialog"]').attributes('title')).toBe(
+      '1 of 3 tasks done',
+    )
 
     context.backgroundTasks.setTasks([running('c'), running('d')])
     await settle(HOLD_MS)
@@ -122,7 +129,7 @@ describe('the summary', () => {
     expect(Number(fill.attributes('stroke-dashoffset'))).toBeCloseTo(length / 2)
   })
 
-  it('keeps the text of the chip and tints it when tasks failed and nothing else runs', async () => {
+  it('keeps the text of the chip when tasks failed and nothing else runs', async () => {
     const { context, view } = activateTasks()
     const wrapper = mountTasks(view)
 
@@ -133,13 +140,10 @@ describe('the summary', () => {
     await flushPromises()
 
     expect(wrapper.find('.tasks-status__summary').text()).toBe('Idle')
-    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe('2 failed')
-    expect(wrapper.find('.tasks-status__trigger').classes()).toContain(
-      'tasks-status__trigger--failed',
-    )
+    expect(wrapper.find('button[aria-haspopup="dialog"]').attributes('aria-label')).toBe('2 failed')
   })
 
-  it('keeps the text of the chip and tints it when some task failed while others run', async () => {
+  it('keeps the text of the chip when some task failed while others run', async () => {
     const { context, view } = activateTasks()
     const wrapper = mountTasks(view)
 
@@ -156,7 +160,7 @@ describe('the summary', () => {
     await settle(HOLD_MS)
 
     expect(wrapper.find('.tasks-status__summary').text()).toBe('1 of 3')
-    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe(
+    expect(wrapper.find('button[aria-haspopup="dialog"]').attributes('aria-label')).toBe(
       '1 of 3 tasks done, 1 failed',
     )
   })
@@ -179,13 +183,13 @@ describe('the chip', () => {
     context.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running' })])
     await flushPromises()
 
-    const trigger = wrapper.find('.tasks-status__trigger')
+    const trigger = wrapper.find('button[aria-haspopup="dialog"]')
     expect(trigger.attributes('tabindex')).toBe('-1')
     expect(wrapper.find('.tasks-status__badge').exists()).toBe(false)
     expect(wrapper.find('.circular-progress').exists()).toBe(false)
-    expect(trigger.classes()).toStrictEqual(['tasks-status__trigger'])
     await trigger.trigger('click')
-    expect(wrapper.find('.task-popover').exists()).toBe(true)
+    await flushPromises()
+    expect(page().find('.task-popover').exists()).toBe(true)
   })
 })
 
@@ -197,17 +201,19 @@ describe('the list', () => {
       createTask({ id: 'second', label: 'Transcribe lecture.mp3' }),
     ])
     const wrapper = mountTasks(view)
-    expect(wrapper.find('.task-popover').exists()).toBe(false)
+    expect(page().find('.task-popover').exists()).toBe(false)
 
     await openList(wrapper)
 
-    expect(wrapper.find('.task-popover__title').text()).toBe('Background tasks')
+    expect(page().find('.task-popover__title').text()).toBe('Background tasks')
     expect(
-      wrapper.findAll('.task-item').map((row) => row.attributes('data-task-id')),
+      page()
+        .findAll('.task-item')
+        .map((row) => row.attributes('data-task-id')),
     ).toStrictEqual(['second', 'first'])
 
     await openList(wrapper)
-    expect(wrapper.find('.task-popover').exists()).toBe(false)
+    expect(page().find('.task-popover').exists()).toBe(false)
   })
 
   it('says that there is nothing to show when the list is empty', async () => {
@@ -216,7 +222,7 @@ describe('the list', () => {
 
     await openList(wrapper)
 
-    expect(wrapper.find('.task-popover__empty').text()).toBe('No active background tasks')
+    expect(page().find('.task-popover__empty').text()).toBe('No active background tasks')
   })
 
   it('closes on Escape', async () => {
@@ -224,10 +230,10 @@ describe('the list', () => {
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     await flushPromises()
 
-    expect(wrapper.find('.task-popover').exists()).toBe(false)
+    expect(page().find('.task-popover').exists()).toBe(false)
   })
 
   it('shows what a task is done to and how much of it is done', async () => {
@@ -239,7 +245,7 @@ describe('the list', () => {
 
     await openList(wrapper)
 
-    const row = wrapper.find('[data-task-id="a"]')
+    const row = page().find('[data-task-id="a"]')
     expect(row.find('.task-item__label').text()).toBe('Index books')
     expect(row.find('.task-item__detail').text()).toBe('Gita.pdf')
     expect(row.find('.circular-progress').attributes('data-progress')).toBe('25')
@@ -254,7 +260,7 @@ describe('the list', () => {
 
     await openList(wrapper)
 
-    expect(wrapper.find('[data-task-id="a"] .task-item__detail').text()).toBe('the file is damaged')
+    expect(page().find('[data-task-id="a"] .task-item__detail').text()).toBe('the file is damaged')
   })
 })
 
@@ -265,7 +271,7 @@ describe('the actions of a task', () => {
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
-    await wrapper.find('button[aria-label="Cancel task"]').trigger('click')
+    await page().find('button[aria-label="Cancel task"]').trigger('click')
 
     expect(context.backgroundTasks.getActions()).toStrictEqual([{ action: 'cancel', id: 'a' }])
   })
@@ -276,7 +282,7 @@ describe('the actions of a task', () => {
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
-    expect(wrapper.find('button[aria-label="Cancel task"]').exists()).toBe(false)
+    expect(page().find('button[aria-label="Cancel task"]').exists()).toBe(false)
   })
 
   it('disables the cancel of a task that is being cancelled', async () => {
@@ -287,7 +293,7 @@ describe('the actions of a task', () => {
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
-    const button = wrapper.find('button[aria-label="Cancelling"]')
+    const button = page().find('button[aria-label="Cancelling"]')
     expect(button.attributes('disabled')).toBeDefined()
   })
 
@@ -298,10 +304,10 @@ describe('the actions of a task', () => {
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
-    await wrapper.find('button[aria-label="Cancel task"]').trigger('click')
+    await page().find('button[aria-label="Cancel task"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('[data-task-id="a"]').exists()).toBe(true)
+    expect(page().find('[data-task-id="a"]').exists()).toBe(true)
   })
 
   it('retries a failed task that can be retried', async () => {
@@ -312,7 +318,7 @@ describe('the actions of a task', () => {
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
-    await wrapper.find('button[aria-label="Retry task"]').trigger('click')
+    await page().find('button[aria-label="Retry task"]').trigger('click')
 
     expect(context.backgroundTasks.getActions()).toStrictEqual([{ action: 'retry', id: 'a' }])
   })
@@ -323,8 +329,8 @@ describe('the actions of a task', () => {
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
-    expect(wrapper.find('button[aria-label="Retry task"]').exists()).toBe(false)
-    await wrapper.find('button[aria-label="Dismiss"]').trigger('click')
+    expect(page().find('button[aria-label="Retry task"]').exists()).toBe(false)
+    await page().find('button[aria-label="Dismiss"]').trigger('click')
 
     expect(context.backgroundTasks.getActions()).toStrictEqual([{ action: 'dismiss', id: 'a' }])
   })
@@ -337,8 +343,8 @@ describe('the actions of a task', () => {
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
-    expect(wrapper.find('[data-task-id="n"] .task-item__notice-icon').exists()).toBe(true)
-    await wrapper.find('[data-task-id="n"] button[aria-label="Dismiss"]').trigger('click')
+    expect(page().find('[data-task-id="n"] .task-item__notice-icon').exists()).toBe(true)
+    await page().find('[data-task-id="n"] button[aria-label="Dismiss"]').trigger('click')
 
     expect(context.backgroundTasks.getActions()).toStrictEqual([{ action: 'dismiss', id: 'n' }])
   })
@@ -357,7 +363,7 @@ describe('the actions of a task', () => {
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
-    const link = wrapper.find('.task-item__action-link')
+    const link = page().find('.task-item__action-link')
     expect(link.text()).toContain('Configure')
     await link.trigger('click')
 

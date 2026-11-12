@@ -11,7 +11,7 @@ import (
 )
 
 // BarHeight is the height of a title bar in pixels, and the same number as
-// `--numen-title-bar-height` of the window frame tokens in libs/ui/shell. MacTitleBarHidden has no
+// `--numen-title-bar-height` of libs/ui/core/src/shared/tokens/tokens.css. MacTitleBarHidden has no
 // toolbar, and the system buttons are centered 16 points from the top (14 point circles spanning 9
 // to 23, measured on macOS 26), so a bar or a strip of tabs at the top is 32 high. Change both
 // numbers together when the buttons are off.

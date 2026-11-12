@@ -4,8 +4,8 @@
  * batch, and Idle, how many tasks are done of how many. A failed task tints the chip and changes no text. The list of the tasks
  * opens from it.
  */
-import { computed, ref, useTemplateRef, watch } from 'vue'
-import { useMenuDismissal } from '@numen/ui'
+import { computed, ref, watch } from 'vue'
+import { BarChip } from '@numen/ui'
 import type { BackgroundTask } from '@numen/plugin-sdk'
 import { summarizeBatch, summarizeTasks } from '../lib/summary'
 import { type ChipState } from '../lib/chipDisplay'
@@ -29,8 +29,6 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
-const root = useTemplateRef<HTMLElement>('root')
-const dismissal = useMenuDismissal(root, onClose)
 
 const summary = computed(() => summarizeTasks(props.tasks))
 // The tasks of one busy period: the ids are forgotten when the window is idle again.
@@ -61,7 +59,6 @@ const RING_LENGTH = 2 * Math.PI * RING_RADIUS
 const ringOffset = computed(() => RING_LENGTH * (1 - chip.value.fraction))
 
 /* --------------------------------- Hooks ---------------------------------- */
-watch(isOpen, (open) => (open ? dismissal.listen() : dismissal.release()))
 watch(
   () => props.tasks,
   (tasks) => {
@@ -75,32 +72,19 @@ watch(
 )
 
 /* -------------------------------- Handlers -------------------------------- */
-function onToggle() {
-  isOpen.value = !isOpen.value
-}
-
 function onClose() {
   isOpen.value = false
 }
 </script>
 
 <template>
-  <div
-    ref="root"
-    class="tasks-status"
-    :class="{ 'tasks-status--active': chip.isActive }"
-    data-tasks-status
-  >
-    <button
-      type="button"
-      tabindex="-1"
-      class="tasks-status__trigger"
-      :class="{ 'tasks-status__trigger--failed': hasFailed }"
-      :aria-label="label"
-      :title="label"
-      :aria-expanded="isOpen"
-      aria-haspopup="dialog"
-      @click="onToggle"
+  <div class="tasks-status" :class="{ 'tasks-status--active': chip.isActive }" data-tasks-status>
+    <BarChip
+      v-model:open="isOpen"
+      :tone="hasFailed ? 'alarm' : 'neutral'"
+      :label="label"
+      :tooltip="label"
+      :popover-label="words.title"
     >
       <svg
         class="tasks-status__ring"
@@ -129,17 +113,17 @@ function onClose() {
       </svg>
 
       <span class="tasks-status__summary">{{ summaryText }}</span>
-    </button>
 
-    <div v-if="isOpen" class="tasks-status__popover-container">
-      <TaskPopover
-        :tasks="tasks"
-        @close="onClose"
-        @cancel="(id) => emit('cancel', id)"
-        @retry="(id) => emit('retry', id)"
-        @dismiss="(id) => emit('dismiss', id)"
-        @open-settings="(pluginId) => emit('open-settings', pluginId)"
-      />
-    </div>
+      <template #popover>
+        <TaskPopover
+          :tasks="tasks"
+          @close="onClose"
+          @cancel="(id) => emit('cancel', id)"
+          @retry="(id) => emit('retry', id)"
+          @dismiss="(id) => emit('dismiss', id)"
+          @open-settings="(pluginId) => emit('open-settings', pluginId)"
+        />
+      </template>
+    </BarChip>
   </div>
 </template>

@@ -2,8 +2,8 @@
   display: flex;
   align-items: stretch;
   box-sizing: border-box;
-  height: 32px;
-  min-height: 32px;
+  height: var(--numen-title-bar-height);
+  min-height: var(--numen-title-bar-height);
   background: var(--numen-titlebar);
   border-bottom: 1px solid var(--numen-rule);
   color: var(--numen-ink);
@@ -114,7 +114,7 @@
 .title-bar__title {
   min-width: 0;
   padding-inline: 12px;
-  line-height: 32px;
+  line-height: var(--numen-title-bar-height);
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -138,4 +138,23 @@
 
 .title-bar__title--trigger:focus-visible {
   box-shadow: inset 0 0 0 1px var(--numen-accent);
+}
+
+/* The shell wraps each view in a display: contents span, so a view that draws nothing is a wrapper
+   whose span is empty. It takes no room, and the bar gap sits only between two views that draw
+   something, also with up to two empty views between them. */
+.title-bar__view:has(> [data-slot-view]:empty) {
+  display: none;
+}
+
+.title-bar__view:not(:has(> [data-slot-view]:empty))
+  + .title-bar__view:not(:has(> [data-slot-view]:empty)),
+.title-bar__view:not(:has(> [data-slot-view]:empty))
+  + .title-bar__view:has(> [data-slot-view]:empty)
+  + .title-bar__view:not(:has(> [data-slot-view]:empty)),
+.title-bar__view:not(:has(> [data-slot-view]:empty))
+  + .title-bar__view:has(> [data-slot-view]:empty)
+  + .title-bar__view:has(> [data-slot-view]:empty)
+  + .title-bar__view:not(:has(> [data-slot-view]:empty)) {
+  margin-inline-start: var(--numen-bar-gap);
 }

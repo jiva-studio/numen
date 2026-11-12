@@ -22,7 +22,7 @@ test.describe('the stock plugins after the window starts', () => {
     // A failed launch for the note is reported within a second.
     await observeFor(page, 1_000)
 
-    await page.locator('.tasks-status__trigger').click()
+    await page.locator('[data-tasks-status] button').click()
     await expect(page.locator('.task-popover')).toBeVisible()
     // The vault holds a corrupted PDF on purpose: its failed recognition is no plugin's failure.
     await expect(page.locator('.task-popover')).not.toContainText(PLUGIN_FAILURE)

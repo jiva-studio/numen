@@ -12,15 +12,15 @@ describe('TasksStatus', () => {
     const wrapper = mount(TasksStatus, { props: { tasks: [] } })
 
     await wrapper.setProps({ tasks: [createTask({ id: 'a', state: 'running' })] })
-    expect(wrapper.find('.tasks-status__summary').text()).toBe('Idle')
+    expect(wrapper.find('button').text()).toBe('Idle')
 
     vi.advanceTimersByTime(APPEAR_DELAY_MS)
     await flushPromises()
-    expect(wrapper.find('.tasks-status__summary').text()).toBe('0 of 1')
+    expect(wrapper.find('button').text()).toBe('0 of 1')
     wrapper.unmount()
   })
 
-  it('tints the chip and counts the failure at once', async () => {
+  it('counts the failure at once', async () => {
     const wrapper = mount(TasksStatus, { props: { tasks: [] } })
 
     await wrapper.setProps({
@@ -28,7 +28,7 @@ describe('TasksStatus', () => {
     })
 
     const trigger = wrapper.find('button')
-    expect(trigger.classes()).toContain('tasks-status__trigger--failed')
+    expect(trigger.classes()).toContain('bar-chip--alarm')
     expect(trigger.attributes('aria-label')).toBe('1 failed')
     wrapper.unmount()
   })

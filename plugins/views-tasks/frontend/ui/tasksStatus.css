@@ -1,61 +1,15 @@
 .tasks-status {
-  position: relative;
   display: inline-flex;
   align-items: center;
   height: 100%;
-  padding-inline: calc(var(--numen-inset) / 4);
   color: var(--numen-ink);
   user-select: none;
 }
 
-/* The chip: flat, with a ground and no border. Height, text size, padding and mark size are the
-   same in the three title bar chips; only the width follows the content. The text cell reserves
-   the width of "10 of 10" so a growing count does not move the neighbours. */
-.tasks-status__trigger {
-  --chip-height: 20px;
-  --chip-text: 12px;
-  --chip-pad: 8px;
-  --chip-mark: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: calc(var(--chip-pad) / 2);
-  box-sizing: border-box;
-  height: var(--chip-height);
-  padding: 0 var(--chip-pad);
-  background: var(--numen-surface);
-  border: none;
-  border-radius: var(--numen-radius);
-  outline: none;
-  color: var(--numen-ink);
-  font: inherit;
-  font-size: var(--chip-text);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  cursor: pointer;
-}
-
-/* WebKit sends no click when the node under a press is replaced before the release, and the
-   summary text is replaced whenever a task starts or ends. The button itself takes the press. */
-.tasks-status__trigger > * {
-  pointer-events: none;
-}
-
-.tasks-status__trigger:hover,
-.tasks-status__trigger[aria-expanded='true'] {
-  background: color-mix(in oklab, var(--numen-surface), var(--numen-ink) 10%);
-}
-
-.tasks-status__trigger--failed,
-.tasks-status__trigger--failed:hover,
-.tasks-status__trigger--failed[aria-expanded='true'] {
-  background: var(--numen-alarm-bg);
-  color: var(--numen-alarm);
-}
-
 .tasks-status__ring {
   flex: none;
-  width: var(--chip-mark);
-  height: var(--chip-mark);
+  width: var(--numen-chip-mark);
+  height: var(--numen-chip-mark);
   fill: none;
   transform: rotate(-90deg);
 }
@@ -68,16 +22,10 @@
   stroke: currentColor;
 }
 
+/* The text cell reserves the width of "10 of 10" so a growing count does not move the neighbours. */
 .tasks-status__summary {
   min-width: 8ch;
   white-space: nowrap;
-}
-
-.tasks-status__popover-container {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 50;
 }
 
 /* -------------------------------- Task Item -------------------------------- */
