@@ -114,7 +114,7 @@ interface Options {
   readonly listRowOptions?: InstallationConnections['listRowOptions']
   readonly operation?: string
   readonly countNotes?: InstallationConnections['countNotes']
-  readonly create?: InstallationConnections['create']
+  readonly create?: InstallationConnections['edits']['create']
 }
 
 const mountRows = (options: Options = {}) => {

@@ -40,8 +40,7 @@ function createPaletteBase(deps: PaletteBaseDeps) {
       runs: runSupport(),
       registry: deps.registry,
       writeMessage: deps.writeMessage,
-      search: searchRequests.request,
-      openSettings: deps.openSettings,
+      navigation: { search: searchRequests.request, openSettings: deps.openSettings },
     }),
   }
 }

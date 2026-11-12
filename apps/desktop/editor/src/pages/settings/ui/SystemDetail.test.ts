@@ -136,13 +136,13 @@ const findRow = (wrapper: ReturnType<typeof createPage>['wrapper'], title: strin
 
 describe('the page of the shell settings', () => {
   it('draws the appearance settings on Appearance and the rest on System, in the order declared', () => {
-    const names = (section: 'system' | 'appearance') =>
+    const getRowNames = (section: 'system' | 'appearance') =>
       createPage(section)
         .wrapper.findAllComponents(SettingRow)
         .map((one) => one.props('name'))
 
-    expect(names('appearance')).toStrictEqual(['Theme', 'Light or dark', 'Interface size'])
-    expect(names('system')).toStrictEqual(['Sync title and filename', 'Performance profile'])
+    expect(getRowNames('appearance')).toStrictEqual(['Theme', 'Light or dark', 'Interface size'])
+    expect(getRowNames('system')).toStrictEqual(['Sync title and filename', 'Performance profile'])
   })
 
   it('draws no row where the core declares no setting for the shell', () => {

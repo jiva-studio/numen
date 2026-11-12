@@ -36,10 +36,10 @@ const { managed, hasSettings, fileCount, deleteProblem, readmeText, deleteData }
   usePluginDetail(detailDeps)
 const { isEnabled, isPending, setEnabled, retry } = usePluginSwitch(detailDeps)
 const items = computed(() =>
-  props.manager.health.value.filter((item) => item.pluginId === props.plugin.id),
+  props.manager.health.items.value.filter((item) => item.pluginId === props.plugin.id),
 )
 const health = computed(() =>
-  getManagedHealth(items.value, props.plugin.id, props.manager.canRunCommand),
+  getManagedHealth(items.value, props.plugin.id, props.manager.health.canRunCommand),
 )
 const isApple = computed(() => props.settings.getPlatform() === 'darwin')
 const marked = computed(() => [
@@ -54,7 +54,7 @@ function onBack(): void {
 
 function onRunAction(key: string): void {
   const action = items.value.find((item) => item.key === key)?.action
-  if (action) props.manager.runCommand(action.command, action.values)
+  if (action) props.manager.health.runCommand(action.command, action.values)
 }
 </script>
 

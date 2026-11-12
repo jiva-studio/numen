@@ -14,7 +14,7 @@ import {
   useEnumFields,
   usePluginFields,
   usePluginPaths,
-  useSettingDefaults,
+  createSettingDefaults,
 } from '../../model/usePluginFields'
 import { WORDS as words } from '../../words'
 
@@ -35,7 +35,6 @@ const fieldDeps = {
 }
 const fields = usePluginFields(fieldDeps)
 const {
-  getValue,
   getBooleanSetting,
   getNumberSetting,
   getStringSetting,
@@ -49,7 +48,7 @@ const {
   choosePath: onPathChoose,
   clearPath: onPathClear,
 } = usePluginPaths(fieldDeps, fields)
-const { isChanged, resetSetting: onReset } = useSettingDefaults(fieldDeps)
+const { isChanged, resetSetting: onReset } = createSettingDefaults(fieldDeps)
 </script>
 
 <template>

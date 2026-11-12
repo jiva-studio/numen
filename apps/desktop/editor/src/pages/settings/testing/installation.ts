@@ -10,9 +10,11 @@ type Flat<T> = { [K in keyof T]: T[K] }
 /** What a test puts over the defaults of an installation, named without the group it belongs to. */
 export type InstallationOverrides = Flat<
   Partial<Installation['settings']> &
-    Partial<Omit<Installation['plugin'], 'files'>> &
+    Partial<Omit<Installation['plugin'], 'files' | 'health'>> &
     Partial<Installation['plugin']['files']> &
-    Partial<Installation['connections']>
+    Partial<Installation['plugin']['health']> &
+    Partial<Omit<Installation['connections'], 'edits'>> &
+    Partial<Installation['connections']['edits']>
 >
 
 const SETTINGS_KEYS = [
@@ -28,22 +30,18 @@ const PLUGIN_KEYS = [
   'plugins',
   'app',
   'catalog',
-  'health',
-  'canRunCommand',
-  'runCommand',
   'retryPlugin',
   'choosePath',
   'getSettingsViews',
 ]
 const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
+const HEALTH_KEYS = ['items', 'canRunCommand', 'runCommand']
+const EDITS_KEYS = ['create', 'update', 'delete']
 const CONNECTIONS_KEYS = [
   'list',
   'types',
   'operationTitles',
   'load',
-  'create',
-  'update',
-  'delete',
   'listRowOptions',
   'countNotes',
 ]
@@ -75,9 +73,12 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     plugins: ref([]),
     app: ref([]),
     catalog: ref([]),
-    health: ref([]),
-    canRunCommand: () => true,
-    runCommand: fn(),
+    health: {
+      items: ref([]),
+      canRunCommand: () => true,
+      runCommand: fn(),
+      ...pickOf(overrides, HEALTH_KEYS),
+    },
     getSettingsViews: () => new Map(),
     files: {
       getPluginData: () => Promise.resolve(0),
@@ -92,9 +93,12 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     types: ref([]),
     operationTitles: ref({}),
     load: fn(() => Promise.resolve()),
-    create: fn(() => Promise.resolve(asFailure('Not saved.'))),
-    update: fn(() => Promise.resolve(asFailure('Not saved.'))),
-    delete: fn(() => Promise.resolve(asValue(undefined))),
+    edits: {
+      create: fn(() => Promise.resolve(asFailure('Not saved.'))),
+      update: fn(() => Promise.resolve(asFailure('Not saved.'))),
+      delete: fn(() => Promise.resolve(asValue(undefined))),
+      ...pickOf(overrides, EDITS_KEYS),
+    },
     listRowOptions: fn(() => Promise.resolve(asValue([]))),
     countNotes: fn(() => Promise.resolve(0)),
     ...pickOf(overrides, CONNECTIONS_KEYS),

@@ -5,6 +5,7 @@
 // The library's ban on importing the domain is the one rule that stops at this
 // package: a window is the layer that depends on the vault domain.
 
+import globals from 'globals'
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
 import { createBaseConfig, createPortConfig } from '../../../tools/lint-layers/base-eslint.mjs'
@@ -47,7 +48,7 @@ const layerPolicies = createLayerPolicies({
 })
 
 export default tseslint.config(
-  ...createBaseConfig(import.meta.dirname),
+  ...createBaseConfig(import.meta.dirname, { allowDefaultProject: ['scripts/*.mjs'] }),
 
   // FSD Layer Hierarchy and boundaries enforcement
   createLayerConfig({
@@ -69,6 +70,11 @@ export default tseslint.config(
     files: ['src/**/*.ts'],
     ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/testing/**'],
   }),
+
+  {
+    files: ['scripts/**'],
+    languageOptions: { globals: globals.node },
+  },
 
   {
     files: ['src/testing/**', '.storybook/**'],

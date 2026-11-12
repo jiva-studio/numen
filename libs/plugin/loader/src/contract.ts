@@ -21,7 +21,6 @@ export {
 } from '@numen/plugin-sdk'
 export type {
   BackgroundTask,
-  BackgroundTaskAction,
   BackgroundTaskAllowed,
   BackgroundTaskProgress,
   BackgroundTaskHost,

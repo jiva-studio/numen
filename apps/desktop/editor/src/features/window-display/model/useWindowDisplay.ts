@@ -172,8 +172,7 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
         wait,
         isOpen: () => open,
       }),
-    follow: streams.follow,
-    watch: streams.watch,
+    streams,
     close: () => {
       open = false
       abortController.abort()

@@ -151,7 +151,7 @@ describe('moveRow', () => {
 describe('getConnectionUsability', () => {
   it('finds a complete connection of a type that serves the operations usable', () => {
     expect(
-      getConnectionUsability(connection(), type(), ['llm.complete'], reasons, TITLES),
+      getConnectionUsability(connection(), type(), { ids: ['llm.complete'], titles: TITLES }, reasons),
     ).toStrictEqual({ isUsable: true, reason: '' })
   })
 
@@ -160,28 +160,26 @@ describe('getConnectionUsability', () => {
       getConnectionUsability(
         connection(),
         type({ operations: ['llm.embed'] }),
-        ['llm.embed', 'llm.profile'],
+        { ids: ['llm.embed', 'llm.profile'], titles: TITLES },
         reasons,
-        TITLES,
       ),
     ).toStrictEqual({
       isUsable: false,
       reason: 'This type cannot describe a model',
     })
     expect(
-      getConnectionUsability(connection(), type(), ['llm.complete', 'llm.chat'], reasons, TITLES),
+      getConnectionUsability(connection(), type(), { ids: ['llm.complete', 'llm.chat'], titles: TITLES }, reasons),
     ).toStrictEqual({ isUsable: false, reason: 'This type cannot llm.chat' })
     expect(
       getConnectionUsability(
         connection({ isTypeAvailable: false }),
         type(),
-        ['llm.complete'],
+        { ids: ['llm.complete'], titles: TITLES },
         reasons,
-        TITLES,
       ),
     ).toStrictEqual({ isUsable: false, reason: 'Type unavailable' })
     expect(
-      getConnectionUsability(connection(), undefined, ['llm.complete'], reasons, TITLES),
+      getConnectionUsability(connection(), undefined, { ids: ['llm.complete'], titles: TITLES }, reasons),
     ).toStrictEqual({
       isUsable: false,
       reason: 'Type unavailable',
@@ -190,9 +188,8 @@ describe('getConnectionUsability', () => {
       getConnectionUsability(
         connection({ isComplete: false }),
         type(),
-        ['llm.complete'],
+        { ids: ['llm.complete'], titles: TITLES },
         reasons,
-        TITLES,
       ),
     ).toStrictEqual({ isUsable: false, reason: 'Incomplete' })
   })

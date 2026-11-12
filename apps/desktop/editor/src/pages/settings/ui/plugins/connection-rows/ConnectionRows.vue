@@ -19,17 +19,16 @@
  * row that is not complete changes nothing meanwhile.
  */
 import { computed, nextTick, useTemplateRef, watch } from 'vue'
-import { Plus } from '@lucide/vue'
 import { Button, runInBackground } from '@numen/ui'
 import { PluginSettingsCard } from '@numen/plugin-manager'
 import { getRowKey, readRows, type StoredRow } from '@/entities/connection'
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
 import type { InstallationConnections } from '../../../types'
-import SettingRow from '../../setting-row/SettingRow.vue'
 import { ConfirmDialog } from '../../confirm-dialog'
 import { WORDS as words } from '../../../words'
 import ConnectionRowEditor from './ConnectionRowEditor.vue'
+import ConnectionRowsHeader from './ConnectionRowsHeader.vue'
 import { useConnectionEntries } from '../../../model/useConnectionEntries'
 import { INDEXING_OPERATION, useIndexQuestion } from '../../../model/useIndexQuestion'
 import { useRowDrafts } from '../../../model/useRowDrafts'
@@ -130,17 +129,13 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
 <template>
   <section class="connection-rows">
     <PluginSettingsCard>
-      <SettingRow :at="setting.key" :name="setting.title" detail="">
-        <Button
-          v-if="stored.length > 0 && !isSingle"
-          variant="outline"
-          :disabled="drafts.length >= limit"
-          @click="onAdd"
-        >
-          <Plus :size="14" aria-hidden="true" />
-          {{ words.connectionAdd }}
-        </Button>
-      </SettingRow>
+      <ConnectionRowsHeader
+        :at="setting.key"
+        :name="setting.title"
+        :can-add="stored.length > 0 && !isSingle"
+        :is-add-disabled="drafts.length >= limit"
+        @add="onAdd"
+      />
 
       <div v-if="stored.length === 0" class="connection-rows__empty">
         <p class="connection-rows__note">{{ words.connectionRowsNone }}</p>
@@ -167,8 +162,8 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
           :row-fields="getRowFields(row.connection)"
           :is-single="isSingle"
           :types="props.connections.types.value"
-          :create="props.connections.create"
-          :update="props.connections.update"
+          :create="props.connections.edits.create"
+          :update="props.connections.edits.update"
           :is-held="heldKey === row.key"
           :is-dragging="
             drag.dragging.value?.hasMoved === true && drag.dragging.value.item === index

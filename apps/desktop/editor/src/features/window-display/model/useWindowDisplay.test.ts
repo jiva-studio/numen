@@ -186,7 +186,7 @@ describe('the stream of changes', () => {
       },
     })
 
-    await window.follow()
+    await window.streams.follow()
 
     expect(streams).toBeGreaterThanOrEqual(3)
     expect(waits.length).toBeGreaterThanOrEqual(2)
@@ -206,7 +206,7 @@ describe('the stream of changes', () => {
       },
     })
 
-    await window.follow()
+    await window.streams.follow()
 
     expect(streams).toBeGreaterThanOrEqual(2)
     expect(window.health.lost.value).toContain('lost touch with numen')
@@ -221,7 +221,7 @@ describe('the stream of changes', () => {
     })
     const one = createDisplay(core)
 
-    await one.window.follow()
+    await one.window.streams.follow()
 
     expect(one.changed).toStrictEqual(['', 'Somewhere/Else.md'])
   })
@@ -235,7 +235,7 @@ describe('the stream of changes', () => {
     })
     const one = createDisplay(core)
 
-    await one.window.follow()
+    await one.window.streams.follow()
 
     expect(one.changed).toStrictEqual(['', ''])
   })
@@ -249,7 +249,7 @@ describe('the stream of changes', () => {
     })
     const one = createDisplay(core)
 
-    await one.window.follow()
+    await one.window.streams.follow()
 
     expect(one.changed).toStrictEqual(['', 'Note.md → Renamed.md'])
   })
@@ -270,7 +270,7 @@ describe('the stream of changes', () => {
     const one = createDisplay(core)
     await one.window.opening.read()
 
-    await one.window.follow()
+    await one.window.streams.follow()
 
     expect(one.window.opening.path.value).toBe('Renamed.md')
   })
@@ -289,7 +289,7 @@ describe('the stream of changes', () => {
     const one = createDisplay(core)
     await one.window.opening.read()
 
-    await one.window.follow()
+    await one.window.streams.follow()
 
     expect(one.window.opening.path.value).toBe('Opening.md')
     expect(request).toBe(1)
@@ -421,7 +421,7 @@ describe('a note requested for from outside the window', () => {
     })
     const one = createDisplay(core)
 
-    await one.window.watch()
+    await one.window.streams.watch()
 
     expect(one.travelled).toStrictEqual(['Wanted.md'])
   })
@@ -446,7 +446,7 @@ describe('a tab requested from outside the window', () => {
       },
     })
 
-    await window.watch()
+    await window.streams.watch()
 
     expect(activated).toStrictEqual(['tab-2'])
     expect(travelled).toStrictEqual([])
@@ -475,7 +475,7 @@ describe('a place inside a source requested for from outside the window', () => 
     })
     const { window, opened, travelled } = createRecordingWindow(core)
 
-    await window.watch()
+    await window.streams.watch()
 
     expect(opened).toStrictEqual(['library/mahabharata.epub 40512 40543'])
     expect(travelled).toStrictEqual([])
@@ -498,7 +498,7 @@ describe('a place inside a source requested for from outside the window', () => 
     })
     const { window, opened } = createRecordingWindow(core)
 
-    await window.watch()
+    await window.streams.watch()
 
     expect(opened).toStrictEqual(['library/mahabharata.epub 40512 40543 41000 41020'])
   })
@@ -511,7 +511,7 @@ describe('a place inside a source requested for from outside the window', () => 
     })
     const { window, opened, travelled } = createRecordingWindow(core)
 
-    await window.watch()
+    await window.streams.watch()
 
     expect(opened).toStrictEqual([])
     expect(travelled).toStrictEqual(['Wanted.md'])

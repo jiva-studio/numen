@@ -27,6 +27,12 @@ import type { Installation, InstallationPlugin, InstallationSettings } from '../
 import type { MessageLog } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 
+/** The health items of the plugins, and the commands of the window their fixes run. */
+export interface HealthDeps {
+  items: Readonly<Ref<readonly PluginHealthItem[]>>
+  commands: Pick<CommandsHost, 'getIds' | 'run'>
+}
+
 export interface SettingsPageDeps {
   rest: SettingsStore
   connections: ConnectionStore
@@ -35,24 +41,32 @@ export interface SettingsPageDeps {
   windowTabs: WindowTabs
   getSettingsViews: InstallationPlugin['getSettingsViews']
   getPlatform: InstallationSettings['getPlatform']
-  health: Readonly<Ref<readonly PluginHealthItem[]>>
-  commands: Pick<CommandsHost, 'getIds' | 'run'>
+  health: HealthDeps
+}
+
+interface InstallationSettingsDeps {
+  appearance: ReturnType<typeof createWindowAppearance>
+  rest: SettingsStore
+  getPlatform: InstallationSettings['getPlatform']
+  reportError: (error: Caught) => void
+}
+
+interface InstallationPluginDeps {
+  rest: SettingsStore
+  retry: ReturnType<typeof createPluginRetry>
+  getSettingsViews: InstallationPlugin['getSettingsViews']
+  catalogEntries: NonNullable<InstallationPlugin['catalog']>
+  reportError: (error: Caught) => void
+  health: HealthDeps
 }
 
 interface SettingsTabConfigDeps {
-  appearance: ReturnType<typeof createWindowAppearance>
-  rest: SettingsStore
+  settings: InstallationSettingsDeps
+  plugin: InstallationPluginDeps
   connections: ConnectionStore
-  retry: ReturnType<typeof createPluginRetry>
-  getSettingsViews: InstallationPlugin['getSettingsViews']
-  getPlatform: InstallationSettings['getPlatform']
-  catalogEntries: NonNullable<InstallationPlugin['catalog']>
-  reportError: (error: Caught) => void
-  health: Readonly<Ref<readonly PluginHealthItem[]>>
-  commands: Pick<CommandsHost, 'getIds' | 'run'>
 }
 
-function createInstallationSettings(deps: SettingsTabConfigDeps) {
+function createInstallationSettings(deps: InstallationSettingsDeps) {
   const { appearance, rest, getPlatform, reportError } = deps
   /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
   const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
@@ -93,14 +107,20 @@ function createInstallationPluginFiles() {
   }
 }
 
-function createInstallationPlugin(deps: SettingsTabConfigDeps) {
-  const { rest, retry, getSettingsViews, catalogEntries, commands, reportError } = deps
+function createInstallationHealth({ items, commands }: HealthDeps, reportError: (error: Caught) => void) {
   return {
-    catalog: catalogEntries,
-    health: deps.health,
+    items,
     canRunCommand: (command: string) => commands.getIds().includes(command),
     runCommand: (command: string, values: Readonly<Record<string, string>>) =>
       runInBackground(commands.run(command, undefined, undefined, values), reportError),
+  }
+}
+
+function createInstallationPlugin(deps: InstallationPluginDeps) {
+  const { rest, retry, getSettingsViews, catalogEntries, reportError } = deps
+  return {
+    catalog: catalogEntries,
+    health: createInstallationHealth(deps.health, reportError),
     retryPlugin: (pluginId: string) => retry.retryPlugin(pluginId),
     choosePath: async (pluginId: string, key: string): Promise<string> => {
       try {
@@ -120,15 +140,17 @@ function createInstallationPlugin(deps: SettingsTabConfigDeps) {
   }
 }
 
-function createInstallationConnections({ connections }: SettingsTabConfigDeps) {
+function createInstallationConnections(connections: ConnectionStore) {
   return {
     list: connections.connections,
     types: connections.types,
     operationTitles: connections.operationTitles,
     load: () => connections.load(),
-    create: connections.create,
-    update: connections.update,
-    delete: connections.delete,
+    edits: {
+      create: connections.create,
+      update: connections.update,
+      delete: connections.delete,
+    },
     listRowOptions: async (
       connectionId: string,
       field: string,
@@ -144,9 +166,9 @@ function createInstallationConnections({ connections }: SettingsTabConfigDeps) {
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
   return {
-    settings: createInstallationSettings(deps),
-    plugin: createInstallationPlugin(deps),
-    connections: createInstallationConnections(deps),
+    settings: createInstallationSettings(deps.settings),
+    plugin: createInstallationPlugin(deps.plugin),
+    connections: createInstallationConnections(deps.connections),
   }
 }
 
@@ -160,7 +182,6 @@ export function createSettingsPage({
   getSettingsViews,
   getPlatform,
   health,
-  commands,
 }: SettingsPageDeps) {
   const getPluginName = (pluginId: string): string =>
     rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
@@ -177,16 +198,9 @@ export function createSettingsPage({
   const configured = useSettingsTab(
     windowTabs.groups.handle,
     createSettingsTabConfig({
-      appearance,
-      rest,
+      settings: { appearance, rest, getPlatform, reportError },
+      plugin: { rest, retry, getSettingsViews, catalogEntries, reportError, health },
       connections,
-      retry,
-      getSettingsViews,
-      getPlatform,
-      catalogEntries,
-      reportError,
-      health,
-      commands,
     }),
     reportError,
   )

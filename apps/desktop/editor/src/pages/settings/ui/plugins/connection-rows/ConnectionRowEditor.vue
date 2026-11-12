@@ -8,7 +8,7 @@
  * the row and the list of its first field opens, so the person chooses it at once. Closing the dialog
  * leaves the row as it was.
  */
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, useTemplateRef } from 'vue'
 import { GripVertical, X } from '@lucide/vue'
 import { Button, Select, runInBackground } from '@numen/ui'
 import type { ConnectionInfo, StoredRow } from '@/entities/connection'
@@ -18,9 +18,6 @@ import { openSelect } from '../../../model/openSelect'
 import { useRowChoices } from '../../../model/useRowChoices'
 import type { SelectChoice } from '../../../types'
 import ConnectionDialog from '../../connections/ConnectionDialog.vue'
-
-/** The identifier of the entry that adds a connection; no stored connection has it. */
-const NEW_CONNECTION = 'new-connection'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<ConnectionRowEditorProps>()
@@ -33,6 +30,9 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+/** The identifier of the entry that adds a connection; no stored connection has it. */
+const NEW_CONNECTION = 'new-connection'
+
 const { fields } = useRowChoices({
   getRow: () => props.row,
   getRowFields: () => props.rowFields,
@@ -41,11 +41,17 @@ const { fields } = useRowChoices({
 })
 
 const isAdding = ref(false)
-const fieldSelects = ref<InstanceType<typeof Select>[]>([])
+const fieldSelects = useTemplateRef<InstanceType<typeof Select>[]>('fieldSelects')
 const connectionChoices = computed<readonly SelectChoice[]>(() => [
   ...props.choices,
   { id: NEW_CONNECTION, text: words.connectionNew },
 ])
+const columns = computed(() =>
+  [
+    'minmax(0, 2fr)',
+    ...props.rowFields.map((one) => (one.isRequired ? 'minmax(0, 3fr)' : 'minmax(0, 1.2fr)')),
+  ].join(' '),
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onConnectionChoose(connection: string): void {
@@ -60,7 +66,7 @@ function onConnectionChoose(connection: string): void {
 function onConnectionSaved(saved: ConnectionInfo): void {
   emit('update', { connection: saved.id, options: {} })
   runInBackground(
-    nextTick(() => openSelect(fieldSelects.value[0]?.element)),
+    nextTick(() => openSelect(fieldSelects.value?.[0]?.element)),
     () => undefined,
   )
 }
@@ -75,14 +81,6 @@ function onFieldChoose(index: number, value: string): void {
     options: Object.fromEntries([...kept, [field.key, value]].filter(([, one]) => one !== '')),
   })
 }
-
-/* -------------------------------- Helpers --------------------------------- */
-const columns = computed(() =>
-  [
-    'minmax(0, 2fr)',
-    ...props.rowFields.map((one) => (one.isRequired ? 'minmax(0, 3fr)' : 'minmax(0, 1.2fr)')),
-  ].join(' '),
-)
 </script>
 
 <template>

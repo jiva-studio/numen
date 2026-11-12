@@ -22,7 +22,6 @@ export interface WindowSettingsDeps {
   readonly getSettingsViews: PageDeps['getSettingsViews']
   readonly getPlatform: PageDeps['getPlatform']
   readonly health?: PageDeps['health']
-  readonly commands?: PageDeps['commands']
 }
 
 export function createWindowSettingsPart(deps: WindowSettingsDeps) {
@@ -37,8 +36,10 @@ export function createWindowSettingsPart(deps: WindowSettingsDeps) {
     windowTabs: deps.windowTabs,
     getSettingsViews: deps.getSettingsViews,
     getPlatform: deps.getPlatform,
-    health: deps.health ?? shallowRef([]),
-    commands: deps.commands ?? { getIds: () => [], run: () => Promise.resolve('') },
+    health: deps.health ?? {
+      items: shallowRef([]),
+      commands: { getIds: () => [], run: () => Promise.resolve('') },
+    },
   })
   return {
     rest,

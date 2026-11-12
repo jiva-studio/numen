@@ -36,9 +36,8 @@ export function useConnectionEntries(
           ...getConnectionUsability(
             connection,
             type,
-            getOperations(),
+            { ids: getOperations(), titles: getConnections().operationTitles.value },
             USABILITY_WORDS,
-            getConnections().operationTitles.value,
           ),
         }
       }),

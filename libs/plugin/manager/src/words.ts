@@ -72,7 +72,7 @@ export const PLUGIN_WORDS = {
   pluginTabs: { settings: 'Settings', about: 'About', contributions: 'Contributes', data: 'Data' },
   pluginSections: 'Sections',
   contributionKinds: CONTRIBUTION_KINDS,
-  noSettings: 'Nothing to set up.',
+  noSettings: 'This plugin has no settings.',
   noContributions: 'Contributes nothing.',
   noPluginsMatch: (query: string) => `No plugins match “${query}”`,
   noPluginsHint: 'Search by name, description or category, such as agents or readers.',

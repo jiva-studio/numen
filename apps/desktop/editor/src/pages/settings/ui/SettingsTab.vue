@@ -17,7 +17,7 @@ const props = defineProps<{ state: SettingsTabState }>()
 /* --------------------------------- State ---------------------------------- */
 const { installation, initialSearchQuery, markedSetting } = props.state
 const health = computed(() =>
-  groupManagedHealth(installation.plugin.health.value, installation.plugin.canRunCommand),
+  groupManagedHealth(installation.plugin.health.items.value, installation.plugin.health.canRunCommand),
 )
 const {
   selectedPluginId,

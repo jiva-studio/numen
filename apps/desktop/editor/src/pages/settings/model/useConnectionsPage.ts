@@ -12,7 +12,7 @@ import {
   hasUnavailableConnection,
   type ConnectionInfo,
 } from '@/entities/connection'
-import type { InstallationConnections } from '../types'
+import type { ConnectionEdits, InstallationConnections } from '../types'
 import { WORDS as words } from '../words'
 
 function useConnectionDialog() {
@@ -51,7 +51,7 @@ function useConnectionDeletion(getConnections: () => InstallationConnections) {
   const confirmNow = async (): Promise<boolean> => {
     const asked = target.value
     if (!asked) return false
-    const answer = await getConnections().delete(asked.id)
+    const answer = await getConnections().edits.delete(asked.id)
     if (!answer.ok) {
       problem.value = answer.error
       return false
@@ -97,9 +97,9 @@ export function useConnectionsPage(getConnections: () => InstallationConnections
     hasUnavailable: computed(() => hasUnavailableConnection(connections.value)),
     dialog: useConnectionDialog(),
     deletion: useConnectionDeletion(getConnections),
-    create: (draft: Parameters<InstallationConnections['create']>[0]) =>
-      getConnections().create(draft),
-    update: (change: Parameters<InstallationConnections['update']>[0]) =>
-      getConnections().update(change),
+    create: (draft: Parameters<ConnectionEdits['create']>[0]) =>
+      getConnections().edits.create(draft),
+    update: (change: Parameters<ConnectionEdits['update']>[0]) =>
+      getConnections().edits.update(change),
   }
 }

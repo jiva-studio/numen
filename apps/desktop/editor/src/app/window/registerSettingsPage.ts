@@ -44,8 +44,7 @@ export function registerSettingsPage(deps: SettingsPageDeps): void {
     windowTabs,
     getSettingsViews: (pluginId) => plugins.host.registered.getRegisteredSettingsViews(pluginId),
     getPlatform: () => frame.platform.value,
-    health: plugins.health,
-    commands: plugins.commands,
+    health: { items: plugins.health, commands: plugins.commands },
   })
   deps.settingsRequests.subscribe(settingsPage.configured.openSettings)
   windowTabs.groups.registerKinds(settingsPage.kinds)

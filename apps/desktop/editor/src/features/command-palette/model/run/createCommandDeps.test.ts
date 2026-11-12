@@ -24,7 +24,7 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
     registry: { get: () => undefined },
     writeMessage: vi.fn(),
     settingPalette: { choose: () => Promise.resolve() },
-    search: () => undefined,
+    navigation: { search: () => undefined },
     ...override,
   }
   return { deps: createCommandDeps(options), calls, options }
@@ -76,7 +76,7 @@ describe('the commands reach the window', () => {
 
   it('opens the settings at the requested plugin and setting, or the settings tab without an opener', () => {
     const openSettings = vi.fn()
-    createOptions({ openSettings }).deps.navigator.openSettings({
+    createOptions({ navigation: { search: () => undefined, openSettings } }).deps.navigator.openSettings({
       pluginId: 'org.example.atlas',
       setting: 'source',
     })
@@ -93,7 +93,7 @@ describe('the commands reach the window', () => {
   it('searches with the search the window gave', () => {
     const search = vi.fn()
 
-    createOptions({ search }).deps.navigator.search()
+    createOptions({ navigation: { search } }).deps.navigator.search()
 
     expect(search).toHaveBeenCalledOnce()
   })

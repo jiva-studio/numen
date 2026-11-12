@@ -52,17 +52,19 @@ const setup = (
     plugins: createNoticeQueue(),
     window: { lost: ref(''), unwatched: ref(unwatched), error: ref(''), tasks },
     settings: { appearance: { state: { lost: ref('') } } },
-    health: ref(items),
-    writeMessage: () => undefined,
-    commands: {
-      getIds: () => ids,
-      run: (command, _target, _item, values) => {
-        runs.push({ command, values })
-        return Promise.resolve('')
+    health: {
+      items: ref(items),
+      commands: {
+        getIds: () => ids,
+        run: (command, _target, _item, values) => {
+          runs.push({ command, values })
+          return Promise.resolve('')
+        },
       },
+      getCommandTitle: (command) => (command === 'app:settings.open' ? 'Open settings' : ''),
+      getPluginName: (pluginId) => (pluginId === 'org.example.atlas' ? 'Atlas' : pluginId),
     },
-    getCommandTitle: (command) => (command === 'app:settings.open' ? 'Open settings' : ''),
-    getPluginName: (pluginId) => (pluginId === 'org.example.atlas' ? 'Atlas' : pluginId),
+    writeMessage: () => undefined,
   })
   const read = (): readonly BackgroundTask[] => {
     let list: readonly BackgroundTask[] = []

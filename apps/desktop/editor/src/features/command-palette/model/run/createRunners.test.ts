@@ -45,7 +45,7 @@ const setup = () => {
     runs: runSupport(),
     registry,
     writeMessage: (text, severity) => messages.push([text, severity]),
-    search: () => undefined,
+    navigation: { search: () => undefined },
   })
   return { deps, runs, messages }
 }

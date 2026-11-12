@@ -89,11 +89,13 @@ export function createPluginBackgroundTasks(deps: PluginBackgroundTasksDeps): Ba
       tasks: window.tasks,
     },
     settings: { appearance: deps.appearance },
-    health: window.pluginHealth,
+    health: {
+      items: window.pluginHealth,
+      commands: deps.commands,
+      getCommandTitle: deps.getCommandTitle,
+      getPluginName: deps.getPluginName,
+    },
     writeMessage: deps.log.getWriter('command'),
-    commands: deps.commands,
-    getCommandTitle: deps.getCommandTitle,
-    getPluginName: deps.getPluginName,
   })
 }
 

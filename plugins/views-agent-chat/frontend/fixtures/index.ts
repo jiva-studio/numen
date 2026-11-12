@@ -10,3 +10,4 @@ export {
   stopFor,
 } from './connections'
 export type { FrameInit, TaskScript } from './connections'
+export { byWholeText } from './text'

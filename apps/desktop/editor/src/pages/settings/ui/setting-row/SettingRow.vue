@@ -61,7 +61,7 @@ function onReset(): void {
 
 /* -------------------------------- Helpers --------------------------------- */
 function scrollIntoView(): void {
-  row.value?.scrollIntoView?.({ block: 'center' })
+  row.value?.scrollIntoView({ block: 'center' })
 }
 </script>
 

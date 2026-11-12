@@ -69,7 +69,7 @@ describe('the settings opened at a setting of a plugin', () => {
   it('show the page of the plugin with the item and the setting marked and in view', async () => {
     const installation = createInstallation({
       plugins: ref([ATLAS]),
-      health: ref([CONNECTION]),
+      items: ref([CONNECTION]),
     })
     const handle = { openTab: async (kind: string) => kind } as unknown as WindowHandle
     const settings = useSettingsTab(handle, installation, vi.fn())
@@ -90,7 +90,7 @@ describe('the settings opened at a setting of a plugin', () => {
   it('list the plugin with the label of its worst item', async () => {
     const installation = createInstallation({
       plugins: ref([ATLAS]),
-      health: ref([CONNECTION]),
+      items: ref([CONNECTION]),
     })
     const handle = { openTab: async (kind: string) => kind } as unknown as WindowHandle
     const settings = useSettingsTab(handle, installation, vi.fn())

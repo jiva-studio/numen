@@ -30,6 +30,12 @@ export interface UsabilityWords {
   readonly cannot: (operation: string) => string
 }
 
+/** The operations a setting needs, with the titles the plugins give them. */
+export interface RequiredOperations {
+  readonly ids: readonly string[]
+  readonly titles: OperationTitles
+}
+
 /** Whether a connection can serve the operations of a setting, and if not, why. */
 export interface Usability {
   readonly isUsable: boolean
@@ -115,16 +121,15 @@ export function moveRow<T>(rows: readonly T[], from: number, to: number): readon
 export function getConnectionUsability(
   connection: ConnectionInfo,
   type: ConnectionTypeInfo | undefined,
-  operations: readonly string[],
+  operations: RequiredOperations,
   words: UsabilityWords,
-  operationTitles: OperationTitles,
 ): Usability {
   if (!connection.isTypeAvailable || type === undefined || !type.isAvailable) {
     return { isUsable: false, reason: words.unavailable }
   }
-  const missing = operations.find((one) => !type.operations.includes(one))
+  const missing = operations.ids.find((one) => !type.operations.includes(one))
   if (missing !== undefined) {
-    return { isUsable: false, reason: words.cannot(operationTitles[missing] ?? missing) }
+    return { isUsable: false, reason: words.cannot(operations.titles[missing] ?? missing) }
   }
   if (!connection.isComplete) return { isUsable: false, reason: words.incomplete }
   return { isUsable: true, reason: '' }

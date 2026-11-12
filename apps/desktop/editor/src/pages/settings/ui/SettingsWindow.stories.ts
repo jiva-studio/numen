@@ -153,7 +153,7 @@ const createShippedInstallation = (): Installation =>
     catalog: ref(SHIPPED_CATALOG),
     getReadme: (pluginId) => Promise.resolve(SHIPPED_READMES[pluginId] ?? ''),
     getPluginData: () => Promise.resolve(42),
-    health: ref(HEALTH),
+    items: ref(HEALTH),
   })
 
 /** The settings tab opened on the list. */

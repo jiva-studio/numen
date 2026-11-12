@@ -18,7 +18,7 @@ describe('isChangedFromDefault', () => {
     expect(isChangedFromDefault(true, undefined)).toBe(false)
   })
 
-  it('tells false from the absence of a value', () => {
+  it('distinguishes false from a missing value', () => {
     expect(isChangedFromDefault(true, false)).toBe(true)
     expect(isChangedFromDefault(null, false)).toBe(true)
   })

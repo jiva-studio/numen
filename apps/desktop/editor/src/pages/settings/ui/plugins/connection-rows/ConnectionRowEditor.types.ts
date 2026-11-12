@@ -11,8 +11,8 @@ import type { Result } from '@/shared/lib/result'
 import type { SelectChoice } from '../../../types'
 
 /*
- * The calls are written as function types: Vue reads an indexed method signature such as
- * InstallationConnections['create'] as its return type and checks the prop for a Promise.
+ * The calls are written as function types: Vue reads an indexed method signature as its return
+ * type and checks the prop for a Promise.
  */
 
 /**

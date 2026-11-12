@@ -14,7 +14,7 @@ Use the AI assistants installed on your computer, such as Claude Code, Codex and
 
 ## Programs
 
-Claude Code, Codex and Antigravity speak ACP through an adapter. Leave the program of the connection empty to use the one on your PATH:
+Claude Code, Codex and Antigravity support ACP through an adapter. Leave the program of the connection empty to use the one on your PATH:
 
 - Claude Code: `claude-agent-acp` (npm `@agentclientprotocol/claude-agent-acp`) or `claude-code-acp`.
 - Codex: `codex-acp`.

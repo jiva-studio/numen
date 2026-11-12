@@ -61,11 +61,7 @@ export interface InstallationPlugin {
   readonly plugins: Readonly<Ref<readonly PluginInfo[]>>
   readonly app: Readonly<Ref<readonly PluginSettingInfo[]>>
   readonly catalog: Readonly<Ref<readonly CatalogEntry[]>>
-  readonly health: Readonly<Ref<readonly PluginHealthItem[]>>
-  /** Whether the window has a handler for the command of the full id. */
-  canRunCommand(command: string): boolean
-  /** Runs the command of the full id with the values of its arguments. */
-  runCommand(command: string, values: Readonly<Record<string, string>>): void
+  readonly health: InstallationHealth
   /** A plugin whose last start failed, started once more. */
   retryPlugin(pluginId: string): void
   /**
@@ -76,6 +72,15 @@ export interface InstallationPlugin {
   choosePath(pluginId: string, key: string): Promise<string>
   getSettingsViews(pluginId: string): ReadonlyMap<string, ViewComponent>
   readonly files: InstallationPluginFiles
+}
+
+/** The health items of the plugins, and the commands their fixes run. */
+export interface InstallationHealth {
+  readonly items: Readonly<Ref<readonly PluginHealthItem[]>>
+  /** Whether the window has a handler for the command of the full id. */
+  readonly canRunCommand: (command: string) => boolean
+  /** Runs the command of the full id with the values of its arguments. */
+  readonly runCommand: (command: string, values: Readonly<Record<string, string>>) => void
 }
 
 /** What a plugin keeps and serves as files. */
@@ -101,9 +106,7 @@ export interface InstallationConnections {
   readonly operationTitles: Readonly<Ref<OperationTitles>>
   /** Reads the types and the connections. */
   load(): Promise<void>
-  create(draft: ConnectionDraft): Promise<Result<ConnectionInfo, string>>
-  update(change: ConnectionChange): Promise<Result<ConnectionInfo, string>>
-  delete(id: string): Promise<Result<undefined, string>>
+  readonly edits: ConnectionEdits
   /**
    * The values a row field of the type of a connection can take, from the provider of its type, for the
    * values the row holds so far. `operations` are the operations the setting of rows is used for.
@@ -116,6 +119,13 @@ export interface InstallationConnections {
   ): Promise<Result<readonly RowOption[], string>>
   /** How many notes the shown vault holds. Rows of connections for embeddings say it before they index. */
   countNotes(): Promise<number>
+}
+
+/** The changes to the stored connections; each answers the connection as stored, or why it was not. */
+export interface ConnectionEdits {
+  readonly create: (draft: ConnectionDraft) => Promise<Result<ConnectionInfo, string>>
+  readonly update: (change: ConnectionChange) => Promise<Result<ConnectionInfo, string>>
+  readonly delete: (id: string) => Promise<Result<undefined, string>>
 }
 
 /** One of the choices a select offers. */

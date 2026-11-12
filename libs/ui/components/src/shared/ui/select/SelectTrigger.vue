@@ -3,20 +3,13 @@
  * The line a select shows at rest: what is in force on one line, and the mark that it opens.
  * Attributes and listeners fall through to the button.
  */
-import { useTemplateRef, type HTMLAttributes } from 'vue'
+import { useTemplateRef } from 'vue'
 import { ChevronDown } from '@lucide/vue'
 import { cn } from '@/shared/lib/dom/classes'
+import type { SelectTriggerProps } from './SelectTrigger.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{
-  text: string
-  isHushed: boolean
-  isDisabled: boolean
-  isExpanded: boolean
-  hasPopup: 'menu' | 'listbox'
-  problem?: string
-  class?: HTMLAttributes['class']
-}>()
+const props = defineProps<SelectTriggerProps>()
 
 defineExpose({
   /** The button itself. */

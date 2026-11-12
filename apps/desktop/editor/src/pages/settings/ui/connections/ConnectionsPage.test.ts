@@ -246,7 +246,7 @@ describe('the Add dialog', () => {
 
     await click(findButton(/^save$/i))
 
-    expect(installation.connections.create).not.toHaveBeenCalled()
+    expect(installation.connections.edits.create).not.toHaveBeenCalled()
     expect(dialog().querySelector('[role="alert"]')?.textContent).toContain('API key')
     dispose(wrapper)
   })
@@ -297,7 +297,7 @@ describe('the Add dialog', () => {
     await click(findButton(/^cancel$/i, dialog()))
 
     expect(root().querySelector('[role="dialog"]')).toBeNull()
-    expect(installation.connections.create).not.toHaveBeenCalled()
+    expect(installation.connections.edits.create).not.toHaveBeenCalled()
     dispose(wrapper)
   })
 })
@@ -414,7 +414,7 @@ describe('editing and deleting', () => {
 
     await click(findButton(/^cancel$/i))
 
-    expect(installation.connections.delete).not.toHaveBeenCalled()
+    expect(installation.connections.edits.delete).not.toHaveBeenCalled()
     expect(root().querySelector('[role="alertdialog"]')).toBeNull()
     dispose(wrapper)
   })

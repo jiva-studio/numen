@@ -342,7 +342,7 @@ func (l layout) listGoUses(pkg *packages.Package, file *ast.File, rel string) []
 }
 
 // listDispatchEdges links each method of an interface of the SDK to the methods of the SDK types that
-// answer it: a consumer that calls the interface method calls whichever type stands behind it.
+// answer it: a consumer that calls the interface method calls whichever type implements it.
 func (l layout) listDispatchEdges(pkg *packages.Package, seenPairs map[string]bool) [][2]string {
 	var named []*types.Named
 	addScope := func(scope *types.Scope) {
@@ -555,7 +555,7 @@ func isWithinDir(rel, dir string) bool {
 	return rel == dir || strings.HasPrefix(rel, dir+"/")
 }
 
-// classify tells whether a use in the file rel counts, passes on, or names a consumer, and which one:
+// classify reports whether a use in the file rel counts, passes on, or names a consumer, and which one:
 // a plugin by its folder, an application by its folder, any other package by its directory.
 func (l layout) classify(rel string) (place, string) {
 	if rel == "" || isTestPath(rel) || isWithinDir(rel, l.protocolDir) {

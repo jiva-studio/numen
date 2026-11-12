@@ -27,7 +27,7 @@ func TestListContributions_ListsOnlyTheSectionsTheManifestDeclares(t *testing.T)
 	}
 }
 
-func TestListContributions_GivesACommandTheKeysOfItsBinding(t *testing.T) {
+func TestListContributions_CommandHasTheKeysOfItsBinding(t *testing.T) {
 	got := plugin.ListContributions(manifest.Manifest{Contributes: manifest.Contributes{
 		Commands: []manifest.Command{{ID: "org.example.open", Title: "Open"}, {ID: "org.example.close"}},
 		Keybindings: []manifest.Keybinding{
@@ -50,7 +50,7 @@ func TestListContributions_GivesACommandTheKeysOfItsBinding(t *testing.T) {
 	}
 }
 
-func TestListContributions_TakesTheTitleAndFallsBackToTheID(t *testing.T) {
+func TestListContributions_TitleFallsBackToID(t *testing.T) {
 	got := plugin.ListContributions(manifest.Manifest{Contributes: manifest.Contributes{
 		TabKinds:        []manifest.TabKind{{Kind: "graph", Title: "Graph"}, {Kind: "list"}},
 		ConnectionTypes: []manifest.ConnectionType{{ID: "openai"}},

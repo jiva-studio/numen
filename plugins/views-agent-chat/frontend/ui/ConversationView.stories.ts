@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import ConversationView from './ConversationView.vue'
 import { frameStory } from '../fixtures/frame'
-import { createAgentConnections, failWith, say } from '../fixtures'
+import { byWholeText, createAgentConnections, failWith, say } from '../fixtures'
 
 const { host: connections } = createAgentConnections((request) => ({
   frames: [say(`Leaf mould is compost made of fallen leaves alone. You asked: ${request.prompt}`)],
@@ -57,6 +57,6 @@ export const NoAgent: Story = {
     const canvas = within(canvasElement)
     await userEvent.type(canvas.getByRole('textbox', { name: 'Ask about this card' }), 'why')
     await userEvent.click(canvas.getByRole('button', { name: 'Send' }))
-    await waitFor(() => expect(canvas.getByText('No agent is set up.')).toBeVisible())
+    await waitFor(() => expect(canvas.getByText(byWholeText('No agent is set up.'))).toBeVisible())
   },
 }

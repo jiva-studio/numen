@@ -6,9 +6,8 @@
  * again; changing the address removes the stored key. The type is chosen from a list that filters
  * as one types. A saved connection is announced with `saved` before the dialog closes.
  */
-import { Trash2 } from '@lucide/vue'
 import { computed, onMounted, useId, useTemplateRef } from 'vue'
-import { Button, Select } from '@numen/ui'
+import { Select } from '@numen/ui'
 import type {
   ConnectionChange,
   ConnectionDraft,
@@ -19,6 +18,7 @@ import type { Result } from '@/shared/lib/result'
 import type { SelectChoice } from '../../types'
 import { useConnectionForm } from '../../model/connectionForm'
 import { WORDS as words } from '../../words'
+import ConnectionDialogActions from './ConnectionDialogActions.vue'
 import ConnectionFormFields from './ConnectionFormFields.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -57,6 +57,10 @@ const type = computed(() => form.view.value.type)
 onMounted(() => dialog.value?.querySelector<HTMLElement>('input, [role="combobox"]')?.focus())
 
 /* -------------------------------- Handlers -------------------------------- */
+function onDelete(): void {
+  if (props.connection) emit('delete', props.connection)
+}
+
 function onKeepFocus(event: KeyboardEvent): void {
   const items = Array.from(
     dialog.value?.querySelectorAll<HTMLElement>(
@@ -124,26 +128,12 @@ function onKeepFocus(event: KeyboardEvent): void {
         {{ form.state.problem }}
       </p>
 
-      <div class="connection-dialog__actions">
-        <Button
-          v-if="connection"
-          type="button"
-          variant="outline"
-          class="connection-dialog__delete"
-          :aria-label="words.connectionMenuDelete"
-          :title="words.connectionMenuDelete"
-          @click="emit('delete', connection)"
-        >
-          <Trash2 :size="14" aria-hidden="true" />
-          {{ words.connectionMenuDelete }}
-        </Button>
-        <Button type="button" variant="outline" @click="emit('close')">
-          {{ words.connectionCancel }}
-        </Button>
-        <Button type="submit" variant="solid" :disabled="!type || form.state.isSaving">
-          {{ words.connectionSave }}
-        </Button>
-      </div>
+      <ConnectionDialogActions
+        :can-delete="connection !== undefined"
+        :can-save="type !== undefined && !form.state.isSaving"
+        @cancel="emit('close')"
+        @delete="onDelete"
+      />
     </form>
   </div>
 </template>
@@ -209,15 +199,5 @@ function onKeepFocus(event: KeyboardEvent): void {
 
 .connection-dialog__problem {
   color: var(--numen-alarm);
-}
-
-.connection-dialog__delete {
-  margin-inline-end: auto;
-}
-
-.connection-dialog__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.375rem;
 }
 </style>

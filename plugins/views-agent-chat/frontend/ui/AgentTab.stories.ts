@@ -9,7 +9,7 @@ import type { Conversation } from '../thread'
 import type { Turn } from '../types'
 import AgentTab from './AgentTab.vue'
 import { createAgentKind } from '../model/kind'
-import { createHost } from '../fixtures'
+import { byWholeText, createHost } from '../fixtures'
 import { useAgentConversation } from '../model/useAgentConversation'
 
 const createTab = (turn: readonly Turn[]) =>
@@ -106,7 +106,7 @@ export const NoAgent: Story = {
   }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByText('No agent is set up.')).toBeTruthy())
+    await waitFor(() => expect(canvas.getByText(byWholeText('No agent is set up.'))).toBeVisible())
     await expect(canvas.getByRole('button', { name: 'Open settings' })).toBeVisible()
   },
 }

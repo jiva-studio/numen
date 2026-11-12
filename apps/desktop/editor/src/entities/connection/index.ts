@@ -39,6 +39,7 @@ export {
   readRows,
   sortByUsability,
   writeRows,
+  type RequiredOperations,
   type RowDraft,
   type StoredRow,
 } from './lib/rows'

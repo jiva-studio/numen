@@ -169,7 +169,7 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
     runs: options.runs,
     registry,
     writeMessage,
-    search: searchRequests.request,
+    navigation: { search: searchRequests.request },
     emitEvent: options.emitEvent,
   })
   const pluginPalette = createPluginPalette({

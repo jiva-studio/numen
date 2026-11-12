@@ -211,7 +211,7 @@ describe('PluginDetail', () => {
 
   it('draws the settings slot only where the application says it has settings', () => {
     expect(mountDetail({}, true).find('.settings-stub').exists()).toBe(false)
-    expect(mountDetail({}, true).text()).toContain('Nothing to set up.')
+    expect(mountDetail({}, true).text()).toContain('This plugin has no settings.')
     expect(mountDetail({ hasSettings: true }, true).find('.settings-stub').exists()).toBe(true)
   })
 })

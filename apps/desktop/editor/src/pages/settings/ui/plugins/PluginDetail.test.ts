@@ -39,7 +39,7 @@ const createDetail = (
   const retryPlugin = vi.fn()
   const runCommand = vi.fn()
   const installation: Installation = createInstallation({
-    health: ref(health),
+    items: ref(health),
     runCommand,
     getSetting: (path) => at(file, path),
     write: (edits) => {

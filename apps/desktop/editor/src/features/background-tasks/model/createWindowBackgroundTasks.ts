@@ -8,12 +8,17 @@ import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
 import { getHealthTasks, runHealthAction, type HealthTaskDeps } from './healthTasks'
 import { useNoticeTasks, type NoticeTasksDeps } from './useNoticeTasks'
 
-export interface WindowBackgroundTasksDeps extends HealthTaskDeps {
+/** The health items of the plugins, and what their tasks read of the window. */
+export interface HealthSource extends HealthTaskDeps {
+  readonly items: Readonly<Ref<readonly PluginHealthItem[]>>
+}
+
+export interface WindowBackgroundTasksDeps {
   readonly log: MessageLog
   readonly plugins: NoticeQueue
   readonly window: NoticeTasksDeps['window'] & { readonly tasks: Readonly<Ref<readonly Task[]>> }
   readonly settings: NoticeTasksDeps['settings']
-  readonly health: Readonly<Ref<readonly PluginHealthItem[]>>
+  readonly health: HealthSource
   readonly writeMessage: MessageWriter
 }
 
@@ -28,14 +33,14 @@ export function createWindowBackgroundTasks(deps: WindowBackgroundTasksDeps) {
     window: deps.window,
     settings: deps.settings,
   })
-  const healthTasks = computed(() => getHealthTasks(deps.health.value, deps))
+  const healthTasks = computed(() => getHealthTasks(deps.health.items.value, deps.health))
   return createBackgroundTaskHost({
     tasks: computed(() => [...deps.window.tasks.value, ...healthTasks.value, ...noticeTasks.value]),
     cancelTask,
     reportCancelError: (error) =>
       deps.writeMessage(`The task was not cancelled: ${formatError(error)}`, 'error'),
     runAction: (id) =>
-      runInBackground(runHealthAction(id, deps.health.value, deps), (error) =>
+      runInBackground(runHealthAction(id, deps.health.items.value, deps.health), (error) =>
         deps.writeMessage(formatError(error), 'error'),
       ),
   })

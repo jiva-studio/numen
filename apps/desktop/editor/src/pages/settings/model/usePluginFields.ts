@@ -77,7 +77,7 @@ export function usePluginFields(deps: PluginFieldsDeps) {
 }
 
 /** Whether each setting holds a value other than its default, and the write of the default back. */
-export function useSettingDefaults(deps: PluginFieldsDeps) {
+export function createSettingDefaults(deps: PluginFieldsDeps) {
   const pluginSettings = createFieldSettings(deps)
   return {
     isChanged: (setting: PluginSettingInfo): boolean =>
