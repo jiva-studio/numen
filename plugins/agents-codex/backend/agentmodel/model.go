@@ -1,7 +1,7 @@
 // Package agentmodel holds a model that an agent program offers and the reasoning levels it supports.
 package agentmodel
 
-import "github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
+import "github.com/jiva-studio/numen/plugins/agents-codex/backend/domain/reasoning"
 
 // Model is one model of an agent program. Reasoning lists the supported levels from lowest to
 // highest, and DefaultReasoning is the one of them the program uses when none is asked for.

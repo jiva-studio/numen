@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/run"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/task"
 )
 
 // waitDelay is how long the pipes of a killed child are waited for.
@@ -48,7 +48,7 @@ func WaitForExit(cmd *exec.Cmd, stop func()) error {
 type Launcher struct{}
 
 // Start starts spec and returns the running process.
-func (Launcher) Start(ctx context.Context, spec run.Command) (run.Process, error) {
+func (Launcher) Start(ctx context.Context, spec task.Command) (task.Process, error) {
 	cmd := exec.CommandContext(ctx, spec.Path, spec.Args...)
 	cmd.Dir = spec.Dir
 	env := spec.Env

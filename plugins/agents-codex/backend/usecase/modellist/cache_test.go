@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/agentmodel"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
@@ -31,7 +30,7 @@ func TestTheLimitsOfAListing(t *testing.T) {
 func TestCodexModelCache_Retention(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	counter := filepath.Join(t.TempDir(), "starts")
-	command := agenttest.WriteScript(t, "codex",
+	command := writeScript(t, "codex",
 		"echo x >> "+counter+"\n"+
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
@@ -55,7 +54,7 @@ func TestCodexModelCache_Retention(t *testing.T) {
 // A request that ended before Codex answered keeps nothing.
 func TestAnEndedRequestKeepsNoCodexModels(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	command := agenttest.WriteScript(t, "codex",
+	command := writeScript(t, "codex",
 		`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
@@ -74,9 +73,9 @@ func TestAnEndedRequestKeepsNoCodexModels(t *testing.T) {
 // A failed listing is not retried for a while and is then requested again, and the models Codex lists then are
 // cached.
 func TestModels_FailedListingIsRequeried(t *testing.T) {
-	agenttest.NeedsShell(t)
+	needsShell(t)
 	t.Setenv("HOME", t.TempDir())
-	failing := agenttest.WriteScript(t, "codex", "exit 1\n")
+	failing := writeScript(t, "codex", "exit 1\n")
 	now := clock.NewFake(time.Unix(1000, 0))
 	cache := newTestCache(now)
 

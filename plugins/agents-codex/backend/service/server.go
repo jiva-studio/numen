@@ -1,49 +1,42 @@
 package service
 
 import (
-	"context"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/mcpendpoint"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/completion"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/modellist"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/programs"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/run"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/task"
 )
 
+// agentServer holds the use cases of the plugin.
 type agentServer struct {
-	agentrun.Service
-	settings *settings.Settings
-	programs *programs.Programs
-	runner   *run.Runner
-
+	settings   *settings.Settings
+	tasks      *task.Runner
 	completion *completion.Completion
 }
 
-func newAgentServer(isAsync bool) *agentServer {
-	models := modellist.NewCache(codexcli.Models{}, clock.System{}, isAsync)
-	s := &agentServer{
-		Service:    agentrun.Service{},
-		settings:   new(settings.Settings),
-		programs:   programs.New(codexcli.Installation{}, models),
-		runner:     run.NewRunner(codexcli.Commands{}, codexcli.Launcher{}),
-		completion: nil,
+// parts are what differs between the plugin process, a host that links the plugin in, and a test.
+// Tools is nil where the plugin has no host to list the tools on.
+type parts struct {
+	tools   task.Tools
+	isAsync bool
+}
+
+func newAgentServer(p parts) (*agentServer, error) {
+	values := new(settings.Settings)
+	tasks, err := task.New(task.Dependencies{
+		Settings: values, Finder: codexcli.Installation{}, Commands: codexcli.Commands{}, Launcher: codexcli.Launcher{},
+		Tools: p.tools, ToolServer: mcpendpoint.Server{},
+	})
+	if err != nil {
+		return nil, err
 	}
-	s.completion = completion.New(completion.Dependencies{Settings: s.settings, Asker: s, Programs: s.programs})
-	return s
-}
-
-func (s *agentServer) Ask(ctx context.Context, req *agentrun.Request, send func(*agentrun.Response) error) error {
-	return s.runner.Ask(ctx, &s.Registry, req, s.settings.ExecutablePath(), send)
-}
-
-func (s *agentServer) GetState(_ context.Context) (*agentrun.State, error) {
-	return s.programs.GetState(s.settings.ExecutablePath()), nil
-}
-
-// GetPrograms lists OpenAI Codex, whether it is installed, and the models it lists.
-func (s *agentServer) GetPrograms(ctx context.Context, commands []agentrun.ProgramCommand) ([]*agentrun.Program, error) {
-	return s.programs.GetPrograms(ctx, s.settings.ExecutablePath(), commands), nil
+	models := modellist.NewCache(codexcli.Models{}, clock.System{}, p.isAsync)
+	answers, err := completion.New(completion.Dependencies{Settings: values, Answerer: tasks, Models: models})
+	if err != nil {
+		return nil, err
+	}
+	return &agentServer{settings: values, tasks: tasks, completion: answers}, nil
 }
