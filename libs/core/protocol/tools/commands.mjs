@@ -123,29 +123,6 @@ const ts = [
   ]),
   ']',
   '',
-  '/** One argument of an app command; an `enum` argument lists the values it allows in `options`. */',
-  'export interface AppCommandArgument {',
-  '  readonly name: string',
-  '  readonly title: string',
-  '  readonly type: string',
-  '  readonly options: readonly string[]',
-  '}',
-  '',
-  '// APP_COMMANDS are the app commands that take arguments. A slot entry passes values only',
-  '// for these arguments and these values.',
-  'export const APP_COMMANDS: Readonly<Record<string, readonly AppCommandArgument[]>> = {',
-  ...appCommands.flatMap((one) => {
-    const items = one.arguments.map(
-      (argument) =>
-        `{ name: '${argument.name}', title: '${argument.title}', type: '${argument.type}', options: [${(argument.options ?? []).map((value) => `'${value}'`).join(', ')}] }`,
-    )
-    // One line where it fits, as prettier prints it.
-    const line = `  '${one.id}': [${items.join(', ')}],`
-    if (line.length <= 100) return [line]
-    return [`  '${one.id}': [`, ...items.map((item) => `    ${item},`), '  ],']
-  }),
-  '}',
-  '',
   '/** A key of the application: a chord bound to the full id of a command, with values for its arguments and a condition. */',
   'export interface AppKeybinding {',
   '  readonly key: string',

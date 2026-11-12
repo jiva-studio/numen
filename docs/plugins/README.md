@@ -229,7 +229,7 @@ export default definePlugin({
 
 ### Settings Views
 
-`context.register.settingsView({ id, component })` registers the Vue component the settings page mounts for the `settingsViews` entry with the same id. The component takes the props of `SettingsViewProps`: `pluginId` and `values`, the current value of every declared setting by key. It emits `update:setting` with a key and a value, and the host writes that value to the setting `<key>` in the object named by `<pluginId>`. `createMockPluginContext` records registrations for `getRegisteredSettingsViews()`.
+`context.register.settingsView({ id, component })` registers the Vue component the settings page mounts for the `settingsViews` entry with the same id. The component takes the props `pluginId` and `values`, the current value of every declared setting by key. It emits `update:setting` with a key and a value, and the host writes that value to the setting `<key>` in the object named by `<pluginId>`. `createMockPluginContext` records registrations for `getRegisteredSettingsViews()`.
 
 ### Views in Slots
 

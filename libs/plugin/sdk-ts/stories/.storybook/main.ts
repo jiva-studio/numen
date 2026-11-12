@@ -1,7 +1,7 @@
 import { fileURLToPath, URL } from 'node:url'
 import type { StorybookConfig } from '@storybook/vue3-vite'
 import vue from '@vitejs/plugin-vue'
-import { createStoryUtilitiesPlugin } from '../../src/vite.ts'
+import { createStoryUtilitiesPlugin } from '../../src/viteStyles.ts'
 
 /**
  * A story drawn for a picture is served by `storybook dev`, which reads no

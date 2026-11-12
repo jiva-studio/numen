@@ -2,7 +2,7 @@ import type { Result } from '../result'
 
 // ConnectionPriority says whose action a call serves. A call that names none is background, so it waits
 // behind the calls of a person's actions when its connection runs as many calls as it may.
-export type ConnectionPriority = 'interactive' | 'background'
+type ConnectionPriority = 'interactive' | 'background'
 
 // ConnectionErrorCode is why a call has no result. `canceled` is a call whose signal aborted; the other
 // three are the errors of the Go client: no row can serve the operation, every row failed, and a
@@ -10,7 +10,7 @@ export type ConnectionPriority = 'interactive' | 'background'
 export type ConnectionErrorCode = 'no_connection' | 'all_failed' | 'stopped' | 'canceled'
 
 // ConnectionFailure is one row that did not answer: the name of its connection and the reason.
-export interface ConnectionFailure {
+interface ConnectionFailure {
   readonly connectionName: string
   readonly reason: string
 }
@@ -44,18 +44,4 @@ export interface ConnectionHost {
     payload: Uint8Array,
     options?: ConnectionCallOptions,
   ): AsyncGenerator<Uint8Array, Result<Uint8Array, ConnectionError>>
-}
-
-// collectCall reads a call to its end and returns its done payload, or the error of the call.
-export const collectCall = async (
-  host: ConnectionHost,
-  operation: string,
-  payload: Uint8Array,
-  options?: ConnectionCallOptions,
-): Promise<Result<Uint8Array, ConnectionError>> => {
-  const frames = host.call(operation, payload, options)
-  for (;;) {
-    const next = await frames.next()
-    if (next.done === true) return next.value
-  }
 }
