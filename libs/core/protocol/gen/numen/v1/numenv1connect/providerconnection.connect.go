@@ -49,6 +49,9 @@ const (
 	// ProviderConnectionServiceDeleteProviderConnectionProcedure is the fully-qualified name of the
 	// ProviderConnectionService's DeleteProviderConnection RPC.
 	ProviderConnectionServiceDeleteProviderConnectionProcedure = "/numen.v1.ProviderConnectionService/DeleteProviderConnection"
+	// ProviderConnectionServiceListRowOptionsProcedure is the fully-qualified name of the
+	// ProviderConnectionService's ListRowOptions RPC.
+	ProviderConnectionServiceListRowOptionsProcedure = "/numen.v1.ProviderConnectionService/ListRowOptions"
 )
 
 // ProviderConnectionServiceClient is a client for the numen.v1.ProviderConnectionService service.
@@ -64,6 +67,9 @@ type ProviderConnectionServiceClient interface {
 	UpdateProviderConnection(context.Context, *connect.Request[v1.UpdateProviderConnectionRequest]) (*connect.Response[v1.UpdateProviderConnectionResponse], error)
 	// DeleteProviderConnection removes a connection and its secret fields.
 	DeleteProviderConnection(context.Context, *connect.Request[v1.DeleteProviderConnectionRequest]) (*connect.Response[v1.DeleteProviderConnectionResponse], error)
+	// ListRowOptions calls the operation a row field of the type of a connection names in options_from,
+	// and returns the values the field can take. A value the provider does not list is still accepted.
+	ListRowOptions(context.Context, *connect.Request[v1.ListRowOptionsRequest]) (*connect.Response[v1.ListRowOptionsResponse], error)
 }
 
 // NewProviderConnectionServiceClient constructs a client for the numen.v1.ProviderConnectionService
@@ -107,6 +113,12 @@ func NewProviderConnectionServiceClient(httpClient connect.HTTPClient, baseURL s
 			connect.WithSchema(providerConnectionServiceMethods.ByName("DeleteProviderConnection")),
 			connect.WithClientOptions(opts...),
 		),
+		listRowOptions: connect.NewClient[v1.ListRowOptionsRequest, v1.ListRowOptionsResponse](
+			httpClient,
+			baseURL+ProviderConnectionServiceListRowOptionsProcedure,
+			connect.WithSchema(providerConnectionServiceMethods.ByName("ListRowOptions")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -117,6 +129,7 @@ type providerConnectionServiceClient struct {
 	createProviderConnection    *connect.Client[v1.CreateProviderConnectionRequest, v1.CreateProviderConnectionResponse]
 	updateProviderConnection    *connect.Client[v1.UpdateProviderConnectionRequest, v1.UpdateProviderConnectionResponse]
 	deleteProviderConnection    *connect.Client[v1.DeleteProviderConnectionRequest, v1.DeleteProviderConnectionResponse]
+	listRowOptions              *connect.Client[v1.ListRowOptionsRequest, v1.ListRowOptionsResponse]
 }
 
 // ListProviderConnectionTypes calls numen.v1.ProviderConnectionService.ListProviderConnectionTypes.
@@ -144,6 +157,11 @@ func (c *providerConnectionServiceClient) DeleteProviderConnection(ctx context.C
 	return c.deleteProviderConnection.CallUnary(ctx, req)
 }
 
+// ListRowOptions calls numen.v1.ProviderConnectionService.ListRowOptions.
+func (c *providerConnectionServiceClient) ListRowOptions(ctx context.Context, req *connect.Request[v1.ListRowOptionsRequest]) (*connect.Response[v1.ListRowOptionsResponse], error) {
+	return c.listRowOptions.CallUnary(ctx, req)
+}
+
 // ProviderConnectionServiceHandler is an implementation of the numen.v1.ProviderConnectionService
 // service.
 type ProviderConnectionServiceHandler interface {
@@ -158,6 +176,9 @@ type ProviderConnectionServiceHandler interface {
 	UpdateProviderConnection(context.Context, *connect.Request[v1.UpdateProviderConnectionRequest]) (*connect.Response[v1.UpdateProviderConnectionResponse], error)
 	// DeleteProviderConnection removes a connection and its secret fields.
 	DeleteProviderConnection(context.Context, *connect.Request[v1.DeleteProviderConnectionRequest]) (*connect.Response[v1.DeleteProviderConnectionResponse], error)
+	// ListRowOptions calls the operation a row field of the type of a connection names in options_from,
+	// and returns the values the field can take. A value the provider does not list is still accepted.
+	ListRowOptions(context.Context, *connect.Request[v1.ListRowOptionsRequest]) (*connect.Response[v1.ListRowOptionsResponse], error)
 }
 
 // NewProviderConnectionServiceHandler builds an HTTP handler from the service implementation. It
@@ -197,6 +218,12 @@ func NewProviderConnectionServiceHandler(svc ProviderConnectionServiceHandler, o
 		connect.WithSchema(providerConnectionServiceMethods.ByName("DeleteProviderConnection")),
 		connect.WithHandlerOptions(opts...),
 	)
+	providerConnectionServiceListRowOptionsHandler := connect.NewUnaryHandler(
+		ProviderConnectionServiceListRowOptionsProcedure,
+		svc.ListRowOptions,
+		connect.WithSchema(providerConnectionServiceMethods.ByName("ListRowOptions")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.ProviderConnectionService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ProviderConnectionServiceListProviderConnectionTypesProcedure:
@@ -209,6 +236,8 @@ func NewProviderConnectionServiceHandler(svc ProviderConnectionServiceHandler, o
 			providerConnectionServiceUpdateProviderConnectionHandler.ServeHTTP(w, r)
 		case ProviderConnectionServiceDeleteProviderConnectionProcedure:
 			providerConnectionServiceDeleteProviderConnectionHandler.ServeHTTP(w, r)
+		case ProviderConnectionServiceListRowOptionsProcedure:
+			providerConnectionServiceListRowOptionsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -236,4 +265,8 @@ func (UnimplementedProviderConnectionServiceHandler) UpdateProviderConnection(co
 
 func (UnimplementedProviderConnectionServiceHandler) DeleteProviderConnection(context.Context, *connect.Request[v1.DeleteProviderConnectionRequest]) (*connect.Response[v1.DeleteProviderConnectionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderConnectionService.DeleteProviderConnection is not implemented"))
+}
+
+func (UnimplementedProviderConnectionServiceHandler) ListRowOptions(context.Context, *connect.Request[v1.ListRowOptionsRequest]) (*connect.Response[v1.ListRowOptionsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ProviderConnectionService.ListRowOptions is not implemented"))
 }

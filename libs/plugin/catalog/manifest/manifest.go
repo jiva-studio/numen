@@ -183,7 +183,7 @@ type Setting struct {
 	Preview     bool
 	OptionsFrom string
 	Generate    string
-	Operation   string
+	Operations  []string
 }
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.

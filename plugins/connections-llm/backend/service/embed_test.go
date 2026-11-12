@@ -94,14 +94,14 @@ func TestEmbedStopsOnAnAnswerThatDoesNotMatchTheTexts(t *testing.T) {
 	}
 }
 
-func TestProbeEmbeddingWidthEmbedsOneTextAndReturnsItsWidth(t *testing.T) {
+func TestTheProfileOfAnUnknownModelMeasuresTheWidthWithOneText(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{Dimensions: 12})
-	width, err := newTestService(t).ProbeEmbeddingWidth(newContext(t), newCall("openai-compatible", address, "", "unlisted-model"))
+	profile, err := newTestService(t).GetProfile(newContext(t), newCall("openai-compatible", address, "", "nomic-embed-text"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if width != 12 {
-		t.Errorf("width = %d, want 12", width)
+	if profile.GetWidth() != 12 || profile.GetModel() != "nomic-embed-text" || profile.GetMaxTokens() != 0 || profile.GetPooling() != "" {
+		t.Errorf("profile = %v, want a width of 12 and nothing else known", profile)
 	}
 	var body struct {
 		Input []string `json:"input"`
@@ -111,10 +111,10 @@ func TestProbeEmbeddingWidthEmbedsOneTextAndReturnsItsWidth(t *testing.T) {
 	}
 }
 
-func TestProbeEmbeddingWidthReportsTheFailureOfTheService(t *testing.T) {
+func TestTheProfileOfAnUnknownModelReportsTheFailureOfTheService(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.Fail("/embeddings", http.StatusPaymentRequired, "")
-	_, err := newTestService(t).ProbeEmbeddingWidth(newContext(t), newCall("openrouter", address, testKey, "m"))
+	_, err := newTestService(t).GetProfile(newContext(t), newCall("openrouter", address, testKey, "unlisted-model"))
 	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonPaymentRequired})
 }
 
@@ -122,7 +122,7 @@ func TestTheProfileOfAKnownModelIsReadWithNoRequest(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 	cases := map[string]struct {
 		typeID, model string
-		dimensions    int
+		width         int32
 	}{
 		"openai small":            {"openai", "text-embedding-3-small", 1536},
 		"openai large":            {"openai", "text-embedding-3-large", 3072},
@@ -133,12 +133,12 @@ func TestTheProfileOfAKnownModelIsReadWithNoRequest(t *testing.T) {
 		"compatible case ignored": {"openai-compatible", "Text-Embedding-3-Large", 3072},
 	}
 	for name, one := range cases {
-		profile, err := newTestService(t).GetModelProfile(newContext(t), newCall(one.typeID, address, "", one.model))
+		profile, err := newTestService(t).GetProfile(newContext(t), newCall(one.typeID, address, "", one.model))
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
-		if !profile.IsKnown || profile.Dimensions != one.dimensions || profile.MaxTokens <= 0 || profile.Pooling == "" {
-			t.Errorf("%s: profile = %+v", name, profile)
+		if profile.GetModel() != one.model || profile.GetWidth() != one.width || profile.GetMaxTokens() <= 0 || profile.GetPooling() == "" {
+			t.Errorf("%s: profile = %v", name, profile)
 		}
 	}
 	if len(fake.Requests()) != 0 {
@@ -146,26 +146,15 @@ func TestTheProfileOfAKnownModelIsReadWithNoRequest(t *testing.T) {
 	}
 }
 
-func TestTheProfileOfAnUnknownModelIsMarkedUnknown(t *testing.T) {
-	_, address := startFakeServer(t, fakeopenai.Config{})
-	profile, err := newTestService(t).GetModelProfile(newContext(t), newCall("openai-compatible", address, "", "nomic-embed-text"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if profile.IsKnown || profile.Dimensions != 0 {
-		t.Errorf("profile = %+v, want an unknown profile", profile)
-	}
-}
-
 func TestTheSourceOfAProfileNamesTheTypeAndTheAddressAndNeverTheKey(t *testing.T) {
 	_, address := startFakeServer(t, fakeopenai.Config{})
 	call := newCall("openai-compatible", address+"?token=abc#frag", testKey, "text-embedding-3-small")
-	profile, err := newTestService(t).GetModelProfile(newContext(t), call)
+	profile, err := newTestService(t).GetProfile(newContext(t), call)
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := "md.numen.connections.llm/openai-compatible " + address
-	if profile.Source != want {
-		t.Errorf("source = %q, want %q", profile.Source, want)
+	if profile.GetSource() != want {
+		t.Errorf("source = %q, want %q", profile.GetSource(), want)
 	}
 }

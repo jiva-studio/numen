@@ -12,9 +12,7 @@ import type {
   ConnectionDraft,
   ConnectionInfo,
   ConnectionTypeInfo,
-  ModelInfo,
-  ModelListFailure,
-  ReasoningLevelInfo,
+  RowOption,
 } from '@/entities/connection'
 import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
@@ -91,20 +89,6 @@ interface InstallationPluginFiles {
   getReadme(pluginId: string): Promise<string>
 }
 
-/** What the rows of a plugin page list from the provider of a connection. */
-interface InstallationConnectionModels {
-  /** The models a connection offers for an operation, from the provider of its type. */
-  listModels(
-    connectionId: string,
-    operation: string,
-  ): Promise<Result<readonly ModelInfo[], ModelListFailure>>
-  /** The reasoning levels a connection offers for a model. */
-  listReasoningLevels(
-    connectionId: string,
-    model: string,
-  ): Promise<Result<readonly ReasoningLevelInfo[], ModelListFailure>>
-}
-
 /**
  * The connections to services and programs, and what the rows of connections on a plugin page are
  * filled from. A value of a secret is entered once and is never read back.
@@ -117,7 +101,16 @@ export interface InstallationConnections {
   create(draft: ConnectionDraft): Promise<Result<ConnectionInfo, string>>
   update(change: ConnectionChange): Promise<Result<ConnectionInfo, string>>
   delete(id: string): Promise<Result<undefined, string>>
-  readonly models: InstallationConnectionModels
+  /**
+   * The values a row field of the type of a connection can take, from the provider of its type, for the
+   * values the row holds so far. `operations` are the operations the setting of rows is used for.
+   */
+  listRowOptions(
+    connectionId: string,
+    field: string,
+    options: Readonly<Record<string, string>>,
+    operations: readonly string[],
+  ): Promise<Result<readonly RowOption[], string>>
   /** How many notes the shown vault holds. Rows of connections for embeddings say it before they index. */
   countNotes(): Promise<number>
 }
@@ -131,11 +124,8 @@ export interface SelectChoice {
   readonly isDisabled?: boolean
 }
 
-/** Asks the provider of a connection for the models that fit an operation. */
-export type ListModels = InstallationConnectionModels['listModels']
-
-/** Asks the provider of a connection for the reasoning levels of a model. */
-export type ListReasoningLevels = InstallationConnectionModels['listReasoningLevels']
+/** Asks the provider of a connection for the values of a row field. */
+export type ListRowOptions = InstallationConnections['listRowOptions']
 
 /** What the fields of one plugin ask of the plugins of the installation. */
 export type PluginFieldsHost = Pick<InstallationPlugin, 'choosePath' | 'getSettingsViews'>

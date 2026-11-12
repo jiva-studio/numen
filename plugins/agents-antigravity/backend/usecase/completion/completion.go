@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/domain/settings"
 )
 
@@ -56,14 +57,14 @@ func New(deps Dependencies) *Completion {
 // disk. A program that is not installed, and a run that outlasts the request timeout, are failures to
 // try the next connection after. The text of a failed run does not leave the plugin.
 func (c *Completion) Complete(
-	ctx context.Context, call connection.Call, request connection.ProviderCompleteRequest,
-) (connection.CompleteResult, error) {
+	ctx context.Context, call connection.Call, request *llm.CompleteRequest,
+) (*llm.CompleteResult, error) {
 	task, err := newTask(call, request, c.deps.Settings.ExecutablePath())
 	if err != nil {
-		return connection.CompleteResult{}, connection.NewStopError(connection.ReasonBadRequest)
+		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
 	if !c.isInstalled() {
-		return connection.CompleteResult{}, connection.NewTryNextError(connection.ReasonUnreachable, 0)
+		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	limited, cancel := context.WithTimeout(ctx, c.getRequestLimit())
 	defer cancel()
@@ -78,48 +79,48 @@ func (c *Completion) Complete(
 		return nil
 	})
 	if err := ctx.Err(); err != nil {
-		return connection.CompleteResult{}, err
+		return nil, err
 	}
 	switch {
 	case limited.Err() != nil:
-		return connection.CompleteResult{}, connection.NewTryNextError(connection.ReasonTimeout, 0)
+		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	case runErr != nil, stopReason != "" && stopReason != stoppedDone, strings.TrimSpace(answer.String()) == "":
-		return connection.CompleteResult{}, connection.NewStopError(connection.ReasonUnknown)
+		return nil, connection.NewStopError(connection.ReasonUnavailable)
 	}
-	return connection.CompleteResult{Text: answer.String()}, nil
+	return &llm.CompleteResult{Text: answer.String()}, nil
 }
 
 // ListModels lists the models Antigravity offers.
-func (c *Completion) ListModels(ctx context.Context, _ connection.Call, _ string) ([]connection.Model, error) {
+func (c *Completion) ListModels(ctx context.Context, _ connection.Call, _ []string) ([]connection.Option, error) {
 	programModels, err := c.getProgramModels(ctx)
 	if err != nil {
 		return nil, err
 	}
-	models := make([]connection.Model, 0, len(programModels))
+	models := make([]connection.Option, 0, len(programModels))
 	for _, one := range programModels {
 		title := one.Title
 		if title == "" {
 			title = one.Name
 		}
-		models = append(models, connection.Model{ID: one.Name, Title: title, Operations: nil})
+		models = append(models, connection.Option{Value: one.Name, Title: title})
 	}
 	return models, nil
 }
 
 // ListReasoningLevels lists the levels of reasoning the model of the call takes, none for a model that
 // offers no choice.
-func (c *Completion) ListReasoningLevels(ctx context.Context, call connection.Call) ([]connection.ReasoningLevel, error) {
+func (c *Completion) ListReasoningLevels(ctx context.Context, call connection.Call) ([]connection.Option, error) {
 	programModels, err := c.getProgramModels(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var levels []connection.ReasoningLevel
+	var levels []connection.Option
 	for _, one := range programModels {
-		if one.Name != call.Model {
+		if one.Name != call.Options[llm.OptionModel] {
 			continue
 		}
 		for _, level := range one.ReasoningLevels {
-			levels = append(levels, connection.ReasoningLevel{Value: level.Name, Title: level.Title})
+			levels = append(levels, connection.Option{Value: level.Name, Title: level.Title})
 		}
 	}
 	return levels, nil
@@ -138,7 +139,7 @@ func (c *Completion) isInstalled() bool {
 
 func (c *Completion) getProgramModels(ctx context.Context) ([]*reasoning.Model, error) {
 	if !c.isInstalled() {
-		return nil, connection.NewTryNextError(connection.ReasonUnreachable, 0)
+		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	var models []*reasoning.Model
 	for _, one := range c.deps.Programs.GetPrograms(ctx, c.deps.Settings.ExecutablePath(), nil) {
@@ -147,9 +148,9 @@ func (c *Completion) getProgramModels(ctx context.Context) ([]*reasoning.Model, 
 	return models, nil
 }
 
-func newTask(call connection.Call, request connection.ProviderCompleteRequest, executablePath string) (*agentrun.Request, error) {
+func newTask(call connection.Call, request *llm.CompleteRequest, executablePath string) (*agentrun.Request, error) {
 	var system []string
-	var turns []connection.Message
+	var turns []*llm.Message
 	for _, message := range request.Messages {
 		switch message.Role {
 		case roleSystem:
@@ -168,13 +169,13 @@ func newTask(call connection.Call, request connection.ProviderCompleteRequest, e
 		command = []string{executablePath}
 	}
 	return &agentrun.Request{
-		Prompt: writePrompt(turns), Focus: "", Conversation: "", Context: nil, Agent: "", Model: call.Model,
+		Prompt: writePrompt(turns), Focus: "", Conversation: "", Context: nil, Agent: "", Model: call.Options[llm.OptionModel],
 		Instructions: strings.Join(system, "\n\n"), Tools: nil, MaxSteps: 0, ToolDeclarations: nil, Root: "",
-		Command: command, ToolsURL: "", ToolsToken: "", Reasoning: call.Reasoning,
+		Command: command, ToolsURL: "", ToolsToken: "", Reasoning: call.Options[llm.OptionReasoning],
 	}, nil
 }
 
-func writePrompt(turns []connection.Message) string {
+func writePrompt(turns []*llm.Message) string {
 	if len(turns) == 1 {
 		return turns[0].Text
 	}

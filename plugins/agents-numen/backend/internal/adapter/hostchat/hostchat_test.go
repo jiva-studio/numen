@@ -8,26 +8,32 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 )
 
 type fakeStream struct {
-	events []connection.ChatEvent
+	frames []*llm.ChatFrame
+	finish *llm.ChatFinish
 	next   int
 	err    error
 	closed atomic.Bool
 }
 
-func (s *fakeStream) Next() (connection.ChatEvent, bool) {
-	if s.next >= len(s.events) {
-		return connection.ChatEvent{}, false
+func (s *fakeStream) Next() bool {
+	if s.next >= len(s.frames) {
+		return false
 	}
 	s.next++
-	return s.events[s.next-1], true
+	return true
 }
 
+func (s *fakeStream) Frame() *llm.ChatFrame { return s.frames[s.next-1] }
+
+func (s *fakeStream) Finish() *llm.ChatFinish { return s.finish }
+
 func (s *fakeStream) Err() error {
-	if s.next < len(s.events) {
+	if s.next < len(s.frames) {
 		return nil
 	}
 	return s.err
@@ -38,11 +44,20 @@ func (s *fakeStream) Close() error {
 	return nil
 }
 
-func ask(t *testing.T, stream *fakeStream, openErr error) (conversation.Reply, []string, connection.ChatRequest, error) {
+func text(delta string) *llm.ChatFrame {
+	return &llm.ChatFrame{Event: &llm.ChatFrame_TextDelta{TextDelta: delta}}
+}
+
+type asked struct {
+	request  *llm.ChatRequest
+	priority connection.Priority
+}
+
+func ask(t *testing.T, stream *fakeStream, openErr error) (conversation.Reply, []string, asked, error) {
 	t.Helper()
-	var request connection.ChatRequest
-	chat := New(func(_ context.Context, asked connection.ChatRequest) (Stream, error) {
-		request = asked
+	var got asked
+	chat := New(func(_ context.Context, request *llm.ChatRequest, priority connection.Priority) (Stream, error) {
+		got = asked{request: request, priority: priority}
 		if openErr != nil {
 			return nil, openErr
 		}
@@ -61,19 +76,20 @@ func ask(t *testing.T, stream *fakeStream, openErr error) (conversation.Reply, [
 		spoken = append(spoken, text)
 		return nil
 	})
-	return reply, spoken, request, err
+	return reply, spoken, got, err
 }
 
 func TestATurnIsAskedForInteractivelyWithTheMessagesToolsAndOptions(t *testing.T) {
-	_, _, request, err := ask(t, &fakeStream{}, nil)
+	_, _, got, err := ask(t, &fakeStream{finish: &llm.ChatFinish{}}, nil)
 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if request.Priority != connection.PriorityInteractive {
-		t.Errorf("priority = %v, want interactive: a person waits for the answer", request.Priority)
+	if got.priority != connection.PriorityInteractive {
+		t.Errorf("priority = %v, want interactive: a person waits for the answer", got.priority)
 	}
-	if len(request.Messages) != 3 || request.Messages[1].ToolCalls[0].ID != "c1" || request.Messages[2].ToolCallID != "c1" {
+	request := got.request
+	if len(request.Messages) != 3 || request.Messages[1].ToolCalls[0].Id != "c1" || request.Messages[2].ToolCallId != "c1" {
 		t.Errorf("messages = %+v", request.Messages)
 	}
 	if len(request.Tools) != 1 || request.Tools[0].Name != "note_read" || request.Temperature == nil || *request.Temperature != 0.5 || request.MaxTokens != 64 {
@@ -82,11 +98,10 @@ func TestATurnIsAskedForInteractivelyWithTheMessagesToolsAndOptions(t *testing.T
 }
 
 func TestTheTextAndTheCallsOfTheStreamMakeTheReply(t *testing.T) {
-	stream := &fakeStream{events: []connection.ChatEvent{
-		{TextDelta: "Let me "}, {TextDelta: "look. "},
-		{ToolCall: &connection.ToolCall{ID: "c2", Name: "note_read", Arguments: `{"path":"A.md"}`}},
-		{Finish: &connection.Finish{Reason: connection.FinishToolCalls}},
-	}}
+	stream := &fakeStream{frames: []*llm.ChatFrame{
+		text("Let me "), text("look. "),
+		{Event: &llm.ChatFrame_ToolCall{ToolCall: &llm.ToolCall{Id: "c2", Name: "note_read", ArgumentsJson: `{"path":"A.md"}`}}},
+	}, finish: &llm.ChatFinish{Reason: llm.FinishReason_FINISH_REASON_TOOL_CALLS}}
 
 	reply, spoken, _, err := ask(t, stream, nil)
 
@@ -102,7 +117,7 @@ func TestTheTextAndTheCallsOfTheStreamMakeTheReply(t *testing.T) {
 }
 
 func TestAnAnswerEndedByTheLengthLimitIsTruncated(t *testing.T) {
-	stream := &fakeStream{events: []connection.ChatEvent{{TextDelta: "The plan"}, {Finish: &connection.Finish{Reason: connection.FinishLength}}}}
+	stream := &fakeStream{frames: []*llm.ChatFrame{text("The plan")}, finish: &llm.ChatFinish{Reason: llm.FinishReason_FINISH_REASON_LENGTH}}
 
 	reply, _, _, err := ask(t, stream, nil)
 
@@ -112,7 +127,7 @@ func TestAnAnswerEndedByTheLengthLimitIsTruncated(t *testing.T) {
 }
 
 func TestEveryStreamOfTheModelIsClosed(t *testing.T) {
-	stream := &fakeStream{events: []connection.ChatEvent{{TextDelta: "hi"}}}
+	stream := &fakeStream{frames: []*llm.ChatFrame{text("hi")}, finish: &llm.ChatFinish{Reason: llm.FinishReason_FINISH_REASON_STOP}}
 
 	if _, _, _, err := ask(t, stream, nil); err != nil {
 		t.Fatal(err)
@@ -136,7 +151,7 @@ func TestEveryRowFailingNamesEachConnectionAndReason(t *testing.T) {
 }
 
 func TestARejectionNamesTheConnectionAndTheReason(t *testing.T) {
-	_, _, _, err := ask(t, nil, &connection.RejectedError{ConnectionName: "OpenRouter", Reason: "bad request"})
+	_, _, _, err := ask(t, nil, &connection.StoppedError{ConnectionName: "OpenRouter", Reason: "bad request"})
 
 	if err == nil || err.Error() != "OpenRouter: bad request" {
 		t.Errorf("err = %v", err)
@@ -153,7 +168,7 @@ func TestACoreWithNoConnectionForTheAgentIsReportedSo(t *testing.T) {
 
 func TestAFailureInTheMiddleOfTheStreamKeepsTheTextAndNamesTheConnection(t *testing.T) {
 	stream := &fakeStream{
-		events: []connection.ChatEvent{{TextDelta: "The plan is "}},
+		frames: []*llm.ChatFrame{text("The plan is ")},
 		err:    &connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "OpenRouter", Reason: "unreachable"}}},
 	}
 

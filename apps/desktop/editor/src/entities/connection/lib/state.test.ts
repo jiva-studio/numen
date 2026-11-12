@@ -15,7 +15,7 @@ const type = (overrides: Partial<ConnectionTypeInfo> = {}): ConnectionTypeInfo =
   pluginName: 'A',
   title: 'X',
   description: '',
-  operations: ['complete', 'embed'],
+  operations: ['llm.complete', 'llm.embed'],
   fields: [
     {
       key: 'baseUrl',
@@ -27,6 +27,7 @@ const type = (overrides: Partial<ConnectionTypeInfo> = {}): ConnectionTypeInfo =
       options: [],
     },
   ],
+  rowFields: [],
   isAvailable: true,
   ...overrides,
 })
@@ -65,6 +66,26 @@ describe('getOperationsText', () => {
     expect(getOperationsText(type())).toBe('Completion · Embeddings')
     expect(getOperationsText(undefined)).toBe('')
   })
+
+  it('leaves out the operations that only list the options of a row field', () => {
+    const listed = type({
+      operations: ['llm.chat', 'llm.models'],
+      rowFields: [
+        {
+          key: 'model',
+          type: 'string',
+          title: 'Model',
+          description: '',
+          isRequired: true,
+          isAddress: false,
+          options: [],
+          optionsFrom: 'llm.models',
+        },
+      ],
+    })
+
+    expect(getOperationsText(listed)).toBe('Chat')
+  })
 })
 
 describe('getAddressText', () => {
@@ -95,22 +116,24 @@ describe('hasUnavailableConnection', () => {
 })
 
 describe('getUsedByNames', () => {
-  const use = (pluginName: string, operation = 'complete') => ({
+  const use = (pluginName: string, operation = 'llm.complete') => ({
     pluginId: `a.${pluginName.toLowerCase()}`,
     pluginName,
-    operation,
+    operations: [operation],
   })
 
   it('names the plugins in the order of the uses', () => {
     expect(getUsedByNames([use('Proofreading')])).toBe('Proofreading')
-    expect(getUsedByNames([use('Proofreading'), use('Embeddings', 'embed')])).toBe(
+    expect(getUsedByNames([use('Proofreading'), use('Embeddings', 'llm.embed')])).toBe(
       'Proofreading and Embeddings',
     )
     expect(getUsedByNames([use('A'), use('B'), use('C')])).toBe('A, B and C')
   })
 
   it('names a plugin once whatever the number of its settings', () => {
-    expect(getUsedByNames([use('Proofreading'), use('Proofreading', 'embed')])).toBe('Proofreading')
+    expect(getUsedByNames([use('Proofreading'), use('Proofreading', 'llm.embed')])).toBe(
+      'Proofreading',
+    )
   })
 
   it('returns an empty text for a connection no setting uses', () => {

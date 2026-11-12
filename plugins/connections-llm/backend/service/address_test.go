@@ -35,7 +35,7 @@ func TestAnAddressThatCannotCarryAKeyIsRefusedBeforeAnyRequest(t *testing.T) {
 func TestAnAddressWithNoAddressAtAllIsRefused(t *testing.T) {
 	call := newCall("openai-compatible", "", "", "m")
 	_, err := newTestService(t).Complete(newContext(t), call, oneUserMessage("hi"))
-	checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
+	checkFailure(t, err, failureWant{reason: connection.ReasonInvalidRequest})
 }
 
 func TestAKeyIsSentOverPlainHTTPToTheLoopbackOnly(t *testing.T) {

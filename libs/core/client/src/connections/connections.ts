@@ -35,6 +35,8 @@ export interface ConnectionFieldInfo {
   readonly min?: number
   readonly max?: number
   readonly step?: number
+  /** The operation of the type that lists the values of a row field. */
+  readonly optionsFrom?: string
 }
 
 /** A kind of connection one plugin provides. */
@@ -46,6 +48,8 @@ export interface ConnectionTypeInfo {
   readonly description: string
   readonly operations: readonly string[]
   readonly fields: readonly ConnectionFieldInfo[]
+  /** The values a row that names a connection of the type holds besides the connection. */
+  readonly rowFields: readonly ConnectionFieldInfo[]
   readonly isAvailable: boolean
 }
 
@@ -53,7 +57,7 @@ export interface ConnectionTypeInfo {
 export interface ConnectionUse {
   readonly pluginId: string
   readonly pluginName: string
-  readonly operation: string
+  readonly operations: readonly string[]
 }
 
 /** A stored connection. */
@@ -94,6 +98,7 @@ export type ConnectionErrorCode =
   | 'type_unavailable'
   | 'key_store_failed'
   | 'stale_revision'
+  | 'provider_unavailable'
 
 /** A served refusal with the reason the core gives. */
 export interface ConnectionFailure {
@@ -109,6 +114,7 @@ export type ConnectionRpc = Pick<
   | 'createProviderConnection'
   | 'updateProviderConnection'
   | 'deleteProviderConnection'
+  | 'listRowOptions'
 >
 
 /** The connections of the application. A call that cannot reach the core throws. */
@@ -118,6 +124,23 @@ export interface ConnectionClient {
   create(draft: ConnectionDraft): Promise<Result<ConnectionInfo, ConnectionFailure>>
   update(change: ConnectionChange): Promise<Result<ConnectionInfo, ConnectionFailure>>
   delete(id: string): Promise<Result<undefined, ConnectionFailure>>
+  /**
+   * The values a row field of the type of a connection can take, as its provider lists them for the
+   * values the row holds so far. `operations` are the operations the setting of rows is used for.
+   */
+  listRowOptions(
+    connectionId: string,
+    field: string,
+    options: Readonly<Record<string, string>>,
+    operations: readonly string[],
+  ): Promise<Result<readonly RowOption[], ConnectionFailure>>
+}
+
+/** One value a row field can take. `title` is the value where the provider gives none. */
+export interface RowOption {
+  readonly value: string
+  readonly title: string
+  readonly group: string
 }
 
 const toWire = (value: ConnectionValue): Value => fromJson(ValueSchema, value)
@@ -173,6 +196,7 @@ const readField = (field: ManifestConnectionField): ConnectionFieldInfo => {
     ...(field.min === undefined ? {} : { min: field.min }),
     ...(field.max === undefined ? {} : { max: field.max }),
     ...(field.step === undefined ? {} : { step: field.step }),
+    ...(field.optionsFrom === '' ? {} : { optionsFrom: field.optionsFrom }),
   }
 }
 
@@ -184,6 +208,7 @@ const readType = (type: ProviderConnectionType): ConnectionTypeInfo => ({
   description: type.description,
   operations: type.operations,
   fields: type.fields.map(readField),
+  rowFields: type.rowFields.map(readField),
   isAvailable: type.isAvailable,
 })
 
@@ -205,7 +230,7 @@ const readConnection = (connection: ProviderConnection): ConnectionInfo => {
     uses: connection.uses.map((one) => ({
       pluginId: one.pluginId,
       pluginName: one.pluginName,
-      operation: one.operation,
+      operations: one.operations,
     })),
   }
 }
@@ -224,6 +249,8 @@ const readErrorCode = (code: ProviderConnectionErrorCode): ConnectionErrorCode |
       return 'key_store_failed'
     case ProviderConnectionErrorCode.STALE_REVISION:
       return 'stale_revision'
+    case ProviderConnectionErrorCode.PROVIDER_UNAVAILABLE:
+      return 'provider_unavailable'
     case ProviderConnectionErrorCode.UNSPECIFIED:
       return undefined
   }
@@ -277,6 +304,23 @@ export const createConnectionClient = (rpc: ConnectionRpc): ConnectionClient => 
     const answer = await rpc.deleteProviderConnection({ id })
     const failure = readFailure(answer.error, answer.detail)
     return failure ? asFailure(failure) : asValue(undefined)
+  },
+  listRowOptions: async (connectionId, field, options, operations) => {
+    const answer = await rpc.listRowOptions({
+      connectionId,
+      field,
+      options: { ...options },
+      operations: [...operations],
+    })
+    const failure = readFailure(answer.error, answer.detail)
+    if (failure) return asFailure(failure)
+    return asValue(
+      answer.options.map((one) => ({
+        value: one.value,
+        title: one.title === '' ? one.value : one.title,
+        group: one.group,
+      })),
+    )
   },
 })
 

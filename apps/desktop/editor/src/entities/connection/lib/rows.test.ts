@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import type { ConnectionInfo, ConnectionTypeInfo, ModelInfo } from './types'
+import type { ConnectionFieldInfo, ConnectionInfo, ConnectionTypeInfo } from './types'
 import {
   getCompleteRows,
   getConnectionUsability,
-  listModelsForOperation,
+  getRowKey,
   moveRow,
   readRows,
   sortByUsability,
+  writeRows,
   type RowDraft,
 } from './rows'
 
@@ -22,8 +23,9 @@ const type = (overrides: Partial<ConnectionTypeInfo> = {}): ConnectionTypeInfo =
   pluginName: 'A',
   title: 'X',
   description: '',
-  operations: ['complete'],
+  operations: ['llm.complete'],
   fields: [],
+  rowFields: [],
   isAvailable: true,
   ...overrides,
 })
@@ -41,46 +43,92 @@ const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => 
   ...overrides,
 })
 
-const draft = (key: string, connectionId = 'c00000001', model = 'm', reasoning = ''): RowDraft => ({
+const rowField = (key: string, isRequired: boolean): ConnectionFieldInfo => ({
   key,
-  connection: connectionId,
-  model,
-  reasoning,
+  type: 'string',
+  title: key,
+  description: '',
+  isRequired,
+  isAddress: false,
+  options: [],
+  optionsFrom: `llm.${key}`,
 })
 
+const ROW_FIELDS = [rowField('model', true), rowField('reasoning', false)]
+
+const draft = (
+  key: string,
+  connectionId = 'c00000001',
+  options: Readonly<Record<string, string>> = { model: 'm' },
+): RowDraft => ({ key, connection: connectionId, options })
+
 describe('readRows', () => {
-  it('reads the rows of the value in force in their order', () => {
+  it('reads the rows of the value in force in their order, each field under its key', () => {
     expect(
       readRows([
         { connection: 'c1', model: 'a', reasoning: 'low' },
         { connection: 'c2', model: 'b' },
+        { connection: 'c3' },
       ]),
     ).toStrictEqual([
-      { connection: 'c1', model: 'a', reasoning: 'low' },
-      { connection: 'c2', model: 'b', reasoning: '' },
+      { connection: 'c1', options: { model: 'a', reasoning: 'low' } },
+      { connection: 'c2', options: { model: 'b' } },
+      { connection: 'c3', options: {} },
     ])
   })
 
-  it.each([[undefined], [null], ['text'], [{ connection: 'c1' }], [[1]], [[{ connection: 'c1' }]]])(
-    'reads no row from %j',
-    (value) => {
-      expect(readRows(value)).toStrictEqual([])
-    },
-  )
+  it.each([
+    [undefined],
+    [null],
+    ['text'],
+    [{ connection: 'c1' }],
+    [[1]],
+    [[{ connection: 'c1', model: 2 }]],
+  ])('reads no row from %j', (value) => {
+    expect(readRows(value)).toStrictEqual([])
+  })
+})
+
+describe('writeRows', () => {
+  it('writes the connection and each field of a row under its key', () => {
+    expect(
+      writeRows([{ connection: 'c1', options: { model: 'a', reasoning: 'low' } }]),
+    ).toStrictEqual([{ connection: 'c1', model: 'a', reasoning: 'low' }])
+  })
+})
+
+describe('getRowKey', () => {
+  it('is the same for the same values in another order of keys', () => {
+    expect(getRowKey({ connection: 'c1', options: { model: 'a', reasoning: 'low' } })).toBe(
+      getRowKey({ connection: 'c1', options: { reasoning: 'low', model: 'a' } }),
+    )
+    expect(getRowKey({ connection: 'c1', options: { model: 'a' } })).not.toBe(
+      getRowKey({ connection: 'c1', options: { model: 'b' } }),
+    )
+  })
 })
 
 describe('getCompleteRows', () => {
-  it('keeps the rows that name a connection and a model, in their order', () => {
-    const rows = getCompleteRows([
-      draft('a'),
-      draft('b', '', 'm'),
-      draft('c', 'c00000002', ''),
-      draft('d', 'c00000003', 'n', 'low'),
-    ])
+  it('keeps the rows that name a connection and a value for each required field, in their order', () => {
+    const rows = getCompleteRows(
+      [
+        draft('a'),
+        draft('b', '', { model: 'm' }),
+        draft('c', 'c00000002', { model: '' }),
+        draft('d', 'c00000003', { model: 'n', reasoning: 'low' }),
+      ],
+      () => ROW_FIELDS,
+    )
 
     expect(rows).toStrictEqual([
-      { connection: 'c00000001', model: 'm', reasoning: '' },
-      { connection: 'c00000003', model: 'n', reasoning: 'low' },
+      { connection: 'c00000001', options: { model: 'm' } },
+      { connection: 'c00000003', options: { model: 'n', reasoning: 'low' } },
+    ])
+  })
+
+  it('keeps a row of a type with no required field once it names a connection', () => {
+    expect(getCompleteRows([draft('a', 'c00000001', {})], () => [])).toStrictEqual([
+      { connection: 'c00000001', options: {} },
     ])
   })
 })
@@ -99,8 +147,8 @@ describe('moveRow', () => {
 })
 
 describe('getConnectionUsability', () => {
-  it('finds a complete connection of a type that does the operation usable', () => {
-    expect(getConnectionUsability(connection(), type(), 'complete', reasons)).toStrictEqual({
+  it('finds a complete connection of a type that serves the operations usable', () => {
+    expect(getConnectionUsability(connection(), type(), ['llm.complete'], reasons)).toStrictEqual({
       isUsable: true,
       reason: '',
     })
@@ -108,20 +156,32 @@ describe('getConnectionUsability', () => {
 
   it('gives the reason a connection cannot be used', () => {
     expect(
-      getConnectionUsability(connection(), type({ operations: ['complete'] }), 'embed', reasons),
+      getConnectionUsability(
+        connection(),
+        type({ operations: ['llm.embed'] }),
+        ['llm.embed', 'llm.profile'],
+        reasons,
+      ),
     ).toStrictEqual({
       isUsable: false,
-      reason: 'This type cannot embed',
+      reason: 'This type cannot llm.profile',
     })
     expect(
-      getConnectionUsability(connection({ isTypeAvailable: false }), type(), 'complete', reasons),
+      getConnectionUsability(
+        connection({ isTypeAvailable: false }),
+        type(),
+        ['llm.complete'],
+        reasons,
+      ),
     ).toStrictEqual({ isUsable: false, reason: 'Type unavailable' })
-    expect(getConnectionUsability(connection(), undefined, 'complete', reasons)).toStrictEqual({
+    expect(
+      getConnectionUsability(connection(), undefined, ['llm.complete'], reasons),
+    ).toStrictEqual({
       isUsable: false,
       reason: 'Type unavailable',
     })
     expect(
-      getConnectionUsability(connection({ isComplete: false }), type(), 'complete', reasons),
+      getConnectionUsability(connection({ isComplete: false }), type(), ['llm.complete'], reasons),
     ).toStrictEqual({ isUsable: false, reason: 'Incomplete' })
   })
 })
@@ -136,21 +196,5 @@ describe('sortByUsability', () => {
     ]
 
     expect(sortByUsability(items).map((one) => one.id)).toStrictEqual(['b', 'd', 'a', 'c'])
-  })
-})
-
-describe('listModelsForOperation', () => {
-  it('lists a model that the service labels for the operation or labels for none', () => {
-    const models: readonly ModelInfo[] = [
-      { id: 'a', title: 'A', operations: ['complete'] },
-      { id: 'b', title: 'B', operations: ['embed'] },
-      { id: 'c', title: 'C', operations: [] },
-    ]
-
-    expect(listModelsForOperation(models, 'complete').map((one) => one.id)).toStrictEqual([
-      'a',
-      'c',
-    ])
-    expect(listModelsForOperation(models, 'embed').map((one) => one.id)).toStrictEqual(['b', 'c'])
   })
 })

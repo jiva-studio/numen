@@ -59,7 +59,8 @@ export interface PluginSettingInfo {
   readonly step?: number | undefined
   readonly preview?: boolean | undefined
   readonly optionsFrom?: string | undefined
-  readonly operation?: string | undefined
+  /** The operations a setting of type connections is used for. */
+  readonly operations?: readonly string[] | undefined
   readonly activeOptions?: readonly PluginSettingOption[] | undefined
   readonly isShown?: boolean | undefined
   readonly value?: SettingValue | undefined

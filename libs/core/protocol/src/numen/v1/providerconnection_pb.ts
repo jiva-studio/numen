@@ -8,13 +8,15 @@ import type { Value } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_struct } from "@bufbuild/protobuf/wkt";
 import type { ManifestConnectionField } from "./manifest_pb.js";
 import { file_numen_v1_manifest } from "./manifest_pb.js";
+import type { Option } from "./settings_pb.js";
+import { file_numen_v1_settings } from "./settings_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/providerconnection.proto.
  */
 export const file_numen_v1_providerconnection: GenFile = /*@__PURE__*/
-  fileDesc("CiFudW1lbi92MS9wcm92aWRlcmNvbm5lY3Rpb24ucHJvdG8SCG51bWVuLnYxItIBChZQcm92aWRlckNvbm5lY3Rpb25UeXBlEg8KB3R5cGVfaWQYASABKAkSEQoJcGx1Z2luX2lkGAIgASgJEhMKC3BsdWdpbl9uYW1lGAMgASgJEg0KBXRpdGxlGAQgASgJEhMKC2Rlc2NyaXB0aW9uGAUgASgJEhIKCm9wZXJhdGlvbnMYBiADKAkSMQoGZmllbGRzGAcgAygLMiEubnVtZW4udjEuTWFuaWZlc3RDb25uZWN0aW9uRmllbGQSFAoMaXNfYXZhaWxhYmxlGAggASgIIsoCChJQcm92aWRlckNvbm5lY3Rpb24SCgoCaWQYASABKAkSDwoHdHlwZV9pZBgCIAEoCRIMCgRuYW1lGAMgASgJEjgKBmZpZWxkcxgEIAMoCzIoLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbi5GaWVsZHNFbnRyeRIXCg9zZWNyZXRfa2V5c19zZXQYBSADKAkSGQoRaXNfdHlwZV9hdmFpbGFibGUYBiABKAgSEAoIcmV2aXNpb24YCCABKAUSEwoLaXNfY29tcGxldGUYCSABKAgSLQoEdXNlcxgHIAMoCzIfLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvblVzZRpFCgtGaWVsZHNFbnRyeRILCgNrZXkYASABKAkSJQoFdmFsdWUYAiABKAsyFi5nb29nbGUucHJvdG9idWYuVmFsdWU6AjgBIlIKFVByb3ZpZGVyQ29ubmVjdGlvblVzZRIRCglwbHVnaW5faWQYASABKAkSEwoLcGx1Z2luX25hbWUYAiABKAkSEQoJb3BlcmF0aW9uGAMgASgJIiQKIkxpc3RQcm92aWRlckNvbm5lY3Rpb25UeXBlc1JlcXVlc3QiVgojTGlzdFByb3ZpZGVyQ29ubmVjdGlvblR5cGVzUmVzcG9uc2USLwoFdHlwZXMYASADKAsyIC5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb25UeXBlIiAKHkxpc3RQcm92aWRlckNvbm5lY3Rpb25zUmVxdWVzdCJUCh9MaXN0UHJvdmlkZXJDb25uZWN0aW9uc1Jlc3BvbnNlEjEKC2Nvbm5lY3Rpb25zGAEgAygLMhwubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uIswCCh9DcmVhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0Eg8KB3R5cGVfaWQYASABKAkSDAoEbmFtZRgCIAEoCRJFCgZmaWVsZHMYAyADKAsyNS5udW1lbi52MS5DcmVhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0LkZpZWxkc0VudHJ5EkwKB3NlY3JldHMYBCADKAsyNi5udW1lbi52MS5DcmVhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0LlNlY3JldHNFbnRyeUIDgAEBGkUKC0ZpZWxkc0VudHJ5EgsKA2tleRgBIAEoCRIlCgV2YWx1ZRgCIAEoCzIWLmdvb2dsZS5wcm90b2J1Zi5WYWx1ZToCOAEaLgoMU2VjcmV0c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEimgEKIENyZWF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlc3BvbnNlEjAKCmNvbm5lY3Rpb24YASABKAsyHC5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb24SNAoFZXJyb3IYAiABKA4yJS5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb25FcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJItkCCh9VcGRhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0EgoKAmlkGAEgASgJEhAKCHJldmlzaW9uGAIgASgFEgwKBG5hbWUYAyABKAkSRQoGZmllbGRzGAQgAygLMjUubnVtZW4udjEuVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdC5GaWVsZHNFbnRyeRJMCgdzZWNyZXRzGAUgAygLMjYubnVtZW4udjEuVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdC5TZWNyZXRzRW50cnlCA4ABARpFCgtGaWVsZHNFbnRyeRILCgNrZXkYASABKAkSJQoFdmFsdWUYAiABKAsyFi5nb29nbGUucHJvdG9idWYuVmFsdWU6AjgBGi4KDFNlY3JldHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIpoBCiBVcGRhdGVQcm92aWRlckNvbm5lY3Rpb25SZXNwb25zZRIwCgpjb25uZWN0aW9uGAEgASgLMhwubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uEjQKBWVycm9yGAIgASgOMiUubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uRXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSItCh9EZWxldGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0EgoKAmlkGAEgASgJIp8BCiBEZWxldGVQcm92aWRlckNvbm5lY3Rpb25SZXNwb25zZRI0CgVlcnJvchgBIAEoDjIlLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbkVycm9yQ29kZRIOCgZkZXRhaWwYAiABKAkSNQoMcmVtb3ZlZF91c2VzGAMgAygLMh8ubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uVXNlKvkCChtQcm92aWRlckNvbm5lY3Rpb25FcnJvckNvZGUSLgoqUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASLAooUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX05PVF9GT1VORBABEi0KKVBST1ZJREVSX0NPTk5FQ1RJT05fRVJST1JfQ09ERV9OQU1FX1RBS0VOEAISMAosUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX0lOVkFMSURfRklFTEQQAxIzCi9QUk9WSURFUl9DT05ORUNUSU9OX0VSUk9SX0NPREVfVFlQRV9VTkFWQUlMQUJMRRAEEjMKL1BST1ZJREVSX0NPTk5FQ1RJT05fRVJST1JfQ09ERV9LRVlfU1RPUkVfRkFJTEVEEAUSMQotUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX1NUQUxFX1JFVklTSU9OEAYy4AQKGVByb3ZpZGVyQ29ubmVjdGlvblNlcnZpY2USegobTGlzdFByb3ZpZGVyQ29ubmVjdGlvblR5cGVzEiwubnVtZW4udjEuTGlzdFByb3ZpZGVyQ29ubmVjdGlvblR5cGVzUmVxdWVzdBotLm51bWVuLnYxLkxpc3RQcm92aWRlckNvbm5lY3Rpb25UeXBlc1Jlc3BvbnNlEm4KF0xpc3RQcm92aWRlckNvbm5lY3Rpb25zEigubnVtZW4udjEuTGlzdFByb3ZpZGVyQ29ubmVjdGlvbnNSZXF1ZXN0GikubnVtZW4udjEuTGlzdFByb3ZpZGVyQ29ubmVjdGlvbnNSZXNwb25zZRJxChhDcmVhdGVQcm92aWRlckNvbm5lY3Rpb24SKS5udW1lbi52MS5DcmVhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0GioubnVtZW4udjEuQ3JlYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVzcG9uc2UScQoYVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uEikubnVtZW4udjEuVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdBoqLm51bWVuLnYxLlVwZGF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlc3BvbnNlEnEKGERlbGV0ZVByb3ZpZGVyQ29ubmVjdGlvbhIpLm51bWVuLnYxLkRlbGV0ZVByb3ZpZGVyQ29ubmVjdGlvblJlcXVlc3QaKi5udW1lbi52MS5EZWxldGVQcm92aWRlckNvbm5lY3Rpb25SZXNwb25zZUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_google_protobuf_struct, file_numen_v1_manifest]);
+  fileDesc("CiFudW1lbi92MS9wcm92aWRlcmNvbm5lY3Rpb24ucHJvdG8SCG51bWVuLnYxIokCChZQcm92aWRlckNvbm5lY3Rpb25UeXBlEg8KB3R5cGVfaWQYASABKAkSEQoJcGx1Z2luX2lkGAIgASgJEhMKC3BsdWdpbl9uYW1lGAMgASgJEg0KBXRpdGxlGAQgASgJEhMKC2Rlc2NyaXB0aW9uGAUgASgJEhIKCm9wZXJhdGlvbnMYBiADKAkSMQoGZmllbGRzGAcgAygLMiEubnVtZW4udjEuTWFuaWZlc3RDb25uZWN0aW9uRmllbGQSNQoKcm93X2ZpZWxkcxgJIAMoCzIhLm51bWVuLnYxLk1hbmlmZXN0Q29ubmVjdGlvbkZpZWxkEhQKDGlzX2F2YWlsYWJsZRgIIAEoCCLKAgoSUHJvdmlkZXJDb25uZWN0aW9uEgoKAmlkGAEgASgJEg8KB3R5cGVfaWQYAiABKAkSDAoEbmFtZRgDIAEoCRI4CgZmaWVsZHMYBCADKAsyKC5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb24uRmllbGRzRW50cnkSFwoPc2VjcmV0X2tleXNfc2V0GAUgAygJEhkKEWlzX3R5cGVfYXZhaWxhYmxlGAYgASgIEhAKCHJldmlzaW9uGAggASgFEhMKC2lzX2NvbXBsZXRlGAkgASgIEi0KBHVzZXMYByADKAsyHy5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb25Vc2UaRQoLRmllbGRzRW50cnkSCwoDa2V5GAEgASgJEiUKBXZhbHVlGAIgASgLMhYuZ29vZ2xlLnByb3RvYnVmLlZhbHVlOgI4ASJZChVQcm92aWRlckNvbm5lY3Rpb25Vc2USEQoJcGx1Z2luX2lkGAEgASgJEhMKC3BsdWdpbl9uYW1lGAIgASgJEhIKCm9wZXJhdGlvbnMYBCADKAlKBAgDEAQiJAoiTGlzdFByb3ZpZGVyQ29ubmVjdGlvblR5cGVzUmVxdWVzdCJWCiNMaXN0UHJvdmlkZXJDb25uZWN0aW9uVHlwZXNSZXNwb25zZRIvCgV0eXBlcxgBIAMoCzIgLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvblR5cGUiIAoeTGlzdFByb3ZpZGVyQ29ubmVjdGlvbnNSZXF1ZXN0IlQKH0xpc3RQcm92aWRlckNvbm5lY3Rpb25zUmVzcG9uc2USMQoLY29ubmVjdGlvbnMYASADKAsyHC5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb24izAIKH0NyZWF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlcXVlc3QSDwoHdHlwZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEkUKBmZpZWxkcxgDIAMoCzI1Lm51bWVuLnYxLkNyZWF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlcXVlc3QuRmllbGRzRW50cnkSTAoHc2VjcmV0cxgEIAMoCzI2Lm51bWVuLnYxLkNyZWF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlcXVlc3QuU2VjcmV0c0VudHJ5QgOAAQEaRQoLRmllbGRzRW50cnkSCwoDa2V5GAEgASgJEiUKBXZhbHVlGAIgASgLMhYuZ29vZ2xlLnByb3RvYnVmLlZhbHVlOgI4ARouCgxTZWNyZXRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASKaAQogQ3JlYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVzcG9uc2USMAoKY29ubmVjdGlvbhgBIAEoCzIcLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbhI0CgVlcnJvchgCIAEoDjIlLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbkVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAki2QIKH1VwZGF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlcXVlc3QSCgoCaWQYASABKAkSEAoIcmV2aXNpb24YAiABKAUSDAoEbmFtZRgDIAEoCRJFCgZmaWVsZHMYBCADKAsyNS5udW1lbi52MS5VcGRhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0LkZpZWxkc0VudHJ5EkwKB3NlY3JldHMYBSADKAsyNi5udW1lbi52MS5VcGRhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0LlNlY3JldHNFbnRyeUIDgAEBGkUKC0ZpZWxkc0VudHJ5EgsKA2tleRgBIAEoCRIlCgV2YWx1ZRgCIAEoCzIWLmdvb2dsZS5wcm90b2J1Zi5WYWx1ZToCOAEaLgoMU2VjcmV0c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEimgEKIFVwZGF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlc3BvbnNlEjAKCmNvbm5lY3Rpb24YASABKAsyHC5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb24SNAoFZXJyb3IYAiABKA4yJS5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb25FcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIi0KH0RlbGV0ZVByb3ZpZGVyQ29ubmVjdGlvblJlcXVlc3QSCgoCaWQYASABKAkinwEKIERlbGV0ZVByb3ZpZGVyQ29ubmVjdGlvblJlc3BvbnNlEjQKBWVycm9yGAEgASgOMiUubnVtZW4udjEuUHJvdmlkZXJDb25uZWN0aW9uRXJyb3JDb2RlEg4KBmRldGFpbBgCIAEoCRI1CgxyZW1vdmVkX3VzZXMYAyADKAsyHy5udW1lbi52MS5Qcm92aWRlckNvbm5lY3Rpb25Vc2UiwAEKFUxpc3RSb3dPcHRpb25zUmVxdWVzdBIVCg1jb25uZWN0aW9uX2lkGAEgASgJEg0KBWZpZWxkGAIgASgJEj0KB29wdGlvbnMYAyADKAsyLC5udW1lbi52MS5MaXN0Um93T3B0aW9uc1JlcXVlc3QuT3B0aW9uc0VudHJ5EhIKCm9wZXJhdGlvbnMYBCADKAkaLgoMT3B0aW9uc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEigQEKFkxpc3RSb3dPcHRpb25zUmVzcG9uc2USIQoHb3B0aW9ucxgBIAMoCzIQLm51bWVuLnYxLk9wdGlvbhI0CgVlcnJvchgCIAEoDjIlLm51bWVuLnYxLlByb3ZpZGVyQ29ubmVjdGlvbkVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkqsgMKG1Byb3ZpZGVyQ29ubmVjdGlvbkVycm9yQ29kZRIuCipQUk9WSURFUl9DT05ORUNUSU9OX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIsCihQUk9WSURFUl9DT05ORUNUSU9OX0VSUk9SX0NPREVfTk9UX0ZPVU5EEAESLQopUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX05BTUVfVEFLRU4QAhIwCixQUk9WSURFUl9DT05ORUNUSU9OX0VSUk9SX0NPREVfSU5WQUxJRF9GSUVMRBADEjMKL1BST1ZJREVSX0NPTk5FQ1RJT05fRVJST1JfQ09ERV9UWVBFX1VOQVZBSUxBQkxFEAQSMwovUFJPVklERVJfQ09OTkVDVElPTl9FUlJPUl9DT0RFX0tFWV9TVE9SRV9GQUlMRUQQBRIxCi1QUk9WSURFUl9DT05ORUNUSU9OX0VSUk9SX0NPREVfU1RBTEVfUkVWSVNJT04QBhI3CjNQUk9WSURFUl9DT05ORUNUSU9OX0VSUk9SX0NPREVfUFJPVklERVJfVU5BVkFJTEFCTEUQBzK1BQoZUHJvdmlkZXJDb25uZWN0aW9uU2VydmljZRJ6ChtMaXN0UHJvdmlkZXJDb25uZWN0aW9uVHlwZXMSLC5udW1lbi52MS5MaXN0UHJvdmlkZXJDb25uZWN0aW9uVHlwZXNSZXF1ZXN0Gi0ubnVtZW4udjEuTGlzdFByb3ZpZGVyQ29ubmVjdGlvblR5cGVzUmVzcG9uc2USbgoXTGlzdFByb3ZpZGVyQ29ubmVjdGlvbnMSKC5udW1lbi52MS5MaXN0UHJvdmlkZXJDb25uZWN0aW9uc1JlcXVlc3QaKS5udW1lbi52MS5MaXN0UHJvdmlkZXJDb25uZWN0aW9uc1Jlc3BvbnNlEnEKGENyZWF0ZVByb3ZpZGVyQ29ubmVjdGlvbhIpLm51bWVuLnYxLkNyZWF0ZVByb3ZpZGVyQ29ubmVjdGlvblJlcXVlc3QaKi5udW1lbi52MS5DcmVhdGVQcm92aWRlckNvbm5lY3Rpb25SZXNwb25zZRJxChhVcGRhdGVQcm92aWRlckNvbm5lY3Rpb24SKS5udW1lbi52MS5VcGRhdGVQcm92aWRlckNvbm5lY3Rpb25SZXF1ZXN0GioubnVtZW4udjEuVXBkYXRlUHJvdmlkZXJDb25uZWN0aW9uUmVzcG9uc2UScQoYRGVsZXRlUHJvdmlkZXJDb25uZWN0aW9uEikubnVtZW4udjEuRGVsZXRlUHJvdmlkZXJDb25uZWN0aW9uUmVxdWVzdBoqLm51bWVuLnYxLkRlbGV0ZVByb3ZpZGVyQ29ubmVjdGlvblJlc3BvbnNlElMKDkxpc3RSb3dPcHRpb25zEh8ubnVtZW4udjEuTGlzdFJvd09wdGlvbnNSZXF1ZXN0GiAubnVtZW4udjEuTGlzdFJvd09wdGlvbnNSZXNwb25zZUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_google_protobuf_struct, file_numen_v1_manifest, file_numen_v1_settings]);
 
 /**
  * ProviderConnectionType is a kind of connection one plugin provides.
@@ -50,6 +52,8 @@ export type ProviderConnectionType = Message<"numen.v1.ProviderConnectionType"> 
   description: string;
 
   /**
+   * operations are the names of the operations the type serves.
+   *
    * @generated from field: repeated string operations = 6;
    */
   operations: string[];
@@ -58,6 +62,13 @@ export type ProviderConnectionType = Message<"numen.v1.ProviderConnectionType"> 
    * @generated from field: repeated numen.v1.ManifestConnectionField fields = 7;
    */
   fields: ManifestConnectionField[];
+
+  /**
+   * row_fields are the values a row that names a connection of the type holds besides the connection.
+   *
+   * @generated from field: repeated numen.v1.ManifestConnectionField row_fields = 9;
+   */
+  rowFields: ManifestConnectionField[];
 
   /**
    * is_available is whether the plugin is installed and enabled.
@@ -163,11 +174,11 @@ export type ProviderConnectionUse = Message<"numen.v1.ProviderConnectionUse"> & 
   pluginName: string;
 
   /**
-   * operation is the operation the setting of rows needs, such as "complete".
+   * operations are the operations the setting of rows is used for, such as "llm.chat".
    *
-   * @generated from field: string operation = 3;
+   * @generated from field: repeated string operations = 4;
    */
-  operation: string;
+  operations: string[];
 };
 
 /**
@@ -416,6 +427,71 @@ export const DeleteProviderConnectionResponseSchema: GenMessage<DeleteProviderCo
   messageDesc(file_numen_v1_providerconnection, 12);
 
 /**
+ * @generated from message numen.v1.ListRowOptionsRequest
+ */
+export type ListRowOptionsRequest = Message<"numen.v1.ListRowOptionsRequest"> & {
+  /**
+   * @generated from field: string connection_id = 1;
+   */
+  connectionId: string;
+
+  /**
+   * field is the key of the row field.
+   *
+   * @generated from field: string field = 2;
+   */
+  field: string;
+
+  /**
+   * options are the values the row holds so far.
+   *
+   * @generated from field: map<string, string> options = 3;
+   */
+  options: { [key: string]: string };
+
+  /**
+   * operations are the operations the setting of rows is used for.
+   *
+   * @generated from field: repeated string operations = 4;
+   */
+  operations: string[];
+};
+
+/**
+ * Describes the message numen.v1.ListRowOptionsRequest.
+ * Use `create(ListRowOptionsRequestSchema)` to create a new message.
+ */
+export const ListRowOptionsRequestSchema: GenMessage<ListRowOptionsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_providerconnection, 13);
+
+/**
+ * @generated from message numen.v1.ListRowOptionsResponse
+ */
+export type ListRowOptionsResponse = Message<"numen.v1.ListRowOptionsResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.Option options = 1;
+   */
+  options: Option[];
+
+  /**
+   * @generated from field: numen.v1.ProviderConnectionErrorCode error = 2;
+   */
+  error: ProviderConnectionErrorCode;
+
+  /**
+   * @generated from field: string detail = 3;
+   */
+  detail: string;
+};
+
+/**
+ * Describes the message numen.v1.ListRowOptionsResponse.
+ * Use `create(ListRowOptionsResponseSchema)` to create a new message.
+ */
+export const ListRowOptionsResponseSchema: GenMessage<ListRowOptionsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_providerconnection, 14);
+
+/**
  * ProviderConnectionErrorCode is the reason a served call did not succeed. The zero value is a call
  * that succeeded.
  *
@@ -472,6 +548,14 @@ export enum ProviderConnectionErrorCode {
    * @generated from enum value: PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION = 6;
    */
   STALE_REVISION = 6,
+
+  /**
+   * PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE is a provider that cannot be started or that
+   * failed; the detail says why, for example that the key was rejected.
+   *
+   * @generated from enum value: PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE = 7;
+   */
+  PROVIDER_UNAVAILABLE = 7,
 }
 
 /**
@@ -538,6 +622,17 @@ export const ProviderConnectionService: GenService<{
     methodKind: "unary";
     input: typeof DeleteProviderConnectionRequestSchema;
     output: typeof DeleteProviderConnectionResponseSchema;
+  },
+  /**
+   * ListRowOptions calls the operation a row field of the type of a connection names in options_from,
+   * and returns the values the field can take. A value the provider does not list is still accepted.
+   *
+   * @generated from rpc numen.v1.ProviderConnectionService.ListRowOptions
+   */
+  listRowOptions: {
+    methodKind: "unary";
+    input: typeof ListRowOptionsRequestSchema;
+    output: typeof ListRowOptionsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_providerconnection, 0);

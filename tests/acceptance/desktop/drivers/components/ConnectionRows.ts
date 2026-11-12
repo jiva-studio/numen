@@ -20,13 +20,15 @@ export class ConnectionRows {
 
   async chooseConnection(row: Locator, name: string): Promise<void> {
     await row.getByRole('button', { name: 'Connection', exact: true }).click()
-    await this.page.getByRole('menuitemradio', { name: new RegExp(`^${escapeRegExp(name)}`) }).click()
+    await this.page
+      .getByRole('menuitemradio', { name: new RegExp(`^${escapeRegExp(name)}`) })
+      .click()
   }
 
   /** The model is searched in the list the service gives, and typed when the list does not hold it. */
   async chooseModel(row: Locator, model: string): Promise<void> {
     await row.getByRole('button', { name: 'Model', exact: true }).click()
-    const search = this.page.getByRole('combobox', { name: 'Search models' })
+    const search = this.page.getByRole('combobox', { name: 'Search model' })
     await search.fill(model)
     await search.press('Enter')
   }

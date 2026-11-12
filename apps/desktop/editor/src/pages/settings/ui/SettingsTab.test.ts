@@ -313,7 +313,7 @@ describe('the settings tab', () => {
           title: 'Connections',
           description: '',
           default: undefined,
-          operation: 'complete',
+          operations: ['llm.complete'],
           max: 5,
           isShown: true,
         },

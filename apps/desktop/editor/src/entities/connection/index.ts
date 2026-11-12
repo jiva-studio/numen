@@ -1,7 +1,7 @@
 /** The connections to services and programs, and what the form of one is built from. */
 export { createConnectionStore } from './model/connections'
 export type { ConnectionStore } from './model/connections'
-export { listModels, listReasoningLevels } from './api/connections'
+export { listRowOptions } from './api/connections'
 export type {
   ConnectionChange,
   ConnectionDraft,
@@ -9,9 +9,7 @@ export type {
   ConnectionInfo,
   ConnectionTypeInfo,
   ConnectionValue,
-  ModelInfo,
-  ModelListFailure,
-  ReasoningLevelInfo,
+  RowOption,
 } from './lib/types'
 export {
   createFieldValues,
@@ -35,10 +33,11 @@ export {
 export {
   getCompleteRows,
   getConnectionUsability,
-  listModelsForOperation,
+  getRowKey,
   moveRow,
   readRows,
   sortByUsability,
+  writeRows,
   type RowDraft,
   type StoredRow,
 } from './lib/rows'

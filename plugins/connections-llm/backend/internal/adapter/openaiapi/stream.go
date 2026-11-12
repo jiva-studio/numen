@@ -12,9 +12,10 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 )
 
-// sendError is a send that failed: the receiver of the events is gone.
+// sendError is a send that failed: the receiver of the frames is gone.
 type sendError struct{ err error }
 
 func (e *sendError) Error() string { return e.err.Error() }
@@ -51,10 +52,10 @@ type streamChunk struct {
 const maxStreamedCalls = 128
 
 type chatReader struct {
-	send   func(connection.ChatEvent) error
-	calls  []connection.ToolCall
+	send   func(*llm.ChatFrame) error
+	calls  []*llm.ToolCall
 	finish string
-	isOpen bool
+	reason llm.FinishReason
 	isDone bool
 }
 
@@ -85,27 +86,33 @@ func readLines(ctx context.Context, reader *bufio.Reader) <-chan streamLine {
 	return lines
 }
 
-func readChatStream(ctx context.Context, reader *bufio.Reader, wait time.Duration, send func(connection.ChatEvent) error) error {
-	state := &chatReader{send: send, calls: nil, finish: "", isOpen: false, isDone: false}
+func readChatStream(ctx context.Context, reader *bufio.Reader, wait time.Duration, send func(*llm.ChatFrame) error) (*llm.ChatFinish, error) {
+	state := &chatReader{send: send, calls: nil, finish: "", reason: llm.FinishReason_FINISH_REASON_STOP, isDone: false}
 	if isWholeReply(reader) {
 		answer, err := io.ReadAll(reader)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		return state.read(answer)
+		if err := state.read(answer); err != nil {
+			return nil, err
+		}
+		if !state.isDone {
+			return nil, errStreamEnded
+		}
+		return &llm.ChatFinish{Reason: state.reason}, nil
 	}
 	lines := readLines(ctx, reader)
 	var data bytes.Buffer
 	for !state.isDone {
 		one, err := awaitLine(ctx, lines, wait)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if err := state.takeLine(&data, one); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return &llm.ChatFinish{Reason: state.reason}, nil
 }
 
 func awaitLine(ctx context.Context, lines <-chan streamLine, wait time.Duration) (streamLine, error) {
@@ -188,7 +195,7 @@ func (r *chatReader) read(data []byte) error {
 	}
 	choice := chunk.Choices[0]
 	if text := choice.Delta.Content; text != "" {
-		if err := r.emit(connection.ChatEvent{TextDelta: text}); err != nil {
+		if err := r.emit(&llm.ChatFrame{Event: &llm.ChatFrame_TextDelta{TextDelta: text}}); err != nil {
 			return err
 		}
 	}
@@ -210,19 +217,18 @@ func (r *chatReader) readMessage(message *streamedMessage) error {
 		return nil
 	}
 	if message.Content != "" {
-		if err := r.emit(connection.ChatEvent{TextDelta: message.Content}); err != nil {
+		if err := r.emit(&llm.ChatFrame{Event: &llm.ChatFrame_TextDelta{TextDelta: message.Content}}); err != nil {
 			return err
 		}
 	}
 	for _, call := range message.ToolCalls {
-		r.calls = append(r.calls, connection.ToolCall{ID: call.ID, Name: call.Function.Name, Arguments: call.Function.Arguments})
+		r.calls = append(r.calls, &llm.ToolCall{Id: call.ID, Name: call.Function.Name, ArgumentsJson: call.Function.Arguments})
 	}
 	return nil
 }
 
-func (r *chatReader) emit(event connection.ChatEvent) error {
-	r.isOpen = true
-	if err := r.send(event); err != nil {
+func (r *chatReader) emit(frame *llm.ChatFrame) error {
+	if err := r.send(frame); err != nil {
 		return &sendError{err: err}
 	}
 	return nil
@@ -231,45 +237,45 @@ func (r *chatReader) emit(event connection.ChatEvent) error {
 func (r *chatReader) merge(pieces []streamPiece) error {
 	for _, piece := range pieces {
 		if piece.Index < 0 || piece.Index >= maxStreamedCalls {
-			return &streamError{err: connection.NewStopError(connection.ReasonUnknown)}
+			return &streamError{err: connection.NewStopError(connection.ReasonUnavailable)}
 		}
 		for len(r.calls) <= piece.Index {
-			r.calls = append(r.calls, connection.ToolCall{})
+			r.calls = append(r.calls, &llm.ToolCall{})
 		}
-		call := &r.calls[piece.Index]
-		if call.ID == "" {
-			call.ID = piece.ID
+		call := r.calls[piece.Index]
+		if call.Id == "" {
+			call.Id = piece.ID
 		}
 		if call.Name == "" {
 			call.Name = piece.Function.Name
 		}
-		call.Arguments += piece.Function.Arguments
+		call.ArgumentsJson += piece.Function.Arguments
 	}
 	return nil
 }
 
 func (r *chatReader) end() error {
-	reason := connection.FinishStop
+	reason := llm.FinishReason_FINISH_REASON_STOP
 	for _, call := range r.calls {
-		if call.ID == "" && call.Name == "" {
+		if call.GetId() == "" && call.GetName() == "" {
 			continue
 		}
-		if strings.TrimSpace(call.Arguments) == "" {
-			call.Arguments = "{}"
+		if strings.TrimSpace(call.GetArgumentsJson()) == "" {
+			call.ArgumentsJson = "{}"
 		}
-		if err := r.emit(connection.ChatEvent{ToolCall: &call}); err != nil {
+		if err := r.emit(&llm.ChatFrame{Event: &llm.ChatFrame_ToolCall{ToolCall: call}}); err != nil {
 			return err
 		}
-		reason = connection.FinishToolCalls
+		reason = llm.FinishReason_FINISH_REASON_TOOL_CALLS
 	}
 	switch r.finish {
 	case "length":
-		reason = connection.FinishLength
+		reason = llm.FinishReason_FINISH_REASON_LENGTH
 	case "tool_calls", "function_call":
-		reason = connection.FinishToolCalls
+		reason = llm.FinishReason_FINISH_REASON_TOOL_CALLS
 	}
-	r.isDone = true
-	return r.emit(connection.ChatEvent{Finish: &connection.Finish{Reason: reason}})
+	r.isDone, r.reason = true, reason
+	return nil
 }
 
 func readStreamError(raw json.RawMessage) error {
@@ -281,7 +287,7 @@ func readStreamError(raw json.RawMessage) error {
 			return mapStatusCode(status, "", time.Time{})
 		}
 	}
-	return connection.NewStopError(connection.ReasonUnknown)
+	return connection.NewStopError(connection.ReasonUnavailable)
 }
 
 type streamedMessage struct {

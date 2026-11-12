@@ -12,7 +12,29 @@
         "id": "openrouter",
         "title": "OpenRouter",
         "description": "One key for many models.",
-        "operations": ["complete", "embed", "chat"],
+        "operations": [
+          "llm.complete",
+          "llm.chat",
+          "llm.embed",
+          "llm.profile",
+          "llm.models",
+          "llm.reasoning"
+        ],
+        "rowFields": [
+          {
+            "key": "model",
+            "type": "string",
+            "title": "Model",
+            "required": true,
+            "optionsFrom": "llm.models"
+          },
+          {
+            "key": "reasoning",
+            "type": "enum",
+            "title": "Reasoning",
+            "optionsFrom": "llm.reasoning"
+          }
+        ],
         "fields": [
           {
             "key": "baseUrl",
@@ -37,7 +59,29 @@
         "id": "openai",
         "title": "OpenAI",
         "description": "Models from OpenAI.",
-        "operations": ["complete", "embed", "chat"],
+        "operations": [
+          "llm.complete",
+          "llm.chat",
+          "llm.embed",
+          "llm.profile",
+          "llm.models",
+          "llm.reasoning"
+        ],
+        "rowFields": [
+          {
+            "key": "model",
+            "type": "string",
+            "title": "Model",
+            "required": true,
+            "optionsFrom": "llm.models"
+          },
+          {
+            "key": "reasoning",
+            "type": "enum",
+            "title": "Reasoning",
+            "optionsFrom": "llm.reasoning"
+          }
+        ],
         "fields": [
           {
             "key": "baseUrl",
@@ -62,7 +106,29 @@
         "id": "openai-compatible",
         "title": "OpenAI-compatible server",
         "description": "A server with the OpenAI API, such as Ollama or LM Studio.",
-        "operations": ["complete", "embed", "chat"],
+        "operations": [
+          "llm.complete",
+          "llm.chat",
+          "llm.embed",
+          "llm.profile",
+          "llm.models",
+          "llm.reasoning"
+        ],
+        "rowFields": [
+          {
+            "key": "model",
+            "type": "string",
+            "title": "Model",
+            "required": true,
+            "optionsFrom": "llm.models"
+          },
+          {
+            "key": "reasoning",
+            "type": "enum",
+            "title": "Reasoning",
+            "optionsFrom": "llm.reasoning"
+          }
+        ],
         "fields": [
           {
             "key": "baseUrl",

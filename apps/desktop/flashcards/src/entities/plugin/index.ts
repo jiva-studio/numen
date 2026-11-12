@@ -1,4 +1,4 @@
 /** The plugins the application has installed, the commands the window gives them and their models. */
-export { getPluginModels } from './api/models'
+export { getPluginConnections } from './api/connections'
 export { listPlugins } from './api/plugins'
 export { createWindowCommands } from './model/createWindowCommands'

@@ -3,8 +3,8 @@ import {
   AgentService,
   CatalogService,
   CommandService,
+  ConnectionCallService,
   FileService,
-  ModelService,
   NoteService,
   PluginService,
   ProviderConnectionService,
@@ -39,7 +39,7 @@ const SERVICES = {
   pluginService: PluginService,
   pluginCatalog: CatalogService,
   connections: ProviderConnectionService,
-  models: ModelService,
+  connectionCalls: ConnectionCallService,
 } as const
 
 type ClientName = keyof typeof SERVICES

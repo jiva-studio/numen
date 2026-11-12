@@ -106,15 +106,6 @@ func (s *Source) OpenProvider(_ context.Context, pluginID string) (connectionpor
 	return s.provider, release, nil
 }
 
-// OpenCatalog records the plugin and returns the provider as a catalog.
-func (s *Source) OpenCatalog(_ context.Context, pluginID string) (connectionport.ModelCatalog, func(), error) {
-	release, err := s.open(pluginID)
-	if err != nil {
-		return nil, nil, err
-	}
-	return s.provider, release, nil
-}
-
 func (s *Source) open(pluginID string) (func(), error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -234,19 +225,21 @@ type World struct {
 	next        int
 }
 
-// New creates a world with two plugins that provide the types server (complete and embed) and, for the
-// first plugin, completer (complete only).
+// New creates a world with two plugins that provide the type server (llm.complete, llm.embed, llm.chat
+// and the list llm.models of its row field model) and, for the first plugin, completer (llm.complete only).
 func New() *World {
 	address := manifest.ConnectionField{Key: addressField, Type: "string", Title: "Address", IsAddress: true, IsRequired: true}
 	key := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key", IsRequired: true}
 	minimum, step := 1.0, 1.0
 	parallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: "number", Title: "Parallel requests", Default: float64(2), Min: &minimum, Step: &step}
 	optionalKey := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key"}
+	modelField := manifest.ConnectionField{Key: ModelOption, Type: "string", Title: "Model", IsRequired: true, OptionsFrom: ModelsOperation}
 	maximum := 8.0
 	agentParallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: "number", Title: "Parallel requests", Default: float64(1), Min: &minimum, Max: &maximum, Step: &step}
 	serverType := func(pluginID string) connection.Type {
 		return connection.Type{PluginID: pluginID, PluginName: pluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
 			ID: "server", Title: "Server", Operations: getBothOperations(), Fields: []manifest.ConnectionField{address, key},
+			RowFields: []manifest.ConnectionField{modelField},
 		}}
 	}
 	types := &fixedTypes{list: []connection.Type{
@@ -323,8 +316,9 @@ func (w *World) ChangeRevision(t *testing.T, connectionID string) {
 	}
 }
 
+// Row is a row that names the connection with the model as its option.
 func Row(entry Entry, model string) connection.Row {
-	return connection.Row{ConnectionID: entry.ID, Model: model}
+	return connection.Row{ConnectionID: entry.ID, Options: map[string]string{ModelOption: model}}
 }
 
 // Clock is a clock that stands still until Advance moves it.
@@ -388,9 +382,20 @@ func (w *World) AddLimited(t *testing.T, name, address string, parallelRequests 
 
 const addressField = "baseUrl"
 
-func getBothOperations() []string { return []string{"complete", "embed", "chat"} }
+// The operations of the fake provider, the list of models of its row field and the key of that field.
+const (
+	CompleteOperation = "llm.complete"
+	EmbedOperation    = "llm.embed"
+	ChatOperation     = "llm.chat"
+	ModelsOperation   = "llm.models"
+	ModelOption       = "model"
+)
 
-func getCompleteOnly() []string { return []string{"complete"} }
+func getBothOperations() []string {
+	return []string{CompleteOperation, EmbedOperation, ChatOperation, ModelsOperation}
+}
+
+func getCompleteOnly() []string { return []string{CompleteOperation} }
 
 // AddAgent creates a connection of the type agent, which has no address and no key and runs one call at a
 // time.

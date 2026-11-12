@@ -8,6 +8,7 @@ export const WORDS = {
   file: 'numen.json in the configuration folder',
   /** Accessible name of the search field in a long model list. */
   searchModels: 'Search models',
+  searchValues: (title: string) => `Search ${title.toLowerCase()}`,
   searchConnections: 'Search connections',
   /** Accessible name of the info button next to a setting title. */
   aboutSetting: (name: string) => `About ${name}`,
@@ -57,9 +58,7 @@ export const WORDS = {
   connectionRowsOpen: 'Open Connections',
   connectionRowsChoose: 'Choose a connection',
   connectionRowsConnection: 'Connection',
-  connectionRowsModel: 'Model',
-  connectionRowsModelPlaceholder: 'Choose or type a model',
-  connectionRowsReasoning: 'Reasoning',
+  connectionRowsValuePlaceholder: (title: string) => `Choose or type a ${title.toLowerCase()}`,
   connectionRowsDefault: 'Default',
   connectionRowsIndexQuestion: (count: number | undefined, name: string) =>
     count === undefined
@@ -76,7 +75,8 @@ export const WORDS = {
   connectionRowsDropped: (position: number, count: number) =>
     `Dropped at position ${position} of ${count}.`,
   connectionRowsCancelled: 'Move cancelled.',
-  connectionRowsModelsFailed: 'The models could not be listed:',
+  connectionRowsOptionsFailed: (title: string, detail: string) =>
+    `The values of ${title} could not be listed: ${detail}`,
   connectionCannot: (operation: string) => `This type cannot ${operation}`,
   /** The label of the action that opens a plugin's settings. */
   configure: 'Configure',

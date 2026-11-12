@@ -22,12 +22,12 @@ func TestATryNextErrorCarriesItsReasonAndRetryAfter(t *testing.T) {
 }
 
 func TestAStopErrorCarriesItsReason(t *testing.T) {
-	err := fmt.Errorf("call: %w", NewStopError(ReasonBadRequest))
+	err := fmt.Errorf("call: %w", NewStopError(ReasonInvalidRequest))
 	if !IsStop(err) {
 		t.Fatal("IsStop = false")
 	}
-	if reason, ok := GetReason(err); !ok || reason != ReasonBadRequest {
-		t.Errorf("GetReason = %v, %v, want bad request", reason, ok)
+	if reason, ok := GetReason(err); !ok || reason != ReasonInvalidRequest {
+		t.Errorf("GetReason = %v, %v, want invalid request", reason, ok)
 	}
 	if _, isTryNext := IsTryNext(err); isTryNext {
 		t.Error("a stop error is a try-next")
@@ -46,13 +46,11 @@ func TestAPlainErrorIsNeitherFailure(t *testing.T) {
 
 func TestAFailureErrorTextNamesTheReasonAndNoServiceText(t *testing.T) {
 	for reason, want := range map[Reason]string{
-		ReasonKeyRejected:     "key rejected",
+		ReasonRejectedKey:     "key rejected",
 		ReasonPaymentRequired: "payment required",
 		ReasonRateLimited:     "rate limited",
-		ReasonUnreachable:     "unreachable",
-		ReasonTimeout:         "timeout",
-		ReasonBadRequest:      "bad request",
-		ReasonUnknown:         "unknown",
+		ReasonUnavailable:     "unavailable",
+		ReasonInvalidRequest:  "invalid request",
 	} {
 		if got := NewStopError(reason).Error(); got != want {
 			t.Errorf("NewStopError(%d).Error() = %q, want %q", reason, got, want)

@@ -22,7 +22,7 @@ const (
 const rowsManifest = `{
 	"id": "` + rowsPlugin + `", "name": "Rows", "version": "1.0.0", "protocol": 1,
 	"capabilities": [], "targets": ["desktop.editor"],
-	"settings": [{"key": "connections", "type": "connections", "title": "Connections", "operation": "complete", "max": 3}]
+	"settings": [{"key": "connections", "type": "connections", "title": "Connections", "operations": ["llm.complete"], "max": 3}]
 }`
 
 const rowsInstallation = `{
@@ -73,7 +73,7 @@ func TestTheConnectionsListWhereTheirRowsAre(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != 2 || len(entries[0].Uses) != 1 || entries[0].Uses[0].PluginID != rowsPlugin || entries[0].Uses[0].PluginName != "Rows" || entries[0].Uses[0].Operation != "complete" {
+	if len(entries) != 2 || len(entries[0].Uses) != 1 || entries[0].Uses[0].PluginID != rowsPlugin || entries[0].Uses[0].PluginName != "Rows" || !slices.Equal(entries[0].Uses[0].Operations, []string{"llm.complete"}) {
 		t.Errorf("uses of the first connection = %+v", entries[0].Uses)
 	}
 }
@@ -115,7 +115,7 @@ func TestAPluginAsksTheRowsOfItsOwnSettingForAConnection(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
 	setModelCalls(plugins(cfg), noNotices{}.ReportSetAside)
 
-	_, err := cfg.PluginHost.Endpoint.GetModelCalls().Complete(t.Context(), rowsPlugin, modelcall.CompleteRequest{}, modelcall.PriorityBackground)
+	_, err := cfg.PluginHost.Endpoint.GetModelCalls().Call(t.Context(), rowsPlugin, modelcall.Request{Operation: "llm.complete"}, func([]byte) error { return nil })
 
 	var failed *connection.AllFailedError
 	if !errors.As(err, &failed) {
@@ -135,7 +135,7 @@ func TestAPluginWithoutRowsGetsNoConnection(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
 	setModelCalls(plugins(cfg), noNotices{}.ReportSetAside)
 
-	_, err := cfg.PluginHost.Endpoint.GetModelCalls().Complete(t.Context(), "md.numen.sample.other", modelcall.CompleteRequest{}, modelcall.PriorityBackground)
+	_, err := cfg.PluginHost.Endpoint.GetModelCalls().Call(t.Context(), "md.numen.sample.other", modelcall.Request{Operation: "llm.complete"}, func([]byte) error { return nil })
 
 	if !errors.Is(err, connection.ErrNoConnection) {
 		t.Errorf("err = %v, want ErrNoConnection", err)

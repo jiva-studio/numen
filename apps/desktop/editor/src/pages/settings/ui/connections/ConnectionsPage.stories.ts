@@ -38,7 +38,7 @@ const SERVICE: ConnectionTypeInfo = {
   pluginName: 'Sample connections',
   title: 'Sample service',
   description: 'One key for many models.',
-  operations: ['complete', 'embed'],
+  operations: ['llm.complete', 'llm.embed'],
   fields: [
     field({
       key: 'baseUrl',
@@ -49,6 +49,7 @@ const SERVICE: ConnectionTypeInfo = {
     field({ key: 'apiKey', title: 'API key', type: 'secret', isRequired: true }),
     parallel,
   ],
+  rowFields: [],
   isAvailable: true,
 }
 
@@ -82,7 +83,7 @@ const AGENT: ConnectionTypeInfo = {
   pluginName: 'Sample agent',
   title: 'Sample agent',
   description: 'A program that runs on this computer.',
-  operations: ['complete'],
+  operations: ['llm.complete'],
   fields: [],
 }
 

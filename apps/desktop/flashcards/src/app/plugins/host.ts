@@ -20,7 +20,7 @@ import {
 } from '@numen/plugin-loader'
 import { createNamedIcon } from '@numen/ui'
 import { openExternalUrl, type NoticeQueue, type WindowPlatform } from '@numen/workbench'
-import { getPluginModels } from '@/entities/plugin'
+import { getPluginConnections } from '@/entities/plugin'
 import type { WindowTabs } from '@/entities/tab'
 import { TARGET } from '@/shared/lib/window'
 
@@ -73,7 +73,7 @@ export function createShellHost(deps: ShellHostDeps) {
     getWindow: () => services.window,
     getBackgroundTasks: () => services.backgroundTasks,
     getAgent: () => agent,
-    getModels: (pluginId) => getPluginModels(pluginId),
+    getConnections: (pluginId) => getPluginConnections(pluginId),
   })
   const { views } = pluginHost.contextHost
 

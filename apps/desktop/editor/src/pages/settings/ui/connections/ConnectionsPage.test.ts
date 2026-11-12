@@ -48,8 +48,9 @@ const type = (
   pluginName: 'Sample connections',
   title,
   description: '',
-  operations: ['complete', 'embed'],
+  operations: ['llm.complete', 'llm.embed'],
   fields,
+  rowFields: [],
   isAvailable: true,
   ...overrides,
 })
@@ -76,7 +77,7 @@ const SERVER = type('md.numen.sample/server', 'Sample server', [
   field({ key: 'baseUrl', title: 'Address', isAddress: true, isRequired: true }),
   field({ key: 'apiKey', title: 'API key', type: 'secret' }),
 ])
-const AGENT = type('md.numen.sample/agent', 'Sample agent', [], { operations: ['complete'] })
+const AGENT = type('md.numen.sample/agent', 'Sample agent', [], { operations: ['llm.complete'] })
 
 const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => ({
   id: 'c00000001',
@@ -395,9 +396,13 @@ describe('editing and deleting', () => {
       {
         pluginId: 'md.numen.tools.proofreading',
         pluginName: 'Proofreading',
-        operation: 'complete',
+        operations: ['llm.complete'],
       },
-      { pluginId: 'md.numen.engines.embeddings', pluginName: 'Embeddings', operation: 'embed' },
+      {
+        pluginId: 'md.numen.engines.embeddings',
+        pluginName: 'Embeddings',
+        operations: ['llm.embed'],
+      },
     ]
     const { wrapper } = mountPage(
       [connection({ uses }), connection({ id: 'c00000002', name: 'Spare' })],

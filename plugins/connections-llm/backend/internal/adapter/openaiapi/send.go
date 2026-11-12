@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -28,12 +27,12 @@ func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Dur
 		return err
 	}
 	if !servicetype.IsKnown(call.Type) {
-		return connection.NewStopError(connection.ReasonBadRequest)
+		return connection.NewStopError(connection.ReasonInvalidRequest)
 	}
 	key := call.Secrets[servicetype.SecretAPIKey].Value
 	base, err := address.Parse(call.Fields[servicetype.FieldBaseURL], key != "")
 	if err != nil {
-		return connection.NewStopError(connection.ReasonBadRequest)
+		return connection.NewStopError(connection.ReasonInvalidRequest)
 	}
 	isLoopbackRequired := base.Scheme == address.SchemeHTTP && key != ""
 
@@ -43,11 +42,11 @@ func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Dur
 
 	request, err := newRequest(limited, target, base, key, in)
 	if err != nil {
-		return connection.NewStopError(connection.ReasonUnknown)
+		return connection.NewStopError(connection.ReasonUnavailable)
 	}
 	response, err := g.clients.get(isLoopbackRequired).Do(request)
 	if err != nil {
-		return classifyTransportError(ctx, limited, err)
+		return classifyTransportError(ctx, err)
 	}
 	defer closeBody(response.Body)
 	if response.StatusCode < 200 || response.StatusCode > 299 {
@@ -55,10 +54,10 @@ func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Dur
 	}
 	body, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBytes+1))
 	if err != nil {
-		return classifyTransportError(ctx, limited, err)
+		return classifyTransportError(ctx, err)
 	}
 	if len(body) > maxResponseBytes || json.Unmarshal(body, out) != nil {
-		return connection.NewStopError(connection.ReasonUnknown)
+		return connection.NewStopError(connection.ReasonUnavailable)
 	}
 	return nil
 }
@@ -97,16 +96,16 @@ func closeBody(body io.Closer) {
 	}
 }
 
-func classifyTransportError(parent, limit context.Context, err error) error {
+// classifyTransportError reads a request that got no answer: the end of the call as it is, an address the
+// domain refuses as a stop, and a service that is unreachable or slow as unavailable.
+func classifyTransportError(parent context.Context, err error) error {
 	switch {
 	case parent.Err() != nil:
 		return parent.Err()
 	case address.IsError(err):
-		return connection.NewStopError(connection.ReasonBadRequest)
-	case errors.Is(limit.Err(), context.DeadlineExceeded) || errors.Is(err, context.DeadlineExceeded):
-		return connection.NewTryNextError(connection.ReasonTimeout, 0)
+		return connection.NewStopError(connection.ReasonInvalidRequest)
 	}
-	return connection.NewTryNextError(connection.ReasonUnreachable, 0)
+	return connection.NewTryNextError(connection.ReasonUnavailable, 0)
 }
 
 func (g *Gateway) mapStatus(response *http.Response) error {
@@ -116,17 +115,17 @@ func (g *Gateway) mapStatus(response *http.Response) error {
 func mapStatusCode(status int, retryAfter string, now time.Time) error {
 	switch {
 	case status == http.StatusUnauthorized || status == http.StatusForbidden:
-		return connection.NewTryNextError(connection.ReasonKeyRejected, 0)
+		return connection.NewTryNextError(connection.ReasonRejectedKey, 0)
 	case status == http.StatusPaymentRequired:
 		return connection.NewTryNextError(connection.ReasonPaymentRequired, 0)
 	case status == http.StatusTooManyRequests:
 		return connection.NewTryNextError(connection.ReasonRateLimited, parseRetryAfter(retryAfter, now))
 	case status == http.StatusBadGateway || status == http.StatusServiceUnavailable || status == http.StatusGatewayTimeout:
-		return connection.NewTryNextError(connection.ReasonUnreachable, 0)
+		return connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	case status >= 400 && status < 500:
-		return connection.NewStopError(connection.ReasonBadRequest)
+		return connection.NewStopError(connection.ReasonInvalidRequest)
 	}
-	return connection.NewStopError(connection.ReasonUnknown)
+	return connection.NewStopError(connection.ReasonUnavailable)
 }
 
 func parseRetryAfter(value string, now time.Time) time.Duration {

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/acp"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/agents"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/settings"
@@ -64,62 +65,62 @@ func New(deps Dependencies) (*Completion, error) {
 // request is refused. A program that cannot be found, and a session that outlasts the request timeout,
 // are failures to try the next connection after. The text of a failed session does not leave the plugin.
 func (c *Completion) Complete(
-	ctx context.Context, call connection.Call, request connection.ProviderCompleteRequest,
-) (connection.CompleteResult, error) {
+	ctx context.Context, call connection.Call, request *llm.CompleteRequest,
+) (*llm.CompleteResult, error) {
 	system, prompt, err := splitMessages(request.Messages)
 	if err != nil {
-		return connection.CompleteResult{}, connection.NewStopError(connection.ReasonBadRequest)
+		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
 	agent, err := c.getCallAgent(call)
 	if err != nil {
-		return connection.CompleteResult{}, err
+		return nil, err
 	}
 	limited, cancel := context.WithTimeout(ctx, c.getRequestLimit())
 	defer cancel()
 
-	text, runErr := c.deps.Answerer.Answer(limited, agent, call.Model, call.Reasoning, system, prompt)
+	text, runErr := c.deps.Answerer.Answer(limited, agent, call.Options[llm.OptionModel], call.Options[llm.OptionReasoning], system, prompt)
 	if err := ctx.Err(); err != nil {
-		return connection.CompleteResult{}, err
+		return nil, err
 	}
 	switch {
 	case limited.Err() != nil:
-		return connection.CompleteResult{}, connection.NewTryNextError(connection.ReasonTimeout, 0)
+		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	case runErr != nil, strings.TrimSpace(text) == "":
-		return connection.CompleteResult{}, connection.NewStopError(connection.ReasonUnknown)
+		return nil, connection.NewStopError(connection.ReasonUnavailable)
 	}
-	return connection.CompleteResult{Text: text}, nil
+	return &llm.CompleteResult{Text: text}, nil
 }
 
 // ListModels lists the models the program the call names reports.
-func (c *Completion) ListModels(ctx context.Context, call connection.Call, _ string) ([]connection.Model, error) {
+func (c *Completion) ListModels(ctx context.Context, call connection.Call, _ []string) ([]connection.Option, error) {
 	listing, err := c.readListing(ctx, call)
 	if err != nil {
 		return nil, err
 	}
-	models := make([]connection.Model, 0, len(listing.Models))
+	models := make([]connection.Option, 0, len(listing.Models))
 	for _, one := range listing.Models {
 		title := one.Name
 		if title == "" {
 			title = one.ID
 		}
-		models = append(models, connection.Model{ID: one.ID, Title: title, Operations: nil})
+		models = append(models, connection.Option{Value: one.ID, Title: title})
 	}
 	return models, nil
 }
 
 // ListReasoningLevels lists the levels of reasoning the program reports for the model it answers with.
 // A model of the call other than that one is listed with none.
-func (c *Completion) ListReasoningLevels(ctx context.Context, call connection.Call) ([]connection.ReasoningLevel, error) {
+func (c *Completion) ListReasoningLevels(ctx context.Context, call connection.Call) ([]connection.Option, error) {
 	listing, err := c.readListing(ctx, call)
 	if err != nil {
 		return nil, err
 	}
-	if call.Model != "" && call.Model != listing.Current {
+	if call.Options[llm.OptionModel] != "" && call.Options[llm.OptionModel] != listing.Current {
 		return nil, nil
 	}
-	levels := make([]connection.ReasoningLevel, 0, len(listing.Levels))
+	levels := make([]connection.Option, 0, len(listing.Levels))
 	for _, one := range listing.Levels {
-		levels = append(levels, connection.ReasoningLevel{Value: one.Name, Title: one.Title})
+		levels = append(levels, connection.Option{Value: one.Name, Title: one.Title})
 	}
 	return levels, nil
 }
@@ -135,13 +136,13 @@ func (c *Completion) readListing(ctx context.Context, call connection.Call) (acp
 func (c *Completion) getCallAgent(call connection.Call) (agents.Agent, error) {
 	program := strings.TrimSpace(call.Fields[fieldProgram])
 	if program == "" {
-		return agents.Agent{}, connection.NewStopError(connection.ReasonBadRequest)
+		return agents.Agent{}, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
 	if c.deps.LookPath == nil {
-		return agents.Agent{}, connection.NewTryNextError(connection.ReasonUnreachable, 0)
+		return agents.Agent{}, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	if _, err := c.deps.LookPath(program); err != nil {
-		return agents.Agent{}, connection.NewTryNextError(connection.ReasonUnreachable, 0)
+		return agents.Agent{}, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	return agents.NewFromProgram(program), nil
 }
@@ -153,9 +154,9 @@ func (c *Completion) getRequestLimit() time.Duration {
 	return defaultRequestLimit
 }
 
-func splitMessages(messages []connection.Message) (system, prompt string, err error) {
+func splitMessages(messages []*llm.Message) (system, prompt string, err error) {
 	var instructions []string
-	var turns []connection.Message
+	var turns []*llm.Message
 	for _, message := range messages {
 		switch message.Role {
 		case roleSystem:
@@ -172,7 +173,7 @@ func splitMessages(messages []connection.Message) (system, prompt string, err er
 	return strings.Join(instructions, "\n\n"), writePrompt(turns), nil
 }
 
-func writePrompt(turns []connection.Message) string {
+func writePrompt(turns []*llm.Message) string {
 	if len(turns) == 1 {
 		return turns[0].Text
 	}

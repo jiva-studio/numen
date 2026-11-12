@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
@@ -50,8 +52,8 @@ func recordingCodex(t *testing.T) (string, func() (string, []string)) {
 	return script, read
 }
 
-func userMessage(text string) connection.ProviderCompleteRequest {
-	return connection.ProviderCompleteRequest{Messages: []connection.Message{{Role: "user", Text: text}}}
+func userMessage(text string) *llm.CompleteRequest {
+	return &llm.CompleteRequest{Messages: []*llm.Message{{Role: "user", Text: text}}}
 }
 
 func TestCompleteReturnsTheAnswerOfCodex(t *testing.T) {
@@ -60,8 +62,8 @@ func TestCompleteReturnsTheAnswerOfCodex(t *testing.T) {
 
 	result, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("fix this"))
 
-	if err != nil || result.Text != "fixed" {
-		t.Errorf("Complete = %q, %v, want %q", result.Text, err, "fixed")
+	if err != nil || result.GetText() != "fixed" {
+		t.Errorf("Complete = %q, %v, want %q", result.GetText(), err, "fixed")
 	}
 }
 
@@ -70,8 +72,8 @@ func TestCompleteStartsCodexWithTheModelTheInstructionsAndNoTool(t *testing.T) {
 	svc := newAgentServer(false)
 	svc.settings.Apply(map[string]string{"executablePath": script})
 
-	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex", Model: "gpt-x", Reasoning: "high"}, connection.ProviderCompleteRequest{
-		Messages: []connection.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: "fix this"}},
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex", Options: map[string]string{llm.OptionModel: "gpt-x", llm.OptionReasoning: "high"}}, &llm.CompleteRequest{
+		Messages: []*llm.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: "fix this"}},
 	})
 
 	if err != nil {
@@ -99,8 +101,8 @@ func TestCompleteJoinsTheTurnsOfAConversationIntoOnePrompt(t *testing.T) {
 	svc := newAgentServer(false)
 	svc.settings.Apply(map[string]string{"executablePath": script})
 
-	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, connection.ProviderCompleteRequest{
-		Messages: []connection.Message{
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, &llm.CompleteRequest{
+		Messages: []*llm.Message{
 			{Role: "user", Text: "one"}, {Role: "assistant", Text: "two"}, {Role: "user", Text: "three"},
 		},
 	})
@@ -159,10 +161,10 @@ func TestCompleteRunsCodexInAnEmptyFolderThatIsRemoved(t *testing.T) {
 func TestCompleteRefusesARequestWithNoUserMessage(t *testing.T) {
 	svc := newCodex(t, "exit 0\n")
 
-	for name, request := range map[string]connection.ProviderCompleteRequest{
+	for name, request := range map[string]*llm.CompleteRequest{
 		"no message":   {},
-		"system only":  {Messages: []connection.Message{{Role: "system", Text: "be brief"}}},
-		"unknown role": {Messages: []connection.Message{{Role: "tool", Text: "x"}}},
+		"system only":  {Messages: []*llm.Message{{Role: "system", Text: "be brief"}}},
+		"unknown role": {Messages: []*llm.Message{{Role: "tool", Text: "x"}}},
 	} {
 		_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, request)
 		if !connection.IsStop(err) {
@@ -180,7 +182,7 @@ func TestAMissingCodexIsUnreachable(t *testing.T) {
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
 	}
-	if reason, _ := connection.GetReason(err); reason != connection.ReasonUnreachable {
+	if reason, _ := connection.GetReason(err); reason != connection.ReasonUnavailable {
 		t.Errorf("reason = %v, want unreachable", reason)
 	}
 }
@@ -217,7 +219,7 @@ func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
 	}
-	if reason, _ := connection.GetReason(err); reason != connection.ReasonTimeout {
+	if reason, _ := connection.GetReason(err); reason != connection.ReasonUnavailable {
 		t.Errorf("reason = %v, want timeout", reason)
 	}
 }
@@ -241,34 +243,36 @@ func TestTheModelsOfCodexAreListedForTheRow(t *testing.T) {
 		"while read -r _; do :; done\n")
 	t.Setenv("HOME", t.TempDir())
 
-	models, err := svc.completion.ListModels(t.Context(), connection.Call{Type: "codex"}, "complete")
+	models, err := svc.completion.ListModels(t.Context(), connection.Call{Type: "codex"}, []string{llm.OperationComplete})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var ids []string
 	for _, one := range models {
-		ids = append(ids, one.ID)
+		ids = append(ids, one.Value)
 	}
 	if !slices.Equal(ids, []string{"gpt-x", "gpt-y"}) || models[0].Title != "GPT X" {
 		t.Errorf("models = %+v", models)
 	}
-	levels, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "codex", Model: "gpt-x"})
+	levels, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "codex", Options: map[string]string{llm.OptionModel: "gpt-x"}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(levels) != 2 || levels[0].Value != "low" || levels[1].Value != "high" || levels[1].Title != "High" {
 		t.Errorf("levels = %+v", levels)
 	}
-	none, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "codex", Model: "gpt-y"})
+	none, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "codex", Options: map[string]string{llm.OptionModel: "gpt-y"}})
 	if err != nil || len(none) != 0 {
 		t.Errorf("levels of a model with none = %+v, %v", none, err)
 	}
 }
 
-func TestTheProviderFillsTheRolesOfCompleteAndModels(t *testing.T) {
+func TestTheProviderServesCompleteAndTheListsOfModelsAndReasoningLevels(t *testing.T) {
 	provider := newAgentServer(false).Provider()
-	if provider.Completer == nil || provider.Models == nil || provider.Embedder != nil || provider.Profiles != nil {
-		t.Errorf("provider = %+v, want complete and the models alone", provider)
+	served := slices.Sorted(maps.Keys(provider))
+	want := []string{llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
+	if !slices.Equal(served, want) {
+		t.Errorf("operations = %v, want %v", served, want)
 	}
 }
 

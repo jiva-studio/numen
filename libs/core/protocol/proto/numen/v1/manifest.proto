@@ -118,10 +118,14 @@ message ManifestConnectionType {
   string id = 1;
   string title = 2;
   string description = 3;
-  // operations are the calls the type supports, such as "complete" and "embed". Lowercase words.
+  // operations are the names of the operations the type serves, such as "llm.chat": lowercase words
+  // joined by dots. The core knows them as names only.
   repeated string operations = 4;
   // fields are the values a connection of the type holds, in the order the form shows them.
   repeated ManifestConnectionField fields = 5;
+  // row_fields are the values a row that names a connection of the type holds besides the connection,
+  // such as a model. The core hands them to the provider as the options of the call.
+  repeated ManifestConnectionField row_fields = 6;
 }
 
 // ManifestConnectionField is one value a connection of a type holds.
@@ -145,6 +149,9 @@ message ManifestConnectionField {
   optional double min = 10;
   optional double max = 11;
   optional double step = 12;
+  // options_from names an operation of the type whose done frame is a numen.v1.Options message: the
+  // values a row field can take. It is called with the options the row holds so far.
+  string options_from = 13;
 }
 
 // ManifestTextKind is the readable name of one kind of text version a plugin makes. The application
@@ -327,9 +334,11 @@ message ManifestSetting {
   string options_from = 19;
   // generate makes the host fill an empty value; "token" is 32 random bytes in hex.
   string generate = 20;
-  // operation is the operation a setting of type connections needs of each connection, such as
-  // "complete". max is the number of rows.
-  string operation = 21;
+  // operations are the operations a setting of type connections is used for, such as "llm.chat". A
+  // call of the plugin for one of them goes through the rows of the setting, and a plugin calls no
+  // operation no setting names. max is the number of rows.
+  repeated string operations = 22;
+  reserved 21;
 }
 
 message ManifestNoteType {

@@ -164,7 +164,7 @@ function createWork(pluginId: string, host: PluginContextHost): PluginWork {
     agent: agent && limitAgentSettings(agent),
     tasks: work.getTasks(pluginId),
     backgroundTasks: work.getBackgroundTasks(),
-    models: work.getModels(pluginId),
+    connections: work.getConnections(pluginId),
   })
 }
 

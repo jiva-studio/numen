@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,23 +14,10 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/core/protocol/schematest"
 )
 
 var errPlain = errors.New("HTTP 500 from the service: Authorization: Bearer sk-live-123")
-
-type scriptedCompleter struct {
-	err      error
-	received Call
-	request  ProviderCompleteRequest
-}
-
-func (c *scriptedCompleter) Complete(_ context.Context, call Call, request ProviderCompleteRequest) (CompleteResult, error) {
-	c.received, c.request = call, request
-	if c.err != nil {
-		return CompleteResult{}, c.err
-	}
-	return CompleteResult{Text: "answer"}, nil
-}
 
 func newProviderClient(t *testing.T, provider Provider) numenv1connect.ProviderServiceClient {
 	t.Helper()
@@ -39,144 +28,155 @@ func newProviderClient(t *testing.T, provider Provider) numenv1connect.ProviderS
 	return numenv1connect.NewProviderServiceClient(server.Client(), server.URL)
 }
 
-func newCompleteRequest() *connect.Request[v1.ProviderServiceCompleteRequest] {
-	temperature := 0.25
-	return connect.NewRequest(&v1.ProviderServiceCompleteRequest{
+func newCallRequest(operation string) *connect.Request[v1.ProviderServiceCallRequest] {
+	return connect.NewRequest(&v1.ProviderServiceCallRequest{
+		Operation: operation,
 		Call: &v1.ProviderCall{
-			Type: "openrouter", Model: "m", Reasoning: "low", Fields: map[string]string{"baseUrl": "https://x"},
-			Secrets: []*v1.ProviderSecret{{Key: "apiKey", Value: "sk-1"}},
+			ConnectionId: "c1f0a9e20", Type: "openrouter", Fields: map[string]string{"baseUrl": "https://openrouter.test/api/v1"},
+			Secrets: []*v1.ProviderSecret{{Key: "apiKey", Value: "sk-or-1"}}, Options: map[string]string{"model": "google/gemini-2.5-flash"},
 		},
-		Messages:    []*v1.ProviderMessage{{Role: "user", Text: "hi"}},
-		Temperature: &temperature,
-		MaxTokens:   64,
+		Payload: []byte("list the notes"),
 	})
 }
 
-func TestACompleteCallReachesTheProviderWithItsSnapshotAndRequest(t *testing.T) {
-	completer := &scriptedCompleter{}
-	client := newProviderClient(t, Provider{Completer: completer})
-	response, err := client.Complete(t.Context(), newCompleteRequest())
+// served is what the core read from a call to a provider.
+type served struct {
+	frames  []string
+	done    string
+	isDone  bool
+	failure *v1.ProviderFailure
+}
+
+func readCallResponse(t *testing.T, client numenv1connect.ProviderServiceClient, request *connect.Request[v1.ProviderServiceCallRequest]) (served, error) {
+	t.Helper()
+	stream, err := client.Call(t.Context(), request)
 	if err != nil {
-		t.Fatal(err)
+		return served{}, err
 	}
-	if response.Msg.GetText() != "answer" || response.Msg.GetFailure() != nil {
-		t.Errorf("response = %v, want the text and no failure", response.Msg)
+	var got served
+	for stream.Receive() {
+		switch frame := stream.Msg().GetFrame().(type) {
+		case *v1.ProviderServiceCallResponse_Data:
+			got.frames = append(got.frames, string(frame.Data))
+		case *v1.ProviderServiceCallResponse_Done:
+			got.done, got.isDone = string(frame.Done), true
+		case *v1.ProviderServiceCallResponse_Failure:
+			got.failure = frame.Failure
+		}
 	}
-	if completer.received.Type != "openrouter" || completer.received.Model != "m" || completer.received.Reasoning != "low" ||
-		completer.received.Secrets["apiKey"].Value != "sk-1" || completer.received.Fields["baseUrl"] != "https://x" {
-		t.Errorf("call = %#v", completer.received)
+	return got, stream.Err()
+}
+
+func TestAnOperationReceivesTheConnectionAndThePayloadAndItsFramesReachTheCore(t *testing.T) {
+	var received Call
+	var payload string
+	client := newProviderClient(t, Provider{"llm.chat": func(_ context.Context, call Call, request []byte, send func([]byte) error) ([]byte, error) {
+		received, payload = call, string(request)
+		if err := send([]byte("Let me ")); err != nil {
+			return nil, err
+		}
+		if err := send([]byte("look.")); err != nil {
+			return nil, err
+		}
+		return []byte("finish"), nil
+	}})
+
+	got, err := readCallResponse(t, client, newCallRequest("llm.chat"))
+
+	if err != nil || !slices.Equal(got.frames, []string{"Let me ", "look."}) || got.done != "finish" || got.failure != nil {
+		t.Fatalf("Call = %+v, %v", got, err)
 	}
-	if completer.request.MaxTokens != 64 || completer.request.Temperature == nil || *completer.request.Temperature != 0.25 ||
-		len(completer.request.Messages) != 1 || completer.request.Messages[0] != (Message{Role: "user", Text: "hi"}) {
-		t.Errorf("request = %#v", completer.request)
+	if received.ConnectionID != "c1f0a9e20" || received.Type != "openrouter" || received.Fields["baseUrl"] != "https://openrouter.test/api/v1" ||
+		received.Secrets["apiKey"].Value != "sk-or-1" || received.Options["model"] != "google/gemini-2.5-flash" || payload != "list the notes" {
+		t.Errorf("call = %+v, payload = %q", received, payload)
 	}
 }
 
-func TestATryNextFailureIsAServedFailureNotAStatusCode(t *testing.T) {
-	client := newProviderClient(t, Provider{Completer: &scriptedCompleter{err: NewTryNextError(ReasonRateLimited, 7*time.Second)}})
-	response, err := client.Complete(t.Context(), newCompleteRequest())
-	if err != nil {
-		t.Fatalf("a failure came as a status code: %v", err)
-	}
-	failure := response.Msg.GetFailure()
-	if failure.GetKind() != v1.ProviderFailureKind_PROVIDER_FAILURE_KIND_TRY_NEXT ||
-		failure.GetReason() != v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_RATE_LIMITED || failure.GetRetryAfterMs() != 7000 {
-		t.Errorf("failure = %v", failure)
-	}
-	if response.Msg.GetText() != "" {
-		t.Errorf("text = %q on a failed call", response.Msg.GetText())
+func TestAnEmptyDoneIsADoneFrame(t *testing.T) {
+	client := newProviderClient(t, Provider{"llm.complete": func(context.Context, Call, []byte, func([]byte) error) ([]byte, error) {
+		return nil, nil
+	}})
+
+	got, err := readCallResponse(t, client, newCallRequest("llm.complete"))
+
+	if err != nil || !got.isDone || got.done != "" {
+		t.Errorf("Call = %+v, %v, want an empty done", got, err)
 	}
 }
 
-func TestAnErrorOfNoKindIsAStopWhoseTextDoesNotLeave(t *testing.T) {
-	client := newProviderClient(t, Provider{Completer: &scriptedCompleter{err: errPlain}})
-	response, err := client.Complete(t.Context(), newCompleteRequest())
-	if err != nil {
-		t.Fatal(err)
-	}
-	failure := response.Msg.GetFailure()
-	if failure.GetKind() != v1.ProviderFailureKind_PROVIDER_FAILURE_KIND_STOP ||
-		failure.GetReason() != v1.ProviderFailureReason_PROVIDER_FAILURE_REASON_UNKNOWN {
-		t.Errorf("failure = %v, want a stop of unknown reason", failure)
-	}
-	if response.Msg.GetText() != "" || failure.GetRetryAfterMs() != 0 {
-		t.Errorf("response carries more than the failure: %v", response.Msg)
+func TestAFailureOfAnOperationIsAFailureFrameOfItsKindAndReason(t *testing.T) {
+	for name, c := range map[string]struct {
+		err  error
+		want *v1.ProviderFailure
+	}{
+		"a rate limit": {
+			NewTryNextError(ReasonRateLimited, 1500*time.Millisecond),
+			&v1.ProviderFailure{Kind: v1.FailureKind_FAILURE_KIND_TRY_NEXT, Reason: v1.FailureReason_FAILURE_REASON_RATE_LIMITED, RetryAfterMs: 1500},
+		},
+		"an invalid request": {
+			NewStopError(ReasonInvalidRequest),
+			&v1.ProviderFailure{Kind: v1.FailureKind_FAILURE_KIND_STOP, Reason: v1.FailureReason_FAILURE_REASON_INVALID_REQUEST},
+		},
+		"an error of no kind": {
+			errPlain,
+			&v1.ProviderFailure{Kind: v1.FailureKind_FAILURE_KIND_STOP, Reason: v1.FailureReason_FAILURE_REASON_UNAVAILABLE},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			client := newProviderClient(t, Provider{"llm.complete": func(context.Context, Call, []byte, func([]byte) error) ([]byte, error) {
+				return nil, c.err
+			}})
+
+			got, err := readCallResponse(t, client, newCallRequest("llm.complete"))
+
+			if err != nil || got.isDone || got.failure.GetKind() != c.want.GetKind() || got.failure.GetReason() != c.want.GetReason() ||
+				got.failure.GetRetryAfterMs() != c.want.GetRetryAfterMs() {
+				t.Errorf("Call = %+v, %v, want %v", got, err, c.want)
+			}
+		})
 	}
 }
 
-func TestACanceledCallReturnsTheStatusCodeNotAFailure(t *testing.T) {
-	client := newProviderClient(t, Provider{Completer: &scriptedCompleter{err: context.Canceled}})
-	_, err := client.Complete(t.Context(), newCompleteRequest())
+func TestTheTextOfAnErrorOfNoKindNeverLeavesTheProvider(t *testing.T) {
+	client := newProviderClient(t, Provider{"llm.complete": func(context.Context, Call, []byte, func([]byte) error) ([]byte, error) {
+		return nil, errPlain
+	}})
+
+	got, err := readCallResponse(t, client, newCallRequest("llm.complete"))
+
+	if err != nil || strings.Contains(got.failure.String(), "sk-live") || got.failure.GetMessage() != "" {
+		t.Errorf("failure = %v, %v", got.failure, err)
+	}
+}
+
+func TestAnOperationTheProviderDoesNotServeIsUnimplemented(t *testing.T) {
+	client := newProviderClient(t, Provider{})
+
+	_, err := readCallResponse(t, client, newCallRequest("llm.embed"))
+
+	if connect.CodeOf(err) != connect.CodeUnimplemented {
+		t.Errorf("code = %v, want unimplemented", connect.CodeOf(err))
+	}
+}
+
+func TestACanceledOperationAnswersCanceled(t *testing.T) {
+	client := newProviderClient(t, Provider{"llm.complete": func(context.Context, Call, []byte, func([]byte) error) ([]byte, error) {
+		return nil, context.Canceled
+	}})
+
+	_, err := readCallResponse(t, client, newCallRequest("llm.complete"))
+
 	if connect.CodeOf(err) != connect.CodeCanceled {
-		t.Errorf("code = %v, want canceled: %v", connect.CodeOf(err), err)
+		t.Errorf("code = %v, want canceled", connect.CodeOf(err))
 	}
 }
 
-func TestARoleTheProviderLacksIsUnimplemented(t *testing.T) {
-	client := newProviderClient(t, Provider{Completer: &scriptedCompleter{}})
-	_, err := client.Embed(t.Context(), connect.NewRequest(&v1.ProviderServiceEmbedRequest{Call: &v1.ProviderCall{}, Texts: []string{"a"}}))
-	if connect.CodeOf(err) != connect.CodeUnimplemented {
-		t.Errorf("code = %v, want unimplemented: %v", connect.CodeOf(err), err)
-	}
-}
-
-type fakeProviderRoles struct{}
-
-func (fakeProviderRoles) Embed(_ context.Context, _ Call, texts []string) ([][]float32, error) {
-	vectors := make([][]float32, len(texts))
-	for i := range texts {
-		vectors[i] = []float32{float32(i), 1}
-	}
-	return vectors, nil
-}
-
-func (fakeProviderRoles) ListModels(_ context.Context, _ Call, operation string) ([]Model, error) {
-	return []Model{{ID: "m1", Title: "Model one", Operations: []string{operation}}, {ID: "m2"}}, nil
-}
-
-func (fakeProviderRoles) ListReasoningLevels(context.Context, Call) ([]ReasoningLevel, error) {
-	return []ReasoningLevel{{Value: "low", Title: "Low"}}, nil
-}
-
-func (fakeProviderRoles) GetModelProfile(context.Context, Call) (ModelProfile, error) {
-	return ModelProfile{IsKnown: true, Dimensions: 3, MaxTokens: 8191, Pooling: "mean", QueryPrefix: "q: ", DocumentPrefix: "d: ", Source: "openrouter"}, nil
-}
-
-func (fakeProviderRoles) ProbeEmbeddingWidth(context.Context, Call) (int, error) { return 5, nil }
-
-func TestEveryRoleIsServedOverTheWire(t *testing.T) {
-	roles := fakeProviderRoles{}
-	client := newProviderClient(t, Provider{Embedder: roles, Models: roles, Profiles: roles})
-	call := &v1.ProviderCall{Model: "m"}
-
-	embedded, err := client.Embed(t.Context(), connect.NewRequest(&v1.ProviderServiceEmbedRequest{Call: call, Texts: []string{"a", "b"}}))
-	if err != nil || len(embedded.Msg.GetVectors()) != 2 || embedded.Msg.GetVectors()[1].GetValues()[0] != 1 {
-		t.Errorf("Embed = %v, %v", embedded, err)
-	}
-	models, err := client.ListModels(t.Context(), connect.NewRequest(&v1.ProviderServiceListModelsRequest{Call: call, Operation: "embed"}))
-	if err != nil || len(models.Msg.GetModels()) != 2 || models.Msg.GetModels()[0].GetOperations()[0] != "embed" {
-		t.Errorf("ListModels = %v, %v", models, err)
-	}
-	levels, err := client.ListReasoningLevels(t.Context(), connect.NewRequest(&v1.ProviderServiceListReasoningLevelsRequest{Call: call}))
-	if err != nil || len(levels.Msg.GetLevels()) != 1 || levels.Msg.GetLevels()[0].GetValue() != "low" {
-		t.Errorf("ListReasoningLevels = %v, %v", levels, err)
-	}
-	profile, err := client.GetModelProfile(t.Context(), connect.NewRequest(&v1.ProviderServiceGetModelProfileRequest{Call: call}))
-	if err != nil || !profile.Msg.GetIsKnown() || profile.Msg.GetDimensions() != 3 || profile.Msg.GetMaxTokens() != 8191 ||
-		profile.Msg.GetPooling() != "mean" || profile.Msg.GetQueryPrefix() != "q: " || profile.Msg.GetDocumentPrefix() != "d: " ||
-		profile.Msg.GetSource() != "openrouter" {
-		t.Errorf("GetModelProfile = %v, %v", profile, err)
-	}
-	probe, err := client.ProbeEmbeddingWidth(t.Context(), connect.NewRequest(&v1.ProviderServiceProbeEmbeddingWidthRequest{Call: call}))
-	if err != nil || probe.Msg.GetDimensions() != 5 {
-		t.Errorf("ProbeEmbeddingWidth = %v, %v", probe, err)
-	}
-}
-
-func TestTheReservedJobCallsAreUnimplemented(t *testing.T) {
-	client := newProviderClient(t, Provider{Completer: &scriptedCompleter{}})
-	_, err := client.SubmitJob(t.Context(), connect.NewRequest(&v1.ProviderServiceSubmitJobRequest{Call: &v1.ProviderCall{}}))
-	if connect.CodeOf(err) != connect.CodeUnimplemented {
-		t.Errorf("SubmitJob code = %v, want unimplemented", connect.CodeOf(err))
-	}
+func TestEveryReasonOfTheSchemaIsWrittenFromOne(t *testing.T) {
+	schematest.CheckProduced(t, map[v1.FailureReason]Reason{
+		v1.FailureReason_FAILURE_REASON_REJECTED_KEY:     ReasonRejectedKey,
+		v1.FailureReason_FAILURE_REASON_PAYMENT_REQUIRED: ReasonPaymentRequired,
+		v1.FailureReason_FAILURE_REASON_RATE_LIMITED:     ReasonRateLimited,
+		v1.FailureReason_FAILURE_REASON_UNAVAILABLE:      ReasonUnavailable,
+		v1.FailureReason_FAILURE_REASON_INVALID_REQUEST:  ReasonInvalidRequest,
+	}, writeReason)
 }

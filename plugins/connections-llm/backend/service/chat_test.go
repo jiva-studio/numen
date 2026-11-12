@@ -10,24 +10,44 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
 
-func chatUser(text string) connection.ProviderChatRequest {
-	return connection.ProviderChatRequest{Messages: []connection.ChatMessage{{Role: "user", Text: text}}}
+func chatUser(text string) *llm.ChatRequest {
+	return &llm.ChatRequest{Messages: []*llm.ChatMessage{{Role: "user", Text: text}}}
 }
 
-func runChat(t *testing.T, svc *testService, call connection.Call, request connection.ProviderChatRequest) ([]connection.ChatEvent, error) {
+// toolCall is a tool call of a frame, comparable as a value.
+type toolCall struct{ ID, Name, Arguments string }
+
+// chatEvent is one frame of a turn, or its finish, which is the last event of a turn that ended.
+type chatEvent struct {
+	TextDelta string
+	ToolCall  *toolCall
+	Finish    *llm.ChatFinish
+}
+
+func runChat(t *testing.T, svc *testService, call connection.Call, request *llm.ChatRequest) ([]chatEvent, error) {
 	t.Helper()
-	var events []connection.ChatEvent
-	err := svc.Chat(newContext(t), call, request, func(event connection.ChatEvent) error {
+	var events []chatEvent
+	finish, err := svc.Chat(newContext(t), call, request, func(frame *llm.ChatFrame) error {
+		event := chatEvent{TextDelta: frame.GetTextDelta()}
+		if one := frame.GetToolCall(); one != nil {
+			event.ToolCall = &toolCall{ID: one.GetId(), Name: one.GetName(), Arguments: one.GetArgumentsJson()}
+		}
 		events = append(events, event)
 		return nil
 	})
+	if err == nil {
+		events = append(events, chatEvent{Finish: finish})
+	}
 	return events, err
 }
 
-func joinText(events []connection.ChatEvent) string {
+func ignoreFrame(*llm.ChatFrame) error { return nil }
+
+func joinText(events []chatEvent) string {
 	var text strings.Builder
 	for _, one := range events {
 		text.WriteString(one.TextDelta)
@@ -54,7 +74,7 @@ func TestChatStreamsTheTextAsDeltasAndEndsWithAFinish(t *testing.T) {
 		t.Fatal(err)
 	}
 	last := events[len(events)-1]
-	if joinText(events) != "echo: hello there" || len(events) < 3 || last.Finish == nil || last.Finish.Reason != connection.FinishStop {
+	if joinText(events) != "echo: hello there" || len(events) < 3 || last.Finish == nil || last.Finish.Reason != llm.FinishReason_FINISH_REASON_STOP {
 		t.Errorf("events = %+v", events)
 	}
 	for _, one := range events[:len(events)-1] {
@@ -74,14 +94,14 @@ func TestChatStreamsTheTextAsDeltasAndEndsWithAFinish(t *testing.T) {
 func TestChatSendsTheHistoryTheToolsAndTheOptions(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 	temperature := 0.3
-	request := connection.ProviderChatRequest{
-		Messages: []connection.ChatMessage{
+	request := &llm.ChatRequest{
+		Messages: []*llm.ChatMessage{
 			{Role: "system", Text: "You are an agent."},
 			{Role: "user", Text: "list the notes"},
-			{Role: "assistant", ToolCalls: []connection.ToolCall{{ID: "call-1", Name: "list_notes", Arguments: `{"limit":3}`}}},
-			{Role: "tool", Text: "a, b, c", ToolCallID: "call-1"},
+			{Role: "assistant", ToolCalls: []*llm.ToolCall{{Id: "call-1", Name: "list_notes", ArgumentsJson: `{"limit":3}`}}},
+			{Role: "tool", Text: "a, b, c", ToolCallId: "call-1"},
 		},
-		Tools:       []connection.ToolDefinition{{Name: "list_notes", Description: "Lists the notes.", Parameters: json.RawMessage(`{"type":"object","properties":{"limit":{"type":"number"}}}`)}},
+		Tools:       []*llm.ToolDefinition{{Name: "list_notes", Description: "Lists the notes.", ParametersJson: `{"type":"object","properties":{"limit":{"type":"number"}}}`}},
 		Temperature: &temperature,
 		MaxTokens:   200,
 	}
@@ -136,9 +156,9 @@ func TestChatJoinsTheStreamedPiecesOfAToolCallIntoOneEvent(t *testing.T) {
 		t.Fatalf("events = %+v, err = %v", events, err)
 	}
 	if events[0].TextDelta != "Let me look." ||
-		*events[1].ToolCall != (connection.ToolCall{ID: "call-1", Name: "list_notes", Arguments: `{"limit":3}`}) ||
-		*events[2].ToolCall != (connection.ToolCall{ID: "call-2", Name: "read_note", Arguments: `{}`}) ||
-		events[3].Finish == nil || events[3].Finish.Reason != connection.FinishToolCalls {
+		*events[1].ToolCall != (toolCall{ID: "call-1", Name: "list_notes", Arguments: `{"limit":3}`}) ||
+		*events[2].ToolCall != (toolCall{ID: "call-2", Name: "read_note", Arguments: `{}`}) ||
+		events[3].Finish == nil || events[3].Finish.Reason != llm.FinishReason_FINISH_REASON_TOOL_CALLS {
 		t.Errorf("events = %+v", events)
 	}
 }
@@ -165,7 +185,7 @@ func TestAnAnswerTruncatedAtTheLengthLimitFinishesWithLength(t *testing.T) {
 
 	events, err := runChat(t, newTestService(t), newCall("openai-compatible", address, "", "m"), chatUser("go"))
 
-	if err != nil || events[len(events)-1].Finish == nil || events[len(events)-1].Finish.Reason != connection.FinishLength {
+	if err != nil || events[len(events)-1].Finish == nil || events[len(events)-1].Finish.Reason != llm.FinishReason_FINISH_REASON_LENGTH {
 		t.Errorf("events = %+v, err = %v", events, err)
 	}
 }
@@ -178,15 +198,14 @@ func TestAServerThatAnswersAWholeMessageToAStreamRequestIsRead(t *testing.T) {
 
 	events, err := runChat(t, newTestService(t), newCall("openai-compatible", address, "", "m"), chatUser("go"))
 
-	if err != nil || len(events) != 3 || events[0].TextDelta != "whole" || events[1].ToolCall.Name != "ping" || events[2].Finish.Reason != connection.FinishToolCalls {
+	if err != nil || len(events) != 3 || events[0].TextDelta != "whole" || events[1].ToolCall.Name != "ping" || events[2].Finish.Reason != llm.FinishReason_FINISH_REASON_TOOL_CALLS {
 		t.Errorf("events = %+v, err = %v", events, err)
 	}
 }
 
 func TestChatNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
-	call := newCall("openrouter", address, "", "openai/gpt-5")
-	call.Reasoning = "low"
+	call := withReasoning(newCall("openrouter", address, "", "openai/gpt-5"), "low")
 
 	if _, err := runChat(t, newTestService(t), call, chatUser("hi")); err != nil {
 		t.Fatal(err)
@@ -200,12 +219,11 @@ func TestChatNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
 
 func TestChatStopsOnAReasoningLevelThatTheModelRejects(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
-	call := newCall("openai-compatible", address, "", "qwen2.5:14b")
-	call.Reasoning = "low"
+	call := withReasoning(newCall("openai-compatible", address, "", "qwen2.5:14b"), "low")
 
 	_, err := runChat(t, newTestService(t), call, chatUser("hi"))
 
-	checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
+	checkFailure(t, err, failureWant{reason: connection.ReasonInvalidRequest})
 	if len(fake.Requests()) != 0 {
 		t.Errorf("the service received %d requests, want none", len(fake.Requests()))
 	}
@@ -217,14 +235,14 @@ func TestTheStatusOfAChatAnswerDecidesTheKindOfTheFailure(t *testing.T) {
 		retryAfter string
 		want       failureWant
 	}{
-		{http.StatusUnauthorized, "", failureWant{isTryNext: true, reason: connection.ReasonKeyRejected}},
+		{http.StatusUnauthorized, "", failureWant{isTryNext: true, reason: connection.ReasonRejectedKey}},
 		{http.StatusPaymentRequired, "", failureWant{isTryNext: true, reason: connection.ReasonPaymentRequired}},
 		{http.StatusTooManyRequests, "30", failureWant{isTryNext: true, reason: connection.ReasonRateLimited, retryAfter: 30 * time.Second}},
-		{http.StatusBadGateway, "", failureWant{isTryNext: true, reason: connection.ReasonUnreachable}},
-		{http.StatusServiceUnavailable, "", failureWant{isTryNext: true, reason: connection.ReasonUnreachable}},
-		{http.StatusGatewayTimeout, "", failureWant{isTryNext: true, reason: connection.ReasonUnreachable}},
-		{http.StatusBadRequest, "", failureWant{reason: connection.ReasonBadRequest}},
-		{http.StatusInternalServerError, "", failureWant{reason: connection.ReasonUnknown}},
+		{http.StatusBadGateway, "", failureWant{isTryNext: true, reason: connection.ReasonUnavailable}},
+		{http.StatusServiceUnavailable, "", failureWant{isTryNext: true, reason: connection.ReasonUnavailable}},
+		{http.StatusGatewayTimeout, "", failureWant{isTryNext: true, reason: connection.ReasonUnavailable}},
+		{http.StatusBadRequest, "", failureWant{reason: connection.ReasonInvalidRequest}},
+		{http.StatusInternalServerError, "", failureWant{reason: connection.ReasonUnavailable}},
 	}
 	for _, one := range cases {
 		fake, address := startFakeServer(t, fakeopenai.Config{})
@@ -239,7 +257,7 @@ func TestTheStatusOfAChatAnswerDecidesTheKindOfTheFailure(t *testing.T) {
 	}
 }
 
-func TestAStreamThatBreaksAfterTheFirstTextKeepsTheTextAndFailsAsUnreachable(t *testing.T) {
+func TestAStreamThatBreaksAfterTheFirstTextKeepsTheTextAndFailsAsUnavailable(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.QueueStream(fakeopenai.Stream{IsBroken: true, Chunks: []string{`{"choices":[{"delta":{"content":"partial"}}]}`}})
 
@@ -248,25 +266,25 @@ func TestAStreamThatBreaksAfterTheFirstTextKeepsTheTextAndFailsAsUnreachable(t *
 	if len(events) != 1 || events[0].TextDelta != "partial" {
 		t.Errorf("events = %+v", events)
 	}
-	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnreachable})
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnavailable})
 }
 
-func TestAStreamThatEndsWithoutAFinishFailsAsUnreachable(t *testing.T) {
+func TestAStreamThatEndsWithoutAFinishFailsAsUnavailable(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.QueueStream(fakeopenai.Stream{Chunks: []string{`{"choices":[{"delta":{"content":"cut"}}]}`, "[DONE]"}})
 
 	_, err := runChat(t, newTestService(t), newCall("openai-compatible", address, "", "m"), chatUser("hi"))
 
-	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnreachable})
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnavailable})
 }
 
 func TestAnErrorEventOfTheStreamIsAFailureOfItsKind(t *testing.T) {
 	for code, want := range map[string]failureWant{
 		"429": {isTryNext: true, reason: connection.ReasonRateLimited},
 		"402": {isTryNext: true, reason: connection.ReasonPaymentRequired},
-		"401": {isTryNext: true, reason: connection.ReasonKeyRejected},
-		"503": {isTryNext: true, reason: connection.ReasonUnreachable},
-		"400": {reason: connection.ReasonBadRequest},
+		"401": {isTryNext: true, reason: connection.ReasonRejectedKey},
+		"503": {isTryNext: true, reason: connection.ReasonUnavailable},
+		"400": {reason: connection.ReasonInvalidRequest},
 	} {
 		fake, address := startFakeServer(t, fakeopenai.Config{})
 		fake.QueueStream(fakeopenai.Stream{Chunks: []string{
@@ -283,7 +301,7 @@ func TestAnErrorEventOfTheStreamIsAFailureOfItsKind(t *testing.T) {
 	}
 }
 
-func TestAChatThatStallsAfterAnEventIsATimeoutWhenNothingMoreArrives(t *testing.T) {
+func TestAChatThatStallsAfterAnEventIsUnavailableWhenNothingMoreArrives(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.QueueStream(fakeopenai.Stream{Chunks: []string{`{"choices":[{"delta":{"content":"partial"}}]}`}})
 	svc := newTestService(t)
@@ -294,7 +312,7 @@ func TestAChatThatStallsAfterAnEventIsATimeoutWhenNothingMoreArrives(t *testing.
 	if len(events) != 1 {
 		t.Errorf("events = %+v", events)
 	}
-	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonTimeout})
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnavailable})
 }
 
 func TestTheTimeOfAChatRestartsWithEachEvent(t *testing.T) {
@@ -321,7 +339,8 @@ func TestAChatCanceledWhileTheServiceIsSilentEndsTheRequest(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	finish := make(chan error, 1)
 	go func() {
-		finish <- newTestService(t).Chat(ctx, newCall("openrouter", address, testKey, "m"), chatUser("hi"), func(connection.ChatEvent) error { return nil })
+		_, err := newTestService(t).Chat(ctx, newCall("openrouter", address, testKey, "m"), chatUser("hi"), ignoreFrame)
+		finish <- err
 	}()
 	time.Sleep(100 * time.Millisecond)
 
@@ -341,7 +360,7 @@ func TestAChatStopsWhenTheReceiverOfTheEventsFails(t *testing.T) {
 	_, address := startFakeServer(t, fakeopenai.Config{})
 	consumerFailure := errors.New("the stream is closed")
 
-	err := newTestService(t).Chat(newContext(t), newCall("openrouter", address, testKey, "m"), chatUser("hi"), func(connection.ChatEvent) error { return consumerFailure })
+	_, err := newTestService(t).Chat(newContext(t), newCall("openrouter", address, testKey, "m"), chatUser("hi"), func(*llm.ChatFrame) error { return consumerFailure })
 
 	if !errors.Is(err, consumerFailure) {
 		t.Errorf("err = %v, want the error of the receiver", err)
@@ -361,9 +380,9 @@ func TestNoEventAndNoFailureOfAChatContainsTheKey(t *testing.T) {
 func TestChatStopsOnAnUnknownTypeAndALoneKeyOverPlainHTTPToARemoteHost(t *testing.T) {
 	_, address := startFakeServer(t, fakeopenai.Config{})
 	_, err := runChat(t, newTestService(t), newCall("nope", address, "", "m"), chatUser("hi"))
-	checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
+	checkFailure(t, err, failureWant{reason: connection.ReasonInvalidRequest})
 	_, err = runChat(t, newTestService(t), newCall("openai-compatible", "http://203.0.113.9/v1", testKey, "m"), chatUser("hi"))
-	checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
+	checkFailure(t, err, failureWant{reason: connection.ReasonInvalidRequest})
 }
 
 func object(t *testing.T, value any) map[string]any {

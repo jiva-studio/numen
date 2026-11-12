@@ -1,9 +1,12 @@
 package service
 
-import "github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+import (
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
+)
 
-// Provider returns the roles the plugin fills for its connection type: complete and the lists of
-// models and reasoning levels.
+// Provider returns the operations the plugin serves for its connection type: llm.complete and the
+// option lists llm.models and llm.reasoning.
 func (a *agent) Provider() connection.Provider {
-	return connection.Provider{Completer: a.completion, Embedder: nil, Models: a.completion, Profiles: nil}
+	return llm.Provide(nil, llm.Roles{Completer: a.completion, Models: a.completion, Reasoning: a.completion})
 }

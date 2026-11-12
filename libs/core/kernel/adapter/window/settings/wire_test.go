@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"slices"
 	"testing"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
@@ -119,21 +120,21 @@ func TestEveryPresenceIsSavedFromOne(t *testing.T) {
 	}, func(is settingsdomain.Presence) v1.Presence { return GetPresences()[is] })
 }
 
-func TestNewWirePluginInfos_CarriesTheOperationAndTheRowLimitOfASettingOfRows(t *testing.T) {
+func TestNewWirePluginInfos_CarriesTheOperationsAndTheRowLimitOfASettingOfRows(t *testing.T) {
 	limit := 3.0
 	wire := NewWirePluginInfos([]plugin.Info{{
 		ID: "a.b",
 		Settings: []plugin.Setting{
-			{Key: "connections", Type: "connections", Operation: "complete", Max: &limit},
+			{Key: "connections", Type: "connections", Operations: []string{"llm.complete"}, Max: &limit},
 			{Key: "other", Type: "string"},
 		},
 	}})
 
 	got := wire[0].GetSettings()
-	if got[0].GetOperation() != "complete" || got[0].GetMax() != 3 {
-		t.Errorf("the rows carry operation %q and max %v", got[0].GetOperation(), got[0].GetMax())
+	if !slices.Equal(got[0].GetOperations(), []string{"llm.complete"}) || got[0].GetMax() != 3 {
+		t.Errorf("the rows carry operations %q and max %v", got[0].GetOperations(), got[0].GetMax())
 	}
-	if got[1].GetOperation() != "" {
-		t.Errorf("a plain setting carries operation %q", got[1].GetOperation())
+	if len(got[1].GetOperations()) != 0 {
+		t.Errorf("a plain setting carries operations %q", got[1].GetOperations())
 	}
 }

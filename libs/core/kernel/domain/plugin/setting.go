@@ -28,7 +28,7 @@ type Setting struct {
 	Accept        []string
 	Multiple      bool
 	Preview       bool
-	Operation     string
+	Operations    []string
 	OptionsFrom   string
 	ActiveOptions manifest.SettingOptions
 	IsShown       bool
@@ -56,7 +56,7 @@ func NewSetting(declared manifest.Setting, defaultJSON string, options manifest.
 		Multiple:    declared.Multiple,
 		Preview:     declared.Preview,
 		OptionsFrom: declared.OptionsFrom,
-		Operation:   declared.Operation,
+		Operations:  declared.Operations,
 	}
 }
 

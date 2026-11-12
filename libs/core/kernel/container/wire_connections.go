@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modellist"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
 func hasPluginHost(c pluginsWiring) bool {
@@ -52,15 +52,8 @@ func openConnectionUseCases(c pluginsWiring) *windowconnection.UseCases {
 	return &windowconnection.UseCases{
 		Create: connection.NewCreate(deps, settingsadapter.CreateConnectionID), Update: connection.NewUpdate(deps),
 		Delete: connection.NewDelete(deps), List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps),
+		RowOptions: rowoptions.NewOptions(connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime)),
 	}
-}
-
-func openModelLists(c pluginsWiring) *modellist.Lists {
-	deps, ok := openConnectionDeps(c)
-	if !ok {
-		return nil
-	}
-	return modellist.NewLists(connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime))
 }
 
 func openModelCalls(c pluginsWiring) connectionport.ModelCalls {

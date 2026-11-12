@@ -4,7 +4,7 @@
  * the other settings: a row with the title and what the setting is for, then the rows of connections. A setting
  * whose condition fails is not shown.
  */
-import type { StoredRow } from '@/entities/connection'
+import { writeRows, type StoredRow } from '@/entities/connection'
 import type { PluginInfo } from '@/entities/settings'
 import { useEnumFields, usePluginFields } from '../../model/usePluginFields'
 import type { InstallationConnections, InstallationSettings, PluginFieldsHost } from '../../types'
@@ -33,10 +33,7 @@ const { getShownSettings } = useEnumFields(deps)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onRowsChange(key: string, rows: readonly StoredRow[]): void {
-  setSetting(
-    key,
-    rows.map((row) => ({ connection: row.connection, model: row.model, reasoning: row.reasoning })),
-  )
+  setSetting(key, writeRows(rows))
 }
 </script>
 

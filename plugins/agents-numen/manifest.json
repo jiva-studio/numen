@@ -16,7 +16,7 @@
       "type": "connections",
       "title": "Connection",
       "description": "The service the agent chats through, with its model and reasoning level.",
-      "operation": "chat",
+      "operations": ["llm.chat"],
       "max": 1
     },
     {

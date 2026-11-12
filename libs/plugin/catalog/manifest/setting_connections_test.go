@@ -2,6 +2,7 @@ package manifest_test
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -14,13 +15,13 @@ func readSettings(settings string) (manifest.Manifest, error) {
 }
 
 func TestASettingOfRowsIsReadFromAManifest(t *testing.T) {
-	m, err := readSettings(`{"key":"connections","type":"connections","title":"Connections","description":"Services tried in order.","operation":"complete","max":5}`)
+	m, err := readSettings(`{"key":"connections","type":"connections","title":"Connections","description":"Services tried in order.","operations":["llm.complete"],"max":5}`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	declared, ok := m.GetSetting("connections")
-	if !ok || declared.Type != manifest.SettingTypeConnections || declared.Operation != "complete" {
+	if !ok || declared.Type != manifest.SettingTypeConnections || !slices.Equal(declared.Operations, []string{"llm.complete"}) {
 		t.Fatalf("the connections setting = %+v, %v", declared, ok)
 	}
 	if declared.Max == nil || *declared.Max != 5 {
@@ -30,7 +31,7 @@ func TestASettingOfRowsIsReadFromAManifest(t *testing.T) {
 
 func TestASettingOfRowsFollowsTheConditionOfAnotherSetting(t *testing.T) {
 	m, err := readSettings(`{"key":"source","type":"enum","title":"Source","default":"local","options":["local","connection"]},
-		{"key":"connections","type":"connections","title":"Connections","operation":"embed","max":1,"when":{"setting":"source","is":["connection"]}}`)
+		{"key":"connections","type":"connections","title":"Connections","operations":["llm.embed"],"max":1,"when":{"setting":"source","is":["connection"]}}`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,8 +47,8 @@ func TestASettingOfRowsFollowsTheConditionOfAnotherSetting(t *testing.T) {
 }
 
 func TestAPluginMayDeclareASettingOfRowsForEachOperation(t *testing.T) {
-	_, err := readSettings(`{"key":"completions","type":"connections","title":"Completions","operation":"complete","max":3},
-		{"key":"embeddings","type":"connections","title":"Embeddings","operation":"embed","max":1}`)
+	_, err := readSettings(`{"key":"completions","type":"connections","title":"Completions","operations":["llm.complete"],"max":3},
+		{"key":"embeddings","type":"connections","title":"Embeddings","operations":["llm.embed"],"max":1}`)
 
 	if err != nil {
 		t.Errorf("err = %v, want none", err)
@@ -57,24 +58,24 @@ func TestAPluginMayDeclareASettingOfRowsForEachOperation(t *testing.T) {
 func TestASettingOfRowsThatBreaksARuleIsRejected(t *testing.T) {
 	for name, settings := range map[string]string{
 		"no operation":                   `{"key":"a","type":"connections","title":"A","max":1}`,
-		"an operation that is no word":   `{"key":"a","type":"connections","title":"A","operation":"Complete","max":1}`,
-		"an operation with a dash":       `{"key":"a","type":"connections","title":"A","operation":"co-mplete","max":1}`,
-		"no max":                         `{"key":"a","type":"connections","title":"A","operation":"complete"}`,
-		"a max of zero":                  `{"key":"a","type":"connections","title":"A","operation":"complete","max":0}`,
-		"a negative max":                 `{"key":"a","type":"connections","title":"A","operation":"complete","max":-2}`,
-		"a max that is not whole":        `{"key":"a","type":"connections","title":"A","operation":"complete","max":1.5}`,
-		"a default":                      `{"key":"a","type":"connections","title":"A","operation":"complete","max":1,"default":[]}`,
-		"options":                        `{"key":"a","type":"connections","title":"A","operation":"complete","max":1,"options":["x"]}`,
-		"options from a registry":        `{"key":"a","type":"connections","title":"A","operation":"complete","max":1,"optionsFrom":"themes"}`,
-		"a min":                          `{"key":"a","type":"connections","title":"A","operation":"complete","max":1,"min":1}`,
-		"a step":                         `{"key":"a","type":"connections","title":"A","operation":"complete","max":1,"step":1}`,
-		"extensions":                     `{"key":"a","type":"connections","title":"A","operation":"complete","max":1,"accept":[".txt"]}`,
-		"several paths":                  `{"key":"a","type":"connections","title":"A","operation":"complete","max":1,"multiple":true}`,
-		"a preview":                      `{"key":"a","type":"connections","title":"A","operation":"complete","max":1,"preview":true}`,
-		"a generated value":              `{"key":"a","type":"connections","title":"A","operation":"complete","max":1,"generate":"token"}`,
-		"an operation on a string":       `{"key":"a","type":"string","title":"A","operation":"complete"}`,
-		"an operation on a number":       `{"key":"a","type":"number","title":"A","operation":"complete"}`,
-		"two settings for one operation": `{"key":"a","type":"connections","title":"A","operation":"complete","max":1},{"key":"b","type":"connections","title":"B","operation":"complete","max":2}`,
+		"an operation in capitals":       `{"key":"a","type":"connections","title":"A","operations":["Complete"],"max":1}`,
+		"an operation with a dash":       `{"key":"a","type":"connections","title":"A","operations":["co-mplete"],"max":1}`,
+		"no max":                         `{"key":"a","type":"connections","title":"A","operations":["llm.complete"]}`,
+		"a max of zero":                  `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":0}`,
+		"a negative max":                 `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":-2}`,
+		"a max that is not whole":        `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1.5}`,
+		"a default":                      `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1,"default":[]}`,
+		"options":                        `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1,"options":["x"]}`,
+		"options from a registry":        `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1,"optionsFrom":"themes"}`,
+		"a min":                          `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1,"min":1}`,
+		"a step":                         `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1,"step":1}`,
+		"extensions":                     `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1,"accept":[".txt"]}`,
+		"several paths":                  `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1,"multiple":true}`,
+		"a preview":                      `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1,"preview":true}`,
+		"a generated value":              `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1,"generate":"token"}`,
+		"operations on a string":         `{"key":"a","type":"string","title":"A","operations":["llm.complete"]}`,
+		"operations on a number":         `{"key":"a","type":"number","title":"A","operations":["llm.complete"]}`,
+		"two settings for one operation": `{"key":"a","type":"connections","title":"A","operations":["llm.complete"],"max":1},{"key":"b","type":"connections","title":"B","operations":["llm.complete"],"max":2}`,
 	} {
 		_, err := readSettings(settings)
 		if !errors.Is(err, manifest.ErrInvalidSetting) {

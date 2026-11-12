@@ -127,17 +127,11 @@ type WindowControl interface {
 	ActivateTab(ctx context.Context, id string) (windowdomain.OpenTabs, error)
 }
 
-// ModelCalls carries out the calls on models the plugins ask for. The connections come from the rows of
-// the calling plugin, and a request names none.
+// ModelCalls carries out the operations the plugins ask for. The connections come from the rows of the
+// calling plugin, and a request names none.
 type ModelCalls interface {
-	// Complete asks the rows in order. It returns connection.ErrNoConnection, *connection.AllFailedError or
-	// *connection.RejectedError where no row answers, and the error of the context when the call is canceled.
-	Complete(ctx context.Context, callerPluginID string, request modelcall.CompleteRequest, priority modelcall.Priority) (modelcall.CompleteResult, error)
-	// Chat asks the rows in order for the next turn of a conversation and sends its events to send as they
-	// arrive. It returns the errors Complete does, and the error of send when send fails.
-	Chat(ctx context.Context, callerPluginID string, request modelcall.ChatRequest, priority modelcall.Priority, send func(modelcall.ChatEvent) error) error
-	// Embed asks the rows in order and returns the vectors in the order of the texts.
-	Embed(ctx context.Context, callerPluginID string, texts []string, priority modelcall.Priority) ([][]float32, error)
-	// GetEmbeddingProfile asks the rows in order for the profile of their embedding model.
-	GetEmbeddingProfile(ctx context.Context, callerPluginID string) (modelcall.EmbeddingProfile, error)
+	// Call asks the rows in order and sends the data frames to send as they arrive. It returns the done
+	// payload, connection.ErrNoConnection, *connection.AllFailedError or *connection.StoppedError where no
+	// row answers, the error of send when send fails, and the error of the context when the call is canceled.
+	Call(ctx context.Context, callerPluginID string, request modelcall.Request, send modelcall.Send) ([]byte, error)
 }

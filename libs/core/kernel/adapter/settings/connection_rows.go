@@ -36,8 +36,8 @@ func NewConnectionRows(source ConnectionRowsSource) *ConnectionRows {
 	return &ConnectionRows{source: source}
 }
 
-// ListRows returns the rows in force of the setting of the plugin that needs the operation, in the
-// order the person set. A setting that is not shown has none, and a row that names a connection
+// ListRows returns the rows in force of the setting of the plugin that is used for the operation, in the
+// order the person set. A plugin with no such setting has no row. A setting that is not shown has none, and a row that names a connection
 // that does not exist is left out.
 func (r *ConnectionRows) ListRows(pluginID, operation string) ([]connection.Row, error) {
 	for _, plugin := range r.source.Plugins() {
@@ -45,7 +45,7 @@ func (r *ConnectionRows) ListRows(pluginID, operation string) ([]connection.Row,
 			continue
 		}
 		for _, one := range plugin.Settings {
-			if one.Type == manifest.SettingTypeConnections && one.Operation == operation && one.IsShown {
+			if one.Type == manifest.SettingTypeConnections && slices.Contains(one.Operations, operation) && one.IsShown {
 				return r.readExistingRows(one.ValueJSON)
 			}
 		}
@@ -69,24 +69,33 @@ func (r *ConnectionRows) readExistingRows(valueJSON string) ([]connection.Row, e
 	return slices.DeleteFunc(rows, func(row connection.Row) bool { return !exists[row.ConnectionID] }), nil
 }
 
+// readRowsJSON reads the rows of a value: the connection under its key, and every other string as an
+// option of the row.
 func readRowsJSON(valueJSON string) []connection.Row {
-	var stored []struct {
-		Connection string `json:"connection"`
-		Model      string `json:"model"`
-		Reasoning  string `json:"reasoning"`
-	}
+	var stored []map[string]any
 	if valueJSON == "" || json.Unmarshal([]byte(valueJSON), &stored) != nil {
 		return nil
 	}
 	rows := make([]connection.Row, 0, len(stored))
 	for _, one := range stored {
-		rows = append(rows, connection.Row{ConnectionID: one.Connection, Model: one.Model, Reasoning: one.Reasoning})
+		row := connection.Row{Options: map[string]string{}}
+		for key, value := range one {
+			text, isText := value.(string)
+			switch {
+			case !isText:
+			case key == rowConnection:
+				row.ConnectionID = text
+			default:
+				row.Options[key] = text
+			}
+		}
+		rows = append(rows, row)
 	}
 	return rows
 }
 
 // ListUses returns the settings of rows in force that name the connection, once for each plugin and
-// operation, in the order of the plugin ids.
+// setting, in the order of the plugin ids.
 func (r *ConnectionRows) ListUses(connectionID string) ([]connection.Use, error) {
 	var uses []connection.Use
 	for _, plugin := range r.source.Plugins() {
@@ -94,7 +103,7 @@ func (r *ConnectionRows) ListUses(connectionID string) ([]connection.Use, error)
 			if one.Type != manifest.SettingTypeConnections || !one.IsShown || !namesConnection(readRowsJSON(one.ValueJSON), connectionID) {
 				continue
 			}
-			uses = append(uses, connection.Use{PluginID: plugin.ID, PluginName: plugin.Name, Operation: one.Operation})
+			uses = append(uses, connection.Use{PluginID: plugin.ID, PluginName: plugin.Name, Operations: one.Operations})
 		}
 	}
 	return uses, nil

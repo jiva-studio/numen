@@ -70,7 +70,7 @@
       "type": "connections",
       "title": "Connection",
       "description": "Changing the connection or the model indexes the vault again.",
-      "operation": "embed",
+      "operations": ["llm.embed", "llm.profile"],
       "max": 1,
       "when": {
         "setting": "source",

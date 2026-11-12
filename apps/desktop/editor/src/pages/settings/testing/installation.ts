@@ -12,8 +12,7 @@ export type InstallationOverrides = Flat<
   Partial<Installation['settings']> &
     Partial<Omit<Installation['plugin'], 'files'>> &
     Partial<Installation['plugin']['files']> &
-    Partial<Omit<Installation['connections'], 'models'>> &
-    Partial<Installation['connections']['models']>
+    Partial<Installation['connections']>
 >
 
 const SETTINGS_KEYS = [
@@ -28,8 +27,16 @@ const SETTINGS_KEYS = [
 ]
 const PLUGIN_KEYS = ['plugins', 'app', 'catalog', 'retryPlugin', 'choosePath', 'getSettingsViews']
 const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
-const CONNECTIONS_KEYS = ['list', 'types', 'load', 'create', 'update', 'delete', 'countNotes']
-const MODELS_KEYS = ['listModels', 'listReasoningLevels']
+const CONNECTIONS_KEYS = [
+  'list',
+  'types',
+  'load',
+  'create',
+  'update',
+  'delete',
+  'listRowOptions',
+  'countNotes',
+]
 
 /** A call that failed, with the reason. */
 export const asFailure = <E>(error: E): Result<never, E> => ({ ok: false, error })
@@ -75,11 +82,7 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     create: fn(() => Promise.resolve(asFailure('Not saved.'))),
     update: fn(() => Promise.resolve(asFailure('Not saved.'))),
     delete: fn(() => Promise.resolve(asValue(undefined))),
-    models: {
-      listModels: fn(() => Promise.resolve(asValue([]))),
-      listReasoningLevels: fn(() => Promise.resolve(asValue([]))),
-      ...pickOf(overrides, MODELS_KEYS),
-    },
+    listRowOptions: fn(() => Promise.resolve(asValue([]))),
     countNotes: fn(() => Promise.resolve(0)),
     ...pickOf(overrides, CONNECTIONS_KEYS),
   },

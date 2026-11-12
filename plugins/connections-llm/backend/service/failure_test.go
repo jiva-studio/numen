@@ -20,19 +20,19 @@ func TestTheStatusOfAnAnswerDecidesTheKindOfTheFailure(t *testing.T) {
 		retryAfter string
 		want       failureWant
 	}{
-		{http.StatusUnauthorized, "", failureWant{isTryNext: true, reason: connection.ReasonKeyRejected}},
-		{http.StatusForbidden, "", failureWant{isTryNext: true, reason: connection.ReasonKeyRejected}},
+		{http.StatusUnauthorized, "", failureWant{isTryNext: true, reason: connection.ReasonRejectedKey}},
+		{http.StatusForbidden, "", failureWant{isTryNext: true, reason: connection.ReasonRejectedKey}},
 		{http.StatusPaymentRequired, "", failureWant{isTryNext: true, reason: connection.ReasonPaymentRequired}},
 		{http.StatusTooManyRequests, "", failureWant{isTryNext: true, reason: connection.ReasonRateLimited}},
 		{http.StatusTooManyRequests, "30", failureWant{isTryNext: true, reason: connection.ReasonRateLimited, retryAfter: 30 * time.Second}},
-		{http.StatusBadGateway, "", failureWant{isTryNext: true, reason: connection.ReasonUnreachable}},
-		{http.StatusServiceUnavailable, "", failureWant{isTryNext: true, reason: connection.ReasonUnreachable}},
-		{http.StatusGatewayTimeout, "", failureWant{isTryNext: true, reason: connection.ReasonUnreachable}},
-		{http.StatusNotFound, "", failureWant{reason: connection.ReasonBadRequest}},
-		{http.StatusBadRequest, "", failureWant{reason: connection.ReasonBadRequest}},
-		{http.StatusUnprocessableEntity, "", failureWant{reason: connection.ReasonBadRequest}},
-		{http.StatusInternalServerError, "", failureWant{reason: connection.ReasonUnknown}},
-		{http.StatusTeapot, "", failureWant{reason: connection.ReasonBadRequest}},
+		{http.StatusBadGateway, "", failureWant{isTryNext: true, reason: connection.ReasonUnavailable}},
+		{http.StatusServiceUnavailable, "", failureWant{isTryNext: true, reason: connection.ReasonUnavailable}},
+		{http.StatusGatewayTimeout, "", failureWant{isTryNext: true, reason: connection.ReasonUnavailable}},
+		{http.StatusNotFound, "", failureWant{reason: connection.ReasonInvalidRequest}},
+		{http.StatusBadRequest, "", failureWant{reason: connection.ReasonInvalidRequest}},
+		{http.StatusUnprocessableEntity, "", failureWant{reason: connection.ReasonInvalidRequest}},
+		{http.StatusInternalServerError, "", failureWant{reason: connection.ReasonUnavailable}},
+		{http.StatusTeapot, "", failureWant{reason: connection.ReasonInvalidRequest}},
 	}
 	for _, one := range cases {
 		fake, address := startFakeServer(t, fakeopenai.Config{})
@@ -72,10 +72,10 @@ func TestAServiceThatCannotBeReachedIsTryNext(t *testing.T) {
 	address := ts.URL + "/v1"
 	ts.Close()
 	_, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", address, "", "m"), oneUserMessage("hi"))
-	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnreachable})
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnavailable})
 }
 
-func TestAServiceThatAnswersTooSlowlyIsATimeout(t *testing.T) {
+func TestAServiceThatAnswersTooSlowlyIsUnavailable(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 	fake.Delay("/chat/completions", 2*time.Second)
 	fake.Delay("/embeddings", 2*time.Second)
@@ -83,9 +83,9 @@ func TestAServiceThatAnswersTooSlowlyIsATimeout(t *testing.T) {
 	svc.Configure(map[string]string{"requestTimeout": "0.1"})
 
 	_, err := svc.Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
-	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonTimeout})
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnavailable})
 	_, err = svc.Embed(newContext(t), newCall("openrouter", address, testKey, "m"), []string{"a"})
-	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonTimeout})
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnavailable})
 }
 
 func TestACanceledCallReturnsItsContextErrorAndEndsTheRequest(t *testing.T) {
@@ -135,7 +135,7 @@ func TestARedirectIsNotFollowed(t *testing.T) {
 	t.Cleanup(redirector.Close)
 
 	_, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", redirector.URL+"/v1", testKey, "m"), oneUserMessage("hi"))
-	checkFailure(t, err, failureWant{reason: connection.ReasonUnknown})
+	checkFailure(t, err, failureWant{reason: connection.ReasonUnavailable})
 }
 
 func TestAFailureShowsNeitherTheKeyNorTheTextOfTheService(t *testing.T) {
