@@ -249,8 +249,10 @@ export interface ShelfClient {
 
 export const shelf: ShelfClient = { shelve: () => notes.shelveNote({}) }
 `,
-		"libs/plugin/sdk-ts/package.json":  `{ "name": "@numen/plugin-sdk", "exports": { ".": "./src/index.ts", "./testing": "./src/testing/index.ts", "./contracts/acp": "./src/contracts/acp/index.ts" } }`,
-		"libs/plugin/sdk-ts/tsconfig.json": `{ "extends": "../../../tsconfig.base.json", "include": ["src/**/*.ts"] }`,
+		"libs/plugin/sdk-ts/package.json":             `{ "name": "@numen/plugin-sdk", "exports": { ".": "./src/index.ts", "./testing": "./src/testing/index.ts", "./contracts/acp": "./src/contracts/acp/index.ts", "./vite": "./src/vite.ts" } }`,
+		"libs/plugin/sdk-ts/src/vite.ts":              "export function createStoryPlugin(): object {\n  return {}\n}\n",
+		"libs/plugin/sdk-ts/stories/vitest.config.ts": "import { createStoryPlugin } from '../src/vite'\n\nexport default { plugins: [createStoryPlugin()] }\n",
+		"libs/plugin/sdk-ts/tsconfig.json":            `{ "extends": "../../../tsconfig.base.json", "include": ["src/**/*.ts"] }`,
 		"libs/plugin/sdk-ts/src/index.ts": `export { formatWords, unusedHelper } from './words'
 export * from './testing/index'
 
