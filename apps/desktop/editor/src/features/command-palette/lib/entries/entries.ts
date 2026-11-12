@@ -1,57 +1,43 @@
 /**
- * The note a search did not find, offered as one to make.
+ * The actions that make a note under the words typed in the search.
  *
- * A search that found nothing has the words that were searched for and no
- * note to hold them, so the palette offers a note under them. What is in
- * front is what the note can be nested under as it is made. Each action of the
- * row is the id of the command that makes the note.
+ * They are offered on every row of the search. What is in front is what the
+ * note can be nested under as it is made. Each action is the id of the command
+ * that makes the note.
  */
-import type { PaletteGroup } from '@numen/shell'
-import { COMMAND } from '@/shared/commandIds'
-import type { CommandTarget } from '../../types'
+import { COMMAND, type CommandTarget } from '@/shared/model/command'
 import type { Words } from '../../words'
 
-/** The words of the row that creates a note. */
-export type CreateNoteWords = Pick<
-  Words,
-  'creating' | 'creates' | 'asChild' | 'asParent' | 'asJump'
->
+/** The words of the actions that create a note. */
+type CreateNoteWords = Pick<Words, 'creates' | 'asChild' | 'asParent' | 'asJump'>
 
-/** The id of the group and of the item of the row that creates a note; never an action id. */
-export const CREATE_NOTE_ROW = 'creating'
-
-/** What the row that creates a note is made from. */
-export interface CreateNoteRowOptions {
+/** What the actions that create a note are made from. */
+export interface CreateNoteOptions {
   readonly text: string
   readonly words: CreateNoteWords
   readonly target: CommandTarget
 }
 
+export interface CreateNoteAction {
+  readonly id: string
+  readonly text: string
+}
+
 /**
- * The group that offers to make a note under the words typed, and null where nothing was typed.
+ * The actions that make a note under the words typed, none where nothing was typed.
  * The relations to the note in front are offered only when a note is in front.
  */
-export const createNoteRow = (options: CreateNoteRowOptions): PaletteGroup | null => {
+export const getCreateNoteActions = (options: CreateNoteOptions): readonly CreateNoteAction[] => {
   const { text, words, target } = options
   const name = text.trim()
-  if (!name) return null
+  if (!name) return []
+  const quoted = `“${name}”`
   const relations = target.path
     ? [
-        { id: COMMAND.createChildNote, text: words.asChild },
-        { id: COMMAND.createParentNote, text: words.asParent },
-        { id: COMMAND.createJumpNote, text: words.asJump },
+        { id: COMMAND.createChildNote, text: `${words.asChild} ${quoted}` },
+        { id: COMMAND.createParentNote, text: `${words.asParent} ${quoted}` },
+        { id: COMMAND.createJumpNote, text: `${words.asJump} ${quoted}` },
       ]
     : []
-  return {
-    id: CREATE_NOTE_ROW,
-    title: words.creating,
-    items: [
-      {
-        id: CREATE_NOTE_ROW,
-        title: `${words.creates} “${name}”`,
-        ...(target.path ? { detail: target.title || target.path } : {}),
-        actions: [{ id: COMMAND.createNote, text: words.creates }, ...relations],
-      },
-    ],
-  }
+  return [{ id: COMMAND.createNote, text: `${words.creates} ${quoted}` }, ...relations]
 }

@@ -1,0 +1,122 @@
+package cli
+
+import (
+	"context"
+	"io"
+	"slices"
+	"strings"
+)
+
+// terminal is where a command writes: out carries its result, errOut what it reports besides.
+type terminal struct {
+	out    io.Writer
+	errOut io.Writer
+}
+
+// command is one name the terminal answers to. Synopsis is the text help prints for it, indented as
+// printed and without a trailing newline.
+type command interface {
+	Name() string
+	Synopsis() string
+	Run(ctx context.Context, term terminal, args []string) error
+}
+
+// group is commands that help lists under one heading. The commands are listed when first needed, so
+// the plugins are not readied for a built-in command.
+type group struct {
+	heading string
+	list    func() []command
+}
+
+// commandRegistry holds the built-in commands and those the plugins declare, in the order help lists them.
+type commandRegistry struct {
+	groups []group
+}
+
+func newCommandRegistry(session Session) commandRegistry {
+	return commandRegistry{groups: []group{
+		{list: func() []command { return getBuiltinCommands(session) }},
+		{heading: "commands of the plugins:", list: func() []command { return listDeclaredCommands(session) }},
+		{heading: "shared commands, run by the handler of a plugin:", list: func() []command { return listSharedCommands(session) }},
+	}}
+}
+
+func getBuiltinCommands(session Session) []command {
+	return []command{
+		newVaultCommand(session),
+		scanCommand{session: session},
+		searchCommand{session: session},
+		linksCommand{session: session},
+		problemsCommand{session: session},
+		helpCommand{session: session},
+	}
+}
+
+func listDeclaredCommands(session Session) []command {
+	var commands []command
+	for _, entry := range session.GetPluginCommands().List.Execute() {
+		commands = append(commands, declaredCommand{plugins: session.GetPluginCommands, entry: entry})
+	}
+	return commands
+}
+
+func listSharedCommands(session Session) []command {
+	list := session.GetPluginCommands().List
+	var ids []string
+	for _, one := range list.ListBackendHandlers() {
+		if !slices.Contains(ids, one.Command.ID) {
+			ids = append(ids, one.Command.ID)
+		}
+	}
+	var commands []command
+	for _, id := range ids {
+		commands = append(commands, sharedCommand{plugins: session.GetPluginCommands, handlers: list.ListSharedHandlers(id)})
+	}
+	return commands
+}
+
+func (r commandRegistry) find(name string) (command, bool) {
+	if name == "-h" || name == "--help" {
+		name = "help"
+	}
+	for _, g := range r.groups {
+		for _, one := range g.list() {
+			if one.Name() == name {
+				return one, true
+			}
+		}
+	}
+	return nil, false
+}
+
+// helpCommand prints the usage text, built from the commands of the registry.
+type helpCommand struct {
+	session Session
+}
+
+func (helpCommand) Name() string { return "help" }
+
+func (helpCommand) Synopsis() string { return "" }
+
+func (c helpCommand) Run(_ context.Context, term terminal, _ []string) error {
+	return writeUsage(term.out, newCommandRegistry(c.session))
+}
+
+func writeUsage(out io.Writer, r commandRegistry) error {
+	w := newReporter(out)
+	for i, g := range r.groups {
+		var lines []string
+		for _, one := range g.list() {
+			if synopsis := one.Synopsis(); synopsis != "" {
+				lines = append(lines, synopsis)
+			}
+		}
+		switch {
+		case i == 0:
+			w.Print(usageHead + strings.Join(lines, "\n") + "\n" + usageTail)
+		case len(lines) > 0:
+			w.Print("\n" + g.heading + "\n" + strings.Join(lines, "\n") + "\n")
+		}
+	}
+	return w.Err()
+}

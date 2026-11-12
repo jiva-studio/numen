@@ -11,7 +11,7 @@ import {
 import { openVaultFile, openWorkspace, runCommand, waitForWindow } from '../../support/workspace.js'
 import { getStandInsOrigin, hasVaultFile } from '../../support/media.js'
 import { expectSearchableList } from '../../support/searchable-list.js'
-import { callRPC, readVaultFile } from '../../support/vault.js'
+import { destroyNote, readVaultFile } from '../../support/vault.js'
 
 const openAgentPanel = async (page: Page) => {
   await openWorkspace(page)
@@ -108,7 +108,7 @@ test.describe('Agent Plugin and Interface', () => {
       const texts = await page.evaluate(() => [...(window.toolCallTexts ?? [])])
       expect(texts).toContain('Write Note')
     } finally {
-      await callRPC(request, 'FileService/RemoveFile', { path: TOOL_NOTE_PATH, destroy: true })
+      await destroyNote(request, TOOL_NOTE_PATH)
     }
   })
 

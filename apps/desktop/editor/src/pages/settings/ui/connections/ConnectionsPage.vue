@@ -4,104 +4,54 @@
  * do, and the dialog that adds or edits one. A connection whose type no installed plugin provides is
  * listed as "Type unavailable". The model of a connection is chosen where it is used, not here.
  */
-import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
+import { nextTick, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
-import { Button, ConfirmDialog } from '@numen/ui'
-import {
-  asFailure,
-  type ConnectionChange,
-  type ConnectionDraft,
-  type ConnectionInfo,
-} from '@numen/core-client'
-import { getUsedByNames, hasAvailableType, hasUnavailableConnection } from '@/entities/connection'
-import type { SettingsTabState } from '../../types'
+import { Button, runInBackground } from '@numen/ui'
+import type { ConnectionInfo } from '@/entities/connection'
+import type { InstallationConnections } from '../../types'
+import { useConnectionsPage } from '../../model/useConnectionsPage'
 import { WORDS as words } from '../../words'
+import { ConfirmDialog } from '../confirm-dialog'
 import ConnectionDialog from './ConnectionDialog.vue'
 import ConnectionRow from './ConnectionRow.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{ state: SettingsTabState }>()
+const props = defineProps<{ connections: InstallationConnections }>()
 
 const emit = defineEmits<{
   (e: 'back'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
-const connections = computed(() => installation.value.connections?.value ?? [])
-const types = computed(() => installation.value.connectionTypes?.value ?? [])
-const hasType = computed(() => hasAvailableType(types.value))
-const hasUnavailable = computed(() => hasUnavailableConnection(connections.value))
-const editing = ref<ConnectionInfo | null>(null)
-const isAdding = ref(false)
-const deleting = ref<ConnectionInfo | null>(null)
-const deleteProblem = ref('')
+const page = useConnectionsPage(() => props.connections)
+const { dialog, deletion } = page
 const addButton = useTemplateRef<InstanceType<typeof Button>>('addButton')
 let deleteOpener: HTMLElement | null = null
 
-/* ---------------------------------- Hooks --------------------------------- */
-onMounted(() => installation.value.loadConnections?.())
-
 /* -------------------------------- Handlers -------------------------------- */
-function onAdd(): void {
-  isAdding.value = true
-}
-
-function onEdit(connection: ConnectionInfo): void {
-  editing.value = connection
-}
-
-async function onCloseDialog(): Promise<void> {
-  isAdding.value = false
-  editing.value = null
-  await nextTick()
-  const element = addButton.value?.$el
-  if (element instanceof HTMLElement) element.focus()
+function onCloseDialog(): void {
+  dialog.close()
+  runInBackground(
+    nextTick(() => {
+      const element = addButton.value?.$el
+      if (element instanceof HTMLElement) element.focus()
+    }),
+    () => undefined,
+  )
 }
 
 function onAskDelete(connection: ConnectionInfo, opener: HTMLElement): void {
-  deleting.value = connection
-  deleteProblem.value = ''
+  deletion.ask(connection)
   deleteOpener = opener
 }
 
-async function onConfirmDelete(): Promise<void> {
-  const target = deleting.value
-  if (!target) return
-  const answer = await installation.value.deleteConnection?.(target.id)
-  if (answer && !answer.ok) {
-    deleteProblem.value = answer.error
-    return
-  }
-  onCancelDelete()
+function onConfirmDelete(): void {
+  deletion.confirm(() => deleteOpener?.focus())
 }
 
 function onCancelDelete(): void {
-  deleting.value = null
+  deletion.cancel()
   deleteOpener?.focus()
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function create(draft: ConnectionDraft) {
-  const unavailable = asFailure(words.connectionsNoTypes)
-  return installation.value.createConnection?.(draft) ?? Promise.resolve(unavailable)
-}
-
-function update(change: ConnectionChange) {
-  const unavailable = asFailure(words.connectionsNoTypes)
-  return installation.value.updateConnection?.(change) ?? Promise.resolve(unavailable)
-}
-
-function getDeleteText(connection: ConnectionInfo): string {
-  const question = words.connectionDeleteAsking(
-    connection.name,
-    connection.secretKeysSet.length > 0,
-  )
-  const usedBy = getUsedByNames(connection.uses)
-  const text = usedBy === '' ? question : `${question} ${words.connectionUsedByDeleted(usedBy)}`
-  return deleteProblem.value === ''
-    ? text
-    : `${text} ${words.connectionDeleteFailed} ${deleteProblem.value}`
 }
 </script>
 
@@ -113,7 +63,12 @@ function getDeleteText(connection: ConnectionInfo): string {
 
     <div class="connections-page__head">
       <h2 class="connections-page__title">{{ words.connections }}</h2>
-      <Button ref="addButton" variant="outline" :disabled="!hasType" @click="onAdd">
+      <Button
+        ref="addButton"
+        variant="outline"
+        :disabled="!page.hasType.value"
+        @click="dialog.openAdd"
+      >
         <Plus :size="14" aria-hidden="true" />
         {{ words.connectionAdd }}
       </Button>
@@ -121,43 +76,43 @@ function getDeleteText(connection: ConnectionInfo): string {
     <p class="connections-page__intro">{{ words.connectionsIntro }}</p>
 
     <ul
-      v-if="connections.length > 0"
+      v-if="page.connections.value.length > 0"
       class="connections-page__list"
       :aria-label="words.connections"
     >
       <ConnectionRow
-        v-for="connection in connections"
+        v-for="connection in page.connections.value"
         :key="connection.id"
         :connection="connection"
-        :type="types.find((one) => one.id === connection.typeId)"
-        @edit="onEdit(connection)"
+        :type="page.types.value.find((one) => one.id === connection.typeId)"
+        @edit="dialog.openEdit(connection)"
         @delete="(opener) => onAskDelete(connection, opener)"
       />
     </ul>
     <div v-else class="connections-page__empty">
       <p class="connections-page__empty-title">{{ words.connectionsEmpty }}</p>
       <p class="connections-page__empty-detail">
-        {{ hasType ? words.connectionsEmptyDetail : words.connectionsNoTypes }}
+        {{ page.hasType.value ? words.connectionsEmptyDetail : words.connectionsNoTypes }}
       </p>
     </div>
 
-    <p v-if="hasUnavailable" class="connections-page__legend">
+    <p v-if="page.hasUnavailable.value" class="connections-page__legend">
       {{ words.connectionUnavailableDetail }}
     </p>
 
     <ConnectionDialog
-      v-if="isAdding || editing"
-      :types="types"
-      v-bind="editing ? { connection: editing } : {}"
-      :create="create"
-      :update="update"
+      v-if="dialog.isOpen.value"
+      :types="page.types.value"
+      v-bind="dialog.editing.value ? { connection: dialog.editing.value } : {}"
+      :create="page.create"
+      :update="page.update"
       @close="onCloseDialog"
     />
 
     <ConfirmDialog
-      v-if="deleting"
+      v-if="deletion.target.value"
       tone="danger"
-      :text="getDeleteText(deleting)"
+      :text="deletion.text.value"
       :label="words.connectionDelete"
       :confirm-text="words.connectionDeleteConfirm"
       :cancel-text="words.connectionDeleteCancel"

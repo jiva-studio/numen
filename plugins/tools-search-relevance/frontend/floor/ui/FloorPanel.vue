@@ -5,35 +5,27 @@
  */
 import { computed, onMounted } from 'vue'
 import { Button, SegmentedControl, Slider } from '@numen/ui'
+import type { JsonValue } from '@numen/plugin-sdk'
 import { useFloor } from '../model/useFloor'
 import { formatFloor, formatNoise, getCalibrationNote, getSourceLabel } from '../model/present'
 import type { FloorClient } from '../model/types'
 import FloorHistogram from './FloorHistogram.vue'
 import FloorProbe from './FloorProbe.vue'
-import { SLIDER_MAX, SLIDER_MIN, SLIDER_STEP, WORDS } from '../words'
+import { SLIDER_MAX, SLIDER_MIN, SLIDER_STEP, WORDS } from '../lib/words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   pluginId: string
-  values: Record<string, unknown>
+  values: Readonly<Record<string, JsonValue>>
   client?: FloorClient
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const floor = useFloor(props.client === undefined ? {} : { client: props.client })
-const {
-  state,
-  status,
-  loadError,
-  actionError,
-  isCalibrating,
-  isTooFew,
-  isManual,
-  manualValue,
-  probeResult,
-  probeError,
-  isProbing,
-} = floor
+const { state, isManual, manualValue, isTooFew } = floor.threshold
+const { status, loadError, actionError, isCalibrating } = floor.progress
+const { probeResult, probeError, isProbing } = floor.probing
+const { load, calibrate, setMode, setManualFloor, probe, reportFailure } = floor.actions
 
 const choices = [
   { id: 'auto', text: WORDS.modeAuto },
@@ -42,13 +34,13 @@ const choices = [
 const mode = computed({
   get: () => (isManual.value ? 'manual' : 'auto'),
   set: (id: string) => {
-    floor.setMode(id === 'manual').catch(floor.reportFailure)
+    setMode(id === 'manual').catch(reportFailure)
   },
 })
 const slider = computed({
   get: () => manualValue.value,
   set: (value: number) => {
-    floor.setManualFloor(value).catch(floor.reportFailure)
+    setManualFloor(value).catch(reportFailure)
   },
 })
 const shownFloor = computed(() => (state.value === null ? '' : formatFloor(state.value.floor)))
@@ -70,20 +62,20 @@ const isAutomaticInRange = computed(
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
-  floor.load().catch(floor.reportFailure)
+  load().catch(reportFailure)
 })
 
 /* -------------------------------- Handlers -------------------------------- */
 function onRecalculate(): void {
-  floor.calibrate().catch(floor.reportFailure)
+  calibrate().catch(reportFailure)
 }
 
 function onRetry(): void {
-  floor.load().catch(floor.reportFailure)
+  load().catch(reportFailure)
 }
 
 function onCheck(query: string): void {
-  floor.probe(query).catch(floor.reportFailure)
+  probe(query).catch(reportFailure)
 }
 </script>
 

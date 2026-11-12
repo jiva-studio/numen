@@ -32,28 +32,32 @@ export function createFilesTabDeps(
   id: string,
 ): FilesTabDeps {
   return {
-    openEntry: ({ path, name, isNote }) => {
-      if ((isNote || isNotePath(path)) && workspace.syncPath(id, path, getFileStem(name))) return
-      workspace.openFile(path, { title: name || path, placement: 'current' })
+    window: {
+      openEntry: ({ path, name, isNote }) => {
+        if ((isNote || isNotePath(path)) && workspace.files.syncPath(id, path, getFileStem(name)))
+          return
+        workspace.files.open(path, { title: name || path, placement: 'current' })
+      },
+      onSelectPath: (path, state) => {
+        const entry = state.list.queries.getEntryAt(path)
+        if (entry && !entry.isFolder && (entry.isNote || isNotePath(path))) {
+          workspace.files.syncPath(id, path, getFileStem(entry.name))
+        }
+      },
+      setDraggedPaths: (paths) => workspace.dragged.setPaths(paths),
+      showError: (text) => workspace.messages.showError(text),
+      getEntryIcon: (entry, isOpen) => workspace.icons.getEntry(entry, isOpen),
     },
-    onSelectPath: (path, state) => {
-      const entry = state.list.getEntryAt(path)
-      if (entry && !entry.isFolder && (entry.isNote || isNotePath(path))) {
-        workspace.syncPath(id, path, getFileStem(entry.name))
-      }
+    menu: {
+      getMenuEntries: (target) => slots?.getEntries(SLOT.fileTreeContext, target) ?? [],
+      listItems: async (command, target) => (await commands?.listItems(command, target)) ?? [],
+      runCommand: (command, target, itemId, values) =>
+        commands?.run(command, target, itemId, values) ?? Promise.resolve(''),
     },
-    getMenuEntries: (target) => slots?.getEntries(SLOT.fileTreeContext, target) ?? [],
-    listItems: async (command, target) => (await commands?.listItems(command, target)) ?? [],
-    runCommand: async (command, target, itemId) => {
-      await commands?.run(command, target, itemId)
+    transfer: {
+      movePath: (from, to) => files.move(from, to),
+      canDropData: (types) => drops?.canDrop(types) ?? false,
+      dropData: async (folder, data) => (drops ? drops.drop(folder, data) : []),
     },
-    movePath: (from, to) => files.move(from, to),
-    setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),
-    createFolder: (path) => files.createFolder(path),
-    createNote: (folder) => files.createNote(folder),
-    canDropData: (types) => drops?.canDrop(types) ?? false,
-    dropData: async (folder, data) => (drops ? drops.drop(folder, data) : []),
-    showError: (text) => workspace.showError(text),
-    getEntryIcon: (entry, isOpen) => workspace.getEntryIcon(entry, isOpen),
   }
 }

@@ -1,39 +1,24 @@
 /**
- * The command palette: the window it opens, the commands it offers, and the
+ * The command palette: the window it opens, the commands it offers, and the searches it asks of
+ * the core.
  */
 export { default as CommandPalette } from './ui/CommandPalette.vue'
-export {
-  isChord,
-  findChordCommand,
-  findChordKeys,
-  createRowKeys,
-  findShortcutKeys,
-} from './lib/chords/chords'
 export { createCommands } from './lib/commands/table'
 export { createInvocation } from './lib/entries/invocation'
 export { createNotes } from './lib/notes/notes'
-export type { FileIcons } from './model/rowIcons'
-export { commands, registerCommand, runInvocation } from './model/handlers/handlers'
-export { useCommandPalette } from './model/palette/palette'
+export { runInvocation } from './model/handlers/handlers'
 export type { Commands } from './model/palette/palette'
+export { createCommandDeps } from './model/run/createCommandDeps'
+export { createCommandNotes } from './model/notes/createCommandNotes'
+export { createNoteLookup } from './model/notes/createNoteLookup'
+export { createAppItemRunner } from './model/run/createAppItemRunner'
+export { createSearchRequests } from './model/run/createSearchRequests'
+export { createInvocationRunner } from './model/run/createInvocationRunner'
+export { createVaultOpener } from './model/run/createVaultOpener'
 export { runSupport } from './model/palette/runSupport'
-export { useSearch } from './model/search/search'
-export type { SearchDeps, SearchMode, SearchState } from './model/search/search'
-export type { ResultChoice, SearchMenuDeps } from './model/search/lookup'
-export type { CommandDeps, VaultWriter } from './model/handlers/deps'
-export { ANSWER_WORDS } from './words'
-export type { AnswerWords } from './words'
-export type {
-  Command,
-  CommandInvocation,
-  CommandPrompt,
-  CommandPlace,
-  CommandsDeps,
-  CommandTarget,
-  NoteLookup,
-  Notes,
-  PaletteLists,
-  RunSupport,
-  Store,
-  VaultRef,
-} from './types'
+export { searchCore } from './api/search'
+export { PALETTE_WORDS } from './words'
+export type { NoteLookup, PaletteLists } from './types'
+export { createWindowPalette } from './model/window/createWindowPalette'
+export type { SearchState } from './model/search/search'
+export type { PluginPaletteLists } from './model/window/createWindowPalette'

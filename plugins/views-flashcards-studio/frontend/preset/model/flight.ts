@@ -3,8 +3,8 @@
  */
 import { ref, type Ref } from 'vue'
 import type { MessageWriter } from '@numen/plugin-sdk'
-import type { Presets, Settings } from '../types'
-import { WORDS as words } from '../words'
+import type { Presets, Settings } from '../../lib/presets'
+import { WORDS as words } from '../lib/words'
 
 /** State tracking write flight and dirty settings for one preset file. */
 export interface WriteFlight {

@@ -1,10 +1,11 @@
 {
   "id": "md.numen.views.titleBar",
   "name": "Title bar",
-  "version": "2026.11.2",
+  "version": "2026.11.4",
   "protocol": 1,
   "description": "Draws the bar at the top of each window: the commands, the vault and the window buttons",
   "targets": ["desktop.editor", "desktop.flashcards"],
+  "permissions": ["vault:read", "vault:write", "vault:manage"],
   "contributes": {
     "category": "views",
     "slots": [{ "slot": "titleBar", "view": "bar" }]

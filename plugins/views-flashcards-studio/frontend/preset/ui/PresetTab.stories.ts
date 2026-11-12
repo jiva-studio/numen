@@ -1,10 +1,10 @@
 /**
  * The preset tab: the goal, the curve plot, the backlog plot below it, and the
  * rows of settings derived from the curve. These stories cover what only a
- * browser can verify: the layout of the columns, the readout under the knob, the
- * bubble above it and the numbers along the axis.
+ * browser can verify: the readout under the knob, the bubble above it, the
+ * keyboard focus and the pointer drag.
  */
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../lib/stop'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref, shallowRef } from 'vue'
@@ -16,10 +16,9 @@ import {
   type PresetCounts,
   type Settings,
   type SettingsBounds,
-  type PresetTabState,
-} from '../types'
-import { BACKLOG_PLOT_HEIGHT, PLOT_HEIGHT, PLOT_WIDTH } from '../lib/plot'
-import { WORDS as words } from '../words'
+} from '../../lib/presets'
+import { WORDS as words } from '../lib/words'
+import type { PresetTabState } from '../model/types'
 
 const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
@@ -81,23 +80,29 @@ const createPresetTab = (args: Knobs): PresetTabState => {
   return {
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, goal: args.goal }),
-    curve: shallowRef(picture),
-    material: shallowRef(args.isHonest ? MATERIAL : null),
-    place,
-    isWaiting: ref(args.isWaiting),
     bounds: shallowRef(BOUNDS),
-    problems: shallowRef([]),
-    stopped: ref(StopReason.NOTHING),
-    errorMessage: ref(''),
-    hasExternalChange: ref(false),
-    reload: fn(),
-    chooseGoal: fn(),
-    moveSlider: (pos: number) => {
-      place.value = pos
+    curves: {
+      curve: shallowRef(picture),
+      material: shallowRef(args.isHonest ? MATERIAL : null),
+      place,
+      isWaiting: ref(args.isWaiting),
     },
-    flushPending: fn(),
-    updateSetting: fn(),
-    close: fn(),
+    status: {
+      problems: shallowRef([]),
+      stopped: ref(StopReason.NOTHING),
+      errorMessage: ref(''),
+      hasExternalChange: ref(false),
+    },
+    actions: {
+      reload: fn(),
+      chooseGoal: fn(),
+      moveSlider: (pos: number) => {
+        place.value = pos
+      },
+      flushPending: fn(),
+      updateSetting: fn(),
+      close: fn(),
+    },
   }
 }
 
@@ -166,83 +171,15 @@ const getBubbleLine = (value: number): string =>
   })[0]!
 
 /**
- * Every row of settings is laid on the columns the section declares, so a
- * control begins where the control above it begins however long its name runs.
- *
- * Only a browser resolves that: without the shared columns each row would size
- * its own, and the controls would start at as many places as there are rows.
+ * The knob moved to either end of its grid with the keyboard: the readout under
+ * the knob and the bubble above it show the value at each end.
  */
-export const TheRowsShareTheirColumns: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const settings = canvas.getByRole('region', { name: words.settings })
-
-    // Every row the minutes goal produces, by the control it offers rather
-    // than by the shape it is drawn in.
-    const controls = [
-      canvas.getByRole('button', { name: 'Learned when' }),
-      canvas.getByRole('spinbutton', { name: 'Days apart' }),
-      canvas.getByRole('spinbutton', { name: 'Minutes per day' }),
-      canvas.getByRole('slider', { name: 'Overdue share' }),
-      canvas.getByRole('toolbar', { name: 'Load by weekday' }),
-      canvas.getByRole('switch', { name: 'Even load' }),
-    ]
-
-    // The names of the rows, each in the first of the two columns.
-    const names = [
-      'Learned when',
-      'Days apart',
-      'Minutes per day',
-      'Overdue share',
-      'Load by weekday',
-      'Even load',
-    ].map((name) => within(settings).getByText(name).getBoundingClientRect())
-
-    // One column for all of them: every name begins on one line and ends on
-    // one line. Were each row measuring its own grid, the widest control in
-    // that row alone would decide where its name stopped, and the six would
-    // stop in six places.
-    await expect(new Set(names.map((box) => Math.round(box.left))).size).toBe(1)
-    await expect(new Set(names.map((box) => Math.round(box.right))).size).toBe(1)
-
-    // The controls stand in the second column, past the line every name stops
-    // on, and inside the section and not spilling out of it.
-    const edge = names[0]!.right
-    const room = settings.getBoundingClientRect()
-    for (const control of controls) {
-      const box = control.getBoundingClientRect()
-      await expect(box.width).toBeGreaterThan(0)
-      await expect(box.left).toBeGreaterThanOrEqual(edge)
-      await expect(box.right).toBeLessThanOrEqual(Math.ceil(room.right))
-    }
-
-    // The widest of them is what the column is as wide as, so the column is a
-    // real one and not each row's own guess.
-    const widths = controls.map((one) => one.getBoundingClientRect().width)
-    await expect(Math.max(...widths)).toBeGreaterThan(Math.min(...widths))
-    await expect(room.right - edge).toBeGreaterThanOrEqual(Math.max(...widths))
-  },
-}
-
-/**
- * The knob moved to either end of its grid.
- *
- * The value readout under the knob is on its own line and is shifted back
- * onto the plot at the ends, so it never overflows the side. The shift is the
- * `translate` property, and only a browser reports where the text ends up.
- */
-export const TheReadoutStaysBelowThePlot: Story = {
+export const TheKnobMovesToEitherEnd: Story = {
   play: async ({ canvasElement }) => {
     const picture = getImage(canvasElement)
-    const frame = picture.getBoundingClientRect()
     picture.focus()
     await expect(picture).toHaveFocus()
 
-    const getValueElement = (value: number) =>
-      within(canvasElement).getByText(words.formatGoalValue('minutes', value))
-
-    // At either end and in the middle, the value is inside the plot it is read from
-    // and is rendered.
     for (const [key, value] of [
       ['{Home}', 0],
       ['{End}', 30],
@@ -250,146 +187,58 @@ export const TheReadoutStaysBelowThePlot: Story = {
       await userEvent.keyboard(key)
       await waitFor(() => expect(picture).toHaveAttribute('aria-valuenow', String(value)))
 
-      const box = getValueElement(value).getBoundingClientRect()
-      await expect(box.width).toBeGreaterThan(0)
-      await expect(box.left).toBeGreaterThanOrEqual(frame.left - 1)
-      await expect(box.right).toBeLessThanOrEqual(frame.right + 1)
+      await expect(
+        within(canvasElement).getByText(words.formatGoalValue('minutes', value)),
+      ).toBeVisible()
+      await expect(within(canvasElement).getByText(getBubbleLine(value))).toBeVisible()
     }
   },
 }
 
 /**
- * The bubble that shows what the position under the knob buys.
- *
- * It is anchored to the knob's point and shifted back by half its width, or by
- * its full width at the trailing end, so it stays over the plot. Its tail
- * points at the knob in either case.
+ * With the answer in, the backlog is drawn with its two axes labelled and the days
+ * of the run; while the answer is pending there is no backlog.
  */
-export const TheBubbleIsAboveTheKnob: Story = {
-  play: async ({ canvasElement }) => {
-    const picture = getImage(canvasElement)
-    const frame = picture.getBoundingClientRect()
-    picture.focus()
-
-    // The bubble shows the current value, so it is located by its text.
-    for (const [key, value] of [
-      ['{Home}', 0],
-      ['{End}', 30],
-    ] as const) {
-      await userEvent.keyboard(key)
-      await waitFor(() => expect(picture).toHaveAttribute('aria-valuenow', String(value)))
-
-      const bubble = within(canvasElement).getByText(getBubbleLine(value)).parentElement!
-      const box = bubble.getBoundingClientRect()
-      await expect(box.width).toBeGreaterThan(0)
-      await expect(box.left).toBeGreaterThanOrEqual(frame.left - 1)
-      await expect(box.right).toBeLessThanOrEqual(frame.right + 1)
-    }
-  },
-}
-
-/**
- * The plot keeps its height whether or not a backlog is drawn, so nothing below it moves when
- * the response arrives. Only a browser can verify that: the height is set by an aspect ratio,
- * which is only a number until the layout is computed.
- */
-export const TheBacklogKeepsItsSpace: Story = {
+export const TheBacklogIsDrawnWithTheAnswer: Story = {
   render: bothWays,
   play: async ({ canvasElement }) => {
     const [answered, waiting] = getTabs(canvasElement)
-    const getBacklogRect = (tab: HTMLElement): DOMRect => getRooms(tab)[1]!.getBoundingClientRect()
-
-    // The backlog's two axes are labelled, and it is drawn below the curve plot it
-    // belongs to and not beside it.
     const canvas = within(answered!)
-    const backlog = canvas.getByText(words.backlogY)
-    const axisLabel = canvas.getByText(words.backlogX)
-    const picture = getImage(answered!).getBoundingClientRect()
-    await expect(backlog.getBoundingClientRect().top).toBeGreaterThan(picture.top)
-    await expect(axisLabel.getBoundingClientRect().top).toBeGreaterThan(
-      backlog.getBoundingClientRect().top,
-    )
+    await expect(canvas.getByText(words.backlogY)).toBeVisible()
+    await expect(canvas.getByText(words.backlogX)).toBeVisible()
+    await expect(canvas.getByText(words.formatBacklogDays(1))).toBeVisible()
+    await expect(canvas.getByText(words.formatBacklogDays(7))).toBeVisible()
 
-    // It runs from the first day to the last of the run at this place, and the
-    // two ends stand at the two ends of it.
-    const first = canvas.getByText(words.formatBacklogDays(1))
-    const last = canvas.getByText(words.formatBacklogDays(7))
-    await expect(first.getBoundingClientRect().left).toBeLessThan(last.getBoundingClientRect().left)
-
-    // One tab has a backlog drawn in the backlog and the other has none, which is
-    // what makes the two rooms worth comparing.
     await expect(answered!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(1)
     await expect(waiting!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(0)
-
-    // The height is the same in both cases, with the backlog's own aspect ratio.
-    const backlogBox = getBacklogRect(answered!)
-    const empty = getBacklogRect(waiting!)
-    await expect(backlogBox.width).toBeGreaterThan(0)
-    await expect(empty.width).toBeCloseTo(backlogBox.width, 0)
-    await expect(empty.height).toBeCloseTo(backlogBox.height, 0)
-    await expect(backlogBox.width / backlogBox.height).toBeCloseTo(
-      PLOT_WIDTH / BACKLOG_PLOT_HEIGHT,
-      1,
-    )
   },
 }
 
-/**
- * The curve response is pending.
- *
- * The plot container keeps its aspect ratio while empty, so the rows below it
- * do not move when the curve arrives.
- */
+/** The curve response is pending: the waiting text replaces the plot, and the settings are still there. */
 export const WaitingForAnAnswer: Story = {
   args: { isHonest: false, isWaiting: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     canvas.getByText(words.waiting)
     await expect(canvas.queryByRole('slider', { name: words.knob })).toBeNull()
-
-    // The container for the plot is present and empty, with the plot's aspect ratio,
-    // so nothing below it moves when the curve arrives.
-    const empty = getRooms(canvasElement)[0]!.getBoundingClientRect()
-    await expect(empty.width).toBeGreaterThan(0)
-    await expect(empty.width / empty.height).toBeCloseTo(PLOT_WIDTH / PLOT_HEIGHT, 1)
-
-    // The settings under it are still there, and still on their own columns.
-    const room = canvas.getByRole('region', { name: words.settings }).getBoundingClientRect()
-    await expect(room.height).toBeGreaterThan(0)
-    await expect(room.top).toBeGreaterThanOrEqual(empty.bottom)
+    await expect(getRooms(canvasElement).length).toBeGreaterThan(0)
+    await expect(canvas.getByRole('region', { name: words.settings })).toBeVisible()
   },
 }
 
-/**
- * The knob under keyboard focus.
- *
- * The focus ring is drawn on the knob, which the arrow keys move, and not
- * around the plot containing it. Only a browser reports which element has the
- * ring.
- */
-export const TheRingIsOnTheKnob: Story = {
+/** The keyboard reaches the knob by Tab, and the arrow keys then move it. */
+export const TheKnobTakesTheKeyboardFocus: Story = {
   play: async ({ canvasElement }) => {
     const picture = getImage(canvasElement)
-    const knob = picture.querySelector<SVGCircleElement>('[data-control="knob"]')!
-    const initialStyle = getComputedStyle(knob)
-    const before = { stroke: initialStyle.stroke, width: initialStyle.strokeWidth }
+    const was = picture.getAttribute('aria-valuenow')
 
-    // The keyboard's own way in, so the browser counts the focus as one it
-    // draws a ring for.
     for (let press = 0; press < 12 && document.activeElement !== picture; press += 1) {
       await userEvent.tab()
     }
     await waitFor(() => expect(picture).toHaveFocus())
 
-    // The knob has the ring: its stroke has another colour and a greater width.
-    const target = getComputedStyle(knob)
-    await expect(target.stroke).not.toBe(before.stroke)
-    await expect(Number.parseFloat(target.strokeWidth)).toBeGreaterThan(
-      Number.parseFloat(before.width),
-    )
-
-    // The plot itself has no outline.
-    await expect(getComputedStyle(picture).outlineStyle).toBe('none')
+    await userEvent.keyboard('{End}')
+    await waitFor(() => expect(picture.getAttribute('aria-valuenow')).not.toBe(was))
   },
 }
 

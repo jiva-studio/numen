@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,8 +14,8 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
 
 func getElsewhere() map[string]string {
@@ -47,7 +47,7 @@ func getDeckPreset(t *testing.T, handler *API, v domain.Vault, path string) *api
 // holds. The window is over every vault at once, and the two decks here stand
 // at the same path.
 func TestAPresetIsReadFromTheVaultTheRequestNames(t *testing.T) {
-	handler, target := newAPI(t, getPointed(), getElsewhere())
+	handler, target := newAPI(t, getPointedVault(), getElsewhere())
 	one, two := target[0], target[1]
 
 	first := getDeckPreset(t, handler, one, "decks/Words.md")
@@ -67,10 +67,10 @@ func TestAPresetIsReadFromTheVaultTheRequestNames(t *testing.T) {
 	}
 }
 
-func getHandwritten() map[string]string {
+func getHandwrittenVault() map[string]string {
 	return map[string]string{
 		"Term.md":        getDeck()["Term.md"],
-		"Sanskrit.md":    getPointed()["Sanskrit.md"],
+		"Sanskrit.md":    getPointedVault()["Sanskrit.md"],
 		"decks/Words.md": getDeck()["decks/Words.md"],
 	}
 }
@@ -88,7 +88,7 @@ const typedManually = "---\ntype: deck\nlinks:\n" +
 // writes is level in the index by the time the session is passed. Nothing
 // else is running over the vault, and nothing rescans it.
 func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
-	handler, target := newAPI(t, getHandwritten())
+	handler, target := newAPI(t, getHandwrittenVault())
 	v := target[0]
 
 	pos := filepath.Join(v.Path, "decks", "Words.md")
@@ -120,7 +120,7 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 // A question about the presets of a vault this installation does not hold is
 // rejected, and nothing is read for it.
 func TestAQuestionAboutThePresetsOfAVaultThatNoVaultContainsIsRefused(t *testing.T) {
-	handler, _ := newAPI(t, getPointed())
+	handler, _ := newAPI(t, getPointedVault())
 
 	_, err := handler.GetVaultDeckPreset(t.Context(),
 		&api.GetVaultDeckPresetRequest{Vault: "nobody", Deck: "decks/Words.md"})
@@ -139,8 +139,8 @@ func (brokenPresetLinks) GetLinks(context.Context, domain.VaultID, string) ([]do
 // The index being out of reach is an internal failure and not a deck on the
 // defaults.
 func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
-	handler, target := newAPI(t, getPointed())
-	handler.scenarios().flash.Presets = flashcards.NewPresets(nil, nil, brokenPresetLinks{}, nil, nil, nil).WithDay(handler.scenarios().day)
+	handler, target := newAPI(t, getPointedVault())
+	handler.flash().Schedules.Presets = presets.New(presets.Config{Links: brokenPresetLinks{}, Day: handler.flash().Day})
 
 	_, err := handler.GetVaultDeckPreset(t.Context(),
 		&api.GetVaultDeckPresetRequest{Vault: string(target[0].ID), Deck: "decks/Words.md"})
@@ -152,7 +152,7 @@ func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
 // A preset the deck names that cannot be read returns an error, as the editor
 // rejects a note, and carries no preset.
 func TestGetVaultDeckPreset_UnreadablePresetMatchesEditorError(t *testing.T) {
-	handler, target := newAPI(t, getPointed())
+	handler, target := newAPI(t, getPointedVault())
 	v := target[0]
 	if err := os.Remove(filepath.Join(v.Path, "Sanskrit.md")); err != nil {
 		t.Fatal(err)
@@ -185,7 +185,7 @@ func newWordDeck(pos string, cards int, from int) string {
 	return out
 }
 
-func getPresetted() map[string]string {
+func getPresettedVault() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
 		"Steady.md": "---\ntype: preset\ngoal: retention\n" +
@@ -201,7 +201,7 @@ func getPresetted() map[string]string {
 
 // The window draws a tile per preset, and pressing one opens a session over the
 func TestASessionIsOpenedOverOnePreset(t *testing.T) {
-	handler, target := newAPI(t, getPresetted())
+	handler, target := newAPI(t, getPresettedVault())
 	v := target[0]
 
 	out, err := handler.StartSession(t.Context(), &api.StartSessionRequest{
@@ -224,7 +224,7 @@ func TestASessionIsOpenedOverOnePreset(t *testing.T) {
 // Naming a deck and a preset together is ambiguous about which cards are meant,
 // so the request is rejected.
 func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
-	handler, target := newAPI(t, getPresetted())
+	handler, target := newAPI(t, getPresettedVault())
 	v := target[0]
 
 	_, err := handler.StartSession(t.Context(), &api.StartSessionRequest{
@@ -302,7 +302,7 @@ func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
 
 // window shows in place of an empty session.
 func TestAPresetThatSchedulesNothingIsRefusedWithItsReason(t *testing.T) {
-	handler, target := newAPI(t, getPresetted())
+	handler, target := newAPI(t, getPresettedVault())
 	v := target[0]
 
 	_, err := handler.StartSession(t.Context(), &api.StartSessionRequest{

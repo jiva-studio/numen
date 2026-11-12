@@ -21,8 +21,8 @@ describe('a recording firstRead', () => {
   it('is played from the address the application serves it at, and loaded into an empty player', async () => {
     const { tab, player } = open()
     await tab.content.firstRead
-    expect(tab.playback.url.value).toBe(TALK_URL)
-    expect(player.url.value).toBe(TALK_URL)
+    expect(tab.playback.source.url.value).toBe(TALK_URL)
+    expect(player.state.url.value).toBe(TALK_URL)
   })
 
   it('says it is loading until the answer lands, and no longer', async () => {
@@ -209,7 +209,7 @@ describe('a recording tab that closes', () => {
   it('stops listening for work and holds no words', async () => {
     const { tab, state } = open()
     await tab.content.firstRead
-    tab.close()
+    tab.lifecycle.close()
     expect(state.isWatched).toBe(false)
     expect(tab.content.cues.value).toStrictEqual([])
   })

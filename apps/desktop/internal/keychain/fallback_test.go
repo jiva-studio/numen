@@ -10,9 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/zalando/go-keyring"
-
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
 const (
@@ -134,7 +133,7 @@ func TestADeleteRemovesTheEntryFromTheCredentialsFileAndKeepsTheOthers(t *testin
 	if _, found := got[entryName]; found || got[otherEntry] != valueTwo {
 		t.Errorf("the file holds %v", got)
 	}
-	if _, err := store.GetKey(t.Context(), entryName); !errors.Is(err, pluginport.ErrNoKey) {
+	if _, err := store.GetKey(t.Context(), entryName); !errors.Is(err, plugin.ErrNoKey) {
 		t.Errorf("a deleted value read as %v, want ErrNoKey", err)
 	}
 }
@@ -154,7 +153,7 @@ func TestAKeychainThatAppearsLaterIsUsedAndTheFileStillAnswersForItsKeys(t *test
 	if got, err := keyring.Get(service, otherEntry); err != nil || got != valueTwo {
 		t.Errorf("a write after the keychain appeared did not reach it: %q, %v", got, err)
 	}
-	if _, err := store.GetKey(t.Context(), entryName); !errors.Is(err, pluginport.ErrNoKey) {
+	if _, err := store.GetKey(t.Context(), entryName); !errors.Is(err, plugin.ErrNoKey) {
 		t.Errorf("a key kept in the file read as %v while the keychain is reachable, want ErrNoKey", err)
 	}
 }
@@ -190,7 +189,7 @@ func TestAKeychainThatRefusesIsNotReplacedByTheFile(t *testing.T) {
 	store := newTestStore(dir)
 
 	err := store.SetKey(t.Context(), entryName, valueOne)
-	if !errors.Is(err, pluginport.ErrNoKeyStore) {
+	if !errors.Is(err, plugin.ErrNoKeyStore) {
 		t.Fatalf("a write to a refusing keychain returned %v, want ErrNoKeyStore", err)
 	}
 	if _, statErr := os.Stat(credentialsPath(dir)); !errors.Is(statErr, os.ErrNotExist) {
@@ -231,7 +230,7 @@ func TestTheCredentialsFileIsNotReadWhileTheKeychainIsReachable(t *testing.T) {
 	}
 	store := newTestStore(dir)
 
-	if _, err := store.GetKey(t.Context(), entryName); !errors.Is(err, pluginport.ErrNoKey) {
+	if _, err := store.GetKey(t.Context(), entryName); !errors.Is(err, plugin.ErrNoKey) {
 		t.Errorf("error = %v, want ErrNoKey: the file is not read while the keychain is reachable", err)
 	}
 	if err := keyring.Set(service, entryName, valueTwo); err != nil {
@@ -244,7 +243,7 @@ func TestTheCredentialsFileIsNotReadWhileTheKeychainIsReachable(t *testing.T) {
 
 func TestAValueWithNoEntryAnywhereIsNoKey(t *testing.T) {
 	keyring.MockInit()
-	if _, err := newTestStore(t.TempDir()).GetKey(t.Context(), entryName); !errors.Is(err, pluginport.ErrNoKey) {
+	if _, err := newTestStore(t.TempDir()).GetKey(t.Context(), entryName); !errors.Is(err, plugin.ErrNoKey) {
 		t.Errorf("error = %v, want ErrNoKey", err)
 	}
 }

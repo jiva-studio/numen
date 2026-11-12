@@ -45,8 +45,18 @@ Resolve the repository root and determine the target:
    ```bash
    REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || readlink -f .agents/.. 2>/dev/null || echo "$PWD/../source/numen")
    ```
-2. **Explicit target**: a path (`/nm-review libs/ui/core/src/plex`) focuses the audit on those files; a git reference (`/nm-review origin/main...HEAD`, a SHA) reviews that range.
-3. **Auto-detection (default)**:
+2. **Pull request or commit range**:
+   - For a pull request (`/nm-review #123`, `/nm-review 123`, or a branch with an open pull request), read `baseRefName`, `baseRefOid` (`BASE_SHA`) and `headRefOid` (`HEAD_SHA`) with `gh pr view [<number>] --json number,baseRefName,baseRefOid,headRefOid`.
+   - For a commit range (`/nm-review <base>...<head>`), resolve `BASE_SHA=$(git -C "$REPO_ROOT" rev-parse "<base>^{commit}")` and `HEAD_SHA=$(git -C "$REPO_ROOT" rev-parse "<head>^{commit}")`.
+   - Verify that the checkout is at the head of the target: `git -C "$REPO_ROOT" rev-parse HEAD` must equal `HEAD_SHA`. Stop with an error when the checkout is not at `HEAD_SHA`.
+   - Diff against the base of the pull request or range:
+     ```bash
+     git -C "$REPO_ROOT" diff "$BASE_SHA...$HEAD_SHA" --name-only
+     git -C "$REPO_ROOT" diff "$BASE_SHA...$HEAD_SHA"
+     ```
+   - State the base branch (when known), `$BASE_SHA...$HEAD_SHA`, and the changed files before proceeding. Review only the files in `$BASE_SHA...$HEAD_SHA` and ignore uncommitted working-tree changes. When a changed file in the working tree differs from `HEAD_SHA` (such as `.agents`, `.claude/skills`, `AGENTS.md`, `tools/checks` or `tools/shared/tools.mjs` in CI), read the version at `HEAD_SHA` with `git -C "$REPO_ROOT" show "$HEAD_SHA:<path>"`.
+3. **Explicit path**: a path (`/nm-review libs/ui/components/src/plex`) focuses the audit on those files.
+4. **Local auto-detection (no argument and no open pull request)**:
    - `git -C "$REPO_ROOT" status --short` and `git -C "$REPO_ROOT" diff HEAD`.
    - Dirty tree: audit the uncommitted diff.
    - Clean tree: take the branch delta.
@@ -66,7 +76,7 @@ Every worktree of this repository shares one `git stash` stack. Never stash to g
 
 _Guide: [`stages/1-gatekeeper.md`](./stages/1-gatekeeper.md)_
 
-1. **Automated gate** — Run the modular target for each touched module from `REPO_ROOT` (e.g. `make lib_core_lint lib_core_test` for core backend, `make lib_ui_lint lib_ui_test` for UI, etc.). Never run blanket monorepo suites over untouched domains.
+1. **Automated gate** — Run the modular target for each touched module from `REPO_ROOT` (e.g. `make lib_core_lint lib_core_test` for core backend, `make lib_ui_components_lint lib_ui_components_test` for UI, etc.). Never run blanket monorepo suites over untouched domains.
 2. **Fail-fast** — a type error, a lint failure, or a broken existing test marks the gate **FAIL**. Stop and reject with the exact error output, unless told to continue.
 3. **Architecture checklist** — dependency direction, ports and adapters, the `@numen/ui` domain boundary, the core/view split, tokens, naming, and one name per concept.
 
@@ -74,7 +84,7 @@ _Guide: [`stages/1-gatekeeper.md`](./stages/1-gatekeeper.md)_
 
 _Guide: [`stages/2-bughunter.md`](./stages/2-bughunter.md)_
 
-1. **Intent & Spec conformance** — if `.agents/tasks/<slug>/intent.md` exists, verify that no Non-Goals were violated. If `spec.md` exists, verify that all acceptance criteria are covered and the diff does not exceed the blast radius.
+1. **Intent & Spec conformance** — if `intent.md` exists in the task folder, verify that no Non-Goals were violated. If `spec.md` exists, verify that all acceptance criteria are covered and the diff does not exceed the blast radius.
 2. **Blast radius** — callers of every changed function, upstream sources of the state it reads, downstream watchers, renderers and subscribers.
 3. **Defect matrix** — Go concurrency, context and cancellation, error paths, SQL and resources; Vue reactivity, lifecycle leaks, out-of-order responses; boundary and index errors; wire contracts across _A client is generated from the protocol_.
 4. **Proof** — every defect has a concrete scenario: _Given → When → Then_. No vague warnings.
@@ -128,7 +138,7 @@ Verdict: ❌ Rejected when a gate failed or a CRITICAL finding exists; ⚠️ Ch
 
 …
 
-**Gates:** ✅ `make lib_core_lint` · ✅ `make lib_core_test` · ❌ `make lib_ui_test`
+**Gates:** ✅ `make lib_core_lint` · ✅ `make lib_core_test` · ❌ `make lib_ui_components_test`
 
 ```text
 <the exact error output of a failed gate>

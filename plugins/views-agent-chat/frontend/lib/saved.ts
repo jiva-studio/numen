@@ -3,17 +3,18 @@
  * The agent itself does not keep the conversation, so the turns are shown and a new question
  * starts a new conversation with the agent.
  */
-import type { Turn, Voice } from '../thread/lib/turn'
+import type { JsonValue } from '@numen/plugin-sdk'
+import type { Turn, Voice } from '../types'
 
 /** One settled turn, as an agent tab saves it. */
-export interface SavedTurn {
+type SavedTurn = {
   readonly id: string
   readonly voice: Voice
   readonly text: string
 }
 
 /** What an agent tab saves. */
-export interface SavedConversation {
+export type SavedConversation = {
   readonly question: string
   readonly turns: readonly SavedTurn[]
 }
@@ -32,17 +33,22 @@ export const createSavedConversation = (
     .map(({ id, voice, text }) => ({ id, voice, text })),
 })
 
+const isObject = (value: JsonValue | undefined): value is { readonly [key: string]: JsonValue } =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const isSavedTurn = (value: JsonValue): value is SavedTurn =>
+  isObject(value) &&
+  typeof value['id'] === 'string' &&
+  typeof value['text'] === 'string' &&
+  KEPT.has(value['voice'] as Voice)
+
 /** The conversation an agent tab saved, and an empty one where the value is not one. */
-export const parseSavedConversation = (saved: unknown): SavedConversation => {
-  const value = saved as Partial<SavedConversation> | null | undefined
-  const turns = Array.isArray(value?.turns) ? value.turns : []
+export const parseSavedConversation = (saved: JsonValue | undefined): SavedConversation => {
+  const value = isObject(saved) ? saved : {}
+  const turns = value['turns']
+  const question = value['question']
   return {
-    question: typeof value?.question === 'string' ? value.question : '',
-    turns: turns.filter(
-      (turn): turn is SavedTurn =>
-        typeof turn?.id === 'string' &&
-        typeof turn.text === 'string' &&
-        KEPT.has(turn.voice as Voice),
-    ),
+    question: typeof question === 'string' ? question : '',
+    turns: Array.isArray(turns) ? turns.filter(isSavedTurn) : [],
   }
 }

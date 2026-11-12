@@ -9,10 +9,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
@@ -34,12 +34,8 @@ func (s *searchCalls) getQueries() []host.PassageQuery {
 // recordingSearch is the fake search that records every query and rejects a kind it does not know as
 // the host does.
 type recordingSearch struct {
-	host.Search
+	host.PassageSearch
 	calls *searchCalls
-}
-
-func (r recordingSearch) With(id domain.VaultID) host.Search {
-	return recordingSearch{Search: r.Search.With(id), calls: r.calls}
 }
 
 func (r recordingSearch) SearchPassages(ctx context.Context, query host.PassageQuery) ([]host.Passage, error) {
@@ -51,16 +47,20 @@ func (r recordingSearch) SearchPassages(ctx context.Context, query host.PassageQ
 			return nil, fmt.Errorf("%w: %q is not a searchable source kind: use \"note\" or \"file\"", errInvalidArgument, kind)
 		}
 	}
-	return r.Search.SearchPassages(ctx, query)
+	return r.PassageSearch.SearchPassages(ctx, query)
 }
 
 func newRecordedSearch(t *testing.T, vault *hosttest.Vault, passages []host.Passage) (*searchCalls, *tools.Registry) {
 	t.Helper()
 	search := hosttest.NewSearch(testVault)
 	search.SetIndexedPassages(passages)
+	texts := hosttest.NewTexts(testVault, readerID)
 	calls := &searchCalls{}
-	registry, err := service.New(vault).
-		WithLibrary(hosttest.NewTexts(testVault, readerID), recordingSearch{Search: search, calls: calls}).
+	registry, err := service.New(vaultsOf(vault)).
+		WithLibrary(func(id domain.VaultID) service.Library {
+			on := texts.With(id)
+			return service.Library{Versions: on, Texts: on, Search: recordingSearch{PassageSearch: search.With(id), calls: calls}}
+		}).
 		Registry()
 	if err != nil {
 		t.Fatal(err)

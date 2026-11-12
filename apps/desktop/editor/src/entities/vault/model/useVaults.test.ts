@@ -1,0 +1,119 @@
+// @vitest-environment jsdom
+/**
+ * The list and the displayed vault cannot disagree about which vault is open.
+ *
+ * The displayed vault is derived from the list, so renaming a vault through the
+ * command updates both the welcome screen and the command target.
+ */
+import { ref } from 'vue'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { installCoreAnswers } from '@numen/core-client/testing'
+import { useVaults } from './useVaults'
+import { VAULT_WORDS } from '../words'
+
+const TWO = {
+  vaults: [
+    { id: 'roots', name: 'Roots', path: '/vaults/Roots', isMissing: false },
+    { id: 'leaves', name: 'Leaves', path: '/vaults/Leaves', isMissing: false },
+  ],
+  showing: 'roots',
+}
+
+let restore: () => void = () => undefined
+
+afterEach(() => {
+  restore()
+})
+
+const open = () => {
+  restore = installCoreAnswers({
+    vaultsService: { listVaults: () => ({ vaults: TWO.vaults }) },
+    windowService: { getCurrentVault: () => ({ vault: TWO.showing }) },
+  })
+  return useVaults({
+    listVaults: () => Promise.resolve(TWO),
+    log: { getWriter: () => vi.fn() } as never,
+    chunks: ref(0),
+    embedded: ref(0),
+    isEmbedding: ref(false),
+  })
+}
+
+describe('the vault in front', () => {
+  it('is the one the list says it is showing', async () => {
+    const target = open()
+    await target.loadVaults()
+
+    expect(target.activeVault.value).toEqual({ id: 'roots', name: 'Roots' })
+    expect(target.vaultList.value.showing).toBe('roots')
+  })
+
+  it('carries a rename without the list falling out of step', async () => {
+    const target = open()
+    await target.loadVaults()
+
+    target.setVaultName({ id: 'roots', name: 'Rooted' })
+
+    expect(target.activeVault.value).toEqual({ id: 'roots', name: 'Rooted' })
+    // The list carries the new name, and still shows the same vault.
+    expect(target.vaultList.value.vaults.map((one) => one.name)).toEqual(['Rooted', 'Leaves'])
+    expect(target.vaultList.value.showing).toBe('roots')
+  })
+
+  it('is empty while the list shows a vault it does not hold', async () => {
+    const target = open()
+    await target.loadVaults()
+
+    target.vaultList.value = { ...target.vaultList.value, showing: 'gone' }
+
+    expect(target.activeVault.value).toEqual({ id: '', name: '' })
+  })
+})
+
+describe('the vault list before and after it is requested for', () => {
+  it('is empty and shows nothing before the first answer', () => {
+    const target = open()
+
+    expect(target.vaultList.value).toEqual({ vaults: [], showing: '' })
+    expect(target.activeVault.value).toEqual({ id: '', name: '' })
+  })
+
+  it('reloads the page through the location', () => {
+    const reload = vi.fn()
+    vi.stubGlobal('location', { reload })
+    try {
+      open().reload()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+
+    expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it('writes an error to the listed log when the vaults cannot be listed', async () => {
+    const getWriter = vi.fn()
+    const write = vi.fn()
+    getWriter.mockReturnValue(write)
+    restore = installCoreAnswers({
+      vaultsService: {
+        listVaults: () => {
+          throw new Error('down')
+        },
+      },
+      windowService: { getCurrentVault: () => ({ vault: 'roots' }) },
+    })
+    const target = useVaults({
+      listVaults: () => Promise.reject(new Error('down')),
+      log: { getWriter } as never,
+      chunks: ref(0),
+      embedded: ref(0),
+      isEmbedding: ref(false),
+    })
+
+    await target.loadVaults()
+
+    expect(getWriter).toHaveBeenCalledWith('listed')
+    expect(write).toHaveBeenCalledWith(VAULT_WORDS.unlisted, 'error')
+    expect(target.vaultList.value).toEqual({ vaults: [], showing: '' })
+  })
+})

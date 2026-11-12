@@ -1,22 +1,18 @@
 /**
  * Retry of a plugin whose last start failed.
  */
-import { formatErrorMessage } from '@numen/core-client'
-import type { MessageWriter } from '@/shared/notices/messages'
+import { formatError } from '@/shared/api/errors'
+import type { MessageWriter } from '@/shared/model/notices/messages'
+import { retryPlugin as askPluginRetry } from '../api/settings'
 
 /** Notice copy of a retry. */
-export interface RetryWords {
+interface RetryWords {
   readonly stopped: (name: string, reason: string) => string
   readonly retryFailed: (name: string, message: string) => string
 }
 
-/** The core call a retry makes. */
-export interface RetryDeps {
-  retryPlugin(pluginId: string): Promise<string>
-}
-
 /** Notice output, settings refresh and the plugin name lookup of a retry. */
-export interface RetryOptions {
+interface RetryOptions {
   readonly words: RetryWords
   readonly notify: MessageWriter
   readonly refresh: () => Promise<void>
@@ -27,17 +23,14 @@ export interface RetryOptions {
  * Starts a plugin again. A repeated failure is shown as a notice with the
  * plugin name and the reason; the settings are read again in every case.
  */
-export function createPluginRetry(
-  core: RetryDeps,
-  { words, notify, refresh, getName }: RetryOptions,
-) {
+export function createPluginRetry({ words, notify, refresh, getName }: RetryOptions) {
   const retryPlugin = async (pluginId: string): Promise<void> => {
     notify('')
     try {
-      const failure = await core.retryPlugin(pluginId)
+      const failure = await askPluginRetry(pluginId)
       if (failure !== '') notify(words.stopped(getName(pluginId), failure), 'warning')
     } catch (caughtError) {
-      notify(words.retryFailed(getName(pluginId), formatErrorMessage(caughtError)), 'error')
+      notify(words.retryFailed(getName(pluginId), formatError(caughtError)), 'error')
     }
     await refresh()
   }

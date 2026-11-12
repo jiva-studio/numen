@@ -5,11 +5,13 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
 )
 
 func postDocument(t *testing.T, baseURL, token, body string) int {
 	t.Helper()
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, baseURL+"/"+APIService+"/GetDocument", strings.NewReader(body))
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, baseURL+"/"+api.Service+"/GetDocument", strings.NewReader(body))
 	if err != nil {
 		t.Fatal(err)
 	}

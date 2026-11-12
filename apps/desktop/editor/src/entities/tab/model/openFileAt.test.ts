@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { FileKind } from '@/shared/model/fileTypes'
-import type { TextRange } from '@/shared/textRange'
+import type { TextRange } from '@/shared/lib/textRange'
 import { fileOpeners, type FileOpenerDeps } from './openers'
 
 const createVault = (kinds: Record<string, FileKind>): FileOpenerDeps => ({

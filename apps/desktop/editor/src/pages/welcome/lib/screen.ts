@@ -4,11 +4,10 @@
  * The screen renders these rows and decides nothing, so a test can query what a
  * window on a vault, or on none, presents to the user.
  */
-import type { PaletteKeys } from '@numen/ui'
-import type { VaultRow, WelcomeAction } from '@numen/shell'
+import type { Keystroke } from '@numen/ui'
+import type { VaultRow, WelcomeAction } from '@numen/workbench'
 import type { VaultList } from '@/entities/vault'
-import { createRowKeys } from '@/features/command-palette'
-import { COMMAND } from '@/shared/commandIds'
+import { createRowKeys, COMMAND, COMMANDS_ROW } from '@/shared/model/command'
 
 /** What the welcome screen is drawn over. */
 export interface CurrentVault {
@@ -19,9 +18,9 @@ export interface CurrentVault {
 /** Every label the welcome screen shows. */
 export interface Words {
   readonly find: string
-  readonly findKeys: PaletteKeys
+  readonly findKeys: Keystroke
   readonly commands: string
-  readonly commandsKeys: PaletteKeys
+  readonly commandsKeys: Keystroke
   readonly newNote: string
   readonly settings: string
   readonly vaults: string
@@ -32,7 +31,7 @@ export interface Words {
 }
 
 /** The row that puts the commands up, which is no command of its own. */
-export const COMMANDS = 'commands'
+export const COMMANDS = COMMANDS_ROW
 
 /**
  * The entry points, in render order. The settings come last and are always offered.

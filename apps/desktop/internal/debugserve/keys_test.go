@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 func TestKeyStoreReturnsTheKeySetByName(t *testing.T) {
@@ -31,10 +31,10 @@ func TestKeyStoreHasNoKeyAfterDeletion(t *testing.T) {
 	if err := store.DeleteKey(t.Context(), "plugin/apiKey"); err != nil {
 		t.Fatalf("delete: %v", err)
 	}
-	if _, err := store.GetKey(t.Context(), "plugin/apiKey"); !errors.Is(err, pluginport.ErrNoKey) {
+	if _, err := store.GetKey(t.Context(), "plugin/apiKey"); !errors.Is(err, plugin.ErrNoKey) {
 		t.Errorf("get after delete: error = %v, want ErrNoKey", err)
 	}
-	if err := store.DeleteKey(t.Context(), "plugin/apiKey"); !errors.Is(err, pluginport.ErrNoKey) {
+	if err := store.DeleteKey(t.Context(), "plugin/apiKey"); !errors.Is(err, plugin.ErrNoKey) {
 		t.Errorf("second delete: error = %v, want ErrNoKey", err)
 	}
 }

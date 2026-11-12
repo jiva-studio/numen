@@ -25,21 +25,23 @@ export const activate = (
   create: CreateLinks = createLinks,
   links: Links = servedLinks,
 ): void => {
-  context.registerDropHandler?.({
+  context.register.dropHandler?.({
     types: [URI_LIST],
     drop: async (folder, data) => {
       const made = await create(folder, getUrls(data[URI_LIST] ?? ''))
       if (!made.ok) {
-        context.workspace?.showError(made.error)
+        context.ui.workspace?.messages.showError(made.error)
         return []
       }
       if (made.value.failed.length > 0) {
-        context.workspace?.showError(`${words.notCreated} ${made.value.failed.join(', ')}`)
+        context.ui.workspace?.messages.showError(
+          `${words.notCreated} ${made.value.failed.join(', ')}`,
+        )
       }
       return made.value.paths
     },
   })
-  context.registerCommand({
+  context.register.command({
     id: 'app:link.downloadMedia',
     listItems: async (target) => {
       const facts = await links.getLink(target.path)
@@ -48,7 +50,7 @@ export const activate = (
     handler: async (note, itemId) => {
       if (!isMedia(itemId)) return
       const outcome = await links.copyMedia(note.path, itemId)
-      if (!outcome.ok) context.workspace?.showError(outcome.error)
+      if (!outcome.ok) context.ui.workspace?.messages.showError(outcome.error)
     },
   })
 }

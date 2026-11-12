@@ -2,16 +2,15 @@
  * The commands the plugins declare as the window reads them, and a run as the
  * window dispatches it and reads its result.
  */
-import { describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
-import { flushPromises } from '@vue/test-utils'
-import { COMMAND_ERROR_CODE, asFailure, asValue, type PluginCatalog } from '@numen/core-client'
-import { createWhenReader } from '@numen/plugin-host'
-import { createMockCatalogEntry } from '@numen/core-client/testing'
-import type { PluginInfo } from '@numen/plugin-manager'
-import { useCatalogEntries } from '../model/catalogEntries'
-
-vi.mock('@/shared/clients', () => ({ pluginCommands: request }))
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { COMMAND_ERROR_CODE } from '@numen/core-client'
+import { installCoreAnswers } from '@numen/core-client/testing'
+import {
+  listDeclaredCommands,
+  listDeclaredItemLists,
+  runDeclaredCommand,
+  runDeclaredHandler,
+} from './declaredCommands'
 
 const request = {
   listCommands: vi.fn(),
@@ -19,13 +18,32 @@ const request = {
   listCommandItems: vi.fn(),
 }
 
-const {
-  isOverTarget,
-  listDeclaredCommands,
-  listDeclaredItemLists,
-  runDeclaredCommand,
-  runDeclaredHandler,
-} = await import('./declaredCommands')
+let restore: () => void
+
+beforeEach(() => {
+  restore = installCoreAnswers({
+    pluginCommands: {
+      ...request,
+      listCommands: async (...asked: unknown[]) => {
+        const answer = (await request.listCommands(...asked)) as { slots?: { entry?: object }[] }
+        // A message from the core always carries its maps and lists, empty where it has none.
+        return {
+          contentTypeByExtension: {},
+          handlers: [],
+          keybindings: [],
+          ...answer,
+          slots: (answer.slots ?? []).map((one) =>
+            one.entry ? { ...one, entry: { values: {}, ...one.entry } } : one,
+          ),
+        }
+      },
+    },
+  })
+})
+
+afterEach(() => {
+  restore()
+})
 
 const proofread = {
   pluginId: 'org.example.ink',
@@ -93,6 +111,52 @@ describe('the slot entries the plugins declare', () => {
   })
 })
 
+describe('the values of a slot entry', () => {
+  it('are read with the entry, and absent where the entry holds none', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [],
+      slots: [
+        {
+          pluginId: 'org.example.ledger',
+          entry: {
+            slot: 'titleBar.commands',
+            placed: { case: 'command', value: 'app:file.open' },
+            title: '',
+            icon: '',
+            group: '',
+            when: '',
+            values: { placement: 'split' },
+          },
+        },
+        {
+          pluginId: 'org.example.ledger',
+          entry: {
+            slot: 'titleBar.commands',
+            placed: { case: 'command', value: 'ledger.sum' },
+            title: '',
+            icon: '',
+            group: '',
+            when: '',
+            values: {},
+          },
+        },
+      ],
+    })
+
+    const { slots } = await listDeclaredCommands()
+
+    expect(slots).toStrictEqual([
+      {
+        pluginId: 'org.example.ledger',
+        slot: 'titleBar.commands',
+        command: 'app:file.open',
+        values: { placement: 'split' },
+      },
+      { pluginId: 'org.example.ledger', slot: 'titleBar.commands', command: 'ledger.sum' },
+    ])
+  })
+})
+
 describe('the commands the plugins declare', () => {
   it('are read with their arguments in order', async () => {
     request.listCommands.mockResolvedValue({
@@ -121,7 +185,7 @@ describe('the commands the plugins declare', () => {
     ])
   })
 
-  it('are read with their condition, shortcut, destination flag and the parts of their plugin', async () => {
+  it('are read with their condition, destination flag and the parts of their plugin', async () => {
     request.listCommands.mockResolvedValue({
       commands: [
         {
@@ -130,7 +194,6 @@ describe('the commands the plugins declare', () => {
           title: 'Show note in file tree',
           icon: 'folder-open',
           when: 'target.isNote',
-          shortcut: 'mod+shift+e',
           arguments: [],
         },
       ],
@@ -147,7 +210,6 @@ describe('the commands the plugins declare', () => {
       title: 'Show note in file tree',
       icon: 'folder-open',
       when: 'target.isNote',
-      shortcut: 'mod+shift+e',
       arguments: [],
     })
   })
@@ -163,14 +225,6 @@ describe('the commands the plugins declare', () => {
     } = await listDeclaredCommands()
 
     expect(one).toStrictEqual(proofread)
-  })
-
-  it('run over a target where their condition reads one', () => {
-    const reader = createWhenReader()
-
-    expect(isOverTarget(convert, reader)).toBe(true)
-    expect(isOverTarget({ when: 'window.isVaultReady' }, reader)).toBe(false)
-    expect(isOverTarget({}, reader)).toBe(false)
   })
 })
 
@@ -188,7 +242,7 @@ describe('a run', () => {
       ok: true,
       value: { message: 'Converted 3 pages', openedPath: 'a.md' },
     })
-    expect(request.runPluginCommand).toHaveBeenLastCalledWith({
+    expect(request.runPluginCommand.mock.lastCall?.[0]).toMatchObject({
       pluginId: 'md.numen.pages',
       command: 'convert',
       path: 'a.pdf',
@@ -208,7 +262,7 @@ describe('a run', () => {
       { path: 'a.md', values: {} },
     )
 
-    expect(request.runPluginCommand).toHaveBeenLastCalledWith(expect.objectContaining({ path: '' }))
+    expect(request.runPluginCommand.mock.lastCall?.[0]).toMatchObject({ path: '' })
   })
 
   it('of a command over no file is handed the file a place named', async () => {
@@ -223,9 +277,7 @@ describe('a run', () => {
       { path: 'Glaciers', values: {}, isTargetNamed: true },
     )
 
-    expect(request.runPluginCommand).toHaveBeenLastCalledWith(
-      expect.objectContaining({ path: 'Glaciers' }),
-    )
+    expect(request.runPluginCommand.mock.lastCall?.[0]).toMatchObject({ path: 'Glaciers' })
   })
 
   it('that did not succeed answers why', async () => {
@@ -278,7 +330,7 @@ describe('the items of a command', () => {
         result: { ok: false, error: 'talks/a.mp3 is not in the vault' },
       },
     ])
-    expect(request.listCommandItems).toHaveBeenLastCalledWith({
+    expect(request.listCommandItems.mock.lastCall?.[0]).toMatchObject({
       path: 'talks/a.mp3',
       commands: [
         { pluginId: 'org.example.ink', command: 'ink.proofread' },
@@ -300,7 +352,7 @@ describe('the items of a command', () => {
       itemId: 'org.example.ears/ears',
     })
 
-    expect(request.runPluginCommand).toHaveBeenLastCalledWith({
+    expect(request.runPluginCommand.mock.lastCall?.[0]).toMatchObject({
       pluginId: 'org.example.ink',
       command: 'ink.proofread',
       path: 'talks/a.mp3',
@@ -365,7 +417,7 @@ describe('the handlers of shared commands', () => {
     )
 
     expect(outcome).toStrictEqual({ ok: true, value: { message: 'Deleted', openedPath: '' } })
-    expect(request.runPluginCommand).toHaveBeenLastCalledWith({
+    expect(request.runPluginCommand.mock.lastCall?.[0]).toMatchObject({
       pluginId: 'org.example.ink',
       command: 'app:version.delete',
       path: 'talks/a.mp3',
@@ -389,71 +441,42 @@ describe('the handlers of shared commands', () => {
   })
 })
 
-describe('useCatalogEntries', () => {
-  const createPlugin = (id: string, isActive: boolean): PluginInfo => ({
-    id,
-    name: id,
-    version: '1.0.0',
-    description: '',
-    isActive,
-    capabilities: [],
-    hasFrontend: false,
-    hasBackend: false,
-    settings: [],
-  })
+describe('the keybindings of the plugins', () => {
+  it('are read with their plugin, key, command, values and condition, and none where the core lists none', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [],
+      slots: [],
+      keybindings: [
+        {
+          pluginId: 'org.example.ink',
+          keybinding: { key: 'mod+shift+i', command: 'ink.open', values: {}, when: '' },
+        },
+        {
+          pluginId: 'org.example.ink',
+          keybinding: {
+            key: 'g',
+            command: 'app:file.open',
+            values: { placement: 'split' },
+            when: '!window.isFieldFocused',
+          },
+        },
+      ],
+    })
 
-  it('starts empty and refreshes only when plugin ids or active states change', async () => {
-    const entry = createMockCatalogEntry('sample.notes')
-    const list = vi.fn<PluginCatalog['list']>().mockResolvedValue(
-      asValue({
-        entries: [entry],
-        sourceErrors: [{ source: 'community', message: 'timed out' }] as never,
-      }),
-    )
-    const catalog = {
-      list,
-      findByTabKind: vi.fn(),
-    } as unknown as PluginCatalog
-    const plugins = ref<readonly PluginInfo[]>([])
-    const errors: unknown[] = []
-    const entries = useCatalogEntries(catalog, plugins, (err) => errors.push(err))
+    const { keybindings } = await listDeclaredCommands()
 
-    expect(entries.value).toStrictEqual([])
-    expect(list).not.toHaveBeenCalled()
+    expect(keybindings).toStrictEqual([
+      { pluginId: 'org.example.ink', key: 'mod+shift+i', command: 'ink.open' },
+      {
+        pluginId: 'org.example.ink',
+        key: 'g',
+        command: 'app:file.open',
+        values: { placement: 'split' },
+        when: '!window.isFieldFocused',
+      },
+    ])
 
-    plugins.value = [createPlugin('a', true), createPlugin('b', false)]
-    await nextTick()
-    await flushPromises()
-    expect(list).toHaveBeenCalledTimes(1)
-    expect(entries.value).toStrictEqual([entry])
-    expect(errors).toHaveLength(1)
-    expect((errors[0] as Error).message).toBe('The plugin source community failed: timed out')
-
-    // Same ids and active states do not trigger a refresh
-    plugins.value = [createPlugin('a', true), createPlugin('b', false)]
-    await nextTick()
-    await flushPromises()
-    expect(list).toHaveBeenCalledTimes(1)
-
-    // Boundary between plugins matters (joining with newline vs empty string)
-    plugins.value = [createPlugin('a:trueb', false)]
-    await nextTick()
-    await flushPromises()
-    expect(list).toHaveBeenCalledTimes(2)
-
-    // Unavailable error reports reason, and other error kinds report default fallback
-    list.mockResolvedValueOnce(asFailure({ kind: 'unavailable', message: 'offline' }))
-    plugins.value = [createPlugin('a', false)]
-    await nextTick()
-    await flushPromises()
-    expect((errors.at(-1) as Error).message).toBe('The plugin catalog is unavailable: offline')
-
-    list.mockResolvedValueOnce(asFailure({ kind: 'other' as 'unavailable', message: 'offline' }))
-    plugins.value = [createPlugin('a', true)]
-    await nextTick()
-    await flushPromises()
-    expect((errors.at(-1) as Error).message).toBe(
-      'The plugin catalog is unavailable: it lists nothing',
-    )
+    request.listCommands.mockResolvedValue({ commands: [], slots: [] })
+    expect((await listDeclaredCommands()).keybindings).toStrictEqual([])
   })
 })

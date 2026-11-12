@@ -30,8 +30,9 @@ defineProps<{
 }
 
 .setting-info__button {
+  --pad: 0.125rem;
   display: inline-flex;
-  padding: 0.125rem;
+  padding: var(--pad);
   border: none;
   border-radius: var(--numen-radius-pill);
   background: none;
@@ -44,13 +45,16 @@ defineProps<{
 }
 
 .setting-info__tooltip {
+  --inset-start: 0.25rem;
+  --max-width: 20rem;
+  --pad: 0.375rem 0.5rem;
   position: absolute;
-  inset-block-start: calc(100% + 0.25rem);
+  inset-block-start: calc(100% + var(--inset-start));
   inset-inline-start: 0;
   z-index: 10;
   inline-size: max-content;
-  max-inline-size: 20rem;
-  padding: 0.375rem 0.5rem;
+  max-inline-size: var(--max-width);
+  padding: var(--pad);
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius-tight);
   background: var(--numen-raised);

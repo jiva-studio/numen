@@ -4,20 +4,20 @@
  * snapshot.
  */
 import { shallowRef } from 'vue'
+import type { TabLinksState, TabLinksWriter } from '../types'
 import type {
   LinkableTab,
   TabId,
   TabLinkGroup,
   TabLinksChange,
   TabLinksSnapshot,
-  TabLinksState,
-  TabLinksWriter,
   TabWindow,
-} from '../types'
+} from '@/entities/tab'
+import type { Caught } from '@/shared/api/errors'
 
 export interface TabLinksDeps {
   readonly write: TabLinksWriter
-  readonly onError: (error: unknown) => void
+  readonly onError: (error: Caught) => void
 }
 
 function findGroupOf(groups: ReadonlyMap<string, TabLinkGroup>, tabId: TabId): TabLinkGroup | null {

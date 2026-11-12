@@ -1,0 +1,292 @@
+[
+  {
+    "kind": "index",
+    "name": "chunks_by_hash",
+    "body": "CREATE INDEX chunks_by_hash ON chunks (hash)"
+  },
+  {
+    "kind": "index",
+    "name": "chunks_by_parent",
+    "body": "CREATE INDEX chunks_by_parent ON chunks (parent_id)"
+  },
+  {
+    "kind": "index",
+    "name": "chunks_by_source",
+    "body": "CREATE INDEX chunks_by_source ON chunks (source_id, vault_id)"
+  },
+  {
+    "kind": "index",
+    "name": "chunks_by_vault",
+    "body": "CREATE INDEX chunks_by_vault ON chunks (vault_id, id)"
+  },
+  {
+    "kind": "index",
+    "name": "chunks_by_vault_parent",
+    "body": "CREATE INDEX chunks_by_vault_parent ON chunks (vault_id, parent_id, id)"
+  },
+  {
+    "kind": "index",
+    "name": "links_by_name",
+    "body": "CREATE INDEX links_by_name ON links (folded_name)"
+  },
+  {
+    "kind": "index",
+    "name": "links_by_target",
+    "body": "CREATE INDEX links_by_target ON links (scheme, target)"
+  },
+  {
+    "kind": "index",
+    "name": "notes_by_folded_name",
+    "body": "CREATE INDEX notes_by_folded_name ON notes (vault_id, folded_name)"
+  },
+  {
+    "kind": "index",
+    "name": "notes_by_identifier",
+    "body": "CREATE INDEX notes_by_identifier ON notes (identifier)"
+  },
+  {
+    "kind": "index",
+    "name": "notes_by_type",
+    "body": "CREATE INDEX notes_by_type ON notes (vault_id, type)"
+  },
+  {
+    "kind": "index",
+    "name": "problems_by_note",
+    "body": "CREATE INDEX problems_by_note ON problems (note_id)"
+  },
+  {
+    "kind": "index",
+    "name": "sources_by_fingerprint",
+    "body": "CREATE INDEX sources_by_fingerprint ON sources (vault_id, kind, path, size, modified_at)"
+  },
+  {
+    "kind": "index",
+    "name": "sources_by_id_vault",
+    "body": "CREATE UNIQUE INDEX sources_by_id_vault ON sources (id, vault_id)"
+  },
+  {
+    "kind": "index",
+    "name": "sources_by_modified",
+    "body": "CREATE INDEX sources_by_modified ON sources (vault_id, modified_at DESC, id DESC)"
+  },
+  {
+    "kind": "index",
+    "name": "sources_by_producer",
+    "body": "CREATE INDEX sources_by_producer ON sources (vault_id, kind) WHERE producer IS NOT NULL"
+  },
+  {
+    "kind": "index",
+    "name": "text_versions_by_plugin",
+    "body": "CREATE INDEX text_versions_by_plugin ON text_versions (vault, plugin_id)"
+  },
+  {
+    "kind": "index",
+    "name": "vectors_by_hash",
+    "body": "CREATE UNIQUE INDEX vectors_by_hash ON vectors (hash, recipe)"
+  },
+  {
+    "kind": "table",
+    "name": "chunks",
+    "body": "CREATE TABLE chunks (\n    id        INTEGER PRIMARY KEY,\n    source_id INTEGER NOT NULL,\n    vault_id  INTEGER NOT NULL,\n    start     INTEGER NOT NULL,\n    length    INTEGER NOT NULL,\n    parent_id INTEGER REFERENCES chunks(id) ON DELETE CASCADE,\n    location  TEXT,\n    hash      TEXT NOT NULL,\n\n    FOREIGN KEY (source_id, vault_id) REFERENCES sources (id, vault_id) ON DELETE CASCADE\n)"
+  },
+  {
+    "kind": "table",
+    "name": "chunks_fts",
+    "body": "CREATE VIRTUAL TABLE chunks_fts USING fts5 (\n    text,\n    content='',\n    contentless_delete=1,\n    prefix='2 3'\n)"
+  },
+  {
+    "kind": "table",
+    "name": "chunks_fts_config",
+    "body": "CREATE TABLE 'chunks_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID"
+  },
+  {
+    "kind": "table",
+    "name": "chunks_fts_data",
+    "body": "CREATE TABLE 'chunks_fts_data'(id INTEGER PRIMARY KEY, block BLOB)"
+  },
+  {
+    "kind": "table",
+    "name": "chunks_fts_docsize",
+    "body": "CREATE TABLE 'chunks_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB, origin INTEGER)"
+  },
+  {
+    "kind": "table",
+    "name": "chunks_fts_idx",
+    "body": "CREATE TABLE 'chunks_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID"
+  },
+  {
+    "kind": "table",
+    "name": "chunks_vec",
+    "body": "CREATE VIRTUAL TABLE chunks_vec USING vec0 (\n    chunk_id integer primary key,\n    vault_id integer,\n    coarse   bit[1024]\n)"
+  },
+  {
+    "kind": "table",
+    "name": "chunks_vec_chunks",
+    "body": "CREATE TABLE \"chunks_vec_chunks\"(chunk_id INTEGER PRIMARY KEY AUTOINCREMENT,size INTEGER NOT NULL,validity BLOB NOT NULL,rowids BLOB NOT NULL)"
+  },
+  {
+    "kind": "table",
+    "name": "chunks_vec_info",
+    "body": "CREATE TABLE \"chunks_vec_info\" (key text primary key, value any)"
+  },
+  {
+    "kind": "table",
+    "name": "chunks_vec_metadatachunks00",
+    "body": "CREATE TABLE \"chunks_vec_metadatachunks00\"(rowid PRIMARY KEY, data BLOB NOT NULL)"
+  },
+  {
+    "kind": "table",
+    "name": "chunks_vec_rowids",
+    "body": "CREATE TABLE \"chunks_vec_rowids\"(rowid INTEGER PRIMARY KEY AUTOINCREMENT,id,chunk_id INTEGER,chunk_offset INTEGER)"
+  },
+  {
+    "kind": "table",
+    "name": "chunks_vec_vector_chunks00",
+    "body": "CREATE TABLE \"chunks_vec_vector_chunks00\"(rowid PRIMARY KEY,vectors BLOB NOT NULL)"
+  },
+  {
+    "kind": "table",
+    "name": "coarse_recipe",
+    "body": "CREATE TABLE coarse_recipe (\n    id     INTEGER PRIMARY KEY CHECK (id = 1),\n    recipe TEXT NOT NULL\n)"
+  },
+  {
+    "kind": "table",
+    "name": "headings",
+    "body": "CREATE TABLE headings (\n    id       INTEGER PRIMARY KEY,\n    note_id  INTEGER NOT NULL REFERENCES notes(source_id) ON DELETE CASCADE,\n    line     INTEGER NOT NULL,\n    level    INTEGER NOT NULL,\n    text     TEXT NOT NULL,\n\n    UNIQUE (note_id, line)\n)"
+  },
+  {
+    "kind": "table",
+    "name": "headings_fts",
+    "body": "CREATE VIRTUAL TABLE headings_fts USING fts5 (\n    text,\n    prefix='2 3'\n)"
+  },
+  {
+    "kind": "table",
+    "name": "headings_fts_config",
+    "body": "CREATE TABLE 'headings_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID"
+  },
+  {
+    "kind": "table",
+    "name": "headings_fts_content",
+    "body": "CREATE TABLE 'headings_fts_content'(id INTEGER PRIMARY KEY, c0)"
+  },
+  {
+    "kind": "table",
+    "name": "headings_fts_data",
+    "body": "CREATE TABLE 'headings_fts_data'(id INTEGER PRIMARY KEY, block BLOB)"
+  },
+  {
+    "kind": "table",
+    "name": "headings_fts_docsize",
+    "body": "CREATE TABLE 'headings_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB)"
+  },
+  {
+    "kind": "table",
+    "name": "headings_fts_idx",
+    "body": "CREATE TABLE 'headings_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID"
+  },
+  {
+    "kind": "table",
+    "name": "links",
+    "body": "CREATE TABLE links (\n    note_id     INTEGER NOT NULL REFERENCES notes(source_id) ON DELETE CASCADE,\n    position    INTEGER NOT NULL,\n    scheme      TEXT NOT NULL,\n    target      TEXT NOT NULL,\n\n    -- The last segment of the address under the same fold a note's name is\n    -- held to, which is what the two are compared on: what [[notes/Entropy]],\n    -- [[Entropy]] and [[entropy.MD]] have in common.\n    folded_name TEXT NOT NULL,\n\n    role        TEXT NOT NULL,\n    type        TEXT,\n    why         TEXT,\n    label       TEXT, marker TEXT,\n\n    PRIMARY KEY (note_id, position)\n)"
+  },
+  {
+    "kind": "table",
+    "name": "notes",
+    "body": "CREATE TABLE notes (\n    source_id         INTEGER PRIMARY KEY,\n    vault_id          INTEGER NOT NULL,\n\n    -- The name a link written by name reaches this note by, as domain.FoldName\n    -- computes it: one name whatever case and composition it is written in.\n    folded_name       TEXT NOT NULL,\n\n    title             TEXT NOT NULL,\n    type              TEXT NOT NULL DEFAULT 'note',\n    identifier        TEXT,\n    frontmatter       TEXT,\n    frontmatter_error TEXT,\n\n    FOREIGN KEY (source_id, vault_id) REFERENCES sources (id, vault_id) ON DELETE CASCADE\n)"
+  },
+  {
+    "kind": "table",
+    "name": "open_tabs",
+    "body": "CREATE TABLE open_tabs (\n    vault    TEXT NOT NULL,\n    position INTEGER NOT NULL,\n    id       TEXT NOT NULL,\n    kind     TEXT NOT NULL,\n    path     TEXT NOT NULL,\n    title    TEXT NOT NULL,\n    state    TEXT NOT NULL,\n    is_front INTEGER NOT NULL,\n    PRIMARY KEY (vault, position)\n)"
+  },
+  {
+    "kind": "table",
+    "name": "problems",
+    "body": "CREATE TABLE problems (\n    note_id INTEGER NOT NULL REFERENCES notes(source_id) ON DELETE CASCADE,\n    detail  TEXT NOT NULL\n)"
+  },
+  {
+    "kind": "table",
+    "name": "schema_migrations",
+    "body": "CREATE TABLE schema_migrations (\n\t\tversion INTEGER PRIMARY KEY,\n\t\tname    TEXT NOT NULL\n\t)"
+  },
+  {
+    "kind": "table",
+    "name": "search_floors",
+    "body": "CREATE TABLE search_floors (\n    vault  TEXT NOT NULL,\n    recipe TEXT NOT NULL,\n    floor  REAL NOT NULL,\n    PRIMARY KEY (vault, recipe)\n) WITHOUT ROWID"
+  },
+  {
+    "kind": "table",
+    "name": "sections_fts",
+    "body": "CREATE VIRTUAL TABLE sections_fts USING fts5 (\n    text,\n    content='',\n    contentless_delete=1,\n    prefix='2 3'\n)"
+  },
+  {
+    "kind": "table",
+    "name": "sections_fts_config",
+    "body": "CREATE TABLE 'sections_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID"
+  },
+  {
+    "kind": "table",
+    "name": "sections_fts_data",
+    "body": "CREATE TABLE 'sections_fts_data'(id INTEGER PRIMARY KEY, block BLOB)"
+  },
+  {
+    "kind": "table",
+    "name": "sections_fts_docsize",
+    "body": "CREATE TABLE 'sections_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB, origin INTEGER)"
+  },
+  {
+    "kind": "table",
+    "name": "sections_fts_idx",
+    "body": "CREATE TABLE 'sections_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID"
+  },
+  {
+    "kind": "table",
+    "name": "sources",
+    "body": "CREATE TABLE sources (\n    id                INTEGER PRIMARY KEY,\n    vault_id          INTEGER NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,\n    path              TEXT NOT NULL,\n    kind              TEXT NOT NULL,\n    size              INTEGER NOT NULL,\n    modified_at       INTEGER NOT NULL,\n    content_hash      TEXT,\n    recipe            TEXT,\n    producer          TEXT,\n    file_id           INTEGER,\n    content_hash_time INTEGER,\n\n    UNIQUE (vault_id, path)\n)"
+  },
+  {
+    "kind": "table",
+    "name": "text_versions",
+    "body": "CREATE TABLE text_versions (\n    id                    INTEGER PRIMARY KEY,\n    vault                 TEXT NOT NULL,\n    path                  TEXT NOT NULL,\n    plugin_id             TEXT NOT NULL,\n    key                   TEXT NOT NULL,\n    source_version_id     TEXT NOT NULL,\n    source_property_key   TEXT NOT NULL DEFAULT '',\n    source_property_value TEXT NOT NULL DEFAULT '',\n    kind                  TEXT NOT NULL,\n    file                  TEXT NOT NULL,\n    input_hash            TEXT NOT NULL,\n    text_hash             TEXT NOT NULL,\n    create_time           INTEGER NOT NULL,\n    UNIQUE (vault, path, plugin_id, key)\n)"
+  },
+  {
+    "kind": "table",
+    "name": "titles_fts",
+    "body": "CREATE VIRTUAL TABLE titles_fts USING fts5 (\n    text,\n    prefix='2 3'\n)"
+  },
+  {
+    "kind": "table",
+    "name": "titles_fts_config",
+    "body": "CREATE TABLE 'titles_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID"
+  },
+  {
+    "kind": "table",
+    "name": "titles_fts_content",
+    "body": "CREATE TABLE 'titles_fts_content'(id INTEGER PRIMARY KEY, c0)"
+  },
+  {
+    "kind": "table",
+    "name": "titles_fts_data",
+    "body": "CREATE TABLE 'titles_fts_data'(id INTEGER PRIMARY KEY, block BLOB)"
+  },
+  {
+    "kind": "table",
+    "name": "titles_fts_docsize",
+    "body": "CREATE TABLE 'titles_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB)"
+  },
+  {
+    "kind": "table",
+    "name": "titles_fts_idx",
+    "body": "CREATE TABLE 'titles_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID"
+  },
+  {
+    "kind": "table",
+    "name": "vaults",
+    "body": "CREATE TABLE vaults (\n    id         INTEGER PRIMARY KEY,\n    identifier TEXT NOT NULL UNIQUE\n)"
+  },
+  {
+    "kind": "table",
+    "name": "vectors",
+    "body": "CREATE TABLE vectors (\n    hash      BLOB NOT NULL,\n    recipe    TEXT NOT NULL,\n    embedding BLOB NOT NULL\n)"
+  }
+]

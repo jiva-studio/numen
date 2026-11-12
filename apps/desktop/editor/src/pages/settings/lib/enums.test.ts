@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEnumFields } from './enums'
-import { createPluginInfo } from '@/testing/installation'
+import { createPluginInfo } from '@/pages/settings/testing/installation'
 
 describe('the fields of a plugin', () => {
   describe('the choices of an enum whose options carry a condition', () => {
@@ -47,7 +47,7 @@ describe('the fields of a plugin', () => {
     })
 
     describe('the value shown', () => {
-      const getShown = (platform: string, stored?: string) => {
+      const getShownOptions = (platform: string, stored?: string) => {
         const buttons = { ...plugin.settings[0]!, default: 'windows' }
         const fields = createEnumFields(
           () => plugin,
@@ -59,21 +59,21 @@ describe('the fields of a plugin', () => {
       }
 
       it('is Left on macOS where the default is Right', () => {
-        expect(getShown('darwin')).toBe('mac')
+        expect(getShownOptions('darwin')).toBe('mac')
       })
 
       it('is Left on macOS where the stored value is Right or None', () => {
-        expect(getShown('darwin', 'windows')).toBe('mac')
-        expect(getShown('darwin', 'none')).toBe('mac')
+        expect(getShownOptions('darwin', 'windows')).toBe('mac')
+        expect(getShownOptions('darwin', 'none')).toBe('mac')
       })
 
       it.each(['linux', 'windows'])('stays Right by default on %s', (platform) => {
-        expect(getShown(platform)).toBe('windows')
+        expect(getShownOptions(platform)).toBe('windows')
       })
 
       it('is a stored value that is offered, as stored', () => {
-        expect(getShown('darwin', 'mac')).toBe('mac')
-        expect(getShown('linux', 'none')).toBe('none')
+        expect(getShownOptions('darwin', 'mac')).toBe('mac')
+        expect(getShownOptions('linux', 'none')).toBe('none')
       })
     })
 

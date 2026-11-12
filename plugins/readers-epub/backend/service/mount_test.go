@@ -6,16 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
-
-func codeOf(err error) server.ErrorCode {
-	if err == nil {
-		return ""
-	}
-	return toAPIError(err).Code
-}
 
 func postMethod(t *testing.T, handler http.Handler, method, body, token string) *httptest.ResponseRecorder {
 	t.Helper()

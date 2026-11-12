@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
@@ -234,7 +234,8 @@ func TestVaultOpenOfAnUnknownVaultIsRejected(t *testing.T) {
 }
 
 func TestVaultListToolsWithoutAVaultListAreNotListed(t *testing.T) {
-	registry, err := service.New(hosttest.New(geologyVault)).Registry()
+	geology := hosttest.New(geologyVault)
+	registry, err := service.New(vaultsOf(geology)).Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}

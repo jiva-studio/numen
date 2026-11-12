@@ -2,36 +2,29 @@ package service
 
 import (
 	"net/http"
-	"os/exec"
-	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/process"
 )
 
 // Mount registers the plugin's services on s.
 func Mount(s *server.Server) error {
-	return mount(s, newAgentServer(exec.LookPath))
-}
-
-func newAgentServer(lookPath func(string) (string, error)) *agentServer {
-	return &agentServer{
-		Unimplemented:   agentrun.Unimplemented{},
-		acpAgents:       nil,
-		lookPath:        lookPath,
-		found:           findACPAgents(lookPath),
-		acpModels:       newACPModelCache(true),
-		mu:              sync.RWMutex{},
-		executablePaths: nil,
-		requestTimeout:  0,
-		commands:        nil,
+	agent, err := newAgentServer(process.LookPath, process.Launcher{}, clock.System{}, true)
+	if err != nil {
+		return err
 	}
+	return mount(s, agent)
 }
 
 func mount(s *server.Server, agent *agentServer) error {
-	s.SetUpdateConfig(func(values map[string]string) { agent.applyConfig(values) })
-	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
+	s.SetUpdateConfig(func(values map[string]string) {
+		agent.registry.SetConfig(values)
+		agent.settings.Apply(values)
+	})
+	s.Register(agentrun.NewHandler(agent, agent, s.HandlerOptions()...))
 	connection.Mount(s, agent.Provider())
 	return nil
 }

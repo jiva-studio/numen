@@ -38,7 +38,7 @@ function createPress(gestureRole: GestureRole = 'open', middle: Position | null 
   const props: NodePressProps = {
     node: NODE,
     gestureRole,
-    behaviour: { reaching, showing: byDoubleClick },
+    behavior: { reaching, showing: byDoubleClick },
   }
   const press = useNodePress(props, () => middle, response)
   return { press, response: response, site }
@@ -72,7 +72,7 @@ describe('the menu key', () => {
   it('opens the menu at the middle of the node and keeps the browser from acting on it', () => {
     const { press, response } = createPress()
     const event = key('ContextMenu')
-    press.onKeyDown(event)
+    press.handlers.onKeyDown(event)
     expect(response.menu).toHaveBeenCalledWith({ x: 5, y: 7 }, 'keyboard')
     expect(event.defaultPrevented).toBe(true)
   })
@@ -80,7 +80,7 @@ describe('the menu key', () => {
   it('opens nothing where the node has no middle to open at', () => {
     const { press, response } = createPress('open', null)
     const event = key('ContextMenu')
-    press.onKeyDown(event)
+    press.handlers.onKeyDown(event)
     expect(response.menu).not.toHaveBeenCalled()
     expect(event.defaultPrevented).toBe(true)
   })
@@ -88,7 +88,7 @@ describe('the menu key', () => {
   it('is left alone by a node that is not there yet', () => {
     const { press, response } = createPress('ghost')
     const event = key('ContextMenu')
-    press.onKeyDown(event)
+    press.handlers.onKeyDown(event)
     expect(response.menu).not.toHaveBeenCalled()
     expect(event.defaultPrevented).toBe(false)
   })
@@ -98,21 +98,21 @@ describe('the keys that choose and show', () => {
   it('asks for the node on its own on Shift and Enter, and keeps the browser from acting', () => {
     const { press, response } = createPress()
     const event = key('Enter', { shiftKey: true })
-    press.onKeyDown(event)
+    press.handlers.onKeyDown(event)
     expect(response.show).toHaveBeenCalledWith('current')
     expect(event.defaultPrevented).toBe(true)
   })
 
   it('asks for it alongside the reader with Alt retained', () => {
     const { press, response } = createPress()
-    press.onKeyDown(key('Enter', { shiftKey: true, altKey: true }))
+    press.handlers.onKeyDown(key('Enter', { shiftKey: true, altKey: true }))
     expect(response.show).toHaveBeenCalledWith('split')
   })
 
   it('chooses the node on Enter, and keeps the browser from acting', () => {
     const { press, response } = createPress()
     const event = key('Enter')
-    press.onKeyDown(event)
+    press.handlers.onKeyDown(event)
     expect(response.activate).toHaveBeenCalledTimes(1)
     expect(event.defaultPrevented).toBe(true)
   })
@@ -120,7 +120,7 @@ describe('the keys that choose and show', () => {
   it('leaves every other key to the browser', () => {
     const { press, response } = createPress()
     const event = key('a')
-    press.onKeyDown(event)
+    press.handlers.onKeyDown(event)
     expect(response.activate).not.toHaveBeenCalled()
     expect(event.defaultPrevented).toBe(false)
   })

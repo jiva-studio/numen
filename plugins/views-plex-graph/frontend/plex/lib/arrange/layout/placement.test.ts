@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { rowsAndColumns, type NodesByRelation, type Widths } from './placement'
 import { DEFAULT_OPTIONS, type PlexOptions } from '../options'
 import type { Limits, RoleLimits } from './limits'
-import type { PlacedNode, PlexNode } from '../../node'
-import { RELATION_NAMES, type PlexRelation } from '../../relation'
+import type { PlacedNode } from '../../node'
+import { RELATION_NAMES } from '../../relation'
+import type { PlexNode, PlexRelation } from '../../../../types'
 
 const { nodeSize, focusSize, gap, lineGap, focusGap } = DEFAULT_OPTIONS
 
@@ -82,7 +83,7 @@ describe('a row', () => {
     expect(of(placedLayout, 'parent').every((node) => node.y < 0)).toBe(true)
   })
 
-  it('is centred on the focus', () => {
+  it('is centered on the focus', () => {
     const row = of(place({ child: createNodes('child', 3) }), 'child')
     const leftCoord = row[0]!.x - row[0]!.width / 2
     const right = row[2]!.x + row[2]!.width / 2
@@ -90,7 +91,7 @@ describe('a row', () => {
     expect(leftCoord).toBeCloseTo(-right)
   })
 
-  it('remains one gap between neighbours', () => {
+  it('remains one gap between neighbors', () => {
     const row = of(place({ child: createNodes('child', 3) }), 'child')
 
     expect(row[1]!.x - row[0]!.x).toBeCloseTo(nodeSize.width + gap)
@@ -145,7 +146,7 @@ describe('a column', () => {
     expect(of(placedLayout, 'sibling').every((node) => node.x > 0)).toBe(true)
   })
 
-  it('is centred on the focus, one gap between neighbours', () => {
+  it('is centered on the focus, one gap between neighbors', () => {
     const column = of(place({ sibling: createNodes('sibling', 3) }), 'sibling')
 
     expect(column[1]!.y).toBeCloseTo(0)

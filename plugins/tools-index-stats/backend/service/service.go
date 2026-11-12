@@ -7,80 +7,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"runtime"
-	"sync"
-	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/performance"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/report"
+	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/internal/adapter/machine"
+	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/usecase/indexstats"
 )
 
-// Clock tells the time.
-type Clock interface {
-	Now() time.Time
-}
-
-// Index reads what the search index of the vault the host shows holds.
-type Index interface {
-	GetIndexStats(ctx context.Context) (host.IndexStats, error)
-}
-
-// stats holds what the calls of the frontend share: the host, the meter and the profile.
-type stats struct {
-	index Index
-	clock Clock
-	cpus  int
-	meter *report.Meter
-
-	mu      sync.Mutex
-	profile performance.Profile
-}
-
-func newStats(index Index, clk Clock, cpus int) *stats {
-	return &stats{
-		index: index, clock: clk, cpus: cpus, meter: report.NewMeter(),
-		mu: sync.Mutex{}, profile: performance.Balanced,
+func getStats(stats *indexstats.Stats) func(context.Context, api.GetStatsRequest) (api.Stats, error) {
+	return func(ctx context.Context, _ api.GetStatsRequest) (api.Stats, error) {
+		answer, err := stats.Get(ctx)
+		if err != nil {
+			return api.Stats{}, convertError(err)
+		}
+		return answer, nil
 	}
-}
-
-func (s *stats) configure(values map[string]string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.profile = performance.Read(values)
-}
-
-func (s *stats) getProfile() performance.Profile {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.profile
-}
-
-func (s *stats) get(ctx context.Context, _ api.GetStatsRequest) (api.Stats, error) {
-	raw, err := s.index.GetIndexStats(ctx)
-	if err != nil {
-		return api.Stats{}, convertError(err)
-	}
-	derived := s.meter.Observe(s.clock.Now(), report.Counts{Vectors: raw.VectorCount, Chunks: raw.ChunkCount, Sources: raw.SourceCount})
-	profile := s.getProfile()
-	answer := api.Stats{
-		Vectors: raw.VectorCount, Chunks: raw.ChunkCount, Waiting: max(0, raw.ChunkCount-raw.VectorCount),
-		Sources: raw.SourceCount, Kinds: report.GroupByKind(raw.Extensions),
-		Model: raw.Model, Recipe: raw.Recipe, Dimensions: raw.Dimensions,
-		Profile: string(profile), Threads: performance.Resolve(profile, s.cpus).Threads,
-		Speed: nil, ChangedAt: "", DatabaseBytes: raw.DatabaseBytes, VectorBytes: raw.VectorBytes,
-	}
-	if derived.HasSpeed {
-		answer.Speed = &derived.Speed
-	}
-	if derived.HasChanged {
-		answer.ChangedAt = derived.ChangedAt.UTC().Format(time.RFC3339)
-	}
-	return answer, nil
 }
 
 func convertError(err error) error {
@@ -93,11 +37,10 @@ func convertError(err error) error {
 	return fmt.Errorf("read the index statistics: %w", err)
 }
 
-func mount(s *server.Server, index Index, clk Clock, cpus int) error {
-	view := newStats(index, clk, cpus)
-	s.SetUpdateConfig(func(values map[string]string) { view.configure(values) })
+func mount(s *server.Server, stats *indexstats.Stats) error {
+	s.SetUpdateConfig(func(values map[string]string) { stats.Configure(values) })
 	a := s.NewAPI(api.Service)
-	server.Handle(a, api.MethodGetStats, view.get)
+	server.Handle(a, api.MethodGetStats, getStats(stats))
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="api.Service and api.MethodGetStats are valid compile-time constants."
 	return a.Err()
 }
@@ -108,5 +51,5 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, host.NewSearchClient(endpoint), clock.System{}, runtime.NumCPU())
+	return mount(s, indexstats.NewStats(host.NewSearchClient(endpoint), clock.System{}, machine.GetCPUCount()))
 }

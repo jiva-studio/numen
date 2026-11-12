@@ -1,0 +1,24 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "types": ["vite/client", "node"],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "composite": true,
+    "rootDir": "..",
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo"
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    ".storybook/**/*.ts",
+    "*.config.ts",
+    "../components/.storybook/browser.ts",
+    "../components/.storybook/check.ts",
+    "../components/.storybook/keyboard.ts",
+    "../components/.storybook/reach.ts",
+    "../components/.storybook/toolbar.ts"
+  ]
+}

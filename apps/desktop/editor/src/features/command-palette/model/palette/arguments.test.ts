@@ -5,17 +5,21 @@
 import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 import { runSupport } from './runSupport'
-import { useCommandPalette, type Commands } from './palette'
-import type { Command, CommandTarget } from '../../types'
-import { WORDS as words } from '@/shared/words'
+import { createCommandPalette, type Commands } from './palette'
+import type { Command } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
+import { WORDS as windowWords } from '@/shared/ui/words'
+import { PALETTE_WORDS } from '../../words'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 function rethrow(error: unknown): never {
   throw error
 }
 
 function chooseRow(commands: Commands) {
-  const row = commands.groups.value.flatMap((group) => group.items)[0]
-  return commands.chooseItem(row?.id ?? '', row?.actions?.[0]?.id ?? '')
+  const row = commands.view.groups.value.flatMap((group) => group.items)[0]
+  return commands.palette.chooseItem(row?.id ?? '', row?.actions?.[0]?.id ?? '')
 }
 
 const front: CommandTarget = {
@@ -42,16 +46,16 @@ const createSample: Command = {
 }
 
 const createPalette = () => {
-  const commands = useCommandPalette({
+  const commands = createCommandPalette({
     core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
     words,
     at: () => front,
     knows: { getTitle: () => '', getTabAt: () => null },
     lists: { getStepGroups: () => [], previewItem: vi.fn() },
     runs: runSupport(),
-    getExtraCommands: () => [createSample],
+    getCommands: () => [createSample],
   })
-  commands.setOpen(true)
+  commands.palette.setOpen(true)
   return commands
 }
 
@@ -59,85 +63,85 @@ describe('a command that asks for its arguments', () => {
   it('asks for the first in a step named after it', () => {
     const commands = createPalette()
 
-    expect(commands.startCommand('create-sample', front)).toBeNull()
+    expect(commands.palette.startCommand('create-sample', front)).toBeNull()
 
-    expect(commands.crumb.value).toBe('Create a sample')
-    expect(commands.placeholder.value).toBe('Title')
-    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['arguments'])
-    expect(commands.groups.value[0]?.items).toStrictEqual([])
+    expect(commands.navigation.crumb.value).toBe('Create a sample')
+    expect(commands.navigation.placeholder.value).toBe('Title')
+    expect(commands.view.groups.value.map((group) => group.id)).toStrictEqual(['arguments'])
+    expect(commands.view.groups.value[0]?.items).toStrictEqual([])
   })
 
   it('does not go on from a required argument with nothing typed', () => {
     const commands = createPalette()
-    commands.startCommand('create-sample', front)
+    commands.palette.startCommand('create-sample', front)
 
     expect(chooseRow(commands)).toBeNull()
-    expect(commands.placeholder.value).toBe('Title')
+    expect(commands.navigation.placeholder.value).toBe('Title')
   })
 
   it('goes on to the next argument with what was typed, and offers to leave an optional one out', () => {
     const commands = createPalette()
-    commands.startCommand('create-sample', front)
-    commands.setTyped('  Verbs ').catch(rethrow)
+    commands.palette.startCommand('create-sample', front)
+    commands.palette.setTyped('  Verbs ').catch(rethrow)
 
-    expect(commands.groups.value[0]?.items[0]?.title).toBe('Title: “Verbs”')
+    expect(commands.view.groups.value[0]?.items[0]?.title).toBe('Title: “Verbs”')
     expect(chooseRow(commands)).toBeNull()
 
-    expect(commands.placeholder.value).toBe('Folder')
-    expect(commands.typed.value).toBe('')
-    expect(commands.groups.value[0]?.items[0]?.title).toBe(`${words.leavesOut} Folder`)
+    expect(commands.navigation.placeholder.value).toBe('Folder')
+    expect(commands.palette.typed.value).toBe('')
+    expect(commands.view.groups.value[0]?.items[0]?.title).toBe(`${words.leavesOut} Folder`)
   })
 
   it('carries every value typed, by name, and leaves out the optional ones left blank', () => {
     const commands = createPalette()
-    commands.startCommand('create-sample', front)
-    commands.setTyped('Verbs').catch(rethrow)
+    commands.palette.startCommand('create-sample', front)
+    commands.palette.setTyped('Verbs').catch(rethrow)
     chooseRow(commands)
     chooseRow(commands)
-    commands.setTyped('Spanish').catch(rethrow)
+    commands.palette.setTyped('Spanish').catch(rethrow)
 
     const invocation = chooseRow(commands)
 
     expect(invocation?.id).toBe('create-sample')
-    expect(invocation?.file).toBe('physics/Ontology.md')
+    expect(invocation?.target.file).toBe('physics/Ontology.md')
     expect(invocation?.values).toStrictEqual({ title: 'Verbs', form: 'Spanish' })
   })
 
   it('goes back to the argument before', () => {
     const commands = createPalette()
-    commands.startCommand('create-sample', front)
-    commands.setTyped('Verbs').catch(rethrow)
+    commands.palette.startCommand('create-sample', front)
+    commands.palette.setTyped('Verbs').catch(rethrow)
     chooseRow(commands)
 
-    expect(commands.goBack()).toBe(false)
+    expect(commands.navigation.goBack()).toBe(false)
 
-    expect(commands.placeholder.value).toBe('Title')
+    expect(commands.navigation.placeholder.value).toBe('Title')
   })
 })
 
 describe('a command that arrives after the palette is made', () => {
   it('is offered from then on', () => {
     const extra = shallowRef<readonly Command[]>([])
-    const commands = useCommandPalette({
+    const commands = createCommandPalette({
       core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
       words,
       at: () => front,
       knows: { getTitle: () => '', getTabAt: () => null },
       lists: { getStepGroups: () => [], previewItem: vi.fn() },
       runs: runSupport(),
-      getExtraCommands: () => extra.value,
+      getCommands: () => extra.value,
     })
-    commands.setOpen(true)
-    commands.setTyped('a sample').catch(rethrow)
-    expect(commands.groups.value).toStrictEqual([])
+    commands.palette.setOpen(true)
+    commands.palette.setTyped('a sample').catch(rethrow)
+    expect(commands.view.groups.value).toStrictEqual([])
 
     extra.value = [createSample]
 
     expect(
-      commands.groups.value.flatMap((group) => group.items.map((item) => item.id)),
+      commands.view.groups.value.flatMap((group) => group.items.map((item) => item.id)),
     ).toStrictEqual(['create-sample'])
 
-    expect(commands.startCommand('create-sample', front)).toBeNull()
-    expect(commands.placeholder.value).toBe('Title')
+    expect(commands.palette.startCommand('create-sample', front)).toBeNull()
+    expect(commands.navigation.placeholder.value).toBe('Title')
   })
 })

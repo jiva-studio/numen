@@ -20,7 +20,7 @@ describe('a note a plex tab opens', () => {
   it('goes to the tabs linked to it, and opens nowhere else', () => {
     const { host, recorded } = createHost({ linked: { 'plex:1': true } })
 
-    createPlexTabDeps(host, 'plex:1').openNote('One.md', { title: 'One', showing: 'split' })
+    createPlexTabDeps(host, 'plex:1').window.openNote('One.md', { title: 'One', showing: 'split' })
 
     expect(recorded.synced).toStrictEqual([['plex:1', 'One.md', 'One']])
     expect(recorded.opened).toStrictEqual([])
@@ -29,7 +29,7 @@ describe('a note a plex tab opens', () => {
   it('opens at the line requested even where a tab is linked to it', () => {
     const { host, recorded } = createHost({ linked: { 'plex:1': true } })
 
-    createPlexTabDeps(host, 'plex:1').openNote('One.md', { title: 'One', line: 4 })
+    createPlexTabDeps(host, 'plex:1').window.openNote('One.md', { title: 'One', line: 4 })
 
     expect(recorded.synced).toStrictEqual([])
     expect(recorded.opened).toStrictEqual([['One.md', { title: 'One', line: 4 }]])
@@ -38,7 +38,7 @@ describe('a note a plex tab opens', () => {
   it('opens where the person requested, at the line requested, where no tab is linked to it', () => {
     const { host, recorded } = createHost()
 
-    createPlexTabDeps(host, 'plex:1').openNote('One.md', {
+    createPlexTabDeps(host, 'plex:1').window.openNote('One.md', {
       title: 'One',
       showing: 'split',
       line: 4,
@@ -52,7 +52,7 @@ describe('a note a plex tab opens', () => {
   it('opens with no title, placement or line where none is requested', () => {
     const { host, recorded } = createHost()
 
-    createPlexTabDeps(host, 'plex:1').openNote('One.md')
+    createPlexTabDeps(host, 'plex:1').window.openNote('One.md')
 
     expect(recorded.synced).toStrictEqual([['plex:1', 'One.md', '']])
     expect(recorded.opened).toStrictEqual([['One.md', { title: '' }]])
@@ -64,8 +64,8 @@ describe('what else a plex tab asks of the window', () => {
     const { host, recorded } = createHost()
     const deps = createPlexTabDeps(host, 'plex:2')
 
-    deps.onSelectPath?.('Two.md', 'Two')
-    deps.onSelectPath?.('Three.md')
+    deps.window.onSelectPath?.('Two.md', 'Two')
+    deps.window.onSelectPath?.('Three.md')
 
     expect(recorded.synced).toStrictEqual([
       ['plex:2', 'Two.md', 'Two'],
@@ -78,9 +78,9 @@ describe('what else a plex tab asks of the window', () => {
     const deps = createPlexTabDeps(host, 'plex:1')
     const target = { path: 'One.md', title: 'One', isFolder: false, others: [], tab: '' }
 
-    deps.getMenuEntries(target)
-    await deps.runCommand('rename', target)
-    deps.showMessage('the link was not written')
+    deps.menu.getMenuEntries(target)
+    await deps.menu.runCommand('rename', target)
+    deps.window.showMessage('the link was not written')
 
     expect(recorded.entries).toStrictEqual([['plexGraph.context', target]])
     expect(recorded.commands).toStrictEqual([['rename', target]])
@@ -108,7 +108,6 @@ describe('what else a plex tab asks of the window', () => {
       ok: true,
       value: undefined,
     })
-    expect(await deps.createUntitledNote()).toBe('Untitled.md')
 
     expect(recorded.made).toStrictEqual([
       ['One.md', 'child'],
@@ -122,14 +121,14 @@ describe('what else a plex tab asks of the window', () => {
     const { host, requested } = createHost({ opening: 'Root.md' })
     const deps = createPlexTabDeps(host, 'plex:1')
 
-    expect(deps.isReady.value).toBe(true)
-    expect(deps.openingPath.value).toBe('Root.md')
-    expect(deps.isNesting.value).toBe(true)
-    expect(deps.headings.value).toBe(6)
-    expect(deps.dragged.value).toStrictEqual([])
-    expect(await deps.readOpeningPath()).toBe('Root.md')
-    await deps.readHeadings(['Root.md'])
+    expect(deps.window.isReady.value).toBe(true)
+    expect(deps.window.openingPath.value).toBe('Root.md')
+    expect(deps.notes.isNesting.value).toBe(true)
+    expect(deps.notes.headings.value).toBe(6)
+    expect(deps.window.dragged.value).toStrictEqual([])
+    expect(await deps.window.readOpeningPath()).toBe('Root.md')
+    await deps.notes.readHeadings(['Root.md'])
     expect(requested.headings).toStrictEqual([['Root.md']])
-    expect(await deps.searchNames?.('Ro', 5)).toStrictEqual([])
+    expect(await deps.notes.searchNames?.('Ro', 5)).toStrictEqual([])
   })
 })

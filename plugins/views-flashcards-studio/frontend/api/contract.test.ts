@@ -1,9 +1,12 @@
 /**
  * The JSON fixtures in `testdata/api` are the messages of the contract between the backend and this
- * frontend. Each is checked against the interfaces of `types.ts` and sent through the client.
+ * frontend. Each is checked against the interfaces of `lib/wire` and sent through the client.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import typesSource from './types.ts?raw'
+import notesSource from '../lib/wire/notes.ts?raw'
+import scheduleSource from '../lib/wire/schedule.ts?raw'
+import reviewSource from '../lib/wire/review.ts?raw'
+import stopSource from '../lib/stop.ts?raw'
 
 const fixtureFiles = import.meta.glob('../../testdata/api/*.json', {
   eager: true,
@@ -20,7 +23,7 @@ interface Field {
 const parseTypes = (source: string) => {
   const interfaces = new Map<string, Map<string, Field>>()
   const enums = new Map<string, readonly string[]>()
-  for (const match of source.matchAll(/export interface (\w+) \{([^}]*)\}/g)) {
+  for (const match of source.matchAll(/^(?:export )?interface (\w+) \{([^}]*)\}/gm)) {
     const fields = new Map<string, Field>()
     for (const line of (match[2] ?? '').split('\n')) {
       const field = /^\s*(\w+)(\?)?: ([\w<>, ]+?)(\[\])?\s*$/.exec(line)
@@ -46,7 +49,7 @@ const parseTypes = (source: string) => {
   return { interfaces, enums }
 }
 
-const { interfaces, enums } = parseTypes(typesSource)
+const { interfaces, enums } = parseTypes(notesSource + scheduleSource + reviewSource + stopSource)
 
 const check = (value: unknown, typeName: string, path: string, isRequest: boolean): string[] => {
   if (typeName === 'string') return typeof value === 'string' ? [] : [`${path}: not a string`]

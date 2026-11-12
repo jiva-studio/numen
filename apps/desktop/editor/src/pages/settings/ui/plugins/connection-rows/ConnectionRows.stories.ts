@@ -6,15 +6,11 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { ref } from 'vue'
-import {
-  asValue,
-  type ConnectionInfo,
-  type ConnectionTypeInfo,
-  type ModelInfo,
-} from '@numen/core-client'
+import { ref, shallowRef } from 'vue'
+import type { ConnectionInfo, ConnectionTypeInfo, ModelInfo } from '@/entities/connection'
+import type { JsonValue } from '@/shared/api/json'
 import type { PluginSettingInfo } from '@/entities/settings'
-import { createInstallation } from '@/testing/installation'
+import { asValue, createInstallation } from '@/pages/settings/testing/installation'
 import ConnectionRows from './ConnectionRows.vue'
 
 const type = (id: string, title: string, operations: readonly string[]): ConnectionTypeInfo => ({
@@ -100,10 +96,10 @@ const render =
   () => ({
     components: { ConnectionRows },
     setup: () => {
-      const value = ref<unknown>(rows)
+      const value = shallowRef<JsonValue | undefined>(rows)
       const installation = createInstallation({
-        connections: ref(connections),
-        connectionTypes: ref([SERVICE, SERVER, EMBEDDER]),
+        list: ref(connections),
+        types: ref([SERVICE, SERVER, EMBEDDER]),
         listModels: fn((connectionId: string) =>
           Promise.resolve(asValue(MODELS[connectionId] ?? [])),
         ),
@@ -120,14 +116,14 @@ const render =
           ),
         ),
       })
-      const onChange = (next: unknown) => {
+      const onChange = (next: JsonValue) => {
         value.value = next
       }
-      return { value, installation, onChange, plugin: setting({ max }) }
+      return { value, connections: installation.connections, onChange, plugin: setting({ max }) }
     },
     template: `
       <div class="numen" style="inline-size:30rem;max-inline-size:100%;padding:1rem;background:var(--numen-surface);--settings-choice:16rem">
-        <ConnectionRows :setting="plugin" :value="value" :installation="installation" @change="onChange" />
+        <ConnectionRows :setting="plugin" :value="value" :connections="connections" @change="onChange" />
         <output data-testid="written">{{ JSON.stringify(value) }}</output>
       </div>
     `,
@@ -183,6 +179,9 @@ export const OneRowHasNoAddButton: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByRole('button', { name: 'Connection' })).toHaveLength(1)
     await expect(canvas.queryByRole('button', { name: 'Add connection' })).toBeNull()
+    await expect(
+      canvas.getByText('The text of your notes is sent to the connection chosen here.'),
+    ).toBeVisible()
   },
 }
 

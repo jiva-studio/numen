@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
 
@@ -18,7 +18,7 @@ func TestOpenRouterModelsCarryTheOperationsTheServiceLabelsThemWith(t *testing.T
 			{ID: "openai/text-embedding-3-small", Name: "Text Embedding 3 Small"},
 		},
 	})
-	svc := New()
+	svc := newTestService(t)
 	call := newCall("openrouter", address, testKey, "")
 
 	complete, err := svc.ListModels(newContext(t), call, "complete")
@@ -50,7 +50,7 @@ func TestOpenRouterModelsCarryTheOperationsTheServiceLabelsThemWith(t *testing.T
 func TestModelsOfAServiceWithoutLabelsAreListedForEveryOperation(t *testing.T) {
 	_, address := startFake(t, fakeopenai.Config{Models: []fakeopenai.Model{{ID: "qwen2.5:14b"}, {ID: "nomic-embed-text"}}})
 	for _, operation := range []string{"complete", "embed"} {
-		models, err := New().ListModels(newContext(t), newCall("openai-compatible", address, "", ""), operation)
+		models, err := newTestService(t).ListModels(newContext(t), newCall("openai-compatible", address, "", ""), operation)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -63,14 +63,14 @@ func TestModelsOfAServiceWithoutLabelsAreListedForEveryOperation(t *testing.T) {
 
 func TestListModelsReportsAKeyTheServiceRejects(t *testing.T) {
 	_, address := startFake(t, fakeopenai.Config{APIKey: testKey})
-	_, err := New().ListModels(newContext(t), newCall("openai", address, "wrong-key", ""), "complete")
+	_, err := newTestService(t).ListModels(newContext(t), newCall("openai", address, "wrong-key", ""), "complete")
 	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonKeyRejected})
 }
 
 func TestListModelsReportsAServiceThatIsDown(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	fake.Fail("/models", http.StatusServiceUnavailable, "")
-	_, err := New().ListModels(newContext(t), newCall("openai", address, testKey, ""), "complete")
+	_, err := newTestService(t).ListModels(newContext(t), newCall("openai", address, testKey, ""), "complete")
 	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnreachable})
 }
 
@@ -88,7 +88,7 @@ func TestReasoningLevelsAreListedWhereTheTypeKnowsThem(t *testing.T) {
 		"compatible server o-named": {"openai-compatible", "o3", nil},
 	}
 	for name, one := range cases {
-		got, err := New().ListReasoningLevels(newContext(t), newCall(one.typeID, "http://127.0.0.1:1", "", one.model))
+		got, err := newTestService(t).ListReasoningLevels(newContext(t), newCall(one.typeID, "http://127.0.0.1:1", "", one.model))
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -108,7 +108,7 @@ func TestOpenRouterListsTheTextModelsForChatAsForComplete(t *testing.T) {
 		Models: []fakeopenai.Model{{ID: "openai/gpt-4o-mini", Name: "GPT-4o mini"}},
 	})
 
-	models, err := New().ListModels(newContext(t), newCall("openrouter", address, testKey, ""), "chat")
+	models, err := newTestService(t).ListModels(newContext(t), newCall("openrouter", address, testKey, ""), "chat")
 
 	want := []connection.Model{{ID: "openai/gpt-4o-mini", Title: "GPT-4o mini", Operations: []string{"chat"}}}
 	if err != nil || !slices.EqualFunc(models, want, equalModel) {

@@ -1,0 +1,203 @@
+package hostendpoint
+
+import (
+	"errors"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/libs/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+)
+
+func (m *memoryVault) openFolder(pluginID string) (derivedfile.PluginFolder, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.vault == nil {
+		return derivedfile.PluginFolder{}, plugin.ErrNoVault
+	}
+	if m.storeRoot == "" {
+		return derivedfile.PluginFolder{}, errors.New("the vault keeps no store")
+	}
+	return derivedfile.PluginStores{}.OpenWriter(domain.Vault{ID: m.vault.ID, Path: m.storeRoot}, pluginID)
+}
+
+func (m *memoryVault) OpenStore(pluginID string) (vaultapi.StoreReader, error) {
+	return m.openFolder(pluginID)
+}
+
+func (m *memoryVault) OpenStoreWriter(pluginID string) (vaultapi.StoreWriter, error) {
+	return m.openFolder(pluginID)
+}
+
+// storeHost is the store endpoint served over one vault whose store is a folder of the test's own.
+type storeHost struct {
+	vault  *memoryVault
+	url    string
+	client *http.Client
+}
+
+func newStoreHost(t *testing.T) storeHost {
+	t.Helper()
+	vault := newMemoryVault(nil)
+	vault.storeRoot = t.TempDir()
+	hosted := newCallers()
+	hosted.vault = vaultOf(vault)
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: &Endpoint{callers: hosted.asCallers()}}))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	return storeHost{vault: vault, url: server.URL, client: server.Client()}
+}
+
+func (h storeHost) newClient(token string) numenv1connect.HostStoreServiceClient {
+	return numenv1connect.NewHostStoreServiceClient(h.client, h.url, connect.WithInterceptors(transport.AuthInterceptor(token)))
+}
+
+func TestAPluginsFilesAreAppendedReadAndListedInItsOwnFolder(t *testing.T) {
+	h := newStoreHost(t)
+	client := h.newClient("token-a")
+	ctx := t.Context()
+
+	for _, line := range []string{"one\n", "two\n"} {
+		if _, err := client.AppendStoreFile(ctx, connect.NewRequest(&v1.AppendStoreFileRequest{Name: "a.log", Content: []byte(line)})); err != nil {
+			t.Fatal(err)
+		}
+	}
+	read, readErr := client.ReadStoreFile(ctx, connect.NewRequest(&v1.ReadStoreFileRequest{Name: "a.log"}))
+	listed, listErr := client.ListStoreFiles(ctx, connect.NewRequest(&v1.ListStoreFilesRequest{}))
+	on, diskErr := os.ReadFile(filepath.Join(h.vault.storeRoot, ".numen", "md.numen.a", "a.log"))
+	missing, missingErr := client.ReadStoreFile(ctx, connect.NewRequest(&v1.ReadStoreFileRequest{Name: "none"}))
+
+	if readErr != nil || string(read.Msg.GetContent()) != "one\ntwo\n" {
+		t.Errorf("read %v (%v)", read.Msg, readErr)
+	}
+	if listErr != nil || len(listed.Msg.GetFiles()) != 1 || listed.Msg.GetFiles()[0].GetName() != "a.log" || listed.Msg.GetFiles()[0].GetSize() != 8 {
+		t.Errorf("listed %v (%v)", listed.Msg, listErr)
+	}
+	if diskErr != nil || string(on) != "one\ntwo\n" {
+		t.Errorf("the folder holds %q (%v)", on, diskErr)
+	}
+	if missingErr != nil || missing.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_MISSING {
+		t.Errorf("a missing file was answered %v (%v)", missing.Msg, missingErr)
+	}
+}
+
+func TestAPluginSeesNoOtherPluginsFolder(t *testing.T) {
+	h := newStoreHost(t)
+	ctx := t.Context()
+	if _, err := h.newClient("token-a").AppendStoreFile(ctx, connect.NewRequest(&v1.AppendStoreFileRequest{Name: "secret", Content: []byte("a")})); err != nil {
+		t.Fatal(err)
+	}
+	other := h.newClient("token-b")
+
+	mine, err := other.ReadStoreFile(ctx, connect.NewRequest(&v1.ReadStoreFileRequest{Name: "secret"}))
+	if err != nil || mine.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_MISSING {
+		t.Errorf("another plugin's file was answered %v (%v)", mine.Msg, err)
+	}
+	listed, err := other.ListStoreFiles(ctx, connect.NewRequest(&v1.ListStoreFilesRequest{}))
+	if err != nil || len(listed.Msg.GetFiles()) != 0 {
+		t.Errorf("another plugin listed %v (%v)", listed.Msg, err)
+	}
+	for _, name := range []string{"../md.numen.a/secret", "../config.json", ".hidden", ""} {
+		res, err := other.ReadStoreFile(ctx, connect.NewRequest(&v1.ReadStoreFileRequest{Name: name}))
+		if err != nil || res.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE {
+			t.Errorf("%q was answered %v (%v)", name, res.Msg, err)
+		}
+	}
+}
+
+func TestPluginStoreAcceptsHostTokenWithoutVaultPermission(t *testing.T) {
+	h := newStoreHost(t)
+	ctx := t.Context()
+
+	_, err := h.newClient("token-b").AppendStoreFile(ctx, connect.NewRequest(&v1.AppendStoreFileRequest{Name: "a", Content: []byte("a")}))
+	if err != nil {
+		t.Errorf("a plugin without vault permissions was refused its folder: %v", err)
+	}
+	_, err = h.newClient("token-x").ReadStoreFile(ctx, connect.NewRequest(&v1.ReadStoreFileRequest{Name: "a"}))
+	if connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Errorf("an unknown token was answered %v", err)
+	}
+}
+
+func TestAHostShowingNoVaultAnswersNoVaultForTheStore(t *testing.T) {
+	h := newStoreHost(t)
+	h.vault.mu.Lock()
+	h.vault.vault = nil
+	h.vault.mu.Unlock()
+
+	res, err := h.newClient("token-a").ReadStoreFile(t.Context(), connect.NewRequest(&v1.ReadStoreFileRequest{Name: "a"}))
+
+	if err != nil || res.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NO_VAULT {
+		t.Errorf("answered %v (%v)", res.Msg, err)
+	}
+}
+
+func TestStoreWriteReplacesAndDeleteRemovesFile(t *testing.T) {
+	h := newStoreHost(t)
+	client := h.newClient("token-a")
+	ctx := t.Context()
+	filePath := filepath.Join(h.vault.storeRoot, ".numen", "md.numen.a", "a.json")
+
+	for _, content := range []string{"first and longer", "second"} {
+		if _, err := client.WriteStoreFile(ctx, connect.NewRequest(&v1.WriteStoreFileRequest{Name: "a.json", Content: []byte(content)})); err != nil {
+			t.Fatal(err)
+		}
+	}
+	on, err := os.ReadFile(filePath)
+	if err != nil || string(on) != "second" {
+		t.Errorf("the folder holds %q (%v), want the second write alone", on, err)
+	}
+
+	for range 2 {
+		res, err := client.DeleteStoreFile(ctx, connect.NewRequest(&v1.DeleteStoreFileRequest{Name: "a.json"}))
+		if err != nil || res.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED {
+			t.Errorf("a delete was answered %v (%v)", res.Msg, err)
+		}
+	}
+	if _, err := os.Stat(filePath); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("the deleted file is still there: %v", err)
+	}
+	outside, err := client.WriteStoreFile(ctx, connect.NewRequest(&v1.WriteStoreFileRequest{Name: "../md.numen.b/a", Content: []byte("x")}))
+	if err != nil || outside.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE {
+		t.Errorf("a write outside the folder was answered %v (%v)", outside.Msg, err)
+	}
+}
+
+func TestStoreRenameMovesAFileWithinTheFolder(t *testing.T) {
+	h := newStoreHost(t)
+	client := h.newClient("token-a")
+	ctx := t.Context()
+	folder := filepath.Join(h.vault.storeRoot, ".numen", "md.numen.a")
+
+	if _, err := client.AppendStoreFile(ctx, connect.NewRequest(&v1.AppendStoreFileRequest{Name: "clip.part", Content: []byte("a copy")})); err != nil {
+		t.Fatal(err)
+	}
+	res, err := client.RenameStoreFile(ctx, connect.NewRequest(&v1.RenameStoreFileRequest{From: "clip.part", To: "clip.mp4"}))
+	if err != nil || res.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("a rename was answered %v (%v)", res.Msg, err)
+	}
+	if on, err := os.ReadFile(filepath.Join(folder, "clip.mp4")); err != nil || string(on) != "a copy" {
+		t.Errorf("the new name holds %q (%v)", on, err)
+	}
+	missing, err := client.RenameStoreFile(ctx, connect.NewRequest(&v1.RenameStoreFileRequest{From: "clip.part", To: "clip.mp4"}))
+	if err != nil || missing.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_MISSING {
+		t.Errorf("a rename of a file that is not there was answered %v (%v)", missing.Msg, err)
+	}
+	outside, err := client.RenameStoreFile(ctx, connect.NewRequest(&v1.RenameStoreFileRequest{From: "clip.mp4", To: "../md.numen.b/clip.mp4"}))
+	if err != nil || outside.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE {
+		t.Errorf("a rename out of the folder was answered %v (%v)", outside.Msg, err)
+	}
+}

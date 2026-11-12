@@ -6,17 +6,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { Select } from '@numen/ui'
-import {
-  asFailure,
-  asValue,
-  type ConnectionInfo,
-  type ModelListFailure,
-  type ConnectionTypeInfo,
-  type ModelInfo,
-} from '@numen/core-client'
+import type {
+  ConnectionInfo,
+  ConnectionTypeInfo,
+  ModelInfo,
+  ModelListFailure,
+} from '@/entities/connection'
 import type { PluginSettingInfo } from '@/entities/settings'
-import type { Installation } from '../../../types'
-import { createInstallation } from '@/testing/installation'
+import type { JsonValue } from '@/shared/api/json'
+import type { InstallationConnections } from '../../../types'
+import { asFailure, asValue, createInstallation } from '@/pages/settings/testing/installation'
 import { click, dispose, findButton, root } from '@/testing/dom'
 import ConnectionRows from './ConnectionRows.vue'
 
@@ -81,19 +80,19 @@ const row = (connectionId: string, model: string, reasoning = '') => ({
 })
 
 interface Options {
-  readonly value?: unknown
+  readonly value?: JsonValue
   readonly max?: number
   readonly connections?: readonly ConnectionInfo[]
-  readonly listModels?: NonNullable<Installation['listModels']>
+  readonly listModels?: InstallationConnections['models']['listModels']
   readonly operation?: string
-  readonly countNotes?: NonNullable<Installation['countNotes']>
+  readonly countNotes?: InstallationConnections['countNotes']
 }
 
 const mountRows = (options: Options = {}) => {
   const listModels = options.listModels ?? vi.fn(() => Promise.resolve(asValue(MODELS)))
   const installation = createInstallation({
-    connections: ref(options.connections ?? [EMBED_ONLY, WORK, RETIRED, HOME]),
-    connectionTypes: ref([SERVICE, EMBEDDER]),
+    list: ref(options.connections ?? [EMBED_ONLY, WORK, RETIRED, HOME]),
+    types: ref([SERVICE, EMBEDDER]),
     listModels,
     listReasoningLevels: vi.fn(() => Promise.resolve(asValue([]))),
     ...(options.countNotes ? { countNotes: options.countNotes } : {}),
@@ -103,7 +102,7 @@ const mountRows = (options: Options = {}) => {
     props: {
       setting: setting({ max: options.max ?? 3, operation: options.operation ?? 'complete' }),
       value: options.value ?? [],
-      installation,
+      connections: installation.connections,
     },
   })
   return { wrapper, installation, listModels }
@@ -134,6 +133,17 @@ describe('the rows of a setting of connections', () => {
     expect(root().textContent).toContain(
       'The text of your notes is sent to each connection listed, in this order.',
     )
+    dispose(wrapper)
+  })
+
+  it('names the one connection, without an order, where the setting holds one row', async () => {
+    const { wrapper } = mountRows({ max: 1, value: [row(WORK.id, 'alpha')] })
+    await flushPromises()
+
+    expect(root().textContent).toContain(
+      'The text of your notes is sent to the connection chosen here.',
+    )
+    expect(root().textContent).not.toContain('in this order')
     dispose(wrapper)
   })
 
@@ -186,7 +196,7 @@ describe('the rows of a setting of connections', () => {
     const { wrapper, installation } = mountRows()
     await flushPromises()
 
-    expect(installation.loadConnections).toHaveBeenCalledOnce()
+    expect(installation.connections.load).toHaveBeenCalledOnce()
     dispose(wrapper)
   })
 
@@ -360,11 +370,24 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     await flushPromises()
   }
 
+  it('waits for a model after a connection is chosen, and asks nothing yet', async () => {
+    const { wrapper } = mountEmbedRows()
+    await click(findButton(/add connection/i))
+
+    await choose(wrapper, 0, HOME.id)
+
+    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    expect(changes(wrapper)).toStrictEqual([])
+    expect(wrapper.findAllComponents(Select)[1]?.props('modelValue')).toBe('')
+    dispose(wrapper)
+  })
+
   it('asks before it writes a connection, naming the notes and the connection', async () => {
     const { wrapper } = mountEmbedRows()
     await click(findButton(/add connection/i))
 
     await choose(wrapper, 0, HOME.id)
+    await choose(wrapper, 1, 'alpha')
 
     expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
       'This indexes 120 notes through Home. It may cost money.',
@@ -377,6 +400,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     const { wrapper } = mountEmbedRows()
     await click(findButton(/add connection/i))
     await choose(wrapper, 0, HOME.id)
+    await choose(wrapper, 1, 'alpha')
 
     await click(findButton(/^index$/i))
 
@@ -389,12 +413,27 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     const { wrapper } = mountEmbedRows({ value: [row(WORK.id, 'alpha')] })
     await flushPromises()
     await choose(wrapper, 0, HOME.id)
+    await choose(wrapper, 1, 'beta')
 
     await click(findButton(/^cancel$/i))
 
     expect(changes(wrapper)).toStrictEqual([])
     expect(root().querySelector('li')?.textContent).toContain('Work')
     expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    dispose(wrapper)
+  })
+
+  it('keeps the row with its connection when the question about a first row is cancelled', async () => {
+    const { wrapper } = mountEmbedRows()
+    await click(findButton(/add connection/i))
+    await choose(wrapper, 0, HOME.id)
+    await choose(wrapper, 1, 'alpha')
+
+    await click(findButton(/^cancel$/i))
+
+    expect(changes(wrapper)).toStrictEqual([])
+    expect(root().querySelectorAll('li')).toHaveLength(1)
+    expect(root().querySelector('li')?.textContent).toContain('Home')
     dispose(wrapper)
   })
 
@@ -444,6 +483,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     await click(findButton(/add connection/i))
 
     await choose(wrapper, 0, HOME.id)
+    await choose(wrapper, 1, 'alpha')
 
     expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
       'This indexes your notes through Home. It may cost money.',

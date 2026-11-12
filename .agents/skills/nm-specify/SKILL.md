@@ -22,9 +22,9 @@ flowchart TD
 
 ## Step 1: Locate Active Task and Read Intent
 
-1. Identify the task directory from arguments or git branch:
-   - Example: `.agents/tasks/<slug>`
-2. Read `.agents/tasks/<slug>/intent.md`.
+   - The task folder is named after the task, under the tasks folder of `.agents`.
+   - Example: the task folder
+2. Read `intent.md` in the task folder.
    - If `intent.md` does not exist, ask the user to run `/nm-clarify` first.
 
 ---
@@ -33,33 +33,34 @@ flowchart TD
 
 Before proposing new files, types, or methods, search the codebase:
 
-1. Search existing domain models, ports, and DTOs across `libs/core` and `apps/desktop`.
-2. Check existing composables, components, and utilities in `libs/ui/core`.
+1. Search existing domain models, ports, and DTOs across `libs/core/kernel` and `apps/desktop`.
+2. Check existing composables, components, and utilities in `libs/ui/components`.
 3. Check `AGENTS.md` and the rules in `.agents/rules/` governing the touched area.
 
 ---
 
-## Step 3: Author `.agents/tasks/<slug>/spec.md`
+## Step 3: Author `spec.md` in the task folder
 
-Generate `.agents/tasks/<slug>/spec.md` with:
+Generate `spec.md` in the task folder with:
 
 ```markdown
 # Specification: <Task Title>
 
 **Task Slug:** `<slug>`
 **Date:** `<YYYY-MM-DD>`
-**Intent:** `.agents/tasks/<slug>/intent.md`
+**Intent:** `intent.md` in the task folder
 
 ## 1. Target Architecture & Interfaces
 
 - Type signatures, interface definitions, or component prop/event contracts.
-- Explicit placement: which layer each file belongs to (`shared`, `entities`, `features`, `widgets`, `pages`).
+- Explicit placement: which layer each file belongs to (`shared`, `entities`, `features`, `pages`, `app`).
+- Name the placement skill of each area the work touches in the blast radius ([`nm-place-core`](../nm-place-core/SKILL.md), [`nm-place-window`](../nm-place-window/SKILL.md), [`nm-place-plugin`](../nm-place-plugin/SKILL.md) or [`nm-place-library`](../nm-place-library/SKILL.md)), and take the placement of every file from it.
 
 ## 2. Blast Radius Matrix
 
 | Package / Path        | File                                | Action (Create/Modify) | Downstream Consumers                   |
 | :-------------------- | :---------------------------------- | :--------------------- | :------------------------------------- |
-| `libs/core`           | `domain/card.go`                    | Modify                 | `usecase/flashcards`, `adapter/sqlite` |
+| `libs/core/kernel`           | `domain/card.go`                    | Modify                 | `usecase/flashcards`, `adapter/sqlite` |
 | `apps/desktop/editor` | `src/features/deck/ui/DeckView.vue` | Create                 | `pages/DeckPage.vue`                   |
 
 ## 3. Negative Invariants (Architectural Prohibitions)
@@ -89,7 +90,7 @@ Generate `.agents/tasks/<slug>/spec.md` with:
 
 Present a concise summary of the specification to the user and request confirmation:
 
-> 📐 **Specification created in `.agents/tasks/<slug>/spec.md`.**
+> 📐 **Specification created in `spec.md` in the task folder.**
 >
 > - **Blast Radius:** `<N> files touched across <modules>`
 > - **Acceptance Criteria:** `<Count> verifiable behaviors defined`

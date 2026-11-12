@@ -7,14 +7,14 @@
  * settings values are restored as soon as the keyboard leaves the list. What a
  * list offers and what choosing a row writes belong to the adapter of the settings.
  */
-import { formatErrorMessage } from '@numen/core-client'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { ref, watch, type Ref } from 'vue'
 import { createFollower, createRequestGuard } from '@numen/ui'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import { DESIGNED, SCHEMES } from '@/entities/settings'
 import type { Appearance, Mode, Sizes, Themes } from '@/entities/settings'
 import type { AppearanceWords } from '../words'
-import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../lib/head'
+import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../api/head'
 import { createAppearancePreview } from './preview'
 
 export interface WindowAppearanceDeps {
@@ -22,7 +22,7 @@ export interface WindowAppearanceDeps {
   words: AppearanceWords
   write: MessageWriter
   sheet?: Document
-  wait?: (ms: number) => Promise<unknown>
+  wait?: (ms: number) => Promise<void>
 }
 
 interface ThemeApplierDeps {
@@ -115,7 +115,7 @@ function createThemeWatcher(deps: {
   applyAppearance: () => Promise<void>
   loadAppearance: () => Promise<void>
   lost: Ref<string>
-  wait: (ms: number) => Promise<unknown>
+  wait: (ms: number) => Promise<void>
 }) {
   let open = true
   const abortController = new AbortController()
@@ -134,7 +134,7 @@ function createThemeWatcher(deps: {
         if (!names.length) return
         for (const name of names) deps.files.delete(name)
         await deps.loadAppearance()
-        if (names.includes(deps.preview.current.value)) await deps.applyAppearance()
+        if (names.includes(deps.preview.display.current.value)) await deps.applyAppearance()
       },
     )
 
@@ -175,9 +175,10 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     settings: state.settings,
   })
 
-  const applyAppearance = () => applyTheme(preview.current.value, preview.half.value)
+  const applyAppearance = () =>
+    applyTheme(preview.display.current.value, preview.display.half.value)
   const writeSizes = createSizesWriter(styleElements, sheet)
-  const targetDrawing = watch(preview.sized, writeSizes)
+  const targetDrawing = watch(preview.display.sized, writeSizes)
 
   const loadAppearance = createAppearanceLoader({
     core,
@@ -201,16 +202,8 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
   })
 
   return {
-    ...state,
-    sized: preview.sized,
-    /** Applies the theme of a row while the keyboard is on it. */
-    previewTheme: preview.previewTheme,
-    /** Reads the tokens as the half of a row while the keyboard is on it. */
-    previewMode: preview.previewMode,
-    /** Draws the window at the size of a row once the keyboard has rested on it. */
-    previewSize: preview.previewSize,
-    /** Shows what the settings name again. */
-    restore: preview.restore,
+    state,
+    preview,
     /** Reads the theme, the mode and the sizes the settings now name, and applies them. */
     reload: async () => {
       await loadAppearance()
@@ -220,7 +213,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     start: async () => {
       await loadAppearance(true)
       // Stryker disable next-line ArrowFunction: createFollower handles stream errors internally.
-      watcher.follow().catch((error: unknown) => write(formatErrorMessage(error), 'error'))
+      watcher.follow().catch((error: Caught) => write(formatError(error), 'error'))
     },
     close: () => {
       watcher.stop()
@@ -230,4 +223,4 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
   }
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

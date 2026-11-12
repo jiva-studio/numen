@@ -19,7 +19,7 @@ A white-box audit looking only for **functional defects**: logic bugs, races, co
 
 ## Phase 1: Diff and blast radius
 
-1. Extract the change: `git diff HEAD` for the working tree, `git diff origin/main...HEAD` for a branch.
+1. Extract the change for the target resolved in [`../SKILL.md`](../SKILL.md): `git diff "$BASE_SHA...$HEAD_SHA"` for a pull request or commit range, `git diff HEAD` for an uncommitted working tree.
 2. Map the blast radius:
    - Every caller of a changed function, method or component.
    - Upstream sources of the state it reads: props, RPC responses, index rows, files on disk.

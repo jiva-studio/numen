@@ -3,7 +3,7 @@ import { expect, type Page } from 'playwright/test'
 /** The address the index stats item asks for its counts at. */
 const STATS_PATH = '/md.numen.tools.index.stats/GetStats'
 
-/** How old a count the core answers can be: `countsMaxAge` in libs/core/internal/adapter/plugin/hostsearch/stats.go. */
+/** How old a count the core answers can be: `countsMaxAge` in libs/core/kernel/adapter/plugin/hostsearch/stats.go. */
 const COUNTS_MAX_AGE_MS = 1_000
 
 /**

@@ -1,7 +1,7 @@
 /**
  * The version of a file as the one string the window carries it: size, modification time and path.
  */
-import type { FileStat } from './types'
+import type { FileStat } from '../lib/wire/notes'
 
 /** The file a response came out of as one string, and nothing where the response names none. */
 export const formatFingerprint = (at?: FileStat): string | undefined =>

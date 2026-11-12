@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import { appendPathEntry, createTextDrafts, removePathEntry } from './drafts'
+import { appendPathEntry, useTextDrafts, removePathEntry } from './drafts'
 
-describe('createTextDrafts', () => {
+describe('useTextDrafts', () => {
   it('holds the text typed at a key until it is written and preserves other keys', () => {
     const write = vi.fn()
-    const text = createTextDrafts(write)
+    const text = useTextDrafts(write)
     text.setDraft('endpoint', 'http://127.0.0.1:9/v1')
     text.setDraft('model', 'gpt-4')
     expect(text.getDraft('endpoint')).toBe('http://127.0.0.1:9/v1')

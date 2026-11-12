@@ -3,29 +3,26 @@
  * them. A value of a secret goes to the core once and is not kept here.
  */
 import { shallowRef } from 'vue'
+import type { Result } from '@/shared/lib/result'
+import { formatError } from '@/shared/api/errors'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import {
-  asFailure,
-  asValue,
-  formatErrorMessage,
-  type ConnectionChange,
-  type ConnectionClient,
-  type ConnectionDraft,
-  type ConnectionFailure,
-  type ConnectionInfo,
-  type ConnectionTypeInfo,
-  type Result,
-} from '@numen/core-client'
-import type { MessageWriter } from '@/shared/notices/messages'
+  createConnection,
+  deleteConnection,
+  listConnections,
+  listConnectionTypes,
+  updateConnection,
+} from '../api/connections'
+import type {
+  ConnectionChange,
+  ConnectionDraft,
+  ConnectionFailure,
+  ConnectionInfo,
+  ConnectionTypeInfo,
+} from '../lib/types'
+import { CONNECTION_WORDS } from '../words'
 
-/** The words this module shows in the window. */
-export interface ConnectionOptions {
-  readonly describeFailure: (failure: ConnectionFailure) => string
-  readonly loadFailed: string
-  readonly notify: MessageWriter
-}
-
-export function createConnectionStore(client: ConnectionClient, options: ConnectionOptions) {
-  const { describeFailure, loadFailed, notify } = options
+export function createConnectionStore(notify: MessageWriter) {
   const connections = shallowRef<readonly ConnectionInfo[]>([])
   const types = shallowRef<readonly ConnectionTypeInfo[]>([])
   let hasLoaded = false
@@ -34,12 +31,15 @@ export function createConnectionStore(client: ConnectionClient, options: Connect
   const load = async (): Promise<void> => {
     hasLoaded = true
     try {
-      const [readTypes, readConnections] = await Promise.all([client.listTypes(), client.list()])
+      const [readTypes, readConnections] = await Promise.all([
+        listConnectionTypes(),
+        listConnections(),
+      ])
       types.value = readTypes
       connections.value = readConnections
       notify('')
     } catch (caughtError) {
-      notify(`${loadFailed} ${formatErrorMessage(caughtError)}`, 'error')
+      notify(`${CONNECTION_WORDS.loadFailed} ${formatError(caughtError)}`, 'error')
     }
   }
 
@@ -53,11 +53,11 @@ export function createConnectionStore(client: ConnectionClient, options: Connect
   ): Promise<Result<T, string>> => {
     try {
       const answer = await operation()
-      if (!answer.ok) return asFailure(describeFailure(answer.error))
+      if (!answer.ok) return { ok: false, error: CONNECTION_WORDS.describeFailure(answer.error) }
       await load()
-      return asValue(answer.value)
+      return { ok: true, value: answer.value }
     } catch (caughtError) {
-      return asFailure(formatErrorMessage(caughtError))
+      return { ok: false, error: formatError(caughtError) }
     }
   }
 
@@ -66,8 +66,9 @@ export function createConnectionStore(client: ConnectionClient, options: Connect
     types,
     load,
     reload,
-    create: (draft: ConnectionDraft) => run(() => client.create(draft)),
-    update: (change: ConnectionChange) => run(() => client.update(change)),
-    delete: (id: string) => run(() => client.delete(id)),
+    create: (draft: ConnectionDraft) => run(() => createConnection(draft)),
+    update: (change: ConnectionChange) => run(() => updateConnection(change)),
+    delete: (id: string) => run(() => deleteConnection(id)),
   }
 }
+export type ConnectionStore = ReturnType<typeof createConnectionStore>

@@ -2,18 +2,14 @@ package service
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"path"
-	"slices"
-	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/window"
 )
 
-func addNoteFocus(registry *tools.Registry, on Host) error {
+func addNoteFocus(registry *tools.Registry, control window.Control) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "note_focus",
 		Title: "Focus a note",
@@ -26,19 +22,16 @@ func addNoteFocus(registry *tools.Registry, on Host) error {
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{showSentence},
 		Requires:     []string{host.PermissionWindowFocus},
-	}, func(ctx context.Context, in NoteFocusInput) (NoteFocusOutput, error) {
-		if on.Window == nil {
-			return NoteFocusOutput{}, host.ErrNoWindow
-		}
-		note, err := on.Window.FocusNote(ctx, in.Path)
+	}, func(ctx context.Context, in api.NoteFocusInput) (api.NoteFocusOutput, error) {
+		note, err := control.FocusNote(ctx, in.Path)
 		if err != nil {
-			return NoteFocusOutput{}, err
+			return api.NoteFocusOutput{}, err
 		}
-		return NoteFocusOutput{Note: FocusedNote{Path: note.Path, Title: note.Title, ID: note.ID}}, nil
+		return api.NoteFocusOutput{Note: api.FocusedNote{Path: note.Path, Title: note.Title, ID: note.ID}}, nil
 	})
 }
 
-func addSourceFocus(registry *tools.Registry, on Host) error {
+func addSourceFocus(registry *tools.Registry, control window.Control) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "source_focus",
 		Title: "Focus passages of a file",
@@ -54,25 +47,20 @@ func addSourceFocus(registry *tools.Registry, on Host) error {
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{showSentence, passagesSentence},
 		Requires:     []string{host.PermissionWindowFocus},
-	}, func(ctx context.Context, in SourceFocusInput) (SourceFocusOutput, error) {
+	}, func(ctx context.Context, in api.SourceFocusInput) (api.SourceFocusOutput, error) {
 		passages := make([]host.PassageSpan, 0, len(in.Passages))
 		for _, passage := range in.Passages {
 			passages = append(passages, host.PassageSpan{Start: passage.Start, Length: passage.Length})
 		}
-		if err := focusFile(ctx, on, in.Path, passages); err != nil {
-			return SourceFocusOutput{}, err
+		highlightCount, err := control.FocusPassages(ctx, in.Path, passages)
+		if err != nil {
+			return api.SourceFocusOutput{}, err
 		}
-		highlightCount := len(passages)
-		if isNotePath(in.Path) {
-			highlightCount = 0
-		}
-		return SourceFocusOutput{Path: in.Path, HighlightCount: highlightCount}, nil
+		return api.SourceFocusOutput{Path: in.Path, HighlightCount: highlightCount}, nil
 	})
 }
 
-var errMissingTabID = errors.New("tabId is required")
-
-func addWindowTabActivate(registry *tools.Registry, on Host) error {
+func addWindowTabActivate(registry *tools.Registry, control window.Control) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "window_tab_activate",
 		Title: "Activate window tab",
@@ -84,54 +72,11 @@ func addWindowTabActivate(registry *tools.Registry, on Host) error {
 		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{showSentence, tabIDSentence},
 		Requires:     []string{host.PermissionWindowFocus},
-	}, func(ctx context.Context, in WindowTabActivateInput) (WindowTabActivateOutput, error) {
-		if in.TabID == "" {
-			return WindowTabActivateOutput{}, errMissingTabID
-		}
-		info, err := activateWindowTab(ctx, on, in.TabID)
+	}, func(ctx context.Context, in api.WindowTabActivateInput) (api.WindowTabActivateOutput, error) {
+		tab, activeID, err := control.ActivateTab(ctx, in.TabID)
 		if err != nil {
-			return WindowTabActivateOutput{}, err
+			return api.WindowTabActivateOutput{}, err
 		}
-		return WindowTabActivateOutput{Tab: info}, nil
+		return api.WindowTabActivateOutput{Tab: newTabInfo(tab, activeID)}, nil
 	})
 }
-
-func activateWindowTab(ctx context.Context, on Host, id string) (TabInfo, error) {
-	if on.Window == nil {
-		return TabInfo{}, host.ErrNoWindow
-	}
-	open, _, err := on.Window.ReadOpenTabs(ctx)
-	if err != nil {
-		return TabInfo{}, err
-	}
-	index := slices.IndexFunc(open, func(tab host.OpenTab) bool { return tab.ID == id })
-	if index < 0 {
-		return TabInfo{}, fmt.Errorf("no open tab has id %q", id)
-	}
-	tab, activeID, err := on.Window.ActivateTab(ctx, id)
-	if errors.Is(err, host.ErrNotExist) {
-		return TabInfo{}, fmt.Errorf("no open tab has id %q", id)
-	}
-	if errors.Is(err, host.ErrTabNotShown) {
-		return TabInfo{}, fmt.Errorf("the window did not show tab %q within %s", id, tabActivationBound)
-	}
-	if err != nil {
-		return TabInfo{}, err
-	}
-	return newTabInfo(tab, activeID), nil
-}
-
-func focusFile(ctx context.Context, on Host, path string, passages []host.PassageSpan) error {
-	if on.Window == nil {
-		return host.ErrNoWindow
-	}
-	return on.Window.FocusPassages(ctx, path, passages)
-}
-
-func isNotePath(filePath string) bool {
-	return strings.EqualFold(path.Ext(filePath), domain.NoteExtension)
-}
-
-// tabActivationBound is the time the host waits for the window to show an activated tab. The host
-// does not send its bound, so the text of the error names the default of the host.
-const tabActivationBound = "2 s"

@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 const writeTargetVariable = "NUMEN_TEST_WRITE_TARGET"
@@ -37,8 +37,8 @@ done
 func newAntigravity(t *testing.T, script string) *agentServer {
 	t.Helper()
 	t.Setenv("HOME", t.TempDir())
-	svc := &agentServer{}
-	svc.applyConfig(map[string]string{"executablePath": agenttest.WriteScript(t, "agy", script)})
+	svc := newAgentServer(false)
+	svc.settings.Apply(map[string]string{"executablePath": agenttest.WriteScript(t, "agy", script)})
 	return svc
 }
 
@@ -50,7 +50,7 @@ func TestCompleteReturnsTheAnswerOfAntigravity(t *testing.T) {
 	svc := newAntigravity(t, answerScript)
 	t.Setenv(writeTargetVariable, filepath.Join(t.TempDir(), "written"))
 
-	result, err := svc.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("fix this"))
+	result, err := svc.completion.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("fix this"))
 
 	if err != nil || result.Text != "fixed" {
 		t.Errorf("Complete = %q, %v, want %q", result.Text, err, "fixed")
@@ -61,7 +61,7 @@ func TestCompleteStartsAntigravityWithTheModelOfTheLevelAndTheInstructions(t *te
 	recorded, read := agenttest.RecordingProgram(t, "agy")
 	svc := newAntigravity(t, modelListing+agenttest.QuoteShell(recorded)+` "$@"`+"\n"+resultEvent)
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "antigravity", Model: "m", Reasoning: "high"}, connection.ProviderCompleteRequest{
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "antigravity", Model: "m", Reasoning: "high"}, connection.ProviderCompleteRequest{
 		Messages: []connection.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: "fix this"}},
 	})
 
@@ -79,7 +79,7 @@ func TestCompleteJoinsTheTurnsOfAConversationIntoOnePrompt(t *testing.T) {
 	recorded, read := agenttest.RecordingProgram(t, "agy")
 	svc := newAntigravity(t, agenttest.QuoteShell(recorded)+` "$@"`+"\n"+resultEvent)
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "antigravity"}, connection.ProviderCompleteRequest{
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "antigravity"}, connection.ProviderCompleteRequest{
 		Messages: []connection.Message{
 			{Role: "user", Text: "one"}, {Role: "assistant", Text: "two"}, {Role: "user", Text: "three"},
 		},
@@ -100,7 +100,7 @@ func TestACompleteCallLetsAntigravityWriteNothing(t *testing.T) {
 	target := filepath.Join(t.TempDir(), "written")
 	t.Setenv(writeTargetVariable, target)
 	svc := newAntigravity(t, answerScript)
-	script := svc.getExecutablePath()
+	script := svc.settings.ExecutablePath()
 	if err := exec.CommandContext(t.Context(), script, "--dangerously-skip-permissions").Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +111,7 @@ func TestACompleteCallLetsAntigravityWriteNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := svc.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("write a file")); err != nil {
+	if _, err := svc.completion.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("write a file")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -127,7 +127,7 @@ func TestCompleteRunsAntigravityInAnEmptyFolderWithNoToolServer(t *testing.T) {
 		"ls -A > "+agenttest.QuoteShell(out+".files")+"\n"+
 		"cat \"$HOME/.gemini/config/mcp_config.json\" > "+agenttest.QuoteShell(out+".mcp")+"\n"+resultEvent)
 
-	if _, err := svc.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("hi")); err != nil {
+	if _, err := svc.completion.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("hi")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -156,7 +156,7 @@ func TestCompleteRefusesARequestWithNoMessageToAnswer(t *testing.T) {
 		"system only":  {Messages: []connection.Message{{Role: "system", Text: "be brief"}}},
 		"unknown role": {Messages: []connection.Message{{Role: "tool", Text: "x"}}},
 	} {
-		_, err := svc.Complete(t.Context(), connection.Call{Type: "antigravity"}, request)
+		_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "antigravity"}, request)
 		if !connection.IsStop(err) {
 			t.Errorf("%s: Complete = %v, want a stop", name, err)
 		}
@@ -165,9 +165,9 @@ func TestCompleteRefusesARequestWithNoMessageToAnswer(t *testing.T) {
 
 func TestAMissingAntigravityIsUnreachable(t *testing.T) {
 	withoutAgentsAnywhere(t)
-	svc := &agentServer{}
+	svc := newAgentServer(false)
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("hi"))
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
@@ -180,7 +180,7 @@ func TestAMissingAntigravityIsUnreachable(t *testing.T) {
 func TestAFailedRunOfAntigravityIsAStopWithNoTextOfTheProgram(t *testing.T) {
 	svc := newAntigravity(t, "echo 'error: not signed in as sk-secret' >&2\nexit 2\n")
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("hi"))
 
 	if !connection.IsStop(err) {
 		t.Fatalf("Complete = %v, want a stop", err)
@@ -193,7 +193,7 @@ func TestAFailedRunOfAntigravityIsAStopWithNoTextOfTheProgram(t *testing.T) {
 func TestAnEmptyAnswerIsAStop(t *testing.T) {
 	svc := newAntigravity(t, "exit 0\n")
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("hi"))
 
 	if !connection.IsStop(err) {
 		t.Errorf("Complete = %v, want a stop", err)
@@ -202,9 +202,9 @@ func TestAnEmptyAnswerIsAStop(t *testing.T) {
 
 func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	svc := newAntigravity(t, "sleep 30\n")
-	svc.applyConfig(map[string]string{"requestTimeout": "0.2"})
+	svc.settings.Apply(map[string]string{"requestTimeout": "0.2"})
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "antigravity"}, userMessage("hi"))
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
@@ -219,34 +219,17 @@ func TestCompleteReturnsTheErrorOfACancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	time.AfterFunc(200*time.Millisecond, cancel)
 
-	_, err := svc.Complete(ctx, connection.Call{Type: "antigravity"}, userMessage("hi"))
+	_, err := svc.completion.Complete(ctx, connection.Call{Type: "antigravity"}, userMessage("hi"))
 
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("Complete = %v, want the cancellation", err)
 	}
 }
 
-func TestTheRequestTimeoutIsTheSettingElseTwoMinutes(t *testing.T) {
-	svc := &agentServer{}
-	if got := svc.getRequestLimit(); got != 120*time.Second {
-		t.Errorf("default = %v, want 120 s", got)
-	}
-	svc.applyConfig(map[string]string{"requestTimeout": "45"})
-	if got := svc.getRequestLimit(); got != 45*time.Second {
-		t.Errorf("set to 45 = %v", got)
-	}
-	for _, value := range []string{"", "soon", "0", "-3", "NaN", "Inf"} {
-		svc.applyConfig(map[string]string{"requestTimeout": value})
-		if got := svc.getRequestLimit(); got != 120*time.Second {
-			t.Errorf("value %q: limit = %v, want 120 s", value, got)
-		}
-	}
-}
-
 func TestTheModelsOfAntigravityAreListedForTheRow(t *testing.T) {
 	svc := newAntigravity(t, modelListing)
 
-	models, err := svc.ListModels(t.Context(), connection.Call{Type: "antigravity"}, "complete")
+	models, err := svc.completion.ListModels(t.Context(), connection.Call{Type: "antigravity"}, "complete")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,21 +240,21 @@ func TestTheModelsOfAntigravityAreListedForTheRow(t *testing.T) {
 	if !slices.Equal(ids, []string{"m", "plain"}) || models[0].Title != "Model" {
 		t.Errorf("models = %+v", models)
 	}
-	levels, err := svc.ListReasoningLevels(t.Context(), connection.Call{Type: "antigravity", Model: "m"})
+	levels, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "antigravity", Model: "m"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(levels) != 2 || levels[0].Value != "low" || levels[1].Value != "high" || levels[1].Title != "High" {
 		t.Errorf("levels = %+v", levels)
 	}
-	none, err := svc.ListReasoningLevels(t.Context(), connection.Call{Type: "antigravity", Model: "plain"})
+	none, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "antigravity", Model: "plain"})
 	if err != nil || len(none) != 0 {
 		t.Errorf("levels of a model with none = %+v, %v", none, err)
 	}
 }
 
 func TestTheProviderFillsTheRolesOfCompleteAndModels(t *testing.T) {
-	provider := (&agentServer{}).Provider()
+	provider := newAgentServer(false).Provider()
 	if provider.Completer == nil || provider.Models == nil || provider.Embedder != nil || provider.Profiles != nil {
 		t.Errorf("provider = %+v, want complete and the models alone", provider)
 	}

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // KeyStore keeps the keys of connections in memory for the life of the process. A test server
@@ -28,7 +28,7 @@ func (s *KeyStore) GetKey(_ context.Context, name string) (string, error) {
 	defer s.mu.Unlock()
 	key, ok := s.keys[name]
 	if !ok {
-		return "", fmt.Errorf("%w: %q", pluginport.ErrNoKey, name)
+		return "", fmt.Errorf("%w: %q", plugin.ErrNoKey, name)
 	}
 	return key, nil
 }
@@ -46,7 +46,7 @@ func (s *KeyStore) DeleteKey(_ context.Context, name string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.keys[name]; !ok {
-		return fmt.Errorf("%w: %q", pluginport.ErrNoKey, name)
+		return fmt.Errorf("%w: %q", plugin.ErrNoKey, name)
 	}
 	delete(s.keys, name)
 	return nil

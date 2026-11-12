@@ -3,7 +3,7 @@
  * The bar at the bottom of the window: the entries of `statusBar.left` at its start and those of
  * `statusBar.right` at its end.
  */
-import type { CommandItem, SlotItem } from '@numen/plugin-sdk'
+import type { CommandItem, SlotItem, Caught } from '@numen/plugin-sdk'
 import { WORDS as words } from '../lib/entries'
 import SlotRow from './SlotRow.vue'
 import './statusBar.css'
@@ -13,15 +13,18 @@ defineProps<{
   startEntries: readonly SlotItem[]
   endEntries: readonly SlotItem[]
   listItems: (command: string) => Promise<readonly CommandItem[]>
-  reportError?: ((error: unknown) => void) | undefined
+  reportError?: ((error: Caught) => void) | undefined
 }>()
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run', command: string, itemId?: string): void }>()
+const emit = defineEmits<{
+  (event: 'run', command: string, itemId?: string, values?: Readonly<Record<string, string>>): void
+}>()
 
 /* -------------------------------- Handlers -------------------------------- */
-function onRun(command: string, itemId?: string): void {
-  if (itemId === undefined) emit('run', command)
+function onRun(command: string, itemId?: string, values?: Readonly<Record<string, string>>): void {
+  if (values) emit('run', command, itemId, values)
+  else if (itemId === undefined) emit('run', command)
   else emit('run', command, itemId)
 }
 </script>

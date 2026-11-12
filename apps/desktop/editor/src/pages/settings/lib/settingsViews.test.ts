@@ -1,8 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { getRegisteredViews, getSettingValues } from './settingsViews'
 import { hasPluginSettings } from './pluginSettings'
-import { fetchPluginReadme } from './readme'
-import { createPluginInfo } from '@/testing/installation'
+import { createPluginInfo } from '@/pages/settings/testing/installation'
 
 describe('getRegisteredViews', () => {
   const declared = [
@@ -10,15 +9,17 @@ describe('getRegisteredViews', () => {
     { id: 'floor', title: 'Floor' },
     { id: 'missing', title: 'Missing' },
   ]
+  const T = { name: 'T' }
+  const F = { name: 'F' }
   const registered = new Map([
-    ['top', { component: 'T' }],
-    ['floor', { component: 'F' }],
+    ['top', { component: T }],
+    ['floor', { component: F }],
   ])
 
   it('returns the registered views in declared order', () => {
     expect(getRegisteredViews(declared, registered)).toStrictEqual([
-      { id: 'top', component: 'T' },
-      { id: 'floor', component: 'F' },
+      { id: 'top', component: T },
+      { id: 'floor', component: F },
     ])
   })
 
@@ -56,47 +57,5 @@ describe('hasPluginSettings', () => {
       settingsViews: [{ id: 'v', title: 'V' }],
     })
     expect(hasPluginSettings(withView)).toBe(true)
-  })
-})
-
-describe('fetchPluginReadme', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('returns empty string when fetch is unavailable, fails, returns non-ok, or returns html', async () => {
-    vi.stubGlobal('fetch', undefined)
-    expect(await fetchPluginReadme('my-plugin')).toBe('')
-
-    const fetchMock = vi.fn()
-    vi.stubGlobal('fetch', fetchMock)
-
-    fetchMock.mockResolvedValueOnce({ ok: false, text: async () => 'Error body' })
-    expect(await fetchPluginReadme('my-plugin')).toBe('')
-    expect(fetchMock).toHaveBeenCalledWith('/plugin/my-plugin/README.md')
-
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      headers: new Headers({ 'content-type': 'text/html; charset=utf-8' }),
-      text: async () => '<html></html>',
-    })
-    expect(await fetchPluginReadme('my-plugin')).toBe('')
-
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      headers: new Headers({ 'content-type': 'text/markdown' }),
-      text: async () => '# Hello',
-    })
-    expect(await fetchPluginReadme('my-plugin')).toBe('# Hello')
-
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      headers: new Headers(),
-      text: async () => '# Bare',
-    })
-    expect(await fetchPluginReadme('my-plugin')).toBe('# Bare')
-
-    fetchMock.mockRejectedValueOnce(new Error('network error'))
-    expect(await fetchPluginReadme('my-plugin')).toBe('')
   })
 })

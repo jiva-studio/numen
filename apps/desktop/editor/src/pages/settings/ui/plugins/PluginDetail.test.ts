@@ -1,17 +1,15 @@
+import type { Component } from 'vue'
+import type { JsonObject } from '@/shared/api/json'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import PluginDetail from './PluginDetail.vue'
 import SettingRow from '../setting-row/SettingRow.vue'
-import { createInstallation, createPluginInfo } from '@/testing/installation'
-import type { Installation, SettingsTabState } from '../../types'
-import {
-  getSettingAt as at,
-  type PluginInfo,
-  type PluginSettingInfo,
-  type SettingEdit,
-} from '@/entities/settings'
+import { createInstallation, createPluginInfo } from '@/pages/settings/testing/installation'
+import type { Installation } from '../../types'
+import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
+import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import { WORDS as words } from '../../words'
 
 beforeEach(() => {
@@ -31,7 +29,7 @@ afterEach(() => {
 
 const createDetail = (
   plugin: PluginInfo,
-  file: Record<string, unknown> = {},
+  file: JsonObject = {},
   platform?: string,
   attachTo?: HTMLElement,
 ) => {
@@ -46,9 +44,13 @@ const createDetail = (
     plugins: ref([plugin]),
     ...(platform ? { getPlatform: () => platform } : {}),
   })
-  const state: SettingsTabState = { installation }
   const wrapper = mount(PluginDetail, {
-    props: { state, plugin },
+    props: {
+      settings: installation.settings,
+      manager: installation.plugin,
+      connections: installation.connections,
+      plugin,
+    },
     ...(attachTo ? { attachTo } : {}),
   })
   return {
@@ -496,7 +498,7 @@ describe('PluginDetail with settings that follow one another', () => {
       'test.linked': { dictionary: '/home/a/dicts/ru/letters.txt' },
     })
     const choosePath = vi.fn(async () => 'letters.onnx: wrong type of file, expected .txt')
-    installation.choosePath = choosePath
+    installation.plugin.choosePath = choosePath
     const row = findRow(wrapper, 'dictionary')!
     const label = row.find('[data-testid="setting-path"]')
     expect(label.text()).toBe('…/ru/letters.txt')
@@ -580,7 +582,7 @@ describe('PluginDetail with settings that follow one another', () => {
   const chooseSecondPath = async (multiple: boolean) => {
     const stored = { executablePath: '/opt/one' }
     const detail = createDetail(createPathPlugin(multiple), { 'test.paths': stored })
-    detail.installation.choosePath = vi.fn(async () => {
+    detail.installation.plugin.choosePath = vi.fn(async () => {
       stored.executablePath = '/opt/two'
       return ''
     })
@@ -623,7 +625,7 @@ describe('the settings views of a plugin', () => {
     { id: 'top', title: 'Top' },
     { id: 'gone', title: 'Gone' },
   ]
-  const mountWith = (registered: Record<string, unknown>) => {
+  const mountWith = (registered: Record<string, Component>) => {
     const plugin = createPluginInfo('views.plugin', 'Views', { settings, settingsViews: views })
     const recordedWrites: SettingEdit[] = []
     const installation = createInstallation({
@@ -635,7 +637,14 @@ describe('the settings views of a plugin', () => {
         new Map(Object.entries(registered).map(([id, component]) => [id, { component }])),
       plugins: ref([plugin]),
     })
-    const wrapper = mount(PluginDetail, { props: { state: { installation }, plugin } })
+    const wrapper = mount(PluginDetail, {
+      props: {
+        settings: installation.settings,
+        manager: installation.plugin,
+        connections: installation.connections,
+        plugin,
+      },
+    })
     return { wrapper, recordedWrites }
   }
 
@@ -674,7 +683,14 @@ describe('the settings views of a plugin', () => {
       getSettingsViews: () => new Map([['top', { component: View }]]),
       plugins: ref([plugin]),
     })
-    const wrapper = mount(PluginDetail, { props: { state: { installation }, plugin } })
+    const wrapper = mount(PluginDetail, {
+      props: {
+        settings: installation.settings,
+        manager: installation.plugin,
+        connections: installation.connections,
+        plugin,
+      },
+    })
     expect(wrapper.findAll('.view')).toHaveLength(1)
   })
 })
@@ -691,7 +707,14 @@ describe('the data of a plugin', () => {
       return problem
     })
     const installation = createInstallation({ getPluginData, deletePluginData })
-    const wrapper = mount(PluginDetail, { props: { state: { installation }, plugin: TRANSCRIBER } })
+    const wrapper = mount(PluginDetail, {
+      props: {
+        settings: installation.settings,
+        manager: installation.plugin,
+        connections: installation.connections,
+        plugin: TRANSCRIBER,
+      },
+    })
     await flushPromises()
     return { wrapper, getPluginData, deletePluginData }
   }
@@ -764,7 +787,7 @@ describe('an enum whose value is not offered on this platform', () => {
   })
 
   /** What the closed select shows and what the open list checks, with nothing chosen. */
-  const look = async (platform: string, file: Record<string, unknown> = {}) => {
+  const look = async (platform: string, file: JsonObject = {}) => {
     const host = document.createElement('div')
     document.body.append(host)
     const { wrapper, recordedWrites } = createDetail(buttons, file, platform, host)

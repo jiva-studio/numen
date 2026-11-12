@@ -6,8 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
+	"github.com/jiva-studio/numen/plugins/connections-llm/backend/internal/adapter/openaiapi"
 )
 
 const testKey = "sk-test-key-1234"
@@ -66,4 +68,32 @@ func checkFailure(t *testing.T, err error, want failureWant) {
 	if retryAfter != want.retryAfter {
 		t.Errorf("retryAfter = %v, want %v", retryAfter, want.retryAfter)
 	}
+}
+
+// testService is the plugin built as Mount builds it, with the settings Configure delivers.
+type testService struct {
+	*provider
+	service *service
+}
+
+func newTestService(t *testing.T) *testService {
+	t.Helper()
+	return newTestServiceWith(t, clock.System{})
+}
+
+func newTestServiceWith(t *testing.T, source openaiapi.Clock) *testService {
+	t.Helper()
+	built, err := newService(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &testService{provider: built.provider, service: built}
+}
+
+func (s *testService) Configure(values map[string]string) {
+	s.service.limits.Configure(values)
+}
+
+func (s *testService) Provider() connection.Provider {
+	return s.provider.roles()
 }

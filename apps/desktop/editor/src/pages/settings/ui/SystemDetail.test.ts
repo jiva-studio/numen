@@ -8,7 +8,7 @@ import { mount } from '@vue/test-utils'
 import { Select, Slider, Switch } from '@numen/ui'
 import SystemDetail from './SystemDetail.vue'
 import SettingRow from './setting-row/SettingRow.vue'
-import { createInstallation } from '@/testing/installation'
+import { createInstallation } from '@/pages/settings/testing/installation'
 import type { PluginSettingInfo, SettingEdit } from '@/entities/settings'
 
 beforeEach(() => {
@@ -114,7 +114,13 @@ const createPage = (app: readonly PluginSettingInfo[] = DECLARATION) => {
       writes.push(...edits)
     },
   })
-  const wrapper = mount(SystemDetail, { props: { state: { installation } } })
+  const wrapper = mount(SystemDetail, {
+    props: {
+      settings: installation.settings,
+      manager: installation.plugin,
+      connections: installation.connections,
+    },
+  })
   return { wrapper, writes }
 }
 

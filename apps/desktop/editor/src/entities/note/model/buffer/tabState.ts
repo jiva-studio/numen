@@ -42,7 +42,7 @@ export interface NoteBaseline {
 export interface Tab {
   readonly path: string
   readonly savedText: string | null
-  readonly filePath: string | null
+  readonly revision: string | null
   readonly editorText: string
   readonly pendingWrite: string | null
   readonly hasPendingWrite: boolean
@@ -70,21 +70,6 @@ export const getState = (tab: Tab): State => {
   if (isDirty(tab)) return 'unsaved'
   return 'clean'
 }
-
-/**
- * The mark a tab carries beside its title.
- */
-const MARKS: Record<State, string | undefined> = {
-  stuck: 'stuck',
-  gone: 'gone',
-  stale: 'stale',
-  unsaved: 'unsaved',
-  saving: 'unsaved',
-  loading: undefined,
-  clean: undefined,
-}
-
-export const getMarkOf = (state: State): string | undefined => MARKS[state]
 
 /** What a read answers. */
 export type ReadResult =
@@ -149,7 +134,7 @@ export const openTab = (path: string): Transition => ({
   tab: {
     path,
     savedText: null,
-    filePath: null,
+    revision: null,
     editorText: '',
     pendingWrite: null,
     hasPendingWrite: false,

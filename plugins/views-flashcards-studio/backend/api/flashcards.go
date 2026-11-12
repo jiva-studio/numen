@@ -82,25 +82,21 @@ type SessionCard struct {
 	Intervals *Intervals `json:"intervals,omitempty"`
 }
 
-// WatchCardsDueRequest is the request of the WatchCardsDue method.
 type WatchCardsDueRequest struct {
 }
 
-// WatchCardsDueResponse is the response of the WatchCardsDue method.
 type WatchCardsDueResponse struct {
 	Vaults  []*VaultCardsDue `json:"vaults"`
 	Day     string           `json:"day"`
 	Counted *VaultCardsDue   `json:"counted,omitempty"`
 }
 
-// StartSessionRequest is the request of the StartSession method.
 type StartSessionRequest struct {
 	Vault  string  `json:"vault"`
 	Deck   string  `json:"deck"`
 	Preset *string `json:"preset,omitempty"`
 }
 
-// StartSessionResponse is the response of the StartSession method.
 type StartSessionResponse struct {
 	Run       string         `json:"run"`
 	Cards     []*SessionCard `json:"cards"`
@@ -108,7 +104,6 @@ type StartSessionResponse struct {
 	Skipped   int32          `json:"skipped"`
 }
 
-// RecordReviewRequest is the request of the RecordReview method.
 type RecordReviewRequest struct {
 	Vault      string `json:"vault"`
 	Run        string `json:"run"`
@@ -118,30 +113,25 @@ type RecordReviewRequest struct {
 	DurationMs int64  `json:"durationMs"`
 }
 
-// RecordReviewResponse is the response of the RecordReview method.
 type RecordReviewResponse struct {
 	Answer string `json:"answer"`
 }
 
-// UndoReviewRequest is the request of the UndoReview method.
 type UndoReviewRequest struct {
 	Vault  string `json:"vault"`
 	Run    string `json:"run"`
 	Answer string `json:"answer"`
 }
 
-// UndoReviewResponse is the response of the UndoReview method.
 type UndoReviewResponse struct {
 }
 
-// ListReviewDaysRequest is the request of the ListReviewDays method.
 type ListReviewDaysRequest struct {
 	Vault string `json:"vault"`
 	From  string `json:"from"`
 	To    string `json:"to"`
 }
 
-// ListReviewDaysResponse is the response of the ListReviewDays method.
 type ListReviewDaysResponse struct {
 	Days     []*ReviewDay `json:"days"`
 	Due      []*ReviewDay `json:"due"`
@@ -161,20 +151,18 @@ type ReviewDay struct {
 	Recalled int32  `json:"recalled"`
 }
 
-// GetDeckNeighbourhoodRequest is the request of the GetDeckNeighbourhood method.
-type GetDeckNeighbourhoodRequest struct {
+type GetDeckNeighborhoodRequest struct {
 	Vault string `json:"vault"`
 	Deck  string `json:"deck"`
 }
 
-// GetDeckNeighbourhoodResponse is the response of the GetDeckNeighbourhood method.
-type GetDeckNeighbourhoodResponse struct {
-	Notes  []*DeckNeighbour `json:"notes"`
-	Unread int32            `json:"unread"`
+type GetDeckNeighborhoodResponse struct {
+	Notes  []*DeckNeighbor `json:"notes"`
+	Unread int32           `json:"unread"`
 }
 
-// DeckNeighbour is a note a deck links to or is linked from. Address is the link target as the deck spells it.
-type DeckNeighbour struct {
+// DeckNeighbor is a note a deck links to or is linked from. Address is the link target as the deck spells it.
+type DeckNeighbor struct {
 	Address     string    `json:"address"`
 	Path        string    `json:"path"`
 	Title       string    `json:"title"`
@@ -185,22 +173,18 @@ type DeckNeighbour struct {
 	Error       ErrorCode `json:"error,omitempty"`
 }
 
-// WatchReloadsRequest is the request of the WatchReloads method.
 type WatchReloadsRequest struct {
 }
 
-// WatchReloadsResponse is the response of the WatchReloads method.
 type WatchReloadsResponse struct {
 	Reload bool `json:"reload"`
 }
 
-// GetVaultDeckPresetRequest is the request of the GetVaultDeckPreset method.
 type GetVaultDeckPresetRequest struct {
 	Vault string `json:"vault"`
 	Deck  string `json:"deck"`
 }
 
-// GetVaultDeckPresetResponse is the response of the GetVaultDeckPreset method.
 type GetVaultDeckPresetResponse struct {
 	Preset *Preset   `json:"preset,omitempty"`
 	Error  ErrorCode `json:"error,omitempty"`

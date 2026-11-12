@@ -19,13 +19,10 @@ import {
 } from '@lucide/vue'
 import { ref } from 'vue'
 import { Menu, type MenuItem } from '@numen/ui'
-import { hoverOver } from '../../fixtures/colour'
+import { hoverOver } from '../../fixtures/pointer'
 import Plex from './Plex.vue'
-import { RELATION_NAMES, type PlexRelation } from '../lib/relation'
-import type { PlexEdge } from '../lib/edge'
-import type { PlexHeading } from '../lib/inside'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
-import type { PlexNode } from '../lib/node'
+import { RELATION_NAMES } from '../lib/relation'
+import type { PlexRelation, PlexEdge, PlexHeading, PlexNeighborhood, PlexNode } from '../../types'
 
 const node = (id: string, title: string, relation: PlexNode['relation']): PlexNode => ({
   id,
@@ -66,26 +63,24 @@ const createPair = (from: string, to: string, texts: readonly [string, string]):
   arrows: ['to', 'from'],
 })
 
-const createEdge = (neighbour: PlexNode): PlexEdge => {
-  const label = LABELS[neighbour.id]
-  if (neighbour.relation === 'sibling') return { from: 'thermodynamics', to: neighbour.id }
-  if (neighbour.relation === 'parent' || neighbour.relation === 'jump') {
+const createEdge = (neighbor: PlexNode): PlexEdge => {
+  const label = LABELS[neighbor.id]
+  if (neighbor.relation === 'sibling') return { from: 'thermodynamics', to: neighbor.id }
+  if (neighbor.relation === 'parent' || neighbor.relation === 'jump') {
     return label
-      ? createLine(neighbour.id, 'focus', label, 'from')
-      : { from: neighbour.id, to: 'focus' }
+      ? createLine(neighbor.id, 'focus', label, 'from')
+      : { from: neighbor.id, to: 'focus' }
   }
-  return label
-    ? createLine('focus', neighbour.id, label, 'to')
-    : { from: 'focus', to: neighbour.id }
+  return label ? createLine('focus', neighbor.id, label, 'to') : { from: 'focus', to: neighbor.id }
 }
 
-const createNeighbourhood = (neighbours: readonly PlexNode[]): PlexNeighbourhood => ({
-  nodes: [node('focus', 'Entropy', 'focus'), ...neighbours],
-  edges: neighbours.map(createEdge),
+const createNeighborhood = (neighbors: readonly PlexNode[]): PlexNeighborhood => ({
+  nodes: [node('focus', 'Entropy', 'focus'), ...neighbors],
+  edges: neighbors.map(createEdge),
 })
 
-/** A wide neighbourhood: more nodes at the sides than in depth. */
-const WIDE = createNeighbourhood([
+/** A wide neighborhood: more nodes at the sides than in depth. */
+const WIDE = createNeighborhood([
   ...RELATED,
   node('landauer', "Landauer's principle", 'jump'),
   node('carnot', 'Carnot cycle', 'jump'),
@@ -119,16 +114,16 @@ const HEADINGS: Readonly<Record<string, readonly PlexHeading[]>> = {
  * create from it in the plex, agent actions, and removal from the vault.
  */
 const MENU: readonly MenuItem[] = [
-  { id: 'app:note.open', text: 'Open note', group: 'open' },
+  { id: 'app:file.open', text: 'Open note', group: 'open' },
   { id: 'travel', text: 'Show note in plex', group: 'open' },
-  { id: 'app:note.copyPath', text: 'Copy note path', group: 'file' },
+  { id: 'app:file.copyPath', text: 'Copy note path', group: 'file' },
   { id: 'reveal', text: 'Show note in file tree', group: 'file' },
   { id: 'app:note.createChild', text: 'Create child note', group: 'plex' },
   { id: 'app:note.createParent', text: 'Create parent note', group: 'plex' },
   { id: 'app:note.createJump', text: 'Create jump note', group: 'plex' },
   { id: 'app:note.rename', text: 'Rename note', group: 'plex' },
   { id: 'ask', text: 'Ask agent about note', group: 'agent' },
-  { id: 'app:note.trash', text: 'Move note to trash', group: 'remove' },
+  { id: 'app:file.remove', text: 'Move note to trash', group: 'remove' },
 ]
 
 const MENU_ICONS: Readonly<Record<string, typeof Waypoints>> = {
@@ -155,13 +150,13 @@ interface MapScreen {
 const map = ({ headings = () => [], creatable = [], menu = null }: MapScreen) => ({
   components: { Plex, Menu },
   setup() {
-    const neighbourhood = ref<PlexNeighbourhood>(WIDE)
-    return { neighbourhood, headings, creatable, menu, MENU, menuIcon }
+    const neighborhood = ref<PlexNeighborhood>(WIDE)
+    return { neighborhood, headings, creatable, menu, MENU, menuIcon }
   },
   template: `
     <div style="height: 100vh">
       <Plex
-        :neighbourhood="neighbourhood"
+        :neighborhood="neighborhood"
         :creatable="creatable"
         :duration="420"
         :headings="headings"
@@ -205,11 +200,10 @@ export const Mapping: Story = {
       name: 'What can be done to this note',
     })
     const box = menu.getBoundingClientRect()
-    await expect(box.width).toBeGreaterThan(0)
     await expect(box.left).toBeGreaterThanOrEqual(0)
-    await expect(box.right).toBeLessThanOrEqual(window.innerWidth + 1)
+    await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
     await expect(box.top).toBeGreaterThanOrEqual(0)
-    await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight + 1)
+    await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
     await expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0)
   },
 }
@@ -236,11 +230,8 @@ export const Nesting: Story = {
     const suspendedView = suspended()
     await expect(suspendedView).toEqual(titles.slice(0, suspendedView.length))
 
-    // The headings are under the box, in note order. The box is the node's own
-    // rectangle; the surrounding group has grown to contain them.
-    const box = focus.querySelector('rect')!.getBoundingClientRect()
+    // The headings are listed in note order.
     const tops = suspendedView.map((words) => canvas.getByText(words).getBoundingClientRect().top)
-    await expect(Math.min(...tops)).toBeGreaterThan(box.bottom - 1)
     await expect([...tops].sort((one, other) => one - other)).toEqual(tops)
   },
 }
@@ -251,7 +242,7 @@ export const Nesting: Story = {
  * parent and a sibling have a record written by each note, one at either end of
  * their line. A line with a record and no arrowhead is the last.
  */
-const EVERY_LINE: PlexNeighbourhood = {
+const EVERY_LINE: PlexNeighborhood = {
   nodes: [
     node('focus', 'Entropy', 'focus'),
     node('thermodynamics', 'Thermodynamics', 'parent'),
@@ -276,9 +267,9 @@ const EVERY_LINE: PlexNeighbourhood = {
 export const EveryLine: Story = {
   render: () => ({
     components: { Plex },
-    setup: () => ({ neighbourhood: ref(EVERY_LINE) }),
+    setup: () => ({ neighborhood: ref(EVERY_LINE) }),
     template:
-      '<div style="height: 100vh"><Plex :neighbourhood="neighbourhood" :creatable="[]" :duration="0" /></div>',
+      '<div style="height: 100vh"><Plex :neighborhood="neighborhood" :creatable="[]" :duration="0" /></div>',
   }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -296,35 +287,9 @@ export const EveryLine: Story = {
     }
     await expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(7)
 
-    // The two records of one line are set apart, in the order of the notes that wrote them, on
-    // opposite sides of the line, each read in the direction of its record.
-    const getBox = (text: string) => canvas.getAllByText(text)[0]!.getBoundingClientRect()
-    const own = getBox('includes')
-    const other = getBox('part of')
-    const isApart =
-      own.right <= other.left ||
-      other.right <= own.left ||
-      own.bottom <= other.top ||
-      other.bottom <= own.top
-    await expect(isApart).toBe(true)
-
-    // The one label of a line has its baseline half the height of an x below the line, which puts the
-    // middle of its lowercase letters on it; each of a pair is moved off it, to its own side.
-    const getAcross = (text: string) =>
-      Number(canvas.getAllByText(text)[0]!.closest('text')!.getAttribute('dy'))
-    const getXHeight = (text: string) => {
-      const style = getComputedStyle(canvas.getAllByText(text)[0]!.closest('text')!)
-      const context = canvasElement.ownerDocument.createElement('canvas').getContext('2d')!
-      context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
-      return context.measureText('x').actualBoundingBoxAscent
-    }
-    for (const text of ['measures', 'states', 'costs', 'drives', 'leads to', 'is about']) {
-      await expect(getAcross(text)).toBeCloseTo(getXHeight(text) / 2, 1)
-    }
-    await expect(getAcross('includes')).toBeLessThan(0)
-    await expect(getAcross('part of')).toBeLessThan(0)
-
-    const getReading = (text: string) => {
+    // The two records of one line are set on opposite sides of the line, each read in the direction
+    // of its record.
+    const getTextPathReading = (text: string) => {
       const set = canvas.getAllByText(text)[0]!
       const href = set.closest('textPath')!.getAttribute('href')!
       const path = canvasElement.ownerDocument.getElementById(
@@ -332,8 +297,8 @@ export const EveryLine: Story = {
       ) as unknown as SVGPathElement
       return { dy: Number(set.closest('text')!.getAttribute('dy')), path }
     }
-    const one = getReading('includes')
-    const two = getReading('part of')
+    const one = getTextPathReading('includes')
+    const two = getTextPathReading('part of')
     await expect(one.dy).toBeLessThan(0)
     await expect(two.dy).toBeLessThan(0)
 

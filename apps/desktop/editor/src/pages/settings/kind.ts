@@ -8,11 +8,12 @@ import { SETTINGS } from '@/entities/tab'
 import SettingsTab from './ui/SettingsTab.vue'
 import type { Installation, SettingsTabState } from './types'
 import { WORDS as words } from './words'
+import type { Caught } from '@/shared/api/errors'
 
 export function useSettingsTab(
   handle: WindowHandle,
   installation: Installation,
-  reportError: (error: unknown) => void,
+  reportError: (error: Caught) => void,
 ) {
   const isOpen = ref(false)
   const initialPluginId = ref<string | null>(null)
@@ -29,10 +30,10 @@ export function useSettingsTab(
       }
       return state
     },
-    getTitle: () => words.settings,
     pane: SettingsTab,
-    identity: () => SETTINGS,
-    isTool: true,
+    getTitle: () => words.settings,
+    display: { isTool: true },
+    address: { identity: () => SETTINGS },
   }
 
   /** Opens the settings tab, optionally at one plugin or with a search filter. */

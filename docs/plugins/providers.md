@@ -8,7 +8,7 @@ The manifest lists the types under `contributes.connectionTypes` (see [the manif
 
 ## Fill the roles
 
-`plugin-sdk-go/connection` has one interface for each role, and a `Provider` struct that lists the roles a plugin fills. `connection.Mount(s, provider)` serves them on the plugin server; a role left nil answers as not served.
+`plugin/sdk-go/connection` has one interface for each role, and a `Provider` struct that lists the roles a plugin fills. `connection.Mount(s, provider)` serves them on the plugin server; a role left nil answers as not served.
 
 | Role            | Methods                                  | Operation                          |
 | --------------- | ---------------------------------------- | ---------------------------------- |
@@ -57,7 +57,7 @@ A connection runs at most `parallelRequests` calls at once: the value stored on 
 
 ### From TypeScript
 
-A plugin view gets `context.models`, a `ModelHost` with `complete`, `embed`, `getEmbeddingProfile` and `chat`, which is an async generator of the events of a turn that returns `null` after the finish and the `ModelError` otherwise. They take the same fields as the Go client; the priority is `options.priority` (`'interactive'` or `'background'`) and `options.signal` cancels the call. Each returns a `Result` whose `error` is a `ModelError` with `error` (`'no_connection'`, `'all_failed'`, `'rejected'` or `'canceled'`), `message` and `failures` (`connectionName` and `reason` for each row). The calls go to `ModelService` of the window with the id of the plugin; the endpoint plugin processes reach with their token does not mount `ModelService`, and the service refuses a request that carries a token.
+A plugin view gets `context.work.models`, a `ModelHost` with `complete`, `embed`, `getEmbeddingProfile` and `chat`, which is an async generator of the events of a turn that returns `null` after the finish and the `ModelError` otherwise. They take the same fields as the Go client; the priority is `options.priority` (`'interactive'` or `'background'`) and `options.signal` cancels the call. Each returns a `Result` whose `error` is a `ModelError` with `error` (`'no_connection'`, `'all_failed'`, `'rejected'` or `'canceled'`), `message` and `failures` (`connectionName` and `reason` for each row). The calls go to `ModelService` of the window with the id of the plugin; the endpoint plugin processes reach with their token does not mount `ModelService`, and the service refuses a request that carries a token.
 
 ## Agent programs as providers
 

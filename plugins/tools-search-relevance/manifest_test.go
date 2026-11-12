@@ -46,10 +46,10 @@ func TestManifestDeclaresTheIndexAndTheFloorPermissionsAndNoCapability(t *testin
 	}
 }
 
-// The events of the host reach the plugin, which measures a vault once its vectors exist.
-func TestManifestSubscribesToEveryEvent(t *testing.T) {
-	if manifest := readManifest(t); !slices.Equal(manifest.ActivationEvents, []string{"*"}) {
-		t.Errorf("activationEvents = %v, want *", manifest.ActivationEvents)
+// The plugin starts when the vectors of a vault are ready and measures the search floor.
+func TestManifestSubscribesToVectorsReadyOnly(t *testing.T) {
+	if manifest := readManifest(t); !slices.Equal(manifest.ActivationEvents, []string{"onVectorsReady"}) {
+		t.Errorf("activationEvents = %v, want [onVectorsReady]", manifest.ActivationEvents)
 	}
 }
 

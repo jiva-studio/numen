@@ -5,10 +5,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
 
-// The plugin declares the ONNX Runtime as a runtime dependency.
 func TestManifestDeclaresONNXRuntimeDependency(t *testing.T) {
 	var manifest struct {
 		Dependencies []struct {
@@ -28,14 +27,18 @@ func TestManifestDeclaresONNXRuntimeDependency(t *testing.T) {
 // The core finds the provider by its capability; no window calls the service.
 func TestManifestDeclaresTheEmbeddingCapabilityAndNoWindowService(t *testing.T) {
 	var manifest struct {
-		Capabilities []string `json:"capabilities"`
-		Services     []string `json:"services"`
+		Capabilities     []string `json:"capabilities"`
+		ActivationEvents []string `json:"activationEvents"`
+		Services         []string `json:"services"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Contains(manifest.Capabilities, "embedding") {
 		t.Errorf("capabilities = %v, want embedding", manifest.Capabilities)
+	}
+	if len(manifest.ActivationEvents) != 0 {
+		t.Errorf("activationEvents = %v, want none", manifest.ActivationEvents)
 	}
 	if len(manifest.Services) != 0 {
 		t.Errorf("serves %v to the windows, want nothing", manifest.Services)
@@ -130,9 +133,9 @@ func readSettings(t *testing.T) map[string]manifestSetting {
 }
 
 // The local models of the settings are the curated profiles of the plugin, in the order of the table,
-// and the model setting defaults to the default model. Edit manifest.json to match backend/engine/profiles.json.
+// and the model setting defaults to the default model. Edit manifest.json to match backend/domain/model/profiles.json.
 func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.T) {
-	profiles, err := engine.GetShippedProfiles()
+	profiles, err := model.GetShippedProfiles()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,15 +143,15 @@ func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.
 	for _, p := range profiles.GetCurated() {
 		want = append(want, manifestOption{Value: p.ID, Title: p.GetOptionTitle(), Detail: p.GetOptionDetail()})
 	}
-	model, ok := readSettings(t)["model"]
+	localModel, ok := readSettings(t)["model"]
 	if !ok {
 		t.Fatal("manifest has no model setting")
 	}
-	if model.Default != any(engine.DefaultModel) {
-		t.Errorf("model defaults to %q, want %q", model.Default, engine.DefaultModel)
+	if localModel.Default != any(model.DefaultModel) {
+		t.Errorf("model defaults to %q, want %q", localModel.Default, model.DefaultModel)
 	}
-	if !slices.Equal(model.Options, want) {
-		t.Errorf("local models = %+v, want the curated profiles %+v", model.Options, want)
+	if !slices.Equal(localModel.Options, want) {
+		t.Errorf("local models = %+v, want the curated profiles %+v", localModel.Options, want)
 	}
 }
 

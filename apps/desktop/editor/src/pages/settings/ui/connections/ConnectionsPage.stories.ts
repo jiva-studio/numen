@@ -6,13 +6,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
-import {
-  asValue,
-  type ConnectionFieldInfo,
-  type ConnectionInfo,
-  type ConnectionTypeInfo,
-} from '@numen/core-client'
-import { createInstallation } from '@/testing/installation'
+import type { ConnectionFieldInfo, ConnectionInfo, ConnectionTypeInfo } from '@/entities/connection'
+import { asValue, createInstallation } from '@/pages/settings/testing/installation'
 import ConnectionsPage from './ConnectionsPage.vue'
 
 const field = (
@@ -132,24 +127,20 @@ const LIST: readonly ConnectionInfo[] = [
   connection({ id: 'c00000005', name: 'No key yet', secretKeysSet: [], isComplete: false }),
 ]
 
-const createPage = (
-  connections: readonly ConnectionInfo[],
-  types: readonly ConnectionTypeInfo[],
-) => ({
-  ...createInstallation({
-    connections: ref(connections),
-    connectionTypes: ref(types),
-    createConnection: fn(() => Promise.resolve(asValue(connection({})))),
-  }),
-})
+const createPage = (connections: readonly ConnectionInfo[], types: readonly ConnectionTypeInfo[]) =>
+  createInstallation({
+    list: ref(connections),
+    types: ref(types),
+    create: fn(() => Promise.resolve(asValue(connection({})))),
+  }).connections
 
 const render =
   (connections: readonly ConnectionInfo[], types: readonly ConnectionTypeInfo[]) => () => ({
     components: { ConnectionsPage },
-    setup: () => ({ state: { installation: createPage(connections, types) } }),
+    setup: () => ({ connections: createPage(connections, types) }),
     template: `
       <div class="numen" style="container-type:inline-size;inline-size:26rem;padding:1rem;background:var(--numen-surface);--settings-measure:54rem;--settings-apart:1.75rem;--settings-choice:16rem">
-        <ConnectionsPage :state="state" />
+        <ConnectionsPage :connections="connections" />
       </div>
     `,
   })

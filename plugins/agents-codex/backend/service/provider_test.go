@@ -14,11 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 const writeTargetVariable = "NUMEN_TEST_WRITE_TARGET"
@@ -38,8 +37,8 @@ echo '{"type":"item.completed","item":{"type":"agent_message","text":"fixed"}}'
 
 func newCodex(t *testing.T, script string) *agentServer {
 	t.Helper()
-	svc := &agentServer{codexModels: codexModelCache{clock: clock.NewFake(time.Unix(1000, 0))}}
-	svc.applyConfig(map[string]string{"executablePath": agenttest.WriteScript(t, "codex", script)})
+	svc := newAgentServer(false)
+	svc.settings.Apply(map[string]string{"executablePath": agenttest.WriteScript(t, "codex", script)})
 	return svc
 }
 
@@ -59,7 +58,7 @@ func TestCompleteReturnsTheAnswerOfCodex(t *testing.T) {
 	svc := newCodex(t, answerScript)
 	t.Setenv(writeTargetVariable, filepath.Join(t.TempDir(), "written"))
 
-	result, err := svc.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("fix this"))
+	result, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("fix this"))
 
 	if err != nil || result.Text != "fixed" {
 		t.Errorf("Complete = %q, %v, want %q", result.Text, err, "fixed")
@@ -68,10 +67,10 @@ func TestCompleteReturnsTheAnswerOfCodex(t *testing.T) {
 
 func TestCompleteStartsCodexWithTheModelTheInstructionsAndNoTool(t *testing.T) {
 	script, read := recordingCodex(t)
-	svc := &agentServer{}
-	svc.applyConfig(map[string]string{"executablePath": script})
+	svc := newAgentServer(false)
+	svc.settings.Apply(map[string]string{"executablePath": script})
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "codex", Model: "gpt-x", Reasoning: "high"}, connection.ProviderCompleteRequest{
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex", Model: "gpt-x", Reasoning: "high"}, connection.ProviderCompleteRequest{
 		Messages: []connection.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: "fix this"}},
 	})
 
@@ -97,10 +96,10 @@ func TestCompleteStartsCodexWithTheModelTheInstructionsAndNoTool(t *testing.T) {
 
 func TestCompleteJoinsTheTurnsOfAConversationIntoOnePrompt(t *testing.T) {
 	script, read := recordingCodex(t)
-	svc := &agentServer{}
-	svc.applyConfig(map[string]string{"executablePath": script})
+	svc := newAgentServer(false)
+	svc.settings.Apply(map[string]string{"executablePath": script})
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "codex"}, connection.ProviderCompleteRequest{
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, connection.ProviderCompleteRequest{
 		Messages: []connection.Message{
 			{Role: "user", Text: "one"}, {Role: "assistant", Text: "two"}, {Role: "user", Text: "three"},
 		},
@@ -130,10 +129,10 @@ func TestACompleteCallLetsCodexWriteNothing(t *testing.T) {
 	if err := os.Remove(target); err != nil {
 		t.Fatal(err)
 	}
-	svc := &agentServer{}
-	svc.applyConfig(map[string]string{"executablePath": script})
+	svc := newAgentServer(false)
+	svc.settings.Apply(map[string]string{"executablePath": script})
 
-	if _, err := svc.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("write a file")); err != nil {
+	if _, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("write a file")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -144,10 +143,10 @@ func TestACompleteCallLetsCodexWriteNothing(t *testing.T) {
 
 func TestCompleteRunsCodexInAnEmptyFolderThatIsRemoved(t *testing.T) {
 	script, read := recordingCodex(t)
-	svc := &agentServer{}
-	svc.applyConfig(map[string]string{"executablePath": script})
+	svc := newAgentServer(false)
+	svc.settings.Apply(map[string]string{"executablePath": script})
 
-	if _, err := svc.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("hi")); err != nil {
+	if _, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("hi")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -165,7 +164,7 @@ func TestCompleteRefusesARequestWithNoUserMessage(t *testing.T) {
 		"system only":  {Messages: []connection.Message{{Role: "system", Text: "be brief"}}},
 		"unknown role": {Messages: []connection.Message{{Role: "tool", Text: "x"}}},
 	} {
-		_, err := svc.Complete(t.Context(), connection.Call{Type: "codex"}, request)
+		_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, request)
 		if !connection.IsStop(err) {
 			t.Errorf("%s: Complete = %v, want a stop", name, err)
 		}
@@ -174,9 +173,9 @@ func TestCompleteRefusesARequestWithNoUserMessage(t *testing.T) {
 
 func TestAMissingCodexIsUnreachable(t *testing.T) {
 	withoutAgentsAnywhere(t)
-	svc := &agentServer{}
+	svc := newAgentServer(false)
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("hi"))
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
@@ -189,7 +188,7 @@ func TestAMissingCodexIsUnreachable(t *testing.T) {
 func TestAFailedRunOfCodexIsAStopWithNoTextOfTheProgram(t *testing.T) {
 	svc := newCodex(t, "echo 'not signed in as sk-secret' >&2\nexit 2\n")
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("hi"))
 
 	if !connection.IsStop(err) {
 		t.Fatalf("Complete = %v, want a stop", err)
@@ -202,7 +201,7 @@ func TestAFailedRunOfCodexIsAStopWithNoTextOfTheProgram(t *testing.T) {
 func TestAnEmptyAnswerIsAStop(t *testing.T) {
 	svc := newCodex(t, "exit 0\n")
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("hi"))
 
 	if !connection.IsStop(err) {
 		t.Errorf("Complete = %v, want a stop", err)
@@ -211,9 +210,9 @@ func TestAnEmptyAnswerIsAStop(t *testing.T) {
 
 func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	svc := newCodex(t, "sleep 30\n")
-	svc.applyConfig(map[string]string{"requestTimeout": "0.2"})
+	svc.settings.Apply(map[string]string{"requestTimeout": "0.2"})
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "codex"}, userMessage("hi"))
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
@@ -228,27 +227,10 @@ func TestCompleteReturnsTheErrorOfACancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	time.AfterFunc(200*time.Millisecond, cancel)
 
-	_, err := svc.Complete(ctx, connection.Call{Type: "codex"}, userMessage("hi"))
+	_, err := svc.completion.Complete(ctx, connection.Call{Type: "codex"}, userMessage("hi"))
 
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("Complete = %v, want the cancellation", err)
-	}
-}
-
-func TestTheRequestTimeoutIsTheSettingElseTwoMinutes(t *testing.T) {
-	svc := &agentServer{}
-	if got := svc.getRequestLimit(); got != 120*time.Second {
-		t.Errorf("default = %v, want 120 s", got)
-	}
-	svc.applyConfig(map[string]string{"requestTimeout": "45"})
-	if got := svc.getRequestLimit(); got != 45*time.Second {
-		t.Errorf("set to 45 = %v", got)
-	}
-	for _, value := range []string{"", "soon", "0", "-3", "NaN", "Inf"} {
-		svc.applyConfig(map[string]string{"requestTimeout": value})
-		if got := svc.getRequestLimit(); got != 120*time.Second {
-			t.Errorf("value %q: limit = %v, want 120 s", value, got)
-		}
 	}
 }
 
@@ -259,7 +241,7 @@ func TestTheModelsOfCodexAreListedForTheRow(t *testing.T) {
 		"while read -r _; do :; done\n")
 	t.Setenv("HOME", t.TempDir())
 
-	models, err := svc.ListModels(t.Context(), connection.Call{Type: "codex"}, "complete")
+	models, err := svc.completion.ListModels(t.Context(), connection.Call{Type: "codex"}, "complete")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -270,21 +252,21 @@ func TestTheModelsOfCodexAreListedForTheRow(t *testing.T) {
 	if !slices.Equal(ids, []string{"gpt-x", "gpt-y"}) || models[0].Title != "GPT X" {
 		t.Errorf("models = %+v", models)
 	}
-	levels, err := svc.ListReasoningLevels(t.Context(), connection.Call{Type: "codex", Model: "gpt-x"})
+	levels, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "codex", Model: "gpt-x"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(levels) != 2 || levels[0].Value != "low" || levels[1].Value != "high" || levels[1].Title != "High" {
 		t.Errorf("levels = %+v", levels)
 	}
-	none, err := svc.ListReasoningLevels(t.Context(), connection.Call{Type: "codex", Model: "gpt-y"})
+	none, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "codex", Model: "gpt-y"})
 	if err != nil || len(none) != 0 {
 		t.Errorf("levels of a model with none = %+v, %v", none, err)
 	}
 }
 
 func TestTheProviderFillsTheRolesOfCompleteAndModels(t *testing.T) {
-	provider := (&agentServer{}).Provider()
+	provider := newAgentServer(false).Provider()
 	if provider.Completer == nil || provider.Models == nil || provider.Embedder != nil || provider.Profiles != nil {
 		t.Errorf("provider = %+v, want complete and the models alone", provider)
 	}

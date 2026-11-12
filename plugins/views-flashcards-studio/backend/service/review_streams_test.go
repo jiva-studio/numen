@@ -9,10 +9,12 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 var errPageGone = errors.New("the page is gone")
@@ -161,7 +163,7 @@ func TestWatchCardsDue_MissingPageDuringCountEndsStream(t *testing.T) {
 
 	target := make(chan struct{})
 	defer close(target)
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithReviewCards(handler.scenarios().flash.CardsDue.ReviewCards().WithReaders(waiting{until: target}))
+	readThrough(handler, waiting{until: target})
 
 	returned := make(chan error, 1)
 	client := newBreakingClient(t, handler, breaking{
@@ -197,14 +199,14 @@ func (g gated) Open(v domain.Vault) (ports.VaultReader, error) {
 // A stream that sent a count does not send the list again immediately:
 // the wait before the list restarts after every count.
 func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
-	handler, target := newAPI(t, getDeck(), getOther())
+	handler, target := newAPI(t, getDeck(), getOtherVault())
 	front(t, handler)
 
 	first, second := make(chan struct{}), make(chan struct{})
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithReviewCards(handler.scenarios().flash.CardsDue.ReviewCards().WithReaders(gated{
+	readThrough(handler, gated{
 		until:   map[domain.VaultID]<-chan struct{}{target[0].ID: first, target[1].ID: second},
 		entered: make(chan domain.VaultID, 16),
-	}))
+	})
 	openFirst := sync.OnceFunc(func() { close(first) })
 	openSecond := sync.OnceFunc(func() { close(second) })
 	t.Cleanup(func() { openFirst(); openSecond() })
@@ -251,8 +253,7 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 		gates[v.ID] = until
 	}
 	entered := make(chan domain.VaultID, 64)
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithReviewCards(handler.scenarios().flash.CardsDue.ReviewCards().WithReaders(
-		gated{until: gates, entered: entered}))
+	readThrough(handler, gated{until: gates, entered: entered})
 	openAll := sync.OnceFunc(func() { close(until) })
 	t.Cleanup(openAll)
 
@@ -305,8 +306,7 @@ func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
 		gates[v.ID] = until
 	}
 	entered := make(chan domain.VaultID, 64)
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithReviewCards(handler.scenarios().flash.CardsDue.ReviewCards().WithReaders(
-		gated{until: gates, entered: entered}))
+	readThrough(handler, gated{until: gates, entered: entered})
 	openAll := sync.OnceFunc(func() { close(until) })
 	t.Cleanup(openAll)
 
@@ -388,7 +388,7 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 
 	target := make(chan struct{})
 	defer close(target)
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithReviewCards(handler.scenarios().flash.CardsDue.ReviewCards().WithReaders(waiting{until: target}))
+	readThrough(handler, waiting{until: target})
 
 	stream, err := newFlashcardsClient(t, handler).WatchCardsDue(
 		t.Context(), &api.WatchCardsDueRequest{})
@@ -428,3 +428,13 @@ func (w waiting) Open(domain.Vault) (ports.VaultReader, error) {
 }
 
 var errNothingRead = errors.New("the count was let go")
+
+func readThrough(handler *API, readers ports.VaultReaders) {
+	// The count of cards due runs over a list of review cards of its own, not the one of the handler.
+	shared := hostports.New(handler.vaults, nil)
+	flash := handler.flash()
+	flash.Counts.CardsDue = flashcards.NewCountCardsDue(
+		flashcards.NewListReviewCards(readers, shared.Notes, shared.Links),
+		flash.Schedules.Schedules, flash.Schedules.Presets, flash.Day, handler.now,
+	)
+}

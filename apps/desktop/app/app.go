@@ -16,14 +16,16 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
+	"github.com/jiva-studio/numen/apps/desktop/internal/folderdialog"
 	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 const appName = "numen"
@@ -72,7 +74,8 @@ func Run(opts ...*Options) error {
 		cfg.RegistryPath = opt.RegistryPath
 	}
 	cfg.ShouldRebuildIndex = opt.RebuildIndex
-	cfg = cfg.SetSafeMode(opt.SafeMode)
+	cfg.SafeMode = opt.SafeMode
+	cfg = container.NewConfig(cfg)
 
 	scaleFlags := scaleSettings{
 		interfaceScale: opt.InterfaceScale,
@@ -119,7 +122,7 @@ func parseFlags() (*Options, error) {
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfig()
 	cfg.ErrorHandler = func(err error) {
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 		if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
 			return
 		}
@@ -155,29 +158,29 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 		return err
 	}
 
-	if err := setSchemasDir(); err != nil {
+	if err := folderdialog.SetSchemasDir(); err != nil {
 		return err
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
-	selected, err := cfg.Settings()
+	cfg, notices, err := cfg.ApplySettings()
 	if err != nil {
 		return err
 	}
-	cfg = cfg.SetSettings(selected)
-	applyMemoryLimit(cfg.ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
-	cfg.InterfaceScale, cfg.TextScale = scaleFlags.interfaceScale, scaleFlags.textScale
+	applyMemoryLimit(cfg.GetMachine().ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 
-	displayed, err := openInstallation(ctx, cfg, vault)
+	frame := &windowFrame{}
+	displayed, err := openInstallation(ctx, cfg, vault, frame)
 	if err != nil {
 		return err
 	}
 	pages, installation := displayed.pages, displayed.opened
-	installation.Services.Themes = themes.Load(cfg.Themes, installation.SayTheme, os.Stdout)
+	scales := container.Scales{InterfaceScale: scaleFlags.interfaceScale, TextScale: scaleFlags.textScale}
+	themes.Report(container.SetThemes(cfg, installation.Installation, scales, installation.RecordThemeWarning), os.Stdout)
 
-	installation.Report(selected.Notices)
+	installation.Report(notices)
 
 	going := &vaultFlush{flush: installation.FlushPending}
 	shutdownSeq := shutdown.NewSequence(
@@ -205,9 +208,10 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	}
 
 	app := makeApplication(installation, pages, shutdownSeq, going, observed)
+	app.Menu.SetApplicationMenu(makeApplicationMenu())
 	window = makeWindow(app, installation)
 	tracker.addWindow()
-	connectWindow(ctx, app, window, installation, windowHooks{cfg: cfg, tracker: tracker, going: going})
+	connectWindow(ctx, app, window, installation, frame, windowHooks{tracker: tracker, going: going})
 
 	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
 		if !handleWindowClosing(ctx, tracker, going, observed, installation.WaitForFlush, window.Close) {
@@ -220,67 +224,31 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 
 type shownInstallation struct {
 	pages  http.Handler
-	opened *editor.Installation
+	opened *container.OpenedWindow
 }
 
 func openInstallation(
-	ctx context.Context, cfg container.Config, vault string,
+	ctx context.Context, cfg container.Config, vault string, frame editor.Frame,
 ) (shownInstallation, error) {
 	pages, err := editor.Pages()
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	registry, err := cfg.Registry()
+	opened, err := container.OpenEditor(cfg, ctx, vault, os.Stdout, frame)
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	db, err := cfg.OpenIndex(ctx)
-	if err != nil {
-		return shownInstallation{}, err
-	}
-	versions, err := cfg.NewTextVersions(db)
-	if err != nil {
-		return shownInstallation{}, errors.Join(err, db.Close())
-	}
-	cfg.TextVersions = versions
-	made := container.NewEditorAssembly(cfg, registry, db)
-	opened, err := editor.Open(ctx, made, vault, os.Stdout)
-	if err != nil {
-		return shownInstallation{}, err
-	}
-	cfg.SetPluginVaultPath(opened.GetCurrentVault().Path)
-	getShownVault := func() (domain.Vault, bool) {
-		current := opened.GetCurrentVault()
-		return current, current.Path != ""
-	}
-	shared, err := made.OpenPluginVault(getShownVault, container.PluginVaultHooks{
-		Written: func() {
-			if wake := opened.State.NotifyNoteWritten; wake != nil {
-				wake()
-			}
-		},
-		Notes: opened.Notes(),
-	})
-	if err != nil {
-		return shownInstallation{}, err
-	}
-	cfg.SetPluginVault(shared)
-	cfg.SetPluginVaultList(editor.NewPluginVaultList(opened))
-	cfg.SetPluginTexts()
-	// The plugin window reads the vault of the State on each call, so a vault opened later in the
-	// main window is served without a new binding.
-	cfg.SetPluginWindow(editor.NewPluginWindow(opened.State, made.GetNoteQueries(), made.GetVaultReaders()))
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
 
 func makeApplication(
-	opened *editor.Installation, pages http.Handler, shutdownSeq *shutdown.Sequence,
+	opened *container.OpenedWindow, pages http.Handler, shutdownSeq *shutdown.Sequence,
 	going *vaultFlush, windowVis visibility,
 ) *application.App {
 	return application.New(application.Options{
 		Name: appName,
 		Assets: application.AssetOptions{
-			Handler: opened.Services.NewHandler(pages),
+			Handler: opened.NewHandler(pages),
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
@@ -292,13 +260,13 @@ func makeApplication(
 	})
 }
 
-func makeWindow(app *application.App, opened *editor.Installation) *application.WebviewWindow {
+func makeWindow(app *application.App, opened *container.OpenedWindow) *application.WebviewWindow {
 	return app.Window.NewWithOptions(getMainWindowOptions(opened))
 }
 
-func getMainWindowOptions(opened *editor.Installation) application.WebviewWindowOptions {
+func getMainWindowOptions(opened *container.OpenedWindow) application.WebviewWindowOptions {
 	return frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
+		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Tabs.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
 		URL:            "/",
@@ -306,7 +274,7 @@ func getMainWindowOptions(opened *editor.Installation) application.WebviewWindow
 	})
 }
 
-func getSecondaryWindowURL(tab editor.DetachedTab) string {
+func getSecondaryWindowURL(tab windowdomain.DetachedTab) string {
 	query := url.Values{"window": {"secondary"}}
 	if tab.ID != "" {
 		query.Set("id", tab.ID)
@@ -315,7 +283,7 @@ func getSecondaryWindowURL(tab editor.DetachedTab) string {
 }
 
 func makeSecondaryWindow(
-	app *application.App, opened *editor.Installation, tab editor.DetachedTab,
+	app *application.App, opened *container.OpenedWindow, tab windowdomain.DetachedTab,
 ) *application.WebviewWindow {
 	return app.Window.NewWithOptions(getSecondaryWindowOptions(opened, tab))
 }
@@ -326,9 +294,9 @@ const (
 	secondaryWindowHeight = 860
 )
 
-func getSecondaryWindowOptions(opened *editor.Installation, tab editor.DetachedTab) application.WebviewWindowOptions {
+func getSecondaryWindowOptions(opened *container.OpenedWindow, tab windowdomain.DetachedTab) application.WebviewWindowOptions {
 	opts := frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
+		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Tabs.GetOpenTabs()),
 		Width:          secondaryWindowWidth,
 		Height:         secondaryWindowHeight,
 		URL:            getSecondaryWindowURL(tab),
@@ -348,53 +316,70 @@ func getSecondaryWindowOptions(opened *editor.Installation, tab editor.DetachedT
 
 // windowHooks holds what a window needs to close and to follow the vault.
 type windowHooks struct {
-	cfg     container.Config
 	tracker *windowTracker
 	going   *vaultFlush
 }
 
-func connectWindow(
-	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *editor.Installation,
-	hooks windowHooks,
-) {
-	opened.Services.SetFolderDialog(&folderDialog{window: window})
+// windowFrame is the application window around the editor: it titles the main window after the open tabs and
+// opens a window of its own for a torn-off tab. It is made before the editor opens and is given the windows
+// by connectWindow, so it does nothing until then.
+type windowFrame struct {
+	window *application.WebviewWindow
+	opened *container.OpenedWindow
+	detach func(tab windowdomain.DetachedTab) error
+}
 
-	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
-	opened.State.NotifyOpenTabs = naming
+func (f *windowFrame) ShowOpenTabs(open windowdomain.OpenTabs) {
+	if f.window != nil {
+		f.window.SetTitle(getWindowTitle(f.opened.State.GetCurrentVault(), open))
+	}
+}
+
+func (f *windowFrame) DetachTab(_ context.Context, tab windowdomain.DetachedTab) error {
+	if f.detach == nil {
+		return errNoWindow
+	}
+	return f.detach(tab)
+}
+
+func detachTab(
+	ctx context.Context, app *application.App, opened *container.OpenedWindow, hooks windowHooks, tab windowdomain.DetachedTab,
+) error {
+	hooks.tracker.addWindow()
+	secWindow := makeSecondaryWindow(app, opened, tab)
+	secSeen := visibility{
+		hide: func() { secWindow.Hide() },
+		show: func() { secWindow.Show() },
+	}
+	secWindow.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		if !handleWindowClosing(ctx, hooks.tracker, hooks.going, secSeen, opened.WaitForFlush, secWindow.Close) {
+			event.Cancel()
+		}
+	})
+	secWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
+		importDroppedFiles(ctx, opened, event)
+	})
+	return nil
+}
+
+var errNoWindow = errors.New("the application has no window to open")
+
+func connectWindow(
+	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *container.OpenedWindow,
+	frame *windowFrame, hooks windowHooks,
+) {
+	opened.SetFolderDialog(folderdialog.New(window))
+	*frame = windowFrame{
+		window: window, opened: opened,
+		detach: func(tab windowdomain.DetachedTab) error { return detachTab(ctx, app, opened, hooks, tab) },
+	}
 
 	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
 		importDroppedFiles(ctx, opened, event)
 	})
-
-	opened.State.OpenVault = func(ctx context.Context, v domain.Vault, open *editor.PluginOpen) error {
-		err := opened.Show(ctx, v, open)
-		if err == nil {
-			hooks.cfg.SetPluginVaultPath(v.Path)
-		}
-		naming(opened.State.GetOpenTabs())
-		return err
-	}
-
-	opened.State.DetachTab = func(_ context.Context, tab editor.DetachedTab) error {
-		hooks.tracker.addWindow()
-		secWindow := makeSecondaryWindow(app, opened, tab)
-		secSeen := visibility{
-			hide: func() { secWindow.Hide() },
-			show: func() { secWindow.Show() },
-		}
-		secWindow.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-			if !handleWindowClosing(ctx, hooks.tracker, hooks.going, secSeen, opened.WaitForFlush, secWindow.Close) {
-				event.Cancel()
-			}
-		})
-		secWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
-			importDroppedFiles(ctx, opened, event)
-		})
-		return nil
-	}
 }
 
-func importDroppedFiles(ctx context.Context, opened *editor.Installation, event *application.WindowEvent) {
+func importDroppedFiles(ctx context.Context, opened *container.OpenedWindow, event *application.WindowEvent) {
 	landed := event.Context().DropTargetDetails()
 	if landed == nil {
 		return
@@ -408,7 +393,7 @@ func importDroppedFiles(ctx context.Context, opened *editor.Installation, event 
 
 const droppedInto = "data-file-drop-target"
 
-func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
+func getWindowTitle(v domain.Vault, open windowdomain.OpenTabs) string {
 	if front, target := open.GetActiveTab(); target && front.Path != "" {
 		return "numen — " + path.Base(front.Path)
 	}

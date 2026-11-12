@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 func decodeAnswer(t *testing.T, structured []byte) map[string]any {
@@ -175,8 +175,8 @@ func TestRecognitionCreateReturnsTheTaskIDKey(t *testing.T) {
 	if want := "recognize:Physics:" + scanPath; answer["taskId"] != want {
 		t.Errorf("taskId = %v, want %s", answer["taskId"], want)
 	}
-	close(s.recogniser.release)
-	s.waitFinished(t, "recognize:Physics:"+scanPath)
+	close(s.recognizer.release)
+	s.waitUntilFinished(t, "recognize:Physics:"+scanPath)
 
 	schema := getToolSchema(t, s.registry, "recognition_create", true)
 	requireKeys(t, "the output schema of recognition_create", getSchemaProperties(t, schema), []string{"taskId"}, []string{"task_id"})

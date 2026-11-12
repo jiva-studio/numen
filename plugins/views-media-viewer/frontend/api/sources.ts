@@ -2,12 +2,12 @@
  * Where a tab plays from: a file of the vault from its own address, a note from the address its
  * `media` property names, or, while it names none, the page its `page` property names.
  */
-import { isNotePath, type AddressSource, type VaultNotes } from '@numen/plugin-sdk'
+import { isNotePath, type AddressSource, type JsonValue, type VaultNotes } from '@numen/plugin-sdk'
 import type { RecordingSource } from '../types'
 
 const NOTHING: RecordingSource = { mediaUrl: '', mediaType: '', pageUrl: '' }
 
-const readText = (properties: Readonly<Record<string, unknown>>, key: string): string => {
+const readText = (properties: Readonly<Record<string, JsonValue>>, key: string): string => {
   const value = properties[key]
   return typeof value === 'string' ? value : ''
 }

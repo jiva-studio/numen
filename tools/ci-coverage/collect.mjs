@@ -14,8 +14,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..')
 const tmpDir = join(root, '.coverage_tmp')
 
 const GO_MODULES = [
-  'libs/core',
-  'libs/protocol',
+  'libs/core/kernel',
+  'libs/core/protocol',
   'apps/desktop',
   'apps/mobile',
   'plugins/agents-numen',
@@ -36,7 +36,7 @@ const GO_MODULES = [
   'plugins/engines-transcription',
 ]
 
-const TS_PACKAGES = ['libs/ui/core', 'apps/desktop/editor', 'apps/desktop/flashcards']
+const TS_PACKAGES = ['libs/ui/components', 'apps/desktop/editor', 'apps/desktop/flashcards']
 
 /**
  * Parses a Go coverprofile file and returns { total, covered } statements.

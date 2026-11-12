@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { test, expect } from '../../support/test.js'
 import { readOwner, writeSetting } from '../../support/vault.js'
+import type { JsonObject, JsonValue } from '../../support/json.js'
 
 interface Row {
   pid: number
@@ -46,11 +47,11 @@ const readPluginNice = (): number | undefined => {
 }
 
 test.describe('Performance profile of the embeddings plugin', () => {
-  let profile: unknown
+  let profile: JsonValue | undefined
 
   test.beforeEach(async ({ request }) => {
     profile = (
-      (await readOwner(request, 'app'))['performance'] as Record<string, unknown> | undefined
+      (await readOwner(request, 'app'))['performance'] as JsonObject | undefined
     )?.['profile']
   })
 

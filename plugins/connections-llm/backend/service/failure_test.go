@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
 
@@ -39,9 +39,9 @@ func TestTheStatusOfAnAnswerDecidesTheKindOfTheFailure(t *testing.T) {
 		fake.Fail("/chat/completions", one.status, one.retryAfter)
 		fake.Fail("/embeddings", one.status, one.retryAfter)
 
-		_, err := New().Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
+		_, err := newTestService(t).Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
 		checkFailure(t, err, one.want)
-		_, err = New().Embed(newContext(t), newCall("openrouter", address, testKey, "m"), []string{"a"})
+		_, err = newTestService(t).Embed(newContext(t), newCall("openrouter", address, testKey, "m"), []string{"a"})
 		checkFailure(t, err, one.want)
 	}
 }
@@ -50,8 +50,7 @@ func TestARetryAfterGivenAsADateIsReadAsTheWaitFromNow(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	now := time.Date(2026, time.March, 4, 10, 0, 0, 0, time.UTC)
 	fake.Fail("/chat/completions", http.StatusTooManyRequests, now.Add(90*time.Second).Format(http.TimeFormat))
-	svc := New()
-	svc.clock = clock.NewFake(now)
+	svc := newTestServiceWith(t, clock.NewFake(now))
 	_, err := svc.Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
 	retryAfter, ok := connection.IsTryNext(err)
 	if !ok || retryAfter != 90*time.Second {
@@ -63,7 +62,7 @@ func TestARetryAfterThatIsNotAWaitIsLeftOut(t *testing.T) {
 	for _, value := range []string{"soon", "-5", ""} {
 		fake, address := startFake(t, fakeopenai.Config{})
 		fake.Fail("/chat/completions", http.StatusTooManyRequests, value)
-		_, err := New().Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
+		_, err := newTestService(t).Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
 		checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonRateLimited})
 	}
 }
@@ -72,7 +71,7 @@ func TestAServiceThatCannotBeReachedIsTryNext(t *testing.T) {
 	ts := httptest.NewServer(http.NotFoundHandler())
 	address := ts.URL + "/v1"
 	ts.Close()
-	_, err := New().Complete(newContext(t), newCall("openai-compatible", address, "", "m"), oneUserMessage("hi"))
+	_, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", address, "", "m"), oneUserMessage("hi"))
 	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnreachable})
 }
 
@@ -80,7 +79,7 @@ func TestAServiceThatAnswersTooSlowlyIsATimeout(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	fake.Delay("/chat/completions", 2*time.Second)
 	fake.Delay("/embeddings", 2*time.Second)
-	svc := New()
+	svc := newTestService(t)
 	svc.Configure(map[string]string{"requestTimeout": "0.1"})
 
 	_, err := svc.Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
@@ -95,7 +94,7 @@ func TestACancelledCallReturnsItsContextErrorAndEndsTheRequest(t *testing.T) {
 	ctx, cancel := context.WithCancel(newContext(t))
 	result := make(chan error, 1)
 	go func() {
-		_, err := New().Complete(ctx, newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
+		_, err := newTestService(t).Complete(ctx, newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
 		result <- err
 	}()
 	waitForRequest(t, fake)
@@ -115,7 +114,7 @@ func TestACallThatIsAlreadyCancelledNeverReachesTheService(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	_, err := New().Embed(ctx, newCall("openrouter", address, testKey, "m"), []string{"a"})
+	_, err := newTestService(t).Embed(ctx, newCall("openrouter", address, testKey, "m"), []string{"a"})
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("err = %v, want context.Canceled", err)
 	}
@@ -135,7 +134,7 @@ func TestARedirectIsNotFollowed(t *testing.T) {
 	}))
 	t.Cleanup(redirector.Close)
 
-	_, err := New().Complete(newContext(t), newCall("openai-compatible", redirector.URL+"/v1", testKey, "m"), oneUserMessage("hi"))
+	_, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", redirector.URL+"/v1", testKey, "m"), oneUserMessage("hi"))
 	checkFailure(t, err, failureWant{reason: connection.ReasonUnknown})
 }
 
@@ -150,7 +149,7 @@ func TestAFailureShowsNeitherTheKeyNorTheTextOfTheService(t *testing.T) {
 		}))
 		t.Cleanup(ts.Close)
 
-		_, err := New().Complete(newContext(t), newCall("openrouter", ts.URL+"/v1", testKey, "m"), oneUserMessage("hi"))
+		_, err := newTestService(t).Complete(newContext(t), newCall("openrouter", ts.URL+"/v1", testKey, "m"), oneUserMessage("hi"))
 		if err == nil {
 			t.Fatalf("status %d gave no error", status)
 		}

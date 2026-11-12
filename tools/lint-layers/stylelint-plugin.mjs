@@ -1,7 +1,9 @@
 /**
  * The rules over design tokens that stylelint has no rule for: no `var()` takes a fallback, a stylesheet
  * declares no `--numen-` token, and every `var(--numen-…)` names a token a token file declares. A fourth
- * keeps a border on one side of a box from sharing a rule with a radius.
+ * keeps a border on one side of a box from sharing a rule with a radius. A fifth keeps the lengths to the scale:
+ * a `rem` or `em` literal may stand on a property, a custom property outside the token files holds only a
+ * length the token files declare, and only a 1px hairline border is written in `px`.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -183,9 +185,65 @@ const noRoundedSideBorder = (primary) => (root, result) => {
 noRoundedSideBorder.ruleName = NO_ROUNDED_SIDE_BORDER;
 noRoundedSideBorder.messages = noRoundedSideBorderMessages;
 
+const NO_BARE_LENGTH = "numen/no-bare-length";
+
+const noBareLengthMessages = ruleMessages(NO_BARE_LENGTH, {
+  pixelProperty: (length, prop) => `${length} on ${prop}: a size is not written in px; write it in rem or em (only a 1px border is px)`,
+  pixelDeclaration: (length, prop) => `${length} in ${prop}: a custom property holds a size in rem or em; px stays out (only a 1px border is px)`,
+  otherUnit: (length, prop) => `${length} on ${prop}: write the length in rem or em`,
+});
+
+/** The units of a length that does not follow the interface scale by itself: absolute and font-relative ones. Viewport and container units, percentages and `fr` are proportions and pass. */
+const LENGTH_UNITS = new Set(["px", "rem", "em", "ex", "ch", "cap", "ic", "lh", "rlh", "cm", "mm", "q", "in", "pt", "pc"]);
+
+/** The units that follow the root font size, written on a property or in a custom property. */
+const SCALED_UNITS = new Set(["rem", "em"]);
+
+/** The properties that draw a border line, whose width of exactly 1px is a hairline. */
+const BORDER_LINE = /^border(-(top|right|bottom|left|block|inline)(-(start|end))?)?(-width)?$/;
+
+/** The lengths of a declaration value, each as `{ text, number, unit }`; zero and the contents of `url()` are not lengths. */
+function findLengths(value) {
+  const lengths = [];
+  valueParser(value).walk((node) => {
+    if (node.type === "function" && node.value.toLowerCase() === "url") return false;
+    if (node.type !== "word") return undefined;
+    const parsed = valueParser.unit(node.value);
+    if (!parsed || !LENGTH_UNITS.has(parsed.unit.toLowerCase()) || Number(parsed.number) === 0) return undefined;
+    lengths.push({ text: node.value, number: Number(parsed.number), unit: parsed.unit.toLowerCase() });
+    return undefined;
+  });
+  return lengths;
+}
+
+const noBareLength = (primary) => (root, result) => {
+  if (!validateOptions(result, NO_BARE_LENGTH, { actual: primary })) return;
+  root.walkDecls((decl) => {
+    const isCustomProperty = decl.prop.startsWith("--");
+    for (const length of findLengths(decl.value)) {
+      let message;
+      if (SCALED_UNITS.has(length.unit)) {
+        continue;
+      } else if (isCustomProperty) {
+        message = length.unit === "px" ? noBareLengthMessages.pixelDeclaration(length.text, decl.prop) : noBareLengthMessages.otherUnit(length.text, decl.prop);
+      } else if (length.unit === "px" && length.number === 1 && BORDER_LINE.test(decl.prop)) {
+        continue;
+      } else if (length.unit === "px") {
+        message = noBareLengthMessages.pixelProperty(length.text, decl.prop);
+      } else {
+        message = noBareLengthMessages.otherUnit(length.text, decl.prop);
+      }
+      report({ ruleName: NO_BARE_LENGTH, result, node: decl, message, word: length.text });
+    }
+  });
+};
+noBareLength.ruleName = NO_BARE_LENGTH;
+noBareLength.messages = noBareLengthMessages;
+
 export default [
   createPlugin(NO_FALLBACK, noFallback),
   createPlugin(NO_TOKEN_DECLARATION, noTokenDeclaration),
   createPlugin(KNOWN_TOKEN, knownToken),
   createPlugin(NO_ROUNDED_SIDE_BORDER, noRoundedSideBorder),
+  createPlugin(NO_BARE_LENGTH, noBareLength),
 ];

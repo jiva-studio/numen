@@ -2,7 +2,7 @@
  * The answer as it arrives: put up with its first words, grown a frame at a
  * time, and settled when it ends. An answer with nothing in it leaves no turn.
  */
-import type { Turn } from '../lib/turn'
+import type { Turn } from '../../types'
 import type { Paint } from '@numen/ui'
 
 export interface Answer {

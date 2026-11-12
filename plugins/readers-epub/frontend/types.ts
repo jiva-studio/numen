@@ -12,14 +12,14 @@ export interface SpineDocument {
 }
 
 /** One section or chapter named by a book. */
-export interface BookPart {
+interface BookPart {
   readonly title: string
   readonly offset: number
   readonly level: number
 }
 
 /** One page label of a printed edition. */
-export interface PrintedPage {
+interface PrintedPage {
   readonly label: string
   readonly offset: number
 }
@@ -59,4 +59,11 @@ export interface BookWords {
 export interface BookHandle {
   measure(): void
   handleKey(event: KeyboardEvent): boolean
+}
+
+/** One line of a book's contents: a name, and where it begins. */
+export interface ContentsEntry {
+  readonly title: string
+  readonly at: number
+  readonly level: number
 }

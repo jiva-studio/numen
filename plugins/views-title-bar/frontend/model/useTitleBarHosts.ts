@@ -25,14 +25,14 @@ export function useTitleBarHosts(context: PluginContext) {
   const commandIds = shallowRef<readonly string[]>([])
 
   const watches: Disposable[] = []
-  const { slots } = context
-  if (slots) {
-    watches.push(slots.watchEntries(SLOT.titleBarCommands, (next) => (commands.value = next)))
-    watches.push(slots.watchEntries(SLOT.titleBarStatus, (next) => (status.value = next)))
-  }
-  if (context.commands) watches.push(context.commands.watch((next) => (commandIds.value = next)))
-  if (context.vaults) watches.push(context.vaults.watch((next) => (vaults.value = next)))
-  if (context.window) watches.push(context.window.watch((next) => (window.value = next)))
+  const { slots } = context.ui
+  watches.push(slots.watchEntries(SLOT.titleBarCommands, (next) => (commands.value = next)))
+  watches.push(slots.watchEntries(SLOT.titleBarStatus, (next) => (status.value = next)))
+  if (context.ui.commands)
+    watches.push(context.ui.commands.watch((next) => (commandIds.value = next)))
+  if (context.vault.vaults)
+    watches.push(context.vault.vaults.watch((next) => (vaults.value = next)))
+  if (context.ui.window) watches.push(context.ui.window.watch((next) => (window.value = next)))
   onScopeDispose(() => {
     for (const one of watches.splice(0)) one.dispose()
   })

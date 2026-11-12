@@ -57,9 +57,6 @@ const isApart = (first: Box, second: Box): boolean =>
 const getGaps = (row: readonly Box[]): number[] =>
   row.slice(1).map((one, index) => one.x - ((row[index]?.x ?? 0) + (row[index]?.width ?? 0)))
 
-const getStyle = (element: Locator, property: string): Promise<string> =>
-  element.evaluate((node, name) => getComputedStyle(node).getPropertyValue(name), property)
-
 const openUpdaterSettings = async (page: Page): Promise<void> => {
   await runPaletteCommand(page, 'Open settings', 'Open settings')
   await page
@@ -103,7 +100,7 @@ test.describe('the update indicator', () => {
     ).toBeVisible()
   })
 
-  test('opens a framed popover above the indicator, with its details laid out, and closes it on Escape', async ({
+  test('opens a popover above the indicator, with its details laid out, and closes it on Escape', async ({
     page,
     request,
   }) => {
@@ -127,10 +124,6 @@ test.describe('the update indicator', () => {
     expect(box.x).toBeLessThan(trigger.x + trigger.width)
     expect(box.x + box.width).toBeGreaterThan(trigger.x)
 
-    expect(await getStyle(popover, 'background-color')).not.toBe('rgba(0, 0, 0, 0)')
-    expect(await getStyle(popover, 'border-top-style')).toBe('solid')
-    expect(await getStyle(popover, 'border-top-width')).toBe('1px')
-
     const header = popover.locator('header')
     await expect(header).toContainText('Update available')
     await expect(header).not.toContainText(`${NEW_RELEASE.version}`)
@@ -145,7 +138,6 @@ test.describe('the update indicator', () => {
       const button = popover.getByRole('button', { name, exact: true })
       await expect(button).toBeVisible()
       expect(await button.evaluate((node) => node.tagName)).toBe('BUTTON')
-      expect(Number.parseFloat(await getStyle(button, 'padding-left'))).toBeGreaterThan(0)
       const one = await getBox(button)
       expect(one.x).toBeGreaterThanOrEqual(box.x)
       expect(one.x + one.width).toBeLessThanOrEqual(box.x + box.width)

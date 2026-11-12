@@ -12,10 +12,10 @@ import {
   type Presets,
   type Settings,
   type SettingsBounds,
-} from '../types'
+} from '../../lib/presets'
 import { estimateCurve } from '../lib/sketch'
 import { getShapeKey } from '../lib/fields'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
 import {
   applyCurveAnswer,
   createCurveState,
@@ -92,9 +92,9 @@ describe('a preset tab before any curve has landed', () => {
   it('is waiting for one, and holds no answer of the application', () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
 
-    expect(state.isWaiting.value).toBe(true)
-    expect(state.shape).toBe('')
-    expect(state.isReal).toBe(false)
+    expect(state.current.isWaiting.value).toBe(true)
+    expect(state.drawing.shape).toBe('')
+    expect(state.drawing.isReal).toBe(false)
   })
 })
 
@@ -136,17 +136,22 @@ describe('a curve that landed', () => {
 
     applyCurveAnswer(state, landed)
 
-    expect(state.curve.value).toBe(landed)
-    expect(state.material.value).toStrictEqual({ decks: 2, cards: 40, overdue: 3, unbegun: 7 })
-    expect(state.isReal).toBe(true)
-    expect(state.isWaiting.value).toBe(false)
+    expect(state.current.curve.value).toBe(landed)
+    expect(state.current.material.value).toStrictEqual({
+      decks: 2,
+      cards: 40,
+      overdue: 3,
+      unbegun: 7,
+    })
+    expect(state.drawing.isReal).toBe(true)
+    expect(state.current.isWaiting.value).toBe(false)
   })
 })
 
 describe('asking for a curve', () => {
   it('draws the sketch meanwhile, the knob where the preset relies on it', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
-    state.curve.value = curve()
+    state.current.curve.value = curve()
     const gate = createGate()
     const { core } = createCore(gate.promise)
     const sketch = estimateCurve(DEFAULTS, today, BOUNDS)
@@ -162,9 +167,9 @@ describe('asking for a curve', () => {
     )
     await flushPromises()
 
-    expect(state.curve.value).toStrictEqual(sketch)
+    expect(state.current.curve.value).toStrictEqual(sketch)
     expect(sketch.now.index).toBeGreaterThan(0)
-    expect(state.place.value).toBe(sketch.now.index)
+    expect(state.current.place.value).toBe(sketch.now.index)
     gate.open(curve())
     await picture
   })
@@ -186,7 +191,7 @@ describe('asking for a curve', () => {
     )
     await flushPromises()
 
-    expect(state.curve.value).toStrictEqual(estimateCurve(DEFAULTS, today, BOUNDS))
+    expect(state.current.curve.value).toStrictEqual(estimateCurve(DEFAULTS, today, BOUNDS))
     gate.open(curve())
     await picture
   })
@@ -208,9 +213,9 @@ describe('asking for a curve', () => {
     )
     await flushPromises()
 
-    expect(state.curve.value).toStrictEqual(curve({ isHonest: false }))
-    expect(state.isReal).toBe(false)
-    expect(state.isWaiting.value).toBe(true)
+    expect(state.current.curve.value).toStrictEqual(curve({ isHonest: false }))
+    expect(state.drawing.isReal).toBe(false)
+    expect(state.current.isWaiting.value).toBe(true)
     gate.open(curve())
     await picture
   })
@@ -218,7 +223,7 @@ describe('asking for a curve', () => {
   it('draws an answer already retained without asking again', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const target = curve({ now: { index: 3, value: 30, day: '' } })
-    state.answers.set(getShapeKey(DEFAULTS), target)
+    state.requests.answers.set(getShapeKey(DEFAULTS), target)
     const { core, requests } = createCore()
 
     await updateCurves(
@@ -232,9 +237,9 @@ describe('asking for a curve', () => {
     )
 
     expect(requests).toStrictEqual([])
-    expect(state.curve.value).toBe(target)
-    expect(state.isReal).toBe(true)
-    expect(state.place.value).toBe(3)
+    expect(state.current.curve.value).toBe(target)
+    expect(state.drawing.isReal).toBe(true)
+    expect(state.current.place.value).toBe(3)
   })
 
   it('asks once more for settings changed while a question was out', async () => {
@@ -266,7 +271,7 @@ describe('asking for a curve', () => {
     await picture
 
     expect(requests).toStrictEqual([DEFAULTS, now])
-    expect(state.shouldDrawAgain).toBe(false)
+    expect(state.drawing.shouldDrawAgain).toBe(false)
   })
 })
 
@@ -275,7 +280,7 @@ describe('an answer no caller is waiting for any more', () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const card = curve({ cards: 99 })
     const other = settings({ minutesADay: 30 })
-    state.answers.set(getShapeKey(other), card)
+    state.requests.answers.set(getShapeKey(other), card)
     const gate = createGate()
     const { core } = createCore(gate.promise)
     let now = DEFAULTS
@@ -302,13 +307,13 @@ describe('an answer no caller is waiting for any more', () => {
     gate.open(curve({ cards: 1 }))
     await picture
 
-    expect(state.curve.value).toBe(card)
+    expect(state.current.curve.value).toBe(card)
   })
 
   it('says nothing about a question that failed', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const other = settings({ minutesADay: 30 })
-    state.answers.set(getShapeKey(other), curve())
+    state.requests.answers.set(getShapeKey(other), curve())
     const gate = createGate()
     const { core } = createCore(gate.promise)
     const response: string[] = []
@@ -362,6 +367,6 @@ describe('an answer no caller is waiting for any more', () => {
     await picture
 
     expect(response).toStrictEqual([words.noCurve])
-    expect(state.isWaiting.value).toBe(false)
+    expect(state.current.isWaiting.value).toBe(false)
   })
 })

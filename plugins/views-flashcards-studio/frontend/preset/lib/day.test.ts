@@ -8,22 +8,23 @@
  * the day the core reads.
  */
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../lib/stop'
 import { asValue } from '@numen/plugin-sdk'
 import { dayAfter } from '../../lib/day'
 
-import { usePresetTab } from '../kind'
+import { usePresetTab } from '../model/kind'
 import {
   DEFAULTS,
   NO_BOUNDS,
   type Curve,
   type Point,
   type Presets,
-  type PresetTabState,
   type Settings,
-} from '../types'
+} from '../../lib/presets'
 import { BOUNDS } from '../fixtures'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
+import PresetTab from '../ui/PresetTab.vue'
+import type { PresetTabState } from '../model/types'
 
 const DAY = '2026-09-04'
 
@@ -95,6 +96,7 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
     curve: async () => answer ?? new Promise<Curve>(() => undefined),
   }
   const kind = usePresetTab({
+    component: PresetTab,
     core,
     buffers: createMockBufferHost(),
     closeTab: () => undefined,
@@ -114,23 +116,23 @@ describe('a goal of a date', () => {
   it('counts the days to it from the review day', async () => {
     const { state } = await openPresetTab({ goal: 'date', byDate: BY })
 
-    expect(state.curve.value.now.value).toBe(8)
+    expect(state.curves.curve.value.now.value).toBe(8)
   })
 
   it('leaves the knob at its current position when the day it already aims at is typed', async () => {
     const reply = createHonestCurve()
     const { state } = await openPresetTab({ goal: 'date', byDate: BY }, reply)
-    expect(state.place.value).toBe(reply.now.index)
+    expect(state.curves.place.value).toBe(reply.now.index)
 
-    state.updateSetting('byDate', BY)
+    state.actions.updateSetting('byDate', BY)
 
-    expect(state.place.value).toBe(reply.now.index)
+    expect(state.curves.place.value).toBe(reply.now.index)
   })
 
   it('opens on a day counted from the review day where the file names none', async () => {
     const { state, written } = await openPresetTab({ goal: 'minutes', byDate: '' })
 
-    state.chooseGoal('date')
+    state.actions.chooseGoal('date')
     for (let i = 0; i < 10; i += 1) await Promise.resolve()
 
     expect(state.settings.value.byDate).toBe('2026-10-04')

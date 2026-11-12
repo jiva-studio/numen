@@ -8,8 +8,8 @@
 import { onBeforeUnmount, shallowRef, watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
-import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
-import { createMarks, findOffset, rangesOver, getRuns, type Run } from '../lib/runs'
+import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from './highlight'
+import { createMarks, findOffset, createRangesOver, getRuns, type Run } from './runs'
 import type { Mark } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
 
@@ -46,8 +46,8 @@ export function useBookMarks(
 
   /** Highlights the runs in `highlights`, and the runs in `otherHighlights` more faintly. */
   const markRuns = () => {
-    highlight(HIGHLIGHT, props, rangesOver(runs, props.highlights))
-    highlight(OTHER_HIGHLIGHT, props, rangesOver(runs, props.otherHighlights))
+    highlight(HIGHLIGHT, props, createRangesOver(runs, props.highlights))
+    highlight(OTHER_HIGHLIGHT, props, createRangesOver(runs, props.otherHighlights))
   }
 
   /** The copies of the paper highlighted under their own key. */
@@ -56,8 +56,8 @@ export function useBookMarks(
   /** Highlights the runs of `copy`, a copy of the paper that still carries the run offsets. */
   const markCopy = (copy: HTMLElement) => {
     const copied = getRuns(copy)
-    highlight(HIGHLIGHT, copy, rangesOver(copied, props.highlights))
-    highlight(OTHER_HIGHLIGHT, copy, rangesOver(copied, props.otherHighlights))
+    highlight(HIGHLIGHT, copy, createRangesOver(copied, props.highlights))
+    highlight(OTHER_HIGHLIGHT, copy, createRangesOver(copied, props.otherHighlights))
     markedCopies.add(copy)
   }
 

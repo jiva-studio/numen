@@ -1,0 +1,45 @@
+---
+import { BUILDS, SHELF } from './site'
+---
+
+<!-- Band 5: Deep Dark Download Band (#get) -->
+<section class="evidence band" id="get">
+  <div class="container">
+    <div class="evidence-grid">
+      <div class="evidence-copy">
+        <p class="section-kicker" data-i18n="nav_download">Download</p>
+        <h2 data-i18n="close_title">Download Numen.</h2>
+        <p data-i18n="close_lede">
+          Free during the alpha for macOS, Windows, and Linux. Includes both Numen and Numen
+          Flashcards.
+        </p>
+      </div>
+
+      <div class="resource-action">
+        {
+          BUILDS.map((build) => (
+            <div class="shelf-row">
+              <div class="shelf-what">{build.name}</div>
+              <div class="shelf-takes">
+                {build.takes.map((take) => (
+                  <a
+                    class="take-pill"
+                    href={`${SHELF}/${take.file}`}
+                    data-file={take.file}
+                    download
+                  >
+                    <b>{take.name}</b>
+                    <span>{take.note}</span>
+                    <em class="take__weight" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          ))
+        }
+
+        <p class="version-note" hidden></p>
+      </div>
+    </div>
+  </div>
+</section>

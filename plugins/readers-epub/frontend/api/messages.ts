@@ -20,13 +20,13 @@ export interface SpineDocument {
   length: number
 }
 
-export interface BookPart {
+interface BookPart {
   title: string
   offset: number
   level: number
 }
 
-export interface PrintedPage {
+interface PrintedPage {
   label: string
   offset: number
 }

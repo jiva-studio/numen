@@ -8,22 +8,23 @@ import { Button } from '@numen/ui'
 import { PluginSettingsCard } from '@numen/plugin-manager'
 import PluginFields from './plugins/PluginFields.vue'
 import type { PluginInfo } from '@/entities/settings'
-import type { SettingsTabState } from '../types'
+import type { InstallationConnections, InstallationPlugin, InstallationSettings } from '../types'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  state: SettingsTabState
+  settings: InstallationSettings
+  manager: InstallationPlugin
+  connections: InstallationConnections
 }>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (e: 'back'): void
+  (e: 'open-connections'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
-
 /** The owner the core declares the settings of the shell under. */
 const owner = computed<PluginInfo>(() => ({
   id: 'app',
@@ -34,7 +35,7 @@ const owner = computed<PluginInfo>(() => ({
   capabilities: [],
   hasFrontend: false,
   hasBackend: false,
-  settings: installation.value.app?.value ?? [],
+  settings: props.manager.app.value,
 }))
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -50,31 +51,40 @@ function onBack(): void {
     </Button>
 
     <PluginSettingsCard>
-      <PluginFields :state="props.state" :plugin="owner" />
+      <PluginFields
+        :settings="props.settings"
+        :host="props.manager"
+        :connections="props.connections"
+        :plugin="owner"
+        @open-connections="emit('open-connections')"
+      />
     </PluginSettingsCard>
 
     <div class="system-detail__where">
-      <p class="system-detail__file">{{ installation.file.value || words.file }}</p>
+      <p class="system-detail__file">{{ props.settings.file.value || words.file }}</p>
     </div>
   </div>
 </template>
 
 <style scoped>
 .system-detail {
+  --max-width: 54rem;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  max-inline-size: 54rem;
+  max-inline-size: var(--max-width);
   margin-inline: auto;
 }
 
 .system-detail__back {
+  --margin-end: 0.75rem;
   align-self: flex-start;
-  margin-block-end: 0.75rem;
+  margin-block-end: var(--margin-end);
 }
 
 .system-detail__where {
-  margin-block-start: 0.75rem;
+  --margin-start: 0.75rem;
+  margin-block-start: var(--margin-start);
 }
 
 .system-detail__file {

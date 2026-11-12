@@ -2,27 +2,18 @@
  * Reader state and controls for an open book.
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
-import type { ContentsEntry } from '../book'
-import { formatErrorMessage, type TextRange } from '@numen/plugin-sdk'
+import type { ContentsEntry } from '../types'
+import { formatErrorMessage, type TextRange, type Caught } from '@numen/plugin-sdk'
 import type { MessageWriter } from './useBookDocument'
 import { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
 import { books as servedBooks } from '../api/wire'
 import { useBookDocument } from './useBookDocument'
 import { useBookHighlights } from './useBookHighlights'
-import type {
-  Book,
-  BookHandle,
-  BookPart,
-  Books,
-  BookWords,
-  PrintedPage,
-  SpineDocument,
-} from '../types'
+import type { Book, Books, BookWords, SpineDocument } from '../types'
 
-export type { Book, BookHandle, BookPart, Books, BookWords, PrintedPage, SpineDocument }
+export type { Book, Books, BookWords, SpineDocument }
 export { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
 export { useBookDocument } from './useBookDocument'
-export { useBookHighlights } from './useBookHighlights'
 
 export type BookReaderState = ReturnType<typeof useBookReader>
 
@@ -223,7 +214,7 @@ export function useBookReader(
   }
   const shape = loadBook()
 
-  const { page, chapter } = useBookProgress(state, nav.offset)
+  const progress = useBookProgress(state, nav.offset)
   const marks = useBookHighlights(nav.goToOffset, () => isOpen)
   const focusSpans = async (...spans: readonly TextRange[]) => {
     await shape
@@ -246,28 +237,17 @@ export function useBookReader(
     isOpen = false
   })
 
-  const reportFailure = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
+  const reportFailure = (error: Caught) => writeMessage(formatErrorMessage(error), 'error')
 
-  const reader = {
+  return {
     path,
-    reportFailure,
-    ...state,
-    page,
-    chapter,
-    offset: nav.offset,
-    target: nav.target,
-    documentSpan: bookDocument.documentSpan,
-    renderedChapter: bookDocument.renderedChapter,
-    markup: bookDocument.markup,
-    highlights: marks.highlights,
-    otherHighlights: marks.otherHighlights,
-    goToOffset: nav.goToOffset,
-    moveTo: nav.moveTo,
-    goToCfi,
-    getCfi,
-    followLink: nav.followLink,
-    focusSpans,
     close,
+    state,
+    progress,
+    navigation: nav,
+    bookDocument,
+    marks,
+    locator: { goToCfi, getCfi, focusSpans },
+    reportFailure,
   }
-  return reader
 }

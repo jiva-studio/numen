@@ -5,8 +5,9 @@
  * when the form opens, whether or not a key is stored; the stored key is never shown.
  */
 import { computed, useId } from 'vue'
-import { NumberField, Select, Switch, type SelectChoice } from '@numen/ui'
-import type { ConnectionFieldInfo, ConnectionValue } from '@numen/core-client'
+import { NumberField, Select, Switch } from '@numen/ui'
+import type { SelectChoice } from '../../types'
+import type { ConnectionFieldInfo, ConnectionValue } from '@/entities/connection'
 import { getFieldHint } from '@/entities/connection'
 import { WORDS as words } from '../../words'
 

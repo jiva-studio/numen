@@ -5,15 +5,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
+import type { ConnectionFieldInfo, ConnectionInfo, ConnectionTypeInfo } from '@/entities/connection'
+import SettingsTab from '../SettingsTab.vue'
 import {
   asFailure,
   asValue,
-  type ConnectionFieldInfo,
-  type ConnectionInfo,
-  type ConnectionTypeInfo,
-} from '@numen/core-client'
-import SettingsTab from '../SettingsTab.vue'
-import { createInstallation } from '@/testing/installation'
+  createInstallation,
+  createSettingsState,
+} from '@/pages/settings/testing/installation'
 import {
   click,
   dispose,
@@ -101,13 +100,13 @@ const mountPage = (
   overrides: Parameters<typeof createInstallation>[0] = {},
 ) => {
   const installation = createInstallation({
-    connections: ref(connections),
-    connectionTypes: ref(types),
+    list: ref(connections),
+    types: ref(types),
     ...overrides,
   })
   const wrapper = mount(SettingsTab, {
     attachTo: document.body,
-    props: { state: { installation, initialPluginId: ref('connections') } },
+    props: { state: createSettingsState(installation, { initialPluginId: ref('connections') }) },
   })
   return { installation, wrapper }
 }
@@ -127,7 +126,7 @@ describe('the page of connections', () => {
     const { installation, wrapper } = mountPage([], [SERVICE])
     await flushPromises()
 
-    expect(installation.loadConnections).toHaveBeenCalledOnce()
+    expect(installation.connections.load).toHaveBeenCalledOnce()
     dispose(wrapper)
   })
 
@@ -246,7 +245,7 @@ describe('the Add dialog', () => {
 
     await click(findButton(/^save$/i))
 
-    expect(installation.createConnection).not.toHaveBeenCalled()
+    expect(installation.connections.create).not.toHaveBeenCalled()
     expect(dialog().querySelector('[role="alert"]')?.textContent).toContain('API key')
     dispose(wrapper)
   })
@@ -254,7 +253,7 @@ describe('the Add dialog', () => {
   it('saves the typed key and the default of the number, and closes', async () => {
     const created = connection({ id: 'c00000009', name: 'Service' })
     const createConnection = vi.fn(() => Promise.resolve(asValue(created)))
-    const { wrapper } = mountPage([], [SERVICE], { createConnection })
+    const { wrapper } = mountPage([], [SERVICE], { create: createConnection })
     await flushPromises()
     await click(findButton(/add connection/i))
 
@@ -277,7 +276,7 @@ describe('the Add dialog', () => {
     const createConnection = vi.fn(() =>
       Promise.resolve(asFailure('Another connection has this name.')),
     )
-    const { wrapper } = mountPage([], [SERVICE], { createConnection })
+    const { wrapper } = mountPage([], [SERVICE], { create: createConnection })
     await flushPromises()
     await click(findButton(/add connection/i))
     await enterText(maskedInputs(dialog())[0]!, 'sk-secret-1')
@@ -298,7 +297,7 @@ describe('the Add dialog', () => {
     await click(findButton(/^cancel$/i, dialog()))
 
     expect(root().querySelector('[role="dialog"]')).toBeNull()
-    expect(installation.createConnection).not.toHaveBeenCalled()
+    expect(installation.connections.create).not.toHaveBeenCalled()
     dispose(wrapper)
   })
 })
@@ -306,7 +305,7 @@ describe('the Add dialog', () => {
 describe('editing and deleting', () => {
   it('opens the form of the connection with its values and no key, and sends the revision it read', async () => {
     const updateConnection = vi.fn(() => Promise.resolve(asValue(connection({ revision: 3 }))))
-    const { wrapper } = mountPage([connection()], [SERVICE], { updateConnection })
+    const { wrapper } = mountPage([connection()], [SERVICE], { update: updateConnection })
     await flushPromises()
     await click(findButton(/connection actions/i))
     await click(findMenuItem(/^edit$/i))
@@ -352,7 +351,7 @@ describe('editing and deleting', () => {
 
   it('sends an empty key when the person removes it', async () => {
     const updateConnection = vi.fn(() => Promise.resolve(asValue(connection({ revision: 3 }))))
-    const { wrapper } = mountPage([connection()], [SERVICE], { updateConnection })
+    const { wrapper } = mountPage([connection()], [SERVICE], { update: updateConnection })
     await flushPromises()
     await click(findButton(/connection actions/i))
     await click(findMenuItem(/^edit$/i))
@@ -368,7 +367,7 @@ describe('editing and deleting', () => {
 
   it('asks before it deletes, and says the key is removed', async () => {
     const deleteConnection = vi.fn(() => Promise.resolve(asValue(undefined)))
-    const { wrapper } = mountPage([connection()], [SERVICE], { deleteConnection })
+    const { wrapper } = mountPage([connection()], [SERVICE], { delete: deleteConnection })
     await flushPromises()
     await click(findButton(/connection actions/i))
     await click(findMenuItem(/^delete$/i))
@@ -419,7 +418,7 @@ describe('editing and deleting', () => {
 
     await click(findButton(/^cancel$/i))
 
-    expect(installation.deleteConnection).not.toHaveBeenCalled()
+    expect(installation.connections.delete).not.toHaveBeenCalled()
     expect(root().querySelector('[role="alertdialog"]')).toBeNull()
     dispose(wrapper)
   })

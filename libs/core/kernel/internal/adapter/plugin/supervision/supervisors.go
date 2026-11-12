@@ -1,0 +1,270 @@
+package supervision
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"sync"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+)
+
+const rpcShutdownGrace = 2 * time.Second
+
+// Supervisors keeps, for each plugin, the supervisor of its process, the endpoint of the process that
+// runs, the ports that process reported for its listeners and the client that calls it. One lock
+// guards them, so that a plugin is never started twice and never stopped half way.
+type Supervisors struct {
+	mu            sync.RWMutex
+	byPlugin      map[string]*lifecycle.Supervisor
+	endpoints     map[string]transport.Endpoint
+	listenerPorts map[string]map[string]int
+	clients       *transport.Clients
+	report        func(error)
+	onDrop        func(pluginID string)
+}
+
+// NewSupervisors returns the supervisors of a host that has no plugin. report receives the problems
+// a supervisor meets, and onDrop is called with the id of a plugin whose process ended.
+func NewSupervisors(report func(error), onDrop func(pluginID string)) *Supervisors {
+	return &Supervisors{
+		byPlugin:      make(map[string]*lifecycle.Supervisor),
+		endpoints:     make(map[string]transport.Endpoint),
+		listenerPorts: make(map[string]map[string]int),
+		clients:       transport.NewClients(),
+		report:        report,
+		onDrop:        onDrop,
+	}
+}
+
+// Register returns the supervisor of the plugin, which it makes where there is none, and gives it the
+// permissions the manifest declares.
+func (s *Supervisors) Register(p manifest.Discovered) *lifecycle.Supervisor {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	id := p.Manifest.ID
+	sup, exists := s.byPlugin[id]
+	if !exists {
+		sup = lifecycle.New(s.report)
+		sup.SetOnExit(func() { s.Drop(id) })
+		s.byPlugin[id] = sup
+	}
+	sup.Permissions.Set(p.Manifest.Permissions)
+	return sup
+}
+
+// Put sets the supervisor of the plugin to one made elsewhere.
+func (s *Supervisors) Put(pluginID string, sup *lifecycle.Supervisor) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.byPlugin[pluginID] = sup
+}
+
+func (s *Supervisors) Get(pluginID string) (*lifecycle.Supervisor, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	sup, ok := s.byPlugin[pluginID]
+	return sup, ok
+}
+
+// Forget removes the supervisor of the plugin.
+func (s *Supervisors) Forget(pluginID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.byPlugin, pluginID)
+}
+
+// GetEndpoint returns the endpoint of the running process of the plugin.
+func (s *Supervisors) GetEndpoint(pluginID string) (transport.Endpoint, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	endpoint, ok := s.endpoints[pluginID]
+	return endpoint, ok
+}
+
+// FindByToken returns the id of the running plugin the token was given to.
+func (s *Supervisors) FindByToken(token string) (string, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var pluginID string
+	var found bool
+	for id, endpoint := range s.endpoints {
+		if localendpoint.IsTokenEqual(endpoint.Token, token) {
+			pluginID, found = id, true
+		}
+	}
+	return pluginID, found
+}
+
+// IsActive reports whether the process of the plugin is active or idle.
+func (s *Supervisors) IsActive(pluginID string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	sup, ok := s.byPlugin[pluginID]
+	if !ok {
+		return false
+	}
+	state := sup.GetState()
+	return state == lifecycle.StateActive || state == lifecycle.StateIdle
+}
+
+// ListRunning returns the ids of the plugins whose supervisor is not dormant.
+func (s *Supervisors) ListRunning() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	ids := make([]string, 0, len(s.byPlugin))
+	for id, sup := range s.byPlugin {
+		if sup.GetState() != lifecycle.StateDormant {
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
+// ListEndpointOwners returns the ids of the plugins that have an endpoint.
+func (s *Supervisors) ListEndpointOwners() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	ids := make([]string, 0, len(s.endpoints))
+	for id := range s.endpoints {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+// GetListenerPort returns the port the process of the plugin reported for a listener.
+func (s *Supervisors) GetListenerPort(pluginID, name string) (int, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	port, ok := s.listenerPorts[pluginID][name]
+	return port, ok
+}
+
+// Release gives up a hold on the plugin if its endpoint is still the one the token names.
+func (s *Supervisors) Release(pluginID, token string, now time.Time) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	sup, ok := s.byPlugin[pluginID]
+	if !ok || s.endpoints[pluginID].Token != token {
+		return
+	}
+	sup.Release(now)
+}
+
+// Clients returns the clients that call the processes, by the token each process was given.
+func (s *Supervisors) Clients() *transport.Clients {
+	return s.clients
+}
+
+// Drop forgets the endpoint and the client of a plugin whose process ended.
+func (s *Supervisors) Drop(pluginID string) {
+	s.mu.Lock()
+	s.clients.Remove(s.endpoints[pluginID].Token)
+	forgetEndpointLocked(s, pluginID)
+	s.mu.Unlock()
+	s.onDrop(pluginID)
+}
+
+func forgetEndpointLocked(s *Supervisors, pluginID string) {
+	delete(s.endpoints, pluginID)
+	delete(s.listenerPorts, pluginID)
+}
+
+// Claim is what Begin found.
+type Claim struct {
+	Endpoint transport.Endpoint
+	Running  bool
+	State    lifecycle.ProcessState
+	Started  bool
+}
+
+// Begin takes a hold on the running plugin, or reports the state of the supervisor, or sets a dormant
+// supervisor to activating.
+func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, now time.Time) Claim {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if endpoint, ok := s.acquireRunningLocked(pluginID, sup, now); ok {
+		return Claim{Endpoint: endpoint, Running: true, State: lifecycle.StateDormant, Started: false}
+	}
+	if state := sup.GetState(); state != lifecycle.StateDormant {
+		return Claim{Endpoint: NoEndpoint(), Running: false, State: state, Started: false}
+	}
+	sup.SetActivating()
+	return Claim{Endpoint: NoEndpoint(), Running: false, State: lifecycle.StateDormant, Started: true}
+}
+
+// AcquireRunning takes a hold on the plugin and returns its endpoint if a process of it runs.
+func (s *Supervisors) AcquireRunning(pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.acquireRunningLocked(pluginID, sup, now)
+}
+
+func (s *Supervisors) acquireRunningLocked(pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
+	endpoint := s.endpoints[pluginID]
+	if IsNoEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(now) {
+		return NoEndpoint(), false
+	}
+	return endpoint, true
+}
+
+// ProcessAttachment is what AttachProcess records for a started plugin process.
+type ProcessAttachment struct {
+	PluginID   string
+	Supervisor *lifecycle.Supervisor
+	Process    *os.Process
+	Endpoint   transport.Endpoint
+	Listeners  map[string]int
+	Now        time.Time
+	OnExit     func()
+}
+
+// AttachProcess records a process the supervisor now tracks, with its endpoint and the ports of its
+// listeners, and takes the first hold on it. It fails where the start was aborted meanwhile. onExit
+// runs after the endpoint is forgotten when the process exits.
+func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachment) error {
+	pluginID, sup, proc, endpoint := attach.PluginID, attach.Supervisor, attach.Process, attach.Endpoint
+	now, listeners, onExit := attach.Now, attach.Listeners, attach.OnExit
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if sup.GetState() != lifecycle.StateActivating {
+		return lifecycle.ErrActivationAborted
+	}
+	if err := sup.Attach(ctx, proc, now); err != nil {
+		return fmt.Errorf("attach plugin %s: %w", pluginID, err)
+	}
+	sup.SetOnExit(func() {
+		s.Drop(pluginID)
+		onExit()
+	})
+	sup.Acquire(now)
+	s.endpoints[pluginID] = endpoint
+	s.listenerPorts[pluginID] = listeners
+	sup.SetRPCShutdown(createRPCShutdown(endpoint, s.clients.Get(endpoint), rpcShutdownGrace))
+	sup.FinishActivating()
+	return nil
+}
+
+// AttachInProcess records the endpoint of a plugin served inside this process and activates it. It
+// fails where the start was aborted meanwhile.
+func (s *Supervisors) AttachInProcess(pluginID string, sup *lifecycle.Supervisor, endpoint transport.Endpoint, now time.Time) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if sup.GetState() != lifecycle.StateActivating {
+		return lifecycle.ErrActivationAborted
+	}
+	s.endpoints[pluginID] = endpoint
+	sup.ActivateInProcess(now)
+	return nil
+}
+
+// SetEndpoint records the endpoint of a plugin as a process of it would have reported it.
+func (s *Supervisors) SetEndpoint(pluginID string, endpoint transport.Endpoint) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.endpoints[pluginID] = endpoint
+}

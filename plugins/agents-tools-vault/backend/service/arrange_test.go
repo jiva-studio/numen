@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
@@ -79,7 +79,7 @@ func newSkyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	v.File("Skyline.md", "---\ntitle: City Skyline at Night\n---\nLight hides the stars.")
 	v.File("Tides.md", "---\ntitle: Tides and the Moon\n---\nThe moon pulls the sea.")
 	v.File("Sky/chart.txt", "RA 05h 35m\n")
-	registry, err := service.New(v).WithVaultList(v).Registry()
+	registry, err := service.New(vaultsOf(v)).WithVaultList(v).Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -200,7 +200,7 @@ func TestNoteListReturnsAtMostOneHundredNotesByDefault(t *testing.T) {
 	for i := range 120 {
 		v.File(fmt.Sprintf("Stars/Star %03d.md", i), fmt.Sprintf("# Star %03d\nA star.", i))
 	}
-	registry, err := service.New(v).Registry()
+	registry, err := service.New(vaultsOf(v)).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -7,7 +7,8 @@
  */
 import { computed } from 'vue'
 import { SearchableList, type ListItem } from '@numen/ui'
-import { CONTENTS_WORDS, findLineAt, type ContentsEntry, type ContentsWords } from './contents'
+import { CONTENTS_WORDS, findLineAt, type ContentsWords } from './contents'
+import type { ContentsEntry } from '../../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(

@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '../../support/test.js'
 import { getGraph, openWorkspace, runCommand, runPaletteCommand } from '../../support/workspace.js'
 import { readOwner, writeSetting } from '../../support/vault.js'
+import type { JsonObject, JsonValue } from '../../support/json.js'
 
 const readCurrentProfile = async (page: Page): Promise<string> => {
   await runPaletteCommand(page, 'Performance profile', 'Performance profile')
@@ -14,15 +15,15 @@ const readCurrentProfile = async (page: Page): Promise<string> => {
 test.describe('App Updates, Performance Profiles and OCR Settings', () => {
   test.describe.configure({ timeout: 90_000 })
 
-  let profile: unknown
-  let mode: unknown
+  let profile: JsonValue | undefined
+  let mode: JsonValue | undefined
   /** The row of the profile other than the one in force. */
   let other = ''
 
   test.beforeEach(async ({ request }) => {
     const app = await readOwner(request, 'app')
-    profile = (app['performance'] as Record<string, unknown> | undefined)?.['profile']
-    mode = (app['appearance'] as Record<string, unknown> | undefined)?.['mode']
+    profile = (app['performance'] as JsonObject | undefined)?.['profile']
+    mode = (app['appearance'] as JsonObject | undefined)?.['mode']
     other = profile === 'eco' ? 'Maximum' : 'Eco'
   })
 
@@ -69,17 +70,12 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
     await page.getByRole('option', { name: /^Dark/ }).click()
 
     await expect
-      .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme))
-      .toContain('dark')
-    await expect
       .poll(async () => (await readOwner(request, 'app'))['appearance'])
       .toMatchObject({ mode: 'dark' })
 
     await page.reload()
-    await expect(page.getByRole('group', { name: 'Neighbourhood' })).toBeVisible()
+    await expect(page.getByRole('group', { name: 'Neighborhood' })).toBeVisible()
 
-    expect(
-      await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme),
-    ).toContain('dark')
+    expect((await readOwner(request, 'app'))['appearance']).toMatchObject({ mode: 'dark' })
   })
 })

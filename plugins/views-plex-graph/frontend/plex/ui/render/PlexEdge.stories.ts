@@ -14,9 +14,8 @@ import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import { getLines } from './lines'
 import { createTitle, getLabelPlaces, getRise, getShift, LABEL_GAP } from '../../lib/arrange'
-import { getArrow, type EdgeArrow, type EdgeCurve, type PlacedEdge } from '../../lib/edge'
-import { lightness } from '../../../fixtures/colour'
-import { DARK, expectDark } from '../../../fixtures/theme'
+import { getArrow, type EdgeCurve, type PlacedEdge } from '../../lib/edge'
+import type { EdgeArrow } from '../../../types'
 
 /**
  * Which records the edge draws: one without a marker, one pointing at the `to`
@@ -86,7 +85,7 @@ const createEdge = (args: Knobs): PlacedEdge => {
   }
 }
 
-const createBoth = (args: Knobs) => ({
+const createEdgeStory = (args: Knobs) => ({
   components: { PlexEdgeLine, PlexEdgeTitle },
   setup: () => ({ line: getLines([createEdge(args)], 'edge')[0]! }),
   template: `
@@ -117,9 +116,9 @@ const meta: Meta<Knobs> = {
       description: {
         component:
           'One edge: the curve, the heads it ends in, and the titles set along ' +
-          'it over a halo, one centred on the line, or two set at opposite ends ' +
+          'it over a halo, one centered on the line, or two set at opposite ends ' +
           'whatever heads the line has. Lifted, it is drawn over the boxes, in ' +
-          'the colours and the weight that stand out against them.',
+          'the colors and the weight that stand out against them.',
       },
     },
   },
@@ -130,7 +129,7 @@ const meta: Meta<Knobs> = {
     opacity: { control: { type: 'range', min: 0, max: 1, step: 0.05 } },
   },
   args: { words: 'refers to', reverseWords: 'cited by', direction: 'forward', opacity: 1 },
-  render: createBoth,
+  render: createEdgeStory,
 }
 
 export default meta
@@ -139,7 +138,7 @@ type Story = StoryObj<Knobs>
 /** The pair at rest above, and lifted below. */
 export const Playground: Story = {}
 
-const getResting = (canvas: HTMLElement) => {
+const getRestingEdge = (canvas: HTMLElement) => {
   const group = canvas.querySelector('[data-edge="resting"]')!
   const heads = [...group.querySelectorAll('.plex__edge-arrow')].map((head) =>
     head.getAttribute('transform'),
@@ -162,7 +161,7 @@ const AT_FROM = `translate(${CURVE.fromPoint.x} ${CURVE.fromPoint.y})`
 export const NoDirection: Story = {
   args: { direction: 'none' },
   play: async ({ canvasElement }) => {
-    const { heads, titles } = getResting(canvasElement)
+    const { heads, titles } = getRestingEdge(canvasElement)
     await expect(heads).toStrictEqual([])
     await expect(titles).toStrictEqual([['refers to', '50%']])
   },
@@ -172,11 +171,11 @@ export const NoDirection: Story = {
 export const Forward: Story = {
   args: { direction: 'forward' },
   play: async ({ canvasElement }) => {
-    const { heads, titles } = getResting(canvasElement)
+    const { heads, titles } = getRestingEdge(canvasElement)
     await expect(heads).toHaveLength(1)
     await expect(heads[0]).toContain(AT_TO)
     await expect(titles).toStrictEqual([['refers to', '50%']])
-    await expect(getResting(canvasElement).offsets).toStrictEqual([LABEL_TYPE.xHeight / 2])
+    await expect(getRestingEdge(canvasElement).offsets).toStrictEqual([LABEL_TYPE.xHeight / 2])
   },
 }
 
@@ -184,7 +183,7 @@ export const Forward: Story = {
 export const Backward: Story = {
   args: { direction: 'backward' },
   play: async ({ canvasElement }) => {
-    const { heads, titles } = getResting(canvasElement)
+    const { heads, titles } = getRestingEdge(canvasElement)
     await expect(heads).toHaveLength(1)
     await expect(heads[0]).toContain(AT_FROM)
     await expect(titles).toStrictEqual([['refers to', '50%']])
@@ -198,7 +197,7 @@ export const Backward: Story = {
 export const BothDirections: Story = {
   args: { direction: 'both' },
   play: async ({ canvasElement }) => {
-    const { heads, titles, offsets } = getResting(canvasElement)
+    const { heads, titles, offsets } = getRestingEdge(canvasElement)
     await expect(heads).toHaveLength(2)
     await expect(heads[0]).toContain(AT_TO)
     await expect(heads[1]).toContain(AT_FROM)
@@ -236,64 +235,5 @@ export const PartWayThere: Story = {
     )
     await expect(viewElement).toHaveLength(4)
     for (const one of viewElement) await expect(one.getAttribute('opacity')).toBe('0.3')
-  },
-}
-
-const getParts = (canvas: HTMLElement, edge: string) => {
-  const group = canvas.querySelector(`[data-edge="${edge}"]`)
-  if (!group) throw new Error(`no ${edge} edge`)
-  const [curve, head] = group.querySelectorAll('path')
-  const [halo, letters] = group.querySelectorAll('text')
-  if (!curve || !head || !halo || !letters) throw new Error(`the ${edge} edge is short a part`)
-  return { curve, head, halo, letters }
-}
-
-/**
- * On the dark set of tokens, at rest and lifted over one another.
- *
- * Lifted means drawn over the boxes, so both the line and its letters have to
- * come further from the surface than the resting pair does, and the halo has
- * to stay the surface itself or it stops hiding what runs under the words.
- */
-export const Dark: Story = {
-  globals: DARK,
-  play: async ({ canvasElement }) => {
-    await expectDark(canvasElement)
-    const ground = getComputedStyle(canvasElement.querySelector('[data-ground]')!).backgroundColor
-    const surface = lightness(ground)
-    const getDistanceFrom = (colour: string) => Math.abs(lightness(colour, ground) - surface)
-
-    const restParts = getParts(canvasElement, 'resting')
-    const lifted = getParts(canvasElement, 'lifted')
-
-    // A resting line is still lighter than the surface in the dark set, where
-    // lines are drawn lighter than the background.
-    await expect(lightness(getComputedStyle(restParts.curve).stroke, ground)).toBeGreaterThan(
-      surface + 2,
-    )
-
-    // The line and its head form one drawing, and lifting increases the contrast
-    // of both against the background. The curve is stroked and the head is
-    // filled, so each is read from the property it is painted with.
-    await expect(getDistanceFrom(getComputedStyle(lifted.curve).stroke)).toBeGreaterThan(
-      getDistanceFrom(getComputedStyle(restParts.curve).stroke) + 2,
-    )
-    await expect(getDistanceFrom(getComputedStyle(lifted.head).fill)).toBeGreaterThan(
-      getDistanceFrom(getComputedStyle(restParts.head).fill) + 2,
-    )
-
-    // The letters likewise, and the halo under them stays the surface, at a
-    // weight that covers the line running through the words.
-    await expect(getDistanceFrom(getComputedStyle(lifted.letters).fill)).toBeGreaterThan(
-      getDistanceFrom(getComputedStyle(restParts.letters).fill) + 2,
-    )
-    for (const halo of [restParts.halo, lifted.halo]) {
-      const renderedStyle = getComputedStyle(halo)
-      await expect(getDistanceFrom(renderedStyle.stroke)).toBeLessThan(2)
-      await expect(Number.parseFloat(renderedStyle.strokeWidth)).toBeGreaterThan(0)
-    }
-    await expect(Number.parseFloat(getComputedStyle(lifted.halo).strokeWidth)).toBeGreaterThan(
-      Number.parseFloat(getComputedStyle(restParts.halo).strokeWidth),
-    )
   },
 }

@@ -3,17 +3,17 @@
  */
 import type { Component, ComputedRef, Ref } from 'vue'
 import type { MenuItem, MenuTrigger } from '@numen/ui'
-import type { PlexNeighbourhood, PlexHeading, PlexRelation, PlexDestination } from './plex'
 import type {
   CommandItem,
   CommandTarget,
   SlotItem,
   Connection,
   ConnectionRole,
-  NoteNeighbour,
+  NoteNeighbor,
   PathRename,
   PluginContext,
   VaultRelations,
+  Caught,
 } from '@numen/plugin-sdk'
 
 /** What a note is: a note, or a type a plugin declares. */
@@ -26,24 +26,24 @@ export interface NoteHeading {
   readonly line: number
 }
 
-/** Focus of a neighbourhood. */
+/** Focus of a neighborhood. */
 export interface Focus {
   readonly path: string
   readonly title: string
 }
 
 /** One note joined to the focus. */
-export type Neighbour = NoteNeighbour
+export type Neighbor = NoteNeighbor
 
 /**
- * A neighbourhood of a note: the note in focus, the notes joined to it, and the connection of
+ * A neighborhood of a note: the note in focus, the notes joined to it, and the connection of
  * every line drawn between them.
  */
-export interface Neighbourhood {
+export interface Neighborhood {
   readonly focus: Focus
   readonly focusType: NoteType
   readonly focusTabKind?: string
-  readonly related: readonly Neighbour[]
+  readonly related: readonly Neighbor[]
   readonly connections: readonly Connection[]
 }
 
@@ -53,9 +53,9 @@ export type NoteRelation = PlexRelation
 /** A path rename. */
 export type { PathRename }
 
-/** The one query a plex makes of the vault: the neighbours of a note. */
-export interface Neighbours {
-  neighbourhood(path: string): Promise<Neighbourhood>
+/** The one query a plex makes of the vault: the neighbors of a note. */
+export interface Neighbors {
+  neighborhood(path: string): Promise<Neighborhood>
 }
 
 /** Position of the menu and the node it was requested on. */
@@ -103,7 +103,7 @@ export interface OpenNoteOptions {
 }
 
 export interface PlexView {
-  readonly neighbourhood: Ref<Neighbourhood | null>
+  readonly neighborhood: Ref<Neighborhood | null>
   readonly here: Ref<string>
   readonly error: Ref<string>
   readonly nextPath: Ref<string>
@@ -113,44 +113,66 @@ export interface PlexView {
   close(): void
 }
 
-/** Dependencies for plex tab state. */
-export interface PlexTabDeps {
-  readonly tabId: string
-  readonly editor: PlexEditor
+/** What a plex tab requests of the window: the notes it opens, selects and drags, and the messages it shows. */
+export interface PlexWindowDeps {
   readonly isReady: Readonly<Ref<boolean>>
-  readonly isNesting: Readonly<Ref<boolean>>
-  readonly headings: Readonly<Ref<number>>
+  readonly openingPath: Readonly<Ref<string>>
+  readonly dragged: Readonly<Ref<readonly string[]>>
   openNote(path: string, options?: OpenNoteOptions): void
   onSelectPath?(path: string, title?: string, state?: PlexTabState): void
-  readHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
+  /** The icon the window draws a type of note with. */
+  getNoteIcon(tabKind: string): Component | null
+  showMessage(text: string): void
+  readOpeningPath(): Promise<string>
+}
+
+/** What a plex tab requests for its menu. */
+export interface PlexMenuDeps {
   /** The entries of the slot `plexGraph.context` over the note of a node, or over the canvas. */
   getMenuEntries(target: CommandTarget): readonly SlotItem[]
   /** The items a command of the menu offers over the note of a node. */
   listItems(command: string, target: CommandTarget): Promise<readonly CommandItem[]>
-  /** Runs a command of the menu over the note of a node; with `itemId`, the item picked. */
-  runCommand(command: string, target: CommandTarget, itemId?: string): Promise<void>
-  /** The icon the window draws a type of note with. */
-  getNoteIcon(tabKind: string): Component | null
-  readonly openingPath: Readonly<Ref<string>>
-  readonly dragged: Readonly<Ref<readonly string[]>>
-  showMessage(text: string): void
-  createUntitledNote(): Promise<string>
-  readOpeningPath(): Promise<string>
-  readonly creatable: readonly ConnectionRole[]
+  /**
+   * Runs a command of the menu over the note of a node; with `itemId`, the item picked. Answers
+   * the path of the note it made, empty where none.
+   */
+  runCommand(
+    command: string,
+    target: CommandTarget,
+    itemId?: string,
+    values?: Readonly<Record<string, string>>,
+  ): Promise<string>
+}
+
+/** What a plex tab reads of the notes: their headings and names, and whether it nests the headings. */
+export interface PlexNotesDeps {
+  readonly isNesting: Readonly<Ref<boolean>>
+  readonly headings: Readonly<Ref<number>>
+  readHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
+}
+
+/** Dependencies for plex tab state. */
+export interface PlexTabDeps {
+  readonly tabId: string
+  readonly editor: PlexEditor
+  readonly creatable: readonly ConnectionRole[]
   readonly isNavigatingOnCreate?: Readonly<Ref<boolean>>
+  readonly window: PlexWindowDeps
+  readonly menu: PlexMenuDeps
+  readonly notes: PlexNotesDeps
 }
 
 export interface PlexViewState {
   readonly view: PlexView
-  readonly picture: ComputedRef<PlexNeighbourhood | null>
+  readonly picture: ComputedRef<PlexNeighborhood | null>
   readonly empty: ComputedRef<boolean>
   readonly dragged: ComputedRef<readonly string[]>
   readonly creatable: readonly PlexRelation[]
 }
 
 export interface PlexMenuState {
-  readonly menu: Readonly<Ref<MenuRequest | null>>
+  readonly request: Readonly<Ref<MenuRequest | null>>
   readonly menuItems: ComputedRef<readonly MenuItem[]>
   getMenuIcon(id: string): Component | null
   /** The icon a node is drawn with, and nothing for an ordinary note. */
@@ -165,21 +187,20 @@ export interface PlexHeadingsState {
   getType(node: string): NoteType
   getHeadings(node: string): readonly PlexHeading[]
   readHeadings(): Promise<void>
-  openHeading(node: string, heading: string): void
 }
 
 /** Shows the failure of an operation that runs in the background. */
 export interface PlexFailureReporter {
-  reportFailure(error: unknown): void
+  reportFailure(error: Caught): void
 }
 
 export interface PlexNodeActions {
   activate(node: string): void
-  createNode(from: string, relation: PlexRelation, at?: { x: number; y: number }): Promise<void>
+  addNode(from: string, relation: PlexRelation, at?: { x: number; y: number }): Promise<void>
   joinNodes(from: string, to: string, relation: PlexRelation): Promise<void>
   dropNodes(dragged: readonly string[], relation: PlexRelation): Promise<void>
   openNode(node: string, showing?: PlexDestination): void
-  createNote(): Promise<void>
+  openHeading(node: string, heading: string): void
   followMoves(renamed: readonly PathRename[]): void
   getName(path: string): string
 }
@@ -202,17 +223,76 @@ export interface PlexLinkInspectorState {
 }
 
 /** What one plex tab holds. */
-export type PlexTabState = PlexViewState &
-  PlexMenuState &
-  PlexHeadingsState &
-  PlexNodeActions &
-  PlexFailureReporter &
-  PlexQuickLinkState &
-  PlexLinkInspectorState & {
-    readonly pluginId?: string
-  }
+export interface PlexTabState {
+  readonly canvas: PlexViewState
+  readonly menu: PlexMenuState
+  readonly headings: PlexHeadingsState
+  readonly nodes: PlexNodeActions
+  readonly quickLink: PlexQuickLinkState
+  readonly inspector: PlexLinkInspectorState
+  readonly reportFailure: PlexFailureReporter['reportFailure']
+  readonly pluginId?: string
+}
 
 export interface PlexGraphViewProps {
   readonly state: PlexTabState
   readonly context?: PluginContext
+}
+
+/** Every relation a node can take to the one in focus. */
+export type PlexRelation = 'parent' | 'child' | 'jump' | 'sibling'
+
+/** Where a node is positioned relative to the one in focus. */
+export type PlexNodeRelation = 'focus' | PlexRelation
+
+/** Where an opened node is shown: in the current pane, or in an adjacent split. */
+export type PlexDestination = 'current' | 'split'
+
+/**
+ * A node as the caller describes it. The id is opaque: the plex cannot query what
+ * it addresses, and the relation is a position in the layout, not a claim about
+ * a graph.
+ */
+export interface PlexNode {
+  readonly id: string
+  readonly title: string
+  readonly relation: PlexNodeRelation
+}
+
+/** The end of a line an arrowhead is drawn at, pointing out of the line there. */
+export type EdgeArrow = 'from' | 'to'
+
+/**
+ * Words set along an edge. A line with one label carries it in the middle, on
+ * the line, its letters across it. With two whose records both have a head,
+ * each is set near the end its head is at, on its own side, and reads toward that end. Otherwise
+ * the first, written in the `from` note, is set near the `from` end and reads from `from` to `to`,
+ * and the second, written in the `to` note, is set near the `to` end on the other side and reads back.
+ */
+export interface EdgeLabel {
+  readonly text: string
+  readonly end?: EdgeArrow
+}
+
+export interface PlexEdge {
+  readonly from: string
+  readonly to: string
+  readonly labels?: readonly EdgeLabel[]
+  readonly arrows?: readonly EdgeArrow[]
+}
+
+/** One neighborhood: the node in focus and everything shown around it. */
+export interface PlexNeighborhood {
+  readonly nodes: readonly PlexNode[]
+  readonly edges: readonly PlexEdge[]
+}
+
+/**
+ * One heading of a node, as the caller describes it. The identifier is opaque:
+ * the plex has no way to ask what it addresses.
+ */
+export interface PlexHeading {
+  readonly id: string
+  readonly text: string
+  readonly level: number
 }

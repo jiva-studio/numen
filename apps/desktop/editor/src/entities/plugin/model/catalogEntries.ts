@@ -1,28 +1,28 @@
 import { shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { PluginInfo } from '@numen/plugin-manager'
-import { ReportedError, type CatalogEntry, type PluginCatalog } from '@numen/core-client'
+import { ReportedError, type Caught } from '@/shared/api/errors'
+import { listCatalog } from '../api/catalog'
+import type { CatalogEntry } from '../lib/catalogEntry'
 
 /**
  * The entries of the plugin catalog, read again each time the plugins the host lists change: a
  * plugin enabled, installed or removed changes both lists together.
  */
 export function useCatalogEntries(
-  catalog: PluginCatalog,
   plugins: Readonly<Ref<readonly PluginInfo[]>>,
-  reportError: (error: unknown) => void,
+  reportError: (error: Caught) => void,
 ): Readonly<ShallowRef<readonly CatalogEntry[]>> {
   const entries = shallowRef<readonly CatalogEntry[]>([])
 
   const refresh = async (): Promise<void> => {
-    const answer = await catalog.list()
+    const answer = await listCatalog()
     if (!answer.ok) {
-      const reason = answer.error.kind === 'unavailable' ? answer.error.message : 'it lists nothing'
-      reportError(new ReportedError(`The plugin catalog is unavailable: ${reason}`))
+      reportError(new ReportedError(`The plugin catalog is unavailable: ${answer.error}`))
       return
     }
     entries.value = answer.value.entries
-    for (const failure of answer.value.sourceErrors) {
+    for (const failure of answer.value.sourceFailures) {
       reportError(
         new ReportedError(`The plugin source ${failure.source} failed: ${failure.message}`),
       )

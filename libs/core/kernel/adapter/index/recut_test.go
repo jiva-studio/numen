@@ -1,0 +1,758 @@
+package index
+
+import (
+	"slices"
+	"strconv"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/markdown"
+)
+
+// A note is cut into one large chunk over the whole of it, tiled into the small
+// chunks that carry the vectors, once inside each section the note's headings
+// name. These tests are about what a second cut of the same note keeps.
+
+func wordsOf(n int) string { return wordsBetween(0, n) }
+
+func wordsBetween(from, to int) string {
+	out := make([]string, 0, to-from)
+	for i := from; i < to; i++ {
+		out = append(out, "word"+spellNumber(i))
+	}
+	return strings.Join(out, " ")
+}
+
+func createSections(n, per int) string {
+	var parts []string
+	for pos := 0; pos < n; pos += per {
+		parts = append(parts, "## Section"+spellNumber(pos), wordsBetween(pos, min(pos+per, n)))
+	}
+	return strings.Join(parts, "\n\n")
+}
+
+func insertWordBefore(body string, pos int) string {
+	word := "word" + spellNumber(pos)
+	return strings.Replace(body, word, "wordzz "+word, 1)
+}
+
+func spellNumber(i int) string {
+	digits := []byte(strconv.Itoa(i))
+	for item, d := range digits {
+		digits[item] = 'a' + (d - '0')
+	}
+	return string(digits)
+}
+
+func noteAt(path, title, body string) domain.Note {
+	return domain.Note{
+		FileStat: domain.FileStat{Path: path, Size: int64(len(body)), ModTime: getWalkedTime()},
+		Title:    title,
+		Body:     body,
+	}
+}
+
+func parseNote(path, body string) domain.Note {
+	return markdown.Parse(domain.FileStat{Path: path, Size: int64(len(body)), ModTime: getWalkedTime()}, []byte(body))
+}
+
+func noParts(n domain.Note) domain.Note {
+	n.Headings = nil
+	return n
+}
+
+func save(t *testing.T, db *DB, vault domain.Vault, n domain.Note) {
+	t.Helper()
+	if err := saveCut(t.Context(), db, vault.ID, []domain.Note{n}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// vector for each, and reports how many vectors were requested. That number is
+// the cost of a save.
+type embedder struct{ seed byte }
+
+func (e embedder) run(t *testing.T, db *DB, vault domain.Vault) int {
+	t.Helper()
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), vault.ID, "model", chunk.Cursor{}, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saveSeededVectors(t, db, vault, e.seed)
+	return len(unembedded)
+}
+
+func smallChunks(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
+	t.Helper()
+	return rowsOf(t, db, `SELECT c.id FROM chunks c
+	                      JOIN sources s ON s.id = c.source_id
+	                      JOIN vaults v ON v.id = c.vault_id
+	                      WHERE v.identifier = ? AND s.path = ? AND c.parent_id IS NOT NULL
+	                      ORDER BY c.start, c.length`, vault.ID, path)
+}
+
+func largeChunk(t *testing.T, db *DB, vault domain.Vault, path string) int64 {
+	t.Helper()
+	rows := rowsOf(t, db, `SELECT c.id FROM chunks c
+	                       JOIN sources s ON s.id = c.source_id
+	                       JOIN vaults v ON v.id = c.vault_id
+	                       WHERE v.identifier = ? AND s.path = ? AND c.parent_id IS NULL`, vault.ID, path)
+	if len(rows) != 1 {
+		t.Fatalf("%d large chunks for %s", len(rows), path)
+	}
+	return rows[0]
+}
+
+func chunksIn(t *testing.T, db *DB, vault domain.Vault) int {
+	t.Helper()
+	return countRows(t, db, `SELECT COUNT(*) FROM chunks c JOIN vaults v ON v.id = c.vault_id
+	                       WHERE v.identifier = ?`, vault.ID)
+}
+
+func rowsOf(t *testing.T, db *DB, statement string, args ...any) []int64 {
+	t.Helper()
+	rows, err := db.read.QueryContext(t.Context(), statement, args...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	var out []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, id)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+func hasVector(t *testing.T, db *DB, chunk int64) bool {
+	t.Helper()
+	stored := countRows(t, db, `SELECT COUNT(*) FROM chunks c
+	                            JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?
+	                            WHERE c.id = ?`, testRecipe, chunk)
+	coarse := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec WHERE chunk_id = ?`, chunk)
+	if stored != coarse {
+		t.Errorf("chunk %d is in %d rows of vectors and %d of the coarse index", chunk, stored, coarse)
+	}
+	return stored == 1
+}
+
+func TestEditingTheEndOfANoteAsksForOneVector(t *testing.T) {
+	// A word is typed at the end of a note. The chunks before the edit keep their
+	// text, rows and vectors, and the model is called for the one chunk the edit
+	// landed in.
+	db := openDB(t)
+	model := embedder{seed: 0x11}
+
+	body := wordsOf(200)
+	n := noteAt("notes/Entropy.md", "Entropy", body)
+	save(t, db, getFirstVault(), n)
+
+	if request := model.run(t, db, getFirstVault()); request != 5 {
+		t.Fatalf("a note of 200 words needs %d vectors, want 5", request)
+	}
+	was := smallChunks(t, db, getFirstVault(), n.FileStat.Path)
+	if len(was) != 5 {
+		t.Fatalf("%d chunks carry a vector", len(was))
+	}
+
+	save(t, db, getFirstVault(), noteAt(n.FileStat.Path, n.Title, body+" wordzz"))
+
+	now := smallChunks(t, db, getFirstVault(), n.FileStat.Path)
+	if len(now) != 5 {
+		t.Fatalf("%d chunks carry a vector after the edit", len(now))
+	}
+	// Every chunk before the edit is the chunk it was, on the row it was on.
+	for item, row := range was[:4] {
+		if now[item] != row {
+			t.Errorf("the chunk at %d is row %d, and was row %d", item, now[item], row)
+		}
+		if !hasVector(t, db, row) {
+			t.Errorf("row %d lost its vector, and the text it holds did not change", row)
+		}
+	}
+	if now[4] == was[4] {
+		t.Errorf("the chunk the edit landed in is row %d, the row of the text before it", now[4])
+	}
+	if hasVector(t, db, now[4]) {
+		t.Error("the chunk the edit landed in carries a vector made from other text")
+	}
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 4 {
+		t.Errorf("%d vectors survived the edit, want the four chunks before it", got)
+	}
+	if requestVal := model.run(t, db, getFirstVault()); requestVal != 1 {
+		t.Errorf("editing the end of a note asked for %d vectors, want 1", requestVal)
+	}
+}
+
+func TestAChunkThatMovedInTheFileKeepsItsVector(t *testing.T) {
+	// A chunk is a place in a file, and the body of a note begins after its
+	// frontmatter. A line added to the frontmatter moves every chunk in the file
+	// and changes the text of none of them, so every row is kept and every one is
+	// moved to where its text now is.
+	ctx := t.Context()
+	db := openDB(t)
+	model := embedder{seed: 0x44}
+
+	body := wordsOf(200)
+	n := noteAt("notes/Entropy.md", "Entropy", body)
+	save(t, db, getFirstVault(), n)
+	model.run(t, db, getFirstVault())
+
+	was := smallChunks(t, db, getFirstVault(), n.FileStat.Path)
+	enclosing := largeChunk(t, db, getFirstVault(), n.FileStat.Path)
+
+	const frontmatter = 20
+	moved := n
+	moved.FileStat.Size = int64(len(body) + frontmatter)
+	save(t, db, getFirstVault(), moved)
+
+	if got := smallChunks(t, db, getFirstVault(), n.FileStat.Path); !slices.Equal(got, was) {
+		t.Errorf("the chunks are rows %v, and were rows %v", got, was)
+	}
+	if got := largeChunk(t, db, getFirstVault(), n.FileStat.Path); got != enclosing {
+		t.Errorf("the large chunk is row %d, and was row %d", got, enclosing)
+	}
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != len(was) {
+		t.Errorf("%d vectors, want the %d chunks that carry one", got, len(was))
+	}
+	if request := model.run(t, db, getFirstVault()); request != 0 {
+		t.Errorf("a note whose body did not change asked for %d vectors", request)
+	}
+
+	// Every chunk is read from where its text is now.
+	for _, row := range append(was, enclosing) {
+		p, found, err := db.ChunkFiles().Passage(ctx, getFirstVault().ID, row)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !found {
+			t.Fatalf("row %d is gone", row)
+		}
+		if p.Start < frontmatter || p.Start+p.Length > int(moved.FileStat.Size) {
+			t.Errorf("row %d is read at %d for %d, and the body begins at %d",
+				row, p.Start, p.Length, frontmatter)
+		}
+	}
+}
+
+func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
+	// A note that names no part is tiled from its first word, so a word typed
+	// half way down it moves the chunk it landed in and every chunk after that.
+	// The chunks in front of it hold the text they held.
+	db := openDB(t)
+	model := embedder{seed: 0x11}
+
+	body := wordsOf(200)
+	n := noteAt("notes/Entropy.md", "Entropy", body)
+	save(t, db, getFirstVault(), n)
+
+	if request := model.run(t, db, getFirstVault()); request != 5 {
+		t.Fatalf("a note of 200 words needs %d vectors, want 5", request)
+	}
+	was := smallChunks(t, db, getFirstVault(), n.FileStat.Path)
+
+	save(t, db, getFirstVault(), noteAt(n.FileStat.Path, n.Title, insertWordBefore(body, 96)))
+
+	now := smallChunks(t, db, getFirstVault(), n.FileStat.Path)
+	if len(now) != 5 {
+		t.Fatalf("%d chunks carry a vector after the edit", len(now))
+	}
+	// The word landed in the third chunk, which is tiled from word 80.
+	for item, row := range was[:2] {
+		if now[item] != row {
+			t.Errorf("the chunk at %d is row %d, and was row %d", item, now[item], row)
+		}
+		if !hasVector(t, db, row) {
+			t.Errorf("row %d lost its vector, and the text it holds did not change", row)
+		}
+	}
+	for pos := 2; pos < len(now); pos++ {
+		if slices.Contains(was, now[pos]) {
+			t.Errorf("the chunk at %d is row %d, the row of the text before the edit", pos, now[pos])
+		}
+		if hasVector(t, db, now[pos]) {
+			t.Errorf("the chunk at %d carries a vector made from other text", pos)
+		}
+	}
+	if requestVal := model.run(t, db, getFirstVault()); requestVal != 3 {
+		t.Errorf("editing the middle of a note asked for %d vectors, want 3", requestVal)
+	}
+}
+
+// cost is what one save of a note costs the model, and how much of what the
+// index held survived it.
+type cost struct {
+	requested, preserved, was, now int
+}
+
+func costOf(t *testing.T, before, after domain.Note) cost {
+	t.Helper()
+	db := openDB(t)
+	model := embedder{seed: 0x11}
+
+	save(t, db, getFirstVault(), before)
+	if request := model.run(t, db, getFirstVault()); request == 0 {
+		t.Fatal("the note needs no vector, so this measures nothing")
+	}
+	was := smallChunks(t, db, getFirstVault(), before.FileStat.Path)
+
+	save(t, db, getFirstVault(), after)
+	now := smallChunks(t, db, getFirstVault(), after.FileStat.Path)
+
+	count := 0
+	for _, row := range now {
+		if !slices.Contains(was, row) {
+			continue
+		}
+		count++
+		if !hasVector(t, db, row) {
+			t.Errorf("row %d kept its number and lost its vector", row)
+		}
+	}
+	return cost{requested: model.run(t, db, getFirstVault()), preserved: count, was: len(was), now: len(now)}
+}
+
+func TestAHeadingBoundsWhatAnEditRecuts(t *testing.T) {
+	// A note of 200 words under four headings, edited at four points. The same
+	// words are cut twice: once with the headings naming the sections they open,
+	// and once with nothing naming a part, where the note is one division.
+	//
+	// Every figure here is in docs/performance.md.
+	const path = "notes/Entropy.md"
+	body := createSections(192, 48)
+
+	frontmattered := parseNote(path, body)
+	frontmattered.FileStat.Size += 20
+
+	for _, edit := range []struct {
+		name           string
+		note           domain.Note
+		named, unnamed cost
+	}{
+		{
+			name:    "a line added to the frontmatter",
+			note:    frontmattered,
+			named:   cost{requested: 0, preserved: 4, was: 4, now: 4},
+			unnamed: cost{requested: 0, preserved: 5, was: 5, now: 5},
+		},
+		{
+			name:    "at the end of the body",
+			note:    parseNote(path, body+" wordzz"),
+			named:   cost{requested: 1, preserved: 4, was: 4, now: 5},
+			unnamed: cost{requested: 1, preserved: 4, was: 5, now: 5},
+		},
+		{
+			name:    "in the middle of the body",
+			note:    parseNote(path, insertWordBefore(body, 96)),
+			named:   cost{requested: 2, preserved: 3, was: 4, now: 5},
+			unnamed: cost{requested: 3, preserved: 2, was: 5, now: 5},
+		},
+		{
+			name:    "at the start of the body",
+			note:    parseNote(path, insertWordBefore(body, 0)),
+			named:   cost{requested: 2, preserved: 3, was: 4, now: 5},
+			unnamed: cost{requested: 5, preserved: 0, was: 5, now: 5},
+		},
+	} {
+		t.Run(edit.name, func(t *testing.T) {
+			if got := costOf(t, parseNote(path, body), edit.note); got != edit.named {
+				t.Errorf("with the headings as parts: %+v, want %+v", got, edit.named)
+			}
+			if got := costOf(t, noParts(parseNote(path, body)), noParts(edit.note)); got != edit.unnamed {
+				t.Errorf("with no part named: %+v, want %+v", got, edit.unnamed)
+			}
+		})
+	}
+}
+
+func TestEditingTheStartOfANoteRecutsAllOfIt(t *testing.T) {
+	// Chunks are tiled from the first word of the note, so a word inserted in front
+	// shifts every following chunk, and each needs a new vector.
+	db := openDB(t)
+	model := embedder{seed: 0x11}
+
+	body := wordsOf(200)
+	n := noteAt("notes/Entropy.md", "Entropy", body)
+	save(t, db, getFirstVault(), n)
+
+	if request := model.run(t, db, getFirstVault()); request != 5 {
+		t.Fatalf("a note of 200 words needs %d vectors, want 5", request)
+	}
+	was := smallChunks(t, db, getFirstVault(), n.FileStat.Path)
+
+	save(t, db, getFirstVault(), noteAt(n.FileStat.Path, n.Title, "wordzz "+body))
+
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
+		t.Errorf("%d vectors survived an edit at the start of the note", got)
+	}
+	now := smallChunks(t, db, getFirstVault(), n.FileStat.Path)
+	for _, row := range now {
+		if slices.Contains(was, row) {
+			t.Errorf("row %d holds text it did not hold before", row)
+		}
+	}
+	if requestVal := model.run(t, db, getFirstVault()); requestVal != len(now) {
+		t.Errorf("editing the start of a note asked for %d vectors, want its %d chunks", requestVal, len(now))
+	}
+}
+
+func TestARecutKeepsAChunkInsideALargeOneThatChanged(t *testing.T) {
+	// The large chunk covers the whole note, so its text moves on every edit and
+	// it is a new row every time. `chunks.parent_id … ON DELETE CASCADE` takes
+	// every chunk inside a large one with it, so the chunks that were kept are
+	// pointed at the new large chunk before the old one comes out.
+	db := openDB(t)
+	model := embedder{seed: 0x22}
+
+	body := wordsOf(200)
+	n := noteAt("notes/Entropy.md", "Entropy", body)
+	save(t, db, getFirstVault(), n)
+	model.run(t, db, getFirstVault())
+
+	enclosing := largeChunk(t, db, getFirstVault(), n.FileStat.Path)
+	chunkItem := smallChunks(t, db, getFirstVault(), n.FileStat.Path)[0]
+	if !hasVector(t, db, chunkItem) {
+		t.Fatal("the chunk this is about carries no vector, so it would pass either way")
+	}
+
+	save(t, db, getFirstVault(), noteAt(n.FileStat.Path, n.Title, body+" wordzz"))
+
+	now := largeChunk(t, db, getFirstVault(), n.FileStat.Path)
+	if now == enclosing {
+		t.Fatalf("the large chunk is row %d after the note was edited, so its text did not move", now)
+	}
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ?`, chunkItem); got != 1 {
+		t.Fatal("the chunk whose text did not change went with the large chunk enclosing it")
+	}
+	if !hasVector(t, db, chunkItem) {
+		t.Error("the chunk whose text did not change lost its vector")
+	}
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ? AND parent_id = ?`, chunkItem, now); got != 1 {
+		t.Error("the chunk that was kept does not sit inside the large chunk that is there now")
+	}
+}
+
+func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
+	// A hit found by words and one found by meaning name one row, so a
+	// chunk that keeps its number keeps what was indexed under it.
+	ctx := t.Context()
+	db := openDB(t)
+
+	body := wordsOf(200)
+	n := noteAt("notes/Entropy.md", "Entropy", body)
+	save(t, db, getFirstVault(), n)
+
+	chunkItem := smallChunks(t, db, getFirstVault(), n.FileStat.Path)[0]
+	// A word of the first chunk, which an edit at the other end does not reach.
+	opening := "word" + spellNumber(3)
+
+	save(t, db, getFirstVault(), noteAt(n.FileStat.Path, n.Title, body+" wordzz"))
+
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid = ?`, chunkItem); got != 1 {
+		t.Errorf("%d full-text rows for the chunk that was kept", got)
+	}
+	// One row per small chunk, and none naming a chunk that is gone.
+	chunks := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NOT NULL`)
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts`); got != chunks {
+		t.Errorf("%d rows in the full-text index for %d chunks", got, chunks)
+	}
+	if got := countRows(t, db,
+		`SELECT COUNT(*) FROM chunks_fts WHERE rowid NOT IN (SELECT id FROM chunks)`); got != 0 {
+		t.Errorf("%d full-text rows name a chunk that is gone", got)
+	}
+
+	found, err := db.ChunkSearch().FindLexical(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: opening, Kinds: nil, Limit: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) == 0 {
+		t.Fatalf("the note is not findable by %s, which is in the chunk that was kept", opening)
+	}
+	for _, p := range found {
+		if p.Source != n.FileStat.Path {
+			t.Errorf("%s answered for a word of %s", p.Source, n.FileStat.Path)
+		}
+	}
+	typed, err := db.ChunkSearch().FindLexical(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "wordzz", Kinds: nil, Limit: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(typed) == 0 {
+		t.Error("the word that was typed is in no full-text row")
+	}
+}
+
+func TestARecutStaysInsideItsVault(t *testing.T) {
+	// One database holds every vault. The two notes here are at one path and
+	// share no word, so a row that came from the wrong vault is recognizable and
+	// a cut that reached across would take the other vault's chunks with it.
+	db := openDB(t)
+	model := embedder{seed: 0x33}
+
+	mine := noteAt("notes/Entropy.md", "Entropy", wordsOf(200))
+	theirs := noteAt("notes/Entropy.md", "Quasar",
+		"quasar "+strings.ReplaceAll(wordsOf(200), "word", "other"))
+	save(t, db, getFirstVault(), mine)
+	save(t, db, getSecond(), theirs)
+	model.run(t, db, getFirstVault())
+	model.run(t, db, getSecond())
+
+	unchangedChunks := smallChunks(t, db, getSecond(), theirs.FileStat.Path)
+	if len(unchangedChunks) == 0 {
+		t.Fatal("the second vault holds no chunk that carries a vector")
+	}
+	was := chunksIn(t, db, getSecond())
+	vectors := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`)
+
+	save(t, db, getFirstVault(), noteAt(mine.FileStat.Path, mine.Title, mine.Body+" wordzz"))
+
+	for _, row := range unchangedChunks {
+		if !hasVector(t, db, row) {
+			t.Errorf("row %d of the second vault lost its vector when the first vault's note was cut", row)
+		}
+	}
+	if got := chunksIn(t, db, getSecond()); got != was {
+		t.Errorf("the second vault holds %d chunks, and held %d before the first vault's note was cut", got, was)
+	}
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vectors-1 {
+		t.Errorf("%d vectors, want %d: the one chunk the edit landed in", got, vectors-1)
+	}
+
+	checkVaultsAnswerOnlyForThemselves(t, db)
+}
+
+func locationsOf(t *testing.T, db *DB, vault domain.Vault, path string) []string {
+	t.Helper()
+	rows, err := db.read.QueryContext(t.Context(), `SELECT COALESCE(c.location, '') FROM chunks c
+	                                                JOIN sources s ON s.id = c.source_id
+	                                                JOIN vaults v ON v.id = c.vault_id
+	                                                WHERE v.identifier = ? AND s.path = ? AND c.parent_id IS NOT NULL
+	                                                ORDER BY c.start, c.length`, vault.ID, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	var out []string
+	for rows.Next() {
+		var location string
+		if err := rows.Scan(&location); err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, location)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+func TestAChunkIsNamedAfterTheSectionItWasSplitInside(t *testing.T) {
+	// A heading names the text under it, and that name is on every chunk cut
+	// there, which is what a result has to show to say where the passage is.
+	db := openDB(t)
+
+	n := parseNote("notes/Entropy.md", createSections(192, 48))
+	save(t, db, getFirstVault(), n)
+
+	want := []string{"Sectiona", "Sectionei", "Sectionjg", "Sectionbee"}
+	if got := locationsOf(t, db, getFirstVault(), n.FileStat.Path); !slices.Equal(got, want) {
+		t.Errorf("the chunks are located %v, want %v", got, want)
+	}
+}
+
+func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
+	// One large chunk encloses the whole note however many sections it holds, and
+	// a hit in any section returns the enclosing chunk for the note.
+	ctx := t.Context()
+	db := openDB(t)
+
+	body := createSections(192, 48)
+	n := parseNote("notes/Entropy.md", body)
+	save(t, db, getFirstVault(), n)
+
+	found, err := db.ChunkSearch().FindLexical(ctx, getFirstVault().ID, sourcedomain.LexicalQuery{Text: "Sectiona", Kinds: nil, Limit: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) == 0 {
+		t.Fatal("the note is not findable by \"Sectiona\", which is in its first section")
+	}
+	// The enclosing chunk is the note: it begins at the first word of the body and
+	// ends at the last.
+	p, ok, err := db.ChunkFiles().Passage(ctx, getFirstVault().ID, largeChunk(t, db, getFirstVault(), n.FileStat.Path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("the chunk enclosing the note is gone")
+	}
+	if p.Start != 0 || p.Length != len(body) {
+		t.Errorf("the enclosing chunk is at %d for %d, and the body is %d bytes", p.Start, p.Length, len(body))
+	}
+}
+
+func TestSplittingOneSectionStaysInsideItsVault(t *testing.T) {
+	// One database holds every vault. The two notes here are at one path, are cut
+	// into sections of the same shape, and share no word of prose, so a chunk that
+	// arrived from the wrong vault is recognizable and a cut that reached across
+	// would take the other vault's chunks with it.
+	db := openDB(t)
+	model := embedder{seed: 0x33}
+
+	const path = "notes/Entropy.md"
+	body := createSections(192, 48)
+	mine := parseNote(path, body)
+	theirs := parseNote(path, strings.Replace(
+		strings.ReplaceAll(body, "word", "other"), "## Sectiona", "## Quasar", 1))
+	save(t, db, getFirstVault(), mine)
+	save(t, db, getSecond(), theirs)
+	model.run(t, db, getFirstVault())
+	model.run(t, db, getSecond())
+
+	unchangedChunks := smallChunks(t, db, getSecond(), path)
+	if len(unchangedChunks) == 0 {
+		t.Fatal("the second vault holds no chunk that carries a vector")
+	}
+	was := chunksIn(t, db, getSecond())
+	vectors := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`)
+
+	// A word typed into the first section of the first vault's note.
+	save(t, db, getFirstVault(), parseNote(path, insertWordBefore(body, 0)))
+
+	for _, row := range unchangedChunks {
+		if !hasVector(t, db, row) {
+			t.Errorf("row %d of the second vault lost its vector when the first vault's note was cut", row)
+		}
+	}
+	if got := chunksIn(t, db, getSecond()); got != was {
+		t.Errorf("the second vault holds %d chunks, and held %d before the first vault's note was cut", got, was)
+	}
+	// The section the word landed in is cut into two chunks, and both of them need
+	// a vector; the sections it did not reach keep theirs.
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != vectors-1 {
+		t.Errorf("%d vectors, want %d", got, vectors-1)
+	}
+	if request := model.run(t, db, getFirstVault()); request != 2 {
+		t.Errorf("editing the first section asked for %d vectors, want 2", request)
+	}
+
+	checkVaultsAnswerOnlyForThemselves(t, db)
+}
+
+func TestTheWorstCaseIsBoundedByTheSectionAndNotByTheNote(t *testing.T) {
+	// A note of a thousand words under five headings, edited at the same four
+	// points. What an edit re-cuts is every chunk of the division it lands in: a
+	// note that names no part is one division, so a longer note has more of
+	// them, and a heading opening each section makes it the chunks of one
+	// section at any length.
+	//
+	// Every figure here is in docs/performance.md.
+	const path = "notes/Entropy.md"
+	body := createSections(1000, 200)
+
+	frontmattered := parseNote(path, body)
+	frontmattered.FileStat.Size += 20
+
+	for _, edit := range []struct {
+		name           string
+		note           domain.Note
+		named, unnamed cost
+	}{
+		{
+			name:    "a line added to the frontmatter",
+			note:    frontmattered,
+			named:   cost{requested: 0, preserved: 25, was: 25, now: 25},
+			unnamed: cost{requested: 0, preserved: 25, was: 25, now: 25},
+		},
+		{
+			name:    "at the end of the body",
+			note:    parseNote(path, body+" wordzz"),
+			named:   cost{requested: 1, preserved: 24, was: 25, now: 25},
+			unnamed: cost{requested: 1, preserved: 25, was: 25, now: 26},
+		},
+		{
+			name:    "in the middle of the body",
+			note:    parseNote(path, insertWordBefore(body, 500)),
+			named:   cost{requested: 3, preserved: 22, was: 25, now: 25},
+			unnamed: cost{requested: 14, preserved: 12, was: 25, now: 26},
+		},
+		{
+			name:    "at the start of the body",
+			note:    parseNote(path, insertWordBefore(body, 0)),
+			named:   cost{requested: 5, preserved: 20, was: 25, now: 25},
+			unnamed: cost{requested: 26, preserved: 0, was: 25, now: 26},
+		},
+	} {
+		t.Run(edit.name, func(t *testing.T) {
+			if got := costOf(t, parseNote(path, body), edit.note); got != edit.named {
+				t.Errorf("with the headings as parts: %+v, want %+v", got, edit.named)
+			}
+			if got := costOf(t, noParts(parseNote(path, body)), noParts(edit.note)); got != edit.unnamed {
+				t.Errorf("with no part named: %+v, want %+v", got, edit.unnamed)
+			}
+		})
+	}
+}
+
+func TestASectionShorterThanAChunkIsAChunkOfItsOwn(t *testing.T) {
+	// Cost of each part. A chunk is cut inside one section and never across a
+	// heading, so a note of many short sections yields many short chunks, and
+	// each needs its own vector.
+	//
+	// The figures are in docs/performance.md.
+	db := openDB(t)
+
+	body := createSections(200, 5)
+	named := parseNote("notes/Named.md", body)
+	unnamed := noParts(parseNote("notes/Unnamed.md", body))
+	save(t, db, getFirstVault(), named)
+	save(t, db, getFirstVault(), unnamed)
+
+	if got := len(smallChunks(t, db, getFirstVault(), named.FileStat.Path)); got != 40 {
+		t.Errorf("a note of forty sections is cut into %d chunks, want 40", got)
+	}
+	if got := len(smallChunks(t, db, getFirstVault(), unnamed.FileStat.Path)); got != 7 {
+		t.Errorf("the same words with no part named are cut into %d chunks, want 7", got)
+	}
+}
+
+func checkVaultsAnswerOnlyForThemselves(t *testing.T, db *DB) {
+	t.Helper()
+	for _, ask := range []struct {
+		vault    domain.Vault
+		word     string
+		isWanted bool
+	}{
+		{getFirstVault(), "wordzz", true},
+		{getSecond(), "wordzz", false},
+		{getSecond(), "quasar", true},
+		{getFirstVault(), "quasar", false},
+	} {
+		found, err := db.ChunkSearch().FindLexical(t.Context(), ask.vault.ID, sourcedomain.LexicalQuery{Text: ask.word, Kinds: nil, Limit: 10})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if (len(found) > 0) != ask.isWanted {
+			t.Errorf("%s answered %d passages for %q, want %v", ask.vault.Name, len(found), ask.word, ask.isWanted)
+		}
+	}
+}

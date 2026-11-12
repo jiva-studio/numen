@@ -12,7 +12,7 @@ import {
   extensionsCompartment,
   code,
   previewCompartment,
-  createEditable,
+  createEditableExtension,
   editableCompartment,
   getLineNumbersExtension,
   getTabSizeExtension,
@@ -26,8 +26,8 @@ import {
   languageCompartment,
   tabSizeCompartment,
   wrapCompartment,
-} from '../lib/setup'
-import { loadLanguage } from '../config/languages'
+} from './setup'
+import { loadLanguage } from '../lib/config/languages'
 import { addressOpener, addressResolver, saveHandler } from '../lib/outside'
 import { replace } from '../lib/change/replace'
 
@@ -46,7 +46,7 @@ export interface EditorProps {
   tabSize?: number | undefined
 }
 
-export interface EditorEmit {
+interface EditorEmit {
   (event: 'open', address: string): void
   (event: 'save'): void
 }
@@ -149,7 +149,8 @@ export function useEditor(options: EditorStateOptions) {
 
   watch(
     () => options.props.isReadonly,
-    (off) => view?.dispatch({ effects: editableCompartment.reconfigure(createEditable(!off)) }),
+    (off) =>
+      view?.dispatch({ effects: editableCompartment.reconfigure(createEditableExtension(!off)) }),
   )
 
   watch(

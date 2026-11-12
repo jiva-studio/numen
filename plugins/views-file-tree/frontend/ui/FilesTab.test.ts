@@ -33,43 +33,52 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 const mountFiles = async (open: readonly string[] = []) => {
   const isDone: string[] = []
-  const list = createFileTree({ list: async (folderPath: string) => target[folderPath] ?? [] })
-  const tab: FilesTabState = useFilesTab(list, {
-    ...renderDeps,
-    openEntry: (entry) => {
-      isDone.push(`lands file ${entry.path}`)
-    },
-    listItems: async () => [],
-    getMenuEntries: () => ROW_MENU,
-    runCommand: async (command, rowTarget) => {
-      isDone.push(
-        `runs ${command} ${[rowTarget.path, ...rowTarget.others].join(' ')} ${rowTarget.title}`,
-      )
-    },
-    movePath: async (from, to) => {
-      isDone.push(`moves ${from} ${to}`)
-    },
-    setDraggedPaths: (paths) => {
-      isDone.push(`drags ${paths.join(' ') || '—'}`)
-    },
-    createFolder: async (path) => {
-      isDone.push(`makes ${path}`)
-    },
-    createNote: async (folderPath) => `${folderPath}Untitled note.md`,
-    canDropData: (types) => types.includes('text/uri-list'),
-    dropData: async (folderPath, data) => {
-      isDone.push(`drops into ${folderPath || '/'} ${data['text/uri-list']}`)
-      return []
-    },
-    showError: (text) => {
-      isDone.push(`says ${text}`)
+  const listings: string[] = []
+  const list = createFileTree({
+    list: async (folderPath: string) => {
+      listings.push(folderPath)
+      return target[folderPath] ?? []
     },
   })
-  await list.openFolder(ROOT)
-  for (const folderPath of open) await list.openFolder(folderPath)
+  const tab: FilesTabState = useFilesTab(list, {
+    window: {
+      ...renderDeps,
+      openEntry: (entry) => {
+        isDone.push(`lands file ${entry.path}`)
+      },
+      setDraggedPaths: (paths) => {
+        isDone.push(`drags ${paths.join(' ') || '—'}`)
+      },
+      showError: (text) => {
+        isDone.push(`says ${text}`)
+      },
+    },
+    menu: {
+      listItems: async () => [],
+      getMenuEntries: () => ROW_MENU,
+      runCommand: async (command, rowTarget) => {
+        isDone.push(
+          `runs ${command} ${[rowTarget.path, ...rowTarget.others].join(' ')} ${rowTarget.title}`,
+        )
+        return ''
+      },
+    },
+    transfer: {
+      movePath: async (from, to) => {
+        isDone.push(`moves ${from} ${to}`)
+      },
+      canDropData: (types) => types.includes('text/uri-list'),
+      dropData: async (folderPath, data) => {
+        isDone.push(`drops into ${folderPath || '/'} ${data['text/uri-list']}`)
+        return []
+      },
+    },
+  })
+  await list.folders.openFolder(ROOT)
+  for (const folderPath of open) await list.folders.openFolder(folderPath)
   const window = mount(FilesTab, { props: { state: tab } })
   await settle()
-  return { recorded: isDone, list, tab, window }
+  return { recorded: isDone, listings, list, tab, window }
 }
 
 const getRowIds = (rows: readonly { id: string; rows?: readonly unknown[] }[]): unknown =>
@@ -123,6 +132,30 @@ describe('the tree the tab draws', () => {
   })
 })
 
+describe('the window regaining focus', () => {
+  it('lists the open folders again', async () => {
+    const { listings, window } = await mountFiles(['physics'])
+    listings.length = 0
+
+    globalThis.dispatchEvent(new Event('focus'))
+    await settle()
+
+    expect([...listings].sort()).toStrictEqual([ROOT, 'physics'].sort())
+    window.unmount()
+  })
+
+  it('does not list them after the tab is unmounted', async () => {
+    const { listings, window } = await mountFiles(['physics'])
+    window.unmount()
+    listings.length = 0
+
+    globalThis.dispatchEvent(new Event('focus'))
+    await settle()
+
+    expect(listings).toStrictEqual([])
+  })
+})
+
 describe('a row the tree reports', () => {
   it('takes the person to the note it remains for', async () => {
     const { recorded, window } = await mountFiles()
@@ -169,7 +202,7 @@ describe('a row the tree reports', () => {
     window.findComponent(Tree).vm.$emit('select', ['Entropy.md', 'Cover.png'])
     await settle()
 
-    expect(list.selectedPaths.value).toStrictEqual(['Entropy.md', 'Cover.png'])
+    expect(list.state.selectedPaths.value).toStrictEqual(['Entropy.md', 'Cover.png'])
     expect(window.findComponent(Tree).props('selected')).toStrictEqual(['Entropy.md', 'Cover.png'])
   })
 
@@ -179,7 +212,7 @@ describe('a row the tree reports', () => {
     window.findComponent(Tree).vm.$emit('remove', ['Entropy.md', 'Cover.png'])
     await settle()
 
-    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:file.remove Entropy.md Cover.png Entropy.md'])
   })
 
   it('is filed under the name that was typed over it', async () => {
@@ -278,7 +311,7 @@ describe('the menu on a row', () => {
     window.findComponent(Menu).vm.$emit('choose', TRASH.key)
     await settle()
 
-    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:file.remove Entropy.md Cover.png Entropy.md'])
     expect(window.findComponent(Menu).exists()).toBe(false)
   })
 })
@@ -291,20 +324,24 @@ describe('a folder that could not be read', () => {
       },
     })
     const tab: FilesTabState = useFilesTab(list, {
-      ...renderDeps,
-      openEntry: () => undefined,
-      listItems: async () => [],
-      getMenuEntries: () => [],
-      runCommand: async () => undefined,
-      movePath: async () => undefined,
-      setDraggedPaths: () => undefined,
-      createFolder: async () => undefined,
-      createNote: async () => '',
-      canDropData: () => false,
-      dropData: async () => [],
-      showError: () => undefined,
+      window: {
+        ...renderDeps,
+        openEntry: () => undefined,
+        setDraggedPaths: () => undefined,
+        showError: () => undefined,
+      },
+      menu: {
+        listItems: async () => [],
+        getMenuEntries: () => [],
+        runCommand: async () => '',
+      },
+      transfer: {
+        movePath: async () => undefined,
+        canDropData: () => false,
+        dropData: async () => [],
+      },
     })
-    await list.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     const window = mount(FilesTab, { props: { state: tab } })
     await settle()
@@ -335,5 +372,59 @@ describe('an address dropped on the files tab', () => {
     const dataTransfer = { types: ['Files'], getData: () => '' }
     await window.find('.files').trigger('drop', { dataTransfer })
     expect(recorded.some((one) => one.startsWith('drops into'))).toBe(false)
+  })
+})
+
+describe('the empty message of the tab', () => {
+  const mountOver = (list: (folderPath: string) => Promise<readonly Entry[]>) => {
+    const tree = createFileTree({ list })
+    const tab = useFilesTab(tree, {
+      window: {
+        ...renderDeps,
+        openEntry: () => undefined,
+        setDraggedPaths: () => undefined,
+        showError: () => undefined,
+      },
+      menu: {
+        listItems: async () => [],
+        getMenuEntries: () => ROW_MENU,
+        runCommand: async () => '',
+      },
+      transfer: {
+        movePath: async () => undefined,
+        canDropData: () => false,
+        dropData: async () => [],
+      },
+    })
+    const window = mount(FilesTab, { props: { state: tab } })
+    return { tree, window }
+  }
+
+  it('is absent while the first listing is still loading', async () => {
+    const { tree, window } = mountOver(() => new Promise(() => undefined))
+    tree.folders.openFolder(ROOT).catch(() => undefined)
+    await settle()
+
+    expect(window.text()).not.toContain('No files in this vault')
+  })
+
+  it('shows the entries once the first listing is returned', async () => {
+    let resolve: (entries: readonly Entry[]) => void = () => undefined
+    const { tree, window } = mountOver(() => new Promise((isDone) => (resolve = isDone)))
+    const opening = tree.folders.openFolder(ROOT)
+    resolve([file('Entropy.md')])
+    await opening
+    await settle()
+
+    expect(window.text()).toContain('Entropy.md')
+    expect(window.text()).not.toContain('No files in this vault')
+  })
+
+  it('shows once the first listing is returned with no entries', async () => {
+    const { tree, window } = mountOver(async () => [])
+    await tree.folders.openFolder(ROOT)
+    await settle()
+
+    expect(window.text()).toContain('No files in this vault')
   })
 })

@@ -7,6 +7,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { undo } from '@codemirror/commands'
+import { syntaxTree } from '@codemirror/language'
 import { EditorSelection, StateField, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import Editor from './Editor.vue'
@@ -402,27 +403,21 @@ describe('what the caller draws into the editor', () => {
 })
 
 describe('a document written in one language', () => {
-  it('is read as that language, and set in the face code is set in', async () => {
-    const editor = mount(Editor, {
-      props: { modelValue: '{ "agent": { "use": "claude" } }', isLive: false, language: 'json' },
-      attachTo: document.body,
+  it('is read as that language once the language is loaded', async () => {
+    const { view } = editor({
+      modelValue: '{ "agent": { "use": "claude" } }',
+      isLive: false,
+      language: 'json',
     })
     // The language is loaded when it is first wanted.
-    const viewElement = editor.get('.cm-editor').element
     await vi.waitFor(() => {
-      // The face is the token the editor's theme names, not a family named here.
-      expect(getComputedStyle(viewElement).fontFamily).toBe('var(--editor-mono)')
+      expect(syntaxTree(view.state).topNode.name).toBe('JsonText')
     })
-
-    editor.unmount()
   })
 
-  it('is markdown, set in the face prose is set in, where none is named', () => {
-    const editor = mount(Editor, { props: { modelValue: '# A heading' }, attachTo: document.body })
-    expect(getComputedStyle(editor.get('.cm-editor').element).fontFamily).toBe(
-      'var(--numen-font-sans)',
-    )
-    editor.unmount()
+  it('is markdown where no language is named', () => {
+    const { view } = editor({ modelValue: '# A heading' })
+    expect(syntaxTree(view.state).topNode.name).toBe('Document')
   })
 })
 

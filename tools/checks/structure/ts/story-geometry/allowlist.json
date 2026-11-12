@@ -1,0 +1,98 @@
+[
+  {
+    "file": "apps/desktop/editor/src/features/file-conflict/ui/UnsavedChangesPrompt.stories.ts",
+    "reason": "the prompt for two notes stays inside the viewport"
+  },
+  {
+    "file": "apps/desktop/editor/src/pages/settings/ui/connections/ConnectionsPage.stories.ts",
+    "reason": "the list stays inside its column at a narrow width and the dialog opens inside the viewport"
+  },
+  {
+    "file": "apps/desktop/editor/src/pages/settings/ui/plugins/connection-rows/ConnectionRows.stories.ts",
+    "reason": "the rows stay inside their column at a narrow width and a row dragged by its grip to the end of the list is moved there"
+  },
+  {
+    "file": "libs/ui/components/src/features/tree/ui/Tree.stories.ts",
+    "reason": "a row dragged over another is dropped before or after it by where the pointer is in the row"
+  },
+  {
+    "file": "libs/ui/components/src/shared/ui/drag-preview/DragPreview.stories.ts",
+    "reason": "the preview follows the pointer and lets it through to the element below"
+  },
+  {
+    "file": "libs/ui/components/src/shared/ui/menu/Menu.stories.ts",
+    "reason": "a menu opens inside the viewport, scrolls instead of clipping and puts its submenu beside the row that opened it"
+  },
+  {
+    "file": "libs/ui/components/src/shared/ui/searchable-list/SearchableList.stories.ts",
+    "reason": "the active option of a long list is scrolled into view inside the list"
+  },
+  {
+    "file": "libs/ui/workbench/src/features/palette/ui/Palette.stories.ts",
+    "reason": "the last row of a far too long list is reachable inside the list"
+  },
+  {
+    "file": "libs/ui/workbench/src/features/workspace/ui/WorkspaceLayout.stories.ts",
+    "reason": "a pane dragged to an edge of the workspace lands on that side"
+  },
+  {
+    "file": "libs/ui/workbench/src/features/workspace/ui/branch/WorkspaceBranch.stories.ts",
+    "reason": "nested panes stay in order and keep the sizes a divider gave them"
+  },
+  {
+    "file": "libs/ui/workbench/src/screens/Window.stories.ts",
+    "reason": "the parts of the window follow each other in the order the person reads them"
+  },
+  {
+    "file": "plugins/notes/frontend/editor/ui/Editor.stories.ts",
+    "reason": "a position in the text can be reached by the scroll of the editor"
+  },
+  {
+    "file": "plugins/readers-epub/frontend/book/ui/Book.stories.ts",
+    "reason": "a run of text is shown inside the page and stays so when the page is resized"
+  },
+  {
+    "file": "plugins/readers-epub/frontend/book/ui/BookSectionTurns.stories.ts",
+    "reason": "a section turn settles in place before the story reads the page"
+  },
+  {
+    "file": "plugins/readers-epub/frontend/book/ui/BookSections.stories.ts",
+    "reason": "a section settles in place before the story reads the page"
+  },
+  {
+    "file": "plugins/readers-epub/frontend/book/ui/book-contents/BookContents.stories.ts",
+    "reason": "the contents scroll to the entry where the reading is"
+  },
+  {
+    "file": "plugins/readers-pdf/frontend/reader/ui/Reader.stories.ts",
+    "reason": "a sheet opens inside the free space of the reader"
+  },
+  {
+    "file": "plugins/views-agent-chat/frontend/thread/ui/Thread.stories.ts",
+    "reason": "a selection of words is found by where its words are drawn"
+  },
+  {
+    "file": "plugins/views-file-tree/frontend/ui/FilesTab.stories.ts",
+    "reason": "the menu of a row opens at the row"
+  },
+  {
+    "file": "plugins/views-flashcards-studio/frontend/preset/ui/PresetTab.stories.ts",
+    "reason": "the knob follows the pointer along the track"
+  },
+  {
+    "file": "plugins/views-flashcards-studio/frontend/review/ui/heatmap/Heatmap.stories.ts",
+    "reason": "the tooltip of a day stays inside the view at every edge"
+  },
+  {
+    "file": "plugins/views-plex-graph/frontend/plex/ui/Plex.stories.ts",
+    "reason": "a link is made by dragging from a node to another and the nodes keep their place"
+  },
+  {
+    "file": "plugins/views-plex-graph/frontend/plex/ui/PlexMap.stories.ts",
+    "reason": "the menu of the map opens inside the view and the suspended words keep their order"
+  },
+  {
+    "file": "plugins/views-title-bar/frontend/ui/TitleBar.stories.ts",
+    "reason": "the window controls stay inside the bar for a long vault name and the popover opens under the bar"
+  }
+]

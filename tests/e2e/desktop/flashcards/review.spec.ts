@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { expect, test, type Page } from '../tests/support/certificate.js'
 import { STAND_IN_REPLY } from '../scripts/stand-ins.mjs'
+import type { JsonObject } from '../tests/support/json.js'
 
 const vault = process.env.NUMEN_FLASHCARDS_VAULT ?? ''
 const answers = path.join(vault, '.numen', 'md.numen.views.flashcards.studio')
@@ -134,7 +135,7 @@ test('Undo writes a line taking the last answer back, and shows its card again',
   await expect(page.getByRole('button', { name: /Again/ })).toBeVisible()
 })
 
-function readFrame(body: Buffer): Record<string, unknown> {
+function readFrame(body: Buffer): JsonObject {
   return JSON.parse(body.subarray(5, 5 + body.readUInt32BE(1)).toString('utf8'))
 }
 
@@ -142,7 +143,7 @@ function readFrame(body: Buffer): Record<string, unknown> {
 test('the review mounts the conversation of the agent chat plugin in its agent panel', async ({
   page,
 }) => {
-  const requests: Record<string, unknown>[] = []
+  const requests: JsonObject[] = []
   page.on('request', (request) => {
     if (request.url().endsWith('/numen.v1.AgentService/AskAgent')) {
       requests.push(readFrame(request.postDataBuffer() ?? Buffer.alloc(5)))

@@ -3,38 +3,27 @@
  * The views a plugin's frontend registered for its settings form, drawn at the top of the form
  * in the order the manifest declares them. A declared view without a registration draws nothing.
  */
-import { computed } from 'vue'
-import type { SettingsTabState } from '../../types'
-import { createSettingFields, type PluginInfo } from '@/entities/settings'
-import { getRegisteredViews, getSettingValues } from '../../lib/settingsViews'
+import type { InstallationSettings, PluginFieldsHost } from '../../types'
+import type { PluginInfo } from '@/entities/settings'
+import { useSettingsViews } from '../../model/useSettingsViews'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  state: SettingsTabState
+  settings: InstallationSettings
+  host: Pick<PluginFieldsHost, 'getSettingsViews'>
   plugin: PluginInfo
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
-const fields = createSettingFields(() => props.state.installation)
-const views = computed(() =>
-  getRegisteredViews(
-    props.plugin.settingsViews ?? [],
-    installation.value.getSettingsViews?.(props.plugin.id) ?? new Map(),
-  ),
-)
-const values = computed(() =>
-  getSettingValues(
-    props.plugin,
-    (key) => installation.value.getSetting([props.plugin.id, ...key.split('.')]),
-    (key) => installation.value.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false,
-  ),
-)
-
-/* -------------------------------- Handlers -------------------------------- */
-function onSettingUpdate(key: string, value: unknown): void {
-  fields.setValue([props.plugin.id, ...key.split('.')], value)
-}
+const {
+  views,
+  values,
+  setSetting: onSettingUpdate,
+} = useSettingsViews({
+  getSettings: () => props.settings,
+  getHost: () => props.host,
+  getPlugin: () => props.plugin,
+})
 </script>
 
 <template>

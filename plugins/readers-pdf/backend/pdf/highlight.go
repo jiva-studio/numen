@@ -188,7 +188,6 @@ type pdfiumMeasurer struct {
 	worker pdfium.Pdfium
 }
 
-// GetPageSize gets the size of a page as it is drawn.
 func (m pdfiumMeasurer) GetPageSize(request *requests.GetPageSize) (*responses.GetPageSize, error) {
 	return m.worker.GetPageSize(request)
 }

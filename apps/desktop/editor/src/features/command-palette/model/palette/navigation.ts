@@ -2,16 +2,12 @@
  * Step navigation, stack tracking, and presentation for command palette steps.
  */
 import { computed, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
-import { getRenamedPath, type PathRename } from '@/shared/paths'
+import { getRenamedPath, type PathRename } from '@/shared/lib/paths'
 import type { Vault } from '@/entities/vault'
 import { getPrompt, type PendingStep } from '../../lib/step/step'
-import type {
-  CommandInvocation,
-  CommandTarget,
-  NoteLookup,
-  PaletteLists,
-  PromptStep,
-} from '../../types'
+import type { NoteLookup, PaletteLists } from '../../types'
+import type { Command, PromptStep } from '@/entities/command'
+import type { CommandInvocation, CommandTarget } from '@/shared/model/command'
 import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
 
@@ -32,7 +28,15 @@ export interface PaletteStepsOptions {
   readonly onLights: (item: string) => void
   readonly onLists: () => void
   readonly onClose: () => void
+}
+
+/** What choosing in a step reaches: the invocation it makes and the steps it pushes and pops. */
+export interface StepChoiceDeps {
   readonly invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
+  readonly lists: PaletteLists
+  readonly text: Ref<string>
+  readonly stack: { readonly pushStep: (step: PendingStep) => void; readonly popStep: () => void }
+  readonly getStepTitle: (step: PendingStep) => string
 }
 
 interface StepActionDeps {
@@ -109,18 +113,33 @@ function resolveConfirmationAction(
     : null
 }
 
+/** The index of the first prompt from `from` on whose argument has no value yet, or -1. */
+export function findUnsuppliedPrompt(
+  command: Pick<Command, 'prompts'>,
+  from: number,
+  values: Readonly<Record<string, string>>,
+): number {
+  const prompts = command.prompts ?? []
+  for (let index = from; index < prompts.length; index += 1) {
+    const name = prompts[index]?.name
+    if (name !== undefined && !(name in values)) return index
+  }
+  return -1
+}
+
 function resolveArgumentAction(step: PendingStep, deps: StepActionDeps): CommandInvocation | null {
   const prompt = getPrompt(step)
   if (!prompt) return null
   const value = deps.text.value.trim()
   if (!value && prompt.isRequired) return null
   const values = value ? { ...step.values, [prompt.name]: value } : { ...step.values }
-  const promptIndex = (step.promptIndex ?? 0) + 1
-  if (promptIndex < (step.command.prompts?.length ?? 0)) {
+  const promptIndex = findUnsuppliedPrompt(step.command, (step.promptIndex ?? 0) + 1, values)
+  if (promptIndex >= 0) {
     deps.pushStep({ step: 'arguments', command: step.command, on: step.on, promptIndex, values })
     return null
   }
-  return { ...deps.invocation(step.command.id, step.on), values }
+  const made = deps.invocation(step.command.id, step.on)
+  return { ...made, values: { ...made.values, ...values } }
 }
 
 function resolveStepAction(
@@ -218,7 +237,7 @@ function createStepStack(options: {
 }
 
 export function createPaletteSteps(options: PaletteStepsOptions) {
-  const { words, lists, knows, text, onDrop, onLights, onLists, onClose, invocation } = options
+  const { words, lists, knows, text, onDrop, onLights, onLists, onClose } = options
   const steps = shallowRef<readonly PendingStep[]>([])
   const here = computed<PendingStep | null>(() => steps.value.at(-1) ?? null)
 
@@ -234,7 +253,44 @@ export function createPaletteSteps(options: PaletteStepsOptions) {
     })
   }
 
-  const chooseInStep = (
+  return {
+    steps,
+    here,
+    naming: { getStepTitle, getStepLabel },
+    position: computedFields,
+    stack: {
+      pushStep,
+      popStep,
+      reset: () => {
+        steps.value = []
+      },
+    },
+    moves: {
+      applyRenames,
+      leaveStep: () => (here.value ? popStep() : onClose()),
+      goBack: (): boolean => {
+        if (here.value) {
+          popStep()
+          return false
+        }
+        onClose()
+        return true
+      },
+    },
+  }
+}
+
+/** Carries out the choice of a row in a step: the invocation it makes, or the step it moves to. */
+export function createStepChoice(deps: StepChoiceDeps) {
+  const actionDeps: StepActionDeps = {
+    invocation: deps.invocation,
+    lists: deps.lists,
+    text: deps.text,
+    pushStep: deps.stack.pushStep,
+    popStep: deps.stack.popStep,
+    getStepTitle: deps.getStepTitle,
+  }
+  return (
     step: PendingStep,
     item: string,
     ...[action, found, vaults, isAside]: [
@@ -244,33 +300,5 @@ export function createPaletteSteps(options: PaletteStepsOptions) {
       isAside: (vault: Vault) => boolean,
     ]
   ): CommandInvocation | null =>
-    resolveStepAction(
-      step,
-      { item, action, found, vaults, isAside },
-      { invocation, pushStep, popStep, lists, text, getStepTitle },
-    )
-
-  return {
-    steps,
-    here,
-    getStepTitle,
-    getStepLabel,
-    ...computedFields,
-    pushStep,
-    popStep,
-    reset: () => {
-      steps.value = []
-    },
-    applyRenames,
-    leaveStep: () => (here.value ? popStep() : onClose()),
-    goBack: (): boolean => {
-      if (here.value) {
-        popStep()
-        return false
-      }
-      onClose()
-      return true
-    },
-    chooseInStep,
-  }
+    resolveStepAction(step, { item, action, found, vaults, isAside }, actionDeps)
 }

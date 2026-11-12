@@ -6,8 +6,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/document"
 )
 
 func TestPdfServerVaultBoundary(t *testing.T) {
@@ -21,11 +26,11 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	outsidePath := filepath.Join(outsideDir, "outside.pdf")
 	writeFile(t, outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
 
-	documents := NewDocumentServer(files, hosttest.NewTexts("vault", pluginID), newTestWorkers(t))
+	documents := newDocumentServer(t, files)
 	ctx := t.Context()
 
 	// 1. GetDocument outside vault -> PermissionDenied
-	_, err := documents.GetDocument(ctx, GetDocumentRequest{
+	_, err := documents.GetDocument(ctx, api.GetDocumentRequest{
 		Path: outsidePath,
 	})
 	if err == nil || codeOf(err) != server.CodePermissionDenied {
@@ -33,7 +38,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	}
 
 	// 4. Traversal path -> PermissionDenied
-	_, err = documents.GetDocument(ctx, GetDocumentRequest{
+	_, err = documents.GetDocument(ctx, api.GetDocumentRequest{
 		Path: filepath.Join(vaultDir, "..", "outside.pdf"),
 	})
 	if err == nil || codeOf(err) != server.CodePermissionDenied {
@@ -41,7 +46,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	}
 
 	// 5. GetHighlights outside vault -> PermissionDenied
-	_, err = documents.GetHighlights(ctx, GetHighlightsRequest{
+	_, err = documents.GetHighlights(ctx, api.GetHighlightsRequest{
 		Path: outsidePath,
 	})
 	if err == nil || codeOf(err) != server.CodePermissionDenied {
@@ -49,7 +54,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	}
 
 	// 6. Double-dot filename inside vault -> check passes (does not return PermissionDenied)
-	_, err = documents.GetDocument(ctx, GetDocumentRequest{
+	_, err = documents.GetDocument(ctx, api.GetDocumentRequest{
 		Path: "a..b.pdf",
 	})
 	if codeOf(err) == server.CodePermissionDenied {
@@ -61,7 +66,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	if err := os.Symlink(filepath.Join(outsideDir, "missing.pdf"), brokenLink); err != nil {
 		t.Fatal(err)
 	}
-	_, err = documents.GetDocument(ctx, GetDocumentRequest{
+	_, err = documents.GetDocument(ctx, api.GetDocumentRequest{
 		Path: brokenLink,
 	})
 	if err == nil || codeOf(err) != server.CodePermissionDenied {
@@ -71,17 +76,18 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 }
 
 func TestDocumentServerEmptyPath(t *testing.T) {
-	documents := NewDocumentServer(hosttest.New("vault"), hosttest.NewTexts("vault", pluginID), newTestWorkers(t))
+	vault := hosttest.New("vault")
+	documents := newDocumentServer(t, vault)
 	ctx := t.Context()
 
 	// 1. GetDocument with empty path
-	_, err := documents.GetDocument(ctx, GetDocumentRequest{Path: ""})
+	_, err := documents.GetDocument(ctx, api.GetDocumentRequest{Path: ""})
 	if err == nil || codeOf(err) != server.CodeInvalidArgument {
 		t.Fatalf("expected invalid_argument for GetDocument with empty path, got %v", err)
 	}
 
 	// 4. GetHighlights with empty path
-	_, err = documents.GetHighlights(ctx, GetHighlightsRequest{Path: ""})
+	_, err = documents.GetHighlights(ctx, api.GetHighlightsRequest{Path: ""})
 	if err == nil || codeOf(err) != server.CodeInvalidArgument {
 		t.Fatalf("expected invalid_argument for GetHighlights with empty path, got %v", err)
 	}
@@ -99,4 +105,17 @@ func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
 	if err := os.WriteFile(path, content, perm); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func newReader(t *testing.T, vault *hosttest.Vault, texts *hosttest.Texts) *document.Reader {
+	t.Helper()
+	return document.NewReader(
+		func(id domain.VaultID) host.FileReader { return vault.With(id) },
+		func(id domain.VaultID) document.LiveTexts { return texts.With(id) },
+		testsupport.NewWorkers(t))
+}
+
+func newDocumentServer(t *testing.T, vault *hosttest.Vault) *DocumentServer {
+	t.Helper()
+	return NewDocumentServer(newReader(t, vault, hosttest.NewTexts("vault", testsupport.PluginID)))
 }

@@ -1,0 +1,27 @@
+package query
+
+import (
+	"context"
+
+	"github.com/jiva-studio/numen/libs/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+)
+
+// IsVaultIndexed reports whether the index already contains a vault.
+type IsVaultIndexed struct {
+	queries noteport.VaultHolds
+}
+
+func NewIsVaultIndexed(queries noteport.VaultHolds) *IsVaultIndexed {
+	return &IsVaultIndexed{queries: queries}
+}
+
+// Execute returns false for a build with no index and for an index error.
+func (u *IsVaultIndexed) Execute(ctx context.Context, v domain.Vault) bool {
+	if u == nil || u.queries == nil {
+		return false
+	}
+	target, err := u.queries.Has(ctx, v.ID)
+	return err == nil && target
+}

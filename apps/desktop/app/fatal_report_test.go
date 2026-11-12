@@ -9,18 +9,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/index"
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
 // What stopped the application is reported in a window, with the state of the
 // installation it found.
 func TestError_MessageContainsFound(t *testing.T) {
 	pos := filepath.Join(t.TempDir(), "index.db")
-	cfg := container.NewConfig(container.Config{IndexPath: pos})
+	cfg := container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: pos},
+	})
 
-	page, err := fatalReport{}.page(cfg, settings.GetTextScaleBounds().Check("appearance.textScale", 4))
+	page, err := fatalReport{}.page(cfg, container.CheckTextScale("appearance.textScale", 4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +44,9 @@ func TestError_MessageContainsFound(t *testing.T) {
 
 // An error this build has no further information about is still reported.
 func TestError_AdditionalDetails(t *testing.T) {
-	page, err := fatalReport{}.page(container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")}),
+	page, err := fatalReport{}.page(container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "i.db")},
+	}),
 		errors.New("the settings could not be read"))
 	if err != nil {
 		t.Fatal(err)
@@ -53,7 +58,9 @@ func TestError_AdditionalDetails(t *testing.T) {
 
 // A message shown to the user must not render markup the user did not write.
 func TestError_StripsMarkup(t *testing.T) {
-	page, err := fatalReport{}.page(container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")}),
+	page, err := fatalReport{}.page(container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "i.db")},
+	}),
 		errors.New(`<script>alert("x")</script>`))
 	if err != nil {
 		t.Fatal(err)
@@ -103,33 +110,43 @@ func getStoppings(t *testing.T) []stopping {
 	return []stopping{
 		{
 			name: "an index that is not a database",
-			cfg:  container.NewConfig(container.Config{IndexPath: corrupt}),
-			why:  openIndex(t, corrupt),
+			cfg: container.NewConfig(container.Config{
+				Paths: container.Paths{IndexPath: corrupt},
+			}),
+			why: openIndex(t, corrupt),
 		},
 		{
 			name: "an index path that is a folder",
-			cfg:  container.NewConfig(container.Config{IndexPath: folder}),
-			why:  openIndex(t, folder),
+			cfg: container.NewConfig(container.Config{
+				Paths: container.Paths{IndexPath: folder},
+			}),
+			why: openIndex(t, folder),
 		},
 		{
 			name: "an index folder nobody may write in",
-			cfg:  container.NewConfig(container.Config{IndexPath: filepath.Join(noWrite, "index.db")}),
-			why:  openIndex(t, filepath.Join(noWrite, "index.db")),
+			cfg: container.NewConfig(container.Config{
+				Paths: container.Paths{IndexPath: filepath.Join(noWrite, "index.db")},
+			}),
+			why: openIndex(t, filepath.Join(noWrite, "index.db")),
 		},
 		{
 			name: "a settings file that is not JSON",
-			cfg:  container.NewConfig(container.Config{SettingsPath: unreadable}),
-			why:  read(t, unreadable),
+			cfg: container.NewConfig(container.Config{
+				Paths: container.Paths{SettingsPath: unreadable},
+			}),
+			why: read(t, unreadable),
 		},
 		{
 			name: "a size the settings file does not take",
-			cfg:  container.NewConfig(container.Config{SettingsPath: unreadable}),
-			why:  settings.GetTextScaleBounds().Check("appearance.textScale", 4),
+			cfg: container.NewConfig(container.Config{
+				Paths: container.Paths{SettingsPath: unreadable},
+			}),
+			why: container.CheckTextScale("appearance.textScale", 4),
 		},
 		{
 			name: "a size the command line does not take",
 			cfg:  container.NewConfig(container.Config{}),
-			why:  settings.GetTextScaleBounds().Check("-text-scale", 4),
+			why:  container.CheckTextScale("-text-scale", 4),
 		},
 	}
 }
@@ -148,7 +165,7 @@ func openIndex(t *testing.T, path string) error {
 
 func read(t *testing.T, path string) error {
 	t.Helper()
-	target := container.DefaultSettings()
+	target := settings.DefaultFile()
 	err := settings.NewFiles().OpenAt(path, &target)
 	if err == nil {
 		t.Fatalf("%s was read as settings", path)
@@ -244,17 +261,23 @@ func TestFatalReport_DistinguishesIndexFaults(t *testing.T) {
 		t.Errorf("corrupt sentence = %q", corrupt.Sentence)
 	}
 
-	otherOnFolder := getIndexFatalReport(container.Config{IndexPath: t.TempDir()}, 1, errors.New("other sqlite error"))
+	otherOnFolder := getIndexFatalReport(container.Config{
+		Paths: container.Paths{IndexPath: t.TempDir()},
+	}, 1, errors.New("other sqlite error"))
 	if otherOnFolder.Sentence != "The index can't be opened." || otherOnFolder.Remedy == "" || otherOnFolder.Error != "other sqlite error" {
 		t.Errorf("otherOnFolder = %+v", otherOnFolder)
 	}
 }
 
 func TestGetSettingsPathResolvesConfiguredAndDefaultPaths(t *testing.T) {
-	if got := getSettingsPath(container.Config{SettingsPath: "/custom/settings.json", RegistryPath: "/reg/vaults.json"}); got != "/custom/settings.json" {
+	if got := getSettingsPath(container.Config{
+		Paths: container.Paths{SettingsPath: "/custom/settings.json", RegistryPath: "/reg/vaults.json"},
+	}); got != "/custom/settings.json" {
 		t.Errorf("got %q, want /custom/settings.json", got)
 	}
-	if got := getSettingsPath(container.Config{RegistryPath: "/reg/vaults.json"}); got != filepath.Join("/reg", "numen.json") {
+	if got := getSettingsPath(container.Config{
+		Paths: container.Paths{RegistryPath: "/reg/vaults.json"},
+	}); got != filepath.Join("/reg", "numen.json") {
 		t.Errorf("got %q, want /reg/numen.json", got)
 	}
 	t.Setenv("XDG_CONFIG_HOME", "/cfg")
@@ -271,12 +294,12 @@ func TestGetSettingsPathResolvesConfiguredAndDefaultPaths(t *testing.T) {
 // A number a size does not accept is answered where it was written: the field in
 // the file, or the flag on the command line.
 func TestSizeResponse_MatchingOffset(t *testing.T) {
-	file := getFatalReport(container.NewConfig(container.Config{}), settings.GetTextScaleBounds().Check("appearance.textScale", 4))
+	file := getFatalReport(container.NewConfig(container.Config{}), container.CheckTextScale("appearance.textScale", 4))
 	if !strings.Contains(file.Remedy, "appearance.textScale") {
 		t.Errorf("a size in the file is answered with %q", file.Remedy)
 	}
 
-	line := getFatalReport(container.NewConfig(container.Config{}), settings.GetTextScaleBounds().Check("-text-scale", 4))
+	line := getFatalReport(container.NewConfig(container.Config{}), container.CheckTextScale("-text-scale", 4))
 	if !strings.Contains(line.Remedy, "-text-scale") {
 		t.Errorf("a size on the command line is answered with %q", line.Remedy)
 	}
@@ -284,7 +307,7 @@ func TestSizeResponse_MatchingOffset(t *testing.T) {
 
 // A vault named on the command line that the registry does not hold is reported by its name, without the Go error chain.
 func TestFatalReport_UnknownVault(t *testing.T) {
-	why := fmt.Errorf("open vault: %w", &container.UnknownVaultError{Name: "/home/someone/Notes"})
+	why := fmt.Errorf("open vault: %w", &registry.UnknownError{Name: "/home/someone/Notes"})
 	response := getFatalReport(container.NewConfig(container.Config{}), why)
 
 	if response.Heading != startingAtAll {

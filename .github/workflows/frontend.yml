@@ -52,31 +52,31 @@ jobs:
         run: |
           npm run lint --prefix apps/desktop/editor
           npm run lint --prefix apps/desktop/flashcards
-          npm run lint --prefix libs/ui/shell
-          npm run lint --prefix libs/core-client
-          npm run lint --prefix libs/plugin-host-ts
-          npm run lint --prefix libs/plugin-manager
+          npm run lint --prefix libs/ui/workbench
+          npm run lint --prefix libs/core/client
+          npm run lint --prefix libs/plugin/loader
+          npm run lint --prefix libs/plugin/manager
           npm run lint --prefix tests/e2e/desktop
-          (cd libs/plugin-sdk-ts && ../../node_modules/.bin/eslint .)
+          (cd libs/plugin/sdk-ts && ../../../node_modules/.bin/eslint .)
 
       - name: Typecheck screens and SDK
         run: |
-          npm run typecheck --prefix libs/plugin-sdk-ts
-          npm run typecheck --prefix libs/core-client
-          npm run typecheck --prefix libs/ui/shell
-          npm run typecheck --prefix libs/plugin-host-ts
-          npm run typecheck --prefix libs/plugin-manager
+          npm run typecheck --prefix libs/plugin/sdk-ts
+          npm run typecheck --prefix libs/core/client
+          npm run typecheck --prefix libs/ui/workbench
+          npm run typecheck --prefix libs/plugin/loader
+          npm run typecheck --prefix libs/plugin/manager
           npm run typecheck --prefix apps/desktop/editor
           npm run typecheck --prefix apps/desktop/flashcards
 
       - name: Run frontend tests
         run: |
-          npm test --prefix libs/plugin-sdk-ts
-          npm test --prefix libs/core-client
-          npm run test:unit --prefix libs/ui/shell -- --coverage
-          npm run test:stories --prefix libs/ui/shell
-          npm test --prefix libs/plugin-host-ts
-          npm test --prefix libs/plugin-manager
+          npm test --prefix libs/plugin/sdk-ts
+          npm test --prefix libs/core/client
+          npm run test:unit --prefix libs/ui/workbench -- --coverage
+          npm run test:stories --prefix libs/ui/workbench
+          npm test --prefix libs/plugin/loader
+          npm test --prefix libs/plugin/manager
           npm run test:unit --prefix apps/desktop/editor -- --coverage
           npm run test:stories --prefix apps/desktop/editor
           npm run test:unit --prefix apps/desktop/flashcards -- --coverage
@@ -99,12 +99,12 @@ jobs:
       - uses: ./.github/actions/install-node-modules
 
       - name: Lint components
-        run: npm run lint --prefix libs/ui/core
+        run: npm run lint --prefix libs/ui/components
 
       - uses: ./.github/actions/build-ui
 
       - name: Run unit tests
-        run: npm run test:unit --prefix libs/ui/core -- --coverage
+        run: npm run test:unit --prefix libs/ui/components -- --coverage
 
   # A story runs in a real browser, and several are the only test of what a browser decides: what
   # an overflow clips, where a scroll lands, whether a key reaches an SVG group. The window is WebKit
@@ -130,7 +130,7 @@ jobs:
       - uses: ./.github/actions/setup-playwright
 
       - name: Run story tests
-        run: npm run test:stories --prefix libs/ui/core
+        run: npm run test:stories --prefix libs/ui/components
 
   mobile-frontend:
     name: Mobile Frontend

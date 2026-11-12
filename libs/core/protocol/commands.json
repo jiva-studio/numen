@@ -1,0 +1,69 @@
+{
+  "about": "The shared commands of the application. A shared command does nothing by itself: a plugin handles it with an entry of contributes.handlers and registers the handler under the id of the command. Run over a target, a command with one matching handler runs it, and a command with several offers the matching handlers as its items. `arguments` are declared once, as a manifest command declares them; the palette asks for them and the core checks them for every handler. tools/commands.mjs writes the Go and TypeScript lists from this file. `appCommands` are the commands of the application that take arguments, declared the same way; an argument of the type `enum` lists its allowed values in `options`, as a setting of a manifest does. The entry of a slot that passes values to an `app:` command is checked against them and against the `arguments` of the shared command of that id, and an `app:` command with neither takes none. `keybindings` are the keys of the application, each `{key, command, values, when}` as an entry of `contributes.keybindings` of a manifest: `key` is a chord such as `mod+shift+p` or a single letter, `command` the full id of a command or of a row of the palette that runs one, such as `app:file.open#note`, `values` the values of its arguments and `when` a condition over the variables of when.json.",
+  "commands": [
+    {
+      "id": "app:file.createText",
+      "title": "Create text",
+      "about": "creates a text version of a file"
+    },
+    {
+      "id": "app:link.import",
+      "title": "Import link",
+      "about": "creates a link note from a web address",
+      "arguments": [
+        {
+          "name": "address",
+          "title": "Web address",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "app:link.downloadMedia",
+      "title": "Download media",
+      "about": "downloads the media of a link note"
+    },
+    {
+      "id": "app:link.deleteMedia",
+      "title": "Delete media",
+      "about": "deletes the downloaded media of a link note"
+    }
+  ],
+  "appCommands": [
+    {
+      "id": "app:file.open",
+      "arguments": [
+        {
+          "name": "placement",
+          "title": "Showing",
+          "type": "enum",
+          "required": false,
+          "options": ["current", "split"]
+        }
+      ]
+    },
+    {
+      "id": "app:file.reveal",
+      "arguments": [
+        {
+          "name": "kind",
+          "title": "Place",
+          "type": "enum",
+          "required": false,
+          "options": ["plex", "files"]
+        }
+      ]
+    }
+  ],
+  "keybindings": [
+    { "key": "mod+n", "command": "app:note.create" },
+    { "key": "mod+shift+n", "command": "app:vault.create" },
+    { "key": "mod+g", "command": "app:file.open#note" },
+    { "key": "mod+shift+c", "command": "app:note.createChild" },
+    { "key": "mod+w", "command": "app:tab.close" },
+    { "key": "mod+shift+w", "command": "app:tab.close" },
+    { "key": "mod+k", "command": "app:vault.search" },
+    { "key": "mod+p", "command": "app:commands.open" }
+  ]
+}

@@ -5,14 +5,14 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { SettledBookProps } from '../lib/props'
-import { createBookLinks } from './links'
+import { useBookLinks } from './links'
 
 const props = { path: 'text/one.xhtml', span: { start: 40, end: 90 } } as SettledBookProps
 
 const setUp = () => {
   const reportMove = vi.fn<(pos: number) => void>()
   const reportFollow = vi.fn<(path: string) => void>()
-  const links = createBookLinks(props, { reportMove, reportFollow })
+  const links = useBookLinks(props, { reportMove, reportFollow })
   const findFragmentOffset = vi.fn<(fragment: string) => number | undefined>(() => 12)
   return { links, reportMove, reportFollow, findFragmentOffset }
 }
@@ -63,8 +63,8 @@ describe('a press on a link', () => {
 
     expect(reportFollow).toHaveBeenCalledExactlyOnceWith('text/two.xhtml')
     expect(reportMove).not.toHaveBeenCalled()
-    expect(links.takeLed()).toStrictEqual({ path: 'text/two.xhtml', fragment: 'n3' })
-    expect(links.takeLed()).toBeUndefined()
+    expect(links.takeLedLink()).toStrictEqual({ path: 'text/two.xhtml', fragment: 'n3' })
+    expect(links.takeLedLink()).toBeUndefined()
   })
 
   it('is left alone where the link leads out of the book', () => {

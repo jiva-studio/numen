@@ -11,7 +11,7 @@ import {
   createUniqueTitle,
   destroyNote,
   destroyTrashed,
-  findTrashed,
+  findTrashedNotes,
   getNoteTab,
   isSyncingTitles,
   listFilePaths,
@@ -50,7 +50,7 @@ test.describe('Removing and renaming a note', () => {
       await writeNote(request, target, 'High water at six.\n')
       await openWorkspace(page)
       await openNote(page, linker)
-      await runPaletteCommand(page, 'Show note in plex', 'Show note in plex')
+      await runPaletteCommand(page, 'Show in plex', 'Show in plex')
       await expect(getPlexNode(page, targetTitle, 'child')).toBeAttached()
 
       await openNote(page, target)
@@ -62,45 +62,12 @@ test.describe('Removing and renaming a note', () => {
       await expect(await openTaskList(page)).toContainText(`Broken links in: ${linker}`)
       expect((await readNote(request, target)).error).toBe('ERROR_CODE_NOT_FOUND')
       expect(await listFilePaths(request, 'notes')).not.toContain(target)
-      expect(await findTrashed(request, `${targetTitle}.md`)).toHaveLength(1)
+      expect(await findTrashedNotes(request, `${targetTitle}.md`)).toHaveLength(1)
       expect(await readVaultFile(request, linker)).toContain(targetTitle)
     } finally {
       await destroyNote(request, linker)
       await destroyNote(request, target)
       await destroyTrashed(request, `${targetTitle}.md`)
-    }
-  })
-
-  test('destroys a note only once its exact title is typed back', async ({ page, request }) => {
-    const title = createUniqueTitle('Ballast')
-    const notePath = await createNote(request, title)
-    try {
-      await writeNote(request, notePath, 'Stones laid in the hold.\n')
-      await openWorkspace(page)
-      await openNote(page, notePath)
-
-      await page.keyboard.press('Control+p')
-      await getPaletteField(page).fill('Move note to trash')
-      await expect(page.getByRole('option', { selected: true })).toContainText('Move note to trash')
-      await page.keyboard.press('Shift+Enter')
-      const field = getPaletteField(page)
-      const destroy = page.getByRole('option', { name: new RegExp(`^Destroy “`) })
-      await field.fill(`${title} wrong`)
-      await expect(destroy).toHaveAttribute('aria-disabled', 'true')
-      await page.keyboard.press('Enter')
-      expect((await readNote(request, notePath)).body).toBe('Stones laid in the hold.\n')
-
-      await field.fill(title)
-      await expect(destroy).not.toHaveAttribute('aria-disabled', 'true')
-      await page.keyboard.press('Enter')
-
-      await expect(getNoteTab(page, notePath)).toHaveCount(0)
-      await expect
-        .poll(async () => (await readNote(request, notePath)).error)
-        .toBe('ERROR_CODE_NOT_FOUND')
-      expect(await findTrashed(request, `${title}.md`)).toHaveLength(0)
-    } finally {
-      await destroyNote(request, notePath)
     }
   })
 

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -48,23 +47,32 @@ type Workers struct {
 	afterFunc   func(time.Duration, func()) Timer
 	idleRelease time.Duration
 	compilation wazero.CompilationCache
+	report      func(what string, err error)
 }
 
-// NewWorkers returns a pool that has not started, of one worker per CPU, keeping no idle worker.
-func NewWorkers() *Workers {
+// Options is what a pool is made from.
+type Options struct {
+	Report           func(what string, err error)
+	CompilationCache wazero.CompilationCache
+	AfterFunc        func(time.Duration, func()) Timer
+	Workers          int
+	IdleWorkers      int
+}
+
+// NewWorkers returns a pool that has not started, made from options.
+func NewWorkers(options Options) *Workers {
 	return &Workers{
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="NewWorkers initializes pool counters to zero"
-		mu: sync.Mutex{}, pool: nil, size: 0, idle: 0, open: 0, isWarmed: false, release: nil,
-		afterFunc: nil, idleRelease: defaultIdleRelease, compilation: nil,
+		mu: sync.Mutex{}, pool: nil, size: options.Workers, idle: max(options.IdleWorkers, 0), open: 0, isWarmed: false,
+		release: nil, afterFunc: options.AfterFunc, idleRelease: defaultIdleRelease,
+		compilation: options.CompilationCache, report: options.Report,
 	}
 }
 
-// SetCompilationCache makes the pools started afterwards compile PDFium into cache, so pools that
-// share a cache compile it once. It has no effect on a pool that has started.
-func (w *Workers) SetCompilationCache(cache wazero.CompilationCache) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.compilation = cache
+func (w *Workers) reportError(what string, err error) {
+	if err != nil {
+		w.report(what, err)
+	}
 }
 
 func (w *Workers) getRuntimeConfig() wazero.RuntimeConfig {
@@ -75,13 +83,6 @@ func (w *Workers) getRuntimeConfig() wazero.RuntimeConfig {
 	return wazero.NewRuntimeConfig().
 		WithCoreFeatures(api.CoreFeaturesV2 | experimental.CoreFeaturesExceptionHandling).
 		WithCompilationCache(w.compilation)
-}
-
-// SetAfterFunc sets the timer factory that releases idle workers.
-func (w *Workers) SetAfterFunc(fn func(time.Duration, func()) Timer) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.afterFunc = fn
 }
 
 // defaultIdleRelease is how long an unused pool keeps its workers; a worker holds
@@ -113,25 +114,9 @@ func ComputeIdleWorkers(planned int, availableBytes int64) int {
 	return int(min(int64(planned), fits))
 }
 
-// SetIdleWorkers sets how many returned workers the pool keeps alive. Zero or
-// less keeps none. It has no effect on a pool that has started.
-func (w *Workers) SetIdleWorkers(n int) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.idle = max(n, 0)
-}
-
 // minWorkers is the fewest workers the pool starts: a reader and the reader
 // beside it each hold one document.
 const minWorkers = 2
-
-// SetWorkers sets how many workers the pool starts with. Zero or less is one
-// per CPU. It has no effect on a pool that has started.
-func (w *Workers) SetWorkers(n int) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	w.size = n
-}
 
 func (w *Workers) getPoolSize() int {
 	if w.size > 0 {
@@ -227,7 +212,7 @@ func (w *Workers) releasePool() {
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE,CONDITIONALS_NEGATION,BRANCH_IF reason="releasePool closes idle workers pool and logs any failure"
 	if err := w.pool.Close(); err != nil {
-		fmt.Fprintf(os.Stderr, "readers-pdf: close the worker pool: %v\n", err)
+		w.reportError("close the worker pool", err)
 	}
 	w.pool = nil
 	if w.release != nil {
@@ -381,9 +366,10 @@ func (w *Workers) Warmup() {
 	w.mu.Unlock()
 	worker, err := w.getWorker()
 	if err != nil {
+		w.report("start the warm-up worker", err)
 		return
 	}
 	if err := w.putWorker(worker); err != nil {
-		fmt.Fprintf(os.Stderr, "readers-pdf: release the warm-up worker: %v\n", err)
+		w.report("release the warm-up worker", err)
 	}
 }

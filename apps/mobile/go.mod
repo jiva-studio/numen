@@ -1,10 +1,11 @@
 module github.com/jiva-studio/numen/apps/mobile
 
-go 1.26.10
+go 1.26.11
 
 require (
-	github.com/jiva-studio/numen/libs/core v0.0.0
-	github.com/jiva-studio/numen/libs/protocol v0.0.0
+	github.com/jiva-studio/numen/libs/core/kernel v0.0.0
+	github.com/jiva-studio/numen/libs/atomicfile v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/core/protocol v0.0.0
 	golang.org/x/mobile v0.0.0-20260821190718-4776eadac327
 )
 
@@ -17,8 +18,8 @@ require (
 	github.com/ebitengine/purego v0.11.3 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/jiva-studio/numen/libs/notes v0.0.0 // indirect
-	github.com/jiva-studio/numen/libs/plugin-catalog v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/note v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/modelcontextprotocol/go-sdk v1.8.0 // indirect
@@ -48,10 +49,12 @@ require (
 	modernc.org/sqlite v1.61.1 // indirect
 )
 
-replace github.com/jiva-studio/numen/libs/core => ../../libs/core
+replace github.com/jiva-studio/numen/libs/core/kernel => ../../libs/core/kernel
 
-replace github.com/jiva-studio/numen/libs/protocol => ../../libs/protocol
+replace github.com/jiva-studio/numen/libs/core/protocol => ../../libs/core/protocol
 
-replace github.com/jiva-studio/numen/libs/notes => ../../libs/notes
+replace github.com/jiva-studio/numen/libs/note => ../../libs/note
 
-replace github.com/jiva-studio/numen/libs/plugin-catalog => ../../libs/plugin-catalog
+replace github.com/jiva-studio/numen/libs/plugin/catalog => ../../libs/plugin/catalog
+
+replace github.com/jiva-studio/numen/libs/atomicfile => ../../libs/atomicfile

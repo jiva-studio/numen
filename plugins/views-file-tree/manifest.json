@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.file.tree",
   "name": "File Tree Explorer",
-  "version": "2026.11.7",
+  "version": "2026.11.15",
   "protocol": 1,
   "description": "Sidebar file browser for managing notes, books, and recordings",
   "capabilities": [],
@@ -21,32 +21,33 @@
         "id": "tree.open",
         "title": "Open file tree",
         "icon": "folder-tree",
-        "shortcut": "mod+shift+e",
         "when": "window.isVaultOpen"
       },
       {
-        "id": "tree.revealNote",
-        "title": "Show note in file tree",
-        "icon": "folder-open",
-        "when": "target.isNote"
-      },
-      {
         "id": "tree.renameFile",
-        "title": "Rename file",
+        "title": "Rename",
         "icon": "pencil"
-      },
-      {
-        "id": "tree.createNote",
-        "title": "Create note here",
-        "icon": "file-plus"
-      },
-      {
-        "id": "tree.createFolder",
-        "title": "Create folder",
-        "icon": "folder-plus"
       }
     ],
     "slots": [
+      {
+        "slot": "palette.searchResult",
+        "command": "app:file.reveal",
+        "values": { "kind": "files" },
+        "title": "Show in file tree",
+        "icon": "folder-open",
+        "group": "navigate",
+        "order": 30,
+        "when": "target.isNote"
+      },
+      {
+        "slot": "palette.note",
+        "command": "app:file.reveal",
+        "values": { "kind": "files" },
+        "title": "Show in file tree",
+        "icon": "folder-open",
+        "when": "target.isNote"
+      },
       { "slot": "titleBar.commands", "command": "tree.open", "group": "navigate", "order": 10 },
       {
         "slot": "fileTree.context",
@@ -58,14 +59,14 @@
       },
       {
         "slot": "fileTree.new",
-        "command": "tree.createNote",
+        "command": "app:note.create",
         "group": "0-tree",
         "order": 10,
         "when": "target.isFolder"
       },
       {
         "slot": "fileTree.new",
-        "command": "tree.createFolder",
+        "command": "app:folder.create",
         "group": "0-tree",
         "order": 20,
         "when": "target.isFolder"
@@ -77,7 +78,25 @@
         "order": 10,
         "when": "!target.isRoot && !target.isMultiple"
       },
-      { "slot": "plexGraph.context", "command": "tree.revealNote", "group": "1-note", "order": 30 }
+      {
+        "slot": "plexGraph.context",
+        "command": "app:file.reveal",
+        "values": { "kind": "files" },
+        "title": "Show in file tree",
+        "icon": "folder-open",
+        "group": "1-note",
+        "order": 30,
+        "when": "target.isNote"
+      }
+    ],
+    "keybindings": [
+      { "key": "mod+shift+e", "command": "tree.open" },
+      {
+        "key": "mod+alt+e",
+        "command": "app:file.reveal",
+        "values": { "kind": "files" },
+        "when": "target.isNote"
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

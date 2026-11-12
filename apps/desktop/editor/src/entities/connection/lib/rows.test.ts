@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ConnectionInfo, ConnectionTypeInfo, ModelInfo } from '@numen/core-client'
+import type { ConnectionInfo, ConnectionTypeInfo, ModelInfo } from './types'
 import {
   getCompleteRows,
   getConnectionUsability,

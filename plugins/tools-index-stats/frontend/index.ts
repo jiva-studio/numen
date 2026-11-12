@@ -6,7 +6,7 @@ import { defineComponent, h } from 'vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { statsApi, type StatsApi } from './api/wire'
 import { createIndexStats, type Activity, type IndexStats, type Timer } from './model/stats'
-import StatsIndicator from './StatsIndicator.vue'
+import StatsIndicator from './ui/StatsIndicator.vue'
 import './styles.css'
 
 export { StatsIndicator }
@@ -22,8 +22,8 @@ export interface StatsParts {
 }
 
 const browserTimer: Timer = {
-  set: (run, delayMs) => setTimeout(run, delayMs),
-  clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+  set: (run, delayMs) => window.setTimeout(run, delayMs),
+  clear: (handle) => window.clearTimeout(handle),
 }
 
 /** The window is in use while it is visible and has the focus. */
@@ -55,8 +55,8 @@ export function createStatusView(model: IndexStats) {
 
 export const activate = (context: PluginContext, parts: StatsParts = browserParts): void => {
   const model = createIndexStats(parts)
-  context.registerSlotView({ id: STATS_VIEW, component: createStatusView(model) })
-  context.subscriptions.push({ dispose: () => model.stop() })
+  context.register.slotView({ id: STATS_VIEW, component: createStatusView(model) })
+  context.plugin.subscriptions.push({ dispose: () => model.stop() })
   model.start()
 }
 

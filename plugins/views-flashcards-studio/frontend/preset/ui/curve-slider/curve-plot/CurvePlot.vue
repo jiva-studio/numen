@@ -4,8 +4,8 @@
  * and heights beside it, and the callout at the knob.
  */
 import { PLOT_HEIGHT, PLOT_WIDTH } from '../../../lib/plot'
-import type { Goal } from '../../../types'
-import { WORDS as words } from '../../../words'
+import type { Goal } from '../../../../lib/presets'
+import { WORDS as words } from '../../../lib/words'
 import type { CurveSliderState } from '../useCurveSlider'
 import { CurveCallout } from './curve-callout'
 import { CurveChart } from './curve-chart'

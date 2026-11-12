@@ -28,7 +28,7 @@ describe('what a document tab holds', () => {
   })
 
   it('remains at the path the document is filed at', () => {
-    expect(useDocumentTab(readItem('doc.pdf')).path).toBe('doc.pdf')
+    expect(useDocumentTab(readItem('doc.pdf')).document.path).toBe('doc.pdf')
   })
 
   it('delegates keypresses to the page', () => {

@@ -3,7 +3,7 @@
  */
 import { FileText } from '@lucide/vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import DocumentTab from './DocumentTab.vue'
+import DocumentTab from './ui/DocumentTab.vue'
 import { bindPDFReaderPreferences } from './model/preferences'
 
 export { DocumentTab }
@@ -16,7 +16,7 @@ export { readPDFReaderPreferences, type PDFReaderPreferences } from './model/pre
 
 export function activate(context: PluginContext): void {
   bindPDFReaderPreferences(context)
-  context.registerReader({
+  context.register.reader({
     id: 'reader-pdf',
     component: DocumentTab,
     title: 'PDF Reader',

@@ -10,7 +10,7 @@ import { Button, Select } from '@numen/ui'
 import type { StoredRow } from '@/entities/connection'
 import { WORDS as words } from '../../../words'
 import type { ConnectionRowEditorProps } from './ConnectionRowEditor.types'
-import { useRowChoices } from './useRowChoices'
+import { useRowChoices } from '../../../model/useRowChoices'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<ConnectionRowEditorProps>()

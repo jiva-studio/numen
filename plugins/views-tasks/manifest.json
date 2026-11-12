@@ -1,13 +1,16 @@
 {
   "id": "md.numen.views.tasks",
   "name": "Tasks",
-  "version": "2026.11.3",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Shows the background tasks of the window in the title bar: how many run, how many failed, and the list of them",
   "targets": ["desktop.editor"],
+  "permissions": ["vault:write"],
   "contributes": {
     "category": "views",
-    "slots": [{ "slot": "titleBar.status", "view": "status", "when": "window.isVaultOpen" }]
+    "slots": [
+      { "slot": "titleBar.status", "view": "status", "order": 20, "when": "window.isVaultOpen" }
+    ]
   },
   "frontend": {}
 }

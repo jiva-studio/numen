@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
@@ -48,7 +48,7 @@ func newRangeVault(v *hosttest.Vault) rangeVault {
 	}
 }
 
-func (r rangeVault) With(domain.VaultID) host.Vault { return r }
+func (r rangeVault) With(domain.VaultID) rangeVault { return r }
 
 func (r rangeVault) ReadRange(ctx context.Context, filePath string, start, length int) (host.FileRange, error) {
 	r.calls.mu.Lock()
@@ -83,12 +83,8 @@ type textCalls struct {
 
 // countingTexts is the fake text versions that record ReadText and ReadTextRange.
 type countingTexts struct {
-	host.Texts
+	host.TextReader
 	calls *textCalls
-}
-
-func (c countingTexts) With(id domain.VaultID) host.Texts {
-	return countingTexts{Texts: c.Texts.With(id), calls: c.calls}
 }
 
 func (c countingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
@@ -99,14 +95,14 @@ func (c countingTexts) ReadText(ctx context.Context, path string, id domain.Text
 	if isRefused {
 		return host.TextPage{}, errors.New("ReadText reads the whole text, which a ranged read does not need")
 	}
-	return c.Texts.ReadText(ctx, path, id, cursor)
+	return c.TextReader.ReadText(ctx, path, id, cursor)
 }
 
 func (c countingTexts) ReadTextRange(ctx context.Context, path string, id domain.TextVersionID, start, length int) (host.TextRange, error) {
 	c.calls.mu.Lock()
 	c.calls.ranges = append(c.calls.ranges, rangeRequest{Path: path, Start: start, Length: length})
 	c.calls.mu.Unlock()
-	return c.Texts.ReadTextRange(ctx, path, id, start, length)
+	return c.TextReader.ReadTextRange(ctx, path, id, start, length)
 }
 
 func callFailure(t *testing.T, registry *tools.Registry, vaultID, name, arguments string, out any) string {
@@ -134,7 +130,10 @@ func newRangeLibrary(t *testing.T) (library, rangeVault, *textCalls, *tools.Regi
 	l := newLibrary(t)
 	vault := newRangeVault(l.vault)
 	counted := &textCalls{}
-	registry, err := service.New(vault).WithLibrary(countingTexts{Texts: l.texts, calls: counted}, l.search).Registry()
+	registry, err := service.New(vault.vaults()).WithLibrary(func(id domain.VaultID) service.Library {
+		on := l.texts.With(id)
+		return service.Library{Versions: on, Texts: countingTexts{TextReader: on, calls: counted}, Search: l.search.With(id)}
+	}).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -301,15 +300,11 @@ func TestLibraryReadOfAPageReturnsItsRangesViaATextRange(t *testing.T) {
 // repeatingTexts is the texts of the host that return the first page of every version again for
 // the cursor of the page after it.
 type repeatingTexts struct {
-	host.Texts
-}
-
-func (r repeatingTexts) With(id domain.VaultID) host.Texts {
-	return repeatingTexts{Texts: r.Texts.With(id)}
+	host.TextReader
 }
 
 func (r repeatingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, _ string) (host.TextPage, error) {
-	page, err := r.Texts.ReadText(ctx, path, id, "")
+	page, err := r.TextReader.ReadText(ctx, path, id, "")
 	if err != nil {
 		return host.TextPage{}, err
 	}
@@ -323,7 +318,7 @@ func (r repeatingTexts) ReadText(ctx context.Context, path string, id domain.Tex
 func TestLibraryReadOfAPageStartingOnTheSecondHostPageReturnsThatPage(t *testing.T) {
 	l := newLibrary(t)
 	l.texts.SetPageSize(2)
-	registry, err := service.New(l.vault).WithLibrary(l.texts, l.search).Registry()
+	registry, err := service.New(vaultsOf(l.vault)).WithLibrary(libraryOf(l.texts, l.search)).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -342,7 +337,10 @@ func TestLibraryReadOfAPageStartingOnTheSecondHostPageReturnsThatPage(t *testing
 
 func TestLibraryReadOfAPageFailsWhenTheHostReturnsTheSameCursorTwice(t *testing.T) {
 	l := newLibrary(t)
-	registry, err := service.New(l.vault).WithLibrary(repeatingTexts{Texts: l.texts}, l.search).Registry()
+	registry, err := service.New(vaultsOf(l.vault)).WithLibrary(func(id domain.VaultID) service.Library {
+		on := l.texts.With(id)
+		return service.Library{Versions: on, Texts: repeatingTexts{TextReader: on}, Search: l.search.With(id)}
+	}).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,5 +348,12 @@ func TestLibraryReadOfAPageFailsWhenTheHostReturnsTheSameCursorTwice(t *testing.
 	failure := callFailure(t, registry, testVault, "library_read", `{"path":"`+guidePath+`","page":3}`, nil)
 	if want := `returned the page at "1" twice`; !strings.Contains(failure, want) {
 		t.Errorf("library_read over a host that repeats the cursor 1 gave %q, want it to contain %q", failure, want)
+	}
+}
+
+func (r rangeVault) vaults() func(domain.VaultID) service.Vault {
+	return func(id domain.VaultID) service.Vault {
+		on := r.With(id)
+		return service.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Arranger: on, Editor: on, Selector: on}
 	}
 }

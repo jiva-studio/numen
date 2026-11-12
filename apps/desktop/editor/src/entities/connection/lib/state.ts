@@ -1,4 +1,4 @@
-import type { ConnectionInfo, ConnectionTypeInfo } from '@numen/core-client'
+import type { ConnectionInfo, ConnectionTypeInfo } from './types'
 import { getAddressField } from './form'
 
 /** Whether a connection can be used: it is unavailable, incomplete, or ready. */
@@ -15,8 +15,7 @@ const OPERATION_TITLES: Readonly<Record<string, string>> = {
   embed: 'Embeddings',
 }
 
-/** The name of an operation in words a person reads. */
-export function getOperationTitle(operation: string): string {
+function getOperationTitle(operation: string): string {
   return OPERATION_TITLES[operation] ?? operation.charAt(0).toUpperCase() + operation.slice(1)
 }
 

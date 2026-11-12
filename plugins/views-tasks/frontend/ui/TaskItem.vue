@@ -39,12 +39,6 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const isHovered = ref(false)
 const lastAbout = ref(props.task.about)
-watch(
-  () => props.task.about,
-  (about) => {
-    if (about) lastAbout.value = about
-  },
-)
 const isNotice = computed(() => props.task.state === 'notice')
 const isFailed = computed(() => props.task.state === 'failed')
 const isCancelling = computed(() => props.task.state === 'cancelling')
@@ -54,11 +48,21 @@ const subtext = computed(() => {
   return props.task.about || lastAbout.value
 })
 const isCancelShown = computed(
-  () => (props.task.state === 'running' || isCancelling.value) && props.task.canCancel,
+  () => (props.task.state === 'running' || isCancelling.value) && props.task.allowed.cancel,
 )
-const isRetryShown = computed(() => isFailed.value && props.task.canRetry)
-const isDismissShown = computed(() => isNotice.value || (isFailed.value && !props.task.canRetry))
+const isRetryShown = computed(() => isFailed.value && props.task.allowed.retry)
+const isDismissShown = computed(
+  () => isNotice.value || (isFailed.value && !props.task.allowed.retry),
+)
 const hasAction = computed(() => isCancelShown.value || isRetryShown.value || isDismissShown.value)
+
+/* --------------------------------- Hooks ---------------------------------- */
+watch(
+  () => props.task.about,
+  (about) => {
+    if (about) lastAbout.value = about
+  },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onPointerEnter() {
@@ -82,7 +86,7 @@ function onDismiss() {
 }
 
 function onOpenSettings() {
-  emit('open-settings', props.task.actionPluginId)
+  emit('open-settings', props.task.action.pluginId)
 }
 </script>
 
@@ -109,9 +113,9 @@ function onOpenSettings() {
       >
         {{ subtext }}
       </span>
-      <div v-if="isFailed && task.actionLabel" class="task-item__failure-row">
+      <div v-if="isFailed && task.action.label" class="task-item__failure-row">
         <button type="button" class="task-item__action-link" @click.stop="onOpenSettings">
-          {{ task.actionLabel }} &rarr;
+          {{ task.action.label }} &rarr;
         </button>
       </div>
     </div>

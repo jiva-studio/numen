@@ -7,13 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/preview"
 )
 
 func TestRegisterTools(t *testing.T) {
-	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -41,7 +43,7 @@ func TestRegisterTools(t *testing.T) {
 }
 
 func TestWindowTabListReturnsNoTabsForAnEmptyWindow(t *testing.T) {
-	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -59,7 +61,7 @@ func TestWindowTabListReturnsNoTabsForAnEmptyWindow(t *testing.T) {
 		t.Fatalf("unexpected refusal: %s", result.GetText())
 	}
 
-	var output WindowTabListOutput
+	var output api.WindowTabListOutput
 	if err := json.Unmarshal(result.GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
@@ -76,7 +78,7 @@ func TestWindowTabListReturnsNoTabsForAnEmptyWindow(t *testing.T) {
 }
 
 func TestWindowTabListUsesTheFocusOfTheCall(t *testing.T) {
-	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -91,7 +93,7 @@ func TestWindowTabListUsesTheFocusOfTheCall(t *testing.T) {
 		t.Fatalf("CallTool: %v", err)
 	}
 
-	var output WindowTabListOutput
+	var output api.WindowTabListOutput
 	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
@@ -119,7 +121,7 @@ func TestWindowTabListUsesTheFocusOfTheCall(t *testing.T) {
 }
 
 func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
-	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	vault := hosttest.New("test-vault")
 	ctx := t.Context()
 	if err := vault.Create(ctx, "notes/sample.md", []byte("hello world\nline 2\n")); err != nil {
@@ -131,7 +133,7 @@ func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	input := NoteEditPreviewInput{
+	input := api.NoteEditPreviewInput{
 		Path:         "notes/sample.md",
 		ProposedText: "hello world\nline 2 modified\nnew line\n",
 	}
@@ -147,7 +149,7 @@ func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 		t.Fatalf("refusal: %s", resp.GetResult().GetText())
 	}
 
-	var output NoteEditPreviewOutput
+	var output api.NoteEditPreviewOutput
 	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
@@ -161,21 +163,21 @@ func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 		t.Error("expected non-empty preview ID")
 	}
 
-	saved, ok := mgr.GetPreview(output.PreviewID)
+	saved, ok := mgr.Get(output.PreviewID)
 	if !ok || saved.Path != "notes/sample.md" {
-		t.Errorf("preview not found in manager: %+v", saved)
+		t.Errorf("preview not found in store: %+v", saved)
 	}
 }
 
 func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
-	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
 	customDiff := "--- a/notes/custom.md\n+++ b/notes/custom.md\n@@ -1 +1 @@\n-old\n+new\n"
-	args := marshalJSON(t, NoteEditPreviewInput{
+	args := marshalJSON(t, api.NoteEditPreviewInput{
 		Path: "notes/custom.md",
 		Diff: customDiff,
 	})
@@ -187,7 +189,7 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 		t.Fatalf("CallTool: %v", err)
 	}
 
-	var output NoteEditPreviewOutput
+	var output api.NoteEditPreviewOutput
 	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
@@ -209,7 +211,7 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 	}
 	respOverride, err := registryWithVault.InvokeTool(t.Context(), tools.Call{
 		Name: "note_edit_preview",
-		Arguments: marshalJSON(t, NoteEditPreviewInput{
+		Arguments: marshalJSON(t, api.NoteEditPreviewInput{
 			Path:         "notes/override.md",
 			OriginalText: "explicit original\n",
 			ProposedText: "explicit proposed\n",
@@ -228,7 +230,7 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 	// Nil vault with empty OriginalText diffs against empty string.
 	respNilVault, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name: "note_edit_preview",
-		Arguments: marshalJSON(t, NoteEditPreviewInput{
+		Arguments: marshalJSON(t, api.NoteEditPreviewInput{
 			Path:         "notes/new.md",
 			ProposedText: "brand new\n",
 		}),
@@ -245,14 +247,14 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 }
 
 func TestNoteEditPreviewRejectsMissingArguments(t *testing.T) {
-	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
 	// Missing path
-	args := marshalJSON(t, NoteEditPreviewInput{ProposedText: "abc"})
+	args := marshalJSON(t, api.NoteEditPreviewInput{ProposedText: "abc"})
 	resp, err := registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "note_edit_preview",
 		Arguments: args,
@@ -265,7 +267,7 @@ func TestNoteEditPreviewRejectsMissingArguments(t *testing.T) {
 	}
 
 	// Missing content and diff
-	args = marshalJSON(t, NoteEditPreviewInput{Path: "notes/a.md"})
+	args = marshalJSON(t, api.NoteEditPreviewInput{Path: "notes/a.md"})
 	resp, err = registry.InvokeTool(t.Context(), tools.Call{
 		Name:      "note_edit_preview",
 		Arguments: args,

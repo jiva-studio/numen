@@ -7,15 +7,9 @@
  * two.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { COMMAND } from '@/shared/commandIds'
-import {
-  useSearch,
-  type SearchDeps,
-  type NameMatch,
-  type Passage,
-  type SearchMode,
-  type Words,
-} from './search'
+import { COMMAND, ROW } from '@/shared/model/command'
+import { useSearch, type SearchDeps, type NameMatch, type Passage, type Words } from './search'
+import type { SearchMode } from '../../lib/search/types'
 import { createDeferred, type Deferred } from '@/testing/deferred'
 
 function rethrow(error: unknown): never {
@@ -33,7 +27,6 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Text search only: no embedding model set',
   notEmbedded: 'Semantic index not built yet',
-  creating: 'No results',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',
@@ -41,7 +34,7 @@ const WORDS: Words = {
 }
 
 /** The first action of a note is the id of the editor command that opens it. */
-const OPEN_NOTE = COMMAND.openNote
+const OPEN_NOTE = COMMAND.openFile
 
 function createVault() {
   const names: Deferred<readonly NameMatch[]>[] = []
@@ -176,8 +169,7 @@ describe('answers arriving', () => {
 
     expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(1)
     expect(getGroup(palette.groups.value, 'names')?.isWorking).toBe(false)
-    expect(getGroup(palette.groups.value, 'text')?.isWorking).toBe(true)
-    expect(getGroup(palette.groups.value, 'meaning')?.isWorking).toBe(true)
+    expect(palette.groups.value.map((one) => one.id)).toEqual(['names'])
   })
 
   it('drops a result of a superseded query', async () => {
@@ -194,7 +186,7 @@ describe('answers arriving', () => {
     // The first question answers late, and with something else entirely.
     vault.names[0]?.answer([createNameMatch({ path: 'notes/stale.md', title: 'Stale' })])
     await flushPromises()
-    expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(0)
+    expect(getGroup(palette.groups.value, 'names')?.items).toBeUndefined()
 
     vault.names[1]?.answer([createNameMatch()])
     await flushPromises()
@@ -230,9 +222,7 @@ describe('answers arriving', () => {
     vault.names[0]?.answer([])
     await flushPromises()
 
-    const group = getGroup(palette.groups.value, 'names')
-    expect(group?.silence).toBe('')
-    expect(group?.isWorking).toBe(false)
+    expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
   })
 
   it('says the vault holds no vectors, where meaning returned nothing', async () => {
@@ -249,7 +239,7 @@ describe('answers arriving', () => {
     expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe(WORDS.notEmbedded)
     // The other groups query the words, which a vault with no vectors still
     // answers, and a group that returned nothing contributes no rows.
-    expect(getGroup(palette.groups.value, 'names')?.silence).toBe('')
+    expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
   })
 
   it('says nothing reads the vault for meaning, where nothing is set to', async () => {
@@ -358,7 +348,7 @@ describe('where a thing found takes the person', () => {
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
 
     expect(palette.chooseResult(item.id, OPEN_NOTE)).toEqual({
-      command: COMMAND.openNote,
+      command: COMMAND.openFile,
       over: { path: 'notes/entropy.md', file: 'notes/entropy.md', title: 'Entropy' },
       input: '',
     })
@@ -369,7 +359,7 @@ describe('where a thing found takes the person', () => {
     const item = getGroup(palette.groups.value, 'names')!.items[1]!
 
     expect(palette.chooseResult(item.id, OPEN_NOTE)).toEqual({
-      command: COMMAND.openNote,
+      command: COMMAND.openFile,
       over: {
         path: 'notes/carnot.md',
         file: 'notes/carnot.md',
@@ -394,7 +384,7 @@ describe('where a thing found takes the person', () => {
     const item = getGroup(palette.groups.value, 'text')!.items[0]!
 
     expect(palette.chooseResult(item.id, OPEN_NOTE)).toEqual({
-      command: COMMAND.openNote,
+      command: COMMAND.openFile,
       over: { path: 'notes/heat.md', file: 'notes/heat.md', title: 'Heat engines', line: 12 },
       input: '',
     })
@@ -464,8 +454,8 @@ describe('a passage from something that is not a note', () => {
     expect(item.actions?.map((one) => one.text)).toEqual([WORDS.readDocument])
 
     // The document opens where the words stand in its own text.
-    expect(palette.chooseResult(item.id, COMMAND.openFile)).toEqual({
-      command: 'app:file.open',
+    expect(palette.chooseResult(item.id, ROW.openDocument)).toEqual({
+      command: 'app:file.open#document',
       over: {
         path: '',
         file: 'library/mahabharata.epub',
@@ -505,7 +495,12 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'names')!.items
-    expect(items.map((one) => palette.findTabKind(one.id))).toEqual(['', 'sample', 'form', 'sheet'])
+    expect(items.map((one) => palette.reads.findTabKind(one.id))).toEqual([
+      '',
+      'sample',
+      'form',
+      'sheet',
+    ])
   })
 
   it('draws a heading as the note it remains in', async () => {
@@ -529,7 +524,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
-    expect(palette.findTabKind(item.id)).toBe('sample')
+    expect(palette.reads.findTabKind(item.id)).toBe('sample')
   })
 
   it('draws a passage as the note it was read out of', async () => {
@@ -553,7 +548,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'text')!.items
-    expect(items.map((one) => palette.findTabKind(one.id))).toEqual(['sheet', null])
+    expect(items.map((one) => palette.reads.findTabKind(one.id))).toEqual(['sheet', null])
   })
 
   it('names the file of a passage read out of a file that is no note', async () => {
@@ -574,7 +569,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'text')!.items
-    expect(items.map((one) => palette.findHitFile(one.id))).toEqual([
+    expect(items.map((one) => palette.reads.findHitFile(one.id))).toEqual([
       null,
       'library/a.bin',
       'talks/b.bin',
@@ -596,7 +591,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'names')!.items
-    expect(items.map((one) => palette.findHitFile(one.id))).toEqual([null, null])
+    expect(items.map((one) => palette.reads.findHitFile(one.id))).toEqual([null, null])
   })
 
   it('says nothing about an item it is not drawing', async () => {
@@ -604,8 +599,8 @@ describe('what a row is drawn as', () => {
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
     })
-    expect(palette.findTabKind('notes/entropy.md')).toBeNull()
-    expect(palette.findHitFile('notes/entropy.md')).toBeNull()
+    expect(palette.reads.findTabKind('notes/entropy.md')).toBeNull()
+    expect(palette.reads.findHitFile('notes/entropy.md')).toBeNull()
   })
 })
 
@@ -649,26 +644,8 @@ function createHolds() {
   return { holds, wait }
 }
 
-const describeGroups = (groups: readonly { id: string }[]) =>
-  Object.fromEntries(
-    ['names', 'text', 'meaning'].map((id) => {
-      const group = getGroup(groups, id)
-      return [
-        id,
-        { items: group?.items.length, isWorking: group?.isWorking, silence: group?.silence },
-      ]
-    }),
-  )
-
-/** Every group holding nothing, working at nothing and saying nothing. */
-const IDLE = {
-  names: { items: 0, isWorking: false, silence: '' },
-  text: { items: 0, isWorking: false, silence: '' },
-  meaning: { items: 0, isWorking: false, silence: '' },
-}
-
 describe('the hold before a question', () => {
-  it('draws every group idle and saying nothing while the first keystroke waits', async () => {
+  it('draws no group and no spinner while the first keystroke waits', async () => {
     const vault = createVault()
     const { wait } = createHolds()
     const palette = useSearch(vault.core, WORDS, { wait })
@@ -676,10 +653,11 @@ describe('the hold before a question', () => {
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
-    expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)
+    expect(palette.groups.value).toStrictEqual([])
+    expect(palette.status.isBusy.value).toBe(false)
   })
 
-  it('draws every group working once the hold is out and nothing has answered', async () => {
+  it('shows the spinner and draws no group once the hold is out and nothing has answered', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
@@ -688,9 +666,8 @@ describe('the hold before a question', () => {
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
-    expect(getGroup(palette.groups.value, 'names')?.isWorking).toBe(true)
-    expect(getGroup(palette.groups.value, 'text')?.isWorking).toBe(true)
-    expect(getGroup(palette.groups.value, 'meaning')?.isWorking).toBe(true)
+    expect(palette.status.isBusy.value).toBe(true)
+    expect(palette.groups.value).toStrictEqual([])
   })
 
   it('asks nothing about a keystroke another one overtook while it waited', async () => {
@@ -713,7 +690,7 @@ describe('the hold before a question', () => {
 })
 
 describe('what was typed taken back', () => {
-  it('forgets what each group found and returned, before anything else is typed', async () => {
+  it('draws no group of what was found before anything else is typed', async () => {
     const vault = createVault()
     const { holds, wait } = createHolds()
     const palette = useSearch(vault.core, WORDS, { wait })
@@ -729,7 +706,7 @@ describe('what was typed taken back', () => {
     palette.setTyped('heat').catch(rethrow)
     await flushPromises()
 
-    expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)
+    expect(palette.groups.value).toStrictEqual([])
   })
 
   it('draws no group at all where only spaces are typed', async () => {
@@ -761,10 +738,10 @@ describe('answers to a question overtaken', () => {
     await flushPromises()
 
     expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(1)
-    expect(getGroup(palette.groups.value, 'names')?.silence).toBe('')
+    expect(getGroup(palette.groups.value, 'names')?.silence ?? '').toBe('')
   })
 
-  it('keeps the group working where only the overtaken question has answered', async () => {
+  it('keeps the spinner where only the overtaken question has answered', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
@@ -777,7 +754,8 @@ describe('answers to a question overtaken', () => {
     vault.names[0]?.answer([createNameMatch()])
     await flushPromises()
 
-    expect(getGroup(palette.groups.value, 'names')?.isWorking).toBe(true)
+    expect(palette.status.isBusy.value).toBe(true)
+    expect(palette.groups.value).toStrictEqual([])
   })
 
   it('holds nothing in a group whose question failed', async () => {
@@ -794,7 +772,7 @@ describe('answers to a question overtaken', () => {
     expect(getGroup(palette.groups.value, 'names')?.items).toStrictEqual([])
   })
 
-  it('forgets what each group found for an earlier question as soon as another question is typed', async () => {
+  it('draws no group of an earlier question as soon as another question is typed', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
@@ -809,9 +787,7 @@ describe('answers to a question overtaken', () => {
     palette.setTyped('entr').catch(rethrow)
     await flushPromises()
 
-    expect(getGroup(palette.groups.value, 'names')?.items).toStrictEqual([])
-    expect(getGroup(palette.groups.value, 'text')?.items).toStrictEqual([])
-    expect(getGroup(palette.groups.value, 'meaning')?.items).toStrictEqual([])
+    expect(palette.groups.value).toStrictEqual([])
   })
 })
 
@@ -851,6 +827,6 @@ describe('the palette opened and put away', () => {
     palette.setTyped('heat').catch(rethrow)
     await flushPromises()
 
-    expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)
+    expect(palette.groups.value).toStrictEqual([])
   })
 })

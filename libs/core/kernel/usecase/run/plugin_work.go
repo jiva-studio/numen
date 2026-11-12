@@ -1,0 +1,263 @@
+package run
+
+import (
+	"context"
+	"errors"
+	"sync"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+)
+
+// pluginTaskPrefix starts the id a plugin's task is listed under. The plugin's
+// id follows it, so the tasks of two plugins and of the core never share an id.
+const pluginTaskPrefix = "plugin:"
+
+// errPluginCleared is the wait of a plugin whose work was cleared.
+var errPluginCleared = errors.New("the plugin's work was cleared")
+
+// PluginWork is the lock and the list of tasks the core's own work uses, as
+// the plugins use them. It is safe to use from several goroutines.
+type PluginWork struct {
+	lock    leasing
+	tasks   taskList
+	getName func(pluginID string) string
+
+	mu      sync.Mutex
+	plugins map[string]*pluginState
+	next    uint64
+	changed chan struct{}
+}
+
+// pluginState is what one plugin holds: the ids of its tasks, each true while
+// it runs and false once it failed, its leases and the cancellations of its waits.
+type pluginState struct {
+	tasks  map[string]bool
+	leases map[*Lease]bool
+	waits  map[uint64]context.CancelFunc
+}
+
+// NewPluginWork opens the lock and the list of tasks to the plugins. getName
+// returns the name a plugin's tasks are listed under; nil lists them unnamed.
+func NewPluginWork(lock *Lock, tasks *Tasks, getName func(pluginID string) string) *PluginWork {
+	return &PluginWork{lock: lock, tasks: tasks, getName: getName, plugins: map[string]*pluginState{}, changed: make(chan struct{})}
+}
+
+// EnqueueWork waits at the lock for a lease for the plugin and returns it.
+func (w *PluginWork) EnqueueWork(
+	ctx context.Context, pluginID string, isUserStarted bool, onWaiting func(),
+) (*Lease, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	w.mu.Lock()
+	w.next++
+	key := w.next
+	w.getStateLocked(pluginID).waits[key] = cancel
+	w.notifyLocked()
+	w.mu.Unlock()
+
+	release, err := w.lock.Acquire(ctx, isUserStarted, onWaiting)
+
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	defer w.notifyLocked()
+	state, isKnown := w.plugins[pluginID]
+	isWaiting := isKnown && state.waits[key] != nil
+	if isWaiting {
+		delete(state.waits, key)
+	}
+	if err != nil {
+		if !isWaiting {
+			return nil, errPluginCleared
+		}
+		return nil, err
+	}
+	// A plugin cleared while the lock was handed to it gives the lock back.
+	if !isWaiting {
+		release()
+		return nil, errPluginCleared
+	}
+	one := &Lease{lock: w.lock, release: release, end: make(chan struct{})}
+	one.forget = func() {
+		w.mu.Lock()
+		defer w.mu.Unlock()
+		if state, isKnown := w.plugins[pluginID]; isKnown {
+			delete(state.leases, one)
+		}
+		w.notifyLocked()
+	}
+	state.leases[one] = true
+	return one, nil
+}
+
+// ReportTask lists the task under the plugin's own id, with the plugin's id
+// and name on it. A task with no id is not listed.
+func (w *PluginWork) ReportTask(pluginID string, task plugin.Task) {
+	if task.ID == "" {
+		return
+	}
+	w.mu.Lock()
+	w.getStateLocked(pluginID).tasks[task.ID] = task.Error == ""
+	w.notifyLocked()
+	w.mu.Unlock()
+	w.tasks.Set(work.Task{
+		ID:            getPluginTaskID(pluginID, task.ID),
+		Title:         task.Title,
+		About:         task.About,
+		Count:         task.Done,
+		Total:         task.Total,
+		Unit:          readUnit(task.Unit),
+		Error:         task.Error,
+		IsUserStarted: task.IsUserStarted,
+		PluginID:      pluginID,
+		PluginName:    w.readName(pluginID),
+	})
+}
+
+func (w *PluginWork) readName(pluginID string) string {
+	if w.getName == nil {
+		return ""
+	}
+	return w.getName(pluginID)
+}
+
+// FinishTask takes the plugin's task out of the list.
+func (w *PluginWork) FinishTask(pluginID, taskID string) {
+	w.mu.Lock()
+	if state, isKnown := w.plugins[pluginID]; isKnown {
+		delete(state.tasks, taskID)
+	}
+	w.notifyLocked()
+	w.mu.Unlock()
+	w.tasks.Remove(getPluginTaskID(pluginID, taskID))
+}
+
+// ClearPlugin takes the plugin's tasks out of the list, releases its turns and
+// ends its waits.
+func (w *PluginWork) ClearPlugin(pluginID string) {
+	w.mu.Lock()
+	state, isKnown := w.plugins[pluginID]
+	delete(w.plugins, pluginID)
+	w.notifyLocked()
+	w.mu.Unlock()
+	if !isKnown {
+		return
+	}
+	for _, cancel := range state.waits {
+		cancel()
+	}
+	for turn := range state.leases {
+		turn.Release()
+	}
+	for taskID := range state.tasks {
+		w.tasks.Remove(getPluginTaskID(pluginID, taskID))
+	}
+}
+
+// WaitIdle returns once no plugin holds a lease, waits for one or has a task that has not failed, or
+// with the error of the context where it ends first.
+func (w *PluginWork) WaitIdle(ctx context.Context) error {
+	for {
+		w.mu.Lock()
+		isIdle, changed := w.isIdleLocked(), w.changed
+		w.mu.Unlock()
+		if isIdle {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-changed:
+		}
+	}
+}
+
+func (w *PluginWork) isIdleLocked() bool {
+	for _, state := range w.plugins {
+		if len(state.leases) > 0 || len(state.waits) > 0 {
+			return false
+		}
+		for _, isRunning := range state.tasks {
+			if isRunning {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (w *PluginWork) notifyLocked() {
+	close(w.changed)
+	w.changed = make(chan struct{})
+}
+
+func (w *PluginWork) getStateLocked(pluginID string) *pluginState {
+	state, isKnown := w.plugins[pluginID]
+	if !isKnown {
+		state = &pluginState{
+			tasks:  map[string]bool{},
+			leases: map[*Lease]bool{},
+			waits:  map[uint64]context.CancelFunc{},
+		}
+		w.plugins[pluginID] = state
+	}
+	return state
+}
+
+// GetPluginTaskPrefix starts the id of every task the plugin reports.
+func GetPluginTaskPrefix(pluginID string) string { return pluginTaskPrefix + pluginID + ":" }
+
+func getPluginTaskID(pluginID, taskID string) string { return GetPluginTaskPrefix(pluginID) + taskID }
+
+func getUnits() map[plugin.TaskUnit]work.Unit {
+	return map[plugin.TaskUnit]work.Unit{
+		plugin.TaskUnitThings:  work.Things,
+		plugin.TaskUnitBytes:   work.Bytes,
+		plugin.TaskUnitSeconds: work.Seconds,
+	}
+}
+
+func readUnit(unit plugin.TaskUnit) work.Unit {
+	if listed, isKnown := getUnits()[unit]; isKnown {
+		return listed
+	}
+	return work.Things
+}
+
+// Lease is a plugin's hold on the lock.
+type Lease struct {
+	lock    leasing
+	release func()
+	forget  func()
+	once    sync.Once
+	end     chan struct{}
+}
+
+// Release ends the lease and lets the next work in the queue run. A lease released twice is
+// released once.
+func (t *Lease) Release() {
+	t.once.Do(func() {
+		t.forget()
+		t.release()
+		close(t.end)
+	})
+}
+
+// WatchWaiting returns a channel closed once other work waits for the queue.
+func (t *Lease) WatchWaiting() <-chan struct{} { return t.lock.WatchWaiting() }
+
+// WatchEnd returns a channel closed once the lease is over.
+func (t *Lease) WatchEnd() <-chan struct{} { return t.end }
+
+// leasing hands out the lock the work of the core and of the plugins shares.
+type leasing interface {
+	Acquire(ctx context.Context, isUserStarted bool, onWaiting func()) (release func(), err error)
+	WatchWaiting() <-chan struct{}
+}
+
+// taskList is the list of tasks the plugins add theirs to.
+type taskList interface {
+	Set(task work.Task)
+	Remove(id string)
+}

@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { useTranscriptLines } from './lines'
-import type { Cue } from '../lib/cues'
+import type { Cue } from '../types'
 
 const CUES: readonly Cue[] = [
   { text: 'A bell over the door.', from: 1_000, to: 3_000 },

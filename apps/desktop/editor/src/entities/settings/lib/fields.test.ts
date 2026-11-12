@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Model, SettingEdit } from './configuration'
 import { createSettingFields } from './fields'
+import type { JsonValue } from '@/shared/api/json'
 
 const AT = ['agent', 'model']
 
@@ -17,7 +18,7 @@ const createModel = (name: string, writes: readonly SettingEdit[]): Model => ({
   presence: 'nothing to fetch',
 })
 
-const setup = (target: Record<string, unknown> = {}, models: readonly Model[] = []) => {
+const setup = (target: Record<string, JsonValue> = {}, models: readonly Model[] = []) => {
   const content: SettingEdit[][] = []
   const fields = createSettingFields(() => ({
     getSetting: (path) => target[path.join('.')],

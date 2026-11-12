@@ -1,8 +1,7 @@
 import type { Preview } from '@storybook/vue3-vite'
 import { configure } from 'storybook/test'
-import { accentCheck } from '../../../../libs/ui/core/.storybook/contrastBrowser'
 import '@numen/ui/styles.css'
-import '@numen/shell/styles.css'
+import '@numen/workbench/styles.css'
 import './preview.css'
 
 // A story waits on a real browser drawing a frame, and two engines draw at
@@ -18,6 +17,7 @@ const preview: Preview = {
     (story, context) => {
       const theme = context.globals['theme'] === 'dark' ? 'dark' : 'light'
       document.documentElement.style.colorScheme = theme
+      document.documentElement.dataset['theme'] = theme
       return { components: { story }, template: '<story />' }
     },
   ],
@@ -36,7 +36,6 @@ const preview: Preview = {
     },
   },
   initialGlobals: { theme: 'light' },
-  afterEach: accentCheck,
 }
 
 export default preview

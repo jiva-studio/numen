@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
@@ -43,7 +43,7 @@ func newRiverLibrary(t *testing.T) *tools.Registry {
 		{Path: riverGuidePath, Text: "The kingfisher dives for minnows.", Location: "page 1", Start: 0, Length: 33, Selector: `{"page":1}`},
 	})
 
-	registry, err := service.New(vault).WithLibrary(texts, search).Registry()
+	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(texts, search)).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}

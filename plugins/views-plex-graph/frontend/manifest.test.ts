@@ -38,8 +38,32 @@ describe('the manifest', () => {
         (one) => one.slot === 'palette.searchResult' || one.slot === 'titleBar.commands',
       ),
     ).toStrictEqual([
-      { slot: 'palette.searchResult', command: 'graph.showNote', group: 'navigate', order: 20 },
+      {
+        slot: 'palette.searchResult',
+        command: 'app:file.reveal',
+        values: { kind: 'plex' },
+        title: 'Show in plex',
+        icon: 'waypoints',
+        group: 'navigate',
+        order: 20,
+        when: 'target.isNote',
+      },
       { slot: 'titleBar.commands', command: 'graph.open', group: 'navigate', order: 20 },
+    ])
+  })
+
+  it('places showing the note in front in the plex among the commands of the palette over a note', () => {
+    expect(
+      (manifest.contributes.slots ?? []).filter((one) => one.slot === 'palette.note'),
+    ).toStrictEqual([
+      {
+        slot: 'palette.note',
+        command: 'app:file.reveal',
+        values: { kind: 'plex' },
+        title: 'Show in plex',
+        icon: 'waypoints',
+        when: 'target.isNote',
+      },
     ])
   })
 
@@ -55,22 +79,27 @@ describe('the manifest', () => {
       (one) => one.slot === 'titleBar.commands',
     )
 
-    expect(entries.map((one) => one.command)).not.toContain('graph.showNote')
+    expect(entries.map((one) => one.command)).not.toContain('app:file.reveal')
   })
 
-  it('keeps the declaration of the command that shows a note, with no field about its place', () => {
-    const command = manifest.contributes.commands.find((one) => one.id === 'graph.showNote')
-
-    expect(command).toMatchObject({ title: 'Show note in plex', when: 'target.isNote' })
-    expect(Object.keys(command ?? {})).not.toContain('location')
-    expect(Object.keys(command ?? {})).not.toContain('slots')
+  it('declares no command to show a note, which the window runs as app:file.reveal over the plex', () => {
+    expect(manifest.contributes.commands.map((one) => one.id)).toStrictEqual(['graph.open'])
   })
 })
 
 describe('the menu of a row of the file tree', () => {
   it('places showing the note, and the submenu of relations with the window’s commands', () => {
     expect(getMenuEntries()).toStrictEqual([
-      { slot: 'fileTree.context', command: 'graph.showNote', group: '0-open', order: 20 },
+      {
+        slot: 'fileTree.context',
+        command: 'app:file.reveal',
+        values: { kind: 'plex' },
+        title: 'Show in plex',
+        icon: 'waypoints',
+        group: '0-open',
+        order: 20,
+        when: 'target.isNote',
+      },
       {
         slot: 'fileTree.context',
         submenu: 'plex.relation',
@@ -92,20 +121,20 @@ describe('the menu of a row of the file tree', () => {
 })
 
 describe('the menu on a node', () => {
-  it('is the slot plexGraph.context, filled with the commands of the window over a note, and no new note', () => {
+  it('is the slot plexGraph.context, filled with the commands of the window over a note, and no new note on a node', () => {
     expect(
       (manifest.contributes.slots ?? [])
-        .filter((one) => one.slot === 'plexGraph.context' && one.command !== 'graph.createNote')
+        .filter((one) => one.slot === 'plexGraph.context' && one.command !== 'app:note.create')
         .map((one) => [one.command, one.group]),
     ).toStrictEqual([
-      ['app:note.open', '0-open'],
-      ['graph.showNote', '1-note'],
-      ['app:note.copyPath', '2-file'],
+      ['app:file.open', '0-open'],
+      ['app:file.reveal', '1-note'],
+      ['app:file.copyPath', '2-file'],
       ['app:note.createChild', '3-plex'],
       ['app:note.createParent', '3-plex'],
       ['app:note.createJump', '3-plex'],
       ['app:note.rename', '3-plex'],
-      ['app:note.trash', '9-remove'],
+      ['app:file.remove', '9-remove'],
     ])
   })
 })
@@ -113,29 +142,23 @@ describe('the menu on a node', () => {
 describe('the menu of a place with no node', () => {
   const getCanvasEntries = () =>
     (manifest.contributes.slots ?? []).filter(
-      (one) => one.slot === 'plexGraph.context' && one.command === 'graph.createNote',
+      (one) => one.slot === 'plexGraph.context' && one.command === 'app:note.create',
     )
 
-  it('declares the command that makes a note with a title of its own', () => {
-    expect(
-      manifest.contributes.commands.find((one) => one.id === 'graph.createNote'),
-    ).toMatchObject({ title: 'New note' })
+  it('declares no command of its own to make a note', () => {
+    expect(manifest.contributes.commands.map((one) => one.id)).not.toContain('graph.createNote')
   })
 
-  it('offers the command over the root target alone, in the menu and in every other place', () => {
-    expect(manifest.contributes.commands.find((one) => one.id === 'graph.createNote')?.when).toBe(
-      'target.isRoot',
-    )
-    expect(getCanvasEntries()).toHaveLength(1)
-    expect(getCanvasEntries()[0]).toMatchObject({ when: 'target.isRoot' })
-  })
-
-  it('places the command in no slot other than the menu of the canvas', () => {
-    expect(
-      (manifest.contributes.slots ?? [])
-        .filter((one) => one.command === 'graph.createNote')
-        .map((one) => one.slot),
-    ).toStrictEqual(['plexGraph.context'])
+  it('offers the command of the window to make a note over a folder alone, in the group of new rows', () => {
+    expect(getCanvasEntries()).toStrictEqual([
+      {
+        slot: 'plexGraph.context',
+        command: 'app:note.create',
+        group: '0-new',
+        order: 10,
+        when: 'target.isFolder',
+      },
+    ])
   })
 })
 

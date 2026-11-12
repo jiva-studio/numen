@@ -1,0 +1,592 @@
+package container_test
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"maps"
+	"net"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"slices"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+
+	"connectrpc.com/connect"
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
+	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+)
+
+const (
+	agentPlugin = "md.test.agent"
+	vaultPlugin = "md.test.vault"
+	cardPlugin  = "md.test.cards"
+	cardKey     = cardPlugin + "/card"
+)
+
+// toolCall is one call the agent stand-in makes.
+type toolCall struct {
+	name      string
+	arguments string
+}
+
+// toolAgent is an agent plugin that connects to the tools of its task over MCP: it
+// lists them, makes the calls it is given and records each result.
+type toolAgent struct {
+	numenv1connect.UnimplementedAgentServiceHandler
+	calls []toolCall
+
+	mu       sync.Mutex
+	requests []*v1.AskAgentRequest
+	names    []string
+	results  []string
+}
+
+func (a *toolAgent) GetAgentPrograms(
+	context.Context, *connect.Request[v1.GetAgentProgramsRequest],
+) (*connect.Response[v1.GetAgentProgramsResponse], error) {
+	return connect.NewResponse(&v1.GetAgentProgramsResponse{Programs: []*v1.AgentProgram{
+		{Name: "alpha", Title: "Alpha", IsInstalled: true, IsDefault: true},
+	}}), nil
+}
+
+func (a *toolAgent) AskAgent(
+	ctx context.Context, req *connect.Request[v1.AskAgentRequest], stream *connect.ServerStream[v1.AskAgentResponse],
+) error {
+	a.mu.Lock()
+	a.requests = append(a.requests, req.Msg)
+	a.mu.Unlock()
+	if req.Msg.GetToolsUrl() != "" {
+		if err := a.callTools(ctx, req.Msg.GetToolsUrl(), req.Msg.GetToolsToken()); err != nil {
+			return stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Stopped{Stopped: err.Error()}})
+		}
+	}
+	return stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Stopped{Stopped: "done"}})
+}
+
+func (a *toolAgent) callTools(ctx context.Context, url, token string) (err error) {
+	session, err := connectTools(ctx, url, token)
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, session.Close()) }()
+
+	var names []string
+	for tool, err := range session.Tools(ctx, nil) {
+		if err != nil {
+			return err
+		}
+		names = append(names, tool.Name)
+	}
+	var results []string
+	for _, call := range a.calls {
+		result, err := session.CallTool(ctx, &sdk.CallToolParams{Name: call.name, Arguments: json.RawMessage(call.arguments)})
+		if err != nil {
+			return err
+		}
+		for _, content := range result.Content {
+			if text, isText := content.(*sdk.TextContent); isText {
+				results = append(results, text.Text)
+			}
+		}
+	}
+	a.mu.Lock()
+	a.names, a.results = names, results
+	a.mu.Unlock()
+	return nil
+}
+
+func (a *toolAgent) getRequests() []*v1.AskAgentRequest {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return slices.Clone(a.requests)
+}
+
+func (a *toolAgent) getToolNames() []string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return slices.Clone(a.names)
+}
+
+func (a *toolAgent) getResults() []string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return slices.Clone(a.results)
+}
+
+// bearerTransport presents the token on every request.
+type bearerTransport struct{ token string }
+
+func (b bearerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.Header.Set("Authorization", "Bearer "+b.token)
+	return http.DefaultTransport.RoundTrip(req)
+}
+
+func connectTools(ctx context.Context, url, token string) (*sdk.ClientSession, error) {
+	client := sdk.NewClient(&sdk.Implementation{Name: "stand-in", Version: "1"}, nil)
+	return client.Connect(ctx, &sdk.StreamableClientTransport{
+		Endpoint:             url,
+		HTTPClient:           &http.Client{Transport: bearerTransport{token: token}},
+		DisableStandaloneSSE: true,
+	}, nil)
+}
+
+// toolPlugin is a plugin that lists tools and answers every call with its name and arguments.
+type toolPlugin struct {
+	numenv1connect.UnimplementedPluginToolServiceHandler
+	tools []*v1.PluginTool
+
+	mu      sync.Mutex
+	lists   int
+	request []*v1.CallToolRequest
+}
+
+func (p *toolPlugin) ListTools(
+	context.Context, *connect.Request[v1.ListToolsRequest],
+) (*connect.Response[v1.ListToolsResponse], error) {
+	p.mu.Lock()
+	p.lists++
+	p.mu.Unlock()
+	return connect.NewResponse(&v1.ListToolsResponse{Tools: p.tools}), nil
+}
+
+func (p *toolPlugin) CallTool(
+	_ context.Context, req *connect.Request[v1.CallToolRequest],
+) (*connect.Response[v1.CallToolResponse], error) {
+	p.mu.Lock()
+	p.request = append(p.request, req.Msg)
+	p.mu.Unlock()
+	text := fmt.Sprintf("%s %s %s", req.Msg.GetName(), req.Msg.GetArguments(), req.Msg.GetContext()[cardKey])
+	return connect.NewResponse(&v1.CallToolResponse{Result: &v1.ToolResult{Text: text}}), nil
+}
+
+func (p *toolPlugin) getRequests() []*v1.CallToolRequest {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return slices.Clone(p.request)
+}
+
+func (p *toolPlugin) countLists() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.lists
+}
+
+func newPluginTool(name string, effect v1.ToolEffect, servers ...v1.ToolServer) *v1.PluginTool {
+	return &v1.PluginTool{
+		Name: name, Title: name, Effect: effect, Servers: servers,
+		InputSchema: []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
+	}
+}
+
+// testPlugin is one plugin of a test host: its manifest and the services its backend serves.
+type testPlugin struct {
+	id           string
+	capabilities []string
+	permissions  []string
+	mount        func(mux *http.ServeMux)
+}
+
+func hostOver(t *testing.T, plugins ...testPlugin) *container.PluginRoles {
+	t.Helper()
+	tmp := t.TempDir()
+	ports := map[string]int{}
+	for _, one := range plugins {
+		dir := filepath.Join(tmp, one.id)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		capabilities, err := json.Marshal(one.capabilities)
+		if err != nil {
+			t.Fatal(err)
+		}
+		permissions, err := json.Marshal(one.permissions)
+		if err != nil {
+			t.Fatal(err)
+		}
+		manifest := fmt.Sprintf(`{
+			"id": %q, "name": %q, "version": "1.0.0",
+			"capabilities": %s, "permissions": %s,
+			"targets": ["desktop.editor"],
+			"services": ["numen.v1.PluginToolService"], "backend": {"entrypoint": "bin/x"}
+		}`, one.id, one.id, capabilities, permissions)
+		if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		mux := http.NewServeMux()
+		wiretest.HandlePluginLifecycle(mux)
+		one.mount(mux)
+		server := httptest.NewServer(mux)
+		t.Cleanup(server.Close)
+		addr, isTCP := server.Listener.Addr().(*net.TCPAddr)
+		if !isTCP {
+			t.Fatalf("expected *net.TCPAddr, got %T", server.Listener.Addr())
+		}
+		ports[one.id] = addr.Port
+	}
+
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Discovery.Discover(); err != nil {
+		t.Fatal(err)
+	}
+	host.Processes.SetLauncher(func(ctx context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		port, isServed := ports[p.Manifest.ID]
+		if !isServed {
+			return nil, nil, errors.New("this plugin cannot be started")
+		}
+		cmd := exec.CommandContext(context.WithoutCancel(ctx), "sleep", "10")
+		if err := cmd.Start(); err != nil {
+			return nil, nil, err
+		}
+		t.Cleanup(func() { wiretest.Kill(t, cmd) })
+		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", port))), nil
+	})
+	return host
+}
+
+func agentAt(agent *toolAgent) testPlugin {
+	return testPlugin{
+		id: agentPlugin, capabilities: []string{"ai.agent.provider"}, permissions: []string{"vault:read", "vault:write"},
+		mount: func(mux *http.ServeMux) { mux.Handle(numenv1connect.NewAgentServiceHandler(agent)) },
+	}
+}
+
+func toolsAt(id string, permissions []string, tools *toolPlugin) testPlugin {
+	return testPlugin{
+		id: id, capabilities: []string{"tools"}, permissions: permissions,
+		mount: func(mux *http.ServeMux) { mux.Handle(numenv1connect.NewPluginToolServiceHandler(tools)) },
+	}
+}
+
+func vaultAndCards(t *testing.T, agent *toolAgent) (*container.PluginRoles, *toolPlugin, *toolPlugin) {
+	t.Helper()
+	vault := &toolPlugin{tools: []*v1.PluginTool{
+		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolServer_TOOL_SERVER_FULL, v1.ToolServer_TOOL_SERVER_READING),
+		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_READ_WRITE),
+	}}
+	cards := &toolPlugin{tools: []*v1.PluginTool{
+		newPluginTool("card_current_get", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolServer_TOOL_SERVER_FULL),
+	}}
+	host := hostOver(t,
+		agentAt(agent),
+		toolsAt(vaultPlugin, []string{"vault:read", "vault:write"}, vault),
+		toolsAt(cardPlugin, []string{"vault:read", "vault:write"}, cards),
+	)
+	return host, vault, cards
+}
+
+func runToEnd(t *testing.T, agent agentport.Agent, task agentdomain.Task) []agentdomain.Step {
+	t.Helper()
+	run, err := agent.StartRun(t.Context(), task)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var steps []agentdomain.Step
+	for step := range run.GetSteps() {
+		steps = append(steps, step)
+	}
+	if err := run.Stop(); err != nil {
+		t.Fatal(err)
+	}
+	return steps
+}
+
+// An agent run in the editor receives its own endpoint: the agent lists the tools
+// of every tools plugin there, and a call is routed to the plugin that listed the tool,
+// with the run's context.
+func TestAnEditorRunCallsTheToolsOfThePluginsWithItsContext(t *testing.T) {
+	agent := &toolAgent{calls: []toolCall{
+		{name: "note_read", arguments: `{"path":"Garden.md"}`},
+		{name: "card_current_get", arguments: `{}`},
+	}}
+	host, vault, cards := vaultAndCards(t, agent)
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+
+	requestContext := map[string]string{cardKey: "c-7"}
+	steps := runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Context: requestContext})
+
+	if last := steps[len(steps)-1]; last.Kind != domain.StepStop || last.Detail != "done" {
+		t.Fatalf("the run stopped with %+v", last)
+	}
+	request := agent.getRequests()[0]
+	if !strings.HasPrefix(request.GetToolsUrl(), "http://127.0.0.1:") || request.GetToolsToken() == "" {
+		t.Errorf("the agent was given the tools at %q with token %q", request.GetToolsUrl(), request.GetToolsToken())
+	}
+	if want := []string{"card_current_get", "note_read", "note_write"}; !slices.Equal(request.GetTools(), want) {
+		t.Errorf("the agent may call %v, want %v", request.GetTools(), want)
+	}
+	if kinds := getDeclaredKinds(request); !maps.Equal(kinds, map[string]string{"note_read": "read", "note_write": "edit", "card_current_get": "read"}) {
+		t.Errorf("the tools are declared as %v", kinds)
+	}
+	if names := agent.getToolNames(); !slices.Equal(names, []string{"card_current_get", "note_read", "note_write"}) {
+		t.Errorf("the endpoint lists %v", names)
+	}
+	if results := agent.getResults(); !slices.Equal(results, []string{`note_read {"path":"Garden.md"} c-7`, "card_current_get {} c-7"}) {
+		t.Errorf("the calls returned %v", results)
+	}
+	for _, served := range []*toolPlugin{vault, cards} {
+		if requests := served.getRequests(); len(requests) != 1 || !maps.Equal(requests[0].GetContext(), requestContext) {
+			t.Errorf("the plugin was called with %v", requests)
+		}
+	}
+}
+
+func getDeclaredKinds(request *v1.AskAgentRequest) map[string]string {
+	kinds := map[string]string{}
+	for _, one := range request.GetToolDeclarations() {
+		kinds[one.GetName()] = one.GetKind()
+	}
+	return kinds
+}
+
+// The window of the flashcards serves its runs the tools too.
+func TestASettingsAgentRunCallsTheToolsOfThePlugins(t *testing.T) {
+	agent := &toolAgent{calls: []toolCall{{name: "card_current_get", arguments: `{}`}}}
+	host, _, cards := vaultAndCards(t, agent)
+	settingsAgent := openSettingsAgent(t, host, `{"app": {"agent": {"use": "alpha"}}}`)
+
+	runToEnd(t, settingsAgent, agentdomain.Task{Question: "q", Context: map[string]string{cardKey: "c-9"}})
+
+	if results := agent.getResults(); !slices.Equal(results, []string{"card_current_get {} c-9"}) {
+		t.Errorf("the calls returned %v", results)
+	}
+	if requests := cards.getRequests(); len(requests) != 1 || requests[0].GetContext()[cardKey] != "c-9" {
+		t.Errorf("the plugin was called with %v", requests)
+	}
+}
+
+// A tool is offered only when its plugin holds the permission for its effect,
+// and only on the servers it names; a plugin that does not declare the tools
+// capability is not queried.
+func TestOnlyTheToolsTheWindowAllowsAreServed(t *testing.T) {
+	agent := &toolAgent{}
+	reader := &toolPlugin{tools: []*v1.PluginTool{
+		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READ_ONLY),
+		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_READ_WRITE),
+		newPluginTool("note_quote", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolServer_TOOL_SERVER_READING),
+		newPluginTool("note_guess", v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED),
+	}}
+	undeclared := &toolPlugin{tools: []*v1.PluginTool{newPluginTool("card_current_get", v1.ToolEffect_TOOL_EFFECT_READ_ONLY)}}
+	host := hostOver(t,
+		agentAt(agent),
+		toolsAt(vaultPlugin, []string{"vault:read"}, reader),
+		testPlugin{
+			id: cardPlugin, permissions: []string{"vault:read"},
+			mount: func(mux *http.ServeMux) { mux.Handle(numenv1connect.NewPluginToolServiceHandler(undeclared)) },
+		},
+	)
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+
+	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
+
+	if names := agent.getToolNames(); !slices.Equal(names, []string{"note_read"}) {
+		t.Errorf("the endpoint lists %v", names)
+	}
+	if undeclared.countLists() != 0 {
+		t.Error("a plugin that does not declare the tools capability was asked for its tools")
+	}
+}
+
+func TestARunWithNoToolPluginIsGivenNoEndpoint(t *testing.T) {
+	agent := &toolAgent{}
+	host := hostOver(t, agentAt(agent))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+
+	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
+
+	if request := agent.getRequests()[0]; request.GetToolsUrl() != "" || len(request.GetTools()) != 0 {
+		t.Errorf("the agent was given the tools at %q: %v", request.GetToolsUrl(), request.GetTools())
+	}
+}
+
+// The endpoint is gone once the run is stopped.
+func TestTheEndpointClosesWhenTheRunStops(t *testing.T) {
+	agent := &toolAgent{}
+	host, _, _ := vaultAndCards(t, agent)
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+
+	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
+
+	request := agent.getRequests()[0]
+	if request.GetToolsUrl() == "" {
+		t.Fatal("the run was given no endpoint")
+	}
+	if _, err := connectTools(t.Context(), request.GetToolsUrl(), request.GetToolsToken()); err == nil {
+		t.Error("the endpoint still answers after the run stopped")
+	}
+}
+
+// While the run is active, the endpoint accepts its token and rejects any other.
+func TestToolsEndpoint_RejectsWrongToken(t *testing.T) {
+	agent := &toolAgent{}
+	host, _, _ := vaultAndCards(t, agent)
+	run, err := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)})).GetAgent().
+		StartRun(t.Context(), agentdomain.Task{Question: "q", Agent: "alpha"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := run.Stop(); err != nil {
+			t.Error(err)
+		}
+	})
+	for range run.GetSteps() {
+	}
+
+	request := agent.getRequests()[0]
+	if _, err := connectTools(t.Context(), request.GetToolsUrl(), "another"); err == nil {
+		t.Error("the endpoint answered another token")
+	}
+	session, err := connectTools(t.Context(), request.GetToolsUrl(), request.GetToolsToken())
+	if err != nil {
+		t.Fatalf("the endpoint refuses the token of its run: %v", err)
+	}
+	if err := session.Close(); err != nil {
+		t.Error(err)
+	}
+}
+
+// Every call of a run is made in the vault the run works, which the card tools read.
+func TestACardToolCallCarriesTheVaultOfTheRun(t *testing.T) {
+	agent := &toolAgent{calls: []toolCall{{name: "card_current_get", arguments: `{}`}}}
+	host, _, cards := vaultAndCards(t, agent)
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+
+	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Vault: "v-garden"})
+
+	if requests := cards.getRequests(); len(requests) != 1 || requests[0].GetVaultId() != "v-garden" {
+		t.Errorf("the plugin was called with %v", requests)
+	}
+	if request := agent.getRequests()[0]; request.GetVaultId() != "v-garden" {
+		t.Errorf("the agent request names the vault %q", request.GetVaultId())
+	}
+}
+
+// shownVault is a host that exposes one vault and nothing else.
+type shownVault struct {
+	vaultapi.Switch
+	vault domain.Vault
+}
+
+func (s shownVault) GetVault() (domain.Vault, bool) { return s.vault, true }
+
+const mcpPlugin = "md.test.mcp"
+
+// A plugin that serves the tools to programs outside Numen lists the tools of the tools plugins on
+// the host, and calls them in the vault the host shows with no context. A tool whose effect it
+// holds no permission of is neither listed nor run.
+func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
+	agent := &toolAgent{}
+	vault := &toolPlugin{tools: []*v1.PluginTool{
+		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READ_ONLY),
+		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_READ_WRITE),
+	}}
+	host := hostOver(t,
+		agentAt(agent),
+		toolsAt(vaultPlugin, []string{"vault:read", "vault:write"}, vault),
+		testPlugin{id: mcpPlugin, permissions: []string{"vault:read"}, mount: func(*http.ServeMux) {}},
+	)
+	t.Cleanup(func() {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
+	container.AdaptPluginHost(host).Endpoint.SetPluginVault(&vaultapi.Access{Switch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
+	port, err := host.Services.OpenHostEndpoint(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	caller, err := host.Activation.EnsureActive(t.Context(), mcpPlugin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := numenv1connect.NewPluginToolServiceClient(
+		&http.Client{Transport: bearerTransport{token: caller.Token}}, fmt.Sprintf("http://127.0.0.1:%d", port))
+
+	listed, err := client.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, one := range listed.Msg.GetTools() {
+		names = append(names, one.GetName())
+	}
+	if !slices.Equal(names, []string{"note_read"}) {
+		t.Errorf("the host lists %v", names)
+	}
+	res, err := client.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
+		Name: "note_read", Arguments: []byte(`{"path":"Garden.md"}`), Context: map[string]string{cardKey: "c-1"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if text := res.Msg.GetResult().GetText(); text != `note_read {"path":"Garden.md"} ` {
+		t.Errorf("the call answered %q", text)
+	}
+	if requests := vault.getRequests(); len(requests) != 1 || requests[0].GetVaultId() != "v-garden" || len(requests[0].GetContext()) != 0 {
+		t.Errorf("the plugin was called with %v", requests)
+	}
+	denial, err := client.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{Name: "note_write"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if denial.Msg.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL || len(vault.getRequests()) != 1 {
+		t.Errorf("a tool the caller may not run answered %v", denial.Msg)
+	}
+}
+
+// An in-app run lists only the tools whose effect permission the agent plugin holds: an agent
+// plugin with vault:read alone lists the READ_ONLY tools and neither lists nor can call
+// a READ_WRITE one, although the plugin of that tool holds vault:write.
+func TestAnInAppRunOfAnAgentPluginWithVaultReadListsNoReadWriteTool(t *testing.T) {
+	agent := &toolAgent{calls: []toolCall{{name: "note_write", arguments: `{"path":"Garden.md"}`}}}
+	vault := &toolPlugin{tools: []*v1.PluginTool{
+		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READ_ONLY),
+		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_READ_WRITE),
+	}}
+	cards := &toolPlugin{tools: []*v1.PluginTool{newPluginTool("card_current_get", v1.ToolEffect_TOOL_EFFECT_READ_ONLY)}}
+	reader := agentAt(agent)
+	reader.permissions = []string{"vault:read"}
+	host := hostOver(t,
+		reader,
+		toolsAt(vaultPlugin, []string{"vault:read", "vault:write"}, vault),
+		toolsAt(cardPlugin, []string{"vault:read", "vault:write"}, cards),
+	)
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
+
+	steps := runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
+
+	request := agent.getRequests()[0]
+	if want := []string{"card_current_get", "note_read"}; !slices.Equal(request.GetTools(), want) {
+		t.Errorf("an agent plugin with vault:read may call %v, want %v", request.GetTools(), want)
+	}
+	if kinds := getDeclaredKinds(request); !maps.Equal(kinds, map[string]string{"note_read": "read", "card_current_get": "read"}) {
+		t.Errorf("an agent plugin with vault:read is given the declarations %v", kinds)
+	}
+	if requests := vault.getRequests(); len(requests) != 0 {
+		t.Errorf("the vault plugin ran %v for an agent plugin with vault:read", requests)
+	}
+	if last := steps[len(steps)-1]; last.Kind != domain.StepStop || last.Detail == "done" {
+		t.Errorf("the call of note_write ended the run with %+v, want an error for a tool the endpoint does not serve", last)
+	}
+}

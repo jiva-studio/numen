@@ -143,3 +143,17 @@ func TestManifestDeclaresTheSettingRequestTimeout(t *testing.T) {
 		t.Error("the manifest has no setting requestTimeout")
 	}
 }
+
+// The provider asks for no permission: it reaches the services of its connections itself, and a
+// plugin is not stopped from the network by a permission.
+func TestManifestAsksForNoPermission(t *testing.T) {
+	var manifest struct {
+		Permissions []string `json:"permissions"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	if len(manifest.Permissions) != 0 {
+		t.Errorf("permissions = %v, want none", manifest.Permissions)
+	}
+}

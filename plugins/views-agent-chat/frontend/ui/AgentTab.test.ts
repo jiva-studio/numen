@@ -79,10 +79,12 @@ const mountTab = (createAgent: (sample: () => void) => AgentPort) => {
       openFileAdjacent: () => undefined,
       resolveLinks: async () => [],
       unreachable: () => '',
-      getModelsAt: (path) =>
-        path.join('/') === 'app/agent/use'
-          ? [{ name: 'orchard', title: 'Orchard', isDefault: true, presence: 'present' }]
-          : [{ name: 'main', title: 'Main', isDefault: true, presence: 'present' }],
+      settings: {
+        getModelsAt: (path) =>
+          path.join('/') === 'app/agent/use'
+            ? [{ name: 'orchard', title: 'Orchard', isDefault: true, presence: 'present' }]
+            : [{ name: 'main', title: 'Main', isDefault: true, presence: 'present' }],
+      },
     },
   )
   const wrapper = mount(AgentTab, {
@@ -108,9 +110,9 @@ describe('the disc across one answer', () => {
 
     await tab.wrapper.get('.disc button').trigger('click')
     tab.sample()
-    expect(tab.state.isAnswerPending.value).toBe(true)
+    expect(tab.state.conversation.isAnswerPending.value).toBe(true)
     expect(readDisc(tab.wrapper.element)).toBe('stop:pressable')
-    while (tab.state.isAnswerPending.value) await waitTask()
+    while (tab.state.conversation.isAnswerPending.value) await waitTask()
     await waitTransitions()
 
     expect(tab.values).toEqual(['send:pressable', 'stop:pressable', 'send:barred'])
@@ -134,10 +136,10 @@ describe('the disc across one answer', () => {
 
     await tab.wrapper.get('.disc button').trigger('click')
     tab.sample()
-    while (tab.state.isAnswerPending.value) await waitTask()
+    while (tab.state.conversation.isAnswerPending.value) await waitTask()
     await waitTransitions()
 
     expect(tab.values).toEqual(['send:pressable', 'stop:pressable', 'send:barred'])
-    expect(tab.state.turns.value.map((turn) => turn.text)).toContain('The east orchard ')
+    expect(tab.state.addresses.turns.value.map((turn) => turn.text)).toContain('The east orchard ')
   })
 })

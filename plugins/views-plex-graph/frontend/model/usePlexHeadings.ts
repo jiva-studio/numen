@@ -3,10 +3,9 @@
  */
 import { shallowRef, watch, type Ref } from 'vue'
 import { NOTE_TYPE } from '@numen/plugin-sdk'
-import type { PlexHeading } from '../plex'
 import { createRequestGuard } from '@numen/ui'
 import { convertHeadings } from '../lib/picture'
-import type { PlexTabDeps, NoteType } from '../types'
+import type { PlexTabDeps, NoteType, PlexHeading } from '../types'
 import type { NodeIdMap } from '../lib/nodeIdMap'
 
 export function usePlexHeadings(
@@ -20,12 +19,12 @@ export function usePlexHeadings(
   const readHeadings = async () => {
     const notes = paths.value.filter((path) => (types.value.get(path) ?? NOTE_TYPE) === NOTE_TYPE)
     const mine = guard.acquireRequest()
-    if (!deps.isNesting.value || notes.length === 0) {
+    if (!deps.notes.isNesting.value || notes.length === 0) {
       headings.value = new Map()
       return
     }
     try {
-      const found = await deps.readHeadings(notes)
+      const found = await deps.notes.readHeadings(notes)
       if (!mine.isCurrent) return
       headings.value = new Map(
         [...found].map(([path, rawHeadings]) => [path, convertHeadings(rawHeadings)]),
@@ -37,10 +36,13 @@ export function usePlexHeadings(
   }
 
   watch(paths, () => readHeadings(), { immediate: true })
-  watch(deps.isNesting, () => readHeadings())
+  watch(deps.notes.isNesting, () => readHeadings())
+
+  const getType = (node: string): NoteType =>
+    types.value.get(nodeIdMap.getNodePath(node)) ?? NOTE_TYPE
 
   const getHeadings = (node: string): readonly PlexHeading[] =>
-    deps.isNesting.value ? (headings.value.get(nodeIdMap.getNodePath(node)) ?? []) : []
+    deps.notes.isNesting.value ? (headings.value.get(nodeIdMap.getNodePath(node)) ?? []) : []
 
-  return { headings, readHeadings, getHeadings }
+  return { headings, maxHeadings: deps.notes.headings, getType, readHeadings, getHeadings }
 }

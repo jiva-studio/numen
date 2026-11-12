@@ -20,6 +20,25 @@ export const getFitKey = (prefix: string, entry: SlotItem): string => `${prefix}
 const ENTRY = '[data-title-bar-entry]'
 const MORE = '[data-title-bar-more]'
 
+function readEntryWidths(
+  area: HTMLElement,
+  previous: ReadonlyMap<string, number>,
+  observer: ResizeObserver | undefined,
+): ReadonlyMap<string, number> | null {
+  const next = new Map(previous)
+  let isChanged = false
+  for (const element of area.querySelectorAll<HTMLElement>(ENTRY)) {
+    const key = element.getAttribute('data-title-bar-entry') ?? ''
+    const width = element.offsetWidth
+    if (width > 0 && next.get(key) !== width) {
+      next.set(key, width)
+      isChanged = true
+    }
+    observer?.observe(element)
+  }
+  return isChanged ? next : null
+}
+
 export function useBarFit(
   start: Readonly<Ref<HTMLElement | null>>,
   rows: () => readonly BarRow[],
@@ -51,18 +70,8 @@ export function useBarFit(
   function measure(): void {
     const area = start.value
     if (!area) return
-    const next = new Map(widths.value)
-    let isChanged = false
-    for (const element of area.querySelectorAll<HTMLElement>(ENTRY)) {
-      const key = element.getAttribute('data-title-bar-entry') ?? ''
-      const width = element.offsetWidth
-      if (width > 0 && next.get(key) !== width) {
-        next.set(key, width)
-        isChanged = true
-      }
-      observer?.observe(element)
-    }
-    if (isChanged) widths.value = next
+    const next = readEntryWidths(area, widths.value, observer)
+    if (next) widths.value = next
     const more = area.querySelector<HTMLElement>(MORE)?.offsetWidth ?? 0
     if (more > 0 && more !== moreWidth.value) moreWidth.value = more
   }

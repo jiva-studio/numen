@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { effectScope } from 'vue'
-import { openNotes, type Notes } from '@/entities/note'
-import { createCustomTabKind, type PluginHostDeps } from '@numen/plugin-host'
+import { openNotes as openNotesOn } from '@/entities/note'
+import { createCustomTabKind, type PluginHostDeps } from '@numen/plugin-loader'
+import { blank } from '@/testing/stubs'
+import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 
-const statFile = (body: string): string => `at:${body}`
+const statFile = (body: string): string => `1 1 at:${body}`
+
+const openNotes = (core: Notes, how: Parameters<typeof openNotesOn>[0]) => {
+  answerNotes(core)
+  return openNotesOn(how)
+}
 
 function createFiles() {
   const files = new Map<string, string>()
@@ -47,7 +54,7 @@ function openNoteTab(path: string) {
   const notes = openNotes(core, { limits: { quiet: 1, bound: 5 } })
   const kind = createCustomTabKind(
     'md.numen.notes',
-    { kind: 'note', component: null, title: 'Note' },
+    { kind: 'note', component: blank, title: 'Note' },
     { getNoteBuffer: () => notes } as unknown as PluginHostDeps,
   )
   const scope = effectScope(true)
@@ -154,7 +161,7 @@ describe('the links of a note tab of the note kind', () => {
     const notes = openNotes(core, { limits: { quiet: 1, bound: 5 } })
     const kind = createCustomTabKind(
       'md.numen.notes',
-      { kind: 'note', component: null, title: 'Note' },
+      { kind: 'note', component: blank, title: 'Note' },
       {
         getNoteBuffer: () => notes,
         getNotes: () => ({
@@ -165,11 +172,13 @@ describe('the links of a note tab of the note kind', () => {
           getHeadings: async () => new Map([['notes/Entropy.md', [{ text: 'Shannon formula' }]]]),
         }),
         getWorkspace: () => ({
-          openFile: (path: string, options?: { placement?: string }) =>
-            openCalls.push({
-              path,
-              ...(options?.placement ? { placement: options.placement } : {}),
-            }),
+          files: {
+            open: (path: string, options?: { placement?: string }) =>
+              openCalls.push({
+                path,
+                ...(options?.placement ? { placement: options.placement } : {}),
+              }),
+          },
         }),
         resolveLink: async (_from: string, address: string) =>
           address === 'name://Entropy' ? 'notes/Entropy.md' : '',
@@ -239,9 +248,9 @@ describe('note tab restored from the saved path', () => {
       const saved = (
         createCustomTabKind('md.numen.notes', {
           kind: 'note',
-          component: null,
+          component: blank,
           title: 'Note',
-        }).getOpenTab?.(first.state) ?? { path: '' }
+        }).address?.getOpenTab?.(first.state) ?? { path: '' }
       ).path
       expect(saved).toBe(path)
 

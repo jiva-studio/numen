@@ -15,29 +15,26 @@
  * may charge for. It is written after a question that names the notes and the connection, and a
  * row that is not complete changes nothing meanwhile.
  */
-import { computed, onMounted, useTemplateRef } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
-import { Button, ConfirmDialog, type SelectChoice } from '@numen/ui'
-import {
-  getConnectionUsability,
-  readRows,
-  sortByUsability,
-  type RowDraft,
-  type StoredRow,
-} from '@/entities/connection'
+import { Button } from '@numen/ui'
+import { readRows, type StoredRow } from '@/entities/connection'
 import type { PluginSettingInfo } from '@/entities/settings'
-import type { Installation } from '../../../types'
+import type { JsonValue } from '@/shared/api/json'
+import type { InstallationConnections } from '../../../types'
+import { ConfirmDialog } from '../../confirm-dialog'
 import { WORDS as words } from '../../../words'
 import ConnectionRowEditor from './ConnectionRowEditor.vue'
-import { useIndexQuestion } from './useIndexQuestion'
-import { useRowDrafts } from './useRowDrafts'
-import { useRowOrder } from './useRowOrder'
+import { useConnectionEntries } from '../../../model/useConnectionEntries'
+import { useIndexQuestion } from '../../../model/useIndexQuestion'
+import { useRowDrafts } from '../../../model/useRowDrafts'
+import { useRowOrder } from '../../../model/useRowOrder'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   setting: PluginSettingInfo
-  value: unknown
-  installation: Installation
+  value: JsonValue | undefined
+  connections: InstallationConnections
 }>()
 
 const emit = defineEmits<{
@@ -47,19 +44,19 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const list = useTemplateRef<HTMLElement>('list')
-const { drafts, write, reset, add, remove, update, move } = useRowDrafts({
+const { drafts, write, revert, add, remove, update, move } = useRowDrafts({
   getValue: () => props.value,
   onChange: (rows) => onRowsChange(rows),
 })
 const { question, ask, confirm, cancel } = useIndexQuestion({
-  countNotes: () => props.installation.countNotes?.(),
+  getConnections: () => props.connections,
   getText: (rows, count) =>
     words.connectionRowsIndexQuestion(
       count,
-      connections.value.find((one) => one.id === rows[0]?.connection)?.name ?? '',
+      stored.value.find((one) => one.id === rows[0]?.connection)?.name ?? '',
     ),
   onConfirm: (rows) => emit('change', rows),
-  onCancel: reset,
+  onCancel: revert,
 })
 const { heldKey, announcement, drag, onGripPress, onGripKey } = useRowOrder({
   drafts,
@@ -70,40 +67,11 @@ const { heldKey, announcement, drag, onGripPress, onGripKey } = useRowOrder({
 
 const operation = computed(() => props.setting.operation ?? '')
 const limit = computed(() => props.setting.max ?? 1)
-const connections = computed(() => props.installation.connections?.value ?? [])
-const types = computed(() => props.installation.connectionTypes?.value ?? [])
-const usabilityWords = {
-  unavailable: words.connectionUnavailable,
-  incomplete: words.connectionIncomplete,
-  cannot: words.connectionCannot,
-}
-
-const entries = computed(() =>
-  sortByUsability(
-    connections.value.map((connection) => {
-      const type = types.value.find((one) => one.id === connection.typeId)
-      return {
-        connection,
-        type,
-        ...getConnectionUsability(connection, type, operation.value, usabilityWords),
-      }
-    }),
-  ),
+const { stored, choices, getReason } = useConnectionEntries(
+  () => props.connections,
+  () => operation.value,
 )
-
-const choices = computed<readonly SelectChoice[]>(() =>
-  entries.value.map((one) => ({
-    id: one.connection.id,
-    text: one.connection.name,
-    detail: one.isUsable ? (one.type?.title ?? '') : one.reason,
-    ...(one.isUsable ? {} : { isDisabled: true }),
-  })),
-)
-
-const canAdd = computed(() => drafts.value.length < limit.value && connections.value.length > 0)
-
-/* ---------------------------------- Hooks --------------------------------- */
-onMounted(() => props.installation.loadConnections?.())
+const canAdd = computed(() => drafts.value.length < limit.value && stored.value.length > 0)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onRowsChange(rows: readonly StoredRow[]): void {
@@ -119,12 +87,8 @@ function onRowsChange(rows: readonly StoredRow[]): void {
 /* -------------------------------- Helpers --------------------------------- */
 function isIndexChange(rows: readonly StoredRow[]): boolean {
   const getKey = (one: StoredRow): string => `${one.connection}\0${one.model}`
-  const stored = readRows(props.value).map(getKey)
-  return rows.length > 0 && rows.map(getKey).join('\n') !== stored.join('\n')
-}
-
-function getReason(row: RowDraft): string {
-  return entries.value.find((one) => one.connection.id === row.connection)?.reason ?? ''
+  const written = readRows(props.value).map(getKey)
+  return rows.length > 0 && rows.map(getKey).join('\n') !== written.join('\n')
 }
 </script>
 
@@ -144,16 +108,12 @@ function getReason(row: RowDraft): string {
         :count="drafts.length"
         :operation="operation"
         :choices="choices"
-        :reason="getReason(row)"
+        :reason="getReason(row.connection)"
         :is-held="heldKey === row.key"
         :is-dragging="drag.dragging.value?.hasMoved === true && drag.dragging.value.item === index"
         :is-drop-target="drag.dragging.value?.hasMoved === true && drag.at.value === index"
-        v-bind="{
-          ...(installation.listModels ? { listModels: installation.listModels } : {}),
-          ...(installation.listReasoningLevels
-            ? { listReasoningLevels: installation.listReasoningLevels }
-            : {}),
-        }"
+        :list-models="props.connections.models.listModels"
+        :list-reasoning-levels="props.connections.models.listReasoningLevels"
         @update="(patch) => update(row.key, patch)"
         @remove="remove(row.key)"
         @grip-press="(event) => onGripPress(index, event)"
@@ -169,12 +129,14 @@ function getReason(row: RowDraft): string {
       <Button v-if="drafts.length === 0" variant="ghost" @click="emit('open-connections')">
         {{ words.connectionRowsOpen }}
       </Button>
-      <p v-if="connections.length === 0" class="connection-rows__note">
+      <p v-if="stored.length === 0" class="connection-rows__note">
         {{ words.connectionRowsNone }}
       </p>
     </div>
 
-    <p v-if="drafts.length > 0" class="connection-rows__note">{{ words.connectionRowsPrivacy }}</p>
+    <p v-if="drafts.length > 0" class="connection-rows__note">
+      {{ words.connectionRowsPrivacy(limit) }}
+    </p>
     <p class="sr-only" role="status" aria-live="assertive">{{ announcement }}</p>
 
     <ConfirmDialog

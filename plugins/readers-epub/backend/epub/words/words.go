@@ -1,10 +1,10 @@
-// Package words normalises and matches the words of markup attributes and names.
+// Package words normalizes and matches the words of markup attributes and names.
 package words
 
 import "strings"
 
-// NormaliseSpaces is one line of text: the words of a name, single-spaced.
-func NormaliseSpaces(s string) string {
+// NormalizeSpaces is one line of text: the words of a name, single-spaced.
+func NormalizeSpaces(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
 

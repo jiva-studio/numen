@@ -1,15 +1,14 @@
-import { getRelationName } from './plex'
-import type { PlexRelation } from './plex'
+import type { PlexRelation } from './types'
 
 /** What a plex tab is called, on its own and after the note it relies on. */
 export const WORDS = {
   plex: 'Plex',
-  /** The neighbourhood is being read, and its contents are not known yet. */
+  /** The neighborhood is being read, and its contents are not known yet. */
   loading: 'Loading…',
   /** The row of a command of the menu whose items are being read. */
   loadingItems: 'Loading…',
   /** The label of the drop preview shown while notes are dragged over the plex. */
-  dropName: (relation: PlexRelation) => `as ${getRelationName(relation)}`,
+  dropName: (relation: PlexRelation) => `as ${relation}`,
   /** The notes that stayed unjoined, because the vault would not write the link. */
   notJoined: 'Links not created:',
   /** What the field in the quick-link popover is called. */

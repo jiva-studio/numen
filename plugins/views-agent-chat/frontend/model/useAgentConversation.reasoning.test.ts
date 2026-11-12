@@ -59,13 +59,15 @@ function open(settings: Record<string, string> = {}, reasoning = '') {
     openFileAdjacent: () => undefined,
     resolveLinks: async () => [],
     unreachable: () => '',
-    getSetting: (path) => settings[path.join('/')],
-    getReasoning: () => reasoning,
-    writeSetting: async (path, value) => {
-      content.push([path.join('/'), value])
+    settings: {
+      getSetting: (path) => settings[path.join('/')],
+      getReasoning: () => reasoning,
+      writeSetting: async (path, value) => {
+        content.push([path.join('/'), value])
+      },
+      getModelsAt: (categoryPath) =>
+        LISTED.filter((one) => one.nameAt.join('/') === categoryPath.join('/')),
     },
-    getModelsAt: (categoryPath) =>
-      LISTED.filter((one) => one.nameAt.join('/') === categoryPath.join('/')),
   })
   return { state, requests: request, writtenSettings: content }
 }
@@ -73,61 +75,61 @@ function open(settings: Record<string, string> = {}, reasoning = '') {
 describe('the levels offered', () => {
   it('are those of the selected model', () => {
     const { state } = open()
-    expect(state.reasoningLevels.value.map((one) => one.id)).toEqual(['low', 'high'])
-    expect(state.reasoningLevels.value.map((one) => one.title)).toEqual(['Low', 'High'])
+    expect(state.reasoning.reasoningLevels.value.map((one) => one.id)).toEqual(['low', 'high'])
+    expect(state.reasoning.reasoningLevels.value.map((one) => one.title)).toEqual(['Low', 'High'])
   })
 
   it('are none for a model that offers none', () => {
     const { state } = open({ 'app/agent/use': 'alpha', 'app/agent/alpha/model': 'plain' })
-    expect(state.reasoningLevels.value).toEqual([])
-    expect(state.selectedReasoningId.value).toBe('')
+    expect(state.reasoning.reasoningLevels.value).toEqual([])
+    expect(state.reasoning.selectedReasoningId.value).toBe('')
   })
 })
 
 describe('the level selected', () => {
   it('is the default of the model while none was chosen', () => {
-    expect(open().state.selectedReasoningId.value).toBe('low')
+    expect(open().state.reasoning.selectedReasoningId.value).toBe('low')
   })
 
   it('is empty where the model names no default and none was chosen', () => {
     const { state } = open({ 'app/agent/use': 'beta' })
-    expect(state.reasoningLevels.value).toHaveLength(2)
-    expect(state.selectedReasoningId.value).toBe('')
+    expect(state.reasoning.reasoningLevels.value).toHaveLength(2)
+    expect(state.reasoning.selectedReasoningId.value).toBe('')
   })
 
   it('is the one kept by the plugin setting', () => {
-    expect(open({}, 'high').state.selectedReasoningId.value).toBe('high')
+    expect(open({}, 'high').state.reasoning.selectedReasoningId.value).toBe('high')
   })
 
   it('is the default where the kept level is not one the model offers', () => {
-    expect(open({}, 'max').state.selectedReasoningId.value).toBe('low')
+    expect(open({}, 'max').state.reasoning.selectedReasoningId.value).toBe('low')
   })
 
   it('is the one chosen without mutating settings', () => {
     const { state, writtenSettings } = open()
-    state.selectReasoning('high')
-    expect(state.selectedReasoningId.value).toBe('high')
+    state.reasoning.selectReasoningLevel('high')
+    expect(state.reasoning.selectedReasoningId.value).toBe('high')
     expect(writtenSettings).toEqual([])
   })
 
   it('does not follow an agent other than the one it was chosen for', () => {
     const { state } = open()
-    state.selectReasoning('high')
-    state.selectModel({
+    state.reasoning.selectReasoningLevel('high')
+    state.models.selectModel({
       agentId: 'beta',
       agentTitle: 'beta',
       modelId: 'quiet',
       modelTitle: 'QUIET',
       isAvailable: true,
     })
-    expect(state.selectedReasoningId.value).toBe('')
+    expect(state.reasoning.selectedReasoningId.value).toBe('')
   })
 })
 
 describe('the question', () => {
   it('names the level selected', () => {
     const { state, requests } = open({}, 'high')
-    state.send('hello')
+    state.draft.send('hello')
     expect(requests).toEqual([{ agentId: 'alpha', modelId: 'deep', reasoning: 'high' }])
   })
 
@@ -136,7 +138,7 @@ describe('the question', () => {
       { 'app/agent/use': 'alpha', 'app/agent/alpha/model': 'plain' },
       'high',
     )
-    state.send('hello')
+    state.draft.send('hello')
     expect(requests[0]?.reasoning).toBe('')
   })
 })

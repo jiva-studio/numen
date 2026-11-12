@@ -69,33 +69,36 @@ const systemChrome = () => {
   return undefined
 }
 
+/** Takes one picture of a story in a theme, in a window of the size the picture asks for, and writes it. */
+async function takeShot(browser, books, shot, theme) {
+  // A window of its own size for each picture: the page holds two shapes,
+  // and one browser drawn at both would take the second at the first's.
+  const page = await browser.newPage({
+    viewport: shot.size ?? VIEWPORT,
+    deviceScaleFactor: SCALE,
+    colorScheme: theme,
+  })
+  await page.goto(
+    `${books.getBase(shot.story)}/iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme}`,
+    { waitUntil: 'networkidle' },
+  )
+  if (shot.over) await page.hover(shot.over)
+  await page.waitForTimeout(SETTLING)
+  const name = `window-${shot.name}-${theme}.webp`
+  const taken = await sharp(await page.screenshot()).webp({ quality: QUALITY }).toBuffer()
+  if (taken.length < (shot.drawn ?? DRAWN)) throw new Error(`${name} is ${taken.length} bytes: the story had not drawn`)
+  await writeFile(join(INTO, name), taken)
+  process.stdout.write(`${name}\n`)
+  await page.close()
+}
+
 const books = await openBooks(SHOTS)
 
 try {
   const chrome = systemChrome()
   const browser = await chromium.launch(chrome ? { executablePath: chrome } : {})
   for (const theme of ['light', 'dark']) {
-    for (const shot of SHOTS) {
-      // A window of its own size for each picture: the page holds two shapes,
-      // and one browser drawn at both would take the second at the first's.
-      const page = await browser.newPage({
-        viewport: shot.size ?? VIEWPORT,
-        deviceScaleFactor: SCALE,
-        colorScheme: theme,
-      })
-      await page.goto(
-        `${books.getBase(shot.story)}/iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme}`,
-        { waitUntil: 'networkidle' },
-      )
-      if (shot.over) await page.hover(shot.over)
-      await page.waitForTimeout(SETTLING)
-      const name = `window-${shot.name}-${theme}.webp`
-      const taken = await sharp(await page.screenshot()).webp({ quality: QUALITY }).toBuffer()
-      if (taken.length < (shot.drawn ?? DRAWN)) throw new Error(`${name} is ${taken.length} bytes: the story had not drawn`)
-      await writeFile(join(INTO, name), taken)
-      console.log(name)
-      await page.close()
-    }
+    for (const shot of SHOTS) await takeShot(browser, books, shot, theme)
   }
   await browser.close()
 } finally {

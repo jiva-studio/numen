@@ -4,11 +4,11 @@
  */
 import type { Calibration, GetFloorResponse, ProbeFloorResponse } from '../api/relevance'
 
-export type { FloorCalibrationResult, FloorClient, FloorWriteResult } from '../api/relevance'
+export type { FloorClient } from '../api/relevance'
 
 export type FloorCalibration = Calibration
 export type FloorState = GetFloorResponse
 export type FloorProbeResult = ProbeFloorResponse
 
 /** Pauses for a number of milliseconds. */
-export type Wait = (ms: number) => Promise<unknown>
+export type Wait = (ms: number) => Promise<void>

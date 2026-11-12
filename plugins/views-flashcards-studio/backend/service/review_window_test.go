@@ -8,12 +8,12 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/presetwire"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/presetwire"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
 
 // bothWays is a card model of two review cards, so one card of it is two review cards.
@@ -39,7 +39,7 @@ func newCardModelDeck(cardModel, pos string, cards, from int) string {
 	return out
 }
 
-func getLived() map[string]string {
+func getLivedVault() map[string]string {
 	return map[string]string{
 		"Both.md": bothWays,
 		"One.md":  oneWay,
@@ -82,11 +82,18 @@ func getFirstMorning() time.Time {
 func setNow(handler *API, now time.Time) {
 	pos := clock.NewFake(now)
 	handler.now = pos
-	handler.scenarios().day = getReviewDay()
-	handler.scenarios().flash.Record = flashcards.NewRecord(pos)
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithDay(getReviewDay()).WithNow(pos)
-	handler.scenarios().flash.Session = handler.scenarios().flash.Session.WithDay(getReviewDay()).WithNow(pos)
-	handler.scenarios().flash.GetReviewDays = handler.scenarios().flash.GetReviewDays.WithDay(getReviewDay()).WithNow(pos)
+	day := getReviewDay()
+	handler.flash().Day = day
+	flash := handler.flash()
+	schedules, deckPresets := flash.Schedules.Schedules, flash.Schedules.Presets
+	flash.Reviews.Record = flashcards.NewRecord(pos)
+	flash.Counts.CardsDue = flashcards.NewCountCardsDue(schedules.ReviewCards(), schedules, deckPresets, day, pos)
+	flash.Reviews.Session = flashcards.NewSession(
+		flash.Reviews.AssignCardIDs, schedules.ReviewCards(), schedules, deckPresets, day, pos)
+	counted := flashcards.NewCountReviews(flash.Reviews.Log.Stores, schedules, day, pos)
+	counted.Cache, counted.Report = flash.Counts.Counted.Cache, flash.Counts.Counted.Report
+	flash.Counts.Counted = counted
+	flash.Counts.GetReviewDays = flashcards.NewGetReviewDays(counted)
 }
 
 func runDays(t *testing.T, handler *API, v domain.Vault, days int) {
@@ -151,7 +158,7 @@ func countSessionCards(due *api.VaultCardsDue, decks []string) int {
 
 func readPresetConfig(t *testing.T, handler *API, v domain.Vault, path string) review.Preset {
 	t.Helper()
-	found, err := handler.scenarios().flash.Presets.Read(t.Context(), v, path)
+	found, err := handler.flash().Schedules.Presets.Read(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +167,7 @@ func readPresetConfig(t *testing.T, handler *API, v domain.Vault, path string) r
 
 func writePreset(t *testing.T, handler *API, v domain.Vault, path string, p review.Preset) {
 	t.Helper()
-	if _, err := handler.scenarios().flash.Presets.Save(t.Context(), v, path, p, domain.FileStat{}); err != nil {
+	if _, err := handler.flash().Schedules.Presets.Save(t.Context(), v, path, p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -176,10 +183,10 @@ func getCurve(t *testing.T, handler *API, v domain.Vault, path string, p review.
 
 func curves(handler *API) flashcards.ProjectCurve {
 	c := flashcards.NewProjectCurve(
-		handler.scenarios().flash.Schedules.ReviewCards(),
-		handler.scenarios().flash.Schedules,
-		handler.scenarios().flash.Presets,
-		handler.scenarios().day,
+		handler.flash().Schedules.Schedules.ReviewCards(),
+		handler.flash().Schedules.Schedules,
+		handler.flash().Schedules.Presets,
+		handler.flash().Day,
 		handler.now,
 	)
 	c.Cores = runtime.GOMAXPROCS(0)
@@ -207,7 +214,7 @@ func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 		},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			handler, target := newAPI(t, getLived())
+			handler, target := newAPI(t, getLivedVault())
 			v := target[0]
 			runDays(t, handler, v, 14)
 			setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -243,7 +250,7 @@ func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 // distinguishes a preset with nothing scheduled from one whose day is fully
 // used.
 func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	setNow(handler, getFirstMorning())
 
@@ -255,14 +262,14 @@ func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 	}
 }
 
-func getSole() map[string]bool {
+func getSoleDecks() map[string]bool {
 	return map[string]bool{"decks/Roots.md": true, "decks/Loose.md": true}
 }
 
 // The cards each deck offers add up to the cards the vault offers, and a
 // session on one deck requests only that deck's share.
 func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -288,7 +295,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 		}
 		want := int(one.Due) + int(one.New)
 		got := len(sat.Cards)
-		if getSole()[one.Deck] && got != want {
+		if getSoleDecks()[one.Deck] && got != want {
 			t.Errorf("%s offers %d review cards and its session asks %d",
 				one.Deck, want, got)
 		}
@@ -311,7 +318,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 
 // TestVaultCount_ReturnsReviewedTodayPerDeck verifies answered count metrics per deck.
 func TestVaultCount_ReturnsReviewedTodayPerDeck(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 
@@ -356,9 +363,8 @@ func TestVaultCount_ReturnsReviewedTodayPerDeck(t *testing.T) {
 	}
 }
 
-// CardsDue summary includes each vault once.
 func TestCardsDueSummaryContainsEachVaultOnce(t *testing.T) {
-	handler, target := newAPI(t, getLived(), getDeck())
+	handler, target := newAPI(t, getLivedVault(), getDeck())
 	setNow(handler, getFirstMorning())
 
 	rows := front(t, handler).Vaults
@@ -400,7 +406,7 @@ func TestCardsDueSummaryContainsEachVaultOnce(t *testing.T) {
 // A higher retention target gives shorter intervals, so the same history leaves
 // more cards due today.
 func TestVaultCount_RecomputesAfterRetentionChange(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 	setNow(handler, getFirstMorning().AddDate(0, 0, 14))

@@ -27,7 +27,7 @@ describe('the title bar colour', () => {
       REPO_ROOT,
       'libs',
       'ui',
-      'core',
+      'components',
       'src',
       'shared',
       'tokens',

@@ -1,12 +1,34 @@
-import { describe, expect, it, vi } from 'vitest'
-import {
-  asFailure,
-  asValue,
-  formatErrorMessage,
-  type ConnectionClient,
-  type ConnectionInfo,
-} from '@numen/core-client'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { connections } from '@/shared/api/clients'
+import { formatError } from '@/shared/api/errors'
+import type { Result } from '@/shared/lib/result'
+import type {
+  ConnectionChange,
+  ConnectionDraft,
+  ConnectionFailure,
+  ConnectionInfo,
+  ConnectionTypeInfo,
+} from '../lib/types'
 import { createConnectionStore } from './connections'
+
+const asValue = <T>(value: T): Result<T, ConnectionFailure> => ({ ok: true, value })
+const asFailure = (error: ConnectionFailure): Result<never, ConnectionFailure> => ({
+  ok: false,
+  error,
+})
+
+/** The calls of the connection client, which a test answers. */
+interface ConnectionClient {
+  listTypes(): Promise<readonly ConnectionTypeInfo[]>
+  list(): Promise<readonly ConnectionInfo[]>
+  create(draft: ConnectionDraft): Promise<Result<ConnectionInfo, ConnectionFailure>>
+  update(change: ConnectionChange): Promise<Result<ConnectionInfo, ConnectionFailure>>
+  delete(id: string): Promise<Result<undefined, ConnectionFailure>>
+}
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => ({
   id: 'c00000001',
@@ -31,19 +53,14 @@ const createClient = (overrides: Partial<ConnectionClient> = {}): ConnectionClie
   ...overrides,
 })
 
-const describeFailure = (failure: { errorCode: string; detail: string }) =>
-  `${failure.errorCode}: ${failure.detail}`
-
 const createStore = (client: ConnectionClient) => {
   const notify = vi.fn()
-  return {
-    notify,
-    store: createConnectionStore(client, {
-      describeFailure,
-      loadFailed: 'Could not read the connections.',
-      notify,
-    }),
-  }
+  vi.spyOn(connections, 'listTypes').mockImplementation(client.listTypes)
+  vi.spyOn(connections, 'list').mockImplementation(client.list)
+  vi.spyOn(connections, 'create').mockImplementation(client.create)
+  vi.spyOn(connections, 'update').mockImplementation(client.update)
+  vi.spyOn(connections, 'delete').mockImplementation(client.delete)
+  return { notify, store: createConnectionStore(notify) }
 }
 
 describe('createConnectionStore', () => {
@@ -72,7 +89,7 @@ describe('createConnectionStore', () => {
 
     expect(store.connections.value).toHaveLength(1)
     expect(notify).toHaveBeenLastCalledWith(
-      expect.stringContaining('Could not read the connections.'),
+      expect.stringContaining('The connections could not be read.'),
       'error',
     )
   })
@@ -98,8 +115,7 @@ describe('createConnectionStore', () => {
   it('answers a refused create with the words of the failure and writes no message', async () => {
     const { notify, store } = createStore(
       createClient({
-        create: () =>
-          Promise.resolve(asFailure({ errorCode: 'name_taken' as const, detail: 'Work' })),
+        create: () => Promise.resolve(asFailure({ errorCode: 'name_taken', detail: 'Work' })),
       }),
     )
 
@@ -111,7 +127,7 @@ describe('createConnectionStore', () => {
       isPrivateNetworkAllowed: false,
     })
 
-    expect(answer).toStrictEqual({ ok: false, error: 'name_taken: Work' })
+    expect(answer).toStrictEqual({ ok: false, error: 'Another connection has this name.' })
     expect(notify).not.toHaveBeenCalled()
   })
 
@@ -131,7 +147,7 @@ describe('createConnectionStore', () => {
 
     expect(answer).toStrictEqual({
       ok: false,
-      error: formatErrorMessage(new Error('core unreachable')),
+      error: formatError(new Error('core unreachable')),
     })
   })
 

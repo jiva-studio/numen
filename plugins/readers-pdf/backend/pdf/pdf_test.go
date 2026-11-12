@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 
 	"github.com/tetratelabs/wazero"
 
@@ -396,12 +396,11 @@ const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
 
 func newWorkers(tb testing.TB) *pdf.Workers {
 	tb.Helper()
-	workers := pdf.NewWorkers()
 	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(compilationDirVariable))
 	if err != nil {
 		tb.Fatal(err)
 	}
-	workers.SetCompilationCache(compilation)
+	workers := pdf.NewWorkers(pdf.Options{Report: func(what string, err error) { tb.Errorf("%s: %v", what, err) }, CompilationCache: compilation, AfterFunc: nil, Workers: 0, IdleWorkers: 0})
 	tb.Cleanup(func() {
 		if err := errors.Join(workers.Close(), compilation.Close(context.WithoutCancel(tb.Context()))); err != nil {
 			tb.Error(err)

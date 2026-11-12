@@ -7,7 +7,7 @@
  */
 import type { Position } from '@numen/ui'
 import { getPointCost } from './curve'
-import type { Curve } from '../types'
+import type { Curve } from '../../lib/presets'
 
 /** Plot units. The plot is scaled uniformly, so a circle stays a circle. */
 export const PLOT_WIDTH = 560
@@ -25,8 +25,7 @@ export interface Plot {
   readonly foot: number
 }
 
-/** The curve plot. */
-export const CURVE_PLOT: Plot = { high: PLOT_HEIGHT, top: PLOT_TOP, foot: PLOT_BOTTOM }
+const CURVE_PLOT: Plot = { high: PLOT_HEIGHT, top: PLOT_TOP, foot: PLOT_BOTTOM }
 
 /** The backlog plot below the curve plot: shorter, and the same width. */
 export const BACKLOG_PLOT_HEIGHT = 76

@@ -35,7 +35,7 @@ Two places are skipped whole:
 - any folder whose name begins with a dot, which is where other tools keep their state.
 
 Files removed from the vault are moved into `.trash/` inside it, which is a dot-folder and so is
-out of the index as well. Nothing there is destroyed.
+out of the index as well. Nothing there is deleted until the command **Empty trash** is run.
 
 ## What a folder of yours becomes
 

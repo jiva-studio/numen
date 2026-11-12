@@ -6,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
 import { useTranscriptDraft } from './draft'
-import { getText, type Cue } from '../lib/cues'
+import { getText } from '../lib/cues'
+import type { Cue } from '../types'
 
 const CUES: readonly Cue[] = [
   { text: 'The first thing said.', from: 0, to: 2_000 },

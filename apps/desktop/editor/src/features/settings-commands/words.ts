@@ -8,3 +8,8 @@ export interface AppearanceWords {
   readonly unlisted: string
   readonly themeUnreadable: string
 }
+
+export const APPEARANCE_WORDS: AppearanceWords = {
+  unlisted: 'Themes unavailable',
+  themeUnreadable: 'Theme unreadable',
+}

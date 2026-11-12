@@ -1,17 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import {
-  ALLOWED_TYPES,
-  getDynamicScopes,
-  validateCommitMessage,
-} from './check-commit.mjs'
-
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../..'
-)
+import { ALLOWED_TYPES, validateCommitMessage } from './check-commit.mjs'
 
 test('ALLOWED_TYPES contains standard conventional commit types', () => {
   assert.ok(ALLOWED_TYPES.has('feat'))
@@ -20,44 +12,6 @@ test('ALLOWED_TYPES contains standard conventional commit types', () => {
   assert.ok(ALLOWED_TYPES.has('test'))
   assert.ok(ALLOWED_TYPES.has('arch'))
   assert.ok(ALLOWED_TYPES.has('sec'))
-})
-
-test('getDynamicScopes discovers idiomatic plugin names and variants', () => {
-  const scopes = getDynamicScopes(repoRoot)
-
-  // Discovered from engines-*
-  assert.ok(scopes.has('ocr'))
-  assert.ok(scopes.has('transcription'))
-  assert.ok(scopes.has('embeddings'))
-  assert.ok(scopes.has('engine-ocr'))
-
-  // Discovered from readers-*
-  assert.ok(scopes.has('epub'))
-  assert.ok(scopes.has('pdf'))
-  assert.ok(scopes.has('reader-epub'))
-  assert.ok(scopes.has('reader-pdf'))
-
-  // Discovered from agents-*
-  assert.ok(scopes.has('claude'))
-  assert.ok(scopes.has('codex'))
-  assert.ok(scopes.has('antigravity'))
-  assert.ok(scopes.has('agent-claude'))
-  assert.ok(scopes.has('agent-codex'))
-
-  // Discovered from views-*
-  assert.ok(scopes.has('flashcards'))
-  assert.ok(scopes.has('flashcards-studio'))
-  assert.ok(scopes.has('plex'))
-  assert.ok(scopes.has('plex-graph'))
-
-  // Discovered from apps
-  assert.ok(scopes.has('mobile'))
-  assert.ok(scopes.has('desktop'))
-
-  // Base scopes
-  assert.ok(scopes.has('core'))
-  assert.ok(scopes.has('domain'))
-  assert.ok(scopes.has('ui'))
 })
 
 test('validateCommitMessage accepts valid conventional commit messages', () => {
@@ -75,50 +29,59 @@ test('validateCommitMessage accepts valid conventional commit messages', () => {
   ]
 
   for (const msg of validMessages) {
-    const res = validateCommitMessage(msg, repoRoot)
+    const res = validateCommitMessage(msg)
     assert.equal(res.ok, true, `Expected valid for: "${msg}", got error: ${res.error}`)
   }
 })
 
 test('validateCommitMessage accepts merge and revert commits', () => {
   assert.equal(
-    validateCommitMessage("Merge branch 'main' into feature", repoRoot).ok,
+    validateCommitMessage("Merge branch 'main' into feature").ok,
     true
   )
   assert.equal(
-    validateCommitMessage('Revert "feat(ui): add modal"', repoRoot).ok,
+    validateCommitMessage('Revert "feat(ui): add modal"').ok,
     true
   )
 })
 
 test('validateCommitMessage rejects invalid types and unknown scopes', () => {
   const invalidType = validateCommitMessage(
-    'badtype(core): do something',
-    repoRoot
+    'badtype(core): do something'
   )
   assert.equal(invalidType.ok, false)
   assert.match(invalidType.error, /Unknown commit type/)
 
-  const unknownScope = validateCommitMessage(
-    'feat(non_existent_scope_12345): do something',
-    repoRoot
-  )
-  assert.equal(unknownScope.ok, false)
-  assert.match(unknownScope.error, /Unknown scope/)
+  const malformedScope = validateCommitMessage('feat(Non_Existent Scope): do something')
+  assert.equal(malformedScope.ok, false)
+  assert.match(malformedScope.error, /Malformed scope/)
+  assert.equal(validateCommitMessage('feat(any-new-scope): do something').ok, true)
+  assert.equal(validateCommitMessage('feat(core,): do something').ok, false)
 
-  const emptySubject = validateCommitMessage('feat(core):', repoRoot)
+  const emptySubject = validateCommitMessage('feat(core):')
   assert.equal(emptySubject.ok, false)
 
-  assert.equal(validateCommitMessage('feat(core):   wide gap', repoRoot).ok, true)
-  assert.equal(validateCommitMessage('feat(core):subject', repoRoot).ok, false)
+  assert.equal(validateCommitMessage('feat(core):   wide gap').ok, true)
+  assert.equal(validateCommitMessage('feat(core):subject').ok, false)
 
-  const emptyHeader = validateCommitMessage('', repoRoot)
+  const emptyHeader = validateCommitMessage('')
   assert.equal(emptyHeader.ok, false)
 
   const tooLong = validateCommitMessage(
-    `feat(core): ${'a'.repeat(95)}`,
-    repoRoot
+    `feat(core): ${'a'.repeat(95)}`
   )
   assert.equal(tooLong.ok, false)
   assert.match(tooLong.error, /too long/)
+})
+
+test('the command validates the title given as an argument or in PR_TITLE', () => {
+  const script = path.join(path.dirname(fileURLToPath(import.meta.url)), 'check-commit.mjs')
+  const run = (args, env) =>
+    spawnSync('node', [script, ...args], { encoding: 'utf8', env: { ...process.env, PR_TITLE: '', ...env } })
+
+  assert.equal(run(['feat(core): add a port'], {}).status, 0)
+  assert.equal(run(['badtype(core): add a port'], {}).status, 1)
+  assert.equal(run([], { PR_TITLE: 'fix(tools): read a title' }).status, 0)
+  assert.equal(run([], { PR_TITLE: 'bad title' }).status, 1)
+  assert.equal(run([], {}).status, 1)
 })

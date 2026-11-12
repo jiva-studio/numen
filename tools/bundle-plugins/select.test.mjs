@@ -18,7 +18,7 @@ const EDITOR = 'desktop.editor'
 
 const runSelect = (args) => spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8' })
 
-const listSelected = (pluginsDir, target) => {
+const listSelectedPlugins = (pluginsDir, target) => {
   const result = runSelect(['--target', target, '--plugins', pluginsDir])
   assert.equal(result.status, 0, result.stderr)
   return result.stdout.split('\n').filter((line) => line !== '')
@@ -62,13 +62,13 @@ const fixture = {
 
 test('a plugin with a manifest and no bin or dist is selected for its target', () => {
   withTree(fixture, (root) => {
-    assert.ok(listSelected(root, EDITOR).includes('only-contributions'))
+    assert.ok(listSelectedPlugins(root, EDITOR).includes('only-contributions'))
   })
 })
 
 test('a plugin with a backend or a frontend is selected for its target', () => {
   withTree(fixture, (root) => {
-    const selected = listSelected(root, EDITOR)
+    const selected = listSelectedPlugins(root, EDITOR)
     assert.ok(selected.includes('with-bin'))
     assert.ok(selected.includes('with-dist'))
   })
@@ -76,14 +76,14 @@ test('a plugin with a backend or a frontend is selected for its target', () => {
 
 test('a plugin built for another target is not selected', () => {
   withTree(fixture, (root) => {
-    assert.ok(!listSelected(root, EDITOR).includes('flashcards-only'))
-    assert.deepEqual(listSelected(root, 'desktop.flashcards'), ['flashcards-only', 'with-dist'])
+    assert.ok(!listSelectedPlugins(root, EDITOR).includes('flashcards-only'))
+    assert.deepEqual(listSelectedPlugins(root, 'desktop.flashcards'), ['flashcards-only', 'with-dist'])
   })
 })
 
 test('the selection is ordered by folder name', () => {
   withTree(fixture, (root) => {
-    assert.deepEqual(listSelected(root, EDITOR), ['only-contributions', 'with-bin', 'with-dist'])
+    assert.deepEqual(listSelectedPlugins(root, EDITOR), ['only-contributions', 'with-bin', 'with-dist'])
   })
 })
 
@@ -95,7 +95,7 @@ test('the selection for the editor equals the plugins the index lists for it', (
     .sort((a, b) => a.localeCompare(b))
 
   assert.ok(expected.includes('themes-presets'))
-  assert.deepEqual(listSelected(PLUGINS_DIR, EDITOR), expected)
+  assert.deepEqual(listSelectedPlugins(PLUGINS_DIR, EDITOR), expected)
 })
 
 test('the selection for the flashcards window equals the plugins the index lists for it', () => {
@@ -105,12 +105,12 @@ test('the selection for the flashcards window equals the plugins the index lists
     .map((plugin) => byId.get(plugin.id))
     .sort((a, b) => a.localeCompare(b))
 
-  assert.deepEqual(listSelected(PLUGINS_DIR, 'desktop.flashcards'), expected)
+  assert.deepEqual(listSelectedPlugins(PLUGINS_DIR, 'desktop.flashcards'), expected)
 })
 
 test('the check passes when the application holds every selected plugin', () => {
   withTree(fixture, (root) => {
-    const selected = listSelected(root, EDITOR)
+    const selected = listSelectedPlugins(root, EDITOR)
     assert.ok(selected.length > 0)
     const app = mkdtempSync(join(tmpdir(), 'bundle-app-'))
     try {

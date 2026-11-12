@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { ConnectionInfo, ConnectionTypeInfo } from '@numen/core-client'
+import type { ConnectionInfo, ConnectionTypeInfo } from './types'
 import {
   getAddressText,
   getConnectionState,
   getOperationsText,
-  getOperationTitle,
   getUsedByNames,
   hasAvailableType,
   hasUnavailableConnection,
@@ -59,14 +58,6 @@ describe('getConnectionState', () => {
 
   it('is ready otherwise', () => {
     expect(getConnectionState(connection())).toBe('ready')
-  })
-})
-
-describe('getOperationTitle', () => {
-  it('names the known operations and capitalizes the others', () => {
-    expect(getOperationTitle('complete')).toBe('Completion')
-    expect(getOperationTitle('embed')).toBe('Embeddings')
-    expect(getOperationTitle('chat')).toBe('Chat')
   })
 })
 

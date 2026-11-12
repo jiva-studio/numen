@@ -5,14 +5,11 @@
 import type { PluginInfo, PluginSettingInfo } from '@numen/plugin-manager'
 export type {
   PluginInfo,
-  PluginReader,
   PluginSettingCondition,
   PluginSettingInfo,
   PluginSettingOption,
-  PluginSettingOptionsBy,
   PluginSettingsViewInfo,
 } from '@numen/plugin-manager'
-export type { PluginSettingType } from '@numen/core-client'
 
 /** One setting of the configuration file, and the JSON value to set. */
 export interface SettingEdit {

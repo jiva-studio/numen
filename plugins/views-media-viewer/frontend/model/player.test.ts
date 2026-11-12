@@ -104,10 +104,10 @@ describe('a recording loaded', () => {
 
     plays.load(TALK)
 
-    expect(plays.url.value).toBe(TALK)
+    expect(plays.state.url.value).toBe(TALK)
     expect(element.loaded).toStrictEqual([TALK])
     expect(element.started).toBe(0)
-    expect(plays.isPlaying.value).toBe(false)
+    expect(plays.state.isPlaying.value).toBe(false)
   })
 
   it('loads an address once', () => {
@@ -118,7 +118,7 @@ describe('a recording loaded', () => {
     plays.load(TALK)
 
     expect(element.loaded).toStrictEqual([TALK])
-    expect(plays.position.value).toBe(4_000)
+    expect(plays.state.position.value).toBe(4_000)
   })
 
   it('is nothing at all where the application named no address', () => {
@@ -126,7 +126,7 @@ describe('a recording loaded', () => {
 
     plays.load('')
 
-    expect(plays.url.value).toBe('')
+    expect(plays.state.url.value).toBe('')
     expect(element.loaded).toStrictEqual([])
   })
 
@@ -137,9 +137,9 @@ describe('a recording loaded', () => {
 
     plays.load(OTHER)
 
-    expect(plays.url.value).toBe(OTHER)
-    expect(plays.position.value).toBe(0)
-    expect(plays.duration.value).toBe(0)
+    expect(plays.state.url.value).toBe(OTHER)
+    expect(plays.state.position.value).toBe(0)
+    expect(plays.state.duration.value).toBe(0)
   })
 })
 
@@ -151,7 +151,7 @@ describe('a moment gone to', () => {
 
     expect(element.loaded).toStrictEqual([TALK])
     expect(element.currentTime).toBe(2.5)
-    expect(plays.position.value).toBe(2_500)
+    expect(plays.state.position.value).toBe(2_500)
   })
 
   it('is the beginning when it is before that', () => {
@@ -160,7 +160,7 @@ describe('a moment gone to', () => {
     plays.seek(TALK, -400)
 
     expect(element.currentTime).toBe(0)
-    expect(plays.position.value).toBe(0)
+    expect(plays.state.position.value).toBe(0)
   })
 
   it('is nowhere at all where the application named no address', () => {
@@ -169,7 +169,7 @@ describe('a moment gone to', () => {
     plays.seek('', 2_500)
 
     expect(element.loaded).toStrictEqual([])
-    expect(plays.position.value).toBe(0)
+    expect(plays.state.position.value).toBe(0)
   })
 })
 
@@ -183,8 +183,8 @@ describe('a recording played', () => {
     await Promise.resolve()
 
     expect(element.loaded).toStrictEqual([TALK, OTHER])
-    expect(plays.url.value).toBe(OTHER)
-    expect(plays.isPlaying.value).toBe(true)
+    expect(plays.state.url.value).toBe(OTHER)
+    expect(plays.state.isPlaying.value).toBe(true)
   })
 
   it('is not playing where the window refused it, and says so', async () => {
@@ -195,8 +195,8 @@ describe('a recording played', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(plays.isPlaying.value).toBe(false)
-    expect(plays.error.value).toBe(WORDS.unreadable)
+    expect(plays.state.isPlaying.value).toBe(false)
+    expect(plays.state.error.value).toBe(WORDS.unreadable)
   })
 
   it('says nothing of a play the window itself cut short', async () => {
@@ -210,7 +210,7 @@ describe('a recording played', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(plays.error.value).toBe('')
+    expect(plays.state.error.value).toBe('')
   })
 
   it('pauses and keeps the position', () => {
@@ -220,8 +220,8 @@ describe('a recording played', () => {
 
     plays.pause()
 
-    expect(plays.isPlaying.value).toBe(false)
-    expect(plays.position.value).toBe(3_000)
+    expect(plays.state.isPlaying.value).toBe(false)
+    expect(plays.state.position.value).toBe(3_000)
   })
 
   it('stops of itself when it ends', () => {
@@ -230,7 +230,7 @@ describe('a recording played', () => {
 
     emit('ended')
 
-    expect(plays.isPlaying.value).toBe(false)
+    expect(plays.state.isPlaying.value).toBe(false)
   })
 })
 
@@ -241,7 +241,7 @@ describe('how long a recording runs', () => {
 
     setDuration(85.25)
 
-    expect(plays.duration.value).toBe(85_250)
+    expect(plays.state.duration.value).toBe(85_250)
   })
 
   it('is nothing where the recording never ends', () => {
@@ -250,7 +250,7 @@ describe('how long a recording runs', () => {
 
     setDuration(Number.POSITIVE_INFINITY)
 
-    expect(plays.duration.value).toBe(0)
+    expect(plays.state.duration.value).toBe(0)
   })
 
   it('is read again where the element learns it without a durationchange', () => {
@@ -259,13 +259,13 @@ describe('how long a recording runs', () => {
     element.readyState = 4
     setDuration(0)
     emit('loadedmetadata')
-    expect(plays.duration.value).toBe(0)
+    expect(plays.state.duration.value).toBe(0)
 
     // WebKitGTK sets the estimated length of a VBR mp3 with no Xing header this way.
     element.duration = 3352.4
     emit('canplay')
 
-    expect(plays.duration.value).toBe(3_352_400)
+    expect(plays.state.duration.value).toBe(3_352_400)
   })
 
   it('is polled while it is unknown after loadedmetadata', () => {
@@ -279,7 +279,7 @@ describe('how long a recording runs', () => {
       element.duration = 187
       vi.advanceTimersByTime(300)
 
-      expect(plays.duration.value).toBe(187_000)
+      expect(plays.state.duration.value).toBe(187_000)
       expect(vi.getTimerCount()).toBe(0)
     } finally {
       vi.useRealTimers()
@@ -298,7 +298,7 @@ describe('how long a recording runs', () => {
       vi.advanceTimersByTime(300)
 
       expect(vi.getTimerCount()).toBe(0)
-      expect(plays.duration.value).toBe(0)
+      expect(plays.state.duration.value).toBe(0)
     } finally {
       vi.useRealTimers()
     }
@@ -310,7 +310,7 @@ describe('how long a recording runs', () => {
 
     setDuration(Number.NaN)
 
-    expect(plays.duration.value).toBe(0)
+    expect(plays.state.duration.value).toBe(0)
   })
 })
 
@@ -321,7 +321,7 @@ describe('a recording the player could not read', () => {
 
     setError(2)
 
-    expect(plays.error.value).toBe(WORDS.unreached)
+    expect(plays.state.error.value).toBe(WORDS.unreached)
   })
 
   it('says the recording could not be played where it named no code', () => {
@@ -330,7 +330,7 @@ describe('a recording the player could not read', () => {
 
     setError(9)
 
-    expect(plays.error.value).toBe(WORDS.unreadable)
+    expect(plays.state.error.value).toBe(WORDS.unreadable)
   })
 
   it('says nothing again once another recording takes the player', () => {
@@ -340,7 +340,7 @@ describe('a recording the player could not read', () => {
 
     plays.load(OTHER)
 
-    expect(plays.error.value).toBe('')
+    expect(plays.state.error.value).toBe('')
   })
 })
 
@@ -371,9 +371,9 @@ describe('the element a window plays through', () => {
     plays.seek(TALK, 1_000)
     plays.pause()
 
-    expect(plays.url.value).toBe('')
-    expect(plays.isPlaying.value).toBe(false)
-    expect(plays.error.value).toBe(WORDS.unreadable)
+    expect(plays.state.url.value).toBe('')
+    expect(plays.state.isPlaying.value).toBe(false)
+    expect(plays.state.error.value).toBe(WORDS.unreadable)
   })
 })
 
@@ -407,7 +407,7 @@ describe('an unused player', () => {
   it('has no error to say', () => {
     const { plays } = player()
 
-    expect(plays.error.value).toBe('')
+    expect(plays.state.error.value).toBe('')
   })
 })
 
@@ -427,7 +427,7 @@ describe('the element once it is made', () => {
     element.currentTime = 7.5
     emit('seeked')
 
-    expect(plays.position.value).toBe(7_500)
+    expect(plays.state.position.value).toBe(7_500)
   })
 })
 
@@ -453,8 +453,8 @@ describe('a play the window refused', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(plays.error.value).toBe(WORDS.unreadable)
-    expect(plays.isPlaying.value).toBe(false)
+    expect(plays.state.error.value).toBe(WORDS.unreadable)
+    expect(plays.state.isPlaying.value).toBe(false)
   })
 
   it('keeps the duration the element reported', async () => {
@@ -466,7 +466,7 @@ describe('a play the window refused', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(plays.error.value).toBe(WORDS.unreached)
+    expect(plays.state.error.value).toBe(WORDS.unreached)
   })
 })
 
@@ -477,7 +477,7 @@ describe('an element that reports an error with no reason', () => {
 
     emit('error')
 
-    expect(plays.error.value).toBe(WORDS.unreadable)
+    expect(plays.state.error.value).toBe(WORDS.unreadable)
   })
 })
 
@@ -540,7 +540,7 @@ describe('the length of a recording that does not hold the player', () => {
     reader.setDuration(187)
 
     await expect(length).resolves.toBe(187_000)
-    expect(plays.url.value).toBe(TALK)
+    expect(plays.state.url.value).toBe(TALK)
     expect(made[0]!.element.loaded).toStrictEqual([TALK])
   })
 
@@ -574,13 +574,13 @@ describe('a video surface in a tab', () => {
     document.body.append(surface, other)
 
     plays.load(TALK)
-    plays.attach(surface)
+    plays.surface.attach(surface)
     expect(element.parentElement).toBe(surface)
 
-    plays.release(other)
+    plays.surface.release(other)
     expect(element.parentElement).toBe(surface)
 
-    plays.release(surface)
+    plays.surface.release(surface)
     expect(surface.contains(element)).toBe(false)
     expect(element.isConnected).toBe(true)
     expect(element.parentElement?.hidden).toBe(true)

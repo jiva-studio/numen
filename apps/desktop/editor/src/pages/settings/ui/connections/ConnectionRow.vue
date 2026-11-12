@@ -6,7 +6,7 @@
 import { computed, ref } from 'vue'
 import { Ellipsis } from '@lucide/vue'
 import { Button, Menu, measureRect, measureWindow, type MenuItem } from '@numen/ui'
-import type { ConnectionInfo, ConnectionTypeInfo } from '@numen/core-client'
+import type { ConnectionInfo, ConnectionTypeInfo } from '@/entities/connection'
 import {
   getAddressText,
   getConnectionState,
@@ -163,7 +163,7 @@ function onChoose(id: string): void {
 .connection-row__chip {
   padding: 0.0625rem 0.5rem;
   border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: 999px;
+  border-radius: var(--numen-radius-pill);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
   white-space: nowrap;

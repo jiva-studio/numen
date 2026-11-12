@@ -64,11 +64,21 @@ const taskList = computed(() => orderTasks(props.tasks))
 
 <style scoped>
 .task-popover {
+  --popover-width: 24rem;
+  --popover-edge-gap: 1rem;
+  --popover-max-height: 22rem;
+  --header-pad-block: 0.5rem;
+  --header-pad-inline: 0.75rem;
+  --close-size: 1.25rem;
+  --body-pad: 0.5rem;
+  --body-gap: 0.125rem;
+  --empty-pad-block: 1.5rem;
+  --empty-pad-inline: 1rem;
   display: flex;
   flex-direction: column;
-  width: 24rem;
-  max-width: calc(100vw - 1rem);
-  max-height: 22rem;
+  width: var(--popover-width);
+  max-width: calc(100vw - var(--popover-edge-gap));
+  max-height: var(--popover-max-height);
   background: var(--numen-raised);
   color: var(--numen-ink);
   border: 1px solid var(--numen-panel-border);
@@ -81,7 +91,7 @@ const taskList = computed(() => orderTasks(props.tasks))
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0.75rem;
+  padding: var(--header-pad-block) var(--header-pad-inline);
   background: var(--numen-surface);
   border-bottom: 1px solid var(--numen-rule);
 }
@@ -93,8 +103,8 @@ const taskList = computed(() => orderTasks(props.tasks))
 }
 
 .task-popover__close-btn {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: var(--close-size);
+  height: var(--close-size);
   padding: 0;
   color: var(--numen-hushed);
 }
@@ -104,15 +114,15 @@ const taskList = computed(() => orderTasks(props.tasks))
 }
 
 .task-popover__body {
-  padding: 0.5rem;
+  padding: var(--body-pad);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--body-gap);
 }
 
 .task-popover__empty {
-  padding: 1.5rem 1rem;
+  padding: var(--empty-pad-block) var(--empty-pad-inline);
   text-align: center;
   font-size: var(--numen-text-2);
   color: var(--numen-hushed);

@@ -11,8 +11,8 @@ import {
   createWriteOpts,
   flushPromises,
 } from '../fixtures/writes'
-import type { Presets, PresetWriteResult } from '../types'
-import { WORDS as words } from '../words'
+import type { Presets, PresetWriteResult } from '../../lib/presets'
+import { WORDS as words } from '../lib/words'
 import { createWriteQueue, flushWrites, requestWrite, sendWrite } from './writeQueue'
 
 const requestInBackground = createBackgroundRequest(requestWrite)
@@ -21,14 +21,14 @@ describe('a preset nothing has been written to yet', () => {
   it('remains at no version, with nothing queued, changed or returned', () => {
     const queue = createWriteQueue()
 
-    expect(queue.revision).toBe('')
-    expect(queue.isWriting).toBe(false)
-    expect(queue.isWriteQueued).toBe(false)
-    expect(queue.activeWrite).toBeNull()
-    expect(queue.hasWarned).toBe(false)
-    expect(queue.dirtyFields.size).toBe(0)
-    expect(queue.hasExternalChange.value).toBe(false)
-    expect(queue.errorMessage.value).toBe('')
+    expect(queue.unsaved.revision).toBe('')
+    expect(queue.inflight.isWriting).toBe(false)
+    expect(queue.inflight.isWriteQueued).toBe(false)
+    expect(queue.inflight.activeWrite).toBeNull()
+    expect(queue.unsaved.hasWarned).toBe(false)
+    expect(queue.unsaved.dirtyFields.size).toBe(0)
+    expect(queue.status.hasExternalChange.value).toBe(false)
+    expect(queue.status.errorMessage.value).toBe('')
   })
 })
 
@@ -47,16 +47,16 @@ describe('one write', () => {
 
   it('takes back an earlier failure and warning once it lands', async () => {
     const queue = createWriteQueue()
-    queue.errorMessage.value = words.unwritten
-    queue.hasWarned = true
-    queue.dirtyFields.add('retention')
+    queue.status.errorMessage.value = words.unwritten
+    queue.unsaved.hasWarned = true
+    queue.unsaved.dirtyFields.add('retention')
     const { core } = createCore({ ok: true, value: { at: 'v1' } })
 
     await sendWrite(queue, createWriteOpts(core, createMessages().writeMessage))
 
-    expect(queue.errorMessage.value).toBe('')
-    expect(queue.hasWarned).toBe(false)
-    expect(queue.dirtyFields.size).toBe(0)
+    expect(queue.status.errorMessage.value).toBe('')
+    expect(queue.unsaved.hasWarned).toBe(false)
+    expect(queue.unsaved.dirtyFields.size).toBe(0)
   })
 
   it('says an error as an error', async () => {
@@ -66,7 +66,7 @@ describe('one write', () => {
 
     await sendWrite(queue, createWriteOpts(core, writeMessage))
 
-    expect(messages.at(-1)).toStrictEqual([queue.errorMessage.value, 'error'])
+    expect(messages.at(-1)).toStrictEqual([queue.status.errorMessage.value, 'error'])
   })
 })
 
@@ -81,7 +81,7 @@ describe('a write the vault could not be requested for', () => {
 
     await sendWrite(queue, createWriteOpts(core, createMessages().writeMessage))
 
-    expect(queue.errorMessage.value).toBe(words.unwritten)
+    expect(queue.status.errorMessage.value).toBe(words.unwritten)
   })
 })
 
@@ -94,13 +94,13 @@ describe('a write requested for while another is out', () => {
 
     const one = requestWrite(queue, createWriteOpts(core, writeMessage))
     const two = requestWrite(queue, createWriteOpts(core, writeMessage))
-    expect(queue.isWriteQueued).toBe(true)
+    expect(queue.inflight.isWriteQueued).toBe(true)
     first.open({ ok: true, value: { at: 'v1' } })
     await Promise.all([one, two])
 
     expect(based).toStrictEqual(['', 'v1'])
-    expect(queue.revision).toBe('v2')
-    expect(queue.activeWrite).toBeNull()
+    expect(queue.unsaved.revision).toBe('v2')
+    expect(queue.inflight.activeWrite).toBeNull()
   })
 
   it('is dropped where the first found the file changed elsewhere', async () => {
@@ -115,14 +115,14 @@ describe('a write requested for while another is out', () => {
     await one
 
     expect(based).toStrictEqual([''])
-    expect(queue.hasExternalChange.value).toBe(true)
+    expect(queue.status.hasExternalChange.value).toBe(true)
   })
 })
 
 describe('flushing a preset', () => {
   it('writes what the person changed', async () => {
     const queue = createWriteQueue()
-    queue.dirtyFields.add('retention')
+    queue.unsaved.dirtyFields.add('retention')
     const { core, based } = createCore()
 
     await flushWrites(queue, createWriteOpts(core, createMessages().writeMessage))
@@ -141,8 +141,8 @@ describe('flushing a preset', () => {
 
   it('writes nothing over a file changed elsewhere', async () => {
     const queue = createWriteQueue()
-    queue.dirtyFields.add('retention')
-    queue.hasExternalChange.value = true
+    queue.unsaved.dirtyFields.add('retention')
+    queue.status.hasExternalChange.value = true
     const { core, based } = createCore()
 
     await flushWrites(queue, createWriteOpts(core, createMessages().writeMessage))

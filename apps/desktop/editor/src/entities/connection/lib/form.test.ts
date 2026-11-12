@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ConnectionFieldInfo, ConnectionInfo, ConnectionTypeInfo } from '@numen/core-client'
+import type { ConnectionFieldInfo, ConnectionInfo, ConnectionTypeInfo } from './types'
 import {
   createFieldValues,
   createInitialValues,
@@ -11,7 +11,6 @@ import {
   getSentSecrets,
   getStoredSecretKeys,
   hasPrivateNetworkChoice,
-  isAddressChanged,
   isStoredKeyLost,
 } from './form'
 
@@ -100,14 +99,6 @@ describe('getMissingFields', () => {
   it('counts a secret that is already stored, and a blank text as no value', () => {
     expect(getMissingFields(openRouter, {}, {}, ['apiKey'])).toStrictEqual([])
     expect(getMissingFields(compatible, { baseUrl: '   ' }, {})).toStrictEqual(['baseUrl'])
-  })
-})
-
-describe('isAddressChanged', () => {
-  it('compares the address of the stored connection with the one typed', () => {
-    expect(isAddressChanged(compatible, { baseUrl: 'a' }, { baseUrl: 'b' })).toBe(true)
-    expect(isAddressChanged(compatible, { baseUrl: 'a' }, { baseUrl: 'a' })).toBe(false)
-    expect(isAddressChanged(openRouter, {}, {})).toBe(false)
   })
 })
 

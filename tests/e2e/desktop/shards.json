@@ -67,6 +67,7 @@
   "tests/shell/lifecycle/wrong-type-settings.spec.ts": 8,
   "tests/shell/window/layout.spec.ts": 3,
   "tests/shell/window/tab-linking.spec.ts": 5,
+  "tests/shell/window/tab-move.spec.ts": 6,
   "tests/shell/window/tabs.spec.ts": 1,
   "tests/shell/window/title-bar-plugin-commands.spec.ts": 10,
   "tests/shell/window/title-bar.spec.ts": 8,

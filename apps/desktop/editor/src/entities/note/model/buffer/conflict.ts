@@ -2,25 +2,19 @@
  * External conflict detection and resolution for open notes.
  */
 import { getState, type Event, type Tab } from './tab'
-import type { PathRename } from '@/shared/paths'
+import type { PathRename } from '@/shared/lib/paths'
 import type { ConflictWords } from './types'
 import { ERROR_MESSAGES, STALE_CONFLICT } from './words'
 
-export type FileConflict = 'gone' | 'stale' | null
-
-export function parseFileConflict(state: string): FileConflict {
-  return state === 'gone' || state === 'stale' ? state : null
-}
-
-export function isStale(tab: Tab): boolean {
+function isStale(tab: Tab): boolean {
   return getState(tab) === 'stale'
 }
 
-export function findStaleConflict(tab: Tab | undefined): ConflictWords | null {
+function findStaleConflict(tab: Tab | undefined): ConflictWords | null {
   return tab && isStale(tab) ? STALE_CONFLICT : null
 }
 
-export function getErrorMessage(tab: Tab | undefined): string {
+function getErrorMessage(tab: Tab | undefined): string {
   const error = tab?.error
   return error ? ERROR_MESSAGES[error] : ''
 }

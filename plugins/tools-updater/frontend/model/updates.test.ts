@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { AppInfo } from '@numen/plugin-sdk'
+import type { AppInfo, JsonValue } from '@numen/plugin-sdk'
 import type { Status } from '../api/updater'
 import {
   createUpdates,
@@ -35,7 +35,7 @@ const createFakeTimer = () => {
       return handle
     },
     clear: (handle) => {
-      waits.delete(handle as number)
+      waits.delete(handle)
     },
   }
   return {
@@ -55,7 +55,7 @@ const flush = async () => {
   for (let i = 0; i < 5; i++) await Promise.resolve()
 }
 
-const create = (answers: Array<Status | 'fail' | 'reject'>, hours: unknown = 4) => {
+const create = (answers: Array<Status | 'fail' | 'reject'>, hours: JsonValue | undefined = 4) => {
   const clock = createFakeTimer()
   const queue = [...answers]
   const check = vi.fn(async () => {
@@ -94,7 +94,7 @@ describe('starting the checks', () => {
   it('checks the running build at once and announces what it finds', async () => {
     const { updates, check } = create([AVAILABLE])
 
-    updates.start()
+    updates.schedule.start()
     await flush()
 
     expect(check).toHaveBeenCalledWith(APP)
@@ -103,7 +103,7 @@ describe('starting the checks', () => {
 
   it('waits the interval of the setting before the next check', async () => {
     const { updates, clock, check } = create([AVAILABLE], 2)
-    updates.start()
+    updates.schedule.start()
     await flush()
 
     expect(clock.delays()).toEqual([2 * HOUR])
@@ -115,7 +115,7 @@ describe('starting the checks', () => {
   it('announces nothing for a build that is current', async () => {
     const { updates } = create([{ state: 'current' }])
 
-    updates.start()
+    updates.schedule.start()
     await flush()
 
     expect(updates.announced.value).toBeNull()
@@ -125,7 +125,7 @@ describe('starting the checks', () => {
 describe('a check that reaches no answer', () => {
   it('shows nothing and is repeated after growing waits', async () => {
     const { updates, clock, check } = create(['fail'])
-    updates.start()
+    updates.schedule.start()
     await flush()
 
     expect(updates.announced.value).toBeNull()
@@ -142,7 +142,7 @@ describe('a check that reaches no answer', () => {
 
   it('is treated as unreachable when the backend says so', async () => {
     const { updates, clock } = create([{ state: 'unreachable' }, AVAILABLE])
-    updates.start()
+    updates.schedule.start()
     await flush()
 
     expect(updates.announced.value).toBeNull()
@@ -154,7 +154,7 @@ describe('a check that reaches no answer', () => {
   it('is repeated when the call itself rejects', async () => {
     const { updates, clock } = create(['reject'])
 
-    updates.start()
+    updates.schedule.start()
     await flush()
 
     expect(updates.announced.value).toBeNull()
@@ -163,7 +163,7 @@ describe('a check that reaches no answer', () => {
 
   it('is never repeated later than the interval', async () => {
     const { updates, clock } = create(['fail'], 1)
-    updates.start()
+    updates.schedule.start()
     await flush()
     for (let i = 0; i < 4; i++) await clock.runNext()
 
@@ -178,10 +178,10 @@ describe('dismissing the announcement', () => {
       update: { ...(AVAILABLE.update as NonNullable<Status['update']>), version: '2026.10.2' },
     }
     const { updates, clock } = create([AVAILABLE, AVAILABLE, newer])
-    updates.start()
+    updates.schedule.start()
     await flush()
 
-    updates.dismiss()
+    updates.announcement.dismiss()
     expect(updates.announced.value).toBeNull()
     await clock.runNext()
     expect(updates.announced.value).toBeNull()
@@ -194,11 +194,11 @@ describe('dismissing the announcement', () => {
 describe('opening the pages of the update', () => {
   it('opens the download and the release notes in the system browser', async () => {
     const { updates, openExternal } = create([AVAILABLE])
-    updates.start()
+    updates.schedule.start()
     await flush()
 
-    await updates.openDownload()
-    await updates.openNotes()
+    await updates.announcement.openDownload()
+    await updates.announcement.openNotes()
 
     expect(openExternal).toHaveBeenNthCalledWith(1, 'https://dl.numen.md/numen-windows-setup.exe')
     expect(openExternal).toHaveBeenNthCalledWith(
@@ -210,7 +210,7 @@ describe('opening the pages of the update', () => {
   it('opens nothing where nothing is announced', async () => {
     const { updates, openExternal } = create([{ state: 'current' }])
 
-    expect(await updates.openDownload()).toEqual({ ok: true, value: null })
+    expect(await updates.announcement.openDownload()).toEqual({ ok: true, value: null })
     expect(openExternal).not.toHaveBeenCalled()
   })
 })
@@ -218,20 +218,20 @@ describe('opening the pages of the update', () => {
 describe('changing the settings', () => {
   it('counts the interval again from the change', async () => {
     const { updates, clock } = create([AVAILABLE], 3)
-    updates.start()
+    updates.schedule.start()
     await flush()
 
-    updates.reschedule()
+    updates.schedule.reschedule()
 
     expect(clock.delays()).toEqual([3 * HOUR])
   })
 
   it('checks soon after the feed changed, from an unchecked state', async () => {
     const { updates, clock, check } = create([AVAILABLE, { state: 'current' }])
-    updates.start()
+    updates.schedule.start()
     await flush()
 
-    updates.checkSoon()
+    updates.schedule.checkSoon()
 
     expect(updates.status.value.state).toBe('unchecked')
     expect(clock.delays()).toEqual([SETTLE_DELAY_MS])
@@ -244,8 +244,8 @@ describe('changing the settings', () => {
 describe('stopping the checks', () => {
   it('ends the wait and ignores an answer that arrives later', async () => {
     const { updates, clock } = create([AVAILABLE])
-    updates.start()
-    updates.stop()
+    updates.schedule.start()
+    updates.schedule.stop()
     await flush()
 
     expect(clock.delays()).toEqual([])

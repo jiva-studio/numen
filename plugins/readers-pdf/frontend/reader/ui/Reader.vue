@@ -6,29 +6,17 @@
  * under the viewport's midpoint. The component fills its container and does not
  * depend on the container's position.
  */
-import { computed, useTemplateRef, ref, watch } from 'vue'
+import { computed, useTemplateRef, ref } from 'vue'
 import { ReaderToolbar } from './reader-toolbar'
 import { Sheet } from './sheet'
 import { usePageWidth } from '../model/width'
 import { useViewport } from '@numen/ui'
 import { onNextFrame } from '@numen/ui'
-import { usePanScroll, type PanScroll } from '../model/scroll'
-import {
-  GAP,
-  READER_WORDS,
-  getPagesWithin,
-  getAnchor,
-  getAnchorScroll,
-  getAcrossScroll,
-  getAcrossShare,
-  type Anchor,
-  SHARP,
-  getCurrentPage,
-  row,
-  getScrollTarget,
-  getTurnTarget,
-  getFitZoom,
-} from '../lib/strip'
+import { usePanScroll } from '../model/scroll'
+import { useRowLayout } from '../model/useRowLayout'
+import { usePageImageUrl } from '../model/usePageImageUrl'
+import { useRowRestore } from '../model/useRowRestore'
+import { READER_WORDS, getFitZoom, getTurnTarget } from '../lib/strip'
 import type { ReaderProps } from './Reader.types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -52,6 +40,13 @@ const emit = defineEmits<{
   (event: 'measure', pixels: number): void
 }>()
 
+defineExpose({
+  measure: () => measure(),
+  handleKey: (event: KeyboardEvent) => onKey(event),
+  /** Focuses the pages so key events reach them. */
+  focusPages: () => area.value?.focus(),
+})
+
 /* ---------------------------------- State --------------------------------- */
 /** The zoom the person chose with the toolbar. Until one is chosen the document is drawn at its fit. */
 const chosenZoom = ref<number | null>(null)
@@ -62,19 +57,11 @@ const area = useTemplateRef<HTMLElement>('area')
 const { viewport, measure: measureViewport } = useViewport(area)
 
 /** Row scroll state, and pointer and wheel handling. */
-const {
-  along: scrollOffset,
-  isDragging,
-  getScrollOffset,
-  send,
-  restore,
-  isMoved,
-  isStill,
-  onPointerDown,
-  onPointerMove,
-  letGo,
-  onWheel,
-} = usePanScroll(area)
+const scroll = usePanScroll(area)
+const scrollOffset = scroll.state.offset
+const { isDragging } = scroll.state
+const { onPointerDown, onPointerMove, letGo } = scroll.drag
+const { onWheel } = scroll
 
 /** How close a page is drawn. What that may be is `strip.ts`. */
 const zoom = computed({
@@ -84,15 +71,12 @@ const zoom = computed({
   },
 })
 
-const pageLayout = computed(() => row(props.pages, viewport.value, zoom.value))
-const visiblePages = computed(() =>
-  getPagesWithin(pageLayout.value, viewport.value, scrollOffset.value),
-)
-/** The pages that are requested at the settled width. The rest keep what they show. */
-const sharpPages = computed(
-  () => new Set(getPagesWithin(pageLayout.value, viewport.value, scrollOffset.value, SHARP)),
-)
-const middle = computed(() => getCurrentPage(pageLayout.value, viewport.value, scrollOffset.value))
+const { pageLayout, visiblePages, sharpPages, middle, rowStyle, getBoxStyle } = useRowLayout({
+  getPages: () => props.pages,
+  viewport,
+  zoom,
+  offset: scrollOffset,
+})
 
 /** Width at which each page is requested. */
 const { drawnWidth } = usePageWidth(
@@ -100,89 +84,21 @@ const { drawnWidth } = usePageWidth(
   (pixels) => emit('measure', pixels),
 )
 
-const rowStyle = computed(() => ({
-  inlineSize: `${pageLayout.value.length}px`,
-  blockSize: `${pageLayout.value.height + 2 * GAP}px`,
-}))
-
-/**
- * How many puts of the row back wait for a frame. The browser queues a scroll event when the row
- * scrolls and delivers it with the next frame. An event queued before the row was hidden or moved
- * reaches the handler after the browser has scrolled the row to its start, and reports the start as
- * a place the person scrolled to.
- */
-let pendingPuts = 0
-
-function putRowBack(): void {
-  if (!isMoved()) {
-    props.paint(restore)
-    return
-  }
-  pendingPuts += 1
-  props.paint(() => {
-    restore()
-    pendingPuts -= 1
-  })
-}
-
-const measure = (): void => {
-  measureViewport()
-  putRowBack()
-}
-
-defineExpose({
-  measure,
-  handleKey: (event: KeyboardEvent) => onKey(event),
-  /** Focuses the pages so key events reach them. */
-  focusPages: () => area.value?.focus(),
+const { measure, isPutting } = useRowRestore({
+  area,
+  viewport,
+  measureViewport,
+  pageLayout,
+  getAt: () => props.at,
+  getPaint: () => props.paint,
+  scroll: scroll.moves,
 })
 
-/* ---------------------------------- Hooks --------------------------------- */
-/** The point kept through zooms whose redraw has not run yet, so a second zoom keeps the first one's. */
-let pendingZoom: { anchor: Anchor | undefined; across: number } | undefined
-
-// A page requested from outside is scrolled to. A page reached by the user's
-// scrolling is already in view.
-watch(
-  () => props.at,
-  (page) => {
-    if (page === getCurrentPage(pageLayout.value, viewport.value, getScrollOffset())) return
-    // A redraw that has not run yet holds the place the row was at when the layout changed, and
-    // would send the row back there once the turn has started. The turn is where the row goes.
-    if (pendingZoom) pendingZoom.anchor = undefined
-    stand(page, 'smooth')
-  },
-)
-
-// Zooming keeps the point under the centre of the viewport where it is. Every
-// page changes width, so the scroll position shifts. A row with no pages before
-// it has no point to keep, and the current page is shown instead.
-watch(pageLayout, (now, was) => {
-  if (now.height === was.height) return
-  pendingZoom ??= {
-    anchor: getAnchor(was, viewport.value, getScrollOffset()),
-    across: getAcrossShare(was, viewport.value, area.value?.scrollTop ?? 0),
-  }
-  props.paint(() => {
-    const point = pendingZoom
-    pendingZoom = undefined
-    if (!point) return
-    const to = point.anchor && getAnchorScroll(pageLayout.value, viewport.value, point.anchor)
-    if (to === undefined) stand(props.at, 'auto')
-    else send(to, 'auto')
-    if (area.value && point.anchor) {
-      area.value.scrollTop = getAcrossScroll(pageLayout.value, viewport.value, point.across)
-    }
-  })
-})
-
-// A viewport that is reported again was hidden or moved, and the browser
-// scrolled its row to the start without a scroll event.
-watch(viewport, putRowBack)
+const getImageUrl = usePageImageUrl({ getPicture: () => props.picture, drawnWidth, sharpPages })
 
 /* -------------------------------- Handlers -------------------------------- */
 const onScroll = () => {
-  if (pendingPuts > 0 || !isStill()) return
+  if (isPutting() || !scroll.moves.isStill()) return
   if (middle.value !== props.at) emit('go', middle.value)
 }
 
@@ -192,22 +108,6 @@ const onKey = (event: KeyboardEvent): boolean => {
   emit('go', to)
   return true
 }
-
-/* --------------------------------- Helpers -------------------------------- */
-const getImageUrl = (page: number) =>
-  drawnWidth.value > 0 && sharpPages.value.has(page) ? props.picture(page) : ''
-
-const stand = (page: number, how: Parameters<PanScroll['send']>[1]) => {
-  const to = getScrollTarget(pageLayout.value, viewport.value, page)
-  if (to !== undefined) send(to, how)
-}
-
-const getBoxStyle = (page: number) => ({
-  insetInlineStart: `${pageLayout.value.starts[page] ?? 0}px`,
-  insetBlockStart: `${GAP}px`,
-  inlineSize: `${pageLayout.value.widths[page] ?? 0}px`,
-  blockSize: `${pageLayout.value.height}px`,
-})
 </script>
 
 <template>

@@ -7,17 +7,22 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 import { File } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
-import { findIcon } from '@/shared/icons'
-import { WORDS as words } from '@/shared/words'
-import { createCommands } from '../../lib/commands/commands'
-import { CREATE_NOTE_ROW } from '../../lib/entries/entries'
+import { type Command } from '@/entities/command'
+import { findIcon, COMMAND, type CommandTarget } from '@/shared/model/command'
+import { WORDS as windowWords } from '@/shared/ui/words'
+import { PALETTE_WORDS } from '../../words'
+import { createAppCommands } from '@/testing/appCommands'
 import type { PendingStep } from '../../lib/step/step'
-import type { Command, CommandTarget, PaletteLists } from '../../types'
+import type { PaletteLists } from '../../types'
 import type { Commands } from '../palette/palette'
 import { runSupport } from '../palette/runSupport'
 import { findRowIcon } from '../rowIcons'
 import type { SearchState } from '../search/search'
+import { createStepGroups } from './stepGroups'
+import type { ViewState } from './viewState'
 import { getPaletteView } from './view'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 const front = (overrides: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
@@ -61,11 +66,11 @@ const getNoteGroup = (view: ReturnType<typeof createView>, target: CommandTarget
   view.createGroups(null, target, typed).find((group) => group.id === 'note')
 
 describe('the commands as the words typed leave them', () => {
-  const view = createView(createCommands(words))
+  const view = createView(createAppCommands())
 
   it('lights nothing where nothing is typed', () => {
     const readItem = getNoteGroup(view, front(), '')?.items.find(
-      (item) => item.id === 'app:note.open',
+      (item) => item.id === 'app:file.open',
     )
 
     expect(readItem).toBeDefined()
@@ -76,7 +81,7 @@ describe('the commands as the words typed leave them', () => {
     const word = words.read.toLowerCase().slice(0, 3)
 
     const readItem = getNoteGroup(view, front(), word)?.items.find(
-      (item) => item.id === 'app:note.open',
+      (item) => item.id === 'app:file.open',
     )
 
     expect(readItem?.at).toStrictEqual([{ start: 0, end: 3 }])
@@ -84,7 +89,7 @@ describe('the commands as the words typed leave them', () => {
 
   it('lights the words typed where they match inside the text of a command', () => {
     const readItem = getNoteGroup(view, front(), words.read.toLowerCase().slice(1, 3))?.items.find(
-      (item) => item.id === 'app:note.open',
+      (item) => item.id === 'app:file.open',
     )
 
     expect(readItem?.at).toStrictEqual([{ start: 1, end: 3 }])
@@ -99,7 +104,7 @@ describe('the commands as the words typed leave them', () => {
 
     const ids = getNoteGroup(view, front(), `   ${word}  `)?.items.map((item) => item.id)
 
-    expect(ids).toContain('app:note.open')
+    expect(ids).toContain('app:file.open')
   })
 })
 
@@ -129,7 +134,7 @@ describe('the command reached on the same row', () => {
 })
 
 describe('empty command groups', () => {
-  const view = createView(createCommands(words))
+  const view = createView(createAppCommands())
 
   it('omits groups that hold no commands', () => {
     expect(getNoteGroup(view, front({ isReady: false }), '')).toBeUndefined()
@@ -276,13 +281,14 @@ describe('findRowIcon', () => {
 
   it('resolves command and note icons when commands palette is open', () => {
     const commands = {
-      open: ref(true),
-      findTabKind: (id: string) => (id === 'n1' ? 'sample' : null),
-      findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined),
+      palette: { open: ref(true) },
+      view: {
+        findTabKind: (id: string) => (id === 'n1' ? 'sample' : null),
+        findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined),
+      },
     } as unknown as Commands
     const search = {
-      findTabKind: () => 'form',
-      findHitFile: () => 'doc.pdf',
+      reads: { findTabKind: () => 'form', findHitFile: () => 'doc.pdf' },
     } as unknown as SearchState
 
     expect(findRowIcon('n1', commands, search)).toBe(getNoteIcon('sample'))
@@ -290,18 +296,18 @@ describe('findRowIcon', () => {
     expect(findRowIcon('app:note.create', commands, search)).toBe(findIcon('app:note.create'))
   })
 
-  it('resolves create-note, search note type, and file hit icons when commands palette is closed', () => {
+  it('resolves search note type, and file hit icons when commands palette is closed', () => {
     const commands = {
-      open: ref(false),
-      findTabKind: () => 'sample',
-      findCommandIcon: () => customIcon,
+      palette: { open: ref(false) },
+      view: { findTabKind: () => 'sample', findCommandIcon: () => customIcon },
     } as unknown as Commands
     const search = {
-      findTabKind: (id: string) => (id === 'hit-note' ? 'sheet' : null),
-      findHitFile: (id: string) => (id === 'hit-file' ? 'book.epub' : null),
+      reads: {
+        findTabKind: (id: string) => (id === 'hit-note' ? 'sheet' : null),
+        findHitFile: (id: string) => (id === 'hit-file' ? 'book.epub' : null),
+      },
     } as unknown as SearchState
 
-    expect(findRowIcon(CREATE_NOTE_ROW, commands, search)).toBe(findIcon('app:note.create'))
     expect(findRowIcon('hit-note', commands, search)).toBe(getNoteIcon('sheet'))
     expect(findRowIcon('hit-file', commands, search, () => customIcon)).toBe(customIcon)
     expect(findRowIcon('hit-file', commands, search, () => undefined)).toBe(File)
@@ -312,19 +318,52 @@ describe('findRowIcon', () => {
 
 describe('the icon of the command that opens a document', () => {
   it('is the file icon the row of a document is drawn with', () => {
-    expect(findIcon('app:file.open')).toBe(File)
+    expect(findIcon('app:file.open#document')).toBe(File)
   })
 
   it('is the icon of the command the row of a document offers', () => {
-    const commands = { open: ref(true), findTabKind: () => null, findCommandIcon: () => null }
-    const search = { findTabKind: () => null, findHitFile: () => null }
+    const commands = {
+      palette: { open: ref(true) },
+      view: { findTabKind: () => null, findCommandIcon: () => null },
+    }
+    const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
 
     expect(
       findRowIcon(
-        'app:file.open',
+        'app:file.open#document',
         commands as unknown as Commands,
         search as unknown as SearchState,
       ),
     ).toBe(File)
+  })
+})
+
+describe('the two choices of the confirmation that empties the trash', () => {
+  const emptyTrash = createAppCommands().find((one) => one.id === COMMAND.emptyTrash)
+
+  it('are both drawn with an icon', () => {
+    const groups = createStepGroups({
+      words,
+      getStepLabel: () => 'trash',
+    } as unknown as ViewState)
+    const step: PendingStep = {
+      step: 'confirmation',
+      command: emptyTrash as Command,
+      on: front(),
+    }
+    const commands = {
+      palette: { open: ref(true) },
+      view: { findTabKind: () => null, findCommandIcon: () => null },
+    }
+    const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
+
+    const items = groups.getConfirmGroup(step, '').items
+
+    expect(items.map((one) => one.id)).toStrictEqual(['app:trash.empty:keep', COMMAND.emptyTrash])
+    for (const one of items) {
+      expect(
+        findRowIcon(one.id, commands as unknown as Commands, search as unknown as SearchState),
+      ).not.toBeNull()
+    }
   })
 })

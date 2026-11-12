@@ -6,11 +6,10 @@ import { onScopeDispose, shallowRef, type ShallowRef } from 'vue'
 import type { SlotHost, SlotItem, SlotPlace } from '@numen/plugin-sdk'
 
 export function useSlotEntries(
-  host: SlotHost | undefined,
+  host: SlotHost,
   slot: SlotPlace,
 ): Readonly<ShallowRef<readonly SlotItem[]>> {
   const entries = shallowRef<readonly SlotItem[]>([])
-  if (!host) return entries
   const watching = host.watchEntries(slot, (list) => {
     entries.value = list
   })

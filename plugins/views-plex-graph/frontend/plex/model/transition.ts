@@ -1,10 +1,10 @@
-/** A frame moving towards each new neighbourhood. */
+/** A frame moving towards each new neighborhood. */
 import { onScopeDispose, ref, shallowRef, watch, type Ref } from 'vue'
 import { arrangePlex, easeOut, interpolatePlex } from '../lib/arrange'
 import type { ArrangeInput } from '../lib/arrange'
 import type { PlexFrame } from '../lib/frame'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import { browserClock, type Clock } from '@numen/ui'
+import type { PlexNeighborhood } from '../../types'
 
 export { browserClock, type Clock }
 
@@ -19,16 +19,16 @@ export interface PlexTransitionOptions {
 }
 
 /**
- * Hold a frame that moves towards each new neighbourhood. One arriving
+ * Hold a frame that moves towards each new neighborhood. One arriving
  * mid-movement re-aims from wherever the plex has got to.
  */
 export function usePlexTransition(
-  neighbourhood: () => PlexNeighbourhood,
+  neighborhood: () => PlexNeighborhood,
   input: () => ArrangeInput | undefined,
   options: PlexTransitionOptions,
 ): PlexTransition {
   const { duration, clock = browserClock } = options
-  const target = () => arrangePlex(neighbourhood(), input())
+  const target = () => arrangePlex(neighborhood(), input())
 
   const frame = shallowRef<PlexFrame>(target())
   const isMoving = ref(false)
@@ -69,7 +69,7 @@ export function usePlexTransition(
   }
 
   watch(
-    () => neighbourhood(),
+    () => neighborhood(),
     () => run(target()),
   )
   watchInputChanges(input, () => run(target()))

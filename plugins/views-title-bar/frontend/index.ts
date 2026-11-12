@@ -4,7 +4,7 @@
  */
 import { defineComponent, h, shallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type PluginContext, type Caught } from '@numen/plugin-sdk'
 import {
   BUTTONS_SETTING,
   HIDE_IN_FULLSCREEN_SETTING,
@@ -25,18 +25,18 @@ const CREATE_VAULT = 'app:vault.create'
 
 /** The view of the slot: the bar over the context, with the window buttons where `buttons` says. */
 export function createTitleBarView(context: PluginContext) {
-  const buttons = shallowRef(readButtonsSetting(context.getSetting(BUTTONS_SETTING)))
-  context.onSettingChange(BUTTONS_SETTING, (value) => {
+  const buttons = shallowRef(readButtonsSetting(context.settings.get(BUTTONS_SETTING)))
+  context.settings.onChange(BUTTONS_SETTING, (value) => {
     buttons.value = readButtonsSetting(value)
   })
   const hideInFullscreen = shallowRef(
-    readHideInFullscreenSetting(context.getSetting(HIDE_IN_FULLSCREEN_SETTING)),
+    readHideInFullscreenSetting(context.settings.get(HIDE_IN_FULLSCREEN_SETTING)),
   )
-  context.onSettingChange(HIDE_IN_FULLSCREEN_SETTING, (value) => {
+  context.settings.onChange(HIDE_IN_FULLSCREEN_SETTING, (value) => {
     hideInFullscreen.value = readHideInFullscreenSetting(value)
   })
-  const reportError = (error: unknown): void =>
-    context.notices?.show(error instanceof Error ? error.message : String(error), 'error')
+  const reportError = (error: Caught): void =>
+    context.ui.notices.show(error instanceof Error ? error.message : String(error), 'error')
   return defineComponent({
     name: 'TitleBarView',
     setup: () => {
@@ -45,8 +45,8 @@ export function createTitleBarView(context: PluginContext) {
         !isBarShown(hideInFullscreen.value, hosts.window.value.isFullscreen)
           ? null
           : h(TitleBar, {
-              appName: context.app.name,
-              platform: context.app.platform,
+              appName: context.plugin.app.name,
+              platform: context.plugin.app.platform,
               buttons: buttons.value,
               isMaximized: hosts.window.value.isMaximized,
               isFullscreen: hosts.window.value.isFullscreen,
@@ -55,30 +55,38 @@ export function createTitleBarView(context: PluginContext) {
               status: hosts.status.value,
               canCreateVault: hosts.commandIds.value.includes(CREATE_VAULT),
               listItems: (command: string) =>
-                context.commands?.listItems(command) ?? Promise.resolve([]),
+                context.ui.commands?.listItems(command) ?? Promise.resolve([]),
               reportError,
-              onRunCommand: (command: string, itemId?: string) => {
-                if (context.commands) {
-                  runInBackground(context.commands.run(command, undefined, itemId), reportError)
+              onRunCommand: (
+                command: string,
+                itemId?: string,
+                values?: Readonly<Record<string, string>>,
+              ) => {
+                if (context.ui.commands) {
+                  runInBackground(
+                    context.ui.commands.run(command, undefined, itemId, values),
+                    reportError,
+                  )
                 }
               },
               onSwitchVault: (id: string) => {
-                if (context.vaults) runInBackground(context.vaults.switchTo(id), reportError)
+                if (context.vault.vaults)
+                  runInBackground(context.vault.vaults.switchTo(id), reportError)
               },
               onCreateVault: () => {
-                if (context.commands)
-                  runInBackground(context.commands.run(CREATE_VAULT), reportError)
+                if (context.ui.commands)
+                  runInBackground(context.ui.commands.run(CREATE_VAULT), reportError)
               },
-              onMinimizeWindow: () => context.window?.minimize(),
-              onToggleMaximizeWindow: () => context.window?.toggleMaximize(),
-              onCloseWindow: () => context.window?.close(),
+              onMinimizeWindow: () => context.ui.window?.minimize(),
+              onToggleMaximizeWindow: () => context.ui.window?.toggleMaximize(),
+              onCloseWindow: () => context.ui.window?.close(),
             })
     },
   })
 }
 
 export const activate = (context: PluginContext): void => {
-  context.registerSlotView({ id: TITLE_BAR_VIEW, component: createTitleBarView(context) })
+  context.register.slotView({ id: TITLE_BAR_VIEW, component: createTitleBarView(context) })
 }
 
 export default definePlugin({

@@ -1,0 +1,675 @@
+{
+  "about": "The variables of when conditions, which are CEL expressions, and examples the Go and the TypeScript evaluators are both tested against. Only the Go reader of the manifest checks types, so the TypeScript tests leave out the invalid conditions that are type errors. `target` is what the command runs over, as its place gives it; `version` is a text version of the file, set only where a command lists one item per version; `window` is the window the command is offered in; `config` holds every setting by its dotted key. `partial` are conditions evaluated where some variables are not known: a context leaves them out, and the value is true, false or unknown. `targets` are the target variables both languages derive from a target and the note read at it.",
+  "variables": [
+    {
+      "name": "target.isRoot",
+      "type": "bool",
+      "about": "the target is the root folder of the vault"
+    },
+    {
+      "name": "target.isFolder",
+      "type": "bool",
+      "about": "the target is a folder"
+    },
+    {
+      "name": "target.isMultiple",
+      "type": "bool",
+      "about": "the target is one of several paths selected together"
+    },
+    {
+      "name": "target.isNote",
+      "type": "bool",
+      "about": "the target is a note"
+    },
+    {
+      "name": "target.isFile",
+      "type": "bool",
+      "about": "the target is a file that is not a note"
+    },
+    {
+      "name": "target.contentType",
+      "type": "string",
+      "about": "the content type of the target, such as application/pdf; empty for a folder"
+    },
+    {
+      "name": "target.noteType",
+      "type": "string",
+      "about": "the type of the note, such as link; empty where the target is no note"
+    },
+    {
+      "name": "target.properties",
+      "type": "map",
+      "about": "the frontmatter of the note by its keys, as target.properties.media; empty where the target is no note"
+    },
+    {
+      "name": "target.versions",
+      "type": "list",
+      "about": "the text versions of the file, each with kind, pluginId, isValid and isLive, as target.versions.exists(v, v.kind == 'recognition' && v.isValid); a valid version still matches the file, its source chain whole, and the live one is the newest valid one; empty where the file has none"
+    },
+    {
+      "name": "version.kind",
+      "type": "string",
+      "about": "the kind of the text version, as the plugin that made it names it"
+    },
+    {
+      "name": "version.isLive",
+      "type": "bool",
+      "about": "the text version is the one shown and indexed now"
+    },
+    {
+      "name": "window.isVaultOpen",
+      "type": "bool",
+      "about": "a vault is open in the window"
+    },
+    {
+      "name": "window.isVaultReady",
+      "type": "bool",
+      "about": "the vault of the window is open and read"
+    },
+    {
+      "name": "window.isTabOpen",
+      "type": "bool",
+      "about": "a tab is in front"
+    },
+    {
+      "name": "window.isFieldFocused",
+      "type": "bool",
+      "about": "a text field or an editable area of the window has the focus"
+    },
+    {
+      "name": "window.isPaletteOpen",
+      "type": "bool",
+      "about": "the search or the command palette of the window is open"
+    },
+    {
+      "name": "app.platform",
+      "type": "string",
+      "about": "the operating system of the window: darwin, windows or linux, as context.app.platform"
+    },
+    {
+      "name": "config",
+      "type": "map",
+      "about": "every setting by its dotted key, as config.editor.lineNumbers"
+    }
+  ],
+  "examples": [
+    {
+      "when": "target.isFolder && !target.isMultiple",
+      "values": [
+        {
+          "context": {
+            "target.isFolder": true,
+            "target.isMultiple": false
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "target.isFolder": true,
+            "target.isMultiple": true
+          },
+          "value": false
+        },
+        {
+          "context": {
+            "target.isFolder": false,
+            "target.isMultiple": false
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "when": "target.contentType in ['application/pdf', 'image/png']",
+      "values": [
+        {
+          "context": {
+            "target.contentType": "image/png"
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "target.contentType": "text/markdown"
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "when": "target.contentType.startsWith('audio/') || target.contentType.startsWith('video/')",
+      "values": [
+        {
+          "context": {
+            "target.contentType": "video/mp4"
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "target.contentType": "image/png"
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "when": "target.noteType == 'link'",
+      "values": [
+        {
+          "context": {
+            "target.noteType": "link"
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "target.noteType": ""
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "when": "version.isLive && version.kind != ''",
+      "values": [
+        {
+          "context": {
+            "version.isLive": true,
+            "version.kind": "ocr"
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "version.isLive": false,
+            "version.kind": "ocr"
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "when": "window.isVaultReady && !window.isTabOpen || target.isRoot",
+      "values": [
+        {
+          "context": {
+            "window.isVaultReady": true,
+            "window.isTabOpen": false,
+            "target.isRoot": false
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "window.isVaultReady": true,
+            "window.isTabOpen": true,
+            "target.isRoot": false
+          },
+          "value": false
+        },
+        {
+          "context": {
+            "window.isVaultReady": false,
+            "window.isTabOpen": true,
+            "target.isRoot": true
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "when": "target.noteType == 'link' && has(target.properties.media)",
+      "values": [
+        {
+          "context": {
+            "target.noteType": "link",
+            "target.properties": {
+              "media": "plugin://org.example.links/talk.mp4"
+            }
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "target.noteType": "link",
+            "target.properties": {}
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "when": "app.platform != 'darwin'",
+      "values": [
+        { "context": { "app.platform": "darwin" }, "value": false },
+        { "context": { "app.platform": "windows" }, "value": true },
+        { "context": { "app.platform": "linux" }, "value": true }
+      ]
+    },
+    {
+      "when": "config.editor.lineNumbers == true",
+      "values": [
+        {
+          "context": {
+            "config": {
+              "editor": {
+                "lineNumbers": true
+              }
+            }
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "config": {
+              "editor": {
+                "lineNumbers": false
+              }
+            }
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "when": "!target.versions.exists(v, v.kind == 'recognition' && v.isLive)",
+      "values": [
+        {
+          "context": {
+            "target.versions": []
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "target.versions": [
+              {
+                "kind": "recognition",
+                "pluginId": "org.example.scans",
+                "isLive": true,
+                "isValid": true
+              }
+            ]
+          },
+          "value": false
+        },
+        {
+          "context": {
+            "target.versions": [
+              {
+                "kind": "recognition",
+                "pluginId": "org.example.scans",
+                "isLive": false,
+                "isValid": false
+              }
+            ]
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "target.versions": [
+              {
+                "kind": "transcript",
+                "pluginId": "org.example.ears",
+                "isLive": true,
+                "isValid": true
+              }
+            ]
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "when": "target.versions.exists(v, v.pluginId == 'org.example.scans')",
+      "values": [
+        {
+          "context": {
+            "target.versions": [
+              {
+                "kind": "recognition",
+                "pluginId": "org.example.scans",
+                "isLive": false,
+                "isValid": false
+              }
+            ]
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "target.versions": [
+              {
+                "kind": "recognition",
+                "pluginId": "org.example.viewer",
+                "isLive": true,
+                "isValid": true
+              }
+            ]
+          },
+          "value": false
+        }
+      ]
+    },
+    {
+      "when": "!target.versions.exists(v, v.kind == 'recognition' && v.isValid)",
+      "values": [
+        {
+          "context": {
+            "target.versions": [
+              {
+                "kind": "recognition",
+                "pluginId": "org.example.scans",
+                "isLive": false,
+                "isValid": true
+              },
+              {
+                "kind": "proofreading",
+                "pluginId": "org.example.proofs",
+                "isLive": true,
+                "isValid": true
+              }
+            ]
+          },
+          "value": false
+        },
+        {
+          "context": {
+            "target.versions": [
+              {
+                "kind": "recognition",
+                "pluginId": "org.example.scans",
+                "isLive": false,
+                "isValid": false
+              }
+            ]
+          },
+          "value": true
+        }
+      ]
+    }
+  ],
+  "invalid": [
+    {
+      "when": "target.isRemote",
+      "about": "a variable that is not declared"
+    },
+    {
+      "when": "isFolder",
+      "about": "a variable without its prefix"
+    },
+    {
+      "when": "target.isFolder &&",
+      "about": "a dangling operator"
+    },
+    {
+      "when": "target.contentType == 1",
+      "about": "a string compared with a number",
+      "isTypeError": true
+    },
+    {
+      "when": "target.contentType",
+      "about": "an expression that is not a condition",
+      "isTypeError": true
+    }
+  ],
+  "partial": [
+    {
+      "when": "target.contentType == 'application/pdf' && !target.versions.exists(v, v.kind == 'text-layer')",
+      "values": [
+        {
+          "context": {
+            "target.contentType": "image/png"
+          },
+          "value": false
+        },
+        {
+          "context": {
+            "target.contentType": "application/pdf"
+          },
+          "value": "unknown"
+        },
+        {
+          "context": {
+            "target.contentType": "application/pdf",
+            "target.versions": []
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "when": "target.noteType == 'link' && config.org.example.links.isAutomatic == true",
+      "values": [
+        {
+          "context": {
+            "config": {
+              "org": {
+                "example": {
+                  "links": {
+                    "isAutomatic": false
+                  }
+                }
+              }
+            }
+          },
+          "value": false
+        },
+        {
+          "context": {
+            "config": {
+              "org": {
+                "example": {
+                  "links": {
+                    "isAutomatic": true
+                  }
+                }
+              }
+            }
+          },
+          "value": "unknown"
+        },
+        {
+          "context": {
+            "target.noteType": "link",
+            "config": {
+              "org": {
+                "example": {
+                  "links": {
+                    "isAutomatic": true
+                  }
+                }
+              }
+            }
+          },
+          "value": true
+        }
+      ]
+    },
+    {
+      "when": "target.noteType == 'link' || has(target.properties.media)",
+      "values": [
+        {
+          "context": {
+            "target.noteType": "link"
+          },
+          "value": true
+        },
+        {
+          "context": {
+            "target.noteType": "note"
+          },
+          "value": "unknown"
+        },
+        {
+          "context": {
+            "target.noteType": "note",
+            "target.properties": {}
+          },
+          "value": false
+        }
+      ]
+    }
+  ],
+  "targets": {
+    "contentTypes": {
+      "md": "text/markdown",
+      "pdf": "application/pdf",
+      "mp3": "audio/mpeg"
+    },
+    "cases": [
+      {
+        "about": "no path",
+        "target": {
+          "path": "",
+          "isFolder": false
+        },
+        "values": {
+          "target.isRoot": false,
+          "target.isFolder": false,
+          "target.isMultiple": false,
+          "target.isNote": false,
+          "target.isFile": false,
+          "target.contentType": "",
+          "target.noteType": "",
+          "target.properties": {}
+        }
+      },
+      {
+        "about": "the root folder",
+        "target": {
+          "path": "",
+          "isFolder": true
+        },
+        "values": {
+          "target.isRoot": true,
+          "target.isFolder": true,
+          "target.isMultiple": false,
+          "target.isNote": false,
+          "target.isFile": false,
+          "target.contentType": "",
+          "target.noteType": "",
+          "target.properties": {}
+        }
+      },
+      {
+        "about": "a folder",
+        "target": {
+          "path": "Books",
+          "isFolder": true
+        },
+        "values": {
+          "target.isRoot": false,
+          "target.isFolder": true,
+          "target.isMultiple": false,
+          "target.isNote": false,
+          "target.isFile": false,
+          "target.contentType": "",
+          "target.noteType": "",
+          "target.properties": {}
+        }
+      },
+      {
+        "about": "a note, with the type and properties read at it",
+        "target": {
+          "path": "Talks/River.md",
+          "isFolder": false
+        },
+        "note": {
+          "type": "link",
+          "properties": {
+            "url": "https://example.org/river"
+          }
+        },
+        "values": {
+          "target.isRoot": false,
+          "target.isFolder": false,
+          "target.isMultiple": false,
+          "target.isNote": true,
+          "target.isFile": false,
+          "target.contentType": "text/markdown",
+          "target.noteType": "link",
+          "target.properties": {
+            "url": "https://example.org/river"
+          }
+        }
+      },
+      {
+        "about": "a file of a known type, its extension in capitals",
+        "target": {
+          "path": "Books/Atlas.PDF",
+          "isFolder": false
+        },
+        "values": {
+          "target.isRoot": false,
+          "target.isFolder": false,
+          "target.isMultiple": false,
+          "target.isNote": false,
+          "target.isFile": true,
+          "target.contentType": "application/pdf",
+          "target.noteType": "",
+          "target.properties": {}
+        }
+      },
+      {
+        "about": "a file of a type the table does not know",
+        "target": {
+          "path": "Data/points.xyz",
+          "isFolder": false
+        },
+        "values": {
+          "target.isRoot": false,
+          "target.isFolder": false,
+          "target.isMultiple": false,
+          "target.isNote": false,
+          "target.isFile": true,
+          "target.contentType": "",
+          "target.noteType": "",
+          "target.properties": {}
+        }
+      },
+      {
+        "about": "a file with no extension",
+        "target": {
+          "path": "Data/README",
+          "isFolder": false
+        },
+        "values": {
+          "target.isRoot": false,
+          "target.isFolder": false,
+          "target.isMultiple": false,
+          "target.isNote": false,
+          "target.isFile": true,
+          "target.contentType": "",
+          "target.noteType": "",
+          "target.properties": {}
+        }
+      },
+      {
+        "about": "a file that is no note, given a note type and properties: both stay empty",
+        "target": {
+          "path": "Audio/talk.mp3",
+          "isFolder": false
+        },
+        "note": {
+          "type": "link",
+          "properties": {
+            "url": "https://example.org"
+          }
+        },
+        "values": {
+          "target.isRoot": false,
+          "target.isFolder": false,
+          "target.isMultiple": false,
+          "target.isNote": false,
+          "target.isFile": true,
+          "target.contentType": "audio/mpeg",
+          "target.noteType": "",
+          "target.properties": {}
+        }
+      }
+    ]
+  }
+}

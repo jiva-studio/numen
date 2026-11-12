@@ -1,23 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { Palette } from '@numen/shell'
-import type { SlotCommand } from '@numen/plugin-host'
-import { WORDS as words } from '@/shared/words'
-import { CREATE_NOTE_ROW } from '../lib/entries/entries'
+import { Palette } from '@numen/workbench'
+import type { SlotCommand } from '@numen/plugin-loader'
+import { WORDS as windowWords } from '@/shared/ui/words'
+import { PALETTE_WORDS } from '../words'
+import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from '../model/palette/runSupport'
-import { useCommandPalette } from '../model/palette/palette'
+import { createCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
-import type { CommandDeps } from '../model/handlers/deps'
-import type { CommandTarget } from '../types'
+import type { CommandDeps } from '@/shared/model/command'
+import { createCommandRegistry } from '@/shared/model/command'
+import type { CommandTarget } from '@/shared/model/command'
 import CommandPalette from './CommandPalette.vue'
-import type * as HandlersModule from '../model/handlers/handlers'
 
-const h = vi.hoisted(() => ({ runInvocation: vi.fn(() => Promise.resolve()) }))
+const words = { ...windowWords, ...PALETTE_WORDS }
 
-vi.mock('../model/handlers/handlers', async (importOriginal) => ({
-  ...(await importOriginal<typeof HandlersModule>()),
-  runInvocation: h.runInvocation,
-}))
+const COPY_PATH = 'app:file.copyPath'
+const copyPath = vi.fn()
+
+let registry = createCommandRegistry()
+
+beforeEach(() => {
+  copyPath.mockClear()
+  registry = createCommandRegistry()
+  registry.register(COPY_PATH, copyPath)
+})
 
 const ATLAS = 'org.example.atlas'
 const SHOW: SlotCommand = {
@@ -77,7 +84,11 @@ const flushPromises = async () => {
   for (let turn = 0; turn < 8; turn += 1) await Promise.resolve()
 }
 
-async function mountField(found: { names?: NameMatch[]; passages?: Passage[] }, text: string) {
+async function mountField(
+  found: { names?: NameMatch[]; passages?: Passage[] },
+  text: string,
+  showSilence = false,
+) {
   const core: SearchDeps = {
     names: async () => found.names ?? [],
     search: async (_query, mode) => (mode === 'words' ? (found.passages ?? []) : []),
@@ -87,14 +98,15 @@ async function mountField(found: { names?: NameMatch[]; passages?: Passage[] }, 
     getTarget: () => inFront,
     menu: { getEntries: () => [SHOW] },
   })
-  const commands = useCommandPalette(
-    { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+  const commands = createCommandPalette({
+    core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
     words,
-    () => inFront,
-    { getTitle: () => '', getTabAt: () => null },
-    { getStepGroups: () => [], previewItem: () => undefined },
-    runSupport(),
-  )
+    at: () => inFront,
+    knows: { getTitle: () => '', getTabAt: () => null },
+    lists: { getStepGroups: () => [], previewItem: () => undefined },
+    runs: runSupport(),
+    getCommands: createAppCommands,
+  })
   search.setOpen(true)
   await search.setTyped(text)
   await flushPromises()
@@ -103,12 +115,14 @@ async function mountField(found: { names?: NameMatch[]; passages?: Passage[] }, 
     props: {
       commands,
       search,
-      doing: {} as CommandDeps,
+      doing: { writeMessage: vi.fn(), registry } as unknown as CommandDeps,
       getTarget: () => inFront,
       places: {},
       runChoice,
     },
-    global: { stubs: { Palette: true } },
+    global: {
+      stubs: { Palette: showSilence ? { template: '<div><slot name="silence" /></div>' } : true },
+    },
   })
   const choose = async (item: string, action: string) => {
     field.findComponent(Palette).vm.$emit('choose', item, action)
@@ -119,10 +133,6 @@ async function mountField(found: { names?: NameMatch[]; passages?: Passage[] }, 
   )
   return { search, commands, runChoice, choose, rows, field }
 }
-
-beforeEach(() => {
-  h.runInvocation.mockClear()
-})
 
 describe('choosing an action of a row of the search', () => {
   it('runs the choice the search answers for every action of every row, and nothing else', async () => {
@@ -141,7 +151,7 @@ describe('choosing an action of a row of the search', () => {
 
       expect(one.runChoice, `${item} ${action}`).toHaveBeenCalledExactlyOnceWith(expected)
     }
-    expect(h.runInvocation).not.toHaveBeenCalled()
+    expect(copyPath).not.toHaveBeenCalled()
   })
 
   it('runs the command that opens a document over its file for the action of a document', async () => {
@@ -149,10 +159,10 @@ describe('choosing an action of a row of the search', () => {
     const row = one.rows.find((each) => each.item.includes('books/Atlas.pdf'))
     expect(row).toBeDefined()
 
-    await one.choose(row!.item, 'app:file.open')
+    await one.choose(row!.item, 'app:file.open#document')
 
     expect(one.runChoice).toHaveBeenCalledExactlyOnceWith({
-      command: 'app:file.open',
+      command: 'app:file.open#document',
       over: { path: '', file: 'books/Atlas.pdf', title: '', selector: { page: 3 } },
       input: '',
     })
@@ -164,7 +174,7 @@ describe('choosing an action of a row of the search', () => {
     expect(row).toBeDefined()
     expect(one.search.open.value).toBe(true)
 
-    await one.choose(row!.item, 'app:file.open')
+    await one.choose(row!.item, 'app:file.open#document')
 
     expect(one.search.open.value).toBe(false)
     expect(one.runChoice).toHaveBeenCalledTimes(1)
@@ -178,11 +188,11 @@ describe('choosing an action of a row of the search', () => {
     await one.choose(row!.item, 'note')
 
     expect(one.runChoice).not.toHaveBeenCalled()
-    expect(h.runInvocation).not.toHaveBeenCalled()
+    expect(copyPath).not.toHaveBeenCalled()
   })
 })
 
-describe('choosing an action of the row that creates a note', () => {
+describe('choosing an action that creates a note on a row of the search', () => {
   it.each([
     'app:note.create',
     'app:note.createChild',
@@ -191,16 +201,16 @@ describe('choosing an action of the row that creates a note', () => {
   ])(
     'runs %s with the words typed as its input, as a command and not as a branch',
     async (action) => {
-      const one = await mountField({}, '  Entropy  ')
+      const one = await mountField({ names: [byName] }, '  Entropy  ')
 
-      await one.choose(CREATE_NOTE_ROW, action)
+      await one.choose(byName.path, action)
 
       expect(one.runChoice).toHaveBeenCalledExactlyOnceWith({
         command: action,
         over: null,
         input: 'Entropy',
       })
-      expect(h.runInvocation).not.toHaveBeenCalled()
+      expect(copyPath).not.toHaveBeenCalled()
       expect(one.search.open.value).toBe(false)
     },
   )
@@ -210,11 +220,11 @@ describe('choosing a row of the commands', () => {
   it('runs the invocation of the command with the deps of the window and no choice of a result', async () => {
     const one = await mountField({}, 'x')
     one.search.setOpen(false)
-    one.commands.setOpen(true)
+    one.commands.palette.setOpen(true)
 
-    await one.choose('app:note.copyPath', 'app:note.copyPath')
+    await one.choose(COPY_PATH, COPY_PATH)
 
-    expect(h.runInvocation).toHaveBeenCalledTimes(1)
+    expect(copyPath).toHaveBeenCalledTimes(1)
     expect(one.runChoice).not.toHaveBeenCalled()
   })
 })
@@ -247,19 +257,19 @@ describe('the highlight of the search menu as groups answer', () => {
       getTarget: () => inFront,
       menu: { getEntries: () => [SHOW] },
     })
-    const commands = useCommandPalette(
-      { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+    const commands = createCommandPalette({
+      core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
       words,
-      () => inFront,
-      { getTitle: () => '', getTabAt: () => null },
-      { getStepGroups: () => [], previewItem: () => undefined },
-      runSupport(),
-    )
+      at: () => inFront,
+      knows: { getTitle: () => '', getTabAt: () => null },
+      lists: { getStepGroups: () => [], previewItem: () => undefined },
+      runs: runSupport(),
+    })
     const field = mount(CommandPalette, {
       props: {
         commands,
         search,
-        doing: {} as CommandDeps,
+        doing: { registry } as unknown as CommandDeps,
         getTarget: () => inFront,
         places: {},
         runChoice: vi.fn(),
@@ -318,5 +328,21 @@ describe('the highlight of the search menu as groups answer', () => {
     } finally {
       field.unmount()
     }
+  })
+})
+
+describe('the empty state of the search', () => {
+  it('shows the typed words and the icon when nothing is found', async () => {
+    const one = await mountField({}, '  oo  ', true)
+
+    expect(one.field.get('[data-palette="nothing-text"]').text()).toBe('No results for “oo”')
+    expect(one.field.find('[data-palette="nothing-icon"]').exists()).toBe(true)
+  })
+
+  it('is absent while results exist', async () => {
+    const one = await mountField({ passages: [bookPassage] }, 'reef', true)
+
+    expect(one.field.find('[data-palette="nothing-text"]').exists()).toBe(false)
+    expect(one.field.find('[data-palette="nothing-icon"]').exists()).toBe(false)
   })
 })

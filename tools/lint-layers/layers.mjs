@@ -95,7 +95,22 @@ export function createOwnImportConfig({ layer, patterns, group, message, outside
 }
 
 /**
- * The layer blocks of a component library (`libs/ui/core`, `libs/ui/shell`):
+ * The eslint block for the stories and fixtures of a component library. They stand outside the
+ * layer order, but they are no place for the domain: a story draws a component with made-up props,
+ * and a fixture is made-up content, so neither imports a wire type, a client, a domain type or an
+ * application.
+ */
+export function createStoryImportConfig({ patterns }) {
+  return {
+    files: ['src/**/*.stories.ts', 'src/**/fixtures/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns }],
+    },
+  }
+}
+
+/**
+ * The layer blocks of a component library (`libs/ui/components`, `libs/ui/workbench`):
  * the layers, the imports `domainImports` bans, and a slice of `features`
  * reaching no other slice. `outsideLayers` are the files that stand outside.
  */
@@ -119,6 +134,7 @@ export function createLibraryLayerConfigs({ boundaries, order, sliceLayers, outs
       message: 'a slice imports its own files by relative path and no other slice',
       outsideLayers,
     }),
+    createStoryImportConfig({ patterns: domainImports }),
   ]
 }
 

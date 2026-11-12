@@ -1,0 +1,662 @@
+/**
+ * What the deck editor renders from the cards it receives, and what it emits.
+ *
+ * The negative cases: no tile names the card model that cuts it, the head holds
+ * only the two things a tile is used for, the plus button offers nothing until
+ * it is pressed, a card dropped at its current position moves nothing, and a
+ * card whose card model was not supplied keeps every value it has.
+ */
+import { mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
+import DeckEditor from './DeckEditor.vue'
+import { getRunEndPoint, HEAD, type DeckSection, type DeckCard } from '../../../../lib/cards'
+import type { CardModel } from '../../../../lib/cards'
+
+const CUTS: readonly CardModel[] = [
+  { name: 'Animal', fields: ['Name', 'Height', 'Life span'] },
+  { name: 'Word', fields: ['Word', 'Meaning'] },
+]
+
+/* Every field a card model declares is placed under its own heading, the first
+   included, and a card is addressed by the identity the caller drew it under. */
+const CARDS: readonly DeckCard[] = [
+  {
+    id: 'llama',
+    section: null,
+    cardModel: 'Animal',
+    filled: [
+      { field: 'Name', text: 'Llama' },
+      { field: 'Height', text: 'about 45"' },
+    ],
+  },
+  { id: 'yak', section: null, cardModel: 'Animal', filled: [] },
+]
+
+const mountDeck = (props: Record<string, unknown> = {}) =>
+  mount(DeckEditor, {
+    attachTo: document.body,
+    props: { cards: CARDS, cardModels: CUTS, ...props },
+  })
+
+type Grid = ReturnType<typeof mountDeck>
+
+const getTile = (wrapper: Grid, id: string) => wrapper.get(`[data-card="${id}"]`)
+
+const getDrawnCards = (wrapper: Grid) =>
+  wrapper.findAll('[data-card]').map((tile) => tile.attributes('data-card'))
+
+const getFields = (wrapper: Grid, id: string): readonly (string | undefined)[] =>
+  getTile(wrapper, id)
+    .findAll('textarea')
+    .map((box) => box.attributes('data-value'))
+
+const getBox = (wrapper: Grid, id: string, field: string) =>
+  getTile(wrapper, id).get<HTMLTextAreaElement>(`[data-value="${field}"]`)
+
+const getBoxes = (wrapper: Grid, id: string, field: string): readonly HTMLTextAreaElement[] =>
+  getTile(wrapper, id)
+    .findAll<HTMLTextAreaElement>(`[data-value="${field}"]`)
+    .map((box) => box.element)
+
+const dragTo = async (wrapper: Grid, id: string, onto: string | null): Promise<void> => {
+  await getTile(wrapper, id).get('[data-grip]').trigger('dragstart')
+  const overTarget =
+    onto === null
+      ? wrapper.findAll('[data-plus]').at(-1)!
+      : onto === HEAD
+        ? wrapper.get('[data-head]')
+        : wrapper.find(`[data-card="${onto}"]`).exists()
+          ? getTile(wrapper, onto)
+          : wrapper.get(`[data-section-head="${onto}"]`)
+  await overTarget.trigger('dragover')
+  await overTarget.trigger('drop')
+}
+
+const typeInto = (box: HTMLTextAreaElement | undefined, text: string): void => {
+  if (!box) throw new Error('no box to type in')
+  box.value = text
+  box.dispatchEvent(new Event('input'))
+}
+
+const pressKey = (on: Element, key: string): KeyboardEvent => {
+  const press = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+  on.dispatchEvent(press)
+  return press
+}
+
+const dragOff = async (wrapper: Grid, id: string, targetId: string | null): Promise<void> => {
+  const grip = getTile(wrapper, id).get('[data-grip]')
+  await grip.trigger('dragstart')
+  if (targetId !== null) await getTile(wrapper, targetId).trigger('dragover')
+  await grip.trigger('dragend')
+}
+
+afterEach(() => {
+  document.body.innerHTML = ''
+})
+
+describe('DeckEditor', () => {
+  it('draws a tile per card, in the order they were handed in', () => {
+    expect(getDrawnCards(mountDeck())).toEqual(['llama', 'yak'])
+  })
+
+  it('remains the plus last, and counts it in what a tile is announced as', () => {
+    const card = mountDeck()
+    expect(getTile(card, 'yak').attributes('aria-setsize')).toBe('3')
+    expect(card.get('[data-plus]').attributes('aria-posinset')).toBe('3')
+  })
+
+  it('draws the plus alone for a deck holding nothing', () => {
+    const card = mountDeck({ cards: [] })
+    expect(card.findAll('[data-card]')).toHaveLength(0)
+    expect(card.get('[data-plus]').attributes('aria-posinset')).toBe('1')
+  })
+
+  it('draws every field of the card model in a box, the first among them', () => {
+    expect(getFields(mountDeck(), 'llama')).toEqual(['Name', 'Height', 'Life span'])
+  })
+
+  it('draws the first field as it draws every other', () => {
+    const card = mountDeck()
+    const values = getTile(card, 'llama').findAll('.card__value')
+    expect(values.map((each) => each.get('label').text())).toEqual(['Name', 'Height', 'Life span'])
+    expect(values[0]?.attributes('data-names')).toBeUndefined()
+  })
+
+  it('names each box by a label the box itself is named by', () => {
+    const card = mountDeck()
+    for (const value of getTile(card, 'llama').findAll('.card__value')) {
+      const label = value.get('label')
+      const box = value.get('textarea')
+      expect(label.attributes('for')).toBe(box.attributes('id'))
+      expect(label.attributes('for')).toBeTruthy()
+    }
+  })
+
+  it('names a value on the rule that divides it from the one above, and nowhere else', () => {
+    const value = getTile(mountDeck(), 'llama').findAll('.card__value')[0]
+
+    // One name, and it relies on the rule. Nothing is drawn around the box
+    // under it.
+    expect(value?.findAll('label')).toHaveLength(1)
+    expect(value?.get('.divider').get('label').text()).toBe('Name')
+    expect(value?.find('fieldset').exists()).toBe(false)
+  })
+
+  it('remains what the card wrote under the first field in that field’s box', () => {
+    expect(getBox(mountDeck(), 'llama', 'Name').element.value).toBe('Llama')
+  })
+
+  it('holds what was typed, breaks and all, in every box, the first field’s among them', async () => {
+    const card = mountDeck()
+    const box = getBox(card, 'llama', 'Name')
+    expect(pressKey(box.element, 'Enter').defaultPrevented).toBe(false)
+
+    await box.setValue('Llama\nand alpaca')
+    expect(card.emitted('write')).toEqual([['llama', 'Name', 1, 'Llama\nand alpaca']])
+  })
+
+  it('emits one value of one card as it now reads', async () => {
+    const card = mountDeck()
+    await getBox(card, 'llama', 'Life span').setValue('about 20 years')
+    expect(card.emitted('write')).toEqual([['llama', 'Life span', 1, 'about 20 years']])
+  })
+
+  it('sets the ground behind each box to the box’s own text, which is what sizes it', () => {
+    const cards: readonly DeckCard[] = [
+      {
+        id: 'x',
+        section: null,
+        cardModel: 'Animal',
+        filled: [{ field: 'Height', text: 'a\nb\nc' }],
+      },
+    ]
+    const card = mountDeck({ cards })
+    const boxes = getTile(card, 'x').findAll('[data-autosize]')
+    expect(boxes.map((each) => each.attributes('data-autosize'))).toEqual(['', 'a\nb\nc', ''])
+  })
+
+  it('says on each tile what cut the card it draws', () => {
+    // Two card models, named nothing that any field is named, so what is looked
+    // for here can only be the card model's own name.
+    const cardModels: readonly CardModel[] = [
+      { name: 'Beast', fields: ['Name', 'Height'] },
+      { name: 'Vocabulary', fields: ['Word', 'Meaning'] },
+    ]
+    const mixed: readonly DeckCard[] = [
+      { id: 'llama', section: null, cardModel: 'Beast', filled: [] },
+      { id: 'llano', section: null, cardModel: 'Vocabulary', filled: [] },
+    ]
+    const card = mountDeck({ cards: mixed, cardModels })
+
+    expect(card.findAll('[data-card]')).toHaveLength(2)
+    expect(getTile(card, 'llama').get('[data-cut-of]').text()).toBe('Beast')
+    expect(getTile(card, 'llano').get('[data-cut-of]').text()).toBe('Vocabulary')
+  })
+
+  it('holds nothing in a tile’s head but what cut it, the grip and the way to remove it', () => {
+    const head = getTile(mountDeck(), 'llama').get('.card-header')
+    expect(head.findAll('button')).toHaveLength(1)
+    expect(head.attributes('data-grip')).toBeDefined()
+    expect(head.attributes('draggable')).toBe('true')
+    expect(head.text().trim()).toBe('Animal')
+  })
+
+  it('drags a tile by the strip itself, and not by a handle inside it', () => {
+    const tile = getTile(mountDeck(), 'llama')
+    expect(tile.findAll('[data-grip]')).toHaveLength(1)
+    expect(tile.get('[data-grip]').element.tagName).toBe('HEADER')
+  })
+
+  it('leaves the way to remove a card out of what drags it', () => {
+    const away = getTile(mountDeck(), 'llama').get('.card-header button')
+    expect(away.attributes('draggable')).toBe('false')
+  })
+
+  describe('a press landing on something the strip holds', () => {
+    const getStrip = (wrapper: Grid, id: string) => getTile(wrapper, id).get('[data-grip]')
+
+    it('lets that thing have the press, so the strip is not dragged by it', async () => {
+      const card = mountDeck()
+      await getStrip(card, 'llama').get('button').trigger('pointerdown')
+      expect(getStrip(card, 'llama').attributes('draggable')).toBe('false')
+    })
+
+    it('takes the strip up again once the press is released anywhere at all', async () => {
+      const card = mountDeck()
+      await getStrip(card, 'llama').get('button').trigger('pointerdown')
+
+      // The pointer may be released far outside the strip, and the strip is
+      // dragged again from there.
+      document.body.dispatchEvent(new Event('pointerup', { bubbles: true }))
+      await nextTick()
+
+      expect(getStrip(card, 'llama').attributes('draggable')).toBe('true')
+    })
+
+    it('takes the strip up again where the press is called off', async () => {
+      const card = mountDeck()
+      await getStrip(card, 'llama').get('button').trigger('pointerdown')
+
+      document.body.dispatchEvent(new Event('pointercancel', { bubbles: true }))
+      await nextTick()
+
+      expect(getStrip(card, 'llama').attributes('draggable')).toBe('true')
+    })
+
+    it('drags the strip from a press landing on the strip itself', async () => {
+      const card = mountDeck()
+      await getStrip(card, 'llama').trigger('pointerdown')
+      expect(getStrip(card, 'llama').attributes('draggable')).toBe('true')
+    })
+  })
+
+  it('draws no way to open or shut a tile: every value is open to typing', () => {
+    const card = mountDeck()
+    expect(getTile(card, 'llama').find('[aria-expanded]').exists()).toBe(false)
+  })
+
+  it('says of nothing that it is open, the plus being gone once it has opened', async () => {
+    const card = mountDeck()
+    expect(card.find('[aria-expanded]').exists()).toBe(false)
+    await card.get('[data-plus] button').trigger('click')
+    expect(card.find('[aria-expanded]').exists()).toBe(false)
+  })
+
+  it('announces a card by the place it remains in the deck, and by no name of its own', () => {
+    const card = mountDeck()
+    expect(getTile(card, 'yak').attributes('aria-label')).toBe('Card 2')
+  })
+
+  describe('dragging a tile by the keyboard', () => {
+    const getStrip = (wrapper: Grid, id: string) => getTile(wrapper, id).get('.card-header__grip')
+
+    it('names the handle a tile is dragged by, and gives it a place in the order', () => {
+      const strip = getStrip(mountDeck(), 'llama')
+      expect(strip.attributes('aria-label')).toBe('Reorder: Card 1')
+      expect(strip.attributes('tabindex')).toBe('0')
+      expect(strip.attributes('role')).toBe('button')
+    })
+
+    it('emits a tile dragged one place down the order', () => {
+      const card = mountDeck()
+      const press = pressKey(getStrip(card, 'llama').element, 'ArrowDown')
+      expect(press.defaultPrevented).toBe(true)
+      expect(card.emitted('move')).toEqual([['llama', null]])
+    })
+
+    it('emits a tile dragged one place up the order', () => {
+      const card = mountDeck()
+      pressKey(getStrip(card, 'yak').element, 'ArrowUp')
+      expect(card.emitted('move')).toEqual([['yak', 'llama']])
+    })
+
+    it('moves nothing where there is no place that way', () => {
+      const card = mountDeck()
+      const press = pressKey(getStrip(card, 'llama').element, 'ArrowUp')
+      expect(press.defaultPrevented).toBe(false)
+      expect(card.emitted('move')).toBeUndefined()
+    })
+
+    it('moves nothing on a key that is no way along the order', () => {
+      const card = mountDeck()
+      pressKey(getStrip(card, 'llama').element, 'ArrowRight')
+      expect(card.emitted('move')).toBeUndefined()
+    })
+  })
+
+  it('emits the card requested to go', async () => {
+    const card = mountDeck()
+    await getTile(card, 'yak').get('.card-header button').trigger('click')
+    expect(card.emitted('remove')).toEqual([['yak']])
+  })
+
+  it('offers no card model until the plus is pressed', () => {
+    expect(mountDeck().findAll('[data-cut]')).toHaveLength(0)
+  })
+
+  it('asks which card model once the plus is pressed', async () => {
+    const card = mountDeck()
+    await card.get('[data-plus] button').trigger('click')
+    expect(card.findAll('[data-cut]').map((each) => each.attributes('data-cut'))).toEqual([
+      'Animal',
+      'Word',
+    ])
+  })
+
+  it('adds nothing while it is only asking', async () => {
+    const card = mountDeck()
+    await card.get('[data-plus] button').trigger('click')
+    expect(card.emitted('add')).toBeUndefined()
+  })
+
+  it('asks for a card cut by the card model chosen, before the first section', async () => {
+    const card = mountDeck()
+    await card.get('[data-plus] button').trigger('click')
+    await card.get('[data-cut="Animal"]').trigger('click')
+    expect(card.emitted('add')).toEqual([['Animal', null]])
+  })
+
+  it('stops asking once a card model is chosen', async () => {
+    const card = mountDeck()
+    await card.get('[data-plus] button').trigger('click')
+    await card.get('[data-cut="Word"]').trigger('click')
+    expect(card.findAll('[data-cut]')).toHaveLength(0)
+  })
+
+  it('emits a card dropped before another', async () => {
+    const card = mountDeck()
+    await dragTo(card, 'yak', 'llama')
+    expect(card.emitted('move')).toEqual([['yak', 'llama']])
+  })
+
+  it('emits a card dropped past the last of them, which is where the plus remains', async () => {
+    const card = mountDeck()
+    await dragTo(card, 'llama', null)
+    expect(card.emitted('move')).toEqual([['llama', getRunEndPoint(HEAD)]])
+  })
+
+  it('moves nothing where the card dropped past the last of them is the last of them', async () => {
+    const card = mountDeck()
+    await dragTo(card, 'yak', null)
+    expect(card.emitted('move')).toBeUndefined()
+  })
+
+  // A card is moved to a position, and the caret marks it. A card dropped where
+  // the caret shows no position — the gap between the tiles — keeps its position.
+  it('moves nothing where a card is dropped on no place at all', async () => {
+    const card = mountDeck()
+    await getTile(card, 'llama').get('[data-grip]').trigger('dragstart')
+    await card.get('.deck').trigger('dragover')
+    await card.get('.deck').trigger('drop')
+    expect(card.emitted('move')).toBeUndefined()
+  })
+
+  it('forgets where a card would land once it is dragged off every place', async () => {
+    const card = mountDeck()
+    await getTile(card, 'llama').get('[data-grip]').trigger('dragstart')
+    await getTile(card, 'yak').trigger('dragover')
+    await card.get('.deck').trigger('dragover')
+    await card.get('.deck').trigger('drop')
+    expect(card.emitted('move')).toBeUndefined()
+  })
+
+  it('moves nothing where a card is dropped at its current position', async () => {
+    const card = mountDeck()
+    await dragTo(card, 'llama', 'llama')
+    expect(card.emitted('move')).toBeUndefined()
+  })
+
+  it('moves nothing where a drag ends with the card dropped nowhere', async () => {
+    const card = mountDeck()
+    await dragOff(card, 'yak', null)
+    expect(card.emitted('move')).toBeUndefined()
+    expect(getTile(card, 'yak').attributes('data-dragged')).toBeUndefined()
+  })
+
+  it('moves nothing where a drag over another card ends with it dropped nowhere', async () => {
+    const card = mountDeck()
+    await dragOff(card, 'yak', 'llama')
+    expect(card.emitted('move')).toBeUndefined()
+  })
+
+  it('draws no value of a card whose card model was not handed in, and says which it wants', () => {
+    const orphan: readonly DeckCard[] = [
+      { id: 'gone', section: null, cardModel: 'Missing', filled: [{ field: 'A', text: 'kept' }] },
+    ]
+    const card = mountDeck({ cards: orphan })
+    const tile = getTile(card, 'gone')
+
+    // The card model is named, so the user can see what the card is waiting for.
+    expect(tile.get('.card__objections').text()).toBe('No card model called Missing')
+    // Nothing names the values, so nothing draws them. They stay in the file.
+    expect(tile.findAll('.card__value')).toHaveLength(0)
+    expect(tile.find('textarea').exists()).toBe(false)
+  })
+
+  it('says nothing about a card whose card model was handed in', () => {
+    expect(mountDeck().find('.card__objections').exists()).toBe(false)
+  })
+
+  it('draws every value a card writes under one field, and hides none of them', () => {
+    const twice: readonly DeckCard[] = [
+      {
+        id: 'llama',
+        section: null,
+        cardModel: 'Animal',
+        filled: [
+          { field: 'Height', text: 'about 45"' },
+          { field: 'Height', text: 'about 6 feet' },
+        ],
+      },
+    ]
+    const card = mountDeck({ cards: twice })
+    expect(getBoxes(card, 'llama', 'Height').map((box) => box.value)).toEqual([
+      'about 45"',
+      'about 6 feet',
+    ])
+  })
+
+  it('notifies the two boxes of a field written twice apart in what each emits', async () => {
+    const twice: readonly DeckCard[] = [
+      {
+        id: 'twice',
+        section: null,
+        cardModel: 'Animal',
+        filled: [
+          { field: 'Name', text: 'Llama' },
+          { field: 'Name', text: 'Alpaca' },
+        ],
+      },
+    ]
+    const card = mountDeck({ cards: twice })
+    const boxes = getBoxes(card, 'twice', 'Name')
+    typeInto(boxes[0], 'Vicuña')
+    typeInto(boxes[1], 'Guanaco')
+
+    expect(card.emitted('write')).toEqual([
+      ['twice', 'Name', 1, 'Vicuña'],
+      ['twice', 'Name', 2, 'Guanaco'],
+    ])
+  })
+
+  it('leaves the caret in no box but the one it was put in when a field is removed', async () => {
+    const card = mountDeck()
+    const box = getBox(card, 'llama', 'Height').element
+    box.focus()
+    expect(document.activeElement).toBe(box)
+
+    await card.setProps({ cardModels: [{ name: 'Animal', fields: ['Name', 'Life span'] }] })
+
+    // After the card model drops the field, its box is removed and its value
+    // stays in the file. The caret leaves with the box and moves to no other.
+    expect(getFields(card, 'llama')).toEqual(['Name', 'Life span'])
+    expect(getTile(card, 'llama').find('[data-value="Height"]').exists()).toBe(false)
+    expect(document.activeElement).not.toBe(getBox(card, 'llama', 'Life span').element)
+  })
+
+  describe('the sections of a deck', () => {
+    const SECTIONS: readonly DeckSection[] = [
+      { id: 'roots', name: 'Roots' },
+      { id: 'leaves', name: 'Leaves' },
+    ]
+    const UNDER: readonly DeckCard[] = [
+      { id: 'loose', section: null, cardModel: 'Animal', filled: [] },
+      { id: 'llama', section: 'roots', cardModel: 'Animal', filled: [] },
+    ]
+
+    const mountSectionedDeck = (props: Record<string, unknown> = {}) =>
+      mountDeck({ cards: UNDER, sections: SECTIONS, ...props })
+
+    it('draws a heading per section, in the order they were handed in', () => {
+      const target = mountSectionedDeck()
+      expect(
+        target.findAll('[data-section-head]').map((head) => head.attributes('data-section-head')),
+      ).toEqual(['roots', 'leaves'])
+    })
+
+    it('draws a heading for a section holding no card', () => {
+      const target = mountSectionedDeck()
+      expect(target.get('[data-section-head="leaves"]').get('input').element.value).toBe('Leaves')
+    })
+
+    it('remains each card under the section it was handed in under', () => {
+      const target = mountSectionedDeck()
+      expect(getTile(target, 'llama').attributes('data-section')).toBe('roots')
+      expect(getTile(target, 'loose').attributes('data-section')).toBeUndefined()
+    })
+
+    it('draws no heading for a deck the caller handed no section', () => {
+      expect(mountDeck().findAll('[data-section-head]')).toHaveLength(0)
+    })
+
+    it('emits a section requested for, named by something nothing has taken', async () => {
+      const target = mountSectionedDeck()
+      await target.get('[data-add-section]').trigger('click')
+      expect(target.emitted('add-section')).toEqual([['Section 1']])
+    })
+
+    it('emits a section renamed', async () => {
+      const target = mountSectionedDeck()
+      const box = target.get<HTMLInputElement>('[data-section-head="roots"] input')
+      box.element.value = 'Roots and shoots'
+      await box.trigger('input')
+      await box.trigger('change')
+      expect(target.emitted('rename-section')).toEqual([['roots', 'Roots and shoots']])
+    })
+
+    it('emits a section requested to go', async () => {
+      const target = mountSectionedDeck()
+      await target.get('[data-section-head="roots"] .remove-button').trigger('click')
+      expect(target.emitted('remove-section')).toEqual([['roots']])
+    })
+
+    it('asks for a card under the section whose plus was pressed', async () => {
+      const target = mountSectionedDeck()
+      await target.get('[data-plus-of="roots"] button').trigger('click')
+      await target.get('[data-plus-of="roots"] [data-cut="Animal"]').trigger('click')
+      expect(target.emitted('add')?.map((call) => call[1])).toEqual(['roots'])
+    })
+
+    it('asks from one plus at a time, the others standing shut', async () => {
+      const target = mountSectionedDeck()
+      await target.get('[data-plus-of="roots"] button').trigger('click')
+      expect(target.findAll('[data-cut]').length).toBeGreaterThan(0)
+      expect(target.find('[data-plus-of="leaves"] [data-cut]').exists()).toBe(false)
+
+      await target.get('[data-plus-of="leaves"] button').trigger('click')
+      expect(target.find('[data-plus-of="roots"] [data-cut]').exists()).toBe(false)
+      expect(target.find('[data-plus-of="leaves"] [data-cut]').exists()).toBe(true)
+    })
+
+    it('moves nothing where the card dropped past a section is the last under it', async () => {
+      const target = mountSectionedDeck()
+      const plus = target.get('[data-plus-of="roots"]')
+      await getTile(target, 'llama').get('[data-grip]').trigger('dragstart')
+      await plus.trigger('dragover')
+      await plus.trigger('drop')
+      expect(target.emitted('move')).toBeUndefined()
+    })
+
+    it('remains a plus in every section, and one where the loose cards stand', () => {
+      const target = mountSectionedDeck()
+      expect(
+        target.findAll('[data-plus]').map((plus) => plus.attributes('data-plus-of') ?? ''),
+      ).toEqual(['', 'roots', 'leaves'])
+    })
+
+    it('remains none before the first section where no card remains there', () => {
+      const card = mountSectionedDeck({ cards: [UNDER[1]] })
+      expect(
+        card.findAll('[data-plus]').map((plus) => plus.attributes('data-plus-of') ?? ''),
+      ).toEqual(['roots', 'leaves'])
+    })
+
+    it('emits a card dropped past the last card of a section', async () => {
+      const target = mountSectionedDeck()
+      const plus = target.get('[data-plus-of="roots"]')
+      await getTile(target, 'loose').get('[data-grip]').trigger('dragstart')
+      await plus.trigger('dragover')
+      await plus.trigger('drop')
+      expect(target.emitted('move')).toEqual([['loose', getRunEndPoint('roots')]])
+    })
+
+    it('emits a card dropped past the last of those standing under no section', async () => {
+      const target = mountSectionedDeck()
+      const plus = target.get('[data-plus]')
+      await getTile(target, 'llama').get('[data-grip]').trigger('dragstart')
+      await plus.trigger('dragover')
+      await plus.trigger('drop')
+      expect(target.emitted('move')).toEqual([['llama', getRunEndPoint(HEAD)]])
+    })
+
+    it('emits a card dropped at the head of a section', async () => {
+      const target = mountSectionedDeck()
+      await dragTo(target, 'loose', 'roots')
+      expect(target.emitted('move')).toEqual([['loose', 'roots']])
+    })
+
+    it('emits a card dropped at the head of a section holding none', async () => {
+      const target = mountSectionedDeck()
+      await dragTo(target, 'llama', 'leaves')
+      expect(target.emitted('move')).toEqual([['llama', 'leaves']])
+    })
+
+    describe('the cards before the first section', () => {
+      const INSIDE: readonly DeckCard[] = [
+        { id: 'llama', section: 'roots', cardModel: 'Animal', filled: [] },
+        { id: 'yak', section: 'leaves', cardModel: 'Animal', filled: [] },
+      ]
+
+      it('take a drop target of their own where no card remains there', () => {
+        expect(mountSectionedDeck({ cards: INSIDE }).find('[data-head]').exists()).toBe(true)
+      })
+
+      it('take none where a card already remains there to land in front of', () => {
+        expect(mountSectionedDeck().find('[data-head]').exists()).toBe(false)
+      })
+
+      it('take none in a deck holding no section, the end of it being that place', () => {
+        expect(mountDeck().find('[data-head]').exists()).toBe(false)
+      })
+
+      it('emit a card dropped before the first section', async () => {
+        const card = mountSectionedDeck({ cards: INSIDE })
+        await dragTo(card, 'yak', HEAD)
+        expect(card.emitted('move')).toEqual([['yak', HEAD]])
+      })
+
+      it('emit the first card of the deck dragged out of its section', () => {
+        const card = mountSectionedDeck({ cards: INSIDE })
+        const press = pressKey(getTile(card, 'llama').get('.card-header__grip').element, 'ArrowUp')
+        expect(press.defaultPrevented).toBe(true)
+        expect(card.emitted('move')).toEqual([['llama', HEAD]])
+      })
+
+      it('move nothing where the card dragged up already remains there', () => {
+        const target = mountSectionedDeck()
+        const press = pressKey(
+          getTile(target, 'loose').get('.card-header__grip').element,
+          'ArrowUp',
+        )
+        expect(press.defaultPrevented).toBe(false)
+        expect(target.emitted('move')).toBeUndefined()
+      })
+
+      it('hold a card standing under a section the deck was not handed', () => {
+        const missing: readonly DeckCard[] = [
+          { id: 'lost', section: 'gone', cardModel: 'Animal', filled: [] },
+          { id: 'llama', section: 'roots', cardModel: 'Animal', filled: [] },
+        ]
+        const card = mountSectionedDeck({ cards: missing })
+
+        expect(getDrawnCards(card)).toEqual(['lost', 'llama'])
+        expect(getTile(card, 'lost').attributes('data-section')).toBeUndefined()
+        // Every card is drawn, so what each tile is announced by counts them
+        // all and the plus each run carries.
+        expect(getTile(card, 'lost').attributes('aria-setsize')).toBe('5')
+      })
+    })
+  })
+})

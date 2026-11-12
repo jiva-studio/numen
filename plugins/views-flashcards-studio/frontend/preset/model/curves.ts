@@ -10,24 +10,30 @@ import {
   type Presets,
   type Settings,
   type SettingsBounds,
-} from '../types'
-import { getGoalValue, findNearest } from '../lib/curve'
+} from '../../lib/presets'
+import { getGoalValue, findNearestGridValue } from '../lib/curve'
 import { getShapeKey } from '../lib/fields'
 import { estimateCurve } from '../lib/sketch'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
 
 /** Reactive state for preset curve calculations. */
 export interface CurveState {
-  readonly curve: Ref<Curve>
-  readonly material: Ref<PresetCounts | null>
-  readonly place: Ref<number>
-  readonly isWaiting: Ref<boolean>
-  isDrawing: boolean
-  shouldDrawAgain: boolean
-  shape: string
-  isReal: boolean
-  readonly asks: RequestGuard
-  readonly answers: Map<string, Curve>
+  readonly current: {
+    readonly curve: Ref<Curve>
+    readonly material: Ref<PresetCounts | null>
+    readonly place: Ref<number>
+    readonly isWaiting: Ref<boolean>
+  }
+  readonly drawing: {
+    isDrawing: boolean
+    shouldDrawAgain: boolean
+    shape: string
+    isReal: boolean
+  }
+  readonly requests: {
+    readonly asks: RequestGuard
+    readonly answers: Map<string, Curve>
+  }
 }
 
 export function createCurveState(
@@ -36,16 +42,14 @@ export function createCurveState(
   bounds: SettingsBounds,
 ): CurveState {
   return {
-    curve: shallowRef<Curve>(estimateCurve(initialSettings, today, bounds)),
-    material: shallowRef<PresetCounts | null>(null),
-    place: ref(0),
-    isWaiting: ref(true),
-    isDrawing: false,
-    shouldDrawAgain: false,
-    shape: '',
-    isReal: false,
-    asks: createRequestGuard(),
-    answers: new Map<string, Curve>(),
+    current: {
+      curve: shallowRef<Curve>(estimateCurve(initialSettings, today, bounds)),
+      material: shallowRef<PresetCounts | null>(null),
+      place: ref(0),
+      isWaiting: ref(true),
+    },
+    drawing: { isDrawing: false, shouldDrawAgain: false, shape: '', isReal: false },
+    requests: { asks: createRequestGuard(), answers: new Map<string, Curve>() },
   }
 }
 
@@ -57,19 +61,19 @@ export const isSameGrid = (one: readonly number[], two: readonly number[]): bool
 export const getKnobPosition = (curve: Curve, settings: Settings, today: string): number =>
   curve.now.index >= 0
     ? curve.now.index
-    : Math.max(findNearest(curve.grid, getGoalValue(settings, today)), 0)
+    : Math.max(findNearestGridValue(curve.grid, getGoalValue(settings, today)), 0)
 
 /** Applies a landed curve and updates the material counts. */
 export const applyCurveAnswer = (state: CurveState, curve: Curve): void => {
-  state.curve.value = curve
-  state.material.value = {
+  state.current.curve.value = curve
+  state.current.material.value = {
     decks: curve.decks,
     cards: curve.cards,
     overdue: curve.overdue,
     unbegun: curve.unbegun,
   }
-  state.isReal = true
-  state.isWaiting.value = false
+  state.drawing.isReal = true
+  state.current.isWaiting.value = false
 }
 
 export interface CurveContext {
@@ -83,22 +87,22 @@ export interface CurveContext {
 
 const fetchCurve = async (state: CurveState, context: CurveContext): Promise<void> => {
   const { path, getSettings, core, bounds, today, setErrorMessage } = context
-  const mine = state.asks.acquireRequest()
+  const mine = state.requests.asks.acquireRequest()
   const settings = getSettings()
   const shape = getShapeKey(settings)
-  state.shape = shape
-  const riding = state.curve.value.grid
+  state.drawing.shape = shape
+  const riding = state.current.curve.value.grid
 
-  const isCurrent = state.isReal && state.curve.value.goal === settings.goal
+  const isCurrent = state.drawing.isReal && state.current.curve.value.goal === settings.goal
   if (isCurrent) {
-    state.curve.value = { ...state.curve.value, isHonest: false }
+    state.current.curve.value = { ...state.current.curve.value, isHonest: false }
   } else {
     const meanwhile = estimateCurve(settings, today, bounds)
-    state.curve.value = meanwhile
-    state.place.value = Math.max(meanwhile.now.index, 0)
+    state.current.curve.value = meanwhile
+    state.current.place.value = Math.max(meanwhile.now.index, 0)
   }
-  state.isReal = false
-  state.isWaiting.value = true
+  state.drawing.isReal = false
+  state.current.isWaiting.value = true
 
   let answer: Curve
   try {
@@ -107,14 +111,14 @@ const fetchCurve = async (state: CurveState, context: CurveContext): Promise<voi
     // The window states what failed; the error returned by the call adds nothing the user can act on.
     if (!mine.isCurrent) return
     setErrorMessage(words.noCurve)
-    state.isWaiting.value = false
+    state.current.isWaiting.value = false
     return
   }
   if (!mine.isCurrent) return
-  state.answers.set(shape, answer)
+  state.requests.answers.set(shape, answer)
   applyCurveAnswer(state, answer)
   if (isCurrent && isSameGrid(riding, answer.grid)) return
-  state.place.value = getKnobPosition(answer, settings, today)
+  state.current.place.value = getKnobPosition(answer, settings, today)
 }
 
 /** Calculates the curve for the goal these settings name. */
@@ -122,28 +126,28 @@ export const updateCurves = async (state: CurveState, context: CurveContext): Pr
   const { getSettings, today } = context
   const settings = getSettings()
   const shape = getShapeKey(settings)
-  const cachedCurve = state.answers.get(shape)
+  const cachedCurve = state.requests.answers.get(shape)
   if (cachedCurve) {
-    state.asks.cancel()
-    state.shape = shape
+    state.requests.asks.cancel()
+    state.drawing.shape = shape
     applyCurveAnswer(state, cachedCurve)
-    state.place.value = getKnobPosition(cachedCurve, settings, today)
+    state.current.place.value = getKnobPosition(cachedCurve, settings, today)
     return
   }
 
-  if (state.isDrawing) {
-    state.shouldDrawAgain = true
+  if (state.drawing.isDrawing) {
+    state.drawing.shouldDrawAgain = true
     return
   }
 
-  state.isDrawing = true
+  state.drawing.isDrawing = true
   try {
     await fetchCurve(state, context)
   } finally {
-    state.isDrawing = false
+    state.drawing.isDrawing = false
   }
 
-  if (!state.shouldDrawAgain) return
-  state.shouldDrawAgain = false
+  if (!state.drawing.shouldDrawAgain) return
+  state.drawing.shouldDrawAgain = false
   await updateCurves(state, context)
 }

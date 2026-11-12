@@ -5,32 +5,36 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func windowOn(t *testing.T) (*editor.Installation, container.Config) {
+func windowOn(t *testing.T) (*container.OpenedWindow, container.Config) {
+	t.Helper()
+	opened, cfg, _ := windowWithCases(t)
+	return opened, cfg
+}
+
+func windowWithCases(t *testing.T) (*container.OpenedWindow, container.Config, *container.WindowUseCases) {
 	t.Helper()
 
 	cfg := container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
-		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
 	root := t.TempDir()
-	if _, err := cfg.AddVault(registry, root, "one"); err != nil {
+	if _, err := cfg.AddVault(root, "one"); err != nil {
 		t.Fatal(err)
 	}
 
-	made, err := cfg.GetEditorAssembly(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	opened, err := editor.Open(t.Context(), made, "one", io.Discard)
+	cases := &container.WindowUseCases{}
+	opened, err := container.OpenWindowWith(cfg, t.Context(), container.WindowOpening{
+		DB: db, Named: "one", Out: io.Discard, UseCases: cases,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +43,7 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 			t.Error(err)
 		}
 	})
-	return opened, cfg
+	return opened, cfg, cases
 }
 
 // TestTheWindowIsNamedAfterTheFileInFrontOfThePerson checks that the page
@@ -49,14 +53,14 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 	vault := domain.Vault{ID: "one", Name: "Notes"}
 	for name, c := range map[string]struct {
 		vault domain.Vault
-		open  domain.OpenTabs
+		open  windowdomain.OpenTabs
 		want  string
 	}{
 		"a note in front": {
 			vault: vault,
-			open: domain.OpenTabs{
+			open: windowdomain.OpenTabs{
 				ActiveID: "two",
-				Tabs: []domain.Tab{
+				Tabs: []windowdomain.Tab{
 					{ID: "one", Kind: "plex", Path: "Entropy.md"},
 					{ID: "two", Kind: "note", Path: "Reading/Order.md"},
 				},
@@ -65,15 +69,15 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 		},
 		"a tab holding no file": {
 			vault: vault,
-			open: domain.OpenTabs{
+			open: windowdomain.OpenTabs{
 				ActiveID: "one",
-				Tabs:     []domain.Tab{{ID: "one", Kind: "settings"}},
+				Tabs:     []windowdomain.Tab{{ID: "one", Kind: "settings"}},
 			},
 			want: "numen — Notes",
 		},
 		"a window with nothing open": {vault: vault, want: "numen — Notes"},
 		"a window standing on no vault": {
-			open: domain.OpenTabs{ActiveID: "one", Tabs: []domain.Tab{{ID: "one", Kind: "files"}}},
+			open: windowdomain.OpenTabs{ActiveID: "one", Tabs: []windowdomain.Tab{{ID: "one", Kind: "files"}}},
 			want: "numen",
 		},
 	} {
@@ -87,11 +91,11 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 
 func TestGetSecondaryWindowURL(t *testing.T) {
 	cases := []struct {
-		tab  editor.DetachedTab
+		tab  windowdomain.DetachedTab
 		want string
 	}{
-		{editor.DetachedTab{ID: "plex:4f1c", X: 40}, "/?id=plex%3A4f1c&window=secondary"},
-		{editor.DetachedTab{}, "/?window=secondary"},
+		{windowdomain.DetachedTab{ID: "plex:4f1c", X: 40}, "/?id=plex%3A4f1c&window=secondary"},
+		{windowdomain.DetachedTab{}, "/?window=secondary"},
 	}
 	for _, c := range cases {
 		if got := getSecondaryWindowURL(c.tab); got != c.want {

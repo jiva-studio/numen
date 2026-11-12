@@ -6,14 +6,15 @@
  * again; changing the address removes the stored key.
  */
 import { computed, onMounted, useId, useTemplateRef } from 'vue'
-import { Button, Select, type SelectChoice } from '@numen/ui'
+import { Button, Select } from '@numen/ui'
 import type {
   ConnectionChange,
   ConnectionDraft,
   ConnectionInfo,
   ConnectionTypeInfo,
-  Result,
-} from '@numen/core-client'
+} from '@/entities/connection'
+import type { Result } from '@/shared/lib/result'
+import type { SelectChoice } from '../../types'
 import { useConnectionForm } from '../../model/connectionForm'
 import { WORDS as words } from '../../words'
 import ConnectionFormFields from './ConnectionFormFields.vue'
@@ -38,6 +39,7 @@ const form = useConnectionForm({
   connection: () => props.connection,
   create: props.create,
   update: props.update,
+  onSaved: () => emit('close'),
 })
 const typeChoices = computed<readonly SelectChoice[]>(() =>
   form.availableTypes.value.map((one) => ({ id: one.id, text: one.title, detail: one.pluginName })),
@@ -48,10 +50,6 @@ const type = computed(() => form.view.value.type)
 onMounted(() => dialog.value?.querySelector<HTMLElement>('input, [role="combobox"]')?.focus())
 
 /* -------------------------------- Handlers -------------------------------- */
-async function onSave(): Promise<void> {
-  if (await form.actions.save()) emit('close')
-}
-
 function onKeepFocus(event: KeyboardEvent): void {
   const items = Array.from(
     dialog.value?.querySelectorAll<HTMLElement>(
@@ -84,7 +82,7 @@ function onKeepFocus(event: KeyboardEvent): void {
       role="dialog"
       aria-modal="true"
       :aria-labelledby="titleId"
-      @submit.prevent="onSave"
+      @submit.prevent="form.actions.submit"
     >
       <h2 :id="titleId" class="connection-dialog__title">
         {{ form.isEditing ? words.connectionEdit : words.connectionAdd }}

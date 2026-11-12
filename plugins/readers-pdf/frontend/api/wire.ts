@@ -9,18 +9,22 @@ import {
   UNAVAILABLE,
 } from '@numen/plugin-sdk'
 import type { Api } from '@numen/plugin-sdk'
-import type { Documents, PageHighlight, Rect } from '../types'
+import type { Documents, PageHighlight, Rect, TextRange } from '../types'
 import type {
+  DocumentPlace,
   DocumentRect,
   DocumentRun,
+  FileStat,
   GetDocumentRequest,
   GetDocumentResponse,
   GetHighlightsRequest,
   GetHighlightsResponse,
+  Page,
+  Range,
 } from './types'
 
 /** The service name the manifest declares. */
-export const API_SERVICE = 'md.numen.readers.pdf'
+const API_SERVICE = 'md.numen.readers.pdf'
 
 /** Where the plugin's backend answers the window: the core forwards /plugin/<id>/ to it. */
 const PLUGIN_ROUTE = '/plugin/md.numen.readers.pdf'
@@ -47,8 +51,21 @@ const toRect = (rect: DocumentRect): Rect => ({
   maxY: rect.maxY,
 })
 
-const toHighlightedPages = (run: DocumentRun): PageHighlight[] =>
-  run.places.map((place) => ({ page: place.page, rects: place.rects.map(toRect) }))
+const toHighlightedPage = (place: DocumentPlace): PageHighlight => ({
+  page: place.page,
+  rects: place.rects.map(toRect),
+})
+
+const toHighlightedPages = (run: DocumentRun): PageHighlight[] => run.places.map(toHighlightedPage)
+
+const toPageSize = (page: Page) => ({ width: page.width, height: page.height })
+
+const toRange = (span: TextRange): Range => ({ start: span.start, end: span.end })
+
+const toFingerprint = (stat: FileStat | undefined) =>
+  formatFingerprint(
+    stat && { path: stat.path, size: BigInt(stat.size), mtime: BigInt(stat.mtime) },
+  ) ?? ''
 
 export const createDocuments = (api: Api): Documents => ({
   getDocumentLayout: async (path) => {
@@ -58,15 +75,8 @@ export const createDocuments = (api: Api): Documents => ({
       { path },
     )
     return {
-      pages: response.pages.map((one) => ({ width: one.width, height: one.height })),
-      stat:
-        formatFingerprint(
-          response.stat && {
-            path: response.stat.path,
-            size: BigInt(response.stat.size),
-            mtime: BigInt(response.stat.mtime),
-          },
-        ) ?? '',
+      pages: response.pages.map(toPageSize),
+      stat: toFingerprint(response.stat),
     }
   },
   getPageUrl: (...[path, pageNumber, width, stat = '']: [string, number, number, string?]) =>
@@ -75,7 +85,7 @@ export const createDocuments = (api: Api): Documents => ({
     const response = await callWhileBusy<GetHighlightsRequest, GetHighlightsResponse>(
       api,
       'GetHighlights',
-      { path, ranges: spans.map((span) => ({ start: span.start, end: span.end })) },
+      { path, ranges: spans.map(toRange) },
     )
     return spans.map((_, index) => {
       const run = response.runs[index]

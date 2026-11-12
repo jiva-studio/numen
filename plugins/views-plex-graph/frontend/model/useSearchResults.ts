@@ -7,7 +7,7 @@ import { createRequestGuard, type RequestGuard, type InFlightRequest } from '@nu
 
 export const SEARCH_DEBOUNCE_MS = 120
 
-export type Wait = (ms: number) => Promise<unknown>
+type Wait = (ms: number) => Promise<void>
 
 const sleep: Wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -16,13 +16,13 @@ export interface DebouncedSearchOptions {
   guard?: RequestGuard
 }
 
-export interface DebouncedSearchSteps {
+interface DebouncedSearchSteps {
   blank(): void
   pending?(): void
   run(query: string, mine: InFlightRequest): Promise<void>
 }
 
-export function useDebouncedSearch(options: DebouncedSearchOptions = {}) {
+function useDebouncedSearch(options: DebouncedSearchOptions = {}) {
   const wait = options.wait ?? sleep
   const guard = options.guard ?? createRequestGuard()
 
@@ -42,7 +42,7 @@ export function useDebouncedSearch(options: DebouncedSearchOptions = {}) {
 }
 
 export function useSearchResults<T>(
-  search: (query: string) => Promise<readonly T[]>,
+  getSearch: () => (query: string) => Promise<readonly T[]>,
   options: DebouncedSearchOptions = {},
 ) {
   const results = shallowRef<readonly T[]>([])
@@ -60,7 +60,7 @@ export function useSearchResults<T>(
       },
       run: async (query, mine) => {
         try {
-          const found = await search(query)
+          const found = await getSearch()(query)
           if (mine.isCurrent) results.value = found
         } catch {
           if (mine.isCurrent) results.value = []

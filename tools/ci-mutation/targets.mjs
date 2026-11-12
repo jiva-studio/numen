@@ -76,7 +76,7 @@ export const nameTargets = (found) => {
 
 /**
  * Folders outside `at` that the tests read, from the relative specifiers in
- * their source: `../../protocol/testdata/templates.json` from a test in `at`
+ * their source: `../../core/protocol/testdata/templates.json` from a test in `at`
  * keeps `…/protocol/testdata`.
  */
 export const findTestdata = (at, tests) => {
@@ -96,7 +96,7 @@ export const findTestdata = (at, tests) => {
 
 /* -------------------------------- Discovery ------------------------------- */
 
-const listTracked = () =>
+const listTrackedFiles = () =>
   execTool('git', ['ls-files'], {
     cwd: root,
     encoding: 'utf8',
@@ -150,10 +150,10 @@ const findTsTargets = (tracked) => {
       const tests = tracked
         .filter((path) => isUnder(path, at) && (/\.test\.ts$/.test(path) || path === config))
         .map((path) => ({ path, source: readFileSync(join(root, path), 'utf8') }))
-      if (tests.some((one) => one.path === config && one.source.includes('@numen/shell/vite'))) {
+      if (tests.some((one) => one.path === config && one.source.includes('@numen/workbench/vite'))) {
         tests.push({
           path: config,
-          source: readFileSync(join(root, 'libs/ui/shell/src/vite.ts'), 'utf8'),
+          source: readFileSync(join(root, 'libs/ui/workbench/src/vite.ts'), 'utf8'),
         })
       }
       return { kind: 'ts', at, lines: countLines(sources), testdata: findTestdata(at, tests) }
@@ -166,7 +166,7 @@ let found = null
 /** Every target, with `name`, `kind`, `at`, `shards` and the `testdata` folders its tests read. */
 export const getTargets = () => {
   if (found) return found
-  const tracked = listTracked()
+  const tracked = listTrackedFiles()
   found = nameTargets([...findGoTargets(tracked), ...findTsTargets(tracked)])
     .map(({ lines, ...one }) => ({ ...one, shards: getShardCount(one.kind, lines) }))
     .sort((a, b) => a.name.localeCompare(b.name))

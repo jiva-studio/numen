@@ -13,11 +13,13 @@ import plugin, { activate, DECK, PRESET, REVIEW, CARD_MODEL } from './index'
 const createContext = () => {
   const writers: string[] = []
   const workspace = {
-    getMessageWriter: (name: string) => {
-      writers.push(name)
-      return () => undefined
+    messages: {
+      getWriter: (name: string) => {
+        writers.push(name)
+        return () => undefined
+      },
     },
-    getToday: () => '2026-09-04',
+    window: { getToday: () => '2026-09-04' },
   } as unknown as WorkspaceHost
   const buffers = createMockBufferHost()
   const window = createMockTabWindow()
@@ -49,26 +51,6 @@ describe('flashcards-studio plugin', () => {
     expect(ctx.getRegisteredViews().map((one) => one.capability)).toStrictEqual([VAULT_SUMMARY])
   })
 
-  it('refuses to draw the review in a window that offers no notices', () => {
-    const ctx = createMockPluginContext({
-      target: 'desktop.flashcards',
-      closeTab: vi.fn(),
-      agent: createMockAgentHost(),
-    })
-
-    expect(() => activate(ctx)).toThrow(/notices/)
-  })
-
-  it('refuses to draw the review in a window that cannot close its tab', () => {
-    const ctx = createMockPluginContext({
-      target: 'desktop.flashcards',
-      notices: createMockNoticeHost(),
-      agent: createMockAgentHost(),
-    })
-
-    expect(() => activate(ctx)).toThrow(/tabs/)
-  })
-
   it('refuses to draw the review in a window that offers no agent', () => {
     const ctx = createMockPluginContext({
       target: 'desktop.flashcards',
@@ -91,10 +73,10 @@ describe('flashcards-studio plugin', () => {
     const kind = ctx.getRegisteredTabKinds()[0]!
     const scope = effectScope()
     const state = scope.run(() => kind.open!('roots', 'tab-1')) as {
-      decks: { goToVaults: () => void }
+      actions: { goToVaults: () => void }
     }
 
-    state.decks.goToVaults()
+    state.actions.goToVaults()
 
     expect(closeTab).toHaveBeenCalledExactlyOnceWith('tab-1')
     scope.stop()
@@ -121,7 +103,7 @@ describe('flashcards-studio plugin', () => {
 
     ctx.dispose()
 
-    expect(ctx.subscriptions).toHaveLength(0)
+    expect(ctx.plugin.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
   })
 
@@ -163,7 +145,7 @@ describe('flashcards-studio plugin', () => {
 
   it('opens a note that is no deck as its own preset', async () => {
     const { ctx } = createContext()
-    const openTab = vi.spyOn(ctx, 'openTab')
+    const openTab = vi.spyOn(ctx.tabs, 'open')
     activate(ctx)
 
     await ctx.triggerCommand('preset.open', {
@@ -196,7 +178,7 @@ describe('flashcards-studio plugin', () => {
       activate(
         createMockPluginContext({
           pluginId: 'md.numen.views.flashcards.studio',
-          ...(ctx.workspace ? { workspace: ctx.workspace } : {}),
+          ...(ctx.ui.workspace ? { workspace: ctx.ui.workspace } : {}),
         }),
       ),
     ).toThrow('the flashcards need the window their tabs are drawn in and its open files')

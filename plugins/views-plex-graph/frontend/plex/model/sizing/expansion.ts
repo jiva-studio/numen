@@ -44,12 +44,7 @@ export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds
   return { width, offset: middle - node.x }
 }
 
-/**
- * The box as it is drawn: the one the node was placed with, carried towards the
- * one it opens to as far as it has got. A node with nothing more of its title
- * to show is drawn as it was placed, however long the attention rests on it.
- */
-export function interpolateBox(node: PlacedNode, expanded: WideBox | null, open: number): WideBox {
+function interpolateBox(node: PlacedNode, expanded: WideBox | null, open: number): WideBox {
   if (!expanded) return { width: node.width, offset: 0 }
   return {
     width: lerp(node.width, expanded.width, open),
@@ -70,19 +65,19 @@ export function useExpansion(
   let expandTimer: ReturnType<typeof setTimeout> | undefined
   let frame: number | null = null
 
-  const stopWaiting = () => {
+  const stopExpandTimer = () => {
     clearTimeout(expandTimer)
     expandTimer = undefined
   }
 
-  const stopMoving = () => {
+  const cancelExpandFrame = () => {
     if (frame !== null) clock.cancel(frame)
     frame = null
   }
 
   /** The rest of the way, from wherever it has got to, at the speed it opens. */
   const move = (to: number) => {
-    stopMoving()
+    cancelExpandFrame()
     const from = open.value
     if (from === to) return
 
@@ -104,7 +99,7 @@ export function useExpansion(
   watch(
     [on, delay],
     ([what, ms]) => {
-      stopWaiting()
+      stopExpandTimer()
       move(0)
       if (what === null || ms <= 0) return
       expandTimer = setTimeout(() => move(1), ms)
@@ -113,8 +108,8 @@ export function useExpansion(
   )
 
   onScopeDispose(() => {
-    stopWaiting()
-    stopMoving()
+    stopExpandTimer()
+    cancelExpandFrame()
   })
 
   return open

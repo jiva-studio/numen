@@ -7,9 +7,10 @@
  */
 import { Button } from '@numen/ui'
 import type { ConflictPrompt } from '../model/flush'
+import { keepConflict, postponeConflict, takeConflict } from '../model/resolveConflict'
 
 /** The labels shown for the unsaved notes. */
-export interface UnsavedChangesWords {
+interface UnsavedChangesWords {
   readonly going: string
   readonly keep: string
   readonly take: string
@@ -24,18 +25,9 @@ const props = defineProps<{
 }>()
 
 // --- State ---
-
-async function onKeep(conflict: ConflictPrompt) {
-  await conflict.keep()
-}
-
-async function onTake(conflict: ConflictPrompt) {
-  await conflict.take()
-}
-
-function onLater(conflict: ConflictPrompt) {
-  conflict.later()
-}
+const onKeep = keepConflict
+const onTake = takeConflict
+const onLater = postponeConflict
 
 // --- Helpers ---
 </script>
@@ -63,11 +55,14 @@ function onLater(conflict: ConflictPrompt) {
 <style scoped>
 /* Overlays the content, because the prompt must be resolved before anything else. */
 .unsaved {
+  --inset-end: 1rem;
+  --inset-inline: 1rem;
+  --pad: 0.8rem 1rem;
   position: fixed;
-  inset-block-end: 1rem;
-  inset-inline: 1rem;
+  inset-block-end: var(--inset-end);
+  inset-inline: var(--inset-inline);
   z-index: var(--numen-lift-unsaved);
-  padding: 0.8rem 1rem;
+  padding: var(--pad);
   border-radius: var(--numen-radius);
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
@@ -77,22 +72,25 @@ function onLater(conflict: ConflictPrompt) {
 }
 
 .unsaved__says {
-  margin: 0 0 0.5rem;
+  --margin: 0 0 0.5rem;
+  margin: var(--margin);
 }
 
 .unsaved__notes {
+  --gap: 0.35rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--gap);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .unsaved__note {
+  --gap: 0.5rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--gap);
 }
 
 .unsaved__title {

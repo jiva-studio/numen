@@ -1,0 +1,366 @@
+/**
+ * The commands, invoked from the palette and from their keystrokes.
+ *
+ * A command is offered for the current selection, prompts for its inputs, and
+ * runs on the note the window holds. Results are checked on the rendered window,
+ * since the palette is where the user invokes commands.
+ */
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
+import { CATALOG_STATE } from '@numen/core-client'
+import { createMockCatalogEntry } from '@numen/core-client/testing'
+import { parseSavedTabs } from '@/entities/tab'
+import { answerTabKinds } from '@/testing/tabCatalog'
+import { Layers, LayoutTemplate } from '@lucide/vue'
+import { registerTabKindIcon } from '@/entities/note'
+// The mocked modules stand before the plugins that reach them are imported.
+import {
+  requests,
+  cards,
+  DEBOUNCE,
+  getWindowParts,
+  mountWindow,
+  mountWindowWithPalette,
+  nameAnswer,
+  passageAnswer,
+  vaultState,
+  settle,
+  sourceAnswer,
+} from '@/testing/window'
+import { Palette, type PaletteGroup } from '@numen/workbench'
+import { WORDS } from '@/shared/ui/words'
+import { PALETTE_WORDS } from '@/features/command-palette'
+
+describe('the palette', () => {
+  /** A keystroke taken on the window, and whether the window took it. */
+  const pressKey = (key: string) => {
+    const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true })
+    globalThis.dispatchEvent(event)
+    return event
+  }
+
+  const getGroups = (window: Awaited<ReturnType<typeof mountWindow>>) =>
+    (window.findComponent(Palette).props('groups') as readonly { id: string }[]).map(
+      (one) => one.id,
+    )
+
+  it('opens on the search under its own keystroke', async () => {
+    const window = await mountWindow()
+
+    pressKey('k')
+    await settle()
+
+    expect(window.findComponent(Palette).props('isOpen')).toBe(true)
+    expect(getGroups(window)).toStrictEqual([])
+  })
+
+  /** The words typed into the search, with the answers back. */
+  const runSearch = async (window: Awaited<ReturnType<typeof mountWindowWithPalette>>) => {
+    pressKey('k')
+    await settle()
+    window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
+    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
+    await settle()
+  }
+
+  /** The mark each row draws, by the name Lucide files it under. */
+  const marks = () =>
+    [...document.body.querySelectorAll('[data-palette="list"] [role="option"]')].map(
+      (row) =>
+        /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(
+          row.querySelector('svg')?.getAttribute('class') ?? '',
+        )?.[1] ?? '',
+    )
+
+  it('draws every kind of note a name turned up as what it is', async () => {
+    drawPluginTypes()
+    vaultState.names = [
+      nameAnswer('Ants.md', 'Ants'),
+      nameAnswer('Animals.md', 'Animals', 'sample'),
+      nameAnswer('Animal.md', 'Animal', 'form'),
+    ]
+    const window = await mountWindowWithPalette()
+
+    await runSearch(window)
+
+    expect(marks()).toStrictEqual(['file-text', 'layers', 'layout-template'])
+  })
+
+  it('draws a passage as the note it was read out of', async () => {
+    drawPluginTypes()
+    vaultState.names = []
+    vaultState.passages = [
+      passageAnswer('Animals.md', 'Animals', 'sample'),
+      passageAnswer('Ants.md', 'Ants'),
+    ]
+    const window = await mountWindowWithPalette()
+
+    await runSearch(window)
+
+    // Both halves of the search answer with the same two passages here.
+    expect(marks()).toStrictEqual(['layers', 'file-text', 'layers', 'file-text'])
+  })
+
+  it('draws a passage out of a file no reader opens as a plain file', async () => {
+    vaultState.names = []
+    vaultState.passages = [
+      sourceAnswer('Ants.bin', { page: 3 }),
+      sourceAnswer('Talk.bin', { t: [12, 14] }),
+    ]
+    const window = await mountWindowWithPalette()
+
+    await runSearch(window)
+
+    expect(marks()).toStrictEqual(['file', 'file', 'file', 'file'])
+    // Every row of the list has a mark, and none reserves empty space.
+    expect(marks().every(Boolean)).toBe(true)
+  })
+
+  /** The groups standing, by the name each carries. */
+  const groupTitles = () =>
+    [...document.body.querySelectorAll('[data-palette="title"]')].map((one) =>
+      one.textContent?.trim(),
+    )
+
+  it('draws no group for a search that answered with nothing', async () => {
+    vaultState.embedded = 4
+    const window = await mountWindowWithPalette()
+
+    await runSearch(window)
+
+    expect(groupTitles()).toStrictEqual([])
+    expect(document.body.querySelector('[data-palette="silence"]')).toBeNull()
+  })
+
+  it('keeps the group that could not be requested, with what it has to say', async () => {
+    vaultState.embedded = 0
+    const window = await mountWindowWithPalette()
+
+    await runSearch(window)
+
+    expect(groupTitles()).toStrictEqual([PALETTE_WORDS.meaning])
+    expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe(
+      PALETTE_WORDS.notEmbedded,
+    )
+  })
+})
+
+/**
+ * The keystrokes shown on a command's row. Each is pressed on the window with
+ * the palette closed.
+ */
+describe('a command reached by its own keystroke', () => {
+  const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
+
+  /** A keystroke taken on the window, and whether the window took it. */
+  const pressKey = (key: string, overrides: Partial<KeyboardEventInit> = {}) => {
+    const event = new KeyboardEvent('keydown', {
+      key,
+      ctrlKey: true,
+      cancelable: true,
+      ...overrides,
+    })
+    globalThis.dispatchEvent(event)
+    return event
+  }
+
+  const type = async (text: string) => {
+    const into = field()
+    if (!into) return
+    into.value = text
+    into.dispatchEvent(new Event('input'))
+    await settle()
+  }
+
+  const press = async (key: string) => {
+    field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+    await settle()
+  }
+
+  /** The row of a command in the list of commands, by the identity it is drawn under. */
+  const getRow = (window: Awaited<ReturnType<typeof mountWindow>>, id: string) => {
+    const groups = window.findComponent(Palette).props('groups') as readonly PaletteGroup[]
+    return groups.flatMap((group) => group.items).find((one) => one.id === id)
+  }
+
+  it('draws the keystroke on its row, written for the keyboard in hand', async () => {
+    const window = await mountWindow()
+
+    pressKey('p')
+    await settle()
+
+    expect(getRow(window, 'app:note.create')?.keys).toEqual({ icons: ['control'], letter: 'N' })
+    expect(getRow(window, 'app:file.open#note')?.keys).toEqual({ icons: ['control'], letter: 'G' })
+  })
+
+  it('draws no keystroke on the rows no keystroke reaches', async () => {
+    const window = await mountWindow()
+
+    pressKey('p')
+    await settle()
+
+    expect(getRow(window, 'app:trash.empty')?.keys).toBeUndefined()
+    expect(getRow(window, 'app:vault.erase')?.keys).toBeUndefined()
+  })
+
+  it('makes a note under the name typed, on the keystroke the new note draws', async () => {
+    await mountWindowWithPalette()
+
+    const event = pressKey('n')
+    await settle()
+    await type('Entropy')
+    await press('Enter')
+    await settle()
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(requests.made).toStrictEqual(['Entropy'])
+  })
+
+  it('opens the step that picks a note, on the keystroke going to one draws', async () => {
+    vaultState.names = [nameAnswer('physics/Entropy.md', 'Entropy')]
+    const window = await mountWindowWithPalette()
+
+    const event = pressKey('g')
+    await settle()
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(window.findComponent(Palette).props('crumb')).toBe('Go to note')
+  })
+
+  it('leaves a keystroke alone while Alt is retained with it', async () => {
+    const window = await mountWindow()
+
+    const event = pressKey('n', { altKey: true })
+    await settle()
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(window.findComponent(Palette).props('isOpen')).toBe(false)
+    expect(requests.made).toStrictEqual([])
+  })
+
+  it('leaves a keystroke a pane has already answered alone', async () => {
+    const window = await mountWindow()
+
+    const event = new KeyboardEvent('keydown', { key: 'n', ctrlKey: true, cancelable: true })
+    event.preventDefault()
+    globalThis.dispatchEvent(event)
+    await settle()
+
+    expect(window.findComponent(Palette).props('isOpen')).toBe(false)
+  })
+})
+
+describe('a command reached by a keystroke holding Shift', () => {
+  /** A keystroke taken on the window, and whether the window took it. */
+  const pressKey = (key: string, overrides: Partial<KeyboardEventInit> = {}) => {
+    const event = new KeyboardEvent('keydown', {
+      key,
+      ctrlKey: true,
+      cancelable: true,
+      ...overrides,
+    })
+    globalThis.dispatchEvent(event)
+    return event
+  }
+
+  it('no longer puts the palette up on the letter that puts it up alone', async () => {
+    const window = await mountWindow()
+
+    const event = pressKey('K', { shiftKey: true })
+    await settle()
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(window.findComponent(Palette).props('isOpen')).toBe(false)
+  })
+
+  it('no longer puts the commands up on the letter that puts them up alone', async () => {
+    const window = await mountWindow()
+
+    pressKey('P', { shiftKey: true })
+    await settle()
+
+    // The plex the window opened with is the one it is standing on, which is
+    // what showing the note in the plex leaves in front.
+    expect(window.findComponent(Palette).props('groups')).toStrictEqual([])
+  })
+})
+
+/**
+ * A vault that is still loading renders no tree, so commands on it are reached
+ * by keyboard: this is the window shown while a vault is opening.
+ */
+describe('a command requested for while the vault is being read', () => {
+  const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
+
+  const type = async (text: string) => {
+    const into = field()
+    if (!into) return
+    into.value = text
+    into.dispatchEvent(new Event('input'))
+    await settle()
+  }
+
+  const press = async (key: string) => {
+    field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+    await settle()
+  }
+
+  /** The keystroke for a new note, which is a command over the window. */
+  const pressNewNote = async () => {
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', ctrlKey: true }))
+    await settle()
+  }
+
+  it('carries the command out, and shows no corner card while the vault is being read', async () => {
+    vaultState.isReady = false
+    vaultState.opening = null
+    await mountWindowWithPalette()
+
+    await pressNewNote()
+    await type('Entropy')
+    await press('Enter')
+
+    expect(requests.made).toStrictEqual(['Entropy'])
+    expect(cards()).toStrictEqual([])
+  })
+})
+
+/** The window as rendered, driven like a user with nothing stubbed. */
+
+function drawPluginTypes(): void {
+  const unregister = [
+    registerTabKindIcon('sample', Layers),
+    registerTabKindIcon('form', LayoutTemplate),
+  ]
+  onTestFinished(() => {
+    for (const one of unregister) one()
+  })
+}
+
+describe('the request to open the settings', () => {
+  it('opens the settings tab from the placeholder of a plugin that is not running', async () => {
+    answerTabKinds([
+      createMockCatalogEntry('sample.notes', {
+        name: 'Notes',
+        feature: 'Markdown notes',
+        tabKinds: ['reader:viewer'],
+        state: CATALOG_STATE.INSTALLED,
+      }),
+    ])
+    const window = await mountWindow()
+    const getTabNames = () => window.findAll('[role="tab"]').map((one) => one.text())
+    expect(getTabNames().some((name) => name.includes(WORDS.settings))).toBe(false)
+    const saved = [
+      { id: 'tab-1', kind: 'reader:viewer', path: 'cards/Place.md', title: 'Place', state: '' },
+    ]
+    getWindowParts(window).tabs.windowTabs.restored.restoreTabs(
+      parseSavedTabs({ tabs: saved, activeId: 'tab-1' }),
+      'tab-1',
+    )
+    await vi.waitFor(() => expect(window.find('.tab-unavailable__action').exists()).toBe(true))
+
+    await window.find('.tab-unavailable__action').trigger('click')
+    await settle()
+
+    expect(getTabNames().some((name) => name.includes(WORDS.settings))).toBe(true)
+  })
+})

@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+// The segments a text version is made of, and the codes a text call answers with.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// TextErrorCode is the reason a served text call did not succeed. The zero
+// value is a call that succeeded.
+enum TextErrorCode {
+  TEXT_ERROR_CODE_UNSPECIFIED = 0;
+  // TEXT_ERROR_CODE_MISSING is a file, a version or a key that does not exist.
+  TEXT_ERROR_CODE_MISSING = 1;
+  // TEXT_ERROR_CODE_NO_VAULT is a call while the host shows no vault.
+  TEXT_ERROR_CODE_NO_VAULT = 2;
+  // TEXT_ERROR_CODE_INVALID is a version the host does not accept: no kind, an
+  // empty key, a file that is missing or is not JSON Lines of segments, or a
+  // source that is no version of the file.
+  TEXT_ERROR_CODE_INVALID = 3;
+  // TEXT_ERROR_CODE_NOT_OWNER is a version another plugin made.
+  TEXT_ERROR_CODE_NOT_OWNER = 4;
+}
+
+// TextSegment is one segment of a text. A version file holds one segment per
+// line as JSON: {"text", "heading"?, "selector"?}.
+//
+// heading is the heading the segment opens, and empty for a segment inside one.
+// selector locates the segment in the file the text was made from, as JSON; it
+// is empty for none. The host stores it as is and returns it with search hits.
+// The SDK documents its keys.
+message TextSegment {
+  string text = 1;
+  string heading = 2;
+  string selector = 3;
+}

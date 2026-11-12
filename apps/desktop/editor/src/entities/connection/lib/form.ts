@@ -7,7 +7,7 @@ import type {
   ConnectionInfo,
   ConnectionTypeInfo,
   ConnectionValue,
-} from '@numen/core-client'
+} from './types'
 
 /** The fields the person edits, in the order the type declares them. */
 export function getEditableFields(type: ConnectionTypeInfo): readonly ConnectionFieldInfo[] {
@@ -58,8 +58,7 @@ function hasValue(
   return typeof value === 'string' ? value.trim() !== '' : value !== undefined
 }
 
-/** Whether the address typed differs from the stored one, which clears the keys of the connection. */
-export function isAddressChanged(
+function isAddressChanged(
   type: ConnectionTypeInfo,
   stored: Readonly<Record<string, ConnectionValue>>,
   typed: Readonly<Record<string, ConnectionValue>>,
@@ -81,7 +80,8 @@ export function createInitialValues(
     return first ? createFieldValues(first) : {}
   }
   const own = types.find((one) => one.id === connection.typeId)
-  return { ...(own ? createFieldValues(own) : {}), ...connection.fields }
+  const values: Record<string, ConnectionValue> = own ? createFieldValues(own) : {}
+  return Object.assign(values, connection.fields)
 }
 
 /** The secret fields of a connection that still hold a key: none once the address was changed. */

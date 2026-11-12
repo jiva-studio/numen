@@ -61,7 +61,10 @@ export const WORDS = {
   connectionRequired: 'Required.',
   connectionOptionalKey: 'May stay empty for a server on this computer.',
   /** The rows of connections on the page of a plugin. */
-  connectionRowsPrivacy: 'The text of your notes is sent to each connection listed, in this order.',
+  connectionRowsPrivacy: (limit: number) =>
+    limit === 1
+      ? 'The text of your notes is sent to the connection chosen here.'
+      : 'The text of your notes is sent to each connection listed, in this order.',
   connectionRowsNone: 'No connections yet. Add one on the Connections page.',
   connectionRowsOpen: 'Open Connections',
   connectionRowsChoose: 'Choose a connection',

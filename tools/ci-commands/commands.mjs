@@ -7,6 +7,7 @@
  */
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 import { ManifestError, readPluginManifests } from '../shared/manifests.mjs'
 import { listRegistrations } from '../shared/registrations.mjs'
 
@@ -23,7 +24,7 @@ const fail = (message) => {
  * The text from the bracket at `at` to the one that closes it, and how many
  * braces open directly inside it.
  */
-export const readBracketed = (source, at) => {
+export const readBracketedText = (source, at) => {
   let depth = 0
   let entries = 0
   let quote = null
@@ -66,6 +67,29 @@ export const readBracketed = (source, at) => {
   return null
 }
 
+const unwrapExpression = (node) =>
+  node &&
+  (ts.isAsExpression(node) || ts.isSatisfiesExpression(node) || ts.isParenthesizedExpression(node))
+    ? unwrapExpression(node.expression)
+    : node
+
+/** The `WORDS` object literal declared in `sourceFile`, or the first object literal when none is named `WORDS`. */
+const findWordsObject = (sourceFile) => {
+  for (const statement of sourceFile.statements) {
+    if (!ts.isVariableStatement(statement)) continue
+    for (const declaration of statement.declarationList.declarations) {
+      if (
+        ts.isIdentifier(declaration.name) &&
+        (declaration.name.text === 'WORDS' || declaration.name.text === 'PALETTE_WORDS')
+      ) {
+        const initializer = unwrapExpression(declaration.initializer)
+        if (initializer && ts.isObjectLiteralExpression(initializer)) return initializer
+      }
+    }
+  }
+  return null
+}
+
 /**
  * What one entry of the words says. `at` is the file the words stand in. An
  * entry standing for another module's is followed there, which is where the
@@ -73,53 +97,129 @@ export const readBracketed = (source, at) => {
  * is written with that name in italics, where the window puts what it names.
  */
 export const readWords = async (whole, name, at, seen = new Set()) => {
-  // The words a person reads are one object. What is above it says what a
-  // refusal is called, under names a command has too.
-  const from = whole.indexOf('export const WORDS')
-  const words = from < 0 ? whole : whole.slice(from)
-
-  const literal = words.match(new RegExp(`^\\s*${name}:\\s*'([^']+)',`, 'm'))
-  if (literal) return literal[1]
-
-  const formed = words.match(
-    new RegExp(`^\\s*${name}:\\s*\\((\\w+)[^)]*\\)\\s*=>\\s*\`([^\`]*)\`,`, 'm'),
+  const sourceFile = ts.createSourceFile('words.ts', whole, ts.ScriptTarget.Latest, true)
+  const words = findWordsObject(sourceFile)
+  const property = words?.properties.find(
+    (one) =>
+      ts.isPropertyAssignment(one) &&
+      (ts.isIdentifier(one.name) || ts.isStringLiteral(one.name)) &&
+      one.name.text === name,
   )
-  if (formed) return formed[2].replaceAll(`\${${formed[1]}}`, `*${formed[1]}*`)
+  const value = unwrapExpression(property?.initializer)
+  if (!value) fail(`the words say nothing under '${name}'`)
 
-  const elsewhere = words.match(new RegExp(`^\\s*${name}:\\s*([a-z]+)\\.([A-Za-z]+),`, 'm'))
-  if (!elsewhere) fail(`the words say nothing under '${name}'`)
-  const [, module, key] = elsewhere
-  if (seen.has(module)) fail(`the words under '${name}' point at themselves`)
+  if (ts.isStringLiteral(value) || ts.isNoSubstitutionTemplateLiteral(value)) {
+    return value.text
+  }
 
-  // The file names where it took the module from, so a part that moved is
-  // followed without this knowing where any part stands.
-  const path = getWordsFile(whole, module, at)
-  return readWords(await readFile(path, 'utf8'), key, path, new Set([...seen, module]))
+  if (
+    ts.isArrowFunction(value) &&
+    value.parameters.length > 0 &&
+    ts.isIdentifier(value.parameters[0].name)
+  ) {
+    const parameter = value.parameters[0].name.text
+    const body = unwrapExpression(value.body)
+    if (body && (ts.isStringLiteral(body) || ts.isNoSubstitutionTemplateLiteral(body))) {
+      return body.text
+    }
+    if (body && ts.isTemplateExpression(body)) {
+      return (
+        body.head.text +
+        body.templateSpans
+          .map((span) => {
+            const expression = unwrapExpression(span.expression)
+            const piece =
+              ts.isIdentifier(expression) && expression.text === parameter
+                ? `*${parameter}*`
+                : `\${${span.expression.getText(sourceFile)}}`
+            return piece + span.literal.text
+          })
+          .join('')
+      )
+    }
+  }
+
+  if (
+    ts.isPropertyAccessExpression(value) &&
+    ts.isIdentifier(value.expression) &&
+    ts.isIdentifier(value.name)
+  ) {
+    const module = value.expression.text
+    const key = value.name.text
+    if (seen.has(module)) fail(`the words under '${name}' point at themselves`)
+
+    const path = getWordsFile(sourceFile, module, at)
+    return readWords(await readFile(path, 'utf8'), key, path, new Set([...seen, module]))
+  }
+
+  return fail(`the words say nothing under '${name}'`)
 }
 
 /** The file a module takes one set of words in from, as `WORDS` or `WORDS as <module>`. */
-const getWordsFile = (source, module, at) => {
-  const named = module === 'WORDS' ? 'WORDS' : `WORDS as ${module}`
-  const imported = source.match(new RegExp(`^import \\{ ${named} \\} from '([^']+)'`, 'm'))
-  if (!imported) fail(`the words take nothing in as '${module}'`)
-  return new URL(`${imported[1]}.ts`, at)
+const getWordsFile = (sourceFile, module, at) => {
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier))
+      continue
+    const bindings = statement.importClause?.namedBindings
+    if (!bindings || !ts.isNamedImports(bindings)) continue
+    const matches = bindings.elements.some(
+      (specifier) =>
+        (specifier.propertyName ?? specifier.name).text === 'WORDS' &&
+        specifier.name.text === module,
+    )
+    if (matches) return new URL(`${statement.moduleSpecifier.text}.ts`, at)
+  }
+  return fail(`the words take nothing in as '${module}'`)
 }
 
 /**
- * The chord a plugin's shortcut is drawn as, such as `mod+shift+x`. The window
- * draws a shortcut that is its modifier with a letter, and Shift or not; any
- * other shortcut is refused, as the window would draw it as nothing.
+ * The chord a plugin's keybinding is drawn as, such as `mod+shift+x`. The window
+ * draws a key that is its modifier with a letter, and Shift or not; any
+ * other key is refused, as the window would draw it as nothing.
  */
-const getShortcutChord = (shortcut, where) => {
-  const parts = shortcut.toLowerCase().split('+')
+const getKeyChord = (key, where, known = ['mod', 'ctrl', 'control', 'cmd', 'shift']) => {
+  const parts = key.toLowerCase().split('+')
   const letter = parts.at(-1)
   const modifiers = parts.slice(0, -1)
-  const known = ['mod', 'ctrl', 'control', 'cmd', 'shift']
   if (!/^[a-z]$/.test(letter) || modifiers.some((one) => !known.includes(one))) {
-    fail(`${where} declares the shortcut '${shortcut}', which the window draws as nothing`)
+    fail(`${where} binds the key '${key}', which the window draws as nothing`)
   }
-  return { letter, shift: modifiers.includes('shift') }
+  const alt = modifiers.includes('alt') ? { alt: true } : {}
+  return { letter, shift: modifiers.includes('shift'), ...alt }
 }
+
+/** Whether a slot entry passes exactly the values a keybinding passes. */
+const hasSameValues = (a = {}, b = {}) => {
+  const names = Object.keys(a)
+  return names.length === Object.keys(b).length && names.every((name) => a[name] === b[name])
+}
+
+/**
+ * The keys a manifest binds to a command of the application with values, such as showing a note in
+ * the plex, each named by the title of the slot entry that passes the same values and drawn with
+ * Alt allowed.
+ */
+const getBoundKeys = (manifest, name) =>
+  (manifest.contributes?.keybindings ?? [])
+    .filter((one) => one.command.startsWith('app:') && Object.keys(one.values ?? {}).length > 0)
+    .map((one) => {
+      const entry = (manifest.contributes?.slots ?? []).find(
+        (slot) =>
+          slot.placed.case === 'command' &&
+          slot.placed.value === one.command &&
+          hasSameValues(slot.values, one.values),
+      )
+      if (!entry?.title) fail(`${name} binds '${one.key}' to a command no entry of a slot titles`)
+      return {
+        text: entry.title,
+        group: /\btarget\.isNote\b/.test(one.when) ? 'note' : 'window',
+        chord: getKeyChord(one.key, name, ['mod', 'ctrl', 'control', 'cmd', 'shift', 'alt']),
+      }
+    })
+
+/** The key the manifest binds to its command of the id, or an empty string for none. */
+const getKey = (manifest, id) =>
+  (manifest.contributes?.keybindings ?? []).find((one) => one.command === id)?.key ?? ''
 
 /** The palette group of a declared command by its when condition, as the window files it. */
 const getWhenGroup = (when) => {
@@ -140,8 +240,10 @@ const isOverVersion = (when) => /\bversion\.\w/.test(when)
  *   frontend does not register, which the palette shows, leaving out the ones whose condition names
  *   a text version;
  * - `commands`, each command its manifest declares that its frontend registers a
- *   handler for, with the chord its shortcut is drawn as, over the note where its condition
+ *   handler for, with the chord its keybinding is drawn as, over the note where its condition
  *   reads target.isNote and over the window where it does not;
+ * - `bound`, each key the manifest binds to a command of the application with values, with the
+ *   title the slot entry gives it and its chord;
  * - `handled`, the id of each shared command its manifest handles under
  *   `contributes.handlers`.
  *
@@ -181,12 +283,16 @@ export const getPluginCommands = async (target, plugins = PLUGINS) => {
         .map((one) => ({ text: one.title, group: getWhenGroup(one.when) })),
       commands: all
         .filter((one) => registered.includes(one.id))
-        .map((one) => ({
-          id: one.id,
-          text: one.title,
-          group: /\btarget\.isNote\b/.test(one.when) ? 'note' : 'window',
-          ...(one.shortcut ? { chord: getShortcutChord(one.shortcut, name) } : {}),
-        })),
+        .map((one) => {
+          const key = getKey(manifest, one.id)
+          return {
+            id: one.id,
+            text: one.title,
+            group: /\btarget\.isNote\b/.test(one.when) ? 'note' : 'window',
+            ...(key ? { chord: getKeyChord(key, name) } : {}),
+          }
+        }),
+      bound: getBoundKeys(manifest, name),
       handled,
     })
   }
@@ -204,7 +310,7 @@ const readManifests = (plugins) => {
 }
 
 /**
- * The ids one plugin's frontend registers a handler for. Every `registerCommand` call of the
+ * The ids one plugin's frontend registers a handler for. Every `register.command` call of the
  * frontend's sources is read; one this cannot read an id out of is refused.
  */
 const readRegisteredIds = (at, name) =>

@@ -9,7 +9,7 @@ import { getDropRelation, type PlexOptions, type Size } from '../../lib/arrange'
 import { getPosition } from './gesture'
 import type { PlexFrame } from '../../lib/frame'
 import type { Position } from '../../lib/node'
-import type { PlexRelation } from '../../lib/relation'
+import type { PlexRelation } from '../../../types'
 
 const CAPTURE = { capture: true } as const
 

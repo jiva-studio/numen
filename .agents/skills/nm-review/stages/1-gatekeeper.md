@@ -21,7 +21,7 @@ make lib_core_lint lib_core_test
 make lib_protocol_lint lib_protocol_test lib_protocol_generate_check
 
 # For UI changes (@numen/ui):
-make lib_ui_lint lib_ui_test
+make lib_ui_components_lint lib_ui_components_test
 
 # For desktop changes:
 make app_desktop_lint app_desktop_test
@@ -63,6 +63,10 @@ Never run blanket checks over untouched parts of the monorepo.
 
 Read `AGENTS.md` at the root and in the touched module, and the rules summarized in [`../../../rules/architecture.md`](../../../rules/architecture.md), [`../../../rules/coding-style-backend.md`](../../../rules/coding-style-backend.md) and [`../../../rules/coding-style-frontend.md`](../../../rules/coding-style-frontend.md). Quote the rule when a change contradicts it. What follows is the short form.
 
+### Placement
+
+Load the placement skill of each area the diff touches ([`nm-place-core`](../../nm-place-core/SKILL.md), [`nm-place-window`](../../nm-place-window/SKILL.md), [`nm-place-plugin`](../../nm-place-plugin/SKILL.md), [`nm-place-library`](../../nm-place-library/SKILL.md)) and check where the diff put its code against it: layer, slice, segment, package and library. Quote the skill when a file is in the wrong place.
+
 ### Go — core, adapters, the desktop host
 
 - **Dependencies point inward, and the compiler proves it.** `domain/`, `port/` and `usecase/` import nothing from `adapter/` and nothing that is a driver, a framework or a transport. An import going the wrong way is a finding whatever it is for; it is always visible in an import block.
@@ -72,14 +76,14 @@ Read `AGENTS.md` at the root and in the touched module, and the rules summarized
 - **Driving and driven adapters are both adapters.** The core must not depend on which kind of adapter is used. A use case formatting output for a terminal, or an entity that uses a column name, violates the boundary.
 - **Entities contain rules only**: no I/O, no clock, no framework tags, no knowledge of how they are stored.
 - **A repository is a collection, not a service.** Put an aggregate in, take one out, remove one. A long list of methods is the finding; searches and counts are separate queries.
-- **Constructors validate.** Sealed `New*` with required dependencies checked. `New…` for constructors, `make` for built-in allocation.
+- **Constructors take their collaborators and return the concrete type.** No validation of collaborators, no error return, no `With*` method that changes a use case after construction. `New…` for constructors, `make` for built-in allocation.
 - **Nothing is logged.** No logging library in the core; an error is returned, reported through `port.Trouble`, or streamed to the interface.
 - **Everything exists because a decision requires it.** For every field parsed, column stored, syntax accepted or option offered there is a decision that requires it. A parsing rule nobody specified was invented by whoever wrote it, and once a vault is full of what it accepts the guess is permanent.
 - **Do not abstract before there is a second case**, and say so equally when a genuinely needed seam is missing.
 
 ### Vue and TypeScript — the library and the windows
 
-- **`@numen/ui` does not depend on the domain.** No component, story or fixture in `libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**`. A fixture taken from the domain brings the dependency back through test code. A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. The dependency runs `apps/*` → `libs/ui/core`; never back, never sideways.
+- **`@numen/ui` does not depend on the domain.** No component, story or fixture in `libs/ui/components` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**`. A fixture taken from the domain brings the dependency back through test code. A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. The dependency runs `apps/*` → `libs/ui/components`; never back, never sideways.
 - **The core is pure and the view is humble.** What is drawn is computed from the props as plain values — every coordinate, state and derived flag — with no DOM, no Vue, no clock, no randomness and no measurement of text. A number in a template that the pure part did not produce is a broken split, and so is a `computed` that reads `window` or `Date.now`.
 - **Time and platform capabilities are ports**: the clock, `requestAnimationFrame`, the viewport, the motion preference. Each is a parameter with a default that uses the browser API.
 - **A concept is declared once.** The type union, the layout, the wording and the colour of a role or a variant all read from one declaration.
@@ -100,12 +104,35 @@ Read `AGENTS.md` at the root and in the touched module, and the rules summarized
 - **A comment states the rule that holds, and stops.** Flag a comment that restates the code or argues — `rather than X`, `instead of X`, `so that we do not…`, `otherwise somebody would…` — and any comparison with a previous implementation. Benchmark numbers are stored in `docs/performance.md`.
 - **Anything that makes the same fact true in two places**, and any new dependency inside the core.
 
+### Read the checks themselves
+
+A green gate proves only what the checks look at. Read the checks the diff relies on: the checks under `tools/checks` and the registry `tools/checks/rules.json`, `tools/lint-layers`, the ESLint configurations and `.golangci*.yml`. A check is sound when:
+
+- no exemption, allow-list, named path or name list narrows what it covers;
+- each threshold is the value the rules state, not a value just above the largest current object, so the code is held to the rule and not to its present size;
+- it asserts that it found something to check, so a scan of an empty set or of a folder it does not walk fails;
+- it decides by structure (syntax tree, import graph, type information) and covers every package, test files and generated files included, as the rules say.
+
+A check that fails one of these is a finding on the check, reported with the rule it should enforce.
+
+Then judge each object by what it does, not by the interfaces it is cut into. For every struct, package and file the diff adds or grows, count the methods, fields and lines against the bounds in `architecture.md` §8, and ask what the object does: one technology for an adapter, one scenario for a use case, one wire and composition for a `service` package. An object that does several jobs is a finding even when each interface it implements is small and every check is green.
+
+### Checks are passed by changing the code
+
+A change that makes a check pass without fixing what it reports is a finding. Look in the diff for:
+
+- a package of type aliases (`type T = otherpkg.T`) that re-exports types of another package;
+- an interface split into embedded pieces, each under the size limit, that together exceed it;
+- a file or a package added to an `exclude`, `ignores` or similar entry of a lint or `tsconfig` configuration;
+- a name, path or file added to a list of exceptions in a check;
+- logic moved into a folder a check does not walk, such as a sub-package of `container/`.
+
 ---
 
 ## What not to report
 
 - Anything `gofmt`, `go vet`, `golangci-lint`, `buf lint`, `vue-tsc`, Prettier or a house ESLint rule already enforces; they all run in the gate above.
-- **A file's length, an import count, or a block size.** A file is split by responsibility.
+- **An import count.** A file is split by responsibility; its length and the size of a package are bounded by the rules and are findings when over the bound.
 - **Where a line breaks** in TypeScript, Vue, JSON or CSS. Prettier decides it, and `npm run format:check` is the check.
 - Preferences with no consequence: a helper you would have written differently, an early return you find prettier, a name that is merely not your choice.
 - Speculative structure. "This should be an interface in case we swap it" is a finding only when the second implementation is in sight.

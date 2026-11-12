@@ -1,0 +1,47 @@
+/**
+ * Where the phone connects to the core: the plugin that starts it, and the
+ * address each client uses.
+ */
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { startCore } from './start'
+
+const PORT = 41234
+
+const plugin = vi.hoisted(() => ({
+  start: vi.fn(async () => ({ port: 41234, dir: '/data/vault', token: 't0ken' })),
+}))
+
+vi.mock('@capacitor/core', () => ({
+  registerPlugin: (name: string) =>
+    name === 'NumenCore'
+      ? plugin
+      : { start: async () => Promise.reject(new Error(`no plugin named ${name}`)) },
+}))
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+describe('reaching the core', () => {
+  it('starts the core via the NumenCore plugin and requests each service on loopback at its port', async () => {
+    const request: string[] = []
+    const authorized: (string | null)[] = []
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+      request.push(input instanceof Request ? input.url : String(input))
+      authorized.push(new Headers(init?.headers).get('Authorization'))
+      throw new Error('speech recognition failed: no speech detected')
+    })
+
+    const core = await startCore()
+    expect(core.port).toBe(PORT)
+    expect(core.dir).toBe('/data/vault')
+
+    await expect(core.getVaultState()).rejects.toThrow()
+    await expect(core.getOpeningPath()).rejects.toThrow()
+    expect(request).toEqual([
+      `http://127.0.0.1:${PORT}/numen.v1.VaultService/GetVaultState`,
+      `http://127.0.0.1:${PORT}/numen.v1.NoteService/GetOpeningNote`,
+    ])
+    expect(authorized).toEqual(['Bearer t0ken', 'Bearer t0ken'])
+  })
+})

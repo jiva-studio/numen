@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -12,15 +12,16 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/enumtest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/presetwire"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/presetwire"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 func getDeck() map[string]string {
@@ -33,7 +34,7 @@ func getDeck() map[string]string {
 	}
 }
 
-func getOther() map[string]string {
+func getOtherVault() map[string]string {
 	return map[string]string{
 		"Bird.md": "---\ntype: card-model\nfields:\n  - Call\n  - Who\n---\n" +
 			"\n## Whose call\n\n### Front\n\n{{Call}}\n\n### Back\n\n{{Who}}\n",
@@ -59,8 +60,8 @@ func newAPIOn(tb testing.TB, notes ...map[string]string) (*API, []domain.Vault, 
 	for _, one := range notes {
 		target = append(target, installation.Add(tb, one))
 	}
-	backend := New(Config{Vault: installation.Host, Store: installation.Host.Store(), Now: vaulttest.NewClock()})
-	return &reviewHandler{Backend: backend}, target, installation
+	backend := New(Config{Vaults: vaulttest.Vaults(installation.Host), Store: vaulttest.Folders(installation.Host), Now: vaulttest.NewClock()})
+	return backend.newReviewHandler(), target, installation
 }
 
 func newFlashcardsClient(_ *testing.T, handler *API) reviewClient {
@@ -137,7 +138,7 @@ func startSession(t *testing.T, handler *API, v domain.Vault) *api.StartSessionR
 // A run belongs to the vault it was opened on, and an answer naming another
 // vault's run fails.
 func TestRecordReview_ErrorsOnRunOfOtherVault(t *testing.T) {
-	handler, target, installation := newAPIOn(t, getDeck(), getOther())
+	handler, target, installation := newAPIOn(t, getDeck(), getOtherVault())
 	one, two := target[0], target[1]
 
 	session := startSession(t, handler, one)
@@ -166,7 +167,7 @@ func TestRecordReview_ErrorsOnRunOfOtherVault(t *testing.T) {
 	}
 }
 
-func getRunFiles(t *testing.T, store host.Store) []string {
+func getRunFiles(t *testing.T, store ports.HostFolder) []string {
 	t.Helper()
 	entries, err := store.List(t.Context())
 	if err != nil {
@@ -202,7 +203,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 	if codeOf(err) != server.CodeNotFound {
 		t.Fatalf("the session was over and the answer failed with %v", codeOf(err))
 	}
-	if !hasCause(err, ErrNoRun) {
+	if !hasCause(err, sessions.ErrNoRun) {
 		t.Errorf("failed with %v", err)
 	}
 }
@@ -211,7 +212,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 // another: the two vaults share no card id, no review card and no word, so nothing
 // can pass between them by similarity.
 func TestAnAnswerInOneVaultPreservesTheOtherVaultDueCards(t *testing.T) {
-	handler, target, installation := newAPIOn(t, getDeck(), getOther())
+	handler, target, installation := newAPIOn(t, getDeck(), getOtherVault())
 	one, two := target[0], target[1]
 
 	was := findVaultCount(t, front(t, handler), string(two.ID))
@@ -390,24 +391,6 @@ func TestStartSession_CardsCarryRatingIntervals(t *testing.T) {
 	}
 }
 
-// The four ratings are carried across as themselves, and nothing else is a
-// rating.
-func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
-	for response, want := range map[api.Rating]review.Rating{
-		api.RatingAgain: review.Again,
-		api.RatingHard:  review.Hard,
-		api.RatingGood:  review.Good,
-		api.RatingEasy:  review.Easy,
-	} {
-		if got := parseRating(response); got != want {
-			t.Errorf("%v came across as %v", response, got)
-		}
-	}
-	if got := parseRating(api.RatingUnspecified); got.Valid() {
-		t.Errorf("nothing said came across as %v", got)
-	}
-}
-
 // A deck that could not be assigned card ids is reported to the user, so the
 // missing cards are identifiable.
 func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
@@ -434,7 +417,7 @@ func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 
 // TestWatchCardsDue_CountsEveryVault verifies all vaults are reported.
 func TestWatchCardsDue_CountsEveryVault(t *testing.T) {
-	handler, target := newAPI(t, getDeck(), getOther())
+	handler, target := newAPI(t, getDeck(), getOtherVault())
 
 	out := front(t, handler)
 	if len(out.Vaults) != len(target) {
@@ -447,7 +430,6 @@ func TestWatchCardsDue_CountsEveryVault(t *testing.T) {
 	}
 }
 
-// Counting cards does not modify vault files.
 func TestWatchCardsDue_DoesNotModifyVaultFiles(t *testing.T) {
 	handwritten := map[string]string{
 		"Term.md": getDeck()["Term.md"],
@@ -471,7 +453,7 @@ func TestWatchCardsDue_DoesNotModifyVaultFiles(t *testing.T) {
 	}
 }
 
-func getPointed() map[string]string {
+func getPointedVault() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
@@ -483,9 +465,8 @@ func getPointed() map[string]string {
 	}
 }
 
-// WatchCardsDue returns daily progress and limits for each preset.
 func TestWatchCardsDue_ReturnsDailyProgressPerPreset(t *testing.T) {
-	handler, target := newAPI(t, getPointed())
+	handler, target := newAPI(t, getPointedVault())
 	v := target[0]
 
 	session := startSession(t, handler, v)
@@ -572,7 +553,6 @@ func TestASessionOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
 	}
 }
 
-// WatchCardsDue returns settings for each preset independently.
 func TestWatchCardsDue_ReturnsSettingsPerPreset(t *testing.T) {
 	handler, _ := newAPI(t, getTwoPresets())
 
@@ -605,7 +585,7 @@ func newDeck(pos string, cards, from int) string {
 	return out
 }
 
-func getBacklogged() map[string]string {
+func getBackloggedVault() map[string]string {
 	return map[string]string{
 		"Term.md": getDeck()["Term.md"],
 		"Steady.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 10\n" +
@@ -651,7 +631,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 		},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			handler, target := newAPI(t, getBacklogged())
+			handler, target := newAPI(t, getBackloggedVault())
 			v := target[0]
 
 			p := readPresetConfig(t, handler, v, "Steady.md")
@@ -697,7 +677,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 // Under a goal of minutes a day long enough for the whole of the material is
 // closed by nothing: the material itself ran out, and no card limit is named.
 func TestGetCurve_LongDayHasNoClosingLimit(t *testing.T) {
-	handler, target := newAPI(t, getBacklogged())
+	handler, target := newAPI(t, getBackloggedVault())
 	v := target[0]
 
 	curveResp := getCurve(t, handler, v, "Steady.md", readPresetConfig(t, handler, v, "Steady.md"))
@@ -711,7 +691,7 @@ func TestGetCurve_LongDayHasNoClosingLimit(t *testing.T) {
 // day on the range is never the suggestion for a vault behind on its reviews. A card returning
 // within the day is the same card, and its repeated showings exhaust the clock.
 func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -751,7 +731,7 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 //
 // The overdue count applies across the whole curve and does not change with the goal.
 func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -799,7 +779,7 @@ func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
 
 // A vault with no review history has nothing overdue.
 func TestGetCurve_UnansweredVaultHasNothingOverdue(t *testing.T) {
-	handler, target := newAPI(t, getBacklogged())
+	handler, target := newAPI(t, getBackloggedVault())
 	v := target[0]
 
 	curveResp := getCurve(t, handler, v, "Steady.md", readPresetConfig(t, handler, v, "Steady.md"))
@@ -849,7 +829,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	rows := make(map[string]*api.DeckCardsDue, len(response.Decks))
 	for _, one := range response.Decks {
 		rows[one.Deck] = one
-		p, err := handler.scenarios().flash.Presets.GetForDeck(t.Context(), v, one.Deck)
+		p, err := handler.flash().Schedules.Presets.GetForDeck(t.Context(), v, one.Deck)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -910,7 +890,7 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 	for _, one := range []struct {
 		what  string
 		notes map[string]string
-	}{{"lived", getLived()}, {"spread", getSpread()}} {
+	}{{"lived", getLivedVault()}, {"spread", getSpread()}} {
 		t.Run(one.what, func(t *testing.T) {
 			handler, target := newAPI(t, one.notes)
 			v := target[0]
@@ -957,7 +937,7 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 // Overdue, unbegun and the cards whose day is still to come are three separate
 // counts of the one material, and the band begins where the overdue pile does.
 func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
-	handler, target := newAPI(t, getLived())
+	handler, target := newAPI(t, getLivedVault())
 	v := target[0]
 	runDays(t, handler, v, 14)
 	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -1031,7 +1011,7 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 		{"counts that never bind", 50, 200, review.BudgetUnitCards, true},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			handler, target := newAPI(t, getLived())
+			handler, target := newAPI(t, getLivedVault())
 			v := target[0]
 			runDays(t, handler, v, 14)
 			setNow(handler, getFirstMorning().AddDate(0, 0, 14))
@@ -1096,13 +1076,12 @@ func session(t *testing.T, handler *API, v domain.Vault, preset string) sessionC
 	return target
 }
 
-// The backlog share moves the session and the projection together.
 func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 	target := make(map[int]sessionCounts, 2)
 	bands := make(map[int][]int32, 2)
 
 	for _, share := range []int{100, 0} {
-		handler, made := newAPI(t, getLived())
+		handler, made := newAPI(t, getLivedVault())
 		v := made[0]
 		runDays(t, handler, v, 20)
 		setNow(handler, getFirstMorning().AddDate(0, 0, 20))
@@ -1145,11 +1124,4 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 	if slices.Equal(bands[100], bands[0]) {
 		t.Error("bands[100] and bands[0] are equal, want different")
 	}
-}
-
-// TestEveryRatingIsRead. A rating the parser does not recognize is parsed as
-// zero, which the use case rejects; a button press would be reported as not an
-// answer.
-func TestEveryRatingIsRead(t *testing.T) {
-	enumtest.CheckHandled(t, api.GetRatingValues(), func(r api.Rating) bool { return parseRating(r) != 0 })
 }

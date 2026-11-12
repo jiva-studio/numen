@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULTS, NO_BOUNDS, NO_CURVE_POINT, type Settings } from '../types'
+import { DEFAULTS, NO_BOUNDS, NO_CURVE_POINT, type Settings } from '../../lib/presets'
 import { BOUNDS } from '../fixtures'
 import { getPointCost } from './curve'
 import { estimateCurve } from './sketch'

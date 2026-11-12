@@ -1,7 +1,7 @@
 /** A fake vault and window for the tests of the preset writes: replies on demand, and records each message. */
 import { afterEach, expect } from 'vitest'
-import type { MessageWriter } from '@numen/plugin-sdk'
-import { DEFAULTS, type Presets, type PresetWriteResult } from '../types'
+import { formatErrorMessage, type MessageWriter, type Caught } from '@numen/plugin-sdk'
+import { DEFAULTS, type Presets, type PresetWriteResult, type Settings } from '../../lib/presets'
 
 const PATH = 'presets/Daily.md'
 
@@ -14,15 +14,25 @@ export const createGate = () => {
   return { promise: reply, open }
 }
 
+const rejectUnused = (): never => {
+  throw new Error('unused vault call')
+}
+
 /** A vault whose writes answer in turn, recording the version each was based on. */
 export const createCore = (...answers: (PresetWriteResult | Promise<PresetWriteResult>)[]) => {
   const based: string[] = []
-  const core = {
-    write: async (_path: string, _settings: unknown, target: string) => {
+  const core: Presets = {
+    read: rejectUnused,
+    list: rejectUnused,
+    createPreset: rejectUnused,
+    scheduleDeck: rejectUnused,
+    getDeckPreset: rejectUnused,
+    curve: rejectUnused,
+    write: async (_path: string, _settings: Settings, target: string) => {
       based.push(target)
       return (await answers.shift()) ?? { ok: true, value: { at: 'v-last' } }
     },
-  } as unknown as Presets
+  }
   return { core, based }
 }
 
@@ -52,17 +62,17 @@ export const createWriteOpts = (core: Presets, writeMessage: MessageWriter = () 
  * A caller of `request` that does not wait for the write; a failure is kept, and each test ends by
  * expecting none.
  */
-export const createBackgroundRequest = <Args extends unknown[]>(
-  request: (...args: Args) => Promise<unknown>,
+export const createBackgroundRequest = <Args extends object[]>(
+  request: (...args: Args) => Promise<void>,
 ) => {
-  const writeFailures: unknown[] = []
+  const writeFailures: string[] = []
   afterEach(() => {
     expect(writeFailures).toStrictEqual([])
     writeFailures.length = 0
   })
   return (...args: Args): void => {
-    request(...args).catch((error: unknown) => {
-      writeFailures.push(error)
+    request(...args).catch((error: Caught) => {
+      writeFailures.push(formatErrorMessage(error))
     })
   }
 }

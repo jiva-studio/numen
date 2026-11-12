@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 func decodeAnswer(t *testing.T, structured []byte) map[string]any {
@@ -163,27 +163,27 @@ func getNarrativeMarkers() []*regexp.Regexp {
 }
 
 func TestTranscriptCreateReturnsTheTaskIDKey(t *testing.T) {
-	s := newToolFixture(t)
-	res := invokeAtOnce(t, s.registry, tools.Call{
+	s := newWire(t)
+	res, err := s.registry.InvokeTool(t.Context(), tools.Call{
 		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"` + lecture + `"}`),
 	})
-	if res.GetResult().GetIsError() {
-		t.Fatalf("transcript_create was rejected: %s", res.GetResult().GetText())
+	if err != nil || res.GetResult().GetIsError() {
+		t.Fatalf("transcript_create was rejected: %v %s", err, res.GetResult().GetText())
 	}
 	answer := decodeAnswer(t, res.GetResult().GetStructured())
 	requireKeys(t, "the answer of transcript_create", answer, []string{"taskId", "path", "state"}, []string{"task_id"})
 	if want := "transcription:Lectures:" + lecture; answer["taskId"] != want {
 		t.Errorf("taskId = %v, want %s", answer["taskId"], want)
 	}
-	close(s.blocking.release)
-	s.waitFinished(t, "transcription:Lectures:"+lecture)
+	close(s.recognizer.release)
+	s.waitUntilNoTask(t)
 
 	schema := getToolSchema(t, s.registry, "transcript_create", true)
 	requireKeys(t, "the output schema of transcript_create", getSchemaProperties(t, schema), []string{"taskId"}, []string{"task_id"})
 }
 
 func TestTranscriptionToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
-	s := newToolFixture(t)
+	s := newWire(t)
 	markers := getNarrativeMarkers()
 	visitEveryToolSchema(t, s.registry, func(string, string) {}, func(tool, description string) {
 		for _, marker := range markers {
@@ -195,7 +195,7 @@ func TestTranscriptionToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 }
 
 func TestTranscriptionToolInstructionsContainNoNarrativeMarker(t *testing.T) {
-	s := newToolFixture(t)
+	s := newWire(t)
 	listing, err := s.registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -231,7 +231,7 @@ func isOneSentence(text string) bool {
 var lowerCamelCase = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*$`)
 
 func TestTranscriptionToolSchemasUseLowerCamelCaseProperties(t *testing.T) {
-	s := newToolFixture(t)
+	s := newWire(t)
 	visitEveryToolSchema(t, s.registry, func(tool, name string) {
 		if !lowerCamelCase.MatchString(name) {
 			t.Errorf("the schema of %s names the property %q, which is not lowerCamelCase", tool, name)
@@ -240,7 +240,7 @@ func TestTranscriptionToolSchemasUseLowerCamelCaseProperties(t *testing.T) {
 }
 
 func TestTranscriptionToolTextsNameNoToolOfAnotherPlugin(t *testing.T) {
-	s := newToolFixture(t)
+	s := newWire(t)
 	foreign := getForeignToolNames()
 	visitEveryToolSchema(t, s.registry, func(string, string) {}, func(tool, text string) {
 		for _, name := range foreign {

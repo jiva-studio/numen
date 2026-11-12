@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import test from 'node:test'
-import { ReadError, getPluginCommands } from './commands.mjs'
+import { ReadError, getPluginCommands, readWords } from './commands.mjs'
 
 const writePlugin = async (root, name, manifest, frontend) => {
   await mkdir(join(root, name, 'frontend'), { recursive: true })
@@ -55,23 +55,40 @@ test('a plugin is read with its settings, declared and registered commands', () 
                 title: 'Dim a text',
                 when: "version.plugin == 'md.numen.tools.lantern'",
               },
-              { id: 'lamp.create', title: 'New lamp', shortcut: 'mod+shift+l' },
+              { id: 'lamp.create', title: 'New lamp' },
               { id: 'wick.trim', title: 'Trim the wick', when: 'target.isNote' },
             ],
             handlers: [{ command: 'app:file.createText', title: 'Read the lantern' }],
+            keybindings: [
+              { key: 'mod+shift+l', command: 'lamp.create' },
+              {
+                key: 'mod+alt+l',
+                command: 'app:file.reveal',
+                values: { kind: 'plex' },
+                when: 'target.isNote',
+              },
+            ],
+            slots: [
+              {
+                slot: 'fileTree.context',
+                command: 'app:file.reveal',
+                values: { kind: 'plex' },
+                title: 'Show in plex',
+              },
+            ],
           },
         },
         {
           'index.ts': [
-            'context.registerCommand({',
+            'context.register.command({',
             "  id: 'lamp.create',",
             '  handler: () => undefined,',
             '})',
-            'context.registerCommand({',
+            'context.register.command({',
             "  id: 'wick.trim',",
             '  handler: () => undefined,',
             '})',
-            'context.registerCommand({',
+            'context.register.command({',
             "  id: 'app:file.createText',",
             '  handler: () => undefined,',
             '})',
@@ -103,13 +120,20 @@ test('a plugin is read with its settings, declared and registered commands', () 
             },
             { id: 'wick.trim', text: 'Trim the wick', group: 'note' },
           ],
+          bound: [
+            {
+              text: 'Show in plex',
+              group: 'note',
+              chord: { letter: 'l', shift: false, alt: true },
+            },
+          ],
           handled: ['app:file.createText'],
         },
       ])
     },
   ))
 
-test('a shortcut the window cannot draw is refused', () =>
+test('a key the window cannot draw is refused', () =>
   withPlugins(
     (root) =>
       writePlugin(
@@ -121,11 +145,14 @@ test('a shortcut the window cannot draw is refused', () =>
           version: '1.0.0',
           targets: ['desktop.editor'],
           frontend: { entrypoint: 'dist/index.js' },
-          contributes: { commands: [{ id: 'ring.create', title: 'Ring', shortcut: 'alt+f4' }] },
+          contributes: {
+            commands: [{ id: 'ring.create', title: 'Ring' }],
+            keybindings: [{ key: 'alt+f4', command: 'ring.create' }],
+          },
         },
         {
           'index.ts':
-            "context.registerCommand({\n  id: 'ring.create',\n  handler: () => undefined,\n})\n",
+            "context.register.command({\n  id: 'ring.create',\n  handler: () => undefined,\n})\n",
         },
       ),
     (at) =>
@@ -133,7 +160,7 @@ test('a shortcut the window cannot draw is refused', () =>
         assert.ok(error instanceof ReadError)
         assert.equal(
           error.message,
-          "tools-bell declares the shortcut 'alt+f4', which the window draws as nothing",
+          "tools-bell binds the key 'alt+f4', which the window draws as nothing",
         )
         return true
       }),
@@ -154,7 +181,7 @@ test('a command the frontend registers and the manifest does not declare is refu
         },
         {
           'index.ts':
-            "context.registerCommand({\n  id: 'beat.create',\n  handler: () => undefined,\n})\n",
+            "context.register.command({\n  id: 'beat.create',\n  handler: () => undefined,\n})\n",
         },
       ),
     (at) =>
@@ -177,7 +204,7 @@ test('a registration this cannot read an id out of is refused', () =>
           targets: ['desktop.editor'],
           frontend: { entrypoint: 'dist/index.js' },
         },
-        { 'index.ts': 'context.registerCommand({\n  handler: () => undefined,\n})\n' },
+        { 'index.ts': 'context.register.command({\n  handler: () => undefined,\n})\n' },
       ),
     (at) =>
       assert.rejects(getPluginCommands('desktop.editor', at), {
@@ -230,7 +257,7 @@ test('a registration whose options sit in a constant is read', () =>
           'index.ts': [
             "const options = { id: 'reed.cut', handler: () => undefined }",
             'export const activate = (context) => {',
-            '    context.registerCommand(options)',
+            '    context.register.command(options)',
             '}',
           ].join('\n'),
         },
@@ -254,10 +281,37 @@ test('a registration in a file other than index.ts is read', () =>
           targets: ['desktop.editor'],
           frontend: { entrypoint: 'dist/index.js' },
         },
-        { 'index.ts': '', 'commands.ts': "context.registerCommand({ id: 'pipe.blow', handler })" },
+        { 'index.ts': '', 'commands.ts': "context.register.command({ id: 'pipe.blow', handler })" },
       ),
     (at) =>
       assert.rejects(getPluginCommands('desktop.editor', at), {
         message: 'tools-pipe registers pipe.blow, which its manifest does not declare',
       }),
+  ))
+
+test('readWords reads string literals, template functions and imported WORDS from the syntax tree', () =>
+  withPlugins(
+    async (root) => {
+      await writeFile(
+        join(root, 'other.ts'),
+        "export const WORDS = {\n  open: 'Open note',\n} as const\n",
+      )
+    },
+    async (at) => {
+      const source = [
+        "import { WORDS as other } from './other'",
+        "const EARLIER = { find: 'Wrong' }",
+        'export const WORDS = {',
+        "  find: 'Search the vault',",
+        '  commandRan: (title: string) => `${title}: done`,',
+        '  delegated: other.open,',
+        '}',
+      ].join('\n')
+      assert.equal(await readWords(source, 'find', at), 'Search the vault')
+      assert.equal(await readWords(source, 'commandRan', at), '*title*: done')
+      assert.equal(await readWords(source, 'delegated', at), 'Open note')
+      await assert.rejects(readWords(source, 'missing', at), {
+        message: "the words say nothing under 'missing'",
+      })
+    },
   ))

@@ -2,7 +2,7 @@
  * A fake window hosting a files tab, the files of a vault behind it, and the entries of the slot
  * the tab draws its menu from, for tests. Every request the tab makes is recorded in call order.
  */
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, h, ref, type Component } from 'vue'
 import {
   NOTE_TYPE,
   SLOT,
@@ -26,7 +26,7 @@ const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
 
 const Sketch = () => h('em', 'sketch')
 
-const command = (pluginId: string, id: string, title: string, icon?: unknown): SlotCommand => ({
+const command = (pluginId: string, id: string, title: string, icon?: Component): SlotCommand => ({
   kind: 'command',
   key: `${pluginId}/command/${id}`,
   pluginId,
@@ -42,12 +42,12 @@ const separator = (index: number): SlotSeparator => ({
   key: `separator/${index}`,
 })
 
-export const OPEN = command('app', 'note.open', 'Open note', Icon)
-const RENAME_ENTRY = command(TREE, 'tree.renameFile', 'Rename file')
-const COPY_PATH = command('app', 'note.copyPath', 'Copy path')
-export const TRASH = command('app', 'note.trash', 'Move to trash')
-const NEW_NOTE_ENTRY = command(TREE, 'tree.createNote', 'Create note here')
-const NEW_FOLDER_ENTRY = command(TREE, 'tree.createFolder', 'Create folder')
+export const OPEN = command('app', 'file.open', 'Open note', Icon)
+const RENAME_ENTRY = command(TREE, 'tree.renameFile', 'Rename')
+const COPY_PATH = command('app', 'file.copyPath', 'Copy path')
+export const TRASH = command('app', 'file.remove', 'Move to trash')
+const NEW_NOTE_ENTRY = command('app', 'note.create', 'Create note')
+const NEW_FOLDER_ENTRY = command('app', 'folder.create', 'Create folder')
 export const ASK = command(CHAT, 'note.ask', 'Ask about the note')
 
 export const NEW_MENU: SlotSubmenu = {
@@ -103,30 +103,37 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
   }
 
   const workspace: WorkspaceHost = {
-    isReady: ref(true),
-    openingPath: ref(''),
-    readOpeningPath: async () => '',
-    draggedPaths: ref([]),
-    setDraggedPaths: (paths) => {
-      recorded.dragged.push(paths)
+    window: {
+      isReady: ref(true),
+      openingPath: ref(''),
+      readOpeningPath: async () => '',
+      getToday: () => '2026-01-01',
     },
-    openFile: (path, options) => {
-      recorded.opened.push([path, options])
+    dragged: {
+      paths: ref([]),
+      setPaths: (paths) => {
+        recorded.dragged.push(paths)
+      },
     },
-    openFileAt: () => undefined,
+    files: {
+      open: (path, options) => {
+        recorded.opened.push([path, options])
+      },
+      openAt: () => undefined,
+      syncPath: (tabId, path, title) => {
+        recorded.synced.push([tabId, path, title])
+        return linked[tabId] ?? false
+      },
+    },
+    messages: {
+      showError: (text) => {
+        recorded.errors.push(text)
+      },
+      getWriter: () => () => undefined,
+    },
+    icons: { getCommand: () => null, getEntry: renderDeps.getEntryIcon },
     getNoteInFocus: () => ({ path: '', title: '' }),
-    syncPath: (tabId, path, title) => {
-      recorded.synced.push([tabId, path, title])
-      return linked[tabId] ?? false
-    },
     ask: () => undefined,
-    showError: (text) => {
-      recorded.errors.push(text)
-    },
-    getMessageWriter: () => () => undefined,
-    getToday: () => '2026-01-01',
-    getCommandIcon: () => null,
-    ...renderDeps,
   }
 
   const record = (what: string) => async (folder: string, name?: string) => {
@@ -140,7 +147,7 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
       recorded.made.push(`move ${from} ${to}`)
     },
     createFolder: async (path) => {
-      recorded.made.push(`folder ${path}`)
+      recorded.made.push(`createFolder ${path}`)
     },
     createNote: record(NOTE_TYPE),
   }

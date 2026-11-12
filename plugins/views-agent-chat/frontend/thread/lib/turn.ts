@@ -3,6 +3,7 @@
  */
 
 import { groupDigits, type LinkPiece } from '@numen/ui'
+import type { Turn, TurnState, Voice } from '../../types'
 
 export interface VoiceDescriptor {
   readonly isBubble: boolean
@@ -17,24 +18,7 @@ export const VOICES = {
   prompt: { isBubble: true, against: 'end' },
   response: { isBubble: false, against: 'start' },
   doing: { isBubble: false, against: 'start' },
-} as const satisfies Record<string, VoiceDescriptor>
-
-export type Voice = keyof typeof VOICES
-
-/** How far along a turn is. Defaults to settled. */
-export type TurnState = 'settled' | 'arriving' | 'failed'
-
-export interface Turn {
-  readonly id: string
-  readonly voice: Voice
-  readonly text: string
-  readonly subject?: string
-  readonly aside?: string
-  readonly state?: TurnState
-  readonly canOpen?: boolean
-  readonly unresolved?: readonly string[]
-  readonly links?: readonly LinkPiece[]
-}
+} as const satisfies Record<Voice, VoiceDescriptor>
 
 /** A turn with everything about how to draw it worked out. */
 export interface PlacedTurn {

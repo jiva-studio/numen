@@ -1,4 +1,5 @@
-import type { ConnectionInfo, ConnectionTypeInfo, ModelInfo } from '@numen/core-client'
+import type { JsonObject, JsonValue } from '@/shared/api/json'
+import type { ConnectionInfo, ConnectionTypeInfo, ModelInfo } from './types'
 
 /** A row as the core stores it: a connection, a model and a reasoning level; empty is the default. */
 export interface StoredRow {
@@ -25,18 +26,17 @@ export interface Usability {
   readonly reason: string
 }
 
-const readText = (value: unknown): string | undefined =>
+const readText = (value: JsonValue | undefined): string | undefined =>
   typeof value === 'string' ? value : undefined
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+const isRecord = (value: JsonValue | undefined): value is JsonObject =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
 /** The rows in the value of a setting of rows; a value that is no list of rows holds none. */
-export function readRows(value: unknown): readonly StoredRow[] {
+export function readRows(value: JsonValue | undefined): readonly StoredRow[] {
   if (!Array.isArray(value)) return []
-  const list: readonly unknown[] = value
   const rows: StoredRow[] = []
-  for (const one of list) {
+  for (const one of value) {
     if (!isRecord(one)) return []
     const connection = readText(one['connection'])
     const model = readText(one['model'])

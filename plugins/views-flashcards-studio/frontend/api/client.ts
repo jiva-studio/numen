@@ -8,36 +8,10 @@ import { ApiFailure, CANCELED } from './failure'
 import type {
   RecordReviewRequest,
   RecordReviewResponse,
-  ComputeCurveRequest,
-  ComputeCurveResponse,
-  CreateCardModelRequest,
-  CreateCardModelResponse,
-  CreateDeckRequest,
-  CreateDeckResponse,
-  CreatePresetRequest,
-  CreatePresetResponse,
-  GetDeckNeighbourhoodRequest,
-  GetDeckNeighbourhoodResponse,
-  GetDeckPresetRequest,
-  GetDeckPresetResponse,
-  GetVaultDeckPresetRequest,
-  GetVaultDeckPresetResponse,
-  ListCardModelsRequest,
-  ListCardModelsResponse,
-  ListPresetsRequest,
-  ListPresetsResponse,
+  GetDeckNeighborhoodRequest,
+  GetDeckNeighborhoodResponse,
   ListReviewDaysRequest,
   ListReviewDaysResponse,
-  ReadCardModelRequest,
-  ReadCardModelResponse,
-  ReadDeckRequest,
-  ReadDeckResponse,
-  ReadPresetRequest,
-  ReadPresetResponse,
-  RenameCardModelFieldRequest,
-  RenameCardModelFieldResponse,
-  ScheduleDeckRequest,
-  ScheduleDeckResponse,
   StartSessionRequest,
   StartSessionResponse,
   UndoReviewRequest,
@@ -46,18 +20,47 @@ import type {
   WatchCardsDueResponse,
   WatchReloadsRequest,
   WatchReloadsResponse,
+} from '../lib/wire/review'
+import type {
+  ComputeCurveRequest,
+  ComputeCurveResponse,
+  CreatePresetRequest,
+  CreatePresetResponse,
+  GetDeckPresetRequest,
+  GetDeckPresetResponse,
+  GetVaultDeckPresetRequest,
+  GetVaultDeckPresetResponse,
+  ListPresetsRequest,
+  ListPresetsResponse,
+  ReadPresetRequest,
+  ReadPresetResponse,
+  ScheduleDeckRequest,
+  ScheduleDeckResponse,
+  WritePresetRequest,
+  WritePresetResponse,
+} from '../lib/wire/schedule'
+import type {
+  CreateCardModelRequest,
+  CreateCardModelResponse,
+  CreateDeckRequest,
+  CreateDeckResponse,
+  ListCardModelsRequest,
+  ListCardModelsResponse,
+  ReadCardModelRequest,
+  ReadCardModelResponse,
+  ReadDeckRequest,
+  ReadDeckResponse,
+  RenameCardModelFieldRequest,
+  RenameCardModelFieldResponse,
   WriteCardModelRequest,
   WriteCardModelResponse,
   WriteDeckRequest,
   WriteDeckResponse,
-  WritePresetRequest,
-  WritePresetResponse,
-} from './types'
+} from '../lib/wire/notes'
 
 /** The name the manifest declares for the service. */
-export const SERVICE = 'md.numen.views.flashcards.studio'
+const SERVICE = 'md.numen.views.flashcards.studio'
 
-/** Options of one call. */
 export interface CallOptions {
   readonly signal?: AbortSignal
 }
@@ -146,9 +149,9 @@ export const reviewService = {
     watch<WatchReloadsRequest, WatchReloadsResponse>('WatchReloads', request, options),
   listReviewDays: (request: ListReviewDaysRequest, options?: CallOptions) =>
     call<ListReviewDaysRequest, ListReviewDaysResponse>('ListReviewDays', request, options),
-  getDeckNeighbourhood: (request: GetDeckNeighbourhoodRequest, options?: CallOptions) =>
-    call<GetDeckNeighbourhoodRequest, GetDeckNeighbourhoodResponse>(
-      'GetDeckNeighbourhood',
+  getDeckNeighborhood: (request: GetDeckNeighborhoodRequest, options?: CallOptions) =>
+    call<GetDeckNeighborhoodRequest, GetDeckNeighborhoodResponse>(
+      'GetDeckNeighborhood',
       request,
       options,
     ),

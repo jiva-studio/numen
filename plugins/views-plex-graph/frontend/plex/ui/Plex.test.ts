@@ -8,11 +8,11 @@ import { nextTick } from 'vue'
 import Plex from './Plex.vue'
 import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
 import type { Viewport } from '@numen/ui'
-import { neighbourhoods } from '../fixtures/neighbourhoods'
+import { neighborhoods } from '../fixtures/neighborhoods'
 
 const mountPlex = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) =>
   mount(Plex, {
-    props: { neighbourhood: neighbourhoods.typical, duration: 0, ...props },
+    props: { neighborhood: neighborhoods.typical, duration: 0, ...props },
     attachTo: document.body,
   })
 
@@ -98,7 +98,7 @@ describe('what a screen reader and a keyboard are given', () => {
     // wherever the keyboard is.
     const plex = mountPlex()
     expect(plex.findAll('.plex__node[tabindex="0"]')).toHaveLength(
-      neighbourhoods.typical.nodes.length,
+      neighborhoods.typical.nodes.length,
     )
     expect(plex.findAll('.plex__node[tabindex="-1"]')).toHaveLength(0)
   })
@@ -111,31 +111,31 @@ describe('what a screen reader and a keyboard are given', () => {
   })
 
   it('still names a node whose title is empty', () => {
-    const plex = mountPlex({ neighbourhood: neighbourhoods.awkwardLabels })
+    const plex = mountPlex({ neighborhood: neighborhoods.awkwardLabels })
     expect(plex.find('[aria-label="Untitled, child"]').exists()).toBe(true)
   })
 
   it('keeps the full title in the accessible name when the box truncates it', () => {
     const long = 'Supercalifragilisticexpialidociousandthensomemore'
-    const plex = mountPlex({ neighbourhood: neighbourhoods.awkwardLabels })
+    const plex = mountPlex({ neighborhood: neighborhoods.awkwardLabels })
     expect(plex.find(`[aria-label="${long}, child"]`).exists()).toBe(true)
   })
 })
 
 describe('what did not fit', () => {
   it('says so and not hiding it', () => {
-    const plex = mountPlex({ neighbourhood: neighbourhoods.overcrowded })
+    const plex = mountPlex({ neighborhood: neighborhoods.overcrowded })
     const status = plex.get('[role="status"]').text()
 
     // How much fits depends on the window, so the sentence is checked against what
     // was rendered and not against a hard-coded number.
-    const countDrawn = (relation: string) =>
+    const countDrawnRelations = (relation: string) =>
       plex
         .findAll('.plex__node')
         .filter((n) => n.attributes('aria-label')?.endsWith(`, ${relation}`)).length
 
-    expect(status).toContain(`${200 - countDrawn('child')} children`)
-    expect(status).toContain(`${40 - countDrawn('jump')} jumps`)
+    expect(status).toContain(`${200 - countDrawnRelations('child')} children`)
+    expect(status).toContain(`${40 - countDrawnRelations('jump')} jumps`)
     expect(status).toContain('not shown')
   })
 
@@ -146,7 +146,7 @@ describe('what did not fit', () => {
   it('passes the counts over, so the words are not the plex to choose', () => {
     // Knowing English is the same mistake as knowing the domain, one step down.
     const plex = mount(Plex, {
-      props: { neighbourhood: neighbourhoods.overcrowded, duration: 0 },
+      props: { neighborhood: neighborhoods.overcrowded, duration: 0 },
       slots: {
         overflow: `<template #default="{ overflow }">спрятано: {{ overflow.length }}</template>`,
       },
@@ -156,7 +156,7 @@ describe('what did not fit', () => {
 
   it('can be kept quiet by a slot that draws nothing', () => {
     const plex = mount(Plex, {
-      props: { neighbourhood: neighbourhoods.overcrowded, duration: 0 },
+      props: { neighborhood: neighborhoods.overcrowded, duration: 0 },
       slots: { overflow: '<span class="hushed" />' },
     })
     expect(plex.get('[role="status"]').text()).toBe('')
@@ -170,6 +170,13 @@ describe('how wide a box is drawn', () => {
   /** The type the page is set in, which a theme may rewrite at any moment. */
   let theme = { size: 13, padding: 10, gap: 6, label: 10 }
 
+  const readThemeType = () => ({
+    font: `${theme.size}px Test Sans`,
+    labelFont: `${theme.label}px Test Sans`,
+    padding: theme.padding,
+    gap: theme.gap,
+  })
+
   /** A canvas that measures by the character. jsdom has none of its own. */
   const stubCanvas = () => {
     vi.stubGlobal('CanvasRenderingContext2D', class {})
@@ -177,28 +184,6 @@ describe('how wide a box is drawn', () => {
       font: '',
       measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
     } as unknown as CanvasRenderingContext2D)
-  }
-
-  /**
-   * The document, resolving the tokens a box carries into pixels. jsdom
-   */
-  const stubStyles = () => {
-    const engine = window.getComputedStyle.bind(window)
-
-    vi.spyOn(window, 'getComputedStyle').mockImplementation(((
-      element: Element,
-      pseudo?: string | null,
-    ) => {
-      const declared = (element as HTMLElement).style?.getPropertyValue('font-size') ?? ''
-      if (!declared.startsWith('var(--numen')) return engine(element, pseudo)
-
-      return {
-        fontSize: `${declared.includes('edge-label') ? theme.label : theme.size}px`,
-        fontFamily: 'Test Sans',
-        paddingInlineStart: `${theme.padding}px`,
-        columnGap: `${theme.gap}px`,
-      } as CSSStyleDeclaration
-    }) as typeof window.getComputedStyle)
   }
 
   /** A window that reports a size change when a test triggers it. */
@@ -237,9 +222,8 @@ describe('how wide a box is drawn', () => {
     // Measured before the first arrangement, so nothing is drawn at a width it
     // then has to leave: the reader is never shown a box shrinking into place.
     stubCanvas()
-    stubStyles()
 
-    const plex = mountPlex({ duration: 400 })
+    const plex = mountPlex({ duration: 400, readType: readThemeType })
     const painted = boxes(plex)
 
     expect(new Set(painted).size).toBeGreaterThan(1)
@@ -254,10 +238,9 @@ describe('how wide a box is drawn', () => {
     // The box of the plex's own type is observed, and measured again whenever the
     // window reports it may have moved.
     stubCanvas()
-    stubStyles()
     const rings = stubObserver()
 
-    const plex = mountPlex({ duration: 400 })
+    const plex = mountPlex({ duration: 400, readType: readThemeType })
     const painted = boxes(plex)
 
     for (const ring of rings) ring()
@@ -271,10 +254,9 @@ describe('how wide a box is drawn', () => {
     // A theme is applied by rewriting a style element, with nothing remounted.
     // Every box then holds a title set in a type the plex has not measured.
     stubCanvas()
-    stubStyles()
     const rings = stubObserver()
 
-    const plex = mountPlex()
+    const plex = mountPlex({ readType: readThemeType })
     const painted = boxes(plex)
 
     theme = { ...theme, size: 20, padding: 24 }
@@ -289,19 +271,19 @@ describe('how wide a box is drawn', () => {
   })
 })
 
-describe('being given the next neighbourhood', () => {
+describe('being given the next neighborhood', () => {
   it('arrives at once when there is no movement to make', async () => {
     const plex = mountPlex()
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(true)
 
-    await plex.setProps({ neighbourhood: neighbourhoods.leaf })
+    await plex.setProps({ neighborhood: neighborhoods.leaf })
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(false)
     expect(plex.find('[aria-label="Inbox, parent"]').exists()).toBe(true)
   })
 
   it('sets off and not jumping when it has time to move', async () => {
     const plex = mountPlex({ duration: 400 })
-    await plex.setProps({ neighbourhood: neighbourhoods.leaf })
+    await plex.setProps({ neighborhood: neighborhoods.leaf })
 
     // Still showing the old picture: on its way, not replaced.
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(true)
@@ -310,15 +292,15 @@ describe('being given the next neighbourhood', () => {
 
   it('remains still when it has nowhere left to go', async () => {
     const plex = mountPlex()
-    await plex.setProps({ neighbourhood: neighbourhoods.leaf })
+    await plex.setProps({ neighborhood: neighborhoods.leaf })
     expect(plex.vm.isMoving).toBe(false)
   })
 
-  it('re-aims at the newest neighbourhood and not queueing them', async () => {
+  it('re-aims at the newest neighborhood and not queueing them', async () => {
     const plex = mountPlex({ duration: 400 })
-    await plex.setProps({ neighbourhood: neighbourhoods.leaf })
-    await plex.setProps({ neighbourhood: neighbourhoods.root })
-    await plex.setProps({ neighbourhood: neighbourhoods.diamond, duration: 0 })
+    await plex.setProps({ neighborhood: neighborhoods.leaf })
+    await plex.setProps({ neighborhood: neighborhoods.root })
+    await plex.setProps({ neighborhood: neighborhoods.diamond, duration: 0 })
 
     // Four clicks in a second end at the fourth, not at a queue of three.
     expect(plex.find('[aria-label^="Recursive CTE"]').exists()).toBe(true)

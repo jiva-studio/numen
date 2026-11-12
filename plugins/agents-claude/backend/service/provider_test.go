@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 const writeTargetVariable = "NUMEN_TEST_WRITE_TARGET"
@@ -37,10 +37,10 @@ done
 if [ "$tools" != "" ]; then echo written > "$` + writeTargetVariable + `"; fi
 ` + textEvent
 
-func newClaude(t *testing.T, script string) *agentServer {
+func newClaude(t *testing.T, script string) *agent {
 	t.Helper()
-	svc := &agentServer{clock: &steppingClock{tick: time.Unix(0, 0), step: time.Second}}
-	svc.applyConfig(map[string]string{"executablePath": writeScript(t, "claude", script)})
+	svc := newTestAgent(t)
+	svc.settings.Apply(map[string]string{"executablePath": writeScript(t, "claude", script)})
 	return svc
 }
 
@@ -52,7 +52,7 @@ func TestCompleteReturnsTheAnswerOfClaude(t *testing.T) {
 	svc := newClaude(t, answerScript)
 	t.Setenv(writeTargetVariable, filepath.Join(t.TempDir(), "written"))
 
-	result, err := svc.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("fix this"))
+	result, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("fix this"))
 
 	if err != nil || result.Text != "fixed" {
 		t.Errorf("Complete = %q, %v, want %q", result.Text, err, "fixed")
@@ -63,7 +63,7 @@ func TestCompleteStartsClaudeWithTheModelTheInstructionsAndNoTool(t *testing.T) 
 	out := filepath.Join(t.TempDir(), "argv")
 	svc := newClaude(t, "cat > "+out+".stdin\nfor a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+"\n"+textEvent)
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "claude-code", Model: "opus"}, connection.ProviderCompleteRequest{
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code", Model: "opus"}, connection.ProviderCompleteRequest{
 		Messages: []connection.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: "fix this"}},
 	})
 
@@ -90,7 +90,7 @@ func TestCompleteJoinsTheTurnsOfAConversationIntoOnePrompt(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "stdin")
 	svc := newClaude(t, "cat > "+out+"\n"+textEvent)
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "claude-code"}, connection.ProviderCompleteRequest{
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, connection.ProviderCompleteRequest{
 		Messages: []connection.Message{
 			{Role: "user", Text: "one"}, {Role: "assistant", Text: "two"}, {Role: "user", Text: "three"},
 		},
@@ -120,10 +120,10 @@ func TestACompleteCallLetsClaudeWriteNothing(t *testing.T) {
 	if err := os.Remove(target); err != nil {
 		t.Fatal(err)
 	}
-	svc := &agentServer{clock: &steppingClock{tick: time.Unix(0, 0), step: time.Second}}
-	svc.applyConfig(map[string]string{"executablePath": script})
+	svc := newTestAgent(t)
+	svc.settings.Apply(map[string]string{"executablePath": script})
 
-	if _, err := svc.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("write a file")); err != nil {
+	if _, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("write a file")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -140,7 +140,7 @@ func TestCompleteRefusesARequestWithNoMessageToAnswer(t *testing.T) {
 		"system only":  {Messages: []connection.Message{{Role: "system", Text: "be brief"}}},
 		"unknown role": {Messages: []connection.Message{{Role: "tool", Text: "x"}}},
 	} {
-		_, err := svc.Complete(t.Context(), connection.Call{Type: "claude-code"}, request)
+		_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, request)
 		if !connection.IsStop(err) {
 			t.Errorf("%s: Complete = %v, want a stop", name, err)
 		}
@@ -149,9 +149,9 @@ func TestCompleteRefusesARequestWithNoMessageToAnswer(t *testing.T) {
 
 func TestAMissingClaudeIsUnreachable(t *testing.T) {
 	withoutClaudeAnywhere(t)
-	svc := &agentServer{clock: &steppingClock{tick: time.Unix(0, 0), step: time.Second}}
+	svc := newTestAgent(t)
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
@@ -164,7 +164,7 @@ func TestAMissingClaudeIsUnreachable(t *testing.T) {
 func TestAFailedRunOfClaudeIsAStopWithNoTextOfTheProgram(t *testing.T) {
 	svc := newClaude(t, "cat > /dev/null\necho 'not signed in as sk-secret' >&2\nexit 2\n")
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
 
 	if !connection.IsStop(err) {
 		t.Fatalf("Complete = %v, want a stop", err)
@@ -177,7 +177,7 @@ func TestAFailedRunOfClaudeIsAStopWithNoTextOfTheProgram(t *testing.T) {
 func TestAnEmptyAnswerIsAStop(t *testing.T) {
 	svc := newClaude(t, "cat > /dev/null\nprintf '%s\\n' '{\"type\":\"result\",\"is_error\":false}'\n")
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
 
 	if !connection.IsStop(err) {
 		t.Errorf("Complete = %v, want a stop", err)
@@ -186,9 +186,9 @@ func TestAnEmptyAnswerIsAStop(t *testing.T) {
 
 func TestCompleteEndsAtTheRequestTimeoutAsATimeout(t *testing.T) {
 	svc := newClaude(t, "sleep 30\n")
-	svc.applyConfig(map[string]string{"requestTimeout": "0.2"})
+	svc.settings.Apply(map[string]string{"requestTimeout": "0.2"})
 
-	_, err := svc.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
+	_, err := svc.completion.Complete(t.Context(), connection.Call{Type: "claude-code"}, userMessage("hi"))
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Fatalf("Complete = %v, want try the next", err)
@@ -203,46 +203,25 @@ func TestCompleteReturnsTheErrorOfACancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	time.AfterFunc(200*time.Millisecond, cancel)
 
-	_, err := svc.Complete(ctx, connection.Call{Type: "claude-code"}, userMessage("hi"))
+	_, err := svc.completion.Complete(ctx, connection.Call{Type: "claude-code"}, userMessage("hi"))
 
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("Complete = %v, want the cancellation", err)
 	}
 }
 
-func TestTheRequestTimeoutIsTheSettingElseTwoMinutes(t *testing.T) {
-	svc := &agentServer{}
-	if got := svc.getRequestLimit(); got != 120*time.Second {
-		t.Errorf("default = %v, want 120 s", got)
-	}
-	svc.applyConfig(map[string]string{"requestTimeout": "45"})
-	if got := svc.getRequestLimit(); got != 45*time.Second {
-		t.Errorf("set to 45 = %v", got)
-	}
-	for _, value := range []string{"", "soon", "0", "-3", "NaN", "Inf"} {
-		svc.applyConfig(map[string]string{"requestTimeout": value})
-		if got := svc.getRequestLimit(); got != 120*time.Second {
-			t.Errorf("value %q: limit = %v, want 120 s", value, got)
-		}
-	}
-}
+// listingAnswer is the answer of a Claude Code that lists two models.
+const listingAnswer = `{"type":"control_response","response":{"subtype":"success","request_id":"numen-models","response":{"models":[{"value":"opus","displayName":"Opus","supportsEffort":true,"supportedEffortLevels":["high","low"]},{"value":"haiku","displayName":"Haiku","supportsEffort":false,"supportedEffortLevels":[]}]}}}`
 
-func newListingClaude(t *testing.T) *agentServer {
+func newListingClaude(t *testing.T) *agent {
 	t.Helper()
-	svc := newClaude(t, "exit 0\n")
-	svc.fetch = func(context.Context, []string, []string) ([]claudeModel, error) {
-		return []claudeModel{
-			{Value: "opus", DisplayName: "Opus", SupportsEffort: true, EffortLevels: []string{"high", "low"}},
-			{Value: "haiku", DisplayName: "Haiku", SupportsEffort: false, EffortLevels: nil},
-		}, nil
-	}
-	return svc
+	return newClaude(t, "read line\nprintf '%s\\n' '"+listingAnswer+"'\nsleep 30\n")
 }
 
 func TestTheModelsOfClaudeAreListedForTheRow(t *testing.T) {
 	svc := newListingClaude(t)
 
-	models, err := svc.ListModels(t.Context(), connection.Call{Type: "claude-code"}, "complete")
+	models, err := svc.completion.ListModels(t.Context(), connection.Call{Type: "claude-code"}, "complete")
 
 	if err != nil {
 		t.Fatal(err)
@@ -259,14 +238,14 @@ func TestTheModelsOfClaudeAreListedForTheRow(t *testing.T) {
 func TestTheLevelsOfTheModelOfTheCallAreListedFromTheLeastToTheMost(t *testing.T) {
 	svc := newListingClaude(t)
 
-	levels, err := svc.ListReasoningLevels(t.Context(), connection.Call{Type: "claude-code", Model: "opus"})
+	levels, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "claude-code", Model: "opus"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(levels) != 2 || levels[0].Value != "low" || levels[1].Value != "high" || levels[1].Title != "High" {
 		t.Errorf("levels = %+v", levels)
 	}
-	none, err := svc.ListReasoningLevels(t.Context(), connection.Call{Type: "claude-code", Model: "haiku"})
+	none, err := svc.completion.ListReasoningLevels(t.Context(), connection.Call{Type: "claude-code", Model: "haiku"})
 	if err != nil || len(none) != 0 {
 		t.Errorf("levels of a model with none = %+v, %v", none, err)
 	}
@@ -274,9 +253,9 @@ func TestTheLevelsOfTheModelOfTheCallAreListedFromTheLeastToTheMost(t *testing.T
 
 func TestListingTheModelsOfAMissingClaudeIsUnreachable(t *testing.T) {
 	withoutClaudeAnywhere(t)
-	svc := &agentServer{clock: &steppingClock{tick: time.Unix(0, 0), step: time.Second}}
+	svc := newTestAgent(t)
 
-	_, err := svc.ListModels(t.Context(), connection.Call{Type: "claude-code"}, "complete")
+	_, err := svc.completion.ListModels(t.Context(), connection.Call{Type: "claude-code"}, "complete")
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Errorf("ListModels = %v, want try the next", err)
@@ -284,7 +263,7 @@ func TestListingTheModelsOfAMissingClaudeIsUnreachable(t *testing.T) {
 }
 
 func TestTheProviderFillsTheRolesOfCompleteAndModels(t *testing.T) {
-	provider := (&agentServer{}).Provider()
+	provider := newTestAgent(t).Provider()
 	if provider.Completer == nil || provider.Models == nil || provider.Embedder != nil || provider.Profiles != nil {
 		t.Errorf("provider = %+v, want complete and the models alone", provider)
 	}

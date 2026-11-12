@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "google/protobuf/struct.proto";
+import "numen/v1/manifest.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// ProviderConnectionService serves the connections to the windows: the places the core sends
+// requests to for the plugins, and the kinds of connection the installed plugins provide. A
+// secret value is written through it and never read back.
+service ProviderConnectionService {
+  // ListProviderConnectionTypes returns the kinds of connection the plugins declare, with the fields
+  // the form of each is built from.
+  rpc ListProviderConnectionTypes(ListProviderConnectionTypesRequest) returns (ListProviderConnectionTypesResponse);
+
+  // ListProviderConnections returns the connections in the order they were created.
+  rpc ListProviderConnections(ListProviderConnectionsRequest) returns (ListProviderConnectionsResponse);
+
+  // CreateProviderConnection adds a connection and keeps its secret fields in the key store.
+  rpc CreateProviderConnection(CreateProviderConnectionRequest) returns (CreateProviderConnectionResponse);
+
+  // UpdateProviderConnection changes a connection that has the revision the request carries.
+  rpc UpdateProviderConnection(UpdateProviderConnectionRequest) returns (UpdateProviderConnectionResponse);
+
+  // DeleteProviderConnection removes a connection and its secret fields.
+  rpc DeleteProviderConnection(DeleteProviderConnectionRequest) returns (DeleteProviderConnectionResponse);
+}
+
+// ProviderConnectionErrorCode is the reason a served call did not succeed. The zero value is a call
+// that succeeded.
+enum ProviderConnectionErrorCode {
+  PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED = 0;
+  // PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND is a connection that is not in the list.
+  PROVIDER_CONNECTION_ERROR_CODE_NOT_FOUND = 1;
+  // PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN is a name another connection has, ignoring case.
+  PROVIDER_CONNECTION_ERROR_CODE_NAME_TAKEN = 2;
+  // PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD is a name, a value or an address the type does not
+  // accept; the detail says which.
+  PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD = 3;
+  // PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE is a type that no installed and enabled plugin
+  // provides.
+  PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE = 4;
+  // PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED is a key store that fails or that this machine
+  // does not have.
+  PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED = 5;
+  // PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION is an update that carries an older revision than
+  // the connection has, because another window changed it.
+  PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION = 6;
+}
+
+// ProviderConnectionType is a kind of connection one plugin provides.
+message ProviderConnectionType {
+  // type_id is the plugin id, a slash and the id the plugin gives the type.
+  string type_id = 1;
+  string plugin_id = 2;
+  string plugin_name = 3;
+  string title = 4;
+  string description = 5;
+  repeated string operations = 6;
+  repeated ManifestConnectionField fields = 7;
+  // is_available is whether the plugin is installed and enabled.
+  bool is_available = 8;
+}
+
+// ProviderConnection is a stored connection. No secret value is part of it.
+message ProviderConnection {
+  string id = 1;
+  string type_id = 2;
+  string name = 3;
+  // fields are the values of the fields the type declares and the connection holds, secret fields
+  // excluded.
+  map<string, google.protobuf.Value> fields = 4;
+  // secret_keys_set are the keys of the secret fields that hold a value for the current address.
+  repeated string secret_keys_set = 5;
+  // is_type_available is false while no installed and enabled plugin provides the type.
+  bool is_type_available = 6;
+  // revision grows by one at every change, including a change of a secret.
+  int32 revision = 8;
+  // is_complete is false while a required field of the type has no value.
+  bool is_complete = 9;
+  // is_private_network_allowed is whether the address may name a private network.
+  bool is_private_network_allowed = 10;
+  // uses are the settings of plugins whose rows name the connection.
+  repeated ProviderConnectionUse uses = 7;
+}
+
+// ProviderConnectionUse is a setting of rows of a plugin that names a connection.
+message ProviderConnectionUse {
+  string plugin_id = 1;
+  string plugin_name = 2;
+  // operation is the operation the setting of rows needs, such as "complete".
+  string operation = 3;
+}
+
+message ListProviderConnectionTypesRequest {}
+
+message ListProviderConnectionTypesResponse {
+  repeated ProviderConnectionType types = 1;
+}
+
+message ListProviderConnectionsRequest {}
+
+message ListProviderConnectionsResponse {
+  repeated ProviderConnection connections = 1;
+}
+
+message CreateProviderConnectionRequest {
+  string type_id = 1;
+  // name is empty for a name the core makes from the title of the type.
+  string name = 2;
+  map<string, google.protobuf.Value> fields = 3;
+  // secrets are the values of the secret fields by key. They are write-only.
+  map<string, string> secrets = 4 [debug_redact = true];
+  bool is_private_network_allowed = 5;
+}
+
+message CreateProviderConnectionResponse {
+  ProviderConnection connection = 1;
+  ProviderConnectionErrorCode error = 2;
+  string detail = 3;
+}
+
+message UpdateProviderConnectionRequest {
+  string id = 1;
+  // revision is the revision the caller read. A connection with another revision is not changed.
+  int32 revision = 2;
+  string name = 3;
+  map<string, google.protobuf.Value> fields = 4;
+  // secrets are the new values of secret fields by key. A key that is absent keeps its value and an
+  // empty value clears it. A change of the address clears every secret field before these are stored.
+  map<string, string> secrets = 5 [debug_redact = true];
+  bool is_private_network_allowed = 6;
+}
+
+message UpdateProviderConnectionResponse {
+  ProviderConnection connection = 1;
+  ProviderConnectionErrorCode error = 2;
+  string detail = 3;
+}
+
+message DeleteProviderConnectionRequest {
+  string id = 1;
+}
+
+message DeleteProviderConnectionResponse {
+  ProviderConnectionErrorCode error = 1;
+  string detail = 2;
+  // removed_uses are the settings whose rows named the connection and were removed with it.
+  repeated ProviderConnectionUse removed_uses = 3;
+}

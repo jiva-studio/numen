@@ -7,7 +7,8 @@
  * computed times.
  */
 import { describe, expect, it } from 'vitest'
-import { applyCues, findCueAt, isSame, spanCues, getText, type Cue } from './cues'
+import { applyCues, findCueAt, isSame, spanCues, getText } from './cues'
+import type { Cue } from '../types'
 
 const CUES: readonly Cue[] = [
   { text: 'A bell over the door.', from: 1_000, to: 3_000 },
@@ -259,7 +260,7 @@ describe('a line of nothing but spaces', () => {
   })
 })
 
-describe('lines that read areNeighbourhoodsEqual', () => {
+describe('lines that read areNeighborhoodsEqual', () => {
   it('keep the unchanged line and drop the other', () => {
     const was: readonly Cue[] = [
       { text: 'Again.', from: 0, to: 1_000 },

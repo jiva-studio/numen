@@ -14,8 +14,9 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
 func failWithDialog(cfg container.Config, why error) error {
@@ -89,13 +90,13 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	response := getFatalReport(cfg, why)
 
 	if constructed, ok := debug.ReadBuildInfo(); ok {
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="a test binary has no module version, so the branch that reports one is reached only in a built release"
 		if version := constructed.Main.Version; version != "" && version != "(devel)" {
 			response.Facts = append(response.Facts, detail{"this build", version})
 		}
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="a test binary carries no version-control settings, so the loop over them is reached only in a built release"
 		for _, setting := range constructed.Settings {
-			// gomutants:disable-next-line
+			// gomutants:disable-next-line reason="a test binary carries no version-control settings, so the match is reached only in a built release"
 			if setting.Key == "vcs.revision" {
 				response.Facts = append(response.Facts, detail{"revision", setting.Value})
 			}
@@ -103,7 +104,7 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	}
 
 	var out strings.Builder
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err := getFatalPage().Execute(&out, response); err != nil {
 		return nil, err
 	}
@@ -111,7 +112,7 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 }
 
 func getFatalReport(cfg container.Config, why error) fatalReport {
-	if outside, ok := errors.AsType[*settings.OutsideBoundsError](why); ok {
+	if outside, ok := errors.AsType[*settingsdomain.OutsideBoundsError](why); ok {
 		return getSizeFatalReport(cfg, outside)
 	}
 
@@ -122,11 +123,11 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 		return getIndexFatalReport(cfg, coded.Code(), why)
 	}
 
-	if unknown, ok := errors.AsType[*container.UnknownVaultError](why); ok {
+	if name, ok := container.GetUnknownVaultName(why); ok {
 		return fatalReport{
 			Heading:  startingAtAll,
-			Sentence: "Vault not found: " + unknown.Name,
-			Facts:    []detail{{"vault", unknown.Name}, {factSettings, getSettingsPath(cfg)}},
+			Sentence: "Vault not found: " + name,
+			Facts:    []detail{{"vault", name}, {factSettings, getSettingsPath(cfg)}},
 			Remedy:   "Start Numen without -vault to choose a vault from the list.",
 		}
 	}
@@ -152,7 +153,7 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 	}
 }
 
-func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBoundsError) fatalReport {
+func getSizeFatalReport(cfg container.Config, outside *settingsdomain.OutsideBoundsError) fatalReport {
 	far := fmt.Sprintf("%v to %v", outside.Min, outside.Max)
 	content := fmt.Sprint(outside.Number)
 
@@ -228,7 +229,7 @@ func getSettingsPath(cfg container.Config) string {
 		return filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	}
 	path, err := settings.Path()
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return ""
 	}

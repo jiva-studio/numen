@@ -12,7 +12,7 @@ export type FloorSource = 'manual' | 'calibrated' | 'model' | 'default'
 /** How a calibration ended when it did not fail. */
 export type CalibrationOutcome = 'calibrated' | 'too-few'
 
-export type GetFloorRequest = Record<string, never>
+type GetFloorRequest = Record<string, never>
 
 export interface Calibration {
   readonly median: number
@@ -33,23 +33,23 @@ export interface GetFloorResponse {
   readonly calibration?: Calibration | undefined
 }
 
-export type CalibrateFloorRequest = Record<string, never>
+type CalibrateFloorRequest = Record<string, never>
 
-export interface CalibrateFloorResponse {
+interface CalibrateFloorResponse {
   readonly outcome: CalibrationOutcome
   readonly state: GetFloorResponse
 }
 
-export interface SetFloorRequest {
+interface SetFloorRequest {
   readonly isManual: boolean
   readonly floor: number
 }
 
-export interface SetFloorResponse {
+interface SetFloorResponse {
   readonly state: GetFloorResponse
 }
 
-export interface ProbeFloorRequest {
+interface ProbeFloorRequest {
   readonly query: string
 }
 
@@ -60,13 +60,13 @@ export interface ProbeFloorResponse {
 }
 
 /** What a calibration answered. A state the answer leaves out is read again. */
-export interface FloorCalibrationResult {
+interface FloorCalibrationResult {
   outcome: CalibrationOutcome
   state?: GetFloorResponse | undefined
 }
 
 /** What a choice of the floor answered. A state the answer leaves out is read again. */
-export interface FloorWriteResult {
+interface FloorWriteResult {
   state?: GetFloorResponse | undefined
 }
 

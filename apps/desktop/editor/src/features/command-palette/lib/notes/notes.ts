@@ -3,8 +3,9 @@
  * An identity is resolved by the store holding it, and an identity no store holds
  * resolves to nothing.
  */
-import type { Selector } from '@numen/plugin-host'
-import type { CommandPlace, Notes, Store } from '../../types'
+import type { Selector } from '@numen/plugin-loader'
+import type { Store } from '../../types'
+import type { CommandPlace, Notes } from '@/shared/model/command'
 
 /** What opens a file: in the current tab or beside it, at a line of the note where one is given. */
 export interface NoteOpeners {
@@ -13,21 +14,22 @@ export interface NoteOpeners {
     title: string,
     options:
       'current' | 'split' | { where: 'current' | 'split'; line?: number; selector?: Selector },
-  ): unknown
+  ): void
 }
 
 const createPlacement = (
-  showing: 'current' | 'split',
+  placement: 'current' | 'split',
   place: CommandPlace | undefined,
 ): Parameters<NoteOpeners['openFile']>[2] => {
   const line = place?.line
   const selector = place?.selector
-  if (line === undefined && selector === undefined) return showing
-  return {
-    where: showing,
-    ...(line === undefined ? {} : { line }),
-    ...(selector === undefined ? {} : { selector }),
+  if (line === undefined && selector === undefined) return placement
+  const target: { where: 'current' | 'split'; line?: number; selector?: Selector } = {
+    where: placement,
   }
+  if (line !== undefined) target.line = line
+  if (selector !== undefined) target.selector = selector
+  return target
 }
 
 export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners): Notes => {
@@ -46,7 +48,7 @@ export const createNotes = (stores: readonly Store[], noteOpeners: NoteOpeners):
       await holder(id)?.flushPending(id)
     },
     close: (id) => holder(id)?.close(id),
-    openFile: (path, title, showing, place) =>
-      noteOpeners.openFile(path, title, createPlacement(showing, place)),
+    openFile: (path, title, placement, place) =>
+      noteOpeners.openFile(path, title, createPlacement(placement, place)),
   }
 }

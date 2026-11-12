@@ -1,0 +1,70 @@
+package index
+
+import (
+	"encoding/hex"
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
+)
+
+func TestSaveVectorsBatchedCommit(t *testing.T) {
+	ctx := t.Context()
+	db := openDB(t)
+
+	vault := getFirstVault().ID
+	path := "doc.md"
+
+	if err := db.Chunks().SaveSource(ctx, vault, chunk.Source{
+		Path: path, Kind: "note", Size: 100, MTime: 1, ContentHash: "h" + path, Recipe: "text",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create 1500 small chunks to test batch sizes of 1000
+	const numChunks = 1500
+	chunks := make([]chunk.Chunk, 1)
+	chunks[0] = chunk.Chunk{Start: 0, Length: numChunks * 10, Text: "whole", Small: make([]chunk.Chunk, numChunks)}
+	for i := range numChunks {
+		chunks[0].Small[i] = chunk.Chunk{Start: i * 10, Length: 10, Text: "chunk" + hex.EncodeToString([]byte{byte(i % 256), byte(i / 256)})}
+	}
+
+	if err := db.Chunks().ReplaceChunks(ctx, vault, "note", path, chunks); err != nil {
+		t.Fatal(err)
+	}
+
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(ctx, vault, "model", chunk.Cursor{}, numChunks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(unembedded) != numChunks {
+		t.Fatalf("expected %d chunks needing embedding, got %d", numChunks, len(unembedded))
+	}
+
+	vectors := make([]chunk.Vector, len(unembedded))
+	for i, o := range unembedded {
+		hash, err := hex.DecodeString(o.ChunkHash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		vectors[i] = chunk.Vector{
+			Chunk:  o.Chunk,
+			Hash:   hash,
+			Recipe: "model",
+			Value:  make([]byte, 1024),
+			Coarse: make([]byte, 1024/8),
+		}
+	}
+
+	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
+		t.Fatalf("batched insertion failed: %v", err)
+	}
+
+	// Verify all were written
+	unembeddedAfter, err := db.ChunkVectors().GetUnembeddedChunks(ctx, vault, "model", chunk.Cursor{}, numChunks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(unembeddedAfter) != 0 {
+		t.Errorf("expected 0 unembedded chunks after save, got %d", len(unembeddedAfter))
+	}
+}

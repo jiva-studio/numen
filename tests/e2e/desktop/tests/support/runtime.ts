@@ -22,7 +22,6 @@ export const System = {
 }
 `
 
-/** Serves the runtime of the platform to the page. */
 export const serveRuntime = async (page: Page, platform: Platform): Promise<void> => {
   await page.route('**/wails/runtime.js', (route) =>
     route.fulfill({ contentType: 'text/javascript', body: createRuntime(platform) }),

@@ -2,17 +2,16 @@
  * Reader state and controls for an open document.
  */
 import { ref, shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage, type Caught } from '@numen/plugin-sdk'
 import type { TextRange } from '../types'
 import { useDocumentNavigation } from './useDocumentNavigation'
 import { useDocumentViewport } from './useDocumentViewport'
 import { useDocumentHighlights } from './useDocumentHighlights'
-import { documents as servedDocuments } from '../api/wire'
-import type { DocumentLayout, Documents, Page, PageHighlight, Rect } from '../types'
+import type { Documents, Page } from '../types'
 
-export type { DocumentLayout, Documents, Page, PageHighlight, Rect }
+export type { Documents, Page }
 export { useDocumentNavigation } from './useDocumentNavigation'
-export { useDocumentViewport } from './useDocumentViewport'
+
 export { useDocumentHighlights } from './useDocumentHighlights'
 
 /** What one open document holds. */
@@ -39,9 +38,7 @@ function createDocumentReaderNavigation(
   return { goToPage, goToNextPage, goToPreviousPage, focusSpans }
 }
 
-export function useDocumentReader(documentsOrPath: Documents | string, maybePath?: string) {
-  const documents = typeof documentsOrPath === 'string' ? servedDocuments : documentsOrPath
-  const path = typeof documentsOrPath === 'string' ? documentsOrPath : maybePath!
+export function useDocumentReader(documents: Documents, path: string) {
   const pages = shallowRef<readonly Page[]>([])
   const stat = ref<string>()
   const error = ref('')
@@ -87,30 +84,17 @@ export function useDocumentReader(documentsOrPath: Documents | string, maybePath
     pages.value = []
   }
 
-  const reportFailure = (caughtError: unknown) => {
-    error.value = formatErrorMessage(caughtError)
+  const reportFailure = (cause: Caught) => {
+    error.value = formatErrorMessage(cause)
   }
 
-  const reader = {
+  return {
     path,
     reportFailure,
-    pages,
-    pageNumber: navigation.pageNumber,
-    picture: viewport.picture,
-    getPageImageUrl: viewport.getPageImageUrl,
-    highlighted: highlights.highlighted,
-    getHighlightsOn: highlights.getHighlightsOn,
-    otherHighlighted: highlights.otherHighlighted,
-    getOtherHighlightsOn: highlights.getOtherHighlightsOn,
-    error,
-    isLoading,
-    goToPage: nav.goToPage,
-    goToNextPage: nav.goToNextPage,
-    goToPreviousPage: nav.goToPreviousPage,
-    widen: viewport.widen,
-    applyHighlights: highlights.applyHighlights,
-    focusSpans: nav.focusSpans,
     close,
+    state: { pages, pageNumber: navigation.pageNumber, error, isLoading },
+    view: viewport,
+    highlights,
+    actions: nav,
   }
-  return reader
 }

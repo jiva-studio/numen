@@ -4,11 +4,13 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
 
 func TestTheHandlerOfCreateTextWritesTheTextLayerOfTheFile(t *testing.T) {
-	texts, server, _ := newVault(t, "books/tiny.pdf", "tiny.pdf")
+	texts, server, _ := testsupport.NewVault(t, "books/tiny.pdf", "tiny.pdf")
 	commands, err := newCommands(server)
 	if err != nil {
 		t.Fatal(err)
@@ -23,13 +25,13 @@ func TestTheHandlerOfCreateTextWritesTheTextLayerOfTheFile(t *testing.T) {
 	if result.Message == "" {
 		t.Error("the handler answered no message")
 	}
-	if text := readLive(t, texts, "books/tiny.pdf"); text.Version().Kind != textKind {
-		t.Errorf("the live version is of kind %q, want %q", text.Version().Kind, textKind)
+	if text := testsupport.ReadLive(t, texts, "books/tiny.pdf"); text.Version().Kind != extract.TextKind {
+		t.Errorf("the live version is of kind %q, want %q", text.Version().Kind, extract.TextKind)
 	}
 }
 
 func TestTheHandlerOfCreateTextNeedsAFile(t *testing.T) {
-	_, server, _ := newVault(t, "books/tiny.pdf", "tiny.pdf")
+	_, server, _ := testsupport.NewVault(t, "books/tiny.pdf", "tiny.pdf")
 	commands, err := newCommands(server)
 	if err != nil {
 		t.Fatal(err)

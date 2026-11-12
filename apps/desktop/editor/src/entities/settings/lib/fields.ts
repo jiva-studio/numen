@@ -2,17 +2,18 @@
  * The settings file read and written by key path: a value as the type a field
  * needs, and a value or a model written back.
  */
+import type { JsonValue } from '@/shared/api/json'
 import type { Model, SettingEdit } from './configuration'
 import { write } from './write'
 
 /** Where the settings stand, and where a change to them goes. */
-export interface SettingSource {
-  getSetting(path: readonly string[]): unknown
+interface SettingSource {
+  getSetting(path: readonly string[]): JsonValue | undefined
   getModels(path: readonly string[]): readonly Model[]
   write(content: readonly SettingEdit[]): void
 }
 
-export interface SettingFields {
+interface SettingFields {
   /** The text at a setting, and nothing for any other value. */
   getString(path: readonly string[]): string
   /** Whether a setting is on. */
@@ -23,7 +24,7 @@ export interface SettingFields {
   /** The models a setting that names one can be set to. */
   getModels(path: readonly string[]): readonly Model[]
   /** A value written at a setting. */
-  setValue(path: readonly string[], value: unknown): void
+  setValue(path: readonly string[], value: JsonValue): void
   /** A model chosen by name: its own writes where it is a preset, else the name itself. */
   chooseModel(path: readonly string[], name: string): void
 }
@@ -46,7 +47,7 @@ export function createSettingFields(getSource: () => SettingSource): SettingFiel
 
   const getModels = (path: readonly string[]): readonly Model[] => getSource().getModels(path)
 
-  const setValue = (path: readonly string[], value: unknown): void => {
+  const setValue = (path: readonly string[], value: JsonValue): void => {
     getSource().write([{ at: path, value: write(value) }])
   }
 

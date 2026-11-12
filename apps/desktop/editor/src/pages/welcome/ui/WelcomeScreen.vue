@@ -2,111 +2,28 @@
 /**
  * The screen a window holding nothing shows: the vaults this installation
  * holds, and the ways into the one it is showing.
- *
- * chosen here, where the window's own icons are. A letter alone opens the vault
- * standing at it, which is the letter drawn on that row.
  */
-import { computed, onMounted, onUnmounted } from 'vue'
-import { formatErrorMessage } from '@numen/core-client'
-import { getVaultForKey, WelcomePage } from '@numen/shell'
-import { runInBackground } from '@numen/ui'
-import {
-  runInvocation,
-  createInvocation,
-  createRowKeys,
-  ANSWER_WORDS,
-  type VaultRef,
-} from '@/features/command-palette'
-import { COMMAND } from '@/shared/commandIds'
-import { findIcon } from '@/shared/icons'
-import { getUserAgent } from '@/shared/lib/dom'
+import { WelcomePage } from '@numen/workbench'
+import { WORDS as words } from '@/shared/ui/words'
 import { VERSION } from '../lib/version'
-import { COMMANDS, createVaultRows, createWelcomeActions } from '../lib/screen'
-import { WORDS as words } from '@/shared/words'
-import type { WelcomeScreenProps } from './welcomeScreen.types'
+import { useWelcomeScreen, type WelcomeScreenProps } from '../model/useWelcomeScreen'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<WelcomeScreenProps>()
 
 /* --------------------------------- State ---------------------------------- */
-const adding = computed(() => {
-  const icon = findIcon(COMMAND.createVault)
-  return {
-    text: words.newVault,
-    detail: words.newVaultDetail,
-    ...(icon ? { icon } : {}),
-    ...createRowKeys(COMMAND.createVault, getUserAgent()),
-  }
-})
-
-const ways = computed(() => {
-  const target = props.getTarget()
-  return createWelcomeActions(
-    { vault: target.vault.id, isReady: target.isReady },
-    words,
-    getUserAgent(),
-    props.pluginWays,
-  ).map((one) => {
-    const icon = one.icon ?? findIcon(one.id)
-    return { ...one, ...(icon ? { icon } : {}) }
-  })
-})
-
-const onList = computed(() => createVaultRows(props.vaultList, words))
-
-/** Whether the welcome screen is the one the user is viewing and typing into. */
-const welcoming = computed(
-  () => props.tabs.length === 0 && !props.search.open.value && !props.commands.open.value,
-)
-
-/* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => globalThis.addEventListener('keydown', onKeyDown))
-onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
-
-/* -------------------------------- Handlers -------------------------------- */
-function onRun(id: string) {
-  if (id !== COMMANDS) return props.runCommand(id, props.getTarget())
-  props.search.setOpen(false)
-  props.commands.setOpen(true)
-}
-
-function onOpen(id: string) {
-  const one = props.vaultList.vaults.find((vault) => vault.id === id)
-  if (!one) return
-  if (id === props.vaultList.showing) {
-    props.openCurrentVault?.()
-    return
-  }
-  const vault: VaultRef = { id: one.id, name: one.name }
-  runInBackground(
-    runInvocation(
-      createInvocation(COMMAND.openVault, { ...props.getTarget(), vault }),
-      props.doing,
-      ANSWER_WORDS,
-    ),
-    (error) => props.doing.writeMessage(formatErrorMessage(error), 'error'),
-  )
-}
-
-function onKeyDown(event: KeyboardEvent) {
-  if (event.defaultPrevented || !welcoming.value) return
-  const pos = getVaultForKey(event, onList.value.length)
-  const one = pos === null ? undefined : onList.value[pos]
-  if (!one) return
-  event.preventDefault()
-  onOpen(one.id)
-}
+const { adding, ways, vaults, onRun, onOpen, onTakeFooter } = useWelcomeScreen(props)
 </script>
 
 <template>
   <WelcomePage
     :ways="ways"
-    :vaults="onList"
+    :vaults="vaults"
     :heading="words.vaults"
     :footer="adding"
     :version="VERSION"
     @run="onRun"
     @open="onOpen"
-    @take-footer="runCommand(COMMAND.createVault, getTarget())"
+    @take-footer="onTakeFooter"
   />
 </template>

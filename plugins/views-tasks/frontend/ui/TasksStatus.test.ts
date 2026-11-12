@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { APPEAR_DELAY_MS } from '../lib/chipDisplay'
+import { APPEAR_DELAY_MS } from '../model/chipDisplay'
 import { createTask } from '../testing/tasks'
 import TasksStatus from './TasksStatus.vue'
 

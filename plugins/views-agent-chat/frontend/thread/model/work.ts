@@ -2,12 +2,13 @@
  * The status line showing the tool the agent is running, and the wait line
  * under it, shown whenever no more specific status is known.
  */
-import { writeCharCount, type Turn } from '../lib/turn'
+import { writeCharCount } from '../lib/turn'
+import type { Turn } from '../../types'
 import type { SourceLocation } from '@numen/plugin-sdk'
 
 const getSpokenTool = (tool: string) => tool.replaceAll('_', ' ')
 
-export interface WorkCall {
+interface WorkCall {
   readonly tool: string
   readonly subject: string
   readonly location?: SourceLocation | null | undefined
@@ -17,7 +18,7 @@ export interface WorkCall {
 export interface WorkLine {
   readonly reach: (call: WorkCall) => void
   readonly settle: () => void
-  readonly takeDown: () => void
+  readonly dropWorkLine: () => void
   readonly setWaiting: (isOn: boolean) => void
   readonly clear: () => void
 }
@@ -59,7 +60,7 @@ export function createWorkLine(options: WorkLineOptions, workId: string, wait: s
     up = true
   }
 
-  const takeDown = () => {
+  const dropWorkLine = () => {
     drop(workId)
     locations.delete(workId)
     up = false
@@ -86,10 +87,10 @@ export function createWorkLine(options: WorkLineOptions, workId: string, wait: s
     settle: () => {
       if (up) show('settled')
     },
-    takeDown,
+    dropWorkLine,
     setWaiting,
     clear: () => {
-      takeDown()
+      dropWorkLine()
       setWaiting(false)
     },
   }

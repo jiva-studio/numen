@@ -34,6 +34,38 @@ describe('the manifest', () => {
     ])
   })
 
+  it('places showing a note in the file tree in the menu of a search result, after showing it in the plex', () => {
+    expect(
+      (manifest.contributes.slots ?? []).filter((one) => one.slot === 'palette.searchResult'),
+    ).toStrictEqual([
+      {
+        slot: 'palette.searchResult',
+        command: 'app:file.reveal',
+        values: { kind: 'files' },
+        title: 'Show in file tree',
+        icon: 'folder-open',
+        group: 'navigate',
+        order: 30,
+        when: 'target.isNote',
+      },
+    ])
+  })
+
+  it('places showing the note in front in the file tree among the commands of the palette over a note', () => {
+    expect(
+      (manifest.contributes.slots ?? []).filter((one) => one.slot === 'palette.note'),
+    ).toStrictEqual([
+      {
+        slot: 'palette.note',
+        command: 'app:file.reveal',
+        values: { kind: 'files' },
+        title: 'Show in file tree',
+        icon: 'folder-open',
+        when: 'target.isNote',
+      },
+    ])
+  })
+
   it('declares the command the title bar shows with the title and the icon of a folder tree', () => {
     expect(manifest.contributes.commands.find((one) => one.id === 'tree.open')).toMatchObject({
       title: 'Open file tree',
@@ -55,14 +87,14 @@ describe('the menu of a row', () => {
       },
       {
         slot: 'fileTree.new',
-        command: 'tree.createNote',
+        command: 'app:note.create',
         group: '0-tree',
         order: 10,
         when: 'target.isFolder',
       },
       {
         slot: 'fileTree.new',
-        command: 'tree.createFolder',
+        command: 'app:folder.create',
         group: '0-tree',
         order: 20,
         when: 'target.isFolder',
@@ -80,19 +112,11 @@ describe('the menu of a row', () => {
   it('declares the commands the menu runs, over any row', () => {
     expect(getCommand('tree.renameFile')).toStrictEqual({
       id: 'tree.renameFile',
-      title: 'Rename file',
+      title: 'Rename',
       icon: 'pencil',
     })
-    expect(getCommand('tree.createNote')).toStrictEqual({
-      id: 'tree.createNote',
-      title: 'Create note here',
-      icon: 'file-plus',
-    })
-    expect(getCommand('tree.createFolder')).toStrictEqual({
-      id: 'tree.createFolder',
-      title: 'Create folder',
-      icon: 'folder-plus',
-    })
+    expect(getCommand('tree.createNote')).toBeUndefined()
+    expect(getCommand('tree.createFolder')).toBeUndefined()
   })
 })
 

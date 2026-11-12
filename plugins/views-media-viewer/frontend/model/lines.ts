@@ -4,7 +4,8 @@
  */
 import { computed, type Ref } from 'vue'
 import { clock } from '@numen/ui'
-import { spanCues, type Cue } from '../lib/cues'
+import { spanCues } from '../lib/cues'
+import type { Cue } from '../types'
 
 export function useTranscriptLines(cues: Ref<readonly Cue[]>, prose: Ref<string>) {
   /**

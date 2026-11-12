@@ -86,7 +86,6 @@
       }
     ]
   },
-  "permissions": ["network:outbound"],
   "services": ["numen.v1.ProviderService"],
   "settings": [
     {

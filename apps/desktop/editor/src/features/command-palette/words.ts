@@ -1,76 +1,41 @@
 /**
- * The palette's display strings: every command as offered, and every answer
- * shown after a command has been carried out.
+ * The palette's display strings: the commands it owns and the steps it draws.
  *
  * Contains no decisions. `types.ts` defines what a command is and
  * `lib/table.ts` lists which commands exist; this file holds only their text.
  */
 // Stryker disable StringLiteral: interface copy
-import type { PaletteKeys } from '@numen/ui'
-import { VAULT_ERRORS } from '@/entities/vault'
-import type { VaultErrorCode } from '@/entities/vault'
-import type { ErrorCode } from '@/shared/errors'
-import { WORDS } from '@/shared/words'
+import type { Keystroke } from '@numen/ui'
 import type { EmptyWords } from './model/search/search'
-
-export const ANSWER_WORDS: AnswerWords = {
-  ...WORDS,
-  vaultErrors: VAULT_ERRORS,
-}
-
-/** The text shown for the outcome of carrying out a command. */
-export interface AnswerWords {
-  readonly errors: Record<ErrorCode, string>
-  readonly vaultErrors: Record<VaultErrorCode, string>
-  readonly folder: string
-  readonly dangling: string
-  readonly nowhere: string
-  readonly unanswered: string
-  readonly stale: string
-  readonly alreadyExists: string
-}
-
-/** Text for the step that requires the user to retype a name. */
-export interface RetypeWords {
-  readonly action: string
-  readonly detail: string
-  readonly back: string
-}
-
-/** The words the step that confirms is drawn in. */
-export interface ConfirmWords {
-  readonly keeps: string
-  readonly retainedNotice: string
-  readonly action: string
-  readonly detail: string
-}
 
 /** Everything the commands say in the window's voice. */
 export interface Words extends EmptyWords {
   readonly read: string
   readonly readDocument: string
   readonly beside: string
+  readonly reveal: string
   readonly travel: string
   readonly child: string
   readonly parent: string
   readonly jump: string
   readonly title: string
   readonly remove: string
-  readonly destroy: string
   readonly copy: string
   readonly newNote: string
+  readonly newFolder: string
   readonly close: string
   readonly settings: string
   readonly find: string
   readonly openSettings: string
   readonly searchVault: string
-  readonly findKeys: PaletteKeys
+  readonly findKeys: Keystroke
   readonly goto: string
   readonly openVault: string
   readonly newVault: string
   readonly renameVault: string
   readonly removeVault: string
   readonly eraseVault: string
+  readonly emptyTrash: string
   readonly noteGroupTitle: string
   readonly overFile: string
   readonly overWindow: string
@@ -98,18 +63,49 @@ export interface Words extends EmptyWords {
   readonly answer: string
   readonly retainedNotice: string
   readonly keepsVault: string
+  readonly keepsTrash: string
+  readonly emptiesTrash: string
   readonly removeVaultAction: string
   readonly stays: string
   readonly exactly: string
   readonly typeBack: string
-  readonly destroys: string
-  readonly forever: string
   readonly typeVaultBack: string
   readonly erases: string
   readonly binned: string
-  readonly creating: string
   readonly creates: string
   readonly asChild: string
   readonly asParent: string
   readonly asJump: string
+}
+
+/** The words only the palette says; the window's own words are joined to them where it is built. */
+export const PALETTE_WORDS = {
+  meaning: 'Meaning',
+  readAt: 'Open at this heading',
+  noneFound: 'No results found',
+  noQuery: 'Search failed',
+  nothingFound: (query: string) => `No results for “${query}”`,
+  notEmbedded: 'Semantic index not built yet',
+  wordsOnly: 'Text search only: no embedding model set',
+  noteGroupTitle: 'Note',
+  overFile: 'File',
+  overWindow: 'General',
+  overSettings: 'Settings',
+  overVault: 'Vault',
+  noVault: 'No vault open',
+  noNote: 'No active note',
+  typeCommand: 'Type a command',
+  callIt: 'Name it',
+  givesIt: 'Set',
+  leavesOut: 'Clear',
+  typeNote: 'Search notes',
+  typeItems: 'Search',
+  typeVault: 'Search vaults',
+  typeBack: 'Type the note name to confirm',
+  chooses: 'Select',
+  asChild: 'Create as child',
+  asParent: 'Create as parent',
+  asJump: 'Create as jump',
+  findAction: 'Search actions',
+  noAction: 'No actions found',
 }

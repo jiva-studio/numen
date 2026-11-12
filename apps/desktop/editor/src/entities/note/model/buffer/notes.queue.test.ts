@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from './results'
 import type { Event } from './tab'
-import type { Notes } from './types'
+import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 import { createNoteQueue, convertErrorCode } from './queue'
 
 function rethrow(error: unknown): never {
@@ -30,18 +30,16 @@ describe('the queue of an open note', () => {
   const setup = (notes: Partial<Notes> = {}, hasTab = true) => {
     const turned: [string, Event][] = []
     const resumed: string[] = []
-    const queue = createNoteQueue(
-      {
-        read: async () => asValue({ body: '' }),
-        write: async () => asValue({ body: '' }),
-        ...notes,
-      },
-      {
-        dispatch: (id, event) => turned.push([id, event]),
-        hasTab: () => hasTab,
-        resumeClosing: (id) => resumed.push(id),
-      },
-    )
+    answerNotes({
+      read: async () => asValue({ body: '' }),
+      write: async () => asValue({ body: '' }),
+      ...notes,
+    })
+    const queue = createNoteQueue({
+      dispatch: (id, event) => turned.push([id, event]),
+      hasTab: () => hasTab,
+      resumeClosing: (id) => resumed.push(id),
+    })
     return { queue, turned, resumed }
   }
 
@@ -165,13 +163,16 @@ describe('the queue of an open note', () => {
   describe('a read', () => {
     it('passes the body and the file it came from to the tab', async () => {
       const { queue, turned } = setup({
-        read: async () => asValue({ body: 'text', at: 'v1' }),
+        read: async () => asValue({ body: 'text', at: '1 1 v1' }),
       })
 
       await queue.read('a', 'Note.md', 3)
 
       expect(turned).toEqual([
-        ['a', { kind: 'read', generation: 3, answer: { kind: 'body', body: 'text', at: 'v1' } }],
+        [
+          'a',
+          { kind: 'read', generation: 3, answer: { kind: 'body', body: 'text', at: '1 1 v1' } },
+        ],
       ])
     })
 
@@ -221,12 +222,12 @@ describe('the queue of an open note', () => {
   describe('a write', () => {
     it('passes the file it wrote to the tab and lets a closing tab go on', async () => {
       const { queue, turned, resumed } = setup({
-        write: async () => asValue({ body: '', at: 'v2' }),
+        write: async () => asValue({ body: '', at: '1 2 v2' }),
       })
 
       await queue.write('a', { path: 'Note.md', body: 'text', baseline: null })
 
-      expect(turned).toEqual([['a', { kind: 'written', answer: { kind: 'ok', at: 'v2' } }]])
+      expect(turned).toEqual([['a', { kind: 'written', answer: { kind: 'ok', at: '1 2 v2' } }]])
       expect(resumed).toEqual(['a'])
     })
 
@@ -257,7 +258,7 @@ describe('the queue of an open note', () => {
       ])
     })
 
-    it('reports a call that threw as unreachable, and does not resume closing', async () => {
+    it('reports a call that threw as unreachable, and lets a closing tab go on', async () => {
       const { queue, turned, resumed } = setup({
         write: async () => {
           throw new Error('down')
@@ -269,7 +270,7 @@ describe('the queue of an open note', () => {
       expect(turned).toEqual([
         ['a', { kind: 'written', answer: { kind: 'error', error: 'unreachable' } }],
       ])
-      expect(resumed).toEqual([])
+      expect(resumed).toEqual(['a'])
     })
   })
 })

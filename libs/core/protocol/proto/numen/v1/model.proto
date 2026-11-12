@@ -1,0 +1,171 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/embedding.proto";
+import "numen/v1/hostmodel.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// ModelService answers a window about the models of a connection and carries out the operations a plugin
+// view asks for. The calls name the plugin they are made for, so the host endpoint that plugin processes
+// reach with their token does not mount it, and the handler refuses a request that carries a token.
+service ModelService {
+  // ListModels lists the models of a connection that fit an operation. A model the service does not list
+  // is still accepted when typed.
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse);
+
+  // ListReasoningLevels lists the reasoning levels of a model of a connection.
+  rpc ListReasoningLevels(ListReasoningLevelsRequest) returns (ListReasoningLevelsResponse);
+
+  // Complete turns messages into the text of an answer, through the rows of the plugin the request names.
+  rpc Complete(ModelServiceCompleteRequest) returns (ModelServiceCompleteResponse);
+
+  // Chat streams the next turn of a conversation through the rows of the plugin the request names.
+  rpc Chat(ModelServiceChatRequest) returns (stream ModelServiceChatResponse);
+
+  // Embed turns texts into vectors, in the order of the texts, through the rows of the plugin the request names.
+  rpc Embed(ModelServiceEmbedRequest) returns (ModelServiceEmbedResponse);
+
+  // GetEmbeddingProfile returns the profile of the embedding model of the first row of the plugin that answers.
+  rpc GetEmbeddingProfile(ModelServiceGetEmbeddingProfileRequest) returns (ModelServiceGetEmbeddingProfileResponse);
+}
+
+// ModelErrorCode is the reason a served call did not succeed. The zero value is a call that succeeded.
+enum ModelErrorCode {
+  MODEL_ERROR_CODE_UNSPECIFIED = 0;
+  // MODEL_ERROR_CODE_NOT_FOUND is a connection that is not in the list.
+  MODEL_ERROR_CODE_NOT_FOUND = 1;
+  // MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE is a provider that cannot be started or that failed; the detail
+  // says why, for example that the key was rejected.
+  MODEL_ERROR_CODE_PROVIDER_UNAVAILABLE = 2;
+  // MODEL_ERROR_CODE_NO_CONNECTION is a plugin with no row that can serve the operation.
+  MODEL_ERROR_CODE_NO_CONNECTION = 3;
+  // MODEL_ERROR_CODE_ALL_FAILED is every row set aside or failed; the failures name each one.
+  MODEL_ERROR_CODE_ALL_FAILED = 4;
+  // MODEL_ERROR_CODE_REJECTED is a request that is wrong in itself; the failure names the connection.
+  MODEL_ERROR_CODE_REJECTED = 5;
+}
+
+message ConnectionModel {
+  string id = 1;
+  string title = 2;
+  // operations are what the service says the model does; empty when it says nothing, and then the model
+  // is shown for every operation.
+  repeated string operations = 3;
+}
+
+message ConnectionReasoningLevel {
+  string value = 1;
+  string title = 2;
+}
+
+message ListModelsRequest {
+  string connection_id = 1;
+  string operation = 2;
+}
+
+message ListModelsResponse {
+  repeated ConnectionModel models = 1;
+  ModelErrorCode error = 2;
+  string detail = 3;
+}
+
+message ListReasoningLevelsRequest {
+  string connection_id = 1;
+  string model = 2;
+}
+
+message ListReasoningLevelsResponse {
+  repeated ConnectionReasoningLevel levels = 1;
+  ModelErrorCode error = 2;
+  string detail = 3;
+}
+
+// ModelFailure is one row that did not answer.
+message ModelFailure {
+  string connection_name = 1;
+  string reason = 2;
+}
+
+message ModelMessage {
+  // role is system, user or assistant.
+  string role = 1;
+  string text = 2;
+}
+
+message ModelServiceCompleteRequest {
+  // plugin_id is the plugin whose rows serve the call.
+  string plugin_id = 1;
+  repeated ModelMessage messages = 2;
+  optional double temperature = 3;
+  int32 max_tokens = 4;
+  Priority priority = 5;
+}
+
+message ModelServiceCompleteResponse {
+  string text = 1;
+  ModelErrorCode error = 2;
+  string detail = 3;
+  repeated ModelFailure failures = 4;
+}
+
+message ModelServiceChatRequest {
+  // plugin_id is the plugin whose rows serve the call.
+  string plugin_id = 1;
+  repeated HostModelChatMessage messages = 2;
+  repeated HostModelToolDefinition tools = 3;
+  optional double temperature = 4;
+  int32 max_tokens = 5;
+  Priority priority = 6;
+}
+
+// ModelChatError is a turn that did not succeed. A failure after the first event is ALL_FAILED with the
+// one connection that failed.
+message ModelChatError {
+  ModelErrorCode error = 1;
+  string detail = 2;
+  repeated ModelFailure failures = 3;
+}
+
+// ModelServiceChatResponse is one event of a turn. A turn ends with a finish or an error.
+message ModelServiceChatResponse {
+  oneof event {
+    string text_delta = 1;
+    HostModelToolCall tool_call = 2;
+    HostModelChatFinish finish = 3;
+    ModelChatError failure = 4;
+  }
+}
+
+message ModelServiceEmbedRequest {
+  string plugin_id = 1;
+  repeated string texts = 2;
+  Priority priority = 3;
+}
+
+message ModelServiceEmbedResponse {
+  repeated FloatVector vectors = 1;
+  ModelErrorCode error = 2;
+  string detail = 3;
+  repeated ModelFailure failures = 4;
+}
+
+message ModelServiceGetEmbeddingProfileRequest {
+  string plugin_id = 1;
+}
+
+message ModelServiceGetEmbeddingProfileResponse {
+  // model is the model of the row that answered.
+  string model = 1;
+  string source = 2;
+  string pooling = 3;
+  string query_prefix = 4;
+  string document_prefix = 5;
+  int32 dimensions = 6;
+  // max_tokens is zero when the provider does not know the limit.
+  int32 max_tokens = 7;
+  ModelErrorCode error = 8;
+  string detail = 9;
+  repeated ModelFailure failures = 10;
+}

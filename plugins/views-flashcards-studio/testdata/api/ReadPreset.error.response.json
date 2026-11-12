@@ -1,5 +1,5 @@
 {
-  "error": "notFound",
+  "error": "not_found",
   "bounds": {
     "minutesADay": {
       "min": 1,

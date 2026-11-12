@@ -11,8 +11,8 @@ import {
   type Point,
   type Settings,
   type SettingsBounds,
-} from '../types'
-import { getGoalValue, findNearest } from './curve'
+} from '../../lib/presets'
+import { getGoalValue, findNearestGridValue } from './curve'
 
 /** How many places the line drawn in the answer's place is worked out at. */
 const PLACES = 25
@@ -44,7 +44,7 @@ export const estimateCurve = (settings: Settings, today: string, within: Setting
   const points = grid.map((value) => estimatePoint(settings, value, grid))
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
   const value = getGoalValue(settings, today)
-  const place = findNearest(grid, value)
+  const place = findNearestGridValue(grid, value)
   const now: CurvePoint = { index: place, value, day: days[place] ?? '' }
   return {
     goal: settings.goal,

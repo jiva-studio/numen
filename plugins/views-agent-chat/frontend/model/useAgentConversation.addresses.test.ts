@@ -4,7 +4,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
-import type { Conversation, Turn } from '../thread'
+import type { Conversation } from '../thread'
+import type { Turn } from '../types'
 import { useAgentConversation } from './useAgentConversation'
 import type { TextRange } from '@numen/plugin-sdk'
 import { createLinkResolver } from '../fixtures/links'
@@ -62,7 +63,7 @@ describe('the notes an answer names', () => {
     const one = open([turn('a', 'See [[Entropy]].')])
     one.turns.value = [...one.turns.value, turn('b', 'And [[Entropy]] with [[Order]].')]
     await settle()
-    expect(one.state.turns.value).toHaveLength(2)
+    expect(one.state.addresses.turns.value).toHaveLength(2)
     expect(one.requests).toEqual(['See [[Entropy]].', 'And [[Entropy]] with [[Order]].'])
   })
 
@@ -91,7 +92,7 @@ describe('the notes an answer names', () => {
     await settle()
 
     expect(one.requests).toEqual(['See [[Entropy]].', 'See [[Order]].'])
-    expect(one.state.turns.value[0]?.unresolved).toEqual(['name://Order'])
+    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual(['name://Order'])
   })
 })
 
@@ -100,29 +101,29 @@ describe('a turn drawn with the notes that reach nothing', () => {
     const one = open([turn('a', 'See nothing.')])
     await settle()
 
-    expect(one.state.turns.value[0]).toBe(one.turns.value[0])
+    expect(one.state.addresses.turns.value[0]).toBe(one.turns.value[0])
   })
 
   it('carries the links the core read, and no address where every note was found', async () => {
     const one = open([turn('a', 'See [[Entropy|heat]].')], { 'name://Entropy': 'Entropy.md' })
     await settle()
 
-    expect(one.state.turns.value[0]?.links).toEqual([
+    expect(one.state.addresses.turns.value[0]?.links).toEqual([
       { raw: '[[Entropy|heat]]', href: 'name://Entropy', text: 'heat' },
     ])
-    expect(one.state.turns.value[0]?.unresolved).toEqual([])
+    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual([])
   })
 
   it('is the same turn while nothing about its links changed', async () => {
     const one = open([turn('a', 'See [[Entropy]].')])
     await settle()
 
-    const before = one.state.turns.value[0]
+    const before = one.state.addresses.turns.value[0]
 
     one.turns.value = [...one.turns.value, turn('b', 'Plain.')]
     await settle()
 
-    expect(one.state.turns.value[0]).toBe(before)
+    expect(one.state.addresses.turns.value[0]).toBe(before)
   })
 
   it('keeps the previous links while the longer text resolves', async () => {
@@ -131,29 +132,40 @@ describe('a turn drawn with the notes that reach nothing', () => {
 
     one.turns.value = [turn('a', 'See [[Entropy]] and more')]
 
-    expect(one.state.turns.value[0]?.links?.map((link) => link.raw)).toEqual(['[[Entropy]]'])
+    expect(one.state.addresses.turns.value[0]?.links?.map((link) => link.raw)).toEqual([
+      '[[Entropy]]',
+    ])
   })
 
   it('names the notes again once they change while the turn stays', async () => {
     const one = open([turn('a', 'See [[Entropy]].')])
     await settle()
-    expect(one.state.turns.value[0]?.unresolved).toEqual(['name://Entropy'])
+    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual(['name://Entropy'])
 
     rewrite(one.turns.value[0]!, 'See [[Entropy]] and [[Order]].')
     await settle()
 
-    expect(one.state.turns.value[0]?.unresolved).toEqual(['name://Entropy', 'name://Order'])
+    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual([
+      'name://Entropy',
+      'name://Order',
+    ])
   })
 
   it('names the notes again when as many are named but not the same', async () => {
     const one = open([turn('a', 'See [[Entropy]] and [[Order]].')])
     await settle()
-    expect(one.state.turns.value[0]?.unresolved).toEqual(['name://Entropy', 'name://Order'])
+    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual([
+      'name://Entropy',
+      'name://Order',
+    ])
 
     rewrite(one.turns.value[0]!, 'See [[Entropy]] and [[Chaos]].')
     await settle()
 
-    expect(one.state.turns.value[0]?.unresolved).toEqual(['name://Entropy', 'name://Chaos'])
+    expect(one.state.addresses.turns.value[0]?.unresolved).toEqual([
+      'name://Entropy',
+      'name://Chaos',
+    ])
   })
 })
 
@@ -163,7 +175,11 @@ describe('a link inside an answer', () => {
     const text =
       '[a](numen:Source.pdf?start=10&length=4) [b](numen:Other.pdf?start=5&length=2) [c](numen:Source.pdf?start=90&length=2)'
 
-    one.state.followLink(turn('a', text), 'numen:Source.pdf?start=10&length=4', createPress().press)
+    one.state.addresses.followLink(
+      turn('a', text),
+      'numen:Source.pdf?start=10&length=4',
+      createPress().press,
+    )
 
     expect(one.opened).toEqual([
       [
@@ -180,7 +196,7 @@ describe('a link inside an answer', () => {
     const one = open([turn('a', 'See [[Entropy]].')], { 'name://Entropy': 'Entropy.md' })
     await settle()
 
-    one.state.followLink(one.turns.value[0]!, 'name://Entropy', createPress().press)
+    one.state.addresses.followLink(one.turns.value[0]!, 'name://Entropy', createPress().press)
 
     expect(one.adjacentItems).toEqual(['Entropy.md'])
   })
@@ -190,7 +206,7 @@ describe('a link inside an answer', () => {
     await settle()
     const press = createPress()
 
-    one.state.followLink(one.turns.value[0]!, 'name://Nowhere', press.press)
+    one.state.addresses.followLink(one.turns.value[0]!, 'name://Nowhere', press.press)
 
     expect(one.adjacentItems).toEqual([])
     expect(press.was()).toBe(false)
@@ -201,13 +217,13 @@ describe('a link inside an answer', () => {
       'name://Amazon river': 'notes/Amazon river.md',
     })
     const press1 = createPress()
-    one.state.followLink(one.turns.value[0]!, 'Amazon%20river.md', press1.press)
+    one.state.addresses.followLink(one.turns.value[0]!, 'Amazon%20river.md', press1.press)
     expect(press1.was()).toBe(true)
     await settle()
     expect(one.adjacentItems).toEqual(['notes/Amazon river.md'])
 
     const press2 = createPress()
-    one.state.followLink(one.turns.value[0]!, 'numen:notes%2FDirect.md', press2.press)
+    one.state.addresses.followLink(one.turns.value[0]!, 'numen:notes%2FDirect.md', press2.press)
     expect(press2.was()).toBe(true)
     await settle()
     expect(one.adjacentItems).toEqual(['notes/Amazon river.md', 'notes/Direct.md'])

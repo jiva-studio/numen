@@ -1,7 +1,7 @@
 /** The actions a search result actionIds: opening the note, then the entries plugins place in its menu. */
 import { describe, expect, it } from 'vitest'
-import { COMMAND } from '@/shared/commandIds'
-import type { SlotCommand } from '@numen/plugin-host'
+import { COMMAND, ROW } from '@/shared/model/command'
+import type { SlotCommand } from '@numen/plugin-loader'
 import {
   createNameItem,
   createPassageItem,
@@ -23,7 +23,6 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Words only',
   notEmbedded: 'Not read for meaning yet',
-  creating: 'No results',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',
@@ -52,7 +51,7 @@ const OTHER = entry(`${ATLAS}:other.run`, 'Another')
 const ENTRIES = [SHOW, OTHER]
 
 /** The first action of a note is the id of the editor command that opens it, and an entry is the id of its command. */
-const openId = COMMAND.openNote
+const openId = COMMAND.openFile
 const showId = SHOW.command
 const otherId = OTHER.command
 
@@ -166,31 +165,35 @@ describe('a passage found in a file that is no note', () => {
       ENTRIES,
     )
 
-    expect(row.item.actions).toStrictEqual([{ id: COMMAND.openFile, text: 'Open the document' }])
-    expect(row.hit.actionIds).toStrictEqual([COMMAND.openFile])
+    expect(row.item.actions).toStrictEqual([{ id: ROW.openDocument, text: 'Open the document' }])
+    expect(row.hit.actionIds).toStrictEqual([ROW.openDocument])
   })
 })
 
 describe('the command an action of a result runs', () => {
-  const createHit = (overrides: Partial<SearchHit> = {}): SearchHit => ({
-    path: 'reef/Coral.md',
-    title: 'Coral',
-    line: 3,
-    start: 12,
-    length: 4,
-    actionIds: [openId, showId, otherId],
-    type: 'sample',
-    selector: null,
-    ...overrides,
+  /** The fields of a hit, flat: where it is found, the ids of its actions, its type and selector. */
+  type HitFields = Partial<SearchHit['spot']> &
+    Partial<Pick<SearchHit, 'type' | 'selector'>> & { actionIds?: readonly string[] }
+
+  const createHit = ({
+    actionIds = [openId, showId, otherId],
+    type = 'sample',
+    selector = null,
+    ...spot
+  }: HitFields = {}): SearchHit => ({
+    spot: { path: 'reef/Coral.md', title: 'Coral', line: 3, start: 12, length: 4, ...spot },
+    actionIds,
+    type,
+    selector,
   })
 
-  const createDocument = (overrides: Partial<SearchHit> = {}): SearchHit =>
+  const createDocument = (overrides: HitFields = {}): SearchHit =>
     createHit({
       path: 'library/a.bin',
       title: '',
       line: -1,
       type: null,
-      actionIds: [COMMAND.openFile],
+      actionIds: [ROW.openDocument],
       selector: { page: 3 },
       ...overrides,
     })
@@ -205,7 +208,7 @@ describe('the command an action of a result runs', () => {
 
   it('is the command that opens the note, over the note of the hit', () => {
     expect(resolveChoice(createHit(), openId)).toStrictEqual({
-      command: COMMAND.openNote,
+      command: COMMAND.openFile,
       over: { path: 'reef/Coral.md', file: 'reef/Coral.md', title: 'Coral', line: 3 },
       input: '',
     })
@@ -218,15 +221,15 @@ describe('the command an action of a result runs', () => {
   })
 
   it('is the command that opens a document, over its file and the selector of the hit', () => {
-    expect(resolveChoice(createDocument(), COMMAND.openFile)).toStrictEqual({
-      command: 'app:file.open',
+    expect(resolveChoice(createDocument(), ROW.openDocument)).toStrictEqual({
+      command: 'app:file.open#document',
       over: { path: '', file: 'library/a.bin', title: '', selector: { page: 3 } },
       input: '',
     })
   })
 
   it('is the command that opens a document, over the file alone where the hit has no selector', () => {
-    const place = resolveChoice(createDocument({ selector: null }), COMMAND.openFile)?.over
+    const place = resolveChoice(createDocument({ selector: null }), ROW.openDocument)?.over
 
     expect(place).toStrictEqual({ path: '', file: 'library/a.bin', title: '' })
   })
@@ -239,11 +242,53 @@ describe('the command an action of a result runs', () => {
 
   it('is none for an entry of the menu over a hit in a file that is no note', () => {
     expect(
-      resolveChoice(createDocument({ actionIds: [COMMAND.openFile, showId] }), showId),
+      resolveChoice(createDocument({ actionIds: [ROW.openDocument, showId] }), showId),
     ).toBeNull()
   })
 
   it('is none for the action id the document had before it was a command', () => {
     expect(resolveChoice(createDocument({ actionIds: ['note'] }), 'note')).toBeNull()
+  })
+})
+
+describe('an entry that holds values', () => {
+  const WITH_VALUES = entry(`${ATLAS}:graph.show`, 'Show', { values: { where: 'plex' } })
+
+  const getActionId = (row: ReturnType<typeof createNameItem>, text: string): string =>
+    row.item.actions?.find((one) => one.text === text)?.id ?? ''
+
+  it('gives the values to the choice of its action, and none to the choice of another', () => {
+    const row = createNameItem(createName(), WORDS, [WITH_VALUES, OTHER])
+
+    const choice = resolveChoice(row.hit, getActionId(row, 'Show'))
+
+    expect(choice?.command).toBe(WITH_VALUES.command)
+    expect(choice?.values).toStrictEqual({ where: 'plex' })
+    expect(resolveChoice(row.hit, OTHER.command)).not.toHaveProperty('values')
+  })
+
+  it('keeps the plain open of a note free of the values of an entry for the same command', () => {
+    const splitEntry = entry(COMMAND.openFile, 'Open in split', { values: { placement: 'split' } })
+    const row = createNameItem(createName(), WORDS, [splitEntry])
+
+    expect(resolveChoice(row.hit, COMMAND.openFile)).not.toHaveProperty('values')
+    expect(resolveChoice(row.hit, getActionId(row, 'Open in split'))).toMatchObject({
+      command: COMMAND.openFile,
+      values: { placement: 'split' },
+    })
+  })
+
+  it('gives the values to the choice on a passage of a note', () => {
+    const row = createPassageItem('text', createPassage(), WORDS, [WITH_VALUES])
+
+    expect(resolveChoice(row.hit, getActionId(row, 'Show'))?.values).toStrictEqual({
+      where: 'plex',
+    })
+  })
+
+  it('leaves the hit without values where no entry holds any', () => {
+    const row = createNameItem(createName(), WORDS, ENTRIES)
+
+    expect(row.hit).not.toHaveProperty('actionValues')
   })
 })

@@ -6,9 +6,6 @@ import type { DroppedLinks, Links, Outcome } from '../types'
 import { WORDS as words } from '../words'
 import { ErrorCode, SERVICE, type Methods } from './importer'
 
-/** The id the manifest declares the plugin under. */
-export const PLUGIN_ID = 'md.numen.tools.media.importer'
-
 const BUSY_ATTEMPTS = 5
 const BUSY_DELAY_MS = 1000
 
@@ -42,7 +39,7 @@ const callWhileBusy = async <M extends keyof Methods>(
   }
 }
 
-const readOutcome = (result: Result<unknown, ApiError>): Outcome<null> =>
+const readOutcome = <Response>(result: Result<Response, ApiError>): Outcome<null> =>
   result.ok ? { ok: true, value: null } : { ok: false, error: describeError(result.error) }
 
 export const links: Links = {

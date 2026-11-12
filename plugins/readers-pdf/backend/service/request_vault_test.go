@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
 
 // twoVaults is a current vault without the file and a second vault holding tiny.pdf with its text
@@ -20,40 +20,33 @@ type twoVaults struct {
 	current *hosttest.Vault
 	other   *hosttest.Vault
 	texts   *hosttest.Texts
-	server  *TextServer
+	writer  *extract.Writer
 }
 
 func newTwoVaults(t *testing.T) twoVaults {
 	t.Helper()
-	raw, err := os.ReadFile(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	raw := testsupport.ReadFixture(t, "tiny.pdf")
 	current := hosttest.OnDisk(t, "Physics", map[string]string{"Note.md": "# Note\n"})
 	other := hosttest.OnDisk(t, "Chemistry", map[string]string{"tiny.pdf": string(raw)})
 	current.Beside(other)
-	texts := hosttest.NewTexts("Physics", pluginID)
-	chemistry, isTexts := texts.With("Chemistry").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of the vault are not hosttest texts")
-	}
+	texts := hosttest.NewTexts("Physics", testsupport.PluginID)
+	chemistry := texts.With("Chemistry")
 	chemistry.File("tiny.pdf", raw)
-	chemistry.SetStore(pluginID, other.Store())
-	server := NewTextServer(current, texts, current.Store(), hosttest.NewQueue(), newTestWorkers(t))
-	t.Cleanup(server.Close)
-	createText(t, server, TextRequest{Vault: "Chemistry", Path: "tiny.pdf"})
-	return twoVaults{current: current, other: other, texts: texts, server: server}
+	chemistry.SetStore(testsupport.PluginID, other.Store())
+	writer := testsupport.NewWriter(t, testsupport.FilesOf(current), current, texts, hosttest.NewQueue())
+	testsupport.CreateText(t, writer, extract.Request{Vault: "Chemistry", Path: "tiny.pdf"})
+	return twoVaults{current: current, other: other, texts: texts, writer: writer}
 }
 
 func postAPI(t *testing.T, documents *DocumentServer, method, vault, body string, response any) int {
 	t.Helper()
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "token"}, func(s *server.Server) error {
-		return documents.Mount(s.NewAPI(APIService))
+		return documents.Mount(s.NewAPI(api.Service))
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/"+APIService+"/"+method, strings.NewReader(body))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/"+api.Service+"/"+method, strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer token")
 	if vault != "" {
 		req.Header.Set("Numen-Vault", vault)
@@ -70,8 +63,8 @@ func postAPI(t *testing.T, documents *DocumentServer, method, vault, body string
 
 func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(v.current, v.texts, newTestWorkers(t))
-	var res GetHighlightsResponse
+	documents := NewDocumentServer(newReader(t, v.current, v.texts))
+	var res api.GetHighlightsResponse
 
 	code := postAPI(t, documents, "GetHighlights", "Chemistry", `{"path":"tiny.pdf","ranges":[{"start":0,"end":4}]}`, &res)
 
@@ -85,8 +78,8 @@ func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 
 func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(v.current, v.texts, newTestWorkers(t))
-	var res GetDocumentResponse
+	documents := NewDocumentServer(newReader(t, v.current, v.texts))
+	var res api.GetDocumentResponse
 
 	code := postAPI(t, documents, "GetDocument", "Chemistry", `{"path":"tiny.pdf"}`, &res)
 
@@ -100,7 +93,7 @@ func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 
 func TestPageServerDrawsThePageOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	pages := NewPageServer(v.current, newTestWorkers(t))
+	pages := NewPageServer(newReader(t, v.current, v.texts), func(string, error) {})
 	mux := http.NewServeMux()
 	mux.Handle("GET /"+pagesPattern, pages)
 
@@ -116,49 +109,5 @@ func TestPageServerDrawsThePageOfTheVaultTheRequestNames(t *testing.T) {
 	mux.ServeHTTP(current, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/pages/0?path=tiny.pdf&wide=400", nil))
 	if current.Code == http.StatusOK {
 		t.Error("a request naming no vault drew a file the current vault does not hold")
-	}
-}
-
-func TestCreateTextWritesTheLayerInATurnOfTheQueue(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	files := hosttest.OnDisk(t, "vault", map[string]string{"tiny.pdf": string(raw)})
-	texts := hosttest.NewTexts("vault", pluginID)
-	texts.File("tiny.pdf", raw)
-	queue := hosttest.NewQueue()
-	held, err := queue.EnqueueWork(t.Context(), host.Work{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	texts.SetStore(pluginID, files.Store())
-	server := NewTextServer(files, texts, files.Store(), queue, newTestWorkers(t))
-	t.Cleanup(server.Close)
-
-	if err := server.CreateText(t.Context(), TextRequest{Path: "tiny.pdf"}); err != nil {
-		t.Fatalf("CreateText: %v", err)
-	}
-	listing, err := texts.ListVersions(t.Context(), "tiny.pdf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(listing.Versions) != 0 {
-		t.Fatalf("versions %v while the queue is held, want none", listing.Versions)
-	}
-	if err := held.Release(); err != nil {
-		t.Fatal(err)
-	}
-	server.Wait()
-
-	listing, err = texts.ListVersions(t.Context(), "tiny.pdf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(listing.Versions) != 1 {
-		t.Errorf("versions %v after the turn, want the text layer", listing.Versions)
-	}
-	if tasks := queue.ListTasks(); len(tasks) != 0 {
-		t.Errorf("tasks %v after the layer was written, want none", tasks)
 	}
 }

@@ -1,0 +1,61 @@
+package derivedfile_test
+
+import (
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+)
+
+func opening(b *testing.B) *derivedfile.DerivedStore {
+	b.Helper()
+	root := b.TempDir()
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
+		b.Fatal(err)
+	}
+	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)
+	if err != nil {
+		b.Fatal(err)
+	}
+	return derived
+}
+
+// What one name of the store costs. An answer written to the log is one append
+// and a reading of the log is one read a file, so each of these is paid once
+// per answer and once per run file read.
+func BenchmarkDerived(b *testing.B) {
+	ctx := b.Context()
+	line := []byte("one line of a run\n")
+
+	b.Run("Append", func(b *testing.B) {
+		derived := opening(b)
+		for b.Loop() {
+			if err := derived.Append(ctx, "area/run.txt", line); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("Read", func(b *testing.B) {
+		derived := opening(b)
+		if err := derived.Write(ctx, "area/run.txt", line); err != nil {
+			b.Fatal(err)
+		}
+		for b.Loop() {
+			if _, err := derived.Read(ctx, "area/run.txt"); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("List", func(b *testing.B) {
+		derived := opening(b)
+		if err := derived.Write(ctx, "area/run.txt", line); err != nil {
+			b.Fatal(err)
+		}
+		for b.Loop() {
+			if _, err := derived.List(ctx, testArea); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+}

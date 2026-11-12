@@ -11,28 +11,33 @@ import { usePlexHeadings } from './usePlexHeadings'
 const createDeps = (
   headings: ReadonlyMap<string, readonly NoteHeading[]>,
   request: (readonly string[])[],
-  readHeadings: PlexTabDeps['readHeadings'] = async (paths) => {
+  readHeadings: PlexTabDeps['notes']['readHeadings'] = async (paths) => {
     request.push(paths)
     return headings
   },
 ): PlexTabDeps => ({
   editor: createVault(false).editor,
-  isReady: ref(true),
-  isNesting: ref(true),
   tabId: 'plex:1',
-  headings: ref(6),
-  openNote: () => undefined,
-  readHeadings,
-  getMenuEntries: () => [],
-  listItems: async () => [],
-  getNoteIcon: () => null,
-  runCommand: async () => undefined,
-  openingPath: ref(''),
-  dragged: ref([]),
-  showMessage: () => undefined,
-  createUntitledNote: async () => '',
-  readOpeningPath: async () => '',
   creatable: [],
+  window: {
+    isReady: ref(true),
+    openNote: () => undefined,
+    getNoteIcon: () => null,
+    openingPath: ref(''),
+    dragged: ref([]),
+    showMessage: () => undefined,
+    readOpeningPath: async () => '',
+  },
+  menu: {
+    getMenuEntries: () => [],
+    listItems: async () => [],
+    runCommand: async () => '',
+  },
+  notes: {
+    isNesting: ref(true),
+    headings: ref(6),
+    readHeadings,
+  },
 })
 
 describe('the notes whose headings are read', () => {

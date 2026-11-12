@@ -1,10 +1,10 @@
 module github.com/jiva-studio/numen/plugins/views-flashcards-studio
 
-go 1.26.10
+go 1.26.11
 
 require (
-	github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0
-	github.com/jiva-studio/numen/libs/plugin-sdk-go/host v0.0.0
+	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0
+	github.com/jiva-studio/numen/libs/plugin/sdk-go/host v0.0.0
 	github.com/open-spaced-repetition/go-fsrs/v3 v3.3.1
 	gopkg.in/yaml.v3 v3.0.1
 	pgregory.net/rapid v1.3.0

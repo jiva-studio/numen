@@ -2,33 +2,34 @@
 /**
  * The plex: one focused node, with all other nodes placed by their relation to it.
  *
- * Takes a neighbourhood and emits an identifier when one is chosen. It does not
+ * Takes a neighborhood and emits an identifier when one is chosen. It does not
  * fetch data, does not interpret what an identifier addresses, and does not
  * compute who is related to whom. The caller answers `activate` with the next
- * neighbourhood, and the plex transitions to it.
+ * neighborhood, and the plex transitions to it.
  */
-import { computed, toRef, useSlots, useTemplateRef, watch } from 'vue'
+import { computed, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
-import { DEFAULT_BEHAVIOUR, type PlexBehaviour } from '../model/behaviour'
+import { DEFAULT_BEHAVIOR, type PlexBehavior } from '../model/behavior'
 import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
-import { formatCount, getRelationName, type PlexRelation } from '../lib/relation'
+import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
+import type { PlexRelation } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexProps>(), {
   showEdgeLabels: true,
   duration: 420,
-  clock: () => DEFAULT_BEHAVIOUR.clock,
+  clock: () => DEFAULT_BEHAVIOR.clock,
   viewport: () => browserViewport,
   creatable: () => ['parent', 'child', 'jump'],
   dragThreshold: 8,
-  expansionDelay: DEFAULT_BEHAVIOUR.expansionDelay,
-  reaching: () => DEFAULT_BEHAVIOUR.reaching,
-  showing: () => DEFAULT_BEHAVIOUR.showing,
+  expansionDelay: DEFAULT_BEHAVIOR.expansionDelay,
+  reaching: () => DEFAULT_BEHAVIOR.reaching,
+  showing: () => DEFAULT_BEHAVIOR.showing,
   relationName: getRelationName,
   pending: null,
   dragged: () => [],
@@ -37,6 +38,14 @@ const props = withDefaults(defineProps<PlexProps>(), {
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<PlexEvents>()
+
+defineExpose({
+  get isMoving() {
+    return isMoving.value
+  },
+  /** Restores keyboard focus to a node. */
+  focusNode: (id: string) => view.value?.focusNode(id),
+})
 
 defineSlots<PlexSlots>()
 
@@ -54,7 +63,7 @@ const { room, options, measures, widen, hung } = useFreeSpace(
 )
 
 /** How the nodes behave, handed down as one. */
-const behaviour = computed<PlexBehaviour>(() => ({
+const behavior = computed<PlexBehavior>(() => ({
   expansionDelay: props.expansionDelay,
   reaching: props.reaching,
   showing: props.showing,
@@ -62,7 +71,7 @@ const behaviour = computed<PlexBehaviour>(() => ({
 }))
 
 const { frame, isMoving } = usePlexTransition(
-  () => props.neighbourhood,
+  () => props.neighborhood,
   () => ({
     options: { ...props.options, viewport: room.value },
     placement: props.placement,
@@ -120,16 +129,6 @@ const dragging = usePlexDrag({
 
 /* --------------------------------- Hooks ---------------------------------- */
 /**
- * A neighbourhood is drawn from the node it is seen from, so every node walks
- * to a new relation when another one arrives. A menu is anchored where one of them
- * was.
- */
-watch(
-  () => props.neighbourhood,
-  () => emit('dismiss'),
-)
-
-/**
  * The overflow, as `[relation, count]` pairs. The renderer of the plex supplies
  * the labels through the `overflow` slot.
  */
@@ -143,11 +142,15 @@ const frameStyle = computed(() => ({
   '--plex-move': `${props.duration}ms`,
 }))
 
-defineExpose({
-  isMoving: toRef(isMoving),
-  /** Restores keyboard focus to a node. */
-  focusNode: (id: string) => view.value?.focusNode(id),
-})
+/**
+ * A neighborhood is drawn from the node it is seen from, so every node walks
+ * to a new relation when another one arrives. A menu is anchored where one of them
+ * was.
+ */
+watch(
+  () => props.neighborhood,
+  () => emit('dismiss'),
+)
 </script>
 
 <template>
@@ -167,7 +170,7 @@ defineExpose({
       :relation-name="relationName"
       :widen="widen"
       :hung="hung"
-      :behaviour="behaviour"
+      :behavior="behavior"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"

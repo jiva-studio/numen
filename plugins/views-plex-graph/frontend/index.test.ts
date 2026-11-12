@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { TabKindRegistration } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { activate, PlexGraphView, PLEX } from './index'
 import { createHost } from './fixtures/host'
@@ -14,6 +15,27 @@ const createContext = () => {
     relations: host.relations,
   })
   return { ctx, requested }
+}
+
+const createWindow = () => {
+  let getKinds = (): readonly TabKindRegistration[] => []
+  const tabOpens: (readonly [string, string])[] = []
+  const tabs: { kind: string; state: object }[] = []
+  const navigateTab = async (kind: string, path: string): Promise<string> => {
+    const registration = getKinds().find((one) => one.kind === kind)!
+    const last = tabs.filter((one) => one.kind === kind).at(-1)
+    if (last) {
+      await registration.navigate?.(last.state, path, '')
+      return kind
+    }
+    tabOpens.push([kind, path])
+    tabs.push({ kind, state: registration.open!(path, `${kind}-${tabs.length}`) })
+    return kind
+  }
+  const bind = (ctx: { getRegisteredTabKinds(): TabKindRegistration[] }): void => {
+    getKinds = () => ctx.getRegisteredTabKinds()
+  }
+  return { tabOpens, tabs, navigateTab, bind }
 }
 
 describe('view-plex-graph plugin', () => {
@@ -32,102 +54,122 @@ describe('view-plex-graph plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(7)
+    expect(ctx.plugin.subscriptions).toHaveLength(5)
 
     ctx.dispose()
-    expect(ctx.subscriptions).toHaveLength(0)
+    expect(ctx.plugin.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
 
-  it('registers the handlers that open the plex and show a note in it', () => {
+  it('registers the handler that opens the plex', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
-      'graph.open',
-      'graph.showNote',
-      'graph.createNote',
-    ])
+    expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual(['graph.open'])
   })
 
-  it('opens a plex, and moves the plex last in front to a note', async () => {
-    const openCalls: (readonly [string, string | undefined])[] = []
-    const navigateCalls: (readonly [string, string])[] = []
+  const createWindowContext = () => {
     const { host } = createHost({ opening: 'Root.md' })
+    const strip = createWindow()
     const ctx = createMockPluginContext({
       pluginId: 'md.numen.views.plex.graph',
       workspace: host.workspace,
       notes: host.notes,
       relations: host.relations,
-      openTab: (kind, path) => {
-        openCalls.push([kind, path])
-        return Promise.resolve('')
-      },
-      navigateTab: (kind, path) => {
-        navigateCalls.push([kind, path])
-        return Promise.resolve('')
-      },
+      navigateTab: strip.navigateTab,
     })
+    strip.bind(ctx)
     activate(ctx)
+    return { ctx, strip }
+  }
+
+  it('opens one plex however many times the command runs', async () => {
+    const { ctx, strip } = createWindowContext()
 
     await ctx.triggerCommand('graph.open')
-    await ctx.triggerCommand('graph.showNote', {
-      path: 'One.md',
-      title: 'One',
+    await ctx.triggerCommand('graph.open')
+    await ctx.triggerCommand('graph.open', {
+      path: 'Other.md',
+      title: 'Other.md',
       type: 'note',
       isFolder: false,
       others: [],
       tab: '',
     })
 
-    expect(openCalls).toStrictEqual([[PLEX, undefined]])
-    expect(navigateCalls).toStrictEqual([[PLEX, 'One.md']])
+    expect(strip.tabOpens).toStrictEqual([[PLEX, '']])
+    expect(strip.tabs).toHaveLength(1)
   })
 
-  it('makes a note and shows it in the plex of the tab the target names', async () => {
-    const { host, recorded } = createHost({ opening: 'Root.md' })
-    const ctx = createMockPluginContext({
-      pluginId: 'md.numen.views.plex.graph',
-      workspace: host.workspace,
-      notes: host.notes,
-      relations: host.relations,
-    })
-    activate(ctx)
-    const kind = ctx.getRegisteredTabKinds()[0]!
-    const first = kind.open!('', 'plex:1') as PlexTabState
-    const second = kind.open!('One.md', 'plex:2') as PlexTabState
+  it('shows the active note in a plex that is already open', async () => {
+    const { ctx, strip } = createWindowContext()
+    await ctx.triggerCommand('graph.open')
     await settle()
 
-    await ctx.triggerCommand('graph.createNote', {
-      path: '',
-      title: '',
+    await ctx.triggerCommand('graph.open', {
+      path: 'Other.md',
+
+      title: 'Other.md',
+
       type: 'note',
-      isFolder: true,
+
+      isFolder: false,
+
       others: [],
-      tab: 'plex:2',
+
+      tab: '',
     })
     await settle()
 
-    expect(second.view.here.value).toBe('Untitled.md')
-    expect(first.view.here.value).not.toBe('Untitled.md')
-    expect(recorded.errors).toStrictEqual([])
+    const state = strip.tabs[0]!.state as PlexTabState
+    expect(state.canvas.view.here.value).toBe('Other.md')
   })
 
-  it('fails where no plex is open in the tab the target names', async () => {
+  it('shows the active note in the plex it opens', async () => {
+    const { ctx, strip } = createWindowContext()
+
+    await ctx.triggerCommand('graph.open', {
+      path: 'Other.md',
+
+      title: 'Other.md',
+
+      type: 'note',
+
+      isFolder: false,
+
+      others: [],
+
+      tab: '',
+    })
+
+    expect(strip.tabOpens).toStrictEqual([[PLEX, 'Other.md']])
+  })
+
+  it('keeps its note without an active note', async () => {
+    const { ctx, strip } = createWindowContext()
+    await ctx.triggerCommand('graph.open', {
+      path: 'Other.md',
+      title: 'Other.md',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
+    await settle()
+
+    await ctx.triggerCommand('graph.open')
+    await settle()
+
+    const state = strip.tabs[0]!.state as PlexTabState
+    expect(state.canvas.view.here.value).toBe('Other.md')
+  })
+
+  it('registers no command that makes a note', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    await expect(
-      ctx.triggerCommand('graph.createNote', {
-        path: '',
-        title: '',
-        type: 'note',
-        isFolder: true,
-        others: [],
-        tab: 'plex:9',
-      }),
-    ).rejects.toThrow('no plex is open in the tab plex:9')
+    expect(ctx.getRegisteredCommands().map((one) => one.id)).not.toContain('graph.createNote')
   })
 
   it('asks every plex for its picture again when the vault changes', async () => {
@@ -138,7 +180,7 @@ describe('view-plex-graph plugin', () => {
     await settle()
     requested.headings.length = 0
 
-    ctx.emitVaultChange({ paths: ['One.md'] })
+    ctx.events.emitVaultChange({ paths: ['One.md'] })
     await settle()
     await settle()
 
@@ -164,7 +206,7 @@ describe('view-plex-graph plugin', () => {
     await settle()
 
     expect(requested.headings.length).toBeGreaterThan(0)
-    expect(state.maxHeadings.value).toBe(3)
+    expect(state.headings.maxHeadings.value).toBe(3)
   })
 
   it('refuses to activate in a window that offers no workspace, notes or relationships', () => {

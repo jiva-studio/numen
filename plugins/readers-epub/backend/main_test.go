@@ -10,11 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/service"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/books"
 )
 
 func TestLifecycleServerPingAndShutdown(t *testing.T) {
@@ -113,16 +115,16 @@ func createMinimalEpub(t *testing.T) []byte {
 	return buf.Bytes()
 }
 
-func TestBookServerGetBookAndMarkup(t *testing.T) {
+func TestReaderGetBookAndMarkup(t *testing.T) {
 	epubBytes := createMinimalEpub(t)
 	files := hosttest.New("vault")
 	files.File("test.epub", string(epubBytes))
 
-	books := service.NewBookServer(files)
+	reader := books.NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	ctx := t.Context()
 
 	// Test GetBook
-	resp, err := books.GetBook(ctx, api.GetBookRequest{
+	resp, err := reader.GetBook(ctx, api.GetBookRequest{
 		Path: "test.epub",
 	})
 	if err != nil {
@@ -140,7 +142,7 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 	}
 
 	// Test ReadBookMarkup
-	markupResp, err := books.ReadBookMarkup(ctx, api.ReadBookMarkupRequest{
+	markupResp, err := reader.ReadBookMarkup(ctx, api.ReadBookMarkupRequest{
 		Path:     "test.epub",
 		Document: "OEBPS/doc1.xhtml",
 	})
@@ -152,7 +154,7 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 	}
 
 	// Test non-existent book
-	_, err = books.GetBook(ctx, api.GetBookRequest{
+	_, err = reader.GetBook(ctx, api.GetBookRequest{
 		Path: "nonexistent.epub",
 	})
 	if err == nil {
@@ -160,7 +162,7 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 	}
 }
 
-func TestBookServerVaultBoundary(t *testing.T) {
+func TestReaderVaultBoundary(t *testing.T) {
 	outsideDir := t.TempDir()
 
 	epubBytes := createMinimalEpub(t)
@@ -171,11 +173,11 @@ func TestBookServerVaultBoundary(t *testing.T) {
 
 	files := hosttest.New("vault")
 	files.File("inside.epub", string(epubBytes))
-	books := service.NewBookServer(files)
+	reader := books.NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	ctx := t.Context()
 
 	// 1. Path outside vault should fail with permission denied
-	_, err := books.GetBook(ctx, api.GetBookRequest{
+	_, err := reader.GetBook(ctx, api.GetBookRequest{
 		Path: outsidePath,
 	})
 	if err == nil {
@@ -186,7 +188,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}
 
 	// 2. Path traversal should fail with permission denied
-	_, err = books.GetBook(ctx, api.GetBookRequest{
+	_, err = reader.GetBook(ctx, api.GetBookRequest{
 		Path: "../outside.epub",
 	})
 	if err == nil {
@@ -197,7 +199,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}
 
 	// 3. Relative path inside vault should succeed
-	resp, err := books.GetBook(ctx, api.GetBookRequest{
+	resp, err := reader.GetBook(ctx, api.GetBookRequest{
 		Path: "inside.epub",
 	})
 	if err != nil {

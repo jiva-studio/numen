@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
 
@@ -15,7 +15,7 @@ func TestEmbedSendsTheTextsAndReturnsOneVectorForEach(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{APIKey: testKey, Dimensions: 6})
 	texts := []string{"first", "second", "third"}
 
-	vectors, err := New().Embed(newContext(t), newCall("openai", address, testKey, "text-embedding-3-small"), texts)
+	vectors, err := newTestService(t).Embed(newContext(t), newCall("openai", address, testKey, "text-embedding-3-small"), texts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestEmbedOrdersTheVectorsByTheIndexInTheAnswer(t *testing.T) {
 	}))
 	t.Cleanup(ts.Close)
 
-	vectors, err := New().Embed(newContext(t), newCall("openai-compatible", ts.URL, "", "m"), []string{"a", "b"})
+	vectors, err := newTestService(t).Embed(newContext(t), newCall("openai-compatible", ts.URL, "", "m"), []string{"a", "b"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +63,7 @@ func TestEmbedOrdersTheVectorsByTheIndexInTheAnswer(t *testing.T) {
 
 func TestEmbedWithNoTextsSendsNothing(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
-	vectors, err := New().Embed(newContext(t), newCall("openai-compatible", address, "", "m"), nil)
+	vectors, err := newTestService(t).Embed(newContext(t), newCall("openai-compatible", address, "", "m"), nil)
 	if err != nil || len(vectors) != 0 {
 		t.Errorf("vectors = %v, err = %v", vectors, err)
 	}
@@ -87,7 +87,7 @@ func TestEmbedStopsOnAnAnswerThatDoesNotMatchTheTexts(t *testing.T) {
 			}
 		}))
 		t.Cleanup(ts.Close)
-		_, err := New().Embed(newContext(t), newCall("openai-compatible", ts.URL, "", "m"), []string{"a", "b"})
+		_, err := newTestService(t).Embed(newContext(t), newCall("openai-compatible", ts.URL, "", "m"), []string{"a", "b"})
 		if err == nil || !connection.IsStop(err) {
 			t.Errorf("%s: err = %v, want a stop", name, err)
 		}
@@ -96,7 +96,7 @@ func TestEmbedStopsOnAnAnswerThatDoesNotMatchTheTexts(t *testing.T) {
 
 func TestProbeEmbeddingWidthEmbedsOneTextAndReturnsItsWidth(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{Dimensions: 12})
-	width, err := New().ProbeEmbeddingWidth(newContext(t), newCall("openai-compatible", address, "", "unlisted-model"))
+	width, err := newTestService(t).ProbeEmbeddingWidth(newContext(t), newCall("openai-compatible", address, "", "unlisted-model"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func TestProbeEmbeddingWidthEmbedsOneTextAndReturnsItsWidth(t *testing.T) {
 func TestProbeEmbeddingWidthReportsTheFailureOfTheService(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
 	fake.Fail("/embeddings", http.StatusPaymentRequired, "")
-	_, err := New().ProbeEmbeddingWidth(newContext(t), newCall("openrouter", address, testKey, "m"))
+	_, err := newTestService(t).ProbeEmbeddingWidth(newContext(t), newCall("openrouter", address, testKey, "m"))
 	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonPaymentRequired})
 }
 
@@ -133,7 +133,7 @@ func TestTheProfileOfAKnownModelIsReadWithNoRequest(t *testing.T) {
 		"compatible case ignored": {"openai-compatible", "Text-Embedding-3-Large", 3072},
 	}
 	for name, one := range cases {
-		profile, err := New().GetModelProfile(newContext(t), newCall(one.typeID, address, "", one.model))
+		profile, err := newTestService(t).GetModelProfile(newContext(t), newCall(one.typeID, address, "", one.model))
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -148,7 +148,7 @@ func TestTheProfileOfAKnownModelIsReadWithNoRequest(t *testing.T) {
 
 func TestTheProfileOfAnUnknownModelIsMarkedUnknown(t *testing.T) {
 	_, address := startFake(t, fakeopenai.Config{})
-	profile, err := New().GetModelProfile(newContext(t), newCall("openai-compatible", address, "", "nomic-embed-text"))
+	profile, err := newTestService(t).GetModelProfile(newContext(t), newCall("openai-compatible", address, "", "nomic-embed-text"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +160,7 @@ func TestTheProfileOfAnUnknownModelIsMarkedUnknown(t *testing.T) {
 func TestTheSourceOfAProfileNamesTheTypeAndTheAddressAndNeverTheKey(t *testing.T) {
 	_, address := startFake(t, fakeopenai.Config{})
 	call := newCall("openai-compatible", address+"?token=abc#frag", testKey, "text-embedding-3-small")
-	profile, err := New().GetModelProfile(newContext(t), call)
+	profile, err := newTestService(t).GetModelProfile(newContext(t), call)
 	if err != nil {
 		t.Fatal(err)
 	}

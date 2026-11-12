@@ -1,4 +1,4 @@
-// Package themes loads the installation's themes into a window.
+// Package themes reports the fault of loading the installation's themes.
 package themes
 
 import (
@@ -6,14 +6,13 @@ import (
 	"io"
 )
 
-// Load fetches the installation's themes. If a folder cannot be created, the
-// themes the binary ships are kept and the fault is written to out.
-func Load[S any](get func(say func(string)) (S, error), say func(string), out io.Writer) S {
-	loaded, err := get(say)
-	if err != nil {
-		if _, writeErr := fmt.Fprintf(out, "themes: %v\n", err); writeErr != nil {
-			return loaded
-		}
+// Report writes the fault of loading the themes to out, and nothing when there is none. The window
+// keeps the themes the binary ships when a folder cannot be created.
+func Report(err error, out io.Writer) {
+	if err == nil {
+		return
 	}
-	return loaded
+	if _, writeErr := fmt.Fprintf(out, "themes: %v\n", err); writeErr != nil {
+		return
+	}
 }

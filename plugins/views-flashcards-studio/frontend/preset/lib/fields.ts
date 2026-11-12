@@ -5,7 +5,7 @@
  * apply to it: they are neither displayed nor written while the goal is active,
  * and the file keeps their stored values.
  */
-import type { Bounds, Goal, Rule, Settings, SettingsBounds } from '../types'
+import type { Bounds, Goal, Rule, Settings, SettingsBounds } from '../../lib/presets'
 import { round } from './curve'
 
 /** One setting of a preset that the user may set directly. */

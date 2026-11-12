@@ -5,11 +5,16 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/ui/words'
+import { PALETTE_WORDS } from '../../words'
 import type { PendingStep } from '../../lib/step/step'
-import type { Command, CommandTarget, PromptStep, StepGroup } from '../../types'
+import type { StepGroup } from '@/shared/model/command'
+import type { Command, PromptStep } from '@/entities/command'
+import type { CommandTarget } from '@/shared/model/command'
 import type { NameMatch } from '../search/search'
-import { createPaletteSteps } from './navigation'
+import { createPaletteSteps, createStepChoice } from './navigation'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 const on: CommandTarget = {
   tab: 'tab-1',
@@ -57,12 +62,18 @@ const createSteps = (groups: readonly StepGroup[] = []) => {
     onClose: () => {
       happened.push('close')
     },
+  })
+  const choose = createStepChoice({
     invocation: (id, target, name) => {
       invoked.push([id, target, name])
       return { id } as never
     },
+    lists: { getStepGroups: () => groups, previewItem: vi.fn() },
+    text,
+    stack: steps.stack,
+    getStepTitle: steps.naming.getStepTitle,
   })
-  return { steps, text, happened, invoked }
+  return { steps, choose, text, happened, invoked }
 }
 
 const match = (path: string, title: string) => ({ path, title }) as NameMatch
@@ -73,8 +84,8 @@ describe('the palette at its list of commands', () => {
 
     expect(steps.steps.value).toStrictEqual([])
     expect(steps.here.value).toBeNull()
-    expect(steps.placeholder.value).toBe(words.typeCommand)
-    expect(steps.step.value).toBe('0::commands')
+    expect(steps.position.placeholder.value).toBe(words.typeCommand)
+    expect(steps.position.step.value).toBe('0::commands')
   })
 })
 
@@ -82,16 +93,16 @@ describe('a step taken', () => {
   it('releases what was found, and is named by its depth, command and step', () => {
     const { steps, happened } = createSteps()
 
-    steps.pushStep(pending('name'))
+    steps.stack.pushStep(pending('name'))
 
     expect(happened).toStrictEqual(['drop'])
-    expect(steps.step.value).toBe('1:rename:name')
+    expect(steps.position.step.value).toBe('1:rename:name')
   })
 
   it('asks for the list of vaults only on the step that picks one', () => {
     const { steps, happened } = createSteps()
 
-    steps.pushStep(pending('vault'))
+    steps.stack.pushStep(pending('vault'))
 
     expect(happened).toStrictEqual(['drop', 'lists'])
   })
@@ -99,16 +110,16 @@ describe('a step taken', () => {
   it('asks for the name back in plain words where the command gives none', () => {
     const { steps } = createSteps()
 
-    steps.pushStep(pending('retypedName'))
-    expect(steps.placeholder.value).toBe(words.typeBack)
+    steps.stack.pushStep(pending('retypedName'))
+    expect(steps.position.placeholder.value).toBe(words.typeBack)
   })
 
   it('is taken back with what was found and lit release', () => {
     const { steps, happened, text } = createSteps()
-    steps.pushStep(pending('name'))
+    steps.stack.pushStep(pending('name'))
     text.value = 'Alpaca'
 
-    steps.popStep()
+    steps.stack.popStep()
 
     expect(happened).toStrictEqual(['drop', 'lights ', 'drop'])
     expect(text.value).toBe('')
@@ -121,34 +132,36 @@ describe('what a step is over', () => {
     const { steps } = createSteps()
 
     expect(
-      steps.getStepLabel(pending('confirmation', { on: { ...on, others: ['a.md', 'b.md'] } })),
+      steps.naming.getStepLabel(
+        pending('confirmation', { on: { ...on, others: ['a.md', 'b.md'] } }),
+      ),
     ).toBe(words.several(3))
   })
 
   it('is returned by its title where it is over one', () => {
     const { steps } = createSteps()
 
-    expect(steps.getStepLabel(pending('confirmation'))).toBe('“Llama”')
+    expect(steps.naming.getStepLabel(pending('confirmation'))).toBe('“Llama”')
   })
 })
 
 describe('the steps when files move', () => {
   it('are left as they are where nothing moved', () => {
     const { steps } = createSteps()
-    steps.pushStep(pending('name'))
+    steps.stack.pushStep(pending('name'))
     const before = steps.steps.value
 
-    steps.applyRenames([])
-    steps.applyRenames()
+    steps.moves.applyRenames([])
+    steps.moves.applyRenames()
 
     expect(steps.steps.value).toBe(before)
   })
 
   it('are all release on a reset', () => {
     const { steps } = createSteps()
-    steps.pushStep(pending('name'))
+    steps.stack.pushStep(pending('name'))
 
-    steps.reset()
+    steps.stack.reset()
 
     expect(steps.steps.value).toStrictEqual([])
   })
@@ -159,7 +172,7 @@ describe('choosing on a step', () => {
     const createdItem = createSteps()
     return {
       ...createdItem,
-      chosen: () => createdItem.steps.chooseInStep(step, item, action, found, [], () => false),
+      chosen: () => createdItem.choose(step, item, action, found, [], () => false),
     }
   }
 
@@ -198,24 +211,24 @@ describe('the row a list opens on', () => {
   it('is the one standing now, on the step that chooses from a list', () => {
     const { steps } = createSteps(groups)
 
-    steps.pushStep(pending('items'))
+    steps.stack.pushStep(pending('items'))
 
-    expect(steps.opensOn.value).toBe('dark')
+    expect(steps.position.opensOn.value).toBe('dark')
   })
 
   it('is none where no row remains now', () => {
     const { steps } = createSteps([{ id: 'g', title: 'Themes', items: [row('light')] }])
 
-    steps.pushStep(pending('items'))
+    steps.stack.pushStep(pending('items'))
 
-    expect(steps.opensOn.value).toBe('')
+    expect(steps.position.opensOn.value).toBe('')
   })
 
   it('is none on any other step', () => {
     const { steps } = createSteps(groups)
 
-    steps.pushStep(pending('name'))
+    steps.stack.pushStep(pending('name'))
 
-    expect(steps.opensOn.value).toBe('')
+    expect(steps.position.opensOn.value).toBe('')
   })
 })

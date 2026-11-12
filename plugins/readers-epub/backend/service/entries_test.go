@@ -7,19 +7,23 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/books"
 )
 
-func serveEntries(t *testing.T) (*http.ServeMux, *BookServer) {
+func serveEntries(t *testing.T) (*http.ServeMux, *books.Reader) {
 	t.Helper()
 	current := hosttest.OnDisk(t, "Physics", map[string]string{"Note.md": "# Note\n"})
-	other := hosttest.OnDisk(t, "Chemistry", map[string]string{"pictured.epub": string(createImageEpub(t))})
+	other := hosttest.OnDisk(t, "Chemistry", map[string]string{"pictured.epub": string(testsupport.CreateImageEpub(t))})
 	current.Beside(other)
-	books := NewBookServer(current)
-	t.Cleanup(books.Close)
+	reader := books.NewReader(func(id domain.VaultID) host.FileReader { return current.With(id) })
+	t.Cleanup(reader.Close)
 	mux := http.NewServeMux()
-	mux.Handle("GET /"+entriesPattern, NewEntryServer(books))
-	return mux, books
+	mux.Handle("GET /"+entriesPattern, NewEntryServer(reader, func(string, error) {}))
+	return mux, reader
 }
 
 func TestEntriesRoute_ServesBookImageFromRequestedVault(t *testing.T) {
@@ -30,13 +34,18 @@ func TestEntriesRoute_ServesBookImageFromRequestedVault(t *testing.T) {
 	answer := httptest.NewRecorder()
 	mux.ServeHTTP(answer, req)
 
-	if answer.Code != http.StatusOK || !bytes.Equal(answer.Body.Bytes(), getPNGBytes()) {
+	if answer.Code != http.StatusOK || !bytes.Equal(answer.Body.Bytes(), testsupport.GetPNGBytes()) {
 		t.Fatalf("the picture answered %d with %d bytes", answer.Code, answer.Body.Len())
 	}
 	if got := answer.Header().Get("Cache-Control"); got != "public, max-age=31536000, immutable" {
 		t.Errorf("Cache-Control = %q, want immutable", got)
 	}
-	badMtime := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/entries/EPUB/cover.png?path=pictured.epub&size="+strconv.FormatInt(int64(len(createImageEpub(t))), 10)+"&mtime=notanumber", nil)
+	badMtime := httptest.NewRequestWithContext(
+		t.Context(),
+		http.MethodGet,
+		"/entries/EPUB/cover.png?path=pictured.epub&size="+strconv.FormatInt(int64(len(testsupport.CreateImageEpub(t))), 10)+"&mtime=notanumber",
+		nil,
+	)
 	badMtime.Header.Set("Numen-Vault", "Chemistry")
 	badMtimeAnswer := httptest.NewRecorder()
 	mux.ServeHTTP(badMtimeAnswer, badMtime)

@@ -3,7 +3,7 @@ package api
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/plugintest"
 )
 
 // fixtureDir holds the request and response fixtures the frontend contract test reads as well.

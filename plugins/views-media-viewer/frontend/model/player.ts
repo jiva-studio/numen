@@ -8,6 +8,7 @@
 import { doc } from '@numen/ui'
 import { readonly, ref, type Ref } from 'vue'
 import { WORDS } from '../words'
+import type { Caught } from '@numen/plugin-sdk'
 
 // The codes a MediaError carries, under the names the standard gives them. A
 // window with no media element of its own defines none of them.
@@ -45,11 +46,13 @@ const DURATION_POLLS = 40
 
 /** What plays a recording, as whatever draws the controls reads it. */
 export interface Player {
-  readonly url: Readonly<Ref<string>>
-  readonly position: Readonly<Ref<number>>
-  readonly duration: Readonly<Ref<number>>
-  readonly isPlaying: Readonly<Ref<boolean>>
-  readonly error: Readonly<Ref<string>>
+  readonly state: {
+    readonly url: Readonly<Ref<string>>
+    readonly position: Readonly<Ref<number>>
+    readonly duration: Readonly<Ref<number>>
+    readonly isPlaying: Readonly<Ref<boolean>>
+    readonly error: Readonly<Ref<string>>
+  }
 
   /** Load a recording, leaving whatever was loaded before it. */
   load(url: string): void
@@ -62,10 +65,12 @@ export interface Player {
    * own, so the recording that holds the player keeps it. Zero where it cannot be read.
    */
   getDuration(url: string): Promise<number>
-  /** Draws the element in the container, which shows the picture of a video. */
-  attach(container: HTMLElement): void
-  /** Moves the element from the container to the hidden holder; a container not holding it is left alone. */
-  release(container: HTMLElement): void
+  readonly surface: {
+    /** Draws the element in the container, which shows the picture of a video. */
+    attach(container: HTMLElement): void
+    /** Moves the element from the container to the hidden holder; a container not holding it is left alone. */
+    release(container: HTMLElement): void
+  }
 }
 
 /** Creates the media element. Tests substitute their own. */
@@ -235,11 +240,13 @@ export function createMediaPlayer(create: MediaFactory = createVideoElement): Pl
   }
 
   return {
-    url: readonly(url),
-    position: readonly(position),
-    duration: readonly(duration),
-    isPlaying: readonly(isPlaying),
-    error: readonly(error),
+    state: {
+      url: readonly(url),
+      position: readonly(position),
+      duration: readonly(duration),
+      isPlaying: readonly(isPlaying),
+      error: readonly(error),
+    },
 
     load: (url) => {
       load(url)
@@ -248,7 +255,7 @@ export function createMediaPlayer(create: MediaFactory = createVideoElement): Pl
     play: (url) => {
       const audio = load(url)
       if (!audio) return
-      audio.play().catch((thrown: unknown) => {
+      audio.play().catch((thrown: Caught) => {
         isPlaying.value = false
         // An AbortError from a play interrupted by the window is not a failure. Any other
         // rejection is a play request with no effect and fires no `error` event, so the
@@ -270,13 +277,15 @@ export function createMediaPlayer(create: MediaFactory = createVideoElement): Pl
 
     getDuration,
 
-    attach: (container) => {
-      const media = getElement()
-      if (media) container.append(media)
-    },
+    surface: {
+      attach: (container) => {
+        const media = getElement()
+        if (media) container.append(media)
+      },
 
-    release: (container) => {
-      if (element && element.parentElement === container) getHolder().append(element)
+      release: (container) => {
+        if (element && element.parentElement === container) getHolder().append(element)
+      },
     },
   }
 }

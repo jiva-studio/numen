@@ -12,14 +12,14 @@ import {
   type VaultSummaryContext,
   type ViewRegistration,
 } from '@numen/plugin-sdk'
-import ReviewTab from './app/ReviewTab.vue'
-import { useReview, type Review } from './app/review'
-import type { VaultCounts } from './app/counts'
-import { VaultSummary } from './pages/vaults'
-import type { MountView } from './shared/views'
+import ReviewTab from './ui/ReviewTab.vue'
+import { useReview, type Review } from './model/review'
+import type { VaultCounts } from './model/counts'
+import VaultSummary from './ui/vaults/VaultSummary.vue'
+import type { MountView } from './model/views'
 
-export { createVaultCounts } from './app/counts'
-export { createNotices } from './app/notices'
+export { createVaultCounts } from './model/counts'
+export { createNotices } from './model/notices'
 
 /** The tab kind the review is rendered in. */
 export const REVIEW = 'flashcards.review'
@@ -51,8 +51,12 @@ export function createReviewKind(deps: ReviewKindDeps): TabKindRegistration<Revi
         agent: deps.agent,
         mountView: deps.mountView,
         goToVaults: () => deps.closeTab(id),
+        getViewport: () => ({
+          screen: window.screen.width,
+          page: document.documentElement.clientWidth,
+        }),
       }),
-    getTitle: (state) => state.vaultCount.value?.name ?? 'Flashcards',
+    getTitle: (state) => state.vaultCount.value?.identity.name ?? 'Flashcards',
     onKeyPress: (state, event) => state.onKeyDown(event),
   }
 }
@@ -67,7 +71,8 @@ export function createVaultSummaryView(counts: VaultCounts): ViewRegistration {
       setup(props) {
         counts.start()
         const vault = computed(
-          () => counts.vaults.value.find((one) => one.vault === props.context.vault) ?? null,
+          () =>
+            counts.vaults.value.find((one) => one.identity.vault === props.context.vault) ?? null,
         )
         return () => h(VaultSummary, { vault: vault.value })
       },

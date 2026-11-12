@@ -6,7 +6,11 @@
  */
 import { computed } from 'vue'
 import { Switch } from '@numen/ui'
-import type { ConnectionFieldInfo, ConnectionTypeInfo, ConnectionValue } from '@numen/core-client'
+import type {
+  ConnectionFieldInfo,
+  ConnectionTypeInfo,
+  ConnectionValue,
+} from '@/entities/connection'
 import type { ConnectionFormView } from '../../model/connectionForm'
 import { WORDS as words } from '../../words'
 import ConnectionFieldInput from './ConnectionFieldInput.vue'

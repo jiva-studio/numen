@@ -21,7 +21,7 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view'
-import { browserClock, type Clock } from '@numen/ui'
+import type { Clock } from '@numen/ui'
 
 /** A change being made to this text by something other than the reader. */
 export interface EditorChange {
@@ -141,7 +141,7 @@ const start = (state: EditorState): Mark => {
   return { change, from, to, reveal, decorations: getDecorations(change, { from, to }, reveal) }
 }
 
-const getStepped = (transaction: Transaction): Reveal | null => {
+const getSteppedReveal = (transaction: Transaction): Reveal | null => {
   let stepping: Reveal | null = null
   for (const effect of transaction.effects) if (effect.is(setReveal)) stepping = effect.value
   return stepping
@@ -169,7 +169,7 @@ export const changeMarks = StateField.define<Mark>({
     const change = was.change
     if (!change) return was
 
-    const stepping = getStepped(transaction)
+    const stepping = getSteppedReveal(transaction)
     if (!stepping && !transaction.docChanged) return was
 
     const from = transaction.changes.mapPos(was.from, -1)
@@ -236,5 +236,4 @@ class Pace {
   }
 }
 
-export const createPacePlugin = (clock: Clock = browserClock) =>
-  ViewPlugin.define((view) => new Pace(view, clock))
+export const createPacePlugin = (clock: Clock) => ViewPlugin.define((view) => new Pace(view, clock))

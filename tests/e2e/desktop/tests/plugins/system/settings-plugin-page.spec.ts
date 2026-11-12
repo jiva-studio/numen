@@ -4,11 +4,12 @@ import { test, expect, type Page } from '../../support/test.js'
 import { observeFor } from '../../support/browser.js'
 import { openWorkspace, runCommand } from '../../support/workspace.js'
 import { readSettings } from '../../support/vault.js'
+import type { JsonValue } from '../../support/json.js'
 
 const FIRST = { id: 'md.numen.agents.antigravity', name: 'Antigravity Agent' }
 const SECOND = { id: 'md.numen.agents.claude', name: 'Claude Code Agent' }
 
-const createExecutable = async (): Promise<string> => {
+const createExecutableFile = async (): Promise<string> => {
   const path = test.info().outputPath('antigravity', 'bin', 'gemini')
   await mkdir(dirname(path), { recursive: true })
   await writeFile(path, '#!/bin/sh\n', { mode: 0o755 })
@@ -25,7 +26,7 @@ declare global {
   }
 }
 
-const writeSetting = async (page: Page, path: string[], value: unknown): Promise<void> => {
+const writeSetting = async (page: Page, path: string[], value: JsonValue): Promise<void> => {
   const answer = await page.request.post('/numen.v1.SettingsService/WriteSettings', {
     data: { settings: [{ at: path, value: JSON.stringify(value) }] },
     headers: { 'Content-Type': 'application/json' },
@@ -63,7 +64,7 @@ test.describe('The page of a plugin', () => {
   })
 
   test('shows none of the values of the plugin page opened before it', async ({ page }) => {
-    const firstPath = await createExecutable()
+    const firstPath = await createExecutableFile()
     await writeSetting(page, [FIRST.id, 'executablePath'], firstPath)
     await openWorkspace(page)
     await runCommand(page, 'Open settings', /^Open settings$/)
@@ -91,7 +92,7 @@ test.describe('The page of a plugin', () => {
   })
 
   test('stores a path under the id of the plugin and keeps no plugins object', async ({ page }) => {
-    const path = await createExecutable()
+    const path = await createExecutableFile()
     await writeSetting(page, [FIRST.id, 'executablePath'], path)
 
     const file = await readSettings(page.request)

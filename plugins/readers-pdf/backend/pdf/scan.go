@@ -161,9 +161,9 @@ func getHeightAt(width int, pageWidth, pageHeight float64) int {
 }
 
 func copyRendered(index int, rendered image.Image, release func()) (image.Image, error) {
-	page, isColour := rendered.(*image.RGBA)
+	page, isColor := rendered.(*image.RGBA)
 	// gomutants:disable-next-line BRANCH_IF reason="non-RGBA render output is rejected"
-	if !isColour {
+	if !isColor {
 		release()
 		return nil, fmt.Errorf("pdf: page %d was drawn as %T", index, rendered)
 	}

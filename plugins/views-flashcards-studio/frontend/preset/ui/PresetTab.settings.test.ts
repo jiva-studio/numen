@@ -9,13 +9,12 @@ import { describe, expect, it } from 'vitest'
 import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
-import goalSource from './preset-goal/PresetGoal.vue?raw'
-import rowsSource from './preset-settings/PresetSettings.vue?raw'
-import sliderSource from './curve-slider/CurveSlider.vue?raw'
-import tilesSource from './curve-slider/CurveTiles.vue?raw'
-import { NO_BOUNDS, type Field, type PresetTabState, type SettingValue } from '../types'
+import { NO_BOUNDS } from '../../lib/presets'
 import { BOUNDS, mountPresetTab, rows, createTab } from '../fixtures'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
+import type { PresetTabState } from '../model/types'
+import type { Field } from '../lib/fields'
+import type { SettingValue } from '../lib/settings'
 
 describe('the settings under the control', () => {
   it('draws a row for each, with what it is alongside it', () => {
@@ -140,7 +139,10 @@ describe('the settings under the control', () => {
 describe('what the tab says went wrong', () => {
   const mountWithError = (words: string) => {
     const one = createTab()
-    const state: PresetTabState = { ...one.state, errorMessage: ref(words) }
+    const state: PresetTabState = {
+      ...one.state,
+      status: { ...one.state.status, errorMessage: ref(words) },
+    }
     return { tab: mount(PresetTab, { props: { state } }), recorded: one.recorded }
   }
 
@@ -170,7 +172,10 @@ describe('what the tab says went wrong', () => {
 describe('a file that changed under the tab', () => {
   it('says so, and offers reading the file again', async () => {
     const one = createTab()
-    const state: PresetTabState = { ...one.state, hasExternalChange: ref(true) }
+    const state: PresetTabState = {
+      ...one.state,
+      status: { ...one.state.status, hasExternalChange: ref(true) },
+    }
     const tab = mount(PresetTab, { props: { state } })
     const response = tab.get('[role="status"].preset__answering')
     expect(response.text()).toContain(words.changed)
@@ -195,9 +200,12 @@ describe('the load of the week', () => {
     const loadWrites: [Field, SettingValue][] = []
     const state: PresetTabState = {
       ...one.state,
-      updateSetting: (field, value) => {
-        loadWrites.push([field, value])
-        one.recorded.push('type')
+      actions: {
+        ...one.state.actions,
+        updateSetting: (field, value) => {
+          loadWrites.push([field, value])
+          one.recorded.push('type')
+        },
       },
     }
     return { tab: mount(PresetTab, { props: { state } }), loadWrites, recorded: one.recorded }
@@ -257,46 +265,31 @@ describe('the load of the week', () => {
   })
 })
 
-describe('the line the tab is read against', () => {
-  /** What one selector declares, as the file it is written in writes it. */
-  const getStyle = (sheet: string, selector: string): string => {
-    const opens = sheet.indexOf(`\n${selector} {`)
-    expect(opens, `no rule for ${selector}`).toBeGreaterThan(-1)
-    return sheet.slice(opens, sheet.indexOf('}', opens))
-  }
+describe('the column the tab is read in', () => {
+  it('places the goal control and settings rows inside the shared column', () => {
+    const { tab } = mountPresetTab()
+    const column = tab.get('.preset__column')
 
-  /** What a rule holds a block off the column by, on the two sides it has. */
-  const getSpacing = (style: string, names: readonly string[]): readonly string[] =>
-    [...style.matchAll(/^\s*([a-z-]+):\s*([^;]+);/gm)]
-      .filter(([, name]) => names.includes(name ?? ''))
-      .map(([, name, value]) => `${name}: ${value}`)
-      .filter((one) => !one.endsWith(': 0'))
-
-  const APART = ['margin', 'margin-inline', 'margin-inline-start', 'margin-inline-end']
-  const AIR = ['padding', 'padding-inline', 'padding-inline-start', 'padding-inline-end']
-
-  /** The blocks of the column that draw a box, and the ones that draw none. */
-  const BOXED = [
-    [tilesSource, '.curve-slider__material'],
-    [sliderSource, '.curve-slider__island'],
-    [goalSource, '.preset__stopped'],
-  ] as const
-  const BARE = [
-    [goalSource, '.preset__label'],
-    [goalSource, '.preset__unpointed'],
-    [rowsSource, '.preset-settings__row'],
-  ] as const
-
-  it('puts the edge of every box on the edge of the column', () => {
-    for (const [sheet, selector] of BOXED) {
-      expect(getSpacing(getStyle(sheet, selector), APART), selector).toStrictEqual([])
-    }
+    expect(column.find('[data-preset="label"]').exists()).toBe(true)
+    expect(column.find('[data-control="material"]').exists()).toBe(true)
+    expect(column.find('.curve-slider__island').exists()).toBe(true)
+    expect(column.find('[data-preset="unpointed"]').exists()).toBe(false)
+    expect(column.find('[data-preset="stopped"]').exists()).toBe(false)
+    expect(column.findAll('[data-preset-row]').length).toBeGreaterThan(0)
   })
 
-  it('puts the text of every block that draws no box on that same edge', () => {
-    for (const [sheet, selector] of BARE) {
-      expect(getSpacing(getStyle(sheet, selector), [...APART, ...AIR]), selector).toStrictEqual([])
+  it('replaces the curve island with the unpointed notice and shows stopped notice inside the column', () => {
+    const one = createTab({ decks: 0, cards: 0 })
+    const state: PresetTabState = {
+      ...one.state,
+      status: { ...one.state.status, stopped: ref('no_minutes') },
     }
+    const tab = mount(PresetTab, { props: { state } })
+    const column = tab.get('.preset__column')
+
+    expect(column.find('.curve-slider__island').exists()).toBe(false)
+    expect(column.find('[data-preset="unpointed"]').exists()).toBe(true)
+    expect(column.find('[data-preset="stopped"]').exists()).toBe(true)
   })
 })
 

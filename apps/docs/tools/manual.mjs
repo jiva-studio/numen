@@ -17,7 +17,7 @@ import { readFile, readdir, writeFile } from 'node:fs/promises'
 import {
   ReadError,
   getPluginCommands,
-  readBracketed,
+  readBracketedText,
   readWords,
 } from '../../../tools/ci-commands/commands.mjs'
 import { hasPreset } from '../../../tools/ci-stories/presets.mjs'
@@ -26,20 +26,25 @@ import { cell } from './cell.mjs'
 
 const EDITOR = new URL('../../desktop/editor/src/', import.meta.url)
 // The window's shared layer, which is where the words stand.
-const UI = new URL('shared/', EDITOR)
-// The slice the commands and their keystrokes stand in.
-const PALETTE = new URL('features/command-palette/', EDITOR)
-// Where the window adds the plugins' commands to its own.
-const APP = new URL('app/', EDITOR)
+const UI = new URL('shared/ui/', EDITOR)
+// The slices that declare the commands the palette lists, in the order the palette draws them, and
+// the words each one names its text in. The palette's own commands name their text in the window's
+// words directly.
+const COMMAND_SLICES = [
+  { file: 'features/note-commands/model/commands.ts', words: 'features/note-commands/words.ts' },
+  { file: 'features/file-commands/model/commands.ts', words: 'features/file-commands/words.ts' },
+  { file: 'features/command-palette/lib/window-commands/windowCommands.ts' },
+  { file: 'features/vault-commands/model/commands.ts', words: 'features/vault-commands/words.ts' },
+]
 // The window the palette is drawn in, as a plugin manifest names it.
 const TARGET = 'desktop.editor'
-const GO = new URL('../../../libs/core/', import.meta.url)
+const GO = new URL('../../../libs/core/kernel/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
 const PAGES = new URL('../src/content/docs/', import.meta.url)
 
 /** The shared commands of the application, which plugins handle. */
 const SHARED = JSON.parse(
-  await readFile(new URL('../../../libs/protocol/commands.json', import.meta.url), 'utf8'),
+  await readFile(new URL('../../../libs/core/protocol/commands.json', import.meta.url), 'utf8'),
 )
 
 /**
@@ -64,8 +69,24 @@ const refuse = (error) => {
   throw error
 }
 
-/** What one entry of the window's words says. */
-const said = (whole, name) => readWords(whole, name, UI).catch(refuse)
+const said = async (sources, name) => {
+  let unread
+  for (const whole of sources) {
+    try {
+      return await readWords(whole, name, UI)
+    } catch (error) {
+      if (!(error instanceof ReadError)) throw error
+      unread = error
+    }
+  }
+  return refuse(unread)
+}
+
+/** The sources of the words the palette draws: the window's own and the palette's. */
+const readWordSources = async () => [
+  await read(UI, 'words.ts'),
+  await read(EDITOR, 'features/command-palette/words.ts'),
+]
 
 const readPlugins = () => getPluginCommands(TARGET).catch(refuse)
 
@@ -82,31 +103,28 @@ const readPlugins = () => getPluginCommands(TARGET).catch(refuse)
 const listed = (source, from) => {
   const opens = source.slice(from).match(/=>?\s*\[/)
   if (!opens) return null
-  return readBracketed(source, from + opens.index + opens[0].length - 1)
-}
-
-/** The list one exported name is declared as. */
-const declaring = (source, name, what) => {
-  const at = source.indexOf(`export const ${name}`)
-  const found = at < 0 ? null : listed(source, at)
-  if (!found) die(what)
-  return found
+  return readBracketedText(source, from + opens.index + opens[0].length - 1)
 }
 
 /* ------------------------------------------------------------------ keys */
 
 /**
- * The full id of every command of the window, by the name chords.ts and the table give it. The
- * names are the keys of COMMAND in commandIds.ts, each filed under the owner app.
+ * The full id of every command of the window, by the name the table gives it. The
+ * names are the keys of COMMAND in ids.ts, each filed under the owner app.
  */
 const readCommandIds = async () => {
-  const source = await read(EDITOR, 'shared/commandIds.ts')
+  const source = await read(EDITOR, 'shared/model/command/ids.ts')
   const ids = new Map(
     [...source.matchAll(/^\s*([A-Za-z]+):\s*formatAppCommandId\('([^']+)'\)/gm)].map(
       ([, name, id]) => [name, `app:${id}`],
     ),
   )
-  if (ids.size === 0) die('commandIds.ts no longer names its commands')
+  if (ids.size === 0) die('ids.ts no longer names its commands')
+  const rows = source.matchAll(/^\s*([A-Za-z]+):\s*`\$\{COMMAND\.([A-Za-z]+)\}(#[a-z]+)`/gm)
+  for (const [, name, command, argument] of rows) {
+    const id = ids.get(command)
+    if (id) ids.set(name, `${id}${argument}`)
+  }
   return ids
 }
 
@@ -117,59 +135,56 @@ const getCommandId = (ids, name) => {
   return id
 }
 
-/** Every chord the window carries out a command for, in the order it declares them. */
-const chords = (source, ids) => {
-  const table = declaring(source, 'CHORDS', 'chords.ts no longer lists its chords')
-  const found = [
-    ...table.text.matchAll(
-      /\{\s*command:\s*COMMAND\.([A-Za-z]+),\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
-    ),
-  ].map(([, name, letter, shift]) => ({
-    command: getCommandId(ids, name),
-    letter,
-    shift: shift === 'true',
-  }))
-  if (found.length === 0) die('no chords are declared in chords.ts')
-  if (found.length !== table.entries) {
-    die(`chords.ts lists ${table.entries} chords and this reads ${found.length}`)
-  }
-  return found
+/** The keys of the application, in the order commands.json declares them. */
+const readKeybindings = () => {
+  const found = SHARED.keybindings ?? []
+  if (found.length === 0) die('commands.json declares no keybindings')
+  return found.map(({ key, command, values, when }) => {
+    if (Object.keys(values ?? {}).length > 0 || when) {
+      die(`the keyboard page cannot draw the key '${key}', which has values or a condition`)
+    }
+    const parts = key.split('+')
+    const letter = parts.at(-1)
+    const modifiers = parts.slice(0, -1)
+    if (!/^[a-z]$/.test(letter) || modifiers.some((one) => one !== 'mod' && one !== 'shift')) {
+      die(`the keyboard page draws only mod and shift with a letter, and not '${key}'`)
+    }
+    return { command, letter, shift: modifiers.includes('shift') }
+  })
 }
 
 /** The chord as it is drawn: Control and Command are one key. */
-const chordOf = ({ letter, shift }) => {
+const chordOf = ({ letter, shift, alt }) => {
   const keys = ['<kbd>Ctrl</kbd>/<kbd>⌘</kbd>']
+  if (alt) keys.push('<kbd>Alt</kbd>/<kbd>⌥</kbd>')
   if (shift) keys.push('<kbd>⇧</kbd>')
   keys.push(`<kbd>${letter.toUpperCase()}</kbd>`)
   return keys.join(' ')
 }
 
 const keyboard = async () => {
-  const keys = await read(PALETTE, 'lib/chords/chords.ts')
-  const words = await read(UI, 'words.ts')
+  const words = await readWordSources()
   const ids = await readCommandIds()
+  const declared = await readCommands(ids)
+  const search = getCommandId(ids, 'searchVault')
+  const commands = getCommandId(ids, 'openCommands')
 
-  // The two the window keeps for itself are not in that table: they put the
-  // palette up, and the palette answers them.
-  const palette = await read(PALETTE, 'model/palette/shortcuts.ts')
-  for (const letter of ['k', 'p']) {
-    if (!palette.includes(`key === '${letter}'`)) {
-      die(`the palette no longer answers '${letter}' itself`)
-    }
+  // The two that put a palette up are no row of the palette: the window answers them itself.
+  const text = async (command) => {
+    if (command === search) return said(words, 'find')
+    if (command === commands) return 'Commands'
+    return said(words, spoken(declared, command))
   }
 
-  const rows = [
-    `| ${chordOf({ letter: 'k' })} | ${await said(words, 'find')} |`,
-    `| ${chordOf({ letter: 'p' })} | Commands |`,
-  ]
-  const declared = await readCommands(ids)
-  for (const chord of chords(keys, ids)) {
-    rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(declared, chord.command))} |`)
+  const rows = []
+  for (const one of readKeybindings()) {
+    rows.push(`| ${chordOf(one)} | ${await text(one.command)} |`)
   }
   for (const plugin of await readPlugins()) {
     for (const command of plugin.commands) {
       if (command.chord) rows.push(`| ${chordOf(command.chord)} | ${command.text} |`)
     }
+    for (const bound of plugin.bound) rows.push(`| ${chordOf(bound.chord)} | ${bound.text} |`)
   }
   return ['| | |', '| --- | --- |', ...rows].join('\n')
 }
@@ -177,17 +192,22 @@ const keyboard = async () => {
 /* -------------------------------------------------------------- commands */
 
 /**
- * Where each row of the list begins, so that what one row says is read out of
- * the row itself and not out of a fixed number of characters after its id: a
- * row grown longer than that number is a row that stops matching.
+ * Where each row of a slice begins, so that what one row says is read out of the row itself and
+ * not out of a fixed number of characters after its id: a row grown longer than that number is a
+ * row that stops matching.
  *
- * Every command the list holds is a command read here. One written in a shape
- * this cannot find an id in stops the build.
+ * The rows of a slice stand before its handlers. Every row has an id and a group, and a count of
+ * the one held against the count of the other stops the build at a row written in a shape this
+ * cannot find an id in.
  */
-const rowsOf = ({ text, entries }, ids, path = 'table.ts') => {
-  const found = [...text.matchAll(/\bid:\s*COMMAND\.([A-Za-z]+)/g)]
-  if (found.length !== entries) {
-    die(`${path} lists ${entries} commands and this reads ${found.length}`)
+const rowsOf = (source, ids, path) => {
+  const end = source.search(/\bhandlers:/)
+  const text = end < 0 ? source : source.slice(0, end)
+  const found = [...text.matchAll(/\bid:\s*(?:COMMAND|ROW)\.([A-Za-z]+)/g)]
+  const groups = [...text.matchAll(/^\s*group:\s*'/gm)].length
+  if (found.length === 0) die(`${path} declares no commands`)
+  if (found.length !== groups) {
+    die(`${path} declares ${groups} groups and this reads ${found.length} commands`)
   }
   return found.map((one, i) => ({
     id: getCommandId(ids, one[1]),
@@ -195,42 +215,54 @@ const rowsOf = ({ text, entries }, ids, path = 'table.ts') => {
   }))
 }
 
-/** The window's own commands, read from table.ts and every slice it composes, in its order. */
-const readCommands = async (ids) => {
-  const at = new URL('lib/commands/table.ts', PALETTE)
-  const source = await readFile(at, 'utf8')
-  const list = declaring(source, 'createCommands', 'table.ts no longer lists its commands')
-  const calls = [...list.text.matchAll(/\.\.\.([A-Za-z0-9_]+)\(/g)].map((m) => m[1])
-  if (calls.length === 0) die('table.ts composes no commands')
-  const imports = new Map(
-    [...source.matchAll(/import\s*\{([^}]+)\}\s*from\s*'([^']+)'/g)].flatMap(
-      ([, names, specifier]) => names.split(',').map((n) => [n.trim(), specifier]),
-    ),
+/** What a slice's words name in the window's words: its own name for each entry. */
+const readWordNames = (whole, path) => {
+  const names = new Map(
+    [...whole.matchAll(/^\s*([A-Za-z]+):\s*WORDS\.([A-Za-z]+),?$/gm)].map(([, own, entry]) => [
+      own,
+      entry,
+    ]),
   )
+  if (names.size === 0) die(`${path} no longer names its words in the window's words`)
+  return names
+}
+
+/** The rows of one slice, with their text named in the window's words. */
+const readSliceRows = async (slice, ids) => {
+  const rows = rowsOf(await read(EDITOR, slice.file), ids, slice.file)
+  if (!slice.words) return rows
+  const names = readWordNames(await read(EDITOR, slice.words), slice.words)
+  return rows.map(({ id, said: row }) => ({
+    id,
+    said: row.replace(/text:\s*[A-Z]+_WORDS\.([A-Za-z]+)/, (_whole, own) => {
+      const entry = names.get(own)
+      if (!entry) die(`${slice.words} has no words for '${own}'`)
+      return `text: words.${entry}`
+    }),
+  }))
+}
+
+/** The window's own commands, read from the slices that declare them, in the order they are drawn. */
+const readCommands = async (ids) => {
   const rows = []
-  for (const fn of calls) {
-    const specifier = imports.get(fn)
-    if (!specifier) die(`table.ts calls '${fn}' without importing it`)
-    const path = new URL(`${specifier}.ts`, at)
-    const part = declaring(await readFile(path, 'utf8'), fn, `${specifier} no longer lists ${fn}`)
-    rows.push(...rowsOf(part, ids, specifier))
-  }
+  for (const slice of COMMAND_SLICES) rows.push(...(await readSliceRows(slice, ids)))
   return rows
 }
 
 /**
- * The window's commands over the text versions of a file, read from versionCommands.ts: each row's
- * group, and its text from the words that file declares.
+ * The window's commands over the text versions of a file: each row's group is read from the
+ * version-commands slice, and its text from the words that slice declares.
  */
 const readVersionCommands = async () => {
-  const source = await read(APP, 'commands/versionCommands.ts')
-  const words = source.match(/const VERSION_WORDS = \{([^}]*)\}/)?.[1]
-  if (words === undefined) die('versionCommands.ts no longer declares its words')
+  const source = await read(EDITOR, 'features/version-commands/model/commands.ts')
+  const wordsSource = await read(EDITOR, 'features/version-commands/words.ts')
+  const words = wordsSource.match(/const VERSION_WORDS = \{([^}]*)\}/)?.[1]
+  if (words === undefined) die('version-commands/words.ts no longer declares its words')
   const rows = [...source.matchAll(/text:\s*VERSION_WORDS\.([A-Za-z]+),\s*group:\s*'([a-z]+)'/g)]
-  if (rows.length === 0) die('versionCommands.ts declares no command')
+  if (rows.length === 0) die('commands.ts declares no command')
   return rows.map(([, word, group]) => {
     const text = words.match(new RegExp(`\\b${word}:\\s*'([^']+)'`))?.[1]
-    if (!text) die(`versionCommands.ts has no words for '${word}'`)
+    if (!text) die(`version-commands/words.ts has no words for '${word}'`)
     return { text, group }
   })
 }
@@ -245,7 +277,7 @@ const spoken = (declared, command) => {
 
 /** That the window still draws a plugin's palette setting as its name and the setting's title. */
 const checkSettingCommands = async () => {
-  const source = await read(APP, 'window/settingCommands.ts')
+  const source = await read(EDITOR, 'features/settings-commands/model/settingCommands.ts')
   if (!source.includes('`${owner.name}: ${setting.title}`')) {
     die(
       'settingCommands.ts no longer names a plugin setting in the palette as its plugin and title',
@@ -254,9 +286,9 @@ const checkSettingCommands = async () => {
 }
 
 /**
- * The shared commands a plugin handles, in the order libs/protocol/commands.json lists them: over
+ * The shared commands a plugin handles, in the order libs/core/protocol/commands.json lists them: over
  * the note where the command declares no required argument, and over the window where it asks for
- * one, as the window's sharedCommands.ts files them.
+ * one, as the window's shared commands file them.
  */
 const getSharedRows = (plugins) => {
   const handled = new Set(plugins.flatMap((one) => one.handled))
@@ -270,13 +302,12 @@ const getSharedRows = (plugins) => {
 
 /** Every command the palette offers, in the order it draws them. */
 const commands = async () => {
-  const words = await read(UI, 'words.ts')
-  const keys = await read(PALETTE, 'lib/chords/chords.ts')
+  const words = await readWordSources()
   const ids = await readCommandIds()
-  const table = chords(keys, ids)
+  const table = readKeybindings()
 
   const declared = await readCommands(ids)
-  if (declared.length === 0) die('no commands are declared in table.ts')
+  if (declared.length === 0) die('no commands are declared in the command slices')
 
   // Every command declared is a command the page carries. One the words or the
   // groups say nothing about stops the build.
@@ -287,18 +318,20 @@ const commands = async () => {
     if (!word) die(`no words draw the command '${id}'`)
     if (!group) die(`the command '${id}' is in no group`)
     const chord = table.find((one) => one.command === id)
-    const key = chord
-      ? chordOf(chord)
-      : id === getCommandId(ids, 'searchVault')
-        ? chordOf({ letter: 'k' })
-        : ''
+    const key = chord ? chordOf(chord) : ''
     own.push({ text: await said(words, word[1]), group: group[1], key })
+  }
+  // A row the window draws for a command a plugin binds with values carries the key of the plugin.
+  const plugins = await readPlugins()
+  const bound = plugins.flatMap((one) => one.bound)
+  for (const row of own) {
+    const found = bound.find((one) => one.text === row.text)
+    if (!row.key && found) row.key = chordOf(found.chord)
   }
 
   // The window's own commands come first, then what the plugins add, in the
-  // order useCommands.ts hands them to the palette.
+  // order createCommands.ts hands them to the palette.
   await checkSettingCommands()
-  const plugins = await readPlugins()
   const rows = [
     ...own,
     ...(await readVersionCommands()),
@@ -412,7 +445,7 @@ const kindOf = (given) => {
 
 /**
  * The comment lines over a type. A settings type carries the line
- * `//numen:settings`: tools/lint-comments keeps the comments on its fields,
+ * `//numen:settings`: tools/checks/style/comments keeps the comments on its fields,
  * which this reads as the descriptions of the keys.
  */
 const SETTINGS_MARKER = '//numen:settings'
@@ -708,7 +741,62 @@ const flags = async () => {
 
 /* ------------------------------------------------------------ the command line */
 
-const CLI = new URL('../../../libs/core/adapter/cli/', import.meta.url)
+const CLI = new URL('../../../libs/core/kernel/adapter/cli/', import.meta.url)
+
+/**
+ * The text the command line prints when asked for help, put together the way
+ * it puts it together: `usageHead`, the synopsis of each built-in command in
+ * the order the registry lists them, then `usageTail`. A synopsis is the string
+ * returned by the `Synopsis` method of a command type; the vault subcommands
+ * are listed in `newVaultCommand`. Commands the plugins declare are not in the
+ * source, so they are not on this page.
+ */
+const getUsageText = async () => {
+  const constant = (source, name) => {
+    const found = source.match(new RegExp('const ' + name + ' = `([^`]*)`'))
+    if (!found) die(`cli.go no longer defines ${name}`)
+    return found[1]
+  }
+
+  const cliSource = await read(CLI, 'cli.go')
+  const head = constant(cliSource, 'usageHead')
+  const tail = constant(cliSource, 'usageTail')
+  if (!head.includes('usage:')) die('cli.go no longer prints a usage string')
+
+  const names = (await readdir(CLI)).filter((n) => n.endsWith('.go') && !n.endsWith('_test.go'))
+  const synopses = new Map()
+  const method =
+    /func \((?:\w+ )?(\w+)\) Synopsis\(\) string \{\s*return ("(?:[^"\\\n]|\\.)*"|`[^`]*`)\s*\}/g
+  for (const name of names) {
+    for (const [, type, literal] of (await read(CLI, name)).matchAll(method)) {
+      synopses.set(type, literal.startsWith('`') ? literal.slice(1, -1) : JSON.parse(literal))
+    }
+  }
+
+  const typesIn = (source, from) => {
+    const start = source.indexOf(from)
+    if (start === -1) die(`the cli package no longer has ${from}`)
+    const end = source.indexOf('\n}', start)
+    return [...source.slice(start, end).matchAll(/^\t\t(\w+)\{/gm)].map((one) => one[1])
+  }
+
+  const vault = typesIn(await read(CLI, 'vault.go'), 'func newVaultCommand')
+  const builtin = []
+  for (const type of typesIn(await read(CLI, 'command.go'), 'func getBuiltinCommands')) {
+    if (type !== 'helpCommand') builtin.push(type)
+  }
+  if (!(await read(CLI, 'command.go')).includes('newVaultCommand(session)')) {
+    die('command.go no longer lists the vault commands')
+  }
+  const commands = [...vault, ...builtin]
+
+  const lines = commands.map((type) => {
+    const synopsis = synopses.get(type)
+    if (!synopsis) die(`${type} has no synopsis the manual can read`)
+    return synopsis
+  })
+  return head + lines.join('\n') + '\n' + tail
+}
 
 /**
  * What the command line says it takes, out of the one string it prints when
@@ -717,9 +805,7 @@ const CLI = new URL('../../../libs/core/adapter/cli/', import.meta.url)
  * prose and is written on the page.
  */
 const cli = async () => {
-  const source = await read(CLI, 'cli.go')
-  const usage = source.match(/const usage = `([\s\S]*?)`/)
-  if (!usage) die('cli.go no longer prints a usage string')
+  const usage = [null, await getUsageText()]
 
   /** Where a command stands. Anything further in is a line, not an entry. */
   const LEFT = 2

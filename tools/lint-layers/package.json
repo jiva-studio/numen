@@ -3,25 +3,25 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Validation and enforcement of architectural layer boundaries across backend, plugins, and frontend.",
+  "description": "The ESLint and stylelint rules of the repository, with the tests that prove them. The checks that apply them live in tools/checks.",
   "dependencies": {
     "@vue/compiler-sfc": "^3.5.44",
-    "dependency-cruiser": "^18.7.0",
+    "dependency-cruiser": "^18.7.1",
     "postcss": "^8.5.32",
     "postcss-html": "^2.0.0",
     "postcss-value-parser": "^4.2.0",
     "stylelint": "^17.16.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.12.0",
-    "globals": "^17.12.0",
+    "globals": "^17.14.0",
     "typescript-eslint": "^8.72.1"
   },
   "scripts": {
-    "check": "node check.mjs",
-    "test": "node --test ./*.test.mjs ./checks/*.test.mjs ../shared/*.test.mjs"
+    "test": "node --test ./*.test.mjs ../shared/*.test.mjs"
   }
 }

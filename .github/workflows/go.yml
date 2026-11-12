@@ -44,7 +44,7 @@ jobs:
       - id: go
         uses: ./.github/actions/setup-go
         with:
-          go-version-file: libs/core/go.mod
+          go-version-file: libs/core/kernel/go.mod
           cache-key: core-lint
 
       - uses: ./.github/actions/install-golangci-lint
@@ -52,7 +52,7 @@ jobs:
       - name: Lint the core libraries
         run: |
           set -euo pipefail
-          for module in libs/core libs/notes libs/plugin-catalog libs/protocol; do
+          for module in libs/core/kernel libs/atomicfile libs/note libs/plugin/catalog libs/core/protocol tools/checks/structure/go; do
             echo "::group::$module"
             (
               cd "$module"
@@ -69,11 +69,11 @@ jobs:
       # branch that changed nothing.
       - uses: ./.github/actions/govulncheck
         with:
-          working-directory: libs/core
+          working-directory: libs/core/kernel
 
       - uses: ./.github/actions/govulncheck
         with:
-          working-directory: libs/protocol
+          working-directory: libs/core/protocol
 
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache
@@ -101,7 +101,7 @@ jobs:
       - id: go
         uses: ./.github/actions/setup-go
         with:
-          go-version-file: libs/core/go.mod
+          go-version-file: libs/core/kernel/go.mod
           cache-key: core-test-${{ matrix.race && 'race' || 'plain' }}
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -133,11 +133,41 @@ jobs:
           RACE: ${{ matrix.race && '-race' || '' }}
         run: |
           set -euo pipefail
-          for module in libs/core libs/notes libs/plugin-catalog; do
+          for module in libs/core/kernel libs/atomicfile libs/note libs/plugin/catalog; do
             echo "::group::$module"
             (cd "$module" && go test ${RACE:+"$RACE"} ./...)
             echo "::endgroup::"
           done
+
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-key: ${{ steps.go.outputs.cache-key }}
+
+  # The structural checks of the Go code type-check every module of the workspace, so they run once, on
+  # one machine, and not on each platform of the core tests.
+  structure:
+    name: Structure Checks
+    if: inputs.core
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: libs/core/kernel/go.mod
+          cache-key: structure-checks
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      - name: Run the Go checks
+        run: make checks TAGS=go
 
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache
@@ -158,11 +188,11 @@ jobs:
           persist-credentials: false
 
       - name: Self-test migration rule
-        run: libs/core/adapter/index/migration-forward-only.sh --self-test
+        run: libs/core/kernel/adapter/index/migration-forward-only.sh --self-test
 
       - name: Verify migrations are forward-only
         if: github.event_name == 'pull_request'
-        run: libs/core/adapter/index/migration-forward-only.sh HEAD^1
+        run: libs/core/kernel/adapter/index/migration-forward-only.sh HEAD^1
 
   schema:
     name: Protocol Schema
@@ -171,7 +201,7 @@ jobs:
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: libs/protocol
+        working-directory: libs/core/protocol
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -180,7 +210,7 @@ jobs:
       - id: go
         uses: ./.github/actions/setup-go
         with:
-          go-version-file: libs/protocol/go.mod
+          go-version-file: libs/core/protocol/go.mod
           cache-key: schema
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -232,13 +262,13 @@ jobs:
       - id: go
         uses: ./.github/actions/setup-go
         with:
-          go-version-file: libs/plugin-sdk-go/go.mod
+          go-version-file: libs/plugin/sdk-go/go.mod
           cache-key: sdk
 
       - uses: ./.github/actions/install-golangci-lint
 
       - name: Verify Go formatting
-        working-directory: libs/plugin-sdk-go
+        working-directory: libs/plugin/sdk-go
         run: |
           unformatted=$(gofmt -l .)
           if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
@@ -378,6 +408,10 @@ jobs:
       - name: Build the profile normaliser
         working-directory: apps/desktop/build/pgonorm
         run: go build -o /dev/null .
+
+      - name: Run CLI end-to-end tests
+        working-directory: .
+        run: tests/e2e/cli/plugin-commands.sh
 
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache

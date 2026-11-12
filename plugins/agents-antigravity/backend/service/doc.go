@@ -1,3 +1,3 @@
-// Package service serves the agents-antigravity plugin: it runs the Antigravity CLI for agent tasks and
-// lists the models the CLI offers.
+// Package service is the composition root of the agents-antigravity plugin: it builds the adapters and the
+// use cases and serves them over the agent service.
 package service

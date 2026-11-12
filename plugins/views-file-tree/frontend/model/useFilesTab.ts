@@ -9,43 +9,28 @@ import {
   NOTE_TYPE,
   useSlotMenu,
   type CommandTarget,
+  type Caught,
 } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
-import { TRASH_NOTE } from '../lib/menu'
+import { CREATE_FOLDER, CREATE_NOTE, TRASH_FILE } from '../lib/menu'
 import { resolveRenamePath } from './rename'
 import { WORDS as words } from '../words'
 import type {
   DropPosition,
   Entry,
   FilesTabDeps,
+  FilesTabEntries,
+  FilesTabMenu,
   FilesTabState,
   FileTree,
   MenuRequest,
 } from '../types'
 import * as create from './create'
 
-export type { DropPosition, FilesTabDeps, FilesTabState, MenuRequest }
+export type { FilesTabDeps, FilesTabState }
 
-const createFailureReporter = (deps: FilesTabDeps) => (error: unknown) => {
-  deps.showError(formatErrorMessage(error))
-}
-
-function createFileCreation(
-  list: FileTree,
-  deps: FilesTabDeps,
-  renamingPath: ReturnType<typeof ref<string | null>>,
-) {
-  const createFolder = async (path: string | null) => {
-    const createdItem = await create.createFolder(list, deps, path)
-    if (createdItem) renamingPath.value = createdItem
-  }
-
-  const createNote = async (path: string | null) => {
-    const createdItem = await create.createNote(list, deps, path)
-    if (createdItem) renamingPath.value = createdItem
-  }
-
-  return { createFolder, createNote }
+const createFailureReporter = (deps: FilesTabDeps) => (error: Caught) => {
+  deps.window.showError(formatErrorMessage(error))
 }
 
 function createFileMoves(list: FileTree, deps: FilesTabDeps) {
@@ -53,8 +38,8 @@ function createFileMoves(list: FileTree, deps: FilesTabDeps) {
     if (paths.length === 0) return
 
     const into = resolveDropFolder(target)
-    await list.loadFolder(into)
-    const existingNames = new Set(list.getEntriesInFolder(into).map((one) => one.name))
+    await list.sync.loadFolder(into)
+    const existingNames = new Set(list.queries.getEntriesInFolder(into).map((one) => one.name))
     const conflictedNames: string[] = []
 
     for (const path of paths) {
@@ -66,18 +51,19 @@ function createFileMoves(list: FileTree, deps: FilesTabDeps) {
         continue
       }
       existingNames.add(name)
-      await deps.movePath(path, to)
+      await deps.transfer.movePath(path, to)
     }
 
-    if (conflictedNames.length > 0) deps.showError(`${words.taken} ${conflictedNames.join(', ')}`)
-    await list.refresh()
+    if (conflictedNames.length > 0)
+      deps.window.showError(`${words.taken} ${conflictedNames.join(', ')}`)
+    await list.sync.refresh()
   }
 
   return { move }
 }
 
 const getMenuEntry = (list: FileTree, path: string): Entry =>
-  list.getEntryAt(path) ?? {
+  list.queries.getEntryAt(path) ?? {
     path,
     name: getFileName(path),
     isFolder: false,
@@ -104,6 +90,8 @@ const getMenuTarget = (
         overPaths.filter((one) => one !== path),
       )
 
+const CREATED_COMMANDS: ReadonlySet<string> = new Set([CREATE_NOTE, CREATE_FOLDER])
+
 /** The words of the rows the menu writes itself. */
 const MENU_WORDS = { loadingText: words.loadingItems }
 
@@ -113,17 +101,21 @@ interface FileMenuTarget {
   readonly target: CommandTarget
 }
 
-function useFileMenu(list: FileTree, deps: FilesTabDeps) {
+function useFileMenu(
+  list: FileTree,
+  deps: FilesTabDeps,
+  showCreated: (folder: string, path: string) => Promise<void>,
+): FilesTabMenu {
   const reportFailure = createFailureReporter(deps)
   const slotMenu = useSlotMenu<FileMenuTarget>({
-    listItems: (command, { target }) => deps.listItems(command, target),
+    listItems: (command, { target }) => deps.menu.listItems(command, target),
     words: MENU_WORDS,
     onError: reportFailure,
   })
   const menu = computed(() => slotMenu.target.value?.request ?? null)
 
   const getOverPaths = (path: string): readonly string[] =>
-    list.selectedPaths.value.includes(path) ? list.selectedPaths.value : [path]
+    list.state.selectedPaths.value.includes(path) ? list.state.selectedPaths.value : [path]
 
   const getTarget = (path: string | null): CommandTarget =>
     getMenuTarget(list, path, path === null ? [] : getOverPaths(path))
@@ -131,14 +123,17 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
   /** Opens the menu the request asks for, over the row it was opened on. */
   const openMenu = (request: MenuRequest) => {
     const target = getTarget(request.path)
-    slotMenu.open(() => ({ target: { request, target }, entries: deps.getMenuEntries(target) }))
+    slotMenu.open(() => ({
+      target: { request, target },
+      entries: deps.menu.getMenuEntries(target),
+    }))
   }
 
   /** The rows of the open menu for its row; for another row, its rows before any list is read. */
   const getMenuItems = (path: string | null) => {
     const openMenuTree = slotMenu.menu.value
     if (openMenuTree && menu.value?.path === path) return openMenuTree.items
-    return createSlotMenu(deps.getMenuEntries(getTarget(path)), new Map(), MENU_WORDS).items
+    return createSlotMenu(deps.menu.getMenuEntries(getTarget(path)), new Map(), MENU_WORDS).items
   }
 
   const getMenuIcon = (id: string): Component | null =>
@@ -147,41 +142,51 @@ function useFileMenu(list: FileTree, deps: FilesTabDeps) {
   const chooseMenuItem = (id: string) => {
     const choice = slotMenu.pick(id)
     if (!choice) return
-    deps.runCommand(choice.command, choice.target.target, choice.itemId).catch(reportFailure)
+    deps.menu
+      .runCommand(choice.command, choice.target.target, choice.itemId, choice.values)
+      .then((made) =>
+        CREATED_COMMANDS.has(choice.command) && made
+          ? showCreated(choice.target.target.path, made)
+          : undefined,
+      )
+      .catch(reportFailure)
   }
 
   return {
-    menu,
-    openMenu,
-    dismissMenu: slotMenu.close,
-    chooseMenuItem,
+    request: menu,
+    open: openMenu,
+    dismiss: slotMenu.close,
+    choose: chooseMenuItem,
     getOverPaths,
-    getMenuItems,
-    getMenuIcon,
+    getItems: getMenuItems,
+    getIcon: getMenuIcon,
   }
 }
 
 function createFileActions(list: FileTree, deps: FilesTabDeps) {
-  const getNameOf = (path: string): string => list.getEntryAt(path)?.name ?? getFileName(path)
+  const reportFailure = createFailureReporter(deps)
+
+  const getNameOf = (path: string): string =>
+    list.queries.getEntryAt(path)?.name ?? getFileName(path)
 
   const activate = (path: string) => {
-    const entry = list.getEntryAt(path)
+    const entry = list.queries.getEntryAt(path)
     if (!entry) return
     list.selectPaths([path])
-    if (!entry.isFolder) deps.openEntry(entry)
+    if (!entry.isFolder) deps.window.openEntry(entry)
   }
 
   const rename = async (path: string, name: string) => {
-    const to = resolveRenamePath(path, name, list.getEntryAt(path)?.isFolder ?? false)
+    const to = resolveRenamePath(path, name, list.queries.getEntryAt(path)?.isFolder ?? false)
     if (!to) return
-    await deps.movePath(path, to)
-    await list.refresh()
+    await deps.transfer.movePath(path, to)
+    await list.sync.refresh()
   }
 
   const drag = (paths: readonly string[]) => {
-    deps.setDraggedPaths(
+    deps.window.setDraggedPaths(
       paths.filter((path) => {
-        const entry = list.getEntryAt(path)
+        const entry = list.queries.getEntryAt(path)
         return !!entry && !entry.isFolder && entry.isNote
       }),
     )
@@ -190,18 +195,31 @@ function createFileActions(list: FileTree, deps: FilesTabDeps) {
   const remove = (paths: readonly string[]) => {
     const first = paths[0]
     if (first === undefined) return
-    deps
-      .runCommand(TRASH_NOTE, getPathTarget(list, first, paths.slice(1)))
-      .catch(createFailureReporter(deps))
+    deps.menu
+      .runCommand(TRASH_FILE, getPathTarget(list, first, paths.slice(1)))
+      .catch(reportFailure)
   }
 
-  return { getNameOf, activate, rename, drag, remove }
+  const entries: FilesTabEntries = {
+    activate,
+    open: (path) => {
+      list.folders.openFolder(path).catch(reportFailure)
+    },
+    close: (path) => list.folders.closeFolder(path),
+    select: (paths) => list.selectPaths(paths),
+    rename,
+    remove,
+    getNameOf,
+    getEntryIcon: (entry, isOpen) => deps.window.getEntryIcon(entry, isOpen),
+  }
+
+  return { entries, drag }
 }
 
-async function selectDropped(list: FileTree, paths: readonly string[]) {
+async function selectDroppedFiles(list: FileTree, paths: readonly string[]) {
   const first = paths[0]
   if (first === undefined) return
-  await list.refresh()
+  await list.sync.refresh()
   await list.revealPath(first)
   list.selectPaths(paths)
 }
@@ -213,44 +231,32 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   }
 
   const actions = createFileActions(list, deps)
-  const creators = createFileCreation(list, deps, renamingPath)
   const { move } = createFileMoves(list, deps)
-  const fileMenu = useFileMenu(list, deps)
+  const fileMenu = useFileMenu(list, deps, async (folder, path) => {
+    await list.folders.openFolder(folder)
+    renamingPath.value = path
+  })
 
   const reportFailure = createFailureReporter(deps)
 
-  const tabState: FilesTabState = {
-    ...actions,
-    reportFailure,
+  return {
     list,
-    menu: fileMenu.menu,
-    renamingPath,
-    setRenamingPath,
-    getOverPaths: fileMenu.getOverPaths,
-    getFolderFor: (path) => create.getFolderFor(list, path),
-    open: (path) => {
-      list.openFolder(path).catch(reportFailure)
+    reportFailure,
+    entries: actions.entries,
+    renaming: { path: renamingPath, setPath: setRenamingPath },
+    transfer: {
+      getFolderFor: (path) => create.getFolderFor(list, path),
+      move,
+      drag: actions.drag,
+      drop: () => deps.window.setDraggedPaths([]),
+      canDropData: (types) => deps.transfer.canDropData(types),
+      dropData: async (data) => {
+        const folder = create.getFolderFor(list, list.state.selectedPaths.value[0] ?? null)
+        const paths = await deps.transfer.dropData(folder, data)
+        await selectDroppedFiles(list, paths)
+        return paths
+      },
     },
-    close: (path) => list.closeFolder(path),
-    select: (paths) => list.selectPaths(paths),
-    move,
-    drop: () => deps.setDraggedPaths([]),
-    createFolder: creators.createFolder,
-    createNote: creators.createNote,
-    canDropData: (types) => deps.canDropData(types),
-    dropData: async (data) => {
-      const folder = create.getFolderFor(list, list.selectedPaths.value[0] ?? null)
-      const paths = await deps.dropData(folder, data)
-      await selectDropped(list, paths)
-      return paths
-    },
-    openMenu: fileMenu.openMenu,
-    dismissMenu: fileMenu.dismissMenu,
-    chooseMenuItem: fileMenu.chooseMenuItem,
-    getMenuItems: fileMenu.getMenuItems,
-    getMenuIcon: fileMenu.getMenuIcon,
-    getEntryIcon: (entry, isOpen) => deps.getEntryIcon(entry, isOpen),
+    menu: fileMenu,
   }
-
-  return tabState
 }

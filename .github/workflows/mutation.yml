@@ -89,8 +89,8 @@ jobs:
             ${{ steps.go-cache-path.outputs.build }}
             ${{ steps.go-cache-path.outputs.modules }}
             ~/.cache/golangci-lint
-          key: ${{ matrix.target == 'libs-core' && 'go-core-test-race-Linux-' || matrix.target == 'apps-desktop' && 'go-desktop-test-Linux-' || matrix.target == 'apps-mobile' && 'go-mobile-test-Linux-' || 'go-plugins-test-Linux-' }}${{ github.sha }}
-          restore-keys: ${{ matrix.target == 'libs-core' && 'go-core-test-race-Linux-' || matrix.target == 'apps-desktop' && 'go-desktop-test-Linux-' || matrix.target == 'apps-mobile' && 'go-mobile-test-Linux-' || 'go-plugins-test-Linux-' }}
+          key: ${{ matrix.target == 'libs-core-kernel' && 'go-core-test-race-Linux-' || matrix.target == 'apps-desktop' && 'go-desktop-test-Linux-' || matrix.target == 'apps-mobile' && 'go-mobile-test-Linux-' || 'go-plugins-test-Linux-' }}${{ github.sha }}
+          restore-keys: ${{ matrix.target == 'libs-core-kernel' && 'go-core-test-race-Linux-' || matrix.target == 'apps-desktop' && 'go-desktop-test-Linux-' || matrix.target == 'apps-mobile' && 'go-mobile-test-Linux-' || 'go-plugins-test-Linux-' }}
 
       # A Go module that links the window needs the system browser's headers.
       - uses: ./.github/actions/setup-webkit
@@ -110,8 +110,8 @@ jobs:
       - name: Build the components
         if: matrix.kind == 'ts'
         run: |
-          npm run build --prefix libs/ui/core
-          npm run build --prefix libs/ui/shell
+          npm run build --prefix libs/ui/components
+          npm run build --prefix libs/ui/workbench
 
       # `-run-` ends the target's name in the key, so `apps-desktop` matches no key of `apps-desktop-editor`.
       - name: Restore the target's cache

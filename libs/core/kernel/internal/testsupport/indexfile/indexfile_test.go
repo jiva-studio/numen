@@ -1,0 +1,134 @@
+package indexfile_test
+
+import (
+	"database/sql"
+	"path/filepath"
+	"testing"
+
+	_ "modernc.org/sqlite"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
+)
+
+// A copy is at the schema the migrations produce and reports which migrations
+// ran, so a migration added later starts from the state of a real index.
+func TestACopyIsAMigratedIndex(t *testing.T) {
+	t.Parallel()
+
+	copied := indexfile.Path(t)
+
+	scratch := filepath.Join(t.TempDir(), "index.db")
+	opened, err := index.Open(t.Context(), scratch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := opened.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if target, want := versionOf(t, copied), versionOf(t, scratch); target != want {
+		t.Errorf("a copy is at schema %d, and an index opened from nothing is at %d", target, want)
+	}
+	targetVal, want := readAppliedMigrations(t, copied), readAppliedMigrations(t, scratch)
+	if len(want) == 0 {
+		t.Fatal("an index opened from nothing records nothing as applied")
+	}
+	if !equal(targetVal, want) {
+		t.Errorf("a copy says %v was applied, and an index opened from nothing says %v", targetVal, want)
+	}
+}
+
+// Two copies are two databases: what is written to one is not in the other.
+func TestCopiesAreIndependent(t *testing.T) {
+	t.Parallel()
+
+	one, err := index.Open(t.Context(), indexfile.Path(t), index.Unsynchronized())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testsupport.Close(t, one)
+
+	other := indexfile.Path(t)
+	two, err := index.Open(t.Context(), other)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testsupport.Close(t, two)
+
+	if err := one.Vaults().Register(t.Context(), "abcdefghijklmnop"); err != nil {
+		t.Fatal(err)
+	}
+
+	if target := vaultsIn(t, other); target != 0 {
+		t.Errorf("the second copy holds %d vaults, and was written to only through the first", target)
+	}
+}
+
+func versionOf(t *testing.T, path string) int {
+	t.Helper()
+	var version int
+	if err := openFile(t, path).QueryRowContext(t.Context(), "PRAGMA user_version").Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	return version
+}
+
+func vaultsIn(t *testing.T, path string) int {
+	t.Helper()
+	var count int
+	if err := openFile(t, path).QueryRowContext(t.Context(), "SELECT COUNT(*) FROM vaults").Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	return count
+}
+
+func readAppliedMigrations(t *testing.T, path string) []string {
+	t.Helper()
+	rows, err := openFile(t, path).QueryContext(t.Context(),
+		"SELECT name FROM schema_migrations ORDER BY version")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	var out []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, name)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+func openFile(t *testing.T, path string) *sql.DB {
+	t.Helper()
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testsupport.CloseAfter(t, db)
+	return db
+}
+
+func equal(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}

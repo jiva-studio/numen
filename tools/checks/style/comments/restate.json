@@ -1,0 +1,16 @@
+{
+  "thresholdPercent": 80,
+  "minPrefixLength": 4,
+  "stopWords": [
+    "a", "an", "the", "of", "to", "for", "in", "is", "are", "was", "were", "be", "been", "by", "that", "which",
+    "and", "or", "with", "from", "on", "as", "it", "its", "this", "these", "those", "at", "if", "when", "then",
+    "into", "each", "one", "any", "does", "do", "has", "have", "whose", "whether", "so", "not", "than", "there",
+    "their", "can", "will", "may"
+  ],
+  "synonyms": {
+    "get": ["find", "read", "fetch", "return", "load", "retrieve", "obtain", "lookup"],
+    "set": ["put", "store", "save", "write", "update", "assign"],
+    "create": ["make", "build", "new", "construct"],
+    "delete": ["remove", "drop"]
+  }
+}

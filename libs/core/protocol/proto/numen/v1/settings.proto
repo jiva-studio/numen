@@ -1,0 +1,193 @@
+syntax = "proto3";
+
+// What a client may ask about the file a person configures this installation
+// in.
+//
+// The settings belong to the installation and not to a vault: the same file
+//
+// They travel as the file's own text. Their sections belong to whichever
+// adapters an installation is composed of, so the core does not know the whole
+// shape and does not describe it, and a setting is written by naming the path
+// through the file. It is the only tree here that goes undescribed.
+package numen.v1;
+
+import "numen/v1/plugin.proto";
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// SettingsService answers about that file, one setting at a time.
+service SettingsService {
+  // GetSettings is every setting of the file, and the models the settings that
+  // name one can be set to.
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
+
+  // WriteSettings writes settings into that file. The file is patched as an
+  // object, so every key a person typed keeps its position, and a file the
+  // settings could not be read out of again is not written at all.
+  rpc WriteSettings(WriteSettingsRequest) returns (WriteSettingsResponse);
+
+  // RetryPlugin forgets the failures of a plugin the host suspends, and starts
+  // it once. A plugin that fails again is suspended again, and the call answers
+  // the reason.
+  rpc RetryPlugin(RetryPluginRequest) returns (RetryPluginResponse);
+
+  // ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
+  // of type file or folder, and writes the path they chose. A path the setting does not accept is not
+  // written, and the answer says why.
+  rpc ChoosePluginPath(ChoosePluginPathRequest) returns (ChoosePluginPathResponse);
+
+  // GetPluginData is how many files the folder of a plugin holds in the vault
+  // the window shows, `.numen/<plugin id>/`, and their bytes.
+  rpc GetPluginData(GetPluginDataRequest) returns (GetPluginDataResponse);
+
+  // DeletePluginData deletes the folder of a plugin in the vault the window
+  // shows and the records of the text versions the plugin made there. The
+  // files those versions were of are indexed again.
+  rpc DeletePluginData(DeletePluginDataRequest) returns (DeletePluginDataResponse);
+
+  // WatchSettings reports each setting whose value changed, for as long as the caller listens: a
+  // write by a window, a plugin or the palette, and an edit of the file by hand. A change arrives
+  // once, named by its declared path, whoever made it and whichever caller listens, and a path no
+  // owner declares is not reported. The stream opens with a response that holds no change, so a
+  // caller knows it is listening before it reads GetSettings.
+  rpc WatchSettings(WatchSettingsRequest) returns (stream WatchSettingsResponse);
+}
+
+message GetSettingsRequest {}
+
+message GetSettingsResponse {
+  // Every setting currently, as JSON: what the file says, and what an
+  // installation without a configuration does under everything it does not. The first level is the
+  // version `v`, the owner `app` and one object per plugin id.
+  string written = 1;
+
+  // The file itself, absolute on this machine.
+  string path = 2;
+
+  // The models the settings that name one can be set to.
+  repeated Model models = 3;
+
+  // Active plugins and their declarative settings schema.
+  repeated PluginInfo plugins = 7;
+
+  // The settings of the owner app, declared by the core in the format of a manifest setting. The
+  // window reads their defaults, bounds and options from here.
+  repeated PluginSetting app = 8;
+
+  reserved 9;
+
+}
+
+// Model is one model a setting that names a model can be set to.
+message Model {
+  // The setting the model is read from, as a path through the file. The model
+  // in force is the one whose name stands there.
+  repeated string named_at = 1;
+
+  // What stands there while this model is the one in force.
+  string name = 2;
+
+  // What is drawn on the row, and the group the rows around it stand under.
+  string title = 3;
+  string group = 4;
+
+  // Set on the model an installation with no configuration runs on.
+  bool is_default = 5;
+
+  // What choosing it writes. One model is several keys where the model decides
+  // more than its own name.
+  repeated Setting writes = 6;
+
+  // What this model's files are on this machine.
+  Presence presence = 7;
+
+  // The depths of reasoning the model can be asked to work at, from the least to the most. Empty
+  // where the model offers no choice.
+  repeated ReasoningLevel reasoning_levels = 8;
+
+  // The level the model works at unasked. Empty where it names none.
+  string default_reasoning = 9;
+}
+
+// Presence is what a model's files are on this machine. It says where files
+// stand and nothing else: it is no reason to prefer one model to another.
+enum Presence {
+  // Nothing was said about this model's files.
+  PRESENCE_UNSPECIFIED = 0;
+
+  // The files stand where a fetch puts them.
+  PRESENCE_PRESENT = 1;
+
+  // The files are not on this machine. They are fetched when the model is next
+  // needed.
+  PRESENCE_NOT_FETCHED = 2;
+
+  // The model is reached over the network, and nothing of it is fetched.
+  PRESENCE_NOTHING_TO_FETCH = 3;
+}
+
+// Setting is one setting of the file and what to put there.
+message Setting {
+  // The setting, as a path through the file. The first element is the owner, `app` or the id of a
+  // plugin, and the rest is the key path under it. A path is never joined, since ids contain dots.
+  repeated string at = 1;
+
+  // What to write there, as JSON. A value the settings cannot be read out of
+  string value = 2;
+}
+
+message WatchSettingsRequest {}
+
+message WatchSettingsResponse {
+  // The settings that changed together, with the value each now holds. A write of several settings
+  // arrives as one response.
+  repeated Setting changed = 1;
+}
+
+message WriteSettingsRequest {
+  // The settings to write. They are written together, or none of them is.
+  repeated Setting settings = 1;
+}
+
+message WriteSettingsResponse {}
+
+message RetryPluginRequest {
+  // The plugin, by its id.
+  string plugin_id = 1;
+}
+
+message RetryPluginResponse {
+  // Set when the plugin failed to start again, in words a person reads.
+  string failure = 1;
+}
+
+message ChoosePluginPathRequest {
+  string plugin_id = 1;
+  // The key of the setting.
+  string key = 2;
+}
+
+message ChoosePluginPathResponse {
+  // The path the person chose, empty when they chose none.
+  string path = 1;
+  // Set when the person chose a path.
+  bool is_chosen = 2;
+  // Why the setting does not accept the path, in words a person reads. Empty where it was written.
+  string problem = 3;
+}
+
+message GetPluginDataRequest {
+  string plugin_id = 1;
+}
+
+message GetPluginDataResponse {
+  int32 file_count = 1;
+  int64 byte_count = 2;
+}
+
+message DeletePluginDataRequest {
+  string plugin_id = 1;
+}
+
+message DeletePluginDataResponse {}

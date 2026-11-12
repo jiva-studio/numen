@@ -2,30 +2,28 @@ package service
 
 import (
 	"bytes"
-	"context"
-	"errors"
 	"image/jpeg"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/document"
 )
 
-func newLinkedPages(t *testing.T, files host.Vault) *httptest.Server {
+func newLinkedPages(t *testing.T, files *hosttest.Vault) *httptest.Server {
 	t.Helper()
 	handler, err := server.NewLinkedHandler(map[string]string{
 		"NUMEN_PLUGIN_TOKEN": "linked-token",
 		"NUMEN_HOST_PORT":    "1",
 	}, func(s *server.Server) error {
-		s.RegisterRoute(pagesPattern, NewPageServer(files, newTestWorkers(t)))
+		s.RegisterRoute(pagesPattern, NewPageServer(newReader(t, files, hosttest.NewTexts("vault", testsupport.PluginID)), func(string, error) {}))
 		return nil
 	})
 	if err != nil {
@@ -68,11 +66,7 @@ func getPage(t *testing.T, web *httptest.Server, path string) page {
 
 func newTestdataVault(t *testing.T) *hosttest.Vault {
 	t.Helper()
-	raw, err := os.ReadFile(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	return hosttest.OnDisk(t, "vault", map[string]string{"tiny.pdf": string(raw)})
+	return hosttest.OnDisk(t, "vault", map[string]string{"tiny.pdf": string(testsupport.ReadFixture(t, "tiny.pdf"))})
 }
 
 func TestPageRouteServesAPageAsJPEG(t *testing.T) {
@@ -168,8 +162,8 @@ func TestPageRouteDrawsAPageNoLargerThanTheMostPixels(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the page is no JPEG: %v", err)
 	}
-	if pixels := drawing.Bounds().Dx() * drawing.Bounds().Dy(); pixels > mostPixels || pixels < mostPixels/2 {
-		t.Errorf("the page has %d pixels, want just under %d", pixels, mostPixels)
+	if pixels := drawing.Bounds().Dx() * drawing.Bounds().Dy(); pixels > document.MostPixels || pixels < document.MostPixels/2 {
+		t.Errorf("the page has %d pixels, want just under %d", pixels, document.MostPixels)
 	}
 	drawnOne := getPage(t, web, "/plugin/pages/0?path=tiny.pdf&wide=1")
 	if drawnOne.status != http.StatusOK {
@@ -178,27 +172,13 @@ func TestPageRouteDrawsAPageNoLargerThanTheMostPixels(t *testing.T) {
 }
 
 func TestPageServerServeHTTPCanceledAndHeaders(t *testing.T) {
-	srv := NewPageServer(newTestdataVault(t), newTestWorkers(t))
+	vault := newTestdataVault(t)
+	srv := NewPageServer(newReader(t, vault, hosttest.NewTexts("vault", testsupport.PluginID)), func(string, error) {})
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/pages/0?path=tiny.pdf&wide=100", nil)
 	req.SetPathValue("page", "0")
 	rec := httptest.NewRecorder()
 	srv.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != "image/jpeg" {
 		t.Fatalf("ServeHTTP = %d %q, want 200 image/jpeg", rec.Code, rec.Header().Get("Content-Type"))
-	}
-}
-
-func TestRenderPageDrawsNothingForARequestThatWasGivenUp(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx, cancel := context.WithCancel(t.Context())
-	cancel()
-
-	encoded, err := renderPage(ctx, newTestWorkers(t), raw, 0, 400)
-
-	if !errors.Is(err, context.Canceled) || len(encoded) != 0 {
-		t.Errorf("drew %d bytes, error %v", len(encoded), err)
 	}
 }

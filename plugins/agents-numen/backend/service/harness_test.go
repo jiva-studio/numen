@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,31 +13,31 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/endpoint"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/vaulttools"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/usecase/answer"
 )
 
 const vaultToken = "vault-token"
 
-// turn is what the fake model answers to one request: events in order, then the error the stream ends with.
+// turn is what the fake model answers to one request: the text it says, the calls it asks for, whether
+// the answer is cut off, and the error it ends with.
 type turn struct {
-	events []connection.ChatEvent
-	err    error
+	text  string
+	calls []conversation.ToolCall
+	isCut bool
+	err   error
 }
 
 func newTextTurn(text string) turn {
-	return turn{events: []connection.ChatEvent{
-		{TextDelta: text}, {Finish: &connection.Finish{Reason: connection.FinishStop}},
-	}}
+	return turn{text: text}
 }
 
 func newCallTurn(id, tool, args string) turn {
-	return turn{events: []connection.ChatEvent{
-		{TextDelta: "Let me look. "},
-		{ToolCall: &connection.ToolCall{ID: id, Name: tool, Arguments: args}},
-		{Finish: &connection.Finish{Reason: connection.FinishToolCalls}},
-	}}
+	return turn{text: "Let me look. ", calls: []conversation.ToolCall{{ID: id, Name: tool, Arguments: args}}}
 }
 
 // fakeModel answers each request with the next turn it holds, and the last turn again after that. It
@@ -46,51 +45,36 @@ func newCallTurn(id, tool, args string) turn {
 type fakeModel struct {
 	mu       sync.Mutex
 	turns    []turn
-	requests []connection.ChatRequest
+	requests []conversation.Turn
 	failOpen error
 }
 
-func (f *fakeModel) chat(_ context.Context, request connection.ChatRequest) (chatStream, error) {
+func (f *fakeModel) Stream(_ context.Context, request conversation.Turn, emit func(string) error) (conversation.Reply, error) {
 	f.mu.Lock()
-	defer f.mu.Unlock()
 	f.requests = append(f.requests, request)
-	if f.failOpen != nil {
-		return nil, f.failOpen
-	}
+	failOpen := f.failOpen
 	index := min(len(f.requests), len(f.turns)) - 1
-	return &fakeStream{turn: f.turns[index]}, nil
+	f.mu.Unlock()
+	if failOpen != nil {
+		return conversation.Reply{}, failOpen
+	}
+	one := f.turns[index]
+	if one.text != "" {
+		if err := emit(one.text); err != nil {
+			return conversation.Reply{}, err
+		}
+	}
+	reply := conversation.Reply{
+		Message: conversation.Message{Role: "assistant", Text: one.text, ToolCalls: append([]conversation.ToolCall(nil), one.calls...)},
+		IsCut:   one.isCut,
+	}
+	return reply, one.err
 }
 
-func (f *fakeModel) getRequests() []connection.ChatRequest {
+func (f *fakeModel) getRequests() []conversation.Turn {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return append([]connection.ChatRequest(nil), f.requests...)
-}
-
-type fakeStream struct {
-	turn   turn
-	next   int
-	closed atomic.Bool
-}
-
-func (s *fakeStream) Next() (connection.ChatEvent, bool) {
-	if s.next >= len(s.turn.events) {
-		return connection.ChatEvent{}, false
-	}
-	s.next++
-	return s.turn.events[s.next-1], true
-}
-
-func (s *fakeStream) Err() error {
-	if s.next < len(s.turn.events) {
-		return nil
-	}
-	return s.turn.err
-}
-
-func (s *fakeStream) Close() error {
-	s.closed.Store(true)
-	return nil
+	return append([]conversation.Turn(nil), f.requests...)
 }
 
 // fakeVault is a tool server with two tools, behind the token, that keeps the arguments of every
@@ -147,7 +131,7 @@ func newTask(url, prompt string) *agentrun.Request {
 	}
 }
 
-func ask(t *testing.T, s *Server, task *agentrun.Request) []*agentrun.Response {
+func ask(t *testing.T, s *agent, task *agentrun.Request) []*agentrun.Response {
 	t.Helper()
 	var steps []*agentrun.Response
 	if err := s.Ask(t.Context(), task, func(r *agentrun.Response) error {
@@ -190,16 +174,22 @@ func getSpoken(steps []*agentrun.Response) []string {
 	return response
 }
 
-func newServer(model *fakeModel) *Server {
-	s := &Server{chat: model.chat}
-	s.Configure(map[string]string{SettingConnections: rowsJSON(connection.Row{Connection: "c00000001", Model: "m1", Reasoning: "low"})})
+func newServer(t *testing.T, model *fakeModel) *agent {
+	t.Helper()
+	s, err := newAgent(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.settings.Configure(map[string]string{"connections": rowsJSON(row{connection: "c00000001", model: "m1", reasoning: "low"})})
 	return s
 }
 
-func rowsJSON(rows ...connection.Row) string {
+type row struct{ connection, model, reasoning string }
+
+func rowsJSON(rows ...row) string {
 	items := make([]string, len(rows))
 	for i, one := range rows {
-		items[i] = fmt.Sprintf(`{"connection":%q,"model":%q,"reasoning":%q}`, one.Connection, one.Model, one.Reasoning)
+		items[i] = fmt.Sprintf(`{"connection":%q,"model":%q,"reasoning":%q}`, one.connection, one.model, one.reasoning)
 	}
 	return "[" + strings.Join(items, ",") + "]"
 }
@@ -213,12 +203,12 @@ func assertToolSteps(t *testing.T, steps []*agentrun.Response) {
 	if call.Tool != "Read a note" || call.Kind != "read" || call.Call != "call-1" || call.Path != "Plan.md" {
 		t.Errorf("the call is %+v", call)
 	}
-	if response, last := strings.Join(getSpoken(steps), ""), steps[len(steps)-1]; response != "Let me look. Water the garden." || last.GetStopped() != reasonDone {
+	if response, last := strings.Join(getSpoken(steps), ""), steps[len(steps)-1]; response != "Let me look. Water the garden." || last.GetStopped() != answer.ReasonDone {
 		t.Errorf("the answer is %q, stopped %q", response, last.GetStopped())
 	}
 }
 
-func assertToolRequests(t *testing.T, requests []connection.ChatRequest) {
+func assertToolRequests(t *testing.T, requests []conversation.Turn) {
 	t.Helper()
 	if len(requests) != 2 {
 		t.Fatalf("the model was asked %d times", len(requests))
@@ -229,9 +219,6 @@ func assertToolRequests(t *testing.T, requests []connection.ChatRequest) {
 	}
 	if first.Messages[0].Role != "system" || first.Messages[1].Role != "user" || first.Messages[1].Text != "What is the plan?" {
 		t.Errorf("the first request is %+v", first)
-	}
-	if first.Priority != connection.PriorityInteractive {
-		t.Errorf("the priority is %v, want interactive: a person waits for the answer", first.Priority)
 	}
 	messages := requests[1].Messages
 	asked, fedBack := messages[len(messages)-2], messages[len(messages)-1]
@@ -246,7 +233,7 @@ func assertToolRequests(t *testing.T, requests []connection.ChatRequest) {
 func TestAToolTheModelCallsRunsAndItsResultIsFedBack(t *testing.T) {
 	model := &fakeModel{turns: []turn{newCallTurn("call-1", "note_read", `{"path":"Plan.md"}`), newTextTurn("Water the garden.")}}
 	vault := &fakeVault{}
-	s := newServer(model)
+	s := newServer(t, model)
 
 	steps := ask(t, s, newTask(vault.serve(t), "What is the plan?"))
 	assertToolSteps(t, steps)
@@ -261,7 +248,7 @@ func TestAToolTheModelCallsRunsAndItsResultIsFedBack(t *testing.T) {
 func TestAModelThatKeepsCallingToolsStopsAtTheTurnLimit(t *testing.T) {
 	model := &fakeModel{turns: []turn{newCallTurn("c", "note_read", `{"path":"A.md"}`)}}
 	vault := &fakeVault{}
-	s := newServer(model)
+	s := newServer(t, model)
 	task := newTask(vault.serve(t), "Read forever.")
 	task.MaxSteps = 2
 
@@ -270,7 +257,7 @@ func TestAModelThatKeepsCallingToolsStopsAtTheTurnLimit(t *testing.T) {
 	if got := describeSteps(steps); got != "model said call finished model said call finished stopped" {
 		t.Fatalf("steps are %q", got)
 	}
-	if steps[len(steps)-1].GetStopped() != reasonTurns {
+	if steps[len(steps)-1].GetStopped() != answer.ReasonTurns {
 		t.Errorf("stopped %q", steps[len(steps)-1].GetStopped())
 	}
 	if len(model.getRequests()) != 2 {
@@ -278,11 +265,9 @@ func TestAModelThatKeepsCallingToolsStopsAtTheTurnLimit(t *testing.T) {
 	}
 }
 
-func TestEveryRowFailingBeforeAnyTextStopsTheRunWithEachConnectionAndReason(t *testing.T) {
-	model := &fakeModel{failOpen: &connection.AllFailedError{Failures: []connection.Failure{
-		{ConnectionName: "OpenRouter", Reason: "payment required"}, {ConnectionName: "Ollama", Reason: "unreachable"},
-	}}}
-	s := newServer(model)
+func TestEveryRowFailingBeforeAnyTextStopsTheRunWithTheReasonsOfTheConnections(t *testing.T) {
+	model := &fakeModel{failOpen: errors.New("OpenRouter: payment required; Ollama: unreachable")}
+	s := newServer(t, model)
 
 	steps := ask(t, s, newTask("", "Hello?"))
 
@@ -295,16 +280,16 @@ func TestEveryRowFailingBeforeAnyTextStopsTheRunWithEachConnectionAndReason(t *t
 }
 
 func TestAFailureInTheMiddleOfTheAnswerKeepsTheTextAndNamesTheConnection(t *testing.T) {
-	failure := &connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "OpenRouter", Reason: "unreachable"}}}
-	model := &fakeModel{turns: []turn{{
-		events: []connection.ChatEvent{
-			{TextDelta: "The plan is "},
-			{ToolCall: &connection.ToolCall{ID: "c", Name: "note_read", Arguments: `{"path":"A.md"}`}},
+	model := &fakeModel{turns: []turn{
+		{
+			text:  "The plan is ",
+			calls: []conversation.ToolCall{{ID: "c", Name: "note_read", Arguments: `{"path":"A.md"}`}},
+			err:   errors.New("OpenRouter: unreachable"),
 		},
-		err: failure,
-	}}}
+		newTextTurn("Fine."),
+	}}
 	vault := &fakeVault{}
-	s := newServer(model)
+	s := newServer(t, model)
 	task := newTask(vault.serve(t), "Plan?")
 	task.Conversation = "talk-1"
 
@@ -325,14 +310,16 @@ func TestAFailureInTheMiddleOfTheAnswerKeepsTheTextAndNamesTheConnection(t *test
 	if got := len(model.getRequests()); got != 1 {
 		t.Errorf("the model was asked %d times, want once: nothing is repeated by itself", got)
 	}
-	if history := s.getConversation("talk-1"); len(history) != 0 {
-		t.Errorf("a failed turn went into the conversation: %+v", history)
+	task.Prompt = "Again?"
+	ask(t, s, task)
+	if messages := model.getRequests()[1].Messages; len(messages) != 2 {
+		t.Errorf("a failed turn went into the conversation: %+v", messages)
 	}
 }
 
 func TestARejectionNamesTheConnectionAndTheReason(t *testing.T) {
-	model := &fakeModel{failOpen: &connection.RejectedError{ConnectionName: "OpenRouter", Reason: "bad request"}}
-	s := newServer(model)
+	model := &fakeModel{failOpen: errors.New("OpenRouter: bad request")}
+	s := newServer(t, model)
 
 	steps := ask(t, s, newTask("", "Hello?"))
 
@@ -343,11 +330,14 @@ func TestARejectionNamesTheConnectionAndTheReason(t *testing.T) {
 
 func TestAnAgentWithNoRowStopsBeforeAnyRequestAndNamesWhereToChooseOne(t *testing.T) {
 	model := &fakeModel{turns: []turn{newTextTurn("hi")}}
-	s := &Server{chat: model.chat}
+	s, err := newAgent(model)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	steps := ask(t, s, newTask("", "Hello?"))
 
-	if len(steps) != 1 || steps[0].GetStopped() != reasonNoConnection {
+	if len(steps) != 1 || steps[0].GetStopped() != conversation.ReasonNoConnection {
 		t.Fatalf("steps are %v", steps)
 	}
 	if len(model.getRequests()) != 0 {
@@ -356,19 +346,19 @@ func TestAnAgentWithNoRowStopsBeforeAnyRequestAndNamesWhereToChooseOne(t *testin
 }
 
 func TestACoreWithNoConnectionForTheAgentStopsTheRunWithTheSameWords(t *testing.T) {
-	model := &fakeModel{failOpen: connection.ErrNoConnection}
-	s := newServer(model)
+	model := &fakeModel{failOpen: conversation.ErrNoConnection}
+	s := newServer(t, model)
 
 	steps := ask(t, s, newTask("", "Hello?"))
 
-	if reason := steps[len(steps)-1].GetStopped(); reason != reasonNoConnection {
+	if reason := steps[len(steps)-1].GetStopped(); reason != conversation.ReasonNoConnection {
 		t.Errorf("stopped %q", reason)
 	}
 }
 
 func TestUnreachableVaultStopsRunBeforeModelCall(t *testing.T) {
 	model := &fakeModel{turns: []turn{newTextTurn("hi")}}
-	s := newServer(model)
+	s := newServer(t, model)
 	nowhere := httptest.NewServer(http.NotFoundHandler())
 	defer nowhere.Close()
 	task := newTask(nowhere.URL, "Hello?")
@@ -385,8 +375,8 @@ func TestUnreachableVaultStopsRunBeforeModelCall(t *testing.T) {
 
 func TestTheOptionsOfTheSettingsGoWithEveryRequest(t *testing.T) {
 	model := &fakeModel{turns: []turn{newTextTurn("hi")}}
-	s := newServer(model)
-	s.Configure(map[string]string{SettingTemperature: "0.5", SettingMaxTokens: "2048"})
+	s := newServer(t, model)
+	s.settings.Configure(map[string]string{"temperature": "0.5", "maxTokens": "2048"})
 
 	ask(t, s, newTask("", "Hello?"))
 
@@ -397,28 +387,24 @@ func TestTheOptionsOfTheSettingsGoWithEveryRequest(t *testing.T) {
 }
 
 func TestAnAnswerTruncatedAtItsLengthLimitIsReportedSo(t *testing.T) {
-	model := &fakeModel{turns: []turn{{events: []connection.ChatEvent{
-		{TextDelta: "The plan is to"}, {Finish: &connection.Finish{Reason: connection.FinishLength}},
-	}}}}
-	s := newServer(model)
+	model := &fakeModel{turns: []turn{{text: "The plan is to", isCut: true}}}
+	s := newServer(t, model)
 
 	steps := ask(t, s, newTask("", "Plan?"))
 
-	if got := describeSteps(steps); got != "model said stopped" || steps[len(steps)-1].GetStopped() != reasonCut {
+	if got := describeSteps(steps); got != "model said stopped" || steps[len(steps)-1].GetStopped() != answer.ReasonCut {
 		t.Errorf("steps are %q, stopped %q", got, steps[len(steps)-1].GetStopped())
 	}
 }
 
 func TestATruncatedAnswerCallsNoTool(t *testing.T) {
-	model := &fakeModel{turns: []turn{{events: []connection.ChatEvent{
-		{ToolCall: &connection.ToolCall{ID: "c", Name: "note_read", Arguments: "{}"}}, {Finish: &connection.Finish{Reason: connection.FinishLength}},
-	}}}}
+	model := &fakeModel{turns: []turn{{calls: []conversation.ToolCall{{ID: "c", Name: "note_read", Arguments: "{}"}}, isCut: true}}}
 	vault := &fakeVault{}
-	s := newServer(model)
+	s := newServer(t, model)
 
 	steps := ask(t, s, newTask(vault.serve(t), "Read."))
 
-	if got := describeSteps(steps); got != "model stopped" || steps[1].GetStopped() != reasonCut {
+	if got := describeSteps(steps); got != "model stopped" || steps[1].GetStopped() != answer.ReasonCut {
 		t.Errorf("steps are %q", got)
 	}
 	if calls := vault.getCalls(); len(calls) != 0 {
@@ -428,7 +414,7 @@ func TestATruncatedAnswerCallsNoTool(t *testing.T) {
 
 func TestConversationContinuesUntilFinished(t *testing.T) {
 	model := &fakeModel{turns: []turn{newTextTurn("Noted.")}}
-	s := newServer(model)
+	s := newServer(t, model)
 	task := newTask("", "Remember the garden.")
 	task.Conversation = "talk-1"
 
@@ -452,18 +438,15 @@ func TestConversationContinuesUntilFinished(t *testing.T) {
 
 func TestTheAgentNamesNeitherAModelNorAConnectionToTheCore(t *testing.T) {
 	model := &fakeModel{turns: []turn{newTextTurn("the answer")}}
-	s := newServer(model)
+	s := newServer(t, model)
 	task := newTask("", "why?")
 	task.Tools, task.ToolDeclarations, task.Model, task.Reasoning = nil, nil, "routed", "high"
 
 	ask(t, s, task)
 
-	request, err := json.Marshal(model.getRequests()[0])
-	if err != nil {
-		t.Fatal(err)
-	}
+	request := fmt.Sprintf("%+v", model.getRequests()[0])
 	for _, name := range []string{"routed", "high", "m1", "c00000001", "Model", "Connection"} {
-		if strings.Contains(string(request), name) {
+		if strings.Contains(request, name) {
 			t.Errorf("the request %s names %q: the row of the settings decides", request, name)
 		}
 	}
@@ -472,9 +455,9 @@ func TestTheAgentNamesNeitherAModelNorAConnectionToTheCore(t *testing.T) {
 func TestAskAgentStreamsTheStepsOverConnect(t *testing.T) {
 	model := &fakeModel{turns: []turn{newCallTurn("call-1", "note_read", `{"path":"Plan.md"}`), newTextTurn("Done.")}}
 	vault := &fakeVault{}
-	s := newServer(model)
+	s := newServer(t, model)
 	mux := http.NewServeMux()
-	mux.Handle(agentrun.NewHandler(s))
+	mux.Handle(agentrun.NewHandler(s, s))
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
@@ -497,7 +480,7 @@ func TestAskAgentStreamsTheStepsOverConnect(t *testing.T) {
 func TestACallWithNoArgumentsIsReportedBackWithAnEmptyObject(t *testing.T) {
 	model := &fakeModel{turns: []turn{newCallTurn("c", "note_read", ""), newTextTurn("ok")}}
 	vault := &fakeVault{}
-	s := newServer(model)
+	s := newServer(t, model)
 
 	ask(t, s, newTask(vault.serve(t), "Read."))
 
@@ -512,11 +495,11 @@ func TestACallWithNoArgumentsIsReportedBackWithAnEmptyObject(t *testing.T) {
 
 func TestTheVaultTokenIsNotSentOverPlainHTTPToAnotherMachine(t *testing.T) {
 	model := &fakeModel{turns: []turn{newTextTurn("hi")}}
-	s := newServer(model)
+	s := newServer(t, model)
 
 	steps := ask(t, s, newTask("http://192.0.2.1/mcp", "Hello?"))
 
-	if len(steps) != 1 || !strings.Contains(steps[0].GetStopped(), errPlainToken.Error()) {
+	if len(steps) != 1 || !strings.Contains(steps[0].GetStopped(), vaulttools.ErrPlainToken.Error()) {
 		t.Errorf("steps are %v", steps)
 	}
 }
@@ -525,11 +508,11 @@ func TestTheVaultTokenIsNotFollowedToPlainHTTP(t *testing.T) {
 	redirecting := httptest.NewServer(http.RedirectHandler("http://192.0.2.1/mcp", http.StatusTemporaryRedirect))
 	defer redirecting.Close()
 	model := &fakeModel{turns: []turn{newTextTurn("hi")}}
-	s := newServer(model)
+	s := newServer(t, model)
 
 	steps := ask(t, s, newTask(redirecting.URL, "Hello?"))
 
-	if len(steps) != 1 || !strings.Contains(steps[0].GetStopped(), errDowngrade.Error()) {
+	if len(steps) != 1 || !strings.Contains(steps[0].GetStopped(), endpoint.ErrDowngrade.Error()) {
 		t.Errorf("steps are %v", steps)
 	}
 }
@@ -537,7 +520,7 @@ func TestTheVaultTokenIsNotFollowedToPlainHTTP(t *testing.T) {
 func TestAStepThatCannotBeSentEndsTheRunWithItsError(t *testing.T) {
 	model := &fakeModel{turns: []turn{newCallTurn("c", "note_read", `{"path":"A.md"}`), newTextTurn("ok")}}
 	vault := &fakeVault{}
-	s := newServer(model)
+	s := newServer(t, model)
 	removed := errors.New("the window closed")
 	dispatched := 0
 
@@ -564,7 +547,7 @@ func TestNoToolsWhenTaskNamesNone(t *testing.T) {
 	var connected atomic.Bool
 	vault := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { connected.Store(true) }))
 	t.Cleanup(vault.Close)
-	s := newServer(model)
+	s := newServer(t, model)
 	task := newTask(vault.URL, "why?")
 	task.Tools, task.ToolDeclarations = nil, nil
 
@@ -601,7 +584,7 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	s := newServer(model)
+	s := newServer(t, model)
 	task := &agentrun.Request{
 		Prompt:       "Run custom tool",
 		Instructions: "Follow instructions",
@@ -623,7 +606,7 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 func TestTheContextOfATaskIsTheMetaOfEveryCall(t *testing.T) {
 	model := &fakeModel{turns: []turn{newCallTurn("call-1", "note_read", `{"path":"Plan.md"}`), newTextTurn("ok")}}
 	vault := &fakeVault{}
-	s := newServer(model)
+	s := newServer(t, model)
 	task := newTask(vault.serve(t), "What is on this card?")
 	task.Context = map[string]string{"md.example.cards/card": "k7"}
 
@@ -639,12 +622,12 @@ func TestTheContextOfATaskIsTheMetaOfEveryCall(t *testing.T) {
 func TestTheMaxStepsSettingLimitsATaskThatNamesNoLimit(t *testing.T) {
 	model := &fakeModel{turns: []turn{newCallTurn("c", "note_read", `{"path":"A.md"}`)}}
 	vault := &fakeVault{}
-	s := newServer(model)
-	s.Configure(map[string]string{SettingMaxSteps: "3"})
+	s := newServer(t, model)
+	s.settings.Configure(map[string]string{"maxSteps": "3"})
 
 	steps := ask(t, s, newTask(vault.serve(t), "Read forever."))
 
-	if steps[len(steps)-1].GetStopped() != reasonTurns {
+	if steps[len(steps)-1].GetStopped() != answer.ReasonTurns {
 		t.Errorf("stopped %q", steps[len(steps)-1].GetStopped())
 	}
 	if len(model.getRequests()) != 3 {
@@ -655,8 +638,8 @@ func TestTheMaxStepsSettingLimitsATaskThatNamesNoLimit(t *testing.T) {
 func TestATaskLimitOverridesTheMaxStepsSetting(t *testing.T) {
 	model := &fakeModel{turns: []turn{newCallTurn("c", "note_read", `{"path":"A.md"}`)}}
 	vault := &fakeVault{}
-	s := newServer(model)
-	s.Configure(map[string]string{SettingMaxSteps: "5"})
+	s := newServer(t, model)
+	s.settings.Configure(map[string]string{"maxSteps": "5"})
 	task := newTask(vault.serve(t), "Read forever.")
 	task.MaxSteps = 2
 
@@ -667,33 +650,27 @@ func TestATaskLimitOverridesTheMaxStepsSetting(t *testing.T) {
 	}
 }
 
-// blockingStream delivers one event and then waits for the context of its request.
-type blockingStream struct {
-	ctx    context.Context
-	isSent bool
-	ended  chan struct{}
+// blockingModel says one word and then waits for the context of its request.
+type blockingModel struct {
+	ended chan struct{}
 }
 
-func (s *blockingStream) Next() (connection.ChatEvent, bool) {
-	if !s.isSent {
-		s.isSent = true
-		return connection.ChatEvent{TextDelta: "partial"}, true
+func (m *blockingModel) Stream(ctx context.Context, _ conversation.Turn, emit func(string) error) (conversation.Reply, error) {
+	if err := emit("partial"); err != nil {
+		return conversation.Reply{}, err
 	}
-	<-s.ctx.Done()
-	close(s.ended)
-	return connection.ChatEvent{}, false
+	<-ctx.Done()
+	close(m.ended)
+	return conversation.Reply{}, ctx.Err()
 }
 
-func (s *blockingStream) Err() error { return s.ctx.Err() }
-
-func (s *blockingStream) Close() error { return nil }
-
-func TestACancelledTaskEndsTheStreamOfTheModel(t *testing.T) {
-	ended := make(chan struct{})
-	s := &Server{chat: func(ctx context.Context, _ connection.ChatRequest) (chatStream, error) {
-		return &blockingStream{ctx: ctx, ended: ended}, nil
-	}}
-	s.Configure(map[string]string{SettingConnections: rowsJSON(connection.Row{Connection: "c1", Model: "m"})})
+func TestACancelledTaskEndsTheTurnOfTheModel(t *testing.T) {
+	model := &blockingModel{ended: make(chan struct{})}
+	s, err := newAgent(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.settings.Configure(map[string]string{"connections": rowsJSON(row{connection: "c1", model: "m"})})
 	ctx, cancel := context.WithCancel(t.Context())
 	finish := make(chan error, 1)
 	firstText := make(chan struct{}, 1)
@@ -712,30 +689,18 @@ func TestACancelledTaskEndsTheStreamOfTheModel(t *testing.T) {
 	if err := <-finish; err != nil {
 		t.Errorf("a canceled task returned %v", err)
 	}
-	<-ended
-}
-
-func TestEveryStreamOfTheModelIsClosed(t *testing.T) {
-	stream := &fakeStream{turn: newTextTurn("hi")}
-	s := &Server{chat: func(context.Context, connection.ChatRequest) (chatStream, error) { return stream, nil }}
-	s.Configure(map[string]string{SettingConnections: rowsJSON(connection.Row{Connection: "c1", Model: "m"})})
-
-	ask(t, s, newTask("", "Hello?"))
-
-	if !stream.closed.Load() {
-		t.Error("the stream of the model was left open")
-	}
+	<-model.ended
 }
 
 func TestTheProgramIsInstalledWhileARowNamesAConnectionAndOffersItsModel(t *testing.T) {
-	s := newServer(&fakeModel{})
+	s := newServer(t, &fakeModel{})
 
 	programs, err := s.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	program := programs[0]
-	if program.Name != ProgramName || !program.IsInstalled || !program.LimitsTools || len(program.Models) != 1 {
+	if program.Name != "numen" || !program.IsInstalled || !program.LimitsTools || len(program.Models) != 1 {
 		t.Fatalf("the program is %+v", program)
 	}
 	if model := program.Models[0]; model.Name != "m1" || !model.IsDefault || len(model.ReasoningLevels) != 0 {
@@ -744,45 +709,5 @@ func TestTheProgramIsInstalledWhileARowNamesAConnectionAndOffersItsModel(t *test
 	state, err := s.GetState(t.Context())
 	if err != nil || state.Unreachable != "" {
 		t.Errorf("state %v, %v", state, err)
-	}
-}
-
-func TestTheProgramIsNotInstalledWhileNoRowNamesAConnection(t *testing.T) {
-	s := &Server{}
-
-	programs, err := s.GetPrograms(t.Context(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if programs[0].IsInstalled || len(programs[0].Models) != 0 {
-		t.Errorf("the program is %+v", programs[0])
-	}
-	state, err := s.GetState(t.Context())
-	if err != nil || state.Unreachable != reasonNoConnection {
-		t.Errorf("state %v, %v, want unreachable for %q", state, err, reasonNoConnection)
-	}
-}
-
-func TestOnlyTheFirstRowIsUsed(t *testing.T) {
-	s := &Server{}
-	s.Configure(map[string]string{SettingConnections: rowsJSON(
-		connection.Row{Connection: "c1", Model: "first"}, connection.Row{Connection: "c2", Model: "second"},
-	)})
-
-	programs, err := s.GetPrograms(t.Context(), nil)
-
-	if err != nil || len(programs[0].Models) != 1 || programs[0].Models[0].Name != "first" {
-		t.Errorf("programs = %+v, %v", programs, err)
-	}
-}
-
-func TestARowsSettingThatIsNoListKeepsTheRowsAsTheyWere(t *testing.T) {
-	s := newServer(&fakeModel{})
-
-	s.Configure(map[string]string{SettingConnections: "not a list"})
-
-	programs, err := s.GetPrograms(t.Context(), nil)
-	if err != nil || !programs[0].IsInstalled {
-		t.Errorf("programs = %+v, %v", programs, err)
 	}
 }

@@ -1,10 +1,8 @@
 /** The menu of a search result as the palette draws it and answers a choice from it. */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import type { SlotCommand, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
-import { COMMAND } from '@/shared/commandIds'
-import { CREATE_NOTE_ROW } from '../../lib/entries/entries'
-import type { CommandTarget } from '../../types'
+import type { SlotCommand, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
+import { COMMAND, ROW, type CommandTarget } from '@/shared/model/command'
 import { useSearch, type NameMatch, type Passage, type SearchDeps, type Words } from './search'
 
 const WORDS: Words = {
@@ -18,7 +16,6 @@ const WORDS: Words = {
   noQuery: 'Search failed',
   wordsOnly: 'Words only',
   notEmbedded: 'Not read for meaning yet',
-  creating: 'No results',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',
@@ -52,7 +49,7 @@ const SKETCH: SlotItem = {
   view: 'sketch',
   component: {},
 }
-const openId = COMMAND.openNote
+const openId = COMMAND.openFile
 const showId = SHOW.command
 
 const nameMatch: NameMatch = {
@@ -201,7 +198,7 @@ describe('a note found by name in the search', () => {
     const item = getNamesGroup(palette)?.items[0]?.id ?? ''
 
     expect(palette.chooseResult(item, openId)).toStrictEqual({
-      command: COMMAND.openNote,
+      command: COMMAND.openFile,
       over: { path: 'reef/Coral.md', file: 'reef/Coral.md', title: 'Coral' },
       input: '',
     })
@@ -232,7 +229,7 @@ describe('a passage of a file that is no note in the search', () => {
 
     const text = palette.groups.value.find((one) => one.id === 'text')
     expect(text?.items[0]?.actions).toStrictEqual([
-      { id: COMMAND.openFile, text: 'Open the document' },
+      { id: ROW.openDocument, text: 'Open the document' },
     ])
     expect(palette.chooseResult(text?.items[0]?.id ?? '', showId)).toBeNull()
     expect(palette.chooseResult(text?.items[0]?.id ?? '', 'note')).toBeNull()
@@ -245,8 +242,8 @@ describe('choosing the action of a passage of a file that is no note', () => {
     await typeQuery(palette)
     const item = palette.groups.value.find((one) => one.id === 'text')?.items[0]?.id ?? ''
 
-    expect(palette.chooseResult(item, COMMAND.openFile)).toStrictEqual({
-      command: 'app:file.open',
+    expect(palette.chooseResult(item, ROW.openDocument)).toStrictEqual({
+      command: 'app:file.open#document',
       over: { path: '', file: 'books/Atlas.pdf', title: '', selector: { page: 3 } },
       input: '',
     })
@@ -277,99 +274,80 @@ const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   ...override,
 })
 
-describe('the row that creates a note, in a search that found nothing', () => {
+describe('the actions that create a note, in a search', () => {
   const setUp = async (target: CommandTarget, text = '  Entropy  ') => {
-    const palette = useSearch(createCore([]), WORDS, { wait: now, getTarget: () => target })
+    const palette = useSearch(createCore([nameMatch]), WORDS, {
+      wait: now,
+      getTarget: () => target,
+    })
     await palette.setTyped(text)
     await flushPromises()
     return palette
   }
 
-  const getRow = (palette: ReturnType<typeof useSearch>) =>
-    palette.groups.value.find((one) => one.id === CREATE_NOTE_ROW)
+  const getActions = (palette: ReturnType<typeof useSearch>, group = 'names') =>
+    palette.groups.value.find((one) => one.id === group)?.items[0]?.actions ?? []
 
-  it('is the last group, and holds one item named after the words typed', async () => {
+  it('draws no row of its own', async () => {
     const palette = await setUp(front())
 
-    expect(palette.groups.value.at(-1)?.id).toBe(CREATE_NOTE_ROW)
-    expect(palette.groups.value.at(-1)?.title).toBe('No results')
-    expect(getRow(palette)?.items).toHaveLength(1)
-    expect(getRow(palette)?.items[0]).toMatchObject({
-      id: CREATE_NOTE_ROW,
-      title: 'Create note “Entropy”',
-      detail: 'Being',
-    })
+    expect(palette.groups.value.map((one) => one.id)).toEqual(['names'])
   })
 
-  it('offers the command that creates a note and then the three relations to the note in front', async () => {
+  it('follows the actions of a row with the command that creates a note and then the three relations to the note in front', async () => {
     const palette = await setUp(front())
 
-    expect(getRow(palette)?.items[0]?.actions).toStrictEqual([
-      { id: 'app:note.create', text: 'Create note' },
-      { id: 'app:note.createChild', text: 'Create as child' },
-      { id: 'app:note.createParent', text: 'Create as parent' },
-      { id: 'app:note.createJump', text: 'Create as jump' },
+    expect(getActions(palette)).toStrictEqual([
+      { id: COMMAND.openFile, text: 'Open note' },
+      { id: 'app:note.create', text: 'Create note “Entropy”' },
+      { id: 'app:note.createChild', text: 'Create as child “Entropy”' },
+      { id: 'app:note.createParent', text: 'Create as parent “Entropy”' },
+      { id: 'app:note.createJump', text: 'Create as jump “Entropy”' },
     ])
   })
 
   it('offers the command that creates a note alone where no note is in front', async () => {
     const palette = await setUp(front({ path: '', title: '', file: '' }))
 
-    expect(getRow(palette)?.items[0]?.actions).toStrictEqual([
-      { id: 'app:note.create', text: 'Create note' },
-    ])
-    expect(getRow(palette)?.items[0]?.detail).toBeUndefined()
+    expect(getActions(palette).map((one) => one.id)).toEqual([COMMAND.openFile, 'app:note.create'])
   })
 
-  it('has an action whose id is the id of the row for none of its actions', async () => {
-    const palette = await setUp(front())
-
-    const ids = getRow(palette)?.items[0]?.actions?.map((one) => one.id) ?? []
-    expect(ids.length).toBeGreaterThan(0)
-    expect(ids).not.toContain(CREATE_NOTE_ROW)
-  })
-
-  it('is absent while a group is still working', async () => {
-    const pending: SearchDeps = {
-      names: () => new Promise(() => undefined),
-      search: () => new Promise(() => undefined),
-    }
-    const palette = useSearch(pending, WORDS, { wait: now, getTarget: () => front() })
-
-    palette.setTyped('Entropy').catch(() => undefined)
-    await flushPromises()
-
-    expect(palette.groups.value.some((one) => one.isWorking)).toBe(true)
-    expect(getRow(palette)).toBeUndefined()
-  })
-
-  it('is absent while the search waits to run', async () => {
-    const palette = useSearch(createCore([]), WORDS, {
-      wait: () => new Promise(() => undefined),
-      getTarget: () => front(),
-    })
-
-    palette.setTyped('Entropy').catch(() => undefined)
-    await flushPromises()
-
-    expect(getRow(palette)).toBeUndefined()
-  })
-
-  it('is absent where a group found something', async () => {
-    const palette = useSearch(createCore([nameMatch]), WORDS, {
+  it('is offered on a row that found something in the text too', async () => {
+    const palette = useSearch(createCore([], [bookPassage]), WORDS, {
       wait: now,
       getTarget: () => front(),
     })
+    await palette.setTyped('Entropy')
+    await flushPromises()
+
+    expect(getActions(palette, 'text').map((one) => one.id)).toContain('app:note.create')
+  })
+
+  it('is offered as soon as a row is there, while the other groups are still working', async () => {
+    const searchDeps: SearchDeps = {
+      names: async () => [nameMatch],
+      search: () => new Promise(() => undefined),
+    }
+    const palette = useSearch(searchDeps, WORDS, { wait: now, getTarget: () => front() })
+
+    palette.setTyped('Entropy').catch(() => undefined)
+    await flushPromises()
+
+    expect(getActions(palette).map((one) => one.id)).toContain('app:note.create')
+  })
+
+  it('is offered on no row where nothing was typed', async () => {
+    const palette = await setUp(front(), '   ')
+
+    expect(palette.groups.value).toEqual([])
+  })
+
+  it('is offered on no row where the window gives no target', async () => {
+    const palette = useSearch(createCore([nameMatch]), WORDS, { wait: now })
     await palette.setTyped('cor')
     await flushPromises()
 
-    expect(getRow(palette)).toBeUndefined()
-  })
-
-  it('is absent where nothing was typed', async () => {
-    const palette = await setUp(front(), '   ')
-
-    expect(getRow(palette)).toBeUndefined()
+    expect(getActions(palette).map((one) => one.id)).toEqual([COMMAND.openFile])
   })
 
   it.each([
@@ -382,7 +360,7 @@ describe('the row that creates a note, in a search that found nothing', () => {
     async (action) => {
       const palette = await setUp(front())
 
-      expect(palette.chooseResult(CREATE_NOTE_ROW, action)).toStrictEqual({
+      expect(palette.chooseResult(nameMatch.path, action)).toStrictEqual({
         command: action,
         over: null,
         input: 'Entropy',
@@ -390,11 +368,16 @@ describe('the row that creates a note, in a search that found nothing', () => {
     },
   )
 
-  it('answers an action the row does not carry with nothing', async () => {
+  it('answers an action of no row with nothing', async () => {
     const palette = await setUp(front({ path: '', title: '', file: '' }))
 
-    expect(palette.chooseResult(CREATE_NOTE_ROW, 'app:note.createChild')).toBeNull()
-    expect(palette.chooseResult(CREATE_NOTE_ROW, CREATE_NOTE_ROW)).toBeNull()
+    expect(palette.chooseResult(nameMatch.path, 'app:note.createChild')).toBeNull()
+  })
+
+  it('still opens the note on the choice of its own action', async () => {
+    const palette = await setUp(front())
+
+    expect(palette.chooseResult(nameMatch.path, COMMAND.openFile)?.over?.path).toBe(nameMatch.path)
   })
 
   it('answers with the words typed at the moment of the choice', async () => {
@@ -402,6 +385,6 @@ describe('the row that creates a note, in a search that found nothing', () => {
     await palette.setTyped('Enthalpy')
     await flushPromises()
 
-    expect(palette.chooseResult(CREATE_NOTE_ROW, 'app:note.create')?.input).toBe('Enthalpy')
+    expect(palette.chooseResult(nameMatch.path, 'app:note.create')?.input).toBe('Enthalpy')
   })
 })

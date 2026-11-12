@@ -51,9 +51,9 @@ const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
   const activeEditors: string[] = []
   for (const type of ['note', 'sample', 'form'] as const) {
     tabOpeners.registerEditor(type, (path, title, options) => {
-      const showing = typeof options === 'string' ? options : (options?.where ?? 'current')
+      const placement = typeof options === 'string' ? options : (options?.where ?? 'current')
       const line = typeof options === 'object' ? options?.line : undefined
-      activeEditors.push(`${type} ${path} ${title || '—'} ${showing} ${line ?? '—'}`)
+      activeEditors.push(`${type} ${path} ${title || '—'} ${placement} ${line ?? '—'}`)
     })
   }
   tabOpeners.registerExtensionReader('bin', (path, selector) =>

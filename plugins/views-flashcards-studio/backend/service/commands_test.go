@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	flashcardsstudio "github.com/jiva-studio/numen/plugins/views-flashcards-studio"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service"
@@ -17,7 +17,7 @@ import (
 func newCommands(t *testing.T) (*command.Registry, string) {
 	t.Helper()
 	env := vaulttest.New(t, map[string]string{})
-	commands, err := service.New(service.Config{Vault: env.Host, Now: vaulttest.NewClock()}).Commands()
+	commands, err := service.New(service.Config{Vaults: vaulttest.Vaults(env.Host), Now: vaulttest.NewClock()}).Commands()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestTheCreateCommandsMakeTheFileInTheFolderOfTheRowTheyRunOver(t *testing.T
 		for _, row := range []string{"Glaciers", "Glaciers/Lakes.md"} {
 			t.Run(id+" over "+row, func(t *testing.T) {
 				env := vaulttest.New(t, map[string]string{"Glaciers/Lakes.md": "# Lakes\n"})
-				commands, err := service.New(service.Config{Vault: env.Host, Now: vaulttest.NewClock()}).Commands()
+				commands, err := service.New(service.Config{Vaults: vaulttest.Vaults(env.Host), Now: vaulttest.NewClock()}).Commands()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -75,7 +75,7 @@ func TestTheCreateCommandsMakeNothingOverAMissingRow(t *testing.T) {
 	for _, row := range []string{"Gone", "Glaciers/Gone.md"} {
 		t.Run(row, func(t *testing.T) {
 			env := vaulttest.New(t, map[string]string{"Glaciers/Lakes.md": "# Lakes\n"})
-			commands, err := service.New(service.Config{Vault: env.Host, Now: vaulttest.NewClock()}).Commands()
+			commands, err := service.New(service.Config{Vaults: vaulttest.Vaults(env.Host), Now: vaulttest.NewClock()}).Commands()
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -56,8 +56,7 @@ export interface BookFlowState {
   readonly measure: () => void
 }
 
-/** The flow and sizing of the book reading area. */
-export function useBookFlow(
+function useBookFlow(
   area: Readonly<ShallowRef<HTMLElement | null>>,
   props: SettledBookProps,
   contentWidth: ShallowRef<number> | import('vue').Ref<number>,
@@ -89,11 +88,8 @@ export function useBookFlow(
 /** `getEdge` is handed on to the marks, which is what reads it. */
 export function useBookColumns(options: BookColumnsOptions) {
   const contentWidth = ref(0)
-  const { textSize, viewport, isMeasured, viewportFlow, setting, measure } = useBookFlow(
-    options.area,
-    options.props,
-    contentWidth,
-  )
+  const sizing = useBookFlow(options.area, options.props, contentWidth)
+  const { viewportFlow } = sizing
 
   /**
    * The flow the marks were read in. The area takes its new size before the columns are read
@@ -102,11 +98,7 @@ export function useBookColumns(options: BookColumnsOptions) {
   const laidFlow = shallowRef<Flow>(viewportFlow.value)
   const spreadCount = computed(() => countSpreads(laidFlow.value))
 
-  const { marks, gather, findFragmentOffset, markRuns, markCopy, unmarkCopy } = useBookMarks(
-    options.paper,
-    options.props,
-    options.getEdge,
-  )
+  const runMarks = useBookMarks(options.paper, options.props, options.getEdge)
 
   /** Whether the spread for the rendered document has been laid out. */
   const isStood = ref(false)
@@ -121,35 +113,29 @@ export function useBookColumns(options: BookColumnsOptions) {
    * The columns are as wide as the box is at this moment, and the viewport learns that width only
    * after the frame, so the width the marks are read against is taken off the box. The column
    * count is the one the CSS was last set at.
+   *
+   * Returns the column height in pixels, which is also written to `--book-paper` on the text.
    */
-  const readColumns = (box: HTMLElement, text: HTMLElement): void => {
-    text.style.setProperty('--book-paper', `${columnHeight(box.clientHeight, getLine(text))}px`)
-    gather()
+  const readColumns = (box: HTMLElement, text: HTMLElement): number => {
+    const paperHeight = columnHeight(box.clientHeight, getLine(text))
+    text.style.setProperty('--book-paper', `${paperHeight}px`)
+    runMarks.gather()
     const readFlow: Flow = { ...viewportFlow.value, width: box.clientWidth }
     const isSingleColumn =
       readFlow.columns === 1 &&
       text.clientWidth > 0 &&
       text.scrollWidth <= text.clientWidth &&
-      countFilledColumns(marks.value, readFlow) === 1
+      countFilledColumns(runMarks.marks.value, readFlow) === 1
     contentWidth.value = isSingleColumn ? box.clientWidth : text.scrollWidth
     laidFlow.value = { ...readFlow, contentWidth: contentWidth.value }
+    return paperHeight
   }
 
-  const state = {
-    textSize,
-    viewport,
-    isMeasured,
+  return {
+    sizing,
+    runMarks,
+    laid: { flow: laidFlow, spreadCount },
     isStood,
-    flow: laidFlow,
-    spreadCount,
-    setting,
-    marks,
-    measure,
     readColumns,
-    findFragmentOffset,
-    markRuns,
-    markCopy,
-    unmarkCopy,
   }
-  return state
 }

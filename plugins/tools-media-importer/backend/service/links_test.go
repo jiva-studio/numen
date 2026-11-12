@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/api"
 )
 
@@ -29,7 +29,7 @@ func TestCreateLinksMakesANoteOfEachWebAddressInTheFolder(t *testing.T) {
 	if found.URL != videoAddress {
 		t.Errorf("the note created reads %+v", found)
 	}
-	if raw, _, err := hosted.Vault.Read(t.Context(), created.Paths[0]); err != nil || !strings.Contains(string(raw), "page: ") || !strings.Contains(string(raw), "media: ") {
+	if raw, _, err := hosted.Vaults("").Files.Read(t.Context(), created.Paths[0]); err != nil || !strings.Contains(string(raw), "page: ") || !strings.Contains(string(raw), "media: ") {
 		t.Errorf("the note created holds %s (%v), want its page and media", raw, err)
 	}
 	if !strings.HasPrefix(created.Paths[0], "talks/") {
@@ -82,7 +82,7 @@ func TestCreateLinksHandlesEachAddressOnItsOwn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := hosted.Vault.Create(t.Context(), "talks/"+name+domain.NoteExtension, []byte("plain text")); err != nil {
+	if err := hosted.Vaults("").Writer.Create(t.Context(), "talks/"+name+domain.NoteExtension, []byte("plain text")); err != nil {
 		t.Fatal(err)
 	}
 

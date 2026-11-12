@@ -1,0 +1,680 @@
+package vault_test
+
+import (
+	"context"
+	"errors"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"slices"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
+	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+)
+
+func vaultAt(t *testing.T, root string) (domain.Vault, vaultport.VaultReaders) {
+	t.Helper()
+	cfg, err := vaultconfig.ReadConfig(root, vaultconfig.DefaultServiceDir)
+	if err != nil {
+		t.Fatalf("fixture vault has no identity: %v", err)
+	}
+	return domain.Vault{ID: domain.VaultID(cfg.ID), Name: "fixture", Path: root},
+		vaultreader.Readers{}
+}
+
+func openIndex(t *testing.T) *container.Index {
+	t.Helper()
+	db, err := container.OpenIndex(container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: indexfile.Path(t)},
+	}), t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	testsupport.CloseAfter(t, db)
+	return db
+}
+
+func getNotesOnly() []domain.SourceKind { return []domain.SourceKind{domain.KindNote} }
+
+func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
+	t.Helper()
+	found, err := db.ChunkSearch().FindLexical(t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: getNotesOnly(), Limit: 20})
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := make([]string, 0, len(found))
+	for _, p := range found {
+		if !slices.Contains(out, p.Source) {
+			out = append(out, p.Source)
+		}
+	}
+	return out
+}
+
+func scanner(readers vaultport.VaultReaders, db *container.Index) vaults.Scan {
+	scan := vaults.NewScan(
+		readers,
+		db.Vaults(),
+		db.Notes(),
+		db.NoteQueries(),
+		db.Maintenance(), nil,
+	)
+	scan.Walks = &db.Walks
+	return scan
+}
+
+func TestScanIndexesEveryNoteOnce(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	db := openIndex(t)
+
+	res, err := scanner(readers, db).Execute(ctx, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Notes != 14 {
+		t.Errorf("saw %d markdown files, want 14 — check what the walk skipped", res.Notes)
+	}
+	if res.Indexed != 14 || res.Unchanged != 0 || res.Removed != 0 {
+		t.Errorf("first scan: %+v", res)
+	}
+
+	summary, err := db.NoteQueries().GetSummary(ctx, v.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.Notes != 14 {
+		t.Errorf("index holds %d notes, want 14", summary.Notes)
+	}
+}
+
+// TestAScanSeesBooksBesideNotes. A book found in a vault is reported without
+// being requested, and it is not counted as a note: the meaning of `Seen` is
+// unchanged by a second source kind.
+func TestAScanSeesBooksAdjacentNotes(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	root := vaultfixture.CopyVault(t)
+	vaultfixture.WriteBook(t, root, "library/A Book.epub")
+	v, readers := vaultAt(t, root)
+	db := openIndex(t)
+
+	res, err := scanner(readers, db).Execute(ctx, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Notes != 14 {
+		t.Errorf("saw %d notes, want the 14 the fixture holds", res.Notes)
+	}
+	// The fixture carries a document and a picture of its own beside the book written here.
+	if res.Assets != 3 {
+		t.Errorf("saw %d sources of another kind, want the book, the document and the picture", res.Assets)
+	}
+	if res.Indexed != 14 || res.Removed != 0 {
+		t.Errorf("scan of a vault with a book in it: %+v", res)
+	}
+
+	summary, err := db.NoteQueries().GetSummary(ctx, v.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.Notes != 14 {
+		t.Errorf("index holds %d notes, want 14 — the book was parsed as one", summary.Notes)
+	}
+}
+
+// TestEveryFileThatIsNotANoteIsAnAsset. The core reads no file format, so a
+// file of any format is a source of another kind.
+func TestEveryFileThatIsNotANoteIsAnAsset(t *testing.T) {
+	t.Parallel()
+	root := vaultfixture.CopyVault(t)
+	if err := os.WriteFile(filepath.Join(root, "assets", "scan.png"), []byte("PNG"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	v, readers := vaultAt(t, root)
+	db := openIndex(t)
+
+	res, err := scanner(readers, db).Execute(t.Context(), v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The fixture carries a document and a picture of its own beside the image written here.
+	if res.Assets != 3 {
+		t.Errorf("counted %d sources of another kind, want the document and both pictures", res.Assets)
+	}
+	if res.Notes != 14 {
+		t.Errorf("saw %d notes, want 14", res.Notes)
+	}
+}
+
+// TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly. Two vaults share no words
+// and are queried in both directions: one index holds every vault, so a query
+// that ignores the vault returns a plausible but wrong count.
+func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	first := vaultfixture.NewVault(t, map[string]string{
+		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\nthermodynamics\n",
+	})
+	vaultfixture.WriteBook(t, first.Path, "library/Thermodynamics.epub")
+
+	second := vaultfixture.NewVault(t, map[string]string{
+		"Quasar.md": "---\ntitle: Quasar\n---\n\n# Quasar\n\nredshift\n",
+		"Pulsar.md": "---\ntitle: Pulsar\n---\n\n# Pulsar\n\nredshift\n",
+	})
+	vaultfixture.WriteBook(t, second.Path, "shelf/Astronomy.epub")
+	vaultfixture.WriteBook(t, second.Path, "shelf/Cosmology.epub")
+
+	db := openIndex(t)
+	scan := scanner(vaultreader.Readers{}, db)
+
+	one, err := scan.Execute(ctx, first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if one.Notes != 1 || one.Assets != 1 {
+		t.Errorf("the first vault scanned as %+v, want one note and one book", one)
+	}
+	two, err := scan.Execute(ctx, second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if two.Notes != 2 || two.Assets != 2 {
+		t.Errorf("the second vault scanned as %+v, want two notes and two books", two)
+	}
+
+	if got := titles(t, db, first, "thermodynamics"); !slices.Equal(got, []string{"Entropy"}) {
+		t.Errorf("the first vault holds %v", got)
+	}
+	if got := titles(t, db, second, "thermodynamics"); len(got) != 0 {
+		t.Errorf("the second vault answered with the first's notes: %v", got)
+	}
+	if got := titles(t, db, second, "redshift"); !slices.Equal(got, []string{"Pulsar", "Quasar"}) {
+		t.Errorf("the second vault holds %v", got)
+	}
+	if got := titles(t, db, first, "redshift"); len(got) != 0 {
+		t.Errorf("the first vault answered with the second's notes: %v", got)
+	}
+}
+
+func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	db := openIndex(t)
+	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, path := range searchNotes(t, db, v, "hidden") {
+		if path == ".obsidian/note-in-a-hidden-folder.md" {
+			t.Errorf("indexed a file from a hidden folder: %s", path)
+		}
+	}
+}
+
+func TestSecondScanOpensNoFiles(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	db := openIndex(t)
+
+	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {
+		t.Fatal(err)
+	}
+
+	counter := &countingReaders{VaultReaders: readers}
+	second, err := scanner(counter, db).Execute(ctx, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// This is what makes a scan cheap enough to run at startup: an unchanged
+	// vault is decided on size and modification time, without opening a file.
+	if counter.reads != 0 {
+		t.Errorf("second scan read %d files, want 0", counter.reads)
+	}
+	if second.Unchanged != second.Notes || second.Indexed != 0 {
+		t.Errorf("second scan: %+v", second)
+	}
+}
+
+func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	// A copy, because this test writes: the fixture is shared and must stay
+	// exactly as committed.
+	root := vaultfixture.CopyVault(t)
+	v, readers := vaultAt(t, root)
+	db := openIndex(t)
+	scan := scanner(readers, db)
+
+	if _, err := scan.Execute(ctx, v); err != nil {
+		t.Fatal(err)
+	}
+
+	edited := filepath.Join(root, "daily", "2026-08-15.md")
+	if err := os.WriteFile(edited, []byte("# Journal\n\na completely different text about crystallography\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// Modification time is the invalidation key, and a test can write twice
+	// within one timestamp tick.
+	future := testsupport.GetMachine().Now().Add(2 * time.Second)
+	if err := os.Chtimes(edited, future, future); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(root, "edge", "crlf.md")); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := scan.Execute(ctx, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Indexed != 1 {
+		t.Errorf("reindexed %d notes, want 1", res.Indexed)
+	}
+	if res.Removed != 1 {
+		t.Errorf("removed %d notes, want 1", res.Removed)
+	}
+
+	if matches := searchNotes(t, db, v, "crystallography"); len(matches) != 1 {
+		t.Errorf("new text not searchable: %v", matches)
+	}
+	// The vault is authoritative: what is not on disk is not in the index.
+	if staleNotes := searchNotes(t, db, v, "windows"); len(staleNotes) != 0 {
+		t.Errorf("deleted note still searchable: %v", staleNotes)
+	}
+}
+
+// cancelingReaders cancels the scan once the walk is complete.
+//
+// The cancellation happens after the walk, not during it: the reader rejects a
+// canceled context itself, so a scan that never checked the context would
+// still stop during the walk. The pass over the walk results, which is the
+// entire work of a warm scan, has no other guard.
+type cancelingReaders struct {
+	vaultport.VaultReaders
+	cancel context.CancelFunc
+}
+
+func (c *cancelingReaders) Open(v domain.Vault) (vaultport.VaultReader, error) {
+	reader, err := c.VaultReaders.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return &cancelingReader{VaultReader: reader, parent: c}, nil
+}
+
+type cancelingReader struct {
+	vaultport.VaultReader
+	parent *cancelingReaders
+}
+
+func (c *cancelingReader) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
+	err := c.VaultReader.WalkFiles(ctx, fn)
+	c.parent.cancel()
+	return err
+}
+
+// countingReaders records the number of files a scan opens.
+type countingReaders struct {
+	vaultport.VaultReaders
+	reads int
+}
+
+func (c *countingReaders) Open(v domain.Vault) (vaultport.VaultReader, error) {
+	reader, err := c.VaultReaders.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return &countingReader{VaultReader: reader, parent: c}, nil
+}
+
+type countingReader struct {
+	vaultport.VaultReader
+	parent *countingReaders
+}
+
+func (c *countingReader) Read(ctx context.Context, path string) ([]byte, error) {
+	c.parent.reads++
+	return c.VaultReader.Read(ctx, path)
+}
+
+func TestSearchNeverCrossesVaults(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	db := openIndex(t)
+
+	first, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	second := vaultfixture.NewVault(t, map[string]string{
+		"quasar.md": "# Quasar\n\nA word that exists in no other vault.\n",
+	})
+
+	if _, err := scanner(readers, db).Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := scanner(readers, db).Execute(ctx, second); err != nil {
+		t.Fatal(err)
+	}
+
+	// The two vaults hold disjoint words, so a query that forgets its vault
+	// shows up as a match that cannot belong to the vault being searched. One
+	// database for every vault makes that failure invisible by construction,
+	// and a test that shares content between the vaults cannot see it either.
+	if leaked := searchNotes(t, db, first, "quasar"); len(leaked) != 0 {
+		t.Errorf("searching the first vault returned the second vault's notes: %v", leaked)
+	}
+
+	if other := searchNotes(t, db, second, "entropy"); len(other) != 0 {
+		t.Errorf("searching the second vault returned the first vault's notes: %v", other)
+	}
+
+	own := searchNotes(t, db, second, "quasar")
+	if len(own) != 1 || own[0] != "quasar.md" {
+		t.Errorf("the second vault cannot find its own note: %v", own)
+	}
+}
+
+func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	db := openIndex(t)
+
+	// Two vaults holding a note at the same path is not a corner case: copying
+	// a vault folder produces exactly that. If FileStats leaks, the second
+	// vault's note looks unchanged and is never indexed — silently, with the
+	// scan reporting success.
+	shared := "notes/Entropy.md"
+	first := vaultfixture.NewVault(t, map[string]string{
+		shared: "# Entropy\n\nthe first vault\n",
+	})
+	second := vaultfixture.NewVault(t, map[string]string{
+		shared:     "# Entropy\n\nthe second vault\n",
+		"extra.md": "# Extra\n\nonly the second vault has this\n",
+	})
+	readers := vaultreader.Readers{}
+
+	if _, err := scanner(readers, db).Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+	result, err := scanner(readers, db).Execute(ctx, second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Indexed != 2 {
+		t.Errorf("the second vault indexed %d notes, want 2 — a shared path was taken for already known", result.Indexed)
+	}
+
+	stats, summaries := db.NoteQueries(), db.NoteQueries()
+
+	recognized, err := stats.GetFileStats(ctx, first.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(recognized) != 1 {
+		t.Errorf("the first vault knows %d files, want 1: %v", len(recognized), recognized)
+	}
+	if _, leaked := recognized["extra.md"]; leaked {
+		t.Error("the first vault knows a file that belongs to the second")
+	}
+
+	summary, err := summaries.GetSummary(ctx, first.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.Notes != 1 {
+		t.Errorf("the first vault summarizes %d notes, want 1", summary.Notes)
+	}
+}
+
+// vanishingReader reports a file that is gone by the time it is read, which is
+// what happens when the user saves, moves or deletes a note during a scan.
+type vanishingReader struct {
+	vaultport.VaultReader
+	vanishedVal string
+}
+
+func (v vanishingReader) Read(ctx context.Context, path string) ([]byte, error) {
+	if path == v.vanishedVal {
+		return nil, fs.ErrNotExist
+	}
+	return v.VaultReader.Read(ctx, path)
+}
+
+type vanishingReaders struct {
+	vaultport.VaultReaders
+	vanishedVal string
+}
+
+func (v vanishingReaders) Open(vault domain.Vault) (vaultport.VaultReader, error) {
+	reader, err := v.VaultReaders.Open(vault)
+	if err != nil {
+		return nil, err
+	}
+	return vanishingReader{VaultReader: reader, vanishedVal: v.vanishedVal}, nil
+}
+
+func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	db := openIndex(t)
+
+	scan := scanner(vanishingReaders{VaultReaders: readers, vanishedVal: "notes/Entropy.md"}, db)
+	res, err := scan.Execute(ctx, v)
+	if err != nil {
+		t.Fatalf("one vanished file ended the scan: %v", err)
+	}
+	if res.Vanished != 1 {
+		t.Errorf("vanished = %d, want 1", res.Vanished)
+	}
+	if res.Indexed != res.Notes-1 {
+		t.Errorf("indexed %d of %d seen", res.Indexed, res.Notes)
+	}
+
+	if res.Removed != 0 {
+		t.Errorf("removed %d notes: a file that could not be read is not a deletion", res.Removed)
+	}
+}
+
+type refusingReader struct {
+	vaultport.VaultReader
+	failingPath string
+}
+
+func (r refusingReader) Read(ctx context.Context, path string) ([]byte, error) {
+	if path == r.failingPath {
+		return nil, fs.ErrPermission
+	}
+	return r.VaultReader.Read(ctx, path)
+}
+
+type refusingReaders struct {
+	vaultport.VaultReaders
+	failingPath string
+}
+
+func (r refusingReaders) Open(vault domain.Vault) (vaultport.VaultReader, error) {
+	reader, err := r.VaultReaders.Open(vault)
+	if err != nil {
+		return nil, err
+	}
+	return refusingReader{VaultReader: reader, failingPath: r.failingPath}, nil
+}
+
+// A permission bit, a broken ACL, a device that went away. A refresh counts
+// such a file and carries on, and the two ways the index changes agree.
+func TestAnUnreadableFileDoesNotStopAScan(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	db := openIndex(t)
+
+	scan := scanner(refusingReaders{VaultReaders: readers, failingPath: "notes/Entropy.md"}, db)
+	res, err := scan.Execute(ctx, v)
+	if err != nil {
+		t.Fatalf("one unreadable file ended the scan: %v", err)
+	}
+	if res.Unreadable != 1 {
+		t.Errorf("unreadable = %d, want 1", res.Unreadable)
+	}
+	if res.Indexed != res.Notes-1 {
+		t.Errorf("indexed %d of %d seen", res.Indexed, res.Notes)
+	}
+	if res.Removed != 0 {
+		t.Errorf("removed %d notes: a file nobody can read is not a deletion", res.Removed)
+	}
+}
+
+func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
+	t.Parallel()
+	// Saving through a temporary file and a rename makes a note briefly absent.
+	// A scan that catches that moment must not take the note out of search
+	// until the next one.
+	ctx := t.Context()
+	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
+	db := openIndex(t)
+
+	if _, err := scanner(readers, db).Execute(ctx, v); err != nil {
+		t.Fatal(err)
+	}
+
+	removed := "notes/Entropy.md"
+	res, err := scanner(vanishingReaders{VaultReaders: readers, vanishedVal: removed}, db).Execute(ctx, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Removed != 0 {
+		t.Errorf("removed %d notes, want 0", res.Removed)
+	}
+
+	recognized, err := db.NoteQueries().GetFileStats(ctx, v.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, isRecognized := recognized[removed]; !isRecognized {
+		t.Error("a note that was briefly absent was dropped from the index")
+	}
+	if matches := searchNotes(t, db, v, "uncertainty"); len(matches) != 1 {
+		t.Errorf("the note is no longer searchable: %v", matches)
+	}
+}
+
+func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	db := openIndex(t)
+	// `.nan` is valid YAML and not representable in JSON. The note is still a
+	// note, so it must still be indexed.
+	v := vaultfixture.NewVault(t, map[string]string{
+		"odd.md": "---\nvalue: .nan\n---\n\n# Odd\n\nsearchable all the same\n",
+	})
+
+	if _, err := scanner(vaultreader.Readers{}, db).Execute(ctx, v); err != nil {
+		t.Fatalf("a note with unstorable frontmatter ended the scan: %v", err)
+	}
+	if matches := searchNotes(t, db, v, "searchable"); len(matches) != 1 {
+		t.Errorf("the note was not indexed: %v", matches)
+	}
+}
+
+func TestNewestNotesAreIndexedFirst(t *testing.T) {
+	t.Parallel()
+	// A vault has a working set and an archive. While a scan runs, recently
+	// modified notes are the ones in demand, so they are indexed first.
+	ctx := t.Context()
+	root := vaultfixture.CopyVault(t)
+	v, readers := vaultAt(t, root)
+	db := openIndex(t)
+
+	newest := filepath.Join(root, "edge", "unicode.md")
+	pos := testsupport.GetMachine().Now().Add(time.Hour)
+	if err := os.Chtimes(newest, pos, pos); err != nil {
+		t.Fatal(err)
+	}
+
+	// Checks the order in which notes reach the index: the index contents
+	// part-way through are whole groups, which does not show the order.
+	content := &groupedWrites{}
+	scan := vaults.NewScan(readers, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), nil)
+	scan.Walks = &db.Walks
+	if _, err := scan.Execute(ctx, v); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(content.groups) == 0 || content.groups[0][0] != "edge/unicode.md" {
+		t.Errorf("first note indexed was %v, want edge/unicode.md", content.groups)
+	}
+}
+
+// TestScanStopsWhenCanceled. A canceled scan keeps what it committed and
+// discards the group being filled, whose files are read again on the next scan.
+//
+// Asserted on how far the walk got, not on the error: the next read rejects a
+// canceled context itself, so the error occurs either way.
+func TestScanStopsWhenCanceled(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	v := vaultfixture.GenerateVault(t, 600)
+	db := openIndex(t)
+
+	scan := scanner(vaultreader.Readers{}, db)
+
+	res, err := scan.ScanWithProgress(ctx, v, func(vaultreading.ScanResult) { cancel() })
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("a canceled scan returned %v", err)
+	}
+	if res.Notes != 500 {
+		t.Errorf("a canceled scan walked %d files, want the 500 it had reached", res.Notes)
+	}
+
+	recognized, err := db.NoteQueries().GetFileStats(t.Context(), v.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(recognized) != 500 {
+		t.Errorf("a canceled scan left %d notes indexed, want the 500 it committed", len(recognized))
+	}
+}
+
+// TestAWarmScanStopsWhenCanceled covers the check in the loop. A warm scan
+// opens no file, so no reader rejects the canceled context and the scan must
+// check it itself.
+// The context is canceled part-way through: with an up-front cancellation the
+// first query fails and the loop check is never reached.
+func TestAWarmScanStopsWhenCanceled(t *testing.T) {
+	t.Parallel()
+	v := vaultfixture.GenerateVault(t, 600)
+	db := openIndex(t)
+	scan := scanner(vaultreader.Readers{}, db)
+
+	if _, err := scan.Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	warmScanner := scanner(&cancelingReaders{VaultReaders: vaultreader.Readers{}, cancel: cancel}, db)
+
+	res, err := warmScanner.Execute(ctx, v)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("a canceled warm scan returned %v", err)
+	}
+	if res.Notes != 0 {
+		t.Errorf("a warm scan canceled before its first note looked at %d of 600", res.Notes)
+	}
+}

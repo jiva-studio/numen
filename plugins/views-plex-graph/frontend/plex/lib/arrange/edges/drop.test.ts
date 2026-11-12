@@ -5,7 +5,7 @@ import { getDropRelation, findNode, resolveDrop, getRelationTowards } from './dr
 import { DEFAULT_OPTIONS, resolveOptions } from '../options'
 import { build } from '../../../fixtures/build'
 import type { PlexFrame } from '../../frame'
-import type { PlexRelation } from '../../relation'
+import type { PlexRelation } from '../../../../types'
 
 const ALLOWED: readonly PlexRelation[] = ['parent', 'child', 'jump']
 
@@ -108,7 +108,7 @@ describe('dropping on nothing makes a node', () => {
 
   it('reads the direction from the node it started at, not from the middle', () => {
     // Straight up from a child is still above *it*, though it is below the
-    // focus. A rule written against the centre would call this a child.
+    // focus. A rule written against the center would call this a child.
     const above = { x: child.x, y: child.y - 4000 }
     expect(drop(child.id, above)).toStrictEqual({
       kind: 'create',

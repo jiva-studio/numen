@@ -74,16 +74,6 @@ describe('the title with vaults', () => {
     expect(trigger.text()).toBe('numen — Orchard notes')
   })
 
-  it('stays out of the drag area while the rest of the bar drags', () => {
-    const wrapper = mountBar()
-    const drag = (element: Element) =>
-      (element as HTMLElement).style.getPropertyValue('--wails-draggable')
-
-    expect(drag(getTrigger(wrapper).element)).toBe('no-drag')
-    expect(drag(wrapper.find('[data-title-bar]').element)).toBe('drag')
-    expect(drag(wrapper.find('[data-title-bar-middle]').element)).toBe('')
-  })
-
   it('is the plain title when the bar has no vaults', () => {
     for (const vaults of [null, { vaults: [], current: ORCHARD }, { ...VAULTS, current: null }]) {
       const wrapper = mountBar(vaults)

@@ -1,0 +1,274 @@
+package note_test
+
+import (
+	"context"
+	"errors"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/note/markdown"
+)
+
+func TestAMissingSpanReturnsWhatItIs(t *testing.T) {
+	t.Parallel()
+
+	if got, want := (note.MissingSpanError{}).Error(), "no part of this span is in the note"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+	got := note.MissingSpanError{Matched: "the wrath", Instead: "the calm"}.Error()
+	want := `this span is not in the note; it holds "the calm" where the span has "the wrath…"`
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestAnAmbiguousSpanReturnsHowManyPlaces(t *testing.T) {
+	t.Parallel()
+
+	got := note.AmbiguousSpanError{Places: 3}.Error()
+	want := "this span is in 3 places; take in enough of what is around one of them to tell it from the others"
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestAReplacementMustNameTheTextItReplaces(t *testing.T) {
+	t.Parallel()
+	was := "one two three\n"
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": was})
+
+	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.FileStat{}); err == nil {
+		t.Fatal("a replacement naming nothing was accepted")
+	}
+	if body := c.read(t, "Aggressor.md"); body != was {
+		t.Errorf("the note changed:\n%s", body)
+	}
+}
+
+// Emptying a span is a replacement; a span that is not there is not made
+// present by it.
+func TestAMissingSpanReplacedByNothingIsMissing(t *testing.T) {
+	t.Parallel()
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "one two three\n"})
+
+	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "four", "", domain.FileStat{})
+	if !errors.As(err, new(note.MissingSpanError)) {
+		t.Fatalf("want MissingSpanError, got %v", err)
+	}
+}
+
+func TestAReplacementPresentingAStaleFingerprintIsRefused(t *testing.T) {
+	t.Parallel()
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "one two three\n"})
+	replacing := c.replace()
+
+	first, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONES", domain.FileStat{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := replacing.Execute(
+		t.Context(), c.vault, "Aggressor.md", "two", "TWOS", first.FileStat); err != nil {
+		t.Fatal(err)
+	}
+	before := c.read(t, "Aggressor.md")
+
+	_, err = replacing.Execute(t.Context(), c.vault, "Aggressor.md", "three", "THREES", first.FileStat)
+	if !errors.Is(err, edit.ErrStale) {
+		t.Fatalf("want ErrStale, got %v", err)
+	}
+	if body := c.read(t, "Aggressor.md"); body != before {
+		t.Errorf("the rejected replacement landed anyway:\n%s", body)
+	}
+}
+
+func TestAReplacementAnswersWithTheFileItWrote(t *testing.T) {
+	t.Parallel()
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "one two three\n"})
+
+	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.FileStat{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := c.read(t, "Aggressor.md")
+	if isDone.FileStat.Path != "Aggressor.md" || isDone.FileStat.Size != int64(len(content)) {
+		t.Errorf("the answer describes %+v, and the file is %d bytes", isDone.FileStat, len(content))
+	}
+}
+
+func TestAReplacementThatMakesTheNoteTooLargeIsRefused(t *testing.T) {
+	t.Parallel()
+	was := "# Big\n\n" + strings.Repeat("a", edit.MaxBytes-100) + "\nneedle\n"
+	c := openChangeFixture(t, map[string]string{"Big.md": was})
+
+	_, err := c.replace().Execute(t.Context(), c.vault, "Big.md", "needle", strings.Repeat("n", 200), domain.FileStat{})
+	if !errors.Is(err, edit.ErrTooLarge) {
+		t.Fatalf("want ErrTooLarge, got %v", err)
+	}
+	if body := c.read(t, "Big.md"); body != was {
+		t.Error("the rejected replacement landed anyway")
+	}
+}
+
+// Frontmatter that is never closed leaves no prose to replace.
+func TestReplace_ErrorsOnUnterminatedFrontmatter(t *testing.T) {
+	t.Parallel()
+	was := "---\ntitle: Aggressor\nA hedgehog.\n"
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": was})
+
+	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.FileStat{})
+	if !errors.Is(err, markdown.ErrUnterminated) {
+		t.Fatalf("want ErrUnterminated, got %v", err)
+	}
+	if body := c.read(t, "Aggressor.md"); body != was {
+		t.Errorf("the rejected replacement landed anyway:\n%s", body)
+	}
+}
+
+// The observer drawing the note receives the span in the units a client counts,
+// and receives a notification when the change ends.
+func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
+	t.Parallel()
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "ééé 😀 target tail\n"})
+	var notified []domain.Edit
+	replacing := c.replace()
+	replacing.Drawing = func(_ context.Context, response domain.Edit) error {
+		notified = append(notified, response)
+		return nil
+	}
+
+	if _, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "target", "goal", domain.FileStat{}); err != nil {
+		t.Fatal(err)
+	}
+	if len(notified) != 2 {
+		t.Fatalf("told %d times: %+v", len(notified), notified)
+	}
+	begun, ended := notified[0], notified[1]
+	if begun.Path != "Aggressor.md" || begun.From != 7 || begun.To != 13 || begun.Text != "goal" || begun.IsDone {
+		t.Errorf("the change began as %+v", begun)
+	}
+	if begun.Change == "" {
+		t.Error("the change has no name")
+	}
+	if ended.Change != begun.Change || ended.Path != "Aggressor.md" || !ended.IsDone {
+		t.Errorf("the change ended as %+v", ended)
+	}
+}
+
+// A missing span reports where a copy stopped agreeing with the note, and the text at that point.
+func TestAMissingSpanNamesWhereACopyStoppedAgreeing(t *testing.T) {
+	t.Parallel()
+	for name, tc := range map[string]struct {
+		note, status     string
+		matched, instead string
+	}{
+		"a single byte that is nowhere": {
+			note: "abc\n", status: "z",
+		},
+		"an opening of one byte": {
+			note: "ab\n", status: "ax",
+			matched: "a", instead: "ab",
+		},
+		"an opening that is most of the span": {
+			note: "abcdZ\n", status: "abcdxy",
+			matched: "abcd", instead: "abcdZ\n",
+		},
+		"a letter that differs inside a rune": {
+			note: "xéz\n", status: "xèy",
+			matched: "x", instead: "xéz",
+		},
+		"a rune the note cuts at the end of what stands there": {
+			note: "abcéfgh\n", status: "abXY",
+			matched: "ab", instead: "abcé",
+		},
+		"a first rune that is nowhere": {
+			note: "é\n", status: "èy",
+		},
+		"bytes that are not text": {
+			note: "abc\n", status: "\x80ab",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			c := openChangeFixture(t, map[string]string{"Aggressor.md": tc.note})
+
+			_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", tc.status, "q", domain.FileStat{})
+			var nowhere note.MissingSpanError
+			if !errors.As(err, &nowhere) {
+				t.Fatalf("want MissingSpanError, got %v", err)
+			}
+			if nowhere.Matched != tc.matched || nowhere.Instead != tc.instead {
+				t.Errorf("matched %q and instead %q, want %q and %q",
+					nowhere.Matched, nowhere.Instead, tc.matched, tc.instead)
+			}
+		})
+	}
+}
+
+func TestAReplacementNamingNothingIsRefusedAsSuch(t *testing.T) {
+	t.Parallel()
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "one two three\n"})
+
+	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.FileStat{})
+	var nowhere note.MissingSpanError
+	if err == nil || errors.As(err, &nowhere) || !strings.Contains(err.Error(), "name the text to replace") {
+		t.Errorf("want the rejection to name the text, got %v", err)
+	}
+}
+
+// A rejected replacement draws nothing and names the note it failed in.
+func TestAReplacementRefusedForItsFrontmatterDrawsNothing(t *testing.T) {
+	t.Parallel()
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "---\ntitle: Aggressor\nA hedgehog.\n"})
+	var notified []domain.Edit
+	replacing := c.replace()
+	replacing.Drawing = func(_ context.Context, response domain.Edit) error {
+		notified = append(notified, response)
+		return nil
+	}
+
+	_, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.FileStat{})
+	if err == nil || !strings.HasPrefix(err.Error(), "Aggressor.md: ") {
+		t.Errorf("want the error to name the note, got %v", err)
+	}
+	if len(notified) != 0 {
+		t.Errorf("a rejected change was drawn: %+v", notified)
+	}
+}
+
+// A rune of three bytes puts the middle of the search inside it.
+func TestAMissingSpanAfterAThreeByteRuneNamesWhereItStopped(t *testing.T) {
+	t.Parallel()
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": "x\n"})
+
+	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "x€y", "q", domain.FileStat{})
+	var nowhere note.MissingSpanError
+	if !errors.As(err, &nowhere) {
+		t.Fatalf("want MissingSpanError, got %v", err)
+	}
+	if nowhere.Matched != "x" || nowhere.Instead != "x\n" {
+		t.Errorf("matched %q and instead %q", nowhere.Matched, nowhere.Instead)
+	}
+}
+
+// An observer that cannot be notified of the change stops the replacement, as it stops a write, and the
+// note stays as it was.
+func TestAReplacementWhoseObserverCannotBeNotifiedIsRefused(t *testing.T) {
+	t.Parallel()
+	const was = "ééé 😀 target tail\n"
+	c := openChangeFixture(t, map[string]string{"Aggressor.md": was})
+	observerError := errors.New("the observer cannot be reached")
+	replacing := c.replace()
+	replacing.Drawing = func(context.Context, domain.Edit) error { return observerError }
+
+	_, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "target", "goal", domain.FileStat{})
+
+	if !errors.Is(err, observerError) {
+		t.Fatalf("want the error of the observer, got %v", err)
+	}
+	if body := c.read(t, "Aggressor.md"); body != was {
+		t.Errorf("the refused replacement landed anyway:\n%s", body)
+	}
+}

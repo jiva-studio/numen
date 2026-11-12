@@ -76,8 +76,8 @@ function getStride(suspended: NodeHeadings, mode: number): number {
 const LINES = 1
 const WINDOWS = 2
 
-/** The getFurthest the window on the headings may be scrolled down, counted in headings. */
-export const getFurthest = (suspended: NodeHeadings): number =>
+/** The getFurthestOffset the window on the headings may be scrolled down, counted in headings. */
+export const getFurthestOffset = (suspended: NodeHeadings): number =>
   Math.max(0, suspended.headings.length - suspended.visibleCount)
 
 /**
@@ -94,7 +94,7 @@ export function getOpenHeadings(
   if (openProgress <= 0) return null
 
   // The window covers whole headings and scrolls one heading at a time.
-  const first = Math.min(Math.max(Math.round(scrollOffset), 0), getFurthest(suspended))
+  const first = Math.min(Math.max(Math.round(scrollOffset), 0), getFurthestOffset(suspended))
   const visibleHeadings = suspended.headings.slice(first, first + suspended.visibleCount)
 
   // Each heading sets off a lead behind the one above it, and the leads together
@@ -115,7 +115,7 @@ export function getOpenHeadings(
   })
 
   const isAbove = first > 0
-  const isBelow = first < getFurthest(suspended)
+  const isBelow = first < getFurthestOffset(suspended)
   return {
     height: suspended.height,
     opacity: easeOut(openProgress),

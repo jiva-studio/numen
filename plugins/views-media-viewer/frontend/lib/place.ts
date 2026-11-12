@@ -4,7 +4,7 @@
 import type { Selector } from '@numen/plugin-sdk'
 
 /** The selector of one moment of a recording, given in milliseconds. */
-export const createTimeSelector = (ms: number): Selector => {
+export const getTimeSelector = (ms: number): Selector => {
   const seconds = Math.max(0, ms) / 1000
   return { t: [seconds, seconds] }
 }

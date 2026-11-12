@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
@@ -20,7 +20,7 @@ func TestCompleteSendsAChatRequestAndReturnsTheAnswer(t *testing.T) {
 	request.Temperature = &temperature
 	request.MaxTokens = 300
 
-	result, err := New().Complete(newContext(t), newCall("openrouter", address, testKey, "openai/gpt-4o-mini"), request)
+	result, err := newTestService(t).Complete(newContext(t), newCall("openrouter", address, testKey, "openai/gpt-4o-mini"), request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestCompleteSendsAChatRequestAndReturnsTheAnswer(t *testing.T) {
 
 func TestCompleteSendsNoKeyHeaderWhenTheConnectionHasNoKey(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
-	if _, err := New().Complete(newContext(t), newCall("openai-compatible", address, "", "qwen2.5:14b"), oneUserMessage("hi")); err != nil {
+	if _, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", address, "", "qwen2.5:14b"), oneUserMessage("hi")); err != nil {
 		t.Fatal(err)
 	}
 	if got := fake.Requests()[0].Header.Get("Authorization"); got != "" {
@@ -66,7 +66,7 @@ func TestCompleteSendsNoKeyHeaderWhenTheConnectionHasNoKey(t *testing.T) {
 
 func TestCompleteOmitsTheOptionsTheRequestDoesNotSet(t *testing.T) {
 	fake, address := startFake(t, fakeopenai.Config{})
-	if _, err := New().Complete(newContext(t), newCall("openai-compatible", address, "", "m"), oneUserMessage("hi")); err != nil {
+	if _, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", address, "", "m"), oneUserMessage("hi")); err != nil {
 		t.Fatal(err)
 	}
 	body := string(fake.Requests()[0].Body)
@@ -82,7 +82,7 @@ func TestCompleteNamesTheTokenLimitAsTheServiceExpectsIt(t *testing.T) {
 		fake, address := startFake(t, fakeopenai.Config{})
 		request := oneUserMessage("hi")
 		request.MaxTokens = 50
-		if _, err := New().Complete(newContext(t), newCall(typeID, address, "", "m"), request); err != nil {
+		if _, err := newTestService(t).Complete(newContext(t), newCall(typeID, address, "", "m"), request); err != nil {
 			t.Fatal(err)
 		}
 		var body map[string]any
@@ -110,7 +110,7 @@ func TestCompleteNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
 		fake, address := startFake(t, fakeopenai.Config{})
 		call := newCall(typeID, address, "", one.model)
 		call.Reasoning = "low"
-		if _, err := New().Complete(newContext(t), call, oneUserMessage("hi")); err != nil {
+		if _, err := newTestService(t).Complete(newContext(t), call, oneUserMessage("hi")); err != nil {
 			t.Fatal(err)
 		}
 		var body map[string]any
@@ -128,7 +128,7 @@ func TestCompleteStopsOnAReasoningLevelThatTheModelRejects(t *testing.T) {
 	for typeID, model := range map[string]string{"openai-compatible": "qwen2.5:14b", "openai": "gpt-4o-mini"} {
 		call := newCall(typeID, address, "", model)
 		call.Reasoning = "low"
-		_, err := New().Complete(newContext(t), call, oneUserMessage("hi"))
+		_, err := newTestService(t).Complete(newContext(t), call, oneUserMessage("hi"))
 		checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
 	}
 	if len(fake.Requests()) != 0 {
@@ -143,12 +143,12 @@ func TestCompleteStopsOnAnAnswerWithoutChoices(t *testing.T) {
 		}
 	}))
 	t.Cleanup(ts.Close)
-	_, err := New().Complete(newContext(t), newCall("openai-compatible", ts.URL, "", "m"), oneUserMessage("hi"))
+	_, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", ts.URL, "", "m"), oneUserMessage("hi"))
 	checkFailure(t, err, failureWant{reason: connection.ReasonUnknown})
 }
 
 func TestCompleteStopsOnAnUnknownType(t *testing.T) {
 	_, address := startFake(t, fakeopenai.Config{})
-	_, err := New().Complete(newContext(t), newCall("nope", address, "", "m"), oneUserMessage("hi"))
+	_, err := newTestService(t).Complete(newContext(t), newCall("nope", address, "", "m"), oneUserMessage("hi"))
 	checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
 }

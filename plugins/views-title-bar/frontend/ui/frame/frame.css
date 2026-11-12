@@ -3,14 +3,21 @@
   min-width: 0;
 }
 
-/* The 4px after the system buttons keep the first command off them. */
+/* The space after the system buttons keeps the first command off them. Like the system buttons, the inset
+   keeps its size at every interface scale. */
 .mac-buttons-inset {
+  --inset-width: calc(5rem / var(--numen-interface-scale));
+  --inset-gap: calc(0.25rem / var(--numen-interface-scale));
   flex: none;
-  width: 80px;
-  margin-inline-end: 4px;
+  width: var(--inset-width);
+  margin-inline-end: var(--inset-gap);
 }
 
 .window-controls {
+  --windows-button-width: calc(2.75rem / var(--numen-interface-scale));
+  --mac-gap: calc(0.5rem / var(--numen-interface-scale));
+  --mac-pad-inline: calc(0.75rem / var(--numen-interface-scale));
+  --mac-button-size: calc(0.75rem / var(--numen-interface-scale));
   position: relative;
   top: var(--numen-window-edge);
   z-index: 1;
@@ -24,7 +31,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
+  width: var(--windows-button-width);
   height: 100%;
   padding: 0;
   background: transparent;
@@ -43,13 +50,13 @@
 }
 
 .window-controls--mac {
-  gap: 8px;
-  padding-inline: 12px;
+  gap: var(--mac-gap);
+  padding-inline: var(--mac-pad-inline);
 }
 
 .window-controls--mac .window-controls__button {
-  width: 12px;
-  height: 12px;
+  width: var(--mac-button-size);
+  height: var(--mac-button-size);
   padding: 0;
   border: none;
   border-radius: 50%;

@@ -38,18 +38,6 @@ const isSameEntries = (one: readonly Entry[] | undefined, other: readonly Entry[
   one.length === other.length &&
   one.every((entry, index) => isSameEntry(entry, other[index]!))
 
-/**
- * Generates a name not taken in the folder.
- */
-export const generateUniqueName = (names: readonly string[], word: string): string => {
-  const existingNames = new Set(names)
-  if (!existingNames.has(word)) return word
-  for (let count = 2; ; count++) {
-    const name = `${word} ${count}`
-    if (!existingNames.has(name)) return name
-  }
-}
-
 function getRowsInFolder(
   entriesByFolder: ReadonlyMap<string, readonly Entry[]>,
   isFolderOpen: (folder: string) => boolean,
@@ -68,7 +56,7 @@ function getRowsInFolder(
 interface FolderListingResult {
   folder: string
   entries?: readonly Entry[]
-  error?: unknown
+  error?: string
 }
 
 function mergeFolderListings(
@@ -80,7 +68,7 @@ function mergeFolderListings(
   let error = ''
   for (const listing of listings) {
     if (listing.error !== undefined) {
-      error = formatErrorMessage(listing.error)
+      error = listing.error
     } else if (listing.entries && !isSameEntries(next.get(listing.folder), listing.entries)) {
       next.set(listing.folder, listing.entries)
       isChanged = true
@@ -106,9 +94,12 @@ interface TreeRefreshDeps {
   entriesByFolder: ShallowRef<ReadonlyMap<string, readonly Entry[]>>
   open: ShallowRef<ReadonlySet<string>>
   errorMessage: Ref<string>
+  isLoaded: Ref<boolean>
   selectedPaths: ShallowRef<readonly string[]>
-  isFolderOpen: (folder: string) => boolean
-  getEntryAt: (path: string) => Entry | null
+  lookup: {
+    isFolderOpen: (folder: string) => boolean
+    getEntryAt: (path: string) => Entry | null
+  }
   isAlive: () => boolean
 }
 
@@ -118,9 +109,9 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
     entriesByFolder,
     open,
     errorMessage,
+    isLoaded,
     selectedPaths,
-    isFolderOpen,
-    getEntryAt,
+    lookup: { isFolderOpen, getEntryAt },
     isAlive,
   } = deps
 
@@ -130,7 +121,7 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
         try {
           return { folder, entries: await core.list(folder) }
         } catch (err) {
-          return { folder, error: err }
+          return { folder, error: formatErrorMessage(err) }
         }
       }),
     )
@@ -138,6 +129,7 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
     const merged = mergeFolderListings(entriesByFolder.value, listings)
     if (merged.isChanged) entriesByFolder.value = merged.next
     errorMessage.value = merged.error
+    if (folders.includes(ROOT)) isLoaded.value = true
   }
 
   const loadFolder = (folder: string) => loadFolders([folder])
@@ -165,7 +157,7 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
     await loadFolders([...folders])
   }
 
-  return { loadFolders, loadFolder, refresh, refreshChanged }
+  return { loadFolder, refresh, refreshChanged }
 }
 
 function createFolderOperations(
@@ -193,7 +185,7 @@ function createFolderOperations(
     else await openFolder(folder)
   }
 
-  return { isFolderOpen, openFolder, closeFolder, toggleFolder }
+  return { openFolder, closeFolder, toggleFolder }
 }
 
 function initTreeState() {
@@ -201,7 +193,8 @@ function initTreeState() {
   const open = shallowRef<ReadonlySet<string>>(new Set([ROOT]))
   const selectedPaths = shallowRef<readonly string[]>([])
   const errorMessage = ref('')
-  return { entriesByFolder, open, selectedPaths, errorMessage }
+  const isLoaded = ref(false)
+  return { entriesByFolder, open, selectedPaths, errorMessage, isLoaded }
 }
 
 function createTreeQueries(
@@ -233,8 +226,7 @@ export function createFileTree(core: Folders): FileTree {
   const refreshControl = createTreeRefresh({
     core,
     ...state,
-    isFolderOpen: queries.isFolderOpen,
-    getEntryAt: queries.getEntryAt,
+    lookup: queries,
     isAlive: () => isAlive,
   })
 
@@ -255,24 +247,18 @@ export function createFileTree(core: Folders): FileTree {
   }
 
   return {
-    ...queries,
-    selectedPaths: state.selectedPaths,
-    errorMessage: state.errorMessage,
-    loadFolder: refreshControl.loadFolder,
-    openFolder: folderOps.openFolder,
-    closeFolder: folderOps.closeFolder,
-    toggleFolder: folderOps.toggleFolder,
+    state: {
+      selectedPaths: state.selectedPaths,
+      errorMessage: state.errorMessage,
+      isLoaded: state.isLoaded,
+    },
+    queries,
+    folders: folderOps,
+    sync: refreshControl,
     selectPaths: (paths: readonly string[]) => {
       state.selectedPaths.value = paths
     },
     revealPath,
-    refresh: refreshControl.refresh,
-    refreshChanged: refreshControl.refreshChanged,
-    getUniqueNameInFolder: (folder: string, word: string): string =>
-      generateUniqueName(
-        queries.getEntriesInFolder(folder).map((one) => one.name),
-        word,
-      ),
     close,
   }
 }

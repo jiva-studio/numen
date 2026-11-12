@@ -1,5 +1,5 @@
 /**
- * The book tabs of a window: a tab's title, its behaviour when it becomes visible, where
+ * The book tabs of a window: a tab's title, its behavior when it becomes visible, where
  * a search sends the user, and what a command over a tab operates on.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -24,7 +24,9 @@ describe('what a book tab holds', () => {
   })
 
   it('remains at the path the book is filed at', () => {
-    expect(useBookTab(readItem('library/Mahabharata.epub')).path).toBe('library/Mahabharata.epub')
+    expect(useBookTab(readItem('library/Mahabharata.epub')).book.path).toBe(
+      'library/Mahabharata.epub',
+    )
   })
 
   it('delegates focus and keypresses to the retained elements', () => {

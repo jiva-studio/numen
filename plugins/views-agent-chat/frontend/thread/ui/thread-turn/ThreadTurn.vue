@@ -3,7 +3,8 @@
 import { computed } from 'vue'
 import { Prose } from '@numen/ui'
 import { ToolCall } from '../tool-call'
-import { NO_LINKS, NO_UNRESOLVED, type PlacedTurn, type Turn } from '../../lib/turn'
+import { NO_LINKS, NO_UNRESOLVED, type PlacedTurn } from '../../lib/turn'
+import type { Turn } from '../../../types'
 
 const props = defineProps<{
   entry: PlacedTurn

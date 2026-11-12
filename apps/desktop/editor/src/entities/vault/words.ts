@@ -1,6 +1,6 @@
 /** Error messages the vault list reports for a command, in user-readable text. */
 // Stryker disable StringLiteral: interface copy
-import type { VaultErrorCode } from './types'
+import type { VaultErrorCode } from './lib/vault'
 
 export const VAULT_ERRORS: Record<VaultErrorCode, string> = {
   unreadable: 'folder missing or unreadable',
@@ -12,4 +12,9 @@ export const VAULT_ERRORS: Record<VaultErrorCode, string> = {
   notFound: 'vault not in the list',
   noTrash: 'no trash on this system',
   unsaved: 'a tab has an unresolved file conflict',
+}
+
+export const VAULT_WORDS = {
+  /** The list of vaults did not answer. */
+  unlisted: 'Vault list unavailable',
 }

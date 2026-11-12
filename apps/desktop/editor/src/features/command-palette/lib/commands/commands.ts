@@ -1,9 +1,7 @@
 /**
  * Command grouping and filtering.
  */
-import type { Command, CommandGroup } from '../../types'
-
-export { createCommands } from './table'
+import type { Command, CommandGroup } from '@/entities/command'
 
 const getNestedCommandIds = (commands: readonly Command[]): ReadonlySet<string | undefined> =>
   new Set(commands.map((one) => one.also))

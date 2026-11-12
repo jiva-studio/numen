@@ -11,31 +11,30 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
-	"github.com/jiva-studio/numen/libs/core/adapter/window/shell"
-	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/notes/domain"
-
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func getNotes() map[string]string {
 	return map[string]string{
-		"Leaf mould.md":  "# Leaf mold\n\nCompost made of fallen leaves alone.\n",
+		"Leaf mold.md":   "# Leaf mold\n\nCompost made of fallen leaves alone.\n",
 		"garden/Beds.md": "# Beds\n\n[[Leaf mold]] goes on in autumn.\n",
 	}
 }
 
 func makeWindow(
 	t *testing.T,
-) (container.Config, *container.Index, *container.OpenVaults, *shell.API, []domain.Vault) {
+) (container.Config, *container.Index, *vault.OpenVaults[*container.Index], *shell.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
 	cfg := container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(state, "index.db"),
-		RegistryPath: filepath.Join(state, "vaults.json"),
+		Paths: container.Paths{IndexPath: filepath.Join(state, "index.db"), RegistryPath: filepath.Join(state, "vaults.json")},
 	})
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,25 +44,19 @@ func makeWindow(
 		}
 	})
 
-	target := []domain.Vault{
-		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
-		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
-	}
-	vaults := &container.OpenVaults{
-		Config: cfg, Index: db,
+	target := []domain.Vault{addVaultOf(t, cfg, "One"), addVaultOf(t, cfg, "Two")}
+	vaults := &vault.OpenVaults[*container.Index]{
+		Opener: func(i *container.Index) *vault.VaultOpener { return container.VaultOpener(cfg, i) }, Index: db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
 	t.Cleanup(vaults.CloseAndWait)
 	return cfg, db, vaults, &shell.API{}, target
 }
 
-func vaultOf(t *testing.T, cfg container.Config) string {
+func addVaultOf(t *testing.T, cfg container.Config, name string) domain.Vault {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)); err != nil {
-		t.Fatal(err)
-	}
 	for name, body := range getNotes() {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
@@ -73,27 +66,20 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 			t.Fatal(err)
 		}
 	}
-	return root
-}
-
-// The notes the page and the tools are served are built, not empty.
-func TestTheNotesAreBuilt(t *testing.T) {
-	cfg, db, vaults, _, _ := makeWindow(t)
-
-	notes := makeNotes(cfg, db, vaults)
-
-	if reflect.ValueOf(notes).IsZero() {
-		t.Error("no notes were built")
+	added, err := cfg.AddVault(root, name)
+	if err != nil {
+		t.Fatal(err)
 	}
+	return added
 }
 
-// The page is given the notes it answers about, the window it draws and the plugins' services it
+// The page is given whether a vault is indexed, the window it draws and the plugins' services it
 // forwards.
 func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
-	cfg, db, vaults, _, _ := makeWindow(t)
-	notes := makeNotes(cfg, db, vaults)
+	cfg, db, _, _, _ := makeWindow(t)
 
-	api := makeWindowAPI(cfg, notes)
+	api := makeWindowAPI(cfg)
+	container.SetShellNotes(api, db)
 
 	if api == nil {
 		t.Fatal("the page has no API")
@@ -102,9 +88,8 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 		t.Error("the page forwards no services")
 	}
 	for name, wired := range map[string]any{
-		"indexed": api.IsVaultIndexed,
+		"indexed": api.Ensure,
 		"window":  api.Window,
-		"links":   api.ResolveLinks,
 	} {
 		if reflect.ValueOf(wired).IsZero() {
 			t.Errorf("the page has no %s", name)
@@ -112,12 +97,37 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 	}
 }
 
+// The page resolves the links of a note against the vaults the application lists.
+func TestTheFlashcardsPageIsGivenTheLinksOfItsVaults(t *testing.T) {
+	state := t.TempDir()
+	cfg := container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: filepath.Join(state, "index.db"), RegistryPath: filepath.Join(state, "vaults.json")},
+	})
+	addVaultOf(t, cfg, "One")
+	api := makeWindowAPI(cfg)
+
+	started, err := container.OpenFlashcards(cfg, t.Context(), api, io.Discard, "flashcards", func(string) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		started.CloseVaults()
+		if err := started.CloseIndex(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	if api.ResolveLinks == nil {
+		t.Error("the page has no links")
+	}
+}
+
 // A vault the index was updated for is counted again, and the walk of a
 // vault is the one the window's own opening makes.
 func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	cfg, db, vaults, _, target := makeWindow(t)
-	notes := makeNotes(cfg, db, vaults)
-	api := makeWindowAPI(cfg, notes)
+	api := makeWindowAPI(cfg)
+	container.SetShellNotes(api, db)
 
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
 		return errors.New("boom")
@@ -133,21 +143,18 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 
-	bindVaultIndexer(t.Context(), api, vaults)
+	api.SetVaultIndexer(t.Context(), vaults.IndexVault)
 
-	if vaults.RecordVault == nil {
-		t.Fatal("a vault updated is recorded nowhere")
-	}
 	moved, err := api.WatchMoves(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	vaults.RecordVault(target[0])
+	api.ReportVaultRead(target[0])
 	select {
 	case <-moved:
 	case <-time.After(time.Second):
-		t.Error("RecordVault did not report a change")
+		t.Error("a vault read did not report a change")
 	}
 
 	for {
@@ -155,10 +162,10 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if state.Status == pluginport.PluginIndexFailed {
+		if state.Status == plugin.IndexFailed {
 			t.Fatalf("expected SetVaultIndexer to replace failing indexer, got %+v", state)
 		}
-		if state.Status == pluginport.PluginIndexed {
+		if state.Status == plugin.Indexed {
 			break
 		}
 		time.Sleep(5 * time.Millisecond)
@@ -169,33 +176,29 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 // identity, and a vault that is not in the index is read into it when a plugin
 // requests it.
 func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
-	cfg, db, vaults, _, target := makeWindow(t)
-	registry, err := cfg.Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, v := range target {
-		if err := registry.Save(v); err != nil {
-			t.Fatal(err)
-		}
-	}
-	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
+	cfg, db, _, _, target := makeWindow(t)
+	api := makeWindowAPI(cfg)
 	api.SetVaultIndexer(t.Context(), nil)
 
-	lent, err := openPluginVault(cfg, registry, db, api)
+	host, err := container.NewPluginHost(func(error) {}, "md.numen.test", t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
+	cfg.PluginHost = host
+	if err := container.InstallPluginVault(cfg, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
+		t.Fatal(err)
+	}
+	lent := cfg.PluginHost.Endpoint.GetPluginVault()
 
-	recognized, listErr := lent.GetVaults()
-	linked, withErr := lent.With(target[1].ID)
-	_, hasVault := lent.GetVault()
-	state, stateErr := linked.EnsureIndexed(t.Context())
+	recognized, listErr := lent.Switch.GetVaults()
+	linked, withErr := lent.Switch.With(target[1].ID)
+	_, hasVault := lent.Switch.GetVault()
+	state, stateErr := linked.Switch.EnsureIndexed(t.Context())
 
 	if listErr != nil || len(recognized) != 2 || withErr != nil || hasVault {
 		t.Fatalf("got %v (%v), %v and the window showing a vault: %v", recognized, listErr, withErr, hasVault)
 	}
-	if stateErr != nil || state.Status != pluginport.PluginIndexFailed {
+	if stateErr != nil || state.Status != plugin.IndexFailed {
 		t.Errorf("a vault nothing reads into the index stands as %+v (%v)", state, stateErr)
 	}
 }
@@ -203,13 +206,19 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 // The page receives the plugins of the flashcards target and is served the
 // files of their frontends.
 func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
-	cfg, db, vaults, _, _ := makeWindow(t)
-	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
+	cfg, _, _, _, _ := makeWindow(t)
+	api := makeWindowAPI(cfg)
 
 	if api.GetFrontendPluginIDs == nil || api.GetPluginDir == nil {
 		t.Error("the page is not told the plugins it loads")
 	}
-	if api.Window.Named != platform.TargetFlashcards {
-		t.Errorf("the window answers as %q", api.Window.Named)
+	if api.Window.Name != platform.TargetFlashcards {
+		t.Errorf("the window answers as %q", api.Window.Name)
 	}
+}
+
+func getNoCurrentVault() (domain.Vault, bool) { return domain.Vault{}, false }
+
+func getPluginVaultHooks(api *shell.API) container.PluginVaultHooks {
+	return container.PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
 }

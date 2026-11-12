@@ -1,3 +1,3 @@
-// Package service serves the agents-tools-vault plugin: it offers the notes and files of the vault to agents
-// as tools.
+// Package service mounts the agents-tools-vault plugin: it builds the host clients, binds each vault
+// tool to its use case and registers the tools on the plugin server.
 package service

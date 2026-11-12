@@ -6,7 +6,7 @@
  */
 import { ref } from 'vue'
 
-export function createTextDrafts(write: (key: string, text: string) => void) {
+export function useTextDrafts(write: (key: string, text: string) => void) {
   const drafts = ref<Readonly<Record<string, string>>>({})
 
   /** The text typed at a key, and nothing where none is waiting to be written. */

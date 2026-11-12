@@ -1,3 +1,11 @@
 /** The files of the vault: which of them a file is, and what making one or moving one returns. */
-export { countNotes } from './countNotes'
-export type { CreateResult, Entry, FileKind, Movement, MoveResult, NoteType } from './types'
+export type { Entry, FileKind, NoteType } from './types'
+export { countNotes } from './lib/countNotes'
+export {
+  createFolder,
+  emptyTrash,
+  getFileKinds,
+  listFiles,
+  moveFile,
+  removeFile,
+} from './api/files'

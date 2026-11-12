@@ -3,6 +3,8 @@
  * request that saving sends. A value of a secret stays in this state until it is sent once.
  */
 import { computed, reactive } from 'vue'
+import { runInBackground } from '@numen/ui'
+import { formatError } from '@/shared/api/errors'
 import type {
   ConnectionChange,
   ConnectionDraft,
@@ -10,8 +12,8 @@ import type {
   ConnectionInfo,
   ConnectionTypeInfo,
   ConnectionValue,
-  Result,
-} from '@numen/core-client'
+} from '@/entities/connection'
+import type { Result } from '@/shared/lib/result'
 import {
   createFieldValues,
   createInitialValues,
@@ -31,6 +33,7 @@ export interface ConnectionFormInput {
   readonly connection: () => ConnectionInfo | undefined
   readonly create: (draft: ConnectionDraft) => Promise<Result<ConnectionInfo, string>>
   readonly update: (change: ConnectionChange) => Promise<Result<ConnectionInfo, string>>
+  readonly onSaved: () => void
 }
 
 /** What is typed in the form. */
@@ -143,7 +146,20 @@ function createActions(
     return answer.ok
   }
 
-  return { chooseType, updateValue, updateSecret, clearSecret, save }
+  /** Sends the form and calls `onSaved` where it was saved. */
+  const submit = (): void => {
+    runInBackground(
+      save().then((isSaved) => {
+        if (isSaved) input.onSaved()
+      }),
+      (error) => {
+        state.isSaving = false
+        state.problem = formatError(error)
+      },
+    )
+  }
+
+  return { chooseType, updateValue, updateSecret, clearSecret, submit }
 }
 
 export function useConnectionForm(input: ConnectionFormInput) {

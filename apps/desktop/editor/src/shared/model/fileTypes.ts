@@ -2,8 +2,9 @@
  * The files of the vault: which of them a file is, what a listing of one folder
  * reports, and what making one or moving one returns.
  */
-import type { Result } from '@numen/core-client'
-import type { ErrorCode } from '@/shared/errors'
+import type { JsonObject } from '@numen/plugin-loader'
+import type { Result } from '@/shared/lib/result'
+import type { ErrorCode } from '@/shared/api/errors'
 
 /**
  * The note type from the `type` key of its frontmatter: `note`, or a type a plugin declares.
@@ -19,7 +20,7 @@ export interface FileKind {
   readonly isNote: boolean
   readonly type: NoteType
   readonly tabKind?: string
-  readonly properties?: Readonly<Record<string, unknown>>
+  readonly properties?: JsonObject
 }
 
 export interface Entry {
@@ -49,3 +50,12 @@ export interface MoveResult {
  * value of null is a requested move that changed nothing.
  */
 export type Movement = Result<MoveResult | null, ErrorCode>
+
+/** A file or folder in the trash, and the notes whose links no longer lead anywhere. */
+interface RemovedNote {
+  readonly trashed: string
+  readonly dangling: readonly string[]
+}
+
+/** What removing a file or folder returned. */
+export type RemoveResult = Result<RemovedNote, ErrorCode>

@@ -5,15 +5,28 @@
   align-items: center;
   height: 100%;
   padding-inline: calc(var(--numen-inset) / 4);
+  --popover-offset: 0.25rem;
+  --popover-width: 24rem;
+  --popover-max-height: 28rem;
+  --popover-edge-gap: 1rem;
+  --popover-pad: 0.5rem;
+  --popover-header-pad-inline: 0.75rem;
+  --close-size: 1.25rem;
+  --close-text: 0.75rem;
+  --row-gap: 0.75rem;
+  --row-pad-block: 0.25rem;
+  --row-pad-inline: 0.5rem;
+  --row-nested-indent: 1.25rem;
+  --figure-min-width: 4.2em;
 }
 
 /* The chip: flat, with a ground and no border. Height, text size, padding and mark size are the
    same in the three title bar chips; only the width follows the content. */
 .index-stats__trigger {
-  --chip-height: 20px;
-  --chip-text: 12px;
-  --chip-pad: 8px;
-  --chip-mark: 12px;
+  --chip-height: 1.25rem;
+  --chip-text: 0.75rem;
+  --chip-pad: 0.5rem;
+  --chip-mark: 0.75rem;
   display: inline-flex;
   align-items: center;
   gap: calc(var(--chip-pad) / 2);
@@ -41,7 +54,7 @@
 }
 
 .index-stats__figure {
-  min-width: 7ch;
+  min-width: var(--figure-min-width);
   text-align: end;
   white-space: nowrap;
 }
@@ -53,13 +66,13 @@
 
 .index-popover {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + var(--popover-offset));
   right: 0;
   display: flex;
   flex-direction: column;
-  width: 24rem;
-  max-width: calc(100vw - 1rem);
-  max-height: 28rem;
+  width: var(--popover-width);
+  max-width: calc(100vw - var(--popover-edge-gap));
+  max-height: var(--popover-max-height);
   background: var(--numen-raised);
   color: var(--numen-ink);
   border: 1px solid var(--numen-panel-border);
@@ -73,7 +86,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0.75rem;
+  padding: var(--popover-pad) var(--popover-header-pad-inline);
   background: var(--numen-surface);
   border-bottom: 1px solid var(--numen-rule);
 }
@@ -88,14 +101,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: var(--close-size);
+  height: var(--close-size);
   padding: 0;
   background: transparent;
   border: none;
   border-radius: var(--numen-radius-tight);
   color: var(--numen-hushed);
-  font-size: 0.75rem;
+  font-size: var(--close-text);
   cursor: pointer;
 }
 
@@ -107,7 +120,7 @@
   display: flex;
   flex-direction: column;
   margin: 0;
-  padding: 0.5rem;
+  padding: var(--popover-pad);
   overflow-y: auto;
 }
 
@@ -115,8 +128,8 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.25rem 0.5rem;
+  gap: var(--row-gap);
+  padding: var(--row-pad-block) var(--row-pad-inline);
   border-radius: var(--numen-radius);
   font-size: var(--numen-text-2);
   line-height: 1.25;
@@ -127,7 +140,7 @@
 }
 
 .index-popover__row--nested {
-  padding-inline-start: 1.25rem;
+  padding-inline-start: var(--row-nested-indent);
   font-size: var(--numen-text-1);
 }
 

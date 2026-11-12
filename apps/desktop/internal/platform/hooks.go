@@ -1,30 +1,10 @@
 package platform
 
-import (
-	"os"
-	"path/filepath"
-	"runtime"
-
-	"github.com/jiva-studio/numen/libs/core/container"
-
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
-)
+import "path/filepath"
 
 // storageFolder is the folder of the application inside the cache and data folders that holds
 // what the plugins store.
 const storageFolder = "plugin-storage"
-
-func newPluginHost(target string, dirs ...string) pluginport.PluginManager {
-	host := container.NewPluginHost(target, dirs...)
-	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
-	host.SetStorageRoots(cacheRoot, dataRoot)
-	// gomutants:disable-next-line
-	if models := host.GetModelsDir(); models != "" {
-		// gomutants:disable-next-line
-		host.SetDependencies(container.NewDependenciesIn(models))
-	}
-	return host
-}
 
 func getStorageRoots(goos string, getEnv func(string) string, getCacheDir, getHome func() (string, error)) (cacheRoot, dataRoot string) {
 	if dir, err := getCacheDir(); err == nil && dir != "" {

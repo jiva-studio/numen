@@ -11,7 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/apps/desktop/internal/plugincli"
-	"github.com/jiva-studio/numen/libs/core/adapter/cli"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 )
 
 func main() {
@@ -36,11 +36,10 @@ func run() (code int) {
 		}
 	}()
 
-	selected, err := cfg.Settings()
+	cfg, _, err := cfg.ApplySettings()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "numen-cli:", err)
 		return 1
 	}
-	cfg = cfg.SetSettings(selected)
 	return cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:], makeDeps(cfg))
 }

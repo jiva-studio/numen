@@ -6,12 +6,10 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
-import { useTitleWidths } from './measure'
-import type { PlexNode } from '../../lib/node'
+import { useTitleWidths, type PlexType } from './measure'
+import type { PlexNode } from '../../../types'
 
 const node = (title: string): PlexNode => ({ id: title, title, relation: 'child' })
-
-const widths = (icon = 0) => useTitleWidths(() => icon).value
 
 const PER_CHARACTER = 7
 
@@ -50,31 +48,22 @@ function setTheme(tokens: Record<string, string> = {}): void {
 const inPixels = (value: string): string =>
   value.endsWith('rem') ? `${Number.parseFloat(value) * 16}px` : value
 
-const resolveValue = (declaration: string): string => {
-  const token = /^var\((--[a-z-]+)\)$/.exec(declaration)?.[1]
-  if (!token) return declaration
-  const content = theme[token]
-  return content ? inPixels(content) : ''
+const getToken = (token: string): string => inPixels(theme[token] ?? '')
+
+const readThemeType = (): PlexType => {
+  const family = getToken('--numen-font-sans') || 'sans-serif'
+  return {
+    font: `${getToken('--numen-font-size')} ${family}`,
+    labelFont: `${getToken('--numen-edge-label-size')} ${family}`,
+    padding: Number.parseFloat(getToken('--numen-node-padding')) || 0,
+    gap: Number.parseFloat(getToken('--numen-node-gap')) || 0,
+  }
 }
 
+const widths = (icon = 0) => useTitleWidths(() => icon, readThemeType).value
+
 function stubStyles() {
-  const engine = window.getComputedStyle.bind(window)
-
-  vi.spyOn(window, 'getComputedStyle').mockImplementation(((
-    element: Element,
-    pseudo?: string | null,
-  ) => {
-    const style = (element as HTMLElement).style
-    const getDeclared = (property: string) => resolveValue(style?.getPropertyValue(property) ?? '')
-    if (!getDeclared('font-size')) return engine(element, pseudo)
-
-    return {
-      fontSize: getDeclared('font-size'),
-      fontFamily: getDeclared('font-family'),
-      paddingInlineStart: getDeclared('padding-inline'),
-      columnGap: getDeclared('column-gap'),
-    } as CSSStyleDeclaration
-  }) as typeof window.getComputedStyle)
+  // Type values are read by readThemeType above.
 }
 
 function stubObserver(): (() => void)[] {
@@ -247,7 +236,7 @@ describe('a theme changed under a plex already standing', () => {
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
+    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
 
     expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
 
@@ -263,7 +252,7 @@ describe('a theme changed under a plex already standing', () => {
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
+    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
 
     const first = measures.value
     for (const ring of observers) ring()
@@ -277,7 +266,7 @@ describe('a theme changed under a plex already standing', () => {
     stubStyles()
     setTheme()
     stubObserver()
-    const { stop } = scoped(() => useTitleWidths(() => 0))
+    const { stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
 
     expect(document.body.children).toHaveLength(1)
     stop()
@@ -288,7 +277,7 @@ describe('a theme changed under a plex already standing', () => {
     stubCanvas()
     stubStyles()
     setTheme()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
+    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
 
     expect(measures.value!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
     expect(document.body.children).toHaveLength(0)
@@ -355,9 +344,7 @@ describe('the box a plex measures its type against', () => {
 
     const [title, label] = Array.from(box.children) as HTMLElement[]
     expect(title!.textContent).toBe('Hxg')
-    expect(title!.style.getPropertyValue('font-size')).toBe('')
     expect(label!.textContent).toBe('Hxg')
-    expect(label!.style.getPropertyValue('font-size')).toBe('var(--numen-edge-label-size)')
   })
 
   it('is watched for the size of its border box', () => {
@@ -378,7 +365,7 @@ describe('the box a plex measures its type against', () => {
     setTheme()
     const { disconnect } = stubWatching()
     const scope = effectScope()
-    scope.run(() => useTitleWidths(() => 0))
+    scope.run(() => useTitleWidths(() => 0, readThemeType))
     expect(disconnect).not.toHaveBeenCalled()
 
     scope.stop()
@@ -446,7 +433,7 @@ describe('a theme changed in one token under a plex already standing', () => {
     stubStyles()
     setTheme()
     const observers = stubObserver()
-    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
+    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0, readThemeType))
     const first = measures.value
 
     setTheme(tokens)

@@ -1,0 +1,334 @@
+package cards_test
+
+import (
+	"context"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
+)
+
+// counted is a writer that counts how many times a file was replaced, so a test
+// of one write can assert that it was a single write.
+type counted struct {
+	ports.VaultWriters
+	writes int
+}
+
+func (w *counted) Open(v domain.Vault) (ports.VaultWriter, error) {
+	writer, err := w.VaultWriters.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return &countedWriter{VaultWriter: writer, on: w}, nil
+}
+
+type countedWriter struct {
+	ports.VaultWriter
+	on *counted
+}
+
+func (w *countedWriter) Write(
+	ctx context.Context, path string, content []byte, stat domain.FileStat,
+) (domain.FileStat, error) {
+	w.on.writes++
+	return w.VaultWriter.Write(ctx, path, content, stat)
+}
+
+// The templates are the body and the fields are one key of the frontmatter, and
+// both are in the same file, so one write carries both. Two writes can leave the
+// file in an unintended state whenever the second one fails.
+func TestACardModelsTemplatesAndItsFieldsAreOneWrite(t *testing.T) {
+	vs := newVaults(t)
+	writers := &counted{VaultWriters: vs.ports.Writers}
+	u := cards.NewWrite(
+		vs.ports.Readers, writers, vs.queries, indexNothing, vaulttest.NewClock())
+
+	body := "\n## Recognize\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
+	pos, err := u.CardModel(
+		t.Context(), vs.first, "Animal.md", body,
+		[]string{"Name", "Wingspan"}, domain.FileStat{})
+	if err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if writers.writes != 1 {
+		t.Errorf("the card model was written %d times", writers.writes)
+	}
+
+	target := read(t, vs.first, "Animal.md")
+	if !strings.Contains(target, "fields:\n  - Name\n  - Wingspan\n") {
+		t.Errorf("the card model declares something else: %q", target)
+	}
+	if !strings.Contains(target, "{{Wingspan}}") {
+		t.Errorf("the templates are not the ones written: %q", target)
+	}
+	if !strings.Contains(target, "mine: keep me verbatim") {
+		t.Errorf("a key nobody owns was rewritten: %q", target)
+	}
+	// The file stat that is returned is the file on disk, so the next write of
+	// it lands.
+	if pos.Size != int64(len(target)) {
+		t.Errorf("the fingerprint is not the file: %+v", pos)
+	}
+}
+
+// A card model that already declares exactly these fields, in this order, is
+// not written again, so the content around them is preserved.
+func TestWriteCardModel_PreservesExistingFieldDeclarations(t *testing.T) {
+	vs := newVaults(t)
+	write(t, vs.first, "Kept.md", "---\ntype: card-model\nfields:\n"+
+		"  # the one the card is named by\n  - Name\n  - Height\n---\n"+
+		"\n## Recognize\n\n### Front\n\n{{Name}}\n")
+
+	u := cards.NewWrite(
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
+		vaulttest.NewClock())
+	if _, err := u.CardModel(
+		t.Context(), vs.first, "Kept.md",
+		"\n## Recognize\n\n### Front\n\n{{Height}}\n",
+		[]string{"Name", "Height"}, domain.FileStat{},
+	); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	target := read(t, vs.first, "Kept.md")
+	if !strings.Contains(target, "  # the one the card is named by\n") {
+		t.Errorf("the fields were written over: %q", target)
+	}
+	if !strings.Contains(target, "{{Height}}") {
+		t.Errorf("the templates are not the ones written: %q", target)
+	}
+}
+
+func newWriteForDeck(t *testing.T, vs vaulted, path, body string) cards.Write {
+	t.Helper()
+	return newWriteForDeckIndexed(t, vs, path, body, indexNothing)
+}
+
+func newWriteForDeckIndexed(t *testing.T, vs vaulted, path, body string, index note.IndexUpdater) cards.Write {
+	t.Helper()
+	write(t, vs.first, path, "---\ntype: deck\n---\n"+body)
+	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
+		t.Fatal(err)
+	}
+	return cards.NewWrite(
+		vs.ports.Readers, vs.ports.Writers, vs.queries, index,
+		vaulttest.NewClock())
+}
+
+func readDeck(t *testing.T, vs vaulted, path string) format.Deck {
+	t.Helper()
+	got, err := cards.NewRead(vs.ports.Readers, vs.queries).
+		Deck(t.Context(), vs.first, path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	return got.Body
+}
+
+// A deck goes to disk through the note writer, and is read at MaxBytes. The
+// writer carries that bound, so a deck larger than a note is written.
+func TestWritingADeckLargerThanANote(t *testing.T) {
+	vs := newVaults(t)
+	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\n" +
+		strings.Repeat("Llama ", note.MaxBytes/6) + "\n"
+	if len(body) <= note.MaxBytes {
+		t.Fatalf("the deck is %d bytes, and a note is bounded at %d", len(body), note.MaxBytes)
+	}
+	w := newWriteForDeck(t, vs, "decks/Long.md", body)
+
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Long.md", body, domain.FileStat{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if deck := readDeck(t, vs, "decks/Long.md"); len(deck.Cards) != 1 {
+		t.Errorf("cards = %d", len(deck.Cards))
+	}
+}
+
+// A card typed into a deck manually has no card id until the application next
+// writes that file, which assigns one.
+func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
+	vs := newVaults(t)
+	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n" +
+		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
+	w := newWriteForDeck(t, vs, "decks/Hand.md", body)
+
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Hand.md", body, domain.FileStat{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	deck := readDeck(t, vs, "decks/Hand.md")
+	if len(deck.Cards) != 2 {
+		t.Fatalf("cards = %+v", deck.Cards)
+	}
+	for _, card := range deck.Cards {
+		if !format.IsValidID(card.CardID) {
+			t.Errorf("%q carries %q, which is no card id", card.Heading, card.CardID)
+		}
+	}
+	if deck.Cards[0].CardID == deck.Cards[1].CardID {
+		t.Errorf("both cards carry %q", deck.Cards[0].CardID)
+	}
+
+	// A card id is what the card is for as long as it exists, so the next write
+	// leaves it at its current position.
+	after := read(t, vs.first, "decks/Hand.md")
+	if _, err := w.Deck(
+		t.Context(), vs.first, "decks/Hand.md", prose(t, after), domain.FileStat{},
+	); err != nil {
+		t.Fatalf("write again: %v", err)
+	}
+	if got := read(t, vs.first, "decks/Hand.md"); got != after {
+		t.Errorf("the second write moved a card id\n was %q\n now %q", after, got)
+	}
+}
+
+// A card id is written into a file of carriage returns without disturbing them.
+func TestAMarkIsSavedInTheFilesOwnLineEnding(t *testing.T) {
+	vs := newVaults(t)
+	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n"
+	write(t, vs.first, "decks/Crlf.md",
+		strings.ReplaceAll("---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\n---\n"+body, "\n", "\r\n"))
+	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	w := cards.NewWrite(
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
+		vaulttest.NewClock())
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Crlf.md", body, domain.FileStat{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	got := read(t, vs.first, "decks/Crlf.md")
+	if strings.Contains(strings.ReplaceAll(got, "\r\n", ""), "\n") {
+		t.Errorf("a bare break was written into a file of carriage returns: %q", got)
+	}
+	if !format.IsValidID(readDeck(t, vs, "decks/Crlf.md").Cards[0].CardID) {
+		t.Errorf("no card id was written: %q", got)
+	}
+}
+
+// The field is authoritative. If the heading disagrees with it, the next write
+// corrects the heading.
+func TestWritingADeckInsertsAStaleHeadingBackInStep(t *testing.T) {
+	vs := newVaults(t)
+	body := "\n## Something else ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
+		"\n## Also stale ^zpqrstvwxy\n\n[[Animal]]\n\n### Name\n" +
+		"\n### Height\n\nthe first field is a box to fill\n"
+	w := newWriteForDeck(t, vs, "decks/Stale.md", body)
+
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Stale.md", body, domain.FileStat{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	deck := readDeck(t, vs, "decks/Stale.md")
+	if deck.Cards[0].Heading != "Llama" || deck.Cards[0].CardID != "k7m2xq9fzp" {
+		t.Errorf("card = %+v, want the heading written again from the field", deck.Cards[0])
+	}
+	// An empty first field gives a heading of nothing, and the card is placed under
+	// its card id alone.
+	if deck.Cards[1].Heading != "" || deck.Cards[1].CardID != "zpqrstvwxy" {
+		t.Errorf("card = %+v, want a heading of nothing", deck.Cards[1])
+	}
+	if got := read(t, vs.first, "decks/Stale.md"); !strings.Contains(got, "## ^zpqrstvwxy\n") {
+		t.Errorf("heading written wrong: %q", got)
+	}
+}
+
+// A card with no heading for the first field gives no information about what
+// its heading should be, so the heading is left unchanged. A rename that could
+// not be written to a deck leaves every card in it in this state, and the next
+// ordinary save must not treat it as an empty heading.
+func TestACardWritingNothingBelowTheFirstFieldKeepsItsHeading(t *testing.T) {
+	vs := newVaults(t)
+	// The card model declares Name first, and this card was written when the field
+	// standing first was called something else.
+	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Was called something else\n\nLlama\n"
+	w := newWriteForDeck(t, vs, "decks/Behind.md", body)
+
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Behind.md", body, domain.FileStat{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	deck := readDeck(t, vs, "decks/Behind.md")
+	if deck.Cards[0].Heading != "Llama" {
+		t.Errorf("heading = %q, want it left as it stands", deck.Cards[0].Heading)
+	}
+}
+
+// The card id is assigned when the deck is completed, so the write returns it and
+// returns it, and a caller that added a card can address it by that id.
+func TestAWriteReturnsWhichMarksItGave(t *testing.T) {
+	vs := newVaults(t)
+	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
+		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
+	w := newWriteForDeck(t, vs, "decks/Given.md", body)
+
+	wrote, err := w.Deck(t.Context(), vs.first, "decks/Given.md", body, domain.FileStat{})
+	if err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if len(wrote.Given) != 1 || wrote.Given[0].Card != 1 {
+		t.Fatalf("given = %+v, want the one card that carried none", wrote.Given)
+	}
+	if got := readDeck(t, vs, "decks/Given.md").Cards[1].CardID; got != wrote.Given[0].CardID {
+		t.Errorf("the card id reported is %q and the card carries %q", wrote.Given[0].CardID, got)
+	}
+}
+
+// Nothing can say which field is first where the card model cannot be read, so the
+// heading is left exactly currently. The card is given its card id all the same.
+func TestACardWhoseCardModelCannotBeReadIsNotReprojected(t *testing.T) {
+	vs := newVaults(t)
+	body := "\n## Whatever a person typed\n\n[[Nowhere]]\n\n### Name\n\nLlama\n"
+	w := newWriteForDeck(t, vs, "decks/Loose.md", body)
+
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Loose.md", body, domain.FileStat{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	deck := readDeck(t, vs, "decks/Loose.md")
+	if deck.Cards[0].Heading != "Whatever a person typed" {
+		t.Errorf("heading = %q, want it left as it stands", deck.Cards[0].Heading)
+	}
+	if !format.IsValidID(deck.Cards[0].CardID) {
+		t.Errorf("card id = %q", deck.Cards[0].CardID)
+	}
+}
+
+// A deck whose cards are already complete is returned unchanged, under either
+// line ending. Any change would be an unintended diff on every save.
+func TestWritingAnUntouchedDeckChangesNothing(t *testing.T) {
+	body := "\nCards I am learning.\n" +
+		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n" +
+		"\n## ^zpqrstvwxy\n\n[[Animal]]\n\n### Name\n\n"
+	for name, ending := range map[string]string{"lf": "\n", "crlf": "\r\n"} {
+		t.Run(name, func(t *testing.T) {
+			vs := newVaults(t)
+			raw := strings.ReplaceAll(
+				"---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\n---\n"+body, "\n", ending)
+			write(t, vs.first, "decks/Whole.md", raw)
+			if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
+				t.Fatal(err)
+			}
+
+			w := cards.NewWrite(
+				vs.ports.Readers, vs.ports.Writers,
+				vs.queries, indexNothing, vaulttest.NewClock())
+			if _, err := w.Deck(
+				t.Context(), vs.first, "decks/Whole.md", body, domain.FileStat{},
+			); err != nil {
+				t.Fatalf("write: %v", err)
+			}
+			if got := read(t, vs.first, "decks/Whole.md"); got != raw {
+				t.Errorf("the file changed\n was %q\n now %q", raw, got)
+			}
+		})
+	}
+}

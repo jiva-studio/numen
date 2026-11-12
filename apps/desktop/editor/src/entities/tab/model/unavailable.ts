@@ -1,28 +1,29 @@
 import { shallowRef, type Component, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
-import type { CatalogEntry, PluginCatalog } from '@numen/core-client'
-import UnavailablePane from './UnavailablePane.vue'
-import type { AnyTabKind } from './kinds'
+import { getFileName } from '@/shared/lib/paths'
+import { findTabKindPlugin } from '../api/tabKindPlugin'
+import type { JsonValue } from '@/shared/api/json'
+import type { AnyTabKind, TabKind } from '../lib/kinds'
+import type { UnavailableLookup } from '../lib/unavailableView'
 
-/** What the catalog answered for the plugin that provides a kind of tab. */
-export type UnavailableLookup =
-  | { readonly status: 'pending' }
-  | { readonly status: 'found'; readonly entry: CatalogEntry }
-  | { readonly status: 'missing' }
-
-/** What a placeholder asks of the window: the catalog it reads and the changes it makes. */
+/** What a placeholder asks of the window: the changes it makes. */
 export interface UnavailableServices {
-  readonly catalog?: PluginCatalog | undefined
   readonly enablePlugin?: ((pluginId: string) => Promise<void>) | undefined
   readonly isPluginStarting?: ((pluginId: string) => boolean) | undefined
   readonly openPlugin?: ((pluginId: string | undefined) => void) | undefined
+}
+
+/** The components that draw the placeholders a window puts in place of a tab it cannot show. */
+export interface PlaceholderPanes {
+  readonly unavailable: Component
+  readonly restoreFailed: Component
 }
 
 /** What a tab of an unavailable kind holds: the kind it was made for, its path, and the state its plugin saved. */
 export interface UnavailableState {
   readonly kind: string
   readonly targetPath: string
-  readonly saved: unknown
+  readonly saved: JsonValue | undefined
   readonly title?: string | undefined
   readonly lookup: ShallowRef<UnavailableLookup>
   readonly services: UnavailableServices
@@ -39,23 +40,14 @@ const placeholders = new WeakSet<AnyTabKind>()
 /** Whether a kind is the placeholder of a kind that is not registered. */
 export const isUnavailableKind = (kind: AnyTabKind): boolean => placeholders.has(kind)
 
-const getFileName = (path: string): string => path.split('/').pop() ?? path
+const getDeclaredTitle = (lookup: UnavailableLookup): string =>
+  lookup.status === 'found' ? lookup.plugin.kindTitle : ''
 
-const getDeclaredTitle = (lookup: UnavailableLookup, kind: string): string =>
-  lookup.status === 'found'
-    ? (lookup.entry.contributes?.tabKinds.find((one) => one.kind === kind)?.title ?? '')
-    : ''
-
-const startLookup = (kind: string, catalog: PluginCatalog | undefined) => {
-  const lookup = shallowRef<UnavailableLookup>(
-    catalog === undefined ? { status: 'missing' } : { status: 'pending' },
-  )
-  if (catalog === undefined) return lookup
+const startLookup = (kind: string) => {
+  const lookup = shallowRef<UnavailableLookup>({ status: 'pending' })
   runInBackground(
-    catalog.findByTabKind(kind).then((answer) => {
-      lookup.value = answer.ok
-        ? { status: 'found', entry: answer.value.entry }
-        : { status: 'missing' }
+    findTabKindPlugin(kind).then((plugin) => {
+      lookup.value = plugin ? { status: 'found', plugin } : { status: 'missing' }
     }),
     () => {
       lookup.value = { status: 'missing' }
@@ -68,39 +60,40 @@ const startLookup = (kind: string, catalog: PluginCatalog | undefined) => {
  * The tab kind substituted for an unregistered kind, because its plugin is disabled or missing.
  * It keeps the kind, the path and the saved state, so the open tabs keep the tab as it was and
  * the plugin opens it again once it is enabled. The plugin's name, feature and action come from
- * the catalog.
+ * the catalog. `pane` draws the placeholder.
  */
 export const createUnavailableKind = (
+  pane: Component,
   kind: string,
   options?: UnavailableKindOptions,
   services: UnavailableServices = {},
 ): AnyTabKind => {
-  const placeholder: AnyTabKind = {
+  const placeholder: {
+    -readonly [K in keyof TabKind<UnavailableState>]: TabKind<UnavailableState>[K]
+  } = {
     kind,
-    ...(options?.icon ? { icon: options.icon } : {}),
-    open: (targetPath: string, _id: string, saved?: unknown): UnavailableState => ({
+    open: (targetPath: string, _id: string, saved?: JsonValue): UnavailableState => ({
       kind,
       targetPath,
       saved,
-      ...(options?.title ? { title: options.title } : {}),
-      lookup: startLookup(kind, services.catalog),
+      title: options?.title,
+      lookup: startLookup(kind),
       services,
     }),
-    getTitle: (state: unknown) => {
-      const unavailable = state as UnavailableState
-      return (
-        unavailable.title ||
-        getFileName(unavailable.targetPath) ||
-        options?.title ||
-        getDeclaredTitle(unavailable.lookup.value, kind) ||
-        kind
-      )
+    pane,
+    getTitle: (state) =>
+      state.title ||
+      getFileName(state.targetPath) ||
+      options?.title ||
+      getDeclaredTitle(state.lookup.value) ||
+      kind,
+    address: {
+      getState: (state) => state.saved,
+      getOpenTab: (state) => ({ path: state.targetPath }),
+      identity: (targetPath: string) => targetPath,
     },
-    getOpenTab: (state: unknown) => ({ path: (state as UnavailableState).targetPath }),
-    getState: (state: unknown) => (state as UnavailableState).saved,
-    pane: UnavailablePane,
-    identity: (targetPath: string) => targetPath,
   }
+  if (options?.icon) placeholder.display = { icon: options.icon }
   placeholders.add(placeholder)
   return placeholder
 }

@@ -2,79 +2,48 @@ package service
 
 import (
 	"context"
-	"strings"
-	"sync"
-	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/completion"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/modellist"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/programs"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/usecase/run"
 )
 
 type agentServer struct {
 	agentrun.Service
-	mu             sync.RWMutex
-	executablePath string
-	requestTimeout time.Duration
-	codexModels    codexModelCache
+	settings *settings.Settings
+	programs *programs.Programs
+	runner   *run.Runner
+
+	completion *completion.Completion
 }
 
-func (s *agentServer) applyConfig(values map[string]string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if execPath, ok := values["executablePath"]; ok {
-		s.executablePath = strings.TrimSpace(execPath)
+func newAgentServer(isAsync bool) *agentServer {
+	models := modellist.NewCache(codexcli.Models{}, clock.System{}, isAsync)
+	s := &agentServer{
+		Service:    agentrun.Service{},
+		settings:   new(settings.Settings),
+		programs:   programs.New(codexcli.Installation{}, models),
+		runner:     run.NewRunner(codexcli.Commands{}, codexcli.Launcher{}),
+		completion: nil,
 	}
-	if timeout, ok := values[settingRequestTimeout]; ok {
-		s.requestTimeout = parseRequestTimeout(timeout)
-	}
-}
-
-func (s *agentServer) getExecutablePath() string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.executablePath
+	s.completion = completion.New(completion.Dependencies{Settings: s.settings, Asker: s, Programs: s.programs})
+	return s
 }
 
 func (s *agentServer) Ask(ctx context.Context, req *agentrun.Request, send func(*agentrun.Response) error) error {
-	if err := send(&agentrun.Response{Step: &agentrun.ModelStartedStep{}}); err != nil {
-		return err
-	}
-
-	work, err := start(ctx, &s.Registry, newSpec(req, s.getExecutablePath()))
-	if err != nil {
-		return send(&agentrun.Response{
-			Step: &agentrun.StoppedStep{Stopped: err.Error()},
-		})
-	}
-	return agentrun.ForwardResponses(ctx, work, send)
+	return s.runner.Ask(ctx, &s.Registry, req, s.settings.ExecutablePath(), send)
 }
 
 func (s *agentServer) GetState(_ context.Context) (*agentrun.State, error) {
-	if !IsCodexInstalled(s.getExecutablePath()) {
-		return &agentrun.State{Unreachable: "OpenAI Codex was not found on this machine"}, nil
-	}
-	return &agentrun.State{Unreachable: ""}, nil
+	return s.programs.GetState(s.settings.ExecutablePath()), nil
 }
 
 // GetPrograms lists OpenAI Codex, whether it is installed, and the models it lists.
 func (s *agentServer) GetPrograms(ctx context.Context, commands []agentrun.ProgramCommand) ([]*agentrun.Program, error) {
-	command := programCommand(commands, "codex")
-	customPath := s.getExecutablePath()
-	if len(command) == 0 && customPath != "" {
-		command = []string{customPath}
-	}
-
-	codex := &agentrun.Program{
-		Name: "codex", Title: "OpenAI Codex", IsInstalled: IsCodexInstalled(customPath) || len(command) > 0,
-		IsDefault: false, Models: nil, LimitsTools: false,
-	}
-	if codex.IsInstalled {
-		for _, one := range s.codexModels.get(ctx, command) {
-			codex.Models = append(codex.Models, &reasoning.Model{
-				Name: one.Name, Title: one.Title, IsDefault: one.IsDefault,
-				ReasoningLevels: one.Reasoning, DefaultReasoning: one.DefaultReasoning,
-			})
-		}
-	}
-	return []*agentrun.Program{codex}, nil
+	return s.programs.GetPrograms(ctx, s.settings.ExecutablePath(), commands), nil
 }

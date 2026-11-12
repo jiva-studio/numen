@@ -16,13 +16,13 @@ updates:
   # local module is listed beside it, so one group bump moves them together.
   - package-ecosystem: gomod
     directories:
-      - /libs/core
-      - /libs/protocol
-      - /libs/plugin-sdk-go
-      - /libs/plugin-sdk-go/agent
-      - /libs/plugin-sdk-go/wasm
-      - /libs/plugin-sdk-go/models
-      - /libs/plugin-sdk-go/vault
+      - /libs/core/kernel
+      - /libs/core/protocol
+      - /libs/plugin/sdk-go
+      - /libs/plugin/sdk-go/agent
+      - /libs/plugin/sdk-go/wasm
+      - /libs/plugin/sdk-go/models
+      - /libs/plugin/sdk-go/vault
       - /apps/desktop
       - /apps/mobile
       - /apps/desktop/build/tools
@@ -105,6 +105,11 @@ updates:
       gradle-major:
         patterns: ["*"]
         update-types: ["major"]
+    # Android Gradle Plugin 8.13 runs on Gradle 8 only; the wrapper stays on 8.x
+    # until the plugin moves to 9.
+    ignore:
+      - dependency-name: gradle-wrapper
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
