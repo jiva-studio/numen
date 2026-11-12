@@ -8,12 +8,13 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { WorkspaceLayout, pane } from '@numen/workbench'
 import type { Tab, Workspace } from '@numen/workbench'
 import { Settings as SettingsIcon } from '@lucide/vue'
-import { computed, reactive, ref, type Component, type Ref } from 'vue'
+import { computed, reactive, ref, type Component } from 'vue'
 
 import type { Installation } from '../types'
 import SettingsTab from './SettingsTab.vue'
 import type { PluginHealthItem } from '@/entities/plugin'
 import type { PluginInfo, SettingEdit } from '@/entities/settings'
+import type { JsonValue } from '@/shared/api/json'
 import { SETTINGS } from '@/entities/tab'
 import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
 import {
@@ -85,14 +86,14 @@ const HEALTH: readonly PluginHealthItem[] = [
 
 /** What numen.json holds: EPUB Book Reader turned off and two values changed from their defaults. */
 const VALUES = reactive(
-  new Map<string, unknown>([
+  new Map<string, JsonValue>([
     ['md.numen.readers.epub/enabled', false],
     ['md.numen.agents.numen/temperature', 0.4],
     ['md.numen.tools.media.importer/copyMaxSizeMb', 2000],
   ]),
 )
 
-const readValue = (path: readonly string[]) => VALUES.get(path.join('/')) as never
+const readValue = (path: readonly string[]) => VALUES.get(path.join('/'))
 
 const writeValues = (edits: readonly SettingEdit[]) => {
   for (const edit of edits) VALUES.set(edit.at.join('/'), JSON.parse(edit.value))
@@ -137,7 +138,8 @@ const withShownSettings = (plugin: PluginInfo): PluginInfo => {
     ...plugin,
     settings: plugin.settings.map((one) => ({
       ...one,
-      isShown: one.when === undefined || one.when.is.includes(String(valueOf(one.when.setting) ?? '')),
+      isShown:
+        one.when === undefined || one.when.is.includes(String(valueOf(one.when.setting) ?? '')),
     })),
   }
 }
@@ -147,7 +149,7 @@ const createShippedInstallation = (): Installation =>
     getSetting: readValue,
     write: writeValues,
     app: APP_SETTINGS,
-    plugins: computed(() => SHIPPED_PLUGINS.map(withShownSettings)) as unknown as Ref<readonly PluginInfo[]>,
+    plugins: computed<readonly PluginInfo[]>(() => SHIPPED_PLUGINS.map(withShownSettings)),
     catalog: ref(SHIPPED_CATALOG),
     getReadme: (pluginId) => Promise.resolve(SHIPPED_READMES[pluginId] ?? ''),
     getPluginData: () => Promise.resolve(42),

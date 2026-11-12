@@ -87,6 +87,7 @@ func (r *Registry) GetPluginInfos() []plugindomain.Info {
 			HasBackend:     p.Manifest.HasBackend(),
 			Readers:        r.readers.ListReaderInfos(enabled, p.Manifest),
 			SettingsViews:  slices.Clone(p.Manifest.SettingsViews),
+			Contributions:  plugindomain.ListContributions(p.Manifest),
 			IsOffByDefault: p.Manifest.IsOffByDefault,
 		})
 	}

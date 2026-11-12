@@ -94,13 +94,40 @@ export interface PluginInfo {
   readonly contributions?: readonly PluginContribution[]
 }
 
-/** One kind of thing a plugin adds to the window, with the items its manifest declares. */
+/** A section of a manifest, named after its key, whose entries the plugin page lists. */
+export type PluginContributionKind =
+  | 'commands'
+  | 'keybindings'
+  | 'tabKinds'
+  | 'readers'
+  | 'handlers'
+  | 'triggers'
+  | 'textKinds'
+  | 'noteTypes'
+  | 'themes'
+  | 'slots'
+  | 'listeners'
+  | 'viewCapabilities'
+  | 'dropHandlers'
+  | 'frameOrigins'
+  | 'connectionTypes'
+  | 'operations'
+  | 'permissions'
+  | 'dependencies'
+  | 'services'
+  | 'capabilities'
+  | 'activationEvents'
+
+/** One section of a manifest with its entries, in the order the manifest declares them. */
 export interface PluginContribution {
-  readonly kind: string
+  readonly kind: PluginContributionKind
   readonly items: readonly PluginContributionItem[]
 }
 
-/** One manifest entry: its title, its id or target as the manifest writes it, and for a command the shortcut, such as `mod+shift+a`. */
+/**
+ * One entry of a section: its title, or its id where it has none; its id or target as the manifest
+ * writes it; and for a command or a keybinding the shortcut, such as `mod+shift+a`.
+ */
 export interface PluginContributionItem {
   readonly text: string
   readonly detail: string

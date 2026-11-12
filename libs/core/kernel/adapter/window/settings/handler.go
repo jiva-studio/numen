@@ -128,6 +128,7 @@ func NewWirePluginInfos(target []plugin.Info) []*v1.PluginInfo {
 			HasBackend:    one.HasBackend,
 			Readers:       newWireReaders(one.Readers),
 			SettingsViews: newWireSettingsViews(one.SettingsViews),
+			Contributions: newWireContributions(one.Contributions),
 		})
 	}
 	return infos

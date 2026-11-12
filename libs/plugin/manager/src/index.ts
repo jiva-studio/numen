@@ -14,6 +14,7 @@ export {
 export type {
   PluginContribution,
   PluginContributionItem,
+  PluginContributionKind,
   PluginHealth,
   PluginInfo,
   PluginReader,
