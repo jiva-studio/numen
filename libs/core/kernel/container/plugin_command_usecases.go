@@ -2,9 +2,9 @@ package container
 
 import "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 
-// PluginCommandScenarios is everything the application does with the commands the plugins declare:
+// PluginCommandUseCases is everything the application does with the commands the plugins declare:
 // listing them, listing the items of one, and running one.
-type PluginCommandScenarios struct {
+type PluginCommandUseCases struct {
 	List       plugincommand.List
 	Listing    plugincommand.ListCommands
 	Run        plugincommand.Run

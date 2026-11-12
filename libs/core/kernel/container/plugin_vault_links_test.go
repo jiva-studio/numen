@@ -26,17 +26,17 @@ func (w *windowIndex) getPaths() []string {
 	return slices.Clone(w.paths)
 }
 
-func openWindowScenarios(assembly windowVaults) (container.PluginVaultHooks, *windowIndex) {
+func openWindowUseCases(assembly windowVaults) (container.PluginVaultHooks, *windowIndex) {
 	refresh := assembly.GetRefresh()
 	index := &windowIndex{}
-	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
+	useCases := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {
 		index.mu.Lock()
 		index.paths = append(index.paths, paths...)
 		index.mu.Unlock()
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	})
-	return container.PluginVaultHooks{Notes: &scenarios}, index
+	return container.PluginVaultHooks{Notes: &useCases}, index
 }
 
 func statFile(t *testing.T, shared *vaultapi.Access, path string) domain.FileStat {
@@ -54,7 +54,7 @@ func TestPluginLinkAddInActiveVaultUsesWindowNoteUseCases(t *testing.T) {
 		"Rhine.md":  "# Rhine\n\nA river of western Europe.\n",
 	}
 	v, current, assembly := openPluginVault(t, notes)
-	hooks, index := openWindowScenarios(assembly)
+	hooks, index := openWindowUseCases(assembly)
 	shared, err := assembly.OpenPluginVault(current, hooks)
 	if err != nil {
 		t.Fatal(err)
@@ -88,7 +88,7 @@ func TestPluginLinkAddInActiveVaultUsesWindowNoteUseCases(t *testing.T) {
 
 func TestPluginLinkRemoveInActiveVaultUsesWindowNoteUseCases(t *testing.T) {
 	v, current, assembly := openPluginVault(t, getRivers())
-	hooks, index := openWindowScenarios(assembly)
+	hooks, index := openWindowUseCases(assembly)
 	shared, err := assembly.OpenPluginVault(current, hooks)
 	if err != nil {
 		t.Fatal(err)
@@ -113,7 +113,7 @@ func TestPluginLinkRemoveInActiveVaultUsesWindowNoteUseCases(t *testing.T) {
 
 func TestPluginLinkAddInOtherVaultBypassesWindowNoteUseCases(t *testing.T) {
 	other, current, assembly := openTwoPluginVaults(t)
-	hooks, index := openWindowScenarios(assembly)
+	hooks, index := openWindowUseCases(assembly)
 	shared, err := assembly.OpenPluginVault(current, hooks)
 	if err != nil {
 		t.Fatal(err)

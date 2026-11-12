@@ -246,9 +246,9 @@ func shareEditorWindow(db *Index, opened *windowWiring) {
 }
 
 func shareVaultList(opened *windowWiring) {
-	scenarios := opened.cases.Vaults
+	useCases := opened.cases.Vaults
 	setPluginVaultList(opened.a, windowsession.NewPluginVaults(&opened.state.Runtime, windowsession.VaultOps{
-		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
+		Edit:    windowsession.VaultEdits{Add: useCases.Change.Add, Rename: useCases.Change.Rename, Remove: useCases.Change.Remove},
 		Find:    opened.cases.Listing.Find,
 		Missing: opened.cases.Listing.FolderCheck,
 		Open:    opened.inst,

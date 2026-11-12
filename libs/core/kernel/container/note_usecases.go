@@ -2,10 +2,10 @@ package container
 
 import "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
-// NoteScenarios is everything that changes the notes of a vault, grouped; the container builds each
+// NoteUseCases is everything that changes the notes of a vault, grouped; the container builds each
 // use case on its own. The window and the agent tools use the same set, so both enforce the same
 // rules and a dependency is configured once for both.
-type NoteScenarios struct {
+type NoteUseCases struct {
 	Edit    NoteEditing
 	Place   NotePlacing
 	Connect NoteConnecting

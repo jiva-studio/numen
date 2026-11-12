@@ -15,7 +15,7 @@ type windowParts struct {
 	db            *Index
 	indexer       *indexing.Worker
 	embedding     *indexing.Embedding
-	moves         *VaultScenarios
+	moves         *VaultUseCases
 	current       *vault.CurrentRefresh
 	out           io.Writer
 	embedderError error

@@ -19,7 +19,7 @@ import (
 )
 
 // windowWiring is what the wire_window_<service>.go files share while one editor window is built.
-// The state, the scenarios of notes and vaults and the installation are the window's own, and each
+// The state, the useCases of notes and vaults and the installation are the window's own, and each
 // service is handed the ones it uses.
 type windowWiring struct {
 	cfg       Config
@@ -70,11 +70,11 @@ type WindowOpening struct {
 // WindowUseCases are the use cases of notes and vaults a window works through. The notes the plugins work through, PluginNotes, pass no gate
 // and report no write to the window.
 type WindowUseCases struct {
-	Notes       *NoteScenarios
-	PluginNotes *NoteScenarios
+	Notes       *NoteUseCases
+	PluginNotes *NoteUseCases
 	Queries     *query.Scenarios
 	Listing     *registry.Listing
-	Vaults      *VaultScenarios
+	Vaults      *VaultUseCases
 	ShowTab     windowsession.ShowTab
 }
 

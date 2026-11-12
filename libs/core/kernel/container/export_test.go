@@ -87,7 +87,7 @@ func AbsentBinding() pluginport.PluginBinding { return absent.Runtime{} }
 // view showing a note under its old name switches to the new name.
 func NotesShowingMoves(
 	c Config, db *Index, index edit.IndexUpdater, showing func() (domain.Vault, bool), view note.MoveView,
-) NoteScenarios {
+) NoteUseCases {
 	return vaultNotes(vaultOf(c), db, index, noteViews{Moves: note.NewTellMoveInShownVault(showing, view), Writes: note.OpenGate{}})
 }
 

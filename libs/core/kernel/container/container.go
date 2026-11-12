@@ -138,7 +138,7 @@ func (c Config) runningHost() *PluginHost {
 	return c.host()
 }
 
-// Clock is the clock every scenario assembled here is handed.
+// Clock is the clock every use case assembled here is handed.
 func (c Config) Clock() machineport.Clock {
 	if c.Now != nil {
 		return c.Now

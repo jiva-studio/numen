@@ -2,8 +2,8 @@ package container
 
 import "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
-// VaultScenarios covers the operations on the vaults an installation holds, and the vault's own tree.
-type VaultScenarios struct {
+// VaultUseCases covers the operations on the vaults an installation holds, and the vault's own tree.
+type VaultUseCases struct {
 	Change     VaultChanging
 	Tree       vault.Tree
 	RecordOpen vault.RecordOpen

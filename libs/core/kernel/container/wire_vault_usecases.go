@@ -65,7 +65,7 @@ type noteViews struct {
 	Follow note.IndexFollow
 }
 
-func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteViews) NoteScenarios {
+func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteViews) NoteUseCases {
 	names, links := db.NoteQueries(), db.NoteQueries()
 	indexed := db.Sources()
 	readers := vaultReaders(c)
@@ -89,7 +89,7 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 		Gate: views.Writes, Follow: views.Follow,
 	}
 
-	return NoteScenarios{
+	return NoteUseCases{
 		Edit: NoteEditing{
 			Read:    note.NewRead(readers),
 			Write:   note.NewWrite(readers, writers, index, now, views.Writes),

@@ -2,8 +2,8 @@ package container
 
 import "github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 
-// SecretScenarios is every use case on the list of secrets.
-type SecretScenarios struct {
+// SecretUseCases is every use case on the list of secrets.
+type SecretUseCases struct {
 	Items  SecretItems
 	Groups SecretGroups
 	Access SecretAccess

@@ -32,10 +32,10 @@ type PluginVaultHooks struct {
 	Written    func()
 	IndexState func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
-	Notes      *NoteScenarios
+	Notes      *NoteUseCases
 }
 
-func getNoteChanges(notes NoteScenarios) hostvault.NoteChanges {
+func getNoteChanges(notes NoteUseCases) hostvault.NoteChanges {
 	return hostvault.NoteChanges{
 		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking, AddLinks: notes.Refer.AddLinks,
 	}
@@ -72,16 +72,16 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
-	scenarios := vaultNotes(c.vault, db, index, noteViews{Writes: note.OpenGate{}})
+	useCases := vaultNotes(c.vault, db, index, noteViews{Writes: note.OpenGate{}})
 	connections := hostvault.Connections{
 		Reader:      query.NewGetConnection(db.NoteQueries()),
-		Saver:       scenarios.Connect.SaveConnection,
-		SideRemover: scenarios.Connect.RemoveSide,
-		Remover:     scenarios.Connect.RemoveConnection,
-		Joiner:      scenarios.Connect.Join,
-		Creator:     scenarios.Connect.CreateInRelation,
+		Saver:       useCases.Connect.SaveConnection,
+		SideRemover: useCases.Connect.RemoveSide,
+		Remover:     useCases.Connect.RemoveConnection,
+		Joiner:      useCases.Connect.Join,
+		Creator:     useCases.Connect.CreateInRelation,
 	}
-	arranger := newArranger(scenarios, db, hooks.Notes, current)
+	arranger := newArranger(useCases, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	return hostvault.NewAccess(
 		hostvault.Session{
@@ -123,10 +123,10 @@ func pluginsOpenPluginVault(c pluginsWiring,
 }
 
 func newArranger(
-	scenarios NoteScenarios, db *Index, window *NoteScenarios, current func() (domain.Vault, bool),
+	useCases NoteUseCases, db *Index, window *NoteUseCases, current func() (domain.Vault, bool),
 ) hostvault.Arranger {
 	arranger := hostvault.Arranger{
-		Notes:    getNoteChanges(scenarios),
+		Notes:    getNoteChanges(useCases),
 		Checks:   getProblemChecks(getProblems(vaultWiring{}, db.NoteProblems())),
 		Problems: db.NoteProblems(),
 	}
@@ -173,9 +173,9 @@ func openSecretLedger(c pluginsWiring) *settingsadapter.SecretLedger {
 	)
 }
 
-func openSecrets(c pluginsWiring) *SecretScenarios {
+func openSecrets(c pluginsWiring) *SecretUseCases {
 	base := secret.NewOperation(openSecretLedger(c), c.KeyStore, c.PluginHost.Configuration, c.settings.SecretGate)
-	return &SecretScenarios{
+	return &SecretUseCases{
 		Items: SecretItems{
 			Create: secret.NewCreate(base, settingsadapter.CreateSecretID),
 			Rename: secret.NewRename(base),
