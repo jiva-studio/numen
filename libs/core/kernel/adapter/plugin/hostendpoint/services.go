@@ -41,14 +41,13 @@ type WorkQueue interface {
 
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
 // plugin may do, and what the host lends the plugin to work with. Lent holds what exists only while a
-// window shows a vault; the dependencies and the tools are read at each call.
+// window shows a vault; the tools are read at each call.
 type Callers struct {
-	Identity     Identity
-	Leases       Leases
-	Lent         *Services
-	Dependencies func() Dependencies
-	Tools        func() PluginTools
-	Health       HealthCalls
+	Identity Identity
+	Leases   Leases
+	Lent     *Services
+	Tools    func() PluginTools
+	Health   HealthCalls
 }
 
 // HealthReport puts a health item in the list as the plugin's. It returns plugin.ErrInvalidHealth for an

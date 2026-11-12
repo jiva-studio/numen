@@ -66,21 +66,6 @@ func (p *FileProvisioner) getDir(req manifest.DependencyRequirement) (string, er
 	return getDependencyDir(root, string(req.Kind), req.ID, req.Version), nil
 }
 
-// Status returns whether the machine or the folder holds the dependency.
-func (p *FileProvisioner) Status(_ context.Context, req manifest.DependencyRequirement) (plugin.DependencyStatus, error) {
-	if found := p.cfg.Discovery.find(req); found != "" {
-		return readyStatus(req, filepath.Dir(found), found), nil
-	}
-	dir, err := p.getDir(req)
-	if err != nil {
-		return plugin.DependencyStatus{}, err
-	}
-	if resolved, ok := readCachedDependency(req, dir); ok {
-		return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
-	}
-	return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateMissing}, nil
-}
-
 // Provision returns the dependency: the one the machine holds, the one in the
 // folder, or the one it fetches. Processes provisioning the same dependency
 // take turns.
@@ -184,11 +169,6 @@ func readCachedDependency(req manifest.DependencyRequirement, dir string) (plugi
 		return plugin.ResolvedDependency{}, false
 	}
 	return newResolvedDependency(req, dir, primary), true
-}
-
-func readyStatus(req manifest.DependencyRequirement, root, primary string) plugin.DependencyStatus {
-	resolved := newResolvedDependency(req, root, primary)
-	return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}
 }
 
 func newResolvedDependency(req manifest.DependencyRequirement, root, primary string) plugin.ResolvedDependency {

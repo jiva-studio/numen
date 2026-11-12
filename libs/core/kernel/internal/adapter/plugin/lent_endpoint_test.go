@@ -12,12 +12,6 @@ func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Se
 	callers := hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation,
 		Lent: services,
-		Dependencies: func() hostendpoint.Dependencies {
-			if registry := host.Services.GetDependencies(); registry != nil {
-				return registry
-			}
-			return nil
-		},
 		Tools: func() hostendpoint.PluginTools {
 			return toolbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry))
 		},

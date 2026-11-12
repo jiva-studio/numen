@@ -75,7 +75,7 @@ func (c *callers) asCallers() Callers {
 	lent.SetPluginVaultList(c.list)
 	return Callers{
 		Identity: c, Leases: c, Lent: lent,
-		Dependencies: func() Dependencies { return nil }, Tools: func() PluginTools { return c.tools },
+		Tools: func() PluginTools { return c.tools },
 	}
 }
 
