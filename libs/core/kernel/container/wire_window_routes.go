@@ -157,9 +157,8 @@ func mountNote(w *windowWiring) {
 		query.NewGetNeighborhoodView(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
 		query.NewListHeadings(w.db.NoteQueries()),
 	)
-	writeLink := note.NewWriteLink(notes.Edit.Linking, w.db.NoteQueries(), writes)
 	links := notewindow.NewLinks(
-		state, query.NewResolveLinks(w.db.NoteQueries()), &writeLink, &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, writes,
+		state, query.NewResolveLinks(w.db.NoteQueries()), &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, writes,
 	)
 	connections := notewindow.NewConnections(
 		state, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
