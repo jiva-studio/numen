@@ -63,9 +63,9 @@ export const WORDS = {
   connectionRowsDefault: 'Default',
   connectionRowsIndexQuestion: (count: number | undefined, name: string) =>
     count === undefined
-      ? `This indexes your notes through ${name}. It may cost money.`
-      : `This indexes ${count} ${count === 1 ? 'note' : 'notes'} through ${name}. It may cost money.`,
-  connectionRowsIndexLabel: 'Index the notes',
+      ? `The vault will be indexed again through ${name}. This can take a while and may cost money.`
+      : `The vault will be indexed again: ${count} ${count === 1 ? 'note' : 'notes'} through ${name}. This can take a while and may cost money.`,
+  connectionRowsIndexLabel: 'Index the notes again?',
   connectionRowsIndexConfirm: 'Index',
   connectionRowsRemove: (position: number) => `Remove row ${position}`,
   connectionRowsGrip: (position: number, count: number) => `Move row ${position} of ${count}`,
