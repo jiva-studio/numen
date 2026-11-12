@@ -1,6 +1,10 @@
 Feature: Link notes
   A note links to another note by its title.
 
+  As a person who keeps notes
+  I want to link a note to another note by its title
+  So that I can go from one note to the other
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:

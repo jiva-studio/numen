@@ -1,6 +1,10 @@
 Feature: Open found file
   A person opens a file from the search and gets the tab that is made for its type.
 
+  As a person who keeps files in a vault
+  I want to open a file that the search finds
+  So that I see it in the tab that fits its type
+
   Background:
     Given the empty vault "Test"
     And the vault has the following card models:

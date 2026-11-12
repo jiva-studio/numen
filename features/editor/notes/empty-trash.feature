@@ -1,6 +1,10 @@
 Feature: Empty trash
   A person deletes the notes in the trash for good.
 
+  As a person who keeps notes
+  I want to delete the files in the trash for good, or to keep them
+  So that I free my vault and I do not lose a file by mistake
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:

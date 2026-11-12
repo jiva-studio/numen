@@ -1,6 +1,10 @@
 Feature: Ask agent
   A person asks the agent about the vault in the Agent tab.
 
+  As a person who keeps notes
+  I want to ask the agent a question about my vault
+  So that I get an answer and the agent can work with my notes
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:

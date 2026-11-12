@@ -1,6 +1,10 @@
 Feature: Go to note
   A person finds a note by its title and sees where it stands among the other notes.
 
+  As a person who keeps notes
+  I want to go to a note by its title and to see its place in the plex
+  So that I find my notes fast and I see how they link
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:

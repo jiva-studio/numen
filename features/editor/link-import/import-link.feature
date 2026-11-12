@@ -1,6 +1,10 @@
 Feature: Import link
   A person imports a web page or a video by its address.
 
+  As a person who collects web pages
+  I want to import a web page by its address and to keep its text
+  So that I can read and search the page in my vault
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

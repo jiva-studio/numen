@@ -1,6 +1,10 @@
 Feature: Move to trash
   A person removes a note or a file and it leaves the places that show it.
 
+  As a person who keeps notes
+  I want to move a note or a file to the trash
+  So that it leaves the file tree, the plex and the search
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

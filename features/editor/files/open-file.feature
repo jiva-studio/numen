@@ -1,6 +1,10 @@
 Feature: Open file
   A person opens a file and gets the tab that is made for its type.
 
+  As a person who keeps files in a vault
+  I want to open a file and see it in the tab that fits its type
+  So that I can read or edit each file in the right way
+
   Background:
     Given the empty vault "Test"
     And the vault has the following card models:

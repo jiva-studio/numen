@@ -1,6 +1,10 @@
 Feature: File tree
   A person moves, makes, renames and removes the files of a vault in the file tree.
 
+  As a person who keeps notes
+  I want to move, make and rename the files of my vault in the file tree
+  So that my files stay in order and the links between my notes stay right
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

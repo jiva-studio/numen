@@ -1,6 +1,10 @@
 Feature: Close reader
   A person closes the tab of a PDF or a book.
 
+  As a person who reads PDFs and books
+  I want to close the tab of a PDF or a book and to open it again
+  So that I can end my reading and come back later
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:

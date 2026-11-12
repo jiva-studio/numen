@@ -1,6 +1,10 @@
 Feature: Save note
   A note is saved while the person writes it.
 
+  As a person who keeps notes
+  I want my text to be saved while I write
+  So that I do not lose what I write
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:

@@ -1,6 +1,10 @@
 Feature: Stop agent
   A person stops the agent before it answers.
 
+  As a person who uses the agent
+  I want to stop the agent before it answers
+  So that I can ask again without waiting
+
   Scenario: A person asks again after the stop
     Given the empty vault "Test"
     And the environment is set to the following:

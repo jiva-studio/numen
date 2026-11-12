@@ -1,6 +1,10 @@
 Feature: Import video
   A person imports a video by its address and plays it.
 
+  As a person who collects videos
+  I want to import a video by its address, download it and play it
+  So that I can watch it and read its text in my vault
+
   Background:
     Given the empty vault "Test"
     And the application "editor" starts

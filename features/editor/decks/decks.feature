@@ -1,6 +1,10 @@
 Feature: Decks
   A person makes a deck of cards and edits the values of its cards.
 
+  As a person who learns with cards
+  I want to make decks and card models and to edit the values of my cards
+  So that my cards stay in their deck and I can keep them up to date
+
   Background:
     Given the empty vault "Test"
 

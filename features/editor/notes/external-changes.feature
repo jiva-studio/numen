@@ -1,6 +1,10 @@
 Feature: External changes of a note
   Another program changes the file of a note that is open.
 
+  As a person who keeps notes
+  I want to see when another program changes or removes a note that is open
+  So that I do not lose my text and I choose which version I keep
+
   Background:
     Given the empty vault "Test"
     And the vault has the following:
