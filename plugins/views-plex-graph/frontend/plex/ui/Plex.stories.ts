@@ -958,7 +958,6 @@ const renderInSmallWindow: NonNullable<Story['render']> = (args) => ({
         </div>
       </div>
     `,
-  }),
 })
 
 /** Renders the plex inside a small fixed container. */
