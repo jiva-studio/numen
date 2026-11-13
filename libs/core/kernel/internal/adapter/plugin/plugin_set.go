@@ -177,12 +177,6 @@ func (s *PluginSet) listIDs() []string {
 	return ids
 }
 
-func (s *PluginSet) hasProblems() bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return len(s.problems) > 0
-}
-
 func (s *PluginSet) isOnDisk(pluginID string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

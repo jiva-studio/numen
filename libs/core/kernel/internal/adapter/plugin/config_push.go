@@ -13,16 +13,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // configPlugins is what the push reads of the set of plugins.
 type configPlugins interface {
 	listIDs() []string
 	getPluginSettings(pluginID string) map[string]any
-	getKnownPlugin(pluginID string) (manifest.Discovered, bool)
-	view() (setView, func())
-	hasProblems() bool
 }
 
 // ConfigPush gives the running plugins their configuration: the settings and the performance profile,
