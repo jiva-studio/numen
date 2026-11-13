@@ -10,13 +10,7 @@ import type { ReachStrategy } from '../model/interaction/reachStrategy'
 import type { ShowStrategy } from '../model/interaction/destination'
 import type { Clock } from '../model/transition'
 import type { PlexType, Probe } from '../model/sizing/measure'
-import type {
-  PlexHeading,
-  PlexGraph,
-  PlexNames,
-  PlexRelation,
-  PlexDestination,
-} from '../../types'
+import type { PlexHeading, PlexGraph, PlexNames, PlexRelation, PlexDestination } from '../../types'
 
 /**
  * With `showPills` off each title is drawn without its pill, after a dot in the hue of its

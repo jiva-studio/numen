@@ -104,7 +104,14 @@ export function getNamesRoom(names: PlexNames, request: NamesRequest): NamesRoom
 function placeRow(row: Row, room: NamesRoom, at: { x: number; y: number }): PlacedName[] {
   let left = at.x - row.width / 2
   return row.names.map((name) => {
-    const placed = { id: name.id, title: name.title, x: left + name.width / 2, y: at.y, width: name.width, height: room.rowHeight }
+    const placed = {
+      id: name.id,
+      title: name.title,
+      x: left + name.width / 2,
+      y: at.y,
+      width: name.width,
+      height: room.rowHeight,
+    }
     left += name.width + room.spacing
     return placed
   })

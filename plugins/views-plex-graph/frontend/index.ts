@@ -36,7 +36,10 @@ export function activate(context: PluginContext): void {
       look: readLook(context),
     },
     () =>
-      usePlexView({ listRelatedNotes: (path, wanted) => notes.listRelatedNotes(path, wanted) }, depth),
+      usePlexView(
+        { listRelatedNotes: (path, wanted) => notes.listRelatedNotes(path, wanted) },
+        depth,
+      ),
     PlexGraphView,
   )
   context.register.tabKind(plexes.kind)

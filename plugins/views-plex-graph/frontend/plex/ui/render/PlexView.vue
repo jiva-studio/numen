@@ -145,30 +145,30 @@ const getRole = (node: PlacedNode): GestureRole => {
     </g>
 
     <g v-for="node in renderedNodes" :key="node.id" class="plex__stack">
-    <PlexNodeView
-      :ref="holdNode(node.id)"
-      :node="node"
-      :gesture-role="getRole(node)"
-      :wide="widen?.(node) ?? null"
-      :hung="hung?.(node) ?? null"
-      :behavior="behavior"
-      :show-pills="showPills"
-      @activate="emit('activate', node.id)"
-      @show="emit('show', node.id, $event)"
-      @reach="emit('reach', node.id, $event)"
-      @ask="emit('ask', node.id)"
-      @menu="(at, trigger) => emit('menu', node.id, at, trigger)"
-      @enter="(heading) => emit('enter', node.id, heading)"
-      @settle="onSettle(node.id, $event)"
-    >
-      <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
-    </PlexNodeView>
-    <PlexNodeNames
-      v-if="names?.(node.id)"
-      :node="node"
-      :room="names(node.id)!"
-      @choose="emit('choose-name', $event)"
-    />
+      <PlexNodeView
+        :ref="holdNode(node.id)"
+        :node="node"
+        :gesture-role="getRole(node)"
+        :wide="widen?.(node) ?? null"
+        :hung="hung?.(node) ?? null"
+        :behavior="behavior"
+        :show-pills="showPills"
+        @activate="emit('activate', node.id)"
+        @show="emit('show', node.id, $event)"
+        @reach="emit('reach', node.id, $event)"
+        @ask="emit('ask', node.id)"
+        @menu="(at, trigger) => emit('menu', node.id, at, trigger)"
+        @enter="(heading) => emit('enter', node.id, heading)"
+        @settle="onSettle(node.id, $event)"
+      >
+        <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
+      </PlexNodeView>
+      <PlexNodeNames
+        v-if="names?.(node.id)"
+        :node="node"
+        :room="names(node.id)!"
+        @choose="emit('choose-name', $event)"
+      />
     </g>
 
     <g v-if="raisedLines.length" class="plex__raised" aria-hidden="true">

@@ -168,7 +168,9 @@ export function getNames(
 
   const found = new Map<string, PlexNames>()
   for (const [owner, items] of owners) {
-    const ordered = NAME_ORDER.flatMap((relation) => items.filter((item) => item.relation === relation))
+    const ordered = NAME_ORDER.flatMap((relation) =>
+      items.filter((item) => item.relation === relation),
+    )
     const kept = ordered.slice(0, limit)
     const toName = (item: RelatedNote): PlexName => ({ id: token(item.path), title: item.title })
     found.set(token(owner), {
