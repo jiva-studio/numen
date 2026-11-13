@@ -331,7 +331,10 @@ describe('the settings tab', () => {
 
     const getToolbar = (tab: Tab) => tab.get('.settings-toolbar')
     const getPath = (tab: Tab) => getToolbar(tab).get('nav[aria-label="Path"]')
-    const getSegments = (tab: Tab) => getPath(tab).findAll('button').map((one) => one.text())
+    const getSegments = (tab: Tab) =>
+      getPath(tab)
+        .findAll('button')
+        .map((one) => one.text())
     const getCurrent = (tab: Tab) => getPath(tab).get('[aria-current="page"]').text()
 
     it('shows only Settings on the list, with no back button and no action', () => {
@@ -362,7 +365,9 @@ describe('the settings tab', () => {
 
       expect(getSegments(tab)).toStrictEqual(['Settings'])
       expect(getCurrent(tab)).toBe(words.connections)
-      expect(getToolbar(tab).get('.settings-toolbar__actions').text()).toContain(words.connectionAdd)
+      expect(getToolbar(tab).get('.settings-toolbar__actions').text()).toContain(
+        words.connectionAdd,
+      )
     })
 
     it('holds the state and the enabled switch of a plugin on its page', async () => {
@@ -396,7 +401,9 @@ describe('the settings tab', () => {
 
       expect(isList(tab)).toBe(true)
       expect(initialSearchQuery.value).toBe('category:other')
-      expect((tab.get('input[type="search"]').element as HTMLInputElement).value).toBe('category:other')
+      expect((tab.get('input[type="search"]').element as HTMLInputElement).value).toBe(
+        'category:other',
+      )
       expect(tab.find('button[aria-label="Page Reader"]').exists()).toBe(true)
     })
   })

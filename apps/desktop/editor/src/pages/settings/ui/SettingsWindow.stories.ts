@@ -192,7 +192,10 @@ export const SettingsToolbarStaysAtTheTop: Story = {
     const path = await canvas.findByRole('navigation', { name: 'Path' })
     await expect(within(path).getByRole('button', { name: 'Settings' })).toBeVisible()
     await expect(within(path).getByRole('button', { name: 'Agents' })).toBeVisible()
-    await expect(within(path).getByText('Claude Code Agent')).toHaveAttribute('aria-current', 'page')
+    await expect(within(path).getByText('Claude Code Agent')).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
     await expect(canvas.getByRole('switch', { name: 'Enabled Claude Code Agent' })).toBeVisible()
 
     const page = canvasElement.querySelector<HTMLElement>('.settings__page')

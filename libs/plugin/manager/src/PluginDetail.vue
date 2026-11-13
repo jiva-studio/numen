@@ -48,7 +48,11 @@ defineSlots<{
 const startItem = computed(() => getStartItem(props.health ?? []))
 const worstItem = computed(() => getWorstItem(props.health ?? []))
 const category = computed(() => getPluginCategory(props.plugin))
-const path = computed(() => [words.settings, formatCategoryLabel(category.value), props.plugin.name])
+const path = computed(() => [
+  words.settings,
+  formatCategoryLabel(category.value),
+  props.plugin.name,
+])
 const hasConnections = computed(() => hasConnectionSettings(props.plugin.info))
 const contributions = computed(() => props.plugin.info?.contributions ?? [])
 const readmeText = computed(() => getReadmeText(props.readme))
