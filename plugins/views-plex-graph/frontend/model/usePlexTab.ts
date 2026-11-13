@@ -113,6 +113,19 @@ function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap
   return { types, getType, getTabKind, shownPaths }
 }
 
+/** What moving the focus to a note needs. */
+interface FocusMover {
+  readonly view: PlexView
+  readonly deps: PlexTabDeps
+  readonly getName: (path: string) => string
+}
+
+function moveFocus({ view, deps, getName }: FocusMover, path: string): void {
+  if (!path) return
+  view.go(path).catch((error: Caught) => deps.window.showMessage(formatErrorMessage(error)))
+  deps.window.onSelectPath?.(path, getName(path))
+}
+
 function createPlexNodeActions(options: {
   view: PlexView
   tabDeps: PlexTabDeps
@@ -121,13 +134,7 @@ function createPlexNodeActions(options: {
   openQuickLink: (request: QuickLinkRequest) => void
 }) {
   const { view, tabDeps: deps, map, getName, openQuickLink } = options
-  const goTo = (path: string) => {
-    if (!path) return
-    view.go(path).catch((error: Caught) => deps.window.showMessage(formatErrorMessage(error)))
-    deps.window.onSelectPath?.(path, getName(path))
-  }
-  const activate = (node: string) => goTo(map.getNodePath(node))
-  const chooseName = (name: string) => goTo(getNamePath(name))
+  const activate = (node: string) => moveFocus({ view, deps, getName }, map.getNodePath(node))
 
   const addNode = async (from: string, relation: PlexRelation, pos?: { x: number; y: number }) => {
     if (pos) {
@@ -193,7 +200,6 @@ function createPlexNodeActions(options: {
     dropNodes,
     openNode,
     openHeading,
-    chooseName,
     followMoves,
     getName,
   }
@@ -286,10 +292,10 @@ function usePlexMenu(options: {
 const NO_NAMES: PlexNames = { above: [], below: [] }
 
 function usePlexNames(
-  view: PlexView,
-  deps: PlexTabDeps,
+  mover: FocusMover,
   map: ReturnType<typeof createNodeIdMap>,
 ): PlexNamesState {
+  const { view, deps } = mover
   const { showNames, namesPerNote } = deps.names
   const names = computed(() => {
     const noteGraph = view.noteGraph.value
@@ -298,7 +304,8 @@ function usePlexNames(
   })
   const getNodeNames = (node: string): PlexNames =>
     names.value.get(getNameToken(map.getNodePath(node))) ?? NO_NAMES
-  return { showNames, getNames: getNodeNames }
+  const choose = (name: string) => moveFocus(mover, getNamePath(name))
+  return { showNames, getNames: getNodeNames, choose }
 }
 
 function getPlexNodeName(noteGraph: PlexView['noteGraph']['value'], path: string): string {
@@ -315,7 +322,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const getName = (path: string): string => getPlexNodeName(view.noteGraph.value, path)
   const quickLink = useQuickLink(view, deps, map)
   const headings = usePlexHeadings(shownPaths, types, deps, map)
-  const names = usePlexNames(view, deps, map)
+  const names = usePlexNames({ view, deps, getName }, map)
   const inspector = useLinkInspector(
     view,
     { editor: deps.editor, showMessage: deps.window.showMessage },
@@ -347,10 +354,9 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   return {
     reportFailure,
-    canvas,
+    canvas: { ...canvas, names },
     menu,
     headings,
-    names,
     nodes,
     quickLink,
     inspector,

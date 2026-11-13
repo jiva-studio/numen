@@ -28,13 +28,13 @@ import { findSpacing } from './layout/spacing'
 import { separateTitles } from './edges/titles'
 import type { PlexGraph, PlexNode } from '../../../types'
 
+/** `room` is the space a note keeps over and under its pill; a note without one keeps none. */
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
   readonly placement?: Placement | undefined
   readonly measure?: ((node: PlexNode) => number) | undefined
   readonly measureLabel?: ((label: string) => number) | undefined
   readonly labelType?: LabelType | undefined
-  /** The space each note keeps over and under its pill; absent, a note keeps none. */
   readonly room?: Rooms | undefined
 }
 
@@ -151,7 +151,6 @@ function createRoomLookup(
   return rooms
 }
 
-/** Whether the footprint of a note, its pill and the room around it, lies inside the window less the margin. */
 function isInside(node: PlacedNode, viewport: Size, { margin, rooms }: Fit): boolean {
   const { top, bottom, width } = rooms.get(node.id) ?? NO_ROOM
   const halfWidth = Math.max(node.width, width) / 2

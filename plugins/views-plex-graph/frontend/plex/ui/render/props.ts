@@ -28,7 +28,6 @@ export interface PlexViewProps {
   relationName?: (relation: PlexRelation) => string
   widen?: ((node: PlacedNode) => WideBox | null) | undefined
   hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
-  /** The names set around a node, as measured and wrapped; none for a node that has none. */
   names?: ((id: string) => NamesRoom | undefined) | undefined
   behavior?: PlexBehavior
   gestureFrom?: string | null

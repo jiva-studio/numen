@@ -27,19 +27,16 @@ export interface Row {
   readonly width: number
 }
 
-/** What the names of one note are measured with. */
+/** What the names of one note are measured with. `width` is the widest a row may be: the width of the node. */
 export interface NamesRequest {
   readonly fontSize: number
-  /** The widest a row may be: the width of the node. */
   readonly width: number
   readonly measure: (title: string) => number
 }
 
-/** The rows of the names of a note and the room they take over and under its pill. */
+/** The rows of the names of a note and the room they take over and under its pill. The last row of `above` and the first of `below` are nearest to the pill. */
 export interface NamesRoom {
-  /** Rows over the pill, the last nearest to it. */
   readonly above: readonly Row[]
-  /** Rows under the pill, the first nearest to it. */
   readonly below: readonly Row[]
   readonly rowHeight: number
   readonly spacing: number

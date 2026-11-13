@@ -19,7 +19,6 @@ export interface PlexMetrics {
   readonly node: Measure
   readonly label: (label: string) => number
   readonly heading: (text: string) => number
-  /** The width of a name, set smaller than a title, and the size it is set at. */
   readonly name: (title: string) => number
   readonly nameSize: number
   readonly labelType: LabelType
@@ -168,7 +167,6 @@ function createMetrics(type: PlexType, { padding, beside }: TitleRoom): PlexMetr
   }
 }
 
-/** The font of the names: the font of a title, set smaller. */
 function getNameFont(font: string): string {
   const size = parsePixels(font)
   return `${size * NAME_SCALE}px ${font.slice(font.indexOf(' ') + 1)}`

@@ -18,9 +18,8 @@ import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
 import { getFrameStyle } from './frameStyle'
-import { getNamesRoom, type NamesRoom } from '../lib/names'
-import { NO_ROOM } from '../lib/arrange'
-import type { PlexNode, PlexRelation } from '../../types'
+import { useNamesRooms } from '../model/useNamesRooms'
+import type { PlexRelation } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexProps>(), {
@@ -77,29 +76,12 @@ const behavior = computed<PlexBehavior>(() => ({
   clock: props.clock,
 }))
 
-/**
- * The names set around each node, wrapped to the width of a node and measured in the type of a name.
- * A node with none has no entry.
- */
-const namesRooms = computed<ReadonlyMap<string, NamesRoom>>(() => {
-  const rooms = new Map<string, NamesRoom>()
-  const metrics = measures.value
-  if (!props.showNames || !props.names || !metrics) return rooms
-  for (const node of props.graph.nodes) {
-    if (node.relation === 'focus') continue
-    const room = getNamesRoom(props.names(node.id), {
-      fontSize: metrics.nameSize,
-      width: options.value.nodeSize.width,
-      measure: metrics.name,
-    })
-    if (room.above.length > 0 || room.below.length > 0) rooms.set(node.id, room)
-  }
-  return rooms
-})
-
-const getRoom = computed(() => {
-  const rooms = namesRooms.value
-  return (node: PlexNode) => rooms.get(node.id) ?? NO_ROOM
+const { rooms: namesRooms, room: getRoom } = useNamesRooms({
+  graph: () => props.graph,
+  names: () => props.names,
+  isShown: () => props.showNames,
+  metrics: () => measures.value,
+  width: () => options.value.nodeSize.width,
 })
 
 const { frame, isMoving } = usePlexTransition(
@@ -110,7 +92,7 @@ const { frame, isMoving } = usePlexTransition(
     measure: measures.value?.node,
     measureLabel: measures.value?.label,
     labelType: measures.value?.labelType,
-    room: namesRooms.value.size > 0 ? getRoom.value : undefined,
+    room: getRoom.value,
   }),
   {
     duration: () => props.duration,

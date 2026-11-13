@@ -14,7 +14,8 @@ import type { PlexHeading, PlexGraph, PlexNames, PlexRelation, PlexDestination }
 
 /**
  * With `showPills` off each title is drawn without its pill, after a dot in the hue of its
- * relation. `lineWidth` and `outlineWidth` are in pixels.
+ * relation. `lineWidth` and `outlineWidth` are in pixels. `names` gives the names to set over
+ * and under a node, drawn while `showNames` is on.
  */
 export interface PlexProps {
   graph: PlexGraph
@@ -33,7 +34,6 @@ export interface PlexProps {
   reaching?: ReachStrategy
   showing?: ShowStrategy
   headings?: (id: string) => readonly PlexHeading[]
-  /** The names to set over and under a node. They are drawn while `showNames` is on. */
   names?: (id: string) => PlexNames
   showNames?: boolean
   relationName?: (relation: PlexRelation) => string

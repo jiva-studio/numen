@@ -191,6 +191,7 @@ export interface PlexViewState {
   readonly empty: ComputedRef<boolean>
   readonly dragged: ComputedRef<readonly string[]>
   readonly creatable: readonly PlexRelation[]
+  readonly names: PlexNamesState
 }
 
 export interface PlexMenuState {
@@ -204,11 +205,14 @@ export interface PlexMenuState {
   chooseMenuItem(id: string): void
 }
 
-/** The names of the notes related to the drawn notes. */
+/**
+ * The names of the notes related to the drawn notes. A node with none, and every node while names are off, has none;
+ * choosing a name moves the focus to the note it stands for.
+ */
 export interface PlexNamesState {
   readonly showNames: Readonly<Ref<boolean>>
-  /** The names over and under a node; none for a node with none or while names are off. */
   getNames(node: string): PlexNames
+  choose(name: string): void
 }
 
 export interface PlexHeadingsState {
@@ -230,8 +234,6 @@ export interface PlexNodeActions {
   dropNodes(dragged: readonly string[], relation: PlexRelation): Promise<void>
   openNode(node: string, showing?: PlexDestination): void
   openHeading(node: string, heading: string): void
-  /** Moves the focus to the note a name stands for. */
-  chooseName(name: string): void
   followMoves(renamed: readonly PathRename[]): void
   getName(path: string): string
 }
@@ -259,7 +261,6 @@ export interface PlexTabState {
   readonly look: PlexLook
   readonly menu: PlexMenuState
   readonly headings: PlexHeadingsState
-  readonly names: PlexNamesState
   readonly nodes: PlexNodeActions
   readonly quickLink: PlexQuickLinkState
   readonly inspector: PlexLinkInspectorState
