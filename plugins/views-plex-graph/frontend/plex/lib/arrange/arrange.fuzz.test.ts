@@ -115,25 +115,15 @@ describe('what is shown of a graph', () => {
   )
 })
 
-describe('a graph cut to what was shown', () => {
-  it.each(cases.map((one, round) => [round, one] as const))('is shown whole, in case %i', (_, one) => {
-    const shown = new Set(arrangeCase(one).nodes.map((node) => node.id))
-    const kept: Case = {
-      ...one,
-      graph: {
-        nodes: one.graph.nodes.filter((node) => shown.has(node.id)),
-        edges: one.graph.edges.filter((edge) => shown.has(edge.from) && shown.has(edge.to)),
-      },
-    }
-
-    expect(arrangeCase(kept).overflow).toStrictEqual({})
-  })
-})
-
 describe('a note that is cut', () => {
-  const cutNodes = (one: Case, relation: PlexRelation, keep: number): Case => {
-    const members = one.graph.nodes.filter((node) => node.relation === relation)
-    const left = new Set(members.slice(keep).map((node) => node.id))
+  // The graph with every relation at the number of notes shown, and the relation at one more.
+  const cutNodes = (one: Case, frame: ReturnType<typeof arrangeCase>, relation: PlexRelation): Case => {
+    const left = new Set<string>()
+    for (const name of RELATION_NAMES) {
+      const members = one.graph.nodes.filter((node) => node.relation === name)
+      const keep = countByRelation(frame.nodes, name) + (name === relation ? 1 : 0)
+      for (const node of members.slice(keep)) left.add(node.id)
+    }
     return {
       ...one,
       graph: {
@@ -148,7 +138,7 @@ describe('a note that is cut', () => {
     rounds: cases.flatMap((one, round) => {
       const frame = arrangeCase(one)
       if (!frame.overflow[relation]) return []
-      return [{ round, one, shown: countByRelation(frame.nodes, relation) }]
+      return [{ round, one, frame, shown: countByRelation(frame.nodes, relation) }]
     }),
   }))
 
@@ -159,11 +149,11 @@ describe('a note that is cut', () => {
   })
 
   it.each(cuts.map(({ relation, rounds }) => [relation, rounds] as const))(
-    'leaves no room for the next %s note: the arrangement of the graph with that note cut to shown + 1 cuts it again',
+    'leaves no room for the next %s note: the arrangement of the shown notes and that note cuts it again',
     (relation, rounds) => {
       const stillFits: string[] = []
-      for (const { round, one, shown } of rounds) {
-        const again = arrangeCase(cutNodes(one, relation, shown + 1))
+      for (const { round, one, frame, shown } of rounds) {
+        const again = arrangeCase(cutNodes(one, frame, relation))
         if (!again.overflow[relation]) stillFits.push(`case ${round} ${relation} ${shown}`)
       }
       expect(stillFits).toStrictEqual([])

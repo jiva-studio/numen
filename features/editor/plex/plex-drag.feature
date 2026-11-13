@@ -49,7 +49,7 @@ Feature: Plex drag
 
   Rule: A line dropped on a note of the plex links it
 
-    Background:
+    Scenario Outline: A line onto a note makes a link by the place of the note
       Given the vault has the following:
         | path             | text      |
         | notes/Coast.md   | # Coast   |
@@ -61,8 +61,6 @@ Feature: Plex drag
         | Harbour | Quay    | child |
       And the person opens the note titled "Harbour"
       And the person runs the command "Show in plex" on the note tab titled "Harbour"
-
-    Scenario Outline: A line onto a note makes a link by the place of the note
       When the person drops the handle of the note titled "<from>" on the note titled "<to>"
       Then the vault "Test" has the following links:
         | from    | to      | role       |
