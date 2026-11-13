@@ -37,6 +37,9 @@ test.describe('Start-up while the embeddings model is still opening', () => {
     await page.keyboard.press('Control+k')
     await getPaletteField(page).fill('Entropy')
     await expect(page.getByRole('option').first()).toBeVisible(within)
+    // The words answer while the meaning search still waits for the model.
+    await expect(page.getByRole('group', { name: 'Text' })).toBeVisible(within)
+    await expect(page.getByRole('group', { name: 'Meaning' })).toHaveCount(0)
     expect(errors).toStrictEqual([])
   })
 })

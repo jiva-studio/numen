@@ -177,6 +177,7 @@ async function executeSearchQuery(
     core: SearchDeps
     query: string
     mine: InFlightRequest
+    signal: AbortSignal
     emptyQueryWord: string
   },
   state: SearchRefs,
@@ -199,7 +200,7 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'names',
-      question: () => ctx.core.names(ctx.query, GROUP_RESULT_LIMIT),
+      question: () => ctx.core.names(ctx.query, GROUP_RESULT_LIMIT, ctx.signal),
       into: (found) => {
         state.names.value = found
       },
@@ -209,7 +210,7 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'text',
-      question: () => ctx.core.search(ctx.query, 'words', GROUP_RESULT_LIMIT),
+      question: () => ctx.core.search(ctx.query, 'words', GROUP_RESULT_LIMIT, ctx.signal),
       into: (found) => {
         state.texts.value = found
       },
@@ -219,7 +220,7 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'meaning',
-      question: () => ctx.core.search(ctx.query, 'meaning', GROUP_RESULT_LIMIT),
+      question: () => ctx.core.search(ctx.query, 'meaning', GROUP_RESULT_LIMIT, ctx.signal),
       into: (found) => {
         state.meanings.value = found
       },
@@ -260,7 +261,11 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const debounced = useDebouncedSearch(how.wait ? { wait: how.wait } : {})
 
+  // The questions of the current query, which a newer query or putting the palette away aborts.
+  let asking = new AbortController()
+
   const drop = () => {
+    asking.abort()
     names.value = []
     texts.value = []
     meanings.value = []
@@ -269,8 +274,14 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     isAnswered.value = false
   }
 
-  const ask = (query: string, mine: InFlightRequest) =>
-    executeSearchQuery({ core, query, mine, emptyQueryWord: words.noQuery }, state)
+  const ask = (query: string, mine: InFlightRequest) => {
+    asking.abort()
+    asking = new AbortController()
+    return executeSearchQuery(
+      { core, query, mine, signal: asking.signal, emptyQueryWord: words.noQuery },
+      state,
+    )
+  }
 
   const setTyped = async (text: string) => {
     inputValue.value = text

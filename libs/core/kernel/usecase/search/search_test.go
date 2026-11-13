@@ -624,3 +624,45 @@ func TestASearchAbortsOnCanceledContext(t *testing.T) {
 		t.Fatalf("expected context.Canceled, got %v", err)
 	}
 }
+
+// opening is a model that answers no query until its caller stops waiting, as a model that is still being
+// opened. asked receives each query it is handed.
+type opening struct{ asked chan struct{} }
+
+func (opening) Describe() searchsource.Description { return getModel() }
+
+func (o opening) Embed(ctx context.Context, _ []string) ([][]float32, error) {
+	o.asked <- struct{}{}
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func (opening) Close() error { return nil }
+
+func TestASearchByWordsAnswersWhileTheSearchByMeaningWaitsForItsSource(t *testing.T) {
+	c := newCorpus(t)
+	var errs []error
+	model := opening{asked: make(chan struct{}, 1)}
+	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(model), func(err error) { errs = append(errs, err) })
+
+	meaningCtx, cancelMeaning := context.WithCancel(t.Context())
+	meaning := make(chan error, 1)
+	go func() {
+		_, err := finds.Execute(meaningCtx, c.first, "disorder", search.GetTypingParameters(search.Sources, 8))
+		meaning <- err
+	}()
+	<-model.asked
+
+	found, err := finds.Execute(t.Context(), c.first, "disorder", search.GetTypingParameters(search.Lexical, 8))
+	if err != nil || len(found) != 1 || !strings.Contains(found[0].Source, "Entropy") {
+		t.Fatalf("the words found %v, %v while the meaning waited", sources(found), err)
+	}
+
+	cancelMeaning()
+	if err := <-meaning; !errors.Is(err, context.Canceled) {
+		t.Errorf("the meaning search a newer query stopped returned %v", err)
+	}
+	if len(errs) != 0 {
+		t.Errorf("the stopped meaning search was reported as a failure of the source: %v", errs)
+	}
+}

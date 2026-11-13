@@ -36,7 +36,11 @@ const OPEN_NOTE = COMMAND.openFile
 
 function createVault() {
   const names: Deferred<readonly NameMatch[]>[] = []
-  const searched: { mode: SearchMode; answer: Deferred<readonly Passage[]> }[] = []
+  const searched: {
+    mode: SearchMode
+    answer: Deferred<readonly Passage[]>
+    signal: AbortSignal | undefined
+  }[] = []
   const queries: string[] = []
 
   const core: SearchDeps = {
@@ -46,10 +50,10 @@ function createVault() {
       names.push(one)
       return one.promise
     },
-    search: (query, mode) => {
+    search: (query, mode, _limit, signal) => {
       queries.push(query)
       const one = createDeferred<readonly Passage[]>()
-      searched.push({ mode, answer: one })
+      searched.push({ mode, answer: one, signal })
       return one.promise
     },
   }
@@ -168,6 +172,40 @@ describe('answers arriving', () => {
     expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(1)
     expect(getGroup(palette.groups.value, 'names')?.isWorking).toBe(false)
     expect(palette.groups.value.map((one) => one.id)).toEqual(['names'])
+  })
+
+  it('shows what the words found while the meaning question is out, and adds meaning when it answers', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    vault.names[0]?.answer([])
+    vault.mode('words')?.answer([passage()])
+    await flushPromises()
+
+    expect(palette.groups.value.map((one) => one.id)).toEqual(['text'])
+    expect(palette.status.isBusy.value).toBe(true)
+
+    vault.mode('meaning')?.answer([passage({ path: 'notes/carnot.md', title: 'Carnot' })])
+    await flushPromises()
+
+    expect(palette.groups.value.map((one) => one.id)).toEqual(['text', 'meaning'])
+    expect(palette.status.isBusy.value).toBe(false)
+  })
+
+  it('aborts the questions of a query once a newer query is typed', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    const older = vault.mode('meaning')?.signal
+    palette.setTyped('entr').catch(rethrow)
+    await flushPromises()
+
+    expect(older?.aborted).toBe(true)
+    expect(vault.searched.at(-1)?.signal?.aborted).toBe(false)
   })
 
   it('drops a result of a superseded query', async () => {
@@ -296,6 +334,7 @@ describe('answers arriving', () => {
     vault.names[0]?.answer([createNameMatch()])
     await flushPromises()
 
+    expect(vault.mode('meaning')?.signal?.aborted).toBe(true)
     expect(palette.open.value).toBe(false)
     expect(palette.typed.value).toBe('')
     expect(palette.groups.value).toHaveLength(0)
