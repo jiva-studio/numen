@@ -241,3 +241,24 @@ describe('a shared command in the palette', () => {
     expect(removeEmptyCommands([createCommand('tab.move')])[0]?.text).toBe('tab.move')
   })
 })
+
+describe('the notes the conditions of the palette read', () => {
+  it('are forgotten each time the palette opens or closes', async () => {
+    const forgetNotes = vi.fn()
+    const lists = createItemLists(undefined, {
+      paletteLists: WINDOW_LISTS,
+      getTarget: () => TARGET,
+      runs: RUNS,
+      forgetNotes,
+    })
+    const isOpen = ref(false)
+    lists.resetWhenClosed(isOpen)
+
+    isOpen.value = true
+    await nextTick()
+    isOpen.value = false
+    await nextTick()
+
+    expect(forgetNotes).toHaveBeenCalledTimes(2)
+  })
+})
