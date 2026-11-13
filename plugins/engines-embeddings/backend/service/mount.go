@@ -73,7 +73,11 @@ func getPlaces(connect func() (*host.SearchClient, error)) openPlace {
 
 func mount(s *server.Server, open ports.OpenModels, places openPlace, reports sourcehealth.OpenHealth) error {
 	embedSrv := newServer(open)
-	s.SetUpdateConfig(embedSrv.Update)
+	// The host starts the plugin when something needs vectors, and configures it before the first call.
+	s.SetUpdateConfig(func(values map[string]string) {
+		embedSrv.Update(values)
+		embedSrv.StartLoading()
+	})
 	searchsource.Mount(s, newHandler(embedSrv, places, sourcehealth.New(reports, console.Report)))
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server shutdown callback closes internal embedSrv state"
 	s.OnClose(embedSrv.Close)

@@ -123,6 +123,18 @@ func (s *Server) getEmbedder(ctx context.Context) (ports.Embedder, error) {
 	return s.loader.Get(ctx, s.getStartLocked)
 }
 
+// StartLoading starts loading the local model in the background, so that the first batch finds it
+// loaded or waits for the load already running. It does nothing while a connection serves the model or
+// the local model cannot be resolved.
+func (s *Server) StartLoading() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.isConnectionLocked() || s.getLocalErrLocked() != nil {
+		return
+	}
+	s.loader.StartLocked(s.getStartLocked)
+}
+
 func (s *Server) getStartLocked() loading.Start[modelSpec] {
 	info := s.modelInfo
 	if !s.isMock {

@@ -248,3 +248,43 @@ func TestAFailedPriorityChangeIsReportedAndTheModelStaysLoaded(t *testing.T) {
 		t.Errorf("reports = %v", h.reports)
 	}
 }
+
+func TestStartLockedOpensTheModelOnceAndAGetDuringTheLoadWaitsForIt(t *testing.T) {
+	var opens atomic.Int32
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	loaded := &model{}
+	h := newHarness(t, func(context.Context, string) (ports.Embedder, error) {
+		if opens.Add(1) == 1 {
+			close(entered)
+		}
+		<-release
+		return loaded, nil
+	})
+
+	h.lock.Lock()
+	h.loader.StartLocked(start("a", 0))
+	h.loader.StartLocked(start("a", 0))
+	h.lock.Unlock()
+	<-entered
+
+	got := make(chan ports.Embedder, 1)
+	go func() {
+		emb, err := h.loader.Get(t.Context(), start("a", 0))
+		if err != nil {
+			t.Error(err)
+		}
+		got <- emb
+	}()
+	close(release)
+
+	if emb := <-got; emb != loaded || opens.Load() != 1 {
+		t.Fatalf("Get = %v after %d opens, want the started model after one", emb, opens.Load())
+	}
+	h.lock.Lock()
+	h.loader.StartLocked(start("a", 0))
+	h.lock.Unlock()
+	if opens.Load() != 1 {
+		t.Errorf("a start with the model loaded opened it again: %d opens", opens.Load())
+	}
+}

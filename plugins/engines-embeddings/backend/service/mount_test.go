@@ -15,6 +15,7 @@ import (
 
 // The handler of a host that links the plugin in serves the local model it is configured for.
 func TestTheLinkedHandlerServesTheModelItsConfigureNames(t *testing.T) {
+	setEmptyModelDir(t)
 	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": linkedToken})
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
@@ -42,6 +43,13 @@ func TestMountRegistersCloseCallback(t *testing.T) {
 	if err := s.Close(); err != nil {
 		t.Fatalf("s.Close: %v", err)
 	}
+}
+
+// setEmptyModelDir points the local model at an empty folder, so that the load Configure starts fails at
+// once instead of downloading.
+func setEmptyModelDir(t *testing.T) {
+	t.Helper()
+	t.Setenv("NUMEN_EMBEDDING_DIR", t.TempDir())
 }
 
 // linkedToken is the token the host gives the plugin it links in.
@@ -101,6 +109,7 @@ func describeStatus(t *testing.T, web *httptest.Server) int {
 // A local model the plugin has no profile for is reported to the host as the source item, with the
 // settings of the source as its fix, and the item is cleared once a model it knows answers.
 func TestAMissingLocalModelIsReportedAsTheSourceItemUntilAKnownModelAnswers(t *testing.T) {
+	setEmptyModelDir(t)
 	hostHealth := healthtest.NewHost(t)
 	handler, err := NewHandler(hostHealth.Vars(linkedToken))
 	if err != nil {
