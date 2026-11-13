@@ -163,8 +163,8 @@ function placeClusters(
     const request = createRequest(plan, footprintOf(node), context)
     const spot = findFreeSpot(index, { ...request, group, fits: context.fits })
     index.add(spot)
+    const box = getPlacedNode(node, spot, context, group.length)
     group.push(spot)
-    const box = getPlacedNode(node, spot, context, plan.members.indexOf(node))
     placed.set(node.id, box)
     if (context.shouldStop?.(box)) break
   }
