@@ -87,6 +87,7 @@ function focusAfterDelete(at: number): void {
     <SettingsToolbar :path="[words.settings, words.connections]" @back="onBack" @open="onBack">
       <Button
         ref="addButton"
+        variant="ghost"
         size="small"
         :disabled="!page.hasType.value"
         @click="dialog.openAdd"

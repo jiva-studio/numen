@@ -2,7 +2,8 @@
 /**
  * The bar at the top of a settings page: a back button and the path from Settings to the page on the
  * left, the actions of the page on the right. Each earlier segment of the path opens its level. The
- * bar stays at the top while the page scrolls. The first level, Settings itself, has no back button.
+ * bar stays at the top while the page scrolls. On the first level, Settings itself, the back button
+ * keeps its place but is hidden, so the path does not move between levels.
  */
 import type { VNode } from 'vue'
 import { ChevronLeft, ChevronRight } from '@lucide/vue'
@@ -37,10 +38,13 @@ function onOpen(level: number): void {
 <template>
   <div class="settings-toolbar">
     <button
-      v-if="props.path.length > 1"
       type="button"
       class="settings-toolbar__back"
+      :class="{ 'settings-toolbar__back--hidden': props.path.length < 2 }"
       :aria-label="words.back"
+      :aria-hidden="props.path.length < 2 ? 'true' : undefined"
+      :tabindex="props.path.length < 2 ? -1 : undefined"
+      :disabled="props.path.length < 2"
       @click="onBack"
     >
       <ChevronLeft :size="16" aria-hidden="true" />
@@ -81,7 +85,6 @@ function onOpen(level: number): void {
   box-sizing: border-box;
   min-block-size: 3.25rem;
   padding-block: 0.5rem;
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
   background-color: var(--numen-surface);
 }
 
@@ -96,6 +99,10 @@ function onOpen(level: number): void {
   background: none;
   color: var(--numen-hushed);
   cursor: pointer;
+}
+
+.settings-toolbar__back--hidden {
+  visibility: hidden;
 }
 
 .settings-toolbar__back:hover,
