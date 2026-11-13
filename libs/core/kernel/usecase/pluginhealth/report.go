@@ -29,9 +29,9 @@ func NewReport(items *Items, plugins Plugins) *Report {
 
 // Execute puts the item in the list as the plugin's, or replaces the one under its key; an item at
 // HealthOK removes the key. It returns plugin.ErrInvalidHealth for a key of the core, an item past
-// the limits, a ninth key, an action naming a command other than an app: command or one of the
-// plugin's own, and values the command does not accept. The value plugin of app:settings.open is set to
-// the plugin.
+// the limits, a ninth key, an action naming a command other than an app: command the app declares
+// with its arguments or one of the plugin's own, and values the command does not accept. The value
+// plugin of app:settings.open is set to the plugin.
 func (u *Report) Execute(pluginID string, item plugin.HealthItem) error {
 	item.PluginID = pluginID
 	if plugin.IsCoreHealthKey(item.Key) {
@@ -81,6 +81,9 @@ func (u *Report) listActionIssues(pluginID string, checked *plugin.HealthAction)
 			return nil, fmt.Errorf("%w: the action names %q, which is neither an app: command nor a command of the plugin", plugin.ErrInvalidHealth, checked.Command)
 		}
 		return manifest.ListDeclaredValueIssues(command, checked.Command, checked.Values), nil
+	}
+	if _, isDeclared := manifest.GetAppCommandArguments(checked.Command); !isDeclared {
+		return nil, fmt.Errorf("%w: the action names %q, which is no app command the app declares", plugin.ErrInvalidHealth, checked.Command)
 	}
 	if checked.Command == plugin.AppCommandOpenSettings {
 		if checked.Values == nil {

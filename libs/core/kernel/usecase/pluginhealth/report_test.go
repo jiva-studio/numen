@@ -138,6 +138,7 @@ func TestAnActionNamesAnAppCommandOrACommandOfThePluginItself(t *testing.T) {
 		isTaken bool
 	}{
 		"an app command":                        {plugin.HealthAction{Command: "app:file.open", Values: map[string]string{"placement": "split"}}, true},
+		"an undeclared app command":             {plugin.HealthAction{Command: "app:file.burn"}, false},
 		"a command of the plugin":               {plugin.HealthAction{Command: atlasID + ":tiles.download", Values: map[string]string{"region": "north"}}, true},
 		"a command of another plugin":           {plugin.HealthAction{Command: gazetteID + ":names.refresh"}, false},
 		"a command the plugin does not have":    {plugin.HealthAction{Command: atlasID + ":tiles.delete"}, false},
