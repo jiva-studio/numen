@@ -18,6 +18,7 @@ var errChat = errors.New("the model could not be asked")
 // run is one task worked by the model: the way to ask it, the tools, and where its frames go.
 type run struct {
 	chat        ports.Chat
+	model       conversation.Model
 	temperature *float64
 	maxTokens   int
 	tools       ports.Tools
@@ -58,7 +59,7 @@ func (r *run) turn(ctx context.Context, messages []conversation.Message, message
 		return unsent
 	}
 	reply, err := r.chat.Stream(ctx, conversation.Turn{
-		Messages: messages, Tools: r.offered, Temperature: r.temperature, MaxTokens: r.maxTokens,
+		Messages: messages, Tools: r.offered, Temperature: r.temperature, MaxTokens: r.maxTokens, Model: r.model,
 	}, emit)
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, false, ctxErr

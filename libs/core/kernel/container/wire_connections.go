@@ -97,6 +97,9 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 		},
 		openCallSource(c, deps), clock.System{}, clock.System{}.Wait, notices,
 	))
+	if lists := openRowLists(c); lists != nil {
+		c.PluginHost.Endpoint.SetRowLists(lists)
+	}
 }
 
 // GetConnectionCalls is the calls plugin views make through their connections, for a window that serves

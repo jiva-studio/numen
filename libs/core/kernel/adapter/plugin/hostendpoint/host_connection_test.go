@@ -82,6 +82,11 @@ func newConnectionClient(t *testing.T, calls ModelCalls, token string) (numenv1c
 	t.Helper()
 	fakeCallers := newCallers()
 	fakeCallers.modelCalls = calls
+	return newConnectionClientFor(t, fakeCallers, token)
+}
+
+func newConnectionClientFor(t *testing.T, fakeCallers *callers, token string) (numenv1connect.HostConnectionServiceClient, *recordingClient) {
+	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostConnectionServiceHandler(&connectionEndpoint{endpoint: &Endpoint{callers: fakeCallers.asCallers()}}))
 	server := httptest.NewServer(mux)

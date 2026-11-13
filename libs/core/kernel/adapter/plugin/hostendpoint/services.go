@@ -165,3 +165,13 @@ type ModelCalls interface {
 	// row answers, the error of send when send fails, and the error of the context when the call is canceled.
 	Call(ctx context.Context, callerPluginID string, request modelcall.Request, send modelcall.Send) ([]byte, error)
 }
+
+// RowLists lists the rows of the calling plugin and the values of their row fields.
+type RowLists interface {
+	// ListRows returns the rows of the plugin for the operation in the order of use, without the rows whose
+	// connection is missing or whose type is unavailable or does not serve the operation.
+	ListRows(callerPluginID, operation string) ([]modelcall.Row, error)
+	// ListRowOptions returns the values a row field of a connection among those rows can take. It fails with
+	// connection.ErrNotFound for a connection that is not among the rows.
+	ListRowOptions(ctx context.Context, callerPluginID, operation, connectionID, field string, options map[string]string) ([]modelcall.Option, error)
+}

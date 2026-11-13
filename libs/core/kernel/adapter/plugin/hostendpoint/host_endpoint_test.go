@@ -27,6 +27,7 @@ type callers struct {
 	plugins    map[string]string
 	allowed    map[string]bool
 	modelCalls ModelCalls
+	rowLists   RowLists
 	checked    []string
 	vault      *vaultapi.Access
 	texts      TextVersions
@@ -67,6 +68,7 @@ func (c *callers) over(list vaultapi.List, granted ...string) Callers {
 func (c *callers) asCallers() Callers {
 	lent := NewServices()
 	lent.SetModelCalls(c.modelCalls)
+	lent.SetRowLists(c.rowLists)
 	lent.SetPluginVault(c.vault)
 	lent.SetPluginTexts(c.texts)
 	lent.SetPluginSearch(c.search)

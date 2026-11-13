@@ -1,9 +1,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
-	"fmt"
+
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp/acptest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
@@ -111,30 +113,42 @@ func (h *fakeHost) serve(t *testing.T) string {
 	return srv.URL
 }
 
+// chatConnections are two connections that serve llm.chat: Meadow and Harbor, each with its models.
+type chatConnections struct{}
+
+func (chatConnections) ListConnections(context.Context) ([]conversation.ChatConnection, error) {
+	return []conversation.ChatConnection{
+		{ID: "c-meadow", Name: "Meadow", ModelField: "model"},
+		{ID: "c-harbor", Name: "Harbor", ModelField: "model"},
+	}, nil
+}
+
+func (chatConnections) ListModels(_ context.Context, chat conversation.ChatConnection) ([]conversation.ModelOption, error) {
+	if chat.ID == "c-meadow" {
+		return []conversation.ModelOption{{ID: "wren-2", Title: "Wren 2"}}, nil
+	}
+	return []conversation.ModelOption{{ID: "gull-7b", Title: "Gull 7B"}}, nil
+}
+
 func newTestAgent(t *testing.T, model ports.Chat, hostURL string) *agent {
 	t.Helper()
-	s, err := newAgent(model, hosttools.New(tools.NewClient(hostcall.Endpoint{BaseURL: hostURL, Token: hostToken})))
+	s, err := newAgent(host{
+		chat: model, models: chatConnections{},
+		tools: hosttools.New(tools.NewClient(hostcall.Endpoint{BaseURL: hostURL, Token: hostToken})),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.settings.Configure(map[string]string{"connections": rowsJSON(row{connection: "c00000001", model: "m1", reasoning: "low"})})
 	return s
 }
 
-type row struct{ connection, model, reasoning string }
-
-func rowsJSON(rows ...row) string {
-	items := make([]string, len(rows))
-	for i, one := range rows {
-		items[i] = fmt.Sprintf(`{"connection":%q,"model":%q,"reasoning":%q}`, one.connection, one.model, one.reasoning)
-	}
-	return "[" + strings.Join(items, ",") + "]"
-}
+// gull is the row of a task that chose the model Gull 7B of Harbor.
+var gull = connection.Call{Type: "numen", Options: map[string]string{"model": "c-harbor|gull-7b"}}
 
 func runTask(ctx context.Context, t *testing.T, s *agent, task *acp.TaskRequest) ([]*acp.TaskFrame, acp.StopReason, error) {
 	t.Helper()
 	var frames []*acp.TaskFrame
-	done, err := acptest.RunTask(ctx, s.provider, connection.Call{Type: "numen"}, task, func(frame *acp.TaskFrame) error {
+	done, err := acptest.RunTask(ctx, s.provider, gull, task, func(frame *acp.TaskFrame) error {
 		frames = append(frames, frame)
 		return nil
 	})
@@ -287,7 +301,7 @@ func startBlockedTask(ctx context.Context, t *testing.T) (*agent, *blockingModel
 	finish := make(chan error, 1)
 	firstText := make(chan struct{}, 1)
 	go func() {
-		_, err := acptest.RunTask(ctx, s.provider, connection.Call{Type: "numen"}, &acp.TaskRequest{Prompt: "Hello?"}, func(*acp.TaskFrame) error {
+		_, err := acptest.RunTask(ctx, s.provider, gull, &acp.TaskRequest{Prompt: "Hello?"}, func(*acp.TaskFrame) error {
 			firstText <- struct{}{}
 			return nil
 		})
@@ -320,4 +334,36 @@ func TestClosingThePluginEndsARunningTask(t *testing.T) {
 		t.Errorf("a task of a closed plugin returned %v", err)
 	}
 	<-model.ended
+}
+
+func TestATaskChatsWithTheModelItsRowChose(t *testing.T) {
+	model := &fakeModel{turns: []turn{newTextTurn("Noted.")}}
+	host := &fakeHost{}
+	s := newTestAgent(t, model, host.serve(t))
+
+	if _, _, err := runTask(t.Context(), t, s, &acp.TaskRequest{Prompt: "Hello?"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := model.getRequests()[0].Model; got != (conversation.Model{ConnectionID: "c-harbor", Field: "model", ID: "gull-7b"}) {
+		t.Errorf("the model asked is %+v", got)
+	}
+}
+
+func TestTheModelsOfTheAgentAreTheModelsOfEveryChatConnection(t *testing.T) {
+	s := newTestAgent(t, &fakeModel{turns: []turn{newTextTurn("hi")}}, (&fakeHost{}).serve(t))
+
+	done, err := s.provider[llm.OperationModels](t.Context(), connection.Call{Type: "numen"}, nil, func([]byte) error { return nil })
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"c-meadow|wren-2", "Meadow · Wren 2", "c-harbor|gull-7b", "Harbor · Gull 7B"} {
+		if !bytes.Contains(done, []byte(want)) {
+			t.Errorf("the listing %q holds no %q", done, want)
+		}
+	}
+	if bytes.Index(done, []byte("Meadow · Wren 2")) > bytes.Index(done, []byte("Harbor · Gull 7B")) {
+		t.Errorf("the listing %q is not in the order of the connections", done)
+	}
 }

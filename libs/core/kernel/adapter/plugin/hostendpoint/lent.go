@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 )
 
-// Services holds what the host lends to the plugins that call it: the calls on models, the vault, the
+// Services holds what the host lends to the plugins that call it: the calls on models, the rows, the vault, the
 // texts, the window, the list of vaults, the search and the queue of work. What is not set is
 // reported as nil, and a call that needs it is refused. The set is replaced whole at each change, so a
 // call reads one consistent set without a lock.
@@ -16,6 +16,7 @@ type Services struct {
 
 type lentSet struct {
 	modelCalls ModelCalls
+	rowLists   RowLists
 	access     *vault.Access
 	texts      TextVersions
 	window     WindowControl
@@ -55,6 +56,14 @@ func (s *Services) SetModelCalls(calls ModelCalls) {
 
 // GetModelCalls returns what carries out the calls on models plugins ask for, or nil.
 func (s *Services) GetModelCalls() ModelCalls { return s.get().modelCalls }
+
+// SetRowLists sets what lists the rows of the plugins and the values of their row fields.
+func (s *Services) SetRowLists(lists RowLists) {
+	s.change(func(set *lentSet) { set.rowLists = lists })
+}
+
+// GetRowLists returns what lists the rows of the plugins and the values of their row fields, or nil.
+func (s *Services) GetRowLists() RowLists { return s.get().rowLists }
 
 // SetPluginVault sets the vault exposed to plugins. Nil means none.
 func (s *Services) SetPluginVault(access *vault.Access) {

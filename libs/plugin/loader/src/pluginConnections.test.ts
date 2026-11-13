@@ -127,7 +127,7 @@ describe('the connections of a plugin', () => {
       connectionId: 'c-claude',
       connectionName: 'Claude',
       options: { model: 'opus' },
-      fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models' }],
+      fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: false }],
     }
     const client: ConnectionCallClient = {
       call: async function* () {

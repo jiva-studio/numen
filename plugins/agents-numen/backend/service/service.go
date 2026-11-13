@@ -3,23 +3,27 @@
 package service
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/hostchat"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/hosttools"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/ports"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/usecase/answer"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/usecase/models"
 )
 
-// Mount registers acp.task on s and hands the settings Configure receives to the agent. The agent's tasks
-// end when s closes. The model API and the tools are those of the host the environment names.
+// Mount registers acp.task and llm.models on s and hands the settings Configure receives to the agent.
+// The agent's tasks end when s closes. The models, the connections that serve them and the tools are
+// those of the host the environment names.
 func Mount(s *server.Server) error {
-	chat, err := hostchat.FromEnvironment()
+	chat, connections, err := hostchat.FromEnvironment()
 	if err != nil {
 		return err
 	}
@@ -27,11 +31,19 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, chat, tools)
+	return mount(s, host{chat: chat, models: connections, tools: tools})
 }
 
-func mount(s *server.Server, chat ports.Chat, tools ports.Tools) error {
-	agent, err := newAgent(chat, tools)
+// host is what the agent reaches through the core: the model of a turn, the connections that serve
+// llm.chat with their models, and the tools.
+type host struct {
+	chat   ports.Chat
+	models ports.Models
+	tools  ports.Tools
+}
+
+func mount(s *server.Server, reach host) error {
+	agent, err := newAgent(reach)
 	if err != nil {
 		return err
 	}
@@ -41,27 +53,51 @@ func mount(s *server.Server, chat ports.Chat, tools ports.Tools) error {
 	return nil
 }
 
-// agent is the provider of acp.task, the settings it reads and the answerer that carries out its tasks.
+// agent is the provider of acp.task and llm.models, the settings it reads and the answerer that carries
+// out its tasks.
 type agent struct {
 	settings *settings.Store
 	answerer *answer.Answerer
 	provider connection.Provider
 }
 
-func newAgent(chat ports.Chat, tools ports.Tools) (*agent, error) {
+func newAgent(reach host) (*agent, error) {
 	store := settings.NewStore()
-	answerer, err := answer.New(store, chat, tools, clock.System{})
+	answerer, err := answer.New(answer.Parts{Store: store, Chat: reach.chat, Models: reach.models, Tools: reach.tools, Clock: clock.System{}})
 	if err != nil {
 		return nil, err
 	}
-	return &agent{settings: store, answerer: answerer, provider: acp.Provide(nil, answerer)}, nil
+	lister, err := models.NewLister(reach.models)
+	if err != nil {
+		return nil, err
+	}
+	provider := llm.Provide(acp.Provide(nil, answerer), llm.Roles{Models: modelOptions{lister: lister}})
+	return &agent{settings: store, answerer: answerer, provider: provider}, nil
+}
+
+// modelOptions serves llm.models for a connection of the type numen: the models of every connection that
+// serves llm.chat.
+type modelOptions struct {
+	lister *models.Lister
+}
+
+func (m modelOptions) ListModels(ctx context.Context, _ connection.Call, _ []string) ([]connection.Option, error) {
+	listed, err := m.lister.ListOptions(ctx)
+	if err != nil {
+		return nil, err
+	}
+	options := make([]connection.Option, len(listed))
+	for i, one := range listed {
+		options[i] = connection.Option{Value: one.Value, Title: one.Title, Group: ""}
+	}
+	return options, nil
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made from
-// the variables a launched process of the plugin is given. The model API and the tools are those of the
-// host those variables name.
+// the variables a launched process of the plugin is given. The models, the connections that serve them
+// and the tools are those of the host those variables name.
 func NewHandler(vars map[string]string) (http.Handler, error) {
-	chat, err := hostchat.FromVariables(vars)
+	chat, connections, err := hostchat.FromVariables(vars)
 	if err != nil {
 		return nil, err
 	}
@@ -69,5 +105,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	return server.NewLinkedHandler(vars, func(s *server.Server) error { return mount(s, chat, tools) })
+	reach := host{chat: chat, models: connections, tools: tools}
+	return server.NewLinkedHandler(vars, func(s *server.Server) error { return mount(s, reach) })
 }

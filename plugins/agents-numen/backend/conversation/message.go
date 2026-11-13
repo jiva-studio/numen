@@ -49,12 +49,13 @@ type ToolResult struct {
 	IsError bool
 }
 
-// Turn is what the model is asked in one request.
+// Turn is what the model is asked in one request, and the model that is asked.
 type Turn struct {
 	Messages    []Message
 	Tools       []Tool
 	Temperature *float64
 	MaxTokens   int
+	Model       Model
 }
 
 // Reply is the model's answer to a turn. IsCut is set for an answer cut off at the model's length limit.

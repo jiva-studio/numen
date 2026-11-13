@@ -43,6 +43,11 @@ const (
 	// when the host stops it for idleness, and its worst health item.
 	PermissionPluginsRead = "plugins:read"
 
+	// PermissionConnectionsUse allows calling an operation that none of the settings of rows of the plugin
+	// lists through every connection that serves it, and listing those connections and the values of their
+	// row fields.
+	PermissionConnectionsUse = "connections:use"
+
 	// PermissionNetworkAlias is the accepted short spelling of PermissionLinkOpen.
 	PermissionNetworkAlias = "network"
 
@@ -53,7 +58,7 @@ const (
 func PluginPermissions() []string {
 	return []string{
 		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionLinkOpen,
-		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus, PermissionPluginsRead,
+		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus, PermissionPluginsRead, PermissionConnectionsUse,
 	}
 }
 

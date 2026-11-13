@@ -17,6 +17,8 @@ export const WORDS = {
   reasoning: 'Reasoning',
   /** The model of an agent whose row names none, which the agent chooses itself. */
   defaultModel: 'Default model',
+  /** The model of an agent whose row names none where its type requires one. */
+  chooseModel: 'Choose a model',
   /** The model control where no agent can answer. */
   noAgent: 'No agent',
   noAgentMessage: 'No agent is set up.',

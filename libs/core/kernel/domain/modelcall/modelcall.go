@@ -41,8 +41,11 @@ type Row struct {
 }
 
 // RowField is a row field a type declares. OptionsFrom is the operation that lists its values, empty for
-// none.
-type RowField struct{ Key, Title, OptionsFrom string }
+// none. IsRequired is a field a row must hold a value for.
+type RowField struct {
+	Key, Title, OptionsFrom string
+	IsRequired              bool
+}
 
 // Send receives the data frames of a call in order. An error of send ends the call.
 type Send func(data []byte) error

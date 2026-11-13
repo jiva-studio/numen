@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 const (
@@ -375,5 +376,40 @@ func TestReadRowSettingDoesNotDiscoverForAHiddenSetting(t *testing.T) {
 
 	if err != nil || setting.IsDiscovering {
 		t.Errorf("setting = %+v, %v, want no discovery", setting, err)
+	}
+}
+
+func TestReadRowSettingDiscoversForAPluginThatUsesConnectionsAndHasNoSettingForTheOperation(t *testing.T) {
+	world := newRowsWorld()
+	agent := rowsPlugin("md.numen.agents.lantern", "Lantern agent")
+	agent.Permissions = []string{manifest.PermissionConnectionsUse}
+	world.plugins = append(world.plugins, agent)
+
+	setting, err := world.rows().ReadRowSetting("md.numen.agents.lantern", "llm.chat")
+
+	if err != nil || !setting.IsDiscovering || len(setting.Rows) != 0 {
+		t.Errorf("setting = %+v, %v, want no row and discovery", setting, err)
+	}
+}
+
+func TestReadRowSettingDoesNotDiscoverForAPluginWithoutThePermissionToUseConnections(t *testing.T) {
+	world := newRowsWorld()
+	world.plugins = append(world.plugins, rowsPlugin("md.numen.agents.lantern", "Lantern agent"))
+
+	setting, err := world.rows().ReadRowSetting("md.numen.agents.lantern", "llm.chat")
+
+	if err != nil || setting.IsDiscovering {
+		t.Errorf("setting = %+v, %v, want no discovery", setting, err)
+	}
+}
+
+func TestReadRowSettingReadsTheRowsOfTheSettingOfAPluginThatUsesConnections(t *testing.T) {
+	world := newRowsWorld()
+	world.plugins[1].Permissions = []string{manifest.PermissionConnectionsUse}
+
+	setting, err := world.rows().ReadRowSetting(rowsPluginID, "llm.complete")
+
+	if err != nil || setting.IsDiscovering || len(setting.Rows) != 2 {
+		t.Errorf("setting = %+v, %v, want the two rows of the setting and no discovery", setting, err)
 	}
 }

@@ -36,6 +36,12 @@ const (
 	// HostConnectionServiceCallProcedure is the fully-qualified name of the HostConnectionService's
 	// Call RPC.
 	HostConnectionServiceCallProcedure = "/numen.v1.HostConnectionService/Call"
+	// HostConnectionServiceListRowsProcedure is the fully-qualified name of the HostConnectionService's
+	// ListRows RPC.
+	HostConnectionServiceListRowsProcedure = "/numen.v1.HostConnectionService/ListRows"
+	// HostConnectionServiceListRowOptionsProcedure is the fully-qualified name of the
+	// HostConnectionService's ListRowOptions RPC.
+	HostConnectionServiceListRowOptionsProcedure = "/numen.v1.HostConnectionService/ListRowOptions"
 )
 
 // HostConnectionServiceClient is a client for the numen.v1.HostConnectionService service.
@@ -43,6 +49,12 @@ type HostConnectionServiceClient interface {
 	// Call carries out one operation. The core goes to the next row only when a row fails before its first
 	// data frame. The stream holds data frames and ends with one done or one failure.
 	Call(context.Context, *connect.Request[v1.HostConnectionServiceCallRequest]) (*connect.ServerStreamForClient[v1.HostConnectionServiceCallResponse], error)
+	// ListRows returns the rows of the calling plugin for an operation, as ConnectionCallService.ListRows
+	// does for a plugin view.
+	ListRows(context.Context, *connect.Request[v1.HostConnectionServiceListRowsRequest]) (*connect.Response[v1.HostConnectionServiceListRowsResponse], error)
+	// ListRowOptions returns the values a row field of a connection among the rows of the calling plugin can
+	// take, as ConnectionCallService.ListRowOptions does for a plugin view.
+	ListRowOptions(context.Context, *connect.Request[v1.HostConnectionServiceListRowOptionsRequest]) (*connect.Response[v1.HostConnectionServiceListRowOptionsResponse], error)
 }
 
 // NewHostConnectionServiceClient constructs a client for the numen.v1.HostConnectionService
@@ -62,12 +74,26 @@ func NewHostConnectionServiceClient(httpClient connect.HTTPClient, baseURL strin
 			connect.WithSchema(hostConnectionServiceMethods.ByName("Call")),
 			connect.WithClientOptions(opts...),
 		),
+		listRows: connect.NewClient[v1.HostConnectionServiceListRowsRequest, v1.HostConnectionServiceListRowsResponse](
+			httpClient,
+			baseURL+HostConnectionServiceListRowsProcedure,
+			connect.WithSchema(hostConnectionServiceMethods.ByName("ListRows")),
+			connect.WithClientOptions(opts...),
+		),
+		listRowOptions: connect.NewClient[v1.HostConnectionServiceListRowOptionsRequest, v1.HostConnectionServiceListRowOptionsResponse](
+			httpClient,
+			baseURL+HostConnectionServiceListRowOptionsProcedure,
+			connect.WithSchema(hostConnectionServiceMethods.ByName("ListRowOptions")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // hostConnectionServiceClient implements HostConnectionServiceClient.
 type hostConnectionServiceClient struct {
-	call *connect.Client[v1.HostConnectionServiceCallRequest, v1.HostConnectionServiceCallResponse]
+	call           *connect.Client[v1.HostConnectionServiceCallRequest, v1.HostConnectionServiceCallResponse]
+	listRows       *connect.Client[v1.HostConnectionServiceListRowsRequest, v1.HostConnectionServiceListRowsResponse]
+	listRowOptions *connect.Client[v1.HostConnectionServiceListRowOptionsRequest, v1.HostConnectionServiceListRowOptionsResponse]
 }
 
 // Call calls numen.v1.HostConnectionService.Call.
@@ -75,11 +101,27 @@ func (c *hostConnectionServiceClient) Call(ctx context.Context, req *connect.Req
 	return c.call.CallServerStream(ctx, req)
 }
 
+// ListRows calls numen.v1.HostConnectionService.ListRows.
+func (c *hostConnectionServiceClient) ListRows(ctx context.Context, req *connect.Request[v1.HostConnectionServiceListRowsRequest]) (*connect.Response[v1.HostConnectionServiceListRowsResponse], error) {
+	return c.listRows.CallUnary(ctx, req)
+}
+
+// ListRowOptions calls numen.v1.HostConnectionService.ListRowOptions.
+func (c *hostConnectionServiceClient) ListRowOptions(ctx context.Context, req *connect.Request[v1.HostConnectionServiceListRowOptionsRequest]) (*connect.Response[v1.HostConnectionServiceListRowOptionsResponse], error) {
+	return c.listRowOptions.CallUnary(ctx, req)
+}
+
 // HostConnectionServiceHandler is an implementation of the numen.v1.HostConnectionService service.
 type HostConnectionServiceHandler interface {
 	// Call carries out one operation. The core goes to the next row only when a row fails before its first
 	// data frame. The stream holds data frames and ends with one done or one failure.
 	Call(context.Context, *connect.Request[v1.HostConnectionServiceCallRequest], *connect.ServerStream[v1.HostConnectionServiceCallResponse]) error
+	// ListRows returns the rows of the calling plugin for an operation, as ConnectionCallService.ListRows
+	// does for a plugin view.
+	ListRows(context.Context, *connect.Request[v1.HostConnectionServiceListRowsRequest]) (*connect.Response[v1.HostConnectionServiceListRowsResponse], error)
+	// ListRowOptions returns the values a row field of a connection among the rows of the calling plugin can
+	// take, as ConnectionCallService.ListRowOptions does for a plugin view.
+	ListRowOptions(context.Context, *connect.Request[v1.HostConnectionServiceListRowOptionsRequest]) (*connect.Response[v1.HostConnectionServiceListRowOptionsResponse], error)
 }
 
 // NewHostConnectionServiceHandler builds an HTTP handler from the service implementation. It
@@ -95,10 +137,26 @@ func NewHostConnectionServiceHandler(svc HostConnectionServiceHandler, opts ...c
 		connect.WithSchema(hostConnectionServiceMethods.ByName("Call")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostConnectionServiceListRowsHandler := connect.NewUnaryHandler(
+		HostConnectionServiceListRowsProcedure,
+		svc.ListRows,
+		connect.WithSchema(hostConnectionServiceMethods.ByName("ListRows")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostConnectionServiceListRowOptionsHandler := connect.NewUnaryHandler(
+		HostConnectionServiceListRowOptionsProcedure,
+		svc.ListRowOptions,
+		connect.WithSchema(hostConnectionServiceMethods.ByName("ListRowOptions")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.HostConnectionService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostConnectionServiceCallProcedure:
 			hostConnectionServiceCallHandler.ServeHTTP(w, r)
+		case HostConnectionServiceListRowsProcedure:
+			hostConnectionServiceListRowsHandler.ServeHTTP(w, r)
+		case HostConnectionServiceListRowOptionsProcedure:
+			hostConnectionServiceListRowOptionsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -110,4 +168,12 @@ type UnimplementedHostConnectionServiceHandler struct{}
 
 func (UnimplementedHostConnectionServiceHandler) Call(context.Context, *connect.Request[v1.HostConnectionServiceCallRequest], *connect.ServerStream[v1.HostConnectionServiceCallResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostConnectionService.Call is not implemented"))
+}
+
+func (UnimplementedHostConnectionServiceHandler) ListRows(context.Context, *connect.Request[v1.HostConnectionServiceListRowsRequest]) (*connect.Response[v1.HostConnectionServiceListRowsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostConnectionService.ListRows is not implemented"))
+}
+
+func (UnimplementedHostConnectionServiceHandler) ListRowOptions(context.Context, *connect.Request[v1.HostConnectionServiceListRowOptionsRequest]) (*connect.Response[v1.HostConnectionServiceListRowOptionsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostConnectionService.ListRowOptions is not implemented"))
 }

@@ -80,7 +80,7 @@ func TestTheRowsAreListedWithTheirConnectionAndTheRowFieldsOfItsType(t *testing.
 	if first.ConnectionID != s.one.ID || first.ConnectionName != "First" || first.Options["model"] != "model-one" {
 		t.Errorf("first row = %+v", first)
 	}
-	want := []modelcalldomain.RowField{{Key: "model", Title: "Model", OptionsFrom: modelcalltest.ModelsOperation}}
+	want := []modelcalldomain.RowField{{Key: "model", Title: "Model", OptionsFrom: modelcalltest.ModelsOperation, IsRequired: true}}
 	if !slices.Equal(first.Fields, want) {
 		t.Errorf("fields = %+v, want %+v", first.Fields, want)
 	}

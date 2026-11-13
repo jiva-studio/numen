@@ -47,7 +47,7 @@ func (r *Rows) ListRows(callerPluginID, operation string) ([]modelcall.Row, erro
 		}
 		fields := make([]modelcall.RowField, len(resolved.Declaration.RowFields))
 		for i, one := range resolved.Declaration.RowFields {
-			fields[i] = modelcall.RowField{Key: one.Key, Title: one.Title, OptionsFrom: one.OptionsFrom}
+			fields[i] = modelcall.RowField{Key: one.Key, Title: one.Title, OptionsFrom: one.OptionsFrom, IsRequired: one.IsRequired}
 		}
 		listed = append(listed, modelcall.Row{
 			ConnectionID: resolved.ID, ConnectionName: resolved.Name, Options: maps.Clone(row.Options), Fields: fields,

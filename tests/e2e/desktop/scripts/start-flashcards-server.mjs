@@ -47,6 +47,11 @@ const standIns = await startStandIns()
 
 // The connection of numen's own agent, which the agent panel runs its tasks on.
 const NUMEN_AGENT_CONNECTION = 'c57a4d200'
+// The row of that connection, which names the stand-in model of the stand-in connection.
+const NUMEN_AGENT_ROW = {
+  connection: NUMEN_AGENT_CONNECTION,
+  model: `${STAND_IN_CONNECTION}|${STAND_IN_MODEL}`,
+}
 
 // The review's agent panel answers from numen's own agent through a connection to the stand-in chat API. The agents
 // that run a program the machine has installed stay off: those programs reach their own services.
@@ -76,11 +81,8 @@ fs.writeFileSync(
           fields: {},
         },
       ],
-      'md.numen.agents.numen': {
-        connections: [{ connection: STAND_IN_CONNECTION, model: STAND_IN_MODEL }],
-      },
-      'md.numen.views.agent.chat': { connections: [{ connection: NUMEN_AGENT_CONNECTION }] },
-      'md.numen.views.flashcards.studio': { agentConnections: [{ connection: NUMEN_AGENT_CONNECTION }] },
+      'md.numen.views.agent.chat': { connections: [NUMEN_AGENT_ROW] },
+      'md.numen.views.flashcards.studio': { agentConnections: [NUMEN_AGENT_ROW] },
       'md.numen.agents.claude': { enabled: false },
       'md.numen.agents.codex': { enabled: false },
       'md.numen.agents.antigravity': { enabled: false },

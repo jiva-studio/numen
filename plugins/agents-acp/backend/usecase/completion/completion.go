@@ -145,7 +145,7 @@ func (c *Completion) ListModels(ctx context.Context, call connection.Call, _ []s
 		if title == "" {
 			title = one.ID
 		}
-		models = append(models, connection.Option{Value: one.ID, Title: title})
+		models = append(models, connection.Option{Value: one.ID, Title: getModelTitle(title)})
 	}
 	return models, nil
 }
@@ -225,4 +225,14 @@ func writePrompt(turns []*llm.Message) string {
 		parts = append(parts, role+":\n"+turn.GetText())
 	}
 	return strings.Join(parts, "\n\n")
+}
+
+// getModelTitle writes the provider and the model of a title such as "OpenRouter/DeepSeek R1" apart
+// with a middle dot, as the other agents list them.
+func getModelTitle(title string) string {
+	provider, model, isFound := strings.Cut(title, "/")
+	if !isFound || provider == "" || model == "" {
+		return title
+	}
+	return provider + " · " + model
 }

@@ -41,19 +41,24 @@ func NewConnectionRows(source ConnectionRowsSource) *ConnectionRows {
 
 // ReadRowSetting returns the setting of rows of the plugin that is used for the operation: its rows in force in the
 // order the person set, and whether it discovers. A plugin with no such setting, and a setting that is not
-// shown, has no row and does not discover. A row that names a connection that does not exist is left out; a
-// row that names a connection detected for a type whose provider has not answered yet is kept.
+// shown, has no row and does not discover, except that a plugin that holds connections:use and has no such
+// setting discovers. A row that names a connection that does not exist is left out; a row that names a
+// connection detected for a type whose provider has not answered yet is kept.
 func (r *ConnectionRows) ReadRowSetting(pluginID, operation string) (connection.RowSetting, error) {
 	for _, plugin := range r.source.Plugins() {
 		if plugin.ID != pluginID {
 			continue
 		}
 		for _, one := range plugin.Settings {
-			if one.Type == manifest.SettingTypeConnections && slices.Contains(one.Operations, operation) && one.IsShown {
+			if one.Type == manifest.SettingTypeConnections && slices.Contains(one.Operations, operation) {
+				if !one.IsShown {
+					return connection.RowSetting{}, nil
+				}
 				rows, err := r.readExistingRows(one.ValueJSON)
 				return connection.RowSetting{Rows: rows, IsDiscovering: one.IsDiscovering}, err
 			}
 		}
+		return connection.RowSetting{IsDiscovering: slices.Contains(plugin.Permissions, manifest.PermissionConnectionsUse)}, nil
 	}
 	return connection.RowSetting{}, nil
 }
