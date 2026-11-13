@@ -1,20 +1,25 @@
 <script setup lang="ts">
 /**
  * The names set over and under one node, in small faint text with no pill. They sit
- * a little back until the pointer is over the node or over one of them. What
+ * back, at the resting opacity, until the pointer is over the node or over one of them, which
+ * brings them to the focused opacity. What
  * choosing one does is the caller's.
  */
 import { computed } from 'vue'
 import type { Attention } from './props'
-import { NAME_OPACITY, placeNames, ROW_RATIO, type NamesRoom } from '../../lib/names'
+import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY, placeNames, ROW_RATIO, type NamesRoom } from '../../lib/names'
 import type { PlacedNode } from '../../lib/node'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   node: PlacedNode
   room: NamesRoom
   attention: Attention
-}>()
+  /** The opacity of the names while their node is not attended to. */
+  restingOpacity?: number
+  /** The opacity of the names while their node, or one of them, is attended to. */
+  focusedOpacity?: number
+}>(), { restingOpacity: DEFAULT_NAMES_OPACITY, focusedOpacity: DEFAULT_FOCUSED_NAMES_OPACITY })
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
@@ -32,6 +37,8 @@ const isForward = computed(
 
 const placed = computed(() => placeNames(props.room, props.node))
 
+const opacity = computed(() => (isForward.value ? props.focusedOpacity : props.restingOpacity))
+
 /** The type of a name is the size its row was measured at. */
 const fontSize = computed(() => `${props.room.rowHeight / ROW_RATIO}px`)
 </script>
@@ -39,14 +46,14 @@ const fontSize = computed(() => `${props.room.rowHeight / ROW_RATIO}px`)
 <template>
   <g
     class="plex__names"
-    :class="{ 'plex__names--forward': isForward }"
     :opacity="node.opacity"
-    :style="{ fontSize, '--name-rest': NAME_OPACITY }"
+    :style="{ fontSize }"
   >
     <g
       v-for="name in placed"
       :key="name.id"
       class="plex__name"
+      :style="{ opacity }"
       role="button"
       tabindex="0"
       :aria-label="name.title"
@@ -77,7 +84,6 @@ const fontSize = computed(() => `${props.room.rowHeight / ROW_RATIO}px`)
 }
 
 .plex__name {
-  opacity: var(--name-rest);
   cursor: pointer;
   pointer-events: all;
   transition: opacity var(--plex-move, 0ms) var(--numen-easing);
@@ -90,10 +96,6 @@ const fontSize = computed(() => `${props.room.rowHeight / ROW_RATIO}px`)
 .plex__name-text {
   fill: var(--numen-hushed);
   font-family: var(--numen-font-sans);
-}
-
-.plex__names--forward .plex__name {
-  opacity: 1;
 }
 
 .plex__name:hover .plex__name-text,

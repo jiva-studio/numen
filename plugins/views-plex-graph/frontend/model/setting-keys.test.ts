@@ -20,6 +20,8 @@ describe('the keys of the plex look settings', () => {
       outlineThickness: 1.5,
       lineCurvature: 0.2,
       noteRoom: 12,
+      namesOpacity: 0.2,
+      focusedNamesOpacity: 0.8,
       references: 'incoming',
     })
 
@@ -32,6 +34,8 @@ describe('the keys of the plex look settings', () => {
     expect(look.outlineThickness.value).toBe(1.5)
     expect(look.lineCurvature.value).toBe(0.2)
     expect(look.noteRoom.value).toBe(12)
+    expect(look.namesOpacity.value).toBe(0.2)
+    expect(look.focusedNamesOpacity.value).toBe(0.8)
     expect(look.references.value).toBe('incoming')
   })
 

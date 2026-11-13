@@ -120,9 +120,9 @@ describe('the room kept for an icon', () => {
 })
 
 describe('the room reserved for a title without a pill', () => {
-  it('is the dot, before the icon', () => {
+  it('is the icon alone', () => {
     mountFreeSpace({ showPills: false }, undefined, () => true)
-    expect(stand.room?.().beside).toStrictEqual([DEFAULT_OPTIONS.dotSize, OPTIONS.iconWidth])
+    expect(stand.room?.().beside).toStrictEqual([OPTIONS.iconWidth])
   })
 
   it('holds the side padding of the options', () => {

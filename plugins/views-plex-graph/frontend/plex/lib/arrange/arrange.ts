@@ -55,7 +55,7 @@ export function arrangePlex(
     shouldStop?: PlacementContext['shouldStop'],
     isRoomed = true,
   ) => {
-    const width = createWidthLookup(laid, measure)
+    const width = createWidthLookup(laid, measure, request)
     const focus: PlacedNode = {
       ...focusNode,
       x: 0,
@@ -117,14 +117,20 @@ export function arrangePlex(
   return { nodes, edges, extent: getExtent(nodes), overflow }
 }
 
+/**
+ * The width of each box. Without a measured title a box is the widest the packing allows. With
+ * one, a box is as wide as its title needs up to the widest the settings allow: packing a
+ * crowded window closes gaps and leaves notes out, and does not cut a title.
+ */
 function createWidthLookup(
   options: PlexOptions,
   measure: ((node: PlexNode) => number) | undefined,
+  settings: PlexOptions,
 ): Widths {
   return (node) => {
     const isFocus = node.relation === 'focus'
-    const widest = isFocus ? options.focusSize.width : options.nodeSize.width
-    if (!measure) return widest
+    if (!measure) return isFocus ? options.focusSize.width : options.nodeSize.width
+    const widest = isFocus ? settings.focusSize.width : settings.nodeSize.width
     // The focus pill is the box its title would have as a neighbor, made larger.
     const box = Math.max(options.minWidth, measure(node))
     return Math.min(widest, isFocus ? box * options.focusScale : box)

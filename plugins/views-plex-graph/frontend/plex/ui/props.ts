@@ -13,8 +13,7 @@ import type { PlexType, Probe } from '../model/sizing/measure'
 import type { PlexHeading, PlexGraph, PlexNames, PlexRelation, PlexDestination } from '../../types'
 
 /**
- * With `showPills` off each title is drawn without its pill, after a dot in the hue of its
- * relation. `lineWidth` and `outlineWidth` are in pixels. `names` gives the names to set over
+ * With `showPills` off each title is drawn without its pill. `lineWidth` and `outlineWidth` are in pixels. `names` gives the names to set over
  * and under a node, drawn while `showNames` is on.
  */
 export interface PlexProps {
@@ -36,6 +35,8 @@ export interface PlexProps {
   headings?: (id: string) => readonly PlexHeading[]
   names?: (id: string) => PlexNames
   showNames?: boolean
+  namesOpacity?: number
+  focusedNamesOpacity?: number
   relationName?: (relation: PlexRelation) => string
   pending?: PlexPending | null
   dragged?: readonly string[]

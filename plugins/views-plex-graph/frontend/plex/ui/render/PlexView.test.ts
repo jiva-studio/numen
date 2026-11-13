@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import PlexView from './PlexView.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { arrangePlex, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
+import { getNamesRoom } from '../../lib/names'
 import type { PlacedNode } from '../../lib/node'
 import type { PlexGraph } from '../../../types'
 
@@ -54,6 +55,29 @@ const mountView = () =>
       nodeSize: DEFAULT_OPTIONS.nodeSize,
     },
   })
+
+describe('the order things are drawn in', () => {
+  it('draws every node, and so the headings that open under it, over the names of all of them', () => {
+    const room = getNamesRoom(
+      { above: [{ id: 'a', title: 'Heat' }], below: [{ id: 'b', title: 'Work' }] },
+      { fontSize: 10, width: 144, measure: (title) => title.length * 6 },
+    )
+    const view = mount(PlexView, {
+      attachTo: document.body,
+      props: {
+        frame: arrangePlex(before),
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+        names: () => room,
+      },
+    })
+
+    const lastNames = view.findAll('.plex__names').at(-1)!.element
+    const firstNode = view.get('.plex__node').element
+    expect(view.findAll('.plex__names').length).toBeGreaterThan(0)
+    expect(lastNames.compareDocumentPosition(firstNode) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+})
 
 describe('node activation', () => {
   it('emits activate with the clicked node id', async () => {

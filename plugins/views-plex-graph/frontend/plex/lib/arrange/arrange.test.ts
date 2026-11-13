@@ -121,6 +121,16 @@ describe('a box is as wide as its title needs', () => {
     expect(focus.width).toBeLessThan(focusSize.width)
   })
 
+  it('keeps a measured title whole in a crowded window, up to the widest box', () => {
+    const crowd = build('A note', { parent: 4, child: 12, jump: 4, sibling: 4 })
+    const viewport = { width: 560, height: 1000 }
+    const layout = arrangePlex(crowd, { options: { viewport }, measure: () => 120 })
+    const shown = layout.nodes.filter((node) => node.relation !== 'focus')
+
+    expect(shown.length).toBeGreaterThan(0)
+    for (const node of shown) expect(node.width).toBe(120)
+  })
+
   it('clamps a title past the maximum, which each relation has its own of', () => {
     const layout = arrangePlex(graphs.typical, { measure: () => 4000 })
     expect(getFocus(layout).width).toBe(focusSize.width)

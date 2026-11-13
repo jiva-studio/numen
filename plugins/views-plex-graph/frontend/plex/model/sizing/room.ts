@@ -69,9 +69,6 @@ export function useFreeSpace(
    */
   const iconWidthReserve = computed(() => (hasIcon() ? options.value.iconWidth : 0))
 
-  /** Space reserved for the dot drawn before a title that has no pill. */
-  const dotWidthReserve = computed(() => (props.showPills === false ? options.value.dotSize : 0))
-
   const padding = computed(() => options.value.padding.inline)
 
   /**
@@ -83,7 +80,7 @@ export function useFreeSpace(
   const measures = measureTitles(
     () => ({
       padding: padding.value,
-      beside: [dotWidthReserve.value, iconWidthReserve.value].filter((width) => width > 0),
+      beside: [iconWidthReserve.value].filter((width) => width > 0),
     }),
     props.readType,
   )

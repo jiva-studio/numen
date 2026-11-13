@@ -15,5 +15,4 @@ export const getFrameStyle = (look: FrameLook, options: PlexOptions): Record<str
   '--plex-line': `${look.lineWidth}px`,
   '--plex-outline': `${look.outlineWidth}px`,
   '--plex-pad-inline': `${options.padding.inline}px`,
-  '--plex-dot': `${options.dotSize}px`,
 })

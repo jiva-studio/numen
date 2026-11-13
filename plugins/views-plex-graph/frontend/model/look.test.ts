@@ -17,6 +17,8 @@ const DEFAULTS = {
   outlineThickness: 1,
   lineCurvature: 0.55,
   noteRoom: 0,
+  namesOpacity: 0.7,
+  focusedNamesOpacity: 1,
   references: 'both',
 }
 
@@ -31,6 +33,8 @@ const CHOSEN = {
   outlineThickness: 1.5,
   lineCurvature: 0.2,
   noteRoom: 12,
+  namesOpacity: 0.2,
+  focusedNamesOpacity: 0.8,
   references: 'outgoing',
 }
 
@@ -43,6 +47,8 @@ const BELOW = {
   outlineThickness: 0.1,
   lineCurvature: -0.4,
   noteRoom: -10,
+  namesOpacity: -1,
+  focusedNamesOpacity: -0.5,
 }
 
 const ABOVE = {
@@ -54,6 +60,8 @@ const ABOVE = {
   outlineThickness: 9,
   lineCurvature: 3,
   noteRoom: 400,
+  namesOpacity: 3,
+  focusedNamesOpacity: 2,
 }
 
 const LOWEST = {
@@ -65,6 +73,8 @@ const LOWEST = {
   outlineThickness: 0.5,
   lineCurvature: 0,
   noteRoom: 0,
+  namesOpacity: 0,
+  focusedNamesOpacity: 0,
 }
 
 const HIGHEST = {
@@ -76,6 +86,8 @@ const HIGHEST = {
   outlineThickness: 4,
   lineCurvature: 1,
   noteRoom: 40,
+  namesOpacity: 1,
+  focusedNamesOpacity: 1,
 }
 
 type Look = ReturnType<typeof readLook>

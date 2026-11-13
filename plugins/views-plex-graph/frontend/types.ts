@@ -170,6 +170,8 @@ export interface PlexLook {
   readonly outlineThickness: Readonly<Ref<number>>
   readonly lineCurvature: Readonly<Ref<number>>
   readonly noteRoom: Readonly<Ref<number>>
+  readonly namesOpacity: Readonly<Ref<number>>
+  readonly focusedNamesOpacity: Readonly<Ref<number>>
 }
 
 /** Dependencies for plex tab state. */

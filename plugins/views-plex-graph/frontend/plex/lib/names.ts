@@ -5,9 +5,11 @@
 import { cutToFit } from './arrange/edges/routing'
 import type { PlexName, PlexNames } from '../../types'
 
-/** A name is set at this fraction of the size of a title, and sits back at this opacity until its note is attended to. */
+/** A name is set at this fraction of the size of a title. */
 export const NAME_SCALE = 0.75
-export const NAME_OPACITY = 0.7
+/** The opacity of a name while its note is not attended to, and while it is. */
+export const DEFAULT_NAMES_OPACITY = 0.7
+export const DEFAULT_FOCUSED_NAMES_OPACITY = 1
 
 /** The height of a row, in sizes of the type. */
 export const ROW_RATIO = 1.3

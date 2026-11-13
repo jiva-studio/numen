@@ -225,5 +225,15 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 4. A name may repeat a note already drawn; only the focus is left out.
 5. The limit counts all names of a note together, parents first.
 6. Admission tests the footprint (pill plus names).
-7. Name text size is `NAME_SCALE = 0.75` of the title size and the resting opacity is `NAME_OPACITY = 0.7`, constants taken from the lab Playground values the owner approved (`levelScale`, `levelOpacity`); the default of 6 is the lab `nextGenerationLimit`.
+7. Name text size is `NAME_SCALE = 0.75` of the title size and the opacity of a name is two settings, `namesOpacity` (its note not in focus, default 0.7) and `focusedNamesOpacity` (the pointer over its note or over a name, default 1), range 0 to 1, 0 hiding the names; the size constant is taken from the lab Playground value the owner approved (`levelScale`); the default of 6 is the lab `nextGenerationLimit`.
 8. A name wider than the node is cut with an ellipsis, no tooltip.
+
+## 8. Amendments after the owner ran the plugin (2026-11-13)
+
+1. A measured title is never cut by packing: a crowded window closes gaps and leaves notes out, and a box keeps the width its title needs up to the widest box of the settings (`createWidthLookup`). Unmeasured boxes still narrow with the packing.
+2. The dot before a title without a pill is removed in every mode, with its option `dotSize`, its custom property and its width reserve.
+3. Names opacity: two range settings, see decision 7.
+4. The headings that open under a note are drawn over the names and lines of all notes: the names of every note are drawn in one layer under all the nodes, and the headings reserve no layout room.
+5. Every number setting with a range is declared `range`, which the settings page draws as a slider with its value.
+6. Focus size scales the title text, icon, gap and padding of the focus note together with its pill, with the pill on and off.
+7. The manifest lists the settings in groups (notes shown, names, pill, lines, motion and spacing); the settings page has no section headers.

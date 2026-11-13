@@ -5,7 +5,9 @@
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
-  "targets": ["desktop.editor"],
+  "targets": [
+    "desktop.editor"
+  ],
   "contributes": {
     "tabKinds": [
       {
@@ -28,7 +30,9 @@
       {
         "slot": "palette.searchResult",
         "command": "app:file.reveal",
-        "values": { "kind": "plex" },
+        "values": {
+          "kind": "plex"
+        },
         "title": "Show in plex",
         "icon": "waypoints",
         "group": "navigate",
@@ -38,16 +42,25 @@
       {
         "slot": "palette.note",
         "command": "app:file.reveal",
-        "values": { "kind": "plex" },
+        "values": {
+          "kind": "plex"
+        },
         "title": "Show in plex",
         "icon": "waypoints",
         "when": "target.isNote"
       },
-      { "slot": "titleBar.commands", "command": "graph.open", "group": "navigate", "order": 20 },
+      {
+        "slot": "titleBar.commands",
+        "command": "graph.open",
+        "group": "navigate",
+        "order": 20
+      },
       {
         "slot": "fileTree.context",
         "command": "app:file.reveal",
-        "values": { "kind": "plex" },
+        "values": {
+          "kind": "plex"
+        },
         "title": "Show in plex",
         "icon": "waypoints",
         "group": "0-open",
@@ -61,9 +74,21 @@
         "icon": "waypoints",
         "group": "4-relation"
       },
-      { "slot": "plex.relation", "command": "app:note.createChild", "order": 10 },
-      { "slot": "plex.relation", "command": "app:note.createParent", "order": 20 },
-      { "slot": "plex.relation", "command": "app:note.createJump", "order": 30 },
+      {
+        "slot": "plex.relation",
+        "command": "app:note.createChild",
+        "order": 10
+      },
+      {
+        "slot": "plex.relation",
+        "command": "app:note.createParent",
+        "order": 20
+      },
+      {
+        "slot": "plex.relation",
+        "command": "app:note.createJump",
+        "order": 30
+      },
       {
         "slot": "plexGraph.context",
         "command": "app:note.create",
@@ -71,11 +96,18 @@
         "order": 10,
         "when": "target.isFolder"
       },
-      { "slot": "plexGraph.context", "command": "app:file.open", "group": "0-open", "order": 10 },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:file.open",
+        "group": "0-open",
+        "order": 10
+      },
       {
         "slot": "plexGraph.context",
         "command": "app:file.reveal",
-        "values": { "kind": "plex" },
+        "values": {
+          "kind": "plex"
+        },
         "title": "Show in plex",
         "icon": "waypoints",
         "group": "1-note",
@@ -106,21 +138,63 @@
         "group": "3-plex",
         "order": 30
       },
-      { "slot": "plexGraph.context", "command": "app:note.rename", "group": "3-plex", "order": 40 },
-      { "slot": "plexGraph.context", "command": "app:file.remove", "group": "9-remove" }
+      {
+        "slot": "plexGraph.context",
+        "command": "app:note.rename",
+        "group": "3-plex",
+        "order": 40
+      },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:file.remove",
+        "group": "9-remove"
+      }
     ],
     "keybindings": [
-      { "key": "mod+shift+x", "command": "graph.open" },
+      {
+        "key": "mod+shift+x",
+        "command": "graph.open"
+      },
       {
         "key": "mod+shift+p",
         "command": "app:file.reveal",
-        "values": { "kind": "plex" },
+        "values": {
+          "kind": "plex"
+        },
         "when": "target.isNote"
       }
     ]
   },
-  "permissions": ["vault:read", "vault:write"],
+  "permissions": [
+    "vault:read",
+    "vault:write"
+  ],
   "settings": [
+    {
+      "key": "references",
+      "type": "enum",
+      "title": "References",
+      "description": "Show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none.",
+      "default": "both",
+      "options": [
+        {
+          "value": "off",
+          "title": "Off"
+        },
+        {
+          "value": "outgoing",
+          "title": "Outgoing"
+        },
+        {
+          "value": "both",
+          "title": "Outgoing and incoming"
+        },
+        {
+          "value": "incoming",
+          "title": "Incoming only"
+        }
+      ]
+    },
     {
       "key": "nestHeadings",
       "type": "boolean",
@@ -132,7 +206,7 @@
     },
     {
       "key": "headingLimit",
-      "type": "number",
+      "type": "range",
       "title": "Headings per note",
       "description": "Maximum number of headings shown under a node. The rest scroll.",
       "default": 6,
@@ -151,7 +225,7 @@
     },
     {
       "key": "namesPerNote",
-      "type": "number",
+      "type": "range",
       "title": "Names per note",
       "description": "Most names shown under and over a related note.",
       "default": 6,
@@ -160,17 +234,37 @@
       "step": 1
     },
     {
+      "key": "namesOpacity",
+      "type": "range",
+      "title": "Names opacity",
+      "description": "How visible the names under and over a note are while the note is not in focus. 0 hides them.",
+      "default": 0.7,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "key": "focusedNamesOpacity",
+      "type": "range",
+      "title": "Names opacity in focus",
+      "description": "How visible the names under and over a note are while the pointer is over the note or one of them. 0 hides them.",
+      "default": 1,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
       "key": "showPills",
       "type": "boolean",
       "title": "Pill background",
-      "description": "Draw a pill behind each title. Off: the title alone, with a dot in the color of its relation.",
+      "description": "Draw a pill behind each title. Off: the title alone.",
       "default": true,
       "palette": true,
       "icon": "waypoints"
     },
     {
       "key": "pillPaddingSides",
-      "type": "number",
+      "type": "range",
       "title": "Pill padding, sides",
       "description": "Space between a title and the left and right edge of its pill.",
       "default": 10,
@@ -180,7 +274,7 @@
     },
     {
       "key": "pillPaddingEnds",
-      "type": "number",
+      "type": "range",
       "title": "Pill padding, top and bottom",
       "description": "Space between a title and the top and bottom edge of its pill.",
       "default": 9.25,
@@ -190,27 +284,17 @@
     },
     {
       "key": "focusSize",
-      "type": "number",
+      "type": "range",
       "title": "Focus size",
-      "description": "How much larger the pill of the note in the middle is. Its title keeps its size.",
+      "description": "How much larger the note in the middle is drawn: its pill, title and icon.",
       "default": 1.22,
       "min": 1,
       "max": 2.5,
       "step": 0.01
     },
     {
-      "key": "animationLength",
-      "type": "number",
-      "title": "Animation",
-      "description": "How long moving to another note takes, in milliseconds. 0 moves at once.",
-      "default": 420,
-      "min": 0,
-      "max": 2000,
-      "step": 20
-    },
-    {
       "key": "lineThickness",
-      "type": "number",
+      "type": "range",
       "title": "Line thickness",
       "description": "Width of the lines between notes, in pixels.",
       "default": 2,
@@ -220,7 +304,7 @@
     },
     {
       "key": "outlineThickness",
-      "type": "number",
+      "type": "range",
       "title": "Outline thickness",
       "description": "Width of the outline of a pill, in pixels.",
       "default": 1,
@@ -230,7 +314,7 @@
     },
     {
       "key": "lineCurvature",
-      "type": "number",
+      "type": "range",
       "title": "Line curvature",
       "description": "How far a line between two notes bends. 0 is a straight line.",
       "default": 0.55,
@@ -239,27 +323,24 @@
       "step": 0.05
     },
     {
+      "key": "animationLength",
+      "type": "range",
+      "title": "Animation",
+      "description": "How long moving to another note takes, in milliseconds. 0 moves at once.",
+      "default": 420,
+      "min": 0,
+      "max": 2000,
+      "step": 20
+    },
+    {
       "key": "noteRoom",
-      "type": "number",
+      "type": "range",
       "title": "Room around a note",
       "description": "Extra empty space kept around every note. Larger is sparser.",
       "default": 0,
       "min": 0,
       "max": 40,
       "step": 1
-    },
-    {
-      "key": "references",
-      "type": "enum",
-      "title": "References",
-      "description": "Show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none.",
-      "default": "both",
-      "options": [
-        { "value": "off", "title": "Off" },
-        { "value": "outgoing", "title": "Outgoing" },
-        { "value": "both", "title": "Outgoing and incoming" },
-        { "value": "incoming", "title": "Incoming only" }
-      ]
     }
   ],
   "frontend": {}

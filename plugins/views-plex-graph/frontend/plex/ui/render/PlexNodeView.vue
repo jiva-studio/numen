@@ -23,6 +23,7 @@ const props = withDefaults(defineProps<PlexNodeProps>(), {
   hung: null,
   behavior: () => DEFAULT_BEHAVIOR,
   showPills: true,
+  focusScale: 1,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -141,6 +142,7 @@ function getMiddle(): Position | null {
       :is-ghost="isGhost"
       :is-target="gestureRole === 'target'"
       :show-pills="showPills"
+      :focus-scale="focusScale"
     >
       <template v-if="$slots.icon" #icon="{ node: drawn }">
         <slot name="icon" :node="drawn" />
@@ -264,9 +266,5 @@ function getMiddle(): Position | null {
 /* Without its pill the focus is set on the surface, in the ink every other title is in. */
 .plex__node--focus :deep(.plex__title--bare) {
   color: var(--numen-ink);
-}
-
-.plex__node--focus :deep(.plex__dot) {
-  background: var(--numen-accent);
 }
 </style>

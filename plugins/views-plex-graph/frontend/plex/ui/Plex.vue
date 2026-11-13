@@ -14,6 +14,7 @@ import { DEFAULT_BEHAVIOR, getBehavior, type PlexBehavior } from '../model/behav
 import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
+import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../lib/names'
 import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
@@ -40,6 +41,8 @@ const props = withDefaults(defineProps<PlexProps>(), {
   dragged: () => [],
   dropName: getRelationName,
   showNames: false,
+  namesOpacity: DEFAULT_NAMES_OPACITY,
+  focusedNamesOpacity: DEFAULT_FOCUSED_NAMES_OPACITY,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -170,6 +173,9 @@ watch(
       :curvature="options.routing.curvature"
       :show-edge-labels="showEdgeLabels"
       :show-pills="showPills"
+      :focus-scale="options.focusScale"
+      :names-opacity="namesOpacity"
+      :focused-names-opacity="focusedNamesOpacity"
       :can-reach="canReach"
       :relation-name="relationName"
       :widen="widen"

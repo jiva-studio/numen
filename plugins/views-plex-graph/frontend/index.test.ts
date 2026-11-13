@@ -299,7 +299,7 @@ describe('the look of an open plex', () => {
     ctx.setSetting('showPills', false)
     await nextTick()
     expect(tab.findAll('.plex__box')).toHaveLength(0)
-    expect(tab.findAll('.plex__dot').length).toBeGreaterThan(0)
+    expect(tab.findAll('.plex__dot')).toHaveLength(0)
 
     ctx.setSetting('showPills', true)
     await nextTick()

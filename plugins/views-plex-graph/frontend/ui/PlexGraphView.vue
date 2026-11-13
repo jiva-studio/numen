@@ -131,6 +131,8 @@ function onDismissLinkInspector() {
       :headings="props.state.headings.getHeadings"
       :names="props.state.canvas.names.getNames"
       :show-names="props.state.canvas.names.showNames.value"
+      :names-opacity="look.namesOpacity.value"
+      :focused-names-opacity="look.focusedNamesOpacity.value"
       @activate="onActivateNode"
       @create="onCreateNode"
       @link="onLinkNodes"

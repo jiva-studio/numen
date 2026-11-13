@@ -76,6 +76,33 @@ describe('the node in focus', () => {
   })
 })
 
+describe('the title of the node in focus', () => {
+  const scaled = (props: Record<string, unknown>, overrides: Partial<PlacedNode> = {}) => {
+    const node = mount(PlexNodeView, {
+      props: { node: createNode({ width: 200, height: 40, ...overrides }), ...props },
+    })
+    const title = node.get('foreignObject')
+    const [, factor] = /scale\(([\d.]+)\)/.exec(title.attributes('transform') ?? '') ?? []
+    return { title, factor: factor === undefined ? 1 : Number(factor) }
+  }
+
+  it('is drawn larger by the focus size, with the pill and without it', () => {
+    for (const showPills of [true, false]) {
+      const { title, factor } = scaled({ showPills, focusScale: 1.5 }, { relation: 'focus' })
+      expect(factor).toBe(1.5)
+      // The title is laid out in a box 1.5 times smaller, and fills the node's box once enlarged.
+      expect(Number(title.attributes('width')) * factor).toBeCloseTo(200)
+      expect(Number(title.attributes('height')) * factor).toBeCloseTo(40)
+    }
+  })
+
+  it('leaves the title of any other node at its size', () => {
+    const { title, factor } = scaled({ focusScale: 1.5 }, { relation: 'child' })
+    expect(factor).toBe(1)
+    expect(title.attributes('width')).toBe('200')
+  })
+})
+
 describe('a node that can be chosen', () => {
   it('is chosen by a click', async () => {
     const node = mountNode()
@@ -649,10 +676,10 @@ describe('a node with Pill background off', () => {
     }
   })
 
-  it('draws a dot and its title instead', () => {
+  it('draws its title alone, with no dot before it', () => {
     for (const relation of RELATIONS) {
       const node = mountBare({ relation, title: 'Hydrology' })
-      expect(node.findAll('.plex__dot'), relation).toHaveLength(1)
+      expect(node.find('.plex__dot').exists(), relation).toBe(false)
       expect(node.get('.plex__title-text').text()).toBe('Hydrology')
     }
   })

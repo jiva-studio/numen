@@ -375,11 +375,11 @@ describe('Pill background', () => {
     expect(plex.findAll('.plex__box')).toHaveLength(0)
   })
 
-  it('draws every node as a dot and its title when it is off', () => {
+  it('draws every node as its title alone when it is off', () => {
     const plex = mountPlex({ graph: FAMILY, showPills: false })
 
     for (const node of plex.findAll('.plex__node')) {
-      expect(node.findAll('.plex__dot')).toHaveLength(1)
+      expect(node.findAll('.plex__dot')).toHaveLength(0)
       expect(node.find('.plex__title-text').exists()).toBe(true)
     }
     expect(plex.findAll('.plex__title-text').map((title) => title.text())).toStrictEqual(
