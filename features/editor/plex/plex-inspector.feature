@@ -20,14 +20,21 @@ Feature: Plex link inspector
 
   Rule: The link inspector changes the arrows and the description of a link
 
-    Scenario: An arrow points to the other note
-      Given the plex draws the line from "Harbour" to "Quay" with an arrow to "Quay"
+    Scenario Outline: An arrow is added to a link
+      Given the plex draws the line from "Harbour" to "Quay" without an arrow
       When the person changes the link from "Harbour" to "Quay" in the plex with:
-        | Arrow | Arrow to Harbour |
-      Then the plex draws the line from "Harbour" to "Quay" with an arrow to "Harbour"
+        | Arrow | <arrow> |
+      Then the plex draws the line from "Harbour" to "Quay" with an arrow to "<end>"
+
+      Examples:
+        | arrow            | end     |
+        | Arrow to Quay    | Quay    |
+        | Arrow to Harbour | Harbour |
 
     Scenario: An arrow is removed from a link
-      Given the plex draws the line from "Harbour" to "Quay" with an arrow to "Quay"
+      Given the person changes the link from "Harbour" to "Quay" in the plex with:
+        | Arrow | Arrow to Quay |
+      And the plex draws the line from "Harbour" to "Quay" with an arrow to "Quay"
       When the person changes the link from "Harbour" to "Quay" in the plex with:
         | Arrow | No arrow |
       Then the plex draws the line from "Harbour" to "Quay" without an arrow
@@ -41,12 +48,12 @@ Feature: Plex link inspector
 
     Scenario: A cancelled change leaves the links unchanged
       When the person cancels the change of the link from "Harbour" to "Quay" in the plex with:
-        | Arrow       | No arrow    |
-        | Description | Daily ferry |
+        | Arrow       | Arrow to Quay |
+        | Description | Daily ferry   |
       Then the vault "Test" has the following links:
         | from    | to   | role  |
         | Harbour | Quay | child |
-      And the plex draws the line from "Harbour" to "Quay" with an arrow to "Quay"
+      And the plex draws the line from "Harbour" to "Quay" without an arrow
 
     Scenario: A reverse link is added
       When the person adds the reverse link from "Quay" to "Harbour" in the plex

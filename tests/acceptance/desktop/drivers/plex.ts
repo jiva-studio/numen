@@ -65,7 +65,8 @@ export class PlexDriver {
 
   private async hoverNote(title: string): Promise<void> {
     await this.findNode(title)
-    await (await this.getPart(title, '.plex__box')).hover()
+    const at = await getMiddle(await this.getPart(title, '.plex__box'))
+    await this.scenario.page.mouse.move(at.x, at.y)
   }
 
   async restPointerOn(title: string): Promise<void> {
