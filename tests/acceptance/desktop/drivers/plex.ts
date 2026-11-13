@@ -259,8 +259,8 @@ export class PlexDriver {
     return inspector
   }
 
-  /** The row of the record that the note writes, taken by its place: a click on the arrow of the row moves the record to the other note, and the row stays where it is. */
   private async getRow(inspector: Locator, from: string): Promise<Locator> {
+    // A click on the arrow of a row moves its record to the other note, so the row is kept by its place.
     const rows = inspector.locator('.plex-link-row')
     const authors = await rows.evaluateAll((all) => all.map((row) => row.getAttribute('data-from')))
     const index = authors.indexOf(from)
