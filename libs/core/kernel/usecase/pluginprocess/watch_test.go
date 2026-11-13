@@ -105,7 +105,7 @@ func TestTheFirstListNamesEachPluginAndItsWorstHealth(t *testing.T) {
 	}
 }
 
-func TestAPluginThatStopsLeavesTheList(t *testing.T) {
+func TestAStoppedPluginIsRemovedFromTheNextList(t *testing.T) {
 	maps := plugin.Process{PluginID: mapsID, StartTime: getStartTime(), LastUseTime: getStartTime(), LeaseCount: 1}
 	atlas := plugin.Process{PluginID: atlasID, StartTime: getStartTime(), LastUseTime: getStartTime(), LeaseCount: 1}
 	p := newProcesses(atlas, maps)
@@ -132,7 +132,7 @@ func TestAHealthItemReportedLaterIsSent(t *testing.T) {
 	}
 }
 
-func TestAChangeThatLeavesTheListAsItWasSendsNothing(t *testing.T) {
+func TestAnUnchangedListIsNotSentAgain(t *testing.T) {
 	maps := plugin.Process{PluginID: mapsID, StartTime: getStartTime(), LastUseTime: getStartTime(), LeaseCount: 1}
 	p := newProcesses(maps)
 	watch := startWatch(t, p, newHealth())

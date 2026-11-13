@@ -184,7 +184,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		SetStorage:          func(cacheRoot, dataRoot string) { setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry) },
 		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
 		Health:              host.Health,
-		Processes:           host.Supervisors,
+		Processes:           host.RunningProcesses,
 		Detection:           detection,
 	}
 }

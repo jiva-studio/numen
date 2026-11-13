@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * The title bar item that counts the plugins that run, and the popover that lists them.
+ * The title bar item that counts the plugins that run, and the popover that lists them. `now` is the
+ * time on the clock of the core, in milliseconds since the Unix epoch.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useMenuDismissal } from '@numen/ui'
@@ -14,7 +15,6 @@ import { WORDS as words } from '../words'
 const props = defineProps<{
   processes: readonly PluginProcess[]
   phase: Phase
-  /** The time now on the clock of the core, in milliseconds since the Unix epoch. */
   now: number
   locale?: string | undefined
 }>()

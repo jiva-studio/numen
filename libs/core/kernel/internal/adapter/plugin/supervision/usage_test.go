@@ -30,7 +30,7 @@ func startInProcess(t *testing.T, sups *Supervisors, ids ...string) {
 	}
 }
 
-func TestTheListHoldsThePluginsThatRunAndWhenTheIdleOnesStop(t *testing.T) {
+func TestListProcessesReturnsTheRunningPluginsWithTheIdleStopTime(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: dormantID}})
 	startInProcess(t, sups, mapsID, atlasID)
@@ -43,7 +43,7 @@ func TestTheListHoldsThePluginsThatRunAndWhenTheIdleOnesStop(t *testing.T) {
 			IdleStopTime: getStartTime().Add(time.Minute + IdleThreshold),
 		},
 	}
-	if got := sups.ListProcesses(); !slices.Equal(got, want) {
+	if got := NewRunningProcesses(sups).ListProcesses(); !slices.Equal(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
 }
@@ -51,7 +51,7 @@ func TestTheListHoldsThePluginsThatRunAndWhenTheIdleOnesStop(t *testing.T) {
 func TestAWatchIsSignaledWhenAPluginReturnsALease(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	startInProcess(t, sups, mapsID)
-	watch := sups.WatchProcesses(t.Context())
+	watch := NewRunningProcesses(sups).WatchProcesses(t.Context())
 
 	sups.Release(mapsID, mapsID, getStartTime().Add(time.Minute))
 
@@ -65,7 +65,7 @@ func TestAWatchIsSignaledWhenAPluginReturnsALease(t *testing.T) {
 func TestSignalsTheWatchHasNotReceivedAreMergedIntoOne(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	startInProcess(t, sups, mapsID)
-	watch := sups.WatchProcesses(t.Context())
+	watch := NewRunningProcesses(sups).WatchProcesses(t.Context())
 
 	sups.Release(mapsID, mapsID, getStartTime().Add(time.Minute))
 	startInProcess(t, sups, atlasID)

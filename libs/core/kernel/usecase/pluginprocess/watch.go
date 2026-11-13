@@ -22,7 +22,7 @@ type Processes interface {
 	WatchProcesses(ctx context.Context) <-chan struct{}
 }
 
-// HealthItems is the health items of every plugin.
+// HealthItems keeps what the plugins and the core report about whether each plugin works.
 type HealthItems interface {
 	// Watch returns the items at once and on every change until the context ends, and is closed then.
 	Watch(ctx context.Context) <-chan []plugin.HealthItem
@@ -87,7 +87,6 @@ func (r *watchRun) sendLists(ctx context.Context) {
 	}
 }
 
-// sendList sends the list unless it equals the last one sent, and reports whether the watch goes on.
 func (r *watchRun) sendList(ctx context.Context, isFirst bool) bool {
 	list := r.use.listStatuses(r.items)
 	if !isFirst && slices.Equal(list, r.last) {
@@ -102,8 +101,6 @@ func (r *watchRun) sendList(ctx context.Context, isFirst bool) bool {
 	}
 }
 
-// awaitChange waits for a change of the plugins or of their health, and reports whether the watch goes
-// on.
 func (r *watchRun) awaitChange(ctx context.Context) bool {
 	select {
 	case <-ctx.Done():

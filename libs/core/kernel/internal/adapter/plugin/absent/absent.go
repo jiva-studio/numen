@@ -116,7 +116,7 @@ func (Settings) ObserveDependencies(func(manifest.DependencyRequirement, plugind
 // Processes is the processes of a plugin host that runs nothing.
 type Processes struct{}
 
-// ListProcesses lists no plugin.
+// ListProcesses is empty: a host that runs nothing starts no process.
 func (Processes) ListProcesses() []plugindomain.Process { return nil }
 
 // WatchProcesses never signals: nothing runs to change.

@@ -18,7 +18,6 @@ const create = (pluginId: string, pluginName: string, extra: Partial<PluginProce
     ...extra,
   }) satisfies PluginProcess
 
-/** A monotonic clock and a ticker a test moves by hand. */
 const createTime = () => {
   let monotonic = 500
   const runs = new Map<number, () => void>()

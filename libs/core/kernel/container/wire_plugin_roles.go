@@ -30,12 +30,12 @@ type PluginRoles struct {
 }
 
 // PluginSupervision are the roles that run the processes of the plugins: their start and stop, their
-// failures and the services they serve, and the supervisors that list the ones that run.
+// failures and the services they serve, and the list of the ones that run.
 type PluginSupervision struct {
-	Supervisors *supervision.Supervisors
-	Processes   *supervision.Processes
-	Failures    *supervision.Failures
-	Services    *supervision.Services
+	RunningProcesses *supervision.RunningProcesses
+	Processes        *supervision.Processes
+	Failures         *supervision.Failures
+	Services         *supervision.Services
 }
 
 // NewPluginRoles creates the roles of a plugin host for the target application and the folders its plugins are in. The
@@ -66,7 +66,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *Plu
 		Set: set, Mode: mode, Supervisors: sups, Activation: activation, Failures: failures, Clock: clock, Report: errs.Report,
 	})
 	return &PluginRoles{
-		PluginSupervision: PluginSupervision{Supervisors: sups, Processes: processes, Failures: failures, Services: services},
+		PluginSupervision: PluginSupervision{RunningProcesses: supervision.NewRunningProcesses(sups), Processes: processes, Failures: failures, Services: services},
 		Registry:          registry,
 		Discovery: plugin.NewDiscovery(plugin.DiscoveryDeps{
 			Set: set, Registrar: set, Scan: scan, Mode: mode, Supervisors: sups, Stopper: stopper, Listeners: listeners, Storage: files,

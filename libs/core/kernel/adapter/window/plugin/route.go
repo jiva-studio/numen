@@ -43,7 +43,8 @@ func NewRoute(handler *Handler, options connect.HandlerOption) (path string, ser
 }
 
 // WatchPluginProcesses sends the plugins that run at once, on every change and again every
-// wire.ResendInterval, until the client is gone. A gone client is noticed through a failed write.
+// wire.ResendInterval, until the use case closes its channel or a write fails. A closed client is
+// detected only by the failed write.
 func (h *Handler) WatchPluginProcesses(
 	ctx context.Context, _ *connect.Request[v1.WatchPluginProcessesRequest], out *connect.ServerStream[v1.WatchPluginProcessesResponse],
 ) error {

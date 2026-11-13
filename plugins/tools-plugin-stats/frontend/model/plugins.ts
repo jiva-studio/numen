@@ -25,17 +25,20 @@ export interface Ticker {
   stop(handle: number): void
 }
 
+/** What the model is made of; the host is absent where the window gives no list. */
 export interface RunningPluginsDeps {
-  /** Absent where the window gives no list. */
   readonly host: ProcessHost | undefined
   readonly clock: MonotonicClock
   readonly ticker: Ticker
 }
 
+/**
+ * The list, the phase, and the time now on the clock of the core in milliseconds since the Unix
+ * epoch.
+ */
 export interface RunningPlugins {
   readonly processes: Readonly<Ref<readonly PluginProcess[]>>
   readonly phase: Readonly<Ref<Phase>>
-  /** The time now on the clock of the core, in milliseconds since the Unix epoch. */
   readonly now: Readonly<Ref<number>>
   /** Listens to the core and moves the time on. */
   start(): void

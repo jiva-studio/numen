@@ -369,7 +369,7 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 	})
 }
 
-func TestTheUsageOfARunningPluginIsWhatItHolds(t *testing.T) {
+func TestGetUsageReturnsTheStartTheLastUseAndTheLeases(t *testing.T) {
 	sup := New(nil)
 	if usage, isRunning := sup.GetUsage(); isRunning {
 		t.Fatalf("a dormant plugin has the usage %+v", usage)
@@ -393,9 +393,8 @@ func TestTheUsageOfARunningPluginIsWhatItHolds(t *testing.T) {
 }
 
 func TestTheSupervisorReportsTheStartTheLeasesAndTheStop(t *testing.T) {
-	sup := New(nil)
 	changes := 0
-	sup.SetOnChange(func() { changes++ })
+	sup := NewObserved(nil, func() { changes++ })
 	now := testsupport.GetEpoch()
 
 	sup.SetActivating()
