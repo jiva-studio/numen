@@ -52,6 +52,9 @@ const (
 	// PluginServiceWatchPluginProcessesProcedure is the fully-qualified name of the PluginService's
 	// WatchPluginProcesses RPC.
 	PluginServiceWatchPluginProcessesProcedure = "/numen.v1.PluginService/WatchPluginProcesses"
+	// PluginServiceReleaseProcessProcedure is the fully-qualified name of the PluginService's
+	// ReleaseProcess RPC.
+	PluginServiceReleaseProcessProcedure = "/numen.v1.PluginService/ReleaseProcess"
 	// PluginEventServiceDeliverEventProcedure is the fully-qualified name of the PluginEventService's
 	// DeliverEvent RPC.
 	PluginEventServiceDeliverEventProcedure = "/numen.v1.PluginEventService/DeliverEvent"
@@ -186,6 +189,14 @@ type PluginServiceClient interface {
 	// WatchPluginProcesses sends the plugin processes that run at once and again
 	// on every change, at most once a second, for as long as the caller listens.
 	WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest]) (*connect.ServerStreamForClient[v1.WatchPluginProcessesResponse], error)
+	// ReleaseProcess tells the core that the process of a plugin has finished
+	// its work. The core stops a process that holds no lease at once, and one
+	// that holds a lease at the first idle check after the last lease is
+	// returned. A lease taken after the call cancels it. A plugin calls it
+	// through the host endpoint, which names the plugin by its token; a window
+	// calls it for the plugin plugin_id names. A plugin with no process answers
+	// success.
+	ReleaseProcess(context.Context, *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error)
 }
 
 // NewPluginServiceClient constructs a client for the numen.v1.PluginService service. By default, it
@@ -211,6 +222,12 @@ func NewPluginServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(pluginServiceMethods.ByName("WatchPluginProcesses")),
 			connect.WithClientOptions(opts...),
 		),
+		releaseProcess: connect.NewClient[v1.ReleaseProcessRequest, v1.ReleaseProcessResponse](
+			httpClient,
+			baseURL+PluginServiceReleaseProcessProcedure,
+			connect.WithSchema(pluginServiceMethods.ByName("ReleaseProcess")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -218,6 +235,7 @@ func NewPluginServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 type pluginServiceClient struct {
 	getPlugins           *connect.Client[v1.GetPluginsRequest, v1.GetPluginsResponse]
 	watchPluginProcesses *connect.Client[v1.WatchPluginProcessesRequest, v1.WatchPluginProcessesResponse]
+	releaseProcess       *connect.Client[v1.ReleaseProcessRequest, v1.ReleaseProcessResponse]
 }
 
 // GetPlugins calls numen.v1.PluginService.GetPlugins.
@@ -230,12 +248,25 @@ func (c *pluginServiceClient) WatchPluginProcesses(ctx context.Context, req *con
 	return c.watchPluginProcesses.CallServerStream(ctx, req)
 }
 
+// ReleaseProcess calls numen.v1.PluginService.ReleaseProcess.
+func (c *pluginServiceClient) ReleaseProcess(ctx context.Context, req *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error) {
+	return c.releaseProcess.CallUnary(ctx, req)
+}
+
 // PluginServiceHandler is an implementation of the numen.v1.PluginService service.
 type PluginServiceHandler interface {
 	GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error)
 	// WatchPluginProcesses sends the plugin processes that run at once and again
 	// on every change, at most once a second, for as long as the caller listens.
 	WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest], *connect.ServerStream[v1.WatchPluginProcessesResponse]) error
+	// ReleaseProcess tells the core that the process of a plugin has finished
+	// its work. The core stops a process that holds no lease at once, and one
+	// that holds a lease at the first idle check after the last lease is
+	// returned. A lease taken after the call cancels it. A plugin calls it
+	// through the host endpoint, which names the plugin by its token; a window
+	// calls it for the plugin plugin_id names. A plugin with no process answers
+	// success.
+	ReleaseProcess(context.Context, *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error)
 }
 
 // NewPluginServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -257,12 +288,20 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(pluginServiceMethods.ByName("WatchPluginProcesses")),
 		connect.WithHandlerOptions(opts...),
 	)
+	pluginServiceReleaseProcessHandler := connect.NewUnaryHandler(
+		PluginServiceReleaseProcessProcedure,
+		svc.ReleaseProcess,
+		connect.WithSchema(pluginServiceMethods.ByName("ReleaseProcess")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.PluginService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case PluginServiceGetPluginsProcedure:
 			pluginServiceGetPluginsHandler.ServeHTTP(w, r)
 		case PluginServiceWatchPluginProcessesProcedure:
 			pluginServiceWatchPluginProcessesHandler.ServeHTTP(w, r)
+		case PluginServiceReleaseProcessProcedure:
+			pluginServiceReleaseProcessHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -278,6 +317,10 @@ func (UnimplementedPluginServiceHandler) GetPlugins(context.Context, *connect.Re
 
 func (UnimplementedPluginServiceHandler) WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest], *connect.ServerStream[v1.WatchPluginProcessesResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.WatchPluginProcesses is not implemented"))
+}
+
+func (UnimplementedPluginServiceHandler) ReleaseProcess(context.Context, *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.ReleaseProcess is not implemented"))
 }
 
 // PluginEventServiceClient is a client for the numen.v1.PluginEventService service.

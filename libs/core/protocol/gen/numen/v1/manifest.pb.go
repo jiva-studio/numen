@@ -1532,9 +1532,12 @@ func (x *ManifestDependency) GetMetadata() map[string]string {
 type ManifestBackend struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// entrypoint is the path of the executable relative to the plugin folder.
-	Entrypoint    string `protobuf:"bytes,2,opt,name=entrypoint,proto3" json:"entrypoint,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Entrypoint string `protobuf:"bytes,2,opt,name=entrypoint,proto3" json:"entrypoint,omitempty"`
+	// idle_stop_seconds is how long the process may run without a lease before the host stops it,
+	// from 30 to 3600 seconds. Absent is 180.
+	IdleStopSeconds int32 `protobuf:"varint,3,opt,name=idle_stop_seconds,json=idleStopSeconds,proto3" json:"idle_stop_seconds,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ManifestBackend) Reset() {
@@ -1572,6 +1575,13 @@ func (x *ManifestBackend) GetEntrypoint() string {
 		return x.Entrypoint
 	}
 	return ""
+}
+
+func (x *ManifestBackend) GetIdleStopSeconds() int32 {
+	if x != nil {
+		return x.IdleStopSeconds
+	}
+	return 0
 }
 
 // ManifestFrontend declares that the plugin has a frontend. The bundle is dist/index.js and the
@@ -2499,11 +2509,12 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\bmetadata\x18\x06 \x03(\v2*.numen.v1.ManifestDependency.MetadataEntryR\bmetadata\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"1\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"]\n" +
 	"\x0fManifestBackend\x12\x1e\n" +
 	"\n" +
 	"entrypoint\x18\x02 \x01(\tR\n" +
-	"entrypoint\"\x12\n" +
+	"entrypoint\x12*\n" +
+	"\x11idle_stop_seconds\x18\x03 \x01(\x05R\x0fidleStopSeconds\"\x12\n" +
 	"\x10ManifestFrontend\"\x93\x01\n" +
 	"\x15ManifestSettingOption\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
