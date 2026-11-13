@@ -364,12 +364,13 @@ func TestTheProgramOnThePathIsDetected(t *testing.T) {
 
 func TestTheProgramAtTheExecutablePathIsDetected(t *testing.T) {
 	withoutAgentsAnywhere(t)
-	svc := newAntigravity(t, nil, writeScript(t, "agy", "exit 0\n"))
+	program := writeScript(t, "agy", "exit 0\n")
+	svc := newAntigravity(t, nil, program)
 
 	found, err := svc.tasks.DetectConnections(t.Context(), connection.Call{Type: "antigravity"})
 
-	if err != nil || len(found) != 1 || found[0].Name != "Antigravity" {
-		t.Errorf("DetectConnections = %+v, %v, want Antigravity", found, err)
+	if err != nil || len(found) != 1 || found[0].Name != "Antigravity" || found[0].Path != program {
+		t.Errorf("DetectConnections = %+v, %v, want Antigravity at %s", found, err, program)
 	}
 }
 

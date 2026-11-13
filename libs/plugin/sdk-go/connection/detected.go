@@ -2,6 +2,9 @@ package connection
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"google.golang.org/protobuf/proto"
 
@@ -23,6 +26,9 @@ type DetectedConnection struct {
 	// Fields are the values of fields of the type that are not secret, by key; a field left out takes its
 	// default.
 	Fields map[string]string `json:"fields"`
+	// Path is where the provider found the connection on this machine, such as the program it runs; empty
+	// when there is no such place. The list of connections shows it with the home folder written as ~.
+	Path string `json:"path"`
 }
 
 // DetectConnections returns the connections of the type of call found on this machine, none when nothing is
@@ -30,7 +36,8 @@ type DetectedConnection struct {
 type DetectConnections func(ctx context.Context, call Call) ([]DetectedConnection, error)
 
 // ServeDetected is the operation connections.detected: it answers the connections detect finds as the done
-// payload. The handler of the provider releases the process after the answer where no other call is open.
+// payload, with the home folder in each path written as ~. The handler of the provider releases the process
+// after the answer where no other call is open.
 func ServeDetected(detect DetectConnections) Operation {
 	return func(ctx context.Context, call Call, _ []byte, _ func([]byte) error) ([]byte, error) {
 		found, err := detect(ctx, call)
@@ -38,10 +45,24 @@ func ServeDetected(detect DetectConnections) Operation {
 			return nil, err
 		}
 		markLookup(ctx)
+		home, _ := os.UserHomeDir()
 		wire := &v1.DetectedConnections{Connections: make([]*v1.DetectedConnection, len(found))}
 		for i, one := range found {
-			wire.Connections[i] = &v1.DetectedConnection{Name: one.Name, Fields: one.Fields}
+			wire.Connections[i] = &v1.DetectedConnection{Name: one.Name, Fields: one.Fields, Path: writeHomeAsTilde(one.Path, home)}
 		}
 		return proto.Marshal(wire)
 	}
+}
+
+func writeHomeAsTilde(path, home string) string {
+	if home == "" {
+		return path
+	}
+	if path == home {
+		return "~"
+	}
+	if rest, isInHome := strings.CutPrefix(path, home+string(filepath.Separator)); isInHome {
+		return "~" + string(filepath.Separator) + rest
+	}
+	return path
 }

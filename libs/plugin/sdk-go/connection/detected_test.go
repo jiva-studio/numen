@@ -3,6 +3,8 @@ package connection
 import (
 	"context"
 	"errors"
+	"path/filepath"
+	"slices"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -43,5 +45,49 @@ func TestServeDetectedPassesTheFailureOfTheDetectionOn(t *testing.T) {
 
 	if !errors.Is(err, failure) {
 		t.Errorf("err = %v, want the failure of the detection", err)
+	}
+}
+
+func TestServeDetectedAnswersThePathWithTheHomeFolderAsTilde(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	elsewhere := filepath.Join(string(filepath.Separator)+"opt", "orchard", "bin", "orchard")
+	client := newProviderClient(t, Provider{OperationDetected: ServeDetected(func(context.Context, Call) ([]DetectedConnection, error) {
+		return []DetectedConnection{
+			{Name: "Orchard agent", Path: filepath.Join(home, ".local", "bin", "orchard")},
+			{Name: "Meadow agent", Path: elsewhere},
+			{Name: "Pasture agent"},
+		}, nil
+	})})
+
+	got, err := readCallResponse(t, client, newCallRequest(OperationDetected))
+
+	if err != nil || !got.isDone {
+		t.Fatalf("Call = %+v, %v", got, err)
+	}
+	var listed v1.DetectedConnections
+	if err := proto.Unmarshal([]byte(got.done), &listed); err != nil {
+		t.Fatal(err)
+	}
+	var paths []string
+	for _, one := range listed.GetConnections() {
+		paths = append(paths, one.GetPath())
+	}
+	want := []string{"~" + string(filepath.Separator) + filepath.Join(".local", "bin", "orchard"), elsewhere, ""}
+	if !slices.Equal(paths, want) {
+		t.Errorf("paths = %q, want %q", paths, want)
+	}
+}
+
+func TestWriteHomeAsTildeLeavesAFolderThatOnlyStartsLikeTheHomeFolder(t *testing.T) {
+	home := filepath.Join(string(filepath.Separator)+"home", "ada")
+	neighbor := filepath.Join(string(filepath.Separator)+"home", "adam", "bin", "orchard")
+
+	if got := writeHomeAsTilde(neighbor, home); got != neighbor {
+		t.Errorf("writeHomeAsTilde(%q) = %q, want it unchanged", neighbor, got)
+	}
+	if got := writeHomeAsTilde(home, home); got != "~" {
+		t.Errorf("writeHomeAsTilde(home) = %q, want ~", got)
 	}
 }

@@ -447,9 +447,12 @@ func (x *DetectedConnections) GetConnections() []*DetectedConnection {
 // DetectedConnection is one connection a provider found. name is unique within the type. fields are the
 // values of the fields of the type that are not secret, by key; a field left out takes its default.
 type DetectedConnection struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Fields        map[string]string      `protobuf:"bytes,2,rep,name=fields,proto3" json:"fields,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Name   string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Fields map[string]string      `protobuf:"bytes,2,rep,name=fields,proto3" json:"fields,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// path is where the provider found the connection on this machine, such as the program it runs, with the
+	// home folder written as ~. Empty when there is no such place.
+	Path          string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -496,6 +499,13 @@ func (x *DetectedConnection) GetFields() map[string]string {
 		return x.Fields
 	}
 	return nil
+}
+
+func (x *DetectedConnection) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
 }
 
 // ProviderServiceCallResponse is one frame of a call.
@@ -628,10 +638,11 @@ const file_numen_v1_provider_proto_rawDesc = "" +
 	"\x04call\x18\x02 \x01(\v2\x16.numen.v1.ProviderCallR\x04call\x12\x18\n" +
 	"\apayload\x18\x03 \x01(\fR\apayload\"U\n" +
 	"\x13DetectedConnections\x12>\n" +
-	"\vconnections\x18\x01 \x03(\v2\x1c.numen.v1.DetectedConnectionR\vconnections\"\xa5\x01\n" +
+	"\vconnections\x18\x01 \x03(\v2\x1c.numen.v1.DetectedConnectionR\vconnections\"\xb9\x01\n" +
 	"\x12DetectedConnection\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12@\n" +
-	"\x06fields\x18\x02 \x03(\v2(.numen.v1.DetectedConnection.FieldsEntryR\x06fields\x1a9\n" +
+	"\x06fields\x18\x02 \x03(\v2(.numen.v1.DetectedConnection.FieldsEntryR\x06fields\x12\x12\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\x1a9\n" +
 	"\vFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x89\x01\n" +

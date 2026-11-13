@@ -190,7 +190,10 @@ func (m *modelList) ListDetected(context.Context, modelcall.ProviderCall) ([]mod
 type kiteDetected struct{}
 
 func (kiteDetected) ListDetected() []connection.Connection {
-	return []connection.Connection{{ID: "org.example.agents/kite/Kite agent", TypeID: "org.example.agents/kite", Name: "Kite agent", Fields: map[string]any{}}}
+	return []connection.Connection{{
+		ID: "org.example.agents/kite/Kite agent", TypeID: "org.example.agents/kite", Name: "Kite agent", Fields: map[string]any{},
+		Path: "~/.local/bin/kite",
+	}}
 }
 
 func (kiteDetected) IsPending(string) bool { return false }
@@ -494,7 +497,10 @@ func TestListProviderConnectionsMarksADetectedConnection(t *testing.T) {
 
 	got := listed.Msg.GetConnections()
 	if len(got) != 2 || got[0].GetIsDetected() || got[1].GetId() != "org.example.agents/kite/Kite agent" || !got[1].GetIsDetected() {
-		t.Errorf("connections = %v, want Work and then the detected Kite agent", got)
+		t.Fatalf("connections = %v, want Work and then the detected Kite agent", got)
+	}
+	if got[0].GetPath() != "" || got[1].GetPath() != "~/.local/bin/kite" {
+		t.Errorf("paths = %q, %q, want none for Work and the path of the program for Kite agent", got[0].GetPath(), got[1].GetPath())
 	}
 }
 

@@ -48,7 +48,7 @@ type OptionLists interface {
 // Entry is a connection as a window shows it: the fields the type declares, the keys of the secret
 // fields that hold a value for the current address, and no value of a secret. IsDetected marks a
 // connection the provider of its type reported ready on this machine, which is not stored and cannot be
-// changed or deleted.
+// changed or deleted. Path is where the provider found a detected connection, empty for a stored one.
 type Entry struct {
 	ID              string
 	TypeID          string
@@ -59,6 +59,7 @@ type Entry struct {
 	IsTypeAvailable bool
 	IsComplete      bool
 	IsDetected      bool
+	Path            string
 	Uses            []connection.Use
 }
 
@@ -299,7 +300,7 @@ func (o operation) buildEntry(ctx context.Context, one connection.Connection) (E
 	}
 	entry := Entry{
 		ID: one.ID, TypeID: one.TypeID, Name: one.Name, Revision: one.Revision,
-		Fields: map[string]any{}, Uses: uses, IsDetected: connection.IsDetected(one.ID),
+		Fields: map[string]any{}, Uses: uses, IsDetected: connection.IsDetected(one.ID), Path: one.Path,
 	}
 	found, isFound := o.types.GetType(one.TypeID)
 	if !isFound {

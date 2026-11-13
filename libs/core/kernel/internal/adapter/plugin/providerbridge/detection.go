@@ -262,6 +262,7 @@ func newDetectedConnections(declared connection.Type, found []modelcall.Detected
 		}
 		list = append(list, connection.Connection{
 			ID: connection.GetDetectedID(declared.GetID(), one.Name), TypeID: declared.GetID(), Name: one.Name, Fields: fields,
+			Path: one.Path,
 		})
 	}
 	return list

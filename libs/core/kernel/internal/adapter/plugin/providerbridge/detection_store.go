@@ -26,6 +26,7 @@ type storedAnswer struct {
 type storedConnection struct {
 	Name   string         `json:"name"`
 	Fields map[string]any `json:"fields"`
+	Path   string         `json:"path,omitempty"`
 }
 
 func (d *Detection) load(pluginID string) {
@@ -51,6 +52,7 @@ func (d *Detection) load(pluginID string) {
 			}
 			list = append(list, connection.Connection{
 				ID: connection.GetDetectedID(typeID, kept.Name), TypeID: typeID, Name: kept.Name, Fields: fields,
+				Path: kept.Path,
 			})
 		}
 		d.answers[typeID] = answer{pluginID: pluginID, pluginVersion: one.PluginVersion, connections: list}
@@ -82,7 +84,7 @@ func (d *Detection) readStoredFile(pluginID string) (DetectionFiles, storedFile)
 		}
 		kept := storedAnswer{PluginVersion: one.pluginVersion, Connections: []storedConnection{}}
 		for _, found := range one.connections {
-			kept.Connections = append(kept.Connections, storedConnection{Name: found.Name, Fields: found.Fields})
+			kept.Connections = append(kept.Connections, storedConnection{Name: found.Name, Fields: found.Fields, Path: found.Path})
 		}
 		stored.Answers[typeID] = kept
 	}

@@ -160,6 +160,7 @@ describe('createConnectionClient', () => {
         isTypeAvailable: true,
         isComplete: true,
         isDetected: false,
+        path: '',
         uses: [
           {
             pluginId: 'md.numen.tools.proofreading',
@@ -169,6 +170,33 @@ describe('createConnectionClient', () => {
         ],
       },
     ])
+  })
+
+  it('lists a detected connection with the path its provider found it at', async () => {
+    const client = createConnectionClient(
+      createRpc({
+        listProviderConnections: () =>
+          Promise.resolve(
+            create(ListProviderConnectionsResponseSchema, {
+              connections: [
+                {
+                  id: 'org.example.agents/kite/Kite agent',
+                  typeId: 'org.example.agents/kite',
+                  name: 'Kite agent',
+                  isTypeAvailable: true,
+                  isComplete: true,
+                  isDetected: true,
+                  path: '~/.local/bin/kite',
+                },
+              ],
+            }),
+          ),
+      }),
+    )
+
+    const [kite] = await client.list()
+
+    expect(kite).toMatchObject({ isDetected: true, path: '~/.local/bin/kite' })
   })
 
   it('sends the fields as values and the secrets as texts when it creates a connection', async () => {

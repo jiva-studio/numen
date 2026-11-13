@@ -96,6 +96,9 @@ message ProviderConnection {
   // is_detected marks a connection the provider of its type reported ready on this machine through the
   // operation connections.detected. It is not stored, and it cannot be changed or deleted.
   bool is_detected = 10;
+  // path is where the provider found a detected connection on this machine, such as the program it runs,
+  // with the home folder written as ~. Empty for a stored connection.
+  string path = 11;
 }
 
 // ProviderConnectionUse is a setting of rows of a plugin that names a connection.

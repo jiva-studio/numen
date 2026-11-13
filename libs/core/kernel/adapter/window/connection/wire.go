@@ -44,6 +44,7 @@ func writeConnection(entry connections.Entry) (*v1.ProviderConnection, error) {
 		Revision:        int32(entry.Revision),
 		IsComplete:      entry.IsComplete,
 		IsDetected:      entry.IsDetected,
+		Path:            entry.Path,
 		Uses:            writeUses(entry.Uses),
 	}, nil
 }

@@ -23,7 +23,7 @@ export {
   isStoredKeyLost,
 } from './lib/form'
 export {
-  getAddressText,
+  getLocationText,
   getConnectionState,
   getUsedByNames,
   hasAvailableType,

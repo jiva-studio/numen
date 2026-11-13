@@ -35,6 +35,9 @@ func TestTheAgentsOnThePathAreDetectedWithTheirPrograms(t *testing.T) {
 	if found[0].Name != "Gemini CLI" || found[0].Fields["program"] != "gemini" || found[1].Name != "OpenCode" || found[1].Fields["program"] != "opencode" {
 		t.Errorf("found = %+v", found)
 	}
+	if found[0].Path != filepath.Join(folder, "gemini") || found[1].Path != filepath.Join(folder, "opencode") {
+		t.Errorf("paths = %q, %q, want the programs found on the path", found[0].Path, found[1].Path)
+	}
 }
 
 func TestNothingIsDetectedWithoutAKnownAgentOnThePath(t *testing.T) {

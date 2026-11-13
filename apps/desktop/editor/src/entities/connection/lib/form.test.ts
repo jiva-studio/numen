@@ -104,6 +104,7 @@ const stored = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => ({
   isTypeAvailable: true,
   isComplete: true,
   isDetected: false,
+  path: '',
   uses: [],
   ...overrides,
 })

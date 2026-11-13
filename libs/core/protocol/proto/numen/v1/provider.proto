@@ -80,6 +80,9 @@ message DetectedConnections {
 message DetectedConnection {
   string name = 1;
   map<string, string> fields = 2;
+  // path is where the provider found the connection on this machine, such as the program it runs, with the
+  // home folder written as ~. Empty when there is no such place.
+  string path = 3;
 }
 
 // ProviderServiceCallResponse is one frame of a call.

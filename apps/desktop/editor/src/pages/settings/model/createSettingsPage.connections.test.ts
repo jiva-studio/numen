@@ -21,6 +21,7 @@ const connection: ConnectionInfo = {
   isTypeAvailable: true,
   isComplete: true,
   isDetected: false,
+  path: '',
   uses: [],
 }
 

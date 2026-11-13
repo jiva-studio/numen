@@ -90,6 +90,7 @@ export interface ConnectionInfo {
   readonly isTypeAvailable: boolean
   readonly isComplete: boolean
   readonly isDetected: boolean
+  readonly path: string
   readonly uses: readonly ConnectionUse[]
 }
 
@@ -253,6 +254,7 @@ const readConnection = (connection: ProviderConnection): ConnectionInfo => {
     isTypeAvailable: connection.isTypeAvailable,
     isComplete: connection.isComplete,
     isDetected: connection.isDetected,
+    path: connection.path,
     uses: connection.uses.map((one) => ({
       pluginId: one.pluginId,
       pluginName: one.pluginName,

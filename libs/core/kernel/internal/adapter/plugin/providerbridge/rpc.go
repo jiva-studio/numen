@@ -121,7 +121,7 @@ func (p *provider) ListDetected(ctx context.Context, call modelcall.ProviderCall
 	}
 	found := make([]modelcall.DetectedConnection, len(listed.GetConnections()))
 	for i, one := range listed.GetConnections() {
-		found[i] = modelcall.DetectedConnection{Name: one.GetName(), Fields: one.GetFields()}
+		found[i] = modelcall.DetectedConnection{Name: one.GetName(), Fields: one.GetFields(), Path: one.GetPath()}
 	}
 	return found, nil
 }

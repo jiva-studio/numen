@@ -10,11 +10,15 @@ export function getConnectionState(connection: ConnectionInfo): ConnectionState 
   return connection.isComplete ? 'ready' : 'incomplete'
 }
 
-/** The address the person entered for a connection; empty for a fixed address or an unknown type. */
-export function getAddressText(
+/**
+ * Where a connection points: for a detected connection the path its provider found it at, otherwise the
+ * address the person entered; empty for a fixed address or an unknown type.
+ */
+export function getLocationText(
   type: ConnectionTypeInfo | undefined,
   connection: ConnectionInfo,
 ): string {
+  if (connection.isDetected) return connection.path
   const field = type ? getAddressField(type) : undefined
   const value = field ? connection.fields[field.key] : undefined
   return typeof value === 'string' ? value : ''

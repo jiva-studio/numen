@@ -19,6 +19,7 @@ const (
 	agentsPluginID = "org.example.agents"
 	kiteTypeID     = agentsPluginID + "/kite"
 	kiteID         = kiteTypeID + "/Kite agent"
+	kitePath       = "~/.local/bin/kite"
 )
 
 // detectingSource is the providers of the plugins: each answers connections.detected with the connections set for
@@ -107,7 +108,10 @@ type detectionFixture struct {
 
 func newDetectionFixture() *detectionFixture {
 	f := &detectionFixture{source: &detectingSource{found: map[string][]modelcall.DetectedConnection{
-		"kite": {{Name: "Kite agent", Fields: map[string]string{"program": "kite", "parallelRequests": "2", "token": "invented"}}},
+		"kite": {{
+			Name: "Kite agent", Fields: map[string]string{"program": "kite", "parallelRequests": "2", "token": "invented"},
+			Path: kitePath,
+		}},
 		"wren": {{Name: "Wren agent"}},
 	}}, changes: make(chan struct{}, 8)}
 	types := detectingTypes{
@@ -137,6 +141,9 @@ func TestTheAnswerOfAProviderIsListedForItsAvailableType(t *testing.T) {
 	}
 	if fields := listed[0].Fields; len(fields) != 2 || fields["program"] != "kite" || fields["parallelRequests"] != float64(2) {
 		t.Errorf("fields = %v, want the program and the parallel requests as a number, and no secret", fields)
+	}
+	if listed[0].Path != kitePath {
+		t.Errorf("path = %q, want %q", listed[0].Path, kitePath)
 	}
 }
 

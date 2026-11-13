@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
  * One connection as a row of the list, drawn by the navigation row of the plugin manager: the
- * name, the type as the secondary text (with the address and the plugins that use it), and a chip
- * for the state. The whole row opens the connection for editing. A connection detected on this computer
+ * name, the type as the secondary text (with the address, or the path of a detected connection, and the
+ * plugins that use it), and a chip for the state. The whole row opens the connection for editing. A connection detected on this computer
  * is marked Discovered and is no button: it has nothing to edit and cannot be deleted.
  */
 import { computed, useTemplateRef } from 'vue'
 import { NavigationRow } from '@numen/plugin-manager'
 import type { ConnectionInfo, ConnectionTypeInfo } from '@/entities/connection'
-import { getAddressText, getConnectionState, getUsedByNames } from '@/entities/connection'
+import { getLocationText, getConnectionState, getUsedByNames } from '@/entities/connection'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -24,11 +24,11 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const state = computed(() => getConnectionState(props.connection))
 const typeTitle = computed(() => props.type?.title ?? props.connection.typeId)
-const address = computed(() => getAddressText(props.type, props.connection))
+const location = computed(() => getLocationText(props.type, props.connection))
 const usedBy = computed(() => getUsedByNames(props.connection.uses))
 const row = useTemplateRef<InstanceType<typeof NavigationRow>>('row')
 const detail = computed(() =>
-  [typeTitle.value, address.value, usedBy.value === '' ? '' : words.connectionUsedBy(usedBy.value)]
+  [typeTitle.value, location.value, usedBy.value === '' ? '' : words.connectionUsedBy(usedBy.value)]
     .filter((one) => one !== '')
     .join(' · '),
 )

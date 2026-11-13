@@ -89,6 +89,7 @@ const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => 
   isTypeAvailable: true,
   isComplete: true,
   isDetected: false,
+  path: '',
   uses: [],
   ...overrides,
 })
@@ -208,6 +209,22 @@ describe('the page of connections', () => {
     await click(sample)
 
     expect(root().querySelector('[role="dialog"]')).toBeNull()
+    dispose(wrapper)
+  })
+
+  it('shows the kind and the path of a detected connection under its name', async () => {
+    const detected = connection({
+      id: `${AGENT.id}/Kite agent`,
+      typeId: AGENT.id,
+      name: 'Kite agent',
+      secretKeysSet: [],
+      isDetected: true,
+      path: '~/.local/bin/kite',
+    })
+    const { wrapper } = mountPage([detected], [AGENT])
+    await flushPromises()
+
+    expect(entryOf('Kite agent').textContent).toContain('Sample agent · ~/.local/bin/kite')
     dispose(wrapper)
   })
 

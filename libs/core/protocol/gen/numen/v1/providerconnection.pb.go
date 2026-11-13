@@ -234,7 +234,10 @@ type ProviderConnection struct {
 	Uses []*ProviderConnectionUse `protobuf:"bytes,7,rep,name=uses,proto3" json:"uses,omitempty"`
 	// is_detected marks a connection the provider of its type reported ready on this machine through the
 	// operation connections.detected. It is not stored, and it cannot be changed or deleted.
-	IsDetected    bool `protobuf:"varint,10,opt,name=is_detected,json=isDetected,proto3" json:"is_detected,omitempty"`
+	IsDetected bool `protobuf:"varint,10,opt,name=is_detected,json=isDetected,proto3" json:"is_detected,omitempty"`
+	// path is where the provider found a detected connection on this machine, such as the program it runs,
+	// with the home folder written as ~. Empty for a stored connection.
+	Path          string `protobuf:"bytes,11,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -337,6 +340,13 @@ func (x *ProviderConnection) GetIsDetected() bool {
 		return x.IsDetected
 	}
 	return false
+}
+
+func (x *ProviderConnection) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
 }
 
 // ProviderConnectionUse is a setting of rows of a plugin that names a connection.
@@ -1094,7 +1104,7 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\x06fields\x18\a \x03(\v2!.numen.v1.ManifestConnectionFieldR\x06fields\x12@\n" +
 	"\n" +
 	"row_fields\x18\t \x03(\v2!.numen.v1.ManifestConnectionFieldR\trowFields\x12!\n" +
-	"\fis_available\x18\b \x01(\bR\visAvailable\"\xcd\x03\n" +
+	"\fis_available\x18\b \x01(\bR\visAvailable\"\xe1\x03\n" +
 	"\x12ProviderConnection\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\atype_id\x18\x02 \x01(\tR\x06typeId\x12\x12\n" +
@@ -1108,7 +1118,8 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\x04uses\x18\a \x03(\v2\x1f.numen.v1.ProviderConnectionUseR\x04uses\x12\x1f\n" +
 	"\vis_detected\x18\n" +
 	" \x01(\bR\n" +
-	"isDetected\x1aQ\n" +
+	"isDetected\x12\x12\n" +
+	"\x04path\x18\v \x01(\tR\x04path\x1aQ\n" +
 	"\vFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
 	"\x05value\x18\x02 \x01(\v2\x16.google.protobuf.ValueR\x05value:\x028\x01\"{\n" +

@@ -65,8 +65,10 @@ type ProviderCall struct {
 type Option struct{ Value, Title, Group string }
 
 // DetectedConnection is a connection a provider found ready on this machine: its name, unique within the type,
-// and the values of fields of the type that are not secret, by key.
+// the values of fields of the type that are not secret, by key, and where the provider found it, such as the
+// program it runs, with the home folder written as ~.
 type DetectedConnection struct {
 	Name   string
+	Path   string
 	Fields map[string]string
 }

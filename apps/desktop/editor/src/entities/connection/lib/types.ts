@@ -79,6 +79,7 @@ export interface ConnectionInfo {
   readonly isTypeAvailable: boolean
   readonly isComplete: boolean
   readonly isDetected: boolean
+  readonly path: string
   readonly uses: readonly ConnectionUse[]
 }
 

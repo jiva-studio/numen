@@ -22,7 +22,8 @@ func New(lookPath func(string) (string, error)) *Detection {
 }
 
 // DetectConnections returns one connection for each agent of agents.ListKnown whose program is found, named
-// as the registry names the agent and with the program in the field program, in the order of the names.
+// as the registry names the agent, with the program in the field program and the path lookPath found, in the
+// order of the names.
 func (d *Detection) DetectConnections(context.Context, connection.Call) ([]connection.DetectedConnection, error) {
 	found := []connection.DetectedConnection{}
 	if d.lookPath == nil {
@@ -30,7 +31,9 @@ func (d *Detection) DetectConnections(context.Context, connection.Call) ([]conne
 	}
 	for _, one := range agents.ListKnown() {
 		if path, err := d.lookPath(one.Program); err == nil && path != "" {
-			found = append(found, connection.DetectedConnection{Name: one.Name, Fields: map[string]string{fieldProgram: one.Program}})
+			found = append(found, connection.DetectedConnection{
+				Name: one.Name, Fields: map[string]string{fieldProgram: one.Program}, Path: path,
+			})
 		}
 	}
 	return found, nil

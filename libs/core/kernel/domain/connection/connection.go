@@ -16,13 +16,15 @@ const connectionIDLength = 9
 
 // Connection is a stored place to send requests to and the way in. Fields holds the values of the
 // fields the person set, secret fields excluded: their values are kept in the key store. Revision
-// grows by one at every change, including a change of a secret.
+// grows by one at every change, including a change of a secret. Path is where the provider of a detected
+// connection found it on this machine, empty for a stored connection.
 type Connection struct {
 	ID       string
 	TypeID   string
 	Name     string
 	Revision int
 	Fields   map[string]any
+	Path     string
 }
 
 // Type is a kind of connection together with the plugin that provides it. IsAvailable is whether

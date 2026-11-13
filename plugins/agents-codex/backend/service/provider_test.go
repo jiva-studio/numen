@@ -375,12 +375,13 @@ func TestTheProgramOnThePathIsDetected(t *testing.T) {
 
 func TestTheProgramAtTheExecutablePathIsDetected(t *testing.T) {
 	withoutAgentsAnywhere(t)
-	svc := newCodex(t, nil, writeScript(t, "codex", "exit 0\n"))
+	program := writeScript(t, "codex", "exit 0\n")
+	svc := newCodex(t, nil, program)
 
 	found, err := svc.tasks.DetectConnections(t.Context(), connection.Call{Type: "codex"})
 
-	if err != nil || len(found) != 1 || found[0].Name != "OpenAI Codex" {
-		t.Errorf("DetectConnections = %+v, %v, want OpenAI Codex", found, err)
+	if err != nil || len(found) != 1 || found[0].Name != "OpenAI Codex" || found[0].Path != program {
+		t.Errorf("DetectConnections = %+v, %v, want OpenAI Codex at %s", found, err, program)
 	}
 }
 

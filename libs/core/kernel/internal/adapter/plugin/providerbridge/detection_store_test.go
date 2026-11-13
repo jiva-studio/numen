@@ -70,7 +70,10 @@ func TestARestartListsTheStoredAnswerWithoutAskingTheProvider(t *testing.T) {
 
 	listed := restarted.ListDetected()
 	if len(listed) != 1 || listed[0].ID != kiteID || listed[0].Fields["parallelRequests"] != float64(2) || listed[0].Fields["program"] != "kite" {
-		t.Errorf("listed = %+v, want Kite agent with its fields", listed)
+		t.Fatalf("listed = %+v, want Kite agent with its fields", listed)
+	}
+	if listed[0].Path != kitePath {
+		t.Errorf("path = %q, want the path the provider answered, %q", listed[0].Path, kitePath)
 	}
 	if restarted.IsPending(kiteTypeID) {
 		t.Error("the type is pending after a restart with its answer kept")

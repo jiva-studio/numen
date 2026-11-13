@@ -405,12 +405,13 @@ func TestTheProgramOnThePathIsDetected(t *testing.T) {
 
 func TestTheProgramAtTheExecutablePathIsDetected(t *testing.T) {
 	withoutClaudeAnywhere(t)
-	svc := newClaude(t, nil, writeScript(t, "claude", "exit 0\n"))
+	program := writeScript(t, "claude", "exit 0\n")
+	svc := newClaude(t, nil, program)
 
 	found, err := svc.tasks.DetectConnections(t.Context(), connection.Call{Type: "claude-code"})
 
-	if err != nil || len(found) != 1 || found[0].Name != "Claude Code" {
-		t.Errorf("DetectConnections = %+v, %v, want Claude Code", found, err)
+	if err != nil || len(found) != 1 || found[0].Name != "Claude Code" || found[0].Path != program {
+		t.Errorf("DetectConnections = %+v, %v, want Claude Code at %s", found, err, program)
 	}
 }
 

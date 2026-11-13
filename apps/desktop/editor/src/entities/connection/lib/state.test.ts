@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ConnectionInfo, ConnectionTypeInfo } from './types'
 import {
-  getAddressText,
+  getLocationText,
   getConnectionState,
   getUsedByNames,
   hasAvailableType,
@@ -41,6 +41,7 @@ const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => 
   isTypeAvailable: true,
   isComplete: true,
   isDetected: false,
+  path: '',
   uses: [],
   ...overrides,
 })
@@ -61,13 +62,22 @@ describe('getConnectionState', () => {
   })
 })
 
-describe('getAddressText', () => {
+describe('getLocationText', () => {
   it('returns the address the person entered, and nothing for a fixed address or a missing type', () => {
     const entered = connection({ fields: { baseUrl: 'http://localhost:11434/v1' } })
-    expect(getAddressText(type(), entered)).toBe('http://localhost:11434/v1')
-    expect(getAddressText(type(), connection())).toBe('')
-    expect(getAddressText(undefined, entered)).toBe('')
-    expect(getAddressText(type({ fields: [] }), entered)).toBe('')
+    expect(getLocationText(type(), entered)).toBe('http://localhost:11434/v1')
+    expect(getLocationText(type(), connection())).toBe('')
+    expect(getLocationText(undefined, entered)).toBe('')
+    expect(getLocationText(type({ fields: [] }), entered)).toBe('')
+  })
+
+  it('returns the path the provider found a detected connection at, not its address', () => {
+    const detected = connection({
+      isDetected: true,
+      path: '~/.local/bin/kite',
+      fields: { baseUrl: 'http://localhost:11434/v1' },
+    })
+    expect(getLocationText(type(), detected)).toBe('~/.local/bin/kite')
   })
 })
 
