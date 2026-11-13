@@ -5,7 +5,8 @@ import { DEFAULT_OPTIONS } from './options'
 import { graphs } from '../../fixtures/graphs'
 import type { PlexFrame } from '../frame'
 import type { PlacedNode } from '../node'
-import { rowsAndColumns, type Placement } from './layout/placement'
+import { clusters } from './layout/clusters'
+import type { Placement } from './layout/placement'
 import { build } from '../../fixtures/build'
 import type { PlexGraph, PlexNode, PlexRelation, PlexNodeRelation } from '../../../types'
 
@@ -20,15 +21,6 @@ const createGraph = (relation: PlexRelation, ...titles: string[]): PlexGraph => 
   ],
   edges: [],
 })
-
-const inLines = (nodes: readonly PlacedNode[], perLine: number): PlacedNode[][] => {
-  const lines: PlacedNode[][] = []
-  for (const node of nodes) {
-    const line = Math.floor(node.order / perLine)
-    ;(lines[line] ??= []).push(node)
-  }
-  return lines
-}
 
 const getNodesByRelation = (layout: { nodes: readonly PlacedNode[] }, relation: PlexNodeRelation) =>
   layout.nodes.filter((node) => node.relation === relation)
@@ -105,33 +97,10 @@ describe('where the relations sit', () => {
     expect(getNodesByRelation(layout, 'jump').length).toBeGreaterThan(0)
     expect(getNodesByRelation(layout, 'sibling').length).toBeGreaterThan(0)
   })
-
-  it('clears the rows a column runs alongside, and only those', () => {
-    // A column at a fixed distance lands on a row once the row outgrows it.
-    const wideLayout = arrangePlex(graphs.overcrowded)
-    const columns = getNodesByRelation(wideLayout, 'jump')
-    const columnReach = Math.max(...columns.map((n) => Math.abs(n.y) + n.height / 2))
-    const alongside = [
-      ...getNodesByRelation(wideLayout, 'parent'),
-      ...getNodesByRelation(wideLayout, 'child'),
-    ].filter((n) => Math.abs(n.y) - n.height / 2 < columnReach)
-    expect(alongside.length).toBeGreaterThan(0)
-    const rowsReach = Math.max(...alongside.map((n) => Math.abs(n.x) + n.width / 2))
-    for (const column of columns) {
-      expect(Math.abs(column.x) - column.width / 2).toBeGreaterThanOrEqual(rowsReach)
-    }
-
-    // And a short column is not dragged out to a row it never comes near.
-    const short = Math.min(...getNodesByRelation(layout, 'jump').map((n) => Math.abs(n.x)))
-    const childrenReach = Math.max(
-      ...getNodesByRelation(layout, 'child').map((n) => Math.abs(n.x) + n.width / 2),
-    )
-    expect(short).toBeLessThan(childrenReach)
-  })
 })
 
 describe('a box is as wide as its title needs', () => {
-  const { minWidth, nodeSize, focusSize, focusScale, gap, lineGap, maxPerLine } = DEFAULT_OPTIONS
+  const { minWidth, nodeSize, focusSize, focusScale } = DEFAULT_OPTIONS
 
   it('draws every box at its widest when nothing was measured', () => {
     const layout = arrangePlex(graphs.typical)
@@ -164,42 +133,12 @@ describe('a box is as wide as its title needs', () => {
     for (const node of getNodesByRelation(layout, 'child')) expect(node.width).toBe(minWidth)
   })
 
-  it('leaves a row packed to one gap between boxes, and centered on the focus', () => {
+  it('puts the first box of a group on the axis of its side, whatever the widths', () => {
     const mixed = createGraph('child', 'A', 'Domain', 'Composition root', 'Port', 'Use case')
     const children = getNodesByRelation(arrangePlex(mixed, { measure: byTitle }), 'child')
 
     expect(new Set(children.map((node) => node.width)).size).toBeGreaterThan(1)
-    for (let i = 1; i < children.length; i++) {
-      const before = children[i - 1]!
-      const node = children[i]!
-      expect(node.x - node.width / 2 - (before.x + before.width / 2)).toBeCloseTo(gap)
-    }
-
-    const minLeft = Math.min(...children.map((node) => node.x - node.width / 2))
-    const right = Math.max(...children.map((node) => node.x + node.width / 2))
-    expect(minLeft + right).toBeCloseTo(0)
-  })
-
-  it('turns one edge of a column towards the focus, whatever the widths', () => {
-    const mixed = createGraph('jump', 'A', 'Dependency inversion', 'Port')
-    const jumps = getNodesByRelation(arrangePlex(mixed, { measure: byTitle }), 'jump')
-
-    expect(new Set(jumps.map((node) => node.width)).size).toBeGreaterThan(1)
-    const nearDistances = jumps.map((node) => Math.abs(node.x) - node.width / 2)
-    for (const edge of nearDistances) expect(edge).toBeCloseTo(nearDistances[0]!)
-  })
-
-  it('starts each further column beyond the widest of the one before it', () => {
-    const jumps = getNodesByRelation(arrangePlex(graphs.overcrowded, { measure: byTitle }), 'jump')
-    const lines = inLines(jumps, maxPerLine)
-    expect(lines.length).toBeGreaterThan(1)
-
-    const getNearEdge = (line: PlacedNode[]) => Math.abs(line[0]!.x) - line[0]!.width / 2
-    for (let i = 1; i < lines.length; i++) {
-      const before = lines[i - 1]!
-      const widest = Math.max(...before.map((node) => node.width))
-      expect(getNearEdge(lines[i]!)).toBeCloseTo(getNearEdge(before) + widest + lineGap)
-    }
+    expect(children[0]!.x).toBe(0)
   })
 
   it('shows as much as it would have shown unmeasured', () => {
@@ -243,7 +182,9 @@ describe('a label is as long as its words', () => {
   })
 
   it('cuts words too long for their line', () => {
-    expect(getWords((label) => 6 * [...label].length)).toBe('the scen…')
+    const words = getWords((label) => 6 * [...label].length)
+    expect(words).toMatch(/^the .+…$/)
+    expect(words!.length).toBeLessThan('the scene in the assembly'.length)
   })
 
   it('writes no words at all where the line holds none of them', () => {
@@ -306,57 +247,10 @@ describe('the same input gives the same numbers', () => {
   })
 })
 
-describe('the lines of a relation are shared out evenly', () => {
-  it('keeps every line within one node of every other', () => {
-    const children = getNodesByRelation(
-      arrangePlex(graphs.typical, { options: { maxPerLine: 4 } }),
-      'child',
-    )
-    const lines = new Map<number, number>()
-    for (const node of children) lines.set(node.y, (lines.get(node.y) ?? 0) + 1)
-
-    const lengths = [...lines.values()]
-    expect(Math.max(...lengths) - Math.min(...lengths)).toBeLessThanOrEqual(1)
-  })
-
-  it('never puts more on a line than the limit allows', () => {
-    for (const maxPerLine of [1, 2, 3, 4, 5]) {
-      const children = getNodesByRelation(
-        arrangePlex(graphs.crowded, { options: { maxPerLine } }),
-        'child',
-      )
-      const lines = new Map<number, number>()
-      for (const node of children) lines.set(node.y, (lines.get(node.y) ?? 0) + 1)
-      expect(Math.max(...lines.values())).toBeLessThanOrEqual(maxPerLine)
-    }
-  })
-})
-
-describe('order along a line follows the order given', () => {
+describe('order within a group follows the order given', () => {
   it('numbers each relation outward from the focus', () => {
     const children = getNodesByRelation(arrangePlex(graphs.crowded), 'child')
     expect(children.map((node) => node.order)).toStrictEqual(children.map((_, index) => index))
-  })
-
-  it('lays a row out left to right', () => {
-    const children = getNodesByRelation(arrangePlex(graphs.typical), 'child')
-    const firstLine = children.filter((node) => node.y === children[0]!.y)
-    expect(firstLine.length).toBeGreaterThan(1)
-    for (let i = 1; i < firstLine.length; i++) {
-      const previous = firstLine[i - 1]
-      const current = firstLine[i]
-      if (!previous || !current) continue
-      expect(current.x).toBeGreaterThan(previous.x)
-    }
-  })
-
-  it('puts the second line further from the focus than the first', () => {
-    const children = getNodesByRelation(arrangePlex(graphs.crowded), 'child')
-    const first = children[0]
-    const onSecondLine = children.find((node) => node.y !== first!.y)
-    expect(first).toBeDefined()
-    expect(onSecondLine).toBeDefined()
-    expect(onSecondLine!.y).toBeGreaterThan(first!.y)
   })
 
   it('keeps the relative order when one more node arrives', () => {
@@ -371,14 +265,13 @@ describe('order along a line follows the order given', () => {
 })
 
 describe('what does not fit is reported and not dropped silently', () => {
-  it('counts the nodes past the last line, per relation', () => {
-    const { maxPerLine, maxLines } = DEFAULT_OPTIONS
-    const capacity = maxPerLine * maxLines
+  it('counts the nodes past the cap of a group, per relation', () => {
+    const capacity = DEFAULT_OPTIONS.maxPerCluster
     const { overflow, nodes } = arrangePlex(graphs.overcrowded)
 
     expect(overflow.child).toBe(200 - capacity)
     expect(overflow.jump).toBe(40 - capacity)
-    expect(overflow.parent).toBeUndefined() // nine parents fit in four lines of five
+    expect(overflow.parent).toBeUndefined() // nine parents are under the cap
     expect(nodes.filter((node) => node.relation === 'child')).toHaveLength(capacity)
   })
 
@@ -428,17 +321,21 @@ describe('the extent', () => {
 })
 
 describe('the options are honoured', () => {
-  it('lets the caller change how many fit on a line', () => {
-    const narrow = arrangePlex(graphs.crowded, { options: { maxPerLine: 3 } })
-    const children = getNodesByRelation(narrow, 'child')
-    const onFirstLine = children.filter((node) => node.y === children[0]!.y)
-    expect(onFirstLine).toHaveLength(3)
+  it('lets the caller change how many are shown in a group', () => {
+    const narrow = arrangePlex(graphs.crowded, { options: { maxPerCluster: 3 } })
+    expect(getNodesByRelation(narrow, 'child')).toHaveLength(3)
   })
 
   it('lets the caller send children up and parents down', () => {
     const upside = arrangePlex(graphs.typical, {
       options: {
-        direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
+        direction: {
+          parent: 'down',
+          child: 'up',
+          jump: 'left',
+          reference: 'left',
+          sibling: 'right',
+        },
       },
     })
     for (const child of getNodesByRelation(upside, 'child')) expect(child.y).toBeLessThan(0)
@@ -456,7 +353,7 @@ describe('the options are honoured', () => {
 })
 
 describe('the arrangement is a strategy, not a shape baked in', () => {
-  it('uses rows and columns unless told otherwise', () => {
+  it('uses clusters unless told otherwise', () => {
     const frame = arrangePlex(graphs.typical)
     expect(getNodesByRelation(frame, 'parent').every((n) => n.y < 0)).toBe(true)
   })
@@ -497,7 +394,7 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
   })
 
   it('does not let a strategy decide how much is shown', () => {
-    // Admission is settled before a strategy runs, so the count is the same
+    // Admission is settled by the window and the cap, so the count is the same
     // whichever arrangement drew it.
     const countPlacement: Placement = {
       name: 'counting',
@@ -515,9 +412,8 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
           })),
     }
 
-    const { maxPerLine, maxLines } = DEFAULT_OPTIONS
     const frame = arrangePlex(graphs.overcrowded, { placement: countPlacement })
-    expect(frame.overflow.child).toBe(200 - maxPerLine * maxLines)
+    expect(frame.overflow.child).toBe(200 - DEFAULT_OPTIONS.maxPerCluster)
   })
 
   it('passes a strategy only the relations that have nodes in them', () => {
@@ -526,7 +422,7 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
       name: 'recording',
       place: (nodesByRelation, focus, context) => {
         handed.push(Object.keys(nodesByRelation))
-        return rowsAndColumns.place(nodesByRelation, focus, context)
+        return clusters.place(nodesByRelation, focus, context)
       },
     }
 
@@ -539,13 +435,18 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
 
 describe('a window that holds the arrangement exactly', () => {
   it('opens the gaps that have room, the height being met to the pixel', () => {
-    const { nodeSize, gap, spread, focusSize, focusGap, margin } = DEFAULT_OPTIONS
-    const reach = focusSize.height / 2 + focusGap + nodeSize.height
-    const viewport = { width: 2000, height: 2 * (reach + margin) }
+    const { nodeSize, gap, margin } = DEFAULT_OPTIONS
+    const two = createGraph('child', 'One', 'Two')
+    const settings = getNodesByRelation(arrangePlex(two), 'child')
+    const bottom = Math.max(...settings.map((node) => node.y + node.height / 2))
+    const viewport = { width: 2000, height: 2 * (bottom + margin) }
 
-    const frame = arrangePlex(createGraph('child', 'One', 'Two'), { options: { viewport } })
+    const frame = arrangePlex(two, { options: { viewport } })
     const [first, second] = getNodesByRelation(frame, 'child')
 
-    expect(second!.x - first!.x).toBe(nodeSize.width + gap * spread)
+    expect(Math.max(...[first!, second!].map((node) => node.y + node.height / 2))).toBeCloseTo(
+      bottom,
+    )
+    expect(Math.abs(second!.x - first!.x)).toBeGreaterThan(nodeSize.width + gap)
   })
 })

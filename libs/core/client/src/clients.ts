@@ -8,6 +8,7 @@ import {
   ErrorCode as ProtoErrorCode,
   FileService,
   FlushResult,
+  LinkDirection,
   Marker,
   Mode,
   NameSource,
@@ -68,6 +69,9 @@ export type NoteRoleCode = Role
 
 export const NOTE_RELATION = Relation
 export type NoteRelationCode = Relation
+
+export const NOTE_LINK_DIRECTION = LinkDirection
+export type NoteLinkDirectionCode = LinkDirection
 
 export const FLUSH_RESULT = FlushResult
 export type FlushResultCode = FlushResult

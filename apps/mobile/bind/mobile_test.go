@@ -17,7 +17,7 @@ import (
 )
 
 // graphCenter is the note of writeGraph with every relation: a parent, two
-// children, a sibling and a jump.
+// children, a sibling, a jump and a reference.
 const graphCenter = "Physics.md"
 
 func writeGraph(t *testing.T, root string) {
@@ -33,11 +33,12 @@ func writeGraph(t *testing.T, root string) {
 			"  - to: \"[[Sciences]]\"\n    role: parent\n" +
 			"  - to: \"[[Entropy]]\"\n    role: child\n" +
 			"  - to: \"[[Tides]]\"\n    role: child\n" +
-			"  - to: \"[[Vellum]]\"\n    role: jump\n---\n\n# Physics\n",
+			"  - to: \"[[Vellum]]\"\n    role: jump\n---\n\n# Physics\n\nSee [[Aurora]].\n",
 		"Optics.md":  "# Optics\n",
 		"Entropy.md": "# Entropy\n",
 		"Tides.md":   "# Tides\n",
 		"Vellum.md":  "# Vellum\n",
+		"Aurora.md":  "# Aurora\n",
 	}
 	for name, text := range notes {
 		if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o644); err != nil {
@@ -112,7 +113,7 @@ func TestStartAnswers(t *testing.T) {
 	}
 
 	// The vault is read behind the caller, so the relations are polled for.
-	wanted := []string{"RELATION_PARENT", "RELATION_CHILD", "RELATION_JUMP", "RELATION_SIBLING"}
+	wanted := []string{"RELATION_PARENT", "RELATION_CHILD", "RELATION_JUMP", "RELATION_SIBLING", "RELATION_REFERENCE"}
 	relations := map[string]int{}
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()

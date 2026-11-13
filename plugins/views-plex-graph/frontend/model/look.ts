@@ -4,10 +4,13 @@
  */
 import { shallowRef, type Ref } from 'vue'
 import type { JsonValue, PluginContext, Unvalidated } from '@numen/plugin-sdk'
-import type { PlexLook } from '../types'
+import type { PlexLook, ReferenceMode } from '../types'
 
 /** The key the manifest declares Pill background under. */
 const SHOW_PILLS = 'showPills'
+
+/** The key the manifest declares References under. */
+const REFERENCES = 'references'
 
 /** A number setting: the default the manifest declares, and the range it takes. */
 interface NumberRange {
@@ -29,6 +32,11 @@ const LOOK_NUMBERS = [
 ] as const satisfies readonly (readonly [string, NumberRange])[]
 
 type LookNumber = (typeof LOOK_NUMBERS)[number][0]
+
+const REFERENCE_MODES: readonly ReferenceMode[] = ['off', 'outgoing', 'incoming', 'both']
+
+const parseReferences = (value: Unvalidated): ReferenceMode =>
+  typeof value === 'string' ? (REFERENCE_MODES.find((mode) => mode === value) ?? 'both') : 'both'
 
 const parseShowPills = (value: Unvalidated): boolean => (typeof value === 'boolean' ? value : true)
 
@@ -57,7 +65,11 @@ export function readLook(context: Pick<PluginContext, 'settings'>): PlexLook {
       followSetting(context, key, (value) => parseNumber(value, range)),
     ]),
   ) as Record<LookNumber, Ref<number>>
-  return { ...numbers, showPills: followSetting(context, SHOW_PILLS, parseShowPills) }
+  return {
+    ...numbers,
+    showPills: followSetting(context, SHOW_PILLS, parseShowPills),
+    references: followSetting(context, REFERENCES, parseReferences),
+  }
 }
 
 /** The look at its defaults, for a plex no settings are read for. */

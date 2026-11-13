@@ -48,3 +48,15 @@ describe('walking', () => {
     }
   })
 })
+
+describe('references', () => {
+  it('builds the requested number of reference nodes, each with a line to or from the focus', () => {
+    const graph = build('A node', { child: 2, reference: 3 })
+    const references = graph.nodes.filter((node) => node.relation === 'reference')
+
+    expect(references).toHaveLength(3)
+    for (const node of references) {
+      expect(graph.edges.some((edge) => edge.from === node.id || edge.to === node.id)).toBe(true)
+    }
+  })
+})

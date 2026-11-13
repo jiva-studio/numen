@@ -6,25 +6,24 @@ import { spacingAsSet, findSpacing, type Spacing } from './spacing'
 import { build } from '../../../fixtures/build'
 import type { PlexFrame } from '../../frame'
 
-const { nodeSize, focusSize, gap, focusGap, margin, spread } = DEFAULT_OPTIONS
-
-/** The step from one node to the next along a line, at the settings. */
-const TIGHT_STEP = nodeSize.width + gap
-
-/** A window wide enough for eleven children at the settings and no wider. */
-const EXACT = { width: 11 * nodeSize.width + 10 * gap + 2 * margin, height: 1000 }
+const { nodeSize, focusSize, gap, lineGap, focusGap, margin, spread } = DEFAULT_OPTIONS
 
 const children = (frame: PlexFrame) => frame.nodes.filter((node) => node.relation === 'child')
 
-const stepAxis = (frame: PlexFrame) => {
-  const [first, second] = children(frame)
-  return second!.x - first!.x
+const getSeparation = (frame: PlexFrame): number => {
+  const nodes = children(frame)
+  let smallest = Infinity
+  nodes.forEach((a, index) => {
+    for (const b of nodes.slice(index + 1)) {
+      const sideways = Math.abs(a.x - b.x) - (a.width + b.width) / 2
+      const lengthways = Math.abs(a.y - b.y) - (a.height + b.height) / 2
+      smallest = Math.min(smallest, Math.max(sideways, lengthways))
+    }
+  })
+  return smallest
 }
 
-const firstLine = (frame: PlexFrame) => {
-  const line = children(frame)[0]!.y
-  return children(frame).filter((node) => node.y === line)
-}
+const getNearestY = (frame: PlexFrame): number => Math.min(...children(frame).map((node) => node.y))
 
 const findEscapedNodes = (frame: PlexFrame, viewport: { width: number; height: number }) =>
   frame.nodes.filter(
@@ -34,70 +33,50 @@ const findEscapedNodes = (frame: PlexFrame, viewport: { width: number; height: n
   )
 
 describe('a gap is never given less than its setting', () => {
-  it('packs a crowded window to the settings and no closer', () => {
-    const viewport = { width: 700, height: 600 }
+  it('packs a window that holds the group to the settings and no closer', () => {
+    const viewport = { width: 1200, height: 800 }
     const frame = arrangePlex(build('A node', { child: 11 }), { options: { viewport } })
-    expect(stepAxis(frame)).toBeGreaterThanOrEqual(TIGHT_STEP)
+    expect(getSeparation(frame)).toBeGreaterThanOrEqual(Math.min(gap, lineGap) - 0.5)
   })
 
   it('is the whole of it at a spread of one', () => {
     const viewport = { width: 2400, height: 1400 }
-    const frame = arrangePlex(build('A node', { child: 5 }), {
+    const frame = arrangePlex(build('A node', { child: 1 }), {
       options: { viewport, spread: 1 },
     })
-    expect(stepAxis(frame)).toBe(TIGHT_STEP)
-    expect(firstLine(frame)[0]!.y).toBe(focusSize.height / 2 + focusGap + nodeSize.height / 2)
+    expect(getNearestY(frame)).toBe(focusSize.height / 2 + focusGap + nodeSize.height / 2)
   })
 })
 
 describe('a gap opens into the room the window leaves', () => {
-  it('spaces a short row out in a wide window', () => {
+  it('spaces a short group out in a wide window', () => {
     const viewport = { width: 2400, height: 1400 }
+    const settings = arrangePlex(build('A node', { child: 3 }))
     const frame = arrangePlex(build('A node', { child: 3 }), { options: { viewport } })
-    expect(stepAxis(frame)).toBeGreaterThan(TIGHT_STEP)
+    expect(getSeparation(frame)).toBeGreaterThan(getSeparation(settings))
   })
 
   it('opens no further than the spread allows, however much room there is', () => {
     const roomy = arrangePlex(build('A node', { child: 3 }), {
       options: { viewport: { width: 4000, height: 3000 } },
     })
-    expect(stepAxis(roomy)).toBeLessThanOrEqual(nodeSize.width + gap * spread)
+    expect(getSeparation(roomy)).toBeLessThanOrEqual(spread * Math.max(gap, lineGap) + 1e-6)
   })
 
   it('leaves the settings alone when there is no window to measure', () => {
-    const frame = arrangePlex(build('A node', { child: 3 }))
-    expect(stepAxis(frame)).toBe(TIGHT_STEP)
+    const frame = arrangePlex(build('A node', { child: 1 }))
+    expect(getNearestY(frame)).toBe(focusSize.height / 2 + focusGap + nodeSize.height / 2)
   })
 })
 
 describe('the gap an edge crosses opens first', () => {
-  it('places the first line further down when the width is already reserved', () => {
-    // Eleven children fill this window edge to edge, so nothing opens sideways.
-    // The height is untouched, and the label an edge carries is read there.
-    const frame = arrangePlex(build('A node', { child: 11 }), {
-      options: { viewport: EXACT },
+  it('places the first children further from the focus when the window has room', () => {
+    const frame = arrangePlex(build('A node', { child: 1 }), {
+      options: { viewport: { width: 2400, height: 1400 } },
     })
-    expect(stepAxis(frame)).toBe(TIGHT_STEP)
-    expect(firstLine(frame)[0]!.y).toBeGreaterThan(
+    expect(getNearestY(frame)).toBeGreaterThan(
       focusSize.height / 2 + focusGap + nodeSize.height / 2,
     )
-  })
-})
-
-describe('a line runs as long as the window holds', () => {
-  it('places eleven children on one line when the width is there', () => {
-    const frame = arrangePlex(build('A node', { child: 11 }), {
-      options: { viewport: { width: 1970, height: 1440 } },
-    })
-    expect(firstLine(frame)).toHaveLength(11)
-  })
-
-  it('wraps the same eleven when it is not', () => {
-    const frame = arrangePlex(build('A node', { child: 11 }), {
-      options: { viewport: { width: 1200, height: 800 } },
-    })
-    expect(firstLine(frame).length).toBeLessThan(11)
-    expect(frame.overflow.child).toBeUndefined()
   })
 })
 

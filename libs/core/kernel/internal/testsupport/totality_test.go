@@ -23,6 +23,7 @@ func getWalkedMessages() map[protoreflect.FullName]string {
 		"numen.v1.HostStoreErrorCode":          "plugin/sdk-go/host: read by readStoreError",
 		"numen.v1.HostVaultErrorCode":          "plugin/sdk-go/host: read by fail",
 		"numen.v1.HostWindowErrorCode":         "plugin/sdk-go/host: read by readWindowError",
+		"numen.v1.LinkDirection":               "adapter/window/editor: written by convertDirectionToWire",
 		"numen.v1.Mode":                        "internal/adapterlib/wire: round trip through ConvertModeFromWire and ConvertModeToWire",
 		"numen.v1.NameSource":                  "adapter/window/editor: written by newWireNameSource",
 		"numen.v1.ProviderConnectionErrorCode": "adapter/window/connection: written by getErrorCode",

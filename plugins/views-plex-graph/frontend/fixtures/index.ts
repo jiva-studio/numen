@@ -23,6 +23,7 @@ export interface RelatedNoteSpec {
   reverseMarker?: LinkMarker
   title?: string
   type?: NoteType
+  direction?: 'outgoing' | 'incoming' | 'both'
 }
 
 export type RelatedNoteInput = string | RelatedNoteSpec
@@ -69,8 +70,14 @@ const createNoteGraph = (
       title: spec.title ?? spec.path.replace(/\.md$/, ''),
       type: spec.type ?? types[spec.path] ?? NOTE_TYPE,
       ...(types[spec.path] ? { tabKind: types[spec.path] } : {}),
+      ...(spec.direction ? { direction: spec.direction } : {}),
     })),
-    connections: [...specs.map((spec) => createLine(focus, spec)), ...lines],
+    connections: [
+      ...specs
+        .filter((spec) => spec.relation !== 'reference')
+        .map((spec) => createLine(focus, spec)),
+      ...lines,
+    ],
   }
   return focusKind ? { ...noteGraph, focusTabKind: focusKind } : noteGraph
 }

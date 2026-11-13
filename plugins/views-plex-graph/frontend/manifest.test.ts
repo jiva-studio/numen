@@ -228,6 +228,19 @@ describe('the look settings of the plex', () => {
       'headingLimit',
       'showPills',
       ...NUMBERS.map(([key]) => key),
+      'references',
+    ])
+  })
+
+  it('declares References as four choices that show the notes linked in the text, both ways by default', () => {
+    const setting = settings.find((one) => one.key === 'references')
+
+    expect(setting).toMatchObject({ type: 'enum', title: 'References', default: 'both' })
+    expect((setting?.options as { value: string }[]).map((option) => option.value)).toStrictEqual([
+      'off',
+      'outgoing',
+      'both',
+      'incoming',
     ])
   })
 

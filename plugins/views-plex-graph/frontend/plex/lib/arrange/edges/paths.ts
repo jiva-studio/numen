@@ -6,6 +6,7 @@
  */
 import { ARROW_LENGTH, type EdgeCurve, type EdgeHeading, type PlacedArrow } from '../../edge'
 import type { Position } from '@numen/ui'
+import { DEFAULT_OPTIONS } from '../options'
 
 /** The curve, from where it leaves to where it arrives. */
 export const createPath = (edge: EdgeCurve): string =>
@@ -32,10 +33,16 @@ export const createArrowTransform = (arrow: PlacedArrow): string =>
 
 /**
  * A line between two loose points: out of the first and into the second, each
- * end square-on, reaching half the sideways distance between them.
+ * end square-on. At the default curvature it reaches half the sideways
+ * distance between them; the reach scales with the curvature like the bow of
+ * a line, and is nothing at 0, which makes the line straight.
  */
-export const createThreadPath = (start: Position, to: Position): string => {
-  const reachOut = Math.abs(to.x - start.x) / 2
+export const createThreadPath = (
+  start: Position,
+  to: Position,
+  curvature: number = DEFAULT_OPTIONS.routing.curvature,
+): string => {
+  const reachOut = (Math.abs(to.x - start.x) / 2) * (curvature / DEFAULT_OPTIONS.routing.curvature)
   return (
     `M ${start.x} ${start.y}` +
     ` C ${start.x + reachOut} ${start.y} ${to.x - reachOut} ${to.y} ${to.x} ${to.y}`

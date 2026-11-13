@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.11.20",
+  "version": "2026.11.22",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
@@ -228,6 +228,20 @@
       "min": 0,
       "max": 40,
       "step": 1
+    },
+    {
+      "key": "references",
+      "type": "enum",
+      "title": "References",
+      "description": "Notes linked in the text, by direction.",
+      "details": "Show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none.",
+      "default": "both",
+      "options": [
+        { "value": "off", "title": "Off" },
+        { "value": "outgoing", "title": "Outgoing" },
+        { "value": "both", "title": "Outgoing and incoming" },
+        { "value": "incoming", "title": "Incoming only" }
+      ]
     }
   ],
   "frontend": {}

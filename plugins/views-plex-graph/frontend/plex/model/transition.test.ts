@@ -2,7 +2,7 @@
 import { effectScope, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { usePlexTransition as baseUsePlexTransition, type Clock } from './transition'
-import { rowsAndColumns, type ArrangeInput } from '../lib/arrange'
+import { clusters, type ArrangeInput } from '../lib/arrange'
 import { graphs } from '../fixtures/graphs'
 import { stubClock } from '../../fixtures/clock'
 import type { PlacedNode } from '../lib/node'
@@ -153,7 +153,7 @@ describe('when nothing should move', () => {
 describe('a change to the arrangement is a movement too', () => {
   it('travels to a new density and not jumping to it', async () => {
     const world = stubClock()
-    const input = ref({ options: { maxPerLine: 5 } })
+    const input = ref({ options: { maxPerCluster: 5 } })
     const { isMoving } = inScope(() =>
       usePlexTransition(
         () => graphs.crowded,
@@ -163,7 +163,7 @@ describe('a change to the arrangement is a movement too', () => {
       ),
     )
 
-    input.value = { options: { maxPerLine: 3 } }
+    input.value = { options: { maxPerCluster: 3 } }
     await Promise.resolve()
     world.tick(0)
     expect(isMoving.value).toBe(true)
@@ -199,15 +199,14 @@ describe('what counts as a change to the arrangement', () => {
   const measure = () => 100
   const measureLabel = () => 10
   const base: ArrangeInput = {
-    placement: rowsAndColumns,
+    placement: clusters,
     measure,
     measureLabel,
     labelType: { ascent: 3, descent: 1, xHeight: 2 },
     options: {
       viewport: { width: 800, height: 600 },
       margin: 8,
-      maxPerLine: 5,
-      maxLines: 4,
+      maxPerCluster: 20,
       minWidth: 60,
       gap: 10,
       lineGap: 10,
@@ -222,12 +221,11 @@ describe('what counts as a change to the arrangement', () => {
   })
 
   const changes: readonly (readonly [string, ArrangeInput])[] = [
-    ['the placement', { ...base, placement: { ...rowsAndColumns } }],
+    ['the placement', { ...base, placement: { ...clusters } }],
     ['the viewport width', withOptions({ viewport: { width: 900, height: 600 } })],
     ['the viewport height', withOptions({ viewport: { width: 800, height: 700 } })],
     ['the margin', withOptions({ margin: 12 })],
-    ['the nodes allowed on a line', withOptions({ maxPerLine: 4 })],
-    ['the lines allowed', withOptions({ maxLines: 3 })],
+    ['the notes allowed in a group', withOptions({ maxPerCluster: 4 })],
     ['the narrowest box', withOptions({ minWidth: 70 })],
     ['the gap', withOptions({ gap: 14 })],
     ['the gap between lines', withOptions({ lineGap: 14 })],
@@ -293,7 +291,7 @@ describe('what counts as a change to the arrangement', () => {
       ),
     )
 
-    input.value = { placement: { ...rowsAndColumns } }
+    input.value = { placement: { ...clusters } }
     await Promise.resolve()
 
     expect(isMoving.value).toBe(true)

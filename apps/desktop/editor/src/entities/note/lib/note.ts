@@ -4,7 +4,7 @@ import type { ErrorCode } from '@/shared/api/errors'
 import type { TextRange } from '@/shared/lib/textRange'
 import type { MoveResult } from '@/shared/model/fileTypes'
 
-export type { NoteRelation } from '@numen/plugin-loader'
+export type { LinkDirection, NoteRelation } from '@numen/plugin-loader'
 
 /** The prose returned by a read, with the file identity returned alongside it. */
 export interface NoteContents {

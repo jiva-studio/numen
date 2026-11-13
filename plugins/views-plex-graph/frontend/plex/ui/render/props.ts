@@ -35,6 +35,7 @@ export interface PlexViewProps {
   draggedAt?: Position | null
   dropRelation?: PlexRelation | null
   dropName?: (relation: PlexRelation) => string
+  curvature?: number | undefined
 }
 
 export interface PlexViewEvents {

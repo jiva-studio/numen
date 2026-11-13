@@ -8,6 +8,7 @@ import { nextTick } from 'vue'
 import Plex from './Plex.vue'
 import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
 import type { Viewport } from '@numen/ui'
+import { build } from '../fixtures/build'
 import { graphs } from '../fixtures/graphs'
 import { stubClock } from '../../fixtures/clock'
 import type { PlexGraph } from '../../types'
@@ -123,8 +124,11 @@ describe('what a screen reader and a keyboard are given', () => {
 })
 
 describe('what did not fit', () => {
+  // More of two relations than any window holds.
+  const many = build('A node', { child: 300, jump: 300 })
+
   it('says so and not hiding it', () => {
-    const plex = mountPlex({ graph: graphs.overcrowded })
+    const plex = mountPlex({ graph: many })
     const status = plex.get('[role="status"]').text()
 
     // How much fits depends on the window, so the sentence is checked against what
@@ -134,8 +138,8 @@ describe('what did not fit', () => {
         .findAll('.plex__node')
         .filter((n) => n.attributes('aria-label')?.endsWith(`, ${relation}`)).length
 
-    expect(status).toContain(`${200 - countDrawnRelations('child')} children`)
-    expect(status).toContain(`${40 - countDrawnRelations('jump')} jumps`)
+    expect(status).toContain(`${300 - countDrawnRelations('child')} children`)
+    expect(status).toContain(`${300 - countDrawnRelations('jump')} jumps`)
     expect(status).toContain('not shown')
   })
 
@@ -146,7 +150,7 @@ describe('what did not fit', () => {
   it('passes the counts over, so the words are not the plex to choose', () => {
     // Knowing English is the same mistake as knowing the domain, one step down.
     const plex = mount(Plex, {
-      props: { graph: graphs.overcrowded, duration: 0 },
+      props: { graph: many, duration: 0 },
       slots: {
         overflow: `<template #default="{ overflow }">спрятано: {{ overflow.length }}</template>`,
       },

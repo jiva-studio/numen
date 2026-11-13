@@ -39,15 +39,18 @@ function getDropDirection(dx: number, dy: number, bias: number): Direction | nul
  * The relation a direction maps to: the inverse of the arrangement's own map.
  *
  * It is derived from `direction`, which places the relations: with parents
- * placed downward, dragging down means a parent.
+ * placed downward, dragging down means a parent. Where several relations share
+ * a heading, the first of `relations` wins, so the answer does not depend on
+ * the order of the relation table.
  */
 export function getRelationTowards(
   from: Position,
   to: Position,
   options: PlexOptions,
+  relations: readonly PlexRelation[] = RELATION_NAMES,
 ): PlexRelation | null {
   const heading = getDropDirection(to.x - from.x, to.y - from.y, options.gesture.verticalBias)
-  return RELATION_NAMES.find((relation) => options.direction[relation] === heading) ?? null
+  return relations.find((relation) => options.direction[relation] === heading) ?? null
 }
 
 /**
@@ -90,8 +93,8 @@ export function resolveDrop({ frame, options, from, point, relations }: DropInpu
 
   const landedOn = findNode(point, frame)
   const target = landedOn ? { x: landedOn.x, y: landedOn.y } : point
-  const relation = getRelationTowards(source, target, options)
-  if (!relation || !relations.includes(relation)) return null
+  const relation = getRelationTowards(source, target, options, relations)
+  if (!relation) return null
 
   return landedOn
     ? { kind: 'link', from, to: landedOn.id, relation }
@@ -131,6 +134,6 @@ export function getDropRelation({
   // Close enough to the focus that the direction is pointer jitter.
   if (Math.hypot(point.x - focus.x, point.y - focus.y) < threshold) return null
 
-  const relation = getRelationTowards(focus, point, options)
-  return relation && relations.includes(relation) ? relation : null
+  const relation = getRelationTowards(focus, point, options, relations)
+  return relation
 }
