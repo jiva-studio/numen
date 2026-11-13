@@ -160,10 +160,12 @@ export class TabDriver {
 
   private async isFileOpened(filePath: string): Promise<boolean> {
     const { tabs, activeId } = await readOpenTabs(this.scenario.page.request)
+    // A Plex tab carries the path of the note it follows, so it does not show that the note opened.
+    const holdsFile = (one: OpenTab): boolean => one.path === filePath && one.kind !== TAB_KINDS.Plex.id
     const active = tabs.find((one) => one.id === activeId)
-    if (active?.path === filePath) return true
+    if (active !== undefined && holdsFile(active)) return true
     // A file opened from a file tree that is linked to another tab shows in that tab, and the tree stays in front.
-    return active?.kind === TAB_KINDS.Files.id && tabs.some((one) => one.path === filePath)
+    return active?.kind === TAB_KINDS.Files.id && tabs.some(holdsFile)
   }
 
   private async listNotePaths(): Promise<string[]> {
