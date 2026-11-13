@@ -68,6 +68,15 @@ func (l *Loader[S]) Get(ctx context.Context, start func() Start[S]) (ports.Embed
 	}
 }
 
+// StartLocked starts the load with start when no model is loaded and no load runs, and returns at once.
+// A later Get waits for that load. The caller holds the lock.
+func (l *Loader[S]) StartLocked(start func() Start[S]) {
+	if l.embedder != nil || l.opening != nil {
+		return
+	}
+	l.begin(context.Background(), start())
+}
+
 func (l *Loader[S]) wait(ctx context.Context, start func() Start[S]) (ports.Embedder, error) {
 	l.lock.Lock()
 	if l.embedder != nil {
