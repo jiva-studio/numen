@@ -138,3 +138,18 @@ func writeReason(reason Reason) v1.FailureReason {
 	}
 	return v1.FailureReason_FAILURE_REASON_UNAVAILABLE
 }
+
+func readReason(reason v1.FailureReason) Reason {
+	switch reason {
+	case v1.FailureReason_FAILURE_REASON_REJECTED_KEY:
+		return ReasonRejectedKey
+	case v1.FailureReason_FAILURE_REASON_PAYMENT_REQUIRED:
+		return ReasonPaymentRequired
+	case v1.FailureReason_FAILURE_REASON_RATE_LIMITED:
+		return ReasonRateLimited
+	case v1.FailureReason_FAILURE_REASON_INVALID_REQUEST:
+		return ReasonInvalidRequest
+	case v1.FailureReason_FAILURE_REASON_UNAVAILABLE, v1.FailureReason_FAILURE_REASON_UNSPECIFIED:
+	}
+	return ReasonUnavailable
+}

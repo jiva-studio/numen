@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/provider.proto";
 import "numen/v1/settings.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
@@ -47,10 +48,12 @@ enum CallErrorCode {
   CALL_ERROR_CODE_STOPPED = 3;
 }
 
-// CallRowFailure is one row that did not answer.
+// CallRowFailure is one row that did not answer. reason is the words the person reads and code the reason
+// a program reads; a row the core set aside for a reason outside the enum has the code UNAVAILABLE.
 message CallRowFailure {
   string connection_name = 1;
   string reason = 2;
+  FailureReason code = 3;
 }
 
 // CallFailure ends a call that did not succeed.

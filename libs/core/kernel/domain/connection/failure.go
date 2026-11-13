@@ -9,8 +9,13 @@ import (
 // ErrNoConnection is a plugin with no row that can serve the operation.
 var ErrNoConnection = errors.New("no connection serves the operation")
 
-// Failure is one row that did not answer: the name of its connection and the reason.
-type Failure struct{ ConnectionName, Reason string }
+// Failure is one row that did not answer: the name of its connection, the reason in words and the reason as
+// a code. A row set aside for a reason outside the enum has the code FailureReasonUnavailable.
+type Failure struct {
+	ConnectionName string
+	Reason         string
+	Code           FailureReason
+}
 
 // AllFailedError is every row of a plugin set aside or failed.
 type AllFailedError struct{ Failures []Failure }
@@ -24,8 +29,13 @@ func (e *AllFailedError) Error() string {
 	return strings.Join(parts, "; ")
 }
 
-// StoppedError is a connection that found the request itself wrong, so no other row was tried.
-type StoppedError struct{ ConnectionName, Reason string }
+// StoppedError is a connection that found the request itself wrong, so no other row was tried. Reason is
+// the words of Code.
+type StoppedError struct {
+	ConnectionName string
+	Reason         string
+	Code           FailureReason
+}
 
 // Error names the connection and the reason.
 func (e *StoppedError) Error() string { return e.ConnectionName + ": " + e.Reason }

@@ -171,7 +171,7 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 		}
 		c.cooldown.Start(resolved.ID, resolved.Revision, judged.reason, judged.retryAfter, c.clock.Now())
 		return rowOutcome{
-			failure: &connection.Failure{ConnectionName: resolved.Name, Reason: judged.reason.String()},
+			failure: &connection.Failure{ConnectionName: resolved.Name, Reason: judged.reason.String(), Code: judged.reason},
 			aside:   &asideRow{id: resolved.ID, name: resolved.Name, revision: resolved.Revision, reason: judged.reason, isDiscovered: row.IsDiscovered},
 		}, false
 	}
@@ -191,13 +191,13 @@ func (c *Calls) checkRow(row connection.Row, operation string) (connection.Resol
 		return resolved, newSkip(resolved.Name, "the type does not serve "+operation), nil
 	}
 	if reason, isCooling := c.cooldown.Get(resolved.ID, resolved.Revision, c.clock.Now()); isCooling {
-		return resolved, newSkip(resolved.Name, reason.String()), nil
+		return resolved, &connection.Failure{ConnectionName: resolved.Name, Reason: reason.String(), Code: reason}, nil
 	}
 	return resolved, nil, nil
 }
 
 func newSkip(name, reason string) *connection.Failure {
-	return &connection.Failure{ConnectionName: name, Reason: reason}
+	return &connection.Failure{ConnectionName: name, Reason: reason, Code: connection.FailureReasonUnavailable}
 }
 
 // verdict is what a failed call means for its row.
@@ -233,7 +233,7 @@ func readVerdict(resolved connection.Resolved, err error) verdict {
 	case errors.Is(err, connection.ErrStaleRevision):
 		return verdict{isSkipped: true, isStale: true, skip: newSkip(resolved.Name, "changed during the call")}
 	case errors.As(err, &stopError):
-		return verdict{err: &connection.StoppedError{ConnectionName: resolved.Name, Reason: stopError.Reason.String()}}
+		return verdict{err: &connection.StoppedError{ConnectionName: resolved.Name, Reason: stopError.Reason.String(), Code: stopError.Reason}}
 	case errors.As(err, &tryNext):
 		return verdict{reason: tryNext.Reason, retryAfter: tryNext.RetryAfter}
 	}

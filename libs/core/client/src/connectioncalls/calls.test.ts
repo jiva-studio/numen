@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import {
   CallErrorCode,
+  CallFailureSchema,
   ConnectionCallServiceCallResponseSchema,
+  FailureReason,
   ConnectionCallServiceListRowOptionsResponseSchema,
   ConnectionCallServiceListRowsResponseSchema,
   Priority,
@@ -124,6 +126,7 @@ describe('createConnectionCallClient', () => {
                     $typeName: 'numen.v1.CallRowFailure',
                     connectionName: 'Ollama',
                     reason: 'unavailable',
+                    code: FailureReason.UNAVAILABLE,
                   },
                 ],
               },
@@ -139,8 +142,35 @@ describe('createConnectionCallClient', () => {
         error: {
           errorCode: expected,
           detail: 'Ollama: unavailable',
-          failures: [{ connectionName: 'Ollama', reason: 'unavailable' }],
+          failures: [{ connectionName: 'Ollama', reason: 'unavailable', code: 'unavailable' }],
         },
+      })
+    }
+  })
+
+  it('reads the reason of each failed row as its code, apart from its words', async () => {
+    const codes: Array<[FailureReason, string]> = [
+      [FailureReason.REJECTED_KEY, 'rejected_key'],
+      [FailureReason.PAYMENT_REQUIRED, 'payment_required'],
+      [FailureReason.RATE_LIMITED, 'rate_limited'],
+      [FailureReason.INVALID_REQUEST, 'invalid_request'],
+      [FailureReason.UNAVAILABLE, 'unavailable'],
+    ]
+    for (const [code, expected] of codes) {
+      const failure = create(CallFailureSchema, {
+        error: CallErrorCode.ALL_FAILED,
+        failures: [{ connectionName: 'Harbor', reason: 'words of the reason', code }],
+      })
+      const rpc: ConnectionCallRpc = {
+        ...NO_LISTS,
+        call: () => streamOf({ case: 'failure', value: failure }),
+      }
+
+      const { end } = await read(createConnectionCallClient(rpc).call(CHAT_REQUEST))
+
+      expect(end).toMatchObject({
+        ok: false,
+        error: { failures: [{ reason: 'words of the reason', code: expected }] },
       })
     }
   })

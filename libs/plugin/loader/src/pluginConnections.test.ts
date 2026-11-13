@@ -69,7 +69,7 @@ describe('the connections of a plugin', () => {
           error: {
             errorCode: 'all_failed',
             detail: 'Ollama: unavailable',
-            failures: [{ connectionName: 'Ollama', reason: 'unavailable' }],
+            failures: [{ connectionName: 'Ollama', reason: 'unavailable', code: 'rate_limited' }],
           },
         }
       },
@@ -84,7 +84,7 @@ describe('the connections of a plugin', () => {
       error: {
         error: 'all_failed',
         message: 'Ollama: unavailable',
-        failures: [{ connectionName: 'Ollama', reason: 'unavailable' }],
+        failures: [{ connectionName: 'Ollama', reason: 'unavailable', code: 'rate_limited' }],
       },
     })
   })

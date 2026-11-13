@@ -67,7 +67,7 @@ func readMidStreamVerdict(name string, err error) verdict {
 		reason, retryAfter, isTryNext = tryNext.Reason, tryNext.RetryAfter, true
 	}
 	return verdict{
-		err:    &connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: name, Reason: reason.String()}}},
+		err:    &connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: name, Reason: reason.String(), Code: reason}}},
 		reason: reason, retryAfter: retryAfter, isCooling: isTryNext,
 	}
 }

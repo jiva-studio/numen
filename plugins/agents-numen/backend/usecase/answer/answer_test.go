@@ -325,8 +325,8 @@ func TestAnAnswerEndedByTheLengthLimitStopsAtMaxTokens(t *testing.T) {
 
 func TestAChatThatFailsStopsTheTaskWithTheReasonOfItsConnection(t *testing.T) {
 	for failure, want := range map[error]connection.Reason{
-		&connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "Ferry API", Reason: "rate limited"}}}: connection.ReasonRateLimited,
-		&connection.StoppedError{ConnectionName: "Ferry API", Reason: "key rejected"}:                                     connection.ReasonRejectedKey,
+		&connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "Ferry API", Reason: "busy", Code: connection.ReasonRateLimited}}}: connection.ReasonRateLimited,
+		&connection.StoppedError{ConnectionName: "Ferry API", Reason: "refused", Code: connection.ReasonRejectedKey}:                                  connection.ReasonRejectedKey,
 		errors.New("the stream broke"): connection.ReasonUnavailable,
 	} {
 		chat := &scriptedChat{err: failure}

@@ -43,7 +43,7 @@ const createHost = (
 const failure: ConnectionError = {
   error: 'all_failed',
   message: 'Ollama: unavailable',
-  failures: [{ connectionName: 'Ollama', reason: 'unavailable' }],
+  failures: [{ connectionName: 'Ollama', reason: 'unavailable', code: 'unavailable' }],
 }
 
 describe('the llm contract', () => {

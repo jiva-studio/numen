@@ -20,8 +20,14 @@ var (
 	ErrStreamEnded = errors.New("connection: the stream ended before the call did")
 )
 
-// Failure is one row that did not answer: the name of its connection and the reason.
-type Failure struct{ ConnectionName, Reason string }
+// Failure is one row that did not answer: the name of its connection, the reason in the words the person
+// reads and the reason as a code. A row the core set aside for a reason outside the codes has the code
+// ReasonUnavailable.
+type Failure struct {
+	ConnectionName string
+	Reason         string
+	Code           Reason
+}
 
 // AllFailedError means every row of the plugin was set aside or failed.
 type AllFailedError struct{ Failures []Failure }
@@ -35,8 +41,13 @@ func (e *AllFailedError) Error() string {
 	return "connection: every connection failed: " + strings.Join(parts, "; ")
 }
 
-// StoppedError means a connection found the request itself wrong, so no other connection was tried.
-type StoppedError struct{ ConnectionName, Reason string }
+// StoppedError means a connection found the request itself wrong, so no other connection was tried. Reason
+// is the words of Code.
+type StoppedError struct {
+	ConnectionName string
+	Reason         string
+	Code           Reason
+}
 
 // Error names the connection and the reason.
 func (e *StoppedError) Error() string {
@@ -191,13 +202,14 @@ func readFailure(failure *v1.CallFailure) error {
 	case v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED:
 		all := &AllFailedError{Failures: make([]Failure, len(failures))}
 		for i, one := range failures {
-			all.Failures[i] = Failure{ConnectionName: one.GetConnectionName(), Reason: one.GetReason()}
+			all.Failures[i] = Failure{ConnectionName: one.GetConnectionName(), Reason: one.GetReason(), Code: readReason(one.GetCode())}
 		}
 		return all
 	case v1.CallErrorCode_CALL_ERROR_CODE_STOPPED:
 		stopped := &StoppedError{}
 		if len(failures) > 0 {
 			stopped.ConnectionName, stopped.Reason = failures[0].GetConnectionName(), failures[0].GetReason()
+			stopped.Code = readReason(failures[0].GetCode())
 		}
 		return stopped
 	case v1.CallErrorCode_CALL_ERROR_CODE_UNSPECIFIED:
