@@ -163,9 +163,10 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
   const found: { best?: { point: Vector; cost: number; along: number } } = {}
+  let leastAlong = -TOLERANCE
   const consider = (point: Vector) => {
     const along = measureAlong(point, request)
-    if (along < -TOLERANCE) return
+    if (along < leastAlong) return
     const cost = Math.round(measureCost(point, request) * COST_PRECISION)
     if (found.best && !isBetter(cost, along, found.best)) return
     if (request.fits && !request.fits(toSpot(point))) return
@@ -179,8 +180,11 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
     listCandidatesAround(box, request).forEach(consider)
   }
   if (!found.best && request.fits) {
-    // Beside its own group the window has no free place, so the places beside any other box are tried before the window is given up.
-    for (const box of index.list()) listCandidatesAround(box, request).forEach(consider)
+    // The group has no free place in the window on its side of the start. A box wider than the ones before it starts further out, so a place
+    // that is free and in the window is also taken where the box reaches back past the start, as long as its center is on the side of the group.
+    leastAlong = -getReach(request.direction, request.size) - TOLERANCE
+    for (const box of [...request.group, ...index.list()])
+      listCandidatesAround(box, request).forEach(consider)
   }
   if (found.best) return toSpot(found.best.point)
   return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)
@@ -220,6 +224,10 @@ function getLeastCost(box: Spot, request: SpotRequest): number {
     farY / (size.height + request.gaps.lineGap),
   )
   return least * COST_PRECISION
+}
+
+function getReach(direction: Vector, box: Size): number {
+  return Math.abs(direction.x) * (box.width / 2) + Math.abs(direction.y) * (box.height / 2)
 }
 
 function listCandidatesAround(box: Spot, request: SpotRequest): Vector[] {
