@@ -122,7 +122,7 @@ func TestAPluginOnlyAskedAQuestionIsDueToStopAtItsStart(t *testing.T) {
 	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, questionLease, getStartTime()); err != nil {
 		t.Fatal(err)
 	}
-	sups.ReturnHold(atlasID, sup, questionLease, getStartTime().Add(time.Minute))
+	sups.Release(atlasID, atlasID, questionLease, getStartTime().Add(time.Minute))
 
 	want := []plugindomain.Process{{
 		PluginID: atlasID, StartTime: getStartTime(), LastUseTime: getStartTime(), IsInProcess: true, IdleStopTime: getStartTime(),
@@ -141,8 +141,8 @@ func TestAQuestionDoesNotCancelTheReleaseOfAProcess(t *testing.T) {
 	if _, isRunning := sups.AcquireRunning(mapsID, sup, questionLease, getStartTime()); !isRunning {
 		t.Fatal("the running plugin was not held for the question")
 	}
-	sups.ReturnHold(mapsID, sup, questionLease, getStartTime())
-	sups.ReturnHold(mapsID, sup, useLease, getStartTime())
+	sups.Release(mapsID, mapsID, questionLease, getStartTime())
+	sups.Release(mapsID, mapsID, useLease, getStartTime())
 
 	if targets := takeIdleTargets(sups, IdleThreshold, getStartTime()); len(targets) != 1 || targets[0].ID != mapsID {
 		t.Errorf("got %+v, want the released plugin to stop", targets)
@@ -162,7 +162,7 @@ func TestListProcessesReturnsTheStarterAndTheHoldersOfEachPlugin(t *testing.T) {
 	}
 	sups.AcquireRunning(atlasID, sup, asker, getStartTime())
 	sups.AcquireRunning(atlasID, sup, questionLease, getStartTime())
-	sups.ReturnHold(atlasID, sup, starter, getStartTime())
+	sups.Release(atlasID, atlasID, starter, getStartTime())
 
 	got := NewRunningProcesses(sups).ListProcesses()
 
