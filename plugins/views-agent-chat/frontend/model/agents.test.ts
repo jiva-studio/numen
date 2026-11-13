@@ -10,7 +10,7 @@ import { createAgentKind } from './kind'
 import { useAgentConversation, type AgentTabState } from './useAgentConversation'
 import { useConversation } from '../thread'
 import AgentTab from '../ui/AgentTab.vue'
-import { createAgentConnections, createHost, say, type AgentListing } from '../fixtures'
+import { createAgentConnections, createHost, failWith, say, type AgentListing } from '../fixtures'
 import { WORDS } from '../words'
 
 const FIELDS = [
@@ -48,18 +48,23 @@ const listOptions: NonNullable<AgentListing['listOptions']> = (connectionId, fie
 
 const waitTask = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
 
-const createChat = async (rows: readonly ConnectionRow[], { isPickerOpened = true } = {}) => {
+type TaskAnswer = Parameters<typeof createAgentConnections>[0]
+
+const createChat = async (
+  rows: readonly ConnectionRow[],
+  {
+    isPickerOpened = true,
+    answer = { frames: [say('Twelve.')] },
+  }: { readonly isPickerOpened?: boolean; readonly answer?: TaskAnswer } = {},
+) => {
   const asked: string[] = []
-  const connections = createAgentConnections(
-    { frames: [say('Twelve.')] },
-    {
-      rows,
-      listOptions: (connectionId, field, options) => {
-        asked.push(`${connectionId} ${field}`)
-        return listOptions(connectionId, field, options)
-      },
+  const connections = createAgentConnections(answer, {
+    rows,
+    listOptions: (connectionId, field, options) => {
+      asked.push(`${connectionId} ${field}`)
+      return listOptions(connectionId, field, options)
     },
-  )
+  })
   const list = createAgentList(connections.host, WORDS)
   await list.reload()
   const choice = useAgentChoice(connections.host, list)
@@ -298,7 +303,7 @@ describe('the turns of a conversation', () => {
     expect(calls[0]?.options?.preferred).toBeUndefined()
   })
 
-  it('go first to the agent and model chosen', async () => {
+  it('go only to the agent and model chosen', async () => {
     const { choice, conversation, calls } = await createChat([
       row('c-orchard', 'Orchard agent', { model: 'pear-small', reasoning: 'low' }),
       row('c-meadow', 'Meadow agent', { model: 'clover' }),
@@ -311,11 +316,36 @@ describe('the turns of a conversation', () => {
     expect(calls[0]?.options?.preferred).toStrictEqual({
       connectionId: 'c-meadow',
       options: { model: 'clover' },
+      isExclusive: true,
     })
     expect(choice.selected.agentId.value).toBe('c-meadow')
   })
 
-  it('of a new conversation go first to the agent and model chosen last', async () => {
+  it('show the failure of the agent chosen, and no other agent answers', async () => {
+    const { choice, conversation, calls } = await createChat(
+      [
+        row('c-orchard', 'Orchard agent', { model: 'pear-small' }),
+        row('c-meadow', 'Meadow agent', { model: 'clover' }),
+      ],
+      {
+        answer: (_, options) =>
+          options?.preferred?.isExclusive
+            ? { end: failWith('all_failed', 'Meadow agent: the program exited') }
+            : { frames: [say('Orchard counts twelve.')] },
+      },
+    )
+    choice.selectModel(choice.offered.options.value.find((one) => one.agentId === 'c-meadow')!)
+
+    await conversation.ask('How many clover fields?')
+
+    expect(calls).toHaveLength(1)
+    const responses = conversation.turns.value.filter((turn) => turn.voice === 'response')
+    expect(responses.map((turn) => [turn.text, turn.state])).toStrictEqual([
+      ['Meadow agent: the program exited', 'failed'],
+    ])
+  })
+
+  it('of a new conversation go only to the agent and model chosen last', async () => {
     const { host, calls } = createAgentConnections(
       { frames: [say('Twelve.')] },
       {
@@ -347,6 +377,7 @@ describe('the turns of a conversation', () => {
     expect(calls[0]?.options?.preferred).toStrictEqual({
       connectionId: 'c-meadow',
       options: { model: 'clover' },
+      isExclusive: true,
     })
   })
 
@@ -367,6 +398,7 @@ describe('the turns of a conversation', () => {
     expect(calls[0]?.options?.preferred).toStrictEqual({
       connectionId: 'c-orchard',
       options: { model: 'pear-large', reasoning: 'high' },
+      isExclusive: true,
     })
   })
 
@@ -381,6 +413,7 @@ describe('the turns of a conversation', () => {
     expect(calls[0]?.options?.preferred).toStrictEqual({
       connectionId: 'c-orchard',
       options: { model: 'pear-large', reasoning: 'high' },
+      isExclusive: true,
     })
   })
 })
@@ -461,6 +494,7 @@ describe('a choice saved before a restart', () => {
     expect(after.calls[0]?.options?.preferred).toStrictEqual({
       connectionId: 'c-lantern',
       options: { model: 'c-meadow|clover' },
+      isExclusive: true,
     })
   })
 

@@ -3,8 +3,8 @@
  * the plugin, or the connections discovery finds where it has none. Until a picker opens, an agent offers
  * the model and the reasoning level its row holds; from then on, the models the type of its connection
  * lists in llm.models and the levels it lists in llm.reasoning. The turns of a conversation that chose an
- * agent go to it first, with the model and the reasoning level chosen; a conversation that chose none asks
- * the rows in their order. A new conversation starts with the agent and the model chosen last. A choice
+ * agent go to it alone, with the model and the reasoning level chosen, and fail with its failure; a
+ * conversation that chose none asks the rows in their order. A new conversation starts with the agent and the model chosen last. A choice
  * restored after a restart lists the models of the agents, and is dropped once its agent, or its model
  * among the listed models of its agent, is gone.
  */
@@ -289,7 +289,7 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
   }
 
   /**
-   * The row the next turn asks first: none until the person chose, or after the chosen agent left the
+   * The row the next turn asks alone: none until the person chose, or after the chosen agent left the
    * list.
    */
   const getPreferredRow = (): ConnectionPreferredRow | undefined => {
@@ -300,7 +300,7 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
     const field = getFieldKey(row, REASONING)
     if (field && selectedReasoningId.value) options[field] = selectedReasoningId.value
     else if (field) delete options[field]
-    return { connectionId: row.connectionId, options }
+    return { connectionId: row.connectionId, options, isExclusive: true }
   }
 
   return {
