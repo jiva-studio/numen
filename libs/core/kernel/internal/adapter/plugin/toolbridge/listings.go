@@ -1,21 +1,19 @@
 package toolbridge
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
-
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
+
+// ListingFiles keeps the tool listing of each plugin across processes.
+type ListingFiles interface {
+	ReadToolListing(pluginID string) ([]byte, bool)
+	WriteToolListing(pluginID string, content []byte)
+}
 
 // listingFile is the on-disk shape of the tools one version of a plugin listed.
 type listingFile struct {
@@ -29,16 +27,15 @@ type listing struct {
 	tools   *v1.ListToolsResponse
 }
 
-// listings keeps the ListTools answer of every plugin by plugin id and version, in memory and, while dir
-// names a folder, in one file per plugin there.
+// listings keeps the ListTools answer of every plugin by plugin id and version, in memory and in files.
 type listings struct {
-	dir      func() string
+	files    ListingFiles
 	mu       sync.Mutex
 	byPlugin map[string]listing
 }
 
-func newListings(dir func() string) *listings {
-	return &listings{dir: dir, byPlugin: map[string]listing{}}
+func newListings(files ListingFiles) *listings {
+	return &listings{files: files, byPlugin: map[string]listing{}}
 }
 
 // get returns the tools the version of the plugin listed, and false when it has not been listed.
@@ -48,70 +45,43 @@ func (l *listings) get(pluginID, version string) (*v1.ListToolsResponse, bool) {
 	if kept, isKept := l.byPlugin[pluginID]; isKept && kept.version == version {
 		return kept.tools, true
 	}
-	read, err := l.read(pluginID)
-	if err != nil || read.version != version {
+	read, isRead := l.read(pluginID)
+	if !isRead || read.version != version {
 		return nil, false
 	}
 	l.byPlugin[pluginID] = read
 	return read.tools, true
 }
 
-// put keeps the tools the version of the plugin listed. A file that cannot be written leaves the
-// listing in memory only, and the plugin is asked again in the next process.
+// put keeps the tools the version of the plugin listed.
 func (l *listings) put(pluginID, version string, tools *v1.ListToolsResponse) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	kept := listing{version: version, tools: tools}
-	l.byPlugin[pluginID] = kept
-	_ = l.write(pluginID, kept)
+	l.byPlugin[pluginID] = listing{version: version, tools: tools}
+	encoded, err := protojson.Marshal(tools)
+	if err != nil {
+		return
+	}
+	content, err := json.Marshal(listingFile{Version: version, Listing: encoded})
+	if err != nil {
+		return
+	}
+	l.files.WriteToolListing(pluginID, content)
 }
 
-func (l *listings) getPath(pluginID string) (string, error) {
-	dir := l.dir()
-	if dir == "" {
-		return "", errors.New("no folder keeps the tool listings")
-	}
-	if pluginID == "" || strings.HasPrefix(pluginID, ".") || strings.ContainsAny(pluginID, `/\`) {
-		return "", fmt.Errorf("plugin id %q does not name a file", pluginID)
-	}
-	return filepath.Join(dir, pluginID+".json"), nil
-}
-
-func (l *listings) read(pluginID string) (listing, error) {
-	path, err := l.getPath(pluginID)
-	if err != nil {
-		return listing{}, err
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return listing{}, err
+// read returns the listing kept in the file of the plugin; a file that cannot be decoded counts as none.
+func (l *listings) read(pluginID string) (listing, bool) {
+	content, isKept := l.files.ReadToolListing(pluginID)
+	if !isKept {
+		return listing{}, false
 	}
 	var file listingFile
-	if err := json.Unmarshal(raw, &file); err != nil {
-		return listing{}, err
+	if err := json.Unmarshal(content, &file); err != nil {
+		return listing{}, false
 	}
 	tools := &v1.ListToolsResponse{}
 	if err := protojson.Unmarshal(file.Listing, tools); err != nil {
-		return listing{}, err
+		return listing{}, false
 	}
-	return listing{version: file.Version, tools: tools}, nil
-}
-
-func (l *listings) write(pluginID string, kept listing) error {
-	path, err := l.getPath(pluginID)
-	if err != nil {
-		return err
-	}
-	encoded, err := protojson.Marshal(kept.tools)
-	if err != nil {
-		return err
-	}
-	raw, err := json.Marshal(listingFile{Version: kept.version, Listing: encoded})
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return err
-	}
-	return atomicfile.WriteFile(path, bytes.NewReader(raw), 0o600)
+	return listing{version: file.Version, tools: tools}, true
 }

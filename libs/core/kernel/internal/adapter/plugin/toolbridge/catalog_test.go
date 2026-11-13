@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
@@ -136,11 +137,17 @@ func getNames(tools []*v1.PluginTool) []string {
 	return names
 }
 
-func memoryOnly() string { return "" }
+// filesIn is the plugin storage of a host whose cache root is dir; an empty dir keeps no files.
+func filesIn(t *testing.T, dir string) *storage.Storage {
+	t.Helper()
+	files := storage.New(func(err error) { t.Errorf("the storage reported %v", err) }, func(string) string { return "1.0.0" })
+	files.SetStorageRoots(dir, "")
+	return files
+}
 
 func TestTheFirstListingStartsEveryToolsPluginAndTheSecondNone(t *testing.T) {
 	host := newTwoPlugins(t)
-	catalog := toolbridge.NewCatalog(host, memoryOnly)
+	catalog := toolbridge.NewCatalog(host, filesIn(t, ""))
 
 	if names := getNames(catalog.ListTools(t.Context(), callerPlugin)); !slices.Equal(names, []string{"bed_list", "tree_count"}) {
 		t.Fatalf("the first listing gave %v", names)
@@ -158,7 +165,7 @@ func TestTheFirstListingStartsEveryToolsPluginAndTheSecondNone(t *testing.T) {
 
 func TestANewVersionOfAPluginIsListedAgain(t *testing.T) {
 	host := newTwoPlugins(t)
-	catalog := toolbridge.NewCatalog(host, memoryOnly)
+	catalog := toolbridge.NewCatalog(host, filesIn(t, ""))
 	catalog.ListTools(t.Context(), callerPlugin)
 	host.takeStarts()
 
@@ -172,7 +179,7 @@ func TestANewVersionOfAPluginIsListedAgain(t *testing.T) {
 
 func TestACallStartsOnlyThePluginOfTheTool(t *testing.T) {
 	host := newTwoPlugins(t)
-	catalog := toolbridge.NewCatalog(host, memoryOnly)
+	catalog := toolbridge.NewCatalog(host, filesIn(t, ""))
 	catalog.ListTools(t.Context(), callerPlugin)
 	host.takeStarts()
 
@@ -191,7 +198,7 @@ func TestACallStartsOnlyThePluginOfTheTool(t *testing.T) {
 
 func TestADisabledPluginsToolsAreNotListed(t *testing.T) {
 	host := newTwoPlugins(t)
-	catalog := toolbridge.NewCatalog(host, memoryOnly)
+	catalog := toolbridge.NewCatalog(host, filesIn(t, ""))
 	catalog.ListTools(t.Context(), callerPlugin)
 
 	host.disable(gardenPlugin)
@@ -210,11 +217,10 @@ func TestADisabledPluginsToolsAreNotListed(t *testing.T) {
 
 func TestTheListingsOnDiskServeANewCatalog(t *testing.T) {
 	dir := t.TempDir()
-	keptIn := func() string { return dir }
-	toolbridge.NewCatalog(newTwoPlugins(t), keptIn).ListTools(t.Context(), callerPlugin)
+	toolbridge.NewCatalog(newTwoPlugins(t), filesIn(t, dir)).ListTools(t.Context(), callerPlugin)
 
 	host := newTwoPlugins(t)
-	names := getNames(toolbridge.NewCatalog(host, keptIn).ListTools(t.Context(), callerPlugin))
+	names := getNames(toolbridge.NewCatalog(host, filesIn(t, dir)).ListTools(t.Context(), callerPlugin))
 
 	if !slices.Equal(names, []string{"bed_list", "tree_count"}) {
 		t.Errorf("the new catalog lists %v", names)

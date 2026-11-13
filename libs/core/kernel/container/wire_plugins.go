@@ -191,7 +191,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 
 func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 	services := hostendpoint.NewServices()
-	tools := toolbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), host.Storage.GetToolsDir)
+	tools := toolbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), host.Storage)
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation,
 		Lent: services,

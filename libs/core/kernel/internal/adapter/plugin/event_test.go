@@ -126,7 +126,7 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 }
 
 // readyEvent is the event the host emits when the search source has indexed a vault.
-var readyEvent = protocol.GetSearchSourceReadyEvent("vault-1")
+const readyEvent = catalogmanifest.ActivationEventSearchSourceReady + ":vault-1"
 
 func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
 	vectors, onDemand := &eventRecorder{}, &eventRecorder{}

@@ -12,10 +12,10 @@ type Catalog struct {
 	plugins plugins
 }
 
-// NewCatalog is the tools the plugins of the host offer. The answers of the plugins are kept in the
-// folder dir returns, and in memory only while it returns an empty path.
-func NewCatalog(host Host, dir func() string) *Catalog {
-	return &Catalog{plugins: plugins{host: host, listings: newListings(dir)}}
+// NewCatalog is the tools the plugins of the host offer. The answers of the plugins are kept in memory
+// and in files.
+func NewCatalog(host Host, files ListingFiles) *Catalog {
+	return &Catalog{plugins: plugins{host: host, listings: newListings(files)}}
 }
 
 // ListTools lists the tools the caller is allowed: those the other plugins offer, for which the
