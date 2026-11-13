@@ -143,15 +143,16 @@ func TestThePluginRunsInDesktopWindowsAlone(t *testing.T) {
 	}
 }
 
-// A row names the model, from the list the program offers, and a reasoning level of that model.
+// A row may name a model from the list the program offers, and a reasoning level of that model. A row
+// without a model uses the model of the program's own configuration.
 func TestARowStoresAModelAndAReasoningLevelListedByTheProvider(t *testing.T) {
 	for _, one := range readConnectionShape(t).Contributes.ConnectionTypes {
 		if len(one.RowFields) != 2 {
 			t.Fatalf("%s: row fields = %+v, want two", one.ID, one.RowFields)
 		}
 		model, reasoning := one.RowFields[0], one.RowFields[1]
-		if model.Key != "model" || !model.IsRequired || model.OptionsFrom != "llm.models" {
-			t.Errorf("%s: first row field = %+v, want the required model listed by llm.models", one.ID, model)
+		if model.Key != "model" || model.IsRequired || model.OptionsFrom != "llm.models" {
+			t.Errorf("%s: first row field = %+v, want the optional model listed by llm.models", one.ID, model)
 		}
 		if reasoning.Key != "reasoning" || reasoning.IsRequired || reasoning.OptionsFrom != "llm.reasoning" {
 			t.Errorf("%s: second row field = %+v, want the optional reasoning listed by llm.reasoning", one.ID, reasoning)

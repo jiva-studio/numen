@@ -39,8 +39,13 @@ export function createWindowSettings({
   watch(appearance.preview.display.sized, () => onSizeChanged())
   const settingPalette = createWindowSettingPalette({ rest, appearance, words })
   const changes = createChangeFollower({
-    refresh: () =>
-      Promise.all([rest.start(), appearance.reload(), connections.reload()]).then(() => undefined),
+    refresh: async (batch) => {
+      try {
+        await Promise.all([rest.start(), appearance.reload(), connections.reload()])
+      } finally {
+        rest.changes.emit(batch)
+      }
+    },
   })
   return {
     appearance,

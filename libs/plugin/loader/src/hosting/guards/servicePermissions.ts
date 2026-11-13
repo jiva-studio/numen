@@ -254,6 +254,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       call: requireNothing(CONNECTION_GRANT),
       listRows: requireNothing(CONNECTION_GRANT),
       listRowOptions: requireNothing(CONNECTION_GRANT),
+      onChange: requireNothing('it says only that the rows may have changed'),
     },
     tasks: {
       watch: requireNothing('the tasks the plugin itself reported'),

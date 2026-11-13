@@ -224,6 +224,41 @@ describe('a setting that changes', () => {
     settings.close()
   })
 
+  it('notifies the connections of a plugin of a change of the connections, the detected connections or an enabled plugin', async () => {
+    const { settings, feed, windowTabs } = create()
+    const support = createTestPluginSupport({
+      windowTabs,
+      tabOpeners: {
+        registerExtensionReader: vi.fn(() => () => undefined),
+        registerEditor: vi.fn(() => () => undefined),
+      } as never,
+      rest: settings.rest,
+      getServices: () => ({}),
+    })
+    await settings.start()
+    const handler = vi.fn()
+    support.pluginHost.lifecycle.createContext(PLUGIN).work.connections!.onChange!(handler)
+
+    change(feed, ['app', 'appearance', 'mode'], 'dark')
+    await vi.advanceTimersByTimeAsync(0)
+    await settle()
+    expect(handler).not.toHaveBeenCalled()
+
+    const pushes = [
+      () => feed.push([{ at: ['detectedConnections'], value: '["c-gemini"]' }]),
+      () => change(feed, ['connections'], { 'c-orchard': { type: 'acp' } }),
+      () => change(feed, ['md.numen.agents.acp', 'enabled'], false),
+    ]
+    for (const push of pushes) {
+      push()
+      await vi.advanceTimersByTimeAsync(0)
+      await settle()
+    }
+
+    expect(handler).toHaveBeenCalledTimes(3)
+    settings.close()
+  })
+
   it('is not read again at 1.5, 3.5, 7, 11 or 16 seconds after the window wrote it', async () => {
     const { settings, core } = create()
     await settings.start()

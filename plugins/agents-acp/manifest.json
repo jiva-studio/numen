@@ -24,7 +24,6 @@
             "key": "model",
             "type": "string",
             "title": "Model",
-            "required": true,
             "optionsFrom": "llm.models"
           },
           {

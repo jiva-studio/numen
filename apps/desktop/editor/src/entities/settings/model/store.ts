@@ -5,6 +5,7 @@
  */
 import { ref, shallowRef } from 'vue'
 import { formatError } from '@/shared/api/errors'
+import { createEmitter } from '@/shared/lib/emitter'
 import type { JsonObject, JsonValue } from '@/shared/api/json'
 import { createRemoteValues } from './remoteValues'
 import type {
@@ -169,6 +170,8 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
 
   return {
     start,
+    /** The batches of the stream of changes of the settings, emitted as the window follows them. */
+    changes: createEmitter<readonly SettingEdit[]>(),
     state: { target, path, plugins, app },
     read: { getSetting, getCommittedSetting, isPending, isRequested },
     write: { writeSettings, writeSetting },

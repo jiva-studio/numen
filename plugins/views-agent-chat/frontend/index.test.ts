@@ -134,6 +134,38 @@ describe('view-agent-chat plugin', () => {
     expect(state.agents?.offered.isAgentMissing.value).toBe(false)
   })
 
+  it('lists the agents again on a change of the connections while a tab is open', async () => {
+    let rows: readonly ConnectionRow[] = []
+    const listed: string[] = []
+    const ctx = createContext(undefined, undefined, {
+      get rows() {
+        listed.push('rows')
+        return rows
+      },
+    })
+    const handlers = new Set<() => void>()
+    const connections = {
+      ...ctx.work.connections!,
+      onChange: (handler: () => void) => {
+        handlers.add(handler)
+        return { dispose: () => handlers.delete(handler) }
+      },
+    }
+    const watched = { ...ctx, work: { ...ctx.work, connections } }
+    activate(watched)
+    const kind = ctx.getRegisteredTabKinds()[0]!
+    const state = kind.open!('', 'agent:1') as AgentTabState
+    kind.open!('', 'agent:2')
+    await vi.waitFor(() => expect(state.agents?.offered.isAgentMissing.value).toBe(true))
+    expect(listed).toStrictEqual(['rows'])
+
+    rows = [{ connectionId: 'c-gemini', connectionName: 'Gemini CLI', options: {}, fields: [] }]
+    for (const handler of handlers) handler()
+
+    await vi.waitFor(() => expect(state.agents?.selected.agentId.value).toBe('c-gemini'))
+    expect(listed).toStrictEqual(['rows', 'rows'])
+  })
+
   it('opens the settings page of the plugin from a tab', () => {
     const ctx = createContext()
     activate(ctx)

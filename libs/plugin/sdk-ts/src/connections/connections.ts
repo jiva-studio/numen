@@ -1,4 +1,5 @@
 import type { Result } from '../result'
+import type { Disposable } from '../types'
 
 // ConnectionPriority says whose action a call serves. A call that names none is background, so it waits
 // behind the calls of a person's actions when its connection runs as many calls as it may.
@@ -96,4 +97,8 @@ export interface ConnectionHost {
   // lists them for the options of the request. It throws for a connection that is not among the rows and for a provider
   // that cannot list them.
   listRowOptions?(request: ConnectionRowOptionsRequest): Promise<readonly ConnectionRowOption[]>
+  // Calls the handler after a change that can change the rows listRows lists: a connection, the
+  // connections detected on this machine, or which plugins are enabled. A host that does not follow these
+  // changes has no onChange.
+  onChange?(handler: () => void): Disposable
 }
