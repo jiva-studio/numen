@@ -61,7 +61,7 @@ const createChat = async (rows: readonly ConnectionRow[]) => {
 }
 
 const readOptions = (choice: Awaited<ReturnType<typeof createChat>>['choice']) =>
-  choice.options.value.map((one) => `${one.agentTitle} · ${one.modelTitle}`)
+  choice.offered.options.value.map((one) => `${one.agentTitle} · ${one.modelTitle}`)
 
 describe('the agents a chat offers', () => {
   it('are the rows of the plugin, each with the models of its type and the model of its row first', async () => {
@@ -75,7 +75,7 @@ describe('the agents a chat offers', () => {
       'Orchard agent · Pear Large',
       'Meadow agent · Clover',
     ])
-    expect(choice.isAgentMissing.value).toBe(false)
+    expect(choice.offered.isAgentMissing.value).toBe(false)
   })
 
   it('offer each connection once where two rows name it', async () => {
@@ -103,17 +103,17 @@ describe('the agents a chat offers', () => {
       row('c-meadow', 'Meadow agent', { model: 'clover' }),
     ])
 
-    expect(choice.selectedAgentId.value).toBe('c-orchard')
-    expect(choice.selectedModelId.value).toBe('pear-large')
-    expect(choice.reasoningLevels.value.map((one) => one.title)).toStrictEqual(['Low', 'High'])
-    expect(choice.selectedReasoningId.value).toBe('high')
+    expect(choice.selected.agentId.value).toBe('c-orchard')
+    expect(choice.selected.modelId.value).toBe('pear-large')
+    expect(choice.offered.reasoningLevels.value.map((one) => one.title)).toStrictEqual(['Low', 'High'])
+    expect(choice.selected.reasoningId.value).toBe('high')
   })
 
   it('are missing where the plugin has no row and discovery found none', async () => {
     const { choice } = await createChat([])
 
-    expect(choice.options.value).toStrictEqual([])
-    expect(choice.isAgentMissing.value).toBe(true)
+    expect(choice.offered.options.value).toStrictEqual([])
+    expect(choice.offered.isAgentMissing.value).toBe(true)
   })
 
   it('are not offered by connections that list no rows', async () => {
@@ -122,8 +122,8 @@ describe('the agents a chat offers', () => {
     await list.reload()
     const choice = useAgentChoice(host, list)
 
-    expect(choice.options.value).toStrictEqual([])
-    expect(choice.isAgentMissing.value).toBe(false)
+    expect(choice.offered.options.value).toStrictEqual([])
+    expect(choice.offered.isAgentMissing.value).toBe(false)
   })
 })
 
@@ -144,7 +144,7 @@ describe('the turns of a conversation', () => {
       row('c-orchard', 'Orchard agent', { model: 'pear-small', reasoning: 'low' }),
       row('c-meadow', 'Meadow agent', { model: 'clover' }),
     ])
-    const meadow = choice.options.value.find((one) => one.agentId === 'c-meadow')!
+    const meadow = choice.offered.options.value.find((one) => one.agentId === 'c-meadow')!
 
     choice.selectModel(meadow)
     await conversation.ask('How many pear trees?')
@@ -153,20 +153,20 @@ describe('the turns of a conversation', () => {
       connectionId: 'c-meadow',
       options: { model: 'clover' },
     })
-    expect(choice.selectedAgentId.value).toBe('c-meadow')
+    expect(choice.selected.agentId.value).toBe('c-meadow')
   })
 
   it('carry the reasoning level chosen for the model chosen', async () => {
     const { choice, conversation, calls } = await createChat([
       row('c-orchard', 'Orchard agent', { model: 'pear-small', reasoning: 'low' }),
     ])
-    const large = choice.options.value.find((one) => one.modelId === 'pear-large')!
+    const large = choice.offered.options.value.find((one) => one.modelId === 'pear-large')!
 
     choice.selectModel(large)
     await nextTick()
     await waitTask()
-    expect(choice.reasoningLevels.value.map((one) => one.id)).toStrictEqual(['low', 'high'])
-    expect(choice.selectedReasoningId.value).toBe('')
+    expect(choice.offered.reasoningLevels.value.map((one) => one.id)).toStrictEqual(['low', 'high'])
+    expect(choice.selected.reasoningId.value).toBe('')
     choice.selectReasoning('high')
     await conversation.ask('How many pear trees?')
 

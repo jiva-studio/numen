@@ -6,35 +6,33 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { defineComponent, h, ref } from 'vue'
 import { useConversation, type Conversation } from '../thread'
-import type { Turn } from '../types'
+import type { AgentTabDeps, Turn } from '../types'
 import AgentTab from './AgentTab.vue'
 import { createAgentKind } from '../model/kind'
 import { byWholeText, createAgentConnections, createHost, say } from '../fixtures'
-import { useAgentConversation } from '../model/useAgentConversation'
+import { useAgentConversation, type AgentTabState } from '../model/useAgentConversation'
 import { createAgentList, useAgentChoice } from '../model/agents'
 import { WORDS } from '../words'
 
-const createTab = (turn: readonly Turn[]) =>
+/** A conversation that keeps the questions asked and answers none. */
+const createRecordedState =
+  (turn: readonly Turn[]) =>
+  (deps: AgentTabDeps): AgentTabState => {
+    const conversation: Conversation = {
+      turns: ref([...turn]),
+      isAnswerPending: ref(false),
+      ask: async () => undefined,
+      getSourcePath: () => null,
+      stop: () => undefined,
+    }
+    return useAgentConversation(conversation, deps)
+  }
+
+const createTab = (createState: (deps: AgentTabDeps) => AgentTabState) =>
   defineComponent({
     name: 'AgentKindTab',
     setup() {
-      const request: string[] = []
-      const { kind } = createAgentKind(
-        createHost().host,
-        (deps) => {
-          const conversation: Conversation = {
-            turns: ref([...turn]),
-            isAnswerPending: ref(false),
-            ask: async (text) => {
-              request.push(text)
-            },
-            getSourcePath: () => null,
-            stop: () => undefined,
-          }
-          return useAgentConversation(conversation, deps)
-        },
-        AgentTab,
-      )
+      const { kind } = createAgentKind(createHost().host, createState, AgentTab)
       const state = kind.open!('', 'agent:story')
       return () =>
         h('div', { style: { width: '100vw', height: '100vh' } }, [h(AgentTab, { state })])
@@ -50,7 +48,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Empty: Story = {
-  render: () => ({ components: { Tab: createTab([]) }, template: '<Tab />' }),
+  render: () => ({ components: { Tab: createTab(createRecordedState([])) }, template: '<Tab />' }),
   play: async ({ canvasElement }) => {
     await waitFor(() =>
       expect(within(canvasElement).getByPlaceholderText('Ask about the vault')).toBeTruthy(),
@@ -62,14 +60,15 @@ export const Empty: Story = {
 export const Answered: Story = {
   render: () => ({
     components: {
-      Tab: createTab([
+      Tab: createTab(
+        createRecordedState([
         { id: 'a', voice: 'prompt', text: 'What is entropy?' },
         {
           id: 'b',
           voice: 'response',
           text: 'A measure of how many ways a system can be arranged.',
         },
-      ]),
+      ])),
     },
     template: '<Tab />',
   }),
@@ -81,7 +80,7 @@ export const Answered: Story = {
 
 /** Typing into the composer fills it with what was typed. */
 export const Typing: Story = {
-  render: () => ({ components: { Tab: createTab([]) }, template: '<Tab />' }),
+  render: () => ({ components: { Tab: createTab(createRecordedState([])) }, template: '<Tab />' }),
   play: async ({ canvasElement }) => {
     const field = await within(canvasElement).findByPlaceholderText('Ask about the vault')
     await userEvent.type(field, 'hello')
@@ -93,7 +92,8 @@ export const Typing: Story = {
 export const NoAgent: Story = {
   render: () => ({
     components: {
-      Tab: createTab([
+      Tab: createTab(
+        createRecordedState([
         { id: 'a', voice: 'prompt', text: 'Which pear trees flowered first?' },
         {
           id: 'b',
@@ -102,7 +102,7 @@ export const NoAgent: Story = {
           state: 'failed',
           offersSettings: true,
         },
-      ]),
+      ])),
     },
     template: '<Tab />',
   }),
@@ -137,58 +137,38 @@ const ORCHARD_OPTIONS: Readonly<Record<string, readonly string[]>> = {
   'c-orchard:reasoning': ['Low', 'High'],
 }
 
-const createAgentsTab = () =>
-  defineComponent({
-    name: 'AgentsTab',
-    setup() {
-      const { host } = createAgentConnections(
-        { frames: [say('Twelve pear trees.')] },
-        {
-          rows: ORCHARD_ROWS,
-          listOptions: (connectionId, field) =>
-            (ORCHARD_OPTIONS[`${connectionId}:${field}`] ?? []).map((title) => ({
-              value: title.toLowerCase().replace(' ', '-'),
-              title,
-              group: '',
-            })),
-        },
-      )
-      const list = createAgentList(host, WORDS.defaultModel)
-      const { kind } = createAgentKind(
-        createHost().host,
-        (deps) => {
-          const choice = useAgentChoice(host, list)
-          const conversation = useConversation({
-            connections: host,
-            words: WORDS,
-            conversation: 'conversation:story',
-            getPreferred: choice.getPreferred,
-          })
-          return useAgentConversation(conversation, deps, choice)
-        },
-        AgentTab,
-      )
-      const state = kind.open!('', 'agent:story')
-      const isListed = ref(false)
-      list.reload().then(
-        () => {
-          isListed.value = true
-        },
-        () => undefined,
-      )
-      return () =>
-        h('div', { style: { width: '100vw', height: '100vh' } }, [
-          isListed.value ? h(AgentTab, { state }) : null,
-        ])
+/** A conversation over the agents of the orchard rows, listed once the tab opens. */
+const createAgentsState = (deps: AgentTabDeps): AgentTabState => {
+  const { host } = createAgentConnections(
+    { frames: [say('Twelve pear trees.')] },
+    {
+      rows: ORCHARD_ROWS,
+      listOptions: (connectionId, field) =>
+        (ORCHARD_OPTIONS[`${connectionId}:${field}`] ?? []).map((title) => ({
+          value: title.toLowerCase().replace(' ', '-'),
+          title,
+          group: '',
+        })),
     },
+  )
+  const list = createAgentList(host, WORDS.defaultModel)
+  list.reload().catch(() => undefined)
+  const choice = useAgentChoice(host, list)
+  const conversation = useConversation({
+    connections: host,
+    words: WORDS,
+    conversation: 'conversation:story',
+    getPreferred: choice.getPreferred,
   })
+  return useAgentConversation(conversation, deps, choice)
+}
 
 /**
  * The agents of the plugin in the picker under the field: the one that answers named with its model, the
  * models of each agent under its name, and the reasoning levels of the model in force.
  */
 export const Agents: Story = {
-  render: () => ({ components: { Tab: createAgentsTab() }, template: '<Tab />' }),
+  render: () => ({ components: { Tab: createTab(createAgentsState) }, template: '<Tab />' }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const picker = await canvas.findByRole('button', { name: 'Orchard agent · Pear Small' })

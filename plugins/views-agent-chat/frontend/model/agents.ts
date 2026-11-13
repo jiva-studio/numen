@@ -200,12 +200,12 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
   }
 
   return {
-    options,
-    selectedAgentId: computed(() => current.value?.agentId ?? ''),
-    selectedModelId: computed(() => current.value?.modelId ?? ''),
-    reasoningLevels,
-    selectedReasoningId,
-    isAgentMissing,
+    offered: { options, reasoningLevels, isAgentMissing },
+    selected: {
+      agentId: computed(() => current.value?.agentId ?? ''),
+      modelId: computed(() => current.value?.modelId ?? ''),
+      reasoningId: selectedReasoningId,
+    },
     selectModel,
     selectReasoning,
     getPreferred,
