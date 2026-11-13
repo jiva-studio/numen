@@ -75,23 +75,35 @@ const { room, options, measures, widen, hung } = useFreeSpace(
 /** How the nodes behave, handed down as one. */
 const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
-const { getRoomOf, room: getRoom } = useNamesRooms(props, measures, options)
+const { getRoomOf, getNodeRoom } = useNamesRooms(props, measures, options)
 
 const { frame, isMoving } = usePlexTransition(
   () => props.graph,
   () => ({
-    options: { ...props.options, viewport: room.value },
+    options: options.value,
     placement: props.placement,
     measure: measures.value?.node,
     measureLabel: measures.value?.label,
     labelType: measures.value?.labelType,
-    room: getRoom.value,
+    room: getNodeRoom.value,
   }),
   {
     duration: () => props.duration,
     clock: props.clock,
   },
 )
+
+/**
+ * The overflow, as `[relation, count]` pairs. The renderer of the plex supplies
+ * the labels through the `overflow` slot.
+ */
+const overflow = computed(() =>
+  (Object.entries(frame.value.overflow) as [PlexRelation, number][]).filter(
+    ([, count]) => count > 0,
+  ),
+)
+
+const frameStyle = computed(() => getFrameStyle(props, options.value))
 
 /**
  * A caller that allows no relation has disabled the gesture, so no handle is
@@ -136,18 +148,6 @@ const dragging = usePlexDrag({
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
-/**
- * The overflow, as `[relation, count]` pairs. The renderer of the plex supplies
- * the labels through the `overflow` slot.
- */
-const overflow = computed(() =>
-  (Object.entries(frame.value.overflow) as [PlexRelation, number][]).filter(
-    ([, count]) => count > 0,
-  ),
-)
-
-const frameStyle = computed(() => getFrameStyle(props, options.value))
-
 /**
  * A graph is drawn from the node it is seen from, so every node walks
  * to a new relation when another one arrives. A menu is anchored where one of them

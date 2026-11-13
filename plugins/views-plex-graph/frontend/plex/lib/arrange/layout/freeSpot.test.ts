@@ -190,7 +190,6 @@ describe('equal costs', () => {
   })
 })
 
-/** The spot of least cost among every candidate around every box, tried without skipping any box. */
 function findLeastCostSpot(index: SpotIndex, request: SpotRequest): Spot | undefined {
   const costOf = (spot: Spot) => Math.round(measureCost(spot, request) * 1e6)
   const alongOf = (spot: Spot) => Math.round(measureAlong(spot, request) * 1e6)

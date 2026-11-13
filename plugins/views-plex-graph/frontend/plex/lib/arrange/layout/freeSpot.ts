@@ -12,6 +12,7 @@ export interface Gaps {
   readonly lineGap: number
 }
 
+/** `fits` reports whether a spot lies inside the window; a spot outside it is taken only when no spot inside is free. */
 export interface SpotRequest {
   readonly start: Vector
   readonly middle: Vector
@@ -19,7 +20,6 @@ export interface SpotRequest {
   readonly size: Size
   readonly group: readonly Spot[]
   readonly gaps: Gaps
-  /** Whether a spot lies inside the window; a spot outside it is taken only when no spot inside is free. */
   readonly fits?: ((spot: Spot) => boolean) | undefined
 }
 

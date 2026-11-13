@@ -50,7 +50,7 @@ const press = useNodePress(props, getMiddle, {
 const { isGhost, canStop, isAnnounced } = press.role
 const { listening } = press
 
-const { hasDropTarget, role, openPosition, hue } = useNodeState(props, {
+const { isHandleShown, role, openPosition, hue } = useNodeState(props, {
   isGhost,
   isOn: hoverFocus.isOn,
 })
@@ -137,7 +137,7 @@ function getMiddle(): Position | null {
     <!-- Reach out from here to make something. Under the hand or under the
          keyboard, so it is there when wanted and out of the way when not. -->
     <PlexNodeHandle
-      v-if="hasDropTarget"
+      v-if="isHandleShown"
       :at="handle"
       @reach="(pointer) => emit('reach', pointer)"
       @ask="emit('ask')"

@@ -20,6 +20,7 @@ export interface PlexPending {
   at: Position
 }
 
+/** `gesture` and `dragging` are passed as the refs they are, so the pointer moving through them redraws the lines it draws and not the notes. */
 export interface PlexViewProps {
   frame: PlexFrame
   viewport: { width: number; height: number }
@@ -36,7 +37,6 @@ export interface PlexViewProps {
   hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
   roomOf?: ((id: string) => NamesRoom | undefined) | undefined
   behavior?: PlexBehavior
-  /** Handed over as the refs they are, so the pointer moving through them redraws the lines it draws and not the notes. */
   gesture?: Gesture | undefined
   dragging?: PlexDragState | undefined
   pending?: PlexPending | null
@@ -63,6 +63,7 @@ export interface PlexViewEvents {
   (event: 'edge-menu', pair: string, point: Position): void
 }
 
+/** `attention` is what the drawing attends to: a node stays on only while the attention is on no other node. */
 export interface PlexNodeProps {
   node: PlacedNode
   gestureRole?: GestureRole
@@ -71,7 +72,6 @@ export interface PlexNodeProps {
   behavior?: PlexBehavior
   showPills?: boolean
   restHeight?: number
-  /** What the drawing attends to. A node stays on only while the attention is on no other node. */
   attention?: Attention
 }
 

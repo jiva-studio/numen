@@ -59,11 +59,6 @@ function findOutside(
   return new Set(placed.filter((node) => !isInside(node)).map((node) => node.id))
 }
 
-/**
- * A cut lays a smaller group closer to the focus than the group it was cut from, so notes that
- * were cut may fit after all. Each relation takes its next note back, in turn, while the window
- * still holds every box.
- */
 function refill(
   admitted: NodesByRelation,
   requested: NodesByRelation,

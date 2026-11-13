@@ -29,10 +29,6 @@ const toPlaced = (node: PlexNode, y: number, order: number): PlacedNode => ({
   opacity: 1,
 })
 
-/**
- * A layout where the first box of a group lies the further out the more the group holds, and each next box lies one step further.
- * It stops as the caller asks, as the placement does.
- */
 const lay = (nodesByRelation: NodesByRelation, shouldStop: (node: PlacedNode) => boolean) => {
   const placed: PlacedNode[] = []
   const queues = RELATION_NAMES.map((relation) => nodesByRelation[relation] ?? [])

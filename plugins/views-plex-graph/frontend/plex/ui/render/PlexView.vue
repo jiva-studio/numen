@@ -110,7 +110,6 @@ interface NodeHandlers {
 
 const nodeHandlers = new Map<string, NodeHandlers>()
 
-/** The handlers of a note, the same functions every time, so they do not redraw it. */
 const getNodeHandlers = (id: string): NodeHandlers => {
   let handlers = nodeHandlers.get(id)
   if (!handlers) {

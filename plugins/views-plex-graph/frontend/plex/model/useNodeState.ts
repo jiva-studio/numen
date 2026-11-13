@@ -21,7 +21,7 @@ export function useNodeState(
   const { isGhost, isOn } = state
 
   /** Whether the handle is shown: while a gesture begins at the node, or while it is attended to. */
-  const hasDropTarget = computed(
+  const isHandleShown = computed(
     () =>
       props.behavior.reaching.hasHandle &&
       props.node.opacity >= 1 &&
@@ -49,5 +49,5 @@ export function useNodeState(
     '--relation-hue': `var(--numen-relation-${props.node.relation})`,
   }))
 
-  return { hasDropTarget, role, openPosition, hue }
+  return { isHandleShown, role, openPosition, hue }
 }

@@ -80,7 +80,9 @@ export function arrangePlex(
   }
 
   // Packed as closely as this window needs and no closer, so a box narrows
-  // and a gap closes before a note is given up. The names are left out of it:
+  // and a gap closes before a note is given up. The probes of the packing and of the gaps lay out
+  // without `fits`; with it they pack differently, and arrange.frames.test.ts records the packing
+  // they choose. The names are left out of it:
   // a pill is the same size with names as without, and the names then cost notes.
   const resolved = measureCrowding(request, (packed) =>
     isHeld(
@@ -162,7 +164,6 @@ function createRoomLookup(
   return rooms
 }
 
-/** Whether a footprint keeps a margin from the edge of the window. */
 function isFootprintInside(spot: Spot, viewport: Size, margin: number): boolean {
   return (
     Math.abs(spot.x) + spot.width / 2 <= viewport.width / 2 - margin &&
@@ -170,10 +171,6 @@ function isFootprintInside(spot: Spot, viewport: Size, margin: number): boolean 
   )
 }
 
-/**
- * Whether a footprint lies inside the window, which is what a group is given to grow sideways within.
- * Admission and the final layout pass it. The probes of the packing and of the gaps lay out without it; with it they pack differently, and arrange.frames.test.ts records the packing they choose.
- */
 function getFits(options: PlexOptions): PlacementContext['fits'] {
   const { viewport, margin } = options
   if (!viewport) return undefined

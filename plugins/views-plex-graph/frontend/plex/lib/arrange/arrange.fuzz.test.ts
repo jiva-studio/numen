@@ -98,7 +98,6 @@ describe('what is shown of a graph', () => {
   )
 })
 
-/** The arrangement with the packing and the spacing left out, so the window decides what is admitted, as it does in the arrangement. */
 function admitAndPlace(one: Case) {
   const options = applyRoom(resolveOptions({ viewport: one.viewport }))
   const { viewport, margin } = options

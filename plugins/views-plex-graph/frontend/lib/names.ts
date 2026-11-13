@@ -14,7 +14,6 @@ const NAME_ORDER: readonly NoteRelation[] = ['parent', 'child', 'jump', 'referen
 
 const NAME_PREFIX = 'name:'
 
-/** The items that can be names, by the related note they belong to, in arrival order. */
 function groupByOwner(
   noteGraph: NoteGraph,
   references: ReferenceMode,
@@ -29,7 +28,6 @@ function groupByOwner(
   return owners
 }
 
-/** The items in the order of the names, each note once, in the first relation it has. */
 function listDistinctItems(items: readonly RelatedNote[]): RelatedNote[] {
   const kept = NAME_ORDER.flatMap((relation) => items.filter((item) => item.relation === relation))
   const named = new Set<string>()

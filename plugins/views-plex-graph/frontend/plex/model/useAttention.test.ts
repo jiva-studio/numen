@@ -1,4 +1,4 @@
-/** What the drawing attends to: set by a note or its names, and let go when that note leaves the frame. */
+/** What the drawing attends to: set by a note or its names, and cleared when that note leaves the frame. */
 import { nextTick, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { useAttention } from './useAttention'
@@ -18,7 +18,7 @@ describe('the attention of the drawing', () => {
     expect({ ...attention }).toStrictEqual({ node: 'focus/child-0', names: 'focus/child-1' })
   })
 
-  it('is let go by the note that held it, and not by another', () => {
+  it('is released by the note that took it, and not by another', () => {
     const { attention, attend } = useAttention(() => whole)
     attend('node', 'focus/child-0', true)
 

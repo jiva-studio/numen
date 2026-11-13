@@ -13,7 +13,7 @@ const frame = arrangePlex(build('Hub', { parent: 2, child: 6, jump: 2 }))
 
 const VIEWPORT = { width: 1200, height: 800 }
 
-const mountCounting = (props: Record<string, unknown> = {}) => {
+const createCountedView = (props: Record<string, unknown> = {}) => {
   const redrawn = new Map<string, number>()
   const view = mount(PlexView, {
     attachTo: document.body,
@@ -42,12 +42,12 @@ const mountCounting = (props: Record<string, unknown> = {}) => {
   return { view, redrawn, reset }
 }
 
-const note = (view: ReturnType<typeof mountCounting>['view'], id: string) =>
+const note = (view: ReturnType<typeof createCountedView>['view'], id: string) =>
   view.get(`[data-testid="${id}"], [aria-label^="${id}"]`)
 
 describe('the pointer moving over a note', () => {
   it('redraws only that note, and not the others', async () => {
-    const { view, redrawn, reset } = mountCounting()
+    const { view, redrawn, reset } = createCountedView()
     reset()
 
     await note(view, frame.nodes[3]!.title).trigger('pointerenter')
@@ -60,7 +60,7 @@ describe('the pointer moving over a note', () => {
   it('does not settle the width or the headings of a note again', async () => {
     const widen = vi.fn((node: PlacedNode) => ({ width: node.width + 40, offset: 0 }))
     const hung = vi.fn(() => null)
-    const { view } = mountCounting({ widen, hung })
+    const { view } = createCountedView({ widen, hung })
     const widened = widen.mock.calls.length
     const hanged = hung.mock.calls.length
 
@@ -75,7 +75,7 @@ describe('the pointer moving over a note', () => {
   })
 
   it('lifts the lines of the note without redrawing the others', async () => {
-    const { view, redrawn, reset } = mountCounting()
+    const { view, redrawn, reset } = createCountedView()
     reset()
 
     await note(view, frame.nodes[0]!.title).trigger('pointerenter')
@@ -96,7 +96,7 @@ describe('the pointer moving during a gesture or a drag', () => {
       outcome: ref<Drop | null>(create),
     }
     const dragging = { at: ref<Position | null>(null), relation: ref<PlexRelation | null>(null) }
-    const { redrawn, reset } = mountCounting({ gesture, dragging })
+    const { redrawn, reset } = createCountedView({ gesture, dragging })
     reset()
 
     gesture.at.value = { x: 30, y: 60 }
@@ -115,7 +115,7 @@ describe('the pointer moving during a gesture or a drag', () => {
     const source = frame.nodes[0]!
     const at = ref<Position | null>({ x: 10, y: 10 })
     const gesture = { from: ref<string | null>(source.id), at, outcome: ref<Drop | null>(null) }
-    const { view } = mountCounting({ gesture })
+    const { view } = createCountedView({ gesture })
     const before = view.get('.plex__reach .plex__thread').attributes('d')
 
     at.value = { x: 200, y: 150 }
