@@ -1,5 +1,6 @@
-import type { TabKindChoice, TextKind } from '../drivers/rules.js'
-import { Then, When } from '../support/bdd.js'
+import path from 'node:path'
+import { DEFAULT_VAULT, type TabKindChoice, type TextKind } from '../drivers/rules.js'
+import { Given, Then, When } from '../support/bdd.js'
 
 When('the person recognizes the text of the file at {string}', async ({ person }, filePath: string) => {
   await person.text.recognize(filePath)
@@ -50,4 +51,9 @@ When(
 
 Then('the file at {string} has the {text}', async ({ person }, filePath: string, kind: TextKind) => {
   await person.text.expectVersion(filePath, kind)
+})
+
+Given('the transcribed recording {string}', async ({ person }, filePath: string) => {
+  await person.vault.addFiles(DEFAULT_VAULT, [['path', 'sample'], [filePath, path.posix.basename(filePath)]])
+  await person.text.transcribe(filePath)
 })

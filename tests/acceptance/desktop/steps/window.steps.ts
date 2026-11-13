@@ -72,3 +72,15 @@ Then('the window shows the message {string}', async ({ person }, text: string) =
 Then('the window has the following tabs:', async ({ person }, tabs: DataTable) => {
   await person.tab.expectTabs(tabs.raw())
 })
+
+When('the person answers {string} to {string}', async ({ person }, button: string, part: string) => {
+  await person.window.answerQuestion(button, part)
+})
+
+When('the person answers {string} to the question:', async ({ person }, button: string, question: string) => {
+  await person.window.answerWholeQuestion(button, question)
+})
+
+Then('the dialog does not show {string}', async ({ person }, text: string) => {
+  await person.window.expectDialogWithout(text)
+})
