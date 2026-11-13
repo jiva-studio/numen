@@ -10,7 +10,6 @@ const createReports = () =>
     ask: vi.fn(),
     menu: vi.fn(),
     enter: vi.fn(),
-    settle: vi.fn(),
     attend: vi.fn(),
   }) satisfies NodeReports
 

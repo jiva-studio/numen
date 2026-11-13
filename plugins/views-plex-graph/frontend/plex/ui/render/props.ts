@@ -94,7 +94,7 @@ export interface PlexNodeEvents {
    * press has no pointer position, so the center of the box is used.
    */
   (event: 'menu', point: Position, trigger: MenuTrigger): void
-  /** The box began to open, or has closed and gone from the drawing. */
+  /** The box began to open, or has closed or gone from the drawing. */
   (event: 'settle', resting: boolean): void
   /** The pointer or keyboard focus came onto the node, or left it. */
   (event: 'attend', isAttended: boolean): void

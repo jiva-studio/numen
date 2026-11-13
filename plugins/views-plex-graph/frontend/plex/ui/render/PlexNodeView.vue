@@ -8,9 +8,9 @@ import { measureRect } from '@numen/ui'
  * While it is open it draws its parts in the layer over the notes, and stays
  * where it is in the document.
  */
-import { computed, inject, onBeforeUnmount, useTemplateRef, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import PlexNodeFace from './PlexNodeFace.vue'
-import { LIFT_LAYER } from './layer'
+import { LIFT_LAYER, SETTLED_NODES } from './layer'
 import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
 import { useHoverFocus } from '../../model/interaction/hoverFocus'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
@@ -43,6 +43,10 @@ defineExpose({ focus: () => group.value?.focus() })
 const group = useTemplateRef<SVGGElement>('group')
 const lifted = useTemplateRef<SVGGElement>('lifted')
 const layer = inject(LIFT_LAYER, null)
+const settled = inject(SETTLED_NODES, null)
+
+/** Whether the box has begun to open and not yet closed. */
+const hasOpened = ref(false)
 
 const hoverFocus = useHoverFocus(() => [group.value, lifted.value])
 
@@ -56,14 +60,35 @@ const press = useNodePress(props, getMiddle, {
 const { isGhost, canStop, isAnnounced } = press.role
 const { listening } = press
 
-const { isHandleShown, role, openPosition, hue } = useNodeState(props, {
-  isGhost,
-  isOn: hoverFocus.isOn,
-})
+// A note works out its widened box and its headings only while it is on or open.
+const isHeld = computed(() => hoverFocus.isOn.value || hasOpened.value)
+const wide = computed(() => props.wide ?? (isHeld.value ? (settled?.getWide(props.node) ?? null) : null))
+const hung = computed(() => props.hung ?? (isHeld.value ? (settled?.getHung(props.node) ?? null) : null))
+
+const { isHandleShown, role, openPosition, hue } = useNodeState(
+  {
+    get node() {
+      return props.node
+    },
+    get gestureRole() {
+      return props.gestureRole
+    },
+    get wide() {
+      return wide.value
+    },
+    get hung() {
+      return hung.value
+    },
+    get behavior() {
+      return props.behavior
+    },
+  },
+  { isGhost, isOn: hoverFocus.isOn },
+)
 
 const { open, box, handle } = useOpenBox({
   node: () => props.node,
-  wide: () => props.wide,
+  wide: () => wide.value,
   on: () => openPosition.value,
   delay: () => props.behavior.expansionDelay,
   hasPill: () => props.showPills,
@@ -87,7 +112,7 @@ const face = computed(() => ({
   isTarget: props.gestureRole === 'target',
   showPills: props.showPills,
   restHeight: props.restHeight,
-  hung: props.hung,
+  hung: hung.value,
   open: open.value,
   isHandleShown: isHandleShown.value,
   handle: handle.value,
@@ -108,7 +133,10 @@ const events = {
 // A box that has begun to open is already over its neighbors.
 watch(
   () => open.value > 0,
-  (now) => emit('settle', now),
+  (now) => {
+    hasOpened.value = now
+    emit('settle', now)
+  },
 )
 watch(
   () => hoverFocus.isOn.value,

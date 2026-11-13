@@ -12,7 +12,6 @@ export interface NodeReports {
   readonly ask: (id: string) => void
   readonly menu: (id: string, at: Position, trigger: MenuTrigger) => void
   readonly enter: (id: string, heading: string) => void
-  readonly settle: (id: string, isResting: boolean) => void
   readonly attend: (id: string, isAttended: boolean) => void
 }
 
@@ -23,7 +22,6 @@ export interface NodeListeners {
   readonly ask: () => void
   readonly menu: (at: Position, trigger: MenuTrigger) => void
   readonly enter: (heading: string) => void
-  readonly settle: (isResting: boolean) => void
   readonly attend: (isAttended: boolean) => void
 }
 
@@ -51,7 +49,6 @@ export function useNodeHandlers(
         ask: () => reports.ask(id),
         menu: (at, trigger) => reports.menu(id, at, trigger),
         enter: (heading) => reports.enter(id, heading),
-        settle: (isResting) => reports.settle(id, isResting),
         attend: (isAttended) => reports.attend(id, isAttended),
       }
       made.set(id, listeners)

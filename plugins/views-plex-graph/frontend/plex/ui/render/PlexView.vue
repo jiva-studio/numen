@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, provide, reactive, useId, useTemplateRef } from 'vue'
+import { computed, provide, useId, useTemplateRef } from 'vue'
 import PlexEdgeLayer from './PlexEdgeLayer.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import PlexNodeNames from './PlexNodeNames.vue'
 import PlexThreads from './PlexThreads.vue'
-import { LIFT_LAYER } from './layer'
+import { LIFT_LAYER, SETTLED_NODES } from './layer'
 import { useEdgeLines } from './lines'
 import { listNamedNodes } from './named'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
@@ -57,9 +57,6 @@ const viewBox = computed(() => {
 
 const uid = useId()
 
-/** The notes that have begun to open and not yet closed. */
-const rested = reactive(new Set<string>())
-
 const { attention, attend } = useAttention(() => props.frame)
 
 const { lines, isRaised, setOver, getLabel } = useEdgeLines(props, uid, attention)
@@ -72,7 +69,6 @@ const getNodeHandlers = useNodeHandlers(
     ask: (id) => emit('ask', id),
     menu: (id, at, trigger) => emit('menu', id, at, trigger),
     enter: (id, heading) => emit('enter', id, heading),
-    settle: (id, isResting) => onSettle(id, isResting),
     attend: (id, isAttended) => attend('node', id, isAttended),
   },
   () => props.frame.nodes.map((node) => node.id),
@@ -80,11 +76,12 @@ const getNodeHandlers = useNodeHandlers(
 
 const namedNodes = computed(() => listNamedNodes(props.frame.nodes, props.roomOf))
 
-const { getWide, getHung } = useSettledNodes(() => ({
+const settled = useSettledNodes(() => ({
   nodes: props.frame.nodes,
   widen: props.widen,
   hung: props.hung,
 }))
+provide(SETTLED_NODES, settled)
 
 /** Stays the same map while no role changes, so a pointer moving through a gesture does not redraw the notes. */
 const roles = computed<Map<string, GestureRole>>((previous) => {
@@ -97,19 +94,12 @@ const roles = computed<Map<string, GestureRole>>((previous) => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-const onSettle = (id: string, isResting: boolean) => {
-  if (isResting) rested.add(id)
-  else rested.delete(id)
-}
-
 const onChooseName = (id: string) => {
   attention.names = null
   emit('choose-name', id)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-const isActive = (node: PlacedNode) => attention.node === node.id || rested.has(node.id)
-
 const getRole = (node: PlacedNode): GestureRole => {
   const outcome = props.gesture?.outcome.value
   const from = props.gesture?.from.value ?? null
@@ -194,8 +184,6 @@ const getRole = (node: PlacedNode): GestureRole => {
         :ref="holdNode(node.id)"
         :node="node"
         :gesture-role="roles.get(node.id) ?? 'closed'"
-        :wide="isActive(node) ? getWide(node) : null"
-        :hung="isActive(node) ? getHung(node) : null"
         :behavior="behavior"
         :show-pills="showPills"
         :rest-height="nodeSize.height"
