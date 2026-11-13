@@ -51,7 +51,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 - `manifest.json`: two settings after `headingLimit`:
   - `showNames`: boolean, title "Show notes related to related notes", description "Under each related note, the names of the notes it is related to.", default `true`, `palette: true`, `icon: "waypoints"`.
   - `namesPerNote`: number, title "Names per note", description "Most names shown under and over a related note.", default `6`, `min` 1, `max` 12, `step` 1.
-- `frontend/model/names.ts` (create, beside `nesting.ts`): `SHOW_NAMES = true`, `NAMES_PER_NOTE = 6`, `readNames(context): { hasNames: Ref<boolean>; namesPerNote: Ref<number> }`, keys read in camelCase as `readNesting` does. A value outside min/max or not a number falls back to the default.
+- `frontend/model/names.ts` (create, beside `nesting.ts`): `SHOW_NAMES = true`, `NAMES_PER_NOTE = 6`, `readNames(context): { showNames: Ref<boolean>; namesPerNote: Ref<number> }`, keys read in camelCase as `readNesting` does. A value outside min/max or not a number falls back to the default.
 - `frontend/model/usePlexView.ts`: `RelatedNoteQueries.listRelatedNotes(path, depth)`; the tab asks for depth 2 when `showNames` is on, depth 1 otherwise, and asks again when the setting changes. `areNoteGraphsEqual` compares `relatedTo` too.
 - `frontend/lib/picture.ts`:
   - `convertNoteGraph` skips every `related` item that has `relatedTo`: they are never nodes, and `getNoteTypes` / `getTabKinds` keep reading all items (a name may be drawn with its type later; no UI uses it now).
