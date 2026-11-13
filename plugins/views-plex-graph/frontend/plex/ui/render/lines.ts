@@ -71,7 +71,8 @@ export function useEdgeLines(props: EdgeLinesProps, uid: string, attention: Atte
   const lines = computed(() => getLines(frame().edges, uid))
   const overKey = ref<string | null>(null)
 
-  watch(frame, () => {
+  watch(frame, (next) => {
+    if (next.edges.some((edge) => edgeKey(edge) === overKey.value)) return
     overKey.value = null
   })
 

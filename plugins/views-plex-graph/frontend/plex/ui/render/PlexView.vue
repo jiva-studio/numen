@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, useId, useTemplateRef } from 'vue'
+import { computed, provide, useId, useTemplateRef } from 'vue'
 import PlexEdgeLayer from './PlexEdgeLayer.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import PlexNodeNames from './PlexNodeNames.vue'
 import PlexThreads from './PlexThreads.vue'
+import { LIFT_LAYER, SETTLED_NODES } from './layer'
 import { useEdgeLines } from './lines'
 import { listNamedNodes } from './named'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
@@ -46,6 +47,9 @@ const svg = useTemplateRef<SVGSVGElement>('svg')
 
 const { holdNode, focusNode } = useNodeViews()
 
+const lift = useTemplateRef<SVGGElement>('lift')
+provide(LIFT_LAYER, lift)
+
 const viewBox = computed(() => {
   const { width, height } = props.viewport
   return `${-width / 2} ${-height / 2} ${width} ${height}`
@@ -53,36 +57,31 @@ const viewBox = computed(() => {
 
 const uid = useId()
 
-const restedOn = ref<string | null>(null)
-
 const { attention, attend } = useAttention(() => props.frame)
 
 const { lines, isRaised, setOver, getLabel } = useEdgeLines(props, uid, attention)
 
-const getNodeHandlers = useNodeHandlers({
-  activate: (id) => emit('activate', id),
-  show: (id, showing) => emit('show', id, showing),
-  reach: (id, pointer) => emit('reach', id, pointer),
-  ask: (id) => emit('ask', id),
-  menu: (id, at, trigger) => emit('menu', id, at, trigger),
-  enter: (id, heading) => emit('enter', id, heading),
-  settle: (id, isResting) => onSettle(id, isResting),
-  attend: (id, isAttended) => attend('node', id, isAttended),
-})
+const getNodeHandlers = useNodeHandlers(
+  {
+    activate: (id) => emit('activate', id),
+    show: (id, showing) => emit('show', id, showing),
+    reach: (id, pointer) => emit('reach', id, pointer),
+    ask: (id) => emit('ask', id),
+    menu: (id, at, trigger) => emit('menu', id, at, trigger),
+    enter: (id, heading) => emit('enter', id, heading),
+    attend: (id, isAttended) => attend('node', id, isAttended),
+  },
+  () => props.frame.nodes.map((node) => node.id),
+)
 
 const namedNodes = computed(() => listNamedNodes(props.frame.nodes, props.roomOf))
 
-const renderedNodes = computed(() => {
-  const node = props.frame.nodes.find((each) => each.id === restedOn.value)
-  if (!node) return props.frame.nodes
-  return [...props.frame.nodes.filter((each) => each.id !== node.id), node]
-})
-
-const { wides, hungs } = useSettledNodes(() => ({
+const settled = useSettledNodes(() => ({
   nodes: props.frame.nodes,
   widen: props.widen,
   hung: props.hung,
 }))
+provide(SETTLED_NODES, settled)
 
 /** Stays the same map while no role changes, so a pointer moving through a gesture does not redraw the notes. */
 const roles = computed<Map<string, GestureRole>>((previous) => {
@@ -95,11 +94,6 @@ const roles = computed<Map<string, GestureRole>>((previous) => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-const onSettle = (id: string, isResting: boolean) => {
-  if (isResting) restedOn.value = id
-  else if (restedOn.value === id) restedOn.value = null
-}
-
 const onChooseName = (id: string) => {
   attention.names = null
   emit('choose-name', id)
@@ -185,16 +179,15 @@ const getRole = (node: PlacedNode): GestureRole => {
       :show-edge-labels="showEdgeLabels"
     />
 
-    <g v-for="node in renderedNodes" :key="node.id" class="plex__stack">
+    <g v-for="node in frame.nodes" :key="node.id" class="plex__stack">
       <PlexNodeView
         :ref="holdNode(node.id)"
         :node="node"
         :gesture-role="roles.get(node.id) ?? 'closed'"
-        :wide="wides.get(node.id) ?? null"
-        :hung="hungs.get(node.id) ?? null"
         :behavior="behavior"
         :show-pills="showPills"
         :rest-height="nodeSize.height"
+        :viewport-width="viewport.width"
         :attention="attention"
         v-on="getNodeHandlers(node.id)"
       >
@@ -202,9 +195,13 @@ const getRole = (node: PlacedNode): GestureRole => {
       </PlexNodeView>
     </g>
 
+    <!-- Over every note, so a note that is open covers its neighbors without moving in the document. -->
+    <g ref="lift" class="plex__lift" />
+
     <PlexThreads
       :frame="frame"
       :viewport="viewport"
+      :show-pills="showPills"
       :ghost-size="ghostSize"
       :relation-name="relationName"
       :gesture="gesture"

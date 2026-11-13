@@ -18,24 +18,30 @@ export interface DraggedShape {
   readonly ghost: PlacedNode
 }
 
+/** What decides where a thread starts: the handle of the node, which depends on its pill and on the width of the window. */
+export interface ThreadOptions {
+  readonly curvature?: number | undefined
+  readonly hasPill?: boolean | undefined
+  readonly viewportWidth?: number | undefined
+}
+
 /** The line from a node's handle to the pointer, and nothing off a node. */
 export function getReachThread(
   frame: PlexFrame,
   from: string | null,
   to: Position | null,
-  curvature?: number,
+  options: ThreadOptions = {},
 ): Thread | null {
   const source = frame.nodes.find((node) => node.id === from)
   if (!source || !to) return null
-  const offset = getHandle(source)
-  return createThreadPath({ x: source.x + offset.x, y: source.y }, to, curvature)
+  const offset = getHandle(source, options.hasPill ?? true, options.viewportWidth)
+  return createThreadPath({ x: source.x + offset.x, y: source.y }, to, options.curvature)
 }
 
-export interface PendingThreadTarget {
+export interface PendingThreadTarget extends ThreadOptions {
   readonly from: string | null
   readonly position: Position | null
   readonly viewport: Size
-  readonly curvature?: number | undefined
 }
 
 /**
@@ -43,9 +49,9 @@ export interface PendingThreadTarget {
  * measured from its top left corner.
  */
 export function getPendingThread(frame: PlexFrame, target: PendingThreadTarget): Thread | null {
-  const { from, position, viewport, curvature } = target
+  const { from, position, viewport, ...options } = target
   const to = position && { x: position.x - viewport.width / 2, y: position.y - viewport.height / 2 }
-  return getReachThread(frame, from, to, curvature)
+  return getReachThread(frame, from, to, options)
 }
 
 export interface ReachGhostOptions {

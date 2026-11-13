@@ -1,4 +1,4 @@
-/** What each note of the frame is settled to: its widened box and its headings, kept as they are until the frame or the sizes change. */
+/** What a note of the frame is settled to: its widened box and its headings, worked out when asked for and kept until the frame or the sizes change. */
 import { computed } from 'vue'
 import type { NodeHeadings } from '../lib/inside'
 import type { PlacedNode } from '../lib/node'
@@ -10,13 +10,25 @@ export interface SettledNodesSource {
   readonly hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
 }
 
+export type SettledNodes = ReturnType<typeof useSettledNodes>
+
 export function useSettledNodes(source: () => SettledNodesSource) {
+  const settled = computed(() => ({
+    ...source(),
+    wides: new Map<string, WideBox | null>(),
+    hungs: new Map<string, NodeHeadings | null>(),
+  }))
+
   return {
-    wides: computed(
-      () => new Map(source().nodes.map((node) => [node.id, source().widen?.(node) ?? null])),
-    ),
-    hungs: computed(
-      () => new Map(source().nodes.map((node) => [node.id, source().hung?.(node) ?? null])),
-    ),
+    getWide: (node: PlacedNode): WideBox | null => {
+      const { wides, widen } = settled.value
+      if (!wides.has(node.id)) wides.set(node.id, widen?.(node) ?? null)
+      return wides.get(node.id) ?? null
+    },
+    getHung: (node: PlacedNode): NodeHeadings | null => {
+      const { hungs, hung } = settled.value
+      if (!hungs.has(node.id)) hungs.set(node.id, hung?.(node) ?? null)
+      return hungs.get(node.id) ?? null
+    },
   }
 }
