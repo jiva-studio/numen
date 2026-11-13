@@ -76,8 +76,8 @@ const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&
 const getName = (canvas: ReturnType<typeof within>, title: string) =>
   canvas.getByRole('button', { name: new RegExp(`^${escapeRegExp(title)}, name under `) })
 
-// The y comes from the translate the element is drawn at.
 const getY = (element: Element) => {
+  // The y comes from the translate the element is drawn at.
   const match = /translate\(\S+ (\S+)\)/.exec(element.getAttribute('transform') ?? '')
   if (!match) throw new Error('the element is not placed yet')
   return Number(match[1])
