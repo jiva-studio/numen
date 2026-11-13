@@ -138,7 +138,6 @@ function onOpen(level: number): void {
   overflow: hidden;
   padding-inline: 0.25rem;
   color: var(--numen-ink);
-  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

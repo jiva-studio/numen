@@ -60,6 +60,7 @@ defineSlots<{
   flex: none;
   padding-inline: var(--numen-gutter);
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
+  background-color: var(--numen-raised);
 }
 
 .settings-page__body {
