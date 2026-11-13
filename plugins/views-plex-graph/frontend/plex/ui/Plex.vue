@@ -76,13 +76,7 @@ const behavior = computed<PlexBehavior>(() => ({
   clock: props.clock,
 }))
 
-const { rooms: namesRooms, room: getRoom } = useNamesRooms({
-  graph: () => props.graph,
-  names: () => props.names,
-  isShown: () => props.showNames,
-  metrics: () => measures.value,
-  width: () => options.value.nodeSize.width,
-})
+const { rooms: namesRooms, room: getRoom } = useNamesRooms(props, measures, options)
 
 const { frame, isMoving } = usePlexTransition(
   () => props.graph,

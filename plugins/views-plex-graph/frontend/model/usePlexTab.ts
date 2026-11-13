@@ -48,6 +48,7 @@ function usePlexPicture(
   view: PlexView,
   deps: PlexTabDeps,
   map: ReturnType<typeof createNodeIdMap>,
+  getName: (path: string) => string,
 ) {
   const picture = computed<PlexGraph | null>(() => {
     const noteGraph = view.noteGraph.value
@@ -82,7 +83,9 @@ function usePlexPicture(
     return deps.window.dragged.value.filter((path) => path !== here)
   })
 
-  return { view, picture, empty, dragged, creatable: deps.creatable }
+  const names = usePlexNames({ view, deps, getName }, map)
+
+  return { view, picture, empty, dragged, creatable: deps.creatable, names }
 }
 
 function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap>) {
@@ -316,13 +319,12 @@ function getPlexNodeName(noteGraph: PlexView['noteGraph']['value'], path: string
 
 export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
-  const canvas = usePlexPicture(view, deps, map)
+  const getName = (path: string): string => getPlexNodeName(view.noteGraph.value, path)
+  const canvas = usePlexPicture(view, deps, map, getName)
   const { types, getType, getTabKind, shownPaths } = usePlexNoteKinds(view, map)
 
-  const getName = (path: string): string => getPlexNodeName(view.noteGraph.value, path)
   const quickLink = useQuickLink(view, deps, map)
   const headings = usePlexHeadings(shownPaths, types, deps, map)
-  const names = usePlexNames({ view, deps, getName }, map)
   const inspector = useLinkInspector(
     view,
     { editor: deps.editor, showMessage: deps.window.showMessage },
@@ -354,7 +356,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   return {
     reportFailure,
-    canvas: { ...canvas, names },
+    canvas,
     menu,
     headings,
     nodes,
