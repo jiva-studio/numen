@@ -5,7 +5,7 @@ import type { useNodePress } from './press'
 
 type Listener = (event: PointerEvent) => void
 
-const on = <E extends Event>(handler: (event: E) => void) => handler as Listener
+const on = (handler: (event: never) => void) => handler as Listener
 
 export function getNodeEvents(
   press: ReturnType<typeof useNodePress>,

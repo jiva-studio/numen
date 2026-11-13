@@ -890,9 +890,9 @@ export const HeadingsInside: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const focus = canvas.getByLabelText(/, focus$/)
-    const getLifted = (id: string) =>
+    const getOpenBox = (id: string) =>
       canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
-    const getHeadings = (id: string) => [...(getLifted(id)?.querySelectorAll(".plex__heading") ?? [])]
+    const getHeadings = (id: string) => [...(getOpenBox(id)?.querySelectorAll(".plex__heading") ?? [])]
 
     const most = args.maxHeadings
 
@@ -917,11 +917,11 @@ export const HeadingsInside: Story = {
     await userEvent.hover(many)
     await waitFor(async () => await expect(getHeadings("focus/jump-0")).toHaveLength(most), { timeout: 3000 })
 
-    const arrows = () => [...(getLifted("focus/jump-0")?.querySelectorAll(".plex__more") ?? [])]
+    const arrows = () => [...(getOpenBox("focus/jump-0")?.querySelectorAll(".plex__more") ?? [])]
     await expect(arrows()).toHaveLength(1)
 
     const wheel = (deltaY: number) =>
-      getLifted("focus/jump-0")!
+      getOpenBox("focus/jump-0")!
         .querySelector('.plex__inside')!
         .dispatchEvent(
           new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }),
@@ -993,9 +993,9 @@ export const OneOpenNote: Story = {
     const canvas = within(canvasElement)
     const focus = canvas.getByLabelText(/, focus$/)
     const other = canvas.getByLabelText(/, jump$/)
-    const getLifted = (id: string) =>
+    const getOpenBox = (id: string) =>
       canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
-    const getHeadings = (id: string) => [...(getLifted(id)?.querySelectorAll(".plex__heading") ?? [])]
+    const getHeadings = (id: string) => [...(getOpenBox(id)?.querySelectorAll(".plex__heading") ?? [])]
     const getHandles = () => canvasElement.querySelectorAll('.plex__handle')
 
     await userEvent.hover(focus)
