@@ -46,22 +46,13 @@ export interface RunningPlugins {
   stop(): void
 }
 
-const isHeld = (one: PluginProcess) => one.leaseCount > 0 || one.idleStopTime === undefined
+const getName = (one: PluginProcess) => one.pluginName || one.pluginId
 
-const compareNames = (a: PluginProcess, b: PluginProcess) =>
-  (a.pluginName || a.pluginId).localeCompare(b.pluginName || b.pluginId) ||
-  a.pluginId.localeCompare(b.pluginId)
-
-/**
- * The plugins in the order a person reads them: the ones in use first, by name, then the idle ones,
- * the one the core stops first at the top.
- */
+/** The plugins by name, so a row keeps its place while its use and idle times change. */
 export function sortProcesses(processes: readonly PluginProcess[]): PluginProcess[] {
-  return [...processes].sort((a, b) => {
-    if (isHeld(a) !== isHeld(b)) return isHeld(a) ? -1 : 1
-    if (isHeld(a)) return compareNames(a, b)
-    return (a.idleStopTime ?? 0) - (b.idleStopTime ?? 0) || compareNames(a, b)
-  })
+  return [...processes].sort(
+    (a, b) => getName(a).localeCompare(getName(b)) || a.pluginId.localeCompare(b.pluginId),
+  )
 }
 
 export function createRunningPlugins(deps: RunningPluginsDeps): RunningPlugins {

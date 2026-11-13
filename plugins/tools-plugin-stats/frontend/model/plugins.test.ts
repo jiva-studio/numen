@@ -41,7 +41,7 @@ const createTime = () => {
 }
 
 describe('the order of the running plugins', () => {
-  it('puts the ones in use first by name, then the idle ones by the time they stop', () => {
+  it('lists the plugins by name, whether in use or idle', () => {
     const list = [
       create('org.example.late', 'Late', { idleStopTime: 1_700_000_300_000 }),
       create('org.example.zines', 'Zines', { leaseCount: 1 }),
@@ -51,9 +51,9 @@ describe('the order of the running plugins', () => {
 
     expect(sortProcesses(list).map((one) => one.pluginName)).toStrictEqual([
       'Atlas',
-      'Zines',
-      'Soon',
       'Late',
+      'Soon',
+      'Zines',
     ])
   })
 })
