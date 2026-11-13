@@ -4,9 +4,10 @@ withDefaults(
   defineProps<{
     tool: string
     subject?: string
+    aside?: string
     isWorking?: boolean
   }>(),
-  { subject: '', isWorking: false },
+  { subject: '', aside: '', isWorking: false },
 )
 </script>
 
@@ -15,6 +16,8 @@ withDefaults(
     <span class="tool-call__mark" :data-working="isWorking || undefined" />
     <span class="min-w-0 truncate">{{ tool }}</span>
     <span v-if="subject" class="min-w-0 flex-1 truncate opacity-70">{{ subject }}</span>
+    <span v-else class="flex-1" />
+    <span v-if="aside" class="flex-none tabular-nums opacity-70">{{ aside }}</span>
   </p>
 </template>
 

@@ -35,6 +35,7 @@ const plan = computed(() => props.entry.turn.plan ?? [])
 const call = computed(() => ({
   tool: props.entry.turn.text,
   subject: props.entry.turn.subject ?? '',
+  aside: props.entry.turn.aside ?? '',
   isWorking: props.entry.state === 'arriving',
 }))
 </script>

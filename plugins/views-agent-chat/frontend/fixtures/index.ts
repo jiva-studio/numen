@@ -8,6 +8,8 @@ export {
   say,
   showPlan,
   stopFor,
+  think,
+  writeTool,
 } from './connections'
 export type { FrameInit, TaskScript } from './connections'
 export { byWholeText } from './text'

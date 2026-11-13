@@ -78,6 +78,16 @@ export const callTool = (
   },
 })
 
+/** A piece of the reasoning of the model. */
+export const think = (text: string, messageId = 'thought'): FrameInit => ({
+  update: { case: 'agentThoughtChunk', value: { messageId, text } },
+})
+
+/** The text a call that is still being written has written so far to the file at path. */
+export const writeTool = (toolCallId: string, path: string, newText: string): FrameInit => ({
+  update: { case: 'toolCallUpdate', value: { toolCallId, diffs: [{ path, newText }] } },
+})
+
 /** A tool call that ended. */
 export const endTool = (toolCallId: string, status = acp.ToolCallStatus.COMPLETED): FrameInit => ({
   update: { case: 'toolCallUpdate', value: { toolCallId, status } },

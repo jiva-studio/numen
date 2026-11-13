@@ -2,6 +2,7 @@
  * The status line showing the tool the agent is running, and the wait line
  * under it, shown whenever no more specific status is known.
  */
+import { writeCharCount } from '../lib/turn'
 import type { Turn } from '../../types'
 
 const getSpokenTool = (tool: string) => tool.replaceAll('_', ' ')
@@ -13,8 +14,10 @@ export interface WorkCall {
   readonly path: string
 }
 
+/** write shows how many characters of the text of the current call have arrived, until it settles. */
 export interface WorkLine {
   readonly reach: (call: WorkCall) => void
+  readonly write: (count: number) => void
   readonly settle: () => void
   readonly dropWorkLine: () => void
   readonly setWaiting: (isOn: boolean) => void
@@ -37,6 +40,7 @@ export function createWorkLine(options: WorkLineOptions, workId: string, wait: s
   const { put, drop, paths, waitWords } = options
   let says = waitWords
   let subject = ''
+  let written = 0
 
   // Whether the line is up. It comes down when the answer begins, and a tool
   // answering does not put it back: what a tool did belongs above the answer it
@@ -50,6 +54,7 @@ export function createWorkLine(options: WorkLineOptions, workId: string, wait: s
       text: says,
       subject,
       state,
+      ...(written > 0 ? { aside: writeCharCount(written) } : {}),
       ...(paths.has(workId) ? { canOpen: true } : {}),
     })
     up = true
@@ -70,11 +75,17 @@ export function createWorkLine(options: WorkLineOptions, workId: string, wait: s
     reach: (call) => {
       says = getSpokenTool(call.title)
       subject = call.subject
+      written = 0
       if (call.path) paths.set(workId, call.path)
       else paths.delete(workId)
       show('arriving')
     },
+    write: (count) => {
+      written = count
+      if (up) show('arriving')
+    },
     settle: () => {
+      written = 0
       if (up) show('settled')
     },
     dropWorkLine,
