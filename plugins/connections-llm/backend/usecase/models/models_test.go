@@ -189,7 +189,7 @@ func TestAFirstListThatFailsReturnsTheFailureAndKeepsNothing(t *testing.T) {
 	}
 }
 
-func TestAListKeptPastItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testing.T) {
+func TestAListOlderThanItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testing.T) {
 	dir := t.TempDir()
 	old := []connection.Option{{Value: "invented/model-a"}}
 	if _, err := newModelsIn(t, &gateway{models: old}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {

@@ -21,7 +21,7 @@ type shownCall struct {
 // tool_call_updates, and nothing after the call has finished. A call of a served tool shows the title of
 // the listing, the kind of its effect, what it is about and the vault path it works on; any other call
 // shows its name. The reasoning of the model is sent as thought chunks. thread is the thread the program
-// reported, and isSent tells whether any frame was sent.
+// reported, and isSent reports whether any frame was sent.
 type turn struct {
 	listed       map[string]*tools.ToolInfo
 	send         func(*contract.TaskFrame) error

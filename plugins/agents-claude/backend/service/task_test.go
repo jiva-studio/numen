@@ -53,7 +53,7 @@ func TestATaskStreamsTheClaudeTextAndToolCalls(t *testing.T) {
 
 // The reasoning of the model reaches the chat as thoughts, and the note a call writes is previewed while
 // the call is still arriving, again after each 200 characters of its arguments.
-func TestATaskSendsTheThoughtsAndThePreviewOfTheNoteBeingWritten(t *testing.T) {
+func TestATaskSendsTheThoughtsAndThePreviewOfTheNoteItWrites(t *testing.T) {
 	_, client := serveGardenHost(t)
 	first, second := strings.Repeat("Oak ", 55), "and elm."
 	output := filepath.Join(t.TempDir(), "output")

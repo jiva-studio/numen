@@ -53,9 +53,9 @@ func TestTheFileNamesTheServerWithTheTokenForItsOwnerAlone(t *testing.T) {
 	}
 }
 
-// The person's own servers of Claude Code are named in the file beside the server of the vault, which a
+// The person's own servers of Claude Code are named in the file with the server of the vault, which a
 // server of the person by its name does not replace.
-func TestTheFileNamesThePersonsOwnServersBesideTheVault(t *testing.T) {
+func TestTheFileNamesThePersonsOwnServersWithTheVault(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("CLAUDE_CONFIG_DIR", dir)
 	config := `{"numStartups":3,"mcpServers":{"weather":{"type":"stdio","command":"weather-mcp"},"numen":{"type":"http","url":"http://elsewhere.test"}}}`
