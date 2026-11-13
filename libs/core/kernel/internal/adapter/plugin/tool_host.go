@@ -42,5 +42,5 @@ func (h ToolHost) Release(pluginID string) { h.activation.Release(pluginID) }
 // GetPluginInfos lists the plugins the host knows.
 func (h ToolHost) GetPluginInfos() []plugindomain.Info { return h.registry.GetPluginInfos() }
 
-// IsEnabled reports whether the host has the plugin enabled.
+// IsEnabled is false for a disabled plugin and for every plugin in safe mode.
 func (h ToolHost) IsEnabled(pluginID string) bool { return h.registry.IsEnabled(pluginID) }

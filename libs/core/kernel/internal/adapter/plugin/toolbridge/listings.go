@@ -38,7 +38,6 @@ func newListings(files ListingFiles) *listings {
 	return &listings{files: files, byPlugin: map[string]listing{}}
 }
 
-// get returns the tools the version of the plugin listed, and false when it has not been listed.
 func (l *listings) get(pluginID, version string) (*v1.ListToolsResponse, bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -53,7 +52,6 @@ func (l *listings) get(pluginID, version string) (*v1.ListToolsResponse, bool) {
 	return read.tools, true
 }
 
-// put keeps the tools the version of the plugin listed.
 func (l *listings) put(pluginID, version string, tools *v1.ListToolsResponse) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -69,7 +67,6 @@ func (l *listings) put(pluginID, version string, tools *v1.ListToolsResponse) {
 	l.files.WriteToolListing(pluginID, content)
 }
 
-// read returns the listing kept in the file of the plugin; a file that cannot be decoded counts as none.
 func (l *listings) read(pluginID string) (listing, bool) {
 	content, isKept := l.files.ReadToolListing(pluginID)
 	if !isKept {

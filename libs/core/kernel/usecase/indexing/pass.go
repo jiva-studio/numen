@@ -12,14 +12,13 @@ import (
 
 // pass is the indexing of one vault, on the one goroutine that runs it.
 type pass struct {
-	env       passEnv
-	events    Events
-	waits     wakeWaits
-	skips     *vaultreading.Skips
-	session   *Session
-	v         domain.Vault
-	isRebuild bool
-	// isReadyNotified is whether this session has reported the search source ready.
+	env             passEnv
+	events          Events
+	waits           wakeWaits
+	skips           *vaultreading.Skips
+	session         *Session
+	v               domain.Vault
+	isRebuild       bool
 	isReadyNotified bool
 }
 

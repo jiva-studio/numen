@@ -137,7 +137,6 @@ func getNames(tools []*v1.PluginTool) []string {
 	return names
 }
 
-// filesIn is the plugin storage of a host whose cache root is dir; an empty dir keeps no files.
 func filesIn(t *testing.T, dir string) *storage.Storage {
 	t.Helper()
 	files := storage.New(func(err error) { t.Errorf("the storage reported %v", err) }, func(string) string { return "1.0.0" })
