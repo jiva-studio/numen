@@ -14,7 +14,10 @@ const collect = async (frames: AsyncGenerator<ChatFrame, unknown>) => {
 describe('createLlmHost', () => {
   it('passes the request to the served completion and returns its result to complete', async () => {
     const host = createLlmHost({
-      complete: async (request) => ({ ok: true, value: { text: `${request.messages.length} lines` } }),
+      complete: async (request) => ({
+        ok: true,
+        value: { text: `${request.messages.length} lines` },
+      }),
     })
 
     const answer = await complete(host, { messages: [{ role: 'user', text: 'tide tables' }] })

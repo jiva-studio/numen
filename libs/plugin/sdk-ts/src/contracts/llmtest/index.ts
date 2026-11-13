@@ -69,7 +69,9 @@ async function* serveChat(
   for (;;) {
     const next = await frames.next()
     if (next.done === true)
-      return encode(next.value, (value) => toBinary(ChatFinishSchema, create(ChatFinishSchema, value)))
+      return encode(next.value, (value) =>
+        toBinary(ChatFinishSchema, create(ChatFinishSchema, value)),
+      )
     yield toBinary(ChatFrameSchema, create(ChatFrameSchema, next.value))
   }
 }
@@ -81,7 +83,9 @@ const listServed = (roles: Roles): ReadonlyMap<string, Served> => {
     served.set(OPERATION_COMPLETE, async function* (payload, options) {
       yield* []
       const end = await complete(fromBinary(CompleteRequestSchema, payload), options)
-      return encode(end, (value) => toBinary(CompleteResultSchema, create(CompleteResultSchema, value)))
+      return encode(end, (value) =>
+        toBinary(CompleteResultSchema, create(CompleteResultSchema, value)),
+      )
     })
   if (embed !== undefined)
     served.set(OPERATION_EMBED, async function* (payload, options) {
@@ -112,7 +116,11 @@ export function createLlmHost(roles: Roles): ConnectionHost {
       if (serve === undefined) {
         return {
           ok: false,
-          error: { error: 'no_connection', message: `no connection serves ${operation}`, failures: [] },
+          error: {
+            error: 'no_connection',
+            message: `no connection serves ${operation}`,
+            failures: [],
+          },
         }
       }
       return yield* serve(payload, options)
