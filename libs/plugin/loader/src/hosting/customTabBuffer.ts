@@ -90,7 +90,6 @@ export function createBufferedNoteState(
 
   const note = computed(() => buffer.getOpenNote(id))
   const lines = createLineReveal(() => note.value.state !== 'loading')
-  let editor: EditorHandle | null = null
 
   const state = shallowReactive({
     at: targetPath,
@@ -110,11 +109,10 @@ export function createBufferedNoteState(
     keepMine: () => buffer.keep(id),
     takeFile: () => buffer.take(id),
     attachEditor: (attached: EditorHandle | null): void => {
-      editor = attached
       lines.attach(attached)
     },
     revealLine: lines.reveal,
-    measure: (): void => editor?.measure?.(),
+    measure: lines.measure,
     updateBody: (body: string) => buffer.setBody(id, body),
     save: () => buffer.save(id),
     navigate: (nextPath: string, nextTitle?: string): void => {

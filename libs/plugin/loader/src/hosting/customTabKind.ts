@@ -189,7 +189,6 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
   let currentPath = targetPath
   let hasEdited = false
   const lines = createLineReveal(() => !isLoading.value)
-  let editor: EditorHandle | null = null
   let write = createNoteWriter(targetPath, deps.hostDeps?.writeNote, errorMessageRef)
 
   const readAt = (pathToRead: string): void => {
@@ -216,11 +215,10 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
     isLoading,
     body: computed(() => noteRef.value.body),
     attachEditor: (attached: EditorHandle | null): void => {
-      editor = attached
       lines.attach(attached)
     },
     revealLine: lines.reveal,
-    measure: (): void => editor?.measure?.(),
+    measure: lines.measure,
     updateBody: (body: string) => {
       hasEdited = true
       noteRef.value = { path: currentPath, body }

@@ -24,6 +24,7 @@ export function createLineReveal(isLoaded: () => boolean) {
       editor = attached
       settleAfterRender()
     },
+    measure: (): void => editor?.measure?.(),
     reveal: (line: number): void => {
       owed = line
       settleAfterRender()
