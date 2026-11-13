@@ -36,12 +36,22 @@ const (
 	// ConnectionCallServiceCallProcedure is the fully-qualified name of the ConnectionCallService's
 	// Call RPC.
 	ConnectionCallServiceCallProcedure = "/numen.v1.ConnectionCallService/Call"
+	// ConnectionCallServiceListRowsProcedure is the fully-qualified name of the ConnectionCallService's
+	// ListRows RPC.
+	ConnectionCallServiceListRowsProcedure = "/numen.v1.ConnectionCallService/ListRows"
+	// ConnectionCallServiceListRowOptionsProcedure is the fully-qualified name of the
+	// ConnectionCallService's ListRowOptions RPC.
+	ConnectionCallServiceListRowOptionsProcedure = "/numen.v1.ConnectionCallService/ListRowOptions"
 )
 
 // ConnectionCallServiceClient is a client for the numen.v1.ConnectionCallService service.
 type ConnectionCallServiceClient interface {
 	// Call carries out one operation as HostConnectionService.Call does.
 	Call(context.Context, *connect.Request[v1.ConnectionCallServiceCallRequest]) (*connect.ServerStreamForClient[v1.ConnectionCallServiceCallResponse], error)
+	// ListRows lists the rows of the plugin as HostConnectionService.ListRows does.
+	ListRows(context.Context, *connect.Request[v1.ConnectionCallServiceListRowsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowsResponse], error)
+	// ListRowOptions lists the values of a row field as HostConnectionService.ListRowOptions does.
+	ListRowOptions(context.Context, *connect.Request[v1.ConnectionCallServiceListRowOptionsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowOptionsResponse], error)
 }
 
 // NewConnectionCallServiceClient constructs a client for the numen.v1.ConnectionCallService
@@ -61,12 +71,26 @@ func NewConnectionCallServiceClient(httpClient connect.HTTPClient, baseURL strin
 			connect.WithSchema(connectionCallServiceMethods.ByName("Call")),
 			connect.WithClientOptions(opts...),
 		),
+		listRows: connect.NewClient[v1.ConnectionCallServiceListRowsRequest, v1.ConnectionCallServiceListRowsResponse](
+			httpClient,
+			baseURL+ConnectionCallServiceListRowsProcedure,
+			connect.WithSchema(connectionCallServiceMethods.ByName("ListRows")),
+			connect.WithClientOptions(opts...),
+		),
+		listRowOptions: connect.NewClient[v1.ConnectionCallServiceListRowOptionsRequest, v1.ConnectionCallServiceListRowOptionsResponse](
+			httpClient,
+			baseURL+ConnectionCallServiceListRowOptionsProcedure,
+			connect.WithSchema(connectionCallServiceMethods.ByName("ListRowOptions")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // connectionCallServiceClient implements ConnectionCallServiceClient.
 type connectionCallServiceClient struct {
-	call *connect.Client[v1.ConnectionCallServiceCallRequest, v1.ConnectionCallServiceCallResponse]
+	call           *connect.Client[v1.ConnectionCallServiceCallRequest, v1.ConnectionCallServiceCallResponse]
+	listRows       *connect.Client[v1.ConnectionCallServiceListRowsRequest, v1.ConnectionCallServiceListRowsResponse]
+	listRowOptions *connect.Client[v1.ConnectionCallServiceListRowOptionsRequest, v1.ConnectionCallServiceListRowOptionsResponse]
 }
 
 // Call calls numen.v1.ConnectionCallService.Call.
@@ -74,10 +98,24 @@ func (c *connectionCallServiceClient) Call(ctx context.Context, req *connect.Req
 	return c.call.CallServerStream(ctx, req)
 }
 
+// ListRows calls numen.v1.ConnectionCallService.ListRows.
+func (c *connectionCallServiceClient) ListRows(ctx context.Context, req *connect.Request[v1.ConnectionCallServiceListRowsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowsResponse], error) {
+	return c.listRows.CallUnary(ctx, req)
+}
+
+// ListRowOptions calls numen.v1.ConnectionCallService.ListRowOptions.
+func (c *connectionCallServiceClient) ListRowOptions(ctx context.Context, req *connect.Request[v1.ConnectionCallServiceListRowOptionsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowOptionsResponse], error) {
+	return c.listRowOptions.CallUnary(ctx, req)
+}
+
 // ConnectionCallServiceHandler is an implementation of the numen.v1.ConnectionCallService service.
 type ConnectionCallServiceHandler interface {
 	// Call carries out one operation as HostConnectionService.Call does.
 	Call(context.Context, *connect.Request[v1.ConnectionCallServiceCallRequest], *connect.ServerStream[v1.ConnectionCallServiceCallResponse]) error
+	// ListRows lists the rows of the plugin as HostConnectionService.ListRows does.
+	ListRows(context.Context, *connect.Request[v1.ConnectionCallServiceListRowsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowsResponse], error)
+	// ListRowOptions lists the values of a row field as HostConnectionService.ListRowOptions does.
+	ListRowOptions(context.Context, *connect.Request[v1.ConnectionCallServiceListRowOptionsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowOptionsResponse], error)
 }
 
 // NewConnectionCallServiceHandler builds an HTTP handler from the service implementation. It
@@ -93,10 +131,26 @@ func NewConnectionCallServiceHandler(svc ConnectionCallServiceHandler, opts ...c
 		connect.WithSchema(connectionCallServiceMethods.ByName("Call")),
 		connect.WithHandlerOptions(opts...),
 	)
+	connectionCallServiceListRowsHandler := connect.NewUnaryHandler(
+		ConnectionCallServiceListRowsProcedure,
+		svc.ListRows,
+		connect.WithSchema(connectionCallServiceMethods.ByName("ListRows")),
+		connect.WithHandlerOptions(opts...),
+	)
+	connectionCallServiceListRowOptionsHandler := connect.NewUnaryHandler(
+		ConnectionCallServiceListRowOptionsProcedure,
+		svc.ListRowOptions,
+		connect.WithSchema(connectionCallServiceMethods.ByName("ListRowOptions")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.ConnectionCallService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ConnectionCallServiceCallProcedure:
 			connectionCallServiceCallHandler.ServeHTTP(w, r)
+		case ConnectionCallServiceListRowsProcedure:
+			connectionCallServiceListRowsHandler.ServeHTTP(w, r)
+		case ConnectionCallServiceListRowOptionsProcedure:
+			connectionCallServiceListRowOptionsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -108,4 +162,12 @@ type UnimplementedConnectionCallServiceHandler struct{}
 
 func (UnimplementedConnectionCallServiceHandler) Call(context.Context, *connect.Request[v1.ConnectionCallServiceCallRequest], *connect.ServerStream[v1.ConnectionCallServiceCallResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ConnectionCallService.Call is not implemented"))
+}
+
+func (UnimplementedConnectionCallServiceHandler) ListRows(context.Context, *connect.Request[v1.ConnectionCallServiceListRowsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ConnectionCallService.ListRows is not implemented"))
+}
+
+func (UnimplementedConnectionCallServiceHandler) ListRowOptions(context.Context, *connect.Request[v1.ConnectionCallServiceListRowOptionsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowOptionsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ConnectionCallService.ListRowOptions is not implemented"))
 }

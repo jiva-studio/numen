@@ -245,19 +245,76 @@ func (x *CallFailure) GetFailures() []*CallRowFailure {
 	return nil
 }
 
+// PreferredRow is the row a call asks first. connection_id names a connection among the rows of the plugin
+// for the operation; the call goes to it with options in place of the values of its row fields, then to
+// the other rows in order. A connection that is not among the rows is ignored.
+type PreferredRow struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ConnectionId  string                 `protobuf:"bytes,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	Options       map[string]string      `protobuf:"bytes,2,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PreferredRow) Reset() {
+	*x = PreferredRow{}
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PreferredRow) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PreferredRow) ProtoMessage() {}
+
+func (x *PreferredRow) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PreferredRow.ProtoReflect.Descriptor instead.
+func (*PreferredRow) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *PreferredRow) GetConnectionId() string {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return ""
+}
+
+func (x *PreferredRow) GetOptions() map[string]string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
 type HostConnectionServiceCallRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// operation is the name of the operation, such as "llm.chat".
-	Operation     string   `protobuf:"bytes,1,opt,name=operation,proto3" json:"operation,omitempty"`
-	Payload       []byte   `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
-	Priority      Priority `protobuf:"varint,3,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
+	Operation string   `protobuf:"bytes,1,opt,name=operation,proto3" json:"operation,omitempty"`
+	Payload   []byte   `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+	Priority  Priority `protobuf:"varint,3,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
+	// preferred is unset for the rows in their order.
+	Preferred     *PreferredRow `protobuf:"bytes,4,opt,name=preferred,proto3" json:"preferred,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *HostConnectionServiceCallRequest) Reset() {
 	*x = HostConnectionServiceCallRequest{}
-	mi := &file_numen_v1_hostconnection_proto_msgTypes[2]
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -269,7 +326,7 @@ func (x *HostConnectionServiceCallRequest) String() string {
 func (*HostConnectionServiceCallRequest) ProtoMessage() {}
 
 func (x *HostConnectionServiceCallRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostconnection_proto_msgTypes[2]
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -282,7 +339,7 @@ func (x *HostConnectionServiceCallRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostConnectionServiceCallRequest.ProtoReflect.Descriptor instead.
 func (*HostConnectionServiceCallRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *HostConnectionServiceCallRequest) GetOperation() string {
@@ -306,6 +363,347 @@ func (x *HostConnectionServiceCallRequest) GetPriority() Priority {
 	return Priority_PRIORITY_UNSPECIFIED
 }
 
+func (x *HostConnectionServiceCallRequest) GetPreferred() *PreferredRow {
+	if x != nil {
+		return x.Preferred
+	}
+	return nil
+}
+
+// CallRowField is a row field the type of a connection declares. options_from is the operation that lists
+// its values, empty for none.
+type CallRowField struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	OptionsFrom   string                 `protobuf:"bytes,3,opt,name=options_from,json=optionsFrom,proto3" json:"options_from,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CallRowField) Reset() {
+	*x = CallRowField{}
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CallRowField) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CallRowField) ProtoMessage() {}
+
+func (x *CallRowField) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CallRowField.ProtoReflect.Descriptor instead.
+func (*CallRowField) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CallRowField) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *CallRowField) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *CallRowField) GetOptionsFrom() string {
+	if x != nil {
+		return x.OptionsFrom
+	}
+	return ""
+}
+
+// CallRow is one row of a plugin: its connection, the values of its row fields, and the row fields the
+// type of the connection declares.
+type CallRow struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConnectionId   string                 `protobuf:"bytes,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	ConnectionName string                 `protobuf:"bytes,2,opt,name=connection_name,json=connectionName,proto3" json:"connection_name,omitempty"`
+	Options        map[string]string      `protobuf:"bytes,3,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Fields         []*CallRowField        `protobuf:"bytes,4,rep,name=fields,proto3" json:"fields,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CallRow) Reset() {
+	*x = CallRow{}
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CallRow) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CallRow) ProtoMessage() {}
+
+func (x *CallRow) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CallRow.ProtoReflect.Descriptor instead.
+func (*CallRow) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CallRow) GetConnectionId() string {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return ""
+}
+
+func (x *CallRow) GetConnectionName() string {
+	if x != nil {
+		return x.ConnectionName
+	}
+	return ""
+}
+
+func (x *CallRow) GetOptions() map[string]string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *CallRow) GetFields() []*CallRowField {
+	if x != nil {
+		return x.Fields
+	}
+	return nil
+}
+
+type HostConnectionServiceListRowsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Operation     string                 `protobuf:"bytes,1,opt,name=operation,proto3" json:"operation,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostConnectionServiceListRowsRequest) Reset() {
+	*x = HostConnectionServiceListRowsRequest{}
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostConnectionServiceListRowsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostConnectionServiceListRowsRequest) ProtoMessage() {}
+
+func (x *HostConnectionServiceListRowsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostConnectionServiceListRowsRequest.ProtoReflect.Descriptor instead.
+func (*HostConnectionServiceListRowsRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *HostConnectionServiceListRowsRequest) GetOperation() string {
+	if x != nil {
+		return x.Operation
+	}
+	return ""
+}
+
+type HostConnectionServiceListRowsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Rows          []*CallRow             `protobuf:"bytes,1,rep,name=rows,proto3" json:"rows,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostConnectionServiceListRowsResponse) Reset() {
+	*x = HostConnectionServiceListRowsResponse{}
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostConnectionServiceListRowsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostConnectionServiceListRowsResponse) ProtoMessage() {}
+
+func (x *HostConnectionServiceListRowsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostConnectionServiceListRowsResponse.ProtoReflect.Descriptor instead.
+func (*HostConnectionServiceListRowsResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *HostConnectionServiceListRowsResponse) GetRows() []*CallRow {
+	if x != nil {
+		return x.Rows
+	}
+	return nil
+}
+
+type HostConnectionServiceListRowOptionsRequest struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Operation    string                 `protobuf:"bytes,1,opt,name=operation,proto3" json:"operation,omitempty"`
+	ConnectionId string                 `protobuf:"bytes,2,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	// field is the key of the row field.
+	Field string `protobuf:"bytes,3,opt,name=field,proto3" json:"field,omitempty"`
+	// options are the values of the row fields so far.
+	Options       map[string]string `protobuf:"bytes,4,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostConnectionServiceListRowOptionsRequest) Reset() {
+	*x = HostConnectionServiceListRowOptionsRequest{}
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostConnectionServiceListRowOptionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostConnectionServiceListRowOptionsRequest) ProtoMessage() {}
+
+func (x *HostConnectionServiceListRowOptionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostConnectionServiceListRowOptionsRequest.ProtoReflect.Descriptor instead.
+func (*HostConnectionServiceListRowOptionsRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *HostConnectionServiceListRowOptionsRequest) GetOperation() string {
+	if x != nil {
+		return x.Operation
+	}
+	return ""
+}
+
+func (x *HostConnectionServiceListRowOptionsRequest) GetConnectionId() string {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return ""
+}
+
+func (x *HostConnectionServiceListRowOptionsRequest) GetField() string {
+	if x != nil {
+		return x.Field
+	}
+	return ""
+}
+
+func (x *HostConnectionServiceListRowOptionsRequest) GetOptions() map[string]string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+type HostConnectionServiceListRowOptionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Options       []*Option              `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostConnectionServiceListRowOptionsResponse) Reset() {
+	*x = HostConnectionServiceListRowOptionsResponse{}
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostConnectionServiceListRowOptionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostConnectionServiceListRowOptionsResponse) ProtoMessage() {}
+
+func (x *HostConnectionServiceListRowOptionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostConnectionServiceListRowOptionsResponse.ProtoReflect.Descriptor instead.
+func (*HostConnectionServiceListRowOptionsResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *HostConnectionServiceListRowOptionsResponse) GetOptions() []*Option {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
 // HostConnectionServiceCallResponse is one frame of a call.
 type HostConnectionServiceCallResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -321,7 +719,7 @@ type HostConnectionServiceCallResponse struct {
 
 func (x *HostConnectionServiceCallResponse) Reset() {
 	*x = HostConnectionServiceCallResponse{}
-	mi := &file_numen_v1_hostconnection_proto_msgTypes[3]
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -333,7 +731,7 @@ func (x *HostConnectionServiceCallResponse) String() string {
 func (*HostConnectionServiceCallResponse) ProtoMessage() {}
 
 func (x *HostConnectionServiceCallResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostconnection_proto_msgTypes[3]
+	mi := &file_numen_v1_hostconnection_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -346,7 +744,7 @@ func (x *HostConnectionServiceCallResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use HostConnectionServiceCallResponse.ProtoReflect.Descriptor instead.
 func (*HostConnectionServiceCallResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *HostConnectionServiceCallResponse) GetFrame() isHostConnectionServiceCallResponse_Frame {
@@ -410,18 +808,51 @@ var File_numen_v1_hostconnection_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostconnection_proto_rawDesc = "" +
 	"\n" +
-	"\x1dnumen/v1/hostconnection.proto\x12\bnumen.v1\"Q\n" +
+	"\x1dnumen/v1/hostconnection.proto\x12\bnumen.v1\x1a\x17numen/v1/settings.proto\"Q\n" +
 	"\x0eCallRowFailure\x12'\n" +
 	"\x0fconnection_name\x18\x01 \x01(\tR\x0econnectionName\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\"\x8a\x01\n" +
 	"\vCallFailure\x12-\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.CallErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\x124\n" +
-	"\bfailures\x18\x03 \x03(\v2\x18.numen.v1.CallRowFailureR\bfailures\"\x8a\x01\n" +
+	"\bfailures\x18\x03 \x03(\v2\x18.numen.v1.CallRowFailureR\bfailures\"\xae\x01\n" +
+	"\fPreferredRow\x12#\n" +
+	"\rconnection_id\x18\x01 \x01(\tR\fconnectionId\x12=\n" +
+	"\aoptions\x18\x02 \x03(\v2#.numen.v1.PreferredRow.OptionsEntryR\aoptions\x1a:\n" +
+	"\fOptionsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc0\x01\n" +
 	" HostConnectionServiceCallRequest\x12\x1c\n" +
 	"\toperation\x18\x01 \x01(\tR\toperation\x12\x18\n" +
 	"\apayload\x18\x02 \x01(\fR\apayload\x12.\n" +
-	"\bpriority\x18\x03 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\"\x8b\x01\n" +
+	"\bpriority\x18\x03 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\x124\n" +
+	"\tpreferred\x18\x04 \x01(\v2\x16.numen.v1.PreferredRowR\tpreferred\"Y\n" +
+	"\fCallRowField\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12!\n" +
+	"\foptions_from\x18\x03 \x01(\tR\voptionsFrom\"\xfd\x01\n" +
+	"\aCallRow\x12#\n" +
+	"\rconnection_id\x18\x01 \x01(\tR\fconnectionId\x12'\n" +
+	"\x0fconnection_name\x18\x02 \x01(\tR\x0econnectionName\x128\n" +
+	"\aoptions\x18\x03 \x03(\v2\x1e.numen.v1.CallRow.OptionsEntryR\aoptions\x12.\n" +
+	"\x06fields\x18\x04 \x03(\v2\x16.numen.v1.CallRowFieldR\x06fields\x1a:\n" +
+	"\fOptionsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"D\n" +
+	"$HostConnectionServiceListRowsRequest\x12\x1c\n" +
+	"\toperation\x18\x01 \x01(\tR\toperation\"N\n" +
+	"%HostConnectionServiceListRowsResponse\x12%\n" +
+	"\x04rows\x18\x01 \x03(\v2\x11.numen.v1.CallRowR\x04rows\"\x9e\x02\n" +
+	"*HostConnectionServiceListRowOptionsRequest\x12\x1c\n" +
+	"\toperation\x18\x01 \x01(\tR\toperation\x12#\n" +
+	"\rconnection_id\x18\x02 \x01(\tR\fconnectionId\x12\x14\n" +
+	"\x05field\x18\x03 \x01(\tR\x05field\x12[\n" +
+	"\aoptions\x18\x04 \x03(\v2A.numen.v1.HostConnectionServiceListRowOptionsRequest.OptionsEntryR\aoptions\x1a:\n" +
+	"\fOptionsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"Y\n" +
+	"+HostConnectionServiceListRowOptionsResponse\x12*\n" +
+	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions\"\x8b\x01\n" +
 	"!HostConnectionServiceCallResponse\x12\x14\n" +
 	"\x04data\x18\x01 \x01(\fH\x00R\x04data\x12\x14\n" +
 	"\x04done\x18\x02 \x01(\fH\x00R\x04done\x121\n" +
@@ -435,9 +866,11 @@ const file_numen_v1_hostconnection_proto_rawDesc = "" +
 	"\x1bCALL_ERROR_CODE_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dCALL_ERROR_CODE_NO_CONNECTION\x10\x01\x12\x1e\n" +
 	"\x1aCALL_ERROR_CODE_ALL_FAILED\x10\x02\x12\x1b\n" +
-	"\x17CALL_ERROR_CODE_STOPPED\x10\x032z\n" +
+	"\x17CALL_ERROR_CODE_STOPPED\x10\x032\xe6\x02\n" +
 	"\x15HostConnectionService\x12a\n" +
-	"\x04Call\x12*.numen.v1.HostConnectionServiceCallRequest\x1a+.numen.v1.HostConnectionServiceCallResponse0\x01BFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x04Call\x12*.numen.v1.HostConnectionServiceCallRequest\x1a+.numen.v1.HostConnectionServiceCallResponse0\x01\x12k\n" +
+	"\bListRows\x12..numen.v1.HostConnectionServiceListRowsRequest\x1a/.numen.v1.HostConnectionServiceListRowsResponse\x12}\n" +
+	"\x0eListRowOptions\x124.numen.v1.HostConnectionServiceListRowOptionsRequest\x1a5.numen.v1.HostConnectionServiceListRowOptionsResponseBFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_hostconnection_proto_rawDescOnce sync.Once
@@ -452,27 +885,49 @@ func file_numen_v1_hostconnection_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_hostconnection_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_hostconnection_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_numen_v1_hostconnection_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_numen_v1_hostconnection_proto_goTypes = []any{
-	(Priority)(0),                             // 0: numen.v1.Priority
-	(CallErrorCode)(0),                        // 1: numen.v1.CallErrorCode
-	(*CallRowFailure)(nil),                    // 2: numen.v1.CallRowFailure
-	(*CallFailure)(nil),                       // 3: numen.v1.CallFailure
-	(*HostConnectionServiceCallRequest)(nil),  // 4: numen.v1.HostConnectionServiceCallRequest
-	(*HostConnectionServiceCallResponse)(nil), // 5: numen.v1.HostConnectionServiceCallResponse
+	(Priority)(0),                                       // 0: numen.v1.Priority
+	(CallErrorCode)(0),                                  // 1: numen.v1.CallErrorCode
+	(*CallRowFailure)(nil),                              // 2: numen.v1.CallRowFailure
+	(*CallFailure)(nil),                                 // 3: numen.v1.CallFailure
+	(*PreferredRow)(nil),                                // 4: numen.v1.PreferredRow
+	(*HostConnectionServiceCallRequest)(nil),            // 5: numen.v1.HostConnectionServiceCallRequest
+	(*CallRowField)(nil),                                // 6: numen.v1.CallRowField
+	(*CallRow)(nil),                                     // 7: numen.v1.CallRow
+	(*HostConnectionServiceListRowsRequest)(nil),        // 8: numen.v1.HostConnectionServiceListRowsRequest
+	(*HostConnectionServiceListRowsResponse)(nil),       // 9: numen.v1.HostConnectionServiceListRowsResponse
+	(*HostConnectionServiceListRowOptionsRequest)(nil),  // 10: numen.v1.HostConnectionServiceListRowOptionsRequest
+	(*HostConnectionServiceListRowOptionsResponse)(nil), // 11: numen.v1.HostConnectionServiceListRowOptionsResponse
+	(*HostConnectionServiceCallResponse)(nil),           // 12: numen.v1.HostConnectionServiceCallResponse
+	nil,            // 13: numen.v1.PreferredRow.OptionsEntry
+	nil,            // 14: numen.v1.CallRow.OptionsEntry
+	nil,            // 15: numen.v1.HostConnectionServiceListRowOptionsRequest.OptionsEntry
+	(*Option)(nil), // 16: numen.v1.Option
 }
 var file_numen_v1_hostconnection_proto_depIdxs = []int32{
-	1, // 0: numen.v1.CallFailure.error:type_name -> numen.v1.CallErrorCode
-	2, // 1: numen.v1.CallFailure.failures:type_name -> numen.v1.CallRowFailure
-	0, // 2: numen.v1.HostConnectionServiceCallRequest.priority:type_name -> numen.v1.Priority
-	3, // 3: numen.v1.HostConnectionServiceCallResponse.failure:type_name -> numen.v1.CallFailure
-	4, // 4: numen.v1.HostConnectionService.Call:input_type -> numen.v1.HostConnectionServiceCallRequest
-	5, // 5: numen.v1.HostConnectionService.Call:output_type -> numen.v1.HostConnectionServiceCallResponse
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	1,  // 0: numen.v1.CallFailure.error:type_name -> numen.v1.CallErrorCode
+	2,  // 1: numen.v1.CallFailure.failures:type_name -> numen.v1.CallRowFailure
+	13, // 2: numen.v1.PreferredRow.options:type_name -> numen.v1.PreferredRow.OptionsEntry
+	0,  // 3: numen.v1.HostConnectionServiceCallRequest.priority:type_name -> numen.v1.Priority
+	4,  // 4: numen.v1.HostConnectionServiceCallRequest.preferred:type_name -> numen.v1.PreferredRow
+	14, // 5: numen.v1.CallRow.options:type_name -> numen.v1.CallRow.OptionsEntry
+	6,  // 6: numen.v1.CallRow.fields:type_name -> numen.v1.CallRowField
+	7,  // 7: numen.v1.HostConnectionServiceListRowsResponse.rows:type_name -> numen.v1.CallRow
+	15, // 8: numen.v1.HostConnectionServiceListRowOptionsRequest.options:type_name -> numen.v1.HostConnectionServiceListRowOptionsRequest.OptionsEntry
+	16, // 9: numen.v1.HostConnectionServiceListRowOptionsResponse.options:type_name -> numen.v1.Option
+	3,  // 10: numen.v1.HostConnectionServiceCallResponse.failure:type_name -> numen.v1.CallFailure
+	5,  // 11: numen.v1.HostConnectionService.Call:input_type -> numen.v1.HostConnectionServiceCallRequest
+	8,  // 12: numen.v1.HostConnectionService.ListRows:input_type -> numen.v1.HostConnectionServiceListRowsRequest
+	10, // 13: numen.v1.HostConnectionService.ListRowOptions:input_type -> numen.v1.HostConnectionServiceListRowOptionsRequest
+	12, // 14: numen.v1.HostConnectionService.Call:output_type -> numen.v1.HostConnectionServiceCallResponse
+	9,  // 15: numen.v1.HostConnectionService.ListRows:output_type -> numen.v1.HostConnectionServiceListRowsResponse
+	11, // 16: numen.v1.HostConnectionService.ListRowOptions:output_type -> numen.v1.HostConnectionServiceListRowOptionsResponse
+	14, // [14:17] is the sub-list for method output_type
+	11, // [11:14] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostconnection_proto_init() }
@@ -480,7 +935,8 @@ func file_numen_v1_hostconnection_proto_init() {
 	if File_numen_v1_hostconnection_proto != nil {
 		return
 	}
-	file_numen_v1_hostconnection_proto_msgTypes[3].OneofWrappers = []any{
+	file_numen_v1_settings_proto_init()
+	file_numen_v1_hostconnection_proto_msgTypes[10].OneofWrappers = []any{
 		(*HostConnectionServiceCallResponse_Data)(nil),
 		(*HostConnectionServiceCallResponse_Done)(nil),
 		(*HostConnectionServiceCallResponse_Failure)(nil),
@@ -491,7 +947,7 @@ func file_numen_v1_hostconnection_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostconnection_proto_rawDesc), len(file_numen_v1_hostconnection_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   4,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

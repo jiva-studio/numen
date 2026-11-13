@@ -315,3 +315,57 @@ func TestThePluginEndpointDoesNotMountConnectionCallService(t *testing.T) {
 func lookupsOf(world *modelcalltest.World) modelcalls.Connections {
 	return modelcalls.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows}
 }
+
+func (*scriptedCalls) ListRows(string, string) ([]modelcall.Row, error) { return nil, nil }
+
+func (*scriptedCalls) ListRowOptions(context.Context, string, string, string, string, map[string]string) ([]modelcall.Option, error) {
+	return nil, nil
+}
+
+func TestACallCarriesThePreferredRowOfTheRequest(t *testing.T) {
+	calls := &scriptedCalls{}
+	client, _ := newConnectionClient(t, calls, "token-a")
+
+	_, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{
+		Operation: "acp.task", Preferred: &v1.PreferredRow{ConnectionId: "c-claude", Options: map[string]string{"model": "opus"}},
+	})
+
+	preferred := calls.request.Preferred
+	if err != nil || preferred == nil || preferred.ConnectionID != "c-claude" || preferred.Options["model"] != "opus" {
+		t.Fatalf("preferred = %+v, %v", preferred, err)
+	}
+}
+
+func TestTheRowsOfThePluginTheTokenNamesAreListed(t *testing.T) {
+	world := modelcalltest.New()
+	one := world.AddServer(t, "One", "https://one.test/v1", "sk-one-0123456789")
+	two := world.AddServer(t, "Two", "https://two.test/v1", "sk-two-0123456789")
+	world.Rows.Set("md.numen.a", modelcalltest.ChatOperation, modelcalltest.Row(one, "m"))
+	world.Rows.Set("md.numen.b", modelcalltest.ChatOperation, modelcalltest.Row(two, "model-two"))
+	client, _ := newConnectionClient(t, modelcalls.NewCalls(lookupsOf(world), world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside), "token-b")
+
+	response, err := client.ListRows(t.Context(), connect.NewRequest(&v1.HostConnectionServiceListRowsRequest{Operation: modelcalltest.ChatOperation}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rows := response.Msg.GetRows()
+	if len(rows) != 1 || rows[0].GetConnectionId() != two.ID || rows[0].GetConnectionName() != "Two" || rows[0].GetOptions()["model"] != "model-two" {
+		t.Errorf("rows = %v, want the row of md.numen.b", rows)
+	}
+}
+
+func TestTheValuesOfARowFieldOfAConnectionOutsideTheRowsOfThePluginAreNotFound(t *testing.T) {
+	world := modelcalltest.New()
+	one := world.AddServer(t, "One", "https://one.test/v1", "sk-one-0123456789")
+	world.Rows.Set("md.numen.a", modelcalltest.ChatOperation, modelcalltest.Row(one, "m"))
+	client, _ := newConnectionClient(t, modelcalls.NewCalls(lookupsOf(world), world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside), "token-b")
+
+	_, err := client.ListRowOptions(t.Context(), connect.NewRequest(&v1.HostConnectionServiceListRowOptionsRequest{
+		Operation: modelcalltest.ChatOperation, ConnectionId: one.ID, Field: modelcalltest.ModelOption,
+	}))
+
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("err = %v, want not found", err)
+	}
+}

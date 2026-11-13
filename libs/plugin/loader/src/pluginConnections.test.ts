@@ -4,6 +4,11 @@ import { createPluginConnections } from './pluginConnections'
 
 const bytes = (text: string) => new TextEncoder().encode(text)
 
+const NO_LISTS: Omit<ConnectionCallClient, 'call'> = {
+  listRows: () => Promise.reject(new Error('no rows')),
+  listRowOptions: () => Promise.reject(new Error('no options')),
+}
+
 const read = async (generator: AsyncGenerator<Uint8Array, unknown>) => {
   const data: Uint8Array[] = []
   for (;;) {
@@ -17,6 +22,7 @@ describe('the connections of a plugin', () => {
   it('carries out an operation for the plugin and yields its frames', async () => {
     const requests: unknown[] = []
     const client: ConnectionCallClient = {
+      ...NO_LISTS,
       call: async function* (request, options) {
         requests.push({ ...request, options })
         yield bytes('one')
@@ -50,6 +56,7 @@ describe('the connections of a plugin', () => {
 
   it('reads the failure the core serves as the error of the call', async () => {
     const client: ConnectionCallClient = {
+      ...NO_LISTS,
       call: async function* () {
         yield* []
         return {
@@ -80,6 +87,7 @@ describe('the connections of a plugin', () => {
   it('reads a call whose signal aborted as canceled', async () => {
     const controller = new AbortController()
     const client: ConnectionCallClient = {
+      ...NO_LISTS,
       call: async function* () {
         yield* []
         controller.abort()
@@ -101,6 +109,7 @@ describe('the connections of a plugin', () => {
 
   it('lets a call that fails for another reason throw', async () => {
     const client: ConnectionCallClient = {
+      ...NO_LISTS,
       call: async function* () {
         yield* []
         throw new Error('the core is gone')
@@ -110,5 +119,48 @@ describe('the connections of a plugin', () => {
     await expect(
       read(createPluginConnections(client, 'md.numen.a').call('llm.chat', bytes(''))),
     ).rejects.toThrow('the core is gone')
+  })
+
+  it('lists the rows and the values of a row field of the plugin', async () => {
+    const asked: unknown[] = []
+    const row = {
+      connectionId: 'c-claude',
+      connectionName: 'Claude',
+      options: { model: 'opus' },
+      fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models' }],
+    }
+    const client: ConnectionCallClient = {
+      call: async function* () {
+        yield* []
+        return { ok: true, value: bytes('') }
+      },
+      listRows: (pluginId, operation) => {
+        asked.push({ pluginId, operation })
+        return Promise.resolve([row])
+      },
+      listRowOptions: (request) => {
+        asked.push(request)
+        return Promise.resolve([{ value: 'high', title: 'High', group: '' }])
+      },
+    }
+    const connections = createPluginConnections(client, 'md.numen.views.agent.chat')
+
+    const rows = await connections.listRows?.('acp.task')
+    const options = await connections.listRowOptions?.('acp.task', 'c-claude', 'reasoning', {
+      model: 'opus',
+    })
+
+    expect(rows).toStrictEqual([row])
+    expect(options).toStrictEqual([{ value: 'high', title: 'High', group: '' }])
+    expect(asked).toStrictEqual([
+      { pluginId: 'md.numen.views.agent.chat', operation: 'acp.task' },
+      {
+        pluginId: 'md.numen.views.agent.chat',
+        operation: 'acp.task',
+        connectionId: 'c-claude',
+        field: 'reasoning',
+        options: { model: 'opus' },
+      },
+    ])
   })
 })

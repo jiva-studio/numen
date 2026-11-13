@@ -24,10 +24,12 @@ const (
 type ConnectionCallServiceCallRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// plugin_id is the plugin whose rows serve the call.
-	PluginId      string   `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	Operation     string   `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
-	Payload       []byte   `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
-	Priority      Priority `protobuf:"varint,4,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
+	PluginId  string   `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Operation string   `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
+	Payload   []byte   `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+	Priority  Priority `protobuf:"varint,4,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
+	// preferred is unset for the rows in their order.
+	Preferred     *PreferredRow `protobuf:"bytes,5,opt,name=preferred,proto3" json:"preferred,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -88,6 +90,13 @@ func (x *ConnectionCallServiceCallRequest) GetPriority() Priority {
 		return x.Priority
 	}
 	return Priority_PRIORITY_UNSPECIFIED
+}
+
+func (x *ConnectionCallServiceCallRequest) GetPreferred() *PreferredRow {
+	if x != nil {
+		return x.Preferred
+	}
+	return nil
 }
 
 // ConnectionCallServiceCallResponse is one frame of a call.
@@ -190,23 +199,261 @@ func (*ConnectionCallServiceCallResponse_Done) isConnectionCallServiceCallRespon
 
 func (*ConnectionCallServiceCallResponse_Failure) isConnectionCallServiceCallResponse_Frame() {}
 
+type ConnectionCallServiceListRowsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// plugin_id is the plugin whose rows are listed.
+	PluginId      string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Operation     string `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConnectionCallServiceListRowsRequest) Reset() {
+	*x = ConnectionCallServiceListRowsRequest{}
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConnectionCallServiceListRowsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConnectionCallServiceListRowsRequest) ProtoMessage() {}
+
+func (x *ConnectionCallServiceListRowsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConnectionCallServiceListRowsRequest.ProtoReflect.Descriptor instead.
+func (*ConnectionCallServiceListRowsRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ConnectionCallServiceListRowsRequest) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *ConnectionCallServiceListRowsRequest) GetOperation() string {
+	if x != nil {
+		return x.Operation
+	}
+	return ""
+}
+
+type ConnectionCallServiceListRowsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Rows          []*CallRow             `protobuf:"bytes,1,rep,name=rows,proto3" json:"rows,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConnectionCallServiceListRowsResponse) Reset() {
+	*x = ConnectionCallServiceListRowsResponse{}
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConnectionCallServiceListRowsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConnectionCallServiceListRowsResponse) ProtoMessage() {}
+
+func (x *ConnectionCallServiceListRowsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConnectionCallServiceListRowsResponse.ProtoReflect.Descriptor instead.
+func (*ConnectionCallServiceListRowsResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ConnectionCallServiceListRowsResponse) GetRows() []*CallRow {
+	if x != nil {
+		return x.Rows
+	}
+	return nil
+}
+
+type ConnectionCallServiceListRowOptionsRequest struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	PluginId     string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	Operation    string                 `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
+	ConnectionId string                 `protobuf:"bytes,3,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	// field is the key of the row field.
+	Field string `protobuf:"bytes,4,opt,name=field,proto3" json:"field,omitempty"`
+	// options are the values of the row fields so far.
+	Options       map[string]string `protobuf:"bytes,5,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConnectionCallServiceListRowOptionsRequest) Reset() {
+	*x = ConnectionCallServiceListRowOptionsRequest{}
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConnectionCallServiceListRowOptionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConnectionCallServiceListRowOptionsRequest) ProtoMessage() {}
+
+func (x *ConnectionCallServiceListRowOptionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConnectionCallServiceListRowOptionsRequest.ProtoReflect.Descriptor instead.
+func (*ConnectionCallServiceListRowOptionsRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ConnectionCallServiceListRowOptionsRequest) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *ConnectionCallServiceListRowOptionsRequest) GetOperation() string {
+	if x != nil {
+		return x.Operation
+	}
+	return ""
+}
+
+func (x *ConnectionCallServiceListRowOptionsRequest) GetConnectionId() string {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return ""
+}
+
+func (x *ConnectionCallServiceListRowOptionsRequest) GetField() string {
+	if x != nil {
+		return x.Field
+	}
+	return ""
+}
+
+func (x *ConnectionCallServiceListRowOptionsRequest) GetOptions() map[string]string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+type ConnectionCallServiceListRowOptionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Options       []*Option              `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConnectionCallServiceListRowOptionsResponse) Reset() {
+	*x = ConnectionCallServiceListRowOptionsResponse{}
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConnectionCallServiceListRowOptionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConnectionCallServiceListRowOptionsResponse) ProtoMessage() {}
+
+func (x *ConnectionCallServiceListRowOptionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConnectionCallServiceListRowOptionsResponse.ProtoReflect.Descriptor instead.
+func (*ConnectionCallServiceListRowOptionsResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ConnectionCallServiceListRowOptionsResponse) GetOptions() []*Option {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
 var File_numen_v1_connectioncall_proto protoreflect.FileDescriptor
 
 const file_numen_v1_connectioncall_proto_rawDesc = "" +
 	"\n" +
-	"\x1dnumen/v1/connectioncall.proto\x12\bnumen.v1\x1a\x1dnumen/v1/hostconnection.proto\"\xa7\x01\n" +
+	"\x1dnumen/v1/connectioncall.proto\x12\bnumen.v1\x1a\x1dnumen/v1/hostconnection.proto\x1a\x17numen/v1/settings.proto\"\xdd\x01\n" +
 	" ConnectionCallServiceCallRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1c\n" +
 	"\toperation\x18\x02 \x01(\tR\toperation\x12\x18\n" +
 	"\apayload\x18\x03 \x01(\fR\apayload\x12.\n" +
-	"\bpriority\x18\x04 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\"\x8b\x01\n" +
+	"\bpriority\x18\x04 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\x124\n" +
+	"\tpreferred\x18\x05 \x01(\v2\x16.numen.v1.PreferredRowR\tpreferred\"\x8b\x01\n" +
 	"!ConnectionCallServiceCallResponse\x12\x14\n" +
 	"\x04data\x18\x01 \x01(\fH\x00R\x04data\x12\x14\n" +
 	"\x04done\x18\x02 \x01(\fH\x00R\x04done\x121\n" +
 	"\afailure\x18\x03 \x01(\v2\x15.numen.v1.CallFailureH\x00R\afailureB\a\n" +
-	"\x05frame2z\n" +
+	"\x05frame\"a\n" +
+	"$ConnectionCallServiceListRowsRequest\x12\x1b\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1c\n" +
+	"\toperation\x18\x02 \x01(\tR\toperation\"N\n" +
+	"%ConnectionCallServiceListRowsResponse\x12%\n" +
+	"\x04rows\x18\x01 \x03(\v2\x11.numen.v1.CallRowR\x04rows\"\xbb\x02\n" +
+	"*ConnectionCallServiceListRowOptionsRequest\x12\x1b\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1c\n" +
+	"\toperation\x18\x02 \x01(\tR\toperation\x12#\n" +
+	"\rconnection_id\x18\x03 \x01(\tR\fconnectionId\x12\x14\n" +
+	"\x05field\x18\x04 \x01(\tR\x05field\x12[\n" +
+	"\aoptions\x18\x05 \x03(\v2A.numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntryR\aoptions\x1a:\n" +
+	"\fOptionsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"Y\n" +
+	"+ConnectionCallServiceListRowOptionsResponse\x12*\n" +
+	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions2\xe6\x02\n" +
 	"\x15ConnectionCallService\x12a\n" +
-	"\x04Call\x12*.numen.v1.ConnectionCallServiceCallRequest\x1a+.numen.v1.ConnectionCallServiceCallResponse0\x01BFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x04Call\x12*.numen.v1.ConnectionCallServiceCallRequest\x1a+.numen.v1.ConnectionCallServiceCallResponse0\x01\x12k\n" +
+	"\bListRows\x12..numen.v1.ConnectionCallServiceListRowsRequest\x1a/.numen.v1.ConnectionCallServiceListRowsResponse\x12}\n" +
+	"\x0eListRowOptions\x124.numen.v1.ConnectionCallServiceListRowOptionsRequest\x1a5.numen.v1.ConnectionCallServiceListRowOptionsResponseBFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_connectioncall_proto_rawDescOnce sync.Once
@@ -220,23 +467,39 @@ func file_numen_v1_connectioncall_proto_rawDescGZIP() []byte {
 	return file_numen_v1_connectioncall_proto_rawDescData
 }
 
-var file_numen_v1_connectioncall_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_numen_v1_connectioncall_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_connectioncall_proto_goTypes = []any{
-	(*ConnectionCallServiceCallRequest)(nil),  // 0: numen.v1.ConnectionCallServiceCallRequest
-	(*ConnectionCallServiceCallResponse)(nil), // 1: numen.v1.ConnectionCallServiceCallResponse
-	(Priority)(0),       // 2: numen.v1.Priority
-	(*CallFailure)(nil), // 3: numen.v1.CallFailure
+	(*ConnectionCallServiceCallRequest)(nil),            // 0: numen.v1.ConnectionCallServiceCallRequest
+	(*ConnectionCallServiceCallResponse)(nil),           // 1: numen.v1.ConnectionCallServiceCallResponse
+	(*ConnectionCallServiceListRowsRequest)(nil),        // 2: numen.v1.ConnectionCallServiceListRowsRequest
+	(*ConnectionCallServiceListRowsResponse)(nil),       // 3: numen.v1.ConnectionCallServiceListRowsResponse
+	(*ConnectionCallServiceListRowOptionsRequest)(nil),  // 4: numen.v1.ConnectionCallServiceListRowOptionsRequest
+	(*ConnectionCallServiceListRowOptionsResponse)(nil), // 5: numen.v1.ConnectionCallServiceListRowOptionsResponse
+	nil,                  // 6: numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntry
+	(Priority)(0),        // 7: numen.v1.Priority
+	(*PreferredRow)(nil), // 8: numen.v1.PreferredRow
+	(*CallFailure)(nil),  // 9: numen.v1.CallFailure
+	(*CallRow)(nil),      // 10: numen.v1.CallRow
+	(*Option)(nil),       // 11: numen.v1.Option
 }
 var file_numen_v1_connectioncall_proto_depIdxs = []int32{
-	2, // 0: numen.v1.ConnectionCallServiceCallRequest.priority:type_name -> numen.v1.Priority
-	3, // 1: numen.v1.ConnectionCallServiceCallResponse.failure:type_name -> numen.v1.CallFailure
-	0, // 2: numen.v1.ConnectionCallService.Call:input_type -> numen.v1.ConnectionCallServiceCallRequest
-	1, // 3: numen.v1.ConnectionCallService.Call:output_type -> numen.v1.ConnectionCallServiceCallResponse
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	7,  // 0: numen.v1.ConnectionCallServiceCallRequest.priority:type_name -> numen.v1.Priority
+	8,  // 1: numen.v1.ConnectionCallServiceCallRequest.preferred:type_name -> numen.v1.PreferredRow
+	9,  // 2: numen.v1.ConnectionCallServiceCallResponse.failure:type_name -> numen.v1.CallFailure
+	10, // 3: numen.v1.ConnectionCallServiceListRowsResponse.rows:type_name -> numen.v1.CallRow
+	6,  // 4: numen.v1.ConnectionCallServiceListRowOptionsRequest.options:type_name -> numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntry
+	11, // 5: numen.v1.ConnectionCallServiceListRowOptionsResponse.options:type_name -> numen.v1.Option
+	0,  // 6: numen.v1.ConnectionCallService.Call:input_type -> numen.v1.ConnectionCallServiceCallRequest
+	2,  // 7: numen.v1.ConnectionCallService.ListRows:input_type -> numen.v1.ConnectionCallServiceListRowsRequest
+	4,  // 8: numen.v1.ConnectionCallService.ListRowOptions:input_type -> numen.v1.ConnectionCallServiceListRowOptionsRequest
+	1,  // 9: numen.v1.ConnectionCallService.Call:output_type -> numen.v1.ConnectionCallServiceCallResponse
+	3,  // 10: numen.v1.ConnectionCallService.ListRows:output_type -> numen.v1.ConnectionCallServiceListRowsResponse
+	5,  // 11: numen.v1.ConnectionCallService.ListRowOptions:output_type -> numen.v1.ConnectionCallServiceListRowOptionsResponse
+	9,  // [9:12] is the sub-list for method output_type
+	6,  // [6:9] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_connectioncall_proto_init() }
@@ -245,6 +508,7 @@ func file_numen_v1_connectioncall_proto_init() {
 		return
 	}
 	file_numen_v1_hostconnection_proto_init()
+	file_numen_v1_settings_proto_init()
 	file_numen_v1_connectioncall_proto_msgTypes[1].OneofWrappers = []any{
 		(*ConnectionCallServiceCallResponse_Data)(nil),
 		(*ConnectionCallServiceCallResponse_Done)(nil),
@@ -256,7 +520,7 @@ func file_numen_v1_connectioncall_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_connectioncall_proto_rawDesc), len(file_numen_v1_connectioncall_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -15,12 +15,34 @@ const (
 )
 
 // Request is one call a plugin asks for: the name of the operation, the payload of its contract and whose
-// action it serves.
+// action it serves. Preferred is the row the call asks first, nil for the rows in their order.
 type Request struct {
 	Operation string
 	Payload   []byte
 	Priority  Priority
+	Preferred *PreferredRow
 }
+
+// PreferredRow is a connection among the rows of the plugin for the operation, asked before the other
+// rows with Options in place of the values of its row fields. A connection that is not among the rows is
+// ignored.
+type PreferredRow struct {
+	ConnectionID string
+	Options      map[string]string
+}
+
+// Row is one row of a plugin as the plugin lists them: its connection, the values of its row fields, and
+// the row fields the type of the connection declares.
+type Row struct {
+	ConnectionID   string
+	ConnectionName string
+	Options        map[string]string
+	Fields         []RowField
+}
+
+// RowField is a row field a type declares. OptionsFrom is the operation that lists its values, empty for
+// none.
+type RowField struct{ Key, Title, OptionsFrom string }
 
 // Send receives the data frames of a call in order. An error of send ends the call.
 type Send func(data []byte) error

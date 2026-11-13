@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
@@ -43,6 +45,7 @@ type asking struct {
 	callerPluginID string
 	operation      string
 	priority       modelcall.Priority
+	preferred      *modelcall.PreferredRow
 }
 
 func carry(ctx context.Context, c *Calls, ask asking, do attempt) ([]byte, error) {
@@ -51,6 +54,7 @@ func carry(ctx context.Context, c *Calls, ask asking, do attempt) ([]byte, error
 	if err != nil {
 		return none, fmt.Errorf("read the rows of %s: %w", ask.callerPluginID, err)
 	}
+	rows = putPreferredFirst(rows, ask.preferred)
 	if len(rows) == 0 {
 		return none, connection.ErrNoConnection
 	}
@@ -74,6 +78,24 @@ func carry(ctx context.Context, c *Calls, ask asking, do attempt) ([]byte, error
 		}
 	}
 	return none, &connection.AllFailedError{Failures: failures}
+}
+
+// putPreferredFirst moves the first row of the preferred connection to the front, holding the preferred
+// options. A preferred connection that is not among the rows leaves them as they are.
+func putPreferredFirst(rows []connection.Row, preferred *modelcall.PreferredRow) []connection.Row {
+	if preferred == nil {
+		return rows
+	}
+	index := slices.IndexFunc(rows, func(row connection.Row) bool { return row.ConnectionID == preferred.ConnectionID })
+	if index < 0 {
+		return rows
+	}
+	first := rows[index]
+	first.Options = maps.Clone(preferred.Options)
+	if first.Options == nil {
+		first.Options = map[string]string{}
+	}
+	return append([]connection.Row{first}, slices.Delete(slices.Clone(rows), index, index+1)...)
 }
 
 // callServices is what a row call takes from Calls: a slot of its connection, the provider and the secrets.

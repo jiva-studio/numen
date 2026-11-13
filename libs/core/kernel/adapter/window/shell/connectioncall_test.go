@@ -84,3 +84,9 @@ func TestAWindowWithoutConnectionCallsAnswersThemAsUnimplemented(t *testing.T) {
 		t.Errorf("the error is %v, want unimplemented", err)
 	}
 }
+
+func (*answeringCalls) ListRows(string, string) ([]modelcall.Row, error) { return nil, nil }
+
+func (*answeringCalls) ListRowOptions(context.Context, string, string, string, string, map[string]string) ([]modelcall.Option, error) {
+	return nil, nil
+}

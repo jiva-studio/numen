@@ -3,6 +3,7 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/hostconnection.proto";
+import "numen/v1/settings.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
 
@@ -12,6 +13,12 @@ option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v
 service ConnectionCallService {
   // Call carries out one operation as HostConnectionService.Call does.
   rpc Call(ConnectionCallServiceCallRequest) returns (stream ConnectionCallServiceCallResponse);
+
+  // ListRows lists the rows of the plugin as HostConnectionService.ListRows does.
+  rpc ListRows(ConnectionCallServiceListRowsRequest) returns (ConnectionCallServiceListRowsResponse);
+
+  // ListRowOptions lists the values of a row field as HostConnectionService.ListRowOptions does.
+  rpc ListRowOptions(ConnectionCallServiceListRowOptionsRequest) returns (ConnectionCallServiceListRowOptionsResponse);
 }
 
 message ConnectionCallServiceCallRequest {
@@ -20,6 +27,8 @@ message ConnectionCallServiceCallRequest {
   string operation = 2;
   bytes payload = 3;
   Priority priority = 4;
+  // preferred is unset for the rows in their order.
+  PreferredRow preferred = 5;
 }
 
 // ConnectionCallServiceCallResponse is one frame of a call.
@@ -30,4 +39,28 @@ message ConnectionCallServiceCallResponse {
     bytes done = 2;
     CallFailure failure = 3;
   }
+}
+
+message ConnectionCallServiceListRowsRequest {
+  // plugin_id is the plugin whose rows are listed.
+  string plugin_id = 1;
+  string operation = 2;
+}
+
+message ConnectionCallServiceListRowsResponse {
+  repeated CallRow rows = 1;
+}
+
+message ConnectionCallServiceListRowOptionsRequest {
+  string plugin_id = 1;
+  string operation = 2;
+  string connection_id = 3;
+  // field is the key of the row field.
+  string field = 4;
+  // options are the values of the row fields so far.
+  map<string, string> options = 5;
+}
+
+message ConnectionCallServiceListRowOptionsResponse {
+  repeated Option options = 1;
 }

@@ -91,3 +91,9 @@ func TestAPluginOnDiskReplacesABuiltInThatProvidesNoConnectionType(t *testing.T)
 		t.Errorf("GetPlugin = %+v, %v, want the plugin on disk", found, ok)
 	}
 }
+
+func (noModelCalls) ListRows(string, string) ([]modelcall.Row, error) { return nil, nil }
+
+func (noModelCalls) ListRowOptions(context.Context, string, string, string, string, map[string]string) ([]modelcall.Option, error) {
+	return nil, nil
+}

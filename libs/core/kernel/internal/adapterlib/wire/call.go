@@ -3,6 +3,7 @@ package wire
 import (
 	"context"
 	"errors"
+	"maps"
 
 	"connectrpc.com/connect"
 
@@ -53,4 +54,49 @@ func ConvertPriorityFromWire(priority v1.Priority) modelcall.Priority {
 		return modelcall.PriorityInteractive
 	}
 	return modelcall.PriorityBackground
+}
+
+// ConvertPreferredRowFromWire returns the row a call asks first, nil where the request names none.
+func ConvertPreferredRowFromWire(preferred *v1.PreferredRow) *modelcall.PreferredRow {
+	if preferred.GetConnectionId() == "" {
+		return nil
+	}
+	return &modelcall.PreferredRow{ConnectionID: preferred.GetConnectionId(), Options: maps.Clone(preferred.GetOptions())}
+}
+
+// ConvertCallRowsToWire returns the rows of a plugin as the call services list them.
+func ConvertCallRowsToWire(rows []modelcall.Row) []*v1.CallRow {
+	wired := make([]*v1.CallRow, len(rows))
+	for i, row := range rows {
+		fields := make([]*v1.CallRowField, len(row.Fields))
+		for j, one := range row.Fields {
+			fields[j] = &v1.CallRowField{Key: one.Key, Title: one.Title, OptionsFrom: one.OptionsFrom}
+		}
+		wired[i] = &v1.CallRow{
+			ConnectionId: row.ConnectionID, ConnectionName: row.ConnectionName, Options: maps.Clone(row.Options), Fields: fields,
+		}
+	}
+	return wired
+}
+
+// ConvertOptionsToWire returns the values of a row field as the call services list them.
+func ConvertOptionsToWire(options []modelcall.Option) []*v1.Option {
+	wired := make([]*v1.Option, len(options))
+	for i, one := range options {
+		wired[i] = &v1.Option{Value: one.Value, Title: one.Title, Group: one.Group}
+	}
+	return wired
+}
+
+// NewRowListError returns the status of a listing of rows or of the values of a row field that failed: not
+// found for a connection that is not among the rows, canceled where its context ended, and unavailable
+// with the reason otherwise.
+func NewRowListError(ctx context.Context, err error) error {
+	switch {
+	case ctx.Err() != nil:
+		return connect.NewError(connect.CodeCanceled, ctx.Err())
+	case errors.Is(err, connection.ErrNotFound):
+		return connect.NewError(connect.CodeNotFound, err)
+	}
+	return connect.NewError(connect.CodeUnavailable, err)
 }

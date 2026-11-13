@@ -117,10 +117,11 @@ func newClientAt(endpoint hostcall.Endpoint) *Client {
 }
 
 // Call asks the rows of the plugin, in order, to carry out the operation. The core goes to the next row
-// only when a row fails before its first data frame. The caller closes the frames.
+// only when a row fails before its first data frame. A row set on ctx with WithPreferredRow is asked first.
+// The caller closes the frames.
 func (c *Client) Call(ctx context.Context, operation string, payload []byte, priority Priority) (Frames, error) {
 	stream, err := c.host.Call(ctx, connect.NewRequest(&v1.HostConnectionServiceCallRequest{
-		Operation: operation, Payload: payload, Priority: writePriority(priority),
+		Operation: operation, Payload: payload, Priority: writePriority(priority), Preferred: readPreferredRow(ctx),
 	}))
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {

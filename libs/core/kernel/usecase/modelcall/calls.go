@@ -26,6 +26,7 @@ type Calls struct {
 	resolve     connectionport.ResolveConnection
 	readSecrets connectionport.ReadConnectionSecrets
 	rows        connectionport.ListRows
+	listOptions connectionport.ListRowOptions
 	source      connectionport.ProviderSource
 	clock       machineport.Clock
 	queues      *queues
@@ -33,11 +34,13 @@ type Calls struct {
 	cooldown    *cooldown
 }
 
-// Connections is where the calls find a connection, its secrets and the rows of the plugins that name it.
+// Connections is where the calls find a connection, its secrets, the rows of the plugins that name it and
+// the values of the row fields of its type.
 type Connections struct {
 	Resolve     connectionport.ResolveConnection
 	ReadSecrets connectionport.ReadConnectionSecrets
 	Rows        connectionport.ListRows
+	ListOptions connectionport.ListRowOptions
 }
 
 // NewCalls returns the calls over the connections and the providers the source
@@ -46,7 +49,7 @@ func NewCalls(
 	connections Connections, source connectionport.ProviderSource, clock machineport.Clock, wait Wait, notices connectionport.ReportSetAside,
 ) *Calls {
 	return &Calls{
-		resolve: connections.Resolve, readSecrets: connections.ReadSecrets, rows: connections.Rows, source: source, clock: clock, queues: newQueues(wait), notices: notices,
+		resolve: connections.Resolve, readSecrets: connections.ReadSecrets, rows: connections.Rows, listOptions: connections.ListOptions, source: source, clock: clock, queues: newQueues(wait), notices: notices,
 		cooldown: newCooldown(),
 	}
 }

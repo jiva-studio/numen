@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Option } from "./settings_pb.js";
+import { file_numen_v1_settings } from "./settings_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hostconnection.proto.
  */
 export const file_numen_v1_hostconnection: GenFile = /*@__PURE__*/
-  fileDesc("Ch1udW1lbi92MS9ob3N0Y29ubmVjdGlvbi5wcm90bxIIbnVtZW4udjEiOQoOQ2FsbFJvd0ZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSJxCgtDYWxsRmFpbHVyZRImCgVlcnJvchgBIAEoDjIXLm51bWVuLnYxLkNhbGxFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJEioKCGZhaWx1cmVzGAMgAygLMhgubnVtZW4udjEuQ2FsbFJvd0ZhaWx1cmUibAogSG9zdENvbm5lY3Rpb25TZXJ2aWNlQ2FsbFJlcXVlc3QSEQoJb3BlcmF0aW9uGAEgASgJEg8KB3BheWxvYWQYAiABKAwSJAoIcHJpb3JpdHkYAyABKA4yEi5udW1lbi52MS5Qcmlvcml0eSJ2CiFIb3N0Q29ubmVjdGlvblNlcnZpY2VDYWxsUmVzcG9uc2USDgoEZGF0YRgBIAEoDEgAEg4KBGRvbmUYAiABKAxIABIoCgdmYWlsdXJlGAMgASgLMhUubnVtZW4udjEuQ2FsbEZhaWx1cmVIAEIHCgVmcmFtZSpXCghQcmlvcml0eRIYChRQUklPUklUWV9VTlNQRUNJRklFRBAAEhgKFFBSSU9SSVRZX0lOVEVSQUNUSVZFEAESFwoTUFJJT1JJVFlfQkFDS0dST1VORBACKpABCg1DYWxsRXJyb3JDb2RlEh8KG0NBTExfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiEKHUNBTExfRVJST1JfQ09ERV9OT19DT05ORUNUSU9OEAESHgoaQ0FMTF9FUlJPUl9DT0RFX0FMTF9GQUlMRUQQAhIbChdDQUxMX0VSUk9SX0NPREVfU1RPUFBFRBADMnoKFUhvc3RDb25uZWN0aW9uU2VydmljZRJhCgRDYWxsEioubnVtZW4udjEuSG9zdENvbm5lY3Rpb25TZXJ2aWNlQ2FsbFJlcXVlc3QaKy5udW1lbi52MS5Ib3N0Q29ubmVjdGlvblNlcnZpY2VDYWxsUmVzcG9uc2UwAUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("Ch1udW1lbi92MS9ob3N0Y29ubmVjdGlvbi5wcm90bxIIbnVtZW4udjEiOQoOQ2FsbFJvd0ZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCSJxCgtDYWxsRmFpbHVyZRImCgVlcnJvchgBIAEoDjIXLm51bWVuLnYxLkNhbGxFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJEioKCGZhaWx1cmVzGAMgAygLMhgubnVtZW4udjEuQ2FsbFJvd0ZhaWx1cmUiiwEKDFByZWZlcnJlZFJvdxIVCg1jb25uZWN0aW9uX2lkGAEgASgJEjQKB29wdGlvbnMYAiADKAsyIy5udW1lbi52MS5QcmVmZXJyZWRSb3cuT3B0aW9uc0VudHJ5Gi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIpcBCiBIb3N0Q29ubmVjdGlvblNlcnZpY2VDYWxsUmVxdWVzdBIRCglvcGVyYXRpb24YASABKAkSDwoHcGF5bG9hZBgCIAEoDBIkCghwcmlvcml0eRgDIAEoDjISLm51bWVuLnYxLlByaW9yaXR5EikKCXByZWZlcnJlZBgEIAEoCzIWLm51bWVuLnYxLlByZWZlcnJlZFJvdyJACgxDYWxsUm93RmllbGQSCwoDa2V5GAEgASgJEg0KBXRpdGxlGAIgASgJEhQKDG9wdGlvbnNfZnJvbRgDIAEoCSLCAQoHQ2FsbFJvdxIVCg1jb25uZWN0aW9uX2lkGAEgASgJEhcKD2Nvbm5lY3Rpb25fbmFtZRgCIAEoCRIvCgdvcHRpb25zGAMgAygLMh4ubnVtZW4udjEuQ2FsbFJvdy5PcHRpb25zRW50cnkSJgoGZmllbGRzGAQgAygLMhYubnVtZW4udjEuQ2FsbFJvd0ZpZWxkGi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIjkKJEhvc3RDb25uZWN0aW9uU2VydmljZUxpc3RSb3dzUmVxdWVzdBIRCglvcGVyYXRpb24YASABKAkiSAolSG9zdENvbm5lY3Rpb25TZXJ2aWNlTGlzdFJvd3NSZXNwb25zZRIfCgRyb3dzGAEgAygLMhEubnVtZW4udjEuQ2FsbFJvdyLpAQoqSG9zdENvbm5lY3Rpb25TZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXF1ZXN0EhEKCW9wZXJhdGlvbhgBIAEoCRIVCg1jb25uZWN0aW9uX2lkGAIgASgJEg0KBWZpZWxkGAMgASgJElIKB29wdGlvbnMYBCADKAsyQS5udW1lbi52MS5Ib3N0Q29ubmVjdGlvblNlcnZpY2VMaXN0Um93T3B0aW9uc1JlcXVlc3QuT3B0aW9uc0VudHJ5Gi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlAKK0hvc3RDb25uZWN0aW9uU2VydmljZUxpc3RSb3dPcHRpb25zUmVzcG9uc2USIQoHb3B0aW9ucxgBIAMoCzIQLm51bWVuLnYxLk9wdGlvbiJ2CiFIb3N0Q29ubmVjdGlvblNlcnZpY2VDYWxsUmVzcG9uc2USDgoEZGF0YRgBIAEoDEgAEg4KBGRvbmUYAiABKAxIABIoCgdmYWlsdXJlGAMgASgLMhUubnVtZW4udjEuQ2FsbEZhaWx1cmVIAEIHCgVmcmFtZSpXCghQcmlvcml0eRIYChRQUklPUklUWV9VTlNQRUNJRklFRBAAEhgKFFBSSU9SSVRZX0lOVEVSQUNUSVZFEAESFwoTUFJJT1JJVFlfQkFDS0dST1VORBACKpABCg1DYWxsRXJyb3JDb2RlEh8KG0NBTExfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiEKHUNBTExfRVJST1JfQ09ERV9OT19DT05ORUNUSU9OEAESHgoaQ0FMTF9FUlJPUl9DT0RFX0FMTF9GQUlMRUQQAhIbChdDQUxMX0VSUk9SX0NPREVfU1RPUFBFRBADMuYCChVIb3N0Q29ubmVjdGlvblNlcnZpY2USYQoEQ2FsbBIqLm51bWVuLnYxLkhvc3RDb25uZWN0aW9uU2VydmljZUNhbGxSZXF1ZXN0GisubnVtZW4udjEuSG9zdENvbm5lY3Rpb25TZXJ2aWNlQ2FsbFJlc3BvbnNlMAESawoITGlzdFJvd3MSLi5udW1lbi52MS5Ib3N0Q29ubmVjdGlvblNlcnZpY2VMaXN0Um93c1JlcXVlc3QaLy5udW1lbi52MS5Ib3N0Q29ubmVjdGlvblNlcnZpY2VMaXN0Um93c1Jlc3BvbnNlEn0KDkxpc3RSb3dPcHRpb25zEjQubnVtZW4udjEuSG9zdENvbm5lY3Rpb25TZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXF1ZXN0GjUubnVtZW4udjEuSG9zdENvbm5lY3Rpb25TZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXNwb25zZUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_settings]);
 
 /**
  * CallRowFailure is one row that did not answer.
@@ -66,6 +68,32 @@ export const CallFailureSchema: GenMessage<CallFailure> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostconnection, 1);
 
 /**
+ * PreferredRow is the row a call asks first. connection_id names a connection among the rows of the plugin
+ * for the operation; the call goes to it with options in place of the values of its row fields, then to
+ * the other rows in order. A connection that is not among the rows is ignored.
+ *
+ * @generated from message numen.v1.PreferredRow
+ */
+export type PreferredRow = Message<"numen.v1.PreferredRow"> & {
+  /**
+   * @generated from field: string connection_id = 1;
+   */
+  connectionId: string;
+
+  /**
+   * @generated from field: map<string, string> options = 2;
+   */
+  options: { [key: string]: string };
+};
+
+/**
+ * Describes the message numen.v1.PreferredRow.
+ * Use `create(PreferredRowSchema)` to create a new message.
+ */
+export const PreferredRowSchema: GenMessage<PreferredRow> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostconnection, 2);
+
+/**
  * @generated from message numen.v1.HostConnectionServiceCallRequest
  */
 export type HostConnectionServiceCallRequest = Message<"numen.v1.HostConnectionServiceCallRequest"> & {
@@ -85,6 +113,13 @@ export type HostConnectionServiceCallRequest = Message<"numen.v1.HostConnectionS
    * @generated from field: numen.v1.Priority priority = 3;
    */
   priority: Priority;
+
+  /**
+   * preferred is unset for the rows in their order.
+   *
+   * @generated from field: numen.v1.PreferredRow preferred = 4;
+   */
+  preferred?: PreferredRow | undefined;
 };
 
 /**
@@ -92,7 +127,159 @@ export type HostConnectionServiceCallRequest = Message<"numen.v1.HostConnectionS
  * Use `create(HostConnectionServiceCallRequestSchema)` to create a new message.
  */
 export const HostConnectionServiceCallRequestSchema: GenMessage<HostConnectionServiceCallRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostconnection, 2);
+  messageDesc(file_numen_v1_hostconnection, 3);
+
+/**
+ * CallRowField is a row field the type of a connection declares. options_from is the operation that lists
+ * its values, empty for none.
+ *
+ * @generated from message numen.v1.CallRowField
+ */
+export type CallRowField = Message<"numen.v1.CallRowField"> & {
+  /**
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string options_from = 3;
+   */
+  optionsFrom: string;
+};
+
+/**
+ * Describes the message numen.v1.CallRowField.
+ * Use `create(CallRowFieldSchema)` to create a new message.
+ */
+export const CallRowFieldSchema: GenMessage<CallRowField> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostconnection, 4);
+
+/**
+ * CallRow is one row of a plugin: its connection, the values of its row fields, and the row fields the
+ * type of the connection declares.
+ *
+ * @generated from message numen.v1.CallRow
+ */
+export type CallRow = Message<"numen.v1.CallRow"> & {
+  /**
+   * @generated from field: string connection_id = 1;
+   */
+  connectionId: string;
+
+  /**
+   * @generated from field: string connection_name = 2;
+   */
+  connectionName: string;
+
+  /**
+   * @generated from field: map<string, string> options = 3;
+   */
+  options: { [key: string]: string };
+
+  /**
+   * @generated from field: repeated numen.v1.CallRowField fields = 4;
+   */
+  fields: CallRowField[];
+};
+
+/**
+ * Describes the message numen.v1.CallRow.
+ * Use `create(CallRowSchema)` to create a new message.
+ */
+export const CallRowSchema: GenMessage<CallRow> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostconnection, 5);
+
+/**
+ * @generated from message numen.v1.HostConnectionServiceListRowsRequest
+ */
+export type HostConnectionServiceListRowsRequest = Message<"numen.v1.HostConnectionServiceListRowsRequest"> & {
+  /**
+   * @generated from field: string operation = 1;
+   */
+  operation: string;
+};
+
+/**
+ * Describes the message numen.v1.HostConnectionServiceListRowsRequest.
+ * Use `create(HostConnectionServiceListRowsRequestSchema)` to create a new message.
+ */
+export const HostConnectionServiceListRowsRequestSchema: GenMessage<HostConnectionServiceListRowsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostconnection, 6);
+
+/**
+ * @generated from message numen.v1.HostConnectionServiceListRowsResponse
+ */
+export type HostConnectionServiceListRowsResponse = Message<"numen.v1.HostConnectionServiceListRowsResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.CallRow rows = 1;
+   */
+  rows: CallRow[];
+};
+
+/**
+ * Describes the message numen.v1.HostConnectionServiceListRowsResponse.
+ * Use `create(HostConnectionServiceListRowsResponseSchema)` to create a new message.
+ */
+export const HostConnectionServiceListRowsResponseSchema: GenMessage<HostConnectionServiceListRowsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostconnection, 7);
+
+/**
+ * @generated from message numen.v1.HostConnectionServiceListRowOptionsRequest
+ */
+export type HostConnectionServiceListRowOptionsRequest = Message<"numen.v1.HostConnectionServiceListRowOptionsRequest"> & {
+  /**
+   * @generated from field: string operation = 1;
+   */
+  operation: string;
+
+  /**
+   * @generated from field: string connection_id = 2;
+   */
+  connectionId: string;
+
+  /**
+   * field is the key of the row field.
+   *
+   * @generated from field: string field = 3;
+   */
+  field: string;
+
+  /**
+   * options are the values of the row fields so far.
+   *
+   * @generated from field: map<string, string> options = 4;
+   */
+  options: { [key: string]: string };
+};
+
+/**
+ * Describes the message numen.v1.HostConnectionServiceListRowOptionsRequest.
+ * Use `create(HostConnectionServiceListRowOptionsRequestSchema)` to create a new message.
+ */
+export const HostConnectionServiceListRowOptionsRequestSchema: GenMessage<HostConnectionServiceListRowOptionsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostconnection, 8);
+
+/**
+ * @generated from message numen.v1.HostConnectionServiceListRowOptionsResponse
+ */
+export type HostConnectionServiceListRowOptionsResponse = Message<"numen.v1.HostConnectionServiceListRowOptionsResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.Option options = 1;
+   */
+  options: Option[];
+};
+
+/**
+ * Describes the message numen.v1.HostConnectionServiceListRowOptionsResponse.
+ * Use `create(HostConnectionServiceListRowOptionsResponseSchema)` to create a new message.
+ */
+export const HostConnectionServiceListRowOptionsResponseSchema: GenMessage<HostConnectionServiceListRowOptionsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostconnection, 9);
 
 /**
  * HostConnectionServiceCallResponse is one frame of a call.
@@ -131,7 +318,7 @@ export type HostConnectionServiceCallResponse = Message<"numen.v1.HostConnection
  * Use `create(HostConnectionServiceCallResponseSchema)` to create a new message.
  */
 export const HostConnectionServiceCallResponseSchema: GenMessage<HostConnectionServiceCallResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostconnection, 3);
+  messageDesc(file_numen_v1_hostconnection, 10);
 
 /**
  * Priority says whose action a call serves. The zero value is background, so a call that sets none
@@ -225,6 +412,29 @@ export const HostConnectionService: GenService<{
     methodKind: "server_streaming";
     input: typeof HostConnectionServiceCallRequestSchema;
     output: typeof HostConnectionServiceCallResponseSchema;
+  },
+  /**
+   * ListRows returns the rows the calling plugin calls an operation through, in the order of use, with the
+   * connection each names. A row whose connection is missing, or whose type is unavailable or does not
+   * serve the operation, is left out.
+   *
+   * @generated from rpc numen.v1.HostConnectionService.ListRows
+   */
+  listRows: {
+    methodKind: "unary";
+    input: typeof HostConnectionServiceListRowsRequestSchema;
+    output: typeof HostConnectionServiceListRowsResponseSchema;
+  },
+  /**
+   * ListRowOptions returns the values a row field of a connection among the rows of the operation can take,
+   * as the provider lists them for the options given. A connection that is not among the rows is not found.
+   *
+   * @generated from rpc numen.v1.HostConnectionService.ListRowOptions
+   */
+  listRowOptions: {
+    methodKind: "unary";
+    input: typeof HostConnectionServiceListRowOptionsRequestSchema;
+    output: typeof HostConnectionServiceListRowOptionsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hostconnection, 0);
