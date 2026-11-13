@@ -26,6 +26,7 @@ type Supervisors struct {
 	clients       *transport.Clients
 	report        func(error)
 	onDrop        func(pluginID string)
+	startTimes    map[string]time.Time
 	changes       *changeSignal
 }
 
@@ -37,6 +38,7 @@ func NewSupervisors(report func(error), onDrop func(pluginID string)) *Superviso
 		endpoints:     make(map[string]transport.Endpoint),
 		listenerPorts: make(map[string]map[string]int),
 		clients:       transport.NewClients(),
+		startTimes:    make(map[string]time.Time),
 		changes:       &changeSignal{},
 		report:        report,
 		onDrop:        onDrop,
@@ -51,7 +53,7 @@ func (s *Supervisors) Register(p manifest.Discovered) *lifecycle.Supervisor {
 	id := p.Manifest.ID
 	sup, exists := s.byPlugin[id]
 	if !exists {
-		sup = lifecycle.NewObserved(s.report, s.changes.notify)
+		sup = lifecycle.New(s.report)
 		sup.SetOnExit(func() { s.Drop(id) })
 		s.byPlugin[id] = sup
 	}
@@ -155,6 +157,7 @@ func (s *Supervisors) Release(pluginID, token string, now time.Time) {
 		return
 	}
 	sup.Release(now)
+	s.changes.notify()
 }
 
 // Clients returns the clients that call the processes, by the token each process was given.
@@ -174,6 +177,7 @@ func (s *Supervisors) Drop(pluginID string) {
 func forgetEndpointLocked(s *Supervisors, pluginID string) {
 	delete(s.endpoints, pluginID)
 	delete(s.listenerPorts, pluginID)
+	delete(s.startTimes, pluginID)
 }
 
 // Claim is what Begin found.
@@ -211,6 +215,7 @@ func (s *Supervisors) acquireRunningLocked(pluginID string, sup *lifecycle.Super
 	if IsNoEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(now) {
 		return NoEndpoint(), false
 	}
+	s.changes.notify()
 	return endpoint, true
 }
 
@@ -248,6 +253,13 @@ func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachmen
 	s.listenerPorts[pluginID] = listeners
 	sup.SetRPCShutdown(createRPCShutdown(endpoint, s.clients.Get(endpoint), rpcShutdownGrace))
 	sup.FinishActivating()
+	s.startTimes[pluginID] = now
+	exit := sup.GetExitSignal()
+	go func() {
+		<-exit
+		s.changes.notify()
+	}()
+	s.changes.notify()
 	return nil
 }
 
@@ -261,6 +273,8 @@ func (s *Supervisors) AttachInProcess(pluginID string, sup *lifecycle.Supervisor
 	}
 	s.endpoints[pluginID] = endpoint
 	sup.ActivateInProcess(now)
+	s.startTimes[pluginID] = now
+	s.changes.notify()
 	return nil
 }
 
@@ -269,4 +283,10 @@ func (s *Supervisors) SetEndpoint(pluginID string, endpoint transport.Endpoint) 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.endpoints[pluginID] = endpoint
+}
+
+// NotifyChange tells the watchers of RunningProcesses that a plugin took or returned a lease, or
+// stopped, outside the calls of the supervisors.
+func (s *Supervisors) NotifyChange() {
+	s.changes.notify()
 }

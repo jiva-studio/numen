@@ -369,7 +369,7 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 	})
 }
 
-func TestGetUsageReturnsTheStartTheLastUseAndTheLeases(t *testing.T) {
+func TestGetUsageReturnsTheLastUseAndTheLeases(t *testing.T) {
 	sup := New(nil)
 	if usage, isRunning := sup.GetUsage(); isRunning {
 		t.Fatalf("a dormant plugin has the usage %+v", usage)
@@ -380,31 +380,14 @@ func TestGetUsageReturnsTheStartTheLastUseAndTheLeases(t *testing.T) {
 	sup.Acquire(start.Add(time.Second))
 
 	usage, _ := sup.GetUsage()
-	if want := (Usage{StartTime: start, LastActiveTime: start.Add(time.Second), LeaseCount: 2, IsInProcess: true}); usage != want {
+	if want := (Usage{LastActiveTime: start.Add(time.Second), LeaseCount: 2, IsInProcess: true}); usage != want {
 		t.Errorf("held: got %+v, want %+v", usage, want)
 	}
 
 	sup.Release(start.Add(2 * time.Second))
 	sup.Release(start.Add(3 * time.Second))
 	usage, _ = sup.GetUsage()
-	if want := (Usage{StartTime: start, LastActiveTime: start.Add(3 * time.Second), IsInProcess: true, IsIdle: true}); usage != want {
+	if want := (Usage{LastActiveTime: start.Add(3 * time.Second), IsInProcess: true, IsIdle: true}); usage != want {
 		t.Errorf("released: got %+v, want %+v", usage, want)
-	}
-}
-
-func TestTheSupervisorReportsTheStartTheLeasesAndTheStop(t *testing.T) {
-	changes := 0
-	sup := NewObserved(nil, func() { changes++ })
-	now := testsupport.GetEpoch()
-
-	sup.SetActivating()
-	sup.ActivateInProcess(now)
-	sup.Acquire(now)
-	sup.Release(now)
-	sup.Release(now)
-	sup.BeginDeactivation(0, now)
-
-	if changes != 5 {
-		t.Errorf("got %d changes, want 5: the start, a lease taken, two returned and the stop", changes)
 	}
 }

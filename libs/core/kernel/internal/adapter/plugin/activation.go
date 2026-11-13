@@ -140,6 +140,7 @@ func (a *Activation) Acquire(pluginID string) {
 	sup, ok := a.sups.Get(pluginID)
 	if ok {
 		sup.Acquire(a.clock.Now())
+		a.sups.NotifyChange()
 	}
 }
 
@@ -148,6 +149,7 @@ func (a *Activation) Release(pluginID string) {
 	sup, ok := a.sups.Get(pluginID)
 	if ok {
 		sup.Release(a.clock.Now())
+		a.sups.NotifyChange()
 	}
 }
 

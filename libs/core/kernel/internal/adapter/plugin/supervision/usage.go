@@ -32,7 +32,7 @@ func (r *RunningProcesses) ListProcesses() []plugindomain.Process {
 			continue
 		}
 		process := plugindomain.Process{
-			PluginID: id, StartTime: usage.StartTime, LastUseTime: usage.LastActiveTime,
+			PluginID: id, StartTime: s.startTimes[id], LastUseTime: usage.LastActiveTime,
 			LeaseCount: usage.LeaseCount, IsInProcess: usage.IsInProcess,
 		}
 		if usage.IsIdle {
@@ -44,8 +44,8 @@ func (r *RunningProcesses) ListProcesses() []plugindomain.Process {
 	return processes
 }
 
-// WatchProcesses signals each time a plugin the supervisors registered starts, stops, or takes or
-// returns a lease, until the context ends. Signals not received yet are merged into one.
+// WatchProcesses signals each time a plugin starts, stops, or takes or returns a lease, until the
+// context ends. Signals not received yet are merged into one.
 func (r *RunningProcesses) WatchProcesses(ctx context.Context) <-chan struct{} {
 	return r.sups.changes.watch(ctx)
 }
