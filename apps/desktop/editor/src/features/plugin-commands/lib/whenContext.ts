@@ -5,6 +5,7 @@
  */
 import {
   createWhenReader,
+  isNotePath,
   type JsonObject,
   type WhenCondition,
   type WhenReader,
@@ -39,15 +40,15 @@ const hasNoteKindVariable = (condition: WhenCondition): boolean =>
 /**
  * Whether a command of the condition is available over what is in front of the palette. The target
  * holds no type or properties of its note, so a condition that reads them holds once `getNote` has
- * read the note, and is false while it is read.
+ * read the note, and is false while it is read. A file that is no note has no type to read.
  */
 export function createWhenAvailability(context: WindowWhenContext) {
   return (when: string | undefined, target: CommandTarget): boolean => {
     const condition = context.whenReader.getCondition(when)
     if (!condition) return false
-    const isOverFile = target.isReady && (target.path || target.file) !== ''
+    const isOverNote = target.isReady && isNotePath(target.path || target.file)
     const note =
-      isOverFile && context.getNote && hasNoteKindVariable(condition) ? context.getNote(target) : {}
+      isOverNote && context.getNote && hasNoteKindVariable(condition) ? context.getNote(target) : {}
     if (note === undefined) return false
     return condition.evaluate(
       getPaletteValues(target, context.getContentTypes(), context.getConfig(), note),

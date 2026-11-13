@@ -16,12 +16,24 @@ const target = (path: string): CommandTarget => ({
 
 const createNotes = () => {
   const reads: string[] = []
+  const errors: unknown[] = []
   let media = ''
-  const notes = createPaletteNotes(async (one) => {
-    reads.push(one.path)
-    return { type: 'link', properties: { media } }
+  let failure: Error | undefined
+  const notes = createPaletteNotes({
+    read: async (one) => {
+      reads.push(one.path)
+      if (failure) throw failure
+      return { type: 'link', properties: { media } }
+    },
+    reportError: (error) => errors.push(error),
   })
-  return { notes, reads, setMedia: (value: string) => (media = value) }
+  return {
+    notes,
+    reads,
+    errors,
+    setMedia: (value: string) => (media = value),
+    setFailure: (value: Error | undefined) => (failure = value),
+  }
 }
 
 describe('the notes the palette reads', () => {
@@ -52,6 +64,22 @@ describe('the notes the palette reads', () => {
     expect(notes.getNote(target('links/Mill.md'))?.properties).toStrictEqual({
       media: 'media/mill.mp4',
     })
+  })
+
+  it('reports a failed read and reads the note again on the next ask', async () => {
+    const { notes, reads, errors, setFailure } = createNotes()
+    const failure = new Error('the vault is closed')
+    setFailure(failure)
+
+    notes.getNote(target('links/Mill.md'))
+    await flushPromises()
+    setFailure(undefined)
+    notes.getNote(target('links/Mill.md'))
+    await flushPromises()
+
+    expect(errors).toStrictEqual([failure])
+    expect(reads).toStrictEqual(['links/Mill.md', 'links/Mill.md'])
+    expect(notes.getNote(target('links/Mill.md'))?.type).toBe('link')
   })
 
   it('drops a read that ends after a reset', async () => {

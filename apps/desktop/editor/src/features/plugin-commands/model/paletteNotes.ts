@@ -2,11 +2,12 @@
  * The type and properties of the note in front of the palette, which the conditions of the plugins'
  * commands read and the palette's target does not hold. Each note is read once from the core and kept
  * until `reset`, which the palette calls as it opens or closes, so a change to the note shows at the
- * next open.
+ * next open. A failed read is reported and read again on the next ask.
  */
 import { shallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { CommandNote } from '@numen/plugin-loader'
+import type { Caught } from '@/shared/api/errors'
 import type { CommandTarget } from '@/shared/model/command'
 import type { PaletteNote } from '../lib/whenContext'
 
@@ -15,7 +16,13 @@ export type ReadNote = (
   target: Pick<CommandNote, 'path' | 'title' | 'isFolder' | 'others'>,
 ) => Promise<Pick<CommandNote, 'type' | 'properties'>>
 
-export function createPaletteNotes(readNote: ReadNote) {
+/** How the palette reads a note, and where a failed read is reported. */
+export interface PaletteNotesDeps {
+  readonly read: ReadNote
+  readonly reportError: (error: Caught) => void
+}
+
+export function createPaletteNotes(deps: PaletteNotesDeps) {
   const notes = shallowRef<ReadonlyMap<string, PaletteNote>>(new Map())
   const requests = new Set<string>()
   let generation = 0
@@ -27,7 +34,7 @@ export function createPaletteNotes(readNote: ReadNote) {
     if (known || requests.has(path)) return known
     requests.add(path)
     const requestGeneration = generation
-    const pending = readNote({
+    const pending = deps.read({
       path,
       title: target.title,
       isFolder: false,
@@ -41,7 +48,11 @@ export function createPaletteNotes(readNote: ReadNote) {
           ...(properties ? { properties } : {}),
         })
       }),
-      () => undefined,
+      (error) => {
+        if (requestGeneration !== generation) return
+        requests.delete(path)
+        deps.reportError(error)
+      },
     )
     return undefined
   }
