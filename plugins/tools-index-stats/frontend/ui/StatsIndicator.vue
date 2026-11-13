@@ -3,7 +3,7 @@
  * The title bar item that counts the vectors of the search index, and the popover with its details.
  */
 import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
-import { useMenuDismissal } from '@numen/ui'
+import { isPageMove, useMenuDismissal } from '@numen/ui'
 import type { Stats } from '../api/stats'
 import type { Phase } from '../model/stats'
 import { formatSummary, formatVectors, MARK } from '../lib/format'
@@ -26,8 +26,7 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
-// The popover is placed against the item by CSS and follows it through a resize.
-const dismissal = useMenuDismissal(root, onClose, isResize)
+const dismissal = useMenuDismissal(root, onClose, isPageMove)
 
 const figure = computed(() => {
   return props.stats ? formatVectors(props.stats, props.locale) : words.unavailable
@@ -59,10 +58,6 @@ function onToggle() {
 
 function onClose() {
   isOpen.value = false
-}
-
-function isResize(event: Event): boolean {
-  return event.type === 'resize'
 }
 </script>
 

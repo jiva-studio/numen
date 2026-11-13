@@ -17,7 +17,7 @@
  */
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch, type VNode } from 'vue'
 import { Info, RotateCcw, TriangleAlert } from '@lucide/vue'
-import { runInBackground, useMenuDismissal } from '@numen/ui'
+import { runInBackground, isPageMove, useMenuDismissal } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import type { SettingRowProps } from './SettingRow.types'
 
@@ -45,7 +45,7 @@ const label = useTemplateRef<HTMLElement>('label')
 const infoButton = useTemplateRef<HTMLButtonElement>('infoButton')
 const popover = useTemplateRef<HTMLElement>('popover')
 const isInfoOpen = ref(false)
-const dismissal = useMenuDismissal(label, () => closeInfo(false), isMoveOfThePage)
+const dismissal = useMenuDismissal(label, () => closeInfo(false), isPageMove)
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
@@ -88,10 +88,6 @@ function onPopoverEscape(): void {
 function closeInfo(isFocusReturned: boolean): void {
   isInfoOpen.value = false
   if (isFocusReturned) infoButton.value?.focus()
-}
-
-function isMoveOfThePage(event: Event): boolean {
-  return event.type === 'scroll' || event.type === 'resize'
 }
 
 function scrollIntoView(): void {

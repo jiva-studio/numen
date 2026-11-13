@@ -5,7 +5,7 @@
  * opens from it.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import { useMenuDismissal } from '@numen/ui'
+import { isPageMove, useMenuDismissal } from '@numen/ui'
 import type { BackgroundTask } from '@numen/plugin-sdk'
 import { summarizeBatch, summarizeTasks } from '../lib/summary'
 import { type ChipState } from '../model/chipDisplay'
@@ -30,7 +30,7 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
-const dismissal = useMenuDismissal(root, onClose)
+const dismissal = useMenuDismissal(root, onClose, isPageMove)
 
 const summary = computed(() => summarizeTasks(props.tasks))
 // The tasks of one busy period: the ids are forgotten when the window is idle again.

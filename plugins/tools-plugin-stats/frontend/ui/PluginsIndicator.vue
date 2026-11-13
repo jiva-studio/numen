@@ -4,7 +4,7 @@
  * time on the clock of the core, in milliseconds since the Unix epoch.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import { useMenuDismissal } from '@numen/ui'
+import { isPageMove, useMenuDismissal } from '@numen/ui'
 import type { PluginProcess } from '../types'
 import type { Phase } from '../model/plugins'
 import { formatCount, formatSummary, MARK } from '../lib/format'
@@ -22,8 +22,7 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
-// The popover is placed against the item by CSS and follows it through a resize.
-const dismissal = useMenuDismissal(root, onClose, isResize)
+const dismissal = useMenuDismissal(root, onClose, isPageMove)
 
 const isReady = computed(() => props.phase === 'ready')
 const figure = computed(() =>
@@ -44,10 +43,6 @@ function onToggle() {
 
 function onClose() {
   isOpen.value = false
-}
-
-function isResize(event: Event): boolean {
-  return event.type === 'resize'
 }
 </script>
 
