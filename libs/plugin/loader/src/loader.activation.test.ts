@@ -37,7 +37,6 @@ function createWindow(activate: (context: PluginContext) => void | Promise<void>
   return { host, loader, reportCommandIssue, onError }
 }
 
-/** Starts the window and then uses the plugin, which fills no slot of the window and starts on use. */
 async function startWindow(loader: ReturnType<typeof createWindow>['loader']): Promise<void> {
   await loader.start()
   await loader.status.startPlugin(PLUGIN)

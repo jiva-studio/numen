@@ -8,7 +8,6 @@ import { getPluginStyle, registerPluginStyle } from './styles'
 import { createPluginLoader } from './loader'
 import { parseLifecycleHooks, resolveModule } from './module'
 
-/** The manifest of a plugin that fills the title bar, a slot of the window, which starts with it. */
 function createWindowSlotManifest(id: string) {
   const parsed = parseManifest(
     JSON.stringify({
@@ -22,7 +21,6 @@ function createWindowSlotManifest(id: string) {
   return parsed.value
 }
 
-/** Registers the modules as plugins of the title bar, which the window starts with. */
 function registerModules(
   loader: ReturnType<typeof createPluginLoader>,
   modules: Record<string, () => Promise<object>>,

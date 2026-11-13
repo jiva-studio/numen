@@ -115,10 +115,6 @@ const openInIsolation = (store: TabStore, saved: SavedTab, one: AnyTabKind) => {
   }
 }
 
-/**
- * The placeholder of a kind not registered where a tab of it opens, which starts the plugin that
- * declares the kind: a plugin starts when a tab of its kind opens.
- */
 const createPluginPlaceholder = (
   store: TabStore,
   kind: string,

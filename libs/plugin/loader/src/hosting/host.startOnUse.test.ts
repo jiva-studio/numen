@@ -1,6 +1,6 @@
 /**
  * The uses of what a plugin contributes that start the plugin: a key of its command, the items of its
- * command, a drop of its type, a mount of its view. Every plugin here is invented.
+ * command, a drop of its type, a mount of its view, its settings page. Every plugin here is invented.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
@@ -26,6 +26,7 @@ const OPEN: CommandDeclaration = { pluginId: LEDGER, id: 'ledger.open', title: '
 const LEDGER_MANIFEST = createMockManifest(LEDGER, {
   commands: ['ledger.open'],
   viewCapabilities: ['ledger-sheet'],
+  settingsViews: ['ledger-columns'],
 })
 const LINKS_MANIFEST = createMockManifest(LINKS, {
   dropTypes: [URI_LIST],
@@ -34,7 +35,6 @@ const LINKS_MANIFEST = createMockManifest(LINKS, {
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-/** A window whose plugins register what `starts` gives them when the host starts them. */
 function createWindow(
   starts: Record<string, (host: ReturnType<typeof createPluginHost>) => void>,
   extra: Partial<PluginHostDeps> = {},
@@ -170,5 +170,28 @@ describe('a plugin that has not started', () => {
     const [match] = startPluginsOf.mock.calls[0] ?? []
     expect(match?.(LEDGER_MANIFEST)).toBe(true)
     expect(match?.(LINKS_MANIFEST)).toBe(false)
+  })
+
+  it('starts when its settings page asks for its settings views, and gives them once it has', async () => {
+    const manifests = [LEDGER_MANIFEST, LINKS_MANIFEST]
+    const { host, started } = createWindow(
+      {
+        [LEDGER]: (one) =>
+          one.lifecycle
+            .createContext(LEDGER, LEDGER_MANIFEST)
+            .register.settingsView({ id: 'ledger-columns', component: {} }),
+      },
+      {
+        findPluginsOf: (match) =>
+          manifests.filter((one) => match(one)).map((one) => one.id),
+      },
+    )
+
+    expect(host.registered.getSettingsViews(LINKS).size).toBe(0)
+    expect(host.registered.getSettingsViews(LEDGER).size).toBe(0)
+    await settle()
+
+    expect(started).toStrictEqual([LEDGER])
+    expect([...host.registered.getSettingsViews(LEDGER).keys()]).toStrictEqual(['ledger-columns'])
   })
 })

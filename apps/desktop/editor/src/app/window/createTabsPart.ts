@@ -2,12 +2,12 @@
  * The tabs of the window: the tabs, the links between them, the files they open, the sync of their
  * paths and the session that keeps their links with the core.
  */
-import { runInBackground } from '@numen/ui'
 import type { PluginStatus } from '@numen/plugin-loader'
 import { getFileKinds } from '@/entities/file'
 import type { SettingsStore } from '@/entities/settings'
 import {
   createTabNavigation,
+  createTabPluginStarts,
   createTabSync,
   createWindowTabs,
   fileOpeners,
@@ -30,17 +30,16 @@ export interface TabsPartDeps {
 
 export function createTabsPart(deps: TabsPartDeps) {
   const { writeMessage, status } = deps
+  const pluginStarts = createTabPluginStarts({
+    status,
+    getPlugins: () => deps.rest.state.plugins.value,
+    writeMessage,
+  })
   const windowTabs = createWindowTabs(
     { unavailable: UnavailablePane, restoreFailed: RestoreFailedPane },
     {
       isPluginStarting: status.isPluginStarting,
-      startKindPlugin: (kind) =>
-        runInBackground(status.startTabPlugins([kind]), (error) =>
-          writeMessage(
-            `The plugin of the ${kind} tab did not start: ${formatError(error)}`,
-            'error',
-          ),
-        ),
+      startKindPlugin: pluginStarts.startKindPlugin,
       enablePlugin: async (pluginId) => {
         await deps.rest.write.writeSetting([pluginId, 'enabled'], true)
       },
@@ -53,13 +52,8 @@ export function createTabsPart(deps: TabsPartDeps) {
   const tabOpeners = fileOpeners({
     fileKinds: getFileKinds,
     reconcileTab: windowTabs.panes.reconcileTab,
-    startTabKind: (kind) => status.startTabPlugins([kind]),
-    startExtensionReader: async (extension) => {
-      const plugins = deps.rest.state.plugins.value.filter((one) =>
-        (one.readers ?? []).some((reader) => reader.extensions.includes(extension)),
-      )
-      await Promise.all(plugins.map((one) => status.startPlugin(one.id)))
-    },
+    startTabKind: pluginStarts.startTabKind,
+    startExtensionReader: pluginStarts.startExtensionReader,
   })
   const tabSync = createTabSync({
     windowTabs,

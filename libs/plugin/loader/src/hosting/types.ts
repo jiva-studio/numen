@@ -104,7 +104,8 @@ export type SlotCommandFinder = (
 /**
  * target is the target of the window, which the plugins it activates read as theirs. A window that opens
  * no tab for a plugin leaves out openTab. getSlotEntries reads the slot entries from the manifests of the
- * plugins whose context the host made, keyed by plugin id.
+ * plugins whose context the host made, keyed by plugin id. startPlugin settles once the plugin is active
+ * or has failed, and does nothing for a plugin that is off; findPluginsOf matches the manifests read so far.
  */
 export interface PluginHostDeps {
   readonly target: string
@@ -122,11 +123,8 @@ export interface PluginHostDeps {
   readonly hasPluginFrontend?: (pluginId: string) => boolean
   readonly hasPluginBackend?: (pluginId: string) => boolean
   readonly isPluginFailed?: (pluginId: string) => boolean
-  /** Starts the plugin and settles once it is active or has failed; nothing for a plugin that is off. */
   readonly startPlugin?: (pluginId: string) => Promise<void>
-  /** Starts the enabled plugins whose manifest declares the contribution, and waits for them. */
   readonly startPluginsOf?: (match: ContributionMatch) => Promise<void>
-  /** The enabled plugins whose manifest, as read so far, declares the contribution. */
   readonly findPluginsOf?: (match: ContributionMatch) => readonly string[]
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
   readonly reportViewIssue?: (pluginId: string, message: string) => void

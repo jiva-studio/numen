@@ -9,7 +9,6 @@ import type { ActivePluginEntry } from './activation'
 
 /** What starts a plugin and reads its manifest; the loader gives it once it exists. */
 export interface PluginStarter {
-  /** Starts the plugin, or joins its start going on; settles once it is active or has failed. */
   readonly start: (id: string) => Promise<boolean>
   readonly readManifest: (id: string) => Promise<Manifest | undefined>
 }
@@ -28,7 +27,7 @@ export interface PluginStartsDeps {
 }
 
 export function createPluginStarts(deps: PluginStartsDeps) {
-  const listEnabled = (): string[] => deps.listPlugins().filter((id) => deps.isEnabled(id))
+  const getEnabledPluginIds = (): string[] => deps.listPlugins().filter((id) => deps.isEnabled(id))
 
   /** Starts the plugin and settles once it is active or has failed; nothing for a plugin that is off. */
   const startPlugin = async (id: string): Promise<void> => {
@@ -43,7 +42,7 @@ export function createPluginStarts(deps: PluginStartsDeps) {
   /** Starts the enabled plugins whose manifest declares the contribution, and waits for them. */
   const startPluginsOf = async (match: ContributionMatch): Promise<void> => {
     if (!deps.isRunning.value) return
-    const ids = listEnabled()
+    const ids = getEnabledPluginIds()
     const manifests = await Promise.all(ids.map(readManifest))
     const matched = ids.filter((_, index) => {
       const manifest = manifests[index]
@@ -67,7 +66,7 @@ export function createPluginStarts(deps: PluginStartsDeps) {
       ),
     /** The enabled plugins whose manifest, as read so far, declares the contribution. */
     findPluginsOf: (match: ContributionMatch): string[] =>
-      listEnabled().filter((id) => {
+      getEnabledPluginIds().filter((id) => {
         const manifest = deps.manifests.get(id)
         return manifest !== undefined && match(manifest)
       }),

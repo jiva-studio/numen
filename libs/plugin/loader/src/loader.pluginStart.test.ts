@@ -155,7 +155,7 @@ describe('a plugin that fills no slot of the window', () => {
 })
 
 describe('the start of the plugins of tab kinds', () => {
-  it('starts only the plugins of the kinds asked for, and waits for them', async () => {
+  it('starts only the plugins of the given kinds and settles once they have started', async () => {
     vi.useFakeTimers()
     const loader = createLoader({ [ORCHARD]: 200, [LEDGER]: 400 })
     await listAll(loader)

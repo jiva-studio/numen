@@ -21,11 +21,9 @@ interface ItemParts {
   readonly deps: HostDeps
   readonly registry: HostRegistry
   readonly handlers: ReturnType<typeof createHandlerApi>
-  /** The plugin that declares the command, while the window lists it. */
   readonly findOwner: (id: string) => string | undefined
 }
 
-/** The items the commands offer, which only a started plugin knows. */
 function createItemApi({ deps, registry, handlers, findOwner }: ItemParts) {
   /** The registered command, once its plugin has started. */
   const findStartedEntry = async (id: string) => {

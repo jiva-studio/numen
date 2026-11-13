@@ -54,7 +54,6 @@ export interface SlotRegistryDeps {
   readonly reportIssue?: (pluginId: string, message: string, severity: 'warning' | 'error') => void
   readonly getWhenValues?: (target: CommandTarget | undefined) => WhenValues
   readonly whenReader?: WhenReader
-  /** Starts a plugin whose entry is drawn and needs it: a view not registered yet, a command of a menu. */
   readonly requestPlugin?: (pluginId: string) => void
 }
 
@@ -103,7 +102,6 @@ function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
   return placed.filter((one) => one.item.kind !== 'command' || first.get(getRunKey(one)) === one)
 }
 
-/** Whether the place is a slot of the window or a slot inside one, drawn while the window is. */
 const isWindowPlace = (slot: string): boolean =>
   WINDOW_SLOTS.some((one) => slot === one || slot.startsWith(`${one}.`))
 
@@ -262,7 +260,6 @@ function toSubmenuItem(
   }
 }
 
-/** The item of an entry that names a command, drawn over the target. */
 function drawCommand(
   deps: SlotRegistryDeps,
   place: { readonly entry: DeclaredSlotEntry; readonly command: string },

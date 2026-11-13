@@ -97,12 +97,14 @@ function eraseView(mount: Mount): void {
   mount.instance = undefined
 }
 
-/** Starts the plugins that declare a capability under `contributes.viewCapabilities`. */
+/**
+ * Starts the plugins that declare a capability under `contributes.viewCapabilities`. A start reports
+ * its own failure, and the mount goes on waiting.
+ */
 export interface ViewRegistryDeps {
   readonly startPluginsOf?: (match: ContributionMatch) => Promise<void>
 }
 
-/** Starts the plugins that declare the capability; a start reports its own failure, and the mount waits. */
 function startDeclaringPlugins(deps: ViewRegistryDeps, capability: string): void {
   deps
     .startPluginsOf?.((manifest) =>

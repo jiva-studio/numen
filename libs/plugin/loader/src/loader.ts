@@ -2,6 +2,8 @@
  * Loads plugin frontends: each module is fetched from the window, activated with a context
  * created by the host, and deactivated according to its `enabled` setting. The plugins of the window
  * slots start with the window; every other plugin starts on the first use of what it contributes.
+ * Callers that start a plugin while its start goes on join that start, and the plugin counts as
+ * starting until the last of them ends.
  */
 import type { Caught, Disposable, JsonValue } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
@@ -118,10 +120,6 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
   }
 }
 
-/**
- * The starts going on, as `starting` shows them. A plugin may be activated by more than one caller at
- * once, and it is starting until the last ends; `startOnce` joins the start of a plugin going on.
- */
 function createStartRuns(starting: LoaderState['starting']) {
   const runs = new Map<string, number>()
   const going = new Map<string, Promise<boolean>>()

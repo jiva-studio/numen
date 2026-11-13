@@ -38,7 +38,6 @@ function listMatchingHandlers(
 const findEntry = ({ registry }: HandlerParts, handler: HandlerDeclaration) =>
   registry.handlers.value.get(formatCommandId(handler.pluginId, handler.command))
 
-/** The entry of the handler once its plugin has started, where the plugin has a frontend. */
 async function findStartedEntry(parts: HandlerParts, handler: HandlerDeclaration) {
   const entry = findEntry(parts, handler)
   if (entry || parts.deps.hasPluginFrontend?.(handler.pluginId) === false) return entry

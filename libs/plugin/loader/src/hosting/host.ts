@@ -176,16 +176,33 @@ function createHostContextBridge(
   }
 }
 
-function createRegisteredApi(registry: HostRegistry) {
+function readSettingsViews(
+  registry: HostRegistry,
+  pluginId: string,
+): ReadonlyMap<string, SettingsViewRegistration> {
+  const views = new Map<string, SettingsViewRegistration>()
+  for (const item of registry.settingsViews.value.values()) {
+    if (item.pluginId === pluginId) views.set(item.reg.id, item.reg)
+  }
+  return views
+}
+
+const hasDeclaredSettingsViews = (deps: PluginHostDeps, pluginId: string): boolean =>
+  (deps.findPluginsOf?.((one) => one.id === pluginId && one.settingsViews.length > 0) ?? [])
+    .length > 0
+
+function createRegisteredApi(deps: PluginHostDeps, registry: HostRegistry) {
   return {
     /** The settings views a plugin registered, by view id; reactive. */
-    getRegisteredSettingsViews: (
-      pluginId: string,
-    ): ReadonlyMap<string, SettingsViewRegistration> => {
-      const views = new Map<string, SettingsViewRegistration>()
-      for (const item of registry.settingsViews.value.values()) {
-        if (item.pluginId === pluginId) views.set(item.reg.id, item.reg)
-      }
+    getRegisteredSettingsViews: (pluginId: string) => readSettingsViews(registry, pluginId),
+    /**
+     * The settings views of a plugin for its settings page, by view id; reactive. A plugin that
+     * declares settings views and has registered none starts, and its views follow once it has.
+     */
+    getSettingsViews: (pluginId: string): ReadonlyMap<string, SettingsViewRegistration> => {
+      const views = readSettingsViews(registry, pluginId)
+      if (views.size === 0 && hasDeclaredSettingsViews(deps, pluginId))
+        requestPluginStart(deps, pluginId)
       return views
     },
     getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
@@ -326,13 +343,11 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     lifecycle: createLifecycleApi({ registry, contextHost, keybindings, entries }),
     commands,
     keybindings,
-    registered: createRegisteredApi(registry),
+    registered: createRegisteredApi(deps, registry),
     /** The entries of the slots of the window, as their owners read them. */
     slots,
     slotViews,
     contextHost,
-    /** Starts the plugin in the background for a use that does not wait, such as a view drawn. */
-    requestPluginStart: (pluginId: string): void => requestPluginStart(deps, pluginId),
     /** A change to the vault, delivered to every plugin that subscribed to vault changes. */
     notifyVaultChange: (event: VaultChangeEvent): void =>
       notifyListeners(registry.vaultListeners, event, deps),
