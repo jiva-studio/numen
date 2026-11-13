@@ -158,6 +158,23 @@ func TestEmbedReturnsOneVectorForEachText(t *testing.T) {
 	}
 }
 
+// oneVector embeds every request into one vector, whatever the number of its texts.
+type oneVector struct{}
+
+func (oneVector) Embed(context.Context, connection.Call, *llm.EmbedRequest) (*llm.EmbedResult, error) {
+	return &llm.EmbedResult{Vectors: []*llm.Vector{{Values: []float32{1}}}}, nil
+}
+
+func TestEmbedOfAnotherNumberOfVectorsThanTextsIsAnError(t *testing.T) {
+	caller := newCaller(llm.Roles{Embedder: oneVector{}})
+
+	result, err := llm.Embed(t.Context(), caller, &llm.EmbedRequest{Texts: []string{"quay", "jetty"}}, connection.PriorityBackground)
+
+	if err == nil || result != nil {
+		t.Errorf("Embed = %v, %v, want an error", result, err)
+	}
+}
+
 func TestEmbedOfNoTextCallsNoProvider(t *testing.T) {
 	caller := newCaller(llm.Roles{Embedder: &assistant{}})
 

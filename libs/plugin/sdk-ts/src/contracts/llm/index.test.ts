@@ -11,6 +11,7 @@ import {
   CompleteRequestSchema,
   CompleteResultSchema,
   embed,
+  EmbedResultSchema,
   FinishReason,
   getProfile,
   ProfileSchema,
@@ -77,6 +78,16 @@ describe('the llm contract', () => {
 
     expect(answer.ok && answer.value.vectors).toStrictEqual([])
     expect(asked).toStrictEqual([])
+  })
+
+  it('throws on a result with another number of vectors than texts', async () => {
+    const result = toBinary(
+      EmbedResultSchema,
+      create(EmbedResultSchema, { vectors: [{ values: [1] }] }),
+    )
+    const { host } = createHost([], { ok: true, value: result })
+
+    await expect(embed(host, { texts: ['quay', 'jetty'] })).rejects.toThrow('1 vectors for 2 texts')
   })
 
   it('asks the profile in the background', async () => {

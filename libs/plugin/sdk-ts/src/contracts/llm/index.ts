@@ -70,7 +70,11 @@ export const complete = async (
     (bytes) => fromBinary(CompleteResultSchema, bytes),
   )
 
-/** Asks the rows of the plugin, in order, for one vector for each text. No text is no call. */
+/**
+ * Asks the rows of the plugin, in order, for one vector for each text. No text is no call. A result with
+ * another number of vectors than texts throws, as a result that is no message of the contract does; the Go
+ * client returns that error.
+ */
 export const embed = async (
   host: ConnectionHost,
   request: MessageInitShape<typeof EmbedRequestSchema>,
@@ -80,7 +84,14 @@ export const embed = async (
   if (message.texts.length === 0) return asValue(create(EmbedResultSchema))
   return decode(
     await collectCall(host, OPERATION_EMBED, toBinary(EmbedRequestSchema, message), options),
-    (bytes) => fromBinary(EmbedResultSchema, bytes),
+    (bytes) => {
+      const result = fromBinary(EmbedResultSchema, bytes)
+      if (result.vectors.length !== message.texts.length)
+        throw new Error(
+          `llm: ${OPERATION_EMBED} answered ${result.vectors.length} vectors for ${message.texts.length} texts`,
+        )
+      return result
+    },
   )
 }
 

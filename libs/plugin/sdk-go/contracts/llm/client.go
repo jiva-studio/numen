@@ -20,7 +20,8 @@ func Complete(ctx context.Context, caller connection.Caller, request *CompleteRe
 	return result, nil
 }
 
-// Embed asks the rows of the plugin, in order, for one vector for each text. No text is no call.
+// Embed asks the rows of the plugin, in order, for one vector for each text. No text is no call. A result
+// with another number of vectors than texts is an error.
 func Embed(ctx context.Context, caller connection.Caller, request *EmbedRequest, priority connection.Priority) (*EmbedResult, error) {
 	result := &EmbedResult{}
 	if len(request.GetTexts()) == 0 {
@@ -28,6 +29,9 @@ func Embed(ctx context.Context, caller connection.Caller, request *EmbedRequest,
 	}
 	if err := callOnce(ctx, caller, OperationEmbed, request, priority, result); err != nil {
 		return nil, err
+	}
+	if len(result.GetVectors()) != len(request.GetTexts()) {
+		return nil, fmt.Errorf("llm: %s answered %d vectors for %d texts", OperationEmbed, len(result.GetVectors()), len(request.GetTexts()))
 	}
 	return result, nil
 }
@@ -116,7 +120,8 @@ func (s *ChatStream) Finish() *ChatFinish {
 	return s.finish
 }
 
-// Err returns why the turn ended: nil after the finish, or the errors of connection.Frames.Err.
+// Err returns why the turn ended: nil after the finish, the errors of connection.Frames.Err, or the error
+// of a frame or a finish that is no message of the contract, which the TypeScript client throws.
 func (s *ChatStream) Err() error { return errors.Join(s.err, s.frames.Err()) }
 
 // Close ends the stream and cancels the call if the turn has not ended.
