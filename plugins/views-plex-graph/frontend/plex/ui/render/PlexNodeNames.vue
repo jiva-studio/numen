@@ -7,7 +7,7 @@
 import { computed, onBeforeUnmount } from 'vue'
 import type { Attention } from '../../model/useAttention'
 import { placeNames, type NamesRoom } from '../../lib/names'
-import type { PlacedNode } from '../../lib/node'
+import { createNameLabel, type PlacedNode } from '../../lib/node'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -54,7 +54,7 @@ function onChoose(id: string) {
       :class="{ 'plex__name--forward': isForward }"
       :opacity="opacity"
       role="button"
-      :aria-label="name.title"
+      :aria-label="createNameLabel(name.title, node)"
       :transform="`translate(${name.x} ${name.y})`"
       @click="onChoose(name.id)"
       @pointerenter="emit('attend', true)"

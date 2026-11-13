@@ -5,11 +5,12 @@ import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import PlexNodeNames from './PlexNodeNames.vue'
 import PlexThread from './PlexThread.vue'
-import { useEdgeLines } from './lines'
+import { useEdgeLines, type EdgeLine } from './lines'
 import { listNamedNodes } from './named'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
 import { getDraggedShape, getPendingThread, getReachGhost, getReachThread } from './threads'
 import type { GestureRole, PlacedNode } from '../../lib/node'
+import { createEdgeLabel } from '../../lib/edge'
 import { getRelationName } from '../../lib/relation'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useFieldSize } from '../../model/sizing/fieldSize'
@@ -120,6 +121,9 @@ const onChooseName = (id: string) => {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+const getEdgeLabel = (line: EdgeLine): string =>
+  createEdgeLabel(line.edge, (id) => props.frame.nodes.find((node) => node.id === id)?.title || 'Untitled')
+
 const getRole = (node: PlacedNode): GestureRole => {
   const outcome = props.gestureOutcome
   if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'
@@ -152,6 +156,8 @@ const getRole = (node: PlacedNode): GestureRole => {
         v-for="line in lines"
         :key="`reach:${line.key}`"
         class="plex__edge-hit"
+        role="button"
+        :aria-label="getEdgeLabel(line)"
         :d="line.d"
         @pointerenter="setOver(line.pair)"
         @pointerleave="setOver(null)"

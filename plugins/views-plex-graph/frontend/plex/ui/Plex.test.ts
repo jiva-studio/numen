@@ -568,7 +568,7 @@ describe('the names of a note', () => {
     plex.findAll('.plex__name').map((name) => Number(name.attributes('opacity')))
 
   const getName = (plex: ReturnType<typeof mountWithNames>, title: string) =>
-    plex.get(`[role="button"][aria-label="${title}"]`)
+    plex.get(`[role="button"][aria-label^="${title}, name under "]`)
 
   afterEach(() => {
     vi.restoreAllMocks()
@@ -580,7 +580,7 @@ describe('the names of a note', () => {
     const plex = mountWithNames()
 
     expect(plex.findAll('.plex__name')).toHaveLength(2)
-    expect(plex.find('[aria-label="Heat"]').exists()).toBe(true)
+    expect(plex.find('[aria-label="Heat, name under Domain"]').exists()).toBe(true)
   })
 
   it('sit at the resting opacity while the pointer is elsewhere', () => {

@@ -106,10 +106,10 @@ describe('the keyboard and the names', () => {
     expect(names.emitted('choose')).toBeUndefined()
   })
 
-  it('names each name as a button by its title', () => {
+  it('names each name as a button by its title and the note it is under', () => {
     const name = mountNames({ node: null, names: null }).get('.plex__name')
 
     expect(name.attributes('role')).toBe('button')
-    expect(name.attributes('aria-label')).toBe('Heat')
+    expect(name.attributes('aria-label')).toBe('Heat, name under Entropy')
   })
 })

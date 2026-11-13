@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   ARROW_LENGTH,
+  createEdgeLabel,
   createPointOnCurve,
   getArrow,
   edgeKey,
@@ -30,6 +31,24 @@ describe('the key of an edge', () => {
   it('is the same whichever end is which', () => {
     expect(edgeKey({ from: 'a', to: 'b' })).toBe('a b')
     expect(edgeKey({ from: 'b', to: 'a' })).toBe('a b')
+  })
+})
+
+describe('the label of an edge', () => {
+  const titles: Record<string, string> = { a: 'Harbour', b: 'Quay' }
+  const titleOf = (id: string) => titles[id] ?? id
+
+  it('names the two notes it joins', () => {
+    expect(createEdgeLabel({ from: 'a', to: 'b' }, titleOf)).toBe('Harbour to Quay')
+  })
+
+  it('names the note each arrowhead points at', () => {
+    expect(createEdgeLabel({ from: 'a', to: 'b', arrows: ['to'] }, titleOf)).toBe(
+      'Harbour to Quay, arrow to Quay',
+    )
+    expect(createEdgeLabel({ from: 'a', to: 'b', arrows: ['from', 'to'] }, titleOf)).toBe(
+      'Harbour to Quay, arrow to Harbour, arrow to Quay',
+    )
   })
 })
 
