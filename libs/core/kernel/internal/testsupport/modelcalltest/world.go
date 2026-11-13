@@ -221,12 +221,12 @@ type World struct {
 // New creates a world with two plugins that provide the type server (llm.complete, llm.embed, llm.chat
 // and the list llm.models of its row field model) and, for the first plugin, completer (llm.complete only).
 func New() *World {
-	address := manifest.ConnectionField{Key: addressField, Type: "string", Title: "Address", IsAddress: true, IsRequired: true}
+	address := manifest.ConnectionField{Key: addressField, Type: textField, Title: "Address", IsAddress: true, IsRequired: true}
 	key := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key", IsRequired: true}
 	minimum, step := 1.0, 1.0
 	parallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: "number", Title: "Parallel requests", Default: float64(2), Min: &minimum, Step: &step}
 	optionalKey := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key"}
-	modelField := manifest.ConnectionField{Key: ModelOption, Type: "string", Title: "Model", IsRequired: true, OptionsFrom: ModelsOperation}
+	modelField := manifest.ConnectionField{Key: ModelOption, Type: textField, Title: "Model", IsRequired: true, OptionsFrom: ModelsOperation}
 	maximum := 8.0
 	agentParallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: "number", Title: "Parallel requests", Default: float64(1), Min: &minimum, Max: &maximum, Step: &step}
 	serverType := func(pluginID string) connection.Type {
@@ -375,6 +375,8 @@ func (w *World) AddLimited(t *testing.T, name, address string, parallelRequests 
 
 const addressField = "baseUrl"
 
+const textField = "string"
+
 // The operations of the fake provider, the list of models of its row field and the key of that field.
 const (
 	CompleteOperation = "llm.complete"
@@ -420,7 +422,7 @@ func newEntry(created connectionuse.Entry) Entry {
 func (w *World) AddBuiltIn(name, address string) Entry {
 	declared := manifest.ConnectionType{
 		ID: "built-in", Title: name, IsBuiltIn: true, Operations: getCompleteOnly(),
-		Fields: []manifest.ConnectionField{{Key: addressField, Type: "string", Title: "Address", FixedValue: &address}},
+		Fields: []manifest.ConnectionField{{Key: addressField, Type: textField, Title: "Address", FixedValue: &address}},
 	}
 	w.Types.list = append(w.Types.list, connection.Type{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: declared})
 	return Entry{ID: manifest.GetConnectionTypeID(ProviderPluginID, declared.ID), Name: name, Fields: map[string]any{}}
