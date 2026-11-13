@@ -32,13 +32,13 @@ type BuiltIn struct {
 	Serve func(vars map[string]string) (http.Handler, error)
 }
 
-// Launch is what a start of a plugin needs to know of it, and the kind of the first hold on it.
+// Launch is what a start of a plugin needs to know of it, and the first lease on it.
 type Launch struct {
 	Plugin       manifest.Discovered
 	BuiltIn      *BuiltIn
 	Requirements []manifest.DependencyRequirement
 	VaultPath    string
-	Lease        lifecycle.LeaseKind
+	Lease        lifecycle.Lease
 }
 
 type stdinKey struct {
@@ -50,7 +50,7 @@ type stdinKey struct {
 type processTable interface {
 	Clients() *transport.Clients
 	AttachProcess(ctx context.Context, attach ProcessAttachment) error
-	AttachInProcess(pluginID string, sup *lifecycle.Supervisor, endpoint transport.Endpoint, kind lifecycle.LeaseKind, now time.Time) error
+	AttachInProcess(pluginID string, sup *lifecycle.Supervisor, endpoint transport.Endpoint, lease lifecycle.Lease, now time.Time) error
 }
 
 // launchServices is what a start of a process reads of the services the host gives the plugins.

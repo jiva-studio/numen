@@ -36,10 +36,11 @@ type Tool struct {
 }
 
 // Scope is what every tool call of a task carries: the context of the task and the vault the tools work.
-// An empty VaultID is the vault the window shows.
+// An empty VaultID is the vault the window shows. ConnectionID is the connection the task runs for.
 type Scope struct {
-	Context map[string]string
-	VaultID string
+	Context      map[string]string
+	VaultID      string
+	ConnectionID string
 }
 
 // ToolResult is the result of a tool call as text. IsError is set for a call that failed.

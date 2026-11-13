@@ -43,7 +43,7 @@ func (h *servingHost) ResolveService(service string) (catalogmanifest.Discovered
 	return catalogmanifest.Discovered{Manifest: catalogmanifest.Manifest{ID: id}}, serves
 }
 
-func (h *servingHost) EnsureActive(_ context.Context, id string) (transport.Endpoint, error) {
+func (h *servingHost) EnsureActive(_ context.Context, id string, _ plugindomain.Holder) (transport.Endpoint, error) {
 	endpoint, running := h.endpoints[id]
 	if !running {
 		return transport.Endpoint{}, errors.New("the plugin is down")
@@ -51,17 +51,17 @@ func (h *servingHost) EnsureActive(_ context.Context, id string) (transport.Endp
 	return endpoint, nil
 }
 
-func (h *servingHost) Release(string) {
+func (h *servingHost) Release(string, plugindomain.Holder) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.released++
 }
 
-func (h *servingHost) EnsureActiveForQuestion(ctx context.Context, id string) (transport.Endpoint, error) {
-	return h.EnsureActive(ctx, id)
+func (h *servingHost) EnsureActiveForQuestion(ctx context.Context, id string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return h.EnsureActive(ctx, id, holder)
 }
 
-func (h *servingHost) ReleaseQuestion(id string) { h.Release(id) }
+func (h *servingHost) ReleaseQuestion(id string, holder plugindomain.Holder) { h.Release(id, holder) }
 
 func (h *servingHost) getReleasedCount() int {
 	h.mu.Lock()

@@ -26,6 +26,7 @@ type Calls struct {
 	resolve     connectionport.ResolveConnection
 	readSecrets connectionport.ReadConnectionSecrets
 	rows        connectionport.ListRows
+	titles      connectionport.OperationTitles
 	source      connectionport.ProviderSource
 	clock       machineport.Clock
 	queues      *queues
@@ -38,6 +39,8 @@ type Connections struct {
 	Resolve     connectionport.ResolveConnection
 	ReadSecrets connectionport.ReadConnectionSecrets
 	Rows        connectionport.ListRows
+	// Titles names the operations in the list of running plugins; nil names them by their ids.
+	Titles connectionport.OperationTitles
 }
 
 // NewCalls returns the calls over the connections and the providers the source
@@ -46,7 +49,7 @@ func NewCalls(
 	connections Connections, source connectionport.ProviderSource, clock machineport.Clock, wait Wait, notices connectionport.ReportSetAside,
 ) *Calls {
 	return &Calls{
-		resolve: connections.Resolve, readSecrets: connections.ReadSecrets, rows: connections.Rows, source: source, clock: clock, queues: newQueues(wait), notices: notices,
+		resolve: connections.Resolve, readSecrets: connections.ReadSecrets, rows: connections.Rows, titles: connections.Titles, source: source, clock: clock, queues: newQueues(wait), notices: notices,
 		cooldown: newCooldown(),
 	}
 }

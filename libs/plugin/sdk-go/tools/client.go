@@ -25,6 +25,9 @@ type Call struct {
 	Arguments []byte
 	Context   map[string]string
 	VaultID   string
+	// ConnectionID is the connection whose agent asks for the call. The list of running plugins names
+	// that connection as the holder of the tool call.
+	ConnectionID string
 }
 
 func (c *Call) GetName() string {
@@ -203,10 +206,11 @@ func (c *rpcClient) ListTools(ctx context.Context) (Listing, error) {
 
 func (c *rpcClient) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {
 	res, err := c.rpc.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{
-		Name:      call.Name,
-		Arguments: call.Arguments,
-		Context:   call.Context,
-		VaultId:   call.VaultID,
+		Name:         call.Name,
+		Arguments:    call.Arguments,
+		Context:      call.Context,
+		VaultId:      call.VaultID,
+		ConnectionId: call.ConnectionID,
 	}))
 	if err != nil {
 		return nil, err

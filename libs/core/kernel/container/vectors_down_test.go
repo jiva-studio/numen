@@ -2,6 +2,7 @@ package container_test
 
 import (
 	"context"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -40,18 +41,20 @@ func (h *downEmbeddingHost) ResolveService(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{}, false
 }
 
-func (h *downEmbeddingHost) EnsureActive(context.Context, string) (transport.Endpoint, error) {
+func (h *downEmbeddingHost) EnsureActive(context.Context, string, plugindomain.Holder) (transport.Endpoint, error) {
 	h.acquired.Add(1)
 	return h.endpoint, nil
 }
 
-func (h *downEmbeddingHost) Release(string) { h.released.Add(1) }
+func (h *downEmbeddingHost) Release(string, plugindomain.Holder) { h.released.Add(1) }
 
-func (h *downEmbeddingHost) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	return h.EnsureActive(ctx, pluginID)
+func (h *downEmbeddingHost) EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return h.EnsureActive(ctx, pluginID, holder)
 }
 
-func (h *downEmbeddingHost) ReleaseQuestion(pluginID string) { h.Release(pluginID) }
+func (h *downEmbeddingHost) ReleaseQuestion(pluginID string, holder plugindomain.Holder) {
+	h.Release(pluginID, holder)
+}
 
 func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	t.Helper()

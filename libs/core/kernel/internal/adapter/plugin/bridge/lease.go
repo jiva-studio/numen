@@ -17,18 +17,19 @@ import (
 // the plugin; a question lease is for a question the core asks the plugin for itself, which holds the
 // process but does not count as a use of it.
 type Activator interface {
-	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
-	Release(pluginID string)
-	EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error)
-	ReleaseQuestion(pluginID string)
+	EnsureActive(ctx context.Context, pluginID string, holder plugin.Holder) (transport.Endpoint, error)
+	Release(pluginID string, holder plugin.Holder)
+	EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugin.Holder) (transport.Endpoint, error)
+	ReleaseQuestion(pluginID string, holder plugin.Holder)
 }
 
 // Lease is the one reference a bridge holds on its plugin, from the moment
-// the plugin is activated until the bridge is closed. IsQuestion marks a
-// question lease.
+// the plugin is activated until the bridge is closed. Holder is who holds it
+// and IsQuestion marks a question lease.
 type Lease struct {
 	Host       Activator
 	PluginID   string
+	Holder     plugin.Holder
 	IsQuestion bool
 	once       sync.Once
 }
@@ -43,57 +44,61 @@ func (l *Lease) Close() error {
 func (l *Lease) Release() {
 	l.once.Do(func() {
 		if l.IsQuestion {
-			l.Host.ReleaseQuestion(l.PluginID)
+			l.Host.ReleaseQuestion(l.PluginID, l.Holder)
 			return
 		}
-		l.Host.Release(l.PluginID)
+		l.Host.Release(l.PluginID, l.Holder)
 	})
 }
 
 // Open activates the plugin and returns a client for one of its services
-// together with the reference taken on the plugin. A plugin that cannot be
+// together with the reference taken on the plugin, held for why. A plugin that cannot be
 // activated is a *port.UnavailableError, and the end of the context is returned as
 // it is.
 func Open[C any](
 	ctx context.Context,
 	host Activator,
 	pluginID string,
+	why string,
 	newClient func(connect.HTTPClient, string, ...connect.ClientOption) C,
 ) (C, *Lease, error) {
-	return open(ctx, host, pluginID, newClient, false)
+	return open(ctx, host, pluginID, why, newClient, false)
 }
 
-// OpenForQuestion opens the service as Open does, with a question lease: the
+// OpenForQuestion opens the service as Open does, with a question lease held for why: the
 // plugin is held for a question the core asks it for itself, which is not a
 // use of it.
 func OpenForQuestion[C any](
 	ctx context.Context,
 	host Activator,
 	pluginID string,
+	why string,
 	newClient func(connect.HTTPClient, string, ...connect.ClientOption) C,
 ) (C, *Lease, error) {
-	return open(ctx, host, pluginID, newClient, true)
+	return open(ctx, host, pluginID, why, newClient, true)
 }
 
 func open[C any](
 	ctx context.Context,
 	host Activator,
 	pluginID string,
+	why string,
 	newClient func(connect.HTTPClient, string, ...connect.ClientOption) C,
 	isQuestion bool,
 ) (C, *Lease, error) {
 	var none C
+	holder := plugin.GetHolder(ctx, why)
 	ensureActive := host.EnsureActive
 	if isQuestion {
 		ensureActive = host.EnsureActiveForQuestion
 	}
-	endpoint, err := ensureActive(ctx, pluginID)
+	endpoint, err := ensureActive(ctx, pluginID, holder)
 	if err != nil {
 		return none, nil, ConvertActivationError(pluginID, err)
 	}
 	interceptor := connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token))
 	client := newClient(transport.GetClient(host, endpoint), transport.GetBaseURL(endpoint), interceptor)
-	return client, &Lease{Host: host, PluginID: pluginID, IsQuestion: isQuestion}, nil
+	return client, &Lease{Host: host, PluginID: pluginID, Holder: holder, IsQuestion: isQuestion}, nil
 }
 
 // ConvertActivationError is the failure to activate a plugin: the end of a
@@ -118,13 +123,13 @@ type Service[C any] struct {
 
 // Open activates the plugin, or finds it running, and returns a client for the
 // endpoint it is at now with the reference the call holds until it is closed.
-func (s Service[C]) Open(ctx context.Context) (C, *Lease, error) {
-	return Open(ctx, s.Host, s.PluginID, s.NewClient)
+func (s Service[C]) Open(ctx context.Context, why string) (C, *Lease, error) {
+	return Open(ctx, s.Host, s.PluginID, why, s.NewClient)
 }
 
 // OpenForQuestion opens the service as Open does, with a question lease.
-func (s Service[C]) OpenForQuestion(ctx context.Context) (C, *Lease, error) {
-	return OpenForQuestion(ctx, s.Host, s.PluginID, s.NewClient)
+func (s Service[C]) OpenForQuestion(ctx context.Context, why string) (C, *Lease, error) {
+	return OpenForQuestion(ctx, s.Host, s.PluginID, why, s.NewClient)
 }
 
 // ReadActivationError sorts the failure to start a plugin: the

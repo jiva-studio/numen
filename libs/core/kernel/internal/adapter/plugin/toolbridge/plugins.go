@@ -74,7 +74,7 @@ func (p plugins) getPluginTools(ctx context.Context, info plugin.Info) (*v1.List
 }
 
 func (p plugins) listPluginTools(ctx context.Context, pluginID string) (listing *v1.ListToolsResponse, err error) {
-	client, lease, err := bridge.OpenForQuestion(ctx, p.host, pluginID, numenv1connect.NewPluginToolServiceClient)
+	client, lease, err := bridge.OpenForQuestion(ctx, p.host, pluginID, "list tools", numenv1connect.NewPluginToolServiceClient)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (p plugins) listPluginTools(ctx context.Context, pluginID string) (listing 
 }
 
 func (p plugins) callTool(ctx context.Context, one tool, call *v1.CallToolRequest) (response *v1.CallToolResponse, err error) {
-	client, lease, err := bridge.Open(ctx, p.host, one.pluginID, numenv1connect.NewPluginToolServiceClient)
+	client, lease, err := bridge.Open(ctx, p.host, one.pluginID, "call tool "+one.spec.GetName(), numenv1connect.NewPluginToolServiceClient)
 	if err != nil {
 		return nil, err
 	}

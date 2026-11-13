@@ -48,7 +48,7 @@ func New(store *settings.Store, chat ports.Chat, tools ports.Tools, clock ports.
 // their path, with the path of the note. A task whose model cannot be asked, because no row of llm.chat is
 // set or every row failed, fails for a reason of unavailable so that the next row of acp.task is asked; a
 // closed answerer stops for that reason.
-func (a *Answerer) RunTask(ctx context.Context, _ connection.Call, task *acp.TaskRequest, send func(*acp.TaskFrame) error) (*acp.TaskDone, error) {
+func (a *Answerer) RunTask(ctx context.Context, call connection.Call, task *acp.TaskRequest, send func(*acp.TaskFrame) error) (*acp.TaskDone, error) {
 	taskCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	if !a.running.add(&cancel) {
@@ -81,7 +81,7 @@ func (a *Answerer) RunTask(ctx context.Context, _ connection.Call, task *acp.Tas
 		tools:       a.tools,
 		offered:     offered,
 		listed:      listed,
-		scope:       conversation.Scope{Context: task.GetToolContext(), VaultID: task.GetVaultId()},
+		scope:       conversation.Scope{Context: task.GetToolContext(), VaultID: task.GetVaultId(), ConnectionID: call.ConnectionID},
 		turns:       cfg.GetMaxSteps(),
 		send:        send,
 	}

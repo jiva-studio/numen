@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
@@ -183,27 +184,27 @@ func (s *Supervisors) GetListenerPort(pluginID, name string) (int, bool) {
 	return port, ok
 }
 
-// Release gives up a hold on the plugin if its endpoint is still the one the token names.
-func (s *Supervisors) Release(pluginID, token string, now time.Time) {
+// Release gives up a use lease of the holder on the plugin if its endpoint is still the one the token names.
+func (s *Supervisors) Release(pluginID, token string, holder plugin.Holder, now time.Time) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	sup, ok := s.byPlugin[pluginID]
 	if !ok || getEndpointLocked(s, pluginID).Token != token {
 		return
 	}
-	returnHoldLocked(s, pluginID, sup, lifecycle.UseLease, now)
+	returnHoldLocked(s, pluginID, sup, lifecycle.Lease{Kind: lifecycle.UseLease, Holder: holder}, now)
 }
 
-// ReturnHold gives up a hold of the kind on the plugin. A process that holds no other is stopped at once
-// where it was released or never used since it started.
-func (s *Supervisors) ReturnHold(pluginID string, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind, now time.Time) {
+// ReturnHold gives up the lease on the plugin. A process that holds no other is stopped at once where it
+// was released or never used since it started.
+func (s *Supervisors) ReturnHold(pluginID string, sup *lifecycle.Supervisor, lease lifecycle.Lease, now time.Time) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	returnHoldLocked(s, pluginID, sup, kind, now)
+	returnHoldLocked(s, pluginID, sup, lease, now)
 }
 
-func returnHoldLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind, now time.Time) {
-	sup.Release(kind, now)
+func returnHoldLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, lease lifecycle.Lease, now time.Time) {
+	sup.Release(lease, now)
 	notifyLocked(s)
 	usage, isRunning := sup.GetUsage()
 	if isRunning && usage.IsIdle && (isReleasedLocked(s, pluginID) || !usage.IsUsed) && s.stopIdle != nil {
@@ -237,47 +238,48 @@ type Claim struct {
 	Started  bool
 }
 
-// Begin takes a hold of the kind on the running plugin, or reports the state of the supervisor, or sets a
-// dormant supervisor to activating.
-func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind, now time.Time) Claim {
+// Begin takes the lease on the running plugin, or reports the state of the supervisor, or sets a dormant
+// supervisor to activating with the holder of the lease as its starter.
+func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, lease lifecycle.Lease, now time.Time) Claim {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if endpoint, ok := acquireRunningLocked(s, pluginID, sup, kind, now); ok {
+	if endpoint, ok := acquireRunningLocked(s, pluginID, sup, lease, now); ok {
 		return Claim{Endpoint: endpoint, Running: true, State: lifecycle.StateDormant, Started: false}
 	}
 	if state := sup.GetState(); state != lifecycle.StateDormant {
 		return Claim{Endpoint: NoEndpoint(), Running: false, State: state, Started: false}
 	}
 	sup.SetActivating()
+	sup.SetStartedBy(lease.Holder)
 	return Claim{Endpoint: NoEndpoint(), Running: false, State: lifecycle.StateDormant, Started: true}
 }
 
-// AcquireRunning takes a hold of the kind on the plugin and returns its endpoint if a process of it runs.
-// A use hold cancels a release of the process.
+// AcquireRunning takes the lease on the plugin and returns its endpoint if a process of it runs. A use
+// lease cancels a release of the process.
 func (s *Supervisors) AcquireRunning(
-	pluginID string, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind, now time.Time,
+	pluginID string, sup *lifecycle.Supervisor, lease lifecycle.Lease, now time.Time,
 ) (transport.Endpoint, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return acquireRunningLocked(s, pluginID, sup, kind, now)
+	return acquireRunningLocked(s, pluginID, sup, lease, now)
 }
 
 func acquireRunningLocked(
-	s *Supervisors, pluginID string, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind, now time.Time,
+	s *Supervisors, pluginID string, sup *lifecycle.Supervisor, lease lifecycle.Lease, now time.Time,
 ) (transport.Endpoint, bool) {
 	run, ok := s.runs[pluginID]
-	if !ok || IsNoEndpoint(run.endpoint) || run.endpoint.Token == "" || !sup.Acquire(kind, now) {
+	if !ok || IsNoEndpoint(run.endpoint) || run.endpoint.Token == "" || !sup.Acquire(lease, now) {
 		return NoEndpoint(), false
 	}
-	if kind == lifecycle.UseLease {
+	if lease.Kind == lifecycle.UseLease {
 		run.isReleased = false
 	}
 	notifyLocked(s)
 	return run.endpoint, true
 }
 
-// ProcessAttachment is what AttachProcess records for a started plugin process, with the kind of the first
-// hold on it.
+// ProcessAttachment is what AttachProcess records for a started plugin process, with the first
+// lease on it.
 type ProcessAttachment struct {
 	PluginID   string
 	Supervisor *lifecycle.Supervisor
@@ -286,7 +288,7 @@ type ProcessAttachment struct {
 	Listeners  map[string]int
 	Now        time.Time
 	OnExit     func()
-	Lease      lifecycle.LeaseKind
+	Lease      lifecycle.Lease
 }
 
 // AttachProcess records a process the supervisor now tracks, with its endpoint and the ports of its
@@ -320,10 +322,10 @@ func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachmen
 	return nil
 }
 
-// AttachInProcess records the endpoint of a plugin served inside this process and activates it with a first
-// hold of the kind. It fails where the start was aborted meanwhile.
+// AttachInProcess records the endpoint of a plugin served inside this process and activates it with the first
+// lease on it. It fails where the start was aborted meanwhile.
 func (s *Supervisors) AttachInProcess(
-	pluginID string, sup *lifecycle.Supervisor, endpoint transport.Endpoint, kind lifecycle.LeaseKind, now time.Time,
+	pluginID string, sup *lifecycle.Supervisor, endpoint transport.Endpoint, lease lifecycle.Lease, now time.Time,
 ) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -331,7 +333,7 @@ func (s *Supervisors) AttachInProcess(
 		return lifecycle.ErrActivationAborted
 	}
 	s.runs[pluginID] = &processRun{endpoint: endpoint, listenerPorts: nil, startTime: now, isReleased: false}
-	sup.ActivateInProcess(kind, now)
+	sup.ActivateInProcess(lease, now)
 	notifyLocked(s)
 	return nil
 }

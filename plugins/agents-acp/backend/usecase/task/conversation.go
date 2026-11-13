@@ -35,6 +35,7 @@ type conversation struct {
 	scopeMu     sync.Mutex
 	toolContext map[string]string
 	vaultID     string
+	connection  string
 
 	lastUsed time.Time
 	isGone   bool
@@ -45,7 +46,7 @@ func newConversation(key string, now time.Time) *conversation {
 		key: key, turn: make(chan struct{}, 1),
 		mu: sync.Mutex{}, session: nil, served: nil, isClosed: false,
 		listed: nil, instructions: "", isPrompted: false,
-		scopeMu: sync.Mutex{}, toolContext: nil, vaultID: "",
+		scopeMu: sync.Mutex{}, toolContext: nil, vaultID: "", connection: "",
 		lastUsed: now, isGone: false,
 	}
 	c.turn <- struct{}{}
@@ -83,18 +84,18 @@ func (c *conversation) setSession(ctx context.Context, session *acp.Session, ser
 	return nil
 }
 
-func (c *conversation) setScope(toolContext map[string]string, vaultID string) {
+func (c *conversation) setScope(toolContext map[string]string, vaultID, connectionID string) {
 	c.scopeMu.Lock()
 	defer c.scopeMu.Unlock()
-	c.toolContext, c.vaultID = maps.Clone(toolContext), vaultID
+	c.toolContext, c.vaultID, c.connection = maps.Clone(toolContext), vaultID, connectionID
 }
 
 func (c *conversation) invokeWith(host Tools) Invoke {
 	return func(ctx context.Context, name string, arguments []byte) (*tools.CallResponse, error) {
 		c.scopeMu.Lock()
-		toolContext, vaultID := maps.Clone(c.toolContext), c.vaultID
+		toolContext, vaultID, connectionID := maps.Clone(c.toolContext), c.vaultID, c.connection
 		c.scopeMu.Unlock()
-		return host.InvokeTool(ctx, tools.Call{Name: name, Arguments: arguments, Context: toolContext, VaultID: vaultID})
+		return host.InvokeTool(ctx, tools.Call{Name: name, Arguments: arguments, Context: toolContext, VaultID: vaultID, ConnectionID: connectionID})
 	}
 }
 

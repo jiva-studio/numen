@@ -108,7 +108,7 @@ func searchOf(fake any) *SearchAccess {
 	}
 }
 
-func (c *callers) Acquire(pluginID string) {
+func (c *callers) Acquire(pluginID string, _ plugin.Holder) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.acquired == nil {
@@ -117,7 +117,7 @@ func (c *callers) Acquire(pluginID string) {
 	c.acquired[pluginID]++
 }
 
-func (c *callers) Release(pluginID string) {
+func (c *callers) Release(pluginID string, _ plugin.Holder) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.acquired[pluginID]--

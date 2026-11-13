@@ -176,7 +176,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Errorf("expected 0 triggered plugins for disabled plugin, got %d", len(triggered))
 	}
 
-	_, err = host.Activation.EnsureActive(ctx, pluginID)
+	_, err = host.Activation.EnsureActive(ctx, pluginID, testHolder)
 	if err == nil {
 		t.Errorf("expected EnsureActive to fail for disabled plugin")
 	}

@@ -53,7 +53,7 @@ func newFrontendOnlyHost(t *testing.T) (*container.PluginRoles, *int) {
 
 func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 	host, launches := newFrontendOnlyHost(t)
-	_, err := host.Activation.EnsureActive(t.Context(), "md.numen.views.sketch")
+	_, err := host.Activation.EnsureActive(t.Context(), "md.numen.views.sketch", testHolder)
 
 	var unavailable *plugindomain.UnavailableError
 	if !errors.As(err, &unavailable) || unavailable.Reason != plugindomain.WithoutBackend {

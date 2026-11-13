@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"sync"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/portproxy"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -296,7 +297,8 @@ func (l *Listeners) closeAll() {
 
 func (l *Listeners) createTarget(pluginID, name string) portproxy.Target {
 	return func(ctx context.Context) (string, func(), error) {
-		endpoint, err := l.activator.EnsureActive(ctx, pluginID)
+		holder := plugindomain.Holder{Who: plugindomain.WhoListeners, Why: "forward a connection to " + name}
+		endpoint, err := l.activator.EnsureActive(ctx, pluginID, holder)
 		isReported := l.failures.MarkTargetResult(pluginID, err)
 		if err != nil {
 			err = fmt.Errorf("activate plugin %s for listener %s: %w", pluginID, name, err)
@@ -305,7 +307,7 @@ func (l *Listeners) createTarget(pluginID, name string) portproxy.Target {
 			}
 			return "", nil, err
 		}
-		release := func() { l.releaseEndpoint(pluginID, endpoint) }
+		release := func() { l.releaseEndpoint(pluginID, endpoint, holder) }
 		port, ok := l.sups.GetListenerPort(pluginID, name)
 		if !ok {
 			release()
@@ -315,6 +317,6 @@ func (l *Listeners) createTarget(pluginID, name string) portproxy.Target {
 	}
 }
 
-func (l *Listeners) releaseEndpoint(pluginID string, endpoint transport.Endpoint) {
-	l.sups.Release(pluginID, endpoint.Token, l.clock.Now())
+func (l *Listeners) releaseEndpoint(pluginID string, endpoint transport.Endpoint, holder plugindomain.Holder) {
+	l.sups.Release(pluginID, endpoint.Token, holder, l.clock.Now())
 }

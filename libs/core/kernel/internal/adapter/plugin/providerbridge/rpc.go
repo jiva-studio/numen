@@ -40,7 +40,7 @@ func (s *Source) OpenProvider(ctx context.Context, pluginID string) (connectionp
 	if s.isQuestion {
 		open = bridge.OpenForQuestion[numenv1connect.ProviderServiceClient]
 	}
-	client, lease, err := open(ctx, s.host, pluginID, numenv1connect.NewProviderServiceClient)
+	client, lease, err := open(ctx, s.host, pluginID, "call provider", numenv1connect.NewProviderServiceClient)
 	if err != nil {
 		return nil, nil, err
 	}

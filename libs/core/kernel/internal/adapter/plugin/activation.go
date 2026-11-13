@@ -135,41 +135,50 @@ func (a *Activation) HasEndpoint(pluginID string) bool {
 	return ok
 }
 
-// Acquire takes a use lease on a plugin whose process runs, and cancels a release of that process.
-func (a *Activation) Acquire(pluginID string) {
+// Acquire takes a use lease of the holder on a plugin whose process runs, and cancels a release of that
+// process.
+func (a *Activation) Acquire(pluginID string, holder plugindomain.Holder) {
 	sup, ok := a.sups.Get(pluginID)
 	if ok {
-		a.sups.AcquireRunning(pluginID, sup, lifecycle.UseLease, a.clock.Now())
+		a.sups.AcquireRunning(pluginID, sup, useLease(holder), a.clock.Now())
 	}
 }
 
-// AcquireRunningForQuestion takes a question lease on a plugin whose process runs and returns the endpoint
-// of the process. A plugin whose process does not run is not started and returns false. ReleaseQuestion
-// returns the lease.
-func (a *Activation) AcquireRunningForQuestion(pluginID string) (transport.Endpoint, bool) {
+// AcquireRunningForQuestion takes a question lease of the holder on a plugin whose process runs and returns
+// the endpoint of the process. A plugin whose process does not run is not started and returns false.
+// ReleaseQuestion returns the lease.
+func (a *Activation) AcquireRunningForQuestion(pluginID string, holder plugindomain.Holder) (transport.Endpoint, bool) {
 	sup, ok := a.sups.Get(pluginID)
 	if !ok {
 		return supervision.NoEndpoint(), false
 	}
-	return a.sups.AcquireRunning(pluginID, sup, lifecycle.QuestionLease, a.clock.Now())
+	return a.sups.AcquireRunning(pluginID, sup, questionLease(holder), a.clock.Now())
 }
 
-// Release returns a use lease on a plugin. A released process that holds no lease after it is stopped at
-// once.
-func (a *Activation) Release(pluginID string) {
-	a.returnLease(pluginID, lifecycle.UseLease)
+// Release returns a use lease of the holder on a plugin. A released process that holds no lease after it is
+// stopped at once.
+func (a *Activation) Release(pluginID string, holder plugindomain.Holder) {
+	a.returnLease(pluginID, useLease(holder))
 }
 
-// ReleaseQuestion returns a question lease on a plugin. A process that holds no lease after it and was
-// released or never used since it started is stopped at once.
-func (a *Activation) ReleaseQuestion(pluginID string) {
-	a.returnLease(pluginID, lifecycle.QuestionLease)
+// ReleaseQuestion returns a question lease of the holder on a plugin. A process that holds no lease after it
+// and was released or never used since it started is stopped at once.
+func (a *Activation) ReleaseQuestion(pluginID string, holder plugindomain.Holder) {
+	a.returnLease(pluginID, questionLease(holder))
 }
 
-func (a *Activation) returnLease(pluginID string, kind lifecycle.LeaseKind) {
+func useLease(holder plugindomain.Holder) lifecycle.Lease {
+	return lifecycle.Lease{Kind: lifecycle.UseLease, Holder: holder}
+}
+
+func questionLease(holder plugindomain.Holder) lifecycle.Lease {
+	return lifecycle.Lease{Kind: lifecycle.QuestionLease, Holder: holder}
+}
+
+func (a *Activation) returnLease(pluginID string, lease lifecycle.Lease) {
 	sup, ok := a.sups.Get(pluginID)
 	if ok {
-		a.sups.ReturnHold(pluginID, sup, kind, a.clock.Now())
+		a.sups.ReturnHold(pluginID, sup, lease, a.clock.Now())
 	}
 }
 
@@ -204,7 +213,7 @@ func (a *Activation) prepareSupervisor(pluginID string) (manifest.Discovered, *l
 }
 
 func (a *Activation) awaitActivation(
-	ctx context.Context, pluginID string, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind,
+	ctx context.Context, pluginID string, sup *lifecycle.Supervisor, lease lifecycle.Lease,
 ) (transport.Endpoint, bool, error) {
 	waitCh := sup.ActivatingChan()
 	select {
@@ -213,7 +222,7 @@ func (a *Activation) awaitActivation(
 	case <-waitCh:
 	}
 
-	if endpoint, ok := a.sups.AcquireRunning(pluginID, sup, kind, a.clock.Now()); ok {
+	if endpoint, ok := a.sups.AcquireRunning(pluginID, sup, lease, a.clock.Now()); ok {
 		return endpoint, true, nil
 	}
 	if err := sup.ActivationError(); err != nil {
@@ -227,14 +236,14 @@ func (a *Activation) settlePluginInState(
 	pluginID string,
 	sup *lifecycle.Supervisor,
 	state lifecycle.ProcessState,
-	kind lifecycle.LeaseKind,
+	lease lifecycle.Lease,
 ) (transport.Endpoint, bool, error) {
 	switch state {
 	case lifecycle.StateDeactivating:
 		err := sup.WaitWhileDeactivating(ctx)
 		return supervision.NoEndpoint(), err != nil, err
 	case lifecycle.StateActivating:
-		endpoint, ready, err := a.awaitActivation(ctx, pluginID, sup, kind)
+		endpoint, ready, err := a.awaitActivation(ctx, pluginID, sup, lease)
 		return endpoint, ready || err != nil, err
 	default:
 		if err := sup.Teardown(ctx, 0, nil); err != nil && !errors.Is(err, lifecycle.ErrProcessNotRunning) {
@@ -244,20 +253,22 @@ func (a *Activation) settlePluginInState(
 	}
 }
 
-// EnsureActive starts the plugin where its process does not run, takes a use lease on it and returns its
-// endpoint. Release returns the lease.
-func (a *Activation) EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	return a.ensureActiveDuringDiscovery(ctx, pluginID, lifecycle.UseLease)
+// EnsureActive starts the plugin where its process does not run, takes a use lease of the holder on it and
+// returns its endpoint. Release returns the lease.
+func (a *Activation) EnsureActive(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return a.ensureActiveDuringDiscovery(ctx, pluginID, useLease(holder))
 }
 
-// EnsureActiveForQuestion starts the plugin where its process does not run, takes a question lease on it
-// and returns its endpoint. ReleaseQuestion returns the lease.
-func (a *Activation) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	return a.ensureActiveDuringDiscovery(ctx, pluginID, lifecycle.QuestionLease)
+// EnsureActiveForQuestion starts the plugin where its process does not run, takes a question lease of the
+// holder on it and returns its endpoint. ReleaseQuestion returns the lease.
+func (a *Activation) EnsureActiveForQuestion(
+	ctx context.Context, pluginID string, holder plugindomain.Holder,
+) (transport.Endpoint, error) {
+	return a.ensureActiveDuringDiscovery(ctx, pluginID, questionLease(holder))
 }
 
 func (a *Activation) ensureActiveDuringDiscovery(
-	ctx context.Context, pluginID string, kind lifecycle.LeaseKind,
+	ctx context.Context, pluginID string, lease lifecycle.Lease,
 ) (transport.Endpoint, error) {
 	a.scan.holdStart()
 	defer a.scan.releaseStart()
@@ -268,12 +279,12 @@ func (a *Activation) ensureActiveDuringDiscovery(
 			return supervision.NoEndpoint(), err
 		}
 
-		claim := a.sups.Begin(pluginID, sup, kind, a.clock.Now())
+		claim := a.sups.Begin(pluginID, sup, lease, a.clock.Now())
 		if claim.Running {
 			return claim.Endpoint, nil
 		}
 		if !claim.Started {
-			endpoint, isDone, err := a.settlePluginInState(ctx, pluginID, sup, claim.State, kind)
+			endpoint, isDone, err := a.settlePluginInState(ctx, pluginID, sup, claim.State, lease)
 			if isDone {
 				return endpoint, err
 			}
@@ -284,15 +295,15 @@ func (a *Activation) ensureActiveDuringDiscovery(
 			return supervision.NoEndpoint(), errHostClosed
 		}
 
-		return a.runActivation(ctx, p, sup, kind)
+		return a.runActivation(ctx, p, sup, lease)
 	}
 }
 
 func (a *Activation) runActivation(
-	ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind,
+	ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor, lease lifecycle.Lease,
 ) (transport.Endpoint, error) {
 	launch := a.set.getLaunch(p)
-	launch.Lease = kind
+	launch.Lease = lease
 	endpoint, err := a.processes.Start(ctx, launch, sup)
 	if err != nil {
 		a.failures.FailActivation(ctx, p.Manifest.ID, p.Manifest.Name, sup, err)

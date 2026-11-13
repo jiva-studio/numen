@@ -72,7 +72,7 @@ func GetStopper(t *Teardown) *supervision.Stopper { return t.stopper }
 
 // RunActivation starts the process of p under sup.
 func RunActivation(ctx context.Context, a *Activation, p manifest.Discovered, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
-	return a.runActivation(ctx, p, sup, lifecycle.UseLease)
+	return a.runActivation(ctx, p, sup, lifecycle.Lease{Kind: lifecycle.UseLease})
 }
 
 // CreateTarget returns the target the listener name of the plugin forwards its connections to.

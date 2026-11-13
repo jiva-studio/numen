@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -130,7 +131,7 @@ func (d *Detection) Detect(ctx context.Context, pluginID string) {
 	if len(types) == 0 {
 		return
 	}
-	provider, release, err := d.source.OpenProvider(ctx, pluginID)
+	provider, release, err := d.source.OpenProvider(plugin.WithPurpose(ctx, "detect connections"), pluginID)
 	if err != nil {
 		report(fmt.Errorf("detect the connections of %s: %w", pluginID, err))
 		return
@@ -175,7 +176,7 @@ func (d *Detection) Refresh() {
 // DetectInBackground runs Detect for the plugin on a goroutine of its own, within DetectLimit.
 func (d *Detection) DetectInBackground(pluginID string) {
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), DetectLimit)
+		ctx, cancel := context.WithTimeout(plugin.WithBackground(context.Background(), plugin.WhoDetection), DetectLimit)
 		defer cancel()
 		d.Detect(ctx, pluginID)
 	}()

@@ -280,6 +280,22 @@ message PluginProcess {
 
   // The text of that item. Empty where it has none.
   string health_text = 9;
+
+  // The holder whose lease started the process.
+  PluginLeaseHolder started_by = 10;
+
+  // The holders of the leases open now, oldest first.
+  repeated PluginLeaseHolder holders = 11;
+}
+
+// PluginLeaseHolder is who holds a lease on a plugin process and why.
+message PluginLeaseHolder {
+  // Who took the lease: a part of Numen such as "Search" or "Indexing", or the
+  // name of the plugin or of the connection that asked.
+  string who = 1;
+
+  // What the lease is for, in a few plain words.
+  string why = 2;
 }
 
 // PluginEventService hands a running plugin an event its manifest's activationEvents subscribe to.

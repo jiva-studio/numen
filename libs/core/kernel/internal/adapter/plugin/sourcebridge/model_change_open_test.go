@@ -3,6 +3,7 @@ package sourcebridge
 import (
 	"context"
 	"errors"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"strings"
 	"testing"
 
@@ -18,17 +19,17 @@ const embeddingPluginID = "md.numen.embeddings"
 // failingActivator is a plugin host that cannot start any plugin.
 type failingActivator struct{}
 
-func (failingActivator) EnsureActive(context.Context, string) (transport.Endpoint, error) {
+func (failingActivator) EnsureActive(context.Context, string, plugindomain.Holder) (transport.Endpoint, error) {
 	return transport.Endpoint{}, errors.New("the plugin did not start")
 }
 
-func (failingActivator) Release(string) {}
+func (failingActivator) Release(string, plugindomain.Holder) {}
 
-func (a failingActivator) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	return a.EnsureActive(ctx, pluginID)
+func (a failingActivator) EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return a.EnsureActive(ctx, pluginID, holder)
 }
 
-func (failingActivator) ReleaseQuestion(string) {}
+func (failingActivator) ReleaseQuestion(string, plugindomain.Holder) {}
 
 func (failingActivator) ResolveCapability(string) (manifest.Discovered, error) {
 	return manifest.Discovered{Manifest: manifest.Manifest{ID: embeddingPluginID}}, nil

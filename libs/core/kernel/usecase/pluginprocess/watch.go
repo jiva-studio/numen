@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
@@ -42,6 +43,8 @@ type WatchProcesses struct {
 	plugins   Plugins
 	clock     machineport.Clock
 	Interval  time.Duration
+	// Resolve names the connections that hold leases; nil names them by the plugin that asked.
+	Resolve connectionport.ResolveConnection
 }
 
 // NewWatchProcesses returns the use case over the plugins that run, their health items, their manifests
@@ -89,7 +92,7 @@ func (r *watchRun) sendLists(ctx context.Context) {
 
 func (r *watchRun) sendList(ctx context.Context, isFirst bool) bool {
 	list := r.use.listStatuses(r.items)
-	if !isFirst && slices.Equal(list, r.last) {
+	if !isFirst && slices.EqualFunc(list, r.last, plugin.IsSameStatus) {
 		return true
 	}
 	select {
@@ -118,6 +121,11 @@ func (u *WatchProcesses) listStatuses(items []plugin.HealthItem) []plugin.Proces
 	statuses := make([]plugin.ProcessStatus, 0, len(processes))
 	for _, process := range processes {
 		status := plugin.ProcessStatus{Process: process, Health: plugin.HealthOK}
+		status.StartedBy = u.nameHolder(process.StartedBy)
+		status.Holders = make([]plugin.Holder, 0, len(process.Holders))
+		for _, holder := range process.Holders {
+			status.Holders = append(status.Holders, u.nameHolder(holder))
+		}
 		if found, ok := u.plugins.GetPlugin(process.PluginID); ok {
 			status.PluginName = found.Manifest.Name
 		}
@@ -141,4 +149,21 @@ func waitInterval(ctx context.Context, interval time.Duration) bool {
 	case <-ctx.Done():
 		return false
 	}
+}
+
+// nameHolder puts the name of the connection or of the plugin that holds a lease in place of its id.
+func (u *WatchProcesses) nameHolder(holder plugin.Holder) plugin.Holder {
+	if holder.ConnectionID != "" && u.Resolve != nil {
+		if resolved, err := u.Resolve(holder.ConnectionID); err == nil && resolved.Name != "" {
+			holder.Who = resolved.Name
+			return holder
+		}
+	}
+	if holder.PluginID != "" {
+		holder.Who = holder.PluginID
+		if found, ok := u.plugins.GetPlugin(holder.PluginID); ok && found.Manifest.Name != "" {
+			holder.Who = found.Manifest.Name
+		}
+	}
+	return holder
 }

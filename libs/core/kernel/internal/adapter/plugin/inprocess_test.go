@@ -137,7 +137,7 @@ func TestEachBuiltInPluginAnswersFromItsOwnHandler(t *testing.T) {
 	registerBuiltIn(t, host, newBuiltInManifest(secondBuiltInID), newBuiltInBackend().serve("second tools"))
 
 	for id, want := range map[string]string{firstBuiltInID: "first tools", secondBuiltInID: "second tools"} {
-		endpoint, err := host.Activation.EnsureActive(t.Context(), id)
+		endpoint, err := host.Activation.EnsureActive(t.Context(), id, testHolder)
 		if err != nil {
 			t.Fatalf("EnsureActive(%s): %v", id, err)
 		}
@@ -169,7 +169,7 @@ func TestABuiltInPluginIsGivenItsOwnLaunchVariables(t *testing.T) {
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first tools"))
 
-	endpoint, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
+	endpoint, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, testHolder)
 	if err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
@@ -192,7 +192,7 @@ func TestABuiltInPluginIsConfiguredWithItsSettings(t *testing.T) {
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first tools"))
 
-	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, testHolder); err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
 	call := backend.probe.last(t)
@@ -209,7 +209,7 @@ func TestABuiltInPluginWhoseBackendFailsIsNotActivated(t *testing.T) {
 		return nil, failure
 	})
 
-	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
+	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, testHolder)
 	if !errors.Is(err, failure) || !strings.Contains(err.Error(), firstBuiltInID) {
 		t.Fatalf("EnsureActive() = %v, want the failure with the plugin named", err)
 	}
@@ -252,7 +252,7 @@ func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
 		return nil, nil, errors.New("no process in this test")
 	})
 
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); err == nil {
 		t.Fatal("the launch that failed activated the plugin")
 	}
 	if got := <-launched; got != "org.example.sample" {
@@ -287,7 +287,7 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 	if !ok || p.Dir != "" {
 		t.Fatalf("GetPlugin = %+v, %v; want the built-in", p, ok)
 	}
-	endpoint, err := host.Activation.EnsureActive(t.Context(), "org.example.sample")
+	endpoint, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder)
 	if err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
@@ -316,7 +316,7 @@ func TestABuiltInPluginIsGivenTheRuntime(t *testing.T) {
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), backend.serve("first tools"))
 
-	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, testHolder); err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
 	if got := os.Getenv(process.EnvONNXRuntimeLib); got != "/models/libonnxruntime.so" {
@@ -338,7 +338,7 @@ func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
 	host.Services.SetDependencies(newFixedCatalog("", "", failure))
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), newBuiltInBackend().serve("first tools"))
 
-	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
+	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, testHolder)
 	if !errors.Is(err, failure) || !strings.Contains(err.Error(), firstBuiltInID) {
 		t.Fatalf("EnsureActive() = %v, want the failure with the plugin named", err)
 	}
@@ -386,7 +386,7 @@ func TestABuiltInPluginThatUsesAnotherProtocolIsRefused(t *testing.T) {
 		return mux, nil
 	})
 
-	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
+	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, testHolder)
 	if !errors.Is(err, manifest.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), firstBuiltInID+" uses protocol 2") {
 		t.Fatalf("EnsureActive() = %v, want %v naming the plugin", err, manifest.ErrUnsupportedProtocol)
 	}
@@ -518,7 +518,7 @@ func TestAPluginOnDiskIsLaunchedWhereABuiltInSharesItsId(t *testing.T) {
 	}
 	registerBuiltIn(t, host, manifest, newBuiltInBackend().serve("built-in sample"))
 
-	endpoint, err := host.Activation.EnsureActive(t.Context(), "org.example.sample")
+	endpoint, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder)
 
 	if err == nil {
 		t.Fatalf("the copy on disk was served by the built-in: %+v", endpoint)
@@ -536,7 +536,7 @@ func TestAShutdownThatFailsOnAnUnactivatedBuiltInIsReported(t *testing.T) {
 		return mux, nil
 	})
 
-	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
+	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, testHolder)
 
 	if !errors.Is(err, manifest.ErrUnsupportedProtocol) {
 		t.Fatalf("EnsureActive() = %v, want %v", err, manifest.ErrUnsupportedProtocol)
@@ -560,7 +560,7 @@ func TestABuiltInPluginIsNotGivenTheVariablesOfTheHostProcess(t *testing.T) {
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first tools"))
 
-	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID, testHolder); err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
 

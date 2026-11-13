@@ -80,7 +80,7 @@ func (h *commandHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, b
 	return domain.NoteProfile{}, false
 }
 
-func (h *commandHost) EnsureActive(_ context.Context, id string) (transport.Endpoint, error) {
+func (h *commandHost) EnsureActive(_ context.Context, id string, _ plugindomain.Holder) (transport.Endpoint, error) {
 	endpoint, isRunning := h.endpoints[id]
 	if !isRunning {
 		return transport.Endpoint{}, errors.New("the plugin is down")
@@ -89,13 +89,13 @@ func (h *commandHost) EnsureActive(_ context.Context, id string) (transport.Endp
 	return endpoint, nil
 }
 
-func (h *commandHost) Release(string) { h.released++ }
+func (h *commandHost) Release(string, plugindomain.Holder) { h.released++ }
 
-func (h *commandHost) EnsureActiveForQuestion(ctx context.Context, id string) (transport.Endpoint, error) {
-	return h.EnsureActive(ctx, id)
+func (h *commandHost) EnsureActiveForQuestion(ctx context.Context, id string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return h.EnsureActive(ctx, id, holder)
 }
 
-func (h *commandHost) ReleaseQuestion(id string) { h.Release(id) }
+func (h *commandHost) ReleaseQuestion(id string, holder plugindomain.Holder) { h.Release(id, holder) }
 
 func serveCommandPlugin(t *testing.T, plugin *commandPlugin) transport.Endpoint {
 	t.Helper()

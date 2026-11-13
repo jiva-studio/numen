@@ -86,3 +86,11 @@ func TestACallOfAnUnknownToolIsLoggedWithItsToolError(t *testing.T) {
 		t.Errorf("the tool error is logged as %v", line["tool_error"])
 	}
 }
+
+func TestACallForAConnectionIsLoggedWithTheConnection(t *testing.T) {
+	line := callLogged(t, &v1.CallToolRequest{Name: "tree_count", Arguments: []byte(`{}`), ConnectionId: "conn-orchard-keeper"})
+
+	if line["connection"] != "conn-orchard-keeper" {
+		t.Errorf("the connection is logged as %v", line["connection"])
+	}
+}

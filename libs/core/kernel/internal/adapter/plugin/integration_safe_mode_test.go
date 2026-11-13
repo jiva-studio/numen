@@ -59,7 +59,7 @@ func TestHostSafeMode(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample"); !errors.Is(err, plugin.ErrSafeModeActive) {
+	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample", testHolder); !errors.Is(err, plugin.ErrSafeModeActive) {
 		t.Fatalf("expected errSafeModeActive, got %v", err)
 	}
 

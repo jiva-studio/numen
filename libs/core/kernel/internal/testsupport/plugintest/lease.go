@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync/atomic"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	manifestdomain "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -32,7 +33,7 @@ func (h *LeaseHost) GetPlugin(string) (manifestdomain.Discovered, bool) {
 	return manifestdomain.Discovered{Manifest: manifestdomain.Manifest{ID: "org.example.stub"}}, true
 }
 
-func (h *LeaseHost) EnsureActive(context.Context, string) (transport.Endpoint, error) {
+func (h *LeaseHost) EnsureActive(context.Context, string, plugin.Holder) (transport.Endpoint, error) {
 	if h.EnsureErr != nil {
 		return transport.Endpoint{}, h.EnsureErr
 	}
@@ -40,11 +41,11 @@ func (h *LeaseHost) EnsureActive(context.Context, string) (transport.Endpoint, e
 	return h.Endpoint, nil
 }
 
-func (h *LeaseHost) Acquire(string) { h.Acquired.Add(1) }
+func (h *LeaseHost) Acquire(string, plugin.Holder) { h.Acquired.Add(1) }
 
-func (h *LeaseHost) Release(string) { h.Released.Add(1) }
+func (h *LeaseHost) Release(string, plugin.Holder) { h.Released.Add(1) }
 
-func (h *LeaseHost) EnsureActiveForQuestion(context.Context, string) (transport.Endpoint, error) {
+func (h *LeaseHost) EnsureActiveForQuestion(context.Context, string, plugin.Holder) (transport.Endpoint, error) {
 	if h.EnsureErr != nil {
 		return transport.Endpoint{}, h.EnsureErr
 	}
@@ -53,7 +54,7 @@ func (h *LeaseHost) EnsureActiveForQuestion(context.Context, string) (transport.
 	return h.Endpoint, nil
 }
 
-func (h *LeaseHost) ReleaseQuestion(string) {
+func (h *LeaseHost) ReleaseQuestion(string, plugin.Holder) {
 	h.Released.Add(1)
 	h.QuestionsReleased.Add(1)
 }

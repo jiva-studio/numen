@@ -3,7 +3,7 @@
  * worst health item of an unhealthy plugin and the time until an idle plugin stops, and the rest in
  * the tooltips.
  */
-import type { PluginProcess } from '../types'
+import type { LeaseHolder, PluginProcess } from '../types'
 import { WORDS as words } from '../words'
 import { formatDuration } from './format'
 
@@ -12,7 +12,8 @@ import { formatDuration } from './format'
  * `status` is `In use` or `Idle`. `healthText` is empty while the plugin is healthy. `countdown` is
  * `2m 02s` until an idle plugin stops, `stopping` once that time has passed, and empty for a plugin
  * in use; `countdownHint` is its tooltip. `title` is the tooltip of the line: the id, how long the
- * plugin has run, and where it runs.
+ * plugin has run, and where it runs. `startedBy` is who started the plugin and why, and `holders` who holds
+ * it now and why, one line per lease.
  */
 export interface Row {
   readonly id: string
@@ -25,6 +26,8 @@ export interface Row {
   readonly countdown: string
   readonly countdownHint: string
   readonly title: string
+  readonly startedBy: string
+  readonly holders: readonly string[]
 }
 
 interface Countdown {
@@ -43,6 +46,11 @@ function getCountdown(one: PluginProcess, now: number): Countdown {
   return { countdown, countdownHint: `${words.stopsIn} ${countdown}; ${words.idleFor} ${idle}` }
 }
 
+function formatHolder(holder: LeaseHolder): string {
+  const who = holder.who || words.unknownHolder
+  return holder.why ? `${who} · ${holder.why}` : who
+}
+
 /** The row of one plugin at the moment `now`, in milliseconds since the Unix epoch. */
 export function getRow(one: PluginProcess, now: number): Row {
   const isInUse = one.leaseCount > 0
@@ -58,6 +66,8 @@ export function getRow(one: PluginProcess, now: number): Row {
     isInCore: one.isInProcess,
     ...getCountdown(one, now),
     title: title.join('\n'),
+    startedBy: formatHolder(one.startedBy),
+    holders: one.holders.map(formatHolder),
   }
 }
 

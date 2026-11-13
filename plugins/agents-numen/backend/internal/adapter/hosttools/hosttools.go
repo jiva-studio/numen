@@ -82,7 +82,7 @@ func (t *Tools) CallTool(ctx context.Context, name, arguments string, scope conv
 	if !json.Valid(args) {
 		return conversation.ToolResult{Text: "error: the arguments are not JSON", IsError: true}
 	}
-	response, err := t.client.InvokeTool(ctx, tools.Call{Name: name, Arguments: args, Context: scope.Context, VaultID: scope.VaultID})
+	response, err := t.client.InvokeTool(ctx, tools.Call{Name: name, Arguments: args, Context: scope.Context, VaultID: scope.VaultID, ConnectionID: scope.ConnectionID})
 	if err != nil {
 		return conversation.ToolResult{Text: fmt.Sprintf("error: %v", err), IsError: true}
 	}

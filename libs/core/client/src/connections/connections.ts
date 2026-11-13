@@ -13,7 +13,7 @@ import {
   type ProviderConnectionType,
 } from '@numen/protocol'
 import { asFailure, asValue, type Result } from '../result'
-import { transport } from '../transport'
+import { createCallerTransport } from '../transport'
 
 /** A value a field of a connection holds. */
 export type ConnectionValue = string | number | boolean
@@ -360,5 +360,5 @@ export const createConnectionClient = (rpc: ConnectionRpc): ConnectionClient => 
 
 /** The connections of the window the page is served from. */
 export const connections = createConnectionClient(
-  createClient(ProviderConnectionService, transport),
+  createClient(ProviderConnectionService, createCallerTransport('settings')),
 )

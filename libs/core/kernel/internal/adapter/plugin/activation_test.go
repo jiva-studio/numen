@@ -50,7 +50,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 		return cmd.Process, silent, nil
 	})
 
-	_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample")
+	_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder)
 	if !errors.Is(err, transport.ErrHandshakeTimeout) {
 		t.Fatalf("expected a handshake timeout, got %v", err)
 	}
@@ -76,7 +76,7 @@ func TestAPluginWhoseStartFailedIsStartedAgainOnItsNextUseAtOnce(t *testing.T) {
 	host.Processes.SetLauncher(failLaunchingCounting(&launches))
 
 	for range 3 {
-		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {
+		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); err == nil {
 			t.Fatal("expected the start to fail")
 		}
 	}
@@ -92,7 +92,7 @@ func TestAFailedStartIsListedOnceAndShownWithItsReason(t *testing.T) {
 	host.Processes.SetLauncher(failLaunchingCounting(&launches))
 
 	for range 2 {
-		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {
+		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); err == nil {
 			t.Fatal("expected the start to fail")
 		}
 	}
@@ -113,7 +113,7 @@ func TestACanceledCallerDoesNotRecordAFailedStart(t *testing.T) {
 	})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample"); err == nil {
+	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample", testHolder); err == nil {
 		t.Fatal("expected the activation to fail")
 	}
 	if supervisorOf(host, "org.example.sample").Failure.IsFailed() {

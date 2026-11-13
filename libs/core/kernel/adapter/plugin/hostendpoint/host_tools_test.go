@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
@@ -24,6 +25,7 @@ type toolCall struct {
 	name     string
 	context  map[string]string
 	vault    domain.VaultID
+	caller   plugin.Caller
 }
 
 // recordedTools lists one tool and answers every call with the vault it was run in.
@@ -37,9 +39,10 @@ func (r *recordedTools) ListTools(_ context.Context, callerID string) []*v1.Plug
 	return []*v1.PluginTool{{Name: "note_read", Effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY}}
 }
 
-func (r *recordedTools) CallTool(_ context.Context, callerID string, call *v1.CallToolRequest) (*v1.CallToolResponse, error) {
+func (r *recordedTools) CallTool(ctx context.Context, callerID string, call *v1.CallToolRequest) (*v1.CallToolResponse, error) {
+	caller, _ := plugin.GetCaller(ctx)
 	r.calls = append(r.calls, toolCall{
-		callerID: callerID, name: call.GetName(), context: call.GetContext(), vault: domain.VaultID(call.GetVaultId()),
+		callerID: callerID, name: call.GetName(), context: call.GetContext(), vault: domain.VaultID(call.GetVaultId()), caller: caller,
 	})
 	return &v1.CallToolResponse{Result: &v1.ToolResult{Text: call.GetVaultId()}}, nil
 }
@@ -148,5 +151,18 @@ func TestTheToolsRefuseACallerWithoutVaultRead(t *testing.T) {
 	}
 	if len(tools.listedFor) != 0 || len(tools.calls) != 0 {
 		t.Errorf("the tools were reached: %v, %v", tools.listedFor, tools.calls)
+	}
+}
+
+// A call an agent makes for a connection runs in the name of the connection.
+func TestAToolCallForAConnectionRunsInTheNameOfTheConnection(t *testing.T) {
+	tools := &recordedTools{}
+	req := connect.NewRequest(&v1.CallToolRequest{Name: "note_read", ConnectionId: "conn-keeper"})
+	if _, err := newToolClient(t, newTwoVaults(tools), "token-a").CallTool(t.Context(), req); err != nil {
+		t.Fatal(err)
+	}
+	want := plugin.Caller{PluginID: "md.numen.a", ConnectionID: "conn-keeper"}
+	if len(tools.calls) != 1 || tools.calls[0].caller != want {
+		t.Errorf("the tools ran %+v, want the caller %+v", tools.calls, want)
 	}
 }

@@ -3,6 +3,7 @@ package providerbridge_test
 import (
 	"context"
 	"errors"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"net/http"
 	"slices"
 	"sync"
@@ -87,7 +88,7 @@ type activator struct {
 	questionsReleased []string
 }
 
-func (a *activator) EnsureActive(context.Context, string) (transport.Endpoint, error) {
+func (a *activator) EnsureActive(context.Context, string, plugindomain.Holder) (transport.Endpoint, error) {
 	return a.endpoint, a.err
 }
 
@@ -99,20 +100,20 @@ func (a *activator) GetClient(transport.Endpoint) *http.Client {
 	return a.client
 }
 
-func (a *activator) Release(id string) {
+func (a *activator) Release(id string, _ plugindomain.Holder) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.released = append(a.released, id)
 }
 
-func (a *activator) EnsureActiveForQuestion(_ context.Context, id string) (transport.Endpoint, error) {
+func (a *activator) EnsureActiveForQuestion(_ context.Context, id string, _ plugindomain.Holder) (transport.Endpoint, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.questions = append(a.questions, id)
 	return a.endpoint, a.err
 }
 
-func (a *activator) ReleaseQuestion(id string) {
+func (a *activator) ReleaseQuestion(id string, _ plugindomain.Holder) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.questionsReleased = append(a.questionsReleased, id)

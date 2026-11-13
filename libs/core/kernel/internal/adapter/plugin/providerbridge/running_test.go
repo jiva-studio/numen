@@ -1,6 +1,7 @@
 package providerbridge_test
 
 import (
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"slices"
 	"testing"
 
@@ -18,7 +19,7 @@ type runningHost struct {
 	acquired  []string
 }
 
-func (h *runningHost) AcquireRunningForQuestion(pluginID string) (transport.Endpoint, bool) {
+func (h *runningHost) AcquireRunningForQuestion(pluginID string, _ plugindomain.Holder) (transport.Endpoint, bool) {
 	if !h.isRunning {
 		return transport.Endpoint{}, false
 	}
