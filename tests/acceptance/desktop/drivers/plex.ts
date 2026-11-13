@@ -137,20 +137,26 @@ export class PlexDriver {
     await options.first().click()
   }
 
-  /** The handle of a node, once it is shown and has stopped moving. */
+  /** The handle of a node, once it is shown and has stopped moving; the pointer is put on the note again while it is not. */
   private async waitForHandle(title: string): Promise<Locator> {
     const handle = await this.getPart(title, '.plex__handle')
-    await expect(handle).toBeVisible()
-    let before = ''
-    await expect
-      .poll(async () => {
-        const box = await handle.boundingBox()
-        const now = JSON.stringify(box && [box.x, box.y, box.width, box.height].map(Math.round))
-        const isStill = now === before
-        before = now
-        return isStill
-      })
-      .toBe(true)
+    await expect(async () => {
+      await this.hoverNote(title)
+      await expect(handle).toBeVisible({ timeout: 3_000 })
+      let before = ''
+      await expect
+        .poll(
+          async () => {
+            const box = await handle.boundingBox()
+            const now = JSON.stringify(box && [box.x, box.y, box.width, box.height].map(Math.round))
+            const isStill = now === before
+            before = now
+            return isStill
+          },
+          { timeout: 4_000, intervals: [150] },
+        )
+        .toBe(true)
+    }).toPass({ timeout: 25_000 })
     return handle
   }
 
