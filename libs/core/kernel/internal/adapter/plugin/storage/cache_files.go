@@ -14,8 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 )
 
-// The folders inside the cache root where the host keeps what plugins answered, one file per plugin;
-// cacheFolders lists them all.
+// The folders inside the cache root where the host keeps what plugins answered, one file per plugin.
 const (
 	// toolsFolder holds the tools each plugin listed.
 	toolsFolder = "tools"
@@ -27,7 +26,9 @@ const (
 	optionListsFolder = "models"
 )
 
-var cacheFolders = []string{toolsFolder, sourcesFolder, connectionsFolder, optionListsFolder}
+func listCacheFolders() []string {
+	return []string{toolsFolder, sourcesFolder, connectionsFolder, optionListsFolder}
+}
 
 // ReadToolListing returns the tool listing kept for the plugin, and false where none is kept or the host
 // has no cache root.

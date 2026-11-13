@@ -76,8 +76,9 @@ func (r *revisions) set(pluginID, revision string) {
 }
 
 func (r *revisions) GetPluginConfigRevision(pluginID string) string {
-	revision, _, _ := r.getGrantRevision(pluginID)
-	return revision
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.byPlugin[pluginID]
 }
 
 func (r *revisions) getGrantRevision(pluginID string) (string, bool, error) {

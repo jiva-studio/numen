@@ -98,7 +98,7 @@ func (s *Storage) RemoveCacheDir(pluginID string) {
 	if err := os.RemoveAll(getPluginStorageDir(root, pluginID)); err != nil {
 		s.report(fmt.Errorf("remove cache directory of plugin %s: %w", pluginID, err))
 	}
-	for _, folder := range cacheFolders {
+	for _, folder := range listCacheFolders() {
 		if err := os.Remove(s.getCacheFilePath(folder, pluginID)); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			s.report(fmt.Errorf("remove the %s file of plugin %s: %w", folder, pluginID, err))
 		}

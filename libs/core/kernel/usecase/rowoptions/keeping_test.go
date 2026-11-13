@@ -86,20 +86,20 @@ func TestAProviderWithAGrantHasTheLongerReadTimeout(t *testing.T) {
 		s := newSetup(t)
 		s.grants.set(modelcalltest.ProviderPluginID, "")
 		s.world.Provider.Block(address)
-		var isDone atomic.Bool
+		result := make(chan error, 1)
 		go func() {
-			_, _ = s.listModels(t.Context(), modelcalltest.EmbedOperation)
-			isDone.Store(true)
+			_, err := s.listModels(t.Context(), modelcalltest.EmbedOperation)
+			result <- err
 		}()
 
 		time.Sleep(rowoptions.ReadTimeout + time.Second)
 		synctest.Wait()
-		if isDone.Load() {
-			t.Fatal("the read gave up within the read timeout of a provider without a grant")
+		if len(result) != 0 {
+			t.Fatalf("the read ended within the read timeout of a provider without a grant: %v", <-result)
 		}
 		time.Sleep(rowoptions.GrantedReadTimeout)
 		synctest.Wait()
-		if !isDone.Load() {
+		if len(result) == 0 {
 			t.Error("the read did not give up after the read timeout of a provider with a grant")
 		}
 	})
