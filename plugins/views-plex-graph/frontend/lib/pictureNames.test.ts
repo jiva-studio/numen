@@ -3,7 +3,8 @@
  * and a note never names itself.
  */
 import { describe, expect, it } from 'vitest'
-import type { LinkDirection, NoteGraph, RelatedNote } from '../types'
+import type { LinkDirection } from '@numen/plugin-sdk'
+import type { NoteGraph, RelatedNote } from '../types'
 import { getNames } from './picture'
 
 const token = (path: string) => `id:${path}`

@@ -10,7 +10,7 @@
 import { computed, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
-import { DEFAULT_BEHAVIOR, type PlexBehavior } from '../model/behavior'
+import { DEFAULT_BEHAVIOR, getBehavior, type PlexBehavior } from '../model/behavior'
 import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
@@ -69,12 +69,7 @@ const { room, options, measures, widen, hung } = useFreeSpace(
 )
 
 /** How the nodes behave, handed down as one. */
-const behavior = computed<PlexBehavior>(() => ({
-  expansionDelay: props.expansionDelay,
-  reaching: props.reaching,
-  showing: props.showing,
-  clock: props.clock,
-}))
+const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
 const { getRoomOf, room: getRoom } = useNamesRooms(props, measures, options)
 
