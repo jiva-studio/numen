@@ -60,12 +60,16 @@ describe('the line a note tab is asked to open on', () => {
     lines.reveal(2)
     await nextTick()
 
+    expect(editor.reveal).toHaveBeenCalledWith(2)
+    editor.reveal.mockClear()
     editor.reveal.mockReturnValue(true)
     lines.attach(editor)
     await nextTick()
+    expect(editor.reveal).toHaveBeenCalledOnce()
+
     lines.attach(editor)
     await nextTick()
 
-    expect(editor.reveal).toHaveBeenCalledTimes(2)
+    expect(editor.reveal).toHaveBeenCalledOnce()
   })
 })
