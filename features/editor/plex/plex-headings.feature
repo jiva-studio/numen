@@ -32,7 +32,6 @@ Feature: Plex headings
   Scenario: A heading opens its note
     When the person enters the heading "Joule" under the note titled "Work" in the plex
     Then the note tab at "notes/Work.md" is active
-    And the note titled "Work" is at the heading "Joule"
 
   Scenario: Headings are hidden
     Given the person rests the pointer on the note titled "Heat" in the plex

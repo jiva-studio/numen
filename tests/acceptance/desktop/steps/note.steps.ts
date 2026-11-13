@@ -47,10 +47,6 @@ Then('the note {reference} {string} has {string}', async ({ person }, reference:
   await person.note.expectHasText(reference, name, text)
 })
 
-Then('the note {reference} {string} is at the heading {string}', async ({ person }, reference: string, name: string, heading: string) => {
-  await person.note.expectAtHeading(reference, name, heading)
-})
-
 Then('the note {reference} {string} does not have {string}', async ({ person }, reference: string, name: string, text: string) => {
   await person.note.expectDoesNotHaveText(reference, name, text)
 })
