@@ -37,7 +37,8 @@ func NewListRelatedNotes(links noteport.LinkQueries, notes RefQueries) ListRelat
 }
 
 // Execute gathers the notes related to the note at the path. Depth 2 also gathers, for
-// each note related to it, the notes that one is related to, never as siblings, in the order of the related notes. The focus is never one of them.
+// each note related to it, the notes that one is related to, never as siblings, in the
+// order of the related notes. The focus is never one of them.
 func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path string, depth uint32) (domain.NoteGraph, error) {
 	cache := &linkCache{queries: u.links, vault: v}
 	center, err := u.getRelatedNotes(ctx, cache, path)
@@ -58,6 +59,12 @@ func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path stri
 			return domain.NoteGraph{}, err
 		}
 	}
+	return u.createGraph(ctx, cache, v.ID, path, related, items)
+}
+
+// createGraph reads the display data of the focus and of every related note and item,
+// and keeps the ones that still exist.
+func (u ListRelatedNotes) createGraph(ctx context.Context, cache *linkCache, vaultID domain.VaultID, path string, related, items []domain.RelatedNote) (domain.NoteGraph, error) {
 	paths := make([]string, 0, len(related)+len(items)+1)
 	paths = append(paths, path)
 	for _, s := range related {
@@ -66,7 +73,7 @@ func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path stri
 	for _, s := range items {
 		paths = append(paths, s.Path)
 	}
-	notes, err := u.notes.GetNotes(ctx, v.ID, paths)
+	notes, err := u.notes.GetNotes(ctx, vaultID, paths)
 	if err != nil {
 		return domain.NoteGraph{}, err
 	}

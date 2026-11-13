@@ -30,7 +30,7 @@ func TestEachListOfLinksIsReadOnceAtDepthTwo(t *testing.T) {
 	counted := &countingLinks{graph: depthGraph(), links: map[string]int{}, backlinks: map[string]int{}}
 
 	_, err := query.NewListRelatedNotes(counted, &pathLookup{}).Execute(
-		context.Background(), domain.Vault{ID: graphVault}, "F.md", 2)
+		t.Context(), domain.Vault{ID: graphVault}, "F.md", 2)
 	if err != nil {
 		t.Fatal(err)
 	}
