@@ -150,6 +150,7 @@ func withoutAgentsAnywhere(t *testing.T) {
 func recordArgs(dir string) string {
 	return "pwd > " + dir + "/pwd\n" +
 		"for a in \"$@\"; do printf '%s\\0' \"$a\"; done > " + dir + "/argv\n" +
+		"cat > " + dir + "/stdin\n" +
 		"printf '%s' \"$NUMEN_TOKEN\" > " + dir + "/token\n"
 }
 
@@ -260,6 +261,8 @@ func describeFrame(frame *acp.TaskFrame) string {
 	case *acp.TaskFrame_ToolCallUpdate:
 		change := update.ToolCallUpdate
 		return fmt.Sprintf("update %s %s", change.GetToolCallId(), change.GetStatus())
+	case *acp.TaskFrame_AgentThoughtChunk:
+		return fmt.Sprintf("thought %s %q", update.AgentThoughtChunk.GetMessageId(), update.AgentThoughtChunk.GetText())
 	}
 	return "unknown"
 }

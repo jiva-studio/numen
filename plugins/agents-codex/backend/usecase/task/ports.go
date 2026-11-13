@@ -36,22 +36,27 @@ type Finder interface {
 }
 
 // Spec is what a run of the program is built from. ToolsURL is the server of the tools a run that may
-// call them is given.
+// call them is given. Thread is the thread of the program the run continues, empty for a new one; a run
+// that IsKept keeps its thread for a later run to continue.
 type Spec struct {
 	Program   string
 	Prompt    string
 	Model     string
 	Reasoning string
 	ToolsURL  string
+	Thread    string
+	IsKept    bool
 }
 
-// Command is the program and environment of a run. Release frees what the command was built with.
+// Command is the program and environment of a run, and what the program reads on its standard input.
+// Release frees what the command was built with.
 type Command struct {
 	Path    string
 	Args    []string
 	Dir     string
 	Env     []string
 	Token   string
+	Stdin   string
 	Release func() error
 }
 
