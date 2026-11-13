@@ -1,7 +1,9 @@
 <script setup lang="ts">
 /**
  * One settings row: the title with a one-line description under it on the left, the control on the
- * right. A value changed from its default shows a Reset action beside the title. When the settings
+ * right. A setting with details shows an info button beside the title that opens them in a popover;
+ * Escape closes it and gives the focus back to the button. A value changed from its default shows a
+ * Reset action beside the title. When the settings
  * column is narrower than 34rem, the control moves under the title at full width.
  *
  * The title carries the id the control is labelled by, because switches, segments and composite
@@ -12,8 +14,9 @@
  * is drawn with a focus request and whenever it is given a new one, so a repeated request scrolls
  * again.
  */
-import { computed, onMounted, useTemplateRef, watch, type VNode } from 'vue'
-import { RotateCcw, TriangleAlert } from '@lucide/vue'
+import { computed, nextTick, onMounted, ref, useTemplateRef, watch, type VNode } from 'vue'
+import { Info, RotateCcw, TriangleAlert } from '@lucide/vue'
+import { runInBackground, useMenuDismissal } from '@numen/ui'
 import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -21,6 +24,7 @@ const props = defineProps<{
   at: string
   name: string
   detail: string
+  details?: string | undefined
   isMarked?: boolean
   focus?: object | null
   isChanged?: boolean
@@ -41,11 +45,29 @@ defineSlots<{
 const nameId = computed(() => `settings-${props.at}`)
 const trimmedDetail = computed(() => props.detail.trim())
 const detailId = computed(() => (trimmedDetail.value ? `${nameId.value}-detail` : undefined))
+const trimmedDetails = computed(() => props.details?.trim() ?? '')
 const row = useTemplateRef<HTMLElement>('row')
+const label = useTemplateRef<HTMLElement>('label')
+const infoButton = useTemplateRef<HTMLButtonElement>('infoButton')
+const popover = useTemplateRef<HTMLElement>('popover')
+const isInfoOpen = ref(false)
+const dismissal = useMenuDismissal(label, () => closeInfo(false), isMoveOfThePage)
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
   if (props.focus) scrollIntoView()
+})
+
+watch(isInfoOpen, (isOpen) => {
+  if (!isOpen) {
+    dismissal.release()
+    return
+  }
+  dismissal.listen()
+  runInBackground(
+    nextTick(() => popover.value?.focus()),
+    () => undefined,
+  )
 })
 
 watch(
@@ -60,7 +82,25 @@ function onReset(): void {
   emit('reset')
 }
 
+function onToggleInfo(): void {
+  isInfoOpen.value = !isInfoOpen.value
+}
+
+function onPopoverEscape(): void {
+  closeInfo(true)
+}
+
 /* -------------------------------- Helpers --------------------------------- */
+function closeInfo(isFocusReturned: boolean): void {
+  isInfoOpen.value = false
+  if (isFocusReturned) infoButton.value?.focus()
+}
+
+/** The popover moves with its row, so a scroll or a resize of the page leaves it open. */
+function isMoveOfThePage(event: Event): boolean {
+  return event.type === 'scroll' || event.type === 'resize'
+}
+
 function scrollIntoView(): void {
   row.value?.scrollIntoView({ block: 'center' })
 }
@@ -68,8 +108,20 @@ function scrollIntoView(): void {
 
 <template>
   <div ref="row" class="settings__row" :data-marked="props.isMarked ? '' : undefined">
-    <div class="settings__label">
+    <div ref="label" class="settings__label">
       <span :id="nameId" class="settings__name">{{ props.name }}</span>
+      <button
+        v-if="trimmedDetails"
+        ref="infoButton"
+        type="button"
+        class="settings__info"
+        :aria-label="words.aboutSetting(props.name)"
+        aria-haspopup="dialog"
+        :aria-expanded="isInfoOpen"
+        @click="onToggleInfo"
+      >
+        <Info :size="14" aria-hidden="true" />
+      </button>
       <TriangleAlert
         v-if="props.isMarked"
         class="settings__mark"
@@ -91,6 +143,18 @@ function scrollIntoView(): void {
       <span v-if="trimmedDetail" :id="detailId" class="settings__detail" :title="trimmedDetail">
         {{ trimmedDetail }}
       </span>
+      <div
+        v-if="isInfoOpen"
+        ref="popover"
+        class="settings__popover"
+        role="dialog"
+        :aria-label="words.aboutSetting(props.name)"
+        tabindex="-1"
+        @keydown.esc.stop.prevent="onPopoverEscape"
+      >
+        <p class="settings__popover-title">{{ props.name }}</p>
+        <p class="settings__popover-text">{{ trimmedDetails }}</p>
+      </div>
     </div>
     <div class="settings__value">
       <slot v-bind="{ labelledBy: nameId, describedBy: detailId }" />
@@ -111,6 +175,59 @@ function scrollIntoView(): void {
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
+.settings__info {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  margin-block: -0.25rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--numen-radius-tight);
+  background: none;
+  color: var(--numen-hushed);
+  cursor: pointer;
+}
+
+.settings__info:hover,
+.settings__info[aria-expanded='true'] {
+  background-color: var(--settings-hover-bg);
+  color: var(--numen-ink);
+}
+
+.settings__info:focus-visible,
+.settings__popover:focus-visible {
+  outline: var(--numen-stroke) solid var(--numen-accent);
+}
+
+.settings__popover {
+  position: absolute;
+  inset-block-start: calc(100% + 0.25rem);
+  inset-inline-start: 0;
+  z-index: var(--numen-lift-menu);
+  box-sizing: border-box;
+  inline-size: max-content;
+  max-inline-size: min(26rem, 100cqi);
+  padding: 0.75rem 0.875rem;
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius-popup);
+  background-color: var(--numen-raised);
+  box-shadow: var(--numen-shadow-card);
+  color: var(--numen-ink);
+  font-size: var(--numen-text-2);
+  line-height: 1.5;
+}
+
+.settings__popover-title {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+
+.settings__popover-text {
+  margin: 0;
+  color: var(--numen-hushed);
+}
+
 .settings__mark {
   flex: none;
   color: var(--numen-alarm);
@@ -121,6 +238,7 @@ function scrollIntoView(): void {
 }
 
 .settings__label {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

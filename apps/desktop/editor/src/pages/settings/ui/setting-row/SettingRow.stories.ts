@@ -3,7 +3,7 @@
  * wide and a narrow width. The checks need real layout, so they run in a browser.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from './SettingRow.vue'
 
@@ -77,5 +77,44 @@ export const ControlsAreLabelledByTheTitle: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByRole('switch')[0]).toHaveAccessibleName('Nest headings under notes')
     await expect(canvas.getByDisplayValue('04:00')).toHaveAccessibleName('Day starts at')
+  },
+}
+
+const HOOKS_DETAILS =
+  'Lets the agent read the hooks, skills and standing instructions of your own setup. Off, it runs with the tools of the vault only.'
+
+/**
+ * A row whose setting has details: the row keeps its one line, and the info button beside the title
+ * opens the full text. Enter opens it, Escape closes it and gives the focus back to the button.
+ */
+export const DetailsOpenFromTheInfoButton: Story = {
+  render: () => ({
+    components: { SettingRow, Switch },
+    setup: () => ({ details: HOOKS_DETAILS }),
+    template: `
+      <div class="numen" style="container:settings / inline-size;inline-size:45rem;padding:1rem;background:var(--numen-surface)">
+        <SettingRow v-slot="{ labelledBy, describedBy }" at="hooks" name="Hooks & skills" detail="Use your own hooks, skills and standing instructions" :details="details">
+          <Switch :aria-labelledby="labelledBy" :aria-describedby="describedBy" />
+        </SettingRow>
+        <SettingRow v-slot="{ labelledBy, describedBy }" at="wrap" name="Soft wrap" detail="Wrap long lines to fit the editor">
+          <Switch :aria-labelledby="labelledBy" :aria-describedby="describedBy" />
+        </SettingRow>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByRole('button', { name: 'About Hooks & skills' })
+    await expect(canvas.queryByRole('button', { name: 'About Soft wrap' })).toBeNull()
+
+    button.focus()
+    await userEvent.keyboard('{Enter}')
+    const popover = await canvas.findByRole('dialog', { name: 'About Hooks & skills' })
+    await expect(popover).toHaveTextContent(HOOKS_DETAILS)
+    await waitFor(() => expect(popover).toHaveFocus())
+
+    await userEvent.keyboard('{Escape}')
+    await expect(canvas.queryByRole('dialog')).toBeNull()
+    await expect(button).toHaveFocus()
   },
 }
