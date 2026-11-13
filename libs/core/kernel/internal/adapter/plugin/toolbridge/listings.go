@@ -1,6 +1,7 @@
 package toolbridge
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,8 @@ import (
 	"sync"
 
 	"google.golang.org/protobuf/encoding/protojson"
+
+	"github.com/jiva-studio/numen/libs/atomicfile"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
@@ -110,16 +113,5 @@ func (l *listings) write(pluginID string, kept listing) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
-	temp, err := os.CreateTemp(filepath.Dir(path), "."+pluginID+"-*")
-	if err != nil {
-		return err
-	}
-	defer func() { _ = os.Remove(temp.Name()) }()
-	if _, err := temp.Write(raw); err != nil {
-		return errors.Join(err, temp.Close())
-	}
-	if err := temp.Close(); err != nil {
-		return err
-	}
-	return os.Rename(temp.Name(), path)
+	return atomicfile.WriteFile(path, bytes.NewReader(raw), 0o600)
 }
