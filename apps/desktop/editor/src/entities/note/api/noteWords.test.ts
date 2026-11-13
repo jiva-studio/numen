@@ -124,11 +124,9 @@ describe('mapNoteGraph references', () => {
       }),
     ).related
 
-  it.each([
-    ['outgoing', NOTE_LINK_DIRECTION.OUTGOING],
-    ['incoming', NOTE_LINK_DIRECTION.INCOMING],
-    ['both', NOTE_LINK_DIRECTION.BOTH],
-  ])('carries a reference linked %s with that direction', (word, direction) => {
+  it.each(['OUTGOING', 'INCOMING', 'BOTH'] as const)('carries a reference linked %s with that direction', (name) => {
+    const word = name.toLowerCase()
+    const direction = NOTE_LINK_DIRECTION[name]
     expect(map(direction)).toEqual([
       { path: 'Cited.md', title: 'Cited', type: 'note', relation: 'reference', direction: word },
     ])
