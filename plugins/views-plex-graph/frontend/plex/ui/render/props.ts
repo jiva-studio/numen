@@ -24,7 +24,7 @@ export interface PlexViewProps {
   frame: PlexFrame
   viewport: { width: number; height: number }
   nodeSize: { width: number; height: number }
-  ghostSize?: { width: number; height: number }
+  ghostSize?: { width: number; height: number } | undefined
   showEdgeLabels?: boolean
   showPills?: boolean
   highlightLinks?: boolean
