@@ -269,3 +269,18 @@ func TestStartLoadingDoesNotOpenTheModelWhileAConnectionServes(t *testing.T) {
 		t.Error("the loader started for a connection")
 	}
 }
+
+func TestSwitchingToAConnectionEndsTheLoadOfTheLocalModel(t *testing.T) {
+	srv, started, release := slowModel(t)
+	defer close(release)
+
+	srv.StartLoading()
+	<-started
+	srv.updateConfig(map[string]string{"source": SourceConnection})
+
+	srv.mu.Lock()
+	defer srv.mu.Unlock()
+	if srv.loader.IsOpening() || srv.loader.IsLoaded() {
+		t.Fatal("the local model still loads while a connection serves the embeddings")
+	}
+}

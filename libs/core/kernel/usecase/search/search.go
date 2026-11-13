@@ -105,6 +105,8 @@ type Search struct {
 	texts        textdomain.Readers
 	errorHandler window.ErrorHandler
 	Extractors   int
+	// ReportAnswered is called each time a search source answers; nil calls no one.
+	ReportAnswered func()
 }
 
 // NewByName creates a Search that resolves the vault and prepares the search over it.
@@ -225,6 +227,9 @@ func (u Search) rank(ctx context.Context, v domain.Vault, one asked, q Query) (*
 	ranking, err := one.participant.Rank(ctx, v, q)
 	switch {
 	case err == nil:
+		if one.isTolerated && u.ReportAnswered != nil {
+			u.ReportAnswered()
+		}
 		return &ranking, nil
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return nil, err

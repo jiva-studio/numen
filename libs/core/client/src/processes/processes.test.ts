@@ -20,7 +20,7 @@ const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> =>
 }
 
 describe('the plugins that run', () => {
-  it('arrive with their times in milliseconds, their stop for idleness, their health and the time of the list', async () => {
+  it('arrive with their times in milliseconds, their stop for idleness, their health, who started and holds them, and the time of the list', async () => {
     restore = installCoreAnswers({
       pluginService: {
         watchPluginProcesses: async function* () {
@@ -36,6 +36,8 @@ describe('the plugins that run', () => {
                 idleStopTimeUnixMs: 1_700_000_240_000n,
                 health: HealthSeverity.WARNING,
                 healthText: 'The tiles are old',
+                startedBy: { who: 'Indexing', why: 'embed notes' },
+                holders: [{ who: 'Search', why: 'find places' }],
               },
               {
                 pluginId: 'org.example.maps',
@@ -47,6 +49,10 @@ describe('the plugins that run', () => {
                 idleStopTimeUnixMs: 0n,
                 health: HealthSeverity.OK,
                 healthText: '',
+                holders: [
+                  { who: 'Search', why: 'find places' },
+                  { who: 'Orchard', why: 'call tool' },
+                ],
               },
             ],
             timeUnixMs: 1_700_000_100_000n,
@@ -69,6 +75,8 @@ describe('the plugins that run', () => {
         idleStopTime: 1_700_000_240_000,
         health: 'warning',
         healthText: 'The tiles are old',
+        startedBy: { who: 'Indexing', why: 'embed notes' },
+        holders: [{ who: 'Search', why: 'find places' }],
       },
       {
         pluginId: 'org.example.maps',
@@ -79,6 +87,11 @@ describe('the plugins that run', () => {
         isInProcess: true,
         health: 'ok',
         healthText: '',
+        startedBy: { who: '', why: '' },
+        holders: [
+          { who: 'Search', why: 'find places' },
+          { who: 'Orchard', why: 'call tool' },
+        ],
       },
     ])
   })

@@ -91,3 +91,13 @@ func TestWriteHomeAsTildeIgnoresAFolderThatOnlyStartsLikeTheHomeFolder(t *testin
 		t.Errorf("writeHomeAsTilde(home) = %q, want ~", got)
 	}
 }
+
+func TestWriteHomeAsTildeShortensAHomeFolderGivenWithATrailingSeparator(t *testing.T) {
+	home := filepath.Join(string(filepath.Separator)+"home", "ada") + string(filepath.Separator)
+	program := filepath.Join(string(filepath.Separator)+"home", "ada", "bin", "orchard")
+
+	want := "~" + string(filepath.Separator) + filepath.Join("bin", "orchard")
+	if got := writeHomeAsTilde(program, home); got != want {
+		t.Errorf("writeHomeAsTilde(%q, %q) = %q, want %q", program, home, got, want)
+	}
+}

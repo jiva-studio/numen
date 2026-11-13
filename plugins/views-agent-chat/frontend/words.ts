@@ -25,4 +25,6 @@ export const WORDS = {
   openSettings: 'Open settings',
   /** The row of an agent in the model list while its models are being asked. */
   loading: 'Loading…',
+  /** The row of an agent in the model list whose models could not be listed; the next open asks again. */
+  modelsFailed: 'Could not list models',
 }

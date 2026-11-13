@@ -17,10 +17,13 @@ const (
 	dormantID = "org.example.dormant"
 )
 
-var (
-	useLease      = lifecycle.Lease{Kind: lifecycle.UseLease, Holder: plugindomain.Holder{Who: plugindomain.WhoWindow, Why: "open view"}}
-	questionLease = lifecycle.Lease{Kind: lifecycle.QuestionLease, Holder: plugindomain.Holder{Who: plugindomain.WhoSettings, Why: "list tools"}}
-)
+func getUseLease() lifecycle.Lease {
+	return lifecycle.Lease{Kind: lifecycle.UseLease, Holder: plugindomain.Holder{Who: plugindomain.WhoWindow, Why: "open view"}}
+}
+
+func getQuestionLease() lifecycle.Lease {
+	return lifecycle.Lease{Kind: lifecycle.QuestionLease, Holder: plugindomain.Holder{Who: plugindomain.WhoSettings, Why: "list tools"}}
+}
 
 func getStartTime() time.Time { return time.Date(2026, 11, 13, 9, 0, 0, 0, time.UTC) }
 
@@ -30,7 +33,7 @@ func startInProcess(t *testing.T, sups *Supervisors, ids ...string) {
 		sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: id}})
 		sup.SetActivating(plugindomain.Holder{})
 		endpoint := transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: id}
-		if err := sups.AttachInProcess(id, sup, endpoint, useLease, getStartTime()); err != nil {
+		if err := sups.AttachInProcess(id, sup, endpoint, getUseLease(), getStartTime()); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -40,10 +43,10 @@ func TestListProcessesReturnsTheRunningPluginsWithTheIdleStopTime(t *testing.T) 
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: dormantID}})
 	startInProcess(t, sups, mapsID, atlasID)
-	sups.Release(mapsID, mapsID, useLease, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, getUseLease(), getStartTime().Add(time.Minute))
 
 	want := []plugindomain.Process{
-		{PluginID: atlasID, StartTime: getStartTime(), LastUseTime: getStartTime(), LeaseCount: 1, IsInProcess: true, Holders: []plugindomain.Holder{useLease.Holder}},
+		{PluginID: atlasID, StartTime: getStartTime(), LastUseTime: getStartTime(), LeaseCount: 1, IsInProcess: true, Holders: []plugindomain.Holder{getUseLease().Holder}},
 		{
 			PluginID: mapsID, StartTime: getStartTime(), LastUseTime: getStartTime().Add(time.Minute), IsInProcess: true,
 			IdleStopTime: getStartTime().Add(time.Minute + IdleThreshold),
@@ -59,7 +62,7 @@ func TestAWatchIsSignaledWhenAPluginReturnsALease(t *testing.T) {
 	startInProcess(t, sups, mapsID)
 	watch := NewRunningProcesses(sups).WatchProcesses(t.Context())
 
-	sups.Release(mapsID, mapsID, useLease, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, getUseLease(), getStartTime().Add(time.Minute))
 
 	select {
 	case <-watch:
@@ -73,7 +76,7 @@ func TestSignalsTheWatchHasNotReceivedAreMergedIntoOne(t *testing.T) {
 	startInProcess(t, sups, mapsID)
 	watch := NewRunningProcesses(sups).WatchProcesses(t.Context())
 
-	sups.Release(mapsID, mapsID, useLease, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, getUseLease(), getStartTime().Add(time.Minute))
 	startInProcess(t, sups, atlasID)
 	<-watch
 
@@ -88,10 +91,10 @@ func TestTheIdleStopTimeFollowsTheIdleLimitOfTheManifest(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: atlasID, Backend: manifest.Backend{Entrypoint: "bin/atlas", IdleStopSeconds: 600}}})
 	sup.SetActivating(plugindomain.Holder{})
-	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, useLease, getStartTime()); err != nil {
+	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, getUseLease(), getStartTime()); err != nil {
 		t.Fatal(err)
 	}
-	sups.Release(atlasID, atlasID, useLease, getStartTime().Add(time.Minute))
+	sups.Release(atlasID, atlasID, getUseLease(), getStartTime().Add(time.Minute))
 
 	got := NewRunningProcesses(sups).ListProcesses()
 
@@ -106,7 +109,7 @@ func TestAReleasedPluginIsDueToStopAtItsLastUse(t *testing.T) {
 	if targets := takeReleasedTarget(sups, mapsID, getStartTime()); len(targets) != 0 {
 		t.Fatalf("a plugin that holds a lease was taken to stop: %+v", targets)
 	}
-	sups.Release(mapsID, mapsID, useLease, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, getUseLease(), getStartTime().Add(time.Minute))
 
 	got := NewRunningProcesses(sups).ListProcesses()
 
@@ -119,10 +122,10 @@ func TestAPluginOnlyAskedAQuestionIsDueToStopAtItsStart(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: atlasID}})
 	sup.SetActivating(plugindomain.Holder{})
-	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, questionLease, getStartTime()); err != nil {
+	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, getQuestionLease(), getStartTime()); err != nil {
 		t.Fatal(err)
 	}
-	sups.Release(atlasID, atlasID, questionLease, getStartTime().Add(time.Minute))
+	sups.Release(atlasID, atlasID, getQuestionLease(), getStartTime().Add(time.Minute))
 
 	want := []plugindomain.Process{{
 		PluginID: atlasID, StartTime: getStartTime(), LastUseTime: getStartTime(), IsInProcess: true, IdleStopTime: getStartTime(),
@@ -138,11 +141,11 @@ func TestAQuestionDoesNotCancelTheReleaseOfAProcess(t *testing.T) {
 	takeReleasedTarget(sups, mapsID, getStartTime())
 	sup, _ := sups.Get(mapsID)
 
-	if _, isRunning := sups.AcquireRunning(mapsID, sup, questionLease, getStartTime()); !isRunning {
+	if _, isRunning := sups.AcquireRunning(mapsID, sup, getQuestionLease(), getStartTime()); !isRunning {
 		t.Fatal("the running plugin was not held for the question")
 	}
-	sups.Release(mapsID, mapsID, questionLease, getStartTime())
-	sups.Release(mapsID, mapsID, useLease, getStartTime())
+	sups.Release(mapsID, mapsID, getQuestionLease(), getStartTime())
+	sups.Release(mapsID, mapsID, getUseLease(), getStartTime())
 
 	if targets := takeIdleTargets(sups, IdleThreshold, getStartTime()); len(targets) != 1 || targets[0].ID != mapsID {
 		t.Errorf("got %+v, want the released plugin to stop", targets)
@@ -161,7 +164,7 @@ func TestListProcessesReturnsTheStarterAndTheHoldersOfEachPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 	sups.AcquireRunning(atlasID, sup, asker, getStartTime())
-	sups.AcquireRunning(atlasID, sup, questionLease, getStartTime())
+	sups.AcquireRunning(atlasID, sup, getQuestionLease(), getStartTime())
 	sups.Release(atlasID, atlasID, starter, getStartTime())
 
 	got := NewRunningProcesses(sups).ListProcesses()
@@ -169,7 +172,7 @@ func TestListProcessesReturnsTheStarterAndTheHoldersOfEachPlugin(t *testing.T) {
 	if len(got) != 1 || got[0].StartedBy != starter.Holder {
 		t.Fatalf("got %+v, want the plugin started by %+v", got, starter.Holder)
 	}
-	if want := []plugindomain.Holder{asker.Holder, questionLease.Holder}; !slices.Equal(got[0].Holders, want) {
+	if want := []plugindomain.Holder{asker.Holder, getQuestionLease().Holder}; !slices.Equal(got[0].Holders, want) {
 		t.Errorf("holders %+v, want %+v", got[0].Holders, want)
 	}
 }

@@ -98,6 +98,7 @@ func mountVaults(w *windowWiring) {
 func mountSearch(w *windowWiring) {
 	state := w.state
 	finds := newSearch(w.a.search, w.db, w.asking, state.ReportWordsAlone)
+	finds.ReportAnswered = state.ClearWordsAlone
 	handler := windowsearch.NewHandler(
 		state,
 		search.NewFindNames(w.db.NoteQueries(), w.kinds.list),

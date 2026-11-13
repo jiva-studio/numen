@@ -150,7 +150,7 @@ func (d *Delivery) Configure(ctx context.Context, pluginID string) error {
 		return err
 	}
 	if !isRunning {
-		d.watchers.run(pluginID, d.host.GetPluginConfigRevision(pluginID))
+		d.runWatchers(pluginID, d.ledger.isAwaitingFirstConfigure(pluginID))
 		return nil
 	}
 	return d.deliver(ctx, snapshot)

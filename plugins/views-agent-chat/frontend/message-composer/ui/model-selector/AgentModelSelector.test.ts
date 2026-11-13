@@ -277,3 +277,24 @@ describe('AgentModelSelector while the models are listed', () => {
     wrapper.unmount()
   })
 })
+
+describe('AgentModelSelector where an agent could not list its models', () => {
+  it('shows one row that says so under that agent, and the models of the others', async () => {
+    const wrapper = mount(AgentModelSelector, {
+      props: {
+        options: AGENTS,
+        selectedAgentId: 'meadow',
+        selectedModelId: 'clover',
+        failedAgentIds: ['orchard'],
+        failedLabel: 'Could not list models',
+      },
+      attachTo: document.body,
+    })
+
+    await wrapper.find('button').trigger('click')
+
+    expect(isListOpen()).toBe(true)
+    expect(readRows()).toEqual(['Could not list models', 'Clover'])
+    wrapper.unmount()
+  })
+})

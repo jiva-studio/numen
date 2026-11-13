@@ -28,7 +28,6 @@ import {
 } from '@/testing/window'
 import { Palette, type PaletteGroup } from '@numen/workbench'
 import { WORDS } from '@/shared/ui/words'
-import { PALETTE_WORDS } from '@/features/command-palette'
 
 describe('the palette', () => {
   /** A keystroke taken on the window, and whether the window took it. */

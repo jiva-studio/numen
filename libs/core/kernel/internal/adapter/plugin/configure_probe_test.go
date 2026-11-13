@@ -100,7 +100,7 @@ func newConfiguredHost(t *testing.T) (*container.PluginRoles, *configured) {
 		},
 	}})
 	sup := lifecycle.New(nil)
-	sup.ActivateInProcess(lifecycle.Lease{Kind: lifecycle.UseLease, Holder: testHolder}, testsupport.GetMachine().Now())
+	sup.ActivateInProcess(lifecycle.Lease{Kind: lifecycle.UseLease, Holder: getTestHolder()}, testsupport.GetMachine().Now())
 	putSupervisor(host, configuredPluginID, sup)
 	putEndpoint(host, configuredPluginID, transport.Endpoint{
 		Host: "127.0.0.1", Port: wiretest.GetPort(t, server), Token: "launch-name",

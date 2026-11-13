@@ -39,12 +39,14 @@ interface UnnamedModelTitles {
 
 /**
  * One agent: the first row of its connection, and the models it offers with that row's model first.
- * `isListed` is false until its connection answered which models it has.
+ * `isListed` is false until its connection answered which models it has. `isFailed` is true where its
+ * connection could not list them; the next open of a picker asks again.
  */
 export interface Agent {
   readonly row: ConnectionRow
   readonly models: readonly AgentModelOption[]
   readonly isListed: boolean
+  readonly isFailed: boolean
 }
 
 /** An agent and a model the person chose. */
@@ -67,13 +69,20 @@ export interface AgentList {
   readonly lastChoice: Ref<ModelChoice | null>
 }
 
-async function listOptions(
+async function askOptions(
   connections: ConnectionHost,
   request: Omit<ConnectionRowOptionsRequest, 'operation'>,
 ): Promise<readonly ConnectionRowOption[]> {
   if (!request.field || !connections.listRowOptions) return []
+  return connections.listRowOptions({ operation: acp.OPERATION_TASK, ...request })
+}
+
+async function listOptions(
+  connections: ConnectionHost,
+  request: Omit<ConnectionRowOptionsRequest, 'operation'>,
+): Promise<readonly ConnectionRowOption[]> {
   try {
-    return await connections.listRowOptions({ operation: acp.OPERATION_TASK, ...request })
+    return await askOptions(connections, request)
   } catch {
     return []
   }
@@ -82,6 +91,7 @@ async function listOptions(
 function createAgent(
   row: ConnectionRow,
   listed: readonly ConnectionRowOption[] | undefined,
+  isFailed: boolean,
   titles: UnnamedModelTitles,
 ): Agent {
   const field = getField(row, MODELS)
@@ -100,11 +110,12 @@ function createAgent(
     row,
     models: [own, ...models.filter((one) => one !== own)],
     isListed: listed !== undefined,
+    isFailed: listed === undefined && isFailed,
   }
 }
 
 const listModelOptions = (connections: ConnectionHost, row: ConnectionRow) =>
-  listOptions(connections, {
+  askOptions(connections, {
     connectionId: row.connectionId,
     field: getFieldKey(row, MODELS),
     options: row.options,
@@ -112,7 +123,8 @@ const listModelOptions = (connections: ConnectionHost, row: ConnectionRow) =>
 
 /**
  * Lists the agents again on each reload; an answer that comes after a later reload is dropped. An agent
- * whose models were listed before keeps them until its new answer comes.
+ * whose models were listed before keeps them until its new answer comes, and keeps them where that
+ * answer fails.
  */
 export function createAgentList(
   connections: ConnectionHost,
@@ -121,6 +133,7 @@ export function createAgentList(
   const agents = shallowRef<readonly Agent[] | null>(null)
   const lastChoice = shallowRef<ModelChoice | null>(null)
   const listedModels = new Map<string, readonly ConnectionRowOption[]>()
+  const failedModels = new Set<string>()
   let latest = 0
   let isModelsWanted = false
 
@@ -139,22 +152,35 @@ export function createAgentList(
     }
     if (request !== latest) return
     const update = () => {
-      agents.value = rows.map((row) => createAgent(row, listedModels.get(row.connectionId), titles))
+      agents.value = rows.map((row) =>
+        createAgent(
+          row,
+          listedModels.get(row.connectionId),
+          failedModels.has(row.connectionId),
+          titles,
+        ),
+      )
     }
     update()
     if (!isModelsWanted) return
     await Promise.all(
       rows.map(async (row) => {
-        const listed = await listModelOptions(connections, row)
-        if (request !== latest) return
-        listedModels.set(row.connectionId, listed)
+        try {
+          const listed = await listModelOptions(connections, row)
+          if (request !== latest) return
+          listedModels.set(row.connectionId, listed)
+        } catch {
+          if (request !== latest) return
+          failedModels.add(row.connectionId)
+        }
         update()
       }),
     )
   }
 
   const listModels = async () => {
-    if (isModelsWanted) return
+    if (isModelsWanted && failedModels.size === 0) return
+    failedModels.clear()
     isModelsWanted = true
     await reload()
   }
@@ -177,10 +203,18 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
   const options = computed(() => agents.value.flatMap((agent) => agent.models))
   const isAgentMissing = computed(() => list.agents.value?.length === 0)
   const pendingAgentIds = computed(() =>
-    agents.value.filter((agent) => !agent.isListed).map((agent) => agent.row.connectionId),
+    agents.value
+      .filter((agent) => !agent.isListed && !agent.isFailed)
+      .map((agent) => agent.row.connectionId),
+  )
+  const failedAgentIds = computed(() =>
+    agents.value.filter((agent) => agent.isFailed).map((agent) => agent.row.connectionId),
   )
 
-  /** Whether the agent of a choice offers its model, or is still being asked which models it has. */
+  /**
+   * Whether the agent of a choice offers its model, or is still being asked which models it has, or could
+   * not list them.
+   */
   const isOffered = (choice: ModelChoice, listed: readonly Agent[]) => {
     const agent = listed.find((one) => one.row.connectionId === choice.agentId)
     return (
@@ -304,7 +338,7 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
   }
 
   return {
-    offered: { options, reasoningLevels, isAgentMissing, pendingAgentIds },
+    offered: { options, reasoningLevels, isAgentMissing, pendingAgentIds, failedAgentIds },
     selected: {
       agentId: computed(() => current.value?.agentId ?? ''),
       modelId: computed(() => current.value?.modelId ?? ''),

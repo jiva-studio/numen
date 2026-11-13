@@ -21,14 +21,14 @@ func TestAReleaseTakenOnAnEarlierProcessKeepsTheLeaseOfTheNewOne(t *testing.T) {
 	host := newAtlasHost(t, testsupport.NewClock(), 0)
 	startAtlas(t, host)
 	first := endpointOf(host, atlasPlugin).Token
-	host.Activation.Release(atlasPlugin, first, testHolder)
+	host.Activation.Release(atlasPlugin, first, getTestHolder())
 	host.Teardown.ReleaseProcess(t.Context(), atlasPlugin)
 	if state := supervisorOf(host, atlasPlugin).GetState(); state != lifecycle.StateDormant {
 		t.Fatalf("state after the release = %v, want dormant", state)
 	}
 
 	startAtlas(t, host)
-	host.Activation.Release(atlasPlugin, first, testHolder)
+	host.Activation.Release(atlasPlugin, first, getTestHolder())
 
 	if count := getLeaseCount(t, supervisorOf(host, atlasPlugin)); count != 1 {
 		t.Errorf("the new process holds %d leases after a release for the earlier one, want 1", count)
@@ -46,7 +46,7 @@ func TestAStartWhoseConfigureCannotBeSentReturnsItsLease(t *testing.T) {
 	defer cancel()
 	result := make(chan error, 1)
 	go func() {
-		_, err := host.Activation.EnsureActive(ctx, atlasPlugin, testHolder)
+		_, err := host.Activation.EnsureActive(ctx, atlasPlugin, getTestHolder())
 		result <- err
 	}()
 	wiretest.WaitUntil(t, "the process to start", func() bool { return endpointOf(host, atlasPlugin).Token != "" })

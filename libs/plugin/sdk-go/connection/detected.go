@@ -45,7 +45,10 @@ func ServeDetected(detect DetectConnections) Operation {
 			return nil, err
 		}
 		markLookup(ctx)
-		home, _ := os.UserHomeDir()
+		home, homeErr := os.UserHomeDir()
+		if homeErr != nil {
+			home = ""
+		}
 		wire := &v1.DetectedConnections{Connections: make([]*v1.DetectedConnection, len(found))}
 		for i, one := range found {
 			wire.Connections[i] = &v1.DetectedConnection{Name: one.Name, Fields: one.Fields, Path: writeHomeAsTilde(one.Path, home)}

@@ -296,13 +296,31 @@ func NewMediaRoute(state *State, handler *mediawindow.Handler) Route {
 	return NewRoute(path, served, handler)
 }
 
-// CallerHeader names the part of the window that makes a request: a tag of windowCallers, or
-// "plugin:" and the id of the plugin whose view asks.
+// CallerHeader names the part of the window that makes a request: a tag known to
+// getWindowCallerName, or "plugin:" and the id of the plugin whose view asks.
 const CallerHeader = "Numen-Caller"
 
-var windowCallers = map[string]string{
-	"chat": "Chat", "commands": "Commands", "editor": "Editor", "graph": "Graph", "plugins": "Plugins",
-	"search": "Search", "settings": "Settings", "tasks": "Tasks",
+func getWindowCallerName(tag string) (string, bool) {
+	switch tag {
+	case "chat":
+		return "Chat", true
+	case "commands":
+		return "Commands", true
+	case "editor":
+		return "Editor", true
+	case "graph":
+		return "Graph", true
+	case "plugins":
+		return "Plugins", true
+	case "search":
+		return "Search", true
+	case "settings":
+		return "Settings", true
+	case "tasks":
+		return "Tasks", true
+	default:
+		return "", false
+	}
 }
 
 func getWindowCaller(header http.Header) plugindomain.Caller {
@@ -310,7 +328,7 @@ func getWindowCaller(header http.Header) plugindomain.Caller {
 	if pluginID, isPlugin := strings.CutPrefix(tag, "plugin:"); isPlugin && pluginID != "" {
 		return plugindomain.Caller{PluginID: pluginID}
 	}
-	if who, ok := windowCallers[tag]; ok {
+	if who, ok := getWindowCallerName(tag); ok {
 		return plugindomain.Caller{Who: who}
 	}
 	return plugindomain.Caller{Who: plugindomain.WhoWindow}

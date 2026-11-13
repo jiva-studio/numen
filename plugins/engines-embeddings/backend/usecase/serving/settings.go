@@ -23,7 +23,9 @@ func (s *Server) Update(values map[string]string) {
 	if _, ok := values[chunking.TokensKey]; ok {
 		s.chunkTokens = chunking.ReadTokens(values)
 	}
-	if !s.isConnectionLocked() {
+	if s.isConnectionLocked() {
+		s.loader.ResetLocked()
+	} else {
 		s.updateLocalModelLocked(values["model"])
 	}
 	s.refreshModelInfoLocked()

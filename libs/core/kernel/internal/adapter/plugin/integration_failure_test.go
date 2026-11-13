@@ -37,7 +37,7 @@ func TestAPluginWhoseStartFailedIsListedWithItsReason(t *testing.T) {
 	if got := getFailure(host, failingPluginID); got != nil {
 		t.Fatalf("failure before any start = %+v, want none", got)
 	}
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, testHolder); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
+	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
 		t.Fatalf("EnsureActive() = %v, want %v", err, manifest.ErrUnsupportedProtocol)
 	}
 
@@ -62,7 +62,7 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion+1, &procs))
 	var recovered []string
 	host.Failures.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, testHolder); err == nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err == nil {
 		t.Fatal("expected the first start to fail")
 	}
 
@@ -108,7 +108,7 @@ func TestTheReasonOfAFailedStartIsListedUntilAStartSucceeds(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
 	host.Processes.SetLauncher(failLaunching)
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, testHolder); err == nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err == nil {
 		t.Fatal("expected the first start to fail")
 	}
 	if got := getFailure(host, failingPluginID); got == nil {
@@ -118,7 +118,7 @@ func TestTheReasonOfAFailedStartIsListedUntilAStartSucceeds(t *testing.T) {
 	host.Failures.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
 
 	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, testHolder); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive() on the next use = %v, want the plugin started", err)
 	}
 

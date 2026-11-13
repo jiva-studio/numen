@@ -533,3 +533,57 @@ describe('a choice saved before a restart', () => {
     expect(restored.agents!.selected.agentId.value).toBe('c-orchard')
   })
 })
+
+describe('a model listing that fails', () => {
+  it('keeps the choice restored for its agent, and marks the agent as failed, not pending', async () => {
+    const saved = await saveWithLanternModel()
+
+    const after = startWindow(LANTERN_ROWS, (connectionId, field, options) => {
+      if (connectionId === 'c-lantern' && field === 'model') throw new Error('the agent is offline')
+      return listOptions(connectionId, field, options)
+    })
+    await after.list.reload()
+    const restored = after.open('agent:1', JSON.parse(JSON.stringify(saved)))
+    await waitTask()
+    await waitTask()
+    const fresh = after.open('agent:2')
+
+    expect(restored.agents!.getChosen()).toStrictEqual({
+      agentId: 'c-lantern',
+      modelId: 'c-meadow|clover',
+    })
+    expect(after.kind.getState!(restored)).toMatchObject({
+      model: { connectionId: 'c-lantern', modelId: 'c-meadow|clover' },
+    })
+    expect(fresh.agents!.getChosen()).toStrictEqual({
+      agentId: 'c-lantern',
+      modelId: 'c-meadow|clover',
+    })
+    expect(restored.agents!.offered.failedAgentIds.value).toStrictEqual(['c-lantern'])
+    expect(restored.agents!.offered.pendingAgentIds.value).toStrictEqual([])
+  })
+
+  it('is asked again on the next open of a picker', async () => {
+    let isOffline = true
+    const { host } = createAgentConnections(
+      { frames: [] },
+      {
+        rows: [row('c-meadow', 'Meadow agent', { model: 'clover' })],
+        listOptions: (connectionId, field, options) => {
+          if (field === 'model' && isOffline) throw new Error('the agent is offline')
+          return listOptions(connectionId, field, options)
+        },
+      },
+    )
+    const list = createAgentList(host, WORDS)
+    const choice = useAgentChoice(host, list)
+    await choice.listChoices()
+    expect(choice.offered.failedAgentIds.value).toStrictEqual(['c-meadow'])
+
+    isOffline = false
+    await choice.listChoices()
+
+    expect(choice.offered.failedAgentIds.value).toStrictEqual([])
+    expect(readOptions(choice)).toStrictEqual(['Meadow agent · Clover'])
+  })
+})

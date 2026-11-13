@@ -32,14 +32,9 @@ type Choice struct {
 
 const choiceSeparator = "|"
 
-var (
-	escapeConnection   = strings.NewReplacer("%", "%25", choiceSeparator, "%7C")
-	unescapeConnection = strings.NewReplacer("%7C", choiceSeparator, "%25", "%")
-)
-
 // WriteChoice returns the value of the row field that names the model of the connection.
 func WriteChoice(choice Choice) string {
-	return escapeConnection.Replace(choice.ConnectionID) + choiceSeparator + choice.ModelID
+	return escapeConnectionID(choice.ConnectionID) + choiceSeparator + choice.ModelID
 }
 
 // ParseChoice returns the model of a connection the value of the row field names, and false for a value
@@ -49,5 +44,13 @@ func ParseChoice(value string) (Choice, bool) {
 	if !isCut || connectionID == "" || modelID == "" {
 		return Choice{ConnectionID: "", ModelID: ""}, false
 	}
-	return Choice{ConnectionID: unescapeConnection.Replace(connectionID), ModelID: modelID}, true
+	return Choice{ConnectionID: unescapeConnectionID(connectionID), ModelID: modelID}, true
+}
+
+func escapeConnectionID(connectionID string) string {
+	return strings.NewReplacer("%", "%25", choiceSeparator, "%7C").Replace(connectionID)
+}
+
+func unescapeConnectionID(connectionID string) string {
+	return strings.NewReplacer("%7C", choiceSeparator, "%25", "%").Replace(connectionID)
 }

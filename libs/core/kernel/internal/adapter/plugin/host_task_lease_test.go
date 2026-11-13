@@ -37,10 +37,10 @@ func newTaskHost(t *testing.T) taskHost {
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
 	services, _ := lendEndpoint(host, hostendpoint.Address)
 	services.SetPluginWork(run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil))
-	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin, testHolder); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
 		t.Fatal(err)
 	}
-	host.Activation.Release(workingPlugin, endpointOf(host, workingPlugin).Token, testHolder)
+	host.Activation.Release(workingPlugin, endpointOf(host, workingPlugin).Token, getTestHolder())
 	return taskHost{host: host, process: procs[0], client: newTaskClient(t, host)}
 }
 
@@ -162,15 +162,14 @@ func TestACrashClearsTheOpenTasks(t *testing.T) {
 	wiretest.KillProcess(t, w.process)
 	waitForProcessExit(t, supervisorOf(w.host, workingPlugin).GetExitSignal())
 
-	if _, err := w.host.Activation.EnsureActive(t.Context(), workingPlugin, testHolder); err != nil {
+	if _, err := w.host.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
 		t.Fatalf("restart after the crash: %v", err)
 	}
-	w.host.Activation.Release(workingPlugin, endpointOf(w.host, workingPlugin).Token, testHolder)
+	w.host.Activation.Release(workingPlugin, endpointOf(w.host, workingPlugin).Token, getTestHolder())
 	if evicted := w.listEvictedIDs(t); len(evicted) != 1 || evicted[0] != workingPlugin {
 		t.Fatalf("evicted %v, want the restarted plugin without the crashed process's task", evicted)
 	}
 }
-
 func TestATaskReportedAfterTheReleaseDoesNotCancelIt(t *testing.T) {
 	w := newTaskHost(t)
 	w.reportTask(t, "first", 0, 4)
