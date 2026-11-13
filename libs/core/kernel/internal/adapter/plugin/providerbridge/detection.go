@@ -26,6 +26,7 @@ const (
 
 // answer is what the provider of a type reported, and the version of its plugin then.
 type answer struct {
+	pluginID      string
 	pluginVersion string
 	connections   []connection.Connection
 }
@@ -33,21 +34,21 @@ type answer struct {
 // Detection keeps the connections the providers report ready on this machine, by type. A type takes part
 // when it lists connection.OperationDetected among its operations; until its provider answers, it lists
 // none. An answer counts only for the version of the plugin that gave it. A detected connection is not
-// stored with the connections: its id is the type id, a slash and its name. Where a store file is set,
-// the answers are kept in it, so the providers are not asked again after a restart.
+// stored with the connections: its id is the type id, a slash and its name. Where files are set, the
+// answers of each plugin are kept in them, so the providers are not asked again after a restart.
 type Detection struct {
 	types  connectionport.Types
 	source connectionport.ProviderSource
 	clock  machineport.Clock
 
-	mu        sync.Mutex
-	answers   map[string]answer
-	askedAt   map[string]time.Time
-	running   map[string]chan struct{}
-	storeFile string
-	isLoaded  bool
-	onChange  func()
-	report    func(error)
+	mu       sync.Mutex
+	answers  map[string]answer
+	askedAt  map[string]time.Time
+	running  map[string]chan struct{}
+	files    DetectionFiles
+	loaded   map[string]bool
+	onChange func()
+	report   func(error)
 
 	writeMu sync.Mutex
 }
@@ -57,16 +58,16 @@ type Detection struct {
 func NewDetection(types connectionport.Types, source connectionport.ProviderSource, clock machineport.Clock) *Detection {
 	return &Detection{
 		types: types, source: source, clock: clock, answers: map[string]answer{}, askedAt: map[string]time.Time{},
-		running: map[string]chan struct{}{}, isLoaded: true, onChange: func() {}, report: func(error) {},
+		running: map[string]chan struct{}{}, loaded: map[string]bool{}, onChange: func() {}, report: func(error) {},
 	}
 }
 
-// SetStoreFile sets the file the answers are kept in; they are read from it on the first use after. An
-// empty path keeps the answers in memory only.
-func (d *Detection) SetStoreFile(path string) {
+// SetFiles sets the files the answers are kept in; the answers of a plugin are read from them on its first
+// use after.
+func (d *Detection) SetFiles(files DetectionFiles) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.storeFile, d.isLoaded = path, path == ""
+	d.files, d.loaded = files, map[string]bool{}
 }
 
 // Follow sets what runs after an answer changed the detected connections, and what receives the failures of
@@ -83,10 +84,13 @@ func (d *Detection) ListDetected() []connection.Connection {
 	types := d.types.ListTypes()
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.load()
 	var list []connection.Connection
 	for _, one := range types {
-		if found, isAnswered := d.getAnswer(one); isAnswered && isDetecting(one) {
+		if !isDetecting(one) {
+			continue
+		}
+		d.load(one.PluginID)
+		if found, isAnswered := d.getAnswer(one); isAnswered {
 			list = append(list, found...)
 		}
 	}
@@ -102,7 +106,7 @@ func (d *Detection) IsPending(typeID string) bool {
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.load()
+	d.load(found.PluginID)
 	_, isAnswered := d.getAnswer(found)
 	return !isAnswered
 }
@@ -144,7 +148,7 @@ func (d *Detection) Detect(ctx context.Context, pluginID string) {
 		isChanged = d.store(one, newDetectedConnections(one, found)) || isChanged
 	}
 	if isChanged {
-		if err := d.writeStoreFile(); err != nil {
+		if err := d.writeStoreFile(pluginID); err != nil {
 			report(fmt.Errorf("keep the detected connections: %w", err))
 		}
 		onChange()
@@ -237,9 +241,9 @@ func (d *Detection) getAnswer(declared connection.Type) ([]connection.Connection
 func (d *Detection) store(declared connection.Type, found []connection.Connection) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.load()
+	d.load(declared.PluginID)
 	before, isAnswered := d.getAnswer(declared)
-	d.answers[declared.GetID()] = answer{pluginVersion: declared.PluginVersion, connections: found}
+	d.answers[declared.GetID()] = answer{pluginID: declared.PluginID, pluginVersion: declared.PluginVersion, connections: found}
 	return !isAnswered || !reflect.DeepEqual(before, found)
 }
 

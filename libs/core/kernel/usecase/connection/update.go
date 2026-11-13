@@ -21,8 +21,8 @@ type UpdateRequest struct {
 	Secrets  map[string]string
 }
 
-// Update changes the name, the fields and the secrets of a stored connection, and adds 1 to its revision. A
-// detected connection is not found.
+// Update changes the name, the fields and the secrets of a stored connection, adds 1 to its revision and
+// refreshes the option lists kept for it. A detected connection is not found.
 type Update struct{ operation }
 
 // Execute applies the request to the connection that has the revision the request carries. A change
@@ -73,6 +73,9 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 	})
 	if err != nil {
 		return Entry{}, errors.Join(err, u.secrets().restore(context.WithoutCancel(ctx), current.ID, backup))
+	}
+	if u.lists != nil {
+		u.lists.RefreshConnection(updated.ID)
 	}
 	return u.describe(ctx, updated)
 }

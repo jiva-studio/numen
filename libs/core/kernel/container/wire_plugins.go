@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"errors"
-	"path/filepath"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
@@ -125,7 +124,8 @@ type PluginViews struct {
 // made. ApplySetting makes a plugin follow one setting that changed. SetStorage sets the folders the plugins
 // store files in and keeps the dependencies in the models folder the host names; RefreshDependencies
 // provisions them as the environment names them now. Detection and RowOptions keep what the providers
-// reported, for every window of the host; SetStorage also sets the file Detection keeps its answers in.
+// reported, for every window of the host, in the cache files of the plugins; RunningProviders opens the
+// provider of a plugin only while it runs.
 // SourceDescriptions keeps the description of the search source between its openings and processes.
 type PluginHost struct {
 	Runtime             PluginRuntime
@@ -139,7 +139,8 @@ type PluginHost struct {
 	Health              *pluginhealth.Items
 	Processes           pluginprocess.Processes
 	Detection           *providerbridge.Detection
-	RowOptions          *rowoptions.Cache
+	RowOptions          *rowoptions.Lists
+	RunningProviders    *providerbridge.RunningSource
 	SourceDescriptions  *sourcebridge.Descriptions
 }
 
@@ -191,13 +192,14 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		},
 		SetStorage: func(cacheRoot, dataRoot string) {
 			setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry)
-			detection.SetStoreFile(getDetectionFile(dataRoot))
+			detection.SetFiles(host.Storage)
 		},
 		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
 		Health:              host.Health,
 		Processes:           host.RunningProcesses,
 		Detection:           detection,
-		RowOptions:          rowoptions.NewCache(clock.System{}),
+		RowOptions:          rowoptions.NewLists(host.Storage),
+		RunningProviders:    providerbridge.NewRunningSource(host.Activation, host.Activation.ClientLookup()),
 		SourceDescriptions:  sourcebridge.NewDescriptions(host.Storage, host.Config),
 	}
 }
@@ -217,11 +219,4 @@ func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 		},
 	}))
 	return services
-}
-
-func getDetectionFile(dataRoot string) string {
-	if dataRoot == "" {
-		return ""
-	}
-	return filepath.Join(dataRoot, "core", "detected-connections.json")
 }

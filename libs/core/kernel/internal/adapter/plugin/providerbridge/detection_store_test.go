@@ -3,12 +3,14 @@ package providerbridge_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"testing/synctest"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
 )
 
 // standingClock is a clock that stands still until advance moves it.
@@ -38,9 +40,16 @@ func setPluginVersion(types detectingTypes, version string) detectingTypes {
 	return changed
 }
 
-func (f *detectionFixture) restart(types detectingTypes, storeFile string) *providerbridge.Detection {
+func cacheIn(t *testing.T, root string) *storage.Storage {
+	t.Helper()
+	files := storage.New(func(err error) { t.Errorf("the storage reported %v", err) }, func(string) string { return "1.0.0" })
+	files.SetStorageRoots(root, "")
+	return files
+}
+
+func (f *detectionFixture) restart(types detectingTypes, files providerbridge.DetectionFiles) *providerbridge.Detection {
 	detection := providerbridge.NewDetection(types, f.source, f.clock)
-	detection.SetStoreFile(storeFile)
+	detection.SetFiles(files)
 	return detection
 }
 
@@ -52,12 +61,12 @@ func (f *detectionFixture) countCalls() int {
 
 func TestARestartListsTheStoredAnswerWithoutAskingTheProvider(t *testing.T) {
 	f := newDetectionFixture()
-	storeFile := filepath.Join(t.TempDir(), "core", "detected-connections.json")
-	f.detection.SetStoreFile(storeFile)
+	root := t.TempDir()
+	f.detection.SetFiles(cacheIn(t, root))
 	f.detect(t)
 	calls := f.countCalls()
 
-	restarted := f.restart(f.types, storeFile)
+	restarted := f.restart(f.types, cacheIn(t, root))
 
 	listed := restarted.ListDetected()
 	if len(listed) != 1 || listed[0].ID != kiteID || listed[0].Fields["parallelRequests"] != float64(2) || listed[0].Fields["program"] != "kite" {
@@ -73,25 +82,23 @@ func TestARestartListsTheStoredAnswerWithoutAskingTheProvider(t *testing.T) {
 
 func TestAStoredAnswerOfAnotherPluginVersionIsPending(t *testing.T) {
 	f := newDetectionFixture()
-	storeFile := filepath.Join(t.TempDir(), "detected-connections.json")
-	f.detection.SetStoreFile(storeFile)
+	root := t.TempDir()
+	f.detection.SetFiles(cacheIn(t, root))
 	f.detect(t)
 
-	restarted := f.restart(setPluginVersion(f.types, "2.0.0"), storeFile)
+	restarted := f.restart(setPluginVersion(f.types, "2.0.0"), cacheIn(t, root))
 
 	if listed := restarted.ListDetected(); len(listed) != 0 || !restarted.IsPending(kiteTypeID) {
 		t.Errorf("listed = %+v, pending = %v, want none and pending", listed, restarted.IsPending(kiteTypeID))
 	}
 }
 
-func TestAStoreFileThatCannotBeReadIsReportedAndHasNoAnswer(t *testing.T) {
+func TestAFileThatCannotBeReadIsReportedAndHasNoAnswer(t *testing.T) {
 	f := newDetectionFixture()
-	storeFile := filepath.Join(t.TempDir(), "detected-connections.json")
-	if err := os.WriteFile(storeFile, []byte("{not json"), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	root := t.TempDir()
+	cacheIn(t, root).WriteDetectedConnections(agentsPluginID, []byte("{not json"))
 	var reported []error
-	restarted := f.restart(f.types, storeFile)
+	restarted := f.restart(f.types, cacheIn(t, root))
 	restarted.Follow(func() {}, func(err error) { reported = append(reported, err) })
 
 	if !restarted.IsPending(kiteTypeID) || len(reported) != 1 {
@@ -129,4 +136,17 @@ func TestRefreshAsksAPluginAgainOnceTheRefreshIntervalPassed(t *testing.T) {
 			t.Errorf("the providers were asked %d times, want once", got-calls)
 		}
 	})
+}
+
+func TestTheAnswersOfAPluginAreKeptInItsFileOfTheConnectionsFolder(t *testing.T) {
+	f := newDetectionFixture()
+	root := t.TempDir()
+	f.detection.SetFiles(cacheIn(t, root))
+
+	f.detect(t)
+
+	content, err := os.ReadFile(filepath.Join(root, "connections", agentsPluginID+".json"))
+	if err != nil || !strings.Contains(string(content), "Kite agent") {
+		t.Errorf("content = %s, %v, want the answer of Kite", content, err)
+	}
 }

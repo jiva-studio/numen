@@ -144,6 +144,16 @@ func (a *Activation) Acquire(pluginID string) {
 	}
 }
 
+// AcquireRunning takes a reference on a plugin whose process runs, as Acquire does, and returns the endpoint
+// of the process. A plugin whose process does not run is not started and returns false.
+func (a *Activation) AcquireRunning(pluginID string) (transport.Endpoint, bool) {
+	sup, ok := a.sups.Get(pluginID)
+	if !ok {
+		return supervision.NoEndpoint(), false
+	}
+	return a.sups.AcquireRunning(pluginID, sup, a.clock.Now())
+}
+
 // Release decrements the active consumer reference count for a plugin. A released process that holds no
 // lease after it is stopped at once.
 func (a *Activation) Release(pluginID string) {

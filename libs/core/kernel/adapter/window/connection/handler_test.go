@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
@@ -110,22 +109,63 @@ func getTypes() fixedTypes {
 }
 
 func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
+	return newHandlerOver(keys, uses, &modelList{})
+}
+
+func newHandlerOver(keys *memoryKeys, uses connectionport.Uses, provider *modelList) *Handler {
 	next := 0
 	return NewHandler(useCasesOf(connectiontest.New(&memoryRepository{}, getTypes(), keys, uses, func() (string, error) {
 		next++
 		return "c0000000" + string(rune('0'+next)), nil
-	}), &modelList{}))
+	}), provider))
 }
 
 func useCasesOf(all *connectiontest.Connections, source connectionport.ProviderSource) UseCases {
 	return UseCases{
 		Edits: Edits{Create: all.Create, Update: all.Update, Delete: all.Delete},
-		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: rowoptions.NewOptions(all.Resolve.Execute, all.ReadSecrets.Execute, source, rowoptions.NewCache(clock.System{}))},
+		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: rowoptions.NewOptions(
+			all.Resolve.Execute, all.ReadSecrets.Execute, source, notRunning{}, rowoptions.NewLists(&memoryLists{byPlugin: map[string][]rowoptions.KeptList{}}),
+		)},
 	}
 }
 
-// modelList is a provider that lists two models.
-type modelList struct{}
+// memoryLists keeps the option lists in memory.
+type memoryLists struct {
+	mu       sync.Mutex
+	byPlugin map[string][]rowoptions.KeptList
+}
+
+func (m *memoryLists) ReadOptionLists(pluginID string) ([]rowoptions.KeptList, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	lists, isKept := m.byPlugin[pluginID]
+	return slices.Clone(lists), isKept
+}
+
+func (m *memoryLists) WriteOptionLists(pluginID string, lists []rowoptions.KeptList) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.byPlugin[pluginID] = slices.Clone(lists)
+}
+
+// notRunning finds no plugin running.
+type notRunning struct{}
+
+func (notRunning) OpenRunningProvider(context.Context, string) (connectionport.Provider, func(), bool) {
+	return nil, nil, false
+}
+
+// modelList is a provider that lists two models and counts the listings.
+type modelList struct {
+	mu     sync.Mutex
+	listed int
+}
+
+func (m *modelList) countListings() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.listed
+}
 
 func (m *modelList) OpenProvider(context.Context, string) (connectionport.Provider, func(), error) {
 	return m, func() {}, nil
@@ -136,6 +176,9 @@ func (m *modelList) Call(context.Context, string, modelcall.ProviderCall, []byte
 }
 
 func (m *modelList) ListOptions(context.Context, string, modelcall.ProviderCall, []string) ([]modelcall.Option, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.listed++
 	return []modelcall.Option{{Value: "google/gemini-2.5-flash", Title: "Gemini 2.5 Flash", Group: "Google"}, {Value: "qwen/qwen3-8b"}}, nil
 }
 
@@ -452,5 +495,22 @@ func TestListProviderConnectionsMarksADetectedConnection(t *testing.T) {
 	got := listed.Msg.GetConnections()
 	if len(got) != 2 || got[0].GetIsDetected() || got[1].GetId() != "org.example.agents/kite/Kite agent" || !got[1].GetIsDetected() {
 		t.Errorf("connections = %v, want Work and then the detected Kite agent", got)
+	}
+}
+
+func TestListRowOptionsAsksTheProviderAgainEachTime(t *testing.T) {
+	provider := &modelList{}
+	handler := newHandlerOver(newKeys(), fixedUses{}, provider)
+	created := mustCreate(t, handler)
+	request := &v1.ListRowOptionsRequest{ConnectionId: created.Msg.GetConnection().GetId(), Field: "model"}
+
+	for range 2 {
+		if _, err := handler.ListRowOptions(t.Context(), connect.NewRequest(request)); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if listed := provider.countListings(); listed != 2 {
+		t.Errorf("the provider listed %d times, want twice", listed)
 	}
 }

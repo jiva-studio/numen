@@ -42,8 +42,12 @@ func openConnectionDeps(c pluginsWiring) (connection.Deps, bool) {
 	if !hasPluginHost(c) {
 		return connection.Deps{}, false
 	}
-	deps := connection.NewDeps(openConnectionRepository(c.settings), c.PluginHost.Views.Types, c.KeyStore, openConnectionRows(c))
-	return deps.AddDetection(openDetection(c)), true
+	deps := connection.NewDeps(openConnectionRepository(c.settings), c.PluginHost.Views.Types, c.KeyStore, openConnectionRows(c)).
+		AddDetection(openDetection(c))
+	if options := openRowOptions(c, deps); options != nil {
+		deps = deps.AddOptionLists(options)
+	}
+	return deps, true
 }
 
 func openDetection(c pluginsWiring) connectionport.Detected {
@@ -89,7 +93,7 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 			Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
 			Rows: connection.NewListRows(deps, openConnectionRows(c)).Execute,
 		},
-		openCallSource(c), clock.System{}, clock.System{}.Wait, notices,
+		openCallSource(c, deps), clock.System{}, clock.System{}.Wait, notices,
 	))
 }
 
@@ -107,6 +111,9 @@ func openRowLists(c pluginsWiring) connectionport.RowLists {
 	}
 	resolve := connection.NewResolve(deps).Execute
 	options := openRowOptions(c, deps)
+	if options == nil {
+		return nil
+	}
 	return modelcall.NewRows(resolve, connection.NewListRows(deps, openConnectionRows(c)).Execute, options.ListOptions)
 }
 
@@ -117,19 +124,24 @@ func GetConnectionRows(c Config) connectionport.RowLists {
 }
 
 func openRowOptions(c pluginsWiring, deps connection.Deps) *rowoptions.Options {
-	cache := c.PluginHost.RowOptions
-	if cache == nil {
-		cache = rowoptions.NewCache(clock.System{})
+	if c.PluginHost.RowOptions == nil || c.PluginHost.RunningProviders == nil {
+		return nil
 	}
 	return rowoptions.NewOptions(
-		connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime), cache,
+		connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime),
+		c.PluginHost.RunningProviders, c.PluginHost.RowOptions,
 	)
 }
 
-func openCallSource(c pluginsWiring) connectionport.ProviderSource {
-	source := providerbridge.NewSource(c.PluginHost.Runtime)
-	if c.PluginHost.Detection == nil {
-		return source
+// openCallSource opens the providers of the calls through connections. A call a provider answered makes
+// the option lists of its connection refresh while the plugin runs.
+func openCallSource(c pluginsWiring, deps connection.Deps) connectionport.ProviderSource {
+	var source connectionport.ProviderSource = providerbridge.NewSource(c.PluginHost.Runtime)
+	if c.PluginHost.Detection != nil {
+		source = providerbridge.NewRedetectingSource(source, c.PluginHost.Detection)
 	}
-	return providerbridge.NewRedetectingSource(source, c.PluginHost.Detection)
+	if options := openRowOptions(c, deps); options != nil {
+		source = providerbridge.NewCallReportingSource(source, options.RefreshRunning)
+	}
+	return source
 }

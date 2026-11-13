@@ -18,6 +18,8 @@ const address = "https://one.test/v1"
 
 type setup struct {
 	world   *modelcalltest.World
+	files   *memoryLists
+	running *runningProviders
 	options *rowoptions.Options
 	entry   modelcalltest.Entry
 }
@@ -25,10 +27,12 @@ type setup struct {
 func newSetup(t *testing.T) *setup {
 	t.Helper()
 	w := modelcalltest.New()
-	return &setup{
+	s := &setup{
 		world: w, entry: w.AddServer(t, "First", address, "sk-one"),
-		options: rowoptions.NewOptions(w.Resolve, w.ReadSecrets, w.Source, rowoptions.NewCache(w.Clock)),
+		files: &memoryLists{byPlugin: map[string][]rowoptions.KeptList{}}, running: &runningProviders{provider: w.Provider},
 	}
+	s.options = s.restart()
+	return s
 }
 
 func (s *setup) listModels(ctx context.Context, operations ...string) ([]modelcalldomain.Option, error) {

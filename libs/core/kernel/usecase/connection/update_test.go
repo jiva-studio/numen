@@ -219,3 +219,44 @@ func TestUpdateRejectsAnUnavailableType(t *testing.T) {
 		t.Errorf("err = %v, want connectiondomain.ErrTypeUnavailable", err)
 	}
 }
+
+// refreshedLists records the connections whose option lists were refreshed.
+type refreshedLists struct{ ids []string }
+
+func (r *refreshedLists) RefreshConnection(connectionID string) { r.ids = append(r.ids, connectionID) }
+
+func TestUpdateRefreshesTheOptionListsOfTheConnection(t *testing.T) {
+	f := newFixture(t)
+	lists := &refreshedLists{}
+	deps := connection.NewDeps(f.repository, f.types, f.keys, f.uses).AddOptionLists(lists)
+	created, err := connection.NewCreate(deps, func() (string, error) { return "c0000heron", nil }).Execute(t.Context(), connection.CreateRequest{
+		TypeID: openRouterID, Name: "Work", Secrets: map[string]string{"apiKey": "sk-or-1"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := connection.NewUpdate(deps).Execute(t.Context(), connection.UpdateRequest{
+		ID: created.ID, Revision: created.Revision, Secrets: map[string]string{"apiKey": "sk-or-2"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if !slices.Equal(lists.ids, []string{"c0000heron"}) {
+		t.Errorf("refreshed = %v, want the updated connection", lists.ids)
+	}
+}
+
+func TestARefusedUpdateRefreshesNoOptionList(t *testing.T) {
+	f := newFixture(t)
+	created := f.createOpenRouter(t, "Work")
+	lists := &refreshedLists{}
+
+	_, err := connection.NewUpdate(connection.NewDeps(f.repository, f.types, f.keys, f.uses).AddOptionLists(lists)).Execute(t.Context(), connection.UpdateRequest{
+		ID: created.ID, Revision: created.Revision + 1, Name: "Home",
+	})
+
+	if err == nil || len(lists.ids) != 0 {
+		t.Errorf("err = %v, refreshed = %v, want a refusal and no refresh", err, lists.ids)
+	}
+}
