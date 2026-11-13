@@ -115,6 +115,7 @@ interface Options {
   readonly list?: Ref<readonly ConnectionInfo[]>
   readonly listRowOptions?: InstallationConnections['listRowOptions']
   readonly operation?: string
+  readonly operations?: readonly string[]
   readonly countNotes?: InstallationConnections['countNotes']
   readonly create?: InstallationConnections['edits']['create']
   readonly discover?: boolean
@@ -136,7 +137,7 @@ const mountRows = (options: Options = {}) => {
     props: {
       setting: setting({
         max: options.max ?? 3,
-        operations: [options.operation ?? 'llm.complete'],
+        operations: options.operations ?? [options.operation ?? 'llm.complete'],
         ...(options.discover ? { discover: true } : {}),
       }),
       value: options.value ?? [],
@@ -529,6 +530,18 @@ describe('the rows of a setting that discovers', () => {
     expect(root().textContent).toContain('Discover automatically')
     expect(discoverSwitch(wrapper).props('modelValue')).toBe(true)
     expect(root().textContent).toContain('Automatic: Work, Home')
+    dispose(wrapper)
+  })
+
+  it('names a connection that serves one of the operations, as the core discovers each on its own', async () => {
+    const { wrapper } = mountRows({
+      discover: true,
+      isDiscovering: true,
+      operations: ['llm.complete', 'llm.embed'],
+    })
+    await flushPromises()
+
+    expect(root().textContent).toContain('Automatic: Embed only, Work, Home')
     dispose(wrapper)
   })
 

@@ -20,7 +20,7 @@ export interface RowDraftsSource {
   readonly onChange: (rows: readonly StoredRow[]) => void
 }
 
-function sameRows(first: readonly StoredRow[], second: readonly StoredRow[]): boolean {
+function isSameRows(first: readonly StoredRow[], second: readonly StoredRow[]): boolean {
   return (
     first.length === second.length &&
     first.every((one, index) => {
@@ -45,7 +45,7 @@ export function useRowDrafts(source: RowDraftsSource) {
 
   const write = (): void => {
     const complete = getCompleteRows(drafts.value, source.getRowFields)
-    if (sameRows(complete, readRows(source.getValue())) && inFlight.length === 0) return
+    if (isSameRows(complete, readRows(source.getValue())) && inFlight.length === 0) return
     inFlight = [...inFlight, complete]
     source.onChange(complete)
   }
@@ -56,13 +56,13 @@ export function useRowDrafts(source: RowDraftsSource) {
 
   watch(source.getValue, (next) => {
     const stored = readRows(next)
-    const at = inFlight.findIndex((one) => sameRows(one, stored))
+    const at = inFlight.findIndex((one) => isSameRows(one, stored))
     if (at >= 0) {
       inFlight = inFlight.slice(at + 1)
       return
     }
     inFlight = []
-    if (!sameRows(stored, getCompleteRows(drafts.value, source.getRowFields)))
+    if (!isSameRows(stored, getCompleteRows(drafts.value, source.getRowFields)))
       drafts.value = createDrafts(stored)
   })
 
