@@ -102,7 +102,13 @@ func describeFrame(frame *acp.TaskFrame) string {
 		return fmt.Sprintf("call %s %q %s %s %v %v", call.GetToolCallId(), call.GetTitle(), call.GetKind(), call.GetStatus(), call.GetContent(), paths)
 	case *acp.TaskFrame_ToolCallUpdate:
 		change := update.ToolCallUpdate
-		return fmt.Sprintf("update %s %s %s", change.GetToolCallId(), change.GetStatus(), change.GetRawOutputJson())
+		described := fmt.Sprintf("update %s %s %s", change.GetToolCallId(), change.GetStatus(), change.GetRawOutputJson())
+		for _, one := range change.GetDiffs() {
+			described += fmt.Sprintf(" diff %q %q %q", one.GetPath(), one.GetOldText(), one.GetNewText())
+		}
+		return described
+	case *acp.TaskFrame_AgentThoughtChunk:
+		return fmt.Sprintf("thought %s %q", update.AgentThoughtChunk.GetMessageId(), update.AgentThoughtChunk.GetText())
 	}
 	return "unknown"
 }
@@ -128,6 +134,31 @@ func TestATaskStreamsTheAnswerAsItArrivesAndEndsWithTheStopReason(t *testing.T) 
 		`chunk m1 "Raised "`,
 		"plan Read the garden note PLAN_ENTRY_PRIORITY_HIGH PLAN_ENTRY_STATUS_PENDING",
 		`chunk m2 "beds."`,
+	}
+	if !slices.Equal(frames, want) {
+		t.Errorf("frames = %q, want %q", frames, want)
+	}
+}
+
+// The reasoning of the agent arrives as thought chunks, and the diffs a call reports, on its start or on an
+// update, arrive in the updates of the call.
+func TestATaskSendsTheThoughtsAndTheDiffsTheProgramReports(t *testing.T) {
+	program, _ := fakeProgram(t, "edit")
+
+	frames, done, err := runTask(t.Context(), newTestServer(t), taskCall("acp", program), &acp.TaskRequest{Prompt: "List the beds."})
+
+	if err != nil || done.GetStopReason() != acp.StopReason_STOP_REASON_END_TURN {
+		t.Fatalf("RunTask = %v, %v, want the end of the turn", done, err)
+	}
+	want := []string{
+		`thought t1 "The beds "`,
+		`thought t1 "need a list."`,
+		`chunk m1 "Writing it."`,
+		`thought t2 "Start north."`,
+		`call e1 "Write beds.md" TOOL_KIND_EDIT TOOL_CALL_STATUS_PENDING [] []`,
+		`update e1 TOOL_CALL_STATUS_PENDING  diff "/garden/beds.md" "" "# Beds"`,
+		`update e1 TOOL_CALL_STATUS_IN_PROGRESS  diff "/garden/beds.md" "# Beds" "# Beds\nNorth"`,
+		`update e1 TOOL_CALL_STATUS_COMPLETED `,
 	}
 	if !slices.Equal(frames, want) {
 		t.Errorf("frames = %q, want %q", frames, want)

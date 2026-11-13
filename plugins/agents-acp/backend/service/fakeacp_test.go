@@ -234,6 +234,10 @@ func (a *fakeAgent) answerPrompt(id any) {
 		a.streamAnswer()
 		a.send(map[string]any{"id": id, "result": map[string]any{"stopReason": "end_turn"}})
 		return
+	case "edit":
+		a.editFile()
+		a.send(map[string]any{"id": id, "result": map[string]any{"stopReason": "end_turn"}})
+		return
 	case "mcp":
 		a.callServedTool()
 		a.send(map[string]any{"id": id, "result": map[string]any{"stopReason": "end_turn"}})
@@ -327,6 +331,25 @@ func (a *fakeAgent) streamAnswer() {
 		{"content": "Read the garden note", "priority": "high", "status": "pending"},
 	}})
 	a.update(map[string]any{"sessionUpdate": "agent_message_chunk", "content": map[string]any{"type": "text", "text": "beds."}})
+}
+
+func (a *fakeAgent) editFile() {
+	a.update(map[string]any{"sessionUpdate": "agent_thought_chunk", "content": map[string]any{"type": "text", "text": "The beds "}})
+	a.update(map[string]any{"sessionUpdate": "agent_thought_chunk", "content": map[string]any{"type": "text", "text": "need a list."}})
+	a.update(map[string]any{"sessionUpdate": "agent_message_chunk", "content": map[string]any{"type": "text", "text": "Writing it."}})
+	a.update(map[string]any{"sessionUpdate": "agent_thought_chunk", "content": map[string]any{"type": "text", "text": "Start north."}})
+	a.update(map[string]any{
+		"sessionUpdate": "tool_call", "toolCallId": "e1", "title": "Write beds.md", "kind": "edit", "status": "pending",
+		"content": []map[string]any{
+			{"type": "content", "content": map[string]any{"type": "text", "text": "A new note"}},
+			{"type": "diff", "path": "/garden/beds.md", "oldText": nil, "newText": "# Beds"},
+		},
+	})
+	a.update(map[string]any{
+		"sessionUpdate": "tool_call_update", "toolCallId": "e1", "status": "in_progress",
+		"content": []map[string]any{{"type": "diff", "path": "/garden/beds.md", "oldText": "# Beds", "newText": "# Beds\nNorth"}},
+	})
+	a.update(map[string]any{"sessionUpdate": "tool_call_update", "toolCallId": "e1", "status": "completed"})
 }
 
 func (a *fakeAgent) callServedTool() {

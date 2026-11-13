@@ -26,9 +26,10 @@ type shownCall struct {
 
 // turn turns the session updates of one prompt turn into the frames of the task, and allows the agent
 // the tools the session serves. Pieces of the answer the agent names no message for belong to one message
-// until another update comes between them. The first report of a call is sent as a tool_call, followed by
-// its end where the first report is the end, the others as tool_call_updates, and nothing after the call
-// has finished. A call of a served tool shows the title of the listing, the kind of its effect, its first
+// until another update comes between them; a piece of its reasoning is sent as a thought chunk. The first
+// report of a call is sent as a tool_call, followed by a tool_call_update with its end or its diffs where
+// the first report has them, the others as tool_call_updates, and nothing after the call has finished. A
+// call of a served tool shows the title of the listing, the kind of its effect, its first
 // content and the vault path it works on; any other call shows the title and the kind the agent reports.
 type turn struct {
 	listed       map[string]*tools.ToolInfo
@@ -53,6 +54,8 @@ func (t *turn) HandleUpdate(update acp.Update) error {
 	switch {
 	case update.Chunk != nil:
 		return t.sendChunk(*update.Chunk)
+	case update.Thought != nil:
+		return t.sendThought(*update.Thought)
 	case update.Plan != nil:
 		t.endMessage()
 		return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_Plan{Plan: writePlan(*update.Plan)}})
@@ -71,6 +74,17 @@ func (t *turn) sendChunk(chunk acp.Chunk) error {
 	t.isAfterChunk = true
 	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_AgentMessageChunk{
 		AgentMessageChunk: &contract.MessageChunk{MessageId: id, Text: chunk.Text},
+	}})
+}
+
+func (t *turn) sendThought(chunk acp.Chunk) error {
+	t.endMessage()
+	id := chunk.MessageID
+	if id == "" {
+		id = "t" + strconv.Itoa(t.message)
+	}
+	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_AgentThoughtChunk{
+		AgentThoughtChunk: &contract.MessageChunk{MessageId: id, Text: chunk.Text},
 	}})
 }
 
@@ -96,7 +110,10 @@ func (t *turn) sendTool(update acp.ToolUpdate) error {
 	listed := t.listed[shown.name]
 	title, kind := describeTool(listed, update)
 	content, locations := describeArguments(listed, update)
-	change := toolChange{title: title, kind: kind, status: readStatus(update.Status), content: content, locations: locations}
+	change := toolChange{
+		title: title, kind: kind, status: readStatus(update.Status), content: content, locations: locations,
+		diffs: writeDiffs(update.Diffs),
+	}
 	if !isKnown {
 		return t.sendToolStart(shown, update, change)
 	}
@@ -115,7 +132,7 @@ func (t *turn) sendToolStart(shown *shownCall, update acp.ToolUpdate, change too
 	}}}); err != nil {
 		return err
 	}
-	if !isFinal(change.status) {
+	if !isFinal(change.status) && len(change.diffs) == 0 {
 		return nil
 	}
 	return t.sendToolUpdate(shown, update, change)
@@ -132,12 +149,13 @@ type toolChange struct {
 	status    contract.ToolCallStatus
 	content   []string
 	locations []*contract.ToolCallLocation
+	diffs     []*contract.Diff
 }
 
 func (t *turn) sendToolUpdate(shown *shownCall, update acp.ToolUpdate, change toolChange) error {
 	frame := &contract.ToolCallUpdate{
 		ToolCallId: update.ID, Title: nil, Kind: nil, Status: nil,
-		Content: change.content, Locations: change.locations, RawOutputJson: string(update.Output),
+		Content: change.content, Locations: change.locations, RawOutputJson: string(update.Output), Diffs: change.diffs,
 	}
 	if change.title != shown.title && change.title != "" {
 		shown.title = change.title
@@ -196,6 +214,14 @@ func describeArguments(listed *tools.ToolInfo, update acp.ToolUpdate) ([]string,
 		return nil, locations
 	}
 	return []string{about}, locations
+}
+
+func writeDiffs(diffs []acp.Diff) []*contract.Diff {
+	written := make([]*contract.Diff, 0, len(diffs))
+	for _, one := range diffs {
+		written = append(written, &contract.Diff{Path: one.Path, OldText: one.OldText, NewText: one.NewText})
+	}
+	return written
 }
 
 func readKind(kind string) contract.ToolKind {
