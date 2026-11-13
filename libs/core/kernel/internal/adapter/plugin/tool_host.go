@@ -11,9 +11,9 @@ import (
 // toolActivator starts a plugin for the catalog of tools and holds it.
 type toolActivator interface {
 	EnsureActive(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error)
-	Release(pluginID string, holder plugindomain.Holder)
+	Release(pluginID, token string, holder plugindomain.Holder)
 	EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error)
-	ReleaseQuestion(pluginID string, holder plugindomain.Holder)
+	ReleaseQuestion(pluginID, token string, holder plugindomain.Holder)
 }
 
 // pluginInfoLister lists the plugins the host knows and tells the enabled ones.
@@ -39,8 +39,8 @@ func (h ToolHost) EnsureActive(ctx context.Context, pluginID string, holder plug
 }
 
 // Release gives up the hold EnsureActive took.
-func (h ToolHost) Release(pluginID string, holder plugindomain.Holder) {
-	h.activation.Release(pluginID, holder)
+func (h ToolHost) Release(pluginID, token string, holder plugindomain.Holder) {
+	h.activation.Release(pluginID, token, holder)
 }
 
 // EnsureActiveForQuestion starts the plugin if it is not running and holds it for a question.
@@ -51,8 +51,8 @@ func (h ToolHost) EnsureActiveForQuestion(
 }
 
 // ReleaseQuestion gives up the hold EnsureActiveForQuestion took.
-func (h ToolHost) ReleaseQuestion(pluginID string, holder plugindomain.Holder) {
-	h.activation.ReleaseQuestion(pluginID, holder)
+func (h ToolHost) ReleaseQuestion(pluginID, token string, holder plugindomain.Holder) {
+	h.activation.ReleaseQuestion(pluginID, token, holder)
 }
 
 // GetPluginInfos lists the plugins the host knows.

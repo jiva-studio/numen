@@ -92,6 +92,8 @@ func (u fixedUses) RemoveRows(string) error { return nil }
 
 func (u fixedUses) Refresh(context.Context, string) error { return nil }
 
+func (u fixedUses) ListGrants() []connection.Grant { return nil }
+
 func newHandler(keys *memoryKeys) *Handler { return newHandlerWithUses(keys, fixedUses{}) }
 
 func getTypes() fixedTypes {
@@ -123,11 +125,18 @@ func newHandlerOver(keys *memoryKeys, uses connectionport.Uses, provider *modelL
 func useCasesOf(all *connectiontest.Connections, source connectionport.ProviderSource) UseCases {
 	return UseCases{
 		Edits: Edits{Create: all.Create, Update: all.Update, Delete: all.Delete},
-		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: rowoptions.NewOptions(
-			all.Resolve.Execute, all.ReadSecrets.Execute, source, notRunning{}, rowoptions.NewLists(&memoryLists{byPlugin: map[string][]connection.OptionList{}}), nil,
-		)},
+		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: rowoptions.NewOptions(rowoptions.Deps{
+			Resolve: all.Resolve.Execute, ReadSecrets: all.ReadSecrets.Execute, Source: source, Running: notRunning{},
+			Lists:  rowoptions.NewLists(&memoryLists{byPlugin: map[string][]connection.OptionList{}}, sameConfig{}),
+			Grants: func(string) (string, bool, error) { return "", false, nil },
+		})},
 	}
 }
+
+// sameConfig gives every plugin one configuration that never changes.
+type sameConfig struct{}
+
+func (sameConfig) GetPluginConfigRevision(string) string { return "" }
 
 // memoryLists keeps the option lists in memory.
 type memoryLists struct {
@@ -175,11 +184,13 @@ func (m *modelList) Call(context.Context, string, modelcall.ProviderCall, []byte
 	return nil, nil
 }
 
-func (m *modelList) ListOptions(context.Context, string, modelcall.ProviderCall, []string) ([]modelcall.Option, error) {
+func (m *modelList) ListOptions(context.Context, string, modelcall.ProviderCall, modelcall.OptionsQuery) (modelcall.ListedOptions, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.listed++
-	return []modelcall.Option{{Value: "google/gemini-2.5-flash", Title: "Gemini 2.5 Flash", Group: "Google"}, {Value: "qwen/qwen3-8b"}}, nil
+	return modelcall.ListedOptions{Options: []modelcall.Option{
+		{Value: "google/gemini-2.5-flash", Title: "Gemini 2.5 Flash", Group: "Google"}, {Value: "qwen/qwen3-8b"},
+	}}, nil
 }
 
 func (m *modelList) ListDetected(context.Context, modelcall.ProviderCall) ([]modelcall.DetectedConnection, error) {

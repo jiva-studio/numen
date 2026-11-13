@@ -63,8 +63,40 @@ func (r *runningProviders) countOpenCalls() int {
 	return r.opened
 }
 
+// revisions names a revision for each plugin by id; a plugin left out has none.
+type revisions struct {
+	mu       sync.Mutex
+	byPlugin map[string]string
+}
+
+func (r *revisions) set(pluginID, revision string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.byPlugin[pluginID] = revision
+}
+
+func (r *revisions) GetPluginConfigRevision(pluginID string) string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.byPlugin[pluginID]
+}
+
+func (r *revisions) getGrantRevision(pluginID string) (string, bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	revision, isSet := r.byPlugin[pluginID]
+	return revision, isSet, nil
+}
+
 func (s *setup) restart() *rowoptions.Options {
-	return rowoptions.NewOptions(s.world.Resolve, s.world.ReadSecrets, s.world.Source, s.running, rowoptions.NewLists(s.files), nil)
+	return s.openOver(s.world.Source)
+}
+
+func (s *setup) openOver(source connectionport.ProviderSource) *rowoptions.Options {
+	return rowoptions.NewOptions(rowoptions.Deps{
+		Resolve: s.world.Resolve, ReadSecrets: s.world.ReadSecrets, Source: source, Running: s.running,
+		Lists: rowoptions.NewLists(s.files, s.configs), Grants: s.grants.getGrantRevision,
+	})
 }
 
 func (s *setup) countCalls() int { return len(s.world.Provider.Calls()) }

@@ -40,9 +40,11 @@ type operation struct {
 	gate       *sync.Mutex
 }
 
-// OptionLists asks again for the option lists kept for a connection after it changed.
+// OptionLists asks again for the option lists kept for a connection after it changed, and forgets them
+// once it is deleted.
 type OptionLists interface {
 	RefreshConnection(connectionID string)
+	DropConnection(pluginID, connectionID string)
 }
 
 // Entry is a connection as a window shows it: the fields the type declares, the keys of the secret
@@ -82,7 +84,8 @@ func (d Deps) AddDetection(detected connectionport.Detected) Deps {
 	return d
 }
 
-// AddOptionLists returns the shared parts with the option lists an update of a connection refreshes.
+// AddOptionLists returns the shared parts with the option lists an update of a connection refreshes and a
+// deletion drops.
 func (d Deps) AddOptionLists(lists OptionLists) Deps {
 	d.base.lists = lists
 	return d
@@ -293,8 +296,31 @@ func (s secretStore) restore(ctx context.Context, id string, backup snapshot) er
 	return errors.Join(failures...)
 }
 
-func (o operation) buildEntry(ctx context.Context, one connection.Connection) (Entry, error) {
+func listUses(o operation, one connection.Connection) ([]connection.Use, error) {
 	uses, err := o.uses.ListUses(one.ID)
+	if err != nil {
+		return nil, err
+	}
+	return addGrantUses(o, uses, one.TypeID), nil
+}
+
+func addGrantUses(o operation, uses []connection.Use, typeID string) []connection.Use {
+	found, isFound := o.types.GetType(typeID)
+	if !isFound || !found.IsAvailable {
+		return uses
+	}
+	for _, granted := range connection.ListGrantUses(o.uses.ListGrants(), found.Declaration) {
+		at := slices.IndexFunc(uses, func(one connection.Use) bool { return one.PluginID > granted.PluginID })
+		if at < 0 {
+			at = len(uses)
+		}
+		uses = slices.Insert(uses, at, granted)
+	}
+	return uses
+}
+
+func (o operation) buildEntry(ctx context.Context, one connection.Connection) (Entry, error) {
+	uses, err := listUses(o, one)
 	if err != nil {
 		return Entry{}, err
 	}

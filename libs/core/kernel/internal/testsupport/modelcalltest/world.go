@@ -358,6 +358,8 @@ func (NoUses) RemoveRows(string) error { return nil }
 // Refresh configures no plugin.
 func (NoUses) Refresh(context.Context, string) error { return nil }
 
+func (NoUses) ListGrants() []connection.Grant { return nil }
+
 // AddLimited creates a connection of the type limited, which runs two calls at once unless the field
 // parallelRequests says otherwise. A parallelRequests of 0 leaves the field unset.
 func (w *World) AddLimited(t *testing.T, name, address string, parallelRequests int) Entry {

@@ -23,13 +23,13 @@ func (failingActivator) EnsureActive(context.Context, string, plugindomain.Holde
 	return transport.Endpoint{}, errors.New("the plugin did not start")
 }
 
-func (failingActivator) Release(string, plugindomain.Holder) {}
+func (failingActivator) Release(string, string, plugindomain.Holder) {}
 
 func (a failingActivator) EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
 	return a.EnsureActive(ctx, pluginID, holder)
 }
 
-func (failingActivator) ReleaseQuestion(string, plugindomain.Holder) {}
+func (failingActivator) ReleaseQuestion(string, string, plugindomain.Holder) {}
 
 func (failingActivator) ResolveCapability(string) (manifest.Discovered, error) {
 	return manifest.Discovered{Manifest: manifest.Manifest{ID: embeddingPluginID}}, nil

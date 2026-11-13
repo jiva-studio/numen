@@ -88,8 +88,8 @@ func (a *assistant) GetProfile(_ context.Context, call connection.Call) (*llm.Pr
 	return &llm.Profile{Model: call.Options[llm.OptionModel], Source: "server https://models.test/v1", Width: 768, MaxTokens: 512}, nil
 }
 
-func (a *assistant) ListModels(_ context.Context, _ connection.Call, operations []string) ([]connection.Option, error) {
-	return []connection.Option{{Value: "small", Title: "Small " + operations[0]}}, nil
+func (a *assistant) ListModels(_ context.Context, _ connection.Call, query connection.OptionsQuery) (connection.ListedOptions, error) {
+	return connection.ListedOptions{Options: []connection.Option{{Value: "small", Title: "Small " + query.Operations[0]}}}, nil
 }
 
 func (a *assistant) ListReasoningLevels(_ context.Context, call connection.Call) ([]connection.Option, error) {

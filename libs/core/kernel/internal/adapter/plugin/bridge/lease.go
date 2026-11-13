@@ -18,17 +18,19 @@ import (
 // process but does not count as a use of it.
 type Activator interface {
 	EnsureActive(ctx context.Context, pluginID string, holder plugin.Holder) (transport.Endpoint, error)
-	Release(pluginID string, holder plugin.Holder)
+	Release(pluginID, token string, holder plugin.Holder)
 	EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugin.Holder) (transport.Endpoint, error)
-	ReleaseQuestion(pluginID string, holder plugin.Holder)
+	ReleaseQuestion(pluginID, token string, holder plugin.Holder)
 }
 
 // Lease is the one reference a bridge holds on its plugin, from the moment
-// the plugin is activated until the bridge is closed. Holder is who holds it
-// and IsQuestion marks a question lease.
+// the plugin is activated until the bridge is closed. Token is the token of the
+// endpoint the lease was taken on, Holder is who holds it and IsQuestion marks a
+// question lease.
 type Lease struct {
 	Host       Activator
 	PluginID   string
+	Token      string
 	Holder     plugin.Holder
 	IsQuestion bool
 	once       sync.Once
@@ -44,10 +46,10 @@ func (l *Lease) Close() error {
 func (l *Lease) Release() {
 	l.once.Do(func() {
 		if l.IsQuestion {
-			l.Host.ReleaseQuestion(l.PluginID, l.Holder)
+			l.Host.ReleaseQuestion(l.PluginID, l.Token, l.Holder)
 			return
 		}
-		l.Host.Release(l.PluginID, l.Holder)
+		l.Host.Release(l.PluginID, l.Token, l.Holder)
 	})
 }
 
@@ -98,7 +100,7 @@ func open[C any](
 	}
 	interceptor := connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token))
 	client := newClient(transport.GetClient(host, endpoint), transport.GetBaseURL(endpoint), interceptor)
-	return client, &Lease{Host: host, PluginID: pluginID, Holder: holder, IsQuestion: isQuestion}, nil
+	return client, &Lease{Host: host, PluginID: pluginID, Token: endpoint.Token, Holder: holder, IsQuestion: isQuestion}, nil
 }
 
 // ConvertActivationError is the failure to activate a plugin: the end of a

@@ -43,7 +43,7 @@ func TestListProcessesReturnsTheRunningPluginsWithTheIdleStopTime(t *testing.T) 
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: dormantID}})
 	startInProcess(t, sups, mapsID, atlasID)
-	sups.Release(mapsID, mapsID, getUseLease().Holder, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, getUseLease(), getStartTime().Add(time.Minute))
 
 	want := []plugindomain.Process{
 		{PluginID: atlasID, StartTime: getStartTime(), LastUseTime: getStartTime(), LeaseCount: 1, IsInProcess: true, Holders: []plugindomain.Holder{getUseLease().Holder}},
@@ -62,7 +62,7 @@ func TestAWatchIsSignaledWhenAPluginReturnsALease(t *testing.T) {
 	startInProcess(t, sups, mapsID)
 	watch := NewRunningProcesses(sups).WatchProcesses(t.Context())
 
-	sups.Release(mapsID, mapsID, getUseLease().Holder, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, getUseLease(), getStartTime().Add(time.Minute))
 
 	select {
 	case <-watch:
@@ -76,7 +76,7 @@ func TestSignalsTheWatchHasNotReceivedAreMergedIntoOne(t *testing.T) {
 	startInProcess(t, sups, mapsID)
 	watch := NewRunningProcesses(sups).WatchProcesses(t.Context())
 
-	sups.Release(mapsID, mapsID, getUseLease().Holder, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, getUseLease(), getStartTime().Add(time.Minute))
 	startInProcess(t, sups, atlasID)
 	<-watch
 
@@ -94,7 +94,7 @@ func TestTheIdleStopTimeFollowsTheIdleLimitOfTheManifest(t *testing.T) {
 	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, getUseLease(), getStartTime()); err != nil {
 		t.Fatal(err)
 	}
-	sups.Release(atlasID, atlasID, getUseLease().Holder, getStartTime().Add(time.Minute))
+	sups.Release(atlasID, atlasID, getUseLease(), getStartTime().Add(time.Minute))
 
 	got := NewRunningProcesses(sups).ListProcesses()
 
@@ -109,7 +109,7 @@ func TestAReleasedPluginIsDueToStopAtItsLastUse(t *testing.T) {
 	if targets := takeReleasedTarget(sups, mapsID, getStartTime()); len(targets) != 0 {
 		t.Fatalf("a plugin that holds a lease was taken to stop: %+v", targets)
 	}
-	sups.Release(mapsID, mapsID, getUseLease().Holder, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, getUseLease(), getStartTime().Add(time.Minute))
 
 	got := NewRunningProcesses(sups).ListProcesses()
 
@@ -125,7 +125,7 @@ func TestAPluginOnlyAskedAQuestionIsDueToStopAtItsStart(t *testing.T) {
 	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, getQuestionLease(), getStartTime()); err != nil {
 		t.Fatal(err)
 	}
-	sups.ReturnHold(atlasID, sup, getQuestionLease(), getStartTime().Add(time.Minute))
+	sups.Release(atlasID, atlasID, getQuestionLease(), getStartTime().Add(time.Minute))
 
 	want := []plugindomain.Process{{
 		PluginID: atlasID, StartTime: getStartTime(), LastUseTime: getStartTime(), IsInProcess: true, IdleStopTime: getStartTime(),
@@ -144,8 +144,8 @@ func TestAQuestionDoesNotCancelTheReleaseOfAProcess(t *testing.T) {
 	if _, isRunning := sups.AcquireRunning(mapsID, sup, getQuestionLease(), getStartTime()); !isRunning {
 		t.Fatal("the running plugin was not held for the question")
 	}
-	sups.ReturnHold(mapsID, sup, getQuestionLease(), getStartTime())
-	sups.ReturnHold(mapsID, sup, getUseLease(), getStartTime())
+	sups.Release(mapsID, mapsID, getQuestionLease(), getStartTime())
+	sups.Release(mapsID, mapsID, getUseLease(), getStartTime())
 
 	if targets := takeIdleTargets(sups, IdleThreshold, getStartTime()); len(targets) != 1 || targets[0].ID != mapsID {
 		t.Errorf("got %+v, want the released plugin to stop", targets)
@@ -165,7 +165,7 @@ func TestListProcessesReturnsTheStarterAndTheHoldersOfEachPlugin(t *testing.T) {
 	}
 	sups.AcquireRunning(atlasID, sup, asker, getStartTime())
 	sups.AcquireRunning(atlasID, sup, getQuestionLease(), getStartTime())
-	sups.ReturnHold(atlasID, sup, starter, getStartTime())
+	sups.Release(atlasID, atlasID, starter, getStartTime())
 
 	got := NewRunningProcesses(sups).ListProcesses()
 

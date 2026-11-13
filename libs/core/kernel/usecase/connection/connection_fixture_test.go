@@ -214,6 +214,7 @@ type memoryUses struct {
 	refreshed   []string
 	failRemove  error
 	failRefresh error
+	grants      []connectiondomain.Grant
 }
 
 func (u *memoryUses) ListUses(connectionID string) ([]connectiondomain.Use, error) {
@@ -247,4 +248,10 @@ func (u *memoryUses) use(connectionID string, uses ...connectiondomain.Use) {
 		u.uses = map[string][]connectiondomain.Use{}
 	}
 	u.uses[connectionID] = uses
+}
+
+func (u *memoryUses) ListGrants() []connectiondomain.Grant {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return slices.Clone(u.grants)
 }

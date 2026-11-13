@@ -81,16 +81,16 @@ type modelOptions struct {
 	lister *models.Lister
 }
 
-func (m modelOptions) ListModels(ctx context.Context, _ connection.Call, _ []string) ([]connection.Option, error) {
-	listed, err := m.lister.ListOptions(ctx)
+func (m modelOptions) ListModels(ctx context.Context, _ connection.Call, _ connection.OptionsQuery) (connection.ListedOptions, error) {
+	listing, err := m.lister.ListOptions(ctx)
 	if err != nil {
-		return nil, err
+		return connection.ListedOptions{}, err
 	}
-	options := make([]connection.Option, len(listed))
-	for i, one := range listed {
+	options := make([]connection.Option, len(listing.Options))
+	for i, one := range listing.Options {
 		options[i] = connection.Option{Value: one.Value, Title: one.Title, Group: ""}
 	}
-	return options, nil
+	return connection.ListedOptions{Options: options, IsPartial: listing.IsPartial}, nil
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made from

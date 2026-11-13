@@ -176,7 +176,10 @@ func TestWhenEveryRowFailsTheErrorNamesEachConnectionAndReason(t *testing.T) {
 	if !errors.As(err, &failed) {
 		t.Fatalf("err = %v, want *AllFailedError", err)
 	}
-	want := []connection.Failure{{ConnectionName: "First", Reason: "payment required"}, {ConnectionName: "Second", Reason: "rate limited"}}
+	want := []connection.Failure{
+		{ConnectionName: "First", Reason: "payment required", Code: connection.FailureReasonPaymentRequired},
+		{ConnectionName: "Second", Reason: "rate limited", Code: connection.FailureReasonRateLimited},
+	}
 	if !slices.Equal(failed.Failures, want) {
 		t.Errorf("failures = %v, want %v", failed.Failures, want)
 	}

@@ -102,7 +102,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		p.reportError(writeConnectError(w, http.StatusServiceUnavailable, code, bridge.ConvertActivationError(found.Manifest.ID, err).Error()))
 		return
 	}
-	lease := &bridge.Lease{Host: p.activator, PluginID: found.Manifest.ID, Holder: holder}
+	lease := &bridge.Lease{Host: p.activator, PluginID: found.Manifest.ID, Token: endpoint.Token, Holder: holder}
 	defer p.releasePlugin(lease)
 
 	out, err := http.NewRequestWithContext(r.Context(), r.Method, transport.GetBaseURL(endpoint)+r.URL.RequestURI(), r.Body)

@@ -232,7 +232,8 @@ func TestTheModelsOfCodexAreListedForTheRow(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	svc := newCodex(t, nil, writeScript(t, "codex", appServerScript))
 
-	models, err := svc.completion.ListModels(t.Context(), completeCall(nil), []string{llm.OperationComplete})
+	listed, err := svc.completion.ListModels(t.Context(), completeCall(nil), connection.OptionsQuery{Operations: []string{llm.OperationComplete}})
+	models := listed.Options
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,7 +261,7 @@ func TestListingTheModelsOfAMissingCodexIsUnreachable(t *testing.T) {
 	withoutAgentsAnywhere(t)
 	svc := newTestServer(t, nil)
 
-	_, err := svc.completion.ListModels(t.Context(), completeCall(nil), nil)
+	_, err := svc.completion.ListModels(t.Context(), completeCall(nil), connection.OptionsQuery{})
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Errorf("ListModels = %v, want try the next", err)

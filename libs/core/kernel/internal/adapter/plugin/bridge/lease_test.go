@@ -21,13 +21,13 @@ func (h refusingHost) EnsureActive(context.Context, string, plugin.Holder) (tran
 	return transport.Endpoint{}, h.err
 }
 
-func (refusingHost) Release(string, plugin.Holder) {}
+func (refusingHost) Release(string, string, plugin.Holder) {}
 
 func (h refusingHost) EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugin.Holder) (transport.Endpoint, error) {
 	return h.EnsureActive(ctx, pluginID, holder)
 }
 
-func (refusingHost) ReleaseQuestion(string, plugin.Holder) {}
+func (refusingHost) ReleaseQuestion(string, string, plugin.Holder) {}
 
 // A plugin that cannot be started is unavailable, an unavailability the host
 // sorted is kept, and the end of the caller's context stays the caller's.
@@ -62,14 +62,14 @@ func (h *leaseHost) EnsureActive(context.Context, string, plugin.Holder) (transp
 	return transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: "t-atlas"}, nil
 }
 
-func (h *leaseHost) Release(string, plugin.Holder) { h.usesReleased++ }
+func (h *leaseHost) Release(string, string, plugin.Holder) { h.usesReleased++ }
 
 func (h *leaseHost) EnsureActiveForQuestion(context.Context, string, plugin.Holder) (transport.Endpoint, error) {
 	h.questions++
 	return transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: "t-atlas"}, nil
 }
 
-func (h *leaseHost) ReleaseQuestion(string, plugin.Holder) { h.questionsReleased++ }
+func (h *leaseHost) ReleaseQuestion(string, string, plugin.Holder) { h.questionsReleased++ }
 
 func TestALeaseOpenedForAQuestionIsReturnedAsAQuestion(t *testing.T) {
 	host := &leaseHost{}
@@ -115,7 +115,7 @@ func (h *holdingHost) EnsureActive(_ context.Context, _ string, holder plugin.Ho
 	return transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: "t-atlas"}, nil
 }
 
-func (h *holdingHost) Release(_ string, holder plugin.Holder) {
+func (h *holdingHost) Release(_, _ string, holder plugin.Holder) {
 	h.returned = append(h.returned, holder)
 }
 
@@ -123,8 +123,8 @@ func (h *holdingHost) EnsureActiveForQuestion(ctx context.Context, pluginID stri
 	return h.EnsureActive(ctx, pluginID, holder)
 }
 
-func (h *holdingHost) ReleaseQuestion(pluginID string, holder plugin.Holder) {
-	h.Release(pluginID, holder)
+func (h *holdingHost) ReleaseQuestion(pluginID, token string, holder plugin.Holder) {
+	h.Release(pluginID, token, holder)
 }
 
 func TestALeaseIsHeldAndReturnedInTheNameOfTheCaller(t *testing.T) {

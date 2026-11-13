@@ -73,7 +73,7 @@ func TestTheModelsAreListedByTheServiceForTheOperationsOfTheSetting(t *testing.T
 	g := &gateway{}
 	call := connection.Call{Type: "openai", Fields: map[string]string{"baseUrl": "https://api.test/v1"}}
 
-	list, err := newModels(t, g).ListModels(t.Context(), call, []string{llm.OperationEmbed})
+	list, err := optionsOf(newModels(t, g).ListModels(t.Context(), call, connection.OptionsQuery{Operations: []string{llm.OperationEmbed}}))
 
 	if err != nil || len(list) != 1 || !slices.Equal(g.operations, []string{llm.OperationEmbed}) || g.limit != limits.DefaultOtherLimit {
 		t.Errorf("list = %v, err = %v, operations = %v, limit = %v", list, err, g.operations, g.limit)
@@ -111,12 +111,13 @@ func newOpenRouterCall(key string) connection.Call {
 func TestAListOfModelsOutlivesARestartAndIsAnsweredWhileTheServiceFails(t *testing.T) {
 	dir := t.TempDir()
 	listed := []connection.Option{{Value: "invented/model-a", Title: "Model A"}, {Value: "invented/model-b", Title: "Model B"}}
-	if _, err := newModelsIn(t, &gateway{models: listed}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
+	chat := connection.OptionsQuery{Operations: []string{llm.OperationChat}}
+	if _, err := optionsOf(newModelsIn(t, &gateway{models: listed}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), chat)); err != nil {
 		t.Fatal(err)
 	}
 
 	down := &gateway{err: errors.New("the service is down")}
-	list, err := newModelsIn(t, down, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat})
+	list, err := optionsOf(newModelsIn(t, down, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), connection.OptionsQuery{Operations: []string{llm.OperationChat}}))
 
 	if err != nil || !slices.Equal(list, listed) || down.calls != 0 {
 		t.Errorf("after a restart: list = %v, err = %v, calls to the service = %d", list, err, down.calls)
@@ -127,7 +128,7 @@ func TestListModelsCallsTheServiceOncePerCachedList(t *testing.T) {
 	g := &gateway{}
 	subject := newModels(t, g)
 	for range 3 {
-		if _, err := subject.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
+		if _, err := optionsOf(subject.ListModels(t.Context(), newOpenRouterCall(openRouterKey), connection.OptionsQuery{Operations: []string{llm.OperationChat}})); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -144,7 +145,7 @@ func TestAnotherKeyOrAnotherOperationIsListedApart(t *testing.T) {
 		operation string
 	}{{openRouterKey, llm.OperationChat}, {"sk-or-other-invented-key", llm.OperationChat}, {openRouterKey, llm.OperationEmbed}}
 	for _, one := range calls {
-		if _, err := subject.ListModels(t.Context(), newOpenRouterCall(one.key), []string{one.operation}); err != nil {
+		if _, err := optionsOf(subject.ListModels(t.Context(), newOpenRouterCall(one.key), connection.OptionsQuery{Operations: []string{one.operation}})); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -155,7 +156,7 @@ func TestAnotherKeyOrAnotherOperationIsListedApart(t *testing.T) {
 
 func TestTheCacheFileContainsTheKeyDigestAndNotTheKey(t *testing.T) {
 	dir := t.TempDir()
-	if _, err := newModelsIn(t, &gateway{}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
+	if _, err := optionsOf(newModelsIn(t, &gateway{}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), connection.OptionsQuery{Operations: []string{llm.OperationChat}})); err != nil {
 		t.Fatal(err)
 	}
 	var stored strings.Builder
@@ -179,11 +180,11 @@ func TestTheCacheFileContainsTheKeyDigestAndNotTheKey(t *testing.T) {
 func TestAFirstListThatFailsReturnsTheFailureAndKeepsNothing(t *testing.T) {
 	g := &gateway{err: errors.New("the service is down")}
 	subject := newModels(t, g)
-	if _, err := subject.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err == nil {
+	if _, err := optionsOf(subject.ListModels(t.Context(), newOpenRouterCall(openRouterKey), connection.OptionsQuery{Operations: []string{llm.OperationChat}})); err == nil {
 		t.Fatal("a failed list returned no error")
 	}
 	g.err = nil
-	list, err := subject.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat})
+	list, err := optionsOf(subject.ListModels(t.Context(), newOpenRouterCall(openRouterKey), connection.OptionsQuery{Operations: []string{llm.OperationChat}}))
 	if err != nil || len(list) != 1 || g.calls != 2 {
 		t.Errorf("list = %v, err = %v, calls = %d, want a second call to the service", list, err, g.calls)
 	}
@@ -192,7 +193,8 @@ func TestAFirstListThatFailsReturnsTheFailureAndKeepsNothing(t *testing.T) {
 func TestAListOlderThanItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testing.T) {
 	dir := t.TempDir()
 	old := []connection.Option{{Value: "invented/model-a"}}
-	if _, err := newModelsIn(t, &gateway{models: old}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
+	chat := connection.OptionsQuery{Operations: []string{llm.OperationChat}}
+	if _, err := optionsOf(newModelsIn(t, &gateway{models: old}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), chat)); err != nil {
 		t.Fatal(err)
 	}
 	ageKeptLists(t, dir)
@@ -200,7 +202,7 @@ func TestAListOlderThanItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testi
 	asked := make(chan struct{}, 1)
 	fresh := []connection.Option{{Value: "invented/model-b"}}
 	restarted := newModelsIn(t, &gateway{models: fresh, asked: asked}, dir)
-	list, err := restarted.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat})
+	list, err := optionsOf(restarted.ListModels(t.Context(), newOpenRouterCall(openRouterKey), connection.OptionsQuery{Operations: []string{llm.OperationChat}}))
 
 	if err != nil || !slices.Equal(list, old) {
 		t.Fatalf("list = %v, err = %v, want the kept list at once", list, err)
@@ -215,7 +217,7 @@ func TestAListOlderThanItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testi
 			t.Fatalf("list = %v, want the list listed again kept", list)
 		}
 		time.Sleep(10 * time.Millisecond)
-		if list, err = restarted.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
+		if list, err = optionsOf(restarted.ListModels(t.Context(), newOpenRouterCall(openRouterKey), connection.OptionsQuery{Operations: []string{llm.OperationChat}})); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -247,5 +249,30 @@ func ageKeptLists(t *testing.T, dir string) {
 		if err := os.WriteFile(path, aged, 0o600); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func optionsOf(listed connection.ListedOptions, err error) ([]connection.Option, error) {
+	return listed.Options, err
+}
+
+func TestAFreshQueryCallsTheServiceAndStoresTheNewList(t *testing.T) {
+	g := &gateway{}
+	subject := newModels(t, g)
+	query := connection.OptionsQuery{Operations: []string{llm.OperationChat}}
+	if _, err := subject.ListModels(t.Context(), newOpenRouterCall(openRouterKey), query); err != nil {
+		t.Fatal(err)
+	}
+	g.models = []connection.Option{{Value: "invented/model-new"}}
+
+	query.IsFresh = true
+	listed, err := subject.ListModels(t.Context(), newOpenRouterCall(openRouterKey), query)
+
+	if err != nil || g.calls != 2 || !slices.Equal(listed.Options, g.models) {
+		t.Errorf("listed = %v, err = %v, calls = %d, want the service asked again", listed, err, g.calls)
+	}
+	query.IsFresh = false
+	if kept, err := optionsOf(subject.ListModels(t.Context(), newOpenRouterCall(openRouterKey), query)); err != nil || !slices.Equal(kept, g.models) {
+		t.Errorf("kept = %v, err = %v, want the fresh list kept", kept, err)
 	}
 }

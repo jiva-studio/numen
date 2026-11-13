@@ -184,23 +184,30 @@ func (s *Supervisors) GetListenerPort(pluginID, name string) (int, bool) {
 	return port, ok
 }
 
-// Release gives up a use lease of the holder on the plugin if its endpoint is still the one the token names.
-func (s *Supervisors) Release(pluginID, token string, holder plugin.Holder, now time.Time) {
+// Release gives up the lease on the plugin if its endpoint is still the one the token names: a lease taken
+// on an earlier process of the plugin is gone with that process. A process that holds no other lease is
+// stopped at once where it was released or never used since it started.
+func (s *Supervisors) Release(pluginID, token string, lease lifecycle.Lease, now time.Time) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	sup, ok := s.byPlugin[pluginID]
-	if !ok || getEndpointLocked(s, pluginID).Token != token {
+	if !ok || token == "" || getEndpointLocked(s, pluginID).Token != token {
 		return
 	}
-	returnHoldLocked(s, pluginID, sup, lifecycle.Lease{Kind: lifecycle.UseLease, Holder: holder}, now)
+	returnHoldLocked(s, pluginID, sup, lease, now)
 }
 
-// ReturnHold gives up the lease on the plugin. A process that holds no other is stopped at once where it
-// was released or never used since it started.
-func (s *Supervisors) ReturnHold(pluginID string, sup *lifecycle.Supervisor, lease lifecycle.Lease, now time.Time) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	returnHoldLocked(s, pluginID, sup, lease, now)
+// AcquireOwn takes an own lease of the holder on the plugin if its endpoint is still the one the token
+// names, and reports whether it did. An own lease does not cancel a release of the process.
+func (s *Supervisors) AcquireOwn(pluginID, token string, holder plugin.Holder, now time.Time) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sup, ok := s.byPlugin[pluginID]
+	if !ok || token == "" || getEndpointLocked(s, pluginID).Token != token {
+		return false
+	}
+	_, isTaken := acquireRunningLocked(s, pluginID, sup, lifecycle.Lease{Kind: lifecycle.OwnLease, Holder: holder}, now)
+	return isTaken
 }
 
 func returnHoldLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, lease lifecycle.Lease, now time.Time) {

@@ -65,7 +65,7 @@ describe('createLlmHost', () => {
     const error = {
       error: 'stopped' as const,
       message: 'Harbor: key rejected',
-      failures: [{ connectionName: 'Harbor', reason: 'key rejected' }],
+      failures: [{ connectionName: 'Harbor', reason: 'key rejected', code: 'rejected_key' as const }],
     }
     const host = createLlmHost({ complete: async () => ({ ok: false, error }) })
 

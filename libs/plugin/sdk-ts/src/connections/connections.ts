@@ -10,10 +10,21 @@ type ConnectionPriority = 'interactive' | 'background'
 // connection found the request itself wrong.
 export type ConnectionErrorCode = 'no_connection' | 'all_failed' | 'stopped' | 'canceled'
 
-// ConnectionFailure is one row that did not answer: the name of its connection and the reason.
+// ConnectionFailureCode is the reason a row did not answer, as a program reads it: the codes of
+// connection.Reason of the Go SDK. A row the core set aside for a reason outside these has `unavailable`.
+type ConnectionFailureCode =
+  | 'unavailable'
+  | 'rejected_key'
+  | 'payment_required'
+  | 'rate_limited'
+  | 'invalid_request'
+
+// ConnectionFailure is one row that did not answer: the name of its connection, the reason in the words
+// the person reads and the reason as a code.
 interface ConnectionFailure {
   readonly connectionName: string
   readonly reason: string
+  readonly code: ConnectionFailureCode
 }
 
 // ConnectionError is the error of a call. `failures` lists the rows that failed, in order, and is empty

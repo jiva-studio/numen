@@ -28,3 +28,27 @@ func TestEveryPriorityOfTheSchemaIsReadAsThePortOne(t *testing.T) {
 	}
 	testsupport.CheckHandled(t, func(priority v1.Priority) bool { return ConvertPriorityFromWire(priority) == want[priority] })
 }
+
+func TestEveryFailureReasonOfTheSchemaIsProducedFromTheCodeOfAFailure(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.FailureReason]connection.FailureReason{
+		v1.FailureReason_FAILURE_REASON_UNAVAILABLE:      connection.FailureReasonUnavailable,
+		v1.FailureReason_FAILURE_REASON_REJECTED_KEY:     connection.FailureReasonRejectedKey,
+		v1.FailureReason_FAILURE_REASON_PAYMENT_REQUIRED: connection.FailureReasonPaymentRequired,
+		v1.FailureReason_FAILURE_REASON_RATE_LIMITED:     connection.FailureReasonRateLimited,
+		v1.FailureReason_FAILURE_REASON_INVALID_REQUEST:  connection.FailureReasonInvalidRequest,
+	}, func(reason connection.FailureReason) v1.FailureReason {
+		served, _ := ConvertCallFailureToWire(t.Context(), &connection.AllFailedError{
+			Failures: []connection.Failure{{ConnectionName: "Harbor", Reason: "words of the reason", Code: reason}},
+		})
+		return served.GetFailures()[0].GetCode()
+	})
+}
+
+func TestTheFailureOfAStoppedCallCarriesTheCodeOfTheReason(t *testing.T) {
+	served, _ := ConvertCallFailureToWire(t.Context(), &connection.StoppedError{
+		ConnectionName: "Harbor", Reason: "invalid request", Code: connection.FailureReasonInvalidRequest,
+	})
+	if code := served.GetFailures()[0].GetCode(); code != v1.FailureReason_FAILURE_REASON_INVALID_REQUEST {
+		t.Errorf("code = %v, want FAILURE_REASON_INVALID_REQUEST", code)
+	}
+}

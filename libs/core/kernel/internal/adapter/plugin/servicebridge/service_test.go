@@ -51,7 +51,7 @@ func (h *servingHost) EnsureActive(_ context.Context, id string, _ plugindomain.
 	return endpoint, nil
 }
 
-func (h *servingHost) Release(string, plugindomain.Holder) {
+func (h *servingHost) Release(string, string, plugindomain.Holder) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.released++
@@ -61,7 +61,9 @@ func (h *servingHost) EnsureActiveForQuestion(ctx context.Context, id string, ho
 	return h.EnsureActive(ctx, id, holder)
 }
 
-func (h *servingHost) ReleaseQuestion(id string, holder plugindomain.Holder) { h.Release(id, holder) }
+func (h *servingHost) ReleaseQuestion(id, token string, holder plugindomain.Holder) {
+	h.Release(id, token, holder)
+}
 
 func (h *servingHost) getReleasedCount() int {
 	h.mu.Lock()

@@ -88,10 +88,10 @@ func (c *Completion) Complete(
 }
 
 // ListModels lists the models Antigravity offers.
-func (c *Completion) ListModels(ctx context.Context, _ connection.Call, _ []string) ([]connection.Option, error) {
+func (c *Completion) ListModels(ctx context.Context, _ connection.Call, _ connection.OptionsQuery) (connection.ListedOptions, error) {
 	families, err := c.getFamilies(ctx)
 	if err != nil {
-		return nil, err
+		return connection.ListedOptions{}, err
 	}
 	models := make([]connection.Option, 0, len(families))
 	for _, one := range families {
@@ -101,7 +101,7 @@ func (c *Completion) ListModels(ctx context.Context, _ connection.Call, _ []stri
 		}
 		models = append(models, connection.Option{Value: one.Name, Title: title})
 	}
-	return models, nil
+	return connection.ListedOptions{Options: models}, nil
 }
 
 // ListReasoningLevels lists the levels of reasoning the model of the call takes, none for a model that

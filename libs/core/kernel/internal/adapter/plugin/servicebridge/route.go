@@ -40,7 +40,7 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, bridge.ConvertActivationError(id, err).Error(), status)
 		return
 	}
-	lease := &bridge.Lease{Host: p.activator, PluginID: id, Holder: holder}
+	lease := &bridge.Lease{Host: p.activator, PluginID: id, Token: endpoint.Token, Holder: holder}
 	defer p.releasePlugin(lease)
 
 	target := url.URL{Path: wire.PluginRoute + rest, RawQuery: r.URL.RawQuery}

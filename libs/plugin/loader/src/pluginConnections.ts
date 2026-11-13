@@ -11,6 +11,7 @@ const readError = (failure: ConnectionCallFailure): ConnectionError => ({
   failures: failure.failures.map((one) => ({
     connectionName: one.connectionName,
     reason: one.reason,
+    code: one.code,
   })),
 })
 

@@ -100,20 +100,25 @@ func TestAFailureFrameIsReadAsTheErrorOfTheCall(t *testing.T) {
 		},
 		"every row failed": {
 			&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED, Failures: []*v1.CallRowFailure{
-				{ConnectionName: "OpenRouter", Reason: "payment required"}, {ConnectionName: "Ollama", Reason: "unavailable"},
+				{ConnectionName: "OpenRouter", Reason: "payment required", Code: v1.FailureReason_FAILURE_REASON_PAYMENT_REQUIRED},
+				{ConnectionName: "Ollama", Reason: "unavailable", Code: v1.FailureReason_FAILURE_REASON_UNAVAILABLE},
 			}},
 			func(err error) bool {
 				var failed *AllFailedError
 				return errors.As(err, &failed) && slices.Equal(failed.Failures, []Failure{
-					{ConnectionName: "OpenRouter", Reason: "payment required"}, {ConnectionName: "Ollama", Reason: "unavailable"},
+					{ConnectionName: "OpenRouter", Reason: "payment required", Code: ReasonPaymentRequired},
+					{ConnectionName: "Ollama", Reason: "unavailable", Code: ReasonUnavailable},
 				})
 			},
 		},
 		"a stop": {
-			&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_STOPPED, Failures: []*v1.CallRowFailure{{ConnectionName: "OpenRouter", Reason: "invalid request"}}},
+			&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_STOPPED, Failures: []*v1.CallRowFailure{
+				{ConnectionName: "OpenRouter", Reason: "invalid request", Code: v1.FailureReason_FAILURE_REASON_INVALID_REQUEST},
+			}},
 			func(err error) bool {
 				var stopped *StoppedError
-				return errors.As(err, &stopped) && stopped.ConnectionName == "OpenRouter" && stopped.Reason == "invalid request"
+				return errors.As(err, &stopped) && stopped.ConnectionName == "OpenRouter" && stopped.Reason == "invalid request" &&
+					stopped.Code == ReasonInvalidRequest
 			},
 		},
 	} {
@@ -179,4 +184,21 @@ func TestEveryPriorityOfTheSchemaIsNumberedFromOne(t *testing.T) {
 		v1.Priority_PRIORITY_INTERACTIVE: PriorityInteractive,
 		v1.Priority_PRIORITY_BACKGROUND:  PriorityBackground,
 	}, writePriority)
+}
+
+func TestEveryFailureReasonOfTheSchemaIsReadAsTheCodeOfAFailure(t *testing.T) {
+	want := map[v1.FailureReason]Reason{
+		v1.FailureReason_FAILURE_REASON_UNAVAILABLE:      ReasonUnavailable,
+		v1.FailureReason_FAILURE_REASON_REJECTED_KEY:     ReasonRejectedKey,
+		v1.FailureReason_FAILURE_REASON_PAYMENT_REQUIRED: ReasonPaymentRequired,
+		v1.FailureReason_FAILURE_REASON_RATE_LIMITED:     ReasonRateLimited,
+		v1.FailureReason_FAILURE_REASON_INVALID_REQUEST:  ReasonInvalidRequest,
+	}
+	schematest.CheckHandled(t, func(code v1.FailureReason) bool {
+		err := readFailure(&v1.CallFailure{
+			Error: v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED, Failures: []*v1.CallRowFailure{{ConnectionName: "Harbor", Reason: "words", Code: code}},
+		})
+		var failed *AllFailedError
+		return errors.As(err, &failed) && failed.Failures[0].Code == want[code]
+	})
 }

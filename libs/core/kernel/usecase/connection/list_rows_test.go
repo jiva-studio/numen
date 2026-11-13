@@ -31,21 +31,33 @@ func agentType(pluginID, id string, isAvailable bool, operations ...string) conn
 
 func listRows(t *testing.T, setting connectiondomain.RowSetting) []connectiondomain.Row {
 	t.Helper()
+	return listGrantedRows(t, setting, nil, chatPluginID, taskOp)
+}
+
+const (
+	numenAgentID = "md.numen.agents.numen"
+	chatOp       = "llm.chat"
+)
+
+func listGrantedRows(t *testing.T, setting connectiondomain.RowSetting, grants []connectiondomain.Grant, pluginID, operation string) []connectiondomain.Row {
+	t.Helper()
 	repository := &memoryRepository{connections: []connectiondomain.Connection{
 		{ID: "c00000001", TypeID: "org.example.models/chat", Name: "Lantern Models"},
 		{ID: "c00000002", TypeID: "org.example.agents/heron", Name: "Heron"},
 		{ID: "c00000003", TypeID: "org.example.retired/owl", Name: "Owl"},
 		{ID: "c00000004", TypeID: "org.example.agents/finch", Name: "Finch"},
 		{ID: "c00000005", TypeID: "org.example.gone/wren", Name: "Wren"},
+		{ID: "c00000006", TypeID: numenAgentID + "/numen", Name: "Numen Agent"},
 	}}
 	types := fixedTypes{types: []connectiondomain.Type{
 		agentType("org.example.models", "chat", true, "llm.chat"),
 		agentType("org.example.agents", "heron", true, taskOp),
 		agentType("org.example.agents", "finch", true, "llm.chat", taskOp),
 		agentType("org.example.retired", "owl", false, taskOp),
+		agentType(numenAgentID, "numen", true, taskOp, "llm.models"),
 	}}
-	deps := connection.NewDeps(repository, types, &memoryKeys{values: map[string]string{}}, &memoryUses{})
-	rows, err := connection.NewListRows(deps, fixedRowSettings{setting: setting}).Execute(chatPluginID, taskOp)
+	deps := connection.NewDeps(repository, types, &memoryKeys{values: map[string]string{}}, &memoryUses{grants: grants})
+	rows, err := connection.NewListRows(deps, fixedRowSettings{setting: setting}).Execute(pluginID, operation)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,14 +80,49 @@ func TestListRowsReturnsEveryAvailableConnectionServingTheOperationInListOrder(t
 	want := []connectiondomain.Row{
 		{ConnectionID: "c00000002", Options: map[string]string{}, IsDiscovered: true},
 		{ConnectionID: "c00000004", Options: map[string]string{}, IsDiscovered: true},
+		{ConnectionID: "c00000006", Options: map[string]string{}, IsDiscovered: true},
 	}
 	if !reflect.DeepEqual(rows, want) {
-		t.Errorf("rows = %v, want Heron and Finch, discovered, with no options", rows)
+		t.Errorf("rows = %v, want Heron, Finch and Numen Agent, discovered, with no options", rows)
 	}
 }
 
 func TestListRowsReturnsNoRowWithoutDiscoveryOrChosenRows(t *testing.T) {
 	rows := listRows(t, connectiondomain.RowSetting{})
+
+	if len(rows) != 0 {
+		t.Errorf("rows = %v, want none", rows)
+	}
+}
+
+func numenAgentGrant() []connectiondomain.Grant {
+	return []connectiondomain.Grant{{PluginID: numenAgentID, PluginName: "Numen Agent", Operations: []string{chatOp}}}
+}
+
+func TestListRowsReturnsEveryConnectionOfAGrantedOperation(t *testing.T) {
+	rows := listGrantedRows(t, connectiondomain.RowSetting{}, numenAgentGrant(), numenAgentID, chatOp)
+
+	want := []connectiondomain.Row{
+		{ConnectionID: "c00000001", Options: map[string]string{}, IsDiscovered: true},
+		{ConnectionID: "c00000004", Options: map[string]string{}, IsDiscovered: true},
+	}
+	if !reflect.DeepEqual(rows, want) {
+		t.Errorf("rows = %v, want Lantern Models and Finch, discovered", rows)
+	}
+}
+
+func TestListRowsRefusesAnOperationTheGrantDoesNotName(t *testing.T) {
+	for _, operation := range []string{taskOp, "llm.embed", "llm.models"} {
+		rows := listGrantedRows(t, connectiondomain.RowSetting{}, numenAgentGrant(), numenAgentID, operation)
+
+		if len(rows) != 0 {
+			t.Errorf("%s: rows = %v, want none: Numen Agent is granted only %s, also not its own type", operation, rows, chatOp)
+		}
+	}
+}
+
+func TestListRowsAppliesAGrantToItsPluginOnly(t *testing.T) {
+	rows := listGrantedRows(t, connectiondomain.RowSetting{}, numenAgentGrant(), chatPluginID, chatOp)
 
 	if len(rows) != 0 {
 		t.Errorf("rows = %v, want none", rows)

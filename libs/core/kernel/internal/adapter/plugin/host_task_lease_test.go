@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -39,7 +40,7 @@ func newTaskHost(t *testing.T) taskHost {
 	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
 		t.Fatal(err)
 	}
-	host.Activation.Release(workingPlugin, getTestHolder())
+	host.Activation.Release(workingPlugin, endpointOf(host, workingPlugin).Token, getTestHolder())
 	return taskHost{host: host, process: procs[0], client: newTaskClient(t, host)}
 }
 
@@ -164,8 +165,46 @@ func TestACrashClearsTheOpenTasks(t *testing.T) {
 	if _, err := w.host.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
 		t.Fatalf("restart after the crash: %v", err)
 	}
-	w.host.Activation.Release(workingPlugin, getTestHolder())
+	w.host.Activation.Release(workingPlugin, endpointOf(w.host, workingPlugin).Token, getTestHolder())
 	if evicted := w.listEvictedIDs(t); len(evicted) != 1 || evicted[0] != workingPlugin {
 		t.Fatalf("evicted %v, want the restarted plugin without the crashed process's task", evicted)
 	}
+}
+func TestATaskReportedAfterTheReleaseDoesNotCancelIt(t *testing.T) {
+	w := newTaskHost(t)
+	w.reportTask(t, "first", 0, 4)
+	w.host.Teardown.ReleaseProcess(t.Context(), workingPlugin)
+	w.reportTask(t, "second", 0, 4)
+
+	w.finishTask(t, "first")
+	if state := supervisorOf(w.host, workingPlugin).GetState(); state == lifecycle.StateDormant {
+		t.Fatal("the released plugin stopped while a task is open")
+	}
+	w.finishTask(t, "second")
+
+	wiretest.WaitUntil(t, "the released plugin to stop once its tasks finished", func() bool {
+		return supervisorOf(w.host, workingPlugin).GetState() == lifecycle.StateDormant
+	})
+}
+
+func TestAQueueTurnTakenAfterTheReleaseDoesNotCancelIt(t *testing.T) {
+	w := newTaskHost(t)
+	w.reportTask(t, "first", 0, 4)
+	w.host.Teardown.ReleaseProcess(t.Context(), workingPlugin)
+	ctx, closeStream := context.WithCancel(t.Context())
+	defer closeStream()
+	stream, err := w.client.EnqueueWork(ctx, connect.NewRequest(&v1.EnqueueWorkRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !stream.Receive() || stream.Msg().GetState() != v1.WorkState_WORK_STATE_RUNNING {
+		t.Fatalf("the turn did not start: %v", stream.Err())
+	}
+	w.finishTask(t, "first")
+
+	closeStream()
+
+	wiretest.WaitUntil(t, "the released plugin to stop once its turn ended", func() bool {
+		return supervisorOf(w.host, workingPlugin).GetState() == lifecycle.StateDormant
+	})
 }

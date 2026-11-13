@@ -78,7 +78,7 @@ func TestEnsureActive_ActivatesPluginWithHostProtocol(t *testing.T) {
 	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive() = %v, want the plugin active", err)
 	}
-	host.Activation.Release("org.example.sample", getTestHolder())
+	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
 	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}

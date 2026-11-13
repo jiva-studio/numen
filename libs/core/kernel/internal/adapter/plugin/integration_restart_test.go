@@ -139,8 +139,8 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 				t.Fatalf("the first call failed: %v", err)
 			}
 
-			// The read of the description holds the plugin for a question only, and a plugin never used is
-			// stopped once that hold ends, so the first call can find it stopped and start it again.
+			// A start for the description alone stops once it is answered, so the call may have started the
+			// plugin a second time; the process that runs is the last one started.
 			started := launcher.count()
 			running, _, runningServer := launcher.get(started - 1)
 			wiretest.KillProcess(t, running)

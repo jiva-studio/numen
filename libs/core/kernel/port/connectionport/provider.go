@@ -14,8 +14,8 @@ type Provider interface {
 	// returns the done payload. It returns the error of the first send that fails.
 	Call(ctx context.Context, operation string, call modelcall.ProviderCall, payload []byte, send modelcall.Send) ([]byte, error)
 	// ListOptions carries out an operation a row field names in optionsFrom and returns the values the
-	// field can take. operations are the operations the setting of rows is used for.
-	ListOptions(ctx context.Context, operation string, call modelcall.ProviderCall, operations []string) ([]modelcall.Option, error)
+	// field can take.
+	ListOptions(ctx context.Context, operation string, call modelcall.ProviderCall, query modelcall.OptionsQuery) (modelcall.ListedOptions, error)
 	// ListDetected carries out connections.detected for the type of call, which names no connection, and returns
 	// the connections the provider found ready on this machine.
 	ListDetected(ctx context.Context, call modelcall.ProviderCall) ([]modelcall.DetectedConnection, error)

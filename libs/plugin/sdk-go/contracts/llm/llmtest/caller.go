@@ -68,11 +68,11 @@ func (c *caller) Call(ctx context.Context, operation string, payload []byte, _ c
 }
 
 func (c *caller) readFailure(failure *v1.ProviderFailure, hasData bool) error {
-	reason := readReason(failure.GetReason()).String()
+	code := readReason(failure.GetReason())
 	if failure.GetKind() == v1.FailureKind_FAILURE_KIND_TRY_NEXT || hasData {
-		return &connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: c.call.ConnectionID, Reason: reason}}}
+		return &connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: c.call.ConnectionID, Reason: code.String(), Code: code}}}
 	}
-	return &connection.StoppedError{ConnectionName: c.call.ConnectionID, Reason: reason}
+	return &connection.StoppedError{ConnectionName: c.call.ConnectionID, Reason: code.String(), Code: code}
 }
 
 func readStreamError(ctx context.Context, err error) error {

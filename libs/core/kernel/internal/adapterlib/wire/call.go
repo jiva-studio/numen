@@ -27,13 +27,15 @@ func ConvertCallFailureToWire(ctx context.Context, err error) (*v1.CallFailure, 
 	case errors.As(err, &allFailed):
 		failures := make([]*v1.CallRowFailure, len(allFailed.Failures))
 		for i, one := range allFailed.Failures {
-			failures[i] = &v1.CallRowFailure{ConnectionName: one.ConnectionName, Reason: one.Reason}
+			failures[i] = &v1.CallRowFailure{ConnectionName: one.ConnectionName, Reason: one.Reason, Code: convertFailureReasonToWire(one.Code)}
 		}
 		return &v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED, Detail: allFailed.Error(), Failures: failures}, true
 	case errors.As(err, &stopped):
 		return &v1.CallFailure{
 			Error: v1.CallErrorCode_CALL_ERROR_CODE_STOPPED, Detail: stopped.Error(),
-			Failures: []*v1.CallRowFailure{{ConnectionName: stopped.ConnectionName, Reason: stopped.Reason}},
+			Failures: []*v1.CallRowFailure{{
+				ConnectionName: stopped.ConnectionName, Reason: stopped.Reason, Code: convertFailureReasonToWire(stopped.Code),
+			}},
 		}, true
 	}
 	return nil, false
@@ -101,4 +103,20 @@ func NewRowListError(ctx context.Context, err error) error {
 		return connect.NewError(connect.CodeNotFound, err)
 	}
 	return connect.NewError(connect.CodeUnavailable, err)
+}
+
+func convertFailureReasonToWire(reason connection.FailureReason) v1.FailureReason {
+	switch reason {
+	case connection.FailureReasonRejectedKey:
+		return v1.FailureReason_FAILURE_REASON_REJECTED_KEY
+	case connection.FailureReasonPaymentRequired:
+		return v1.FailureReason_FAILURE_REASON_PAYMENT_REQUIRED
+	case connection.FailureReasonRateLimited:
+		return v1.FailureReason_FAILURE_REASON_RATE_LIMITED
+	case connection.FailureReasonInvalidRequest:
+		return v1.FailureReason_FAILURE_REASON_INVALID_REQUEST
+	case connection.FailureReasonUnavailable:
+		return v1.FailureReason_FAILURE_REASON_UNAVAILABLE
+	}
+	return v1.FailureReason_FAILURE_REASON_UNAVAILABLE
 }

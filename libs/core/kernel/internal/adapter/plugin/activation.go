@@ -135,13 +135,15 @@ func (a *Activation) HasEndpoint(pluginID string) bool {
 	return ok
 }
 
-// Acquire takes a use lease of the holder on a plugin whose process runs, and cancels a release of that
-// process.
-func (a *Activation) Acquire(pluginID string, holder plugindomain.Holder) {
-	sup, ok := a.sups.Get(pluginID)
-	if ok {
-		a.sups.AcquireRunning(pluginID, sup, useLease(holder), a.clock.Now())
-	}
+// AcquireOwn takes an own lease of the holder on a plugin whose process runs under the token, for work the
+// plugin started on its own. It does not cancel a release of the process. ReleaseOwn returns the lease.
+func (a *Activation) AcquireOwn(pluginID, token string, holder plugindomain.Holder) bool {
+	return a.sups.AcquireOwn(pluginID, token, holder, a.clock.Now())
+}
+
+// ReleaseOwn returns an own lease of the holder on the process of the plugin that runs under the token.
+func (a *Activation) ReleaseOwn(pluginID, token string, holder plugindomain.Holder) {
+	a.sups.Release(pluginID, token, lifecycle.Lease{Kind: lifecycle.OwnLease, Holder: holder}, a.clock.Now())
 }
 
 // AcquireRunningForQuestion takes a question lease of the holder on a plugin whose process runs and returns
@@ -155,16 +157,16 @@ func (a *Activation) AcquireRunningForQuestion(pluginID string, holder plugindom
 	return a.sups.AcquireRunning(pluginID, sup, questionLease(holder), a.clock.Now())
 }
 
-// Release returns a use lease of the holder on a plugin. A released process that holds no lease after it is
-// stopped at once.
-func (a *Activation) Release(pluginID string, holder plugindomain.Holder) {
-	a.returnLease(pluginID, useLease(holder))
+// Release returns a use lease of the holder on the process of a plugin that runs under the token, the token of
+// the endpoint the lease was taken with. A released process that holds no lease after it is stopped at once.
+func (a *Activation) Release(pluginID, token string, holder plugindomain.Holder) {
+	a.sups.Release(pluginID, token, useLease(holder), a.clock.Now())
 }
 
-// ReleaseQuestion returns a question lease of the holder on a plugin. A process that holds no lease after it
-// and was released or never used since it started is stopped at once.
-func (a *Activation) ReleaseQuestion(pluginID string, holder plugindomain.Holder) {
-	a.returnLease(pluginID, questionLease(holder))
+// ReleaseQuestion returns a question lease of the holder on the process of a plugin that runs under the token.
+// A process that holds no lease after it and was released or never used since it started is stopped at once.
+func (a *Activation) ReleaseQuestion(pluginID, token string, holder plugindomain.Holder) {
+	a.sups.Release(pluginID, token, questionLease(holder), a.clock.Now())
 }
 
 func useLease(holder plugindomain.Holder) lifecycle.Lease {
@@ -173,13 +175,6 @@ func useLease(holder plugindomain.Holder) lifecycle.Lease {
 
 func questionLease(holder plugindomain.Holder) lifecycle.Lease {
 	return lifecycle.Lease{Kind: lifecycle.QuestionLease, Holder: holder}
-}
-
-func (a *Activation) returnLease(pluginID string, lease lifecycle.Lease) {
-	sup, ok := a.sups.Get(pluginID)
-	if ok {
-		a.sups.ReturnHold(pluginID, sup, lease, a.clock.Now())
-	}
 }
 
 func (a *Activation) prepareSupervisor(pluginID string) (manifest.Discovered, *lifecycle.Supervisor, error) {
@@ -312,7 +307,8 @@ func (a *Activation) runActivation(
 	a.config.awaitFirstConfigure(p.Manifest.ID)
 	a.failures.Clear(p.Manifest.ID, sup)
 	if err := a.config.configureActivated(ctx, p.Manifest.ID); err != nil {
-		return endpoint, err
+		a.sups.Release(p.Manifest.ID, endpoint.Token, lease, a.clock.Now())
+		return supervision.NoEndpoint(), err
 	}
 	a.reportStart(p.Manifest.ID)
 	return endpoint, nil

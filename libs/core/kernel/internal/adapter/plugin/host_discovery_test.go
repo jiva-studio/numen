@@ -63,7 +63,7 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", getTestHolder())
+	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
 	exited := supervisorOf(host, "org.example.sample").GetExitSignal()
 
 	if err := os.RemoveAll(filepath.Join(tmp, "sample")); err != nil {
@@ -94,7 +94,7 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", getTestHolder())
+	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
 	exited := supervisorOf(host, "org.example.sample").GetExitSignal()
 
 	manifestPath := filepath.Join(tmp, "sample", "manifest.json")
@@ -118,7 +118,7 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive after the manifest change failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", getTestHolder())
+	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
 	if started.Load() != 2 {
 		t.Fatalf("expected the plugin to be launched again, got %d launches", started.Load())
 	}

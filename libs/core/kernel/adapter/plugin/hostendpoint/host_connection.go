@@ -15,7 +15,7 @@ import (
 
 // connectionEndpoint answers HostConnectionService for the plugins that call the host. The connections are
 // the rows of the calling plugin for the operation, so a plugin reaches only the operations its settings of
-// rows name or, with connections:use, the connections that serve an operation none of them names.
+// rows name or, with connections:use:<operation>, the connections that serve that operation.
 type connectionEndpoint struct {
 	endpoint *Endpoint
 }

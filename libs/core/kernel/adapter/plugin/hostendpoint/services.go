@@ -19,10 +19,12 @@ type Identity interface {
 	CheckPluginPermission(pluginID, permission string) error
 }
 
-// Leases holds a plugin from being stopped as idle while it works.
+// Leases holds a plugin from being stopped as idle while it works on its own. A lease is taken on the
+// process that runs under the token and does not cancel a release of that process; AcquireOwn reports
+// whether it took one.
 type Leases interface {
-	Acquire(pluginID string, holder plugin.Holder)
-	Release(pluginID string, holder plugin.Holder)
+	AcquireOwn(pluginID, token string, holder plugin.Holder) bool
+	ReleaseOwn(pluginID, token string, holder plugin.Holder)
 }
 
 // WorkQueue is the core's shared queue of heavy work and its list of tasks, as the plugins use them.

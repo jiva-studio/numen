@@ -131,11 +131,13 @@ func (CallErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_hostconnection_proto_rawDescGZIP(), []int{1}
 }
 
-// CallRowFailure is one row that did not answer.
+// CallRowFailure is one row that did not answer. reason is the words the person reads and code the reason
+// a program reads; a row the core set aside for a reason outside the enum has the code UNAVAILABLE.
 type CallRowFailure struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	ConnectionName string                 `protobuf:"bytes,1,opt,name=connection_name,json=connectionName,proto3" json:"connection_name,omitempty"`
 	Reason         string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	Code           FailureReason          `protobuf:"varint,3,opt,name=code,proto3,enum=numen.v1.FailureReason" json:"code,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -182,6 +184,13 @@ func (x *CallRowFailure) GetReason() string {
 		return x.Reason
 	}
 	return ""
+}
+
+func (x *CallRowFailure) GetCode() FailureReason {
+	if x != nil {
+		return x.Code
+	}
+	return FailureReason_FAILURE_REASON_UNSPECIFIED
 }
 
 // CallFailure ends a call that did not succeed.
@@ -826,10 +835,11 @@ var File_numen_v1_hostconnection_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostconnection_proto_rawDesc = "" +
 	"\n" +
-	"\x1dnumen/v1/hostconnection.proto\x12\bnumen.v1\x1a\x17numen/v1/settings.proto\"Q\n" +
+	"\x1dnumen/v1/hostconnection.proto\x12\bnumen.v1\x1a\x17numen/v1/provider.proto\x1a\x17numen/v1/settings.proto\"~\n" +
 	"\x0eCallRowFailure\x12'\n" +
 	"\x0fconnection_name\x18\x01 \x01(\tR\x0econnectionName\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"\x8a\x01\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12+\n" +
+	"\x04code\x18\x03 \x01(\x0e2\x17.numen.v1.FailureReasonR\x04code\"\x8a\x01\n" +
 	"\vCallFailure\x12-\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.CallErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\x124\n" +
@@ -921,34 +931,36 @@ var file_numen_v1_hostconnection_proto_goTypes = []any{
 	(*HostConnectionServiceListRowsResponse)(nil),       // 10: numen.v1.HostConnectionServiceListRowsResponse
 	(*HostConnectionServiceListRowOptionsRequest)(nil),  // 11: numen.v1.HostConnectionServiceListRowOptionsRequest
 	(*HostConnectionServiceListRowOptionsResponse)(nil), // 12: numen.v1.HostConnectionServiceListRowOptionsResponse
-	nil,            // 13: numen.v1.PreferredRow.OptionsEntry
-	nil,            // 14: numen.v1.CallRow.OptionsEntry
-	nil,            // 15: numen.v1.HostConnectionServiceListRowOptionsRequest.OptionsEntry
-	(*Option)(nil), // 16: numen.v1.Option
+	nil,                // 13: numen.v1.PreferredRow.OptionsEntry
+	nil,                // 14: numen.v1.CallRow.OptionsEntry
+	nil,                // 15: numen.v1.HostConnectionServiceListRowOptionsRequest.OptionsEntry
+	(FailureReason)(0), // 16: numen.v1.FailureReason
+	(*Option)(nil),     // 17: numen.v1.Option
 }
 var file_numen_v1_hostconnection_proto_depIdxs = []int32{
-	1,  // 0: numen.v1.CallFailure.error:type_name -> numen.v1.CallErrorCode
-	2,  // 1: numen.v1.CallFailure.failures:type_name -> numen.v1.CallRowFailure
-	0,  // 2: numen.v1.HostConnectionServiceCallRequest.priority:type_name -> numen.v1.Priority
-	6,  // 3: numen.v1.HostConnectionServiceCallRequest.preferred:type_name -> numen.v1.PreferredRow
-	3,  // 4: numen.v1.HostConnectionServiceCallResponse.failure:type_name -> numen.v1.CallFailure
-	13, // 5: numen.v1.PreferredRow.options:type_name -> numen.v1.PreferredRow.OptionsEntry
-	14, // 6: numen.v1.CallRow.options:type_name -> numen.v1.CallRow.OptionsEntry
-	7,  // 7: numen.v1.CallRow.fields:type_name -> numen.v1.CallRowField
-	8,  // 8: numen.v1.HostConnectionServiceListRowsResponse.rows:type_name -> numen.v1.CallRow
-	15, // 9: numen.v1.HostConnectionServiceListRowOptionsRequest.options:type_name -> numen.v1.HostConnectionServiceListRowOptionsRequest.OptionsEntry
-	16, // 10: numen.v1.HostConnectionServiceListRowOptionsResponse.options:type_name -> numen.v1.Option
-	4,  // 11: numen.v1.HostConnectionService.Call:input_type -> numen.v1.HostConnectionServiceCallRequest
-	9,  // 12: numen.v1.HostConnectionService.ListRows:input_type -> numen.v1.HostConnectionServiceListRowsRequest
-	11, // 13: numen.v1.HostConnectionService.ListRowOptions:input_type -> numen.v1.HostConnectionServiceListRowOptionsRequest
-	5,  // 14: numen.v1.HostConnectionService.Call:output_type -> numen.v1.HostConnectionServiceCallResponse
-	10, // 15: numen.v1.HostConnectionService.ListRows:output_type -> numen.v1.HostConnectionServiceListRowsResponse
-	12, // 16: numen.v1.HostConnectionService.ListRowOptions:output_type -> numen.v1.HostConnectionServiceListRowOptionsResponse
-	14, // [14:17] is the sub-list for method output_type
-	11, // [11:14] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	16, // 0: numen.v1.CallRowFailure.code:type_name -> numen.v1.FailureReason
+	1,  // 1: numen.v1.CallFailure.error:type_name -> numen.v1.CallErrorCode
+	2,  // 2: numen.v1.CallFailure.failures:type_name -> numen.v1.CallRowFailure
+	0,  // 3: numen.v1.HostConnectionServiceCallRequest.priority:type_name -> numen.v1.Priority
+	6,  // 4: numen.v1.HostConnectionServiceCallRequest.preferred:type_name -> numen.v1.PreferredRow
+	3,  // 5: numen.v1.HostConnectionServiceCallResponse.failure:type_name -> numen.v1.CallFailure
+	13, // 6: numen.v1.PreferredRow.options:type_name -> numen.v1.PreferredRow.OptionsEntry
+	14, // 7: numen.v1.CallRow.options:type_name -> numen.v1.CallRow.OptionsEntry
+	7,  // 8: numen.v1.CallRow.fields:type_name -> numen.v1.CallRowField
+	8,  // 9: numen.v1.HostConnectionServiceListRowsResponse.rows:type_name -> numen.v1.CallRow
+	15, // 10: numen.v1.HostConnectionServiceListRowOptionsRequest.options:type_name -> numen.v1.HostConnectionServiceListRowOptionsRequest.OptionsEntry
+	17, // 11: numen.v1.HostConnectionServiceListRowOptionsResponse.options:type_name -> numen.v1.Option
+	4,  // 12: numen.v1.HostConnectionService.Call:input_type -> numen.v1.HostConnectionServiceCallRequest
+	9,  // 13: numen.v1.HostConnectionService.ListRows:input_type -> numen.v1.HostConnectionServiceListRowsRequest
+	11, // 14: numen.v1.HostConnectionService.ListRowOptions:input_type -> numen.v1.HostConnectionServiceListRowOptionsRequest
+	5,  // 15: numen.v1.HostConnectionService.Call:output_type -> numen.v1.HostConnectionServiceCallResponse
+	10, // 16: numen.v1.HostConnectionService.ListRows:output_type -> numen.v1.HostConnectionServiceListRowsResponse
+	12, // 17: numen.v1.HostConnectionService.ListRowOptions:output_type -> numen.v1.HostConnectionServiceListRowOptionsResponse
+	15, // [15:18] is the sub-list for method output_type
+	12, // [12:15] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostconnection_proto_init() }
@@ -956,6 +968,7 @@ func file_numen_v1_hostconnection_proto_init() {
 	if File_numen_v1_hostconnection_proto != nil {
 		return
 	}
+	file_numen_v1_provider_proto_init()
 	file_numen_v1_settings_proto_init()
 	file_numen_v1_hostconnection_proto_msgTypes[3].OneofWrappers = []any{
 		(*HostConnectionServiceCallResponse_Data)(nil),

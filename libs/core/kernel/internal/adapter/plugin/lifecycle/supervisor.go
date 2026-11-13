@@ -34,9 +34,10 @@ const (
 	StateDeactivating
 )
 
-// LeaseKind says what a lease holds a plugin for: a use of the plugin, or a question the core asks the
-// plugin for itself. A question lease holds the process as a use lease does, but neither marks the plugin
-// used nor moves its idle countdown.
+// LeaseKind says what a lease holds a plugin for: a use of the plugin, a question the core asks the
+// plugin for itself, or work the plugin does on its own. A question lease holds the process as a use lease
+// does, but neither marks the plugin used nor moves its idle countdown. An own lease counts as a use but
+// does not cancel a release of the process.
 type LeaseKind int
 
 const (
@@ -44,12 +45,18 @@ const (
 	UseLease LeaseKind = iota
 	// QuestionLease holds the plugin for a question the core asks it for itself.
 	QuestionLease
+	// OwnLease holds the plugin for work it started on its own, such as an open task.
+	OwnLease
 )
 
 // Lease is one hold on a plugin: its kind and its holder.
 type Lease struct {
 	Kind   LeaseKind
 	Holder plugin.Holder
+}
+
+func (l Lease) isUse() bool {
+	return l.Kind != QuestionLease
 }
 
 // Supervisor monitors and controls the execution lifecycle of a single plugin process. Failure keeps why
@@ -235,7 +242,7 @@ func (s *Supervisor) ActivateInProcess(lease Lease, now time.Time) {
 	defer s.mu.Unlock()
 	s.inProcess = true
 	s.state = StateActive
-	s.leases.StartHeld(lease.Holder, lease.Kind == UseLease, now)
+	s.leases.StartHeld(lease.Holder, lease.isUse(), now)
 	s.activationErr = nil
 	closeActivationSignal(&s.activatingCh)
 }
@@ -255,7 +262,7 @@ func (s *Supervisor) Acquire(lease Lease, now time.Time) bool {
 	if !isRunning(s) {
 		return false
 	}
-	s.leases.Add(lease.Holder, lease.Kind == UseLease, now)
+	s.leases.Add(lease.Holder, lease.isUse(), now)
 	s.state = StateActive
 	return true
 }
@@ -268,7 +275,7 @@ func (s *Supervisor) Release(lease Lease, now time.Time) {
 	if !isRunning(s) {
 		return
 	}
-	if s.leases.Remove(lease.Holder, lease.Kind == UseLease, now) {
+	if s.leases.Remove(lease.Holder, lease.isUse(), now) {
 		s.state = StateIdle
 	}
 }

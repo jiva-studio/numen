@@ -318,5 +318,5 @@ func (l *Listeners) createTarget(pluginID, name string) portproxy.Target {
 }
 
 func (l *Listeners) releaseEndpoint(pluginID string, endpoint transport.Endpoint, holder plugindomain.Holder) {
-	l.sups.Release(pluginID, endpoint.Token, holder, l.clock.Now())
+	l.sups.Release(pluginID, endpoint.Token, useLease(holder), l.clock.Now())
 }

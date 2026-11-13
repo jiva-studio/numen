@@ -3,6 +3,7 @@
 package connection
 
 import (
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -91,12 +92,44 @@ func IsValidID(id string) bool {
 	return true
 }
 
-// Use is a setting of rows of a plugin that names a connection. Operations are the operations the
-// setting is used for.
+// Use is a setting of rows of a plugin that names a connection, or a grant of the plugin that reaches it.
+// Operations are the operations the plugin uses the connection for.
 type Use struct {
 	PluginID   string
 	PluginName string
 	Operations []string
+}
+
+// Grant is a plugin that calls the operations through every connection that serves them, with no setting
+// of rows: the permissions connections:use:<operation> of its manifest.
+type Grant struct {
+	PluginID   string
+	PluginName string
+	Operations []string
+}
+
+// IsGranted reports whether one of the grants lets the plugin call the operation through every connection
+// that serves it.
+func IsGranted(grants []Grant, pluginID, operation string) bool {
+	for _, one := range grants {
+		if one.PluginID == pluginID && slices.Contains(one.Operations, operation) {
+			return true
+		}
+	}
+	return false
+}
+
+// ListGrantUses returns a use for each grant that reaches a connection of the type, with the granted
+// operations the type serves, in the order of the grants.
+func ListGrantUses(grants []Grant, declaration manifest.ConnectionType) []Use {
+	var uses []Use
+	for _, one := range grants {
+		served := slices.DeleteFunc(slices.Clone(one.Operations), func(operation string) bool { return !declaration.HasOperation(operation) })
+		if len(served) > 0 {
+			uses = append(uses, Use{PluginID: one.PluginID, PluginName: one.PluginName, Operations: served})
+		}
+	}
+	return uses
 }
 
 // Row is one entry of the settings of a plugin that names a connection, with the values of the row

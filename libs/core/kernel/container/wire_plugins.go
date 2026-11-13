@@ -198,7 +198,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		Health:              host.Health,
 		Processes:           host.RunningProcesses,
 		Detection:           detection,
-		RowOptions:          rowoptions.NewLists(host.Storage),
+		RowOptions:          rowoptions.NewLists(host.Storage, host.Config),
 		RunningProviders:    providerbridge.NewRunningSource(host.Activation, host.Activation.ClientLookup()),
 		SourceDescriptions:  sourcebridge.NewDescriptions(host.Storage, host.Config),
 	}

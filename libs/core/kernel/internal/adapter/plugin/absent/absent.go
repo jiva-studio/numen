@@ -58,10 +58,10 @@ func (Runtime) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 }
 
 // Release has no plugin to release.
-func (Runtime) Release(string, plugindomain.Holder) {}
+func (Runtime) Release(string, string, plugindomain.Holder) {}
 
 // ReleaseQuestion does nothing: EnsureActiveForQuestion takes no lease here.
-func (Runtime) ReleaseQuestion(string, plugindomain.Holder) {}
+func (Runtime) ReleaseQuestion(string, string, plugindomain.Holder) {}
 
 // Discover finds no plugin.
 func (Runtime) Discover() error { return nil }

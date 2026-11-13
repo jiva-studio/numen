@@ -1,6 +1,8 @@
 package storage_test
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -41,7 +43,8 @@ func TestTheOptionListsOfAPluginAreStoredInTheModelsFolder(t *testing.T) {
 	var reported []error
 	lists := []connection.OptionList{{
 		ConnectionID: "c0000beak", Field: "model", RowOptions: map[string]string{"reasoning": "low"},
-		Operations: []string{"llm.chat"}, Revision: 3, PluginVersion: "1.2.0", Fields: map[string]string{"baseUrl": "https://finch.test/v1"},
+		Operations: []string{"llm.chat"}, Revision: 3, PluginVersion: "1.2.0", ConfigRevision: "config-7", GrantRevision: "c0000wren@2",
+		Fields:  map[string]string{"baseUrl": "https://finch.test/v1"},
 		Options: []modelcall.Option{{Value: "finch-small", Title: "Finch small", Group: "Finch"}, {Value: "finch-large"}},
 	}}
 
@@ -84,5 +87,26 @@ func TestAHostWithNoCacheRootKeepsNothing(t *testing.T) {
 	_, isListsKept := files.ReadOptionLists(finchPlugin)
 	if isConnectionsKept || isListsKept || len(reported) != 0 {
 		t.Errorf("connections kept = %v, lists kept = %v, reported = %v", isConnectionsKept, isListsKept, reported)
+	}
+}
+
+func TestRemoveCacheDirDeletesTheCacheFilesOfThePlugin(t *testing.T) {
+	root := t.TempDir()
+	var reported []error
+	files := newStorage(t, root, &reported)
+	files.WriteToolListing(finchPlugin, []byte(`[]`))
+	files.WriteSourceDescription(finchPlugin, []byte(`{}`))
+	files.WriteDetectedConnections(finchPlugin, []byte(`{}`))
+	files.WriteOptionLists(finchPlugin, []connection.OptionList{{ConnectionID: "c0000beak", Field: "model"}})
+
+	files.RemoveCacheDir(finchPlugin)
+
+	for _, folder := range []string{"tools", "sources", "connections", "models"} {
+		if _, err := os.Stat(filepath.Join(root, folder, finchPlugin+".json")); !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("the %s file of the removed plugin: %v, want none", folder, err)
+		}
+	}
+	if len(reported) != 0 {
+		t.Errorf("reported = %v", reported)
 	}
 }

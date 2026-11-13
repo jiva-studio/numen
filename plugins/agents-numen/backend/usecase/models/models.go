@@ -5,6 +5,7 @@ package models
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/ports"
@@ -15,6 +16,17 @@ import (
 type Option struct {
 	Value string
 	Title string
+}
+
+// ConnectionLimit is how long the models of one connection may take to list; a connection that takes longer
+// is left out of the listing, which is then partial.
+const ConnectionLimit = 3 * time.Second
+
+// Listing is the models a task can chat with. IsPartial marks a listing that left out a connection whose
+// models could not be listed.
+type Listing struct {
+	Options   []Option
+	IsPartial bool
 }
 
 // Lister lists the models of the connections that serve llm.chat.
@@ -31,23 +43,24 @@ func NewLister(models ports.Models) (*Lister, error) {
 }
 
 // ListOptions returns the models of each connection that serves llm.chat, the connections in their order
-// and the models in the order the connection lists them. A connection with no field of models, or whose
-// models cannot be listed, is left out.
-func (l *Lister) ListOptions(ctx context.Context) ([]Option, error) {
+// and the models in the order the connection lists them. A connection with no field of models is left out,
+// and so is one whose models cannot be listed within ConnectionLimit, which makes the listing partial.
+func (l *Lister) ListOptions(ctx context.Context) (Listing, error) {
 	connections, err := l.models.ListConnections(ctx)
 	if err != nil {
-		return nil, err
+		return Listing{}, err
 	}
-	options := []Option{}
+	listing := Listing{Options: []Option{}, IsPartial: false}
 	for _, one := range connections {
 		if one.ModelField == "" {
 			continue
 		}
-		listed, err := l.models.ListModels(ctx, one)
+		listed, err := l.listModels(ctx, one)
 		if ctxErr := ctx.Err(); ctxErr != nil {
-			return nil, ctxErr
+			return Listing{}, ctxErr
 		}
 		if err != nil {
+			listing.IsPartial = true
 			continue
 		}
 		for _, model := range listed {
@@ -55,11 +68,17 @@ func (l *Lister) ListOptions(ctx context.Context) ([]Option, error) {
 			if title == "" {
 				title = model.ID
 			}
-			options = append(options, Option{
+			listing.Options = append(listing.Options, Option{
 				Value: conversation.WriteChoice(conversation.Choice{ConnectionID: one.ID, ModelID: model.ID}),
 				Title: one.Name + " · " + title,
 			})
 		}
 	}
-	return options, nil
+	return listing, nil
+}
+
+func (l *Lister) listModels(ctx context.Context, chat conversation.ChatConnection) ([]conversation.ModelOption, error) {
+	ctx, cancel := context.WithTimeout(ctx, ConnectionLimit)
+	defer cancel()
+	return l.models.ListModels(ctx, chat)
 }

@@ -35,7 +35,7 @@ func startAtlas(t *testing.T, host *container.PluginRoles) {
 func TestAReleasedPluginWithoutALeaseStopsAtOnce(t *testing.T) {
 	host := newAtlasHost(t, testsupport.NewClock(), 0)
 	startAtlas(t, host)
-	host.Activation.Release(atlasPlugin, getTestHolder())
+	host.Activation.Release(atlasPlugin, endpointOf(host, atlasPlugin).Token, getTestHolder())
 
 	host.Teardown.ReleaseProcess(t.Context(), atlasPlugin)
 
@@ -52,7 +52,7 @@ func TestAReleasedPluginWithALeaseStopsWhenTheLeaseIsReturned(t *testing.T) {
 	if state := supervisorOf(host, atlasPlugin).GetState(); state != lifecycle.StateActive {
 		t.Fatalf("state while the call is open = %v, want active", state)
 	}
-	host.Activation.Release(atlasPlugin, getTestHolder())
+	host.Activation.Release(atlasPlugin, endpointOf(host, atlasPlugin).Token, getTestHolder())
 
 	wiretest.WaitUntil(t, "the released plugin to stop", func() bool {
 		return supervisorOf(host, atlasPlugin).GetState() == lifecycle.StateDormant
@@ -65,8 +65,8 @@ func TestAUseAfterTheReleaseKeepsThePluginForTheIdleLimit(t *testing.T) {
 	host.Teardown.ReleaseProcess(t.Context(), atlasPlugin)
 
 	startAtlas(t, host)
-	host.Activation.Release(atlasPlugin, getTestHolder())
-	host.Activation.Release(atlasPlugin, getTestHolder())
+	host.Activation.Release(atlasPlugin, endpointOf(host, atlasPlugin).Token, getTestHolder())
+	host.Activation.Release(atlasPlugin, endpointOf(host, atlasPlugin).Token, getTestHolder())
 
 	if evicted := host.Teardown.EvictIdle(t.Context(), supervision.IdleThreshold, releaseGrace); len(evicted) != 0 {
 		t.Errorf("evicted %v, want none before the idle limit", evicted)
@@ -77,7 +77,7 @@ func TestAPluginStopsAfterTheIdleLimitOfItsManifest(t *testing.T) {
 	clock := testsupport.NewClock()
 	host := newAtlasHost(t, clock, 600)
 	startAtlas(t, host)
-	host.Activation.Release(atlasPlugin, getTestHolder())
+	host.Activation.Release(atlasPlugin, endpointOf(host, atlasPlugin).Token, getTestHolder())
 
 	clock.Advance(supervision.IdleThreshold + time.Second)
 	if evicted := host.Teardown.EvictIdle(t.Context(), supervision.IdleThreshold, releaseGrace); len(evicted) != 0 {

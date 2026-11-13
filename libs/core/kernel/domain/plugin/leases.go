@@ -51,13 +51,14 @@ func (l *Leases) Add(holder Holder, isUse bool, now time.Time) {
 	}
 }
 
-// Remove records a lease of the holder returned at now, and reports whether no lease is left. Where the
-// holder holds none, the oldest lease is removed.
+// Remove records a lease of the holder returned at now, and reports whether it was the last lease. Where the
+// holder holds none, no lease is removed.
 func (l *Leases) Remove(holder Holder, isUse bool, now time.Time) bool {
-	if len(l.holders) > 0 {
-		i := max(slices.Index(l.holders, holder), 0)
-		l.holders = slices.Delete(l.holders, i, i+1)
+	i := slices.Index(l.holders, holder)
+	if i < 0 {
+		return false
 	}
+	l.holders = slices.Delete(l.holders, i, i+1)
 	if isUse {
 		l.lastUseTime = now
 	}

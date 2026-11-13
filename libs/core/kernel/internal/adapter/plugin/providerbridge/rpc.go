@@ -87,25 +87,25 @@ func (p *provider) Call(
 // ListOptions calls the operation with a numen.v1.OptionsRequest and reads the numen.v1.Options of its done
 // frame. A done frame that holds no Options is an invalid request.
 func (p *provider) ListOptions(
-	ctx context.Context, operation string, call modelcall.ProviderCall, operations []string,
-) ([]modelcall.Option, error) {
-	payload, err := proto.Marshal(&v1.OptionsRequest{Operations: operations})
+	ctx context.Context, operation string, call modelcall.ProviderCall, query modelcall.OptionsQuery,
+) (modelcall.ListedOptions, error) {
+	payload, err := proto.Marshal(&v1.OptionsRequest{Operations: query.Operations, IsFresh: query.IsFresh})
 	if err != nil {
-		return nil, err
+		return modelcall.ListedOptions{}, err
 	}
 	done, err := p.Call(ctx, operation, call, payload, func([]byte) error { return nil })
 	if err != nil {
-		return nil, err
+		return modelcall.ListedOptions{}, err
 	}
 	var listed v1.Options
 	if err := proto.Unmarshal(done, &listed); err != nil {
-		return nil, &connection.StopError{Reason: connection.FailureReasonInvalidRequest}
+		return modelcall.ListedOptions{}, &connection.StopError{Reason: connection.FailureReasonInvalidRequest}
 	}
 	options := make([]modelcall.Option, len(listed.GetOptions()))
 	for i, one := range listed.GetOptions() {
 		options[i] = modelcall.Option{Value: one.GetValue(), Title: one.GetTitle(), Group: one.GetGroup()}
 	}
-	return options, nil
+	return modelcall.ListedOptions{Options: options, IsPartial: listed.GetIsPartial()}, nil
 }
 
 // ListDetected calls connections.detected with an empty payload and reads the numen.v1.DetectedConnections of its

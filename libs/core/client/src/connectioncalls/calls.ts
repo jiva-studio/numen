@@ -4,7 +4,13 @@
  * belongs to.
  */
 import { createClient, type Client } from '@connectrpc/connect'
-import { CallErrorCode, ConnectionCallService, Priority, type CallFailure } from '@numen/protocol'
+import {
+  CallErrorCode,
+  ConnectionCallService,
+  FailureReason,
+  Priority,
+  type CallFailure,
+} from '@numen/protocol'
 import { asFailure, asValue, type Result } from '../result'
 import { transport } from '../transport'
 
@@ -42,10 +48,22 @@ export interface ConnectionCallRequest {
   readonly payload: Uint8Array
 }
 
-/** One row of a plugin that did not answer. */
+/**
+ * Why a row did not answer, as a program reads it. A row the core set aside for a reason outside these
+ * has `unavailable`.
+ */
+export type ConnectionCallFailureCode =
+  | 'unavailable'
+  | 'rejected_key'
+  | 'payment_required'
+  | 'rate_limited'
+  | 'invalid_request'
+
+/** One row of a plugin that did not answer: `reason` is the words the person reads, `code` the reason. */
 export interface ConnectionCallRowFailure {
   readonly connectionName: string
   readonly reason: string
+  readonly code: ConnectionCallFailureCode
 }
 
 /** Why no row answered a call. */
@@ -131,12 +149,29 @@ const readErrorCode = (code: CallErrorCode): ConnectionCallErrorCode => {
   }
 }
 
+const readFailureCode = (code: FailureReason): ConnectionCallFailureCode => {
+  switch (code) {
+    case FailureReason.REJECTED_KEY:
+      return 'rejected_key'
+    case FailureReason.PAYMENT_REQUIRED:
+      return 'payment_required'
+    case FailureReason.RATE_LIMITED:
+      return 'rate_limited'
+    case FailureReason.INVALID_REQUEST:
+      return 'invalid_request'
+    case FailureReason.UNAVAILABLE:
+    case FailureReason.UNSPECIFIED:
+      return 'unavailable'
+  }
+}
+
 const readFailure = (failure: CallFailure): ConnectionCallFailure => ({
   errorCode: readErrorCode(failure.error),
   detail: failure.detail,
   failures: failure.failures.map((one) => ({
     connectionName: one.connectionName,
     reason: one.reason,
+    code: readFailureCode(one.code),
   })),
 })
 

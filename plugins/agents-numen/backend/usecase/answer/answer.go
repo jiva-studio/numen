@@ -129,19 +129,11 @@ var errConnections = errors.New("the connections of llm.chat could not be listed
 func readChatReason(err error) connection.Reason {
 	var failed *connection.AllFailedError
 	var stopped *connection.StoppedError
-	given := ""
 	switch {
 	case errors.As(err, &failed) && len(failed.Failures) > 0:
-		given = failed.Failures[len(failed.Failures)-1].Reason
+		return failed.Failures[len(failed.Failures)-1].Code
 	case errors.As(err, &stopped):
-		given = stopped.Reason
-	}
-	for _, reason := range []connection.Reason{
-		connection.ReasonRejectedKey, connection.ReasonPaymentRequired, connection.ReasonRateLimited, connection.ReasonInvalidRequest,
-	} {
-		if reason.String() == given {
-			return reason
-		}
+		return stopped.Code
 	}
 	return connection.ReasonUnavailable
 }

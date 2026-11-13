@@ -289,6 +289,7 @@ func TestAcquire_RejectsDeactivatingPlugin(t *testing.T) {
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
+	sup.Acquire(getUseLease(), now)
 	sup.Release(getUseLease(), now)
 
 	if !sup.BeginDeactivation(0, now) {

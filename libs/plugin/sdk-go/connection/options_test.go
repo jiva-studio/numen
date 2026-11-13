@@ -11,15 +11,15 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
-func TestServeOptionsReadsTheOperationsOfTheSettingAndAnswersTheOptions(t *testing.T) {
-	var operations []string
+func TestServeOptionsReadsTheQueryAndAnswersTheOptions(t *testing.T) {
+	var asked OptionsQuery
 	var model string
-	client := newProviderClient(t, Provider{"llm.reasoning": ServeOptions(func(_ context.Context, call Call, uses []string) ([]Option, error) {
-		operations, model = uses, call.Options["model"]
-		return []Option{{Value: "low", Title: "Low"}, {Value: "high", Title: "High", Group: "Slower"}}, nil
+	client := newProviderClient(t, Provider{"llm.reasoning": ServeOptions(func(_ context.Context, call Call, query OptionsQuery) (ListedOptions, error) {
+		asked, model = query, call.Options["model"]
+		return ListedOptions{Options: []Option{{Value: "low", Title: "Low"}, {Value: "high", Title: "High", Group: "Slower"}}, IsPartial: true}, nil
 	})})
 	request := newCallRequest("llm.reasoning")
-	payload, err := proto.Marshal(&v1.OptionsRequest{Operations: []string{"llm.chat"}})
+	payload, err := proto.Marshal(&v1.OptionsRequest{Operations: []string{"llm.chat"}, IsFresh: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,17 +34,18 @@ func TestServeOptionsReadsTheOperationsOfTheSettingAndAnswersTheOptions(t *testi
 	if err := proto.Unmarshal([]byte(got.done), &listed); err != nil {
 		t.Fatal(err)
 	}
-	if len(listed.GetOptions()) != 2 || listed.GetOptions()[1].GetValue() != "high" || listed.GetOptions()[1].GetGroup() != "Slower" {
-		t.Errorf("options = %v", listed.GetOptions())
+	if len(listed.GetOptions()) != 2 || listed.GetOptions()[1].GetValue() != "high" || listed.GetOptions()[1].GetGroup() != "Slower" ||
+		!listed.GetIsPartial() {
+		t.Errorf("options = %v, partial %v", listed.GetOptions(), listed.GetIsPartial())
 	}
-	if !slices.Equal(operations, []string{"llm.chat"}) || model != "google/gemini-2.5-flash" {
-		t.Errorf("operations = %v, model = %q", operations, model)
+	if !slices.Equal(asked.Operations, []string{"llm.chat"}) || !asked.IsFresh || model != "google/gemini-2.5-flash" {
+		t.Errorf("query = %+v, model = %q", asked, model)
 	}
 }
 
 func TestServeOptionsPassesTheFailureOfTheListOn(t *testing.T) {
 	failure := NewTryNextError(ReasonRejectedKey, 0)
-	operation := ServeOptions(func(context.Context, Call, []string) ([]Option, error) { return nil, failure })
+	operation := ServeOptions(func(context.Context, Call, OptionsQuery) (ListedOptions, error) { return ListedOptions{}, failure })
 
 	_, err := operation(t.Context(), Call{}, nil, nil)
 
@@ -54,7 +55,7 @@ func TestServeOptionsPassesTheFailureOfTheListOn(t *testing.T) {
 }
 
 func TestServeOptionsRefusesAPayloadThatIsNoOptionsRequest(t *testing.T) {
-	operation := ServeOptions(func(context.Context, Call, []string) ([]Option, error) { return nil, nil })
+	operation := ServeOptions(func(context.Context, Call, OptionsQuery) (ListedOptions, error) { return ListedOptions{}, nil })
 
 	_, err := operation(t.Context(), Call{}, []byte{0xff, 0xff}, nil)
 

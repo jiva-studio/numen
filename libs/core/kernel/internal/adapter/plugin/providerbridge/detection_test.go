@@ -48,8 +48,8 @@ func (s *detectingSource) Call(context.Context, string, modelcall.ProviderCall, 
 	return nil, s.failCall
 }
 
-func (s *detectingSource) ListOptions(context.Context, string, modelcall.ProviderCall, []string) ([]modelcall.Option, error) {
-	return nil, nil
+func (s *detectingSource) ListOptions(context.Context, string, modelcall.ProviderCall, modelcall.OptionsQuery) (modelcall.ListedOptions, error) {
+	return modelcall.ListedOptions{}, nil
 }
 
 func (s *detectingSource) ListDetected(_ context.Context, call modelcall.ProviderCall) ([]modelcall.DetectedConnection, error) {
