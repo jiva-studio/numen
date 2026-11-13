@@ -397,6 +397,107 @@ func (x *ProviderServiceCallRequest) GetPayload() []byte {
 	return nil
 }
 
+// DetectedConnections is the done frame of the operation connections.detected, which the core calls with an
+// empty payload and a call that names the type and no connection: the connections of the type the provider
+// found ready on this machine, none when it found nothing.
+type DetectedConnections struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Connections   []*DetectedConnection  `protobuf:"bytes,1,rep,name=connections,proto3" json:"connections,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DetectedConnections) Reset() {
+	*x = DetectedConnections{}
+	mi := &file_numen_v1_provider_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DetectedConnections) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DetectedConnections) ProtoMessage() {}
+
+func (x *DetectedConnections) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_provider_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DetectedConnections.ProtoReflect.Descriptor instead.
+func (*DetectedConnections) Descriptor() ([]byte, []int) {
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *DetectedConnections) GetConnections() []*DetectedConnection {
+	if x != nil {
+		return x.Connections
+	}
+	return nil
+}
+
+// DetectedConnection is one connection a provider found. name is unique within the type. fields are the
+// values of the fields of the type that are not secret, by key; a field left out takes its default.
+type DetectedConnection struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Fields        map[string]string      `protobuf:"bytes,2,rep,name=fields,proto3" json:"fields,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DetectedConnection) Reset() {
+	*x = DetectedConnection{}
+	mi := &file_numen_v1_provider_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DetectedConnection) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DetectedConnection) ProtoMessage() {}
+
+func (x *DetectedConnection) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_provider_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DetectedConnection.ProtoReflect.Descriptor instead.
+func (*DetectedConnection) Descriptor() ([]byte, []int) {
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *DetectedConnection) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DetectedConnection) GetFields() map[string]string {
+	if x != nil {
+		return x.Fields
+	}
+	return nil
+}
+
 // ProviderServiceCallResponse is one frame of a call.
 type ProviderServiceCallResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -412,7 +513,7 @@ type ProviderServiceCallResponse struct {
 
 func (x *ProviderServiceCallResponse) Reset() {
 	*x = ProviderServiceCallResponse{}
-	mi := &file_numen_v1_provider_proto_msgTypes[4]
+	mi := &file_numen_v1_provider_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -424,7 +525,7 @@ func (x *ProviderServiceCallResponse) String() string {
 func (*ProviderServiceCallResponse) ProtoMessage() {}
 
 func (x *ProviderServiceCallResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_provider_proto_msgTypes[4]
+	mi := &file_numen_v1_provider_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -437,7 +538,7 @@ func (x *ProviderServiceCallResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProviderServiceCallResponse.ProtoReflect.Descriptor instead.
 func (*ProviderServiceCallResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ProviderServiceCallResponse) GetFrame() isProviderServiceCallResponse_Frame {
@@ -525,7 +626,15 @@ const file_numen_v1_provider_proto_rawDesc = "" +
 	"\x1aProviderServiceCallRequest\x12\x1c\n" +
 	"\toperation\x18\x01 \x01(\tR\toperation\x12*\n" +
 	"\x04call\x18\x02 \x01(\v2\x16.numen.v1.ProviderCallR\x04call\x12\x18\n" +
-	"\apayload\x18\x03 \x01(\fR\apayload\"\x89\x01\n" +
+	"\apayload\x18\x03 \x01(\fR\apayload\"U\n" +
+	"\x13DetectedConnections\x12>\n" +
+	"\vconnections\x18\x01 \x03(\v2\x1c.numen.v1.DetectedConnectionR\vconnections\"\xa5\x01\n" +
+	"\x12DetectedConnection\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12@\n" +
+	"\x06fields\x18\x02 \x03(\v2(.numen.v1.DetectedConnection.FieldsEntryR\x06fields\x1a9\n" +
+	"\vFieldsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x89\x01\n" +
 	"\x1bProviderServiceCallResponse\x12\x14\n" +
 	"\x04data\x18\x01 \x01(\fH\x00R\x04data\x12\x14\n" +
 	"\x04done\x18\x02 \x01(\fH\x00R\x04done\x125\n" +
@@ -558,7 +667,7 @@ func file_numen_v1_provider_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_provider_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_numen_v1_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_provider_proto_goTypes = []any{
 	(FailureKind)(0),                    // 0: numen.v1.FailureKind
 	(FailureReason)(0),                  // 1: numen.v1.FailureReason
@@ -566,25 +675,30 @@ var file_numen_v1_provider_proto_goTypes = []any{
 	(*ProviderSecret)(nil),              // 3: numen.v1.ProviderSecret
 	(*ProviderFailure)(nil),             // 4: numen.v1.ProviderFailure
 	(*ProviderServiceCallRequest)(nil),  // 5: numen.v1.ProviderServiceCallRequest
-	(*ProviderServiceCallResponse)(nil), // 6: numen.v1.ProviderServiceCallResponse
-	nil,                                 // 7: numen.v1.ProviderCall.FieldsEntry
-	nil,                                 // 8: numen.v1.ProviderCall.OptionsEntry
+	(*DetectedConnections)(nil),         // 6: numen.v1.DetectedConnections
+	(*DetectedConnection)(nil),          // 7: numen.v1.DetectedConnection
+	(*ProviderServiceCallResponse)(nil), // 8: numen.v1.ProviderServiceCallResponse
+	nil,                                 // 9: numen.v1.ProviderCall.FieldsEntry
+	nil,                                 // 10: numen.v1.ProviderCall.OptionsEntry
+	nil,                                 // 11: numen.v1.DetectedConnection.FieldsEntry
 }
 var file_numen_v1_provider_proto_depIdxs = []int32{
-	7, // 0: numen.v1.ProviderCall.fields:type_name -> numen.v1.ProviderCall.FieldsEntry
-	3, // 1: numen.v1.ProviderCall.secrets:type_name -> numen.v1.ProviderSecret
-	8, // 2: numen.v1.ProviderCall.options:type_name -> numen.v1.ProviderCall.OptionsEntry
-	0, // 3: numen.v1.ProviderFailure.kind:type_name -> numen.v1.FailureKind
-	1, // 4: numen.v1.ProviderFailure.reason:type_name -> numen.v1.FailureReason
-	2, // 5: numen.v1.ProviderServiceCallRequest.call:type_name -> numen.v1.ProviderCall
-	4, // 6: numen.v1.ProviderServiceCallResponse.failure:type_name -> numen.v1.ProviderFailure
-	5, // 7: numen.v1.ProviderService.Call:input_type -> numen.v1.ProviderServiceCallRequest
-	6, // 8: numen.v1.ProviderService.Call:output_type -> numen.v1.ProviderServiceCallResponse
-	8, // [8:9] is the sub-list for method output_type
-	7, // [7:8] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	9,  // 0: numen.v1.ProviderCall.fields:type_name -> numen.v1.ProviderCall.FieldsEntry
+	3,  // 1: numen.v1.ProviderCall.secrets:type_name -> numen.v1.ProviderSecret
+	10, // 2: numen.v1.ProviderCall.options:type_name -> numen.v1.ProviderCall.OptionsEntry
+	0,  // 3: numen.v1.ProviderFailure.kind:type_name -> numen.v1.FailureKind
+	1,  // 4: numen.v1.ProviderFailure.reason:type_name -> numen.v1.FailureReason
+	2,  // 5: numen.v1.ProviderServiceCallRequest.call:type_name -> numen.v1.ProviderCall
+	7,  // 6: numen.v1.DetectedConnections.connections:type_name -> numen.v1.DetectedConnection
+	11, // 7: numen.v1.DetectedConnection.fields:type_name -> numen.v1.DetectedConnection.FieldsEntry
+	4,  // 8: numen.v1.ProviderServiceCallResponse.failure:type_name -> numen.v1.ProviderFailure
+	5,  // 9: numen.v1.ProviderService.Call:input_type -> numen.v1.ProviderServiceCallRequest
+	8,  // 10: numen.v1.ProviderService.Call:output_type -> numen.v1.ProviderServiceCallResponse
+	10, // [10:11] is the sub-list for method output_type
+	9,  // [9:10] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_provider_proto_init() }
@@ -592,7 +706,7 @@ func file_numen_v1_provider_proto_init() {
 	if File_numen_v1_provider_proto != nil {
 		return
 	}
-	file_numen_v1_provider_proto_msgTypes[4].OneofWrappers = []any{
+	file_numen_v1_provider_proto_msgTypes[6].OneofWrappers = []any{
 		(*ProviderServiceCallResponse_Data)(nil),
 		(*ProviderServiceCallResponse_Done)(nil),
 		(*ProviderServiceCallResponse_Failure)(nil),
@@ -603,7 +717,7 @@ func file_numen_v1_provider_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_provider_proto_rawDesc), len(file_numen_v1_provider_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   7,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

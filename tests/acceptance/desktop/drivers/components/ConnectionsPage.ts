@@ -18,11 +18,11 @@ export class ConnectionsPage {
     return this.page.getByRole('dialog')
   }
 
-  /** A connection of the list is a button that opens it for editing. */
+  /** A connection of the list: a button that opens it for editing, or an entry that opens nothing when it is detected. */
   getRow(panel: Locator, name: string): Locator {
-    return panel
-      .getByRole('list')
-      .getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}$`) })
+    const named = { name: new RegExp(`^${escapeRegExp(name)}$`) }
+    const list = panel.getByRole('list')
+    return list.getByRole('button', named).or(list.getByRole('listitem', named))
   }
 
   /** Chooses a type in the open dialog; the list of the types is a searchable list. */

@@ -259,7 +259,7 @@ func TestListingTheModelsOfAMissingAntigravityIsUnreachable(t *testing.T) {
 
 func TestTheProviderServesCompleteTheListsOfModelsAndReasoningLevelsAndTasks(t *testing.T) {
 	served := slices.Sorted(maps.Keys(newTestAgent(t, nil).Provider()))
-	want := []string{acp.OperationTask, llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
+	want := []string{acp.OperationTask, connection.OperationDetected, llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
 	if !slices.Equal(served, want) {
 		t.Errorf("operations = %v, want %v", served, want)
 	}
@@ -348,4 +348,38 @@ func readDoneFrame(answer []byte) []byte {
 		}
 	}
 	return nil
+}
+
+func TestTheProgramOnThePathIsDetected(t *testing.T) {
+	withoutAgentsAnywhere(t)
+	t.Setenv("PATH", filepath.Dir(writeScript(t, "agy", "exit 0\n")))
+	svc := newTestAgent(t, nil)
+
+	found, err := svc.tasks.DetectConnections(t.Context(), connection.Call{Type: "antigravity"})
+
+	if err != nil || len(found) != 1 || found[0].Name != "Antigravity" {
+		t.Errorf("DetectConnections = %+v, %v, want Antigravity", found, err)
+	}
+}
+
+func TestTheProgramAtTheExecutablePathIsDetected(t *testing.T) {
+	withoutAgentsAnywhere(t)
+	svc := newAntigravity(t, nil, writeScript(t, "agy", "exit 0\n"))
+
+	found, err := svc.tasks.DetectConnections(t.Context(), connection.Call{Type: "antigravity"})
+
+	if err != nil || len(found) != 1 || found[0].Name != "Antigravity" {
+		t.Errorf("DetectConnections = %+v, %v, want Antigravity", found, err)
+	}
+}
+
+func TestNothingIsDetectedWithoutTheProgram(t *testing.T) {
+	withoutAgentsAnywhere(t)
+	svc := newTestAgent(t, nil)
+
+	found, err := svc.tasks.DetectConnections(t.Context(), connection.Call{Type: "antigravity"})
+
+	if err != nil || len(found) != 0 {
+		t.Errorf("DetectConnections = %+v, %v, want none", found, err)
+	}
 }

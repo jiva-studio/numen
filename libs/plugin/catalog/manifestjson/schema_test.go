@@ -62,8 +62,7 @@ const everyFieldManifest = `{
 			{"key": "baseUrl", "type": "string", "title": "Address", "description": "d", "isAddress": true, "fixedValue": "https://svc.example/v1"},
 			{"key": "mode", "type": "enum", "title": "Mode", "options": ["a", "b"], "default": "a"},
 			{"key": "apiKey", "type": "secret", "title": "Key", "required": true},
-			{"key": "parallelRequests", "type": "number", "title": "Parallel", "default": 4, "min": 1, "max": 32, "step": 1}]},
-			{"id": "cli", "title": "CLI", "operations": ["llm.complete"], "builtIn": true}],
+			{"key": "parallelRequests", "type": "number", "title": "Parallel", "default": 4, "min": 1, "max": 32, "step": 1}]}],
 		"operations": [{"name": "llm.complete", "title": "complete text"}, {"name": "llm.models", "title": "list models"}]}
 }`
 

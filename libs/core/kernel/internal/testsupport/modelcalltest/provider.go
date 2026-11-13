@@ -150,6 +150,11 @@ func (p *Provider) ListOptions(
 	}, nil
 }
 
+// ListDetected answers that nothing is found; it is not recorded as a call.
+func (p *Provider) ListDetected(context.Context, modelcall.ProviderCall) ([]modelcall.DetectedConnection, error) {
+	return nil, nil
+}
+
 // Entered receives the address of each call as the provider takes it.
 func (p *Provider) Entered() <-chan string { return p.entered }
 

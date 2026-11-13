@@ -6,7 +6,7 @@ Use Google Antigravity (`agy`) installed on your computer to chat with your vaul
 
 ## What You Can Do
 
-- **Chat in the Agent Chat panel**: With the plugin enabled, the connection Antigravity is on the Connections page with no setup, and the assistant answers in Agent Chat as it writes. A row of the Agents setting of Agent Chat chooses its model and level of reasoning; with no model, the program uses its own default.
+- **Chat in the Agent Chat panel**: When Antigravity is installed on this computer, the connection Antigravity is on the Connections page, marked Discovered, with no setup, and the assistant answers in Agent Chat as it writes. A row of the Agents setting of Agent Chat chooses its model and level of reasoning; with no model, the program uses its own default.
 - **Ask questions about your library**: Chat with Gemini models through your local Antigravity setup to explore notes, books, PDFs, and recordings with the tools of your vault.
 - **Continue a conversation**: The turns of one chat continue one conversation of Antigravity.
 - **Answer requests of other plugins**: A request from a connection runs the program with no tools, in an empty folder.

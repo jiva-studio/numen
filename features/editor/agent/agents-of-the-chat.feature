@@ -1,11 +1,24 @@
 Feature: Agents of the chat
-  A person chooses the agents of the chat as connection rows on the page of the plugin.
+  The chat answers through the agents a person chooses on the page of Agent Chat. An agent program
+  installed on this computer is found and listed with no setup.
 
   As a person who uses the agent
-  I want to choose the agents of the chat on the page of the plugin
-  So that I know which agent answers me
+  I want the agents installed on my computer to be ready in the chat
+  So that I can ask them without setting them up
 
-  Scenario: The agent of the chat is a row on the page of the plugin
+  Background:
     Given the empty vault "Test"
+    And the program "Claude Code" is installed on this computer
     And the application "editor" starts
-    Then the plugin "Agent Chat" has 1 row
+    And the person enables the plugin "Claude Code Agent"
+
+  Scenario: An agent found on this computer is listed as a connection
+    Then the connections list has the following connections:
+      | name        | type        |
+      | Claude Code | Claude Code |
+    And the connection "Claude Code" shows "Discovered"
+    And the connection "Claude Code" cannot be opened
+
+  Scenario: With no agent chosen the chat uses every agent
+    When the person removes every row of the setting "Agents" of the plugin "Agent Chat"
+    Then the setting "Agents" of the plugin "Agent Chat" shows "Automatic: Numen agent, Claude Code"

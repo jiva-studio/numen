@@ -129,10 +129,6 @@ message ManifestConnectionType {
   // row_fields are the values a row that names a connection of the type holds besides the connection,
   // such as a model. The core hands them to the provider as the options of the call.
   repeated ManifestConnectionField row_fields = 6;
-  // is_built_in makes the core list one connection of the type while the plugin is enabled, with the
-  // type id as its id and no field set. It is not stored and cannot be deleted. Only a type with no
-  // required field that is not fixed declares it.
-  bool is_built_in = 7 [json_name = "builtIn"];
 }
 
 // ManifestOperation titles an operation a connection type serves.

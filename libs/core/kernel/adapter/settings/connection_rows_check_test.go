@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -233,32 +235,53 @@ func TestAChoiceToDiscoverThatBreaksTheRulesIsRejected(t *testing.T) {
 	}
 }
 
-func listConnectionsWithBuiltIns(name string) ([]string, bool) {
-	if name == settings.RegistryBuiltInConnections {
-		return settings.ListBuiltInConnectionIDs(builtInTypes{}), true
-	}
-	return knownConnections(name)
-}
+// detectionTypes are the types of the agents plugin: kite answered, heron has not.
+type detectionTypes struct{}
 
-func TestARowOfABuiltInConnectionIsAcceptedOnWrite(t *testing.T) {
-	var value any
-	if err := json.Unmarshal([]byte(`[{"connection":"org.example.agents/kite","model":"m"}]`), &value); err != nil {
-		t.Fatal(err)
-	}
-
-	err := settings.CheckWrite(declaredWithRows, listConnectionsWithBuiltIns, []string{rowsPluginID, "connections"}, value)
-
-	if err != nil {
-		t.Errorf("err = %v, want none for the built-in connection of an available type", err)
+func (detectionTypes) ListTypes() []connection.Type {
+	return []connection.Type{
+		{PluginID: "org.example.agents", IsAvailable: true, Declaration: manifest.ConnectionType{ID: "kite", Title: "Kite"}},
+		{PluginID: "org.example.agents", IsAvailable: true, Declaration: manifest.ConnectionType{ID: "heron", Title: "Heron"}},
 	}
 }
 
-func TestARowOfABuiltInConnectionStaysInForceOnRead(t *testing.T) {
+func (detectionTypes) GetType(string) (connection.Type, bool) { return connection.Type{}, false }
+
+func listConnectionsWithDetected(name string) ([]string, bool) {
+	return settings.AddDetectedRegistries(knownConnections, detectionTypes{}, fixedDetection{})(name)
+}
+
+func TestTheIDsOfTheDetectedConnectionsAreAddedToTheValuesAWindowFollows(t *testing.T) {
+	values := settingsdomain.Values{}
+
+	settings.AddDetectedConnectionIDs(values, fixedDetection{})
+
+	if got := values[settingsdomain.DetectedConnectionsKey]; got != `["`+kiteAgentID+`"]` {
+		t.Errorf("values = %v, want the id of Kite agent", values)
+	}
+}
+
+func TestARowOfADetectedConnectionIsAcceptedOnWrite(t *testing.T) {
+	for _, id := range []string{kiteAgentID, heronAgentID} {
+		var value any
+		if err := json.Unmarshal([]byte(`[{"connection":"`+id+`","model":"m"}]`), &value); err != nil {
+			t.Fatal(err)
+		}
+
+		err := settings.CheckWrite(declaredWithRows, listConnectionsWithDetected, []string{rowsPluginID, "connections"}, value)
+
+		if err != nil {
+			t.Errorf("%s: err = %v, want none", id, err)
+		}
+	}
+}
+
+func TestARowOfADetectedConnectionStaysInForceOnRead(t *testing.T) {
 	path := write(t, fmt.Sprintf(rowsFile, `[
-		{"connection":"org.example.agents/kite","model":"m"},
-		{"connection":"org.example.gone/wren","model":"m"}
+		{"connection":"`+kiteAgentID+`","model":"m"},
+		{"connection":"`+wrenAgentID+`","model":"m"}
 	]`))
-	store := settings.NewStore(settings.NewFiles(), func() (string, error) { return path, nil }, declaredWithRows, listConnectionsWithBuiltIns)
+	store := settings.NewStore(settings.NewFiles(), func() (string, error) { return path, nil }, declaredWithRows, listConnectionsWithDetected)
 
 	cfg, err := store.ReadCheckedFile()
 	if err != nil {
@@ -266,10 +289,10 @@ func TestARowOfABuiltInConnectionStaysInForceOnRead(t *testing.T) {
 	}
 
 	rows := listRowsInForce(t, cfg)
-	if len(rows) != 1 || rows[0]["connection"] != "org.example.agents/kite" {
-		t.Errorf("rows in force = %v, want the row of Kite only", rows)
+	if len(rows) != 1 || rows[0]["connection"] != kiteAgentID {
+		t.Errorf("rows in force = %v, want the row of Kite agent only", rows)
 	}
-	if !hasNotice(cfg.Notices, rowsPluginID, "connections", "org.example.gone/wren") {
-		t.Errorf("no notice names the row of the built-in connection of the disabled plugin: %q", cfg.Notices)
+	if !hasNotice(cfg.Notices, rowsPluginID, "connections", wrenAgentID) {
+		t.Errorf("no notice names the row of the connection that is not detected: %q", cfg.Notices)
 	}
 }

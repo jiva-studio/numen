@@ -34,7 +34,6 @@ const type = (fields: readonly ConnectionFieldInfo[]): ConnectionTypeInfo => ({
   fields,
   rowFields: [],
   isAvailable: true,
-  isBuiltIn: false,
 })
 
 const openRouter = type([
@@ -104,7 +103,7 @@ const stored = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => ({
   secretKeysSet: ['apiKey'],
   isTypeAvailable: true,
   isComplete: true,
-  isBuiltIn: false,
+  isDetected: false,
   uses: [],
   ...overrides,
 })

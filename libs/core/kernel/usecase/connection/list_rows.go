@@ -13,7 +13,8 @@ type ListRows struct {
 
 // Execute returns the rows the person chose for the operation, in their order. Where the person chose none
 // and the setting discovers, it returns a row with no options for each connection whose type is available
-// and serves the operation, in the order of the list of connections, the built-in ones last.
+// and serves the operation, in the order of the list of connections, the detected ones last. A type whose provider has not reported what it
+// detects yet is asked first.
 func (u *ListRows) Execute(pluginID, operationName string) ([]connection.Row, error) {
 	setting, err := u.settings.ReadRowSetting(pluginID, operationName)
 	if err != nil {
@@ -22,7 +23,7 @@ func (u *ListRows) Execute(pluginID, operationName string) ([]connection.Row, er
 	if len(setting.Rows) > 0 || !setting.IsDiscovering {
 		return setting.Rows, nil
 	}
-	list, err := u.listConnections()
+	list, err := u.listConnectionsAfterDetection(u.listServingTypes(operationName))
 	if err != nil {
 		return nil, err
 	}
@@ -34,4 +35,14 @@ func (u *ListRows) Execute(pluginID, operationName string) ([]connection.Row, er
 		}
 	}
 	return rows, nil
+}
+
+func (u *ListRows) listServingTypes(operationName string) []string {
+	var typeIDs []string
+	for _, one := range u.types.ListTypes() {
+		if one.IsAvailable && one.Declaration.HasOperation(operationName) {
+			typeIDs = append(typeIDs, one.GetID())
+		}
+	}
+	return typeIDs
 }

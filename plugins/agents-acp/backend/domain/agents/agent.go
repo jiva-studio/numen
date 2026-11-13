@@ -5,6 +5,7 @@ package agents
 import (
 	"errors"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -29,11 +30,11 @@ type Agent struct {
 
 func getArguments(executable string) []string {
 	base := filepath.Base(executable)
-	switch strings.TrimSuffix(base, filepath.Ext(base)) {
-	case "cursor-agent", "goose", "kimi", "opencode":
-		return []string{acpSubcommand}
-	case "gemini", "qwen":
-		return []string{"--acp"}
+	name := strings.TrimSuffix(base, filepath.Ext(base))
+	for _, one := range ListKnown() {
+		if one.Program == name {
+			return slices.Clone(one.Arguments)
+		}
 	}
 	return nil
 }

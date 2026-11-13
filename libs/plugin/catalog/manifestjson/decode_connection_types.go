@@ -25,7 +25,6 @@ func newConnectionTypes(wire []*v1.ManifestConnectionType) ([]manifest.Connectio
 			Operations:  one.GetOperations(),
 			Fields:      fields,
 			RowFields:   rowFields,
-			IsBuiltIn:   one.GetIsBuiltIn(),
 		})
 	}
 	return out, nil

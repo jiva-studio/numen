@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
@@ -56,6 +57,9 @@ type Activation struct {
 	failures   *supervision.Failures
 	config     configPusher
 	clock      machineport.Clock
+
+	startMu sync.Mutex
+	onStart func(pluginID string)
 }
 
 // ActivationDeps are what an Activation starts a plugin from: the set of plugins, the answer whether a plugin is enabled,
@@ -78,6 +82,23 @@ func NewActivation(d ActivationDeps) *Activation {
 	return &Activation{
 		set: d.Set, enablement: d.Enablement, scan: d.Scan, mode: d.Mode, sups: d.Supervisors, processes: d.Processes,
 		failures: d.Failures, config: d.Config, clock: d.Clock,
+	}
+}
+
+// SetOnStart sets what is called after the process of a plugin started and took its configuration; it returns at
+// once and does its work on a goroutine of its own. It replaces what was set before.
+func (a *Activation) SetOnStart(onStart func(pluginID string)) {
+	a.startMu.Lock()
+	defer a.startMu.Unlock()
+	a.onStart = onStart
+}
+
+func (a *Activation) reportStart(pluginID string) {
+	a.startMu.Lock()
+	onStart := a.onStart
+	a.startMu.Unlock()
+	if onStart != nil {
+		onStart(pluginID)
 	}
 }
 
@@ -244,5 +265,6 @@ func (a *Activation) runActivation(ctx context.Context, p manifest.Discovered, s
 	if err := a.config.configureActivated(ctx, p.Manifest.ID); err != nil {
 		return endpoint, err
 	}
+	a.reportStart(p.Manifest.ID)
 	return endpoint, nil
 }

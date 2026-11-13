@@ -62,3 +62,28 @@ func TestTheKeyTellsTheProgramsApart(t *testing.T) {
 		t.Error("two command lines share a key")
 	}
 }
+
+func TestAKnownAgentStartsWithTheArgumentsOfTheRegistry(t *testing.T) {
+	path := fakePath{"kiro-cli": "/usr/bin/kiro-cli", "qwen": "/usr/bin/qwen", "amp-acp": "/usr/bin/amp-acp"}
+
+	for program, want := range map[string][]string{
+		"kiro-cli": {"/usr/bin/kiro-cli", "acp", "--agent-engine=v3"},
+		"qwen":     {"/usr/bin/qwen", "--acp", "--experimental-skills"},
+		"amp-acp":  {"/usr/bin/amp-acp"},
+	} {
+		agent, err := Find(TypeACP, program, path.lookPath)
+		if err != nil || !slices.Equal(agent.Command, want) {
+			t.Errorf("Find %s = %v, %v, want %v", program, agent.Command, err, want)
+		}
+	}
+}
+
+func TestTheKnownAgentsHaveOneNameAndOneProgramEach(t *testing.T) {
+	names, programs := map[string]bool{}, map[string]bool{}
+	for _, one := range ListKnown() {
+		if names[one.Name] || programs[one.Program] {
+			t.Errorf("%s (%s) is listed twice", one.Name, one.Program)
+		}
+		names[one.Name], programs[one.Program] = true, true
+	}
+}

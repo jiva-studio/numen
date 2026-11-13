@@ -56,8 +56,8 @@ func TestManifestProvidesTheTypesOfACPProgramsThatCompleteAndRunTasks(t *testing
 	var ids []string
 	for _, one := range types {
 		ids = append(ids, one.ID+"="+one.Title)
-		if !slices.Equal(one.Operations, []string{"llm.complete", "llm.models", "llm.reasoning", "acp.task"}) {
-			t.Errorf("%s: operations = %v, want llm.complete, the lists of models and reasoning levels, and acp.task", one.ID, one.Operations)
+		if !slices.Equal(one.Operations, []string{"llm.complete", "llm.models", "llm.reasoning", "acp.task", "connections.detected"}) {
+			t.Errorf("%s: operations = %v, want llm.complete, the lists of models and reasoning levels, acp.task and connections.detected", one.ID, one.Operations)
 		}
 		var keys []string
 		for _, field := range one.Fields {

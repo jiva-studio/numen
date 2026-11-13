@@ -138,6 +138,23 @@ func (m *modelList) ListOptions(context.Context, string, modelcall.ProviderCall,
 	return []modelcall.Option{{Value: "google/gemini-2.5-flash", Title: "Gemini 2.5 Flash", Group: "Google"}, {Value: "qwen/qwen3-8b"}}, nil
 }
 
+func (m *modelList) ListDetected(context.Context, modelcall.ProviderCall) ([]modelcall.DetectedConnection, error) {
+	return nil, nil
+}
+
+// kiteDetected is the providers once the agents plugin answered that Kite agent is found.
+type kiteDetected struct{}
+
+func (kiteDetected) ListDetected() []connection.Connection {
+	return []connection.Connection{{ID: "org.example.agents/kite/Kite agent", TypeID: "org.example.agents/kite", Name: "Kite agent", Fields: map[string]any{}}}
+}
+
+func (kiteDetected) IsPending(string) bool { return false }
+
+func (kiteDetected) Detect(context.Context, string) {}
+
+func (kiteDetected) Refresh() {}
+
 func newKeys() *memoryKeys { return &memoryKeys{values: map[string]string{}} }
 
 func createRequest(name string) *connect.Request[v1.CreateProviderConnectionRequest] {
@@ -415,11 +432,11 @@ func TestListProviderConnectionTypesReturnsNoTitleWithoutTheirUseCase(t *testing
 	}
 }
 
-func TestListProviderConnectionsMarksTheConnectionOfABuiltInType(t *testing.T) {
+func TestListProviderConnectionsMarksADetectedConnection(t *testing.T) {
 	types := append(getTypes(), connection.Type{PluginID: "org.example.agents", PluginName: "Kite agent", IsAvailable: true, Declaration: manifest.ConnectionType{
-		ID: "kite", Title: "Kite", Operations: []string{"acp.task"}, IsBuiltIn: true,
+		ID: "kite", Title: "Kite", Operations: []string{"acp.task", connection.OperationDetected},
 	}})
-	handler := NewHandler(useCasesOf(connectiontest.New(&memoryRepository{}, types, newKeys(), fixedUses{}, func() (string, error) {
+	handler := NewHandler(useCasesOf(connectiontest.NewWithDetection(&memoryRepository{}, types, newKeys(), fixedUses{}, kiteDetected{}, func() (string, error) {
 		return "c00000001", nil
 	}), &modelList{}))
 	if _, err := handler.CreateProviderConnection(t.Context(), createRequest("Work")); err != nil {
@@ -430,17 +447,9 @@ func TestListProviderConnectionsMarksTheConnectionOfABuiltInType(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	declared, err := handler.ListProviderConnectionTypes(t.Context(), connect.NewRequest(&v1.ListProviderConnectionTypesRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	got := listed.Msg.GetConnections()
-	if len(got) != 2 || got[0].GetIsBuiltIn() || got[1].GetId() != "org.example.agents/kite" || !got[1].GetIsBuiltIn() {
-		t.Errorf("connections = %v, want Work and then the built-in Kite", got)
-	}
-	kinds := declared.Msg.GetTypes()
-	if len(kinds) != 2 || kinds[0].GetIsBuiltIn() || !kinds[1].GetIsBuiltIn() {
-		t.Errorf("types = %v, want only Kite built in", kinds)
+	if len(got) != 2 || got[0].GetIsDetected() || got[1].GetId() != "org.example.agents/kite/Kite agent" || !got[1].GetIsDetected() {
+		t.Errorf("connections = %v, want Work and then the detected Kite agent", got)
 	}
 }

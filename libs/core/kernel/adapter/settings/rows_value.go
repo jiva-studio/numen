@@ -48,10 +48,14 @@ func listConnectionIDs(registries Registries) (map[string]bool, bool) {
 	if !isFound {
 		return nil, false
 	}
-	builtIns, _ := registries(RegistryBuiltInConnections)
-	connectionIDs := make(map[string]bool, len(ids)+len(builtIns))
-	for _, id := range slices.Concat(ids, builtIns) {
+	detected, _ := registries(RegistryDetectedConnections)
+	pending, _ := registries(RegistryPendingDetections)
+	connectionIDs := make(map[string]bool, len(ids)+len(detected))
+	for _, id := range slices.Concat(ids, detected) {
 		connectionIDs[id] = true
+	}
+	for _, typeID := range pending {
+		connectionIDs[typeID+pendingSuffix] = true
 	}
 	return connectionIDs, true
 }
@@ -76,7 +80,7 @@ func readRow(row any, connectionIDs map[string]bool, isKnown bool) (rowIdentity,
 		}
 		fmt.Fprintf(&options, "%q=%q;", key, text)
 	}
-	if isKnown && !connectionIDs[connection] {
+	if isKnown && !isKnownConnection(connectionIDs, connection) {
 		return rowIdentity{}, fmt.Errorf("%q is %w the connections", connection, ErrNotAnOption)
 	}
 	return rowIdentity{connection: connection, options: options.String()}, nil
@@ -174,4 +178,15 @@ func checkDiscover(settings []manifest.Setting, value any) error {
 		}
 	}
 	return nil
+}
+
+// pendingSuffix marks, in the set of known connections, a type whose detected connections are not known yet.
+const pendingSuffix = "\x00pending"
+
+func isKnownConnection(connectionIDs map[string]bool, id string) bool {
+	if connectionIDs[id] {
+		return true
+	}
+	typeID, _, isDetected := connection.SplitDetectedID(id)
+	return isDetected && connectionIDs[typeID+pendingSuffix]
 }

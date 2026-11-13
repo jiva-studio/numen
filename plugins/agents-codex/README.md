@@ -6,7 +6,7 @@ Use the OpenAI Codex assistant (`codex`) installed on your computer to explore y
 
 ## What You Can Do
 
-- **Chat with OpenAI models**: With the plugin enabled, the connection OpenAI Codex is on the Connections page with no setup, and Codex answers in Agent Chat. A row of the Agents setting of Agent Chat chooses its model and level of reasoning; with no model, the program uses its own default.
+- **Chat with OpenAI models**: When Codex is installed on this computer, the connection OpenAI Codex is on the Connections page, marked Discovered, with no setup, and Codex answers in Agent Chat. A row of the Agents setting of Agent Chat chooses its model and level of reasoning; with no model, the program uses its own default.
 - **Search and edit notes**: Let the assistant look up passages across your books and notes and work on them through the tools of your vault.
 - **Answer requests of other plugins**: A request from a connection runs the program with no tools and without writing to disk.
 

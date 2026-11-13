@@ -115,9 +115,7 @@ type ProviderConnectionType struct {
 	// row_fields are the values a row that names a connection of the type holds besides the connection.
 	RowFields []*ManifestConnectionField `protobuf:"bytes,9,rep,name=row_fields,json=rowFields,proto3" json:"row_fields,omitempty"`
 	// is_available is whether the plugin is installed and enabled.
-	IsAvailable bool `protobuf:"varint,8,opt,name=is_available,json=isAvailable,proto3" json:"is_available,omitempty"`
-	// is_built_in is whether the core lists one connection of the type while the plugin is enabled.
-	IsBuiltIn     bool `protobuf:"varint,10,opt,name=is_built_in,json=isBuiltIn,proto3" json:"is_built_in,omitempty"`
+	IsAvailable   bool `protobuf:"varint,8,opt,name=is_available,json=isAvailable,proto3" json:"is_available,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -215,14 +213,7 @@ func (x *ProviderConnectionType) GetIsAvailable() bool {
 	return false
 }
 
-func (x *ProviderConnectionType) GetIsBuiltIn() bool {
-	if x != nil {
-		return x.IsBuiltIn
-	}
-	return false
-}
-
-// ProviderConnection is a stored connection. No secret value is part of it.
+// ProviderConnection is a stored connection or a detected one. No secret value is part of it.
 type ProviderConnection struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Id     string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -241,9 +232,9 @@ type ProviderConnection struct {
 	IsComplete bool `protobuf:"varint,9,opt,name=is_complete,json=isComplete,proto3" json:"is_complete,omitempty"`
 	// uses are the settings of plugins whose rows name the connection.
 	Uses []*ProviderConnectionUse `protobuf:"bytes,7,rep,name=uses,proto3" json:"uses,omitempty"`
-	// is_built_in marks the connection the core lists for a type that declares built_in. Its id is the
-	// type id; it is not stored, and it cannot be changed or deleted.
-	IsBuiltIn     bool `protobuf:"varint,10,opt,name=is_built_in,json=isBuiltIn,proto3" json:"is_built_in,omitempty"`
+	// is_detected marks a connection the provider of its type reported ready on this machine through the
+	// operation connections.detected. It is not stored, and it cannot be changed or deleted.
+	IsDetected    bool `protobuf:"varint,10,opt,name=is_detected,json=isDetected,proto3" json:"is_detected,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -341,9 +332,9 @@ func (x *ProviderConnection) GetUses() []*ProviderConnectionUse {
 	return nil
 }
 
-func (x *ProviderConnection) GetIsBuiltIn() bool {
+func (x *ProviderConnection) GetIsDetected() bool {
 	if x != nil {
-		return x.IsBuiltIn
+		return x.IsDetected
 	}
 	return false
 }
@@ -1089,7 +1080,7 @@ var File_numen_v1_providerconnection_proto protoreflect.FileDescriptor
 
 const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\n" +
-	"!numen/v1/providerconnection.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x17numen/v1/manifest.proto\x1a\x17numen/v1/settings.proto\"\x87\x03\n" +
+	"!numen/v1/providerconnection.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\x1a\x17numen/v1/manifest.proto\x1a\x17numen/v1/settings.proto\"\xe7\x02\n" +
 	"\x16ProviderConnectionType\x12\x17\n" +
 	"\atype_id\x18\x01 \x01(\tR\x06typeId\x12\x1b\n" +
 	"\tplugin_id\x18\x02 \x01(\tR\bpluginId\x12\x1f\n" +
@@ -1103,9 +1094,7 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\x06fields\x18\a \x03(\v2!.numen.v1.ManifestConnectionFieldR\x06fields\x12@\n" +
 	"\n" +
 	"row_fields\x18\t \x03(\v2!.numen.v1.ManifestConnectionFieldR\trowFields\x12!\n" +
-	"\fis_available\x18\b \x01(\bR\visAvailable\x12\x1e\n" +
-	"\vis_built_in\x18\n" +
-	" \x01(\bR\tisBuiltIn\"\xcc\x03\n" +
+	"\fis_available\x18\b \x01(\bR\visAvailable\"\xcd\x03\n" +
 	"\x12ProviderConnection\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\atype_id\x18\x02 \x01(\tR\x06typeId\x12\x12\n" +
@@ -1116,9 +1105,10 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\brevision\x18\b \x01(\x05R\brevision\x12\x1f\n" +
 	"\vis_complete\x18\t \x01(\bR\n" +
 	"isComplete\x123\n" +
-	"\x04uses\x18\a \x03(\v2\x1f.numen.v1.ProviderConnectionUseR\x04uses\x12\x1e\n" +
-	"\vis_built_in\x18\n" +
-	" \x01(\bR\tisBuiltIn\x1aQ\n" +
+	"\x04uses\x18\a \x03(\v2\x1f.numen.v1.ProviderConnectionUseR\x04uses\x12\x1f\n" +
+	"\vis_detected\x18\n" +
+	" \x01(\bR\n" +
+	"isDetected\x1aQ\n" +
 	"\vFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
 	"\x05value\x18\x02 \x01(\v2\x16.google.protobuf.ValueR\x05value:\x028\x01\"{\n" +

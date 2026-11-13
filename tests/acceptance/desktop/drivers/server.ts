@@ -27,6 +27,14 @@ const ARTICLE = path.join(REPO_ROOT, 'tests/e2e/desktop/fixtures/article.html')
 const HOST = '127.0.0.1'
 /** The connection of the Numen agent the chat answers through; the agent reaches the stand-in model by its own row. */
 const STAND_IN_AGENT_CONNECTION = 'c57a4d101'
+/**
+ * Each agent program a scenario installs: the place in the home folder it is put at, and the variable that names it to
+ * its plugin, so that a program of the machine the run is on is never started. The stand-in answers nothing: only its
+ * presence is looked for.
+ */
+const INSTALLED_PROGRAMS: Readonly<Record<string, { place: string; variable: string } | undefined>> = {
+  'Claude Code': { place: '.local/bin/claude', variable: 'NUMEN_CLAUDE_COMMAND' },
+}
 const STATE_FOLDERS = ['config', 'cache', 'data', 'state', 'home'] as const
 
 const getFreePort = (): Promise<number> =>
@@ -70,6 +78,7 @@ export interface ServerOptions {
   readonly vault: string
   readonly readPageText: (address: string) => string | undefined
   readonly environment: readonly EnvironmentSetting[]
+  readonly programs: readonly string[]
 }
 
 interface Services {
@@ -82,6 +91,7 @@ export class Server {
   private child: ChildProcess | undefined
   private baseURL = ''
   private publicKeyHash = ''
+  private readonly programVariables: Record<string, string> = {}
 
   private constructor(
     private readonly options: ServerOptions,
@@ -100,6 +110,7 @@ export class Server {
       for (const name of STATE_FOLDERS) fs.mkdirSync(path.join(state, name))
       fs.mkdirSync(path.join(state, 'home', 'run'))
       server.writeSettings(standIns)
+      for (const program of options.programs) server.installProgram(program)
       await server.setEnvironment(options.environment)
       await server.launch(server.getStartFlags(true))
     } catch (error) {
@@ -121,6 +132,17 @@ export class Server {
   /** Makes the folder dialog answer with the folder, which the command Create vault asks for. */
   writeFolderChoice(folder: string): void {
     fs.writeFileSync(path.join(this.state, 'folder-choice.txt'), folder)
+  }
+
+  private installProgram(name: string): void {
+    const program = INSTALLED_PROGRAMS[name]
+    if (program === undefined) {
+      throw new Error(`no stand-in of the program "${name}": use ${Object.keys(INSTALLED_PROGRAMS).join(', ')}`)
+    }
+    const target = path.join(this.state, 'home', program.place)
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    fs.writeFileSync(target, '#!/bin/sh\nexit 0\n', { mode: 0o755 })
+    this.programVariables[program.variable] = target
   }
 
   /** Puts the settings of the environment in force in the stand-ins of this server. */
@@ -229,6 +251,7 @@ export class Server {
         NUMEN_PLUGINS_PATH: path.join(REPO_ROOT, 'plugins'),
         NUMEN_DEBUG_TLS_CERT: certificate,
         NUMEN_DEBUG_TLS_KEY: path.join(this.state, 'key.pem'),
+        ...this.programVariables,
       },
     })
     this.child = child

@@ -183,10 +183,10 @@ func TestARowSetAsideAfterARetryStartsItsCooldown(t *testing.T) {
 	}
 }
 
-func TestARejectedKeyOfABuiltInConnectionIsSetAsideForTheDefaultCooldown(t *testing.T) {
+func TestARejectedKeyOfADetectedConnectionIsSetAsideForTheDefaultCooldown(t *testing.T) {
 	const addressKite = "https://kite.test/v1"
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	kite := s.world.AddBuiltIn("Kite", addressKite)
+	kite := s.world.AddDetected("Kite", addressKite)
 	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.Row(kite, "m"), modelcalltest.Row(s.two, "m"))
 	s.world.Provider.Fail(addressKite, tryNext(connection.FailureReasonRejectedKey, 0))
 	s.attempt(t)
@@ -200,6 +200,6 @@ func TestARejectedKeyOfABuiltInConnectionIsSetAsideForTheDefaultCooldown(t *test
 	s.world.Clock.Advance(2 * time.Second)
 	s.attempt(t)
 	if got := len(s.world.Provider.CallsTo(addressKite)); got != 2 {
-		t.Errorf("Kite was called %d times after 61 s, want 2: a built-in connection cannot be edited", got)
+		t.Errorf("Kite was called %d times after 61 s, want 2: a detected connection cannot be edited", got)
 	}
 }

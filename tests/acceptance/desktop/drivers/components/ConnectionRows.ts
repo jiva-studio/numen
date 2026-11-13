@@ -6,6 +6,7 @@ const SETTING = 'section.connection-rows'
 const SETTING_NAME = '.settings__name'
 const ROW = 'li.connection-rows__row'
 const CONNECTION = 'Connection'
+const NOTE = '.connection-rows__note'
 
 export class ConnectionRows {
   constructor(private readonly page: Page) {}
@@ -18,6 +19,11 @@ export class ConnectionRows {
 
   getRows(setting: Locator): Locator {
     return setting.locator(ROW)
+  }
+
+  /** The line that stands for the rows while there are none, such as the connections the setting discovers. */
+  getNote(setting: Locator): Locator {
+    return setting.locator(NOTE)
   }
 
   /** A setting of one row shows its row at once; a setting of more rows adds one with Add connection. */

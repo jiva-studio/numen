@@ -7,8 +7,10 @@ import (
 )
 
 // Provider returns the operations the plugin serves for its connection type: llm.complete, the option
-// lists llm.models and llm.reasoning, and acp.task.
+// lists llm.models and llm.reasoning, acp.task, and connections.detected.
 func (a *agent) Provider() connection.Provider {
 	provider := llm.Provide(nil, llm.Roles{Completer: a.completion, Models: a.completion, Reasoning: a.completion})
-	return acp.Provide(provider, a.tasks)
+	provider = acp.Provide(provider, a.tasks)
+	provider[connection.OperationDetected] = connection.ServeDetected(a.tasks.DetectConnections)
+	return provider
 }

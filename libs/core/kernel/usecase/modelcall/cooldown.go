@@ -56,7 +56,7 @@ func (c *cooldown) start(version connectionVersion, reason connection.FailureRea
 	}
 	entry := cooldownEntry{reason: reason}
 	switch {
-	case lastsUntilEdited(reason) && !connection.IsBuiltIn(version.id):
+	case lastsUntilEdited(reason) && !connection.IsDetected(version.id):
 		entry.isForever = true
 	case retryAfter > 0:
 		entry.until = now.Add(min(retryAfter, MaxCooldown))

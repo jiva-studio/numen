@@ -41,3 +41,10 @@ type ProviderCall struct {
 // Option is one value a row field can take. An empty title shows the value, and an empty group shows no
 // heading.
 type Option struct{ Value, Title, Group string }
+
+// DetectedConnection is a connection a provider found ready on this machine: its name, unique within the type,
+// and the values of fields of the type that are not secret, by key.
+type DetectedConnection struct {
+	Name   string
+	Fields map[string]string
+}

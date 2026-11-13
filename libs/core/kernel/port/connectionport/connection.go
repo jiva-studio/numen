@@ -63,3 +63,17 @@ type ResolveConnection func(connectionID string) (connection.Resolved, error)
 // connection.ErrSecretMissing for a required secret with no value and connection.ErrStaleRevision for a
 // connection that changed since it was resolved.
 type ReadConnectionSecrets func(ctx context.Context, resolved connection.Resolved) (map[string]string, error)
+
+// Detected is the connections the providers report ready on this machine through connection.OperationDetected.
+type Detected interface {
+	// ListDetected returns the connections the providers last reported for the available types, in the order
+	// of the types. It does not wait for a provider.
+	ListDetected() []connection.Connection
+	// IsPending reports whether the type is available, serves detection and its provider has not answered yet.
+	IsPending(typeID string) bool
+	// Detect asks the provider of each available type of the plugin that serves detection and waits for the
+	// answers.
+	Detect(ctx context.Context, pluginID string)
+	// Refresh asks every provider again in the background.
+	Refresh()
+}

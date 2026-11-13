@@ -214,6 +214,7 @@ type World struct {
 	Waits       *Waits
 	Clock       *Clock
 	Types       *fixedTypes
+	Detected    *Detected
 	repository  *memoryRepository
 	next        int
 }
@@ -253,7 +254,8 @@ func New() *World {
 		Clock: &Clock{now: time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)}, Types: types, repository: &memoryRepository{},
 	}
 	w.Source = NewSource(w.Provider)
-	w.Connections = connectiontest.New(w.repository, types, w.Keys, NoUses{}, func() (string, error) {
+	w.Detected = &Detected{}
+	w.Connections = connectiontest.NewWithDetection(w.repository, types, w.Keys, NoUses{}, w.Detected, func() (string, error) {
 		w.next++
 		return fmt.Sprintf("c%08x", w.next), nil
 	})
@@ -417,13 +419,44 @@ func newEntry(created connectionuse.Entry) Entry {
 	return Entry{ID: created.ID, Name: created.Name, Revision: created.Revision, Fields: created.Fields}
 }
 
-// AddBuiltIn adds a built-in type of the first plugin, titled name, whose calls go to the address, and returns
-// its connection.
-func (w *World) AddBuiltIn(name, address string) Entry {
+// AddDetected adds a type of the first plugin whose calls go to the address, and the connection its provider
+// detects, named name.
+func (w *World) AddDetected(name, address string) Entry {
 	declared := manifest.ConnectionType{
-		ID: "built-in", Title: name, IsBuiltIn: true, Operations: getCompleteOnly(),
+		ID: "detecting", Title: "Detecting", Operations: append(getCompleteOnly(), connection.OperationDetected),
 		Fields: []manifest.ConnectionField{{Key: addressField, Type: textField, Title: "Address", FixedValue: &address}},
 	}
 	w.Types.list = append(w.Types.list, connection.Type{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: declared})
-	return Entry{ID: manifest.GetConnectionTypeID(ProviderPluginID, declared.ID), Name: name, Fields: map[string]any{}}
+	typeID := manifest.GetConnectionTypeID(ProviderPluginID, declared.ID)
+	detected := connection.Connection{ID: connection.GetDetectedID(typeID, name), TypeID: typeID, Name: name, Fields: map[string]any{}}
+	w.Detected.add(detected)
+	return Entry{ID: detected.ID, Name: name, Fields: detected.Fields}
 }
+
+// Detected is the connections the providers of the world detected, every type answered.
+type Detected struct {
+	mu   sync.Mutex
+	list []connection.Connection
+}
+
+func (d *Detected) add(one connection.Connection) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.list = append(d.list, one)
+}
+
+// ListDetected returns the connections added, in order.
+func (d *Detected) ListDetected() []connection.Connection {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return slices.Clone(d.list)
+}
+
+// IsPending reports none: every type answered.
+func (d *Detected) IsPending(string) bool { return false }
+
+// Detect asks nothing.
+func (d *Detected) Detect(context.Context, string) {}
+
+// Refresh asks nothing.
+func (d *Detected) Refresh() {}

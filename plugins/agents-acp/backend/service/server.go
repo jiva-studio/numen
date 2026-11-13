@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/mcpendpoint"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/completion"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/detection"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/listing"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/task"
 )
@@ -24,6 +25,7 @@ type agentServer struct {
 	settings   *settings.Settings
 	completion *completion.Completion
 	tasks      *task.Runner
+	detection  *detection.Detection
 }
 
 func newAgentServer(on machine) (*agentServer, error) {
@@ -43,5 +45,5 @@ func newAgentServer(on machine) (*agentServer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &agentServer{settings: values, completion: answers, tasks: tasks}, nil
+	return &agentServer{settings: values, completion: answers, tasks: tasks, detection: detection.New(on.lookPath)}, nil
 }
