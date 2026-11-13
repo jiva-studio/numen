@@ -160,6 +160,20 @@ func (s *Storage) GetSharedDir() string {
 	return filepath.Join(s.roots.cache, sharedFolder)
 }
 
+// toolsFolder is the folder inside the cache root where the host keeps the tools each plugin listed.
+const toolsFolder = "tools"
+
+// GetToolsDir returns the directory the host keeps the tool listings of the plugins in, or empty where
+// the host has no cache root.
+func (s *Storage) GetToolsDir() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.roots.cache == "" {
+		return ""
+	}
+	return filepath.Join(s.roots.cache, toolsFolder)
+}
+
 // GetSharedDataDir returns the directory all plugins share for what is downloaded or made and cannot be
 // computed again, or empty where the host has no data root. The host never deletes it.
 func (s *Storage) GetSharedDataDir() string {

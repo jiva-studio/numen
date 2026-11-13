@@ -12,9 +12,10 @@ type Catalog struct {
 	plugins plugins
 }
 
-// NewCatalog is the tools the plugins of the host offer.
-func NewCatalog(host Host) *Catalog {
-	return &Catalog{plugins: plugins{host: host}}
+// NewCatalog is the tools the plugins of the host offer. The answers of the plugins are kept in the
+// folder dir returns, and in memory only while it returns an empty path.
+func NewCatalog(host Host, dir func() string) *Catalog {
+	return &Catalog{plugins: plugins{host: host, listings: newListings(dir)}}
 }
 
 // ListTools lists the tools the caller is allowed: those the other plugins offer, for which the
@@ -30,7 +31,8 @@ func (c *Catalog) ListTools(ctx context.Context, callerID string) []*v1.PluginTo
 }
 
 // CallTool runs the call on the plugin that lists the tool, with the context and in the vault the
-// call carries. A tool the caller is not allowed is answered as unknown.
+// call carries. The tool is found in the kept listings, so only the plugins not listed yet and the
+// one that runs the tool are started. A tool the caller is not allowed is answered as unknown.
 func (c *Catalog) CallTool(ctx context.Context, callerID string, call *v1.CallToolRequest) (*v1.CallToolResponse, error) {
 	allowed := c.listAllowedTools(ctx, callerID)
 	index := slices.IndexFunc(allowed, func(one tool) bool { return one.spec.GetName() == call.GetName() })

@@ -13,7 +13,7 @@ func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Se
 		Identity: host.Activation, Leases: host.Activation,
 		Lent: services,
 		Tools: func() hostendpoint.PluginTools {
-			return toolbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry))
+			return toolbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), host.Storage.GetToolsDir)
 		},
 	}
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(address, callers))
