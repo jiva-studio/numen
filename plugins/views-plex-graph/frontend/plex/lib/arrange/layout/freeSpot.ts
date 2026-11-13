@@ -184,8 +184,7 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
     // The group has no free place in the window on its side of the start. A box wider than the ones before it starts further out, so a place
     // that is free and in the window is also taken where the box reaches back past the start, as long as its center is on the side of the group.
     const relaxedAlong = -getReach(request.direction, request.size) - TOLERANCE
-    for (const box of [...request.group, ...index.list()])
-      considerAll(listCandidatesAround(box, request), relaxedAlong)
+    for (const box of index.list()) considerAll(listCandidatesAround(box, request), relaxedAlong)
   }
   if (found.best) return toSpot(found.best.point)
   return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)
