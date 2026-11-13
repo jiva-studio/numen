@@ -14,8 +14,10 @@ import { clusters } from './layout/clusters'
 import { measureCrowding } from './layout/crowding'
 import { applyRoom } from './look'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
+import type { Spot } from './layout/freeSpot'
 import {
   getFootprint,
+  getFootprintCenterY,
   NO_ROOM,
   type NodeRoom,
   type Placement,
@@ -160,22 +162,30 @@ function createRoomLookup(
   return rooms
 }
 
-/** Whether a footprint centered on a spot lies inside the window, which is what a group is given to grow within. */
+/** Whether a footprint keeps a margin from the edge of the window. */
+function isFootprintInside(spot: Spot, viewport: Size, margin: number): boolean {
+  return (
+    Math.abs(spot.x) + spot.width / 2 <= viewport.width / 2 - margin &&
+    Math.abs(spot.y) + spot.height / 2 <= viewport.height / 2 - margin
+  )
+}
+
+/**
+ * Whether a footprint lies inside the window, which is what a group is given to grow sideways within.
+ * Admission and the final layout pass it. The probes of the packing and of the gaps lay out without it; with it they pack differently, and arrange.frames.test.ts records the packing they choose.
+ */
 function getFits(options: PlexOptions): PlacementContext['fits'] {
   const { viewport, margin } = options
   if (!viewport) return undefined
-  return (spot) =>
-    Math.abs(spot.x) + spot.width / 2 <= viewport.width / 2 - margin &&
-    Math.abs(spot.y) + spot.height / 2 <= viewport.height / 2 - margin
+  return (spot) => isFootprintInside(spot, viewport, margin)
 }
 
 function isInside(node: PlacedNode, viewport: Size, { margin, rooms }: Fit): boolean {
   const room = rooms.get(node.id) ?? NO_ROOM
-  const footprint = getFootprint(node, room)
-  const centerY = node.y + (room.bottom - room.top) / 2
-  return (
-    Math.abs(node.x) + footprint.width / 2 <= viewport.width / 2 - margin &&
-    Math.abs(centerY) + footprint.height / 2 <= viewport.height / 2 - margin
+  return isFootprintInside(
+    { x: node.x, y: getFootprintCenterY(node.y, room), ...getFootprint(node, room) },
+    viewport,
+    margin,
   )
 }
 
