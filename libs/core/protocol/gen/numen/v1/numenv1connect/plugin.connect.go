@@ -191,11 +191,10 @@ type PluginServiceClient interface {
 	WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest]) (*connect.ServerStreamForClient[v1.WatchPluginProcessesResponse], error)
 	// ReleaseProcess tells the core that the process of a plugin has finished
 	// its work. The core stops a process that holds no lease at once, and one
-	// that holds a lease at the first idle check after the last lease is
-	// returned. A lease taken after the call cancels it. A plugin calls it
-	// through the host endpoint, which names the plugin by its token; a window
-	// calls it for the plugin plugin_id names. A plugin with no process answers
-	// success.
+	// that holds a lease as soon as it returns the last. A lease taken after
+	// the call cancels it. A plugin calls it through the host endpoint, which
+	// names the plugin by its token; a window calls it for the plugin plugin_id
+	// names. A plugin with no process answers success.
 	ReleaseProcess(context.Context, *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error)
 }
 
@@ -261,11 +260,10 @@ type PluginServiceHandler interface {
 	WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest], *connect.ServerStream[v1.WatchPluginProcessesResponse]) error
 	// ReleaseProcess tells the core that the process of a plugin has finished
 	// its work. The core stops a process that holds no lease at once, and one
-	// that holds a lease at the first idle check after the last lease is
-	// returned. A lease taken after the call cancels it. A plugin calls it
-	// through the host endpoint, which names the plugin by its token; a window
-	// calls it for the plugin plugin_id names. A plugin with no process answers
-	// success.
+	// that holds a lease as soon as it returns the last. A lease taken after
+	// the call cancels it. A plugin calls it through the host endpoint, which
+	// names the plugin by its token; a window calls it for the plugin plugin_id
+	// names. A plugin with no process answers success.
 	ReleaseProcess(context.Context, *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error)
 }
 
