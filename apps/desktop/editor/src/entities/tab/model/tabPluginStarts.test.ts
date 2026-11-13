@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { ReportedError } from '@/shared/api/errors'
 import { createTabPluginStarts } from './tabPluginStarts'
 
 const PLUGINS = [
@@ -16,7 +17,7 @@ const createStarts = () => {
         started.push(id)
       },
       startTabPlugins: async () => {
-        throw new Error('no such kind')
+        throw new ReportedError('The chart kind is not declared')
       },
     },
     getPlugins: () => PLUGINS,
@@ -41,7 +42,7 @@ describe('the plugin starts of the tabs', () => {
     await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledOnce())
 
     expect(writeMessage).toHaveBeenCalledWith(
-      expect.stringMatching(/^The plugin of the chart tab did not start: .*no such kind/),
+      'The plugin of the chart tab did not start: The chart kind is not declared',
       'error',
     )
   })
