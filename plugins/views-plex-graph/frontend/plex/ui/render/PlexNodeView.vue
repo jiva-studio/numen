@@ -23,7 +23,7 @@ const props = withDefaults(defineProps<PlexNodeProps>(), {
   hung: null,
   behavior: () => DEFAULT_BEHAVIOR,
   showPills: true,
-  focusScale: 1,
+  restHeight: 0,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -142,7 +142,7 @@ function getMiddle(): Position | null {
       :is-ghost="isGhost"
       :is-target="gestureRole === 'target'"
       :show-pills="showPills"
-      :focus-scale="focusScale"
+      :rest-height="restHeight"
     >
       <template v-if="$slots.icon" #icon="{ node: drawn }">
         <slot name="icon" :node="drawn" />

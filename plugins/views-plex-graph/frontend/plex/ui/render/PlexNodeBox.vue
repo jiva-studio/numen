@@ -16,9 +16,9 @@ const props = withDefaults(
     isGhost: boolean
     isTarget: boolean
     showPills: boolean
-    focusScale?: number
+    restHeight?: number
   }>(),
-  { focusScale: 1 },
+  { restHeight: 0 },
 )
 
 defineSlots<{
@@ -40,10 +40,13 @@ const startsAt = computed(() => props.box.offset - props.box.width / 2)
 const startsDown = computed(() => -props.node.height / 2)
 
 /**
- * How much larger the title is drawn: the focus note's title grows with its box, in every mode.
+ * How much larger the title is drawn: as much as the node is taller than a note at rest, so the title grows with
+ * its box in every mode, and through the move to focus it keeps the same room in the box.
  * The title is laid out in a box that many times smaller and enlarged, so text, icon, gap and padding grow together.
  */
-const scale = computed(() => (props.node.relation === 'focus' ? props.focusScale : 1))
+const scale = computed(() =>
+  props.restHeight > 0 ? Math.max(1, props.node.height / props.restHeight) : 1,
+)
 
 /** A ghost keeps its dashed outline whether or not the other nodes have pills. */
 const hasPill = computed(() => props.showPills || props.isGhost)

@@ -173,7 +173,6 @@ watch(
       :curvature="options.routing.curvature"
       :show-edge-labels="showEdgeLabels"
       :show-pills="showPills"
-      :focus-scale="options.focusScale"
       :names-opacity="namesOpacity"
       :focused-names-opacity="focusedNamesOpacity"
       :can-reach="canReach"

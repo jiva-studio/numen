@@ -86,20 +86,32 @@ describe('the title of the node in focus', () => {
     return { title, factor: factor === undefined ? 1 : Number(factor) }
   }
 
-  it('is drawn larger by the focus size, with the pill and without it', () => {
+  it('is drawn larger as far as the node is taller than a note at rest, with the pill and without it', () => {
     for (const showPills of [true, false]) {
-      const { title, factor } = scaled({ showPills, focusScale: 1.5 }, { relation: 'focus' })
+      const { title, factor } = scaled({ showPills, restHeight: 40 }, { height: 60 })
       expect(factor).toBe(1.5)
       // The title is laid out in a box 1.5 times smaller, and fills the node's box once enlarged.
       expect(Number(title.attributes('width')) * factor).toBeCloseTo(200)
-      expect(Number(title.attributes('height')) * factor).toBeCloseTo(40)
+      expect(Number(title.attributes('height')) * factor).toBeCloseTo(60)
     }
   })
 
-  it('leaves the title of any other node at its size', () => {
-    const { title, factor } = scaled({ focusScale: 1.5 }, { relation: 'child' })
+  it('leaves the title of a note at rest at its size', () => {
+    const { title, factor } = scaled({ restHeight: 40 }, { relation: 'child', height: 40 })
     expect(factor).toBe(1)
     expect(title.attributes('width')).toBe('200')
+  })
+
+  it('keeps the box its text is laid out in the same size through the move to focus, so a title that fits is never cut', () => {
+    // The node grows from a note at rest to the focus; its width grows with its height.
+    const laidOut = [0, 0.25, 0.5, 0.75, 1].map((t) => {
+      const { title } = scaled(
+        { restHeight: 40 },
+        { relation: 'focus', width: 160 * (1 + 0.5 * t), height: 40 * (1 + 0.5 * t) },
+      )
+      return Number(title.attributes('width'))
+    })
+    for (const width of laidOut) expect(width).toBeCloseTo(160)
   })
 })
 

@@ -24,7 +24,6 @@ export interface PlexViewProps {
   nodeSize: { width: number; height: number }
   showEdgeLabels?: boolean
   showPills?: boolean
-  focusScale?: number
   namesOpacity?: number
   focusedNamesOpacity?: number
   canReach?: boolean
@@ -69,7 +68,8 @@ export interface PlexNodeProps {
   hung?: NodeHeadings | null
   behavior?: PlexBehavior
   showPills?: boolean
-  focusScale?: number
+  /** The height of a note at rest; a taller node has its title drawn larger by the ratio. */
+  restHeight?: number
 }
 
 export interface PlexNodeEvents {

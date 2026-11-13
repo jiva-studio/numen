@@ -18,7 +18,6 @@ import { useNodeViews } from '../../model/useNodeViews'
 const props = withDefaults(defineProps<PlexViewProps>(), {
   showEdgeLabels: true,
   showPills: true,
-  focusScale: 1,
   namesOpacity: DEFAULT_NAMES_OPACITY,
   focusedNamesOpacity: DEFAULT_FOCUSED_NAMES_OPACITY,
   canReach: true,
@@ -184,7 +183,7 @@ const getRole = (node: PlacedNode): GestureRole => {
         :hung="hung?.(node) ?? null"
         :behavior="behavior"
         :show-pills="showPills"
-        :focus-scale="focusScale"
+        :rest-height="nodeSize.height"
         @activate="emit('activate', node.id)"
         @show="emit('show', node.id, $event)"
         @reach="emit('reach', node.id, $event)"
