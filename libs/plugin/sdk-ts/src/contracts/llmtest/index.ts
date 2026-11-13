@@ -55,41 +55,67 @@ const encode = <T>(
   write: (value: T) => Uint8Array,
 ): Result<Uint8Array, ConnectionError> => (end.ok ? { ok: true, value: write(end.value) } : end)
 
-const noConnection = (operation: string): Result<Uint8Array, ConnectionError> => ({
-  ok: false,
-  error: { error: 'no_connection', message: `no connection serves ${operation}`, failures: [] },
-})
+type Served = (
+  payload: Uint8Array,
+  options: ConnectionCallOptions | undefined,
+) => AsyncGenerator<Uint8Array, Result<Uint8Array, ConnectionError>>
+
+async function* serveChat(
+  chat: NonNullable<Roles['chat']>,
+  payload: Uint8Array,
+  options: ConnectionCallOptions | undefined,
+): AsyncGenerator<Uint8Array, Result<Uint8Array, ConnectionError>> {
+  const frames = chat(fromBinary(ChatRequestSchema, payload), options)
+  for (;;) {
+    const next = await frames.next()
+    if (next.done === true)
+      return encode(next.value, (value) => toBinary(ChatFinishSchema, create(ChatFinishSchema, value)))
+    yield toBinary(ChatFrameSchema, create(ChatFrameSchema, next.value))
+  }
+}
+
+const listServed = (roles: Roles): ReadonlyMap<string, Served> => {
+  const served = new Map<string, Served>()
+  const { complete, chat, embed, getProfile } = roles
+  if (complete !== undefined)
+    served.set(OPERATION_COMPLETE, async function* (payload, options) {
+      yield* []
+      const end = await complete(fromBinary(CompleteRequestSchema, payload), options)
+      return encode(end, (value) => toBinary(CompleteResultSchema, create(CompleteResultSchema, value)))
+    })
+  if (embed !== undefined)
+    served.set(OPERATION_EMBED, async function* (payload, options) {
+      yield* []
+      const end = await embed(fromBinary(EmbedRequestSchema, payload), options)
+      return encode(end, (value) => toBinary(EmbedResultSchema, create(EmbedResultSchema, value)))
+    })
+  if (getProfile !== undefined)
+    served.set(OPERATION_PROFILE, async function* (_payload, options) {
+      yield* []
+      const end = await getProfile(options)
+      return encode(end, (value) => toBinary(ProfileSchema, create(ProfileSchema, value)))
+    })
+  if (chat !== undefined)
+    served.set(OPERATION_CHAT, (payload, options) => serveChat(chat, payload, options))
+  return served
+}
 
 /**
  * Returns connections that serve the operations of `roles`: the payload is decoded into the request, and
  * each frame and the result are encoded as the core passes them.
  */
 export function createLlmHost(roles: Roles): ConnectionHost {
+  const served = listServed(roles)
   return {
     call: async function* (operation, payload, options) {
-      const { complete, chat, embed, getProfile } = roles
-      if (operation === OPERATION_COMPLETE && complete !== undefined) {
-        const end = await complete(fromBinary(CompleteRequestSchema, payload), options)
-        return encode(end, (value) => toBinary(CompleteResultSchema, create(CompleteResultSchema, value)))
-      }
-      if (operation === OPERATION_EMBED && embed !== undefined) {
-        const end = await embed(fromBinary(EmbedRequestSchema, payload), options)
-        return encode(end, (value) => toBinary(EmbedResultSchema, create(EmbedResultSchema, value)))
-      }
-      if (operation === OPERATION_PROFILE && getProfile !== undefined) {
-        const end = await getProfile(options)
-        return encode(end, (value) => toBinary(ProfileSchema, create(ProfileSchema, value)))
-      }
-      if (operation === OPERATION_CHAT && chat !== undefined) {
-        const frames = chat(fromBinary(ChatRequestSchema, payload), options)
-        for (;;) {
-          const next = await frames.next()
-          if (next.done === true)
-            return encode(next.value, (value) => toBinary(ChatFinishSchema, create(ChatFinishSchema, value)))
-          yield toBinary(ChatFrameSchema, create(ChatFrameSchema, next.value))
+      const serve = served.get(operation)
+      if (serve === undefined) {
+        return {
+          ok: false,
+          error: { error: 'no_connection', message: `no connection serves ${operation}`, failures: [] },
         }
       }
-      return noConnection(operation)
+      return yield* serve(payload, options)
     },
   }
 }
