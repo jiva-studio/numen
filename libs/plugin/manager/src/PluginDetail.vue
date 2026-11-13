@@ -128,83 +128,69 @@ function onRunAction(key: string): void {
         {{ words.pluginInstall }}
       </Button>
     </template>
-    <div class="plugin-detail">
-      <PluginHeader :plugin="props.plugin" />
+    <PluginHeader :plugin="props.plugin" />
 
-      <PluginNotice
-        v-if="startItem"
-        :item="startItem"
-        :action-label="words.pluginRetry"
-        @run-action="onRetry"
-      />
-      <PluginNotice
-        v-else-if="worstItem"
-        :item="worstItem"
-        :action-label="worstItem.actionLabel"
-        @run-action="onRunAction(worstItem.key)"
-      />
+    <PluginNotice
+      v-if="startItem"
+      :item="startItem"
+      :action-label="words.pluginRetry"
+      @run-action="onRetry"
+    />
+    <PluginNotice
+      v-else-if="worstItem"
+      :item="worstItem"
+      :action-label="worstItem.actionLabel"
+      @run-action="onRunAction(worstItem.key)"
+    />
 
-      <PluginTabs
-        v-model="activeTab"
-        :tabs="tabs"
-        :label="words.pluginSections"
-        :id-base="idBase"
-      />
+    <PluginTabs v-model="activeTab" :tabs="tabs" :label="words.pluginSections" :id-base="idBase" />
 
-      <div
-        :id="getPanelElementId(idBase, activeTab)"
-        class="plugin-detail__panel"
-        role="tabpanel"
-        :aria-labelledby="getTabElementId(idBase, activeTab)"
+    <div
+      :id="getPanelElementId(idBase, activeTab)"
+      class="plugin-detail__panel"
+      role="tabpanel"
+      :aria-labelledby="getTabElementId(idBase, activeTab)"
+    >
+      <PluginSettingsCard v-if="activeTab === 'settings' && props.hasSettings">
+        <slot name="settings" />
+      </PluginSettingsCard>
+      <slot v-if="activeTab === 'settings'" name="sections" />
+      <p
+        v-if="activeTab === 'settings' && !props.hasSettings && !hasConnections"
+        class="plugin-detail__nothing"
       >
-        <PluginSettingsCard v-if="activeTab === 'settings' && props.hasSettings">
-          <slot name="settings" />
-        </PluginSettingsCard>
-        <slot v-if="activeTab === 'settings'" name="sections" />
-        <p
-          v-if="activeTab === 'settings' && !props.hasSettings && !hasConnections"
-          class="plugin-detail__nothing"
-        >
-          {{ words.noSettings }}
-        </p>
+        {{ words.noSettings }}
+      </p>
 
-        <div v-if="activeTab === 'about' && readmeText" class="settings-card plugin-detail__readme">
-          <Prose :text="readmeText" />
-        </div>
-        <p v-else-if="activeTab === 'about'" class="plugin-detail__nothing">
-          {{ props.plugin.description }}
-        </p>
-
-        <PluginContributions
-          v-if="activeTab === 'contributions' && contributions.length > 0"
-          :contributions="contributions"
-          :is-apple="props.isApple ?? false"
-        />
-        <p v-else-if="activeTab === 'contributions'" class="plugin-detail__nothing">
-          {{ words.noContributions }}
-        </p>
-
-        <PluginData
-          v-if="activeTab === 'data'"
-          :plugin-id="props.plugin.id"
-          :plugin-name="props.plugin.name"
-          :file-count="props.dataFileCount"
-          :problem="props.problem"
-          @delete-data="onDeleteData"
-        />
+      <div v-if="activeTab === 'about' && readmeText" class="settings-card plugin-detail__readme">
+        <Prose :text="readmeText" />
       </div>
+      <p v-else-if="activeTab === 'about'" class="plugin-detail__nothing">
+        {{ props.plugin.description }}
+      </p>
+
+      <PluginContributions
+        v-if="activeTab === 'contributions' && contributions.length > 0"
+        :contributions="contributions"
+        :is-apple="props.isApple ?? false"
+      />
+      <p v-else-if="activeTab === 'contributions'" class="plugin-detail__nothing">
+        {{ words.noContributions }}
+      </p>
+
+      <PluginData
+        v-if="activeTab === 'data'"
+        :plugin-id="props.plugin.id"
+        :plugin-name="props.plugin.name"
+        :file-count="props.dataFileCount"
+        :problem="props.problem"
+        @delete-data="onDeleteData"
+      />
     </div>
   </SettingsPage>
 </template>
 
 <style scoped>
-.plugin-detail {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 1rem;
-}
-
 .plugin-detail__state {
   display: inline-flex;
   align-items: center;
