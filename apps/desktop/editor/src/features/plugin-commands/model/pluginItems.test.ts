@@ -195,7 +195,7 @@ describe('a shared command in the palette', () => {
 
   it('keeps its own title where its one item is an item of a handler, in the group of its plugin', async () => {
     const { removeEmptyCommands } = setUp({
-      'app:link.downloadMedia': [
+      [CREATE_TEXT]: [
         {
           id: 'md.numen.engines.transcription:t1',
           title: 'transcript',
@@ -204,7 +204,7 @@ describe('a shared command in the palette', () => {
       ],
     })
     const shared = {
-      ...createCommand('app:link.downloadMedia'),
+      ...createCommand(CREATE_TEXT),
       text: 'Delete text',
       input: 'items' as const,
     }
@@ -216,15 +216,14 @@ describe('a shared command in the palette', () => {
   })
 
   it('that asks for its arguments keeps its steps where one handler holds', async () => {
-    const IMPORT = 'app:link.import'
     const { removeEmptyCommands } = setUp({
-      [IMPORT]: [{ id: 'md.numen.tools.media.importer', title: 'Import link' }],
+      [CREATE_TEXT]: [{ id: 'md.numen.engines.ocr', title: 'Recognize text' }],
     })
     const shared: Command = {
-      ...createCommand(IMPORT),
-      text: 'Import link',
+      ...createCommand(CREATE_TEXT),
+      text: 'Create text',
       input: 'arguments',
-      prompts: [{ name: 'address', title: 'Address', isRequired: true }],
+      prompts: [{ name: 'language', title: 'Language', isRequired: true }],
     }
 
     removeEmptyCommands([shared])
@@ -240,5 +239,26 @@ describe('a shared command in the palette', () => {
     await settle()
 
     expect(removeEmptyCommands([createCommand('tab.move')])[0]?.text).toBe('tab.move')
+  })
+})
+
+describe('the notes the conditions of the palette read', () => {
+  it('are forgotten each time the palette opens or closes', async () => {
+    const forgetNotes = vi.fn()
+    const lists = createItemLists(undefined, {
+      paletteLists: WINDOW_LISTS,
+      getTarget: () => TARGET,
+      runs: RUNS,
+      forgetNotes,
+    })
+    const isOpen = ref(false)
+    lists.resetWhenClosed(isOpen)
+
+    isOpen.value = true
+    await nextTick()
+    isOpen.value = false
+    await nextTick()
+
+    expect(forgetNotes).toHaveBeenCalledTimes(2)
   })
 })

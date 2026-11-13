@@ -13,6 +13,29 @@ const createRespondedTurn = (id: string, text = 'back', state?: Turn['state']): 
 
 const thread = (turns: readonly Turn[]) => mount(Thread, { props: { turns } })
 
+describe('a plan', () => {
+  it('lists its entries in order, each with how far it is', () => {
+    const wrapper = thread([
+      {
+        id: '1',
+        voice: 'plan',
+        text: '',
+        plan: [
+          { text: 'Read the orchard notes', status: 'done' },
+          { text: 'Write the sorted list', status: 'pending' },
+        ],
+      },
+    ])
+
+    expect(
+      wrapper.findAll('li').map((item) => [item.text(), item.attributes('data-status')]),
+    ).toStrictEqual([
+      ['Read the orchard notes', 'done'],
+      ['Write the sorted list', 'pending'],
+    ])
+  })
+})
+
 describe('what is drawn', () => {
   it('says nothing was returned yet on an empty thread', () => {
     expect(thread([]).text()).toContain('No messages yet')

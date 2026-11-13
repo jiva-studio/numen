@@ -151,6 +151,17 @@ export interface VaultRelations {
   createRelated(request: RelatedNoteRequest): Promise<Result<string, RelationError>>
   // The links written in other notes that point at a note.
   listBacklinks(path: string): Promise<readonly Backlink[]>
+  // The wikilinks of a text, each raw form once. vault is the id of the vault the text belongs to;
+  // a window that shows one vault may omit it.
+  resolveLinks(text: string, vault?: string): Promise<readonly TextLink[]>
+}
+
+// TextLink is one wikilink of a text.
+export interface TextLink {
+  readonly raw: string
+  readonly address: string
+  readonly text: string
+  readonly path: string
 }
 
 // FilePlacement is where a file opened from a tab is drawn: in the current pane, or in a split beside it.
@@ -215,8 +226,6 @@ export interface WorkspaceHost {
   readonly icons: WorkspaceIcons
   // The note the most recently active tool tab depends on; empty strings when none.
   getNoteInFocus(): NoteRef
-  // Sends a question to the agent and shows it to the user.
-  ask(text: string): void
 }
 
 export interface VaultEntry {

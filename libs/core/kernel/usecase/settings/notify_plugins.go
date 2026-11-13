@@ -15,7 +15,6 @@ type NotifyPlugins struct {
 	codec          settingsport.ValueCodec
 	apply          settingsport.PluginSettingApplier
 	config         settingsport.PluginConfig
-	refreshSecrets settingsport.SecretRefresh
 	resolveProfile settingsport.ProfileResolver
 	signal         func()
 	report         func(error)
@@ -27,7 +26,6 @@ type NotifyPluginsDeps struct {
 	Codec          settingsport.ValueCodec
 	Apply          settingsport.PluginSettingApplier
 	Config         settingsport.PluginConfig
-	RefreshSecrets settingsport.SecretRefresh
 	ResolveProfile settingsport.ProfileResolver
 	Signal         func()
 	Report         func(error)
@@ -36,18 +34,16 @@ type NotifyPluginsDeps struct {
 // NewNotifyPlugins makes the use case.
 func NewNotifyPlugins(deps NotifyPluginsDeps) *NotifyPlugins {
 	return &NotifyPlugins{
-		codec: deps.Codec, apply: deps.Apply, config: deps.Config, refreshSecrets: deps.RefreshSecrets,
+		codec: deps.Codec, apply: deps.Apply, config: deps.Config,
 		resolveProfile: deps.ResolveProfile, signal: deps.Signal, report: deps.Report,
 	}
 }
-
-func getSecretsPath() []string { return []string{settingsdomain.SecretsKey} }
 
 func getPerformancePath() []string {
 	return []string{settingsdomain.AppOwner, "performance", "profile"}
 }
 
-// Execute gives the plugins a batch of changed settings: their own settings, the secrets and the
+// Execute gives the plugins a batch of changed settings: their own settings and the
 // performance profile. A failure is reported and the rest of the batch is still given.
 func (u *NotifyPlugins) Execute(batch []settingsdomain.Setting) {
 	u.updatePluginSettings(batch)
@@ -55,20 +51,16 @@ func (u *NotifyPlugins) Execute(batch []settingsdomain.Setting) {
 		defer u.signal()
 	}
 	for _, one := range batch {
-		switch {
-		case slices.Equal(one.Path, getSecretsPath()):
-			if err := u.refreshSecrets(context.Background()); err != nil {
-				u.report(fmt.Errorf("configure the plugins after the secrets changed: %w", err))
-			}
-		case slices.Equal(one.Path, getPerformancePath()):
-			value, err := u.codec.Decode(one.JSON)
-			profile, isText := value.(string)
-			if err != nil || !isText {
-				u.report(fmt.Errorf("the performance profile is not a name: %s", one.JSON))
-				continue
-			}
-			u.config.SetPerformanceProfile(context.Background(), u.resolveProfile(profile))
+		if !slices.Equal(one.Path, getPerformancePath()) {
+			continue
 		}
+		value, err := u.codec.Decode(one.JSON)
+		profile, isText := value.(string)
+		if err != nil || !isText {
+			u.report(fmt.Errorf("the performance profile is not a name: %s", one.JSON))
+			continue
+		}
+		u.config.SetPerformanceProfile(context.Background(), u.resolveProfile(profile))
 	}
 }
 

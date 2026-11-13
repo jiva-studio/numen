@@ -13,9 +13,9 @@ const props = defineProps<{
   path: string
   problem: string
   labelledBy: string
+  describedBy?: string | undefined
   isMulti?: boolean
   words: {
-    readonly pathNone: string
     readonly pathChoose: string
     readonly pathAdd?: string
     readonly pathClear: string
@@ -72,6 +72,7 @@ function formatPathLabel(rawPath: string): string {
     :class="{ 'settings__path--multi': hasMultipleRows }"
     role="group"
     :aria-labelledby="labelledBy"
+    :aria-describedby="describedBy"
   >
     <span v-if="!hasMultipleRows" class="settings__path-line">
       <span

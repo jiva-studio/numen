@@ -17,7 +17,7 @@ import {
 const NO_VAULTS: VaultsState = { vaults: [], current: null }
 const RESTORED: WindowState = { isMaximized: false, isFullscreen: false }
 
-export function useTitleBarHosts(context: PluginContext) {
+export function useTitleBarHosts(context: Pick<PluginContext, 'ui' | 'vault'>) {
   const commands = shallowRef<readonly SlotItem[]>([])
   const status = shallowRef<readonly SlotItem[]>([])
   const vaults = shallowRef<VaultsState>(NO_VAULTS)

@@ -395,9 +395,9 @@ To keep code readable, pseudo-literary prose, Anglish idioms, irregular past par
 
 ## 15. Rules for agents learned from review
 
-The plugin model is [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11.
+The plugin model is [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11. The core is a microkernel (§11 (l)): the core, the core protocol and the shared SDK know no plugin domain, connection operations are opaque, their shapes are SDK contracts that only plugins and applications import, the core owns all index storage, and agents are providers of `acp.task`.
 
-The plugin model, the SDK rules and the import rules for windows, plugins and libraries are [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11 (a) to (k); placement within a plugin is [`nm-place-plugin`](.agents/skills/nm-place-plugin/SKILL.md) and placement of shared code is [`nm-place-library`](.agents/skills/nm-place-library/SKILL.md). Time is a port (§5, §11 (i)). Size and complexity limits are one set for Go, TypeScript and Vue (§8). The numbered rules continue from 10.
+The plugin model, the SDK rules and the import rules for windows, plugins and libraries are [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11 (a) to (l); placement within a plugin is [`nm-place-plugin`](.agents/skills/nm-place-plugin/SKILL.md) and placement of shared code is [`nm-place-library`](.agents/skills/nm-place-library/SKILL.md). Time is a port (§5, §11 (i)). Size and complexity limits are one set for Go, TypeScript and Vue (§8). The numbered rules continue from 10.
 
 10. Checks are structural. Use an off-the-shelf tool with configuration where one exists (dependency-cruiser, depguard and gomodguard, golangci-lint linters, stylelint). Write a check by hand only over syntax trees, import graphs and type information. A check never decides by a regular expression over source text, a list of names or a list of files ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §10).
 11. Checks never get weaker: no exclusion and no workaround that bypasses a rule (such as obtaining the time through `time.After(0)`). Derive sets from structure.
@@ -408,7 +408,7 @@ The plugin model, the SDK rules and the import rules for windows, plugins and li
 16. A failing check is fixed in the code it reports. The check stays as it is, and the code changes until it passes:
     - A type is named from the package that declares it, not from an alias package that re-exports it.
     - An interface stays within the size limit with all its methods, embedded ones included.
-    - Every file and every package is linted and typechecked; a configuration excludes only build output.
+    - Every file and every package is linted and typechecked; a configuration excludes only build output. The duplication check reads code only: declarations (`*.yml`, `go.mod`, `Makefile`, plugin `manifest.json`) repeat by nature and are out of its scope.
     - An exception list stays as it is; the code it would exempt is changed.
     - Logic stays in the folder its layer gives it, where the checks walk.
 17. Every rule that a check enforces is stated in [`.agents/rules/architecture.md`](.agents/rules/architecture.md) with the check's name; a rule with no check is a finding for the gatekeeper.

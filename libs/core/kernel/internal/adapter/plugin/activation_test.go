@@ -50,7 +50,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 		return cmd.Process, silent, nil
 	})
 
-	_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample")
+	_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 	if !errors.Is(err, transport.ErrHandshakeTimeout) {
 		t.Fatalf("expected a handshake timeout, got %v", err)
 	}
@@ -76,7 +76,7 @@ func TestAPluginWhoseStartFailedIsStartedAgainOnItsNextUseAtOnce(t *testing.T) {
 	host.Processes.SetLauncher(failLaunchingCounting(&launches))
 
 	for range 3 {
-		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {
+		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err == nil {
 			t.Fatal("expected the start to fail")
 		}
 	}
@@ -86,21 +86,19 @@ func TestAPluginWhoseStartFailedIsStartedAgainOnItsNextUseAtOnce(t *testing.T) {
 	}
 }
 
-func TestAFailedStartIsReportedEachTimeAndShownWithItsReason(t *testing.T) {
+func TestAFailedStartIsListedOnceAndShownWithItsReason(t *testing.T) {
 	host := newDiscoveredHost(t)
-	var notified []string
-	host.Failures.SetOnPluginFailed(func(failure plugindomain.Failure) { notified = append(notified, failure.PluginID) })
 	launches := 0
 	host.Processes.SetLauncher(failLaunchingCounting(&launches))
 
 	for range 2 {
-		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {
+		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err == nil {
 			t.Fatal("expected the start to fail")
 		}
 	}
 
-	if len(notified) != 2 {
-		t.Fatalf("expected a failure notification for each start, got %v", notified)
+	if items := host.Health.List(); len(items) != 1 || items[0].PluginID != "org.example.sample" || items[0].Key != plugindomain.HealthKeyStart {
+		t.Fatalf("expected one start item for the plugin, got %+v", items)
 	}
 	status, ok := host.Registry.GetPluginStatus("org.example.sample")
 	if !ok || !status.Failed || status.FailureReason == "" {
@@ -115,7 +113,7 @@ func TestACanceledCallerDoesNotRecordAFailedStart(t *testing.T) {
 	})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample"); err == nil {
+	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); err == nil {
 		t.Fatal("expected the activation to fail")
 	}
 	if supervisorOf(host, "org.example.sample").Failure.IsFailed() {

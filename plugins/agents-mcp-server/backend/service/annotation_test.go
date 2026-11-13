@@ -25,65 +25,49 @@ func describeAnnotations(annotations *sdk.ToolAnnotations) string {
 		describe(annotations.DestructiveHint), describe(annotations.OpenWorldHint))
 }
 
-// hintCase is a tool whose hints say otherwise than its effect, step and required permissions, and
-// the annotations an MCP client is given. The same table is in
-// libs/core/kernel/internal/adapter/plugin/agenttoolsbridge/declare_tool_test.go.
-type hintCase struct {
+// annotationCase is a tool's effect and required permissions and the annotations an MCP client is
+// given.
+type annotationCase struct {
 	name                                         string
 	effect                                       tools.Effect
-	step                                         tools.Step
 	requires                                     []string
-	hints                                        tools.Hints
 	readOnly, idempotent, destructive, openWorld bool
 }
 
-func getHintCases() []hintCase {
-	return []hintCase{
+func getAnnotationCases() []annotationCase {
+	return []annotationCase{
+		{name: "a local read", effect: tools.ReadOnly, readOnly: true, idempotent: true},
+		{name: "a local write", effect: tools.ReadWrite, destructive: true},
 		{
-			name: "a removing tool that needs the network with the hints of a local read", effect: tools.ReadWrite,
-			step: tools.Remove, requires: []string{"link:open"},
-			hints:    tools.Hints{ReadOnly: true, Idempotent: true},
-			readOnly: true, idempotent: true,
+			name: "a read that needs the network", effect: tools.ReadOnly, requires: []string{"link:open"},
+			readOnly: true, idempotent: true, openWorld: true,
 		},
 		{
-			name: "a local read with the hints of a removing tool that needs the network", effect: tools.ReadOnly,
-			hints:       tools.Hints{Destructive: true, OpenWorld: true},
-			destructive: true, openWorld: true,
+			name: "a write that needs the network and to manage vaults", effect: tools.ReadWrite,
+			requires: []string{"vault:manage", "link:open"}, destructive: true, openWorld: true,
 		},
-		{
-			name: "a moving tool with the destructive hint", effect: tools.ReadWrite, step: tools.Move,
-			hints:       tools.Hints{Destructive: true},
-			destructive: true,
-		},
-		{
-			name: "a read that needs the network with no hints", effect: tools.ReadOnly,
-			requires: []string{"link:open"},
-		},
-		{
-			name: "a removing tool with every hint", effect: tools.ReadWrite, step: tools.Remove,
-			hints:    tools.Hints{ReadOnly: true, Destructive: true, Idempotent: true, OpenWorld: true},
-			readOnly: true, idempotent: true, destructive: true, openWorld: true,
-		},
+		{name: "a write that needs to manage vaults", effect: tools.ReadWrite, requires: []string{"vault:manage"}, destructive: true},
+		{name: "a tool of no effect", effect: 0},
 	}
 }
 
-func (tc hintCase) describeWant() string {
+func (tc annotationCase) describeWant() string {
 	return describeAnnotations(&sdk.ToolAnnotations{
 		ReadOnlyHint: tc.readOnly, IdempotentHint: tc.idempotent, DestructiveHint: &tc.destructive, OpenWorldHint: &tc.openWorld,
 	})
 }
 
-func TestTheMCPServerAnnotatesAToolFromItsHintsOnly(t *testing.T) {
+func TestTheMCPServerAnnotatesAToolFromItsEffectAndRequiredPermissions(t *testing.T) {
 	t.Parallel()
-	hintCases := getHintCases()
-	listing := make([]*tools.ToolInfo, 0, len(hintCases))
-	byName := map[string]hintCase{}
-	for i, tc := range hintCases {
+	annotationCases := getAnnotationCases()
+	listing := make([]*tools.ToolInfo, 0, len(annotationCases))
+	byName := map[string]annotationCase{}
+	for i, tc := range annotationCases {
 		name := "pond_tool_" + string(rune('a'+i))
 		byName[name] = tc
 		listing = append(listing, &tools.ToolInfo{
 			Name: name, Description: tc.name, InputSchema: []byte(`{"type":"object"}`),
-			Effect: tc.effect, Step: tc.step, Requires: tc.requires, Hints: tc.hints,
+			Effect: tc.effect, Requires: tc.requires,
 		})
 	}
 	srv, err := NewServer(Config{}, &fakeToolClient{tools: listing})
@@ -93,8 +77,8 @@ func TestTheMCPServerAnnotatesAToolFromItsHintsOnly(t *testing.T) {
 
 	declared := listTools(t, connectInMemory(t, srv, nil))
 
-	if len(declared) != len(hintCases) {
-		t.Fatalf("tools/list returned %d tools, want %d", len(declared), len(hintCases))
+	if len(declared) != len(annotationCases) {
+		t.Fatalf("tools/list returned %d tools, want %d", len(declared), len(annotationCases))
 	}
 	for _, tool := range declared {
 		tc, isKnown := byName[tool.Name]

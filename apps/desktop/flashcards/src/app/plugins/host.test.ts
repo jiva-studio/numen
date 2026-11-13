@@ -1,16 +1,23 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, effectScope, h, onScopeDispose } from 'vue'
-import { CONVERSATION, VAULT_SUMMARY, createMockAgentHost } from '@numen/plugin-loader'
+import { CONVERSATION, VAULT_SUMMARY } from '@numen/plugin-loader'
 import { createMockManifest } from '@numen/core-client/testing'
-import type { AgentHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
+import type { ConnectionHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
 import { TARGET } from '@/shared/lib/window'
 import { createNoticeQueue } from '@numen/workbench'
 import { createWindowCommands } from '@/entities/plugin'
 import { createWindowTabs } from '@/entities/tab'
 import { createShellHost as createHost } from './host'
 
+/** Connections that end every call at once, for a conversation view that needs them. */
+const CONNECTIONS: ConnectionHost = {
+  call: async function* () {
+    yield* []
+    return { ok: true, value: new Uint8Array() }
+  },
+}
+
 const createShellHost = (
-  agent?: AgentHost,
   services: Parameters<typeof createHost>[0]['services'] = {},
   getPlatform?: () => 'windows' | 'darwin',
 ) => {
@@ -20,7 +27,6 @@ const createShellHost = (
     tabs,
     notices,
     services,
-    ...(agent ? { agent } : {}),
     ...(getPlatform ? { getPlatform } : {}),
   })
   return {
@@ -56,11 +62,11 @@ const withVault = (id: string) =>
     name: id,
     permissions: ['vault:read', 'vault:write', 'link:open'],
     viewCapabilities: [CONVERSATION, VAULT_SUMMARY],
-    tabKinds: ['unplaced', 'second', 'default-zero', 'negative', 'review', 'fallback', 'stateless'],
+    tabKinds: ['unplaced', 'second', 'default-zero', 'negative', 'review', 'fallback'],
     readers: ['document'],
     commands: ['open'],
     settingsViews: ['floor'],
-    capabilities: ['ai.agent.provider'],
+    capabilities: ['tools'],
   })
 
 const view = (kind: string, order?: number) => ({
@@ -76,7 +82,7 @@ describe('createShellHost', () => {
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
     })
     let platform: 'windows' | 'darwin' = 'windows'
-    const { host } = createShellHost(undefined, {}, () => platform)
+    const { host } = createShellHost({}, () => platform)
     const context = host.createContext('md.numen.example', withVault('md.numen.example'))
     vi.unstubAllGlobals()
 
@@ -113,17 +119,17 @@ describe('createShellHost', () => {
       component: {},
       placement: { pane: 'main' } as never,
     })
-    expect(front.value?.registration.kind).toBe('default-zero')
+    expect(front.value?.kind).toBe('default-zero')
 
     const sub = context.register.tabKind(view('negative', -1))
-    expect(front.value?.registration.kind).toBe('negative')
+    expect(front.value?.kind).toBe('negative')
     expect(front.value?.pluginId).toBe('md.numen.example')
 
     sub.dispose()
-    expect(front.value?.registration.kind).toBe('default-zero')
+    expect(front.value?.kind).toBe('default-zero')
 
     defaultOrder.dispose()
-    expect(front.value?.registration.kind).toBe('second')
+    expect(front.value?.kind).toBe('second')
   })
 
   it('releases what a plugin registered once it is disposed, whatever it does to its subscriptions', () => {
@@ -141,7 +147,7 @@ describe('createShellHost', () => {
     host.disposePlugin('md.numen.example')
     host.disposePlugin('md.numen.unknown')
 
-    expect(front.value?.registration.kind).toBe('fallback')
+    expect(front.value?.kind).toBe('fallback')
   })
 
   it('gives every plugin the commands, the vaults and the window the window offers', () => {
@@ -150,7 +156,7 @@ describe('createShellHost', () => {
       vaults: createMockVaultsHost(),
       window: createMockWindowHost(),
     }
-    const { host } = createShellHost(undefined, services)
+    const { host } = createShellHost(services)
 
     const bar = host.createContext('org.example.ledger', withVault('org.example.ledger'))
     const cards = host.createContext('md.numen.cards', withVault('md.numen.cards'))
@@ -164,7 +170,7 @@ describe('createShellHost', () => {
   it('refuses the vaults to a plugin without vault:read and switching to one without vault:manage', async () => {
     const switched: string[] = []
     const vaults = createMockVaultsHost(switched)
-    const { host } = createShellHost(undefined, { vaults })
+    const { host } = createShellHost({ vaults })
     const noGrants = host.createContext(
       'org.example.bare',
       createMockManifest('org.example.bare', { name: 'Bare' }),
@@ -248,7 +254,7 @@ describe('createShellHost', () => {
     const context = host.createContext('md.numen.example', withVault('md.numen.example'))
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
 
-    context.register.reader?.({ id: 'document' } as never).dispose()
+    context.register.reader?.({ id: 'document', title: 'Document', component: {} }).dispose()
     context.register.command?.({ id: 'open' } as never).dispose()
     context.register.settingsView?.({ id: 'floor' } as never).dispose()
     expect(context.settings.get?.('key')).toBeUndefined()
@@ -268,7 +274,7 @@ describe('createShellHost', () => {
     const { host } = createShellHost()
     const conversation = defineComponent({
       props: { context: { type: Object, required: true } },
-      setup: (props) => () => h('p', (props.context as { focus: string }).focus),
+      setup: (props) => () => h('p', (props.context as { vault: string }).vault),
     })
     host
       .createContext('md.numen.chat', withVault('md.numen.chat'))
@@ -277,11 +283,8 @@ describe('createShellHost', () => {
 
     host
       .createContext('md.numen.cards', withVault('md.numen.cards'))
-      .ui.mountView(CONVERSATION, panel, {
-        agent: createMockAgentHost(),
-        focus: 'Decks/Physics.md',
-      })
-    expect(panel.textContent).toBe('Decks/Physics.md')
+      .ui.mountView(CONVERSATION, panel, { connections: CONNECTIONS, vault: 'physics' })
+    expect(panel.textContent).toBe('physics')
 
     host.disposePlugin('md.numen.chat')
     expect(panel.textContent).toBe('')
@@ -296,7 +299,7 @@ describe('createShellHost', () => {
     const panel = document.createElement('section')
     host
       .createContext('md.numen.cards', withVault('md.numen.cards'))
-      .ui.mountView(CONVERSATION, panel, { agent: createMockAgentHost(), focus: '' })
+      .ui.mountView(CONVERSATION, panel, { connections: CONNECTIONS })
 
     host.disposePlugin('md.numen.cards')
 
@@ -357,7 +360,7 @@ describe('the tab of the window', () => {
     expect(tab.value).toBeNull()
   })
 
-  it('opens the front kind on the vault chosen, in a detached scope of its own, even without an open callback', () => {
+  it('opens the front kind on the vault chosen, in a detached scope of its own', () => {
     const { host, tab, openTab, closeTab } = createShellHost()
     const { registration, released } = createKind()
     host.createContext('md.numen.cards', withVault('md.numen.cards')).register.tabKind(registration)
@@ -368,18 +371,11 @@ describe('the tab of the window', () => {
 
     expect(released).toStrictEqual([])
     expect(tab.value?.vault).toBe('roots')
-    expect(tab.value?.view.pluginId).toBe('md.numen.cards')
+    expect(tab.value?.kind.pluginId).toBe('md.numen.cards')
     expect(tab.value?.state).toStrictEqual({ vault: 'roots', id: 'review#1' })
 
     closeTab()
-    host.createContext('md.numen.stateless', withVault('md.numen.stateless')).register.tabKind({
-      kind: 'stateless',
-      component: {},
-      placement: { pane: 'main', order: -1 },
-    })
-    openTab('words')
-    expect(tab.value?.id).toBe('stateless#2')
-    expect(tab.value?.state).toBeUndefined()
+    expect(tab.value).toBeNull()
   })
 
   it('closes the tab a plugin names, which takes the window back to its vaults', () => {
@@ -470,111 +466,13 @@ describe('the tab of the window', () => {
   })
 })
 
-describe('the agent of the window', () => {
-  it('is given to every plugin where the window has one', () => {
-    const agent = createMockAgentHost()
-
-    expect(
-      createShellHost(agent).host.createContext('md.numen.example', withVault('md.numen.example'))
-        .work.agent,
-    ).toBeDefined()
-    expect(
-      createShellHost().host.createContext('md.numen.example', withVault('md.numen.example')).work
-        .agent,
-    ).toBeUndefined()
-  })
-})
-
-describe('the agent calls of a plugin in the window', () => {
-  const ask = (agent: AgentHost) =>
-    agent.ask({
-      question: 'Quote the note',
-      focus: 'Journal/Garden.md',
-      conversation: 'c1',
-      signal: new AbortController().signal,
-    })
-
-  const createContext = (permissions: string[]) => {
-    const queries: string[] = []
-    const markdownInputs: string[] = []
-    const baseAgent = createMockAgentHost()
-    const agent: AgentHost = {
-      ...baseAgent,
-      ask: (query) => {
-        queries.push(query.question)
-        return baseAgent.ask(query)
-      },
-      resolveLinks: async (markdown: string) => {
-        markdownInputs.push(markdown)
-        return []
-      },
-    }
-    const { host } = createShellHost(agent)
-    const context = host.createContext(
+describe('the relationships of the window', () => {
+  it('refuses a plugin without vault:read the wikilinks of a text', async () => {
+    const context = createShellHost().host.createContext(
       'md.numen.example',
-      createMockManifest('md.numen.example', { name: 'Example', permissions }),
+      createMockManifest('md.numen.example', { name: 'Example', permissions: [] }),
     )
-    return {
-      queries,
-      getFinished: () => baseAgent.getFinished(),
-      markdownInputs,
-      agentOfPlugin: context.work.agent!,
-    }
-  }
 
-  it('refuses the agent to a plugin without vault:write to ask', () => {
-    const { queries, agentOfPlugin } = createContext([])
-
-    expect(() => ask(agentOfPlugin)).toThrow(/vault:write/)
-    expect(queries).toStrictEqual([])
-  })
-
-  it('refuses the agent to a plugin without vault:write to finish', async () => {
-    const { getFinished, agentOfPlugin } = createContext([])
-
-    await expect(agentOfPlugin.finish('c1')).rejects.toThrow(/vault:write/)
-    expect(getFinished()).toStrictEqual([])
-  })
-
-  it('refuses the agent to a plugin without vault:read to resolve links', async () => {
-    const { markdownInputs, agentOfPlugin } = createContext([])
-
-    await expect(agentOfPlugin.resolveLinks('[[Garden]]')).rejects.toThrow(/vault:read/)
-    expect(markdownInputs).toStrictEqual([])
-  })
-
-  it('refuses the agent, which can write the vault, to a plugin with vault:read only to ask', () => {
-    const { queries, agentOfPlugin } = createContext(['vault:read'])
-
-    expect(() => ask(agentOfPlugin)).toThrow(/vault:write/)
-    expect(queries).toStrictEqual([])
-  })
-
-  it('refuses the agent to a plugin that has no manifest', () => {
-    const { host } = createShellHost(createMockAgentHost())
-    const context = host.createContext('md.numen.example')
-
-    expect(() => ask(context.work.agent!)).toThrow(/vault:write/)
-  })
-
-  it('lets a plugin with vault:write ask the agent', () => {
-    const { queries, agentOfPlugin } = createContext(['vault:write'])
-
-    ask(agentOfPlugin)
-
-    expect(queries).toStrictEqual(['Quote the note'])
-  })
-
-  it('lets a plugin with vault:read and vault:write finish a conversation and resolve links', async () => {
-    const { getFinished, markdownInputs, agentOfPlugin } = createContext([
-      'vault:read',
-      'vault:write',
-    ])
-
-    await agentOfPlugin.finish('c1')
-    await agentOfPlugin.resolveLinks('[[Garden]]')
-
-    expect(getFinished()).toStrictEqual(['c1'])
-    expect(markdownInputs).toStrictEqual(['[[Garden]]'])
+    await expect(context.vault.relations?.resolveLinks('[[Garden]]')).rejects.toThrow(/vault:read/)
   })
 })

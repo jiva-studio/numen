@@ -39,6 +39,7 @@ function create(
   const windowValues: Record<string, boolean> = {}
   const reportSlotIssue = vi.fn()
   const host = createPluginHost({
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),

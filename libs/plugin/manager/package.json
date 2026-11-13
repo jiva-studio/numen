@@ -19,7 +19,8 @@
     "vue": "^3.5.44"
   },
   "dependencies": {
-    "@numen/ui": "*"
+    "@numen/ui": "*",
+    "@lucide/vue": "^1.66.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

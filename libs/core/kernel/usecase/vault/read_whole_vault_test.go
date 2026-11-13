@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -51,7 +52,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -59,7 +60,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	notes := scanner(readers, db)
 	books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
 	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
-	embed.Embedder = pointing{}
+	embed.Source = sourcefake.Wrap(pointing{})
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	if _, err := making.Execute(t.Context(), v, indexing.Reporting{
@@ -112,14 +113,14 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
 	notes := scanner(readers, db)
 	books := filetext.NewIndex(refusing{}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: refusing{}})
 	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
-	embed.Embedder = unwilling{}
+	embed.Source = sourcefake.Wrap(unwilling{})
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
@@ -142,7 +143,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	v, readers := vaultAt(t, vaultfixture.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -151,7 +152,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	books := filetext.NewIndex(timedOut{limit: limitCtx}, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: timedOut{limit: limitCtx}})
 	counted := &counting{VaultReaders: readers}
 	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources())
-	embed.Embedder = unwilling{}
+	embed.Source = sourcefake.Wrap(unwilling{})
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(limitCtx, v, indexing.Reporting{})
@@ -175,8 +176,8 @@ const width = 1024
 // pointing answers every text with one direction.
 type pointing struct{}
 
-func (pointing) GetModel() embedding.Model {
-	return embedding.Model{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+func (pointing) Describe() searchsource.Description {
+	return searchsource.Description{Name: "test", Width: width, SourceRecipe: "mean"}
 }
 
 func (pointing) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -194,8 +195,8 @@ func (pointing) Close() error { return nil }
 // not there looks like from here.
 type unwilling struct{}
 
-func (unwilling) GetModel() embedding.Model {
-	return embedding.Model{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+func (unwilling) Describe() searchsource.Description {
+	return searchsource.Description{Name: "test", Width: width, SourceRecipe: "mean"}
 }
 
 func (unwilling) Embed(context.Context, []string) ([][]float32, error) {

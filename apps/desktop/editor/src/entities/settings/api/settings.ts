@@ -3,29 +3,17 @@
  * operations on a plugin that belong to its page. Each answer is mapped into the types of this
  * entity.
  */
-import { MODEL_PRESENCE, type ModelPresenceCode } from '@numen/core-client'
+import { PLUGIN_CONTRIBUTION_KIND, type PluginContributionKindValue } from '@numen/core-client'
 import { settingsService } from '@/shared/api/clients'
 import type { JsonValue } from '@/shared/api/json'
 import type {
   Configuration,
+  PluginContribution,
+  PluginContributionKind,
   PluginSettingCondition,
   PluginSettingInfo,
-  Presence,
-  SecretMenu,
-  SecretSection,
   SettingEdit,
 } from '../lib/configuration'
-
-/**
- * What a model's files are on this machine, in the words the window uses. Keyed by the schema, so
- * a presence added to it has to be given a word here before this compiles.
- */
-const PRESENCE: Record<ModelPresenceCode, Presence> = {
-  [MODEL_PRESENCE.UNSPECIFIED]: 'nothing to fetch',
-  [MODEL_PRESENCE.PRESENT]: 'present',
-  [MODEL_PRESENCE.NOT_FETCHED]: 'not fetched',
-  [MODEL_PRESENCE.NOTHING_TO_FETCH]: 'nothing to fetch',
-}
 
 const readOption = (one: { value: string; title: string; detail: string; when: string }) => ({
   value: one.value,
@@ -42,42 +30,46 @@ const readCondition = (
 type ServedSettings = Awaited<ReturnType<typeof settingsService.getSettings>>
 type ServedPlugin = NonNullable<ServedSettings['plugins']>[number]
 type ServedSetting = NonNullable<ServedPlugin['settings']>[number]
+type ServedContribution = NonNullable<ServedPlugin['contributions']>[number]
 
-type ServedSection = NonNullable<ServedSettings['secretSections']>[number]
-type ServedMenu = NonNullable<ServedSettings['secretMenus']>[number]
+type ContributionKinds = Record<PluginContributionKindValue, PluginContributionKind | null>
 
-const readSecretSections = (sections: readonly ServedSection[]): readonly SecretSection[] =>
-  sections.map((section) => ({
-    group: section.group,
-    isAsked: section.isAsked,
-    secrets: section.secrets.map((one) => ({
-      id: one.id,
-      name: one.name,
-      group: one.group,
-      allowed: one.allowed.map((entry) => ({
-        pluginId: entry.pluginId,
-        name: entry.name,
-        group: entry.group,
-      })),
-    })),
-  }))
-
-const readSecretMenus = (
-  menus: readonly ServedMenu[],
-  sections: readonly ServedSection[],
-): readonly SecretMenu[] => {
-  const byId = new Map(
-    readSecretSections(sections)
-      .flatMap((one) => one.secrets)
-      .map((one) => [one.id, one]),
-  )
-  return menus.map((menu) => ({
-    pluginId: menu.pluginId,
-    name: menu.name,
-    group: menu.group,
-    secrets: menu.secretIds.flatMap((id) => byId.get(id) ?? []),
-  }))
+const CONTRIBUTION_KINDS: Readonly<ContributionKinds> = {
+  [PLUGIN_CONTRIBUTION_KIND.UNSPECIFIED]: null,
+  [PLUGIN_CONTRIBUTION_KIND.COMMANDS]: 'commands',
+  [PLUGIN_CONTRIBUTION_KIND.KEYBINDINGS]: 'keybindings',
+  [PLUGIN_CONTRIBUTION_KIND.TAB_KINDS]: 'tabKinds',
+  [PLUGIN_CONTRIBUTION_KIND.READERS]: 'readers',
+  [PLUGIN_CONTRIBUTION_KIND.HANDLERS]: 'handlers',
+  [PLUGIN_CONTRIBUTION_KIND.TRIGGERS]: 'triggers',
+  [PLUGIN_CONTRIBUTION_KIND.TEXT_KINDS]: 'textKinds',
+  [PLUGIN_CONTRIBUTION_KIND.NOTE_TYPES]: 'noteTypes',
+  [PLUGIN_CONTRIBUTION_KIND.THEMES]: 'themes',
+  [PLUGIN_CONTRIBUTION_KIND.SLOTS]: 'slots',
+  [PLUGIN_CONTRIBUTION_KIND.LISTENERS]: 'listeners',
+  [PLUGIN_CONTRIBUTION_KIND.VIEW_CAPABILITIES]: 'viewCapabilities',
+  [PLUGIN_CONTRIBUTION_KIND.DROP_HANDLERS]: 'dropHandlers',
+  [PLUGIN_CONTRIBUTION_KIND.FRAME_ORIGINS]: 'frameOrigins',
+  [PLUGIN_CONTRIBUTION_KIND.CONNECTION_TYPES]: 'connectionTypes',
+  [PLUGIN_CONTRIBUTION_KIND.OPERATIONS]: 'operations',
+  [PLUGIN_CONTRIBUTION_KIND.PERMISSIONS]: 'permissions',
+  [PLUGIN_CONTRIBUTION_KIND.DEPENDENCIES]: 'dependencies',
+  [PLUGIN_CONTRIBUTION_KIND.SERVICES]: 'services',
+  [PLUGIN_CONTRIBUTION_KIND.CAPABILITIES]: 'capabilities',
+  [PLUGIN_CONTRIBUTION_KIND.ACTIVATION_EVENTS]: 'activationEvents',
 }
+
+const readContributionItem = (item: ServedContribution['items'][number]) => ({
+  text: item.text,
+  detail: item.detail,
+  keys: item.keys,
+})
+
+const readContributions = (served: readonly ServedContribution[]): readonly PluginContribution[] =>
+  served.flatMap((one) => {
+    const kind = CONTRIBUTION_KINDS[one.kind]
+    return kind === null ? [] : [{ kind, items: one.items.map(readContributionItem) }]
+  })
 
 const readJson = (text: string): JsonValue | undefined => {
   // Stryker disable next-line ConditionalExpression: empty text fails JSON.parse and leaves the value undefined
@@ -98,6 +90,7 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
     type: s.type as PluginSettingInfo['type'],
     title: s.title,
     description: s.description,
+    ...(s.details ? { details: s.details } : {}),
     default: defaultValue,
     palette: s.palette,
     ...(s.icon ? { icon: s.icon } : {}),
@@ -118,6 +111,8 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
     ...(s.multiple ? { multiple: true } : {}),
     ...(s.preview ? { preview: true } : {}),
     ...(s.optionsFrom ? { optionsFrom: s.optionsFrom } : {}),
+    ...(s.operations.length > 0 ? { operations: s.operations } : {}),
+    ...(s.discover ? { discover: true } : {}),
     min: s.min,
     max: s.max,
     step: s.step,
@@ -127,23 +122,12 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
   }
 }
 
-/** Every setting currently, and the models the settings offer. */
+/** Every setting currently. */
 export const getSettings = async (): Promise<Configuration> => {
   const answer = await settingsService.getSettings({})
   return {
     written: answer.written,
     path: answer.path,
-    models: answer.models.map((one) => ({
-      namedAt: one.namedAt,
-      name: one.name,
-      title: one.title,
-      group: one.group,
-      isDefault: one.isDefault,
-      writes: one.writes.map((w) => ({ at: w.at, value: w.value })),
-      presence: PRESENCE[one.presence],
-      reasoningLevels: one.reasoningLevels.map((l) => ({ name: l.name, title: l.title })),
-      defaultReasoning: one.defaultReasoning,
-    })),
     plugins: answer.plugins.map((p) => ({
       id: p.id,
       name: p.name,
@@ -151,32 +135,15 @@ export const getSettings = async (): Promise<Configuration> => {
       description: p.description,
       isActive: p.isActive,
       capabilities: p.capabilities,
-      secrets: p.secrets.map((one) => ({
-        name: one.name,
-        title: one.title || one.name,
-        description: one.description,
-        group: one.group,
-        when: readCondition(one.when),
-      })),
       hasFrontend: p.hasFrontend,
       hasBackend: p.hasBackend,
       readers: p.readers.map((one) => ({ id: one.id, extensions: one.extensions })),
       settingsViews: p.settingsViews.map((one) => ({ id: one.id, title: one.title })),
-      ...(p.failure
-        ? {
-            failure: {
-              reason: p.failure.reason,
-              detail: p.failure.detail,
-              failedAt: Number(p.failure.failedAtUnixMs),
-            },
-          }
-        : {}),
+      contributions: readContributions(p.contributions),
+      isOffByDefault: p.isOffByDefault,
       settings: p.settings.map(readPluginSetting),
     })),
     app: answer.app.map(readPluginSetting),
-    secretSections: readSecretSections(answer.secretSections),
-    secretMenus: readSecretMenus(answer.secretMenus, answer.secretSections),
-    credentialsPath: answer.credentialsPath,
   }
 }
 

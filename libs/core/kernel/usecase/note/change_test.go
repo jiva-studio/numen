@@ -46,7 +46,7 @@ func openChangeFixture(t *testing.T, notes map[string]string) changeFixture {
 }
 
 func (c changeFixture) search() search.Search {
-	return search.New(search.Index{Passages: c.db.ChunkSearch()}, vaultreader.Readers{}, nil, nil, nil, nil)
+	return search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, nil, nil, nil)
 }
 
 func (c changeFixture) create() note.Create {

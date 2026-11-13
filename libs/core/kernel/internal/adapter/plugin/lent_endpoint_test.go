@@ -1,10 +1,13 @@
 package plugin_test
 
 import (
+	"io"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
 func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Services, hostendpoint.Callers) {
@@ -12,14 +15,9 @@ func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Se
 	callers := hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation,
 		Lent: services,
-		Dependencies: func() hostendpoint.Dependencies {
-			if registry := host.Services.GetDependencies(); registry != nil {
-				return registry
-			}
-			return nil
-		},
 		Tools: func() hostendpoint.PluginTools {
-			return agenttoolsbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), agenttoolsbridge.Full)
+			toolHost := plugin.NewToolHost(host.Activation, host.Registry)
+			return toolbridge.NewCatalog(toolHost, toolHost, host.Storage, testsupport.NewClock(), io.Discard)
 		},
 	}
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(address, callers))

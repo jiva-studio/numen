@@ -7,6 +7,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -37,8 +38,8 @@ func TestANearestSearchAnswersTheMostSimilarFirst(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"near", "middle", "far"}; !slices.Equal(sources(got), want) {
-		t.Errorf("got %v, want %v", sources(got), want)
+	if want := []string{"near", "middle", "far"}; !slices.Equal(chunksOf(got), want) {
+		t.Errorf("got %v, want %v", chunksOf(got), want)
 	}
 }
 
@@ -58,8 +59,8 @@ func TestANearestSearchKeepsTheCoarseOrderAmongEqualSimilarities(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(sources(got), want) {
-		t.Errorf("got %v, want the order of the coarse pass %v", sources(got), want)
+	if !slices.Equal(chunksOf(got), want) {
+		t.Errorf("got %v, want the order of the coarse pass %v", chunksOf(got), want)
 	}
 }
 
@@ -73,12 +74,12 @@ func TestANearestSearchKeepsAChunkAtTheFloorAndDropsOneBelowIt(t *testing.T) {
 	q.Floor = exact
 	got, err := search.NewFindNearest(f).Execute(t.Context(), nearestVault, q)
 	if err != nil || len(got) != 1 {
-		t.Errorf("at the floor got %v, %v, want the chunk", sources(got), err)
+		t.Errorf("at the floor got %v, %v, want the chunk", chunksOf(got), err)
 	}
 	q.Floor = math.Nextafter(exact, 2)
 	got, err = search.NewFindNearest(f).Execute(t.Context(), nearestVault, q)
 	if err != nil || len(got) != 0 {
-		t.Errorf("above the floor got %v, %v, want nothing", sources(got), err)
+		t.Errorf("above the floor got %v, %v, want nothing", chunksOf(got), err)
 	}
 }
 
@@ -109,8 +110,8 @@ func TestANearestSearchReturnsAtMostTheLimitAndPassesTheKinds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"c0", "c1"}; !slices.Equal(sources(got), want) {
-		t.Errorf("got %v, want %v", sources(got), want)
+	if want := []string{"c0", "c1"}; !slices.Equal(chunksOf(got), want) {
+		t.Errorf("got %v, want %v", chunksOf(got), want)
 	}
 	if len(f.stored) != 1 || !slices.Equal(f.stored[0].Kinds, q.Kinds) || f.stored[0].Recipe != "model" {
 		t.Errorf("the vectors were asked for as %+v, want the kinds and the recipe of the query", f.stored)
@@ -204,4 +205,12 @@ func TestTheBestSimilarityReportsWhatTheIndexCannotRead(t *testing.T) {
 	if _, err := search.NewGetBestSimilarity(f).Execute(t.Context(), nearestVault, "model", newVector(+1)); !errors.Is(err, broken) {
 		t.Errorf("vectors: got %v", err)
 	}
+}
+
+func chunksOf(matches []searchsource.Match) []string {
+	out := make([]string, 0, len(matches))
+	for _, one := range matches {
+		out = append(out, string(one.ChunkID))
+	}
+	return out
 }

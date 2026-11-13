@@ -22,7 +22,7 @@ const render = (args: Knobs) => ({
   components: { PathField, SettingRow },
   setup: () => ({ args, words: WORDS, onChoose, onClear }),
   template: `
-    <div class="numen" style="container-type:inline-size;inline-size:48rem;padding:1rem;background:var(--numen-surface);--settings-choice:16rem">
+    <div class="numen" style="container:settings / inline-size;inline-size:48rem;padding:1rem;background:var(--numen-surface)">
       <SettingRow v-slot="{ labelledBy }" at="path" name="Programs" detail="The programs this plugin runs.">
         <PathField
           :path="args.path"

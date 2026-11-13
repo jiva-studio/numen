@@ -95,8 +95,8 @@ var storePort vaultport.IndexClaim
 
 func mount() {
 	var _ noteport.NoteRefs = (*sound)(nil)
-	var agentPort agentport.Agent
-	_, _ = storePort, agentPort
+	var sourcePort searchport.Source
+	_, _ = storePort, sourcePort
 }
 `, 0)
 	if err != nil {

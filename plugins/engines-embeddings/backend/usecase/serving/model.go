@@ -6,7 +6,6 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/chunking"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/providers"
 )
 
 func (s *Server) refreshModelInfoLocked() {
@@ -18,18 +17,10 @@ func (s *Server) refreshModelIdentityLocked() {
 	if s.isMock {
 		return
 	}
-	keep := s.modelInfo
-	if s.provider != providers.Local && s.remoteModel != "" {
-		profile := s.profiles.GetRemote(s.remoteModel)
-		s.modelInfo = model.ModelInfo{
-			Name: s.remoteModel, Dimensions: profile.Dimensions, MaxTokens: profile.GetTokens(), Pooling: profile.Pooling,
-			From: keep.From, Concurrency: keep.Concurrency, FloorHint: profile.FloorHint, MinChunkLength: keep.MinChunkLength,
-			ChunkTokens: chunking.ClampTokens(s.chunkTokens, profile.GetTokens()),
-			Handling:    profile.GetHandling(),
-		}
-		s.env.GetOverrides().ApplyToInfo(&s.modelInfo)
+	if s.isConnectionLocked() {
 		return
 	}
+	keep := s.modelInfo
 	s.modelInfo = s.localInfo
 	s.modelInfo.Concurrency = keep.Concurrency
 	s.modelInfo.MinChunkLength = keep.MinChunkLength
@@ -71,7 +62,7 @@ func (s *Server) resolveLocalModel(name string) (model.ModelInfo, model.LocalMod
 	if name == "" {
 		name = overrides.Model
 	}
-	if name == "" || s.profiles.IsRemote(name) {
+	if name == "" {
 		name = model.DefaultModel
 	}
 	profile, err := s.profiles.GetLocal(name)

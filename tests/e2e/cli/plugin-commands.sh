@@ -23,7 +23,7 @@ cp "$repo/tests/e2e/desktop/fixtures/flywheel.pdf" "$work/vault/books/flywheel.p
 # The home, config and cache folders are the run's own. On mock models the host hands each
 # dependency a plugin declares as an empty placeholder, so nothing is fetched.
 export HOME="$work" XDG_CONFIG_HOME="$work/config" XDG_CACHE_HOME="$work/cache"
-export NUMEN_MOCK_ML=true NUMEN_PLUGINS_PATH="$repo/plugins"
+export NUMEN_TEST_MOCK_ML=true NUMEN_PLUGINS_PATH="$repo/plugins"
 export HTTP_PROXY="http://127.0.0.1:$pages_port" NO_PROXY=127.0.0.1
 
 # The address the import fetches, served by a local stand-in through the proxy.
@@ -56,7 +56,7 @@ cli vault add "$work/vault" --name talks >/dev/null
 expect "numen-cli app:file.createText <vault> <file>" help
 expect "transcribing talks/lecture.wav" app:file.createText talks talks/lecture.wav
 expect "recognizing books/flywheel.pdf" app:file.createText talks books/flywheel.pdf --plugin md.numen.engines.ocr
-expect "http---numen.dev-.md" app:link.import talks --address http://numen.dev/
+expect "http---numen.dev-.md" link.import talks --address http://numen.dev/
 expect "Fetching the text of http---numen.dev-.md" app:file.createText talks http---numen.dev-.md
 expect "proofread 1 lines of talks/lecture.wav" proofreading.create talks talks/lecture.wav
 expect "3 sources: 3 read" scan talks

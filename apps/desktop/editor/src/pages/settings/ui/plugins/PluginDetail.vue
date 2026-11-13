@@ -1,25 +1,35 @@
 <script setup lang="ts">
 /**
- * The page of one plugin in the settings tab: the plugin manager's page, with the declarative
- * settings and secrets drawn in its slot.
+ * The page of one plugin in the settings tab: the plugin manager's page, with its health items and
+ * the declarative settings drawn in its slot, the settings the fixes of the items name marked.
  */
+import { computed } from 'vue'
 import { PluginDetail as PluginDetailView } from '@numen/plugin-manager'
 import type { PluginInfo } from '@/entities/settings'
 import { usePluginDetail, usePluginSwitch } from '../../model/usePluginDetail'
-import type { InstallationPlugin, InstallationSettings, SecretChoices } from '../../types'
+import type {
+  InstallationConnections,
+  InstallationPlugin,
+  InstallationSettings,
+  MarkedSetting,
+} from '../../types'
+import PluginConnectionSections from './PluginConnectionSections.vue'
 import PluginFields from './PluginFields.vue'
+import { getManagedHealth, getMarkedSettings } from '../../lib/pluginHealth'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   settings: InstallationSettings
   manager: InstallationPlugin
-  choices: SecretChoices
+  connections: InstallationConnections
   plugin: PluginInfo
+  markedSetting?: MarkedSetting | null
 }>()
 
 const emit = defineEmits<{
   (e: 'back'): void
-  (e: 'open-secrets'): void
+  (e: 'open-category', category: string): void
+  (e: 'open-connections'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -28,13 +38,28 @@ const detailDeps = {
   getManager: () => props.manager,
   getPlugin: () => props.plugin,
 }
-const { managed, hasSettings, fileCount, deleteProblem, readmeText, deleteData } =
+const { managed, hasSettings, isApple, fileCount, deleteProblem, readmeText, deleteData } =
   usePluginDetail(detailDeps)
 const { isEnabled, isPending, setEnabled, retry } = usePluginSwitch(detailDeps)
+const items = computed(() =>
+  props.manager.health.items.value.filter((item) => item.pluginId === props.plugin.id),
+)
+const health = computed(() =>
+  getManagedHealth(items.value, props.plugin.id, props.manager.health.canRunCommand),
+)
+const marked = computed(() => [
+  ...getMarkedSettings(items.value, props.plugin.id),
+  ...(props.markedSetting ? [props.markedSetting.setting] : []),
+])
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
   emit('back')
+}
+
+function onRunAction(key: string): void {
+  const action = items.value.find((item) => item.key === key)?.action
+  if (action) props.manager.health.runCommand(action.command, action.values)
 }
 </script>
 
@@ -49,19 +74,32 @@ function onBack(): void {
     :problem="deleteProblem"
     :can-install="false"
     :has-settings="hasSettings"
+    :health="health"
+    :is-apple="isApple"
     @back="onBack"
+    @open-category="(category) => emit('open-category', category)"
     @toggle-enabled="setEnabled"
     @retry="retry"
     @delete-data="deleteData"
+    @run-action="onRunAction"
   >
     <template #settings>
       <PluginFields
         v-if="hasSettings"
         :settings="props.settings"
         :host="props.manager"
-        :choices="props.choices"
         :plugin="props.plugin"
-        @open-secrets="emit('open-secrets')"
+        :marked="marked"
+        :focused="props.markedSetting ?? null"
+      />
+    </template>
+    <template #sections>
+      <PluginConnectionSections
+        :settings="props.settings"
+        :host="props.manager"
+        :connections="props.connections"
+        :plugin="props.plugin"
+        @open-connections="emit('open-connections')"
       />
     </template>
   </PluginDetailView>

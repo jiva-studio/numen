@@ -7,13 +7,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import {
-  getAssetUrl,
-  getBytesQuery,
-  retryWhileBusy,
-  formatFingerprint,
-  MAX_BUSY_RETRIES,
-} from './answers'
+import { getAssetUrl, getBytesQuery, retryWhileBusy, formatFingerprint } from './answers'
 
 describe('the file an answer came out of', () => {
   it('arrives back out as the size and modification time it went in with', () => {
@@ -84,11 +78,7 @@ describe('waiting for an answer', () => {
     await vi.advanceTimersByTimeAsync(10_000)
 
     await rejection
-    expect(ask).toHaveBeenCalledTimes(MAX_BUSY_RETRIES + 1)
-  })
-
-  it('defines the maximum retry limit as 3', () => {
-    expect(MAX_BUSY_RETRIES).toBe(3)
+    expect(ask).toHaveBeenCalledTimes(4)
   })
 
   it('does not ask again after any other error', async () => {

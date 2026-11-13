@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -26,8 +26,8 @@ type windowWiring struct {
 	a         pluginsWiring
 	ports     registry.Ports
 	db        *Index
-	embedder  embeddingport.Embedder
-	asking    embeddingport.Embedder
+	embedder  searchsourceport.Source
+	asking    searchsourceport.Source
 	inst      *editor.Installation
 	state     *editor.State
 	kinds     tabKinds
@@ -140,17 +140,21 @@ func buildWindow(
 	// A request is one task regardless of how it was issued. The list is created
 	// before any component that reports into it.
 	tasks := run.NewTasks()
-	reportPluginFailures(a, tasks)
+	signalFailureClears(a)
 	reportDependencies(a, tasks)
 	setPluginWork(a, tasks, &run.Lock{})
+	setModelCalls(a, run.NewConnectionNoticeTasks(tasks).Execute)
 
 	// Opened once, for as long as the window is. A local model is fetched and
-	// compiled behind this, so the window is drawn while it arrives.
-	embedder, asking, closeEmbedder, why := searchEmbedders(a.search, ctx, tasks)
+	// compiled behind this, so the window is drawn while it arrives. A source that cannot describe itself
+	// yet is opened all the same: the search item of its plugin shows why, and the source joins search and
+	// indexing once a configuration of its plugin lets it describe itself.
+	embedder, asking, closeEmbedder, why := searchSources(a.search, ctx)
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(a, event) })
 	state.SetIndexing(embedding)
 	indexer := newIndexWorker(a, db, state, embedding, opening.Out)
+	state.Writes.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
@@ -165,8 +169,7 @@ func buildWindow(
 	inst := editor.NewInstallation(state, editor.Lifecycle{
 		Start: session.cases.start, Show: session.cases.show, OpenPlugin: session.cases.openPlugin,
 		Flush: session.cases.flush, Close: session.cases.close,
-		NoteWritten: indexer.WakeNotes,
-	}, session.tools.importFiles, opening.Out)
+	}, session.tools.importFiles, getMediaType(a.vault), opening.Out)
 
 	kinds := newTabKinds(a, db)
 	return windowBuilt{
@@ -232,10 +235,12 @@ func mountServices(w *windowWiring) {
 	mountVaults(w)
 	mountSettings(w)
 	mountMedia(w)
-	mountAgent(w)
 	mountCommand(w)
+	mountConnection(w)
+	mountConnectionCall(w)
 	mountText(w)
 	mountPlugin(w)
+	mountHealth(w)
 	mountCatalog(w)
 }
 

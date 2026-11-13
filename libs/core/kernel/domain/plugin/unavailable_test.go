@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -26,9 +25,6 @@ func TestUnavailableErrorIsErrUnavailable(t *testing.T) {
 		}
 		if !errors.Is(tc.err, domain.ErrUnavailable) {
 			t.Errorf("%q is not ErrUnavailable", tc.want)
-		}
-		if errors.Is(tc.err, completion.ErrNoRoute) {
-			t.Errorf("%q is ErrNoRoute", tc.want)
 		}
 	}
 	if !errors.Is(&UnavailableError{Reason: Failed, Err: cause}, cause) {

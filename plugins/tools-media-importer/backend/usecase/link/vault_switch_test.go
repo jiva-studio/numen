@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
@@ -99,7 +98,7 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 			other := mills.Store().With(id)
 			return link.Folder{Files: other, Writer: other}
 		},
-		Texts: textsOf(texts), Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0)),
+		Texts: textsOf(texts), Queue: hosttest.NewQueue(), Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
 	}, func() link.Fetcher { return fetched }, func() link.Settings { return link.Settings{} })
 	t.Cleanup(links.Close)
 	made, err := links.Create(t.Context(), "", "", videoAddress)

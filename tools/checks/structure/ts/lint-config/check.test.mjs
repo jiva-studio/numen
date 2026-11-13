@@ -81,7 +81,7 @@ test("packages are derived from eslint configs and package.json files", () => {
     "plugins/.example/eslint.config.js",
     "plugins/.example/package.json",
     "plugins/.draft/package.json",
-    "plugins/agents-claude/Makefile",
+    "plugins/agents-acp/Makefile",
   ];
   assert.deepEqual(listLintedPackages(tracked), [
     { dir: "apps/landing", hasConfig: true },

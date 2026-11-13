@@ -1,10 +1,11 @@
-/** The person at the window as a whole: its keys, its title bar, its status bar and its list of background tasks. */
+/** The person at the window as a whole: its keys, its title bar, its status bar, its list of background tasks and its dialogs. */
 import { expect, type Locator } from 'playwright/test'
+import { Question } from './components/Question.js'
 import { StatusBar } from './components/StatusBar.js'
 import { TaskList } from './components/TaskList.js'
 import { TitleBar } from './components/TitleBar.js'
 import { writeSetting } from '../../../e2e/desktop/tests/support/vault.js'
-import { parseKeys } from './rules.js'
+import { escapeRegExp, parseKeys } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 const UPDATER = 'md.numen.tools.updater'
@@ -24,6 +25,10 @@ export class WindowDriver {
 
   private get statusBar(): StatusBar {
     return new StatusBar(this.scenario.page)
+  }
+
+  private get question(): Question {
+    return new Question(this.scenario.page)
   }
 
   private get taskList(): TaskList {
@@ -132,5 +137,24 @@ export class WindowDriver {
   /** Whether a task of the list failed; the list stays as it was found. */
   async hasFailedTask(): Promise<boolean> {
     return this.taskList.hasFailed()
+  }
+
+  /** Answers the open question whose text contains the part. */
+  async answerQuestion(button: string, part: string): Promise<void> {
+    await this.question.answer(button, new RegExp(escapeRegExp(part)))
+  }
+
+  /** Answers the open question whose text is the text, line breaks and spaces aside. */
+  async answerWholeQuestion(button: string, text: string): Promise<void> {
+    await this.question.answer(button, text.replace(/\s+/g, ' ').trim())
+  }
+
+  /** The open dialog has the text neither in what it reads nor in a field. */
+  async expectDialogWithout(text: string): Promise<void> {
+    const dialog = this.scenario.page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    await expect(dialog).not.toContainText(text)
+    const values = await dialog.locator('input, textarea').evaluateAll((fields) => fields.map((field) => (field as HTMLInputElement).value))
+    expect(values).not.toContain(text)
   }
 }

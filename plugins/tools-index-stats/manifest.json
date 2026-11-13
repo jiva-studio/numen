@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.index.stats",
   "name": "Index stats",
-  "version": "2026.11.11",
+  "version": "2026.11.12",
   "protocol": 1,
   "description": "Shows in the title bar how many vectors the search index holds",
   "targets": ["desktop.editor"],
@@ -11,7 +11,7 @@
       { "slot": "titleBar.status", "view": "stats", "order": 10, "when": "window.isVaultOpen" }
     ]
   },
-  "permissions": ["index:read"],
+  "permissions": ["index:read", "vault:read"],
   "services": ["md.numen.tools.index.stats"],
   "backend": { "entrypoint": "bin/tools-index-stats" },
   "frontend": {}

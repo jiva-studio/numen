@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.flashcards.studio",
   "name": "Flashcards Studio",
-  "version": "2026.11.17",
+  "version": "2026.11.18",
   "protocol": 1,
   "description": "Flashcard deck editor, card template designer, and spaced-repetition review",
   "capabilities": ["tools"],
@@ -130,8 +130,16 @@
       "key": "dayStartTime",
       "type": "string",
       "title": "Day starts at",
-      "description": "Time a review day starts. Answers before it count toward the day before. HH:MM from 00:00 to 12:00; other values use 04:00.",
+      "description": "Time a review day starts, HH:MM up to 12:00",
+      "details": "The time a review day starts, as HH:MM up to 12:00. Any other value uses 04:00.",
       "default": "04:00"
+    },
+    {
+      "key": "agentConnections",
+      "type": "connections",
+      "title": "Agents",
+      "operations": ["acp.task"],
+      "max": 5
     }
   ],
   "backend": {

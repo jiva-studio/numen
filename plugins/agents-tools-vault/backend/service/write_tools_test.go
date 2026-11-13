@@ -22,27 +22,24 @@ func getWriteToolArguments() map[string]string {
 	}
 }
 
-func TestWriteToolsAreOnTheFullServerOnly(t *testing.T) {
+func TestWriteToolsReadAndWriteTheVault(t *testing.T) {
 	_, _, registry := newTwoVaults(t)
 	infos, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
-	servers := map[string][]tools.Server{}
+	effects := map[string]tools.Effect{}
 	for _, info := range infos.Tools {
-		servers[info.GetName()] = info.GetServers()
+		effects[info.GetName()] = info.GetEffect()
 	}
 	for name := range getWriteToolArguments() {
-		got, ok := servers[name]
+		got, ok := effects[name]
 		if !ok {
 			t.Errorf("the tool %s is not listed", name)
 			continue
 		}
-		if !slices.Contains(got, tools.Full) {
-			t.Errorf("the tool %s is not on the Full server: %v", name, got)
-		}
-		if slices.Contains(got, tools.Reading) {
-			t.Errorf("the tool %s is on the Reading server: %v", name, got)
+		if got != tools.ReadWrite {
+			t.Errorf("the tool %s has the effect %v, want read-write", name, got)
 		}
 	}
 }

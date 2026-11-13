@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+import { isDeepStrictEqual } from 'node:util'
 import { parse as parseYaml } from 'yaml'
 import { listPluginNames, readPluginManifests } from '../../../../shared/manifests.mjs'
 import { findPluginCommandMismatches } from '../../../../shared/registrations.mjs'
@@ -51,7 +52,8 @@ export function verifyPluginsStatic() {
 }
 
 /** The packages a plugin depends on; their `package.json` `exports` declare the entries a plugin may name. */
-const PLUGIN_PACKAGES = ['@numen/plugin-sdk', '@numen/ui']
+const SDK_PACKAGE = '@numen/plugin-sdk'
+const PLUGIN_PACKAGES = [SDK_PACKAGE, '@numen/ui']
 
 /** A build configuration file, which may name the build entries a package declares. */
 const BUILD_CONFIGURATION = /\.config\.[cm]?[jt]s$/
@@ -60,10 +62,17 @@ const BUILD_CONFIGURATION = /\.config\.[cm]?[jt]s$/
 const TEST_ENTRY = './testing'
 
 /**
+ * The entry of the contracts between plugins. The main entry of the SDK may not re-export them (the
+ * contracts-imports check keeps every library without them), so a plugin names this entry.
+ */
+const CONTRACTS_ENTRY = './contracts'
+
+/**
  * Lists the specifiers of `files` that reach into a plugin package beyond its main entry. `files`
  * holds `{ file, literals }` with each literal as `{ line, value }`, and `exportsByPackage` maps a
  * package name to the keys and targets of its `exports`. A deep path passes when the package
- * declares it and it is the test entry, a stylesheet, or named from a build configuration file.
+ * declares it and it is the test entry, the contracts entry, a stylesheet, or named from a build
+ * configuration file.
  */
 export function findPluginEntryViolations(files, exportsByPackage) {
   const found = []
@@ -84,6 +93,7 @@ export function findPluginEntryViolations(files, exportsByPackage) {
       const targetPath = typeof target === 'string' ? target : JSON.stringify(target)
       const isAllowed =
         entry === TEST_ENTRY ||
+        (entry === CONTRACTS_ENTRY && name === SDK_PACKAGE) ||
         /\.css\b/.test(targetPath) ||
         BUILD_CONFIGURATION.test(path.basename(file))
       if (!isAllowed)
@@ -109,7 +119,7 @@ export function readPluginPackageExports() {
   return result
 }
 
-/** A plugin imports `@numen/plugin-sdk` and `@numen/ui` through their main entry, and from the test entry, stylesheets and build entries a package declares. */
+/** A plugin imports `@numen/plugin-sdk` and `@numen/ui` through their main entry, and from the test entry, the contracts entry, stylesheets and build entries a package declares. */
 export function verifyPluginsUseMainEntry() {
   const exportsByPackage = readPluginPackageExports()
   for (const name of PLUGIN_PACKAGES)
@@ -135,9 +145,15 @@ export function verifyPluginsUseMainEntry() {
 
 const OUTER_BACKEND_PACKAGES = ['service', 'engine']
 const WIRE_BACKEND_PACKAGE = 'wire'
-const NON_INNER_BACKEND_PACKAGES = ['cmd', ...OUTER_BACKEND_PACKAGES, WIRE_BACKEND_PACKAGE, 'testsupport']
+const NON_INNER_BACKEND_PACKAGES = [
+  'cmd',
+  ...OUTER_BACKEND_PACKAGES,
+  WIRE_BACKEND_PACKAGE,
+  'testsupport',
+]
 
-const isBackendPackageImport = (value, name) => value.endsWith(`/backend/${name}`) || value.includes(`/backend/${name}/`)
+const isBackendPackageImport = (value, name) =>
+  value.endsWith(`/backend/${name}`) || value.includes(`/backend/${name}/`)
 
 /**
  * Finds the imports that run against the layers of a plugin backend: an inner package (below `service` and `wire`)
@@ -153,8 +169,13 @@ export function findPluginBackendLayerInversions(files) {
     const isWire = subpkg === WIRE_BACKEND_PACKAGE
     if (!isWire && NON_INNER_BACKEND_PACKAGES.includes(subpkg)) continue
     const forbidden = isWire
-      ? (value) => OUTER_BACKEND_PACKAGES.some((outer) => isBackendPackageImport(value, outer)) || value.includes('/backend/internal/adapter/')
-      : (value) => [...OUTER_BACKEND_PACKAGES, WIRE_BACKEND_PACKAGE].some((outer) => isBackendPackageImport(value, outer))
+      ? (value) =>
+          OUTER_BACKEND_PACKAGES.some((outer) => isBackendPackageImport(value, outer)) ||
+          value.includes('/backend/internal/adapter/')
+      : (value) =>
+          [...OUTER_BACKEND_PACKAGES, WIRE_BACKEND_PACKAGE].some((outer) =>
+            isBackendPackageImport(value, outer),
+          )
     for (const { line, value } of imports) {
       if (forbidden(value)) {
         found.push({
@@ -233,8 +254,11 @@ export const SERVICE_STANDARD_IMPORTS = [
   'unicode/utf8',
 ]
 
+/** The folder of the Go SDK in the repository. */
+const SDK_GO_DIR = 'libs/plugin/sdk-go'
+
 /** The SDK packages a plugin service may import: every package of the Go SDK. */
-const SDK_GO_MODULE = `${GO_MODULE_ROOT}libs/plugin/sdk-go`
+const SDK_GO_MODULE = `${GO_MODULE_ROOT}${SDK_GO_DIR}`
 
 /** The packages of the plugin's own backend a service may import: its API, domain, use cases, ports and wire. */
 export const SERVICE_OWN_PACKAGES = ['api', 'domain', 'usecase', 'ports', 'wire']
@@ -249,7 +273,9 @@ function isAllowedServiceImport(value, plugin) {
   const own = `${GO_MODULE_ROOT}plugins/${plugin}/backend/`
   if (!value.startsWith(own)) return false
   const inner = value.slice(own.length)
-  return inner.startsWith(SERVICE_OWN_ADAPTERS) || SERVICE_OWN_PACKAGES.includes(inner.split('/')[0])
+  return (
+    inner.startsWith(SERVICE_OWN_ADAPTERS) || SERVICE_OWN_PACKAGES.includes(inner.split('/')[0])
+  )
 }
 
 /**
@@ -277,7 +303,10 @@ export function findServiceImportsOffAllowList(files) {
 
 function listServiceSources() {
   return listShippedFiles(['plugins/*/backend/service/*.go'])
-    .filter((file) => /^plugins\/[^/]+\/backend\/service\/[^/]+\.go$/.test(file) && !file.endsWith('_test.go'))
+    .filter(
+      (file) =>
+        /^plugins\/[^/]+\/backend\/service\/[^/]+\.go$/.test(file) && !file.endsWith('_test.go'),
+    )
     .map((file) => ({
       file,
       imports: getGoReferences(fs.readFileSync(path.join(REPO_ROOT, file), 'utf8')).imports,
@@ -313,14 +342,22 @@ export function findOversizedBackendPackages(files) {
   const byDir = new Map()
   for (const { file, lines } of files) {
     if (lines > MAX_FILE_LINES) {
-      found.push({ file, line: MAX_FILE_LINES + 1, symbol: `file holds ${lines} lines, at most ${MAX_FILE_LINES}` })
+      found.push({
+        file,
+        line: MAX_FILE_LINES + 1,
+        symbol: `file holds ${lines} lines, at most ${MAX_FILE_LINES}`,
+      })
     }
     const dir = path.posix.dirname(file)
     byDir.set(dir, (byDir.get(dir) ?? 0) + lines)
   }
   for (const [dir, lines] of byDir) {
     if (lines > MAX_PACKAGE_LINES) {
-      found.push({ file: dir, line: 1, symbol: `package holds ${lines} non-test lines, at most ${MAX_PACKAGE_LINES}` })
+      found.push({
+        file: dir,
+        line: 1,
+        symbol: `package holds ${lines} non-test lines, at most ${MAX_PACKAGE_LINES}`,
+      })
     }
   }
   return found
@@ -329,7 +366,10 @@ export function findOversizedBackendPackages(files) {
 function listBackendFiles() {
   return listShippedFiles(['plugins/*/backend/**/*.go', 'plugins/*/backend/*.go'])
     .filter((file) => /^plugins\/[^/]+\/backend\//.test(file) && !file.endsWith('_test.go'))
-    .map((file) => ({ file, lines: countLines(fs.readFileSync(path.join(REPO_ROOT, file), 'utf8')) }))
+    .map((file) => ({
+      file,
+      lines: countLines(fs.readFileSync(path.join(REPO_ROOT, file), 'utf8')),
+    }))
 }
 
 function listPluginBackends(files) {
@@ -368,35 +408,68 @@ export function parseEnabledGoLinters(yamlText) {
   return [...(parseYaml(yamlText)?.linters?.enable ?? [])].sort((a, b) => a.localeCompare(b))
 }
 
+/** The linter settings the SDK sets for its own packages: its import rules and import aliases. */
+const SDK_OWN_LINTER_SETTINGS = new Set(['depguard', 'importas'])
+
+/**
+ * Returns a finding for each linter whose settings in `yamlText` differ from those in `rootYamlText`,
+ * leaving out the settings the SDK sets for its own packages.
+ */
+export function findGoLinterSettingsDrift(rootYamlText, yamlText, file) {
+  const rootSettings = parseYaml(rootYamlText)?.linters?.settings ?? {}
+  const settings = parseYaml(yamlText)?.linters?.settings ?? {}
+  const names = [...new Set([...Object.keys(rootSettings), ...Object.keys(settings)])]
+  return names
+    .filter((name) => !SDK_OWN_LINTER_SETTINGS.has(name))
+    .filter((name) => !isDeepStrictEqual(rootSettings[name], settings[name]))
+    .sort((a, b) => a.localeCompare(b))
+    .map((name) => ({
+      file,
+      line: 1,
+      symbol: `settings of linter '${name}' differ from root .golangci.yml`,
+    }))
+}
+
 function findPluginConfigDrift() {
   const found = []
   const exampleDir = path.join(REPO_ROOT, 'plugins/.example')
   const rootGolangci = path.join(REPO_ROOT, '.golangci.yml')
-  const exampleGolangci = path.join(exampleDir, '.golangci.yml')
   const baseEslint = path.join(REPO_ROOT, 'tools/lint-layers/base-eslint.mjs')
   const exampleEslint = path.join(exampleDir, 'eslint.config.js')
 
-  if (fs.existsSync(rootGolangci) && fs.existsSync(exampleGolangci)) {
+  for (const dir of ['plugins/.example', SDK_GO_DIR]) {
+    const golangci = path.join(REPO_ROOT, dir, '.golangci.yml')
+    if (!fs.existsSync(rootGolangci) || !fs.existsSync(golangci)) continue
     const rootLinters = parseEnabledGoLinters(fs.readFileSync(rootGolangci, 'utf8'))
-    const exLinters = parseEnabledGoLinters(fs.readFileSync(exampleGolangci, 'utf8'))
+    const linters = parseEnabledGoLinters(fs.readFileSync(golangci, 'utf8'))
     for (const l of rootLinters) {
-      if (!exLinters.includes(l)) {
+      if (!linters.includes(l)) {
         found.push({
-          file: 'plugins/.example/.golangci.yml',
+          file: `${dir}/.golangci.yml`,
           line: 1,
           symbol: `missing linter '${l}' enabled in root .golangci.yml`,
         })
       }
     }
-    for (const l of exLinters) {
+    for (const l of linters) {
       if (!rootLinters.includes(l)) {
         found.push({
-          file: 'plugins/.example/.golangci.yml',
+          file: `${dir}/.golangci.yml`,
           line: 1,
           symbol: `extra linter '${l}' not in root .golangci.yml`,
         })
       }
     }
+  }
+  const sdkGolangci = path.join(REPO_ROOT, SDK_GO_DIR, '.golangci.yml')
+  if (fs.existsSync(rootGolangci) && fs.existsSync(sdkGolangci)) {
+    found.push(
+      ...findGoLinterSettingsDrift(
+        fs.readFileSync(rootGolangci, 'utf8'),
+        fs.readFileSync(sdkGolangci, 'utf8'),
+        `${SDK_GO_DIR}/.golangci.yml`,
+      ),
+    )
   }
 
   if (fs.existsSync(baseEslint) && fs.existsSync(exampleEslint)) {
@@ -423,7 +496,8 @@ function findPluginConfigDrift() {
     }
     const specifiers = getModuleSpecifiers(exampleEslint, exText)
     // A relative import names a file beside the configuration, which every plugin copies with it.
-    const isBeside = (s) => path.dirname(path.resolve(path.dirname(exampleEslint), s)) === path.dirname(exampleEslint)
+    const isBeside = (s) =>
+      path.dirname(path.resolve(path.dirname(exampleEslint), s)) === path.dirname(exampleEslint)
     if (specifiers.some((s) => (s.startsWith('.') && !isBeside(s)) || s.startsWith('@numen/'))) {
       found.push({
         file: 'plugins/.example/eslint.config.js',
@@ -436,14 +510,19 @@ function findPluginConfigDrift() {
 
   const pluginsDir = path.join(REPO_ROOT, 'plugins')
   const pluginNames = listPluginNames(pluginsDir)
-  const goConfigCopies = [
+  const pluginCopies = [
     'plugins/.example',
-    'libs/plugin/sdk-go',
     ...pluginNames
       .filter((name) => fs.existsSync(path.join(pluginsDir, name, 'go.mod')))
       .map((name) => `plugins/${name}`),
   ]
-  for (const name of ['.golangci.yml', '.golangci-structure.yml']) {
+  // The SDK has a .golangci.yml of its own, whose linters and linter settings
+  // findPluginConfigDrift compares with the root.
+  const copiesByName = {
+    '.golangci.yml': pluginCopies,
+    '.golangci-structure.yml': [...pluginCopies, SDK_GO_DIR],
+  }
+  for (const [name, goConfigCopies] of Object.entries(copiesByName)) {
     const rootFile = path.join(REPO_ROOT, name)
     if (!fs.existsSync(rootFile)) {
       found.push({ file: name, line: 1, symbol: 'the root Go lint configuration is missing' })
@@ -475,7 +554,10 @@ function findPluginConfigDrift() {
 
   const rulesSource = path.join(REPO_ROOT, 'tools/lint-layers/numen-rules.mjs')
   const rulesGolden = path.join(exampleDir, 'numen-rules.mjs')
-  if (!fs.existsSync(rulesGolden) || fs.readFileSync(rulesSource, 'utf8') !== fs.readFileSync(rulesGolden, 'utf8')) {
+  if (
+    !fs.existsSync(rulesGolden) ||
+    fs.readFileSync(rulesSource, 'utf8') !== fs.readFileSync(rulesGolden, 'utf8')
+  ) {
     found.push({
       file: 'plugins/.example/numen-rules.mjs',
       line: 1,
@@ -581,7 +663,8 @@ function listShippedFrontendFiles(files) {
     const match = FRONTEND_FILE.exec(file)
     if (!match) continue
     const parts = match[2].split('/')
-    if (/\.(test|stories)\.ts$/.test(file) || parts.some((one) => SUPPORT_FOLDERS.includes(one))) continue
+    if (/\.(test|stories)\.ts$/.test(file) || parts.some((one) => SUPPORT_FOLDERS.includes(one)))
+      continue
     found.push({ file, plugin: match[1], parts })
   }
   return found
@@ -591,7 +674,8 @@ function listShippedFrontendFiles(files) {
 export function listPluginSlices(files) {
   const slices = new Set()
   for (const { plugin, parts } of listShippedFrontendFiles(files)) {
-    if (parts.length > 1 && !FRONTEND_ROOT_SEGMENTS.includes(parts[0])) slices.add(`${plugin}/${parts[0]}`)
+    if (parts.length > 1 && !FRONTEND_ROOT_SEGMENTS.includes(parts[0]))
+      slices.add(`${plugin}/${parts[0]}`)
   }
   return [...slices].sort()
 }
@@ -607,22 +691,39 @@ export function findPluginSliceShapeViolations(files) {
   for (const { file, plugin, parts } of listShippedFrontendFiles(files)) {
     if (parts.length === 1) {
       if (!FRONTEND_ROOT_FILES.includes(parts[0])) {
-        found.push({ file, line: 1, symbol: `${parts[0]} lies at the root of the frontend, which holds ${FRONTEND_ROOT_FILES.join(', ')} and the slices` })
+        found.push({
+          file,
+          line: 1,
+          symbol: `${parts[0]} lies at the root of the frontend, which holds ${FRONTEND_ROOT_FILES.join(', ')} and the slices`,
+        })
       }
       continue
     }
     if (FRONTEND_ROOT_SEGMENTS.includes(parts[0])) continue
     if (parts.length === 2) {
       if (parts[1] === 'index.ts') entries.add(`${plugin}/${parts[0]}`)
-      else found.push({ file, line: 1, symbol: `${parts[1]} lies in the slice ${parts[0]} outside its segments (${SLICE_SEGMENTS.join(', ')})` })
+      else
+        found.push({
+          file,
+          line: 1,
+          symbol: `${parts[1]} lies in the slice ${parts[0]} outside its segments (${SLICE_SEGMENTS.join(', ')})`,
+        })
     } else if (!SLICE_SEGMENTS.includes(parts[1])) {
-      found.push({ file, line: 1, symbol: `${parts[1]} is not a segment of the slice ${parts[0]} (${SLICE_SEGMENTS.join(', ')})` })
+      found.push({
+        file,
+        line: 1,
+        symbol: `${parts[1]} is not a segment of the slice ${parts[0]} (${SLICE_SEGMENTS.join(', ')})`,
+      })
     }
   }
   for (const slice of listPluginSlices(files)) {
     if (!entries.has(slice)) {
       const [plugin, name] = slice.split('/')
-      found.push({ file: `plugins/${plugin}/frontend/${name}`, line: 1, symbol: `the slice ${name} has no index.ts` })
+      found.push({
+        file: `plugins/${plugin}/frontend/${name}`,
+        line: 1,
+        symbol: `the slice ${name} has no index.ts`,
+      })
     }
   }
   return found
@@ -630,22 +731,38 @@ export function findPluginSliceShapeViolations(files) {
 
 /** A frontend of two slices that breaks each import rule once: a deep import into a slice from the entry, an import of a sibling slice through its index, and one through its files. */
 export const PLANTED_SLICE_FRONTEND = {
-  'frontend/index.ts': ["import { alpha } from './alpha'", "import { total } from './alpha/model/total'", 'export const both = [alpha, total]', ''].join('\n'),
+  'frontend/index.ts': [
+    "import { alpha } from './alpha'",
+    "import { total } from './alpha/model/total'",
+    'export const both = [alpha, total]',
+    '',
+  ].join('\n'),
   'frontend/alpha/index.ts': ["export { total as alpha } from './model/total'", ''].join('\n'),
   'frontend/alpha/model/total.ts': 'export const total = 1\n',
   'frontend/beta/index.ts': ["export { count } from './ui/count'", ''].join('\n'),
-  'frontend/beta/ui/count.ts': ["import { alpha } from '../../alpha'", "import { total } from '../../alpha/model/total'", 'export const count = alpha + total', ''].join('\n'),
+  'frontend/beta/ui/count.ts': [
+    "import { alpha } from '../../alpha'",
+    "import { total } from '../../alpha/model/total'",
+    'export const count = alpha + total',
+    '',
+  ].join('\n'),
 }
 
 /** The lines of `frontend/` files that `PLANTED_SLICE_FRONTEND` must be refused at. */
-export const PLANTED_SLICE_REFUSALS = { 'frontend/index.ts': [2], 'frontend/beta/ui/count.ts': [1, 2] }
+export const PLANTED_SLICE_REFUSALS = {
+  'frontend/index.ts': [2],
+  'frontend/beta/ui/count.ts': [1, 2],
+}
 
 /** The lines of the boundaries findings in an ESLint JSON report, by file name below the linted folder. */
 export function readBoundaryLines(report, folder) {
   const lines = {}
   for (const result of report) {
-    const hits = result.messages.filter((one) => one.ruleId?.startsWith('boundaries/')).map((one) => one.line)
-    if (hits.length > 0) lines[path.relative(folder, result.filePath)] = [...new Set(hits)].sort((a, b) => a - b)
+    const hits = result.messages
+      .filter((one) => one.ruleId?.startsWith('boundaries/'))
+      .map((one) => one.line)
+    if (hits.length > 0)
+      lines[path.relative(folder, result.filePath)] = [...new Set(hits)].sort((a, b) => a - b)
   }
   return lines
 }
@@ -662,13 +779,16 @@ export function lintPlantedFrontend(files) {
       fs.mkdirSync(path.dirname(path.join(dir, name)), { recursive: true })
       fs.writeFileSync(path.join(dir, name), text)
     }
-    const res = spawnSync(path.join(REPO_ROOT, 'node_modules/.bin/eslint'), ['-f', 'json', 'frontend'], { cwd: dir, encoding: 'utf8' })
+    const res = spawnSync(
+      path.join(REPO_ROOT, 'node_modules/.bin/eslint'),
+      ['-f', 'json', 'frontend'],
+      { cwd: dir, encoding: 'utf8' },
+    )
     return readBoundaryLines(JSON.parse(res.stdout || '[]'), dir)
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }
 }
-
 
 /**
  * The slices of every plugin frontend hold their shape, and the rule that keeps them apart is live: the
@@ -680,7 +800,8 @@ export function verifyPluginFrontendSlices() {
   requireMatches('plugin frontend files', listShippedFrontendFiles(files).length)
   failOnFindings('A plugin frontend breaks its shape', findPluginSliceShapeViolations(files))
   const refused = lintPlantedFrontend(PLANTED_SLICE_FRONTEND)
-  const sorted = (lines) => JSON.stringify(Object.entries(lines).sort(([a], [b]) => a.localeCompare(b)))
+  const sorted = (lines) =>
+    JSON.stringify(Object.entries(lines).sort(([a], [b]) => a.localeCompare(b)))
   if (sorted(refused) !== sorted(PLANTED_SLICE_REFUSALS)) {
     throw new Error(
       `the slice rule of plugins/.example/eslint.config.js refused ${JSON.stringify(refused)} in the planted frontend, expected ${JSON.stringify(PLANTED_SLICE_REFUSALS)}`,
@@ -728,7 +849,7 @@ export const PLUGIN_VERIFIERS = [
     id: 'plugins-use-main-entry',
     scope: 'plugins',
     module: 'plugins',
-    name: 'Plugins Import the SDK and UI Through Their Main Entry (only the test entry, stylesheets and build entries a package declares in exports)',
+    name: 'Plugins Import the SDK and UI Through Their Main Entry (only the test entry, the contracts entry, stylesheets and build entries a package declares in exports)',
     run: verifyPluginsUseMainEntry,
   },
   {

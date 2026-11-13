@@ -16,7 +16,7 @@ await test('a plugin change selects its folder, the specs that name it and the a
 })
 
 await test('a plugin without tests of its own selects the shell alone', () => {
-  assert.equal(getScope(['plugins/agents-codex/backend/main.go']), 'shell/')
+  assert.equal(getScope(['plugins/agents-mcp-server/backend/main.go']), 'shell/')
   assert.deepEqual(getScopePaths('shell/'), ['tests/shell/'])
 })
 
@@ -134,4 +134,8 @@ await test('every test runs in at most four shards an engine', () => {
   const jobs = planJobs(undefined)
   assert.ok(jobs.length >= 2 && jobs.length <= 8)
   assert.deepEqual(jobs[0], { engine: 'chromium', shard: 1, shards: jobs.length / 2 })
+})
+
+await test('a change to the connections plugin selects the shell and the acceptance scenarios', () => {
+  assert.equal(getScope(['plugins/connections-llm/backend/fakeopenai/server.go']), 'shell/ acceptance')
 })

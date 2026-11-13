@@ -42,7 +42,7 @@ func TestSearchPassagesRunsKeywordAndEmbeddingWithThreePerSource(t *testing.T) {
 	if p.Limit != 7 || p.PathPrefix != "library/" || len(p.Kinds) != 1 || p.Kinds[0] != domain.KindFile || p.Each != 3 || p.IsGrowing {
 		t.Errorf("the parameters are %+v, want limit 7, the prefix, the kind, three passages of one source and a finished query", p)
 	}
-	if p.Lexical == 0 || p.Dense == 0 {
+	if p.Lexical == 0 || p.Sources == 0 {
 		t.Errorf("the parameters are %+v, want the words and the meaning both to run", p)
 	}
 }

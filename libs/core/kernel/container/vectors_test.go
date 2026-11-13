@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -25,7 +24,7 @@ func TestAContainerWithoutSettingsEmbedsWithNothing(t *testing.T) {
 		t.Fatalf("want no reason, got %v", why)
 	}
 	if embedder != nil {
-		t.Errorf("got an embedder: %v", embedder.GetModel())
+		t.Errorf("got an embedder: %v", embedder.Describe())
 	}
 	if closer == nil {
 		t.Error("expected non-nil no-op closer")
@@ -33,7 +32,7 @@ func TestAContainerWithoutSettingsEmbedsWithNothing(t *testing.T) {
 		t.Errorf("closer failed: %v", err)
 	}
 
-	indexing, asking, closer, why := cfg.Embedders(t.Context(), run.NewTasks())
+	indexing, asking, closer, why := cfg.Embedders(t.Context())
 	if why != nil {
 		t.Fatalf("want no reason from Embedders, got %v", why)
 	}
@@ -60,7 +59,7 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 		"id": "md.numen.embeddings",
 		"name": "Vector Embeddings",
 		"version": "1.0.0",
-		"capabilities": ["embedding"],
+		"capabilities": ["search.source"],
 		"targets": ["desktop.editor"]
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
@@ -132,7 +131,7 @@ func TestAPluginWithoutTheEmbeddingCapabilityIsNotTheProvider(t *testing.T) {
 		"name": "Vectors",
 		"version": "1.0.0",
 		"targets": ["desktop.editor"],
-		"services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/vectors"}
+		"services": ["numen.v1.SearchSourceService"], "backend": {"entrypoint": "bin/vectors"}
 	}`)
 	cfg := container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)})
 
@@ -151,7 +150,7 @@ func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
 		"id": "test.vectors",
 		"name": "Vectors",
 		"version": "1.0.0",
-		"capabilities": ["embedding"],
+		"capabilities": ["search.source"],
 		"targets": ["desktop.editor"],
 		"backend": {"entrypoint": "bin/vectors"}
 	}`)

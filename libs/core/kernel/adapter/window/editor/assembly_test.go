@@ -23,9 +23,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -85,7 +85,7 @@ func (w readingParts) OpenIndex(ctx context.Context) (*testIndex, error) {
 // testIndex is the part of an open index the tests of the window read and write.
 type testIndex struct {
 	closer  io.Closer
-	vectors embeddingport.VectorIndex
+	vectors searchsourceport.VectorIndex
 	walks   vault.Walks
 	ledger  *vault.Ledger
 
@@ -107,8 +107,8 @@ type testIndex struct {
 		Passages      sourceport.PassageQueries
 		Nearest       sourceport.NearestQueries
 		Progress      indexport.IndexProgress
-		Vectors       embeddingport.VectorRepository
-		VectorQueries embeddingport.VectorQueries
+		Vectors       searchsourceport.VectorRepository
+		VectorQueries searchsourceport.VectorQueries
 	}
 	Source struct {
 		Sources       sourceport.SourceRepository
@@ -124,7 +124,7 @@ func (i *testIndex) Walks() *vault.Walks { return &i.walks }
 
 func (i *testIndex) Ledger() *vault.Ledger { return i.ledger }
 
-func (i *testIndex) VectorIndex() embeddingport.VectorIndex { return i.vectors }
+func (i *testIndex) VectorIndex() searchsourceport.VectorIndex { return i.vectors }
 
 func (w readingParts) GetVaultReaders() vaultport.VaultReaders { return vaultreader.Readers{} }
 
@@ -175,7 +175,7 @@ func (w readingParts) OpenVaultWith(
 
 // ReadWholeVault reads the notes, cuts the file texts and makes the vectors of a vault.
 func (w readingParts) ReadWholeVault(
-	ctx context.Context, db *testIndex, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+	ctx context.Context, db *testIndex, embedder searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
 	fit := vectors.NewFitIndex(db.VectorIndex(), nil)
 	fit.ShouldRebuildIndex = rebuild
@@ -209,7 +209,7 @@ func (w readingParts) ReadWholeVault(
 	embed := vectors.NewEmbed(w.GetVaultReaders(), db.Chunks.VectorQueries, db.Chunks.Vectors)
 	embed.Claim = store.NewIndexClaim(derivedCoreFolder + "/indexing")
 	embed.Texts = w.texts
-	embed.Embedder = embedder
+	embed.Source = embedder
 	return indexing.NewReadWholeVault(w.scan(db, rebuild), texts, embed), nil
 }
 
@@ -236,9 +236,9 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 		}
 		return names, true
 	}
-	store := settingsadapter.NewStore(settingsadapter.NewFiles(), getPath, declarations, registries, nil)
+	store := settingsadapter.NewStore(settingsadapter.NewFiles(), getPath, declarations, registries)
 	list := settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, store, settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, nil, nil,
+		settingsadapter.JSONCodec{}, store, settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, nil,
 	)
 	feed := settingevents.Feed{
 		Events:  settingevents.New(),

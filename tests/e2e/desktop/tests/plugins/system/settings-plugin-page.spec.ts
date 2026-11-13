@@ -5,13 +5,13 @@ import { observeFor } from '../../support/browser.js'
 import type { JsonValue } from '../../support/json.js'
 import { openWorkspace, runCommand } from '../../support/workspace.js'
 
-const FIRST = { id: 'md.numen.agents.antigravity', name: 'Antigravity Agent' }
-const SECOND = { id: 'md.numen.agents.claude', name: 'Claude Code Agent' }
+const FIRST = { id: 'md.numen.engines.ocr', name: 'Document OCR' }
+const SECOND = { id: 'md.numen.agents.acp', name: 'ACP Agents' }
 
-const createExecutableFile = async (): Promise<string> => {
-  const path = test.info().outputPath('antigravity', 'bin', 'gemini')
+const createModelFile = async (): Promise<string> => {
+  const path = test.info().outputPath('ocr', 'recognition.onnx')
   await mkdir(dirname(path), { recursive: true })
-  await writeFile(path, '#!/bin/sh\n', { mode: 0o755 })
+  await writeFile(path, 'model')
   return path
 }
 
@@ -42,8 +42,8 @@ const recordPage = async (page: Page, pluginName: string): Promise<void> => {
       for (const one of document.querySelectorAll('[data-testid="setting-path"]')) {
         window.shownPaths?.push(one.getAttribute('title') ?? '')
       }
-      const title = document.querySelector('.plugin-detail__title')?.textContent ?? ''
-      if (window.firstRenderMs === undefined && title.includes(name)) {
+      const titles = Array.from(document.querySelectorAll('h2'), (one) => one.textContent ?? '')
+      if (window.firstRenderMs === undefined && titles.includes(name)) {
         window.firstRenderMs = performance.now() - startedAt
       }
     }
@@ -59,24 +59,26 @@ const recordPage = async (page: Page, pluginName: string): Promise<void> => {
 
 test.describe('The page of a plugin', () => {
   test.afterEach(async ({ page }) => {
-    await writeSetting(page, [FIRST.id, 'executablePath'], '')
+    await writeSetting(page, [FIRST.id, 'customModelPath'], '')
+    await writeSetting(page, [FIRST.id, 'model'], 'pp-ocrv6-tiny')
   })
 
   test('shows none of the values of the plugin page opened before it', async ({ page }) => {
-    const firstPath = await createExecutableFile()
-    await writeSetting(page, [FIRST.id, 'executablePath'], firstPath)
+    const firstPath = await createModelFile()
+    await writeSetting(page, [FIRST.id, 'model'], 'custom')
+    await writeSetting(page, [FIRST.id, 'customModelPath'], firstPath)
     await openWorkspace(page)
     await runCommand(page, 'Open settings', /^Open settings$/)
-    const settings = page.getByRole('tabpanel', { name: /Settings/ })
+    const settings = page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
 
     await settings.getByRole('button', { name: new RegExp(FIRST.name) }).click()
     await expect(settings.getByTestId('setting-path')).toHaveAttribute('title', firstPath)
-    await settings.getByRole('button', { name: 'All plugins' }).click()
+    await settings.getByRole('button', { name: 'Back', exact: true }).click()
 
     await recordPage(page, SECOND.name)
     await settings.getByRole('button', { name: new RegExp(SECOND.name) }).click()
-    await expect(settings.locator('.plugin-detail__title')).toContainText(SECOND.name)
-    await expect(settings.getByRole('group', { name: 'Executable Path' })).toBeVisible()
+    await expect(settings.getByRole('heading', { level: 2, name: SECOND.name })).toBeVisible()
+    await expect(settings.getByText('Request timeout')).toBeVisible()
     // The settings are read again after the page opens.
     await observeFor(page, 2_000)
 

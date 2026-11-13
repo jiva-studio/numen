@@ -18,8 +18,8 @@ const readVectors = async (item: Locator): Promise<number> => {
 
 const isSettled = async (item: Locator): Promise<boolean> => {
   const text = (await item.textContent()) ?? ''
-  const isIndexing = await item.locator('.index-stats__trigger--indexing').count()
-  return /\d/.test(text) && isIndexing === 0
+  const summary = (await item.getAttribute('aria-label')) ?? ''
+  return /\d/.test(text) && !summary.includes('indexing')
 }
 
 const readSettledVectors = async (item: Locator): Promise<number> => {

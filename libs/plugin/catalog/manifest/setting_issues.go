@@ -2,7 +2,7 @@ package manifest
 
 import (
 	"fmt"
-	"maps"
+	"math"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -10,84 +10,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
-// maxSecretGroupLength is the longest group name of a secret declaration, in characters.
-const maxSecretGroupLength = 64
-
-func (m Manifest) listSecretIssues() []error {
-	var issues []error
-	for _, secret := range m.Secrets {
-		name := secret.Name
-		issues = append(issues, m.listConditionIssues("secret "+name, secret.When)...)
-		issues = append(issues, listSecretGroupIssues(secret)...)
-		switch {
-		case !manifestSecretPattern.MatchString(name):
-			issues = append(issues, fmt.Errorf("%w: %q is not letters, digits, _ or -", ErrInvalidSecret, name))
-		case slices.Contains(listReservedSettingKeys(), name):
-			issues = append(issues, fmt.Errorf("%w: secret %q", ErrReservedSettingKey, name))
-		case slices.ContainsFunc(m.Settings, func(s Setting) bool { return s.Key == name }):
-			issues = append(issues, fmt.Errorf("%w: %q is also a setting", ErrInvalidSecret, name))
-		}
-	}
-	return append(issues, listRepeatedSecretIssues(m.Secrets)...)
-}
-
-func listSecretGroupIssues(secret SecretDeclaration) []error {
-	group := secret.Group
-	if group == "" {
-		return nil
-	}
-	switch {
-	case strings.TrimSpace(group) != group:
-		return []error{fmt.Errorf("%w: group %q of %q has leading or trailing space", ErrInvalidSecret, group, secret.Name)}
-	case utf8.RuneCountInString(group) > maxSecretGroupLength:
-		return []error{fmt.Errorf("%w: group of %q is longer than %d characters", ErrInvalidSecret, secret.Name, maxSecretGroupLength)}
-	}
-	return nil
-}
-
-func listRepeatedSecretIssues(secrets []SecretDeclaration) []error {
-	var issues []error
-	byName := make(map[string][]SecretDeclaration, len(secrets))
-	for _, secret := range secrets {
-		byName[secret.Name] = append(byName[secret.Name], secret)
-	}
-	for _, name := range slices.Sorted(maps.Keys(byName)) {
-		declared := byName[name]
-		if len(declared) < 2 {
-			continue
-		}
-		if !isDisjoint(declared) {
-			issues = append(issues, fmt.Errorf("%w: %q is declared twice without conditions on one setting that exclude each other", ErrInvalidSecret, name))
-			continue
-		}
-		groups := make(map[string]bool, len(declared))
-		for _, secret := range declared {
-			if groups[secret.Group] {
-				issues = append(issues, fmt.Errorf("%w: %q is declared twice for the group %q", ErrInvalidSecret, name, secret.Group))
-			}
-			groups[secret.Group] = true
-		}
-	}
-	return issues
-}
-
-func isDisjoint(declared []SecretDeclaration) bool {
-	values := make(map[string]bool)
-	for _, secret := range declared {
-		if secret.When == nil || secret.When.Setting != declared[0].When.Setting {
-			return false
-		}
-		for _, is := range secret.When.Is {
-			if values[is] {
-				return false
-			}
-		}
-		for _, is := range secret.When.Is {
-			values[is] = true
-		}
-	}
-	return true
-}
+// MaxSettingDescriptionLength is the most characters the description of a setting holds: one line of a
+// settings row at the full width of the settings page.
+const MaxSettingDescriptionLength = 64
 
 func listManifestSettingIssues(settings []Setting) []error {
 	var issues []error
@@ -112,13 +37,16 @@ func listManifestSettingIssues(settings []Setting) []error {
 		}
 		issues = append(issues, listManifestSettingIssue(s, key)...)
 	}
-	return issues
+	return append(issues, listDuplicateOperationIssues(settings)...)
 }
 
 func listManifestSettingIssue(s Setting, key string) []error {
 	var issues []error
 	if strings.TrimSpace(s.Title) == "" {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrEmptySettingTitle, key))
+	}
+	if length := utf8.RuneCountInString(s.Description); length > MaxSettingDescriptionLength {
+		issues = append(issues, fmt.Errorf("%w: %s has %d characters, at most %d; the full text goes in details", ErrLongSettingDescription, key, length, MaxSettingDescriptionLength))
 	}
 	if !slices.Contains(listSettingTypes(), s.Type) {
 		issues = append(issues, fmt.Errorf("%w: %q for %s", ErrInvalidSettingType, s.Type, key))
@@ -130,7 +58,8 @@ func listManifestSettingIssue(s Setting, key string) []error {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrRangeInvalidBounds, key))
 	}
 	issues = append(issues, listGenerateSettingIssues(s, key)...)
-	return append(issues, listFileSettingIssues(s, key)...)
+	issues = append(issues, listFileSettingIssues(s, key)...)
+	return append(issues, listConnectionsSettingIssues(s, key)...)
 }
 
 func listGenerateSettingIssues(s Setting, key string) []error {
@@ -199,7 +128,7 @@ func (m Manifest) listOptionsByIssues(s Setting, declared map[string]Setting) []
 	if s.OptionsBy == nil {
 		return nil
 	}
-	if (s.Type != SettingTypeEnum && s.Type != "string") || len(s.Options) > 0 {
+	if (s.Type != SettingTypeEnum && s.Type != SettingTypeString) || len(s.Options) > 0 {
 		return []error{fmt.Errorf("%w: %s takes its options from %s and is no enum or string without options of its own", ErrInvalidSetting, s.Key, s.OptionsBy.Setting)}
 	}
 	parent, ok := declared[s.OptionsBy.Setting]
@@ -213,14 +142,6 @@ func (m Manifest) listOptionsByIssues(s Setting, declared map[string]Setting) []
 		}
 	}
 	return issues
-}
-
-func (m Manifest) listConditionIssues(subject string, when *Condition) []error {
-	declared := make(map[string]Setting, len(m.Settings))
-	for _, s := range m.Settings {
-		declared[s.Key] = s
-	}
-	return listConditionIssues(subject, when, declared)
 }
 
 func listConditionIssues(subject string, when *Condition, declared map[string]Setting) []error {
@@ -237,12 +158,78 @@ func listConditionIssues(subject string, when *Condition, declared map[string]Se
 	var issues []error
 	for _, value := range when.Is {
 		switch {
-		case parent.Type == "boolean" && value != "true" && value != "false":
+		case parent.Type == settingTypeBoolean && value != "true" && value != "false":
 			issues = append(issues, fmt.Errorf("%w: %s is shown by %s holding %q, and it holds true or false", ErrInvalidSetting, subject, when.Setting, value))
 		case len(parent.Options) > 0:
 			if _, isOption := parent.Options.Find(value); !isOption {
 				issues = append(issues, fmt.Errorf("%w: %s is shown by %s holding %q, which is none of its options", ErrInvalidSetting, subject, when.Setting, value))
 			}
+		}
+	}
+	return issues
+}
+
+func listConnectionsSettingIssues(s Setting, key string) []error {
+	if s.Type != SettingTypeConnections {
+		var issues []error
+		if len(s.Operations) > 0 {
+			issues = append(issues, fmt.Errorf("%w: %s names operations and holds no rows of connections", ErrInvalidSetting, key))
+		}
+		if s.Discover {
+			issues = append(issues, fmt.Errorf("%w: %s discovers connections and holds no rows of connections", ErrInvalidSetting, key))
+		}
+		return issues
+	}
+	var issues []error
+	if len(s.Operations) == 0 {
+		issues = append(issues, fmt.Errorf("%w: %s names no operation", ErrInvalidSetting, key))
+	}
+	named := map[string]bool{}
+	for _, operation := range s.Operations {
+		if named[operation] {
+			issues = append(issues, fmt.Errorf("%w: %s names the operation %q twice", ErrInvalidSetting, key, operation))
+		}
+		named[operation] = true
+		if !connectionOperationPattern.MatchString(operation) {
+			issues = append(issues, fmt.Errorf("%w: %s needs operations of lowercase words joined by dots, got %q", ErrInvalidSetting, key, operation))
+		}
+	}
+	if s.Max == nil || *s.Max < 1 || *s.Max != math.Trunc(*s.Max) {
+		issues = append(issues, fmt.Errorf("%w: %s needs max, the number of rows, as a whole number of at least 1", ErrInvalidSetting, key))
+	}
+	return append(issues, listConnectionsSettingExtraIssues(s, key)...)
+}
+
+func listConnectionsSettingExtraIssues(s Setting, key string) []error {
+	var issues []error
+	declared := []struct {
+		name  string
+		isSet bool
+	}{
+		{"default", s.Default != nil}, {"options", len(s.Options) > 0}, {"optionsBy", s.OptionsBy != nil},
+		{"optionsFrom", s.OptionsFrom != ""}, {"min", s.Min != nil}, {"step", s.Step != nil}, {"preview", s.Preview},
+	}
+	for _, one := range declared {
+		if one.isSet {
+			issues = append(issues, fmt.Errorf("%w: %s holds rows of connections and declares %s", ErrInvalidSetting, key, one.name))
+		}
+	}
+	return issues
+}
+
+func listDuplicateOperationIssues(settings []Setting) []error {
+	var issues []error
+	keyOf := map[string]string{}
+	for _, s := range settings {
+		if s.Type != SettingTypeConnections {
+			continue
+		}
+		for _, operation := range s.Operations {
+			if first, isTaken := keyOf[operation]; isTaken && first != s.Key {
+				issues = append(issues, fmt.Errorf("%w: %s and %s both hold rows for the operation %q", ErrInvalidSetting, first, s.Key, operation))
+				continue
+			}
+			keyOf[operation] = s.Key
 		}
 	}
 	return issues

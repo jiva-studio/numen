@@ -58,6 +58,7 @@ export function createPluginPalette(deps: PluginPaletteDeps) {
     paletteLists: windowSettings.paletteLists,
     getTarget,
     runs: commandDeps.runSupport,
+    forgetNotes: declaredCommands.whenContext.forgetNotes,
   })
   return {
     sources,

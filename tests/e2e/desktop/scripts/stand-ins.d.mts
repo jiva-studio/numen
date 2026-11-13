@@ -4,6 +4,8 @@ export const STAND_IN_REPLY: string
 export const HELD_PROMPT: string
 /** The model the stand-in lists. */
 export const STAND_IN_MODEL: string
+/** The connection row of the stand-in model. */
+export const STAND_IN_CONNECTION: string
 /** The prompt the stand-in answers with a note_write tool call. */
 export const TOOL_PROMPT: string
 /** The path of the note the stand-in writes with that call. */

@@ -13,6 +13,7 @@ import {
   lintPlantedFrontend,
   listPluginSlices,
   parseEnabledGoLinters,
+  findGoLinterSettingsDrift,
   PLANTED_SLICE_FRONTEND,
   PLANTED_SLICE_REFUSALS,
   readPluginPackageExports,
@@ -22,6 +23,7 @@ const EXPORTS = {
   '@numen/plugin-sdk': {
     '.': './src/index.ts',
     './testing': './src/testing/index.ts',
+    './contracts': './src/contracts/index.ts',
     './vite': './src/vite.ts',
     './internal': './src/internal.ts',
   },
@@ -44,6 +46,35 @@ test('the main entry, the test entry and a stylesheet are clean in a plugin sour
     ),
   ]
   assert.deepEqual(findPluginEntryViolations(files, EXPORTS), [])
+})
+
+test('the contracts entry is clean in a plugin source file, a path below it is reported', () => {
+  const found = findPluginEntryViolations(
+    [
+      file(
+        'plugins/a/frontend/index.ts',
+        '@numen/plugin-sdk/contracts',
+        '@numen/plugin-sdk/contracts/acp',
+      ),
+    ],
+    EXPORTS,
+  )
+  assert.equal(found.length, 1)
+  assert.equal(found[0].line, 2)
+  assert.match(found[0].symbol, /is not an entry @numen\/plugin-sdk declares/)
+})
+
+test('a contracts entry of a package other than the SDK is reported', () => {
+  const exports = {
+    ...EXPORTS,
+    '@numen/ui': { ...EXPORTS['@numen/ui'], './contracts': './dist/contracts.js' },
+  }
+  const found = findPluginEntryViolations(
+    [file('plugins/a/frontend/index.ts', '@numen/ui/contracts')],
+    exports,
+  )
+  assert.equal(found.length, 1)
+  assert.match(found[0].symbol, /reaches past the main entry of @numen\/ui/)
 })
 
 test('a build entry is clean in a build configuration file', () => {
@@ -90,8 +121,46 @@ test('the exports of the plugin packages of this repository are read', () => {
 })
 
 test('enabled Go linters are read from the YAML structure', () => {
-  const yaml = 'version: "2"\nlinters:\n  default: none\n  enable:\n    - govet\n    # comment\n    - errcheck\n'
+  const yaml =
+    'version: "2"\nlinters:\n  default: none\n  enable:\n    - govet\n    # comment\n    - errcheck\n'
   assert.deepEqual(parseEnabledGoLinters(yaml), ['errcheck', 'govet'])
+})
+
+test('linter settings that differ from the root are reported, the import rules and aliases of the SDK are not', () => {
+  const root = [
+    'linters:',
+    '  settings:',
+    '    gocritic:',
+    '      disabled-checks: [argOrder]',
+    '    depguard:',
+    '      rules: {core: {deny: [{pkg: os}]}}',
+    '    importas:',
+    '      alias: [{pkg: a, alias: b}]',
+    '    usetesting:',
+    '      os-temp-dir: true',
+  ].join('\n')
+  const sdk = [
+    'linters:',
+    '  settings:',
+    '    gocritic:',
+    '      disabled-checks: []',
+    '    depguard:',
+    '      rules: {sdk: {deny: [{pkg: net}]}}',
+    '    importas:',
+    '      alias: []',
+    '    staticcheck:',
+    '      checks: [all]',
+  ].join('\n')
+
+  assert.deepEqual(
+    findGoLinterSettingsDrift(root, sdk, 'sdk/.golangci.yml').map((one) => one.symbol),
+    [
+      "settings of linter 'gocritic' differ from root .golangci.yml",
+      "settings of linter 'staticcheck' differ from root .golangci.yml",
+      "settings of linter 'usetesting' differ from root .golangci.yml",
+    ],
+  )
+  assert.deepEqual(findGoLinterSettingsDrift(root, root, 'sdk/.golangci.yml'), [])
 })
 
 const SLICED = [
@@ -130,7 +199,11 @@ test('tests, stories and test support are not part of the shape', () => {
 })
 
 test('a file at the frontend root besides the entry, the words, the types and the stylesheet is reported', () => {
-  const found = findPluginSliceShapeViolations([...SLICED, 'plugins/a/frontend/kind.ts', 'plugins/a/frontend/Tab.vue'])
+  const found = findPluginSliceShapeViolations([
+    ...SLICED,
+    'plugins/a/frontend/kind.ts',
+    'plugins/a/frontend/Tab.vue',
+  ])
   assert.deepEqual(
     found.map((one) => one.file),
     ['plugins/a/frontend/kind.ts', 'plugins/a/frontend/Tab.vue'],
@@ -146,7 +219,11 @@ test('a slice file outside the segments, a folder that is no segment and a slice
   ])
   assert.deepEqual(
     found.map((one) => one.file),
-    ['plugins/a/frontend/deck/kind.ts', 'plugins/a/frontend/deck/wire/errors.ts', 'plugins/a/frontend/review'],
+    [
+      'plugins/a/frontend/deck/kind.ts',
+      'plugins/a/frontend/deck/wire/errors.ts',
+      'plugins/a/frontend/review',
+    ],
   )
   assert.match(found[2].symbol, /the slice review has no index.ts/)
 })
@@ -159,7 +236,8 @@ test('the slice rule of the golden configuration passes a frontend that reaches 
   const files = {
     ...PLANTED_SLICE_FRONTEND,
     'frontend/index.ts': "import { alpha } from './alpha'\nexport const both = [alpha]\n",
-    'frontend/beta/ui/count.ts': "import { shared } from '../../lib/shared'\nexport const count = shared\n",
+    'frontend/beta/ui/count.ts':
+      "import { shared } from '../../lib/shared'\nexport const count = shared\n",
     'frontend/lib/shared.ts': 'export const shared = 2\n',
   }
   assert.deepEqual(lintPlantedFrontend(files), {})
@@ -255,42 +333,79 @@ test('a service source with listed standard packages, SDK packages and its own a
 
 test('a backend file over the file limit and a package over the package limit are reported, tests are not counted by the caller', () => {
   const lines = (file, count) => ({ file, lines: count })
-  assert.deepEqual(findOversizedBackendPackages([lines('plugins/a/backend/x/a.go', MAX_FILE_LINES)]), [])
+  assert.deepEqual(
+    findOversizedBackendPackages([lines('plugins/a/backend/x/a.go', MAX_FILE_LINES)]),
+    [],
+  )
   const long = findOversizedBackendPackages([lines('plugins/a/backend/x/a.go', MAX_FILE_LINES + 1)])
-  assert.deepEqual(long.map((one) => [one.file, one.symbol.split(',')[0]]), [
-    ['plugins/a/backend/x/a.go', `file holds ${MAX_FILE_LINES + 1} lines`],
-  ])
+  assert.deepEqual(
+    long.map((one) => [one.file, one.symbol.split(',')[0]]),
+    [['plugins/a/backend/x/a.go', `file holds ${MAX_FILE_LINES + 1} lines`]],
+  )
   const many = Array.from({ length: 7 }, (_, at) => lines(`plugins/a/backend/y/f${at}.go`, 450))
-  assert.deepEqual(findOversizedBackendPackages(many).map((one) => [one.file, one.symbol.split(',')[0]]), [
-    ['plugins/a/backend/y', 'package holds 3150 non-test lines'],
-  ])
-  assert.deepEqual(findOversizedBackendPackages([...many.slice(0, 6), lines('plugins/a/backend/z/f.go', 450)]), [])
+  assert.deepEqual(
+    findOversizedBackendPackages(many).map((one) => [one.file, one.symbol.split(',')[0]]),
+    [['plugins/a/backend/y', 'package holds 3150 non-test lines']],
+  )
+  assert.deepEqual(
+    findOversizedBackendPackages([...many.slice(0, 6), lines('plugins/a/backend/z/f.go', 450)]),
+    [],
+  )
 })
 
 const layerImports = (file, imports) => {
   const source = `package x\n\nimport (\n${imports.map((one) => `\t"${one}"\n`).join('')})\n`
-  return findPluginBackendLayerInversions([{ file, imports: getGoReferences(source).imports }]).map((one) => one.file)
+  return findPluginBackendLayerInversions([{ file, imports: getGoReferences(source).imports }]).map(
+    (one) => one.file,
+  )
 }
 
 test('an inner package importing wire, and wire importing service, engine or an adapter, are refused', () => {
   const own = 'github.com/jiva-studio/numen/plugins/a/backend'
-  assert.deepEqual(layerImports('plugins/a/backend/usecase/x/x.go', [`${own}/wire/cardwire`, `${own}/service`, `${own}/engine`]), [
-    'plugins/a/backend/usecase/x/x.go',
-    'plugins/a/backend/usecase/x/x.go',
-    'plugins/a/backend/usecase/x/x.go',
-  ])
-  assert.deepEqual(layerImports('plugins/a/backend/wire/cardwire/x.go', [`${own}/service`, `${own}/engine`, `${own}/internal/adapter/files`]), [
-    'plugins/a/backend/wire/cardwire/x.go',
-    'plugins/a/backend/wire/cardwire/x.go',
-    'plugins/a/backend/wire/cardwire/x.go',
-  ])
+  assert.deepEqual(
+    layerImports('plugins/a/backend/usecase/x/x.go', [
+      `${own}/wire/cardwire`,
+      `${own}/service`,
+      `${own}/engine`,
+    ]),
+    [
+      'plugins/a/backend/usecase/x/x.go',
+      'plugins/a/backend/usecase/x/x.go',
+      'plugins/a/backend/usecase/x/x.go',
+    ],
+  )
+  assert.deepEqual(
+    layerImports('plugins/a/backend/wire/cardwire/x.go', [
+      `${own}/service`,
+      `${own}/engine`,
+      `${own}/internal/adapter/files`,
+    ]),
+    [
+      'plugins/a/backend/wire/cardwire/x.go',
+      'plugins/a/backend/wire/cardwire/x.go',
+      'plugins/a/backend/wire/cardwire/x.go',
+    ],
+  )
 })
 
 test('wire imports the api, domain, use cases, ports and its sibling wire packages; the service imports wire', () => {
   const own = 'github.com/jiva-studio/numen/plugins/a/backend'
   assert.deepEqual(
-    layerImports('plugins/a/backend/wire/cardwire/x.go', [`${own}/api`, `${own}/domain/format`, `${own}/usecase/cards`, `${own}/ports`, `${own}/wire/filewire`, `${own}/internal/enumtest`]),
+    layerImports('plugins/a/backend/wire/cardwire/x.go', [
+      `${own}/api`,
+      `${own}/domain/format`,
+      `${own}/usecase/cards`,
+      `${own}/ports`,
+      `${own}/wire/filewire`,
+      `${own}/internal/enumtest`,
+    ]),
     [],
   )
-  assert.deepEqual(layerImports('plugins/a/backend/service/x.go', [`${own}/wire/cardwire`, `${own}/internal/adapter/files`]), [])
+  assert.deepEqual(
+    layerImports('plugins/a/backend/service/x.go', [
+      `${own}/wire/cardwire`,
+      `${own}/internal/adapter/files`,
+    ]),
+    [],
+  )
 })

@@ -104,7 +104,7 @@ export { isLeading, isTrailing } from './shared/lib/text/surrogate'
 
 /** A thing carried under the pointer, and a menu put away by a press outside it or Escape. */
 export { DragPreview, usePressDrag } from './shared/ui/drag-preview'
-export { useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
+export { isPageMove, useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
 
 export { Tree } from './features/tree'
 export type { Row, RowMarker } from './features/tree'

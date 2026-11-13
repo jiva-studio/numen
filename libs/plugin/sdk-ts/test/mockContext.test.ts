@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockPluginContext } from '../src/testing/mockContext'
-import type { PluginVault, PluginWork } from '../src/types'
-import type { AgentPort } from '../src/agent'
+import type { PluginVault } from '../src/types'
+import type { ConnectionHost } from '../src/connections'
 import { CONVERSATION } from '../src/views'
 
-/** An agent that ends every question at once, for views that need one to be mounted. */
-const AGENT: AgentPort = {
-  ask: async function* () {
-    yield { kind: 'answered' }
+/** Connections that end every call at once, for views that need them to be mounted. */
+const CONNECTIONS: ConnectionHost = {
+  call: async function* () {
+    yield* []
+    return { ok: true, value: new Uint8Array() }
   },
-  finish: async () => undefined,
 }
 
 describe('mock plugin context', () => {
@@ -134,8 +134,8 @@ describe('mock plugin context', () => {
     const element = {} as HTMLElement
 
     const view = ctx.ui.mountView(CONVERSATION, element, {
-      agent: AGENT,
-      focus: 'Decks/Physics.md',
+      connections: CONNECTIONS,
+      vault: 'physics',
     })
     view.focus()
     view.dispose()
@@ -145,7 +145,7 @@ describe('mock plugin context', () => {
       {
         capability: CONVERSATION,
         element,
-        context: { agent: AGENT, focus: 'Decks/Physics.md' },
+        context: { connections: CONNECTIONS, vault: 'physics' },
         isDisposed: true,
         focusCount: 1,
       },
@@ -216,13 +216,6 @@ describe('mock plugin context', () => {
     const ctx = createMockPluginContext()
     const result = await ctx.tabs.open?.('url', 'https://example.com')
     expect(result).toBe('url:https://example.com')
-  })
-
-  it('passes over the agent it is given, and none where it is given none', () => {
-    const agent = { name: 'agent' } as unknown as NonNullable<PluginWork['agent']>
-
-    expect(createMockPluginContext({ agent }).work.agent).toBe(agent)
-    expect(createMockPluginContext().work).not.toHaveProperty('agent')
   })
 
   it('forwards the provided buffers and closeTab, and closes nothing by default', () => {

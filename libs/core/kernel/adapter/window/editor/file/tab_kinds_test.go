@@ -19,12 +19,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 )
 
-// window is a window showing one vault, with nothing writing and no plugins to tell.
+// window is a window showing one vault, with nothing writing.
 type window struct{ vault domain.Vault }
 
 func (w window) GetCurrentVault() domain.Vault { return w.vault }
 func (window) PublishChange(...string)         {}
-func (window) EmitFileEvent(string)            {}
 
 // tabKinds is the tab kinds of the enabled plugins of a window.
 type tabKinds []pluginentries.TabKindEntry
@@ -51,7 +50,7 @@ func newHandler(t *testing.T, notes map[string]string, kinds tabKinds) *filewind
 	fileKinds := file.NewGetFileKinds(readers, nil)
 	return filewindow.NewHandler(
 		filewindow.NewFolders(
-			open, open,
+			open,
 			file.NewListFolder(file.NewGetFolderEntries(readers, nil), file.NewListTabKinds(fileKinds, choose)),
 			file.NewListFileKinds(fileKinds, choose), nil,
 		),
@@ -65,8 +64,8 @@ func TestAPathNamesTheKindOfTabItsNoteOpensIn(t *testing.T) {
 		"links/tide.md": "---\ntype: link\nurl: https://tides.example/mill\nmedia: plugin://org.example.links/tide.mp4\n---\n",
 		"Physics.epub":  "an epub\n",
 	}, tabKinds{
-		{PluginID: "org.example.editor", TabKind: manifest.TabKind{Kind: "note", Title: "Note", Icon: "", When: "target.isNote", Rank: domain.RankAlternate}},
-		{PluginID: "org.example.viewer", TabKind: manifest.TabKind{Kind: "media", Title: "Media", Icon: "", When: "has(target.properties.media)", Rank: domain.RankDefault}},
+		{PluginID: "org.example.editor", TabKind: manifest.TabKind{Kind: "note", Title: "Note", Icon: "", When: "target.isNote", Rank: domain.RankAlternate, IsNoteEditor: false}},
+		{PluginID: "org.example.viewer", TabKind: manifest.TabKind{Kind: "media", Title: "Media", Icon: "", When: "has(target.properties.media)", Rank: domain.RankDefault, IsNoteEditor: false}},
 	})
 
 	answer, err := handler.ListFileKinds(t.Context(), connect.NewRequest(&v1.ListFileKindsRequest{
@@ -97,7 +96,7 @@ func TestAListingOfAFolderNamesTheKindOfTabEachNoteOpensIn(t *testing.T) {
 		"links/plain.md": "# Plain\n",
 		"links/map.png":  "pixels",
 	}, tabKinds{
-		{PluginID: "org.example.viewer", TabKind: manifest.TabKind{Kind: "media", Title: "Media", When: "has(target.properties.media)", Rank: domain.RankDefault}},
+		{PluginID: "org.example.viewer", TabKind: manifest.TabKind{Kind: "media", Title: "Media", When: "has(target.properties.media)", Rank: domain.RankDefault, IsNoteEditor: false}},
 	})
 
 	answer, err := handler.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Path: "links"}))

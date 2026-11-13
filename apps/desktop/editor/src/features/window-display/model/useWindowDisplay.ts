@@ -1,6 +1,7 @@
 import { shallowRef } from 'vue'
 import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/entities/window'
+import type { PluginHealthItem } from '@/entities/plugin'
 import type { PathRename } from '@/shared/lib/paths'
 import type { TextRange } from '@/shared/lib/textRange'
 import { formatError, type Caught } from '@/shared/api/errors'
@@ -8,6 +9,7 @@ import { createFollower, runInBackground } from '@numen/ui'
 import {
   createEditStream,
   createFocusStream,
+  createHealthStream,
   createTaskStream,
   createVaultStream,
   type VaultScan,
@@ -72,6 +74,7 @@ function startStreams(streams: WindowStreams, health: DisplayHealth): void {
   runInBackground(streams.watch(), onError)
   runInBackground(streams.draw(), onError)
   runInBackground(streams.followTasks(), onError)
+  runInBackground(streams.followHealth(), onError)
 }
 
 async function startDisplay(deps: StartDisplayDeps): Promise<void> {
@@ -109,6 +112,7 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
   const health = useDisplayHealth()
   const opening = useDisplayOpening()
   const tasks = shallowRef<readonly Task[]>([])
+  const pluginHealth = shallowRef<readonly PluginHealthItem[]>([])
   let open = true
   const abortController = new AbortController()
 
@@ -145,6 +149,11 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
       activateTab: how.activateTab ?? (() => undefined),
     }),
     followTasks: createTaskStream({ follows, listening: abortController, tasks, ask }),
+    followHealth: createHealthStream({
+      follows,
+      listening: abortController,
+      items: pluginHealth,
+    }),
   }
 
   return {
@@ -152,6 +161,7 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
     health,
     opening,
     tasks,
+    pluginHealth,
     start: () =>
       startDisplay({
         health,
@@ -162,8 +172,7 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
         wait,
         isOpen: () => open,
       }),
-    follow: streams.follow,
-    watch: streams.watch,
+    streams,
     close: () => {
       open = false
       abortController.abort()

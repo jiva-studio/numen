@@ -95,13 +95,8 @@ describe('placing the same turns again', () => {
 })
 
 describe('writeCharCount', () => {
-  it('says nothing for no characters', () => {
-    expect(writeCharCount(0)).toBe('')
-    expect(writeCharCount(-3)).toBe('')
-  })
-
-  it('counts characters', () => {
-    expect(writeCharCount(1)).toBe('1 characters')
+  it('counts characters in groups of thousands', () => {
     expect(writeCharCount(999)).toBe('999 characters')
+    expect(writeCharCount(12015)).toBe('12 015 characters')
   })
 })

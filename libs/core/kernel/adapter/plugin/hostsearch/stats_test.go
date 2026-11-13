@@ -137,7 +137,7 @@ func TestGetIndexStatsRefusesNoModelAndFailsWhenIndexFails(t *testing.T) {
 		t.Errorf("an index that fails gave %v", err)
 	}
 
-	f.search.Embedder = nil
+	f.search.Source = nil
 	if _, err := f.search.GetIndexStats(t.Context(), getVault()); !errors.Is(err, plugin.ErrNoModel) {
 		t.Errorf("an installation with no model gave %v", err)
 	}

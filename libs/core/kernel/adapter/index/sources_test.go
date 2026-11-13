@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 )
 
 func getLastInstant() time.Time { return time.Unix(0, math.MaxInt64) }
@@ -56,7 +56,7 @@ func numberRowsPast2To62(t *testing.T, db *DB) {
 
 func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Passage {
 	t.Helper()
-	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, getBenchModel(), "", 1000)
+	unembedded, _, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, getBenchModel().Recipe(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,9 +66,9 @@ func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Pa
 func getUnembeddedPassagesPaged(t *testing.T, db *DB, vault domain.Vault, limit int) []domain.Passage {
 	t.Helper()
 	var visited []domain.Passage
-	cursor := embedding.ChunkCursor("")
+	cursor := vector.ChunkCursor("")
 	for range 100 {
-		page, next, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, getBenchModel(), cursor, limit)
+		page, next, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, getBenchModel().Recipe(), cursor, limit)
 		if err != nil {
 			t.Fatalf("after cursor %q: %v", cursor, err)
 		}
@@ -146,7 +146,7 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 	// Every number is past 2^62.
 	const row = "9000000000000000000"
 	for _, item := range []struct {
-		cursor embedding.ChunkCursor
+		cursor vector.ChunkCursor
 		want   []string
 	}{
 		{row, []string{
@@ -154,9 +154,9 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 			"library/later.epub", "library/later.epub",
 			"library/far.epub", "library/far.epub",
 		}},
-		{embedding.ChunkCursor(strconv.FormatInt(getFarFuture().UnixNano(), 10) + ":" + row), []string{"library/far.epub", "library/far.epub"}},
+		{vector.ChunkCursor(strconv.FormatInt(getFarFuture().UnixNano(), 10) + ":" + row), []string{"library/far.epub", "library/far.epub"}},
 	} {
-		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel(), item.cursor, 10)
+		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel().Recipe(), item.cursor, 10)
 		if err != nil {
 			t.Errorf("cursor %q: %v", item.cursor, err)
 			continue
@@ -172,8 +172,8 @@ func TestGetUnembeddedChunks_RejectsForeignCursor(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, getFirstVault(), "library/a.epub", getThisYear(), "bread rises", "yeast ferments")
 
-	for _, cursor := range []embedding.ChunkCursor{"x", "x:1", "1:x", "x:1:2", "1:x:2", "1:2:x", "1:2:3:4"} {
-		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel(), cursor, 10)
+	for _, cursor := range []vector.ChunkCursor{"x", "x:1", "1:x", "x:1:2", "1:x:2", "1:2:x", "1:2:3:4"} {
+		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel().Recipe(), cursor, 10)
 		if err == nil {
 			t.Errorf("cursor %q was visited from, and gave %d chunks", cursor, len(page))
 		}
@@ -188,7 +188,7 @@ func TestAWalkOverAClosedIndexFails(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel(), "", 10); err == nil {
+	if _, _, err := db.Sources().GetUnembeddedChunks(t.Context(), getFirstVault().ID, getBenchModel().Recipe(), "", 10); err == nil {
 		t.Error("a walk over a closed index reported nothing unembedded")
 	}
 }
@@ -250,14 +250,14 @@ func TestVectorsSavedThroughThePortSettleWhatWasUnembedded(t *testing.T) {
 	if len(unembedded) != 2 {
 		t.Fatalf("%d chunks need a vector, want 2", len(unembedded))
 	}
-	vectors := make([]embedding.Vector, 0, len(unembedded))
+	vectors := make([]vector.Stored, 0, len(unembedded))
 	for _, p := range unembedded {
 		row, err := strconv.ParseInt(string(p.ChunkID), 10, 64)
 		if err != nil {
 			t.Fatal(err)
 		}
-		vectors = append(vectors, embedding.Vector{
-			ChunkID: p.ChunkID, Hash: hashOf(t, db, row), Model: getBenchModel(),
+		vectors = append(vectors, vector.Stored{
+			ChunkID: p.ChunkID, Hash: hashOf(t, db, row), Recipe: getBenchModel().Recipe(),
 			Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f),
 		})
 	}
@@ -268,8 +268,8 @@ func TestVectorsSavedThroughThePortSettleWhatWasUnembedded(t *testing.T) {
 		t.Errorf("%d chunks still need a vector", len(remaining))
 	}
 
-	stranger := embedding.Vector{ChunkID: "x", Hash: []byte{1}, Model: getBenchModel(), Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f)}
-	if err := db.Sources().SaveVectors(ctx, []embedding.Vector{stranger}); err == nil {
+	stranger := vector.Stored{ChunkID: "x", Hash: []byte{1}, Recipe: getBenchModel().Recipe(), Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f)}
+	if err := db.Sources().SaveVectors(ctx, []vector.Stored{stranger}); err == nil {
 		t.Error("a vector for chunk \"x\" was saved")
 	}
 }
@@ -334,7 +334,7 @@ func TestRemovingSourcesFromAClosedIndexFails(t *testing.T) {
 // the ordering.
 func TestACursorIsReadIntoThePositionItNames(t *testing.T) {
 	for _, c := range []struct {
-		cursor               embedding.ChunkCursor
+		cursor               vector.ChunkCursor
 		mtime, source, chunk int64
 		wantErr              bool
 	}{

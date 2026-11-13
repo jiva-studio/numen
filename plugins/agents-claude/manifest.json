@@ -1,12 +1,52 @@
 {
   "id": "md.numen.agents.claude",
   "name": "Claude Code Agent",
-  "version": "2026.11.10",
+  "version": "2026.11.11",
   "protocol": 1,
   "description": "Anthropic Claude Code assistant for chat and note editing",
-  "capabilities": ["ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
-  "contributes": { "category": "agents" },
+  "contributes": {
+    "category": "agents",
+    "operations": [{ "name": "acp.task", "title": "run agent tasks" }],
+    "connectionTypes": [
+      {
+        "id": "claude-code",
+        "title": "Claude Code",
+        "operations": [
+          "llm.complete",
+          "llm.models",
+          "llm.reasoning",
+          "acp.task",
+          "connections.detected"
+        ],
+        "rowFields": [
+          {
+            "key": "model",
+            "type": "string",
+            "title": "Model",
+            "optionsFrom": "llm.models"
+          },
+          {
+            "key": "reasoning",
+            "type": "enum",
+            "title": "Reasoning",
+            "optionsFrom": "llm.reasoning"
+          }
+        ],
+        "fields": [
+          {
+            "key": "parallelRequests",
+            "type": "number",
+            "title": "Parallel requests",
+            "default": 1,
+            "min": 1,
+            "max": 8,
+            "step": 1
+          }
+        ]
+      }
+    ]
+  },
   "permissions": [
     "link:open",
     "vault:read",
@@ -16,21 +56,32 @@
     "index:read"
   ],
   "backend": { "entrypoint": "bin/agents-claude" },
-  "services": ["numen.v1.AgentService"],
+  "services": ["numen.v1.ProviderService"],
   "settings": [
     {
       "key": "executablePath",
       "type": "file",
       "title": "Executable Path",
-      "description": "Path to the Claude Code CLI executable. Empty finds it automatically.",
+      "description": "Path to the Claude Code CLI; empty finds it automatically",
       "default": ""
     },
     {
       "key": "readsHooksAndSkills",
       "type": "boolean",
       "title": "Hooks & skills",
-      "description": "Let Claude Code read the hooks, skills, standing instructions in CLAUDE.md and plugins configured for this person. Off. A hook is a shell command Claude Code runs itself. What a vault contains is never read.",
+      "description": "Use your own Claude Code hooks, skills and CLAUDE.md",
+      "details": "Lets Claude Code read the hooks, skills, standing instructions in CLAUDE.md and plugins configured for this person. Off by default. A hook is a shell command Claude Code runs itself. What a vault contains is never read.",
       "default": false
+    },
+    {
+      "key": "requestTimeout",
+      "type": "number",
+      "title": "Request timeout",
+      "description": "Seconds to wait for the program; empty waits 120",
+      "details": "Seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds.",
+      "min": 1,
+      "max": 3600,
+      "step": 1
     }
   ]
 }

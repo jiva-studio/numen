@@ -51,7 +51,6 @@ func NewTools(links *link.Links) *Tools {
 func (t *Tools) Registry() (*tools.Registry, error) {
 	registry := tools.New()
 	err := tools.Add(registry, tools.Spec{
-		Step:  tools.ByEffect,
 		Name:  "url_import",
 		Title: "Import a URL",
 		Description: "Create a link note for a web address and fetch the text published there before returning: " +
@@ -62,7 +61,6 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 			"fetch is reported in error and the note is kept. With downloadVideo set, the video is also " +
 			"downloaded to this disk in the background, and the result returns the task id of the download.",
 		Effect:       tools.ReadWrite,
-		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{importerUseSentence, importerFetchSentence, importerOwnNotesSentence, importerDownloadSentence},
 		Requires:     []string{host.PermissionLinkOpen},
 	}, t.importURL)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -49,11 +50,11 @@ func TestACallOfTheHostDoesNotWaitForTheModelToOpen(t *testing.T) {
 	<-started
 
 	within(t, "GetModelInfo", func() {
-		if _, err := srv.GetModelInfo(); err != nil {
+		if _, err := srv.GetModelInfo(t.Context()); err != nil {
 			t.Error(err)
 		}
 	})
-	within(t, "Configure", func() { srv.updateConfig(map[string]string{"provider": "local"}, nil) })
+	within(t, "Configure", func() { srv.updateConfig(map[string]string{"source": "local"}) })
 }
 
 func TestACanceledBatchDoesNotStopTheOpening(t *testing.T) {
@@ -89,13 +90,13 @@ func TestAChangeOfTheModelEndsTheOpeningOfTheOldOne(t *testing.T) {
 	}
 	t.Cleanup(func() { closeServer(t, srv) })
 
-	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/bge-m3"}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": "Xenova/bge-m3"})
 	go func() { embedText(t.Context(), t, srv) }()
 	if got := <-names; got != "Xenova/bge-m3" {
 		t.Fatalf("opened %q first", got)
 	}
 
-	srv.updateConfig(map[string]string{"provider": "local", "model": model.DefaultModel}, nil)
+	srv.updateConfig(map[string]string{"source": "local", "model": model.DefaultModel})
 	vectors, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"text"})
 	if err != nil && !errors.Is(err, context.Canceled) {
 		t.Fatalf("the batch after the change: %v", err)
@@ -224,5 +225,62 @@ func TestFinishOpeningSupersededClosesRetiredModelAndRetries(t *testing.T) {
 	<-closedRetired
 	if srv.modelInfo.Concurrency != 5 {
 		t.Fatalf("Concurrency = %d, want 5 from second opening", srv.modelInfo.Concurrency)
+	}
+}
+
+func TestStartLoadingOpensTheModelOnceAndABatchDuringTheLoadWaitsForIt(t *testing.T) {
+	srv, started, release := slowModel(t)
+	var opens atomic.Int32
+	slow := srv.open
+	srv.open = func(ctx context.Context, info model.ModelInfo, local model.LocalModel) (ports.Embedder, error) {
+		opens.Add(1)
+		return slow(ctx, info, local)
+	}
+
+	srv.StartLoading()
+	<-started
+	ended := make(chan error, 1)
+	go func() { _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"text"}); ended <- err }()
+	srv.StartLoading()
+	close(release)
+
+	if err := <-ended; err != nil {
+		t.Fatalf("the batch during the load: %v", err)
+	}
+	if opens.Load() != 1 {
+		t.Errorf("opened the model %d times, want once", opens.Load())
+	}
+}
+
+func TestStartLoadingDoesNotOpenTheModelWhileAConnectionServes(t *testing.T) {
+	srv := newEmbeddingServer()
+	srv.updateConfig(map[string]string{"source": SourceConnection})
+	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
+		t.Error("the local model was opened for a connection")
+		return mockembedder.Embedder{}, nil
+	}
+	t.Cleanup(func() { closeServer(t, srv) })
+
+	srv.StartLoading()
+
+	srv.mu.Lock()
+	defer srv.mu.Unlock()
+	if srv.loader.IsOpening() || srv.loader.IsLoaded() {
+		t.Error("the loader started for a connection")
+	}
+}
+
+func TestSwitchingToAConnectionEndsTheLoadOfTheLocalModel(t *testing.T) {
+	srv, started, release := slowModel(t)
+	defer close(release)
+
+	srv.StartLoading()
+	<-started
+	srv.updateConfig(map[string]string{"source": SourceConnection})
+
+	srv.mu.Lock()
+	defer srv.mu.Unlock()
+	if srv.loader.IsOpening() || srv.loader.IsLoaded() {
+		t.Fatal("the local model still loads while a connection serves the embeddings")
 	}
 }

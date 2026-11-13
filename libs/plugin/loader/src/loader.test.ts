@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { PluginContext, PluginSettings, PluginLifecycle } from '@numen/plugin-sdk'
+import { parseManifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
 import type { LoaderHost } from './host'
@@ -7,11 +8,27 @@ import { getPluginStyle, registerPluginStyle } from './styles'
 import { createPluginLoader } from './loader'
 import { parseLifecycleHooks, resolveModule } from './module'
 
+function createWindowSlotManifest(id: string) {
+  const parsed = parseManifest(
+    JSON.stringify({
+      id,
+      name: id,
+      version: '1.0.0',
+      contributes: { slots: [{ slot: 'titleBar', view: 'bar' }] },
+    }),
+  )
+  if (!parsed.ok) throw new Error(parsed.error)
+  return parsed.value
+}
+
 function registerModules(
   loader: ReturnType<typeof createPluginLoader>,
   modules: Record<string, () => Promise<object>>,
 ) {
-  for (const [id, load] of Object.entries(modules)) loader.registerPluginModule(id, load)
+  for (const [id, load] of Object.entries(modules)) {
+    loader.registerPluginModule(id, load)
+    loader.registerPluginManifest(id, createWindowSlotManifest(id))
+  }
   return loader
 }
 
@@ -166,6 +183,8 @@ describe('createPluginLoader', () => {
     }))
 
     await loader.start()
+    expect(activatedCount).toBe(0)
+    await loader.status.startPlugin('p1')
     expect(activatedCount).toBe(1)
     expect(loader.status.isPluginActive('p1')).toBe(true)
 
@@ -177,12 +196,13 @@ describe('createPluginLoader', () => {
     expect(loader.status.isPluginActive('p1')).toBe(false)
 
     await loader.start()
+    await loader.status.startPlugin('p1')
     expect(activatedCount).toBe(2)
     await host.triggerSettingChange('p1', 'enabled', false)
     expect(loader.status.isPluginActive('p1')).toBe(false)
   })
 
-  it('does not activate disabled plugins on start', async () => {
+  it('does not activate disabled plugins on start or on use', async () => {
     const host = createMockHost()
     host.settings.set('disabled.plugin.enabled', false)
     const loader = createTestLoader(host)
@@ -195,6 +215,7 @@ describe('createPluginLoader', () => {
     }))
 
     await loader.start()
+    await loader.status.startPlugin('disabled.plugin')
     expect(activated).toBe(false)
     expect(loader.status.isPluginActive('disabled.plugin')).toBe(false)
   })
@@ -216,6 +237,7 @@ describe('createPluginLoader', () => {
     }))
 
     await loader.start()
+    await loader.status.startPlugin('toggleable.plugin')
     expect(activated).toBe(true)
     expect(loader.status.isPluginActive('toggleable.plugin')).toBe(true)
 
@@ -351,6 +373,7 @@ describe('createPluginLoader catalog manifests', () => {
     })
     loader.registerPluginManifest('cat.plugin', manifest)
     await loader.start()
+    await loader.status.startPlugin('cat.plugin')
     expect(createContext).toHaveBeenCalledWith('cat.plugin', manifest)
   })
 })
@@ -554,65 +577,51 @@ describe('createPluginLoader failures, order and toggles', () => {
     expect(activate).toHaveBeenCalledTimes(1)
   })
 
-  it('settles a wait for a plugin once the plugin has been activated', async () => {
+  it('starts a plugin on use, and the use settles once the plugin is active', async () => {
     const { host } = createHost()
-    const loader = registerModules(createPluginLoader({ host }), {
-      p: async () => ({ activate: () => undefined }),
-    })
-    const spy = vi.fn()
+    const activate = vi.fn()
+    const loader = createPluginLoader({ host })
+    loader.registerPluginModule('p', async () => ({ activate }))
+    await loader.start()
+    expect(activate).not.toHaveBeenCalled()
 
-    const wait = loader.status.settlePlugin('p').then(spy)
-    await Promise.resolve()
-    expect(spy).not.toHaveBeenCalled()
-    await loader.activation.activatePlugin('p')
-    await wait
+    await loader.status.startPlugin('p')
 
-    expect(spy).toHaveBeenCalledOnce()
+    expect(activate).toHaveBeenCalledOnce()
+    expect(loader.status.isPluginActive('p')).toBe(true)
   })
 
-  it('settles a wait for a plugin at once when the plugin is already active', async () => {
+  it('settles a use at once when the plugin is already active', async () => {
     const { host } = createHost()
-    const loader = registerModules(createPluginLoader({ host }), {
-      p: async () => ({ activate: () => undefined }),
-    })
-    await loader.activation.activatePlugin('p')
+    const activate = vi.fn()
+    const loader = registerModules(createPluginLoader({ host }), { p: async () => ({ activate }) })
+    await loader.start()
 
-    await expect(loader.status.settlePlugin('p')).resolves.toBeUndefined()
+    await expect(loader.status.startPlugin('p')).resolves.toBeUndefined()
+    expect(activate).toHaveBeenCalledOnce()
   })
 
-  it('settles a wait for a plugin whose activation failed', async () => {
+  it('settles a use of a plugin whose activation failed', async () => {
     const { host } = createHost()
-    const loader = registerModules(createPluginLoader({ host }), {
-      p: async () => ({
-        activate: () => {
-          throw new Error('boom')
-        },
-      }),
-    })
-    const wait = loader.status.settlePlugin('p')
+    const loader = createPluginLoader({ host, onError: vi.fn() })
+    loader.registerPluginModule('p', async () => ({
+      activate: () => {
+        throw new Error('boom')
+      },
+    }))
+    await loader.start()
 
-    await loader.activation.activatePlugin('p')
-
-    await expect(wait).resolves.toBeUndefined()
+    await expect(loader.status.startPlugin('p')).resolves.toBeUndefined()
+    expect(loader.status.getPluginFailure('p')).toBe('boom')
   })
 
-  it('settles a wait for a plugin that is never activated after the start limit', async () => {
-    vi.useFakeTimers()
-    try {
-      const { host } = createHost()
-      const loader = createPluginLoader({ host })
-      const spy = vi.fn()
+  it('settles a use at once for a plugin the window does not list', async () => {
+    const { host } = createHost()
+    const loader = createPluginLoader({ host })
+    await loader.start()
 
-      const wait = loader.status.settlePlugin('never').then(spy)
-      await vi.advanceTimersByTimeAsync(30_000 - 1)
-      expect(spy).not.toHaveBeenCalled()
-      await vi.advanceTimersByTimeAsync(1)
-      await wait
-
-      expect(spy).toHaveBeenCalledOnce()
-    } finally {
-      vi.useRealTimers()
-    }
+    await expect(loader.status.startPlugin('never')).resolves.toBeUndefined()
+    expect(loader.status.isPluginActive('never')).toBe(false)
   })
 
   it('runs a deactivation requested during an activation after it', async () => {
@@ -689,10 +698,13 @@ describe('createPluginLoader failures, order and toggles', () => {
     return { host, imports, loader }
   }
 
-  it('tracks a plugin that is only known by id and loads it from its manifest', async () => {
+  it('tracks a plugin that is only known by id, and loads it from its manifest on use', async () => {
     const { host, loader } = createDynamicLoader()
     await loader.start()
     await loader.trackPlugins(['dyn'])
+    expect(loader.status.isPluginActive('dyn')).toBe(false)
+
+    await loader.status.startPlugin('dyn')
 
     expect(loader.status.isPluginActive('dyn')).toBe(true)
     expect(host.onSettingChange).toHaveBeenCalledTimes(1)
@@ -858,6 +870,9 @@ describe('createPluginLoader failures, order and toggles', () => {
     expect(host.onSettingChange).not.toHaveBeenCalled()
 
     await loader.start()
+    expect(loader.status.isPluginActive('tracked.one')).toBe(false)
+    await loader.status.startPlugin('tracked.one')
+    await loader.status.startPlugin('backend.only')
     expect(loader.status.isPluginActive('tracked.one')).toBe(true)
     expect(loader.status.isPluginActive('backend.only')).toBe(false)
     expect(manifestCount).toBe(2)
@@ -879,8 +894,10 @@ describe('createPluginLoader failures, order and toggles', () => {
       },
     }))
     await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(lateActivated).toBe(true)
+    expect(lateActivated).toBe(false)
     expect(listeners.has('late.enabled')).toBe(true)
+    await loader.status.startPlugin('late.enabled')
+    expect(lateActivated).toBe(true)
 
     let disabledActivated = false
     loader.registerPluginModule('disabled.after', async () => ({

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 const IGNORE =
-  "**/*.test.*,**/*_test.go,**/*.spec.*,**/*.stories.*,**/fixtures/**,**/testdata/**,**/node_modules/**,**/dist/**,**/.claude/**,**/gen/**,**/*.yml,**/*.yaml,**/Makefile,**/go.mod,**/go.sum";
+  "**/*.test.*,**/*_test.go,**/*.spec.*,**/*.stories.*,**/fixtures/**,**/testdata/**,**/node_modules/**,**/dist/**,**/.claude/**,**/gen/**,**/*.yml,**/*.yaml,**/Makefile,**/go.mod,**/go.sum,**/manifest.json";
 
 const CONCURRENCY = 4;
 

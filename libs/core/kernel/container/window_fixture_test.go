@@ -3,33 +3,11 @@ package container_test
 import (
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
-
-// editorServices is what the editor window is given of a configuration: its agent and the use cases
-// of its settings. The agent and its provider are made once, as a window makes them.
-type editorServices struct {
-	cfg      container.Config
-	agent    agentport.Agent
-	provider agentport.AgentProvider
-}
-
-func newEditorServices(cfg container.Config) editorServices {
-	return editorServices{cfg: cfg, agent: cfg.GetEditorAgent(), provider: cfg.AgentProvider()}
-}
-
-func (e editorServices) GetAgent() agentport.Agent { return e.agent }
-
-func (e editorServices) OpenGetSettings() *settings.Get { return e.cfg.OpenGetSettings(e.provider) }
-
-func (e editorServices) OpenWatchSettings() *settings.WatchSettingChanges {
-	return e.cfg.OpenWatchSettings()
-}
 
 // windowVaults is a configuration with the list of vaults and the cache a window works the vaults
 // of the plugins through.

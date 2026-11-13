@@ -71,13 +71,12 @@ export function usePluginSwitch(deps: PluginDetailDeps) {
 }
 
 export function usePluginDetail(deps: PluginDetailDeps) {
-  const read = (key: string) => deps.getSettings().getSetting([deps.getPlugin().id, key])
-
   const managed = computed(
     () => createManagedFromEntries([deps.getPlugin()], deps.getManager().catalog.value)[0],
   )
 
-  const hasSettings = computed(() => hasPluginSettings(deps.getPlugin(), read))
+  const hasSettings = computed(() => hasPluginSettings(deps.getPlugin()))
+  const isApple = computed(() => deps.getSettings().getPlatform() === 'darwin')
   /** How many files the plugin keeps in the shown vault; zero hides the delete action. */
   const fileCount = ref(0)
   const deleteProblem = ref('')
@@ -117,5 +116,5 @@ export function usePluginDetail(deps: PluginDetailDeps) {
 
   const deleteData = createDataDeletion(deps, deleteProblem, readFileCount)
 
-  return { managed, hasSettings, fileCount, deleteProblem, readmeText, deleteData }
+  return { managed, hasSettings, isApple, fileCount, deleteProblem, readmeText, deleteData }
 }

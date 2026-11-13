@@ -153,7 +153,7 @@ func TestStartAnswers(t *testing.T) {
 	}
 }
 
-// The three services this mounts read and write the user's notes, and the
+// The services this mounts read and write the user's notes, and the
 // socket they listen on is reachable by every process on the phone. The only
 // allowed origin is the page the platform serves; a request from any other
 // origin receives no CORS grant.

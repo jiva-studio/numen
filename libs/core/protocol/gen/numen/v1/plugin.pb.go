@@ -21,6 +21,115 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PluginContributionKind is a section of a manifest, named after its key. The zero value means
+// nothing. KEYBINDINGS lists only the bindings of commands the plugin does not declare; a binding
+// of a command it declares is the keys of that command.
+type PluginContributionKind int32
+
+const (
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED       PluginContributionKind = 0
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_COMMANDS          PluginContributionKind = 1
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_KEYBINDINGS       PluginContributionKind = 2
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TAB_KINDS         PluginContributionKind = 3
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_READERS           PluginContributionKind = 4
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_HANDLERS          PluginContributionKind = 5
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TRIGGERS          PluginContributionKind = 6
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TEXT_KINDS        PluginContributionKind = 7
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_NOTE_TYPES        PluginContributionKind = 8
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_THEMES            PluginContributionKind = 9
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SLOTS             PluginContributionKind = 10
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_LISTENERS         PluginContributionKind = 11
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_VIEW_CAPABILITIES PluginContributionKind = 12
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_DROP_HANDLERS     PluginContributionKind = 13
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_FRAME_ORIGINS     PluginContributionKind = 14
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_CONNECTION_TYPES  PluginContributionKind = 15
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_OPERATIONS        PluginContributionKind = 16
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_PERMISSIONS       PluginContributionKind = 17
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_DEPENDENCIES      PluginContributionKind = 18
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SERVICES          PluginContributionKind = 19
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_CAPABILITIES      PluginContributionKind = 20
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS PluginContributionKind = 21
+)
+
+// Enum value maps for PluginContributionKind.
+var (
+	PluginContributionKind_name = map[int32]string{
+		0:  "PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED",
+		1:  "PLUGIN_CONTRIBUTION_KIND_COMMANDS",
+		2:  "PLUGIN_CONTRIBUTION_KIND_KEYBINDINGS",
+		3:  "PLUGIN_CONTRIBUTION_KIND_TAB_KINDS",
+		4:  "PLUGIN_CONTRIBUTION_KIND_READERS",
+		5:  "PLUGIN_CONTRIBUTION_KIND_HANDLERS",
+		6:  "PLUGIN_CONTRIBUTION_KIND_TRIGGERS",
+		7:  "PLUGIN_CONTRIBUTION_KIND_TEXT_KINDS",
+		8:  "PLUGIN_CONTRIBUTION_KIND_NOTE_TYPES",
+		9:  "PLUGIN_CONTRIBUTION_KIND_THEMES",
+		10: "PLUGIN_CONTRIBUTION_KIND_SLOTS",
+		11: "PLUGIN_CONTRIBUTION_KIND_LISTENERS",
+		12: "PLUGIN_CONTRIBUTION_KIND_VIEW_CAPABILITIES",
+		13: "PLUGIN_CONTRIBUTION_KIND_DROP_HANDLERS",
+		14: "PLUGIN_CONTRIBUTION_KIND_FRAME_ORIGINS",
+		15: "PLUGIN_CONTRIBUTION_KIND_CONNECTION_TYPES",
+		16: "PLUGIN_CONTRIBUTION_KIND_OPERATIONS",
+		17: "PLUGIN_CONTRIBUTION_KIND_PERMISSIONS",
+		18: "PLUGIN_CONTRIBUTION_KIND_DEPENDENCIES",
+		19: "PLUGIN_CONTRIBUTION_KIND_SERVICES",
+		20: "PLUGIN_CONTRIBUTION_KIND_CAPABILITIES",
+		21: "PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS",
+	}
+	PluginContributionKind_value = map[string]int32{
+		"PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED":       0,
+		"PLUGIN_CONTRIBUTION_KIND_COMMANDS":          1,
+		"PLUGIN_CONTRIBUTION_KIND_KEYBINDINGS":       2,
+		"PLUGIN_CONTRIBUTION_KIND_TAB_KINDS":         3,
+		"PLUGIN_CONTRIBUTION_KIND_READERS":           4,
+		"PLUGIN_CONTRIBUTION_KIND_HANDLERS":          5,
+		"PLUGIN_CONTRIBUTION_KIND_TRIGGERS":          6,
+		"PLUGIN_CONTRIBUTION_KIND_TEXT_KINDS":        7,
+		"PLUGIN_CONTRIBUTION_KIND_NOTE_TYPES":        8,
+		"PLUGIN_CONTRIBUTION_KIND_THEMES":            9,
+		"PLUGIN_CONTRIBUTION_KIND_SLOTS":             10,
+		"PLUGIN_CONTRIBUTION_KIND_LISTENERS":         11,
+		"PLUGIN_CONTRIBUTION_KIND_VIEW_CAPABILITIES": 12,
+		"PLUGIN_CONTRIBUTION_KIND_DROP_HANDLERS":     13,
+		"PLUGIN_CONTRIBUTION_KIND_FRAME_ORIGINS":     14,
+		"PLUGIN_CONTRIBUTION_KIND_CONNECTION_TYPES":  15,
+		"PLUGIN_CONTRIBUTION_KIND_OPERATIONS":        16,
+		"PLUGIN_CONTRIBUTION_KIND_PERMISSIONS":       17,
+		"PLUGIN_CONTRIBUTION_KIND_DEPENDENCIES":      18,
+		"PLUGIN_CONTRIBUTION_KIND_SERVICES":          19,
+		"PLUGIN_CONTRIBUTION_KIND_CAPABILITIES":      20,
+		"PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS": 21,
+	}
+)
+
+func (x PluginContributionKind) Enum() *PluginContributionKind {
+	p := new(PluginContributionKind)
+	*p = x
+	return p
+}
+
+func (x PluginContributionKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PluginContributionKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_plugin_proto_enumTypes[0].Descriptor()
+}
+
+func (PluginContributionKind) Type() protoreflect.EnumType {
+	return &file_numen_v1_plugin_proto_enumTypes[0]
+}
+
+func (x PluginContributionKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PluginContributionKind.Descriptor instead.
+func (PluginContributionKind) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{0}
+}
+
 // value means it did not.
 type PluginEventErrorCode int32
 
@@ -53,11 +162,11 @@ func (x PluginEventErrorCode) String() string {
 }
 
 func (PluginEventErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_plugin_proto_enumTypes[0].Descriptor()
+	return file_numen_v1_plugin_proto_enumTypes[1].Descriptor()
 }
 
 func (PluginEventErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_plugin_proto_enumTypes[0]
+	return &file_numen_v1_plugin_proto_enumTypes[1]
 }
 
 func (x PluginEventErrorCode) Number() protoreflect.EnumNumber {
@@ -66,7 +175,7 @@ func (x PluginEventErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PluginEventErrorCode.Descriptor instead.
 func (PluginEventErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{0}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{1}
 }
 
 type PingRequest struct {
@@ -249,12 +358,9 @@ type ConfigureRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	PluginId          string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 	ConfigurationJson string                 `protobuf:"bytes,2,opt,name=configuration_json,json=configurationJson,proto3" json:"configuration_json,omitempty"`
-	// values no longer carries secrets.
-	Values map[string]string `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// secrets holds one entry for each active secret declaration of the plugin.
-	Secrets       []*ConfigureSecrets `protobuf:"bytes,4,rep,name=secrets,proto3" json:"secrets,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Values            map[string]string      `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ConfigureRequest) Reset() {
@@ -308,146 +414,6 @@ func (x *ConfigureRequest) GetValues() map[string]string {
 	return nil
 }
 
-func (x *ConfigureRequest) GetSecrets() []*ConfigureSecrets {
-	if x != nil {
-		return x.Secrets
-	}
-	return nil
-}
-
-// ConfigureSecrets is what one active declaration of the plugin receives.
-type ConfigureSecrets struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The name of the declaration.
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// The group of the declaration, empty for none.
-	Group string `protobuf:"bytes,3,opt,name=group,proto3" json:"group,omitempty"`
-	// The allowed secrets in delivery order. Empty means no secret.
-	Values        []*SecretValue `protobuf:"bytes,2,rep,name=values,proto3" json:"values,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ConfigureSecrets) Reset() {
-	*x = ConfigureSecrets{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ConfigureSecrets) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ConfigureSecrets) ProtoMessage() {}
-
-func (x *ConfigureSecrets) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ConfigureSecrets.ProtoReflect.Descriptor instead.
-func (*ConfigureSecrets) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *ConfigureSecrets) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *ConfigureSecrets) GetGroup() string {
-	if x != nil {
-		return x.Group
-	}
-	return ""
-}
-
-func (x *ConfigureSecrets) GetValues() []*SecretValue {
-	if x != nil {
-		return x.Values
-	}
-	return nil
-}
-
-// SecretValue is one allowed secret with its value. Values are delivered here and nowhere else.
-type SecretValue struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Group         string                 `protobuf:"bytes,3,opt,name=group,proto3" json:"group,omitempty"`
-	Value         string                 `protobuf:"bytes,4,opt,name=value,proto3" json:"value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SecretValue) Reset() {
-	*x = SecretValue{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SecretValue) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SecretValue) ProtoMessage() {}
-
-func (x *SecretValue) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SecretValue.ProtoReflect.Descriptor instead.
-func (*SecretValue) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *SecretValue) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *SecretValue) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *SecretValue) GetGroup() string {
-	if x != nil {
-		return x.Group
-	}
-	return ""
-}
-
-func (x *SecretValue) GetValue() string {
-	if x != nil {
-		return x.Value
-	}
-	return ""
-}
-
 type ConfigureResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
@@ -458,7 +424,7 @@ type ConfigureResponse struct {
 
 func (x *ConfigureResponse) Reset() {
 	*x = ConfigureResponse{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[7]
+	mi := &file_numen_v1_plugin_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -470,7 +436,7 @@ func (x *ConfigureResponse) String() string {
 func (*ConfigureResponse) ProtoMessage() {}
 
 func (x *ConfigureResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[7]
+	mi := &file_numen_v1_plugin_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -483,7 +449,7 @@ func (x *ConfigureResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigureResponse.ProtoReflect.Descriptor instead.
 func (*ConfigureResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ConfigureResponse) GetSuccess() bool {
@@ -502,11 +468,14 @@ func (x *ConfigureResponse) GetError() string {
 
 // PluginSetting declares one setting in the plugin's declarative settings schema.
 type PluginSetting struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	Key         string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Type        string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
-	Title       string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Key   string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Type  string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	Title string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	// The one line the settings row shows under the title.
+	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	// The full text the info button beside the title opens. Empty shows no button.
+	Details     string                 `protobuf:"bytes,25,opt,name=details,proto3" json:"details,omitempty"`
 	DefaultJson string                 `protobuf:"bytes,5,opt,name=default_json,json=defaultJson,proto3" json:"default_json,omitempty"`
 	Palette     bool                   `protobuf:"varint,6,opt,name=palette,proto3" json:"palette,omitempty"`
 	Options     []*PluginSettingOption `protobuf:"bytes,7,rep,name=options,proto3" json:"options,omitempty"`
@@ -537,14 +506,19 @@ type PluginSetting struct {
 	IsShown bool `protobuf:"varint,20,opt,name=is_shown,json=isShown,proto3" json:"is_shown,omitempty"`
 	// The value in force as JSON, resolved by the core: the stored value, else the default, else the
 	// first of the options in force.
-	ValueJson     string `protobuf:"bytes,21,opt,name=value_json,json=valueJson,proto3" json:"value_json,omitempty"`
+	ValueJson string `protobuf:"bytes,21,opt,name=value_json,json=valueJson,proto3" json:"value_json,omitempty"`
+	// The operations a setting of type connections is used for. max is the number of rows.
+	Operations []string `protobuf:"bytes,23,rep,name=operations,proto3" json:"operations,omitempty"`
+	// Whether the manifest lets a setting of type connections that holds no row use every connection
+	// whose type serves the operation. The person's choice is in the plugin field "discover".
+	Discover      bool `protobuf:"varint,24,opt,name=discover,proto3" json:"discover,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PluginSetting) Reset() {
 	*x = PluginSetting{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[8]
+	mi := &file_numen_v1_plugin_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -556,7 +530,7 @@ func (x *PluginSetting) String() string {
 func (*PluginSetting) ProtoMessage() {}
 
 func (x *PluginSetting) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[8]
+	mi := &file_numen_v1_plugin_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -569,7 +543,7 @@ func (x *PluginSetting) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginSetting.ProtoReflect.Descriptor instead.
 func (*PluginSetting) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PluginSetting) GetKey() string {
@@ -596,6 +570,13 @@ func (x *PluginSetting) GetTitle() string {
 func (x *PluginSetting) GetDescription() string {
 	if x != nil {
 		return x.Description
+	}
+	return ""
+}
+
+func (x *PluginSetting) GetDetails() string {
+	if x != nil {
+		return x.Details
 	}
 	return ""
 }
@@ -712,6 +693,20 @@ func (x *PluginSetting) GetValueJson() string {
 	return ""
 }
 
+func (x *PluginSetting) GetOperations() []string {
+	if x != nil {
+		return x.Operations
+	}
+	return nil
+}
+
+func (x *PluginSetting) GetDiscover() bool {
+	if x != nil {
+		return x.Discover
+	}
+	return false
+}
+
 // PluginSettingOption is one value an enum setting can hold.
 type PluginSettingOption struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -729,7 +724,7 @@ type PluginSettingOption struct {
 
 func (x *PluginSettingOption) Reset() {
 	*x = PluginSettingOption{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[9]
+	mi := &file_numen_v1_plugin_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -741,7 +736,7 @@ func (x *PluginSettingOption) String() string {
 func (*PluginSettingOption) ProtoMessage() {}
 
 func (x *PluginSettingOption) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[9]
+	mi := &file_numen_v1_plugin_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -754,7 +749,7 @@ func (x *PluginSettingOption) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginSettingOption.ProtoReflect.Descriptor instead.
 func (*PluginSettingOption) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PluginSettingOption) GetValue() string {
@@ -795,7 +790,7 @@ type PluginSettingOptions struct {
 
 func (x *PluginSettingOptions) Reset() {
 	*x = PluginSettingOptions{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[10]
+	mi := &file_numen_v1_plugin_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -807,7 +802,7 @@ func (x *PluginSettingOptions) String() string {
 func (*PluginSettingOptions) ProtoMessage() {}
 
 func (x *PluginSettingOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[10]
+	mi := &file_numen_v1_plugin_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -820,7 +815,7 @@ func (x *PluginSettingOptions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginSettingOptions.ProtoReflect.Descriptor instead.
 func (*PluginSettingOptions) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *PluginSettingOptions) GetOptions() []*PluginSettingOption {
@@ -842,7 +837,7 @@ type PluginSettingOptionsBy struct {
 
 func (x *PluginSettingOptionsBy) Reset() {
 	*x = PluginSettingOptionsBy{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[11]
+	mi := &file_numen_v1_plugin_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -854,7 +849,7 @@ func (x *PluginSettingOptionsBy) String() string {
 func (*PluginSettingOptionsBy) ProtoMessage() {}
 
 func (x *PluginSettingOptionsBy) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[11]
+	mi := &file_numen_v1_plugin_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -867,7 +862,7 @@ func (x *PluginSettingOptionsBy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginSettingOptionsBy.ProtoReflect.Descriptor instead.
 func (*PluginSettingOptionsBy) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PluginSettingOptionsBy) GetSetting() string {
@@ -895,7 +890,7 @@ type PluginSettingCondition struct {
 
 func (x *PluginSettingCondition) Reset() {
 	*x = PluginSettingCondition{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[12]
+	mi := &file_numen_v1_plugin_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -907,7 +902,7 @@ func (x *PluginSettingCondition) String() string {
 func (*PluginSettingCondition) ProtoMessage() {}
 
 func (x *PluginSettingCondition) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[12]
+	mi := &file_numen_v1_plugin_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -920,7 +915,7 @@ func (x *PluginSettingCondition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginSettingCondition.ProtoReflect.Descriptor instead.
 func (*PluginSettingCondition) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *PluginSettingCondition) GetSetting() string {
@@ -949,10 +944,6 @@ type PluginInfo struct {
 	IsActive     bool                   `protobuf:"varint,7,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
 	// The permissions the manifest declares.
 	Permissions []string `protobuf:"bytes,8,rep,name=permissions,proto3" json:"permissions,omitempty"`
-	// The secrets the manifest declares.
-	Secrets []*SecretDeclaration `protobuf:"bytes,9,rep,name=secrets,proto3" json:"secrets,omitempty"`
-	// Set while the last start of the plugin failed, until a start succeeds.
-	Failure *PluginFailure `protobuf:"bytes,10,opt,name=failure,proto3" json:"failure,omitempty"`
 	// Whether the plugin declares a frontend bundle a window loads.
 	HasFrontend bool `protobuf:"varint,11,opt,name=has_frontend,json=hasFrontend,proto3" json:"has_frontend,omitempty"`
 	// The readers the manifest declares, with the files each opens.
@@ -960,14 +951,19 @@ type PluginInfo struct {
 	// The components the frontend draws inside the plugin's settings.
 	SettingsViews []*PluginSettingsView `protobuf:"bytes,13,rep,name=settings_views,json=settingsViews,proto3" json:"settings_views,omitempty"`
 	// Whether the plugin declares a backend the host starts.
-	HasBackend    bool `protobuf:"varint,14,opt,name=has_backend,json=hasBackend,proto3" json:"has_backend,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	HasBackend bool `protobuf:"varint,14,opt,name=has_backend,json=hasBackend,proto3" json:"has_backend,omitempty"`
+	// What the manifest declares, one entry per section that declares anything, in the order of
+	// PluginContributionKind.
+	Contributions []*PluginContribution `protobuf:"bytes,15,rep,name=contributions,proto3" json:"contributions,omitempty"`
+	// Whether the plugin stays off until the person enables it, when its settings hold no enabled value.
+	IsOffByDefault bool `protobuf:"varint,16,opt,name=is_off_by_default,json=isOffByDefault,proto3" json:"is_off_by_default,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *PluginInfo) Reset() {
 	*x = PluginInfo{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[13]
+	mi := &file_numen_v1_plugin_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -979,7 +975,7 @@ func (x *PluginInfo) String() string {
 func (*PluginInfo) ProtoMessage() {}
 
 func (x *PluginInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[13]
+	mi := &file_numen_v1_plugin_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -992,7 +988,7 @@ func (x *PluginInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginInfo.ProtoReflect.Descriptor instead.
 func (*PluginInfo) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *PluginInfo) GetId() string {
@@ -1051,20 +1047,6 @@ func (x *PluginInfo) GetPermissions() []string {
 	return nil
 }
 
-func (x *PluginInfo) GetSecrets() []*SecretDeclaration {
-	if x != nil {
-		return x.Secrets
-	}
-	return nil
-}
-
-func (x *PluginInfo) GetFailure() *PluginFailure {
-	if x != nil {
-		return x.Failure
-	}
-	return nil
-}
-
 func (x *PluginInfo) GetHasFrontend() bool {
 	if x != nil {
 		return x.HasFrontend
@@ -1091,6 +1073,139 @@ func (x *PluginInfo) GetHasBackend() bool {
 		return x.HasBackend
 	}
 	return false
+}
+
+func (x *PluginInfo) GetContributions() []*PluginContribution {
+	if x != nil {
+		return x.Contributions
+	}
+	return nil
+}
+
+func (x *PluginInfo) GetIsOffByDefault() bool {
+	if x != nil {
+		return x.IsOffByDefault
+	}
+	return false
+}
+
+// PluginContribution is one section of a plugin's manifest and the entries it declares, in the
+// order the manifest declares them.
+type PluginContribution struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Kind          PluginContributionKind    `protobuf:"varint,1,opt,name=kind,proto3,enum=numen.v1.PluginContributionKind" json:"kind,omitempty"`
+	Items         []*PluginContributionItem `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PluginContribution) Reset() {
+	*x = PluginContribution{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PluginContribution) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PluginContribution) ProtoMessage() {}
+
+func (x *PluginContribution) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PluginContribution.ProtoReflect.Descriptor instead.
+func (*PluginContribution) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *PluginContribution) GetKind() PluginContributionKind {
+	if x != nil {
+		return x.Kind
+	}
+	return PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED
+}
+
+func (x *PluginContribution) GetItems() []*PluginContributionItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+// PluginContributionItem is one entry of a section of a manifest.
+type PluginContributionItem struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The title of the entry, or its id where it declares no title.
+	Text string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	// The id or the target of the entry as the manifest writes it. Empty where it has none.
+	Detail string `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	// The shortcut of a command or a keybinding as the manifest writes it, such as mod+shift+a. Empty
+	// for every other entry.
+	Keys          string `protobuf:"bytes,3,opt,name=keys,proto3" json:"keys,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PluginContributionItem) Reset() {
+	*x = PluginContributionItem{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PluginContributionItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PluginContributionItem) ProtoMessage() {}
+
+func (x *PluginContributionItem) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PluginContributionItem.ProtoReflect.Descriptor instead.
+func (*PluginContributionItem) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *PluginContributionItem) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *PluginContributionItem) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *PluginContributionItem) GetKeys() string {
+	if x != nil {
+		return x.Keys
+	}
+	return ""
 }
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.
@@ -1205,70 +1320,6 @@ func (x *PluginReader) GetExtensions() []string {
 	return nil
 }
 
-// PluginFailure is why the last start of a plugin failed, and when.
-type PluginFailure struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// A short UI label for the failure, such as "Failed to start".
-	Reason string `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
-	// When the host gave the plugin up, in milliseconds since the Unix epoch.
-	FailedAtUnixMs int64 `protobuf:"varint,2,opt,name=failed_at_unix_ms,json=failedAtUnixMs,proto3" json:"failed_at_unix_ms,omitempty"`
-	// The underlying error, shown on request.
-	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PluginFailure) Reset() {
-	*x = PluginFailure{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PluginFailure) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PluginFailure) ProtoMessage() {}
-
-func (x *PluginFailure) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PluginFailure.ProtoReflect.Descriptor instead.
-func (*PluginFailure) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *PluginFailure) GetReason() string {
-	if x != nil {
-		return x.Reason
-	}
-	return ""
-}
-
-func (x *PluginFailure) GetFailedAtUnixMs() int64 {
-	if x != nil {
-		return x.FailedAtUnixMs
-	}
-	return 0
-}
-
-func (x *PluginFailure) GetDetail() string {
-	if x != nil {
-		return x.Detail
-	}
-	return ""
-}
-
 type GetPluginsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1277,7 +1328,7 @@ type GetPluginsRequest struct {
 
 func (x *GetPluginsRequest) Reset() {
 	*x = GetPluginsRequest{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[17]
+	mi := &file_numen_v1_plugin_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1289,7 +1340,7 @@ func (x *GetPluginsRequest) String() string {
 func (*GetPluginsRequest) ProtoMessage() {}
 
 func (x *GetPluginsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[17]
+	mi := &file_numen_v1_plugin_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1302,7 +1353,7 @@ func (x *GetPluginsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPluginsRequest.ProtoReflect.Descriptor instead.
 func (*GetPluginsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{16}
 }
 
 type GetPluginsResponse struct {
@@ -1314,7 +1365,7 @@ type GetPluginsResponse struct {
 
 func (x *GetPluginsResponse) Reset() {
 	*x = GetPluginsResponse{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[18]
+	mi := &file_numen_v1_plugin_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1326,7 +1377,7 @@ func (x *GetPluginsResponse) String() string {
 func (*GetPluginsResponse) ProtoMessage() {}
 
 func (x *GetPluginsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[18]
+	mi := &file_numen_v1_plugin_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1339,7 +1390,7 @@ func (x *GetPluginsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPluginsResponse.ProtoReflect.Descriptor instead.
 func (*GetPluginsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{18}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetPluginsResponse) GetPlugins() []*PluginInfo {
@@ -1349,9 +1400,369 @@ func (x *GetPluginsResponse) GetPlugins() []*PluginInfo {
 	return nil
 }
 
+type WatchPluginProcessesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WatchPluginProcessesRequest) Reset() {
+	*x = WatchPluginProcessesRequest{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WatchPluginProcessesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WatchPluginProcessesRequest) ProtoMessage() {}
+
+func (x *WatchPluginProcessesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WatchPluginProcessesRequest.ProtoReflect.Descriptor instead.
+func (*WatchPluginProcessesRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{18}
+}
+
+type ReleaseProcessRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReleaseProcessRequest) Reset() {
+	*x = ReleaseProcessRequest{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReleaseProcessRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReleaseProcessRequest) ProtoMessage() {}
+
+func (x *ReleaseProcessRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReleaseProcessRequest.ProtoReflect.Descriptor instead.
+func (*ReleaseProcessRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{19}
+}
+
+type ReleaseProcessResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReleaseProcessResponse) Reset() {
+	*x = ReleaseProcessResponse{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReleaseProcessResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReleaseProcessResponse) ProtoMessage() {}
+
+func (x *ReleaseProcessResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReleaseProcessResponse.ProtoReflect.Descriptor instead.
+func (*ReleaseProcessResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{20}
+}
+
+type WatchPluginProcessesResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The processes that run, in the order of the plugin ids.
+	Processes []*PluginProcess `protobuf:"bytes,1,rep,name=processes,proto3" json:"processes,omitempty"`
+	// When the core took the list, in milliseconds since the Unix epoch. A
+	// list sent again unchanged carries the time it was first taken.
+	TimeUnixMs    int64 `protobuf:"varint,2,opt,name=time_unix_ms,json=timeUnixMs,proto3" json:"time_unix_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WatchPluginProcessesResponse) Reset() {
+	*x = WatchPluginProcessesResponse{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WatchPluginProcessesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WatchPluginProcessesResponse) ProtoMessage() {}
+
+func (x *WatchPluginProcessesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WatchPluginProcessesResponse.ProtoReflect.Descriptor instead.
+func (*WatchPluginProcessesResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *WatchPluginProcessesResponse) GetProcesses() []*PluginProcess {
+	if x != nil {
+		return x.Processes
+	}
+	return nil
+}
+
+func (x *WatchPluginProcessesResponse) GetTimeUnixMs() int64 {
+	if x != nil {
+		return x.TimeUnixMs
+	}
+	return 0
+}
+
+// PluginProcess is the process of one plugin that runs.
+type PluginProcess struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PluginId string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	// The name the manifest gives the plugin. Empty for a plugin the core no
+	// longer lists.
+	PluginName string `protobuf:"bytes,2,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
+	// When the process started, in milliseconds since the Unix epoch.
+	StartTimeUnixMs int64 `protobuf:"varint,3,opt,name=start_time_unix_ms,json=startTimeUnixMs,proto3" json:"start_time_unix_ms,omitempty"`
+	// When a lease on the process was last taken or returned, in milliseconds
+	// since the Unix epoch.
+	LastUseTimeUnixMs int64 `protobuf:"varint,4,opt,name=last_use_time_unix_ms,json=lastUseTimeUnixMs,proto3" json:"last_use_time_unix_ms,omitempty"`
+	// The leases the process holds: open calls, open streams and reported work.
+	LeaseCount int32 `protobuf:"varint,5,opt,name=lease_count,json=leaseCount,proto3" json:"lease_count,omitempty"`
+	// Whether the plugin is served inside the core rather than by a process of
+	// its own.
+	IsInProcess bool `protobuf:"varint,6,opt,name=is_in_process,json=isInProcess,proto3" json:"is_in_process,omitempty"`
+	// From when the core stops the process for idleness, in milliseconds since
+	// the Unix epoch; the core checks every 30 seconds. Zero while the process
+	// holds a lease.
+	IdleStopTimeUnixMs int64 `protobuf:"varint,7,opt,name=idle_stop_time_unix_ms,json=idleStopTimeUnixMs,proto3" json:"idle_stop_time_unix_ms,omitempty"`
+	// The severity of the worst health item of the plugin: HEALTH_SEVERITY_OK
+	// where it has none.
+	Health HealthSeverity `protobuf:"varint,8,opt,name=health,proto3,enum=numen.v1.HealthSeverity" json:"health,omitempty"`
+	// The text of that item. Empty where it has none.
+	HealthText string `protobuf:"bytes,9,opt,name=health_text,json=healthText,proto3" json:"health_text,omitempty"`
+	// The holder whose lease started the process.
+	StartedBy *PluginLeaseHolder `protobuf:"bytes,10,opt,name=started_by,json=startedBy,proto3" json:"started_by,omitempty"`
+	// The holders of the leases open now, oldest first.
+	Holders       []*PluginLeaseHolder `protobuf:"bytes,11,rep,name=holders,proto3" json:"holders,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PluginProcess) Reset() {
+	*x = PluginProcess{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PluginProcess) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PluginProcess) ProtoMessage() {}
+
+func (x *PluginProcess) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PluginProcess.ProtoReflect.Descriptor instead.
+func (*PluginProcess) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *PluginProcess) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *PluginProcess) GetPluginName() string {
+	if x != nil {
+		return x.PluginName
+	}
+	return ""
+}
+
+func (x *PluginProcess) GetStartTimeUnixMs() int64 {
+	if x != nil {
+		return x.StartTimeUnixMs
+	}
+	return 0
+}
+
+func (x *PluginProcess) GetLastUseTimeUnixMs() int64 {
+	if x != nil {
+		return x.LastUseTimeUnixMs
+	}
+	return 0
+}
+
+func (x *PluginProcess) GetLeaseCount() int32 {
+	if x != nil {
+		return x.LeaseCount
+	}
+	return 0
+}
+
+func (x *PluginProcess) GetIsInProcess() bool {
+	if x != nil {
+		return x.IsInProcess
+	}
+	return false
+}
+
+func (x *PluginProcess) GetIdleStopTimeUnixMs() int64 {
+	if x != nil {
+		return x.IdleStopTimeUnixMs
+	}
+	return 0
+}
+
+func (x *PluginProcess) GetHealth() HealthSeverity {
+	if x != nil {
+		return x.Health
+	}
+	return HealthSeverity_HEALTH_SEVERITY_UNSPECIFIED
+}
+
+func (x *PluginProcess) GetHealthText() string {
+	if x != nil {
+		return x.HealthText
+	}
+	return ""
+}
+
+func (x *PluginProcess) GetStartedBy() *PluginLeaseHolder {
+	if x != nil {
+		return x.StartedBy
+	}
+	return nil
+}
+
+func (x *PluginProcess) GetHolders() []*PluginLeaseHolder {
+	if x != nil {
+		return x.Holders
+	}
+	return nil
+}
+
+// PluginLeaseHolder is who holds a lease on a plugin process and why.
+type PluginLeaseHolder struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Who took the lease: a part of Numen such as "Search" or "Indexing", or the
+	// name of the plugin or of the connection that asked.
+	Who string `protobuf:"bytes,1,opt,name=who,proto3" json:"who,omitempty"`
+	// What the lease is for, in a few plain words.
+	Why           string `protobuf:"bytes,2,opt,name=why,proto3" json:"why,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PluginLeaseHolder) Reset() {
+	*x = PluginLeaseHolder{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PluginLeaseHolder) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PluginLeaseHolder) ProtoMessage() {}
+
+func (x *PluginLeaseHolder) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PluginLeaseHolder.ProtoReflect.Descriptor instead.
+func (*PluginLeaseHolder) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *PluginLeaseHolder) GetWho() string {
+	if x != nil {
+		return x.Who
+	}
+	return ""
+}
+
+func (x *PluginLeaseHolder) GetWhy() string {
+	if x != nil {
+		return x.Why
+	}
+	return ""
+}
+
 type DeliverEventRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The event as the host names it, such as onFile:<extension> or onCommand:<id>.
+	// The event as the host names it, such as onSearchSourceReady:<vault id>.
 	Event         string `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1359,7 +1770,7 @@ type DeliverEventRequest struct {
 
 func (x *DeliverEventRequest) Reset() {
 	*x = DeliverEventRequest{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[19]
+	mi := &file_numen_v1_plugin_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1371,7 +1782,7 @@ func (x *DeliverEventRequest) String() string {
 func (*DeliverEventRequest) ProtoMessage() {}
 
 func (x *DeliverEventRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[19]
+	mi := &file_numen_v1_plugin_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1384,7 +1795,7 @@ func (x *DeliverEventRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeliverEventRequest.ProtoReflect.Descriptor instead.
 func (*DeliverEventRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *DeliverEventRequest) GetEvent() string {
@@ -1404,7 +1815,7 @@ type DeliverEventResponse struct {
 
 func (x *DeliverEventResponse) Reset() {
 	*x = DeliverEventResponse{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[20]
+	mi := &file_numen_v1_plugin_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1416,7 +1827,7 @@ func (x *DeliverEventResponse) String() string {
 func (*DeliverEventResponse) ProtoMessage() {}
 
 func (x *DeliverEventResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[20]
+	mi := &file_numen_v1_plugin_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1429,7 +1840,7 @@ func (x *DeliverEventResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeliverEventResponse.ProtoReflect.Descriptor instead.
 func (*DeliverEventResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{20}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *DeliverEventResponse) GetError() PluginEventErrorCode {
@@ -1450,7 +1861,7 @@ var File_numen_v1_plugin_proto protoreflect.FileDescriptor
 
 const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/plugin.proto\x12\bnumen.v1\x1a\x17numen/v1/manifest.proto\"\r\n" +
+	"\x15numen/v1/plugin.proto\x12\bnumen.v1\x1a\x15numen/v1/health.proto\"\r\n" +
 	"\vPingRequest\"B\n" +
 	"\fPingResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x1a\n" +
@@ -1458,32 +1869,23 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x0fShutdownRequest\x12'\n" +
 	"\x0ftimeout_seconds\x18\x01 \x01(\x05R\x0etimeoutSeconds\",\n" +
 	"\x10ShutdownResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x8f\x02\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\xd9\x01\n" +
 	"\x10ConfigureRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12-\n" +
 	"\x12configuration_json\x18\x02 \x01(\tR\x11configurationJson\x12>\n" +
-	"\x06values\x18\x03 \x03(\v2&.numen.v1.ConfigureRequest.ValuesEntryR\x06values\x124\n" +
-	"\asecrets\x18\x04 \x03(\v2\x1a.numen.v1.ConfigureSecretsR\asecrets\x1a9\n" +
+	"\x06values\x18\x03 \x03(\v2&.numen.v1.ConfigureRequest.ValuesEntryR\x06values\x1a9\n" +
 	"\vValuesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"k\n" +
-	"\x10ConfigureSecrets\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05group\x18\x03 \x01(\tR\x05group\x12-\n" +
-	"\x06values\x18\x02 \x03(\v2\x15.numen.v1.SecretValueR\x06values\"b\n" +
-	"\vSecretValue\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
-	"\x05group\x18\x03 \x01(\tR\x05group\x12\x19\n" +
-	"\x05value\x18\x04 \x01(\tB\x03\x80\x01\x01R\x05value\"C\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\xbf\x05\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\x9b\x06\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x04 \x01(\tR\vdescription\x12!\n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x18\n" +
+	"\adetails\x18\x19 \x01(\tR\adetails\x12!\n" +
 	"\fdefault_json\x18\x05 \x01(\tR\vdefaultJson\x12\x18\n" +
 	"\apalette\x18\x06 \x01(\bR\apalette\x127\n" +
 	"\aoptions\x18\a \x03(\v2\x1d.numen.v1.PluginSettingOptionR\aoptions\x12\x15\n" +
@@ -1502,10 +1904,14 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x0eactive_options\x18\x13 \x03(\v2\x1d.numen.v1.PluginSettingOptionR\ractiveOptions\x12\x19\n" +
 	"\bis_shown\x18\x14 \x01(\bR\aisShown\x12\x1d\n" +
 	"\n" +
-	"value_json\x18\x15 \x01(\tR\tvalueJsonB\x06\n" +
+	"value_json\x18\x15 \x01(\tR\tvalueJson\x12\x1e\n" +
+	"\n" +
+	"operations\x18\x17 \x03(\tR\n" +
+	"operations\x12\x1a\n" +
+	"\bdiscover\x18\x18 \x01(\bR\bdiscoverB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_step\"m\n" +
+	"\x05_stepJ\x04\b\x16\x10\x17\"m\n" +
 	"\x13PluginSettingOption\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
@@ -1521,7 +1927,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1e.numen.v1.PluginSettingOptionsR\x05value:\x028\x01\"B\n" +
 	"\x16PluginSettingCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xa9\x04\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xb4\x04\n" +
 	"\n" +
 	"PluginInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -1531,15 +1937,22 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\fcapabilities\x18\x05 \x03(\tR\fcapabilities\x123\n" +
 	"\bsettings\x18\x06 \x03(\v2\x17.numen.v1.PluginSettingR\bsettings\x12\x1b\n" +
 	"\tis_active\x18\a \x01(\bR\bisActive\x12 \n" +
-	"\vpermissions\x18\b \x03(\tR\vpermissions\x125\n" +
-	"\asecrets\x18\t \x03(\v2\x1b.numen.v1.SecretDeclarationR\asecrets\x121\n" +
-	"\afailure\x18\n" +
-	" \x01(\v2\x17.numen.v1.PluginFailureR\afailure\x12!\n" +
+	"\vpermissions\x18\b \x03(\tR\vpermissions\x12!\n" +
 	"\fhas_frontend\x18\v \x01(\bR\vhasFrontend\x120\n" +
 	"\areaders\x18\f \x03(\v2\x16.numen.v1.PluginReaderR\areaders\x12C\n" +
 	"\x0esettings_views\x18\r \x03(\v2\x1c.numen.v1.PluginSettingsViewR\rsettingsViews\x12\x1f\n" +
 	"\vhas_backend\x18\x0e \x01(\bR\n" +
-	"hasBackend\":\n" +
+	"hasBackend\x12B\n" +
+	"\rcontributions\x18\x0f \x03(\v2\x1c.numen.v1.PluginContributionR\rcontributions\x12)\n" +
+	"\x11is_off_by_default\x18\x10 \x01(\bR\x0eisOffByDefaultJ\x04\b\n" +
+	"\x10\v\"\x82\x01\n" +
+	"\x12PluginContribution\x124\n" +
+	"\x04kind\x18\x01 \x01(\x0e2 .numen.v1.PluginContributionKindR\x04kind\x126\n" +
+	"\x05items\x18\x02 \x03(\v2 .numen.v1.PluginContributionItemR\x05items\"X\n" +
+	"\x16PluginContributionItem\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\x12\x12\n" +
+	"\x04keys\x18\x03 \x01(\tR\x04keys\":\n" +
 	"\x12PluginSettingsView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\">\n" +
@@ -1547,29 +1960,78 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
 	"\n" +
 	"extensions\x18\x02 \x03(\tR\n" +
-	"extensions\"j\n" +
-	"\rPluginFailure\x12\x16\n" +
-	"\x06reason\x18\x01 \x01(\tR\x06reason\x12)\n" +
-	"\x11failed_at_unix_ms\x18\x02 \x01(\x03R\x0efailedAtUnixMs\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x13\n" +
+	"extensions\"\x13\n" +
 	"\x11GetPluginsRequest\"D\n" +
 	"\x12GetPluginsResponse\x12.\n" +
-	"\aplugins\x18\x01 \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\"+\n" +
+	"\aplugins\x18\x01 \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\"\x1d\n" +
+	"\x1bWatchPluginProcessesRequest\"\x17\n" +
+	"\x15ReleaseProcessRequest\"\x18\n" +
+	"\x16ReleaseProcessResponse\"w\n" +
+	"\x1cWatchPluginProcessesResponse\x125\n" +
+	"\tprocesses\x18\x01 \x03(\v2\x17.numen.v1.PluginProcessR\tprocesses\x12 \n" +
+	"\ftime_unix_ms\x18\x02 \x01(\x03R\n" +
+	"timeUnixMs\"\xeb\x03\n" +
+	"\rPluginProcess\x12\x1b\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1f\n" +
+	"\vplugin_name\x18\x02 \x01(\tR\n" +
+	"pluginName\x12+\n" +
+	"\x12start_time_unix_ms\x18\x03 \x01(\x03R\x0fstartTimeUnixMs\x120\n" +
+	"\x15last_use_time_unix_ms\x18\x04 \x01(\x03R\x11lastUseTimeUnixMs\x12\x1f\n" +
+	"\vlease_count\x18\x05 \x01(\x05R\n" +
+	"leaseCount\x12\"\n" +
+	"\ris_in_process\x18\x06 \x01(\bR\visInProcess\x122\n" +
+	"\x16idle_stop_time_unix_ms\x18\a \x01(\x03R\x12idleStopTimeUnixMs\x120\n" +
+	"\x06health\x18\b \x01(\x0e2\x18.numen.v1.HealthSeverityR\x06health\x12\x1f\n" +
+	"\vhealth_text\x18\t \x01(\tR\n" +
+	"healthText\x12:\n" +
+	"\n" +
+	"started_by\x18\n" +
+	" \x01(\v2\x1b.numen.v1.PluginLeaseHolderR\tstartedBy\x125\n" +
+	"\aholders\x18\v \x03(\v2\x1b.numen.v1.PluginLeaseHolderR\aholders\"7\n" +
+	"\x11PluginLeaseHolder\x12\x10\n" +
+	"\x03who\x18\x01 \x01(\tR\x03who\x12\x10\n" +
+	"\x03why\x18\x02 \x01(\tR\x03why\"+\n" +
 	"\x13DeliverEventRequest\x12\x14\n" +
 	"\x05event\x18\x01 \x01(\tR\x05event\"d\n" +
 	"\x14DeliverEventResponse\x124\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.v1.PluginEventErrorCodeR\x05error\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason*d\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason*\xa9\a\n" +
+	"\x16PluginContributionKind\x12(\n" +
+	"$PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED\x10\x00\x12%\n" +
+	"!PLUGIN_CONTRIBUTION_KIND_COMMANDS\x10\x01\x12(\n" +
+	"$PLUGIN_CONTRIBUTION_KIND_KEYBINDINGS\x10\x02\x12&\n" +
+	"\"PLUGIN_CONTRIBUTION_KIND_TAB_KINDS\x10\x03\x12$\n" +
+	" PLUGIN_CONTRIBUTION_KIND_READERS\x10\x04\x12%\n" +
+	"!PLUGIN_CONTRIBUTION_KIND_HANDLERS\x10\x05\x12%\n" +
+	"!PLUGIN_CONTRIBUTION_KIND_TRIGGERS\x10\x06\x12'\n" +
+	"#PLUGIN_CONTRIBUTION_KIND_TEXT_KINDS\x10\a\x12'\n" +
+	"#PLUGIN_CONTRIBUTION_KIND_NOTE_TYPES\x10\b\x12#\n" +
+	"\x1fPLUGIN_CONTRIBUTION_KIND_THEMES\x10\t\x12\"\n" +
+	"\x1ePLUGIN_CONTRIBUTION_KIND_SLOTS\x10\n" +
+	"\x12&\n" +
+	"\"PLUGIN_CONTRIBUTION_KIND_LISTENERS\x10\v\x12.\n" +
+	"*PLUGIN_CONTRIBUTION_KIND_VIEW_CAPABILITIES\x10\f\x12*\n" +
+	"&PLUGIN_CONTRIBUTION_KIND_DROP_HANDLERS\x10\r\x12*\n" +
+	"&PLUGIN_CONTRIBUTION_KIND_FRAME_ORIGINS\x10\x0e\x12-\n" +
+	")PLUGIN_CONTRIBUTION_KIND_CONNECTION_TYPES\x10\x0f\x12'\n" +
+	"#PLUGIN_CONTRIBUTION_KIND_OPERATIONS\x10\x10\x12(\n" +
+	"$PLUGIN_CONTRIBUTION_KIND_PERMISSIONS\x10\x11\x12)\n" +
+	"%PLUGIN_CONTRIBUTION_KIND_DEPENDENCIES\x10\x12\x12%\n" +
+	"!PLUGIN_CONTRIBUTION_KIND_SERVICES\x10\x13\x12)\n" +
+	"%PLUGIN_CONTRIBUTION_KIND_CAPABILITIES\x10\x14\x12.\n" +
+	"*PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS\x10\x15*d\n" +
 	"\x14PluginEventErrorCode\x12'\n" +
 	"#PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fPLUGIN_EVENT_ERROR_CODE_REFUSED\x10\x012\xd8\x01\n" +
 	"\x16PluginLifecycleService\x125\n" +
 	"\x04Ping\x12\x15.numen.v1.PingRequest\x1a\x16.numen.v1.PingResponse\x12A\n" +
 	"\bShutdown\x12\x19.numen.v1.ShutdownRequest\x1a\x1a.numen.v1.ShutdownResponse\x12D\n" +
-	"\tConfigure\x12\x1a.numen.v1.ConfigureRequest\x1a\x1b.numen.v1.ConfigureResponse2X\n" +
+	"\tConfigure\x12\x1a.numen.v1.ConfigureRequest\x1a\x1b.numen.v1.ConfigureResponse2\x96\x02\n" +
 	"\rPluginService\x12G\n" +
 	"\n" +
-	"GetPlugins\x12\x1b.numen.v1.GetPluginsRequest\x1a\x1c.numen.v1.GetPluginsResponse2c\n" +
+	"GetPlugins\x12\x1b.numen.v1.GetPluginsRequest\x1a\x1c.numen.v1.GetPluginsResponse\x12g\n" +
+	"\x14WatchPluginProcesses\x12%.numen.v1.WatchPluginProcessesRequest\x1a&.numen.v1.WatchPluginProcessesResponse0\x01\x12S\n" +
+	"\x0eReleaseProcess\x12\x1f.numen.v1.ReleaseProcessRequest\x1a .numen.v1.ReleaseProcessResponse2c\n" +
 	"\x12PluginEventService\x12M\n" +
 	"\fDeliverEvent\x12\x1d.numen.v1.DeliverEventRequest\x1a\x1e.numen.v1.DeliverEventResponseBFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -1585,68 +2047,81 @@ func file_numen_v1_plugin_proto_rawDescGZIP() []byte {
 	return file_numen_v1_plugin_proto_rawDescData
 }
 
-var file_numen_v1_plugin_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_numen_v1_plugin_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_numen_v1_plugin_proto_goTypes = []any{
-	(PluginEventErrorCode)(0),      // 0: numen.v1.PluginEventErrorCode
-	(*PingRequest)(nil),            // 1: numen.v1.PingRequest
-	(*PingResponse)(nil),           // 2: numen.v1.PingResponse
-	(*ShutdownRequest)(nil),        // 3: numen.v1.ShutdownRequest
-	(*ShutdownResponse)(nil),       // 4: numen.v1.ShutdownResponse
-	(*ConfigureRequest)(nil),       // 5: numen.v1.ConfigureRequest
-	(*ConfigureSecrets)(nil),       // 6: numen.v1.ConfigureSecrets
-	(*SecretValue)(nil),            // 7: numen.v1.SecretValue
-	(*ConfigureResponse)(nil),      // 8: numen.v1.ConfigureResponse
-	(*PluginSetting)(nil),          // 9: numen.v1.PluginSetting
-	(*PluginSettingOption)(nil),    // 10: numen.v1.PluginSettingOption
-	(*PluginSettingOptions)(nil),   // 11: numen.v1.PluginSettingOptions
-	(*PluginSettingOptionsBy)(nil), // 12: numen.v1.PluginSettingOptionsBy
-	(*PluginSettingCondition)(nil), // 13: numen.v1.PluginSettingCondition
-	(*PluginInfo)(nil),             // 14: numen.v1.PluginInfo
-	(*PluginSettingsView)(nil),     // 15: numen.v1.PluginSettingsView
-	(*PluginReader)(nil),           // 16: numen.v1.PluginReader
-	(*PluginFailure)(nil),          // 17: numen.v1.PluginFailure
-	(*GetPluginsRequest)(nil),      // 18: numen.v1.GetPluginsRequest
-	(*GetPluginsResponse)(nil),     // 19: numen.v1.GetPluginsResponse
-	(*DeliverEventRequest)(nil),    // 20: numen.v1.DeliverEventRequest
-	(*DeliverEventResponse)(nil),   // 21: numen.v1.DeliverEventResponse
-	nil,                            // 22: numen.v1.ConfigureRequest.ValuesEntry
-	nil,                            // 23: numen.v1.PluginSettingOptionsBy.OptionsEntry
-	(*SecretDeclaration)(nil),      // 24: numen.v1.SecretDeclaration
+	(PluginContributionKind)(0),          // 0: numen.v1.PluginContributionKind
+	(PluginEventErrorCode)(0),            // 1: numen.v1.PluginEventErrorCode
+	(*PingRequest)(nil),                  // 2: numen.v1.PingRequest
+	(*PingResponse)(nil),                 // 3: numen.v1.PingResponse
+	(*ShutdownRequest)(nil),              // 4: numen.v1.ShutdownRequest
+	(*ShutdownResponse)(nil),             // 5: numen.v1.ShutdownResponse
+	(*ConfigureRequest)(nil),             // 6: numen.v1.ConfigureRequest
+	(*ConfigureResponse)(nil),            // 7: numen.v1.ConfigureResponse
+	(*PluginSetting)(nil),                // 8: numen.v1.PluginSetting
+	(*PluginSettingOption)(nil),          // 9: numen.v1.PluginSettingOption
+	(*PluginSettingOptions)(nil),         // 10: numen.v1.PluginSettingOptions
+	(*PluginSettingOptionsBy)(nil),       // 11: numen.v1.PluginSettingOptionsBy
+	(*PluginSettingCondition)(nil),       // 12: numen.v1.PluginSettingCondition
+	(*PluginInfo)(nil),                   // 13: numen.v1.PluginInfo
+	(*PluginContribution)(nil),           // 14: numen.v1.PluginContribution
+	(*PluginContributionItem)(nil),       // 15: numen.v1.PluginContributionItem
+	(*PluginSettingsView)(nil),           // 16: numen.v1.PluginSettingsView
+	(*PluginReader)(nil),                 // 17: numen.v1.PluginReader
+	(*GetPluginsRequest)(nil),            // 18: numen.v1.GetPluginsRequest
+	(*GetPluginsResponse)(nil),           // 19: numen.v1.GetPluginsResponse
+	(*WatchPluginProcessesRequest)(nil),  // 20: numen.v1.WatchPluginProcessesRequest
+	(*ReleaseProcessRequest)(nil),        // 21: numen.v1.ReleaseProcessRequest
+	(*ReleaseProcessResponse)(nil),       // 22: numen.v1.ReleaseProcessResponse
+	(*WatchPluginProcessesResponse)(nil), // 23: numen.v1.WatchPluginProcessesResponse
+	(*PluginProcess)(nil),                // 24: numen.v1.PluginProcess
+	(*PluginLeaseHolder)(nil),            // 25: numen.v1.PluginLeaseHolder
+	(*DeliverEventRequest)(nil),          // 26: numen.v1.DeliverEventRequest
+	(*DeliverEventResponse)(nil),         // 27: numen.v1.DeliverEventResponse
+	nil,                                  // 28: numen.v1.ConfigureRequest.ValuesEntry
+	nil,                                  // 29: numen.v1.PluginSettingOptionsBy.OptionsEntry
+	(HealthSeverity)(0),                  // 30: numen.v1.HealthSeverity
 }
 var file_numen_v1_plugin_proto_depIdxs = []int32{
-	22, // 0: numen.v1.ConfigureRequest.values:type_name -> numen.v1.ConfigureRequest.ValuesEntry
-	6,  // 1: numen.v1.ConfigureRequest.secrets:type_name -> numen.v1.ConfigureSecrets
-	7,  // 2: numen.v1.ConfigureSecrets.values:type_name -> numen.v1.SecretValue
-	10, // 3: numen.v1.PluginSetting.options:type_name -> numen.v1.PluginSettingOption
-	12, // 4: numen.v1.PluginSetting.options_by:type_name -> numen.v1.PluginSettingOptionsBy
-	13, // 5: numen.v1.PluginSetting.when:type_name -> numen.v1.PluginSettingCondition
-	10, // 6: numen.v1.PluginSetting.active_options:type_name -> numen.v1.PluginSettingOption
-	10, // 7: numen.v1.PluginSettingOptions.options:type_name -> numen.v1.PluginSettingOption
-	23, // 8: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
-	9,  // 9: numen.v1.PluginInfo.settings:type_name -> numen.v1.PluginSetting
-	24, // 10: numen.v1.PluginInfo.secrets:type_name -> numen.v1.SecretDeclaration
-	17, // 11: numen.v1.PluginInfo.failure:type_name -> numen.v1.PluginFailure
-	16, // 12: numen.v1.PluginInfo.readers:type_name -> numen.v1.PluginReader
-	15, // 13: numen.v1.PluginInfo.settings_views:type_name -> numen.v1.PluginSettingsView
-	14, // 14: numen.v1.GetPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
-	0,  // 15: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.PluginEventErrorCode
-	11, // 16: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
-	1,  // 17: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
-	3,  // 18: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
-	5,  // 19: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
-	18, // 20: numen.v1.PluginService.GetPlugins:input_type -> numen.v1.GetPluginsRequest
-	20, // 21: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
-	2,  // 22: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
-	4,  // 23: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
-	8,  // 24: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
-	19, // 25: numen.v1.PluginService.GetPlugins:output_type -> numen.v1.GetPluginsResponse
-	21, // 26: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
-	22, // [22:27] is the sub-list for method output_type
-	17, // [17:22] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	28, // 0: numen.v1.ConfigureRequest.values:type_name -> numen.v1.ConfigureRequest.ValuesEntry
+	9,  // 1: numen.v1.PluginSetting.options:type_name -> numen.v1.PluginSettingOption
+	11, // 2: numen.v1.PluginSetting.options_by:type_name -> numen.v1.PluginSettingOptionsBy
+	12, // 3: numen.v1.PluginSetting.when:type_name -> numen.v1.PluginSettingCondition
+	9,  // 4: numen.v1.PluginSetting.active_options:type_name -> numen.v1.PluginSettingOption
+	9,  // 5: numen.v1.PluginSettingOptions.options:type_name -> numen.v1.PluginSettingOption
+	29, // 6: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
+	8,  // 7: numen.v1.PluginInfo.settings:type_name -> numen.v1.PluginSetting
+	17, // 8: numen.v1.PluginInfo.readers:type_name -> numen.v1.PluginReader
+	16, // 9: numen.v1.PluginInfo.settings_views:type_name -> numen.v1.PluginSettingsView
+	14, // 10: numen.v1.PluginInfo.contributions:type_name -> numen.v1.PluginContribution
+	0,  // 11: numen.v1.PluginContribution.kind:type_name -> numen.v1.PluginContributionKind
+	15, // 12: numen.v1.PluginContribution.items:type_name -> numen.v1.PluginContributionItem
+	13, // 13: numen.v1.GetPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
+	24, // 14: numen.v1.WatchPluginProcessesResponse.processes:type_name -> numen.v1.PluginProcess
+	30, // 15: numen.v1.PluginProcess.health:type_name -> numen.v1.HealthSeverity
+	25, // 16: numen.v1.PluginProcess.started_by:type_name -> numen.v1.PluginLeaseHolder
+	25, // 17: numen.v1.PluginProcess.holders:type_name -> numen.v1.PluginLeaseHolder
+	1,  // 18: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.PluginEventErrorCode
+	10, // 19: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
+	2,  // 20: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
+	4,  // 21: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
+	6,  // 22: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
+	18, // 23: numen.v1.PluginService.GetPlugins:input_type -> numen.v1.GetPluginsRequest
+	20, // 24: numen.v1.PluginService.WatchPluginProcesses:input_type -> numen.v1.WatchPluginProcessesRequest
+	21, // 25: numen.v1.PluginService.ReleaseProcess:input_type -> numen.v1.ReleaseProcessRequest
+	26, // 26: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
+	3,  // 27: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
+	5,  // 28: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
+	7,  // 29: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
+	19, // 30: numen.v1.PluginService.GetPlugins:output_type -> numen.v1.GetPluginsResponse
+	23, // 31: numen.v1.PluginService.WatchPluginProcesses:output_type -> numen.v1.WatchPluginProcessesResponse
+	22, // 32: numen.v1.PluginService.ReleaseProcess:output_type -> numen.v1.ReleaseProcessResponse
+	27, // 33: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
+	27, // [27:34] is the sub-list for method output_type
+	20, // [20:27] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_plugin_proto_init() }
@@ -1654,15 +2129,15 @@ func file_numen_v1_plugin_proto_init() {
 	if File_numen_v1_plugin_proto != nil {
 		return
 	}
-	file_numen_v1_manifest_proto_init()
-	file_numen_v1_plugin_proto_msgTypes[8].OneofWrappers = []any{}
+	file_numen_v1_health_proto_init()
+	file_numen_v1_plugin_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_plugin_proto_rawDesc), len(file_numen_v1_plugin_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   23,
+			NumEnums:      2,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   3,
 		},

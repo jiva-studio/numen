@@ -11,27 +11,26 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // completedBatch is one batch whose vectors are ready to be stored.
 type completedBatch struct {
-	vectors []embedding.Vector
+	vectors []vector.Stored
 	reused  int
 	id      uint64
 }
 
-// inferrer embeds the texts of the batches the producer cut.
+// inferrer hands the texts of the batches the producer cut to the search source.
 type inferrer struct {
-	embedder embeddingport.Embedder
+	source searchsourceport.Source
 }
 
 // storer writes the vectors of the completed batches.
 type storer struct {
-	vectors embeddingport.VectorRepository
+	vectors searchsourceport.VectorRepository
 }
 
 func (u inferrer) inferBatches(
@@ -114,14 +113,14 @@ func (u inferrer) inferBatch(ctx context.Context, prep preparedBatch) (completed
 		return completedBatch{}, err
 	}
 
-	out := make([]embedding.Vector, len(prep.pending))
+	out := make([]vector.Stored, len(prep.pending))
 	for i := range prep.pending {
 		if pos := prep.askingMap[i]; pos >= 0 {
-			out[i] = embedding.Vector{
+			out[i] = vector.Stored{
 				ChunkID: prep.pending[i].ChunkID,
 				Hash:    prep.hashes[i],
-				Model:   prep.model,
-				Kind:    embedding.QuantizedInt8,
+				Recipe:  prep.model.Recipe(),
+				Kind:    vector.QuantizedInt8,
 				Value:   unique[pos].value,
 				Coarse:  unique[pos].coarse,
 			}
@@ -189,16 +188,16 @@ func (u inferrer) embedAsking(ctx context.Context, prep preparedBatch) ([]unique
 	if len(prep.asking) == 0 {
 		return nil, nil
 	}
-	vectors, err := u.embedder.Embed(ctx, prep.asking)
+	vectors, err := u.source.IndexTexts(ctx, prep.place, prep.asking)
 	if err != nil {
-		return nil, fmt.Errorf("embed %d chunks: %w", len(prep.asking), err)
+		return nil, fmt.Errorf("index %d chunks: %w", len(prep.asking), err)
 	}
 	if len(vectors) != len(prep.asking) {
 		return nil, fmt.Errorf("%s answered with %d vectors for %d texts", prep.model, len(vectors), len(prep.asking))
 	}
 	unique := make([]uniqueVector, len(vectors))
 	for i, v := range vectors {
-		if len(v) != prep.model.Dimensions {
+		if len(v) != prep.model.Width {
 			return nil, fmt.Errorf("%s answered with %d dimensions", prep.model, len(v))
 		}
 		quantized := vector.Bytes(vector.Normalize(v))

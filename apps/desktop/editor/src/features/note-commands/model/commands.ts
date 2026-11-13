@@ -14,9 +14,8 @@ import {
   type CommandPlace,
   type Notes,
 } from '@/shared/model/command'
-import { removeFile } from '@/entities/file'
+import { getFileKinds, removeFile } from '@/entities/file'
 import { renameNote, type NoteCreator } from '@/entities/note'
-import { NOTE } from '@/entities/tab'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { ConnectionRole } from '@numen/plugin-loader'
@@ -60,6 +59,14 @@ const revealFile = (invocation: CommandInvocation, deps: NoteCommandsDeps): void
   if (kind) deps.navigator.showTab(kind, invocation.target.path)
 }
 
+const findNoteKind = async (path: string): Promise<string | undefined> => {
+  try {
+    return (await getFileKinds([path])).get(path)?.tabKind
+  } catch {
+    return undefined
+  }
+}
+
 const createNoteCommand = async (
   invocation: CommandInvocation,
   deps: NoteCommandsDeps,
@@ -75,7 +82,8 @@ const createNoteCommand = async (
     relation,
   )
   if (!made) return
-  if (invocation.target.kind === NOTE) {
+  const { kind } = invocation.target
+  if (made.path && kind && kind === (await findNoteKind(made.path))) {
     deps.notes.openFile(made.path, made.title, 'split')
   } else if (made.path) {
     await deps.navigator.travel(made.path)

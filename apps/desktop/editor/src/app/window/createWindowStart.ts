@@ -105,16 +105,17 @@ export interface WindowStartDeps {
 
 export function createWindowStart(deps: WindowStartDeps) {
   const { foundation, tabs, tabParts, vault, windowSettings, getTarget, plugins, palettes } = deps
-  const { log, rest, frame, writeMessage, settingsRequests } = foundation
+  const { log, rest, connections, frame, writeMessage, settingsRequests } = foundation
   const { windowTabs } = tabs
   const { pluginHost, pluginLoader, declaredCommands } = plugins
   const { editing, window, vaults } = vault
   registerSettingsPage({
     rest,
+    connections,
     windowSettings,
     log,
     windowTabs,
-    pluginHost,
+    plugins: { host: pluginHost, health: window.pluginHealth, commands: plugins.hostPort.commands },
     frame,
     settingsRequests,
   })

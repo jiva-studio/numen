@@ -20,13 +20,15 @@ var (
 	categoryNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 )
 
-// TabKind is a kind of tab the plugin's frontend registers.
+// TabKind is a kind of tab the plugin's frontend registers. IsNoteEditor marks the kind that edits the
+// text of the note its tab opens on.
 type TabKind struct {
-	Kind  string
-	Title string
-	Icon  string
-	When  string
-	Rank  domain.HandlerRank
+	Kind         string
+	Title        string
+	Icon         string
+	When         string
+	Rank         domain.HandlerRank
+	IsNoteEditor bool
 }
 
 // Contributes is what a plugin adds to the application, known before the frontend of the plugin is loaded.
@@ -47,6 +49,8 @@ type Contributes struct {
 	Keybindings      []Keybinding
 	ViewCapabilities []string
 	DropHandlers     []DropHandler
+	ConnectionTypes  []ConnectionType
+	Operations       []Operation
 }
 
 // DropHandler lists the data types of a drag from outside the window that the plugin's frontend takes.
@@ -116,6 +120,8 @@ func (m Manifest) listContributionIssues() []error {
 	issues = append(issues, m.listKeybindingIssues()...)
 	issues = append(issues, m.listViewCapabilityIssues()...)
 	issues = append(issues, m.listDropHandlerIssues()...)
+	issues = append(issues, m.listConnectionTypeIssues()...)
+	issues = append(issues, m.listOperationIssues()...)
 	return append(issues, m.listFrameIssues()...)
 }
 
@@ -266,7 +272,7 @@ func (m Manifest) listNoteTypeIssues() []error {
 	observed := map[string]bool{}
 	for _, declared := range m.Contributes.NoteTypes {
 		switch {
-		case !manifestSecretPattern.MatchString(declared.Type):
+		case !manifestNoteTypePattern.MatchString(declared.Type):
 			issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidNoteType, declared.Type))
 		case observed[declared.Type]:
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidNoteType, declared.Type))

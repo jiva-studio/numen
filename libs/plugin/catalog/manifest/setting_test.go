@@ -20,7 +20,6 @@ func readTestManifest(t *testing.T) Manifest {
 			{"id": "small-weights", "kind": "model"},
 			{"id": "large-weights", "kind": "model"}
 		],
-		"secrets": [{"name": "apiKey", "title": "API key", "when": {"setting": "provider", "is": ["remote"]}}],
 		"settings": [
 			{"key": "model", "type": "enum", "title": "Model", "default": "large", "options": [
 				{"value": "large", "title": "Large", "dependencies": ["large-weights"]},
@@ -129,10 +128,6 @@ func TestASettingWhoseConditionFailsIsLeftOut(t *testing.T) {
 	stored["provider"] = "remote"
 	if got := m.ResolveSettings(stored)["url"]; got != "https://mine.example.org" {
 		t.Errorf("url under the remote provider = %v", got)
-	}
-	secret := m.Secrets[0]
-	if m.IsSecretActive(secret, values) || !m.IsSecretActive(secret, m.ResolveSettings(stored)) {
-		t.Errorf("the key follows the provider wrongly")
 	}
 }
 
@@ -291,9 +286,8 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"invalid activation":    {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["bad"]}`, ErrInvalidActivationEvent},
 		"wildcard activation":   {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["*"]}`, ErrInvalidActivationEvent},
 		"blank entrypoint":      {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":" "}}`, ErrInvalidBackend},
-		"activation no backend": {`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onStartup"]}`, ErrNoBackend},
+		"activation no backend": {`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onSearchSourceReady"]}`, ErrNoBackend},
 		"services no backend":   {`{"id":"a.b","name":"A","version":"1.0.0","services":["a.b.S"]}`, ErrNoBackend},
-		"secrets no backend":    {`{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"s","title":"S"}]}`, ErrNoBackend},
 		"runtime no backend":    {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"r","kind":"runtime"}]}`, ErrNoBackend},
 		"invalid permission":    {`{"id":"a.b","name":"A","version":"1.0.0","permissions":["bad"]}`, ErrInvalidPermission},
 		"dep empty id":          {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"kind":"model"}]}`, ErrInvalidDependency},
@@ -302,17 +296,12 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"dep checksum no url":   {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","checksumSha256":"` + sum + `"}]}`, ErrInvalidDependency},
 		"dep http url": {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model",` +
 			`"sourceUrl":"http://example.com/a","checksumSha256":"` + sum + `"}]}`, ErrInvalidDependency},
-		"dep bad checksum": {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","sourceUrl":"https://example.com/a","checksumSha256":"bad"}]}`, ErrInvalidDependency},
-		"secret bad name":  {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"a/b","title":"T"}]}`, ErrInvalidSecret},
-		"secret duplicate": {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T"},{"name":"s","title":"T"}]}`, ErrInvalidSecret},
-		"secret is setting": {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T"}],` +
-			`"settings":[{"key":"s","type":"string","title":"S"}]}`, ErrInvalidSecret},
-		"secret bad when": {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"secrets":[{"name":"s","title":"T","when":` +
-			`{"setting":"none","is":["x"]}}]}`, ErrInvalidSetting},
+		"dep bad checksum":        {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"d","kind":"model","sourceUrl":"https://example.com/a","checksumSha256":"bad"}]}`, ErrInvalidDependency},
 		"service bad name":        {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["Bad"]}`, ErrInvalidService},
 		"service duplicate":       {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":["a.b.S","a.b.S"]}`, ErrInvalidService},
 		"setting empty key":       {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"","type":"string","title":"T"}]}`, ErrEmptySettingKey},
 		"setting named enabled":   {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"enabled","type":"boolean","title":"T"}]}`, ErrReservedSettingKey},
+		"setting named discover":  {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"discover","type":"boolean","title":"T"}]}`, ErrReservedSettingKey},
 		"setting duplicate key":   {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":"T"},{"key":"k","type":"string","title":"T"}]}`, ErrDuplicateSettingKey},
 		"setting empty title":     {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"string","title":" "}]}`, ErrEmptySettingTitle},
 		"setting bad type":        {`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"bad","title":"T"}]}`, ErrInvalidSettingType},
@@ -362,5 +351,34 @@ func TestAnOptionConditionThatIsNotValidIsRejected(t *testing.T) {
 		if !errors.Is(err, ErrInvalidSetting) || !strings.Contains(err.Error(), "when") {
 			t.Errorf("%q: err = %v, want an invalid setting naming when", text, err)
 		}
+	}
+}
+
+func readDescribedSetting(description, details string) (Manifest, error) {
+	return manifestjson.Read(strings.NewReader(
+		`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"wrap","type":"boolean","title":"Wrap lines",` +
+			`"description":"` + description + `","details":"` + details + `"}]}`,
+	))
+}
+
+func TestASettingDescriptionLongerThanOneLineIsRefused(t *testing.T) {
+	_, err := readDescribedSetting(strings.Repeat("w", MaxSettingDescriptionLength+1), "")
+
+	if !errors.Is(err, ErrLongSettingDescription) {
+		t.Fatalf("got %v, want %v", err, ErrLongSettingDescription)
+	}
+}
+
+func TestASettingDescriptionOfOneLineIsAcceptedWithItsDetails(t *testing.T) {
+	description := strings.Repeat("é", MaxSettingDescriptionLength)
+	details := "Long lines break at the edge of the editor and are kept whole in the file."
+
+	m, err := readDescribedSetting(description, details)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got := m.Settings[0]; got.Description != description || got.Details != details {
+		t.Errorf("got description %q and details %q", got.Description, got.Details)
 	}
 }

@@ -16,7 +16,7 @@ type Launcher struct{}
 type program struct {
 	cmd    *exec.Cmd
 	out    io.ReadCloser
-	stderr *strings.Builder
+	stderr *tailBuffer
 }
 
 // Launch starts the program in the directory of the launch with its input on the standard input.
@@ -33,13 +33,13 @@ func (Launcher) Launch(ctx context.Context, launch ports.Launch) (ports.Process,
 		return nil, fmt.Errorf("stdout pipe: %w", err)
 	}
 
-	var stderrBuf strings.Builder
-	cmd.Stderr = &stderrBuf
+	stderr := new(tailBuffer)
+	cmd.Stderr = stderr
 
 	if err := cmd.Start(); err != nil {
 		return nil, fmt.Errorf("start claude: %w", err)
 	}
-	return &program{cmd: cmd, out: out, stderr: &stderrBuf}, nil
+	return &program{cmd: cmd, out: out, stderr: stderr}, nil
 }
 
 func (p *program) Output() io.ReadCloser {

@@ -30,11 +30,13 @@ afterEach(() => {
 })
 
 describe('ConfirmDialog', () => {
-  it('is announced as a modal alert dialog with its label and question', () => {
+  it('is announced as a modal alert dialog named by its title, with its question', () => {
     const dialog = mountDialog()
     const box = dialog.get('[role="alertdialog"]')
     expect(box.attributes('aria-modal')).toBe('true')
-    expect(box.attributes('aria-label')).toBe('Delete page')
+    const labelledBy = box.attributes('aria-labelledby')
+    expect(labelledBy).toBeTruthy()
+    expect(document.getElementById(labelledBy!)?.textContent).toBe('Delete page')
     expect(box.text()).toContain('Delete the page?')
   })
 

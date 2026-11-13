@@ -1,51 +1,57 @@
 {
   "id": "md.numen.agents.numen",
   "name": "Numen Agent",
-  "version": "2026.11.10",
+  "version": "2026.11.11",
   "protocol": 1,
-  "description": "Built-in AI assistant for OpenRouter, OpenAI, Ollama, and LM Studio",
-  "capabilities": ["ai.agent.provider"],
+  "description": "Built-in AI assistant that chats through a connection to OpenRouter, OpenAI or an OpenAI-compatible server",
   "targets": ["desktop.editor", "desktop.flashcards"],
-  "contributes": { "category": "agents" },
+  "contributes": {
+    "category": "agents",
+    "operations": [{ "name": "acp.task", "title": "run agent tasks" }],
+    "connectionTypes": [
+      {
+        "id": "numen",
+        "title": "Numen agent",
+        "operations": ["acp.task", "llm.models"],
+        "rowFields": [
+          {
+            "key": "model",
+            "type": "string",
+            "title": "Model",
+            "required": true,
+            "optionsFrom": "llm.models"
+          }
+        ],
+        "fields": [
+          {
+            "key": "parallelRequests",
+            "type": "number",
+            "title": "Parallel requests",
+            "default": 1,
+            "min": 1,
+            "max": 8,
+            "step": 1
+          }
+        ]
+      }
+    ]
+  },
   "permissions": [
-    "link:open",
     "vault:read",
     "vault:write",
     "vault:manage",
     "window:focus",
-    "index:read"
-  ],
-  "secrets": [
-    {
-      "name": "apiKey",
-      "title": "API key",
-      "description": "Lets the Numen Agent talk to the AI service you chose and answer on your behalf.",
-      "group": "openrouter"
-    }
+    "index:read",
+    "connections:use:llm.chat"
   ],
   "backend": { "entrypoint": "bin/agents-numen" },
-  "services": ["numen.v1.AgentService"],
+  "services": ["numen.v1.ProviderService"],
   "settings": [
-    {
-      "key": "baseUrl",
-      "type": "string",
-      "title": "Chat API",
-      "description": "Base URL of an OpenAI-compatible chat API, such as https://openrouter.ai/api/v1 or http://localhost:11434/v1. Available models are fetched from <Chat API>/models.",
-      "default": "https://openrouter.ai/api/v1"
-    },
-    {
-      "key": "model",
-      "type": "string",
-      "title": "Model",
-      "description": "Model used when a task sets none",
-      "default": "openai/gpt-4o-mini",
-      "options": ["openai/gpt-4o-mini", "openai/gpt-4o", "google/gemini-2.5-flash"]
-    },
     {
       "key": "temperature",
       "type": "range",
       "title": "Temperature",
-      "description": "Sampling temperature for model responses (0.0 to 1.0)",
+      "description": "Lower is steadier, higher is more varied",
       "default": 0.7,
       "min": 0,
       "max": 1,
@@ -55,7 +61,7 @@
       "key": "maxTokens",
       "type": "number",
       "title": "Max Tokens",
-      "description": "Maximum number of tokens to generate per completion",
+      "description": "Most tokens one answer may have",
       "default": 4096,
       "min": 256,
       "max": 128000,
@@ -65,7 +71,7 @@
       "key": "maxSteps",
       "type": "number",
       "title": "Max Steps",
-      "description": "Maximum number of requests to the model one task may make before it is stopped",
+      "description": "Most model requests one task may make",
       "default": 25,
       "min": 1,
       "max": 1000,

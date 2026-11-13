@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.titleBar",
   "name": "Title bar",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Draws the bar at the top of each window: the commands, the vault and the window buttons",
   "targets": ["desktop.editor", "desktop.flashcards"],
@@ -15,7 +15,8 @@
       "key": "buttons",
       "type": "enum",
       "title": "Window buttons",
-      "description": "Where the bar draws the minimize, maximize and close buttons: at the right like Windows, at the left like macOS, or not at all. macOS always keeps the system buttons at the left. On Windows, the buttons at the left lose the Snap Layouts menu.",
+      "description": "Side of the bar the window buttons are drawn on",
+      "details": "Where the bar draws the window buttons. macOS always draws them on the left.",
       "default": "windows",
       "options": [
         { "value": "mac", "title": "Left", "detail": "Round buttons at the left, as on macOS." },
@@ -37,7 +38,7 @@
       "key": "hideInFullscreen",
       "type": "boolean",
       "title": "Hide in full screen",
-      "description": "Draw no bar while the window is in full screen, so the tabs start at the top of the window. The bar is drawn again when the window leaves full screen.",
+      "description": "Hide the bar while the window is full screen",
       "default": false
     }
   ],

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.11.16",
+  "version": "2026.11.17",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "capabilities": ["tools"],
@@ -29,36 +29,49 @@
       },
       {
         "slot": "fileTree.context",
-        "command": "app:link.downloadMedia",
+        "command": "link.downloadMedia",
         "group": "3-text",
         "order": 30
       },
       {
         "slot": "fileTree.context",
-        "command": "app:link.deleteMedia",
+        "command": "link.deleteMedia",
         "group": "3-text",
         "order": 40
       }
     ],
-    "handlers": [
+    "commands": [
       {
-        "command": "app:link.import",
-        "title": "Import link"
+        "id": "link.import",
+        "title": "Import link",
+        "icon": "link",
+        "arguments": [
+          {
+            "name": "address",
+            "title": "Web address",
+            "type": "string",
+            "required": true
+          }
+        ]
       },
+      {
+        "id": "link.downloadMedia",
+        "title": "Download media",
+        "icon": "download",
+        "when": "target.noteType == 'link'"
+      },
+      {
+        "id": "link.deleteMedia",
+        "title": "Delete media",
+        "icon": "trash-2",
+        "when": "target.noteType == 'link' && has(target.properties.media) && target.properties.media != ''"
+      }
+    ],
+    "handlers": [
       {
         "command": "app:file.createText",
         "title": "Download captions",
         "when": "target.noteType == 'link'"
-      },
-      {
-        "command": "app:link.downloadMedia",
-        "title": "Download media",
-        "when": "target.noteType == 'link'"
-      },
-      {
-        "command": "app:link.deleteMedia",
-        "title": "Delete media",
-        "when": "target.noteType == 'link' && has(target.properties.media) && target.properties.media != ''"
       }
     ],
     "triggers": [
@@ -94,7 +107,7 @@
       "key": "captions",
       "type": "string",
       "title": "Caption languages",
-      "description": "Caption languages in order of preference, comma-separated",
+      "description": "Preferred caption languages, comma-separated",
       "default": ""
     },
     {
@@ -108,14 +121,14 @@
       "key": "downloadCaptionsAutomatically",
       "type": "boolean",
       "title": "Download captions automatically",
-      "description": "Download the captions or the article of every link note that has none. A text removed with Delete text is downloaded again",
+      "description": "Download captions or the article of link notes without them",
       "default": false
     },
     {
       "key": "copyMaxSizeMb",
       "type": "number",
       "title": "Maximum download size",
-      "description": "Maximum video download size in megabytes; 0 for no limit",
+      "description": "Largest video to download, in MB; 0 for no limit",
       "default": 500,
       "min": 0,
       "max": 100000,

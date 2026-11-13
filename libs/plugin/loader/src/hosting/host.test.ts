@@ -12,7 +12,7 @@ import {
 import { createMockBackgroundTaskHost } from '@numen/plugin-sdk/testing'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { PluginHostDeps } from './types'
-import { STUB_AGENT, STUB_COMPONENT } from '../testing/stubComponent'
+import { STUB_COMPONENT, STUB_CONNECTIONS } from '../testing/stubComponent'
 
 describe('createPluginHost', () => {
   function createMockDeps(): {
@@ -31,6 +31,7 @@ describe('createPluginHost', () => {
           title: 'Run Test',
         },
       ],
+      target: 'desktop.editor',
       registerKind: vi.fn((kind) => {
         registeredKinds.push(kind)
         return () => {
@@ -198,6 +199,7 @@ describe('createPluginHost', () => {
 
     // Host without getReaderExtensions does not register extension readers
     const hostNoExt = createPluginHost({
+      target: 'desktop.editor',
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader,
       openTab: vi.fn(async () => 't1'),
@@ -219,6 +221,7 @@ describe('createPluginHost', () => {
 
     // Host with getReaderExtensions and getTabState returning undefined vs object
     const hostWithExt = createPluginHost({
+      target: 'desktop.editor',
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader,
       getReaderExtensions: () => ['pdf'],
@@ -324,6 +327,33 @@ describe('createPluginHost', () => {
     ).toBeUndefined()
   })
 
+  it('files the health items of a plugin under its own id', async () => {
+    const { deps } = createMockDeps()
+    const filed: string[] = []
+    const host = createPluginHost({
+      ...deps,
+      health: {
+        reportHealth: (pluginId, item) => {
+          filed.push(`${pluginId} ${item.key}`)
+          return Promise.resolve()
+        },
+        clearHealth: (pluginId, key) => {
+          filed.push(`${pluginId} -${key}`)
+          return Promise.resolve()
+        },
+      },
+    })
+
+    const health = host.lifecycle.createContext('org.example.atlas').health
+    await health?.report({ key: 'connection', severity: 'error', text: 'Choose a connection' })
+    await health?.clear('connection')
+
+    expect(filed).toStrictEqual(['org.example.atlas connection', 'org.example.atlas -connection'])
+    expect(createPluginHost(deps).lifecycle.createContext('org.example.atlas').health).toBe(
+      undefined,
+    )
+  })
+
   it('delegates getSetting and onSettingChange through host', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
@@ -417,7 +447,7 @@ describe('createPluginHost', () => {
     const host = createPluginHost(deps)
     const conversation = defineComponent({
       props: { context: { type: Object, required: true } },
-      setup: (props) => () => h('p', (props.context as { focus: string }).focus),
+      setup: (props) => () => h('p', (props.context as { vault: string }).vault),
     })
     host.lifecycle
       .createContext(
@@ -432,8 +462,8 @@ describe('createPluginHost', () => {
 
     const mounted = host.lifecycle
       .createContext('org.example.sample')
-      .ui.mountView(CONVERSATION, panel, { agent: STUB_AGENT, focus: 'Samples/Physics.md' })
-    expect(panel.textContent).toBe('Samples/Physics.md')
+      .ui.mountView(CONVERSATION, panel, { connections: STUB_CONNECTIONS, vault: 'samples' })
+    expect(panel.textContent).toBe('samples')
 
     mounted.dispose()
     expect(panel.textContent).toBe('')
@@ -455,7 +485,7 @@ describe('createPluginHost', () => {
     const panel = document.createElement('section')
     host.lifecycle
       .createContext('org.example.sample')
-      .ui.mountView(CONVERSATION, panel, { agent: STUB_AGENT, focus: '' })
+      .ui.mountView(CONVERSATION, panel, { connections: STUB_CONNECTIONS })
 
     host.lifecycle.disposePlugin('md.numen.chat')
 
@@ -499,6 +529,7 @@ describe('a view mounted by a plugin', () => {
   const createHost = (registerNow = true) => {
     const read = vi.fn(async (path: string) => ({ body: `Body of ${path}` }))
     const host = createPluginHost({
+      target: 'desktop.editor',
       registerKind: () => vi.fn(),
       registerExtensionReader: () => vi.fn(),
       openTab: () => Promise.resolve('tab'),
@@ -644,7 +675,7 @@ describe('a view mounted by a plugin', () => {
     const element = document.createElement('div')
 
     expect(() =>
-      createCaller([]).ui.mountView(CONVERSATION, element, { agent: STUB_AGENT, focus: '' }),
+      createCaller([]).ui.mountView(CONVERSATION, element, { connections: STUB_CONNECTIONS }),
     ).not.toThrow()
     await settle()
 

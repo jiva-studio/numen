@@ -24,9 +24,6 @@ const MaxChunkTokens = 512
 // profile files of their own.
 const ProfilesFolder = "profiles"
 
-// fallbackRemoteID is the id of the profile an unlisted remote model takes.
-const fallbackRemoteID = "*"
-
 // InputPositionIDs is the extra input a profile asks the model to be given.
 const InputPositionIDs = "position_ids"
 
@@ -46,7 +43,6 @@ type Profile struct {
 	Title          string            `json:"title"`
 	Tier           string            `json:"tier,omitempty"`
 	SizeMB         int               `json:"sizeMB,omitempty"`
-	Remote         bool              `json:"remote,omitempty"`
 	Dimensions     int               `json:"dims"`
 	MaxTokens      int               `json:"maxTokens"`
 	Pooling        string            `json:"pooling"`
@@ -67,9 +63,6 @@ func (p Profile) IsNormalized() bool {
 
 // GetTokens returns the most tokens of a text the plugin gives the model.
 func (p Profile) GetTokens() int {
-	if p.Remote {
-		return p.MaxTokens
-	}
 	return min(p.MaxTokens, MaxChunkTokens)
 }
 
@@ -134,9 +127,6 @@ func (h Handling) Hash(maxTokens int) string {
 const handlingHashLength = 8
 
 func (p Profile) GetHandling() Handling {
-	if p.Remote {
-		return Handling{}
-	}
 	return Handling{
 		QueryPrefix:    p.QueryPrefix,
 		DocumentPrefix: p.DocumentPrefix,
@@ -168,7 +158,7 @@ func (p Profile) Validate() error {
 			return fmt.Errorf("%s: extraInputs %q is not supported, only %s", p.ID, input, InputPositionIDs)
 		}
 	}
-	if !p.Remote && p.OnnxFile == "" {
+	if p.OnnxFile == "" {
 		return fmt.Errorf("%s: a local model needs onnxFile", p.ID)
 	}
 	return nil
@@ -346,28 +336,17 @@ func cloneProfile(p Profile) Profile {
 // error that says where to add one.
 func (t *Profiles) GetLocal(id string) (Profile, error) {
 	p, ok := t.byID[t.byName[strings.ToLower(strings.TrimSpace(id))]]
-	if !ok || p.Remote {
+	if !ok {
 		return Profile{}, fmt.Errorf("%w %q: add a profile for it as a .json file in %s, or choose one of %s",
-			ErrNoProfile, id, t.getUserFolder(), strings.Join(t.getLocalIDs(), ", "))
+			ErrNoProfile, id, t.getUserFolder(), strings.Join(t.order, ", "))
 	}
 	return cloneProfile(p), nil
 }
 
-// GetRemote returns the profile of a model that a service runs. A model that no profile lists takes
-// the profile of any other remote model.
-func (t *Profiles) GetRemote(id string) Profile {
-	if p, ok := t.byID[t.byName[strings.ToLower(strings.TrimSpace(id))]]; ok && p.Remote {
-		return cloneProfile(p)
-	}
-	p := cloneProfile(t.byID[fallbackRemoteID])
-	p.ID = id
-	return p
-}
-
 // IsLocal reports whether the table lists the id as a model run on this machine.
 func (t *Profiles) IsLocal(id string) bool {
-	p, ok := t.byID[t.byName[strings.ToLower(strings.TrimSpace(id))]]
-	return ok && !p.Remote
+	_, ok := t.byID[t.byName[strings.ToLower(strings.TrimSpace(id))]]
+	return ok
 }
 
 func (t *Profiles) getUserFolder() string {
@@ -377,31 +356,15 @@ func (t *Profiles) getUserFolder() string {
 	return t.userHome
 }
 
-func (t *Profiles) getLocalIDs() []string {
-	var ids []string
-	for _, id := range t.order {
-		if !t.byID[id].Remote {
-			ids = append(ids, id)
-		}
-	}
-	return ids
-}
-
 // GetCurated returns the profiles the settings list, in table order.
 func (t *Profiles) GetCurated() []Profile {
 	var out []Profile
 	for _, id := range t.order {
-		if p := t.byID[id]; !p.Remote && p.Tier != "" {
+		if p := t.byID[id]; p.Tier != "" {
 			out = append(out, cloneProfile(p))
 		}
 	}
 	return out
-}
-
-// IsRemote reports whether the table lists the id as a model that a service runs.
-func (t *Profiles) IsRemote(id string) bool {
-	p, ok := t.byID[t.byName[strings.ToLower(strings.TrimSpace(id))]]
-	return ok && p.Remote
 }
 
 // IsZero reports whether the handling changes nothing.

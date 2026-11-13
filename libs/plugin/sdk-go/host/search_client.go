@@ -20,9 +20,9 @@ type SearchClient struct {
 }
 
 var (
-	_ SearchIndex   = (*SearchClient)(nil)
-	_ PassageSearch = (*SearchClient)(nil)
-	_ SearchPolicy  = (*SearchClient)(nil)
+	_ SearchIndex  = (*SearchClient)(nil)
+	_ SearchPolicy = (*SearchClient)(nil)
+	_ PlaceSearch  = (*SearchClient)(nil)
 )
 
 // NewSearchClientFromEnv connects to the host the process was started for. It returns hostcall.ErrNoHost
@@ -224,6 +224,28 @@ func (c *SearchClient) GetBestSimilarity(ctx context.Context, recipe string, que
 		return 0, err
 	}
 	return res.Msg.GetSimilarity(), nil
+}
+
+func (c *SearchClient) FindNearestPassages(ctx context.Context, query NearestQuery) ([]NearestMatch, error) {
+	kinds := make([]string, len(query.Kinds))
+	for i, kind := range query.Kinds {
+		kinds[i] = string(kind)
+	}
+	res, err := c.rpc.FindNearestPassages(ctx, newSearchRequest(c, &v1.FindNearestPassagesRequest{
+		Place: &v1.SearchPlace{VaultId: c.vault, Recipe: query.Recipe}, Vector: query.Vector,
+		Limit: int32(min(max(query.Limit, math.MinInt32), math.MaxInt32)), Kinds: kinds, PathPrefix: query.PathPrefix, Floor: query.Floor,
+	}))
+	if err != nil {
+		return nil, readSearchCallError(err)
+	}
+	if err := readSearchError(res.Msg.GetError()); err != nil {
+		return nil, err
+	}
+	found := make([]NearestMatch, len(res.Msg.GetMatches()))
+	for i, one := range res.Msg.GetMatches() {
+		found[i] = NearestMatch{ChunkID: one.GetChunkId(), Similarity: one.GetScore()}
+	}
+	return found, nil
 }
 
 func (c *SearchClient) GetSearchFloor(ctx context.Context, recipe string) (SearchFloor, error) {

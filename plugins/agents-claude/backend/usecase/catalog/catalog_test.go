@@ -164,7 +164,7 @@ func TestAProgramThatIsNotInstalledListsTheFallbackModels(t *testing.T) {
 		t.Fatalf("the models are %v", list)
 	}
 	for place, one := range list {
-		if one.Name != model.GetFallback()[place].Value || len(one.ReasoningLevels) != 0 {
+		if one.Value != model.GetFallback()[place].Value || len(one.GetLevels()) != 0 {
 			t.Errorf("the model %v is not a fallback alias", one)
 		}
 	}

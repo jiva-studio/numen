@@ -12,15 +12,15 @@ import (
 )
 
 func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
-	handler := NewHandler(NewValues(setting.NewGetWithSecrets(setting.NewGet(
+	handler := NewHandler(NewValues(setting.NewGet(
 		func() (string, string, error) { return `{"v":1}`, "/home/numen.json", nil },
-		nil, nil,
+		nil,
 		func() []plugin.Setting {
 			return []plugin.Setting{
 				{Key: "appearance.interfaceScale", Type: "range", DefaultJSON: "1", ValueJSON: "1"},
 			}
 		},
-	), nil), nil, nil, nil), PluginFolders{}, &SecretItems{}, &SecretGroups{})
+	), nil, nil, nil), PluginFolders{})
 
 	response, err := handler.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {

@@ -43,8 +43,10 @@ const ACCEPTANCE = 'acceptance'
 /** Tests of a plugin beyond its own folder and the spec files that name its id, as scope tokens. */
 export const PLUGIN_TESTS = {
   'agents-numen': ['agents.chat', ACCEPTANCE],
+  'connections-llm': [ACCEPTANCE],
   'agents-tools-vault': ['agents.chat', ACCEPTANCE],
   'agents-tools-window': ['agents.chat', ACCEPTANCE],
+  'engines-embeddings': [ACCEPTANCE],
   'engines-ocr': [ACCEPTANCE],
   'engines-transcription': [ACCEPTANCE],
   notes: [ACCEPTANCE],

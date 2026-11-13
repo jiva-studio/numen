@@ -23,6 +23,7 @@ function createHost() {
       { pluginId: TIDE, id: 'chart.open', title: 'Open chart' },
       { pluginId: TIDE, id: 'chart.share', title: 'Share chart' },
     ],
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),

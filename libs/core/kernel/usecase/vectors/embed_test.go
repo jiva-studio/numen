@@ -12,9 +12,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 )
 
 // dimensions is the width of the model the tests embed with. One byte per
@@ -51,7 +53,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	defer cancel()
 	interrupted := &interruptedStore{Store: index, cancel: cancel, after: 2}
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, interrupted)
-	embed.Embedder = &embedder{dims: dimensions}
+	embed.Source = sourcefake.Wrap(&embedder{dims: dimensions})
 	embed.BatchCharacters = 4000
 	if _, err := embed.Execute(stopCtx, indexfake.GetFirst()); err == nil {
 		t.Fatal("a canceled context did not stop the run")
@@ -112,7 +114,7 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 	var progress []vaultreading.EmbedResult
 	model := &embedder{dims: dimensions}
 	emb := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
-	emb.Embedder = model
+	emb.Source = sourcefake.Wrap(model)
 	emb.BatchCharacters = 2000
 	res, err := emb.EmbedWithProgress(ctx, indexfake.GetFirst(), func(r vaultreading.EmbedResult) { progress = append(progress, r) }, nil)
 	if err != nil {
@@ -127,7 +129,7 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 	}
 	for _, group := range index.Groups {
 		for _, v := range group {
-			if v.Kind != embedding.QuantizedInt8 {
+			if v.Kind != vector.QuantizedInt8 {
 				t.Errorf("chunk %s was stored as %q", v.ChunkID, v.Kind)
 			}
 			if len(v.Value) != dimensions {
@@ -136,8 +138,8 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 			if want := (dimensions + 7) / 8; len(v.Coarse) != want {
 				t.Errorf("chunk %s holds %d coarse bytes, want %d", v.ChunkID, len(v.Coarse), want)
 			}
-			if v.Model != model.GetModel() {
-				t.Errorf("chunk %s was stored under %s", v.ChunkID, v.Model)
+			if v.Recipe != model.Describe().Recipe() {
+				t.Errorf("chunk %s was stored under %s", v.ChunkID, v.Recipe)
 			}
 		}
 	}
@@ -231,7 +233,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			c.replace(t, shelf)
 
 			emb := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
-			emb.Embedder = &embedder{dims: dimensions}
+			emb.Source = sourcefake.Wrap(&embedder{dims: dimensions})
 			res, err := emb.Execute(ctx, indexfake.GetFirst())
 			if err != nil {
 				t.Fatalf("a source that moved on is not an error: %v", err)
@@ -268,7 +270,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 	}
 
 	embed := newEmbed(shelves, index, index)
-	embed.Embedder = &embedder{dims: dimensions}
+	embed.Source = sourcefake.Wrap(&embedder{dims: dimensions})
 	if _, err := embed.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +307,7 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	model := &embedder{dims: dimensions}
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	embed.Claim = claim
-	embed.Embedder = model
+	embed.Source = sourcefake.Wrap(model)
 	embed.BatchCharacters = 4000
 
 	res, err := embed.Execute(ctx, indexfake.GetFirst())
@@ -347,7 +349,7 @@ func TestPipelineConcurrentBatchesWithProgress(t *testing.T) {
 	var progressReports []vaultreading.EmbedResult
 	model := &embedder{dims: dimensions}
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
-	embed.Embedder = model
+	embed.Source = sourcefake.Wrap(model)
 	embed.BatchCharacters = 1000
 	res, err := embed.EmbedWithProgress(ctx, indexfake.GetFirst(), func(r vaultreading.EmbedResult) {
 		progressReports = append(progressReports, r)
@@ -378,7 +380,7 @@ func TestDuplicateChunksInBatchAreDeduplicated(t *testing.T) {
 
 	model := &embedder{dims: dimensions}
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
-	embed.Embedder = model
+	embed.Source = sourcefake.Wrap(model)
 	embed.BatchCharacters = 50000
 
 	res, err := embed.Execute(ctx, indexfake.GetFirst())
@@ -429,7 +431,7 @@ func TestEmbeddingPrioritizesRecentlyModifiedSources(t *testing.T) {
 
 	model := &embedder{dims: dimensions}
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
-	embed.Embedder = model
+	embed.Source = sourcefake.Wrap(model)
 	embed.BatchCharacters = 4000
 	if _, err := embed.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
@@ -463,7 +465,7 @@ func TestEmbeddingWithConcurrentWorkers(t *testing.T) {
 
 	model := &embedder{dims: dimensions}
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
-	embed.Embedder = model
+	embed.Source = sourcefake.Wrap(model)
 	embed.BatchCharacters = 200
 	embed.Concurrency = 3
 
@@ -549,7 +551,7 @@ func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
 	}
 	var log progressLog
 	embed := newEmbed(indexfake.Vaults{first.ID: shelf}, index, index)
-	embed.Embedder = model
+	embed.Source = sourcefake.Wrap(model)
 	embed.BatchCharacters = 1
 
 	ctx, cancel := context.WithCancel(t.Context())
@@ -606,7 +608,9 @@ func TestEmbeddingTheChunksOfAVaultMakesDocumentVectors(t *testing.T) {
 
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	aware := &queryAware{embedder: &embedder{dims: dimensions}}
-	embed.Embedder = aware
+	source := sourcefake.Wrap(aware)
+	source.Queries = aware.EmbedQueries
+	embed.Source = source
 	if _, err := embed.Execute(t.Context(), indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	}
@@ -636,7 +640,7 @@ func TestACanceledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	err := newProducer(embed, nil).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
+	err := newProducer(embed, nil).sendBatches(ctx, batchTarget{model: searchsource.Description{Name: "m", Width: dimensions}},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 
 	if !errors.Is(err, context.Canceled) {
@@ -648,7 +652,7 @@ func TestACanceledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	track.leave(activeID)
 
 	res.CurrentSource = finished
-	err = newProducer(embed, nil).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
+	err = newProducer(embed, nil).sendBatches(ctx, batchTarget{model: searchsource.Description{Name: "m", Width: dimensions}},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the send ended with %v, want context.Canceled", err)

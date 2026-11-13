@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import type { SlotCommand, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import { COMMAND, ROW, type CommandTarget } from '@/shared/model/command'
-import { useSearch, type NameMatch, type Passage, type SearchDeps, type Words } from './search'
+import { useSearch, type NameMatch, type SearchDeps, type Words } from './search'
+import type { Passage } from './lookup'
 
 const WORDS: Words = {
   names: 'Names',
@@ -14,8 +15,6 @@ const WORDS: Words = {
   readDocument: 'Open the document',
   noneFound: 'Nothing',
   noQuery: 'Search failed',
-  wordsOnly: 'Words only',
-  notEmbedded: 'Not read for meaning yet',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',

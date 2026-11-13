@@ -3,11 +3,11 @@ import { expect } from 'playwright/test'
 import { getTab } from '../../../e2e/desktop/tests/support/layout.js'
 import type { ApplicationDriver } from './application.js'
 import type { WindowDriver } from './window.js'
-import { getAddressTitle, getLinkNotePath, getCurrentVersionLabel, type TabKindChoice, type TextKind } from './rules.js'
+import { getAddressTitle, getLinkNotePath, getCurrentVersionLabel, getVersionTitle, type TabKindChoice, type TextKind } from './rules.js'
 import { TabPanel } from './components/TabPanel.js'
 import type { Scenario } from './scenario.js'
 import type { TabDriver } from './tabs.js'
-import { hasMadeText, hasVersions } from './text-versions.js'
+import { hasMadeText, hasVersions, listVersions } from './text-versions.js'
 
 const CREATE_TEXT = 'Create text'
 const RECOGNIZE_TEXT = 'Recognize text'
@@ -47,6 +47,14 @@ export class TextDriver {
     await this.tab.showFile(filePath)
     await this.application.runCommand(PROOFREAD_TEXT)
     await this.application.pickItem(getCurrentVersionLabel(kind))
+  }
+
+  /** The file has a version of the kind of text, which the product lists with the title of the kind. */
+  async expectVersion(filePath: string, kind: TextKind): Promise<void> {
+    const { request } = this.scenario.page
+    await expect
+      .poll(async () => (await listVersions(request, filePath)).some((one) => one.title.startsWith(getVersionTitle(kind))))
+      .toBe(true)
   }
 
   async deleteVersion(filePath: string, kind: TextKind): Promise<void> {

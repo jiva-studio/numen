@@ -6,23 +6,18 @@
 package container
 
 import (
-	"context"
-
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -46,8 +41,7 @@ type Scales struct {
 
 // Machine is what the hardware allows the installation to use.
 type Machine struct {
-	ResolvedCompute settingsdomain.ResolvedCompute
-	Hardware        settingsdomain.MachineSpecs
+	ResolvedCompute machinedomain.ResolvedCompute
 }
 
 // Config is what the user may point somewhere else. Empty fields mean the platform's own locations. What the
@@ -61,8 +55,6 @@ type Config struct {
 	PluginCatalog catalog.Config
 
 	KeyStore pluginport.KeyStore
-
-	Credentials pluginport.CredentialsLocator
 
 	ShouldRebuildIndex bool
 
@@ -90,9 +82,7 @@ type Resources struct {
 	watches         *vaultwatch.Hub
 	settingsFiles   *settingsadapter.Files
 	settingEvents   *settingevents.Events
-	secretGate      *secret.Gate
 	pluginChanges   *settingsusecase.PluginChanges
-	programs        *settingsadapter.ProgramList
 	subscribedHosts settingsusecase.HostSubscriptions
 }
 
@@ -104,8 +94,6 @@ func NewResources() *Resources {
 		settingsFiles: settingsadapter.NewFiles(),
 		settingEvents: settingevents.New(),
 		pluginChanges: &settingsusecase.PluginChanges{},
-		secretGate:    secret.NewGate(),
-		programs:      &settingsadapter.ProgramList{},
 	}
 }
 
@@ -165,8 +153,6 @@ func settingsOf(c Config) settingsWiring {
 			Watches:         res.watches,
 			SettingsFiles:   res.settingsFiles,
 			SettingEvents:   res.settingEvents,
-			Programs:        res.programs,
-			SecretGate:      res.secretGate,
 			PluginChanges:   res.pluginChanges,
 			SubscribedHosts: &res.subscribedHosts,
 		},
@@ -227,7 +213,6 @@ func assemble(c Config, texts *TextVersions) pluginsWiring {
 			RunningHost:     c.runningHost(),
 			PluginCatalog:   c.PluginCatalog,
 			KeyStore:        c.KeyStore,
-			CredentialsPath: c.getCredentialsPath(),
 		},
 		settings: settings,
 		search:   search,
@@ -240,14 +225,3 @@ func plugins(c Config) pluginsWiring { return assemble(c, nil) }
 func vaultOf(c Config) vaultWiring { return plugins(c).vault }
 
 func searchOf(c Config) searchWiring { return plugins(c).search }
-
-func (c Config) agentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
-	return getAgentPrograms(plugins(c), provider, target)
-}
-
-func (c Config) getCredentialsPath() func(ctx context.Context) string {
-	if c.Credentials == nil {
-		return nil
-	}
-	return c.Credentials.GetCredentialsPath
-}

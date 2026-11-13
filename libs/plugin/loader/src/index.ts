@@ -9,6 +9,8 @@ export {
   createPluginStatus,
   INTERFACE_WAIT_MS,
   PLUGIN_START_LIMIT_MS,
+  waitWithinInterfaceLimit,
+  type ContributionMatch,
   type PluginStatus,
 } from './loading'
 export type { LoaderHost } from './host'
@@ -25,42 +27,36 @@ export {
   unregisterPluginStyle,
   type StyleRoot,
 } from './styles'
-export { createViewRegistry, type ViewRegistry } from './views'
 export { createDropRegistry } from './drops'
 export {
-  createSlotViewRegistry,
   findSlotView,
   getDeclaredSlots,
   SlotViewHost,
   usePluginStyles,
   type DeclaredSlotView,
   type SlotViewManifest,
-  type SlotViewRegistry,
 } from './slot-views'
 export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
 export { createExternalOpener, isWebAddress, type ExternalOpener } from './externalOpener'
-export { createAgentPort, type AgentClient } from './agentPort'
 export { resolveTextLinks, type LinkClient } from './textLinks'
+export { createPluginConnections } from './pluginConnections'
 export { createPluginTexts } from './pluginTexts'
 export { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from './commandId'
 export * from './contract'
 export { createPluginNotices, type NoticeList, type NoticeListTask } from './pluginNotices'
 export { createPluginTasks, type WindowTask } from './pluginTasks'
+export type { HealthReports } from './pluginHealth'
 export {
   createCustomTabKind,
-  createIdleContextHost,
-  createPluginContext,
   createPluginHost,
   createPluginPaneWrapper,
   createWindowHost,
-  disposeSubscriptions,
   requireMountAccess,
   type AnyTabKind,
   type BackendHandlerRun,
   type CommandDeclaration,
   type HandlerDeclaration,
   type HostCommandReads,
-  type IdleContextHostParts,
   type NoteBuffer,
   type OpenTab,
   type PluginContextHost,

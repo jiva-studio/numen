@@ -6,7 +6,6 @@
  * the stored settings.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { MODEL_PRESENCE } from '@numen/core-client'
 import { createLostConnection, installCoreAnswers } from '@numen/core-client/testing'
 import { getSettingAt } from '../lib/settingAt'
 import { createSettingsStore } from './store'
@@ -19,26 +18,10 @@ const words = {
 const answerWith = (text: string, rest: Record<string, unknown> = {}) => ({
   written: text,
   path: '/numen.json',
-  models: [],
   plugins: [],
   app: [],
-  secretSections: [],
-  secretMenus: [],
-  credentialsPath: '',
   ...rest,
 })
-
-const MODELS = [
-  {
-    namedAt: ['agent', 'claude', 'model'],
-    name: 'opus',
-    title: 'opus',
-    group: '',
-    isDefault: false,
-    writes: [{ at: ['agent', 'claude', 'model'], value: '"opus"' }],
-    presence: MODEL_PRESENCE.NOTHING_TO_FETCH,
-  },
-]
 
 let restore: (() => void) | undefined
 
@@ -51,7 +34,7 @@ const createStore = (text: string, failure: string | null = null) => {
   const requests: unknown[] = []
   restore = installCoreAnswers({
     settingsService: {
-      getSettings: () => answerWith(text, { models: MODELS }),
+      getSettings: () => answerWith(text),
       writeSettings: (request) => {
         requests.push(request.settings.map((one) => ({ at: one.at, value: one.value })))
         if (failure) throw createLostConnection(failure)
@@ -87,13 +70,11 @@ describe('what remains at a setting', () => {
     })
     const retainedState = createSettingsStore(words, vi.fn())
 
-    expect(retainedState.state.models.value).toStrictEqual([])
     expect(retainedState.state.plugins.value).toStrictEqual([])
     await retainedState.start()
 
     expect(retainedState.read.getSetting(['agent'])).toBeUndefined()
     expect(retainedState.state.path.value).toBe('')
-    expect(retainedState.state.models.value).toStrictEqual([])
     expect(retainedState.state.plugins.value).toStrictEqual([])
   })
 
@@ -160,24 +141,59 @@ describe('what remains at a setting', () => {
     expect(store.read.getSetting(['my.plugin', 'autoRun'])).toBe(false)
     expect(store.read.getCommittedSetting(['my.plugin', 'autoRun'])).toBe(false)
   })
-})
 
-describe('the models a setting offers', () => {
-  it('are the ones read from that setting, and no others', async () => {
-    const { kept } = createStore('{}')
-    await kept.start()
-    expect(
-      kept.read.getModelsAt(['agent', 'claude', 'model']).map((one) => one.name),
-    ).toStrictEqual(['opus'])
-    expect(kept.read.getModelsAt(['agent', 'use'])).toStrictEqual([])
+  /** A store over a vault with the Status bar, which its manifest keeps off by default. */
+  const createOffByDefaultStore = (text: string) => {
+    restore = installCoreAnswers({
+      settingsService: {
+        getSettings: () =>
+          answerWith(text, {
+            plugins: [
+              {
+                id: 'md.numen.views.statusBar',
+                name: 'Status bar',
+                version: '1.0.0',
+                description: 'The bar at the bottom of the window with plugin commands',
+                isActive: false,
+                isOffByDefault: true,
+              },
+            ],
+          }),
+      },
+    })
+    return createSettingsStore(words, vi.fn())
+  }
+
+  it('keeps a plugin off by default off while the file names no enabled value', async () => {
+    const store = createOffByDefaultStore('{}')
+    await store.start()
+
+    expect(store.read.getSetting(['md.numen.views.statusBar', 'enabled'])).toBe(false)
+    expect(store.read.getCommittedSetting(['md.numen.views.statusBar', 'enabled'])).toBe(false)
+  })
+
+  it('runs a plugin off by default once the file enables it', async () => {
+    const store = createOffByDefaultStore(
+      JSON.stringify({ 'md.numen.views.statusBar': { enabled: true } }),
+    )
+    await store.start()
+
+    expect(store.read.getCommittedSetting(['md.numen.views.statusBar', 'enabled'])).toBe(true)
+  })
+
+  it('leaves the enabled value of other plugins to the window default', async () => {
+    const store = createPluginStore('{}')
+    await store.start()
+
+    expect(store.read.getCommittedSetting(['my.plugin', 'enabled'])).toBeUndefined()
   })
 })
 
 describe('a setting written', () => {
   it('is requested of the vault as it was given', async () => {
     const { kept, requests } = createStore('{}')
-    await kept.write.writeSetting(['agent', 'use'], 'claude')
-    expect(requests).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
+    await kept.write.writeSetting(['appearance', 'mode'], 'dark')
+    expect(requests).toStrictEqual([[{ at: ['appearance', 'mode'], value: '"dark"' }]])
   })
 
   it('clears what was last returned before it is written', async () => {
@@ -195,7 +211,7 @@ describe('a setting written', () => {
 
   it('is returned where it failed', async () => {
     const { kept, notify } = createStore('{}', 'the file could not be written')
-    await kept.write.writeSetting(['agent', 'use'], 'claude')
+    await kept.write.writeSetting(['appearance', 'mode'], 'dark')
     expect(notify).toHaveBeenLastCalledWith(
       'Setting not saved: Numen is not responding; retrying',
       'error',
@@ -208,7 +224,7 @@ describe('a setting written', () => {
       settingsService: {
         getSettings: () => {
           if (shouldFailRead) throw createLostConnection('offline')
-          return answerWith('{"agent":{"keep":1},"nullBranch":null,"primBranch":42}')
+          return answerWith('{"appearance":{"keep":1},"nullBranch":null,"primBranch":42}')
         },
         writeSettings: () => ({}),
       },
@@ -218,14 +234,14 @@ describe('a setting written', () => {
 
     shouldFailRead = true
     await store.write.writeSettings([
-      { at: ['agent', 'use'], value: '"claude"' },
+      { at: ['appearance', 'mode'], value: '"dark"' },
       { at: ['nullBranch', 'nested'], value: '"ok"' },
       { at: ['primBranch', 'nested'], value: '"ok2"' },
-      { at: ['agent', 'keep'], value: 'not-json' },
+      { at: ['appearance', 'keep'], value: 'not-json' },
     ])
 
-    expect(store.read.getCommittedSetting(['agent', 'keep'])).toBe(1)
-    expect(store.read.getCommittedSetting(['agent', 'use'])).toBe('claude')
+    expect(store.read.getCommittedSetting(['appearance', 'keep'])).toBe(1)
+    expect(store.read.getCommittedSetting(['appearance', 'mode'])).toBe('dark')
     expect(store.read.getCommittedSetting(['nullBranch', 'nested'])).toBe('ok')
     expect(store.read.getCommittedSetting(['primBranch', 'nested'])).toBe('ok2')
   })

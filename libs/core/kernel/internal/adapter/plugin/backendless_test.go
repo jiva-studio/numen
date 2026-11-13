@@ -53,10 +53,7 @@ func newFrontendOnlyHost(t *testing.T) (*container.PluginRoles, *int) {
 
 func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 	host, launches := newFrontendOnlyHost(t)
-	var failures []plugindomain.Failure
-	host.Failures.SetOnPluginFailed(func(failure plugindomain.Failure) { failures = append(failures, failure) })
-
-	_, err := host.Activation.EnsureActive(t.Context(), "md.numen.views.sketch")
+	_, err := host.Activation.EnsureActive(t.Context(), "md.numen.views.sketch", getTestHolder())
 
 	var unavailable *plugindomain.UnavailableError
 	if !errors.As(err, &unavailable) || unavailable.Reason != plugindomain.WithoutBackend {
@@ -65,25 +62,8 @@ func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 	if *launches != 0 {
 		t.Fatalf("the host launched %d processes for a plugin without a backend", *launches)
 	}
-	if len(failures) != 0 {
-		t.Fatalf("the host reported %v for a plugin without a backend", failures)
-	}
-	for _, info := range host.Registry.GetPluginInfos() {
-		if info.Failure != nil {
-			t.Fatalf("plugin %s is listed as failed: %v", info.ID, info.Failure.Reason)
-		}
-	}
-}
-
-func TestAnEventForTheFilesOfAFrontendPluginStartsNothing(t *testing.T) {
-	host, launches := newFrontendOnlyHost(t)
-
-	activated, err := host.Events.TriggerEvent(t.Context(), "onFile:pdf")
-	if err != nil {
-		t.Fatalf("TriggerEvent: %v", err)
-	}
-	if len(activated) != 0 || *launches != 0 {
-		t.Fatalf("activated %v with %d launches, want none", activated, *launches)
+	if items := host.Health.List(); len(items) != 0 {
+		t.Fatalf("the host listed %+v for a plugin without a backend", items)
 	}
 }
 

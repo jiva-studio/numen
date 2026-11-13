@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/providers"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
 )
 
@@ -44,10 +43,21 @@ type ModelInfo struct {
 	Handling       string
 }
 
+// GetRecipe is everything about the model that decides what a vector is, as one value: the provider, the
+// name, the width, the token limit, the pooling and the handling. Two vectors of different recipes cannot be
+// compared. The provider comes first: two places serving one name are two sets of vectors.
+func (m ModelInfo) GetRecipe() string {
+	return fmt.Sprintf("%s|%s|%d|%d|%s|%s", m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, m.Handling)
+}
+
 // GetModelInfo returns the model the server serves. It fails with a PreconditionError while the
-// local model cannot be resolved.
-func (s *Server) GetModelInfo() (ModelInfo, error) {
+// local model cannot be resolved, and while no connection answers for the model of the connections.
+func (s *Server) GetModelInfo(ctx context.Context) (ModelInfo, error) {
 	s.mu.Lock()
+	if s.isConnectionLocked() {
+		s.mu.Unlock()
+		return s.getConnectionModelInfo(ctx)
+	}
 	info := s.modelInfo
 	localErr := s.getLocalErrLocked()
 	s.mu.Unlock()
@@ -86,7 +96,7 @@ func (s *Server) getLocalErr() error {
 }
 
 func (s *Server) getLocalErrLocked() error {
-	if s.isMock || providers.IsRemote(s.provider) {
+	if s.isMock || s.isConnectionLocked() {
 		return nil
 	}
 	return s.localErr
@@ -99,22 +109,19 @@ func (s *Server) applyHandling(role model.Role, texts []string) []string {
 	return handling.Apply(role, texts)
 }
 
-// EmbedTexts returns one vector per text. A local model reads the texts with the prefix its profile
-// names for the role; a remote service reads them as they are. A call the settings do not allow fails with a PreconditionError.
+// EmbedTexts returns one vector per text, made for the role. A local model reads the texts with the
+// prefix its profile names for the role; a connection is given the prefixes of its profile. A call the
+// settings do not allow fails with a PreconditionError.
 func (s *Server) EmbedTexts(ctx context.Context, role model.Role, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
 		return nil, nil
 	}
 
-	key, baseURL := s.getService()
-	if key != "" && baseURL != "" {
-		return s.embedRemoteTexts(ctx, key, baseURL, texts)
-	}
-	if s.isRemoteProvider() {
-		if baseURL == "" {
-			return nil, PreconditionError{Err: errors.New("embedding service URL is not configured")}
-		}
-		return nil, PreconditionError{Err: errors.New("embedding API key is not configured")}
+	s.mu.Lock()
+	isConnection := s.isConnectionLocked()
+	s.mu.Unlock()
+	if isConnection {
+		return s.embedThroughConnection(ctx, role, texts)
 	}
 
 	if err := s.getLocalErr(); err != nil {
@@ -141,46 +148,4 @@ func (s *Server) EmbedTexts(ctx context.Context, role model.Role, texts []string
 	}
 
 	return denseVectors, nil
-}
-
-func (s *Server) embedRemoteTexts(ctx context.Context, key, baseURL string, texts []string) ([][]float32, error) {
-	vectors, err := s.fetchVectors(ctx, key, baseURL, s.getModelName(), texts)
-	if err != nil {
-		return nil, err
-	}
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION,INTEGER_DECREMENT,INTEGER_INCREMENT,BRANCH_IF reason="a vector fetched without an error is not empty"
-	if dimensions := len(vectors[len(vectors)-1]); dimensions > 0 {
-		s.mu.Lock()
-		s.modelInfo.Dimensions = dimensions
-		s.mu.Unlock()
-	}
-	return vectors, nil
-}
-
-func (s *Server) isRemoteProvider() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return !s.isMock && providers.IsRemote(s.provider)
-}
-
-func (s *Server) getService() (key, baseURL string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.isMock || s.provider == providers.Local {
-		return "", ""
-	}
-	if hosted := providers.GetServiceURL(s.provider); hosted != "" {
-		return s.apiKey, hosted
-	}
-	baseURL = s.baseURL
-	if baseURL == "" {
-		baseURL = s.env.GetServiceURL()
-	}
-	return s.apiKey, baseURL
-}
-
-func (s *Server) getModelName() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.modelInfo.Name
 }

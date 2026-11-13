@@ -6,7 +6,6 @@ import type { PaletteGroup } from '@numen/workbench'
 import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from './debounced'
-import type { IndexCoverage } from '@/shared/model/notices/coverage'
 import {
   createNameItem,
   createPassageItem,
@@ -21,9 +20,9 @@ import {
 import type { SearchDeps } from '../../lib/search/types'
 import { getCreateNoteActions } from '../../lib/entries/entries'
 import type { CommandTarget } from '@/shared/model/command'
-import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
+import { GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
-export type { NameMatch, Passage, SearchHit, SearchGroup, ResultChoice, SearchDeps }
+export type { NameMatch, SearchHit, SearchGroup, ResultChoice, SearchDeps }
 
 /** The text a palette group shows when it is empty. */
 export interface EmptyWords {
@@ -39,8 +38,6 @@ export interface Words extends EmptyWords {
   read: string
   readAt: string
   readDocument: string
-  wordsOnly: string
-  notEmbedded: string
   creates: string
   asChild: string
   asParent: string
@@ -50,7 +47,6 @@ export interface Words extends EmptyWords {
 /** What the window hands the palette, beside the vault and its own words. */
 export interface SearchOptions {
   wait?: Wait
-  coverage?(this: void): IndexCoverage
   menu?: SearchMenuDeps
   /** The target of the window, for the row that creates a note. */
   getTarget?(this: void): CommandTarget
@@ -176,21 +172,38 @@ interface SearchRefs {
   isAnswered: Ref<boolean>
 }
 
+function createSearchRefs(): SearchRefs {
+  return {
+    names: shallowRef<readonly NameMatch[]>([]),
+    texts: shallowRef<readonly Passage[]>([]),
+    meanings: shallowRef<readonly Passage[]>([]),
+    isWorking: ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false }),
+    failureMessages: ref<Partial<Record<SearchGroup, string>>>({}),
+    isAnswered: ref(false),
+  }
+}
+
+function clearSearchRefs(state: SearchRefs): void {
+  state.names.value = []
+  state.texts.value = []
+  state.meanings.value = []
+  state.isWorking.value = { names: false, text: false, meaning: false }
+  state.failureMessages.value = {}
+  state.isAnswered.value = false
+}
+
 async function executeSearchQuery(
   ctx: {
     core: SearchDeps
     query: string
     mine: InFlightRequest
+    signal: AbortSignal
     emptyQueryWord: string
   },
   state: SearchRefs,
 ) {
-  state.names.value = []
-  state.texts.value = []
-  state.meanings.value = []
+  clearSearchRefs(state)
   state.isWorking.value = { names: true, text: true, meaning: true }
-  state.failureMessages.value = {}
-  state.isAnswered.value = false
   const onFailed = (g: SearchGroup) => {
     state.failureMessages.value = { ...state.failureMessages.value, [g]: ctx.emptyQueryWord }
   }
@@ -203,7 +216,7 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'names',
-      question: () => ctx.core.names(ctx.query, GROUP_RESULT_LIMIT),
+      question: () => ctx.core.names(ctx.query, GROUP_RESULT_LIMIT, ctx.signal),
       into: (found) => {
         state.names.value = found
       },
@@ -213,7 +226,7 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'text',
-      question: () => ctx.core.search(ctx.query, 'words', GROUP_RESULT_LIMIT),
+      question: () => ctx.core.search(ctx.query, 'words', GROUP_RESULT_LIMIT, ctx.signal),
       into: (found) => {
         state.texts.value = found
       },
@@ -223,7 +236,7 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'meaning',
-      question: () => ctx.core.search(ctx.query, 'meaning', GROUP_RESULT_LIMIT),
+      question: () => ctx.core.search(ctx.query, 'meaning', GROUP_RESULT_LIMIT, ctx.signal),
       into: (found) => {
         state.meanings.value = found
       },
@@ -250,38 +263,45 @@ function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
 }
 
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
-  const coverage = how.coverage
   const open = ref(false)
   const inputValue = ref('')
 
-  const names = shallowRef<readonly NameMatch[]>([])
-  const texts = shallowRef<readonly Passage[]>([])
-  const meanings = shallowRef<readonly Passage[]>([])
-
-  const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
-  const failureMessages = ref<Partial<Record<SearchGroup, string>>>({})
-  const isAnswered = ref(false)
-  const state: SearchRefs = { names, texts, meanings, isWorking, failureMessages, isAnswered }
+  const state = createSearchRefs()
+  const { names, texts, meanings, isWorking, failureMessages, isAnswered } = state
 
   const debounced = useDebouncedSearch(how.wait ? { wait: how.wait } : {})
 
+  // The questions of the current query, which a newer query or putting the palette away aborts.
+  let asking = new AbortController()
+  const isWaiting = ref(false)
+
   const drop = () => {
-    names.value = []
-    texts.value = []
-    meanings.value = []
-    isWorking.value = { names: false, text: false, meaning: false }
-    failureMessages.value = {}
-    isAnswered.value = false
+    asking.abort()
+    clearSearchRefs(state)
+    isWaiting.value = false
   }
 
-  const ask = (query: string, mine: InFlightRequest) =>
-    executeSearchQuery({ core, query, mine, emptyQueryWord: words.noQuery }, state)
+  const wait = () => {
+    const wasBusy = isBusy.value
+    drop()
+    isWaiting.value = wasBusy
+  }
+
+  const ask = (query: string, mine: InFlightRequest) => {
+    isWaiting.value = false
+    asking.abort()
+    asking = new AbortController()
+    return executeSearchQuery(
+      { core, query, mine, signal: asking.signal, emptyQueryWord: words.noQuery },
+      state,
+    )
+  }
 
   const setTyped = async (text: string) => {
     inputValue.value = text
     await debounced.search(text, {
       blank: drop,
-      pending: drop,
+      pending: wait,
       run: ask,
     })
   }
@@ -294,8 +314,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     drop()
   }
 
-  const getEmptyGroupMessage = (id: SearchGroup): string =>
-    getEmptyGroupReason(id, { failureMessage: failureMessages.value[id], words, coverage })
+  /** Why a group holds nothing: the failure of its search, and nothing where it did not fail. */
+  const getEmptyGroupMessage = (id: SearchGroup): string => failureMessages.value[id] ?? ''
 
   const searchGroups = computed(() => {
     if (!inputValue.value.trim())
@@ -315,8 +335,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const groups = computed(() => searchGroups.value.groups)
 
-  /** Whether any question of the current request is still out. */
-  const isBusy = computed(() => Object.values(isWorking.value).some(Boolean))
+  /** Whether a typed query waits for its pause or any question of the current request is still out. */
+  const isBusy = computed(() => isWaiting.value || Object.values(isWorking.value).some(Boolean))
 
   /** Whether every question has answered and no group has a row or a message to show. */
   const isNothingFound = computed(

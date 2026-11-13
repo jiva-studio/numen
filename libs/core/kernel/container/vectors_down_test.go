@@ -2,6 +2,7 @@ package container_test
 
 import (
 	"context"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -39,12 +41,20 @@ func (h *downEmbeddingHost) ResolveService(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{}, false
 }
 
-func (h *downEmbeddingHost) EnsureActive(context.Context, string) (transport.Endpoint, error) {
+func (h *downEmbeddingHost) EnsureActive(context.Context, string, plugindomain.Holder) (transport.Endpoint, error) {
 	h.acquired.Add(1)
 	return h.endpoint, nil
 }
 
-func (h *downEmbeddingHost) Release(string) { h.released.Add(1) }
+func (h *downEmbeddingHost) Release(string, string, plugindomain.Holder) { h.released.Add(1) }
+
+func (h *downEmbeddingHost) EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return h.EnsureActive(ctx, pluginID, holder)
+}
+
+func (h *downEmbeddingHost) ReleaseQuestion(pluginID, token string, holder plugindomain.Holder) {
+	h.Release(pluginID, token, holder)
+}
 
 func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	t.Helper()
@@ -59,11 +69,14 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 }
 
 func (h *downEmbeddingHost) lend() *container.PluginHost {
-	return &container.PluginHost{Runtime: container.PluginRuntime{PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding()}}
+	runtime := container.PluginRuntime{
+		PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding(), ConfigWatcher: h,
+	}
+	return &container.PluginHost{Runtime: runtime, Health: pluginhealth.NewItems()}
 }
 
-// A plugin that does not answer names no model, and a vault read without a
-// model leaves the vectors of the index where they are.
+// A plugin that does not answer names no model: the window opens its source undescribed, and a vault read
+// without a model leaves the vectors of the index where they are.
 func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
 	host := newDownEmbeddingHost(t)
@@ -73,15 +86,12 @@ func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 		Paths:              container.Paths{ServiceDir: ".numen"},
 	})
 
-	indexed, asking, _, err := target.Embedders(t.Context(), nil)
-	if err == nil {
-		t.Fatal("an embedding plugin that is down was opened")
+	indexed, _, closeSource, err := target.Embedders(t.Context())
+	if err != nil {
+		t.Fatal(err)
 	}
-	if indexed != nil || asking != nil {
-		t.Fatalf("an embedder was made without a model: %v, %v", indexed, asking)
-	}
-	if host.acquired.Load() != host.released.Load() {
-		t.Errorf("acquired %d times, released %d times", host.acquired.Load(), host.released.Load())
+	if indexed == nil || indexed.Describe().IsDescribed() {
+		t.Fatalf("the source of a plugin that is down is %v, want one with no description", indexed)
 	}
 
 	whole, err := container.ReadWholeVault(target, t.Context(), db, indexed, v)
@@ -94,7 +104,16 @@ func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 	if got := unembeddedTo(t, db, v, unit{"first"}); got != 0 {
 		t.Errorf("%d chunks lost the vector of the first model", got)
 	}
+	if err := closeSource(); err != nil {
+		t.Fatal(err)
+	}
+	if host.acquired.Load() != host.released.Load() {
+		t.Errorf("acquired %d times, released %d times", host.acquired.Load(), host.released.Load())
+	}
 }
+
+// WatchPluginConfig never calls back: the plugin is not configured while the test runs.
+func (h *downEmbeddingHost) WatchPluginConfig(string, func()) (stop func()) { return func() {} }
 
 func (h *downEmbeddingHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 	return domain.NoteProfile{}, false

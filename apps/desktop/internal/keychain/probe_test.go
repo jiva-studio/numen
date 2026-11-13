@@ -80,21 +80,3 @@ func TestACallWaitingForASharedProbeReturnsWithItsOwnContext(t *testing.T) {
 		t.Errorf("a second caller returned %v, want the deadline of its own context", err)
 	}
 }
-
-func TestTheCredentialsPathIsEmptyWhileTheKeychainDoesNotAnswer(t *testing.T) {
-	backend := newBlockingBackend()
-	store := newTestStore(t.TempDir())
-	store.backend = backend
-	t.Cleanup(func() { close(backend.release) })
-
-	returned := make(chan string, 1)
-	go func() { returned <- store.GetCredentialsPath(context.WithoutCancel(t.Context())) }()
-	select {
-	case got := <-returned:
-		if got != "" {
-			t.Errorf("path = %q, want none", got)
-		}
-	case <-time.After(credentialsProbeTimeout + 2*time.Second):
-		t.Fatal("GetCredentialsPath waits for a keychain that does not answer")
-	}
-}

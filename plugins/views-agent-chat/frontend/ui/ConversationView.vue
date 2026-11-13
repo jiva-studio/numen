@@ -33,7 +33,7 @@ const agent = useTemplateRef<InstanceType<typeof Agent>>('agent')
     @submit="view.send"
     @stop="view.stop"
   >
-    <template #silence>{{ view.getSilence() }}</template>
+    <template #silence>{{ words.noTranscript }}</template>
     <template #failure="{ turn }">
       {{ turn.voice === 'prompt' ? words.unsent : words.stopped }}
     </template>

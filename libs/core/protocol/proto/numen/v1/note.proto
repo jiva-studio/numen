@@ -48,10 +48,6 @@ service NoteService {
   // An empty title takes the lowest free "Untitled note N".
   rpc CreateNote(CreateNoteRequest) returns (CreateNoteResponse);
 
-  // WriteLink writes a relationship into one note. The note at the other end is
-  // left alone: a link is one end's account of a relationship.
-  rpc WriteLink(WriteLinkRequest) returns (WriteLinkResponse);
-
   // GetConnection is the relationship between two notes as a whole: the record
   // each note writes about the other.
   rpc GetConnection(GetConnectionRequest) returns (GetConnectionResponse);
@@ -378,19 +374,6 @@ message CreateNoteResponse {
 
   // Set when no title was given and every numbered untitled name is taken.
   bool is_name_exhausted = 4;
-}
-
-message WriteLinkRequest {
-  // The note the link is written in.
-  string path = 1;
-  Link link = 2;
-}
-
-message WriteLinkResponse {
-  // Set when nothing was written, with the reason. A note that changed between
-  // being read and being written returns ERROR_CODE_CONFLICT, and the caller
-  // reads it again before retrying.
-  optional ErrorCode error = 1;
 }
 
 // ConnectionSide is the record one note writes about the other in a connection.

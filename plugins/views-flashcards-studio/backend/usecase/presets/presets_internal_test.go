@@ -23,11 +23,11 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	day := review.Day{Starts: 4 * time.Hour, In: time.UTC}
 	errBoom := errors.New("boom")
 
-	p0 := New(Config{Now: clock.NewFake(now)})
+	p0 := New(Config{Now: newFakeClock(now)})
 	if p0.day.Starts != 0 || p0.day.In != nil {
 		t.Fatalf("expected zero day on New, got %+v", p0.day)
 	}
-	pDay := New(Config{Now: clock.NewFake(now), Day: day})
+	pDay := New(Config{Now: newFakeClock(now), Day: day})
 	if pDay.day.Starts != 4*time.Hour {
 		t.Fatalf("expected New to set day, got %+v", pDay.day)
 	}
@@ -75,13 +75,13 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	}
 
 	// Test GetForDeck error branches: links error, roleless problems error, readFirstLink error, multiple links delta.
-	if _, err := New(Config{Links: stubLinkQueries{linksErr: errBoom}, Now: clock.NewFake(now)}).GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
+	if _, err := New(Config{Links: stubLinkQueries{linksErr: errBoom}, Now: newFakeClock(now)}).GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected links error in GetForDeck, got %v", err)
 	}
 	pProbErr := New(Config{
 		Links:    stubLinkQueries{},
 		Problems: stubProblemQueries{err: errBoom},
-		Now:      clock.NewFake(now),
+		Now:      newFakeClock(now),
 	})
 	if _, err := pProbErr.GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected problems error in GetForDeck, got %v", err)
@@ -94,7 +94,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 			},
 		},
 	}
-	gotDangling, err := New(Config{Links: twoDangling, Now: clock.NewFake(now)}).GetForDeck(ctx, v, "decks/A.md")
+	gotDangling, err := New(Config{Links: twoDangling, Now: newFakeClock(now)}).GetForDeck(ctx, v, "decks/A.md")
 	if err != nil || len(gotDangling.Problems) != 2 || !strings.Contains(gotDangling.Problems[1], "scheduled by Missing1") {
 		t.Fatalf("expected two problems naming Missing1 as the scheduling preset, got %+v, %v", gotDangling.Problems, err)
 	}
@@ -110,7 +110,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	if _, err := New(Config{
 		Readers: stubVaultReaders{openErr: errBoom},
 		Links:   twoResolved,
-		Now:     clock.NewFake(now),
+		Now:     newFakeClock(now),
 	}).GetForDeck(ctx, v, "decks/A.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected read error in readFirstLink, got %v", err)
 	}
@@ -125,7 +125,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	gotTwoResolved, err := New(Config{
 		Readers: stubVaultReaders{reader: readerPreset},
 		Links:   twoResolved,
-		Now:     clock.NewFake(now),
+		Now:     newFakeClock(now),
 	}).GetForDeck(ctx, v, "decks/A.md")
 	if err != nil || len(gotTwoResolved.Problems) != 1 || !strings.Contains(gotTwoResolved.Problems[0], "scheduled by presets/P.md") {
 		t.Fatalf("expected delta presets/P.md in multiple-presets problem, got %+v, %v", gotTwoResolved.Problems, err)
@@ -135,7 +135,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	// missing note (Size==0), Open error, Kind != KindNote, Size == MaxBytes vs MaxBytes+1,
 	// StatFile ErrNotExist but Read succeeds (!target && err == nil -> NotANote),
 	// invalid UTF-8 -> NotText, unreadable frontmatter -> Unreadable.
-	if _, err := New(Config{Readers: stubVaultReaders{openErr: errBoom}, Now: clock.NewFake(now)}).Read(ctx, v, "P.md"); !errors.Is(err, errBoom) {
+	if _, err := New(Config{Readers: stubVaultReaders{openErr: errBoom}, Now: newFakeClock(now)}).Read(ctx, v, "P.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected Open error in Read, got %v", err)
 	}
 	readerMissing := stubVaultReader{
@@ -144,7 +144,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	}
 	gotMissing, err := New(Config{
 		Readers: stubVaultReaders{reader: readerMissing},
-		Now:     clock.NewFake(now),
+		Now:     newFakeClock(now),
 	}).Read(ctx, v, "P.md")
 	if err != nil || gotMissing.Outcome != note.Missing || gotMissing.FileStat.Size != 0 {
 		t.Fatalf("expected Missing with Size=0, got %+v, %v", gotMissing, err)
@@ -157,7 +157,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	}
 	gotNotNote, err := New(Config{
 		Readers: stubVaultReaders{reader: readerKindNotNote},
-		Now:     clock.NewFake(now),
+		Now:     newFakeClock(now),
 	}).Read(ctx, v, "P.bin")
 	if err != nil || gotNotNote.Outcome != note.NotANote || gotNotNote.FileStat.Path != "P.bin" {
 		t.Fatalf("expected NotANote with FileStat set, got %+v, %v", gotNotNote, err)
@@ -170,7 +170,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	}
 	gotTooLarge, err := New(Config{
 		Readers: stubVaultReaders{reader: readerTooLarge},
-		Now:     clock.NewFake(now),
+		Now:     newFakeClock(now),
 	}).Read(ctx, v, "P.md")
 	if err != nil || gotTooLarge.Outcome != note.TooLarge {
 		t.Fatalf("expected TooLarge for MaxBytes+1, got %+v, %v", gotTooLarge, err)
@@ -183,7 +183,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	}
 	gotExactMax, err := New(Config{
 		Readers: stubVaultReaders{reader: readerExactMax},
-		Now:     clock.NewFake(now),
+		Now:     newFakeClock(now),
 	}).Read(ctx, v, "P.md")
 	if err != nil || gotExactMax.Outcome != note.Ok {
 		t.Fatalf("expected Ok for exact MaxBytes, got %+v, %v", gotExactMax, err)
@@ -194,7 +194,7 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	}
 	gotGhost, err := New(Config{
 		Readers: stubVaultReaders{reader: readerGhost},
-		Now:     clock.NewFake(now),
+		Now:     newFakeClock(now),
 	}).Read(ctx, v, "P.md")
 	if err != nil || gotGhost.Outcome != note.NotANote {
 		t.Fatalf("expected NotANote when StatFile says not exist but Read succeeds, got %+v, %v", gotGhost, err)
@@ -215,14 +215,14 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	if _, err := New(Config{
 		Readers: stubVaultReaders{openErr: errBoom},
 		Notes:   stubNoteQueries{},
-		Now:     clock.NewFake(now),
+		Now:     newFakeClock(now),
 	}).getPresetAddress(ctx, v, "P.md"); !errors.Is(err, errBoom) {
 		t.Fatalf("expected Read error in getPresetAddress, got %v", err)
 	}
 	if _, err := New(Config{
 		Readers: stubVaultReaders{reader: readerTooLarge},
 		Notes:   stubNoteQueries{},
-		Now:     clock.NewFake(now),
+		Now:     newFakeClock(now),
 	}).getPresetAddress(ctx, v, "P.md"); !errors.Is(err, ErrNotAPreset) {
 		t.Fatalf("expected ErrNotAPreset when Outcome is TooLarge, got %v", err)
 	}
@@ -324,4 +324,10 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	if err := checkLoad(map[time.Weekday]int{time.Weekday(7): 100}); !errors.Is(err, ErrOutOfBounds) {
 		t.Fatalf("expected ErrOutOfBounds for weekday > Saturday, got %v", err)
 	}
+}
+
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

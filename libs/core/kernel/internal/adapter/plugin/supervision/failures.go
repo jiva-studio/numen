@@ -11,35 +11,35 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
-// Failures keeps the plugins whose start failed, reports them to the callbacks registered, and
+// HealthItems is the list of health items the failures of the starts are kept in, as the item
+// plugin.HealthKeyStart of each plugin.
+type HealthItems interface {
+	Set(item plugindomain.HealthItem)
+	Remove(pluginID, key string)
+}
+
+// Failures keeps the plugins whose start failed, lists each as the start health item of the plugin, and
 // forgets a failure once the plugin starts or is switched on or off.
 type Failures struct {
-	sups  *Supervisors
-	clock machineport.Clock
-	errs  *errsink.Sink
+	sups   *Supervisors
+	clock  machineport.Clock
+	errs   *errsink.Sink
+	health HealthItems
 
 	mu              sync.Mutex
-	pending         []plugindomain.Failure
-	onPluginFailed  func(plugindomain.Failure)
 	onCleared       func(pluginID string)
 	reportedTargets map[string]struct{}
 }
 
-// NewFailures returns the failures of the plugins the supervisors track. Problems the host meets go to errs.
-func NewFailures(sups *Supervisors, clock machineport.Clock, errs *errsink.Sink) *Failures {
-	return &Failures{sups: sups, clock: clock, errs: errs, reportedTargets: make(map[string]struct{})}
+// NewFailures returns the failures of the plugins the supervisors track, listed in health. Problems the
+// host meets go to errs.
+func NewFailures(sups *Supervisors, clock machineport.Clock, errs *errsink.Sink, health HealthItems) *Failures {
+	return &Failures{sups: sups, clock: clock, errs: errs, health: health, reportedTargets: make(map[string]struct{})}
 }
 
 // SetErrorHandler registers a callback for problems the host meets outside a call, such as a failed shutdown.
 func (f *Failures) SetErrorHandler(handler eventbus.ErrorHandler) {
 	f.errs.Set(handler)
-}
-
-// SetOnPluginFailed registers a callback invoked each time a start of a plugin fails.
-func (f *Failures) SetOnPluginFailed(fn func(plugindomain.Failure)) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.onPluginFailed = fn
 }
 
 // SetOnFailureCleared registers a callback invoked with the id of a plugin whose failure the host forgets, because the plugin started, was enabled or was disabled.
@@ -80,13 +80,25 @@ func (f *Failures) Get(pluginID, name string) *plugindomain.Failure {
 	return &failure
 }
 
-func (f *Failures) enqueue(failure plugindomain.Failure) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.pending = append(f.pending, failure)
+func (f *Failures) list(failure plugindomain.Failure) {
+	detail := failure.Detail
+	if runes := []rune(detail); len(runes) > plugindomain.MaxHealthDetail {
+		detail = string(runes[:plugindomain.MaxHealthDetail])
+	}
+	f.health.Set(plugindomain.HealthItem{
+		PluginID: failure.PluginID,
+		Key:      plugindomain.HealthKeyStart,
+		Severity: plugindomain.HealthError,
+		Text:     failure.Reason,
+		Detail:   detail,
+		Action: &plugindomain.HealthAction{
+			Command: plugindomain.AppCommandOpenSettings,
+			Values:  map[string]string{plugindomain.OpenSettingsPlugin: failure.PluginID},
+		},
+	})
 }
 
-// FailActivation sets a plugin whose start failed dormant, and records and queues the failure unless ctx ended.
+// FailActivation sets a plugin whose start failed dormant, and records and lists the failure unless ctx ended.
 func (f *Failures) FailActivation(ctx context.Context, pluginID, name string, sup *lifecycle.Supervisor, cause error) {
 	if sup.GetState() != lifecycle.StateActivating {
 		return
@@ -94,7 +106,7 @@ func (f *Failures) FailActivation(ctx context.Context, pluginID, name string, su
 	sup.SetDormant(cause)
 	if ctx.Err() == nil {
 		sup.Failure.Record(f.clock.Now(), cause)
-		f.enqueue(newFailure(pluginID, name, sup, cause))
+		f.list(newFailure(pluginID, name, sup, cause))
 	}
 }
 
@@ -105,24 +117,8 @@ func (f *Failures) RecordActivationFailure(pluginID, name string, cause error) *
 		return nil
 	}
 	failure := newFailure(pluginID, name, sup, cause)
-	f.enqueue(failure)
+	f.list(failure)
 	return &failure
-}
-
-// Deliver hands the failures queued to the callback registered.
-func (f *Failures) Deliver() {
-	f.mu.Lock()
-	failures := f.pending
-	f.pending = nil
-	notify := f.onPluginFailed
-	f.mu.Unlock()
-
-	if notify == nil {
-		return
-	}
-	for _, failure := range failures {
-		notify(failure)
-	}
 }
 
 // ClearFailure forgets the failure of the plugin, which makes it startable again.
@@ -132,12 +128,14 @@ func (f *Failures) ClearFailure(pluginID string) {
 	}
 }
 
-// Clear forgets the failure of the supervisor of a plugin and tells the callback registered.
+// Clear forgets the failure of the supervisor of a plugin, takes its start item out of the list and tells
+// the callback registered.
 func (f *Failures) Clear(pluginID string, sup *lifecycle.Supervisor) {
 	f.ForgetTargetReport(pluginID)
 	if !sup.Failure.Clear() {
 		return
 	}
+	f.health.Remove(pluginID, plugindomain.HealthKeyStart)
 	f.mu.Lock()
 	notify := f.onCleared
 	f.mu.Unlock()

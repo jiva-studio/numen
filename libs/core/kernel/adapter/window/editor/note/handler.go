@@ -88,7 +88,6 @@ func NewOutline(
 type Links struct {
 	vault         Vault
 	resolveLinks  *query.ResolveLinks
-	writeLink     *note.WriteLink
 	createRelated *note.CreateInRelation
 	getBacklinks  *query.GetBacklinks
 	writes        Writes
@@ -97,11 +96,11 @@ type Links struct {
 // NewLinks is the part of NoteService that works the links of notes.
 func NewLinks(
 	window Vault,
-	resolve *query.ResolveLinks, write *note.WriteLink, create *note.CreateInRelation, backlinks *query.GetBacklinks,
+	resolve *query.ResolveLinks, create *note.CreateInRelation, backlinks *query.GetBacklinks,
 	writes Writes,
 ) *Links {
 	return &Links{
-		vault: window, resolveLinks: resolve, writeLink: write, createRelated: create, getBacklinks: backlinks, writes: writes,
+		vault: window, resolveLinks: resolve, createRelated: create, getBacklinks: backlinks, writes: writes,
 	}
 }
 

@@ -21,34 +21,7 @@ export interface SharedCommand {
 export const SHARED_COMMANDS: readonly SharedCommand[] = [
   // Creates a text version of a file.
   { id: 'app:file.createText', title: 'Create text', arguments: [] },
-  // Creates a link note from a web address.
-  {
-    id: 'app:link.import',
-    title: 'Import link',
-    arguments: [{ name: 'address', title: 'Web address', type: 'string', isRequired: true }],
-  },
-  // Downloads the media of a link note.
-  { id: 'app:link.downloadMedia', title: 'Download media', arguments: [] },
-  // Deletes the downloaded media of a link note.
-  { id: 'app:link.deleteMedia', title: 'Delete media', arguments: [] },
 ]
-
-/** One argument of an app command; an `enum` argument lists the values it allows in `options`. */
-export interface AppCommandArgument {
-  readonly name: string
-  readonly title: string
-  readonly type: string
-  readonly options: readonly string[]
-}
-
-// APP_COMMANDS are the app commands that take arguments. A slot entry passes values only
-// for these arguments and these values.
-export const APP_COMMANDS: Readonly<Record<string, readonly AppCommandArgument[]>> = {
-  'app:file.open': [
-    { name: 'placement', title: 'Showing', type: 'enum', options: ['current', 'split'] },
-  ],
-  'app:file.reveal': [{ name: 'kind', title: 'Place', type: 'enum', options: ['plex', 'files'] }],
-}
 
 /** A key of the application: a chord bound to the full id of a command, with values for its arguments and a condition. */
 export interface AppKeybinding {

@@ -73,6 +73,7 @@ function onSeekChange() {
       class="player__bar"
       min="0"
       :max="runs"
+      :disabled="runs === 0"
       step="1000"
       :value="position"
       :aria-label="props.label"

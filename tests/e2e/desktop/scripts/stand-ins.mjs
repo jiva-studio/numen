@@ -11,6 +11,7 @@ export const HELD_PROMPT = 'Answer when released'
 
 /** The model the stand-in chat API lists. */
 export const STAND_IN_MODEL = 'stand-in/model'
+export const STAND_IN_CONNECTION = 'c57a4d100'
 
 /** A prompt holding these words is answered with a call of the vault tool that writes a note. */
 export const TOOL_PROMPT = 'Write the tide table note'

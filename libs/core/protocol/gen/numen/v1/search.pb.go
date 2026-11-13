@@ -98,7 +98,10 @@ type SearchNamesRequest struct {
 	// of them on its prefix.
 	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// How many names to answer with. Zero takes the number the vault chooses.
-	Limit         int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Limit int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	// The id CancelSearch names this call by, chosen by the client and unique
+	// among its calls. Empty when the call cannot be cancelled.
+	SearchId      string `protobuf:"bytes,3,opt,name=search_id,json=searchId,proto3" json:"search_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -145,6 +148,13 @@ func (x *SearchNamesRequest) GetLimit() int32 {
 		return x.Limit
 	}
 	return 0
+}
+
+func (x *SearchNamesRequest) GetSearchId() string {
+	if x != nil {
+		return x.SearchId
+	}
+	return ""
 }
 
 type SearchNamesResponse struct {
@@ -282,8 +292,11 @@ type SearchPassagesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// How many passages to answer with. Zero takes the number the vault chooses.
-	Limit         int32      `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Mode          SearchMode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.SearchMode" json:"mode,omitempty"`
+	Limit int32      `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Mode  SearchMode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.SearchMode" json:"mode,omitempty"`
+	// The id CancelSearch names this call by, chosen by the client and unique
+	// among its calls. Empty when the call cannot be cancelled.
+	SearchId      string `protobuf:"bytes,4,opt,name=search_id,json=searchId,proto3" json:"search_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -339,6 +352,93 @@ func (x *SearchPassagesRequest) GetMode() SearchMode {
 	return SearchMode_SEARCH_MODE_UNSPECIFIED
 }
 
+func (x *SearchPassagesRequest) GetSearchId() string {
+	if x != nil {
+		return x.SearchId
+	}
+	return ""
+}
+
+type CancelSearchRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SearchId      string                 `protobuf:"bytes,1,opt,name=search_id,json=searchId,proto3" json:"search_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelSearchRequest) Reset() {
+	*x = CancelSearchRequest{}
+	mi := &file_numen_v1_search_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelSearchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelSearchRequest) ProtoMessage() {}
+
+func (x *CancelSearchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_search_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelSearchRequest.ProtoReflect.Descriptor instead.
+func (*CancelSearchRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CancelSearchRequest) GetSearchId() string {
+	if x != nil {
+		return x.SearchId
+	}
+	return ""
+}
+
+type CancelSearchResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelSearchResponse) Reset() {
+	*x = CancelSearchResponse{}
+	mi := &file_numen_v1_search_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelSearchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelSearchResponse) ProtoMessage() {}
+
+func (x *CancelSearchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_search_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelSearchResponse.ProtoReflect.Descriptor instead.
+func (*CancelSearchResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{5}
+}
+
 type SearchPassagesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The passages that answer, best first, one per source.
@@ -349,7 +449,7 @@ type SearchPassagesResponse struct {
 
 func (x *SearchPassagesResponse) Reset() {
 	*x = SearchPassagesResponse{}
-	mi := &file_numen_v1_search_proto_msgTypes[4]
+	mi := &file_numen_v1_search_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -361,7 +461,7 @@ func (x *SearchPassagesResponse) String() string {
 func (*SearchPassagesResponse) ProtoMessage() {}
 
 func (x *SearchPassagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_search_proto_msgTypes[4]
+	mi := &file_numen_v1_search_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -374,7 +474,7 @@ func (x *SearchPassagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchPassagesResponse.ProtoReflect.Descriptor instead.
 func (*SearchPassagesResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_search_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SearchPassagesResponse) GetFound() []*Passage {
@@ -423,7 +523,7 @@ type Passage struct {
 
 func (x *Passage) Reset() {
 	*x = Passage{}
-	mi := &file_numen_v1_search_proto_msgTypes[5]
+	mi := &file_numen_v1_search_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -435,7 +535,7 @@ func (x *Passage) String() string {
 func (*Passage) ProtoMessage() {}
 
 func (x *Passage) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_search_proto_msgTypes[5]
+	mi := &file_numen_v1_search_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -448,7 +548,7 @@ func (x *Passage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Passage.ProtoReflect.Descriptor instead.
 func (*Passage) Descriptor() ([]byte, []int) {
-	return file_numen_v1_search_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_search_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Passage) GetPath() string {
@@ -525,10 +625,11 @@ var File_numen_v1_search_proto protoreflect.FileDescriptor
 
 const file_numen_v1_search_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/search.proto\x12\bnumen.v1\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\"@\n" +
+	"\x15numen/v1/search.proto\x12\bnumen.v1\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\"]\n" +
 	"\x12SearchNamesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\"@\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x1b\n" +
+	"\tsearch_id\x18\x03 \x01(\tR\bsearchId\"@\n" +
 	"\x13SearchNamesResponse\x12)\n" +
 	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xc5\x01\n" +
 	"\tNameMatch\x12\"\n" +
@@ -538,11 +639,15 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12\x19\n" +
 	"\btab_kind\x18\x05 \x01(\tR\atabKindB\n" +
 	"\n" +
-	"\b_heading\"m\n" +
+	"\b_heading\"\x8a\x01\n" +
 	"\x15SearchPassagesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12(\n" +
-	"\x04mode\x18\x03 \x01(\x0e2\x14.numen.v1.SearchModeR\x04mode\"A\n" +
+	"\x04mode\x18\x03 \x01(\x0e2\x14.numen.v1.SearchModeR\x04mode\x12\x1b\n" +
+	"\tsearch_id\x18\x04 \x01(\tR\bsearchId\"2\n" +
+	"\x13CancelSearchRequest\x12\x1b\n" +
+	"\tsearch_id\x18\x01 \x01(\tR\bsearchId\"\x16\n" +
+	"\x14CancelSearchResponse\"A\n" +
 	"\x16SearchPassagesResponse\x12'\n" +
 	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xae\x02\n" +
 	"\aPassage\x12\x12\n" +
@@ -564,10 +669,11 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x11SEARCH_MODE_WORDS\x10\x01\x12\x17\n" +
 	"\x13SEARCH_MODE_MEANING\x10\x02\x12\x15\n" +
 	"\x11SEARCH_MODE_NAMES\x10\x03\x12\x16\n" +
-	"\x12SEARCH_MODE_HYBRID\x10\x042\xb0\x01\n" +
+	"\x12SEARCH_MODE_HYBRID\x10\x042\xff\x01\n" +
 	"\rSearchService\x12J\n" +
 	"\vSearchNames\x12\x1c.numen.v1.SearchNamesRequest\x1a\x1d.numen.v1.SearchNamesResponse\x12S\n" +
-	"\x0eSearchPassages\x12\x1f.numen.v1.SearchPassagesRequest\x1a .numen.v1.SearchPassagesResponseBFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x0eSearchPassages\x12\x1f.numen.v1.SearchPassagesRequest\x1a .numen.v1.SearchPassagesResponse\x12M\n" +
+	"\fCancelSearch\x12\x1d.numen.v1.CancelSearchRequest\x1a\x1e.numen.v1.CancelSearchResponseBFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_search_proto_rawDescOnce sync.Once
@@ -582,35 +688,39 @@ func file_numen_v1_search_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_search_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_numen_v1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_numen_v1_search_proto_goTypes = []any{
 	(SearchMode)(0),                // 0: numen.v1.SearchMode
 	(*SearchNamesRequest)(nil),     // 1: numen.v1.SearchNamesRequest
 	(*SearchNamesResponse)(nil),    // 2: numen.v1.SearchNamesResponse
 	(*NameMatch)(nil),              // 3: numen.v1.NameMatch
 	(*SearchPassagesRequest)(nil),  // 4: numen.v1.SearchPassagesRequest
-	(*SearchPassagesResponse)(nil), // 5: numen.v1.SearchPassagesResponse
-	(*Passage)(nil),                // 6: numen.v1.Passage
-	(*Note)(nil),                   // 7: numen.v1.Note
-	(*Heading)(nil),                // 8: numen.v1.Heading
-	(*Range)(nil),                  // 9: numen.v1.Range
+	(*CancelSearchRequest)(nil),    // 5: numen.v1.CancelSearchRequest
+	(*CancelSearchResponse)(nil),   // 6: numen.v1.CancelSearchResponse
+	(*SearchPassagesResponse)(nil), // 7: numen.v1.SearchPassagesResponse
+	(*Passage)(nil),                // 8: numen.v1.Passage
+	(*Note)(nil),                   // 9: numen.v1.Note
+	(*Heading)(nil),                // 10: numen.v1.Heading
+	(*Range)(nil),                  // 11: numen.v1.Range
 }
 var file_numen_v1_search_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.SearchNamesResponse.found:type_name -> numen.v1.NameMatch
-	7,  // 1: numen.v1.NameMatch.note:type_name -> numen.v1.Note
-	8,  // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
-	9,  // 3: numen.v1.NameMatch.ranges:type_name -> numen.v1.Range
+	9,  // 1: numen.v1.NameMatch.note:type_name -> numen.v1.Note
+	10, // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
+	11, // 3: numen.v1.NameMatch.ranges:type_name -> numen.v1.Range
 	0,  // 4: numen.v1.SearchPassagesRequest.mode:type_name -> numen.v1.SearchMode
-	6,  // 5: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
-	7,  // 6: numen.v1.Passage.note:type_name -> numen.v1.Note
-	9,  // 7: numen.v1.Passage.ranges:type_name -> numen.v1.Range
-	9,  // 8: numen.v1.Passage.range:type_name -> numen.v1.Range
+	8,  // 5: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
+	9,  // 6: numen.v1.Passage.note:type_name -> numen.v1.Note
+	11, // 7: numen.v1.Passage.ranges:type_name -> numen.v1.Range
+	11, // 8: numen.v1.Passage.range:type_name -> numen.v1.Range
 	1,  // 9: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
 	4,  // 10: numen.v1.SearchService.SearchPassages:input_type -> numen.v1.SearchPassagesRequest
-	2,  // 11: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
-	5,  // 12: numen.v1.SearchService.SearchPassages:output_type -> numen.v1.SearchPassagesResponse
-	11, // [11:13] is the sub-list for method output_type
-	9,  // [9:11] is the sub-list for method input_type
+	5,  // 11: numen.v1.SearchService.CancelSearch:input_type -> numen.v1.CancelSearchRequest
+	2,  // 12: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
+	7,  // 13: numen.v1.SearchService.SearchPassages:output_type -> numen.v1.SearchPassagesResponse
+	6,  // 14: numen.v1.SearchService.CancelSearch:output_type -> numen.v1.CancelSearchResponse
+	12, // [12:15] is the sub-list for method output_type
+	9,  // [9:12] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -624,14 +734,14 @@ func file_numen_v1_search_proto_init() {
 	file_numen_v1_note_proto_init()
 	file_numen_v1_shared_proto_init()
 	file_numen_v1_search_proto_msgTypes[2].OneofWrappers = []any{}
-	file_numen_v1_search_proto_msgTypes[5].OneofWrappers = []any{}
+	file_numen_v1_search_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_search_proto_rawDesc), len(file_numen_v1_search_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

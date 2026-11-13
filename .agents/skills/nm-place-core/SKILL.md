@@ -32,7 +32,7 @@ graph TD
 Dependencies point from the outside inward: `libs/note/domain` imports nothing of this repository, `libs/core/kernel/domain/<area>` imports only the standard library, `libs/note/domain` and itself, `port` and `usecase` import the domain and never an adapter, an adapter imports the core and never another adapter, and only `container` names a driven adapter next to the port it satisfies.
 
 - A domain type is a fact about notes, vaults, links or cards, with the rules that follow from the values alone, and it lives in `libs/note/domain`.
-- A concept of the core that is not about notes (settings, agent, theme, plugin information) is a small package `libs/core/kernel/domain/<area>`. Ports and use cases import it; a plugin and the SDK never do. The sentinel errors of an area are declared in its package. A use case may call `crypto/rand` and timers; only the machine clock stays behind a clock port.
+- A concept of the core that is not about notes (settings, theme, connections, the index, search sources, plugin information) is a small package `libs/core/kernel/domain/<area>`. Ports and use cases import it; a plugin and the SDK never do. The sentinel errors of an area are declared in its package. A use case may call `crypto/rand` and timers; only the machine clock stays behind a clock port.
 - A port is an interface a use case requires from the world outside the core, named after the need and declared by the code that calls it.
 - A use case is one business scenario: it takes ports and domain values, orchestrates them and returns a result, and it is the unit of work and of the transaction.
 - A driving adapter receives a request from a person or a program (CLI, window, a plugin calling the host), turns it into the arguments of a use case, calls the use case and turns the result back.
@@ -117,6 +117,16 @@ A structure is judged by what one object does, not by the interfaces it is cut i
 - One host concern has one runtime port: a clock, a filesystem or a process reaches the core through one interface.
 - A `recover` or an error branch handles the failure: it returns, wraps or reports it.
 - Production code does not carry a field, a hook or an interface that only a test substitutes; the test uses the real object.
+
+## Which domain does it know
+
+Ask of every new package, type, RPC or export of the core, the core protocol (`libs/core/protocol`) or the shared SDK (`libs/plugin/sdk-go`, `libs/plugin/sdk-ts` outside `contracts/`): "Which product domain does this know, and why is it not in a plugin or a contract?" The core holds notes, vaults, the index and its storage, search, text versions, windows, settings, the plugin host and the generic connection mechanism; an agent, a model, an engine or the feature of one plugin is a plugin or a contract ([`architecture.md`](../../rules/architecture.md) §11 (l)). Examples from the microkernel change:
+
+- The list of agent programs was cached in the settings adapter of the core. An agent program is a connection type that serves `acp.task`, of the plugin that runs it (agents-claude, agents-codex, agents-antigravity, agents-acp); the core keeps the connection rows only.
+- The core held the model fields of a search source (pooling, handling, the model it came from, the token limit). A source now describes itself by an opaque recipe, a vector width and a chunk size; the model stays in engines-embeddings.
+- The shared command catalog `libs/core/protocol/commands.json` held the `app:link.*` commands of the media importer. They are commands of that plugin's manifest now.
+
+`go/dead-exports` fails on an RPC or an SDK export that nothing outside tests uses, and `ts/contracts-imports` fails on a library outside `contracts/` that imports a contract.
 
 ## What the checks enforce
 

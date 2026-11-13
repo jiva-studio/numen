@@ -30,11 +30,15 @@ function onFollowLink(turn: Turn, href: string, press: MouseEvent) {
 }
 
 function onSelectModel(option: AgentModelOption) {
-  props.state.models.selectModel(option)
+  props.state.agents?.selectModel(option)
 }
 
 function onSelectReasoning(id: string) {
-  props.state.reasoning.selectReasoningLevel(id)
+  props.state.agents?.selectReasoningLevel(id)
+}
+
+function onOpenChoices() {
+  props.state.agents?.listChoices().catch(() => undefined)
 }
 </script>
 
@@ -46,16 +50,20 @@ function onSelectReasoning(id: string) {
     :placeholder="words.ask"
     :send-label="words.send"
     :stop-label="words.stop"
-    :options="props.state.models.modelOptions.value"
-    :selected-agent-id="props.state.models.selectedAgentId.value"
-    :selected-model-id="props.state.models.selectedModelId.value"
-    :reasoning-levels="props.state.reasoning.reasoningLevels.value"
-    :selected-reasoning-id="props.state.reasoning.selectedReasoningId.value"
+    :options="props.state.agents?.offered.options.value ?? []"
+    :selected-agent-id="props.state.agents?.selected.agentId.value ?? ''"
+    :selected-model-id="props.state.agents?.selected.modelId.value ?? ''"
+    :reasoning-levels="props.state.agents?.offered.reasoningLevels.value ?? []"
+    :selected-reasoning-id="props.state.agents?.selected.reasoningId.value ?? ''"
     :reasoning-name="words.reasoning"
-    :is-agent-missing="props.state.agent.isAgentMissing.value"
+    :is-agent-missing="props.state.agents?.offered.isAgentMissing.value ?? false"
     :no-agent-label="words.noAgent"
     :no-agent-message="words.noAgentMessage"
     :open-settings-label="words.openSettings"
+    :pending-agent-ids="props.state.agents?.offered.pendingAgentIds.value ?? []"
+    :loading-label="words.loading"
+    :failed-agent-ids="props.state.agents?.offered.failedAgentIds.value ?? []"
+    :failed-label="words.modelsFailed"
     @update:model-value="onUpdateQuestion"
     @submit="onSubmit"
     @stop="onStop"
@@ -63,11 +71,33 @@ function onSelectReasoning(id: string) {
     @follow="onFollowLink"
     @select-model="onSelectModel"
     @select-reasoning="onSelectReasoning"
-    @open-settings="props.state.agent.openSettings()"
+    @open-choices="onOpenChoices"
+    @open-settings="props.state.openSettings()"
   >
-    <template #silence>{{ props.state.agent.unreachable() || words.noTranscript }}</template>
+    <template #silence>{{ words.noTranscript }}</template>
     <template #failure="{ turn }">
-      {{ turn.voice === 'prompt' ? words.unsent : words.stopped }}
+      <button
+        v-if="turn.offersSettings"
+        type="button"
+        class="agent-tab__settings cursor-pointer"
+        @click="props.state.openSettings()"
+      >
+        {{ words.openSettings }}
+      </button>
+      <template v-else>{{ turn.voice === 'prompt' ? words.unsent : words.stopped }}</template>
     </template>
   </Agent>
 </template>
+
+<style scoped>
+.agent-tab__settings {
+  --underline-offset: 0.2em;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: var(--underline-offset);
+}
+</style>

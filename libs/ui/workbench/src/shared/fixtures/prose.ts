@@ -16,15 +16,6 @@ export const RUSSIAN =
   'В сарае на краю участка лежат лопаты, лейки и мешок с семенами. Ключ от ' +
   'двери висит на гвозде.'
 
-/** No spaces, no hyphens, nothing to break at. */
-export const UNBREAKABLE =
-  'Donaudampfschiffahrtselektrizitaetenhauptbetriebswerkbauunterbeamtengesellschaft' +
-  'Rindfleischetikettierungsueberwachungsaufgabenuebertragungsgesetz'
-
-/** A URL, the unbreakable word that users commonly paste. */
-export const LINK =
-  'https://example.invalid/a/very/long/path/that/keeps/going/and/going?with=query&and=more#and-a-fragment'
-
 export const LONG =
   'The vault format is not settled, so a component built against today’s guess ' +
   'at it would be rewritten when the guess is replaced. That is why a component ' +

@@ -7,11 +7,20 @@ import "strings"
 const AppOwner = "app"
 
 // HostFieldEnabled is the field of the object of a plugin that the host keeps. A plugin that has no
-// stored value for it is enabled.
+// stored value for it is enabled, unless its manifest keeps it off by default.
 const HostFieldEnabled = "enabled"
 
-// SecretsKey is the first-level key of the secrets section.
-const SecretsKey = "secrets"
+// HostFieldDiscover is the field of the object of a plugin that holds, by the key of each setting of rows that
+// declares discover, whether it uses every connection that serves its operations while it holds no row.
+const HostFieldDiscover = "discover"
+
+// ConnectionsKey is the first-level key of the connections section.
+const ConnectionsKey = "connections"
+
+// DetectedConnectionsKey is the first-level key, in the values a window follows and in no file, whose value
+// lists the ids of the connections the providers detected, so that a window reads the connections again when
+// they change.
+const DetectedConnectionsKey = "detectedConnections"
 
 // Values is the value in force of every declared setting as JSON, by its path joined with
 // JoinPath. A setting with neither a stored value nor a default is left out.
@@ -35,8 +44,6 @@ type Stored interface {
 	// GetValue returns the value in force at a path: the stored value, else the default its owner
 	// declares. The first element of the path is the owner.
 	GetValue(path ...string) (any, bool)
-	// GetSecretsJSON is the secrets section as JSON, and empty where the file holds no secret.
-	GetSecretsJSON() (string, error)
-	// GetAgentUse is the program the agent section names, and empty where it names none.
-	GetAgentUse() string
+	// GetConnectionsJSON is the connections section as JSON, and empty where the file holds no connection.
+	GetConnectionsJSON() (string, error)
 }

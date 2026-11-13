@@ -41,7 +41,10 @@ const setup = ({ saved = false, vaultId = 'sea', detached = null }: Parts = {}) 
   const calls: string[] = []
   const pluginLoader = {
     status: {
-      waitForTabPlugins: () => Promise.resolve(),
+      startTabPlugins: (kinds?: readonly string[]) => {
+        calls.push(`tab plugins:${kinds?.join(',') ?? 'every kind'}`)
+        return Promise.resolve()
+      },
       waitForInterface: () => Promise.resolve(),
     },
     trackPlugins: (ids: readonly string[]) => {
@@ -100,12 +103,20 @@ const setup = ({ saved = false, vaultId = 'sea', detached = null }: Parts = {}) 
 }
 
 describe('a window starting', () => {
-  it('loads the plugins that declare a frontend before it opens the tabs', async () => {
+  it('loads the plugins that declare a frontend, and those of every tab kind where no tab was saved', async () => {
     const { calls, layout } = setup()
 
     await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
 
-    expect(calls).toStrictEqual(['track:md.example.notes', 'start'])
+    expect(calls).toStrictEqual(['track:md.example.notes', 'start', 'tab plugins:every kind'])
+  })
+
+  it('starts only the plugins of the kinds of the saved tabs before it opens them', async () => {
+    const { calls, layout } = setup({ saved: true })
+
+    await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
+
+    expect(calls).toStrictEqual(['track:md.example.notes', 'start', 'tab plugins:note'])
   })
 
   it('opens the tabs its kinds place where none were saved, and starts writing the tabs', async () => {

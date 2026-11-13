@@ -24,7 +24,9 @@ export const TITLE_BAR_VIEW = 'bar'
 const CREATE_VAULT = 'app:vault.create'
 
 /** The view of the slot: the bar over the context, with the window buttons where `buttons` says. */
-export function createTitleBarView(context: PluginContext) {
+export function createTitleBarView(
+  context: Pick<PluginContext, 'plugin' | 'settings' | 'ui' | 'vault'>,
+) {
   const buttons = shallowRef(readButtonsSetting(context.settings.get(BUTTONS_SETTING)))
   context.settings.onChange(BUTTONS_SETTING, (value) => {
     buttons.value = readButtonsSetting(value)

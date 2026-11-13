@@ -1,32 +1,27 @@
+/** The README.md of a plugin as its About tab draws it. */
+
+const COMMENT_START = '<!--'
+const COMMENT_END = '-->'
+const LEADING_TITLE = /^\s*#[ \t]+\S[^\n]*(?:\n|$)/
+
+const removeComments = (raw: string): string => {
+  let text = raw
+  let start = text.indexOf(COMMENT_START)
+  while (start !== -1) {
+    const end = text.indexOf(COMMENT_END, start + COMMENT_START.length)
+    text =
+      end === -1
+        ? text.slice(0, start)
+        : text.slice(0, start) + text.slice(end + COMMENT_END.length)
+    start = text.indexOf(COMMENT_START, Math.max(0, start - COMMENT_START.length + 1))
+  }
+  return text
+}
+
 /**
- * Parses a plugin's README.md into a summary and expandable detail around `<!-- more -->`,
- * strips a leading `# Title` heading, and rewrites relative `assets/` links to `/plugin/<id>/assets/`.
+ * The README without its HTML comments and without a leading `# Title`, which the header shows. An
+ * unclosed comment runs to the end; a comment that the removal of another one joins together is
+ * removed too.
  */
-export interface PluginReadmeParts {
-  readonly summary: string
-  readonly more: string
-}
-
-const LEADING_H1 = /^\s*#\s+\S[^\n]*\n*/
-const MORE_MARKER = /<!--\s*more\s*-->/i
-const RELATIVE_ASSET_LINK = /\]\((?:\.\/)?assets\//g
-
-/** Splits a plugin README on `<!-- more -->` with fallback to the manifest description. */
-export function parsePluginReadme(
-  raw: string,
-  pluginId: string,
-  fallbackDescription: string,
-): PluginReadmeParts {
-  const rewritten = raw.replace(RELATIVE_ASSET_LINK, `](/plugin/${pluginId}/assets/`)
-  const body = rewritten.replace(LEADING_H1, '').trim()
-  if (body === '') {
-    return { summary: fallbackDescription.trim(), more: '' }
-  }
-  const match = MORE_MARKER.exec(body)
-  if (!match) {
-    return { summary: body, more: '' }
-  }
-  const summary = body.slice(0, match.index).trim() || fallbackDescription.trim()
-  const more = body.slice(match.index + match[0].length).trim()
-  return { summary, more }
-}
+export const getReadmeText = (raw: string): string =>
+  removeComments(raw).replace(LEADING_TITLE, '').trim()

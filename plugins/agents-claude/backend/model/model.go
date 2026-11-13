@@ -9,7 +9,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/domain/reasoning"
 )
 
 // DefaultName is the model the program lists for the choice of its own.
@@ -38,11 +38,6 @@ func (m Model) GetLevels() []reasoning.Level {
 	levels := reasoning.NewLevels(m.EffortLevels...)
 	reasoning.Sort(levels)
 	return levels
-}
-
-// GetReasoningModel returns the model as the agent service lists it.
-func (m Model) GetReasoningModel() *reasoning.Model {
-	return reasoning.NewModel(m.Value, m.DisplayName, m.GetLevels(), "")
 }
 
 // GetFallback returns the models listed when the program does not answer.

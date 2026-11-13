@@ -173,6 +173,7 @@
         "**/*.{ts,mjs,js}"
       ],
       "ignoreBinaries": [
+        "go",
         "nix",
         "ffmpeg",
         "ffprobe",

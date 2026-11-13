@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
@@ -150,7 +149,7 @@ func (s vaulted) run(t *testing.T, pos time.Time) timedRun {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return newTimedRun(run, clock.NewFake(pos))
+	return newTimedRun(run, newFakeClock(pos))
 }
 
 func (s vaulted) runNamedReview(t *testing.T, named, reviewedAt time.Time) timedRun {
@@ -159,7 +158,7 @@ func (s vaulted) runNamedReview(t *testing.T, named, reviewedAt time.Time) timed
 	if err != nil {
 		t.Fatal(err)
 	}
-	return newTimedRun(run, clock.NewFake(reviewedAt))
+	return newTimedRun(run, newFakeClock(reviewedAt))
 }
 
 func (s vaulted) newCountCardsDue(day review.Day) flashcards.CountCardsDue {
@@ -521,7 +520,7 @@ func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	}
 
 	// The count is taken on the day the card falls on, and the card is due.
-	counter := s.newCountCardsDueAt(getToday(), clock.NewFake(due))
+	counter := s.newCountCardsDueAt(getToday(), newFakeClock(due))
 	counts, err := counter.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -531,7 +530,7 @@ func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	}
 
 	// And the day before it, it is not.
-	counterBefore := s.newCountCardsDueAt(getToday(), clock.NewFake(due.AddDate(0, 0, -1)))
+	counterBefore := s.newCountCardsDueAt(getToday(), newFakeClock(due.AddDate(0, 0, -1)))
 	before, err := counterBefore.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)

@@ -114,6 +114,25 @@ export const Working: Story = {
   ]),
 }
 
+/** A plan the agent keeps while it works: one entry done, one in hand, one waiting. */
+export const WithPlan: Story = {
+  render: renderThread([
+    createRequestedTurn('1', 'Sort the orchard notes by the month of harvest.'),
+    {
+      id: '2',
+      voice: 'plan',
+      text: '',
+      state: 'arriving',
+      plan: [
+        { text: 'Read the orchard notes', status: 'done' },
+        { text: 'Find the month of each harvest', status: 'active' },
+        { text: 'Write the sorted list', status: 'pending' },
+      ],
+    },
+    { id: '3', voice: 'doing', text: 'Read note', subject: 'Pear trees', state: 'arriving' },
+  ]),
+}
+
 /** Far too many. What the scrolling is for. */
 export const FarTooMany: Story = {
   render: renderThread(

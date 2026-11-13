@@ -6,10 +6,11 @@
 import { computed, defineComponent, h, type PropType } from 'vue'
 import {
   VAULT_SUMMARY,
-  type AgentHost,
+  type ConnectionHost,
   type NoticeHost,
   type TabKindRegistration,
   type VaultSummaryContext,
+  type VaultRelations,
   type ViewRegistration,
 } from '@numen/plugin-sdk'
 import ReviewTab from './ui/ReviewTab.vue'
@@ -28,7 +29,8 @@ export const REVIEW = 'flashcards.review'
 export interface ReviewKindDeps {
   readonly counts: VaultCounts
   readonly notices: NoticeHost
-  readonly agent: AgentHost
+  readonly connections: ConnectionHost
+  readonly relations: Pick<VaultRelations, 'resolveLinks'>
   readonly mountView: MountView
   readonly closeTab: (id: string) => void
 }
@@ -48,7 +50,8 @@ export function createReviewKind(deps: ReviewKindDeps): TabKindRegistration<Revi
         vault,
         counts: deps.counts,
         notices: deps.notices,
-        agent: deps.agent,
+        connections: deps.connections,
+        relations: deps.relations,
         mountView: deps.mountView,
         goToVaults: () => deps.closeTab(id),
         getViewport: () => ({

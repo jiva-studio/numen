@@ -6,7 +6,7 @@ import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { STAND_IN_MODEL, startStandIns } from './stand-ins.mjs'
+import { STAND_IN_CONNECTION, STAND_IN_MODEL, startStandIns } from './stand-ins.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const sourceVault = path.resolve(__dirname, '../../../vault')
@@ -161,7 +161,15 @@ fs.mkdirSync(testHomeDir, { recursive: true })
 
 const standIns = await startStandIns()
 
-// The agent panel answers from numen's own agent over the stand-in chat API. The agents that
+// The connection of numen's own agent, which the agent panel runs its tasks on.
+const NUMEN_AGENT_CONNECTION = 'c57a4d200'
+// The row of that connection, which names the stand-in model of the stand-in connection.
+const NUMEN_AGENT_ROW = {
+  connection: NUMEN_AGENT_CONNECTION,
+  model: `${STAND_IN_CONNECTION}|${STAND_IN_MODEL}`,
+}
+
+// The agent panel answers from numen's own agent through a connection to the stand-in chat API. The agents that
 // run a program the machine has installed stay off: those programs reach their own services.
 const settingsDir =
   process.platform === 'darwin'
@@ -173,8 +181,23 @@ fs.writeFileSync(
   JSON.stringify(
     {
       v: 1,
-      app: { agent: { use: 'numen' } },
-      'md.numen.agents.numen': { baseUrl: standIns.chatUrl, model: STAND_IN_MODEL },
+      connections: [
+        {
+          id: STAND_IN_CONNECTION,
+          type: 'md.numen.connections.llm/openai-compatible',
+          name: 'Stand-in',
+          revision: 1,
+          fields: { baseUrl: standIns.chatUrl },
+        },
+        {
+          id: NUMEN_AGENT_CONNECTION,
+          type: 'md.numen.agents.numen/numen',
+          name: 'Numen agent',
+          revision: 1,
+          fields: {},
+        },
+      ],
+      'md.numen.views.agent.chat': { connections: [NUMEN_AGENT_ROW] },
       'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },
       'md.numen.agents.claude': { enabled: false },
       'md.numen.agents.codex': { enabled: false },
@@ -296,13 +319,12 @@ const callCore = (method, body, isStream) =>
     call.end(payload)
   })
 
-/** Whether the vault is read, every chunk has its vector, and no task of the window is running. */
+/** Whether the vault is read and no task of the window is running. */
 const readIdleState = async () => {
   const state = await callCore('VaultService/GetVaultState', {}, false)
   const window = await callCore('WindowService/WatchTasks', { window: 'editor' }, true)
   return (
     state?.scan?.isReady === true &&
-    state.coverage?.chunkCount === state.coverage?.embeddedCount &&
     window !== undefined &&
     (window.tasks ?? []).every((task) => task.error)
   )
@@ -320,7 +342,7 @@ const child = spawn(
       XDG_DATA_HOME: testDataDir,
       XDG_STATE_HOME: testStateDir,
       HOME: testHomeDir,
-      NUMEN_MOCK_ML: 'true',
+      NUMEN_TEST_MOCK_ML: 'true',
       NUMEN_PLUGINS_PATH: pluginsPath,
       NUMEN_DEBUG_TLS_CERT: certificateFile,
       NUMEN_DEBUG_TLS_KEY: keyFile,

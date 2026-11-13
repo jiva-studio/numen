@@ -1,0 +1,47 @@
+package modelcall
+
+import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+)
+
+// Calls carries out the operations plugins ask for. It reads the rows of the calling plugin in order and
+// goes to the next row on the first failure of a connection. An error of a provider that is neither failure
+// kind counts as a service that is unreachable. A row is skipped, and its reason is in the error
+// when every row fails, if its connection is gone, its type is not provided or lacks the operation, its key is
+// missing, it is set aside, its connection stayed busy for the wait its priority allows, or its connection
+// changed during the call twice in a row. A connection that changed once during the call is read again. When a
+// later row answers, notices receives each connection set aside before it, except a row that discovery made
+// rather than the person.
+type Calls struct {
+	resolve     connectionport.ResolveConnection
+	readSecrets connectionport.ReadConnectionSecrets
+	rows        connectionport.ListRows
+	titles      connectionport.OperationTitles
+	source      connectionport.ProviderSource
+	clock       machineport.Clock
+	queues      *queues
+	notices     connectionport.ReportSetAside
+	cooldown    *connection.Cooldowns
+}
+
+// Connections is where the calls find a connection, its secrets and the rows of the plugins that name it.
+// Titles names the operations in the list of running plugins; a nil Titles names them by their ids.
+type Connections struct {
+	Resolve     connectionport.ResolveConnection
+	ReadSecrets connectionport.ReadConnectionSecrets
+	Rows        connectionport.ListRows
+	Titles      connectionport.OperationTitles
+}
+
+// NewCalls returns the calls over the connections and the providers the source
+// opens. wait times the calls that wait for a slot of their connection. notices is called when a connection was set aside and a row after it answered.
+func NewCalls(
+	connections Connections, source connectionport.ProviderSource, clock machineport.Clock, wait Wait, notices connectionport.ReportSetAside,
+) *Calls {
+	return &Calls{
+		resolve: connections.Resolve, readSecrets: connections.ReadSecrets, rows: connections.Rows, titles: connections.Titles, source: source, clock: clock, queues: newQueues(wait), notices: notices,
+		cooldown: connection.NewCooldowns(),
+	}
+}

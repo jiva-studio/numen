@@ -3,6 +3,7 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -85,6 +86,8 @@ func (s *Storage) GetVars(pluginID string) ([]string, error) {
 	return vars, nil
 }
 
+// RemoveCacheDir removes what the cache holds for the plugin: its own directory and the tools, search
+// source description, detected connections and option lists the host kept for it.
 func (s *Storage) RemoveCacheDir(pluginID string) {
 	s.mu.RLock()
 	root := s.roots.cache
@@ -94,6 +97,11 @@ func (s *Storage) RemoveCacheDir(pluginID string) {
 	}
 	if err := os.RemoveAll(getPluginStorageDir(root, pluginID)); err != nil {
 		s.report(fmt.Errorf("remove cache directory of plugin %s: %w", pluginID, err))
+	}
+	for _, folder := range listCacheFolders() {
+		if err := os.Remove(s.getCacheFilePath(folder, pluginID)); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			s.report(fmt.Errorf("remove the %s file of plugin %s: %w", folder, pluginID, err))
+		}
 	}
 }
 

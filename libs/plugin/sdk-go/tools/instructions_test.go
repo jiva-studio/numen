@@ -14,31 +14,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
-type listingHandler struct {
-	listing Listing
-}
-
-func (h listingHandler) ListTools(context.Context, http.Header) (Listing, error) {
-	return h.listing, nil
-}
-
-func (h listingHandler) InvokeTool(context.Context, http.Header, Call) (*CallResponse, error) {
-	return &CallResponse{}, nil
-}
-
 func serveRegistry(t *testing.T, registry *Registry) Client {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(registryHandler{registry: registry}))
-	web := httptest.NewServer(mux)
-	t.Cleanup(web.Close)
-	return NewClient(hostcall.Endpoint{BaseURL: web.URL})
-}
-
-func serveHandler(t *testing.T, handler ServiceHandler) Client {
-	t.Helper()
-	mux := http.NewServeMux()
-	mux.Handle(NewServiceHandler(handler))
 	web := httptest.NewServer(mux)
 	t.Cleanup(web.Close)
 	return NewClient(hostcall.Endpoint{BaseURL: web.URL})
@@ -111,20 +90,5 @@ func TestToolInstructionsAreSentToAClientOverTheWire(t *testing.T) {
 	}
 	if got := byTool["fixture_list"]; len(got) != 0 {
 		t.Errorf("the client read the instructions of fixture_list as %q", got)
-	}
-}
-
-func TestServiceHandlerToolInstructionsAreSentOverTheWire(t *testing.T) {
-	handler := listingHandler{listing: Listing{Tools: []*ToolInfo{
-		{Name: "fixture_find", Description: "Finds the fixture.", Effect: ReadOnly, Instructions: []string{findSentence}},
-	}}}
-
-	listing, err := serveHandler(t, handler).ListTools(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if got := getToolInstructions(listing)["fixture_find"]; !slices.Equal(got, []string{findSentence}) {
-		t.Errorf("the client read the instructions of fixture_find as %q", got)
 	}
 }

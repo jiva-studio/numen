@@ -3,7 +3,6 @@
   "tests/plugins/readers.pdf/moves.spec.ts": 4,
   "tests/plugins/readers.pdf/zoom.chromium.spec.ts": 3,
   "tests/plugins/system/command-issues.spec.ts": 3,
-  "tests/plugins/system/secrets.spec.ts": 10,
   "tests/plugins/system/settings-plugin-page.spec.ts": 4,
   "tests/plugins/system/startup.spec.ts": 3,
   "tests/plugins/tools.index.stats/stats.spec.ts": 25,

@@ -12,19 +12,17 @@
 // shape and does not describe it, and a setting is written by naming the path
 // through the file. It is the only tree here that goes undescribed.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { PluginInfo, PluginSetting } from "./plugin_pb.js";
 import { file_numen_v1_plugin } from "./plugin_pb.js";
-import type { ReasoningLevel } from "./shared_pb.js";
-import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IqACChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEhgKEGNyZWRlbnRpYWxzX3BhdGgYCiABKAkSMAoPc2VjcmV0X3NlY3Rpb25zGAsgAygLMhcubnVtZW4udjEuU2VjcmV0U2VjdGlvbhIqCgxzZWNyZXRfbWVudXMYDCADKAsyFC5udW1lbi52MS5TZWNyZXRNZW51SgQICRAKIvEBCgVNb2RlbBIQCghuYW1lZF9hdBgBIAMoCRIMCgRuYW1lGAIgASgJEg0KBXRpdGxlGAMgASgJEg0KBWdyb3VwGAQgASgJEhIKCmlzX2RlZmF1bHQYBSABKAgSIQoGd3JpdGVzGAYgAygLMhEubnVtZW4udjEuU2V0dGluZxIkCghwcmVzZW5jZRgHIAEoDjISLm51bWVuLnYxLlByZXNlbmNlEjIKEHJlYXNvbmluZ19sZXZlbHMYCCADKAsyGC5udW1lbi52MS5SZWFzb25pbmdMZXZlbBIZChFkZWZhdWx0X3JlYXNvbmluZxgJIAEoCSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciFwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlImIKBlNlY3JldBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWdyb3VwGAMgASgJEikKB2FsbG93ZWQYBCADKAsyGC5udW1lbi52MS5EZWNsYXJhdGlvbktleUoECAUQBiJTCg1TZWNyZXRTZWN0aW9uEg0KBWdyb3VwGAEgASgJEhAKCGlzX2Fza2VkGAIgASgIEiEKB3NlY3JldHMYAyADKAsyEC5udW1lbi52MS5TZWNyZXQiUAoKU2VjcmV0TWVudRIRCglwbHVnaW5faWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVncm91cBgDIAEoCRISCgpzZWNyZXRfaWRzGAQgAygJIkAKDkRlY2xhcmF0aW9uS2V5EhEKCXBsdWdpbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBWdyb3VwGAMgASgJIkYKE0NyZWF0ZVNlY3JldFJlcXVlc3QSDQoFZ3JvdXAYASABKAkSDAoEbmFtZRgCIAEoCRISCgV2YWx1ZRgDIAEoCUIDgAEBIiIKFENyZWF0ZVNlY3JldFJlc3BvbnNlEgoKAmlkGAEgASgJIi8KE1JlbmFtZVNlY3JldFJlcXVlc3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCSIWChRSZW5hbWVTZWNyZXRSZXNwb25zZSI0ChJXcml0ZVNlY3JldFJlcXVlc3QSCgoCaWQYASABKAkSEgoFdmFsdWUYAiABKAlCA4ABASIVChNXcml0ZVNlY3JldFJlc3BvbnNlIiEKE0RlbGV0ZVNlY3JldFJlcXVlc3QSCgoCaWQYASABKAkiFgoURGVsZXRlU2VjcmV0UmVzcG9uc2UiKQoYRGVsZXRlU2VjcmV0R3JvdXBSZXF1ZXN0Eg0KBWdyb3VwGAEgASgJIhsKGURlbGV0ZVNlY3JldEdyb3VwUmVzcG9uc2UiGQoXTGlzdFNlY3JldFN0YXRlc1JlcXVlc3QiQQoYTGlzdFNlY3JldFN0YXRlc1Jlc3BvbnNlEiUKBnN0YXRlcxgBIAMoCzIVLm51bWVuLnYxLlNlY3JldFN0YXRlIiwKC1NlY3JldFN0YXRlEgoKAmlkGAEgASgJEhEKCWhhc192YWx1ZRgCIAEoCCIyChFNb3ZlU2VjcmV0UmVxdWVzdBIKCgJpZBgBIAEoCRIRCgliZWZvcmVfaWQYAiABKAkiFAoSTW92ZVNlY3JldFJlc3BvbnNlIjcKGFJlbmFtZVNlY3JldEdyb3VwUmVxdWVzdBINCgVncm91cBgBIAEoCRIMCgRuYW1lGAIgASgJIhsKGVJlbmFtZVNlY3JldEdyb3VwUmVzcG9uc2UiXQoYQWxsb3dQbHVnaW5TZWNyZXRSZXF1ZXN0EhEKCXNlY3JldF9pZBgBIAEoCRIRCglwbHVnaW5faWQYAiABKAkSDAoEbmFtZRgDIAEoCRINCgVncm91cBgEIAEoCSIbChlBbGxvd1BsdWdpblNlY3JldFJlc3BvbnNlIlwKF0RlbnlQbHVnaW5TZWNyZXRSZXF1ZXN0EhEKCXNlY3JldF9pZBgBIAEoCRIRCglwbHVnaW5faWQYAiABKAkSDAoEbmFtZRgDIAEoCRINCgVncm91cBgEIAEoCSIaChhEZW55UGx1Z2luU2VjcmV0UmVzcG9uc2UiJwoSUmV0cnlQbHVnaW5SZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSImChNSZXRyeVBsdWdpblJlc3BvbnNlEg8KB2ZhaWx1cmUYASABKAkiOQoXQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgsKA2tleRgCIAEoCSJMChhDaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIRCglpc19jaG9zZW4YAiABKAgSDwoHcHJvYmxlbRgDIAEoCSIpChRHZXRQbHVnaW5EYXRhUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiPwoVR2V0UGx1Z2luRGF0YVJlc3BvbnNlEhIKCmZpbGVfY291bnQYASABKAUSEgoKYnl0ZV9jb3VudBgCIAEoAyIsChdEZWxldGVQbHVnaW5EYXRhUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiGgoYRGVsZXRlUGx1Z2luRGF0YVJlc3BvbnNlKnMKCFByZXNlbmNlEhgKFFBSRVNFTkNFX1VOU1BFQ0lGSUVEEAASFAoQUFJFU0VOQ0VfUFJFU0VOVBABEhgKFFBSRVNFTkNFX05PVF9GRVRDSEVEEAISHQoZUFJFU0VOQ0VfTk9USElOR19UT19GRVRDSBADMqkLCg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSHC5udW1lbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaHS5udW1lbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElAKDVdyaXRlU2V0dGluZ3MSHi5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXNwb25zZRJNCgxDcmVhdGVTZWNyZXQSHS5udW1lbi52MS5DcmVhdGVTZWNyZXRSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlU2VjcmV0UmVzcG9uc2USTQoMUmVuYW1lU2VjcmV0Eh0ubnVtZW4udjEuUmVuYW1lU2VjcmV0UmVxdWVzdBoeLm51bWVuLnYxLlJlbmFtZVNlY3JldFJlc3BvbnNlEkoKC1dyaXRlU2VjcmV0EhwubnVtZW4udjEuV3JpdGVTZWNyZXRSZXF1ZXN0Gh0ubnVtZW4udjEuV3JpdGVTZWNyZXRSZXNwb25zZRJNCgxEZWxldGVTZWNyZXQSHS5udW1lbi52MS5EZWxldGVTZWNyZXRSZXF1ZXN0Gh4ubnVtZW4udjEuRGVsZXRlU2VjcmV0UmVzcG9uc2USXAoRRGVsZXRlU2VjcmV0R3JvdXASIi5udW1lbi52MS5EZWxldGVTZWNyZXRHcm91cFJlcXVlc3QaIy5udW1lbi52MS5EZWxldGVTZWNyZXRHcm91cFJlc3BvbnNlElkKEExpc3RTZWNyZXRTdGF0ZXMSIS5udW1lbi52MS5MaXN0U2VjcmV0U3RhdGVzUmVxdWVzdBoiLm51bWVuLnYxLkxpc3RTZWNyZXRTdGF0ZXNSZXNwb25zZRJHCgpNb3ZlU2VjcmV0EhsubnVtZW4udjEuTW92ZVNlY3JldFJlcXVlc3QaHC5udW1lbi52MS5Nb3ZlU2VjcmV0UmVzcG9uc2USXAoRUmVuYW1lU2VjcmV0R3JvdXASIi5udW1lbi52MS5SZW5hbWVTZWNyZXRHcm91cFJlcXVlc3QaIy5udW1lbi52MS5SZW5hbWVTZWNyZXRHcm91cFJlc3BvbnNlElwKEUFsbG93UGx1Z2luU2VjcmV0EiIubnVtZW4udjEuQWxsb3dQbHVnaW5TZWNyZXRSZXF1ZXN0GiMubnVtZW4udjEuQWxsb3dQbHVnaW5TZWNyZXRSZXNwb25zZRJZChBEZW55UGx1Z2luU2VjcmV0EiEubnVtZW4udjEuRGVueVBsdWdpblNlY3JldFJlcXVlc3QaIi5udW1lbi52MS5EZW55UGx1Z2luU2VjcmV0UmVzcG9uc2USSgoLUmV0cnlQbHVnaW4SHC5udW1lbi52MS5SZXRyeVBsdWdpblJlcXVlc3QaHS5udW1lbi52MS5SZXRyeVBsdWdpblJlc3BvbnNlElkKEENob29zZVBsdWdpblBhdGgSIS5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBoiLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXNwb25zZRJQCg1HZXRQbHVnaW5EYXRhEh4ubnVtZW4udjEuR2V0UGx1Z2luRGF0YVJlcXVlc3QaHy5udW1lbi52MS5HZXRQbHVnaW5EYXRhUmVzcG9uc2USWQoQRGVsZXRlUGx1Z2luRGF0YRIhLm51bWVuLnYxLkRlbGV0ZVBsdWdpbkRhdGFSZXF1ZXN0GiIubnVtZW4udjEuRGVsZXRlUGx1Z2luRGF0YVJlc3BvbnNlElIKDVdhdGNoU2V0dGluZ3MSHi5udW1lbi52MS5XYXRjaFNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXNwb25zZTABQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin, file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IocBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nSgQICRAKIiQKB1NldHRpbmcSCgoCYXQYASADKAkSDQoFdmFsdWUYAiABKAkiFgoUV2F0Y2hTZXR0aW5nc1JlcXVlc3QiOwoVV2F0Y2hTZXR0aW5nc1Jlc3BvbnNlEiIKB2NoYW5nZWQYASADKAsyES5udW1lbi52MS5TZXR0aW5nIjsKFFdyaXRlU2V0dGluZ3NSZXF1ZXN0EiMKCHNldHRpbmdzGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyIXChVXcml0ZVNldHRpbmdzUmVzcG9uc2UiJwoSUmV0cnlQbHVnaW5SZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSImChNSZXRyeVBsdWdpblJlc3BvbnNlEg8KB2ZhaWx1cmUYASABKAkiOQoXQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgsKA2tleRgCIAEoCSJMChhDaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIRCglpc19jaG9zZW4YAiABKAgSDwoHcHJvYmxlbRgDIAEoCSIpChRHZXRQbHVnaW5EYXRhUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiPwoVR2V0UGx1Z2luRGF0YVJlc3BvbnNlEhIKCmZpbGVfY291bnQYASABKAUSEgoKYnl0ZV9jb3VudBgCIAEoAyIsChdEZWxldGVQbHVnaW5EYXRhUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkiGgoYRGVsZXRlUGx1Z2luRGF0YVJlc3BvbnNlIjYKDk9wdGlvbnNSZXF1ZXN0EhIKCm9wZXJhdGlvbnMYASADKAkSEAoIaXNfZnJlc2gYAiABKAgiQAoHT3B0aW9ucxIhCgdvcHRpb25zGAEgAygLMhAubnVtZW4udjEuT3B0aW9uEhIKCmlzX3BhcnRpYWwYAiABKAgiNQoGT3B0aW9uEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWdyb3VwGAMgASgJMtcECg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSHC5udW1lbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaHS5udW1lbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElAKDVdyaXRlU2V0dGluZ3MSHi5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXNwb25zZRJKCgtSZXRyeVBsdWdpbhIcLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVxdWVzdBodLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVzcG9uc2USWQoQQ2hvb3NlUGx1Z2luUGF0aBIhLm51bWVuLnYxLkNob29zZVBsdWdpblBhdGhSZXF1ZXN0GiIubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlc3BvbnNlElAKDUdldFBsdWdpbkRhdGESHi5udW1lbi52MS5HZXRQbHVnaW5EYXRhUmVxdWVzdBofLm51bWVuLnYxLkdldFBsdWdpbkRhdGFSZXNwb25zZRJZChBEZWxldGVQbHVnaW5EYXRhEiEubnVtZW4udjEuRGVsZXRlUGx1Z2luRGF0YVJlcXVlc3QaIi5udW1lbi52MS5EZWxldGVQbHVnaW5EYXRhUmVzcG9uc2USUgoNV2F0Y2hTZXR0aW5ncxIeLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1Jlc3BvbnNlMAFCRlpEZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL2NvcmUvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_plugin]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -60,13 +58,6 @@ export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
   path: string;
 
   /**
-   * The models the settings that name one can be set to.
-   *
-   * @generated from field: repeated numen.v1.Model models = 3;
-   */
-  models: Model[];
-
-  /**
    * Active plugins and their declarative settings schema.
    *
    * @generated from field: repeated numen.v1.PluginInfo plugins = 7;
@@ -80,28 +71,6 @@ export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
    * @generated from field: repeated numen.v1.PluginSetting app = 8;
    */
   app: PluginSetting[];
-
-  /**
-   * Empty while the system keychain is in use; otherwise the absolute path of the file the values are kept in.
-   *
-   * @generated from field: string credentials_path = 10;
-   */
-  credentialsPath: string;
-
-  /**
-   * The secrets by group in the order of the page of secrets: the groups the installed plugins ask
-   * for by name, then the groups the person made by name. A value never travels.
-   *
-   * @generated from field: repeated numen.v1.SecretSection secret_sections = 11;
-   */
-  secretSections: SecretSection[];
-
-  /**
-   * For each secret a plugin declares, the secrets its menu offers in order.
-   *
-   * @generated from field: repeated numen.v1.SecretMenu secret_menus = 12;
-   */
-  secretMenus: SecretMenu[];
 };
 
 /**
@@ -110,84 +79,6 @@ export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
  */
 export const GetSettingsResponseSchema: GenMessage<GetSettingsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 1);
-
-/**
- * Model is one model a setting that names a model can be set to.
- *
- * @generated from message numen.v1.Model
- */
-export type Model = Message<"numen.v1.Model"> & {
-  /**
-   * The setting the model is read from, as a path through the file. The model
-   * in force is the one whose name stands there.
-   *
-   * @generated from field: repeated string named_at = 1;
-   */
-  namedAt: string[];
-
-  /**
-   * What stands there while this model is the one in force.
-   *
-   * @generated from field: string name = 2;
-   */
-  name: string;
-
-  /**
-   * What is drawn on the row, and the group the rows around it stand under.
-   *
-   * @generated from field: string title = 3;
-   */
-  title: string;
-
-  /**
-   * @generated from field: string group = 4;
-   */
-  group: string;
-
-  /**
-   * Set on the model an installation with no configuration runs on.
-   *
-   * @generated from field: bool is_default = 5;
-   */
-  isDefault: boolean;
-
-  /**
-   * What choosing it writes. One model is several keys where the model decides
-   * more than its own name.
-   *
-   * @generated from field: repeated numen.v1.Setting writes = 6;
-   */
-  writes: Setting[];
-
-  /**
-   * What this model's files are on this machine.
-   *
-   * @generated from field: numen.v1.Presence presence = 7;
-   */
-  presence: Presence;
-
-  /**
-   * The depths of reasoning the model can be asked to work at, from the least to the most. Empty
-   * where the model offers no choice.
-   *
-   * @generated from field: repeated numen.v1.ReasoningLevel reasoning_levels = 8;
-   */
-  reasoningLevels: ReasoningLevel[];
-
-  /**
-   * The level the model works at unasked. Empty where it names none.
-   *
-   * @generated from field: string default_reasoning = 9;
-   */
-  defaultReasoning: string;
-};
-
-/**
- * Describes the message numen.v1.Model.
- * Use `create(ModelSchema)` to create a new message.
- */
-export const ModelSchema: GenMessage<Model> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 2);
 
 /**
  * Setting is one setting of the file and what to put there.
@@ -216,7 +107,7 @@ export type Setting = Message<"numen.v1.Setting"> & {
  * Use `create(SettingSchema)` to create a new message.
  */
 export const SettingSchema: GenMessage<Setting> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 3);
+  messageDesc(file_numen_v1_settings, 2);
 
 /**
  * @generated from message numen.v1.WatchSettingsRequest
@@ -229,7 +120,7 @@ export type WatchSettingsRequest = Message<"numen.v1.WatchSettingsRequest"> & {
  * Use `create(WatchSettingsRequestSchema)` to create a new message.
  */
 export const WatchSettingsRequestSchema: GenMessage<WatchSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 4);
+  messageDesc(file_numen_v1_settings, 3);
 
 /**
  * @generated from message numen.v1.WatchSettingsResponse
@@ -249,7 +140,7 @@ export type WatchSettingsResponse = Message<"numen.v1.WatchSettingsResponse"> & 
  * Use `create(WatchSettingsResponseSchema)` to create a new message.
  */
 export const WatchSettingsResponseSchema: GenMessage<WatchSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 5);
+  messageDesc(file_numen_v1_settings, 4);
 
 /**
  * @generated from message numen.v1.WriteSettingsRequest
@@ -268,7 +159,7 @@ export type WriteSettingsRequest = Message<"numen.v1.WriteSettingsRequest"> & {
  * Use `create(WriteSettingsRequestSchema)` to create a new message.
  */
 export const WriteSettingsRequestSchema: GenMessage<WriteSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 6);
+  messageDesc(file_numen_v1_settings, 5);
 
 /**
  * @generated from message numen.v1.WriteSettingsResponse
@@ -281,531 +172,7 @@ export type WriteSettingsResponse = Message<"numen.v1.WriteSettingsResponse"> & 
  * Use `create(WriteSettingsResponseSchema)` to create a new message.
  */
 export const WriteSettingsResponseSchema: GenMessage<WriteSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 7);
-
-/**
- * Secret is one secret as the window sees it. A value never travels.
- *
- * @generated from message numen.v1.Secret
- */
-export type Secret = Message<"numen.v1.Secret"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
-
-  /**
-   * @generated from field: string group = 3;
-   */
-  group: string;
-
-  /**
-   * @generated from field: repeated numen.v1.DeclarationKey allowed = 4;
-   */
-  allowed: DeclarationKey[];
-};
-
-/**
- * Describes the message numen.v1.Secret.
- * Use `create(SecretSchema)` to create a new message.
- */
-export const SecretSchema: GenMessage<Secret> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 8);
-
-/**
- * SecretSection is the secrets of one group in priority order. A group a plugin asks for is a
- * section while it holds no secret.
- *
- * @generated from message numen.v1.SecretSection
- */
-export type SecretSection = Message<"numen.v1.SecretSection"> & {
-  /**
-   * @generated from field: string group = 1;
-   */
-  group: string;
-
-  /**
-   * True when an installed plugin asks for the group by name.
-   *
-   * @generated from field: bool is_asked = 2;
-   */
-  isAsked: boolean;
-
-  /**
-   * @generated from field: repeated numen.v1.Secret secrets = 3;
-   */
-  secrets: Secret[];
-};
-
-/**
- * Describes the message numen.v1.SecretSection.
- * Use `create(SecretSectionSchema)` to create a new message.
- */
-export const SecretSectionSchema: GenMessage<SecretSection> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 9);
-
-/**
- * SecretMenu is the secrets the menu of one secret declaration of a plugin offers: those of the
- * declared group first, then the others in the order of the page.
- *
- * @generated from message numen.v1.SecretMenu
- */
-export type SecretMenu = Message<"numen.v1.SecretMenu"> & {
-  /**
-   * @generated from field: string plugin_id = 1;
-   */
-  pluginId: string;
-
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
-
-  /**
-   * The group of the declaration, empty for none.
-   *
-   * @generated from field: string group = 3;
-   */
-  group: string;
-
-  /**
-   * @generated from field: repeated string secret_ids = 4;
-   */
-  secretIds: string[];
-};
-
-/**
- * Describes the message numen.v1.SecretMenu.
- * Use `create(SecretMenuSchema)` to create a new message.
- */
-export const SecretMenuSchema: GenMessage<SecretMenu> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 10);
-
-/**
- * DeclarationKey identifies one secret declaration of a plugin.
- *
- * @generated from message numen.v1.DeclarationKey
- */
-export type DeclarationKey = Message<"numen.v1.DeclarationKey"> & {
-  /**
-   * @generated from field: string plugin_id = 1;
-   */
-  pluginId: string;
-
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
-
-  /**
-   * The group of the declaration, empty for none.
-   *
-   * @generated from field: string group = 3;
-   */
-  group: string;
-};
-
-/**
- * Describes the message numen.v1.DeclarationKey.
- * Use `create(DeclarationKeySchema)` to create a new message.
- */
-export const DeclarationKeySchema: GenMessage<DeclarationKey> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 11);
-
-/**
- * @generated from message numen.v1.CreateSecretRequest
- */
-export type CreateSecretRequest = Message<"numen.v1.CreateSecretRequest"> & {
-  /**
-   * @generated from field: string group = 1;
-   */
-  group: string;
-
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
-
-  /**
-   * @generated from field: string value = 3;
-   */
-  value: string;
-};
-
-/**
- * Describes the message numen.v1.CreateSecretRequest.
- * Use `create(CreateSecretRequestSchema)` to create a new message.
- */
-export const CreateSecretRequestSchema: GenMessage<CreateSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 12);
-
-/**
- * @generated from message numen.v1.CreateSecretResponse
- */
-export type CreateSecretResponse = Message<"numen.v1.CreateSecretResponse"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-};
-
-/**
- * Describes the message numen.v1.CreateSecretResponse.
- * Use `create(CreateSecretResponseSchema)` to create a new message.
- */
-export const CreateSecretResponseSchema: GenMessage<CreateSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 13);
-
-/**
- * @generated from message numen.v1.RenameSecretRequest
- */
-export type RenameSecretRequest = Message<"numen.v1.RenameSecretRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
-};
-
-/**
- * Describes the message numen.v1.RenameSecretRequest.
- * Use `create(RenameSecretRequestSchema)` to create a new message.
- */
-export const RenameSecretRequestSchema: GenMessage<RenameSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 14);
-
-/**
- * @generated from message numen.v1.RenameSecretResponse
- */
-export type RenameSecretResponse = Message<"numen.v1.RenameSecretResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.RenameSecretResponse.
- * Use `create(RenameSecretResponseSchema)` to create a new message.
- */
-export const RenameSecretResponseSchema: GenMessage<RenameSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 15);
-
-/**
- * @generated from message numen.v1.WriteSecretRequest
- */
-export type WriteSecretRequest = Message<"numen.v1.WriteSecretRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
-  /**
-   * @generated from field: string value = 2;
-   */
-  value: string;
-};
-
-/**
- * Describes the message numen.v1.WriteSecretRequest.
- * Use `create(WriteSecretRequestSchema)` to create a new message.
- */
-export const WriteSecretRequestSchema: GenMessage<WriteSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 16);
-
-/**
- * @generated from message numen.v1.WriteSecretResponse
- */
-export type WriteSecretResponse = Message<"numen.v1.WriteSecretResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.WriteSecretResponse.
- * Use `create(WriteSecretResponseSchema)` to create a new message.
- */
-export const WriteSecretResponseSchema: GenMessage<WriteSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 17);
-
-/**
- * @generated from message numen.v1.DeleteSecretRequest
- */
-export type DeleteSecretRequest = Message<"numen.v1.DeleteSecretRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-};
-
-/**
- * Describes the message numen.v1.DeleteSecretRequest.
- * Use `create(DeleteSecretRequestSchema)` to create a new message.
- */
-export const DeleteSecretRequestSchema: GenMessage<DeleteSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 18);
-
-/**
- * @generated from message numen.v1.DeleteSecretResponse
- */
-export type DeleteSecretResponse = Message<"numen.v1.DeleteSecretResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.DeleteSecretResponse.
- * Use `create(DeleteSecretResponseSchema)` to create a new message.
- */
-export const DeleteSecretResponseSchema: GenMessage<DeleteSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 19);
-
-/**
- * @generated from message numen.v1.DeleteSecretGroupRequest
- */
-export type DeleteSecretGroupRequest = Message<"numen.v1.DeleteSecretGroupRequest"> & {
-  /**
-   * @generated from field: string group = 1;
-   */
-  group: string;
-};
-
-/**
- * Describes the message numen.v1.DeleteSecretGroupRequest.
- * Use `create(DeleteSecretGroupRequestSchema)` to create a new message.
- */
-export const DeleteSecretGroupRequestSchema: GenMessage<DeleteSecretGroupRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 20);
-
-/**
- * @generated from message numen.v1.DeleteSecretGroupResponse
- */
-export type DeleteSecretGroupResponse = Message<"numen.v1.DeleteSecretGroupResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.DeleteSecretGroupResponse.
- * Use `create(DeleteSecretGroupResponseSchema)` to create a new message.
- */
-export const DeleteSecretGroupResponseSchema: GenMessage<DeleteSecretGroupResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 21);
-
-/**
- * @generated from message numen.v1.ListSecretStatesRequest
- */
-export type ListSecretStatesRequest = Message<"numen.v1.ListSecretStatesRequest"> & {
-};
-
-/**
- * Describes the message numen.v1.ListSecretStatesRequest.
- * Use `create(ListSecretStatesRequestSchema)` to create a new message.
- */
-export const ListSecretStatesRequestSchema: GenMessage<ListSecretStatesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 22);
-
-/**
- * @generated from message numen.v1.ListSecretStatesResponse
- */
-export type ListSecretStatesResponse = Message<"numen.v1.ListSecretStatesResponse"> & {
-  /**
-   * @generated from field: repeated numen.v1.SecretState states = 1;
-   */
-  states: SecretState[];
-};
-
-/**
- * Describes the message numen.v1.ListSecretStatesResponse.
- * Use `create(ListSecretStatesResponseSchema)` to create a new message.
- */
-export const ListSecretStatesResponseSchema: GenMessage<ListSecretStatesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 23);
-
-/**
- * SecretState reports whether the value of one secret is on this machine.
- *
- * @generated from message numen.v1.SecretState
- */
-export type SecretState = Message<"numen.v1.SecretState"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
-  /**
-   * @generated from field: bool has_value = 2;
-   */
-  hasValue: boolean;
-};
-
-/**
- * Describes the message numen.v1.SecretState.
- * Use `create(SecretStateSchema)` to create a new message.
- */
-export const SecretStateSchema: GenMessage<SecretState> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 24);
-
-/**
- * @generated from message numen.v1.MoveSecretRequest
- */
-export type MoveSecretRequest = Message<"numen.v1.MoveSecretRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
-  /**
-   * Inside one group; empty means the end of the group.
-   *
-   * @generated from field: string before_id = 2;
-   */
-  beforeId: string;
-};
-
-/**
- * Describes the message numen.v1.MoveSecretRequest.
- * Use `create(MoveSecretRequestSchema)` to create a new message.
- */
-export const MoveSecretRequestSchema: GenMessage<MoveSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 25);
-
-/**
- * @generated from message numen.v1.MoveSecretResponse
- */
-export type MoveSecretResponse = Message<"numen.v1.MoveSecretResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.MoveSecretResponse.
- * Use `create(MoveSecretResponseSchema)` to create a new message.
- */
-export const MoveSecretResponseSchema: GenMessage<MoveSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 26);
-
-/**
- * @generated from message numen.v1.RenameSecretGroupRequest
- */
-export type RenameSecretGroupRequest = Message<"numen.v1.RenameSecretGroupRequest"> & {
-  /**
-   * @generated from field: string group = 1;
-   */
-  group: string;
-
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
-};
-
-/**
- * Describes the message numen.v1.RenameSecretGroupRequest.
- * Use `create(RenameSecretGroupRequestSchema)` to create a new message.
- */
-export const RenameSecretGroupRequestSchema: GenMessage<RenameSecretGroupRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 27);
-
-/**
- * @generated from message numen.v1.RenameSecretGroupResponse
- */
-export type RenameSecretGroupResponse = Message<"numen.v1.RenameSecretGroupResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.RenameSecretGroupResponse.
- * Use `create(RenameSecretGroupResponseSchema)` to create a new message.
- */
-export const RenameSecretGroupResponseSchema: GenMessage<RenameSecretGroupResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 28);
-
-/**
- * @generated from message numen.v1.AllowPluginSecretRequest
- */
-export type AllowPluginSecretRequest = Message<"numen.v1.AllowPluginSecretRequest"> & {
-  /**
-   * @generated from field: string secret_id = 1;
-   */
-  secretId: string;
-
-  /**
-   * @generated from field: string plugin_id = 2;
-   */
-  pluginId: string;
-
-  /**
-   * @generated from field: string name = 3;
-   */
-  name: string;
-
-  /**
-   * @generated from field: string group = 4;
-   */
-  group: string;
-};
-
-/**
- * Describes the message numen.v1.AllowPluginSecretRequest.
- * Use `create(AllowPluginSecretRequestSchema)` to create a new message.
- */
-export const AllowPluginSecretRequestSchema: GenMessage<AllowPluginSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 29);
-
-/**
- * @generated from message numen.v1.AllowPluginSecretResponse
- */
-export type AllowPluginSecretResponse = Message<"numen.v1.AllowPluginSecretResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.AllowPluginSecretResponse.
- * Use `create(AllowPluginSecretResponseSchema)` to create a new message.
- */
-export const AllowPluginSecretResponseSchema: GenMessage<AllowPluginSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 30);
-
-/**
- * @generated from message numen.v1.DenyPluginSecretRequest
- */
-export type DenyPluginSecretRequest = Message<"numen.v1.DenyPluginSecretRequest"> & {
-  /**
-   * @generated from field: string secret_id = 1;
-   */
-  secretId: string;
-
-  /**
-   * @generated from field: string plugin_id = 2;
-   */
-  pluginId: string;
-
-  /**
-   * @generated from field: string name = 3;
-   */
-  name: string;
-
-  /**
-   * @generated from field: string group = 4;
-   */
-  group: string;
-};
-
-/**
- * Describes the message numen.v1.DenyPluginSecretRequest.
- * Use `create(DenyPluginSecretRequestSchema)` to create a new message.
- */
-export const DenyPluginSecretRequestSchema: GenMessage<DenyPluginSecretRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 31);
-
-/**
- * @generated from message numen.v1.DenyPluginSecretResponse
- */
-export type DenyPluginSecretResponse = Message<"numen.v1.DenyPluginSecretResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.DenyPluginSecretResponse.
- * Use `create(DenyPluginSecretResponseSchema)` to create a new message.
- */
-export const DenyPluginSecretResponseSchema: GenMessage<DenyPluginSecretResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 32);
+  messageDesc(file_numen_v1_settings, 6);
 
 /**
  * @generated from message numen.v1.RetryPluginRequest
@@ -824,7 +191,7 @@ export type RetryPluginRequest = Message<"numen.v1.RetryPluginRequest"> & {
  * Use `create(RetryPluginRequestSchema)` to create a new message.
  */
 export const RetryPluginRequestSchema: GenMessage<RetryPluginRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 33);
+  messageDesc(file_numen_v1_settings, 7);
 
 /**
  * @generated from message numen.v1.RetryPluginResponse
@@ -843,7 +210,7 @@ export type RetryPluginResponse = Message<"numen.v1.RetryPluginResponse"> & {
  * Use `create(RetryPluginResponseSchema)` to create a new message.
  */
 export const RetryPluginResponseSchema: GenMessage<RetryPluginResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 34);
+  messageDesc(file_numen_v1_settings, 8);
 
 /**
  * @generated from message numen.v1.ChoosePluginPathRequest
@@ -867,7 +234,7 @@ export type ChoosePluginPathRequest = Message<"numen.v1.ChoosePluginPathRequest"
  * Use `create(ChoosePluginPathRequestSchema)` to create a new message.
  */
 export const ChoosePluginPathRequestSchema: GenMessage<ChoosePluginPathRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 35);
+  messageDesc(file_numen_v1_settings, 9);
 
 /**
  * @generated from message numen.v1.ChoosePluginPathResponse
@@ -900,7 +267,7 @@ export type ChoosePluginPathResponse = Message<"numen.v1.ChoosePluginPathRespons
  * Use `create(ChoosePluginPathResponseSchema)` to create a new message.
  */
 export const ChoosePluginPathResponseSchema: GenMessage<ChoosePluginPathResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 36);
+  messageDesc(file_numen_v1_settings, 10);
 
 /**
  * @generated from message numen.v1.GetPluginDataRequest
@@ -917,7 +284,7 @@ export type GetPluginDataRequest = Message<"numen.v1.GetPluginDataRequest"> & {
  * Use `create(GetPluginDataRequestSchema)` to create a new message.
  */
 export const GetPluginDataRequestSchema: GenMessage<GetPluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 37);
+  messageDesc(file_numen_v1_settings, 11);
 
 /**
  * @generated from message numen.v1.GetPluginDataResponse
@@ -939,7 +306,7 @@ export type GetPluginDataResponse = Message<"numen.v1.GetPluginDataResponse"> & 
  * Use `create(GetPluginDataResponseSchema)` to create a new message.
  */
 export const GetPluginDataResponseSchema: GenMessage<GetPluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 38);
+  messageDesc(file_numen_v1_settings, 12);
 
 /**
  * @generated from message numen.v1.DeletePluginDataRequest
@@ -956,7 +323,7 @@ export type DeletePluginDataRequest = Message<"numen.v1.DeletePluginDataRequest"
  * Use `create(DeletePluginDataRequestSchema)` to create a new message.
  */
 export const DeletePluginDataRequestSchema: GenMessage<DeletePluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 39);
+  messageDesc(file_numen_v1_settings, 13);
 
 /**
  * @generated from message numen.v1.DeletePluginDataResponse
@@ -969,50 +336,95 @@ export type DeletePluginDataResponse = Message<"numen.v1.DeletePluginDataRespons
  * Use `create(DeletePluginDataResponseSchema)` to create a new message.
  */
 export const DeletePluginDataResponseSchema: GenMessage<DeletePluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 40);
+  messageDesc(file_numen_v1_settings, 14);
 
 /**
- * Presence is what a model's files are on this machine. It says where files
- * stand and nothing else: it is no reason to prefer one model to another.
+ * OptionsRequest is the payload of an operation a row field of a connection type names in options_from.
  *
- * @generated from enum numen.v1.Presence
+ * @generated from message numen.v1.OptionsRequest
  */
-export enum Presence {
+export type OptionsRequest = Message<"numen.v1.OptionsRequest"> & {
   /**
-   * Nothing was said about this model's files.
+   * operations are the operations the setting of rows the field belongs to is used for.
    *
-   * @generated from enum value: PRESENCE_UNSPECIFIED = 0;
+   * @generated from field: repeated string operations = 1;
    */
-  UNSPECIFIED = 0,
+  operations: string[];
 
   /**
-   * The files stand where a fetch puts them.
+   * is_fresh asks the provider to read the options anew, past any list it keeps.
    *
-   * @generated from enum value: PRESENCE_PRESENT = 1;
+   * @generated from field: bool is_fresh = 2;
    */
-  PRESENT = 1,
-
-  /**
-   * The files are not on this machine. They are fetched when the model is next
-   * needed.
-   *
-   * @generated from enum value: PRESENCE_NOT_FETCHED = 2;
-   */
-  NOT_FETCHED = 2,
-
-  /**
-   * The model is reached over the network, and nothing of it is fetched.
-   *
-   * @generated from enum value: PRESENCE_NOTHING_TO_FETCH = 3;
-   */
-  NOTHING_TO_FETCH = 3,
-}
+  isFresh: boolean;
+};
 
 /**
- * Describes the enum numen.v1.Presence.
+ * Describes the message numen.v1.OptionsRequest.
+ * Use `create(OptionsRequestSchema)` to create a new message.
  */
-export const PresenceSchema: GenEnum<Presence> = /*@__PURE__*/
-  enumDesc(file_numen_v1_settings, 0);
+export const OptionsRequestSchema: GenMessage<OptionsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 15);
+
+/**
+ * Options is the done frame of an operation a row field names in options_from: the values the field can
+ * take, in the order to show them.
+ *
+ * @generated from message numen.v1.Options
+ */
+export type Options = Message<"numen.v1.Options"> & {
+  /**
+   * @generated from field: repeated numen.v1.Option options = 1;
+   */
+  options: Option[];
+
+  /**
+   * is_partial marks a list that misses values the provider could not read now; the core does not keep it.
+   *
+   * @generated from field: bool is_partial = 2;
+   */
+  isPartial: boolean;
+};
+
+/**
+ * Describes the message numen.v1.Options.
+ * Use `create(OptionsSchema)` to create a new message.
+ */
+export const OptionsSchema: GenMessage<Options> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 16);
+
+/**
+ * Option is one value of a field.
+ *
+ * @generated from message numen.v1.Option
+ */
+export type Option = Message<"numen.v1.Option"> & {
+  /**
+   * @generated from field: string value = 1;
+   */
+  value: string;
+
+  /**
+   * title is shown in place of the value; empty shows the value.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * group is the heading the option is shown under; empty is no heading.
+   *
+   * @generated from field: string group = 3;
+   */
+  group: string;
+};
+
+/**
+ * Describes the message numen.v1.Option.
+ * Use `create(OptionSchema)` to create a new message.
+ */
+export const OptionSchema: GenMessage<Option> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 17);
 
 /**
  * SettingsService answers about that file, one setting at a time.
@@ -1021,8 +433,7 @@ export const PresenceSchema: GenEnum<Presence> = /*@__PURE__*/
  */
 export const SettingsService: GenService<{
   /**
-   * GetSettings is every setting of the file, and the models the settings that
-   * name one can be set to.
+   * GetSettings is every setting of the file.
    *
    * @generated from rpc numen.v1.SettingsService.GetSettings
    */
@@ -1042,107 +453,6 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof WriteSettingsRequestSchema;
     output: typeof WriteSettingsResponseSchema;
-  },
-  /**
-   * CreateSecret adds a secret at the end of its group and keeps its value outside the settings file.
-   *
-   * @generated from rpc numen.v1.SettingsService.CreateSecret
-   */
-  createSecret: {
-    methodKind: "unary";
-    input: typeof CreateSecretRequestSchema;
-    output: typeof CreateSecretResponseSchema;
-  },
-  /**
-   * RenameSecret changes the name of a secret. Its id, value and permissions stay.
-   *
-   * @generated from rpc numen.v1.SettingsService.RenameSecret
-   */
-  renameSecret: {
-    methodKind: "unary";
-    input: typeof RenameSecretRequestSchema;
-    output: typeof RenameSecretResponseSchema;
-  },
-  /**
-   * WriteSecret replaces the value of a secret and hands the plugins that may read it their secrets again.
-   *
-   * @generated from rpc numen.v1.SettingsService.WriteSecret
-   */
-  writeSecret: {
-    methodKind: "unary";
-    input: typeof WriteSecretRequestSchema;
-    output: typeof WriteSecretResponseSchema;
-  },
-  /**
-   * DeleteSecret removes a secret with its value and its permissions.
-   *
-   * @generated from rpc numen.v1.SettingsService.DeleteSecret
-   */
-  deleteSecret: {
-    methodKind: "unary";
-    input: typeof DeleteSecretRequestSchema;
-    output: typeof DeleteSecretResponseSchema;
-  },
-  /**
-   * DeleteSecretGroup removes every secret of a group with its values and its permissions.
-   *
-   * @generated from rpc numen.v1.SettingsService.DeleteSecretGroup
-   */
-  deleteSecretGroup: {
-    methodKind: "unary";
-    input: typeof DeleteSecretGroupRequestSchema;
-    output: typeof DeleteSecretGroupResponseSchema;
-  },
-  /**
-   * ListSecretStates tells for each secret whether its value is on this machine. It reads the key
-   * store once for each secret, so only the page of secrets asks for it.
-   *
-   * @generated from rpc numen.v1.SettingsService.ListSecretStates
-   */
-  listSecretStates: {
-    methodKind: "unary";
-    input: typeof ListSecretStatesRequestSchema;
-    output: typeof ListSecretStatesResponseSchema;
-  },
-  /**
-   * MoveSecret changes the priority of a secret inside its group.
-   *
-   * @generated from rpc numen.v1.SettingsService.MoveSecret
-   */
-  moveSecret: {
-    methodKind: "unary";
-    input: typeof MoveSecretRequestSchema;
-    output: typeof MoveSecretResponseSchema;
-  },
-  /**
-   * RenameSecretGroup changes the group of all the secrets of a group the person made.
-   *
-   * @generated from rpc numen.v1.SettingsService.RenameSecretGroup
-   */
-  renameSecretGroup: {
-    methodKind: "unary";
-    input: typeof RenameSecretGroupRequestSchema;
-    output: typeof RenameSecretGroupResponseSchema;
-  },
-  /**
-   * AllowPluginSecret lets one declaration of a plugin read a secret.
-   *
-   * @generated from rpc numen.v1.SettingsService.AllowPluginSecret
-   */
-  allowPluginSecret: {
-    methodKind: "unary";
-    input: typeof AllowPluginSecretRequestSchema;
-    output: typeof AllowPluginSecretResponseSchema;
-  },
-  /**
-   * DenyPluginSecret stops one declaration of a plugin from reading a secret.
-   *
-   * @generated from rpc numen.v1.SettingsService.DenyPluginSecret
-   */
-  denyPluginSecret: {
-    methodKind: "unary";
-    input: typeof DenyPluginSecretRequestSchema;
-    output: typeof DenyPluginSecretResponseSchema;
   },
   /**
    * RetryPlugin forgets the failures of a plugin the host suspends, and starts

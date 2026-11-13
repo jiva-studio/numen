@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.mcp.server",
   "name": "Model Context Protocol Server",
-  "version": "2026.11.13",
+  "version": "2026.11.14",
   "protocol": 1,
   "description": "Connects external AI apps to your open vault",
   "capabilities": [],
@@ -25,7 +25,7 @@
       "key": "port",
       "type": "number",
       "title": "Port",
-      "description": "Local TCP port on 127.0.0.1 for external MCP clients (Streamable HTTP at /mcp)",
+      "description": "Port on 127.0.0.1 MCP clients connect to, at /mcp",
       "default": 3333,
       "min": 1024,
       "max": 65535,
@@ -35,7 +35,8 @@
       "key": "token",
       "type": "string",
       "title": "Token",
-      "description": "Token the host generates on first load; an MCP client sends it in the header Authorization: Bearer <token>, and while it is empty the server rejects every request",
+      "description": "Bearer token MCP clients send; made on first start",
+      "details": "The bearer token MCP clients send with each request. The plugin makes one on its first start. An empty token rejects every request.",
       "generate": "token"
     }
   ]

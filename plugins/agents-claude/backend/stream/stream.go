@@ -1,4 +1,5 @@
-// Package stream reads the output of a Claude Code run and reports it as the steps of an agent.
+// Package stream reads the output of a Claude Code run, in the stream-json format of the program, and
+// hands what the agent says and the tools it calls to a sink.
 package stream
 
 import (
@@ -7,115 +8,88 @@ import (
 	"encoding/json"
 	"io"
 	"strings"
-	"time"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
 )
 
 // serverName is what the vault's tool server calls itself, and the prefix its tools arrive under.
 const serverName = "numen"
 
-// reportChunk is how many characters of a call are written between two reports of it.
-const reportChunk = 200
+// reasonCanceled is the reason of a run whose context ended before its output did.
+const reasonCanceled = "canceled"
 
-// previewInterval is the shortest time between two reports of a change being written.
-const previewInterval = 50 * time.Millisecond
+// Sink receives what a run reports, in the order the program writes it. A call is reported once when
+// it starts, with no arguments when they are still to arrive, and again once its arguments are whole;
+// SendToolInput receives the arguments of a streamed call as far as they have arrived, after each piece.
+// SendThought receives a piece of the reasoning of the model.
+type Sink interface {
+	SendText(text string) error
+	SendThought(text string) error
+	SendToolCall(id, tool, arguments string) error
+	SendToolInput(id, tool, arguments string) error
+	SendToolResult(id string, isFailed bool) error
+}
 
-// Clock gets the current time.
-type Clock interface {
-	Now() time.Time
+// Options are what the parser of a stream needs besides the stream and the sink. Record receives the
+// session the program reports, and ExpectsVault makes the parser report a program that started without
+// the vault.
+type Options struct {
+	Record       func(string)
+	ExpectsVault bool
 }
 
 type streamParser struct {
-	send         func(*agentrun.Response) error
-	words        map[string]toolcall.Declaration
-	clock        Clock
-	last         time.Time
+	sink         Sink
 	record       func(string)
 	isStreaming  bool
 	callID       string
 	tool         string
 	arguments    strings.Builder
-	offset       int
 	reason       string
 	expectsVault bool
 	sendErr      error
 }
 
-func (p *streamParser) emit(resp *agentrun.Response) {
+func (p *streamParser) emit(send func() error) {
 	if p.sendErr == nil {
-		p.sendErr = p.send(resp)
+		p.sendErr = send()
 	}
 }
 
-func (p *streamParser) getReason() string {
-	if p.reason == "" && p.sendErr != nil {
-		return p.sendErr.Error()
-	}
-	return p.reason
-}
-
-// Options are what the parser of a stream needs besides the stream and the way to send. Record is
-// told the session the program reports, and ExpectsVault makes the parser report a program that
-// started without the vault.
-type Options struct {
-	Words        map[string]toolcall.Declaration
-	Record       func(string)
-	Clock        Clock
-	ExpectsVault bool
-}
-
-// Parse reads the output of the program line by line and sends each step it reports. It returns the
-// reason the run failed, or none, once the output ends or ctx is done.
-func Parse(ctx context.Context, r io.Reader, send func(*agentrun.Response) error, opts Options) string {
+// Parse reads the output of the program line by line and hands each report to the sink. It returns the
+// reason the run failed, or none, once the output ends or ctx is done, and the error of the first
+// report the sink refused. A sink that refused a report is handed no other.
+func Parse(ctx context.Context, r io.Reader, sink Sink, opts Options) (string, error) {
 	p := &streamParser{
-		send:         send,
-		words:        opts.Words,
-		clock:        opts.Clock,
-		record:       opts.Record,
-		expectsVault: opts.ExpectsVault,
-		last:         time.Time{},
-		isStreaming:  false,
-		callID:       "",
-		tool:         "",
-		arguments:    strings.Builder{},
-		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial offset is reset to zero on every content_block_start before tool deltas arrive."
-		offset:  0,
-		reason:  "",
-		sendErr: nil,
+		sink: sink, record: opts.Record, expectsVault: opts.ExpectsVault,
+		isStreaming: false, callID: "", tool: "", arguments: strings.Builder{}, reason: "", sendErr: nil,
 	}
 	scanner := bufio.NewReader(r)
 	for {
 		if err := ctx.Err(); err != nil {
-			return "canceled"
+			return reasonCanceled, p.sendErr
 		}
 		line, err := scanner.ReadString('\n')
 		if content := strings.TrimSpace(line); content != "" {
-			p.parseLine(ctx, content)
+			p.parseLine(content)
 		}
 		if err != nil {
-			return p.getReason()
+			return p.reason, p.sendErr
 		}
 	}
 }
 
-func (p *streamParser) parseLine(ctx context.Context, line string) {
+func (p *streamParser) parseLine(line string) {
 	var response event
 	if err := json.Unmarshal([]byte(line), &response); err != nil {
 		return
 	}
-
 	switch response.Type {
 	case "stream_event":
-		p.parseStreamEvent(ctx, response.Event)
+		p.parseStreamEvent(response.Event)
 	case "assistant":
-		p.parseAssistantMessage(ctx, response)
+		p.parseAssistantMessage(response)
 	case "user":
-		if response.hasToolAnswer() {
-			p.emit(&agentrun.Response{
-				Step: &agentrun.ToolFinishedStep{},
-			})
+		for _, answer := range response.getToolAnswers() {
+			p.emit(func() error { return p.sink.SendToolResult(answer.ID, answer.IsError) })
 		}
 	case "system":
 		p.parseSystemEvent(response)
@@ -127,24 +101,18 @@ func (p *streamParser) parseLine(ctx context.Context, line string) {
 }
 
 func (p *streamParser) parseSystemEvent(response event) {
-	switch response.Subtype {
-	case "init":
-		if response.Session != "" && p.record != nil {
-			p.record(response.Session)
-		}
-		if p.expectsVault {
-			p.setReason(getUnreachableReason(response))
-		}
-	case "status":
-		if response.Status == "requesting" {
-			p.emit(&agentrun.Response{
-				Step: &agentrun.ModelStartedStep{},
-			})
-		}
+	if response.Subtype != "init" {
+		return
+	}
+	if response.Session != "" && p.record != nil {
+		p.record(response.Session)
+	}
+	if p.expectsVault {
+		p.setReason(getUnreachableReason(response))
 	}
 }
 
-func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
+func (p *streamParser) parseStreamEvent(ev streamEvent) {
 	switch ev.Type {
 	case "content_block_start":
 		if ev.Block.Type == "tool_use" {
@@ -152,52 +120,50 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 			p.callID = ev.Block.ID
 			p.tool = ev.Block.Name
 			p.arguments.Reset()
-			p.offset = 0
-			p.last = time.Time{}
-			p.emit(p.buildCallStep(p.callID, p.tool, ""))
+			id, tool := p.callID, stripServerPrefix(p.tool)
+			p.emit(func() error { return p.sink.SendToolCall(id, tool, "") })
 		}
 	case "content_block_delta":
-		switch ev.Delta.Type {
-		case "text_delta":
-			if ev.Delta.Text == "" {
-				return
-			}
-			p.isStreaming = true
-			p.emit(&agentrun.Response{
-				Step: &agentrun.TextStep{
-					Text: ev.Delta.Text,
-				},
-			})
-		case "input_json_delta":
-			p.arguments.WriteString(ev.Delta.Partial)
-			if p.arguments.Len()-p.offset >= reportChunk {
-				p.offset = p.arguments.Len()
-				p.emit(p.buildCallStep(p.callID, p.tool, p.arguments.String()))
-			}
-			p.reportEdit()
-		}
+		p.parseDelta(ev.Delta)
 	case "content_block_stop":
 		if p.tool == "" {
 			return
 		}
-		p.emit(p.buildCallStep(p.callID, p.tool, p.arguments.String()))
+		id, tool, arguments := p.callID, stripServerPrefix(p.tool), p.arguments.String()
+		p.emit(func() error { return p.sink.SendToolCall(id, tool, arguments) })
 		p.callID = ""
 		p.tool = ""
 		p.arguments.Reset()
 	}
 }
 
-func (p *streamParser) parseAssistantMessage(_ context.Context, response event) {
+func (p *streamParser) parseDelta(delta streamDelta) {
+	switch {
+	case delta.Type == "text_delta" && delta.Text != "":
+		p.isStreaming = true
+		p.emit(func() error { return p.sink.SendText(delta.Text) })
+	case delta.Type == "thinking_delta" && delta.Thinking != "":
+		p.isStreaming = true
+		p.emit(func() error { return p.sink.SendThought(delta.Thinking) })
+	case delta.Type == "input_json_delta" && p.tool != "":
+		p.arguments.WriteString(delta.Partial)
+		id, tool, arguments := p.callID, stripServerPrefix(p.tool), p.arguments.String()
+		p.emit(func() error { return p.sink.SendToolInput(id, tool, arguments) })
+	}
+}
+
+func (p *streamParser) parseAssistantMessage(response event) {
 	if p.isStreaming {
 		return
 	}
 	var msg struct {
 		Content []struct {
-			Type  string          `json:"type"`
-			Text  string          `json:"text"`
-			ID    string          `json:"id"`
-			Name  string          `json:"name"`
-			Input json.RawMessage `json:"input"`
+			Type     string          `json:"type"`
+			Text     string          `json:"text"`
+			Thinking string          `json:"thinking"`
+			ID       string          `json:"id"`
+			Name     string          `json:"name"`
+			Input    json.RawMessage `json:"input"`
 		} `json:"content"`
 	}
 	if err := json.Unmarshal(response.Message, &msg); err != nil {
@@ -207,14 +173,14 @@ func (p *streamParser) parseAssistantMessage(_ context.Context, response event) 
 		switch block.Type {
 		case "text":
 			if block.Text != "" {
-				p.emit(&agentrun.Response{
-					Step: &agentrun.TextStep{
-						Text: block.Text,
-					},
-				})
+				p.emit(func() error { return p.sink.SendText(block.Text) })
+			}
+		case "thinking":
+			if block.Thinking != "" {
+				p.emit(func() error { return p.sink.SendThought(block.Thinking) })
 			}
 		case "tool_use":
-			p.emit(p.buildCallStep(block.ID, block.Name, string(block.Input)))
+			p.emit(func() error { return p.sink.SendToolCall(block.ID, stripServerPrefix(block.Name), string(block.Input)) })
 		}
 	}
 }
@@ -235,37 +201,4 @@ func stripServerPrefix(tool string) string {
 		}
 	}
 	return tool
-}
-
-func (p *streamParser) buildCallStep(callID, tool, args string) *agentrun.Response {
-	call := toolcall.Describe(p.words, stripServerPrefix(tool), callID, args)
-	return &agentrun.Response{Step: &agentrun.ToolCallStep{ToolCall: call}}
-}
-
-func (p *streamParser) reportEdit() {
-	words := p.words[stripServerPrefix(p.tool)]
-	if words.Text == "" {
-		return
-	}
-	args := p.arguments.String()
-	if !strings.Contains(args, `"`+words.Text+`"`) {
-		return
-	}
-	path, match := toolcall.ReadPartialField(args, "path"), toolcall.ReadPartialField(args, words.Match)
-	if path == "" || match == "" {
-		return
-	}
-	now := p.clock.Now()
-	if now.Sub(p.last) < previewInterval {
-		return
-	}
-	p.last = now
-	p.emit(&agentrun.Response{Step: &agentrun.EditProgressStep{
-		EditProgress: &agentrun.EditProgress{
-			Call:  p.callID,
-			Path:  path,
-			Match: match,
-			Text:  toolcall.ReadPartialField(args, words.Text),
-		},
-	}})
 }

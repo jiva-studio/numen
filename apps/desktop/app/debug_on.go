@@ -34,7 +34,7 @@ func (d *DebugOptions) apply(cfg *container.Config) error {
 	if !d.IsMockML {
 		return nil
 	}
-	if err := os.Setenv("NUMEN_MOCK_ML", "true"); err != nil {
+	if err := os.Setenv("NUMEN_TEST_MOCK_ML", "true"); err != nil {
 		return err
 	}
 	if cfg.PluginHost != nil {

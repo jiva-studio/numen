@@ -16,7 +16,7 @@ interface CommandItemLists {
   lists?: { items?: TextVersion[] }[]
 }
 
-const listVersions = async (request: APIRequestContext, filePath: string): Promise<TextVersion[]> => {
+export const listVersions = async (request: APIRequestContext, filePath: string): Promise<TextVersion[]> => {
   const answer = (await callRPC(request, 'CommandService/ListCommandItems', {
     path: filePath,
     commands: [{ command: DELETE_COMMAND }],

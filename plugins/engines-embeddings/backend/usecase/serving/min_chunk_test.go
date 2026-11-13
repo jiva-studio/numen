@@ -6,7 +6,7 @@ import "testing"
 // value the host sends after.
 func TestGetModelInfoReportsMinChunkLength(t *testing.T) {
 	srv := newEmbeddingServer()
-	info, err := srv.GetModelInfo()
+	info, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -14,8 +14,8 @@ func TestGetModelInfoReportsMinChunkLength(t *testing.T) {
 		t.Errorf("before configure = %d, want 40", info.MinChunkLength)
 	}
 	for value, want := range map[string]int{"0": 0, "250": 250, "9999": 1000} {
-		srv.updateConfig(map[string]string{"provider": "local", "minChunkLength": value}, nil)
-		info, err = srv.GetModelInfo()
+		srv.updateConfig(map[string]string{"source": "local", "minChunkLength": value})
+		info, err = srv.GetModelInfo(t.Context())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -28,13 +28,13 @@ func TestGetModelInfoReportsMinChunkLength(t *testing.T) {
 // Changing the setting does not change the model that makes the vectors.
 func TestMinChunkLengthIsNotPartOfTheModel(t *testing.T) {
 	srv := newEmbeddingServer()
-	srv.updateConfig(map[string]string{"provider": "local", "minChunkLength": "40"}, nil)
-	before, err := srv.GetModelInfo()
+	srv.updateConfig(map[string]string{"source": "local", "minChunkLength": "40"})
+	before, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv.updateConfig(map[string]string{"provider": "local", "minChunkLength": "0"}, nil)
-	after, err := srv.GetModelInfo()
+	srv.updateConfig(map[string]string{"source": "local", "minChunkLength": "0"})
+	after, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

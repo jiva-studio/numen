@@ -35,8 +35,8 @@ func hasToolName(text, name string) bool {
 	return regexp.MustCompile(`\b` + regexp.QuoteMeta(name) + `\b`).MatchString(text)
 }
 
-func isOnReadingServer(tool *tools.ToolInfo) bool {
-	return slices.Contains(tool.Servers, tools.Reading)
+func isReadOnly(tool *tools.ToolInfo) bool {
+	return tool.Effect == tools.ReadOnly
 }
 
 func TestTheVaultToolInstructionsSayHowToCiteAndArrange(t *testing.T) {
@@ -92,42 +92,42 @@ func TestEveryVaultToolWithInstructionsNamesItself(t *testing.T) {
 	}
 }
 
-func TestReadingToolInstructionsNameNoFullServerOnlyTool(t *testing.T) {
+func TestReadOnlyToolInstructionsNameNoWritingTool(t *testing.T) {
 	listing := listVaultTools(t)
-	var fullOnly []string
+	var writing []string
 	for _, tool := range listing.Tools {
-		if !isOnReadingServer(tool) {
-			fullOnly = append(fullOnly, tool.Name)
+		if !isReadOnly(tool) {
+			writing = append(writing, tool.Name)
 		}
 	}
 	for _, name := range []string{
 		"note_rename", "note_remove", "note_move", "link_add", "link_update", "link_remove",
 		"vault_add", "vault_rename", "vault_remove", "vault_open",
 	} {
-		if !slices.Contains(fullOnly, name) {
-			t.Fatalf("%s is not among the tools of the full server only %v", name, fullOnly)
+		if !slices.Contains(writing, name) {
+			t.Fatalf("%s is not among the writing tools %v", name, writing)
 		}
 	}
 
 	for _, tool := range listing.Tools {
-		if !isOnReadingServer(tool) {
+		if !isReadOnly(tool) {
 			continue
 		}
 		for _, sentence := range tool.Instructions {
-			for _, name := range fullOnly {
+			for _, name := range writing {
 				if hasToolName(sentence, name) {
-					t.Errorf("an instruction of %s, a tool of the reading server, names %s: %q", tool.Name, name, sentence)
+					t.Errorf("an instruction of %s, a read-only tool, names %s: %q", tool.Name, name, sentence)
 				}
 			}
 		}
 	}
 }
 
-func TestTheReadingToolsOfTheVaultHaveInstructions(t *testing.T) {
+func TestTheReadOnlyToolsOfTheVaultHaveInstructions(t *testing.T) {
 	listing := listVaultTools(t)
 	var subset tools.Listing
 	for _, tool := range listing.Tools {
-		if isOnReadingServer(tool) {
+		if isReadOnly(tool) {
 			subset.Tools = append(subset.Tools, tool)
 		}
 	}
@@ -135,7 +135,7 @@ func TestTheReadingToolsOfTheVaultHaveInstructions(t *testing.T) {
 	instructions := joinToolInstructions(subset)
 	for _, want := range []string{"library_search", "library_read", "note_search", "`uri`"} {
 		if !strings.Contains(instructions, want) {
-			t.Errorf("the instructions of the reading tools do not contain %q:\n%s", want, instructions)
+			t.Errorf("the instructions of the read-only tools do not contain %q:\n%s", want, instructions)
 		}
 	}
 }

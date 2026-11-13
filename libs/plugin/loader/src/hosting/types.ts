@@ -2,7 +2,6 @@
  * Types and interfaces for the plugin subsystem.
  */
 import type {
-  AgentHost,
   AppInfo,
   BackgroundTaskHost,
   BufferHost,
@@ -15,9 +14,11 @@ import type {
   Caught,
   FilePlacement,
   FileSelectEvent,
+  HealthHost,
   JsonValue,
   MountedView,
   NoticeHost,
+  ProcessHost,
   ReaderRegistration,
   SettingsViewRegistration,
   SlotViewRegistration,
@@ -30,13 +31,17 @@ import type {
   VaultNotes,
   VaultRelations,
   VaultTexts,
+  ConnectionHost,
   VaultsHost,
   WindowHost,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
+import type { Manifest } from '@numen/core-client'
+import type { ContributionMatch } from '../loading'
 import type { AnyTabKind, SourceReader } from './tabKinds'
 import type { DeclaredSlotEntry, SlotCommandLook } from '../slots'
 import type { WhenValues, WhenReader } from '../when'
+import type { HealthReports } from '../pluginHealth'
 import type { Component } from 'vue'
 import type { DeclaredViewRegistration, MountAccess } from '../views'
 
@@ -96,7 +101,14 @@ export type SlotCommandFinder = (
   target: CommandTarget | undefined,
 ) => SlotCommandLook | undefined
 
+/**
+ * target is the target of the window, which the plugins it activates read as theirs. A window that opens
+ * no tab for a plugin leaves out openTab. getSlotEntries reads the slot entries from the manifests of the
+ * plugins whose context the host made, keyed by plugin id. startPlugin settles once the plugin is active
+ * or has failed, and does nothing for a plugin that is off; findPluginsOf matches the manifests read so far.
+ */
 export interface PluginHostDeps {
+  readonly target: string
   readonly getContentTypes?: () => Readonly<Record<string, string>>
   readonly getWindowValues?: () => WhenValues
   readonly whenReader?: WhenReader
@@ -111,11 +123,13 @@ export interface PluginHostDeps {
   readonly hasPluginFrontend?: (pluginId: string) => boolean
   readonly hasPluginBackend?: (pluginId: string) => boolean
   readonly isPluginFailed?: (pluginId: string) => boolean
-  readonly waitForPlugin?: (pluginId: string) => Promise<void>
+  readonly startPlugin?: (pluginId: string) => Promise<void>
+  readonly startPluginsOf?: (match: ContributionMatch) => Promise<void>
+  readonly findPluginsOf?: (match: ContributionMatch) => readonly string[]
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
   readonly reportViewIssue?: (pluginId: string, message: string) => void
   readonly registerKind: (kind: AnyTabKind) => () => void
-  readonly registerExtensionReader: (
+  readonly registerExtensionReader?: (
     extension: string,
     readItem: SourceReader,
     icon?: Component,
@@ -129,7 +143,7 @@ export interface PluginHostDeps {
       options?: FilePlacement | { readonly where?: FilePlacement | undefined },
     ) => void,
   ) => (() => void) | void
-  readonly openTab: (kind: string, at?: string) => Promise<string>
+  readonly openTab?: (kind: string, at?: string) => Promise<string>
   readonly openTabAdjacent?: (kind: string, at?: string) => Promise<string>
   readonly navigateTab?: (kind: string, path: string) => Promise<string>
   readonly closeTab?: (id: string) => void
@@ -150,7 +164,6 @@ export interface PluginHostDeps {
   readonly getNotes?: () => VaultNotes | undefined
   readonly getRelations?: () => VaultRelations | undefined
   readonly getFiles?: () => VaultFiles | undefined
-  readonly getAgent?: () => AgentHost | undefined
   readonly getCommands?: () => CommandsHost | undefined
   readonly getVaults?: () => VaultsHost | undefined
   readonly getWindow?: () => WindowHost | undefined
@@ -160,7 +173,10 @@ export interface PluginHostDeps {
   readonly getTexts?: (pluginId: string) => VaultTexts
   readonly getNotices?: (pluginId: string) => NoticeHost
   readonly getTasks?: (pluginId: string) => TaskHost | undefined
-  readonly getSlotEntries?: () => readonly DeclaredSlotEntry[] | undefined
+  readonly getConnections?: (pluginId: string) => ConnectionHost
+  readonly getSlotEntries?: (
+    manifests: ReadonlyMap<string, Manifest>,
+  ) => readonly DeclaredSlotEntry[] | undefined
   readonly createSlotCommandFinder?: (own: HostCommandReads) => SlotCommandFinder
   readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues
   readonly reportSlotIssue?: (
@@ -169,6 +185,8 @@ export interface PluginHostDeps {
     severity: 'warning' | 'error',
   ) => void
   readonly getBackgroundTasks?: () => BackgroundTaskHost | undefined
+  readonly getProcesses?: () => ProcessHost | undefined
+  readonly health?: HealthReports
   readonly clearNotices?: (pluginId: string) => void
   readonly app?: AppInfo
   readonly openExternal?: (url: string) => Promise<void>
@@ -198,7 +216,7 @@ export interface NoteBuffer {
 }
 
 /** The window a plugin runs in: its application, its target and how it opens web links. */
-export interface ContextInfoHost {
+interface ContextInfoHost {
   readonly app: AppInfo
   readonly target: string
   readonly openExternal: (url: string) => Promise<void>
@@ -282,19 +300,22 @@ export interface ContextVaultHost {
 }
 
 /**
- * The services of the window itself: its workspace, commands, notices, tasks, slots and agent. A
- * service the window lacks answers undefined.
+ * The services of the window itself: its workspace, commands, notices, tasks, connections, slots and the
+ * plugins that run. A service
+ * the window lacks answers undefined.
  */
 export interface ContextWindowHost {
   readonly getWorkspace: () => WorkspaceHost | undefined
-  readonly getAgent: () => AgentHost | undefined
   readonly getCommands: () => CommandsHost | undefined
   readonly isCommandListed: (command: string) => boolean
   readonly getCommandPermission?: (command: string) => string | undefined
   readonly getWindow: () => WindowHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
   readonly getTasks: (pluginId: string) => TaskHost | undefined
+  readonly getConnections: (pluginId: string) => ConnectionHost | undefined
   readonly getBackgroundTasks: () => BackgroundTaskHost | undefined
+  readonly getProcesses: () => ProcessHost | undefined
+  readonly getHealth: (pluginId: string) => HealthHost | undefined
   readonly getSlots: () => SlotHost
 }
 

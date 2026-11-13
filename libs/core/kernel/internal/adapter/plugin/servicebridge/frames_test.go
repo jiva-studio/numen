@@ -16,7 +16,7 @@ func TestTheFramesOfAPluginAreListedWhileItIsEnabled(t *testing.T) {
 			"org.example.reader": {ID: "org.example.reader", Contributes: manifest.Contributes{FrameOrigins: []string{"https://player.example", "https://maps.example"}}},
 		},
 	}
-	proxy := Open(host)
+	proxy := Open(host, host)
 
 	if got := proxy.ListFrameOrigins(); !slices.Equal(got, []string{"https://player.example", "https://maps.example"}) {
 		t.Errorf("the window frames %v", got)

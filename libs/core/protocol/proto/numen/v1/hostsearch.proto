@@ -4,13 +4,14 @@ package numen.v1;
 
 import "numen/v1/embedding.proto";
 import "numen/v1/search.proto";
+import "numen/v1/search_source.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
 
 // HostSearchService is the search index and the search floor of a vault, as a
 // plugin reads and sets them. The host identifies the plugin by its token.
 // GetEmbeddingState, GetIndexStats, EmbedTexts, SampleSimilarities,
-// GetBestSimilarity and SearchPassages need index:read; GetSearchFloor and SetSearchFloor need
+// GetBestSimilarity, FindNearestPassages and SearchPassages need index:read; GetSearchFloor and SetSearchFloor need
 // search:policy.
 //
 // Numen-Vault works the vault of that identity; without it a call works the
@@ -49,6 +50,11 @@ service HostSearchService {
   // nearest a vector under the recipe, and zero when the vault has none.
   rpc GetBestSimilarity(GetBestSimilarityRequest) returns (GetBestSimilarityResponse);
 
+  // FindNearestPassages is the small chunks of the place nearest a vector, nearest first, at or
+  // above the floor: the floor the request names, else the effective floor of the vault under the
+  // recipe. A search source answers a query with it. The vault is the one of the place.
+  rpc FindNearestPassages(FindNearestPassagesRequest) returns (FindNearestPassagesResponse);
+
   // SearchPassages returns passages matching the query, from the index of every
   // source and every text version: by keywords, and by embedding when the
   // installation has an embedding model. It is the search the window runs, with
@@ -73,7 +79,7 @@ enum HostSearchErrorCode {
   // The host is showing no vault.
   HOST_SEARCH_ERROR_CODE_NO_VAULT = 1;
 
-  // The installation has no embedding model.
+  // The installation has no search source.
   HOST_SEARCH_ERROR_CODE_NO_MODEL = 2;
 
   // The recipe is not the one of the model in use.
@@ -223,6 +229,30 @@ message GetBestSimilarityRequest {
 message GetBestSimilarityResponse {
   HostSearchErrorCode error = 1;
   double similarity = 2;
+}
+
+message FindNearestPassagesRequest {
+  SearchPlace place = 1;
+  repeated float vector = 2;
+
+  // The most chunks to answer.
+  int32 limit = 3;
+
+  // The kinds of source to search, "note" or "file". Empty means every kind.
+  repeated string kinds = 4;
+
+  // Limits the search to the sources whose path starts with it, relative to the vault.
+  string path_prefix = 5;
+
+  // The floor in cosine similarity, zero where the effective floor of the vault applies.
+  double floor = 6;
+}
+
+message FindNearestPassagesResponse {
+  HostSearchErrorCode error = 1;
+
+  // Nearest first. The score is the cosine similarity.
+  repeated ChunkMatch matches = 2;
 }
 
 message GetSearchFloorRequest {

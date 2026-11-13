@@ -25,11 +25,12 @@ type Environment interface {
 	GetVariables() []string
 }
 
-// ToolConfig keeps the file that names the vault's tool server for a run.
+// ToolConfig keeps the file that names the vault's tool server and the person's own MCP servers for a
+// run.
 type ToolConfig interface {
-	// Write stores the file readable by this user alone and returns its path, or none when the
-	// address or the token is empty.
-	Write(url, token string) (string, error)
+	// Write stores the file readable by this user alone and returns its path and the names of the
+	// person's servers in it, or no path when the address or the token is empty.
+	Write(url, token string) (string, []string, error)
 	// Remove deletes the file; a path of none or of a file that is gone is not an error.
 	Remove(path string) error
 }

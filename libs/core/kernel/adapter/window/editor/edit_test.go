@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
-	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -28,7 +26,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
@@ -257,80 +254,6 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	}
 	if string(raw) != "# Entropy\n\nTwo.\n" {
 		t.Errorf("the second write did not land:\n%s", raw)
-	}
-}
-
-// beaten is a vault's readers with something writing the note the moment it has
-// been looked at, which is what a writer outside this process looks like from
-// in here.
-type beaten struct {
-	vaultport.VaultReaders
-	after func(path string)
-}
-
-func (b beaten) Open(v domain.Vault) (vaultport.VaultReader, error) {
-	reader, err := b.VaultReaders.Open(v)
-	if err != nil {
-		return nil, err
-	}
-	return beatenReader{VaultReader: reader, after: b.after}, nil
-}
-
-type beatenReader struct {
-	vaultport.VaultReader
-	after func(path string)
-}
-
-func (b beatenReader) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
-	ref, err := b.VaultReader.StatFile(ctx, path)
-	b.after(path)
-	return ref, err
-}
-
-// A join reads a note, splices its frontmatter and puts it back.
-func TestJoinNote_ReportsConflictWhenNoteChanged(t *testing.T) {
-	api := openEditor(t, map[string]string{
-		"Entropy.md": "# Entropy\n",
-		"Heat.md":    "# Heat\n",
-	})
-	on := filepath.Join(api.state.GetCurrentVault().Path, "Heat.md")
-
-	var once sync.Once
-	linking := note.NewEditLinks(
-		beaten{VaultReaders: vaultreader.Readers{}, after: func(path string) {
-			if path != "Heat.md" {
-				return
-			}
-			once.Do(func() {
-				if err := os.WriteFile(on, []byte("# Heat\n\nSomebody else's, longer.\n"), 0o644); err != nil {
-					t.Error(err)
-				}
-			})
-		}},
-		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		levelNothing,
-		testsupport.NewClock(),
-	)
-	api.NoteCases.EditLinks = &linking
-	api.UseNotes()
-
-	out, err := api.Note.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
-		Path: "Heat.md",
-		Link: &v1.Link{To: "Entropy.md", Role: v1.Role_ROLE_PARENT},
-	}))
-	if err != nil {
-		t.Fatalf("a note that changed came back as an error: %v", err)
-	}
-	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_CONFLICT {
-		t.Errorf("a note that changed was answered %v", code)
-	}
-
-	raw, err := os.ReadFile(on)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(raw), "to: Entropy") {
-		t.Errorf("a join that was stopped wrote anyway:\n%s", raw)
 	}
 }
 

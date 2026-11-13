@@ -15,7 +15,8 @@ import (
 )
 
 // exposed is a use case that takes a collaborator at construction and leaves
-// the field holding it open to be written afterwards.
+// the field holding it open to be written afterwards. A field of a predeclared type, such as the name of
+// a level, holds data and no collaborator.
 type exposed struct {
 	in     string
 	fields []string
@@ -60,6 +61,9 @@ func getExposedDependencies(file *ast.File) []exposed {
 		}
 		var open []string
 		for _, one := range target.Fields.List {
+			if isValueType(one.Type) {
+				continue
+			}
 			for _, name := range one.Names {
 				if name.IsExported() && slices.Contains(acquiredVal, strings.ToLower(name.Name)) {
 					open = append(open, name.Name)
@@ -72,6 +76,11 @@ func getExposedDependencies(file *ast.File) []exposed {
 		return true
 	})
 	return found
+}
+
+func isValueType(expr ast.Expr) bool {
+	ident, is := expr.(*ast.Ident)
+	return is && slices.Contains([]string{"string", "bool", "int", "int32", "int64", "uint", "float64", "rune", "byte"}, ident.Name)
 }
 
 func getUseCases(t *testing.T) []string {

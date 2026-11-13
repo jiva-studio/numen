@@ -18,7 +18,6 @@ import type {
   JsonValue,
   VaultChangeEvent,
 } from '../types'
-import type { AgentHost } from '../agent'
 import type { BufferHost } from '../buffers'
 import type { NoticeHost } from '../notices'
 import type { VaultTexts } from '../texts'
@@ -31,11 +30,15 @@ import { createMockNoticeHost } from './mockNotices'
 import {
   createMockBackgroundTaskHost,
   createMockCommandsHost,
+  createMockHealthHost,
+  createMockProcessHost,
   createMockSlotHost,
   createMockVaultsHost,
   createMockWindowHost,
   type MockBackgroundTaskHost,
   type MockCommandsHost,
+  type MockHealthHost,
+  type MockProcessHost,
   type MockSlotHost,
   type MockVaultsHost,
   type MockWindowHost,
@@ -63,6 +66,7 @@ export interface MockPluginVault extends PluginVault {
 
 export interface MockPluginWork extends PluginWork {
   readonly backgroundTasks: MockBackgroundTaskHost
+  readonly processes: MockProcessHost
 }
 
 // MockContextInit is what a test gives a mock context: the services it hands the plugin and the settings it starts with.
@@ -75,7 +79,6 @@ export interface MockContextInit {
   readonly notes?: VaultNotes
   readonly relations?: VaultRelations
   readonly files?: VaultFiles
-  readonly agent?: AgentHost
   readonly buffers?: BufferHost
   readonly texts?: VaultTexts
   readonly notices?: NoticeHost
@@ -89,6 +92,7 @@ export interface MockPluginContext extends PluginContext {
   readonly ui: MockPluginUi
   readonly vault: MockPluginVault
   readonly work: MockPluginWork
+  readonly health: MockHealthHost
   getRegisteredReaders(): ReaderRegistration[]
   getRegisteredSettingsViews(): SettingsViewRegistration[]
   getRegisteredSlotViews(): SlotViewRegistration[]
@@ -296,9 +300,10 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
       mountView,
     },
     work: {
-      ...pickDefinedParts<Pick<PluginWork, 'agent'>>({ agent: init.agent }),
       backgroundTasks: createMockBackgroundTaskHost(),
+      processes: createMockProcessHost(),
     },
+    health: createMockHealthHost(),
 
     setSetting(key: string, value: JsonValue): void {
       settings.set(key, value)

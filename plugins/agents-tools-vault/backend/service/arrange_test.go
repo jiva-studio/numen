@@ -500,27 +500,24 @@ func getArrangeToolNames() []string {
 	return []string{"note_list", "note_title_list", "note_resolve", "vault_list", "vault_problem_list"}
 }
 
-func TestNoteListGroupIsOnReadingAndFullServers(t *testing.T) {
+func TestNoteListGroupIsReadOnly(t *testing.T) {
 	_, registry := newSkyVault(t)
 	infos, err := registry.ListTools(t.Context())
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
-	servers := map[string][]tools.Server{}
+	effects := map[string]tools.Effect{}
 	for _, info := range infos.Tools {
-		servers[info.GetName()] = info.GetServers()
+		effects[info.GetName()] = info.GetEffect()
 	}
 	for _, name := range getArrangeToolNames() {
-		got, ok := servers[name]
+		got, ok := effects[name]
 		if !ok {
 			t.Errorf("the tool %s is not listed", name)
 			continue
 		}
-		if !slices.Contains(got, tools.Reading) {
-			t.Errorf("the tool %s is not on the Reading server: %v", name, got)
-		}
-		if !slices.Contains(got, tools.Full) {
-			t.Errorf("the tool %s is not on the Full server: %v", name, got)
+		if got != tools.ReadOnly {
+			t.Errorf("the tool %s has the effect %v, want read-only", name, got)
 		}
 	}
 }

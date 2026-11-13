@@ -10,9 +10,18 @@ import (
 	"testing"
 )
 
+func findProgram(t *testing.T, name string) string {
+	t.Helper()
+	path, err := exec.LookPath(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func launchChild(t *testing.T) *Child {
 	t.Helper()
-	launched, err := Launcher{}.Launch(t.Context(), "echo", []string{"/bin/cat"})
+	launched, err := Launcher{}.Launch(t.Context(), "echo", []string{findProgram(t, "cat")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +79,7 @@ func TestAMissingProgramFailsToStart(t *testing.T) {
 func TestAFolderThatCannotBeCreatedFailsTheLaunch(t *testing.T) {
 	t.Setenv("TMPDIR", filepath.Join(t.TempDir(), "nonexistent-parent"))
 
-	_, err := Launcher{}.Launch(t.Context(), "echo", []string{"/bin/cat"})
+	_, err := Launcher{}.Launch(t.Context(), "echo", []string{findProgram(t, "cat")})
 
 	if err == nil || !strings.Contains(err.Error(), "create the session folder") || errors.Unwrap(err) == nil {
 		t.Errorf("launch with an invalid TMPDIR = %v", err)
@@ -78,7 +87,7 @@ func TestAFolderThatCannotBeCreatedFailsTheLaunch(t *testing.T) {
 }
 
 func TestAnInputThatIsAlreadySetFailsToStart(t *testing.T) {
-	child := &Child{cmd: exec.CommandContext(t.Context(), "/bin/true"), program: "stdin-prog"}
+	child := &Child{cmd: exec.CommandContext(t.Context(), findProgram(t, "true")), program: "stdin-prog"}
 	child.cmd.Stdin = strings.NewReader("")
 
 	if err := child.start(); err == nil || !strings.Contains(err.Error(), "open the input of stdin-prog") || errors.Unwrap(err) == nil {
@@ -87,7 +96,7 @@ func TestAnInputThatIsAlreadySetFailsToStart(t *testing.T) {
 }
 
 func TestAnOutputThatIsAlreadySetFailsToStart(t *testing.T) {
-	child := &Child{cmd: exec.CommandContext(t.Context(), "/bin/true"), program: "stdout-prog"}
+	child := &Child{cmd: exec.CommandContext(t.Context(), findProgram(t, "true")), program: "stdout-prog"}
 	child.cmd.Stdout = io.Discard
 
 	if err := child.start(); err == nil || !strings.Contains(err.Error(), "open the output of stdout-prog") || errors.Unwrap(err) == nil {

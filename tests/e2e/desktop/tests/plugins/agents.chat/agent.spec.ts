@@ -42,7 +42,7 @@ test.describe('Agent Plugin and Interface', () => {
       await expect(page.getByText(/The tide table is written\./)).toBeVisible({ timeout: 20_000 })
       expect(await readVaultFile(request, TOOL_NOTE_PATH)).toBe(TOOL_NOTE_TEXT)
       const texts = await page.evaluate(() => [...(window.toolCallTexts ?? [])])
-      expect(texts).toContain('Write Note')
+      expect(texts).toContain(`Write Note${TOOL_NOTE_PATH}`)
     } finally {
       await destroyNote(request, TOOL_NOTE_PATH)
     }

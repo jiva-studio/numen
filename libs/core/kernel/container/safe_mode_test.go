@@ -20,7 +20,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		"id": "md.numen.readers.pdf",
 		"name": "PDF",
 		"version": "1.0.0",
-		"capabilities": ["embedding"],
+		"capabilities": ["search.source"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read"],
 		"services": ["md.numen.readers.pdf.SampleService"], "backend": {"entrypoint": "bin/doc"}
@@ -40,7 +40,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		if embedderReady(searchOf(cfg)) {
 			t.Fatal("expected EmbedderReady to report false in safe mode")
 		}
-		indexing, asking, closer, err := searchEmbedders(searchOf(cfg), ctx, nil)
+		indexing, asking, closer, err := searchSources(searchOf(cfg), ctx)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedders in safe mode, got %v", err)
 		}
@@ -51,7 +51,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		embedder, closer, err := searchEmbedder(searchOf(cfg), ctx)
+		embedder, closer, err := searchSource(searchOf(cfg), ctx)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedder in safe mode, got %v", err)
 		}
@@ -74,9 +74,9 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	cfg := NewConfig(Config{})
-	_, err := plugins(cfg).RunningHost.Runtime.ResolveCapability(bridge.CapabilityEmbedding)
+	_, err := plugins(cfg).RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
 	var missing *plugindomain.UnavailableError
-	if !errors.As(err, &missing) || missing.Reason != plugindomain.NotInstalled || missing.Capability != bridge.CapabilityEmbedding {
+	if !errors.As(err, &missing) || missing.Reason != plugindomain.NotInstalled || missing.Capability != bridge.CapabilitySearchSource {
 		t.Fatalf("resolvePlugin = %v, want the embedding plugin not installed", err)
 	}
 	setPluginVaultPath(plugins(cfg), "vault")
@@ -84,7 +84,7 @@ func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 		t.Fatalf("StopPlugins = %v, want nothing to stop", err)
 	}
 	safe := NewConfig(Config{SafeMode: true})
-	_, err = plugins(safe).RunningHost.Runtime.ResolveCapability(bridge.CapabilityEmbedding)
+	_, err = plugins(safe).RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
 	if !errors.Is(err, errSafeMode) || !errors.As(err, &missing) || missing.Reason != plugindomain.Disabled {
 		t.Fatalf("resolvePlugin in safe mode = %v, want the embedding plugin disabled by safe mode", err)
 	}
@@ -97,7 +97,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if err := os.MkdirAll(pDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	manifest := `{"id": "md.numen.engines.ocr", "name": "OCR", "version": "1.0.0", "capabilities": ["embedding"],
+	manifest := `{"id": "md.numen.engines.ocr", "name": "OCR", "version": "1.0.0", "capabilities": ["search.source"],
 		"targets": ["desktop.editor"], "backend": {"entrypoint": "bin/engines.ocr"}}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)

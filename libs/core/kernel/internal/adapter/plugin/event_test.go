@@ -94,7 +94,7 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for id, manifest := range manifests {
 		manifest.ID = id
-		manifest.Backend = catalogmanifest.Backend{Entrypoint: "bin/plugin"}
+		manifest.Backend.Entrypoint = "bin/plugin"
 		setPlugin(host, id, catalogmanifest.Discovered{Manifest: manifest})
 	}
 	var mu sync.Mutex
@@ -125,50 +125,23 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 	return host
 }
 
-func TestAFileEventReachesOnlyThePluginsDeclaringItsExtension(t *testing.T) {
-	pdf, notes := &eventRecorder{}, &eventRecorder{}
-	host := newEventHost(t,
-		map[string]catalogmanifest.Manifest{
-			"md.test.pdf":   {ActivationEvents: []string{"onFile:pdf"}},
-			"md.test.notes": {ActivationEvents: []string{"onFile:md"}},
-		},
-		map[string]int{"md.test.pdf": servePlugin(t, pdf), "md.test.notes": servePlugin(t, notes)},
-	)
-
-	activated, err := host.Events.TriggerEvent(t.Context(), "onFile:report.pdf")
-	if err != nil {
-		t.Fatalf("TriggerEvent failed: %v", err)
-	}
-
-	if !slices.Equal(activated, []string{"md.test.pdf"}) {
-		t.Fatalf("activated %v, want [md.test.pdf]", activated)
-	}
-	if got := pdf.getEvents(); !slices.Equal(got, []string{"onFile:report.pdf"}) {
-		t.Fatalf("the subscribed plugin received %v, want [onFile:report.pdf]", got)
-	}
-	if got := notes.getEvents(); len(got) != 0 {
-		t.Fatalf("the plugin not subscribed received %v, want nothing", got)
-	}
-}
+// readyEvent is the event the host emits when the search source has indexed a vault.
+const readyEvent = catalogmanifest.ActivationEventSearchSourceReady + ":vault-1"
 
 func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
-	startup, vectors, pdf, onDemand := &eventRecorder{}, &eventRecorder{}, &eventRecorder{}, &eventRecorder{}
+	vectors, onDemand := &eventRecorder{}, &eventRecorder{}
 	host := newEventHost(t,
 		map[string]catalogmanifest.Manifest{
-			"md.test.startup":  {ActivationEvents: []string{catalogmanifest.ActivationEventStartup}},
-			"md.test.vectors":  {ActivationEvents: []string{catalogmanifest.ActivationEventVectorsReady}},
-			"md.test.pdf":      {ActivationEvents: []string{"onFile:pdf"}},
+			"md.test.vectors":  {ActivationEvents: []string{catalogmanifest.ActivationEventSearchSourceReady}},
 			"md.test.ondemand": {},
 		},
 		map[string]int{
-			"md.test.startup":  servePlugin(t, startup),
 			"md.test.vectors":  servePlugin(t, vectors),
-			"md.test.pdf":      servePlugin(t, pdf),
 			"md.test.ondemand": servePlugin(t, onDemand),
 		},
 	)
 
-	activated, err := host.Events.TriggerEvent(t.Context(), "onFile:notes.txt")
+	activated, err := host.Events.TriggerEvent(t.Context(), "onCommand:run")
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
@@ -176,20 +149,12 @@ func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
 		t.Fatalf("activated %v on undeclared event, want none", activated)
 	}
 
-	activated, err = host.Events.TriggerEvent(t.Context(), catalogmanifest.ActivationEventStartup)
-	if err != nil {
-		t.Fatalf("TriggerEvent failed: %v", err)
-	}
-	if !slices.Equal(activated, []string{"md.test.startup"}) {
-		t.Fatalf("activated %v on startup, want [md.test.startup]", activated)
-	}
-
-	activated, err = host.Events.TriggerEvent(t.Context(), protocol.GetVectorsReadyEvent("vault-1"))
+	activated, err = host.Events.TriggerEvent(t.Context(), protocol.GetSearchSourceReadyEvent("vault-1"))
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
 	if !slices.Equal(activated, []string{"md.test.vectors"}) {
-		t.Fatalf("activated %v on vectors ready, want [md.test.vectors]", activated)
+		t.Fatalf("activated %v on search source ready, want [md.test.vectors]", activated)
 	}
 
 	if got := onDemand.getEvents(); len(got) != 0 {
@@ -197,7 +162,7 @@ func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
 	}
 }
 
-func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
+func TestToolsSearchRelevanceRunsOnSearchSourceReadyAndEvictsWhenIdle(t *testing.T) {
 	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "plugins", "tools-search-relevance", "manifest.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -213,7 +178,7 @@ func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
 		map[string]int{parsed.ID: servePlugin(t, recorder)},
 	)
 
-	for _, event := range []string{catalogmanifest.ActivationEventStartup, "onFile:md"} {
+	for _, event := range []string{"onCommand:run", catalogmanifest.ActivationEventSearchSourceReady + ":"} {
 		activated, triggerErr := host.Events.TriggerEvent(t.Context(), event)
 		if triggerErr != nil {
 			t.Fatalf("TriggerEvent(%q) failed: %v", event, triggerErr)
@@ -223,10 +188,9 @@ func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
 		}
 	}
 	if status, ok := host.Registry.GetPluginStatus(parsed.ID); !ok || status.IsActive {
-		t.Fatalf("status after startup and file listing = %+v (ok=%v), want inactive", status, ok)
+		t.Fatalf("status after the undeclared events = %+v (ok=%v), want inactive", status, ok)
 	}
 
-	readyEvent := protocol.GetVectorsReadyEvent("vault-1")
 	activated, err := host.Events.TriggerEvent(t.Context(), readyEvent)
 	if err != nil {
 		t.Fatalf("TriggerEvent(%q) failed: %v", readyEvent, err)
@@ -235,7 +199,7 @@ func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
 		t.Fatalf("activated %v, want [%s]", activated, parsed.ID)
 	}
 	if status, ok := host.Registry.GetPluginStatus(parsed.ID); !ok || !status.IsActive {
-		t.Fatalf("status after vectors ready = %+v (ok=%v), want active", status, ok)
+		t.Fatalf("status after search source ready = %+v (ok=%v), want active", status, ok)
 	}
 	if got := recorder.getEvents(); !slices.Equal(got, []string{readyEvent}) {
 		t.Fatalf("received events %v, want [%s]", got, readyEvent)
@@ -252,29 +216,29 @@ func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
 }
 
 func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
-	pdf := &eventRecorder{}
+	vectors := &eventRecorder{}
 	host := newEventHost(t,
-		map[string]catalogmanifest.Manifest{"md.test.pdf": {ActivationEvents: []string{"onFile:pdf"}}},
-		map[string]int{"md.test.pdf": servePlugin(t, pdf)},
+		map[string]catalogmanifest.Manifest{"md.test.vectors": {ActivationEvents: []string{catalogmanifest.ActivationEventSearchSourceReady}}},
+		map[string]int{"md.test.vectors": servePlugin(t, vectors)},
 	)
 
-	host.Events.EmitEvent("onFile:report.pdf")
+	host.Events.EmitEvent(readyEvent)
 	if err := host.Events.GetEventBus().Flush(t.Context()); err != nil {
 		t.Fatalf("Flush failed: %v", err)
 	}
 
-	if got := pdf.getEvents(); !slices.Equal(got, []string{"onFile:report.pdf"}) {
-		t.Fatalf("the plugin received %v, want [onFile:report.pdf]", got)
+	if got := vectors.getEvents(); !slices.Equal(got, []string{readyEvent}) {
+		t.Fatalf("the plugin received %v, want [%s]", got, readyEvent)
 	}
 }
 
 func TestAPluginThatConsumesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 	host := newEventHost(t,
-		map[string]catalogmanifest.Manifest{"md.test.silent": {ActivationEvents: []string{catalogmanifest.ActivationEventStartup}}},
+		map[string]catalogmanifest.Manifest{"md.test.silent": {ActivationEvents: []string{catalogmanifest.ActivationEventSearchSourceReady}}},
 		map[string]int{"md.test.silent": servePlugin(t, nil)},
 	)
 
-	activated, err := host.Events.TriggerEvent(t.Context(), catalogmanifest.ActivationEventStartup)
+	activated, err := host.Events.TriggerEvent(t.Context(), readyEvent)
 	if err != nil {
 		t.Fatalf("TriggerEvent() = %v, want no error for a plugin that takes no events", err)
 	}
@@ -288,30 +252,30 @@ func TestTriggerEvent_PluginErrorDoesNotBlockOtherPlugins(t *testing.T) {
 	working := &eventRecorder{}
 	host := newEventHost(t,
 		map[string]catalogmanifest.Manifest{
-			"a.refusing": {ActivationEvents: []string{catalogmanifest.ActivationEventStartup}},
-			"b.working":  {ActivationEvents: []string{catalogmanifest.ActivationEventStartup}},
+			"a.refusing": {ActivationEvents: []string{catalogmanifest.ActivationEventSearchSourceReady}},
+			"b.working":  {ActivationEvents: []string{catalogmanifest.ActivationEventSearchSourceReady}},
 		},
 		map[string]int{"a.refusing": servePlugin(t, refusing), "b.working": servePlugin(t, working)},
 	)
 
-	_, err := host.Events.TriggerEvent(t.Context(), catalogmanifest.ActivationEventStartup)
+	_, err := host.Events.TriggerEvent(t.Context(), readyEvent)
 
-	if !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "deliver onStartup to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
+	if !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "deliver "+readyEvent+" to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
 		t.Fatalf("TriggerEvent() = %v, want the rejection naming the event and the plugin", err)
 	}
-	if got := working.getEvents(); !slices.Equal(got, []string{catalogmanifest.ActivationEventStartup}) {
-		t.Fatalf("the working plugin received %v, want [onStartup]", got)
+	if got := working.getEvents(); !slices.Equal(got, []string{readyEvent}) {
+		t.Fatalf("the working plugin received %v, want [%s]", got, readyEvent)
 	}
 }
 
 func TestAPluginWhoseEventCallFailsIsReportedApartFromAError(t *testing.T) {
 	failing := &eventRecorder{failure: connect.NewError(connect.CodeInternal, errors.New("the handler panicked"))}
 	host := newEventHost(t,
-		map[string]catalogmanifest.Manifest{"md.test.failing": {ActivationEvents: []string{catalogmanifest.ActivationEventStartup}}},
+		map[string]catalogmanifest.Manifest{"md.test.failing": {ActivationEvents: []string{catalogmanifest.ActivationEventSearchSourceReady}}},
 		map[string]int{"md.test.failing": servePlugin(t, failing)},
 	)
 
-	_, err := host.Events.TriggerEvent(t.Context(), catalogmanifest.ActivationEventStartup)
+	_, err := host.Events.TriggerEvent(t.Context(), readyEvent)
 
 	if err == nil || errors.Is(err, transport.ErrEventRefused) || connect.CodeOf(err) != connect.CodeInternal {
 		t.Fatalf("TriggerEvent() = %v, want the failed call reported as %v and not as an error", err, connect.CodeInternal)

@@ -9,5 +9,3 @@ export const HOST_MODULES = {
   '@numen/plugin-sdk': '/sdk/plugin-sdk.js',
   '@numen/ui': '/sdk/ui.js',
 } as const
-
-export type HostModuleName = keyof typeof HOST_MODULES

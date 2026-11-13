@@ -123,35 +123,6 @@ func (h *Prose) CreateNote(
 	return connect.NewResponse(&v1.CreateNoteResponse{Error: &reason}), nil
 }
 
-// WriteLink writes one relationship into one note. What is already written
-// there is carried across, and the note at the other end is left alone.
-func (h *Links) WriteLink(
-	ctx context.Context, r *connect.Request[v1.WriteLinkRequest],
-) (*connect.Response[v1.WriteLinkResponse], error) {
-	showing, err := getShownVault(h.vault)
-	if err != nil {
-		return nil, err
-	}
-	link, err := newNamedLink(r.Msg.GetLink())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-	if err := h.writeLink.Execute(ctx, showing, r.Msg.GetPath(), link); err != nil {
-		switch {
-		case errors.Is(err, note.ErrInvalidLink):
-			return nil, connect.NewError(connect.CodeInvalidArgument, err)
-		case errors.Is(err, windowdomain.ErrClosing):
-			return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-		}
-		reason, ok := wire.GetErrorCode(err)
-		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return connect.NewResponse(&v1.WriteLinkResponse{Error: &reason}), nil
-	}
-	return connect.NewResponse(&v1.WriteLinkResponse{}), nil
-}
-
 func (h *Outline) GetOpeningNote(
 	ctx context.Context, _ *connect.Request[v1.GetOpeningNoteRequest],
 ) (*connect.Response[v1.GetOpeningNoteResponse], error) {

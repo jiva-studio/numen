@@ -15,14 +15,14 @@ func TestNotifySignalsDeliversUntilStopped(t *testing.T) {
 	signal.Notify(guardSig, syscall.SIGUSR1)
 	defer signal.Stop(guardSig)
 
-	sNoSig := New(WithSignals())
+	sNoSig := New(withSignals())
 	sigCh, stop := sNoSig.notifySignals()
 	if sigCh == nil {
 		t.Fatal("expected non-nil sigCh when signals is empty")
 	}
 	stop()
 
-	sWithSig := New(WithSignals(syscall.SIGUSR1))
+	sWithSig := New(withSignals(syscall.SIGUSR1))
 	sigCh2, stop2 := sWithSig.notifySignals()
 	if sigCh2 == nil {
 		t.Fatal("expected non-nil sigCh when signals is non-empty")

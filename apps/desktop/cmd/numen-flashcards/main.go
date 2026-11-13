@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connectioncall"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
@@ -74,7 +75,7 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 
 	api := makeWindowAPI(cfg)
-	started, err := container.OpenFlashcards(cfg, ctx, api, os.Stderr, appName, notifyUser)
+	started, err := container.OpenShell(cfg, ctx, platform.TargetFlashcards, api, container.ShellLog{Out: os.Stderr, Label: appName, Notify: notifyUser})
 	if err != nil {
 		return err
 	}
@@ -103,11 +104,10 @@ func run(cfg container.Config, debug debugOptions) error {
 
 func makeWindowAPI(cfg container.Config) *shell.API {
 	return &shell.API{
-		Agent:                container.GetSettingsAgentHandler(cfg),
-		Window:               shell.NewWindow(platform.TargetFlashcards, nil),
 		GetFrontendPluginIDs: func() []string { return container.GetFrontendPluginIDs(cfg) },
 		GetPluginDir:         func(id string) (string, bool) { return container.GetPluginDir(cfg, id) },
 		PluginServices:       container.GetPluginServices(cfg),
+		ConnectionCalls:      connectioncall.NewService(container.GetConnectionCalls(cfg), container.GetConnectionRows(cfg)),
 	}
 }
 

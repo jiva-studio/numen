@@ -54,8 +54,5 @@ type PluginConfigPush interface {
 	NotifyPluginConfig(ctx context.Context, pluginID string) error
 }
 
-// SecretRefresh configures the running plugins with the secrets as they stand now.
-type SecretRefresh func(ctx context.Context) error
-
 // ProfileResolver returns the performance profile the machine runs a profile setting as.
 type ProfileResolver func(profile string) string

@@ -48,14 +48,11 @@ type PluginSettingDeclarer interface {
 	GetPluginSettingDeclarations(pluginID string) ([]manifest.Setting, bool)
 }
 
-// SecretConfigurator hands the secrets to the plugins that declare them.
-type SecretConfigurator interface {
-	SetKeyStore(store KeyStore)
-	SetSecretSource(source plugin.SecretSource)
-	// Refresh configures the running plugins whose list of secrets differs from the one they were
-	// last given, and the plugins named in forced.
+// ConfigRefresher sends the configuration again to the plugins that were not given it yet.
+type ConfigRefresher interface {
+	// Refresh configures the running plugins that were not given their configuration yet, and the
+	// plugins named in forced.
 	Refresh(ctx context.Context, forced ...string) error
-	ListDeclarations() []plugin.DeclarationKey
 }
 
 // SettingsPush gives the plugins the settings the user keeps for them.
@@ -82,9 +79,8 @@ type PluginEventEmitter interface {
 	EmitEvent(event string)
 }
 
-// PluginFailures reports the plugins whose start failed.
+// PluginFailures tells the plugins whose start failed.
 type PluginFailures interface {
-	SetOnPluginFailed(fn func(plugin.Failure))
 	SetOnFailureCleared(fn func(pluginID string))
 	// IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended.
 	IsPluginSuspended(pluginID string) bool

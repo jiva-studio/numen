@@ -7,8 +7,6 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
-
 	ort "github.com/getcharzp/onnxruntime_purego"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
@@ -26,7 +24,7 @@ func openCachedTranscriber(tb testing.TB) *Transcriber {
 	if err != nil {
 		tb.Skipf("parakeet models not available: %v", err)
 	}
-	cleanup.CloseAfter(tb, delta)
+	tb.Cleanup(func() { closeAndCheck(tb, delta) })
 	return delta
 }
 

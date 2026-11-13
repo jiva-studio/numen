@@ -14,8 +14,9 @@ import {
   type CommandTarget,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
-import { formatCommandId } from '../commandId'
+import { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from '../commandId'
 import { getTargetValues, type WhenValues, createWhenReader, type WhenReader } from '../when'
+import { WINDOW_SLOTS } from './windowSlots'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
 export interface DeclaredSlotEntry {
@@ -53,6 +54,7 @@ export interface SlotRegistryDeps {
   readonly reportIssue?: (pluginId: string, message: string, severity: 'warning' | 'error') => void
   readonly getWhenValues?: (target: CommandTarget | undefined) => WhenValues
   readonly whenReader?: WhenReader
+  readonly requestPlugin?: (pluginId: string) => void
 }
 
 const KNOWN_SLOTS: ReadonlySet<string> = new Set(Object.values(SLOT))
@@ -99,6 +101,9 @@ function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
   }
   return placed.filter((one) => one.item.kind !== 'command' || first.get(getRunKey(one)) === one)
 }
+
+const isWindowPlace = (slot: string): boolean =>
+  WINDOW_SLOTS.some((one) => slot === one || slot.startsWith(`${one}.`))
 
 const getFullCommand = (entry: DeclaredSlotEntry, command: string): string =>
   command.includes(':') ? command : formatCommandId(entry.pluginId, command)
@@ -255,6 +260,28 @@ function toSubmenuItem(
   }
 }
 
+function drawCommand(
+  deps: SlotRegistryDeps,
+  place: { readonly entry: DeclaredSlotEntry; readonly command: string },
+  target: CommandTarget | undefined,
+): SlotItem | undefined {
+  const { entry } = place
+  const command = getFullCommand(entry, place.command)
+  // A menu is drawn as it opens, and lists the items of a command only once its plugin started.
+  const owner = getCommandOwner(command)
+  if (!isWindowPlace(entry.slot) && owner !== APP_COMMAND_OWNER) deps.requestPlugin?.(owner)
+  return toCommandItem(entry, command, {
+    look: deps.findCommand(command, target),
+    key: deps.getKeyFor?.(command, entry.values),
+  })
+}
+
+function drawView(deps: SlotRegistryDeps, entry: DeclaredSlotEntry, view: string) {
+  const component = deps.findView(entry.pluginId, view)
+  if (component === undefined) deps.requestPlugin?.(entry.pluginId)
+  return toViewItem(entry, view, component)
+}
+
 function createReport(sink: SlotRegistryDeps['reportIssue']): Report {
   const reported = new Set<string>()
   return (pluginId, message, severity) => {
@@ -290,14 +317,8 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
     target: CommandTarget | undefined,
   ): SlotItem | undefined => {
     if (!isDrawnOver(entry, target)) return undefined
-    if (entry.command) {
-      const command = getFullCommand(entry, entry.command)
-      return toCommandItem(entry, command, {
-        look: deps.findCommand(command, target),
-        key: deps.getKeyFor?.(command, entry.values),
-      })
-    }
-    if (entry.view) return toViewItem(entry, entry.view, deps.findView(entry.pluginId, entry.view))
+    if (entry.command) return drawCommand(deps, { entry, command: entry.command }, target)
+    if (entry.view) return drawView(deps, entry, entry.view)
     const { owners, inCycle } = declared.value
     const submenu = entry.submenu
     if (!submenu || owners.get(submenu) !== entry || inCycle.has(submenu)) return undefined

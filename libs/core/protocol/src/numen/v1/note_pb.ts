@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/note.proto.
  */
 export const file_numen_v1_note: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9ub3RlLnByb3RvEghudW1lbi52MSI3CgROb3RlEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSEgoKaWRlbnRpZmllchgDIAEoCSIXChVHZXRPcGVuaW5nTm90ZVJlcXVlc3QiRAoWR2V0T3BlbmluZ05vdGVSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIicKF0xpc3RSZWxhdGVkTm90ZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiuAEKGExpc3RSZWxhdGVkTm90ZXNSZXNwb25zZRIdCgVmb2N1cxgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJgoHcmVsYXRlZBgCIAMoCzIVLm51bWVuLnYxLlJlbGF0ZWROb3RlEhIKCmZvY3VzX3R5cGUYAyABKAkSKQoLY29ubmVjdGlvbnMYBCADKAsyFC5udW1lbi52MS5Db25uZWN0aW9uEhYKDmZvY3VzX3RhYl9raW5kGAUgASgJIp0BCgtSZWxhdGVkTm90ZRIcCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZRIkCghyZWxhdGlvbhgCIAEoDjISLm51bWVuLnYxLlJlbGF0aW9uEgwKBHR5cGUYBiABKAkSEAoIdGFiX2tpbmQYByABKAkSKgoJZGlyZWN0aW9uGAggASgOMhcubnVtZW4udjEuTGlua0RpcmVjdGlvbiJVChdSZXNvbHZlQWRkcmVzc2VzUmVxdWVzdBIMCgRmcm9tGAEgASgJEg8KB3dyaXR0ZW4YAiADKAkSDAoEdGV4dBgDIAEoCRINCgV2YXVsdBgEIAEoCSJqChhSZXNvbHZlQWRkcmVzc2VzUmVzcG9uc2USKwoIcmVzb2x2ZWQYASADKAsyGS5udW1lbi52MS5SZXNvbHZlZEFkZHJlc3MSIQoFZm91bmQYAiADKAsyEi5udW1lbi52MS5UZXh0TGluayI2CghUZXh0TGluaxILCgNyYXcYASABKAkSDwoHYWRkcmVzcxgCIAEoCRIMCgR0ZXh0GAMgASgJImkKD1Jlc29sdmVkQWRkcmVzcxIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFdmF1bHQYAyABKAkSEgoKaXNfY3Jvc3NlZBgEIAEoCBIUCgxpc19hbWJpZ3VvdXMYBSABKAgiJAoTTGlzdEhlYWRpbmdzUmVxdWVzdBINCgVwYXRocxgBIAMoCSJAChRMaXN0SGVhZGluZ3NSZXNwb25zZRIoCghoZWFkaW5ncxgBIAMoCzIWLm51bWVuLnYxLk5vdGVIZWFkaW5ncyJBCgxOb3RlSGVhZGluZ3MSDAoEcGF0aBgBIAEoCRIjCghoZWFkaW5ncxgCIAMoCzIRLm51bWVuLnYxLkhlYWRpbmciNAoHSGVhZGluZxIMCgR0ZXh0GAEgASgJEgwKBGxpbmUYAiABKAUSDQoFbGV2ZWwYAyABKAUiHwoPUmVhZE5vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkifwoQUmVhZE5vdGVSZXNwb25zZRIMCgRib2R5GAEgASgJEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQESIwoCYXQYAyABKAsyEi5udW1lbi52MS5GaWxlU3RhdEgBiAEBQggKBl9lcnJvckIFCgNfYXQiPQoMUmVhZEJhc2VsaW5lEg0KBXByb3NlGAEgASgJEh4KAmF0GAIgASgLMhIubnVtZW4udjEuRmlsZVN0YXQiagoQV3JpdGVOb3RlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBGJvZHkYAiABKAkSLQoIYmFzZWxpbmUYAyABKAsyFi5udW1lbi52MS5SZWFkQmFzZWxpbmVIAIgBAUILCglfYmFzZWxpbmUijQEKEVdyaXRlTm90ZVJlc3BvbnNlEicKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQESIwoCYXQYAiABKAsyEi5udW1lbi52MS5GaWxlU3RhdEgBiAEBEhkKEWlzX2luZGV4X291dGRhdGVkGAMgASgIQggKBl9lcnJvckIFCgNfYXQifQoETGluaxIKCgJ0bxgBIAEoCRIcCgRyb2xlGAIgASgOMg4ubnVtZW4udjEuUm9sZRINCgVsYWJlbBgDIAEoCRIMCgR0eXBlGAQgASgJEgwKBG5vdGUYBSABKAkSIAoGbWFya2VyGAYgASgOMhAubnVtZW4udjEuTWFya2VyIk8KEUNyZWF0ZU5vdGVSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEgwKBHBhdGgYAiABKAkSHQoFbGlua3MYAyADKAsyDi5udW1lbi52MS5MaW5rIosBChJDcmVhdGVOb3RlUmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEhkKEWlzX2luZGV4X291dGRhdGVkGAMgASgIEhkKEWlzX25hbWVfZXhoYXVzdGVkGAQgASgIQggKBl9lcnJvciI+ChBXcml0ZUxpbmtSZXF1ZXN0EgwKBHBhdGgYASABKAkSHAoEbGluaxgCIAEoCzIOLm51bWVuLnYxLkxpbmsiRgoRV3JpdGVMaW5rUmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBAUIICgZfZXJyb3IiewoOQ29ubmVjdGlvblNpZGUSHAoEcm9sZRgBIAEoDjIOLm51bWVuLnYxLlJvbGUSDAoEdHlwZRgCIAEoCRIMCgRub3RlGAMgASgJEg0KBWxhYmVsGAQgASgJEiAKBm1hcmtlchgFIAEoDjIQLm51bWVuLnYxLk1hcmtlciLPAQoKQ29ubmVjdGlvbhINCgVmaXJzdBgBIAEoCRIOCgZzZWNvbmQYAiABKAkSHAoEcm9sZRgFIAEoDjIOLm51bWVuLnYxLlJvbGUSMQoKZmlyc3Rfc2lkZRgDIAEoCzIYLm51bWVuLnYxLkNvbm5lY3Rpb25TaWRlSACIAQESMgoLc2Vjb25kX3NpZGUYBCABKAsyGC5udW1lbi52MS5Db25uZWN0aW9uU2lkZUgBiAEBQg0KC19maXJzdF9zaWRlQg4KDF9zZWNvbmRfc2lkZSJDChRHZXRDb25uZWN0aW9uUmVxdWVzdBINCgVmaXJzdBgBIAEoCRIOCgZzZWNvbmQYAiABKAkSDAoEdHlwZRgDIAEoCSJ0ChVHZXRDb25uZWN0aW9uUmVzcG9uc2USKAoKY29ubmVjdGlvbhgBIAEoCzIULm51bWVuLnYxLkNvbm5lY3Rpb24SJwoFZXJyb3IYAiABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBAUIICgZfZXJyb3IiQQoVU2F2ZUNvbm5lY3Rpb25SZXF1ZXN0EigKCmNvbm5lY3Rpb24YASABKAsyFC5udW1lbi52MS5Db25uZWN0aW9uInEKFlNhdmVDb25uZWN0aW9uUmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBARISCgppc19pbnZhbGlkGAIgASgIEhAKCGlzX2N5Y2xlGAMgASgIQggKBl9lcnJvciI7ChFSZW1vdmVTaWRlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgoKAnRvGAIgASgJEgwKBHR5cGUYAyABKAkiRwoSUmVtb3ZlU2lkZVJlc3BvbnNlEicKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQFCCAoGX2Vycm9yIkYKF1JlbW92ZUNvbm5lY3Rpb25SZXF1ZXN0Eg0KBWZpcnN0GAEgASgJEg4KBnNlY29uZBgCIAEoCRIMCgR0eXBlGAMgASgJIk0KGFJlbW92ZUNvbm5lY3Rpb25SZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvciJUChBKb2luTm90ZXNSZXF1ZXN0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSJgoEc2lkZRgDIAEoCzIYLm51bWVuLnYxLkNvbm5lY3Rpb25TaWRlImwKEUpvaW5Ob3Rlc1Jlc3BvbnNlEicKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQESEgoKaXNfaW52YWxpZBgCIAEoCBIQCghpc19jeWNsZRgDIAEoCEIICgZfZXJyb3IihQEKGENyZWF0ZVJlbGF0ZWROb3RlUmVxdWVzdBIMCgRmcm9tGAEgASgJEhwKBHJvbGUYAiABKA4yDi5udW1lbi52MS5Sb2xlEg0KBXRpdGxlGAMgASgJEgwKBHR5cGUYBCABKAkSIAoGbWFya2VyGAUgASgOMhAubnVtZW4udjEuTWFya2VyIpIBChlDcmVhdGVSZWxhdGVkTm90ZVJlc3BvbnNlEgwKBHBhdGgYASABKAkSJwoFZXJyb3IYAiABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBARIZChFpc19pbmRleF9vdXRkYXRlZBgDIAEoCBIZChFpc19uYW1lX2V4aGF1c3RlZBgEIAEoCEIICgZfZXJyb3IiJAoUTGlzdEJhY2tsaW5rc1JlcXVlc3QSDAoEcGF0aBgBIAEoCSK4AQoIQmFja2xpbmsSHAoEZnJvbRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSHAoEcm9sZRgCIAEoDjIOLm51bWVuLnYxLlJvbGUSIwoLc291cmNlX3JvbGUYAyABKA4yDi5udW1lbi52MS5Sb2xlEgwKBHR5cGUYBCABKAkSDAoEbm90ZRgFIAEoCRINCgVsYWJlbBgGIAEoCRIgCgZtYXJrZXIYByABKA4yEC5udW1lbi52MS5NYXJrZXIiPgoVTGlzdEJhY2tsaW5rc1Jlc3BvbnNlEiUKCWJhY2tsaW5rcxgBIAMoCzISLm51bWVuLnYxLkJhY2tsaW5rIjAKEVJlbmFtZU5vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAki3gEKElJlbmFtZU5vdGVSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEikKC25hbWVfc291cmNlGAMgASgOMhQubnVtZW4udjEuTmFtZVNvdXJjZRIoCgVtb3ZlZBgEIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARInCgVlcnJvchgFIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgBiAEBEhkKEWlzX2luZGV4X291dGRhdGVkGAYgASgIQggKBl9tb3ZlZEIICgZfZXJyb3IiEwoRV2F0Y2hFZGl0c1JlcXVlc3QicgoSV2F0Y2hFZGl0c1Jlc3BvbnNlEg4KBmNoYW5nZRgBIAEoCRIMCgRwYXRoGAIgASgJEh4KBXJhbmdlGAMgASgLMg8ubnVtZW4udjEuUmFuZ2USDAoEdGV4dBgEIAEoCRIQCghpc19maW5hbBgFIAEoCCqOAQoIUmVsYXRpb24SGAoUUkVMQVRJT05fVU5TUEVDSUZJRUQQABITCg9SRUxBVElPTl9QQVJFTlQQARISCg5SRUxBVElPTl9DSElMRBACEhEKDVJFTEFUSU9OX0pVTVAQAxIUChBSRUxBVElPTl9TSUJMSU5HEAQSFgoSUkVMQVRJT05fUkVGRVJFTkNFEAUqggEKDUxpbmtEaXJlY3Rpb24SHgoaTElOS19ESVJFQ1RJT05fVU5TUEVDSUZJRUQQABIbChdMSU5LX0RJUkVDVElPTl9PVVRHT0lORxABEhsKF0xJTktfRElSRUNUSU9OX0lOQ09NSU5HEAISFwoTTElOS19ESVJFQ1RJT05fQk9USBADKm8KBFJvbGUSFAoQUk9MRV9VTlNQRUNJRklFRBAAEg8KC1JPTEVfUEFSRU5UEAESDgoKUk9MRV9DSElMRBACEg0KCVJPTEVfSlVNUBADEgwKCFJPTEVfUkVGEAQSEwoPUk9MRV9BVFRBQ0hNRU5UEAUqMgoGTWFya2VyEhYKEk1BUktFUl9VTlNQRUNJRklFRBAAEhAKDE1BUktFUl9BUlJPVxABKmAKCk5hbWVTb3VyY2USGwoXTkFNRV9TT1VSQ0VfVU5TUEVDSUZJRUQQABIbChdOQU1FX1NPVVJDRV9GUk9OVE1BVFRFUhABEhgKFE5BTUVfU09VUkNFX0ZJTEVOQU1FEAIy1AoKC05vdGVTZXJ2aWNlElMKDkdldE9wZW5pbmdOb3RlEh8ubnVtZW4udjEuR2V0T3BlbmluZ05vdGVSZXF1ZXN0GiAubnVtZW4udjEuR2V0T3BlbmluZ05vdGVSZXNwb25zZRJZChBMaXN0UmVsYXRlZE5vdGVzEiEubnVtZW4udjEuTGlzdFJlbGF0ZWROb3Rlc1JlcXVlc3QaIi5udW1lbi52MS5MaXN0UmVsYXRlZE5vdGVzUmVzcG9uc2USWQoQUmVzb2x2ZUFkZHJlc3NlcxIhLm51bWVuLnYxLlJlc29sdmVBZGRyZXNzZXNSZXF1ZXN0GiIubnVtZW4udjEuUmVzb2x2ZUFkZHJlc3Nlc1Jlc3BvbnNlEk0KDExpc3RIZWFkaW5ncxIdLm51bWVuLnYxLkxpc3RIZWFkaW5nc1JlcXVlc3QaHi5udW1lbi52MS5MaXN0SGVhZGluZ3NSZXNwb25zZRJBCghSZWFkTm90ZRIZLm51bWVuLnYxLlJlYWROb3RlUmVxdWVzdBoaLm51bWVuLnYxLlJlYWROb3RlUmVzcG9uc2USRAoJV3JpdGVOb3RlEhoubnVtZW4udjEuV3JpdGVOb3RlUmVxdWVzdBobLm51bWVuLnYxLldyaXRlTm90ZVJlc3BvbnNlEkcKCkNyZWF0ZU5vdGUSGy5udW1lbi52MS5DcmVhdGVOb3RlUmVxdWVzdBocLm51bWVuLnYxLkNyZWF0ZU5vdGVSZXNwb25zZRJECglXcml0ZUxpbmsSGi5udW1lbi52MS5Xcml0ZUxpbmtSZXF1ZXN0GhsubnVtZW4udjEuV3JpdGVMaW5rUmVzcG9uc2USUAoNR2V0Q29ubmVjdGlvbhIeLm51bWVuLnYxLkdldENvbm5lY3Rpb25SZXF1ZXN0Gh8ubnVtZW4udjEuR2V0Q29ubmVjdGlvblJlc3BvbnNlElMKDlNhdmVDb25uZWN0aW9uEh8ubnVtZW4udjEuU2F2ZUNvbm5lY3Rpb25SZXF1ZXN0GiAubnVtZW4udjEuU2F2ZUNvbm5lY3Rpb25SZXNwb25zZRJHCgpSZW1vdmVTaWRlEhsubnVtZW4udjEuUmVtb3ZlU2lkZVJlcXVlc3QaHC5udW1lbi52MS5SZW1vdmVTaWRlUmVzcG9uc2USWQoQUmVtb3ZlQ29ubmVjdGlvbhIhLm51bWVuLnYxLlJlbW92ZUNvbm5lY3Rpb25SZXF1ZXN0GiIubnVtZW4udjEuUmVtb3ZlQ29ubmVjdGlvblJlc3BvbnNlEkQKCUpvaW5Ob3RlcxIaLm51bWVuLnYxLkpvaW5Ob3Rlc1JlcXVlc3QaGy5udW1lbi52MS5Kb2luTm90ZXNSZXNwb25zZRJcChFDcmVhdGVSZWxhdGVkTm90ZRIiLm51bWVuLnYxLkNyZWF0ZVJlbGF0ZWROb3RlUmVxdWVzdBojLm51bWVuLnYxLkNyZWF0ZVJlbGF0ZWROb3RlUmVzcG9uc2USUAoNTGlzdEJhY2tsaW5rcxIeLm51bWVuLnYxLkxpc3RCYWNrbGlua3NSZXF1ZXN0Gh8ubnVtZW4udjEuTGlzdEJhY2tsaW5rc1Jlc3BvbnNlEkcKClJlbmFtZU5vdGUSGy5udW1lbi52MS5SZW5hbWVOb3RlUmVxdWVzdBocLm51bWVuLnYxLlJlbmFtZU5vdGVSZXNwb25zZRJJCgpXYXRjaEVkaXRzEhsubnVtZW4udjEuV2F0Y2hFZGl0c1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaEVkaXRzUmVzcG9uc2UwAUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file, file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9ub3RlLnByb3RvEghudW1lbi52MSI3CgROb3RlEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSEgoKaWRlbnRpZmllchgDIAEoCSIXChVHZXRPcGVuaW5nTm90ZVJlcXVlc3QiRAoWR2V0T3BlbmluZ05vdGVSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIicKF0xpc3RSZWxhdGVkTm90ZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiuAEKGExpc3RSZWxhdGVkTm90ZXNSZXNwb25zZRIdCgVmb2N1cxgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJgoHcmVsYXRlZBgCIAMoCzIVLm51bWVuLnYxLlJlbGF0ZWROb3RlEhIKCmZvY3VzX3R5cGUYAyABKAkSKQoLY29ubmVjdGlvbnMYBCADKAsyFC5udW1lbi52MS5Db25uZWN0aW9uEhYKDmZvY3VzX3RhYl9raW5kGAUgASgJIp0BCgtSZWxhdGVkTm90ZRIcCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZRIkCghyZWxhdGlvbhgCIAEoDjISLm51bWVuLnYxLlJlbGF0aW9uEgwKBHR5cGUYBiABKAkSEAoIdGFiX2tpbmQYByABKAkSKgoJZGlyZWN0aW9uGAggASgOMhcubnVtZW4udjEuTGlua0RpcmVjdGlvbiJVChdSZXNvbHZlQWRkcmVzc2VzUmVxdWVzdBIMCgRmcm9tGAEgASgJEg8KB3dyaXR0ZW4YAiADKAkSDAoEdGV4dBgDIAEoCRINCgV2YXVsdBgEIAEoCSJqChhSZXNvbHZlQWRkcmVzc2VzUmVzcG9uc2USKwoIcmVzb2x2ZWQYASADKAsyGS5udW1lbi52MS5SZXNvbHZlZEFkZHJlc3MSIQoFZm91bmQYAiADKAsyEi5udW1lbi52MS5UZXh0TGluayI2CghUZXh0TGluaxILCgNyYXcYASABKAkSDwoHYWRkcmVzcxgCIAEoCRIMCgR0ZXh0GAMgASgJImkKD1Jlc29sdmVkQWRkcmVzcxIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFdmF1bHQYAyABKAkSEgoKaXNfY3Jvc3NlZBgEIAEoCBIUCgxpc19hbWJpZ3VvdXMYBSABKAgiJAoTTGlzdEhlYWRpbmdzUmVxdWVzdBINCgVwYXRocxgBIAMoCSJAChRMaXN0SGVhZGluZ3NSZXNwb25zZRIoCghoZWFkaW5ncxgBIAMoCzIWLm51bWVuLnYxLk5vdGVIZWFkaW5ncyJBCgxOb3RlSGVhZGluZ3MSDAoEcGF0aBgBIAEoCRIjCghoZWFkaW5ncxgCIAMoCzIRLm51bWVuLnYxLkhlYWRpbmciNAoHSGVhZGluZxIMCgR0ZXh0GAEgASgJEgwKBGxpbmUYAiABKAUSDQoFbGV2ZWwYAyABKAUiHwoPUmVhZE5vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkifwoQUmVhZE5vdGVSZXNwb25zZRIMCgRib2R5GAEgASgJEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQESIwoCYXQYAyABKAsyEi5udW1lbi52MS5GaWxlU3RhdEgBiAEBQggKBl9lcnJvckIFCgNfYXQiPQoMUmVhZEJhc2VsaW5lEg0KBXByb3NlGAEgASgJEh4KAmF0GAIgASgLMhIubnVtZW4udjEuRmlsZVN0YXQiagoQV3JpdGVOb3RlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBGJvZHkYAiABKAkSLQoIYmFzZWxpbmUYAyABKAsyFi5udW1lbi52MS5SZWFkQmFzZWxpbmVIAIgBAUILCglfYmFzZWxpbmUijQEKEVdyaXRlTm90ZVJlc3BvbnNlEicKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQESIwoCYXQYAiABKAsyEi5udW1lbi52MS5GaWxlU3RhdEgBiAEBEhkKEWlzX2luZGV4X291dGRhdGVkGAMgASgIQggKBl9lcnJvckIFCgNfYXQifQoETGluaxIKCgJ0bxgBIAEoCRIcCgRyb2xlGAIgASgOMg4ubnVtZW4udjEuUm9sZRINCgVsYWJlbBgDIAEoCRIMCgR0eXBlGAQgASgJEgwKBG5vdGUYBSABKAkSIAoGbWFya2VyGAYgASgOMhAubnVtZW4udjEuTWFya2VyIk8KEUNyZWF0ZU5vdGVSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEgwKBHBhdGgYAiABKAkSHQoFbGlua3MYAyADKAsyDi5udW1lbi52MS5MaW5rIosBChJDcmVhdGVOb3RlUmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEhkKEWlzX2luZGV4X291dGRhdGVkGAMgASgIEhkKEWlzX25hbWVfZXhoYXVzdGVkGAQgASgIQggKBl9lcnJvciJ7Cg5Db25uZWN0aW9uU2lkZRIcCgRyb2xlGAEgASgOMg4ubnVtZW4udjEuUm9sZRIMCgR0eXBlGAIgASgJEgwKBG5vdGUYAyABKAkSDQoFbGFiZWwYBCABKAkSIAoGbWFya2VyGAUgASgOMhAubnVtZW4udjEuTWFya2VyIs8BCgpDb25uZWN0aW9uEg0KBWZpcnN0GAEgASgJEg4KBnNlY29uZBgCIAEoCRIcCgRyb2xlGAUgASgOMg4ubnVtZW4udjEuUm9sZRIxCgpmaXJzdF9zaWRlGAMgASgLMhgubnVtZW4udjEuQ29ubmVjdGlvblNpZGVIAIgBARIyCgtzZWNvbmRfc2lkZRgEIAEoCzIYLm51bWVuLnYxLkNvbm5lY3Rpb25TaWRlSAGIAQFCDQoLX2ZpcnN0X3NpZGVCDgoMX3NlY29uZF9zaWRlIkMKFEdldENvbm5lY3Rpb25SZXF1ZXN0Eg0KBWZpcnN0GAEgASgJEg4KBnNlY29uZBgCIAEoCRIMCgR0eXBlGAMgASgJInQKFUdldENvbm5lY3Rpb25SZXNwb25zZRIoCgpjb25uZWN0aW9uGAEgASgLMhQubnVtZW4udjEuQ29ubmVjdGlvbhInCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvciJBChVTYXZlQ29ubmVjdGlvblJlcXVlc3QSKAoKY29ubmVjdGlvbhgBIAEoCzIULm51bWVuLnYxLkNvbm5lY3Rpb24icQoWU2F2ZUNvbm5lY3Rpb25SZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEhIKCmlzX2ludmFsaWQYAiABKAgSEAoIaXNfY3ljbGUYAyABKAhCCAoGX2Vycm9yIjsKEVJlbW92ZVNpZGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSCgoCdG8YAiABKAkSDAoEdHlwZRgDIAEoCSJHChJSZW1vdmVTaWRlUmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBAUIICgZfZXJyb3IiRgoXUmVtb3ZlQ29ubmVjdGlvblJlcXVlc3QSDQoFZmlyc3QYASABKAkSDgoGc2Vjb25kGAIgASgJEgwKBHR5cGUYAyABKAkiTQoYUmVtb3ZlQ29ubmVjdGlvblJlc3BvbnNlEicKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQFCCAoGX2Vycm9yIlQKEEpvaW5Ob3Rlc1JlcXVlc3QSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCRImCgRzaWRlGAMgASgLMhgubnVtZW4udjEuQ29ubmVjdGlvblNpZGUibAoRSm9pbk5vdGVzUmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBARISCgppc19pbnZhbGlkGAIgASgIEhAKCGlzX2N5Y2xlGAMgASgIQggKBl9lcnJvciKFAQoYQ3JlYXRlUmVsYXRlZE5vdGVSZXF1ZXN0EgwKBGZyb20YASABKAkSHAoEcm9sZRgCIAEoDjIOLm51bWVuLnYxLlJvbGUSDQoFdGl0bGUYAyABKAkSDAoEdHlwZRgEIAEoCRIgCgZtYXJrZXIYBSABKA4yEC5udW1lbi52MS5NYXJrZXIikgEKGUNyZWF0ZVJlbGF0ZWROb3RlUmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEhkKEWlzX2luZGV4X291dGRhdGVkGAMgASgIEhkKEWlzX25hbWVfZXhoYXVzdGVkGAQgASgIQggKBl9lcnJvciIkChRMaXN0QmFja2xpbmtzUmVxdWVzdBIMCgRwYXRoGAEgASgJIrgBCghCYWNrbGluaxIcCgRmcm9tGAEgASgLMg4ubnVtZW4udjEuTm90ZRIcCgRyb2xlGAIgASgOMg4ubnVtZW4udjEuUm9sZRIjCgtzb3VyY2Vfcm9sZRgDIAEoDjIOLm51bWVuLnYxLlJvbGUSDAoEdHlwZRgEIAEoCRIMCgRub3RlGAUgASgJEg0KBWxhYmVsGAYgASgJEiAKBm1hcmtlchgHIAEoDjIQLm51bWVuLnYxLk1hcmtlciI+ChVMaXN0QmFja2xpbmtzUmVzcG9uc2USJQoJYmFja2xpbmtzGAEgAygLMhIubnVtZW4udjEuQmFja2xpbmsiMAoRUmVuYW1lTm90ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCSLeAQoSUmVuYW1lTm90ZVJlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSKQoLbmFtZV9zb3VyY2UYAyABKA4yFC5udW1lbi52MS5OYW1lU291cmNlEigKBW1vdmVkGAQgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEicKBWVycm9yGAUgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSAGIAQESGQoRaXNfaW5kZXhfb3V0ZGF0ZWQYBiABKAhCCAoGX21vdmVkQggKBl9lcnJvciITChFXYXRjaEVkaXRzUmVxdWVzdCJyChJXYXRjaEVkaXRzUmVzcG9uc2USDgoGY2hhbmdlGAEgASgJEgwKBHBhdGgYAiABKAkSHgoFcmFuZ2UYAyABKAsyDy5udW1lbi52MS5SYW5nZRIMCgR0ZXh0GAQgASgJEhAKCGlzX2ZpbmFsGAUgASgIKo4BCghSZWxhdGlvbhIYChRSRUxBVElPTl9VTlNQRUNJRklFRBAAEhMKD1JFTEFUSU9OX1BBUkVOVBABEhIKDlJFTEFUSU9OX0NISUxEEAISEQoNUkVMQVRJT05fSlVNUBADEhQKEFJFTEFUSU9OX1NJQkxJTkcQBBIWChJSRUxBVElPTl9SRUZFUkVOQ0UQBSqCAQoNTGlua0RpcmVjdGlvbhIeChpMSU5LX0RJUkVDVElPTl9VTlNQRUNJRklFRBAAEhsKF0xJTktfRElSRUNUSU9OX09VVEdPSU5HEAESGwoXTElOS19ESVJFQ1RJT05fSU5DT01JTkcQAhIXChNMSU5LX0RJUkVDVElPTl9CT1RIEAMqbwoEUm9sZRIUChBST0xFX1VOU1BFQ0lGSUVEEAASDwoLUk9MRV9QQVJFTlQQARIOCgpST0xFX0NISUxEEAISDQoJUk9MRV9KVU1QEAMSDAoIUk9MRV9SRUYQBBITCg9ST0xFX0FUVEFDSE1FTlQQBSoyCgZNYXJrZXISFgoSTUFSS0VSX1VOU1BFQ0lGSUVEEAASEAoMTUFSS0VSX0FSUk9XEAEqYAoKTmFtZVNvdXJjZRIbChdOQU1FX1NPVVJDRV9VTlNQRUNJRklFRBAAEhsKF05BTUVfU09VUkNFX0ZST05UTUFUVEVSEAESGAoUTkFNRV9TT1VSQ0VfRklMRU5BTUUQAjKOCgoLTm90ZVNlcnZpY2USUwoOR2V0T3BlbmluZ05vdGUSHy5udW1lbi52MS5HZXRPcGVuaW5nTm90ZVJlcXVlc3QaIC5udW1lbi52MS5HZXRPcGVuaW5nTm90ZVJlc3BvbnNlElkKEExpc3RSZWxhdGVkTm90ZXMSIS5udW1lbi52MS5MaXN0UmVsYXRlZE5vdGVzUmVxdWVzdBoiLm51bWVuLnYxLkxpc3RSZWxhdGVkTm90ZXNSZXNwb25zZRJZChBSZXNvbHZlQWRkcmVzc2VzEiEubnVtZW4udjEuUmVzb2x2ZUFkZHJlc3Nlc1JlcXVlc3QaIi5udW1lbi52MS5SZXNvbHZlQWRkcmVzc2VzUmVzcG9uc2USTQoMTGlzdEhlYWRpbmdzEh0ubnVtZW4udjEuTGlzdEhlYWRpbmdzUmVxdWVzdBoeLm51bWVuLnYxLkxpc3RIZWFkaW5nc1Jlc3BvbnNlEkEKCFJlYWROb3RlEhkubnVtZW4udjEuUmVhZE5vdGVSZXF1ZXN0GhoubnVtZW4udjEuUmVhZE5vdGVSZXNwb25zZRJECglXcml0ZU5vdGUSGi5udW1lbi52MS5Xcml0ZU5vdGVSZXF1ZXN0GhsubnVtZW4udjEuV3JpdGVOb3RlUmVzcG9uc2USRwoKQ3JlYXRlTm90ZRIbLm51bWVuLnYxLkNyZWF0ZU5vdGVSZXF1ZXN0GhwubnVtZW4udjEuQ3JlYXRlTm90ZVJlc3BvbnNlElAKDUdldENvbm5lY3Rpb24SHi5udW1lbi52MS5HZXRDb25uZWN0aW9uUmVxdWVzdBofLm51bWVuLnYxLkdldENvbm5lY3Rpb25SZXNwb25zZRJTCg5TYXZlQ29ubmVjdGlvbhIfLm51bWVuLnYxLlNhdmVDb25uZWN0aW9uUmVxdWVzdBogLm51bWVuLnYxLlNhdmVDb25uZWN0aW9uUmVzcG9uc2USRwoKUmVtb3ZlU2lkZRIbLm51bWVuLnYxLlJlbW92ZVNpZGVSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlU2lkZVJlc3BvbnNlElkKEFJlbW92ZUNvbm5lY3Rpb24SIS5udW1lbi52MS5SZW1vdmVDb25uZWN0aW9uUmVxdWVzdBoiLm51bWVuLnYxLlJlbW92ZUNvbm5lY3Rpb25SZXNwb25zZRJECglKb2luTm90ZXMSGi5udW1lbi52MS5Kb2luTm90ZXNSZXF1ZXN0GhsubnVtZW4udjEuSm9pbk5vdGVzUmVzcG9uc2USXAoRQ3JlYXRlUmVsYXRlZE5vdGUSIi5udW1lbi52MS5DcmVhdGVSZWxhdGVkTm90ZVJlcXVlc3QaIy5udW1lbi52MS5DcmVhdGVSZWxhdGVkTm90ZVJlc3BvbnNlElAKDUxpc3RCYWNrbGlua3MSHi5udW1lbi52MS5MaXN0QmFja2xpbmtzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RCYWNrbGlua3NSZXNwb25zZRJHCgpSZW5hbWVOb3RlEhsubnVtZW4udjEuUmVuYW1lTm90ZVJlcXVlc3QaHC5udW1lbi52MS5SZW5hbWVOb3RlUmVzcG9uc2USSQoKV2F0Y2hFZGl0cxIbLm51bWVuLnYxLldhdGNoRWRpdHNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hFZGl0c1Jlc3BvbnNlMAFCRlpEZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL2NvcmUvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_file, file_numen_v1_shared]);
 
 /**
  * Note is a note as something else refers to it.
@@ -737,51 +737,6 @@ export const CreateNoteResponseSchema: GenMessage<CreateNoteResponse> = /*@__PUR
   messageDesc(file_numen_v1_note, 21);
 
 /**
- * @generated from message numen.v1.WriteLinkRequest
- */
-export type WriteLinkRequest = Message<"numen.v1.WriteLinkRequest"> & {
-  /**
-   * The note the link is written in.
-   *
-   * @generated from field: string path = 1;
-   */
-  path: string;
-
-  /**
-   * @generated from field: numen.v1.Link link = 2;
-   */
-  link?: Link | undefined;
-};
-
-/**
- * Describes the message numen.v1.WriteLinkRequest.
- * Use `create(WriteLinkRequestSchema)` to create a new message.
- */
-export const WriteLinkRequestSchema: GenMessage<WriteLinkRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 22);
-
-/**
- * @generated from message numen.v1.WriteLinkResponse
- */
-export type WriteLinkResponse = Message<"numen.v1.WriteLinkResponse"> & {
-  /**
-   * Set when nothing was written, with the reason. A note that changed between
-   * being read and being written returns ERROR_CODE_CONFLICT, and the caller
-   * reads it again before retrying.
-   *
-   * @generated from field: optional numen.v1.ErrorCode error = 1;
-   */
-  error?: ErrorCode | undefined;
-};
-
-/**
- * Describes the message numen.v1.WriteLinkResponse.
- * Use `create(WriteLinkResponseSchema)` to create a new message.
- */
-export const WriteLinkResponseSchema: GenMessage<WriteLinkResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 23);
-
-/**
  * ConnectionSide is the record one note writes about the other in a connection.
  *
  * @generated from message numen.v1.ConnectionSide
@@ -818,7 +773,7 @@ export type ConnectionSide = Message<"numen.v1.ConnectionSide"> & {
  * Use `create(ConnectionSideSchema)` to create a new message.
  */
 export const ConnectionSideSchema: GenMessage<ConnectionSide> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 24);
+  messageDesc(file_numen_v1_note, 22);
 
 /**
  * Connection is the relationship between two notes as a whole. Each note writes
@@ -868,7 +823,7 @@ export type Connection = Message<"numen.v1.Connection"> & {
  * Use `create(ConnectionSchema)` to create a new message.
  */
 export const ConnectionSchema: GenMessage<Connection> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 25);
+  messageDesc(file_numen_v1_note, 23);
 
 /**
  * @generated from message numen.v1.GetConnectionRequest
@@ -897,7 +852,7 @@ export type GetConnectionRequest = Message<"numen.v1.GetConnectionRequest"> & {
  * Use `create(GetConnectionRequestSchema)` to create a new message.
  */
 export const GetConnectionRequestSchema: GenMessage<GetConnectionRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 26);
+  messageDesc(file_numen_v1_note, 24);
 
 /**
  * @generated from message numen.v1.GetConnectionResponse
@@ -919,7 +874,7 @@ export type GetConnectionResponse = Message<"numen.v1.GetConnectionResponse"> & 
  * Use `create(GetConnectionResponseSchema)` to create a new message.
  */
 export const GetConnectionResponseSchema: GenMessage<GetConnectionResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 27);
+  messageDesc(file_numen_v1_note, 25);
 
 /**
  * @generated from message numen.v1.SaveConnectionRequest
@@ -936,7 +891,7 @@ export type SaveConnectionRequest = Message<"numen.v1.SaveConnectionRequest"> & 
  * Use `create(SaveConnectionRequestSchema)` to create a new message.
  */
 export const SaveConnectionRequestSchema: GenMessage<SaveConnectionRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 28);
+  messageDesc(file_numen_v1_note, 26);
 
 /**
  * @generated from message numen.v1.SaveConnectionResponse
@@ -970,7 +925,7 @@ export type SaveConnectionResponse = Message<"numen.v1.SaveConnectionResponse"> 
  * Use `create(SaveConnectionResponseSchema)` to create a new message.
  */
 export const SaveConnectionResponseSchema: GenMessage<SaveConnectionResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 29);
+  messageDesc(file_numen_v1_note, 27);
 
 /**
  * @generated from message numen.v1.RemoveSideRequest
@@ -1003,7 +958,7 @@ export type RemoveSideRequest = Message<"numen.v1.RemoveSideRequest"> & {
  * Use `create(RemoveSideRequestSchema)` to create a new message.
  */
 export const RemoveSideRequestSchema: GenMessage<RemoveSideRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 30);
+  messageDesc(file_numen_v1_note, 28);
 
 /**
  * @generated from message numen.v1.RemoveSideResponse
@@ -1020,7 +975,7 @@ export type RemoveSideResponse = Message<"numen.v1.RemoveSideResponse"> & {
  * Use `create(RemoveSideResponseSchema)` to create a new message.
  */
 export const RemoveSideResponseSchema: GenMessage<RemoveSideResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 31);
+  messageDesc(file_numen_v1_note, 29);
 
 /**
  * @generated from message numen.v1.RemoveConnectionRequest
@@ -1047,7 +1002,7 @@ export type RemoveConnectionRequest = Message<"numen.v1.RemoveConnectionRequest"
  * Use `create(RemoveConnectionRequestSchema)` to create a new message.
  */
 export const RemoveConnectionRequestSchema: GenMessage<RemoveConnectionRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 32);
+  messageDesc(file_numen_v1_note, 30);
 
 /**
  * @generated from message numen.v1.RemoveConnectionResponse
@@ -1064,7 +1019,7 @@ export type RemoveConnectionResponse = Message<"numen.v1.RemoveConnectionRespons
  * Use `create(RemoveConnectionResponseSchema)` to create a new message.
  */
 export const RemoveConnectionResponseSchema: GenMessage<RemoveConnectionResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 33);
+  messageDesc(file_numen_v1_note, 31);
 
 /**
  * @generated from message numen.v1.JoinNotesRequest
@@ -1095,7 +1050,7 @@ export type JoinNotesRequest = Message<"numen.v1.JoinNotesRequest"> & {
  * Use `create(JoinNotesRequestSchema)` to create a new message.
  */
 export const JoinNotesRequestSchema: GenMessage<JoinNotesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 34);
+  messageDesc(file_numen_v1_note, 32);
 
 /**
  * @generated from message numen.v1.JoinNotesResponse
@@ -1128,7 +1083,7 @@ export type JoinNotesResponse = Message<"numen.v1.JoinNotesResponse"> & {
  * Use `create(JoinNotesResponseSchema)` to create a new message.
  */
 export const JoinNotesResponseSchema: GenMessage<JoinNotesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 35);
+  messageDesc(file_numen_v1_note, 33);
 
 /**
  * @generated from message numen.v1.CreateRelatedNoteRequest
@@ -1175,7 +1130,7 @@ export type CreateRelatedNoteRequest = Message<"numen.v1.CreateRelatedNoteReques
  * Use `create(CreateRelatedNoteRequestSchema)` to create a new message.
  */
 export const CreateRelatedNoteRequestSchema: GenMessage<CreateRelatedNoteRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 36);
+  messageDesc(file_numen_v1_note, 34);
 
 /**
  * @generated from message numen.v1.CreateRelatedNoteResponse
@@ -1215,7 +1170,7 @@ export type CreateRelatedNoteResponse = Message<"numen.v1.CreateRelatedNoteRespo
  * Use `create(CreateRelatedNoteResponseSchema)` to create a new message.
  */
 export const CreateRelatedNoteResponseSchema: GenMessage<CreateRelatedNoteResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 37);
+  messageDesc(file_numen_v1_note, 35);
 
 /**
  * @generated from message numen.v1.ListBacklinksRequest
@@ -1232,7 +1187,7 @@ export type ListBacklinksRequest = Message<"numen.v1.ListBacklinksRequest"> & {
  * Use `create(ListBacklinksRequestSchema)` to create a new message.
  */
 export const ListBacklinksRequestSchema: GenMessage<ListBacklinksRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 38);
+  messageDesc(file_numen_v1_note, 36);
 
 /**
  * Backlink is a link written in another note that points at the note asked about.
@@ -1288,7 +1243,7 @@ export type Backlink = Message<"numen.v1.Backlink"> & {
  * Use `create(BacklinkSchema)` to create a new message.
  */
 export const BacklinkSchema: GenMessage<Backlink> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 39);
+  messageDesc(file_numen_v1_note, 37);
 
 /**
  * @generated from message numen.v1.ListBacklinksResponse
@@ -1305,7 +1260,7 @@ export type ListBacklinksResponse = Message<"numen.v1.ListBacklinksResponse"> & 
  * Use `create(ListBacklinksResponseSchema)` to create a new message.
  */
 export const ListBacklinksResponseSchema: GenMessage<ListBacklinksResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 40);
+  messageDesc(file_numen_v1_note, 38);
 
 /**
  * @generated from message numen.v1.RenameNoteRequest
@@ -1331,7 +1286,7 @@ export type RenameNoteRequest = Message<"numen.v1.RenameNoteRequest"> & {
  * Use `create(RenameNoteRequestSchema)` to create a new message.
  */
 export const RenameNoteRequestSchema: GenMessage<RenameNoteRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 41);
+  messageDesc(file_numen_v1_note, 39);
 
 /**
  * @generated from message numen.v1.RenameNoteResponse
@@ -1391,7 +1346,7 @@ export type RenameNoteResponse = Message<"numen.v1.RenameNoteResponse"> & {
  * Use `create(RenameNoteResponseSchema)` to create a new message.
  */
 export const RenameNoteResponseSchema: GenMessage<RenameNoteResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 42);
+  messageDesc(file_numen_v1_note, 40);
 
 /**
  * @generated from message numen.v1.WatchEditsRequest
@@ -1404,7 +1359,7 @@ export type WatchEditsRequest = Message<"numen.v1.WatchEditsRequest"> & {
  * Use `create(WatchEditsRequestSchema)` to create a new message.
  */
 export const WatchEditsRequestSchema: GenMessage<WatchEditsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 43);
+  messageDesc(file_numen_v1_note, 41);
 
 /**
  * @generated from message numen.v1.WatchEditsResponse
@@ -1453,7 +1408,7 @@ export type WatchEditsResponse = Message<"numen.v1.WatchEditsResponse"> & {
  * Use `create(WatchEditsResponseSchema)` to create a new message.
  */
 export const WatchEditsResponseSchema: GenMessage<WatchEditsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_note, 44);
+  messageDesc(file_numen_v1_note, 42);
 
 /**
  * Relation is where a note sits relative to the one in focus. A sibling is written
@@ -1729,17 +1684,6 @@ export const NoteService: GenService<{
     methodKind: "unary";
     input: typeof CreateNoteRequestSchema;
     output: typeof CreateNoteResponseSchema;
-  },
-  /**
-   * WriteLink writes a relationship into one note. The note at the other end is
-   * left alone: a link is one end's account of a relationship.
-   *
-   * @generated from rpc numen.v1.NoteService.WriteLink
-   */
-  writeLink: {
-    methodKind: "unary";
-    input: typeof WriteLinkRequestSchema;
-    output: typeof WriteLinkResponseSchema;
   },
   /**
    * GetConnection is the relationship between two notes as a whole: the record

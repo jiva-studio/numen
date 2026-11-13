@@ -234,7 +234,6 @@ docs_sources: &docs_sources
   - libs/core/kernel/adapter/cli/**
   - libs/core/kernel/adapter/settings/**
   - libs/core/kernel/container/**
-  - libs/core/kernel/usecase/completion/**
   - plugins/*/manifest.json
   - plugins/*/frontend/**
   - tools/ci-commands/**

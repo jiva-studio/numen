@@ -1,10 +1,16 @@
 import { type CommandDeps } from '@/shared/model/command'
 import { runInBackground } from '@numen/ui'
-import type { CommandRegistry, Notes, RunSupport } from '@/shared/model/command'
+import type { CommandRegistry, Notes, RunSupport, SettingsRequest } from '@/shared/model/command'
 import { createCommandNotes } from '../notes/createCommandNotes'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import type { WindowTabs } from '@/entities/tab'
+import { SETTINGS, type WindowTabs } from '@/entities/tab'
+
+/** How the window searches and opens its settings. Without openSettings, a settings tab opens. */
+interface NavigationOptions {
+  search: () => void
+  openSettings?: ((request: SettingsRequest) => void) | undefined
+}
 
 export interface CommandDepsOptions {
   windowTabs: Pick<WindowTabs, 'tabs' | 'panes'>
@@ -13,24 +19,30 @@ export interface CommandDepsOptions {
   runs: RunSupport
   registry: Pick<CommandRegistry, 'get'>
   writeMessage: MessageWriter
-  search: () => void
+  navigation: NavigationOptions
   emitEvent?: ((event: string) => void) | undefined
 }
 
-function createNavigationCommands(options: CommandDepsOptions): CommandDeps['navigator'] {
-  const { windowTabs, search, writeMessage } = options
+function createNavigationCommands(
+  options: Pick<CommandDepsOptions, 'windowTabs' | 'writeMessage' | 'navigation'>,
+): CommandDeps['navigator'] {
+  const { windowTabs, writeMessage, navigation } = options
+  const openTab = (kind: string) =>
+    runInBackground(windowTabs.tabs.openTabOfKind(kind), (error) =>
+      writeMessage(formatError(error), 'error'),
+    )
   return {
-    openTab: (kind) =>
-      runInBackground(windowTabs.tabs.openTabOfKind(kind), (error) =>
-        writeMessage(formatError(error), 'error'),
-      ),
+    openTab,
+    openSettings: (request) =>
+      navigation.openSettings ? navigation.openSettings(request) : openTab(SETTINGS),
     closeTab: (tab) => windowTabs.panes.requestClose(tab),
-    search,
+    search: navigation.search,
   }
 }
 
-function createSettingsCommands(options: CommandDepsOptions): CommandDeps['settings'] {
-  const { settingPalette } = options
+function createSettingsCommands(
+  settingPalette: CommandDepsOptions['settingPalette'],
+): CommandDeps['settings'] {
   return {
     chooseSetting: async (command, selected) => {
       await settingPalette.choose(command, selected)
@@ -43,7 +55,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
 
   return {
     navigator: createNavigationCommands(options),
-    settings: createSettingsCommands(options),
+    settings: createSettingsCommands(options.settingPalette),
     notes: createCommandNotes(reached, windowTabs),
     runSupport: runs,
     registry,

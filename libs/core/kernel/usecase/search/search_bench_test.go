@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -20,26 +20,26 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 type benchEmbedder struct {
-	model embedding.Model
+	model searchsource.Description
 }
 
-func newBenchEmbedder(model embedding.Model) *benchEmbedder {
+func newBenchEmbedder(model searchsource.Description) *benchEmbedder {
 	return &benchEmbedder{model: model}
 }
 
-func (e *benchEmbedder) GetModel() embedding.Model {
+func (e *benchEmbedder) Describe() searchsource.Description {
 	return e.model
 }
 
 func (e *benchEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, len(texts))
 	for i, t := range texts {
-		out[i] = generateDeterministicVector(t, e.model.Dimensions)
+		out[i] = generateDeterministicVector(t, e.model.Width)
 	}
 	return out, nil
 }
@@ -86,7 +86,7 @@ type benchCorpus struct {
 	vault      domain.Vault
 	db         *container.Index
 	searchMock search.Search
-	mockModel  embeddingport.Embedder
+	mockModel  sourcefake.Embedder
 	passages   sourceport.PassageQueries
 	candidates []domain.Passage
 	recipe     string
@@ -99,7 +99,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 
 	v := vaultfixture.GenerateVault(b, notes)
 	const maxTokens = 256
-	model := embedding.Model{Name: "bench", Dimensions: 384, MaxTokens: maxTokens, Pooling: "mean"}
+	model := searchsource.Description{Name: "bench", Width: 384, SourceRecipe: "mean"}
 
 	dbPath := filepath.Join(b.TempDir(), "search_bench.db")
 	cfg := container.NewConfig(container.Config{
@@ -115,7 +115,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	if err := db.Vaults().Register(ctx, v.ID); err != nil {
 		b.Fatal(err)
 	}
-	if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
+	if err := db.FitVectors(ctx, model.Width, model.Recipe()); err != nil {
 		b.Fatal(err)
 	}
 
@@ -125,7 +125,8 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	}
 
 	mock := newBenchEmbedder(model)
-	embedderUseCase, err := container.Embed(cfg, db, mock, v)
+	asking := sourcefake.Wrap(mock).Over(search.NewFindNearest(db.ChunkSearch()).Execute)
+	embedderUseCase, err := container.Embed(cfg, db, asking, v)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -133,7 +134,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 		b.Fatal(err)
 	}
 
-	searchMock := container.NewSearch(cfg, db, mock, nil)
+	searchMock := container.NewSearch(cfg, db, asking, nil)
 
 	passages := db.ChunkSearch()
 	candidates, err := passages.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
@@ -200,7 +201,7 @@ func BenchmarkSearch(b *testing.B) {
 			})
 
 			b.Run("Lexical", func(b *testing.B) {
-				p := search.Parameters{Limit: 20, Lexical: 100, Dense: 0, Named: 0}
+				p := search.Parameters{Limit: 20, Lexical: 100, Sources: 0, Named: 0}
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
@@ -215,7 +216,7 @@ func BenchmarkSearch(b *testing.B) {
 			})
 
 			b.Run("Dense/Mock", func(b *testing.B) {
-				p := search.Parameters{Limit: 20, Lexical: 0, Dense: 20, Named: 0, Floor: 0.1}
+				p := search.Parameters{Limit: 20, Lexical: 0, Sources: 20, Named: 0, Floor: 0.1}
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
@@ -316,19 +317,6 @@ func BenchmarkComponents(b *testing.B) {
 					_, err := c.mockModel.Embed(ctx, []string{queryLexical})
 					if err != nil {
 						b.Fatal(err)
-					}
-				}
-			})
-
-			b.Run("QueryEmbedding/Cached", func(b *testing.B) {
-				cache := search.NewQueryCache(256)
-				cache.Put(c.recipe, queryLexical, c.queryVec)
-				b.ReportAllocs()
-				b.ResetTimer()
-				for b.Loop() {
-					vec, ok := cache.Get(c.recipe, queryLexical)
-					if !ok || len(vec) == 0 {
-						b.Fatal("cached query vector not found")
 					}
 				}
 			})

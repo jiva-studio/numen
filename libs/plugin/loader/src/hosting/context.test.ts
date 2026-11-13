@@ -88,7 +88,7 @@ describe('PluginContext', () => {
         readers: ['pdf'],
         commands: ['cmd1'],
         tabKinds: ['custom-tab'],
-        capabilities: ['ai.agent.provider'],
+        capabilities: ['tools'],
       }),
     )
 

@@ -100,11 +100,15 @@ func TestThePermissionsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no permissions: a rule checked against nothing")
 	}
-	valid := append(manifest.PluginPermissions(), manifest.PermissionNetworkAlias)
+	grant := manifest.FormatConnectionsUse("<operation>")
+	valid := append(manifest.PluginPermissions(), manifest.PermissionNetworkAlias, grant)
 	for _, difference := range listPermissionDifferences(documented, valid) {
 		t.Error(difference)
 	}
 	for _, name := range valid {
+		if name == grant {
+			name = manifest.FormatConnectionsUse("llm.chat")
+		}
 		if err := (manifest.Manifest{Permissions: []string{name}}).ValidatePermissions(); err != nil {
 			t.Errorf("the validator refuses %s: %v", name, err)
 		}
@@ -122,8 +126,8 @@ func TestPermissionRule_ReportsPermissionDifferences(t *testing.T) {
 	if got := listPermissionDifferences([]string{"vault:read", "link:open", "network", "root"}, valid); len(got) != 1 {
 		t.Errorf("a permission only the guide names is found %d times: %v", len(got), got)
 	}
-	line := "- **`permissions`**: Whitelisted: `vault:read` and `ai:complete` (ask). Any other value, such as `root`, is rejected."
-	if got := readDocumentedPermissions("text\n" + line + "\n"); !slices.Equal(got, []string{"vault:read", "ai:complete"}) {
+	line := "- **`permissions`**: Whitelisted: `vault:read` and `index:read`. Any other value, such as `root`, is rejected."
+	if got := readDocumentedPermissions("text\n" + line + "\n"); !slices.Equal(got, []string{"vault:read", "index:read"}) {
 		t.Errorf("the guide's line is read as %v", got)
 	}
 	if got := readDocumentedPermissions("no such line"); got != nil {
@@ -219,12 +223,11 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		sample := strings.ReplaceAll(name, "<ext>", "pdf")
-		if hasIssue(manifest.Manifest{ActivationEvents: []string{sample}}, manifest.ErrInvalidActivationEvent) {
-			t.Errorf("the validator refuses %s", sample)
+		if hasIssue(manifest.Manifest{ActivationEvents: []string{name}}, manifest.ErrInvalidActivationEvent) {
+			t.Errorf("the validator refuses %s", name)
 		}
 	}
-	for _, invalid := range []string{"*", "onFile:", "onFile:*", "onCommand:run"} {
+	for _, invalid := range []string{"*", "onStartup", "onFile:pdf", "onCommand:run"} {
 		if !hasIssue(manifest.Manifest{ActivationEvents: []string{invalid}}, manifest.ErrInvalidActivationEvent) {
 			t.Errorf("the validator accepts %s", invalid)
 		}
@@ -252,8 +255,8 @@ func TestShippedPluginsDeclareNoWildcardActivationEvent(t *testing.T) {
 	if !ok {
 		t.Fatal("missing plugin md.numen.tools.search.relevance")
 	}
-	if !slices.Equal(relevance.ActivationEvents, []string{manifest.ActivationEventVectorsReady}) {
-		t.Errorf("md.numen.tools.search.relevance activationEvents = %v, want [onVectorsReady]", relevance.ActivationEvents)
+	if !slices.Equal(relevance.ActivationEvents, []string{manifest.ActivationEventSearchSourceReady}) {
+		t.Errorf("md.numen.tools.search.relevance activationEvents = %v, want [onSearchSourceReady]", relevance.ActivationEvents)
 	}
 }
 
@@ -276,8 +279,8 @@ func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
 	if got := readDocumentedCapabilities(guideLine); !slices.Equal(got, []string{"document", "book"}) {
 		t.Errorf("the capabilities line is read as %v", got)
 	}
-	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onStartup` (when the host starts)\n- **`next`**:\n"
-	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onStartup"}) {
+	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onSearchSourceReady` (when the search source has indexed a vault)\n- **`next`**:\n"
+	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onSearchSourceReady"}) {
 		t.Errorf("the activation events section is read as %v", got)
 	}
 }
@@ -386,10 +389,13 @@ func isReadByCondition(manifest manifest.Manifest, key string) bool {
 	return slices.ContainsFunc(conditions, func(condition string) bool { return strings.Contains(condition, name) })
 }
 
-func listUnreadSettings(manifest manifest.Manifest, sources []string) []string {
+func listUnreadSettings(declaring manifest.Manifest, sources []string) []string {
 	var unread []string
-	for _, setting := range manifest.Settings {
-		if isReadByCondition(manifest, setting.Key) {
+	for _, setting := range declaring.Settings {
+		if setting.Type == manifest.SettingTypeConnections {
+			continue
+		}
+		if isReadByCondition(declaring, setting.Key) {
 			continue
 		}
 		if !slices.ContainsFunc(sources, func(source string) bool { return isNamedIn(source, setting.Key) }) {
@@ -435,6 +441,10 @@ func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 	if got := listUnreadSettings(scans, []string{`languages := "dpis"`}); !slices.Equal(got, []string{"language", "dpi"}) {
 		t.Errorf("a key inside another word is found as read: %v", got)
 	}
+	rows := manifest.Manifest{Settings: []manifest.Setting{{Key: "connections", Type: manifest.SettingTypeConnections}}}
+	if got := listUnreadSettings(rows, nil); len(got) != 0 {
+		t.Errorf("a setting of rows, which the host reads, is found unread: %v", got)
+	}
 	triggered := manifest.Manifest{ID: "org.example.scans", Settings: []manifest.Setting{{Key: "isAutomatic"}}}
 	triggered.Contributes.Triggers = []manifest.Trigger{{Event: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
 	if got := listUnreadSettings(triggered, nil); len(got) != 0 {
@@ -444,7 +454,7 @@ func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 
 // The capabilities a manifest may declare are those the adapters of the core resolve a plugin by.
 func TestTheCapabilitiesAManifestMayDeclareAreTheOnesTheHostResolves(t *testing.T) {
-	want := []string{bridge.CapabilityAgentProvider, bridge.CapabilityEmbedding, bridge.CapabilityTools}
+	want := []string{bridge.CapabilitySearchSource, bridge.CapabilityTools}
 	got := slices.Sorted(slices.Values(manifest.PluginCapabilities()))
 	if !slices.Equal(got, want) {
 		t.Errorf("PluginCapabilities = %v, want %v", got, want)
@@ -467,6 +477,7 @@ func listValidPluginKinds() []string {
 		"editors",
 		"views",
 		"engines",
+		"connections",
 		"tools",
 		"themes",
 	}

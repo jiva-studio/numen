@@ -12,22 +12,23 @@ import (
 
 // pass is the indexing of one vault, on the one goroutine that runs it.
 type pass struct {
-	env       passEnv
-	events    Events
-	waits     wakeWaits
-	skips     *vaultreading.Skips
-	session   *Session
-	v         domain.Vault
-	isRebuild bool
+	env             passEnv
+	events          Events
+	waits           wakeWaits
+	skips           *vaultreading.Skips
+	session         *Session
+	v               domain.Vault
+	isRebuild       bool
+	isReadyNotified bool
 }
 
 // passEnv is what a pass takes from the worker it runs for.
 type passEnv interface {
 	openReading(ctx context.Context, v domain.Vault, rebuild bool) (ReadWholeVault, error)
 	planVectors(ctx context.Context, v domain.Vault) vectorPlan
-	hasEmbedder() bool
+	hasSource() bool
 	waitForQuiet() <-chan time.Time
-	notifyVectorsReady(ctx context.Context, v domain.Vault)
+	notifySearchSourceReady(ctx context.Context, v domain.Vault)
 }
 
 func (p *pass) run(ctx context.Context, read ReadNotes) {
@@ -170,13 +171,16 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 }
 
 func (p *pass) embed(ctx context.Context) {
-	if !p.env.hasEmbedder() {
+	if !p.env.hasSource() {
 		return
 	}
 	plan := p.env.planVectors(ctx, p.v)
 	if !plan.hasPending {
 		p.events.FinishTask(work.MakingVectors)
-		p.env.notifyVectorsReady(ctx, p.v)
+		// A plugin that started after the vectors were made learns of them from the first pass.
+		if !p.isReadyNotified {
+			p.notifySearchSourceReady(ctx)
+		}
 		return
 	}
 
@@ -184,8 +188,13 @@ func (p *pass) embed(ctx context.Context) {
 	defer stop()
 
 	if p.makeVectors(ctx, limit, plan) {
-		p.env.notifyVectorsReady(ctx, p.v)
+		p.notifySearchSourceReady(ctx)
 	}
+}
+
+func (p *pass) notifySearchSourceReady(ctx context.Context) {
+	p.env.notifySearchSourceReady(ctx, p.v)
+	p.isReadyNotified = true
 }
 
 // vectorPlan is what a vector pass must create, computed once before the pass starts. Chunks are

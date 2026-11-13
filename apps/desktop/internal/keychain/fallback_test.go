@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	entryName  = "secret/s0a1b2c3d"
-	otherEntry = "secret/s0e5f6a7b"
+	entryName  = "connection/c0a1b2c3d/apiKey"
+	otherEntry = "connection/c0e5f6a7b/apiKey"
 	valueOne   = "value-one-for-tests"
 	valueTwo   = "value-two-for-tests"
 )
@@ -194,9 +194,6 @@ func TestAKeychainThatRefusesIsNotReplacedByTheFile(t *testing.T) {
 	}
 	if _, statErr := os.Stat(credentialsPath(dir)); !errors.Is(statErr, os.ErrNotExist) {
 		t.Errorf("a key was written to the file: %v", statErr)
-	}
-	if got := store.GetCredentialsPath(t.Context()); got != "" {
-		t.Errorf("path = %q for a keychain that refuses, want none", got)
 	}
 }
 

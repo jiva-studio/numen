@@ -87,7 +87,7 @@ func newSearchClient(t *testing.T, fakeCallers *callers, token string) numenv1co
 }
 
 func newSearchCallers(search any) *callers {
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.vault = vaultOf(newMemoryVault(nil))
 	fakeCallers.search = searchOf(search)
 	return fakeCallers
@@ -175,7 +175,7 @@ func TestHostSearchNamesTheVaultOfTheHeaderAndRefusesAnUnknownOne(t *testing.T) 
 	physics.others = map[domain.VaultID]*memoryVault{
 		"v2": {vault: &domain.Vault{ID: "v2", Name: "Chemistry", Path: "/vaults/Chemistry"}},
 	}
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.vault = vaultOf(physics)
 	fakeCallers.search = searchOf(search)
 	client := newSearchClient(t, fakeCallers, "token-a")
@@ -210,14 +210,14 @@ func TestHostSearchNamesTheVaultOfTheHeaderAndRefusesAnUnknownOne(t *testing.T) 
 func TestHostSearchAnswersACodeForWhatItCannotServe(t *testing.T) {
 	ctx := t.Context()
 
-	noVault := newCallers(nil)
+	noVault := newCallers()
 	noVault.search = searchOf(&recordingSearch{})
 	state, err := newSearchClient(t, noVault, "token-a").GetEmbeddingState(ctx, connect.NewRequest(&v1.GetEmbeddingStateRequest{}))
 	if err != nil || state.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_VAULT {
 		t.Errorf("a host showing no vault answered %v (%v)", state.Msg, err)
 	}
 
-	noSearch := newCallers(nil)
+	noSearch := newCallers()
 	noSearch.vault = vaultOf(newMemoryVault(nil))
 	embedded, err := newSearchClient(t, noSearch, "token-a").EmbedTexts(ctx, connect.NewRequest(&v1.EmbedTextsRequest{Texts: []string{"a"}}))
 	if err != nil || embedded.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL {

@@ -5,21 +5,20 @@ import (
 	"fmt"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
-	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
+	machineadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -36,18 +35,9 @@ func (c Config) ApplySettings() (Config, []string, error) {
 }
 
 func applySettingsFile(c Config, s settingsadapter.File) Config {
-	compute := settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(s.Performance.Profile)
-	c.machine = Machine{ResolvedCompute: compute.Resolved, Hardware: compute.Machine}
-	configurePluginHost(settingsOf(c), s, func() { setUpPluginHost(c) })
+	c.machine = Machine{ResolvedCompute: settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(s.Performance.Profile)}
+	configurePluginHost(settingsOf(c), s)
 	return c
-}
-
-func models(c Config) func() []settingsdomain.Model {
-	return modelsForProvider(c, pluginsAgentProvider(plugins(c)))
-}
-
-func modelsForProvider(c Config, provider agentport.AgentProvider) func() []settingsdomain.Model {
-	return settingsModelsForProvider(settingsOf(c), provider, c.agentPrograms)
 }
 
 // SyncSetting returns whether note title and filename synchronization is enabled.
@@ -73,22 +63,17 @@ func UnsubscribeHost(c Config) {
 	unsubscribeHost(settingsOf(c))
 }
 
-// agentAt is the key of the agent section in the settings file.
-const agentAt = "agent"
-
 type settingsPlaces struct {
 	SettingsPath    string
 	ThemesPath      string
 	RegistryPath    string
-	ResolvedCompute settingsdomain.ResolvedCompute
+	ResolvedCompute machinedomain.ResolvedCompute
 }
 
 type settingsStores struct {
 	Watches         *vaultwatch.Hub
 	SettingsFiles   *settingsadapter.Files
 	SettingEvents   *settingevents.Events
-	Programs        *settingsadapter.ProgramList
-	SecretGate      *secret.Gate
 	SubscribedHosts *settingsusecase.HostSubscriptions
 	PluginChanges   *settingsusecase.PluginChanges
 }
@@ -113,20 +98,11 @@ func settingsSettings(c settingsWiring) (settingsadapter.File, error) {
 	return settingsStore(c).ReadCheckedAt(path)
 }
 
-func settingsGetSettingsOrDefaults(c settingsWiring) settingsadapter.File {
-	if path, err := settingsSettingsFile(c); err == nil {
-		if target, err := settingsStore(c).ReadCheckedAt(path); err == nil {
-			return target
-		}
-	}
-	return defaultSettings()
-}
-
 func readCheckedSettings(c settingsWiring) (settingsadapter.File, error) {
 	return settingsStore(c).ReadCheckedFile()
 }
 
-func configurePluginHost(c settingsWiring, s settingsadapter.File, setup func()) {
+func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 	hosts := c.SubscribedHosts
 	if hosts == nil {
 		hosts = &settingsusecase.HostSubscriptions{}
@@ -137,15 +113,8 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File, setup func())
 	}
 	settingsusecase.NewApplyToPlugins(settingsusecase.ApplyToPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Configuration, Write: settingsWriteSettings(c), Notify: notifyPlugins(c),
-		Subscribe: c.PluginHost.Views.Follow(subscribe), Hosts: hosts, Setup: setup,
+		Subscribe: c.PluginHost.Views.Follow(subscribe), Hosts: hosts,
 	}).Execute(s.Plugins, c.ResolvedCompute.Profile)
-}
-
-func setUpPluginHost(c Config) {
-	c.host().Configuration.SetKeyStore(c.KeyStore)
-	wired := plugins(c)
-	setSecretSource(wired)
-	setCompleter(wired)
 }
 
 func unsubscribeHost(c settingsWiring) {
@@ -159,16 +128,6 @@ func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
 	return c.PluginHost.Runtime.GetPluginInfos
 }
 
-func settingsModelsForProvider(
-	c settingsWiring, provider agentport.AgentProvider,
-	programs func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program,
-) func() []settingsdomain.Model {
-	return settingsusecase.NewListAppModels(func() []settingsdomain.Model {
-		target := settingsGetSettingsOrDefaults(c)
-		return settingsadapter.AgentModels(agentAt, target.Agent, programs(provider, target.Agent))
-	}).Execute
-}
-
 func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 	return func(owner string) ([]manifest.Setting, bool) {
 		if owner == settingsdomain.AppOwner {
@@ -179,7 +138,22 @@ func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 }
 
 func getRegistries(c settingsWiring) settingsadapter.Registries {
-	return themeRegistry(c).GetNames()
+	themes := themeRegistry(c).GetNames()
+	return settingsadapter.AddDetectedRegistries(func(name string) ([]string, bool) {
+		if name == settingsadapter.RegistryConnections {
+			return listConnectionIDs(c)
+		}
+		return themes(name)
+	}, c.PluginHost.Views.Types, getHostDetection(c))
+}
+
+func listConnectionIDs(c settingsWiring) ([]string, bool) {
+	ids, err := settingsStore(c).ListConnectionIDs()
+	if err != nil {
+		c.ErrorHandler(err)
+		return nil, false
+	}
+	return ids, true
 }
 
 func themeRegistry(c settingsWiring) settingsadapter.RegistryOptions {
@@ -248,7 +222,11 @@ func openRetryPlugin(_ settingsWiring, retrier func(context.Context, string) (*p
 }
 
 func settingsStore(c settingsWiring) *settingsadapter.Store {
-	return settingsadapter.NewStore(c.SettingsFiles, func() (string, error) { return settingsSettingsFile(c) }, getDeclarations(c), getRegistries(c), c.PluginHost.Views.Secrets)
+	var declared settingsadapter.Declarations
+	if c.PluginHost.Views.Infos != nil {
+		declared = getDeclarations(c)
+	}
+	return settingsadapter.NewStore(c.SettingsFiles, func() (string, error) { return settingsSettingsFile(c) }, declared, getRegistries(c))
 }
 
 func feed(c settingsWiring) settingevents.Feed {
@@ -256,7 +234,11 @@ func feed(c settingsWiring) settingevents.Feed {
 	return settingevents.Feed{
 		Events:  c.SettingEvents,
 		GetPath: func() (string, error) { return settingsSettingsFile(c) },
-		Read:    list.Execute,
+		Read: func() (settingsdomain.Values, error) {
+			values, err := list.Execute()
+			settingsadapter.AddDetectedConnectionIDs(values, getHostDetection(c))
+			return values, err
+		},
 		Initial: func() settingsdomain.Values {
 			values, err := list.ListDefaults()
 			if err != nil {
@@ -271,7 +253,7 @@ func feed(c settingsWiring) settingevents.Feed {
 
 func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
 	return settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, c.PluginHost.Views.Infos, c.Programs,
+		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, c.PluginHost.Views.Infos,
 	)
 }
 
@@ -286,22 +268,13 @@ func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
 	signal := c.PluginChanges.Signal
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Apply: c.PluginHost.ApplySetting, Config: c.PluginHost.Configuration,
-		RefreshSecrets: func(ctx context.Context) error { return refreshPluginSecrets(c, ctx) },
 		ResolveProfile: resolveProfile, Signal: signal,
 		Report: func(err error) { c.ErrorHandler(err) },
 	})
 }
 
-func refreshPluginSecrets(c settingsWiring, ctx context.Context) error {
-	if err := c.SecretGate.Enter(ctx); err != nil {
-		return err
-	}
-	defer c.SecretGate.Leave()
-	return c.PluginHost.Configuration.Refresh(ctx)
-}
-
 func resolveProfile(profile string) string {
-	return settingsusecase.NewResolveCompute(hardware.Reader{}).Execute(profile).Resolved.Profile
+	return settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(profile).Profile
 }
 
 func settingsThemes(c settingsWiring, scales Scales, say func(string)) (*theme.Service, error) {
@@ -343,4 +316,11 @@ func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
 		return themefiles.OpenAt(folder, c.Watches.GetShared())
 	}
 	return themefiles.Open(c.Watches.GetShared())
+}
+
+func getHostDetection(c settingsWiring) connectionport.Detected {
+	if c.PluginHost.Detection == nil {
+		return nil
+	}
+	return c.PluginHost.Detection
 }

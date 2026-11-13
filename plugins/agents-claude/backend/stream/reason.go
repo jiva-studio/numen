@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+// ReasonMaxTurns is the reason of a run that reached its limit of turns.
+const ReasonMaxTurns = "the agent reached the limit of steps without finishing"
+
 func getUnreachableReason(response event) string {
 	for _, skipped := range response.ServerErrors {
 		if skipped.Name == serverName {
@@ -39,7 +42,7 @@ func getResultError(response event) string {
 func formatSubtype(subtype string) string {
 	switch subtype {
 	case "error_max_turns", "max_turns":
-		return "the agent reached the limit of steps without finishing"
+		return ReasonMaxTurns
 	case "error_context_length_exceeded", "error_context_length", "context_length_exceeded":
 		return "the conversation is too long for the model"
 	case "error_rate_limit", "rate_limit":

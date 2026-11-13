@@ -321,9 +321,9 @@ describe('the active tab', () => {
 
 describe('the tab icon', () => {
   it('is the icon of the kind of the tab', () => {
-    const target = create([{ id: 'a', title: 'A', kind: 'note' }])
+    const target = create([{ id: 'a', title: 'A', kind: 'settings' }])
 
-    expect(target.getTabIcon('a')).toBe(findTabKindIcon('note'))
+    expect(target.getTabIcon('a')).toBe(findTabKindIcon('settings'))
     expect(target.getTabIcon('a')).not.toBe(findTabKindIcon(''))
   })
 
@@ -437,6 +437,6 @@ describe('getKindIcon', () => {
   it('falls back to the built-in icon of the kind', () => {
     const target = create([])
 
-    expect(target.getKindIcon('note')).toBe(findTabKindIcon('note'))
+    expect(target.getKindIcon('settings')).toBe(findTabKindIcon('settings'))
   })
 })

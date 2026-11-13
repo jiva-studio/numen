@@ -994,39 +994,6 @@ func TestALinkNamingNoRolePreservesNoNote(t *testing.T) {
 	}
 }
 
-// TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn. A link is one end's
-// account of a relationship: the other note is not touched.
-func TestTwoNotesAreJoinedFromTheOneTheLinkIsSavedIn(t *testing.T) {
-	const other = "---\ntitle: Entropy\n---\n\n# Entropy\n"
-	f := openWindow(t, nil, map[string]string{
-		"Ontology.md": "---\ntitle: Ontology\ntags:\n  - draft\n---\n\n# Ontology\n",
-		"Entropy.md":  other,
-	})
-
-	answer, err := f.client.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
-		Path: "Ontology.md",
-		Link: &v1.Link{To: "Entropy.md", Role: v1.Role_ROLE_CHILD},
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the link failed: %v", code)
-	}
-
-	joined := fileAt(t, f.root, "Ontology.md")
-	if !strings.Contains(joined, "to: Entropy") || !strings.Contains(joined, "role: child") {
-		t.Errorf("the note does not say what it was joined to:\n%s", joined)
-	}
-	// Frontmatter keys written by the user are preserved unchanged.
-	if !strings.Contains(joined, "tags:\n  - draft\n") {
-		t.Errorf("a key the application does not own was rewritten:\n%s", joined)
-	}
-	if now := fileAt(t, f.root, "Entropy.md"); now != other {
-		t.Errorf("the note at the other end was written:\n%s", now)
-	}
-}
-
 // TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake. A name resolves as
 // an exact path from the root before it resolves as a related note, so a note
 // created from one of two notes sharing a name carries the path of its origin.

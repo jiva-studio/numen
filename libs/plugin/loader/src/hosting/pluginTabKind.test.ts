@@ -208,6 +208,7 @@ describe('a declared kind registered through a plugin context', () => {
   it('reaches the window as the kind the plugin declared', () => {
     const registered: unknown[] = []
     const deps: PluginHostDeps = {
+      target: 'desktop.editor',
       registerKind: (kind) => {
         registered.push(kind)
         return () => registered.splice(registered.indexOf(kind), 1)
@@ -241,6 +242,7 @@ describe('a declared kind registered through a plugin context', () => {
 
 describe('the services a plugin context is given', () => {
   const createDeps = (overrides: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
+    target: 'desktop.editor',
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
     openTab: () => Promise.resolve('tab'),

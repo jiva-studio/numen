@@ -70,6 +70,9 @@ Every other command comes from an enabled plugin, which declares it; `numen-cli 
 | | |
 | --- | --- |
 | `numen-cli proofreading.create <vault> <file>` | correct the live text of a file with the model named in [the settings](/reader/#correcting-what-ocr-read) (`tools-proofreading`) |
+| `numen-cli link.import <vault> --address <url>` | keep an address as a link note (`tools-media-importer`) |
+| `numen-cli link.downloadMedia <vault> <note>` | download the video of a link note (`tools-media-importer`) |
+| `numen-cli link.deleteMedia <vault> <note>` | delete the downloaded media of a link note (`tools-media-importer`) |
 
 Some commands belong to the application and are run by the plugin that handles them; `numen-cli help` lists them under "shared commands", each with the plugins that handle it. Where one plugin handles the file, it runs; where several do, `--plugin <id>` picks one:
 
@@ -77,9 +80,6 @@ Some commands belong to the application and are run by the plugin that handles t
 | --- | --- |
 | `numen-cli app:file.createText <vault> <file>` | create the text of a file: the text layer of a PDF (`md.numen.readers.pdf`), the text of an EPUB (`md.numen.readers.epub`), the text of a scan, recognized page by page (`md.numen.engines.ocr`), the transcript of a recording (`md.numen.engines.transcription`), the captions or the article of a link note (`md.numen.tools.media.importer`) |
 | `numen-cli app:file.createText <vault> <file> --plugin md.numen.engines.ocr` | recognize the text of a PDF that also has a text layer |
-| `numen-cli app:link.import <vault> --address <url>` | keep an address as a link note (`md.numen.tools.media.importer`) |
-| `numen-cli app:link.downloadMedia <vault> <note>` | download the video of a link note (`md.numen.tools.media.importer`) |
-| `numen-cli app:link.deleteMedia <vault> <note>` | delete the downloaded media of a link note (`md.numen.tools.media.importer`) |
 
 What a command creates is a text version of the file. The next `scan` reads it into the index, as the window does, and `search` finds it. A disabled plugin has no commands.
 

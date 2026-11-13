@@ -12,14 +12,9 @@ type Events struct {
 	Emit func(event string)
 }
 
-// EmitFileEvent tells the plugins of the window that an event happened.
-func (e *Events) EmitFileEvent(event string) {
+// EmitSearchSourceReady tells the plugins of the window that the search source has indexed the vault.
+func (e *Events) EmitSearchSourceReady(_ context.Context, v domain.Vault) {
 	if e.Emit != nil {
-		e.Emit(event)
+		e.Emit(protocol.GetSearchSourceReadyEvent(string(v.ID)))
 	}
-}
-
-// EmitVectorsReady tells the plugins of the window that every vector of the vault exists.
-func (e *Events) EmitVectorsReady(_ context.Context, v domain.Vault) {
-	e.EmitFileEvent(protocol.GetVectorsReadyEvent(string(v.ID)))
 }

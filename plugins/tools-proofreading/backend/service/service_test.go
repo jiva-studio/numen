@@ -2,19 +2,16 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/ai"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/model"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/internal/adapter/settings"
@@ -29,12 +26,13 @@ const (
 // scene is a vault with a scan the OCR plugin made a text of, and the proofreading over it as the
 // plugin mounts it.
 type scene struct {
-	texts     *hosttest.Texts
-	host      proofread.Host
-	settings  *settings.Store
-	questions []*ai.Question
-	script    func(prompt string) string
-	run       *proofread.Proofreading
+	texts    *hosttest.Texts
+	queue    *hosttest.Queue
+	host     proofread.Host
+	settings *settings.Store
+	requests []*llm.CompleteRequest
+	script   func(prompt string) string
+	run      *proofread.Proofreading
 }
 
 func newScene(t *testing.T) *scene {
@@ -42,20 +40,21 @@ func newScene(t *testing.T) *scene {
 	vault := hosttest.New("Physics")
 	s := &scene{
 		texts:    hosttest.NewTexts("Physics", PluginID),
+		queue:    hosttest.NewQueue(),
 		settings: settings.NewStore(),
 		script:   func(string) string { return "" },
 	}
 	s.texts.File(scanPath, []byte("the scan"))
 	store := vault.Store()
 	s.texts.SetStore(PluginID, store)
-	complete := func(_ context.Context, question *ai.Question) (string, error) {
-		s.questions = append(s.questions, question)
-		return s.script(question.GetMessages()[1].GetText()), nil
+	complete := func(_ context.Context, request *llm.CompleteRequest, _ connection.Priority) (*llm.CompleteResult, error) {
+		s.requests = append(s.requests, request)
+		return &llm.CompleteResult{Text: s.script(request.GetMessages()[1].GetText())}, nil
 	}
 	s.host = proofread.Host{
 		Store: func(id domain.VaultID) host.StoreWriter { return store.With(id) },
 		Texts: func(id domain.VaultID) proofread.Texts { return s.texts.With(id) },
-		Queue: hosttest.NewQueue(),
+		Queue: s.queue,
 	}
 	s.run = newProofreading(s.host, complete, s.settings)
 	return s
@@ -145,7 +144,7 @@ func TestThePluginRunsNeitherDeleteTextNorTheCommandOfBefore(t *testing.T) {
 func TestTheMockMarksTheLinesTheGatesLetThrough(t *testing.T) {
 	s := newScene(t)
 	scan := s.holdScan(t)
-	s.run = newProofreading(s.host, model.CompleteMock, s.settings)
+	s.run = newProofreading(s.host, model.WithMock(failWith(connection.ErrNoConnection)), s.settings)
 
 	if _, err := s.run.Proofread(t.Context(), proofread.Request{Path: scanPath, Source: scan.GetID()}); err != nil {
 		t.Fatal(err)
@@ -162,60 +161,61 @@ func TestTheMockMarksTheLinesTheGatesLetThrough(t *testing.T) {
 	}
 }
 
-func TestProofreadUsesDirectChatAPIWhenProviderIsConfigured(t *testing.T) {
-	var gotAuth, gotModel, gotSystem string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotAuth = r.Header.Get("Authorization")
-		var req struct {
-			Model    string `json:"model"`
-			Messages []struct {
-				Content string `json:"content"`
-			} `json:"messages"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || len(req.Messages) != 2 {
-			http.Error(w, "bad request", http.StatusBadRequest)
-			return
-		}
-		gotModel, gotSystem = req.Model, req.Messages[0].Content
-		reply := getRows(req.Messages[1].Content, func(line string) string {
-			return strings.NewReplacer("spinnig", "spinning", "vacum", "vacuum").Replace(line)
-		})
-		if err := json.NewEncoder(w).Encode(map[string]any{
-			"choices": []map[string]any{{"message": map[string]any{"role": "assistant", "content": reply}}},
-		}); err != nil {
-			t.Errorf("encode the response: %v", err)
-		}
-	}))
-	defer srv.Close()
+func failWith(err error) model.Completer {
+	return func(context.Context, *llm.CompleteRequest, connection.Priority) (*llm.CompleteResult, error) {
+		return nil, err
+	}
+}
 
+func TestProofreadWithNoConnectionIsOffAndPointsToTheConnectionsPage(t *testing.T) {
 	s := newScene(t)
-	s.settings.Update(map[string]string{
-		"provider": "custom",
-		"baseUrl":  srv.URL,
-		"model":    "google/gemini-2.5-flash",
-	}, server.Secrets{server.SecretAPIKey: {
-		{ID: "s00000001", Name: "Work", Group: "", Value: "secret-key"},
-		{ID: "s00000002", Name: "Home", Group: "", Value: "other-key"},
-	}})
 	scan := s.holdScan(t)
+	s.run = newProofreading(s.host, failWith(connection.ErrNoConnection), s.settings)
 
-	res, err := s.run.Proofread(t.Context(), proofread.Request{Path: scanPath, Source: scan.GetID()})
-	if err != nil {
-		t.Fatal(err)
+	_, err := s.run.Proofread(t.Context(), proofread.Request{Path: scanPath, Source: scan.GetID()})
+
+	if !errors.Is(err, model.ErrNoConnection) || !strings.Contains(err.Error(), "Connections") {
+		t.Fatalf("got %v, want %v", err, model.ErrNoConnection)
 	}
-	if res.Corrected != 1 {
-		t.Errorf("corrected = %d, want 1", res.Corrected)
+	tasks := s.queue.ListTasks()
+	if len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "Connections") {
+		t.Errorf("tasks %+v", tasks)
 	}
-	if len(s.questions) != 0 {
-		t.Errorf("agent completer was called %d times, want 0", len(s.questions))
+	if _, live := s.readLiveSegments(t); live.PluginID != ocrID {
+		t.Errorf("a proofreading that is off left the live version %+v", live)
 	}
-	if gotAuth != "Bearer secret-key" {
-		t.Errorf("Authorization = %q, want Bearer secret-key", gotAuth)
+}
+
+func TestProofreadNamesEveryConnectionThatFailedInTheTask(t *testing.T) {
+	s := newScene(t)
+	scan := s.holdScan(t)
+	failed := &connection.AllFailedError{Failures: []connection.Failure{
+		{ConnectionName: "OpenRouter", Reason: "rate limited"},
+		{ConnectionName: "Local", Reason: "unreachable"},
+	}}
+	s.run = newProofreading(s.host, failWith(failed), s.settings)
+
+	_, err := s.run.Proofread(t.Context(), proofread.Request{Path: scanPath, Source: scan.GetID()})
+
+	all, isAllFailed := errors.AsType[*connection.AllFailedError](err)
+	if !isAllFailed || len(all.Failures) != 2 {
+		t.Fatalf("got %v, want every connection failed", err)
 	}
-	if gotModel != "google/gemini-2.5-flash" {
-		t.Errorf("model = %q, want google/gemini-2.5-flash", gotModel)
+	tasks := s.queue.ListTasks()
+	if len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "OpenRouter: rate limited; Local: unreachable") {
+		t.Errorf("tasks %+v", tasks)
 	}
-	if gotSystem != numbered.ScanInstruction {
-		t.Errorf("system instruction mismatch")
+}
+
+func TestAMistakeInTheRequestEndsTheProofreadingWithTheConnectionThatFoundIt(t *testing.T) {
+	s := newScene(t)
+	scan := s.holdScan(t)
+	s.run = newProofreading(s.host, failWith(&connection.StoppedError{ConnectionName: "OpenRouter", Reason: "bad request"}), s.settings)
+
+	_, err := s.run.Proofread(t.Context(), proofread.Request{Path: scanPath, Source: scan.GetID()})
+
+	var rejected *connection.StoppedError
+	if !errors.As(err, &rejected) || rejected.ConnectionName != "OpenRouter" {
+		t.Fatalf("got %v, want a rejection by OpenRouter", err)
 	}
 }

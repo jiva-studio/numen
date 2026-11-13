@@ -79,8 +79,6 @@ func isSamePath(path, absDest string) bool {
 	return absCurrent == absDest
 }
 
-func getShippedPaths() []string { return []string{"manifest.json", "bin", "dist"} }
-
 func isArchive(pluginDir, path string) bool {
 	return strings.HasSuffix(path, ".zip") && filepath.Dir(path) == filepath.Join(pluginDir, "dist")
 }
@@ -157,7 +155,7 @@ func createArchive(pluginDir, destPath string, extra []string) (count int, err e
 		count:     0,
 	}
 
-	for _, shipped := range slices.Concat(getShippedPaths(), filterOutsideShipped(extra)) {
+	for _, shipped := range slices.Concat(manifestjson.ListShippedPaths(), filterOutsideShipped(extra)) {
 		root := filepath.Join(pluginDir, shipped)
 		if _, err := os.Stat(root); errors.Is(err, fs.ErrNotExist) {
 			continue
@@ -174,7 +172,7 @@ func filterOutsideShipped(files []string) []string {
 	var outside []string
 	for _, file := range files {
 		top, _, _ := strings.Cut(file, string(filepath.Separator))
-		if !slices.Contains(getShippedPaths(), top) {
+		if !slices.Contains(manifestjson.ListShippedPaths(), top) {
 			outside = append(outside, file)
 		}
 	}

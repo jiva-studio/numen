@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 )
 
@@ -57,7 +56,7 @@ func TestCoarseKeepsTheSignOfAQuantizedVector(t *testing.T) {
 }
 
 func TestBytesRoundTrip(t *testing.T) {
-	step := embedding.Int8Scale / 127
+	step := vector.Int8Scale / 127
 	for _, c := range []struct {
 		name string
 		in   float32
@@ -65,8 +64,8 @@ func TestBytesRoundTrip(t *testing.T) {
 	}{
 		{"zero", 0, 0},
 		{"one step", float32(step), 1},
-		{"half the scale", embedding.Int8Scale / 2, 64},
-		{"the scale itself", embedding.Int8Scale, 127},
+		{"half the scale", vector.Int8Scale / 2, 64},
+		{"the scale itself", vector.Int8Scale, 127},
 		{"beyond the scale is clamped", 1, 127},
 		{"beyond the scale, negative", -1, -127},
 		{"a value between two steps rounds", float32(step * 2.7), 3},
@@ -77,8 +76,8 @@ func TestBytesRoundTrip(t *testing.T) {
 			if got[0] != c.want {
 				t.Fatalf("got %d, want %d", got[0], c.want)
 			}
-			back := float64(got[0]) / 127 * embedding.Int8Scale
-			want := math.Min(math.Abs(float64(c.in)), embedding.Int8Scale)
+			back := float64(got[0]) / 127 * vector.Int8Scale
+			want := math.Min(math.Abs(float64(c.in)), vector.Int8Scale)
 			if diff := math.Abs(math.Abs(back) - want); diff > step/2 {
 				t.Errorf("read back %v from %v, off by %v", back, c.in, diff)
 			}

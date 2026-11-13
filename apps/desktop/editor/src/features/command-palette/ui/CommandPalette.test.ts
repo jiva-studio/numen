@@ -7,11 +7,13 @@ import { PALETTE_WORDS } from '../words'
 import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from '../model/palette/runSupport'
 import { createCommandPalette } from '../model/palette/palette'
-import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
+import { useSearch, type NameMatch, type SearchDeps } from '../model/search/search'
+import type { Passage } from '../model/search/lookup'
 import type { CommandDeps } from '@/shared/model/command'
 import { createCommandRegistry } from '@/shared/model/command'
 import type { CommandTarget } from '@/shared/model/command'
 import CommandPalette from './CommandPalette.vue'
+import { createDeferred } from '@/testing/deferred'
 
 const words = { ...windowWords, ...PALETTE_WORDS }
 
@@ -229,14 +231,6 @@ describe('choosing a row of the commands', () => {
   })
 })
 
-function createDeferred<T>() {
-  let answer = (_value: T) => undefined as void
-  const promise = new Promise<T>((resolve) => {
-    answer = resolve
-  })
-  return { promise, answer }
-}
-
 describe('the highlight of the search menu as groups answer', () => {
   it('keeps the highlight on the selected row when another search group answers', async () => {
     const names = [createDeferred<NameMatch[]>(), createDeferred<NameMatch[]>()]
@@ -344,5 +338,47 @@ describe('the empty state of the search', () => {
 
     expect(one.field.find('[data-palette="nothing-text"]').exists()).toBe(false)
     expect(one.field.find('[data-palette="nothing-icon"]').exists()).toBe(false)
+  })
+})
+
+describe('the spinner of the search field', () => {
+  it('turns while the meaning of the query is out and stops once it answers', async () => {
+    const meaning = createDeferred<readonly Passage[]>()
+    const core: SearchDeps = {
+      names: async () => [],
+      search: async (_query, mode) => (mode === 'meaning' ? meaning.promise : [notePassage]),
+    }
+    const search = useSearch(core, words, { wait: now })
+    const commands = createCommandPalette({
+      core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+      words,
+      at: () => inFront,
+      knows: { getTitle: () => '', getTabAt: () => null },
+      lists: { getStepGroups: () => [], previewItem: () => undefined },
+      runs: runSupport(),
+      getCommands: createAppCommands,
+    })
+    const field = mount(CommandPalette, {
+      props: {
+        commands,
+        search,
+        doing: { writeMessage: vi.fn(), registry } as unknown as CommandDeps,
+        getTarget: () => inFront,
+        places: {},
+        runChoice: vi.fn(),
+      },
+      global: { stubs: { Palette: true } },
+    })
+    search.setOpen(true)
+    const typed = search.setTyped('reef')
+    await flushPromises()
+
+    expect(field.findComponent(Palette).props('isBusy')).toBe(true)
+
+    meaning.answer([])
+    await typed
+    await flushPromises()
+
+    expect(field.findComponent(Palette).props('isBusy')).toBe(false)
   })
 })

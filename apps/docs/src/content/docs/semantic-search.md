@@ -13,11 +13,11 @@ Disable the Vector Embeddings plugin. Search is then names and words alone, noth
 
 ## Using a service
 
-In the settings of the Vector Embeddings plugin, set the provider to `openai`, `openrouter` or `custom`, the service URL, and the model name. Any service that supports the standard embeddings request will work. The service's key is not typed here. Add it on the Secrets page of the settings, in the OpenRouter or OpenAI card, and choose Vector Embeddings in its Used by field. For a custom service, add the key in any card, for example one you made, and choose the plugin the same way. The plugin's page shows the key it uses and a button to the Secrets page. The settings file holds no key.
+First add a connection on the Connections page of the settings, as described in [Connections](/connections/). Then open the settings of the Vector Embeddings plugin, set **Source** to **Connection**, choose the connection and type the name of an embedding model it offers. Any service that supports the standard embeddings request will work. The plugin holds no key and no address of its own: the connection does, and the settings file holds no key. Set **Source** back to **Local model** to run the model on your computer again.
 
 ## Changing the model
 
-The model a vector came from is stored with it, so a vault read by another model is read again. Nothing is deleted: if you go back to the old model, its vectors are still there.
+The model a vector came from is stored with it, so a vault read by another model is read again. Changing the connection or its model asks first. The question gives the number of notes and the name of the connection, and says that it may cost money. After you confirm, the vault is indexed again with the new model. Search by words works meanwhile, and the vectors of the old model stay on disk, so if you go back to it they are used again. If the service rejects the key or asks for payment, indexing stops and the status bar names the connection and the reason.
 
 ## The rest
 

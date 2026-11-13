@@ -19,8 +19,8 @@ export function createWindowBase() {
   const tabs = createTabsPart({
     writeMessage,
     rest,
-    isPluginStarting: status.isPluginStarting,
-    openPluginSettings: settingsRequests.emit,
+    status,
+    openPluginSettings: (pluginId) => settingsRequests.emit({ pluginId }),
   })
   const { windowTabs, windowId, tabOpeners, tabLinks } = tabs
   const vault = createVaultServices({ log, windowTabs, tabOpeners, navigation: tabs.navigation })
@@ -51,6 +51,7 @@ export function createWindowBase() {
     getTarget: createTargetResolver(windowTabs, vaults, window),
     windowSettings: createWindowSettings({
       rest,
+      connections: foundation.connections,
       words,
       log,
       onSizeChanged: () => measureTabs(windowTabs),

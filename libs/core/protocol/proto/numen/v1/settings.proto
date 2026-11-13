@@ -12,51 +12,18 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/plugin.proto";
-import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
 
 // SettingsService answers about that file, one setting at a time.
 service SettingsService {
-  // GetSettings is every setting of the file, and the models the settings that
-  // name one can be set to.
+  // GetSettings is every setting of the file.
   rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
 
   // WriteSettings writes settings into that file. The file is patched as an
   // object, so every key a person typed keeps its position, and a file the
   // settings could not be read out of again is not written at all.
   rpc WriteSettings(WriteSettingsRequest) returns (WriteSettingsResponse);
-
-  // CreateSecret adds a secret at the end of its group and keeps its value outside the settings file.
-  rpc CreateSecret(CreateSecretRequest) returns (CreateSecretResponse);
-
-  // RenameSecret changes the name of a secret. Its id, value and permissions stay.
-  rpc RenameSecret(RenameSecretRequest) returns (RenameSecretResponse);
-
-  // WriteSecret replaces the value of a secret and hands the plugins that may read it their secrets again.
-  rpc WriteSecret(WriteSecretRequest) returns (WriteSecretResponse);
-
-  // DeleteSecret removes a secret with its value and its permissions.
-  rpc DeleteSecret(DeleteSecretRequest) returns (DeleteSecretResponse);
-
-  // DeleteSecretGroup removes every secret of a group with its values and its permissions.
-  rpc DeleteSecretGroup(DeleteSecretGroupRequest) returns (DeleteSecretGroupResponse);
-
-  // ListSecretStates tells for each secret whether its value is on this machine. It reads the key
-  // store once for each secret, so only the page of secrets asks for it.
-  rpc ListSecretStates(ListSecretStatesRequest) returns (ListSecretStatesResponse);
-
-  // MoveSecret changes the priority of a secret inside its group.
-  rpc MoveSecret(MoveSecretRequest) returns (MoveSecretResponse);
-
-  // RenameSecretGroup changes the group of all the secrets of a group the person made.
-  rpc RenameSecretGroup(RenameSecretGroupRequest) returns (RenameSecretGroupResponse);
-
-  // AllowPluginSecret lets one declaration of a plugin read a secret.
-  rpc AllowPluginSecret(AllowPluginSecretRequest) returns (AllowPluginSecretResponse);
-
-  // DenyPluginSecret stops one declaration of a plugin from reading a secret.
-  rpc DenyPluginSecret(DenyPluginSecretRequest) returns (DenyPluginSecretResponse);
 
   // RetryPlugin forgets the failures of a plugin the host suspends, and starts
   // it once. A plugin that fails again is suspended again, and the call answers
@@ -96,9 +63,6 @@ message GetSettingsResponse {
   // The file itself, absolute on this machine.
   string path = 2;
 
-  // The models the settings that name one can be set to.
-  repeated Model models = 3;
-
   // Active plugins and their declarative settings schema.
   repeated PluginInfo plugins = 7;
 
@@ -108,63 +72,6 @@ message GetSettingsResponse {
 
   reserved 9;
 
-  // Empty while the system keychain is in use; otherwise the absolute path of the file the values are kept in.
-  string credentials_path = 10;
-
-  // The secrets by group in the order of the page of secrets: the groups the installed plugins ask
-  // for by name, then the groups the person made by name. A value never travels.
-  repeated SecretSection secret_sections = 11;
-
-  // For each secret a plugin declares, the secrets its menu offers in order.
-  repeated SecretMenu secret_menus = 12;
-}
-
-// Model is one model a setting that names a model can be set to.
-message Model {
-  // The setting the model is read from, as a path through the file. The model
-  // in force is the one whose name stands there.
-  repeated string named_at = 1;
-
-  // What stands there while this model is the one in force.
-  string name = 2;
-
-  // What is drawn on the row, and the group the rows around it stand under.
-  string title = 3;
-  string group = 4;
-
-  // Set on the model an installation with no configuration runs on.
-  bool is_default = 5;
-
-  // What choosing it writes. One model is several keys where the model decides
-  // more than its own name.
-  repeated Setting writes = 6;
-
-  // What this model's files are on this machine.
-  Presence presence = 7;
-
-  // The depths of reasoning the model can be asked to work at, from the least to the most. Empty
-  // where the model offers no choice.
-  repeated ReasoningLevel reasoning_levels = 8;
-
-  // The level the model works at unasked. Empty where it names none.
-  string default_reasoning = 9;
-}
-
-// Presence is what a model's files are on this machine. It says where files
-// stand and nothing else: it is no reason to prefer one model to another.
-enum Presence {
-  // Nothing was said about this model's files.
-  PRESENCE_UNSPECIFIED = 0;
-
-  // The files stand where a fetch puts them.
-  PRESENCE_PRESENT = 1;
-
-  // The files are not on this machine. They are fetched when the model is next
-  // needed.
-  PRESENCE_NOT_FETCHED = 2;
-
-  // The model is reached over the network, and nothing of it is fetched.
-  PRESENCE_NOTHING_TO_FETCH = 3;
 }
 
 // Setting is one setting of the file and what to put there.
@@ -191,123 +98,6 @@ message WriteSettingsRequest {
 }
 
 message WriteSettingsResponse {}
-
-// Secret is one secret as the window sees it. A value never travels.
-message Secret {
-  string id = 1;
-  string name = 2;
-  string group = 3;
-  repeated DeclarationKey allowed = 4;
-  reserved 5;
-}
-
-// SecretSection is the secrets of one group in priority order. A group a plugin asks for is a
-// section while it holds no secret.
-message SecretSection {
-  string group = 1;
-  // True when an installed plugin asks for the group by name.
-  bool is_asked = 2;
-  repeated Secret secrets = 3;
-}
-
-// SecretMenu is the secrets the menu of one secret declaration of a plugin offers: those of the
-// declared group first, then the others in the order of the page.
-message SecretMenu {
-  string plugin_id = 1;
-  string name = 2;
-  // The group of the declaration, empty for none.
-  string group = 3;
-  repeated string secret_ids = 4;
-}
-
-// DeclarationKey identifies one secret declaration of a plugin.
-message DeclarationKey {
-  string plugin_id = 1;
-  string name = 2;
-  // The group of the declaration, empty for none.
-  string group = 3;
-}
-
-message CreateSecretRequest {
-  string group = 1;
-  string name = 2;
-  string value = 3 [debug_redact = true];
-}
-
-message CreateSecretResponse {
-  string id = 1;
-}
-
-message RenameSecretRequest {
-  string id = 1;
-  string name = 2;
-}
-
-message RenameSecretResponse {}
-
-message WriteSecretRequest {
-  string id = 1;
-  string value = 2 [debug_redact = true];
-}
-
-message WriteSecretResponse {}
-
-message DeleteSecretRequest {
-  string id = 1;
-}
-
-message DeleteSecretResponse {}
-
-message DeleteSecretGroupRequest {
-  string group = 1;
-}
-
-message DeleteSecretGroupResponse {}
-
-message ListSecretStatesRequest {}
-
-message ListSecretStatesResponse {
-  repeated SecretState states = 1;
-}
-
-// SecretState reports whether the value of one secret is on this machine.
-message SecretState {
-  string id = 1;
-  bool has_value = 2;
-}
-
-message MoveSecretRequest {
-  string id = 1;
-  // Inside one group; empty means the end of the group.
-  string before_id = 2;
-}
-
-message MoveSecretResponse {}
-
-message RenameSecretGroupRequest {
-  string group = 1;
-  string name = 2;
-}
-
-message RenameSecretGroupResponse {}
-
-message AllowPluginSecretRequest {
-  string secret_id = 1;
-  string plugin_id = 2;
-  string name = 3;
-  string group = 4;
-}
-
-message AllowPluginSecretResponse {}
-
-message DenyPluginSecretRequest {
-  string secret_id = 1;
-  string plugin_id = 2;
-  string name = 3;
-  string group = 4;
-}
-
-message DenyPluginSecretResponse {}
 
 message RetryPluginRequest {
   // The plugin, by its id.
@@ -348,3 +138,28 @@ message DeletePluginDataRequest {
 }
 
 message DeletePluginDataResponse {}
+
+// OptionsRequest is the payload of an operation a row field of a connection type names in options_from.
+message OptionsRequest {
+  // operations are the operations the setting of rows the field belongs to is used for.
+  repeated string operations = 1;
+  // is_fresh asks the provider to read the options anew, past any list it keeps.
+  bool is_fresh = 2;
+}
+
+// Options is the done frame of an operation a row field names in options_from: the values the field can
+// take, in the order to show them.
+message Options {
+  repeated Option options = 1;
+  // is_partial marks a list that misses values the provider could not read now; the core does not keep it.
+  bool is_partial = 2;
+}
+
+// Option is one value of a field.
+message Option {
+  string value = 1;
+  // title is shown in place of the value; empty shows the value.
+  string title = 2;
+  // group is the heading the option is shown under; empty is no heading.
+  string group = 3;
+}

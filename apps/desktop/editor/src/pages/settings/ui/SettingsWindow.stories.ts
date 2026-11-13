@@ -5,16 +5,24 @@
  * renders in its settled state and can be captured as a screenshot.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, userEvent, within } from 'storybook/test'
 import { WorkspaceLayout, pane } from '@numen/workbench'
 import type { Tab, Workspace } from '@numen/workbench'
 import { Settings as SettingsIcon } from '@lucide/vue'
-import { ref, type Component } from 'vue'
+import { computed, ref, shallowReactive, type Component } from 'vue'
 
 import type { Installation } from '../types'
 import SettingsTab from './SettingsTab.vue'
-import type { Model, PluginInfo } from '@/entities/settings'
+import type { PluginHealthItem } from '@/entities/plugin'
+import type { PluginInfo, SettingEdit } from '@/entities/settings'
+import type { JsonValue } from '@/shared/api/json'
 import { SETTINGS } from '@/entities/tab'
 import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
+import {
+  SHIPPED_CATALOG,
+  SHIPPED_PLUGINS,
+  SHIPPED_READMES,
+} from '@/pages/settings/testing/shippedPlugins'
 
 /** Every tab this file draws, under the identity the window opens it at. */
 const TABS: readonly Tab[] = [{ id: SETTINGS, title: 'Settings' }]
@@ -66,67 +74,31 @@ type Story = StoryObj
 
 /* The settings. ------------------------------------------------------------ */
 
-/** The program an unconfigured installation uses. */
-const AGENT_USE: Model = {
-  namedAt: ['app', 'agent', 'use'],
-  name: 'claude',
-  title: 'Claude Code',
-  group: '',
-  isDefault: true,
-  writes: [{ at: ['app', 'agent', 'use'], value: '"claude"' }],
-  presence: 'present',
-}
-
-const plugin = (id: string, name: string, description: string): PluginInfo => ({
-  id,
-  name,
-  version: '1.0.0',
-  description,
-  isActive: true,
-  settings: [],
-  capabilities: [],
-  secrets: [],
-  hasFrontend: false,
-  hasBackend: false,
-})
-
-/** Plugins of every category the list sorts by, as an installation ships them. */
-const PLUGINS: readonly PluginInfo[] = [
-  plugin(
-    'md.numen.agents.claude',
-    'Claude Code Agent',
-    'Claude Code CLI agent runner and provider service',
-  ),
-  plugin(
-    'md.numen.agents.tools.vault',
-    'Vault Knowledge Tools',
-    'Core vault, note, search and wikilink tools for agents',
-  ),
-  plugin('md.numen.notes', 'Notes', 'Notes written in Markdown, with wikilinks'),
-  plugin(
-    'md.numen.engines.embeddings',
-    'Vector Embeddings',
-    'Vector embeddings engine for semantic search',
-  ),
-  plugin('md.numen.engines.ocr', 'Document OCR', 'Recognises the text of scans and scanned PDFs'),
-  plugin(
-    'md.numen.engines.transcription',
-    'Audio/Video Transcription',
-    'Transcribes the recordings a person asks for',
-  ),
-  plugin('md.numen.readers.epub', 'EPUB Book Reader', 'EPUB reflowable book reader'),
-  plugin('md.numen.readers.pdf', 'PDF Reader', 'PDF document viewer and page renderer'),
-  plugin(
-    'md.numen.tools.media.importer',
-    'Media Importer',
-    'Keeps web addresses as links and fetches what is published there',
-  ),
-  plugin('org.example.sample.studio', 'Sample Studio', 'Samples, forms and the views of them'),
-  plugin('md.numen.views.plex.graph', 'Plex Graph', 'Knowledge graph visualizer and plex explorer'),
+/** Document OCR suspended after a failed start. */
+const HEALTH: readonly PluginHealthItem[] = [
+  {
+    pluginId: 'md.numen.engines.ocr',
+    key: 'start',
+    severity: 'error',
+    text: 'The engine exited while starting: the model file pp-ocrv6-tiny.onnx is missing.',
+    detail: 'open models/pp-ocrv6-tiny.onnx: no such file or directory',
+  },
 ]
 
-/** The actions the settings requested; a screenshot requests none. */
-const DONE: string[] = []
+/** What numen.json holds: EPUB Book Reader turned off and two values changed from their defaults. */
+const VALUES = shallowReactive(
+  new Map<string, JsonValue>([
+    ['md.numen.readers.epub/enabled', false],
+    ['md.numen.agents.numen/temperature', 0.4],
+    ['md.numen.tools.media.importer/copyMaxSizeMb', 2000],
+  ]),
+)
+
+const readValue = (path: readonly string[]) => VALUES.get(path.join('/'))
+
+const writeValues = (edits: readonly SettingEdit[]) => {
+  for (const edit of edits) VALUES.set(edit.at.join('/'), JSON.parse(edit.value))
+}
 
 const APP_SETTINGS: Installation['plugin']['app'] = ref([
   {
@@ -140,7 +112,6 @@ const APP_SETTINGS: Installation['plugin']['app'] = ref([
     activeOptions: [
       { value: 'preset:numen', title: 'numen', detail: '' },
       { value: 'preset:dracula', title: 'dracula', detail: '' },
-      { value: 'mine:sea', title: 'sea', detail: '' },
     ],
     isShown: true,
     value: 'preset:numen',
@@ -160,54 +131,77 @@ const APP_SETTINGS: Installation['plugin']['app'] = ref([
   },
 ])
 
-const INSTALLED: Installation['plugin']['plugins'] = ref(PLUGINS)
+const withShownSettings = (plugin: PluginInfo): PluginInfo => {
+  const valueOf = (key: string) =>
+    VALUES.get(`${plugin.id}/${key}`) ?? plugin.settings.find((one) => one.key === key)?.default
+  return {
+    ...plugin,
+    settings: plugin.settings.map((one) => ({
+      ...one,
+      isShown:
+        one.when === undefined || one.when.is.includes(String(valueOf(one.when.setting) ?? '')),
+    })),
+  }
+}
 
-const INSTALLATION = createInstallation({
-  getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
-  write: (edits) => {
-    DONE.push(`write ${edits.length}`)
-  },
-  file: ref('/numen.json'),
-  app: APP_SETTINGS,
-  retryPlugin: () => {
-    DONE.push('plugin retried')
-  },
-  choosePath: async () => {
-    DONE.push('path chosen')
-    return ''
-  },
-  plugins: INSTALLED,
-  createSecret: async () => {
-    DONE.push('secret created')
-    return 's00000001'
-  },
-  renameSecret: () => {
-    DONE.push('secret renamed')
-  },
-  writeSecret: () => {
-    DONE.push('secret written')
-  },
-  deleteSecret: () => {
-    DONE.push('secret deleted')
-  },
-  deleteSecretGroup: () => {
-    DONE.push('secret group deleted')
-  },
-  moveSecret: () => {
-    DONE.push('secret moved')
-  },
-  renameSecretGroup: () => {
-    DONE.push('secret group renamed')
-  },
-  allowPluginSecret: () => {
-    DONE.push('secret allowed')
-  },
-  denyPluginSecret: () => {
-    DONE.push('secret denied')
-  },
-})
+const createShippedInstallation = (): Installation =>
+  createInstallation({
+    getSetting: readValue,
+    write: writeValues,
+    app: APP_SETTINGS,
+    plugins: computed<readonly PluginInfo[]>(() => SHIPPED_PLUGINS.map(withShownSettings)),
+    catalog: ref(SHIPPED_CATALOG),
+    getReadme: (pluginId) => Promise.resolve(SHIPPED_READMES[pluginId] ?? ''),
+    getPluginData: () => Promise.resolve(42),
+    items: ref(HEALTH),
+  })
+
+const drawSettings = () =>
+  window(
+    SETTINGS,
+    SettingsTab,
+    createSettingsState(createShippedInstallation(), { initialPluginId: ref(null) }),
+  )
 
 /** The settings of the window and of every plugin installed, each reached from its row. */
 export const Settings: Story = {
-  render: () => window(SETTINGS, SettingsTab, createSettingsState(INSTALLATION)),
+  render: () => drawSettings(),
+}
+
+/**
+ * The page of a plugin: the toolbar holds the back button, the path from Settings through the
+ * category to the plugin, and the state and the switch of the plugin. The category opens the list
+ * searched for it.
+ */
+export const SettingsToolbarOfAPluginPage: Story = {
+  render: () => ({
+    components: { SettingsTab },
+    setup: () => ({
+      state: createSettingsState(createShippedInstallation(), {
+        initialPluginId: ref('md.numen.agents.claude'),
+      }),
+    }),
+    template: `
+      <div class="numen" style="block-size: 40rem; background: var(--numen-surface)">
+        <SettingsTab :state="state" />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const path = await canvas.findByRole('navigation', { name: 'Path' })
+    await expect(within(path).getByRole('button', { name: 'Settings' })).toBeVisible()
+    await expect(within(path).getByRole('button', { name: 'Agents' })).toBeVisible()
+    await expect(within(path).getByText('Claude Code Agent')).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    await expect(canvas.getByRole('switch', { name: 'Enabled Claude Code Agent' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Back' })).toBeVisible()
+
+    await userEvent.click(within(path).getByRole('button', { name: 'Agents' }))
+    await expect(await canvas.findByRole('searchbox', { name: 'Search plugins' })).toHaveValue(
+      'category:agents',
+    )
+  },
 }

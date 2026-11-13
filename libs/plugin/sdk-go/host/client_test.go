@@ -85,19 +85,6 @@ func (a *answering) UnlockVault(_ context.Context, req *connect.Request[v1.Unloc
 	return connect.NewResponse(&v1.UnlockVaultResponse{}), nil
 }
 
-func (a *answering) WatchVault(ctx context.Context, _ *connect.Request[v1.WatchVaultRequest], stream *connect.ServerStream[v1.WatchVaultResponse]) error {
-	for _, response := range []*v1.WatchVaultResponse{{}, {Paths: []string{"x.md"}}, {IsVaultChanged: true}} {
-		if err := stream.Send(response); err != nil {
-			return err
-		}
-		if a.watchFailure != nil {
-			return a.watchFailure
-		}
-	}
-	<-ctx.Done()
-	return nil
-}
-
 func clientTo(t *testing.T, a *answering) *host.Client {
 	t.Helper()
 	mux := httptest.NewServer(handler(a))
@@ -186,25 +173,6 @@ func TestReleasingTheLockPassesItBack(t *testing.T) {
 	}
 }
 
-func TestAWatchBeginsAfterTheFirstMessageAndTellsTheChanges(t *testing.T) {
-	ctx, cancel := context.WithCancel(t.Context())
-	defer cancel()
-
-	changes, err := clientTo(t, &answering{}).Watch(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	first := <-changes
-	second := <-changes
-	if len(first.Paths) != 1 || first.Paths[0] != "x.md" || !second.IsVaultChanged {
-		t.Errorf("got %+v then %+v", first, second)
-	}
-	cancel()
-	for range changes {
-	}
-}
-
 func TestClient_SendsVaultIdentityHeader(t *testing.T) {
 	a := &answering{}
 	client := clientTo(t, a)
@@ -254,22 +222,6 @@ func TestAWatchOfMovesBeginsAfterTheFirstMessage(t *testing.T) {
 	}
 	cancel()
 	for range moves {
-	}
-}
-
-func TestAWatchThatFailsSendsTheFailureLast(t *testing.T) {
-	failure := connect.NewError(connect.CodeUnavailable, errors.New("host gone"))
-	changes, err := clientTo(t, &answering{watchFailure: failure}).Watch(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var last host.Change
-	for change := range changes {
-		last = change
-	}
-	if connect.CodeOf(last.Err) != connect.CodeUnavailable {
-		t.Errorf("the last change was %+v, want the failure of the watch", last)
 	}
 }
 

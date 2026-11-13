@@ -1536,3 +1536,28 @@ describe('openSavedTab', () => {
     expect(window.groups.handle.front()?.id).toBe(id)
   })
 })
+
+describe('a tab of a kind whose plugin has not started', () => {
+  it('starts the plugin of the kind, and becomes a tab of the kind once the plugin registers it', async () => {
+    const started: string[] = []
+    const window = createTestTabs({ startKindPlugin: (one) => started.push(one) })
+    const id = await window.tabs.openTabOfKind('thing', 'One.md')
+
+    expect(started).toStrictEqual(['thing'])
+    const thing = kind()
+    window.groups.registerKind(thing.one)
+
+    expect(window.tabs.getTab(id)?.kind).toBe(thing.one)
+    expect(thing.opened).toStrictEqual(['One.md'])
+  })
+
+  it('starts nothing for a kind the window holds', async () => {
+    const started: string[] = []
+    const window = createTestTabs({ startKindPlugin: (one) => started.push(one) })
+    window.groups.registerKind(kind().one)
+
+    await window.tabs.openTabOfKind('thing', 'One.md')
+
+    expect(started).toStrictEqual([])
+  })
+})

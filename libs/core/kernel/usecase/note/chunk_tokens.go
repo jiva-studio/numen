@@ -3,10 +3,10 @@ package note
 import (
 	"sync/atomic"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
-// ChunkTokens is the chunk size in tokens that the embedding plugin reports, shared by every copy of the
+// ChunkTokens is the chunk size in tokens that the search source reports, shared by every copy of the
 // configuration that holds it. A nil ChunkTokens is a size that is not known.
 type ChunkTokens struct{ tokens atomic.Int64 }
 
@@ -25,8 +25,8 @@ func (c *ChunkTokens) Get() int {
 	return int(c.tokens.Load())
 }
 
-// Follow holds the chunk size of the model of the embedder, and again each time onChange has the model change.
-func (c *ChunkTokens) Follow(embedder embeddingport.Embedder, onChange func(func())) {
-	c.Set(embedder.GetModel().ChunkTokens)
-	onChange(func() { c.Set(embedder.GetModel().ChunkTokens) })
+// Follow holds the chunk size of the search source, and again each time onChange has its description change.
+func (c *ChunkTokens) Follow(source searchsourceport.Source, onChange func(func())) {
+	c.Set(source.Describe().ChunkTokens)
+	onChange(func() { c.Set(source.Describe().ChunkTokens) })
 }

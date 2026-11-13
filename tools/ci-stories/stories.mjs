@@ -15,13 +15,14 @@ import { join } from 'node:path'
 import { modules, root } from '../shared/modules.mjs'
 
 /**
- * The three Storybooks a story is drawn in, each by the folder it is started
- * from: the components' own, the shell's, which draws the windows' screens
- * beside it, and the plugins', which draws every plugin's frontend.
+ * The Storybooks a story is drawn in, each by the folder it is started from:
+ * the components' own, the shell's, the editor window's, and the plugins',
+ * which draws every plugin's frontend.
  */
 export const BOOKS = {
   ui: 'libs/ui/components',
   shell: 'libs/ui/workbench',
+  editor: 'apps/desktop/editor',
   plugins: 'libs/plugin/sdk-ts/stories',
 }
 

@@ -14,8 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
-var _ host.VaultList = (*Vault)(nil)
-
 // SetMissing marks the vault as one whose folder is gone, as the list of vaults reports it. A vault
 // kept on disk whose folder was removed is missing too.
 func (v *Vault) SetMissing(isMissing bool) {

@@ -63,10 +63,6 @@ func (f *fakeProvisioner) Provision(ctx context.Context, req manifest.Dependency
 	return plugin.ResolvedDependency{ID: req.ID, PrimaryPath: "/p/" + req.ID}, nil
 }
 
-func (f *fakeProvisioner) Status(context.Context, manifest.DependencyRequirement) (plugin.DependencyStatus, error) {
-	return plugin.DependencyStatus{State: plugin.DependencyStateMissing}, nil
-}
-
 func TestRegistry_RoutesRequirementByKind(t *testing.T) {
 	onnx := &fakeProvisioner{id: "onnxruntime", kind: manifest.DependencyKindRuntime}
 	models := &fakeProvisioner{kind: manifest.DependencyKindModel}
@@ -174,10 +170,6 @@ func TestDownloadVerifiesChecksumAndWritesToCachePath(t *testing.T) {
 	if err != nil || again.PrimaryPath != resolved.PrimaryPath {
 		t.Errorf("second provision = %+v, %v", again, err)
 	}
-	status, err := provisioner.Status(t.Context(), req)
-	if err != nil || status.State != plugin.DependencyStateReady {
-		t.Errorf("status = %+v, %v", status, err)
-	}
 }
 
 func TestADownloadResumesFromAPartialFile(t *testing.T) {
@@ -247,13 +239,6 @@ func TestDownloadWithChecksumMismatchKeepsFolderEmpty(t *testing.T) {
 	}
 	for _, entry := range entries {
 		t.Errorf("%s was left in the folder", entry.Name())
-	}
-	status, statusErr := provisioner.Status(t.Context(), req)
-	if statusErr != nil {
-		t.Fatal(statusErr)
-	}
-	if status.State != plugin.DependencyStateMissing {
-		t.Errorf("state = %s, want missing", status.State)
 	}
 }
 

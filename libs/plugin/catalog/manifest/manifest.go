@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 )
 
 const (
@@ -27,9 +28,6 @@ const (
 	// restrict network requests: a plugin is trusted code, and permissions are consent and API hygiene.
 	PermissionLinkOpen = "link:open"
 
-	// PermissionAIComplete allows asking the host for a model completion.
-	PermissionAIComplete = "ai:complete"
-
 	// PermissionIndexRead allows reading the search index of a vault: its note titles, the stored
 	// vectors of its chunks, and the state of its embedding.
 	PermissionIndexRead = "index:read"
@@ -41,47 +39,68 @@ const (
 	// the tabs it has open.
 	PermissionWindowFocus = "window:focus"
 
+	// PermissionPluginsRead allows reading which plugins run, since when, how long each has been idle,
+	// when the host stops it for idleness, and its worst health item.
+	PermissionPluginsRead = "plugins:read"
+
+	// PermissionConnectionsUse is the start of the permission connections:use:<operation>, which allows
+	// calling the operation through every connection that serves it, and listing those connections and the
+	// values of their row fields. No setting of rows of the plugin lists the operation.
+	PermissionConnectionsUse = "connections:use:"
+
 	// PermissionNetworkAlias is the accepted short spelling of PermissionLinkOpen.
 	PermissionNetworkAlias = "network"
 
 	ProtocolVersion = 1
 )
 
-// PluginPermissions is every permission a manifest may declare, in its canonical spelling.
+// PluginPermissions is every permission a manifest may declare, in its canonical spelling, besides the
+// permissions connections:use:<operation>.
 func PluginPermissions() []string {
 	return []string{
 		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionLinkOpen,
-		PermissionAIComplete, PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus,
+		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus, PermissionPluginsRead,
 	}
 }
 
-const (
-	// ActivationEventStartup is the event the host emits when it starts.
-	ActivationEventStartup = "onStartup"
+// FormatConnectionsUse returns the permission to call the operation through every connection that serves it.
+func FormatConnectionsUse(operation string) string {
+	return PermissionConnectionsUse + operation
+}
 
-	// ActivationEventVectorsReady is the event the host emits when the vectors of a vault are ready.
-	ActivationEventVectorsReady = "onVectorsReady"
+// ParseConnectionsUse returns the operation a permission connections:use:<operation> names, and false for
+// any other permission.
+func ParseConnectionsUse(permission string) (string, bool) {
+	operation, isFound := strings.CutPrefix(permission, PermissionConnectionsUse)
+	return operation, isFound && connectionOperationPattern.MatchString(operation)
+}
 
-	// ActivationEventFilePrefix starts the event the host emits when a file is opened or listed.
-	ActivationEventFilePrefix = "onFile:"
-)
+// ListConnectionsUse returns the operations the permissions connections:use:<operation> of the manifest
+// name, in the order of the permissions.
+func (m Manifest) ListConnectionsUse() []string {
+	var operations []string
+	for _, p := range m.Permissions {
+		if operation, isGrant := ParseConnectionsUse(p); isGrant {
+			operations = append(operations, operation)
+		}
+	}
+	return operations
+}
+
+// ActivationEventSearchSourceReady is the event the host emits when the search source has indexed a vault.
+const ActivationEventSearchSourceReady = "onSearchSourceReady"
 
 // PluginActivationEvents is every activation event pattern a manifest may declare.
 func PluginActivationEvents() []string {
-	return []string{
-		ActivationEventStartup,
-		ActivationEventVectorsReady,
-		ActivationEventFilePrefix + "<ext>",
-	}
+	return []string{ActivationEventSearchSourceReady}
 }
 
 // PluginCapabilities is every capability a manifest may declare: the capabilities the host resolves
 // a plugin by.
 func PluginCapabilities() []string {
 	return []string{
-		"embedding",
+		"search.source",
 		"tools",
-		"ai.agent.provider",
 	}
 }
 
@@ -105,9 +124,9 @@ var (
 	ErrInvalidSettingType     = errors.New("invalid setting type")
 	ErrEnumMissingOptions     = errors.New("enum setting must define options")
 	ErrRangeInvalidBounds     = errors.New("range min cannot exceed max")
-	ErrInvalidSecret          = errors.New("invalid secret")
 	ErrReservedSettingKey     = errors.New("the setting key is kept by the host")
 	ErrInvalidSetting         = errors.New("invalid setting")
+	ErrLongSettingDescription = errors.New("setting description is longer than one line")
 	ErrInvalidService         = errors.New("invalid service name")
 	ErrInvalidNoteType        = errors.New("invalid note type")
 	ErrNoBackend              = errors.New("only a backend serves this, and the plugin declares none")
@@ -122,13 +141,18 @@ func IsValidID(id string) bool { return manifestIDPattern.MatchString(id) }
 // host runs the plugin. No setting of a manifest takes the name.
 const SettingEnabled = "enabled"
 
-func listReservedSettingKeys() []string { return []string{SettingEnabled} }
+// SettingDiscover is the field of the object of a plugin in the settings file that holds, for each setting
+// of type connections that declares discover, whether it uses every connection that serves its
+// operations while it holds no row. No setting of a manifest takes the name.
+const SettingDiscover = "discover"
+
+func listReservedSettingKeys() []string { return []string{SettingEnabled, SettingDiscover} }
 
 var (
-	manifestIDPattern      = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
-	manifestServicePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
-	manifestSecretPattern  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	manifestVersionPattern = regexp.MustCompile(
+	manifestIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
+	manifestServicePattern  = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$`)
+	manifestNoteTypePattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	manifestVersionPattern  = regexp.MustCompile(
 		`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`,
 	)
 )
@@ -145,15 +169,47 @@ const SettingTypeEnum = "enum"
 // SettingTypeFile is the type of a setting that holds a file path on this machine.
 const SettingTypeFile = "file"
 
+// SettingTypeConnections is the type of a setting that holds rows of connections: each names a
+// connection and holds the values of the row fields of its type.
+const SettingTypeConnections = "connections"
+
 const settingTypeNumber = "number"
 
+// settingTypeBoolean is the type of a setting that stores true or false.
+const settingTypeBoolean = CommandArgumentBoolean
+
 func listSettingTypes() []string {
-	return []string{"boolean", SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile}
+	return []string{settingTypeBoolean, SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile, SettingTypeConnections}
 }
 
-// Backend describes the server-side executable of a plugin.
+// Backend describes the server-side executable of a plugin. A zero IdleStopSeconds takes the idle limit
+// of the host.
 type Backend struct {
-	Entrypoint string
+	Entrypoint      string
+	IdleStopSeconds int
+}
+
+const (
+	// MinIdleStopSeconds is the shortest idle limit a manifest may set.
+	MinIdleStopSeconds = 30
+	// MaxIdleStopSeconds is the longest idle limit a manifest may set.
+	MaxIdleStopSeconds = 3600
+)
+
+// ErrInvalidIdleStop is an idle limit outside MinIdleStopSeconds and MaxIdleStopSeconds.
+var ErrInvalidIdleStop = errors.New("invalid backend idle limit")
+
+// GetIdleStopTime returns how long the process may run without a lease before the host stops it, and
+// zero where the manifest sets no limit.
+func (b Backend) GetIdleStopTime() time.Duration {
+	return time.Duration(b.IdleStopSeconds) * time.Second
+}
+
+func (b Backend) listIdleStopIssues() []error {
+	if b.IdleStopSeconds == 0 || (b.IdleStopSeconds >= MinIdleStopSeconds && b.IdleStopSeconds <= MaxIdleStopSeconds) {
+		return nil
+	}
+	return []error{fmt.Errorf("%w: idleStopSeconds %d is outside %d to %d", ErrInvalidIdleStop, b.IdleStopSeconds, MinIdleStopSeconds, MaxIdleStopSeconds)}
 }
 
 // Frontend declares that a plugin has a client-side bundle. The bundle is dist/index.js and its
@@ -166,6 +222,7 @@ type Setting struct {
 	Type        string
 	Title       string
 	Description string
+	Details     string
 	Default     any
 	Palette     bool
 	Icon        string
@@ -180,6 +237,8 @@ type Setting struct {
 	Preview     bool
 	OptionsFrom string
 	Generate    string
+	Operations  []string
+	Discover    bool
 }
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
@@ -197,10 +256,10 @@ type Manifest struct {
 	Backend          Backend
 	Frontend         *Frontend
 	Settings         []Setting
-	Secrets          []SecretDeclaration
 	Services         []string
 	SettingsViews    []SettingsView
 	Contributes      Contributes
+	IsOffByDefault   bool
 	Warnings         []string
 }
 
@@ -228,9 +287,9 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listActivationEventIssues()...)
 	issues = append(issues, m.listEntrypointIssues()...)
 	issues = append(issues, m.listBackendlessIssues()...)
+	issues = append(issues, m.Backend.listIdleStopIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
 	issues = append(issues, m.listDependencyIssues()...)
-	issues = append(issues, m.listSecretIssues()...)
 	issues = append(issues, m.listServiceIssues()...)
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listCommandIssues()...)
@@ -302,9 +361,9 @@ func (m Manifest) listBackendlessIssues() []error {
 	}{
 		{"activationEvents", len(m.ActivationEvents) > 0},
 		{"services", len(m.Services) > 0},
-		{"secrets", len(m.Secrets) > 0},
 		{"runtime dependencies", slices.ContainsFunc(m.Dependencies, func(d DependencyRequirement) bool { return d.Kind == DependencyKindRuntime })},
 		{"contributes.triggers", len(m.Contributes.Triggers) > 0},
+		{"contributes.connectionTypes", len(m.Contributes.ConnectionTypes) > 0},
 	}
 	var issues []error
 	for _, field := range fields {
@@ -331,8 +390,16 @@ func (m Manifest) ValidatePermissions() error {
 func (m Manifest) listPermissionIssues() []error {
 	var issues []error
 	for _, p := range m.Permissions {
-		if !slices.Contains(PluginPermissions(), NormalizePermission(p)) {
+		_, isGrant := ParseConnectionsUse(p)
+		if !isGrant && !slices.Contains(PluginPermissions(), NormalizePermission(p)) {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidPermission, p))
+		}
+	}
+	for _, operation := range m.ListConnectionsUse() {
+		for _, s := range m.Settings {
+			if s.Type == SettingTypeConnections && slices.Contains(s.Operations, operation) {
+				issues = append(issues, fmt.Errorf("%w: %s, and the setting %s holds rows for the operation", ErrInvalidPermission, FormatConnectionsUse(operation), s.Key))
+			}
 		}
 	}
 	return issues
@@ -359,11 +426,7 @@ func (m Manifest) listActivationEventIssues() []error {
 }
 
 func isValidActivationEvent(event string) bool {
-	if event == ActivationEventStartup || event == ActivationEventVectorsReady {
-		return true
-	}
-	ext, ok := strings.CutPrefix(event, ActivationEventFilePrefix)
-	return ok && ext != "" && strings.TrimSpace(ext) == ext && !strings.Contains(ext, "*")
+	return slices.Contains(PluginActivationEvents(), event)
 }
 
 // HasPermission reports whether this plugin requests the given permission.
@@ -409,28 +472,9 @@ func (m Manifest) IsActivatedBy(event string) bool {
 }
 
 func isMatchingActivationEvent(declared, event string) bool {
-	switch declared {
-	case ActivationEventStartup:
-		return event == ActivationEventStartup
-	case ActivationEventVectorsReady:
-		return event == ActivationEventVectorsReady ||
-			(strings.HasPrefix(event, ActivationEventVectorsReady+":") && len(event) > len(ActivationEventVectorsReady)+1)
-	default:
-		return isMatchingFileEvent(declared, event)
-	}
-}
-
-func isMatchingFileEvent(declared, event string) bool {
-	ext, ok := strings.CutPrefix(declared, ActivationEventFilePrefix)
-	if !ok || ext == "" || strings.Contains(ext, "*") {
+	if declared != ActivationEventSearchSourceReady {
 		return false
 	}
-	target, ok := strings.CutPrefix(event, ActivationEventFilePrefix)
-	if !ok || target == "" {
-		return false
-	}
-	if dot := strings.LastIndexByte(target, '.'); dot >= 0 {
-		target = target[dot+1:]
-	}
-	return target != "" && strings.EqualFold(ext, target)
+	vaultID, isScoped := strings.CutPrefix(event, ActivationEventSearchSourceReady+":")
+	return event == ActivationEventSearchSourceReady || (isScoped && vaultID != "")
 }

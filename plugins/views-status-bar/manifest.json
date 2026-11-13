@@ -1,14 +1,15 @@
 {
   "id": "md.numen.views.statusBar",
   "name": "Status bar",
-  "version": "2026.11.3",
+  "version": "2026.11.4",
   "protocol": 1,
-  "description": "Draws a bar at the bottom of the window with the commands and views plugins place at its start and its end",
+  "description": "The bar at the bottom of the window with plugin commands",
   "targets": ["desktop.editor"],
   "permissions": ["vault:read", "vault:write"],
   "contributes": {
     "category": "views",
     "slots": [{ "slot": "statusBar", "view": "bar" }]
   },
-  "frontend": {}
+  "frontend": {},
+  "isOffByDefault": true
 }

@@ -46,8 +46,8 @@ function getContext(deps: HostDeps, target: CommandTarget | undefined): WhenValu
  * Creates the handler of key events. It returns whether the event is a key it runs, which the caller
  * answers by preventing the default of the event; that is known before the command runs. A key whose
  * command belongs to the application is handed to `runApp`, or left to the window where none is given;
- * a command of a plugin that has no handler yet is left to the window. With a target, the condition of
- * the command is judged over it as well as the key's own.
+ * a command of a plugin that has not started starts it and runs once it has. With a target, the
+ * condition of the command is judged over it as well as the key's own.
  */
 export function createShortcutHandler(parts: ShortcutParts) {
   const { deps, keybindings } = parts
@@ -67,7 +67,7 @@ export function createShortcutHandler(parts: ShortcutParts) {
         )
       }
       const command = available.get(binding.command)
-      if (!command?.entry) return false
+      if (!command) return false
       if (target === undefined) return true
       return deps.whenReader.getCondition(command.declaration.when)?.evaluate(context) ?? false
     }

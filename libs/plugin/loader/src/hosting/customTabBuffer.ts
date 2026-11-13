@@ -6,12 +6,14 @@
  * a file that changed with nothing unsaved is shown at once, and a renamed file is followed.
  */
 import { computed, onScopeDispose, shallowReactive, watch } from 'vue'
+import type { Manifest } from '@numen/core-client'
 import type { EditorHandle } from '@numen/plugin-sdk'
 import { extractFilename, stripMarkdownExtension } from './pane/pluginView'
 import type { NoteBuffer, PluginHostDeps } from './types'
 
-/** The tab kind whose tabs hold a note of the vault. */
-export const NOTE_KIND = 'note'
+/** Whether the manifest declares the tab kind as the editor of the text of a note. */
+export const isNoteEditorKind = (manifest: Manifest | undefined, kind: string): boolean =>
+  manifest?.contributes?.tabKinds.some((one) => one.kind === kind && one.isNoteEditor) ?? false
 
 const getDefaultName = (path: string): string => stripMarkdownExtension(extractFilename(path))
 

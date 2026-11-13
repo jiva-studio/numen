@@ -16,4 +16,8 @@ export interface MessageComposerProps {
   noAgentLabel?: string
   noAgentMessage?: string
   openSettingsLabel?: string
+  pendingAgentIds?: readonly string[]
+  loadingLabel?: string
+  failedAgentIds?: readonly string[]
+  failedLabel?: string
 }

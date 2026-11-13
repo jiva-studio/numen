@@ -43,7 +43,7 @@ const findRows = (wrapper: ReturnType<typeof createList>['wrapper']) =>
   wrapper.findAllComponents({ name: 'PluginRow' })
 
 describe('PluginsList', () => {
-  it('groups the installed plugins under the categories the catalog declares', () => {
+  it('orders the installed plugins by the categories the catalog declares', () => {
     const plugins = [
       createPluginInfo('sample.tree', 'File Tree', { description: 'Tree view' }),
       createPluginInfo('sample.whisper', 'Whisper', { description: 'ASR engine' }),
@@ -53,10 +53,9 @@ describe('PluginsList', () => {
       createCatalogEntry('sample.whisper', { category: 'engines' }),
     ])
 
-    expect(findRows(wrapper)).toHaveLength(2)
-    expect(wrapper.findAll('.plugin-row__category').map((one) => one.text())).toStrictEqual([
-      'Engines /',
-      'Views /',
+    expect(findRows(wrapper).map((row) => row.props('plugin').category)).toStrictEqual([
+      'engines',
+      'views',
     ])
     expect(wrapper.text()).toContain('System')
   })
@@ -64,7 +63,7 @@ describe('PluginsList', () => {
   it('lists a plugin the catalog does not know under other', () => {
     const { wrapper } = createList({}, [createPluginInfo('md.numen.views.tree', 'File Tree')])
 
-    expect(wrapper.find('.plugin-row__category').text()).toBe('Other /')
+    expect(findRows(wrapper)[0]?.props('plugin').category).toBe('')
   })
 
   it('lists a plugin the catalog offers and the host does not have', () => {
@@ -80,13 +79,15 @@ describe('PluginsList', () => {
     )
 
     expect(findRows(wrapper)[0]?.props('plugin').name).toBe('Offered Reader')
-    expect(wrapper.find('.plugin-row__badge--available').exists()).toBe(true)
+    expect(wrapper.get('button[aria-label="Offered Reader, Not installed"]').text()).toContain(
+      'Not installed',
+    )
   })
 
   it('renders empty state when plugins list is empty', () => {
     const { wrapper } = createList({}, [])
 
-    expect(wrapper.find('.plugins-list__empty').text()).toBe('No plugins installed.')
+    expect(wrapper.text()).toContain('No plugins installed.')
     expect(findRows(wrapper)).toHaveLength(0)
   })
 

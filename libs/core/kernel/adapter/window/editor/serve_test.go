@@ -24,14 +24,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	adapterSettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
@@ -39,9 +37,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -57,7 +54,6 @@ func bindNotes(services *Services, db *testIndex) {
 	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.NoteQueries.OpeningNote)
 	services.NoteCases.Headings = query.NewListHeadings(db.NoteQueries.Headings)
 	services.NoteCases.ResolveLinks = query.NewResolveLinks(links)
-	services.NoteCases.Names = db.NoteQueries.NamedPaths
 	services.NoteCases.RelatedNotes = query.NewGetRelatedNotesView(links, refs, db.NoteQueries.NoteTypes, noTabKinds{})
 	services.UseNotes()
 }
@@ -189,7 +185,7 @@ func openingWith(
 	notes map[string]string,
 	watcher vaultport.VaultWatcher,
 	readers vaultport.VaultReaders,
-	embedder embeddingport.Embedder,
+	embedder sourcefake.Embedder,
 	idleDuration time.Duration,
 ) *behind {
 	t.Helper()
@@ -209,17 +205,21 @@ func openingWith(
 	api.UseNotes()
 	api.state.Runtime.SetVault(v)
 	if embedder != nil {
-		if err := db.VectorIndex().FitVectors(t.Context(), embedder.GetModel().Dimensions, embedder.GetModel().Recipe()); err != nil {
+		if err := db.VectorIndex().FitVectors(t.Context(), embedder.Describe().Width, embedder.Describe().Recipe()); err != nil {
 			t.Fatal(err)
 		}
-		api.state.Runtime.RecordModel(embedder.GetModel().String(), "")
+		api.state.Runtime.RecordModel(embedder.Describe().String(), "")
 		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, nil, db.Chunks.Progress)
+	}
+	var source searchsourceport.Source
+	if embedder != nil {
+		source = sourcefake.Wrap(embedder)
 	}
 	line, isDone := api.state.Notices.ChangeEvents.Subscribe()
 	t.Cleanup(isDone)
 
 	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{
-		embedding: indexing.NewEmbedding(embedder, nil, db.Chunks.Progress), idle: idleDuration, out: io.Discard,
+		embedding: indexing.NewEmbedding(source, nil, db.Chunks.Progress), idle: idleDuration, out: io.Discard,
 	})
 	t.Cleanup(end)
 
@@ -815,103 +815,6 @@ func TestAWindowWithNoCatalogAnswersThatItHasNone(t *testing.T) {
 	client := numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
 	if _, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{})); err == nil {
 		t.Error("a build with no catalog listed themes")
-	}
-}
-
-type testAgentRun struct {
-	steps chan agentdomain.Step
-}
-
-func (r *testAgentRun) GetSteps() <-chan agentdomain.Step { return r.steps }
-func (r *testAgentRun) Stop() error                       { return nil }
-
-type testAgentProvider struct {
-	agentport.Agent
-	tasks chan agentdomain.Task
-}
-
-func (m *testAgentProvider) StartRun(ctx context.Context, task agentdomain.Task) (agentport.Run, error) {
-	m.tasks <- task
-	run := &testAgentRun{steps: make(chan agentdomain.Step, 2)}
-	run.steps <- agentdomain.Step{Kind: domain.StepSay, Text: "hello from agent"}
-	run.steps <- agentdomain.Step{Kind: domain.StepStop, Detail: "done"}
-	close(run.steps)
-	return run, nil
-}
-
-func (m *testAgentProvider) EndConversation(ctx context.Context, _ string) error {
-	return nil
-}
-
-type testInterceptingPlugins struct {
-	servedPaths []string
-}
-
-func (p *testInterceptingPlugins) ListFrameOrigins() []string { return nil }
-
-func (p *testInterceptingPlugins) GetFrameOrigins(string) []string { return nil }
-
-func (p *testInterceptingPlugins) Serves(_ string) bool {
-	return true
-}
-
-func (p *testInterceptingPlugins) ServeRoute(w http.ResponseWriter, _ *http.Request) {
-	http.Error(w, "plugin not found", http.StatusNotFound)
-}
-
-func (p *testInterceptingPlugins) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	p.servedPaths = append(p.servedPaths, r.URL.Path)
-	http.Error(w, "should not be called for AgentService", http.StatusInternalServerError)
-}
-
-func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
-	state := NewState(run.NewTasks(), nil, nil)
-	state.Runtime.SetVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
-	services := createServices(state)
-	agent := &testAgentProvider{tasks: make(chan agentdomain.Task, 1)}
-	services.Mount(RouteOf(state, &windowagent.Handler{
-		Start:    agentuse.NewStartTask(agent),
-		End:      agentuse.NewEndConversation(agent),
-		GetRoot:  func() string { return state.GetCurrentVault().Path },
-		GetVault: func() domain.VaultID { return state.GetCurrentVault().ID },
-	}, windowagent.NewRoute))
-	plugins := &testInterceptingPlugins{}
-	services.PluginServices = plugins
-
-	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
-	t.Cleanup(server.Close)
-
-	client := numenv1connect.NewAgentServiceClient(server.Client(), server.URL)
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{
-		Prompt: "test question",
-		Agent:  "claude",
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var gotText string
-	for stream.Receive() {
-		if text := stream.Msg().GetText(); text != "" {
-			gotText += text
-		}
-	}
-	if err := stream.Err(); err != nil {
-		t.Fatal(err)
-	}
-	if gotText != "hello from agent" {
-		t.Errorf("got %q, want %q", gotText, "hello from agent")
-	}
-	if len(plugins.servedPaths) != 0 {
-		t.Errorf("plugin services was erroneously called: %v", plugins.servedPaths)
-	}
-	select {
-	case task := <-agent.tasks:
-		if task.Agent != "claude" || task.Question != "test question" || task.Vault != "v-garden" || task.Root != "/vaults/Garden" {
-			t.Errorf("unexpected task: %+v", task)
-		}
-	default:
-		t.Fatal("agent received no task")
 	}
 }
 

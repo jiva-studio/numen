@@ -1,13 +1,7 @@
 /**
  * Wire adapter for the plugin's JSON API.
  */
-import {
-  createApi,
-  formatFingerprint,
-  getBytesQuery,
-  MAX_BUSY_RETRIES,
-  UNAVAILABLE,
-} from '@numen/plugin-sdk'
+import { createApi, formatFingerprint, getBytesQuery, UNAVAILABLE } from '@numen/plugin-sdk'
 import type { Api } from '@numen/plugin-sdk'
 import type { Documents, PageHighlight, Rect, TextRange } from '../types'
 import type {
@@ -28,6 +22,9 @@ const API_SERVICE = 'md.numen.readers.pdf'
 
 /** Where the plugin's backend answers the window: the core forwards /plugin/<id>/ to it. */
 const PLUGIN_ROUTE = '/plugin/md.numen.readers.pdf'
+
+/** How often a method that answers `unavailable` is retried before it fails. */
+const MAX_BUSY_RETRIES = 3
 
 const BUSY_RETRY_DELAY_MS = 1000
 

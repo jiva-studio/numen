@@ -15,7 +15,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiiAEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlIjwKBFNjYW4SEAoIaXNfcmVhZHkYASABKAgSDQoFZXJyb3IYAiABKAkSEwoLd2F0Y2hfZXJyb3IYAyABKAkiUgoNSW5kZXhDb3ZlcmFnZRITCgtjaHVua19jb3VudBgBIAEoAxIWCg5lbWJlZGRlZF9jb3VudBgCIAEoAxIUCgxpc19lbWJlZGRpbmcYAyABKAgiGgoYV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0InIKGVdhdGNoVmF1bHRDaGFuZ2VzUmVzcG9uc2USDQoFcGF0aHMYASADKAkSDgoGcmVsb2FkGAIgASgIEh8KB3JlbmFtZWQYAyADKAsyDi5udW1lbi52MS5Nb3ZlEhUKDXZlcnNpb25fcGF0aHMYBCADKAkiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJMsABCgxWYXVsdFNlcnZpY2USUAoNR2V0VmF1bHRTdGF0ZRIeLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEl4KEVdhdGNoVmF1bHRDaGFuZ2VzEiIubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0GiMubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZTABQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiXQoVR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRIcCgRzY2FuGAQgASgLMg4ubnVtZW4udjEuU2NhbiI8CgRTY2FuEhAKCGlzX3JlYWR5GAEgASgIEg0KBWVycm9yGAIgASgJEhMKC3dhdGNoX2Vycm9yGAMgASgJIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJyChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZRIVCg12ZXJzaW9uX3BhdGhzGAQgAygJIiAKBE1vdmUSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCTLAAQoMVmF1bHRTZXJ2aWNlElAKDUdldFZhdWx0U3RhdGUSHi5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVxdWVzdBofLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXNwb25zZRJeChFXYXRjaFZhdWx0Q2hhbmdlcxIiLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdBojLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVzcG9uc2UwAUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -63,13 +63,6 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
    * @generated from field: numen.v1.Scan scan = 4;
    */
   scan?: Scan | undefined;
-
-  /**
-   * How far searching it by meaning has got.
-   *
-   * @generated from field: numen.v1.IndexCoverage coverage = 5;
-   */
-  coverage?: IndexCoverage | undefined;
 };
 
 /**
@@ -116,46 +109,6 @@ export const ScanSchema: GenMessage<Scan> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 2);
 
 /**
- * IndexCoverage is how far searching a vault by meaning has got.
- *
- * A search by meaning is asked of the vectors, and a vault holding none answers
- * embedded yet, and a vault that answers.
- *
- * @generated from message numen.v1.IndexCoverage
- */
-export type IndexCoverage = Message<"numen.v1.IndexCoverage"> & {
-  /**
-   * ChunkCount is how many spans of text the index holds, and EmbeddedCount how
-   * many of those carry a vector. Cutting finishes long before embedding does.
-   * Both are zero for a vault nothing has cut yet.
-   *
-   * @generated from field: int64 chunk_count = 1;
-   */
-  chunkCount: bigint;
-
-  /**
-   * @generated from field: int64 embedded_count = 2;
-   */
-  embeddedCount: bigint;
-
-  /**
-   * Embedding reports whether anything is going to turn the spans into vectors.
-   * False for an installation with no model, where the vault is searched by its
-   * words alone.
-   *
-   * @generated from field: bool is_embedding = 3;
-   */
-  isEmbedding: boolean;
-};
-
-/**
- * Describes the message numen.v1.IndexCoverage.
- * Use `create(IndexCoverageSchema)` to create a new message.
- */
-export const IndexCoverageSchema: GenMessage<IndexCoverage> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 3);
-
-/**
  * @generated from message numen.v1.WatchVaultChangesRequest
  */
 export type WatchVaultChangesRequest = Message<"numen.v1.WatchVaultChangesRequest"> & {
@@ -166,7 +119,7 @@ export type WatchVaultChangesRequest = Message<"numen.v1.WatchVaultChangesReques
  * Use `create(WatchVaultChangesRequestSchema)` to create a new message.
  */
 export const WatchVaultChangesRequestSchema: GenMessage<WatchVaultChangesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 4);
+  messageDesc(file_numen_v1_vault, 3);
 
 /**
  * @generated from message numen.v1.WatchVaultChangesResponse
@@ -210,7 +163,7 @@ export type WatchVaultChangesResponse = Message<"numen.v1.WatchVaultChangesRespo
  * Use `create(WatchVaultChangesResponseSchema)` to create a new message.
  */
 export const WatchVaultChangesResponseSchema: GenMessage<WatchVaultChangesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 5);
+  messageDesc(file_numen_v1_vault, 4);
 
 /**
  * Move is a note that is no longer where it was. The bytes do not change on the
@@ -239,7 +192,7 @@ export type Move = Message<"numen.v1.Move"> & {
  * Use `create(MoveSchema)` to create a new message.
  */
 export const MoveSchema: GenMessage<Move> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 6);
+  messageDesc(file_numen_v1_vault, 5);
 
 /**
  * VaultService answers what the one vault a client is looking at is, and what

@@ -5,17 +5,17 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
-func createReadSpec(step tools.Step, name, title, description string, instructions ...string) tools.Spec {
+func createReadSpec(name, title, description string, instructions ...string) tools.Spec {
 	return tools.Spec{
-		Name: name, Title: title, Description: description, Effect: tools.ReadOnly, Step: step,
-		Servers: []tools.Server{tools.Full, tools.Reading}, Instructions: instructions, Requires: nil,
+		Name: name, Title: title, Description: description, Effect: tools.ReadOnly,
+		Instructions: instructions, Requires: nil,
 	}
 }
 
-func createWriteSpec(step tools.Step, name, title, description string, instructions ...string) tools.Spec {
+func createWriteSpec(name, title, description string, instructions ...string) tools.Spec {
 	return tools.Spec{
-		Name: name, Title: title, Description: description, Effect: tools.ReadWrite, Step: step,
-		Servers: []tools.Server{tools.Full}, Instructions: instructions, Requires: nil,
+		Name: name, Title: title, Description: description, Effect: tools.ReadWrite,
+		Instructions: instructions, Requires: nil,
 	}
 }
 

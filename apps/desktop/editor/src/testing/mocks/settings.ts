@@ -19,7 +19,6 @@ export const settingsAnswers = {
     getSettings: () => ({
       written: '{}',
       path: '/vaults/Physics/.numen/settings.json',
-      models: [],
       plugins: [],
       app: mockVaultState.app.map(getSettingInForce).map(toWireSetting),
     }),

@@ -44,11 +44,11 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 
 func mount(s *server.Server, clients hostclient.Clients) error {
 	backend := New(Config{Vaults: clients.Vaults, Store: clients.Folders, Now: clock.System{}, Cores: 0, Scheduler: nil})
-	s.SetConfigure(func(_ context.Context, values map[string]string, _ server.Secrets) error {
+	s.SetConfigure(func(_ context.Context, values map[string]string) error {
 		backend.Configure(values)
 		return nil
 	})
-	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { backend.Configure(values) })
+	s.SetUpdateConfig(func(values map[string]string) { backend.Configure(values) })
 	return backend.Mount(s)
 }
 

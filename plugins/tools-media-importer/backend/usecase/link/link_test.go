@@ -110,7 +110,7 @@ func newWorld(t *testing.T) *world {
 		vault: vault, store: vault.Store(), texts: hosttest.NewTexts(vault.Vault().ID, pluginID),
 		queue: hosttest.NewQueue(), sites: &sites{clip: bytes.Repeat([]byte("frame "), 1000)},
 	}
-	w.links = link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(w.texts), Queue: w.queue, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
+	w.links = link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(w.texts), Queue: w.queue, Clock: newFakeClock(time.Unix(1_700_000_000, 0))},
 		func() link.Fetcher { return w.sites },
 		func() link.Settings { return link.Settings{CopyMaxSize: w.limit} })
 	w.texts.SetStore(pluginID, w.store)
@@ -634,4 +634,10 @@ func TestCopyInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 	if tasks := w.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("tasks %+v after both copies ended", tasks)
 	}
+}
+
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/hostconnection.proto";
+import "numen/v1/settings.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// ConnectionCallService carries out the operations a plugin view asks for, through the rows of the plugin
+// the request names. The host endpoint that plugin processes reach with their token does not mount it,
+// and the handler refuses a request that carries a token.
+service ConnectionCallService {
+  // Call carries out one operation as HostConnectionService.Call does.
+  rpc Call(ConnectionCallServiceCallRequest) returns (stream ConnectionCallServiceCallResponse);
+
+  // ListRows returns the rows of the plugin for an operation, in the order of use, with the connection each
+  // names. A row whose connection is missing, or whose type is unavailable or does not serve the
+  // operation, is left out.
+  rpc ListRows(ConnectionCallServiceListRowsRequest) returns (ConnectionCallServiceListRowsResponse);
+
+  // ListRowOptions returns the values a row field of a connection among the rows of the operation can
+  // take, as the provider lists them for the options given. A connection that is not among the rows is
+  // not found.
+  rpc ListRowOptions(ConnectionCallServiceListRowOptionsRequest) returns (ConnectionCallServiceListRowOptionsResponse);
+}
+
+message ConnectionCallServiceCallRequest {
+  // plugin_id is the plugin whose rows serve the call.
+  string plugin_id = 1;
+  string operation = 2;
+  bytes payload = 3;
+  Priority priority = 4;
+  // preferred is unset for the rows in their order.
+  PreferredRow preferred = 5;
+}
+
+// ConnectionCallServiceCallResponse is one frame of a call.
+message ConnectionCallServiceCallResponse {
+  oneof frame {
+    bytes data = 1;
+    // done ends the call; it may be empty.
+    bytes done = 2;
+    CallFailure failure = 3;
+  }
+}
+
+message ConnectionCallServiceListRowsRequest {
+  // plugin_id is the plugin whose rows are listed.
+  string plugin_id = 1;
+  string operation = 2;
+}
+
+message ConnectionCallServiceListRowsResponse {
+  repeated CallRow rows = 1;
+}
+
+message ConnectionCallServiceListRowOptionsRequest {
+  string plugin_id = 1;
+  string operation = 2;
+  string connection_id = 3;
+  // field is the key of the row field.
+  string field = 4;
+  // options are the values of the row fields so far.
+  map<string, string> options = 5;
+}
+
+message ConnectionCallServiceListRowOptionsResponse {
+  repeated Option options = 1;
+}

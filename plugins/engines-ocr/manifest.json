@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "2026.11.17",
+  "version": "2026.11.18",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": ["tools"],
@@ -130,7 +130,8 @@
     }
   ],
   "backend": {
-    "entrypoint": "bin/engines-ocr"
+    "entrypoint": "bin/engines-ocr",
+    "idleStopSeconds": 600
   },
   "settings": [
     {
@@ -206,7 +207,8 @@
       "key": "customDictPath",
       "type": "file",
       "title": "Character dictionary",
-      "description": "UTF-8 text, one character per line. Empty for a model that includes its own",
+      "description": "UTF-8 text, one character per line",
+      "details": "A UTF-8 text file with one character per line. Leave it empty when the model carries its own dictionary.",
       "accept": [".txt"],
       "default": "",
       "when": {
@@ -247,7 +249,7 @@
       "key": "recognizeAutomatically",
       "type": "boolean",
       "title": "Recognize automatically",
-      "description": "Recognize the text of every PDF and image in the vault that has none. A text removed with Delete text is recognized again",
+      "description": "Recognize every PDF and image in the vault that has no text",
       "default": false
     }
   ]

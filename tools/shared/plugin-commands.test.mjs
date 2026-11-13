@@ -1,7 +1,7 @@
 /**
  * The commands of the plugins in the tree: each is declared under `contributes.commands`, and the
- * frontend registers only the id and the handler. A shared command the manifest handles under
- * `contributes.handlers` is registered under its id, with the items of its menu or without. Every
+ * frontend registers its id, its handler and, where it has a menu, its items. A shared command the
+ * manifest handles under `contributes.handlers` is registered under its id the same way. Every
  * command and shared handler in a manifest has a handler in the frontend or backend, and every
  * handler registered in the frontend or backend is declared in the manifest.
  */
@@ -82,15 +82,13 @@ test('every command a manifest declares has a title and an icon name', () => {
   }
 })
 
-test('a frontend registers a command with an id and a handler, and a shared command its items', () => {
-  for (const { name, document } of readPluginManifests()) {
-    const handled = getHandledIds(document)
-    for (const { file, fields, id } of listPluginRegistrations(name)) {
+test('a frontend registers a command with an id, a handler and its items or none', () => {
+  for (const { name } of readPluginManifests()) {
+    for (const { file, fields } of listPluginRegistrations(name)) {
       assert.ok(!fields.includes(UNREADABLE_FIELD), `${file} registers options this cannot read`)
-      const allowed =
-        handled.has(id) && fields.includes('listItems')
-          ? ['handler', 'id', 'listItems']
-          : ['handler', 'id']
+      const allowed = fields.includes('listItems')
+        ? ['handler', 'id', 'listItems']
+        : ['handler', 'id']
       assert.deepEqual([...fields].sort(), allowed, `${file} registers ${fields.join(', ')}`)
     }
   }

@@ -72,7 +72,8 @@ export function createRemoteValues<V>(send: (values: ReadonlyMap<string, V>) => 
   }
 
   /** The value requested at a key and not yet read back, if any. */
-  const getRequestedValue = (key: string): { readonly value: V } | undefined => requested.value.get(key)
+  const getRequestedValue = (key: string): { readonly value: V } | undefined =>
+    requested.value.get(key)
 
   /** Whether the write of the value requested at a key is still in flight. */
   const isPending = (key: string): boolean => requested.value.get(key)?.settledAt === null

@@ -23,14 +23,11 @@ const resolved = {
   name: 'Vault',
   path: '/vaults/Physics',
   scan: { isReady: true, error: '', unwatchedPath: '' },
-  coverage: { chunkCount: 0n, embeddedCount: 0n, isEmbedding: false },
-  agentUnreachable: '',
 }
 
 /** What the core says about the open vault and the window, in the values the window reads them as. */
 interface Streams {
   state(): Promise<typeof resolved>
-  agentUnreachable(): Promise<string>
   watchVaultChanges(signal: AbortSignal): AsyncIterable<{
     paths: string[]
     shouldReload: boolean
@@ -74,7 +71,6 @@ const answerFrom = (core: Fake) => {
             error: state.scan.error,
             watchError: state.scan.unwatchedPath,
           },
-          coverage: state.coverage,
         }
       },
       watchVaultChanges: async function* (_request, context) {
@@ -105,7 +101,6 @@ const answerFrom = (core: Fake) => {
         }
       },
     },
-    agentService: { getAgentState: async () => ({ unreachable: await core.agentUnreachable() }) },
     workspace: { watchFocus: (_request, context) => core.watchFocus(context.signal) },
     windowService: {
       watchTasks: async function* (_request, context) {
@@ -123,6 +118,12 @@ const answerFrom = (core: Fake) => {
         }
       },
     },
+    pluginHealth: {
+      watchHealth: async function* () {
+        yield { items: [] }
+        await waitForever()
+      },
+    },
   })
 }
 
@@ -135,7 +136,6 @@ function fake(overrides: Partial<Fake> = {}): Fake {
   return {
     getInitialOpenPath: async () => ({ path: 'Opening.md' }),
     state: async () => resolved,
-    agentUnreachable: async () => '',
     watchVaultChanges: emptyStream,
     watchFocus: emptyStream,
     watchEdits: emptyStream,
@@ -184,7 +184,7 @@ describe('the stream of changes', () => {
       },
     })
 
-    await window.follow()
+    await window.streams.follow()
 
     expect(streams).toBeGreaterThanOrEqual(3)
     expect(waits.length).toBeGreaterThanOrEqual(2)
@@ -204,7 +204,7 @@ describe('the stream of changes', () => {
       },
     })
 
-    await window.follow()
+    await window.streams.follow()
 
     expect(streams).toBeGreaterThanOrEqual(2)
     expect(window.health.lost.value).toContain('lost touch with numen')
@@ -219,7 +219,7 @@ describe('the stream of changes', () => {
     })
     const one = createDisplay(core)
 
-    await one.window.follow()
+    await one.window.streams.follow()
 
     expect(one.changed).toStrictEqual(['', 'Somewhere/Else.md'])
   })
@@ -233,7 +233,7 @@ describe('the stream of changes', () => {
     })
     const one = createDisplay(core)
 
-    await one.window.follow()
+    await one.window.streams.follow()
 
     expect(one.changed).toStrictEqual(['', ''])
   })
@@ -247,7 +247,7 @@ describe('the stream of changes', () => {
     })
     const one = createDisplay(core)
 
-    await one.window.follow()
+    await one.window.streams.follow()
 
     expect(one.changed).toStrictEqual(['', 'Note.md → Renamed.md'])
   })
@@ -268,7 +268,7 @@ describe('the stream of changes', () => {
     const one = createDisplay(core)
     await one.window.opening.read()
 
-    await one.window.follow()
+    await one.window.streams.follow()
 
     expect(one.window.opening.path.value).toBe('Renamed.md')
   })
@@ -287,7 +287,7 @@ describe('the stream of changes', () => {
     const one = createDisplay(core)
     await one.window.opening.read()
 
-    await one.window.follow()
+    await one.window.streams.follow()
 
     expect(one.window.opening.path.value).toBe('Opening.md')
     expect(request).toBe(1)
@@ -419,7 +419,7 @@ describe('a note requested for from outside the window', () => {
     })
     const one = createDisplay(core)
 
-    await one.window.watch()
+    await one.window.streams.watch()
 
     expect(one.travelled).toStrictEqual(['Wanted.md'])
   })
@@ -444,7 +444,7 @@ describe('a tab requested from outside the window', () => {
       },
     })
 
-    await window.watch()
+    await window.streams.watch()
 
     expect(activated).toStrictEqual(['tab-2'])
     expect(travelled).toStrictEqual([])
@@ -473,7 +473,7 @@ describe('a place inside a source requested for from outside the window', () => 
     })
     const { window, opened, travelled } = createRecordingWindow(core)
 
-    await window.watch()
+    await window.streams.watch()
 
     expect(opened).toStrictEqual(['library/mahabharata.epub 40512 40543'])
     expect(travelled).toStrictEqual([])
@@ -496,7 +496,7 @@ describe('a place inside a source requested for from outside the window', () => 
     })
     const { window, opened } = createRecordingWindow(core)
 
-    await window.watch()
+    await window.streams.watch()
 
     expect(opened).toStrictEqual(['library/mahabharata.epub 40512 40543 41000 41020'])
   })
@@ -509,7 +509,7 @@ describe('a place inside a source requested for from outside the window', () => 
     })
     const { window, opened, travelled } = createRecordingWindow(core)
 
-    await window.watch()
+    await window.streams.watch()
 
     expect(opened).toStrictEqual([])
     expect(travelled).toStrictEqual(['Wanted.md'])
@@ -578,25 +578,6 @@ describe('a vault that is not being followed', () => {
     await flushPromises()
 
     expect(window.vault.unwatched.value).toBe('too many watches')
-  })
-})
-
-describe('chunks with nothing to embed them', () => {
-  it('says so, since the vault is searched by its words from now on', async () => {
-    const core = fake({
-      state: async () => ({
-        ...resolved,
-        coverage: { chunkCount: 4823n, embeddedCount: 0n, isEmbedding: false },
-      }),
-    })
-    const window = useDisplay(core, { wait: async () => window.close() })
-
-    await window.start()
-    await flushPromises()
-
-    expect(window.vault.chunks.value).toBe(4823)
-    expect(window.vault.embedded.value).toBe(0)
-    expect(window.vault.isEmbedding.value).toBe(false)
   })
 })
 
@@ -696,7 +677,7 @@ describe('what the application is doing', () => {
         asks++
         return {
           ...resolved,
-          coverage: { ...resolved.coverage, chunkCount: BigInt(asks * 1000) },
+          name: `Vault ${asks}`,
         }
       },
       watchTasks: async function* () {
@@ -711,7 +692,7 @@ describe('what the application is doing', () => {
     await flushPromises()
 
     expect(asks).toBeGreaterThan(1)
-    expect(window.vault.chunks.value).toBe(asks * 1000)
+    expect(window.vault.name.value).toBe(`Vault ${asks}`)
 
     window.close()
   })
@@ -727,10 +708,8 @@ describe('a window before it has requested the vault anything', () => {
     expect(window.health.lost.value).toBe('')
     expect(window.vault.error.value).toBe('')
     expect(window.vault.unwatched.value).toBe('')
-    expect(window.vault.unreachable.value).toBe('')
     expect(window.opening.hasNote.value).toBe(false)
     expect(window.opening.path.value).toBe('')
-    expect(window.vault.isEmbedding.value).toBe(false)
     expect(window.tasks.value).toStrictEqual([])
   })
 })

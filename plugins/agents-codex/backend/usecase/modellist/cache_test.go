@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/agentmodel"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
@@ -31,12 +30,12 @@ func TestTheLimitsOfAListing(t *testing.T) {
 func TestCodexModelCache_Retention(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	counter := filepath.Join(t.TempDir(), "starts")
-	command := agenttest.WriteScript(t, "codex",
+	command := writeScript(t, "codex",
 		"echo x >> "+counter+"\n"+
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	cache := newTestCache(clock.NewFake(time.Unix(1000, 0)))
+	cache := newTestCache(newFakeClock(time.Unix(1000, 0)))
 
 	for range 2 {
 		if got := cache.Get(t.Context(), []string{command}); len(got) != 1 || got[0].Name != "gpt-x" {
@@ -55,11 +54,11 @@ func TestCodexModelCache_Retention(t *testing.T) {
 // A request that ended before Codex answered keeps nothing.
 func TestAnEndedRequestKeepsNoCodexModels(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	command := agenttest.WriteScript(t, "codex",
+	command := writeScript(t, "codex",
 		`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	cache := newTestCache(clock.NewFake(time.Unix(1000, 0)))
+	cache := newTestCache(newFakeClock(time.Unix(1000, 0)))
 
 	ended, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -74,10 +73,10 @@ func TestAnEndedRequestKeepsNoCodexModels(t *testing.T) {
 // A failed listing is not retried for a while and is then requested again, and the models Codex lists then are
 // cached.
 func TestModels_FailedListingIsRequeried(t *testing.T) {
-	agenttest.NeedsShell(t)
+	needsShell(t)
 	t.Setenv("HOME", t.TempDir())
-	failing := agenttest.WriteScript(t, "codex", "exit 1\n")
-	now := clock.NewFake(time.Unix(1000, 0))
+	failing := writeScript(t, "codex", "exit 1\n")
+	now := newFakeClock(time.Unix(1000, 0))
 	cache := newTestCache(now)
 
 	if got := cache.Get(t.Context(), []string{failing}); got != nil {
@@ -135,7 +134,7 @@ func TestGetModelsFailsWhenTheProgramAndTheStoredListGiveNone(t *testing.T) {
 }
 
 func TestACachedListIsKeyedByTheWholeCommandLine(t *testing.T) {
-	now := clock.NewFake(time.Unix(1000, 0))
+	now := newFakeClock(time.Unix(1000, 0))
 	c := newTestCache(now)
 	c.key, c.models, c.isCached = "a b", []agentmodel.Model{{Name: "cached-ab"}}, true
 	c.failedKey, c.failedAt = "fail-cmd", now.Now()
@@ -160,7 +159,7 @@ func TestAnAsynchronousCacheAnswersWithTheStoredListFirst(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(home, ".codex", "models_cache.json"), []byte(`{"models":[{"slug":"disk-m","display_name":"Disk"}]}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	asyncCache := NewCache(codexcli.Models{}, clock.NewFake(time.Unix(1000, 0)), true)
+	asyncCache := NewCache(codexcli.Models{}, newFakeClock(time.Unix(1000, 0)), true)
 	asyncCache.inFlight = map[string]bool{"already": true}
 	asyncCache.startBackgroundFetch(t.Context(), "already", []string{"/nonexistent"})
 	cmd := []string{"/bin/sh", "-c", `read -r _; echo '{"id":1,"result":{}}'; read -r _; read -r _; echo '{"id":2,"result":{"data":[{"model":"bg-m"}]}}'`, "sh"}
@@ -184,4 +183,10 @@ func TestAnAsynchronousCacheAnswersWithTheStoredListFirst(t *testing.T) {
 	if len(bgGot) != 1 || bgGot[0].Name != "bg-m" {
 		t.Fatalf("async cached get = %v, want bg-m", bgGot)
 	}
+}
+
+func newFakeClock(at time.Time) *clock.Fake {
+	fake := &clock.Fake{}
+	fake.Set(at)
+	return fake
 }

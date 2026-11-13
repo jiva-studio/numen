@@ -14,11 +14,12 @@ import { ReportedError, type Manifest } from '@numen/core-client'
 import { createAppInfo } from '../appInfo'
 import { formatCommandId } from '../commandId'
 import { createDropRegistry } from '../drops'
-import { createSlotRegistry } from '../slots'
+import { createSlotRegistry, type DeclaredSlotEntry } from '../slots'
 import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views'
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
-import { addListener, notifyListeners } from './events'
+import { isNoteEditorKind } from './customTabBuffer'
+import { addListener, notifyListeners, requestPluginStart } from './events'
 import { createCommandApi } from './commandApi'
 import { createWhenReader, type WhenReader } from '../when'
 import { APP_KEYBINDINGS, isSharedCommand } from '@numen/plugin-sdk'
@@ -45,9 +46,6 @@ import type {
 } from './types'
 
 export { createPluginPaneWrapper }
-
-/** The target the editor activates its plugins in. */
-const EDITOR_TARGET = 'desktop.editor'
 
 function getEntryKey(pluginId: string, id: string): string {
   return `${pluginId}:${id}`
@@ -79,6 +77,10 @@ function createRegistrationBridge(
         pluginId,
         registration,
         getContext: () => registry.contexts.get(pluginId),
+        isNoteEditor: isNoteEditorKind(
+          registry.contextManifests?.value.get(pluginId),
+          registration.kind,
+        ),
       }),
     registerCommand: (pluginId, registration) => {
       const holder = isSharedCommand(registration.id) ? registry.handlers : registry.commands
@@ -131,7 +133,7 @@ function createViewBridge(shared: SharedRegistries): ContextViewHost {
 
 function createTabBridge(deps: PluginHostDeps): ContextTabHost {
   return {
-    openTab: (kind, target) => deps.openTab(kind, target),
+    openTab: (kind, target) => deps.openTab?.(kind, target),
     navigateTab: (kind, target) => deps.navigateTab?.(kind, target),
     closeTab: (id) => deps.closeTab?.(id),
   }
@@ -143,6 +145,7 @@ interface SharedRegistries {
   readonly drops: DropRegistry
   readonly slotViews: SlotViewRegistry
   readonly slots: SlotHost
+  readonly readSlotEntries: () => readonly DeclaredSlotEntry[] | undefined
 }
 
 function createHostContextBridge(
@@ -153,7 +156,7 @@ function createHostContextBridge(
   return {
     info: {
       app: deps.app ?? createAppInfo({ getPlatform: () => 'linux' }),
-      target: EDITOR_TARGET,
+      target: deps.target,
       openExternal: (url) =>
         deps.openExternal
           ? deps.openExternal(url)
@@ -165,20 +168,41 @@ function createHostContextBridge(
     events: createEventBridge(deps, registry),
     tabs: createTabBridge(deps),
     vault: createVaultServiceBridge(deps),
-    window: createWindowServiceBridge(deps, shared.slots, registry.manifests),
+    window: createWindowServiceBridge(deps, {
+      slots: shared.slots,
+      manifests: registry.manifests,
+      readSlotEntries: shared.readSlotEntries,
+    }),
   }
 }
 
-function createRegisteredApi(registry: HostRegistry) {
+function readSettingsViews(
+  registry: HostRegistry,
+  pluginId: string,
+): ReadonlyMap<string, SettingsViewRegistration> {
+  const views = new Map<string, SettingsViewRegistration>()
+  for (const item of registry.settingsViews.value.values()) {
+    if (item.pluginId === pluginId) views.set(item.reg.id, item.reg)
+  }
+  return views
+}
+
+const hasDeclaredSettingsViews = (deps: PluginHostDeps, pluginId: string): boolean =>
+  (deps.findPluginsOf?.((one) => one.id === pluginId && one.settingsViews.length > 0) ?? [])
+    .length > 0
+
+function createRegisteredApi(deps: PluginHostDeps, registry: HostRegistry) {
   return {
     /** The settings views a plugin registered, by view id; reactive. */
-    getRegisteredSettingsViews: (
-      pluginId: string,
-    ): ReadonlyMap<string, SettingsViewRegistration> => {
-      const views = new Map<string, SettingsViewRegistration>()
-      for (const item of registry.settingsViews.value.values()) {
-        if (item.pluginId === pluginId) views.set(item.reg.id, item.reg)
-      }
+    getRegisteredSettingsViews: (pluginId: string) => readSettingsViews(registry, pluginId),
+    /**
+     * The settings views of a plugin for its settings page, by view id; reactive. A plugin that
+     * declares settings views and has registered none starts, and its views follow once it has.
+     */
+    getSettingsViews: (pluginId: string): ReadonlyMap<string, SettingsViewRegistration> => {
+      const views = readSettingsViews(registry, pluginId)
+      if (views.size === 0 && hasDeclaredSettingsViews(deps, pluginId))
+        requestPluginStart(deps, pluginId)
       return views
     },
     getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
@@ -232,6 +256,12 @@ function createLifecycleApi({ registry, contextHost, keybindings, entries }: Lif
         const effectiveManifest = manifest ?? registry.manifests.get(pluginId)
         ctx = createPluginContext(pluginId, contextHost, effectiveManifest)
         registry.contexts.set(pluginId, ctx)
+        if (effectiveManifest && registry.contextManifests) {
+          registry.contextManifests.value = new Map(registry.contextManifests.value).set(
+            pluginId,
+            effectiveManifest,
+          )
+        }
         registry.disposed.delete(pluginId)
         registry.activated.value = new Set(registry.activated.value).add(pluginId)
       }
@@ -272,6 +302,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     settingsViews: shallowRef(new Map()),
     contexts: new Map(),
     manifests: new Map(),
+    contextManifests: shallowRef(new Map()),
     activated: shallowRef(new Set()),
     starting: shallowRef(new Set()),
     disposed: new Set(),
@@ -286,22 +317,25 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
   const commands = createCommandApi(deps, registry, keybindings.registry)
   const findSlotCommand = deps.createSlotCommandFinder?.({
     getPluginCommands: commands.getPaletteCommands,
-    hasPluginItems: commands.hasCommandItems,
+    hasPluginItems: commands.hasKnownItems,
   })
+  const readSlotEntries = () => deps.getSlotEntries?.(registry.contextManifests?.value ?? new Map())
   const slots = createSlotRegistry({
     getKeyFor: keybindings.getKeyFor,
-    getEntries: () => deps.getSlotEntries?.(),
+    getEntries: readSlotEntries,
     findCommand: (command, target) => findSlotCommand?.(command, target),
     findView: slotViews.findView,
     ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
     ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
     whenReader,
+    requestPlugin: (pluginId) => requestPluginStart(deps, pluginId),
   })
   const contextHost = createHostContextBridge(deps, registry, {
-    views: createViewRegistry(),
-    drops: createDropRegistry(),
+    views: createViewRegistry(deps),
+    drops: createDropRegistry(deps),
     slotViews,
     slots,
+    readSlotEntries,
   })
   const entries = { registry, slotViews, deps }
 
@@ -309,7 +343,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     lifecycle: createLifecycleApi({ registry, contextHost, keybindings, entries }),
     commands,
     keybindings,
-    registered: createRegisteredApi(registry),
+    registered: createRegisteredApi(deps, registry),
     /** The entries of the slots of the window, as their owners read them. */
     slots,
     slotViews,

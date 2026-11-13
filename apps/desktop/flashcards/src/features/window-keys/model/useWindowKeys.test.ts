@@ -10,16 +10,14 @@ const setup = (isRegistered: boolean) => {
   const tabs = createWindowTabs()
   const openCalls = vi.fn()
   if (isRegistered) {
-    tabs.addView({
+    tabs.registerKind({
+      kind: 'review',
       pluginId: 'md.numen.cards',
-      registration: {
-        kind: 'review',
-        component: {},
-        placement: { pane: 'main', order: 0 },
-        open: (vault) => {
-          openCalls(vault)
-          return {}
-        },
+      pane: {},
+      display: { placement: { pane: 'main', order: 0 } },
+      open: (vault) => {
+        openCalls(vault)
+        return {}
       },
     })
   }
