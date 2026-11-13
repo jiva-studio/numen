@@ -8,6 +8,7 @@ import type { SettingsStore } from '@/entities/settings'
 import type { FileOpeners } from '@/entities/tab'
 import {
   createBackendHandlers,
+  createCommandNoteReader,
   createDeclaredState,
   type CommandItemLists,
 } from '@/features/plugin-commands'
@@ -42,7 +43,10 @@ export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
   const { rest, log, itemLists, tabOpeners } = deps
   const catalog = createPluginCatalog(rest)
   const reports = createPluginReports(log, catalog.getName)
-  const declared = createDeclaredState({ getConfig: () => getWindowConfig(rest) })
+  const declared = createDeclaredState({
+    getConfig: () => getWindowConfig(rest),
+    readNote: createCommandNoteReader(itemLists),
+  })
   const slots = createWindowSlots({
     declaredCommands: declared,
     facts: createWindowFacts({

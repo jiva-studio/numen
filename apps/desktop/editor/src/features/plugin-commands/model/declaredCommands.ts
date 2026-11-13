@@ -33,6 +33,7 @@ import {
   type WindowWhenContext,
 } from '../lib/whenContext'
 import type { Caught } from '@/shared/api/errors'
+import { createPaletteNotes, type ReadNote } from './paletteNotes'
 
 /** The items a command of a plugin offers over a file. */
 type ListItems = (
@@ -95,6 +96,7 @@ export interface DeclaredStateDeps {
   readonly list?: typeof listDeclaredCommands
   readonly getConfig?: () => WhenSettings
   readonly whenReader?: WhenReader
+  readonly readNote?: ReadNote
 }
 
 export interface DeclaredCommandsDeps extends DeclaredStateDeps {
@@ -135,10 +137,12 @@ export function createDeclaredState(deps: DeclaredStateDeps = {}) {
   const declaredHandlers = shallowRef<readonly HandlerDeclaration[] | undefined>(undefined)
   const declaredKeybindings = shallowRef<readonly DeclaredKeybinding[] | undefined>(undefined)
   const contentTypes = shallowRef<Readonly<Record<string, string>>>({})
+  const paletteNotes = deps.readNote ? createPaletteNotes(deps.readNote) : undefined
   const whenContext: WindowWhenContext = {
     getContentTypes: () => contentTypes.value,
     getConfig: deps.getConfig ?? (() => ({})),
     whenReader: deps.whenReader ?? createWhenReader(),
+    ...(paletteNotes ? { getNote: paletteNotes.getNote, forgetNotes: paletteNotes.reset } : {}),
   }
   let newest = 0
   const isFirstListSettled = shallowRef(false)

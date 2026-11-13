@@ -40,6 +40,33 @@ describe('a condition of a command of a plugin', () => {
   })
 })
 
+describe('a condition that reads the type or the properties of the note', () => {
+  const notes: Record<string, { type: string; properties?: { media: string } }> = {
+    'reef/Coral.md': { type: 'link', properties: { media: 'media/coral.mp4' } },
+  }
+  const isAvailable = createWhenAvailability({
+    getContentTypes: () => ({}),
+    getConfig: () => ({}),
+    whenReader: createWhenReader(),
+    getNote: (one) => notes[one.path],
+  })
+  const DELETE_MEDIA =
+    "target.noteType == 'link' && has(target.properties.media) && target.properties.media != ''"
+
+  it('holds over a note whose type and properties match, once the note is read', () => {
+    expect(isAvailable("target.noteType == 'link'", target())).toBe(true)
+    expect(isAvailable(DELETE_MEDIA, target())).toBe(true)
+  })
+
+  it('is false while the note is not read yet', () => {
+    expect(isAvailable("target.noteType == 'link'", target({ path: 'reef/Kelp.md' }))).toBe(false)
+  })
+
+  it('does not ask for the note where its condition reads neither', () => {
+    expect(isAvailable('target.isNote', target({ path: 'reef/Kelp.md' }))).toBe(true)
+  })
+})
+
 describe('the group of a command in the palette', () => {
   const reader = createWhenReader()
   const getWhenGroupOf = (when: string | undefined) => getWhenGroup(reader.getCondition(when))
