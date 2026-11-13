@@ -62,13 +62,14 @@ export const Answered: Story = {
     components: {
       Tab: createTab(
         createRecordedState([
-        { id: 'a', voice: 'prompt', text: 'What is entropy?' },
-        {
-          id: 'b',
-          voice: 'response',
-          text: 'A measure of how many ways a system can be arranged.',
-        },
-      ])),
+          { id: 'a', voice: 'prompt', text: 'What is entropy?' },
+          {
+            id: 'b',
+            voice: 'response',
+            text: 'A measure of how many ways a system can be arranged.',
+          },
+        ]),
+      ),
     },
     template: '<Tab />',
   }),
@@ -94,15 +95,16 @@ export const NoAgent: Story = {
     components: {
       Tab: createTab(
         createRecordedState([
-        { id: 'a', voice: 'prompt', text: 'Which pear trees flowered first?' },
-        {
-          id: 'b',
-          voice: 'response',
-          text: 'No agent is set up.',
-          state: 'failed',
-          offersSettings: true,
-        },
-      ])),
+          { id: 'a', voice: 'prompt', text: 'Which pear trees flowered first?' },
+          {
+            id: 'b',
+            voice: 'response',
+            text: 'No agent is set up.',
+            state: 'failed',
+            offersSettings: true,
+          },
+        ]),
+      ),
     },
     template: '<Tab />',
   }),

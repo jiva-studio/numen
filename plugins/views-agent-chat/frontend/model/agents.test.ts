@@ -105,7 +105,10 @@ describe('the agents a chat offers', () => {
 
     expect(choice.selected.agentId.value).toBe('c-orchard')
     expect(choice.selected.modelId.value).toBe('pear-large')
-    expect(choice.offered.reasoningLevels.value.map((one) => one.title)).toStrictEqual(['Low', 'High'])
+    expect(choice.offered.reasoningLevels.value.map((one) => one.title)).toStrictEqual([
+      'Low',
+      'High',
+    ])
     expect(choice.selected.reasoningId.value).toBe('high')
   })
 
