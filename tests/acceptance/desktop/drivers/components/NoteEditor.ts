@@ -22,7 +22,7 @@ export class NoteEditor {
     return this.panel().locator('.note__text .cm-content')
   }
 
-  /** The text of the line the cursor stands on, or null while the editor draws no cursor: the cursor is read where the editor draws it, as the person sees it. */
+  /** The text of the line that holds the cursor, or null while the editor draws no cursor: the cursor is read where the editor draws it. */
   async readCursorLine(): Promise<string | null> {
     return this.text().evaluate((content) => {
       const cursor = content.closest('.cm-editor')?.querySelector('.cm-cursor-primary, .cm-cursor')
