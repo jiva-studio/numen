@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/modelcalltest"
 	modelcalls "github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 )
@@ -226,17 +225,6 @@ func TestACanceledCallReachesTheCallsAndReturnsCanceled(t *testing.T) {
 	}
 }
 
-func TestEveryErrorCodeOfTheSchemaIsProducedFromAFailure(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.CallErrorCode]error{
-		v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION: connection.ErrNoConnection,
-		v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED:    &connection.AllFailedError{},
-		v1.CallErrorCode_CALL_ERROR_CODE_STOPPED:       &connection.StoppedError{},
-	}, func(failure error) v1.CallErrorCode {
-		served, _ := writeCallFailure(t.Context(), failure)
-		return served.GetError()
-	})
-}
-
 // A consumer reaches the real calls through the endpoint and receives a key in nothing: not in an answer,
 // not in the error of failed rows, not in a stop, and not in the headers.
 func TestAConsumerReceivesNoKeyInAnyAnswer(t *testing.T) {
@@ -322,14 +310,6 @@ func TestThePluginEndpointDoesNotMountConnectionCallService(t *testing.T) {
 	if connect.CodeOf(callErr) != connect.CodeUnimplemented && connect.CodeOf(callErr) != connect.CodeNotFound {
 		t.Errorf("code = %v, want the service to be absent", connect.CodeOf(callErr))
 	}
-}
-
-func TestEveryPriorityOfTheSchemaIsReadAsThePortOneIt(t *testing.T) {
-	want := map[v1.Priority]modelcall.Priority{
-		v1.Priority_PRIORITY_INTERACTIVE: modelcall.PriorityInteractive,
-		v1.Priority_PRIORITY_BACKGROUND:  modelcall.PriorityBackground,
-	}
-	testsupport.CheckHandled(t, func(priority v1.Priority) bool { return readPriority(priority) == want[priority] })
 }
 
 func lookupsOf(world *modelcalltest.World) modelcalls.Connections {

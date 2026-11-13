@@ -9,8 +9,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
@@ -50,54 +50,16 @@ func (h *Handler) Call(
 		return err
 	}
 	done, err := h.calls.Call(ctx, request.Msg.GetPluginId(), modelcall.Request{
-		Operation: request.Msg.GetOperation(), Payload: request.Msg.GetPayload(), Priority: readPriority(request.Msg.GetPriority()),
+		Operation: request.Msg.GetOperation(), Payload: request.Msg.GetPayload(), Priority: wire.ConvertPriorityFromWire(request.Msg.GetPriority()),
 	}, func(data []byte) error {
 		return stream.Send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Data{Data: data}})
 	})
 	if err == nil {
 		return stream.Send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Done{Done: done}})
 	}
-	failure, isServed := writeCallFailure(ctx, err)
+	failure, isServed := wire.ConvertCallFailureToWire(ctx, err)
 	if !isServed {
-		return newStatusError(ctx, err)
+		return wire.NewCallStatusError(ctx, err)
 	}
 	return stream.Send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Failure{Failure: failure}})
-}
-
-func writeCallFailure(ctx context.Context, err error) (*v1.CallFailure, bool) {
-	if ctx.Err() != nil {
-		return nil, false
-	}
-	var allFailed *connection.AllFailedError
-	var stopped *connection.StoppedError
-	switch {
-	case errors.Is(err, connection.ErrNoConnection):
-		return &v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION}, true
-	case errors.As(err, &allFailed):
-		failures := make([]*v1.CallRowFailure, len(allFailed.Failures))
-		for i, one := range allFailed.Failures {
-			failures[i] = &v1.CallRowFailure{ConnectionName: one.ConnectionName, Reason: one.Reason}
-		}
-		return &v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED, Detail: allFailed.Error(), Failures: failures}, true
-	case errors.As(err, &stopped):
-		return &v1.CallFailure{
-			Error: v1.CallErrorCode_CALL_ERROR_CODE_STOPPED, Detail: stopped.Error(),
-			Failures: []*v1.CallRowFailure{{ConnectionName: stopped.ConnectionName, Reason: stopped.Reason}},
-		}, true
-	}
-	return nil, false
-}
-
-func newStatusError(ctx context.Context, err error) error {
-	if ctxErr := ctx.Err(); ctxErr != nil {
-		return connect.NewError(connect.CodeCanceled, ctxErr)
-	}
-	return connect.NewError(connect.CodeInternal, err)
-}
-
-func readPriority(priority v1.Priority) modelcall.Priority {
-	if priority == v1.Priority_PRIORITY_INTERACTIVE {
-		return modelcall.PriorityInteractive
-	}
-	return modelcall.PriorityBackground
 }
