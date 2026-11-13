@@ -89,4 +89,13 @@ describe('a sound longer than it was returned to be', () => {
     expect(bar(player).attributes('max')).toBe('0')
     expect(times(player)).toEqual(['0:00', '0:00'])
   })
+
+  // A bar of no length puts every move at 0:00, so it is moved only once the length is known.
+  it('cannot be moved until how long it is has returned', async () => {
+    const player = mountPlayer({ at: 0, length: 0 })
+    expect(bar(player).attributes('disabled')).toBeDefined()
+
+    await player.setProps({ length: 187_000 })
+    expect(bar(player).attributes('disabled')).toBeUndefined()
+  })
 })
