@@ -49,7 +49,6 @@ export function createVaultServices(deps: VaultServicesDeps) {
     vaults: useVaults({
       listVaults: getVaultList,
       log,
-      coverage: window.vault.coverage,
     }),
     renames,
     vaultChanges,

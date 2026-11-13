@@ -83,9 +83,6 @@ func (Runtime) IsPluginSuspended(string) bool { return false }
 // WatchPluginConfig never calls fn, and returns a stop that does nothing.
 func (Runtime) WatchPluginConfig(string, func()) func() { return func() {} }
 
-// HasEndpoint reports that no plugin runs.
-func (Runtime) HasEndpoint(string) bool { return false }
-
 // Settings is the configuration and the watch of a plugin host that runs nothing: they accept and keep
 // nothing.
 type Settings struct{}

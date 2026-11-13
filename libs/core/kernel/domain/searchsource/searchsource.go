@@ -70,9 +70,3 @@ type Match struct {
 	ChunkID domain.ChunkID
 	Score   float64
 }
-
-// Counts is how many chunks of a vault can be handed to a source, and how many have a vector in its place.
-type Counts struct {
-	Chunks  int64
-	Indexed int64
-}

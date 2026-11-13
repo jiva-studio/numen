@@ -5,7 +5,6 @@
  * The displayed vault is derived from the list, so renaming a vault through the
  * command updates both the welcome screen and the command target.
  */
-import { ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { useVaults } from './useVaults'
@@ -33,7 +32,6 @@ const open = () => {
   return useVaults({
     listVaults: () => Promise.resolve(TWO),
     log: { getWriter: () => vi.fn() } as never,
-    coverage: ref(''),
   })
 }
 
@@ -103,7 +101,6 @@ describe('the vault list before and after it is requested for', () => {
     const target = useVaults({
       listVaults: () => Promise.reject(new Error('down')),
       log: { getWriter } as never,
-      coverage: ref(''),
     })
 
     await target.loadVaults()

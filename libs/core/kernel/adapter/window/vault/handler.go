@@ -19,7 +19,7 @@ import (
 // Window is the window that holds the vault.
 type Window interface {
 	// GetVaultState is what the window knows about the vault it shows now.
-	GetVaultState(ctx context.Context) (window.VaultState, error)
+	GetVaultState() window.VaultState
 }
 
 // Changes delivers the changes of the vault.
@@ -47,12 +47,9 @@ func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Han
 
 // GetVaultState answers the vault the window shows and how far it has been read.
 func (h *Handler) GetVaultState(
-	ctx context.Context, _ *connect.Request[v1.GetVaultStateRequest],
+	_ context.Context, _ *connect.Request[v1.GetVaultStateRequest],
 ) (*connect.Response[v1.GetVaultStateResponse], error) {
-	state, err := h.window.GetVaultState(ctx)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
+	state := h.window.GetVaultState()
 	return connect.NewResponse(&v1.GetVaultStateResponse{
 		Id:   string(state.Vault.ID),
 		Name: state.Vault.Name,
@@ -62,7 +59,6 @@ func (h *Handler) GetVaultState(
 			Error:      state.Error,
 			WatchError: state.WatchError,
 		},
-		Coverage: &v1.IndexCoverage{Text: state.Coverage},
 	}), nil
 }
 

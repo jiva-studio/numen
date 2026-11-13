@@ -566,112 +566,6 @@ func (x *SearchSourceServiceSearchPassagesResponse) GetMatches() []*ChunkMatch {
 	return nil
 }
 
-type DescribeCoverageRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Place *SearchPlace           `protobuf:"bytes,1,opt,name=place,proto3" json:"place,omitempty"`
-	// How many chunks of the vault can be handed to the source, and how many have a vector in the place.
-	ChunkCount    int64 `protobuf:"varint,2,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
-	IndexedCount  int64 `protobuf:"varint,3,opt,name=indexed_count,json=indexedCount,proto3" json:"indexed_count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DescribeCoverageRequest) Reset() {
-	*x = DescribeCoverageRequest{}
-	mi := &file_numen_v1_search_source_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DescribeCoverageRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DescribeCoverageRequest) ProtoMessage() {}
-
-func (x *DescribeCoverageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_search_source_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DescribeCoverageRequest.ProtoReflect.Descriptor instead.
-func (*DescribeCoverageRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_search_source_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *DescribeCoverageRequest) GetPlace() *SearchPlace {
-	if x != nil {
-		return x.Place
-	}
-	return nil
-}
-
-func (x *DescribeCoverageRequest) GetChunkCount() int64 {
-	if x != nil {
-		return x.ChunkCount
-	}
-	return 0
-}
-
-func (x *DescribeCoverageRequest) GetIndexedCount() int64 {
-	if x != nil {
-		return x.IndexedCount
-	}
-	return 0
-}
-
-type DescribeCoverageResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// What a person reads about the index of the source, empty where there is nothing to say.
-	Text          string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DescribeCoverageResponse) Reset() {
-	*x = DescribeCoverageResponse{}
-	mi := &file_numen_v1_search_source_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DescribeCoverageResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DescribeCoverageResponse) ProtoMessage() {}
-
-func (x *DescribeCoverageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_search_source_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DescribeCoverageResponse.ProtoReflect.Descriptor instead.
-func (*DescribeCoverageResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_search_source_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *DescribeCoverageResponse) GetText() string {
-	if x != nil {
-		return x.Text
-	}
-	return ""
-}
-
 type EmbedQueriesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Queries       []string               `protobuf:"bytes,1,rep,name=queries,proto3" json:"queries,omitempty"`
@@ -681,7 +575,7 @@ type EmbedQueriesRequest struct {
 
 func (x *EmbedQueriesRequest) Reset() {
 	*x = EmbedQueriesRequest{}
-	mi := &file_numen_v1_search_source_proto_msgTypes[11]
+	mi := &file_numen_v1_search_source_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -693,7 +587,7 @@ func (x *EmbedQueriesRequest) String() string {
 func (*EmbedQueriesRequest) ProtoMessage() {}
 
 func (x *EmbedQueriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_search_source_proto_msgTypes[11]
+	mi := &file_numen_v1_search_source_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -706,7 +600,7 @@ func (x *EmbedQueriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbedQueriesRequest.ProtoReflect.Descriptor instead.
 func (*EmbedQueriesRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_search_source_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_search_source_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *EmbedQueriesRequest) GetQueries() []string {
@@ -725,7 +619,7 @@ type EmbedQueriesResponse struct {
 
 func (x *EmbedQueriesResponse) Reset() {
 	*x = EmbedQueriesResponse{}
-	mi := &file_numen_v1_search_source_proto_msgTypes[12]
+	mi := &file_numen_v1_search_source_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -737,7 +631,7 @@ func (x *EmbedQueriesResponse) String() string {
 func (*EmbedQueriesResponse) ProtoMessage() {}
 
 func (x *EmbedQueriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_search_source_proto_msgTypes[12]
+	mi := &file_numen_v1_search_source_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -750,7 +644,7 @@ func (x *EmbedQueriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbedQueriesResponse.ProtoReflect.Descriptor instead.
 func (*EmbedQueriesResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_search_source_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_search_source_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *EmbedQueriesResponse) GetVectors() []*FloatVector {
@@ -802,24 +696,16 @@ const file_numen_v1_search_source_proto_rawDesc = "" +
 	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x14\n" +
 	"\x05score\x18\x02 \x01(\x01R\x05score\"[\n" +
 	")SearchSourceServiceSearchPassagesResponse\x12.\n" +
-	"\amatches\x18\x01 \x03(\v2\x14.numen.v1.ChunkMatchR\amatches\"\x8c\x01\n" +
-	"\x17DescribeCoverageRequest\x12+\n" +
-	"\x05place\x18\x01 \x01(\v2\x15.numen.v1.SearchPlaceR\x05place\x12\x1f\n" +
-	"\vchunk_count\x18\x02 \x01(\x03R\n" +
-	"chunkCount\x12#\n" +
-	"\rindexed_count\x18\x03 \x01(\x03R\findexedCount\".\n" +
-	"\x18DescribeCoverageResponse\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text\"/\n" +
+	"\amatches\x18\x01 \x03(\v2\x14.numen.v1.ChunkMatchR\amatches\"/\n" +
 	"\x13EmbedQueriesRequest\x12\x18\n" +
 	"\aqueries\x18\x01 \x03(\tR\aqueries\"G\n" +
 	"\x14EmbedQueriesResponse\x12/\n" +
-	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors2\xea\x03\n" +
+	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors2\x8f\x03\n" +
 	"\x13SearchSourceService\x12e\n" +
 	"\x14DescribeSearchSource\x12%.numen.v1.DescribeSearchSourceRequest\x1a&.numen.v1.DescribeSearchSourceResponse\x12G\n" +
 	"\n" +
 	"IndexTexts\x12\x1b.numen.v1.IndexTextsRequest\x1a\x1c.numen.v1.IndexTextsResponse\x12y\n" +
-	"\x0eSearchPassages\x122.numen.v1.SearchSourceServiceSearchPassagesRequest\x1a3.numen.v1.SearchSourceServiceSearchPassagesResponse\x12Y\n" +
-	"\x10DescribeCoverage\x12!.numen.v1.DescribeCoverageRequest\x1a\".numen.v1.DescribeCoverageResponse\x12M\n" +
+	"\x0eSearchPassages\x122.numen.v1.SearchSourceServiceSearchPassagesRequest\x1a3.numen.v1.SearchSourceServiceSearchPassagesResponse\x12M\n" +
 	"\fEmbedQueries\x12\x1d.numen.v1.EmbedQueriesRequest\x1a\x1e.numen.v1.EmbedQueriesResponseBFZDgithub.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -834,7 +720,7 @@ func file_numen_v1_search_source_proto_rawDescGZIP() []byte {
 	return file_numen_v1_search_source_proto_rawDescData
 }
 
-var file_numen_v1_search_source_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_numen_v1_search_source_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_numen_v1_search_source_proto_goTypes = []any{
 	(*SearchPlace)(nil),                               // 0: numen.v1.SearchPlace
 	(*DescribeSearchSourceRequest)(nil),               // 1: numen.v1.DescribeSearchSourceRequest
@@ -845,35 +731,30 @@ var file_numen_v1_search_source_proto_goTypes = []any{
 	(*SearchSourceServiceSearchPassagesRequest)(nil),  // 6: numen.v1.SearchSourceServiceSearchPassagesRequest
 	(*ChunkMatch)(nil),                                // 7: numen.v1.ChunkMatch
 	(*SearchSourceServiceSearchPassagesResponse)(nil), // 8: numen.v1.SearchSourceServiceSearchPassagesResponse
-	(*DescribeCoverageRequest)(nil),                   // 9: numen.v1.DescribeCoverageRequest
-	(*DescribeCoverageResponse)(nil),                  // 10: numen.v1.DescribeCoverageResponse
-	(*EmbedQueriesRequest)(nil),                       // 11: numen.v1.EmbedQueriesRequest
-	(*EmbedQueriesResponse)(nil),                      // 12: numen.v1.EmbedQueriesResponse
-	(*FloatVector)(nil),                               // 13: numen.v1.FloatVector
+	(*EmbedQueriesRequest)(nil),                       // 9: numen.v1.EmbedQueriesRequest
+	(*EmbedQueriesResponse)(nil),                      // 10: numen.v1.EmbedQueriesResponse
+	(*FloatVector)(nil),                               // 11: numen.v1.FloatVector
 }
 var file_numen_v1_search_source_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.IndexTextsRequest.place:type_name -> numen.v1.SearchPlace
 	3,  // 1: numen.v1.IndexTextsRequest.texts:type_name -> numen.v1.IndexedText
-	13, // 2: numen.v1.IndexTextsResponse.vectors:type_name -> numen.v1.FloatVector
+	11, // 2: numen.v1.IndexTextsResponse.vectors:type_name -> numen.v1.FloatVector
 	0,  // 3: numen.v1.SearchSourceServiceSearchPassagesRequest.place:type_name -> numen.v1.SearchPlace
 	7,  // 4: numen.v1.SearchSourceServiceSearchPassagesResponse.matches:type_name -> numen.v1.ChunkMatch
-	0,  // 5: numen.v1.DescribeCoverageRequest.place:type_name -> numen.v1.SearchPlace
-	13, // 6: numen.v1.EmbedQueriesResponse.vectors:type_name -> numen.v1.FloatVector
-	1,  // 7: numen.v1.SearchSourceService.DescribeSearchSource:input_type -> numen.v1.DescribeSearchSourceRequest
-	4,  // 8: numen.v1.SearchSourceService.IndexTexts:input_type -> numen.v1.IndexTextsRequest
-	6,  // 9: numen.v1.SearchSourceService.SearchPassages:input_type -> numen.v1.SearchSourceServiceSearchPassagesRequest
-	9,  // 10: numen.v1.SearchSourceService.DescribeCoverage:input_type -> numen.v1.DescribeCoverageRequest
-	11, // 11: numen.v1.SearchSourceService.EmbedQueries:input_type -> numen.v1.EmbedQueriesRequest
-	2,  // 12: numen.v1.SearchSourceService.DescribeSearchSource:output_type -> numen.v1.DescribeSearchSourceResponse
-	5,  // 13: numen.v1.SearchSourceService.IndexTexts:output_type -> numen.v1.IndexTextsResponse
-	8,  // 14: numen.v1.SearchSourceService.SearchPassages:output_type -> numen.v1.SearchSourceServiceSearchPassagesResponse
-	10, // 15: numen.v1.SearchSourceService.DescribeCoverage:output_type -> numen.v1.DescribeCoverageResponse
-	12, // 16: numen.v1.SearchSourceService.EmbedQueries:output_type -> numen.v1.EmbedQueriesResponse
-	12, // [12:17] is the sub-list for method output_type
-	7,  // [7:12] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	11, // 5: numen.v1.EmbedQueriesResponse.vectors:type_name -> numen.v1.FloatVector
+	1,  // 6: numen.v1.SearchSourceService.DescribeSearchSource:input_type -> numen.v1.DescribeSearchSourceRequest
+	4,  // 7: numen.v1.SearchSourceService.IndexTexts:input_type -> numen.v1.IndexTextsRequest
+	6,  // 8: numen.v1.SearchSourceService.SearchPassages:input_type -> numen.v1.SearchSourceServiceSearchPassagesRequest
+	9,  // 9: numen.v1.SearchSourceService.EmbedQueries:input_type -> numen.v1.EmbedQueriesRequest
+	2,  // 10: numen.v1.SearchSourceService.DescribeSearchSource:output_type -> numen.v1.DescribeSearchSourceResponse
+	5,  // 11: numen.v1.SearchSourceService.IndexTexts:output_type -> numen.v1.IndexTextsResponse
+	8,  // 12: numen.v1.SearchSourceService.SearchPassages:output_type -> numen.v1.SearchSourceServiceSearchPassagesResponse
+	10, // 13: numen.v1.SearchSourceService.EmbedQueries:output_type -> numen.v1.EmbedQueriesResponse
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_search_source_proto_init() }
@@ -888,7 +769,7 @@ func file_numen_v1_search_source_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_search_source_proto_rawDesc), len(file_numen_v1_search_source_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

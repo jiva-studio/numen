@@ -75,14 +75,6 @@ type Match struct {
 	Score   float64
 }
 
-// Counts is how many chunks of a vault can be handed to the source, and how many have a vector in its place.
-//
-//numen:api
-type Counts struct {
-	Chunks  int64
-	Indexed int64
-}
-
 // Handler is what a plugin implements to serve a search source.
 type Handler interface {
 	// Describe returns the description of the source. A failure the settings cause is a failed
@@ -92,9 +84,6 @@ type Handler interface {
 	IndexTexts(ctx context.Context, place Place, texts []Text) ([][]float32, error)
 	// SearchPassages returns the chunks of the place that answer the query, best first.
 	SearchPassages(ctx context.Context, place Place, q Query) ([]Match, error)
-	// DescribeCoverage returns what a person reads about how far the source has indexed the vault of the
-	// place, and empty where there is nothing to say.
-	DescribeCoverage(ctx context.Context, place Place, counts Counts) (string, error)
 	// EmbedQueries returns one vector per query, in order, as the source compares a query with its place.
 	EmbedQueries(ctx context.Context, queries []string) ([][]float32, error)
 }
@@ -146,19 +135,6 @@ func (a *adapter) SearchPassages(
 		out[i] = &v1.ChunkMatch{ChunkId: one.ChunkID, Score: one.Score}
 	}
 	return connect.NewResponse(&v1.SearchSourceServiceSearchPassagesResponse{Matches: out}), nil
-}
-
-func (a *adapter) DescribeCoverage(
-	ctx context.Context,
-	req *connect.Request[v1.DescribeCoverageRequest],
-) (*connect.Response[v1.DescribeCoverageResponse], error) {
-	text, err := a.h.DescribeCoverage(ctx, readPlace(req.Msg.GetPlace()), Counts{
-		Chunks: req.Msg.GetChunkCount(), Indexed: req.Msg.GetIndexedCount(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return connect.NewResponse(&v1.DescribeCoverageResponse{Text: text}), nil
 }
 
 func (a *adapter) EmbedQueries(

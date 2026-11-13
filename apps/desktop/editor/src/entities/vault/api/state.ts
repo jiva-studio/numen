@@ -16,7 +16,7 @@ const parseScan = (scan: ScanState | undefined) => ({
   unwatchedPath: scan?.watchError ?? '',
 })
 
-/** The open vault: its identity, how far its scan got and what the search source says of its index. */
+/** The open vault: its identity and how far its scan got. */
 export async function getVaultState(): Promise<VaultState> {
   const state = await vault.getVaultState({})
   return {
@@ -24,7 +24,6 @@ export async function getVaultState(): Promise<VaultState> {
     name: state.name,
     path: state.path,
     scan: parseScan(state.scan),
-    coverage: state.coverage?.text ?? '',
   }
 }
 

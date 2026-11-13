@@ -317,13 +317,12 @@ const callCore = (method, body, isStream) =>
     call.end(payload)
   })
 
-/** Whether the vault is read, every chunk has its vector, and no task of the window is running. */
+/** Whether the vault is read and no task of the window is running. */
 const readIdleState = async () => {
   const state = await callCore('VaultService/GetVaultState', {}, false)
   const window = await callCore('WindowService/WatchTasks', { window: 'editor' }, true)
   return (
     state?.scan?.isReady === true &&
-    state.coverage?.chunkCount === state.coverage?.embeddedCount &&
     window !== undefined &&
     (window.tasks ?? []).every((task) => task.error)
   )

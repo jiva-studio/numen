@@ -27,7 +27,6 @@ import type { Command } from '@/entities/command'
 import type { FileKind } from '@/entities/file'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
-import type { IndexCoverage } from '@/shared/model/notices/coverage'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { useDeclaredCommands, watchCommandLists } from '@/features/plugin-commands'
 import { createSearchMenu, createWindowSlots } from '@/features/plugin-host'
@@ -142,7 +141,6 @@ interface ComposeOptions {
   readonly paletteLists: PaletteLists
   readonly runs: RunSupport
   readonly registry: CommandRegistry
-  readonly coverage: () => IndexCoverage
   readonly reached: Notes
   readonly settings: Pick<SettingsStore, 'read' | 'state'>
   readonly writeMessage: MessageWriter
@@ -188,7 +186,7 @@ function composeCommands(options: ComposeOptions, appCommands: readonly Command[
     knows: options.knows,
     plugin: pluginPalette.plugin,
     searchRequests,
-    searchOptions: { coverage: options.coverage, menu: createSearchMenu(pluginHost.slots) },
+    searchOptions: { menu: createSearchMenu(pluginHost.slots) },
     getVaultList,
   })
   watchCommandLists(
@@ -252,7 +250,6 @@ export function createRealWindow(parts: RealWindowParts) {
     paletteLists: { getStepGroups: () => [], previewItem: () => undefined },
     runs: runSupport(),
     registry,
-    coverage: () => ({ text: '' }),
     reached: {
       getTabAt: () => null,
       getPath: (id: string) => id,

@@ -23,7 +23,7 @@ afterEach(() => {
 })
 
 describe('the state of the vault', () => {
-  it('is a scan not begun and nothing indexed where the answer carries neither', async () => {
+  it('is a scan not begun where the answer carries none', async () => {
     request.getVaultState.mockResolvedValue({ id: 'v1', name: 'Zoo', path: '/zoo' })
 
     expect(await getVaultState()).toStrictEqual({
@@ -31,17 +31,15 @@ describe('the state of the vault', () => {
       name: 'Zoo',
       path: '/zoo',
       scan: { isReady: false, error: '', unwatchedPath: '' },
-      coverage: '',
     })
   })
 
-  it('carries how far the scan got and what the search source says of its index', async () => {
+  it('carries how far the scan got', async () => {
     request.getVaultState.mockResolvedValue({
       id: 'v1',
       name: 'Zoo',
       path: '/zoo',
       scan: { isReady: true, error: 'permission denied', watchError: '/zoo/deep' },
-      coverage: { text: 'Semantic index not built yet' },
     })
 
     const state = await getVaultState()
@@ -51,7 +49,6 @@ describe('the state of the vault', () => {
       error: 'permission denied',
       unwatchedPath: '/zoo/deep',
     })
-    expect(state.coverage).toBe('Semantic index not built yet')
   })
 })
 

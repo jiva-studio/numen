@@ -6,7 +6,6 @@ import type { PaletteGroup } from '@numen/workbench'
 import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from './debounced'
-import type { IndexCoverage } from '@/shared/model/notices/coverage'
 import {
   createNameItem,
   createPassageItem,
@@ -21,7 +20,7 @@ import {
 import type { SearchDeps } from '../../lib/search/types'
 import { getCreateNoteActions } from '../../lib/entries/entries'
 import type { CommandTarget } from '@/shared/model/command'
-import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
+import { GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
 export type { NameMatch, Passage, SearchHit, SearchGroup, ResultChoice, SearchDeps }
 
@@ -48,7 +47,6 @@ export interface Words extends EmptyWords {
 /** What the window hands the palette, beside the vault and its own words. */
 export interface SearchOptions {
   wait?: Wait
-  coverage?(this: void): IndexCoverage
   menu?: SearchMenuDeps
   /** The target of the window, for the row that creates a note. */
   getTarget?(this: void): CommandTarget
@@ -179,6 +177,7 @@ async function executeSearchQuery(
     core: SearchDeps
     query: string
     mine: InFlightRequest
+    signal: AbortSignal
     emptyQueryWord: string
   },
   state: SearchRefs,
@@ -201,7 +200,7 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'names',
-      question: () => ctx.core.names(ctx.query, GROUP_RESULT_LIMIT),
+      question: () => ctx.core.names(ctx.query, GROUP_RESULT_LIMIT, ctx.signal),
       into: (found) => {
         state.names.value = found
       },
@@ -211,7 +210,7 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'text',
-      question: () => ctx.core.search(ctx.query, 'words', GROUP_RESULT_LIMIT),
+      question: () => ctx.core.search(ctx.query, 'words', GROUP_RESULT_LIMIT, ctx.signal),
       into: (found) => {
         state.texts.value = found
       },
@@ -221,7 +220,7 @@ async function executeSearchQuery(
     fillSearchGroup({
       mine: ctx.mine,
       group: 'meaning',
-      question: () => ctx.core.search(ctx.query, 'meaning', GROUP_RESULT_LIMIT),
+      question: () => ctx.core.search(ctx.query, 'meaning', GROUP_RESULT_LIMIT, ctx.signal),
       into: (found) => {
         state.meanings.value = found
       },
@@ -248,7 +247,6 @@ function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
 }
 
 export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
-  const coverage = how.coverage
   const open = ref(false)
   const inputValue = ref('')
 
@@ -263,7 +261,11 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const debounced = useDebouncedSearch(how.wait ? { wait: how.wait } : {})
 
+  // The questions of the current query, which a newer query or putting the palette away aborts.
+  let asking = new AbortController()
+
   const drop = () => {
+    asking.abort()
     names.value = []
     texts.value = []
     meanings.value = []
@@ -272,8 +274,14 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     isAnswered.value = false
   }
 
-  const ask = (query: string, mine: InFlightRequest) =>
-    executeSearchQuery({ core, query, mine, emptyQueryWord: words.noQuery }, state)
+  const ask = (query: string, mine: InFlightRequest) => {
+    asking.abort()
+    asking = new AbortController()
+    return executeSearchQuery(
+      { core, query, mine, signal: asking.signal, emptyQueryWord: words.noQuery },
+      state,
+    )
+  }
 
   const setTyped = async (text: string) => {
     inputValue.value = text
@@ -292,8 +300,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     drop()
   }
 
-  const getEmptyGroupMessage = (id: SearchGroup): string =>
-    getEmptyGroupReason(id, { failureMessage: failureMessages.value[id], coverage })
+  /** Why a group holds nothing: the failure of its search, and nothing where it did not fail. */
+  const getEmptyGroupMessage = (id: SearchGroup): string => failureMessages.value[id] ?? ''
 
   const searchGroups = computed(() => {
     if (!inputValue.value.trim())

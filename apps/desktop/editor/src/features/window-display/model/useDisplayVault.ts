@@ -1,15 +1,13 @@
 import { ref } from 'vue'
 import { getVaultState } from '@/entities/vault'
 
-/** What the vault last answered about itself: its identity, its read errors and what the search source says of its index. */
+/** What the vault last answered about itself: its identity and its read errors. */
 export function useDisplayVault() {
   return {
     name: ref(''),
     at: ref(''),
     error: ref(''),
     unwatched: ref(''),
-    /** What the search source says of its index, as the vault last answered. */
-    coverage: ref(''),
   }
 }
 
@@ -22,7 +20,6 @@ export async function askVaultState(vault: DisplayVault) {
   if (vault.at.value === '') vault.at.value = state.path
   vault.error.value = state.scan.error
   vault.unwatched.value = state.scan.unwatchedPath
-  vault.coverage.value = state.coverage
   return state
 }
 

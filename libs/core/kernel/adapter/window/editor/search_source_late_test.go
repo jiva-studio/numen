@@ -27,8 +27,6 @@ import (
 const (
 	gardenSourceID = "md.numen.embeddings"
 	chooseRow      = "choose a connection in the settings of Vector Embeddings"
-	gardenIndexed  = "every chunk of the vault is indexed"
-	gardenPending  = "the index of the vault is being built"
 )
 
 // connectionSource is the plugin edge of a search source served through a connection: it cannot describe
@@ -94,16 +92,6 @@ func (s *connectionSource) SearchPassages(
 		matches[i] = &v1.ChunkMatch{ChunkId: chunk, Score: 0.9}
 	}
 	return connect.NewResponse(&v1.SearchSourceServiceSearchPassagesResponse{Matches: matches}), nil
-}
-
-func (s *connectionSource) DescribeCoverage(
-	_ context.Context, r *connect.Request[v1.DescribeCoverageRequest],
-) (*connect.Response[v1.DescribeCoverageResponse], error) {
-	text := gardenPending
-	if r.Msg.GetChunkCount() > 0 && r.Msg.GetIndexedCount() == r.Msg.GetChunkCount() {
-		text = gardenIndexed
-	}
-	return connect.NewResponse(&v1.DescribeCoverageResponse{Text: text}), nil
 }
 
 func startConnectionSource(t *testing.T, plugin *connectionSource) *container.PluginRoles {
@@ -190,18 +178,14 @@ func TestASourceThatDescribesItselfAfterASettingJoinsTheOpenWindow(t *testing.T)
 	if found := f.findMeaning(t, "shrubbery"); len(found) != 0 {
 		t.Errorf("a source that has not described itself found %v", found)
 	}
-	if coverage := f.state(t).GetCoverage().GetText(); coverage != "" {
-		t.Errorf("a source that has not described itself has the coverage %q", coverage)
-	}
 
 	if err := cfg.PluginHost.ApplySetting(t.Context(), gardenSourceID, "connection", "garden-row"); err != nil {
 		t.Fatal(err)
 	}
 
-	testsupport.WaitFor(t, func() bool { return f.state(t).GetCoverage().GetText() == gardenIndexed })
-	if found := f.findMeaning(t, "shrubbery"); !slices.Equal(slices.Compact(found), []string{"Hedge.md"}) {
-		t.Errorf("the source found %v, want Hedge.md", found)
-	}
+	testsupport.WaitFor(t, func() bool {
+		return slices.Equal(slices.Compact(f.findMeaning(t, "shrubbery")), []string{"Hedge.md"})
+	})
 	if f.hasSearchItem(chooseRow) {
 		t.Errorf("the plugin keeps the search item %q once the source described itself", chooseRow)
 	}

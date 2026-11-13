@@ -17,9 +17,6 @@ type Source interface {
 	IndexTexts(ctx context.Context, place searchsource.Place, texts []searchsource.Text) ([][]float32, error)
 	// SearchPassages returns the chunks of the place that answer the query, best first.
 	SearchPassages(ctx context.Context, place searchsource.Place, q searchsource.Query) ([]searchsource.Match, error)
-	// DescribeCoverage returns what a person reads about how far the source has indexed the vault of the
-	// place, and empty where there is nothing to say.
-	DescribeCoverage(ctx context.Context, place searchsource.Place, counts searchsource.Counts) (string, error)
 }
 
 // QueryEmbedder makes the vectors of queries the way a source compares a query with its place. A plugin

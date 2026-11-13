@@ -30,15 +30,13 @@ type Queries func(ctx context.Context, queries []string) ([][]float32, error)
 type Watch func(fn func())
 
 // Source is a search source over the model of a test. A nil Nearest answers every query with nothing, a
-// nil Queries embeds the queries with the model and a nil Watch announces no change. Coverage is the text
-// it says of every vault.
+// nil Queries embeds the queries with the model and a nil Watch announces no change.
 type Source struct {
 	Model    Embedder
 	Nearest  Nearest
 	Queries  Queries
 	Watch    Watch
 	Floor    float64
-	Coverage string
 }
 
 // Wrap returns the source over the model, which answers no query.
@@ -96,11 +94,6 @@ func (s *Source) SearchPassages(ctx context.Context, place searchsource.Place, q
 	return s.Nearest(ctx, place.VaultID, sourcedomain.NearestQuery{
 		Recipe: place.Recipe, Vector: vectors[0], Kinds: q.Kinds, PathPrefix: q.PathPrefix, Limit: q.Limit, Floor: floor,
 	})
-}
-
-// DescribeCoverage returns the coverage text of the source.
-func (s *Source) DescribeCoverage(context.Context, searchsource.Place, searchsource.Counts) (string, error) {
-	return s.Coverage, nil
 }
 
 // OnDescriptionChange registers fn with Watch.

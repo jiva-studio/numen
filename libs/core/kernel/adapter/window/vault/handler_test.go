@@ -1,7 +1,6 @@
 package vault
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -24,7 +23,7 @@ type showing struct {
 	changes broadcast.Broadcaster[window.Change]
 }
 
-func (s *showing) GetVaultState(context.Context) (window.VaultState, error) { return s.state, nil }
+func (s *showing) GetVaultState() window.VaultState { return s.state }
 
 func (s *showing) SubscribeChanges() (<-chan window.Change, func()) { return s.changes.Subscribe() }
 
@@ -43,7 +42,6 @@ func TestTheVaultStateAnswersWhatTheWindowKnows(t *testing.T) {
 		IsReady:    true,
 		Error:      "the index is locked",
 		WatchError: "the watch stopped",
-		Coverage:   "Semantic index not built yet",
 	}})
 
 	out, err := client.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
@@ -57,10 +55,6 @@ func TestTheVaultStateAnswersWhatTheWindowKnows(t *testing.T) {
 	scan := got.GetScan()
 	if !scan.GetIsReady() || scan.GetError() != "the index is locked" || scan.GetWatchError() != "the watch stopped" {
 		t.Errorf("the scan is %v", scan)
-	}
-	coverage := got.GetCoverage()
-	if coverage.GetText() != "Semantic index not built yet" {
-		t.Errorf("the coverage is %v", coverage)
 	}
 }
 

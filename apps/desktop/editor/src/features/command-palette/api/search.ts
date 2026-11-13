@@ -30,8 +30,8 @@ const parseSelector = (json: string): Selector | null => {
 }
 
 export const searchCore: SearchDeps = {
-  names: async (query, limit) => {
-    const answer = await search.searchNames({ query, limit })
+  names: async (query, limit, signal) => {
+    const answer = await search.searchNames({ query, limit }, signal ? { signal } : {})
     return answer.found.map((one) => ({
       path: one.note?.path ?? '',
       title: one.note?.title ?? '',
@@ -42,8 +42,11 @@ export const searchCore: SearchDeps = {
       ...(one.tabKind ? { tabKind: one.tabKind } : {}),
     }))
   },
-  search: async (query, mode, limit) => {
-    const answer = await search.searchPassages({ query, limit, mode: modes[mode] })
+  search: async (query, mode, limit, signal) => {
+    const answer = await search.searchPassages(
+      { query, limit, mode: modes[mode] },
+      signal ? { signal } : {},
+    )
     return answer.found.map((one) => ({
       path: one.path,
       title: one.note?.title ?? '',

@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -147,18 +146,3 @@ func TestASettingChangedWhileThePluginIsStoppedIsReadAgain(t *testing.T) {
 	}
 }
 
-// What the source says of its coverage is asked only of a plugin that runs: asking does not start it.
-func TestTheCoverageOfAStoppedSourceStartsNoPlugin(t *testing.T) {
-	source := startKeptSource(t)
-	bridge := source.open(t, nil)
-	source.stop(t)
-	launches := source.launches.Load()
-
-	text, err := bridge.DescribeCoverage(t.Context(), searchsource.Place{VaultID: "01ORCHARD", Recipe: bridge.Describe().Recipe()}, searchsource.Counts{Chunks: 4})
-	if err != nil || text != "" {
-		t.Errorf("the coverage of a stopped source is %q, %v, want nothing", text, err)
-	}
-	if got := source.launches.Load() - launches; got != 0 {
-		t.Errorf("asking for the coverage started the plugin %d times", got)
-	}
-}

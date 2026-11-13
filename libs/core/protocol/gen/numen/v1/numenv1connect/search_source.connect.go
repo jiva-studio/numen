@@ -42,9 +42,6 @@ const (
 	// SearchSourceServiceSearchPassagesProcedure is the fully-qualified name of the
 	// SearchSourceService's SearchPassages RPC.
 	SearchSourceServiceSearchPassagesProcedure = "/numen.v1.SearchSourceService/SearchPassages"
-	// SearchSourceServiceDescribeCoverageProcedure is the fully-qualified name of the
-	// SearchSourceService's DescribeCoverage RPC.
-	SearchSourceServiceDescribeCoverageProcedure = "/numen.v1.SearchSourceService/DescribeCoverage"
 	// SearchSourceServiceEmbedQueriesProcedure is the fully-qualified name of the SearchSourceService's
 	// EmbedQueries RPC.
 	SearchSourceServiceEmbedQueriesProcedure = "/numen.v1.SearchSourceService/EmbedQueries"
@@ -60,8 +57,6 @@ type SearchSourceServiceClient interface {
 	IndexTexts(context.Context, *connect.Request[v1.IndexTextsRequest]) (*connect.Response[v1.IndexTextsResponse], error)
 	// SearchPassages returns the chunks of the place that answer the query, best first.
 	SearchPassages(context.Context, *connect.Request[v1.SearchSourceServiceSearchPassagesRequest]) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error)
-	// DescribeCoverage says to a person how far the source has indexed the vault of the place.
-	DescribeCoverage(context.Context, *connect.Request[v1.DescribeCoverageRequest]) (*connect.Response[v1.DescribeCoverageResponse], error)
 	// EmbedQueries returns one vector per query, in the order of the queries, as the source compares a
 	// query with its place. The floor calibration of a plugin measures the vault with them.
 	EmbedQueries(context.Context, *connect.Request[v1.EmbedQueriesRequest]) (*connect.Response[v1.EmbedQueriesResponse], error)
@@ -96,12 +91,6 @@ func NewSearchSourceServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(searchSourceServiceMethods.ByName("SearchPassages")),
 			connect.WithClientOptions(opts...),
 		),
-		describeCoverage: connect.NewClient[v1.DescribeCoverageRequest, v1.DescribeCoverageResponse](
-			httpClient,
-			baseURL+SearchSourceServiceDescribeCoverageProcedure,
-			connect.WithSchema(searchSourceServiceMethods.ByName("DescribeCoverage")),
-			connect.WithClientOptions(opts...),
-		),
 		embedQueries: connect.NewClient[v1.EmbedQueriesRequest, v1.EmbedQueriesResponse](
 			httpClient,
 			baseURL+SearchSourceServiceEmbedQueriesProcedure,
@@ -116,7 +105,6 @@ type searchSourceServiceClient struct {
 	describeSearchSource *connect.Client[v1.DescribeSearchSourceRequest, v1.DescribeSearchSourceResponse]
 	indexTexts           *connect.Client[v1.IndexTextsRequest, v1.IndexTextsResponse]
 	searchPassages       *connect.Client[v1.SearchSourceServiceSearchPassagesRequest, v1.SearchSourceServiceSearchPassagesResponse]
-	describeCoverage     *connect.Client[v1.DescribeCoverageRequest, v1.DescribeCoverageResponse]
 	embedQueries         *connect.Client[v1.EmbedQueriesRequest, v1.EmbedQueriesResponse]
 }
 
@@ -135,11 +123,6 @@ func (c *searchSourceServiceClient) SearchPassages(ctx context.Context, req *con
 	return c.searchPassages.CallUnary(ctx, req)
 }
 
-// DescribeCoverage calls numen.v1.SearchSourceService.DescribeCoverage.
-func (c *searchSourceServiceClient) DescribeCoverage(ctx context.Context, req *connect.Request[v1.DescribeCoverageRequest]) (*connect.Response[v1.DescribeCoverageResponse], error) {
-	return c.describeCoverage.CallUnary(ctx, req)
-}
-
 // EmbedQueries calls numen.v1.SearchSourceService.EmbedQueries.
 func (c *searchSourceServiceClient) EmbedQueries(ctx context.Context, req *connect.Request[v1.EmbedQueriesRequest]) (*connect.Response[v1.EmbedQueriesResponse], error) {
 	return c.embedQueries.CallUnary(ctx, req)
@@ -155,8 +138,6 @@ type SearchSourceServiceHandler interface {
 	IndexTexts(context.Context, *connect.Request[v1.IndexTextsRequest]) (*connect.Response[v1.IndexTextsResponse], error)
 	// SearchPassages returns the chunks of the place that answer the query, best first.
 	SearchPassages(context.Context, *connect.Request[v1.SearchSourceServiceSearchPassagesRequest]) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error)
-	// DescribeCoverage says to a person how far the source has indexed the vault of the place.
-	DescribeCoverage(context.Context, *connect.Request[v1.DescribeCoverageRequest]) (*connect.Response[v1.DescribeCoverageResponse], error)
 	// EmbedQueries returns one vector per query, in the order of the queries, as the source compares a
 	// query with its place. The floor calibration of a plugin measures the vault with them.
 	EmbedQueries(context.Context, *connect.Request[v1.EmbedQueriesRequest]) (*connect.Response[v1.EmbedQueriesResponse], error)
@@ -187,12 +168,6 @@ func NewSearchSourceServiceHandler(svc SearchSourceServiceHandler, opts ...conne
 		connect.WithSchema(searchSourceServiceMethods.ByName("SearchPassages")),
 		connect.WithHandlerOptions(opts...),
 	)
-	searchSourceServiceDescribeCoverageHandler := connect.NewUnaryHandler(
-		SearchSourceServiceDescribeCoverageProcedure,
-		svc.DescribeCoverage,
-		connect.WithSchema(searchSourceServiceMethods.ByName("DescribeCoverage")),
-		connect.WithHandlerOptions(opts...),
-	)
 	searchSourceServiceEmbedQueriesHandler := connect.NewUnaryHandler(
 		SearchSourceServiceEmbedQueriesProcedure,
 		svc.EmbedQueries,
@@ -207,8 +182,6 @@ func NewSearchSourceServiceHandler(svc SearchSourceServiceHandler, opts ...conne
 			searchSourceServiceIndexTextsHandler.ServeHTTP(w, r)
 		case SearchSourceServiceSearchPassagesProcedure:
 			searchSourceServiceSearchPassagesHandler.ServeHTTP(w, r)
-		case SearchSourceServiceDescribeCoverageProcedure:
-			searchSourceServiceDescribeCoverageHandler.ServeHTTP(w, r)
 		case SearchSourceServiceEmbedQueriesProcedure:
 			searchSourceServiceEmbedQueriesHandler.ServeHTTP(w, r)
 		default:
@@ -230,10 +203,6 @@ func (UnimplementedSearchSourceServiceHandler) IndexTexts(context.Context, *conn
 
 func (UnimplementedSearchSourceServiceHandler) SearchPassages(context.Context, *connect.Request[v1.SearchSourceServiceSearchPassagesRequest]) (*connect.Response[v1.SearchSourceServiceSearchPassagesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchSourceService.SearchPassages is not implemented"))
-}
-
-func (UnimplementedSearchSourceServiceHandler) DescribeCoverage(context.Context, *connect.Request[v1.DescribeCoverageRequest]) (*connect.Response[v1.DescribeCoverageResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchSourceService.DescribeCoverage is not implemented"))
 }
 
 func (UnimplementedSearchSourceServiceHandler) EmbedQueries(context.Context, *connect.Request[v1.EmbedQueriesRequest]) (*connect.Response[v1.EmbedQueriesResponse], error) {

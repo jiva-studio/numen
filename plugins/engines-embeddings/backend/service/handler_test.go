@@ -90,17 +90,3 @@ func TestASearchAsksThePlaceWithTheVectorOfTheQueryAndAnswersItsChunks(t *testin
 		t.Errorf("the place was asked %+v", asked)
 	}
 }
-
-func TestDescribeCoverageReportsUnbuiltIndexUntilAChunkHasAVector(t *testing.T) {
-	h := newHandler(newServer(nil), noPlaces, sourcehealth.New(noHealth, console.Report))
-
-	empty, emptyErr := h.DescribeCoverage(t.Context(), searchsource.Place{}, searchsource.Counts{Chunks: 12})
-	started, startedErr := h.DescribeCoverage(t.Context(), searchsource.Place{}, searchsource.Counts{Chunks: 12, Indexed: 1})
-
-	if emptyErr != nil || startedErr != nil {
-		t.Fatalf("DescribeCoverage failed: %v, %v", emptyErr, startedErr)
-	}
-	if empty != "Semantic index not built yet" || started != "" {
-		t.Errorf("coverage %q before and %q after the first vector", empty, started)
-	}
-}

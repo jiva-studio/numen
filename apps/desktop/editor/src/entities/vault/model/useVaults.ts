@@ -1,9 +1,8 @@
 /**
- * Vaults listing, active vault tracking, and coverage monitoring.
+ * Vaults listing and active vault tracking.
  */
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { VaultList } from '../lib/vault'
-import type { IndexCoverage } from '@/shared/model/notices/coverage'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { VAULT_WORDS } from '../words'
 
@@ -16,10 +15,9 @@ export interface VaultRef {
 export interface VaultsDeps {
   listVaults: () => Promise<VaultList>
   log: MessageLog
-  coverage: Ref<string>
 }
 
-export function useVaults({ listVaults, log, coverage: coverageText }: VaultsDeps) {
+export function useVaults({ listVaults, log }: VaultsDeps) {
   const reload = () => globalThis.location.reload()
   const items = ref<VaultList>({ vaults: [], showing: '' })
 
@@ -52,14 +50,11 @@ export function useVaults({ listVaults, log, coverage: coverageText }: VaultsDep
     }
   }
 
-  const coverage = (): IndexCoverage => ({ text: coverageText.value })
-
   return {
     reload,
     activeVault: displayedItems,
     setVaultName,
     vaultList: items,
     loadVaults,
-    coverage,
   }
 }
