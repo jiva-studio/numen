@@ -16,7 +16,7 @@ test.describe('The plex of a note that is linked in the text', () => {
   const paths: string[] = []
 
   test.afterEach(async ({ request }) => {
-    await writeSetting(request, [PLEX, 'references'], undefined)
+    await writeSetting(request, [PLEX, 'references'], 'both')
     for (const notePath of paths.splice(0)) await destroyNote(request, notePath)
   })
 
@@ -43,7 +43,9 @@ test.describe('The plex of a note that is linked in the text', () => {
 
     await openWorkspace(page)
     await openNote(page, focus)
-    const graph = getGraph(page)
+    // A plex follows the note it was opened on, so the one of the note in front is opened now.
+    await page.getByRole('button', { name: 'Open plex graph' }).click()
+    const graph = getGraph(page).filter({ has: page.getByLabel(`${focusTitle}, focus`) })
     const references = graph.getByLabel(/, reference$/)
 
     await expect(references).toHaveCount(3, WITHIN)
