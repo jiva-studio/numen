@@ -86,12 +86,16 @@ export class NoteDriver {
     const notePath = await this.scenario.getPath(reference, name)
     const text = this.getEditor(notePath).text()
     await expect
-      .poll(async () => {
-        const line = await text.locator('.cm-line').filter({ hasText: heading }).first().boundingBox()
-        const cursor = await text.locator('.cm-cursor').first().boundingBox()
-        return line !== null && cursor !== null && cursor.y >= line.y - 1 && cursor.y + cursor.height <= line.y + line.height + 1
-      }, { message: `the cursor of the note is not on the heading "${heading}"` })
-      .toBe(true)
+      .poll(
+        () =>
+          text.evaluate((): string => {
+            const anchor = window.getSelection()?.anchorNode
+            const element = anchor instanceof Element ? anchor : anchor?.parentElement
+            return element?.closest('.cm-line')?.textContent ?? 'no line has the cursor'
+          }),
+        { message: `the cursor of the note is not on the heading "${heading}"` },
+      )
+      .toContain(heading)
   }
 
   async expectDoesNotHaveText(reference: string, name: string, text: string): Promise<void> {

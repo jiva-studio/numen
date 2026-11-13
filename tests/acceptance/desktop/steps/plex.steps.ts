@@ -67,6 +67,10 @@ Then(
   },
 )
 
+Then('the plex draws the line from {string} to {string} without an arrow', async ({ person }, from: string, to: string) => {
+  await person.plex.expectDrawsLineWithoutArrow(from, to)
+})
+
 When(
   'the person changes the link from {string} to {string} in the plex with:',
   async ({ person }, from: string, to: string, fields: DataTable) => {

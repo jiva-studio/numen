@@ -154,8 +154,9 @@ export class PlexDriver {
     await expect(line).toHaveCount(1)
   }
 
-  async expectDrawsNoLine(first: string, second: string): Promise<void> {
-    await expect(await this.getLine(first, second)).toHaveCount(0)
+  async expectDrawsLineWithoutArrow(from: string, to: string): Promise<void> {
+    const line = (await this.show()).getByRole('button', { name: `Line from ${from} to ${to}`, exact: true })
+    await expect(line).toHaveCount(1)
   }
 
   /** A point on the line, in the middle of its length, where a click opens the inspector of its link. */

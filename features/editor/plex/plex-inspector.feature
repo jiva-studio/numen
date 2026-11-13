@@ -29,9 +29,13 @@ Feature: Plex link inspector
 
       Examples:
         | arrow          | from    | to      | role   |
-        | Arrow to Quay  | Harbour | Quay    | child  |
-        | Arrow to Harbour | Quay  | Harbour | parent |
-        | No arrow       | Harbour | Quay    | jump   |
+        | Arrow to Quay    | Harbour | Quay    | child  |
+        | Arrow to Harbour | Quay    | Harbour | parent |
+
+    Scenario: An arrow is removed from a link
+      When the person changes the link from "Harbour" to "Quay" in the plex with:
+        | Arrow | No arrow |
+      Then the plex draws the line from "Harbour" to "Quay" without an arrow
 
     Scenario: A description is added to a link
       When the person changes the link from "Harbour" to "Quay" in the plex with:
