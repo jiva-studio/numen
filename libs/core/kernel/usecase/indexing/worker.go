@@ -47,8 +47,8 @@ type ReadNotes func(ctx context.Context, during func()) (int, error)
 type GetVectorCounts func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
 // SearchSourceReady is notified that the search source has indexed every chunk of a vault, but those of the
-// sources whose indexing a person canceled: those stay out until they change. It is notified after every pass
-// that leaves no other chunk pending, so it is notified more than once for a vault.
+// sources whose indexing a person canceled: those stay out until they change. It is notified after the first
+// pass of a session that leaves no other chunk pending, and after every later pass that makes vectors.
 type SearchSourceReady func(ctx context.Context, v domain.Vault)
 
 // Config is what a worker is made from.
