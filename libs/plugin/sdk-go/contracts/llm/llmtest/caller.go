@@ -41,7 +41,6 @@ func (c *caller) Call(ctx context.Context, operation string, payload []byte, _ c
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = stream.Close() }()
 	frames := &frames{next: -1}
 	for stream.Receive() {
 		switch frame := stream.Msg().GetFrame().(type) {
@@ -55,6 +54,9 @@ func (c *caller) Call(ctx context.Context, operation string, payload []byte, _ c
 	}
 	if err := stream.Err(); err != nil {
 		frames.err = readStreamError(ctx, err)
+	}
+	if err := stream.Close(); err != nil && frames.err == nil {
+		frames.err = err
 	}
 	return frames, nil
 }
