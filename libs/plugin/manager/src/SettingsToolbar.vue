@@ -2,8 +2,8 @@
 /**
  * The bar at the top of a settings page: a back button and the path from Settings to the page on the
  * left, the actions of the page on the right. Each earlier segment of the path opens its level. The
- * bar stays at the top while the page scrolls. On the first level, Settings itself, the back button
- * keeps its place but is hidden, so the path does not move between levels.
+ * bar stays at the top while the page scrolls. On the first level, Settings itself, the back button is
+ * disabled, as in the toolbar of macOS System Settings, so the path keeps its place between levels.
  */
 import type { VNode } from 'vue'
 import { ChevronLeft, ChevronRight } from '@lucide/vue'
@@ -40,10 +40,7 @@ function onOpen(level: number): void {
     <button
       type="button"
       class="settings-toolbar__back"
-      :class="{ 'settings-toolbar__back--hidden': props.path.length < 2 }"
       :aria-label="words.back"
-      :aria-hidden="props.path.length < 2 ? 'true' : undefined"
-      :tabindex="props.path.length < 2 ? -1 : undefined"
       :disabled="props.path.length < 2"
       @click="onBack"
     >
@@ -101,11 +98,12 @@ function onOpen(level: number): void {
   cursor: pointer;
 }
 
-.settings-toolbar__back--hidden {
-  visibility: hidden;
+.settings-toolbar__back:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
-.settings-toolbar__back:hover,
+.settings-toolbar__back:hover:not(:disabled),
 .settings-toolbar__segment:hover {
   background-color: var(--numen-bubble-bg);
   color: var(--numen-ink);
