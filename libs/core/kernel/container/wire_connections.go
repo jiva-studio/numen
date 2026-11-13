@@ -49,7 +49,7 @@ func openConnectionDeps(c pluginsWiring) (connection.Deps, bool) {
 func openDetection(c pluginsWiring) connectionport.Detected {
 	detection := c.PluginHost.Detection
 	if detection == nil {
-		return providerbridge.NewDetection(c.PluginHost.Views.Types, providerbridge.NewSource(c.PluginHost.Runtime))
+		return providerbridge.NewDetection(c.PluginHost.Views.Types, providerbridge.NewSource(c.PluginHost.Runtime), clock.System{})
 	}
 	detection.Follow(func() { refreshSettingEvents(c.settings) }, c.settings.ErrorHandler)
 	return detection
@@ -67,7 +67,7 @@ func openConnectionUseCases(c pluginsWiring) *windowconnection.UseCases {
 		},
 		Reads: windowconnection.Reads{
 			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, c.PluginHost.Views.Operations),
-			RowOptions: rowoptions.NewOptions(connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime)),
+			RowOptions: openRowOptions(c, deps),
 		},
 	}
 }
@@ -87,7 +87,7 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 	c.PluginHost.Endpoint.SetModelCalls(modelcall.NewCalls(
 		modelcall.Connections{
 			Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
-			Rows: connection.NewListRows(deps, openConnectionRows(c)).Execute,
+			Rows: connection.NewListRows(deps, openConnectionRows(c)).Execute, Redetect: openRedetect(c),
 		},
 		providerbridge.NewSource(c.PluginHost.Runtime), clock.System{}, clock.System{}.Wait, notices,
 	))
@@ -106,7 +106,7 @@ func openRowLists(c pluginsWiring) connectionport.RowLists {
 		return nil
 	}
 	resolve := connection.NewResolve(deps).Execute
-	options := rowoptions.NewOptions(resolve, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime))
+	options := openRowOptions(c, deps)
 	return modelcall.NewRows(resolve, connection.NewListRows(deps, openConnectionRows(c)).Execute, options.ListOptions)
 }
 
@@ -114,4 +114,21 @@ func openRowLists(c pluginsWiring) connectionport.RowLists {
 // ConnectionCallService without the routes of the editor. It is nil where the installation runs no plugins.
 func GetConnectionRows(c Config) connectionport.RowLists {
 	return openRowLists(plugins(c))
+}
+
+func openRowOptions(c pluginsWiring, deps connection.Deps) *rowoptions.Options {
+	cache := c.PluginHost.RowOptions
+	if cache == nil {
+		cache = rowoptions.NewCache(clock.System{})
+	}
+	return rowoptions.NewOptions(
+		connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime), cache,
+	)
+}
+
+func openRedetect(c pluginsWiring) func(pluginID string) {
+	if c.PluginHost.Detection == nil {
+		return nil
+	}
+	return c.PluginHost.Detection.DetectInBackground
 }

@@ -14,7 +14,7 @@ type ListRows struct {
 // Execute returns the rows the person chose for the operation, in their order. Where the person chose none
 // and the setting discovers, it returns a row with no options for each connection whose type is available
 // and serves the operation, in the order of the list of connections, the detected ones last. A type whose provider has not reported what it
-// detects yet is asked first.
+// detects yet is asked first; one that answered, in this start or an earlier one, is not asked.
 func (u *ListRows) Execute(pluginID, operationName string) ([]connection.Row, error) {
 	setting, err := u.settings.ReadRowSetting(pluginID, operationName)
 	if err != nil {

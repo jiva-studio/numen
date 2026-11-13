@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
@@ -119,7 +120,7 @@ func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
 func useCasesOf(all *connectiontest.Connections, source connectionport.ProviderSource) UseCases {
 	return UseCases{
 		Edits: Edits{Create: all.Create, Update: all.Update, Delete: all.Delete},
-		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: rowoptions.NewOptions(all.Resolve.Execute, all.ReadSecrets.Execute, source)},
+		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: rowoptions.NewOptions(all.Resolve.Execute, all.ReadSecrets.Execute, source, rowoptions.NewCache(clock.System{}))},
 	}
 }
 

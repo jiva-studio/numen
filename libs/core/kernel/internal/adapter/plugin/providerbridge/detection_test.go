@@ -97,6 +97,8 @@ func detectingType(pluginID, id string, isAvailable bool) connection.Type {
 type detectionFixture struct {
 	source    *detectingSource
 	detection *providerbridge.Detection
+	types     detectingTypes
+	clock     *standingClock
 	changes   chan struct{}
 }
 
@@ -109,7 +111,8 @@ func newDetectionFixture() *detectionFixture {
 		detectingType(agentsPluginID, "kite", true), detectingType("org.example.gone", "wren", false),
 		{PluginID: agentsPluginID, IsAvailable: true, Declaration: manifest.ConnectionType{ID: "heron", Title: "Heron", Operations: []string{"acp.task"}}},
 	}
-	f.detection = providerbridge.NewDetection(types, f.source)
+	f.types, f.clock = types, &standingClock{now: time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)}
+	f.detection = providerbridge.NewDetection(types, f.source, f.clock)
 	f.detection.Follow(func() { f.changes <- struct{}{} }, func(error) {})
 	return f
 }

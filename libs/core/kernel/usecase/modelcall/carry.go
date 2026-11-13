@@ -156,16 +156,28 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 			c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
 		}
 		if judged.isSkipped || judged.err != nil {
+			if judged.isUnavailable {
+				c.redetectIfDetected(resolved)
+			}
 			return rowOutcome{failure: judged.skip, err: judged.err}, judged.isStale
 		}
 		if tries == 1 && isRetried(judged.reason) {
 			continue
+		}
+		if judged.reason == connection.FailureReasonUnavailable {
+			c.redetectIfDetected(resolved)
 		}
 		c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
 		return rowOutcome{
 			failure: &connection.Failure{ConnectionName: resolved.Name, Reason: judged.reason.String()},
 			aside:   &asideRow{id: resolved.ID, name: resolved.Name, revision: resolved.Revision, reason: judged.reason, isDiscovered: row.IsDiscovered},
 		}, false
+	}
+}
+
+func (c *Calls) redetectIfDetected(resolved connection.Resolved) {
+	if c.redetect != nil && connection.IsDetected(resolved.ID) {
+		c.redetect(resolved.PluginID)
 	}
 }
 
@@ -202,6 +214,8 @@ type verdict struct {
 	retryAfter time.Duration
 	isCooling  bool
 	isStale    bool
+	// isUnavailable is a provider that could not be started.
+	isUnavailable bool
 }
 
 func readVerdict(resolved connection.Resolved, err error) verdict {
@@ -218,7 +232,7 @@ func readVerdict(resolved connection.Resolved, err error) verdict {
 	case errors.Is(err, errQueueTimeout):
 		return verdict{isSkipped: true, skip: newSkip(resolved.Name, "busy")}
 	case errors.As(err, &unavailable):
-		return verdict{isSkipped: true, skip: newSkip(resolved.Name, connection.FailureReasonUnavailable.String())}
+		return verdict{isSkipped: true, isUnavailable: true, skip: newSkip(resolved.Name, connection.FailureReasonUnavailable.String())}
 	case errors.Is(err, connection.ErrSecretMissing):
 		return verdict{isSkipped: true, skip: newSkip(resolved.Name, "key missing")}
 	case errors.Is(err, connection.ErrKeyStore):
