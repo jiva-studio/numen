@@ -54,7 +54,7 @@ func TestTheEventHandlerReceivesADeliveredEvent(t *testing.T) {
 		return nil
 	})), eventToken)
 
-	resp, err := client.DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onFile:pdf"}))
+	resp, err := client.DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onSearchSourceReady:v-1"}))
 	if err != nil {
 		t.Fatalf("DeliverEvent failed: %v", err)
 	}
@@ -64,8 +64,8 @@ func TestTheEventHandlerReceivesADeliveredEvent(t *testing.T) {
 
 	mu.Lock()
 	defer mu.Unlock()
-	if len(received) != 1 || received[0] != "onFile:pdf" {
-		t.Fatalf("received %v, want [onFile:pdf]", received)
+	if len(received) != 1 || received[0] != "onSearchSourceReady:v-1" {
+		t.Fatalf("received %v, want [onSearchSourceReady:v-1]", received)
 	}
 }
 
@@ -80,7 +80,7 @@ func TestEvent_HandlerRejectionReturnsError(t *testing.T) {
 				return caseErr
 			})), eventToken)
 
-			resp, err := client.DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onFile:pdf"}))
+			resp, err := client.DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onSearchSourceReady:v-1"}))
 			if err != nil {
 				t.Fatalf("DeliverEvent() = %v, want the call served", err)
 			}
@@ -97,7 +97,7 @@ func TestEvent_HandlerRejectionReturnsError(t *testing.T) {
 func TestAServerWithoutAnEventHandlerDoesNotAcceptEvents(t *testing.T) {
 	client := newEventClient(serveEvents(t), eventToken)
 
-	_, err := client.DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onFile:pdf"}))
+	_, err := client.DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onSearchSourceReady:v-1"}))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Fatalf("DeliverEvent() = %v, want %v", err, connect.CodeUnimplemented)
 	}
@@ -110,7 +110,7 @@ func TestAnEventWithoutTheTokenIsRefused(t *testing.T) {
 		return nil
 	}))
 
-	_, err := newEventClient(baseURL, "wrong-token").DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onFile:pdf"}))
+	_, err := newEventClient(baseURL, "wrong-token").DeliverEvent(t.Context(), connect.NewRequest(&v1.DeliverEventRequest{Event: "onSearchSourceReady:v-1"}))
 	if connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("DeliverEvent() = %v, want %v", err, connect.CodeUnauthenticated)
 	}

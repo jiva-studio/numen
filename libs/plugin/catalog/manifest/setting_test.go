@@ -286,7 +286,7 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"invalid activation":    {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["bad"]}`, ErrInvalidActivationEvent},
 		"wildcard activation":   {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["*"]}`, ErrInvalidActivationEvent},
 		"blank entrypoint":      {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":" "}}`, ErrInvalidBackend},
-		"activation no backend": {`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onStartup"]}`, ErrNoBackend},
+		"activation no backend": {`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onSearchSourceReady"]}`, ErrNoBackend},
 		"services no backend":   {`{"id":"a.b","name":"A","version":"1.0.0","services":["a.b.S"]}`, ErrNoBackend},
 		"runtime no backend":    {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"r","kind":"runtime"}]}`, ErrNoBackend},
 		"invalid permission":    {`{"id":"a.b","name":"A","version":"1.0.0","permissions":["bad"]}`, ErrInvalidPermission},

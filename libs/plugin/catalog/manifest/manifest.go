@@ -56,24 +56,12 @@ func PluginPermissions() []string {
 	}
 }
 
-const (
-	// ActivationEventStartup is the event the host emits when it starts.
-	ActivationEventStartup = "onStartup"
-
-	// ActivationEventSearchSourceReady is the event the host emits when the search source has indexed a vault.
-	ActivationEventSearchSourceReady = "onSearchSourceReady"
-
-	// ActivationEventFilePrefix starts the event the host emits when a file is opened or listed.
-	ActivationEventFilePrefix = "onFile:"
-)
+// ActivationEventSearchSourceReady is the event the host emits when the search source has indexed a vault.
+const ActivationEventSearchSourceReady = "onSearchSourceReady"
 
 // PluginActivationEvents is every activation event pattern a manifest may declare.
 func PluginActivationEvents() []string {
-	return []string{
-		ActivationEventStartup,
-		ActivationEventSearchSourceReady,
-		ActivationEventFilePrefix + "<ext>",
-	}
+	return []string{ActivationEventSearchSourceReady}
 }
 
 // PluginCapabilities is every capability a manifest may declare: the capabilities the host resolves
@@ -371,11 +359,7 @@ func (m Manifest) listActivationEventIssues() []error {
 }
 
 func isValidActivationEvent(event string) bool {
-	if event == ActivationEventStartup || event == ActivationEventSearchSourceReady {
-		return true
-	}
-	ext, ok := strings.CutPrefix(event, ActivationEventFilePrefix)
-	return ok && ext != "" && strings.TrimSpace(ext) == ext && !strings.Contains(ext, "*")
+	return slices.Contains(PluginActivationEvents(), event)
 }
 
 // HasPermission reports whether this plugin requests the given permission.
@@ -421,28 +405,9 @@ func (m Manifest) IsActivatedBy(event string) bool {
 }
 
 func isMatchingActivationEvent(declared, event string) bool {
-	switch declared {
-	case ActivationEventStartup:
-		return event == ActivationEventStartup
-	case ActivationEventSearchSourceReady:
-		return event == ActivationEventSearchSourceReady ||
-			(strings.HasPrefix(event, ActivationEventSearchSourceReady+":") && len(event) > len(ActivationEventSearchSourceReady)+1)
-	default:
-		return isMatchingFileEvent(declared, event)
-	}
-}
-
-func isMatchingFileEvent(declared, event string) bool {
-	ext, ok := strings.CutPrefix(declared, ActivationEventFilePrefix)
-	if !ok || ext == "" || strings.Contains(ext, "*") {
+	if declared != ActivationEventSearchSourceReady {
 		return false
 	}
-	target, ok := strings.CutPrefix(event, ActivationEventFilePrefix)
-	if !ok || target == "" {
-		return false
-	}
-	if dot := strings.LastIndexByte(target, '.'); dot >= 0 {
-		target = target[dot+1:]
-	}
-	return target != "" && strings.EqualFold(ext, target)
+	vaultID, isScoped := strings.CutPrefix(event, ActivationEventSearchSourceReady+":")
+	return event == ActivationEventSearchSourceReady || (isScoped && vaultID != "")
 }

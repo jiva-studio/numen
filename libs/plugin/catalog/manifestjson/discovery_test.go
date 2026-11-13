@@ -44,7 +44,7 @@ func TestDiscover(t *testing.T) {
 		"description": "Sample plugin",
 		"capabilities": ["search.source"],
 		"targets": ["desktop.samples"],
-		"activationEvents": ["onStartup"],
+		"activationEvents": ["onSearchSourceReady"],
 		"permissions": [],
 		"backend": {"entrypoint": "bin/sample"},
 		"settings": []

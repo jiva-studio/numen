@@ -19,12 +19,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 )
 
-// window is a window showing one vault, with nothing writing and no plugins to tell.
+// window is a window showing one vault, with nothing writing.
 type window struct{ vault domain.Vault }
 
 func (w window) GetCurrentVault() domain.Vault { return w.vault }
 func (window) PublishChange(...string)         {}
-func (window) EmitFileEvent(string)            {}
 
 // tabKinds is the tab kinds of the enabled plugins of a window.
 type tabKinds []pluginentries.TabKindEntry
@@ -51,7 +50,7 @@ func newHandler(t *testing.T, notes map[string]string, kinds tabKinds) *filewind
 	fileKinds := file.NewGetFileKinds(readers, nil)
 	return filewindow.NewHandler(
 		filewindow.NewFolders(
-			open, open,
+			open,
 			file.NewListFolder(file.NewGetFolderEntries(readers, nil), file.NewListTabKinds(fileKinds, choose)),
 			file.NewListFileKinds(fileKinds, choose), nil,
 		),

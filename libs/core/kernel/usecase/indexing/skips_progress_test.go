@@ -125,8 +125,8 @@ func testSearchSourceReadyExcludesTheCanceledNote(t *testing.T, openReading open
 	p.embed(t.Context())
 	p.embed(t.Context())
 
-	if len(log.vaults) != 2 {
-		t.Errorf("told %d times, want once for each pass after the cancel", len(log.vaults))
+	if len(log.vaults) != 1 {
+		t.Errorf("told %d times, want once, for the pass after the cancel that made vectors", len(log.vaults))
 	}
 	if calls := model.getHeldCalls(); calls != 0 {
 		t.Errorf("the canceled note was sent to the model %d times", calls)
