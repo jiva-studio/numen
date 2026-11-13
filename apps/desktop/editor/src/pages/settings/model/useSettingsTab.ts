@@ -52,12 +52,6 @@ export function useSettingsTab(state: SettingsTabState) {
     markedSetting.value = null
   }
 
-  /** The plugin list, searched for the plugins of one category. */
-  function openCategory(category: string): void {
-    updateQuery(`category:${category}`)
-    goBack()
-  }
-
   /** The setting marked on the page of the open plugin; a mark of another plugin marks nothing. */
   const marked = computed(() =>
     markedSetting.value?.pluginId === selectedPluginId.value ? markedSetting.value : null,
@@ -72,6 +66,5 @@ export function useSettingsTab(state: SettingsTabState) {
     selectPlugin,
     updateQuery,
     goBack,
-    openCategory,
   }
 }

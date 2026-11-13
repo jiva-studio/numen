@@ -31,8 +31,14 @@ const {
   selectPlugin,
   updateQuery,
   goBack,
-  openCategory,
 } = useSettingsTab(props.state)
+
+/* -------------------------------- Handlers -------------------------------- */
+/** The plugin list, searched for the plugins of one category. */
+function onOpenCategory(category: string): void {
+  updateQuery(`category:${category}`)
+  goBack()
+}
 </script>
 
 <template>
@@ -61,14 +67,14 @@ const {
           :plugin="selectedPlugin"
           :marked-setting="marked"
           @back="goBack"
-          @open-category="openCategory"
+          @open-category="onOpenCategory"
           @open-connections="selectPlugin('connections')"
         />
         <AvailablePluginDetail
           v-else-if="uninstalled"
           :plugin="uninstalled"
           @back="goBack"
-          @open-category="openCategory"
+          @open-category="onOpenCategory"
         />
         <PluginsList
           v-else
