@@ -50,7 +50,7 @@ type asking struct {
 
 func carry(ctx context.Context, c *Calls, ask asking, do attempt) ([]byte, error) {
 	var none []byte
-	rows, err := c.connections.Rows(ask.callerPluginID, ask.operation)
+	rows, err := c.rows(ask.callerPluginID, ask.operation)
 	if err != nil {
 		return none, fmt.Errorf("read the rows of %s: %w", ask.callerPluginID, err)
 	}
@@ -112,7 +112,7 @@ func (c *Calls) openProvider(ctx context.Context, pluginID string) (connectionpo
 }
 
 func (c *Calls) readConnectionSecrets(ctx context.Context, resolved connection.Resolved) (map[string]string, error) {
-	return c.connections.ReadSecrets(ctx, resolved)
+	return c.readSecrets(ctx, resolved)
 }
 
 // rowCall is one row being called: the connection as resolved, the secrets once they are read, and the
@@ -156,13 +156,11 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 			c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
 		}
 		if judged.isSkipped || judged.err != nil {
-			c.redetectIfUnavailable(resolved, judged.isUnavailable)
 			return rowOutcome{failure: judged.skip, err: judged.err}, judged.isStale
 		}
 		if tries == 1 && isRetried(judged.reason) {
 			continue
 		}
-		c.redetectIfUnavailable(resolved, judged.reason == connection.FailureReasonUnavailable)
 		c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
 		return rowOutcome{
 			failure: &connection.Failure{ConnectionName: resolved.Name, Reason: judged.reason.String()},
@@ -171,14 +169,8 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 	}
 }
 
-func (c *Calls) redetectIfUnavailable(resolved connection.Resolved, isUnavailable bool) {
-	if isUnavailable && c.connections.Redetect != nil && connection.IsDetected(resolved.ID) {
-		c.connections.Redetect(resolved.PluginID)
-	}
-}
-
 func (c *Calls) checkRow(row connection.Row, operation string) (connection.Resolved, *connection.Failure, error) {
-	resolved, err := c.connections.Resolve(row.ConnectionID)
+	resolved, err := c.resolve(row.ConnectionID)
 	switch {
 	case errors.Is(err, connection.ErrNotFound):
 		return resolved, newSkip(row.ConnectionID, "connection missing"), nil
@@ -203,14 +195,13 @@ func newSkip(name, reason string) *connection.Failure {
 
 // verdict is what a failed call means for its row.
 type verdict struct {
-	isSkipped     bool
-	skip          *connection.Failure
-	err           error
-	reason        connection.FailureReason
-	retryAfter    time.Duration
-	isCooling     bool
-	isStale       bool
-	isUnavailable bool
+	isSkipped  bool
+	skip       *connection.Failure
+	err        error
+	reason     connection.FailureReason
+	retryAfter time.Duration
+	isCooling  bool
+	isStale    bool
 }
 
 func readVerdict(resolved connection.Resolved, err error) verdict {
@@ -227,7 +218,7 @@ func readVerdict(resolved connection.Resolved, err error) verdict {
 	case errors.Is(err, errQueueTimeout):
 		return verdict{isSkipped: true, skip: newSkip(resolved.Name, "busy")}
 	case errors.As(err, &unavailable):
-		return verdict{isSkipped: true, isUnavailable: true, skip: newSkip(resolved.Name, connection.FailureReasonUnavailable.String())}
+		return verdict{isSkipped: true, skip: newSkip(resolved.Name, connection.FailureReasonUnavailable.String())}
 	case errors.Is(err, connection.ErrSecretMissing):
 		return verdict{isSkipped: true, skip: newSkip(resolved.Name, "key missing")}
 	case errors.Is(err, connection.ErrKeyStore):

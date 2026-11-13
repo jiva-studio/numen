@@ -29,6 +29,7 @@ type detectingSource struct {
 	calls    int
 	failOpen error
 	failList error
+	failCall error
 }
 
 func (s *detectingSource) OpenProvider(context.Context, string) (connectionport.Provider, func(), error) {
@@ -41,7 +42,9 @@ func (s *detectingSource) OpenProvider(context.Context, string) (connectionport.
 }
 
 func (s *detectingSource) Call(context.Context, string, modelcall.ProviderCall, []byte, modelcall.Send) ([]byte, error) {
-	return nil, nil
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return nil, s.failCall
 }
 
 func (s *detectingSource) ListOptions(context.Context, string, modelcall.ProviderCall, []string) ([]modelcall.Option, error) {

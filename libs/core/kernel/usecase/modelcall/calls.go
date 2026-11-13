@@ -21,10 +21,11 @@ const (
 // missing, it is set aside, its connection stayed busy for the wait its priority allows, or its connection
 // changed during the call twice in a row. A connection that changed once during the call is read again. When a
 // later row answers, notices receives each connection set aside before it, except a row that discovery made
-// rather than the person. A detected connection that is unavailable makes the provider of its type detect
-// again in the background.
+// rather than the person.
 type Calls struct {
-	connections Connections
+	resolve     connectionport.ResolveConnection
+	readSecrets connectionport.ReadConnectionSecrets
+	rows        connectionport.ListRows
 	source      connectionport.ProviderSource
 	clock       machineport.Clock
 	queues      *queues
@@ -33,13 +34,10 @@ type Calls struct {
 }
 
 // Connections is where the calls find a connection, its secrets and the rows of the plugins that name it.
-// Redetect asks the provider of a plugin to detect its connections again in the background; it is nil where
-// no provider detects.
 type Connections struct {
 	Resolve     connectionport.ResolveConnection
 	ReadSecrets connectionport.ReadConnectionSecrets
 	Rows        connectionport.ListRows
-	Redetect    func(pluginID string)
 }
 
 // NewCalls returns the calls over the connections and the providers the source
@@ -48,6 +46,7 @@ func NewCalls(
 	connections Connections, source connectionport.ProviderSource, clock machineport.Clock, wait Wait, notices connectionport.ReportSetAside,
 ) *Calls {
 	return &Calls{
-		connections: connections, source: source, clock: clock, queues: newQueues(wait), notices: notices, cooldown: newCooldown(),
+		resolve: connections.Resolve, readSecrets: connections.ReadSecrets, rows: connections.Rows, source: source, clock: clock, queues: newQueues(wait), notices: notices,
+		cooldown: newCooldown(),
 	}
 }

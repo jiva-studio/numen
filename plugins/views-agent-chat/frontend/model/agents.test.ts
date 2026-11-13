@@ -90,7 +90,7 @@ describe('the agents a chat offers', () => {
     expect(choice.offered.isAgentMissing.value).toBe(false)
   })
 
-  it('are the model and the reasoning level of each row, with no options asked, until a picker opens', async () => {
+  it('offer the stored model and reasoning level of each row until a picker opens', async () => {
     const { choice, asked } = await createChat(
       [
         row('c-orchard', 'Orchard agent', { model: 'pear-small', reasoning: 'low' }),

@@ -87,9 +87,9 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 	c.PluginHost.Endpoint.SetModelCalls(modelcall.NewCalls(
 		modelcall.Connections{
 			Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
-			Rows: connection.NewListRows(deps, openConnectionRows(c)).Execute, Redetect: openRedetect(c),
+			Rows: connection.NewListRows(deps, openConnectionRows(c)).Execute,
 		},
-		providerbridge.NewSource(c.PluginHost.Runtime), clock.System{}, clock.System{}.Wait, notices,
+		openCallSource(c), clock.System{}, clock.System{}.Wait, notices,
 	))
 }
 
@@ -126,9 +126,10 @@ func openRowOptions(c pluginsWiring, deps connection.Deps) *rowoptions.Options {
 	)
 }
 
-func openRedetect(c pluginsWiring) func(pluginID string) {
+func openCallSource(c pluginsWiring) connectionport.ProviderSource {
+	source := providerbridge.NewSource(c.PluginHost.Runtime)
 	if c.PluginHost.Detection == nil {
-		return nil
+		return source
 	}
-	return c.PluginHost.Detection.DetectInBackground
+	return providerbridge.NewRedetectingSource(source, c.PluginHost.Detection)
 }
