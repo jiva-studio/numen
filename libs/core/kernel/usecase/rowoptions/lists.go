@@ -9,10 +9,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// KeptList is the options a provider listed for one row field of a connection, with the row options and
-// operations it was asked with and what of the connection the listing depends on.
+// KeptList is the options a provider listed for one row field of a connection, with the values of the row
+// fields declared before it and the operations it was asked with, and what of the connection the listing
+// depends on.
 type KeptList struct {
 	ConnectionID  string
 	Field         string
@@ -52,9 +54,25 @@ func NewLists(files ListFiles) *Lists {
 
 func newKeptList(resolved connection.Resolved, field string, options map[string]string, operations []string) KeptList {
 	return KeptList{
-		ConnectionID: resolved.ID, Field: field, RowOptions: maps.Clone(options), Operations: slices.Clone(operations),
-		Revision: resolved.Revision, PluginVersion: resolved.PluginVersion, Fields: maps.Clone(resolved.Fields),
+		ConnectionID: resolved.ID, Field: field, RowOptions: getPrecedingOptions(resolved.Declaration, field, options),
+		Operations: slices.Clone(operations),
+		Revision:   resolved.Revision, PluginVersion: resolved.PluginVersion, Fields: maps.Clone(resolved.Fields),
 	}
+}
+
+// getPrecedingOptions returns the values of the row fields the type declares before the field: what the
+// field can take depends on them, not on its own value or on the fields after it.
+func getPrecedingOptions(declaration manifest.ConnectionType, field string, options map[string]string) map[string]string {
+	preceding := map[string]string{}
+	for _, one := range declaration.RowFields {
+		if one.Key == field {
+			break
+		}
+		if value, isSet := options[one.Key]; isSet {
+			preceding[one.Key] = value
+		}
+	}
+	return preceding
 }
 
 func (k KeptList) isSameRequest(other KeptList) bool {

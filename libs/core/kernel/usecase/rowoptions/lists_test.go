@@ -210,15 +210,27 @@ func TestARefreshOfAConnectionWithNoKeptListAsksNothing(t *testing.T) {
 	})
 }
 
-func TestAListingForOtherRowOptionsAsksTheProvider(t *testing.T) {
+func TestAListingForAnotherValueOfAFieldBeforeAsksTheProvider(t *testing.T) {
 	s := newSetup(t)
-	s.mustListModels(t)
-
-	if _, err := s.options.ListOptions(t.Context(), s.entry.ID, modelcalltest.ModelOption, map[string]string{"reasoning": "high"}, []string{modelcalltest.EmbedOperation}); err != nil {
-		t.Fatal(err)
+	for _, model := range []string{"model-1", "model-2"} {
+		if _, err := s.listReasoning(t.Context(), model); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	if calls := s.countCalls(); calls != 2 {
 		t.Errorf("the provider was asked %d times, want twice", calls)
+	}
+}
+
+func TestAKeptListIsAnsweredWhateverTheFieldAndTheFieldsAfterItHold(t *testing.T) {
+	s := newSetup(t)
+	s.mustListModels(t)
+
+	options, err := s.options.ListOptions(t.Context(), s.entry.ID, modelcalltest.ModelOption,
+		map[string]string{modelcalltest.ModelOption: "model-2", reasoningField: "high"}, []string{modelcalltest.EmbedOperation})
+
+	if err != nil || len(options) != 2 || s.countCalls() != 1 {
+		t.Errorf("options = %v, %v, calls = %d, want the kept two with no second ask", options, err, s.countCalls())
 	}
 }

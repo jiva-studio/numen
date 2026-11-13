@@ -54,7 +54,8 @@ func NewOptions(
 
 // ListOptions returns the values the row field can take from the listing kept for the connection as it is
 // now, and asks the provider, which may start its plugin, only where none is kept. options are the values
-// the row holds so far, and operations the operations the setting of rows is used for. A value the
+// the row holds; only those of the row fields declared before the field are sent to the provider and
+// kept with the listing. operations are the operations the setting of rows is used for. A value the
 // provider does not list is still accepted by the core. It fails with connection.ErrNotFound,
 // connection.ErrTypeUnavailable, ErrNoOptions, ErrProviderUnavailable or the error of the context.
 func (o *Options) ListOptions(
