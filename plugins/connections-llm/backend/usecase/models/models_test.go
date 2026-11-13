@@ -195,7 +195,7 @@ func TestAListOlderThanItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testi
 	if _, err := newModelsIn(t, &gateway{models: old}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
 		t.Fatal(err)
 	}
-	ageKeptLists(t, dir, 2*models.ListLifetime)
+	ageKeptLists(t, dir)
 
 	asked := make(chan struct{}, 1)
 	fresh := []connection.Option{{Value: "invented/model-b"}}
@@ -210,18 +210,19 @@ func TestAListOlderThanItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testi
 	case <-time.After(5 * time.Second):
 		t.Fatal("a list past its lifetime was not listed again")
 	}
-	for deadline := time.Now().Add(5 * time.Second); !slices.Equal(list, fresh); time.Sleep(10 * time.Millisecond) {
-		if time.Now().After(deadline) {
+	for tries := 0; !slices.Equal(list, fresh); tries++ {
+		if tries == 500 {
 			t.Fatalf("list = %v, want the list listed again kept", list)
 		}
+		time.Sleep(10 * time.Millisecond)
 		if list, err = restarted.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
 			t.Fatal(err)
 		}
 	}
 }
 
-// ageKeptLists moves the fetch time of every list kept in dir back by age.
-func ageKeptLists(t *testing.T, dir string, age time.Duration) {
+// ageKeptLists moves the fetch time of every list kept in dir to a day long past its lifetime.
+func ageKeptLists(t *testing.T, dir string) {
 	t.Helper()
 	files, err := os.ReadDir(dir)
 	if err != nil {
@@ -238,7 +239,7 @@ func ageKeptLists(t *testing.T, dir string, age time.Duration) {
 			t.Fatal(err)
 		}
 		for _, entry := range entries {
-			entry["fetchedAt"] = time.Now().Add(-age)
+			entry["fetchedAt"] = "2000-01-01T00:00:00Z"
 		}
 		aged, err := json.Marshal(entries)
 		if err != nil {
