@@ -1,7 +1,6 @@
 package vault
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"slices"
