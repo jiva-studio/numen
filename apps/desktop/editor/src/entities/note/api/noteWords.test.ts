@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import {
   NOTE_ERROR_CODE,
+  NOTE_LINK_DIRECTION,
   NOTE_MARKER,
   NOTE_RELATION,
   NOTE_ROLE,
@@ -105,5 +106,49 @@ describe('mapNoteGraph', () => {
         },
       ],
     })
+  })
+})
+
+describe('mapNoteGraph references', () => {
+  const map = (direction: number | undefined) =>
+    mapNoteGraph(
+      create(ListRelatedNotesResponseSchema, {
+        focus: { path: 'Here.md', title: 'Here' },
+        related: [
+          {
+            note: { path: 'Cited.md', title: 'Cited' },
+            relation: NOTE_RELATION.REFERENCE,
+            ...(direction === undefined ? {} : { direction }),
+          },
+        ],
+      }),
+    ).related
+
+  it.each([
+    ['outgoing', NOTE_LINK_DIRECTION.OUTGOING],
+    ['incoming', NOTE_LINK_DIRECTION.INCOMING],
+    ['both', NOTE_LINK_DIRECTION.BOTH],
+  ])('carries a reference linked %s with that direction', (word, direction) => {
+    expect(map(direction)).toEqual([
+      { path: 'Cited.md', title: 'Cited', type: 'note', relation: 'reference', direction: word },
+    ])
+  })
+
+  it('keeps a reference of no direction, with no direction', () => {
+    const [note] = map(NOTE_LINK_DIRECTION.UNSPECIFIED)
+
+    expect(note?.relation).toBe('reference')
+    expect(note?.direction).toBeUndefined()
+  })
+
+  it('carries no direction on a note that is not a reference', () => {
+    const [note] = mapNoteGraph(
+      create(ListRelatedNotesResponseSchema, {
+        focus: { path: 'Here.md', title: 'Here' },
+        related: [{ note: { path: 'Up.md', title: 'Up' }, relation: NOTE_RELATION.PARENT }],
+      }),
+    ).related
+
+    expect(note?.direction).toBeUndefined()
   })
 })

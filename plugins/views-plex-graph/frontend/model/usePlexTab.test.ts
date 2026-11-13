@@ -21,7 +21,8 @@ import {
 } from '../fixtures'
 import type { NoteHeading, NoteRelation, PathRename } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
-import { getDefaultLook } from './look'
+import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { getDefaultLook, readLook } from './look'
 
 /** The icons the window draws a declared command and a note of a declared type with. */
 const SHARE_ICON: Component = { name: 'ShareIcon', render: () => null }
@@ -1403,5 +1404,49 @@ describe('a node opened', () => {
 
     expect(one.opened).toStrictEqual([])
     expect(one.entered).toStrictEqual([])
+  })
+})
+
+describe('the References setting on an open tab', () => {
+  const open = (initial?: string) => {
+    const context = createMockPluginContext({
+      pluginId: 'md.numen.views.plex.graph',
+      initialSettings: initial ? { references: initial } : {},
+    })
+    const plex = viewOn('Root.md', [
+      'Child.md',
+      { path: 'Cites.md', relation: 'reference', direction: 'outgoing' },
+      { path: 'CitedBy.md', relation: 'reference', direction: 'incoming' },
+    ])
+    const state = createPlexTab(plex.view, {
+      ...createDeps(createVault(true).editor),
+      look: readLook(context),
+    })
+    const titles = () => state.canvas.picture.value?.nodes.map((node) => node.title)
+    return { context, plex, titles }
+  }
+
+  it('shows the references of both directions by default', () => {
+    expect(open().titles()).toEqual(['Root', 'Child', 'Cites', 'CitedBy'])
+  })
+
+  it('loses the references when the setting is turned off, without asking the vault again', () => {
+    const one = open()
+
+    one.context.setSetting('references', 'off')
+
+    expect(one.titles()).toEqual(['Root', 'Child'])
+    expect(one.plex.went).toEqual([])
+  })
+
+  it('follows the setting from one direction to the other and back', () => {
+    const one = open('outgoing')
+    expect(one.titles()).toEqual(['Root', 'Child', 'Cites'])
+
+    one.context.setSetting('references', 'incoming')
+    expect(one.titles()).toEqual(['Root', 'Child', 'CitedBy'])
+
+    one.context.setSetting('references', 'both')
+    expect(one.titles()).toEqual(['Root', 'Child', 'Cites', 'CitedBy'])
   })
 })

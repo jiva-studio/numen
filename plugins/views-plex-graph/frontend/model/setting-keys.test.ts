@@ -20,6 +20,7 @@ describe('the keys of the plex look settings', () => {
       outlineThickness: 1.5,
       lineCurvature: 0.2,
       noteRoom: 12,
+      references: 'incoming',
     })
 
     expect(look.showPills.value).toBe(false)
@@ -31,6 +32,7 @@ describe('the keys of the plex look settings', () => {
     expect(look.outlineThickness.value).toBe(1.5)
     expect(look.lineCurvature.value).toBe(0.2)
     expect(look.noteRoom.value).toBe(12)
+    expect(look.references.value).toBe('incoming')
   })
 
   it('ignores the snake_case keys of the same settings', () => {

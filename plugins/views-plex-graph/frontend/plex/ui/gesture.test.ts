@@ -243,3 +243,18 @@ describe('while a gesture is under way', () => {
     expect(plex.findAll('.plex__node--target')).toHaveLength(1)
   })
 })
+
+describe('releasing towards the left beside references', () => {
+  it('asks for a jump, never a reference', async () => {
+    const { plex, svg } = mountPlex({
+      graph: build('A node', { parent: 1, child: 2, jump: 1, reference: 2 }),
+    })
+    await takeHold(plex, 'A node')
+
+    svg.dispatchEvent(pointer('pointermove', 600 - 500, 400))
+    svg.dispatchEvent(pointer('pointerup', 600 - 500, 400))
+    await plex.vm.$nextTick()
+
+    expect(plex.emitted('create')).toStrictEqual([['focus', 'jump']])
+  })
+})
