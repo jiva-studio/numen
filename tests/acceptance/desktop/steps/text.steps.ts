@@ -1,5 +1,5 @@
 import path from 'node:path'
-import type { TabKindChoice, TextKind } from '../drivers/rules.js'
+import { DEFAULT_VAULT, type TabKindChoice, type TextKind } from '../drivers/rules.js'
 import { Given, Then, When } from '../support/bdd.js'
 
 When('the person recognizes the text of the file at {string}', async ({ person }, filePath: string) => {
