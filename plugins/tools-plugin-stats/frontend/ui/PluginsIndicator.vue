@@ -22,8 +22,9 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
-// The popover is placed against the item by CSS and follows it through a resize.
-const dismissal = useMenuDismissal(root, onClose, isResize)
+// The popover is placed against the item by CSS and follows it through a scroll and a resize. A
+// scroll elsewhere in the window, such as a list that shrinks as a plugin stops, leaves it open.
+const dismissal = useMenuDismissal(root, onClose, isPageMove)
 
 const isReady = computed(() => props.phase === 'ready')
 const figure = computed(() =>
@@ -46,8 +47,8 @@ function onClose() {
   isOpen.value = false
 }
 
-function isResize(event: Event): boolean {
-  return event.type === 'resize'
+function isPageMove(event: Event): boolean {
+  return event.type === 'scroll' || event.type === 'resize'
 }
 </script>
 

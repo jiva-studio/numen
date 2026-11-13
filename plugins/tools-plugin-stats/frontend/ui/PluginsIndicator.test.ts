@@ -110,4 +110,25 @@ describe('the running plugins indicator', () => {
     expect(wrapper.find('.plugin-popover__empty').text()).toBe('No plugin is running')
     wrapper.unmount()
   })
+
+  it('keeps the list open and a row expanded while the plugins change and the window scrolls', async () => {
+    const maps = { ...ATLAS, pluginId: 'org.example.maps', pluginName: 'Maps' }
+    const wrapper = draw([ATLAS, maps])
+    await wrapper.find('.plugin-stats__trigger').trigger('click')
+    const atlas = () => wrapper.find('[aria-label="Atlas"]')
+    await atlas().trigger('pointerdown')
+    await atlas().trigger('click')
+    const pane = document.body.appendChild(document.createElement('div'))
+
+    pane.dispatchEvent(new Event('scroll'))
+    const held = { ...ATLAS, leaseCount: 1, holders: [{ who: 'window', why: 'search' }] }
+    await wrapper.setProps({ processes: [held], now: NOW + 1_000 })
+
+    expect(wrapper.find('.plugin-popover').exists()).toBe(true)
+    expect(atlas().attributes('aria-expanded')).toBe('true')
+    expect(atlas().find('.plugin-popover__holders').text()).toContain('window · search')
+    expect(wrapper.find('[aria-label="Maps"]').exists()).toBe(false)
+    pane.remove()
+    wrapper.unmount()
+  })
 })
