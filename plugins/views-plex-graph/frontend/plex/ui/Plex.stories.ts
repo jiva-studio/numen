@@ -1026,6 +1026,8 @@ export const ManyReferencesInASmallWindow: Story = {
       if (!found) throw new Error('nothing says what is not shown')
       return found
     })
-    await expect(status.textContent).toMatch(/\d+ references?\b.* not shown|\d+ references? not shown/)
+    await expect(status.textContent).toMatch(
+      /\d+ references?\b.* not shown|\d+ references? not shown/,
+    )
   },
 }

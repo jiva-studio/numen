@@ -85,8 +85,8 @@ describe('all five relations together', () => {
 
   it('places a reference from each relation of the five by name', () => {
     const relations = new Set<PlexRelation>(
-      arrange(build('A note', FIVE), { width: 1600, height: 1000 }).nodes
-        .filter((node) => node.relation !== 'focus')
+      arrange(build('A note', FIVE), { width: 1600, height: 1000 })
+        .nodes.filter((node) => node.relation !== 'focus')
         .map((node) => node.relation as PlexRelation),
     )
 

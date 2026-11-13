@@ -458,9 +458,27 @@ describe('references in the picture', () => {
     focusType: 'note',
     related: [
       { path: 'Below.md', title: 'Below', type: 'note', relation: 'child' },
-      { path: 'Cites.md', title: 'Cites', type: 'note', relation: 'reference', direction: 'outgoing' },
-      { path: 'CitedBy.md', title: 'CitedBy', type: 'note', relation: 'reference', direction: 'incoming' },
-      { path: 'Mutual.md', title: 'Mutual', type: 'note', relation: 'reference', direction: 'both' },
+      {
+        path: 'Cites.md',
+        title: 'Cites',
+        type: 'note',
+        relation: 'reference',
+        direction: 'outgoing',
+      },
+      {
+        path: 'CitedBy.md',
+        title: 'CitedBy',
+        type: 'note',
+        relation: 'reference',
+        direction: 'incoming',
+      },
+      {
+        path: 'Mutual.md',
+        title: 'Mutual',
+        type: 'note',
+        relation: 'reference',
+        direction: 'both',
+      },
     ],
     connections: [createLine('Here.md', 'Below.md', ['part', null])],
   })
@@ -468,7 +486,11 @@ describe('references in the picture', () => {
   const draw = (noteGraph: NoteGraph, mode: Mode) => {
     const map = createNodeIdMap()
     const plex = (
-      convertNoteGraph as (g: NoteGraph, token: (path: string) => string, mode: Mode) => ReturnType<typeof convertNoteGraph>
+      convertNoteGraph as (
+        g: NoteGraph,
+        token: (path: string) => string,
+        mode: Mode,
+      ) => ReturnType<typeof convertNoteGraph>
     )(noteGraph, map.getNodeId, mode)
     return { plex, note: map.getNodePath }
   }
@@ -492,13 +514,17 @@ describe('references in the picture', () => {
     (mode) => {
       const { plex } = draw(withReferences(), mode)
 
-      expect(plex.nodes.map((node) => node.title)).toEqual(expect.arrayContaining(['Here', 'Below']))
+      expect(plex.nodes.map((node) => node.title)).toEqual(
+        expect.arrayContaining(['Here', 'Below']),
+      )
     },
   )
 
   it('points the line at the note the focus links to, and at the focus from the note that links to it', () => {
     const { plex, note } = draw(withReferences(), 'both')
-    const referenceEdges = plex.edges.filter((edge) => note(edge.from) !== 'Below.md' && note(edge.to) !== 'Below.md')
+    const referenceEdges = plex.edges.filter(
+      (edge) => note(edge.from) !== 'Below.md' && note(edge.to) !== 'Below.md',
+    )
 
     expect(referenceEdges.map((edge) => [note(edge.from), note(edge.to), edge.arrows])).toEqual([
       ['Here.md', 'Cites.md', ['to']],
@@ -541,7 +567,9 @@ describe('references in the picture', () => {
   it('joins no reference to any note but the focus', () => {
     const { plex, note } = draw(withReferences(), 'both')
 
-    for (const edge of plex.edges.filter((one) => note(one.from) !== 'Below.md' && note(one.to) !== 'Below.md')) {
+    for (const edge of plex.edges.filter(
+      (one) => note(one.from) !== 'Below.md' && note(one.to) !== 'Below.md',
+    )) {
       expect([note(edge.from), note(edge.to)]).toContain('Here.md')
     }
   })

@@ -59,5 +59,4 @@ describe('references', () => {
       expect(graph.edges.some((edge) => edge.from === node.id || edge.to === node.id)).toBe(true)
     }
   })
-
 })

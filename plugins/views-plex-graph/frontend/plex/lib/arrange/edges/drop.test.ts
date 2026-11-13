@@ -279,7 +279,9 @@ describe('the relation something dragged in evaluates to', () => {
 
 describe('dragging to the left with references on the board', () => {
   const VIEWPORT = { width: 1200, height: 800 }
-  const five = arrangePlex(build('A node', { parent: 2, child: 4, jump: 2, reference: 2, sibling: 2 }))
+  const five = arrangePlex(
+    build('A node', { parent: 2, child: 4, jump: 2, reference: 2, sibling: 2 }),
+  )
   const centre = five.nodes.find((n) => n.relation === 'focus')!
   const left = { x: centre.x - 900, y: centre.y }
   const upperLeft = { x: centre.x - 900, y: centre.y - 200 }
@@ -293,7 +295,13 @@ describe('dragging to the left with references on the board', () => {
 
   it('makes a jump on empty space to the left', () => {
     expect(
-      resolveDrop({ frame: five, options: DEFAULT_OPTIONS, from: centre.id, point: left, relations: ALLOWED }),
+      resolveDrop({
+        frame: five,
+        options: DEFAULT_OPTIONS,
+        from: centre.id,
+        point: left,
+        relations: ALLOWED,
+      }),
     ).toStrictEqual({ kind: 'create', from: centre.id, relation: 'jump' })
   })
 
@@ -312,7 +320,13 @@ describe('dragging to the left with references on the board', () => {
 
   it('is no relation to the left when only a child may be made', () => {
     expect(
-      resolveDrop({ frame: five, options: DEFAULT_OPTIONS, from: centre.id, point: left, relations: ['child'] }),
+      resolveDrop({
+        frame: five,
+        options: DEFAULT_OPTIONS,
+        from: centre.id,
+        point: left,
+        relations: ['child'],
+      }),
     ).toBeNull()
     expect(
       getDropRelation({
@@ -327,7 +341,13 @@ describe('dragging to the left with references on the board', () => {
   })
 
   it('never yields a reference, however the drag runs', () => {
-    const points = [left, upperLeft, lowerLeft, { x: centre.x, y: centre.y - 300 }, { x: centre.x + 500, y: centre.y }]
+    const points = [
+      left,
+      upperLeft,
+      lowerLeft,
+      { x: centre.x, y: centre.y - 300 },
+      { x: centre.x + 500, y: centre.y },
+    ]
     for (const point of points) {
       const drop = resolveDrop({
         frame: five,

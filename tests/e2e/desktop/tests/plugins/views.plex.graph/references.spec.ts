@@ -34,7 +34,11 @@ test.describe('The plex of a note that is linked in the text', () => {
     const tides = await createNote(request, tidesTitle)
     const survey = await createNote(request, surveyTitle)
     paths.push(focus, heron, tides, survey)
-    await writeNote(request, focus, `Birds are in [[${heronTitle}]], water is in [[${tidesTitle}]].`)
+    await writeNote(
+      request,
+      focus,
+      `Birds are in [[${heronTitle}]], water is in [[${tidesTitle}]].`,
+    )
     await writeNote(request, survey, `The marsh is described in [[${focusTitle}]].`)
 
     await openWorkspace(page)

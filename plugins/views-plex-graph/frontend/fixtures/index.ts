@@ -74,7 +74,9 @@ const createNoteGraph = (
       ...(spec.direction ? { direction: spec.direction } : {}),
     })),
     connections: [
-      ...specs.filter((spec) => spec.relation !== 'reference').map((spec) => createLine(focus, spec)),
+      ...specs
+        .filter((spec) => spec.relation !== 'reference')
+        .map((spec) => createLine(focus, spec)),
       ...lines,
     ],
   }

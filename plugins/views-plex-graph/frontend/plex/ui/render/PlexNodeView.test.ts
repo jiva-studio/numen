@@ -282,7 +282,14 @@ describe('a node that is not there yet', () => {
 
 describe('what a node is drawn as', () => {
   it('carries its own relation, as a class and as a hue', () => {
-    for (const relation of ['focus', 'parent', 'child', 'jump', 'reference', 'sibling'] as PlexNodeRelation[]) {
+    for (const relation of [
+      'focus',
+      'parent',
+      'child',
+      'jump',
+      'reference',
+      'sibling',
+    ] as PlexNodeRelation[]) {
       const node = mountNode({ relation })
       expect(node.classes()).toContain(`plex__node--${relation}`)
       expect(node.attributes('style')).toContain(`var(--numen-relation-${relation})`)
@@ -624,7 +631,14 @@ describe('the headings a node hangs', () => {
 })
 
 describe('a node with Pill background off', () => {
-  const RELATIONS: readonly PlexNodeRelation[] = ['focus', 'parent', 'child', 'jump', 'reference', 'sibling']
+  const RELATIONS: readonly PlexNodeRelation[] = [
+    'focus',
+    'parent',
+    'child',
+    'jump',
+    'reference',
+    'sibling',
+  ]
 
   const mountBare = (overrides: Partial<PlacedNode> = {}, props: Record<string, unknown> = {}) =>
     mount(PlexNodeView, { props: { node: createNode(overrides), showPills: false, ...props } })
