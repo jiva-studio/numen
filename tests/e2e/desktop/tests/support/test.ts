@@ -89,6 +89,19 @@ const readFailedTasks = async (baseURL: string): Promise<string[]> =>
     .map((one) => [one.title, one.about, one.error].filter(Boolean).join(': '))
     .filter((text) => !text.includes(UNREADABLE_FIXTURE))
 
+/**
+ * Whether the core has read every file of the vault once: the unreadable fixture has failed and no
+ * other task runs. The core reads the files of the vault after its notes, so the counts of a window
+ * opened on a new server leave out the files until then.
+ */
+export const isVaultRead = async (baseURL: string): Promise<boolean> => {
+  const tasks = await readTasks(baseURL)
+  const isUnreadableFailed = tasks.some(
+    (one) => one.error && [one.title, one.about, one.error].join(' ').includes(UNREADABLE_FIXTURE),
+  )
+  return isUnreadableFailed && tasks.every((one) => one.error)
+}
+
 export const test = base.extend<{ isFreshTabs: void; hasNoFailedTask: void }>({
   hasNoFailedTask: [
     async ({ baseURL }, use) => {

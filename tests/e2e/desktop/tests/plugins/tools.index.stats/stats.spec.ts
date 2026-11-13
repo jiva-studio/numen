@@ -1,4 +1,4 @@
-import { test, expect, type Locator, type Page } from '../../support/test.js'
+import { test, expect, isVaultRead, type Locator, type Page } from '../../support/test.js'
 import {
   createUniqueTitle,
   destroyIndexedNote,
@@ -18,8 +18,8 @@ const readVectors = async (item: Locator): Promise<number> => {
 
 const isSettled = async (item: Locator): Promise<boolean> => {
   const text = (await item.textContent()) ?? ''
-  const isIndexing = await item.locator('.index-stats__trigger--indexing').count()
-  return /\d/.test(text) && isIndexing === 0
+  const summary = (await item.getAttribute('aria-label')) ?? ''
+  return /\d/.test(text) && !summary.includes('indexing')
 }
 
 const readSettledVectors = async (item: Locator): Promise<number> => {
@@ -43,8 +43,9 @@ test.describe('the index stats item', () => {
     for (const path of notes.splice(0)) await destroyIndexedNote(request, path)
   })
 
-  test('follows a note that is created, edited and removed', async ({ page, request }) => {
+  test('follows a note that is created, edited and removed', async ({ page, request, baseURL }) => {
     await openWorkspace(page)
+    await expect.poll(() => isVaultRead(baseURL ?? ''), { timeout: 45_000 }).toBe(true)
     const item = getItem(page)
     await waitForCurrentVectors(page)
     const before = await readSettledVectors(item)
