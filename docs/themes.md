@@ -96,7 +96,7 @@ A plugin of themes has no backend and no frontend; it consists only of the manif
 
 ## The tokens a theme sets
 
-Forty-three, each a colour unless stated otherwise.
+Forty-four, each a colour unless stated otherwise.
 
 ### The window and what is on it
 
@@ -115,14 +115,15 @@ Forty-three, each a colour unless stated otherwise.
 
 ### The plex
 
-|                            |                                                                                        |
-| -------------------------- | -------------------------------------------------------------------------------------- |
-| `--numen-relation-parent`  | the hue of a parent's relation.                                                        |
-| `--numen-relation-child`   | the hue of a child's relation.                                                         |
-| `--numen-relation-jump`    | the hue of a jump's relation.                                                          |
-| `--numen-relation-sibling` | the hue of a sibling's relation.                                                       |
-| `--numen-edge`             | the line drawn between two nodes.                                                      |
-| `--numen-edge-label`       | the text on that line, which uses the hushed colour unless a theme sets it separately. |
+|                              |                                                                                        |
+| ---------------------------- | -------------------------------------------------------------------------------------- |
+| `--numen-relation-parent`    | the hue of a parent's relation.                                                        |
+| `--numen-relation-child`     | the hue of a child's relation.                                                         |
+| `--numen-relation-jump`      | the hue of a jump's relation.                                                          |
+| `--numen-relation-reference` | the hue of a reference's relation.                                                     |
+| `--numen-relation-sibling`   | the hue of a sibling's relation.                                                       |
+| `--numen-edge`               | the line drawn between two nodes.                                                      |
+| `--numen-edge-label`         | the text on that line, which uses the hushed colour unless a theme sets it separately. |
 
 ### Text being read, and text about to change
 

@@ -43,7 +43,7 @@ function usePlexPicture(
   const picture = computed<PlexGraph | null>(() => {
     const noteGraph = view.noteGraph.value
     if (!deps.window.isReady.value || !noteGraph) return null
-    return convertNoteGraph(noteGraph, map.getNodeId)
+    return convertNoteGraph(noteGraph, map.getNodeId, deps.look.references.value)
   })
 
   // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.

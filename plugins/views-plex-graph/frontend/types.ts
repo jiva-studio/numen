@@ -154,6 +154,7 @@ export interface PlexNotesDeps {
 
 /** How the plex is drawn, as the plugin settings hold it, followed as they change. */
 export interface PlexLook {
+  readonly references: Readonly<Ref<ReferenceMode>>
   readonly showPills: Readonly<Ref<boolean>>
   readonly pillPaddingSides: Readonly<Ref<number>>
   readonly pillPaddingEnds: Readonly<Ref<number>>
@@ -254,8 +255,11 @@ export interface PlexGraphViewProps {
   readonly context?: PluginContext
 }
 
+/** Which references to show: the links the note writes, the links to it, both, or none. */
+export type ReferenceMode = 'off' | 'outgoing' | 'incoming' | 'both'
+
 /** Every relation a node can take to the one in focus. */
-export type PlexRelation = 'parent' | 'child' | 'jump' | 'sibling'
+export type PlexRelation = 'parent' | 'child' | 'jump' | 'reference' | 'sibling'
 
 /** Where a node is positioned relative to the one in focus. */
 export type PlexNodeRelation = 'focus' | PlexRelation

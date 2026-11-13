@@ -1,6 +1,6 @@
 /** The words a relation is counted in. */
 import { describe, expect, it } from 'vitest'
-import { formatCount, getRelationName } from './relation'
+import { formatCount, getRelationName, RELATIONS, RELATION_NAMES } from './relation'
 
 describe('counting a relation', () => {
   it('uses the singular for one and the plural for every other count', () => {
@@ -13,5 +13,22 @@ describe('counting a relation', () => {
 
   it('names one relation by its singular', () => {
     expect(getRelationName('parent')).toBe('parent')
+  })
+})
+
+describe('the reference relation', () => {
+  it('grows to the left and leans up, where a jump grows to the left and leans down', () => {
+    expect(RELATIONS.reference).toMatchObject({ grows: 'left', lean: 'up' })
+    expect(RELATIONS.jump).toMatchObject({ grows: 'left', lean: 'down' })
+  })
+
+  it('is listed between the jump and the sibling', () => {
+    expect(RELATION_NAMES).toEqual(['parent', 'child', 'jump', 'reference', 'sibling'])
+  })
+
+  it('is counted in references', () => {
+    expect(formatCount('reference', 1)).toBe('1 reference')
+    expect(formatCount('reference', 0)).toBe('0 references')
+    expect(formatCount('reference', 2)).toBe('2 references')
   })
 })

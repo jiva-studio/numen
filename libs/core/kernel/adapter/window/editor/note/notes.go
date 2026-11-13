@@ -192,10 +192,11 @@ func (h *Outline) ListRelatedNotes(
 	}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.RelatedNote{
-			Note:     convertNoteToWire(related.NoteRef),
-			Relation: convertRelationToWire(related.Relation),
-			Type:     convertNoteTypeToWire(types[related.Path]),
-			TabKind:  tabKinds[related.Path],
+			Note:      convertNoteToWire(related.NoteRef),
+			Relation:  convertRelationToWire(related.Relation),
+			Direction: convertDirectionToWire(related.Direction),
+			Type:      convertNoteTypeToWire(types[related.Path]),
+			TabKind:   tabKinds[related.Path],
 		})
 	}
 	for _, connection := range found.Connections {
@@ -264,8 +265,23 @@ func convertRelationToWire(s domain.Relation) v1.Relation {
 		return v1.Relation_RELATION_JUMP
 	case domain.RelationSibling:
 		return v1.Relation_RELATION_SIBLING
+	case domain.RelationReference:
+		return v1.Relation_RELATION_REFERENCE
 	default:
 		return v1.Relation_RELATION_UNSPECIFIED
+	}
+}
+
+func convertDirectionToWire(s domain.LinkDirection) v1.LinkDirection {
+	switch s {
+	case domain.DirectionOutgoing:
+		return v1.LinkDirection_LINK_DIRECTION_OUTGOING
+	case domain.DirectionIncoming:
+		return v1.LinkDirection_LINK_DIRECTION_INCOMING
+	case domain.DirectionBoth:
+		return v1.LinkDirection_LINK_DIRECTION_BOTH
+	default:
+		return v1.LinkDirection_LINK_DIRECTION_UNSPECIFIED
 	}
 }
 

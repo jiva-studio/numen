@@ -27,6 +27,7 @@
   --numen-relation-child: light-dark(#1a7f37, #3fb950);
   --numen-relation-jump: light-dark(#9a6700, #d29922);
   --numen-relation-sibling: light-dark(#8250df, #a371f7);
+  --numen-relation-reference: light-dark(#cf222e, #f85149);
 
   --numen-edge: light-dark(#d0d7de, #30363d);
   --numen-edge-label: light-dark(#656d76, #7d8590);

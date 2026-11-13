@@ -17,6 +17,7 @@ const DEFAULTS = {
   outlineThickness: 1,
   lineCurvature: 0.55,
   noteRoom: 0,
+  references: 'both',
 }
 
 /** A value for every setting that is none of the defaults, and inside every range. */
@@ -30,6 +31,7 @@ const CHOSEN = {
   outlineThickness: 1.5,
   lineCurvature: 0.2,
   noteRoom: 12,
+  references: 'outgoing',
 }
 
 const BELOW = {
@@ -154,5 +156,28 @@ describe('readLook', () => {
 
     expect(look.showPills.value).toBe(true)
     expect(look.noteRoom.value).toBe(0)
+  })
+})
+
+describe('the References setting', () => {
+  it.each(['off', 'outgoing', 'incoming', 'both'])('reads %s', (mode) => {
+    expect(readLook(createContext({ references: mode })).references.value).toBe(mode)
+  })
+
+  it.each([['seven'], [3], [null], [true]])('falls back to both for %j', (stored) => {
+    const look = readLook(createContext({ references: stored as JsonValue }))
+
+    expect(look.references.value).toBe('both')
+  })
+
+  it('follows the person changing it and repairs a changed value to both', () => {
+    const context = createContext()
+    const look = readLook(context)
+
+    context.setSetting('references', 'incoming')
+    expect(look.references.value).toBe('incoming')
+
+    context.setSetting('references', 'sometimes')
+    expect(look.references.value).toBe('both')
   })
 })

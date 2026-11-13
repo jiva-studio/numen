@@ -448,3 +448,154 @@ describe('two note graphs drawing one picture', () => {
     expect(areNoteGraphsEqual(target(), withLine(1, line))).toBe(false)
   })
 })
+
+describe('references in the picture', () => {
+  type Direction = 'outgoing' | 'incoming' | 'both'
+  type Mode = 'off' | 'outgoing' | 'incoming' | 'both'
+
+  const withReferences = (): NoteGraph => ({
+    focus: { path: 'Here.md', title: 'Here' },
+    focusType: 'note',
+    related: [
+      { path: 'Below.md', title: 'Below', type: 'note', relation: 'child' },
+      {
+        path: 'Cites.md',
+        title: 'Cites',
+        type: 'note',
+        relation: 'reference',
+        direction: 'outgoing',
+      },
+      {
+        path: 'CitedBy.md',
+        title: 'CitedBy',
+        type: 'note',
+        relation: 'reference',
+        direction: 'incoming',
+      },
+      {
+        path: 'Mutual.md',
+        title: 'Mutual',
+        type: 'note',
+        relation: 'reference',
+        direction: 'both',
+      },
+    ],
+    connections: [createLine('Here.md', 'Below.md', ['part', null])],
+  })
+
+  const draw = (noteGraph: NoteGraph, mode: Mode) => {
+    const map = createNodeIdMap()
+    const plex = (
+      convertNoteGraph as (
+        g: NoteGraph,
+        token: (path: string) => string,
+        mode: Mode,
+      ) => ReturnType<typeof convertNoteGraph>
+    )(noteGraph, map.getNodeId, mode)
+    return { plex, note: map.getNodePath }
+  }
+
+  const getShownNodes = (mode: Mode): string[] =>
+    draw(withReferences(), mode)
+      .plex.nodes.filter((node) => node.relation === 'reference')
+      .map((node) => node.title)
+
+  it.each<[Mode, string[]]>([
+    ['off', []],
+    ['outgoing', ['Cites', 'Mutual']],
+    ['incoming', ['CitedBy', 'Mutual']],
+    ['both', ['Cites', 'CitedBy', 'Mutual']],
+  ])('shows with the setting %s the references %j', (mode, titles) => {
+    expect(getShownNodes(mode)).toEqual(titles)
+  })
+
+  it.each<Mode>(['off', 'outgoing', 'incoming', 'both'])(
+    'keeps the child with the setting %s',
+    (mode) => {
+      const { plex } = draw(withReferences(), mode)
+
+      expect(plex.nodes.map((node) => node.title)).toEqual(
+        expect.arrayContaining(['Here', 'Below']),
+      )
+    },
+  )
+
+  it('points the line at the note the focus links to, and at the focus from the note that links to it', () => {
+    const { plex, note } = draw(withReferences(), 'both')
+    const referenceEdges = plex.edges.filter(
+      (edge) => note(edge.from) !== 'Below.md' && note(edge.to) !== 'Below.md',
+    )
+
+    expect(referenceEdges.map((edge) => [note(edge.from), note(edge.to), edge.arrows])).toEqual([
+      ['Here.md', 'Cites.md', ['to']],
+      ['Here.md', 'CitedBy.md', ['from']],
+      ['Here.md', 'Mutual.md', ['from', 'to']],
+    ])
+    for (const edge of referenceEdges) expect(edge.labels).toBeUndefined()
+  })
+
+  it('draws the lines of the connections before the lines of the references', () => {
+    const { plex, note } = draw(withReferences(), 'both')
+
+    expect(note(plex.edges[0]!.to)).toBe('Below.md')
+    expect(plex.edges).toHaveLength(4)
+  })
+
+  it('draws no line for a reference the setting hides', () => {
+    const { plex } = draw(withReferences(), 'off')
+
+    expect(plex.edges).toHaveLength(1)
+  })
+
+  it('draws a reference with no direction without an arrow, in the setting both only', () => {
+    const noteGraph = withReferences()
+    const bare: NoteGraph = {
+      ...noteGraph,
+      related: [{ path: 'Bare.md', title: 'Bare', type: 'note', relation: 'reference' }],
+      connections: [],
+    }
+
+    const both = draw(bare, 'both')
+    expect(both.plex.nodes.map((node) => node.title)).toContain('Bare')
+    expect(both.plex.edges).toHaveLength(1)
+    expect(both.plex.edges[0]!.arrows).toBeUndefined()
+    for (const mode of ['off', 'outgoing', 'incoming'] as const) {
+      expect(draw(bare, mode).plex.nodes.map((node) => node.title)).not.toContain('Bare')
+    }
+  })
+
+  it('joins no reference to any note but the focus', () => {
+    const { plex, note } = draw(withReferences(), 'both')
+
+    for (const edge of plex.edges.filter(
+      (one) => note(one.from) !== 'Below.md' && note(one.to) !== 'Below.md',
+    )) {
+      expect([note(edge.from), note(edge.to)]).toContain('Here.md')
+    }
+  })
+
+  const withDirection = (related: RelatedNote, value: Direction | undefined): RelatedNote => {
+    const { direction: _previous, ...rest } = related
+    return value === undefined ? rest : { ...rest, direction: value }
+  }
+
+  const direction = (value: Direction | undefined): NoteGraph => {
+    const one = withReferences()
+    return {
+      ...one,
+      related: one.related.map((related) =>
+        related.path === 'Cites.md' ? withDirection(related, value) : related,
+      ),
+    }
+  }
+
+  it('is not equal to a note graph whose reference is linked the other way', () => {
+    expect(areNoteGraphsEqual(direction('outgoing'), direction('incoming'))).toBe(false)
+    expect(areNoteGraphsEqual(direction('outgoing'), direction('both'))).toBe(false)
+    expect(areNoteGraphsEqual(direction('outgoing'), direction(undefined))).toBe(false)
+  })
+
+  it('is equal to a note graph whose reference is linked the same way', () => {
+    expect(areNoteGraphsEqual(direction('incoming'), direction('incoming'))).toBe(true)
+  })
+})
