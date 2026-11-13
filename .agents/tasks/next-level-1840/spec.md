@@ -5,7 +5,7 @@
 **Intent:** `.agents/tasks/next-level-1840/intent.md`
 **Issue:** #1840. Base: `feat/1837-plex-clusters` (PR #1844), stacked on it. Placement skills: [`nm-place-core`](../../skills/nm-place-core/SKILL.md) (proto, use case, adapter), [`nm-place-plugin`](../../skills/nm-place-plugin/SKILL.md) (plugin, SDKs, manifest), [`nm-place-window`](../../skills/nm-place-window/SKILL.md) (the editor's plugin service), [`nm-place-library`](../../skills/nm-place-library/SKILL.md) (protocol, client, UI library).
 
-The kernel answers `ListRelatedNotes` for one step or two. The views-plex-graph plugin asks for two, orders and limits the second step into names per note, and the Plex draws them in small grey text over and under each related note, keeping room for them in the arrangement. Visuals follow the prototype `plugins/views-plex-graph/frontend/plex/lab` of branch `proto/plex-clusters` (`nextGeneration.ts`, `layout.ts` `getFootprint`, `PlexLab.vue`), whose words `generation`, `level` and `via` are not carried over.
+The kernel answers `ListRelatedNotes` for one step or two. The views-plex-graph plugin asks for two, orders and limits the second step into names per note, and the Plex draws them in small grey text over and under each related note, keeping room for them in the arrangement. Visuals follow the prototype (the lab folder of the plex frontend) of branch `proto/plex-clusters` (`nextGeneration.ts`, `layout.ts` `getFootprint`, `PlexLab.vue`), whose words `generation`, `level` and `via` are not carried over.
 
 ## 1. Target Architecture & Interfaces
 
@@ -96,7 +96,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 | `apps/docs/src/content/docs`, `docs/settings.md` | `plex.mdx`, `reference.md`, `settings.md` | Modify (two settings) | users |
 | `tests/e2e/desktop/tests/plugins/views.plex.graph` | one spec | Create | CI |
 
-`apps/landing` keeps its own plex demo and is not touched. `plugins/views-plex-graph/frontend/plex/lab` stays until its own change.
+`apps/landing` keeps its own plex demo and is not touched. The prototype lab folder stays until its own change.
 
 ## 3. Negative Invariants
 

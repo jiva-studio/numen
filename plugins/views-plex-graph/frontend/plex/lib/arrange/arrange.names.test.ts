@@ -16,7 +16,7 @@ interface Room {
   bottom: number
   width: number
 }
-type Rooms = (node: PlexNode) => Room
+type Rooms = (node: PlexNode, index?: number) => Room
 
 const NONE: Room = { top: 0, bottom: 0, width: 0 }
 const { margin } = DEFAULT_OPTIONS
@@ -35,15 +35,12 @@ const arrange = (
   return arrangePlex(graph, input)
 }
 
-/** Four names under every note but the focus. */
 const namesUnder: Rooms = (node) =>
   node.relation === 'focus' ? NONE : { top: 0, bottom: 56, width: 90 }
 
-/** Two names over every parent and none anywhere else. */
 const namesOverParents: Rooms = (node) =>
   node.relation === 'parent' ? { top: 60, bottom: 0, width: 90 } : NONE
 
-/** Names under and over every other note, so any fixture is crowded. */
 const namesAround: Rooms = (node, index = 0) =>
   node.relation === 'focus'
     ? NONE
@@ -74,7 +71,10 @@ const getFootprint = (node: PlacedNode, room: Room): Footprint => {
 }
 
 const isOverlapping = (a: Footprint, b: Footprint): boolean =>
-  a.minX < b.maxX - 1e-6 && b.minX < a.maxX - 1e-6 && a.minY < b.maxY - 1e-6 && b.minY < a.maxY - 1e-6
+  a.minX < b.maxX - 1e-6 &&
+  b.minX < a.maxX - 1e-6 &&
+  a.minY < b.maxY - 1e-6 &&
+  b.minY < a.maxY - 1e-6
 
 const getFootprints = (graph: PlexGraph, frame: PlexFrame, rooms: Rooms): Footprint[] => {
   const nodes = new Map(graph.nodes.map((node) => [node.id, node]))
@@ -90,12 +90,15 @@ const getFootprintOverlaps = (footprints: readonly Footprint[]): string[] =>
   )
 
 describe('a frame with no room reserved', () => {
-  it.each(Object.entries(graphs))('is the frame of %s as it was, with no room and with a room of zeros', (_, graph) => {
-    const window = { width: 1200, height: 800 }
+  it.each(Object.entries(graphs))(
+    'is the frame of %s as it was, with no room and with a room of zeros',
+    (_, graph) => {
+      const window = { width: 1200, height: 800 }
 
-    expect(arrange(graph, window, () => NONE)).toStrictEqual(arrange(graph, window))
-    expect(arrange(graph, undefined, () => NONE)).toStrictEqual(arrange(graph))
-  })
+      expect(arrange(graph, window, () => NONE)).toStrictEqual(arrange(graph, window))
+      expect(arrange(graph, undefined, () => NONE)).toStrictEqual(arrange(graph))
+    },
+  )
 })
 
 describe('names under the notes of a relation', () => {
@@ -255,7 +258,10 @@ describe('a relation where half the notes have names', () => {
 
   it('leaves the notes with no names closer than the tallest footprint', () => {
     const frame = arrange(graph, window, half)
-    const bare = frame.nodes.filter((node) => half(graph.nodes.find((n) => n.id === node.id)!).bottom === 0 && node.relation === 'child')
+    const bare = frame.nodes.filter(
+      (node) =>
+        half(graph.nodes.find((n) => n.id === node.id)!).bottom === 0 && node.relation === 'child',
+    )
     const tallest = bare[0]!.height + 56
 
     const distances = bare.flatMap((a, index) =>

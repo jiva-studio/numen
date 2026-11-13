@@ -67,7 +67,7 @@ func TestDepthTwoAddsTheNotesRelatedToEachRelatedNote(t *testing.T) {
 	}
 }
 
-func TestDepthTwoGivesSiblingsTheirOwnRelatedNotesAndNeverSiblings(t *testing.T) {
+func TestDepthTwoItemsOfASiblingAreNeverSiblings(t *testing.T) {
 	t.Parallel()
 	got := showDepth(t, depthGraph(), &pathLookup{}, "F.md", 2)
 
@@ -123,7 +123,7 @@ func TestDepthTwoAppliesNoLimit(t *testing.T) {
 	}
 }
 
-func TestDepthTwoLeavesTheConnectionsAsDepthOneHasThem(t *testing.T) {
+func TestDepthTwoConnectionsEqualThoseOfDepthOne(t *testing.T) {
 	t.Parallel()
 	one := showDepth(t, depthGraph(), &pathLookup{}, "F.md", 1)
 	two := showDepth(t, depthGraph(), &pathLookup{}, "F.md", 2)
@@ -176,7 +176,7 @@ func TestItemsOfDepthTwoFollowTheNotesRelatedToTheFocusInGroups(t *testing.T) {
 	}
 }
 
-func TestANoteTheIndexDoesNotReturnTakesItsItemsAndAnItemTheIndexLacksIsDropped(t *testing.T) {
+func TestNotesMissingFromTheIndexAreDroppedWithTheirItems(t *testing.T) {
 	t.Parallel()
 	got := showDepth(t, depthGraph(), &pathLookup{unknown: "C.md"}, "F.md", 2)
 	for _, r := range got.Related {

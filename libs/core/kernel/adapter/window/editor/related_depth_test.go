@@ -138,7 +138,7 @@ func TestTheFocusIsNeverAnItemAndANoteBelongsToEachNoteItIsRelatedTo(t *testing.
 	}
 }
 
-func TestDepthTwoAppliesNoLimitAndLeavesTheConnectionsAsTheyAre(t *testing.T) {
+func TestDepthTwoHasNoLimitAndTheConnectionsOfDepthOne(t *testing.T) {
 	notes := map[string]string{
 		"Entropy.md": noteWith("Entropy", "child Big"),
 		"Big.md":     noteWith("Big"),
@@ -171,7 +171,7 @@ func TestItemsOfDepthTwoFollowTheNotesRelatedToTheFocus(t *testing.T) {
 			firstItem = i
 		}
 		if r.GetRelatedTo() == "" && firstItem >= 0 {
-			t.Fatalf("%s is related to the focus and stands after an item of depth 2", r.GetNote().GetPath())
+			t.Fatalf("%s is related to the focus and comes after an item of depth 2", r.GetNote().GetPath())
 		}
 	}
 	if firstItem < 0 {
@@ -186,7 +186,7 @@ func TestItemsOfDepthTwoFollowTheNotesRelatedToTheFocus(t *testing.T) {
 			groups = append(groups, r.GetRelatedTo())
 		}
 	}
-	if want := []string{"Physics.md", "Heat.md", "Work.md", "Optics.md"}; !isSubsequence(groups, want) {
+	if want := []string{"Physics.md", "Heat.md", "Work.md", "Optics.md", "Mirror.md"}; !isSubsequence(groups, want) {
 		t.Errorf("groups %v do not follow the order of the notes related to the focus", groups)
 	}
 }

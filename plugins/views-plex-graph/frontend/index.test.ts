@@ -424,7 +424,10 @@ describe('the names of the notes related to the related notes of an open plex', 
     const getKid = () => state.canvas.picture.value!.nodes.find((node) => node.title === 'Kid')!.id
     const getNames = () => {
       const names = getPlex().props('names') as
-        | ((id: string) => { above: { id: string; title: string }[]; below: { id: string; title: string }[] })
+        | ((id: string) => {
+            above: { id: string; title: string }[]
+            below: { id: string; title: string }[]
+          })
         | undefined
       const found = names?.(getKid())
       return {

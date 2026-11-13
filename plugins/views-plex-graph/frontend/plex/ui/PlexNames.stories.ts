@@ -42,7 +42,7 @@ interface Knobs {
   onChooseName: (id: string) => void
 }
 
-const names = (id: string): PlexNames => NAMES[id] ?? { above: [], below: [] }
+const getNamesOf = (id: string): PlexNames => NAMES[id] ?? { above: [], below: [] }
 
 const meta = {
   title: 'Plex/Names',
@@ -51,13 +51,13 @@ const meta = {
   args: { showNames: true, onActivate: fn(), onChooseName: fn() },
   render: (args: Knobs) => ({
     components: { Plex },
-    setup: () => ({ args, graph, names, headings: (id: string) => HEADINGS[id] ?? [] }),
+    setup: () => ({ args, graph, getNamesOf, headings: (id: string) => HEADINGS[id] ?? [] }),
     template: `
       <div style="height:100vh">
         <Plex
           :graph="graph"
           :duration="0"
-          :names="names"
+          :names="getNamesOf"
           :show-names="args.showNames"
           :headings="headings"
           :options="{ focusScale: 2 }"
@@ -69,7 +69,7 @@ const meta = {
 } satisfies Meta<Knobs>
 
 export default meta
-type Story = StoryObj<typeof meta>
+type Story = StoryObj<Knobs>
 
 const getName = (canvas: ReturnType<typeof within>, title: string) =>
   canvas.getByRole('button', { name: title })
@@ -105,7 +105,9 @@ export const NamesStaySmall: Story = {
     const title = canvas.getByLabelText('Raised beds, child').querySelector('.plex__title-text')!
 
     await expect(getFontSize(getName(canvas, 'Compost'))).toBeLessThan(getFontSize(title))
-    await expect(getFontSize(getName(canvas, 'Compost'))).toBe(getFontSize(getName(canvas, 'Spade')))
+    await expect(getFontSize(getName(canvas, 'Compost'))).toBe(
+      getFontSize(getName(canvas, 'Spade')),
+    )
     const focusBox = canvas.getByLabelText(/, focus$/).querySelector('.plex__box')!
     const childBox = canvas.getByLabelText('Raised beds, child').querySelector('.plex__box')!
     await expect(focusBox.getBoundingClientRect().height).toBeGreaterThan(
@@ -121,7 +123,8 @@ export const ChoosingAName: Story = {
 
     await userEvent.click(getName(canvas, 'Mulch'))
 
-    await expect(args.onChooseName).toHaveBeenCalledExactlyOnceWith('name:Mulch')
+    await expect(args.onChooseName).toHaveBeenCalledTimes(1)
+    await expect(args.onChooseName).toHaveBeenCalledWith('name:Mulch')
     await expect(args.onActivate).not.toHaveBeenCalled()
   },
 }
@@ -130,7 +133,8 @@ export const ChoosingAName: Story = {
 export const HoverBringsNamesForward: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const getOpacity = (title: string) => parseFloat(getComputedStyle(getName(canvas, title)).opacity)
+    const getOpacity = (title: string) =>
+      parseFloat(getComputedStyle(getName(canvas, title)).opacity)
     const beds = canvas.getByLabelText('Raised beds, child')
     const atRest = getOpacity('Compost')
 
@@ -158,7 +162,9 @@ export const OnlyAPillOpensHeadings: Story = {
 
     await userEvent.unhover(getName(canvas, 'Compost'))
     await userEvent.hover(canvas.getByLabelText('Raised beds, child'))
-    await waitFor(async () => await expect(canvasElement.querySelector('.plex__inside')).not.toBeNull())
+    await waitFor(
+      async () => await expect(canvasElement.querySelector('.plex__inside')).not.toBeNull(),
+    )
   },
 }
 

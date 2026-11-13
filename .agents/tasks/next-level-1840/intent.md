@@ -32,7 +32,7 @@
 - No third level: names of names are not shown.
 - No change of the Plex look at the defaults beyond the names themselves; no change to how notes are grouped around the middle.
 - No camera zoom to fit names, no "+N" name for names cut by the limit.
-- The prototype `plugins/views-plex-graph/frontend/plex/lab` is deleted in its own change after this lands.
+- The prototype (the lab folder of the plex frontend, on the prototype branch) is deleted in its own change after this lands.
 
 ## 3. Limits & Edge Cases
 
