@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Connection, ConnectionSide, LinkMarker } from '@numen/plugin-sdk'
-import type { NoteGraph, NoteRelation, RelatedNote } from '../types'
+import type { NoteGraph, NoteRelation } from '../types'
 import { areNoteGraphsEqual, convertNoteGraph, getNoteTypes } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 
