@@ -54,11 +54,9 @@ const onWheel = (event: WheelEvent) => {
 
   const wheel = { delta: event.deltaY, mode: event.deltaMode }
   const { by, left: remainingDelta } = scrollBy(props.hung, wheel, carried)
-  if (by === 0) {
-    carried = remainingDelta
-    return
-  }
-  if (by < 0 ? !visibleHeadings.isAbove : !visibleHeadings.isBelow) {
+  const direction = by !== 0 ? by : remainingDelta
+  if (direction === 0) return
+  if (direction < 0 ? !visibleHeadings.isAbove : !visibleHeadings.isBelow) {
     carried = 0
     return
   }
@@ -66,6 +64,7 @@ const onWheel = (event: WheelEvent) => {
   carried = remainingDelta
   event.preventDefault()
   event.stopPropagation()
+  if (by === 0) return
   // The offset steps from the first visible heading, which is the plex's own
   // calculation of the window position.
   scrollOffset.value = visibleHeadings.first + by

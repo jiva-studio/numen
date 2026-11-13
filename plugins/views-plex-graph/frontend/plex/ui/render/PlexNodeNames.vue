@@ -4,7 +4,7 @@
  * resting opacity until the pointer is over the node or over the room of its names, which brings
  * them forward: at the focused opacity, and then they can be chosen. What choosing one does is the caller's.
  */
-import { computed, onBeforeUnmount } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { Attention } from '../../model/useAttention'
 import { placeNames, type NamesRoom } from '../../lib/names'
 import { createNameLabel, type PlacedNode } from '../../lib/node'
@@ -34,14 +34,33 @@ const isForward = computed(
 
 const placed = computed(() => placeNames(props.room, props.node))
 
+/** The name the pointer is on, null after that name is removed. */
+const overId = ref<string | null>(null)
+
 const opacity = computed(() => (isForward.value ? props.focusedOpacity : props.restingOpacity))
 
 /* --------------------------------- Hooks ---------------------------------- */
 onBeforeUnmount(() => emit('attend', false))
+watch(placed, (now) => {
+  if (overId.value === null || now.some((name) => name.id === overId.value)) return
+  overId.value = null
+  emit('attend', false)
+})
 
 /* -------------------------------- Handlers -------------------------------- */
-function onChoose(id: string) {
-  if (isForward.value) emit('choose', id)
+function onChoose(id: string, event: MouseEvent) {
+  // A click with no count and no pointer over the name comes from assistive technology, which has no pointer to bring the names forward.
+  if (isForward.value || (event.detail === 0 && overId.value === null)) emit('choose', id)
+}
+
+function onEnter(id: string) {
+  overId.value = id
+  emit('attend', true)
+}
+
+function onLeave(id: string) {
+  if (overId.value === id) overId.value = null
+  emit('attend', false)
 }
 </script>
 
@@ -56,9 +75,9 @@ function onChoose(id: string) {
       role="button"
       :aria-label="createNameLabel(name.title, node)"
       :transform="`translate(${name.x} ${name.y})`"
-      @click="onChoose(name.id)"
-      @pointerenter="emit('attend', true)"
-      @pointerleave="emit('attend', false)"
+      @click="onChoose(name.id, $event)"
+      @pointerenter="onEnter(name.id)"
+      @pointerleave="onLeave(name.id)"
     >
       <rect
         class="plex__name-hit"

@@ -121,6 +121,7 @@ export interface OpenBoxOptions {
   readonly on: () => string | null
   readonly delay: () => number
   readonly hasPill?: (() => boolean) | undefined
+  readonly viewportWidth?: (() => number | undefined) | undefined
   readonly clock?: Clock | undefined
 }
 
@@ -130,13 +131,22 @@ export interface OpenBoxOptions {
  * `on` names what the attention is on, and nothing when it is on none.
  */
 export function useOpenBox(options: OpenBoxOptions) {
-  const { node, wide, on, delay, hasPill = () => true, clock = browserClock } = options
+  const {
+    node,
+    wide,
+    on,
+    delay,
+    hasPill = () => true,
+    viewportWidth,
+    clock = browserClock,
+  } = options
   const open = useExpansion(on, delay, clock)
   const box = computed(() => interpolateBox(node(), wide(), open.value))
 
   const handle = computed(() => {
-    const pos = getHandle({ ...node(), width: box.value.width }, hasPill())
-    return { x: pos.x + box.value.offset, y: pos.y }
+    const { offset, width } = box.value
+    const pos = getHandle({ ...node(), x: node().x + offset, width }, hasPill(), viewportWidth?.())
+    return { x: pos.x + offset, y: pos.y }
   })
 
   return { open, box, handle }

@@ -587,7 +587,9 @@ describe('the names of a note', () => {
   it('cannot be chosen while they sit back, and can once the pointer brought them forward', async () => {
     const plex = mountWithNames({ namesOpacity: 0 })
 
-    await getName(plex, 'Heat').trigger('click')
+    getName(plex, 'Heat').element.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, detail: 1 }),
+    )
     expect(plex.emitted('chooseName')).toBeUndefined()
 
     await getName(plex, 'Heat').trigger('pointerenter')

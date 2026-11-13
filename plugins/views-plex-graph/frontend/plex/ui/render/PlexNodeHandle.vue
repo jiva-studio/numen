@@ -21,7 +21,7 @@ const emit = defineEmits<{
 }>()
 
 const onPointerDown = (event: PointerEvent) => {
-  if (event.button !== 0) return
+  if (event.button !== 0 || event.ctrlKey) return
   event.stopPropagation()
   event.preventDefault()
   emit('reach', event)
