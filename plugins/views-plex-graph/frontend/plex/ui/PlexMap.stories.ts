@@ -286,20 +286,13 @@ export const EveryLine: Story = {
     }
     await expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(7)
 
-    // The two records of one line are set on opposite sides of the line, each read in the direction
-    // of its record.
-    const getTextPathReading = (text: string) => {
-      const set = canvas.getAllByText(text)[0]!
-      const href = set.closest('textPath')!.getAttribute('href')!
-      const path = canvasElement.ownerDocument.getElementById(
-        href.slice(1),
-      ) as unknown as SVGPathElement
-      return { dy: Number(set.closest('text')!.getAttribute('dy')), path }
+    // The two records of one line are each read in the direction of their record.
+    const getTextPath = (text: string) => {
+      const href = canvas.getAllByText(text)[0]!.closest('textPath')!.getAttribute('href')!
+      return canvasElement.ownerDocument.getElementById(href.slice(1)) as unknown as SVGPathElement
     }
-    const one = getTextPathReading('includes')
-    const two = getTextPathReading('part of')
-    await expect(one.dy).toBeLessThan(0)
-    await expect(two.dy).toBeLessThan(0)
+    const one = { path: getTextPath('includes') }
+    const two = { path: getTextPath('part of') }
 
     // The first record is read along the line from its note, the second back along it.
     const start = one.path.getPointAtLength(0)

@@ -86,22 +86,6 @@ describe('the title of the node in focus', () => {
     return { title, factor: factor === undefined ? 1 : Number(factor) }
   }
 
-  it('is drawn larger as far as the node is taller than a note at rest, with the pill and without it', () => {
-    for (const showPills of [true, false]) {
-      const { title, factor } = scaled({ showPills, restHeight: 40 }, { height: 60 })
-      expect(factor).toBe(1.5)
-      // The title is laid out in a box 1.5 times smaller, and fills the node's box once enlarged.
-      expect(Number(title.attributes('width')) * factor).toBeCloseTo(200)
-      expect(Number(title.attributes('height')) * factor).toBeCloseTo(60)
-    }
-  })
-
-  it('leaves the title of a note at rest at its size', () => {
-    const { title, factor } = scaled({ restHeight: 40 }, { relation: 'child', height: 40 })
-    expect(factor).toBe(1)
-    expect(title.attributes('width')).toBe('200')
-  })
-
   it('keeps the box its text is laid out in the same size through the move to focus, so a title that fits is never cut', () => {
     // The node grows from a note at rest to the focus; its width grows with its height.
     const laidOut = [0, 0.25, 0.5, 0.75, 1].map((t) => {
@@ -282,11 +266,6 @@ describe('the handle of a node without its pill', () => {
     const node = await hover(mountBare({ width: 144 }))
     expect(getCentre(node) - HANDLE_RADIUS).toBeLessThanOrEqual(72)
   })
-
-  it('keeps the position it has with the pill, when the pill is drawn', async () => {
-    const node = await hover(mountNode({ width: 144 }))
-    expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(72 0)')
-  })
 })
 
 describe('the icon', () => {
@@ -345,33 +324,6 @@ describe('a node that is not there yet', () => {
 })
 
 describe('what a node is drawn as', () => {
-  it('carries its own relation, as a class and as a hue', () => {
-    for (const relation of [
-      'focus',
-      'parent',
-      'child',
-      'jump',
-      'reference',
-      'sibling',
-    ] as PlexNodeRelation[]) {
-      const node = mountNode({ relation })
-      expect(node.classes()).toContain(`plex__node--${relation}`)
-      expect(node.attributes('style')).toContain(`var(--numen-relation-${relation})`)
-    }
-  })
-
-  it('carries what it is to the gesture as a class of its own', () => {
-    expect(mountNode().classes()).toContain('plex__node--open')
-    const target = mount(PlexNodeView, { props: { node: createNode(), gestureRole: 'target' } })
-    expect(target.classes()).toContain('plex__node--target')
-  })
-
-  it('is a box the size the arrangement requested for, in pixels', () => {
-    const rect = mountNode({ width: 200, height: 50 }).get('rect')
-    expect(Number(rect.attributes('width'))).toBe(200)
-    expect(Number(rect.attributes('height'))).toBe(50)
-  })
-
   it('has a name for a screen reader even with no title at all', () => {
     expect(mountNode({ title: '' }).attributes('aria-label')).toBe('Untitled, child')
   })

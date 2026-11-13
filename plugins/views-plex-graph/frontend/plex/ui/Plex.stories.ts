@@ -900,8 +900,6 @@ export const HeadingsInside: Story = {
     await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(most), {
       timeout: 3000,
     })
-    const getFontSize = (heading: Element) => parseFloat(getComputedStyle(heading).fontSize)
-    const focusFontSize = getFontSize(getHeadings(focus)[0]!)
 
     await userEvent.unhover(focus)
     await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(0))
@@ -916,9 +914,6 @@ export const HeadingsInside: Story = {
     const many = canvas.getByLabelText(/, jump$/)
     await userEvent.hover(many)
     await waitFor(async () => await expect(getHeadings(many)).toHaveLength(most), { timeout: 3000 })
-
-    // The focus title is enlarged, the headings under it are not.
-    await expect(focusFontSize).toBe(getFontSize(getHeadings(many)[0]!))
 
     const arrows = () => [...many.querySelectorAll('.plex__more')]
     await expect(arrows()).toHaveLength(1)

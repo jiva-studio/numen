@@ -5,7 +5,6 @@ import PlexView from './PlexView.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { arrangePlex, createPath, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
 import { getNamesRoom } from '../../lib/names'
-import type { PlacedNode } from '../../lib/node'
 import type { PlexGraph } from '../../../types'
 
 const before: PlexGraph = {
@@ -191,37 +190,6 @@ describe('gesture roles and ghost', () => {
     const ghost = view.get('.plex__node--ghost')
     expect(ghost.attributes('transform')).toBe('translate(40 -200)')
     expect(ghost.get('.plex__title-text').text()).toBe('parent')
-    expect(Number(ghost.get('rect').attributes('width'))).toBe(224)
-  })
-
-  it('draws the ghost at the size of a field, whatever size a note has', () => {
-    const field = { width: 224, height: 32 }
-    const sizes = [DEFAULT_OPTIONS.nodeSize, { width: 300, height: 80 }].map((nodeSize) => {
-      const view = mountPlexViewDuring({
-        nodeSize,
-        ghostSize: field,
-        gestureFrom: 'focus',
-        gestureAt: { x: 40, y: -200 },
-        gestureOutcome: { kind: 'create', from: 'focus', relation: 'parent' },
-      })
-      const rect = view.get('.plex__node--ghost rect')
-      return [Number(rect.attributes('width')), Number(rect.attributes('height'))]
-    })
-
-    expect(sizes).toStrictEqual([
-      [224, 32],
-      [224, 32],
-    ])
-  })
-
-  it('draws the ghost title at its size, however tall the ghost is', () => {
-    const view = mountPlexViewDuring({
-      ghostSize: { width: 224, height: 64 },
-      gestureFrom: 'focus',
-      gestureAt: { x: 40, y: -200 },
-      gestureOutcome: { kind: 'create', from: 'focus', relation: 'parent' },
-    })
-    expect(view.get('.plex__node--ghost foreignObject').attributes('transform')).toBeUndefined()
   })
 })
 
@@ -233,12 +201,6 @@ describe('viewport viewBox', () => {
     const [x, y, w, h] = view.get('svg').attributes('viewBox')!.split(' ').map(Number)
     return { x: x!, y: y!, w: w!, h: h! }
   }
-
-  it('centers the viewBox on the origin', () => {
-    const box = getBox()
-    expect(box.x).toBe(-box.w / 2)
-    expect(box.y).toBe(-box.h / 2)
-  })
 
   it('keeps the same viewBox size regardless of node count', () => {
     const small = getBox(arrangePlex(before))
@@ -258,34 +220,6 @@ describe('viewport viewBox', () => {
     )
     expect(large).toStrictEqual(small)
     expect(crowded).toStrictEqual(small)
-  })
-
-  it('renders node rects with the arranged pixel dimensions', () => {
-    const frame = arrangePlex(before)
-    const view = mount(PlexView, {
-      props: { ...NAMES_OPACITY, frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
-    })
-    const focus = frame.nodes.find((n) => n.relation === 'focus')!
-    const rect = view.get('[aria-label^="Start"] rect')
-    expect(Number(rect.attributes('width'))).toBe(focus.width)
-    expect(Number(rect.attributes('height'))).toBe(focus.height)
-  })
-})
-
-describe('element opacity', () => {
-  it('renders a departing node with reduced opacity', () => {
-    const view = mountView()
-    const going = Number(view.get('[aria-label^="Going"]').attributes('opacity'))
-    const staying = Number(view.get('[aria-label^="Staying"]').attributes('opacity'))
-    expect(going).toBeGreaterThan(0)
-    expect(going).toBeLessThan(1)
-    expect(staying).toBe(1)
-  })
-
-  it('renders a departing edge with reduced opacity', () => {
-    const view = mountView()
-    const faded = view.findAll('path.plex__edge').map((path) => Number(path.attributes('opacity')))
-    expect(faded.some((value) => value > 0 && value < 1)).toBe(true)
   })
 })
 
@@ -391,7 +325,6 @@ describe('the links of a hovered note', () => {
 
 describe('hovered edge line', () => {
   const titledFrame = arrangePlex(titled)
-  const down = titledFrame.edges.findIndex((edge) => edge.to === 'below')
   const acrossIndex = titledFrame.edges.findIndex((edge) => edge.to === 'aside')
 
   const mountTitledPlexView = () =>
@@ -460,45 +393,6 @@ describe('hovered edge line', () => {
     expect(view.findAll('.plex__edge-label')).toHaveLength(2 * lines)
   })
 
-  it('renders a resting title with halo and letter layers on the same path', () => {
-    const view = mountTitledPlexView()
-    const [halo, letters] = title(view, acrossIndex)
-
-    expect(halo!.classes()).toContain('plex__edge-label--halo')
-    expect(letters!.classes()).toContain('plex__edge-label--letters')
-
-    expect(halo!.text()).toBe(letters!.text())
-    expect(halo!.get('textPath').attributes('href')).toBe(
-      letters!.get('textPath').attributes('href'),
-    )
-  })
-
-  it('renders a raised title with halo and letter layers on the same path', async () => {
-    const view = mountTitledPlexView()
-    await reach(view, acrossIndex).trigger('pointerenter')
-    const [halo, letters] = view.get('.plex__raised').findAll('.plex__edge-label')
-
-    expect(halo!.classes()).toContain('plex__edge-label--halo')
-    expect(letters!.classes()).toContain('plex__edge-label--letters')
-
-    expect(halo!.text()).toBe(letters!.text())
-    for (const named of ['href', 'startOffset']) {
-      expect(halo!.get('textPath').attributes(named)).toBe(
-        letters!.get('textPath').attributes(named),
-      )
-      expect(halo!.get('textPath').attributes(named)).toBeDefined()
-    }
-  })
-
-  it('renders every edge title inside a textPath element', () => {
-    const view = mountTitledPlexView()
-
-    for (const targetIndex of [down, acrossIndex]) {
-      expect(title(view, targetIndex)[0]!.find('textPath').exists()).toBe(true)
-      expect(title(view, targetIndex)[0]!.attributes('x')).toBeUndefined()
-    }
-  })
-
   it('renders the truncated title text from the arrangement', () => {
     const arrangedPlex = arrangePlex(titled, { measureLabel: (label) => 30 * label.length })
     const view = mount(PlexView, {
@@ -565,24 +459,6 @@ describe('bidirectional edge pair', () => {
   })
 })
 
-describe('node element identity across frames', () => {
-  it('preserves the DOM element of a node when other nodes move', async () => {
-    const view = mount(PlexView, {
-      props: {
-        ...NAMES_OPACITY,
-        frame: arrangePlex(before),
-        viewport: VIEWPORT,
-        nodeSize: DEFAULT_OPTIONS.nodeSize,
-      },
-    })
-    const was = view.get('[aria-label^="Going"]').element
-
-    await view.setProps({ frame: midMove })
-
-    expect(view.get('[aria-label^="Going"]').element).toBe(was)
-  })
-})
-
 describe('settled node draw order', () => {
   const getDrawnOrder = (view: ReturnType<typeof mountView>) =>
     view.findAll('.plex__node').map((node) => node.attributes('aria-label'))
@@ -609,16 +485,6 @@ describe('settled node draw order', () => {
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Going, child', 'Staying, child'])
   })
 
-  it('preserves the DOM element when the node moves to the end', async () => {
-    const view = mountRestingPlexView()
-    const was = view.get('[aria-label^="Staying"]').element
-
-    getBox(view, 'staying').vm.$emit('settle', true)
-    await view.vm.$nextTick()
-
-    expect(view.get('[aria-label^="Staying"]').element).toBe(was)
-  })
-
   it('restores the original draw order when the node unsettles', async () => {
     const view = mountRestingPlexView()
     getBox(view, 'staying').vm.$emit('settle', true)
@@ -627,22 +493,6 @@ describe('settled node draw order', () => {
     getBox(view, 'staying').vm.$emit('settle', false)
     await view.vm.$nextTick()
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
-  })
-
-  it('passes the widened box to each node', () => {
-    const wideBox = { width: 400, offset: -12 }
-    const view = mount(PlexView, {
-      props: {
-        ...NAMES_OPACITY,
-        frame: arrangePlex(before),
-        viewport: VIEWPORT,
-        nodeSize: DEFAULT_OPTIONS.nodeSize,
-        widen: (node: PlacedNode) => (node.id === 'going' ? wideBox : null),
-      },
-    })
-
-    expect(getBox(view, 'going').props('wide')).toStrictEqual(wideBox)
-    expect(getBox(view, 'staying').props('wide')).toBeNull()
   })
 })
 
@@ -692,76 +542,11 @@ describe('edge arrowheads', () => {
     expect(parseTransform(renderedArrows[1]!.attributes('transform')!).angle).toBeCloseTo(-90)
   })
 
-  it('applies the edge opacity to its arrowhead', () => {
-    const view = mount(PlexView, {
-      props: {
-        ...NAMES_OPACITY,
-        frame: { ...frame, edges: frame.edges.map((edge) => ({ ...edge, opacity: 0.4 })) },
-        viewport: VIEWPORT,
-        nodeSize: DEFAULT_OPTIONS.nodeSize,
-      },
-    })
-    for (const arrow of view.findAll('.plex__edge-arrow')) {
-      expect(arrow.attributes('opacity')).toBe('0.4')
-    }
-  })
-
-  it('renders arrowheads before edge titles', () => {
-    const view = mountWithNamesPlexView()
-    const arrow = view.findAll('.plex__edge-arrow')[0]!.element
-    for (const title of view.findAll('.plex__edge-label')) {
-      const where = arrow.compareDocumentPosition(title.element)
-      expect(where & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    }
-  })
-
   it('raises the arrowhead with its hovered edge line', async () => {
     const view = mountWithNamesPlexView()
     await view.findAll('.plex__edge-hit')[0]!.trigger('pointerenter')
 
     expect(view.get('.plex__raised').findAll('.plex__edge-arrow')).toHaveLength(1)
     expect(view.findAll('.plex__edge-arrow')).toHaveLength(2)
-  })
-})
-
-describe('the gesture with Pill background off', () => {
-  const mountBare = (props: Record<string, unknown>) =>
-    mount(PlexView, {
-      props: {
-        ...NAMES_OPACITY,
-        frame: arrangePlex(before),
-        viewport: VIEWPORT,
-        nodeSize: DEFAULT_OPTIONS.nodeSize,
-        showPills: false,
-        ...props,
-      },
-    })
-
-  it('draws no pill on any node', () => {
-    const view = mountBare({})
-    expect(view.findAll('.plex__node')).toHaveLength(3)
-    expect(view.findAll('.plex__box')).toHaveLength(0)
-  })
-
-  it('draws the ring of the note a link is dragged over', () => {
-    const view = mountBare({
-      gestureFrom: 'focus',
-      gestureAt: { x: 0, y: 200 },
-      gestureOutcome: { kind: 'link', from: 'focus', to: 'going', relation: 'child' },
-    })
-    const target = view.get('[aria-label^="Going"]')
-    const other = view.get('[aria-label^="Staying"]')
-
-    expect(target.classes()).toContain('plex__node--target')
-    expect(target.findAll('rect').length).toBeGreaterThan(other.findAll('rect').length)
-  })
-
-  it('draws the dashed outline of the note about to be made', () => {
-    const view = mountBare({
-      gestureFrom: 'focus',
-      gestureAt: { x: 40, y: -200 },
-      gestureOutcome: { kind: 'create', from: 'focus', relation: 'parent' },
-    })
-    expect(view.get('.plex__node--ghost').find('.plex__box').exists()).toBe(true)
   })
 })

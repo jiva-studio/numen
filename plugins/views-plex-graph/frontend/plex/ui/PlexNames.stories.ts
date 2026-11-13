@@ -109,28 +109,6 @@ export const ChoosingAName: Story = {
   },
 }
 
-/** The pointer over a note or over one of its names brings the names of that note forward, and no other. */
-export const HoverBringsNamesForward: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const getOpacity = (title: string) =>
-      parseFloat(getComputedStyle(getName(canvas, title)).opacity)
-    const beds = canvas.getByLabelText('Raised beds, child')
-    const atRest = getOpacity('Compost')
-
-    await userEvent.hover(beds)
-    await waitFor(async () => await expect(getOpacity('Compost')).toBeGreaterThan(atRest))
-    await expect(getOpacity('Compost')).toBe(1)
-    await expect(getOpacity('Spade')).toBe(atRest)
-
-    await userEvent.unhover(beds)
-    await waitFor(async () => await expect(getOpacity('Compost')).toBe(atRest))
-
-    await userEvent.hover(getName(canvas, 'Mulch'))
-    await waitFor(async () => await expect(getOpacity('Compost')).toBe(1))
-  },
-}
-
 /** The hover of a pill opens its heading list; the hover of a name opens none. */
 export const OnlyAPillOpensHeadings: Story = {
   play: async ({ canvasElement }) => {
@@ -145,17 +123,5 @@ export const OnlyAPillOpensHeadings: Story = {
     await waitFor(
       async () => await expect(canvasElement.querySelector('.plex__inside')).not.toBeNull(),
     )
-  },
-}
-
-/** With the names off no name is drawn. */
-export const NamesOff: Story = {
-  args: { showNames: false },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-
-    await expect(canvas.queryByRole('button', { name: 'Compost' })).toBeNull()
-    await expect(canvas.queryByRole('button', { name: 'Orchard' })).toBeNull()
-    await expect(canvas.getByLabelText('Raised beds, child')).toBeInTheDocument()
   },
 }

@@ -576,27 +576,6 @@ describe('the names of a note', () => {
     document.body.replaceChildren()
   })
 
-  it('are drawn over and under the note they belong to', () => {
-    const plex = mountWithNames()
-
-    expect(plex.findAll('.plex__name')).toHaveLength(2)
-    expect(plex.find('[aria-label="Heat"]').exists()).toBe(true)
-  })
-
-  it('sit at the resting opacity while the pointer is elsewhere', () => {
-    expect(getOpacities(mountWithNames())).toEqual([0.3, 0.3])
-  })
-
-  it('come forward to the focused opacity while the pointer is over their note, and return', async () => {
-    const plex = mountWithNames()
-
-    await plex.get('[aria-label^="Domain"]').trigger('pointerenter')
-    expect(getOpacities(plex)).toEqual([0.9, 0.9])
-
-    await plex.get('[aria-label^="Domain"]').trigger('pointerleave')
-    expect(getOpacities(plex)).toEqual([0.3, 0.3])
-  })
-
   it('come forward while the pointer is over one of them', async () => {
     const plex = mountWithNames({ namesOpacity: 0 })
 

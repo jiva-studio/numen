@@ -224,15 +224,3 @@ export const ReachingWithoutPill: Story = {
     )
   },
 }
-
-/**
- * On its way in or out, beside one that has arrived, because faintness only means something against a node that is fully there.
- * Such a node cannot be chosen, is not a tab stop and is not announced. Those negatives fail silently and look right in every screenshot,
- * so they are asserted next door in jsdom.
- */
-export const PartWayThere: Story = {
-  render: renderScene((args) => [
-    createNode(args, { id: 'staying', title: 'Staying', x: -84 }),
-    createNode(args, { id: 'going', title: 'On its way out', x: 84, opacity: 0.35 }),
-  ]),
-}

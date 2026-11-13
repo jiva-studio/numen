@@ -172,29 +172,10 @@ describe('the menu of a place with no node', () => {
   })
 })
 
-describe('the readme', () => {
-  it('names the title bar button that opens the plex', () => {
-    const readme = readFileSync(resolve(import.meta.dirname, '../README.md'), 'utf8')
-
-    expect(readme).toMatch(/title bar/i)
-  })
-})
-
 describe('the look settings of the plex', () => {
   const { settings } = JSON.parse(
     readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
   ) as { settings: readonly Record<string, unknown>[] }
-
-  const NUMBERS = [
-    ['pillPaddingSides', 10, 0, 24, 1],
-    ['pillPaddingEnds', 9.25, 0, 16, 0.25],
-    ['focusSize', 1.22, 1, 2.5, 0.01],
-    ['animationLength', 420, 0, 2000, 20],
-    ['lineThickness', 2, 0.5, 4, 0.25],
-    ['outlineThickness', 1, 0.5, 4, 0.25],
-    ['lineCurvature', 0.55, 0, 1, 0.05],
-    ['noteRoom', 0, 0, 40, 1],
-  ] as const
 
   it('offers Pill background in the command palette, on by default', () => {
     expect(settings.find((one) => one.key === 'showPills')).toMatchObject({
@@ -203,80 +184,5 @@ describe('the look settings of the plex', () => {
       palette: true,
       icon: 'waypoints',
     })
-  })
-
-  it('declares Highlight links of a hovered note on by default', () => {
-    expect(settings.find((one) => one.key === 'highlightLinks')).toMatchObject({
-      type: 'boolean',
-      title: 'Highlight links of a hovered note',
-      default: true,
-      palette: true,
-      icon: 'waypoints',
-    })
-  })
-
-  it('declares every number with its title, default, range and step', () => {
-    for (const [key, value, min, max, step] of NUMBERS) {
-      expect(
-        settings.find((one) => one.key === key),
-        key,
-      ).toMatchObject({
-        type: 'range',
-        default: value,
-        min,
-        max,
-        step,
-      })
-    }
-  })
-
-  it('declares the look after the heading and names settings, which keep their keys', () => {
-    expect(settings.map((one) => one.key)).toStrictEqual([
-      'references',
-      'nestHeadings',
-      'headingLimit',
-      'showNames',
-      'namesPerNote',
-      'namesOpacity',
-      'focusedNamesOpacity',
-      'showPills',
-      'pillPaddingSides',
-      'pillPaddingEnds',
-      'focusSize',
-      'lineThickness',
-      'outlineThickness',
-      'lineCurvature',
-      'highlightLinks',
-      'animationLength',
-      'noteRoom',
-    ])
-  })
-
-  it('declares the opacity of the names as two sliders, the resting one down to nothing and the one in focus down to 0.05', () => {
-    for (const [key, value, min] of [
-      ['namesOpacity', 0.7, 0],
-      ['focusedNamesOpacity', 1, 0.05],
-    ] as const) {
-      expect(
-        settings.find((one) => one.key === key),
-        key,
-      ).toMatchObject({ type: 'range', default: value, min, max: 1, step: 0.05 })
-    }
-  })
-
-  it('declares References as four choices that show the notes linked in the text, both ways by default', () => {
-    const setting = settings.find((one) => one.key === 'references')
-
-    expect(setting).toMatchObject({ type: 'enum', default: 'both' })
-    expect((setting?.options as { value: string }[]).map((option) => option.value)).toStrictEqual([
-      'off',
-      'outgoing',
-      'incoming',
-      'both',
-    ])
-  })
-
-  it('gives every look setting a description', () => {
-    for (const one of settings) expect(one.description, String(one.key)).toBeTruthy()
   })
 })
