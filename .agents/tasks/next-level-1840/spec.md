@@ -220,7 +220,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 ## 7. Decisions of the Owner (formerly open questions)
 
 1. No Go SDK `ListRelatedNotes` is added; that is a separate issue. Go keeps only what exists. The TS SDK carries `depth` and `relatedTo`.
-2. Both settings stay: **Show notes related to related notes** (`showNames`, default on) and **Names per note** (`namesPerNote`, default 6). so the key would be `hasNames`; the owner chose `showNames` to match `showPills` in the same manifest; the count is a noun phrase.
+2. Both settings stay: **Show notes related to related notes** (`showNames`, default on) and **Names per note** (`namesPerNote`, default 6). The boolean key is `showNames` to match `showPills` in the same manifest.
 3. Siblings get names too.
 4. A name may repeat a note already drawn; only the focus is left out.
 5. The limit counts all names of a note together, parents first.
