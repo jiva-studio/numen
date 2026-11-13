@@ -39,7 +39,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// getTestHolder() is the holder of the leases the tests take.
 func getTestHolder() plugindomain.Holder {
 	return plugindomain.Holder{Who: plugindomain.WhoWindow, Why: "open view"}
 }

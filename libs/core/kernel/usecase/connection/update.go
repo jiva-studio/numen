@@ -57,7 +57,10 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 	if err := u.apply(ctx, current.ID, plan); err != nil {
 		return Entry{}, errors.Join(err, u.secrets().restore(context.WithoutCancel(ctx), current.ID, backup))
 	}
-	if err := u.writeConnection(current, updated); err != nil {
+	err = u.repository.ChangeConnections(func(list []connection.Connection) ([]connection.Connection, error) {
+		return replaceConnection(list, u.listDetectedConnections, current, updated)
+	})
+	if err != nil {
 		return Entry{}, errors.Join(err, u.secrets().restore(context.WithoutCancel(ctx), current.ID, backup))
 	}
 	if u.lists != nil {
@@ -66,21 +69,21 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 	return u.describe(ctx, updated)
 }
 
-func (u *Update) writeConnection(current, updated connection.Connection) error {
-	return u.repository.ChangeConnections(func(list []connection.Connection) ([]connection.Connection, error) {
-		position := getIndex(list, current.ID)
-		switch {
-		case position < 0:
-			return nil, newNotFoundError(current.ID)
-		case list[position].Revision != current.Revision:
-			return nil, newStaleRevisionError(current.ID)
-		case isNameTaken(append(slices.Clone(list), u.listDetectedConnections()...), updated.Name, updated.ID):
-			return nil, newNameTakenError(updated.Name)
-		}
-		changed := slices.Clone(list)
-		changed[position] = updated
-		return changed, nil
-	})
+func replaceConnection(
+	list []connection.Connection, listDetected func() []connection.Connection, current, updated connection.Connection,
+) ([]connection.Connection, error) {
+	position := getIndex(list, current.ID)
+	switch {
+	case position < 0:
+		return nil, newNotFoundError(current.ID)
+	case list[position].Revision != current.Revision:
+		return nil, newStaleRevisionError(current.ID)
+	case isNameTaken(append(slices.Clone(list), listDetected()...), updated.Name, updated.ID):
+		return nil, newNameTakenError(updated.Name)
+	}
+	changed := slices.Clone(list)
+	changed[position] = updated
+	return changed, nil
 }
 
 func (u *Update) describe(ctx context.Context, updated connection.Connection) (Entry, error) {

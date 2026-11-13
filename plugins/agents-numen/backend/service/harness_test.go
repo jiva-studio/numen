@@ -142,7 +142,6 @@ func newTestAgent(t *testing.T, model ports.Chat, hostURL string) *agent {
 	return s
 }
 
-// getGull returns the row of a task that chose the model Gull 7B of Harbor.
 func getGull() connection.Call {
 	return connection.Call{Type: "numen", Options: map[string]string{"model": "c-harbor|gull-7b"}}
 }

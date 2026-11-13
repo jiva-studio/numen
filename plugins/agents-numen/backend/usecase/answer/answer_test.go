@@ -91,7 +91,6 @@ func newAnswerer(t *testing.T, chat *scriptedChat, tools *fakeTools) (*answer.An
 	return newAnswererOf(t, chat, tools, settings.NewStore(), now), now
 }
 
-// getWren returns the row of a task that chose the model Wren 2 of Meadow.
 func getWren() connection.Call {
 	return connection.Call{ConnectionID: "c-numen", Options: map[string]string{"model": "c-meadow|wren-2"}}
 }
