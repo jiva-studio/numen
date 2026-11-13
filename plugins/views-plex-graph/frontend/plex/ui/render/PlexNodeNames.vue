@@ -89,7 +89,7 @@ const fontSize = computed(() => `${props.room.rowHeight / ROW_RATIO}px`)
 .plex__name {
   cursor: pointer;
   pointer-events: all;
-  transition: opacity var(--plex-move, 0ms) var(--numen-easing);
+  transition: opacity var(--plex-move) var(--numen-easing);
 }
 
 .plex__name-hit {

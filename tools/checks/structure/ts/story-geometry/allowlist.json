@@ -84,6 +84,10 @@
     "reason": "the menu of the map opens inside the view and the suspended words keep their order"
   },
   {
+    "file": "plugins/views-plex-graph/frontend/plex/ui/PlexNames.stories.ts",
+    "reason": "the names of a note stand over its parents' pill and under the others, in a smaller type than a title, and fade by whether the pointer is over the note"
+  },
+  {
     "file": "plugins/views-title-bar/frontend/ui/TitleBar.stories.ts",
     "reason": "the window controls stay inside the bar for a long vault name and the popover opens under the bar"
   }
