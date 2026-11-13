@@ -6,21 +6,22 @@ import type { PluginProcess } from '../types'
 import { WORDS as words } from '../words'
 import { formatCount, formatDuration } from './format'
 
+/**
+ * One line of the popover. `healthText` is empty while the plugin is healthy; `healthLabel` is
+ * `Healthy` or the text of the worst item. `state` is `In use` or `Idle 57s`; `detail` is `2 calls`,
+ * `stops in 2m 02s`, `stopping` or empty. `title` is the tooltip of the line: the id, how long the
+ * plugin has run, and where it runs.
+ */
 export interface Row {
   readonly id: string
   readonly name: string
   readonly health: PluginProcess['health']
-  /** The text of the worst health item, empty while the plugin is healthy. */
   readonly healthText: string
-  /** The health for the tooltip and the accessible name: `Healthy` or the text of the worst item. */
   readonly healthLabel: string
   readonly isInCore: boolean
-  /** `In use` or `Idle 57s`. */
   readonly state: string
-  /** `2 calls`, `stops in 2m 02s`, `stopping`, or empty. */
   readonly detail: string
   readonly detailHint: string
-  /** The tooltip of the row: the id, how long the plugin has run, and where it runs. */
   readonly title: string
 }
 
