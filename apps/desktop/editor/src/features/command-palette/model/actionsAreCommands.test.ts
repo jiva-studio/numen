@@ -12,7 +12,8 @@ import { PALETTE_WORDS } from '../words'
 import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from './palette/runSupport'
 import { createCommandPalette } from './palette/palette'
-import { useSearch, type NameMatch, type Passage, type SearchDeps } from './search/search'
+import { useSearch, type NameMatch, type SearchDeps } from './search/search'
+import type { Passage } from './search/lookup'
 import type { CommandTarget } from '@/shared/model/command'
 
 const words = { ...windowWords, ...PALETTE_WORDS }

@@ -63,7 +63,8 @@ func TestACallIsLoggedWithItsCallerToolArgumentsResultAndDuration(t *testing.T) 
 			t.Errorf("%s is %v, want %v", key, line[key], value)
 		}
 	}
-	if result, _ := line["resultBytes"].(map[string]any); result["text"] != float64(len("tree_count")) || result["structured"] != float64(0) {
+	result, isMap := line["resultBytes"].(map[string]any)
+	if !isMap || result["text"] != float64(len("tree_count")) || result["structured"] != float64(0) {
 		t.Errorf("the result sizes are logged as %v", line["resultBytes"])
 	}
 	sizes := readArgumentBytes(t, line)
