@@ -270,6 +270,26 @@ func TestAFinalFrameWithoutOptionsIsAStopOfAnInvalidRequest(t *testing.T) {
 	}
 }
 
+func TestListDetectedCallsConnectionsDetectedForTheTypeAndReadsTheConnectionsOfTheFinalFrame(t *testing.T) {
+	listed, err := proto.Marshal(&v1.DetectedConnections{Connections: []*v1.DetectedConnection{
+		{Name: "Orchard agent", Fields: map[string]string{"program": "orchard"}}, {Name: "Meadow agent"},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := &scriptedService{frames: []*v1.ProviderServiceCallResponse{done(listed)}}
+	provider, _, _ := newBridge(t, service)
+
+	found, err := provider.ListDetected(t.Context(), modelcall.ProviderCall{Type: "orchard"})
+
+	if err != nil || len(found) != 2 || found[0].Name != "Orchard agent" || found[0].Fields["program"] != "orchard" || found[1].Name != "Meadow agent" {
+		t.Fatalf("found = %+v, %v", found, err)
+	}
+	if service.received[0].GetOperation() != connection.OperationDetected || service.received[0].GetCall().GetType() != "orchard" {
+		t.Errorf("received = %+v", service.received[0])
+	}
+}
+
 func TestTheLeaseIsReleasedWhenTheCallerReleasesTheProvider(t *testing.T) {
 	_, release, host := newBridge(t, &scriptedService{})
 	if len(host.released) != 0 {

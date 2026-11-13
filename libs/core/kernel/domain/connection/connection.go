@@ -39,22 +39,32 @@ func (t Type) GetID() string {
 	return manifest.GetConnectionTypeID(t.PluginID, t.Declaration.ID)
 }
 
-// ListBuiltIns returns the connection the core lists for each available type that is built in, in the order
-// of the types. Its id is the type id, its name the title of the type, and it holds no field.
-func ListBuiltIns(types []Type) []Connection {
-	var list []Connection
-	for _, one := range types {
-		if one.IsAvailable && one.Declaration.IsBuiltIn {
-			list = append(list, Connection{ID: one.GetID(), TypeID: one.GetID(), Name: one.Declaration.Title, Fields: map[string]any{}})
-		}
-	}
-	return list
+// OperationDetected is the operation through which a provider reports the connections of a type it found
+// ready on this machine. The core owns this one name; a type takes part by listing it among its operations.
+const OperationDetected = "connections.detected"
+
+const detectedIDSeparator = "/"
+
+// GetDetectedID returns the id of a detected connection: the type id, a slash and the name the provider
+// reported. No stored connection has a slash in its id.
+func GetDetectedID(typeID, name string) string {
+	return typeID + detectedIDSeparator + name
 }
 
-// IsBuiltIn reports whether the id is that of a built-in connection: a type id, which no stored connection has.
-func IsBuiltIn(id string) bool {
-	_, _, isTypeID := manifest.SplitConnectionTypeID(id)
-	return isTypeID
+// IsDetected reports whether the id is that of a detected connection.
+func IsDetected(id string) bool {
+	_, _, isDetected := SplitDetectedID(id)
+	return isDetected
+}
+
+// SplitDetectedID returns the type id and the name of the id of a detected connection.
+func SplitDetectedID(id string) (typeID, name string, isDetected bool) {
+	pluginID, rest, _ := strings.Cut(id, detectedIDSeparator)
+	localID, name, _ := strings.Cut(rest, detectedIDSeparator)
+	if pluginID == "" || localID == "" || name == "" {
+		return "", "", false
+	}
+	return manifest.GetConnectionTypeID(pluginID, localID), name, true
 }
 
 // IsValidName reports whether the text is a name of a connection: not empty, without leading or

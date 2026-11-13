@@ -3,7 +3,6 @@ package settings
 import (
 	_ "embed"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
@@ -31,24 +30,42 @@ const (
 const RegistryThemes = "themes"
 
 // RegistryConnections names the registry that lists the ids of the stored connections. A setting of
-// rows takes a list of at most max objects, each with a connection from this registry or from
-// RegistryBuiltInConnections and the row options of its type as text, and no connection with the same
-// options twice. A registry that lists no connections leaves the connection unchecked.
+// rows takes a list of at most max objects, each with a connection from this registry, from
+// RegistryDetectedConnections or detected for a type RegistryPendingDetections lists, and the row options of
+// its type as text, and no connection with the same options twice. A registry that lists no connections leaves
+// the connection unchecked.
 const RegistryConnections = "connections"
 
-// RegistryBuiltInConnections names the registry that lists the ids of the built-in connections of the
-// available types.
-const RegistryBuiltInConnections = "builtInConnections"
+// RegistryDetectedConnections names the registry that lists the ids of the connections the providers detected.
+const RegistryDetectedConnections = "detectedConnections"
 
-// ListBuiltInConnectionIDs returns the ids of the built-in connections of the types, and none where no
-// plugin host gives types.
-func ListBuiltInConnectionIDs(types connectionport.Types) []string {
-	if types == nil {
+// RegistryPendingDetections names the registry that lists the ids of the types whose providers have not reported
+// what they detect yet. A row that names a connection detected for such a type is kept until they do.
+const RegistryPendingDetections = "pendingDetections"
+
+// ListDetectedConnectionIDs returns the ids of the connections the providers detected, and none where nothing
+// detects.
+func ListDetectedConnectionIDs(detected connectionport.Detected) []string {
+	if detected == nil {
 		return nil
 	}
 	var ids []string
-	for _, one := range connection.ListBuiltIns(types.ListTypes()) {
+	for _, one := range detected.ListDetected() {
 		ids = append(ids, one.ID)
+	}
+	return ids
+}
+
+// ListPendingDetections returns the ids of the types whose providers have not reported what they detect yet.
+func ListPendingDetections(types connectionport.Types, detected connectionport.Detected) []string {
+	if types == nil || detected == nil {
+		return nil
+	}
+	var ids []string
+	for _, one := range types.ListTypes() {
+		if detected.IsPending(one.GetID()) {
+			ids = append(ids, one.GetID())
+		}
 	}
 	return ids
 }

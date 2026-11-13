@@ -16,6 +16,9 @@ type Provider interface {
 	// ListOptions carries out an operation a row field names in optionsFrom and returns the values the
 	// field can take. operations are the operations the setting of rows is used for.
 	ListOptions(ctx context.Context, operation string, call modelcall.ProviderCall, operations []string) ([]modelcall.Option, error)
+	// ListDetected carries out connections.detected for the type of call, which names no connection, and returns
+	// the connections the provider found ready on this machine.
+	ListDetected(ctx context.Context, call modelcall.ProviderCall) ([]modelcall.DetectedConnection, error)
 }
 
 // ProviderSource opens the provider of a plugin.

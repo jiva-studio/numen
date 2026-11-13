@@ -1,22 +1,15 @@
 <script setup lang="ts">
 /**
  * A row of a settings list that opens a page: the icon of its category, the name, a one-line
- * detail, the `trail` slot and a chevron, which a tile (`isTile`) has none of. The
- * accessible name is `label`, or the name where none is given.
+ * detail, the `trail` slot and a chevron (see NavigationRowProps).
  */
 import { computed, type VNode } from 'vue'
 import { ChevronRight } from '@lucide/vue'
 import { getCategoryIcon } from './categoryIcons'
+import type { NavigationRowProps } from './NavigationRow.types'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{
-  name: string
-  detail: string
-  category: string
-  label?: string
-  isDimmed?: boolean
-  isTile?: boolean
-}>()
+const props = defineProps<NavigationRowProps>()
 
 const emit = defineEmits<{
   (e: 'select'): void
@@ -32,15 +25,16 @@ const icon = computed(() => getCategoryIcon(props.category))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClick(): void {
-  emit('select')
+  if (!props.isStatic) emit('select')
 }
 </script>
 
 <template>
-  <button
-    type="button"
+  <component
+    :is="props.isStatic ? 'div' : 'button'"
+    :type="props.isStatic ? undefined : 'button'"
     class="navigation-row"
-    :class="{ 'navigation-row--dimmed': props.isDimmed }"
+    :class="{ 'navigation-row--dimmed': props.isDimmed, 'navigation-row--static': props.isStatic }"
     :aria-label="props.label ?? props.name"
     @click="onClick"
   >
@@ -57,12 +51,12 @@ function onClick(): void {
     </span>
     <slot name="trail" />
     <ChevronRight
-      v-if="!props.isTile"
+      v-if="!props.isTile && !props.isStatic"
       class="navigation-row__chevron"
       :size="16"
       aria-hidden="true"
     />
-  </button>
+  </component>
 </template>
 
 <style scoped>
@@ -91,6 +85,14 @@ function onClick(): void {
 
 .navigation-row:hover {
   background-color: var(--settings-hover-bg);
+}
+
+.navigation-row--static {
+  cursor: default;
+}
+
+.navigation-row--static:hover {
+  background-color: transparent;
 }
 
 .navigation-row:focus-visible {

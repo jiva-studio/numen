@@ -138,6 +138,10 @@ func (m *modelList) ListOptions(context.Context, string, modelcall.ProviderCall,
 	return []modelcall.Option{{Value: "google/gemini-2.5-flash", Title: "Gemini 2.5 Flash", Group: "Google"}, {Value: "qwen/qwen3-8b"}}, nil
 }
 
+func (m *modelList) ListDetected(context.Context, modelcall.ProviderCall) ([]modelcall.DetectedConnection, error) {
+	return []modelcall.DetectedConnection{{Name: "Kite agent"}}, nil
+}
+
 func newKeys() *memoryKeys { return &memoryKeys{values: map[string]string{}} }
 
 func createRequest(name string) *connect.Request[v1.CreateProviderConnectionRequest] {
@@ -415,11 +419,13 @@ func TestListProviderConnectionTypesReturnsNoTitleWithoutTheirUseCase(t *testing
 	}
 }
 
-func TestListProviderConnectionsMarksTheConnectionOfABuiltInType(t *testing.T) {
+func TestListProviderConnectionsMarksADetectedConnection(t *testing.T) {
 	types := append(getTypes(), connection.Type{PluginID: "org.example.agents", PluginName: "Kite agent", IsAvailable: true, Declaration: manifest.ConnectionType{
-		ID: "kite", Title: "Kite", Operations: []string{"acp.task"}, IsBuiltIn: true,
+		ID: "kite", Title: "Kite", Operations: []string{"acp.task", connection.OperationDetected},
 	}})
-	handler := NewHandler(useCasesOf(connectiontest.New(&memoryRepository{}, types, newKeys(), fixedUses{}, func() (string, error) {
+	detection := connections.NewDetection(types, &modelList{})
+	detection.Detect(t.Context(), "org.example.agents")
+	handler := NewHandler(useCasesOf(connectiontest.NewWithDetected(&memoryRepository{}, types, newKeys(), fixedUses{}, detection, func() (string, error) {
 		return "c00000001", nil
 	}), &modelList{}))
 	if _, err := handler.CreateProviderConnection(t.Context(), createRequest("Work")); err != nil {
@@ -430,17 +436,9 @@ func TestListProviderConnectionsMarksTheConnectionOfABuiltInType(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	declared, err := handler.ListProviderConnectionTypes(t.Context(), connect.NewRequest(&v1.ListProviderConnectionTypesRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	got := listed.Msg.GetConnections()
-	if len(got) != 2 || got[0].GetIsBuiltIn() || got[1].GetId() != "org.example.agents/kite" || !got[1].GetIsBuiltIn() {
-		t.Errorf("connections = %v, want Work and then the built-in Kite", got)
-	}
-	kinds := declared.Msg.GetTypes()
-	if len(kinds) != 2 || kinds[0].GetIsBuiltIn() || !kinds[1].GetIsBuiltIn() {
-		t.Errorf("types = %v, want only Kite built in", kinds)
+	if len(got) != 2 || got[0].GetIsDetected() || got[1].GetId() != "org.example.agents/kite/Kite agent" || !got[1].GetIsDetected() {
+		t.Errorf("connections = %v, want Work and then the detected Kite agent", got)
 	}
 }

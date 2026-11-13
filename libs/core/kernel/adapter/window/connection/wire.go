@@ -43,7 +43,7 @@ func writeConnection(entry connections.Entry) (*v1.ProviderConnection, error) {
 		IsTypeAvailable: entry.IsTypeAvailable,
 		Revision:        int32(entry.Revision),
 		IsComplete:      entry.IsComplete,
-		IsBuiltIn:       entry.IsBuiltIn,
+		IsDetected:      entry.IsDetected,
 		Uses:            writeUses(entry.Uses),
 	}, nil
 }
@@ -65,7 +65,6 @@ func writeType(one connection.Type) (*v1.ProviderConnectionType, error) {
 		Description: one.Declaration.Description,
 		Operations:  one.Declaration.Operations,
 		IsAvailable: one.IsAvailable,
-		IsBuiltIn:   one.Declaration.IsBuiltIn,
 	}
 	for _, field := range one.Declaration.Fields {
 		converted, err := writeField(field)

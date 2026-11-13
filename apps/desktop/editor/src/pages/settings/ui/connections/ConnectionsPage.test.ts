@@ -52,7 +52,6 @@ const type = (
   fields,
   rowFields: [],
   isAvailable: true,
-  isBuiltIn: false,
   ...overrides,
 })
 
@@ -89,7 +88,7 @@ const connection = (overrides: Partial<ConnectionInfo> = {}): ConnectionInfo => 
   secretKeysSet: ['apiKey'],
   isTypeAvailable: true,
   isComplete: true,
-  isBuiltIn: false,
+  isDetected: false,
   uses: [],
   ...overrides,
 })
@@ -117,6 +116,13 @@ const rows = (): HTMLElement[] =>
 const rowOf = (name: string): HTMLElement => {
   const found = rows().find((one) => one.getAttribute('aria-label') === name)
   if (!found) throw new Error(`no row ${name}`)
+  return found
+}
+
+/** An entry of the list by its name, a button or not. */
+const entryOf = (name: string): HTMLElement => {
+  const found = root().querySelector<HTMLElement>(`[role="list"] [aria-label="${name}"]`)
+  if (!found) throw new Error(`no entry ${name}`)
   return found
 }
 
@@ -184,22 +190,23 @@ describe('the page of connections', () => {
     dispose(wrapper)
   })
 
-  it('marks a built-in connection, which opens no dialog to change or delete it', async () => {
-    const builtIn = connection({
-      id: SERVICE.id,
+  it('marks a detected connection, which is no button and opens no dialog', async () => {
+    const detected = connection({
+      id: `${SERVICE.id}/Sample agent`,
       typeId: SERVICE.id,
       name: 'Sample agent',
       secretKeysSet: [],
-      isBuiltIn: true,
+      isDetected: true,
     })
-    const { wrapper } = mountPage([connection(), builtIn], [SERVICE])
+    const { wrapper } = mountPage([connection(), detected], [SERVICE])
     await flushPromises()
+    const sample = entryOf('Sample agent')
 
-    expect(rowOf('Sample agent').textContent).toContain('Built in')
-    expect(rowOf('Sample agent').getAttribute('aria-disabled')).toBe('true')
-    expect(rowOf('Work').textContent).not.toContain('Built in')
-    expect(rowOf('Work').hasAttribute('aria-disabled')).toBe(false)
-    await click(rowOf('Sample agent'))
+    expect(sample.textContent).toContain('Discovered')
+    expect(sample.tagName).not.toBe('BUTTON')
+    expect(rows().map((one) => one.getAttribute('aria-label'))).toEqual(['Work'])
+    expect(rowOf('Work').textContent).not.toContain('Discovered')
+    await click(sample)
 
     expect(root().querySelector('[role="dialog"]')).toBeNull()
     dispose(wrapper)

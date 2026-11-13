@@ -17,6 +17,11 @@ const HostFieldDiscover = "discover"
 // ConnectionsKey is the first-level key of the connections section.
 const ConnectionsKey = "connections"
 
+// DetectedConnectionsKey is the first-level key, in the values a window follows and in no file, whose value
+// lists the ids of the connections the providers detected, so that a window reads the connections again when
+// they change.
+const DetectedConnectionsKey = "detectedConnections"
+
 // Values is the value in force of every declared setting as JSON, by its path joined with
 // JoinPath. A setting with neither a stored value nor a default is left out.
 type Values map[string]string

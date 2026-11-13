@@ -74,7 +74,7 @@ func TestTheKeyOfAConnectionIsInTheKeyStoreAndNotInTheFile(t *testing.T) {
 		func() {})
 	next := 0
 	no := settings.NewConnectionRows(settings.ConnectionRowsSource{
-		Connections: repository, Types: oneType{}, Plugins: func() []plugin.Info { return nil },
+		Connections: repository, Detected: fixedDetection{}, Plugins: func() []plugin.Info { return nil },
 	})
 	connections := connectiontest.New(repository, oneType{}, keys, no, func() (string, error) {
 		next++

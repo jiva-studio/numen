@@ -31,12 +31,14 @@ type operation struct {
 	types      connectionport.Types
 	keys       pluginport.KeyStore
 	uses       connectionport.Uses
+	detected   connectionport.Detected
 	gate       *sync.Mutex
 }
 
 // Entry is a connection as a window shows it: the fields the type declares, the keys of the secret
-// fields that hold a value for the current address, and no value of a secret. IsBuiltIn marks the
-// connection of a built-in type, which is not stored and cannot be changed or deleted.
+// fields that hold a value for the current address, and no value of a secret. IsDetected marks a
+// connection the provider of its type reported ready on this machine, which is not stored and cannot be
+// changed or deleted.
 type Entry struct {
 	ID              string
 	TypeID          string
@@ -46,7 +48,7 @@ type Entry struct {
 	SecretKeysSet   []string
 	IsTypeAvailable bool
 	IsComplete      bool
-	IsBuiltIn       bool
+	IsDetected      bool
 	Uses            []connection.Use
 }
 
@@ -60,7 +62,13 @@ type Deps struct{ base operation }
 func NewDeps(
 	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, uses connectionport.Uses,
 ) Deps {
-	return Deps{base: operation{repository: repository, types: types, keys: keys, uses: uses, gate: &sync.Mutex{}}}
+	return Deps{base: operation{repository: repository, types: types, keys: keys, uses: uses, detected: noDetection{}, gate: &sync.Mutex{}}}
+}
+
+// WithDetected returns the shared parts with the connections the providers detect listed after the stored ones.
+func (d Deps) WithDetected(detected connectionport.Detected) Deps {
+	d.base.detected = detected
+	return d
 }
 
 // NewCreate returns the use case that adds a connection. newID makes the id of a new connection.
@@ -143,11 +151,27 @@ func (o operation) listConnections() ([]connection.Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	return append(list, o.listBuiltIns()...), nil
+	return append(list, o.detected.ListDetected()...), nil
 }
 
-func (o operation) listBuiltIns() []connection.Connection {
-	return connection.ListBuiltIns(o.types.ListTypes())
+// listConnectionsAfterDetection lists the connections once the providers of the pending types of the plugins
+// answered.
+func (o operation) listConnectionsAfterDetection(typeIDs []string) ([]connection.Connection, error) {
+	var plugins []string
+	for _, typeID := range typeIDs {
+		found, isFound := o.types.GetType(typeID)
+		if isFound && o.detected.IsPending(typeID) && !slices.Contains(plugins, found.PluginID) {
+			plugins = append(plugins, found.PluginID)
+		}
+	}
+	if len(plugins) > 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), DetectLimit)
+		defer cancel()
+		for _, pluginID := range plugins {
+			o.detected.Detect(ctx, pluginID)
+		}
+	}
+	return o.listConnections()
 }
 
 func (o operation) getAvailableType(typeID string) (connection.Type, error) {
@@ -254,7 +278,7 @@ func (o operation) buildEntry(ctx context.Context, one connection.Connection) (E
 	}
 	entry := Entry{
 		ID: one.ID, TypeID: one.TypeID, Name: one.Name, Revision: one.Revision,
-		Fields: map[string]any{}, Uses: uses, IsBuiltIn: connection.IsBuiltIn(one.ID),
+		Fields: map[string]any{}, Uses: uses, IsDetected: connection.IsDetected(one.ID),
 	}
 	found, isFound := o.types.GetType(one.TypeID)
 	if !isFound {

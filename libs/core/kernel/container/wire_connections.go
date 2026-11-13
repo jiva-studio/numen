@@ -28,7 +28,7 @@ func openConnectionRows(c pluginsWiring) *settingsadapter.ConnectionRows {
 	s := c.settings
 	return settingsadapter.NewConnectionRows(settingsadapter.ConnectionRowsSource{
 		Connections: openConnectionRepository(s),
-		Types:       c.PluginHost.Views.Types,
+		Detected:    getDetected(c),
 		Plugins:     settingsPlugins(s),
 		Declared:    getDeclarations(s),
 		ReadStored:  settingsStore(s).ReadUncheckedFile,
@@ -42,7 +42,19 @@ func openConnectionDeps(c pluginsWiring) (connection.Deps, bool) {
 	if !hasPluginHost(c) {
 		return connection.Deps{}, false
 	}
-	return connection.NewDeps(openConnectionRepository(c.settings), c.PluginHost.Views.Types, c.KeyStore, openConnectionRows(c)), true
+	deps := connection.NewDeps(openConnectionRepository(c.settings), c.PluginHost.Views.Types, c.KeyStore, openConnectionRows(c))
+	return deps.WithDetected(getDetected(c)), true
+}
+
+// getDetected returns the detection of the plugin host, which tells the windows when an answer changed the
+// connections; a host made without one detects nothing.
+func getDetected(c pluginsWiring) connectionport.Detected {
+	detection := c.PluginHost.Detection
+	if detection == nil {
+		return connection.NewDetection(c.PluginHost.Views.Types, providerbridge.NewSource(c.PluginHost.Runtime))
+	}
+	detection.Follow(func() { refreshSettingEvents(c.settings) }, c.settings.ErrorHandler)
+	return detection
 }
 
 func openConnectionUseCases(c pluginsWiring) *windowconnection.UseCases {

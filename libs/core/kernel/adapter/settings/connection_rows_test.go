@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 const (
@@ -29,24 +28,25 @@ func (c fixedConnections) ChangeConnections(func([]connection.Connection) ([]con
 	return errors.New("not used")
 }
 
-// builtInTypes is two built-in types: Kite of an enabled plugin and Wren of a disabled one.
-type builtInTypes struct{}
+// fixedDetection has detected Kite agent of the type kite, and the provider of the type heron has not answered yet.
+type fixedDetection struct{}
 
-func (builtInTypes) ListTypes() []connection.Type {
-	return []connection.Type{
-		{PluginID: "org.example.agents", IsAvailable: true, Declaration: manifest.ConnectionType{ID: "kite", Title: "Kite", IsBuiltIn: true}},
-		{PluginID: "org.example.gone", IsAvailable: false, Declaration: manifest.ConnectionType{ID: "wren", Title: "Wren", IsBuiltIn: true}},
-	}
+const (
+	kiteAgentID  = "org.example.agents/kite/Kite agent"
+	heronTypeID  = "org.example.agents/heron"
+	heronAgentID = heronTypeID + "/Heron agent"
+	wrenAgentID  = "org.example.gone/wren/Wren agent"
+)
+
+func (fixedDetection) ListDetected() []connection.Connection {
+	return []connection.Connection{{ID: kiteAgentID, TypeID: "org.example.agents/kite", Name: "Kite agent"}}
 }
 
-func (t builtInTypes) GetType(typeID string) (connection.Type, bool) {
-	for _, one := range t.ListTypes() {
-		if one.GetID() == typeID {
-			return one, true
-		}
-	}
-	return connection.Type{}, false
-}
+func (fixedDetection) IsPending(typeID string) bool { return typeID == heronTypeID }
+
+func (fixedDetection) Detect(context.Context, string) {}
+
+func (fixedDetection) Refresh() {}
 
 func rowsSetting(key, operation string, isShown bool, value string) plugin.Setting {
 	return plugin.Setting{Key: key, Type: "connections", Operations: []string{operation}, IsShown: isShown, ValueJSON: value}
@@ -69,7 +69,7 @@ type rowsWorld struct {
 func (w *rowsWorld) rows() *settings.ConnectionRows {
 	return settings.NewConnectionRows(settings.ConnectionRowsSource{
 		Connections: fixedConnections{{ID: workID, Name: "Work"}, {ID: homeID, Name: "Ollama"}},
-		Types:       builtInTypes{},
+		Detected:    fixedDetection{},
 		Plugins:     func() []plugin.Info { return w.plugins },
 		Declared:    declaredWithRows,
 		ReadStored:  func() (settings.File, error) { return w.stored, nil },
@@ -156,15 +156,15 @@ func TestReadRowSettingReturnsOnlyRowsOfExistingConnections(t *testing.T) {
 	}
 }
 
-func TestReadRowSettingKeepsTheRowOfABuiltInConnectionOfAnEnabledPlugin(t *testing.T) {
+func TestReadRowSettingKeepsTheRowsOfADetectedConnectionAndOfATypeNotAnsweredYet(t *testing.T) {
 	world := newRowsWorld()
 	world.plugins[1] = rowsPlugin(rowsPluginID, "Proofreading", rowsSetting("connections", "llm.complete", true,
-		`[{"connection":"org.example.gone/wren"},{"connection":"org.example.agents/kite","model":"kite-small"}]`))
+		`[{"connection":"`+wrenAgentID+`"},{"connection":"`+kiteAgentID+`","model":"kite-small"},{"connection":"`+heronAgentID+`"}]`))
 
 	rows, err := readRows(world, rowsPluginID, "llm.complete")
 
-	if err != nil || len(rows) != 1 || rows[0].ConnectionID != "org.example.agents/kite" || rows[0].Options["model"] != "kite-small" {
-		t.Errorf("rows = %v, %v, want the row of Kite only", rows, err)
+	if err != nil || len(rows) != 2 || rows[0].ConnectionID != kiteAgentID || rows[0].Options["model"] != "kite-small" || rows[1].ConnectionID != heronAgentID {
+		t.Errorf("rows = %v, %v, want the rows of Kite agent and Heron agent", rows, err)
 	}
 }
 

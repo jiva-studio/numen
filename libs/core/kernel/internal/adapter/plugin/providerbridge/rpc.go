@@ -100,6 +100,24 @@ func (p *provider) ListOptions(
 	return options, nil
 }
 
+// ListDetected calls connections.detected with an empty payload and reads the numen.v1.DetectedConnections of its
+// done frame. A done frame that holds no DetectedConnections is an invalid request.
+func (p *provider) ListDetected(ctx context.Context, call modelcall.ProviderCall) ([]modelcall.DetectedConnection, error) {
+	done, err := p.Call(ctx, connection.OperationDetected, call, nil, func([]byte) error { return nil })
+	if err != nil {
+		return nil, err
+	}
+	var listed v1.DetectedConnections
+	if err := proto.Unmarshal(done, &listed); err != nil {
+		return nil, &connection.StopError{Reason: connection.FailureReasonInvalidRequest}
+	}
+	found := make([]modelcall.DetectedConnection, len(listed.GetConnections()))
+	for i, one := range listed.GetConnections() {
+		found[i] = modelcall.DetectedConnection{Name: one.GetName(), Fields: one.GetFields()}
+	}
+	return found, nil
+}
+
 func writeCall(call modelcall.ProviderCall) *v1.ProviderCall {
 	secrets := make([]*v1.ProviderSecret, 0, len(call.Secrets))
 	for key, value := range call.Secrets {

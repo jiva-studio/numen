@@ -73,11 +73,9 @@ message ProviderConnectionType {
   repeated ManifestConnectionField row_fields = 9;
   // is_available is whether the plugin is installed and enabled.
   bool is_available = 8;
-  // is_built_in is whether the core lists one connection of the type while the plugin is enabled.
-  bool is_built_in = 10;
 }
 
-// ProviderConnection is a stored connection. No secret value is part of it.
+// ProviderConnection is a stored connection or a detected one. No secret value is part of it.
 message ProviderConnection {
   string id = 1;
   string type_id = 2;
@@ -95,9 +93,9 @@ message ProviderConnection {
   bool is_complete = 9;
   // uses are the settings of plugins whose rows name the connection.
   repeated ProviderConnectionUse uses = 7;
-  // is_built_in marks the connection the core lists for a type that declares built_in. Its id is the
-  // type id; it is not stored, and it cannot be changed or deleted.
-  bool is_built_in = 10;
+  // is_detected marks a connection the provider of its type reported ready on this machine through the
+  // operation connections.detected. It is not stored, and it cannot be changed or deleted.
+  bool is_detected = 10;
 }
 
 // ProviderConnectionUse is a setting of rows of a plugin that names a connection.

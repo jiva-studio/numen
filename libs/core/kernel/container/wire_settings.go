@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
@@ -16,6 +17,7 @@ import (
 	machineadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -142,8 +144,10 @@ func getRegistries(c settingsWiring) settingsadapter.Registries {
 		switch name {
 		case settingsadapter.RegistryConnections:
 			return listConnectionIDs(c)
-		case settingsadapter.RegistryBuiltInConnections:
-			return settingsadapter.ListBuiltInConnectionIDs(c.PluginHost.Views.Types), true
+		case settingsadapter.RegistryDetectedConnections:
+			return settingsadapter.ListDetectedConnectionIDs(getHostDetection(c)), true
+		case settingsadapter.RegistryPendingDetections:
+			return settingsadapter.ListPendingDetections(c.PluginHost.Views.Types, getHostDetection(c)), true
 		}
 		return themes(name)
 	}
@@ -236,7 +240,11 @@ func feed(c settingsWiring) settingevents.Feed {
 	return settingevents.Feed{
 		Events:  c.SettingEvents,
 		GetPath: func() (string, error) { return settingsSettingsFile(c) },
-		Read:    list.Execute,
+		Read: func() (settingsdomain.Values, error) {
+			values, err := list.Execute()
+			addDetectedConnections(c, values)
+			return values, err
+		},
 		Initial: func() settingsdomain.Values {
 			values, err := list.ListDefaults()
 			if err != nil {
@@ -314,4 +322,23 @@ func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
 		return themefiles.OpenAt(folder, c.Watches.GetShared())
 	}
 	return themefiles.Open(c.Watches.GetShared())
+}
+
+// getHostDetection returns the detection of the plugin host, and none where the host has none.
+func getHostDetection(c settingsWiring) connectionport.Detected {
+	if c.PluginHost.Detection == nil {
+		return nil
+	}
+	return c.PluginHost.Detection
+}
+
+// addDetectedConnections adds the ids of the detected connections to the values a window follows.
+func addDetectedConnections(c settingsWiring, values settingsdomain.Values) {
+	ids := settingsadapter.ListDetectedConnectionIDs(getHostDetection(c))
+	if values == nil || len(ids) == 0 {
+		return
+	}
+	if encoded, err := json.Marshal(ids); err == nil {
+		values[settingsdomain.JoinPath([]string{settingsdomain.DetectedConnectionsKey})] = string(encoded)
+	}
 }

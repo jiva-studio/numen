@@ -14,14 +14,14 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// ConnectionRowsSource is what the rows of the plugins are read from and written to. Types gives the
-// built-in connections, which a row names as it names a stored one. Plugins lists
+// ConnectionRowsSource is what the rows of the plugins are read from and written to. Detected gives the
+// connections the providers detected, which a row names as it names a stored one. Plugins lists
 // the plugins with the value in force of each setting. ReadStored reads the settings file as it is
 // stored. Write is the path every write of a setting takes. Report receives the failures of a
 // plugin that cannot be configured.
 type ConnectionRowsSource struct {
 	Connections connectionport.Repository
-	Types       connectionport.Types
+	Detected    connectionport.Detected
 	Plugins     func() []plugin.Info
 	Declared    Declarations
 	ReadStored  func() (File, error)
@@ -41,7 +41,8 @@ func NewConnectionRows(source ConnectionRowsSource) *ConnectionRows {
 
 // ReadRowSetting returns the setting of rows of the plugin that is used for the operation: its rows in force in the
 // order the person set, and whether it discovers. A plugin with no such setting, and a setting that is not
-// shown, has no row and does not discover. A row that names a connection that does not exist is left out.
+// shown, has no row and does not discover. A row that names a connection that does not exist is left out; a
+// row that names a connection detected for a type whose provider has not answered yet is kept.
 func (r *ConnectionRows) ReadRowSetting(pluginID, operation string) (connection.RowSetting, error) {
 	for _, plugin := range r.source.Plugins() {
 		if plugin.ID != pluginID {
@@ -67,10 +68,15 @@ func (r *ConnectionRows) readExistingRows(valueJSON string) ([]connection.Row, e
 		return nil, err
 	}
 	exists := make(map[string]bool, len(connections))
-	for _, one := range append(connections, connection.ListBuiltIns(r.source.Types.ListTypes())...) {
+	for _, one := range append(connections, r.source.Detected.ListDetected()...) {
 		exists[one.ID] = true
 	}
-	return slices.DeleteFunc(rows, func(row connection.Row) bool { return !exists[row.ConnectionID] }), nil
+	return slices.DeleteFunc(rows, func(row connection.Row) bool { return !exists[row.ConnectionID] && !r.isPending(row.ConnectionID) }), nil
+}
+
+func (r *ConnectionRows) isPending(connectionID string) bool {
+	typeID, _, isDetected := connection.SplitDetectedID(connectionID)
+	return isDetected && r.source.Detected.IsPending(typeID)
 }
 
 func readRowsJSON(valueJSON string) []connection.Row {

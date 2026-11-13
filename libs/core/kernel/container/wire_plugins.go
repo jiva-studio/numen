@@ -11,11 +11,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	connectionusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -129,6 +131,7 @@ type PluginHost struct {
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
 	Health              *pluginhealth.Items
+	Detection           *connectionusecase.Detection
 }
 
 // AdaptPluginHost lends the capabilities of host, the roles of a plugin host the caller made with NewPluginRoles, to the container. The
@@ -138,6 +141,9 @@ func AdaptPluginHost(host *PluginRoles) *PluginHost {
 }
 
 func adaptPluginHost(host *PluginRoles) *PluginHost {
+	types := plugin.NewConnectionTypes(host.Registry)
+	detection := connectionusecase.NewDetection(types, providerbridge.NewSource(host.Activation))
+	host.Activation.SetOnStart(detection.DetectInBackground)
 	return &PluginHost{
 		Runtime: PluginRuntime{
 			Activator:          host.Activation,
@@ -170,13 +176,14 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 			Health: host.Health,
 		}).Execute,
 		Views: PluginViews{
-			Types: plugin.NewConnectionTypes(host.Registry), Operations: plugin.NewConnectionTypes(host.Registry),
+			Types: types, Operations: types,
 			Infos: host.Registry, Checks: host.Settings,
 			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
 		},
 		SetStorage:          func(cacheRoot, dataRoot string) { setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry) },
 		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
 		Health:              host.Health,
+		Detection:           detection,
 	}
 }
 

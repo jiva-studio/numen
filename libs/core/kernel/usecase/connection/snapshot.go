@@ -15,10 +15,12 @@ import (
 // Resolve reads a connection and its type as a call to the provider needs them.
 type Resolve struct{ operation }
 
-// Execute returns the connection with the id. It fails with connection.ErrNotFound for an id not in the list and
+// Execute returns the connection with the id. A detected connection of a type whose provider has not reported
+// what it detects yet is asked for first. It fails with connection.ErrNotFound for an id not in the list and
 // with connection.ErrTypeUnavailable where no enabled plugin provides the type.
 func (u *Resolve) Execute(connectionID string) (connection.Resolved, error) {
-	list, err := u.listConnections()
+	typeID, _, _ := connection.SplitDetectedID(connectionID)
+	list, err := u.listConnectionsAfterDetection([]string{typeID})
 	if err != nil {
 		return connection.Resolved{}, err
 	}

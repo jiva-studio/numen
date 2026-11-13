@@ -25,6 +25,7 @@ type Provider struct {
 	always   map[string]error
 	blocked  map[string]chan struct{}
 	scripts  map[string]script
+	detected map[string][]modelcall.DetectedConnection
 	recorded []Recorded
 	entered  chan string
 }
@@ -33,7 +34,8 @@ type Provider struct {
 func NewProvider() *Provider {
 	return &Provider{
 		queued: map[string][]error{}, always: map[string]error{}, blocked: map[string]chan struct{}{}, scripts: map[string]script{},
-		entered: make(chan string, 256),
+		detected: map[string][]modelcall.DetectedConnection{},
+		entered:  make(chan string, 256),
 	}
 }
 
@@ -148,6 +150,20 @@ func (p *Provider) ListOptions(
 	return []modelcall.Option{
 		{Value: "model-1", Title: "Model one", Group: strings.Join(operations, " ")}, {Value: "model-2"},
 	}, nil
+}
+
+// SetDetected makes connections.detected of the type, by its id in the manifest, answer the connections.
+func (p *Provider) SetDetected(typeID string, found ...modelcall.DetectedConnection) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.detected[typeID] = found
+}
+
+// ListDetected answers the connections set for the type of call; it is not recorded as a call.
+func (p *Provider) ListDetected(_ context.Context, call modelcall.ProviderCall) ([]modelcall.DetectedConnection, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.detected[call.Type], nil
 }
 
 // Entered receives the address of each call as the provider takes it.

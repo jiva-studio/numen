@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
@@ -214,6 +215,7 @@ type World struct {
 	Waits       *Waits
 	Clock       *Clock
 	Types       *fixedTypes
+	Detection   *connectionuse.Detection
 	repository  *memoryRepository
 	next        int
 }
@@ -253,7 +255,8 @@ func New() *World {
 		Clock: &Clock{now: time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)}, Types: types, repository: &memoryRepository{},
 	}
 	w.Source = NewSource(w.Provider)
-	w.Connections = connectiontest.New(w.repository, types, w.Keys, NoUses{}, func() (string, error) {
+	w.Detection = connectionuse.NewDetection(types, w.Source)
+	w.Connections = connectiontest.NewWithDetected(w.repository, types, w.Keys, NoUses{}, w.Detection, func() (string, error) {
 		w.next++
 		return fmt.Sprintf("c%08x", w.next), nil
 	})
@@ -417,13 +420,16 @@ func newEntry(created connectionuse.Entry) Entry {
 	return Entry{ID: created.ID, Name: created.Name, Revision: created.Revision, Fields: created.Fields}
 }
 
-// AddBuiltIn adds a built-in type of the first plugin, titled name, whose calls go to the address, and returns
-// its connection.
-func (w *World) AddBuiltIn(name, address string) Entry {
+// AddDetected adds a type of the first plugin whose calls go to the address, and the connection its provider
+// detects, named name.
+func (w *World) AddDetected(t *testing.T, name, address string) Entry {
+	t.Helper()
 	declared := manifest.ConnectionType{
-		ID: "built-in", Title: name, IsBuiltIn: true, Operations: getCompleteOnly(),
+		ID: "detecting", Title: "Detecting", Operations: append(getCompleteOnly(), connection.OperationDetected),
 		Fields: []manifest.ConnectionField{{Key: addressField, Type: textField, Title: "Address", FixedValue: &address}},
 	}
 	w.Types.list = append(w.Types.list, connection.Type{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: declared})
-	return Entry{ID: manifest.GetConnectionTypeID(ProviderPluginID, declared.ID), Name: name, Fields: map[string]any{}}
+	w.Provider.SetDetected(declared.ID, modelcall.DetectedConnection{Name: name})
+	w.Detection.Detect(t.Context(), ProviderPluginID)
+	return Entry{ID: connection.GetDetectedID(manifest.GetConnectionTypeID(ProviderPluginID, declared.ID), name), Name: name, Fields: map[string]any{}}
 }

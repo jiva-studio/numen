@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/provider.proto.
  */
 export const file_numen_v1_provider: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9wcm92aWRlci5wcm90bxIIbnVtZW4udjEipwIKDFByb3ZpZGVyQ2FsbBIVCg1jb25uZWN0aW9uX2lkGAEgASgJEgwKBHR5cGUYAiABKAkSMgoGZmllbGRzGAMgAygLMiIubnVtZW4udjEuUHJvdmlkZXJDYWxsLkZpZWxkc0VudHJ5EikKB3NlY3JldHMYBCADKAsyGC5udW1lbi52MS5Qcm92aWRlclNlY3JldBI0CgdvcHRpb25zGAUgAygLMiMubnVtZW4udjEuUHJvdmlkZXJDYWxsLk9wdGlvbnNFbnRyeRotCgtGaWVsZHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBGi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIjEKDlByb3ZpZGVyU2VjcmV0EgsKA2tleRgBIAEoCRISCgV2YWx1ZRgCIAEoCUIDgAEBIogBCg9Qcm92aWRlckZhaWx1cmUSIwoEa2luZBgBIAEoDjIVLm51bWVuLnYxLkZhaWx1cmVLaW5kEicKBnJlYXNvbhgCIAEoDjIXLm51bWVuLnYxLkZhaWx1cmVSZWFzb24SFgoOcmV0cnlfYWZ0ZXJfbXMYAyABKAMSDwoHbWVzc2FnZRgEIAEoCSJmChpQcm92aWRlclNlcnZpY2VDYWxsUmVxdWVzdBIRCglvcGVyYXRpb24YASABKAkSJAoEY2FsbBgCIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBIPCgdwYXlsb2FkGAMgASgMInQKG1Byb3ZpZGVyU2VydmljZUNhbGxSZXNwb25zZRIOCgRkYXRhGAEgASgMSAASDgoEZG9uZRgCIAEoDEgAEiwKB2ZhaWx1cmUYAyABKAsyGS5udW1lbi52MS5Qcm92aWRlckZhaWx1cmVIAEIHCgVmcmFtZSpdCgtGYWlsdXJlS2luZBIcChhGQUlMVVJFX0tJTkRfVU5TUEVDSUZJRUQQABIZChVGQUlMVVJFX0tJTkRfVFJZX05FWFQQARIVChFGQUlMVVJFX0tJTkRfU1RPUBACKtoBCg1GYWlsdXJlUmVhc29uEh4KGkZBSUxVUkVfUkVBU09OX1VOU1BFQ0lGSUVEEAASHwobRkFJTFVSRV9SRUFTT05fUkVKRUNURURfS0VZEAESIwofRkFJTFVSRV9SRUFTT05fUEFZTUVOVF9SRVFVSVJFRBACEh8KG0ZBSUxVUkVfUkVBU09OX1JBVEVfTElNSVRFRBADEh4KGkZBSUxVUkVfUkVBU09OX1VOQVZBSUxBQkxFEAQSIgoeRkFJTFVSRV9SRUFTT05fSU5WQUxJRF9SRVFVRVNUEAUyaAoPUHJvdmlkZXJTZXJ2aWNlElUKBENhbGwSJC5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VDYWxsUmVxdWVzdBolLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUNhbGxSZXNwb25zZTABQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChdudW1lbi92MS9wcm92aWRlci5wcm90bxIIbnVtZW4udjEipwIKDFByb3ZpZGVyQ2FsbBIVCg1jb25uZWN0aW9uX2lkGAEgASgJEgwKBHR5cGUYAiABKAkSMgoGZmllbGRzGAMgAygLMiIubnVtZW4udjEuUHJvdmlkZXJDYWxsLkZpZWxkc0VudHJ5EikKB3NlY3JldHMYBCADKAsyGC5udW1lbi52MS5Qcm92aWRlclNlY3JldBI0CgdvcHRpb25zGAUgAygLMiMubnVtZW4udjEuUHJvdmlkZXJDYWxsLk9wdGlvbnNFbnRyeRotCgtGaWVsZHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBGi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIjEKDlByb3ZpZGVyU2VjcmV0EgsKA2tleRgBIAEoCRISCgV2YWx1ZRgCIAEoCUIDgAEBIogBCg9Qcm92aWRlckZhaWx1cmUSIwoEa2luZBgBIAEoDjIVLm51bWVuLnYxLkZhaWx1cmVLaW5kEicKBnJlYXNvbhgCIAEoDjIXLm51bWVuLnYxLkZhaWx1cmVSZWFzb24SFgoOcmV0cnlfYWZ0ZXJfbXMYAyABKAMSDwoHbWVzc2FnZRgEIAEoCSJmChpQcm92aWRlclNlcnZpY2VDYWxsUmVxdWVzdBIRCglvcGVyYXRpb24YASABKAkSJAoEY2FsbBgCIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBIPCgdwYXlsb2FkGAMgASgMIkgKE0RldGVjdGVkQ29ubmVjdGlvbnMSMQoLY29ubmVjdGlvbnMYASADKAsyHC5udW1lbi52MS5EZXRlY3RlZENvbm5lY3Rpb24iiwEKEkRldGVjdGVkQ29ubmVjdGlvbhIMCgRuYW1lGAEgASgJEjgKBmZpZWxkcxgCIAMoCzIoLm51bWVuLnYxLkRldGVjdGVkQ29ubmVjdGlvbi5GaWVsZHNFbnRyeRotCgtGaWVsZHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBInQKG1Byb3ZpZGVyU2VydmljZUNhbGxSZXNwb25zZRIOCgRkYXRhGAEgASgMSAASDgoEZG9uZRgCIAEoDEgAEiwKB2ZhaWx1cmUYAyABKAsyGS5udW1lbi52MS5Qcm92aWRlckZhaWx1cmVIAEIHCgVmcmFtZSpdCgtGYWlsdXJlS2luZBIcChhGQUlMVVJFX0tJTkRfVU5TUEVDSUZJRUQQABIZChVGQUlMVVJFX0tJTkRfVFJZX05FWFQQARIVChFGQUlMVVJFX0tJTkRfU1RPUBACKtoBCg1GYWlsdXJlUmVhc29uEh4KGkZBSUxVUkVfUkVBU09OX1VOU1BFQ0lGSUVEEAASHwobRkFJTFVSRV9SRUFTT05fUkVKRUNURURfS0VZEAESIwofRkFJTFVSRV9SRUFTT05fUEFZTUVOVF9SRVFVSVJFRBACEh8KG0ZBSUxVUkVfUkVBU09OX1JBVEVfTElNSVRFRBADEh4KGkZBSUxVUkVfUkVBU09OX1VOQVZBSUxBQkxFEAQSIgoeRkFJTFVSRV9SRUFTT05fSU5WQUxJRF9SRVFVRVNUEAUyaAoPUHJvdmlkZXJTZXJ2aWNlElUKBENhbGwSJC5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VDYWxsUmVxdWVzdBolLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUNhbGxSZXNwb25zZTABQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * ProviderCall is the connection one call is made for: a snapshot the core reads at the start of the call.
@@ -147,6 +147,52 @@ export const ProviderServiceCallRequestSchema: GenMessage<ProviderServiceCallReq
   messageDesc(file_numen_v1_provider, 3);
 
 /**
+ * DetectedConnections is the done frame of the operation connections.detected, which the core calls with an
+ * empty payload and a call that names the type and no connection: the connections of the type the provider
+ * found ready on this machine, none when it found nothing.
+ *
+ * @generated from message numen.v1.DetectedConnections
+ */
+export type DetectedConnections = Message<"numen.v1.DetectedConnections"> & {
+  /**
+   * @generated from field: repeated numen.v1.DetectedConnection connections = 1;
+   */
+  connections: DetectedConnection[];
+};
+
+/**
+ * Describes the message numen.v1.DetectedConnections.
+ * Use `create(DetectedConnectionsSchema)` to create a new message.
+ */
+export const DetectedConnectionsSchema: GenMessage<DetectedConnections> = /*@__PURE__*/
+  messageDesc(file_numen_v1_provider, 4);
+
+/**
+ * DetectedConnection is one connection a provider found. name is unique within the type. fields are the
+ * values of the fields of the type that are not secret, by key; a field left out takes its default.
+ *
+ * @generated from message numen.v1.DetectedConnection
+ */
+export type DetectedConnection = Message<"numen.v1.DetectedConnection"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: map<string, string> fields = 2;
+   */
+  fields: { [key: string]: string };
+};
+
+/**
+ * Describes the message numen.v1.DetectedConnection.
+ * Use `create(DetectedConnectionSchema)` to create a new message.
+ */
+export const DetectedConnectionSchema: GenMessage<DetectedConnection> = /*@__PURE__*/
+  messageDesc(file_numen_v1_provider, 5);
+
+/**
  * ProviderServiceCallResponse is one frame of a call.
  *
  * @generated from message numen.v1.ProviderServiceCallResponse
@@ -183,7 +229,7 @@ export type ProviderServiceCallResponse = Message<"numen.v1.ProviderServiceCallR
  * Use `create(ProviderServiceCallResponseSchema)` to create a new message.
  */
 export const ProviderServiceCallResponseSchema: GenMessage<ProviderServiceCallResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_provider, 4);
+  messageDesc(file_numen_v1_provider, 6);
 
 /**
  * FailureKind is what the core does after a call fails.
