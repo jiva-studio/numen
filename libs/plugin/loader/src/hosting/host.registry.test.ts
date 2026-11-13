@@ -309,6 +309,19 @@ describe('a tab kind opened as the editor of a path', () => {
     expect(unregSpy).toHaveBeenCalledTimes(1)
   })
 
+  it('reveals the line it is opened at in the editor of the new tab', async () => {
+    const revealLine = vi.fn()
+    const openTab = vi.fn(async () => 'tab-1')
+    const deps = createDeps({ openTab, getTabState: () => ({ revealLine }) })
+    const { open } = registerKind(deps)
+
+    open('Samples/One.md', 'One', { where: 'current', line: 12 })
+    open('Samples/Two.md', 'Two', { where: 'current' })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(revealLine.mock.calls).toStrictEqual([[12]])
+  })
+
   it('opens the tab in the current pane for any other option and tolerates non-function unreg', () => {
     const deps = createDeps()
     const { open, sub } = registerKind(deps, undefined)

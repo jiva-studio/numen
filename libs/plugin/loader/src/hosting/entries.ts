@@ -15,7 +15,7 @@ import { reportError } from './events'
 import { createReaderTabKind, createCustomTabKind } from './customTabKind'
 import { getReaderKindId } from './tabKinds'
 import { createDeclaredTabKind, isDeclaredTabKind } from './pluginTabKind'
-import type { PluginHostDeps } from './types'
+import type { EditorPlacement, PluginHostDeps } from './types'
 import type { PluginItemRegistration, RegisteredReader, RegisteredTabKind } from './registry'
 
 /** The entries that own the ids of the tabs a window holds: the tab kinds and the readers. */
@@ -104,10 +104,14 @@ export function registerReaderEntry(
   return { dispose: entry.cleanup }
 }
 
-function extractWhere(
-  options?: FilePlacement | { readonly where?: FilePlacement | undefined },
-): FilePlacement | undefined {
+type EditorOpenOptions = FilePlacement | EditorPlacement | null | undefined
+
+function extractWhere(options?: EditorOpenOptions): FilePlacement | undefined {
   return typeof options === 'string' ? options : options?.where
+}
+
+function extractLine(options?: EditorOpenOptions): number | undefined {
+  return typeof options === 'object' ? options?.line : undefined
 }
 
 export function registerTabKindEntry(
@@ -127,15 +131,19 @@ export function registerTabKindEntry(
     if (deps.registerEditor) {
       const unreg = deps.registerEditor(registration.kind, (path, _title, options) => {
         const where = extractWhere(options)
-        if (where === 'split' && deps.openTabAdjacent) {
-          deps
-            .openTabAdjacent(registration.kind, path)
-            .catch((error: Caught) => reportError(deps, pluginId, error))
-        } else {
-          deps
-            .openTab(registration.kind, path)
-            .catch((error: Caught) => reportError(deps, pluginId, error))
-        }
+        const line = extractLine(options)
+        const opening =
+          where === 'split' && deps.openTabAdjacent
+            ? deps.openTabAdjacent(registration.kind, path)
+            : deps.openTab(registration.kind, path)
+        opening
+          .then((tabId) => {
+            if (line === undefined) return
+            const state = deps.getTabState?.(tabId) as
+              { revealLine?: (line: number) => void } | undefined
+            state?.revealLine?.(line)
+          })
+          .catch((error: Caught) => reportError(deps, pluginId, error))
       })
       if (typeof unreg === 'function') cleanups.push(unreg)
     }
