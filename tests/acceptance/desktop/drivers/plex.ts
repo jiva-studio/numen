@@ -54,12 +54,26 @@ export class PlexDriver {
     return node
   }
 
+  /** A part of a note (its pill, its handle, its headings): in the node, or in the layer over the notes once the note is open. */
+  private async getPart(title: string, selector: string): Promise<Locator> {
+    const graph = await this.getGraph()
+    const lifted = graph
+      .locator('.plex__lifted')
+      .filter({ has: graph.locator('.plex__title-text').filter({ hasText: getWholeText(title) }) })
+    return (await this.getNode(title)).locator(selector).or(lifted.locator(selector))
+  }
+
+  private async hoverNote(title: string): Promise<void> {
+    await this.findNode(title)
+    await (await this.getPart(title, '.plex__box')).hover()
+  }
+
   async restPointerOn(title: string): Promise<void> {
-    await (await this.findNode(title)).hover()
+    await this.hoverNote(title)
   }
 
   async expectShowsHeading(heading: string, title: string, has: boolean): Promise<void> {
-    const headings = (await this.getNode(title)).locator('.plex__heading-text').filter({ hasText: getWholeText(heading) })
+    const headings = (await this.getPart(title, '.plex__heading-text')).filter({ hasText: getWholeText(heading) })
     if (has) {
       await expect(headings).toHaveCount(1)
       return
@@ -77,9 +91,8 @@ export class PlexDriver {
   }
 
   async enterHeading(heading: string, title: string): Promise<void> {
-    const node = await this.findNode(title)
-    await node.hover()
-    await node.locator('.plex__heading').filter({ hasText: getWholeText(heading) }).click()
+    await this.hoverNote(title)
+    await (await this.getPart(title, '.plex__heading')).filter({ hasText: getWholeText(heading) }).click()
   }
 
   async choose(reference: string, name: string): Promise<void> {
@@ -98,7 +111,7 @@ export class PlexDriver {
     for (const [title, side] of getTableBody(rows, ['title', 'side'])) {
       const sides = parseSides(side)
       await expect
-        .poll(async () => isOnSides(sides, await getMiddle(await this.findNode(title)), await getMiddle(focus)), {
+        .poll(async () => isOnSides(sides, await getMiddle(await this.getPart(title, '.plex__box')), await getMiddle(focus.locator('.plex__box'))), {
           message: `the note "${title}" is not ${side} of the focus note`,
         })
         .toBe(true)
@@ -106,9 +119,8 @@ export class PlexDriver {
   }
 
   async clickHandle(title: string, toTitle: string): Promise<void> {
-    const node = await this.findNode(title)
-    await node.hover()
-    await (await this.waitForHandle(node)).click()
+    await this.hoverNote(title)
+    await (await this.waitForHandle(title)).click()
     await this.pick(toTitle, toTitle)
   }
 
@@ -125,8 +137,8 @@ export class PlexDriver {
   }
 
   /** The handle of a node, once it is shown and has stopped moving. */
-  private async waitForHandle(node: Locator): Promise<Locator> {
-    const handle = node.locator('.plex__handle')
+  private async waitForHandle(title: string): Promise<Locator> {
+    const handle = await this.getPart(title, '.plex__handle')
     await expect(handle).toBeVisible()
     let before = ''
     await expect
@@ -142,11 +154,10 @@ export class PlexDriver {
 
   /** Drags from the handle of a note in the direction of a relation, and picks or makes the note in the popover that opens there. */
   async dragLine(direction: string, title: string, target: { title: string; isNew: boolean }): Promise<void> {
-    const node = await this.findNode(title)
-    await node.hover()
+    await this.hoverNote(title)
     const [dx, dy] = getDirectionStep(direction)
-    const handle = await getMiddle(await this.waitForHandle(node))
-    const middle = await getMiddle(getPill(node))
+    const handle = await getMiddle(await this.waitForHandle(title))
+    const middle = await getMiddle(await this.getPart(title, '.plex__box'))
     const length = Math.min(DRAG_LENGTH, (await this.measureRoom(middle, dx, dy)) - DRAG_MARGIN)
     const end = { x: middle.x + dx * length, y: middle.y + dy * length }
     await this.expectEmptyPlace(end)
@@ -156,10 +167,9 @@ export class PlexDriver {
 
   /** Drags from the handle of a note onto another note of the plex, which is a link of the kind its place gives it. */
   async dragOnto(title: string, toTitle: string): Promise<void> {
-    const node = await this.findNode(title)
-    await node.hover()
-    const handle = await getMiddle(await this.waitForHandle(node))
-    await this.drag(handle, await getMiddle(getPill(await this.findNode(toTitle))))
+    await this.hoverNote(title)
+    const handle = await getMiddle(await this.waitForHandle(title))
+    await this.drag(handle, await getMiddle(await this.getPart(toTitle, '.plex__box')))
   }
 
   /** How far the plex reaches from a point in a direction. */
@@ -365,9 +375,6 @@ const HEADINGS_HOLD_MS = 2 * HEADINGS_OPEN_WAIT_MS + 300
 const HOLD_STEP_MS = 100
 
 const getWholeText = (text: string): RegExp => new RegExp(`^${escapeRegExp(text)}$`)
-
-/** The pill of a node: the box its title is drawn in. */
-const getPill = (node: Locator): Locator => node.locator('.plex__box')
 
 const getMiddle = async (element: Locator): Promise<Point> => {
   const box = await element.boundingBox()
