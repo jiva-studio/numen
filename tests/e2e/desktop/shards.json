@@ -8,7 +8,6 @@
   "tests/plugins/system/startup.spec.ts": 3,
   "tests/plugins/tools.index.stats/stats.spec.ts": 25,
   "tests/plugins/views.media.viewer/mp3.spec.ts": 4,
-  "tests/plugins/views.plex.graph/references.spec.ts": 12,
   "tests/requests/embeddings-priority.spec.ts": 2,
   "tests/requests/paths-outside-the-vault.spec.ts": 1,
   "tests/shell/lifecycle/certificate.chromium.spec.ts": 1,
