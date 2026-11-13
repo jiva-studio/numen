@@ -417,11 +417,14 @@ func (*HostConnectionServiceCallResponse_Failure) isHostConnectionServiceCallRes
 
 // PreferredRow is the row a call asks first. connection_id names a connection among the rows of the plugin
 // for the operation; the call goes to it with options in place of the values of its row fields, then to
-// the other rows in order. A connection that is not among the rows is ignored.
+// the other rows in order. A connection that is not among the rows is ignored. is_exclusive asks that row
+// alone: the call ends with its failure, and with no_connection where the connection is not among the
+// rows.
 type PreferredRow struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ConnectionId  string                 `protobuf:"bytes,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
 	Options       map[string]string      `protobuf:"bytes,2,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	IsExclusive   bool                   `protobuf:"varint,3,opt,name=is_exclusive,json=isExclusive,proto3" json:"is_exclusive,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -468,6 +471,13 @@ func (x *PreferredRow) GetOptions() map[string]string {
 		return x.Options
 	}
 	return nil
+}
+
+func (x *PreferredRow) GetIsExclusive() bool {
+	if x != nil {
+		return x.IsExclusive
+	}
+	return false
 }
 
 // CallRowField is a row field the type of a connection declares. options_from is the operation that lists
@@ -833,10 +843,11 @@ const file_numen_v1_hostconnection_proto_rawDesc = "" +
 	"\x04data\x18\x01 \x01(\fH\x00R\x04data\x12\x14\n" +
 	"\x04done\x18\x02 \x01(\fH\x00R\x04done\x121\n" +
 	"\afailure\x18\x03 \x01(\v2\x15.numen.v1.CallFailureH\x00R\afailureB\a\n" +
-	"\x05frame\"\xae\x01\n" +
+	"\x05frame\"\xd1\x01\n" +
 	"\fPreferredRow\x12#\n" +
 	"\rconnection_id\x18\x01 \x01(\tR\fconnectionId\x12=\n" +
-	"\aoptions\x18\x02 \x03(\v2#.numen.v1.PreferredRow.OptionsEntryR\aoptions\x1a:\n" +
+	"\aoptions\x18\x02 \x03(\v2#.numen.v1.PreferredRow.OptionsEntryR\aoptions\x12!\n" +
+	"\fis_exclusive\x18\x03 \x01(\bR\visExclusive\x1a:\n" +
 	"\fOptionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"z\n" +
