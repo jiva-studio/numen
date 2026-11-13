@@ -171,7 +171,7 @@ function createWork(pluginId: string, host: PluginContextHost, add: Track): Plug
   return pickDefinedParts<PluginWork>({
     tasks: work.getTasks(pluginId),
     backgroundTasks: work.getBackgroundTasks(),
-    processes: work.getProcesses(),
+    processes: work.getProcesses(pluginId),
     connections: trackConnections(work.getConnections(pluginId), add),
   })
 }

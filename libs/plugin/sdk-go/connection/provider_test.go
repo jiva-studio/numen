@@ -22,7 +22,7 @@ var errPlain = errors.New("HTTP 500 from the service: Authorization: Bearer sk-l
 func newProviderClient(t *testing.T, provider Provider) numenv1connect.ProviderServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(NewHandler(provider))
+	mux.Handle(NewHandler(provider, nil))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewProviderServiceClient(server.Client(), server.URL)

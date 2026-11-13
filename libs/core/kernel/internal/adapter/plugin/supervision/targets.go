@@ -31,13 +31,13 @@ func takeTarget(s *Supervisors, pluginID string) (Target, bool) {
 	return takeTargetLocked(s, pluginID, sup, sup.GetProcessID()), true
 }
 
-func takeIdleTargets(s *Supervisors, threshold time.Duration, now time.Time) []Target {
+func takeIdleTargets(s *Supervisors, defaultLimit time.Duration, now time.Time) []Target {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var targets []Target
 	for id, sup := range s.byPlugin {
 		pid := sup.GetProcessID()
-		if sup.BeginDeactivation(threshold, now) {
+		if sup.BeginDeactivation(defaultLimit, now) {
 			targets = append(targets, takeTargetLocked(s, id, sup, pid))
 		}
 	}
@@ -54,4 +54,21 @@ func takeRunningTargets(s *Supervisors) []Target {
 		}
 	}
 	return targets
+}
+
+// takeReleasedTarget marks the plugin released, signals the watchers, and returns it as a target where it
+// already holds no lease.
+func takeReleasedTarget(s *Supervisors, pluginID string, now time.Time) []Target {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sup, ok := s.byPlugin[pluginID]
+	if !ok || !sup.MarkReleased() {
+		return nil
+	}
+	notifyLocked(s)
+	pid := sup.GetProcessID()
+	if !sup.BeginDeactivation(IdleThreshold, now) {
+		return nil
+	}
+	return []Target{takeTargetLocked(s, pluginID, sup, pid)}
 }

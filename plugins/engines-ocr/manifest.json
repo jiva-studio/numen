@@ -130,7 +130,8 @@
     }
   ],
   "backend": {
-    "entrypoint": "bin/engines-ocr"
+    "entrypoint": "bin/engines-ocr",
+    "idleStopSeconds": 600
   },
   "settings": [
     {

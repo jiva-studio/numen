@@ -83,3 +83,21 @@ describe('the plugins that run', () => {
     ])
   })
 })
+
+describe('the release of a process', () => {
+  it('names the plugin whose backend has finished its work', async () => {
+    const released: string[] = []
+    restore = installCoreAnswers({
+      pluginService: {
+        releaseProcess: (request: { pluginId: string }) => {
+          released.push(request.pluginId)
+          return {}
+        },
+      },
+    })
+
+    await processes.releaseProcess('org.example.atlas')
+
+    expect(released).toStrictEqual(['org.example.atlas'])
+  })
+})

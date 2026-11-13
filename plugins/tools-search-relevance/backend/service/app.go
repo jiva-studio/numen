@@ -5,8 +5,10 @@ package service
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/floorrecords"
@@ -21,24 +23,39 @@ const PluginID = "md.numen.tools.search.relevance"
 // Hosts is what the plugin works through the host.
 type Hosts = calibration.Hosts
 
+// Releaser tells the host that the process has finished its work.
+type Releaser interface {
+	Release(ctx context.Context) error
+}
+
 // App is the backend of the plugin. NewApp and NewAppOver make one.
 type App struct {
-	open  func() (Hosts, error)
-	clock relevance.Clock
+	open     func() (Hosts, error)
+	clock    relevance.Clock
+	releaser Releaser
 
 	calibration *calibration.Calibration
 }
 
-// NewApp returns the backend that connects to the host the process was launched for when it is mounted.
+// NewApp returns the backend that connects to the host the process was launched for when it is mounted,
+// and releases its process through that host.
 func NewApp() *App {
-	return &App{open: func() (calibration.Hosts, error) { return hostclient.OpenFromEnv(floorrecords.New) }, clock: clock.System{}, calibration: calibration.New()}
+	var releaser Releaser
+	if client, err := process.NewClientFromEnv(); err == nil {
+		releaser = client
+	}
+	return &App{
+		open:  func() (calibration.Hosts, error) { return hostclient.OpenFromEnv(floorrecords.New) },
+		clock: clock.System{}, releaser: releaser, calibration: calibration.New(),
+	}
 }
 
-// NewAppOver returns the backend over the hosts given, with measurements stamped by the clock.
-func NewAppOver(hosts Hosts, clk relevance.Clock) *App {
+// NewAppOver returns the backend over the hosts given, with measurements stamped by the clock, that
+// releases its process through releaser. A nil releaser releases nothing.
+func NewAppOver(hosts Hosts, clk relevance.Clock, releaser Releaser) *App {
 	return &App{
 		open:  func() (Hosts, error) { return hosts, nil },
-		clock: clk, calibration: calibration.New(),
+		clock: clk, releaser: releaser, calibration: calibration.New(),
 	}
 }
 
@@ -61,7 +78,18 @@ func (a *App) Mount(s *server.Server) error {
 	return service.Err()
 }
 
-// HandleEvent hands the event of the host to the calibration.
+// HandleEvent hands the event of the host to the calibration, and then releases the process: the next
+// event or call starts it again.
 func (a *App) HandleEvent(ctx context.Context, event string) error {
+	defer a.releaseProcess(ctx)
 	return a.calibration.HandleEvent(ctx, event)
+}
+
+func (a *App) releaseProcess(ctx context.Context) {
+	if a.releaser == nil {
+		return
+	}
+	if err := a.releaser.Release(ctx); err != nil {
+		slog.Warn("search relevance: release the process", "error", err)
+	}
 }

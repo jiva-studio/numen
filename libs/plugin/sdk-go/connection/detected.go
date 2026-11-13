@@ -30,13 +30,14 @@ type DetectedConnection struct {
 type DetectConnections func(ctx context.Context, call Call) ([]DetectedConnection, error)
 
 // ServeDetected is the operation connections.detected: it answers the connections detect finds as the done
-// payload.
+// payload. The handler of the provider releases the process after the answer where no other call is open.
 func ServeDetected(detect DetectConnections) Operation {
 	return func(ctx context.Context, call Call, _ []byte, _ func([]byte) error) ([]byte, error) {
 		found, err := detect(ctx, call)
 		if err != nil {
 			return nil, err
 		}
+		markLookup(ctx)
 		wire := &v1.DetectedConnections{Connections: make([]*v1.DetectedConnection, len(found))}
 		for i, one := range found {
 			wire.Connections[i] = &v1.DetectedConnection{Name: one.Name, Fields: one.Fields}

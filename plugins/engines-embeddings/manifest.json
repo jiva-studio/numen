@@ -15,7 +15,8 @@
     }
   ],
   "backend": {
-    "entrypoint": "bin/engines-embeddings"
+    "entrypoint": "bin/engines-embeddings",
+    "idleStopSeconds": 600
   },
   "settings": [
     {

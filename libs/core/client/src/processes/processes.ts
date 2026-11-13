@@ -24,8 +24,8 @@ export interface PluginProcess {
   readonly healthText: string
 }
 
-/** The calls of PluginService a window makes about the plugins that run. */
-export type ProcessRpc = Pick<Client<typeof PluginService>, 'watchPluginProcesses'>
+/** The calls of PluginService a window makes about the plugins that run and their processes. */
+export type ProcessRpc = Pick<Client<typeof PluginService>, 'watchPluginProcesses' | 'releaseProcess'>
 
 /** The plugins that run, with the time of the core when it took the list. */
 export interface PluginProcessList {
@@ -37,6 +37,11 @@ export interface PluginProcessList {
 export interface ProcessClient {
   /** The plugins that run until the signal aborts: at once and again on every change. */
   watchProcesses(signal: AbortSignal): AsyncGenerator<PluginProcessList>
+  /**
+   * Tells the core that the backend of the plugin has finished its work. The core stops the process
+   * at once where no call into it is open, and else at its first idle check after the last call ends.
+   */
+  releaseProcess(pluginId: string): Promise<void>
 }
 
 const HEALTH: Readonly<Partial<Record<HealthSeverity, PluginProcess['health']>>> = {
@@ -63,6 +68,9 @@ export function createProcessClient(rpc: ProcessRpc): ProcessClient {
       for await (const update of rpc.watchPluginProcesses({}, { signal })) {
         yield { time: Number(update.timeUnixMs), processes: update.processes.map(readProcess) }
       }
+    },
+    releaseProcess: async (pluginId) => {
+      await rpc.releaseProcess({ pluginId })
     },
   }
 }

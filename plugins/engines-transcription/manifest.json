@@ -130,7 +130,8 @@
     }
   ],
   "backend": {
-    "entrypoint": "bin/engines-transcription"
+    "entrypoint": "bin/engines-transcription",
+    "idleStopSeconds": 600
   },
   "settings": [
     {

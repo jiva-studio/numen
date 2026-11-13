@@ -43,11 +43,18 @@ type WorkQueue interface {
 // plugin may do, and what the host lends the plugin to work with. Lent holds what exists only while a
 // window shows a vault; the tools are read at each call.
 type Callers struct {
-	Identity Identity
-	Leases   Leases
-	Lent     *Services
-	Tools    func() PluginTools
-	Health   HealthCalls
+	Identity  Identity
+	Leases    Leases
+	Lent      *Services
+	Tools     func() PluginTools
+	Health    HealthCalls
+	Processes ProcessRelease
+}
+
+// ProcessRelease stops the process of a plugin that has finished its work: at once where it holds no
+// lease, and else once it holds none. A host without it answers that it does not stop plugins on request.
+type ProcessRelease interface {
+	ReleaseProcess(ctx context.Context, pluginID string)
 }
 
 // HealthReport puts a health item in the list as the plugin's. It returns plugin.ErrInvalidHealth for an

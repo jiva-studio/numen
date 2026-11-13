@@ -11,6 +11,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
@@ -42,14 +43,21 @@ type Operation func(ctx context.Context, call Call, payload []byte, send func(da
 // map does not hold answers as not implemented.
 type Provider map[string]Operation
 
-// NewHandler creates the Connect-RPC handler for the operations of a Provider.
-func NewHandler(provider Provider, opts ...connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewProviderServiceHandler(&adapter{provider: provider}, opts...)
+// NewHandler creates the Connect-RPC handler for the operations of a Provider. After it answers
+// connections.detected or an option list while no other call of the provider is open, it releases the
+// process through releaser; a nil releaser releases nothing.
+func NewHandler(provider Provider, releaser Releaser, opts ...connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewProviderServiceHandler(&adapter{provider: provider, calls: &openCalls{releaser: releaser}}, opts...)
 }
 
-// Mount registers the operations of a Provider on the plugin Server.
+// Mount registers the operations of a Provider on the plugin Server. It releases the process through
+// the host the environment of the process names, and releases nothing where it names none.
 func Mount(s *server.Server, provider Provider) {
-	s.Register(NewHandler(provider, s.HandlerOptions()...))
+	var releaser Releaser
+	if client, err := process.NewClientFromEnv(); err == nil {
+		releaser = client
+	}
+	s.Register(NewHandler(provider, releaser, s.HandlerOptions()...))
 }
 
 // adapter serves the operations of a Provider. A canceled call answers with the status code Canceled, and
@@ -58,6 +66,7 @@ func Mount(s *server.Server, provider Provider) {
 type adapter struct {
 	numenv1connect.UnimplementedProviderServiceHandler
 	provider Provider
+	calls    *openCalls
 }
 
 func (a *adapter) Call(
@@ -67,6 +76,9 @@ func (a *adapter) Call(
 	if !isServed {
 		return connect.NewError(connect.CodeUnimplemented, fmt.Errorf("the operation %q is not served", request.Msg.GetOperation()))
 	}
+	ctx, answered := withLookup(ctx)
+	a.calls.begin()
+	defer a.calls.end(ctx, answered)
 	var sendErr error
 	send := func(data []byte) error {
 		sendErr = stream.Send(&v1.ProviderServiceCallResponse{Frame: &v1.ProviderServiceCallResponse_Data{Data: data}})

@@ -46,6 +46,8 @@ type Supervisor struct {
 	teardownBegun  bool
 	lastActiveTime time.Time
 	activeRefCount int
+	idleLimit      time.Duration
+	isReleased     bool
 	exitCh         chan struct{}
 	onExit         func()
 	activatingCh   chan struct{}
@@ -61,12 +63,26 @@ func New(onError func(error)) *Supervisor {
 }
 
 // Usage is what a running plugin holds: when a lease was last taken or returned, the leases, whether
-// it is served inside the host, and whether it is idle.
+// it is served inside the host, whether it is idle, and how long it may stay idle.
 type Usage struct {
 	LastActiveTime time.Time
 	LeaseCount     int
 	IsInProcess    bool
 	IsIdle         bool
+	idleLimit      time.Duration
+	isReleased     bool
+}
+
+// GetIdleLimit returns how long the plugin may stay idle before it is stopped: zero for a released
+// plugin, its own limit where it has one, and defaultLimit otherwise.
+func (u Usage) GetIdleLimit(defaultLimit time.Duration) time.Duration {
+	switch {
+	case u.isReleased:
+		return 0
+	case u.idleLimit > 0:
+		return u.idleLimit
+	}
+	return defaultLimit
 }
 
 // GetUsage returns what the plugin holds, and false where it is not running.
@@ -76,12 +92,38 @@ func (s *Supervisor) GetUsage() (Usage, bool) {
 	if !isRunning(s) {
 		return Usage{}, false
 	}
+	return getUsageLocked(s), true
+}
+
+func getUsageLocked(s *Supervisor) Usage {
 	return Usage{
 		LastActiveTime: s.lastActiveTime,
 		LeaseCount:     s.activeRefCount,
 		IsInProcess:    s.inProcess,
 		IsIdle:         s.state == StateIdle && s.activeRefCount == 0,
-	}, true
+		idleLimit:      s.idleLimit,
+		isReleased:     s.isReleased,
+	}
+}
+
+// SetIdleLimit sets how long the plugin may stay idle before it is stopped. Zero takes the limit the
+// caller of BeginDeactivation gives.
+func (s *Supervisor) SetIdleLimit(limit time.Duration) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.idleLimit = limit
+}
+
+// MarkReleased lets a running plugin be stopped as soon as it holds no lease, and reports whether it
+// runs. The next Acquire takes the mark away.
+func (s *Supervisor) MarkReleased() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !isRunning(s) {
+		return false
+	}
+	s.isReleased = true
+	return true
 }
 
 // SetOnExit sets a callback invoked when the plugin process terminates, before the supervisor goes Dormant.
@@ -165,6 +207,7 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 	defer s.mu.Unlock()
 	s.process = p
 	s.teardownBegun = false
+	s.isReleased = false
 	s.state = StateActive
 	s.lastActiveTime = now
 	s.activationErr = nil
@@ -209,6 +252,7 @@ func (s *Supervisor) ActivateInProcess(now time.Time) {
 	s.inProcess = true
 	s.state = StateActive
 	s.activeRefCount = 1
+	s.isReleased = false
 	s.lastActiveTime = now
 	s.activationErr = nil
 	closeActivationSignal(&s.activatingCh)
@@ -229,6 +273,7 @@ func (s *Supervisor) Acquire(now time.Time) bool {
 		return false
 	}
 	s.activeRefCount++
+	s.isReleased = false
 	s.lastActiveTime = now
 	s.state = StateActive
 	return true
@@ -250,11 +295,13 @@ func (s *Supervisor) Release(now time.Time) {
 	}
 }
 
-// BeginDeactivation moves a plugin that has been idle for the threshold to StateDeactivating and reports whether it did.
-func (s *Supervisor) BeginDeactivation(threshold time.Duration, now time.Time) bool {
+// BeginDeactivation moves a plugin that has been idle for its idle limit to StateDeactivating and reports
+// whether it did. defaultLimit is the limit of a plugin that has none of its own; a released plugin has none.
+func (s *Supervisor) BeginDeactivation(defaultLimit time.Duration, now time.Time) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.state != StateIdle || s.activeRefCount > 0 || now.Sub(s.lastActiveTime) < threshold {
+	limit := getUsageLocked(s).GetIdleLimit(defaultLimit)
+	if s.state != StateIdle || s.activeRefCount > 0 || now.Sub(s.lastActiveTime) < limit {
 		return false
 	}
 	s.state = StateDeactivating

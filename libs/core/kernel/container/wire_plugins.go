@@ -132,6 +132,7 @@ type PluginHost struct {
 	RefreshDependencies func()
 	Health              *pluginhealth.Items
 	Processes           pluginprocess.Processes
+	Release             pluginprocess.Stopper
 	Detection           *providerbridge.Detection
 }
 
@@ -185,6 +186,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
 		Health:              host.Health,
 		Processes:           host.RunningProcesses,
+		Release:             host.Teardown,
 		Detection:           detection,
 	}
 }
@@ -192,7 +194,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 	services := hostendpoint.NewServices()
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
-		Identity: host.Activation, Leases: host.Activation,
+		Identity: host.Activation, Leases: host.Activation, Processes: host.Teardown,
 		Lent: services,
 		Tools: func() hostendpoint.PluginTools {
 			return toolbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry))

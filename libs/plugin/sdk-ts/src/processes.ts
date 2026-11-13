@@ -17,10 +17,15 @@ export interface PluginProcess {
   readonly healthText: string
 }
 
-// ProcessHost reports the plugins that run. It needs the permission plugins:read.
+// ProcessHost reports the plugins that run, which needs the permission plugins:read, and releases the
+// backend of the plugin itself, which needs none.
 export interface ProcessHost {
   // Calls the handler with the plugins that run, in the order of their ids, and the time of the core
   // when it took the list, in milliseconds since the Unix epoch, at once and again on every change,
   // until the returned disposable is disposed. A list sent again unchanged carries its first time.
   watch(handler: (processes: readonly PluginProcess[], time: number) => void): Disposable
+  // Tells the core that the backend of the plugin has finished its work. The core stops the process at
+  // once where no call into it is open, and else at its first idle check after the last call ends; the
+  // next call into the backend starts it again.
+  release(): Promise<void>
 }

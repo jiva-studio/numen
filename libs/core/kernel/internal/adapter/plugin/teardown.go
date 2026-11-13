@@ -71,9 +71,16 @@ func (t *Teardown) StopPlugin(ctx context.Context, pluginID string) error {
 	return t.stopper.StopPlugin(ctx, pluginID)
 }
 
-// EvictIdle stops the plugins that hold no lease and have been idle for longer than threshold.
-func (t *Teardown) EvictIdle(ctx context.Context, threshold, gracePeriod time.Duration) []string {
-	return t.stopper.EvictIdle(ctx, threshold, gracePeriod)
+// EvictIdle stops the plugins that hold no lease and have been idle for longer than their idle limit.
+// defaultLimit is the limit of a plugin whose manifest sets none.
+func (t *Teardown) EvictIdle(ctx context.Context, defaultLimit, gracePeriod time.Duration) []string {
+	return t.stopper.EvictIdle(ctx, defaultLimit, gracePeriod)
+}
+
+// ReleaseProcess stops the process of the plugin at once where it holds no lease, and else at the first
+// idle check after it holds none. A lease taken afterwards cancels the release.
+func (t *Teardown) ReleaseProcess(ctx context.Context, pluginID string) {
+	t.stopper.ReleaseProcess(ctx, pluginID)
 }
 
 // SetSafeMode enables or disables safe recovery mode. Entering it stops every running plugin and takes

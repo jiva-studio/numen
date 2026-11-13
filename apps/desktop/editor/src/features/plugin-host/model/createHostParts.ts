@@ -6,7 +6,7 @@
 import { createPluginNotices, createPluginTasks, type PluginHostDeps } from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
 import { registerTabKindIcon } from '@/entities/note'
-import { healthReports, processHost } from '@/entities/plugin'
+import { createProcessHost, healthReports } from '@/entities/plugin'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { PluginServices } from './pluginServices'
 
@@ -98,7 +98,7 @@ export function createTaskServiceParts(deps: {
     getNoteBuffer: () => services.noteBuffer,
     getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
     getBackgroundTasks: () => services.backgroundTasks,
-    getProcesses: () => processHost,
+    getProcesses: createProcessHost,
     health: healthReports,
   }
 }

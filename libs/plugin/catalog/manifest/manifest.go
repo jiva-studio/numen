@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 )
 
 const (
@@ -162,9 +163,34 @@ func listSettingTypes() []string {
 	return []string{settingTypeBoolean, SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile, SettingTypeConnections}
 }
 
-// Backend describes the server-side executable of a plugin.
+// Backend describes the server-side executable of a plugin. A zero IdleStopSeconds takes the idle limit
+// of the host.
 type Backend struct {
-	Entrypoint string
+	Entrypoint      string
+	IdleStopSeconds int
+}
+
+const (
+	// MinIdleStopSeconds is the shortest idle limit a manifest may set.
+	MinIdleStopSeconds = 30
+	// MaxIdleStopSeconds is the longest idle limit a manifest may set.
+	MaxIdleStopSeconds = 3600
+)
+
+// ErrInvalidIdleStop is an idle limit outside MinIdleStopSeconds and MaxIdleStopSeconds.
+var ErrInvalidIdleStop = errors.New("invalid backend idle limit")
+
+// GetIdleStopTime returns how long the process may run without a lease before the host stops it, and
+// zero where the manifest sets no limit.
+func (b Backend) GetIdleStopTime() time.Duration {
+	return time.Duration(b.IdleStopSeconds) * time.Second
+}
+
+func (b Backend) listIdleStopIssues() []error {
+	if b.IdleStopSeconds == 0 || (b.IdleStopSeconds >= MinIdleStopSeconds && b.IdleStopSeconds <= MaxIdleStopSeconds) {
+		return nil
+	}
+	return []error{fmt.Errorf("%w: idleStopSeconds %d is outside %d to %d", ErrInvalidIdleStop, b.IdleStopSeconds, MinIdleStopSeconds, MaxIdleStopSeconds)}
 }
 
 // Frontend declares that a plugin has a client-side bundle. The bundle is dist/index.js and its
@@ -241,6 +267,7 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listActivationEventIssues()...)
 	issues = append(issues, m.listEntrypointIssues()...)
 	issues = append(issues, m.listBackendlessIssues()...)
+	issues = append(issues, m.Backend.listIdleStopIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
 	issues = append(issues, m.listDependencyIssues()...)
 	issues = append(issues, m.listServiceIssues()...)

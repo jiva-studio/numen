@@ -46,7 +46,7 @@ func NewSupervisors(report func(error), onDrop func(pluginID string)) *Superviso
 }
 
 // Register returns the supervisor of the plugin, which it makes where there is none, and gives it the
-// permissions the manifest declares.
+// permissions and the idle limit the manifest declares.
 func (s *Supervisors) Register(p manifest.Discovered) *lifecycle.Supervisor {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -58,6 +58,7 @@ func (s *Supervisors) Register(p manifest.Discovered) *lifecycle.Supervisor {
 		s.byPlugin[id] = sup
 	}
 	sup.Permissions.Set(p.Manifest.Permissions)
+	sup.SetIdleLimit(p.Manifest.Backend.GetIdleStopTime())
 	return sup
 }
 

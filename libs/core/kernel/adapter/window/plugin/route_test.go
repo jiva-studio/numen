@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"slices"
+	"sync"
 	"testing"
 	"time"
 
@@ -47,7 +49,7 @@ func TestAWindowGetsThePluginsThatRunAndEachChange(t *testing.T) {
 		Process:    plugindomain.Process{PluginID: "org.example.maps", StartTime: start, LastUseTime: start, LeaseCount: 1},
 		PluginName: "Maps", Health: plugindomain.HealthOK,
 	}}}
-	path, served, _ := plugin.NewRoute(plugin.NewHandler(processes{lists: lists}), connect.WithInterceptors())
+	path, served, _ := plugin.NewRoute(plugin.NewHandler(processes{lists: lists}, &releases{}), connect.WithInterceptors())
 	mux := http.NewServeMux()
 	mux.Handle(path, served)
 	server := httptest.NewServer(mux)
@@ -71,5 +73,56 @@ func TestAWindowGetsThePluginsThatRunAndEachChange(t *testing.T) {
 	lists <- plugindomain.ProcessList{Time: start.Add(2 * time.Minute)}
 	if !stream.Receive() || len(stream.Msg().GetProcesses()) != 0 {
 		t.Fatalf("second list = %v, %v, want none", stream.Msg(), stream.Err())
+	}
+}
+
+type releases struct {
+	mu        sync.Mutex
+	pluginIDs []string
+}
+
+func (r *releases) Execute(_ context.Context, pluginID string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.pluginIDs = append(r.pluginIDs, pluginID)
+}
+
+func (r *releases) list() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return slices.Clone(r.pluginIDs)
+}
+
+func newReleaseClient(t *testing.T, released *releases) numenv1connect.PluginServiceClient {
+	t.Helper()
+	path, served, _ := plugin.NewRoute(plugin.NewHandler(processes{lists: nil}, released), connect.WithInterceptors())
+	mux := http.NewServeMux()
+	mux.Handle(path, served)
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	return numenv1connect.NewPluginServiceClient(server.Client(), server.URL)
+}
+
+func TestAWindowReleasesTheProcessOfThePluginItNames(t *testing.T) {
+	released := &releases{}
+	client := newReleaseClient(t, released)
+
+	if _, err := client.ReleaseProcess(t.Context(), connect.NewRequest(&v1.ReleaseProcessRequest{PluginId: "org.example.maps"})); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := released.list(); !slices.Equal(got, []string{"org.example.maps"}) {
+		t.Errorf("released %v, want org.example.maps", got)
+	}
+}
+
+func TestAReleaseThatNamesNoPluginIsRefused(t *testing.T) {
+	released := &releases{}
+	client := newReleaseClient(t, released)
+
+	_, err := client.ReleaseProcess(t.Context(), connect.NewRequest(&v1.ReleaseProcessRequest{}))
+
+	if connect.CodeOf(err) != connect.CodeInvalidArgument || len(released.list()) != 0 {
+		t.Errorf("error = %v, released %v; want InvalidArgument and none", err, released.list())
 	}
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process/processtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/internal/adapter/floorrecords"
@@ -35,11 +36,12 @@ func getMeasuredAt() time.Time {
 
 // fixture is a plugin over a host that shows an embedded vault of 25 notes.
 type fixture struct {
-	app    *service.App
-	search *hosttest.Search
-	vault  *hosttest.Vault
-	queue  *hosttest.Queue
-	web    *httptest.Server
+	app       *service.App
+	search    *hosttest.Search
+	vault     *hosttest.Vault
+	queue     *hosttest.Queue
+	processes *processtest.Host
+	web       *httptest.Server
 }
 
 func passages(n, sources int) []hosttest.SearchPassage {
@@ -72,10 +74,11 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	vault.Beside(hosttest.New("chemistry"))
 	setNotes(vault, 25)
 	queue := hosttest.NewQueue()
+	processes := processtest.NewHost(t)
 	app := service.NewAppOver(service.Hosts{
 		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  queue,
-	}, newFakeClock(getMeasuredAt()))
+	}, newFakeClock(getMeasuredAt()), processes.NewClient(t))
 
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount)
 	if err != nil {
@@ -83,7 +86,7 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	}
 	web := httptest.NewServer(handler)
 	t.Cleanup(web.Close)
-	return &fixture{app: app, search: search, vault: vault, queue: queue, web: web}
+	return &fixture{app: app, search: search, vault: vault, queue: queue, processes: processes, web: web}
 }
 
 func (f *fixture) call(t *testing.T, method string, req, res any) (int, server.APIError) {
@@ -340,7 +343,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		{"missing queue", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			app := service.NewAppOver(tc.hosts, clk)
+			app := service.NewAppOver(tc.hosts, clk, nil)
 			if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount); err == nil {
 				t.Error("Mount succeeded with incomplete host")
 			}
@@ -358,7 +361,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	appReportFail := service.NewAppOver(service.Hosts{
 		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, reportErr: errReport},
-	}, clk)
+	}, clk, nil)
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appReportFail.Mount); err != nil {
 		t.Fatal(err)
 	}
@@ -372,7 +375,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	appFinishFail := service.NewAppOver(service.Hosts{
 		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, finishErr: errFinish},
-	}, clk)
+	}, clk, nil)
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {
 		t.Fatal(err)
 	}
@@ -407,4 +410,42 @@ func newFakeClock(start time.Time) *clock.Fake {
 	source := new(clock.Fake)
 	source.Set(start)
 	return source
+}
+
+func TestAnEventReleasesTheProcessOnceItIsHandled(t *testing.T) {
+	f := newFixture(t, 0.4)
+
+	if err := f.app.HandleEvent(t.Context(), getReadyEvent("physics")); err != nil {
+		t.Fatal(err)
+	}
+
+	if releases := f.processes.CountReleases(); releases != 1 {
+		t.Errorf("releases = %d, want 1", releases)
+	}
+}
+
+func TestAnEventThatFailsReleasesTheProcessToo(t *testing.T) {
+	f := newFixture(t, 0.4)
+	f.search.FailEmbedding(errors.New("model stopped"))
+
+	if err := f.app.HandleEvent(t.Context(), getReadyEvent("physics")); err == nil {
+		t.Fatal("the measurement succeeded without embeddings")
+	}
+
+	if releases := f.processes.CountReleases(); releases != 1 {
+		t.Errorf("releases = %d, want 1", releases)
+	}
+}
+
+func TestACallOfTheSettingsViewKeepsTheProcess(t *testing.T) {
+	f := newFixture(t, 0.4)
+	var state api.GetFloorResponse
+
+	if status, failure := f.call(t, api.MethodGetFloor, api.GetFloorRequest{}, &state); status != http.StatusOK {
+		t.Fatalf("GetFloor = %d %+v", status, failure)
+	}
+
+	if releases := f.processes.CountReleases(); releases != 0 {
+		t.Errorf("releases = %d, want none", releases)
+	}
 }

@@ -24,6 +24,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 | `contracts/llm`, `llmtest`    | the messages, typed client and provider adapter of `llm.complete`, `llm.chat`, `llm.embed` and others |
 | `contracts/acp`, `acptest`    | the messages and provider adapter of `acp.task`                                                       |
 | `health`, `health/healthtest` | the health items a plugin reports                                                                     |
+| `process`, `process/processtest` | the release of the process of a plugin whose work is done |
 | `command`                     | the commands the manifest declares, served as `PluginCommandService`                                  |
 | `tools`, `tools/toolstest`    | the tools a plugin offers an agent, served as `PluginToolService`                                     |
 | `searchsource`                | a search source, served as `SearchSourceService`                                                      |
@@ -53,6 +54,10 @@ The core knows an operation by its name only; the payload and the frames are byt
 ## Health
 
 `health.NewClientFromEnv()` and `health.NewClientFromVars(vars)` return the health client. `Report(ctx, item)` puts an item under its key or replaces it, and `Clear(ctx, key)` takes it out. An `Error` item shows in the window's list of tasks and on the plugin's page, a `Warning` item on the page only. `health.OpenSettings(setting)` is the action that opens the settings of the plugin at a setting. The host refuses more than 8 keys, a text over 120 characters, a detail over 500, and the keys `configure`, `start` and `search`. `healthtest.NewHost(t)` keeps the reported items for tests.
+
+## Process
+
+`process.NewClientFromEnv()` and `process.NewClientFromVars(vars)` return the client that releases the process. `Release(ctx)` tells the host the work is done: the host stops the process at once where no call into it is open, and else at its first idle check after the last call ends; a later call starts it again. `connection.Mount` releases the process after an answer to `connections.detected` or an option list while no other call of the provider is open. `processtest.NewHost(t)` counts the releases for tests.
 
 ## Storage
 

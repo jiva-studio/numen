@@ -21,7 +21,13 @@ import (
 // does not serve is ErrNoConnection; a canceled call is the error of the context. Unlike the core, the
 // caller tries a row that is unavailable only once.
 func NewCaller(provider connection.Provider, call connection.Call) connection.Caller {
-	_, handler := connection.NewHandler(provider)
+	return NewReleasingCaller(provider, call, nil)
+}
+
+// NewReleasingCaller returns the Caller of NewCaller over a handler that releases the process through
+// releaser, as connection.Mount does through the host.
+func NewReleasingCaller(provider connection.Provider, call connection.Call, releaser connection.Releaser) connection.Caller {
+	_, handler := connection.NewHandler(provider, releaser)
 	client := numenv1connect.NewProviderServiceClient(&http.Client{Transport: handlerTransport{handler: handler}}, "http://llmtest")
 	return &caller{client: client, call: call}
 }

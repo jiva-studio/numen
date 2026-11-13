@@ -242,3 +242,19 @@ func TestManifestDeclaresTheLongestChunkOfANote(t *testing.T) {
 	}
 	t.Error("the manifest declares no chunkTokens setting")
 }
+
+// The process keeps its loaded model for ten minutes without a call.
+func TestTheManifestKeepsTheProcessForTenIdleMinutes(t *testing.T) {
+	var manifest struct {
+		Backend struct {
+			IdleStopSeconds int `json:"idleStopSeconds"`
+		} `json:"backend"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+
+	if manifest.Backend.IdleStopSeconds != 600 {
+		t.Errorf("idleStopSeconds = %d, want 600", manifest.Backend.IdleStopSeconds)
+	}
+}

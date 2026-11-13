@@ -77,3 +77,33 @@ func TestSignalsTheWatchHasNotReceivedAreMergedIntoOne(t *testing.T) {
 	default:
 	}
 }
+
+func TestTheIdleStopTimeFollowsTheIdleLimitOfTheManifest(t *testing.T) {
+	sups := NewSupervisors(func(error) {}, func(string) {})
+	sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: atlasID, Backend: manifest.Backend{Entrypoint: "bin/atlas", IdleStopSeconds: 600}}})
+	sup.SetActivating()
+	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, getStartTime()); err != nil {
+		t.Fatal(err)
+	}
+	sups.Release(atlasID, atlasID, getStartTime().Add(time.Minute))
+
+	got := NewRunningProcesses(sups).ListProcesses()
+
+	if len(got) != 1 || !got[0].IdleStopTime.Equal(getStartTime().Add(time.Minute+600*time.Second)) {
+		t.Errorf("got %+v, want the idle stop 600 seconds after the last use", got)
+	}
+}
+
+func TestAReleasedPluginIsDueToStopAtItsLastUse(t *testing.T) {
+	sups := NewSupervisors(func(error) {}, func(string) {})
+	startInProcess(t, sups, mapsID)
+	sup, _ := sups.Get(mapsID)
+	sup.MarkReleased()
+	sups.Release(mapsID, mapsID, getStartTime().Add(time.Minute))
+
+	got := NewRunningProcesses(sups).ListProcesses()
+
+	if len(got) != 1 || !got[0].IdleStopTime.Equal(getStartTime().Add(time.Minute)) {
+		t.Errorf("got %+v, want the idle stop at the last use", got)
+	}
+}

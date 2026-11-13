@@ -26,7 +26,8 @@ type Option struct {
 type ListOptions func(ctx context.Context, call Call, operations []string) ([]Option, error)
 
 // ServeOptions is the operation a row field of a connection type names in optionsFrom: it reads the
-// operations of the setting from the payload and answers the options as the done payload.
+// operations of the setting from the payload and answers the options as the done payload. The handler of
+// the provider releases the process after the answer where no other call is open.
 func ServeOptions(list ListOptions) Operation {
 	return func(ctx context.Context, call Call, payload []byte, _ func([]byte) error) ([]byte, error) {
 		var request v1.OptionsRequest
@@ -37,6 +38,7 @@ func ServeOptions(list ListOptions) Operation {
 		if err != nil {
 			return nil, err
 		}
+		markLookup(ctx)
 		wire := &v1.Options{Options: make([]*v1.Option, len(listed))}
 		for i, one := range listed {
 			wire.Options[i] = &v1.Option{Value: one.Value, Title: one.Title, Group: one.Group}

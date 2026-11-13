@@ -32,5 +32,6 @@ func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHo
 		RefreshDependencies: func() {},
 		Health:              pluginhealth.NewItems(),
 		Processes:           absent.Processes{},
+		Release:             absent.Processes{},
 	}
 }

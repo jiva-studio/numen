@@ -23,7 +23,7 @@ const everyFieldManifest = `{
 	"permissions": ["vault:read"],
 	"dependencies": [{"id": "weights", "kind": "model", "version": "1", "sourceUrl": "https://example.org/w",
 		"checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000", "metadata": {"k": "v"}}],
-	"backend": {"entrypoint": "bin/full"},
+	"backend": {"entrypoint": "bin/full", "idleStopSeconds": 600},
 	"frontend": {},
 	"settings": [
 		{"key": "mode", "type": "enum", "title": "Mode", "description": "d", "default": "a", "palette": true, "icon": "gauge",

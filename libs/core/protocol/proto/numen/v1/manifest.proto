@@ -292,6 +292,9 @@ message ManifestDependency {
 message ManifestBackend {
   // entrypoint is the path of the executable relative to the plugin folder.
   string entrypoint = 2;
+  // idle_stop_seconds is how long the process may run without a lease before the host stops it,
+  // from 30 to 3600 seconds. Absent is 180.
+  int32 idle_stop_seconds = 3;
 }
 
 // ManifestFrontend declares that the plugin has a frontend. The bundle is dist/index.js and the

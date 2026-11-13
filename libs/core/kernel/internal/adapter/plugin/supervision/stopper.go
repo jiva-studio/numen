@@ -17,7 +17,8 @@ const (
 	evictTimeout          = 5 * time.Second
 )
 
-// IdleThreshold is how long a plugin without a lease may stay idle before the host stops it.
+// IdleThreshold is how long a plugin without a lease may stay idle before the host stops it, where its
+// manifest sets no idle limit.
 const IdleThreshold = 180 * time.Second
 
 // stdinHolder closes the pipes the starts of the processes hold open.
@@ -71,9 +72,18 @@ func (s *Stopper) stopTarget(ctx context.Context, target Target, gracePeriod tim
 	return err
 }
 
-// EvictIdle stops the plugins that hold no lease and have been idle for longer than threshold.
-func (s *Stopper) EvictIdle(ctx context.Context, threshold, gracePeriod time.Duration) []string {
-	return s.EvictTargets(ctx, takeIdleTargets(s.sups, threshold, s.clock.Now()), gracePeriod)
+// EvictIdle stops the plugins that hold no lease and have been idle for longer than their idle limit.
+// defaultLimit is the limit of a plugin whose manifest sets none.
+func (s *Stopper) EvictIdle(ctx context.Context, defaultLimit, gracePeriod time.Duration) []string {
+	return s.EvictTargets(ctx, takeIdleTargets(s.sups, defaultLimit, s.clock.Now()), gracePeriod)
+}
+
+// ReleaseProcess marks the running plugin released and stops it where it holds no lease; a plugin
+// that holds one is stopped by EvictIdle once it holds none. It returns the ids of the plugins it stopped.
+func (s *Stopper) ReleaseProcess(ctx context.Context, pluginID string) []string {
+	ctx, cancel := context.WithTimeout(ctx, stopPluginTimeout)
+	defer cancel()
+	return s.EvictTargets(ctx, takeReleasedTarget(s.sups, pluginID, s.clock.Now()), stopPluginGracePeriod)
 }
 
 // EvictTargets stops the targets and returns the ids of the ones it stopped. It reports a failure to stop one.
