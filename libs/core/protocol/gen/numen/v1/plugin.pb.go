@@ -1688,7 +1688,7 @@ func (x *PluginProcess) GetHealthText() string {
 
 type DeliverEventRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The event as the host names it, such as onFile:<extension> or onCommand:<id>.
+	// The event as the host names it, such as onSearchSourceReady:<vault id>.
 	Event         string `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

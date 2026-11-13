@@ -16,9 +16,7 @@
   --column-gap: 0.5rem;
   --row-pad-block: 0.375rem;
   --row-pad-inline: 0.5rem;
-  --health-max: 6rem;
-  --state-width: 7em;
-  --detail-width: 9.5em;
+  --countdown-width: 5em;
   --tag-gap: 0.25rem;
   --dot-size: 0.5rem;
 }
@@ -124,16 +122,13 @@
 }
 
 /*
- * One line per plugin. The rows share the columns of the list, so the names, the health and the
- * times line up; the time columns have a fixed width, so a time counting does not move anything.
+ * One line per plugin. Every row has the same columns of fixed width for the dot and the time, so
+ * the dots, the names and the times line up, and a time counting does not move anything.
  */
 .plugin-popover__body {
-  display: grid;
-  grid-template-columns:
-    minmax(0, 1fr) fit-content(var(--health-max)) var(--state-width)
-    var(--detail-width);
-  column-gap: var(--column-gap);
-  /* The em of the time columns is of this size. */
+  display: flex;
+  flex-direction: column;
+  /* The em of the time column is of this size. */
   font-size: var(--numen-text-2);
   margin: 0;
   padding: var(--popover-pad);
@@ -143,8 +138,8 @@
 
 .plugin-popover__plugin {
   display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: subgrid;
+  grid-template-columns: var(--dot-size) minmax(0, 1fr) var(--countdown-width);
+  column-gap: var(--column-gap);
   align-items: center;
   padding: var(--row-pad-block) var(--row-pad-inline);
   border-radius: var(--numen-radius);
@@ -156,6 +151,17 @@
   background: var(--numen-selection-away);
 }
 
+.plugin-popover__status {
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: var(--numen-radius-pill);
+  background: var(--numen-caution-fg);
+}
+
+.plugin-popover__status--in-use {
+  background: var(--numen-positive);
+}
+
 .plugin-popover__name-cell {
   display: flex;
   align-items: baseline;
@@ -163,10 +169,15 @@
   min-width: 0;
 }
 
-.plugin-popover__name {
+.plugin-popover__name,
+.plugin-popover__health {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.plugin-popover__name {
+  flex: 0 1 auto;
   font-weight: 600;
 }
 
@@ -177,11 +188,7 @@
 }
 
 .plugin-popover__health {
-  display: flex;
-  align-items: center;
-  gap: var(--tag-gap);
-  min-width: 0;
-  color: var(--numen-positive);
+  flex: 0 100 auto;
 }
 
 .plugin-popover__health--warning {
@@ -192,31 +199,10 @@
   color: var(--numen-alarm);
 }
 
-.plugin-popover__dot {
-  flex: none;
-  width: var(--dot-size);
-  height: var(--dot-size);
-  border-radius: var(--numen-radius-pill);
-  background: currentColor;
-}
-
-.plugin-popover__health-text {
-  min-width: 0;
+.plugin-popover__countdown {
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.plugin-popover__state,
-.plugin-popover__detail {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-variant-numeric: tabular-nums;
-}
-
-.plugin-popover__detail {
+  text-align: right;
   color: var(--numen-hushed);
-}
-
-.plugin-popover__separator {
-  margin-inline-end: var(--tag-gap);
+  font-variant-numeric: tabular-nums;
 }

@@ -16,11 +16,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 )
 
-// Host is the plugin host used by the tools: it lists the known plugins and
+// Host is the plugin host used by the tools: it lists the known plugins, tells the enabled ones and
 // starts each on demand.
 type Host interface {
 	bridge.Activator
 	GetPluginInfos() []plugin.Info
+	IsEnabled(pluginID string) bool
 }
 
 // tool is one tool a plugin lists, with the plugin that runs it.
@@ -30,22 +31,23 @@ type tool struct {
 }
 
 // plugins calls the PluginToolService of every plugin that declares the tools
-// capability.
+// capability. A version of a plugin is asked for its tools once; its answer is kept in listings.
 type plugins struct {
-	host Host
+	host     Host
+	listings *listings
 }
 
 func (p plugins) listTools(ctx context.Context, except string) []tool {
 	var found []tool
 	names := map[string]bool{}
 	for _, info := range p.host.GetPluginInfos() {
-		if info.ID == except || !slices.Contains(info.Capabilities, bridge.CapabilityTools) {
+		if info.ID == except || !slices.Contains(info.Capabilities, bridge.CapabilityTools) || !p.host.IsEnabled(info.ID) {
 			continue
 		}
-		listed, err := p.listPluginTools(ctx, info.ID)
+		listed, err := p.getPluginTools(ctx, info)
 		if err != nil {
-			// A disabled plugin, or one that cannot be started, offers no tools; the listing goes on
-			// with the tools of the others.
+			// A plugin that cannot be started offers no tools; the listing goes on with the tools of
+			// the others.
 			continue
 		}
 		for _, spec := range listed.GetTools() {
@@ -57,6 +59,18 @@ func (p plugins) listTools(ctx context.Context, except string) []tool {
 		}
 	}
 	return found
+}
+
+func (p plugins) getPluginTools(ctx context.Context, info plugin.Info) (*v1.ListToolsResponse, error) {
+	if kept, isKept := p.listings.get(info.ID, info.Version); isKept {
+		return kept, nil
+	}
+	listed, err := p.listPluginTools(ctx, info.ID)
+	if err != nil {
+		return nil, err
+	}
+	p.listings.put(info.ID, info.Version, listed)
+	return listed, nil
 }
 
 func (p plugins) listPluginTools(ctx context.Context, pluginID string) (listing *v1.ListToolsResponse, err error) {

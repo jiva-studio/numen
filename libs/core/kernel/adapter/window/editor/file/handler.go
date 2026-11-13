@@ -29,11 +29,6 @@ type IndexFollow interface {
 	IsIndexOutdated(err error) bool
 }
 
-// Events tells the plugins of the window that something happened.
-type Events interface {
-	EmitFileEvent(event string)
-}
-
 var (
 	errClosing = broadcast.ErrClosing
 	errNoVault = errors.New("the window has no vault")
@@ -61,7 +56,6 @@ func NewHandler(folders *Folders, changes *Changes) *Handler {
 // Folders lists what the folders of the vault hold and makes folders.
 type Folders struct {
 	vault        Vault
-	events       Events
 	listFolder   *file.ListFolder
 	listKinds    *file.ListFileKinds
 	createFolder *file.CreateFolder
@@ -69,9 +63,9 @@ type Folders struct {
 
 // NewFolders is the part of FileService that lists and makes folders.
 func NewFolders(
-	window Vault, events Events, folder *file.ListFolder, kinds *file.ListFileKinds, create *file.CreateFolder,
+	window Vault, folder *file.ListFolder, kinds *file.ListFileKinds, create *file.CreateFolder,
 ) *Folders {
-	return &Folders{vault: window, events: events, listFolder: folder, listKinds: kinds, createFolder: create}
+	return &Folders{vault: window, listFolder: folder, listKinds: kinds, createFolder: create}
 }
 
 // Changes moves and removes the files of the vault.

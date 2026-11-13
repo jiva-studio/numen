@@ -3,7 +3,7 @@
  * test corpus: each story is run in a browser by `@storybook/addon-vitest`.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import type { Stats } from '../types'
 import StatsIndicator from './StatsIndicator.vue'
 import '../styles.css'
@@ -39,7 +39,7 @@ const meta = {
   title: 'Index stats/Indicator',
   component: StatsIndicator,
   parameters: { layout: 'fullscreen' },
-  args: { stats: EMBEDDING, phase: 'ready', locale: 'en-US' },
+  args: { stats: EMBEDDING, phase: 'ready', locale: 'en-US', onOpen: fn(), onClose: fn() },
   render: (args) => ({
     components: { StatsIndicator },
     setup: () => ({ args }),
@@ -99,5 +99,19 @@ export const Idle: Story = {
   play: async ({ canvasElement }) => {
     const trigger = await within(canvasElement).findByRole('button', { name: '13,100 vectors' })
     await expect(trigger.textContent?.trim()).toBe('⬡13,100')
+  },
+}
+
+/** The item says when its popover opens and closes, which is when the window asks for fresh counts. */
+export const OpenAndClose: Story = {
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = await canvas.findByRole('button', { name: /12,480/ })
+    await userEvent.click(trigger)
+    await expect(args.onOpen).toHaveBeenCalledTimes(1)
+    await expect(args.onClose).not.toHaveBeenCalled()
+    const popover = await canvas.findByRole('dialog')
+    await userEvent.click(within(popover).getByRole('button', { name: 'Close index stats' }))
+    await expect(args.onClose).toHaveBeenCalledTimes(1)
   },
 }

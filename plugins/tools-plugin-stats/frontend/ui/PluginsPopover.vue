@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * The plugins that run, one line each: its name, its health, and whether it is in use or when the
- * core stops it for idleness. How long it has run is in the tooltip of the line.
+ * The plugins that run, one line each: whether it is in use, its name, the worst health item of an
+ * unhealthy plugin, and when the core stops an idle one. How long it has run is in the tooltip of
+ * the line.
  */
 import { computed } from 'vue'
 import type { PluginProcess } from '../types'
@@ -12,7 +13,6 @@ import { WORDS as words } from '../words'
 const props = defineProps<{
   processes: readonly PluginProcess[]
   now: number
-  locale?: string | undefined
 }>()
 
 /* --------------------------------- Events --------------------------------- */
@@ -21,7 +21,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const rows = computed(() => getRows(props.processes, props.now, props.locale))
+const rows = computed(() => getRows(props.processes, props.now))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClose() {
@@ -53,26 +53,29 @@ function onClose() {
         :aria-label="row.name"
         :title="row.title"
       >
+        <span
+          class="plugin-popover__status"
+          :class="{ 'plugin-popover__status--in-use': row.isInUse }"
+          role="img"
+          :aria-label="row.status"
+          :title="row.status"
+        ></span>
         <span class="plugin-popover__name-cell">
           <span class="plugin-popover__name">{{ row.name }}</span>
           <span v-if="row.isInCore" class="plugin-popover__tag" :title="words.inCoreHint">
             {{ words.inCore }}
           </span>
-        </span>
-        <span
-          class="plugin-popover__health"
-          :class="`plugin-popover__health--${row.health}`"
-          :title="row.healthLabel"
-        >
-          <span class="plugin-popover__dot" role="img" :aria-label="row.healthLabel"></span>
-          <span v-if="row.healthText" class="plugin-popover__health-text" aria-hidden="true">
+          <span
+            v-if="row.healthText"
+            class="plugin-popover__health"
+            :class="`plugin-popover__health--${row.health}`"
+            :title="row.healthText"
+          >
             {{ row.healthText }}
           </span>
         </span>
-        <span class="plugin-popover__state">{{ row.state }}</span>
-        <span class="plugin-popover__detail" :title="row.detailHint || undefined">
-          <span v-if="row.detail" class="plugin-popover__separator" aria-hidden="true">·</span>
-          {{ row.detail }}
+        <span class="plugin-popover__countdown" :title="row.countdownHint || undefined">
+          {{ row.countdown }}
         </span>
       </li>
     </ul>

@@ -219,12 +219,11 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		sample := strings.ReplaceAll(name, "<ext>", "pdf")
-		if hasIssue(manifest.Manifest{ActivationEvents: []string{sample}}, manifest.ErrInvalidActivationEvent) {
-			t.Errorf("the validator refuses %s", sample)
+		if hasIssue(manifest.Manifest{ActivationEvents: []string{name}}, manifest.ErrInvalidActivationEvent) {
+			t.Errorf("the validator refuses %s", name)
 		}
 	}
-	for _, invalid := range []string{"*", "onFile:", "onFile:*", "onCommand:run"} {
+	for _, invalid := range []string{"*", "onStartup", "onFile:pdf", "onCommand:run"} {
 		if !hasIssue(manifest.Manifest{ActivationEvents: []string{invalid}}, manifest.ErrInvalidActivationEvent) {
 			t.Errorf("the validator accepts %s", invalid)
 		}
@@ -276,8 +275,8 @@ func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
 	if got := readDocumentedCapabilities(guideLine); !slices.Equal(got, []string{"document", "book"}) {
 		t.Errorf("the capabilities line is read as %v", got)
 	}
-	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onStartup` (when the host starts)\n- **`next`**:\n"
-	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onStartup"}) {
+	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onSearchSourceReady` (when the search source has indexed a vault)\n- **`next`**:\n"
+	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onSearchSourceReady"}) {
 		t.Errorf("the activation events section is read as %v", got)
 	}
 }
