@@ -68,14 +68,17 @@ export interface AgentListing {
  * `calls` keeps every task with the options it was called with.
  */
 export function createAgentConnections(
-  answer: TaskScript | ((request: acp.TaskRequest) => TaskScript),
+  answer:
+    | TaskScript
+    | ((request: acp.TaskRequest, options?: ConnectionCallOptions) => TaskScript),
   listing?: AgentListing,
 ) {
   const calls: { operation: string; request: acp.TaskRequest; options?: ConnectionCallOptions }[] =
     []
   const tasks = acptest.createTaskHost((request, options) => {
     calls.push({ operation: acp.OPERATION_TASK, request, ...(options ? { options } : {}) })
-    return playScript(typeof answer === 'function' ? answer(request) : answer, options?.signal)
+    const script = typeof answer === 'function' ? answer(request, options) : answer
+    return playScript(script, options?.signal)
   })
   if (!listing) return { host: tasks, calls }
   const host: ConnectionHost = {
