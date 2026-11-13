@@ -86,7 +86,9 @@ describe('a note that has rested open', () => {
     const lifted = mounted.view.findAll('.plex__lifted')
     expect(lifted).toHaveLength(1)
     for (const group of getNoteGroups(mounted.view)) {
-      expect(group.compareDocumentPosition(lifted[0]!.element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(
+        group.compareDocumentPosition(lifted[0]!.element) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
     }
     expect(lifted[0]!.get('.plex__box').attributes('width')).toBe('400')
     const titles = mounted.view.findAll('.plex__title-text').filter((one) => one.text() === 'Below')
@@ -129,9 +131,9 @@ describe('a note that has rested open', () => {
     await mounted.view.vm.$nextTick()
 
     expect(mounted.view.find('.plex__lifted').exists()).toBe(false)
-    expect(
-      mounted.view.get('[aria-label^="Below"]').get('.plex__box').attributes('width'),
-    ).toBe(`${DEFAULT_OPTIONS.nodeSize.width}`)
+    expect(mounted.view.get('[aria-label^="Below"]').get('.plex__box').attributes('width')).toBe(
+      `${DEFAULT_OPTIONS.nodeSize.width}`,
+    )
   })
 
   it('reports a click on the lifted box as a click on the note', async () => {

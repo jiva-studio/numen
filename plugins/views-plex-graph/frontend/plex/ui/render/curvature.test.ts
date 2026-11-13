@@ -60,7 +60,9 @@ describe('how far the line dragged out of a node bows', () => {
 
   it('is passed from the gesture to the line of each of its three drawings', () => {
     const straight = (path: string | null) => getNumbers(path!).slice(2, 4)
-    expect(straight(getReachThread(frame, 'b', { x: 220, y: 150 }, { curvature: 0 }))).toEqual([120, 50])
+    expect(straight(getReachThread(frame, 'b', { x: 220, y: 150 }, { curvature: 0 }))).toEqual([
+      120, 50,
+    ])
     expect(
       straight(
         getPendingThread(frame, {

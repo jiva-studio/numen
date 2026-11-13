@@ -31,10 +31,15 @@ describe('the line dragged from a node without a pill', () => {
   })
 
   it('starts at the leading side when the handle was drawn there', () => {
-    const thread = getReachThread(frame, 'b', { x: -220, y: 150 }, {
-      hasPill: false,
-      viewportWidth: 260,
-    })
+    const thread = getReachThread(
+      frame,
+      'b',
+      { x: -220, y: 150 },
+      {
+        hasPill: false,
+        viewportWidth: 260,
+      },
+    )
 
     expect(thread?.startsWith(`M ${100 - 20 - HANDLE_RADIUS} 50 `)).toBe(true)
   })

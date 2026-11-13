@@ -131,7 +131,15 @@ export interface OpenBoxOptions {
  * `on` names what the attention is on, and nothing when it is on none.
  */
 export function useOpenBox(options: OpenBoxOptions) {
-  const { node, wide, on, delay, hasPill = () => true, viewportWidth, clock = browserClock } = options
+  const {
+    node,
+    wide,
+    on,
+    delay,
+    hasPill = () => true,
+    viewportWidth,
+    clock = browserClock,
+  } = options
   const open = useExpansion(on, delay, clock)
   const box = computed(() => interpolateBox(node(), wide(), open.value))
 

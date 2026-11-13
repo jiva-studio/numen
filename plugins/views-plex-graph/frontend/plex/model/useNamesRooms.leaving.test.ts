@@ -30,9 +30,7 @@ describe('the room of a note that left the graph', () => {
       names: (id: string) => ({ above: [], below: [{ id: `n:${id}`, title: 'Heat' }] }),
       showNames: true,
     })
-    const rooms = effectScope().run(() =>
-      useNamesRooms(props, ref(metrics), ref(DEFAULT_OPTIONS)),
-    )!
+    const rooms = effectScope().run(() => useNamesRooms(props, ref(metrics), ref(DEFAULT_OPTIONS)))!
 
     props.graph = graphOf('b', 'c')
     await nextTick()

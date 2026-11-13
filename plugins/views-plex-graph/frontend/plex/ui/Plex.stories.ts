@@ -892,52 +892,58 @@ export const HeadingsInside: Story = {
     const focus = canvas.getByLabelText(/, focus$/)
     const getOpenBox = (id: string) =>
       canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
-    const getHeadings = (id: string) => [...(getOpenBox(id)?.querySelectorAll(".plex__heading") ?? [])]
+    const getHeadings = (id: string) => [
+      ...(getOpenBox(id)?.querySelectorAll('.plex__heading') ?? []),
+    ]
 
     const most = args.maxHeadings
 
-    await expect(getHeadings("focus")).toHaveLength(0)
+    await expect(getHeadings('focus')).toHaveLength(0)
 
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(getHeadings("focus")).toHaveLength(most), {
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(most), {
       timeout: 3000,
     })
 
     await userEvent.unhover(focus)
-    await waitFor(async () => await expect(getHeadings("focus")).toHaveLength(0))
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(0))
 
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(getHeadings("focus")).toHaveLength(most), {
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(most), {
       timeout: 3000,
     })
-    await userEvent.click(getHeadings("focus")[1]!)
+    await userEvent.click(getHeadings('focus')[1]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus', '4')
 
     const many = canvas.getByLabelText(/, jump$/)
     await userEvent.hover(many)
-    await waitFor(async () => await expect(getHeadings("focus/jump-0")).toHaveLength(most), { timeout: 3000 })
+    await waitFor(async () => await expect(getHeadings('focus/jump-0')).toHaveLength(most), {
+      timeout: 3000,
+    })
 
-    const arrows = () => [...(getOpenBox("focus/jump-0")?.querySelectorAll(".plex__more") ?? [])]
+    const arrows = () => [...(getOpenBox('focus/jump-0')?.querySelectorAll('.plex__more') ?? [])]
     await expect(arrows()).toHaveLength(1)
 
     const wheel = (deltaY: number) =>
-      getOpenBox("focus/jump-0")!
+      getOpenBox('focus/jump-0')!
         .querySelector('.plex__inside')!
         .dispatchEvent(
           new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }),
         )
     wheel(1)
     await waitFor(
-      async () => await expect(getHeadings("focus/jump-0")[0]!.textContent?.trim()).toBe('Section 2'),
+      async () =>
+        await expect(getHeadings('focus/jump-0')[0]!.textContent?.trim()).toBe('Section 2'),
     )
     await expect(arrows()).toHaveLength(2)
 
     wheel(-1)
     await waitFor(
-      async () => await expect(getHeadings("focus/jump-0")[0]!.textContent?.trim()).toBe('Section 1'),
+      async () =>
+        await expect(getHeadings('focus/jump-0')[0]!.textContent?.trim()).toBe('Section 1'),
     )
 
-    await userEvent.click(getHeadings("focus/jump-0")[0]!)
+    await userEvent.click(getHeadings('focus/jump-0')[0]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus/jump-0', '0')
     await expect(args.onActivate).not.toHaveBeenCalled()
   },
@@ -995,11 +1001,13 @@ export const OneOpenNote: Story = {
     const other = canvas.getByLabelText(/, jump$/)
     const getOpenBox = (id: string) =>
       canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
-    const getHeadings = (id: string) => [...(getOpenBox(id)?.querySelectorAll(".plex__heading") ?? [])]
+    const getHeadings = (id: string) => [
+      ...(getOpenBox(id)?.querySelectorAll('.plex__heading') ?? []),
+    ]
     const getHandles = () => canvasElement.querySelectorAll('.plex__handle')
 
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(getHeadings("focus")).toHaveLength(args.maxHeadings), {
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(args.maxHeadings), {
       timeout: 3000,
     })
     await expect(getHandles()).toHaveLength(1)
@@ -1007,15 +1015,18 @@ export const OneOpenNote: Story = {
     // The pointer reaches the other note without the first one hearing it leave.
     other.dispatchEvent(new PointerEvent('pointerenter'))
 
-    await waitFor(async () => await expect(getHeadings("focus")).toHaveLength(0))
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(0))
     await expect(getHandles()).toHaveLength(1)
     await expect(focus.querySelector('.plex__handle')).toBeNull()
     await expect(other.querySelector('.plex__handle')).not.toBeNull()
 
-    await waitFor(async () => await expect(getHeadings("focus/jump-0")).toHaveLength(args.maxHeadings), {
-      timeout: 3000,
-    })
-    await expect(getHeadings("focus")).toHaveLength(0)
+    await waitFor(
+      async () => await expect(getHeadings('focus/jump-0')).toHaveLength(args.maxHeadings),
+      {
+        timeout: 3000,
+      },
+    )
+    await expect(getHeadings('focus')).toHaveLength(0)
   },
 }
 
