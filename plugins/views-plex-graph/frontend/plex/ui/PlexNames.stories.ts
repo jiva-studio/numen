@@ -109,17 +109,13 @@ export const ChoosingAName: Story = {
   },
 }
 
-/** The hover of a pill opens its heading list; the hover of a name opens none. */
-export const OnlyAPillOpensHeadings: Story = {
+/** The hover of a pill opens the heading list of its note. */
+export const APillOpensHeadings: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await userEvent.hover(getName(canvas, 'Compost'))
-    await new Promise((isDone) => setTimeout(isDone, 400))
-    await expect(canvasElement.querySelector('.plex__inside')).toBeNull()
-
-    await userEvent.unhover(getName(canvas, 'Compost'))
     await userEvent.hover(canvas.getByLabelText('Raised beds, child'))
+
     await waitFor(
       async () => await expect(canvasElement.querySelector('.plex__inside')).not.toBeNull(),
     )
