@@ -4,7 +4,7 @@ import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 
 /** A plugin as the settings list it: its id and the file extensions its readers open. */
-export interface ReaderPlugin {
+interface ReaderPlugin {
   readonly id: string
   readonly readers?: readonly { readonly extensions: readonly string[] }[] | undefined
 }
