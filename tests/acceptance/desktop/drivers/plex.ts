@@ -212,7 +212,7 @@ const DRAG_LENGTH = 180
 
 /** Where the relation is drawn, as a step in x and in y: parents above, children below, jumps on the left. */
 const getSide = (relation: string): [number, number] => {
-  const sides: Record<string, [number, number]> = { parent: [0, -1], child: [0, 1], jump: [-1, 0] }
+  const sides: Partial<Record<string, [number, number]>> = { parent: [0, -1], child: [0, 1], jump: [-1, 0] }
   const side = sides[relation]
   if (side === undefined) throw new Error(`a line cannot be dragged as a ${relation}: use parent, child or jump`)
   return side
