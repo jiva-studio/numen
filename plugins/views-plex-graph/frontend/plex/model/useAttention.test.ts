@@ -6,7 +6,9 @@ import { arrangePlex } from '../lib/arrange'
 import { build } from '../fixtures/build'
 
 const whole = arrangePlex(build('Hub', { child: 3 }))
-const [first, second] = whole.nodes.filter((node) => node.relation === 'child').map((node) => node.id) as [string, string]
+const [first, second] = whole.nodes
+  .filter((node) => node.relation === 'child')
+  .map((node) => node.id) as [string, string]
 const without = (id: string) => ({ ...whole, nodes: whole.nodes.filter((node) => node.id !== id) })
 
 describe('the attention of the drawing', () => {

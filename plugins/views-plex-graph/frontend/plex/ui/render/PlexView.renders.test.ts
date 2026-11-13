@@ -101,7 +101,10 @@ describe('a frame that changes', () => {
     const moved = frame.nodes[3]!
 
     await view.setProps({
-      frame: { ...frame, nodes: frame.nodes.map((node) => (node === moved ? { ...node, x: node.x + 10 } : node)) },
+      frame: {
+        ...frame,
+        nodes: frame.nodes.map((node) => (node === moved ? { ...node, x: node.x + 10 } : node)),
+      },
     })
     await nextTick()
 
