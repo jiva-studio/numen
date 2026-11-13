@@ -38,9 +38,12 @@ func NewListRelatedNotes(links noteport.LinkBatches, notes RefQueries) ListRelat
 }
 
 // Execute gathers the notes related to the note at the path. At DepthFar it also gathers,
-// for each related note, the notes that one is related to, in the order of the related
-// notes: never as siblings, never the focus, the related note itself or a note that is
-// already related to the focus.
+// for each related note (a sibling included), every note that one is related to, the focus
+// and the owner itself excepted: a note already related to the focus is a name under the
+// owner too, and a note may be a name under several owners. The names come in the order of
+// the owners, never as siblings. A name stays only while its owner stays, because the index
+// may not know a note a link resolved to. The notes are queried once for every path, the
+// focus first and each path once.
 func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path string, depth domain.RelationDepth) (domain.NoteGraph, error) {
 	cache := &linkCache{queries: u.links, vault: v}
 	center, err := u.getRelatedNotes(ctx, cache, path)
@@ -76,7 +79,6 @@ func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path stri
 	return out, nil
 }
 
-// getPaths lists each path once, the focus first.
 func getPaths(focus string, related, relatedToRelated []domain.RelatedNote) []string {
 	paths := []string{focus}
 	seen := map[string]bool{focus: true}
@@ -89,8 +91,6 @@ func getPaths(focus string, related, relatedToRelated []domain.RelatedNote) []st
 	return paths
 }
 
-// createGraph keeps the notes the index knows. A note related to a related note stays
-// only while that related note does. The paths drawn with the focus are returned too.
 func createGraph(
 	notes map[string]domain.NoteRef, path string, related, relatedToRelated []domain.RelatedNote,
 ) (domain.NoteGraph, []string) {
@@ -119,10 +119,6 @@ func (u ListRelatedNotes) getRelatedToRelated(ctx context.Context, cache *linkCa
 	if err := cache.loadBoth(ctx, getPaths(focus, related, nil)); err != nil {
 		return nil, err
 	}
-	direct := map[string]bool{focus: true}
-	for _, n := range related {
-		direct[n.Path] = true
-	}
 	var out []domain.RelatedNote
 	for _, owner := range related {
 		found, err := u.getRelatedNotes(ctx, cache, owner.Path)
@@ -130,7 +126,7 @@ func (u ListRelatedNotes) getRelatedToRelated(ctx context.Context, cache *linkCa
 			return nil, err
 		}
 		for _, item := range found.getAll() {
-			if direct[item.Path] || item.Path == owner.Path {
+			if item.Path == focus || item.Path == owner.Path {
 				continue
 			}
 			item.RelatedTo = owner.Path
@@ -261,13 +257,13 @@ func (s *relatedNoteSet) add(related domain.RelatedNote) {
 		s.order = append(s.order, related)
 		return
 	}
-	kept := s.order[i]
-	if domain.GetRelationRank(related.Relation) < domain.GetRelationRank(kept.Relation) {
+	current := s.order[i]
+	if domain.GetRelationRank(related.Relation) < domain.GetRelationRank(current.Relation) {
 		s.order[i] = related
 		return
 	}
-	if kept.Relation == domain.RelationReference && related.Relation == domain.RelationReference &&
-		kept.Direction != related.Direction {
+	if current.Relation == domain.RelationReference && related.Relation == domain.RelationReference &&
+		current.Direction != related.Direction {
 		s.order[i].Direction = domain.DirectionBoth
 	}
 }

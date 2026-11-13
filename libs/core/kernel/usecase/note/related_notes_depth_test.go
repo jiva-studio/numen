@@ -62,7 +62,7 @@ func TestDepthTwoAddsTheNotesRelatedToEachRelatedNote(t *testing.T) {
 	if want := []string{"child G.md"}; !slices.Equal(itemsOf(got, "C.md"), want) {
 		t.Errorf("notes related to the child %v, want %v", itemsOf(got, "C.md"), want)
 	}
-	if want := []string{"parent GP.md", "jump J.md"}; !slices.Equal(itemsOf(got, "P.md"), want) {
+	if want := []string{"parent GP.md", "jump J.md", "child S.md"}; !slices.Equal(itemsOf(got, "P.md"), want) {
 		t.Errorf("notes related to the parent %v, want %v", itemsOf(got, "P.md"), want)
 	}
 }
@@ -71,7 +71,7 @@ func TestDepthTwoItemsOfASiblingAreNeverSiblings(t *testing.T) {
 	t.Parallel()
 	got := showDepth(t, depthGraph(), &pathLookup{}, "F.md", 2)
 
-	if want := []string{"child SC.md"}; !slices.Equal(itemsOf(got, "S.md"), want) {
+	if want := []string{"child SC.md", "parent P.md"}; !slices.Equal(itemsOf(got, "S.md"), want) {
 		t.Errorf("notes related to the sibling %v, want %v", itemsOf(got, "S.md"), want)
 	}
 	for _, r := range got.Related {
@@ -186,7 +186,7 @@ func TestNotesMissingFromTheIndexAreDroppedWithTheirItems(t *testing.T) {
 	}
 
 	got = showDepth(t, depthGraph(), &pathLookup{unknown: "GP.md"}, "F.md", 2)
-	if want := []string{"jump J.md"}; !slices.Equal(itemsOf(got, "P.md"), want) {
+	if want := []string{"jump J.md", "child S.md"}; !slices.Equal(itemsOf(got, "P.md"), want) {
 		t.Errorf("items of the parent %v, want %v", itemsOf(got, "P.md"), want)
 	}
 }
@@ -203,5 +203,56 @@ func TestEveryLinkIsReadOnceAndTheNotesAreQueriedOnce(t *testing.T) {
 		if !slices.Contains(refs.paths, p) {
 			t.Errorf("%s is shown by name and was not asked for: %v", p, refs.paths)
 		}
+	}
+}
+
+func TestTheOtherChildrenOfAParentAreItemsOfThatParent(t *testing.T) {
+	t.Parallel()
+	g := graph{out: map[string][]domain.ResolvedLink{
+		"F.md": {createOutgoingLink("P.md", domain.RoleParent, "")},
+		"P.md": {
+			createOutgoingLink("F.md", domain.RoleChild, ""),
+			createOutgoingLink("S1.md", domain.RoleChild, ""),
+			createOutgoingLink("S2.md", domain.RoleChild, ""),
+		},
+	}}
+	got := showDepth(t, g, &pathLookup{}, "F.md", 2)
+
+	if want := []string{"child S1.md", "child S2.md"}; !slices.Equal(itemsOf(got, "P.md"), want) {
+		t.Errorf("items of the parent %v, want %v", itemsOf(got, "P.md"), want)
+	}
+}
+
+func TestTheParentOfTheFocusIsAnItemOfAReferenceWithTheSameParent(t *testing.T) {
+	t.Parallel()
+	g := graph{
+		out: map[string][]domain.ResolvedLink{
+			"F.md": {createOutgoingLink("P.md", domain.RoleParent, ""), createOutgoingLink("R.md", domain.RoleRef, "")},
+			"R.md": {createOutgoingLink("P.md", domain.RoleParent, "")},
+		},
+		in: map[string][]domain.ResolvedLink{"P.md": {writtenIn("R.md", domain.RoleParent)}},
+	}
+	got := showDepth(t, g, &pathLookup{}, "F.md", 2)
+
+	if want := []string{"parent P.md"}; !slices.Equal(itemsOf(got, "R.md"), want) {
+		t.Errorf("items of the reference %v, want %v", itemsOf(got, "R.md"), want)
+	}
+	if want := []string{"child R.md"}; !slices.Equal(itemsOf(got, "P.md"), want) {
+		t.Errorf("items of the parent %v, want %v", itemsOf(got, "P.md"), want)
+	}
+}
+
+func TestANoteRelatedToAnOwnerByTwoLinksIsOneItemOfThatOwner(t *testing.T) {
+	t.Parallel()
+	g := graph{
+		out: map[string][]domain.ResolvedLink{
+			"F.md": {createOutgoingLink("A.md", domain.RoleChild, "")},
+			"A.md": {createOutgoingLink("X.md", domain.RoleJump, ""), createOutgoingLink("X.md", domain.RoleChild, "")},
+		},
+	}
+	got := showDepth(t, g, &pathLookup{}, "F.md", 2)
+
+	if want := []string{"child X.md"}; !slices.Equal(itemsOf(got, "A.md"), want) {
+		t.Errorf("items of A %v, want %v", itemsOf(got, "A.md"), want)
 	}
 }

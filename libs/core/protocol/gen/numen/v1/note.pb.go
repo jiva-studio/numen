@@ -511,9 +511,10 @@ type ListRelatedNotesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Focus *Note                  `protobuf:"bytes,1,opt,name=focus,proto3" json:"focus,omitempty"`
 	// The notes related to the focus, then at depth 2 the notes related to each of those.
-	// A note related to the focus is not repeated at depth 2, and a note is not related to
-	// itself, but one note can appear under two different related notes: `note.path` is
-	// not unique here, `(related_to, note.path)` is.
+	// A note related to the focus can also be an item of another note: the common parent of
+	// the focus and a reference is an item of that reference. The focus is never an item, and
+	// a note is not an item of itself. One note can be an item of several notes, so `note.path`
+	// is not unique here, `(related_to, note.path)` is.
 	Related []*RelatedNote `protobuf:"bytes,2,rep,name=related,proto3" json:"related,omitempty"`
 	// The `type` key of the frontmatter of the note in focus, so a client draws a note as
 	// what it is. Empty for an ordinary note.
