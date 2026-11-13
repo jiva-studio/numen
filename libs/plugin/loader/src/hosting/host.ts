@@ -19,7 +19,7 @@ import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views'
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
 import { isNoteEditorKind } from './customTabBuffer'
-import { addListener, notifyListeners } from './events'
+import { addListener, notifyListeners, requestPluginStart } from './events'
 import { createCommandApi } from './commandApi'
 import { createWhenReader, type WhenReader } from '../when'
 import { APP_KEYBINDINGS, isSharedCommand } from '@numen/plugin-sdk'
@@ -300,7 +300,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
   const commands = createCommandApi(deps, registry, keybindings.registry)
   const findSlotCommand = deps.createSlotCommandFinder?.({
     getPluginCommands: commands.getPaletteCommands,
-    hasPluginItems: commands.hasCommandItems,
+    hasPluginItems: commands.hasKnownItems,
   })
   const readSlotEntries = () => deps.getSlotEntries?.(registry.contextManifests?.value ?? new Map())
   const slots = createSlotRegistry({
@@ -311,10 +311,11 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
     ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
     whenReader,
+    requestPlugin: (pluginId) => requestPluginStart(deps, pluginId),
   })
   const contextHost = createHostContextBridge(deps, registry, {
-    views: createViewRegistry(),
-    drops: createDropRegistry(),
+    views: createViewRegistry(deps),
+    drops: createDropRegistry(deps),
     slotViews,
     slots,
     readSlotEntries,
@@ -330,6 +331,8 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     slots,
     slotViews,
     contextHost,
+    /** Starts the plugin in the background for a use that does not wait, such as a view drawn. */
+    requestPluginStart: (pluginId: string): void => requestPluginStart(deps, pluginId),
     /** A change to the vault, delivered to every plugin that subscribed to vault changes. */
     notifyVaultChange: (event: VaultChangeEvent): void =>
       notifyListeners(registry.vaultListeners, event, deps),

@@ -13,7 +13,7 @@ export interface StartDeps {
   startWindow(): Promise<void>
   startEditing(): void
   startLayout(): Promise<void>
-  /** Starts every plugin; settles once all have started or failed. */
+  /** Starts the plugins of the window slots; settles once they have started or failed. */
   startPlugins?(): Promise<void>
   /** Settles once the plugins of the window slots have started or failed. */
   waitForInterfacePlugins?(): Promise<void>

@@ -28,10 +28,13 @@ export interface SettingsPageDeps {
 
 /** What the settings page reads of the plugins: their settings views, their health items and the commands they run. */
 interface SettingsPagePlugins {
-  readonly host: Pick<PluginHost, 'registered'>
+  readonly host: Pick<PluginHost, 'registered' | 'requestPluginStart'>
   readonly health: Readonly<Ref<readonly PluginHealthItem[]>>
   readonly commands: Pick<CommandsHost, 'getIds' | 'run'>
 }
+
+const hasSettingsViews = (rest: SettingsStore, pluginId: string): boolean =>
+  (rest.state.plugins.value.find((one) => one.id === pluginId)?.settingsViews ?? []).length > 0
 
 /** Makes the settings page, registers its kinds of tab, and opens it when it is asked for. */
 export function registerSettingsPage(deps: SettingsPageDeps): void {
@@ -42,7 +45,13 @@ export function registerSettingsPage(deps: SettingsPageDeps): void {
     appearance: deps.windowSettings.appearance,
     log: deps.log,
     windowTabs,
-    getSettingsViews: (pluginId) => plugins.host.registered.getRegisteredSettingsViews(pluginId),
+    getSettingsViews: (pluginId) => {
+      const views = plugins.host.registered.getRegisteredSettingsViews(pluginId)
+      // A plugin starts when its settings view opens.
+      if (views.size === 0 && hasSettingsViews(deps.rest, pluginId))
+        plugins.host.requestPluginStart(pluginId)
+      return views
+    },
     getPlatform: () => frame.platform.value,
     health: { items: plugins.health, commands: plugins.commands },
   })

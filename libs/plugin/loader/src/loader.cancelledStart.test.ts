@@ -55,7 +55,8 @@ describe('a start cancelled at the limit', () => {
       },
     }))
 
-    const started = loader.start()
+    await loader.start()
+    const started = loader.status.startPlugin(HARBOR)
     await vi.advanceTimersByTimeAsync(30_000 + 2_000)
     await started
 

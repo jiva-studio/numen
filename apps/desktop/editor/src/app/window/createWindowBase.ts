@@ -19,7 +19,7 @@ export function createWindowBase() {
   const tabs = createTabsPart({
     writeMessage,
     rest,
-    isPluginStarting: status.isPluginStarting,
+    status,
     openPluginSettings: (pluginId) => settingsRequests.emit({ pluginId }),
   })
   const { windowTabs, windowId, tabOpeners, tabLinks } = tabs

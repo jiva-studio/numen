@@ -46,7 +46,9 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     hasPluginFrontend: catalog.hasFrontend,
     hasPluginBackend: catalog.hasBackend,
     isPluginFailed: (pluginId) => status.getPluginFailure(pluginId) !== undefined,
-    waitForPlugin: (pluginId) => status.settlePlugin(pluginId),
+    startPlugin: status.startPlugin,
+    startPluginsOf: status.startPluginsOf,
+    findPluginsOf: status.findPluginsOf,
     app: createAppInfo({
       version: import.meta.env.VITE_NUMEN_VERSION,
       build: import.meta.env.VITE_NUMEN_BUILD,

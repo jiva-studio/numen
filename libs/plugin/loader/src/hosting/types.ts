@@ -37,6 +37,7 @@ import type {
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
+import type { ContributionMatch } from '../loading'
 import type { AnyTabKind, SourceReader } from './tabKinds'
 import type { DeclaredSlotEntry, SlotCommandLook } from '../slots'
 import type { WhenValues, WhenReader } from '../when'
@@ -121,7 +122,12 @@ export interface PluginHostDeps {
   readonly hasPluginFrontend?: (pluginId: string) => boolean
   readonly hasPluginBackend?: (pluginId: string) => boolean
   readonly isPluginFailed?: (pluginId: string) => boolean
-  readonly waitForPlugin?: (pluginId: string) => Promise<void>
+  /** Starts the plugin and settles once it is active or has failed; nothing for a plugin that is off. */
+  readonly startPlugin?: (pluginId: string) => Promise<void>
+  /** Starts the enabled plugins whose manifest declares the contribution, and waits for them. */
+  readonly startPluginsOf?: (match: ContributionMatch) => Promise<void>
+  /** The enabled plugins whose manifest, as read so far, declares the contribution. */
+  readonly findPluginsOf?: (match: ContributionMatch) => readonly string[]
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
   readonly reportViewIssue?: (pluginId: string, message: string) => void
   readonly registerKind: (kind: AnyTabKind) => () => void

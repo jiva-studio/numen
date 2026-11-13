@@ -35,7 +35,8 @@ describe('a plugin whose module is read after the start limit', () => {
     })
 
     await loader.trackPlugins([HARBOR])
-    const started = loader.start()
+    await loader.start()
+    const started = loader.status.startPlugin(HARBOR)
     await vi.advanceTimersByTimeAsync(30_000 + 2_000)
     await vi.runAllTimersAsync()
     await started
@@ -75,6 +76,7 @@ describe('a plugin that started within the limit', () => {
 
     await loader.trackPlugins([HARBOR])
     await loader.start()
+    await loader.status.startPlugin(HARBOR)
     await vi.advanceTimersByTimeAsync(30_000 + 1_000)
     context?.register.command({ id: 'harbor.open', handler: () => undefined })
 

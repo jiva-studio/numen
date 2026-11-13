@@ -8,7 +8,7 @@ import { readAvailableCommands } from './availableReader'
 import { isCommandAvailable } from './commandWhen'
 import { isSharedCommand } from '@numen/plugin-sdk'
 import { createHandlerApi } from './handlers'
-import { reportError, runCommand } from './events'
+import { reportError, requestPluginStart, runCommand } from './events'
 import type { HostRegistry } from './registry'
 import type { KeybindingRegistry } from '../keybindings'
 import { createShortcutHandler } from './shortcuts'
@@ -39,7 +39,7 @@ export function createCommandApi(
     if (!command || !isCommandAvailable(command.declaration, note, deps)) return false
     let entry = command.entry
     if (!entry) {
-      await deps.waitForPlugin?.(command.declaration.pluginId)
+      await deps.startPlugin?.(command.declaration.pluginId)
       entry = registry.commands.value.get(id)
     }
     if (!entry) return false
@@ -50,13 +50,28 @@ export function createCommandApi(
     handlers,
     getPaletteCommands: () => getAvailableCommands().map((one) => createPaletteCommand(one)),
     hasCommand: (id: string): boolean => findAvailableCommand(id)?.entry !== undefined,
-    hasCommandItems: (id: string): boolean =>
+    /** Whether the command offers items, as known without starting its plugin; reactive. */
+    hasKnownItems: (id: string): boolean =>
       isSharedCommand(id) || registry.commands.value.get(id)?.reg.listItems !== undefined,
+    /**
+     * Whether the command offers items; reactive. Only the plugin knows, so a plugin that has not
+     * started is started by the question and answers once it has.
+     */
+    hasCommandItems: (id: string): boolean => {
+      if (isSharedCommand(id)) return true
+      const entry = registry.commands.value.get(id)
+      if (entry) return entry.reg.listItems !== undefined
+      const command = findAvailableCommand(id)
+      if (command) requestPluginStart(deps, command.declaration.pluginId)
+      return false
+    },
     listCommandItems: async (
       id: string,
       target: CommandTarget,
     ): Promise<readonly CommandItem[]> => {
       if (isSharedCommand(id)) return handlers.listHandlerItems(id, toNote(target))
+      const pluginId = findAvailableCommand(id)?.declaration.pluginId
+      if (!registry.commands.value.has(id) && pluginId) await deps.startPlugin?.(pluginId)
       const entry = registry.commands.value.get(id)
       try {
         return (await entry?.reg.listItems?.(target)) ?? []

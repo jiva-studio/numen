@@ -15,7 +15,7 @@ export interface PluginStartDeps {
   readonly writeMessage: MessageWriter
 }
 
-/** Loads the frontends of the plugins the settings name, and again as the settings change them. */
+/** Tracks the frontends of the plugins the settings name, and again as the settings change them. */
 export function createPluginStart(deps: PluginStartDeps) {
   const { pluginLoader } = deps
   watch(deps.getPlugins, (plugins) => {
@@ -24,7 +24,7 @@ export function createPluginStart(deps: PluginStartDeps) {
     )
   })
   return {
-    /** The plugins the settings name are active before the layout opens the tabs of their kinds. */
+    /** Tracks the plugins the settings name and starts those of the window slots. */
     start: async (): Promise<void> => {
       await pluginLoader.trackPlugins(getFrontendPluginIds(deps.getPlugins()))
       await pluginLoader.start()

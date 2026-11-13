@@ -1,48 +1,80 @@
 /**
- * Where the start of each plugin stands, as a tab of one of its kinds reads it: going on until the
- * plugin is active, has failed, or has passed PLUGIN_START_LIMIT_MS, which counts as failed.
+ * The starts of the plugins on use. A plugin frontend that has no slot of the window starts when
+ * something it contributes is used, and the use waits for it: until the plugin is active, has failed,
+ * or has passed PLUGIN_START_LIMIT_MS, which counts as failed. A failed plugin starts again on the
+ * next use.
  */
-import { watch } from 'vue'
+import type { Manifest } from '@numen/core-client'
 import type { ActivePluginEntry } from './activation'
-import { PLUGIN_START_LIMIT_MS } from './limits'
+
+/** What starts a plugin and reads its manifest; the loader gives it once it exists. */
+export interface PluginStarter {
+  /** Starts the plugin, or joins its start going on; settles once it is active or has failed. */
+  readonly start: (id: string) => Promise<boolean>
+  readonly readManifest: (id: string) => Promise<Manifest | undefined>
+}
+
+/** Whether a manifest declares a contribution, such as a tab kind or a drop type. */
+export type ContributionMatch = (manifest: Manifest) => boolean
 
 export interface PluginStartsDeps {
   readonly isRunning: { readonly value: boolean }
   readonly listPlugins: () => readonly string[]
   readonly isEnabled: (id: string) => boolean
   readonly activePlugins: { readonly value: ReadonlyMap<string, ActivePluginEntry> }
-  readonly failures: { readonly value: ReadonlyMap<string, string> }
+  readonly starting: { readonly value: ReadonlySet<string> }
+  readonly manifests: ReadonlyMap<string, Manifest>
+  readonly starter: { readonly current: PluginStarter | undefined }
 }
 
 export function createPluginStarts(deps: PluginStartsDeps) {
-  const isSettled = (id: string): boolean =>
-    deps.activePlugins.value.has(id) || deps.failures.value.has(id)
+  const listEnabled = (): string[] => deps.listPlugins().filter((id) => deps.isEnabled(id))
 
-  /** Settles once the plugin is active or has failed, or after PLUGIN_START_LIMIT_MS. */
-  const settlePlugin = (id: string): Promise<void> =>
-    new Promise<void>((resolve) => {
-      if (isSettled(id)) return resolve()
-      const stop = watch([deps.activePlugins, deps.failures], () => {
-        if (!isSettled(id)) return
-        stop()
-        clearTimeout(timer)
-        resolve()
-      })
-      const timer = setTimeout(() => {
-        stop()
-        resolve()
-      }, PLUGIN_START_LIMIT_MS)
+  /** Starts the plugin and settles once it is active or has failed; nothing for a plugin that is off. */
+  const startPlugin = async (id: string): Promise<void> => {
+    if (!deps.isRunning.value || deps.activePlugins.value.has(id)) return
+    if (!deps.listPlugins().includes(id) || !deps.isEnabled(id)) return
+    await deps.starter.current?.start(id)
+  }
+
+  const readManifest = (id: string): Promise<Manifest | undefined> =>
+    deps.starter.current?.readManifest(id).catch(() => undefined) ?? Promise.resolve(undefined)
+
+  /** Starts the enabled plugins whose manifest declares the contribution, and waits for them. */
+  const startPluginsOf = async (match: ContributionMatch): Promise<void> => {
+    if (!deps.isRunning.value) return
+    const ids = listEnabled()
+    const manifests = await Promise.all(ids.map(readManifest))
+    const matched = ids.filter((_, index) => {
+      const manifest = manifests[index]
+      return manifest !== undefined && match(manifest)
     })
+    await Promise.all(matched.map(startPlugin))
+  }
 
   return {
-    settlePlugin,
+    startPlugin,
+    startPluginsOf,
+    /**
+     * Starts the enabled plugins that declare one of the tab kinds, and every enabled plugin that
+     * declares a tab kind where no kinds are given, and waits for them.
+     */
+    startTabPlugins: (kinds?: readonly string[]): Promise<void> =>
+      startPluginsOf((manifest) =>
+        (manifest.contributes?.tabKinds ?? []).some(
+          (one) => kinds === undefined || kinds.includes(one.kind),
+        ),
+      ),
+    /** The enabled plugins whose manifest, as read so far, declares the contribution. */
+    findPluginsOf: (match: ContributionMatch): string[] =>
+      listEnabled().filter((id) => {
+        const manifest = deps.manifests.get(id)
+        return manifest !== undefined && match(manifest)
+      }),
     /**
      * Whether the start of the plugin is going on; reactive. Before the plugins are listed every
      * plugin counts as starting, as none is known to be off yet.
      */
-    isPluginStarting: (id: string): boolean => {
-      if (!deps.isRunning.value) return true
-      return deps.listPlugins().includes(id) && deps.isEnabled(id) && !isSettled(id)
-    },
+    isPluginStarting: (id: string): boolean => !deps.isRunning.value || deps.starting.value.has(id),
   }
 }

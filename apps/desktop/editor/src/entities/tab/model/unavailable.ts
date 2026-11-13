@@ -10,6 +10,8 @@ import type { UnavailableLookup } from '../lib/unavailableView'
 export interface UnavailableServices {
   readonly enablePlugin?: ((pluginId: string) => Promise<void>) | undefined
   readonly isPluginStarting?: ((pluginId: string) => boolean) | undefined
+  /** Starts the plugin that declares the kind, whose tab then takes the place of the placeholder. */
+  readonly startKindPlugin?: ((kind: string) => void) | undefined
   readonly openPlugin?: ((pluginId: string | undefined) => void) | undefined
 }
 
