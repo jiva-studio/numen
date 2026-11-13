@@ -111,27 +111,27 @@ function startTransition(context: StepContext): number {
 }
 
 /** What of the input moves the arrangement. */
-function getInputSources(input: () => ArrangeInput | undefined): (() => unknown)[] {
+function getInputSources(input: () => ArrangeInput | undefined) {
   return [
-      () => input()?.placement,
-      () => input()?.options?.viewport?.width,
-      () => input()?.options?.viewport?.height,
-      () => input()?.options?.margin,
-      () => input()?.options?.maxPerCluster,
-      () => input()?.options?.minWidth,
-      () => input()?.options?.gap,
-      () => input()?.options?.lineGap,
-      () => input()?.options?.focusGap,
-      () => input()?.options?.room,
-      () => input()?.options?.focusScale,
-      () => input()?.options?.routing?.curvature,
-      () => input()?.options?.nodeSize?.width,
-      () => input()?.options?.nodeSize?.height,
-      () => input()?.options?.focusSize?.width,
-      () => input()?.options?.focusSize?.height,
-      () => input()?.measure,
-      () => input()?.measureLabel,
-      () => input()?.labelType,
-      () => input()?.room,
+    () => input()?.placement,
+    () => input()?.options?.viewport?.width,
+    () => input()?.options?.viewport?.height,
+    () => input()?.options?.margin,
+    () => input()?.options?.maxPerCluster,
+    () => input()?.options?.minWidth,
+    () => input()?.options?.gap,
+    () => input()?.options?.lineGap,
+    () => input()?.options?.focusGap,
+    () => input()?.options?.room,
+    () => input()?.options?.focusScale,
+    () => input()?.options?.routing?.curvature,
+    () => input()?.options?.nodeSize?.width,
+    () => input()?.options?.nodeSize?.height,
+    () => input()?.options?.focusSize?.width,
+    () => input()?.options?.focusSize?.height,
+    () => input()?.measure,
+    () => input()?.measureLabel,
+    () => input()?.labelType,
+    () => input()?.room,
   ]
 }

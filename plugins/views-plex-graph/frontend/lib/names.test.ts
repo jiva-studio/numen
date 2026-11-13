@@ -23,7 +23,11 @@ const graphOf = (...items: RelatedNote[]): NoteGraph => ({
   connections: [],
 })
 
-const titlesOf = (graph: NoteGraph, limit = 12, references?: 'off' | 'outgoing' | 'incoming' | 'both') => {
+const titlesOf = (
+  graph: NoteGraph,
+  limit = 12,
+  references?: 'off' | 'outgoing' | 'incoming' | 'both',
+) => {
   const names = getNames(graph, limit, token, references).get(token('Kid'))
   return {
     above: names?.above.map((one) => one.title) ?? [],
@@ -61,8 +65,9 @@ describe('the names under and over a related note', () => {
   })
 
   it('keeps no entry for a note with no names, and none for the focus', () => {
-    const graph = graphOf(item('Leaf', 'child', 'Kid'))
-    graph.related.push({ path: 'Lone', title: 'Lone', type: 'note', relation: 'child' })
+    const named = graphOf(item('Leaf', 'child', 'Kid'))
+    const lone = { path: 'Lone', title: 'Lone', type: 'note', relation: 'child' } as const
+    const graph = { ...named, related: [...named.related, lone] }
 
     expect([...getNames(graph, 6, token).keys()]).toEqual([token('Kid')])
   })
@@ -70,12 +75,16 @@ describe('the names under and over a related note', () => {
   it('names a note under every note it is related to', () => {
     const graph = graphOf(item('Shared', 'child', 'Kid'), item('Shared', 'child', 'Other'))
 
-    expect(getNames(graph, 6, token).get(token('Kid'))?.below.map((one) => one.title)).toEqual([
-      'Shared',
-    ])
-    expect(getNames(graph, 6, token).get(token('Other'))?.below.map((one) => one.title)).toEqual([
-      'Shared',
-    ])
+    expect(
+      getNames(graph, 6, token)
+        .get(token('Kid'))
+        ?.below.map((one) => one.title),
+    ).toEqual(['Shared'])
+    expect(
+      getNames(graph, 6, token)
+        .get(token('Other'))
+        ?.below.map((one) => one.title),
+    ).toEqual(['Shared'])
   })
 
   it('gives a name the id its note has, so choosing it reaches the note', () => {

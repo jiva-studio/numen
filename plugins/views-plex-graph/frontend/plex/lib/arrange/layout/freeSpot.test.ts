@@ -16,7 +16,8 @@ const isFree = (spot: Spot, taken: readonly Spot[], gaps: typeof GAPS): boolean 
 const isFreeAmong = (spot: Spot, taken: readonly Spot[], gaps: typeof GAPS): boolean =>
   taken.every(
     (other) =>
-      Math.abs(spot.x - other.x) >= (spot.width + other.width) / 2 + Math.max(0, gaps.gap - TOLERANCE) ||
+      Math.abs(spot.x - other.x) >=
+        (spot.width + other.width) / 2 + Math.max(0, gaps.gap - TOLERANCE) ||
       Math.abs(spot.y - other.y) >=
         (spot.height + other.height) / 2 + Math.max(0, gaps.lineGap - TOLERANCE),
   )
@@ -81,7 +82,10 @@ describe('the free spot of a group', () => {
 
   it('is the middle itself when nothing else is there', () => {
     const middle = { x: 40, y: 260 }
-    expect(findFreeSpot(new SpotIndex([at(0, 0)]), request([], middle))).toStrictEqual({ ...middle, ...SIZE })
+    expect(findFreeSpot(new SpotIndex([at(0, 0)]), request([], middle))).toStrictEqual({
+      ...middle,
+      ...SIZE,
+    })
   })
 
   it('moves further out along the direction when every candidate next to the group is occupied', () => {
@@ -142,7 +146,9 @@ describe('the index agrees with the plain list', () => {
         ]),
       ]
       for (const probe of probes) {
-        expect(index.isFree(probe, gaps), JSON.stringify(probe)).toBe(isFreeAmong(probe, taken, gaps))
+        expect(index.isFree(probe, gaps), JSON.stringify(probe)).toBe(
+          isFreeAmong(probe, taken, gaps),
+        )
       }
     },
   )

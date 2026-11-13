@@ -51,7 +51,6 @@ export function createRouting(
   }
 }
 
-
 /** The middle of a line, where a title with no end is set until something is in the way. */
 export const MIDDLE = 0.5
 

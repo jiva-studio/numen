@@ -12,11 +12,7 @@ import {
   type CommandTarget,
   type Caught,
 } from '@numen/plugin-sdk'
-import {
-  convertNoteGraph,
-  getNoteTypes,
-  getTabKinds,
-} from '../lib/picture'
+import { convertNoteGraph, getNoteTypes, getTabKinds } from '../lib/picture'
 import { getNamePath, getNames, getNameToken } from '../lib/names'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'

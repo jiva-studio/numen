@@ -24,7 +24,9 @@ const graphOf = (...ids: string[]): PlexGraph => ({
 })
 
 const names = (id: string): PlexNames =>
-  id === 'plain' ? { above: [], below: [] } : { above: [], below: [{ id: `n:${id}`, title: 'Heat' }] }
+  id === 'plain'
+    ? { above: [], below: [] }
+    : { above: [], below: [{ id: `n:${id}`, title: 'Heat' }] }
 
 const setUp = (graph: PlexGraph) => {
   const props = reactive({ graph, names, showNames: true })

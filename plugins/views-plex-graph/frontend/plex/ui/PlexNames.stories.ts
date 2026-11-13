@@ -79,7 +79,6 @@ const getCenterY = (element: Element) => {
   return box.top + box.height / 2
 }
 
-
 /** Each related note shows its names as buttons, the names of its parents over it and the rest under it. */
 export const WithNames: Story = {
   play: async ({ canvasElement }) => {

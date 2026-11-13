@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Connection, ConnectionSide, LinkMarker } from '@numen/plugin-sdk'
 import type { NoteGraph, NoteRelation } from '../types'
-import {
-  areNoteGraphsEqual,
-  convertNoteGraph,
-  getNoteTypes,
-  getTabKinds,
-} from './picture'
+import { areNoteGraphsEqual, convertNoteGraph, getNoteTypes, getTabKinds } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 
 /** A related note: where it is, and how it sits relative to the focus. */

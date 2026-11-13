@@ -1,18 +1,12 @@
 /** A manually driven clock: no waiting, no flakiness. */
 import { effectScope, ref } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { usePlexTransition as baseUsePlexTransition, type Clock } from './transition'
-import { arrangePlex, clusters, NO_ROOM, type ArrangeInput } from '../lib/arrange'
+import { arrangePlex, clusters, NO_ROOM, type ArrangeInput, type Placement } from '../lib/arrange'
 import { graphs } from '../fixtures/graphs'
 import { stubClock } from '../../fixtures/clock'
 import type { PlacedNode } from '../lib/node'
 import type { PlexGraph } from '../../types'
-
-// The real arrangement, counted at the edge of the transition.
-vi.mock('../lib/arrange', async (importActual) => {
-  const actual = await importActual<typeof import('../lib/arrange')>()
-  return { ...actual, arrangePlex: vi.fn(actual.arrangePlex) }
-})
 
 const usePlexTransition = (
   graph: () => PlexGraph,
@@ -116,47 +110,62 @@ describe('a movement stepped by hand', () => {
 })
 
 describe('a graph and an input that change together', () => {
-  it('are arranged once', async () => {
+  /** The real placement, counting how often the arrangement asks it. */
+  const createCounting = () => {
+    const counter = { placed: 0 }
+    const placement: Placement = {
+      name: clusters.name,
+      place: (...args) => {
+        counter.placed += 1
+        return clusters.place(...args)
+      },
+    }
+    return { counter, placement }
+  }
+
+  const PLACED_FOR_ONE_ARRANGEMENT = (() => {
+    const { counter, placement } = createCounting()
+    arrangePlex(graphs.leaf, { placement })
+    return counter.placed
+  })()
+
+  const setUp = () => {
     const world = stubClock()
     const current = ref<PlexGraph>(graphs.typical)
     const room = ref<ArrangeInput['room']>(undefined)
+    const { counter, placement } = createCounting()
     inScope(() =>
       usePlexTransition(
         () => current.value,
-        () => ({ room: room.value }),
+        () => ({ room: room.value, placement }),
         () => 400,
         world.clock,
       ),
     )
-    const before = vi.mocked(arrangePlex).mock.calls.length
+    counter.placed = 0
+    return { current, room, counter }
+  }
+
+  it('are arranged once', async () => {
+    const { current, room, counter } = setUp()
 
     current.value = graphs.leaf
     room.value = () => ({ ...NO_ROOM, bottom: 10 })
     await Promise.resolve()
 
-    expect(vi.mocked(arrangePlex).mock.calls.length - before).toBe(1)
+    expect(counter.placed).toBeGreaterThan(0)
+    expect(counter.placed).toBe(PLACED_FOR_ONE_ARRANGEMENT)
   })
 
   it('are arranged once for the graph alone, and once for the input alone', async () => {
-    const world = stubClock()
-    const current = ref<PlexGraph>(graphs.typical)
-    const room = ref<ArrangeInput['room']>(undefined)
-    inScope(() =>
-      usePlexTransition(
-        () => current.value,
-        () => ({ room: room.value }),
-        () => 400,
-        world.clock,
-      ),
-    )
-    const before = vi.mocked(arrangePlex).mock.calls.length
+    const { current, room, counter } = setUp()
 
     current.value = graphs.leaf
     await Promise.resolve()
     room.value = () => NO_ROOM
     await Promise.resolve()
 
-    expect(vi.mocked(arrangePlex).mock.calls.length - before).toBe(2)
+    expect(counter.placed).toBe(2 * PLACED_FOR_ONE_ARRANGEMENT)
   })
 })
 

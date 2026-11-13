@@ -1,11 +1,44 @@
 /** The names of the notes related to each related note, as the plex draws them. */
-import type { NoteGraph, NoteRelation, PlexName, PlexNames, ReferenceMode, RelatedNote } from '../types'
+import type {
+  NoteGraph,
+  NoteRelation,
+  PlexName,
+  PlexNames,
+  ReferenceMode,
+  RelatedNote,
+} from '../types'
 import { isReferenceAdmitted } from './picture'
 
 /** The order the names of a note stand in, parents first. A sibling is never a name. */
 const NAME_ORDER: readonly NoteRelation[] = ['parent', 'child', 'jump', 'reference']
 
 const NAME_PREFIX = 'name:'
+
+/** The items that can be names, by the related note they belong to, in arrival order. */
+function groupByOwner(
+  noteGraph: NoteGraph,
+  references: ReferenceMode,
+): ReadonlyMap<string, readonly RelatedNote[]> {
+  const owners = new Map<string, RelatedNote[]>()
+  for (const item of noteGraph.related) {
+    if (!item.relatedTo || !NAME_ORDER.includes(item.relation)) continue
+    if (item.path === item.relatedTo) continue
+    if (item.relation === 'reference' && !isReferenceAdmitted(item, references)) continue
+    owners.set(item.relatedTo, [...(owners.get(item.relatedTo) ?? []), item])
+  }
+  return owners
+}
+
+/** The items in the order of the names, each note once: in the first relation it stands in. */
+function listDistinct(items: readonly RelatedNote[]): RelatedNote[] {
+  const kept = NAME_ORDER.flatMap((relation) => items.filter((item) => item.relation === relation))
+  const named = new Set<string>()
+  return kept.filter((item) => {
+    if (named.has(item.path)) return false
+    named.add(item.path)
+    return true
+  })
+}
 
 /**
  * The names of the notes related to each related note: its parents over it, and its children, jumps and references under it,
@@ -18,32 +51,13 @@ export function getNames(
   token: (path: string) => string,
   references: ReferenceMode = 'both',
 ): ReadonlyMap<string, PlexNames> {
-  const owners = new Map<string, RelatedNote[]>()
-  for (const item of noteGraph.related) {
-    if (!item.relatedTo || !NAME_ORDER.includes(item.relation)) continue
-    if (item.path === item.relatedTo) continue
-    if (item.relation === 'reference' && !isReferenceAdmitted(item, references)) continue
-    const owned = owners.get(item.relatedTo) ?? []
-    owned.push(item)
-    owners.set(item.relatedTo, owned)
-  }
-
   const toName = (item: RelatedNote): PlexName => ({ id: token(item.path), title: item.title })
   const found = new Map<string, PlexNames>()
-  for (const [owner, items] of owners) {
-    const named = new Set<string>()
-    const kept: RelatedNote[] = []
-    for (const relation of NAME_ORDER) {
-      for (const item of items) {
-        if (item.relation !== relation || named.has(item.path)) continue
-        named.add(item.path)
-        kept.push(item)
-      }
-    }
-    const limited = kept.slice(0, limit)
+  for (const [owner, items] of groupByOwner(noteGraph, references)) {
+    const kept = listDistinct(items).slice(0, limit)
     found.set(token(owner), {
-      above: limited.filter((item) => item.relation === 'parent').map(toName),
-      below: limited.filter((item) => item.relation !== 'parent').map(toName),
+      above: kept.filter((item) => item.relation === 'parent').map(toName),
+      below: kept.filter((item) => item.relation !== 'parent').map(toName),
     })
   }
   return found

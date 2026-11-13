@@ -220,13 +220,13 @@ The settings of the plugin Plex Graph.
 
 | | | |
 | --- | --- | --- |
-| `references` | text | show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none. One of `off`, `outgoing`, `both`, `incoming`. |
+| `references` | text | show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none. One of `off`, `outgoing`, `incoming`, `both`. |
 | `nestHeadings` | yes or no | show the headings of a note under its node. |
 | `headingLimit` | a number | maximum number of headings shown under a node. The rest scroll. From 1 to 12. |
 | `showNames` | yes or no | under each related note, the names of the notes it is related to. |
 | `namesPerNote` | a number | most names shown under and over a related note. From 1 to 12. |
 | `namesOpacity` | a number | how visible the names under and over a note are while the note is not in focus. 0 hides them. From 0 to 1. |
-| `focusedNamesOpacity` | a number | how visible the names under and over a note are while the pointer is over the note or one of them. 0 hides them. From 0 to 1. |
+| `focusedNamesOpacity` | a number | how visible the names under and over a note are while the pointer is over the note or one of them. From 0.05 to 1. |
 | `showPills` | yes or no | draw a pill behind each title. Off: the title alone. |
 | `pillPaddingSides` | a number | space between a title and the left and right edge of its pill. From 0 to 24. |
 | `pillPaddingEnds` | a number | space between a title and the top and bottom edge of its pill. From 0 to 16. |

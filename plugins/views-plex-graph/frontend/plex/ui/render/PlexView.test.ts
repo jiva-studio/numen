@@ -402,7 +402,12 @@ describe('hovered edge line', () => {
   it('renders the truncated title text from the arrangement', () => {
     const arrangedPlex = arrangePlex(titled, { measureLabel: (label) => 30 * label.length })
     const view = mount(PlexView, {
-      props: { ...NAMES_OPACITY, frame: arrangedPlex, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
+      props: {
+        ...NAMES_OPACITY,
+        frame: arrangedPlex,
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+      },
     })
     const edge = arrangedPlex.edges[acrossIndex]!
 
@@ -442,7 +447,12 @@ describe('bidirectional edge pair', () => {
 
   it('raises both edges of a pair on pointerenter', async () => {
     const view = mount(PlexView, {
-      props: { ...NAMES_OPACITY, frame: paired, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
+      props: {
+        ...NAMES_OPACITY,
+        frame: paired,
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+      },
     })
     expect(view.findAll('.plex__edge')).toHaveLength(2)
     expect(view.findAll('.plex__edge-label')).toHaveLength(4)

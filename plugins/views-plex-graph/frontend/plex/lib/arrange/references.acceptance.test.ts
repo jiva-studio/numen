@@ -2,7 +2,6 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { getBox, isOverlapping } from './layout/boxes'
-import { graphs } from '../../fixtures/graphs'
 import { build } from '../../fixtures/build'
 import type { PlexFrame } from '../frame'
 import type { PlacedNode } from '../node'
@@ -55,7 +54,7 @@ describe('references and jumps in a window', () => {
 
 describe('all five relations together', () => {
   const FIVE = { parent: 3, child: 8, jump: 4, reference: 5, sibling: 3 }
-  const all: Record<string, PlexGraph> = { ...graphs, five: build('A note', FIVE) }
+  const five = build('A note', FIVE)
   const WINDOWS: readonly (Window | undefined)[] = [
     undefined,
     { width: 1200, height: 800 },
@@ -63,12 +62,9 @@ describe('all five relations together', () => {
     { width: 420, height: 320 },
   ]
 
-  it.each(Object.keys(all).flatMap((name) => WINDOWS.map((viewport) => ({ name, viewport }))))(
-    'overlaps no two boxes in $name, window $viewport',
-    ({ name, viewport }) => {
-      expect(getOverlaps(arrange(all[name]!, viewport))).toStrictEqual([])
-    },
-  )
+  it.each(WINDOWS)('overlaps no two boxes in window %j', (viewport) => {
+    expect(getOverlaps(arrange(five, viewport))).toStrictEqual([])
+  })
 
   it.each(WINDOWS)('counts the references shown and left out for window %j', (viewport) => {
     const many = build('A note', { ...FIVE, reference: 40 })

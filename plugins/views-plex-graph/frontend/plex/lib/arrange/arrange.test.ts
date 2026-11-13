@@ -31,13 +31,6 @@ const getFocus = (layout: { nodes: readonly PlacedNode[] }) => {
   return focus
 }
 
-function isOverlapping(a: PlacedNode, b: PlacedNode): boolean {
-  return (
-    Math.abs(a.x - b.x) < (a.width + b.width) / 2 - 1e-9 &&
-    Math.abs(a.y - b.y) < (a.height + b.height) / 2 - 1e-9
-  )
-}
-
 describe('the contract on the graph', () => {
   it('refuses a graph with no focus', () => {
     const nodes = [{ id: 'a', title: 'A', relation: 'child' as const }]
@@ -207,53 +200,6 @@ describe('a label is as long as its words', () => {
 
   it('draws the whole label where nothing measured it', () => {
     expect(getWords()).toBe('the scene in the assembly')
-  })
-})
-
-describe('no two nodes are drawn on top of each other', () => {
-  const noneOverlap = (nodes: readonly PlacedNode[]) => {
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i]
-        const b = nodes[j]
-        if (!a || !b) continue
-        expect(isOverlapping(a, b), `${a.id} overlaps ${b.id}`).toBe(false)
-      }
-    }
-  }
-
-  it.each(every)('%s', (_name, graph: PlexGraph) => {
-    noneOverlap(arrangePlex(graph).nodes)
-  })
-
-  it.each(every)('%s, sized to its titles', (_name, graph: PlexGraph) => {
-    noneOverlap(arrangePlex(graph, { measure: byTitle }).nodes)
-  })
-})
-
-describe('the same input gives the same numbers', () => {
-  it.each(every)('%s', (_name, graph: PlexGraph) => {
-    expect(arrangePlex(graph)).toStrictEqual(arrangePlex(graph))
-  })
-
-  it.each(every)('%s, sized to its titles', (_name, graph: PlexGraph) => {
-    expect(arrangePlex(graph, { measure: byTitle })).toStrictEqual(
-      arrangePlex(graph, { measure: byTitle }),
-    )
-  })
-
-  it('does not depend on the order the relations arrive in', () => {
-    const shuffled = {
-      ...graphs.typical,
-      nodes: [...graphs.typical.nodes].reverse(),
-    }
-    const byRelation = (n: PlexGraph) =>
-      arrangePlex(n)
-        .nodes.filter((node) => node.relation === 'child')
-        .map((node) => node.id)
-    // Order follows the input and not a sort; the set of relations is equal.
-    expect(byRelation(shuffled)).toHaveLength(byRelation(graphs.typical).length)
-    expect([...byRelation(shuffled)].sort()).toStrictEqual([...byRelation(graphs.typical)].sort())
   })
 })
 

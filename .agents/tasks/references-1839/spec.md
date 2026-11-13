@@ -280,3 +280,9 @@ For each admitted reference the picture adds one edge `{ from: <focus token>, to
 5. No Go SDK call is added now (a separate issue).
 6. `ref` entries of frontmatter `links:` are accepted as references.
 7. The mobile test is fixed (section 8); the landing demo is left alone.
+
+## Amendments after review (2026-11-13)
+
+1. The options of the references setting are titled Off, Outgoing, Incoming and Both, in that order; the values are `off`, `outgoing`, `incoming` and `both`, `both` by default.
+2. The line from the focus to a reference is no connection: a click on it, or its context menu, opens no link inspector, because no record joins the two notes. Every other line is unchanged.
+3. `docs/themes.md` counts the tokens a theme sets as forty-five, the number of tokens its tables list, all declared in `tokens.css`; `--numen-relation-reference` is one of them.

@@ -153,15 +153,22 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
   const { size, gaps } = request
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
-  let best: { point: Vector; cost: number; along: number } | undefined
-  for (const point of listCandidates(request)) {
+  const found: { best?: { point: Vector; cost: number; along: number } } = {}
+  const consider = (point: Vector) => {
     const along = measureAlong(point, request)
-    if (along < -TOLERANCE) continue
+    if (along < -TOLERANCE) return
     const cost = Math.round(measureCost(point, request) * COST_PRECISION)
-    if (best && !isBetter(cost, along, best)) continue
-    if (index.isFree(toSpot(point), gaps)) best = { point, cost, along }
+    if (found.best && !isBetter(cost, along, found.best)) return
+    if (index.isFree(toSpot(point), gaps)) found.best = { point, cost, along }
   }
-  if (best) return toSpot(best.point)
+  consider(request.middle)
+  consider(request.start)
+  for (const box of request.group) {
+    // The candidates of a box that all cost more than the best so far cannot win, so they are not built.
+    if (found.best && getLeastCost(box, request) > found.best.cost + 1) continue
+    listCandidatesAround(box, request).forEach(consider)
+  }
+  if (found.best) return toSpot(found.best.point)
   return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)
 }
 
@@ -180,31 +187,46 @@ function findSpotBeyond(index: SpotIndex, request: SpotRequest): Spot {
   return { x: middle.x, y, ...size }
 }
 
-function listCandidates(request: SpotRequest): Vector[] {
-  const { start, middle, size, group } = request
-  const gaps = {
+/** The gaps candidates keep from a neighbor: never nothing, so with no gap they do not touch on float error. */
+function getCandidateGaps(request: SpotRequest): Gaps {
+  return {
     gap: Math.max(request.gaps.gap, LEAST_GAP),
     lineGap: Math.max(request.gaps.lineGap, LEAST_GAP),
   }
-  const candidates: Vector[] = [middle, start]
+}
 
-  for (const box of group) {
-    const right = box.x + box.width / 2 + gaps.gap + size.width / 2
-    const left = box.x - box.width / 2 - gaps.gap - size.width / 2
-    const below = box.y + box.height / 2 + gaps.lineGap + size.height / 2
-    const above = box.y - box.height / 2 - gaps.lineGap - size.height / 2
-    candidates.push(
-      { x: right, y: box.y },
-      { x: left, y: box.y },
-      { x: box.x, y: below },
-      { x: box.x, y: above },
-      { x: (box.x + right) / 2, y: below },
-      { x: (box.x + left) / 2, y: below },
-      { x: (box.x + right) / 2, y: above },
-      { x: (box.x + left) / 2, y: above },
-    )
-  }
-  return candidates
+/** The cost, in the units of the comparison, that no candidate built next to the box can come below. */
+function getLeastCost(box: Spot, request: SpotRequest): number {
+  const { middle, size } = request
+  const gaps = getCandidateGaps(request)
+  const reachX = box.width / 2 + gaps.gap + size.width / 2
+  const reachY = box.height / 2 + gaps.lineGap + size.height / 2
+  const farX = Math.max(0, Math.abs(middle.x - box.x) - reachX)
+  const farY = Math.max(0, Math.abs(middle.y - box.y) - reachY)
+  const least = Math.hypot(
+    farX / (size.width + request.gaps.gap),
+    farY / (size.height + request.gaps.lineGap),
+  )
+  return least * COST_PRECISION
+}
+
+function listCandidatesAround(box: Spot, request: SpotRequest): Vector[] {
+  const { size } = request
+  const gaps = getCandidateGaps(request)
+  const right = box.x + box.width / 2 + gaps.gap + size.width / 2
+  const left = box.x - box.width / 2 - gaps.gap - size.width / 2
+  const below = box.y + box.height / 2 + gaps.lineGap + size.height / 2
+  const above = box.y - box.height / 2 - gaps.lineGap - size.height / 2
+  return [
+    { x: right, y: box.y },
+    { x: left, y: box.y },
+    { x: box.x, y: below },
+    { x: box.x, y: above },
+    { x: (box.x + right) / 2, y: below },
+    { x: (box.x + left) / 2, y: below },
+    { x: (box.x + right) / 2, y: above },
+    { x: (box.x + left) / 2, y: above },
+  ]
 }
 
 function measureAlong(point: Vector, request: SpotRequest): number {

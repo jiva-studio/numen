@@ -11,7 +11,9 @@ import { areConnectionsEqual, isConnectionEmpty } from './connectionDraft'
 /** Whether a connection of the shown note graph joins the two notes: the line to a reference is no connection. */
 const isConnected = (view: PlexView, first: string, second: string): boolean =>
   view.noteGraph.value?.connections.some(
-    (one) => (one.first === first && one.second === second) || (one.first === second && one.second === first),
+    (one) =>
+      (one.first === first && one.second === second) ||
+      (one.first === second && one.second === first),
   ) ?? false
 
 export function useLinkInspector(

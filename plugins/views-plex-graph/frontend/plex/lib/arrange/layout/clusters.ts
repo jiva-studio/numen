@@ -94,7 +94,10 @@ function createGroupPlans(
     const members = nodesByRelation[relation] ?? []
     const first = members[0]
     if (!first) continue
-    const direction = getClusterDirection(context.options.direction[relation], RELATIONS[relation].lean)
+    const direction = getClusterDirection(
+      context.options.direction[relation],
+      RELATIONS[relation].lean,
+    )
     plans.set(relation, {
       members,
       direction,
@@ -116,7 +119,12 @@ function createRequest(plan: GroupPlan, size: Size, context: PlacementContext) {
   return { start, middle, direction, size, gaps: { gap, lineGap } }
 }
 
-function createBox(node: PlexNode, spot: Spot, context: PlacementContext, order: number): PlacedNode {
+function getPlacedNode(
+  node: PlexNode,
+  spot: Spot,
+  context: PlacementContext,
+  order: number,
+): PlacedNode {
   return {
     ...node,
     x: spot.x,
@@ -156,7 +164,7 @@ function placeClusters(
     const spot = findFreeSpot(index, { ...request, group })
     index.add(spot)
     group.push(spot)
-    const box = createBox(node, spot, context, plan.members.indexOf(node))
+    const box = getPlacedNode(node, spot, context, plan.members.indexOf(node))
     placed.set(node.id, box)
     if (context.shouldStop?.(box)) break
   }

@@ -96,7 +96,7 @@ A plugin of themes has no backend and no frontend; it consists only of the manif
 
 ## The tokens a theme sets
 
-Forty-four, each a colour unless stated otherwise.
+Forty-five, each a colour unless stated otherwise.
 
 ### The window and what is on it
 
