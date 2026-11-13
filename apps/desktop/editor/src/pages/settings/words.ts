@@ -18,8 +18,6 @@ export const WORDS = {
   /** The page of connections. */
   secretMasked: '••••••••',
   connectionAdd: 'Add connection',
-  /** The last row of the list of connections, which opens the dialog that adds one. */
-  connectionAddRow: 'Add connection…',
   connectionEdit: 'Edit connection',
   connectionMenuDelete: 'Delete',
   connectionsEmpty: 'No connections yet.',

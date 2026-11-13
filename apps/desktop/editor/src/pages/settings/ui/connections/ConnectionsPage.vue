@@ -115,7 +115,7 @@ function focusAfterDelete(at: number): void {
             :stroke-width="1.75"
             aria-hidden="true"
           />
-          {{ words.connectionAddRow }}
+          {{ words.connectionAdd }}
         </button>
       </div>
 

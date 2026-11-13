@@ -859,6 +859,28 @@ describe('the spinner of the field', () => {
       vault.searched.filter((one) => one.mode === which)[query]?.answer.answer([])
   }
 
+  it('keeps turning through the pause of a keystroke typed while a question is out', async () => {
+    const vault = createVault()
+    const pause = createDeferred<void>()
+    let isFirst = true
+    const wait = () => {
+      if (isFirst) {
+        isFirst = false
+        return Promise.resolve()
+      }
+      return pause.promise
+    }
+    const palette = useSearch(vault.core, WORDS, { wait })
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    expect(palette.status.isBusy.value).toBe(true)
+
+    palette.setTyped('entr').catch(rethrow)
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(true)
+  })
+
   it('stays while one question of the query is out and goes once the last one fails', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, { wait: now })

@@ -263,6 +263,9 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   // The questions of the current query, which a newer query or putting the palette away aborts.
   let asking = new AbortController()
+  // A query typed while the spinner turns keeps it turning through the pause before it is asked, so
+  // it does not blink off on each keystroke; a first keystroke shows none until the questions go out.
+  const isWaiting = ref(false)
 
   const drop = () => {
     asking.abort()
@@ -270,11 +273,19 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     texts.value = []
     meanings.value = []
     isWorking.value = { names: false, text: false, meaning: false }
+    isWaiting.value = false
     failureMessages.value = {}
     isAnswered.value = false
   }
 
+  const wait = () => {
+    const wasBusy = isBusy.value
+    drop()
+    isWaiting.value = wasBusy
+  }
+
   const ask = (query: string, mine: InFlightRequest) => {
+    isWaiting.value = false
     asking.abort()
     asking = new AbortController()
     return executeSearchQuery(
@@ -287,7 +298,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     inputValue.value = text
     await debounced.search(text, {
       blank: drop,
-      pending: drop,
+      pending: wait,
       run: ask,
     })
   }
@@ -321,8 +332,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const groups = computed(() => searchGroups.value.groups)
 
-  /** Whether any question of the current request is still out. */
-  const isBusy = computed(() => Object.values(isWorking.value).some(Boolean))
+  /** Whether a typed query waits for its pause or any question of the current request is still out. */
+  const isBusy = computed(() => isWaiting.value || Object.values(isWorking.value).some(Boolean))
 
   /** Whether every question has answered and no group has a row or a message to show. */
   const isNothingFound = computed(
