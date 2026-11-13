@@ -35,7 +35,7 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	bridge, err := sourcebridge.Open(ctx, pluginhost.Join(host))
+	bridge, err := sourcebridge.Open(ctx, pluginhost.Join(host), nil)
 	if err != nil {
 		t.Fatalf("OpenEmbedderBridge with real binary failed: %v", err)
 	}

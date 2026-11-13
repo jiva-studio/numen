@@ -10,11 +10,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 const embeddingPluginID = "md.numen.embeddings"
 
-// failingActivator is a plugin host that cannot activate any plugin.
+// failingActivator is a plugin host that cannot start any plugin.
 type failingActivator struct{}
 
 func (failingActivator) EnsureActive(context.Context, string) (transport.Endpoint, error) {
@@ -23,10 +24,18 @@ func (failingActivator) EnsureActive(context.Context, string) (transport.Endpoin
 
 func (failingActivator) Release(string) {}
 
+func (failingActivator) ResolveCapability(string) (manifest.Discovered, error) {
+	return manifest.Discovered{Manifest: manifest.Manifest{ID: embeddingPluginID}}, nil
+}
+
+func (failingActivator) WatchPluginConfig(string, func()) func() { return func() {} }
+
+func (failingActivator) HasEndpoint(string) bool { return false }
+
 // A plugin that cannot be opened after a setting is reported with its id, and no listener runs.
 func TestEmbedderReportsFailedOpenAfterSettingChange(t *testing.T) {
 	b := &Source{
-		pluginID: embeddingPluginID,
+		host: failingActivator{},
 		service: bridge.Service[numenv1connect.SearchSourceServiceClient]{
 			Host: failingActivator{}, PluginID: embeddingPluginID, NewClient: numenv1connect.NewSearchSourceServiceClient,
 		},

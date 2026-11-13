@@ -66,6 +66,12 @@ type ConfigWatcher interface {
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
+// RunningPlugins tells which plugins have a process that runs.
+type RunningPlugins interface {
+	// HasEndpoint reports whether the plugin has the endpoint of a running process.
+	HasEndpoint(pluginID string) bool
+}
+
 type SettingChecker interface {
 	CheckPluginSetting(pluginID, key string, value any) error
 }

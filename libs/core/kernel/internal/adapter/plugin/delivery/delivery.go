@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"sync"
 	"time"
 
@@ -92,14 +93,15 @@ func (d *Delivery) IsAwaitingFirstConfigure(pluginID string) bool {
 	return d.ledger.isAwaitingFirstConfigure(pluginID)
 }
 
-// WatchConfig registers fn to run each time the plugin has been given its configuration. The returned
-// function removes the registration.
+// WatchConfig registers fn to run each time the plugin has been given its configuration, and each time
+// Configure or a forced Refresh finds it not running, which is a change of its configuration it has not
+// been given. The returned function removes the registration.
 func (d *Delivery) WatchConfig(pluginID string, fn func()) (stop func()) {
 	return d.watchers.add(pluginID, fn)
 }
 
 // Refresh sends Configure to each running plugin that was not given its configuration yet, and to
-// each plugin in forced.
+// each plugin in forced. A forced plugin that does not run is not sent anything, and its watchers run.
 func (d *Delivery) Refresh(ctx context.Context, forced []string) error {
 	d.ledger.forget(forced)
 	if err := d.Lock(ctx); err != nil {
@@ -114,19 +116,22 @@ func (d *Delivery) Refresh(ctx context.Context, forced []string) error {
 			continue
 		}
 		group.Go(func() {
-			failures[i] = d.refreshPlugin(ctx, id)
+			failures[i] = d.refreshPlugin(ctx, id, slices.Contains(forced, id))
 		})
 	}
 	group.Wait()
 	return errors.Join(failures...)
 }
 
-func (d *Delivery) refreshPlugin(ctx context.Context, pluginID string) error {
+func (d *Delivery) refreshPlugin(ctx context.Context, pluginID string, isForced bool) error {
 	snapshot, isRunning, err := d.host.GetSnapshot(pluginID)
 	if err != nil {
 		return err
 	}
 	if !isRunning {
+		if isForced {
+			d.watchers.run(pluginID)
+		}
 		return nil
 	}
 	if !d.ledger.isDue(pluginID) {
@@ -135,11 +140,15 @@ func (d *Delivery) refreshPlugin(ctx context.Context, pluginID string) error {
 	return d.deliver(ctx, snapshot)
 }
 
-// Configure sends Configure to the plugin. The caller holds Lock.
+// Configure sends Configure to the plugin, or runs its watchers where it does not run. The caller holds Lock.
 func (d *Delivery) Configure(ctx context.Context, pluginID string) error {
 	snapshot, isRunning, err := d.host.GetSnapshot(pluginID)
-	if !isRunning || err != nil {
+	if err != nil {
 		return err
+	}
+	if !isRunning {
+		d.watchers.run(pluginID)
+		return nil
 	}
 	return d.deliver(ctx, snapshot)
 }

@@ -205,12 +205,12 @@ func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, 
 
 func searchSources(c searchWiring, ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
 	report := pluginhealth.NewReportSearchSource(c.PluginHost.Health)
-	source, closeSource, err := searchOpenSource(c, ctx, func(ctx context.Context, host sourcebridge.Host) (*sourcebridge.Source, error) {
+	source, closeSource, err := searchOpenSource(c, ctx, func(ctx context.Context, host sourcebridge.Host, kept *sourcebridge.Descriptions) (*sourcebridge.Source, error) {
 		found, err := host.ResolveCapability(bridge.CapabilitySearchSource)
 		if err != nil {
 			return nil, err
 		}
-		return sourcebridge.OpenWatching(ctx, host, func(readErr error) { report.Execute(found.Manifest.ID, readErr) })
+		return sourcebridge.OpenWatching(ctx, host, kept, func(readErr error) { report.Execute(found.Manifest.ID, readErr) })
 	})
 	if err != nil {
 		return nil, nil, func() error { return nil }, err
@@ -222,8 +222,8 @@ func searchSource(c searchWiring, ctx context.Context) (searchsourceport.Watched
 	return searchOpenSource(c, ctx, sourcebridge.Open)
 }
 
-// sourceOpener opens the search source over the plugin host.
-type sourceOpener func(ctx context.Context, host sourcebridge.Host) (*sourcebridge.Source, error)
+// sourceOpener opens the search source over the plugin host, with the descriptions the host keeps.
+type sourceOpener func(ctx context.Context, host sourcebridge.Host, kept *sourcebridge.Descriptions) (*sourcebridge.Source, error)
 
 func searchOpenSource(c searchWiring, ctx context.Context, open sourceOpener) (searchsourceport.WatchedSource, func() error, error) {
 	if _, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource); errors.Is(err, domain.ErrUnavailable) {
@@ -235,7 +235,7 @@ func searchOpenSource(c searchWiring, ctx context.Context, open sourceOpener) (s
 }
 
 func openSource(c searchWiring, ctx context.Context, host *PluginHost, open sourceOpener) (searchsourceport.WatchedSource, func() error, error) {
-	opened, err := open(ctx, host.Runtime)
+	opened, err := open(ctx, host.Runtime, host.SourceDescriptions)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -84,7 +84,7 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", port))), nil
 	})
 
-	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(host))
+	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(host), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

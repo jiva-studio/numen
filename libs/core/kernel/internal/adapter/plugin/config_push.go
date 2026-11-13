@@ -2,10 +2,14 @@ package plugin
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
+	"strings"
 	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -19,6 +23,8 @@ import (
 type configPlugins interface {
 	listIDs() []string
 	getPluginSettings(pluginID string) map[string]any
+	GetVersion(pluginID string) string
+	isPluginEnabled(pluginID string) bool
 }
 
 // ConfigPush gives the running plugins their configuration: the settings and the performance profile,
@@ -67,11 +73,30 @@ func (c *ConfigPush) Refresh(ctx context.Context, forced ...string) error {
 	return c.delivery.Refresh(ctx, forced)
 }
 
-// WatchPluginConfig registers fn to run each time the plugin has been given its configuration.
+// WatchPluginConfig registers fn to run each time the plugin has been given its configuration, and each
+// time its configuration changes while it does not run and is enabled.
 // fn runs on its own goroutine, so it may call the plugin while the delivery of Configure is locked.
 // The returned function removes the registration.
 func (c *ConfigPush) WatchPluginConfig(pluginID string, fn func()) (stop func()) {
-	return c.delivery.WatchConfig(pluginID, fn)
+	return c.delivery.WatchConfig(pluginID, func() {
+		if c.set.isPluginEnabled(pluginID) {
+			fn()
+		}
+	})
+}
+
+// GetPluginConfigRevision returns a digest of what the plugin is configured with: its version, its settings
+// without the enabled flag, and the performance profile. Equal revisions are one configuration, in this
+// process or another.
+func (c *ConfigPush) GetPluginConfigRevision(pluginID string) string {
+	settings := maps.Clone(c.set.getPluginSettings(pluginID))
+	delete(settings, settingEnabled)
+	encoded, err := json.Marshal(settings)
+	if err != nil {
+		return ""
+	}
+	digest := sha256.Sum256([]byte(strings.Join([]string{c.set.GetVersion(pluginID), string(encoded), c.getPerformanceProfile()}, "\x00")))
+	return hex.EncodeToString(digest[:])
 }
 
 // NotifyPluginConfig sends the resolved configuration to a running plugin process.

@@ -136,6 +136,12 @@ func (s *PluginSet) getName(pluginID string) string {
 	return p.Manifest.Name
 }
 
+func (s *PluginSet) isPluginEnabled(pluginID string) bool {
+	v, release := s.view()
+	defer release()
+	return v.isEnabled(pluginID)
+}
+
 func (s *PluginSet) isRegistered(pluginID string) bool {
 	_, ok := s.getKnownPlugin(pluginID)
 	return ok

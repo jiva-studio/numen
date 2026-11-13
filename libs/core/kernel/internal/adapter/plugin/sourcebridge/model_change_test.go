@@ -46,7 +46,7 @@ func openConfigurableEmbedder(t *testing.T) (*container.PluginRoles, *sourcebrid
 	mock.chunkTokens.Store(256)
 	host := startConfigurableSource(t, mock)
 
-	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(host))
+	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(host), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
