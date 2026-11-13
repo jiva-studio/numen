@@ -337,7 +337,10 @@ function applyFrame(frame: acp.TaskFrame, context: FrameContext): void {
       applyToolCall(update.value, context)
       break
     case 'toolCallUpdate':
-      if (isEnded(update.value.status)) endCall(update.value.toolCallId, context)
+      applyToolCallUpdate(update.value, context)
+      break
+    case 'agentThoughtChunk':
+      applyThought(context)
       break
     default:
       break

@@ -430,7 +430,11 @@ describe('a call that writes a note', () => {
       frames: [
         callTool('c1', 'Write note', { subject: 'Pear trees', path: 'notes/Pear trees.md' }),
         writeTool('c1', 'notes/Pear trees.md', '# Pear trees\n\nPlanted in rows of twelve.'),
-        writeTool('c1', 'notes/Pear trees.md', '# Pear trees\n\nPlanted in rows of twelve. Pruned in March, café rows.'),
+        writeTool(
+          'c1',
+          'notes/Pear trees.md',
+          '# Pear trees\n\nPlanted in rows of twelve. Pruned in March, café rows.',
+        ),
       ],
       hold,
     })

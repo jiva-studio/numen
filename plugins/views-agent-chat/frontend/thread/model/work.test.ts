@@ -104,7 +104,11 @@ describe('the line that says what the agent has in hand', () => {
     line.reach({ title: 'Write note', subject: 'Pear trees', path: '' })
     line.write(12015)
     expect(sendTurn).toHaveBeenLastCalledWith(
-      expect.objectContaining({ text: 'Write note', aside: '12 015 characters', state: 'arriving' }),
+      expect.objectContaining({
+        text: 'Write note',
+        aside: '12 015 characters',
+        state: 'arriving',
+      }),
     )
     line.settle()
     expect(sendTurn.mock.lastCall?.[0]).not.toHaveProperty('aside')
