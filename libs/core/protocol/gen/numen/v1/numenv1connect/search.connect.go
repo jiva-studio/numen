@@ -62,10 +62,11 @@ type SearchServiceClient interface {
 	// caller says which way it is asked, so a client drawing them apart asks once
 	// for each.
 	SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error)
-	// CancelSearch stops the SearchPassages call that carries the search id. A
-	// client that aborts its request does not stop the call in the core, so it
-	// sends this to free the work the call still does. An id no call carries is
-	// ignored.
+	// CancelSearch stops the SearchNames or SearchPassages call that carries the
+	// search id. A client that aborts its request does not stop the call in the
+	// core, so it sends this to free the work the call still does. A cancel that
+	// arrives before its call is kept for a few seconds and cancels the call if
+	// the call arrives in that time.
 	CancelSearch(context.Context, *connect.Request[v1.CancelSearchRequest]) (*connect.Response[v1.CancelSearchResponse], error)
 }
 
@@ -137,10 +138,11 @@ type SearchServiceHandler interface {
 	// caller says which way it is asked, so a client drawing them apart asks once
 	// for each.
 	SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error)
-	// CancelSearch stops the SearchPassages call that carries the search id. A
-	// client that aborts its request does not stop the call in the core, so it
-	// sends this to free the work the call still does. An id no call carries is
-	// ignored.
+	// CancelSearch stops the SearchNames or SearchPassages call that carries the
+	// search id. A client that aborts its request does not stop the call in the
+	// core, so it sends this to free the work the call still does. A cancel that
+	// arrives before its call is kept for a few seconds and cancels the call if
+	// the call arrives in that time.
 	CancelSearch(context.Context, *connect.Request[v1.CancelSearchRequest]) (*connect.Response[v1.CancelSearchResponse], error)
 }
 

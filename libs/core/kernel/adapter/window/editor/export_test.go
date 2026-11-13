@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -97,7 +98,7 @@ func createServices(state *State) *Services {
 		server:  NewFileServer(state, nil),
 	}
 	services.Extra = []Route{
-		RouteOf(state, search.NewHandler(state, nil, nil), search.NewRoute),
+		RouteOf(state, search.NewHandler(state, nil, nil, testsupport.NewClock()), search.NewRoute),
 		RouteOf(state, settings.NewHandler(settings.Values{}, settings.PluginFolders{}), settings.NewRoute),
 		RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
 	}

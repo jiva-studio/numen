@@ -5,13 +5,13 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"sync"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -27,15 +27,15 @@ type Handler struct {
 	vaults       VaultProvider
 	findNames    *search.FindNames
 	findPassages *search.FindPassages
-
-	// running holds the cancel of each SearchPassages call that carries a search id.
-	mu      sync.Mutex
-	running map[string]context.CancelFunc
+	searches     *searches
 }
 
-// NewHandler is the handler of SearchService over the names and the text of the shown vault.
-func NewHandler(vaults VaultProvider, names *search.FindNames, passages *search.FindPassages) *Handler {
-	return &Handler{vaults: vaults, findNames: names, findPassages: passages, running: map[string]context.CancelFunc{}}
+// NewHandler is the handler of SearchService over the names and the text of the shown vault. clock
+// times the cancels that arrive before their search.
+func NewHandler(
+	vaults VaultProvider, names *search.FindNames, passages *search.FindPassages, clock machineport.Clock,
+) *Handler {
+	return &Handler{vaults: vaults, findNames: names, findPassages: passages, searches: newSearches(clock)}
 }
 
 // errNoMode is a search that named no mode to ask it in.
@@ -51,7 +51,15 @@ func (h *Handler) SearchNames(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
+	ctx, done := h.searches.start(ctx, r.Msg.GetSearchId())
+	defer done()
+	if err := ctx.Err(); err != nil {
+		return nil, connect.NewError(connect.CodeCanceled, err)
+	}
 	found, err := h.findNames.Execute(ctx, showing, r.Msg.GetQuery(), int(r.Msg.GetLimit()))
+	if errors.Is(err, context.Canceled) {
+		return nil, connect.NewError(connect.CodeCanceled, err)
+	}
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -90,8 +98,11 @@ func (h *Handler) SearchPassages(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoMode)
 	}
 
-	ctx, done := h.startSearch(ctx, r.Msg.GetSearchId())
+	ctx, done := h.searches.start(ctx, r.Msg.GetSearchId())
 	defer done()
+	if err := ctx.Err(); err != nil {
+		return nil, connect.NewError(connect.CodeCanceled, err)
+	}
 	found, err := h.findPassages.Execute(ctx, showing, query, mode, int(r.Msg.GetLimit()))
 	if errors.Is(err, context.Canceled) {
 		return nil, connect.NewError(connect.CodeCanceled, err)
@@ -123,36 +134,14 @@ func (h *Handler) SearchPassages(
 	return connect.NewResponse(out), nil
 }
 
-// CancelSearch cancels the context of the SearchPassages call that carries the search id. The window
-// sends it when it aborts the call, because an aborted request does not end the context of the call.
+// CancelSearch cancels the context of the SearchNames or SearchPassages call that carries the search id.
+// The window sends it when it aborts the call, because an aborted request does not end the context of
+// the call.
 func (h *Handler) CancelSearch(
 	_ context.Context, r *connect.Request[v1.CancelSearchRequest],
 ) (*connect.Response[v1.CancelSearchResponse], error) {
-	h.mu.Lock()
-	cancel := h.running[r.Msg.GetSearchId()]
-	h.mu.Unlock()
-	if cancel != nil {
-		cancel()
-	}
+	h.searches.cancel(r.Msg.GetSearchId())
 	return connect.NewResponse(&v1.CancelSearchResponse{}), nil
-}
-
-// startSearch returns the context of a SearchPassages call, which CancelSearch with the id cancels, and
-// the function that ends the call. A call without an id cannot be cancelled.
-func (h *Handler) startSearch(ctx context.Context, id string) (context.Context, func()) {
-	if id == "" {
-		return ctx, func() {}
-	}
-	ctx, cancel := context.WithCancel(ctx)
-	h.mu.Lock()
-	h.running[id] = cancel
-	h.mu.Unlock()
-	return ctx, func() {
-		h.mu.Lock()
-		delete(h.running, id)
-		h.mu.Unlock()
-		cancel()
-	}
 }
 
 func convertNoteTypeToWire(noteType domain.NoteType) string {

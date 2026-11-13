@@ -98,7 +98,10 @@ type SearchNamesRequest struct {
 	// of them on its prefix.
 	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// How many names to answer with. Zero takes the number the vault chooses.
-	Limit         int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Limit int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	// The id CancelSearch names this call by, chosen by the client and unique
+	// among its calls. Empty when the call cannot be cancelled.
+	SearchId      string `protobuf:"bytes,3,opt,name=search_id,json=searchId,proto3" json:"search_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -145,6 +148,13 @@ func (x *SearchNamesRequest) GetLimit() int32 {
 		return x.Limit
 	}
 	return 0
+}
+
+func (x *SearchNamesRequest) GetSearchId() string {
+	if x != nil {
+		return x.SearchId
+	}
+	return ""
 }
 
 type SearchNamesResponse struct {
@@ -615,10 +625,11 @@ var File_numen_v1_search_proto protoreflect.FileDescriptor
 
 const file_numen_v1_search_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/search.proto\x12\bnumen.v1\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\"@\n" +
+	"\x15numen/v1/search.proto\x12\bnumen.v1\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\"]\n" +
 	"\x12SearchNamesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\"@\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x1b\n" +
+	"\tsearch_id\x18\x03 \x01(\tR\bsearchId\"@\n" +
 	"\x13SearchNamesResponse\x12)\n" +
 	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xc5\x01\n" +
 	"\tNameMatch\x12\"\n" +

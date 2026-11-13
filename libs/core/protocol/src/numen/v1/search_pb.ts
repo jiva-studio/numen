@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIp8BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIfCgZyYW5nZXMYAyADKAsyDy5udW1lbi52MS5SYW5nZRIMCgR0eXBlGAQgASgJEhAKCHRhYl9raW5kGAUgASgJQgoKCF9oZWFkaW5nImwKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZRIRCglzZWFyY2hfaWQYBCABKAkiKAoTQ2FuY2VsU2VhcmNoUmVxdWVzdBIRCglzZWFyY2hfaWQYASABKAkiFgoUQ2FuY2VsU2VhcmNoUmVzcG9uc2UiOgoWU2VhcmNoUGFzc2FnZXNSZXNwb25zZRIgCgVmb3VuZBgBIAMoCzIRLm51bWVuLnYxLlBhc3NhZ2Ui5AEKB1Bhc3NhZ2USDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSHwoGcmFuZ2VzGAQgAygLMg8ubnVtZW4udjEuUmFuZ2USEAoIbG9jYXRpb24YBSABKAkSHgoFcmFuZ2UYBiABKAsyDy5udW1lbi52MS5SYW5nZRIMCgRsaW5lGAcgASgFEgwKBHR5cGUYCCABKAkSEAoIc2VsZWN0b3IYCiABKAkSEAoIdGFiX2tpbmQYCyABKAlCBwoFX25vdGUqiAEKClNlYXJjaE1vZGUSGwoXU0VBUkNIX01PREVfVU5TUEVDSUZJRUQQABIVChFTRUFSQ0hfTU9ERV9XT1JEUxABEhcKE1NFQVJDSF9NT0RFX01FQU5JTkcQAhIVChFTRUFSQ0hfTU9ERV9OQU1FUxADEhYKElNFQVJDSF9NT0RFX0hZQlJJRBAEMv8BCg1TZWFyY2hTZXJ2aWNlEkoKC1NlYXJjaE5hbWVzEhwubnVtZW4udjEuU2VhcmNoTmFtZXNSZXF1ZXN0Gh0ubnVtZW4udjEuU2VhcmNoTmFtZXNSZXNwb25zZRJTCg5TZWFyY2hQYXNzYWdlcxIfLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVxdWVzdBogLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVzcG9uc2USTQoMQ2FuY2VsU2VhcmNoEh0ubnVtZW4udjEuQ2FuY2VsU2VhcmNoUmVxdWVzdBoeLm51bWVuLnYxLkNhbmNlbFNlYXJjaFJlc3BvbnNlQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIkUKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIRCglzZWFyY2hfaWQYAyABKAkiOQoTU2VhcmNoTmFtZXNSZXNwb25zZRIiCgVmb3VuZBgBIAMoCzITLm51bWVuLnYxLk5hbWVNYXRjaCKfAQoJTmFtZU1hdGNoEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESHwoGcmFuZ2VzGAMgAygLMg8ubnVtZW4udjEuUmFuZ2USDAoEdHlwZRgEIAEoCRIQCgh0YWJfa2luZBgFIAEoCUIKCghfaGVhZGluZyJsChVTZWFyY2hQYXNzYWdlc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUSIgoEbW9kZRgDIAEoDjIULm51bWVuLnYxLlNlYXJjaE1vZGUSEQoJc2VhcmNoX2lkGAQgASgJIigKE0NhbmNlbFNlYXJjaFJlcXVlc3QSEQoJc2VhcmNoX2lkGAEgASgJIhYKFENhbmNlbFNlYXJjaFJlc3BvbnNlIjoKFlNlYXJjaFBhc3NhZ2VzUmVzcG9uc2USIAoFZm91bmQYASADKAsyES5udW1lbi52MS5QYXNzYWdlIuQBCgdQYXNzYWdlEgwKBHBhdGgYASABKAkSIQoEbm90ZRgCIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBARIMCgR0ZXh0GAMgASgJEh8KBnJhbmdlcxgEIAMoCzIPLm51bWVuLnYxLlJhbmdlEhAKCGxvY2F0aW9uGAUgASgJEh4KBXJhbmdlGAYgASgLMg8ubnVtZW4udjEuUmFuZ2USDAoEbGluZRgHIAEoBRIMCgR0eXBlGAggASgJEhAKCHNlbGVjdG9yGAogASgJEhAKCHRhYl9raW5kGAsgASgJQgcKBV9ub3RlKogBCgpTZWFyY2hNb2RlEhsKF1NFQVJDSF9NT0RFX1VOU1BFQ0lGSUVEEAASFQoRU0VBUkNIX01PREVfV09SRFMQARIXChNTRUFSQ0hfTU9ERV9NRUFOSU5HEAISFQoRU0VBUkNIX01PREVfTkFNRVMQAxIWChJTRUFSQ0hfTU9ERV9IWUJSSUQQBDL/AQoNU2VhcmNoU2VydmljZRJKCgtTZWFyY2hOYW1lcxIcLm51bWVuLnYxLlNlYXJjaE5hbWVzUmVxdWVzdBodLm51bWVuLnYxLlNlYXJjaE5hbWVzUmVzcG9uc2USUwoOU2VhcmNoUGFzc2FnZXMSHy5udW1lbi52MS5TZWFyY2hQYXNzYWdlc1JlcXVlc3QaIC5udW1lbi52MS5TZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEk0KDENhbmNlbFNlYXJjaBIdLm51bWVuLnYxLkNhbmNlbFNlYXJjaFJlcXVlc3QaHi5udW1lbi52MS5DYW5jZWxTZWFyY2hSZXNwb25zZUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -39,6 +39,14 @@ export type SearchNamesRequest = Message<"numen.v1.SearchNamesRequest"> & {
    * @generated from field: int32 limit = 2;
    */
   limit: number;
+
+  /**
+   * The id CancelSearch names this call by, chosen by the client and unique
+   * among its calls. Empty when the call cannot be cancelled.
+   *
+   * @generated from field: string search_id = 3;
+   */
+  searchId: string;
 };
 
 /**
@@ -386,10 +394,11 @@ export const SearchService: GenService<{
     output: typeof SearchPassagesResponseSchema;
   },
   /**
-   * CancelSearch stops the SearchPassages call that carries the search id. A
-   * client that aborts its request does not stop the call in the core, so it
-   * sends this to free the work the call still does. An id no call carries is
-   * ignored.
+   * CancelSearch stops the SearchNames or SearchPassages call that carries the
+   * search id. A client that aborts its request does not stop the call in the
+   * core, so it sends this to free the work the call still does. A cancel that
+   * arrives before its call is kept for a few seconds and cancels the call if
+   * the call arrives in that time.
    *
    * @generated from rpc numen.v1.SearchService.CancelSearch
    */

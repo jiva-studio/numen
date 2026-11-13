@@ -99,6 +99,7 @@ func mountSearch(w *windowWiring) {
 		state,
 		search.NewFindNames(w.db.NoteQueries(), w.kinds.list),
 		search.NewFindPassages(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
+		w.cfg.Clock(),
 	)
 	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError)
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())

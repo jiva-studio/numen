@@ -29,9 +29,29 @@ const parseSelector = (json: string): Selector | null => {
   }
 }
 
+const askCancellable = async <T>(
+  signal: AbortSignal | undefined,
+  ask: (searchId: string, options: { signal?: AbortSignal }) => Promise<T>,
+): Promise<T> => {
+  if (!signal) return ask('', {})
+  const searchId = crypto.randomUUID()
+  // An aborted fetch does not end the call in the core, so the abort cancels it by its id.
+  const cancel = () => {
+    search.cancelSearch({ searchId }).catch(() => undefined)
+  }
+  signal.addEventListener('abort', cancel, { once: true })
+  try {
+    return await ask(searchId, { signal })
+  } finally {
+    signal.removeEventListener('abort', cancel)
+  }
+}
+
 export const searchCore: SearchDeps = {
   names: async (query, limit, signal) => {
-    const answer = await search.searchNames({ query, limit }, signal ? { signal } : {})
+    const answer = await askCancellable(signal, (searchId, options) =>
+      search.searchNames({ query, limit, searchId }, options),
+    )
     return answer.found.map((one) => ({
       path: one.note?.path ?? '',
       title: one.note?.title ?? '',
@@ -43,21 +63,9 @@ export const searchCore: SearchDeps = {
     }))
   },
   search: async (query, mode, limit, signal) => {
-    const searchId = signal ? crypto.randomUUID() : ''
-    // An aborted fetch does not end the call in the core, so the abort cancels it by its id.
-    const cancel = () => {
-      search.cancelSearch({ searchId }).catch(() => undefined)
-    }
-    signal?.addEventListener('abort', cancel, { once: true })
-    let answer
-    try {
-      answer = await search.searchPassages(
-        { query, limit, mode: modes[mode], searchId },
-        signal ? { signal } : {},
-      )
-    } finally {
-      signal?.removeEventListener('abort', cancel)
-    }
+    const answer = await askCancellable(signal, (searchId, options) =>
+      search.searchPassages({ query, limit, mode: modes[mode], searchId }, options),
+    )
     return answer.found.map((one) => ({
       path: one.path,
       title: one.note?.title ?? '',
