@@ -13,7 +13,7 @@ import type { PaletteNote } from '../lib/whenContext'
 /** Reads the type and properties of the note at a target. */
 export type ReadNote = (
   target: Pick<CommandNote, 'path' | 'title' | 'isFolder' | 'others'>,
-) => Promise<CommandNote>
+) => Promise<Pick<CommandNote, 'type' | 'properties'>>
 
 export function createPaletteNotes(readNote: ReadNote) {
   const notes = shallowRef<ReadonlyMap<string, PaletteNote>>(new Map())

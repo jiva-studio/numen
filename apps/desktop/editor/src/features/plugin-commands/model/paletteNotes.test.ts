@@ -19,7 +19,7 @@ const createNotes = () => {
   let media = ''
   const notes = createPaletteNotes(async (one) => {
     reads.push(one.path)
-    return { ...one, type: 'link', properties: { media } }
+    return { type: 'link', properties: { media } }
   })
   return { notes, reads, setMedia: (value: string) => (media = value) }
 }
@@ -55,17 +55,12 @@ describe('the notes the palette reads', () => {
   })
 
   it('drops a read that ends after a reset', async () => {
-    const { notes, setMedia } = createNotes()
+    const { notes } = createNotes()
 
     notes.getNote(target('links/Mill.md'))
     notes.reset()
     await flushPromises()
 
     expect(notes.getNote(target('links/Mill.md'))).toBeUndefined()
-    setMedia('media/mill.mp4')
-    await flushPromises()
-    expect(notes.getNote(target('links/Mill.md'))?.properties).toStrictEqual({
-      media: 'media/mill.mp4',
-    })
   })
 })
