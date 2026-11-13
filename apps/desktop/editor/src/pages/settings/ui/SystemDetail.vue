@@ -58,7 +58,9 @@ function onBack(): void {
       <PluginFields :settings="props.settings" :host="props.manager" :plugin="owner" />
     </PluginSettingsCard>
 
-    <p v-if="props.section === 'system'" class="system-detail__file">{{ props.settings.file.value || words.file }}</p>
+    <p v-if="props.section === 'system'" class="system-detail__file">
+      {{ props.settings.file.value || words.file }}
+    </p>
   </div>
 </template>
 
@@ -69,7 +71,6 @@ function onBack(): void {
   align-items: stretch;
   gap: 1rem;
 }
-
 
 .system-detail__file {
   min-inline-size: 0;

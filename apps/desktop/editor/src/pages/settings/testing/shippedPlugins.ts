@@ -94,8 +94,7 @@ const getSlotTarget = (one: Entry): string =>
 const getListenerPort = (one: Entry): string =>
   getText(one.portSetting) || (one.port ? String(one.port) : '')
 
-const getList = (value: Field): readonly string[] =>
-  Array.isArray(value) ? value.map(String) : []
+const getList = (value: Field): readonly string[] => (Array.isArray(value) ? value.map(String) : [])
 
 const asEntry = (value: Field): Entry =>
   typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Entry) : {}
