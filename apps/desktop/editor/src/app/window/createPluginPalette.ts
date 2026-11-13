@@ -64,7 +64,7 @@ export function createPluginPalette(deps: PluginPaletteDeps) {
     ...itemLists,
     resetWhenClosed: (isOpen) => {
       itemLists.resetWhenClosed(isOpen)
-      watch(isOpen, () => declaredCommands.forgetNotes())
+      watch(isOpen, () => declaredCommands.whenContext.forgetNotes?.())
     },
   }
   return {

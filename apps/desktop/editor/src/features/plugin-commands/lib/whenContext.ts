@@ -18,6 +18,8 @@ export interface WindowWhenContext {
   readonly whenReader: WhenReader
   /** The type and properties of the note at the target; undefined while they are read. */
   readonly getNote?: (target: CommandTarget) => PaletteNote | undefined
+  /** Forgets the notes read, so the next palette reads them again. */
+  readonly forgetNotes?: () => void
 }
 
 /** The context of a window that has not listed the content types and has no settings yet. */

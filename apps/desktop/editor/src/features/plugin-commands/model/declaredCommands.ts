@@ -143,7 +143,7 @@ export function createDeclaredState(deps: DeclaredStateDeps = {}) {
     getContentTypes: () => contentTypes.value,
     getConfig: deps.getConfig ?? (() => ({})),
     whenReader: deps.whenReader ?? createWhenReader(),
-    ...(paletteNotes ? { getNote: paletteNotes.getNote } : {}),
+    ...(paletteNotes ? { getNote: paletteNotes.getNote, forgetNotes: paletteNotes.reset } : {}),
   }
   let newest = 0
   const isFirstListSettled = shallowRef(false)
@@ -185,8 +185,6 @@ export function createDeclaredState(deps: DeclaredStateDeps = {}) {
     waitForFirstList,
     /** What the when conditions of the commands read besides their target. */
     whenContext,
-    /** Forgets the notes the conditions read, so they are read again. */
-    forgetNotes: (): void => paletteNotes?.reset(),
     commands: computed(() => declared.value),
     slots: computed(() => declaredSlots.value),
     /** The handlers of shared commands and the keybindings the enabled plugins declare; undefined until the first list. */
@@ -259,7 +257,6 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
       createDeclaredPaletteCommands(backendCommands.value, state.whenContext, listItems),
     ),
     whenContext: state.whenContext,
-    forgetNotes: state.forgetNotes,
     commands: state.commands,
     slots: state.slots,
     contributions: state.contributions,
