@@ -263,8 +263,6 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   // The questions of the current query, which a newer query or putting the palette away aborts.
   let asking = new AbortController()
-  // A query typed while the spinner turns keeps it turning through the pause before it is asked, so
-  // it does not blink off on each keystroke; a first keystroke shows none until the questions go out.
   const isWaiting = ref(false)
 
   const drop = () => {

@@ -101,7 +101,6 @@ function onOpenCategory(category: string): void {
   color: var(--numen-ink);
 }
 
-/* Each page is a SettingsPage, which scrolls under its own toolbar. */
 .settings__page,
 .settings__main {
   flex: 1;

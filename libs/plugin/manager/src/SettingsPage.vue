@@ -1,9 +1,5 @@
 <script setup lang="ts">
-/**
- * A settings page: the toolbar heads the pane at its full width, on the rule that separates it from
- * the page, and only the page under it scrolls, as the head of the media player sits above its
- * transcript.
- */
+/** A settings page under its toolbar; only the page scrolls. */
 import type { VNode } from 'vue'
 import SettingsToolbar from './SettingsToolbar.vue'
 

@@ -2,8 +2,7 @@
 /**
  * The page of connections: every connection by the order it was made, with its type and what it can
  * do, and the dialog that adds or edits one. A connection whose type no installed plugin provides is
- * listed as "Type unavailable". The last row of the list adds a connection, as the add button row of a GNOME
- * boxed list. A row opens its connection for editing; the dialog holds Delete. The model of a connection is chosen where it is used, not here. After a deletion the focus goes to the row in its place, the row before it, or Add.
+ * listed as "Type unavailable". A row opens its connection for editing; the dialog holds Delete. The model of a connection is chosen where it is used, not here. After a deletion the focus goes to the row in its place, the row before it, or Add.
  */
 import { nextTick, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
