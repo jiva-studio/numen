@@ -10,6 +10,8 @@ export interface SettledNodesSource {
   readonly hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
 }
 
+export type SettledNodes = ReturnType<typeof useSettledNodes>
+
 export function useSettledNodes(source: () => SettledNodesSource) {
   const settled = computed(() => ({
     ...source(),

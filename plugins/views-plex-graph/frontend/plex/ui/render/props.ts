@@ -76,6 +76,20 @@ export interface PlexNodeProps {
   attention?: Attention
 }
 
+/** What a node draws, in its place or in the layer over the others. */
+export interface PlexNodeFaceProps {
+  node: PlacedNode
+  box: WideBox
+  isGhost: boolean
+  isTarget: boolean
+  showPills: boolean
+  restHeight: number
+  hung: NodeHeadings | null
+  open: number
+  isHandleShown: boolean
+  handle: Position
+}
+
 export interface PlexNodeEvents {
   /** The node was chosen by click or keyboard. The caller identifies the node. */
   (event: 'activate'): void

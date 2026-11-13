@@ -63,7 +63,7 @@ describe('a note that has rested open', () => {
     const mounted = mountView()
     const before = getNoteGroups(mounted.view)
     const root = mounted.view.element
-    const observer = new MutationObserver(() => {})
+    const observer = new MutationObserver(vi.fn())
     observer.observe(root, { childList: true, subtree: true })
 
     await rest(mounted)

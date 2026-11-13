@@ -38,7 +38,8 @@ const field = useFieldSize()
 
 const fieldSize = computed(() => props.ghostSize ?? field.value)
 
-const handle = computed(() => ({
+const threadOptions = computed(() => ({
+  curvature: props.curvature,
   hasPill: props.showPills,
   viewportWidth: props.viewport.width,
 }))
@@ -48,8 +49,7 @@ const thread = computed(() =>
     props.frame,
     props.gesture?.from.value ?? null,
     props.gesture?.at.value ?? null,
-    props.curvature,
-    handle.value,
+    threadOptions.value,
   ),
 )
 
@@ -58,8 +58,7 @@ const pendingThread = computed(() =>
     from: props.pending?.from ?? null,
     position: props.pending?.at ?? null,
     viewport: props.viewport,
-    curvature: props.curvature,
-    handle: handle.value,
+    ...threadOptions.value,
   }),
 )
 

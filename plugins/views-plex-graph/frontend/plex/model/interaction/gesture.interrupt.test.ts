@@ -18,7 +18,7 @@ const setUp = () => {
       options: () => DEFAULT_OPTIONS,
       relations: () => ['child'],
       threshold: () => 10,
-      commit: () => {},
+      commit: vi.fn(),
     }),
   )!
   return gesture

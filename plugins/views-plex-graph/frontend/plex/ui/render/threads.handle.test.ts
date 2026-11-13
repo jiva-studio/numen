@@ -25,13 +25,13 @@ const frame: PlexFrame = {
 
 describe('the line dragged from a node without a pill', () => {
   it('starts at the disc of the handle beyond the edge of the box', () => {
-    const thread = getReachThread(frame, 'b', { x: 220, y: 150 }, undefined, { hasPill: false })
+    const thread = getReachThread(frame, 'b', { x: 220, y: 150 }, { hasPill: false })
 
     expect(thread?.startsWith(`M ${100 + 20 + HANDLE_RADIUS} 50 `)).toBe(true)
   })
 
   it('starts at the leading side when the handle was drawn there', () => {
-    const thread = getReachThread(frame, 'b', { x: -220, y: 150 }, undefined, {
+    const thread = getReachThread(frame, 'b', { x: -220, y: 150 }, {
       hasPill: false,
       viewportWidth: 260,
     })
@@ -44,7 +44,7 @@ describe('the line dragged from a node without a pill', () => {
       from: 'b',
       position: { x: 600, y: 400 },
       viewport: { width: 1000, height: 800 },
-      handle: { hasPill: false },
+      hasPill: false,
     })
 
     expect(thread?.startsWith(`M ${100 + 20 + HANDLE_RADIUS} 50 `)).toBe(true)
