@@ -1,7 +1,7 @@
 /** The person at the plex: the notes drawn around the note in focus, and the links made from there. */
 import { expect, type Locator } from 'playwright/test'
 import { getGraph } from '../../../e2e/desktop/tests/support/workspace.js'
-import { escapeRegExp, getStem, parseReference } from './rules.js'
+import { escapeRegExp, getStem, parseReference, type Extent } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 export class PlexDriver {
@@ -192,13 +192,18 @@ export class PlexDriver {
     await this.finish(inspector)
   }
 
-  async removeLink(from: string, to: string): Promise<void> {
+  async removeLink({ kind, first, second }: Extent): Promise<void> {
+    if (kind === 'connection') await this.removeConnection(first, second)
+    else await this.removeDirection(first, second)
+  }
+
+  private async removeDirection(from: string, to: string): Promise<void> {
     const inspector = await this.openInspector(from, to)
     await (await this.getRow(inspector, from)).getByRole('button', { name: 'Remove link' }).click()
     await this.finish(inspector)
   }
 
-  async removeConnection(first: string, second: string): Promise<void> {
+  private async removeConnection(first: string, second: string): Promise<void> {
     const inspector = await this.openInspector(first, second)
     const trashes = inspector.getByRole('button', { name: 'Remove link' })
     while ((await trashes.count()) > 0) await trashes.first().click()

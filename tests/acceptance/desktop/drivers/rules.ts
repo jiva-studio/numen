@@ -375,3 +375,16 @@ export const parseTabRef = (text: string): TabRef => {
   if (!match) throw new Error(`"${text}" does not name a tab: write the tab at "path" or the tab titled "Title"`)
   return { kind: parseTabKind(match[1]), reference: match[2], name: match[3] }
 }
+
+/** What a person removes of a link: the record one note writes (from "A" to "B"), or the whole connection (between "A" and "B"). */
+export interface Extent {
+  readonly kind: 'direction' | 'connection'
+  readonly first: string
+  readonly second: string
+}
+
+export const parseExtent = (extent: string): Extent => {
+  const match = /^(from|between) "([^"]+)" (?:to|and) "([^"]+)"$/.exec(extent)
+  if (!match) throw new Error(`"${extent}" does not name a link: write from "A" to "B" or between "A" and "B"`)
+  return { kind: match[1] === 'from' ? 'direction' : 'connection', first: match[2], second: match[3] }
+}

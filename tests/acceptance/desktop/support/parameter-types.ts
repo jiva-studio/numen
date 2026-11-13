@@ -1,5 +1,5 @@
 import { defineParameterType } from 'playwright-bdd'
-import { parsePlace, parseTabKind, parseTabRef, parseTarget, parseVaultName } from '../drivers/rules.js'
+import { parseExtent, parsePlace, parseTabKind, parseTabRef, parseTarget, parseVaultName } from '../drivers/rules.js'
 
 defineParameterType({
   name: 'actor',
@@ -98,7 +98,7 @@ defineParameterType({
 })
 
 defineParameterType({
-  name: 'pair',
-  regexp: /"[^"]+" and "[^"]+"/,
-  transformer: (pair: string) => pair.slice(1, -1).split('" and "') as [string, string],
+  name: 'extent',
+  regexp: /from "[^"]+" to "[^"]+"|between "[^"]+" and "[^"]+"/,
+  transformer: (extent: string) => parseExtent(extent),
 })

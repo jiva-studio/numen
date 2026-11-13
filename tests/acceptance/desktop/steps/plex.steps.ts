@@ -1,4 +1,5 @@
 import type { DataTable } from 'playwright-bdd'
+import type { Extent } from '../drivers/rules.js'
 import { Then, When } from '../support/bdd.js'
 
 Then('the plex {display} the {relation} note titled {string}', async ({ person }, shows: boolean, relation: string, title: string) => {
@@ -64,10 +65,6 @@ When(
   },
 )
 
-When('the person removes the link from {string} to {string} in the plex', async ({ person }, from: string, to: string) => {
-  await person.plex.removeLink(from, to)
-})
-
-When('the person removes the link between {pair} in the plex', async ({ person }, pair: [string, string]) => {
-  await person.plex.removeConnection(...pair)
+When('the person removes the link {extent} in the plex', async ({ person }, extent: Extent) => {
+  await person.plex.removeLink(extent)
 })
