@@ -85,7 +85,7 @@ describe('PluginDetail', () => {
     const plugin = createPluginInfo('test.plugin', 'Super Engine')
     const { wrapper } = createDetail(plugin)
 
-    await wrapper.get(`button[aria-label="${words.backToPlugins}"]`).trigger('click')
+    await wrapper.get(`button[aria-label="${words.back}"]`).trigger('click')
     expect(wrapper.emitted('back')).toHaveLength(1)
   })
 
@@ -281,7 +281,7 @@ describe('PluginDetail', () => {
   it('puts the back button first, above the title', () => {
     const { wrapper } = createDetail(createPluginInfo('test.plugin', 'Super Engine'))
     const buttons = wrapper.findAll('button')
-    expect(buttons[0]?.attributes('aria-label')).toBe(words.backToPlugins)
+    expect(buttons[0]?.attributes('aria-label')).toBe(words.back)
   })
 
   it('opens on Settings and draws the README on About without its title and comments', async () => {

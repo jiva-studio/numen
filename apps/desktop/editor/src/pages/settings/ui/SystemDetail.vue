@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * The System or the Appearance page: the breadcrumb bar and the settings the core declares for the
+ * The System or the Appearance page: the toolbar and the settings the core declares for the
  * owner `app` that belong to the page, drawn by the renderer of the plugins. Appearance holds the
  * `appearance.*` settings; System holds the rest and the path of the numen.json configuration file.
  */
 import { computed } from 'vue'
-import { BreadcrumbBar, PluginSettingsCard } from '@numen/plugin-manager'
+import { PluginSettingsCard, SettingsToolbar } from '@numen/plugin-manager'
 import PluginFields from './plugins/PluginFields.vue'
 import type { PluginInfo } from '@/entities/settings'
 import type { InstallationPlugin, InstallationSettings } from '../types'
@@ -49,9 +49,13 @@ function onBack(): void {
 
 <template>
   <div class="system-detail">
-    <BreadcrumbBar
-      :current="props.section === 'appearance' ? words.appearanceSettings : words.systemSettings"
+    <SettingsToolbar
+      :path="[
+        words.settings,
+        props.section === 'appearance' ? words.appearanceSettings : words.systemSettings,
+      ]"
       @back="onBack"
+      @open="onBack"
     />
 
     <PluginSettingsCard>

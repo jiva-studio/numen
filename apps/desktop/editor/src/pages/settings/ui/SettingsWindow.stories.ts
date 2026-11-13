@@ -5,6 +5,7 @@
  * renders in its settled state and can be captured as a screenshot.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, waitFor, within } from 'storybook/test'
 import { WorkspaceLayout, pane } from '@numen/workbench'
 import type { Tab, Workspace } from '@numen/workbench'
 import { Settings as SettingsIcon } from '@lucide/vue'
@@ -165,4 +166,43 @@ const drawSettings = () =>
 /** The settings of the window and of every plugin installed, each reached from its row. */
 export const Settings: Story = {
   render: () => drawSettings(),
+}
+
+/**
+ * The page of a plugin in a short tab: the toolbar holds the path from Settings through the category
+ * to the plugin, and the state and the switch of the plugin, and stays at the top while the page
+ * scrolls under it.
+ */
+export const SettingsToolbarStaysAtTheTop: Story = {
+  render: () => ({
+    components: { SettingsTab },
+    setup: () => ({
+      state: createSettingsState(createShippedInstallation(), {
+        initialPluginId: ref('md.numen.agents.claude'),
+      }),
+    }),
+    template: `
+      <div class="numen" style="block-size: 20rem; background: var(--numen-surface)">
+        <SettingsTab :state="state" />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const path = await canvas.findByRole('navigation', { name: 'Path' })
+    await expect(within(path).getByRole('button', { name: 'Settings' })).toBeVisible()
+    await expect(within(path).getByRole('button', { name: 'Agents' })).toBeVisible()
+    await expect(within(path).getByText('Claude Code Agent')).toHaveAttribute('aria-current', 'page')
+    await expect(canvas.getByRole('switch', { name: 'Enabled Claude Code Agent' })).toBeVisible()
+
+    const page = canvasElement.querySelector<HTMLElement>('.settings__page')
+    const toolbar = canvasElement.querySelector<HTMLElement>('.settings-toolbar')
+    if (!page || !toolbar) throw new Error('the settings page draws no toolbar')
+    page.scrollTop = page.scrollHeight
+    await waitFor(() => expect(page.scrollTop).toBeGreaterThan(0))
+
+    const top = (element: HTMLElement) => Math.round(element.getBoundingClientRect().top)
+    await expect(top(toolbar)).toBe(top(page))
+    await expect(canvas.getByRole('button', { name: 'Back' })).toBeVisible()
+  },
 }

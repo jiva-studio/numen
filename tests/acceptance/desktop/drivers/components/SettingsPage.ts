@@ -4,7 +4,7 @@ import { escapeRegExp } from '../rules.js'
 
 /** The pages of the window: Appearance holds how it looks, System the rest. */
 export type WindowPage = 'System' | 'Appearance'
-const BACK = /All plugins/i
+const BACK = /^Back$/
 
 export class SettingsPage {
   constructor(private readonly page: Page) {}

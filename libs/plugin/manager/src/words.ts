@@ -40,7 +40,9 @@ const CONTRIBUTION_KINDS: Readonly<Record<PluginContributionKind, string>> = {
 /** UI copy of the plugin list and the plugin page. */
 export const PLUGIN_WORDS = {
   settings: 'Settings',
-  breadcrumb: 'Breadcrumb',
+  /** The bar at the top of a settings page. */
+  back: 'Back',
+  path: 'Path',
   /** Controls of a plugin. */
   pluginShowDetails: 'Show details',
   pluginHideDetails: 'Hide details',
@@ -57,7 +59,6 @@ export const PLUGIN_WORDS = {
   pluginRow: (name: string, state: PluginState) =>
     state === 'enabled' ? name : `${name}, ${PLUGIN_STATES[state]}`,
   /** Plugin list and plugin page. */
-  backToPlugins: 'All plugins',
   noPlugins: 'No plugins installed.',
   systemSettings: 'System',
   systemSettingsDetail: 'File names and performance',
