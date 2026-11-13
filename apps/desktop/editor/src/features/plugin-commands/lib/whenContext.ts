@@ -5,6 +5,7 @@
  */
 import {
   createWhenReader,
+  type JsonObject,
   type WhenCondition,
   type WhenReader,
   type WhenSettings,
@@ -24,13 +25,26 @@ export const createEmptyWhenContext = (): WindowWhenContext => ({
   whenReader: createWhenReader(),
 })
 
+/** The type and properties of the note in front of the palette, read from the core. */
+export interface PaletteNote {
+  readonly type: string
+  readonly properties?: JsonObject
+}
+
 /** Whether a command of the condition is available over what is in front of the palette. */
 export function createWhenAvailability(context: WindowWhenContext) {
-  return (when: string | undefined, target: CommandTarget): boolean =>
+  return (when: string | undefined, target: CommandTarget, note?: PaletteNote): boolean =>
     context.whenReader
       .getCondition(when)
-      ?.evaluate(getPaletteValues(target, context.getContentTypes(), context.getConfig())) ?? false
+      ?.evaluate(
+        getPaletteValues(target, context.getContentTypes(), context.getConfig(), note),
+      ) ?? false
 }
+
+/** Whether the condition reads the type or the properties of the note, which the core is asked for. */
+export const hasNoteKindVariable = (condition: WhenCondition | undefined): boolean =>
+  condition?.names.some((name) => name === 'target.noteType' || name === 'target.properties') ??
+  false
 
 /** Whether the condition reads whether the target is a note: its command is over the note in front. */
 export const hasNoteVariable = (condition: WhenCondition | undefined): boolean =>
