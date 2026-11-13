@@ -227,9 +227,8 @@ func writePrompt(turns []*llm.Message) string {
 	return strings.Join(parts, "\n\n")
 }
 
-// getModelTitle writes the provider and the model of a title such as "OpenRouter/DeepSeek R1" apart
-// with a middle dot, as the other agents list them.
 func getModelTitle(title string) string {
+	// "OpenRouter/DeepSeek R1" is shown as "OpenRouter · DeepSeek R1", as the other agents list their models.
 	provider, model, isFound := strings.Cut(title, "/")
 	if !isFound || provider == "" || model == "" {
 		return title

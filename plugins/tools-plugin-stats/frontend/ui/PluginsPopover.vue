@@ -30,7 +30,7 @@ function onClose() {
   emit('close')
 }
 
-function toggleHolders(id: string) {
+function onToggleHolders(id: string) {
   const next = new Set(expandedIds.value)
   if (!next.delete(id)) next.add(id)
   expandedIds.value = next
@@ -62,8 +62,8 @@ function toggleHolders(id: string) {
         :title="row.title"
         :aria-expanded="expandedIds.has(row.id)"
         tabindex="0"
-        @click="toggleHolders(row.id)"
-        @keydown.enter.space.prevent="toggleHolders(row.id)"
+        @click="onToggleHolders(row.id)"
+        @keydown.enter.space.prevent="onToggleHolders(row.id)"
       >
         <span
           class="plugin-popover__status"
