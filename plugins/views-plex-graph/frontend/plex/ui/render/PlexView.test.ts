@@ -126,7 +126,7 @@ describe('gesture roles and ghost', () => {
     const ghost = view.get('.plex__node--ghost')
     expect(ghost.attributes('transform')).toBe('translate(40 -200)')
     expect(ghost.get('.plex__title-text').text()).toBe('parent')
-    expect(Number(ghost.get('rect').attributes('width'))).toBe(DEFAULT_OPTIONS.nodeSize.width)
+    expect(Number(ghost.get('rect').attributes('width'))).toBe(224)
   })
 
   it('draws the ghost at the size of a field, whatever size a note has', () => {
