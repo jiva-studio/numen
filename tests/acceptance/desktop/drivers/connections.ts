@@ -146,6 +146,13 @@ export class ConnectionsDriver {
     }
   }
 
+  /** Removes the rows of the setting once they are shown. */
+  async removeRows(setting: string, plugin: string): Promise<void> {
+    const block = await this.showSetting(setting, plugin)
+    await expect(this.rows.getRows(block).or(this.rows.getNote(block)).first()).toBeVisible()
+    while ((await this.rows.getRows(block).count()) > 0) await this.rows.removeLast(block)
+  }
+
   /** The setting names what it uses in place of rows, such as the connections it discovers. */
   async expectSettingText(setting: string, plugin: string, text: string): Promise<void> {
     await expect(await this.showSetting(setting, plugin)).toContainText(text, { timeout: PLUGIN_START_LIMIT_MS })

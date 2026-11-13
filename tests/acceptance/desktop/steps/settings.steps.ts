@@ -67,7 +67,7 @@ Then('the setting {string} of the plugin {string} has no rows', async ({ person 
 When(
   'the person removes every row of the setting {string} of the plugin {string}',
   async ({ person }, name: string, plugin: string) => {
-    await person.connections.setRows(name, plugin, [])
+    await person.connections.removeRows(name, plugin)
   },
 )
 
