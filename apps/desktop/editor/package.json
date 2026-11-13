@@ -12,8 +12,7 @@
     "storybook": "storybook dev -p 6007 --no-open",
     "test": "npm run test:unit && npm run test:stories",
     "test:unit": "vitest run --project unit",
-    "test:stories": "node ../../../tools/ci-stories/run.mjs apps/desktop/editor apps/desktop/editor/src",
-    "fixture:plugins": "node scripts/writeShippedPlugins.mjs"
+    "test:stories": "node ../../../tools/ci-stories/run.mjs apps/desktop/editor apps/desktop/editor/src"
   },
   "dependencies": {
     "@lucide/vue": "^1.66.0",

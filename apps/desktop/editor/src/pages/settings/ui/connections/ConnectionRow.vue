@@ -3,7 +3,7 @@
  * One connection as a row of the list, drawn by the navigation row of the plugin manager: the
  * name, the type as the secondary text (with the address and the plugins that use it), and a chip
  * for the state. The whole row opens the connection for editing. A built-in connection is marked so and
- * does not open: it has nothing to edit and cannot be deleted.
+ * is disabled: it has nothing to edit and cannot be deleted.
  */
 import { computed, useTemplateRef } from 'vue'
 import { NavigationRow } from '@numen/plugin-manager'
@@ -48,6 +48,8 @@ function onEdit(): void {
     :name="connection.name"
     :detail="detail"
     :is-tile="connection.isBuiltIn"
+    :aria-disabled="connection.isBuiltIn ? 'true' : undefined"
+    :class="{ 'connection-row--built-in': connection.isBuiltIn }"
     @select="onEdit"
   >
     <template #trail>
@@ -67,6 +69,10 @@ function onEdit(): void {
 </template>
 
 <style scoped>
+.connection-row--built-in {
+  cursor: default;
+}
+
 .connection-row__chip {
   padding: 0.125rem 0.375rem;
   border-radius: var(--numen-radius-tight);

@@ -87,6 +87,39 @@ describe('the settings opened at a setting of a plugin', () => {
     tab.unmount()
   })
 
+  it('mark the setting no longer once the user goes back and opens the plugin again', async () => {
+    const installation = createInstallation({ plugins: ref([ATLAS]) })
+    const handle = { openTab: async (kind: string) => kind } as unknown as WindowHandle
+    const settings = useSettingsTab(handle, installation, vi.fn())
+
+    settings.openSettings({ pluginId: 'org.example.atlas', setting: 'source' })
+    const tab = mount(SettingsTab, { props: { state: settings.state }, attachTo: document.body })
+    await flushPromises()
+    await tab.get('button[aria-label="All plugins"]').trigger('click')
+    await tab.get('button[aria-label="Atlas"]').trigger('click')
+    await flushPromises()
+
+    const marked = tab.findAllComponents(SettingRow).filter((one) => one.props('isMarked'))
+    expect(marked).toStrictEqual([])
+    expect(scrolled).toStrictEqual(['Source'])
+    tab.unmount()
+  })
+
+  it('scroll to the setting again on a repeated request', async () => {
+    const installation = createInstallation({ plugins: ref([ATLAS]) })
+    const handle = { openTab: async (kind: string) => kind } as unknown as WindowHandle
+    const settings = useSettingsTab(handle, installation, vi.fn())
+
+    settings.openSettings({ pluginId: 'org.example.atlas', setting: 'source' })
+    const tab = mount(SettingsTab, { props: { state: settings.state }, attachTo: document.body })
+    await flushPromises()
+    settings.openSettings({ pluginId: 'org.example.atlas', setting: 'source' })
+    await flushPromises()
+
+    expect(scrolled).toStrictEqual(['Source', 'Source'])
+    tab.unmount()
+  })
+
   it('list the plugin with the label of its worst item', async () => {
     const installation = createInstallation({
       plugins: ref([ATLAS]),

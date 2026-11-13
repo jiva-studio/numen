@@ -53,15 +53,15 @@ export function useConnectionEntries(
     })),
   )
 
-  /* The connections a setting that discovers uses while it holds no row: those whose type is available and
-   * serves every operation, in the order of the connections. */
+  /* The connections a setting that discovers uses while it holds no row, in the order of the
+   * connections. The core discovers the rows of each operation on its own, so a connection whose type
+   * is available and serves one of the operations is used for that one. */
   const discovered = computed<readonly ConnectionInfo[]>(() =>
     stored.value.filter((connection) => {
       const type = types.value.find((one) => one.id === connection.typeId)
       return (
-        connection.isTypeAvailable &&
         type?.isAvailable === true &&
-        getOperations().every((operation) => type.operations.includes(operation))
+        getOperations().some((operation) => type.operations.includes(operation))
       )
     }),
   )

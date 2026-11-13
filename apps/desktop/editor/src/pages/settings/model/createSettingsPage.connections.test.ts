@@ -1,6 +1,6 @@
 /**
- * The settings tab is given the connections of the core, and reads them again after a change of the
- * settings only once a page has read them. Every value here is invented.
+ * The settings tab is given the connections of the core: it reads them when a page asks, and words the
+ * reason the core gives for a refused change. Every value here is invented.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { connections } from '@/shared/api/clients'

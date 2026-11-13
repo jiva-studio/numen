@@ -20,7 +20,7 @@ export const CONNECTION_WORDS = {
       case 'key_store_failed':
         return 'The key could not be stored or removed. Check the system keychain.'
       case 'stale_revision':
-        return 'Another window changed this connection. Close this dialog and open it again.'
+        return 'Another window changed this connection. Save again to replace its changes.'
       case 'not_found':
         return 'This connection no longer exists.'
       default:

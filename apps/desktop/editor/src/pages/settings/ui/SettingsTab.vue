@@ -15,7 +15,7 @@ import { AvailablePluginDetail, PluginsList, PluginDetail } from './plugins'
 const props = defineProps<{ state: SettingsTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { installation, initialSearchQuery, markedSetting } = props.state
+const { installation, initialSearchQuery } = props.state
 const health = computed(() =>
   groupManagedHealth(
     installation.plugin.health.items.value,
@@ -27,6 +27,7 @@ const {
   plugins,
   uninstalled,
   selectedPlugin,
+  marked,
   selectPlugin,
   updateQuery,
   goBack,
@@ -43,9 +44,7 @@ const {
           :section="selectedPluginId"
           :settings="installation.settings"
           :manager="installation.plugin"
-          :connections="installation.connections"
           @back="goBack"
-          @open-connections="selectPlugin('connections')"
         />
         <ConnectionsPage
           v-else-if="selectedPluginId === 'connections'"
@@ -59,7 +58,7 @@ const {
           :manager="installation.plugin"
           :connections="installation.connections"
           :plugin="selectedPlugin"
-          :marked-setting="markedSetting"
+          :marked-setting="marked"
           @back="goBack"
           @open-connections="selectPlugin('connections')"
         />

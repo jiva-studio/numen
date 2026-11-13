@@ -125,6 +125,6 @@ export const createSettingsState = (
   installation,
   initialPluginId: ref<string | null>(null),
   initialSearchQuery: ref(''),
-  markedSetting: ref(''),
+  markedSetting: ref(null),
   ...overrides,
 })

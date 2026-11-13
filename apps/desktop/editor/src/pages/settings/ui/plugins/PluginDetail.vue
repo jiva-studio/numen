@@ -7,7 +7,12 @@ import { computed } from 'vue'
 import { PluginDetail as PluginDetailView } from '@numen/plugin-manager'
 import type { PluginInfo } from '@/entities/settings'
 import { usePluginDetail, usePluginSwitch } from '../../model/usePluginDetail'
-import type { InstallationConnections, InstallationPlugin, InstallationSettings } from '../../types'
+import type {
+  InstallationConnections,
+  InstallationPlugin,
+  InstallationSettings,
+  MarkedSetting,
+} from '../../types'
 import PluginConnectionSections from './PluginConnectionSections.vue'
 import PluginFields from './PluginFields.vue'
 import { getManagedHealth, getMarkedSettings } from '../../lib/pluginHealth'
@@ -18,7 +23,7 @@ const props = defineProps<{
   manager: InstallationPlugin
   connections: InstallationConnections
   plugin: PluginInfo
-  markedSetting?: string
+  markedSetting?: MarkedSetting | null
 }>()
 
 const emit = defineEmits<{
@@ -43,7 +48,7 @@ const health = computed(() =>
 )
 const marked = computed(() => [
   ...getMarkedSettings(items.value, props.plugin.id),
-  ...(props.markedSetting ? [props.markedSetting] : []),
+  ...(props.markedSetting ? [props.markedSetting.setting] : []),
 ])
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -83,7 +88,7 @@ function onRunAction(key: string): void {
         :host="props.manager"
         :plugin="props.plugin"
         :marked="marked"
-        :focused="props.markedSetting ?? ''"
+        :focused="props.markedSetting ?? null"
       />
     </template>
     <template #sections>

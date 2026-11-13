@@ -8,7 +8,7 @@ import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
 import SettingsViews from './SettingsViews.vue'
-import type { InstallationSettings, PluginFieldsHost } from '../../types'
+import type { InstallationSettings, MarkedSetting, PluginFieldsHost } from '../../types'
 import type { PluginInfo } from '@/entities/settings'
 import {
   useEnumFields,
@@ -24,7 +24,7 @@ const props = defineProps<{
   host: PluginFieldsHost
   plugin: PluginInfo
   marked?: readonly string[]
-  focused?: string
+  focused?: MarkedSetting | null
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -62,7 +62,7 @@ const { isChanged, resetSetting: onReset } = useSettingDefaults(fieldDeps)
       :name="setting.title"
       :detail="setting.description"
       :is-marked="props.marked?.includes(setting.key) ?? false"
-      :is-focused="props.focused === setting.key"
+      :focus="props.focused?.setting === setting.key ? props.focused : null"
       :is-changed="isChanged(setting)"
       @reset="onReset(setting)"
     >

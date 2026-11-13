@@ -62,6 +62,24 @@ describe('a condition that reads the type or the properties of the note', () => 
     expect(isAvailable("target.noteType == 'link'", target({ path: 'reef/Kelp.md' }))).toBe(false)
   })
 
+  it('does not ask for a note over a file that is no note', () => {
+    const asked: string[] = []
+    const isAvailableOverFile = createWhenAvailability({
+      getContentTypes: () => ({}),
+      getConfig: () => ({}),
+      whenReader: createWhenReader(),
+      getNote: (one) => {
+        asked.push(one.path)
+        return undefined
+      },
+    })
+
+    expect(isAvailableOverFile("target.noteType == ''", target({ path: 'reef/map.pdf' }))).toBe(
+      true,
+    )
+    expect(asked).toStrictEqual([])
+  })
+
   it('does not ask for the note where its condition reads neither', () => {
     expect(isAvailable('target.isNote', target({ path: 'reef/Kelp.md' }))).toBe(true)
   })

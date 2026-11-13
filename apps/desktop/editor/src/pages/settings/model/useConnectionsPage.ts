@@ -1,9 +1,10 @@
 /**
  * The state of the page of connections: the connections and types it lists, the dialog that adds
  * or edits one, and the question asked before one is deleted. The page reads the connections when
- * it opens.
+ * it opens. The dialog shows the connection it edits as the list last read it, so a save sends the
+ * revision the core holds; a connection gone from the list closes the dialog.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
 import {
@@ -15,9 +16,12 @@ import {
 import type { ConnectionEdits, InstallationConnections } from '../types'
 import { WORDS as words } from '../words'
 
-function useConnectionDialog() {
-  const editing = ref<ConnectionInfo | null>(null)
+function useConnectionDialog(connections: Readonly<Ref<readonly ConnectionInfo[]>>) {
+  const editingId = ref<string | null>(null)
   const isAdding = ref(false)
+  const editing = computed(
+    () => connections.value.find((one) => one.id === editingId.value) ?? null,
+  )
   return {
     editing,
     isOpen: computed(() => isAdding.value || editing.value !== null),
@@ -25,11 +29,11 @@ function useConnectionDialog() {
       isAdding.value = true
     },
     openEdit: (connection: ConnectionInfo): void => {
-      editing.value = connection
+      editingId.value = connection.id
     },
     close: (): void => {
       isAdding.value = false
-      editing.value = null
+      editingId.value = null
     },
   }
 }
@@ -95,7 +99,7 @@ export function useConnectionsPage(getConnections: () => InstallationConnections
     types,
     hasType: computed(() => hasAvailableType(types.value)),
     hasUnavailable: computed(() => hasUnavailableConnection(connections.value)),
-    dialog: useConnectionDialog(),
+    dialog: useConnectionDialog(connections),
     deletion: useConnectionDeletion(getConnections),
     create: (draft: Parameters<ConnectionEdits['create']>[0]) =>
       getConnections().edits.create(draft),

@@ -121,7 +121,6 @@ const createPage = (
     props: {
       settings: installation.settings,
       manager: installation.plugin,
-      connections: installation.connections,
       section,
     },
   })

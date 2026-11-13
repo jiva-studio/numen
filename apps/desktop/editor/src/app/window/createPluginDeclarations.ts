@@ -21,6 +21,7 @@ import {
   type HostPort,
 } from '@/features/plugin-host'
 import { getWindowConfig } from '@/features/settings-commands'
+import { formatError } from '@/shared/api/errors'
 import type { CommandTarget } from '@/shared/model/command'
 import type { MessageLog } from '@/shared/model/notices/messages'
 
@@ -45,7 +46,10 @@ export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
   const reports = createPluginReports(log, catalog.getName)
   const declared = createDeclaredState({
     getConfig: () => getWindowConfig(rest),
-    readNote: createCommandNoteReader(itemLists),
+    paletteNotes: {
+      read: createCommandNoteReader(itemLists),
+      reportError: (error) => log.getWriter('command')(formatError(error), 'error'),
+    },
   })
   const slots = createWindowSlots({
     declaredCommands: declared,
