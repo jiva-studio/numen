@@ -70,3 +70,14 @@ describe('keyboard focus', () => {
     expect(hoverFocus.isOn.value).toBe(false)
   })
 })
+
+describe('release', () => {
+  it('takes hover off without a pointer exit', () => {
+    const hoverFocus = useHoverFocus()
+    hoverFocus.onPointerEnter()
+
+    hoverFocus.release()
+
+    expect(hoverFocus.isOn.value).toBe(false)
+  })
+})

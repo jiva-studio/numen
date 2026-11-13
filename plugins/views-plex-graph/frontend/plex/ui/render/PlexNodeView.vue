@@ -73,6 +73,13 @@ watch(
   () => hoverFocus.isOn.value,
   (now) => emit('attend', now),
 )
+// At most one node is on: a leave that never came does not keep this one open.
+watch(
+  () => props.attention?.node,
+  (attended) => {
+    if (attended && attended !== props.node.id) hoverFocus.release()
+  },
+)
 onBeforeUnmount(() => emit('attend', false))
 
 /* -------------------------------- Helpers --------------------------------- */
