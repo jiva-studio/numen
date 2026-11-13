@@ -136,7 +136,6 @@ type PluginHost struct {
 	RefreshDependencies func()
 	Health              *pluginhealth.Items
 	Processes           pluginprocess.Processes
-	Release             pluginprocess.Stopper
 	Detection           *providerbridge.Detection
 	RowOptions          *rowoptions.Cache
 }
@@ -194,7 +193,6 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
 		Health:              host.Health,
 		Processes:           host.RunningProcesses,
-		Release:             host.Teardown,
 		Detection:           detection,
 		RowOptions:          rowoptions.NewCache(clock.System{}),
 	}

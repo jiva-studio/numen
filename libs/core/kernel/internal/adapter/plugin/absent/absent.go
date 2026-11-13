@@ -121,6 +121,3 @@ func (Processes) ListProcesses() []plugindomain.Process { return nil }
 
 // WatchProcesses never signals: nothing runs to change.
 func (Processes) WatchProcesses(context.Context) <-chan struct{} { return nil }
-
-// ReleaseProcess does nothing: a host that runs nothing has no process to stop.
-func (Processes) ReleaseProcess(context.Context, string) {}
