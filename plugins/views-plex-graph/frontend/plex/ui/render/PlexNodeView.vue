@@ -99,6 +99,10 @@ watch(
   () => open.value > 0,
   (now) => emit('settle', now),
 )
+watch(
+  () => hoverFocus.isOn.value,
+  (now) => emit('attend', now),
+)
 
 /* -------------------------------- Helpers --------------------------------- */
 function getMiddle(): Position | null {

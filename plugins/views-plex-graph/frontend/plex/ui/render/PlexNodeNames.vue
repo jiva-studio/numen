@@ -12,12 +12,16 @@ import type { PlacedNode } from '../../lib/node'
 const props = defineProps<{
   node: PlacedNode
   room: NamesRoom
+  /** Whether the pointer is over the node or over one of its names. */
+  isForward: boolean
 }>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** A name was chosen. The identifier is the caller's, returned unchanged. */
   (event: 'choose', id: string): void
+  /** The pointer entered or left a name. */
+  (event: 'attend', isAttended: boolean): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -28,7 +32,12 @@ const fontSize = computed(() => `${props.room.rowHeight / ROW_RATIO}px`)
 </script>
 
 <template>
-  <g class="plex__names" :opacity="node.opacity" :style="{ fontSize, '--name-rest': NAME_OPACITY }">
+  <g
+    class="plex__names"
+    :class="{ 'plex__names--forward': isForward }"
+    :opacity="node.opacity"
+    :style="{ fontSize, '--name-rest': NAME_OPACITY }"
+  >
     <g
       v-for="name in placed"
       :key="name.id"
@@ -38,6 +47,8 @@ const fontSize = computed(() => `${props.room.rowHeight / ROW_RATIO}px`)
       :aria-label="name.title"
       :transform="`translate(${name.x} ${name.y})`"
       @click="emit('choose', name.id)"
+      @pointerenter="emit('attend', true)"
+      @pointerleave="emit('attend', false)"
       @keydown.enter.prevent="emit('choose', name.id)"
       @keydown.space.prevent="emit('choose', name.id)"
     >
@@ -74,6 +85,10 @@ const fontSize = computed(() => `${props.room.rowHeight / ROW_RATIO}px`)
 .plex__name-text {
   fill: var(--numen-hushed);
   font-family: var(--numen-font-sans);
+}
+
+.plex__names--forward .plex__name {
+  opacity: 1;
 }
 
 .plex__name:hover .plex__name-text,

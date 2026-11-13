@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useId, useTemplateRef } from 'vue'
+import { computed, ref, useId, useTemplateRef, type Ref } from 'vue'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
@@ -57,6 +57,10 @@ const { lines, raisedLines, resting, setOver } = useEdgeLines(() => props.frame,
 
 const restedOn = ref<string | null>(null)
 
+/** The node the pointer is over, and the node whose names it is over: either brings the names of that node forward. */
+const overNode = ref<string | null>(null)
+const overNames = ref<string | null>(null)
+
 const renderedNodes = computed(() => {
   const node = props.frame.nodes.find((each) => each.id === restedOn.value)
   if (!node) return props.frame.nodes
@@ -98,6 +102,11 @@ const onSettle = (id: string, isResting: boolean) => {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+function attend(slot: Ref<string | null>, id: string, isAttended: boolean) {
+  if (isAttended) slot.value = id
+  else if (slot.value === id) slot.value = null
+}
+
 const getRole = (node: PlacedNode): GestureRole => {
   const outcome = props.gestureOutcome
   if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'
@@ -160,6 +169,7 @@ const getRole = (node: PlacedNode): GestureRole => {
         @menu="(at, trigger) => emit('menu', node.id, at, trigger)"
         @enter="(heading) => emit('enter', node.id, heading)"
         @settle="onSettle(node.id, $event)"
+      @attend="attend(overNode, node.id, $event)"
       >
         <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
       </PlexNodeView>
@@ -167,6 +177,8 @@ const getRole = (node: PlacedNode): GestureRole => {
         v-if="names?.(node.id)"
         :node="node"
         :room="names(node.id)!"
+      :is-forward="overNode === node.id || overNames === node.id"
+      @attend="attend(overNames, node.id, $event)"
         @choose="emit('choose-name', $event)"
       />
     </g>
@@ -202,11 +214,6 @@ const getRole = (node: PlacedNode): GestureRole => {
   -webkit-user-select: none;
   touch-action: none;
   -webkit-touch-callout: none;
-}
-
-/* The pointer over a node or over one of its names brings the names of that node forward. */
-.plex__stack:hover :deep(.plex__name) {
-  opacity: 1;
 }
 
 .plex__edge-hit {

@@ -91,6 +91,8 @@ export interface PlexNodeEvents {
    * only the whole drawing determines which box that is.
    */
   (event: 'settle', resting: boolean): void
+  /** The pointer or keyboard focus came onto the node, or left it. */
+  (event: 'attend', isAttended: boolean): void
   /** A heading of this node was chosen. The identifier is the caller's. */
   (event: 'enter', heading: string): void
 }
