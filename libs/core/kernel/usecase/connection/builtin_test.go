@@ -124,8 +124,8 @@ func TestListRowsDiscoversTheBuiltInConnectionsAfterTheStoredOnes(t *testing.T) 
 	}
 
 	want := []connectiondomain.Row{
-		{ConnectionID: "c00000002", Options: map[string]string{}},
-		{ConnectionID: kiteID, Options: map[string]string{}},
+		{ConnectionID: "c00000002", Options: map[string]string{}, IsDiscovered: true},
+		{ConnectionID: kiteID, Options: map[string]string{}, IsDiscovered: true},
 	}
 	if !reflect.DeepEqual(rows, want) {
 		t.Errorf("rows = %v, want Heron and then Kite", rows)

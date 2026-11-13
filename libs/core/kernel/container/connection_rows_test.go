@@ -39,7 +39,7 @@ const rowsInstallation = `{
 
 type noNotices struct{}
 
-func (noNotices) ReportSetAside(string, string, connection.FailureReason) {}
+func (noNotices) ReportSetAside(connection.SetAside) {}
 
 func openRowsInstallation(t *testing.T) (Config, string) {
 	t.Helper()

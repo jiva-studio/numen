@@ -87,3 +87,12 @@ var (
 	// ErrSecretMissing is a required secret field with no value stored for the address the connection has.
 	ErrSecretMissing = errors.New("a required secret has no value")
 )
+
+// SetAside is a connection a call set aside for a reason, and NextName, the name of the connection of a later
+// row that answered the call.
+type SetAside struct {
+	ConnectionID   string
+	ConnectionName string
+	Reason         FailureReason
+	NextName       string
+}

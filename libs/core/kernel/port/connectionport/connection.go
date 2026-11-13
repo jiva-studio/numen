@@ -53,7 +53,7 @@ type RowSettings interface {
 }
 
 // ReportSetAside tells the person that a connection was set aside for a reason and a row after it answered.
-type ReportSetAside func(connectionID, connectionName string, reason connection.FailureReason)
+type ReportSetAside func(setAside connection.SetAside)
 
 // ResolveConnection reads a connection and its type as a call to the provider needs them. It fails with
 // connection.ErrNotFound and connection.ErrTypeUnavailable.

@@ -19,13 +19,15 @@ func TestLogNoticesWritesTheConnectionAndTheReason(t *testing.T) {
 		}
 	})
 
-	LogNotices{out: file}.ReportSetAside("c0000001", "OpenRouter", connection.FailureReasonPaymentRequired)
+	LogNotices{out: file}.ReportSetAside(connection.SetAside{
+		ConnectionID: "c0000001", ConnectionName: "OpenRouter", Reason: connection.FailureReasonPaymentRequired, NextName: "Ollama",
+	})
 
 	written, err := os.ReadFile(file.Name())
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"OpenRouter", "c0000001", "payment required"} {
+	for _, want := range []string{"OpenRouter", "c0000001", "payment required", "Ollama"} {
 		if !strings.Contains(string(written), want) {
 			t.Errorf("log = %q, want it to contain %q", written, want)
 		}

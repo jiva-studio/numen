@@ -66,11 +66,11 @@ func TestListRowsReturnsEveryAvailableConnectionServingTheOperationInListOrder(t
 	rows := listRows(t, connectiondomain.RowSetting{IsDiscovering: true})
 
 	want := []connectiondomain.Row{
-		{ConnectionID: "c00000002", Options: map[string]string{}},
-		{ConnectionID: "c00000004", Options: map[string]string{}},
+		{ConnectionID: "c00000002", Options: map[string]string{}, IsDiscovered: true},
+		{ConnectionID: "c00000004", Options: map[string]string{}, IsDiscovered: true},
 	}
 	if !reflect.DeepEqual(rows, want) {
-		t.Errorf("rows = %v, want Heron and Finch with no options", rows)
+		t.Errorf("rows = %v, want Heron and Finch, discovered, with no options", rows)
 	}
 }
 

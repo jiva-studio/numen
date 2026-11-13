@@ -86,10 +86,12 @@ type Use struct {
 }
 
 // Row is one entry of the settings of a plugin that names a connection, with the values of the row
-// fields of the type chosen for it.
+// fields of the type chosen for it. IsDiscovered is a row the person did not choose: the setting discovers,
+// and the row stands for a connection that serves the operation.
 type Row struct {
 	ConnectionID string
 	Options      map[string]string
+	IsDiscovered bool
 }
 
 // RowSetting is the setting of rows a plugin uses for an operation. Rows are the rows the person chose, in

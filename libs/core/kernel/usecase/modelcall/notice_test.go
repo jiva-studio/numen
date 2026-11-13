@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/modelcalltest"
 )
 
-func TestThePersonIsNotifiedWhenARowIsSetAsideAndTheNextOneAnswers(t *testing.T) {
+func TestThePersonIsNotifiedWhenARowIsSetAsideAndTheNextOneAnswersWithBothNames(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonPaymentRequired, 0))
 
@@ -19,7 +19,7 @@ func TestThePersonIsNotifiedWhenARowIsSetAsideAndTheNextOneAnswers(t *testing.T)
 		t.Fatal(err)
 	}
 
-	want := []modelcalltest.Notice{{ConnectionID: s.one.ID, ConnectionName: "First", Reason: connection.FailureReasonPaymentRequired}}
+	want := []connection.SetAside{{ConnectionID: s.one.ID, ConnectionName: "First", Reason: connection.FailureReasonPaymentRequired, NextName: "Second"}}
 	if got := s.world.Notices.List(); !slices.Equal(got, want) {
 		t.Errorf("notices = %v, want %v", got, want)
 	}
@@ -112,5 +112,22 @@ func TestThePersonIsNotNotifiedAboutAStop(t *testing.T) {
 
 	if got := s.world.Notices.List(); len(got) != 0 {
 		t.Errorf("notices = %v", got)
+	}
+}
+
+func TestThePersonIsNotNotifiedAboutADiscoveredRow(t *testing.T) {
+	s := newSetup(t, modelcalltest.CompleteOperation)
+	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation,
+		connection.Row{ConnectionID: s.one.ID, Options: map[string]string{"model": "m"}, IsDiscovered: true},
+		connection.Row{ConnectionID: s.two.ID, Options: map[string]string{"model": "m"}, IsDiscovered: true})
+	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonPaymentRequired, 0))
+
+	result, err := s.complete(t)
+
+	if err != nil || result.Text != "answer from "+addressTwo {
+		t.Fatalf("Complete = %v, %v", result, err)
+	}
+	if got := s.world.Notices.List(); len(got) != 0 {
+		t.Errorf("notices = %v, want none for a row the person did not choose", got)
 	}
 }

@@ -14,10 +14,11 @@ type LogNotices struct{ out *os.File }
 // NewLogNotices returns notices that write to the error output of the process.
 func NewLogNotices() LogNotices { return LogNotices{out: os.Stderr} }
 
-// ReportSetAside writes a line for the connection and the reason. A failed write is dropped: the line
-// is a log, and there is nowhere else to report the failure.
-func (n LogNotices) ReportSetAside(connectionID, connectionName string, reason connection.FailureReason) {
-	if _, err := n.out.WriteString(fmt.Sprintf("connection %s (%s) was set aside: %s\n", connectionName, connectionID, reason)); err != nil {
+// ReportSetAside writes a line for the connection, the reason and the connection that answered. A failed write
+// is dropped: the line is a log, and there is nowhere else to report the failure.
+func (n LogNotices) ReportSetAside(setAside connection.SetAside) {
+	line := fmt.Sprintf("connection %s (%s) was set aside: %s; %s answered\n", setAside.ConnectionName, setAside.ConnectionID, setAside.Reason, setAside.NextName)
+	if _, err := n.out.WriteString(line); err != nil {
 		return
 	}
 }

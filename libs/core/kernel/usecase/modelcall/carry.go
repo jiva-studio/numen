@@ -17,14 +17,16 @@ type attempt func(ctx context.Context, provider connectionport.Provider, call mo
 
 // asideRow is a connection set aside in the call being carried out.
 type asideRow struct {
-	id       string
-	name     string
-	revision int
-	reason   connection.FailureReason
+	id           string
+	name         string
+	revision     int
+	reason       connection.FailureReason
+	isDiscovered bool
 }
 
 type rowOutcome struct {
 	value   []byte
+	name    string
 	failure *connection.Failure
 	aside   *asideRow
 	err     error
@@ -63,7 +65,7 @@ func carry(ctx context.Context, c *Calls, ask asking, do attempt) ([]byte, error
 			return none, outcome.err
 		}
 		if outcome.isDone {
-			c.reportSetAside(setAside)
+			c.reportSetAside(setAside, outcome.name)
 			return outcome.value, nil
 		}
 		failures = append(failures, *outcome.failure)
@@ -126,7 +128,7 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 	for tries := 1; ; tries++ {
 		value, err := call.callOnce(ctx)
 		if err == nil {
-			return rowOutcome{value: value, isDone: true}, false
+			return rowOutcome{value: value, name: resolved.Name, isDone: true}, false
 		}
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return rowOutcome{err: ctxErr}, false
@@ -144,7 +146,7 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 		c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
 		return rowOutcome{
 			failure: &connection.Failure{ConnectionName: resolved.Name, Reason: judged.reason.String()},
-			aside:   &asideRow{id: resolved.ID, name: resolved.Name, revision: resolved.Revision, reason: judged.reason},
+			aside:   &asideRow{id: resolved.ID, name: resolved.Name, revision: resolved.Revision, reason: judged.reason, isDiscovered: row.IsDiscovered},
 		}, false
 	}
 }
@@ -239,10 +241,15 @@ func (r *rowCall) callOnce(ctx context.Context) ([]byte, error) {
 	return r.do(ctx, provider, r.resolved.NewCall(r.secrets, r.row.Options))
 }
 
-func (c *Calls) reportSetAside(rows []asideRow) {
+// reportSetAside tells the person of the rows set aside before the row of nextName answered. A row the person
+// did not choose is not told of.
+func (c *Calls) reportSetAside(rows []asideRow, nextName string) {
 	for _, one := range rows {
+		if one.isDiscovered {
+			continue
+		}
 		if c.cooldown.claim(notice{version: connectionVersion{id: one.id, revision: one.revision}, reason: one.reason}) {
-			c.notices(one.id, one.name, one.reason)
+			c.notices(connection.SetAside{ConnectionID: one.id, ConnectionName: one.name, Reason: one.reason, NextName: nextName})
 		}
 	}
 }

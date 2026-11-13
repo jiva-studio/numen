@@ -30,7 +30,7 @@ func (u *ListRows) Execute(pluginID, operationName string) ([]connection.Row, er
 	for _, one := range list {
 		found, isFound := u.types.GetType(one.TypeID)
 		if isFound && found.IsAvailable && found.Declaration.HasOperation(operationName) {
-			rows = append(rows, connection.Row{ConnectionID: one.ID, Options: map[string]string{}})
+			rows = append(rows, connection.Row{ConnectionID: one.ID, Options: map[string]string{}, IsDiscovered: true})
 		}
 	}
 	return rows, nil

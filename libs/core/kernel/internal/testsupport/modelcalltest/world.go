@@ -29,27 +29,20 @@ const (
 	AgentTypeID       = ProviderPluginID + "/agent"
 )
 
-// Notice is one report of a connection set aside.
-type Notice struct {
-	ConnectionID   string
-	ConnectionName string
-	Reason         connection.FailureReason
-}
-
 // Notices records the reports.
 type Notices struct {
 	mu   sync.Mutex
-	list []Notice
+	list []connection.SetAside
 }
 
-func (n *Notices) ReportSetAside(connectionID, connectionName string, reason connection.FailureReason) {
+func (n *Notices) ReportSetAside(setAside connection.SetAside) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
-	n.list = append(n.list, Notice{ConnectionID: connectionID, ConnectionName: connectionName, Reason: reason})
+	n.list = append(n.list, setAside)
 }
 
 // List returns the reports, in order.
-func (n *Notices) List() []Notice {
+func (n *Notices) List() []connection.SetAside {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 	return slices.Clone(n.list)
