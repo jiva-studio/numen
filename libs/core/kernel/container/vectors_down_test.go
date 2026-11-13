@@ -46,14 +46,14 @@ func (h *downEmbeddingHost) EnsureActive(context.Context, string, plugindomain.H
 	return h.endpoint, nil
 }
 
-func (h *downEmbeddingHost) Release(string, plugindomain.Holder) { h.released.Add(1) }
+func (h *downEmbeddingHost) Release(string, string, plugindomain.Holder) { h.released.Add(1) }
 
 func (h *downEmbeddingHost) EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
 	return h.EnsureActive(ctx, pluginID, holder)
 }
 
-func (h *downEmbeddingHost) ReleaseQuestion(pluginID string, holder plugindomain.Holder) {
-	h.Release(pluginID, holder)
+func (h *downEmbeddingHost) ReleaseQuestion(pluginID, token string, holder plugindomain.Holder) {
+	h.Release(pluginID, token, holder)
 }
 
 func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {

@@ -37,7 +37,7 @@ func newWorkingHost(t *testing.T) workingHost {
 	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin, testHolder); err != nil {
 		t.Fatal(err)
 	}
-	host.Activation.Release(workingPlugin, testHolder)
+	host.Activation.Release(workingPlugin, endpointOf(host, workingPlugin).Token, testHolder)
 
 	work.ReportTask(workingPlugin, plugindomain.Task{ID: "scan.sample", Title: "Scanning"})
 	turn, err := work.EnqueueWork(t.Context(), workingPlugin, true, nil)

@@ -465,7 +465,7 @@ func TestReadyLineWithoutListenerFailsActivation(t *testing.T) {
 	_, err := w.host.Activation.EnsureActive(t.Context(), listenerPlugin, testHolder)
 
 	if err == nil {
-		w.host.Activation.Release(listenerPlugin, testHolder)
+		w.host.Activation.Release(listenerPlugin, endpointOf(w.host, listenerPlugin).Token, testHolder)
 		t.Fatal("EnsureActive succeeded for a plugin that did not report its listener")
 	}
 	if !strings.Contains(err.Error(), "console") {
@@ -485,7 +485,7 @@ func TestReadyLineWithMalformedListenerTokenFailsActivation(t *testing.T) {
 			discover(t, w.host)
 
 			if _, err := w.host.Activation.EnsureActive(t.Context(), listenerPlugin, testHolder); err == nil {
-				w.host.Activation.Release(listenerPlugin, testHolder)
+				w.host.Activation.Release(listenerPlugin, endpointOf(w.host, listenerPlugin).Token, testHolder)
 				t.Errorf("EnsureActive succeeded for the ready line token %q", token)
 			}
 		})

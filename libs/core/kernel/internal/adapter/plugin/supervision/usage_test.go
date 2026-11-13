@@ -40,7 +40,7 @@ func TestListProcessesReturnsTheRunningPluginsWithTheIdleStopTime(t *testing.T) 
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: dormantID}})
 	startInProcess(t, sups, mapsID, atlasID)
-	sups.Release(mapsID, mapsID, useLease.Holder, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, useLease, getStartTime().Add(time.Minute))
 
 	want := []plugindomain.Process{
 		{PluginID: atlasID, StartTime: getStartTime(), LastUseTime: getStartTime(), LeaseCount: 1, IsInProcess: true, Holders: []plugindomain.Holder{useLease.Holder}},
@@ -59,7 +59,7 @@ func TestAWatchIsSignaledWhenAPluginReturnsALease(t *testing.T) {
 	startInProcess(t, sups, mapsID)
 	watch := NewRunningProcesses(sups).WatchProcesses(t.Context())
 
-	sups.Release(mapsID, mapsID, useLease.Holder, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, useLease, getStartTime().Add(time.Minute))
 
 	select {
 	case <-watch:
@@ -73,7 +73,7 @@ func TestSignalsTheWatchHasNotReceivedAreMergedIntoOne(t *testing.T) {
 	startInProcess(t, sups, mapsID)
 	watch := NewRunningProcesses(sups).WatchProcesses(t.Context())
 
-	sups.Release(mapsID, mapsID, useLease.Holder, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, useLease, getStartTime().Add(time.Minute))
 	startInProcess(t, sups, atlasID)
 	<-watch
 
@@ -91,7 +91,7 @@ func TestTheIdleStopTimeFollowsTheIdleLimitOfTheManifest(t *testing.T) {
 	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, useLease, getStartTime()); err != nil {
 		t.Fatal(err)
 	}
-	sups.Release(atlasID, atlasID, useLease.Holder, getStartTime().Add(time.Minute))
+	sups.Release(atlasID, atlasID, useLease, getStartTime().Add(time.Minute))
 
 	got := NewRunningProcesses(sups).ListProcesses()
 
@@ -106,7 +106,7 @@ func TestAReleasedPluginIsDueToStopAtItsLastUse(t *testing.T) {
 	if targets := takeReleasedTarget(sups, mapsID, getStartTime()); len(targets) != 0 {
 		t.Fatalf("a plugin that holds a lease was taken to stop: %+v", targets)
 	}
-	sups.Release(mapsID, mapsID, useLease.Holder, getStartTime().Add(time.Minute))
+	sups.Release(mapsID, mapsID, useLease, getStartTime().Add(time.Minute))
 
 	got := NewRunningProcesses(sups).ListProcesses()
 

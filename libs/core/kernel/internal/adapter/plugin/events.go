@@ -92,7 +92,7 @@ func (e *Events) TriggerEvent(ctx context.Context, event string) ([]string, erro
 			continue
 		}
 		deliverErr := transport.DeliverPluginEvent(ctx, e.sups.Clients().Get(endpoint), endpoint, event)
-		e.activator.Release(id, holder)
+		e.activator.Release(id, endpoint.Token, holder)
 		activated = append(activated, id)
 		if deliverErr != nil {
 			errs = append(errs, fmt.Errorf("deliver %s to plugin %s: %w", event, id, deliverErr))

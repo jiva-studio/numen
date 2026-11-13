@@ -100,7 +100,7 @@ func (a *activator) GetClient(transport.Endpoint) *http.Client {
 	return a.client
 }
 
-func (a *activator) Release(id string, _ plugindomain.Holder) {
+func (a *activator) Release(id, _ string, _ plugindomain.Holder) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.released = append(a.released, id)
@@ -113,7 +113,7 @@ func (a *activator) EnsureActiveForQuestion(_ context.Context, id string, _ plug
 	return a.endpoint, a.err
 }
 
-func (a *activator) ReleaseQuestion(id string, _ plugindomain.Holder) {
+func (a *activator) ReleaseQuestion(id, _ string, _ plugindomain.Holder) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.questionsReleased = append(a.questionsReleased, id)

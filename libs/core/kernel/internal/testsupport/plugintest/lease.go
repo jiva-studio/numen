@@ -43,7 +43,7 @@ func (h *LeaseHost) EnsureActive(context.Context, string, plugin.Holder) (transp
 
 func (h *LeaseHost) Acquire(string, plugin.Holder) { h.Acquired.Add(1) }
 
-func (h *LeaseHost) Release(string, plugin.Holder) { h.Released.Add(1) }
+func (h *LeaseHost) Release(string, string, plugin.Holder) { h.Released.Add(1) }
 
 func (h *LeaseHost) EnsureActiveForQuestion(context.Context, string, plugin.Holder) (transport.Endpoint, error) {
 	if h.EnsureErr != nil {
@@ -54,7 +54,7 @@ func (h *LeaseHost) EnsureActiveForQuestion(context.Context, string, plugin.Hold
 	return h.Endpoint, nil
 }
 
-func (h *LeaseHost) ReleaseQuestion(string, plugin.Holder) {
+func (h *LeaseHost) ReleaseQuestion(string, string, plugin.Holder) {
 	h.Released.Add(1)
 	h.QuestionsReleased.Add(1)
 }

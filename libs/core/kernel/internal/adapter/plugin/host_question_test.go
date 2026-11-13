@@ -20,7 +20,7 @@ func TestAPluginStartedForAQuestionStopsWhenTheQuestionEnds(t *testing.T) {
 		t.Fatalf("state while the question is open = %v, want active", state)
 	}
 
-	host.Activation.ReleaseQuestion(atlasPlugin, testHolder)
+	host.Activation.ReleaseQuestion(atlasPlugin, endpointOf(host, atlasPlugin).Token, testHolder)
 
 	wiretest.WaitUntil(t, "the plugin asked only a question to stop", func() bool {
 		return supervisorOf(host, atlasPlugin).GetState() == lifecycle.StateDormant
@@ -31,13 +31,13 @@ func TestAQuestionToAPluginInUseKeepsItsIdleCountdown(t *testing.T) {
 	clock := testsupport.NewClock()
 	host := newAtlasHost(t, clock, 0)
 	startAtlas(t, host)
-	host.Activation.Release(atlasPlugin, testHolder)
+	host.Activation.Release(atlasPlugin, endpointOf(host, atlasPlugin).Token, testHolder)
 
 	clock.Advance(supervision.IdleThreshold - time.Second)
 	if _, isRunning := host.Activation.AcquireRunningForQuestion(atlasPlugin, testHolder); !isRunning {
 		t.Fatal("the running plugin was not held for the question")
 	}
-	host.Activation.ReleaseQuestion(atlasPlugin, testHolder)
+	host.Activation.ReleaseQuestion(atlasPlugin, endpointOf(host, atlasPlugin).Token, testHolder)
 
 	clock.Advance(time.Second)
 	if evicted := host.Teardown.EvictIdle(t.Context(), supervision.IdleThreshold, releaseGrace); !slices.Equal(evicted, []string{atlasPlugin}) {
@@ -51,8 +51,8 @@ func TestAUseDuringAQuestionKeepsThePluginForTheIdleLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 	startAtlas(t, host)
-	host.Activation.Release(atlasPlugin, testHolder)
-	host.Activation.ReleaseQuestion(atlasPlugin, testHolder)
+	host.Activation.Release(atlasPlugin, endpointOf(host, atlasPlugin).Token, testHolder)
+	host.Activation.ReleaseQuestion(atlasPlugin, endpointOf(host, atlasPlugin).Token, testHolder)
 
 	if evicted := host.Teardown.EvictIdle(t.Context(), supervision.IdleThreshold, releaseGrace); len(evicted) != 0 {
 		t.Errorf("evicted %v, want none before the idle limit", evicted)

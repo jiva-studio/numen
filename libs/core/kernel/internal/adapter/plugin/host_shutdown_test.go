@@ -29,7 +29,7 @@ func newRunningHost(t *testing.T) (*container.PluginRoles, <-chan struct{}) {
 	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", testHolder)
+	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, testHolder)
 	return host, supervisorOf(host, "org.example.sample").GetExitSignal()
 }
 

@@ -86,7 +86,7 @@ func (h *pluginHost) EnsureActive(_ context.Context, pluginID string, holder plu
 	return transport.Endpoint{Host: "127.0.0.1", Port: h.ports[pluginID], Token: "t-" + pluginID}, nil
 }
 
-func (h *pluginHost) Release(string, plugin.Holder) {}
+func (h *pluginHost) Release(string, string, plugin.Holder) {}
 
 func (h *pluginHost) EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugin.Holder) (transport.Endpoint, error) {
 	h.mu.Lock()
@@ -95,7 +95,7 @@ func (h *pluginHost) EnsureActiveForQuestion(ctx context.Context, pluginID strin
 	return h.EnsureActive(ctx, pluginID, holder)
 }
 
-func (h *pluginHost) ReleaseQuestion(string, plugin.Holder) {}
+func (h *pluginHost) ReleaseQuestion(string, string, plugin.Holder) {}
 
 func (h *pluginHost) GetPluginInfos() []plugin.Info {
 	h.mu.Lock()

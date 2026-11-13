@@ -16,7 +16,7 @@ import (
 // RunningHost hands out a plugin whose process runs, with a question lease on it, without starting it.
 type RunningHost interface {
 	AcquireRunningForQuestion(pluginID string, holder plugin.Holder) (transport.Endpoint, bool)
-	ReleaseQuestion(pluginID string, holder plugin.Holder)
+	ReleaseQuestion(pluginID, token string, holder plugin.Holder)
 }
 
 // RunningSource opens the provider of a plugin only while its process runs, for a question the core asks
@@ -43,5 +43,5 @@ func (s *RunningSource) OpenRunningProvider(ctx context.Context, pluginID string
 	interceptor := connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token))
 	client := numenv1connect.NewProviderServiceClient(s.clients.GetClient(endpoint), transport.GetBaseURL(endpoint), interceptor)
 	var once sync.Once
-	return &provider{client: client}, func() { once.Do(func() { s.host.ReleaseQuestion(pluginID, holder) }) }, true
+	return &provider{client: client}, func() { once.Do(func() { s.host.ReleaseQuestion(pluginID, endpoint.Token, holder) }) }, true
 }
