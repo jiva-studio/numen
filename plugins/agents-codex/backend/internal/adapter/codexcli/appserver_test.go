@@ -289,3 +289,14 @@ func TestStoredModelsAreNoneWithoutAHome(t *testing.T) {
 		t.Errorf("readCodexCache without home = %v, want nil", got)
 	}
 }
+
+func isolateWithoutHome(t *testing.T) {
+	t.Helper()
+	t.Setenv("HOME", "")
+	t.Setenv("USERPROFILE", "")
+	t.Setenv("HOMEDRIVE", "")
+	t.Setenv("HOMEPATH", "")
+	if _, err := os.UserHomeDir(); err == nil {
+		t.Skip("this platform finds a home without any environment")
+	}
+}
