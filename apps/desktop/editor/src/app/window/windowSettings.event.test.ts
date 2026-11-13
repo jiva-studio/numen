@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
 import { createTestTabs } from '@/testing/tabs'
+import { createConnectionStore } from '@/entities/connection'
 import { createSettingsStore, SETTINGS_WORDS, type SettingEdit } from '@/entities/settings'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
@@ -68,8 +69,10 @@ const create = () => {
   restoreCore = installSettingsCore(core, { theme: THEME })
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = createTestTabs()
+  const connections = createConnectionStore(log.getWriter('connections'))
   const settings = createWindowSettingsPart({
     rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
+    connections,
     words: WORDS,
     log,
     windowTabs,
@@ -77,7 +80,7 @@ const create = () => {
     getSettingsViews: () => new Map(),
     getPlatform: () => 'linux',
   })
-  return { settings, core, feed, windowTabs }
+  return { settings, core, feed, windowTabs, connections }
 }
 
 const change = (feed: ReturnType<typeof createFeed>, path: readonly string[], value: unknown) => {
@@ -221,6 +224,42 @@ describe('a setting that changes', () => {
     await settle()
 
     expect(handler).not.toHaveBeenCalled()
+    settings.close()
+  })
+
+  it('tells the connections of a plugin of a change of the connections, the detected ones or an enabled plugin', async () => {
+    const { settings, feed, windowTabs, connections } = create()
+    const support = createTestPluginSupport({
+      windowTabs,
+      tabOpeners: {
+        registerExtensionReader: vi.fn(() => () => undefined),
+        registerEditor: vi.fn(() => () => undefined),
+      } as never,
+      rest: settings.rest,
+      getServices: () => ({}),
+      subscribeConnectionChanges: connections.changes.subscribe,
+    })
+    await settings.start()
+    const handler = vi.fn()
+    support.pluginHost.lifecycle.createContext(PLUGIN).work.connections!.onChange!(handler)
+
+    change(feed, ['app', 'appearance', 'mode'], 'dark')
+    await vi.advanceTimersByTimeAsync(0)
+    await settle()
+    expect(handler).not.toHaveBeenCalled()
+
+    const pushes = [
+      () => feed.push([{ at: ['detectedConnections'], value: '["c-gemini"]' }]),
+      () => change(feed, ['connections'], { 'c-orchard': { type: 'acp' } }),
+      () => change(feed, ['md.numen.agents.acp', 'enabled'], false),
+    ]
+    for (const push of pushes) {
+      push()
+      await vi.advanceTimersByTimeAsync(0)
+      await settle()
+    }
+
+    expect(handler).toHaveBeenCalledTimes(3)
     settings.close()
   })
 

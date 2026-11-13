@@ -23,10 +23,14 @@ const readCancellation = (error: Caught, signal: AbortSignal | undefined): Conne
   }
 }
 
-/** The connections a plugin calls through, with the plugin id the loader gives it. */
+/**
+ * The connections a plugin calls through, with the plugin id the loader gives it. `subscribeChanges` is
+ * the window's signal of a change that can change the rows; without it the host has no onChange.
+ */
 export const createPluginConnections = (
   client: ConnectionCallClient,
   pluginId: string,
+  subscribeChanges?: (handler: () => void) => () => void,
 ): ConnectionHost => ({
   call: async function* (operation, payload, options) {
     try {
@@ -41,4 +45,7 @@ export const createPluginConnections = (
   },
   listRows: (operation) => client.listRows(pluginId, operation),
   listRowOptions: (request) => client.listRowOptions({ pluginId, ...request }),
+  ...(subscribeChanges && {
+    onChange: (handler: () => void) => ({ dispose: subscribeChanges(handler) }),
+  }),
 })

@@ -3,6 +3,7 @@
  */
 import type {
   BufferHost,
+  ConnectionHost,
   Disposable,
   FileBuffers,
   FileSelectEvent,
@@ -156,13 +157,22 @@ function createUiService(
   }
 }
 
-function createWork(pluginId: string, host: PluginContextHost): PluginWork {
+function trackConnections(
+  connections: ConnectionHost | undefined,
+  add: Track,
+): ConnectionHost | undefined {
+  const onChange = connections?.onChange?.bind(connections)
+  if (!connections || !onChange) return connections
+  return { ...connections, onChange: (handler) => add(onChange(handler)) }
+}
+
+function createWork(pluginId: string, host: PluginContextHost, add: Track): PluginWork {
   const { window: work } = host
   return pickDefinedParts<PluginWork>({
     tasks: work.getTasks(pluginId),
     backgroundTasks: work.getBackgroundTasks(),
     processes: work.getProcesses(),
-    connections: work.getConnections(pluginId),
+    connections: trackConnections(work.getConnections(pluginId), add),
   })
 }
 
@@ -212,7 +222,7 @@ export function createPluginContext(
     tabs: guardService(createTabs(host), rules.tabs, { check }),
     vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
     ui: createUiService(pluginId, host, { guard: registration, check }),
-    work: guardService(createWork(pluginId, host), rules.work, { check }),
+    work: guardService(createWork(pluginId, host, add), rules.work, { check }),
     ...(health && { health: guardService(health, rules.health, { check }) }),
   }
 }

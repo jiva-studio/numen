@@ -22,6 +22,8 @@ export interface PluginSupportDeps {
   readonly tabs: TabActionParts
   readonly parts: readonly HostParts[]
   readonly getPlatform: () => WindowPlatform
+  /** Calls the handler after a change of the settings that can change the rows the plugins list. */
+  readonly subscribeConnectionChanges: (handler: () => void) => () => void
   readonly reports: {
     readonly reportError: (pluginId: string, error: Caught) => void
     readonly reportLoadError: (pluginId: string, error: Caught) => void
@@ -57,7 +59,8 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getSetting,
     onSettingChange,
     getTexts: (pluginId) => getPluginTexts(pluginId),
-    getConnections: (pluginId) => getPluginConnections(pluginId),
+    getConnections: (pluginId) =>
+      getPluginConnections(pluginId, deps.subscribeConnectionChanges),
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost.lifecycle,

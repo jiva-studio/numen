@@ -26,6 +26,7 @@ export interface TestPluginSupportDeps {
   readonly tabOpeners: Parameters<typeof createTabKindParts>[0]['tabOpeners']
   readonly rest: SettingsStore
   readonly getPlatform?: () => WindowPlatform
+  readonly subscribeConnectionChanges?: (handler: () => void) => () => void
   readonly readNote?: PluginHostDeps['readNote']
   readonly writeNote?: PluginHostDeps['writeNote']
   readonly resolveLink?: PluginHostDeps['resolveLink']
@@ -73,6 +74,7 @@ export function createTestPluginSupport(deps: TestPluginSupportDeps) {
     catalog: createPluginCatalog(deps.rest),
     status: deps.status ?? createWindowPluginStatus(deps.rest),
     getPlatform: deps.getPlatform ?? (() => NO_PLATFORM),
+    subscribeConnectionChanges: deps.subscribeConnectionChanges ?? (() => () => undefined),
     reports: {
       reportError: deps.reportError ?? ignoreError,
       reportLoadError: deps.reportLoadError ?? deps.reportError ?? ignoreError,

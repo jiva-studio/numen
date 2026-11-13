@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ConnectionHost } from '@numen/plugin-sdk'
 import { createPluginContext } from './context'
 import { createTestContextHost } from '../testing/contextHost'
+import { disposeSubscriptions } from './guards/subscriptions'
 
 const createContext = (permissions: readonly string[]) => {
   const connections: ConnectionHost = {
@@ -38,6 +39,32 @@ describe('the connections of a plugin', () => {
     await context.work.connections!.call('llm.complete', new Uint8Array()).next()
 
     expect(connections.call).toHaveBeenCalledWith('llm.complete', new Uint8Array())
+  })
+
+  it('stop telling the plugin of changes once the plugin is disposed', () => {
+    const handlers = new Set<() => void>()
+    const connections: ConnectionHost = {
+      call: vi.fn(),
+      onChange: (handler) => {
+        handlers.add(handler)
+        return { dispose: () => handlers.delete(handler) }
+      },
+    }
+    const host = createTestContextHost({ window: { getConnections: () => connections } })
+    const context = createPluginContext('md.numen.views.agent.chat', host, {
+      id: 'md.numen.views.agent.chat',
+      name: 'Agent Chat',
+      version: '1.0.0',
+      permissions: [],
+    })
+    const changed = vi.fn()
+    context.work.connections!.onChange!(changed)
+    for (const handler of handlers) handler()
+
+    disposeSubscriptions(context.plugin.subscriptions)
+
+    expect(changed).toHaveBeenCalledTimes(1)
+    expect(handlers.size).toBe(0)
   })
 
   it('are absent where the host has none', () => {

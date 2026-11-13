@@ -32,6 +32,11 @@ export function activate(context: PluginContext): void {
   const reloadAgents = () =>
     runInBackground(agents.reload(), (error) => context.ui.notices.show(String(error), 'error'))
   context.settings.onChange(AGENTS_SETTING, reloadAgents)
+  // A host that tells of changes of the connections lists the agents now and again on each change; one
+  // that does not lists them for each tab it opens.
+  const hasChangeSignal = connections.onChange !== undefined
+  connections.onChange?.(reloadAgents)
+  if (hasChangeSignal) reloadAgents()
   const chats = createAgentKind(
     {
       workspace,
@@ -39,7 +44,7 @@ export function activate(context: PluginContext): void {
       openSettings: createSettingsOpener(context),
     },
     (deps) => {
-      reloadAgents()
+      if (!hasChangeSignal) reloadAgents()
       const choice = useAgentChoice(connections, agents)
       const conversation = useConversation({
         connections,

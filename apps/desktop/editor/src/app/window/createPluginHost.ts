@@ -56,6 +56,7 @@ export interface PluginHostSupportDeps {
   readonly tabOpeners: FileOpeners
   readonly reports: ReturnType<typeof createPluginReports>
   readonly parts: readonly HostParts[]
+  readonly subscribeConnectionChanges: (handler: () => void) => () => void
 }
 
 /** The plugin host and the loader, over the tabs, the services and the declarations of the window. */
@@ -70,6 +71,7 @@ export function createPluginHostSupport(deps: PluginHostSupportDeps) {
     kinds: createTabKindParts({ windowTabs, tabOpeners }),
     tabs: createTabActionParts({ windowTabs }),
     parts: deps.parts,
+    subscribeConnectionChanges: deps.subscribeConnectionChanges,
   })
 }
 

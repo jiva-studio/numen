@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { ConnectionCallClient } from '@numen/core-client'
 import { createPluginConnections } from './pluginConnections'
 
@@ -165,5 +165,35 @@ describe('the connections of a plugin', () => {
         options: { model: 'opus' },
       },
     ])
+  })
+
+  it('tells the plugin of each change the window signals until the plugin stops listening', () => {
+    const handlers = new Set<() => void>()
+    const subscribe = (handler: () => void) => {
+      handlers.add(handler)
+      return () => handlers.delete(handler)
+    }
+    const connections = createPluginConnections(
+      { ...NO_LISTS, call: vi.fn() },
+      'md.numen.views.agent.chat',
+      subscribe,
+    )
+    const changed = vi.fn()
+
+    const listening = connections.onChange?.(changed)
+    for (const handler of handlers) handler()
+    listening?.dispose()
+    for (const handler of handlers) handler()
+
+    expect(changed).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers no change signal where the window gives none', () => {
+    const connections = createPluginConnections(
+      { ...NO_LISTS, call: vi.fn() },
+      'md.numen.views.agent.chat',
+    )
+
+    expect(connections.onChange).toBeUndefined()
   })
 })

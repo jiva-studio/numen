@@ -6,6 +6,7 @@ import { shallowRef } from 'vue'
 import { createRequestGuard } from '@numen/ui'
 import type { Result } from '@/shared/lib/result'
 import { formatError } from '@/shared/api/errors'
+import { createEmitter } from '@/shared/lib/emitter'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import {
   createConnection,
@@ -79,6 +80,8 @@ export function createConnectionStore(notify: MessageWriter) {
     connections,
     types,
     operationTitles,
+    /** Emitted after a change of the settings that can change the rows the plugins list. */
+    changes: createEmitter<void>(),
     load,
     reload,
     create: (draft: ConnectionDraft) => run(() => createConnection(draft)),
