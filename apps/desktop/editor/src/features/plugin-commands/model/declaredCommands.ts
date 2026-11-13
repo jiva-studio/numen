@@ -96,7 +96,6 @@ export interface DeclaredStateDeps {
   readonly list?: typeof listDeclaredCommands
   readonly getConfig?: () => WhenSettings
   readonly whenReader?: WhenReader
-  /** Reads the note at a target, for the conditions that read its type or properties. */
   readonly readNote?: ReadNote
 }
 

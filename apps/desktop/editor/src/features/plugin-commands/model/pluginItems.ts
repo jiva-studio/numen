@@ -120,6 +120,7 @@ interface PaletteParts {
   readonly paletteLists: WindowLists
   readonly getTarget: () => CommandTarget
   readonly runs: RunSupport
+  readonly forgetNotes?: (() => void) | undefined
 }
 
 /**
@@ -135,10 +136,13 @@ export function createItemLists(pluginHost: ItemHost, parts: PaletteParts) {
     previewItem: (command, item) => windowLists.previewItem(command, item),
   }
   let paletteOpen: Readonly<Ref<boolean>> | undefined
-  /** Asks again for the items each time the palette opens or closes. */
+  /** Asks again for the items and the notes each time the palette opens or closes. */
   const resetWhenClosed = (isOpen: Readonly<Ref<boolean>>): void => {
     paletteOpen = isOpen
-    watch(isOpen, () => items.reset())
+    watch(isOpen, () => {
+      items.reset()
+      parts.forgetNotes?.()
+    })
   }
   /**
    * The commands without those that list no item over the target of the palette while it is open, as

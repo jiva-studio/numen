@@ -2,7 +2,6 @@
  * What the commands of the plugins add to the palettes: the lists of their items, their commands and the
  * ways they are run.
  */
-import { watch } from 'vue'
 import type { PluginHost } from '@numen/plugin-loader'
 import type {
   createCommandDeps,
@@ -55,18 +54,12 @@ export function createPluginPalette(deps: PluginPaletteDeps) {
     getTarget,
     commandDeps,
   })
-  const itemLists = createItemLists(sources.items, {
+  const lists: PluginPaletteLists = createItemLists(sources.items, {
     paletteLists: windowSettings.paletteLists,
     getTarget,
     runs: commandDeps.runSupport,
+    forgetNotes: declaredCommands.whenContext.forgetNotes,
   })
-  const lists: PluginPaletteLists = {
-    ...itemLists,
-    resetWhenClosed: (isOpen) => {
-      itemLists.resetWhenClosed(isOpen)
-      watch(isOpen, () => declaredCommands.whenContext.forgetNotes?.())
-    },
-  }
   return {
     sources,
     pluginWays: plugin.pluginWays,

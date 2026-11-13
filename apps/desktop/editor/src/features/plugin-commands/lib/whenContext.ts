@@ -16,9 +16,7 @@ export interface WindowWhenContext {
   readonly getContentTypes: () => Readonly<Record<string, string>>
   readonly getConfig: () => WhenSettings
   readonly whenReader: WhenReader
-  /** The type and properties of the note at the target; undefined while they are read. */
   readonly getNote?: (target: CommandTarget) => PaletteNote | undefined
-  /** Forgets the notes read, so the next palette reads them again. */
   readonly forgetNotes?: () => void
 }
 
@@ -35,13 +33,13 @@ export interface PaletteNote {
   readonly properties?: JsonObject
 }
 
-/** Whether the condition reads the type or the properties of the note, which the target does not hold. */
 const hasNoteKindVariable = (condition: WhenCondition): boolean =>
   condition.names.some((name) => name === 'target.noteType' || name === 'target.properties')
 
 /**
- * Whether a command of the condition is available over what is in front of the palette. A condition
- * that reads the type or the properties of the note holds once the note is read.
+ * Whether a command of the condition is available over what is in front of the palette. The target
+ * holds no type or properties of its note, so a condition that reads them holds once `getNote` has
+ * read the note, and is false while it is read.
  */
 export function createWhenAvailability(context: WindowWhenContext) {
   return (when: string | undefined, target: CommandTarget): boolean => {
