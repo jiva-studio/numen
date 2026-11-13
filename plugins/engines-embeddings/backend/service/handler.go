@@ -15,9 +15,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
 
-// notBuilt is what a person reads while no chunk of the vault has a vector.
-const notBuilt = "Semantic index not built yet"
-
 // openPlace returns the search of the core index in the vault of the given identity.
 type openPlace func(vaultID string) (host.PlaceSearch, error)
 
@@ -94,14 +91,6 @@ func (h handler) SearchPassages(ctx context.Context, place searchsource.Place, q
 		matches[i] = searchsource.Match{ChunkID: one.ChunkID, Score: one.Similarity}
 	}
 	return matches, nil
-}
-
-// DescribeCoverage says that the index is not built while no chunk of the vault has a vector.
-func (h handler) DescribeCoverage(_ context.Context, _ searchsource.Place, counts searchsource.Counts) (string, error) {
-	if counts.Indexed == 0 {
-		return notBuilt, nil
-	}
-	return "", nil
 }
 
 func (h handler) getQueryVector(ctx context.Context, recipe, query string) ([]float32, error) {

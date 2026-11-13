@@ -35,9 +35,6 @@ message GetVaultStateResponse {
 
   // How far indexing the vault has got.
   Scan scan = 4;
-
-  // What the search source says about how far it has indexed the vault.
-  IndexCoverage coverage = 5;
 }
 
 // Scan is how far indexing a vault has got, and what stopped it.
@@ -51,14 +48,6 @@ message Scan {
   // Why the vault is not being followed, when it is not. Changes will only
   // appear when something asks for them again.
   string watch_error = 3;
-}
-
-// IndexCoverage is how far the search source has indexed a vault, in its own words.
-message IndexCoverage {
-  // Text is what the source tells a person about its index, such as that it is
-  // not built yet. Empty where the source has nothing to say or the
-  // installation has no search source.
-  string text = 1;
 }
 
 message WatchVaultChangesRequest {}

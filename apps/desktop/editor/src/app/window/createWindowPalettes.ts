@@ -88,7 +88,7 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
     knows: createNoteLookup(vault.editing, windowTabs),
     plugin: pluginPalette.plugin,
     searchRequests,
-    searchOptions: { coverage: vault.vaults.coverage, menu: createSearchMenu(pluginHost.slots) },
+    searchOptions: { menu: createSearchMenu(pluginHost.slots) },
     getVaultList,
   })
   watchCommandLists(

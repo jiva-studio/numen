@@ -23,7 +23,6 @@ const resolved = {
   name: 'Vault',
   path: '/vaults/Physics',
   scan: { isReady: true, error: '', unwatchedPath: '' },
-  coverage: '',
 }
 
 /** What the core says about the open vault and the window, in the values the window reads them as. */
@@ -72,7 +71,6 @@ const answerFrom = (core: Fake) => {
             error: state.scan.error,
             watchError: state.scan.unwatchedPath,
           },
-          coverage: { text: state.coverage },
         }
       },
       watchVaultChanges: async function* (_request, context) {
@@ -583,20 +581,6 @@ describe('a vault that is not being followed', () => {
   })
 })
 
-describe('what the search source says of its index', () => {
-  it('is kept as it is given', async () => {
-    const core = fake({
-      state: async () => ({ ...resolved, coverage: 'Semantic index not built yet' }),
-    })
-    const window = useDisplay(core, { wait: async () => window.close() })
-
-    await window.start()
-    await flushPromises()
-
-    expect(window.vault.coverage.value).toBe('Semantic index not built yet')
-  })
-})
-
 describe('what the application is doing', () => {
   const readText = (count: number): Task => ({
     id: 'reading:library/scan.pdf',
@@ -693,7 +677,7 @@ describe('what the application is doing', () => {
         asks++
         return {
           ...resolved,
-          coverage: `Indexed ${asks * 1000} passages`,
+          name: `Vault ${asks}`,
         }
       },
       watchTasks: async function* () {
@@ -708,7 +692,7 @@ describe('what the application is doing', () => {
     await flushPromises()
 
     expect(asks).toBeGreaterThan(1)
-    expect(window.vault.coverage.value).toBe(`Indexed ${asks * 1000} passages`)
+    expect(window.vault.name.value).toBe(`Vault ${asks}`)
 
     window.close()
   })
@@ -726,7 +710,6 @@ describe('a window before it has requested the vault anything', () => {
     expect(window.vault.unwatched.value).toBe('')
     expect(window.opening.hasNote.value).toBe(false)
     expect(window.opening.path.value).toBe('')
-    expect(window.vault.coverage.value).toBe('')
     expect(window.tasks.value).toStrictEqual([])
   })
 })

@@ -102,10 +102,10 @@ func (s *State) ReportFloorError(err error) {
 	s.Window.AddTask(work.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
 }
 
-// GetVaultState is what the window knows about the vault it shows: whether the first scan is done,
-// what stopped it, and what the search source says of its index.
-func (s *State) GetVaultState(ctx context.Context) (window.VaultState, error) {
-	return windowsession.GetVaultState(ctx, &s.Runtime, s.Indexing.Embedding)
+// GetVaultState is what the window knows about the vault it shows: whether the first scan is done and
+// what stopped it.
+func (s *State) GetVaultState() window.VaultState {
+	return windowsession.GetVaultState(&s.Runtime)
 }
 
 // ReportOpenTabs keeps the tabs the window reported, wakes whoever waits for a report, and tells

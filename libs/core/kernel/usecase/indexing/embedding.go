@@ -60,35 +60,6 @@ func (e *Embedding) CountProgress(ctx context.Context, vaultID domain.VaultID, r
 // HasProgress reports whether the indexed chunks can be counted.
 func (e *Embedding) HasProgress() bool { return e != nil && e.progress != nil }
 
-// DescribeCoverage returns what the search source tells a person about how far it has indexed the vault,
-// and nothing for a window without a source or for a source that has not described itself. A source that does
-// not answer, as while its plugin starts again, says nothing: the state of the vault does not fail with it.
-func (e *Embedding) DescribeCoverage(ctx context.Context, vaultID domain.VaultID) (string, error) {
-	if e == nil || e.source == nil || vaultID == "" {
-		return "", nil
-	}
-	_, recipe := e.Describe()
-	if recipe == "" {
-		return "", nil
-	}
-	var counts searchsource.Counts
-	if e.HasProgress() {
-		chunks, indexed, err := e.CountProgress(ctx, vaultID, recipe)
-		if err != nil {
-			return "", err
-		}
-		counts = searchsource.Counts{Chunks: chunks, Indexed: indexed}
-	}
-	return getCoverageText(e.source.DescribeCoverage(ctx, searchsource.Place{VaultID: vaultID, Recipe: recipe}, counts)), nil
-}
-
-func getCoverageText(text string, err error) string {
-	if err != nil {
-		return ""
-	}
-	return text
-}
-
 // OnModelChange calls fn each time the description of the source changes, with whether the change moved
 // the size of a chunk. A source whose description never changes calls nothing.
 func (e *Embedding) OnModelChange(fn func(isChunkSizeChanged bool)) {

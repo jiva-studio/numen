@@ -23,7 +23,6 @@ import (
 // Host provides plugin resolution and activation for the search source.
 type Host interface {
 	bridge.Activator
-	pluginport.RunningPlugins
 	ResolveCapability(capability string) (manifest.Discovered, error)
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
@@ -38,7 +37,6 @@ type description struct {
 // Source is the search source plugin seen as a searchsourceport.Source. It holds the plugin only for the
 // length of each call, so the plugin stops once it has been idle for its limit.
 type Source struct {
-	host    Host
 	service bridge.Service[numenv1connect.SearchSourceServiceClient]
 	kept    *Descriptions
 	mu      sync.Mutex
@@ -92,7 +90,6 @@ func open(ctx context.Context, host Host, kept *Descriptions) (b *Source, readEr
 	}
 	pluginID := plugin.Manifest.ID
 	b = &Source{
-		host:    host,
 		service: bridge.Service[numenv1connect.SearchSourceServiceClient]{Host: host, PluginID: pluginID, NewClient: numenv1connect.NewSearchSourceServiceClient},
 		kept:    kept,
 	}
@@ -209,27 +206,6 @@ func (b *Source) SearchPassages(ctx context.Context, place searchsource.Place, q
 		matches[i] = searchsource.Match{ChunkID: domain.ChunkID(one.GetChunkId()), Score: one.GetScore()}
 	}
 	return matches, nil
-}
-
-// DescribeCoverage asks the plugin what a person reads about how far it has indexed the vault of the place. A
-// plugin that does not run is not started for it, and says nothing.
-func (b *Source) DescribeCoverage(ctx context.Context, place searchsource.Place, counts searchsource.Counts) (text string, err error) {
-	if !b.host.HasEndpoint(b.service.PluginID) {
-		return "", nil
-	}
-	client, call, err := b.service.Open(ctx)
-	if err != nil {
-		return "", err
-	}
-	defer func() { err = errors.Join(err, call.Close()) }()
-
-	resp, err := client.DescribeCoverage(ctx, connect.NewRequest(&v1.DescribeCoverageRequest{
-		Place: writePlace(place), ChunkCount: counts.Chunks, IndexedCount: counts.Indexed,
-	}))
-	if err != nil {
-		return "", transport.ReadRPCError("describe coverage rpc", err)
-	}
-	return resp.Msg.GetText(), nil
 }
 
 // EmbedQueries asks the plugin for the vectors of the queries.

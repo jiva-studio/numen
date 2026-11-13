@@ -39,7 +39,7 @@ export interface WindowPaletteDeps {
   readonly knows: NoteLookup
   readonly plugin: PluginPaletteParts
   readonly searchRequests: ReturnType<typeof createSearchRequests>
-  readonly searchOptions: Pick<SearchOptions, 'coverage' | 'menu'>
+  readonly searchOptions: Pick<SearchOptions, 'menu'>
   readonly getVaultList: CommandsDeps['vaults']
 }
 

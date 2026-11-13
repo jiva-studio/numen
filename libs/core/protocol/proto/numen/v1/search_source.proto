@@ -22,9 +22,6 @@ service SearchSourceService {
   // SearchPassages returns the chunks of the place that answer the query, best first.
   rpc SearchPassages(SearchSourceServiceSearchPassagesRequest) returns (SearchSourceServiceSearchPassagesResponse);
 
-  // DescribeCoverage says to a person how far the source has indexed the vault of the place.
-  rpc DescribeCoverage(DescribeCoverageRequest) returns (DescribeCoverageResponse);
-
   // EmbedQueries returns one vector per query, in the order of the queries, as the source compares a
   // query with its place. The floor calibration of a plugin measures the vault with them.
   rpc EmbedQueries(EmbedQueriesRequest) returns (EmbedQueriesResponse);
@@ -110,19 +107,6 @@ message ChunkMatch {
 message SearchSourceServiceSearchPassagesResponse {
   // Best first.
   repeated ChunkMatch matches = 1;
-}
-
-message DescribeCoverageRequest {
-  SearchPlace place = 1;
-
-  // How many chunks of the vault can be handed to the source, and how many have a vector in the place.
-  int64 chunk_count = 2;
-  int64 indexed_count = 3;
-}
-
-message DescribeCoverageResponse {
-  // What a person reads about the index of the source, empty where there is nothing to say.
-  string text = 1;
 }
 
 message EmbedQueriesRequest {

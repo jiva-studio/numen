@@ -91,7 +91,6 @@ type PluginRuntime struct {
 	textport.TextPlugins
 	pluginport.PluginFailures
 	pluginport.ConfigWatcher
-	pluginport.RunningPlugins
 }
 
 // PluginConfiguration is what carries the settings to the plugins.
@@ -167,7 +166,6 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 			TextPlugins:        host.Registry,
 			PluginFailures:     host.Failures,
 			ConfigWatcher:      host.Config,
-			RunningPlugins:     host.Activation,
 		},
 		Configuration: PluginConfiguration{
 			PluginSettingDeclarer: host.Registry,

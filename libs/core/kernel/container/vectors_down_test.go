@@ -61,7 +61,7 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 
 func (h *downEmbeddingHost) lend() *container.PluginHost {
 	runtime := container.PluginRuntime{
-		PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding(), ConfigWatcher: h, RunningPlugins: h,
+		PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding(), ConfigWatcher: h,
 	}
 	return &container.PluginHost{Runtime: runtime, Health: pluginhealth.NewItems()}
 }
@@ -105,8 +105,6 @@ func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 
 // WatchPluginConfig never calls back: the plugin is not configured while the test runs.
 func (h *downEmbeddingHost) WatchPluginConfig(string, func()) (stop func()) { return func() {} }
-
-func (h *downEmbeddingHost) HasEndpoint(string) bool { return true }
 
 func (h *downEmbeddingHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 	return domain.NoteProfile{}, false

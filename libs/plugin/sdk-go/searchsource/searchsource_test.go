@@ -45,13 +45,6 @@ func (f fakeHandler) SearchPassages(_ context.Context, _ Place, q Query) ([]Matc
 	return []Match{{ChunkID: q.Text, Score: q.Floor}}, nil
 }
 
-func (f fakeHandler) DescribeCoverage(_ context.Context, _ Place, counts Counts) (string, error) {
-	if counts.Indexed == 0 {
-		return "Not built yet", f.err
-	}
-	return "", f.err
-}
-
 func (f fakeHandler) EmbedQueries(_ context.Context, queries []string) ([][]float32, error) {
 	if f.err != nil {
 		return nil, f.err
@@ -95,17 +88,12 @@ func TestClient_RoundTripsTheDescriptionAndTheVectorsThroughTheHandler(t *testin
 	}
 }
 
-func TestTheAdapterCarriesTheQueryAndTheCountsToTheHandler(t *testing.T) {
+func TestTheAdapterCarriesTheQueryToTheHandler(t *testing.T) {
 	ad := &adapter{h: fakeHandler{}}
 	found, err := ad.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchSourceServiceSearchPassagesRequest{Query: "12", Floor: 0.5}))
 	if err != nil || len(found.Msg.GetMatches()) != 1 || found.Msg.GetMatches()[0].GetChunkId() != "12" || found.Msg.GetMatches()[0].GetScore() != 0.5 {
 		t.Fatalf("SearchPassages = %v, %v", found, err)
-	}
-	coverage, err := ad.DescribeCoverage(t.Context(), connect.NewRequest(&v1.DescribeCoverageRequest{ChunkCount: 4}))
-	if err != nil || coverage.Msg.GetText() != "Not built yet" {
-		t.Fatalf("DescribeCoverage = %v, %v", coverage, err)
-	}
-}
+	}}
 
 func TestClient_PropagatesHandlerErrors(t *testing.T) {
 	wantErr := errors.New("model failed")

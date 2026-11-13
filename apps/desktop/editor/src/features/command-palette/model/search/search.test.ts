@@ -223,34 +223,18 @@ describe('answers arriving', () => {
     expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
   })
 
-  it('says what the search source says of its index, where meaning returned nothing', async () => {
+  it('draws no meaning group when the meaning search returned nothing', async () => {
     const vault = createVault()
-    const readItem = { text: 'Semantic index not built yet' }
-    const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => readItem })
+    const palette = useSearch(vault.core, WORDS, { wait: now })
 
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
     vault.mode('meaning')?.answer([])
-    vault.names[0]?.answer([])
+    vault.names[0]?.answer([createNameMatch()])
     await flushPromises()
 
-    expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe('Semantic index not built yet')
-    // The other groups query the words, which a vault with no vectors still
-    // answers, and a group that returned nothing contributes no rows.
-    expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
-  })
-
-  it('shows the text of the search source as it is given', async () => {
-    const vault = createVault()
-    const readItem = { text: 'Indexed 3 of 12 passages' }
-    const palette = useSearch(vault.core, WORDS, { wait: now, coverage: () => readItem })
-
-    palette.setTyped('ent').catch(rethrow)
-    await flushPromises()
-    vault.mode('meaning')?.answer([])
-    await flushPromises()
-
-    expect(getGroup(palette.groups.value, 'meaning')?.silence).toBe('Indexed 3 of 12 passages')
+    expect(getGroup(palette.groups.value, 'meaning')).toBeUndefined()
+    expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(1)
   })
 
   it('shows meaning search results with meaning item ids', async () => {

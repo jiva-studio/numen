@@ -15,7 +15,6 @@ export const vaultAnswers = {
       name: 'Vault',
       path: '/vaults/Physics',
       scan: { isReady: mockVaultState.isReady, error: mockVaultState.error, watchError: '' },
-      coverage: { text: mockVaultState.coverage },
     }),
     watchVaultChanges: changed.stream,
   },

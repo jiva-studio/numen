@@ -44,9 +44,6 @@ func (h *LeaseHost) Release(string) { h.Released.Add(1) }
 // WatchPluginConfig registers nothing: the stub is never configured.
 func (h *LeaseHost) WatchPluginConfig(string, func()) func() { return func() {} }
 
-// HasEndpoint reports the stub running.
-func (h *LeaseHost) HasEndpoint(string) bool { return true }
-
 func (h *LeaseHost) CheckPluginPermission(_, _ string) error { return nil }
 
 func (h *LeaseHost) GetVaultPath() string { return "" }

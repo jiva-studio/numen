@@ -850,9 +850,6 @@ func TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	if reason := state.Msg.GetScan().GetError(); reason != "" {
 		t.Errorf("the window says it could not be read: %s", reason)
 	}
-	if text := state.Msg.GetCoverage().GetText(); text != "" {
-		t.Errorf("the window says %q of an index nothing builds", text)
-	}
 
 	opening, err := f.vault.GetOpeningNote(t.Context(), connect.NewRequest(&v1.GetOpeningNoteRequest{}))
 	if err != nil {

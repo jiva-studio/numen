@@ -27,10 +27,6 @@ The core decides what is indexed and when (vault changes, text versions, cut rec
 
 Every participant implements `Rank(vault, query) Ranking`: passages best first. The core fuses all rankings with reciprocal rank fusion (k = 60) and keeps at most `Each` passages of one source. A ranking marked leading (the section names) puts its first passage of a source ahead of the other passages of that source. The merge does not know which participant is built in. A source that fails is reported and left out; the other rankings answer. The parameters of a search name how many candidates the words, the names and the sources keep, and the window's modes set one of the three.
 
-## Coverage
-
-`DescribeCoverage(place, counts)` gets how many chunks of the vault can be handed to the source and how many have a vector under the recipe, and answers a text for a person ("Semantic index not built yet"), empty where there is nothing to say. The vault state carries that text; the window shows it as given when the meaning group finds nothing, and computes nothing. A window without a source shows no coverage text.
-
 ## Ready event
 
 After an indexing pass leaves no chunk of a vault pending for the source, the core emits `onSearchSourceReady:<vault id>`. A plugin subscribes with the activation event `onSearchSourceReady`; it replaces `onVectorsReady`.
@@ -41,4 +37,4 @@ After an indexing pass leaves no chunk of a vault pending for the source, the co
 
 ## Limits
 
-One source at a time: the vector table has one width, so the core opens the first plugin that declares `search.source`. The search and the merge take any number of participants. A read of the description the settings do not allow (a connection source with no connection) fails with the sentence the plugin gives, which the window lists as the failure of the search source. A window opens such a source all the same, with no description: it takes no part in search or indexing and gives no coverage text. Each time the plugin is given its configuration (a setting of its own, an edit of a connection it uses, a start of its process) the core reads the description again; once the read succeeds the source joins search, its texts are indexed and `onSearchSourceReady` fires, with no reopen of the window. A command of the command line reads the description once, and runs on words alone when the read fails.
+One source at a time: the vector table has one width, so the core opens the first plugin that declares `search.source`. The search and the merge take any number of participants. A read of the description the settings do not allow (a connection source with no connection) fails with the sentence the plugin gives, which the window lists as the failure of the search source. A window opens such a source all the same, with no description: it takes no part in search or indexing. Each time the plugin is given its configuration (a setting of its own, an edit of a connection it uses, a start of its process) the core reads the description again; once the read succeeds the source joins search, its texts are indexed and `onSearchSourceReady` fires, with no reopen of the window. A command of the command line reads the description once, and runs on words alone when the read fails.

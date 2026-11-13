@@ -138,15 +138,6 @@ func (s *mockSourceServer) SearchPassages(
 	}}), nil
 }
 
-func (s *mockSourceServer) DescribeCoverage(
-	_ context.Context,
-	req *connect.Request[v1.DescribeCoverageRequest],
-) (*connect.Response[v1.DescribeCoverageResponse], error) {
-	return connect.NewResponse(&v1.DescribeCoverageResponse{
-		Text: fmt.Sprintf("%d of %d", req.Msg.GetIndexedCount(), req.Msg.GetChunkCount()),
-	}), nil
-}
-
 func TestOpenSourceBridgeNoPlugin(t *testing.T) {
 	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", t.TempDir())
 	if err := host.Discovery.Discover(); err != nil {
@@ -285,10 +276,6 @@ func TestTheBridgeSendsTheTextsAndTheQueriesToTheSource(t *testing.T) {
 	}
 	if want := []searchsource.Match{{ChunkID: "41", Score: 0.9}, {ChunkID: "7", Score: 0.6}}; !slices.Equal(matches, want) {
 		t.Errorf("matches %v, want %v", matches, want)
-	}
-	coverage, err := bridge.DescribeCoverage(ctx, place, searchsource.Counts{Chunks: 12, Indexed: 3})
-	if err != nil || coverage != "3 of 12" {
-		t.Errorf("coverage %q, %v", coverage, err)
 	}
 
 	mockServer.mu.Lock()

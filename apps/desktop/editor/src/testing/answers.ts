@@ -20,7 +20,6 @@ interface MockVaultState {
   detachedTab: Tab | null
   types: Record<string, string>
   tabKind: string
-  coverage: string
   listable: boolean
   isOpenRefused: boolean
   writeError: string
@@ -50,8 +49,6 @@ export const mockVaultState: MockVaultState = {
   types: {},
   /** The kind of tab a plugin registered for the notes, or none. */
   tabKind: '',
-  /** What the search source says of its index. */
-  coverage: '',
   /** Whether the list of vaults answers at all. */
   listable: true,
   isOpenRefused: false,
@@ -230,7 +227,6 @@ export const forgetAnswers = () => {
   mockVaultState.detachedTab = null
   mockVaultState.types = {}
   mockVaultState.tabKind = ''
-  mockVaultState.coverage = ''
   mockVaultState.listable = true
   mockVaultState.isOpenRefused = false
   mockVaultState.writeError = ''
