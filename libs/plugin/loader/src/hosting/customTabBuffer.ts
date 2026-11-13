@@ -8,6 +8,7 @@
 import { computed, onScopeDispose, shallowReactive, watch } from 'vue'
 import type { EditorHandle } from '@numen/plugin-sdk'
 import { extractFilename, stripMarkdownExtension } from './pane/pluginView'
+import { createLineReveal } from './customTabReveal'
 import type { NoteBuffer, PluginHostDeps } from './types'
 
 /** The tab kind whose tabs hold a note of the vault. */
@@ -88,6 +89,7 @@ export function createBufferedNoteState(
   })
 
   const note = computed(() => buffer.getOpenNote(id))
+  const lines = createLineReveal(() => note.value.state !== 'loading')
   let editor: EditorHandle | null = null
 
   const state = shallowReactive({
@@ -109,7 +111,9 @@ export function createBufferedNoteState(
     takeFile: () => buffer.take(id),
     attachEditor: (attached: EditorHandle | null): void => {
       editor = attached
+      lines.attach(attached)
     },
+    revealLine: lines.reveal,
     measure: (): void => editor?.measure?.(),
     updateBody: (body: string) => buffer.setBody(id, body),
     save: () => buffer.save(id),

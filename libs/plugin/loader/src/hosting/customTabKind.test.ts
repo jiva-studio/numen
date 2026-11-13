@@ -675,6 +675,28 @@ describe('createBufferedNoteState', () => {
     return { buffer, noteRef, errRef }
   }
 
+  it('reveals the line it is asked for once the note is read and the editor is attached', async () => {
+    const { buffer, noteRef } = createMockBuffer()
+    const scope = effectScope()
+    const state = scope.run(() =>
+      createBufferedNoteState(
+        { targetPath: 'notes/buf.md', id: 'tab-buf', buffer },
+        { pluginId: 'md.numen.notes' },
+      ),
+    )!
+    const reveal = vi.fn(() => true)
+
+    state.revealLine(9)
+    state.attachEditor({ reveal })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(reveal).not.toHaveBeenCalled()
+
+    noteRef.value = { path: 'notes/buf.md', body: 'text', state: 'ready' }
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(reveal).toHaveBeenCalledExactlyOnceWith(9)
+  })
+
   it('binds note tab state, wikilinks, link following, navigation, and scope disposal', async () => {
     const { buffer, noteRef, errRef } = createMockBuffer()
     const findNotes = vi.fn(async (q: string) =>
