@@ -55,7 +55,7 @@ export type { PathRename }
 
 /** The one query a plex makes of the vault: the related notes of a note. */
 export interface RelatedNoteQueries {
-  listRelatedNotes(path: string): Promise<NoteGraph>
+  listRelatedNotes(path: string, depth?: 1 | 2): Promise<NoteGraph>
 }
 
 /** Position of the menu and the node it was requested on. */
@@ -152,6 +152,12 @@ export interface PlexNotesDeps {
   searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
 }
 
+/** Whether names are shown and how many a note shows, as the plugin settings hold them. */
+export interface PlexNamesSettings {
+  readonly showNames: Readonly<Ref<boolean>>
+  readonly namesPerNote: Readonly<Ref<number>>
+}
+
 /** How the plex is drawn, as the plugin settings hold it, followed as they change. */
 export interface PlexLook {
   readonly references: Readonly<Ref<ReferenceMode>>
@@ -175,6 +181,7 @@ export interface PlexTabDeps {
   readonly window: PlexWindowDeps
   readonly menu: PlexMenuDeps
   readonly notes: PlexNotesDeps
+  readonly names: PlexNamesSettings
   readonly look: PlexLook
 }
 
@@ -197,6 +204,13 @@ export interface PlexMenuState {
   chooseMenuItem(id: string): void
 }
 
+/** The names of the notes related to the drawn notes. */
+export interface PlexNamesState {
+  readonly showNames: Readonly<Ref<boolean>>
+  /** The names over and under a node; none for a node with none or while names are off. */
+  getNames(node: string): PlexNames
+}
+
 export interface PlexHeadingsState {
   readonly maxHeadings: Readonly<Ref<number>>
   getType(node: string): NoteType
@@ -216,6 +230,8 @@ export interface PlexNodeActions {
   dropNodes(dragged: readonly string[], relation: PlexRelation): Promise<void>
   openNode(node: string, showing?: PlexDestination): void
   openHeading(node: string, heading: string): void
+  /** Moves the focus to the note a name stands for. */
+  chooseName(name: string): void
   followMoves(renamed: readonly PathRename[]): void
   getName(path: string): string
 }
@@ -243,6 +259,7 @@ export interface PlexTabState {
   readonly look: PlexLook
   readonly menu: PlexMenuState
   readonly headings: PlexHeadingsState
+  readonly names: PlexNamesState
   readonly nodes: PlexNodeActions
   readonly quickLink: PlexQuickLinkState
   readonly inspector: PlexLinkInspectorState
@@ -314,4 +331,16 @@ export interface PlexHeading {
   readonly id: string
   readonly text: string
   readonly level: number
+}
+
+/** The name of a note shown beside a related note. The id is the caller's, handed back when the name is chosen. */
+export interface PlexName {
+  readonly id: string
+  readonly title: string
+}
+
+/** The names set over a related note, and those set under it. */
+export interface PlexNames {
+  readonly above: readonly PlexName[]
+  readonly below: readonly PlexName[]
 }

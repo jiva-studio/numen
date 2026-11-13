@@ -112,6 +112,9 @@ message GetOpeningNoteResponse {
 
 message ListRelatedNotesRequest {
   string path = 1;
+  // 1: the notes related to the note in focus. 2: also the notes related to each of those.
+  // 0 reads as 1. Any other value is invalid.
+  uint32 depth = 2;
 }
 
 message ListRelatedNotesResponse {
@@ -170,6 +173,10 @@ message RelatedNote {
 
   // Set for RELATION_REFERENCE only.
   LinkDirection direction = 8;
+
+  // The path of the related note this item belongs to, set for a note found by depth 2.
+  // `relation` is then relative to that note. Empty for a note related to the focus.
+  string related_to = 9;
 }
 
 message ResolveAddressesRequest {

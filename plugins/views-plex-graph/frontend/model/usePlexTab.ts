@@ -12,7 +12,14 @@ import {
   type CommandTarget,
   type Caught,
 } from '@numen/plugin-sdk'
-import { convertNoteGraph, getNoteTypes, getTabKinds } from '../lib/picture'
+import {
+  convertNoteGraph,
+  getNamePath,
+  getNames,
+  getNameToken,
+  getNoteTypes,
+  getTabKinds,
+} from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
 import { CREATE_NOTE } from '../lib/commands'
@@ -28,6 +35,8 @@ import type {
   PlexGraph,
   PlexRelation,
   PlexDestination,
+  PlexNames,
+  PlexNamesState,
 } from '../types'
 import { useLinkInspector } from './useLinkInspector'
 import { useQuickLink } from './useQuickLink'
@@ -95,7 +104,9 @@ function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap
     const noteGraph = view.noteGraph.value
     if (!noteGraph) return []
     const paths = [noteGraph.focus.path]
-    for (const related of noteGraph.related) paths.push(related.path)
+    for (const related of noteGraph.related) {
+      if (!related.relatedTo) paths.push(related.path)
+    }
     return paths.filter(Boolean)
   })
 
@@ -110,13 +121,13 @@ function createPlexNodeActions(options: {
   openQuickLink: (request: QuickLinkRequest) => void
 }) {
   const { view, tabDeps: deps, map, getName, openQuickLink } = options
-  const activate = (node: string) => {
-    const path = map.getNodePath(node)
-    if (path) {
-      view.go(path).catch((error: Caught) => deps.window.showMessage(formatErrorMessage(error)))
-      deps.window.onSelectPath?.(path, getName(path))
-    }
+  const goTo = (path: string) => {
+    if (!path) return
+    view.go(path).catch((error: Caught) => deps.window.showMessage(formatErrorMessage(error)))
+    deps.window.onSelectPath?.(path, getName(path))
   }
+  const activate = (node: string) => goTo(map.getNodePath(node))
+  const chooseName = (name: string) => goTo(getNamePath(name))
 
   const addNode = async (from: string, relation: PlexRelation, pos?: { x: number; y: number }) => {
     if (pos) {
@@ -175,7 +186,17 @@ function createPlexNodeActions(options: {
     deps.window.openNote(path, { title: getName(path), showing: 'current', line: Number(heading) })
   }
 
-  return { activate, addNode, joinNodes, dropNodes, openNode, openHeading, followMoves, getName }
+  return {
+    activate,
+    addNode,
+    joinNodes,
+    dropNodes,
+    openNode,
+    openHeading,
+    chooseName,
+    followMoves,
+    getName,
+  }
 }
 
 /** The words of the rows the menu on a node writes itself. */
@@ -262,6 +283,24 @@ function usePlexMenu(options: {
   return { request, menuItems, getMenuIcon, getNodeIcon, openMenu, dismiss, chooseMenuItem }
 }
 
+const NO_NAMES: PlexNames = { above: [], below: [] }
+
+function usePlexNames(
+  view: PlexView,
+  deps: PlexTabDeps,
+  map: ReturnType<typeof createNodeIdMap>,
+): PlexNamesState {
+  const { showNames, namesPerNote } = deps.names
+  const names = computed(() => {
+    const noteGraph = view.noteGraph.value
+    if (!noteGraph || !showNames.value) return new Map<string, PlexNames>()
+    return getNames(noteGraph, namesPerNote.value, getNameToken)
+  })
+  const getNodeNames = (node: string): PlexNames =>
+    names.value.get(getNameToken(map.getNodePath(node))) ?? NO_NAMES
+  return { showNames, getNames: getNodeNames }
+}
+
 function getPlexNodeName(noteGraph: PlexView['noteGraph']['value'], path: string): string {
   if (noteGraph?.focus.path === path && noteGraph.focus.title) return noteGraph.focus.title
   const foundNode = noteGraph?.related.find((one) => one.path === path)
@@ -276,6 +315,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const getName = (path: string): string => getPlexNodeName(view.noteGraph.value, path)
   const quickLink = useQuickLink(view, deps, map)
   const headings = usePlexHeadings(shownPaths, types, deps, map)
+  const names = usePlexNames(view, deps, map)
   const inspector = useLinkInspector(
     view,
     { editor: deps.editor, showMessage: deps.window.showMessage },
@@ -305,5 +345,15 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const reportFailure = (error: Caught): void => deps.window.showMessage(formatErrorMessage(error))
 
-  return { reportFailure, canvas, menu, headings, nodes, quickLink, inspector, look: deps.look }
+  return {
+    reportFailure,
+    canvas,
+    menu,
+    headings,
+    names,
+    nodes,
+    quickLink,
+    inspector,
+    look: deps.look,
+  }
 }

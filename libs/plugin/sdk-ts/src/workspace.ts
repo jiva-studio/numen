@@ -39,6 +39,8 @@ export interface RelatedNote {
   readonly type: NoteType
   readonly tabKind?: string
   readonly direction?: LinkDirection
+  // The path of the related note this one belongs to: set for a note found by depth 2, absent for a note related to the focus. The relation is then relative to that note.
+  readonly relatedTo?: string
 }
 
 // NoteGraph is a note in focus, the notes joined to it, and one connection for every line drawn between
@@ -55,7 +57,7 @@ export interface NoteGraph {
 
 // VaultNotes is what a plugin reads of the notes of the vault, and writes to them.
 export interface VaultNotes {
-  listRelatedNotes(path: string): Promise<NoteGraph>
+  listRelatedNotes(path: string, depth?: 1 | 2): Promise<NoteGraph>
   getHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   findNotes(query: string, limit?: number): Promise<readonly NoteRef[]>
   // A note made untitled at the root of the vault: its path, and empty where none was made.

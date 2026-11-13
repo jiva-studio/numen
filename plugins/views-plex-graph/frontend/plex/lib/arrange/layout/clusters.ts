@@ -70,9 +70,13 @@ function placeClusters(
   focus: PlacedNode,
   context: PlacementContext,
 ): PlacedNode[] {
-  const { options, width, shouldStop } = context
+  const { options, width, room, shouldStop } = context
   const gaps = { gap: options.gap, lineGap: options.lineGap }
   const { height } = options.nodeSize
+  const getFootprint = (node: PlexNode) => {
+    const { top, bottom, width: roomWidth } = room(node)
+    return { width: Math.max(width(node), roomWidth), height: height + top + bottom }
+  }
   const index = new SpotIndex([
     { x: focus.x, y: focus.y, width: focus.width, height: focus.height },
   ])
@@ -85,12 +89,12 @@ function placeClusters(
     const group = groups.get(relation) ?? []
     groups.set(relation, group)
 
-    const size = { width: width(node), height }
+    const size = getFootprint(node)
     const direction = getClusterDirection(options.direction[relation], RELATIONS[relation].lean)
     const anchor = getAnchor(direction, focus, options)
-    const getReach = (boxWidth: number) =>
-      Math.abs(direction.x) * (boxWidth / 2) + Math.abs(direction.y) * (height / 2)
-    const reach = Math.max(getReach(size.width), getReach(width(members[0] ?? node)))
+    const getReach = (box: { width: number; height: number }) =>
+      Math.abs(direction.x) * (box.width / 2) + Math.abs(direction.y) * (box.height / 2)
+    const reach = Math.max(getReach(size), getReach(getFootprint(members[0] ?? node)))
     const start = { x: anchor.x + direction.x * reach, y: anchor.y + direction.y * reach }
     const cell = { width: size.width + gaps.gap, height: size.height + gaps.lineGap }
     const middle = getClusterMiddle(start, direction, { size: members.length, cell })
@@ -98,12 +102,13 @@ function placeClusters(
     const spot = findFreeSpot(index, { start, middle, direction, size, group, gaps })
     index.add(spot)
     group.push(spot)
+    const { top, bottom } = room(node)
     const box: PlacedNode = {
       ...node,
       x: spot.x,
-      y: spot.y,
-      width: spot.width,
-      height: spot.height,
+      y: top === bottom ? spot.y : spot.y + (top - bottom) / 2,
+      width: width(node),
+      height,
       order: members.indexOf(node),
       opacity: 1,
     }

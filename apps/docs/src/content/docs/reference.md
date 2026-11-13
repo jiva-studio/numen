@@ -222,6 +222,8 @@ The settings of the plugin Plex Graph.
 | --- | --- | --- |
 | `nestHeadings` | yes or no | show the headings of a note under its node. |
 | `headingLimit` | a number | maximum number of headings shown under a node. The rest scroll. From 1 to 12. |
+| `showNames` | yes or no | under each related note, show the names of the notes it is related to. |
+| `namesPerNote` | a number | most names shown under and over a related note. From 1 to 12. |
 | `showPills` | yes or no | draw a pill behind each title. Off: the title alone, with a dot in the color of its relation. |
 | `pillPaddingSides` | a number | space between a title and the left and right edge of its pill. From 0 to 24. |
 | `pillPaddingEnds` | a number | space between a title and the top and bottom edge of its pill. From 0 to 16. |

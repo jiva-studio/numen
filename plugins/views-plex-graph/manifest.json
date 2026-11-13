@@ -141,6 +141,25 @@
       "step": 1
     },
     {
+      "key": "showNames",
+      "type": "boolean",
+      "title": "Show notes related to related notes",
+      "description": "Under each related note, the names of the notes it is related to.",
+      "default": true,
+      "palette": true,
+      "icon": "waypoints"
+    },
+    {
+      "key": "namesPerNote",
+      "type": "number",
+      "title": "Names per note",
+      "description": "Most names shown under and over a related note.",
+      "default": 6,
+      "min": 1,
+      "max": 12,
+      "step": 1
+    },
+    {
       "key": "showPills",
       "type": "boolean",
       "title": "Pill background",

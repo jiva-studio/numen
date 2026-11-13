@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { clusters, getClusterDirection } from './clusters'
 import { DEFAULT_OPTIONS } from '../options'
+import { NO_ROOM } from './placement'
 import { RELATION_NAMES, RELATIONS } from '../../relation'
 import type { PlacedNode } from '../../node'
 import type { PlexNode } from '../../../../types'
@@ -39,10 +40,12 @@ describe('a group of notes of different widths', () => {
       const alone = clusters.place({ [relation]: notes.slice(0, 1) }, focus, {
         options: DEFAULT_OPTIONS,
         width,
+        room: () => NO_ROOM,
       })
       const placed = clusters.place({ [relation]: notes }, focus, {
         options: DEFAULT_OPTIONS,
         width,
+        room: () => NO_ROOM,
       })
 
       for (const box of placed) expect(along(box)).toBeGreaterThanOrEqual(along(alone[0]!) - 0.5)

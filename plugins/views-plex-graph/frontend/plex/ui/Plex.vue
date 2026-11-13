@@ -18,7 +18,9 @@ import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
 import { getFrameStyle } from './frameStyle'
-import type { PlexRelation } from '../../types'
+import { getNamesRoom, type NamesRoom } from '../lib/names'
+import { NO_ROOM } from '../lib/arrange'
+import type { PlexNode, PlexRelation } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexProps>(), {
@@ -38,6 +40,7 @@ const props = withDefaults(defineProps<PlexProps>(), {
   pending: null,
   dragged: () => [],
   dropName: getRelationName,
+  showNames: false,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -74,6 +77,31 @@ const behavior = computed<PlexBehavior>(() => ({
   clock: props.clock,
 }))
 
+/**
+ * The names set around each node, wrapped to the width of a node and measured in the type of a name.
+ * A node with none has no entry.
+ */
+const namesRooms = computed<ReadonlyMap<string, NamesRoom>>(() => {
+  const rooms = new Map<string, NamesRoom>()
+  const metrics = measures.value
+  if (!props.showNames || !props.names || !metrics) return rooms
+  for (const node of props.graph.nodes) {
+    if (node.relation === 'focus') continue
+    const room = getNamesRoom(props.names(node.id), {
+      fontSize: metrics.nameSize,
+      width: options.value.nodeSize.width,
+      measure: metrics.name,
+    })
+    if (room.above.length > 0 || room.below.length > 0) rooms.set(node.id, room)
+  }
+  return rooms
+})
+
+const getRoom = computed(() => {
+  const rooms = namesRooms.value
+  return (node: PlexNode) => rooms.get(node.id) ?? NO_ROOM
+})
+
 const { frame, isMoving } = usePlexTransition(
   () => props.graph,
   () => ({
@@ -82,6 +110,7 @@ const { frame, isMoving } = usePlexTransition(
     measure: measures.value?.node,
     measureLabel: measures.value?.label,
     labelType: measures.value?.labelType,
+    room: namesRooms.value.size > 0 ? getRoom.value : undefined,
   }),
   {
     duration: () => props.duration,
@@ -174,6 +203,7 @@ watch(
       :relation-name="relationName"
       :widen="widen"
       :hung="hung"
+      :names="(id) => namesRooms.get(id)"
       :behavior="behavior"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
@@ -188,6 +218,7 @@ watch(
       @ask="gesture.ask"
       @menu="(id, at, trigger) => emit('menu', id, at, trigger)"
       @enter="(id, heading) => emit('enter', id, heading)"
+      @choose-name="emit('chooseName', $event)"
       @edge-menu="(pair, at) => emit('edge-menu', pair, at)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>

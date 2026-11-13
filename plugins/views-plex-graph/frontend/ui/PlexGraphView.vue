@@ -129,6 +129,8 @@ function onDismissLinkInspector() {
       :dragged="dragged"
       :drop-name="words.dropName"
       :headings="props.state.headings.getHeadings"
+      :names="props.state.names.getNames"
+      :show-names="props.state.names.showNames.value"
       @activate="onActivateNode"
       @create="onCreateNode"
       @link="onLinkNodes"
@@ -136,6 +138,7 @@ function onDismissLinkInspector() {
       @menu="onOpenMenu"
       @show="onShowNode"
       @enter="onEnterHeading"
+      @choose-name="props.state.nodes.chooseName"
       @edge-menu="onEdgeMenu"
       @dismiss="onDismissImage"
     >

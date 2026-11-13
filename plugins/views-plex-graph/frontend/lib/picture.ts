@@ -9,6 +9,7 @@ import type { Connection, ConnectionSide, LinkDirection } from '@numen/plugin-sd
 import type {
   NoteGraph,
   NoteHeading,
+  NoteRelation,
   NoteType,
   RelatedNote,
   EdgeArrow,
@@ -17,6 +18,8 @@ import type {
   PlexGraph,
   PlexNode,
   PlexHeading,
+  PlexName,
+  PlexNames,
   ReferenceMode,
 } from '../types'
 
@@ -123,6 +126,7 @@ export function convertNoteGraph(
   const visiblePaths = new Set<string>([noteGraph.focus.path])
   const shownReferences: RelatedNote[] = []
   for (const related of noteGraph.related) {
+    if (related.relatedTo) continue
     if (related.relation === 'reference') {
       if (!admitReference(related, references)) continue
       shownReferences.push(related)
@@ -140,6 +144,39 @@ export function convertNoteGraph(
   }
 
   return { nodes, edges }
+}
+
+/** The order the names of a note stand in, parents first. A sibling is never a name. */
+const NAME_ORDER: readonly NoteRelation[] = ['parent', 'child', 'jump', 'reference']
+
+/**
+ * The names of the notes related to each related note: its parents over it, and its children, jumps and references under it,
+ * cut to `limit` in that order. A name has the id `token` gives its path. A note with no names has no entry.
+ */
+export function getNames(
+  noteGraph: NoteGraph,
+  limit: number,
+  token: (path: string) => string,
+): ReadonlyMap<string, PlexNames> {
+  const owners = new Map<string, RelatedNote[]>()
+  for (const item of noteGraph.related) {
+    if (!item.relatedTo || !NAME_ORDER.includes(item.relation)) continue
+    const owned = owners.get(item.relatedTo) ?? []
+    owned.push(item)
+    owners.set(item.relatedTo, owned)
+  }
+
+  const found = new Map<string, PlexNames>()
+  for (const [owner, items] of owners) {
+    const ordered = NAME_ORDER.flatMap((relation) => items.filter((item) => item.relation === relation))
+    const kept = ordered.slice(0, limit)
+    const toName = (item: RelatedNote): PlexName => ({ id: token(item.path), title: item.title })
+    found.set(token(owner), {
+      above: kept.filter((item) => item.relation === 'parent').map(toName),
+      below: kept.filter((item) => item.relation !== 'parent').map(toName),
+    })
+  }
+  return found
 }
 
 /**
@@ -188,7 +225,8 @@ export function areNoteGraphsEqual(one: NoteGraph | null, other: NoteGraph | nul
         related.title === comparison.title &&
         related.type === comparison.type &&
         related.relation === comparison.relation &&
-        related.direction === comparison.direction
+        related.direction === comparison.direction &&
+        related.relatedTo === comparison.relatedTo
       )
     }) &&
     one.connections.every((connection, index) =>
@@ -196,3 +234,15 @@ export function areNoteGraphsEqual(one: NoteGraph | null, other: NoteGraph | nul
     )
   )
 }
+
+const NAME_PREFIX = 'name:'
+
+/**
+ * The id a name is handed to the plex under: the path of its note, in a word of its own, so that
+ * choosing it reaches the note whether or not that note is drawn as a node.
+ */
+export const getNameToken = (path: string): string => `${NAME_PREFIX}${path}`
+
+/** The path of the note a name stands for, and empty for an id that is not a name. */
+export const getNamePath = (id: string): string =>
+  id.startsWith(NAME_PREFIX) ? id.slice(NAME_PREFIX.length) : ''

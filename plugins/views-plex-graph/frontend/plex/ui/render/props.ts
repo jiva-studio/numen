@@ -7,6 +7,7 @@ import type { MenuTrigger } from '@numen/ui'
 import type { Drop } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
 import type { NodeHeadings } from '../../lib/inside'
+import type { NamesRoom } from '../../lib/names'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { WideBox } from '../../model/sizing/expansion'
 import type { PlexBehavior } from '../../model/behavior'
@@ -27,6 +28,8 @@ export interface PlexViewProps {
   relationName?: (relation: PlexRelation) => string
   widen?: ((node: PlacedNode) => WideBox | null) | undefined
   hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
+  /** The names set around a node, as measured and wrapped; none for a node that has none. */
+  names?: ((id: string) => NamesRoom | undefined) | undefined
   behavior?: PlexBehavior
   gestureFrom?: string | null
   gestureAt?: Position | null
@@ -51,6 +54,8 @@ export interface PlexViewEvents {
   (event: 'menu', id: string, point: Position, trigger: MenuTrigger): void
   /** A heading of a node was chosen. Both identifiers are the caller's. */
   (event: 'enter', id: string, heading: string): void
+  /** A name set around a node was chosen. The identifier is the caller's, returned unchanged. */
+  (event: 'choose-name', id: string): void
   /** A menu or inspector was requested on an edge. */
   (event: 'edge-menu', pair: string, point: Position): void
 }

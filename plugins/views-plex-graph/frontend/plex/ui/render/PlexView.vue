@@ -3,6 +3,7 @@ import { computed, ref, useId, useTemplateRef } from 'vue'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
+import PlexNodeNames from './PlexNodeNames.vue'
 import PlexThread from './PlexThread.vue'
 import { useEdgeLines } from './lines'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
@@ -143,9 +144,8 @@ const getRole = (node: PlacedNode): GestureRole => {
       <PlexEdgeTitle v-for="line in resting" :key="`title:${line.key}`" :line="line" />
     </g>
 
+    <g v-for="node in renderedNodes" :key="node.id" class="plex__stack">
     <PlexNodeView
-      v-for="node in renderedNodes"
-      :key="node.id"
       :ref="holdNode(node.id)"
       :node="node"
       :gesture-role="getRole(node)"
@@ -163,6 +163,13 @@ const getRole = (node: PlacedNode): GestureRole => {
     >
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
     </PlexNodeView>
+    <PlexNodeNames
+      v-if="names?.(node.id)"
+      :node="node"
+      :room="names(node.id)!"
+      @choose="emit('choose-name', $event)"
+    />
+    </g>
 
     <g v-if="raisedLines.length" class="plex__raised" aria-hidden="true">
       <template v-for="line in raisedLines" :key="line.key">
@@ -195,6 +202,11 @@ const getRole = (node: PlacedNode): GestureRole => {
   -webkit-user-select: none;
   touch-action: none;
   -webkit-touch-callout: none;
+}
+
+/* The pointer over a node or over one of its names brings the names of that node forward. */
+.plex__stack:hover :deep(.plex__name) {
+  opacity: 1;
 }
 
 .plex__edge-hit {

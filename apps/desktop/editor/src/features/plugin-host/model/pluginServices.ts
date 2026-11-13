@@ -142,7 +142,7 @@ const FOUND_LIMIT = 20
 
 export function createVaultNotes({ search, making, pluginNotes }: VaultNotesDeps): VaultNotes {
   return {
-    listRelatedNotes: (path) => listRelatedNotes(path),
+    listRelatedNotes: (path, depth) => listRelatedNotes(path, depth),
     getHeadings: (paths) => listHeadings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),

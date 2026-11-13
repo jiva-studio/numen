@@ -54,7 +54,7 @@ A theme that sets `color-scheme` provides one variant, and `mode` has no effect 
 
 Choosing a theme, light or dark, or either size writes the matching field to this file — each is a separate command in the command palette. The file is read as an object, the named fields are set, and it is written back, so a key this build does not know is preserved. A file that does not parse is not written.
 
-Whether a node in the plex nests the headings of its note, and how many, are settings of the Plex Graph plugin: `md.numen.views.plex.graph.nestHeadings` and `headingLimit`, stored in the object of that plugin.
+Whether a node in the plex nests the headings of its note, and how many, are settings of the Plex Graph plugin: `md.numen.views.plex.graph.nestHeadings` and `headingLimit`, stored in the object of that plugin. Whether a node shows the names of the notes related to it, and how many, are `showNames` and `namesPerNote` of the same plugin.
 
 ## A day of review
 

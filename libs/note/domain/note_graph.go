@@ -63,6 +63,10 @@ type RelatedNote struct {
 	NoteRef
 	Relation Relation
 	Direction LinkDirection
+
+	// RelatedTo is the path of the related note this one belongs to, set for a note found
+	// two steps from the focus. Relation is then relative to that note. Empty otherwise.
+	RelatedTo string
 }
 
 // NoteGraph is one note and everything joined to it, seen from that note.

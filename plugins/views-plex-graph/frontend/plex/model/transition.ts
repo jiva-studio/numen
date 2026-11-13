@@ -135,6 +135,7 @@ function watchInputChanges(input: () => ArrangeInput | undefined, onChange: () =
       () => input()?.measure,
       () => input()?.measureLabel,
       () => input()?.labelType,
+      () => input()?.room,
     ],
     onChange,
   )

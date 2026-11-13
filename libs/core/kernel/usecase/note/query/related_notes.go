@@ -36,7 +36,9 @@ func NewListRelatedNotes(links noteport.LinkQueries, notes RefQueries) ListRelat
 	return ListRelatedNotes{links: links, notes: notes}
 }
 
-func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteGraph, error) {
+// Execute gathers the notes related to the note at the path. Depth 2 also gathers, for
+// each note related to it, the notes that one is related to, never as siblings.
+func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path string, depth uint32) (domain.NoteGraph, error) {
 	cache := &linkCache{queries: u.links, vault: v}
 	center, err := u.getRelatedNotes(ctx, cache, path)
 	if err != nil {
@@ -49,9 +51,19 @@ func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path stri
 	center.remove(path)
 
 	related := center.getAll()
-	paths := make([]string, 0, len(related)+1)
+	var items []domain.RelatedNote
+	if depth == 2 {
+		items, err = u.getItems(ctx, cache, path, related)
+		if err != nil {
+			return domain.NoteGraph{}, err
+		}
+	}
+	paths := make([]string, 0, len(related)+len(items)+1)
 	paths = append(paths, path)
 	for _, s := range related {
+		paths = append(paths, s.Path)
+	}
+	for _, s := range items {
 		paths = append(paths, s.Path)
 	}
 	notes, err := u.notes.GetNotes(ctx, v.ID, paths)
@@ -71,11 +83,35 @@ func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path stri
 			visible = append(visible, s.Path)
 		}
 	}
+	for _, item := range items {
+		note, recognizedItem := notes[item.Path]
+		if _, shown := notes[item.RelatedTo]; recognizedItem && shown {
+			out.AddRelatedNote(note, item)
+		}
+	}
 	out.Connections, err = getConnections(ctx, cache, visible)
 	if err != nil {
 		return domain.NoteGraph{}, err
 	}
 	return out, nil
+}
+
+// getItems reads the notes each related note is related to, in the order of the related
+// notes. The focus is never one of them.
+func (u ListRelatedNotes) getItems(ctx context.Context, cache *linkCache, focus string, related []domain.RelatedNote) ([]domain.RelatedNote, error) {
+	var items []domain.RelatedNote
+	for _, owner := range related {
+		found, err := u.getRelatedNotes(ctx, cache, owner.Path)
+		if err != nil {
+			return nil, err
+		}
+		found.remove(focus)
+		for _, item := range found.getAll() {
+			item.RelatedTo = owner.Path
+			items = append(items, item)
+		}
+	}
+	return items, nil
 }
 
 func (u ListRelatedNotes) addSiblings(ctx context.Context, cache *linkCache, targetSet *relatedNoteSet) error {

@@ -14,7 +14,15 @@ import { clusters } from './layout/clusters'
 import { measureCrowding } from './layout/crowding'
 import { applyRoom } from './look'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
-import type { Placement, NodesByRelation, PlacementContext, Widths } from './layout/placement'
+import {
+  NO_ROOM,
+  type NodeRoom,
+  type Placement,
+  type NodesByRelation,
+  type PlacementContext,
+  type Rooms,
+  type Widths,
+} from './layout/placement'
 import { routeEdges, createRouting } from './edges/routing'
 import { findSpacing } from './layout/spacing'
 import { separateTitles } from './edges/titles'
@@ -26,15 +34,18 @@ export interface ArrangeInput {
   readonly measure?: ((node: PlexNode) => number) | undefined
   readonly measureLabel?: ((label: string) => number) | undefined
   readonly labelType?: LabelType | undefined
+  /** The space each note keeps over and under its pill; absent, a note keeps none. */
+  readonly room?: Rooms | undefined
 }
 
 export function arrangePlex(
   graph: PlexGraph,
-  { options, placement = clusters, measure, measureLabel, labelType }: ArrangeInput = {},
+  { options, placement = clusters, measure, measureLabel, labelType, room }: ArrangeInput = {},
 ): PlexFrame {
   const request = applyRoom(resolveOptions(options))
   const focusNode = assertGraph(graph)
   const requested = requestNodes(graph.nodes, request)
+  const rooms = createRoomLookup(graph.nodes, room)
 
   // Lays the nodes out at the given options: the focus, then the placement.
   // A caller that does not need every box passes `shouldStop`.
@@ -55,7 +66,12 @@ export function arrangePlex(
     }
     return {
       focus,
-      placed: placement.place(nodesByRelation, focus, { options: laid, width, shouldStop }),
+      placed: placement.place(nodesByRelation, focus, {
+        options: laid,
+        width,
+        room: (node) => rooms.get(node.id) ?? NO_ROOM,
+        shouldStop,
+      }),
     }
   }
 
@@ -63,9 +79,9 @@ export function arrangePlex(
   // and a gap closes before a note is given up.
   const resolved = measureCrowding(request, (packed) =>
     isHeld(
-      lay(packed, requested, stopAtOutside(packed.viewport, packed.margin)).placed,
+      lay(packed, requested, stopAtOutside(packed.viewport, packed.margin, rooms)).placed,
       packed.viewport,
-      packed.margin,
+      { margin: packed.margin, rooms },
     ),
   )
 
@@ -77,16 +93,16 @@ export function arrangePlex(
     ? admitNodes(
         requested,
         (nodesByRelation, shouldStop) => lay(resolved, nodesByRelation, shouldStop).placed,
-        (node) => isInside(node, viewport, margin),
+        (node) => isInside(node, viewport, { margin, rooms }),
       )
     : requested
   const overflow = countOverflow(graph.nodes, admitted)
 
   const spacing = findSpacing(resolved, (candidate, window) =>
     isHeld(
-      lay({ ...resolved, ...candidate }, admitted, stopAtOutside(window, margin)).placed,
+      lay({ ...resolved, ...candidate }, admitted, stopAtOutside(window, margin, rooms)).placed,
       window,
-      margin,
+      { margin, rooms },
     ),
   )
   const { focus, placed } = lay({ ...resolved, ...spacing }, admitted)
@@ -113,17 +129,47 @@ function createWidthLookup(
   }
 }
 
-function isInside(node: PlacedNode, viewport: Size, margin: number): boolean {
+/** What a box must keep clear of the window: the margin, and the room each note keeps around its pill. */
+interface Fit {
+  readonly margin: number
+  readonly rooms: ReadonlyMap<string, NodeRoom>
+}
+
+function createRoomLookup(
+  nodes: readonly PlexNode[],
+  room: Rooms | undefined,
+): ReadonlyMap<string, NodeRoom> {
+  const rooms = new Map<string, NodeRoom>()
+  if (!room) return rooms
+  for (const node of nodes) {
+    if (node.relation !== 'focus') rooms.set(node.id, room(node))
+  }
+  return rooms
+}
+
+/** Whether the footprint of a note, its pill and the room around it, lies inside the window less the margin. */
+function isInside(node: PlacedNode, viewport: Size, { margin, rooms }: Fit): boolean {
+  const { top, bottom, width } = rooms.get(node.id) ?? NO_ROOM
+  const halfWidth = Math.max(node.width, width) / 2
+  const isHeldAcross = Math.abs(node.x) + halfWidth <= viewport.width / 2 - margin
+  if (top === 0 && bottom === 0) {
+    return isHeldAcross && Math.abs(node.y) + node.height / 2 <= viewport.height / 2 - margin
+  }
   return (
-    Math.abs(node.x) + node.width / 2 <= viewport.width / 2 - margin &&
-    Math.abs(node.y) + node.height / 2 <= viewport.height / 2 - margin
+    isHeldAcross &&
+    node.y - node.height / 2 - top >= -viewport.height / 2 + margin &&
+    node.y + node.height / 2 + bottom <= viewport.height / 2 - margin
   )
 }
 
-function stopAtOutside(viewport: Size | undefined, margin: number): PlacementContext['shouldStop'] {
-  return viewport ? (node) => !isInside(node, viewport, margin) : undefined
+function stopAtOutside(
+  viewport: Size | undefined,
+  margin: number,
+  rooms: Fit['rooms'],
+): PlacementContext['shouldStop'] {
+  return viewport ? (node) => !isInside(node, viewport, { margin, rooms }) : undefined
 }
 
-function isHeld(nodes: readonly PlacedNode[], viewport: Size | undefined, margin: number): boolean {
-  return !viewport || nodes.every((node) => isInside(node, viewport, margin))
+function isHeld(nodes: readonly PlacedNode[], viewport: Size | undefined, fit: Fit): boolean {
+  return !viewport || nodes.every((node) => isInside(node, viewport, fit))
 }

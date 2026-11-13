@@ -10,7 +10,13 @@ import type { ReachStrategy } from '../model/interaction/reachStrategy'
 import type { ShowStrategy } from '../model/interaction/destination'
 import type { Clock } from '../model/transition'
 import type { PlexType, Probe } from '../model/sizing/measure'
-import type { PlexHeading, PlexGraph, PlexRelation, PlexDestination } from '../../types'
+import type {
+  PlexHeading,
+  PlexGraph,
+  PlexNames,
+  PlexRelation,
+  PlexDestination,
+} from '../../types'
 
 /**
  * With `showPills` off each title is drawn without its pill, after a dot in the hue of its
@@ -33,6 +39,9 @@ export interface PlexProps {
   reaching?: ReachStrategy
   showing?: ShowStrategy
   headings?: (id: string) => readonly PlexHeading[]
+  /** The names to set over and under a node. They are drawn while `showNames` is on. */
+  names?: (id: string) => PlexNames
+  showNames?: boolean
   relationName?: (relation: PlexRelation) => string
   pending?: PlexPending | null
   dragged?: readonly string[]
@@ -74,6 +83,8 @@ export interface PlexEvents {
    * back as given.
    */
   (event: 'enter', id: string, heading: string): void
+  /** A name set around a node was chosen. The identifier is the one the caller gave the name. */
+  (event: 'chooseName', id: string): void
   /** A menu or inspector was requested on an edge between two nodes. */
   (event: 'edge-menu', pair: string, point: Position): void
 }
