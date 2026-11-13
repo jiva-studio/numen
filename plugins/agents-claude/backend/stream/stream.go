@@ -17,10 +17,14 @@ const serverName = "numen"
 const reasonCanceled = "canceled"
 
 // Sink receives what a run reports, in the order the program writes it. A call is reported once when
-// it starts, with no arguments when they are still to arrive, and again once its arguments are whole.
+// it starts, with no arguments when they are still to arrive, and again once its arguments are whole;
+// SendToolInput receives the arguments of a streamed call as far as they have arrived, after each piece.
+// SendThought receives a piece of the reasoning of the model.
 type Sink interface {
 	SendText(text string) error
+	SendThought(text string) error
 	SendToolCall(id, tool, arguments string) error
+	SendToolInput(id, tool, arguments string) error
 	SendToolResult(id string, isFailed bool) error
 }
 
@@ -120,16 +124,7 @@ func (p *streamParser) parseStreamEvent(ev streamEvent) {
 			p.emit(func() error { return p.sink.SendToolCall(id, tool, "") })
 		}
 	case "content_block_delta":
-		switch ev.Delta.Type {
-		case "text_delta":
-			if ev.Delta.Text == "" {
-				return
-			}
-			p.isStreaming = true
-			p.emit(func() error { return p.sink.SendText(ev.Delta.Text) })
-		case "input_json_delta":
-			p.arguments.WriteString(ev.Delta.Partial)
-		}
+		p.parseDelta(ev.Delta)
 	case "content_block_stop":
 		if p.tool == "" {
 			return
@@ -142,17 +137,33 @@ func (p *streamParser) parseStreamEvent(ev streamEvent) {
 	}
 }
 
+func (p *streamParser) parseDelta(delta streamDelta) {
+	switch {
+	case delta.Type == "text_delta" && delta.Text != "":
+		p.isStreaming = true
+		p.emit(func() error { return p.sink.SendText(delta.Text) })
+	case delta.Type == "thinking_delta" && delta.Thinking != "":
+		p.isStreaming = true
+		p.emit(func() error { return p.sink.SendThought(delta.Thinking) })
+	case delta.Type == "input_json_delta" && p.tool != "":
+		p.arguments.WriteString(delta.Partial)
+		id, tool, arguments := p.callID, stripServerPrefix(p.tool), p.arguments.String()
+		p.emit(func() error { return p.sink.SendToolInput(id, tool, arguments) })
+	}
+}
+
 func (p *streamParser) parseAssistantMessage(response event) {
 	if p.isStreaming {
 		return
 	}
 	var msg struct {
 		Content []struct {
-			Type  string          `json:"type"`
-			Text  string          `json:"text"`
-			ID    string          `json:"id"`
-			Name  string          `json:"name"`
-			Input json.RawMessage `json:"input"`
+			Type     string          `json:"type"`
+			Text     string          `json:"text"`
+			Thinking string          `json:"thinking"`
+			ID       string          `json:"id"`
+			Name     string          `json:"name"`
+			Input    json.RawMessage `json:"input"`
 		} `json:"content"`
 	}
 	if err := json.Unmarshal(response.Message, &msg); err != nil {
@@ -163,6 +174,10 @@ func (p *streamParser) parseAssistantMessage(response event) {
 		case "text":
 			if block.Text != "" {
 				p.emit(func() error { return p.sink.SendText(block.Text) })
+			}
+		case "thinking":
+			if block.Thinking != "" {
+				p.emit(func() error { return p.sink.SendThought(block.Thinking) })
 			}
 		case "tool_use":
 			p.emit(func() error { return p.sink.SendToolCall(block.ID, stripServerPrefix(block.Name), string(block.Input)) })

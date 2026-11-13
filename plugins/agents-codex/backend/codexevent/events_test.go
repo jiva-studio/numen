@@ -17,6 +17,15 @@ func (r *recorder) SendText(text string) error {
 	return r.refusal
 }
 
+func (r *recorder) RecordThread(id string) {
+	r.reports = append(r.reports, "thread "+id)
+}
+
+func (r *recorder) SendThought(text string) error {
+	r.reports = append(r.reports, "thought "+text)
+	return r.refusal
+}
+
 func (r *recorder) SendToolCall(id, tool, arguments string) error {
 	r.reports = append(r.reports, "call "+id+" "+tool+" "+arguments)
 	return r.refusal
@@ -102,11 +111,27 @@ func TestOtherEventsSendNothing(t *testing.T) {
 		map[string]any{"type": "other", "item": map[string]any{"type": "mcp_tool_call", "tool": "t"}},
 		map[string]any{"type": "item.started", "item": map[string]any{"type": "other"}},
 		map[string]any{"type": "item.completed", "item": map[string]any{"type": "other"}},
-		map[string]any{"type": "item.completed", "item": map[string]any{"type": "reasoning", "text": "hidden"}},
+		map[string]any{"type": "item.started", "item": map[string]any{"type": "reasoning", "text": "early"}},
+		map[string]any{"type": "item.completed", "item": map[string]any{"type": "reasoning", "text": ""}},
+		map[string]any{"type": "thread.started"},
 	)
 
 	if len(sink.reports) != 0 {
 		t.Errorf("reports %q", sink.reports)
+	}
+}
+
+func TestTheThreadAndTheReasoningOfTheRunAreReported(t *testing.T) {
+	var sink recorder
+
+	handleAll(t, &sink,
+		map[string]any{"type": "thread.started", "thread_id": "0199a213-81c0-7800-8aa1-bbab2a035a53"},
+		map[string]any{"type": "item.completed", "item": map[string]any{"type": "reasoning", "text": "The beds face south."}},
+	)
+
+	want := []string{"thread 0199a213-81c0-7800-8aa1-bbab2a035a53", "thought The beds face south."}
+	if !slices.Equal(sink.reports, want) {
+		t.Errorf("reports %q, want %q", sink.reports, want)
 	}
 }
 

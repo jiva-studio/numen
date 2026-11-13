@@ -120,19 +120,25 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 
 // A task with tools approves the permission requests of the program and gives it a home whose MCP
 // configuration names the tools; the default model is not named. An answer approves nothing, and names
-// the model and the conversation it continues. Each command releases the folders made for it.
+// the model and the conversation it continues. The prompt is the message on the standard input, never an
+// argument. Each command releases the folders made for it.
 func TestTheCommandsAreMadeFromTheRun(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	withTools, err := makeTaskCommand("/opt/agy", task.Run{
-		Prompt: "p", Model: model.DefaultName, Session: "sess-a", ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "tk",
+		Prompt: "Summarize \"Orchard\"", Model: model.DefaultName, Session: "sess-a", ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "tk",
 	})
 	if err != nil || withTools.Release == nil || withTools.Path != "/opt/agy" {
 		t.Fatalf("makeTaskCommand = %+v, %v", withTools, err)
 	}
-	want := []string{"-p", "p", "--output-format", "stream-json", "--dangerously-skip-permissions", "--conversation", "sess-a"}
+	want := []string{
+		"--print=", "--input-format", "stream-json", "--output-format", "stream-json", "--dangerously-skip-permissions", "--conversation", "sess-a",
+	}
 	if !slices.Equal(withTools.Args, want) {
 		t.Errorf("the arguments are %v, want %v", withTools.Args, want)
+	}
+	if wantInput := "{\"event\":\"user\",\"message\":{\"content\":\"Summarize \\\"Orchard\\\"\"}}\n"; withTools.Stdin != wantInput {
+		t.Errorf("the input is %q, want %q", withTools.Stdin, wantInput)
 	}
 	home := ""
 	for _, one := range withTools.Env {
@@ -155,8 +161,10 @@ func TestTheCommandsAreMadeFromTheRun(t *testing.T) {
 	if err != nil || answer.Release == nil {
 		t.Fatalf("makeAnswerCommand = %+v, %v", answer, err)
 	}
-	if want := []string{"-p", "p", "--output-format", "stream-json", "--model", "m-ans", "--conversation", "sess-a"}; !slices.Equal(answer.Args, want) {
-		t.Errorf("the arguments are %v, want %v", answer.Args, want)
+	if want := []string{
+		"--print=", "--input-format", "stream-json", "--output-format", "stream-json", "--model", "m-ans", "--conversation", "sess-a",
+	}; !slices.Equal(answer.Args, want) || !strings.Contains(answer.Stdin, "\"content\":\"p\"") {
+		t.Errorf("the arguments are %v and the input %q, want %v and the prompt", answer.Args, answer.Stdin, want)
 	}
 	if err := answer.Release(); err != nil {
 		t.Fatal(err)

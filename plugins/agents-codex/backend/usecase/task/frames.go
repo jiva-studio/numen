@@ -20,7 +20,8 @@ type shownCall struct {
 // calls is one message. The first report of a call is sent as a tool_call, the others as
 // tool_call_updates, and nothing after the call has finished. A call of a served tool shows the title of
 // the listing, the kind of its effect, what it is about and the vault path it works on; any other call
-// shows its name.
+// shows its name. The reasoning of the model is sent as thought chunks. thread is the thread the program
+// reported, and isSent reports whether any frame was sent.
 type turn struct {
 	listed       map[string]*tools.ToolInfo
 	send         func(*contract.TaskFrame) error
@@ -28,12 +29,17 @@ type turn struct {
 	message      int
 	isAfterChunk bool
 	sendErr      error
+	thread       string
+	isSent       bool
 }
 
 var _ codexevent.Sink = (*turn)(nil)
 
 func newTurn(listed map[string]*tools.ToolInfo, send func(*contract.TaskFrame) error) *turn {
-	return &turn{listed: listed, send: send, calls: map[string]*shownCall{}, message: 1, isAfterChunk: false, sendErr: nil}
+	return &turn{
+		listed: listed, send: send, calls: map[string]*shownCall{}, message: 1, isAfterChunk: false, sendErr: nil,
+		thread: "", isSent: false,
+	}
 }
 
 // SendText sends a piece of the answer as a chunk of the current message.
@@ -41,6 +47,19 @@ func (t *turn) SendText(text string) error {
 	t.isAfterChunk = true
 	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_AgentMessageChunk{
 		AgentMessageChunk: &contract.MessageChunk{MessageId: "m" + strconv.Itoa(t.message), Text: text},
+	}})
+}
+
+// RecordThread keeps the thread the program works in.
+func (t *turn) RecordThread(id string) {
+	t.thread = id
+}
+
+// SendThought sends a piece of the reasoning of the model as a thought chunk.
+func (t *turn) SendThought(text string) error {
+	t.endMessage()
+	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_AgentThoughtChunk{
+		AgentThoughtChunk: &contract.MessageChunk{MessageId: "t" + strconv.Itoa(t.message), Text: text},
 	}})
 }
 
@@ -85,7 +104,7 @@ func (t *turn) SendToolCall(id, tool, arguments string) error {
 	}
 	status := contract.ToolCallStatus_TOOL_CALL_STATUS_IN_PROGRESS
 	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_ToolCallUpdate{ToolCallUpdate: &contract.ToolCallUpdate{
-		ToolCallId: id, Title: nil, Kind: nil, Status: &status, Content: content, Locations: locations, RawOutputJson: "",
+		ToolCallId: id, Title: nil, Kind: nil, Status: &status, Content: content, Locations: locations, RawOutputJson: "", Diffs: nil,
 	}}})
 }
 
@@ -102,11 +121,12 @@ func (t *turn) SendToolResult(id string, isFailed bool) error {
 		status = contract.ToolCallStatus_TOOL_CALL_STATUS_FAILED
 	}
 	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_ToolCallUpdate{ToolCallUpdate: &contract.ToolCallUpdate{
-		ToolCallId: id, Title: nil, Kind: nil, Status: &status, Content: nil, Locations: nil, RawOutputJson: "",
+		ToolCallId: id, Title: nil, Kind: nil, Status: &status, Content: nil, Locations: nil, RawOutputJson: "", Diffs: nil,
 	}}})
 }
 
 func (t *turn) sendFrame(frame *contract.TaskFrame) error {
+	t.isSent = true
 	if err := t.send(frame); err != nil {
 		t.sendErr = err
 		return err

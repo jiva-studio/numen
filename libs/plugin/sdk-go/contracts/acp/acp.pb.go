@@ -465,6 +465,7 @@ type TaskFrame struct {
 	//	*TaskFrame_Plan
 	//	*TaskFrame_ToolCall
 	//	*TaskFrame_ToolCallUpdate
+	//	*TaskFrame_AgentThoughtChunk
 	Update        isTaskFrame_Update `protobuf_oneof:"update"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -543,6 +544,15 @@ func (x *TaskFrame) GetToolCallUpdate() *ToolCallUpdate {
 	return nil
 }
 
+func (x *TaskFrame) GetAgentThoughtChunk() *MessageChunk {
+	if x != nil {
+		if x, ok := x.Update.(*TaskFrame_AgentThoughtChunk); ok {
+			return x.AgentThoughtChunk
+		}
+	}
+	return nil
+}
+
 type isTaskFrame_Update interface {
 	isTaskFrame_Update()
 }
@@ -563,6 +573,10 @@ type TaskFrame_ToolCallUpdate struct {
 	ToolCallUpdate *ToolCallUpdate `protobuf:"bytes,4,opt,name=tool_call_update,json=toolCallUpdate,proto3,oneof"`
 }
 
+type TaskFrame_AgentThoughtChunk struct {
+	AgentThoughtChunk *MessageChunk `protobuf:"bytes,5,opt,name=agent_thought_chunk,json=agentThoughtChunk,proto3,oneof"`
+}
+
 func (*TaskFrame_AgentMessageChunk) isTaskFrame_Update() {}
 
 func (*TaskFrame_Plan) isTaskFrame_Update() {}
@@ -571,7 +585,10 @@ func (*TaskFrame_ToolCall) isTaskFrame_Update() {}
 
 func (*TaskFrame_ToolCallUpdate) isTaskFrame_Update() {}
 
-// MessageChunk is a piece of the answer of the agent. Chunks with the same message_id belong to one message.
+func (*TaskFrame_AgentThoughtChunk) isTaskFrame_Update() {}
+
+// MessageChunk is a piece of the answer of the agent, or of its reasoning in agent_thought_chunk. Chunks with
+// the same message_id belong to one message.
 type MessageChunk struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MessageId     string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
@@ -887,6 +904,9 @@ type ToolCallUpdate struct {
 	Content       []string               `protobuf:"bytes,5,rep,name=content,proto3" json:"content,omitempty"`
 	Locations     []*ToolCallLocation    `protobuf:"bytes,6,rep,name=locations,proto3" json:"locations,omitempty"`
 	RawOutputJson string                 `protobuf:"bytes,7,opt,name=raw_output_json,json=rawOutputJson,proto3" json:"raw_output_json,omitempty"`
+	// diffs are the diff entries of the content of the call: the changes it makes to files, sent again as
+	// more of the new text arrives while the call is still being written.
+	Diffs         []*Diff `protobuf:"bytes,8,rep,name=diffs,proto3" json:"diffs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -970,6 +990,74 @@ func (x *ToolCallUpdate) GetRawOutputJson() string {
 	return ""
 }
 
+func (x *ToolCallUpdate) GetDiffs() []*Diff {
+	if x != nil {
+		return x.Diffs
+	}
+	return nil
+}
+
+// Diff is a change a tool call makes to a file. old_text is empty for a file the call writes whole.
+type Diff struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	OldText       string                 `protobuf:"bytes,2,opt,name=old_text,json=oldText,proto3" json:"old_text,omitempty"`
+	NewText       string                 `protobuf:"bytes,3,opt,name=new_text,json=newText,proto3" json:"new_text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Diff) Reset() {
+	*x = Diff{}
+	mi := &file_acp_acp_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Diff) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Diff) ProtoMessage() {}
+
+func (x *Diff) ProtoReflect() protoreflect.Message {
+	mi := &file_acp_acp_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Diff.ProtoReflect.Descriptor instead.
+func (*Diff) Descriptor() ([]byte, []int) {
+	return file_acp_acp_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *Diff) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *Diff) GetOldText() string {
+	if x != nil {
+		return x.OldText
+	}
+	return ""
+}
+
+func (x *Diff) GetNewText() string {
+	if x != nil {
+		return x.NewText
+	}
+	return ""
+}
+
 // TaskDone is the done frame of acp.task.
 type TaskDone struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -980,7 +1068,7 @@ type TaskDone struct {
 
 func (x *TaskDone) Reset() {
 	*x = TaskDone{}
-	mi := &file_acp_acp_proto_msgTypes[9]
+	mi := &file_acp_acp_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -992,7 +1080,7 @@ func (x *TaskDone) String() string {
 func (*TaskDone) ProtoMessage() {}
 
 func (x *TaskDone) ProtoReflect() protoreflect.Message {
-	mi := &file_acp_acp_proto_msgTypes[9]
+	mi := &file_acp_acp_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1005,7 +1093,7 @@ func (x *TaskDone) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskDone.ProtoReflect.Descriptor instead.
 func (*TaskDone) Descriptor() ([]byte, []int) {
-	return file_acp_acp_proto_rawDescGZIP(), []int{9}
+	return file_acp_acp_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *TaskDone) GetStopReason() StopReason {
@@ -1032,12 +1120,13 @@ const file_acp_acp_proto_rawDesc = "" +
 	"\vContextNote\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04text\"\x82\x02\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\"\xcd\x02\n" +
 	"\tTaskFrame\x12I\n" +
 	"\x13agent_message_chunk\x18\x01 \x01(\v2\x17.numen.acp.MessageChunkH\x00R\x11agentMessageChunk\x12%\n" +
 	"\x04plan\x18\x02 \x01(\v2\x0f.numen.acp.PlanH\x00R\x04plan\x122\n" +
 	"\ttool_call\x18\x03 \x01(\v2\x13.numen.acp.ToolCallH\x00R\btoolCall\x12E\n" +
-	"\x10tool_call_update\x18\x04 \x01(\v2\x19.numen.acp.ToolCallUpdateH\x00R\x0etoolCallUpdateB\b\n" +
+	"\x10tool_call_update\x18\x04 \x01(\v2\x19.numen.acp.ToolCallUpdateH\x00R\x0etoolCallUpdate\x12I\n" +
+	"\x13agent_thought_chunk\x18\x05 \x01(\v2\x17.numen.acp.MessageChunkH\x00R\x11agentThoughtChunkB\b\n" +
 	"\x06update\"A\n" +
 	"\fMessageChunk\x12\x1d\n" +
 	"\n" +
@@ -1060,7 +1149,7 @@ const file_acp_acp_proto_rawDesc = "" +
 	"\x06status\x18\x04 \x01(\x0e2\x19.numen.acp.ToolCallStatusR\x06status\x12\x18\n" +
 	"\acontent\x18\x05 \x03(\tR\acontent\x129\n" +
 	"\tlocations\x18\x06 \x03(\v2\x1b.numen.acp.ToolCallLocationR\tlocations\x12$\n" +
-	"\x0eraw_input_json\x18\a \x01(\tR\frawInputJson\"\xce\x02\n" +
+	"\x0eraw_input_json\x18\a \x01(\tR\frawInputJson\"\xf5\x02\n" +
 	"\x0eToolCallUpdate\x12 \n" +
 	"\ftool_call_id\x18\x01 \x01(\tR\n" +
 	"toolCallId\x12\x19\n" +
@@ -1069,10 +1158,15 @@ const file_acp_acp_proto_rawDesc = "" +
 	"\x06status\x18\x04 \x01(\x0e2\x19.numen.acp.ToolCallStatusH\x02R\x06status\x88\x01\x01\x12\x18\n" +
 	"\acontent\x18\x05 \x03(\tR\acontent\x129\n" +
 	"\tlocations\x18\x06 \x03(\v2\x1b.numen.acp.ToolCallLocationR\tlocations\x12&\n" +
-	"\x0fraw_output_json\x18\a \x01(\tR\rrawOutputJsonB\b\n" +
+	"\x0fraw_output_json\x18\a \x01(\tR\rrawOutputJson\x12%\n" +
+	"\x05diffs\x18\b \x03(\v2\x0f.numen.acp.DiffR\x05diffsB\b\n" +
 	"\x06_titleB\a\n" +
 	"\x05_kindB\t\n" +
-	"\a_status\"B\n" +
+	"\a_status\"P\n" +
+	"\x04Diff\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x19\n" +
+	"\bold_text\x18\x02 \x01(\tR\aoldText\x12\x19\n" +
+	"\bnew_text\x18\x03 \x01(\tR\anewText\"B\n" +
 	"\bTaskDone\x126\n" +
 	"\vstop_reason\x18\x01 \x01(\x0e2\x15.numen.acp.StopReasonR\n" +
 	"stopReason*\x93\x01\n" +
@@ -1125,7 +1219,7 @@ func file_acp_acp_proto_rawDescGZIP() []byte {
 }
 
 var file_acp_acp_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_acp_acp_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_acp_acp_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_acp_acp_proto_goTypes = []any{
 	(PlanEntryPriority)(0),   // 0: numen.acp.PlanEntryPriority
 	(PlanEntryStatus)(0),     // 1: numen.acp.PlanEntryStatus
@@ -1141,31 +1235,34 @@ var file_acp_acp_proto_goTypes = []any{
 	(*ToolCallLocation)(nil), // 11: numen.acp.ToolCallLocation
 	(*ToolCall)(nil),         // 12: numen.acp.ToolCall
 	(*ToolCallUpdate)(nil),   // 13: numen.acp.ToolCallUpdate
-	(*TaskDone)(nil),         // 14: numen.acp.TaskDone
-	nil,                      // 15: numen.acp.TaskRequest.ToolContextEntry
+	(*Diff)(nil),             // 14: numen.acp.Diff
+	(*TaskDone)(nil),         // 15: numen.acp.TaskDone
+	nil,                      // 16: numen.acp.TaskRequest.ToolContextEntry
 }
 var file_acp_acp_proto_depIdxs = []int32{
 	6,  // 0: numen.acp.TaskRequest.context_notes:type_name -> numen.acp.ContextNote
-	15, // 1: numen.acp.TaskRequest.tool_context:type_name -> numen.acp.TaskRequest.ToolContextEntry
+	16, // 1: numen.acp.TaskRequest.tool_context:type_name -> numen.acp.TaskRequest.ToolContextEntry
 	8,  // 2: numen.acp.TaskFrame.agent_message_chunk:type_name -> numen.acp.MessageChunk
 	9,  // 3: numen.acp.TaskFrame.plan:type_name -> numen.acp.Plan
 	12, // 4: numen.acp.TaskFrame.tool_call:type_name -> numen.acp.ToolCall
 	13, // 5: numen.acp.TaskFrame.tool_call_update:type_name -> numen.acp.ToolCallUpdate
-	10, // 6: numen.acp.Plan.entries:type_name -> numen.acp.PlanEntry
-	0,  // 7: numen.acp.PlanEntry.priority:type_name -> numen.acp.PlanEntryPriority
-	1,  // 8: numen.acp.PlanEntry.status:type_name -> numen.acp.PlanEntryStatus
-	2,  // 9: numen.acp.ToolCall.kind:type_name -> numen.acp.ToolKind
-	3,  // 10: numen.acp.ToolCall.status:type_name -> numen.acp.ToolCallStatus
-	11, // 11: numen.acp.ToolCall.locations:type_name -> numen.acp.ToolCallLocation
-	2,  // 12: numen.acp.ToolCallUpdate.kind:type_name -> numen.acp.ToolKind
-	3,  // 13: numen.acp.ToolCallUpdate.status:type_name -> numen.acp.ToolCallStatus
-	11, // 14: numen.acp.ToolCallUpdate.locations:type_name -> numen.acp.ToolCallLocation
-	4,  // 15: numen.acp.TaskDone.stop_reason:type_name -> numen.acp.StopReason
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	8,  // 6: numen.acp.TaskFrame.agent_thought_chunk:type_name -> numen.acp.MessageChunk
+	10, // 7: numen.acp.Plan.entries:type_name -> numen.acp.PlanEntry
+	0,  // 8: numen.acp.PlanEntry.priority:type_name -> numen.acp.PlanEntryPriority
+	1,  // 9: numen.acp.PlanEntry.status:type_name -> numen.acp.PlanEntryStatus
+	2,  // 10: numen.acp.ToolCall.kind:type_name -> numen.acp.ToolKind
+	3,  // 11: numen.acp.ToolCall.status:type_name -> numen.acp.ToolCallStatus
+	11, // 12: numen.acp.ToolCall.locations:type_name -> numen.acp.ToolCallLocation
+	2,  // 13: numen.acp.ToolCallUpdate.kind:type_name -> numen.acp.ToolKind
+	3,  // 14: numen.acp.ToolCallUpdate.status:type_name -> numen.acp.ToolCallStatus
+	11, // 15: numen.acp.ToolCallUpdate.locations:type_name -> numen.acp.ToolCallLocation
+	14, // 16: numen.acp.ToolCallUpdate.diffs:type_name -> numen.acp.Diff
+	4,  // 17: numen.acp.TaskDone.stop_reason:type_name -> numen.acp.StopReason
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_acp_acp_proto_init() }
@@ -1178,6 +1275,7 @@ func file_acp_acp_proto_init() {
 		(*TaskFrame_Plan)(nil),
 		(*TaskFrame_ToolCall)(nil),
 		(*TaskFrame_ToolCallUpdate)(nil),
+		(*TaskFrame_AgentThoughtChunk)(nil),
 	}
 	file_acp_acp_proto_msgTypes[8].OneofWrappers = []any{}
 	type x struct{}
@@ -1186,7 +1284,7 @@ func file_acp_acp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_acp_acp_proto_rawDesc), len(file_acp_acp_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

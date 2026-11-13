@@ -17,10 +17,7 @@ func TestDiscoveryWithMockBins(t *testing.T) {
 	}
 	t.Setenv("PATH", binDir)
 
-	if !isInstalled() {
-		t.Error("expected Antigravity to be installed")
-	}
-	if got := findProgram(); got != filepath.Join(binDir, "agy") {
+	if got := New(nil).Find(""); got != filepath.Join(binDir, "agy") {
 		t.Errorf("expected %s, got %s", filepath.Join(binDir, "agy"), got)
 	}
 }
@@ -39,11 +36,24 @@ func TestDiscoveryWithCustomPath(t *testing.T) {
 	if err := os.WriteFile(custom, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if !isInstalled(custom) {
-		t.Error("expected custom Antigravity to be installed")
-	}
-	if got := findProgram(custom); got != custom {
+	if got := New(nil).Find(custom); got != custom {
 		t.Errorf("expected %s, got %s", custom, got)
+	}
+}
+
+func TestACustomPathThatIsNotRunnableFallsBackToTheProgramFound(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the fixtures are shell scripts")
+	}
+	binDir := t.TempDir()
+	found := filepath.Join(binDir, "agy")
+	if err := os.WriteFile(found, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", binDir)
+
+	if got := New(nil).Find(filepath.Join(t.TempDir(), "moved-agy")); got != found {
+		t.Errorf("Find = %q, want %q", got, found)
 	}
 }
 
@@ -53,11 +63,11 @@ func TestDiscoveryPlacesAndFallbacks(t *testing.T) {
 	}
 	withoutAgentsAnywhere(t)
 
-	if isInstalled("") {
-		t.Error("expected empty customPath to report not installed when absent")
+	if got := New(nil).Find(""); got != "" {
+		t.Errorf("Find = %q, want none while absent", got)
 	}
-	if isInstalled("/nonexistent/agy-bin") {
-		t.Error("expected nonexistent customPath to report not installed")
+	if got := New(nil).Find("/nonexistent/agy-bin"); got != "" {
+		t.Errorf("Find(nonexistent) = %q, want none", got)
 	}
 	if got := findIn(nil, ""); got != "agy" {
 		t.Errorf("findIn(\"\", nil) = %q, want agy", got)

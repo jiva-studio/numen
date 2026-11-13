@@ -46,7 +46,8 @@ func New(store *settings.Store, chat ports.Chat, tools ports.Tools, clock ports.
 // answers without one, its answer is cut off or the steps of the settings are used up. A tool call frame
 // shows the title of the tool, its kind by the effect, and the query, about or title of the arguments, else
 // their path, with the path of the note. A task whose model cannot be asked, because no row of llm.chat is
-// set or every row failed, stops for a reason of unavailable.
+// set or every row failed, fails for a reason of unavailable so that the next row of acp.task is asked; a
+// closed answerer stops for that reason.
 func (a *Answerer) RunTask(ctx context.Context, _ connection.Call, task *acp.TaskRequest, send func(*acp.TaskFrame) error) (*acp.TaskDone, error) {
 	taskCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -57,7 +58,7 @@ func (a *Answerer) RunTask(ctx context.Context, _ connection.Call, task *acp.Tas
 
 	cfg := a.store.Get()
 	if !cfg.HasRow {
-		return nil, connection.NewStopError(connection.ReasonUnavailable)
+		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	offered, err := a.tools.ListTools(taskCtx)
 	if err != nil {
@@ -89,7 +90,7 @@ func (a *Answerer) RunTask(ctx context.Context, _ connection.Call, task *acp.Tas
 		return nil, ctxErr
 	}
 	if errors.Is(err, errChat) {
-		return nil, connection.NewStopError(connection.ReasonUnavailable)
+		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	if err != nil {
 		return nil, err

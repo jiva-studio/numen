@@ -21,13 +21,14 @@ export interface PlanItem {
 
 /**
  * A turn with offersSettings is a failed turn that says no agent is set up, under which the settings are
- * offered.
+ * offered. aside is how much a call has written so far.
  */
 export interface Turn {
   readonly id: string
   readonly voice: Voice
   readonly text: string
   readonly subject?: string
+  readonly aside?: string
   readonly state?: TurnState
   readonly canOpen?: boolean
   readonly offersSettings?: boolean

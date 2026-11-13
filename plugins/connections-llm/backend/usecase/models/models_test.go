@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -24,6 +25,7 @@ type gateway struct {
 	models     []connection.Option
 	err        error
 	calls      int
+	asked      chan<- struct{}
 }
 
 func (g *gateway) Complete(context.Context, connection.Call, time.Duration, *llm.CompleteRequest) (*llm.CompleteResult, error) {
@@ -41,6 +43,9 @@ func (g *gateway) Embed(context.Context, connection.Call, time.Duration, []strin
 func (g *gateway) ListModels(_ context.Context, _ connection.Call, limit time.Duration, operations []string) ([]connection.Option, error) {
 	g.operations, g.limit = operations, limit
 	g.calls++
+	if g.asked != nil {
+		g.asked <- struct{}{}
+	}
 	if g.err != nil {
 		return nil, g.err
 	}
@@ -181,5 +186,66 @@ func TestAFirstListThatFailsReturnsTheFailureAndKeepsNothing(t *testing.T) {
 	list, err := subject.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat})
 	if err != nil || len(list) != 1 || g.calls != 2 {
 		t.Errorf("list = %v, err = %v, calls = %d, want a second call to the service", list, err, g.calls)
+	}
+}
+
+func TestAListOlderThanItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testing.T) {
+	dir := t.TempDir()
+	old := []connection.Option{{Value: "invented/model-a"}}
+	if _, err := newModelsIn(t, &gateway{models: old}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
+		t.Fatal(err)
+	}
+	ageKeptLists(t, dir)
+
+	asked := make(chan struct{}, 1)
+	fresh := []connection.Option{{Value: "invented/model-b"}}
+	restarted := newModelsIn(t, &gateway{models: fresh, asked: asked}, dir)
+	list, err := restarted.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat})
+
+	if err != nil || !slices.Equal(list, old) {
+		t.Fatalf("list = %v, err = %v, want the kept list at once", list, err)
+	}
+	select {
+	case <-asked:
+	case <-time.After(5 * time.Second):
+		t.Fatal("a list past its lifetime was not listed again")
+	}
+	for tries := 0; !slices.Equal(list, fresh); tries++ {
+		if tries == 500 {
+			t.Fatalf("list = %v, want the list listed again kept", list)
+		}
+		time.Sleep(10 * time.Millisecond)
+		if list, err = restarted.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func ageKeptLists(t *testing.T, dir string) {
+	t.Helper()
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range files {
+		path := filepath.Join(dir, one.Name())
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var entries map[string]map[string]any
+		if err := json.Unmarshal(data, &entries); err != nil {
+			t.Fatal(err)
+		}
+		for _, entry := range entries {
+			entry["fetchedAt"] = "2000-01-01T00:00:00Z"
+		}
+		aged, err := json.Marshal(entries)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, aged, 0o600); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

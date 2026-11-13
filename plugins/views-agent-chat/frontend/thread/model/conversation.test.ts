@@ -18,6 +18,8 @@ import {
   say,
   showPlan,
   stopFor,
+  think,
+  writeTool,
 } from '../../fixtures'
 
 const words: ConversationStrings = {
@@ -378,6 +380,96 @@ describe('the line about work', () => {
       ['prompt', 'what is here?', undefined],
       ['response', 'First I look.', undefined],
     ])
+  })
+})
+
+describe('the reasoning of the model', () => {
+  it('closes the answer so far, takes the line about work down and puts the wait up', async () => {
+    const { hold, release } = createHold()
+    const { conversation } = open({
+      frames: [
+        say('First I look.'),
+        callTool('c1', 'Read note'),
+        endTool('c1'),
+        think('The note has two beds.'),
+      ],
+      hold,
+    })
+    const asked = conversation.ask('what is here?')
+    await flushPromises()
+
+    expect(getDrawnTurns(conversation)).toEqual([
+      ['prompt', 'what is here?', undefined],
+      ['response', 'First I look.', undefined],
+      ['doing', 'Thinking', 'arriving'],
+    ])
+
+    release()
+    await asked
+  })
+
+  it('starts a new answer for the words that follow it', async () => {
+    const { conversation } = open({
+      frames: [say('First I look.'), think('Two beds.'), say('There are two beds.')],
+    })
+
+    await conversation.ask('what is here?')
+
+    expect(getDrawnTurns(conversation)).toEqual([
+      ['prompt', 'what is here?', undefined],
+      ['response', 'First I look.', undefined],
+      ['response', 'There are two beds.', undefined],
+    ])
+  })
+})
+
+describe('a call that writes a note', () => {
+  it('says how many characters of the note have arrived while it is written', async () => {
+    const { hold, release } = createHold()
+    const { conversation } = open({
+      frames: [
+        callTool('c1', 'Write note', { subject: 'Pear trees', path: 'notes/Pear trees.md' }),
+        writeTool('c1', 'notes/Pear trees.md', '# Pear trees\n\nPlanted in rows of twelve.'),
+        writeTool(
+          'c1',
+          'notes/Pear trees.md',
+          '# Pear trees\n\nPlanted in rows of twelve. Pruned in March, café rows.',
+        ),
+      ],
+      hold,
+    })
+    const asked = conversation.ask('write it down')
+    await flushPromises()
+
+    expect(conversation.turns.value.at(-1)).toMatchObject({
+      voice: 'doing',
+      text: 'Write note',
+      subject: 'Pear trees',
+      aside: '68 characters',
+      state: 'arriving',
+    })
+
+    release()
+    await asked
+  })
+
+  it('says nothing written for a call that is not in hand', async () => {
+    const { hold, release } = createHold()
+    const { conversation } = open({
+      frames: [
+        callTool('c1', 'Write note'),
+        endTool('c1'),
+        writeTool('c1', 'notes/Pear trees.md', '# Pear trees'),
+      ],
+      hold,
+    })
+    const asked = conversation.ask('write it down')
+    await flushPromises()
+
+    expect(conversation.turns.value.filter((turn) => turn.aside !== undefined)).toEqual([])
+
+    release()
+    await asked
   })
 })
 

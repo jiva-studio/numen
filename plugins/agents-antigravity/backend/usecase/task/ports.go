@@ -37,21 +37,21 @@ type Run struct {
 	ToolsToken string
 }
 
-// Command is the program, the folder and the environment of a run, and what releases the files made
-// for it.
+// Command is the program, the folder and the environment of a run, what the program reads on its
+// standard input, and what releases the files made for it.
 type Command struct {
 	Path    string
 	Args    []string
 	Dir     string
 	Env     []string
+	Stdin   string
 	Release func() error
 }
 
 // Program is the Antigravity program on the machine.
 type Program interface {
-	// IsInstalled reports whether the program is runnable, at path when given, or where it is found.
-	IsInstalled(path string) bool
-	// Find returns the program at path when it is runnable, else where it is found.
+	// Find returns the program at path when it is runnable, else the program found on the machine, else
+	// none.
 	Find(path string) string
 	MakeTaskCommand(path string, run Run) (Command, error)
 	MakeAnswerCommand(path string, run Run) (Command, error)

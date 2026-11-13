@@ -50,7 +50,8 @@ export interface ConversationOptions {
 
 /**
  * A failure the answer already ends with marks the answer failed; any other failure goes on a turn of its
- * own. The work line settles once no tool call is running, and the wait shows again.
+ * own. The work line settles once no tool call is running, and the wait shows again; it shows again too
+ * while the model reasons. A call still being written says how many characters of its text have arrived.
  */
 export function useConversation(options: ConversationOptions): Conversation {
   const { connections, words, conversation, paint = onNextFrame } = options
@@ -290,6 +291,23 @@ function applyMessageChunk(text: string, context: FrameContext): void {
   answer.say(text)
 }
 
+function applyThought(context: FrameContext): void {
+  const { answer, work, calls } = context
+  calls.clear()
+  answer.settle()
+  work.dropWorkLine()
+  work.setWaiting(true)
+}
+
+function applyToolCallUpdate(change: acp.ToolCallUpdate, context: FrameContext): void {
+  if (isEnded(change.status)) {
+    endCall(change.toolCallId, context)
+    return
+  }
+  const written = change.diffs.reduce((count, diff) => count + [...diff.newText].length, 0)
+  if (written > 0 && context.calls.has(change.toolCallId)) context.work.write(written)
+}
+
 function applyToolCall(call: acp.ToolCall, context: FrameContext): void {
   const { answer, work, calls } = context
   answer.settle()
@@ -317,7 +335,10 @@ function applyFrame(frame: acp.TaskFrame, context: FrameContext): void {
       applyToolCall(update.value, context)
       break
     case 'toolCallUpdate':
-      if (isEnded(update.value.status)) endCall(update.value.toolCallId, context)
+      applyToolCallUpdate(update.value, context)
+      break
+    case 'agentThoughtChunk':
+      applyThought(context)
       break
     default:
       break

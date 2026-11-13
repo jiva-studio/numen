@@ -14,10 +14,7 @@ func TestDiscoveryWithMockBins(t *testing.T) {
 	}
 	t.Setenv("PATH", binDir)
 
-	if !IsCodexInstalled() {
-		t.Error("expected Codex to be installed")
-	}
-	if got := FindCodex(); got != filepath.Join(binDir, "codex") {
+	if got := (Installation{}).Find(""); got != filepath.Join(binDir, "codex") {
 		t.Errorf("expected %s, got %s", filepath.Join(binDir, "codex"), got)
 	}
 }
@@ -25,8 +22,8 @@ func TestDiscoveryWithMockBins(t *testing.T) {
 func TestDiscoveryWithoutAgents(t *testing.T) {
 	withoutAgentsAnywhere(t)
 
-	if IsCodexInstalled() {
-		t.Error("expected Codex to be absent")
+	if got := (Installation{}).Find(""); got != "" {
+		t.Errorf("Find = %q, want none", got)
 	}
 	if got := findCodexIn(nil); got != "codex" {
 		t.Errorf("expected bare 'codex', got %q", got)
@@ -39,11 +36,22 @@ func TestDiscoveryWithCustomPath(t *testing.T) {
 	if err := os.WriteFile(custom, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if !IsCodexInstalled(custom) {
-		t.Error("expected custom Codex to be installed")
-	}
-	if got := FindCodex(custom); got != custom {
+	if got := (Installation{}).Find(custom); got != custom {
 		t.Errorf("expected %s, got %s", custom, got)
+	}
+}
+
+func TestACustomPathThatIsNotRunnableFallsBackToTheCodexFound(t *testing.T) {
+	needsShell(t)
+	binDir := t.TempDir()
+	found := filepath.Join(binDir, "codex")
+	if err := os.WriteFile(found, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", binDir)
+
+	if got := (Installation{}).Find(filepath.Join(t.TempDir(), "moved-codex")); got != found {
+		t.Errorf("Find = %q, want %q", got, found)
 	}
 }
 
@@ -53,11 +61,8 @@ func TestDiscoveryPlacesAndFallbacks(t *testing.T) {
 	}
 	withoutAgentsAnywhere(t)
 
-	if IsCodexInstalled("") {
-		t.Error("expected empty customPath to fall through and report not installed")
-	}
-	if IsCodexInstalled("/nonexistent/codex-bin") {
-		t.Error("expected nonexistent customPath to report not installed")
+	if got := (Installation{}).Find("/nonexistent/codex-bin"); got != "" {
+		t.Errorf("Find(nonexistent) = %q, want none", got)
 	}
 	if got := findCodexIn(nil, ""); got != "codex" {
 		t.Errorf("findCodexIn(\"\", nil) = %q, want codex", got)

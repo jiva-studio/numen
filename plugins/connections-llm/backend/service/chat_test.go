@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -401,4 +403,52 @@ func list(t *testing.T, value any) []any {
 		t.Fatalf("%v is no JSON list", value)
 	}
 	return one
+}
+
+func TestAChatWhoseServiceSendsHeadersAndThenNothingIsUnavailableAfterTheLimit(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+		if err := http.NewResponseController(w).Flush(); err != nil {
+			return
+		}
+		<-r.Context().Done()
+	}))
+	t.Cleanup(server.Close)
+	svc := newTestService(t)
+	svc.Configure(map[string]string{"requestTimeout": "0.2"})
+	finish := make(chan error, 1)
+
+	go func() {
+		_, err := runChat(t, svc, newCall("openrouter", server.URL+"/v1", testKey, "m"), chatUser("hi"))
+		finish <- err
+	}()
+
+	select {
+	case err := <-finish:
+		checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnavailable})
+	case <-time.After(5 * time.Second):
+		t.Fatal("the chat waited past its limit for the first byte of the answer")
+	}
+}
+
+func TestAWholeReplyLargerThanTheBoundStopsTheChat(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		piece := strings.Repeat("x", 1<<20)
+		pieces := []string{`{"choices":[{"message":{"role":"assistant","content":"`}
+		for range 65 {
+			pieces = append(pieces, piece)
+		}
+		for _, one := range append(pieces, `"},"finish_reason":"stop"}]}`) {
+			if _, err := io.WriteString(w, one); err != nil {
+				return
+			}
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	_, err := newTestService(t).Chat(newContext(t), newCall("openai-compatible", server.URL+"/v1", "", "m"), chatUser("hi"), ignoreFrame)
+
+	checkFailure(t, err, failureWant{isTryNext: false, reason: connection.ReasonUnavailable})
 }

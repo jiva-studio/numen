@@ -18,6 +18,25 @@ func TestTheAllowanceNamesTheSearchAndTheTasksTools(t *testing.T) {
 	assertPair(t, args, "--tools", "WebSearch")
 }
 
+// The person's own servers are named in the configuration, every tool of them allowed, by the name their
+// tools start with; an answer reads no configuration but its own.
+func TestATaskAllowsEveryToolOfThePersonsServers(t *testing.T) {
+	task := Build(Options{Configuration: "cfg.json", Tools: []string{"note_read"}, Servers: []string{"weather", "my.server v2"}})
+	answer := Build(Options{Servers: []string{"weather"}})
+
+	assertPair(t, task, "--mcp-config", "cfg.json")
+	assertPair(t, task, "--allowedTools", "WebSearch,mcp__my_server_v2__*,mcp__numen__note_read,mcp__weather__*")
+	assertPair(t, answer, "--tools", "")
+	for name, args := range map[string][]string{"task": task, "answer": answer} {
+		if !slices.Contains(args, "--strict-mcp-config") {
+			t.Errorf("the %s may read another configuration: %q", name, args)
+		}
+	}
+	if slices.Contains(answer, "--allowedTools") || slices.Contains(answer, "--mcp-config") {
+		t.Errorf("the answer may call tools: %q", answer)
+	}
+}
+
 func TestTheDefaultNumberOfTurnsIsOneHundred(t *testing.T) {
 	assertPair(t, Build(Options{Tools: []string{"note_read"}}), "--max-turns", "100")
 	assertPair(t, Build(Options{Turns: 1, Tools: []string{"note_read"}}), "--max-turns", "1")

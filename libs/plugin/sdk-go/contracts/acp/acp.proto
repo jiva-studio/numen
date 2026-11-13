@@ -36,10 +36,12 @@ message TaskFrame {
     Plan plan = 2;
     ToolCall tool_call = 3;
     ToolCallUpdate tool_call_update = 4;
+    MessageChunk agent_thought_chunk = 5;
   }
 }
 
-// MessageChunk is a piece of the answer of the agent. Chunks with the same message_id belong to one message.
+// MessageChunk is a piece of the answer of the agent, or of its reasoning in agent_thought_chunk. Chunks with
+// the same message_id belong to one message.
 message MessageChunk {
   string message_id = 1;
   string text = 2;
@@ -119,6 +121,16 @@ message ToolCallUpdate {
   repeated string content = 5;
   repeated ToolCallLocation locations = 6;
   string raw_output_json = 7;
+  // diffs are the diff entries of the content of the call: the changes it makes to files, sent again as
+  // more of the new text arrives while the call is still being written.
+  repeated Diff diffs = 8;
+}
+
+// Diff is a change a tool call makes to a file. old_text is empty for a file the call writes whole.
+message Diff {
+  string path = 1;
+  string old_text = 2;
+  string new_text = 3;
 }
 
 enum StopReason {

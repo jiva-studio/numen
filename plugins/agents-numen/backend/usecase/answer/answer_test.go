@@ -115,13 +115,20 @@ func assertUnavailable(t *testing.T, err error) {
 	}
 }
 
-func TestATaskStopsAsUnavailableWhileTheSettingsNameNoConnection(t *testing.T) {
+func assertTryNextUnavailable(t *testing.T, err error) {
+	t.Helper()
+	if _, isTryNext := connection.IsTryNext(err); !isTryNext || err.Error() != connection.ReasonUnavailable.String() {
+		t.Errorf("err = %v, want a try-next of reason unavailable", err)
+	}
+}
+
+func TestATaskGoesToTheNextRowAsUnavailableWhileTheSettingsNameNoConnection(t *testing.T) {
 	chat := &scriptedChat{}
 	answerer, _ := newAnswerer(t, chat, &fakeTools{}, `[]`)
 
 	frames, _, err := run(t, answerer, &acp.TaskRequest{Prompt: "hi"})
 
-	assertUnavailable(t, err)
+	assertTryNextUnavailable(t, err)
 	if len(frames) != 0 || len(chat.turns) != 0 {
 		t.Errorf("frames = %v, turns = %d", frames, len(chat.turns))
 	}
@@ -257,7 +264,7 @@ func TestAnAnswerEndedByTheLengthLimitStopsAtMaxTokens(t *testing.T) {
 	}
 }
 
-func TestAChatThatFailsStopsTheTaskAsUnavailableWithoutItsText(t *testing.T) {
+func TestAChatThatFailsSendsTheTaskToTheNextRowAsUnavailableWithoutItsText(t *testing.T) {
 	for _, failure := range []error{
 		connection.ErrNoConnection,
 		&connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "Ferry API", Reason: "rate limited"}}},
@@ -267,7 +274,7 @@ func TestAChatThatFailsStopsTheTaskAsUnavailableWithoutItsText(t *testing.T) {
 
 		_, _, err := run(t, answerer, &acp.TaskRequest{Prompt: "hi"})
 
-		assertUnavailable(t, err)
+		assertTryNextUnavailable(t, err)
 		if strings.Contains(err.Error(), "Ferry API") || strings.Contains(err.Error(), "connection:") || len(chat.turns) != 1 {
 			t.Errorf("err = %v after %d turns", err, len(chat.turns))
 		}

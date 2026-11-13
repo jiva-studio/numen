@@ -67,8 +67,11 @@ func TestCompleteStartsAntigravityWithTheModelOfTheLevelAndTheInstructions(t *te
 	if err != nil {
 		t.Fatal(err)
 	}
-	if argv := readFile(t, out+".argv"); argv != "-p\nbe brief\n\nfix this\n--output-format\nstream-json\n--model\nm-high\n" {
-		t.Errorf("the arguments are %q, want the instructions, the question and the model of the level", argv)
+	if argv := readFile(t, out+".argv"); argv != "--print=\n--input-format\nstream-json\n--output-format\nstream-json\n--model\nm-high\n" {
+		t.Errorf("the arguments are %q, want the model of the level", argv)
+	}
+	if prompt := readPrompt(t, out); prompt != "be brief\n\nfix this" {
+		t.Errorf("the prompt is %q, want the instructions and the question", prompt)
 	}
 }
 
@@ -85,8 +88,8 @@ func TestCompleteJoinsTheTurnsOfAConversationIntoOnePrompt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if argv := readFile(t, out+".argv"); !strings.HasPrefix(argv, "-p\nUser:\none\n\nAssistant:\ntwo\n\nUser:\nthree\n") {
-		t.Errorf("the arguments are %q", argv)
+	if prompt := readPrompt(t, out); !strings.HasPrefix(prompt, "User:\none\n\nAssistant:\ntwo\n\nUser:\nthree") {
+		t.Errorf("the prompt is %q", prompt)
 	}
 }
 
