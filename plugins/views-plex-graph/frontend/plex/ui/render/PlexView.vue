@@ -7,13 +7,12 @@ import PlexThreads from './PlexThreads.vue'
 import { useEdgeLines } from './lines'
 import { listNamedNodes } from './named'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
-import type { MenuTrigger } from '@numen/ui'
-import type { GestureRole, PlacedNode, Position } from '../../lib/node'
+import type { GestureRole, PlacedNode } from '../../lib/node'
 import { getRelationName } from '../../lib/relation'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useAttention } from '../../model/useAttention'
+import { useNodeHandlers } from '../../model/useNodeHandlers'
 import { useNodeViews } from '../../model/useNodeViews'
-import type { PlexDestination } from '../../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
@@ -59,6 +58,17 @@ const { attention, attend } = useAttention(() => props.frame)
 
 const { lines, isRaised, setOver } = useEdgeLines(props, uid, attention)
 
+const getNodeHandlers = useNodeHandlers({
+  activate: (id) => emit('activate', id),
+  show: (id, showing) => emit('show', id, showing),
+  reach: (id, pointer) => emit('reach', id, pointer),
+  ask: (id) => emit('ask', id),
+  menu: (id, at, trigger) => emit('menu', id, at, trigger),
+  enter: (id, heading) => emit('enter', id, heading),
+  settle: (id, isResting) => onSettle(id, isResting),
+  attend: (id, isAttended) => attend('node', id, isAttended),
+})
+
 const namedNodes = computed(() => listNamedNodes(props.frame.nodes, props.roomOf))
 
 const renderedNodes = computed(() => {
@@ -95,37 +105,6 @@ const onSettle = (id: string, isResting: boolean) => {
 const onChooseName = (id: string) => {
   attention.names = null
   emit('choose-name', id)
-}
-
-interface NodeHandlers {
-  activate: () => void
-  show: (showing: PlexDestination) => void
-  reach: (pointer: PointerEvent) => void
-  ask: () => void
-  menu: (at: Position, trigger: MenuTrigger) => void
-  enter: (heading: string) => void
-  settle: (isResting: boolean) => void
-  attend: (isAttended: boolean) => void
-}
-
-const nodeHandlers = new Map<string, NodeHandlers>()
-
-const getNodeHandlers = (id: string): NodeHandlers => {
-  let handlers = nodeHandlers.get(id)
-  if (!handlers) {
-    handlers = {
-      activate: () => emit('activate', id),
-      show: (showing: PlexDestination) => emit('show', id, showing),
-      reach: (pointer: PointerEvent) => emit('reach', id, pointer),
-      ask: () => emit('ask', id),
-      menu: (at: Position, trigger: MenuTrigger) => emit('menu', id, at, trigger),
-      enter: (heading: string) => emit('enter', id, heading),
-      settle: (isResting: boolean) => onSettle(id, isResting),
-      attend: (isAttended: boolean) => attend('node', id, isAttended),
-    }
-    nodeHandlers.set(id, handlers)
-  }
-  return handlers
 }
 
 /* -------------------------------- Helpers --------------------------------- */

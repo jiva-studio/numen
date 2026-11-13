@@ -14,7 +14,7 @@ import { DEFAULT_BEHAVIOR, getBehavior, type PlexBehavior } from '../model/behav
 import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
-import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from './namesOpacity'
+import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../model/namesOpacity'
 import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'

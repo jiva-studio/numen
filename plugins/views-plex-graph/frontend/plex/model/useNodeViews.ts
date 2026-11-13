@@ -1,6 +1,6 @@
 import { createRefRegistry } from '@numen/ui'
 
-const isFocusable = (view: unknown): view is { focus: () => void } =>
+const isFocusable = <T>(view: T): view is T & { focus: () => void } =>
   typeof view === 'object' && view !== null && 'focus' in view && typeof view.focus === 'function'
 
 /** The drawn views of the nodes, by node id, held to move the keyboard focus to one of them. */

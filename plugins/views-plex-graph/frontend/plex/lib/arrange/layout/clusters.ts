@@ -64,7 +64,7 @@ interface MiddleRequest {
 }
 
 /** The middle of a group sits as far out from its start as half the patch is deep. */
-export function getClusterMiddle(start: Vector, direction: Vector, request: MiddleRequest): Vector {
+function getClusterMiddle(start: Vector, direction: Vector, request: MiddleRequest): Vector {
   const { size, cell } = request
   const depth =
     Math.max(0, (Math.sqrt(size) - 1) / 2) *
