@@ -54,7 +54,7 @@ export function arrangePlex(
     laid: PlexOptions,
     nodesByRelation: NodesByRelation,
     kept: Fit['rooms'],
-    shouldStop?: PlacementContext['shouldStop'],
+    limits: Pick<PlacementContext, 'shouldStop' | 'fits'> = {},
   ) => {
     const width = createWidthLookup(laid, measure, request)
     const focus: PlacedNode = {
@@ -72,7 +72,7 @@ export function arrangePlex(
         options: laid,
         width,
         room: (node) => kept.get(node.id) ?? NO_ROOM,
-        shouldStop,
+        ...limits,
       }),
     }
   }
@@ -82,8 +82,9 @@ export function arrangePlex(
   // a pill is the same size with names as without, and the names then cost notes.
   const resolved = measureCrowding(request, (packed) =>
     isHeld(
-      lay(packed, requested, NO_ROOMS, stopAtOutside(packed.viewport, packed.margin, NO_ROOMS))
-        .placed,
+      lay(packed, requested, NO_ROOMS, {
+        shouldStop: stopAtOutside(packed.viewport, packed.margin, NO_ROOMS),
+      }).placed,
       packed.viewport,
       { margin: packed.margin, rooms: NO_ROOMS },
     ),
@@ -96,7 +97,8 @@ export function arrangePlex(
   const admitted = viewport
     ? admitNodes(
         requested,
-        (nodesByRelation, shouldStop) => lay(resolved, nodesByRelation, rooms, shouldStop).placed,
+        (nodesByRelation, shouldStop) =>
+          lay(resolved, nodesByRelation, rooms, { shouldStop, fits: getFits(resolved) }).placed,
         (node) => isInside(node, viewport, { margin, rooms }),
       )
     : requested
@@ -104,13 +106,16 @@ export function arrangePlex(
 
   const spacing = findSpacing(resolved, (candidate, window) =>
     isHeld(
-      lay({ ...resolved, ...candidate }, admitted, rooms, stopAtOutside(window, margin, rooms))
-        .placed,
+      lay({ ...resolved, ...candidate }, admitted, rooms, {
+        shouldStop: stopAtOutside(window, margin, rooms),
+      }).placed,
       window,
       { margin, rooms },
     ),
   )
-  const { focus, placed } = lay({ ...resolved, ...spacing }, admitted, rooms)
+  const { focus, placed } = lay({ ...resolved, ...spacing }, admitted, rooms, {
+    fits: getFits(resolved),
+  })
   const nodes = [focus, ...placed]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
@@ -153,6 +158,15 @@ function createRoomLookup(
     if (node.relation !== 'focus') rooms.set(node.id, room(node))
   }
   return rooms
+}
+
+/** Whether a footprint centered on a spot lies inside the window, which is what a group is given to grow within. */
+function getFits(options: PlexOptions): PlacementContext['fits'] {
+  const { viewport, margin } = options
+  if (!viewport) return undefined
+  return (spot) =>
+    Math.abs(spot.x) + spot.width / 2 <= viewport.width / 2 - margin &&
+    Math.abs(spot.y) + spot.height / 2 <= viewport.height / 2 - margin
 }
 
 function isInside(node: PlacedNode, viewport: Size, { margin, rooms }: Fit): boolean {

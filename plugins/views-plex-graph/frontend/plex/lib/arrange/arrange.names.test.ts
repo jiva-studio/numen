@@ -266,3 +266,23 @@ describe('a relation where half the notes have names', () => {
     )
   })
 })
+
+describe('a group that fits the window by area', () => {
+  it('is shown whole when its names stand under every note', () => {
+    const frame = arrange(
+      build('Thermodynamics', { child: 25 }),
+      { width: 2400, height: 1400 },
+      namesUnder,
+    )
+    expect(frame.overflow).toStrictEqual({})
+  })
+
+  it('is shown whole in a window of the size the names leave room for', () => {
+    const frame = arrange(
+      build('Thermodynamics', { child: 25 }),
+      { width: 1570, height: 1440 },
+      namesUnder,
+    )
+    expect(frame.overflow).toStrictEqual({})
+  })
+})

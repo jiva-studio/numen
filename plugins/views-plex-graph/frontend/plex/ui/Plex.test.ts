@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import Plex from './Plex.vue'
 import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
+import { optionsForType } from '../model/sizing/plexScale'
 import type { Viewport } from '@numen/ui'
 import { build } from '../fixtures/build'
 import { graphs } from '../fixtures/graphs'
@@ -338,6 +339,20 @@ describe('how much room the plex has', () => {
     const plex = mountPlex({ viewport: createViewport({ width: 900, height: 700 }) })
     await nextTick()
     expect(plex.get('svg').attributes('viewBox')).toBe('-450 -350 900 700')
+  })
+
+  it('draws the focus at the middle of a tall window at a larger interface size and hides nothing that fits', async () => {
+    const plex = mountPlex({
+      graph: build('Thermodynamics', { parent: 2, child: 8, jump: 5, sibling: 4 }),
+      options: optionsForType(15.6),
+      viewport: createViewport({ width: 1570, height: 1440 }),
+    })
+    await nextTick()
+    expect(plex.get('svg').attributes('viewBox')).toBe('-785 -720 1570 1440')
+    expect(plex.get('[aria-label^="Thermodynamics"]').attributes('transform')).toBe(
+      'translate(0 0)',
+    )
+    expect(plex.find('[role="status"]').exists()).toBe(false)
   })
 
   it('releases the watching when it is taken down', () => {

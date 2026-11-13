@@ -19,6 +19,8 @@ export interface SpotRequest {
   readonly size: Size
   readonly group: readonly Spot[]
   readonly gaps: Gaps
+  /** Whether a spot lies inside the window; a spot outside it is taken only when no spot inside is free. */
+  readonly fits?: ((spot: Spot) => boolean) | undefined
 }
 
 /**
@@ -159,6 +161,7 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
     if (along < -TOLERANCE) return
     const cost = Math.round(measureCost(point, request) * COST_PRECISION)
     if (found.best && !isBetter(cost, along, found.best)) return
+    if (request.fits && !request.fits(toSpot(point))) return
     if (index.isFree(toSpot(point), gaps)) found.best = { point, cost, along }
   }
   consider(request.middle)

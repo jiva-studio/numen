@@ -1,6 +1,7 @@
 import type { PlacedNode } from '../../node'
 import type { PlexOptions } from '../options'
 import type { PlexNode, PlexRelation } from '../../../../types'
+import type { Spot } from './freeSpot'
 
 /** The nodes included in the graph, grouped by relation. */
 export type NodesByRelation = Readonly<Partial<Record<PlexRelation, readonly PlexNode[]>>>
@@ -38,6 +39,8 @@ export interface PlacementContext {
   readonly width: Widths
   readonly room: Rooms
   readonly shouldStop?: ((node: PlacedNode) => boolean) | undefined
+  /** Whether a footprint lies inside the window, so a group grows sideways where it has no room to grow deeper. */
+  readonly fits?: ((footprint: Spot) => boolean) | undefined
 }
 
 /**
