@@ -19,8 +19,9 @@ type cooldownEntry struct {
 }
 
 // cooldown is the connections set aside, by id and revision, and the notices already given for them. An edit
-// changes the revision, so the entry of the old revision no longer matches. A new cooldown of a connection
-// allows a new notice. It is kept in memory, so a restart allows the notices again.
+// changes the revision, so the entry of the old revision no longer matches. A built-in connection cannot be
+// edited, so its cooldown always ends in time. A new cooldown of a connection allows a new notice. It is kept
+// in memory, so a restart allows the notices again.
 type cooldown struct {
 	mu      sync.Mutex
 	entries map[connectionVersion]cooldownEntry
@@ -55,7 +56,7 @@ func (c *cooldown) start(version connectionVersion, reason connection.FailureRea
 	}
 	entry := cooldownEntry{reason: reason}
 	switch {
-	case lastsUntilEdited(reason):
+	case lastsUntilEdited(reason) && !connection.IsBuiltIn(version.id):
 		entry.isForever = true
 	case retryAfter > 0:
 		entry.until = now.Add(min(retryAfter, MaxCooldown))

@@ -421,3 +421,14 @@ type Entry struct {
 func newEntry(created connectionuse.Entry) Entry {
 	return Entry{ID: created.ID, Name: created.Name, Revision: created.Revision, Fields: created.Fields}
 }
+
+// AddBuiltIn adds a built-in type of the first plugin, titled name, whose calls go to the address, and returns
+// its connection.
+func (w *World) AddBuiltIn(name, address string) Entry {
+	declared := manifest.ConnectionType{
+		ID: "built-in", Title: name, IsBuiltIn: true, Operations: getCompleteOnly(),
+		Fields: []manifest.ConnectionField{{Key: addressField, Type: "string", Title: "Address", FixedValue: &address}},
+	}
+	w.Types.list = append(w.Types.list, connection.Type{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: declared})
+	return Entry{ID: manifest.GetConnectionTypeID(ProviderPluginID, declared.ID), Name: name, Fields: map[string]any{}}
+}
