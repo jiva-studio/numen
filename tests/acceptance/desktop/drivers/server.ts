@@ -25,7 +25,7 @@ const BINARIES = {
 } as const
 const ARTICLE = path.join(REPO_ROOT, 'tests/e2e/desktop/fixtures/article.html')
 const HOST = '127.0.0.1'
-/** The connection of the Numen agent the chat answers through; the agent reaches the stand-in model by its own row. */
+/** The connection of the Numen agent the chat answers through; its row names the stand-in model of the stand-in connection. */
 const STAND_IN_AGENT_CONNECTION = 'c57a4d101'
 /**
  * Each agent program a scenario installs: the place in the home folder it is put at, and the variable that names it to
@@ -208,12 +208,13 @@ export class Server {
           fields: {},
         },
       ],
-      'md.numen.agents.numen': { connections: [{ connection: STAND_IN_CONNECTION, model: STAND_IN_MODEL }] },
       'md.numen.agents.claude': { enabled: false },
       'md.numen.agents.codex': { enabled: false },
       'md.numen.agents.antigravity': { enabled: false },
       'md.numen.agents.acp': { enabled: false },
-      'md.numen.views.agent.chat': { connections: [{ connection: STAND_IN_AGENT_CONNECTION }] },
+      'md.numen.views.agent.chat': {
+        connections: [{ connection: STAND_IN_AGENT_CONNECTION, model: `${STAND_IN_CONNECTION}|${STAND_IN_MODEL}` }],
+      },
       ...(this.options.application === 'editor'
         ? {
             'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },

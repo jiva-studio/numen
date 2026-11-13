@@ -79,7 +79,8 @@ type Caller interface {
 }
 
 // Client asks the core to carry out operations for one plugin. The core takes the connections from the
-// rows of the settings of that plugin; a request names no connection and a result holds no key.
+// rows of the settings of that plugin; a request names a connection only as the row it prefers, and a
+// result holds no key.
 type Client struct {
 	host numenv1connect.HostConnectionServiceClient
 }
@@ -119,16 +120,18 @@ func newClientAt(endpoint hostcall.Endpoint) *Client {
 // Call asks the rows of the plugin, in order, to carry out the operation. The core goes to the next row
 // only when a row fails before its first data frame. The caller closes the frames.
 func (c *Client) Call(ctx context.Context, operation string, payload []byte, priority Priority) (Frames, error) {
-	stream, err := c.host.Call(ctx, connect.NewRequest(&v1.HostConnectionServiceCallRequest{
-		Operation: operation, Payload: payload, Priority: writePriority(priority),
-	}))
+	return c.call(ctx, &v1.HostConnectionServiceCallRequest{Operation: operation, Payload: payload, Priority: writePriority(priority)})
+}
+
+func (c *Client) call(ctx context.Context, request *v1.HostConnectionServiceCallRequest) (Frames, error) {
+	stream, err := c.host.Call(ctx, connect.NewRequest(request))
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, ctxErr
 		}
-		return nil, fmt.Errorf("connection: call %s: %w", operation, err)
+		return nil, fmt.Errorf("connection: call %s: %w", request.GetOperation(), err)
 	}
-	return &callStream{stream: stream, contextErr: ctx.Err, operation: operation}, nil
+	return &callStream{stream: stream, contextErr: ctx.Err, operation: request.GetOperation()}, nil
 }
 
 type callStream struct {

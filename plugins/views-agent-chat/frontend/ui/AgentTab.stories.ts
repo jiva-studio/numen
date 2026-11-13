@@ -120,15 +120,15 @@ const ORCHARD_ROWS = [
     connectionName: 'Orchard agent',
     options: { model: 'pear-small' },
     fields: [
-      { key: 'model', title: 'Model', optionsFrom: 'llm.models' },
-      { key: 'reasoning', title: 'Reasoning', optionsFrom: 'llm.reasoning' },
+      { key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: false },
+      { key: 'reasoning', title: 'Reasoning', optionsFrom: 'llm.reasoning', isRequired: false },
     ],
   },
   {
     connectionId: 'c-meadow',
     connectionName: 'Meadow agent',
     options: {},
-    fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models' }],
+    fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: false }],
   },
 ]
 
@@ -151,7 +151,7 @@ const createAgentsState = (deps: AgentTabDeps): AgentTabState => {
         })),
     },
   )
-  const list = createAgentList(host, WORDS.defaultModel)
+  const list = createAgentList(host, WORDS)
   list.reload().catch(() => undefined)
   const choice = useAgentChoice(host, list)
   const conversation = useConversation({

@@ -195,7 +195,9 @@ describe('createConnectionCallClient', () => {
                 connectionId: 'c-claude',
                 connectionName: 'Claude',
                 options: { model: 'opus' },
-                fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models' }],
+                fields: [
+                  { key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: true },
+                ],
               },
             ],
           }),
@@ -214,7 +216,7 @@ describe('createConnectionCallClient', () => {
         connectionId: 'c-claude',
         connectionName: 'Claude',
         options: { model: 'opus' },
-        fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models' }],
+        fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: true }],
       },
     ])
   })

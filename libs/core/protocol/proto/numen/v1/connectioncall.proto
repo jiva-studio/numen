@@ -25,14 +25,6 @@ service ConnectionCallService {
   rpc ListRowOptions(ConnectionCallServiceListRowOptionsRequest) returns (ConnectionCallServiceListRowOptionsResponse);
 }
 
-// PreferredRow is the row a call asks first. connection_id names a connection among the rows of the plugin
-// for the operation; the call goes to it with options in place of the values of its row fields, then to
-// the other rows in order. A connection that is not among the rows is ignored.
-message PreferredRow {
-  string connection_id = 1;
-  map<string, string> options = 2;
-}
-
 message ConnectionCallServiceCallRequest {
   // plugin_id is the plugin whose rows serve the call.
   string plugin_id = 1;
@@ -51,23 +43,6 @@ message ConnectionCallServiceCallResponse {
     bytes done = 2;
     CallFailure failure = 3;
   }
-}
-
-// CallRowField is a row field the type of a connection declares. options_from is the operation that lists
-// its values, empty for none.
-message CallRowField {
-  string key = 1;
-  string title = 2;
-  string options_from = 3;
-}
-
-// CallRow is one row of a plugin: its connection, the values of its row fields, and the row fields the
-// type of the connection declares.
-message CallRow {
-  string connection_id = 1;
-  string connection_name = 2;
-  map<string, string> options = 3;
-  repeated CallRowField fields = 4;
 }
 
 message ConnectionCallServiceListRowsRequest {

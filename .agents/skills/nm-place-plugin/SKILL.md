@@ -165,7 +165,7 @@ Ask of every new package, type, RPC or export of the core, the core protocol (`l
 
 ## Permissions
 
-A plugin declares in `permissions` each host capability it uses: `vault:read`, `vault:write`, `vault:manage`, `link:open` (opening external links only), `index:read`, `search:policy`, `window:focus`, `plugins:read`. It declares the permission for the calls it makes and no more. Plugins are trusted code: permissions are consent and API hygiene, not a sandbox, and `link:open` gates only `openExternal`. A manifest test states the permissions a plugin must hold when they are not obvious from its calls (`plugins/agents-acp/manifest_permissions_test.go`).
+A plugin declares in `permissions` each host capability it uses: `vault:read`, `vault:write`, `vault:manage`, `link:open` (opening external links only), `index:read`, `search:policy`, `window:focus`, `plugins:read`, `connections:use`. It declares the permission for the calls it makes and no more. Plugins are trusted code: permissions are consent and API hygiene, not a sandbox, and `link:open` gates only `openExternal`. A manifest test states the permissions a plugin must hold when they are not obvious from its calls (`plugins/agents-acp/manifest_permissions_test.go`).
 
 The host checks both sides. For a backend, the host endpoint authenticates the bearer token (`NUMEN_PLUGIN_TOKEN`) as a plugin id and checks the permission of that plugin's manifest on each call (`authorize` in `libs/core/kernel/adapter/plugin/hostendpoint/host_endpoint.go`; `libs/core/kernel/internal/adapter/plugin/host_permission_test.go` tests it for any client). For a frontend, `libs/plugin/loader/src/hosting/context.ts` wraps each service of the context so that a call without the permission throws (`requirePerm`).
 

@@ -3,6 +3,7 @@ package hostchat
 import (
 	"context"
 	"errors"
+	"maps"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -50,14 +51,15 @@ func text(delta string) *llm.ChatFrame {
 
 type asked struct {
 	request  *llm.ChatRequest
+	row      connection.PreferredRow
 	priority connection.Priority
 }
 
 func ask(t *testing.T, stream *fakeStream, openErr error) (conversation.Reply, []string, asked, error) {
 	t.Helper()
 	var got asked
-	chat := New(func(_ context.Context, request *llm.ChatRequest, priority connection.Priority) (Stream, error) {
-		got = asked{request: request, priority: priority}
+	chat := New(func(_ context.Context, request *llm.ChatRequest, priority connection.Priority, row connection.PreferredRow) (Stream, error) {
+		got = asked{request: request, row: row, priority: priority}
 		if openErr != nil {
 			return nil, openErr
 		}
@@ -72,6 +74,7 @@ func ask(t *testing.T, stream *fakeStream, openErr error) (conversation.Reply, [
 		},
 		Tools:       []conversation.Tool{{Name: "note_read", Description: "Reads", Parameters: []byte(`{"type":"object"}`)}},
 		Temperature: new(0.5), MaxTokens: 64,
+		Model: conversation.Model{ConnectionID: "c-meadow", Field: "model", ID: "wren-2"},
 	}, func(text string) error {
 		spoken = append(spoken, text)
 		return nil
@@ -94,6 +97,17 @@ func TestATurnIsAskedForInteractivelyWithTheMessagesToolsAndOptions(t *testing.T
 	}
 	if len(request.GetTools()) != 1 || request.GetTools()[0].GetName() != "note_read" || request.Temperature == nil || request.GetTemperature() != 0.5 || request.GetMaxTokens() != 64 {
 		t.Errorf("tools = %+v, temperature = %v, max tokens = %d", request.GetTools(), request.Temperature, request.GetMaxTokens())
+	}
+}
+
+func TestTheConnectionAndTheModelOfTheTurnAreAskedFirst(t *testing.T) {
+	_, _, got, err := ask(t, &fakeStream{finish: &llm.ChatFinish{}}, nil)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.row.ConnectionID != "c-meadow" || !maps.Equal(got.row.Options, map[string]string{"model": "wren-2"}) {
+		t.Errorf("the row asked first is %+v", got.row)
 	}
 }
 

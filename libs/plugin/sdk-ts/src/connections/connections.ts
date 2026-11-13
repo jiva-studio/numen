@@ -41,11 +41,12 @@ export interface ConnectionCallOptions {
 }
 
 // ConnectionRowField is a row field a connection type declares. `optionsFrom` is the operation that lists
-// its values, empty for none.
+// its values, empty for none. `isRequired` is a field a row must hold a value for.
 export interface ConnectionRowField {
   readonly key: string
   readonly title: string
   readonly optionsFrom: string
+  readonly isRequired: boolean
 }
 
 // ConnectionRow is one row of the plugin: its connection, the values of its row fields by key, and the

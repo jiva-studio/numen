@@ -217,7 +217,7 @@ The agent chat answers through connections, as every other plugin that needs a s
 }
 ```
 
-The Numen Agent chats through one connection of its own: its page has a single row that names a connection that supports chat, the model and the reasoning level. How many requests it may make to the model for one task before it is stopped is the plugin's own setting, `maxSteps` in the object `md.numen.agents.numen`, 25 unless it names another. The temperature and the maximum of tokens are its settings too. If the stream breaks in the middle of an answer, the text that arrived stays and the turn ends with an error; it does not repeat a tool call by itself.
+The Numen Agent chats with the model its row names. The models of a row of `md.numen.agents.numen/numen` are the models of every connection that supports chat, titled "<connection> / <model>", and the stored value names the connection and the model, such as `"model": "c77b01d40|qwen2.5:14b"` (a `|` or `%` in the id of the connection is written `%7C` or `%25`). A row with no model, or with a model of a connection that no longer supports chat, answers "Choose a model." and the turn fails. How many requests it may make to the model for one task before it is stopped is the plugin's own setting, `maxSteps` in the object `md.numen.agents.numen`, 25 unless it names another. The temperature and the maximum of tokens are its settings too. If the stream breaks in the middle of an answer, the text that arrived stays and the turn ends with an error; it does not repeat a tool call by itself.
 
 ## Connections
 

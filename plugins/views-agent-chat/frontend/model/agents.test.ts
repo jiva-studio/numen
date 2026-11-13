@@ -11,8 +11,8 @@ import { createAgentConnections, say, type AgentListing } from '../fixtures'
 import { WORDS } from '../words'
 
 const FIELDS = [
-  { key: 'model', title: 'Model', optionsFrom: 'llm.models' },
-  { key: 'reasoning', title: 'Reasoning', optionsFrom: 'llm.reasoning' },
+  { key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: false },
+  { key: 'reasoning', title: 'Reasoning', optionsFrom: 'llm.reasoning', isRequired: false },
 ]
 
 const row = (
@@ -27,6 +27,7 @@ const MODELS: Readonly<Record<string, readonly { value: string; title: string }[
     { value: 'pear-small', title: 'Pear Small' },
   ],
   'c-meadow': [{ value: 'clover', title: 'Clover' }],
+  'c-lantern': [{ value: 'c-meadow|clover', title: 'Meadow / Clover' }],
 }
 
 const REASONING: Readonly<Record<string, readonly { value: string; title: string }[]>> = {
@@ -56,7 +57,7 @@ const createChat = async (rows: readonly ConnectionRow[], { isPickerOpened = tru
       },
     },
   )
-  const list = createAgentList(connections.host, WORDS.defaultModel)
+  const list = createAgentList(connections.host, WORDS)
   await list.reload()
   const choice = useAgentChoice(connections.host, list)
   const conversation = useConversation({
@@ -155,7 +156,7 @@ describe('the agents a chat offers', () => {
             : [],
       },
     )
-    const list = createAgentList(host, WORDS.defaultModel)
+    const list = createAgentList(host, WORDS)
     await list.reload()
     const choice = useAgentChoice(host, list)
     expect(choice.offered.pendingAgentIds.value).toStrictEqual(['c-orchard', 'c-meadow'])
@@ -163,13 +164,21 @@ describe('the agents a chat offers', () => {
     const listing = choice.listChoices()
     await vi.waitFor(() => expect(answers.size).toBe(2))
     answers.get('c-meadow')!([{ value: 'clover', title: 'Clover' }])
-    await vi.waitFor(() => expect(choice.offered.pendingAgentIds.value).toStrictEqual(['c-orchard']))
-    expect(readOptions(choice)).toStrictEqual(['Orchard agent · pear-small', 'Meadow agent · Clover'])
+    await vi.waitFor(() =>
+      expect(choice.offered.pendingAgentIds.value).toStrictEqual(['c-orchard']),
+    )
+    expect(readOptions(choice)).toStrictEqual([
+      'Orchard agent · pear-small',
+      'Meadow agent · Clover',
+    ])
 
     answers.get('c-orchard')!([{ value: 'pear-small', title: 'Pear Small' }])
     await listing
     expect(choice.offered.pendingAgentIds.value).toStrictEqual([])
-    expect(readOptions(choice)).toStrictEqual(['Orchard agent · Pear Small', 'Meadow agent · Clover'])
+    expect(readOptions(choice)).toStrictEqual([
+      'Orchard agent · Pear Small',
+      'Meadow agent · Clover',
+    ])
   })
 
   it('stay listed through a reload, with the models listed before', async () => {
@@ -190,7 +199,7 @@ describe('the agents a chat offers', () => {
         },
       },
     )
-    const list = createAgentList(host, WORDS.defaultModel)
+    const list = createAgentList(host, WORDS)
     const choice = useAgentChoice(host, list)
     await choice.listChoices()
 
@@ -221,6 +230,24 @@ describe('the agents a chat offers', () => {
     ])
   })
 
+  it('ask to choose a model of an agent whose type requires one and whose row names none', async () => {
+    const lantern: ConnectionRow = {
+      connectionId: 'c-lantern',
+      connectionName: 'Lantern agent',
+      options: {},
+      fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: true }],
+    }
+    const { choice } = await createChat([lantern, row('c-orchard', 'Orchard agent')])
+
+    expect(readOptions(choice)).toStrictEqual([
+      `Lantern agent · ${WORDS.chooseModel}`,
+      'Lantern agent · Meadow / Clover',
+      `Orchard agent · ${WORDS.defaultModel}`,
+      'Orchard agent · Pear Large',
+      'Orchard agent · Pear Small',
+    ])
+  })
+
   it('show the first agent with the model of its row as the one that answers, until one is chosen', async () => {
     const { choice } = await createChat([
       row('c-orchard', 'Orchard agent', { model: 'pear-large', reasoning: 'high' }),
@@ -245,7 +272,7 @@ describe('the agents a chat offers', () => {
 
   it('are not offered by connections that list no rows', async () => {
     const { host } = createAgentConnections({ frames: [] })
-    const list = createAgentList(host, WORDS.defaultModel)
+    const list = createAgentList(host, WORDS)
     await list.reload()
     const choice = useAgentChoice(host, list)
 
@@ -281,6 +308,41 @@ describe('the turns of a conversation', () => {
       options: { model: 'clover' },
     })
     expect(choice.selected.agentId.value).toBe('c-meadow')
+  })
+
+  it('of a new conversation go first to the agent and model chosen last', async () => {
+    const { host, calls } = createAgentConnections(
+      { frames: [say('Twelve.')] },
+      {
+        rows: [
+          row('c-orchard', 'Orchard agent', { model: 'pear-small' }),
+          row('c-meadow', 'Meadow agent', { model: 'clover' }),
+        ],
+        listOptions,
+      },
+    )
+    const list = createAgentList(host, WORDS)
+    await list.reload()
+    const first = useAgentChoice(host, list)
+    await first.listChoices()
+    await waitTask()
+    first.selectModel(first.offered.options.value.find((one) => one.agentId === 'c-meadow')!)
+
+    const second = useAgentChoice(host, list)
+    const conversation = useConversation({
+      connections: host,
+      words: WORDS,
+      conversation: 'conversation:meadow',
+      paint: (draw) => draw(),
+      getPreferredRow: second.getPreferredRow,
+    })
+    await conversation.ask('How many clover fields?')
+
+    expect(second.selected.agentId.value).toBe('c-meadow')
+    expect(calls[0]?.options?.preferred).toStrictEqual({
+      connectionId: 'c-meadow',
+      options: { model: 'clover' },
+    })
   })
 
   it('carry the reasoning level chosen for the model chosen', async () => {

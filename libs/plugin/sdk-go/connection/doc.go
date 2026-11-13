@@ -5,5 +5,5 @@
 // The core knows an operation by its name only. The payload and the frames are bytes of the contract
 // the operation belongs to; the packages under contracts give each contract a typed client and a typed
 // provider adapter over this package. A provider mounts its operations with Mount. A consumer calls a
-// Client, which never names a connection and never receives a key.
+// Client, which names a connection only to prefer one of its rows and never receives a key.
 package connection

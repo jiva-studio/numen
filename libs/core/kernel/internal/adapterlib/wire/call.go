@@ -70,7 +70,7 @@ func ConvertCallRowsToWire(rows []modelcall.Row) []*v1.CallRow {
 	for i, row := range rows {
 		fields := make([]*v1.CallRowField, len(row.Fields))
 		for j, one := range row.Fields {
-			fields[j] = &v1.CallRowField{Key: one.Key, Title: one.Title, OptionsFrom: one.OptionsFrom}
+			fields[j] = &v1.CallRowField{Key: one.Key, Title: one.Title, OptionsFrom: one.OptionsFrom, IsRequired: one.IsRequired}
 		}
 		wired[i] = &v1.CallRow{
 			ConnectionId: row.ConnectionID, ConnectionName: row.ConnectionName, Options: maps.Clone(row.Options), Fields: fields,

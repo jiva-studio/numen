@@ -12,7 +12,16 @@
       {
         "id": "numen",
         "title": "Numen agent",
-        "operations": ["acp.task"],
+        "operations": ["acp.task", "llm.models"],
+        "rowFields": [
+          {
+            "key": "model",
+            "type": "string",
+            "title": "Model",
+            "required": true,
+            "optionsFrom": "llm.models"
+          }
+        ],
         "fields": [
           {
             "key": "parallelRequests",
@@ -27,18 +36,17 @@
       }
     ]
   },
-  "permissions": ["vault:read", "vault:write", "vault:manage", "window:focus", "index:read"],
+  "permissions": [
+    "vault:read",
+    "vault:write",
+    "vault:manage",
+    "window:focus",
+    "index:read",
+    "connections:use"
+  ],
   "backend": { "entrypoint": "bin/agents-numen" },
   "services": ["numen.v1.ProviderService"],
   "settings": [
-    {
-      "key": "connections",
-      "type": "connections",
-      "title": "Connection",
-      "description": "Chat service, model and reasoning level",
-      "operations": ["llm.chat"],
-      "max": 1
-    },
     {
       "key": "temperature",
       "type": "range",

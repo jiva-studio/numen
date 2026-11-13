@@ -1,6 +1,5 @@
-// Package answer carries out acp.task: it asks the model for each message of a conversation through the
-// rows of llm.chat of the plugin, calls the tools of the host the model requests, and sends each update of
-// the turn.
+// Package answer carries out acp.task: it asks the model the row of the task names for each message of a
+// conversation, calls the tools of the host the model requests, and sends each update of the turn.
 package answer
 
 import (
@@ -13,15 +12,30 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/ports"
 )
 
+// NoModelText is what a task whose row names no model of a connection that serves llm.chat answers.
+const NoModelText = "Choose a model."
+
+// Parts are what an answerer works with: its settings, the model, the connections of llm.chat, the tools
+// of the host and the clock that ages conversations.
+type Parts struct {
+	Store  *settings.Store
+	Chat   ports.Chat
+	Models ports.Models
+	Tools  ports.Tools
+	Clock  ports.Clock
+}
+
 // Answerer carries out the tasks of the agent. A conversation continues from the transcript kept for it.
 type Answerer struct {
 	store   *settings.Store
 	chat    ports.Chat
+	models  ports.Models
 	tools   ports.Tools
 	history *history
 	running *running
@@ -29,25 +43,26 @@ type Answerer struct {
 
 var _ acp.Runner = (*Answerer)(nil)
 
-// New returns an answerer that reads its settings from store and keeps conversations by clock.
-func New(store *settings.Store, chat ports.Chat, tools ports.Tools, clock ports.Clock) (*Answerer, error) {
-	if store == nil || chat == nil || tools == nil || clock == nil {
-		return nil, errors.New("an answerer needs settings, a chat, the tools and a clock")
+// New returns an answerer over the parts.
+func New(parts Parts) (*Answerer, error) {
+	if parts.Store == nil || parts.Chat == nil || parts.Models == nil || parts.Tools == nil || parts.Clock == nil {
+		return nil, errors.New("an answerer needs settings, a chat, the connections of llm.chat, the tools and a clock")
 	}
 	return &Answerer{
-		store: store, chat: chat, tools: tools,
-		history: newHistory(clock), running: &running{mu: sync.Mutex{}, cancels: map[*context.CancelFunc]bool{}, isClosed: false},
+		store: parts.Store, chat: parts.Chat, models: parts.Models, tools: parts.Tools,
+		history: newHistory(parts.Clock), running: &running{mu: sync.Mutex{}, cancels: map[*context.CancelFunc]bool{}, isClosed: false},
 	}, nil
 }
 
-// RunTask carries out one turn of the task and sends its updates. The model is asked the distinct
-// instruction sentences of the tools, in the order of the listing, then the transcript kept for the
-// conversation, then the prompt with its attached notes; it is asked again after each tool call until it
-// answers without one, its answer is cut off or the steps of the settings are used up. A tool call frame
-// shows the title of the tool, its kind by the effect, and the query, about or title of the arguments, else
-// their path, with the path of the note. A task whose model cannot be asked, because no row of llm.chat is
-// set or every row failed, fails for a reason of unavailable so that the next row of acp.task is asked; a
-// closed answerer stops for that reason.
+// RunTask carries out one turn of the task with the model the row of the task names in llm.OptionModel, a
+// model of a connection that serves llm.chat. The model is asked the distinct instruction sentences of the
+// tools, in the order of the listing, then the transcript kept for the conversation, then the prompt with
+// its attached notes; it is asked again after each tool call until it answers without one, its answer is
+// cut off or the steps of the settings are used up. A tool call frame shows the title of the tool, its kind
+// by the effect, and the query, about or title of the arguments, else their path, with the path of the
+// note. A row that names no model, or a model of a connection that no longer serves llm.chat, sends
+// NoModelText and stops for a reason of invalid request. A task whose model cannot be asked fails for a
+// reason of unavailable so that the next row of acp.task is asked; a closed answerer stops for that reason.
 func (a *Answerer) RunTask(ctx context.Context, call connection.Call, task *acp.TaskRequest, send func(*acp.TaskFrame) error) (*acp.TaskDone, error) {
 	taskCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -56,9 +71,9 @@ func (a *Answerer) RunTask(ctx context.Context, call connection.Call, task *acp.
 	}
 	defer a.running.remove(&cancel)
 
-	cfg := a.store.Get()
-	if !cfg.HasRow {
-		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
+	model, err := a.findModel(taskCtx, call.Options[llm.OptionModel])
+	if err != nil {
+		return nil, a.readModelError(taskCtx, err, send)
 	}
 	offered, err := a.tools.ListTools(taskCtx)
 	if err != nil {
@@ -72,10 +87,12 @@ func (a *Answerer) RunTask(ctx context.Context, call connection.Call, task *acp.
 		listed[one.Name] = one
 	}
 
+	cfg := a.store.Get()
 	id := task.GetConversation()
 	messages := a.getMessages(id, task, offered)
 	taskRun := &run{
 		chat:        a.chat,
+		model:       model,
 		temperature: cfg.Temperature,
 		maxTokens:   cfg.GetMaxTokens(),
 		tools:       a.tools,
@@ -97,6 +114,46 @@ func (a *Answerer) RunTask(ctx context.Context, call connection.Call, task *acp.
 	}
 	a.history.append(id, transcript[len(messages)-1:])
 	return &acp.TaskDone{StopReason: reason}, nil
+}
+
+// errNoModel is a row that names no model of a connection that serves llm.chat.
+var errNoModel = errors.New("the row names no model")
+
+// errConnections is a listing of the connections of llm.chat that failed.
+var errConnections = errors.New("the connections of llm.chat could not be listed")
+
+func (a *Answerer) findModel(ctx context.Context, value string) (conversation.Model, error) {
+	none := conversation.Model{ConnectionID: "", Field: "", ID: ""}
+	choice, isChoice := conversation.ParseChoice(value)
+	if !isChoice {
+		return none, errNoModel
+	}
+	connections, err := a.models.ListConnections(ctx)
+	if err != nil {
+		return none, fmt.Errorf("%w: %w", errConnections, err)
+	}
+	index := slices.IndexFunc(connections, func(one conversation.ChatConnection) bool {
+		return one.ID == choice.ConnectionID && one.ModelField != ""
+	})
+	if index < 0 {
+		return none, errNoModel
+	}
+	return conversation.Model{ConnectionID: choice.ConnectionID, Field: connections[index].ModelField, ID: choice.ModelID}, nil
+}
+
+func (a *Answerer) readModelError(ctx context.Context, err error, send func(*acp.TaskFrame) error) error {
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return ctxErr
+	}
+	if !errors.Is(err, errNoModel) {
+		return connection.NewTryNextError(connection.ReasonUnavailable, 0)
+	}
+	if sendErr := send(&acp.TaskFrame{Update: &acp.TaskFrame_AgentMessageChunk{
+		AgentMessageChunk: &acp.MessageChunk{MessageId: "message-1", Text: NoModelText},
+	}}); sendErr != nil {
+		return sendErr
+	}
+	return connection.NewStopError(connection.ReasonInvalidRequest)
 }
 
 func (a *Answerer) getMessages(id string, task *acp.TaskRequest, offered []conversation.Tool) []conversation.Message {

@@ -90,7 +90,6 @@ The settings of the plugin Numen Agent.
 
 | | | |
 | --- | --- | --- |
-| `connections` | text | chat service, model and reasoning level. |
 | `temperature` | a number | lower is steadier, higher is more varied. From 0 to 1. |
 | `maxTokens` | a number | most tokens one answer may have. From 256 to 128000. |
 | `maxSteps` | a number | most model requests one task may make. From 1 to 1000. |

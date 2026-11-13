@@ -7,11 +7,9 @@ import (
 )
 
 type settingShape struct {
-	Key        string   `json:"key"`
-	Type       string   `json:"type"`
-	Operations []string `json:"operations"`
-	Max        *float64 `json:"max"`
-	Default    any      `json:"default"`
+	Key     string `json:"key"`
+	Type    string `json:"type"`
+	Default any    `json:"default"`
 }
 
 func readSettings(t *testing.T) []settingShape {
@@ -25,17 +23,14 @@ func readSettings(t *testing.T) []settingShape {
 	return manifest.Settings
 }
 
-// The agent chats through one connection, a row that names it, its model and its reasoning level.
-func TestManifestDeclaresOneRowOfTheOperationChat(t *testing.T) {
+// The model of a task is a row of the connection, chosen among the models of the chat connections, so the
+// plugin keeps no connection of its own.
+func TestManifestDeclaresNoSettingOfConnections(t *testing.T) {
 	for _, one := range readSettings(t) {
-		if one.Key == "connections" {
-			if one.Type != "connections" || !slices.Equal(one.Operations, []string{"llm.chat"}) || one.Max == nil || *one.Max != 1 {
-				t.Errorf("the connections setting is %+v, want the kind connections for llm.chat with at most one row", one)
-			}
-			return
+		if one.Type == "connections" {
+			t.Errorf("the plugin declares the setting of connections %s", one.Key)
 		}
 	}
-	t.Error("the plugin declares no connections setting")
 }
 
 // The connection holds the address, the key and the model, so the plugin keeps none of them.
@@ -87,12 +82,18 @@ type fieldShape struct {
 	Max     *float64 `json:"max"`
 }
 
+type rowFieldShape struct {
+	Key         string `json:"key"`
+	IsRequired  bool   `json:"required"`
+	OptionsFrom string `json:"optionsFrom"`
+}
+
 type connectionTypeShape struct {
-	ID         string            `json:"id"`
-	Title      string            `json:"title"`
-	Operations []string          `json:"operations"`
-	RowFields  []json.RawMessage `json:"rowFields"`
-	Fields     []fieldShape      `json:"fields"`
+	ID         string          `json:"id"`
+	Title      string          `json:"title"`
+	Operations []string        `json:"operations"`
+	RowFields  []rowFieldShape `json:"rowFields"`
+	Fields     []fieldShape    `json:"fields"`
 }
 
 type operationShape struct {
@@ -122,7 +123,7 @@ func TestManifestProvidesTheConnectionTypeNumenForAgentTasks(t *testing.T) {
 	types, _, services, capabilities := readContributes(t)
 
 	if len(types) != 1 || types[0].ID != "numen" || types[0].Title != "Numen agent" ||
-		!slices.Equal(types[0].Operations, []string{"acp.task"}) || len(types[0].RowFields) != 0 {
+		!slices.Equal(types[0].Operations, []string{"acp.task", "llm.models"}) {
 		t.Fatalf("the connection types are %+v", types)
 	}
 	if fields := types[0].Fields; len(fields) != 1 || fields[0].Key != "parallelRequests" ||
@@ -139,5 +140,15 @@ func TestManifestTitlesTheOperationOfAgentTasks(t *testing.T) {
 
 	if len(operations) != 1 || operations[0] != (operationShape{Name: "acp.task", Title: "run agent tasks"}) {
 		t.Errorf("the operations are %+v", operations)
+	}
+}
+
+// A row of the connection names the model of its tasks, which the plugin lists from the chat connections.
+func TestManifestDeclaresTheRequiredRowFieldOfTheModel(t *testing.T) {
+	types, _, _, _ := readContributes(t)
+
+	want := []rowFieldShape{{Key: "model", IsRequired: true, OptionsFrom: "llm.models"}}
+	if len(types) != 1 || !slices.Equal(types[0].RowFields, want) {
+		t.Errorf("the connection types are %+v, want the row fields %+v", types, want)
 	}
 }

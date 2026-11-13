@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/ports"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/usecase/answer"
 )
 
@@ -62,28 +63,50 @@ func (f *fakeTools) CallTool(_ context.Context, name, arguments string, scope co
 	return conversation.ToolResult{Text: "result of " + name}
 }
 
-func newAnswerer(t *testing.T, chat *scriptedChat, tools *fakeTools, rows string) (*answer.Answerer, *clock.Fake) {
+// meadowModels is the connection Meadow, which serves llm.chat and lists its models in the field model.
+type meadowModels struct {
+	err error
+}
+
+func (m meadowModels) ListConnections(context.Context) ([]conversation.ChatConnection, error) {
+	return []conversation.ChatConnection{{ID: "c-meadow", Name: "Meadow", ModelField: "model"}}, m.err
+}
+
+func (meadowModels) ListModels(context.Context, conversation.ChatConnection) ([]conversation.ModelOption, error) {
+	return []conversation.ModelOption{{ID: "wren-2", Title: "Wren 2"}}, nil
+}
+
+func newAnswererOf(t *testing.T, chat *scriptedChat, tools *fakeTools, store *settings.Store, now ports.Clock) *answer.Answerer {
 	t.Helper()
-	store := settings.NewStore()
-	store.Configure(map[string]string{settings.KeyConnections: rows})
-	now := newFakeClock(time.Date(2026, 3, 14, 9, 0, 0, 0, time.UTC))
-	answerer, err := answer.New(store, chat, tools, now)
+	answerer, err := answer.New(answer.Parts{Store: store, Chat: chat, Models: meadowModels{}, Tools: tools, Clock: now})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return answerer, now
+	return answerer
 }
 
-const oneRow = `[{"connection":"c1","model":"m"}]`
+func newAnswerer(t *testing.T, chat *scriptedChat, tools *fakeTools) (*answer.Answerer, *clock.Fake) {
+	t.Helper()
+	now := newFakeClock(time.Date(2026, 3, 14, 9, 0, 0, 0, time.UTC))
+	return newAnswererOf(t, chat, tools, settings.NewStore(), now), now
+}
 
-func run(t *testing.T, answerer *answer.Answerer, task *acp.TaskRequest) ([]*acp.TaskFrame, *acp.TaskDone, error) {
+// wren is the row of a task that chose the model Wren 2 of Meadow.
+var wren = connection.Call{ConnectionID: "c-numen", Options: map[string]string{"model": "c-meadow|wren-2"}}
+
+func runWith(t *testing.T, answerer *answer.Answerer, call connection.Call, task *acp.TaskRequest) ([]*acp.TaskFrame, *acp.TaskDone, error) {
 	t.Helper()
 	var frames []*acp.TaskFrame
-	done, err := answerer.RunTask(t.Context(), connection.Call{}, task, func(frame *acp.TaskFrame) error {
+	done, err := answerer.RunTask(t.Context(), call, task, func(frame *acp.TaskFrame) error {
 		frames = append(frames, frame)
 		return nil
 	})
 	return frames, done, err
+}
+
+func run(t *testing.T, answerer *answer.Answerer, task *acp.TaskRequest) ([]*acp.TaskFrame, *acp.TaskDone, error) {
+	t.Helper()
+	return runWith(t, answerer, wren, task)
 }
 
 func runTaskToEnd(t *testing.T, answerer *answer.Answerer, task *acp.TaskRequest) ([]*acp.TaskFrame, acp.StopReason) {
@@ -122,9 +145,48 @@ func assertTryNextUnavailable(t *testing.T, err error) {
 	}
 }
 
-func TestATaskGoesToTheNextRowAsUnavailableWhileTheSettingsNameNoConnection(t *testing.T) {
+func TestATaskIsAnsweredByTheConnectionAndTheModelItsRowNames(t *testing.T) {
+	chat := &scriptedChat{replies: []conversation.Reply{noteCallReply("1", "note_read", "Trips/Ferry.md"), textReply("done")}}
+	answerer, _ := newAnswerer(t, chat, &fakeTools{})
+
+	runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "read it"})
+
+	want := conversation.Model{ConnectionID: "c-meadow", Field: "model", ID: "wren-2"}
+	if len(chat.turns) != 2 || chat.turns[0].Model != want || chat.turns[1].Model != want {
+		t.Errorf("the turns asked %+v, want %+v each", chat.turns, want)
+	}
+}
+
+func TestATaskWhoseRowNamesNoModelAsksToChooseOneAndStops(t *testing.T) {
+	for name, model := range map[string]string{
+		"no model":                        "",
+		"a model of no connection":        "wren-2",
+		"a connection that left llm.chat": "c-gone|wren-2",
+	} {
+		t.Run(name, func(t *testing.T) {
+			chat := &scriptedChat{}
+			answerer, _ := newAnswerer(t, chat, &fakeTools{})
+
+			frames, _, err := runWith(t, answerer, connection.Call{ConnectionID: "c-numen", Options: map[string]string{"model": model}}, &acp.TaskRequest{Prompt: "hi"})
+
+			if !connection.IsStop(err) || err.Error() != connection.ReasonInvalidRequest.String() {
+				t.Errorf("err = %v, want a stop of reason invalid request", err)
+			}
+			if len(frames) != 1 || frames[0].GetAgentMessageChunk().GetText() != answer.NoModelText || len(chat.turns) != 0 {
+				t.Errorf("frames = %v, turns = %d", frames, len(chat.turns))
+			}
+		})
+	}
+}
+
+func TestATaskWhoseConnectionsCannotBeListedGoesToTheNextRowAsUnavailable(t *testing.T) {
 	chat := &scriptedChat{}
-	answerer, _ := newAnswerer(t, chat, &fakeTools{}, `[]`)
+	answerer, err := answer.New(answer.Parts{
+		Store: settings.NewStore(), Chat: chat, Models: meadowModels{err: errors.New("the core is gone")}, Tools: &fakeTools{}, Clock: clock.System{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	frames, _, err := run(t, answerer, &acp.TaskRequest{Prompt: "hi"})
 
@@ -136,7 +198,7 @@ func TestATaskGoesToTheNextRowAsUnavailableWhileTheSettingsNameNoConnection(t *t
 
 func TestAnAnswerWithoutToolCallsEndsTheTurnAndIsSentAsAMessageChunk(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{textReply("hello")}}
-	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
+	answerer, _ := newAnswerer(t, chat, &fakeTools{})
 
 	frames, reason := runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "hi"})
 
@@ -150,7 +212,7 @@ func TestAnAnswerWithoutToolCallsEndsTheTurnAndIsSentAsAMessageChunk(t *testing.
 
 func TestTheDistinctInstructionsOfTheToolsAreTheSystemText(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{textReply("hello")}}
-	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
+	answerer, _ := newAnswerer(t, chat, &fakeTools{})
 
 	runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "hi"})
 
@@ -165,7 +227,7 @@ func TestTheDistinctInstructionsOfTheToolsAreTheSystemText(t *testing.T) {
 
 func TestTheNotesAttachedToThePromptGoWithIt(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{textReply("hello")}}
-	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
+	answerer, _ := newAnswerer(t, chat, &fakeTools{})
 
 	runTaskToEnd(t, answerer, &acp.TaskRequest{
 		Prompt:       "When does the ferry leave?",
@@ -181,7 +243,7 @@ func TestTheNotesAttachedToThePromptGoWithIt(t *testing.T) {
 func TestAToolCallIsSentWithItsTitleKindAndNoteAndEndsCompleted(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{noteCallReply("1", "note_read", "Trips/Ferry.md"), textReply("done reading")}}
 	tools := &fakeTools{}
-	answerer, _ := newAnswerer(t, chat, tools, oneRow)
+	answerer, _ := newAnswerer(t, chat, tools)
 
 	frames, reason := runTaskToEnd(t, answerer, &acp.TaskRequest{
 		Prompt: "read it", ToolContext: map[string]string{"md.example.cards/card": "k7"}, VaultId: "v-trips",
@@ -209,7 +271,7 @@ func TestAToolCallIsSentWithItsTitleKindAndNoteAndEndsCompleted(t *testing.T) {
 
 func TestAToolThatChangesTheVaultIsAnEditAndAFailedCallEndsFailed(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{noteCallReply("1", "note_write", "Trips/Ferry.md"), textReply("could not")}}
-	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
+	answerer, _ := newAnswerer(t, chat, &fakeTools{})
 
 	frames, _ := runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "write it"})
 
@@ -227,7 +289,7 @@ func TestAToolThatChangesTheVaultIsAnEditAndAFailedCallEndsFailed(t *testing.T) 
 func TestACallOfAToolTheHostDoesNotListFailsWithoutACall(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{callReply("1", "note_delete", " "), textReply("ok")}}
 	tools := &fakeTools{}
-	answerer, _ := newAnswerer(t, chat, tools, oneRow)
+	answerer, _ := newAnswerer(t, chat, tools)
 
 	frames, _ := runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "delete it"})
 
@@ -242,11 +304,8 @@ func TestACallOfAToolTheHostDoesNotListFailsWithoutACall(t *testing.T) {
 func TestARunThatKeepsCallingToolsStopsAtTheLimitOfSteps(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{callReply("1", "note_read", "{}")}}
 	store := settings.NewStore()
-	store.Configure(map[string]string{settings.KeyConnections: oneRow, settings.KeyMaxSteps: "2"})
-	limited, err := answer.New(store, chat, &fakeTools{}, clock.System{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	store.Configure(map[string]string{settings.KeyMaxSteps: "2"})
+	limited := newAnswererOf(t, chat, &fakeTools{}, store, clock.System{})
 
 	_, reason := runTaskToEnd(t, limited, &acp.TaskRequest{Prompt: "loop"})
 
@@ -257,7 +316,7 @@ func TestARunThatKeepsCallingToolsStopsAtTheLimitOfSteps(t *testing.T) {
 
 func TestAnAnswerEndedByTheLengthLimitStopsAtMaxTokens(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{{Message: conversation.Message{Role: "assistant", Text: "long"}, IsCut: true}}}
-	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
+	answerer, _ := newAnswerer(t, chat, &fakeTools{})
 
 	if _, reason := runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "hi"}); reason != acp.StopReason_STOP_REASON_MAX_TOKENS {
 		t.Errorf("stop = %v, want max tokens", reason)
@@ -270,7 +329,7 @@ func TestAChatThatFailsSendsTheTaskToTheNextRowAsUnavailableWithoutItsText(t *te
 		&connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "Ferry API", Reason: "rate limited"}}},
 	} {
 		chat := &scriptedChat{err: failure}
-		answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
+		answerer, _ := newAnswerer(t, chat, &fakeTools{})
 
 		_, _, err := run(t, answerer, &acp.TaskRequest{Prompt: "hi"})
 
@@ -283,7 +342,7 @@ func TestAChatThatFailsSendsTheTaskToTheNextRowAsUnavailableWithoutItsText(t *te
 
 func TestAConversationContinuesFromItsHistory(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{textReply("one")}}
-	answerer, _ := newAnswerer(t, chat, &fakeTools{}, oneRow)
+	answerer, _ := newAnswerer(t, chat, &fakeTools{})
 	task := &acp.TaskRequest{Prompt: "q", Conversation: "thread"}
 
 	runTaskToEnd(t, answerer, task)
@@ -300,7 +359,7 @@ func TestAConversationContinuesFromItsHistory(t *testing.T) {
 
 func TestAConversationIdleForThirtyMinutesIsForgotten(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{textReply("one")}}
-	answerer, now := newAnswerer(t, chat, &fakeTools{}, oneRow)
+	answerer, now := newAnswerer(t, chat, &fakeTools{})
 	task := &acp.TaskRequest{Prompt: "q", Conversation: "thread"}
 
 	runTaskToEnd(t, answerer, task)
@@ -316,7 +375,7 @@ func TestAConversationIdleForThirtyMinutesIsForgotten(t *testing.T) {
 
 func TestANinthConversationForgetsTheOneUsedLongestAgo(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{textReply("one")}}
-	answerer, now := newAnswerer(t, chat, &fakeTools{}, oneRow)
+	answerer, now := newAnswerer(t, chat, &fakeTools{})
 	for _, id := range []string{"t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9"} {
 		runTaskToEnd(t, answerer, &acp.TaskRequest{Prompt: "q", Conversation: id})
 		now.Advance(time.Minute)
@@ -334,10 +393,10 @@ func TestANinthConversationForgetsTheOneUsedLongestAgo(t *testing.T) {
 func TestAFrameThatCannotBeSentEndsTheTaskWithItsError(t *testing.T) {
 	chat := &scriptedChat{replies: []conversation.Reply{callReply("1", "note_read", "{}"), textReply("ok")}}
 	tools := &fakeTools{}
-	answerer, _ := newAnswerer(t, chat, tools, oneRow)
+	answerer, _ := newAnswerer(t, chat, tools)
 	closed := errors.New("the window closed")
 
-	_, err := answerer.RunTask(t.Context(), connection.Call{}, &acp.TaskRequest{Prompt: "read"}, func(*acp.TaskFrame) error { return closed })
+	_, err := answerer.RunTask(t.Context(), wren, &acp.TaskRequest{Prompt: "read"}, func(*acp.TaskFrame) error { return closed })
 
 	if !errors.Is(err, closed) || len(tools.called) != 0 {
 		t.Errorf("err = %v after the calls %v", err, tools.called)
@@ -345,13 +404,13 @@ func TestAFrameThatCannotBeSentEndsTheTaskWithItsError(t *testing.T) {
 }
 
 func TestAnAnswererNeedsItsParts(t *testing.T) {
-	if _, err := answer.New(nil, &scriptedChat{}, &fakeTools{}, clock.System{}); err == nil {
+	if _, err := answer.New(answer.Parts{Store: nil, Chat: &scriptedChat{}, Models: meadowModels{}, Tools: &fakeTools{}, Clock: clock.System{}}); err == nil {
 		t.Error("an answerer was made with no settings")
 	}
 }
 
 func TestAClosedAnswererRejectsNewTasks(t *testing.T) {
-	answerer, _ := newAnswerer(t, &scriptedChat{replies: []conversation.Reply{textReply("hi")}}, &fakeTools{}, oneRow)
+	answerer, _ := newAnswerer(t, &scriptedChat{replies: []conversation.Reply{textReply("hi")}}, &fakeTools{})
 	if err := answerer.Close(); err != nil {
 		t.Fatal(err)
 	}

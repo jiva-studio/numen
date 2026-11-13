@@ -4,7 +4,7 @@
  * the model and the reasoning level its row holds; from then on, the models the type of its connection
  * lists in llm.models and the levels it lists in llm.reasoning. The turns of a conversation that chose an
  * agent go to it first, with the model and the reasoning level chosen; a conversation that chose none asks
- * the rows in their order.
+ * the rows in their order. A new conversation starts with the agent and the model chosen last.
  */
 import { computed, shallowRef, watch, type Ref } from 'vue'
 import type {
@@ -20,8 +20,20 @@ import type { AgentModelOption, ReasoningLevelOption } from '../message-composer
 const MODELS = 'llm.models'
 const REASONING = 'llm.reasoning'
 
+const getField = (row: ConnectionRow, optionsFrom: string) =>
+  row.fields.find((field) => field.optionsFrom === optionsFrom)
+
 const getFieldKey = (row: ConnectionRow, optionsFrom: string): string =>
-  row.fields.find((field) => field.optionsFrom === optionsFrom)?.key ?? ''
+  getField(row, optionsFrom)?.key ?? ''
+
+/**
+ * The titles of the model of a row that names none: the agent chooses its own model, or, where the type
+ * requires one, the person has to choose it.
+ */
+interface UnnamedModelTitles {
+  readonly defaultModel: string
+  readonly chooseModel: string
+}
 
 /**
  * One agent: the first row of its connection, and the models it offers with that row's model first.
@@ -33,16 +45,24 @@ export interface Agent {
   readonly isListed: boolean
 }
 
+/** An agent and a model the person chose. */
+interface ModelChoice {
+  readonly agentId: string
+  readonly modelId: string
+}
+
 /**
  * The agents of the plugin. `agents` is null until they are listed and where the host lists no rows, so
  * nothing is offered then; an empty list is a plugin with no agent. `listModels` lists the models of
  * every agent now and on each reload after; before it, an agent offers the model of its row alone. An
- * agent is replaced in the list when the answer for its own models comes.
+ * agent is replaced in the list when the answer for its own models comes. `lastChoice` is the agent and
+ * the model chosen last in any conversation.
  */
 export interface AgentList {
   readonly agents: Readonly<Ref<readonly Agent[] | null>>
   readonly reload: () => Promise<void>
   readonly listModels: () => Promise<void>
+  readonly lastChoice: Ref<ModelChoice | null>
 }
 
 async function listOptions(
@@ -60,14 +80,16 @@ async function listOptions(
 function createAgent(
   row: ConnectionRow,
   listed: readonly ConnectionRowOption[] | undefined,
-  defaultModelTitle: string,
+  titles: UnnamedModelTitles,
 ): Agent {
-  const current = row.options[getFieldKey(row, MODELS)] ?? ''
+  const field = getField(row, MODELS)
+  const current = row.options[field?.key ?? ''] ?? ''
+  const unnamedTitle = field?.isRequired ? titles.chooseModel : titles.defaultModel
   const createOption = (modelId: string, modelTitle: string): AgentModelOption => ({
     agentId: row.connectionId,
     agentTitle: row.connectionName,
     modelId,
-    modelTitle: modelTitle || defaultModelTitle,
+    modelTitle: modelTitle || unnamedTitle,
     isAvailable: true,
   })
   const models = (listed ?? []).map((one) => createOption(one.value, one.title || one.value))
@@ -90,8 +112,12 @@ const listModelOptions = (connections: ConnectionHost, row: ConnectionRow) =>
  * Lists the agents again on each reload; an answer that comes after a later reload is dropped. An agent
  * whose models were listed before keeps them until its new answer comes.
  */
-export function createAgentList(connections: ConnectionHost, defaultModelTitle: string): AgentList {
+export function createAgentList(
+  connections: ConnectionHost,
+  titles: UnnamedModelTitles,
+): AgentList {
   const agents = shallowRef<readonly Agent[] | null>(null)
+  const lastChoice = shallowRef<ModelChoice | null>(null)
   const listedModels = new Map<string, readonly ConnectionRowOption[]>()
   let latest = 0
   let isModelsWanted = false
@@ -111,9 +137,7 @@ export function createAgentList(connections: ConnectionHost, defaultModelTitle: 
     }
     if (request !== latest) return
     const update = () => {
-      agents.value = rows.map((row) =>
-        createAgent(row, listedModels.get(row.connectionId), defaultModelTitle),
-      )
+      agents.value = rows.map((row) => createAgent(row, listedModels.get(row.connectionId), titles))
     }
     update()
     if (!isModelsWanted) return
@@ -133,21 +157,16 @@ export function createAgentList(connections: ConnectionHost, defaultModelTitle: 
     await reload()
   }
 
-  return { agents, reload, listModels }
-}
-
-interface Choice {
-  readonly agentId: string
-  readonly modelId: string
+  return { agents, reload, listModels, lastChoice }
 }
 
 /**
- * The agent, model and reasoning level of one conversation. Until the person chooses, the choice in
- * force is the first agent with the model of its row, which is who answers while the rows are asked in
- * their order.
+ * The agent, model and reasoning level of one conversation. It starts with the agent and the model chosen
+ * last; until the person chooses one, the choice in force is the first agent with the model of its row,
+ * which is who answers while the rows are asked in their order.
  */
 export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
-  const chosen = shallowRef<Choice | null>(null)
+  const chosen = shallowRef<ModelChoice | null>(list.lastChoice.value)
   const chosenReasoning = shallowRef<string | null>(null)
   const reasoningLevels = shallowRef<readonly ReasoningLevelOption[]>([])
   const isOptionsWanted = shallowRef(false)
@@ -159,10 +178,10 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
     agents.value.filter((agent) => !agent.isListed).map((agent) => agent.row.connectionId),
   )
 
-  const isListed = (choice: Choice) =>
+  const isListed = (choice: ModelChoice) =>
     options.value.some((one) => one.agentId === choice.agentId && one.modelId === choice.modelId)
 
-  const current = computed<Choice | null>(() => {
+  const current = computed<ModelChoice | null>(() => {
     if (chosen.value && isListed(chosen.value)) return chosen.value
     const first = agents.value[0]?.models[0]
     return first ? { agentId: first.agentId, modelId: first.modelId } : null
@@ -232,6 +251,7 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
 
   const selectModel = (option: AgentModelOption) => {
     chosen.value = { agentId: option.agentId, modelId: option.modelId }
+    list.lastChoice.value = chosen.value
     chosenReasoning.value = null
   }
 

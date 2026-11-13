@@ -15,7 +15,7 @@ A plugin that needs a model service declares a setting of type `connections`. Th
 }
 ```
 
-`discover: true` makes the setting discover connections, as described under "Discover connections"; a setting without it uses only the rows the person chose. `operations` are the operations the plugin calls through these rows, lowercase words joined by dots such as `llm.complete`, `llm.chat` or `llm.embed` and `llm.profile`; a plugin calls no operation none of its settings lists. `max` is the most rows the setting holds, a whole number of at least 1. The setting takes `when` as any setting does, so a plugin can show the rows only while another setting holds a given value. An operation is listed by at most one `connections` setting of a plugin, and the manifest check rejects a setting that declares a `default`, `options`, `optionsBy`, `optionsFrom`, `min`, `step`, `accept`, `multiple`, `preview` or `generate`, or `operations` on a setting of another type. A plugin that has such a setting uses connections without a permission: the rows, or the declaration of `discover`, are the grant, and the core takes the connections only from the setting of the plugin that calls.
+`discover: true` makes the setting discover connections, as described under "Discover connections"; a setting without it uses only the rows the person chose. `operations` are the operations the plugin calls through these rows, lowercase words joined by dots such as `llm.complete`, `llm.chat` or `llm.embed` and `llm.profile`; a plugin calls no operation none of its settings lists. `max` is the most rows the setting holds, a whole number of at least 1. The setting takes `when` as any setting does, so a plugin can show the rows only while another setting holds a given value. An operation is listed by at most one `connections` setting of a plugin, and the manifest check rejects a setting that declares a `default`, `options`, `optionsBy`, `optionsFrom`, `min`, `step`, `accept`, `multiple`, `preview` or `generate`, or `operations` on a setting of another type. A plugin that has such a setting uses connections without a permission: the rows, or the declaration of `discover`, are the grant, and the core takes the connections only from the setting of the plugin that calls. A plugin that holds the permission `connections:use` calls an operation none of its settings lists as a setting that discovers and holds no row: through every connection that serves it.
 
 ## The stored value
 
@@ -50,7 +50,7 @@ A write is refused when `discover` is no object, holds a value that is not true 
 
 ## What the plugin receives
 
-`Configure` carries the rows as the JSON text of the list under the key of the setting, for a setting that is shown. The window is the only writer of the rows: `Configure` is read-only for the plugin.
+`Configure` carries the rows as the JSON text of the list under the key of the setting, for a setting that is shown. The window is the only writer of the rows: `Configure` is read-only for the plugin. A backend lists the rows of an operation with `ListRows` of the `connection.Client` of the Go SDK, the values of a row field with `ListRowOptions`, and asks one row first with `Prefer`, as a frontend does with `listRows`, `listRowOptions` and the option `preferred` of `call`.
 
 ## The page of the plugin
 

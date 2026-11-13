@@ -56,11 +56,15 @@ export interface ConnectionCallFailure {
   readonly failures: readonly ConnectionCallRowFailure[]
 }
 
-/** A row field a connection type declares. `optionsFrom` is the operation that lists its values, empty for none. */
+/**
+ * A row field a connection type declares. `optionsFrom` is the operation that lists its values, empty
+ * for none. `isRequired` is a field a row must hold a value for.
+ */
 export interface ConnectionCallRowField {
   readonly key: string
   readonly title: string
   readonly optionsFrom: string
+  readonly isRequired: boolean
 }
 
 /** One row of a plugin: its connection, the values of its row fields and the row fields of its type. */
@@ -174,7 +178,12 @@ export const createConnectionCallClient = (rpc: ConnectionCallRpc): ConnectionCa
       connectionId: row.connectionId,
       connectionName: row.connectionName,
       options: { ...row.options },
-      fields: row.fields.map(({ key, title, optionsFrom }) => ({ key, title, optionsFrom })),
+      fields: row.fields.map(({ key, title, optionsFrom, isRequired }) => ({
+        key,
+        title,
+        optionsFrom,
+        isRequired,
+      })),
     }))
   },
   listRowOptions: async (request) => {
