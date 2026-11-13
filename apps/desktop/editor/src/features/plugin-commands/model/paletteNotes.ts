@@ -1,7 +1,8 @@
 /**
  * The type and properties of the note in front of the palette, which the conditions of the plugins'
  * commands read and the palette's target does not hold. Each note is read once from the core and kept
- * until the palette opens or closes, so a change to the note shows at the next open.
+ * until `reset`, which the palette calls as it opens or closes, so a change to the note shows at the
+ * next open.
  */
 import { shallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
@@ -9,7 +10,8 @@ import type { CommandNote } from '@numen/plugin-loader'
 import type { CommandTarget } from '@/shared/model/command'
 import type { PaletteNote } from '../lib/whenContext'
 
-type ReadNote = (
+/** Reads the type and properties of the note at a target. */
+export type ReadNote = (
   target: Pick<CommandNote, 'path' | 'title' | 'isFolder' | 'others'>,
 ) => Promise<CommandNote>
 

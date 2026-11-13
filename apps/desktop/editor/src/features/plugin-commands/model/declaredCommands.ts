@@ -33,6 +33,7 @@ import {
   type WindowWhenContext,
 } from '../lib/whenContext'
 import type { Caught } from '@/shared/api/errors'
+import { createPaletteNotes, type ReadNote } from './paletteNotes'
 
 /** The items a command of a plugin offers over a file. */
 type ListItems = (
@@ -95,6 +96,8 @@ export interface DeclaredStateDeps {
   readonly list?: typeof listDeclaredCommands
   readonly getConfig?: () => WhenSettings
   readonly whenReader?: WhenReader
+  /** Reads the note at a target, for the conditions that read its type or properties. */
+  readonly readNote?: ReadNote
 }
 
 export interface DeclaredCommandsDeps extends DeclaredStateDeps {
@@ -135,10 +138,12 @@ export function createDeclaredState(deps: DeclaredStateDeps = {}) {
   const declaredHandlers = shallowRef<readonly HandlerDeclaration[] | undefined>(undefined)
   const declaredKeybindings = shallowRef<readonly DeclaredKeybinding[] | undefined>(undefined)
   const contentTypes = shallowRef<Readonly<Record<string, string>>>({})
+  const paletteNotes = deps.readNote ? createPaletteNotes(deps.readNote) : undefined
   const whenContext: WindowWhenContext = {
     getContentTypes: () => contentTypes.value,
     getConfig: deps.getConfig ?? (() => ({})),
     whenReader: deps.whenReader ?? createWhenReader(),
+    ...(paletteNotes ? { getNote: paletteNotes.getNote } : {}),
   }
   let newest = 0
   const isFirstListSettled = shallowRef(false)
@@ -180,6 +185,8 @@ export function createDeclaredState(deps: DeclaredStateDeps = {}) {
     waitForFirstList,
     /** What the when conditions of the commands read besides their target. */
     whenContext,
+    /** Forgets the notes the conditions read, so they are read again. */
+    forgetNotes: (): void => paletteNotes?.reset(),
     commands: computed(() => declared.value),
     slots: computed(() => declaredSlots.value),
     /** The handlers of shared commands and the keybindings the enabled plugins declare; undefined until the first list. */
@@ -252,6 +259,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
       createDeclaredPaletteCommands(backendCommands.value, state.whenContext, listItems),
     ),
     whenContext: state.whenContext,
+    forgetNotes: state.forgetNotes,
     commands: state.commands,
     slots: state.slots,
     contributions: state.contributions,

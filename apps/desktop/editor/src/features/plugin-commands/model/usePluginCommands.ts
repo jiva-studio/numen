@@ -17,12 +17,10 @@ import { getNamedIcon } from '@/shared/ui/icons'
 import {
   createEmptyWhenContext,
   createWhenAvailability,
-  hasNoteKindVariable,
   hasNoteVariable,
   type WindowWhenContext,
 } from '../lib/whenContext'
 import { createSharedCommands } from '../lib/sharedCommands'
-import { createPaletteNotes } from './paletteNotes'
 
 /** What a run names: the note, the others selected with it, and the tab it is over. */
 type NoteTarget = Pick<CommandTarget, 'path' | 'title' | 'isFolder' | 'others'> & {
@@ -62,19 +60,6 @@ export function usePluginCommands(
   const getHandlers = extras.getHandlers ?? (() => [])
   const isWhenAvailable = createWhenAvailability(context)
   const getPluginCommands = () => pluginHost?.commands.getPaletteCommands() ?? []
-  const paletteNotes = createPaletteNotes(getCommandNote)
-  /**
-   * Whether a plugin's command is available over the target. A condition that reads the type or the
-   * properties of the note holds once the note is read, as the run checks it over the same note.
-   */
-  const isPluginCommandAvailable = (when: string | undefined, target: CommandTarget): boolean => {
-    const isOverNote = target.isReady && (target.path || target.file) !== ''
-    if (!isOverNote || !hasNoteKindVariable(context.whenReader.getCondition(when))) {
-      return isWhenAvailable(when, target)
-    }
-    const note = paletteNotes.getNote(target)
-    return note !== undefined && isWhenAvailable(when, target, note)
-  }
   const { getSharedCommands, getSharedEntries } = createSharedCommands(getHandlers, isWhenAvailable)
   /** How a plugin's command is drawn: its keystroke and its icon, where it declares them. */
   const getPluginLooks = (cmd: PluginPaletteCommand) => {
@@ -99,7 +84,7 @@ export function usePluginCommands(
         : ('window' as const),
       ...(cmd.when ? { when: cmd.when } : {}),
       ...(pluginHost?.commands.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
-      isAvailable: (target: CommandTarget) => isPluginCommandAvailable(cmd.when, target),
+      isAvailable: (target: CommandTarget) => isWhenAvailable(cmd.when, target),
     })),
     ...getSharedEntries(),
   ]
@@ -142,8 +127,6 @@ export function usePluginCommands(
   return {
     getPaletteEntries,
     getCommandNote,
-    /** Forgets the notes the palette read, so the next palette reads them again. */
-    forgetPaletteNotes: paletteNotes.reset,
     pluginWays,
   }
 }

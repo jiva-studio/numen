@@ -16,6 +16,8 @@ export interface WindowWhenContext {
   readonly getContentTypes: () => Readonly<Record<string, string>>
   readonly getConfig: () => WhenSettings
   readonly whenReader: WhenReader
+  /** The type and properties of the note at the target; undefined while they are read. */
+  readonly getNote?: (target: CommandTarget) => PaletteNote | undefined
 }
 
 /** The context of a window that has not listed the content types and has no settings yet. */
@@ -31,20 +33,29 @@ export interface PaletteNote {
   readonly properties?: JsonObject
 }
 
-/** Whether a command of the condition is available over what is in front of the palette. */
-export function createWhenAvailability(context: WindowWhenContext) {
-  return (when: string | undefined, target: CommandTarget, note?: PaletteNote): boolean =>
-    context.whenReader
-      .getCondition(when)
-      ?.evaluate(
-        getPaletteValues(target, context.getContentTypes(), context.getConfig(), note),
-      ) ?? false
-}
+/** Whether the condition reads the type or the properties of the note, which the target does not hold. */
+const hasNoteKindVariable = (condition: WhenCondition): boolean =>
+  condition.names.some((name) => name === 'target.noteType' || name === 'target.properties')
 
-/** Whether the condition reads the type or the properties of the note, which the core is asked for. */
-export const hasNoteKindVariable = (condition: WhenCondition | undefined): boolean =>
-  condition?.names.some((name) => name === 'target.noteType' || name === 'target.properties') ??
-  false
+/**
+ * Whether a command of the condition is available over what is in front of the palette. A condition
+ * that reads the type or the properties of the note holds once the note is read.
+ */
+export function createWhenAvailability(context: WindowWhenContext) {
+  return (when: string | undefined, target: CommandTarget): boolean => {
+    const condition = context.whenReader.getCondition(when)
+    if (!condition) return false
+    const isOverFile = target.isReady && (target.path || target.file) !== ''
+    const note =
+      isOverFile && context.getNote && hasNoteKindVariable(condition)
+        ? context.getNote(target)
+        : {}
+    if (note === undefined) return false
+    return condition.evaluate(
+      getPaletteValues(target, context.getContentTypes(), context.getConfig(), note),
+    )
+  }
+}
 
 /** Whether the condition reads whether the target is a note: its command is over the note in front. */
 export const hasNoteVariable = (condition: WhenCondition | undefined): boolean =>
