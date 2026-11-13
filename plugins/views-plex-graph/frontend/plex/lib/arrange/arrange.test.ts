@@ -329,7 +329,7 @@ describe('the options are honoured', () => {
   it('lets the caller send children up and parents down', () => {
     const upside = arrangePlex(graphs.typical, {
       options: {
-        direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
+        direction: { parent: 'down', child: 'up', jump: 'left', reference: 'left', sibling: 'right' },
       },
     })
     for (const child of getNodesByRelation(upside, 'child')) expect(child.y).toBeLessThan(0)

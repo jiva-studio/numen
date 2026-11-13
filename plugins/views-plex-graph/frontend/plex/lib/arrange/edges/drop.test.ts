@@ -20,7 +20,7 @@ describe('the relation a direction remains for', () => {
   it('reads the arrangement and not assuming which way is up', () => {
     const origin = { x: 0, y: 0 }
     const upside = resolveOptions({
-      direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
+      direction: { parent: 'down', child: 'up', jump: 'left', reference: 'left', sibling: 'right' },
     })
 
     expect(getRelationTowards(origin, { x: 0, y: -300 }, DEFAULT_OPTIONS)).toBe('parent')
@@ -212,7 +212,7 @@ describe('the relation something dragged in evaluates to', () => {
 
   it('reads which way a relation lies off the arrangement', () => {
     const upside = resolveOptions({
-      direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
+      direction: { parent: 'down', child: 'up', jump: 'left', reference: 'left', sibling: 'right' },
     })
     expect(getRelationAt({ x: focus.x, y: focus.y - 300 }, { options: upside })).toBe('child')
     expect(getRelationAt({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')

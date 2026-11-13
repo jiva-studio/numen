@@ -152,6 +152,7 @@ describe('a group is never nearer the focus than its start', () => {
     parent: [0, -1],
     child: [0, 1],
     jump: [-1 / Math.hypot(1, 0.42), 0.42 / Math.hypot(1, 0.42)],
+    reference: [-1 / Math.hypot(1, 0.42), -0.42 / Math.hypot(1, 0.42)],
     sibling: [1, 0],
   }
   const along = (node: PlacedNode, [dx, dy]: readonly [number, number]) => node.x * dx + node.y * dy
@@ -437,7 +438,7 @@ describe('the same input gives the same picture', () => {
 describe('the direction of a side is set by the options', () => {
   it('puts children above the focus and parents below when told so', () => {
     const frame = arrange(build('A note', { parent: 3, child: 3 }), {
-      direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
+      direction: { parent: 'down', child: 'up', jump: 'left', reference: 'left', sibling: 'right' },
     })
     const focus = getFocus(frame)
     for (const child of getShownNodes(frame, 'child'))

@@ -113,7 +113,7 @@ function createReferenceEdge(
 export function convertNoteGraph(
   noteGraph: NoteGraph,
   token: (path: string) => string,
-  references: ReferenceMode,
+  references: ReferenceMode = 'both',
 ): PlexGraph {
   const focus: PlexNode = {
     id: token(noteGraph.focus.path),
