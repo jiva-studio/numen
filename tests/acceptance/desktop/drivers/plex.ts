@@ -260,12 +260,12 @@ export class PlexDriver {
   }
 
   private async getRow(inspector: Locator, from: string): Promise<Locator> {
-    const titles = await inspector.locator('.plex-link-popover__node-name').allTextContents()
+    // A click on the arrow of a row moves its record to the other note, so the row is kept by its place.
     const rows = inspector.locator('.plex-link-row')
-    const count = await rows.count()
-    if (count === 2) return rows.nth(titles[0] === from ? 0 : 1)
-    if (count === 1 && titles[0] === from) return rows.first()
-    throw new Error(`the link inspector of ${titles.join(' and ')} has ${count} rows: none is the link from "${from}"`)
+    const authors = await rows.evaluateAll((all) => all.map((row) => row.getAttribute('data-from')))
+    const index = authors.indexOf(from)
+    if (index < 0) throw new Error(`the link inspector has no row of the link from "${from}": its rows are from ${authors.join(' and ') || 'nobody'}`)
+    return rows.nth(index)
   }
 
   private async setArrow(row: Locator, arrow: string): Promise<void> {

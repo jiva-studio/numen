@@ -11,6 +11,7 @@ import { WORDS as words } from '../words'
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   label: string
+  author: string
   direction: LinkDirection
   nextDirection: LinkDirection
   firstTitle: string
@@ -49,7 +50,7 @@ function onInputKeyDown(event: KeyboardEvent) {
 </script>
 
 <template>
-  <div class="plex-link-row">
+  <div class="plex-link-row" :data-from="props.author">
     <button
       type="button"
       class="plex-link-row__dir-btn plex-link-popover__dir-btn"

@@ -1,3 +1,4 @@
+import type { TabKindChoice } from '../drivers/rules.js'
 import { Given, Then, When } from '../support/bdd.js'
 
 When('the person opens the note titled {string}', async ({ person }, title: string) => {
@@ -40,6 +41,13 @@ When(
   'the person opens the link {string} in the note {reference} {string}',
   async ({ person }, link: string, reference: string, name: string) => {
     await person.note.openLink(link, reference, name)
+  },
+)
+
+Then(
+  'the cursor of the {tab} {reference} {string} is on the line {string}',
+  async ({ person }, _kind: TabKindChoice, reference: string, name: string, line: string) => {
+    await person.note.expectCursorOnLine(reference, name, line)
   },
 )
 
