@@ -64,7 +64,7 @@ func TestACallIsLoggedWithItsCallerToolArgumentsResultAndDuration(t *testing.T) 
 			t.Errorf("%s is %v, want %v", key, line[key], value)
 		}
 	}
-	sizes, _ := line["argumentBytes"].(map[string]any)
+	sizes := readArgumentBytes(t, line)
 	if sizes["row"] != float64(1) || sizes["note"] != float64(len(long)+2) {
 		t.Errorf("the argument sizes are logged as %v", sizes)
 	}
@@ -102,7 +102,7 @@ func TestACallWithManyArgumentsLogsTheSizesOfTheFirstTwentyByName(t *testing.T) 
 	}
 	line := callLogged(t, &v1.CallToolRequest{Name: "tree_count", Arguments: []byte("{" + strings.Join(fields, ",") + "}")})
 
-	sizes, _ := line["argumentBytes"].(map[string]any)
+	sizes := readArgumentBytes(t, line)
 	if len(sizes) != 20 || sizes["field00"] != float64(len(`"plum"`)) || sizes["field20"] != nil {
 		t.Errorf("the argument sizes are logged as %v", sizes)
 	}
@@ -117,4 +117,13 @@ func TestArgumentsThatAreNotAnObjectAreLoggedByTheirSizeAlone(t *testing.T) {
 	if line["unparsedArgumentBytes"] != float64(len(`["pear orchard"]`)) || strings.Contains(fmt.Sprint(line), "pear") {
 		t.Errorf("the arguments are logged as %v", line)
 	}
+}
+
+func readArgumentBytes(t *testing.T, line map[string]any) map[string]any {
+	t.Helper()
+	sizes, isObject := line["argumentBytes"].(map[string]any)
+	if !isObject {
+		t.Fatalf("the line of the call has no argument sizes: %v", line)
+	}
+	return sizes
 }
