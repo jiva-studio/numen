@@ -33,7 +33,6 @@ export class SettingsDriver {
     return this.settings.showPage(plugin, windowPage)
   }
 
-  /** The panel on the page that holds the setting: that of the plugin, else the page of the window that has it. */
   private async showPageOf(name: string, plugin?: string): Promise<Locator> {
     return this.showPage(plugin, APPEARANCE_SETTINGS.has(name) ? 'Appearance' : 'System')
   }
