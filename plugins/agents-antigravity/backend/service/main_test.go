@@ -242,8 +242,25 @@ func recordRun(out string) string {
 	return "pwd > " + quoteShell(out+".dir") + "\n" +
 		"ls -A > " + quoteShell(out+".files") + "\n" +
 		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > " + quoteShell(out+".argv") + "\n" +
+		"cat > " + quoteShell(out+".stdin") + "\n" +
 		"cat \"$HOME/.gemini/config/mcp_config.json\" > " + quoteShell(out+".mcp") + "\n" +
 		"cat \"$HOME/.gemini/config/config.json\" > " + quoteShell(out+".cfg") + " 2>/dev/null || true\n"
+}
+
+// readPrompt returns the prompt of the run recorded at out: the content of the message on its standard
+// input.
+func readPrompt(t *testing.T, out string) string {
+	t.Helper()
+	var message struct {
+		Event   string `json:"event"`
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	}
+	if err := json.Unmarshal([]byte(readFile(t, out+".stdin")), &message); err != nil || message.Event != "user" {
+		t.Fatalf("the input is not one user message: %v", err)
+	}
+	return message.Message.Content
 }
 
 func readFile(t *testing.T, path string) string {

@@ -27,14 +27,13 @@ func New(supervisor Supervisor) *CLI {
 	return &CLI{supervisor: supervisor}
 }
 
-// IsInstalled reports whether the program is runnable, at path when given, or where it is found.
-func (c *CLI) IsInstalled(path string) bool {
-	return isInstalled(path)
-}
-
-// Find returns the program at path when it is runnable, else where it is found, else the bare name.
+// Find returns the program at path when it is runnable, else the program found on this machine, else none.
 func (c *CLI) Find(path string) string {
-	return findProgram(path)
+	found := findProgram(path)
+	if !isRunnable(found) {
+		return ""
+	}
+	return found
 }
 
 // MakeTaskCommand returns the command of a run that may call the tools served at the address of run

@@ -75,11 +75,7 @@ var _ contract.Runner = (*Runner)(nil)
 // FindProgram returns the program to run, or none when it is not installed: the executable path of the
 // settings when it is runnable, else the program found on the machine.
 func (r *Runner) FindProgram() string {
-	path := r.deps.Settings.ExecutablePath()
-	if !r.deps.Program.IsInstalled(path) {
-		return ""
-	}
-	return r.deps.Program.Find(path)
+	return r.deps.Program.Find(r.deps.Settings.ExecutablePath())
 }
 
 // RunTask runs the program on one prompt turn and sends what it reports as frames. The program may call

@@ -19,14 +19,6 @@ func getPlaces() []string {
 	}
 }
 
-func isInstalled(customPath ...string) bool {
-	if len(customPath) > 0 && customPath[0] != "" {
-		return isRunnable(customPath[0])
-	}
-	found := findProgram()
-	return isRunnable(found)
-}
-
 func findProgram(customPath ...string) string {
 	return findIn(getPlaces(), customPath...)
 }

@@ -3,10 +3,10 @@
 package process
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
@@ -47,8 +47,11 @@ func (Launcher) Start(ctx context.Context, spec task.Command) (task.Process, err
 	cmd.Env = env
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="Supervise sets OS process-group attributes for child cleanup."
 	Supervise(cmd)
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	if spec.Stdin != "" {
+		cmd.Stdin = strings.NewReader(spec.Stdin)
+	}
+	stderr := new(tailBuffer)
+	cmd.Stderr = stderr
 	stdout, err := cmd.StdoutPipe()
 	// gomutants:disable-next-line BRANCH_IF reason="cmd.StdoutPipe on a fresh command before Start fails only on OS descriptor exhaustion."
 	if err != nil {
@@ -57,13 +60,13 @@ func (Launcher) Start(ctx context.Context, spec task.Command) (task.Process, err
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
-	return &startedProcess{cmd: cmd, stdout: stdout, stderr: &stderr}, nil
+	return &startedProcess{cmd: cmd, stdout: stdout, stderr: stderr}, nil
 }
 
 type startedProcess struct {
 	cmd    *exec.Cmd
 	stdout io.ReadCloser
-	stderr *bytes.Buffer
+	stderr *tailBuffer
 }
 
 func (p *startedProcess) Output() io.ReadCloser { return p.stdout }
