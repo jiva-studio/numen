@@ -359,16 +359,14 @@ describe('the settings tab', () => {
       expect(getCurrent(tab)).toBe(words.appearanceSettings)
     })
 
-    it('holds Add connection on the Connections page', async () => {
+    it('shows the path of the Connections page with no action', async () => {
       const { tab } = createTab()
 
       await openPlugin(tab, 'Connections')
 
       expect(getSegments(tab)).toStrictEqual(['Settings'])
       expect(getCurrent(tab)).toBe(words.connections)
-      expect(getToolbar(tab).get('.settings-toolbar__actions').text()).toContain(
-        words.connectionAdd,
-      )
+      expect(getToolbar(tab).find('.settings-toolbar__actions').exists()).toBe(false)
     })
 
     it('holds the state and the enabled switch of a plugin on its page', async () => {

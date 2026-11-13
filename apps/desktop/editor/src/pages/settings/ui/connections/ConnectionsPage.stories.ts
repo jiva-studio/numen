@@ -172,7 +172,7 @@ export const EmptyPage: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('No connections yet.')).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Add connection' })).toBeEnabled()
+    await expect(canvas.getByRole('button', { name: 'Add connection…' })).toBeEnabled()
   },
 }
 
@@ -184,12 +184,12 @@ export const EmptyPageWithoutTypes: Story = {
     await expect(
       canvas.getByText('No installed plugin provides a kind of connection.'),
     ).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Add connection' })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'Add connection…' })).toBeDisabled()
   },
 }
 
 const openDialog = async (canvasElement: HTMLElement) => {
-  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Add connection' }))
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Add connection…' }))
   const dialog = within(document.body).getByRole('dialog', { name: 'Add connection' })
   await expect(dialog).toBeVisible()
   return within(dialog)
