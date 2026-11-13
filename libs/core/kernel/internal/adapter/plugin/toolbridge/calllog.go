@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"slices"
 	"time"
-	"unicode/utf8"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
-// maxLoggedValue is the length in bytes each argument value is cut to in the line of a call. Arguments that
-// are not a JSON object are written whole as UnparsedArguments, cut the same way.
-const maxLoggedValue = 200
+// maxLoggedArguments is how many argument names the line of a call lists, in name order. The values are never
+// written: an argument can hold the text of a note.
+const maxLoggedArguments = 20
 
 // GetErrorOutput returns the error output of the process, which the catalog of the plugin host writes its
 // calls to.
@@ -29,23 +29,25 @@ type callRecord struct {
 	duration time.Duration
 }
 
-// callLine is the JSON line of one tool call. Duration is in nanoseconds.
+// callLine is the JSON line of one tool call. Duration is in nanoseconds. ArgumentBytes is the size of the
+// JSON value of each argument; UnparsedArgumentBytes is the size of arguments that are not a JSON object.
 type callLine struct {
-	Time                  time.Time         `json:"time"`
-	Message               string            `json:"msg"`
-	Caller                string            `json:"caller"`
-	Tool                  string            `json:"tool"`
-	Plugin                string            `json:"plugin"`
-	Connection            string            `json:"connection"`
-	Vault                 string            `json:"vault"`
-	Arguments             map[string]string `json:"arguments,omitempty"`
-	UnparsedArguments     string            `json:"unparsedArguments,omitempty"`
-	Duration              time.Duration     `json:"duration"`
-	ToolError             string            `json:"toolError,omitempty"`
-	ResultTextBytes       *int              `json:"resultTextBytes,omitempty"`
-	ResultStructuredBytes *int              `json:"resultStructuredBytes,omitempty"`
-	ResultIsError         *bool             `json:"resultIsError,omitempty"`
-	Error                 string            `json:"error,omitempty"`
+	Time                  time.Time      `json:"time"`
+	Message               string         `json:"msg"`
+	Caller                string         `json:"caller"`
+	Tool                  string         `json:"tool"`
+	Plugin                string         `json:"plugin"`
+	Connection            string         `json:"connection"`
+	Vault                 string         `json:"vault"`
+	ArgumentBytes         map[string]int `json:"argumentBytes,omitempty"`
+	ArgumentsLeftOut      int            `json:"argumentsLeftOut,omitempty"`
+	UnparsedArgumentBytes *int           `json:"unparsedArgumentBytes,omitempty"`
+	Duration              time.Duration  `json:"duration"`
+	ToolError             string         `json:"toolError,omitempty"`
+	ResultTextBytes       *int           `json:"resultTextBytes,omitempty"`
+	ResultStructuredBytes *int           `json:"resultStructuredBytes,omitempty"`
+	ResultIsError         *bool          `json:"resultIsError,omitempty"`
+	Error                 string         `json:"error,omitempty"`
 }
 
 func writeCall(out io.Writer, record callRecord) {
@@ -54,7 +56,7 @@ func writeCall(out io.Writer, record callRecord) {
 		Plugin: record.pluginID, Connection: record.call.GetConnectionId(), Vault: record.call.GetVaultId(),
 		Duration: record.duration,
 	}
-	line.Arguments, line.UnparsedArguments = getArguments(record.call.GetArguments())
+	setArguments(&line, record.call.GetArguments())
 	if code := record.response.GetError(); code != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED {
 		line.ToolError = code.String()
 	}
@@ -74,25 +76,27 @@ func writeCall(out io.Writer, record callRecord) {
 	}
 }
 
-func getArguments(arguments []byte) (map[string]string, string) {
+func setArguments(line *callLine, arguments []byte) {
+	if len(arguments) == 0 {
+		return
+	}
 	var values map[string]json.RawMessage
 	if err := json.Unmarshal(arguments, &values); err != nil {
-		return nil, cutValue(string(arguments))
+		size := len(arguments)
+		line.UnparsedArgumentBytes = &size
+		return
 	}
-	cut := make(map[string]string, len(values))
-	for name, value := range values {
-		cut[name] = cutValue(string(value))
+	names := make([]string, 0, len(values))
+	for name := range values {
+		names = append(names, name)
 	}
-	return cut, ""
-}
-
-func cutValue(value string) string {
-	if len(value) <= maxLoggedValue {
-		return value
+	slices.Sort(names)
+	if len(names) > maxLoggedArguments {
+		line.ArgumentsLeftOut = len(names) - maxLoggedArguments
+		names = names[:maxLoggedArguments]
 	}
-	cut := maxLoggedValue
-	for cut > 0 && !utf8.RuneStart(value[cut]) {
-		cut--
+	line.ArgumentBytes = make(map[string]int, len(names))
+	for _, name := range names {
+		line.ArgumentBytes[name] = len(values[name])
 	}
-	return value[:cut] + "…"
 }

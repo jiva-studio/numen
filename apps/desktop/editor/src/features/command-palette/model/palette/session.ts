@@ -45,23 +45,26 @@ interface PaletteSearchDeps {
   readonly found: Ref<readonly NameMatch[]>
   readonly isWorking: Ref<boolean>
   readonly failureMessage: Ref<string>
+  readonly asking: NamesAsking
 }
 
 function createNamesSearch(deps: PaletteSearchDeps) {
   return (query: string) =>
     deps.debounced.ask(query, {
       blank: () => {
+        deps.asking.abort()
         deps.found.value = []
         deps.isWorking.value = false
         deps.failureMessage.value = ''
       },
       pending: () => {
+        deps.asking.abort()
         deps.isWorking.value = true
         deps.failureMessage.value = ''
       },
       run: async (trimmed, mine) => {
         try {
-          const names = await deps.core.names(trimmed, GROUP_RESULT_LIMIT)
+          const names = await deps.core.names(trimmed, GROUP_RESULT_LIMIT, deps.asking.start())
           if (!mine.isCurrent) return
           deps.found.value = names
         } catch {
@@ -105,6 +108,24 @@ function createVaultsLoader(deps: PaletteVaultsDeps) {
   }
 }
 
+/** The name question of the current query, which a newer query or closing the palette aborts. */
+interface NamesAsking {
+  start(): AbortSignal
+  abort(): void
+}
+
+function createNamesAsking(): NamesAsking {
+  let asking = new AbortController()
+  return {
+    start: () => {
+      asking.abort()
+      asking = new AbortController()
+      return asking.signal
+    },
+    abort: () => asking.abort(),
+  }
+}
+
 function createPaletteState(wait?: Wait) {
   const open = ref(false)
   const inputValue = ref('')
@@ -115,9 +136,11 @@ function createPaletteState(wait?: Wait) {
   const failureMessage = ref(BLANK.failureMessage)
   const request = latest()
   const debounced = useDebouncedSearch({ guard: request, ...(wait ? { wait } : {}) })
+  const asking = createNamesAsking()
 
   const drop = () => {
     request.cancel()
+    asking.abort()
     found.value = BLANK.found
     recognized.value = BLANK.known
     showing.value = BLANK.showing
@@ -131,6 +154,7 @@ function createPaletteState(wait?: Wait) {
     results: { found, known: recognized, showing, isWorking, failureMessage },
     requests: request,
     debounced,
+    asking,
     drop,
   }
 }
@@ -223,6 +247,7 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     found: state.results.found,
     isWorking: state.results.isWorking,
     failureMessage: state.results.failureMessage,
+    asking: state.asking,
   })
 
   return {

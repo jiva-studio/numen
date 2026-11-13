@@ -25,6 +25,8 @@ withDefaults(defineProps<AgentProps>(), {
   openSettingsLabel: 'Open settings',
   pendingAgentIds: () => [],
   loadingLabel: 'Loading…',
+  failedAgentIds: () => [],
+  failedLabel: 'Could not list models',
 })
 
 const text = defineModel<string>({ default: '' })
@@ -117,6 +119,8 @@ function onSelectReasoning(id: string) {
       :open-settings-label="openSettingsLabel"
       :pending-agent-ids="pendingAgentIds"
       :loading-label="loadingLabel"
+      :failed-agent-ids="failedAgentIds"
+      :failed-label="failedLabel"
       @submit="onSubmit"
       @stop="emit('stop')"
       @select-model="onSelectModel"

@@ -97,6 +97,11 @@ func (s *State) ReportWordsAlone(err error) {
 	s.Window.AddTask(work.Task{ID: work.WordsAlone, Title: "Search by words only", Error: err.Error()})
 }
 
+// ClearWordsAlone removes the words-only task once a search source answers again.
+func (s *State) ClearWordsAlone() {
+	s.Window.RemoveTask(work.WordsAlone)
+}
+
 // ReportFloorError records a similarity floor that is stored and cannot be read.
 func (s *State) ReportFloorError(err error) {
 	s.Window.AddTask(work.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})

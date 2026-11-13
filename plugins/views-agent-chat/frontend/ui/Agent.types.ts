@@ -20,4 +20,6 @@ export interface AgentProps {
   openSettingsLabel?: string
   pendingAgentIds?: readonly string[]
   loadingLabel?: string
+  failedAgentIds?: readonly string[]
+  failedLabel?: string
 }
