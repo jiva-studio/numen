@@ -69,7 +69,7 @@ describe('choosing a name', () => {
   it('emits nothing while the names sit back, even at an opacity of nothing', async () => {
     const names = mountNames({ node: null, names: null }, { restingOpacity: 0 })
 
-    await names.get('.plex__name').trigger('click')
+    await names.get('.plex__name').trigger('click', { detail: 1 })
 
     expect(names.emitted('choose')).toBeUndefined()
   })

@@ -23,12 +23,14 @@ const props = withDefaults(
       | 'pending'
       | 'dropName'
       | 'curvature'
+      | 'showPills'
     >
   >(),
   {
     relationName: getRelationName,
     pending: null,
     dropName: getRelationName,
+    showPills: true,
   },
 )
 
@@ -36,12 +38,18 @@ const field = useFieldSize()
 
 const fieldSize = computed(() => props.ghostSize ?? field.value)
 
+const handle = computed(() => ({
+  hasPill: props.showPills,
+  viewportWidth: props.viewport.width,
+}))
+
 const thread = computed(() =>
   getReachThread(
     props.frame,
     props.gesture?.from.value ?? null,
     props.gesture?.at.value ?? null,
     props.curvature,
+    handle.value,
   ),
 )
 
@@ -51,6 +59,7 @@ const pendingThread = computed(() =>
     position: props.pending?.at ?? null,
     viewport: props.viewport,
     curvature: props.curvature,
+    handle: handle.value,
   }),
 )
 

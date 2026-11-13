@@ -72,6 +72,7 @@ export interface PlexNodeProps {
   behavior?: PlexBehavior
   showPills?: boolean
   restHeight?: number
+  viewportWidth?: number | undefined
   attention?: Attention
 }
 
@@ -93,10 +94,7 @@ export interface PlexNodeEvents {
    * press has no pointer position, so the center of the box is used.
    */
   (event: 'menu', point: Position, trigger: MenuTrigger): void
-  /**
-   * The node gained or lost focus. The expanded box is drawn last, and only
-   * only the whole drawing determines which box that is.
-   */
+  /** The box began to open, or has closed and gone from the drawing. */
   (event: 'settle', resting: boolean): void
   /** The pointer or keyboard focus came onto the node, or left it. */
   (event: 'attend', isAttended: boolean): void

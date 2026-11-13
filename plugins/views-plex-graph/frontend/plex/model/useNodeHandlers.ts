@@ -1,5 +1,6 @@
 /** The listeners of each drawn note, made once per note, so a note keeps the same functions while it is drawn and is not redrawn for them. */
 import type { MenuTrigger } from '@numen/ui'
+import { watch } from 'vue'
 import type { Position } from '../lib/node'
 import type { PlexDestination } from '../../types'
 
@@ -26,8 +27,19 @@ export interface NodeListeners {
   readonly attend: (isAttended: boolean) => void
 }
 
-export function useNodeHandlers(reports: NodeReports): (id: string) => NodeListeners {
+/** `ids` are the notes that are drawn: the listeners of any other note are dropped. */
+export function useNodeHandlers(
+  reports: NodeReports,
+  ids?: () => readonly string[],
+): (id: string) => NodeListeners {
   const made = new Map<string, NodeListeners>()
+
+  if (ids) {
+    watch(ids, (drawn) => {
+      const alive = new Set(drawn)
+      for (const id of made.keys()) if (!alive.has(id)) made.delete(id)
+    })
+  }
 
   return (id) => {
     let listeners = made.get(id)

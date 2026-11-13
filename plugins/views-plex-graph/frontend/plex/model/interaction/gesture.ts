@@ -56,6 +56,7 @@ interface GestureListenerHandlers {
   readonly onMove: (event: PointerEvent) => void
   readonly onFinish: () => void
   readonly onCancel: () => void
+  readonly onContextMenu: (event: MouseEvent) => void
 }
 
 function releasePointer(element: SVGSVGElement | null, pointerId: number | null): boolean {
@@ -94,17 +95,20 @@ function listenGesture(pointerId: number, handlers: GestureListenerHandlers): ()
   const onKey = (key: KeyboardEvent) => {
     if (key.key === 'Escape') handlers.onCancel()
   }
+  const onContextMenu = (event: MouseEvent) => handlers.onContextMenu(event)
 
   win.addEventListener('pointermove', onMove)
   win.addEventListener('pointerup', onUp)
   win.addEventListener('pointercancel', onLost)
   win.addEventListener('keydown', onKey)
+  win.addEventListener('contextmenu', onContextMenu)
 
   return () => {
     win.removeEventListener('pointermove', onMove)
     win.removeEventListener('pointerup', onUp)
     win.removeEventListener('pointercancel', onLost)
     win.removeEventListener('keydown', onKey)
+    win.removeEventListener('contextmenu', onContextMenu)
   }
 }
 
@@ -163,6 +167,7 @@ export function usePlexGesture(deps: PlexGestureDeps): Gesture & GestureHandlers
     const began = element ? getPosition(element, event) : null
     if (!element || !began) return
 
+    if (from.value !== null) stop()
     surface.value = element
     from.value = source
     start.value = began
@@ -181,6 +186,10 @@ export function usePlexGesture(deps: PlexGestureDeps): Gesture & GestureHandlers
         if (resolved) deps.commit(resolved)
       },
       onCancel: stop,
+      onContextMenu: (e) => {
+        e.preventDefault()
+        stop()
+      },
     })
   }
 

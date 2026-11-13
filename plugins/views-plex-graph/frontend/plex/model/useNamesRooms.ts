@@ -5,6 +5,9 @@ import { NO_ROOM, type NodeRoom, type PlexOptions } from '../lib/arrange'
 import type { PlexMetrics } from './sizing/measure'
 import type { PlexGraph, PlexNames, PlexNode } from '../../types'
 
+/** How many changes of the graph back a node that left it still has its room, which covers a move started before the last one ends. */
+const FADING_CHANGES = 4
+
 /** What the rooms of the names are made from: the graph, and the names to show with it. */
 export interface NamesRoomsProps {
   readonly graph: PlexGraph
@@ -14,7 +17,7 @@ export interface NamesRoomsProps {
 
 /**
  * The room of the names of each node: `getRoomOf` answers for a node with names and nothing for one without.
- * A node that has left the graph keeps the room it had until it is gone from the frame, so its names leave with its pill.
+ * A node that has left the graph keeps the room it had through the next changes of the graph, so its names leave with its pill.
  * `getNodeRoom` is what the arrangement is given, and is absent while no node has names.
  */
 export function useNamesRooms(
@@ -42,9 +45,9 @@ export function useNamesRooms(
     return found
   })
 
-  let leaving: ReadonlyMap<string, NamesRoom> = new Map()
+  let leaving: readonly ReadonlyMap<string, NamesRoom>[] = []
   watch(rooms, (_, previous) => {
-    leaving = previous
+    leaving = [previous, ...leaving].slice(0, FADING_CHANGES)
   })
   const drawn = computed(() => new Set(props.graph.nodes.map((node) => node.id)))
 
@@ -54,7 +57,8 @@ export function useNamesRooms(
   })
 
   const getRoomOf = (id: string) =>
-    rooms.value.get(id) ?? (drawn.value.has(id) ? undefined : leaving.get(id))
+    rooms.value.get(id) ??
+    (drawn.value.has(id) ? undefined : leaving.find((one) => one.has(id))?.get(id))
 
   return { getRoomOf, getNodeRoom }
 }
