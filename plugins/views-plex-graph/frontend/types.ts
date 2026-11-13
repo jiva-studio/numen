@@ -341,6 +341,6 @@ export interface PlexName {
 
 /** The names set over a related note, and those set under it. */
 export interface PlexNames {
-  readonly above: readonly PlexName[]
-  readonly below: readonly PlexName[]
+  readonly above: PlexName[]
+  readonly below: PlexName[]
 }

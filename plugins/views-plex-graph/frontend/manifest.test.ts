@@ -222,10 +222,12 @@ describe('the look settings of the plex', () => {
     }
   })
 
-  it('declares the look after the two heading settings, which keep their keys', () => {
+  it('declares the look after the heading and names settings, which keep their keys', () => {
     expect(settings.map((one) => one.key)).toStrictEqual([
       'nestHeadings',
       'headingLimit',
+      'showNames',
+      'namesPerNote',
       'showPills',
       ...NUMBERS.map(([key]) => key),
       'references',
