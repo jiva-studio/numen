@@ -94,8 +94,8 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   motion: { arriveAfter: a.arriveAfter, leaveBefore: a.leaveBefore },
   direction:
     a.orientation === 'parents below'
-      ? { parent: 'down', child: 'up', jump: 'left', sibling: 'right' }
-      : { parent: 'up', child: 'down', jump: 'left', sibling: 'right' },
+      ? { parent: 'down', child: 'up', jump: 'left', reference: 'left', sibling: 'right' }
+      : { parent: 'up', child: 'down', jump: 'left', reference: 'left', sibling: 'right' },
 })
 
 const createOptions = (a: Knobs, type: number): PlexOptionsInput =>

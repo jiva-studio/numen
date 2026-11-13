@@ -91,7 +91,11 @@ function admitReference(reference: RelatedNote, mode: ReferenceMode): boolean {
 }
 
 /** The line to a reference, with its head at the end the link points to: the note, the focus, or both. */
-function createReferenceEdge(from: string, to: string, direction: LinkDirection | undefined): PlexEdge {
+function createReferenceEdge(
+  from: string,
+  to: string,
+  direction: LinkDirection | undefined,
+): PlexEdge {
   const arrows: Record<LinkDirection, readonly EdgeArrow[]> = {
     outgoing: ['to'],
     incoming: ['from'],

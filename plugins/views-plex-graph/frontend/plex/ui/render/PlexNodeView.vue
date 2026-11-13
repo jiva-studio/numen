@@ -191,7 +191,11 @@ function getMiddle(): Position | null {
 }
 
 .plex__node--reference:hover :deep(.plex__box) {
-  fill: color-mix(in oklab, color-mix(in oklab, var(--numen-raised), var(--relation-hue) 12%), var(--numen-ink) 8%);
+  fill: color-mix(
+    in oklab,
+    color-mix(in oklab, var(--numen-raised), var(--relation-hue) 12%),
+    var(--numen-ink) 8%
+  );
 }
 
 .plex__node--focus {

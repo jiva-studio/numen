@@ -192,11 +192,11 @@ func (h *Outline) ListRelatedNotes(
 	}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.RelatedNote{
-			Note:     convertNoteToWire(related.NoteRef),
+			Note:      convertNoteToWire(related.NoteRef),
 			Relation:  convertRelationToWire(related.Relation),
 			Direction: convertDirectionToWire(related.Direction),
-			Type:     convertNoteTypeToWire(types[related.Path]),
-			TabKind:  tabKinds[related.Path],
+			Type:      convertNoteTypeToWire(types[related.Path]),
+			TabKind:   tabKinds[related.Path],
 		})
 	}
 	for _, connection := range found.Connections {
