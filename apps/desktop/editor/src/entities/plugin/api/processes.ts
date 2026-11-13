@@ -3,7 +3,7 @@
  */
 import { createProcessClient } from '@numen/core-client'
 import type { ProcessHost } from '@numen/plugin-loader'
-import { createFollower } from '@numen/ui'
+import { createFollower, runInBackground } from '@numen/ui'
 import { pluginService } from '@/shared/api/clients'
 
 const processes = createProcessClient(pluginService)
@@ -22,7 +22,11 @@ export const processHost: ProcessHost = {
       setLost: () => undefined,
       wait,
     })
-    void follows(() => processes.watchProcesses(listening.signal), handler)
+    // A follower catches every fault of the stream it reads, so nothing reaches the error handler.
+    runInBackground(
+      follows(() => processes.watchProcesses(listening.signal), handler),
+      () => undefined,
+    )
     return { dispose: () => listening.abort() }
   },
 }
