@@ -56,7 +56,9 @@ describe('refill', () => {
       }
       // A set is held while its weight is under a limit, and a relation also has a ceiling of its own.
       const limit = 10 + Math.floor(random() * 50)
-      const ceilings = Object.fromEntries(RELATION_NAMES.map((name) => [name, Math.floor(random() * 9)]))
+      const ceilings = Object.fromEntries(
+        RELATION_NAMES.map((name) => [name, Math.floor(random() * 9)]),
+      )
       const createHeld = (probes: { count: number }) => (set: NodesByRelation) => {
         probes.count++
         let weight = 0

@@ -19,7 +19,8 @@ const fade = (frame: PlexFrame, id: string, opacity: number): PlexFrame => ({
   ...frame,
   nodes: frame.nodes.map((node) => (node.id === id ? { ...node, opacity } : node)),
 })
-const opacityOf = (frame: PlexFrame, id: string) => frame.nodes.find((node) => node.id === id)!.opacity
+const opacityOf = (frame: PlexFrame, id: string) =>
+  frame.nodes.find((node) => node.id === id)!.opacity
 
 describe('a movement that starts from a frame in the middle of another', () => {
   it('moves a half-faded note towards full opacity from where it is', () => {

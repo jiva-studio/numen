@@ -89,7 +89,10 @@ describe('a final layout that leaves the window', () => {
   })
 
   it('leaves a layout inside the window as it is', () => {
-    const frame = arrangePlex(graph, { options: { viewport: WINDOW }, placement: createRows(() => false) })
+    const frame = arrangePlex(graph, {
+      options: { viewport: WINDOW },
+      placement: createRows(() => false),
+    })
 
     expect(listNotes(frame)).toHaveLength(3)
     expect(frame.overflow).toStrictEqual({})
@@ -98,7 +101,9 @@ describe('a final layout that leaves the window', () => {
 
 describe('a measure that is not a width', () => {
   it.each([0, -20])('gives a box the least width: %s', (measured) => {
-    const frame = arrangePlex(graph, { measure: (node) => (node.id === 'child-1' ? measured : 120) })
+    const frame = arrangePlex(graph, {
+      measure: (node) => (node.id === 'child-1' ? measured : 120),
+    })
 
     expect(frame.nodes.find((node) => node.id === 'child-1')!.width).toBe(baseline.minWidth)
   })
@@ -116,7 +121,9 @@ describe('a measure that is not a width', () => {
 
       expect(widthOf(frame, 'child-1')).toBe(baseline.nodeSize.width)
       for (const node of frame.nodes) {
-        expect(Number.isFinite(node.x) && Number.isFinite(node.y) && Number.isFinite(node.width)).toBe(true)
+        expect(
+          Number.isFinite(node.x) && Number.isFinite(node.y) && Number.isFinite(node.width),
+        ).toBe(true)
       }
       expect(Object.values(frame.extent).every(Number.isFinite)).toBe(true)
     },
