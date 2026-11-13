@@ -89,3 +89,16 @@ export function useEdgeLines(props: EdgeLinesProps, uid: string, attention: Atte
     },
   }
 }
+
+/** The lines of one layer of the drawing: the ones raised, and the ones at rest. */
+export function useLayerLines(
+  source: () => {
+    readonly lines: readonly EdgeLine[]
+    readonly isRaised: (line: EdgeLine) => boolean
+  },
+) {
+  return {
+    raised: computed(() => source().lines.filter(source().isRaised)),
+    resting: computed(() => source().lines.filter((line) => !source().isRaised(line))),
+  }
+}

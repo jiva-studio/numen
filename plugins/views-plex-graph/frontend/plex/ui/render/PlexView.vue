@@ -13,6 +13,7 @@ import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useAttention } from '../../model/useAttention'
 import { useNodeHandlers } from '../../model/useNodeHandlers'
 import { useNodeViews } from '../../model/useNodeViews'
+import { useSettledNodes } from '../../model/useSettledNodes'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
@@ -77,14 +78,11 @@ const renderedNodes = computed(() => {
   return [...props.frame.nodes.filter((each) => each.id !== node.id), node]
 })
 
-/** What each note is settled to: its width and its headings, kept as they are until the frame or the sizes change. */
-const wides = computed(
-  () => new Map(props.frame.nodes.map((node) => [node.id, props.widen?.(node) ?? null])),
-)
-
-const hungs = computed(
-  () => new Map(props.frame.nodes.map((node) => [node.id, props.hung?.(node) ?? null])),
-)
+const { wides, hungs } = useSettledNodes(() => ({
+  nodes: props.frame.nodes,
+  widen: props.widen,
+  hung: props.hung,
+}))
 
 /** Stays the same map while no role changes, so a pointer moving through a gesture does not redraw the notes. */
 const roles = computed<Map<string, GestureRole>>((previous) => {

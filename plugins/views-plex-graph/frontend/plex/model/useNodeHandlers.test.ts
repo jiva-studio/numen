@@ -15,7 +15,7 @@ const createReports = () =>
   }) satisfies NodeReports
 
 describe('the listeners of a note', () => {
-  it('are the same functions each time they are asked for', () => {
+  it('stay the same functions for one note, and differ between notes', () => {
     const getListeners = useNodeHandlers(createReports())
 
     expect(getListeners('a')).toBe(getListeners('a'))

@@ -4,10 +4,9 @@
  * with their titles. It reads which lines are raised, so a change of attention redraws this layer
  * and not the drawing around it.
  */
-import { computed } from 'vue'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
-import type { EdgeLine } from './lines'
+import { useLayerLines, type EdgeLine } from './lines'
 
 const props = defineProps<{
   lines: readonly EdgeLine[]
@@ -16,8 +15,7 @@ const props = defineProps<{
   showEdgeLabels: boolean
 }>()
 
-const raised = computed(() => props.lines.filter(props.isRaised))
-const resting = computed(() => props.lines.filter((line) => !props.isRaised(line)))
+const { raised, resting } = useLayerLines(() => props)
 </script>
 
 <template>

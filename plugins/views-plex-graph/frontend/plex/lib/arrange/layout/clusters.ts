@@ -63,8 +63,8 @@ interface MiddleRequest {
   readonly cell: { readonly width: number; readonly height: number }
 }
 
-/** The middle of a group sits as far out from its start as half the patch is deep. */
 function getClusterMiddle(start: Vector, direction: Vector, request: MiddleRequest): Vector {
+  // The middle of a group sits as far out from its start as half the patch is deep.
   const { size, cell } = request
   const depth =
     Math.max(0, (Math.sqrt(size) - 1) / 2) *
