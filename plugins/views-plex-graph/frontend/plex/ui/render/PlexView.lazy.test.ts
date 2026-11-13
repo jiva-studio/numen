@@ -39,8 +39,8 @@ const play = async (view: ReturnType<typeof mountView>['view']) => {
   }
 }
 
-describe('the boxes and headings asked for during a move', () => {
-  it('are asked of no note while none is attended to', async () => {
+describe('the sizes requested during a move', () => {
+  it('are requested of no note while none is hovered', async () => {
     const { view, widen, hung } = mountView()
 
     await play(view)
@@ -49,7 +49,7 @@ describe('the boxes and headings asked for during a move', () => {
     expect(hung).not.toHaveBeenCalled()
   })
 
-  it('are asked of the attended note alone, at most once for each frame', async () => {
+  it('are requested of the hovered note alone, at most once for each frame', async () => {
     const { view, widen, hung } = mountView()
     const attended = from.nodes.find((node) => node.relation === 'child')!
     await view.get(`[aria-label^="${attended.title}"]`).trigger('pointerenter')

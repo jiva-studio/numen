@@ -17,7 +17,7 @@ import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useOpenBox } from '../../model/sizing/expansion'
 import { useLift } from '../../model/useLift'
 import { useNodeState } from '../../model/useNodeState'
-import { createNodeEvents } from '../../model/interaction/nodeEvents'
+import { getNodeEvents } from '../../model/interaction/nodeEvents'
 import { useNodePress } from '../../model/interaction/press'
 import { useHeldSizes } from '../../model/useHeldSizes'
 import { createAriaLabel, type Position } from '../../lib/node'
@@ -100,7 +100,7 @@ const face = computed(() => ({
   handle: handle.value,
 }))
 
-const events = createNodeEvents(press, hoverFocus)
+const events = getNodeEvents(press, hoverFocus)
 
 /* --------------------------------- Hooks ---------------------------------- */
 // A box that has begun to open is already over its neighbors.

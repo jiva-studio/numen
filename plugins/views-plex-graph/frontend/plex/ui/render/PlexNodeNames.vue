@@ -34,7 +34,7 @@ const isForward = computed(
 
 const placed = computed(() => placeNames(props.room, props.node))
 
-/** The name the pointer is on, which is none once that name is gone. */
+/** The name the pointer is on, null after that name is removed. */
 const overId = ref<string | null>(null)
 
 const opacity = computed(() => (isForward.value ? props.focusedOpacity : props.restingOpacity))
@@ -48,8 +48,8 @@ watch(placed, (now) => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-// A click with no count and no pointer over the name comes from assistive technology, which has no pointer to bring the names forward.
 function onChoose(id: string, event: MouseEvent) {
+  // A click with no count and no pointer over the name comes from assistive technology, which has no pointer to bring the names forward.
   if (isForward.value || (event.detail === 0 && overId.value === null)) emit('choose', id)
 }
 

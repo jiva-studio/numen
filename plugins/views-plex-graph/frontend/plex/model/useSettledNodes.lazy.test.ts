@@ -8,7 +8,7 @@ import { build } from '../fixtures/build'
 const frame = arrangePlex(build('Hub', { child: 3 }))
 
 describe('the lazily settled notes of a frame', () => {
-  it('ask the sizes for no note until it is asked for', () => {
+  it('compute nothing until a note is requested', () => {
     const widen = vi.fn(() => null)
     const hung = vi.fn(() => null)
     useSettledNodes(() => ({ nodes: frame.nodes, widen, hung }))
@@ -17,7 +17,7 @@ describe('the lazily settled notes of a frame', () => {
     expect(hung).not.toHaveBeenCalled()
   })
 
-  it('ask once for a note and a frame, and again when the frame changes', async () => {
+  it('compute once for a note and a frame, and again when the frame changes', async () => {
     const hung = vi.fn(() => null)
     const source = reactive({ nodes: frame.nodes, hung })
     const { getHung } = useSettledNodes(() => source)

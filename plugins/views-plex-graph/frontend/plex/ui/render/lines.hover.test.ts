@@ -26,7 +26,7 @@ describe('the line the pointer is on', () => {
     expect(lines.isRaised(lines.lines.value[0]!)).toBe(true)
   })
 
-  it('is let go when the frame no longer has the line', async () => {
+  it('is lowered when the frame no longer has the line', async () => {
     const { props, lines } = setUp()
     const gone = lines.lines.value.at(-1)!
     lines.setOver(gone.pair)

@@ -67,7 +67,7 @@ describe('a context menu while a gesture is under way', () => {
 })
 
 describe('a second press while a gesture is under way', () => {
-  it('lets go of the listeners of the first pointer', () => {
+  it('removes the listeners of the first pointer', () => {
     const add = vi.spyOn(window, 'addEventListener')
     const remove = vi.spyOn(window, 'removeEventListener')
     const gesture = setUp()

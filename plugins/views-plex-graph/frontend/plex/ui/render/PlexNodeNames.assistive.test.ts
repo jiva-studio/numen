@@ -33,8 +33,8 @@ afterEach(() => {
   document.body.replaceChildren()
 })
 
-/** A click as the browser makes it: a mouse click counts one, and one made by assistive technology counts none. */
 const click = (names: ReturnType<typeof mountNames>, detail: number) =>
+  // A mouse click counts one; a click made by assistive technology counts none.
   names.get('.plex__name').element.dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
 
 describe('a name clicked while the names sit back', () => {
@@ -65,7 +65,7 @@ describe('a name clicked while the names sit back', () => {
 })
 
 describe('a name that is removed while the pointer is on it', () => {
-  it('lets go of the attention, since the pointer leave never comes', async () => {
+  it('emits attend false when the hovered name is removed', async () => {
     const names = mountNames(getRoom('Heat', 'Work'))
     await names.findAll('.plex__name')[1]!.trigger('pointerenter')
 
