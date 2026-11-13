@@ -261,6 +261,34 @@ describe('a noteGraph', () => {
     expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md' })
   })
 
+  it('asks for depth 1 unless told, and for depth 2 when told', async () => {
+    request.listRelatedNotes.mockResolvedValue({ focus: { path: 'a.md', title: 'A' } })
+
+    await listRelatedNotes('a.md')
+    expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md', depth: 1 })
+    await listRelatedNotes('a.md', 2)
+    expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md', depth: 2 })
+  })
+
+  it('names the note an item of depth 2 belongs to, and leaves it out for a note related to the focus', async () => {
+    request.listRelatedNotes.mockResolvedValue({
+      focus: { path: 'Rota.md', title: 'The rota' },
+      related: [
+        { note: { path: 'Plots.md', title: 'Plots' }, relation: NOTE_RELATION.CHILD, relatedTo: '' },
+        {
+          note: { path: 'Beans.md', title: 'Beans' },
+          relation: NOTE_RELATION.CHILD,
+          relatedTo: 'Plots.md',
+        },
+      ],
+    })
+
+    const noteGraph = await listRelatedNotes('Rota.md', 2)
+
+    expect(noteGraph.related.map((one) => one.relatedTo)).toEqual([undefined, 'Plots.md'])
+    expect('relatedTo' in noteGraph.related[0]!).toBe(false)
+  })
+
   it('is drawn around the note in focus, with each note in the relation it holds', async () => {
     request.listRelatedNotes.mockResolvedValue({
       focus: { path: 'Rota.md', title: 'The rota' },

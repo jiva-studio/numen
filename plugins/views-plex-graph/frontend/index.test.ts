@@ -6,7 +6,7 @@ import { createMockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { activate, PlexGraphView, PLEX } from './index'
 import { createHost } from './fixtures/host'
 import { settle } from './fixtures'
-import type { PlexTabState } from './types'
+import type { NoteGraph, PlexTabState } from './types'
 import { Plex } from './plex'
 
 const createContext = () => {
@@ -57,8 +57,8 @@ describe('view-plex-graph plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    // The tab kind, the vault, the command, and one for each of the eleven settings.
-    expect(ctx.plugin.subscriptions).toHaveLength(14)
+    // The tab kind, the vault, the command, and one for each of the thirteen settings.
+    expect(ctx.plugin.subscriptions).toHaveLength(16)
 
     ctx.dispose()
     expect(ctx.plugin.subscriptions).toHaveLength(0)
@@ -357,5 +357,137 @@ describe('the look of an open plex', () => {
     await nextTick()
 
     expect(state.headings.maxHeadings.value).toBe(3)
+  })
+})
+
+describe('the names of the notes related to the related notes of an open plex', () => {
+  const answerFor = (path: string, depth: number | undefined): NoteGraph => {
+    const items =
+      depth === 2 && path === 'One.md'
+        ? [
+            { path: 'Aunt.md', title: 'Aunt', relation: 'parent' as const, relatedTo: 'Kid.md' },
+            { path: 'Leaf1.md', title: 'Leaf1', relation: 'child' as const, relatedTo: 'Kid.md' },
+            { path: 'Leaf2.md', title: 'Leaf2', relation: 'child' as const, relatedTo: 'Kid.md' },
+            { path: 'Leaf3.md', title: 'Leaf3', relation: 'child' as const, relatedTo: 'Kid.md' },
+          ]
+        : []
+    return {
+      focus: { path, title: path.replace(/\.md$/, '') },
+      focusType: 'note',
+      related:
+        path === 'One.md'
+          ? [
+              { path: 'Kid.md', title: 'Kid', relation: 'child', type: 'note' },
+              ...items.map((one) => ({ ...one, type: 'note' })),
+            ]
+          : [],
+      connections:
+        path === 'One.md'
+          ? [
+              {
+                first: 'One.md',
+                second: 'Kid.md',
+                role: 'child',
+                type: '',
+                firstSide: null,
+                secondSide: null,
+              },
+            ]
+          : [],
+    }
+  }
+
+  const openPlex = async (initialSettings: Record<string, JsonValue> = {}) => {
+    const { host } = createHost({ opening: 'One.md' })
+    const asked: [string, number | undefined][] = []
+    const notes = {
+      ...host.notes,
+      listRelatedNotes: async (path: string, depth?: 1 | 2) => {
+        asked.push([path, depth])
+        return answerFor(path, depth)
+      },
+    }
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.views.plex.graph',
+      workspace: host.workspace,
+      notes,
+      relations: host.relations,
+      initialSettings,
+    })
+    activate(ctx)
+    const state = ctx.getRegisteredTabKinds()[0]!.open!('One.md', 'plex:1') as PlexTabState
+    await settle()
+    const tab = mount(PlexGraphView, { props: { state }, attachTo: document.body })
+    await settle()
+    await nextTick()
+    const getPlex = () => tab.findComponent(Plex)
+    const getKid = () => state.canvas.picture.value!.nodes.find((node) => node.title === 'Kid')!.id
+    const getNames = () => {
+      const names = getPlex().props('names') as
+        | ((id: string) => { above: { id: string; title: string }[]; below: { id: string; title: string }[] })
+        | undefined
+      const found = names?.(getKid())
+      return {
+        above: found?.above.map((one) => one.title) ?? [],
+        below: found?.below.map((one) => one.title) ?? [],
+      }
+    }
+    return { ctx, state, tab, asked, getPlex, getKid, getNames }
+  }
+
+  afterEach(() => {
+    document.body.replaceChildren()
+  })
+
+  it('asks for the notes related to related notes where nothing is set, and draws no node for them', async () => {
+    const { asked, state, getPlex, getNames } = await openPlex()
+
+    expect(asked.at(-1)).toEqual(['One.md', 2])
+    expect(getPlex().props('showNames')).toBe(true)
+    expect(getNames()).toEqual({ above: ['Aunt'], below: ['Leaf1', 'Leaf2', 'Leaf3'] })
+    expect(state.canvas.picture.value!.nodes.map((node) => node.title)).toEqual(['One', 'Kid'])
+  })
+
+  it('asks again for depth 1 and loses the names when the setting is turned off, and gets them back when it is turned on', async () => {
+    const { ctx, asked, getPlex, getNames } = await openPlex()
+
+    ctx.setSetting('showNames', false)
+    await settle()
+    expect(asked.at(-1)).toEqual(['One.md', 1])
+    expect(getPlex().props('showNames')).toBe(false)
+    expect(getNames()).toEqual({ above: [], below: [] })
+
+    ctx.setSetting('showNames', true)
+    await settle()
+    expect(asked.at(-1)).toEqual(['One.md', 2])
+    expect(getNames()).toEqual({ above: ['Aunt'], below: ['Leaf1', 'Leaf2', 'Leaf3'] })
+  })
+
+  it('asks for depth 1 from the start when the setting is off', async () => {
+    const { asked, getNames } = await openPlex({ showNames: false })
+
+    expect(asked.every(([, depth]) => depth === 1)).toBe(true)
+    expect(getNames()).toEqual({ above: [], below: [] })
+  })
+
+  it('cuts the names to Names per note without asking again', async () => {
+    const { ctx, asked, getNames } = await openPlex()
+    const before = asked.length
+
+    ctx.setSetting('namesPerNote', 2)
+    await settle()
+
+    expect(asked).toHaveLength(before)
+    expect(getNames()).toEqual({ above: ['Aunt'], below: ['Leaf1'] })
+  })
+
+  it('moves the focus to the note of a name that is chosen', async () => {
+    const { state, getPlex, getKid } = await openPlex()
+    const names = getPlex().props('names') as (id: string) => { below: { id: string }[] }
+
+    getPlex().vm.$emit('chooseName', names(getKid()).below[0]!.id)
+    await settle()
+
+    expect(state.canvas.view.here.value).toBe('Leaf1.md')
   })
 })

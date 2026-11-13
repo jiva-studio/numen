@@ -274,14 +274,18 @@ describe('the notes of the vault a plugin is handed', () => {
           properties: { media: 'plugin://org.example.links/tide.mp4' },
         })),
     }))
+    const listRelatedNotes = vi.fn((request: { path: string; depth: number }) => ({
+      focus: { path: request.path, title: 'Root' },
+      focusType: 'note',
+      related: [
+        { note: { path: 'Child.md', title: 'Child' }, relation: 2, relatedTo: '' },
+        { note: { path: 'Leaf.md', title: 'Leaf' }, relation: 2, relatedTo: 'Child.md' },
+      ],
+      connections: [],
+    }))
     answerCore({
       notes: {
-        listRelatedNotes: (request) => ({
-          focus: { path: request.path, title: 'Root' },
-          focusType: 'note',
-          related: [],
-          connections: [],
-        }),
+        listRelatedNotes,
         listHeadings,
       },
       files: { listFileKinds },
@@ -299,6 +303,7 @@ describe('the notes of the vault a plugin is handed', () => {
     }
     return {
       making,
+      listRelatedNotes,
       listHeadings,
       listFileKinds,
       search,
@@ -326,6 +331,17 @@ describe('the notes of the vault a plugin is handed', () => {
     })
     await notes.getHeadings(['Root.md'])
     expect(listHeadings.mock.calls[0]?.[0]).toMatchObject({ paths: ['Root.md'] })
+  })
+
+  it('asks the core for depth 1 unless the plugin says 2, and maps the note an item belongs to', async () => {
+    const { notes, listRelatedNotes } = createNotes()
+
+    const one = await notes.listRelatedNotes('Root.md')
+    const two = await notes.listRelatedNotes('Root.md', 2)
+
+    expect(listRelatedNotes.mock.calls.map((call) => call[0].depth)).toEqual([1, 2])
+    expect(one.related.map((item) => item.relatedTo)).toEqual([undefined, 'Child.md'])
+    expect(two.related.map((item) => item.relatedTo)).toEqual([undefined, 'Child.md'])
   })
 
   it('finds notes by name, twenty unless told how many', async () => {

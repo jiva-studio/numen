@@ -244,6 +244,16 @@ describe('a note a plugin reads and writes', () => {
     expect(notes[name as keyof VaultNotes]).toHaveBeenCalledOnce()
   })
 
+  it('hands the depth of a related-notes read to the editor service unchanged', async () => {
+    const { context, notes } = createContext(['vault:read'])
+
+    await context.vault.notes!.listRelatedNotes('Notes/Example.md', 2)
+    await context.vault.notes!.listRelatedNotes('Notes/Example.md')
+
+    expect(notes.listRelatedNotes).toHaveBeenNthCalledWith(1, 'Notes/Example.md', 2)
+    expect(notes.listRelatedNotes).toHaveBeenNthCalledWith(2, 'Notes/Example.md')
+  })
+
   it('is read with vault:read and without vault:write', async () => {
     const { context, notes } = createContext(['vault:read'])
 
