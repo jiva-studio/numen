@@ -418,7 +418,7 @@ func TestAChatWhoseServiceSendsHeadersAndThenNothingIsUnavailableAfterTheLimit(t
 	finish := make(chan error, 1)
 
 	go func() {
-		_, err := runChat(t, svc, newCall("openai-compatible", server.URL+"/v1", "", "m"), chatUser("hi"))
+		_, err := runChat(t, svc, newCall("openrouter", server.URL+"/v1", testKey, "m"), chatUser("hi"))
 		finish <- err
 	}()
 

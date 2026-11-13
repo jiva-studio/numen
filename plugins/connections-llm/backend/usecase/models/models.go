@@ -70,7 +70,7 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits, lists Lists) (*Mod
 func (m *Models) ListModels(ctx context.Context, call connection.Call, operations []string) ([]connection.Option, error) {
 	limit := m.limits.Get(call.Type, call.Fields[servicetype.FieldBaseURL], call.Options[llm.OptionModel], operation.List)
 	// The cache starts a load of its own for a list it does not keep; the once makes that load and the one
-	// this call waits for one request to the service.
+	// this call waits for one request to the service, and the list is kept before the call returns.
 	var once sync.Once
 	var list []connection.Option
 	var err error
@@ -78,11 +78,17 @@ func (m *Models) ListModels(ctx context.Context, call connection.Call, operation
 		once.Do(func() { list, err = m.gateway.ListModels(ctx, call, limit, operations) })
 		return list, err
 	}
-	kept, isKept, keptErr := m.lists.Get(ctx, getListKey(call, operations), load)
+	key := getListKey(call, operations)
+	kept, isKept, keptErr := m.lists.Get(ctx, key, load)
 	if keptErr != nil || isKept {
 		return kept, keptErr
 	}
-	return load(ctx)
+	listed, loadErr := load(ctx)
+	if loadErr != nil {
+		return nil, loadErr
+	}
+	m.lists.Put(key, listed)
+	return listed, nil
 }
 
 func getListKey(call connection.Call, operations []string) string {
