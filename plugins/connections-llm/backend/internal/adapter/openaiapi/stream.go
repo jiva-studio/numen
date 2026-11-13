@@ -87,9 +87,12 @@ func readLines(ctx context.Context, reader *bufio.Reader) <-chan streamLine {
 }
 
 func readWholeReply(reader *bufio.Reader, state *chatReader) (*llm.ChatFinish, error) {
-	answer, err := io.ReadAll(reader)
+	answer, err := io.ReadAll(io.LimitReader(reader, maxResponseBytes+1))
 	if err != nil {
 		return nil, err
+	}
+	if len(answer) > maxResponseBytes {
+		return nil, &streamError{err: connection.NewStopError(connection.ReasonUnavailable)}
 	}
 	if err := state.read(answer); err != nil {
 		return nil, err
@@ -102,7 +105,11 @@ func readWholeReply(reader *bufio.Reader, state *chatReader) (*llm.ChatFinish, e
 
 func readChatStream(ctx context.Context, reader *bufio.Reader, wait time.Duration, send func(*llm.ChatFrame) error) (*llm.ChatFinish, error) {
 	state := &chatReader{send: send, calls: nil, finish: "", reason: llm.FinishReason_FINISH_REASON_STOP, isDone: false}
-	if isWholeReply(reader) {
+	isWhole, err := awaitFirstByte(ctx, reader, wait)
+	if err != nil {
+		return nil, err
+	}
+	if isWhole {
 		return readWholeReply(reader, state)
 	}
 	lines := readLines(ctx, reader)
@@ -130,6 +137,24 @@ func awaitLine(ctx context.Context, lines <-chan streamLine, wait time.Duration)
 			return streamLine{}, ctx.Err()
 		}
 		return streamLine{}, errSilent
+	}
+}
+
+// awaitFirstByte reports whether the answer is one whole reply rather than a stream, waiting at most wait
+// for the service to send its first byte. A peek left waiting ends when the caller closes the body.
+func awaitFirstByte(ctx context.Context, reader *bufio.Reader, wait time.Duration) (bool, error) {
+	peeked := make(chan bool, 1)
+	go func() { peeked <- isWholeReply(reader) }()
+	waiting, stop := context.WithTimeout(ctx, wait)
+	defer stop()
+	select {
+	case isWhole := <-peeked:
+		return isWhole, nil
+	case <-waiting.Done():
+		if ctx.Err() != nil {
+			return false, ctx.Err()
+		}
+		return false, errSilent
 	}
 }
 
