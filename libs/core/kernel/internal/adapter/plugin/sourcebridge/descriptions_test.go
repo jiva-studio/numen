@@ -2,10 +2,12 @@ package sourcebridge_test
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sync/atomic"
 	"testing"
@@ -61,10 +63,15 @@ func startKeptSource(t *testing.T) keptSource {
 			t.Error(err)
 		}
 	})
+	// Each start takes the next of the processes started here.
+	processes := []*exec.Cmd{wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t)}
 	launches := &atomic.Int32{}
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		launches.Add(1)
-		return wiretest.StartSleepProcess(t).Process, wiretest.GetReadyOutput(port), nil
+		next := int(launches.Add(1)) - 1
+		if next >= len(processes) {
+			return nil, nil, errors.New("no process is left to start")
+		}
+		return processes[next].Process, wiretest.GetReadyOutput(port), nil
 	})
 	return keptSource{host: host, mock: mock, launches: launches}
 }

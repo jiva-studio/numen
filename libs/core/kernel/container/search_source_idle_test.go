@@ -2,10 +2,12 @@ package container_test
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sync/atomic"
 	"testing"
@@ -33,7 +35,7 @@ const meaningPluginID = "md.numen.meaning"
 // meaningPlugin describes itself as a source of eight-dimensional vectors and counts what it is asked.
 type meaningPlugin struct {
 	numenv1connect.UnimplementedSearchSourceServiceHandler
-	recipe   atomic.Value
+	recipe   atomic.Pointer[string]
 	describe atomic.Int32
 	texts    atomic.Int32
 	searches atomic.Int32
@@ -43,8 +45,7 @@ func (p *meaningPlugin) DescribeSearchSource(
 	context.Context, *connect.Request[v1.DescribeSearchSourceRequest],
 ) (*connect.Response[v1.DescribeSearchSourceResponse], error) {
 	p.describe.Add(1)
-	recipe, _ := p.recipe.Load().(string)
-	return connect.NewResponse(&v1.DescribeSearchSourceResponse{Name: "orchard-small", Recipe: recipe, Width: 8, Concurrency: 1}), nil
+	return connect.NewResponse(&v1.DescribeSearchSourceResponse{Name: "orchard-small", Recipe: *p.recipe.Load(), Width: 8, Concurrency: 1}), nil
 }
 
 func (p *meaningPlugin) IndexTexts(
@@ -87,10 +88,15 @@ func openMeaningCore(t *testing.T, pluginDir, cacheRoot string, port int) meanin
 			t.Error(err)
 		}
 	})
+	// Each start takes the next of the processes started here.
+	processes := []*exec.Cmd{wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t)}
 	launches := &atomic.Int32{}
 	roles.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		launches.Add(1)
-		return wiretest.StartSleepProcess(t).Process, wiretest.GetReadyOutput(port), nil
+		next := int(launches.Add(1)) - 1
+		if next >= len(processes) {
+			return nil, nil, errors.New("no process is left to start")
+		}
+		return processes[next].Process, wiretest.GetReadyOutput(port), nil
 	})
 	return meaningCore{
 		roles:    roles,
@@ -140,7 +146,7 @@ func (c meaningCore) awaitNoLease(t *testing.T, what string) {
 
 func serveMeaningPlugin(t *testing.T, plugin *meaningPlugin) (pluginDir string, port int) {
 	t.Helper()
-	plugin.recipe.Store("orchard|small|8")
+	plugin.setRecipe("orchard|small|8")
 	mux := http.NewServeMux()
 	wiretest.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(plugin))
@@ -236,7 +242,7 @@ func TestANewVersionOfTheSearchSourceIsAskedForItsDescription(t *testing.T) {
 	}
 
 	writeMeaningManifest(t, pluginDir, "1.1.0")
-	plugin.recipe.Store("orchard|small|8|v1.1")
+	plugin.setRecipe("orchard|small|8|v1.1")
 	next := openMeaningCore(t, pluginDir, cacheRoot, port)
 	source := next.openSource(t)
 
@@ -247,3 +253,5 @@ func TestANewVersionOfTheSearchSourceIsAskedForItsDescription(t *testing.T) {
 		t.Errorf("the source opened with recipe %q, want the one the new version gave", got)
 	}
 }
+
+func (p *meaningPlugin) setRecipe(recipe string) { p.recipe.Store(&recipe) }

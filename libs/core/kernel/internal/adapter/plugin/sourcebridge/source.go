@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -22,11 +23,10 @@ import (
 // Host provides plugin resolution and activation for the search source.
 type Host interface {
 	bridge.Activator
+	pluginport.ConfigWatcher
+	pluginport.RunningPlugins
 	ResolveCapability(capability string) (manifest.Discovered, error)
-	WatchPluginConfig(pluginID string, fn func()) (stop func())
-	GetPluginConfigRevision(pluginID string) string
 	IsPluginEnabled(pluginID string) bool
-	HasEndpoint(pluginID string) bool
 }
 
 // description is what one read of the source answers: its description, and the floor hint, which is no part
