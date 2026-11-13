@@ -80,8 +80,6 @@ func carry(ctx context.Context, c *Calls, ask asking, do attempt) ([]byte, error
 	return none, &connection.AllFailedError{Failures: failures}
 }
 
-// putPreferredFirst moves the first row of the preferred connection to the front, holding the preferred
-// options. A preferred connection that is not among the rows leaves them as they are.
 func putPreferredFirst(rows []connection.Row, preferred *modelcall.PreferredRow) []connection.Row {
 	if preferred == nil {
 		return rows

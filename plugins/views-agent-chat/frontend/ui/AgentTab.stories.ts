@@ -14,7 +14,6 @@ import { useAgentConversation, type AgentTabState } from '../model/useAgentConve
 import { createAgentList, useAgentChoice } from '../model/agents'
 import { WORDS } from '../words'
 
-/** A conversation that keeps the questions asked and answers none. */
 const createRecordedState =
   (turn: readonly Turn[]) =>
   (deps: AgentTabDeps): AgentTabState => {
@@ -139,7 +138,6 @@ const ORCHARD_OPTIONS: Readonly<Record<string, readonly string[]>> = {
   'c-orchard:reasoning': ['Low', 'High'],
 }
 
-/** A conversation over the agents of the orchard rows, listed once the tab opens. */
 const createAgentsState = (deps: AgentTabDeps): AgentTabState => {
   const { host } = createAgentConnections(
     { frames: [say('Twelve pear trees.')] },
