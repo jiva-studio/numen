@@ -25,7 +25,7 @@ export class PlexDriver {
   /** The graph of the Plex tab, which the person looks at: another tab (the settings) may be in front of it. */
   private async show(): Promise<Locator> {
     const graph = getGraph(this.scenario.page)
-    if (!(await graph.isVisible())) await this.scenario.page.getByRole('tab', { name: /^Plex/ }).first().click()
+    if (!(await graph.isVisible())) await this.scenario.page.locator('[role="tab"][data-workspace-tab^="plex"]').first().click()
     await expect(graph).toBeVisible()
     return graph
   }

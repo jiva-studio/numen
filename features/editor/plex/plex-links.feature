@@ -44,11 +44,11 @@ Feature: Plex links
         | relation | title   |
         | focus    | Quay    |
         | parent   | Harbour |
+        | sibling  | Jetty   |
       And the plex does not show the following notes:
         | relation | title      |
         | parent   | Coast      |
         | sibling  | Cape       |
-        | sibling  | Jetty      |
         | jump     | Lighthouse |
 
     Scenario: The plex opens on the note of its tab
