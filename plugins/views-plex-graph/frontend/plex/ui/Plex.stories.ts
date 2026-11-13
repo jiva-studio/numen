@@ -26,6 +26,7 @@ interface Knobs {
   graph: PlexGraph
   placement: Placement
   showEdgeLabels: boolean
+  highlightLinks: boolean
   duration: number
   expansionDelay: number
   onActivate: (id: string) => void
@@ -194,6 +195,7 @@ const createNavigableStory = (start: (args: Knobs) => PlexGraph) => (args: Knobs
         :placement="args.placement"
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
+        :highlight-links="args.highlightLinks"
         :duration="args.duration"
         :expansion-delay="args.expansionDelay"
         :dragged="args.dragged"
@@ -281,6 +283,7 @@ const meta = {
     minReach: { ...range(0, 120, 2, 'Edges'), table: { category: 'Edges' } },
     arrowClearance: { ...range(0, 40, 1, 'Edges'), table: { category: 'Edges' } },
     showEdgeLabels: { control: 'boolean', table: { category: 'Edges' } },
+    highlightLinks: { control: 'boolean', table: { category: 'Edges' } },
 
     duration: {
       control: { type: 'range', min: 0, max: 3000, step: 20 },
@@ -319,6 +322,7 @@ const meta = {
   args: {
     placement: clusters,
     showEdgeLabels: true,
+    highlightLinks: false,
     duration: 420,
     expansionDelay: EXPANSION_DELAY,
     onActivate: fn(),
@@ -939,6 +943,41 @@ export const HeadingsInside: Story = {
     await userEvent.click(getHeadings(many)[0]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus/jump-0', '0')
     await expect(args.onActivate).not.toHaveBeenCalled()
+  },
+}
+
+/** Draws the lines lifted by the highlight setting under the headings that open under a note. */
+export const HeadingsOverLiftedLines: Story = {
+  args: {
+    ...invented.args,
+    parents: 1,
+    children: 4,
+    jumps: 1,
+    siblings: 0,
+    highlightLinks: true,
+    headings: (id: string) => INSIDE[id] ?? [],
+  },
+  render: invented.render,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const focus = canvas.getByLabelText(/, focus$/)
+
+    await userEvent.hover(focus)
+    const backdrop = await waitFor(async () => {
+      const found = focus.querySelector('.plex__backdrop')
+      if (found === null) throw new Error('the headings are not open')
+      return found
+    })
+    const raised = await waitFor(async () => {
+      const found = canvasElement.querySelector('.plex__raised')
+      if (found === null) throw new Error('no line is lifted')
+      return found
+    })
+
+    await expect(raised.querySelectorAll('.plex__edge-line').length).toBeGreaterThan(0)
+    await expect(raised.compareDocumentPosition(backdrop) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
   },
 }
 

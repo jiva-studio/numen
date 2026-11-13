@@ -431,14 +431,14 @@ describe('hovered edge line', () => {
     expect(view.find('.plex__raised').exists()).toBe(false)
   })
 
-  it('renders the raised line after all node elements', async () => {
+  it('renders the raised line before all node elements', async () => {
     const view = mountTitledPlexView()
     await reach(view, acrossIndex).trigger('pointerenter')
     const raised = view.get('.plex__raised').element
 
     for (const node of view.findAll('.plex__node')) {
       const where = node.element.compareDocumentPosition(raised)
-      expect(where & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(where & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
     }
   })
 
