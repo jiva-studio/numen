@@ -230,7 +230,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: The list of suggestions the editor of a note shows while a link `[[…` is typed.
 
 ### link inspector
-- Is: The small popover of the plex that edits the link between two notes. It opens on a click on the line of the pair. The header names the two notes. It has one row for each record of the pair (up to two, one for each direction); a row has an arrow button ("No arrow", "Arrow to <title>"), a field "Link description" and a trash button "Remove link". It has no field for the role: the arrow button sets it (an arrow to the second note is a child, an arrow to the first is a parent, no arrow is a jump). The button is read as "<arrow now>. Click for: <next arrow>".
+- Is: The small popover of the plex that edits the link between two notes. It opens on a click on the line of the pair. The header names the two notes. It has one row for each record of the pair (up to two, one for each direction); a row has an arrow button ("No arrow", "Arrow to <title>"), a field "Link description" and a trash button "Remove link". It has no field for the role: the arrow button moves the record between the two notes (an arrow to the second note is written by the first note, an arrow to the first note by the second, with the role the core gives it), and "No arrow" hides the arrow and keeps the role. The button is read as "<arrow now>. Click for: <next arrow>".
 - Actions: "Add link" (when the pair has no record), "Add reverse direction" (when it has one), "Remove link" (the trash of a row), "Done", "Cancel". Removing the last row shows "The link between these notes will be removed."; "Done" then removes the link.
 - Not: not the quick link.
 
