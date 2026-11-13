@@ -15,7 +15,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiiAEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlIjwKBFNjYW4SEAoIaXNfcmVhZHkYASABKAgSDQoFZXJyb3IYAiABKAkSEwoLd2F0Y2hfZXJyb3IYAyABKAkiHQoNSW5kZXhDb3ZlcmFnZRIMCgR0ZXh0GAEgASgJIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJyChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZRIVCg12ZXJzaW9uX3BhdGhzGAQgAygJIiAKBE1vdmUSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCTLAAQoMVmF1bHRTZXJ2aWNlElAKDUdldFZhdWx0U3RhdGUSHi5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVxdWVzdBofLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXNwb25zZRJeChFXYXRjaFZhdWx0Q2hhbmdlcxIiLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdBojLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVzcG9uc2UwAUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiXQoVR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRIcCgRzY2FuGAQgASgLMg4ubnVtZW4udjEuU2NhbiI8CgRTY2FuEhAKCGlzX3JlYWR5GAEgASgIEg0KBWVycm9yGAIgASgJEhMKC3dhdGNoX2Vycm9yGAMgASgJIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJyChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZRIVCg12ZXJzaW9uX3BhdGhzGAQgAygJIiAKBE1vdmUSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCTLAAQoMVmF1bHRTZXJ2aWNlElAKDUdldFZhdWx0U3RhdGUSHi5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVxdWVzdBofLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXNwb25zZRJeChFXYXRjaFZhdWx0Q2hhbmdlcxIiLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdBojLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVzcG9uc2UwAUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -63,13 +63,6 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
    * @generated from field: numen.v1.Scan scan = 4;
    */
   scan?: Scan | undefined;
-
-  /**
-   * What the search source says about how far it has indexed the vault.
-   *
-   * @generated from field: numen.v1.IndexCoverage coverage = 5;
-   */
-  coverage?: IndexCoverage | undefined;
 };
 
 /**
@@ -116,29 +109,6 @@ export const ScanSchema: GenMessage<Scan> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 2);
 
 /**
- * IndexCoverage is how far the search source has indexed a vault, in its own words.
- *
- * @generated from message numen.v1.IndexCoverage
- */
-export type IndexCoverage = Message<"numen.v1.IndexCoverage"> & {
-  /**
-   * Text is what the source tells a person about its index, such as that it is
-   * not built yet. Empty where the source has nothing to say or the
-   * installation has no search source.
-   *
-   * @generated from field: string text = 1;
-   */
-  text: string;
-};
-
-/**
- * Describes the message numen.v1.IndexCoverage.
- * Use `create(IndexCoverageSchema)` to create a new message.
- */
-export const IndexCoverageSchema: GenMessage<IndexCoverage> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 3);
-
-/**
  * @generated from message numen.v1.WatchVaultChangesRequest
  */
 export type WatchVaultChangesRequest = Message<"numen.v1.WatchVaultChangesRequest"> & {
@@ -149,7 +119,7 @@ export type WatchVaultChangesRequest = Message<"numen.v1.WatchVaultChangesReques
  * Use `create(WatchVaultChangesRequestSchema)` to create a new message.
  */
 export const WatchVaultChangesRequestSchema: GenMessage<WatchVaultChangesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 4);
+  messageDesc(file_numen_v1_vault, 3);
 
 /**
  * @generated from message numen.v1.WatchVaultChangesResponse
@@ -193,7 +163,7 @@ export type WatchVaultChangesResponse = Message<"numen.v1.WatchVaultChangesRespo
  * Use `create(WatchVaultChangesResponseSchema)` to create a new message.
  */
 export const WatchVaultChangesResponseSchema: GenMessage<WatchVaultChangesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 5);
+  messageDesc(file_numen_v1_vault, 4);
 
 /**
  * Move is a note that is no longer where it was. The bytes do not change on the
@@ -222,7 +192,7 @@ export type Move = Message<"numen.v1.Move"> & {
  * Use `create(MoveSchema)` to create a new message.
  */
 export const MoveSchema: GenMessage<Move> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 6);
+  messageDesc(file_numen_v1_vault, 5);
 
 /**
  * VaultService answers what the one vault a client is looking at is, and what

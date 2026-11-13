@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search_source.proto.
  */
 export const file_numen_v1_search_source: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9zZWFyY2hfc291cmNlLnByb3RvEghudW1lbi52MSIvCgtTZWFyY2hQbGFjZRIQCgh2YXVsdF9pZBgBIAEoCRIOCgZyZWNpcGUYAiABKAkiHQobRGVzY3JpYmVTZWFyY2hTb3VyY2VSZXF1ZXN0IqMBChxEZXNjcmliZVNlYXJjaFNvdXJjZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDgoGcmVjaXBlGAIgASgJEg0KBXdpZHRoGAMgASgFEhQKDGNodW5rX3Rva2VucxgEIAEoBRIXCg9taW5fdGV4dF9sZW5ndGgYBSABKAUSEwoLY29uY3VycmVuY3kYBiABKAUSEgoKZmxvb3JfaGludBgHIAEoASJPCgtJbmRleGVkVGV4dBIQCghjaHVua19pZBgBIAEoCRIMCgRwYXRoGAIgASgJEhIKCnZlcnNpb25faWQYAyABKAkSDAoEdGV4dBgEIAEoCSJfChFJbmRleFRleHRzUmVxdWVzdBIkCgVwbGFjZRgBIAEoCzIVLm51bWVuLnYxLlNlYXJjaFBsYWNlEiQKBXRleHRzGAIgAygLMhUubnVtZW4udjEuSW5kZXhlZFRleHQiPAoSSW5kZXhUZXh0c1Jlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciKhAQooU2VhcmNoU291cmNlU2VydmljZVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBIkCgVwbGFjZRgBIAEoCzIVLm51bWVuLnYxLlNlYXJjaFBsYWNlEg0KBXF1ZXJ5GAIgASgJEg0KBWxpbWl0GAMgASgFEg0KBWtpbmRzGAQgAygJEhMKC3BhdGhfcHJlZml4GAUgASgJEg0KBWZsb29yGAYgASgBIi0KCkNodW5rTWF0Y2gSEAoIY2h1bmtfaWQYASABKAkSDQoFc2NvcmUYAiABKAEiUgopU2VhcmNoU291cmNlU2VydmljZVNlYXJjaFBhc3NhZ2VzUmVzcG9uc2USJQoHbWF0Y2hlcxgBIAMoCzIULm51bWVuLnYxLkNodW5rTWF0Y2giawoXRGVzY3JpYmVDb3ZlcmFnZVJlcXVlc3QSJAoFcGxhY2UYASABKAsyFS5udW1lbi52MS5TZWFyY2hQbGFjZRITCgtjaHVua19jb3VudBgCIAEoAxIVCg1pbmRleGVkX2NvdW50GAMgASgDIigKGERlc2NyaWJlQ292ZXJhZ2VSZXNwb25zZRIMCgR0ZXh0GAEgASgJIiYKE0VtYmVkUXVlcmllc1JlcXVlc3QSDwoHcXVlcmllcxgBIAMoCSI+ChRFbWJlZFF1ZXJpZXNSZXNwb25zZRImCgd2ZWN0b3JzGAEgAygLMhUubnVtZW4udjEuRmxvYXRWZWN0b3Iy6gMKE1NlYXJjaFNvdXJjZVNlcnZpY2USZQoURGVzY3JpYmVTZWFyY2hTb3VyY2USJS5udW1lbi52MS5EZXNjcmliZVNlYXJjaFNvdXJjZVJlcXVlc3QaJi5udW1lbi52MS5EZXNjcmliZVNlYXJjaFNvdXJjZVJlc3BvbnNlEkcKCkluZGV4VGV4dHMSGy5udW1lbi52MS5JbmRleFRleHRzUmVxdWVzdBocLm51bWVuLnYxLkluZGV4VGV4dHNSZXNwb25zZRJ5Cg5TZWFyY2hQYXNzYWdlcxIyLm51bWVuLnYxLlNlYXJjaFNvdXJjZVNlcnZpY2VTZWFyY2hQYXNzYWdlc1JlcXVlc3QaMy5udW1lbi52MS5TZWFyY2hTb3VyY2VTZXJ2aWNlU2VhcmNoUGFzc2FnZXNSZXNwb25zZRJZChBEZXNjcmliZUNvdmVyYWdlEiEubnVtZW4udjEuRGVzY3JpYmVDb3ZlcmFnZVJlcXVlc3QaIi5udW1lbi52MS5EZXNjcmliZUNvdmVyYWdlUmVzcG9uc2USTQoMRW1iZWRRdWVyaWVzEh0ubnVtZW4udjEuRW1iZWRRdWVyaWVzUmVxdWVzdBoeLm51bWVuLnYxLkVtYmVkUXVlcmllc1Jlc3BvbnNlQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_embedding]);
+  fileDesc("ChxudW1lbi92MS9zZWFyY2hfc291cmNlLnByb3RvEghudW1lbi52MSIvCgtTZWFyY2hQbGFjZRIQCgh2YXVsdF9pZBgBIAEoCRIOCgZyZWNpcGUYAiABKAkiHQobRGVzY3JpYmVTZWFyY2hTb3VyY2VSZXF1ZXN0IqMBChxEZXNjcmliZVNlYXJjaFNvdXJjZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDgoGcmVjaXBlGAIgASgJEg0KBXdpZHRoGAMgASgFEhQKDGNodW5rX3Rva2VucxgEIAEoBRIXCg9taW5fdGV4dF9sZW5ndGgYBSABKAUSEwoLY29uY3VycmVuY3kYBiABKAUSEgoKZmxvb3JfaGludBgHIAEoASJPCgtJbmRleGVkVGV4dBIQCghjaHVua19pZBgBIAEoCRIMCgRwYXRoGAIgASgJEhIKCnZlcnNpb25faWQYAyABKAkSDAoEdGV4dBgEIAEoCSJfChFJbmRleFRleHRzUmVxdWVzdBIkCgVwbGFjZRgBIAEoCzIVLm51bWVuLnYxLlNlYXJjaFBsYWNlEiQKBXRleHRzGAIgAygLMhUubnVtZW4udjEuSW5kZXhlZFRleHQiPAoSSW5kZXhUZXh0c1Jlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciKhAQooU2VhcmNoU291cmNlU2VydmljZVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBIkCgVwbGFjZRgBIAEoCzIVLm51bWVuLnYxLlNlYXJjaFBsYWNlEg0KBXF1ZXJ5GAIgASgJEg0KBWxpbWl0GAMgASgFEg0KBWtpbmRzGAQgAygJEhMKC3BhdGhfcHJlZml4GAUgASgJEg0KBWZsb29yGAYgASgBIi0KCkNodW5rTWF0Y2gSEAoIY2h1bmtfaWQYASABKAkSDQoFc2NvcmUYAiABKAEiUgopU2VhcmNoU291cmNlU2VydmljZVNlYXJjaFBhc3NhZ2VzUmVzcG9uc2USJQoHbWF0Y2hlcxgBIAMoCzIULm51bWVuLnYxLkNodW5rTWF0Y2giJgoTRW1iZWRRdWVyaWVzUmVxdWVzdBIPCgdxdWVyaWVzGAEgAygJIj4KFEVtYmVkUXVlcmllc1Jlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvcjKPAwoTU2VhcmNoU291cmNlU2VydmljZRJlChREZXNjcmliZVNlYXJjaFNvdXJjZRIlLm51bWVuLnYxLkRlc2NyaWJlU2VhcmNoU291cmNlUmVxdWVzdBomLm51bWVuLnYxLkRlc2NyaWJlU2VhcmNoU291cmNlUmVzcG9uc2USRwoKSW5kZXhUZXh0cxIbLm51bWVuLnYxLkluZGV4VGV4dHNSZXF1ZXN0GhwubnVtZW4udjEuSW5kZXhUZXh0c1Jlc3BvbnNlEnkKDlNlYXJjaFBhc3NhZ2VzEjIubnVtZW4udjEuU2VhcmNoU291cmNlU2VydmljZVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBozLm51bWVuLnYxLlNlYXJjaFNvdXJjZVNlcnZpY2VTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEk0KDEVtYmVkUXVlcmllcxIdLm51bWVuLnYxLkVtYmVkUXVlcmllc1JlcXVlc3QaHi5udW1lbi52MS5FbWJlZFF1ZXJpZXNSZXNwb25zZUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_embedding]);
 
 /**
  * SearchPlace is where the vectors of a source are kept: the vault and the recipe they were made
@@ -285,54 +285,6 @@ export const SearchSourceServiceSearchPassagesResponseSchema: GenMessage<SearchS
   messageDesc(file_numen_v1_search_source, 8);
 
 /**
- * @generated from message numen.v1.DescribeCoverageRequest
- */
-export type DescribeCoverageRequest = Message<"numen.v1.DescribeCoverageRequest"> & {
-  /**
-   * @generated from field: numen.v1.SearchPlace place = 1;
-   */
-  place?: SearchPlace | undefined;
-
-  /**
-   * How many chunks of the vault can be handed to the source, and how many have a vector in the place.
-   *
-   * @generated from field: int64 chunk_count = 2;
-   */
-  chunkCount: bigint;
-
-  /**
-   * @generated from field: int64 indexed_count = 3;
-   */
-  indexedCount: bigint;
-};
-
-/**
- * Describes the message numen.v1.DescribeCoverageRequest.
- * Use `create(DescribeCoverageRequestSchema)` to create a new message.
- */
-export const DescribeCoverageRequestSchema: GenMessage<DescribeCoverageRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search_source, 9);
-
-/**
- * @generated from message numen.v1.DescribeCoverageResponse
- */
-export type DescribeCoverageResponse = Message<"numen.v1.DescribeCoverageResponse"> & {
-  /**
-   * What a person reads about the index of the source, empty where there is nothing to say.
-   *
-   * @generated from field: string text = 1;
-   */
-  text: string;
-};
-
-/**
- * Describes the message numen.v1.DescribeCoverageResponse.
- * Use `create(DescribeCoverageResponseSchema)` to create a new message.
- */
-export const DescribeCoverageResponseSchema: GenMessage<DescribeCoverageResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search_source, 10);
-
-/**
  * @generated from message numen.v1.EmbedQueriesRequest
  */
 export type EmbedQueriesRequest = Message<"numen.v1.EmbedQueriesRequest"> & {
@@ -347,7 +299,7 @@ export type EmbedQueriesRequest = Message<"numen.v1.EmbedQueriesRequest"> & {
  * Use `create(EmbedQueriesRequestSchema)` to create a new message.
  */
 export const EmbedQueriesRequestSchema: GenMessage<EmbedQueriesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search_source, 11);
+  messageDesc(file_numen_v1_search_source, 9);
 
 /**
  * @generated from message numen.v1.EmbedQueriesResponse
@@ -364,7 +316,7 @@ export type EmbedQueriesResponse = Message<"numen.v1.EmbedQueriesResponse"> & {
  * Use `create(EmbedQueriesResponseSchema)` to create a new message.
  */
 export const EmbedQueriesResponseSchema: GenMessage<EmbedQueriesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search_source, 12);
+  messageDesc(file_numen_v1_search_source, 10);
 
 /**
  * SearchSourceService is a participant of the search of the core that a plugin with the capability
@@ -406,16 +358,6 @@ export const SearchSourceService: GenService<{
     methodKind: "unary";
     input: typeof SearchSourceServiceSearchPassagesRequestSchema;
     output: typeof SearchSourceServiceSearchPassagesResponseSchema;
-  },
-  /**
-   * DescribeCoverage says to a person how far the source has indexed the vault of the place.
-   *
-   * @generated from rpc numen.v1.SearchSourceService.DescribeCoverage
-   */
-  describeCoverage: {
-    methodKind: "unary";
-    input: typeof DescribeCoverageRequestSchema;
-    output: typeof DescribeCoverageResponseSchema;
   },
   /**
    * EmbedQueries returns one vector per query, in the order of the queries, as the source compares a

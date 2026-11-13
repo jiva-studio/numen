@@ -73,9 +73,7 @@ type GetVaultStateResponse struct {
 	// Where the vault relies on this disk.
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// How far indexing the vault has got.
-	Scan *Scan `protobuf:"bytes,4,opt,name=scan,proto3" json:"scan,omitempty"`
-	// What the search source says about how far it has indexed the vault.
-	Coverage      *IndexCoverage `protobuf:"bytes,5,opt,name=coverage,proto3" json:"coverage,omitempty"`
+	Scan          *Scan `protobuf:"bytes,4,opt,name=scan,proto3" json:"scan,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -134,13 +132,6 @@ func (x *GetVaultStateResponse) GetPath() string {
 func (x *GetVaultStateResponse) GetScan() *Scan {
 	if x != nil {
 		return x.Scan
-	}
-	return nil
-}
-
-func (x *GetVaultStateResponse) GetCoverage() *IndexCoverage {
-	if x != nil {
-		return x.Coverage
 	}
 	return nil
 }
@@ -210,54 +201,6 @@ func (x *Scan) GetWatchError() string {
 	return ""
 }
 
-// IndexCoverage is how far the search source has indexed a vault, in its own words.
-type IndexCoverage struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Text is what the source tells a person about its index, such as that it is
-	// not built yet. Empty where the source has nothing to say or the
-	// installation has no search source.
-	Text          string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *IndexCoverage) Reset() {
-	*x = IndexCoverage{}
-	mi := &file_numen_v1_vault_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *IndexCoverage) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*IndexCoverage) ProtoMessage() {}
-
-func (x *IndexCoverage) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use IndexCoverage.ProtoReflect.Descriptor instead.
-func (*IndexCoverage) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *IndexCoverage) GetText() string {
-	if x != nil {
-		return x.Text
-	}
-	return ""
-}
-
 type WatchVaultChangesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -266,7 +209,7 @@ type WatchVaultChangesRequest struct {
 
 func (x *WatchVaultChangesRequest) Reset() {
 	*x = WatchVaultChangesRequest{}
-	mi := &file_numen_v1_vault_proto_msgTypes[4]
+	mi := &file_numen_v1_vault_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -278,7 +221,7 @@ func (x *WatchVaultChangesRequest) String() string {
 func (*WatchVaultChangesRequest) ProtoMessage() {}
 
 func (x *WatchVaultChangesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[4]
+	mi := &file_numen_v1_vault_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -291,7 +234,7 @@ func (x *WatchVaultChangesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchVaultChangesRequest.ProtoReflect.Descriptor instead.
 func (*WatchVaultChangesRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{3}
 }
 
 type WatchVaultChangesResponse struct {
@@ -314,7 +257,7 @@ type WatchVaultChangesResponse struct {
 
 func (x *WatchVaultChangesResponse) Reset() {
 	*x = WatchVaultChangesResponse{}
-	mi := &file_numen_v1_vault_proto_msgTypes[5]
+	mi := &file_numen_v1_vault_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -326,7 +269,7 @@ func (x *WatchVaultChangesResponse) String() string {
 func (*WatchVaultChangesResponse) ProtoMessage() {}
 
 func (x *WatchVaultChangesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[5]
+	mi := &file_numen_v1_vault_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -339,7 +282,7 @@ func (x *WatchVaultChangesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchVaultChangesResponse.ProtoReflect.Descriptor instead.
 func (*WatchVaultChangesResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *WatchVaultChangesResponse) GetPaths() []string {
@@ -384,7 +327,7 @@ type Move struct {
 
 func (x *Move) Reset() {
 	*x = Move{}
-	mi := &file_numen_v1_vault_proto_msgTypes[6]
+	mi := &file_numen_v1_vault_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -396,7 +339,7 @@ func (x *Move) String() string {
 func (*Move) ProtoMessage() {}
 
 func (x *Move) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[6]
+	mi := &file_numen_v1_vault_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -409,7 +352,7 @@ func (x *Move) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Move.ProtoReflect.Descriptor instead.
 func (*Move) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Move) GetFrom() string {
@@ -431,20 +374,17 @@ var File_numen_v1_vault_proto protoreflect.FileDescriptor
 const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/vault.proto\x12\bnumen.v1\"\x16\n" +
-	"\x14GetVaultStateRequest\"\xa8\x01\n" +
+	"\x14GetVaultStateRequest\"s\n" +
 	"\x15GetVaultStateResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\"\n" +
-	"\x04scan\x18\x04 \x01(\v2\x0e.numen.v1.ScanR\x04scan\x123\n" +
-	"\bcoverage\x18\x05 \x01(\v2\x17.numen.v1.IndexCoverageR\bcoverage\"X\n" +
+	"\x04scan\x18\x04 \x01(\v2\x0e.numen.v1.ScanR\x04scan\"X\n" +
 	"\x04Scan\x12\x19\n" +
 	"\bis_ready\x18\x01 \x01(\bR\aisReady\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12\x1f\n" +
 	"\vwatch_error\x18\x03 \x01(\tR\n" +
-	"watchError\"#\n" +
-	"\rIndexCoverage\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text\"\x1a\n" +
+	"watchError\"\x1a\n" +
 	"\x18WatchVaultChangesRequest\"\x98\x01\n" +
 	"\x19WatchVaultChangesResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
@@ -470,29 +410,27 @@ func file_numen_v1_vault_proto_rawDescGZIP() []byte {
 	return file_numen_v1_vault_proto_rawDescData
 }
 
-var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_numen_v1_vault_proto_goTypes = []any{
 	(*GetVaultStateRequest)(nil),      // 0: numen.v1.GetVaultStateRequest
 	(*GetVaultStateResponse)(nil),     // 1: numen.v1.GetVaultStateResponse
 	(*Scan)(nil),                      // 2: numen.v1.Scan
-	(*IndexCoverage)(nil),             // 3: numen.v1.IndexCoverage
-	(*WatchVaultChangesRequest)(nil),  // 4: numen.v1.WatchVaultChangesRequest
-	(*WatchVaultChangesResponse)(nil), // 5: numen.v1.WatchVaultChangesResponse
-	(*Move)(nil),                      // 6: numen.v1.Move
+	(*WatchVaultChangesRequest)(nil),  // 3: numen.v1.WatchVaultChangesRequest
+	(*WatchVaultChangesResponse)(nil), // 4: numen.v1.WatchVaultChangesResponse
+	(*Move)(nil),                      // 5: numen.v1.Move
 }
 var file_numen_v1_vault_proto_depIdxs = []int32{
 	2, // 0: numen.v1.GetVaultStateResponse.scan:type_name -> numen.v1.Scan
-	3, // 1: numen.v1.GetVaultStateResponse.coverage:type_name -> numen.v1.IndexCoverage
-	6, // 2: numen.v1.WatchVaultChangesResponse.renamed:type_name -> numen.v1.Move
-	0, // 3: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
-	4, // 4: numen.v1.VaultService.WatchVaultChanges:input_type -> numen.v1.WatchVaultChangesRequest
-	1, // 5: numen.v1.VaultService.GetVaultState:output_type -> numen.v1.GetVaultStateResponse
-	5, // 6: numen.v1.VaultService.WatchVaultChanges:output_type -> numen.v1.WatchVaultChangesResponse
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	5, // 1: numen.v1.WatchVaultChangesResponse.renamed:type_name -> numen.v1.Move
+	0, // 2: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
+	3, // 3: numen.v1.VaultService.WatchVaultChanges:input_type -> numen.v1.WatchVaultChangesRequest
+	1, // 4: numen.v1.VaultService.GetVaultState:output_type -> numen.v1.GetVaultStateResponse
+	4, // 5: numen.v1.VaultService.WatchVaultChanges:output_type -> numen.v1.WatchVaultChangesResponse
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_vault_proto_init() }
@@ -506,7 +444,7 @@ func file_numen_v1_vault_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_vault_proto_rawDesc), len(file_numen_v1_vault_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
