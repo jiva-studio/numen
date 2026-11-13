@@ -57,7 +57,7 @@ func (l *Lister) ListOptions(ctx context.Context) ([]Option, error) {
 			}
 			options = append(options, Option{
 				Value: conversation.WriteChoice(conversation.Choice{ConnectionID: one.ID, ModelID: model.ID}),
-				Title: one.Name + " / " + title,
+				Title: one.Name + " · " + title,
 			})
 		}
 	}

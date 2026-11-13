@@ -56,9 +56,9 @@ func TestTheOptionsAreTheModelsOfEveryChatConnectionInOrder(t *testing.T) {
 	})
 
 	want := []models.Option{
-		{Value: "c-meadow|wren-2", Title: "Meadow / Wren 2"},
-		{Value: "c-meadow|heron-mini", Title: "Meadow / heron-mini"},
-		{Value: "c-harbor|gull-7b", Title: "Harbor / Gull 7B"},
+		{Value: "c-meadow|wren-2", Title: "Meadow · Wren 2"},
+		{Value: "c-meadow|heron-mini", Title: "Meadow · heron-mini"},
+		{Value: "c-harbor|gull-7b", Title: "Harbor · Gull 7B"},
 	}
 	if !reflect.DeepEqual(options, want) {
 		t.Errorf("options = %+v, want %+v", options, want)
@@ -78,7 +78,7 @@ func TestAConnectionWhoseModelsCannotBeListedOrThatListsNoneIsLeftOut(t *testing
 		},
 	})
 
-	if !reflect.DeepEqual(options, []models.Option{{Value: "c-meadow|wren-2", Title: "Meadow / Wren 2"}}) {
+	if !reflect.DeepEqual(options, []models.Option{{Value: "c-meadow|wren-2", Title: "Meadow · Wren 2"}}) {
 		t.Errorf("options = %+v", options)
 	}
 }

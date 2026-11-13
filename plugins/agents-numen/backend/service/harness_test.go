@@ -358,12 +358,12 @@ func TestTheModelsOfTheAgentAreTheModelsOfEveryChatConnection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"c-meadow|wren-2", "Meadow / Wren 2", "c-harbor|gull-7b", "Harbor / Gull 7B"} {
+	for _, want := range []string{"c-meadow|wren-2", "Meadow · Wren 2", "c-harbor|gull-7b", "Harbor · Gull 7B"} {
 		if !bytes.Contains(done, []byte(want)) {
 			t.Errorf("the listing %q holds no %q", done, want)
 		}
 	}
-	if bytes.Index(done, []byte("Meadow / Wren 2")) > bytes.Index(done, []byte("Harbor / Gull 7B")) {
+	if bytes.Index(done, []byte("Meadow · Wren 2")) > bytes.Index(done, []byte("Harbor · Gull 7B")) {
 		t.Errorf("the listing %q is not in the order of the connections", done)
 	}
 }
