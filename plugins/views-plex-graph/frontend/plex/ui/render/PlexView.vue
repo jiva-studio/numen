@@ -4,11 +4,10 @@ import PlexEdgeLayer from './PlexEdgeLayer.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import PlexNodeNames from './PlexNodeNames.vue'
 import PlexThreads from './PlexThreads.vue'
-import { useEdgeLines, type EdgeLine } from './lines'
+import { useEdgeLines } from './lines'
 import { listNamedNodes } from './named'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
 import type { GestureRole, PlacedNode } from '../../lib/node'
-import { createEdgeLabel } from '../../lib/edge'
 import { getRelationName } from '../../lib/relation'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useAttention } from '../../model/useAttention'
@@ -58,7 +57,7 @@ const restedOn = ref<string | null>(null)
 
 const { attention, attend } = useAttention(() => props.frame)
 
-const { lines, isRaised, setOver } = useEdgeLines(props, uid, attention)
+const { lines, isRaised, setOver, getLabel } = useEdgeLines(props, uid, attention)
 
 const getNodeHandlers = useNodeHandlers({
   activate: (id) => emit('activate', id),
@@ -107,12 +106,6 @@ const onChooseName = (id: string) => {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-const getEdgeLabel = (line: EdgeLine): string =>
-  createEdgeLabel(
-    line.edge,
-    (id) => props.frame.nodes.find((node) => node.id === id)?.title || 'Untitled',
-  )
-
 const getRole = (node: PlacedNode): GestureRole => {
   const outcome = props.gesture?.outcome.value
   const from = props.gesture?.from.value ?? null
@@ -150,7 +143,7 @@ const getRole = (node: PlacedNode): GestureRole => {
         :key="`reach:${line.key}`"
         class="plex__edge-hit"
         role="button"
-        :aria-label="getEdgeLabel(line)"
+        :aria-label="getLabel(line)"
         :d="line.d"
         @pointerenter="setOver(line.pair)"
         @pointerleave="setOver(null)"

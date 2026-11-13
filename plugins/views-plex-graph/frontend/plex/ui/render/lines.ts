@@ -2,7 +2,7 @@ import { computed, ref, watch } from 'vue'
 import type { PlexDragState } from '../../model/interaction/drag'
 import type { Gesture } from '../../model/interaction/gesture'
 import { createArrowTransform, createPath, createReadingPath } from '../../lib/arrange'
-import { edgeKey, type PlacedEdge } from '../../lib/edge'
+import { createEdgeLabel, edgeKey, type PlacedEdge } from '../../lib/edge'
 import type { PlexFrame } from '../../lib/frame'
 import type { Attention } from '../../model/useAttention'
 import type { EdgeArrow } from '../../../types'
@@ -87,6 +87,11 @@ export function useEdgeLines(props: EdgeLinesProps, uid: string, attention: Atte
     setOver: (pair: string | null) => {
       overKey.value = pair
     },
+    getLabel: (line: EdgeLine): string =>
+      createEdgeLabel(
+        line.edge,
+        (id) => frame().nodes.find((node) => node.id === id)?.title || 'Untitled',
+      ),
   }
 }
 
