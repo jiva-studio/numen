@@ -22,7 +22,6 @@ export function useNamesRooms(
   options: Readonly<Ref<PlexOptions>>,
 ): {
   rooms: ComputedRef<ReadonlyMap<string, NamesRoom>>
-  /** The room of one node: the same function for as long as the plex lives. */
   getRoomOf: (id: string) => NamesRoom | undefined
   room: ComputedRef<((node: PlexNode) => NodeRoom) | undefined>
 } {
