@@ -42,7 +42,7 @@ func (c *Connections) ListConnections(ctx context.Context) ([]conversation.ChatC
 	return connections, nil
 }
 
-// ListModels returns the models the connection lists.
+// ListModels returns the values of the field of models of the connection among the rows of llm.chat.
 func (c *Connections) ListModels(ctx context.Context, chat conversation.ChatConnection) ([]conversation.ModelOption, error) {
 	options, err := c.rows.ListRowOptions(ctx, connection.RowOptionsRequest{
 		Operation: llm.OperationChat, ConnectionID: chat.ID, Field: chat.ModelField, Options: map[string]string{},
