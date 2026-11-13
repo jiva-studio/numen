@@ -183,7 +183,9 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
   /** Whether the agent of a choice offers its model, or is still being asked which models it has. */
   const isOffered = (choice: ModelChoice, listed: readonly Agent[]) => {
     const agent = listed.find((one) => one.row.connectionId === choice.agentId)
-    return !!agent && (!agent.isListed || agent.models.some((one) => one.modelId === choice.modelId))
+    return (
+      !!agent && (!agent.isListed || agent.models.some((one) => one.modelId === choice.modelId))
+    )
   }
   const isListed = (choice: ModelChoice) => isOffered(choice, agents.value)
 

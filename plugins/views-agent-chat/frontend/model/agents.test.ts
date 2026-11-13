@@ -389,7 +389,12 @@ const LANTERN_FIELDS = [
 
 const LANTERN_ROWS: readonly ConnectionRow[] = [
   row('c-orchard', 'Orchard agent', { model: 'pear-small' }),
-  { connectionId: 'c-lantern', connectionName: 'Lantern agent', options: {}, fields: LANTERN_FIELDS },
+  {
+    connectionId: 'c-lantern',
+    connectionName: 'Lantern agent',
+    options: {},
+    fields: LANTERN_FIELDS,
+  },
 ]
 
 /** A window of agent tabs over the rows, started anew for each restart. */
@@ -434,7 +439,9 @@ describe('a choice saved before a restart', () => {
   it('is the connection and the model of the agent the conversation chose', async () => {
     const saved = await saveWithLanternModel()
 
-    expect(saved).toMatchObject({ model: { connectionId: 'c-lantern', modelId: 'c-meadow|clover' } })
+    expect(saved).toMatchObject({
+      model: { connectionId: 'c-lantern', modelId: 'c-meadow|clover' },
+    })
   })
 
   it('is restored to its conversation and is the choice of a new one', async () => {
@@ -473,7 +480,9 @@ describe('a choice saved before a restart', () => {
     expect(after.kind.getState!(restored)).toMatchObject({ model: null })
     expect(fresh.agents!.getChosen()).toBeNull()
     expect(after.calls[0]?.options?.preferred).toBeUndefined()
-    const lantern = restored.agents!.offered.options.value.find((one) => one.agentId === 'c-lantern')
+    const lantern = restored.agents!.offered.options.value.find(
+      (one) => one.agentId === 'c-lantern',
+    )
     expect(lantern?.modelTitle).toBe(WORDS.chooseModel)
   })
 
