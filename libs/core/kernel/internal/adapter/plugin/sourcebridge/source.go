@@ -97,7 +97,7 @@ func open(ctx context.Context, host Host, kept *Descriptions) (b *Source, readEr
 		return b, nil, nil
 	}
 
-	client, call, err := b.service.Open(ctx)
+	client, call, err := b.service.OpenForQuestion(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -283,7 +283,7 @@ func (b *Source) readDescriptionChange() []func() {
 	// connection started first, so the read has the same limit as any other read of the description.
 	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelInfoTimeout)
 	defer cancel()
-	client, call, err := b.service.Open(ctx)
+	client, call, err := b.service.OpenForQuestion(ctx)
 	if err != nil {
 		b.reportReadError(fmt.Errorf("open search source %s: %w", b.service.PluginID, err))
 		return nil

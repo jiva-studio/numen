@@ -44,6 +44,20 @@ func takeIdleTargets(s *Supervisors, defaultLimit time.Duration, now time.Time) 
 	return targets
 }
 
+func takeIdleTarget(s *Supervisors, pluginID string, defaultLimit time.Duration, now time.Time) []Target {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sup, ok := s.byPlugin[pluginID]
+	if !ok {
+		return nil
+	}
+	pid := sup.GetProcessID()
+	if !sup.BeginDeactivation(getIdleLimitLocked(s, pluginID, defaultLimit), now) {
+		return nil
+	}
+	return []Target{takeTargetLocked(s, pluginID, sup, pid)}
+}
+
 func takeRunningTargets(s *Supervisors) []Target {
 	s.mu.Lock()
 	defer s.mu.Unlock()

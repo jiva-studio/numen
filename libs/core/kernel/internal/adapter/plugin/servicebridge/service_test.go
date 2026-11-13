@@ -57,6 +57,12 @@ func (h *servingHost) Release(string) {
 	h.released++
 }
 
+func (h *servingHost) EnsureActiveForQuestion(ctx context.Context, id string) (transport.Endpoint, error) {
+	return h.EnsureActive(ctx, id)
+}
+
+func (h *servingHost) ReleaseQuestion(id string) { h.Release(id) }
+
 func (h *servingHost) getReleasedCount() int {
 	h.mu.Lock()
 	defer h.mu.Unlock()

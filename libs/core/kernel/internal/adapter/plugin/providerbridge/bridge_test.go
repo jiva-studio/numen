@@ -75,13 +75,16 @@ func failure(kind v1.FailureKind, reason v1.FailureReason, retryAfterMs int64) *
 	}}}
 }
 
-// activator hands out the in-process endpoint of the service and counts the releases.
+// activator hands out the in-process endpoint of the service and records the leases taken for a question and
+// the releases of each kind of lease.
 type activator struct {
-	mu       sync.Mutex
-	endpoint transport.Endpoint
-	err      error
-	client   *http.Client
-	released []string
+	mu                sync.Mutex
+	endpoint          transport.Endpoint
+	err               error
+	client            *http.Client
+	released          []string
+	questions         []string
+	questionsReleased []string
 }
 
 func (a *activator) EnsureActive(context.Context, string) (transport.Endpoint, error) {
@@ -100,6 +103,19 @@ func (a *activator) Release(id string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.released = append(a.released, id)
+}
+
+func (a *activator) EnsureActiveForQuestion(_ context.Context, id string) (transport.Endpoint, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.questions = append(a.questions, id)
+	return a.endpoint, a.err
+}
+
+func (a *activator) ReleaseQuestion(id string) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.questionsReleased = append(a.questionsReleased, id)
 }
 
 func newActivator(t *testing.T, service numenv1connect.ProviderServiceHandler) *activator {

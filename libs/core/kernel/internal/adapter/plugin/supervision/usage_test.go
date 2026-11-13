@@ -6,6 +6,7 @@ import (
 	"time"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -24,7 +25,7 @@ func startInProcess(t *testing.T, sups *Supervisors, ids ...string) {
 		sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: id}})
 		sup.SetActivating()
 		endpoint := transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: id}
-		if err := sups.AttachInProcess(id, sup, endpoint, getStartTime()); err != nil {
+		if err := sups.AttachInProcess(id, sup, endpoint, lifecycle.UseLease, getStartTime()); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -82,7 +83,7 @@ func TestTheIdleStopTimeFollowsTheIdleLimitOfTheManifest(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: atlasID, Backend: manifest.Backend{Entrypoint: "bin/atlas", IdleStopSeconds: 600}}})
 	sup.SetActivating()
-	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, getStartTime()); err != nil {
+	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, lifecycle.UseLease, getStartTime()); err != nil {
 		t.Fatal(err)
 	}
 	sups.Release(atlasID, atlasID, getStartTime().Add(time.Minute))
@@ -106,5 +107,39 @@ func TestAReleasedPluginIsDueToStopAtItsLastUse(t *testing.T) {
 
 	if len(got) != 1 || !got[0].IdleStopTime.Equal(getStartTime().Add(time.Minute)) {
 		t.Errorf("got %+v, want the idle stop at the last use", got)
+	}
+}
+
+func TestAPluginOnlyAskedAQuestionIsDueToStopAtItsStart(t *testing.T) {
+	sups := NewSupervisors(func(error) {}, func(string) {})
+	sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: atlasID}})
+	sup.SetActivating()
+	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, lifecycle.QuestionLease, getStartTime()); err != nil {
+		t.Fatal(err)
+	}
+	sups.ReturnHold(atlasID, sup, lifecycle.QuestionLease, getStartTime().Add(time.Minute))
+
+	want := []plugindomain.Process{{
+		PluginID: atlasID, StartTime: getStartTime(), LastUseTime: getStartTime(), IsInProcess: true, IdleStopTime: getStartTime(),
+	}}
+	if got := NewRunningProcesses(sups).ListProcesses(); !slices.Equal(got, want) {
+		t.Errorf("got %+v, want %+v", got, want)
+	}
+}
+
+func TestAQuestionDoesNotCancelTheReleaseOfAProcess(t *testing.T) {
+	sups := NewSupervisors(func(error) {}, func(string) {})
+	startInProcess(t, sups, mapsID)
+	takeReleasedTarget(sups, mapsID, getStartTime())
+	sup, _ := sups.Get(mapsID)
+
+	if _, isRunning := sups.AcquireRunning(mapsID, sup, lifecycle.QuestionLease, getStartTime()); !isRunning {
+		t.Fatal("the running plugin was not held for the question")
+	}
+	sups.ReturnHold(mapsID, sup, lifecycle.QuestionLease, getStartTime())
+	sups.ReturnHold(mapsID, sup, lifecycle.UseLease, getStartTime())
+
+	if targets := takeIdleTargets(sups, IdleThreshold, getStartTime()); len(targets) != 1 || targets[0].ID != mapsID {
+		t.Errorf("got %+v, want the released plugin to stop", targets)
 	}
 }

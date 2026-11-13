@@ -33,6 +33,18 @@ const (
 	StateDeactivating
 )
 
+// LeaseKind says what a lease holds a plugin for: a use of the plugin, or a question the core asks the
+// plugin for itself. A question lease holds the process as a use lease does, but neither marks the plugin
+// used nor moves its idle countdown.
+type LeaseKind int
+
+const (
+	// UseLease holds the plugin for a use of it.
+	UseLease LeaseKind = iota
+	// QuestionLease holds the plugin for a question the core asks it for itself.
+	QuestionLease
+)
+
 // Supervisor monitors and controls the execution lifecycle of a single plugin process. Failure keeps why
 // the last start failed, and Permissions what the manifest of the plugin lets it do.
 type Supervisor struct {
@@ -46,6 +58,7 @@ type Supervisor struct {
 	teardownBegun  bool
 	lastActiveTime time.Time
 	activeRefCount int
+	isUsed         bool
 	exitCh         chan struct{}
 	onExit         func()
 	activatingCh   chan struct{}
@@ -60,13 +73,15 @@ func New(onError func(error)) *Supervisor {
 	return &Supervisor{Permissions: security.NewPermissions(), state: StateDormant, onError: onError}
 }
 
-// Usage is what a running plugin holds: when a lease was last taken or returned, the leases, whether
-// it is served inside the host, and whether it is idle.
+// Usage is what a running plugin holds: when it started or a use lease was last taken or returned, the
+// leases, whether it is served inside the host, whether it is idle, and whether a use lease was taken
+// since it started.
 type Usage struct {
 	LastActiveTime time.Time
 	LeaseCount     int
 	IsInProcess    bool
 	IsIdle         bool
+	IsUsed         bool
 }
 
 // GetUsage returns what the plugin holds, and false where it is not running.
@@ -81,6 +96,7 @@ func (s *Supervisor) GetUsage() (Usage, bool) {
 		LeaseCount:     s.activeRefCount,
 		IsInProcess:    s.inProcess,
 		IsIdle:         s.state == StateIdle && s.activeRefCount == 0,
+		IsUsed:         s.isUsed,
 	}, true
 }
 
@@ -167,6 +183,7 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 	s.teardownBegun = false
 	s.state = StateActive
 	s.lastActiveTime = now
+	s.isUsed = false
 	s.activationErr = nil
 	closeActivationSignal(&s.activatingCh)
 	exitCh := make(chan struct{})
@@ -202,14 +219,15 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 	return nil
 }
 
-// ActivateInProcess marks a plugin served inside the host as running and held by one consumer.
-func (s *Supervisor) ActivateInProcess(now time.Time) {
+// ActivateInProcess marks a plugin served inside the host as running and held by one lease of the kind.
+func (s *Supervisor) ActivateInProcess(kind LeaseKind, now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.inProcess = true
 	s.state = StateActive
 	s.activeRefCount = 1
 	s.lastActiveTime = now
+	s.isUsed = kind == UseLease
 	s.activationErr = nil
 	closeActivationSignal(&s.activatingCh)
 }
@@ -221,21 +239,26 @@ func isRunning(s *Supervisor) bool {
 	return s.process != nil || s.inProcess
 }
 
-// Acquire increments the active consumer count and reports whether a running plugin was held.
-func (s *Supervisor) Acquire(now time.Time) bool {
+// Acquire takes a lease of the kind on a running plugin and reports whether it did. A use lease marks the
+// plugin used and restarts its idle countdown.
+func (s *Supervisor) Acquire(kind LeaseKind, now time.Time) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !isRunning(s) {
 		return false
 	}
 	s.activeRefCount++
-	s.lastActiveTime = now
 	s.state = StateActive
+	if kind == UseLease {
+		s.lastActiveTime = now
+		s.isUsed = true
+	}
 	return true
 }
 
-// Release decrements active consumers and marks a running plugin idle when the count is zero.
-func (s *Supervisor) Release(now time.Time) {
+// Release returns a lease of the kind and marks a running plugin idle when it holds none. A use lease
+// restarts the idle countdown.
+func (s *Supervisor) Release(kind LeaseKind, now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !isRunning(s) {
@@ -244,17 +267,20 @@ func (s *Supervisor) Release(now time.Time) {
 	if s.activeRefCount > 0 {
 		s.activeRefCount--
 	}
-	s.lastActiveTime = now
+	if kind == UseLease {
+		s.lastActiveTime = now
+	}
 	if s.activeRefCount == 0 {
 		s.state = StateIdle
 	}
 }
 
-// BeginDeactivation moves a plugin that has been idle for the threshold to StateDeactivating and reports whether it did.
+// BeginDeactivation moves an idle plugin to StateDeactivating and reports whether it did: a plugin used
+// since it started once it has been idle for the threshold, and a plugin never used at once.
 func (s *Supervisor) BeginDeactivation(threshold time.Duration, now time.Time) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.state != StateIdle || s.activeRefCount > 0 || now.Sub(s.lastActiveTime) < threshold {
+	if s.state != StateIdle || s.activeRefCount > 0 || (s.isUsed && now.Sub(s.lastActiveTime) < threshold) {
 		return false
 	}
 	s.state = StateDeactivating

@@ -10,11 +10,14 @@ import (
 )
 
 // LeaseHost resolves every capability to one stub plugin and counts the references taken and given back.
+// A question lease counts among them and among the question leases.
 type LeaseHost struct {
-	Endpoint  transport.Endpoint
-	EnsureErr error
-	Acquired  atomic.Int32
-	Released  atomic.Int32
+	Endpoint          transport.Endpoint
+	EnsureErr         error
+	Acquired          atomic.Int32
+	Released          atomic.Int32
+	QuestionsAcquired atomic.Int32
+	QuestionsReleased atomic.Int32
 }
 
 func (h *LeaseHost) ResolveCapability(string) (manifestdomain.Discovered, error) {
@@ -40,6 +43,20 @@ func (h *LeaseHost) EnsureActive(context.Context, string) (transport.Endpoint, e
 func (h *LeaseHost) Acquire(string) { h.Acquired.Add(1) }
 
 func (h *LeaseHost) Release(string) { h.Released.Add(1) }
+
+func (h *LeaseHost) EnsureActiveForQuestion(context.Context, string) (transport.Endpoint, error) {
+	if h.EnsureErr != nil {
+		return transport.Endpoint{}, h.EnsureErr
+	}
+	h.Acquired.Add(1)
+	h.QuestionsAcquired.Add(1)
+	return h.Endpoint, nil
+}
+
+func (h *LeaseHost) ReleaseQuestion(string) {
+	h.Released.Add(1)
+	h.QuestionsReleased.Add(1)
+}
 
 // WatchPluginConfig registers nothing: the stub is never configured.
 func (h *LeaseHost) WatchPluginConfig(string, func()) func() { return func() {} }

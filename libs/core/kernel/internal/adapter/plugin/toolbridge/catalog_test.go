@@ -45,13 +45,15 @@ func (p *toolPlugin) CallTool(
 	return connect.NewResponse(&v1.CallToolResponse{Result: &v1.ToolResult{Text: req.Msg.GetName()}}), nil
 }
 
-// pluginHost serves each plugin from a test server and records every start.
+// pluginHost serves each plugin from a test server and records every start, and apart the starts for a
+// question.
 type pluginHost struct {
-	mu       sync.Mutex
-	infos    []plugin.Info
-	disabled map[string]bool
-	ports    map[string]int
-	starts   []string
+	mu        sync.Mutex
+	infos     []plugin.Info
+	disabled  map[string]bool
+	ports     map[string]int
+	starts    []string
+	questions []string
 }
 
 func newPluginHost(t *testing.T, plugins map[string]*toolPlugin) *pluginHost {
@@ -84,6 +86,15 @@ func (h *pluginHost) EnsureActive(_ context.Context, pluginID string) (transport
 }
 
 func (h *pluginHost) Release(string) {}
+
+func (h *pluginHost) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
+	h.mu.Lock()
+	h.questions = append(h.questions, pluginID)
+	h.mu.Unlock()
+	return h.EnsureActive(ctx, pluginID)
+}
+
+func (h *pluginHost) ReleaseQuestion(string) {}
 
 func (h *pluginHost) GetPluginInfos() []plugin.Info {
 	h.mu.Lock()
@@ -119,6 +130,14 @@ func (h *pluginHost) takeStarts() []string {
 	starts := h.starts
 	h.starts = nil
 	return starts
+}
+
+func (h *pluginHost) takeQuestions() []string {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	questions := h.questions
+	h.questions = nil
+	return questions
 }
 
 func newTwoPlugins(t *testing.T) *pluginHost {
@@ -192,6 +211,23 @@ func TestACallStartsOnlyThePluginOfTheTool(t *testing.T) {
 	}
 	if starts := host.takeStarts(); !slices.Equal(starts, []string{orchardPlugin}) {
 		t.Errorf("the call started %v", starts)
+	}
+}
+
+func TestTheListingAsksThePluginsAQuestionAndACallUsesThePlugin(t *testing.T) {
+	host := newTwoPlugins(t)
+	catalog := toolbridge.NewCatalog(host, filesIn(t, ""))
+
+	catalog.ListTools(t.Context(), callerPlugin)
+	if questions := host.takeQuestions(); !slices.Equal(questions, []string{gardenPlugin, orchardPlugin}) {
+		t.Errorf("the listing asked %v a question", questions)
+	}
+
+	if _, err := catalog.CallTool(t.Context(), callerPlugin, &v1.CallToolRequest{Name: "tree_count"}); err != nil {
+		t.Fatal(err)
+	}
+	if questions := host.takeQuestions(); len(questions) != 0 {
+		t.Errorf("the call held %v for a question", questions)
 	}
 }
 

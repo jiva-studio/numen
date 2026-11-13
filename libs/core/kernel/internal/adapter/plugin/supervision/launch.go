@@ -106,7 +106,7 @@ func (p *Processes) startBuiltIn(ctx context.Context, launch Launch, sup *lifecy
 		return NoEndpoint(), err
 	}
 
-	if err := p.sups.AttachInProcess(plug.Manifest.ID, sup, endpoint, p.clock.Now()); err != nil {
+	if err := p.sups.AttachInProcess(plug.Manifest.ID, sup, endpoint, launch.Lease, p.clock.Now()); err != nil {
 		shutdownBuiltIn(ctx, p, endpoint)
 		return NoEndpoint(), err
 	}

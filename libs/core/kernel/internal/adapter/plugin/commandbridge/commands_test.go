@@ -91,6 +91,12 @@ func (h *commandHost) EnsureActive(_ context.Context, id string) (transport.Endp
 
 func (h *commandHost) Release(string) { h.released++ }
 
+func (h *commandHost) EnsureActiveForQuestion(ctx context.Context, id string) (transport.Endpoint, error) {
+	return h.EnsureActive(ctx, id)
+}
+
+func (h *commandHost) ReleaseQuestion(id string) { h.Release(id) }
+
 func serveCommandPlugin(t *testing.T, plugin *commandPlugin) transport.Endpoint {
 	t.Helper()
 	mux := http.NewServeMux()
