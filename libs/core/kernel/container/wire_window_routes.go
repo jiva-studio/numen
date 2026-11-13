@@ -31,6 +31,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
@@ -99,7 +100,7 @@ func mountSearch(w *windowWiring) {
 		state,
 		search.NewFindNames(w.db.NoteQueries(), w.kinds.list),
 		search.NewFindPassages(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
-		w.cfg.Clock(),
+		searchcancel.NewSearches(w.cfg.Clock()),
 	)
 	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError)
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())

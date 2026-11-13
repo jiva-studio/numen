@@ -35,7 +35,7 @@ func newSetup(t *testing.T) *setup {
 	w := modelcalltest.New()
 	s := &setup{
 		world: w, entry: w.AddServer(t, "First", address, "sk-one"),
-		files: &memoryLists{byPlugin: map[string][]rowoptions.KeptList{}}, running: &runningProviders{provider: w.Provider},
+		files: &memoryLists{byPlugin: map[string][]connection.OptionList{}}, running: &runningProviders{provider: w.Provider},
 	}
 	w.AddRowField(modelcalltest.ServerTypeID, manifest.ConnectionField{Key: reasoningField, Type: "enum", Title: "Reasoning", OptionsFrom: reasoningOperation})
 	s.options = s.restart()

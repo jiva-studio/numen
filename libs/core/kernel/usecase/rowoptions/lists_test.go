@@ -17,17 +17,17 @@ import (
 // memoryLists keeps the option lists in memory, as the cache files of the plugins do across processes.
 type memoryLists struct {
 	mu       sync.Mutex
-	byPlugin map[string][]rowoptions.KeptList
+	byPlugin map[string][]connection.OptionList
 }
 
-func (m *memoryLists) ReadOptionLists(pluginID string) ([]rowoptions.KeptList, bool) {
+func (m *memoryLists) ReadOptionLists(pluginID string) ([]connection.OptionList, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	lists, isKept := m.byPlugin[pluginID]
 	return slices.Clone(lists), isKept
 }
 
-func (m *memoryLists) WriteOptionLists(pluginID string, lists []rowoptions.KeptList) {
+func (m *memoryLists) WriteOptionLists(pluginID string, lists []connection.OptionList) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.byPlugin[pluginID] = slices.Clone(lists)

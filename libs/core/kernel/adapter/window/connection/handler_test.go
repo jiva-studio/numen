@@ -124,7 +124,7 @@ func useCasesOf(all *connectiontest.Connections, source connectionport.ProviderS
 	return UseCases{
 		Edits: Edits{Create: all.Create, Update: all.Update, Delete: all.Delete},
 		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: rowoptions.NewOptions(
-			all.Resolve.Execute, all.ReadSecrets.Execute, source, notRunning{}, rowoptions.NewLists(&memoryLists{byPlugin: map[string][]rowoptions.KeptList{}}),
+			all.Resolve.Execute, all.ReadSecrets.Execute, source, notRunning{}, rowoptions.NewLists(&memoryLists{byPlugin: map[string][]connection.OptionList{}}),
 		)},
 	}
 }
@@ -132,17 +132,17 @@ func useCasesOf(all *connectiontest.Connections, source connectionport.ProviderS
 // memoryLists keeps the option lists in memory.
 type memoryLists struct {
 	mu       sync.Mutex
-	byPlugin map[string][]rowoptions.KeptList
+	byPlugin map[string][]connection.OptionList
 }
 
-func (m *memoryLists) ReadOptionLists(pluginID string) ([]rowoptions.KeptList, bool) {
+func (m *memoryLists) ReadOptionLists(pluginID string) ([]connection.OptionList, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	lists, isKept := m.byPlugin[pluginID]
 	return slices.Clone(lists), isKept
 }
 
-func (m *memoryLists) WriteOptionLists(pluginID string, lists []rowoptions.KeptList) {
+func (m *memoryLists) WriteOptionLists(pluginID string, lists []connection.OptionList) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.byPlugin[pluginID] = slices.Clone(lists)

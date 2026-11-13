@@ -12,24 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// KeptList is the options a provider listed for one row field of a connection, with the values of the row
-// fields declared before it and the operations it was asked with, and what of the connection the listing
-// depends on.
-type KeptList struct {
-	ConnectionID  string
-	Field         string
-	RowOptions    map[string]string
-	Operations    []string
-	Revision      int
-	PluginVersion string
-	Fields        map[string]string
-	Options       []modelcall.Option
-}
-
 // ListFiles keeps the option lists of the connections of each plugin across processes, one set per plugin.
 type ListFiles interface {
-	ReadOptionLists(pluginID string) ([]KeptList, bool)
-	WriteOptionLists(pluginID string, lists []KeptList)
+	ReadOptionLists(pluginID string) ([]connection.OptionList, bool)
+	WriteOptionLists(pluginID string, lists []connection.OptionList)
 }
 
 // RunningProviders opens the provider of a plugin only while its process runs; a plugin that does not run
@@ -52,8 +38,8 @@ func NewLists(files ListFiles) *Lists {
 	return &Lists{files: files, refreshing: map[string]bool{}}
 }
 
-func newKeptList(resolved connection.Resolved, field string, options map[string]string, operations []string) KeptList {
-	return KeptList{
+func newOptionList(resolved connection.Resolved, field string, options map[string]string, operations []string) connection.OptionList {
+	return connection.OptionList{
 		ConnectionID: resolved.ID, Field: field, RowOptions: getPrecedingOptions(resolved.Declaration, field, options),
 		Operations: slices.Clone(operations),
 		Revision:   resolved.Revision, PluginVersion: resolved.PluginVersion, Fields: maps.Clone(resolved.Fields),
@@ -75,21 +61,21 @@ func getPrecedingOptions(declaration manifest.ConnectionType, field string, opti
 	return preceding
 }
 
-func (k KeptList) isSameRequest(other KeptList) bool {
+func isSameRequest(k, other connection.OptionList) bool {
 	return k.ConnectionID == other.ConnectionID && k.Field == other.Field && maps.Equal(k.RowOptions, other.RowOptions) &&
 		slices.Equal(k.Operations, other.Operations)
 }
 
-func (k KeptList) isSameState(other KeptList) bool {
+func isSameState(k, other connection.OptionList) bool {
 	return k.Revision == other.Revision && k.PluginVersion == other.PluginVersion && maps.Equal(k.Fields, other.Fields)
 }
 
-func (l *Lists) get(pluginID string, asked KeptList) ([]modelcall.Option, bool) {
+func (l *Lists) get(pluginID string, asked connection.OptionList) ([]modelcall.Option, bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	kept, _ := l.files.ReadOptionLists(pluginID)
 	for _, one := range kept {
-		if one.isSameRequest(asked) && one.isSameState(asked) {
+		if isSameRequest(one, asked) && isSameState(one, asked) {
 			return slices.Clone(one.Options), true
 		}
 	}
@@ -98,13 +84,13 @@ func (l *Lists) get(pluginID string, asked KeptList) ([]modelcall.Option, bool) 
 
 // put keeps the listing in place of the one of the same request, and drops the listings of the connection
 // made for another state of it.
-func (l *Lists) put(pluginID string, listed KeptList) {
+func (l *Lists) put(pluginID string, listed connection.OptionList) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	kept, _ := l.files.ReadOptionLists(pluginID)
-	lists := []KeptList{}
+	lists := []connection.OptionList{}
 	for _, one := range kept {
-		if one.isSameRequest(listed) || (one.ConnectionID == listed.ConnectionID && !one.isSameState(listed)) {
+		if isSameRequest(one, listed) || (one.ConnectionID == listed.ConnectionID && !isSameState(one, listed)) {
 			continue
 		}
 		lists = append(lists, one)
@@ -113,11 +99,11 @@ func (l *Lists) put(pluginID string, listed KeptList) {
 }
 
 // listRequests returns the listings kept for the connection, in any state of it.
-func (l *Lists) listRequests(pluginID, connectionID string) []KeptList {
+func (l *Lists) listRequests(pluginID, connectionID string) []connection.OptionList {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	kept, _ := l.files.ReadOptionLists(pluginID)
-	var requests []KeptList
+	var requests []connection.OptionList
 	for _, one := range kept {
 		if one.ConnectionID == connectionID {
 			requests = append(requests, one)

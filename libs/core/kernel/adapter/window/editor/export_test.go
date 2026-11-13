@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -98,7 +99,7 @@ func createServices(state *State) *Services {
 		server:  NewFileServer(state, nil),
 	}
 	services.Extra = []Route{
-		RouteOf(state, search.NewHandler(state, nil, nil, testsupport.NewClock()), search.NewRoute),
+		RouteOf(state, search.NewHandler(state, nil, nil, searchcancel.NewSearches(testsupport.NewClock())), search.NewRoute),
 		RouteOf(state, settings.NewHandler(settings.Values{}, settings.PluginFolders{}), settings.NewRoute),
 		RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
 	}
