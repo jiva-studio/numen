@@ -91,7 +91,10 @@ type Story = StoryObj<typeof meta>
 const getRowOf = (popover: HTMLElement, name: string) =>
   within(popover).getByRole('listitem', { name })
 
-/** The item counts five plugins; the list gives each one line: name, health and what it does. */
+/**
+ * The item counts five plugins; the list gives each one line: a dot for in use or idle, the name,
+ * the worst health item of an unhealthy plugin, and the time until an idle one stops.
+ */
 export const Open: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -99,24 +102,29 @@ export const Open: Story = {
     const popover = await canvas.findByRole('dialog', { name: 'Running plugins' })
 
     const atlas = within(getRowOf(popover, 'Atlas'))
-    await expect(atlas.getByText('In use')).toBeVisible()
-    await expect(atlas.getByText('2 calls')).toBeVisible()
-    await expect(atlas.getByRole('img', { name: 'Healthy' })).toBeVisible()
+    await expect(atlas.getByRole('img', { name: 'In use' })).toBeVisible()
+    await expect(atlas.queryByText(/\d+s$/)).toBeNull()
 
     const gazette = within(getRowOf(popover, 'Gazette'))
-    await expect(gazette.getByText('Idle 57s')).toBeVisible()
-    await expect(gazette.getByText('stops in 2m 02s')).toBeVisible()
+    await expect(gazette.getByRole('img', { name: 'Idle' })).toBeVisible()
+    const countdown = gazette.getByText('2m 02s')
+    await expect(countdown).toBeVisible()
+    await expect(countdown).toHaveAttribute('title', 'Stops in 2m 02s; idle for 57s')
 
     const ledger = getRowOf(popover, 'Ledger')
+    await expect(within(ledger).getByRole('img', { name: 'Idle' })).toBeVisible()
     await expect(within(ledger).getByText('stopping')).toBeVisible()
     await expect(ledger).toHaveAttribute('title', 'org.example.ledger\nRunning for 3h 00m')
 
     const maps = within(getRowOf(popover, 'Maps'))
-    await expect(
-      maps.getByRole('img', {
-        name: 'The map server does not answer since the last restart of the tile service',
-      }),
-    ).toBeVisible()
+    const health = maps.getByText(
+      'The map server does not answer since the last restart of the tile service',
+    )
+    await expect(health).toBeVisible()
+    await expect(health).toHaveAttribute(
+      'title',
+      'The map server does not answer since the last restart of the tile service',
+    )
 
     const words = getRowOf(popover, 'Words')
     await expect(within(words).getByText('in core')).toBeVisible()

@@ -71,7 +71,6 @@ function isResize(event: Event): boolean {
       v-if="isOpen && isReady"
       :processes="processes"
       :now="now"
-      :locale="locale"
       @close="onClose"
     />
   </div>
