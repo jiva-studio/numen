@@ -248,7 +248,10 @@ describe('the look settings of the plex', () => {
       ['namesOpacity', 0.7],
       ['focusedNamesOpacity', 1],
     ] as const) {
-      expect(settings.find((one) => one.key === key), key).toMatchObject({
+      expect(
+        settings.find((one) => one.key === key),
+        key,
+      ).toMatchObject({
         type: 'range',
         default: value,
         min: 0,
