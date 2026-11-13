@@ -20,6 +20,16 @@ func (r *recorder) SendText(text string) error {
 	return r.refusal
 }
 
+func (r *recorder) SendThought(text string) error {
+	r.reports = append(r.reports, "thought "+text)
+	return r.refusal
+}
+
+func (r *recorder) SendToolInput(id, tool, arguments string) error {
+	r.reports = append(r.reports, "input "+id+" "+tool+" "+arguments)
+	return r.refusal
+}
+
 func (r *recorder) SendToolCall(id, tool, arguments string) error {
 	r.reports = append(r.reports, "call "+id+" "+tool+" "+arguments)
 	return r.refusal
@@ -61,17 +71,37 @@ func textDelta(text string) string {
 	return `{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":` + quote(text) + `}}}`
 }
 
-// A call is reported when it starts and once more with its whole arguments, by the name of the vault's
-// tool without the prefix of its server.
-func TestACallIsReportedAtItsStartAndWithItsWholeArguments(t *testing.T) {
+// A call is reported when it starts, with its arguments as far as they arrived after each piece, and once
+// more with its whole arguments, by the name of the vault's tool without the prefix of its server.
+func TestACallIsReportedAtItsStartAsItsArgumentsArriveAndWithItsWholeArguments(t *testing.T) {
 	reports, _ := parseLines(t, startEdit, delta(`{"path":"Beds.md",`), delta(`"text":"Raised"}`), stopBlock)
 
 	want := []string{
 		"call toolu_01 note_edit ",
+		`input toolu_01 note_edit {"path":"Beds.md",`,
+		`input toolu_01 note_edit {"path":"Beds.md","text":"Raised"}`,
 		`call toolu_01 note_edit {"path":"Beds.md","text":"Raised"}`,
 	}
 	if !slices.Equal(reports, want) {
 		t.Errorf("reports = %q, want %q", reports, want)
+	}
+}
+
+func thinkingDelta(text string) string {
+	return `{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"thinking_delta","thinking":` + quote(text) + `}}}`
+}
+
+// The reasoning of the model is reported as it streams, and from the whole message where nothing streams.
+func TestTheReasoningOfTheModelIsReportedAsThoughts(t *testing.T) {
+	streamed, _ := parseLines(t, thinkingDelta("The beds need "), thinkingDelta(""), thinkingDelta("water."), textDelta("Water them."))
+	whole, _ := parseLines(t,
+		`{"type":"assistant","message":{"content":[{"type":"thinking","thinking":"The note says oak."},{"type":"text","text":"Oak beds."}]}}`)
+
+	if want := []string{"thought The beds need ", "thought water.", "text Water them."}; !slices.Equal(streamed, want) {
+		t.Errorf("streamed reports = %q, want %q", streamed, want)
+	}
+	if want := []string{"thought The note says oak.", "text Oak beds."}; !slices.Equal(whole, want) {
+		t.Errorf("whole reports = %q, want %q", whole, want)
 	}
 }
 

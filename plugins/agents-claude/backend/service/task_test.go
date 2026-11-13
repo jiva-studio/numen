@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -50,13 +51,53 @@ func TestATaskStreamsTheClaudeTextAndToolCalls(t *testing.T) {
 	}
 }
 
-// Claude Code keeps web search alone of its own tools, may call the tools of the host without asking,
-// reads no settings, hooks or skills of the person, and goes round at most 100 times. The instruction
-// sentences of the tools are its system prompt.
+// The reasoning of the model reaches the chat as thoughts, and the note a call writes is previewed while
+// the call is still arriving, again after each 200 characters of its arguments.
+func TestATaskSendsTheThoughtsAndThePreviewOfTheNoteBeingWritten(t *testing.T) {
+	_, client := serveGardenHost(t)
+	first, second := strings.Repeat("Oak ", 55), "and elm."
+	output := filepath.Join(t.TempDir(), "output")
+	lines := []string{
+		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"thinking_delta","thinking":"The plan needs oak."}}}`,
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c1","name":"mcp__numen__garden_plan"}}}`,
+		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"input_json_delta","partial_json":` +
+			quoteJSON(`{"path":"Garden/Plan.md","text":"`+first) + `}}}`,
+		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"input_json_delta","partial_json":` +
+			quoteJSON(second+`"}`) + `}}}`,
+		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
+	}
+	if err := os.WriteFile(output, []byte(strings.Join(lines, "\n")+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	svc := newClaude(t, client, writeScript(t, "claude", "cat > /dev/null\ncat "+quoteShell(output)+"\n"))
+
+	frames, _, err := runTask(t.Context(), svc, taskCall(nil), &acp.TaskRequest{Prompt: "Plan the beds"})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		`thought t1 "The plan needs oak."`,
+		`call c1 "Plan the garden" TOOL_KIND_EDIT TOOL_CALL_STATUS_PENDING [] []`,
+		fmt.Sprintf("update c1 TOOL_CALL_STATUS_UNSPECIFIED diff Garden/Plan.md %q %q", "", first),
+		"update c1 TOOL_CALL_STATUS_IN_PROGRESS",
+	}
+	if !slices.Equal(frames, want) {
+		t.Errorf("frames = %q, want %q", frames, want)
+	}
+}
+
+// Claude Code keeps web search alone of its own tools, may call the tools of the host and of the person's
+// own MCP servers without asking, reads no settings, hooks or skills of the person, and goes round at most
+// 100 times. The instruction sentences of the tools are its system prompt.
 func TestClaudeMayUseTheToolsOfTheHostAndWebSearchAlone(t *testing.T) {
 	_, client := serveGardenHost(t)
 	dir := t.TempDir()
 	svc := newClaude(t, client, writeScript(t, "claude", recordArgs(dir)))
+	person := os.Getenv("CLAUDE_CONFIG_DIR")
+	if err := os.WriteFile(filepath.Join(person, ".claude.json"), []byte(`{"mcpServers":{"weather":{"type":"stdio","command":"weather-mcp"}}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
 
 	if _, _, err := runTask(t.Context(), svc, taskCall(nil), &acp.TaskRequest{Prompt: "Plan the beds"}); err != nil {
 		t.Fatal(err)
@@ -64,7 +105,7 @@ func TestClaudeMayUseTheToolsOfTheHostAndWebSearchAlone(t *testing.T) {
 
 	argv := readArgv(t, filepath.Join(dir, "argv"))
 	assertPair(t, argv, "--tools", "WebSearch")
-	assertPair(t, argv, "--allowedTools", "WebSearch,mcp__numen__garden_plan,mcp__numen__note_read")
+	assertPair(t, argv, "--allowedTools", "WebSearch,mcp__numen__garden_plan,mcp__numen__note_read,mcp__weather__*")
 	assertPair(t, argv, "--setting-sources", "")
 	assertPair(t, argv, "--permission-mode", "dontAsk")
 	assertPair(t, argv, "--max-turns", "100")

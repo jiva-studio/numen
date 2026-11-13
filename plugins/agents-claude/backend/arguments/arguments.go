@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"unicode"
 )
 
-// Options is what a run of the program is started from.
+// Options is what a run of the program is started from. Servers are the names of the person's own MCP
+// servers in the configuration, every tool of which the run may call.
 type Options struct {
 	Instructions  string
 	Model         string
@@ -16,6 +18,7 @@ type Options struct {
 	Session       string
 	Turns         int
 	Tools         []string
+	Servers       []string
 	MayReadHooks  bool
 }
 
@@ -74,6 +77,9 @@ func Build(in Options) []string {
 		}
 		allowed = append(allowed, name)
 	}
+	for _, server := range in.Servers {
+		allowed = append(allowed, "mcp__"+getServerPrefix(server)+"__*")
+	}
 	slices.Sort(allowed)
 	args = append(args, "--allowedTools", strings.Join(allowed, ","))
 
@@ -86,6 +92,17 @@ func Build(in Options) []string {
 	args = append(args, "--setting-sources", sources)
 
 	return appendRunFlags(args, in)
+}
+
+// getServerPrefix returns the name of a server as the names of its tools start with: a character other
+// than a letter, a digit, "_" or "-" becomes "_".
+func getServerPrefix(server string) string {
+	return strings.Map(func(char rune) rune {
+		if char < 128 && (unicode.IsLetter(char) || unicode.IsDigit(char) || char == '_' || char == '-') {
+			return char
+		}
+		return '_'
+	}, server)
 }
 
 func buildAnswerArguments(in Options) []string {

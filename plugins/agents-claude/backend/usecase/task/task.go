@@ -108,7 +108,7 @@ func (r *Runner) RunTask(
 	if err != nil {
 		return nil, readFailure(ctx, connection.NewStopError(connection.ReasonUnavailable))
 	}
-	served, configFile, err := r.serveTools(runCtx, listed, request)
+	served, configFile, servers, err := r.serveTools(runCtx, listed, request)
 	if err != nil {
 		return nil, readFailure(ctx, connection.NewStopError(connection.ReasonUnavailable))
 	}
@@ -122,7 +122,7 @@ func (r *Runner) RunTask(
 	modelName, level := r.chooseModel(call)
 	args := arguments.Build(arguments.Options{
 		Instructions: writeInstructions(listed), Model: modelName, Reasoning: level, Configuration: configFile,
-		Session: r.sessions.get(key), Turns: 0, Tools: listNames(listed), MayReadHooks: values.MayReadHooks,
+		Session: r.sessions.get(key), Turns: 0, Tools: listNames(listed), Servers: servers, MayReadHooks: values.MayReadHooks,
 	})
 	frames := newTurn(indexTools(listed), send)
 	reason, err := r.runProgram(runCtx, program, args, writePrompt(request), frames, stream.Options{
@@ -185,7 +185,7 @@ func (r *Runner) Answer(ctx context.Context, call connection.Call, instructions,
 	modelName, level := r.chooseModel(call)
 	args := arguments.Build(arguments.Options{
 		Instructions: instructions, Model: modelName, Reasoning: level, Configuration: "",
-		Session: "", Turns: 0, Tools: nil, MayReadHooks: false,
+		Session: "", Turns: 0, Tools: nil, Servers: nil, MayReadHooks: false,
 	})
 	answer := &collector{text: strings.Builder{}}
 	reason, err := r.runProgram(runCtx, program, args, prompt, answer, stream.Options{Record: nil, ExpectsVault: false})
@@ -270,22 +270,26 @@ func (r *Runner) listTools(ctx context.Context) ([]*tools.ToolInfo, error) {
 	return listed.Tools, nil
 }
 
-func (r *Runner) serveTools(ctx context.Context, listed []*tools.ToolInfo, request *contract.TaskRequest) (ServedTools, string, error) {
+// serveTools serves the listed tools and returns where, the file of the configuration that names them and
+// the person's own servers, and the names of those servers.
+func (r *Runner) serveTools(
+	ctx context.Context, listed []*tools.ToolInfo, request *contract.TaskRequest,
+) (ServedTools, string, []string, error) {
 	if len(listed) == 0 {
-		return nil, "", nil
+		return nil, "", nil, nil
 	}
 	toolContext, vaultID := maps.Clone(request.GetToolContext()), request.GetVaultId()
 	served, err := r.deps.ToolServer.Serve(ctx, listed, func(ctx context.Context, name string, arguments []byte) (*tools.CallResponse, error) {
 		return r.deps.Tools.InvokeTool(ctx, tools.Call{Name: name, Arguments: arguments, Context: toolContext, VaultID: vaultID})
 	})
 	if err != nil {
-		return nil, "", err
+		return nil, "", nil, err
 	}
-	configFile, err := r.deps.ToolConfig.Write(served.GetURL(), served.GetToken())
+	configFile, servers, err := r.deps.ToolConfig.Write(served.GetURL(), served.GetToken())
 	if err != nil {
-		return nil, "", errors.Join(err, served.Close(context.WithoutCancel(ctx)))
+		return nil, "", nil, errors.Join(err, served.Close(context.WithoutCancel(ctx)))
 	}
-	return served, configFile, nil
+	return served, configFile, servers, nil
 }
 
 func (r *Runner) begin(ctx context.Context) (context.Context, func(), error) {
@@ -411,5 +415,9 @@ func (c *collector) SendText(text string) error {
 }
 
 func (*collector) SendToolCall(string, string, string) error { return nil }
+
+func (*collector) SendThought(string) error { return nil }
+
+func (*collector) SendToolInput(string, string, string) error { return nil }
 
 func (*collector) SendToolResult(string, bool) error { return nil }
