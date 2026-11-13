@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
-func TestTheWordsOnlyTaskLeavesWhenTheSearchSourceAnswersAgain(t *testing.T) {
+func TestSuccessfulMeaningSearchRemovesTheWordsOnlyTask(t *testing.T) {
 	tasks := run.NewTasks()
 	state := NewState(tasks, nil, nil)
 

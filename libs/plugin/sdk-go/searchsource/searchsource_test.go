@@ -93,7 +93,8 @@ func TestTheAdapterCarriesTheQueryToTheHandler(t *testing.T) {
 	found, err := ad.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchSourceServiceSearchPassagesRequest{Query: "12", Floor: 0.5}))
 	if err != nil || len(found.Msg.GetMatches()) != 1 || found.Msg.GetMatches()[0].GetChunkId() != "12" || found.Msg.GetMatches()[0].GetScore() != 0.5 {
 		t.Fatalf("SearchPassages = %v, %v", found, err)
-	}}
+	}
+}
 
 func TestClient_PropagatesHandlerErrors(t *testing.T) {
 	wantErr := errors.New("model failed")

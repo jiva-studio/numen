@@ -24,36 +24,26 @@ defineSlots<{
 
 <template>
   <div class="settings-page">
-    <div class="settings-page__content">
-      <SettingsToolbar
-        :path="props.path"
-        @back="emit('back')"
-        @open="(level) => emit('open', level)"
-      >
-        <template v-if="$slots.actions" #default>
-          <slot name="actions" />
-        </template>
-      </SettingsToolbar>
-      <slot />
-    </div>
+    <SettingsToolbar :path="props.path" @back="emit('back')" @open="(level) => emit('open', level)">
+      <template v-if="$slots.actions" #default>
+        <slot name="actions" />
+      </template>
+    </SettingsToolbar>
+    <slot />
   </div>
 </template>
 
 <style scoped>
 .settings-page {
-  block-size: 100%;
-  min-block-size: 0;
-  overflow-y: auto;
-  padding: 0 var(--numen-gutter) var(--numen-gutter);
-}
-
-.settings-page__content {
   container: settings / inline-size;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  inline-size: 100%;
-  max-inline-size: var(--settings-measure);
-  margin-inline: auto;
+  box-sizing: border-box;
+  block-size: 100%;
+  min-block-size: 0;
+  overflow-y: auto;
+  padding: 0 max(var(--numen-gutter), calc((100% - var(--settings-measure)) / 2))
+    var(--numen-gutter);
 }
 </style>

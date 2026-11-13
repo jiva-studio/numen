@@ -563,7 +563,7 @@ describe('a model listing that fails', () => {
     expect(restored.agents!.offered.pendingAgentIds.value).toStrictEqual([])
   })
 
-  it('is asked again on the next open of a picker', async () => {
+  it('lists the models again on the next picker open after a failed listing', async () => {
     let isOffline = true
     const { host } = createAgentConnections(
       { frames: [] },
