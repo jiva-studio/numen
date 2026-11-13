@@ -75,10 +75,12 @@ func NewOptions(deps Deps) *Options {
 	return &Options{deps: deps}
 }
 
-// request is a listing to ask for: what the answer is kept under, and how long the read may take.
+// request is a listing to ask for: what the answer is kept under, how long the read may take, and whether
+// the provider reads past any list it keeps.
 type request struct {
 	key     connection.OptionList
 	timeout time.Duration
+	isFresh bool
 }
 
 // ListOptions returns the values the row field can take from the listing kept for the connection as it is
@@ -101,7 +103,7 @@ func (o *Options) ListOptions(
 	if listed, isKept := o.deps.Lists.get(resolved.PluginID, asked.key); isKept {
 		return listed, nil
 	}
-	return o.readOptions(ctx, resolved, declared, asked, false)
+	return o.readOptions(ctx, resolved, declared, asked)
 }
 
 // RefreshOptions asks the provider, which may start its plugin, for the values the row field can take read
@@ -118,7 +120,8 @@ func (o *Options) RefreshOptions(
 	if err != nil {
 		return nil, err
 	}
-	return o.readOptions(ctx, resolved, declared, asked, true)
+	asked.isFresh = true
+	return o.readOptions(ctx, resolved, declared, asked)
 }
 
 // RefreshConnection asks the provider again, in the background and starting its plugin where needed, for
@@ -182,7 +185,8 @@ func (o *Options) refreshKept(
 		if err != nil {
 			return
 		}
-		if _, err := o.askProvider(ctx, provider, resolved, declared.OptionsFrom, secrets, asked, isFresh); err != nil {
+		asked.isFresh = isFresh
+		if _, err := o.askProvider(ctx, provider, resolved, declared.OptionsFrom, secrets, asked); err != nil {
 			return
 		}
 	}
@@ -221,7 +225,7 @@ func (o *Options) newRequest(
 }
 
 func (o *Options) readOptions(
-	ctx context.Context, resolved connection.Resolved, declared manifest.ConnectionField, asked request, isFresh bool,
+	ctx context.Context, resolved connection.Resolved, declared manifest.ConnectionField, asked request,
 ) ([]modelcall.Option, error) {
 	provider, release, err := o.deps.Source.OpenProvider(plugin.WithPurpose(ctx, o.describeOperation(declared.OptionsFrom)+" of "+resolved.Name), resolved.PluginID)
 	if err != nil {
@@ -235,7 +239,7 @@ func (o *Options) readOptions(
 	case err != nil:
 		return nil, err
 	}
-	listed, err := o.askProvider(ctx, provider, resolved, declared.OptionsFrom, secrets, asked, isFresh)
+	listed, err := o.askProvider(ctx, provider, resolved, declared.OptionsFrom, secrets, asked)
 	if err != nil {
 		return nil, failed(ctx, readReason(err))
 	}
@@ -244,11 +248,11 @@ func (o *Options) readOptions(
 
 func (o *Options) askProvider(
 	ctx context.Context, provider connectionport.Provider, resolved connection.Resolved, operation string,
-	secrets map[string]string, asked request, isFresh bool,
+	secrets map[string]string, asked request,
 ) ([]modelcall.Option, error) {
 	readCtx, stop := context.WithTimeout(ctx, asked.timeout)
 	defer stop()
-	query := modelcall.OptionsQuery{Operations: asked.key.Operations, IsFresh: isFresh}
+	query := modelcall.OptionsQuery{Operations: asked.key.Operations, IsFresh: asked.isFresh}
 	listed, err := provider.ListOptions(readCtx, operation, resolved.NewCall(secrets, asked.key.RowOptions), query)
 	if err != nil {
 		return nil, err
