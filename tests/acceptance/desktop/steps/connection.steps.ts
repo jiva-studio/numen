@@ -17,6 +17,10 @@ Given(
   },
 )
 
+Given('the program {string} is installed on this computer', ({ person }, name: string) => {
+  person.connections.installProgram(name)
+})
+
 Given('the following connections:', async ({ person }, connections: DataTable) => {
   await person.connections.addAll(readConnectionEntries(connections.raw()))
 })
@@ -52,6 +56,6 @@ Then('the connection {string} shows {string}', async ({ person }, name: string, 
   await person.connections.expectState(name, state)
 })
 
-Then('the plugin {string} has {int} row(s)', async ({ person }, plugin: string, count: number) => {
-  await person.connections.expectRowCount(plugin, count)
+Then('the connection {string} cannot be opened', async ({ person }, name: string) => {
+  await person.connections.expectNotOpenable(name)
 })

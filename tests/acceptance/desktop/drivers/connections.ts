@@ -13,6 +13,8 @@ const KEY_SAVED = '••••••••'
 const KEY_LABEL = 'API key'
 /** The column of a table of rows that names the connection; every other column is a field of the row, by its title: "model" is the field "Model". */
 const CONNECTION_COLUMN = 'connection'
+/** A connection the plugin of its type detects is listed once the plugin started and answered. */
+const PLUGIN_START_LIMIT_MS = 35_000
 
 export interface ConnectionEntry {
   readonly name: string
@@ -101,7 +103,7 @@ export class ConnectionsDriver {
     const panel = await this.settings.showConnections()
     for (const row of readTable(table)) {
       const listed = this.page.getRow(panel, requireCell(row, 'name'))
-      await expect(listed).toHaveCount(1)
+      await expect(listed).toHaveCount(1, { timeout: PLUGIN_START_LIMIT_MS })
       await expect(listed).toContainText(requireCell(row, 'type'))
     }
   }
@@ -144,7 +146,23 @@ export class ConnectionsDriver {
     }
   }
 
-  async expectRowCount(plugin: string, count: number): Promise<void> {
-    await expect(this.rows.getRows(await this.settings.showPage(plugin))).toHaveCount(count)
+  /** The setting names what it uses in place of rows, such as the connections it discovers. */
+  async expectSettingText(setting: string, plugin: string, text: string): Promise<void> {
+    await expect(await this.showSetting(setting, plugin)).toContainText(text, { timeout: PLUGIN_START_LIMIT_MS })
+  }
+
+  /** Puts a stand-in of the program where the plugin of the program looks for it. */
+  installProgram(name: string): void {
+    this.scenario.installProgram(name)
+  }
+
+  /** The connection is listed and is no button: a click opens no dialog. */
+  async expectNotOpenable(name: string): Promise<void> {
+    const panel = await this.settings.showConnections()
+    const listed = this.page.getRow(panel, name)
+    await expect(listed).toHaveCount(1, { timeout: PLUGIN_START_LIMIT_MS })
+    await expect(listed).not.toHaveRole('button')
+    await listed.click()
+    await expect(this.page.getDialog()).toHaveCount(0)
   }
 }

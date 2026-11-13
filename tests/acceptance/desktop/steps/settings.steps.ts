@@ -63,3 +63,17 @@ Then(
 Then('the setting {string} of the plugin {string} has no rows', async ({ person }, name: string, plugin: string) => {
   await person.connections.expectRows(name, plugin, [])
 })
+
+When(
+  'the person removes every row of the setting {string} of the plugin {string}',
+  async ({ person }, name: string, plugin: string) => {
+    await person.connections.setRows(name, plugin, [])
+  },
+)
+
+Then(
+  'the setting {string} of the plugin {string} shows {string}',
+  async ({ person }, name: string, plugin: string, text: string) => {
+    await person.connections.expectSettingText(name, plugin, text)
+  },
+)
