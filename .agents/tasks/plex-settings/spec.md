@@ -8,7 +8,7 @@ All paths are under `plugins/views-plex-graph/`. Placement skill: [`nm-place-plu
 
 ## 1. Manifest entries
 
-Appended to `settings[]` after `focusedNamesOpacity` (the order of the manifest: references, nestHeadings, headingLimit, showNames, namesPerNote, namesOpacity, focusedNamesOpacity, then the rows below; `highlightLinks` stands before `animationLength`). The numbers are declared `range`, drawn as sliders. Defaults are today's values, rounded where the owner accepted it. Box lengths are in the plex's option unit: pixels at the designed text size (13, `DESIGNED_TYPE`), multiplied by the text size as every option length is today (`scaleOptions`). The two line widths are screen pixels, as the tokens they replace are today. Ranges and steps are the playground's.
+Appended to `settings[]` after `focusedNamesOpacity` (the order of the manifest: references, nestHeadings, headingLimit, showNames, namesPerNote, namesOpacity, focusedNamesOpacity, then the rows below; `highlightLinks` is before `animationLength`). The numbers are declared `range`, drawn as sliders. Defaults are today's values, rounded where the owner accepted it. Box lengths are in the plex's option unit: pixels at the designed text size (13, `DESIGNED_TYPE`), multiplied by the text size as every option length is today (`scaleOptions`). The two line widths are screen pixels, as the tokens they replace are today. Ranges and steps are the playground's.
 
 | key | type | title | description | default | min | max | step |
 |---|---|---|---|---|---|---|---|
@@ -176,7 +176,7 @@ Contract: no proto, wire or shared payload change; `ManifestSetting` already car
 ## 7. Amendments (2026-11-13)
 
 1. Every number setting is declared `range` (a slider with its value on the settings page), not `number`.
-2. The order of the manifest is the order of the settings page; no groups were built. `highlightLinks` ("Highlight links of a hovered note", boolean, on by default) stands after `lineCurvature` and before `animationLength`.
+2. The order of the manifest is the order of the settings page; no groups were built. `highlightLinks` ("Highlight links of a hovered note", boolean, on by default) is after `lineCurvature` and before `animationLength`.
 3. Focus size scales the title, icon, gap and padding of the focus note together with its pill, with the pill on and off (the invariant of section 4 "no change of title size" is replaced). The description reads "How much larger the note in the middle is drawn: its pill, title and icon."
 4. `showPills` reads "Draw a pill behind each title. Off: the title alone."; the dot before a title without a pill is removed.
 5. `model/look.ts` also holds `references`, `highlightLinks`, `namesOpacity` and `focusedNamesOpacity`. A test of `manifest.test.ts` reads every default and range from the code and compares it with `manifest.json`.

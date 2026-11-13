@@ -23,11 +23,11 @@ const graph: PlexGraph = {
 
 const baseline = applyRoom(resolveOptions({ viewport: WINDOW }))
 
-/** One note per row; `isMisplaced` sends a note far outside the window. */
 function createRows(
   isMisplaced: (context: PlacementContext, node: PlacedNode) => boolean,
   seen: PlacementContext[] = [],
 ): Placement {
+  // One note per row; `isMisplaced` sends a note far outside the window.
   return {
     name: 'rows',
     place(nodesByRelation, _focus, context) {

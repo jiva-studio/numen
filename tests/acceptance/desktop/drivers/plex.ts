@@ -24,8 +24,8 @@ export class PlexDriver {
     return parseReference(reference, name).reference === 'at' ? getStem(name) : name
   }
 
-  /** The plex of the window once it has drawn its focus note: a note is absent from a plex that has not drawn yet, so an absence is read after this. */
   private async getGraph(): Promise<Locator> {
+    // A note is absent from a plex that has not drawn yet, so an absence is read after the focus note is drawn.
     // The settings tab may be in front of the Plex tab, so the graph is looked up each time.
     const graph = getGraph(this.scenario.page)
     if (!(await graph.isVisible())) await this.scenario.page.locator('[role="tab"][data-workspace-tab^="plex"]').first().click()
@@ -54,8 +54,8 @@ export class PlexDriver {
     return node
   }
 
-  /** A part of a note (its pill, its handle, its headings): in the node, or in the layer over the notes once the note is open. */
   private async getPart(title: string, selector: string): Promise<Locator> {
+    // The part is in the node, or in the layer over the notes once the note is open.
     const graph = await this.getGraph()
     const lifted = graph
       .locator('.plex__lifted')
@@ -82,8 +82,8 @@ export class PlexDriver {
     await this.expectStaysAbsent(headings)
   }
 
-  /** The list of headings opens after the wait of the pointer: an absence is held for longer than that wait. */
   private async expectStaysAbsent(locator: Locator): Promise<void> {
+    // The list of headings opens after the wait of the pointer: an absence is held for longer than that wait.
     const deadline = Date.now() + HEADINGS_HOLD_MS
     do {
       await expect(locator).toHaveCount(0)
@@ -137,8 +137,8 @@ export class PlexDriver {
     await options.first().click()
   }
 
-  /** The handle of a node, once it is shown and has stopped moving; the pointer is put on the note again while it is not. */
   private async waitForHandle(title: string): Promise<Locator> {
+    // The pointer is put on the note again until the handle is shown and has stopped moving.
     const handle = await this.getPart(title, '.plex__handle')
     await expect(async () => {
       await this.hoverNote(title)
@@ -180,7 +180,6 @@ export class PlexDriver {
     await this.drag(handle, await getMiddle(await this.getPart(toTitle, '.plex__box')))
   }
 
-  /** How far the plex reaches from a point in a direction. */
   private async measureRoom(from: Point, dx: number, dy: number): Promise<number> {
     const area = await (await this.getGraph()).boundingBox()
     if (area === null) throw new Error('the plex is not drawn')
@@ -189,8 +188,8 @@ export class PlexDriver {
     return dy < 0 ? from.y - area.y : area.y + area.height - from.y
   }
 
-  /** A line that ends on a note links it: the end of a line that makes a note is on no note. */
   private async expectEmptyPlace(at: Point): Promise<void> {
+    // A line that ends on a note links it: the end of a line that makes a note is on no note.
     const isOnNote = await this.scenario.page.evaluate(
       ([x, y]) => document.elementsFromPoint(x, y).some((one) => one.closest('.plex__node') !== null),
       [at.x, at.y] as const,

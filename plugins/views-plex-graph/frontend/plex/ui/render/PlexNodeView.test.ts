@@ -261,7 +261,9 @@ describe('the handle against the box it is drawn at', () => {
     const node = await hover(mount(PlexNodeView, { props: { node: createNode({ width }) } }))
     const box = node.get('.plex__box')
     const middle = Number(box.attributes('y')) + Number(box.attributes('height')) / 2
-    const [, y] = /translate\(\S+ (\S+)\)/.exec(node.get('.plex__handle-at').attributes('transform') ?? '') ?? []
+    const [, y] =
+      /translate\(\S+ (\S+)\)/.exec(node.get('.plex__handle-at').attributes('transform') ?? '') ??
+      []
 
     expect(Number(y)).toBe(middle)
   })
