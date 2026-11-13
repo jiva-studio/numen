@@ -20,8 +20,8 @@ type processes struct {
 	lists chan []plugindomain.ProcessStatus
 }
 
-func (p processes) Execute(ctx context.Context) <-chan []plugindomain.ProcessStatus {
-	out := make(chan []plugindomain.ProcessStatus)
+func (p processes) Execute(ctx context.Context) <-chan plugindomain.ProcessList {
+	out := make(chan plugindomain.ProcessList)
 	go func() {
 		defer close(out)
 		for {
@@ -41,12 +41,12 @@ func (p processes) Execute(ctx context.Context) <-chan []plugindomain.ProcessSta
 }
 
 func TestAWindowGetsThePluginsThatRunAndEachChange(t *testing.T) {
-	lists := make(chan []plugindomain.ProcessStatus, 2)
+	lists := make(chan plugindomain.ProcessList, 2)
 	start := time.Date(2026, 11, 13, 9, 0, 0, 0, time.UTC)
-	lists <- []plugindomain.ProcessStatus{{
+	lists <- plugindomain.ProcessList{Time: start.Add(time.Minute), Processes: []plugindomain.ProcessStatus{{
 		Process:    plugindomain.Process{PluginID: "org.example.maps", StartTime: start, LastUseTime: start, LeaseCount: 1},
 		PluginName: "Maps", Health: plugindomain.HealthOK,
-	}}
+	}}}
 	path, served, _ := plugin.NewRoute(plugin.NewHandler(processes{lists: lists}), connect.WithInterceptors())
 	mux := http.NewServeMux()
 	mux.Handle(path, served)
@@ -63,11 +63,12 @@ func TestAWindowGetsThePluginsThatRunAndEachChange(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	if !stream.Receive() || len(stream.Msg().GetProcesses()) != 1 || stream.Msg().GetProcesses()[0].GetPluginName() != "Maps" {
+	if !stream.Receive() || len(stream.Msg().GetProcesses()) != 1 || stream.Msg().GetProcesses()[0].GetPluginName() != "Maps" ||
+		stream.Msg().GetTimeUnixMs() != start.Add(time.Minute).UnixMilli() {
 		t.Fatalf("first list = %v, %v, want maps", stream.Msg(), stream.Err())
 	}
 
-	lists <- nil
+	lists <- plugindomain.ProcessList{Time: start.Add(2 * time.Minute)}
 	if !stream.Receive() || len(stream.Msg().GetProcesses()) != 0 {
 		t.Fatalf("second list = %v, %v, want none", stream.Msg(), stream.Err())
 	}

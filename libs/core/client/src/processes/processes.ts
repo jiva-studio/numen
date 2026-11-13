@@ -27,10 +27,16 @@ export interface PluginProcess {
 /** The calls of PluginService a window makes about the plugins that run. */
 export type ProcessRpc = Pick<Client<typeof PluginService>, 'watchPluginProcesses'>
 
+/** The plugins that run, with the time of the core when it took the list. */
+export interface PluginProcessList {
+  readonly time: number
+  readonly processes: readonly PluginProcess[]
+}
+
 /** The plugins that run, as a window watches them. */
 export interface ProcessClient {
   /** The plugins that run until the signal aborts: at once and again on every change. */
-  watchProcesses(signal: AbortSignal): AsyncGenerator<readonly PluginProcess[]>
+  watchProcesses(signal: AbortSignal): AsyncGenerator<PluginProcessList>
 }
 
 const HEALTH: Readonly<Partial<Record<HealthSeverity, PluginProcess['health']>>> = {
@@ -55,7 +61,7 @@ export function createProcessClient(rpc: ProcessRpc): ProcessClient {
   return {
     watchProcesses: async function* (signal) {
       for await (const update of rpc.watchPluginProcesses({}, { signal })) {
-        yield update.processes.map(readProcess)
+        yield { time: Number(update.timeUnixMs), processes: update.processes.map(readProcess) }
       }
     },
   }

@@ -34,7 +34,8 @@ describe('the row of a running plugin', () => {
   })
 
   it('names what keeps a plugin in use instead of a stop', () => {
-    const held = { ...IDLE, leaseCount: 2, idleStopTime: undefined }
+    const { idleStopTime: _stop, ...running } = IDLE
+    const held = { ...running, leaseCount: 2 }
 
     expect(facts(held)).toStrictEqual([
       ['Running for', '10m 00s'],

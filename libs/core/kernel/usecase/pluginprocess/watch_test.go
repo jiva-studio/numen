@@ -64,18 +64,22 @@ func (p plugins) GetPlugin(id string) (manifest.Discovered, bool) {
 
 func getNames() plugins { return plugins{atlasID: "Atlas", mapsID: "Maps"} }
 
-func startWatch(t *testing.T, p *processes, h *health) <-chan []plugin.ProcessStatus {
+type clock struct{}
+
+func (clock) Now() time.Time { return getStartTime().Add(10 * time.Minute) }
+
+func startWatch(t *testing.T, p *processes, h *health) <-chan plugin.ProcessList {
 	t.Helper()
-	watch := pluginprocess.NewWatchProcesses(p, h, getNames())
+	watch := pluginprocess.NewWatchProcesses(p, h, getNames(), clock{})
 	watch.Interval = 0
 	return watch.Execute(t.Context())
 }
 
-func receive(t *testing.T, watch <-chan []plugin.ProcessStatus) []plugin.ProcessStatus {
+func receive(t *testing.T, watch <-chan plugin.ProcessList) []plugin.ProcessStatus {
 	t.Helper()
 	select {
 	case list := <-watch:
-		return list
+		return list.Processes
 	case <-time.After(time.Second):
 		t.Fatal("no list arrived")
 		return nil
@@ -144,7 +148,7 @@ func TestAChangeThatLeavesTheListAsItWasSendsNothing(t *testing.T) {
 
 func TestTheListIsClosedWhenTheWatchEnds(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
-	watch := pluginprocess.NewWatchProcesses(newProcesses(), newHealth(), getNames())
+	watch := pluginprocess.NewWatchProcesses(newProcesses(), newHealth(), getNames(), clock{})
 	watch.Interval = 0
 	lists := watch.Execute(ctx)
 	receive(t, lists)
@@ -158,5 +162,18 @@ func TestTheListIsClosedWhenTheWatchEnds(t *testing.T) {
 		}
 	case <-time.After(time.Second):
 		t.Error("the list was not closed")
+	}
+}
+
+func TestEachListCarriesTheTimeItWasTaken(t *testing.T) {
+	watch := startWatch(t, newProcesses(), newHealth())
+
+	select {
+	case list := <-watch:
+		if want := getStartTime().Add(10 * time.Minute); !list.Time.Equal(want) {
+			t.Errorf("got %v, want %v", list.Time, want)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("no list arrived")
 	}
 }

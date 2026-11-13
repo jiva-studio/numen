@@ -4,14 +4,34 @@
  */
 import { defineComponent, h } from 'vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import { createRunningPlugins, type RunningPlugins } from './model/plugins'
+import { getMonotonicNow } from '@numen/ui'
+import {
+  createRunningPlugins,
+  type MonotonicClock,
+  type RunningPlugins,
+  type Ticker,
+} from './model/plugins'
 import PluginsIndicator from './ui/PluginsIndicator.vue'
 import './styles.css'
 
 /** The id the manifest declares the title bar view under. */
 export const PLUGINS_VIEW = 'plugins'
 
-/** The component of the title bar view: the indicator over the list of the model. */
+/** What the plugin is made of outside the window, replaced by a test. */
+export interface PluginsParts {
+  readonly clock: MonotonicClock
+  readonly ticker: Ticker
+}
+
+const browserParts: PluginsParts = {
+  clock: { now: getMonotonicNow },
+  ticker: {
+    start: (run, intervalMs) => window.setInterval(run, intervalMs),
+    stop: (handle) => window.clearInterval(handle),
+  },
+}
+
+/** The component of the title bar view: the indicator over the list and the time of the model. */
 export function createStatusView(model: RunningPlugins) {
   return defineComponent({
     name: 'RunningPluginsStatusView',
@@ -19,13 +39,14 @@ export function createStatusView(model: RunningPlugins) {
       h(PluginsIndicator, {
         processes: model.processes.value,
         phase: model.phase.value,
+        now: model.now.value,
         locale: undefined,
       }),
   })
 }
 
-export const activate = (context: PluginContext): void => {
-  const model = createRunningPlugins(context.work.processes)
+export const activate = (context: PluginContext, parts: PluginsParts = browserParts): void => {
+  const model = createRunningPlugins({ host: context.work.processes, ...parts })
   context.register.slotView({ id: PLUGINS_VIEW, component: createStatusView(model) })
   context.plugin.subscriptions.push({ dispose: () => model.stop() })
   model.start()

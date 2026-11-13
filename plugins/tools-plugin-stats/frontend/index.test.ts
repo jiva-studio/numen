@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { PluginProcess } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
@@ -17,9 +18,16 @@ const MAPS: PluginProcess = {
 
 const setup = () => {
   const context = createMockPluginContext({ pluginId: 'md.numen.tools.plugin.stats' })
-  activate(context)
+  const ticks: number[] = []
+  activate(context, {
+    clock: { now: () => 0 },
+    ticker: {
+      start: () => ticks.push(1),
+      stop: () => ticks.pop(),
+    },
+  })
   const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
-  return { context, wrapper }
+  return { context, wrapper, ticks }
 }
 
 describe('the running plugins frontend', () => {
@@ -34,17 +42,17 @@ describe('the running plugins frontend', () => {
 
     expect(wrapper.find('.plugin-stats__figure').text()).toBe('0')
     context.work.processes.setProcesses([MAPS, { ...MAPS, pluginId: 'org.example.atlas' }])
-    await wrapper.vm.$nextTick()
+    await nextTick()
 
     expect(wrapper.find('.plugin-stats__figure').text()).toBe('2')
   })
 
-  it('stops listening with the plugin', () => {
-    const { context } = setup()
-    expect(context.work.processes.countWatchers()).toBe(1)
+  it('stops listening and moving the time with the plugin', () => {
+    const { context, ticks } = setup()
+    expect([context.work.processes.countWatchers(), ticks.length]).toStrictEqual([1, 1])
 
     context.dispose()
 
-    expect(context.work.processes.countWatchers()).toBe(0)
+    expect([context.work.processes.countWatchers(), ticks.length]).toStrictEqual([0, 0])
   })
 })

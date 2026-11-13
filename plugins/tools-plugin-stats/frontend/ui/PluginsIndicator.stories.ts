@@ -61,7 +61,7 @@ const meta = {
   title: 'Running plugins/Indicator',
   component: PluginsIndicator,
   parameters: { layout: 'fullscreen' },
-  args: { processes: PLUGINS, phase: 'ready', locale: 'en-US', clock: () => NOW },
+  args: { processes: PLUGINS, phase: 'ready', now: NOW, locale: 'en-US' },
   render: (args) => ({
     components: { PluginsIndicator },
     setup: () => ({ args }),

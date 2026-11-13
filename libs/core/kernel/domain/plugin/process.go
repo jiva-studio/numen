@@ -38,3 +38,9 @@ func GetWorstHealth(items []HealthItem, pluginID string) (HealthItem, bool) {
 	}
 	return worst, isFound
 }
+
+// ProcessList is the processes that run, in the order of the plugin ids, as they were at Time.
+type ProcessList struct {
+	Time      time.Time
+	Processes []ProcessStatus
+}

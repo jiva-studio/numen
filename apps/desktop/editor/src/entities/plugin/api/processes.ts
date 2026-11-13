@@ -24,7 +24,10 @@ export const processHost: ProcessHost = {
     })
     // A follower catches every fault of the stream it reads, so nothing reaches the error handler.
     runInBackground(
-      follows(() => processes.watchProcesses(listening.signal), handler),
+      follows(
+        () => processes.watchProcesses(listening.signal),
+        (list) => handler(list.processes, list.time),
+      ),
       () => undefined,
     )
     return { dispose: () => listening.abort() }

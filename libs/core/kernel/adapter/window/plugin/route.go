@@ -18,7 +18,7 @@ import (
 
 // Processes lists the plugins that run at once and after each change, until the context ends.
 type Processes interface {
-	Execute(ctx context.Context) <-chan []plugindomain.ProcessStatus
+	Execute(ctx context.Context) <-chan plugindomain.ProcessList
 }
 
 // Handler answers PluginService to a window. The window does not manage plugins, so GetPlugins is
@@ -53,22 +53,26 @@ func (h *Handler) WatchPluginProcesses(
 	repeat := time.NewTicker(wire.ResendInterval)
 	defer repeat.Stop()
 
-	var last []plugindomain.ProcessStatus
+	var last plugindomain.ProcessList
 	for {
 		select {
 		case list, isOpen := <-watch:
 			if !isOpen {
 				return nil
 			}
-			if err := out.Send(&v1.WatchPluginProcessesResponse{Processes: wire.DescribePluginProcesses(list)}); err != nil {
+			if err := out.Send(describe(list)); err != nil {
 				return err
 			}
 			last = list
 			repeat.Reset(wire.ResendInterval)
 		case <-repeat.C:
-			if err := out.Send(&v1.WatchPluginProcessesResponse{Processes: wire.DescribePluginProcesses(last)}); err != nil {
+			if err := out.Send(describe(last)); err != nil {
 				return err
 			}
 		}
 	}
+}
+
+func describe(list plugindomain.ProcessList) *v1.WatchPluginProcessesResponse {
+	return &v1.WatchPluginProcessesResponse{Processes: wire.DescribePluginProcesses(list.Processes), TimeUnixMs: list.Time.UnixMilli()}
 }

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import type { PluginProcess } from '../types'
 import type { Phase } from '../model/plugins'
@@ -18,15 +18,11 @@ const ATLAS: PluginProcess = {
   healthText: '',
 }
 
-const draw = (processes: readonly PluginProcess[], phase: Phase = 'ready', clock = () => NOW) =>
+const draw = (processes: readonly PluginProcess[], phase: Phase = 'ready') =>
   mount(PluginsIndicator, {
-    props: { processes, phase, locale: 'en-US', clock },
+    props: { processes, phase, now: NOW, locale: 'en-US' },
     attachTo: document.body,
   })
-
-afterEach(() => {
-  vi.useRealTimers()
-})
 
 describe('the running plugins indicator', () => {
   it('counts the running plugins and names them in its label', () => {
@@ -57,17 +53,13 @@ describe('the running plugins indicator', () => {
     wrapper.unmount()
   })
 
-  it('counts down while the list is open', async () => {
-    vi.useFakeTimers()
-    let now = NOW
-    const wrapper = draw([ATLAS], 'ready', () => now)
+  it('counts down as the time moves on', async () => {
+    const wrapper = draw([ATLAS])
     await wrapper.find('.plugin-stats__trigger').trigger('click')
     const stop = () => wrapper.findAll('.plugin-popover__value').at(-1)?.text()
     expect(stop()).toBe('1m 55s')
 
-    now += 5_000
-    vi.advanceTimersByTime(1_000)
-    await wrapper.vm.$nextTick()
+    await wrapper.setProps({ now: NOW + 5_000 })
 
     expect(stop()).toBe('1m 50s')
     wrapper.unmount()

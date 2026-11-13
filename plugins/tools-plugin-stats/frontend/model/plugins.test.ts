@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { PluginProcess } from '../types'
 import { createMockProcessHost } from '@numen/plugin-sdk/testing'
-import { createRunningPlugins, sortProcesses } from './plugins'
+import type { PluginProcess } from '../types'
+import { createRunningPlugins, sortProcesses, TICK_MS, type Ticker } from './plugins'
+
+const CORE_TIME = 1_700_000_600_000
 
 const create = (pluginId: string, pluginName: string, extra: Partial<PluginProcess> = {}) =>
   ({
@@ -15,6 +17,29 @@ const create = (pluginId: string, pluginName: string, extra: Partial<PluginProce
     healthText: '',
     ...extra,
   }) satisfies PluginProcess
+
+/** A monotonic clock and a ticker a test moves by hand. */
+const createTime = () => {
+  let monotonic = 500
+  const runs = new Map<number, () => void>()
+  const ticker: Ticker = {
+    start: (run, intervalMs) => {
+      expect(intervalMs).toBe(TICK_MS)
+      runs.set(runs.size + 1, run)
+      return runs.size
+    },
+    stop: (handle) => runs.delete(handle),
+  }
+  return {
+    clock: { now: () => monotonic },
+    ticker,
+    pass: (ms: number) => {
+      monotonic += ms
+      for (const run of runs.values()) run()
+    },
+    countTicks: () => runs.size,
+  }
+}
 
 describe('the order of the running plugins', () => {
   it('puts the ones in use first by name, then the idle ones by the time they stop', () => {
@@ -37,36 +62,70 @@ describe('the order of the running plugins', () => {
 describe('the running plugins', () => {
   it('wait for the first list, then take each list the core pushes', () => {
     const host = createMockProcessHost()
+    const time = createTime()
     const model = createRunningPlugins({
-      watch: (handler) => {
-        expect(model.phase.value).toBe('loading')
-        return host.watch(handler)
+      host: {
+        watch: (handler) => {
+          expect(model.phase.value).toBe('loading')
+          return host.watch(handler)
+        },
       },
+      ...time,
     })
     model.start()
     expect(model.phase.value).toBe('ready')
 
-    host.setProcesses([create('org.example.maps', 'Maps', { leaseCount: 1 })])
+    host.setProcesses([create('org.example.maps', 'Maps', { leaseCount: 1 })], CORE_TIME)
 
     expect(model.processes.value.map((one) => one.pluginId)).toStrictEqual(['org.example.maps'])
   })
 
+  it('move the time of the core on between two lists, and take the time of the next list', () => {
+    const host = createMockProcessHost([], CORE_TIME)
+    const time = createTime()
+    const model = createRunningPlugins({ host, ...time })
+    model.start()
+    expect(model.now.value).toBe(CORE_TIME)
+
+    time.pass(3_000)
+    expect(model.now.value).toBe(CORE_TIME + 3_000)
+
+    host.setProcesses([], CORE_TIME + 3_500)
+    expect(model.now.value).toBe(CORE_TIME + 3_500)
+  })
+
+  it('keep the time of a list sent again unchanged', () => {
+    const host = createMockProcessHost([], CORE_TIME)
+    const time = createTime()
+    const model = createRunningPlugins({ host, ...time })
+    model.start()
+    time.pass(2_000)
+
+    host.setProcesses([], CORE_TIME)
+
+    expect(model.now.value).toBe(CORE_TIME + 2_000)
+  })
+
   it('show none where the window gives no list or refuses it', () => {
-    const absent = createRunningPlugins(undefined)
+    const absent = createRunningPlugins({ host: undefined, ...createTime() })
     absent.start()
     const refused = createRunningPlugins({
-      watch: () => {
-        throw new Error('the plugin lacks required permission "plugins:read"')
+      host: {
+        watch: () => {
+          throw new Error('the plugin lacks required permission "plugins:read"')
+        },
       },
+      ...createTime(),
     })
     refused.start()
 
     expect([absent.phase.value, refused.phase.value]).toStrictEqual(['unavailable', 'unavailable'])
   })
 
-  it('stop taking lists once stopped', () => {
+  it('stop taking lists and moving the time once stopped', () => {
     const host = createMockProcessHost()
-    const model = createRunningPlugins(host)
+    const time = createTime()
+    const model = createRunningPlugins({ host, ...time })
     model.start()
 
     model.stop()
@@ -74,5 +133,6 @@ describe('the running plugins', () => {
 
     expect(model.processes.value).toStrictEqual([])
     expect(host.countWatchers()).toBe(0)
+    expect(time.countTicks()).toBe(0)
   })
 })

@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // Processes is the plugins that run.
@@ -32,25 +33,27 @@ type Plugins interface {
 	GetPlugin(id string) (manifest.Discovered, bool)
 }
 
-// WatchProcesses lists the plugins that run each time they or their health change. Interval is the
-// shortest time between two lists; changes within it are sent together after it.
+// WatchProcesses lists the plugins that run each time they or their health change, with the time the
+// list was taken. Interval is the shortest time between two lists; changes within it are sent together
+// after it.
 type WatchProcesses struct {
 	processes Processes
 	health    HealthItems
 	plugins   Plugins
+	clock     machineport.Clock
 	Interval  time.Duration
 }
 
-// NewWatchProcesses returns the use case over the plugins that run, their health items and their
-// manifests, sending at most one list a second.
-func NewWatchProcesses(processes Processes, health HealthItems, plugins Plugins) *WatchProcesses {
-	return &WatchProcesses{processes: processes, health: health, plugins: plugins, Interval: time.Second}
+// NewWatchProcesses returns the use case over the plugins that run, their health items, their manifests
+// and the clock that stamps each list, sending at most one list a second.
+func NewWatchProcesses(processes Processes, health HealthItems, plugins Plugins, clock machineport.Clock) *WatchProcesses {
+	return &WatchProcesses{processes: processes, health: health, plugins: plugins, clock: clock, Interval: time.Second}
 }
 
-// Execute returns the plugins that run at once, and again after each change that alters the list,
-// until the context ends; the channel is closed then.
-func (u *WatchProcesses) Execute(ctx context.Context) <-chan []plugin.ProcessStatus {
-	out := make(chan []plugin.ProcessStatus, 1)
+// Execute returns the plugins that run at once, and again after each change that alters them, until the
+// context ends; the channel is closed then.
+func (u *WatchProcesses) Execute(ctx context.Context) <-chan plugin.ProcessList {
+	out := make(chan plugin.ProcessList, 1)
 	run := &watchRun{use: u, out: out, changes: u.processes.WatchProcesses(ctx), health: u.health.Watch(ctx)}
 	go run.sendLists(ctx)
 	return out
@@ -60,7 +63,7 @@ func (u *WatchProcesses) Execute(ctx context.Context) <-chan []plugin.ProcessSta
 // last.
 type watchRun struct {
 	use     *WatchProcesses
-	out     chan<- []plugin.ProcessStatus
+	out     chan<- plugin.ProcessList
 	changes <-chan struct{}
 	health  <-chan []plugin.HealthItem
 	items   []plugin.HealthItem
@@ -91,7 +94,7 @@ func (r *watchRun) sendList(ctx context.Context, isFirst bool) bool {
 		return true
 	}
 	select {
-	case r.out <- list:
+	case r.out <- plugin.ProcessList{Time: r.use.clock.Now(), Processes: list}:
 		r.last = list
 		return true
 	case <-ctx.Done():

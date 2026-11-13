@@ -2,7 +2,7 @@
 /**
  * The title bar item that counts the plugins that run, and the popover that lists them.
  */
-import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useMenuDismissal } from '@numen/ui'
 import type { PluginProcess } from '../types'
 import type { Phase } from '../model/plugins'
@@ -10,28 +10,20 @@ import { formatCount, formatSummary, MARK } from '../lib/format'
 import PluginsPopover from './PluginsPopover.vue'
 import { WORDS as words } from '../words'
 
-/** How often the open popover writes the times again. */
-const TICK_MS = 1_000
-
 /* --------------------------------- Props ---------------------------------- */
-const props = withDefaults(
-  defineProps<{
-    processes: readonly PluginProcess[]
-    phase: Phase
-    locale?: string | undefined
-    /** The time now, in milliseconds since the Unix epoch. */
-    clock?: () => number
-  }>(),
-  { locale: undefined, clock: () => Date.now() },
-)
+const props = defineProps<{
+  processes: readonly PluginProcess[]
+  phase: Phase
+  /** The time now on the clock of the core, in milliseconds since the Unix epoch. */
+  now: number
+  locale?: string | undefined
+}>()
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
-const now = ref(props.clock())
 const root = useTemplateRef<HTMLElement>('root')
 // The popover is placed against the item by CSS and follows it through a resize.
 const dismissal = useMenuDismissal(root, onClose, isResize)
-let tick: number | undefined
 
 const isReady = computed(() => props.phase === 'ready')
 const figure = computed(() =>
@@ -43,18 +35,7 @@ const summary = computed(() => {
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
-watch(isOpen, (open) => {
-  if (open) {
-    now.value = props.clock()
-    tick = window.setInterval(() => (now.value = props.clock()), TICK_MS)
-    dismissal.listen()
-    return
-  }
-  stopTick()
-  dismissal.release()
-})
-
-onBeforeUnmount(stopTick)
+watch(isOpen, (open) => (open ? dismissal.listen() : dismissal.release()))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {
@@ -67,11 +48,6 @@ function onClose() {
 
 function isResize(event: Event): boolean {
   return event.type === 'resize'
-}
-
-function stopTick() {
-  if (tick !== undefined) window.clearInterval(tick)
-  tick = undefined
 }
 </script>
 

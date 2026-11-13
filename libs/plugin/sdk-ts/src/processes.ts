@@ -19,7 +19,8 @@ export interface PluginProcess {
 
 // ProcessHost reports the plugins that run. It needs the permission plugins:read.
 export interface ProcessHost {
-  // Calls the handler with the plugins that run, in the order of their ids, at once and again on
-  // every change, until the returned disposable is disposed.
-  watch(handler: (processes: readonly PluginProcess[]) => void): Disposable
+  // Calls the handler with the plugins that run, in the order of their ids, and the time of the core
+  // when it took the list, in milliseconds since the Unix epoch, at once and again on every change,
+  // until the returned disposable is disposed. A list sent again unchanged carries its first time.
+  watch(handler: (processes: readonly PluginProcess[], time: number) => void): Disposable
 }

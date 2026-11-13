@@ -20,7 +20,7 @@ const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> =>
 }
 
 describe('the plugins that run', () => {
-  it('arrive with their times in milliseconds, their stop for idleness and their health', async () => {
+  it('arrive with their times in milliseconds, their stop for idleness, their health and the time of the list', async () => {
     restore = installCoreAnswers({
       pluginService: {
         watchPluginProcesses: async function* () {
@@ -49,12 +49,16 @@ describe('the plugins that run', () => {
                 healthText: '',
               },
             ],
+            timeUnixMs: 1_700_000_100_000n,
           }
         },
       },
     })
 
-    expect(await readFirst(processes.watchProcesses(new AbortController().signal))).toStrictEqual([
+    const list = await readFirst(processes.watchProcesses(new AbortController().signal))
+
+    expect(list?.time).toBe(1_700_000_100_000)
+    expect(list?.processes).toStrictEqual([
       {
         pluginId: 'org.example.atlas',
         pluginName: 'Atlas',

@@ -193,7 +193,7 @@ func mountSettings(w *windowWiring) {
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(getPluginServices(w.a), func(id string) (string, bool) { return getPluginDir(w.a, id) })
 	host := w.a.PluginHost
-	handler := windowplugin.NewHandler(pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime))
+	handler := windowplugin.NewHandler(pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime, clock.System{}))
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.state.Gate.CountQuestions())))
 }
 

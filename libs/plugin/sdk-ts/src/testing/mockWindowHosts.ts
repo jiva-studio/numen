@@ -218,20 +218,24 @@ export function createMockHealthHost(): MockHealthHost {
   }
 }
 
-// MockProcessHost is a ProcessHost whose plugins a test sets, and whose watchers it counts.
+// MockProcessHost is a ProcessHost whose plugins and time a test sets, and whose watchers it counts.
 export interface MockProcessHost extends ProcessHost {
-  setProcesses(processes: readonly PluginProcess[]): void
+  setProcesses(processes: readonly PluginProcess[], time?: number): void
   countWatchers(): number
 }
 
-export function createMockProcessHost(initial: readonly PluginProcess[] = []): MockProcessHost {
-  let processes = initial
-  const watchers = new Set<(value: readonly PluginProcess[]) => void>()
+export function createMockProcessHost(
+  initial: readonly PluginProcess[] = [],
+  initialTime = 0,
+): MockProcessHost {
+  let list = { processes: initial, time: initialTime }
+  const watchers = new Set<(value: typeof list) => void>()
   return {
-    watch: (handler) => watchWith(watchers, handler, processes),
-    setProcesses: (next) => {
-      processes = next
-      notifyAll(watchers, processes)
+    watch: (handler) =>
+      watchWith(watchers, (value) => handler(value.processes, value.time), list),
+    setProcesses: (processes, time = list.time) => {
+      list = { processes, time }
+      notifyAll(watchers, list)
     },
     countWatchers: () => watchers.size,
   }
