@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -78,6 +79,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (vaultreading.EmbedR
 func (u Embed) run(
 	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
 ) (res vaultreading.EmbedResult, err error) {
+	ctx = plugin.WithBackground(ctx, plugin.WhoIndexing)
 	if u.Source == nil {
 		return res, nil
 	}

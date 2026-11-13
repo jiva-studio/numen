@@ -108,7 +108,7 @@ func (r *Runner) RunTask(
 	if err != nil {
 		return nil, readFailure(ctx, connection.NewStopError(connection.ReasonUnavailable))
 	}
-	served, configFile, servers, err := r.serveTools(runCtx, listed, request)
+	served, configFile, servers, err := r.serveTools(runCtx, listed, request, call.ConnectionID)
 	if err != nil {
 		return nil, readFailure(ctx, connection.NewStopError(connection.ReasonUnavailable))
 	}
@@ -271,14 +271,14 @@ func (r *Runner) listTools(ctx context.Context) ([]*tools.ToolInfo, error) {
 }
 
 func (r *Runner) serveTools(
-	ctx context.Context, listed []*tools.ToolInfo, request *contract.TaskRequest,
+	ctx context.Context, listed []*tools.ToolInfo, request *contract.TaskRequest, connectionID string,
 ) (ServedTools, string, []string, error) {
 	if len(listed) == 0 {
 		return nil, "", nil, nil
 	}
 	toolContext, vaultID := maps.Clone(request.GetToolContext()), request.GetVaultId()
 	served, err := r.deps.ToolServer.Serve(ctx, listed, func(ctx context.Context, name string, arguments []byte) (*tools.CallResponse, error) {
-		return r.deps.Tools.InvokeTool(ctx, tools.Call{Name: name, Arguments: arguments, Context: toolContext, VaultID: vaultID})
+		return r.deps.Tools.InvokeTool(ctx, tools.Call{Name: name, Arguments: arguments, Context: toolContext, VaultID: vaultID, ConnectionID: connectionID})
 	})
 	if err != nil {
 		return nil, "", nil, err

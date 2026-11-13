@@ -45,7 +45,7 @@ func (e *queueEndpoint) EnqueueWork(
 	if err != nil {
 		return err
 	}
-	holder := plugin.Holder{Who: "plugin " + pluginID, Why: "queued work"}
+	holder := plugin.Holder{PluginID: pluginID, Why: "wait for a turn in the work queue"}
 	e.endpoint.callers.Leases.Acquire(pluginID, holder)
 	defer e.endpoint.callers.Leases.Release(pluginID, holder)
 	var waitErr error

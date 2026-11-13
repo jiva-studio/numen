@@ -186,7 +186,7 @@ func (o operation) listConnectionsAfterDetection(typeIDs []string) ([]connection
 		}
 	}
 	if len(plugins) > 0 {
-		ctx, cancel := context.WithTimeout(context.Background(), detectLimit)
+		ctx, cancel := context.WithTimeout(plugindomain.WithBackground(context.Background(), plugindomain.WhoDetection), detectLimit)
 		defer cancel()
 		for _, pluginID := range plugins {
 			o.detected.Detect(ctx, pluginID)

@@ -176,7 +176,7 @@ func (d *Detection) Refresh() {
 // DetectInBackground runs Detect for the plugin on a goroutine of its own, within DetectLimit.
 func (d *Detection) DetectInBackground(pluginID string) {
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), DetectLimit)
+		ctx, cancel := context.WithTimeout(plugin.WithBackground(context.Background(), plugin.WhoDetection), DetectLimit)
 		defer cancel()
 		d.Detect(ctx, pluginID)
 	}()

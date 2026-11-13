@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
@@ -339,7 +340,7 @@ func (b *Bus) flushKey(ctx context.Context, key string) error {
 	}
 
 	if host != nil {
-		if _, err := host.TriggerEvent(ctx, event); err != nil {
+		if _, err := host.TriggerEvent(plugindomain.WithBackground(ctx, plugindomain.WhoEvents), event); err != nil {
 			errs = append(errs, err)
 		}
 	}

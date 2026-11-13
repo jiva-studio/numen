@@ -143,7 +143,7 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 	if skip != nil {
 		return rowOutcome{failure: skip}, false
 	}
-	ctx = plugin.WithPurpose(ctx, ask.operation+" on connection "+resolved.Name)
+	ctx = plugin.WithPurpose(ctx, c.describeOperation(ask.operation)+" with "+resolved.Name)
 	call := &rowCall{calls: c, resolved: resolved, row: row, do: do, priority: ask.priority}
 	for tries := 1; ; tries++ {
 		value, err := call.callOnce(ctx)
@@ -270,4 +270,11 @@ func (c *Calls) reportSetAside(rows []asideRow, nextName string) {
 			c.notices(connection.SetAside{ConnectionID: one.id, ConnectionName: one.name, Reason: one.reason, NextName: nextName})
 		}
 	}
+}
+
+func (c *Calls) describeOperation(operation string) string {
+	if c.titles == nil {
+		return operation
+	}
+	return connection.GetOperationTitle(c.titles.ListOperationTitles(), operation)
 }

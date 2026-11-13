@@ -30,7 +30,7 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "plugin not found", http.StatusNotFound)
 		return
 	}
-	holder := plugin.GetHolder(r.Context(), "frontend view")
+	holder := plugin.GetHolder(plugin.WithAskingPlugin(r.Context(), id), "load "+path.Base(rest))
 	endpoint, err := p.host.EnsureActive(r.Context(), id, holder)
 	if err != nil {
 		status := http.StatusServiceUnavailable

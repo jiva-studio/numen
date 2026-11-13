@@ -134,7 +134,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
-		r = r.WithContext(plugindomain.WithCaller(r.Context(), getWindowCaller(r.URL.Path)))
+		r = r.WithContext(plugindomain.WithCaller(r.Context(), getWindowCaller(r.Header)))
 		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
 		if isWhole && s.plugins != nil && s.plugins.Serves(r.URL.Path) {
 			s.setRequestVault(r)
@@ -296,12 +296,24 @@ func NewMediaRoute(state *State, handler *mediawindow.Handler) Route {
 	return NewRoute(path, served, handler)
 }
 
-// getWindowCaller names the window as the caller of a request, with the RPC the request makes where it
-// makes one: a Connect path is "/<package>.<Service>/<Method>".
-func getWindowCaller(path string) plugindomain.Caller {
-	service, _, isRPC := strings.Cut(strings.TrimPrefix(path, "/"), "/")
-	if !isRPC || !strings.Contains(service, ".") {
-		return plugindomain.Caller{Who: "window", Call: ""}
+// CallerHeader names the part of the window that makes a request: a tag of windowCallers, or
+// "plugin:" and the id of the plugin whose view asks.
+const CallerHeader = "Numen-Caller"
+
+var windowCallers = map[string]string{
+	"chat": "Chat", "commands": "Commands", "editor": "Editor", "graph": "Graph", "plugins": "Plugins",
+	"search": "Search", "settings": "Settings", "tasks": "Tasks",
+}
+
+// getWindowCaller names the part of the window that makes a request, by the header it sends, and the
+// window where it sends none.
+func getWindowCaller(header http.Header) plugindomain.Caller {
+	tag := header.Get(CallerHeader)
+	if pluginID, isPlugin := strings.CutPrefix(tag, "plugin:"); isPlugin && pluginID != "" {
+		return plugindomain.Caller{PluginID: pluginID}
 	}
-	return plugindomain.Caller{Who: "window", Call: plugindomain.GetCallName(path)}
+	if who, ok := windowCallers[tag]; ok {
+		return plugindomain.Caller{Who: who}
+	}
+	return plugindomain.Caller{Who: plugindomain.WhoWindow}
 }

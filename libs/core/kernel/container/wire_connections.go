@@ -91,7 +91,8 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 	c.PluginHost.Endpoint.SetModelCalls(modelcall.NewCalls(
 		modelcall.Connections{
 			Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
-			Rows: connection.NewListRows(deps, openConnectionRows(c)).Execute,
+			Rows:   connection.NewListRows(deps, openConnectionRows(c)).Execute,
+			Titles: c.PluginHost.Views.Operations,
 		},
 		openCallSource(c, deps), clock.System{}, clock.System{}.Wait, notices,
 	))
@@ -127,10 +128,12 @@ func openRowOptions(c pluginsWiring, deps connection.Deps) *rowoptions.Options {
 	if c.PluginHost.RowOptions == nil || c.PluginHost.RunningProviders == nil {
 		return nil
 	}
-	return rowoptions.NewOptions(
+	options := rowoptions.NewOptions(
 		connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime),
 		c.PluginHost.RunningProviders, c.PluginHost.RowOptions,
 	)
+	options.Titles = c.PluginHost.Views.Operations
+	return options
 }
 
 // openCallSource opens the providers of the calls through connections. A call a provider answered makes

@@ -93,7 +93,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		p.reportError(writeConnectError(w, http.StatusNotFound, connect.CodeNotFound, "no plugin serves this service"))
 		return
 	}
-	holder := plugin.GetHolder(r.Context(), "call "+plugin.GetCallName(r.URL.Path))
+	holder := plugin.GetHolder(plugin.WithAskingPlugin(r.Context(), found.Manifest.ID), plugin.GetCallTitle(r.URL.Path))
 	endpoint, err := p.host.EnsureActive(r.Context(), found.Manifest.ID, holder)
 	if err != nil {
 		code := connect.CodeUnavailable

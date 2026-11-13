@@ -33,7 +33,7 @@ func (l *taskLeases) hold(callers Leases, pluginID, taskID, title string) {
 	if _, isOpen := tasks.open[taskID]; isOpen {
 		return
 	}
-	holder := plugin.Holder{Who: "plugin " + pluginID, Why: "task " + title}
+	holder := plugin.Holder{PluginID: pluginID, Why: "task: " + title}
 	tasks.open[taskID] = holder
 	callers.Acquire(pluginID, holder)
 }

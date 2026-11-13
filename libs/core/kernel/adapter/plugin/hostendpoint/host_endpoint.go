@@ -75,7 +75,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 		endpoint.callCount.Add(1)
 		defer endpoint.callCount.Add(-1)
 		if pluginID, err := endpoint.authenticate(r.Header.Get("Authorization")); err == nil {
-			caller := plugin.Caller{Who: "plugin " + pluginID, Call: plugin.GetCallName(r.URL.Path)}
+			caller := plugin.Caller{PluginID: pluginID}
 			r = r.WithContext(plugin.WithCaller(r.Context(), caller))
 		}
 		mux.ServeHTTP(w, r)

@@ -338,7 +338,10 @@ type CallToolRequest struct {
 	// The vault the call works, by identity: the one the task was started on.
 	// Empty on a call to the host is the vault the Numen-Vault header names, else
 	// the one the host shows.
-	VaultId       string `protobuf:"bytes,4,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
+	VaultId string `protobuf:"bytes,4,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
+	// The connection whose agent asks for the call, by id. Empty where the
+	// caller asks for itself.
+	ConnectionId  string `protobuf:"bytes,5,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -397,6 +400,13 @@ func (x *CallToolRequest) GetContext() map[string]string {
 func (x *CallToolRequest) GetVaultId() string {
 	if x != nil {
 		return x.VaultId
+	}
+	return ""
+}
+
+func (x *CallToolRequest) GetConnectionId() string {
+	if x != nil {
+		return x.ConnectionId
 	}
 	return ""
 }
@@ -539,12 +549,13 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\routput_schema\x18\x05 \x01(\fR\foutputSchema\x12,\n" +
 	"\x06effect\x18\x06 \x01(\x0e2\x14.numen.v1.ToolEffectR\x06effect\x12\"\n" +
 	"\finstructions\x18\a \x03(\tR\finstructions\x12\x1a\n" +
-	"\brequires\x18\b \x03(\tR\brequires\"\xdc\x01\n" +
+	"\brequires\x18\b \x03(\tR\brequires\"\x81\x02\n" +
 	"\x0fCallToolRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
 	"\targuments\x18\x02 \x01(\fR\targuments\x12@\n" +
 	"\acontext\x18\x03 \x03(\v2&.numen.v1.CallToolRequest.ContextEntryR\acontext\x12\x19\n" +
-	"\bvault_id\x18\x04 \x01(\tR\avaultId\x1a:\n" +
+	"\bvault_id\x18\x04 \x01(\tR\avaultId\x12#\n" +
+	"\rconnection_id\x18\x05 \x01(\tR\fconnectionId\x1a:\n" +
 	"\fContextEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"o\n" +

@@ -12,6 +12,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -97,7 +98,11 @@ func open(ctx context.Context, host Host, kept *Descriptions) (b *Source, readEr
 		return b, nil, nil
 	}
 
-	client, call, err := b.service.Open(ctx, "describe search source")
+	openCtx := ctx
+	if _, hasCaller := plugindomain.GetCaller(ctx); !hasCaller {
+		openCtx = plugindomain.WithBackground(ctx, plugindomain.WhoSearch)
+	}
+	client, call, err := b.service.Open(openCtx, "describe search source")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -169,7 +174,7 @@ func (b *Source) IndexTexts(ctx context.Context, place searchsource.Place, texts
 	for i, one := range texts {
 		indexed[i] = &v1.IndexedText{ChunkId: string(one.ChunkID), Path: one.Path, VersionId: one.VersionID, Text: one.Text}
 	}
-	client, call, err := b.service.Open(ctx, "index texts")
+	client, call, err := b.service.Open(ctx, "index notes for search by meaning")
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +193,7 @@ func (b *Source) SearchPassages(ctx context.Context, place searchsource.Place, q
 	for i, kind := range q.Kinds {
 		kinds[i] = string(kind)
 	}
-	client, call, err := b.service.Open(ctx, "search passages")
+	client, call, err := b.service.Open(ctx, "search by meaning")
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +217,7 @@ func (b *Source) EmbedQueries(ctx context.Context, queries []string) (vectors []
 	if len(queries) == 0 {
 		return nil, nil
 	}
-	client, call, err := b.service.Open(ctx, "embed queries")
+	client, call, err := b.service.Open(ctx, "search by meaning")
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +288,7 @@ func (b *Source) readDescriptionChange() []func() {
 	// connection started first, so the read has the same limit as any other read of the description.
 	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelInfoTimeout)
 	defer cancel()
-	client, call, err := b.service.Open(ctx, "describe search source after a settings change")
+	client, call, err := b.service.Open(plugindomain.WithBackground(ctx, plugindomain.WhoSettings), "describe search source")
 	if err != nil {
 		b.reportReadError(fmt.Errorf("open search source %s: %w", b.service.PluginID, err))
 		return nil

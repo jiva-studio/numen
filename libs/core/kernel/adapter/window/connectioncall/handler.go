@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
@@ -56,6 +57,7 @@ func (h *Handler) Call(
 	if err := refuseToken(request.Header()); err != nil {
 		return err
 	}
+	ctx = plugin.WithAskingPlugin(ctx, request.Msg.GetPluginId())
 	done, err := h.calls.Call(ctx, request.Msg.GetPluginId(), modelcall.Request{
 		Operation: request.Msg.GetOperation(), Payload: request.Msg.GetPayload(), Priority: wire.ConvertPriorityFromWire(request.Msg.GetPriority()),
 		Preferred: wire.ConvertPreferredRowFromWire(request.Msg.GetPreferred()),
@@ -94,6 +96,7 @@ func (h *Handler) ListRowOptions(
 		return nil, err
 	}
 	message := request.Msg
+	ctx = plugin.WithAskingPlugin(ctx, message.GetPluginId())
 	options, err := h.rows.ListRowOptions(
 		ctx, message.GetPluginId(), message.GetOperation(), message.GetConnectionId(), message.GetField(), message.GetOptions(),
 	)
