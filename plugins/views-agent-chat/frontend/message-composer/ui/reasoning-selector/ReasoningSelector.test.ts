@@ -30,7 +30,7 @@ describe('ReasoningSelector', () => {
     expect(off.get('button').attributes('disabled')).toBeDefined()
   })
 
-  it('opens its menu with the levels and says the one chosen', async () => {
+  it('opens its menu with the levels, tells it opened, and says the one chosen', async () => {
     const wrapper = mount(ReasoningSelector, {
       props: { levels: LEVELS, selectedId: 'medium' },
       attachTo: document.body,
@@ -39,6 +39,7 @@ describe('ReasoningSelector', () => {
 
     const menu = wrapper.findComponent({ name: 'Menu' })
     expect(menu.props('isOpen')).toBe(true)
+    expect(wrapper.emitted('open')).toEqual([[]])
     expect(menu.props('current')).toBe('medium')
     expect((menu.props('items') as { id: string }[]).map((one) => one.id)).toEqual([
       'low',

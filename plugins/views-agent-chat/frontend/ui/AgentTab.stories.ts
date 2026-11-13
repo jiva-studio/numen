@@ -164,20 +164,27 @@ const createAgentsState = (deps: AgentTabDeps): AgentTabState => {
 }
 
 /**
- * The agents of the plugin in the picker under the field: the one that answers named with its model, the
- * models of each agent under its name, and the reasoning levels of the model in force.
+ * The agents of the plugin in the picker under the field: the one that answers named with the model its
+ * row holds until the picker opens; then the models of each agent under its name, and the reasoning
+ * levels of the model in force.
  */
 export const Agents: Story = {
   render: () => ({ components: { Tab: createTab(createAgentsState) }, template: '<Tab />' }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const picker = await canvas.findByRole('button', { name: 'Orchard agent · Pear Small' })
-    await waitFor(() => expect(canvas.getByRole('button', { name: 'Reasoning' })).toBeVisible())
+    const picker = await canvas.findByRole('button', { name: 'Orchard agent · pear-small' })
+    await expect(canvas.queryByRole('button', { name: 'Reasoning' })).toBeNull()
 
     await userEvent.click(picker)
     const body = within(document.body)
-    const list = await body.findByRole('listbox', { name: 'Model' })
-    await expect(within(list).getAllByRole('option')).toHaveLength(4)
+    await waitFor(() =>
+      expect(
+        within(body.getByRole('listbox', { name: 'Model' })).getAllByRole('option'),
+      ).toHaveLength(4),
+    )
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Reasoning' })).toBeVisible())
+    await expect(picker).toHaveAccessibleName('Orchard agent · Pear Small')
+    const list = body.getByRole('listbox', { name: 'Model' })
     await userEvent.click(within(list).getByRole('option', { name: 'Clover' }))
 
     await waitFor(() =>

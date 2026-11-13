@@ -39,6 +39,8 @@ const emit = defineEmits<{
   (event: 'select-model', option: AgentModelOption): void
   /** A depth of reasoning was chosen from the dropdown, by the name of the level. */
   (event: 'select-reasoning', id: string): void
+  /** The list of models or of reasoning levels opened. */
+  (event: 'open-choices'): void
   /** The link to the settings was pressed. */
   (event: 'open-settings'): void
 }>()
@@ -113,6 +115,7 @@ function onSelectReasoning(id: string) {
           :empty-label="noAgentLabel"
           :is-disabled="isDisabled || isAnswerPending"
           @select="onSelectModel"
+          @open="emit('open-choices')"
         />
         <ReasoningSelector
           v-if="reasoningLevels.length > 0"
@@ -121,6 +124,7 @@ function onSelectReasoning(id: string) {
           :name="reasoningName"
           :is-disabled="isDisabled || isAnswerPending"
           @select="onSelectReasoning"
+          @open="emit('open-choices')"
         />
       </div>
 

@@ -36,6 +36,10 @@ function onSelectModel(option: AgentModelOption) {
 function onSelectReasoning(id: string) {
   props.state.agents?.selectReasoningLevel(id)
 }
+
+function onOpenChoices() {
+  props.state.agents?.listChoices().catch(() => undefined)
+}
 </script>
 
 <template>
@@ -63,6 +67,7 @@ function onSelectReasoning(id: string) {
     @follow="onFollowLink"
     @select-model="onSelectModel"
     @select-reasoning="onSelectReasoning"
+    @open-choices="onOpenChoices"
     @open-settings="props.state.openSettings()"
   >
     <template #silence>{{ words.noTranscript }}</template>
