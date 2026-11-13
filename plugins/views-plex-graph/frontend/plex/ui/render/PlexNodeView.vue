@@ -80,14 +80,12 @@ const { open, box, handle } = useOpenBox({
   clock: props.behavior.clock,
 })
 
-const { isLifted } = useLift({
+const { isLifted, target: liftTarget } = useLift({
   layer: () => layer?.value ?? null,
   open: () => open.value,
   group: () => group.value,
   lifted: () => lifted.value,
 })
-
-const liftTarget = computed(() => layer?.value ?? null)
 
 const face = computed(() => ({
   node: props.node,

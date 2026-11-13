@@ -22,5 +22,7 @@ export function useLift(site: LiftSite) {
     group?.focus()
   })
 
-  return { isLifted }
+  const target = computed(() => site.layer())
+
+  return { isLifted, target }
 }
