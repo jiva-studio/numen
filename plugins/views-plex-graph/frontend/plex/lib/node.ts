@@ -61,10 +61,18 @@ export type GestureRole = 'open' | 'closed' | 'source' | 'target' | 'ghost'
 export const createAriaLabel = (node: PlexNode): string =>
   `${node.title || 'Untitled'}, ${node.relation}`
 
+/** The radius of the handle's disc, in the plex's own pixels. */
+export const HANDLE_RADIUS = 9
+
 /**
- * The handle position within a node: on its trailing edge, halfway down.
+ * The handle position within a node: halfway down, on its trailing edge when the pill's outline
+ * is drawn there, and with its whole disc beyond that edge when it is not, because the title
+ * ends inside the padding and the disc must not cover it.
  *
  * Both drawings read it from here: the node draws the handle there, and the
  * plex starts the gesture's thread there.
  */
-export const getHandle = (node: PlacedNode): Position => ({ x: node.width / 2, y: 0 })
+export const getHandle = (node: PlacedNode, hasPill = true): Position => ({
+  x: node.width / 2 + (hasPill ? 0 : HANDLE_RADIUS),
+  y: 0,
+})

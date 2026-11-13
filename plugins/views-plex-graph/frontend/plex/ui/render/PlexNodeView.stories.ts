@@ -22,6 +22,7 @@ interface Knobs {
   opacity: number
   gestureRole: GestureRole
   hasIcon: boolean
+  showPills: boolean
 
   onActivate: () => void
   onShow: (showing: PlexDestination) => void
@@ -82,6 +83,7 @@ const renderScene =
             :key="node.id"
             :node="node"
             :gesture-role="args.gestureRole"
+            :show-pills="args.showPills"
             @activate="args.onActivate"
             @show="args.onShow"
             @reach="args.onReach"
@@ -131,6 +133,7 @@ const meta: Meta<Knobs> = {
     height: range(20, 96, 2),
     opacity: range(0, 1, 0.05),
     hasIcon: { control: 'boolean' },
+    showPills: { control: 'boolean' },
     gestureRole: { control: 'select', options: ROLES },
 
     onActivate: { table: { disable: true } },
@@ -146,6 +149,7 @@ const meta: Meta<Knobs> = {
     height: 36,
     opacity: 1,
     hasIcon: false,
+    showPills: true,
     gestureRole: 'open',
     onActivate: fn(),
     onShow: fn(),
@@ -201,6 +205,23 @@ export const Reaching: Story = {
     // Pressing the box itself still chooses it.
     await userEvent.click(node)
     await expect(args.onActivate).toHaveBeenCalledTimes(1)
+  },
+}
+
+/**
+ * Without its pill the title is cut at the padding of the box and nothing outlines the edge,
+ * so the handle must lie wholly beyond the end of the title text. Only a browser lays text out.
+ */
+export const ReachingWithoutPill: Story = {
+  args: { showPills: false, title: 'Carnot cycle and the second law of thermodynamics' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByLabelText(/^Carnot cycle.*child$/))
+    const handle = canvasElement.querySelector('.plex__handle')!
+    const text = canvasElement.querySelector('.plex__title-text')!
+    await expect(handle.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+      text.getBoundingClientRect().right,
+    )
   },
 }
 

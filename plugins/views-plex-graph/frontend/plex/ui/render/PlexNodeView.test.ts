@@ -12,7 +12,7 @@ import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { EXPANSION_DURATION, type WideBox } from '../../model/sizing/expansion'
 import { getNodeHeadings } from '../../lib/inside'
 import { stubClock } from '../../../fixtures/clock'
-import type { GestureRole, PlacedNode } from '../../lib/node'
+import { HANDLE_RADIUS, type GestureRole, type PlacedNode } from '../../lib/node'
 import type { PlexHeading, PlexNodeRelation } from '../../../types'
 
 const createNode = (overrides: Partial<PlacedNode> = {}): PlacedNode => ({
@@ -264,6 +264,31 @@ describe('the handle', () => {
   })
 })
 
+describe('the handle of a node without its pill', () => {
+  const mountBare = (overrides: Partial<PlacedNode> = {}) =>
+    mount(PlexNodeView, { props: { node: createNode(overrides), showPills: false } })
+
+  const getCentre = (node: ReturnType<typeof mountBare>) =>
+    Number(
+      /translate\((\S+) /.exec(node.get('.plex__handle-at').attributes('transform') ?? '')?.[1],
+    )
+
+  it('has its whole disc outside the box, where the title ends inside its padding', async () => {
+    const node = await hover(mountBare({ width: 144 }))
+    expect(getCentre(node) - HANDLE_RADIUS).toBeGreaterThanOrEqual(72)
+  })
+
+  it('touches the area of the box, so the pointer does not leave the node on its way to it', async () => {
+    const node = await hover(mountBare({ width: 144 }))
+    expect(getCentre(node) - HANDLE_RADIUS).toBeLessThanOrEqual(72)
+  })
+
+  it('keeps the position it has with the pill, when the pill is drawn', async () => {
+    const node = await hover(mountNode({ width: 144 }))
+    expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(72 0)')
+  })
+})
+
 describe('the icon', () => {
   it('is whatever the slot was handed, and sits alongside the title', () => {
     const node = mount(PlexNodeView, {
@@ -364,6 +389,7 @@ describe('a box with more of its title to show', () => {
     wide: WideBox | null = WIDE,
     overrides: Partial<PlacedNode> = {},
     gestureRole: GestureRole = 'open',
+    showPills = true,
   ) => {
     vi.useFakeTimers()
     const world = stubClock()
@@ -373,6 +399,7 @@ describe('a box with more of its title to show', () => {
         wide,
         behavior: { ...DEFAULT_BEHAVIOR, expansionDelay: WAIT, clock: world.clock },
         gestureRole,
+        showPills,
       },
     })
     return { node, world }
@@ -427,6 +454,13 @@ describe('a box with more of its title to show', () => {
     expect(Number(title.attributes('width'))).toBe(400)
     expect(Number(title.attributes('x'))).toBe(-200)
     expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(200 0)')
+  })
+
+  it('carries the handle of a node without a pill out beyond the widened edge', async () => {
+    const node = await rest(mountWideNode(WIDE, {}, 'open', false))
+    expect(node.get('.plex__handle-at').attributes('transform')).toBe(
+      `translate(${200 + HANDLE_RADIUS} 0)`,
+    )
   })
 
   it('is drawn where the widening places it', async () => {
