@@ -937,6 +937,45 @@ export const HeadingsInside: Story = {
   },
 }
 
+/** Closes the note that was attended to as soon as another note is, whichever pointer events came. */
+export const OneOpenNote: Story = {
+  args: {
+    ...invented.args,
+    parents: 1,
+    children: 4,
+    jumps: 1,
+    siblings: 0,
+    headings: (id: string) => INSIDE[id] ?? [],
+  },
+  render: invented.render,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const focus = canvas.getByLabelText(/, focus$/)
+    const other = canvas.getByLabelText(/, jump$/)
+    const getHeadings = (node: Element) => [...node.querySelectorAll('.plex__heading')]
+    const getHandles = () => canvasElement.querySelectorAll('.plex__handle')
+
+    await userEvent.hover(focus)
+    await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(args.maxHeadings), {
+      timeout: 3000,
+    })
+    await expect(getHandles()).toHaveLength(1)
+
+    // The pointer reaches the other note without the first one hearing it leave.
+    other.dispatchEvent(new PointerEvent('pointerenter'))
+
+    await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(0))
+    await expect(getHandles()).toHaveLength(1)
+    await expect(focus.querySelector('.plex__handle')).toBeNull()
+    await expect(other.querySelector('.plex__handle')).not.toBeNull()
+
+    await waitFor(async () => await expect(getHeadings(other)).toHaveLength(args.maxHeadings), {
+      timeout: 3000,
+    })
+    await expect(getHeadings(focus)).toHaveLength(0)
+  },
+}
+
 const renderInSmallWindow: NonNullable<Story['render']> = (args) => ({
   components: { Plex },
   setup: () => {

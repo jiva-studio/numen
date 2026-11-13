@@ -10,6 +10,7 @@ import type { NodeHeadings } from '../../lib/inside'
 import type { NamesRoom } from '../../lib/names'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { WideBox } from '../../model/sizing/expansion'
+import type { Attention } from '../../model/useAttention'
 import type { PlexBehavior } from '../../model/behavior'
 import type { PlexRelation, PlexDestination } from '../../../types'
 
@@ -71,6 +72,8 @@ export interface PlexNodeProps {
   behavior?: PlexBehavior
   showPills?: boolean
   restHeight?: number
+  /** What the drawing attends to. A node stays on only while the attention is on no other node. */
+  attention?: Attention
 }
 
 export interface PlexNodeEvents {

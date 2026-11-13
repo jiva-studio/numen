@@ -191,6 +191,7 @@ const getRole = (node: PlacedNode): GestureRole => {
         :behavior="behavior"
         :show-pills="showPills"
         :rest-height="nodeSize.height"
+        :attention="attention"
         @activate="emit('activate', node.id)"
         @show="emit('show', node.id, $event)"
         @reach="emit('reach', node.id, $event)"
