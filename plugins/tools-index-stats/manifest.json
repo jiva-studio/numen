@@ -11,7 +11,7 @@
       { "slot": "titleBar.status", "view": "stats", "order": 10, "when": "window.isVaultOpen" }
     ]
   },
-  "permissions": ["index:read"],
+  "permissions": ["index:read", "vault:read"],
   "services": ["md.numen.tools.index.stats"],
   "backend": { "entrypoint": "bin/tools-index-stats" },
   "frontend": {}

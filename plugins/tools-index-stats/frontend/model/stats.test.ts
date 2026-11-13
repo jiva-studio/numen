@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { ApiError, BackgroundTask, Result } from '@numen/plugin-sdk'
-import { createMockBackgroundTaskHost } from '@numen/plugin-sdk/testing'
+import { createMockBackgroundTaskHost, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import type { Stats } from '../api/stats'
-import { createIndexStats, REFRESH_MS, type Activity, type Timer } from './stats'
+import { createIndexStats, REFRESH_MS, SETTLE_MS, type Activity, type Timer } from './stats'
 
 const STATS: Stats = {
   vectors: 10,
@@ -58,9 +58,10 @@ const setup = (answers: Array<Result<Stats, ApiError>>, isActive = true) => {
   let calls = 0
   const get = vi.fn(async () => answers[Math.min(calls++, answers.length - 1)]!)
   const tasks = createMockBackgroundTaskHost()
-  const model = createIndexStats({ api: { get }, timer, activity, tasks })
+  const { events } = createMockPluginContext()
+  const model = createIndexStats({ api: { get }, timer, activity, tasks, events })
   const tickAll = () => waits.splice(0).forEach((one) => one.run())
-  return { model, get, waits, state, wakes, tickAll, tasks }
+  return { model, get, waits, state, wakes, tickAll, tasks, events }
 }
 
 const ok = (stats: Stats): Result<Stats, ApiError> => ({ ok: true, value: stats })
@@ -115,6 +116,39 @@ describe('the index stats model', () => {
     tasks.setTasks([task('indexing', 'failed')])
     await flush()
     expect(get).toHaveBeenCalledTimes(3)
+  })
+
+  it('asks when the vault changes, and once more after the host has newer counts', async () => {
+    const { model, get, waits, tickAll, events } = setup([
+      ok(STATS),
+      ok(STATS),
+      ok({ ...STATS, vectors: 9, chunks: 9 }),
+    ])
+    model.start()
+    await flush()
+
+    events.emitVaultChange({ paths: ['Garden/Roses.md'] })
+    await flush()
+    expect(get).toHaveBeenCalledTimes(2)
+    expect(waits.map((one) => one.delayMs)).toEqual([SETTLE_MS])
+
+    tickAll()
+    await flush()
+    expect(get).toHaveBeenCalledTimes(3)
+    expect(model.stats.value?.vectors).toBe(9)
+    expect(waits).toEqual([])
+  })
+
+  it('waits for the last of several changes before the second ask', async () => {
+    const { model, waits, events } = setup([ok(STATS)])
+    model.start()
+    await flush()
+
+    events.emitVaultChange({ paths: ['Garden/Roses.md'] })
+    events.emitVaultChange({ paths: ['Garden/Tulips.md'] })
+    await flush()
+
+    expect(waits.map((one) => one.delayMs)).toEqual([SETTLE_MS])
   })
 
   it('asks every two seconds while the popover is open and the window is in use', async () => {
@@ -204,14 +238,15 @@ describe('the index stats model', () => {
     expect(model.phase.value).toBe('unavailable')
   })
 
-  it('stops asking and forgets the window and the tasks on stop', async () => {
-    const { model, get, waits, wakes, tasks } = setup([ok(STATS)])
+  it('stops asking and forgets the window, the vault and the tasks on stop', async () => {
+    const { model, get, waits, wakes, tasks, events } = setup([ok(STATS)])
     model.start()
     model.open()
     await flush()
 
     model.stop()
     tasks.setTasks([task('indexing')])
+    events.emitVaultChange({ paths: ['Garden/Roses.md'] })
     await flush()
 
     expect(waits).toEqual([])

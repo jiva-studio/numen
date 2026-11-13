@@ -64,6 +64,16 @@ describe('the index stats frontend', () => {
     expect(wrapper.find('.index-stats__trigger').text()).toMatch(/^⬡12.480$/)
   })
 
+  it('asks the backend when a note of the vault changes', async () => {
+    const { context, get } = setup(STATS)
+    await flush()
+
+    context.events.emitVaultChange({ paths: ['Garden/Roses.md'] })
+    await flush()
+
+    expect(get).toHaveBeenCalledTimes(2)
+  })
+
   it('asks the backend when a background task of the window starts', async () => {
     const { context, get } = setup(STATS)
     await flush()
