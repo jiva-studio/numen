@@ -152,7 +152,7 @@ func (c *Cache[V]) Put(key string, value V) {
 	shouldWrite := c.shouldUseDiskLocked()
 	c.mu.Unlock()
 	if shouldWrite {
-		c.writeDiskEntry(key, value)
+		c.writeDiskEntry(key, entry[V]{value: value, fetchedAt: now})
 	}
 }
 
@@ -269,16 +269,15 @@ func (c *Cache[V]) getAsyncLocked(key string, current V, found bool, load func(c
 
 func (c *Cache[V]) loadDiskAndRefreshLocked(key string, load func(context.Context) (V, error)) (V, bool) {
 	c.mu.Unlock()
-	diskVal, ok := c.readDiskEntry(key)
-	now := c.getNow()
+	stored, ok := c.readDiskEntry(key)
 	c.mu.Lock()
 	if ok {
 		if _, exists := c.entries[key]; !exists {
-			c.entries[key] = entry[V]{value: diskVal, fetchedAt: now}
+			c.entries[key] = stored
 		}
 		c.enqueueAsyncLoadLocked(key, load)
 		c.mu.Unlock()
-		return diskVal, true
+		return stored.value, true
 	}
 	if latest, exists := c.entries[key]; exists {
 		c.mu.Unlock()
@@ -321,17 +320,13 @@ func (c *Cache[V]) getSyncLocked(ctx context.Context, key string, found bool, lo
 
 func (c *Cache[V]) loadDiskOrFetchSyncLocked(ctx context.Context, key string, load func(context.Context) (V, error)) (V, bool, error) {
 	c.mu.Unlock()
-	if diskVal, ok := c.readDiskEntry(key); ok {
-		now := c.getNow()
-		c.mu.Lock()
-		if _, exists := c.entries[key]; !exists {
-			c.entries[key] = entry[V]{value: diskVal, fetchedAt: now}
-		}
-		c.mu.Unlock()
-		return diskVal, true, nil
-	}
+	stored, isStored := c.readDiskEntry(key)
 	c.mu.Lock()
-	// gomutants:disable-next-line reason="Get checked freshness before it released the lock; this repeats the check after the lock is taken again, and only a load finished in between changes the answer"
+	if isStored {
+		if _, exists := c.entries[key]; !exists {
+			c.entries[key] = stored
+		}
+	}
 	if current, ok := c.entries[key]; ok && c.isFreshLocked(current.fetchedAt) {
 		c.mu.Unlock()
 		return current.value, true, nil
@@ -375,16 +370,16 @@ func (c *Cache[V]) executeLoad(ctx context.Context, load func(context.Context) (
 }
 
 func (c *Cache[V]) finishLoad(ctx context.Context, key string, inflight *call[V], val V, err error) (V, bool, error) {
+	now := c.getNow()
 	if err == nil {
 		// The value is written before it is visible, so a reader that sees it finds it on disk.
 		c.mu.Lock()
 		shouldWrite := c.shouldUseDiskLocked()
 		c.mu.Unlock()
 		if shouldWrite {
-			c.writeDiskEntry(key, val)
+			c.writeDiskEntry(key, entry[V]{value: val, fetchedAt: now})
 		}
 	}
-	now := c.getNow()
 	c.mu.Lock()
 	delete(c.inFlight, key)
 	if err != nil {
