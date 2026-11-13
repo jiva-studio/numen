@@ -19,12 +19,12 @@
   },
   "dependencies": {
     "@fontsource-variable/nunito-sans": "^5.3.0",
-    "@lucide/vue": "^1.66.0",
+    "@lucide/vue": "^1.70.0",
     "@numen/ui": "*",
     "@numen/workbench": "*",
-    "astro": "^7.4.4",
+    "astro": "^7.4.7",
     "sharp": "^0.35.5",
-    "vue": "^3.5.44"
+    "vue": "^3.5.45"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
