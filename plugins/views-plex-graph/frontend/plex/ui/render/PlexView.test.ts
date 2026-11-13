@@ -1,11 +1,19 @@
 import { mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { nextTick, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import PlexView from './PlexView.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { arrangePlex, createPath, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
 import { getNamesRoom } from '../../lib/names'
+import type { Drop } from '../../lib/arrange'
+import type { Position } from '../../lib/node'
 import type { PlexGraph } from '../../../types'
+
+const gestureOf = (state: { from?: string; at?: Position; outcome?: Drop }) => ({
+  from: ref(state.from ?? null),
+  at: ref(state.at ?? null),
+  outcome: ref(state.outcome ?? null),
+})
 
 const before: PlexGraph = {
   nodes: [
@@ -165,7 +173,7 @@ describe('gesture roles and ghost', () => {
     })
 
   it('shows the handle only on the source node during a gesture', async () => {
-    const view = mountPlexViewDuring({ gestureFrom: 'staying' })
+    const view = mountPlexViewDuring({ gesture: gestureOf({ from: 'staying' }) })
     await view.get('[aria-label^="Going"]').trigger('pointerenter')
     expect(view.findAll('.plex__handle')).toHaveLength(1)
     expect(view.get('[aria-label^="Staying"]').find('.plex__handle').exists()).toBe(true)
@@ -173,9 +181,11 @@ describe('gesture roles and ghost', () => {
 
   it('marks only the link target node', () => {
     const view = mountPlexViewDuring({
-      gestureFrom: 'focus',
-      gestureAt: { x: 0, y: 200 },
-      gestureOutcome: { kind: 'link', from: 'focus', to: 'going', relation: 'child' },
+      gesture: gestureOf({
+        from: 'focus',
+        at: { x: 0, y: 200 },
+        outcome: { kind: 'link', from: 'focus', to: 'going', relation: 'child' },
+      }),
     })
     expect(view.findAll('.plex__node--target')).toHaveLength(1)
     expect(view.get('[aria-label^="Going"]').classes()).toContain('plex__node--target')
@@ -183,9 +193,11 @@ describe('gesture roles and ghost', () => {
 
   it('renders the ghost node at the pointer position with the relation name', () => {
     const view = mountPlexViewDuring({
-      gestureFrom: 'focus',
-      gestureAt: { x: 40, y: -200 },
-      gestureOutcome: { kind: 'create', from: 'focus', relation: 'parent' },
+      gesture: gestureOf({
+        from: 'focus',
+        at: { x: 40, y: -200 },
+        outcome: { kind: 'create', from: 'focus', relation: 'parent' },
+      }),
     })
     const ghost = view.get('.plex__node--ghost')
     expect(ghost.attributes('transform')).toBe('translate(40 -200)')
@@ -307,7 +319,9 @@ describe('the links of a hovered note', () => {
   })
 
   it('lifts nothing while a connection is dragged out of a note', async () => {
-    const view = createLinkedView({ gestureFrom: 'focus', gestureAt: { x: 0, y: 0 } })
+    const view = createLinkedView({
+      gesture: gestureOf({ from: 'focus', at: { x: 0, y: 0 } }),
+    })
     await note(view, 'Below').trigger('pointerenter')
 
     expect(raised(view)).toStrictEqual([])

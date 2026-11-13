@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { computed, ref, useId, useTemplateRef } from 'vue'
-import PlexEdgeLine from './PlexEdgeLine.vue'
-import PlexEdgeTitle from './PlexEdgeTitle.vue'
+import PlexEdgeLayer from './PlexEdgeLayer.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import PlexNodeNames from './PlexNodeNames.vue'
-import PlexThread from './PlexThread.vue'
+import PlexThreads from './PlexThreads.vue'
 import { useEdgeLines } from './lines'
 import { listNamedNodes } from './named'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
-import { getDraggedShape, getPendingThread, getReachGhost, getReachThread } from './threads'
-import type { GestureRole, PlacedNode } from '../../lib/node'
+import type { MenuTrigger } from '@numen/ui'
+import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import { getRelationName } from '../../lib/relation'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
-import { useFieldSize } from '../../model/sizing/fieldSize'
 import { useAttention } from '../../model/useAttention'
 import { useNodeViews } from '../../model/useNodeViews'
+import type { PlexDestination } from '../../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
@@ -24,12 +23,9 @@ const props = withDefaults(defineProps<PlexViewProps>(), {
   canReach: true,
   relationName: getRelationName,
   behavior: () => DEFAULT_BEHAVIOR,
-  gestureFrom: null,
-  gestureAt: null,
-  gestureOutcome: null,
+  gesture: undefined,
+  dragging: undefined,
   pending: null,
-  draggedAt: null,
-  dropRelation: null,
   dropName: getRelationName,
 })
 
@@ -61,7 +57,7 @@ const restedOn = ref<string | null>(null)
 
 const { attention, attend } = useAttention(() => props.frame)
 
-const { lines, raisedLines, resting, setOver } = useEdgeLines(props, uid, attention)
+const { lines, isRaised, setOver } = useEdgeLines(props, uid, attention)
 
 const namedNodes = computed(() => listNamedNodes(props.frame.nodes, props.roomOf))
 
@@ -71,42 +67,24 @@ const renderedNodes = computed(() => {
   return [...props.frame.nodes.filter((each) => each.id !== node.id), node]
 })
 
-const thread = computed(() =>
-  getReachThread(props.frame, props.gestureFrom, props.gestureAt, props.curvature),
+/** What each note is settled to: its width and its headings, kept as they are until the frame or the sizes change. */
+const wides = computed(
+  () => new Map(props.frame.nodes.map((node) => [node.id, props.widen?.(node) ?? null])),
 )
 
-const pendingThread = computed(() =>
-  getPendingThread(props.frame, {
-    from: props.pending?.from ?? null,
-    position: props.pending?.at ?? null,
-    viewport: props.viewport,
-    curvature: props.curvature,
-  }),
+const hungs = computed(
+  () => new Map(props.frame.nodes.map((node) => [node.id, props.hung?.(node) ?? null])),
 )
 
-const field = useFieldSize()
-
-/** The size of the shape a new note is dragged out as. */
-const fieldSize = computed(() => props.ghostSize ?? field.value)
-
-const ghost = computed(() =>
-  getReachGhost(props.gestureOutcome, props.gestureAt, {
-    relationName: props.relationName,
-    nodeSize: fieldSize.value,
-  }),
-)
-
-const dragging = computed(() =>
-  getDraggedShape(
-    props.frame,
-    { relation: props.dropRelation, to: props.draggedAt },
-    {
-      dropName: props.dropName,
-      nodeSize: fieldSize.value,
-      curvature: props.curvature,
-    },
-  ),
-)
+/** Stays the same map while no role changes, so a pointer moving through a gesture does not redraw the notes. */
+const roles = computed<Map<string, GestureRole>>((previous) => {
+  const next = new Map(props.frame.nodes.map((node) => [node.id, getRole(node)]))
+  const isSame =
+    previous !== undefined &&
+    previous.size === next.size &&
+    [...next].every(([id, role]) => previous.get(id) === role)
+  return isSame ? previous : next
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 const onSettle = (id: string, isResting: boolean) => {
@@ -119,12 +97,45 @@ const onChooseName = (id: string) => {
   emit('choose-name', id)
 }
 
+interface NodeHandlers {
+  activate: () => void
+  show: (showing: PlexDestination) => void
+  reach: (pointer: PointerEvent) => void
+  ask: () => void
+  menu: (at: Position, trigger: MenuTrigger) => void
+  enter: (heading: string) => void
+  settle: (isResting: boolean) => void
+  attend: (isAttended: boolean) => void
+}
+
+const nodeHandlers = new Map<string, NodeHandlers>()
+
+/** The handlers of a note, the same functions every time, so they do not redraw it. */
+const getNodeHandlers = (id: string): NodeHandlers => {
+  let handlers = nodeHandlers.get(id)
+  if (!handlers) {
+    handlers = {
+      activate: () => emit('activate', id),
+      show: (showing: PlexDestination) => emit('show', id, showing),
+      reach: (pointer: PointerEvent) => emit('reach', id, pointer),
+      ask: () => emit('ask', id),
+      menu: (at: Position, trigger: MenuTrigger) => emit('menu', id, at, trigger),
+      enter: (heading: string) => emit('enter', id, heading),
+      settle: (isResting: boolean) => onSettle(id, isResting),
+      attend: (isAttended: boolean) => attend('node', id, isAttended),
+    }
+    nodeHandlers.set(id, handlers)
+  }
+  return handlers
+}
+
 /* -------------------------------- Helpers --------------------------------- */
 const getRole = (node: PlacedNode): GestureRole => {
-  const outcome = props.gestureOutcome
+  const outcome = props.gesture?.outcome.value
+  const from = props.gesture?.from.value ?? null
   if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'
-  if (props.gestureFrom === node.id) return 'source'
-  return props.canReach && props.gestureFrom === null ? 'open' : 'closed'
+  if (from === node.id) return 'source'
+  return props.canReach && from === null ? 'open' : 'closed'
 }
 </script>
 
@@ -143,9 +154,12 @@ const getRole = (node: PlacedNode): GestureRole => {
       </template>
     </defs>
 
-    <g aria-hidden="true">
-      <PlexEdgeLine v-for="line in resting" :key="line.key" :line="line" />
-    </g>
+    <PlexEdgeLayer
+      layer="resting"
+      :lines="lines"
+      :is-raised="isRaised"
+      :show-edge-labels="showEdgeLabels"
+    />
 
     <g>
       <path
@@ -162,9 +176,13 @@ const getRole = (node: PlacedNode): GestureRole => {
       />
     </g>
 
-    <g v-if="showEdgeLabels" aria-hidden="true">
-      <PlexEdgeTitle v-for="line in resting" :key="`title:${line.key}`" :line="line" />
-    </g>
+    <PlexEdgeLayer
+      v-if="showEdgeLabels"
+      layer="titles"
+      :lines="lines"
+      :is-raised="isRaised"
+      :show-edge-labels="showEdgeLabels"
+    />
 
     <!-- Under every node, so the headings that open under one are over the names of all. -->
     <g v-if="roomOf">
@@ -182,46 +200,40 @@ const getRole = (node: PlacedNode): GestureRole => {
     </g>
 
     <!-- Over the names and the other lines, and under every node, so the headings that open under a node cover them. -->
-    <g v-if="raisedLines.length" class="plex__raised" aria-hidden="true">
-      <template v-for="line in raisedLines" :key="line.key">
-        <PlexEdgeLine :line="line" is-raised />
-        <PlexEdgeTitle v-if="showEdgeLabels" :line="line" is-raised />
-      </template>
-    </g>
+    <PlexEdgeLayer
+      layer="raised"
+      :lines="lines"
+      :is-raised="isRaised"
+      :show-edge-labels="showEdgeLabels"
+    />
 
     <g v-for="node in renderedNodes" :key="node.id" class="plex__stack">
       <PlexNodeView
         :ref="holdNode(node.id)"
         :node="node"
-        :gesture-role="getRole(node)"
-        :wide="widen?.(node) ?? null"
-        :hung="hung?.(node) ?? null"
+        :gesture-role="roles.get(node.id) ?? 'closed'"
+        :wide="wides.get(node.id) ?? null"
+        :hung="hungs.get(node.id) ?? null"
         :behavior="behavior"
         :show-pills="showPills"
         :rest-height="nodeSize.height"
         :attention="attention"
-        @activate="emit('activate', node.id)"
-        @show="emit('show', node.id, $event)"
-        @reach="emit('reach', node.id, $event)"
-        @ask="emit('ask', node.id)"
-        @menu="(at, trigger) => emit('menu', node.id, at, trigger)"
-        @enter="(heading) => emit('enter', node.id, heading)"
-        @settle="onSettle(node.id, $event)"
-        @attend="attend('node', node.id, $event)"
+        v-on="getNodeHandlers(node.id)"
       >
         <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
       </PlexNodeView>
     </g>
 
-    <PlexThread v-if="thread" class="plex__reach" :d="thread" :ghost="ghost" />
-
-    <PlexThread v-if="pendingThread" class="plex__pending" :d="pendingThread" />
-
-    <PlexThread
-      v-if="dragging"
-      class="plex__dragged"
-      :d="dragging.thread"
-      :ghost="dragging.ghost"
+    <PlexThreads
+      :frame="frame"
+      :viewport="viewport"
+      :ghost-size="ghostSize"
+      :relation-name="relationName"
+      :gesture="gesture"
+      :dragging="dragging"
+      :pending="pending"
+      :drop-name="dropName"
+      :curvature="curvature"
     />
   </svg>
 </template>
@@ -248,19 +260,6 @@ const getRole = (node: PlacedNode): GestureRole => {
 }
 
 [data-moving] .plex__edge-hit {
-  pointer-events: none;
-}
-
-.plex__raised {
-  pointer-events: none;
-}
-
-.plex__reach,
-.plex__pending {
-  pointer-events: none;
-}
-
-.plex__dragged {
   pointer-events: none;
 }
 </style>

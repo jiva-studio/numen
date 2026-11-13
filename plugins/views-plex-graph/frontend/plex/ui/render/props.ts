@@ -4,13 +4,14 @@
  */
 import type { VNode } from 'vue'
 import type { MenuTrigger } from '@numen/ui'
-import type { Drop } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
 import type { NodeHeadings } from '../../lib/inside'
 import type { NamesRoom } from '../../lib/names'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { WideBox } from '../../model/sizing/expansion'
 import type { Attention } from '../../model/useAttention'
+import type { PlexDragState } from '../../model/interaction/drag'
+import type { Gesture } from '../../model/interaction/gesture'
 import type { PlexBehavior } from '../../model/behavior'
 import type { PlexRelation, PlexDestination } from '../../../types'
 
@@ -35,12 +36,10 @@ export interface PlexViewProps {
   hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
   roomOf?: ((id: string) => NamesRoom | undefined) | undefined
   behavior?: PlexBehavior
-  gestureFrom?: string | null
-  gestureAt?: Position | null
-  gestureOutcome?: Drop | null
+  /** Handed over as the refs they are, so the pointer moving through them redraws the lines it draws and not the notes. */
+  gesture?: Gesture | undefined
+  dragging?: PlexDragState | undefined
   pending?: PlexPending | null
-  draggedAt?: Position | null
-  dropRelation?: PlexRelation | null
   dropName?: (relation: PlexRelation) => string
   curvature?: number | undefined
 }
