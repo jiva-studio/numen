@@ -54,8 +54,12 @@ const addCaller = (header: HeadersInit | undefined, caller: string): Headers => 
  * `settings` and the like, or `plugin:` and the id of the plugin whose view asks.
  */
 export const createCallerTransport = (caller: string, wire: Transport = transport): Transport => ({
-  unary: (method, signal, timeoutMs, header, input, contextValues) =>
-    wire.unary(method, signal, timeoutMs, addCaller(header, caller), input, contextValues),
-  stream: (method, signal, timeoutMs, header, input, contextValues) =>
-    wire.stream(method, signal, timeoutMs, addCaller(header, caller), input, contextValues),
+  unary: (...request) => {
+    request[3] = addCaller(request[3], caller)
+    return wire.unary(...request)
+  },
+  stream: (...request) => {
+    request[3] = addCaller(request[3], caller)
+    return wire.stream(...request)
+  },
 })

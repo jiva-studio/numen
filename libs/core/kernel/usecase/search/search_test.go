@@ -667,7 +667,7 @@ func TestASearchByWordsAnswersWhileTheSearchByMeaningWaitsForItsSource(t *testin
 	}
 }
 
-// reconnecting is an embedder whose network comes back after the first request.
+// reconnecting is an embedder that fails the first request and answers every later one.
 type reconnecting struct{ asked *int }
 
 func (reconnecting) Describe() searchsource.Description { return getModel() }
