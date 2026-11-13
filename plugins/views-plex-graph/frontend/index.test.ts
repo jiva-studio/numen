@@ -486,7 +486,7 @@ describe('the names of the notes related to the related notes of an open plex', 
 
   it('moves the focus to the note of a name that is clicked', async () => {
     const { tab, state } = await openPlex()
-    const name = tab.get('[role="button"][aria-label="Leaf1"]')
+    const name = tab.get('[role="button"][aria-label^="Leaf1, name under "]')
 
     await name.trigger('pointerenter')
     await name.trigger('click')
@@ -498,7 +498,7 @@ describe('the names of the notes related to the related notes of an open plex', 
   it('moves nothing when a name that sits back is clicked', async () => {
     const { tab, state } = await openPlex()
 
-    await tab.get('[role="button"][aria-label="Leaf1"]').trigger('click')
+    await tab.get('[role="button"][aria-label^="Leaf1, name under "]').trigger('click')
     await settle()
 
     expect(state.canvas.view.here.value).toBe('One.md')

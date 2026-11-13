@@ -146,11 +146,11 @@ export class PlexDriver {
   /** The line between two notes, as the plex names it: from one to the other with the arrows it has, either way round. */
   private async getLine(first: string, second: string): Promise<Locator> {
     const names = `${escapeRegExp(first)} to ${escapeRegExp(second)}|${escapeRegExp(second)} to ${escapeRegExp(first)}`
-    return (await this.show()).getByRole('button', { name: new RegExp(`^(${names})(, arrow to .+)*$`) })
+    return (await this.show()).getByRole('button', { name: new RegExp(`^Line from (${names})(, arrow to .+)*$`) })
   }
 
   async expectDrawsLine(from: string, to: string, arrow: string): Promise<void> {
-    const line = (await this.show()).getByRole('button', { name: `${from} to ${to}, arrow to ${arrow}`, exact: true })
+    const line = (await this.show()).getByRole('button', { name: `Line from ${from} to ${to}, arrow to ${arrow}`, exact: true })
     await expect(line).toHaveCount(1)
   }
 

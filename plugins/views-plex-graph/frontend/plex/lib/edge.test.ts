@@ -39,15 +39,15 @@ describe('the label of an edge', () => {
   const titleOf = (id: string) => titles[id] ?? id
 
   it('names the two notes it joins', () => {
-    expect(createEdgeLabel({ from: 'a', to: 'b' }, titleOf)).toBe('Harbour to Quay')
+    expect(createEdgeLabel({ from: 'a', to: 'b' }, titleOf)).toBe('Line from Harbour to Quay')
   })
 
   it('names the note each arrowhead points at', () => {
     expect(createEdgeLabel({ from: 'a', to: 'b', arrows: ['to'] }, titleOf)).toBe(
-      'Harbour to Quay, arrow to Quay',
+      'Line from Harbour to Quay, arrow to Quay',
     )
     expect(createEdgeLabel({ from: 'a', to: 'b', arrows: ['from', 'to'] }, titleOf)).toBe(
-      'Harbour to Quay, arrow to Harbour, arrow to Quay',
+      'Line from Harbour to Quay, arrow to Harbour, arrow to Quay',
     )
   })
 })

@@ -414,7 +414,7 @@ describe('hovered edge line', () => {
     const view = mountTitledPlexView()
 
     expect(reach(view, acrossIndex).attributes('role')).toBe('button')
-    expect(reach(view, acrossIndex).attributes('aria-label')).toBe('Start to Aside')
+    expect(reach(view, acrossIndex).attributes('aria-label')).toBe('Line from Start to Aside')
   })
 
   it('raises the hovered line on pointerenter and lowers it on pointerleave', async () => {
