@@ -269,7 +269,7 @@ func TestListingTheModelsOfAMissingCodexIsUnreachable(t *testing.T) {
 
 func TestTheProviderServesCompleteTheListsOfModelsAndReasoningLevelsAndTasks(t *testing.T) {
 	served := slices.Sorted(maps.Keys(newTestServer(t, nil).Provider()))
-	want := []string{acp.OperationTask, llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
+	want := []string{acp.OperationTask, connection.OperationDetected, llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
 	if !slices.Equal(served, want) {
 		t.Errorf("operations = %v, want %v", served, want)
 	}
@@ -359,4 +359,38 @@ func readDoneFrame(t *testing.T, answer []byte) []byte {
 		}
 	}
 	return nil
+}
+
+func TestTheProgramOnThePathIsDetected(t *testing.T) {
+	withoutAgentsAnywhere(t)
+	t.Setenv("PATH", filepath.Dir(writeScript(t, "codex", "exit 0\n")))
+	svc := newTestServer(t, nil)
+
+	found, err := svc.tasks.DetectConnections(t.Context(), connection.Call{Type: "codex"})
+
+	if err != nil || len(found) != 1 || found[0].Name != "OpenAI Codex" {
+		t.Errorf("DetectConnections = %+v, %v, want OpenAI Codex", found, err)
+	}
+}
+
+func TestTheProgramAtTheExecutablePathIsDetected(t *testing.T) {
+	withoutAgentsAnywhere(t)
+	svc := newCodex(t, nil, writeScript(t, "codex", "exit 0\n"))
+
+	found, err := svc.tasks.DetectConnections(t.Context(), connection.Call{Type: "codex"})
+
+	if err != nil || len(found) != 1 || found[0].Name != "OpenAI Codex" {
+		t.Errorf("DetectConnections = %+v, %v, want OpenAI Codex", found, err)
+	}
+}
+
+func TestNothingIsDetectedWithoutTheProgram(t *testing.T) {
+	withoutAgentsAnywhere(t)
+	svc := newTestServer(t, nil)
+
+	found, err := svc.tasks.DetectConnections(t.Context(), connection.Call{Type: "codex"})
+
+	if err != nil || len(found) != 0 {
+		t.Errorf("DetectConnections = %+v, %v, want none", found, err)
+	}
 }

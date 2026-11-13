@@ -12,7 +12,7 @@
       {
         "id": "acp",
         "title": "ACP agent",
-        "operations": ["llm.complete", "llm.models", "llm.reasoning", "acp.task"],
+        "operations": ["llm.complete", "llm.models", "llm.reasoning", "acp.task", "connections.detected"],
         "rowFields": [
           {
             "key": "model",

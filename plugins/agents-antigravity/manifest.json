@@ -12,8 +12,7 @@
       {
         "id": "antigravity",
         "title": "Antigravity",
-        "operations": ["llm.complete", "llm.models", "llm.reasoning", "acp.task"],
-        "builtIn": true,
+        "operations": ["llm.complete", "llm.models", "llm.reasoning", "acp.task", "connections.detected"],
         "rowFields": [
           {
             "key": "model",

@@ -32,7 +32,6 @@ type connectionShape struct {
 			Operations []string          `json:"operations"`
 			Fields     []connectionField `json:"fields"`
 			RowFields  []connectionField `json:"rowFields"`
-			IsBuiltIn  bool              `json:"builtIn"`
 		} `json:"connectionTypes"`
 	} `json:"contributes"`
 	Settings []struct {
@@ -56,21 +55,13 @@ func TestManifestProvidesOneTypeThatCompletesAndRunsTasksWithNoKeyAndNoProgramFi
 	if len(types) != 1 || types[0].ID != "claude-code" || types[0].Title != "Claude Code" {
 		t.Fatalf("types = %+v, want the type claude-code alone", types)
 	}
-	if !slices.Equal(types[0].Operations, []string{"llm.complete", "llm.models", "llm.reasoning", "acp.task"}) {
-		t.Errorf("operations = %v, want llm.complete with the lists of models and reasoning levels, and acp.task", types[0].Operations)
+	if !slices.Equal(types[0].Operations, []string{"llm.complete", "llm.models", "llm.reasoning", "acp.task", "connections.detected"}) {
+		t.Errorf("operations = %v, want llm.complete with the lists of models and reasoning levels, acp.task and connections.detected", types[0].Operations)
 	}
 	for _, field := range types[0].Fields {
 		if field.Key != "parallelRequests" {
 			t.Errorf("field %q: the type holds no field but parallelRequests", field.Key)
 		}
-	}
-}
-
-// The type needs no setup, so the core lists its connection while the plugin is enabled.
-func TestTheTypeIsBuiltIn(t *testing.T) {
-	types := readConnectionShape(t).Contributes.ConnectionTypes
-	if len(types) != 1 || !types[0].IsBuiltIn {
-		t.Errorf("types = %+v, want one built-in type", types)
 	}
 }
 

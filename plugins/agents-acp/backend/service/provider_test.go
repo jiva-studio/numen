@@ -270,7 +270,7 @@ func TestListingTheModelsOfAProgramThatIsNotThereIsUnreachable(t *testing.T) {
 func TestTheProviderServesCompleteTheListsOfModelsAndReasoningLevelsAndTasks(t *testing.T) {
 	provider := newTestServer(t).Provider()
 	served := slices.Sorted(maps.Keys(provider))
-	want := []string{acp.OperationTask, llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
+	want := []string{acp.OperationTask, connection.OperationDetected, llm.OperationComplete, llm.OperationModels, llm.OperationReasoning}
 	if !slices.Equal(served, want) {
 		t.Errorf("operations = %v, want %v", served, want)
 	}
