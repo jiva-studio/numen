@@ -56,6 +56,7 @@ type pathLookup struct {
 	err     error
 	unknown string
 	paths   []string
+	calls   int
 }
 
 func (a *pathLookup) GetNotes(_ context.Context, _ domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
@@ -63,6 +64,7 @@ func (a *pathLookup) GetNotes(_ context.Context, _ domain.VaultID, paths []strin
 		return nil, a.err
 	}
 	a.paths = slices.Clone(paths)
+	a.calls++
 	out := map[string]domain.NoteRef{}
 	for _, p := range paths {
 		if p != a.unknown {
@@ -73,8 +75,12 @@ func (a *pathLookup) GetNotes(_ context.Context, _ domain.VaultID, paths []strin
 }
 
 func showGraph(g graph, refs *pathLookup, focus string) (domain.NoteGraph, error) {
+	return queryRelated(g, refs, focus, 1)
+}
+
+func queryRelated(g graph, refs *pathLookup, focus string, depth uint32) (domain.NoteGraph, error) {
 	return query.NewListRelatedNotes(g, refs).Execute(
-		context.Background(), domain.Vault{ID: graphVault}, focus)
+		context.Background(), domain.Vault{ID: graphVault}, focus, depth)
 }
 
 // Siblings are the other children of a parent, and only of a parent. A child's

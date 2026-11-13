@@ -34,3 +34,16 @@ func TestTheFocusIsNotRelatedToItself(t *testing.T) {
 		t.Errorf("the note added is %+v", target.Related[0])
 	}
 }
+
+func TestARelatedNoteKeepsThePathOfTheNoteItBelongsTo(t *testing.T) {
+	target := domain.NoteGraph{Focus: domain.NoteRef{Path: "Entropy.md"}}
+	target.AddRelatedNote(domain.NoteRef{Path: "Engine.md", Title: "Engine"},
+		domain.RelatedNote{Relation: domain.RelationChild, RelatedTo: "Heat.md"})
+	target.AddRelatedNote(domain.NoteRef{Path: "Heat.md", Title: "Heat"}, domain.RelatedNote{Relation: domain.RelationChild})
+	if got := target.Related[0].RelatedTo; got != "Heat.md" {
+		t.Errorf("an item of depth 2 belongs to %q, want Heat.md", got)
+	}
+	if got := target.Related[1].RelatedTo; got != "" {
+		t.Errorf("a note related to the focus belongs to %q, want none", got)
+	}
+}
