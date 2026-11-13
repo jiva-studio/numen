@@ -220,10 +220,15 @@ func TestUpdateRejectsAnUnavailableType(t *testing.T) {
 	}
 }
 
-// refreshedLists records the connections whose option lists were refreshed.
-type refreshedLists struct{ ids []string }
+// refreshedLists records the connections whose option lists were refreshed, and those whose lists were
+// dropped.
+type refreshedLists struct{ ids, dropped []string }
 
 func (r *refreshedLists) RefreshConnection(connectionID string) { r.ids = append(r.ids, connectionID) }
+
+func (r *refreshedLists) DropConnection(pluginID, connectionID string) {
+	r.dropped = append(r.dropped, pluginID+"/"+connectionID)
+}
 
 func TestUpdateRefreshesTheOptionListsOfTheConnection(t *testing.T) {
 	f := newFixture(t)

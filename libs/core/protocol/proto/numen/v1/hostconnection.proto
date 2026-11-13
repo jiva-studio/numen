@@ -9,9 +9,9 @@ option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v
 
 // HostConnectionService is what a plugin calls to carry out an operation through its connections. The
 // core takes the connections from the rows of the settings of the calling plugin, which the token names;
-// a plugin that holds connections:use uses every connection that serves an operation none of its settings
-// of rows lists. A request names no key. The payload and the frames are bytes of the contract the
-// operation belongs to.
+// a plugin that holds connections:use:<operation> uses every connection that serves that operation, which
+// none of its settings of rows lists. A request names no key. The payload and the frames are bytes of the
+// contract the operation belongs to.
 service HostConnectionService {
   // Call carries out one operation. The core goes to the next row only when a row fails before its first
   // data frame. The stream holds data frames and ends with one done or one failure.

@@ -220,7 +220,8 @@ func TestTheModelsOfClaudeAreListedForTheRow(t *testing.T) {
 	request := filepath.Join(t.TempDir(), "asked")
 	svc := newListingClaude(t, request)
 
-	models, err := svc.completion.ListModels(t.Context(), completeCall(nil), []string{llm.OperationComplete})
+	listed, err := svc.completion.ListModels(t.Context(), completeCall(nil), connection.OptionsQuery{Operations: []string{llm.OperationComplete}})
+	models := listed.Options
 
 	if err != nil {
 		t.Fatal(err)
@@ -257,7 +258,7 @@ func TestTheLevelsOfTheModelOfTheCallAreListedFromTheLeastToTheMost(t *testing.T
 // A level the listed model does not offer is not passed to the program.
 func TestATaskPassesNoReasoningLevelTheModelDoesNotOffer(t *testing.T) {
 	svc := newListingClaude(t, filepath.Join(t.TempDir(), "asked"))
-	if _, err := svc.completion.ListModels(t.Context(), completeCall(nil), nil); err != nil {
+	if _, err := svc.completion.ListModels(t.Context(), completeCall(nil), connection.OptionsQuery{}); err != nil {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
@@ -275,7 +276,8 @@ func TestATaskPassesNoReasoningLevelTheModelDoesNotOffer(t *testing.T) {
 func TestAClaudeThatListsNoModelListsTheFallbackModels(t *testing.T) {
 	svc := newClaude(t, nil, writeScript(t, "claude", "exit 1\n"))
 
-	models, err := svc.completion.ListModels(t.Context(), completeCall(nil), nil)
+	listed, err := svc.completion.ListModels(t.Context(), completeCall(nil), connection.OptionsQuery{})
+	models := listed.Options
 
 	if err != nil || len(models) != len(model.GetFallback()) {
 		t.Fatalf("ListModels = %+v, %v", models, err)
@@ -291,7 +293,7 @@ func TestListingTheModelsOfAMissingClaudeIsUnreachable(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	svc := newTestAgent(t, nil)
 
-	_, err := svc.completion.ListModels(t.Context(), completeCall(nil), []string{llm.OperationComplete})
+	_, err := svc.completion.ListModels(t.Context(), completeCall(nil), connection.OptionsQuery{Operations: []string{llm.OperationComplete}})
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Errorf("ListModels = %v, want try the next", err)

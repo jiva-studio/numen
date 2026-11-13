@@ -41,9 +41,8 @@ func NewConnectionRows(source ConnectionRowsSource) *ConnectionRows {
 
 // ReadRowSetting returns the setting of rows of the plugin that is used for the operation: its rows in force in the
 // order the person set, and whether it discovers. A plugin with no such setting, and a setting that is not
-// shown, has no row and does not discover, except that a plugin that holds connections:use and has no such
-// setting discovers. A row that names a connection that does not exist is left out; a row that names a
-// connection detected for a type whose provider has not answered yet is kept.
+// shown, has no row and does not discover. A row that names a connection that does not exist is left out; a
+// row that names a connection detected for a type whose provider has not answered yet is kept.
 func (r *ConnectionRows) ReadRowSetting(pluginID, operation string) (connection.RowSetting, error) {
 	for _, plugin := range r.source.Plugins() {
 		if plugin.ID != pluginID {
@@ -58,9 +57,27 @@ func (r *ConnectionRows) ReadRowSetting(pluginID, operation string) (connection.
 				return connection.RowSetting{Rows: rows, IsDiscovering: one.IsDiscovering}, err
 			}
 		}
-		return connection.RowSetting{IsDiscovering: slices.Contains(plugin.Permissions, manifest.PermissionConnectionsUse)}, nil
+		return connection.RowSetting{}, nil
 	}
 	return connection.RowSetting{}, nil
+}
+
+// ListGrants returns the operations each plugin names in its permissions connections:use:<operation>, in
+// the order of the plugin ids. A plugin that names none is left out.
+func (r *ConnectionRows) ListGrants() []connection.Grant {
+	var grants []connection.Grant
+	for _, plugin := range r.source.Plugins() {
+		var operations []string
+		for _, permission := range plugin.Permissions {
+			if operation, isGrant := manifest.ParseConnectionsUse(permission); isGrant {
+				operations = append(operations, operation)
+			}
+		}
+		if len(operations) > 0 {
+			grants = append(grants, connection.Grant{PluginID: plugin.ID, PluginName: plugin.Name, Operations: operations})
+		}
+	}
+	return grants
 }
 
 func (r *ConnectionRows) readExistingRows(valueJSON string) ([]connection.Row, error) {

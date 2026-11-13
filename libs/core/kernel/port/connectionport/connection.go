@@ -31,7 +31,7 @@ type OperationTitles interface {
 	ListOperationTitles() []manifest.Operation
 }
 
-// Uses connects a connection to the settings of rows that name it.
+// Uses connects a connection to the settings of rows that name it, and lists the grants of the plugins.
 type Uses interface {
 	// ListUses returns the settings of rows in force that name the connection, one for each plugin and
 	// operation, in the order of the plugin ids.
@@ -40,6 +40,8 @@ type Uses interface {
 	RemoveRows(connectionID string) error
 	// Refresh sends the configuration again to each running plugin whose rows name the connection.
 	Refresh(ctx context.Context, connectionID string) error
+	// ListGrants returns the grants of the plugins in force, in the order of the plugin ids.
+	ListGrants() []connection.Grant
 }
 
 // ListRows returns the rows a plugin calls an operation through, in the order of use.
@@ -48,7 +50,8 @@ type ListRows func(pluginID, operation string) ([]connection.Row, error)
 // RowSettings reads the settings of rows of the plugins.
 type RowSettings interface {
 	// ReadRowSetting returns the setting of rows of the plugin for an operation, with the rows that name an
-	// existing connection. A plugin with no such setting shown has no row and does not discover.
+	// existing connection. A plugin with no such setting shown has no row and does not discover, whatever
+	// it is granted.
 	ReadRowSetting(pluginID, operation string) (connection.RowSetting, error)
 }
 

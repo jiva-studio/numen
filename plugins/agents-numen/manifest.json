@@ -42,7 +42,7 @@
     "vault:manage",
     "window:focus",
     "index:read",
-    "connections:use"
+    "connections:use:llm.chat"
   ],
   "backend": { "entrypoint": "bin/agents-numen" },
   "services": ["numen.v1.ProviderService"],

@@ -68,6 +68,20 @@ type ProviderCall struct {
 // heading.
 type Option struct{ Value, Title, Group string }
 
+// OptionsQuery is what an operation that lists options is asked with: the operations the setting of rows is
+// used for, and whether the provider reads the options anew, past any list it keeps.
+type OptionsQuery struct {
+	Operations []string
+	IsFresh    bool
+}
+
+// ListedOptions is what a provider listed for a row field. IsPartial marks a list that misses values the
+// provider could not read now.
+type ListedOptions struct {
+	Options   []Option
+	IsPartial bool
+}
+
 // DetectedConnection is a connection a provider found ready on this machine: its name, unique within the type,
 // the values of fields of the type that are not secret, by key, and where the provider found it, such as the
 // program it runs, with the home folder written as ~.

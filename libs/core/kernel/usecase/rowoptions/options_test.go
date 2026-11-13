@@ -26,6 +26,8 @@ type setup struct {
 	world   *modelcalltest.World
 	files   *memoryLists
 	running *runningProviders
+	configs *revisions
+	grants  *revisions
 	options *rowoptions.Options
 	entry   modelcalltest.Entry
 }
@@ -36,6 +38,7 @@ func newSetup(t *testing.T) *setup {
 	s := &setup{
 		world: w, entry: w.AddServer(t, "First", address, "sk-one"),
 		files: &memoryLists{byPlugin: map[string][]connection.OptionList{}}, running: &runningProviders{provider: w.Provider},
+		configs: &revisions{byPlugin: map[string]string{}}, grants: &revisions{byPlugin: map[string]string{}},
 	}
 	w.AddRowField(modelcalltest.ServerTypeID, manifest.ConnectionField{Key: reasoningField, Type: "enum", Title: "Reasoning", OptionsFrom: reasoningOperation})
 	s.options = s.restart()

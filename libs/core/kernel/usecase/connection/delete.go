@@ -14,8 +14,9 @@ type Delete struct{ operation }
 // Execute removes the connection from the list first and then its secrets. When a secret cannot be
 // removed the connection returns to its place, so the secret stays named and the call can be
 // repeated. A connection whose type no plugin declares has no known secret fields, and the entries
-// of its secrets stay in the key store. The rows that name the connection are removed last, and the
-// settings they were in are returned, also where the rows cannot be removed.
+// of its secrets stay in the key store. The option lists kept for the connection are dropped with it.
+// The rows that name the connection are removed last, and the settings they were in are returned with
+// the plugins whose grants reached it, also where the rows cannot be removed.
 func (u *Delete) Execute(ctx context.Context, id string) ([]connection.Use, error) {
 	u.gate.Lock()
 	defer u.gate.Unlock()
@@ -39,6 +40,10 @@ func (u *Delete) Execute(ctx context.Context, id string) ([]connection.Use, erro
 	if err := u.removeSecrets(ctx, removed); err != nil {
 		return nil, errors.Join(err, u.restoreEntry(removed, index))
 	}
+	if declared, isFound := u.types.GetType(removed.TypeID); isFound && u.lists != nil {
+		u.lists.DropConnection(declared.PluginID, removed.ID)
+	}
+	uses = u.addGrantUses(uses, removed.TypeID)
 	if err := u.uses.RemoveRows(id); err != nil {
 		return uses, err
 	}

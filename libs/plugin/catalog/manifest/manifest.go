@@ -43,10 +43,10 @@ const (
 	// when the host stops it for idleness, and its worst health item.
 	PermissionPluginsRead = "plugins:read"
 
-	// PermissionConnectionsUse allows calling an operation that none of the settings of rows of the plugin
-	// lists through every connection that serves it, and listing those connections and the values of their
-	// row fields.
-	PermissionConnectionsUse = "connections:use"
+	// PermissionConnectionsUse is the start of the permission connections:use:<operation>, which allows
+	// calling the operation through every connection that serves it, and listing those connections and the
+	// values of their row fields. No setting of rows of the plugin lists the operation.
+	PermissionConnectionsUse = "connections:use:"
 
 	// PermissionNetworkAlias is the accepted short spelling of PermissionLinkOpen.
 	PermissionNetworkAlias = "network"
@@ -54,12 +54,37 @@ const (
 	ProtocolVersion = 1
 )
 
-// PluginPermissions is every permission a manifest may declare, in its canonical spelling.
+// PluginPermissions is every permission a manifest may declare, in its canonical spelling, besides the
+// permissions connections:use:<operation>.
 func PluginPermissions() []string {
 	return []string{
 		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionLinkOpen,
-		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus, PermissionPluginsRead, PermissionConnectionsUse,
+		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus, PermissionPluginsRead,
 	}
+}
+
+// FormatConnectionsUse returns the permission to call the operation through every connection that serves it.
+func FormatConnectionsUse(operation string) string {
+	return PermissionConnectionsUse + operation
+}
+
+// ParseConnectionsUse returns the operation a permission connections:use:<operation> names, and false for
+// any other permission.
+func ParseConnectionsUse(permission string) (string, bool) {
+	operation, isFound := strings.CutPrefix(permission, PermissionConnectionsUse)
+	return operation, isFound && connectionOperationPattern.MatchString(operation)
+}
+
+// ListConnectionsUse returns the operations the permissions connections:use:<operation> of the manifest
+// name, in the order of the permissions.
+func (m Manifest) ListConnectionsUse() []string {
+	var operations []string
+	for _, p := range m.Permissions {
+		if operation, isGrant := ParseConnectionsUse(p); isGrant {
+			operations = append(operations, operation)
+		}
+	}
+	return operations
 }
 
 // ActivationEventSearchSourceReady is the event the host emits when the search source has indexed a vault.
@@ -365,8 +390,16 @@ func (m Manifest) ValidatePermissions() error {
 func (m Manifest) listPermissionIssues() []error {
 	var issues []error
 	for _, p := range m.Permissions {
-		if !slices.Contains(PluginPermissions(), NormalizePermission(p)) {
+		_, isGrant := ParseConnectionsUse(p)
+		if !isGrant && !slices.Contains(PluginPermissions(), NormalizePermission(p)) {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidPermission, p))
+		}
+	}
+	for _, operation := range m.ListConnectionsUse() {
+		for _, s := range m.Settings {
+			if s.Type == SettingTypeConnections && slices.Contains(s.Operations, operation) {
+				issues = append(issues, fmt.Errorf("%w: %s, and the setting %s holds rows for the operation", ErrInvalidPermission, FormatConnectionsUse(operation), s.Key))
+			}
 		}
 	}
 	return issues

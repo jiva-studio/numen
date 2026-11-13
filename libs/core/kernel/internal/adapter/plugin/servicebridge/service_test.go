@@ -61,7 +61,9 @@ func (h *servingHost) EnsureActiveForQuestion(ctx context.Context, id string, ho
 	return h.EnsureActive(ctx, id, holder)
 }
 
-func (h *servingHost) ReleaseQuestion(id, token string, holder plugindomain.Holder) { h.Release(id, token, holder) }
+func (h *servingHost) ReleaseQuestion(id, token string, holder plugindomain.Holder) {
+	h.Release(id, token, holder)
+}
 
 func (h *servingHost) getReleasedCount() int {
 	h.mu.Lock()

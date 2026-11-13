@@ -14,7 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 )
 
-// The folders inside the cache root where the host keeps what plugins answered, one file per plugin.
+// The folders inside the cache root where the host keeps what plugins answered, one file per plugin;
+// cacheFolders lists them all.
 const (
 	// toolsFolder holds the tools each plugin listed.
 	toolsFolder = "tools"
@@ -25,6 +26,8 @@ const (
 	// optionListsFolder holds the options each plugin listed for the row fields of its connections.
 	optionListsFolder = "models"
 )
+
+var cacheFolders = []string{toolsFolder, sourcesFolder, connectionsFolder, optionListsFolder}
 
 // ReadToolListing returns the tool listing kept for the plugin, and false where none is kept or the host
 // has no cache root.
@@ -64,14 +67,16 @@ func (s *Storage) WriteDetectedConnections(pluginID string, content []byte) {
 
 // optionListFile is the on-disk shape of one option list.
 type optionListFile struct {
-	ConnectionID  string            `json:"connectionId"`
-	Field         string            `json:"field"`
-	RowOptions    map[string]string `json:"rowOptions"`
-	Operations    []string          `json:"operations"`
-	Revision      int               `json:"revision"`
-	PluginVersion string            `json:"pluginVersion"`
-	Fields        map[string]string `json:"fields"`
-	Options       []optionFile      `json:"options"`
+	ConnectionID   string            `json:"connectionId"`
+	Field          string            `json:"field"`
+	RowOptions     map[string]string `json:"rowOptions"`
+	Operations     []string          `json:"operations"`
+	Revision       int               `json:"revision"`
+	PluginVersion  string            `json:"pluginVersion"`
+	ConfigRevision string            `json:"configRevision"`
+	GrantRevision  string            `json:"grantRevision"`
+	Fields         map[string]string `json:"fields"`
+	Options        []optionFile      `json:"options"`
 }
 
 type optionFile struct {
@@ -100,7 +105,8 @@ func (s *Storage) ReadOptionLists(pluginID string) ([]connection.OptionList, boo
 		}
 		lists[i] = connection.OptionList{
 			ConnectionID: one.ConnectionID, Field: one.Field, RowOptions: one.RowOptions, Operations: one.Operations,
-			Revision: one.Revision, PluginVersion: one.PluginVersion, Fields: one.Fields, Options: options,
+			Revision: one.Revision, PluginVersion: one.PluginVersion, ConfigRevision: one.ConfigRevision,
+			GrantRevision: one.GrantRevision, Fields: one.Fields, Options: options,
 		}
 	}
 	return lists, true
@@ -117,7 +123,8 @@ func (s *Storage) WriteOptionLists(pluginID string, lists []connection.OptionLis
 		}
 		files[i] = optionListFile{
 			ConnectionID: one.ConnectionID, Field: one.Field, RowOptions: one.RowOptions, Operations: one.Operations,
-			Revision: one.Revision, PluginVersion: one.PluginVersion, Fields: one.Fields, Options: options,
+			Revision: one.Revision, PluginVersion: one.PluginVersion, ConfigRevision: one.ConfigRevision,
+			GrantRevision: one.GrantRevision, Fields: one.Fields, Options: options,
 		}
 	}
 	content, err := json.Marshal(files)

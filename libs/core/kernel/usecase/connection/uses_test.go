@@ -131,3 +131,61 @@ func TestUpdateReportsAConfigurationThatCannotBeSent(t *testing.T) {
 		t.Errorf("the change was not kept: %+v", stored)
 	}
 }
+
+func lanternGrant(operations ...string) connectiondomain.Grant {
+	return connectiondomain.Grant{PluginID: "md.numen.agents.lantern", PluginName: "Lantern", Operations: operations}
+}
+
+func TestListShowsThePluginsWhoseGrantReachesTheConnection(t *testing.T) {
+	f := newFixture(t)
+	work := f.createOpenRouter(t, "Work")
+	f.uses.use(work.ID, proofreading())
+	f.uses.grants = []connectiondomain.Grant{lanternGrant("llm.chat", "llm.embed")}
+
+	entries := f.listEntries(t)
+
+	lantern := connectiondomain.Use{PluginID: "md.numen.agents.lantern", PluginName: "Lantern", Operations: []string{"llm.embed"}}
+	if !reflect.DeepEqual(entries[0].Uses, []connectiondomain.Use{lantern, proofreading()}) {
+		t.Errorf("uses = %v, want Lantern for llm.embed before Proofreading, in the order of the plugin ids", entries[0].Uses)
+	}
+}
+
+func TestListShowsNoGrantForAnOperationTheTypeDoesNotServe(t *testing.T) {
+	f := newFixture(t)
+	f.createOpenRouter(t, "Work")
+	f.uses.grants = []connectiondomain.Grant{lanternGrant("llm.chat", "acp.task")}
+
+	entries := f.listEntries(t)
+
+	if len(entries[0].Uses) != 0 {
+		t.Errorf("uses = %v, want none", entries[0].Uses)
+	}
+}
+
+func TestDeleteReturnsThePluginsWhoseGrantReachedTheConnection(t *testing.T) {
+	f := newFixture(t)
+	work := f.createOpenRouter(t, "Work")
+	f.uses.grants = []connectiondomain.Grant{lanternGrant("llm.complete")}
+
+	removed, err := f.connection.Delete.Execute(t.Context(), work.ID)
+
+	want := []connectiondomain.Use{{PluginID: "md.numen.agents.lantern", PluginName: "Lantern", Operations: []string{"llm.complete"}}}
+	if err != nil || !reflect.DeepEqual(removed, want) {
+		t.Errorf("removed uses = %v, %v, want %v", removed, err, want)
+	}
+}
+
+func TestDeleteDropsTheOptionListsKeptForTheConnection(t *testing.T) {
+	f := newFixture(t)
+	lists := &refreshedLists{}
+	deps := connection.NewDeps(f.repository, f.types, f.keys, f.uses).AddOptionLists(lists)
+	work := f.createOpenRouter(t, "Work")
+
+	if _, err := connection.NewDelete(deps).Execute(t.Context(), work.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if !slices.Equal(lists.dropped, []string{"md.numen.connections.llm/" + work.ID}) {
+		t.Errorf("dropped = %v, want the lists of the deleted connection", lists.dropped)
+	}
+}

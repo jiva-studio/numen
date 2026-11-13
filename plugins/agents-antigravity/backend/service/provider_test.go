@@ -213,7 +213,8 @@ func TestCompleteReturnsTheErrorOfACanceledContext(t *testing.T) {
 func TestTheModelsOfAntigravityAreListedForTheRow(t *testing.T) {
 	svc := newAntigravity(t, nil, writeScript(t, "agy", `if [ "$1" = models ]; then printf 'Fetching available models...\nm-high\tModel (High)\nm-low\tModel (Low)\nplain\tPlain\n'; fi`+"\n"))
 
-	models, err := svc.completion.ListModels(t.Context(), agentCall(nil), []string{llm.OperationComplete})
+	listed, err := svc.completion.ListModels(t.Context(), agentCall(nil), connection.OptionsQuery{Operations: []string{llm.OperationComplete}})
+	models := listed.Options
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +241,8 @@ func TestTheModelsOfAntigravityAreListedForTheRow(t *testing.T) {
 func TestAProgramWhoseListFailsListsNoModels(t *testing.T) {
 	svc := newAntigravity(t, nil, writeScript(t, "agy", "exit 1\n"))
 
-	models, err := svc.completion.ListModels(t.Context(), agentCall(nil), nil)
+	listed, err := svc.completion.ListModels(t.Context(), agentCall(nil), connection.OptionsQuery{})
+	models := listed.Options
 
 	if err != nil || len(models) != 0 {
 		t.Errorf("ListModels = %+v, %v", models, err)
@@ -250,7 +252,7 @@ func TestAProgramWhoseListFailsListsNoModels(t *testing.T) {
 func TestListingTheModelsOfAMissingAntigravityIsUnreachable(t *testing.T) {
 	withoutAgentsAnywhere(t)
 
-	_, err := newTestAgent(t, nil).completion.ListModels(t.Context(), agentCall(nil), nil)
+	_, err := newTestAgent(t, nil).completion.ListModels(t.Context(), agentCall(nil), connection.OptionsQuery{})
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Errorf("ListModels = %v, want try the next", err)

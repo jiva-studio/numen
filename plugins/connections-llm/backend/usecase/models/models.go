@@ -64,28 +64,31 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits, lists Lists) (*Mod
 
 // ListModels lists the models of the service that fit the operations of a setting of rows. A list kept from
 // before, also from an earlier run, is returned at once, and one older than ListLifetime is listed again in
-// the background. Only a connection with no kept list waits for the service. A list is kept under the type,
-// the address, the SHA-256 of the key and the operations, never under the key.
-func (m *Models) ListModels(ctx context.Context, call connection.Call, operations []string) ([]connection.Option, error) {
+// the background. A connection with no kept list, and a query that asks for a fresh list, waits for the
+// service. A list is kept under the type, the address, the SHA-256 of the key and the operations, never
+// under the key.
+func (m *Models) ListModels(ctx context.Context, call connection.Call, query connection.OptionsQuery) (connection.ListedOptions, error) {
 	limit := m.limits.Get(call.Type, call.Fields[servicetype.FieldBaseURL], call.Options[llm.OptionModel], operation.List)
 	load := func(ctx context.Context) ([]connection.Option, error) {
-		return m.gateway.ListModels(ctx, call, limit, operations)
+		return m.gateway.ListModels(ctx, call, limit, query.Operations)
 	}
-	key := getListKey(call, operations)
-	_, isKept, err := m.lists.Get(ctx, key, nil)
-	if err != nil {
-		return nil, err
-	}
-	if isKept {
-		kept, _, keptErr := m.lists.Get(ctx, key, load)
-		return kept, keptErr
+	key := getListKey(call, query.Operations)
+	if !query.IsFresh {
+		_, isKept, err := m.lists.Get(ctx, key, nil)
+		if err != nil {
+			return connection.ListedOptions{}, err
+		}
+		if isKept {
+			kept, _, keptErr := m.lists.Get(ctx, key, load)
+			return connection.ListedOptions{Options: kept}, keptErr
+		}
 	}
 	list, err := load(ctx)
 	if err != nil {
-		return nil, err
+		return connection.ListedOptions{}, err
 	}
 	m.lists.Put(key, list)
-	return list, nil
+	return connection.ListedOptions{Options: list}, nil
 }
 
 func getListKey(call connection.Call, operations []string) string {

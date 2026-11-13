@@ -132,10 +132,12 @@ func openRowOptions(c pluginsWiring, deps connection.Deps) *rowoptions.Options {
 	if c.PluginHost.RowOptions == nil || c.PluginHost.RunningProviders == nil {
 		return nil
 	}
-	return rowoptions.NewOptions(
-		connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute,
-		providerbridge.NewQuestionSource(c.PluginHost.Runtime), c.PluginHost.RunningProviders, c.PluginHost.RowOptions, c.PluginHost.Views.Operations,
-	)
+	return rowoptions.NewOptions(rowoptions.Deps{
+		Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
+		Source: providerbridge.NewQuestionSource(c.PluginHost.Runtime), Running: c.PluginHost.RunningProviders,
+		Lists: c.PluginHost.RowOptions, Titles: c.PluginHost.Views.Operations, Configs: c.PluginHost.ConfigRevisions,
+		Grants: connection.NewGetGrantRevision(deps).Execute,
+	})
 }
 
 func openCallSource(c pluginsWiring, deps connection.Deps) connectionport.ProviderSource {

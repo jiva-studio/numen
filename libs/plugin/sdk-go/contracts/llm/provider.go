@@ -29,10 +29,9 @@ type Profiler interface {
 	GetProfile(ctx context.Context, call connection.Call) (*Profile, error)
 }
 
-// ModelLister carries out llm.models: the models of the connection that fit the operations the setting of
-// rows is used for.
+// ModelLister carries out llm.models: the models of the connection that fit the operations of the query.
 type ModelLister interface {
-	ListModels(ctx context.Context, call connection.Call, operations []string) ([]connection.Option, error)
+	ListModels(ctx context.Context, call connection.Call, query connection.OptionsQuery) (connection.ListedOptions, error)
 }
 
 // ReasoningLister carries out llm.reasoning: the reasoning levels of the model of the row of the call.
@@ -80,8 +79,9 @@ func Provide(provider connection.Provider, roles Roles) connection.Provider {
 		provider[OperationModels] = connection.ServeOptions(roles.Models.ListModels)
 	}
 	if roles.Reasoning != nil {
-		provider[OperationReasoning] = connection.ServeOptions(func(ctx context.Context, call connection.Call, _ []string) ([]connection.Option, error) {
-			return roles.Reasoning.ListReasoningLevels(ctx, call)
+		provider[OperationReasoning] = connection.ServeOptions(func(ctx context.Context, call connection.Call, _ connection.OptionsQuery) (connection.ListedOptions, error) {
+			levels, err := roles.Reasoning.ListReasoningLevels(ctx, call)
+			return connection.ListedOptions{Options: levels}, err
 		})
 	}
 	return provider

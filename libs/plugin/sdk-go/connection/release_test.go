@@ -29,8 +29,8 @@ func detectOneConnection(context.Context, Call) ([]DetectedConnection, error) {
 	return []DetectedConnection{{Name: "Atlas", Fields: map[string]string{"model": "atlas-1"}}}, nil
 }
 
-func listOneOption(context.Context, Call, []string) ([]Option, error) {
-	return []Option{{Value: "atlas-1", Title: "Atlas 1"}}, nil
+func listOneOption(context.Context, Call, OptionsQuery) (ListedOptions, error) {
+	return ListedOptions{Options: []Option{{Value: "atlas-1", Title: "Atlas 1"}}}, nil
 }
 
 func answerAtOnce(context.Context, Call, []byte, func([]byte) error) ([]byte, error) {

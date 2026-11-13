@@ -125,7 +125,7 @@ type PluginViews struct {
 // store files in and keeps the dependencies in the models folder the host names; RefreshDependencies
 // provisions them as the environment names them now. Detection and RowOptions keep what the providers
 // reported, for every window of the host, in the cache files of the plugins; RunningProviders opens the
-// provider of a plugin only while it runs.
+// provider of a plugin only while it runs, and ConfigRevisions names the configuration each plugin has now.
 // SourceDescriptions keeps the description of the search source between its openings and processes.
 type PluginHost struct {
 	Runtime             PluginRuntime
@@ -141,6 +141,7 @@ type PluginHost struct {
 	Detection           *providerbridge.Detection
 	RowOptions          *rowoptions.Lists
 	RunningProviders    *providerbridge.RunningSource
+	ConfigRevisions     rowoptions.ConfigRevisions
 	SourceDescriptions  *sourcebridge.Descriptions
 }
 
@@ -200,6 +201,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		Detection:           detection,
 		RowOptions:          rowoptions.NewLists(host.Storage),
 		RunningProviders:    providerbridge.NewRunningSource(host.Activation, host.Activation.ClientLookup()),
+		ConfigRevisions:     host.Config,
 		SourceDescriptions:  sourcebridge.NewDescriptions(host.Storage, host.Config),
 	}
 }

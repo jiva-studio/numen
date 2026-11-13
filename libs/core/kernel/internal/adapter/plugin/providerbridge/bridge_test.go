@@ -253,23 +253,25 @@ func TestAnErrorOfTheReceiverEndsTheCallAndIsReturnedAsItIs(t *testing.T) {
 	}
 }
 
-func TestListOptionsSendsTheOperationsOfTheSettingAndReadsTheOptionsOfTheFinalFrame(t *testing.T) {
-	listed, err := proto.Marshal(&v1.Options{Options: []*v1.Option{{Value: "m1", Title: "One", Group: "Free"}, {Value: "m2"}}})
+func TestListOptionsSendsTheQueryAndReadsTheOptionsOfTheFinalFrame(t *testing.T) {
+	listed, err := proto.Marshal(&v1.Options{Options: []*v1.Option{{Value: "m1", Title: "One", Group: "Free"}, {Value: "m2"}}, IsPartial: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 	service := &scriptedService{frames: []*v1.ProviderServiceCallResponse{done(listed)}}
 	provider, _, _ := newBridge(t, service)
 
-	options, err := provider.ListOptions(t.Context(), "llm.models", modelcall.ProviderCall{Options: map[string]string{"reasoning": "low"}}, []string{"llm.embed"})
+	query := modelcall.OptionsQuery{Operations: []string{"llm.embed"}, IsFresh: true}
+	listedOptions, err := provider.ListOptions(t.Context(), "llm.models", modelcall.ProviderCall{Options: map[string]string{"reasoning": "low"}}, query)
 
 	want := []modelcall.Option{{Value: "m1", Title: "One", Group: "Free"}, {Value: "m2"}}
-	if err != nil || !slices.Equal(options, want) {
-		t.Fatalf("options = %v, %v, want %v", options, err, want)
+	if err != nil || !slices.Equal(listedOptions.Options, want) || !listedOptions.IsPartial {
+		t.Fatalf("options = %+v, %v, want %v marked partial", listedOptions, err, want)
 	}
 	var request v1.OptionsRequest
-	if err := proto.Unmarshal(service.received[0].GetPayload(), &request); err != nil || !slices.Equal(request.GetOperations(), []string{"llm.embed"}) {
-		t.Errorf("payload = %v, %v", request.GetOperations(), err)
+	if err := proto.Unmarshal(service.received[0].GetPayload(), &request); err != nil ||
+		!slices.Equal(request.GetOperations(), []string{"llm.embed"}) || !request.GetIsFresh() {
+		t.Errorf("payload = %v, fresh %v, %v", request.GetOperations(), request.GetIsFresh(), err)
 	}
 	if service.received[0].GetOperation() != "llm.models" || service.received[0].GetCall().GetOptions()["reasoning"] != "low" {
 		t.Errorf("received = %+v", service.received[0])
@@ -279,7 +281,7 @@ func TestListOptionsSendsTheOperationsOfTheSettingAndReadsTheOptionsOfTheFinalFr
 func TestAFinalFrameWithoutOptionsIsAStopOfAnInvalidRequest(t *testing.T) {
 	provider, _, _ := newBridge(t, &scriptedService{frames: []*v1.ProviderServiceCallResponse{done([]byte{0xff, 0xff})}})
 
-	_, err := provider.ListOptions(t.Context(), "llm.models", modelcall.ProviderCall{}, nil)
+	_, err := provider.ListOptions(t.Context(), "llm.models", modelcall.ProviderCall{}, modelcall.OptionsQuery{})
 
 	var stopError *connection.StopError
 	if !errors.As(err, &stopError) || stopError.Reason != connection.FailureReasonInvalidRequest {

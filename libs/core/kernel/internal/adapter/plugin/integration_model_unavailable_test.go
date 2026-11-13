@@ -49,7 +49,7 @@ func (h *stubModelHost) EnsureActiveForQuestion(ctx context.Context, pluginID st
 	return h.EnsureActive(ctx, pluginID, holder)
 }
 
-func (h *stubModelHost) Acquire(string, plugindomain.Holder) { h.acquired.Add(1) }
+func (h *stubModelHost) Acquire(string, plugindomain.Holder)         { h.acquired.Add(1) }
 func (h *stubModelHost) Release(string, string, plugindomain.Holder) { h.released.Add(1) }
 func (h *stubModelHost) ReleaseQuestion(pluginID, token string, holder plugindomain.Holder) {
 	h.Release(pluginID, token, holder)

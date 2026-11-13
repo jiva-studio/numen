@@ -100,11 +100,15 @@ func TestThePermissionsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no permissions: a rule checked against nothing")
 	}
-	valid := append(manifest.PluginPermissions(), manifest.PermissionNetworkAlias)
+	grant := manifest.FormatConnectionsUse("<operation>")
+	valid := append(manifest.PluginPermissions(), manifest.PermissionNetworkAlias, grant)
 	for _, difference := range listPermissionDifferences(documented, valid) {
 		t.Error(difference)
 	}
 	for _, name := range valid {
+		if name == grant {
+			name = manifest.FormatConnectionsUse("llm.chat")
+		}
 		if err := (manifest.Manifest{Permissions: []string{name}}).ValidatePermissions(); err != nil {
 			t.Errorf("the validator refuses %s: %v", name, err)
 		}

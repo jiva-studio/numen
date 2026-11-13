@@ -95,7 +95,9 @@ func (h *commandHost) EnsureActiveForQuestion(ctx context.Context, id string, ho
 	return h.EnsureActive(ctx, id, holder)
 }
 
-func (h *commandHost) ReleaseQuestion(id, token string, holder plugindomain.Holder) { h.Release(id, token, holder) }
+func (h *commandHost) ReleaseQuestion(id, token string, holder plugindomain.Holder) {
+	h.Release(id, token, holder)
+}
 
 func serveCommandPlugin(t *testing.T, plugin *commandPlugin) transport.Endpoint {
 	t.Helper()

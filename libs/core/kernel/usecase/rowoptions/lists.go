@@ -25,8 +25,10 @@ type RunningProviders interface {
 }
 
 // Lists keeps the option lists through files, for every Options of the host. A listing counts only for
-// the connection as it was read then: a change of its revision, its fields or the version of its plugin
-// makes it count as none, and a new listing of the connection drops it.
+// the connection as it was read then: a change of its revision, its fields, the version or configuration of
+// its plugin, or the connections its plugin reaches through its grants makes it count as none, and a new
+// listing of the connection drops it. A listing read for an earlier revision of the connection than one
+// kept is not kept.
 type Lists struct {
 	files      ListFiles
 	mu         sync.Mutex
@@ -65,7 +67,8 @@ func isSameRequest(k, other connection.OptionList) bool {
 }
 
 func isSameState(k, other connection.OptionList) bool {
-	return k.Revision == other.Revision && k.PluginVersion == other.PluginVersion && maps.Equal(k.Fields, other.Fields)
+	return k.Revision == other.Revision && k.PluginVersion == other.PluginVersion && k.ConfigRevision == other.ConfigRevision &&
+		k.GrantRevision == other.GrantRevision && maps.Equal(k.Fields, other.Fields)
 }
 
 func (l *Lists) get(pluginID string, asked connection.OptionList) ([]modelcall.Option, bool) {
@@ -84,6 +87,11 @@ func (l *Lists) put(pluginID string, listed connection.OptionList) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	kept, _ := l.files.ReadOptionLists(pluginID)
+	if slices.ContainsFunc(kept, func(one connection.OptionList) bool {
+		return one.ConnectionID == listed.ConnectionID && one.Revision > listed.Revision
+	}) {
+		return
+	}
 	lists := []connection.OptionList{}
 	for _, one := range kept {
 		if isSameRequest(one, listed) || (one.ConnectionID == listed.ConnectionID && !isSameState(one, listed)) {
@@ -92,6 +100,17 @@ func (l *Lists) put(pluginID string, listed connection.OptionList) {
 		lists = append(lists, one)
 	}
 	l.files.WriteOptionLists(pluginID, append(lists, listed))
+}
+
+func (l *Lists) drop(pluginID, connectionID string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	kept, isKept := l.files.ReadOptionLists(pluginID)
+	if !isKept {
+		return
+	}
+	lists := slices.DeleteFunc(kept, func(one connection.OptionList) bool { return one.ConnectionID == connectionID })
+	l.files.WriteOptionLists(pluginID, lists)
 }
 
 func (l *Lists) listRequests(pluginID, connectionID string) []connection.OptionList {

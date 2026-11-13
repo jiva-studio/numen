@@ -143,12 +143,16 @@ message DeletePluginDataResponse {}
 message OptionsRequest {
   // operations are the operations the setting of rows the field belongs to is used for.
   repeated string operations = 1;
+  // is_fresh asks the provider to read the options anew, past any list it keeps.
+  bool is_fresh = 2;
 }
 
 // Options is the done frame of an operation a row field names in options_from: the values the field can
 // take, in the order to show them.
 message Options {
   repeated Option options = 1;
+  // is_partial marks a list that misses values the provider could not read now; the core does not keep it.
+  bool is_partial = 2;
 }
 
 // Option is one value of a field.

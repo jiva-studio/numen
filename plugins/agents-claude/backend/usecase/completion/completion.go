@@ -89,10 +89,10 @@ func (c *Completion) Complete(
 }
 
 // ListModels lists the models Claude Code offers.
-func (c *Completion) ListModels(ctx context.Context, _ connection.Call, _ []string) ([]connection.Option, error) {
+func (c *Completion) ListModels(ctx context.Context, _ connection.Call, _ connection.OptionsQuery) (connection.ListedOptions, error) {
 	programModels, err := c.getProgramModels(ctx)
 	if err != nil {
-		return nil, err
+		return connection.ListedOptions{}, err
 	}
 	models := make([]connection.Option, 0, len(programModels))
 	for _, one := range programModels {
@@ -102,7 +102,7 @@ func (c *Completion) ListModels(ctx context.Context, _ connection.Call, _ []stri
 		}
 		models = append(models, connection.Option{Value: one.Value, Title: title})
 	}
-	return models, nil
+	return connection.ListedOptions{Options: models}, nil
 }
 
 // ListReasoningLevels lists the levels of reasoning the model of the call takes, none for a model that

@@ -125,7 +125,8 @@ func (s *testService) GetProfile(ctx context.Context, call connection.Call) (*ll
 // ListModels and ListReasoningLevels answer numen.v1.Options, a message of the core protocol a plugin does
 // not import, so they are asked of the use case the operation serves.
 func (s *testService) ListModels(ctx context.Context, call connection.Call, operations ...string) ([]connection.Option, error) {
-	return s.built.provider.models.ListModels(ctx, call, operations)
+	listed, err := s.built.provider.models.ListModels(ctx, call, connection.OptionsQuery{Operations: operations})
+	return listed.Options, err
 }
 
 func (s *testService) ListReasoningLevels(ctx context.Context, call connection.Call) ([]connection.Option, error) {

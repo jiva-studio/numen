@@ -15,6 +15,7 @@ type Recorded struct {
 	Call       modelcall.ProviderCall
 	Payload    []byte
 	Operations []string
+	IsFresh    bool
 }
 
 // Provider is a connectionport.Provider whose answers are scripted by the address of the connection.
@@ -25,6 +26,7 @@ type Provider struct {
 	always   map[string]error
 	blocked  map[string]chan struct{}
 	scripts  map[string]script
+	listings map[string]modelcall.ListedOptions
 	recorded []Recorded
 	entered  chan string
 }
@@ -33,7 +35,8 @@ type Provider struct {
 func NewProvider() *Provider {
 	return &Provider{
 		queued: map[string][]error{}, always: map[string]error{}, blocked: map[string]chan struct{}{}, scripts: map[string]script{},
-		entered: make(chan string, 256),
+		listings: map[string]modelcall.ListedOptions{},
+		entered:  make(chan string, 256),
 	}
 }
 
@@ -137,17 +140,32 @@ func (p *Provider) Call(
 	return []byte("answer from " + address), nil
 }
 
-// ListOptions answers two models; the group of the first names the operations of the setting.
+// ScriptOptions makes the listings of options of the address answer listed.
+func (p *Provider) ScriptOptions(address string, listed modelcall.ListedOptions) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.listings[address] = listed
+}
+
+// ListOptions answers what ScriptOptions set for the address, and else two models, the group of the first
+// naming the operations of the setting.
 func (p *Provider) ListOptions(
-	ctx context.Context, operation string, call modelcall.ProviderCall, operations []string,
-) ([]modelcall.Option, error) {
+	ctx context.Context, operation string, call modelcall.ProviderCall, query modelcall.OptionsQuery,
+) (modelcall.ListedOptions, error) {
 	address := call.Fields[addressField]
-	if err := p.record(ctx, Recorded{Operation: operation, Address: address, Call: call, Operations: operations}); err != nil {
-		return nil, err
+	recorded := Recorded{Operation: operation, Address: address, Call: call, Operations: query.Operations, IsFresh: query.IsFresh}
+	if err := p.record(ctx, recorded); err != nil {
+		return modelcall.ListedOptions{}, err
 	}
-	return []modelcall.Option{
-		{Value: "model-1", Title: "Model one", Group: strings.Join(operations, " ")}, {Value: "model-2"},
-	}, nil
+	p.mu.Lock()
+	listed, isScripted := p.listings[address]
+	p.mu.Unlock()
+	if isScripted {
+		return listed, nil
+	}
+	return modelcall.ListedOptions{Options: []modelcall.Option{
+		{Value: "model-1", Title: "Model one", Group: strings.Join(query.Operations, " ")}, {Value: "model-2"},
+	}}, nil
 }
 
 // ListDetected answers that nothing is found; it is not recorded as a call.

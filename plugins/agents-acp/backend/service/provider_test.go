@@ -228,7 +228,8 @@ func TestCompleteReturnsTheErrorOfACanceledContext(t *testing.T) {
 func TestTheModelsOfTheProgramAreListedForTheRow(t *testing.T) {
 	program, _ := fakeProgram(t, "config")
 
-	models, err := newTestServer(t).completion.ListModels(t.Context(), programCall(program), []string{llm.OperationComplete})
+	listed, err := newTestServer(t).completion.ListModels(t.Context(), programCall(program), connection.OptionsQuery{Operations: []string{llm.OperationComplete}})
+	models := listed.Options
 
 	if err != nil {
 		t.Fatal(err)
@@ -260,7 +261,7 @@ func TestTheLevelsOfTheCurrentModelOfTheProgramAreListed(t *testing.T) {
 }
 
 func TestListingTheModelsOfAProgramThatIsNotThereIsUnreachable(t *testing.T) {
-	_, err := newTestServer(t).completion.ListModels(t.Context(), programCall(filepath.Join(t.TempDir(), "gone")), []string{llm.OperationComplete})
+	_, err := newTestServer(t).completion.ListModels(t.Context(), programCall(filepath.Join(t.TempDir(), "gone")), connection.OptionsQuery{Operations: []string{llm.OperationComplete}})
 
 	if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 		t.Errorf("ListModels = %v, want try the next", err)

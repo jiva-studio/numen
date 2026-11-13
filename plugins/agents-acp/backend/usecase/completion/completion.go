@@ -134,10 +134,10 @@ func (c *collector) HandleUpdate(update acp.Update) error {
 func (*collector) IsAllowed(string) bool { return false }
 
 // ListModels lists the models the program the call names reports.
-func (c *Completion) ListModels(ctx context.Context, call connection.Call, _ []string) ([]connection.Option, error) {
+func (c *Completion) ListModels(ctx context.Context, call connection.Call, _ connection.OptionsQuery) (connection.ListedOptions, error) {
 	listing, err := c.readListing(ctx, call)
 	if err != nil {
-		return nil, err
+		return connection.ListedOptions{}, err
 	}
 	models := make([]connection.Option, 0, len(listing.Models))
 	for _, one := range listing.Models {
@@ -147,7 +147,7 @@ func (c *Completion) ListModels(ctx context.Context, call connection.Call, _ []s
 		}
 		models = append(models, connection.Option{Value: one.ID, Title: getModelTitle(title)})
 	}
-	return models, nil
+	return connection.ListedOptions{Options: models}, nil
 }
 
 // ListReasoningLevels lists the levels of reasoning the program reports for the model it answers with.
