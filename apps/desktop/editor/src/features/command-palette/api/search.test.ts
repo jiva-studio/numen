@@ -10,6 +10,7 @@ import { searchCore } from './search'
 const search = {
   searchNames: vi.fn(),
   searchPassages: vi.fn(),
+  cancelSearch: vi.fn(),
 }
 
 let restore: () => void
@@ -174,5 +175,46 @@ describe('the kind of a passage', () => {
     const found = await searchCore.search('war', 'words', 8)
     expect(found[0]?.isNote).toBe(false)
     expect(found[0]?.type).toBe('note')
+  })
+})
+
+describe('a passage search the window aborts', () => {
+  it('is cancelled in the core by the id it was asked with', async () => {
+    search.searchPassages.mockReturnValue(new Promise(() => undefined))
+    search.cancelSearch.mockResolvedValue({})
+    const asking = new AbortController()
+
+    const answer = searchCore.search('seeds', 'meaning', 8, asking.signal)
+    await vi.waitFor(() => expect(search.searchPassages).toHaveBeenCalled())
+    asking.abort()
+    await expect(answer).rejects.toThrow()
+
+    const searchId: unknown = search.searchPassages.mock.lastCall?.[0]?.searchId
+    expect(searchId).toEqual(expect.any(String))
+    expect(searchId).not.toBe('')
+    await vi.waitFor(() => expect(search.cancelSearch).toHaveBeenCalledOnce())
+    expect(search.cancelSearch.mock.lastCall?.[0]).toMatchObject({ searchId })
+  })
+
+  it('is not cancelled once the core has answered it', async () => {
+    search.searchPassages.mockResolvedValue({ found: [] })
+    const asking = new AbortController()
+
+    await searchCore.search('seeds', 'meaning', 8, asking.signal)
+    asking.abort()
+
+    expect(search.cancelSearch).not.toHaveBeenCalled()
+  })
+
+  it('carries a new id each time it is asked', async () => {
+    search.searchPassages.mockResolvedValue({ found: [] })
+
+    await searchCore.search('seeds', 'meaning', 8, new AbortController().signal)
+    await searchCore.search('seeds', 'words', 8, new AbortController().signal)
+
+    const [first, second] = search.searchPassages.mock.calls.map(
+      (call) => (call[0] as { searchId: string }).searchId,
+    )
+    expect(first).not.toBe(second)
   })
 })

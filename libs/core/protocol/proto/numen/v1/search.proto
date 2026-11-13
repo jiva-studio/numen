@@ -26,6 +26,12 @@ service SearchService {
   // caller says which way it is asked, so a client drawing them apart asks once
   // for each.
   rpc SearchPassages(SearchPassagesRequest) returns (SearchPassagesResponse);
+
+  // CancelSearch stops the SearchPassages call that carries the search id. A
+  // client that aborts its request does not stop the call in the core, so it
+  // sends this to free the work the call still does. An id no call carries is
+  // ignored.
+  rpc CancelSearch(CancelSearchRequest) returns (CancelSearchResponse);
 }
 
 message SearchNamesRequest {
@@ -94,7 +100,17 @@ message SearchPassagesRequest {
   int32 limit = 2;
 
   SearchMode mode = 3;
+
+  // The id CancelSearch names this call by, chosen by the client and unique
+  // among its calls. Empty when the call cannot be cancelled.
+  string search_id = 4;
 }
+
+message CancelSearchRequest {
+  string search_id = 1;
+}
+
+message CancelSearchResponse {}
 
 message SearchPassagesResponse {
   // The passages that answer, best first, one per source.

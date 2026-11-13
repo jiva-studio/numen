@@ -43,10 +43,21 @@ export const searchCore: SearchDeps = {
     }))
   },
   search: async (query, mode, limit, signal) => {
-    const answer = await search.searchPassages(
-      { query, limit, mode: modes[mode] },
-      signal ? { signal } : {},
-    )
+    const searchId = signal ? crypto.randomUUID() : ''
+    // An aborted fetch does not end the call in the core, so the abort cancels it by its id.
+    const cancel = () => {
+      search.cancelSearch({ searchId }).catch(() => undefined)
+    }
+    signal?.addEventListener('abort', cancel, { once: true })
+    let answer
+    try {
+      answer = await search.searchPassages(
+        { query, limit, mode: modes[mode], searchId },
+        signal ? { signal } : {},
+      )
+    } finally {
+      signal?.removeEventListener('abort', cancel)
+    }
     return answer.found.map((one) => ({
       path: one.path,
       title: one.note?.title ?? '',
