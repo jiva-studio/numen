@@ -12,6 +12,7 @@ import type { GestureRole, PlacedNode } from '../../lib/node'
 import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../../lib/names'
 import { getRelationName } from '../../lib/relation'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
+import { useFieldSize } from '../../model/sizing/fieldSize'
 import { useNodeViews } from '../../model/useNodeViews'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -85,10 +86,15 @@ const pendingThread = computed(() =>
   }),
 )
 
+const field = useFieldSize()
+
+/** The size of the shape a new note is dragged out as. */
+const fieldSize = computed(() => props.ghostSize ?? field.value)
+
 const ghost = computed(() =>
   getReachGhost(props.gestureOutcome, props.gestureAt, {
     relationName: props.relationName,
-    nodeSize: props.ghostSize ?? props.nodeSize,
+    nodeSize: fieldSize.value,
   }),
 )
 
@@ -96,7 +102,11 @@ const dragging = computed(() =>
   getDraggedShape(
     props.frame,
     { relation: props.dropRelation, to: props.draggedAt },
-    { dropName: props.dropName, nodeSize: props.ghostSize ?? props.nodeSize, curvature: props.curvature },
+    {
+      dropName: props.dropName,
+      nodeSize: fieldSize.value,
+      curvature: props.curvature,
+    },
   ),
 )
 

@@ -24,7 +24,8 @@ export function useFieldSize(): Ref<Size> {
   probe.style.cssText = PROBE
   const observer = new ResizeObserver(([entry]) => {
     const box = entry?.contentRect
-    if (box && box.width > 0 && box.height > 0) size.value = { width: box.width, height: box.height }
+    if (box && box.width > 0 && box.height > 0)
+      size.value = { width: box.width, height: box.height }
   })
   doc.body.appendChild(probe)
   observer.observe(probe)
