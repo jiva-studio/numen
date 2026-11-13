@@ -145,4 +145,3 @@ func TestASettingChangedWhileThePluginIsStoppedIsReadAgain(t *testing.T) {
 		t.Errorf("opening the source after the change started the plugin %d times", got)
 	}
 }
-

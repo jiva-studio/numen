@@ -200,7 +200,7 @@ describe('answers arriving', () => {
 
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
-    const older = vault.mode('meaning')?.signal
+    const older = vault.searched.find((one) => one.mode === 'meaning')?.signal
     palette.setTyped('entr').catch(rethrow)
     await flushPromises()
 
@@ -334,7 +334,7 @@ describe('answers arriving', () => {
     vault.names[0]?.answer([createNameMatch()])
     await flushPromises()
 
-    expect(vault.mode('meaning')?.signal?.aborted).toBe(true)
+    expect(vault.searched.find((one) => one.mode === 'meaning')?.signal?.aborted).toBe(true)
     expect(palette.open.value).toBe(false)
     expect(palette.typed.value).toBe('')
     expect(palette.groups.value).toHaveLength(0)
