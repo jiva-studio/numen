@@ -165,7 +165,7 @@ func TestANoteTheVaultDoesNotKnowHasNoRelatedNotes(t *testing.T) {
 
 // A text link is a reference from either end, and a
 // note named from both ends does not hide the notes after it.
-func TestShowGraph_ATextLinkWrittenInAnotherNoteIsAReference(t *testing.T) {
+func TestShowGraph_ATextLinkInAnotherNoteIsAReference(t *testing.T) {
 	t.Parallel()
 	g := graph{
 		out: map[string][]domain.ResolvedLink{

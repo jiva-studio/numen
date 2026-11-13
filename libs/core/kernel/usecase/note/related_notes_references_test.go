@@ -98,7 +98,7 @@ func TestAnExplicitRelationBeatsATextLinkToTheSameNote(t *testing.T) {
 	checkRelatedNotes(t, got, []string{"parent P.md", "child C.md", "jump J.md"})
 }
 
-func TestAnExplicitRelationWrittenInTheOtherNoteBeatsATextLink(t *testing.T) {
+func TestAnExplicitRelationOfTheOtherNoteBeatsATextLink(t *testing.T) {
 	t.Parallel()
 	g := graph{
 		out: map[string][]domain.ResolvedLink{
