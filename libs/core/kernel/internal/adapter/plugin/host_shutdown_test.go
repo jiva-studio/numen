@@ -26,10 +26,10 @@ func newRunningHost(t *testing.T) (*container.PluginRoles, <-chan struct{}) {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", testHolder)
+	host.Activation.Release("org.example.sample", getTestHolder())
 	return host, supervisorOf(host, "org.example.sample").GetExitSignal()
 }
 
@@ -51,7 +51,7 @@ func TestAShutDownHostDoesNotStartPluginsAgain(t *testing.T) {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); !errors.Is(err, plugin.ErrHostClosed) {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); !errors.Is(err, plugin.ErrHostClosed) {
 		t.Fatalf("expected plugin.ErrHostClosed, got %v", err)
 	}
 	if started.Load() != 0 {
@@ -110,7 +110,7 @@ func TestApplyingTheEnabledSettingAsFalseStopsThePlugin(t *testing.T) {
 		t.Fatal("the plugin is still enabled after its enabled setting was cleared")
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); err == nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err == nil {
 		t.Fatal("a disabled plugin was activated")
 	}
 
@@ -206,7 +206,7 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 		"md.numen.absent": plugindomain.NotInstalled,
 		"md.numen.a":      plugindomain.Disabled,
 	} {
-		_, err := host.Activation.EnsureActive(t.Context(), id, testHolder)
+		_, err := host.Activation.EnsureActive(t.Context(), id, getTestHolder())
 		var missing *plugindomain.UnavailableError
 		if !errors.As(err, &missing) || missing.Reason != want || missing.PluginID != id {
 			t.Errorf("EnsureActive(%q) = %v, want reason %v", id, err, want)

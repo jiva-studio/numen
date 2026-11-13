@@ -142,13 +142,15 @@ func newTestAgent(t *testing.T, model ports.Chat, hostURL string) *agent {
 	return s
 }
 
-// gull is the row of a task that chose the model Gull 7B of Harbor.
-var gull = connection.Call{Type: "numen", Options: map[string]string{"model": "c-harbor|gull-7b"}}
+// getGull returns the row of a task that chose the model Gull 7B of Harbor.
+func getGull() connection.Call {
+	return connection.Call{Type: "numen", Options: map[string]string{"model": "c-harbor|gull-7b"}}
+}
 
 func runTask(ctx context.Context, t *testing.T, s *agent, task *acp.TaskRequest) ([]*acp.TaskFrame, acp.StopReason, error) {
 	t.Helper()
 	var frames []*acp.TaskFrame
-	done, err := acptest.RunTask(ctx, s.provider, gull, task, func(frame *acp.TaskFrame) error {
+	done, err := acptest.RunTask(ctx, s.provider, getGull(), task, func(frame *acp.TaskFrame) error {
 		frames = append(frames, frame)
 		return nil
 	})
@@ -301,7 +303,7 @@ func startBlockedTask(ctx context.Context, t *testing.T) (*agent, *blockingModel
 	finish := make(chan error, 1)
 	firstText := make(chan struct{}, 1)
 	go func() {
-		_, err := acptest.RunTask(ctx, s.provider, gull, &acp.TaskRequest{Prompt: "Hello?"}, func(*acp.TaskFrame) error {
+		_, err := acptest.RunTask(ctx, s.provider, getGull(), &acp.TaskRequest{Prompt: "Hello?"}, func(*acp.TaskFrame) error {
 			firstText <- struct{}{}
 			return nil
 		})

@@ -57,7 +57,17 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 	if err := u.apply(ctx, current.ID, plan); err != nil {
 		return Entry{}, errors.Join(err, u.secrets().restore(context.WithoutCancel(ctx), current.ID, backup))
 	}
-	err = u.repository.ChangeConnections(func(list []connection.Connection) ([]connection.Connection, error) {
+	if err := u.writeConnection(current, updated); err != nil {
+		return Entry{}, errors.Join(err, u.secrets().restore(context.WithoutCancel(ctx), current.ID, backup))
+	}
+	if u.lists != nil {
+		u.lists.RefreshConnection(updated.ID)
+	}
+	return u.describe(ctx, updated)
+}
+
+func (u *Update) writeConnection(current, updated connection.Connection) error {
+	return u.repository.ChangeConnections(func(list []connection.Connection) ([]connection.Connection, error) {
 		position := getIndex(list, current.ID)
 		switch {
 		case position < 0:
@@ -71,13 +81,6 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 		changed[position] = updated
 		return changed, nil
 	})
-	if err != nil {
-		return Entry{}, errors.Join(err, u.secrets().restore(context.WithoutCancel(ctx), current.ID, backup))
-	}
-	if u.lists != nil {
-		u.lists.RefreshConnection(updated.ID)
-	}
-	return u.describe(ctx, updated)
 }
 
 func (u *Update) describe(ctx context.Context, updated connection.Connection) (Entry, error) {

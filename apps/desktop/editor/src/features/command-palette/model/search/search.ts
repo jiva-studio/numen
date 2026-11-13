@@ -172,6 +172,26 @@ interface SearchRefs {
   isAnswered: Ref<boolean>
 }
 
+function createSearchRefs(): SearchRefs {
+  return {
+    names: shallowRef<readonly NameMatch[]>([]),
+    texts: shallowRef<readonly Passage[]>([]),
+    meanings: shallowRef<readonly Passage[]>([]),
+    isWorking: ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false }),
+    failureMessages: ref<Partial<Record<SearchGroup, string>>>({}),
+    isAnswered: ref(false),
+  }
+}
+
+function clearSearchRefs(state: SearchRefs): void {
+  state.names.value = []
+  state.texts.value = []
+  state.meanings.value = []
+  state.isWorking.value = { names: false, text: false, meaning: false }
+  state.failureMessages.value = {}
+  state.isAnswered.value = false
+}
+
 async function executeSearchQuery(
   ctx: {
     core: SearchDeps
@@ -182,12 +202,8 @@ async function executeSearchQuery(
   },
   state: SearchRefs,
 ) {
-  state.names.value = []
-  state.texts.value = []
-  state.meanings.value = []
+  clearSearchRefs(state)
   state.isWorking.value = { names: true, text: true, meaning: true }
-  state.failureMessages.value = {}
-  state.isAnswered.value = false
   const onFailed = (g: SearchGroup) => {
     state.failureMessages.value = { ...state.failureMessages.value, [g]: ctx.emptyQueryWord }
   }
@@ -250,14 +266,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const open = ref(false)
   const inputValue = ref('')
 
-  const names = shallowRef<readonly NameMatch[]>([])
-  const texts = shallowRef<readonly Passage[]>([])
-  const meanings = shallowRef<readonly Passage[]>([])
-
-  const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
-  const failureMessages = ref<Partial<Record<SearchGroup, string>>>({})
-  const isAnswered = ref(false)
-  const state: SearchRefs = { names, texts, meanings, isWorking, failureMessages, isAnswered }
+  const state = createSearchRefs()
+  const { names, texts, meanings, isWorking, failureMessages, isAnswered } = state
 
   const debounced = useDebouncedSearch(how.wait ? { wait: how.wait } : {})
 
@@ -267,13 +277,8 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const drop = () => {
     asking.abort()
-    names.value = []
-    texts.value = []
-    meanings.value = []
-    isWorking.value = { names: false, text: false, meaning: false }
+    clearSearchRefs(state)
     isWaiting.value = false
-    failureMessages.value = {}
-    isAnswered.value = false
   }
 
   const wait = () => {

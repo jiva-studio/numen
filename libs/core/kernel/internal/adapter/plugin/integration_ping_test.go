@@ -50,7 +50,7 @@ func TestEnsureActive_RefusesPluginWithMismatchedProtocol(t *testing.T) {
 			var procs []*os.Process
 			host.Processes.SetLauncher(launchAnsweringPing(t, tc.protocol, &procs))
 
-			_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder)
+			_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 			if !errors.Is(err, manifest.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("EnsureActive() = %v, want %v naming %q", err, manifest.ErrUnsupportedProtocol, tc.want)
 			}
@@ -60,7 +60,7 @@ func TestEnsureActive_RefusesPluginWithMismatchedProtocol(t *testing.T) {
 			if err := procs[0].Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) {
 				t.Fatalf("signal the rejected process: %v, want %v", err, os.ErrProcessDone)
 			}
-			if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
+			if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
 				t.Fatalf("second EnsureActive() = %v, want a new start that fails with %v", err, manifest.ErrUnsupportedProtocol)
 			}
 			if len(procs) != 2 {
@@ -75,10 +75,10 @@ func TestEnsureActive_ActivatesPluginWithHostProtocol(t *testing.T) {
 	var procs []*os.Process
 	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
 
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive() = %v, want the plugin active", err)
 	}
-	host.Activation.Release("org.example.sample", testHolder)
+	host.Activation.Release("org.example.sample", getTestHolder())
 	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}

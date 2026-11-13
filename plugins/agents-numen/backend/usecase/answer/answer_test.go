@@ -91,8 +91,10 @@ func newAnswerer(t *testing.T, chat *scriptedChat, tools *fakeTools) (*answer.An
 	return newAnswererOf(t, chat, tools, settings.NewStore(), now), now
 }
 
-// wren is the row of a task that chose the model Wren 2 of Meadow.
-var wren = connection.Call{ConnectionID: "c-numen", Options: map[string]string{"model": "c-meadow|wren-2"}}
+// getWren returns the row of a task that chose the model Wren 2 of Meadow.
+func getWren() connection.Call {
+	return connection.Call{ConnectionID: "c-numen", Options: map[string]string{"model": "c-meadow|wren-2"}}
+}
 
 func runWith(t *testing.T, answerer *answer.Answerer, call connection.Call, task *acp.TaskRequest) ([]*acp.TaskFrame, *acp.TaskDone, error) {
 	t.Helper()
@@ -106,7 +108,7 @@ func runWith(t *testing.T, answerer *answer.Answerer, call connection.Call, task
 
 func run(t *testing.T, answerer *answer.Answerer, task *acp.TaskRequest) ([]*acp.TaskFrame, *acp.TaskDone, error) {
 	t.Helper()
-	return runWith(t, answerer, wren, task)
+	return runWith(t, answerer, getWren(), task)
 }
 
 func runTaskToEnd(t *testing.T, answerer *answer.Answerer, task *acp.TaskRequest) ([]*acp.TaskFrame, acp.StopReason) {
@@ -410,7 +412,7 @@ func TestAFrameThatCannotBeSentEndsTheTaskWithItsError(t *testing.T) {
 	answerer, _ := newAnswerer(t, chat, tools)
 	closed := errors.New("the window closed")
 
-	_, err := answerer.RunTask(t.Context(), wren, &acp.TaskRequest{Prompt: "read"}, func(*acp.TaskFrame) error { return closed })
+	_, err := answerer.RunTask(t.Context(), getWren(), &acp.TaskRequest{Prompt: "read"}, func(*acp.TaskFrame) error { return closed })
 
 	if !errors.Is(err, closed) || len(tools.called) != 0 {
 		t.Errorf("err = %v after the calls %v", err, tools.called)

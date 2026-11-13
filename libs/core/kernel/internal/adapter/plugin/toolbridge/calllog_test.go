@@ -63,12 +63,15 @@ func TestACallIsLoggedWithItsCallerToolArgumentsResultAndDuration(t *testing.T) 
 			t.Errorf("%s is %v, want %v", key, line[key], value)
 		}
 	}
-	arguments, _ := line["arguments"].(map[string]any)
+	arguments, isObject := line["arguments"].(map[string]any)
+	if !isObject {
+		t.Fatalf("the arguments are logged as %v", line["arguments"])
+	}
 	if arguments["row"] != "7" {
 		t.Errorf("the argument row is logged as %v", arguments["row"])
 	}
-	note, _ := arguments["note"].(string)
-	if !strings.HasPrefix(note, `"pear pear`) || !strings.HasSuffix(note, "…") || len(note) > 210 {
+	note, isString := arguments["note"].(string)
+	if !isString || !strings.HasPrefix(note, `"pear pear`) || !strings.HasSuffix(note, "…") || len(note) > 210 {
 		t.Errorf("the long argument is logged as %q", note)
 	}
 	if _, hasError := line["error"]; hasError {

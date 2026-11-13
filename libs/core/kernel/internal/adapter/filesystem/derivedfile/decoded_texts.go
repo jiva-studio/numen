@@ -48,7 +48,10 @@ func (c *DecodedTexts) get(hash string) ([]domain.TextSegment, bool) {
 		return nil, false
 	}
 	c.order.MoveToFront(element)
-	entry, _ := element.Value.(decodedEntry)
+	entry, isEntry := element.Value.(decodedEntry)
+	if !isEntry {
+		return nil, false
+	}
 	return slices.Clip(entry.segments), true
 }
 
@@ -67,9 +70,12 @@ func (c *DecodedTexts) put(hash string, segments []domain.TextSegment) {
 	}
 	c.entries[hash] = c.order.PushFront(decodedEntry{hash: hash, segments: segments, size: size})
 	c.size += size
-	for c.size > c.budget {
+	for c.size > c.budget && c.order.Len() > 0 {
 		oldest := c.order.Back()
-		entry, _ := c.order.Remove(oldest).(decodedEntry)
+		entry, isEntry := c.order.Remove(oldest).(decodedEntry)
+		if !isEntry {
+			continue
+		}
 		delete(c.entries, entry.hash)
 		c.size -= entry.size
 	}

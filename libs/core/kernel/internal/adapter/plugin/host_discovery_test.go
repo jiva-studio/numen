@@ -60,10 +60,10 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 	host.Processes.SetLauncher(startSleepLauncher(t, &atomic.Int32{}, nil))
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", testHolder)
+	host.Activation.Release("org.example.sample", getTestHolder())
 	exited := supervisorOf(host, "org.example.sample").GetExitSignal()
 
 	if err := os.RemoveAll(filepath.Join(tmp, "sample")); err != nil {
@@ -77,7 +77,7 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 		t.Fatal("a plugin removed from disk is still registered")
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); !errors.Is(err, plugin.ErrPluginNotFound) {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); !errors.Is(err, plugin.ErrPluginNotFound) {
 		t.Fatalf("expected plugin.ErrPluginNotFound, got %v", err)
 	}
 }
@@ -91,10 +91,10 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 	}
 	var started atomic.Int32
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", testHolder)
+	host.Activation.Release("org.example.sample", getTestHolder())
 	exited := supervisorOf(host, "org.example.sample").GetExitSignal()
 
 	manifestPath := filepath.Join(tmp, "sample", "manifest.json")
@@ -115,10 +115,10 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 		t.Fatalf("expected the changed manifest to be registered, got %+v", p.Manifest)
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive after the manifest change failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", testHolder)
+	host.Activation.Release("org.example.sample", getTestHolder())
 	if started.Load() != 2 {
 		t.Fatalf("expected the plugin to be launched again, got %d launches", started.Load())
 	}
@@ -187,7 +187,7 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	calling := make(chan struct{})
 	go func() {
 		close(calling)
-		_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", testHolder)
+		_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 		reply <- err
 	}()
 	<-calling
