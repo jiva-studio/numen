@@ -431,3 +431,18 @@ export const isArrow = (buttonName: string, arrow: string): boolean => buttonNam
 
 /** The most clicks the arrow button of a row needs to show any arrow: none, one way, the other way. */
 export const MAX_ARROW_CLICKS = 3
+
+/** The wait of the pointer on a note before its headings open: the EXPANSION_DELAY of the plex, which rules.test.ts reads from the plugin. */
+export const HEADINGS_OPEN_WAIT_MS = 500
+
+/** What the arrow of a line is when the line has none. */
+export const NO_ARROW = 'none'
+
+/** The arrow a step asks of a line: ` with an arrow to "B"`, ` without an arrow`, or nothing, which asks nothing of the arrow. */
+export const parseArrow = (text: string): string | undefined => {
+  if (text === '') return undefined
+  if (text === ' without an arrow') return NO_ARROW
+  const match = /^ with an arrow to "([^"]+)"$/.exec(text)
+  if (!match) throw new Error(`"${text}" does not name an arrow: write with an arrow to "Title" or without an arrow`)
+  return match[1]
+}

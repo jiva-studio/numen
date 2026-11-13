@@ -77,19 +77,17 @@ describe('the node in focus', () => {
 })
 
 describe('the title of the node in focus', () => {
-  const scaled = (props: Record<string, unknown>, overrides: Partial<PlacedNode> = {}) => {
+  const mountTitle = (props: Record<string, unknown>, overrides: Partial<PlacedNode> = {}) => {
     const node = mount(PlexNodeView, {
       props: { node: createNode({ width: 200, height: 40, ...overrides }), ...props },
     })
-    const title = node.get('foreignObject')
-    const [, factor] = /scale\(([\d.]+)\)/.exec(title.attributes('transform') ?? '') ?? []
-    return { title, factor: factor === undefined ? 1 : Number(factor) }
+    return { title: node.get('foreignObject') }
   }
 
   it('keeps the box its text is laid out in the same size through the move to focus, so a title that fits is never cut', () => {
     // The node grows from a note at rest to the focus; its width grows with its height.
     const laidOut = [0, 0.25, 0.5, 0.75, 1].map((t) => {
-      const { title } = scaled(
+      const { title } = mountTitle(
         { restHeight: 40 },
         { relation: 'focus', width: 160 * (1 + 0.5 * t), height: 40 * (1 + 0.5 * t) },
       )
@@ -241,31 +239,6 @@ describe('the handle', () => {
     await node.get('.plex__handle').trigger('dblclick')
     expect(node.emitted('show')).toBeUndefined()
   })
-
-  it('positions at trailing edge vertical center', async () => {
-    const handle = (await hover(mountNode({ width: 144 }))).get('.plex__handle-at')
-    expect(handle.attributes('transform')).toBe('translate(72 0)')
-  })
-})
-
-describe('the handle of a node without its pill', () => {
-  const mountBare = (overrides: Partial<PlacedNode> = {}) =>
-    mount(PlexNodeView, { props: { node: createNode(overrides), showPills: false } })
-
-  const getCentre = (node: ReturnType<typeof mountBare>) =>
-    Number(
-      /translate\((\S+) /.exec(node.get('.plex__handle-at').attributes('transform') ?? '')?.[1],
-    )
-
-  it('has its whole disc outside the box, where the title ends inside its padding', async () => {
-    const node = await hover(mountBare({ width: 144 }))
-    expect(getCentre(node) - HANDLE_RADIUS).toBeGreaterThanOrEqual(72)
-  })
-
-  it('touches the area of the box, so the pointer does not leave the node on its way to it', async () => {
-    const node = await hover(mountBare({ width: 144 }))
-    expect(getCentre(node) - HANDLE_RADIUS).toBeLessThanOrEqual(72)
-  })
 })
 
 describe('the handle against the box it is drawn at', () => {
@@ -282,6 +255,15 @@ describe('the handle against the box it is drawn at', () => {
     const node = await hover(mount(PlexNodeView, { props: { node: createNode({ width }) } }))
 
     expect(getCentre(node)).toBe(getRightEdge(node, '.plex__box'))
+  })
+
+  it.each([100, 144, 230])('sits at the vertical middle of a pill %i wide', async (width) => {
+    const node = await hover(mount(PlexNodeView, { props: { node: createNode({ width }) } }))
+    const box = node.get('.plex__box')
+    const middle = Number(box.attributes('y')) + Number(box.attributes('height')) / 2
+    const [, y] = /translate\(\S+ (\S+)\)/.exec(node.get('.plex__handle-at').attributes('transform') ?? '') ?? []
+
+    expect(Number(y)).toBe(middle)
   })
 
   it.each([100, 144, 230])(

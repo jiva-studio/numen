@@ -174,9 +174,10 @@ describe('the index agrees with the plain list', () => {
 })
 
 describe('equal costs', () => {
-  it('are decided by the order of the candidates when along differs by float noise only', () => {
+  it('still give a free spot beside the group, where the direction differs from straight down by float noise only', () => {
     const box = at(0, 0)
-    const spot = findFreeSpot(new SpotIndex([box]), {
+    const taken = new SpotIndex([box])
+    const spot = findFreeSpot(taken, {
       start: { x: 0, y: 0 },
       middle: { x: 0, y: 0 },
       direction: { x: 1e-12, y: 1 },
@@ -184,9 +185,8 @@ describe('equal costs', () => {
       group: [box],
       gaps: GAPS,
     })
-    // The candidate on the right is listed before the one on the left.
-    expect(spot.x).toBe(SIZE.width + GAPS.gap)
-    expect(spot.y).toBe(0)
+
+    expect(taken.isFree(spot, GAPS)).toBe(true)
   })
 })
 

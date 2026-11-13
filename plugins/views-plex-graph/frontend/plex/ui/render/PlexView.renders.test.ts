@@ -2,6 +2,7 @@
 import { mount } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
+import PlexNodeView from './PlexNodeView.vue'
 import PlexView from './PlexView.vue'
 import { arrangePlex, DEFAULT_OPTIONS } from '../../lib/arrange'
 import type { Drop } from '../../lib/arrange'
@@ -29,8 +30,8 @@ const createCountedView = (props: Record<string, unknown> = {}) => {
     global: {
       mixins: [
         {
-          updated(this: { $props: { node?: PlacedNode }; $options: { __name?: string } }) {
-            if (this.$options.__name !== 'PlexNodeView') return
+          updated(this: { $props: { node?: PlacedNode }; $: { type: unknown } }) {
+            if (this.$.type !== PlexNodeView) return
             const id = this.$props.node!.id
             redrawn.set(id, (redrawn.get(id) ?? 0) + 1)
           },
@@ -57,19 +58,26 @@ describe('the pointer moving over a note', () => {
     expect([...redrawn.keys()]).toStrictEqual([frame.nodes[3]!.id])
   })
 
-  it('does not settle the width or the headings of a note again', async () => {
+  it('settles the width and the headings of the hovered note alone, and not again when the pointer leaves', async () => {
     const widen = vi.fn((node: PlacedNode) => ({ width: node.width + 40, offset: 0 }))
-    const hung = vi.fn(() => null)
+    const hung = vi.fn((_node: PlacedNode) => null)
     const { view } = createCountedView({ widen, hung })
+    const target = frame.nodes[4]!
+    expect(widen).not.toHaveBeenCalled()
+    expect(hung).not.toHaveBeenCalled()
+
+    await note(view, target.title).trigger('pointerenter')
+    await nextTick()
     const widened = widen.mock.calls.length
     const hanged = hung.mock.calls.length
+    expect(widened).toBeGreaterThan(0)
+    expect(hanged).toBeGreaterThan(0)
+    expect(widen.mock.calls.every(([node]) => node.id === target.id)).toBe(true)
+    expect(hung.mock.calls.every(([node]) => node.id === target.id)).toBe(true)
 
-    await note(view, frame.nodes[4]!.title).trigger('pointerenter')
-    await nextTick()
-    await note(view, frame.nodes[4]!.title).trigger('pointerleave')
+    await note(view, target.title).trigger('pointerleave')
     await nextTick()
 
-    expect(widened).toBe(frame.nodes.length)
     expect(widen.mock.calls.length).toBe(widened)
     expect(hung.mock.calls.length).toBe(hanged)
   })
@@ -82,7 +90,22 @@ describe('the pointer moving over a note', () => {
     await nextTick()
 
     expect(view.findAll('.plex__raised .plex__edge').length).toBeGreaterThan(0)
-    expect(redrawn.has(frame.nodes[5]!.id)).toBe(false)
+    expect([...redrawn.keys()]).toStrictEqual([frame.nodes[0]!.id])
+  })
+})
+
+describe('a frame that changes', () => {
+  it('redraws the note that moved', async () => {
+    const { view, redrawn, reset } = createCountedView()
+    reset()
+    const moved = frame.nodes[3]!
+
+    await view.setProps({
+      frame: { ...frame, nodes: frame.nodes.map((node) => (node === moved ? { ...node, x: node.x + 10 } : node)) },
+    })
+    await nextTick()
+
+    expect(redrawn.has(moved.id)).toBe(true)
   })
 })
 
@@ -108,6 +131,7 @@ describe('the pointer moving during a gesture or a drag', () => {
     dragging.at.value = { x: 9, y: 9 }
     await nextTick()
 
+    // The ghost of the note to make and the note dragged are drawn by the same view; no note of the frame is.
     expect([...redrawn.keys()].filter((id) => id !== 'ghost' && id !== 'dragged')).toStrictEqual([])
   })
 

@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   parseApplication,
@@ -35,6 +36,9 @@ import {
   isArrow,
   isOnSides,
   parseSides,
+  HEADINGS_OPEN_WAIT_MS,
+  NO_ARROW,
+  parseArrow,
 } from './rules.js'
 
 describe('parseReference', () => {
@@ -468,5 +472,24 @@ describe('isArrow', () => {
   it('reads the arrow a button shows from its name', () => {
     expect(isArrow('Arrow to Quay. Click for: Arrow to Harbour', 'Arrow to Quay')).toBe(true)
     expect(isArrow('No arrow. Click for: Arrow to Quay', 'Arrow to Quay')).toBe(false)
+  })
+})
+
+describe('parseArrow', () => {
+  it('reads the arrow a step asks of a line', () => {
+    expect(parseArrow(' with an arrow to "Quay"')).toBe('Quay')
+    expect(parseArrow(' without an arrow')).toBe(NO_ARROW)
+    expect(parseArrow('')).toBeUndefined()
+  })
+
+  it('refuses words that name no arrow', () => {
+    expect(() => parseArrow(' with two arrows')).toThrow('does not name an arrow')
+  })
+})
+
+describe('the wait before the headings of a note open', () => {
+  it('is the wait of the plex', () => {
+    const source = fs.readFileSync(new URL('../../../../plugins/views-plex-graph/frontend/plex/model/sizing/expansion.ts', import.meta.url), 'utf8')
+    expect(Number(/export const EXPANSION_DELAY = (\d+)/.exec(source)?.[1])).toBe(HEADINGS_OPEN_WAIT_MS)
   })
 })

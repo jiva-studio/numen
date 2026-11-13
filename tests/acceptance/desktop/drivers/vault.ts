@@ -73,7 +73,10 @@ export class VaultDriver {
   }
 
   addPresets(vault: string, rows: string[][]): void {
-    for (const preset of parsePresets(rows)) this.writeNewCards(vault, preset.title, createPresetText(preset.title, preset.settings))
+    for (const preset of parsePresets(rows)) {
+      this.writeNewCards(vault, preset.title, createPresetText(preset.title, preset.settings))
+      this.scenario.rememberNote(preset.title, getCardFile(preset.title))
+    }
   }
 
   /** Makes the window show another vault of the world, over the calls of the vault list the palette command Open vault makes. */

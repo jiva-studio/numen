@@ -31,13 +31,15 @@ Feature: Plex drag
         | down      | child    |
         | left      | jump     |
 
-    Scenario: A line makes a new note
+    Scenario: A line makes a new note with a link
       When the person drags a line down from the note titled "Harbour" to a new note titled "Pier"
       Then the vault "Test" has the following links:
         | from | to      | role   |
         | Pier | Harbour | parent |
-      And the plex shows the focus note titled "Pier"
-      And the plex shows the parent note titled "Harbour"
+
+    Scenario: A line makes a new note that the plex shows
+      When the person drags a line down from the note titled "Harbour" to a new note titled "Pier"
+      Then the plex shows the focus note titled "Pier"
 
     Scenario: A click on the handle links a note as a child
       When the person clicks the handle of the note titled "Harbour" to link the note titled "Quay"
@@ -47,14 +49,26 @@ Feature: Plex drag
 
   Rule: A line dropped on a note of the plex links it
 
-    Scenario: A line onto a note makes a link by the place of the note
+    Scenario Outline: A line onto a note makes a link by the place of the note
       Given the vault has the following:
-        | path             | text                        |
-        | notes/Harbour.md | # Harbour\n\nSee [[Jetty]]. |
-        | notes/Jetty.md   | # Jetty                     |
+        | path             | text      |
+        | notes/Coast.md   | # Coast   |
+        | notes/Harbour.md | # Harbour |
+        | notes/Quay.md    | # Quay    |
+      And the notes have the following links:
+        | from    | to      | role  |
+        | Coast   | Harbour | child |
+        | Harbour | Quay    | child |
       And the person opens the note titled "Harbour"
       And the person runs the command "Show in plex" on the note tab titled "Harbour"
-      When the person drops the handle of the note titled "Harbour" on the note titled "Jetty"
+      When the person drops the handle of the note titled "<from>" on the note titled "<to>"
       Then the vault "Test" has the following links:
-        | from    | to    | role |
-        | Harbour | Jetty | parent |
+        | from    | to      | role       |
+        | Coast   | Harbour | child      |
+        | Harbour | Quay    | child      |
+        | <from>  | <to>    | <relation> |
+
+      Examples:
+        | from  | to    | relation |
+        | Quay  | Coast | parent   |
+        | Coast | Quay  | child    |

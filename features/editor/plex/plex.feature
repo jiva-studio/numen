@@ -9,7 +9,7 @@ Feature: Plex
     Given the empty vault "Test"
     And the application "editor" starts
 
-  Rule: The plex links notes
+  Rule: A child note made from the file tree is a child in the plex
 
     Scenario: A child note is made from the file tree
       Given the vault has the following:
@@ -23,7 +23,7 @@ Feature: Plex
       And the note titled "Lagoon" links to the note titled "Reef flat"
       And the plex shows the child note titled "Reef flat"
 
-  Rule: The plex shows notes
+  Rule: A linked tab follows the notes of the plex
 
     Scenario: A linked tab follows a click
       Given the vault has the following:
@@ -41,3 +41,13 @@ Feature: Plex
         | kind | path             |
         | note | notes/Entropy.md |
       And the tab titled "Weir notes" is not open
+
+  Rule: A note without links stands alone
+
+    Scenario: A note without links shows only the focus
+      Given the vault has the following:
+        | path            | text                |
+        | notes/Lagoon.md | The lagoon is calm. |
+      And the person opens the note titled "Lagoon"
+      When the person runs the command "Show in plex" on the note tab titled "Lagoon"
+      Then the plex shows only the focus note titled "Lagoon"
