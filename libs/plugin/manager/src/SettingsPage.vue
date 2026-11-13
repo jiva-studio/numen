@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** A settings page under its toolbar; only the page scrolls. */
+/** A settings page with its toolbar as the first line; both scroll together. */
 import type { VNode } from 'vue'
 import SettingsToolbar from './SettingsToolbar.vue'
 
@@ -24,9 +24,8 @@ defineSlots<{
 
 <template>
   <div class="settings-page">
-    <div class="settings-page__head">
+    <div class="settings-page__content">
       <SettingsToolbar
-        class="settings-page__measure"
         :path="props.path"
         @back="emit('back')"
         @open="(level) => emit('open', level)"
@@ -35,44 +34,26 @@ defineSlots<{
           <slot name="actions" />
         </template>
       </SettingsToolbar>
-    </div>
-    <div class="settings-page__body">
-      <div class="settings-page__measure settings-page__content">
-        <slot />
-      </div>
+      <slot />
     </div>
   </div>
 </template>
 
 <style scoped>
 .settings-page {
-  display: flex;
-  flex-direction: column;
   block-size: 100%;
   min-block-size: 0;
-}
-
-.settings-page__head {
-  flex: none;
-  padding-inline: var(--numen-gutter);
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
-  background-color: var(--numen-raised);
-}
-
-.settings-page__body {
-  flex: 1;
-  min-block-size: 0;
   overflow-y: auto;
-  padding: var(--numen-gutter);
-}
-
-.settings-page__measure {
-  inline-size: 100%;
-  max-inline-size: var(--settings-measure);
-  margin-inline: auto;
+  padding: 0 var(--numen-gutter) var(--numen-gutter);
 }
 
 .settings-page__content {
   container: settings / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  inline-size: 100%;
+  max-inline-size: var(--settings-measure);
+  margin-inline: auto;
 }
 </style>

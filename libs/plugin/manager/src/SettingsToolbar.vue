@@ -76,7 +76,7 @@ function onOpen(level: number): void {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  min-block-size: var(--numen-action-size);
+  min-block-size: 3.25rem;
 }
 
 .settings-toolbar__back {
