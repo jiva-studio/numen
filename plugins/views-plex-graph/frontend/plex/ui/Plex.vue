@@ -12,6 +12,7 @@ import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
 import { DEFAULT_BEHAVIOR, getBehavior, type PlexBehavior } from '../model/behavior'
 import { useFreeSpace } from '../model/sizing/room'
+import { useFieldSize } from '../model/sizing/fieldSize'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
 import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../lib/names'
@@ -64,6 +65,8 @@ const frameElement = useTemplateRef<HTMLElement>('frame')
 const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
 
 const slots = useSlots()
+
+const fieldSize = useFieldSize()
 
 const { room, options, measures, widen, hung } = useFreeSpace(
   frameElement,
@@ -170,6 +173,7 @@ watch(
       :frame="frame"
       :viewport="room"
       :node-size="options.nodeSize"
+      :ghost-size="fieldSize"
       :curvature="options.routing.curvature"
       :show-edge-labels="showEdgeLabels"
       :show-pills="showPills"

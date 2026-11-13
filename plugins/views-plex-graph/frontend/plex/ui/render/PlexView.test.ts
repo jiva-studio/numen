@@ -128,6 +128,36 @@ describe('gesture roles and ghost', () => {
     expect(ghost.get('.plex__title-text').text()).toBe('parent')
     expect(Number(ghost.get('rect').attributes('width'))).toBe(DEFAULT_OPTIONS.nodeSize.width)
   })
+
+  it('draws the ghost at the size of a field, whatever size a note has', () => {
+    const field = { width: 224, height: 32 }
+    const sizes = [DEFAULT_OPTIONS.nodeSize, { width: 300, height: 80 }].map((nodeSize) => {
+      const view = mountPlexViewDuring({
+        nodeSize,
+        ghostSize: field,
+        gestureFrom: 'focus',
+        gestureAt: { x: 40, y: -200 },
+        gestureOutcome: { kind: 'create', from: 'focus', relation: 'parent' },
+      })
+      const rect = view.get('.plex__node--ghost rect')
+      return [Number(rect.attributes('width')), Number(rect.attributes('height'))]
+    })
+
+    expect(sizes).toStrictEqual([
+      [224, 32],
+      [224, 32],
+    ])
+  })
+
+  it('draws the ghost title at its size, however tall the ghost is', () => {
+    const view = mountPlexViewDuring({
+      ghostSize: { width: 224, height: 64 },
+      gestureFrom: 'focus',
+      gestureAt: { x: 40, y: -200 },
+      gestureOutcome: { kind: 'create', from: 'focus', relation: 'parent' },
+    })
+    expect(view.get('.plex__node--ghost foreignObject').attributes('transform')).toBeUndefined()
+  })
 })
 
 describe('viewport viewBox', () => {

@@ -236,7 +236,9 @@ function getMiddle(): Position | null {
   transition: none;
 }
 
+/* A ghost is a field: its text keeps the side padding of one, whatever the look of the pills. */
 .plex__node--ghost :deep(.plex__title) {
+  padding-inline: 0.625rem;
   color: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);
 }

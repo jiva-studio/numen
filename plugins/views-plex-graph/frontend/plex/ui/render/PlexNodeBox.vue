@@ -45,7 +45,7 @@ const startsDown = computed(() => -props.node.height / 2)
  * The title is laid out in a box that many times smaller and enlarged, so text, icon, gap and padding grow together.
  */
 const scale = computed(() =>
-  props.restHeight > 0 ? Math.max(1, props.node.height / props.restHeight) : 1,
+  props.restHeight > 0 && !props.isGhost ? Math.max(1, props.node.height / props.restHeight) : 1,
 )
 
 /** A ghost keeps its dashed outline whether or not the other nodes have pills. */

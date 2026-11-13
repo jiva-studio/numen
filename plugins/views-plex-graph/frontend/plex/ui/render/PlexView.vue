@@ -88,7 +88,7 @@ const pendingThread = computed(() =>
 const ghost = computed(() =>
   getReachGhost(props.gestureOutcome, props.gestureAt, {
     relationName: props.relationName,
-    nodeSize: props.nodeSize,
+    nodeSize: props.ghostSize ?? props.nodeSize,
   }),
 )
 
@@ -96,7 +96,7 @@ const dragging = computed(() =>
   getDraggedShape(
     props.frame,
     { relation: props.dropRelation, to: props.draggedAt },
-    { dropName: props.dropName, nodeSize: props.nodeSize, curvature: props.curvature },
+    { dropName: props.dropName, nodeSize: props.ghostSize ?? props.nodeSize, curvature: props.curvature },
   ),
 )
 

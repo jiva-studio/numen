@@ -22,6 +22,8 @@ export interface PlexViewProps {
   frame: PlexFrame
   viewport: { width: number; height: number }
   nodeSize: { width: number; height: number }
+  /** The size of the shape a new note is dragged out as: a field, whatever the size of a note. */
+  ghostSize?: { width: number; height: number }
   showEdgeLabels?: boolean
   showPills?: boolean
   namesOpacity?: number
