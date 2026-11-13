@@ -144,7 +144,7 @@ func TestAProviderThatHasNotAnsweredListsNoConnection(t *testing.T) {
 	}
 }
 
-func TestAPluginThatCannotStartLeavesItsTypePending(t *testing.T) {
+func TestATypeIsPendingWhileItsPluginFailsToStart(t *testing.T) {
 	f := newDetectionFixture(t)
 	f.source.failOpen = errors.New("the plugin did not start")
 

@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
@@ -140,17 +139,12 @@ func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 
 func getRegistries(c settingsWiring) settingsadapter.Registries {
 	themes := themeRegistry(c).GetNames()
-	return func(name string) ([]string, bool) {
-		switch name {
-		case settingsadapter.RegistryConnections:
+	return settingsadapter.AddDetectedRegistries(func(name string) ([]string, bool) {
+		if name == settingsadapter.RegistryConnections {
 			return listConnectionIDs(c)
-		case settingsadapter.RegistryDetectedConnections:
-			return settingsadapter.ListDetectedConnectionIDs(getHostDetection(c)), true
-		case settingsadapter.RegistryPendingDetections:
-			return settingsadapter.ListPendingDetections(c.PluginHost.Views.Types, getHostDetection(c)), true
 		}
 		return themes(name)
-	}
+	}, c.PluginHost.Views.Types, getHostDetection(c))
 }
 
 func listConnectionIDs(c settingsWiring) ([]string, bool) {
@@ -242,7 +236,7 @@ func feed(c settingsWiring) settingevents.Feed {
 		GetPath: func() (string, error) { return settingsSettingsFile(c) },
 		Read: func() (settingsdomain.Values, error) {
 			values, err := list.Execute()
-			addDetectedConnections(c, values)
+			settingsadapter.AddDetectedConnectionIDs(values, getHostDetection(c))
 			return values, err
 		},
 		Initial: func() settingsdomain.Values {
@@ -324,21 +318,9 @@ func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
 	return themefiles.Open(c.Watches.GetShared())
 }
 
-// getHostDetection returns the detection of the plugin host, and none where the host has none.
 func getHostDetection(c settingsWiring) connectionport.Detected {
 	if c.PluginHost.Detection == nil {
 		return nil
 	}
 	return c.PluginHost.Detection
-}
-
-// addDetectedConnections adds the ids of the detected connections to the values a window follows.
-func addDetectedConnections(c settingsWiring, values settingsdomain.Values) {
-	ids := settingsadapter.ListDetectedConnectionIDs(getHostDetection(c))
-	if values == nil || len(ids) == 0 {
-		return
-	}
-	if encoded, err := json.Marshal(ids); err == nil {
-		values[settingsdomain.JoinPath([]string{settingsdomain.DetectedConnectionsKey})] = string(encoded)
-	}
 }

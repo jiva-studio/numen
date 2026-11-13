@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -233,14 +235,28 @@ func TestAChoiceToDiscoverThatBreaksTheRulesIsRejected(t *testing.T) {
 	}
 }
 
-func listConnectionsWithDetected(name string) ([]string, bool) {
-	switch name {
-	case settings.RegistryDetectedConnections:
-		return settings.ListDetectedConnectionIDs(fixedDetection{}), true
-	case settings.RegistryPendingDetections:
-		return []string{heronTypeID}, true
+// detectionTypes are the types of the agents plugin: kite answered, heron has not.
+type detectionTypes struct{}
+
+func (detectionTypes) ListTypes() []connection.Type {
+	return []connection.Type{
+		{PluginID: "org.example.agents", IsAvailable: true, Declaration: manifest.ConnectionType{ID: "kite", Title: "Kite"}},
+		{PluginID: "org.example.agents", IsAvailable: true, Declaration: manifest.ConnectionType{ID: "heron", Title: "Heron"}},
 	}
-	return knownConnections(name)
+}
+
+func (detectionTypes) GetType(string) (connection.Type, bool) { return connection.Type{}, false }
+
+var listConnectionsWithDetected = settings.AddDetectedRegistries(knownConnections, detectionTypes{}, fixedDetection{})
+
+func TestTheIDsOfTheDetectedConnectionsAreAddedToTheValuesAWindowFollows(t *testing.T) {
+	values := settingsdomain.Values{}
+
+	settings.AddDetectedConnectionIDs(values, fixedDetection{})
+
+	if got := values[settingsdomain.DetectedConnectionsKey]; got != `["`+kiteAgentID+`"]` {
+		t.Errorf("values = %v, want the id of Kite agent", values)
+	}
 }
 
 func TestARowOfADetectedConnectionIsAcceptedOnWrite(t *testing.T) {

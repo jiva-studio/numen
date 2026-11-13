@@ -29,7 +29,8 @@ const HOST = '127.0.0.1'
 const STAND_IN_AGENT_CONNECTION = 'c57a4d101'
 /**
  * Each agent program a scenario installs: the place in the home folder it is put at, and the variable that names it to
- * its plugin, so that a program of the machine the run is on is never started.
+ * its plugin, so that a program of the machine the run is on is never started. The stand-in answers nothing: only its
+ * presence is looked for.
  */
 const INSTALLED_PROGRAMS: Readonly<Record<string, { place: string; variable: string } | undefined>> = {
   'Claude Code': { place: '.local/bin/claude', variable: 'NUMEN_CLAUDE_COMMAND' },
@@ -133,7 +134,6 @@ export class Server {
     fs.writeFileSync(path.join(this.state, 'folder-choice.txt'), folder)
   }
 
-  /** Puts a stand-in of the agent program in the home folder of the binary: it answers nothing, as only its presence is looked for. */
   private installProgram(name: string): void {
     const program = INSTALLED_PROGRAMS[name]
     if (program === undefined) {

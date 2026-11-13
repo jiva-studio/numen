@@ -154,8 +154,6 @@ func (o operation) listConnections() ([]connection.Connection, error) {
 	return append(list, o.detected.ListDetected()...), nil
 }
 
-// listConnectionsAfterDetection lists the connections once the providers of the pending types of the plugins
-// answered.
 func (o operation) listConnectionsAfterDetection(typeIDs []string) ([]connection.Connection, error) {
 	var plugins []string
 	for _, typeID := range typeIDs {

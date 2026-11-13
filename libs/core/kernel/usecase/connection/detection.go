@@ -81,7 +81,8 @@ func (d *Detection) IsPending(typeID string) bool {
 
 // Detect asks the provider of each available type of the plugin that serves detection, which starts the
 // plugin, and waits for the answers. A detection of the plugin that is running already is waited for. A
-// provider that fails keeps the answer it gave before.
+// provider that fails keeps the answer it gave before. Of an answer, one connection of each valid name, ignoring
+// case, is kept, with the values of the fields of the type that are neither secret nor fixed.
 func (d *Detection) Detect(ctx context.Context, pluginID string) {
 	done, isMine := d.begin(pluginID)
 	if !isMine {
@@ -92,13 +93,14 @@ func (d *Detection) Detect(ctx context.Context, pluginID string) {
 		return
 	}
 	defer d.end(pluginID, done)
+	onChange, report := d.getFollowers()
 	types := d.listDetectingTypes(pluginID)
 	if len(types) == 0 {
 		return
 	}
 	provider, release, err := d.source.OpenProvider(ctx, pluginID)
 	if err != nil {
-		d.getReport()(fmt.Errorf("detect the connections of %s: %w", pluginID, err))
+		report(fmt.Errorf("detect the connections of %s: %w", pluginID, err))
 		return
 	}
 	defer release()
@@ -108,13 +110,13 @@ func (d *Detection) Detect(ctx context.Context, pluginID string) {
 			Type: one.Declaration.ID, Fields: map[string]string{}, Secrets: map[string]string{}, Options: map[string]string{},
 		})
 		if err != nil {
-			d.getReport()(fmt.Errorf("detect the connections of %s: %w", one.GetID(), err))
+			report(fmt.Errorf("detect the connections of %s: %w", one.GetID(), err))
 			continue
 		}
 		isChanged = d.store(one.GetID(), newDetectedConnections(one, found)) || isChanged
 	}
 	if isChanged {
-		d.getOnChange()()
+		onChange()
 	}
 }
 
@@ -163,16 +165,10 @@ func (d *Detection) end(pluginID string, done chan struct{}) {
 	close(done)
 }
 
-func (d *Detection) getOnChange() func() {
+func (d *Detection) getFollowers() (onChange func(), report func(error)) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	return d.onChange
-}
-
-func (d *Detection) getReport() func(error) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.report
+	return d.onChange, d.report
 }
 
 func (d *Detection) listDetectingTypes(pluginID string) []connection.Type {
@@ -203,8 +199,6 @@ func (d *Detection) store(typeID string, found []connection.Connection) bool {
 	return !isAnswered || !reflect.DeepEqual(before, found)
 }
 
-// newDetectedConnections keeps the connections of an answer that have a valid name not taken before within the
-// type, with the values of the fields the type declares that are neither secret nor fixed.
 func newDetectedConnections(declared connection.Type, found []modelcall.DetectedConnection) []connection.Connection {
 	list := []connection.Connection{}
 	for _, one := range found {

@@ -28,7 +28,6 @@ type Agent struct {
 	Command []string
 }
 
-// getArguments returns the arguments of the agent of ListKnown whose program has the name of the executable.
 func getArguments(executable string) []string {
 	base := filepath.Base(executable)
 	name := strings.TrimSuffix(base, filepath.Ext(base))

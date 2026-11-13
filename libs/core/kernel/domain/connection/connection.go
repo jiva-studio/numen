@@ -51,13 +51,14 @@ func GetDetectedID(typeID, name string) string {
 	return typeID + detectedIDSeparator + name
 }
 
-// IsDetected reports whether the id is that of a detected connection.
+// IsDetected reports whether the id has the shape GetDetectedID gives: a plugin id, a type and a name joined by
+// slashes.
 func IsDetected(id string) bool {
 	_, _, isDetected := SplitDetectedID(id)
 	return isDetected
 }
 
-// SplitDetectedID returns the type id and the name of the id of a detected connection.
+// SplitDetectedID cuts the id at its first two slashes; the name may hold more of them.
 func SplitDetectedID(id string) (typeID, name string, isDetected bool) {
 	pluginID, rest, _ := strings.Cut(id, detectedIDSeparator)
 	localID, name, _ := strings.Cut(rest, detectedIDSeparator)

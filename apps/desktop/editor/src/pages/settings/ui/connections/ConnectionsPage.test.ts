@@ -119,7 +119,6 @@ const rowOf = (name: string): HTMLElement => {
   return found
 }
 
-/** An entry of the list by its name, a button or not. */
 const entryOf = (name: string): HTMLElement => {
   const found = root().querySelector<HTMLElement>(`[role="list"] [aria-label="${name}"]`)
   if (!found) throw new Error(`no entry ${name}`)

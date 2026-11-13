@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 )
 
-// writeProgram puts an executable of the name in the folder.
 func writeProgram(t *testing.T, folder, name string) {
 	t.Helper()
 	if runtime.GOOS == "windows" {

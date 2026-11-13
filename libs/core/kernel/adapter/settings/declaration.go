@@ -2,6 +2,7 @@ package settings
 
 import (
 	_ "embed"
+	"encoding/json"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
@@ -43,9 +44,7 @@ const RegistryDetectedConnections = "detectedConnections"
 // what they detect yet. A row that names a connection detected for such a type is kept until they do.
 const RegistryPendingDetections = "pendingDetections"
 
-// ListDetectedConnectionIDs returns the ids of the connections the providers detected, and none where nothing
-// detects.
-func ListDetectedConnectionIDs(detected connectionport.Detected) []string {
+func listDetectedConnectionIDs(detected connectionport.Detected) []string {
 	if detected == nil {
 		return nil
 	}
@@ -56,8 +55,7 @@ func ListDetectedConnectionIDs(detected connectionport.Detected) []string {
 	return ids
 }
 
-// ListPendingDetections returns the ids of the types whose providers have not reported what they detect yet.
-func ListPendingDetections(types connectionport.Types, detected connectionport.Detected) []string {
+func listPendingDetections(types connectionport.Types, detected connectionport.Detected) []string {
 	if types == nil || detected == nil {
 		return nil
 	}
@@ -68,6 +66,32 @@ func ListPendingDetections(types connectionport.Types, detected connectionport.D
 		}
 	}
 	return ids
+}
+
+// AddDetectedRegistries answers RegistryDetectedConnections and RegistryPendingDetections from the detection, and
+// every other name from registries. A nil detection lists none.
+func AddDetectedRegistries(registries Registries, types connectionport.Types, detected connectionport.Detected) Registries {
+	return func(name string) ([]string, bool) {
+		switch name {
+		case RegistryDetectedConnections:
+			return listDetectedConnectionIDs(detected), true
+		case RegistryPendingDetections:
+			return listPendingDetections(types, detected), true
+		}
+		return registries(name)
+	}
+}
+
+// AddDetectedConnectionIDs adds to the values a window follows the ids of the connections the providers detected,
+// under settingsdomain.DetectedConnectionsKey, so that the window reads the connections again when they change.
+func AddDetectedConnectionIDs(values settingsdomain.Values, detected connectionport.Detected) {
+	ids := listDetectedConnectionIDs(detected)
+	if values == nil || len(ids) == 0 {
+		return
+	}
+	if encoded, err := json.Marshal(ids); err == nil {
+		values[settingsdomain.JoinPath([]string{settingsdomain.DetectedConnectionsKey})] = string(encoded)
+	}
 }
 
 func readAppDeclaration() []manifest.Setting {
