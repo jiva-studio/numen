@@ -84,3 +84,21 @@ defineParameterType({
   regexp: /(?:[A-Za-z]+ ){0,2}tab (?:at|titled|for the web address) "[^"]+"/,
   transformer: (tab: string) => parseTabRef(tab),
 })
+
+defineParameterType({
+  name: 'display',
+  regexp: /shows|does not show/,
+  transformer: (display: string) => display === 'shows',
+})
+
+defineParameterType({
+  name: 'destination',
+  regexp: /the note|a new note/,
+  transformer: (destination: string) => destination === 'a new note',
+})
+
+defineParameterType({
+  name: 'pair',
+  regexp: /"[^"]+" and "[^"]+"/,
+  transformer: (pair: string) => pair.slice(1, -1).split('" and "') as [string, string],
+})

@@ -63,8 +63,8 @@ Then(
 )
 
 Then(
-  'the note {reference} {string} does not link to the note {reference} {string}',
-  async ({ person }, reference: string, name: string, toReference: string, toName: string) => {
-    await person.note.expectDoesNotLink(reference, name, toReference, toName)
+  'the note titled {string} does not link to the note titled {string}',
+  async ({ person }, title: string, toTitle: string) => {
+    await person.note.expectDoesNotLink('titled', title, 'titled', toTitle)
   },
 )
