@@ -90,15 +90,20 @@ export class NoteDriver {
   }
 
   async expectLinks(reference: string, name: string, toReference: string, toName: string): Promise<void> {
+    await expect.poll(() => this.isLinked(reference, name, toReference, toName)).toBe(true)
+  }
+
+  async expectDoesNotLink(reference: string, name: string, toReference: string, toName: string): Promise<void> {
+    await expect.poll(() => this.isLinked(reference, name, toReference, toName)).toBe(false)
+  }
+
+  private async isLinked(reference: string, name: string, toReference: string, toName: string): Promise<boolean> {
     const from = await this.scenario.getPath(reference, name)
     const to = await this.scenario.getPath(toReference, toName)
     const { request } = this.scenario.page
-    const isLinked = async (): Promise<boolean> => {
-      if ((await listBacklinks(request, to)).includes(from)) return true
-      const sides = await getConnectionSides(request, from, to)
-      return sides.first || sides.second
-    }
-    await expect.poll(isLinked).toBe(true)
+    if ((await listBacklinks(request, to)).includes(from)) return true
+    const sides = await getConnectionSides(request, from, to)
+    return sides.first || sides.second
   }
 
 }

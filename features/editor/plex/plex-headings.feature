@@ -16,12 +16,12 @@ Feature: Plex headings
 
   Scenario: The headings of a note are shown
     When the person hovers over the note titled "Heat" in the plex
-    Then the plex has the heading "First law" under the note titled "Heat"
+    Then the plex shows the heading "First law" under the note titled "Heat"
 
   Scenario: Headings are hidden
     Given the person hovers over the note titled "Heat" in the plex
-    And the plex has the heading "First law" under the note titled "Heat"
+    And the plex shows the heading "First law" under the note titled "Heat"
     When the person runs the command "Plex Graph: Nest headings under notes" with:
       | Nest headings under notes | Off |
     And the person hovers over the note titled "Heat" in the plex
-    Then the plex does not have the heading "First law" under the note titled "Heat"
+    Then the plex does not show the heading "First law" under the note titled "Heat"

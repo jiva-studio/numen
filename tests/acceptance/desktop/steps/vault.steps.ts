@@ -40,3 +40,7 @@ Given('the vault list has the following:', async ({ person }, vaults: DataTable)
 Then('{vault} has the following links:', async ({ person }, vault: string, links: DataTable) => {
   await person.vault.expectLinks(vault, links.raw())
 })
+
+Given('the notes have the following links:', ({ person }, links: DataTable) => {
+  person.vault.addLinks(links.raw())
+})

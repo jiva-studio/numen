@@ -61,3 +61,10 @@ Then(
     await person.note.expectLinks(reference, name, toReference, toName)
   },
 )
+
+Then(
+  'the note {reference} {string} does not link to the note {reference} {string}',
+  async ({ person }, reference: string, name: string, toReference: string, toName: string) => {
+    await person.note.expectDoesNotLink(reference, name, toReference, toName)
+  },
+)

@@ -22,5 +22,5 @@ Feature: Go to note
     Given the person runs the command "Go to note" with:
       | Search notes | Entropy |
     When the person runs the command "Show in plex"
-    Then the plex has the focus note titled "Entropy"
-    And the plex has the parent note titled "Thermodynamics"
+    Then the plex shows the focus note titled "Entropy"
+    And the plex shows the parent note titled "Thermodynamics"

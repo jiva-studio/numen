@@ -69,15 +69,22 @@ export class World {
     return fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : undefined
   }
 
-  /** The text of every note of the vault, found below its folders; the folders a program keeps (their names begin with a dot) are left out. */
-  listNotes(vault: string): string[] {
-    const walk = (folder: string): string[] =>
+  /** Every note of the vault, found below its folders, by its path and its text; the folders a program keeps (their names begin with a dot) are left out. */
+  listNoteFiles(vault: string): { path: string; text: string }[] {
+    const root = this.getFolder(vault)
+    const walk = (folder: string): { path: string; text: string }[] =>
       fs.readdirSync(folder, { withFileTypes: true }).flatMap((entry) => {
         const full = path.join(folder, entry.name)
         if (entry.isDirectory()) return entry.name.startsWith('.') ? [] : walk(full)
-        return entry.name.endsWith('.md') ? [fs.readFileSync(full, 'utf8')] : []
+        if (!entry.name.endsWith('.md')) return []
+        return [{ path: path.relative(root, full).split(path.sep).join('/'), text: fs.readFileSync(full, 'utf8') }]
       })
-    return walk(this.getFolder(vault))
+    return walk(root)
+  }
+
+  /** The text of every note of the vault. */
+  listNotes(vault: string): string[] {
+    return this.listNoteFiles(vault).map((note) => note.text)
   }
 
   makeFolder(vault: string, folder: string): void {

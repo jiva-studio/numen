@@ -51,7 +51,7 @@ defineParameterType({
 
 defineParameterType({
   name: 'relation',
-  regexp: /focus|parent|child/,
+  regexp: /focus|parent|child|jump|reference|sibling/,
   transformer: (relation: string) => relation,
 })
 

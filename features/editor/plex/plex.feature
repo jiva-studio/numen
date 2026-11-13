@@ -21,7 +21,7 @@ Feature: Plex
       And the person runs the command "Show in plex" on the note tab titled "Entropy"
       Then the vault "Test" contains the note titled "Tributary"
       And the note titled "Entropy" links to the note titled "Tributary"
-      And the plex has the child note titled "Tributary"
+      And the plex shows the child note titled "Tributary"
 
     Scenario: A note is linked by its title
       Given the vault has the following:
@@ -44,7 +44,7 @@ Feature: Plex
       And the person runs the command "Show in plex"
       Then the vault "Test" contains the note titled "Reef flat"
       And the note titled "Lagoon" links to the note titled "Reef flat"
-      And the plex has the child note titled "Reef flat"
+      And the plex shows the child note titled "Reef flat"
 
   Rule: The plex shows notes
 
@@ -55,7 +55,7 @@ Feature: Plex
       When the person runs the command "Go to note" with:
         | Search notes | Entropy |
       And the person runs the command "Show in plex"
-      Then the plex has the focus note titled "Entropy"
+      Then the plex shows the focus note titled "Entropy"
 
     Scenario: A linked tab follows a click
       Given the vault has the following:
