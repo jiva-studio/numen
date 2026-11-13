@@ -31,14 +31,13 @@ export type LinkDirection = 'outgoing' | 'incoming' | 'both'
 // LinkMarker is what a link record draws at the end that points at its target. A link without one draws nothing there.
 export type LinkMarker = 'arrow'
 
-// RelatedNote is one note joined to the note in focus. The records that join notes are in NoteGraph.connections.
+// RelatedNote is one note joined to the note in focus. Its direction is present for a 'reference' only. The records that join notes are in NoteGraph.connections.
 export interface RelatedNote {
   readonly path: string
   readonly title: string
   readonly relation: NoteRelation
   readonly type: NoteType
   readonly tabKind?: string
-  // Present for a 'reference' only.
   readonly direction?: LinkDirection
 }
 

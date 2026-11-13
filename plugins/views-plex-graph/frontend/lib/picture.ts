@@ -80,17 +80,12 @@ function createEdge(connection: Connection, token: (path: string) => string): Pl
   return arrows.length > 0 ? { ...withLabels, arrows } : withLabels
 }
 
-/**
- * Whether the setting shows a reference: a mode shows the references written in its direction, a mutual one in
- * each of the modes that show a direction, and one with no direction in the mode that shows all.
- */
 function admitReference(reference: RelatedNote, mode: ReferenceMode): boolean {
   if (mode === 'off') return false
   if (mode === 'both') return true
   return reference.direction === mode || reference.direction === 'both'
 }
 
-/** The line to a reference, with its head at the end the link points to: the note, the focus, or both. */
 function createReferenceEdge(
   from: string,
   to: string,
@@ -109,6 +104,8 @@ function createReferenceEdge(
  * Every line is drawn from one connection of the note graph, whichever notes it joins.
  * An arrowhead is drawn at each end whose record carries a marker, and nowhere else.
  * Labels are set by how many records there are, not by the arrowheads.
+ * A reference is drawn when the mode shows its direction (a mutual one in each mode that shows a direction, one with no direction in "both" only),
+ * as a line from the focus with its head at the end the link points to, and no label.
  */
 export function convertNoteGraph(
   noteGraph: NoteGraph,

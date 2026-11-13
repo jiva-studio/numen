@@ -159,8 +159,6 @@ func getRelation(role domain.LinkRole) (domain.Relation, bool) {
 	}
 }
 
-// getDirection is the direction of a link found on one side, for a reference;
-// any other relation has none.
 func getDirection(relation domain.Relation, direction domain.LinkDirection) domain.LinkDirection {
 	if relation != domain.RelationReference {
 		return ""
