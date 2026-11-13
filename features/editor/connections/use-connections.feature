@@ -21,7 +21,7 @@ Feature: Use connections
       And the person adds the connection "Main" of the type "OpenAI-compatible server" for the service "Main service"
       And the person sets the setting "Source" of the plugin "Vector Embeddings" to "Connection"
       And the person adds a row of the connection "Main" with the model "embedder" to the plugin "Vector Embeddings"
-      And the question reads "This indexes 1 note through Main. It may cost money."
+      And the question reads "The vault will be indexed again: 1 note through Main. This can take a while and may cost money."
       When the person answers the question with "Index"
       And the person searches the vault for "A boat leaves at six."
       Then the search has the result "A boat leaves at six" in the group "Meaning"
