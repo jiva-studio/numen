@@ -53,23 +53,64 @@ describe('the index stats frontend', () => {
     expect(context.getRegisteredSlotViews().map((one) => one.id)).toEqual(['stats'])
   })
 
-  it('asks the backend when it starts and draws the count', async () => {
-    const { context, get } = setup(STATS)
+  it('asks the backend once when it starts, draws the count and sets no timer', async () => {
+    const { context, get, waits } = setup(STATS)
     await flush()
 
     const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
 
     expect(get).toHaveBeenCalledTimes(1)
+    expect(waits).toEqual([])
     expect(wrapper.find('.index-stats__trigger').text()).toMatch(/^⬡12.480$/)
   })
 
-  it('draws the new count when the next ask returns one', async () => {
+  it('asks the backend when a background task of the window starts', async () => {
+    const { context, get } = setup(STATS)
+    await flush()
+
+    context.work.backgroundTasks.setTasks([
+      {
+        id: 'indexing',
+        label: 'Indexing',
+        about: '',
+        state: 'running',
+        progress: { completedCount: 0, total: 0, counting: '' },
+        error: '',
+        allowed: { cancel: true, retry: false },
+        actionLabel: '',
+      },
+    ])
+    await flush()
+
+    expect(get).toHaveBeenCalledTimes(2)
+  })
+
+  it('asks every two seconds while the popover is open, and stops when it closes', async () => {
     const { context, waits } = setup(STATS)
     await flush()
-    const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
+    const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
 
+    await wrapper.find('.index-stats__trigger').trigger('click')
     expect(waits.map((one) => one.delayMs)).toEqual([2000])
-    expect(wrapper.find('.index-stats').exists()).toBe(true)
+
+    await wrapper.find('.index-stats__trigger').trigger('click')
+    expect(waits).toEqual([])
+    wrapper.unmount()
+  })
+
+  it('stops asking when the view goes with the popover open', async () => {
+    const { context, waits } = setup(STATS)
+    await flush()
+    const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
+    await wrapper.find('.index-stats__trigger').trigger('click')
+
+    wrapper.unmount()
+
+    expect(waits).toEqual([])
   })
 
   it('stops asking with the plugin', async () => {

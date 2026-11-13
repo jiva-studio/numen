@@ -15,7 +15,7 @@ The popover lists:
 - **Notes and files**: how many sources the index has read, with the chunks and files of each kind: notes, PDF, EPUB and media transcripts. A kind that holds nothing is not listed.
 - **Model**, **Recipe** and **Vector size**: the embedding model in use and the dimension count of its vectors.
 - **Performance profile**: the profile you chose in the settings and the threads it grants.
-- **Embedding speed**: chunks embedded each second over the last 10 seconds, shown only while chunks wait.
+- **Embedding speed**: chunks embedded each second over the last 10 seconds, measured while the popover is open and shown only while chunks wait.
 - **Last change**: when the counts last changed while the window was open.
 - **Index file size** and **Vector data size**: the disk space of the index and of the tables that hold vectors, refreshed every 30 seconds.
 
@@ -23,4 +23,4 @@ The plugin is enabled by default and has no settings. It only reads the index an
 
 ## How It Works
 
-The plugin's backend asks the host for `GetIndexStats` of `HostSearchService` (the permission `index:read`), which reads the counts with indexed queries and keeps the answer for one second. The window asks the backend every 2 seconds while it is visible and has the focus, and once when it gets the focus back. The backend derives the kind of each source from its file extension and measures the speed and the time of the last change from the answers it sees. Its service `md.numen.tools.index.stats` has the method `GetStats`.
+The plugin's backend asks the host for `GetIndexStats` of `HostSearchService` (the permission `index:read`), which reads the counts with indexed queries and keeps the answer for one second. The window asks the backend once when it opens and again each time a background task starts or ends. While the popover is open it asks every 2 seconds while the window is visible and has the focus, and once when it gets the focus back. The backend derives the kind of each source from its file extension and measures the speed and the time of the last change from the answers it sees. Its service `md.numen.tools.index.stats` has the method `GetStats`.

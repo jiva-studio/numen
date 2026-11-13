@@ -1,16 +1,24 @@
 /**
- * What the title bar shows of the index: the last answer of the backend, kept fresh by asking every
- * two seconds while the window is in use.
+ * What the title bar shows of the index: the last answer of the backend.
  *
- * The core emits no event when the index changes, so the model asks. It asks only while the window is
- * visible and has the focus, and once more when the window returns to that state.
+ * The core emits no event with the counts of the index, so the model asks the backend. It asks once at
+ * start and again each time a background task of the window starts or ends, which is when the counts
+ * move. Only while the popover is open, the window is visible and has the focus, it asks every two
+ * seconds, which is what the backend measures the speed of embedding from. With the popover closed no
+ * timer runs, so the backend is called only on those changes.
  */
 import { ref, type Ref } from 'vue'
-import type { ApiError, Result } from '@numen/plugin-sdk'
+import type {
+  ApiError,
+  BackgroundTask,
+  BackgroundTaskHost,
+  Disposable,
+  Result,
+} from '@numen/plugin-sdk'
 import type { StatsApi } from '../api/wire'
 import type { Stats } from '../api/stats'
 
-/** The wait between two asks. */
+/** The wait between two asks while the popover is open. */
 export const REFRESH_MS = 2_000
 
 /** Starts and stops the waits between asks. */
@@ -33,15 +41,28 @@ export interface StatsDeps {
   readonly api: StatsApi
   readonly timer: Timer
   readonly activity: Activity
+  readonly tasks?: Pick<BackgroundTaskHost, 'watch'> | undefined
 }
 
 export interface IndexStats {
   readonly stats: Readonly<Ref<Stats | null>>
   readonly phase: Readonly<Ref<Phase>>
-  /** Asks now and keeps asking every two seconds while the window is in use. */
+  /** Asks now, and again each time a background task starts or ends. */
   start(): void
-  /** Ends the asking. */
+  /** Asks now and every two seconds while the window is in use, until close. */
+  open(): void
+  /** Ends the asks every two seconds. */
+  close(): void
+  /** Ends every ask. */
   stop(): void
+}
+
+function getRunningKey(tasks: readonly BackgroundTask[]): string {
+  return tasks
+    .filter((one) => one.state === 'running' || one.state === 'cancelling')
+    .map((one) => one.id)
+    .sort()
+    .join('\n')
 }
 
 export function createIndexStats(deps: StatsDeps): IndexStats {
@@ -49,8 +70,11 @@ export function createIndexStats(deps: StatsDeps): IndexStats {
   const phase = ref<Phase>('loading')
   let handle: number | undefined
   let isStopped = true
+  let isOpen = false
   let isAsking = false
+  let runningKey: string | undefined
   let stopWatching: (() => void) | undefined
+  let taskWatch: Disposable | undefined
 
   const settle = (result: Result<Stats, ApiError>) => {
     isAsking = false
@@ -71,14 +95,34 @@ export function createIndexStats(deps: StatsDeps): IndexStats {
       .then(settle, () => settle({ ok: false, error: { code: 'unavailable', message: '' } }))
   }
 
+  const clearWait = () => {
+    if (handle !== undefined) deps.timer.clear(handle)
+    handle = undefined
+  }
+
   const wait = () => {
-    if (isStopped) return
+    if (isStopped || !isOpen) return
     handle = deps.timer.set(tick, REFRESH_MS)
   }
 
   function tick(): void {
+    handle = undefined
     if (deps.activity.isActive()) ask()
     wait()
+  }
+
+  const onTasks = (tasks: readonly BackgroundTask[]) => {
+    const key = getRunningKey(tasks)
+    const isChange = runningKey !== undefined && key !== runningKey
+    runningKey = key
+    if (isChange) ask()
+  }
+
+  const close = () => {
+    isOpen = false
+    clearWait()
+    stopWatching?.()
+    stopWatching = undefined
   }
 
   return {
@@ -86,16 +130,23 @@ export function createIndexStats(deps: StatsDeps): IndexStats {
     phase,
     start: () => {
       isStopped = false
+      taskWatch = deps.tasks?.watch(onTasks)
+      ask()
+    },
+    open: () => {
+      if (isStopped || isOpen) return
+      isOpen = true
       stopWatching = deps.activity.onActive(ask)
       ask()
       wait()
     },
+    close,
     stop: () => {
+      close()
       isStopped = true
-      if (handle !== undefined) deps.timer.clear(handle)
-      handle = undefined
-      stopWatching?.()
-      stopWatching = undefined
+      taskWatch?.dispose()
+      taskWatch = undefined
+      runningKey = undefined
     },
   }
 }
