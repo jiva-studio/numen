@@ -15,7 +15,7 @@ Nothing new is stored. The index already keeps every `[[...]]` of a note body as
 - Incoming: `GetBacklinks(vault, focus)` returns the links other notes write that resolve to the focus. `getOppositeRole` returns `ref` unchanged, so a backlink of role `ref` is a note that links to the focus.
 - Dangling links and links resolving into another vault are skipped by the existing `l.ToVault != cache.vault.ID` test; a link of the focus to itself is removed by `remove(path)`.
 - Missing: nothing in the index. What is missing is the relation (`getRelation` has no case for `ref`), the direction (nothing carries which end wrote the link), the wire fields, and the plex edge: `getConnections` keeps only `domain.IsConnectionRole` links (parent, child, jump), so a reference has no `Connection` and the plex has no line for it. The kernel does not add a Connection for it (a Connection is the record pair of a relationship a person draws; a reference is not drawn by a person). The plex draws the line from the related note itself (section 5.3).
-- `[text](note.md)` links are not indexed (the issue says they stay out). A `ref` entry written in `links:` frontmatter is indexed identically and shows up as a reference; the kernel cannot tell the two apart and does not try (open question 6).
+- `[text](note.md)` links are not indexed (the issue says they stay out). A `ref` entry written in `links:` frontmatter is indexed identically and shows up as a reference; the kernel cannot tell the two apart and does not try (decision 6).
 
 ## 2. Contract (frozen first; owner-approved)
 
@@ -29,6 +29,7 @@ enum LinkDirection {
   LINK_DIRECTION_UNSPECIFIED = 0;
   LINK_DIRECTION_OUTGOING = 1; // the note in focus links to this note
   LINK_DIRECTION_INCOMING = 2; // this note links to the note in focus
+  LINK_DIRECTION_BOTH = 3; // each of the two notes links to the other
 }
 
 message RelatedNote {
@@ -49,6 +50,7 @@ type LinkDirection string
 const (
     DirectionOutgoing LinkDirection = "outgoing"
     DirectionIncoming LinkDirection = "incoming"
+    DirectionBoth     LinkDirection = "both"
 )
 
 type RelatedNote struct {
@@ -58,22 +60,22 @@ type RelatedNote struct {
 }
 ```
 
-`GetRelationRank`: parent 0, child 1, jump 2, sibling 3, reference 4, default 5. Reference is last, so any hierarchy position wins over a text link (open question 3 for sibling).
+`GetRelationRank`: parent 0, child 1, jump 2, sibling 3, reference 4, default 5. Reference is last, so any hierarchy position wins over a text link (a sibling also wins, decision 3).
 
 ### 2.3 TypeScript (`libs/plugin/sdk-ts/src/workspace.ts`)
 
 ```ts
 export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling' | 'reference'
-// LinkDirection tells which note wrote a text link: the note in focus ('outgoing') or the related note ('incoming').
-export type LinkDirection = 'outgoing' | 'incoming'
+// LinkDirection tells which note wrote a text link: the note in focus ('outgoing'), the related note ('incoming'), or each of them ('both').
+export type LinkDirection = 'outgoing' | 'incoming' | 'both'
 export interface RelatedNote { ...; readonly direction?: LinkDirection }  // present for 'reference' only
 ```
 
-`LinkDirection` is exported from the SDK index and re-exported by `libs/plugin/loader/src/contract.ts` as `NoteGraph` is. The window mapper (`noteWords.ts`) maps `NOTE_RELATION.REFERENCE` -> `'reference'` and the generated direction enum -> `'outgoing' | 'incoming'`; `LINK_DIRECTION_UNSPECIFIED` on a reference is a protocol violation and the note is kept with no `direction` (the plex then draws no arrow). `libs/core/client/src/clients.ts` exports the generated direction enum next to `NOTE_RELATION`.
+`LinkDirection` is exported from the SDK index and re-exported by `libs/plugin/loader/src/contract.ts` as `NoteGraph` is. The window mapper (`noteWords.ts`) maps `NOTE_RELATION.REFERENCE` -> `'reference'` and the generated direction enum -> `'outgoing' | 'incoming' | 'both'`; `LINK_DIRECTION_UNSPECIFIED` on a reference is a protocol violation and the note is kept with no `direction` (the plex then draws no arrow). `libs/core/client/src/clients.ts` exports the generated direction enum next to `NOTE_RELATION`.
 
 ### 2.4 Go SDK
 
-`libs/plugin/sdk-go` has no related-notes call and no type carrying `Relation` (checked: only `domain.NewRelatedNote` and `CreateInRelation`, both about creating). Parity is therefore met with nothing added: there is no field to keep in step. If the owner wants a Go call it is a separate issue (open question 5).
+`libs/plugin/sdk-go` has no related-notes call and no type carrying `Relation` (checked: only `domain.NewRelatedNote` and `CreateInRelation`, both about creating). Parity is therefore met with nothing added: there is no field to keep in step. If the owner wants a Go call it is a separate issue (decision 5).
 
 ### 2.5 Plugin setting (`plugins/views-plex-graph/manifest.json`)
 
@@ -93,7 +95,7 @@ Placed after `noteRoom` (end of the list). Read in `model/look.ts` as `PlexLook.
 ## 3. Kernel behavior (`libs/core/kernel/usecase/note/query/related_notes.go`)
 
 - `getRelation` returns `RelationReference` for `RoleRef`. `getRelatedNotes` sets `Direction: DirectionOutgoing` for a reference found in `GetLinks`, `DirectionIncoming` for one found in `GetBacklinks`; any other relation has an empty direction.
-- Dedup stays in `relatedNoteSet.add` (lowest rank wins; an equal rank keeps the first). Consequences: a note that is also a parent, child or jump keeps that relation and its empty direction; the sibling pass (`addSiblings`) replaces a reference to a sibling by the sibling when open question 3 is answered as recommended; a note linked both ways is one reference, direction `outgoing` (written first). See open question 1 for the mutual case.
+- Dedup stays in `relatedNoteSet.add` (lowest rank wins; two references to one path merge their directions). Consequences: a note that is also a parent, child or jump keeps that relation and its empty direction; the sibling pass (`addSiblings`) replaces a reference to a sibling by the sibling; a note linked both ways is one reference with direction `both`: `relatedNoteSet.add` merges two references to one path whose directions differ into `DirectionBoth` (equal directions keep the first).
 - Order: references are discovered in the order the other links are (the focus' links in declaration order, then backlinks in query order), so the order of `Related` stays total and deterministic.
 - `addSiblings` ignores references (it filters on parent and child).
 - Connections: unchanged.
@@ -111,15 +113,15 @@ placed between `jump` and `sibling` (the prototype order, #1837 section 1.1: it 
 
 ### 5.1 Drop (`plex/lib/arrange/edges/drop.ts`)
 
-`creatable` holds connection roles only (`parent`, `child`, `jump`), and `findRole` returns nothing for any other relation, as it does for `sibling`. So a reference is never created by a gesture and the drop is not a new creation kind. What must hold: dragging to the left, the heading both jump and reference grow in, still means a jump. `getRelationTowards` takes `RELATION_NAMES.find(r => options.direction[r] === heading)`, which is `jump` because it precedes `reference`; the spec makes the dependency explicit by choosing the first relation of the heading **that the caller allows** (`getRelationTowards` gets the `relations` list and filters before `find`), so the result no longer hangs on the order of the table. Lower-left is a jump and upper-left a reference only in where the clusters stand; a drag is read in four headings, not eight (open question 2 for splitting `left`).
+`creatable` holds connection roles only (`parent`, `child`, `jump`), and `findRole` returns nothing for any other relation, as it does for `sibling`. So a reference is never created by a gesture and the drop is not a new creation kind. What must hold: dragging to the left, the heading both jump and reference grow in, still means a jump. `getRelationTowards` takes `RELATION_NAMES.find(r => options.direction[r] === heading)`, which is `jump` because it precedes `reference`; the spec makes the dependency explicit by choosing the first relation of the heading **that the caller allows** (`getRelationTowards` gets the `relations` list and filters before `find`), so the result no longer hangs on the order of the table. Lower-left is a jump and upper-left a reference only in where the clusters stand; a drag is read in four headings, not eight (decision 2: `left` is not split).
 
 ### 5.2 Setting filter (`lib/picture.ts`, `model/usePlexTab.ts`)
 
-`convertNoteGraph(noteGraph, token, references: ReferenceMode)` omits a related note whose relation is `reference` unless the mode admits its direction: `outgoing` admits `outgoing`; `incoming` admits `incoming`; `both` admits both; `off` none; a reference with no direction is admitted by `both` only. The setting is followed live: changing it recomputes the picture of the open tab with no reload (the `look` ref is read inside the `picture` computed). `areNoteGraphsEqual` also compares `direction`.
+`convertNoteGraph(noteGraph, token, references: ReferenceMode)` omits a related note whose relation is `reference` unless the mode admits its direction: `outgoing` admits `outgoing` and `both`; `incoming` admits `incoming` and `both`; `both` admits all three; `off` none; a reference with no direction is admitted by `both` only. The setting is followed live: changing it recomputes the picture of the open tab with no reload (the `look` ref is read inside the `picture` computed). `areNoteGraphsEqual` also compares `direction`.
 
 ### 5.3 The line (`lib/picture.ts`)
 
-For each admitted reference the picture adds one edge `{ from: <focus token>, to: <note token>, arrows }` after the edges of the connections: `arrows: ['to']` for `outgoing` (head at the note), `['from']` for `incoming` (head at the focus). No label. A reference with no direction has the edge and no arrow. No edge joins a reference to a note other than the focus.
+For each admitted reference the picture adds one edge `{ from: <focus token>, to: <note token>, arrows }` after the edges of the connections: `arrows: ['to']` for `outgoing` (head at the note), `['from']` for `incoming` (head at the focus), `['from', 'to']` for `both`. No label. A reference with no direction has the edge and no arrow. No edge joins a reference to a note other than the focus.
 
 ### 5.4 Look
 
@@ -184,14 +186,14 @@ For each admitted reference the picture adds one edge `{ from: <focus token>, to
 
 ### AC-4: Both directions of one note are one note
 - **Given** Focus links `[[Alpha]]` and Alpha links `[[Focus]]`
-- **Then** Alpha comes back once, as a reference.
+- **Then** Alpha comes back once, as a reference with direction both.
 
 ### AC-5: Skipped links
 - **Given** a link to a note that does not exist, a link of the focus to itself, and a link to a note of another vault
 - **Then** none of them comes back.
 
 ### AC-6: Siblings are not shadowed wrongly
-- **Given** the sibling rule of open question 3 as recommended (hierarchy beats text)
+- **Given** a sibling of the focus that is also linked in the text
 - **Then** a note that is a sibling of the focus and linked in the text comes back once, as a sibling.
 
 ### AC-7: Order is stable
@@ -200,7 +202,7 @@ For each admitted reference the picture adds one edge `{ from: <focus token>, to
 
 ### AC-8: Wire conversion
 - **Given** every domain relation and direction
-- **Then** `convertRelationToWire` yields `RELATION_REFERENCE` for the reference and `convertDirectionToWire` yields outgoing, incoming and unspecified for `outgoing`, `incoming` and empty (`CheckProduced` style, every value of the generated enum is produced from one domain value).
+- **Then** `convertRelationToWire` yields `RELATION_REFERENCE` for the reference and `convertDirectionToWire` yields outgoing, incoming, both and unspecified for `outgoing`, `incoming`, `both` and empty (`CheckProduced` style, every value of the generated enum is produced from one domain value).
 
 ### AC-9: End to end through the window RPC
 - **Given** the editor window served with a real index over a temp vault
@@ -208,20 +210,20 @@ For each admitted reference the picture adds one edge `{ from: <focus token>, to
 - **Then** the response has `RELATION_REFERENCE` items with `LINK_DIRECTION_OUTGOING` and `LINK_DIRECTION_INCOMING`, and a non-reference item has `LINK_DIRECTION_UNSPECIFIED`; `connections` has no record for the reference.
 
 ### AC-10: The window maps references
-- **Given** a response with a reference item per direction (and an unspecified one)
-- **Then** `mapNoteGraph` returns relation `'reference'` with direction `'outgoing'`, `'incoming'` and no direction.
+- **Given** a response with a reference item per direction (outgoing, incoming, both, and an unspecified one)
+- **Then** `mapNoteGraph` returns relation `'reference'` with direction `'outgoing'`, `'incoming'`, `'both'` and no direction.
 
 ### AC-11: The setting values
 - **Given** the manifest
 - **Then** `references` is an enum with the four values, default `both`; `readLook` reads it from the key `references`, follows changes, and falls back to `both` for a value outside the four.
 
 ### AC-12: The picture follows the setting
-- **Given** a note graph with an outgoing reference, an incoming one and a child
-- **Then** `convertNoteGraph` with `off` has no reference node, with `outgoing` only the outgoing one, with `incoming` only the incoming one, with `both` both; the child is in every case.
+- **Given** a note graph with an outgoing reference, an incoming one, a mutual one (direction both) and a child
+- **Then** `convertNoteGraph` with `off` has no reference node, with `outgoing` the outgoing and the mutual one, with `incoming` the incoming and the mutual one, with `both` all three; the child is in every case.
 
 ### AC-13: The line carries the arrow
 - **Given** `both`
-- **Then** the outgoing reference has an edge focus -> note with `arrows: ['to']`, the incoming one an edge focus -> note with `arrows: ['from']`, neither has labels, and no edge joins two references.
+- **Then** the outgoing reference has an edge focus -> note with `arrows: ['to']`, the incoming one an edge focus -> note with `arrows: ['from']`, the mutual one `arrows: ['from', 'to']`, none has labels, and no edge joins two references.
 
 ### AC-14: A changed setting redraws the open tab
 - **Given** an open plex tab with references shown
@@ -269,12 +271,12 @@ For each admitted reference the picture adds one edge `{ from: <focus token>, to
 - e2e: one spec under `views.plex.graph` (AC-22).
 - Nothing existing changes an expectation.
 
-## 11. Open questions for the owner
+## 11. Decisions of the owner (2026-11-13)
 
-1. **A note linked both ways.** The approved contract has two directions, so a mutual link is one reference with direction `outgoing`, and with the setting `incoming only` it is hidden although the note links to the focus. Recommendation: add `LINK_DIRECTION_BOTH = 3` (arrows at both ends; every setting then filters right). It is a contract change, so it is yours to approve; until then the spec follows the issue.
-2. **Drag to the left.** A drag is read in four headings, so left is a jump whichever way it leans, and a reference cannot be created by a drag (it is written in text). Recommendation: keep it so (defaults unchanged). The alternative, splitting the left heading by the vertical lean (lower-left jump, upper-left a reference that creates nothing), would stop a left-and-up drag from making a jump today.
-3. **Sibling versus reference.** The issue names parent, child and jump as winners. A sibling is derived from the hierarchy. Recommendation: the sibling also wins (rank 3 before reference 4).
-4. **Setting value names.** `off`, `outgoing`, `both`, `incoming` and the titles as in 2.5. Recommendation: as written.
-5. **Go SDK.** It has no related-notes call, so no type to extend. Recommendation: nothing now; add the field together with the call when one is asked for.
-6. **`ref` entries in frontmatter `links:`.** They are indexed with the same role and show up as references. Recommendation: accept (a link is a link); the issue's "only `[[...]]` counts" is about `[text](x.md)`.
-7. **Mobile and the landing demo.** Recommendation: the mobile test is fixed as in section 8; the landing demo is not touched.
+1. `LINK_DIRECTION_BOTH = 3` is added: a note linked both ways is one reference with direction both, arrowheads at both ends, shown in the outgoing, incoming and both modes.
+2. A drag to the left stays a jump; a reference is not created by a drag.
+3. A sibling wins over a reference.
+4. Setting values `off`, `outgoing`, `both`, `incoming`; default `both`.
+5. No Go SDK call is added now (a separate issue).
+6. `ref` entries of frontmatter `links:` are accepted as references.
+7. The mobile test is fixed (section 8); the landing demo is left alone.

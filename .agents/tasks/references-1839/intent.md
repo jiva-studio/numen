@@ -53,3 +53,5 @@
 - Setting values and default as above; arrow shows direction.
 - Cluster above left of the focus, jumps below left.
 - Go and TypeScript plugin SDKs keep the same shape.
+- A note linked both ways is one reference with arrowheads at both ends, shown in every mode but off.
+- A sibling wins over a reference; a drag to the left stays a jump; frontmatter `ref` entries count; no Go SDK call now.
