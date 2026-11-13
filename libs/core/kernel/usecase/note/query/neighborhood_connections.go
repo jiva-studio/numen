@@ -16,7 +16,6 @@ type linkCache struct {
 	backlinks map[string][]domain.ResolvedLink
 }
 
-// loadBoth reads the links and the backlinks of the paths not read yet, one call each.
 func (c *linkCache) loadBoth(ctx context.Context, paths []string) error {
 	if err := c.loadLinks(ctx, paths); err != nil {
 		return err
@@ -28,7 +27,7 @@ func (c *linkCache) loadLinks(ctx context.Context, paths []string) error {
 	if c.byPath == nil {
 		c.byPath = map[string][]domain.ResolvedLink{}
 	}
-	return loadMissing(paths, c.byPath, func(missing []string) (map[string][]domain.ResolvedLink, error) {
+	return loadUnreadLinks(paths, c.byPath, func(missing []string) (map[string][]domain.ResolvedLink, error) {
 		return c.queries.GetLinksOf(ctx, c.vault.ID, missing)
 	})
 }
@@ -37,14 +36,12 @@ func (c *linkCache) loadBacklinks(ctx context.Context, paths []string) error {
 	if c.backlinks == nil {
 		c.backlinks = map[string][]domain.ResolvedLink{}
 	}
-	return loadMissing(paths, c.backlinks, func(missing []string) (map[string][]domain.ResolvedLink, error) {
+	return loadUnreadLinks(paths, c.backlinks, func(missing []string) (map[string][]domain.ResolvedLink, error) {
 		return c.queries.GetBacklinksOf(ctx, c.vault.ID, missing)
 	})
 }
 
-// loadMissing reads the paths that are not in the cache, in one call, and
-// records a path that has no links as read.
-func loadMissing(
+func loadUnreadLinks(
 	paths []string, cache map[string][]domain.ResolvedLink,
 	read func(missing []string) (map[string][]domain.ResolvedLink, error),
 ) error {

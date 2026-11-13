@@ -2,6 +2,7 @@ package note_test
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -60,7 +61,6 @@ func TestEachListOfLinksIsReadOnceAtDepthTwo(t *testing.T) {
 	}
 }
 
-// fanGraph is a focus with owners children, each with one child of its own.
 func fanGraph(owners int) graph {
 	g := graph{out: map[string][]domain.ResolvedLink{}, in: map[string][]domain.ResolvedLink{}}
 	for i := range owners {
@@ -113,7 +113,7 @@ func TestANoteSharedByManyOwnersIsReadOnce(t *testing.T) {
 	}
 }
 
-func TestADepthTwoItemIsNotARelatedNoteOfTheFocusNorItsOwner(t *testing.T) {
+func TestADepthTwoItemMayBeARelatedNoteOfTheFocusButNeverTheFocusOrItsOwner(t *testing.T) {
 	t.Parallel()
 	g := graph{out: map[string][]domain.ResolvedLink{
 		"F.md": {createOutgoingLink("A.md", domain.RoleChild, ""), createOutgoingLink("B.md", domain.RoleChild, "")},
@@ -126,8 +126,8 @@ func TestADepthTwoItemIsNotARelatedNoteOfTheFocusNorItsOwner(t *testing.T) {
 
 	got := showDepth(t, g, &pathLookup{}, "F.md", domain.DepthFar)
 
-	if items := itemsOf(got, "A.md"); len(items) != 1 || items[0] != "jump X.md" {
-		t.Errorf("items of A %v, want only jump X.md", items)
+	if want := []string{"jump B.md", "jump X.md"}; !slices.Equal(itemsOf(got, "A.md"), want) {
+		t.Errorf("items of A %v, want %v", itemsOf(got, "A.md"), want)
 	}
 }
 

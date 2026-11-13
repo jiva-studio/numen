@@ -127,9 +127,10 @@ export type ListRelatedNotesResponse = Message<"numen.v1.ListRelatedNotesRespons
 
   /**
    * The notes related to the focus, then at depth 2 the notes related to each of those.
-   * A note related to the focus is not repeated at depth 2, and a note is not related to
-   * itself, but one note can appear under two different related notes: `note.path` is
-   * not unique here, `(related_to, note.path)` is.
+   * A note related to the focus can also be an item of another note: the common parent of
+   * the focus and a reference is an item of that reference. The focus is never an item, and
+   * a note is not an item of itself. One note can be an item of several notes, so `note.path`
+   * is not unique here, `(related_to, note.path)` is.
    *
    * @generated from field: repeated numen.v1.RelatedNote related = 2;
    */

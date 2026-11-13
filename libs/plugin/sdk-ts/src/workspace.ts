@@ -31,7 +31,7 @@ export type LinkDirection = 'outgoing' | 'incoming' | 'both'
 // LinkMarker is what a link record draws at the end that points at its target. A link without one draws nothing there.
 export type LinkMarker = 'arrow'
 
-// RelatedNote is one note joined to the note in focus. Its direction is present for a 'reference' only. Its relatedTo is the path of the related note it belongs to, set for a note found by depth 2 (its relation and direction are then relative to that note, not to the focus) and absent for a note related to the focus. A note found by depth 2 has no connection record, and its path can repeat in NoteGraph.related, once under each related note it belongs to. The records that join notes are in NoteGraph.connections.
+// RelatedNote is one note joined to the note in focus. Its direction is present for a 'reference' only. Its relatedTo is the path of the related note it belongs to, set for a note found by depth 2 (its relation and direction are then relative to that note, not to the focus) and absent for a note related to the focus. A note found by depth 2 has no connection record, it may also be related to the focus, and its path can repeat in NoteGraph.related, once under each related note it belongs to. The records that join notes are in NoteGraph.connections.
 export interface RelatedNote {
   readonly path: string
   readonly title: string

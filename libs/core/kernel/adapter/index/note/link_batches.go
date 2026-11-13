@@ -6,22 +6,27 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// GetLinksOf returns GetLinks for each of the paths. A path with no links is absent.
+// GetLinksOf runs one GetLinks query per path; the batch is a loop, not one SQL statement.
 func (q *Queries) GetLinksOf(ctx context.Context, vaultID domain.VaultID, from []string) (map[string][]domain.ResolvedLink, error) {
-	return readEach(from, func(path string) ([]domain.ResolvedLink, error) { return q.GetLinks(ctx, vaultID, path) })
+	return readEach(ctx, from, func(path string) ([]domain.ResolvedLink, error) { return q.GetLinks(ctx, vaultID, path) })
 }
 
-// GetBacklinksOf returns GetBacklinks for each of the paths. A path with no backlinks is absent.
+// GetBacklinksOf runs one GetBacklinks query per path; the batch is a loop, not one SQL statement.
 func (q *Queries) GetBacklinksOf(ctx context.Context, vaultID domain.VaultID, to []string) (map[string][]domain.ResolvedLink, error) {
-	return readEach(to, func(path string) ([]domain.ResolvedLink, error) { return q.GetBacklinks(ctx, vaultID, path) })
+	return readEach(ctx, to, func(path string) ([]domain.ResolvedLink, error) { return q.GetBacklinks(ctx, vaultID, path) })
 }
 
-func readEach(paths []string, read func(path string) ([]domain.ResolvedLink, error)) (map[string][]domain.ResolvedLink, error) {
+func readEach(ctx context.Context, paths []string, read func(path string) ([]domain.ResolvedLink, error)) (map[string][]domain.ResolvedLink, error) {
 	out := make(map[string][]domain.ResolvedLink, len(paths))
+	visited := map[string]bool{}
 	for _, path := range paths {
-		if _, done := out[path]; done {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		if visited[path] {
 			continue
 		}
+		visited[path] = true
 		links, err := read(path)
 		if err != nil {
 			return nil, err

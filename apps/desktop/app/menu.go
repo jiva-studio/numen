@@ -6,9 +6,9 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// makeApplicationMenu is empty everywhere but on macOS, where the system needs a menu for Cmd+C, Cmd+V and Cmd+Q.
-// A menu item takes its key before the page sees it, so the Delete item loses Backspace there.
 func makeApplicationMenu() *application.Menu {
+	// Empty everywhere but on macOS, where the system needs a menu for Cmd+C, Cmd+V and Cmd+Q.
+	// A menu item takes its key before the page sees it, so the Delete item loses Backspace there.
 	if runtime.GOOS != "darwin" {
 		return application.NewMenu()
 	}
