@@ -18,17 +18,10 @@ import { computed, nextTick, onMounted, ref, useTemplateRef, watch, type VNode }
 import { Info, RotateCcw, TriangleAlert } from '@lucide/vue'
 import { runInBackground, useMenuDismissal } from '@numen/ui'
 import { WORDS as words } from '../../words'
+import type { SettingRowProps } from './SettingRow.types'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{
-  at: string
-  name: string
-  detail: string
-  details?: string | undefined
-  isMarked?: boolean
-  focus?: object | null
-  isChanged?: boolean
-}>()
+const props = defineProps<SettingRowProps>()
 
 const emit = defineEmits<{
   (e: 'reset'): void
@@ -204,7 +197,7 @@ function scrollIntoView(): void {
   position: absolute;
   inset-block-start: calc(100% + 0.25rem);
   inset-inline-start: 0;
-  z-index: var(--numen-lift-menu);
+  z-index: 1;
   box-sizing: border-box;
   inline-size: max-content;
   max-inline-size: min(26rem, 100cqi);

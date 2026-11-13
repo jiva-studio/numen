@@ -85,17 +85,15 @@ function focusAfterDelete(at: number): void {
 <template>
   <div class="connections-page">
     <SettingsToolbar :path="[words.settings, words.connections]" @back="onBack" @open="onBack">
-      <template #actions>
-        <Button
-          ref="addButton"
-          size="small"
-          :disabled="!page.hasType.value"
-          @click="dialog.openAdd"
-        >
-          <Plus :size="14" aria-hidden="true" />
-          {{ words.connectionAdd }}
-        </Button>
-      </template>
+      <Button
+        ref="addButton"
+        size="small"
+        :disabled="!page.hasType.value"
+        @click="dialog.openAdd"
+      >
+        <Plus :size="14" aria-hidden="true" />
+        {{ words.connectionAdd }}
+      </Button>
     </SettingsToolbar>
 
     <div

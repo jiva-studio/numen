@@ -22,7 +22,7 @@ const emit = defineEmits<{
 
 defineSlots<{
   /** The actions of the page. */
-  actions?(): VNode[]
+  default?(): VNode[]
 }>()
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -65,8 +65,8 @@ function onOpen(level: number): void {
         <span v-else class="settings-toolbar__current" aria-current="page">{{ segment }}</span>
       </template>
     </nav>
-    <div v-if="$slots.actions" class="settings-toolbar__actions">
-      <slot name="actions" />
+    <div v-if="$slots.default" class="settings-toolbar__actions">
+      <slot />
     </div>
   </div>
 </template>

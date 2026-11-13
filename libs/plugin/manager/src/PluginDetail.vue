@@ -109,26 +109,24 @@ function onRunAction(key: string): void {
 <template>
   <div class="plugin-detail">
     <SettingsToolbar :path="path" @back="onBack" @open="onOpen">
-      <template #actions>
-        <span class="plugin-detail__state">
-          <span
-            class="plugin-detail__dot"
-            :class="`plugin-detail__dot--${state}`"
-            aria-hidden="true"
-          />
-          {{ words.pluginState[state] }}
-        </span>
-        <Switch
-          v-if="isInstalled(props.plugin)"
-          :model-value="props.isEnabled"
-          :is-busy="props.isPending ?? false"
-          :aria-label="words.pluginSwitch(props.plugin.name)"
-          @update:model-value="onToggleEnabled"
+      <span class="plugin-detail__state">
+        <span
+          class="plugin-detail__dot"
+          :class="`plugin-detail__dot--${state}`"
+          aria-hidden="true"
         />
-        <Button v-else-if="props.canInstall" size="small" @click="onInstall">
-          {{ words.pluginInstall }}
-        </Button>
-      </template>
+        {{ words.pluginState[state] }}
+      </span>
+      <Switch
+        v-if="isInstalled(props.plugin)"
+        :model-value="props.isEnabled"
+        :is-busy="props.isPending ?? false"
+        :aria-label="words.pluginSwitch(props.plugin.name)"
+        @update:model-value="onToggleEnabled"
+      />
+      <Button v-else-if="props.canInstall" size="small" @click="onInstall">
+        {{ words.pluginInstall }}
+      </Button>
     </SettingsToolbar>
     <PluginHeader :plugin="props.plugin" />
 
