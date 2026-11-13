@@ -69,6 +69,13 @@ export interface PlacedEdge extends PlexEdge, EdgeCurve {
 export const edgeKey = (edge: PlexEdge): string =>
   edge.from < edge.to ? `${edge.from} ${edge.to}` : `${edge.to} ${edge.from}`
 
+/** What a line is, by the titles of the two notes it joins and the notes its arrowheads point at: "Line from Harbour to Quay, arrow to Quay". */
+export const createEdgeLabel = (edge: PlexEdge, titleOf: (id: string) => string): string => {
+  const [from, to] = [titleOf(edge.from), titleOf(edge.to)]
+  const arrows = (edge.arrows ?? []).map((end) => `, arrow to ${end === 'to' ? to : from}`)
+  return `Line from ${from} to ${to}${arrows.join('')}`
+}
+
 const getPoint = (edge: EdgeCurve, t: number): Position => {
   const back = 1 - t
   const leaving = back * back * back

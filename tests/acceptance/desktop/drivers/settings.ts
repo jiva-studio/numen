@@ -7,6 +7,12 @@ import type { Scenario } from './scenario.js'
 
 const OPEN_SETTINGS = 'Open settings'
 
+/** A setting that is a switch is "On" or "Off". */
+const parseSwitch = (name: string, value: string): boolean => {
+  if (value !== 'On' && value !== 'Off') throw new Error(`the setting "${name}" is a switch: its value is "On" or "Off", not "${value}"`)
+  return value === 'On'
+}
+
 export class SettingsDriver {
   constructor(
     private readonly scenario: Scenario,
@@ -27,6 +33,13 @@ export class SettingsDriver {
 
   async set(name: string, value: string, plugin?: string): Promise<void> {
     const row = await this.settings.requireRow(await this.showPage(plugin), name)
+    const toggle = this.settings.getSwitch(row)
+    if ((await toggle.count()) > 0) {
+      const isOn = parseSwitch(name, value)
+      if ((await toggle.isChecked()) !== isOn) await toggle.click()
+      await expect(toggle).toBeChecked({ checked: isOn })
+      return
+    }
     const choice = this.settings.getChoice(row)
     if ((await choice.count()) === 0) {
       const input = this.settings.getTextInput(row)
@@ -43,6 +56,11 @@ export class SettingsDriver {
 
   async expectValue(name: string, value: string, plugin?: string): Promise<void> {
     const row = await this.settings.requireRow(await this.showPage(plugin), name)
+    const toggle = this.settings.getSwitch(row)
+    if ((await toggle.count()) > 0) {
+      await expect(toggle).toBeChecked({ checked: parseSwitch(name, value) })
+      return
+    }
     const choice = this.settings.getChoice(row)
     if ((await choice.count()) > 0) await expect(choice).toHaveText(value)
     else await expect(this.settings.getTextInput(row)).toHaveValue(value)

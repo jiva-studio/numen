@@ -424,6 +424,13 @@ describe('hovered edge line', () => {
   const title = (view: ReturnType<typeof mountTitledPlexView>, pos: number) =>
     view.findAll('.plex__edge-label').slice(2 * pos, 2 * pos + 2)
 
+  it('names each line by the two notes it joins', () => {
+    const view = mountTitledPlexView()
+
+    expect(reach(view, acrossIndex).attributes('role')).toBe('button')
+    expect(reach(view, acrossIndex).attributes('aria-label')).toBe('Line from Start to Aside')
+  })
+
   it('raises the hovered line on pointerenter and lowers it on pointerleave', async () => {
     const view = mountTitledPlexView()
     expect(view.find('.plex__raised').exists()).toBe(false)

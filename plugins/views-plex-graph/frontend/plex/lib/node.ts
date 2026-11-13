@@ -61,6 +61,10 @@ export type GestureRole = 'open' | 'closed' | 'source' | 'target' | 'ghost'
 export const createAriaLabel = (node: PlexNode): string =>
   `${node.title || 'Untitled'}, ${node.relation}`
 
+/** What a name set under a note is, and whose it is: "Rootstock list, name under Pear rows". */
+export const createNameLabel = (title: string, owner: PlexNode): string =>
+  `${title || 'Untitled'}, name under ${owner.title || 'Untitled'}`
+
 /** The radius of the handle's disc, in the plex's own pixels. */
 export const HANDLE_RADIUS = 9
 

@@ -568,7 +568,7 @@ describe('the names of a note', () => {
     plex.findAll('.plex__name').map((name) => Number(name.attributes('opacity')))
 
   const getName = (plex: ReturnType<typeof mountWithNames>, title: string) =>
-    plex.get(`[role="button"][aria-label="${title}"]`)
+    plex.get(`[role="button"][aria-label^="${title}, name under "]`)
 
   afterEach(() => {
     vi.restoreAllMocks()

@@ -49,11 +49,31 @@ Feature: Search
       Then the search has the result "bread" in the group "Text"
       And the search does not have the result "milk" in the group "Text"
 
-    Scenario: A found note is opened without the plex
+  Rule: A found note has actions
+
+    Background:
       Given the vault has the following:
         | path          | text                        |
         | notes/Quay.md | The quay is at the harbour. |
-      And the person disables the plugin "Plex Graph"
+
+    Scenario: A found note can be shown in the plex
+      When the person searches the vault for "Quay"
+      Then the search result "Quay" in the group "Names" contains the following actions:
+        | action       |
+        | Open note    |
+        | Show in plex |
+
+    Scenario: A found note has no plex action
+      Given the person disables the plugin "Plex Graph"
+      When the person searches the vault for "Quay"
+      Then the search result "Quay" in the group "Names" has only the following actions:
+        | action             |
+        | Open note          |
+        | Show in file tree  |
+        | Create note “Quay” |
+
+    Scenario: A found note is opened without the plex
+      Given the person disables the plugin "Plex Graph"
       When the person searches the vault for "Quay"
       And the person chooses the search result "Quay" in the group "Names"
       Then the tab at "notes/Quay.md" is active

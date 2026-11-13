@@ -388,3 +388,46 @@ export const parseExtent = (extent: string): Extent => {
   if (!match) throw new Error(`"${extent}" does not name a link: write from "A" to "B" or between "A" and "B"`)
   return { kind: match[1] === 'from' ? 'direction' : 'connection', first: match[2], second: match[3] }
 }
+
+/** The way a line is dragged from a note: the plex writes a parent for a line up, a child for a line down and a jump for a line left. */
+export type Direction = 'up' | 'down' | 'left'
+
+const DIRECTION_STEPS: Readonly<Record<Direction, readonly [number, number]>> = { up: [0, -1], down: [0, 1], left: [-1, 0] }
+
+/** The step in x and in y of a direction on the screen, where y grows downward. */
+export const getDirectionStep = (direction: string): readonly [number, number] => {
+  if (!Object.hasOwn(DIRECTION_STEPS, direction)) throw new Error(`a line cannot be dragged ${direction}: use up, down or left`)
+  return DIRECTION_STEPS[direction as Direction]
+}
+
+export type Side = 'above' | 'below' | 'left' | 'right'
+
+const SIDES: readonly Side[] = ['above', 'below', 'left', 'right']
+
+/** The sides a word of a table names: `above`, `left`, `below left`. */
+export const parseSides = (text: string): Side[] =>
+  text.split(' ').map((word) => {
+    if (!SIDES.includes(word as Side)) throw new Error(`"${word}" is not a side: use ${SIDES.join(', ')}, like "below left"`)
+    return word as Side
+  })
+
+/** Whether the middle of a note is on every named side of the middle of the focus note, where y grows downward. */
+export const isOnSides = (sides: readonly Side[], note: { x: number; y: number }, focus: { x: number; y: number }): boolean =>
+  sides.every((side) => {
+    if (side === 'above') return note.y < focus.y
+    if (side === 'below') return note.y > focus.y
+    if (side === 'left') return note.x < focus.x
+    return note.x > focus.x
+  })
+
+/** The rows under the header of a table, which must name these columns. */
+export const getTableBody = (rows: readonly (readonly string[])[], columns: readonly string[]): readonly (readonly string[])[] => {
+  if (rows[0]?.join('|') !== columns.join('|')) throw new Error(`the table must start with the header "| ${columns.join(' | ')} |"`)
+  return rows.slice(1)
+}
+
+/** What the arrow button of a link row says it is now: it is the start of the name the button has. */
+export const isArrow = (buttonName: string, arrow: string): boolean => buttonName.startsWith(`${arrow}. Click for: `)
+
+/** The most clicks the arrow button of a row needs to show any arrow: none, one way, the other way. */
+export const MAX_ARROW_CLICKS = 3
