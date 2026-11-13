@@ -217,7 +217,7 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
-		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventStartup}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}})
+		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventSearchSourceReady}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}})
 	}
 	var started atomic.Int32
 	working := startSleepLauncher(t, &started, nil)
@@ -228,7 +228,7 @@ func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 		return working(ctx, p, portNumber, token)
 	})
 
-	activated, err := host.Events.TriggerEvent(t.Context(), manifest.ActivationEventStartup)
+	activated, err := host.Events.TriggerEvent(t.Context(), manifest.ActivationEventSearchSourceReady)
 
 	if err == nil {
 		t.Fatal("expected the failing plugin to be reported")

@@ -114,7 +114,7 @@ func mountFile(w *windowWiring) {
 	readers := vaultReaders(w.a.vault)
 	kinds := w.kinds
 	folders := filewindow.NewFolders(
-		state, state.Events,
+		state,
 		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), kinds.list),
 		file.NewListFileKinds(kinds.files, kinds.chooser),
 		file.NewCreateFolder(folderWriters(w.a.vault), state.Writes),

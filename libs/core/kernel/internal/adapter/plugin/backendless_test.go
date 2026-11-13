@@ -67,18 +67,6 @@ func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 	}
 }
 
-func TestAnEventForTheFilesOfAFrontendPluginStartsNothing(t *testing.T) {
-	host, launches := newFrontendOnlyHost(t)
-
-	activated, err := host.Events.TriggerEvent(t.Context(), "onFile:pdf")
-	if err != nil {
-		t.Fatalf("TriggerEvent: %v", err)
-	}
-	if len(activated) != 0 || *launches != 0 {
-		t.Fatalf("activated %v with %d launches, want none", activated, *launches)
-	}
-}
-
 func TestPluginInfosMarkThePartsOfThePlugins(t *testing.T) {
 	host, _ := newFrontendOnlyHost(t)
 

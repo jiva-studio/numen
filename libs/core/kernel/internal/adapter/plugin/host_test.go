@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/core/protocol"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
@@ -155,7 +156,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	host.Activation.Release("org.example.sample")
 
 	// TriggerEvent for matching event
-	activated, err := host.Events.TriggerEvent(ctx, "onFile:test.pdf")
+	activated, err := host.Events.TriggerEvent(ctx, protocol.GetSearchSourceReadyEvent("v-1"))
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
@@ -256,8 +257,8 @@ func TestHostEmitEventActivation(t *testing.T) {
 		t.Fatalf("expected initial state dormant, got %v", sup.GetState())
 	}
 
-	// Emit onFile event via debounced event bus
-	host.Events.EmitEvent("onFile:document.pdf")
+	// Emit the event through the debounced event bus
+	host.Events.EmitEvent(protocol.GetSearchSourceReadyEvent("v-1"))
 	if err := host.Events.GetEventBus().Flush(ctx); err != nil {
 		t.Fatal(err)
 	}

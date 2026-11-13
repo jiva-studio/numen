@@ -63,9 +63,8 @@ export type Manifest = Message<"numen.v1.Manifest"> & {
   targets: string[];
 
   /**
-   * activation_events are the events that start the plugin's backend and deliver the event to it. The
-   * value `*` matches every event the host emits. A plugin with a backend also receives, without
-   * declaring it, the event `onFile:<extension>` for a file it opens by a reader or a handle.
+   * activation_events are the events that start the plugin's backend and deliver the event to it, such
+   * as `onSearchSourceReady` when the search source has indexed a vault.
    *
    * @generated from field: repeated string activation_events = 8;
    */
