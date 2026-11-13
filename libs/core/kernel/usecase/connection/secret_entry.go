@@ -15,8 +15,7 @@ const (
 	fingerprintSeparator = ":"
 )
 
-// GetEntryName returns the name the value of a secret field is stored under in the key store. The
-// secrets of the page "Secrets" use the prefix "secret/".
+// GetEntryName returns the name the value of a secret field is stored under in the key store.
 func GetEntryName(id, key string) string { return entryPrefix + id + "/" + key }
 
 func getFingerprint(typeID, address string) string {

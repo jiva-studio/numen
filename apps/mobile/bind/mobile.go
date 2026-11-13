@@ -97,9 +97,8 @@ func (c *Core) Start(dir string) (int, error) {
 
 	// The phone shows the vault, its notes and the tree they are filed in, and
 	// the health items of the plugins. The socket is reachable by every process
-	// on the phone, so only those four services are mounted. The settings file,
-	// which contains the model API keys, and the files on disk next to the notes
-	// (books and the model sets that run over them) are not served.
+	// on the phone, so only those four services are mounted. The settings and
+	// the files on disk next to the notes are not served.
 	handler, token, err := opened.NewLocalHandler(
 		http.NotFoundHandler(),
 		numenv1connect.VaultServiceName,

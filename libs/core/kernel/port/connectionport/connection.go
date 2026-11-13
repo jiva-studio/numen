@@ -18,7 +18,7 @@ type Repository interface {
 
 // Types is the registry of the kinds of connection the installed plugins provide.
 type Types interface {
-	// ListTypes returns every declared type, in the order of the plugin ids and then of the manifest.
+	// ListTypes returns the types of the enabled plugins, in the order of the plugin ids and then of the manifest.
 	ListTypes() []connection.Type
 	// GetType returns the type with the id, and false where no installed plugin declares it.
 	GetType(typeID string) (connection.Type, bool)

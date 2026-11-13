@@ -30,7 +30,7 @@ func (u *List) Execute(ctx context.Context) ([]Entry, error) {
 }
 
 // TypeList is the kinds of connection and the titles the plugins give the operations of the kinds. Types
-// holds every declared type, the unavailable ones included; Operations holds one title for each titled
+// holds the types of the enabled plugins; Operations holds one title for each titled
 // operation, in the order of the plugin ids.
 type TypeList struct {
 	Types      []connection.Type
