@@ -11,6 +11,7 @@ import {
   CompleteRequestSchema,
   CompleteResultSchema,
   embed,
+  EmbedResultSchema,
   FinishReason,
   getProfile,
   ProfileSchema,
@@ -79,6 +80,16 @@ describe('the llm contract', () => {
     expect(asked).toStrictEqual([])
   })
 
+  it('throws on a result with another number of vectors than texts', async () => {
+    const result = toBinary(
+      EmbedResultSchema,
+      create(EmbedResultSchema, { vectors: [{ values: [1] }] }),
+    )
+    const { host } = createHost([], { ok: true, value: result })
+
+    await expect(embed(host, { texts: ['quay', 'jetty'] })).rejects.toThrow('1 vectors for 2 texts')
+  })
+
   it('asks the profile in the background', async () => {
     const profile = toBinary(ProfileSchema, create(ProfileSchema, { width: 8, model: 'm' }))
     const { host, asked } = createHost([], { ok: true, value: profile })
@@ -114,5 +125,47 @@ describe('the llm contract', () => {
     )
     expect(asked[0]?.operation).toBe('llm.chat')
     expect(fromBinary(ChatRequestSchema, asked[0]!.payload).messages[0]?.text).toBe('hi')
+  })
+
+  it('throws on a frame that is no message of the contract and ends the call', async () => {
+    let isEnded = false
+    const host: ConnectionHost = {
+      call: async function* () {
+        try {
+          yield new Uint8Array([0xff, 0xff, 0xff])
+          return { ok: true, value: new Uint8Array() }
+        } finally {
+          isEnded = true
+        }
+      },
+    }
+
+    await expect(chat(host, { messages: [] }).next()).rejects.toThrow()
+    expect(isEnded).toBe(true)
+  })
+
+  it('ends the call when the reader stops before the finish', async () => {
+    let isEnded = false
+    const delta = toBinary(
+      ChatFrameSchema,
+      create(ChatFrameSchema, { event: { case: 'textDelta', value: 'ebb' } }),
+    )
+    const host: ConnectionHost = {
+      call: async function* () {
+        try {
+          yield delta
+          yield delta
+          return { ok: true, value: new Uint8Array() }
+        } finally {
+          isEnded = true
+        }
+      },
+    }
+
+    const turn = chat(host, { messages: [] })
+    await turn.next()
+    await turn.return({ ok: true, value: create(ChatFinishSchema) })
+
+    expect(isEnded).toBe(true)
   })
 })
