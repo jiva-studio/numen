@@ -460,3 +460,12 @@ func (d *Detected) Detect(context.Context, string) {}
 
 // Refresh asks nothing.
 func (d *Detected) Refresh() {}
+
+// SetPluginVersion sets the version of the plugin that provides the types of the plugin.
+func (w *World) SetPluginVersion(pluginID, version string) {
+	for i := range w.Types.list {
+		if w.Types.list[i].PluginID == pluginID {
+			w.Types.list[i].PluginVersion = version
+		}
+	}
+}

@@ -26,12 +26,13 @@ type Connection struct {
 }
 
 // Type is a kind of connection together with the plugin that provides it. IsAvailable is whether
-// that plugin is installed and enabled.
+// that plugin is installed and enabled. PluginVersion is the version of the plugin installed now.
 type Type struct {
-	PluginID    string
-	PluginName  string
-	IsAvailable bool
-	Declaration manifest.ConnectionType
+	PluginID      string
+	PluginName    string
+	PluginVersion string
+	IsAvailable   bool
+	Declaration   manifest.ConnectionType
 }
 
 // GetID returns the id of the type: the plugin id, a slash and the id the plugin gives the type.

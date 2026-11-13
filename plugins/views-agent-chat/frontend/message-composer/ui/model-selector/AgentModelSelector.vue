@@ -25,6 +25,8 @@ const props = withDefaults(
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'select', option: AgentModelOption): void
+  /** The list of models opened. */
+  (event: 'open'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -68,6 +70,7 @@ function onToggle() {
     menuPosition.value = { x: rect.left, y: rect.bottom + 4 }
   }
   isOpen.value = true
+  emit('open')
 }
 
 function onChoose(id: string) {

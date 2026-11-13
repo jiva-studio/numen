@@ -1,0 +1,132 @@
+package providerbridge_test
+
+import (
+	"os"
+	"path/filepath"
+	"sync"
+	"testing"
+	"testing/synctest"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
+)
+
+// standingClock is a clock that stands still until advance moves it.
+type standingClock struct {
+	mu  sync.Mutex
+	now time.Time
+}
+
+func (c *standingClock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.now
+}
+
+func (c *standingClock) advance(d time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.now = c.now.Add(d)
+}
+
+func setPluginVersion(types detectingTypes, version string) detectingTypes {
+	changed := make(detectingTypes, len(types))
+	for i, one := range types {
+		one.PluginVersion = version
+		changed[i] = one
+	}
+	return changed
+}
+
+func (f *detectionFixture) restart(types detectingTypes, storeFile string) *providerbridge.Detection {
+	detection := providerbridge.NewDetection(types, f.source, f.clock)
+	detection.SetStoreFile(storeFile)
+	return detection
+}
+
+func (f *detectionFixture) countCalls() int {
+	f.source.mu.Lock()
+	defer f.source.mu.Unlock()
+	return f.source.calls
+}
+
+func TestARestartListsTheStoredAnswerWithoutAskingTheProvider(t *testing.T) {
+	f := newDetectionFixture()
+	storeFile := filepath.Join(t.TempDir(), "core", "detected-connections.json")
+	f.detection.SetStoreFile(storeFile)
+	f.detect(t)
+	calls := f.countCalls()
+
+	restarted := f.restart(f.types, storeFile)
+
+	listed := restarted.ListDetected()
+	if len(listed) != 1 || listed[0].ID != kiteID || listed[0].Fields["parallelRequests"] != float64(2) || listed[0].Fields["program"] != "kite" {
+		t.Errorf("listed = %+v, want Kite agent with its fields", listed)
+	}
+	if restarted.IsPending(kiteTypeID) {
+		t.Error("the type is pending after a restart with its answer kept")
+	}
+	if got := f.countCalls(); got != calls {
+		t.Errorf("the providers were asked %d times after the restart, want none", got-calls)
+	}
+}
+
+func TestAStoredAnswerOfAnotherPluginVersionIsPending(t *testing.T) {
+	f := newDetectionFixture()
+	storeFile := filepath.Join(t.TempDir(), "detected-connections.json")
+	f.detection.SetStoreFile(storeFile)
+	f.detect(t)
+
+	restarted := f.restart(setPluginVersion(f.types, "2.0.0"), storeFile)
+
+	if listed := restarted.ListDetected(); len(listed) != 0 || !restarted.IsPending(kiteTypeID) {
+		t.Errorf("listed = %+v, pending = %v, want none and pending", listed, restarted.IsPending(kiteTypeID))
+	}
+}
+
+func TestAStoreFileThatCannotBeReadIsReportedAndHasNoAnswer(t *testing.T) {
+	f := newDetectionFixture()
+	storeFile := filepath.Join(t.TempDir(), "detected-connections.json")
+	if err := os.WriteFile(storeFile, []byte("{not json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var reported []error
+	restarted := f.restart(f.types, storeFile)
+	restarted.Follow(func() {}, func(err error) { reported = append(reported, err) })
+
+	if !restarted.IsPending(kiteTypeID) || len(reported) != 1 {
+		t.Errorf("pending = %v, reported = %v, want pending and one report", restarted.IsPending(kiteTypeID), reported)
+	}
+}
+
+func TestRefreshSkipsAPluginAskedWithinTheRefreshInterval(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		f := newDetectionFixture()
+		f.detect(t)
+		calls := f.countCalls()
+
+		f.clock.advance(providerbridge.RefreshInterval - time.Second)
+		f.detection.Refresh()
+		synctest.Wait()
+
+		if got := f.countCalls(); got != calls {
+			t.Errorf("the providers were asked %d times, want none", got-calls)
+		}
+	})
+}
+
+func TestRefreshAsksAPluginAgainOnceTheRefreshIntervalPassed(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		f := newDetectionFixture()
+		f.detect(t)
+		calls := f.countCalls()
+
+		f.clock.advance(providerbridge.RefreshInterval)
+		f.detection.Refresh()
+		synctest.Wait()
+
+		if got := f.countCalls(); got != calls+1 {
+			t.Errorf("the providers were asked %d times, want once", got-calls)
+		}
+	})
+}

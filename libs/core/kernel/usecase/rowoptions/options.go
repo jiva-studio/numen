@@ -30,18 +30,23 @@ type Options struct {
 	resolve     connectionport.ResolveConnection
 	readSecrets connectionport.ReadConnectionSecrets
 	source      connectionport.ProviderSource
+	cache       *Cache
 }
 
+// NewOptions returns the listing over the connections and the providers the source opens, which answers
+// from cache what the providers listed before.
 func NewOptions(
 	resolve connectionport.ResolveConnection, readSecrets connectionport.ReadConnectionSecrets, source connectionport.ProviderSource,
+	cache *Cache,
 ) *Options {
-	return &Options{resolve: resolve, readSecrets: readSecrets, source: source}
+	return &Options{resolve: resolve, readSecrets: readSecrets, source: source, cache: cache}
 }
 
 // ListOptions calls the operation the row field names in optionsFrom with the options the row holds so far,
-// and returns the values the field can take. A value the provider does not list is still accepted by the
-// core. operations are the operations the setting of rows is used for. It fails with connection.ErrNotFound,
-// connection.ErrTypeUnavailable, ErrNoOptions, ErrProviderUnavailable or the error of the context.
+// and returns the values the field can take; a listing in the cache is returned without the provider. A
+// value the provider does not list is still accepted by the core. operations are the operations the
+// setting of rows is used for. It fails with connection.ErrNotFound, connection.ErrTypeUnavailable,
+// ErrNoOptions, ErrProviderUnavailable or the error of the context.
 func (o *Options) ListOptions(
 	ctx context.Context, connectionID, field string, options map[string]string, operations []string,
 ) ([]modelcall.Option, error) {
@@ -55,6 +60,10 @@ func (o *Options) ListOptions(
 	declared, isDeclared := resolved.Declaration.GetRowField(field)
 	if !isDeclared || declared.OptionsFrom == "" {
 		return nil, fmt.Errorf("%w: %s", ErrNoOptions, field)
+	}
+	key, state := newCacheKey(connectionID, field, options, operations), newConnectionState(resolved)
+	if listed, isCached := o.cache.get(key, state); isCached {
+		return listed, nil
 	}
 	provider, release, err := o.source.OpenProvider(ctx, resolved.PluginID)
 	if err != nil {
@@ -74,6 +83,7 @@ func (o *Options) ListOptions(
 	if err != nil {
 		return nil, failed(ctx, readReason(err))
 	}
+	o.cache.put(key, state, listed)
 	return listed, nil
 }
 

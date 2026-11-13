@@ -10,12 +10,14 @@ import (
 // Resolved is a connection as one call to its provider reads it: the fields as text, with the fixed
 // values of the type, and no value of a secret. ParallelRequests is the number of calls the connection
 // runs at once: the stored field, else the default of the type, else 0 for no limit. Fingerprint
-// identifies the type and the address the connection had when it was read.
+// identifies the type and the address the connection had when it was read. PluginVersion is the version
+// of the plugin that provides the type.
 type Resolved struct {
 	ID               string
 	Name             string
 	Revision         int
 	PluginID         string
+	PluginVersion    string
 	Declaration      manifest.ConnectionType
 	Fields           map[string]string
 	ParallelRequests int

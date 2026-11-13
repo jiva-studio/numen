@@ -44,8 +44,18 @@ const listOptions: NonNullable<AgentListing['listOptions']> = (connectionId, fie
 
 const waitTask = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
 
-const createChat = async (rows: readonly ConnectionRow[]) => {
-  const connections = createAgentConnections({ frames: [say('Twelve.')] }, { rows, listOptions })
+const createChat = async (rows: readonly ConnectionRow[], { isPickerOpened = true } = {}) => {
+  const asked: string[] = []
+  const connections = createAgentConnections(
+    { frames: [say('Twelve.')] },
+    {
+      rows,
+      listOptions: (connectionId, field, options) => {
+        asked.push(`${connectionId} ${field}`)
+        return listOptions(connectionId, field, options)
+      },
+    },
+  )
   const list = createAgentList(connections.host, WORDS.defaultModel)
   await list.reload()
   const choice = useAgentChoice(connections.host, list)
@@ -57,7 +67,9 @@ const createChat = async (rows: readonly ConnectionRow[]) => {
     getPreferredRow: choice.getPreferredRow,
   })
   await waitTask()
-  return { choice, conversation, calls: connections.calls }
+  if (isPickerOpened) await choice.listChoices()
+  await waitTask()
+  return { choice, conversation, calls: connections.calls, asked }
 }
 
 const readOptions = (choice: Awaited<ReturnType<typeof createChat>>['choice']) =>
@@ -76,6 +88,52 @@ describe('the agents a chat offers', () => {
       'Meadow agent · Clover',
     ])
     expect(choice.offered.isAgentMissing.value).toBe(false)
+  })
+
+  it('offer the stored model and reasoning level of each row until a picker opens', async () => {
+    const { choice, asked } = await createChat(
+      [
+        row('c-orchard', 'Orchard agent', { model: 'pear-small', reasoning: 'low' }),
+        row('c-meadow', 'Meadow agent'),
+      ],
+      { isPickerOpened: false },
+    )
+
+    expect(readOptions(choice)).toStrictEqual([
+      'Orchard agent · pear-small',
+      `Meadow agent · ${WORDS.defaultModel}`,
+    ])
+    expect(choice.offered.reasoningLevels.value).toStrictEqual([{ id: 'low', title: 'low' }])
+    expect(choice.selected.reasoningId.value).toBe('low')
+    expect(asked).toStrictEqual([])
+  })
+
+  it('list the models of every agent and the reasoning levels of the choice once a picker opens', async () => {
+    const { choice, asked } = await createChat(
+      [
+        row('c-orchard', 'Orchard agent', { model: 'pear-large' }),
+        row('c-meadow', 'Meadow agent', { model: 'clover' }),
+      ],
+      { isPickerOpened: false },
+    )
+
+    await choice.listChoices()
+    await waitTask()
+
+    expect([...asked].sort()).toStrictEqual([
+      'c-meadow model',
+      'c-orchard model',
+      'c-orchard reasoning',
+    ])
+    expect(readOptions(choice)).toStrictEqual([
+      'Orchard agent · Pear Large',
+      'Orchard agent · Pear Small',
+      'Meadow agent · Clover',
+    ])
+    expect(choice.offered.reasoningLevels.value.map((one) => one.title)).toStrictEqual([
+      'Low',
+      'High',
+    ])
   })
 
   it('offer each connection once where two rows name it', async () => {

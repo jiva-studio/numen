@@ -3,7 +3,9 @@ package container
 import (
 	"context"
 	"errors"
+	"path/filepath"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
@@ -19,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -120,7 +123,8 @@ type PluginViews struct {
 // role of the host that does it. The settings subscription is keyed by the one *PluginHost the container
 // made. ApplySetting makes a plugin follow one setting that changed. SetStorage sets the folders the plugins
 // store files in and keeps the dependencies in the models folder the host names; RefreshDependencies
-// provisions them as the environment names them now.
+// provisions them as the environment names them now. Detection and RowOptions keep what the providers
+// reported, for every window of the host; SetStorage also sets the file Detection keeps its answers in.
 type PluginHost struct {
 	Runtime             PluginRuntime
 	Configuration       PluginConfiguration
@@ -134,6 +138,7 @@ type PluginHost struct {
 	Processes           pluginprocess.Processes
 	Release             pluginprocess.Stopper
 	Detection           *providerbridge.Detection
+	RowOptions          *rowoptions.Cache
 }
 
 // AdaptPluginHost lends the capabilities of host, the roles of a plugin host the caller made with NewPluginRoles, to the container. The
@@ -144,7 +149,7 @@ func AdaptPluginHost(host *PluginRoles) *PluginHost {
 
 func adaptPluginHost(host *PluginRoles) *PluginHost {
 	types := plugin.NewConnectionTypes(host.Registry)
-	detection := providerbridge.NewDetection(types, providerbridge.NewSource(host.Activation))
+	detection := providerbridge.NewDetection(types, providerbridge.NewSource(host.Activation), clock.System{})
 	host.Activation.SetOnStart(detection.DetectInBackground)
 	return &PluginHost{
 		Runtime: PluginRuntime{
@@ -182,12 +187,16 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 			Infos: host.Registry, Checks: host.Settings,
 			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
 		},
-		SetStorage:          func(cacheRoot, dataRoot string) { setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry) },
+		SetStorage: func(cacheRoot, dataRoot string) {
+			setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry)
+			detection.SetStoreFile(getDetectionFile(dataRoot))
+		},
 		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
 		Health:              host.Health,
 		Processes:           host.RunningProcesses,
 		Release:             host.Teardown,
 		Detection:           detection,
+		RowOptions:          rowoptions.NewCache(clock.System{}),
 	}
 }
 
@@ -206,4 +215,11 @@ func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 		},
 	}))
 	return services
+}
+
+func getDetectionFile(dataRoot string) string {
+	if dataRoot == "" {
+		return ""
+	}
+	return filepath.Join(dataRoot, "core", "detected-connections.json")
 }
