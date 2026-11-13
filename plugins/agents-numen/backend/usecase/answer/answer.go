@@ -126,7 +126,6 @@ var errNoModel = errors.New("the row names no model")
 // errConnections is a listing of the connections of llm.chat that failed.
 var errConnections = errors.New("the connections of llm.chat could not be listed")
 
-// readChatReason returns the reason the connection of a failed turn gave, unavailable where it gave none.
 func readChatReason(err error) connection.Reason {
 	var failed *connection.AllFailedError
 	var stopped *connection.StoppedError
