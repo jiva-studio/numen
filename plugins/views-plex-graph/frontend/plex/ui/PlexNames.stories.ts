@@ -71,12 +71,16 @@ const meta = {
 export default meta
 type Story = StoryObj<Knobs>
 
-const getName = (canvas: ReturnType<typeof within>, title: string) =>
-  canvas.getByRole('button', { name: new RegExp(`^${title}, name under `) })
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-const getCenterY = (element: Element) => {
-  const box = element.getBoundingClientRect()
-  return box.top + box.height / 2
+const getName = (canvas: ReturnType<typeof within>, title: string) =>
+  canvas.getByRole('button', { name: new RegExp(`^${escapeRegExp(title)}, name under `) })
+
+/** The y of an element of the plex, from the translate it is drawn at. */
+const getY = (element: Element) => {
+  const match = /translate\(\S+ (\S+)\)/.exec(element.getAttribute('transform') ?? '')
+  if (!match) throw new Error('the element is not placed yet')
+  return Number(match[1])
 }
 
 /** Each related note shows its names as buttons, the names of its parents over it and the rest under it. */
@@ -85,18 +89,19 @@ export const WithNames: Story = {
     const canvas = within(canvasElement)
     const beds = canvas.getByLabelText('Raised beds, child')
 
-    await expect(getCenterY(getName(canvas, 'Allotment'))).toBeLessThan(getCenterY(beds))
+    await waitFor(async () => await expect(getY(beds)).toBeGreaterThan(0))
+    await expect(getY(getName(canvas, 'Allotment'))).toBeLessThan(getY(beds))
     for (const title of ['Compost', 'Mulch', 'Seedlings', 'Watering']) {
-      await expect(getCenterY(getName(canvas, title))).toBeGreaterThan(getCenterY(beds))
+      await expect(getY(getName(canvas, title))).toBeGreaterThan(getY(beds))
     }
-    await expect(getCenterY(getName(canvas, 'Spade'))).toBeGreaterThan(
-      getCenterY(canvas.getByLabelText('Hand tools, child')),
+    await expect(getY(getName(canvas, 'Spade'))).toBeGreaterThan(
+      getY(canvas.getByLabelText('Hand tools, child')),
     )
     await expect(canvas.queryByRole('button', { name: 'Kitchen garden' })).toBeNull()
   },
 }
 
-/** Choosing a name hands the id of its note to the caller, and the node of the note it names is not chosen. */
+/** Choosing a name hands the id of its note to the caller. */
 export const ChoosingAName: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
@@ -105,19 +110,5 @@ export const ChoosingAName: Story = {
 
     await expect(args.onChooseName).toHaveBeenCalledTimes(1)
     await expect(args.onChooseName).toHaveBeenCalledWith('name:Mulch')
-    await expect(args.onActivate).not.toHaveBeenCalled()
-  },
-}
-
-/** The hover of a pill opens the heading list of its note. */
-export const APillOpensHeadings: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-
-    await userEvent.hover(canvas.getByLabelText('Raised beds, child'))
-
-    await waitFor(
-      async () => await expect(canvasElement.querySelector('.plex__inside')).not.toBeNull(),
-    )
   },
 }

@@ -2,6 +2,7 @@
 import { mount } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
+import PlexNodeView from './PlexNodeView.vue'
 import PlexView from './PlexView.vue'
 import { arrangePlex, DEFAULT_OPTIONS } from '../../lib/arrange'
 import type { Drop } from '../../lib/arrange'
@@ -29,8 +30,8 @@ const createCountedView = (props: Record<string, unknown> = {}) => {
     global: {
       mixins: [
         {
-          updated(this: { $props: { node?: PlacedNode }; $options: { __name?: string } }) {
-            if (this.$options.__name !== 'PlexNodeView') return
+          updated(this: { $props: { node?: PlacedNode }; $: { type: unknown } }) {
+            if (this.$.type !== PlexNodeView) return
             const id = this.$props.node!.id
             redrawn.set(id, (redrawn.get(id) ?? 0) + 1)
           },
@@ -63,6 +64,7 @@ describe('the pointer moving over a note', () => {
     const { view } = createCountedView({ widen, hung })
     const widened = widen.mock.calls.length
     const hanged = hung.mock.calls.length
+    expect(hanged).toBeGreaterThan(0)
 
     await note(view, frame.nodes[4]!.title).trigger('pointerenter')
     await nextTick()
@@ -82,7 +84,22 @@ describe('the pointer moving over a note', () => {
     await nextTick()
 
     expect(view.findAll('.plex__raised .plex__edge').length).toBeGreaterThan(0)
-    expect(redrawn.has(frame.nodes[5]!.id)).toBe(false)
+    expect([...redrawn.keys()]).toStrictEqual([frame.nodes[0]!.id])
+  })
+})
+
+describe('a frame that changes', () => {
+  it('redraws the note that moved, and not the others', async () => {
+    const { view, redrawn, reset } = createCountedView()
+    reset()
+    const moved = frame.nodes[3]!
+
+    await view.setProps({
+      frame: { ...frame, nodes: frame.nodes.map((node) => (node === moved ? { ...node, x: node.x + 10 } : node)) },
+    })
+    await nextTick()
+
+    expect([...redrawn.keys()]).toStrictEqual([moved.id])
   })
 })
 
@@ -108,7 +125,7 @@ describe('the pointer moving during a gesture or a drag', () => {
     dragging.at.value = { x: 9, y: 9 }
     await nextTick()
 
-    expect([...redrawn.keys()].filter((id) => id !== 'ghost' && id !== 'dragged')).toStrictEqual([])
+    expect([...redrawn.keys()]).toStrictEqual([])
   })
 
   it('draws the thread where the pointer is', async () => {

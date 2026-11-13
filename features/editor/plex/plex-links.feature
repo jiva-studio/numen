@@ -53,6 +53,8 @@ Feature: Plex links
 
     Scenario: The plex opens on the note of its tab
       Given the person opens the note titled "Quay"
+      And the person clicks the note titled "Quay" in the plex
+      And the plex shows the focus note titled "Quay"
       When the person runs the command "Show in plex" on the note tab titled "Harbour"
       Then the plex shows the focus note titled "Harbour"
 

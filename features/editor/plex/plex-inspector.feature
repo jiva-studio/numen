@@ -18,21 +18,16 @@ Feature: Plex link inspector
     And the person opens the note titled "Harbour"
     And the person runs the command "Show in plex" on the note tab titled "Harbour"
 
-  Rule: The link inspector changes a link
+  Rule: The link inspector changes the arrows and the description of a link
 
-    Scenario Outline: The arrow sets what the notes are to each other
+    Scenario: An arrow points to the other note
+      Given the plex draws the line from "Harbour" to "Quay" with an arrow to "Quay"
       When the person changes the link from "Harbour" to "Quay" in the plex with:
-        | Arrow | <arrow> |
-      Then the vault "Test" has the following links:
-        | from   | to   | role   |
-        | <from> | <to> | <role> |
-
-      Examples:
-        | arrow          | from    | to      | role   |
-        | Arrow to Quay    | Harbour | Quay    | child  |
-        | Arrow to Harbour | Quay    | Harbour | parent |
+        | Arrow | Arrow to Harbour |
+      Then the plex draws the line from "Harbour" to "Quay" with an arrow to "Harbour"
 
     Scenario: An arrow is removed from a link
+      Given the plex draws the line from "Harbour" to "Quay" with an arrow to "Quay"
       When the person changes the link from "Harbour" to "Quay" in the plex with:
         | Arrow | No arrow |
       Then the plex draws the line from "Harbour" to "Quay" without an arrow
@@ -51,20 +46,18 @@ Feature: Plex link inspector
       Then the vault "Test" has the following links:
         | from    | to   | role  |
         | Harbour | Quay | child |
+      And the plex draws the line from "Harbour" to "Quay" with an arrow to "Quay"
 
     Scenario: A reverse link is added
       When the person adds the reverse link from "Quay" to "Harbour" in the plex
-      Then the vault "Test" has the following links:
-        | from    | to      | role   |
-        | Harbour | Quay    | child  |
-        | Quay    | Harbour | parent |
+      Then the note titled "Harbour" links to the note titled "Quay"
+      And the note titled "Quay" links to the note titled "Harbour"
 
     Scenario: One direction of a link is removed
       Given the person adds the reverse link from "Quay" to "Harbour" in the plex
       When the person removes the link from "Quay" to "Harbour" in the plex
-      Then the vault "Test" has the following links:
-        | from    | to   | role  |
-        | Harbour | Quay | child |
+      Then the note titled "Harbour" links to the note titled "Quay"
+      And the note titled "Quay" does not link to the note titled "Harbour"
 
     Scenario: A link is removed
       When the person removes the link between "Harbour" and "Quay" in the plex

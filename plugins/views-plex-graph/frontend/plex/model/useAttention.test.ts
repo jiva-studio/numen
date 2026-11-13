@@ -6,36 +6,37 @@ import { arrangePlex } from '../lib/arrange'
 import { build } from '../fixtures/build'
 
 const whole = arrangePlex(build('Hub', { child: 3 }))
+const [first, second] = whole.nodes.filter((node) => node.relation === 'child').map((node) => node.id) as [string, string]
 const without = (id: string) => ({ ...whole, nodes: whole.nodes.filter((node) => node.id !== id) })
 
 describe('the attention of the drawing', () => {
   it('rests on the note that took it, and on the names of another at once', () => {
     const { attention, attend } = useAttention(() => whole)
 
-    attend('node', 'focus/child-0', true)
-    attend('names', 'focus/child-1', true)
+    attend('node', first, true)
+    attend('names', second, true)
 
-    expect({ ...attention }).toStrictEqual({ node: 'focus/child-0', names: 'focus/child-1' })
+    expect({ ...attention }).toStrictEqual({ node: first, names: second })
   })
 
   it('is released by the note that took it, and not by another', () => {
     const { attention, attend } = useAttention(() => whole)
-    attend('node', 'focus/child-0', true)
+    attend('node', first, true)
 
-    attend('node', 'focus/child-1', false)
-    expect(attention.node).toBe('focus/child-0')
+    attend('node', second, false)
+    expect(attention.node).toBe(first)
 
-    attend('node', 'focus/child-0', false)
+    attend('node', first, false)
     expect(attention.node).toBeNull()
   })
 
   it('is cleared when the note it rests on leaves the frame', async () => {
     const frame = ref(whole)
     const { attention, attend } = useAttention(() => frame.value)
-    attend('node', 'focus/child-0', true)
-    attend('names', 'focus/child-0', true)
+    attend('node', first, true)
+    attend('names', first, true)
 
-    frame.value = without('focus/child-0')
+    frame.value = without(first)
     await nextTick()
 
     expect({ ...attention }).toStrictEqual({ node: null, names: null })
@@ -44,11 +45,11 @@ describe('the attention of the drawing', () => {
   it('stays on a note that is still in the frame', async () => {
     const frame = ref(whole)
     const { attention, attend } = useAttention(() => frame.value)
-    attend('node', 'focus/child-1', true)
+    attend('node', second, true)
 
-    frame.value = without('focus/child-0')
+    frame.value = without(first)
     await nextTick()
 
-    expect(attention.node).toBe('focus/child-1')
+    expect(attention.node).toBe(second)
   })
 })

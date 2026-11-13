@@ -60,15 +60,12 @@ When('the person drops the handle of the note titled {string} on the note titled
   await person.plex.dragOnto(title, toTitle)
 })
 
-Then(
-  'the plex draws the line from {string} to {string} with an arrow to {string}',
-  async ({ person }, from: string, to: string, arrow: string) => {
-    await person.plex.expectDrawsLine(from, to, arrow)
-  },
-)
+Then('the plex draws the line from {string} to {string}{arrow}', async ({ person }, from: string, to: string, arrow: string | undefined) => {
+  await person.plex.expectDrawsLine(from, to, arrow)
+})
 
-Then('the plex draws the line from {string} to {string} without an arrow', async ({ person }, from: string, to: string) => {
-  await person.plex.expectDrawsLineWithoutArrow(from, to)
+Then('the plex shows only the focus note titled {string}', async ({ person }, title: string) => {
+  await person.plex.expectShowsOnlyFocus(title)
 })
 
 When(
@@ -95,6 +92,18 @@ When('the person removes the link {extent} in the plex', async ({ person }, exte
 
 When('the person opens the menu of the note titled {string} in the plex', async ({ person }, title: string) => {
   await person.plex.openMenu(title)
+})
+
+When(
+  'the person chooses the item {string} in the menu of the note titled {string} in the plex',
+  async ({ person }, item: string, title: string) => {
+    await person.plex.openMenu(title)
+    await person.plex.chooseMenuItem(item)
+  },
+)
+
+When('the person answers what the palette asks with:', async ({ person }, answers: DataTable) => {
+  await person.command.answer(answers.raw())
 })
 
 Then('the menu {containment} the following items:', async ({ person }, rule: 'only' | 'include' | 'exclude', items: DataTable) => {

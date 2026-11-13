@@ -25,6 +25,10 @@ Feature: Plex references
         | reference | Dock  |
 
     Scenario: References are hidden
+      Given the plex shows the following notes:
+        | relation  | title |
+        | reference | Jetty |
+        | reference | Dock  |
       When the person sets the setting "References" of the plugin "Plex Graph" to "Off"
       Then the plex does not show the following notes:
         | relation  | title |
@@ -32,6 +36,7 @@ Feature: Plex references
         | reference | Dock  |
 
     Scenario Outline: Only the references of one direction are shown
+      Given the plex shows the reference note titled "<hidden>"
       When the person sets the setting "References" of the plugin "Plex Graph" to "<setting>"
       Then the plex shows the reference note titled "<shown>"
       And the plex does not show the reference note titled "<hidden>"
@@ -44,6 +49,8 @@ Feature: Plex references
 
     Scenario: Both directions are shown
       Given the person sets the setting "References" of the plugin "Plex Graph" to "Outgoing"
+      And the plex shows the reference note titled "Jetty"
+      And the plex does not show the reference note titled "Dock"
       When the person sets the setting "References" of the plugin "Plex Graph" to "Both"
       Then the plex shows the following notes:
         | relation  | title |

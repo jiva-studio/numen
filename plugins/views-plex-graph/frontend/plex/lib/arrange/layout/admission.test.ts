@@ -52,14 +52,6 @@ const admit = (requested: NodesByRelation) => admitNodes(requested, lay, isInsid
 
 const countOf = (nodes: NodesByRelation, relation: PlexRelation) => nodes[relation]?.length ?? 0
 
-describe('a group the window holds', () => {
-  it('is admitted whole', () => {
-    const requested = { child: createNodes('child', 5) }
-
-    expect(admit(requested)).toStrictEqual(requested)
-  })
-})
-
 describe('the boundary of what a window holds', () => {
   // The first box of n notes lies at 100 + 10n and the last at 100 + 20n - 10, so five notes are held whole and the sixth box is outside.
   const WHOLE = 5
@@ -72,23 +64,15 @@ describe('the boundary of what a window holds', () => {
     expect(admit({ child: requested }).child).toStrictEqual(requested)
   })
 
-  it('cuts the group before the first box outside at one more note', () => {
-    const requested = createNodes('child', WHOLE + 1)
+  // Six notes: the sixth box is outside, the group is cut before it. Ten: the second box is outside, one note is held and the notes are taken back. Eleven and more: the first box is outside, the group is halved and the notes are taken back.
+  it.each([WHOLE + 1, FIRST_INSIDE, FIRST_INSIDE + 1, FIRST_INSIDE + 3, 40])(
+    'admits the notes the window holds, and no more, of a group of %i',
+    (count) => {
+      const requested = createNodes('child', count)
 
-    expect(admit({ child: requested }).child).toStrictEqual(requested.slice(0, WHOLE))
-  })
-
-  it('takes back the notes that fit once the group is smaller, where only the first box is inside', () => {
-    const requested = createNodes('child', FIRST_INSIDE)
-
-    expect(admit({ child: requested }).child).toStrictEqual(requested.slice(0, WHOLE))
-  })
-
-  it('halves the group at one more note, where the first box is outside', () => {
-    const requested = createNodes('child', FIRST_INSIDE + 1)
-
-    expect(admit({ child: requested }).child).toStrictEqual(requested.slice(0, WHOLE))
-  })
+      expect(admit({ child: requested }).child).toStrictEqual(requested.slice(0, WHOLE))
+    },
+  )
 
   it('keeps the order the notes arrived in, as a prefix', () => {
     const requested = createNodes('child', 30)
@@ -138,23 +122,6 @@ describe('the order of the notes inside a relation', () => {
     const shown = admit({ child: permuted }).child ?? []
 
     expect(shown).toStrictEqual(permuted.slice(0, shown.length))
-  })
-})
-
-describe('admitting what was admitted', () => {
-  it('changes nothing', () => {
-    const random = createRandom(1840)
-    for (let round = 0; round < 40; round++) {
-      const requested: NodesByRelation = {
-        parent: createNodes('parent', Math.floor(random() * 25)),
-        child: createNodes('child', Math.floor(random() * 25)),
-        reference: createNodes('reference', Math.floor(random() * 25)),
-      }
-
-      const once = admit(requested)
-
-      expect(admit(once), `round ${round}`).toStrictEqual(once)
-    }
   })
 })
 

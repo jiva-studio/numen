@@ -1,5 +1,5 @@
 import { defineParameterType } from 'playwright-bdd'
-import { parseExtent, parsePlace, parseTabKind, parseTabRef, parseTarget, parseVaultName } from '../drivers/rules.js'
+import { parseArrow, parseExtent, parsePlace, parseTabKind, parseTabRef, parseTarget, parseVaultName } from '../drivers/rules.js'
 
 defineParameterType({
   name: 'actor',
@@ -107,4 +107,10 @@ defineParameterType({
   name: 'direction',
   regexp: /up|down|left/,
   transformer: (direction: string) => direction,
+})
+
+defineParameterType({
+  name: 'arrow',
+  regexp: / with an arrow to "[^"]+"| without an arrow|/,
+  transformer: (arrow: string) => parseArrow(arrow),
 })
