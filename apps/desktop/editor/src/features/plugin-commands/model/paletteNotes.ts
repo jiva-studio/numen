@@ -12,7 +12,7 @@ import type { CommandTarget } from '@/shared/model/command'
 import type { PaletteNote } from '../lib/whenContext'
 
 /** Reads the type and properties of the note at a target. */
-export type ReadNote = (
+type ReadNote = (
   target: Pick<CommandNote, 'path' | 'title' | 'isFolder' | 'others'>,
 ) => Promise<Pick<CommandNote, 'type' | 'properties'>>
 
