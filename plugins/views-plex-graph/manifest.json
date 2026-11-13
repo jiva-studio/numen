@@ -5,9 +5,7 @@
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
-  "targets": [
-    "desktop.editor"
-  ],
+  "targets": ["desktop.editor"],
   "contributes": {
     "tabKinds": [
       {
@@ -30,9 +28,7 @@
       {
         "slot": "palette.searchResult",
         "command": "app:file.reveal",
-        "values": {
-          "kind": "plex"
-        },
+        "values": { "kind": "plex" },
         "title": "Show in plex",
         "icon": "waypoints",
         "group": "navigate",
@@ -42,25 +38,16 @@
       {
         "slot": "palette.note",
         "command": "app:file.reveal",
-        "values": {
-          "kind": "plex"
-        },
+        "values": { "kind": "plex" },
         "title": "Show in plex",
         "icon": "waypoints",
         "when": "target.isNote"
       },
-      {
-        "slot": "titleBar.commands",
-        "command": "graph.open",
-        "group": "navigate",
-        "order": 20
-      },
+      { "slot": "titleBar.commands", "command": "graph.open", "group": "navigate", "order": 20 },
       {
         "slot": "fileTree.context",
         "command": "app:file.reveal",
-        "values": {
-          "kind": "plex"
-        },
+        "values": { "kind": "plex" },
         "title": "Show in plex",
         "icon": "waypoints",
         "group": "0-open",
@@ -74,21 +61,9 @@
         "icon": "waypoints",
         "group": "4-relation"
       },
-      {
-        "slot": "plex.relation",
-        "command": "app:note.createChild",
-        "order": 10
-      },
-      {
-        "slot": "plex.relation",
-        "command": "app:note.createParent",
-        "order": 20
-      },
-      {
-        "slot": "plex.relation",
-        "command": "app:note.createJump",
-        "order": 30
-      },
+      { "slot": "plex.relation", "command": "app:note.createChild", "order": 10 },
+      { "slot": "plex.relation", "command": "app:note.createParent", "order": 20 },
+      { "slot": "plex.relation", "command": "app:note.createJump", "order": 30 },
       {
         "slot": "plexGraph.context",
         "command": "app:note.create",
@@ -96,18 +71,11 @@
         "order": 10,
         "when": "target.isFolder"
       },
-      {
-        "slot": "plexGraph.context",
-        "command": "app:file.open",
-        "group": "0-open",
-        "order": 10
-      },
+      { "slot": "plexGraph.context", "command": "app:file.open", "group": "0-open", "order": 10 },
       {
         "slot": "plexGraph.context",
         "command": "app:file.reveal",
-        "values": {
-          "kind": "plex"
-        },
+        "values": { "kind": "plex" },
         "title": "Show in plex",
         "icon": "waypoints",
         "group": "1-note",
@@ -138,37 +106,20 @@
         "group": "3-plex",
         "order": 30
       },
-      {
-        "slot": "plexGraph.context",
-        "command": "app:note.rename",
-        "group": "3-plex",
-        "order": 40
-      },
-      {
-        "slot": "plexGraph.context",
-        "command": "app:file.remove",
-        "group": "9-remove"
-      }
+      { "slot": "plexGraph.context", "command": "app:note.rename", "group": "3-plex", "order": 40 },
+      { "slot": "plexGraph.context", "command": "app:file.remove", "group": "9-remove" }
     ],
     "keybindings": [
-      {
-        "key": "mod+shift+x",
-        "command": "graph.open"
-      },
+      { "key": "mod+shift+x", "command": "graph.open" },
       {
         "key": "mod+shift+p",
         "command": "app:file.reveal",
-        "values": {
-          "kind": "plex"
-        },
+        "values": { "kind": "plex" },
         "when": "target.isNote"
       }
     ]
   },
-  "permissions": [
-    "vault:read",
-    "vault:write"
-  ],
+  "permissions": ["vault:read", "vault:write"],
   "settings": [
     {
       "key": "references",
