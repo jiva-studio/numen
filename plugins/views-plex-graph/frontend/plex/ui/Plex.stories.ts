@@ -2,12 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref } from 'vue'
 import Plex from './Plex.vue'
-import {
-  resolveOptions,
-  rowsAndColumns,
-  type Placement,
-  type PlexOptionsInput,
-} from '../lib/arrange'
+import { resolveOptions, clusters, type Placement, type PlexOptionsInput } from '../lib/arrange'
 import { optionsForType, useTypeSize } from '../model/sizing/plexScale'
 import { EXPANSION_DELAY } from '../model/sizing/expansion'
 import { graphs } from '../fixtures/graphs'
@@ -53,8 +48,7 @@ interface Knobs {
   margin: number
   spread: number
   squeeze: number
-  maxPerLine: number
-  maxLines: number
+  maxPerCluster: number
   maxHeadings: number
   orientation: 'parents above' | 'parents below'
 
@@ -90,8 +84,7 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   margin: a.margin,
   squeeze: a.squeeze,
   spread: a.spread,
-  maxPerLine: a.maxPerLine,
-  maxLines: a.maxLines,
+  maxPerCluster: a.maxPerCluster,
   maxHeadings: a.maxHeadings,
   routing: {
     curvature: a.curvature,
@@ -270,8 +263,7 @@ const meta = {
     margin: range(0, 160, 4),
     spread: range(1, 4, 0.1),
     squeeze: range(0.2, 1, 0.05),
-    maxPerLine: range(1, 12),
-    maxLines: range(1, 8),
+    maxPerCluster: range(1, 40),
     maxHeadings: range(1, 12),
     orientation: {
       control: 'inline-radio',
@@ -280,8 +272,8 @@ const meta = {
     },
     placement: {
       control: 'inline-radio',
-      options: ['rows and columns', 'ring'],
-      mapping: { 'rows and columns': rowsAndColumns, ring },
+      options: ['clusters', 'ring'],
+      mapping: { clusters, ring },
       table: { category: 'Layout' },
     },
 
@@ -325,7 +317,7 @@ const meta = {
   },
 
   args: {
-    placement: rowsAndColumns,
+    placement: clusters,
     showEdgeLabels: true,
     duration: 420,
     expansionDelay: EXPANSION_DELAY,
@@ -352,8 +344,7 @@ const meta = {
     margin: 16,
     spread: 2.5,
     squeeze: 0.35,
-    maxPerLine: 5,
-    maxLines: 4,
+    maxPerCluster: 20,
     maxHeadings: 6,
     orientation: 'parents above',
 
@@ -377,7 +368,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const invented = {
-  args: { graph: graphs.typical, maxPerLine: 9 },
+  args: { graph: graphs.typical, maxPerCluster: 9 },
   render: createNavigableStory((args: Knobs) => build(args.title, createCounts(args))),
 }
 
@@ -571,6 +562,31 @@ export const SeveralParents: Story = {
 /** Renders an overcrowded graph with overflow indicators. */
 export const Overcrowded: Story = {
   args: { graph: graphs.overcrowded },
+  play: async ({ canvasElement }) => {
+    const status = await waitFor(() => {
+      const found = canvasElement.querySelector('[role="status"]')
+      if (!found) throw new Error('nothing says what is not shown')
+      return found
+    })
+    await expect(status.textContent).toMatch(/\d+ (children|child)\b.* not shown/)
+
+    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.plex__box')].map((box) =>
+      box.getBoundingClientRect(),
+    )
+    await expect(boxes.length).toBeGreaterThan(1)
+    const overlaps = boxes.flatMap((a, index) =>
+      boxes
+        .slice(index + 1)
+        .filter(
+          (b) =>
+            a.left < b.right - 0.5 &&
+            b.left < a.right - 0.5 &&
+            a.top < b.bottom - 0.5 &&
+            b.top < a.bottom - 0.5,
+        ),
+    )
+    await expect(overlaps).toHaveLength(0)
+  },
 }
 
 const titledLines: PlexGraph = {

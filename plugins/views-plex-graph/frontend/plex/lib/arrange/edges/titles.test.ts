@@ -102,7 +102,7 @@ const boxAround = (node: PlacedNode): Box => ({
 const createOneLine = (label: string): PlexGraph => ({
   nodes: [
     { id: 'focus', title: 'Here', relation: 'focus' },
-    { id: 'aside', title: 'Aside', relation: 'jump' },
+    { id: 'aside', title: 'Aside', relation: 'sibling' },
   ],
   edges: [{ from: 'aside', to: 'focus', labels: [{ text: label }] }],
 })
@@ -292,15 +292,20 @@ describe('a title finds room on its line', () => {
       ...measured,
     })
     // Its line is barely longer than its words, and it keeps the middle of it.
-    const tightest = crossing.edges.find((edge) => edge.to === 'child-1')!
-    expect(tightest.titles[0]!.words.startsWith('the minutes of the me')).toBe(true)
+    const spare = (edge: PlacedEdge) => getLength(edge) - measureLabel(edge.titles[0]!.words)
+    const titled = crossing.edges.filter((edge) => edge.titles[0]?.words)
+    const tightest = titled.reduce((a, b) => (spare(b) < spare(a) ? b : a))
     expect(Math.abs(tightest.titles[0]!.wordsAt - MIDDLE)).toBeLessThan(A_NUDGE)
 
-    // The line to the farther row has spare length and yields.
-    const roomier = crossing.edges.find((edge) => edge.to === 'child-4')!
-    expect(roomier.titles[0]?.words === undefined || roomier.titles[0]!.wordsAt !== MIDDLE).toBe(
-      true,
+    // A line with spare length yields: it is not set at the middle, or not set at all.
+    const named = graphs.labelledRows.edges.filter((edge) => edge.labels?.[0]?.text)
+    const yielding = crossing.edges.filter(
+      (edge) =>
+        named.some((one) => one.from === edge.from && one.to === edge.to) &&
+        (edge.titles[0]?.words === undefined ||
+          Math.abs(edge.titles[0].wordsAt - MIDDLE) >= A_NUDGE),
     )
+    expect(yielding.length).toBeGreaterThan(0)
   })
 
   it('leaves every title at the middle where nothing measured the words', () => {

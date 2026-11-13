@@ -4,7 +4,7 @@
  * their plex images from these stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, waitFor, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import {
   ArrowRightLeft,
   Bot,
@@ -19,7 +19,6 @@ import {
 } from '@lucide/vue'
 import { ref } from 'vue'
 import { Menu, type MenuItem } from '@numen/ui'
-import { hoverOver } from '../../fixtures/pointer'
 import Plex from './Plex.vue'
 import { RELATION_NAMES } from '../lib/relation'
 import type { PlexRelation, PlexEdge, PlexHeading, PlexGraph, PlexNode } from '../../types'
@@ -222,7 +221,7 @@ export const Nesting: Story = {
     // The headings appear one after another, so wait until the display settles.
     const titles = (HEADINGS['focus'] ?? []).map((heading) => heading.text)
     const suspended = () => titles.filter((words) => canvas.queryByText(words))
-    await hoverOver(focus)
+    await userEvent.hover(focus)
     await waitFor(() => expect(suspended().length).toBeGreaterThan(4), { timeout: 5000 })
 
     // The headings shown are the leading ones of the note, as many as fit; the

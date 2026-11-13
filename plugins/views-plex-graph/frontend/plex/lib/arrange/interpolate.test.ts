@@ -8,18 +8,20 @@ import { ARROW_LENGTH, getHeading, getLength, createPointOnCurve } from '../edge
 import type { PlexFrame } from '../frame'
 import type { PlexGraph } from '../../../types'
 
-/** Focus on `focus`, with two children and one parent. */
+/** Focus on `focus`, with three children and one parent. The first child is on the axis, and the chosen one is the third, to its left. */
 const before: PlexGraph = {
   nodes: [
     { id: 'focus', title: 'Start', relation: 'focus' },
     { id: 'up', title: 'Above', relation: 'parent' },
-    { id: 'a', title: 'A', relation: 'child' },
     { id: 'b', title: 'B', relation: 'child' },
+    { id: 'c', title: 'C', relation: 'child' },
+    { id: 'a', title: 'A', relation: 'child' },
   ],
   edges: [
     { from: 'up', to: 'focus' },
-    { from: 'focus', to: 'a' },
     { from: 'focus', to: 'b' },
+    { from: 'focus', to: 'c' },
+    { from: 'focus', to: 'a' },
   ],
 }
 
@@ -156,7 +158,7 @@ describe('a node that is only in one picture', () => {
 
   it('shows every node of either picture once', () => {
     const ids = interpolatePlex(from, to, 0.5).nodes.map((n) => n.id)
-    expect([...ids].sort()).toStrictEqual(['a', 'a1', 'a2', 'a3', 'b', 'focus', 'up'])
+    expect([...ids].sort()).toStrictEqual(['a', 'a1', 'a2', 'a3', 'b', 'c', 'focus', 'up'])
   })
 
   it('holds a new node invisible until the picture has begun to settle', () => {

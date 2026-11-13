@@ -60,14 +60,11 @@ describe('the relation a direction remains for', () => {
     expect(getRelationTowards({ x: 5, y: 5 }, { x: 5, y: 5 }, DEFAULT_OPTIONS)).toBeNull()
   })
 
-  it('counts a wide row as down, though it reaches further sideways', () => {
-    // The outermost child of a row is further from the focus sideways than it
-    // is downwards. Splitting the space on the diagonal would name it a jump,
+  it('counts a point further across than down as down, within the vertical bias', () => {
+    // A note at the side of a wide group is further from the focus sideways than
+    // it is downwards. Splitting the space on the diagonal would name it a jump,
     // and dragging towards where the children plainly are would miss them.
-    const leftmost = frame.nodes
-      .filter((n) => n.relation === 'child')
-      .reduce((a, b) => (a.x <= b.x ? a : b))
-    expect(Math.abs(leftmost.x)).toBeGreaterThan(Math.abs(leftmost.y))
+    const leftmost = { x: focus.x - 130, y: focus.y + 60 }
     expect(getRelationTowards(focus, leftmost, DEFAULT_OPTIONS)).toBe('child')
 
     const flat = resolveOptions({ gesture: { verticalBias: 1 } })
@@ -221,14 +218,11 @@ describe('the relation something dragged in evaluates to', () => {
     expect(getRelationAt({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
   })
 
-  it('counts a wide row as down, though it reaches further sideways', () => {
-    // The outermost child of a row is further from the focus sideways than it
-    // is downwards, and dragging a note to where the children plainly are has
-    // to name a child.
-    const leftmost = frame.nodes
-      .filter((n) => n.relation === 'child')
-      .reduce((a, b) => (a.x <= b.x ? a : b))
-    expect(Math.abs(leftmost.x)).toBeGreaterThan(Math.abs(leftmost.y))
+  it('counts a point further across than down as down, within the vertical bias', () => {
+    // A note dragged to the side of a wide group is further from the focus
+    // sideways than it is downwards, and dragging a note to where the children
+    // plainly are has to name a child.
+    const leftmost = { x: focus.x - 130, y: focus.y + 60 }
     expect(getRelationAt(leftmost)).toBe('child')
 
     const flat = resolveOptions({ gesture: { verticalBias: 1 } })

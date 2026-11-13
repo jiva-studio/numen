@@ -66,9 +66,7 @@ describe('a label half again as large', () => {
         .filter(([name, value]) => typeof value === 'number' && name !== 'curvature')
         .filter(
           ([name]) =>
-            !['maxPerLine', 'maxLines', 'maxHeadings', 'spread', 'squeeze', 'focusScale'].includes(
-              name,
-            ),
+            !['maxPerCluster', 'maxHeadings', 'spread', 'squeeze', 'focusScale'].includes(name),
         )
         .map(([, value]) => value as number)
         .concat([options.nodeSize, options.focusSize].flatMap((size) => [size.width, size.height]))
@@ -81,8 +79,7 @@ describe('a label half again as large', () => {
   })
 
   it('leaves the counts, the fractions and the directions where they were', () => {
-    expect(larger.maxPerLine).toBe(DEFAULT_OPTIONS.maxPerLine)
-    expect(larger.maxLines).toBe(DEFAULT_OPTIONS.maxLines)
+    expect(larger.maxPerCluster).toBe(DEFAULT_OPTIONS.maxPerCluster)
     expect(larger.maxHeadings).toBe(DEFAULT_OPTIONS.maxHeadings)
     expect(larger.focusScale).toBe(DEFAULT_OPTIONS.focusScale)
     expect(larger.routing.curvature).toBe(DEFAULT_OPTIONS.routing.curvature)
@@ -108,7 +105,7 @@ describe('a label half again as large', () => {
     )
   })
 
-  it('wraps a row sooner, so nothing reaches past the edge', () => {
+  it('keeps every box in the window, so nothing reaches past the edge', () => {
     const viewport = { width: 900, height: 700 }
     const crowd = build('A node', { parent: 3, child: 12, jump: 4, sibling: 4 })
     const frame = arrangePlex(crowd, { options: { ...larger, viewport } })
