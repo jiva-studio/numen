@@ -46,6 +46,8 @@ export interface PluginSettingInfo {
   readonly type: PluginSettingType
   readonly title: string
   readonly description: string
+  /** The full text the info button beside the title opens. */
+  readonly details?: string | undefined
   readonly default: SettingValue | undefined
   readonly palette?: boolean | undefined
   readonly icon?: string | undefined

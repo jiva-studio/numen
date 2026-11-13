@@ -90,6 +90,7 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
     type: s.type as PluginSettingInfo['type'],
     title: s.title,
     description: s.description,
+    ...(s.details ? { details: s.details } : {}),
     default: defaultValue,
     palette: s.palette,
     ...(s.icon ? { icon: s.icon } : {}),

@@ -143,6 +143,7 @@ func newWirePluginSettings(target []plugin.Setting) []*v1.PluginSetting {
 			Type:          s.Type,
 			Title:         s.Title,
 			Description:   s.Description,
+			Details:       s.Details,
 			DefaultJson:   s.DefaultJSON,
 			Palette:       s.Palette,
 			Icon:          s.Icon,
