@@ -48,9 +48,13 @@ const (
 type ConnectionCallServiceClient interface {
 	// Call carries out one operation as HostConnectionService.Call does.
 	Call(context.Context, *connect.Request[v1.ConnectionCallServiceCallRequest]) (*connect.ServerStreamForClient[v1.ConnectionCallServiceCallResponse], error)
-	// ListRows lists the rows of the plugin as HostConnectionService.ListRows does.
+	// ListRows returns the rows of the plugin for an operation, in the order of use, with the connection each
+	// names. A row whose connection is missing, or whose type is unavailable or does not serve the
+	// operation, is left out.
 	ListRows(context.Context, *connect.Request[v1.ConnectionCallServiceListRowsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowsResponse], error)
-	// ListRowOptions lists the values of a row field as HostConnectionService.ListRowOptions does.
+	// ListRowOptions returns the values a row field of a connection among the rows of the operation can
+	// take, as the provider lists them for the options given. A connection that is not among the rows is
+	// not found.
 	ListRowOptions(context.Context, *connect.Request[v1.ConnectionCallServiceListRowOptionsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowOptionsResponse], error)
 }
 
@@ -112,9 +116,13 @@ func (c *connectionCallServiceClient) ListRowOptions(ctx context.Context, req *c
 type ConnectionCallServiceHandler interface {
 	// Call carries out one operation as HostConnectionService.Call does.
 	Call(context.Context, *connect.Request[v1.ConnectionCallServiceCallRequest], *connect.ServerStream[v1.ConnectionCallServiceCallResponse]) error
-	// ListRows lists the rows of the plugin as HostConnectionService.ListRows does.
+	// ListRows returns the rows of the plugin for an operation, in the order of use, with the connection each
+	// names. A row whose connection is missing, or whose type is unavailable or does not serve the
+	// operation, is left out.
 	ListRows(context.Context, *connect.Request[v1.ConnectionCallServiceListRowsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowsResponse], error)
-	// ListRowOptions lists the values of a row field as HostConnectionService.ListRowOptions does.
+	// ListRowOptions returns the values a row field of a connection among the rows of the operation can
+	// take, as the provider lists them for the options given. A connection that is not among the rows is
+	// not found.
 	ListRowOptions(context.Context, *connect.Request[v1.ConnectionCallServiceListRowOptionsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowOptionsResponse], error)
 }
 
