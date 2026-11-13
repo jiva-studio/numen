@@ -6,7 +6,7 @@
  *
  * pressing it must never reach that.
  */
-import type { Position } from '../../lib/node'
+import { HANDLE_RADIUS, type Position } from '../../lib/node'
 import { isPress } from '../../lib/keys'
 
 defineProps<{
@@ -36,7 +36,11 @@ const onKey = (event: KeyboardEvent) => {
 </script>
 
 <template>
-  <g class="plex__handle-at" :transform="`translate(${at.x} ${at.y})`">
+  <g
+    class="plex__handle-at"
+    :style="{ '--radius': `${HANDLE_RADIUS}px` }"
+    :transform="`translate(${at.x} ${at.y})`"
+  >
     <circle
       class="plex__handle"
       tabindex="0"
@@ -53,10 +57,9 @@ const onKey = (event: KeyboardEvent) => {
 </template>
 
 <style scoped>
-/* The disc, the arms of the cross on it, and the bar they are drawn with. The
+/* The arms of the cross on the disc, and the bar they are drawn with. The
    arms read as a plus sign at about half the radius. */
 .plex__handle-at {
-  --radius: 0.5625rem;
   --arm: 0.25rem;
   --bar: 0.09375rem;
 }

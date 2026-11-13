@@ -60,6 +60,7 @@ const { open, box, handle } = useOpenBox({
   wide: () => props.wide,
   on: () => openPosition.value,
   delay: () => props.behavior.expansionDelay,
+  hasPill: () => props.showPills,
   clock: props.behavior.clock,
 })
 
