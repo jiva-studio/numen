@@ -9,14 +9,14 @@ import (
 // A note can answer to two relations and is shown in one place, so it takes the
 // first it qualifies for.
 func TestARelationIsTakenInOneOrder(t *testing.T) {
-	order := []domain.Relation{domain.RelationParent, domain.RelationChild, domain.RelationJump, domain.RelationSibling}
+	order := []domain.Relation{domain.RelationParent, domain.RelationChild, domain.RelationJump, domain.RelationSibling, domain.RelationReference}
 	for i, rel := range order {
 		if got := domain.GetRelationRank(rel); got != i {
 			t.Errorf("GetRelationRank(%q) = %d, want %d", rel, got, i)
 		}
 	}
-	if got := domain.GetRelationRank("whatever"); got != 4 {
-		t.Errorf("GetRelationRank(whatever) = %d, want 4", got)
+	if got := domain.GetRelationRank("whatever"); got != 5 {
+		t.Errorf("GetRelationRank(whatever) = %d, want 5", got)
 	}
 }
 

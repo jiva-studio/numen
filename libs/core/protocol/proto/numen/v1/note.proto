@@ -135,13 +135,23 @@ message ListRelatedNotesResponse {
 }
 
 // Relation is where a note sits relative to the one in focus. A sibling is written
-// nowhere: it is another child of a shared parent.
+// nowhere: it is another child of a shared parent. A reference is a link in the
+// text of one of the two notes.
 enum Relation {
   RELATION_UNSPECIFIED = 0;
   RELATION_PARENT = 1;
   RELATION_CHILD = 2;
   RELATION_JUMP = 3;
   RELATION_SIBLING = 4;
+  RELATION_REFERENCE = 5;
+}
+
+// LinkDirection tells which note wrote a text link.
+enum LinkDirection {
+  LINK_DIRECTION_UNSPECIFIED = 0;
+  LINK_DIRECTION_OUTGOING = 1; // the note in focus links to this note
+  LINK_DIRECTION_INCOMING = 2; // this note links to the note in focus
+  LINK_DIRECTION_BOTH = 3; // each of the two notes links to the other
 }
 
 // RelatedNote is one note joined to the one in focus. The records that join notes
@@ -157,6 +167,9 @@ message RelatedNote {
   // The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
   // where none holds.
   string tab_kind = 7;
+
+  // Set for RELATION_REFERENCE only.
+  LinkDirection direction = 8;
 }
 
 message ResolveAddressesRequest {

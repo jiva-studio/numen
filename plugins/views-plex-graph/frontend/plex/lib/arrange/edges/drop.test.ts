@@ -20,7 +20,7 @@ describe('the relation a direction remains for', () => {
   it('reads the arrangement and not assuming which way is up', () => {
     const origin = { x: 0, y: 0 }
     const upside = resolveOptions({
-      direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
+      direction: { parent: 'down', child: 'up', jump: 'left', reference: 'left', sibling: 'right' },
     })
 
     expect(getRelationTowards(origin, { x: 0, y: -300 }, DEFAULT_OPTIONS)).toBe('parent')
@@ -212,7 +212,7 @@ describe('the relation something dragged in evaluates to', () => {
 
   it('reads which way a relation lies off the arrangement', () => {
     const upside = resolveOptions({
-      direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
+      direction: { parent: 'down', child: 'up', jump: 'left', reference: 'left', sibling: 'right' },
     })
     expect(getRelationAt({ x: focus.x, y: focus.y - 300 }, { options: upside })).toBe('child')
     expect(getRelationAt({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
@@ -274,5 +274,89 @@ describe('the relation something dragged in evaluates to', () => {
       nodes: frame.nodes.filter((node) => node.relation !== 'focus'),
     }
     expect(getRelationAt({ x: focus.x, y: focus.y + 300 }, { frame: nowhere })).toBeNull()
+  })
+})
+
+describe('dragging to the left with references on the board', () => {
+  const VIEWPORT = { width: 1200, height: 800 }
+  const five = arrangePlex(
+    build('A node', { parent: 2, child: 4, jump: 2, reference: 2, sibling: 2 }),
+  )
+  const centre = five.nodes.find((n) => n.relation === 'focus')!
+  const left = { x: centre.x - 900, y: centre.y }
+  const upperLeft = { x: centre.x - 900, y: centre.y - 200 }
+  const lowerLeft = { x: centre.x - 900, y: centre.y + 200 }
+
+  it('is still a jump', () => {
+    expect(getRelationTowards(centre, left, DEFAULT_OPTIONS)).toBe('jump')
+    expect(getRelationTowards(centre, upperLeft, DEFAULT_OPTIONS)).toBe('jump')
+    expect(getRelationTowards(centre, lowerLeft, DEFAULT_OPTIONS)).toBe('jump')
+  })
+
+  it('makes a jump on empty space to the left', () => {
+    expect(
+      resolveDrop({
+        frame: five,
+        options: DEFAULT_OPTIONS,
+        from: centre.id,
+        point: left,
+        relations: ALLOWED,
+      }),
+    ).toStrictEqual({ kind: 'create', from: centre.id, relation: 'jump' })
+  })
+
+  it('makes a jump of a node dropped in from the left', () => {
+    expect(
+      getDropRelation({
+        frame: five,
+        options: DEFAULT_OPTIONS,
+        viewport: VIEWPORT,
+        point: { x: centre.x - 500, y: centre.y },
+        relations: ALLOWED,
+        threshold: 8,
+      }),
+    ).toBe('jump')
+  })
+
+  it('is no relation to the left when only a child may be made', () => {
+    expect(
+      resolveDrop({
+        frame: five,
+        options: DEFAULT_OPTIONS,
+        from: centre.id,
+        point: left,
+        relations: ['child'],
+      }),
+    ).toBeNull()
+    expect(
+      getDropRelation({
+        frame: five,
+        options: DEFAULT_OPTIONS,
+        viewport: VIEWPORT,
+        point: { x: centre.x - 500, y: centre.y },
+        relations: ['child'],
+        threshold: 8,
+      }),
+    ).toBeNull()
+  })
+
+  it('never yields a reference, however the drag runs', () => {
+    const points = [
+      left,
+      upperLeft,
+      lowerLeft,
+      { x: centre.x, y: centre.y - 300 },
+      { x: centre.x + 500, y: centre.y },
+    ]
+    for (const point of points) {
+      const drop = resolveDrop({
+        frame: five,
+        options: DEFAULT_OPTIONS,
+        from: centre.id,
+        point,
+        relations: ['parent', 'child', 'jump', 'sibling'],
+      })
+      expect(drop?.relation).not.toBe('reference')
+    }
   })
 })

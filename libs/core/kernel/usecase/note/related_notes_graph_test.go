@@ -169,9 +169,9 @@ func TestANoteTheVaultDoesNotKnowHasNoRelatedNotes(t *testing.T) {
 	}
 }
 
-// A link with no place in the hierarchy relates no notes from either end, and a
+// A text link is a reference from either end, and a
 // note named from both ends does not hide the notes after it.
-func TestShowGraph_RelatesOnlyHierarchyRolesFromIncoming(t *testing.T) {
+func TestShowGraph_ATextLinkInAnotherNoteIsAReference(t *testing.T) {
 	t.Parallel()
 	g := graph{
 		out: map[string][]domain.ResolvedLink{
@@ -192,7 +192,7 @@ func TestShowGraph_RelatesOnlyHierarchyRolesFromIncoming(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"parent P1.md", "child X.md"}
+	want := []string{"parent P1.md", "reference W.md", "child X.md"}
 	if relations := relationsOf(got); !slices.Equal(relations, want) {
 		t.Errorf("got %v, want %v", relations, want)
 	}

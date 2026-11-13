@@ -94,8 +94,8 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   motion: { arriveAfter: a.arriveAfter, leaveBefore: a.leaveBefore },
   direction:
     a.orientation === 'parents below'
-      ? { parent: 'down', child: 'up', jump: 'left', sibling: 'right' }
-      : { parent: 'up', child: 'down', jump: 'left', sibling: 'right' },
+      ? { parent: 'down', child: 'up', jump: 'left', reference: 'left', sibling: 'right' }
+      : { parent: 'up', child: 'down', jump: 'left', reference: 'left', sibling: 'right' },
 })
 
 const createOptions = (a: Knobs, type: number): PlexOptionsInput =>
@@ -937,16 +937,13 @@ export const HeadingsInside: Story = {
   },
 }
 
-/** Renders the plex inside a small fixed container. */
-export const SmallWindow: Story = {
-  args: { graph: graphs.crowded },
-  render: (args) => ({
-    components: { Plex },
-    setup: () => {
-      const type = useTypeSize()
-      return { args, options: computed(() => createOptions(args, type.value)) }
-    },
-    template: `
+const renderInSmallWindow: NonNullable<Story['render']> = (args) => ({
+  components: { Plex },
+  setup: () => {
+    const type = useTypeSize()
+    return { args, options: computed(() => createOptions(args, type.value)) }
+  },
+  template: `
       <div style="height:100vh;display:grid;place-items:center;background:#8883">
         <div style="width:420px;height:320px;outline:1px solid var(--numen-rule)">
           <Plex
@@ -961,5 +958,78 @@ export const SmallWindow: Story = {
         </div>
       </div>
     `,
-  }),
+})
+
+/** Renders the plex inside a small fixed container. */
+export const SmallWindow: Story = {
+  args: { graph: graphs.crowded },
+  render: renderInSmallWindow,
+}
+
+const withReferences: PlexGraph = {
+  nodes: [
+    { id: 'focus', title: 'Salt marsh', relation: 'focus' },
+    { id: 'parent', title: 'Coastal ecology', relation: 'parent' },
+    { id: 'child', title: 'Tidal creeks', relation: 'child' },
+    { id: 'jump', title: 'Dune grasses', relation: 'jump' },
+    { id: 'sibling', title: 'Mudflats', relation: 'sibling' },
+    { id: 'ref-out', title: 'Heron nesting notes', relation: 'reference' },
+    { id: 'ref-in', title: 'Survey of the estuary', relation: 'reference' },
+    { id: 'ref-both', title: 'Tide tables', relation: 'reference' },
+  ],
+  edges: [
+    { from: 'parent', to: 'focus' },
+    { from: 'focus', to: 'child' },
+    { from: 'jump', to: 'focus' },
+    { from: 'parent', to: 'sibling' },
+    { from: 'focus', to: 'ref-out', arrows: ['to'] },
+    { from: 'focus', to: 'ref-in', arrows: ['from'] },
+    { from: 'focus', to: 'ref-both', arrows: ['from', 'to'] },
+  ],
+}
+
+/** Renders the references as nodes of their own relation, pressable like any other, with an arrowhead at the end each link points to. */
+export const References: Story = {
+  args: { graph: withReferences, duration: 0 },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await waitFor(async () => {
+      await expect(canvasElement.querySelectorAll('.plex__node--reference')).toHaveLength(3)
+    })
+    await expect(canvas.getByLabelText('Heron nesting notes, reference')).toBeTruthy()
+    await expect(canvas.getByLabelText('Survey of the estuary, reference')).toBeTruthy()
+    await expect(canvas.getByLabelText('Tide tables, reference')).toBeTruthy()
+
+    // One head for the outgoing and the incoming link, two for the mutual one.
+    await waitFor(async () => {
+      await expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(4)
+    })
+
+    await userEvent.click(canvas.getByLabelText('Heron nesting notes, reference'))
+    await expect(args.onActivate).toHaveBeenCalledWith('ref-out')
+  },
+}
+
+const crowdedWithReferences: PlexGraph = build('Salt marsh', {
+  parent: 1,
+  child: 3,
+  jump: 2,
+  reference: 30,
+})
+
+/** Counts the references left out of a small window like any other relation. */
+export const ManyReferencesInASmallWindow: Story = {
+  args: { graph: crowdedWithReferences, duration: 0 },
+  render: renderInSmallWindow,
+  play: async ({ canvasElement }) => {
+    const status = await waitFor(() => {
+      const found = canvasElement.querySelector('[role="status"]')
+      if (!found) throw new Error('nothing says what is not shown')
+      return found
+    })
+    await expect(status.textContent).toMatch(
+      /\d+ references?\b.* not shown|\d+ references? not shown/,
+    )
+  },
 }

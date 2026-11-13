@@ -12,6 +12,21 @@ const (
 	RelationChild   Relation = "child"
 	RelationJump    Relation = "jump"
 	RelationSibling Relation = "sibling"
+
+	// RelationReference is a link in the text of one of the two notes.
+	RelationReference Relation = "reference"
+)
+
+// LinkDirection tells which note wrote a text link.
+type LinkDirection string
+
+const (
+	// DirectionOutgoing: the note in focus links to the related note.
+	DirectionOutgoing LinkDirection = "outgoing"
+	// DirectionIncoming: the related note links to the note in focus.
+	DirectionIncoming LinkDirection = "incoming"
+	// DirectionBoth: each of the two notes links to the other.
+	DirectionBoth LinkDirection = "both"
 )
 
 // GetRelationRank orders the relations a note can have. A note can answer to
@@ -27,8 +42,10 @@ func GetRelationRank(s Relation) int {
 		return 2
 	case RelationSibling:
 		return 3
-	default:
+	case RelationReference:
 		return 4
+	default:
+		return 5
 	}
 }
 
@@ -41,10 +58,11 @@ type NoteRef struct {
 }
 
 // RelatedNote is a note and its relation to the note in focus. The
-// records that join it to other notes are in NoteGraph.Connections.
+// records that join it to other notes are in NoteGraph.Connections. Direction is set for RelationReference only.
 type RelatedNote struct {
 	NoteRef
 	Relation Relation
+	Direction LinkDirection
 }
 
 // NoteGraph is one note and everything joined to it, seen from that note.

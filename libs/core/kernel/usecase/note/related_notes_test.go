@@ -315,7 +315,8 @@ func TestRelatedNotesStayInsideTheirVault(t *testing.T) {
 }
 
 // TestOnlyNavigableLinksTakeARelation. A wikilink in prose and an attachment are
-// links, and neither is a place in the hierarchy.
+// links, and neither is a place in the hierarchy. The wikilink is a reference
+// and the attachment takes no relation.
 func TestOnlyNavigableLinksTakeARelation(t *testing.T) {
 	t.Parallel()
 	n := relatedNotesOf(t, map[string]string{
@@ -325,8 +326,8 @@ func TestOnlyNavigableLinksTakeARelation(t *testing.T) {
 		"Other.md": "---\ntitle: Other\n---\n\n# Other\n",
 	}, "Area.md")
 
-	if got := relationsOf(n); !slices.Equal(got, []string{"jump Idea.md"}) {
-		t.Errorf("got %v — prose links and attachments are not relations", got)
+	if got := relationsOf(n); !slices.Equal(got, []string{"jump Idea.md", "reference Other.md"}) {
+		t.Errorf("got %v — an attachment is no relation and a prose link is only a reference", got)
 	}
 }
 

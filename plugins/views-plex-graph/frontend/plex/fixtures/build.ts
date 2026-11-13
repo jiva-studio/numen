@@ -14,6 +14,7 @@ const RELATION: Record<PlexRelation, string> = {
   parent: 'is a',
   child: 'contains',
   jump: 'see also',
+  reference: 'mentions',
   sibling: 'contains',
 }
 
@@ -69,6 +70,9 @@ export function buildAround(
     }
     if (node.relation === 'sibling') {
       return firstParent ? [{ from: firstParent, to: node.id, labels: [{ text: label }] }] : []
+    }
+    if (node.relation === 'reference') {
+      return [{ from: focus.id, to: node.id, arrows: ['to'] }]
     }
     return [{ from: focus.id, to: node.id, labels: [{ text: label }] }]
   })

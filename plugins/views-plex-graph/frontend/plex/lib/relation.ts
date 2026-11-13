@@ -17,6 +17,7 @@ export const RELATIONS = {
   parent: { grows: 'up', lean: null, plural: ['parent', 'parents'] },
   child: { grows: 'down', lean: null, plural: ['child', 'children'] },
   jump: { grows: 'left', lean: 'down', plural: ['jump', 'jumps'] },
+  reference: { grows: 'left', lean: 'up', plural: ['reference', 'references'] },
   sibling: { grows: 'right', lean: null, plural: ['sibling', 'siblings'] },
 } as const satisfies Record<PlexRelation, RelationDescriptor>
 
