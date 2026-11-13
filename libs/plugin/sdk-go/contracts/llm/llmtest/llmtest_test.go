@@ -75,9 +75,7 @@ func TestTheCallerEndsWithTheErrorsOfTheCore(t *testing.T) {
 		},
 		"an operation the provider does not serve": {
 			provider: connection.Provider{},
-			want: &connection.AllFailedError{Failures: []connection.Failure{
-				{ConnectionName: "harbor", Reason: "the type does not serve " + llm.OperationComplete},
-			}},
+			want:     connection.ErrNoConnection,
 		},
 	}
 	for name, one := range cases {
