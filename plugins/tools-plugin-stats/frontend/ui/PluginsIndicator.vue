@@ -67,11 +67,6 @@ function isResize(event: Event): boolean {
       <span class="plugin-stats__figure">{{ figure }}</span>
     </button>
 
-    <PluginsPopover
-      v-if="isOpen && isReady"
-      :processes="processes"
-      :now="now"
-      @close="onClose"
-    />
+    <PluginsPopover v-if="isOpen && isReady" :processes="processes" :now="now" @close="onClose" />
   </div>
 </template>
