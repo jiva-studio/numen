@@ -157,9 +157,6 @@ func TestALineThatIsNoEventIsShownAsText(t *testing.T) {
 	}
 }
 
-// threadScript is a Codex that writes the arguments of each run to the file of its prompt in dir and
-// starts the thread of its prompt; a run that resumes the thread of the prompt "gone" fails as Codex
-// fails for a thread it no longer has.
 func threadScript(t *testing.T, dir string) string {
 	t.Helper()
 	return writeScript(t, "codex",
@@ -198,6 +195,7 @@ func TestTheTurnsOfAConversationContinueItsThread(t *testing.T) {
 }
 
 // A thread the program no longer has is started anew in the same turn, which answers as a first turn does.
+// The script fails, as Codex does, when it is asked to resume the thread of the prompt "gone".
 func TestAThreadTheProgramNoLongerHasIsStartedAnew(t *testing.T) {
 	dir := t.TempDir()
 	svc := newCodex(t, nil, threadScript(t, dir))

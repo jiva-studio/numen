@@ -221,7 +221,6 @@ func TestAListOlderThanItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testi
 	}
 }
 
-// ageKeptLists moves the fetch time of every list kept in dir to a day long past its lifetime.
 func ageKeptLists(t *testing.T, dir string) {
 	t.Helper()
 	files, err := os.ReadDir(dir)

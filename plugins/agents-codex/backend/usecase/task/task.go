@@ -86,7 +86,8 @@ func (r *Runner) FindProgram() string {
 // RunTask runs the program on one prompt turn and sends what it reports as frames. The program may call
 // the tools of the host the plugin lists; without them it answers with no tool, in a read-only sandbox.
 // The turns of one conversation of one connection continue one thread of the program; a thread the
-// program no longer has is started anew. A program that is not installed is a failure to try the next
+// program no longer has, which it answers with a failure before it reports any thread or anything else,
+// is started anew. A program that is not installed is a failure to try the next
 // connection after. A run that fails sends what the program said of the failure as a message of its own
 // and stops. A canceled task returns the error of ctx.
 func (r *Runner) RunTask(
@@ -131,8 +132,6 @@ func (r *Runner) RunTask(
 	return endTask(ctx, runCtx, frames, reason, err)
 }
 
-// isThreadGone reports whether a run that continued a thread failed before the program reported any
-// thread or anything else, which is how the program answers a thread it no longer has.
 func isThreadGone(runCtx context.Context, frames *turn, reason string, err error) bool {
 	return err == nil && reason != "" && runCtx.Err() == nil && frames.thread == "" && !frames.isSent
 }
@@ -177,7 +176,6 @@ func endTask(ctx, runCtx context.Context, frames *turn, reason string, err error
 	return nil, connection.NewStopError(connection.ReasonUnavailable)
 }
 
-// serveTools serves the listed tools to the program, or nothing where none is listed.
 func (r *Runner) serveTools(ctx context.Context, listed []*tools.ToolInfo, request *contract.TaskRequest) (ServedTools, error) {
 	if len(listed) == 0 {
 		return nil, nil

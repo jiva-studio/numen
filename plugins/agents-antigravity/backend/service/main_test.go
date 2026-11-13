@@ -247,8 +247,6 @@ func recordRun(out string) string {
 		"cat \"$HOME/.gemini/config/config.json\" > " + quoteShell(out+".cfg") + " 2>/dev/null || true\n"
 }
 
-// readPrompt returns the prompt of the run recorded at out: the content of the message on its standard
-// input.
 func readPrompt(t *testing.T, out string) string {
 	t.Helper()
 	var message struct {

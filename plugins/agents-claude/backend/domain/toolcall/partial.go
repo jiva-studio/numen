@@ -33,7 +33,6 @@ func ReadPartialText(arguments, field string) string {
 	return decodePartialText(rest[:min(end, len(rest))])
 }
 
-// decodePartialText decodes the longest start of the quoted text that is whole JSON text.
 func decodePartialText(quoted string) string {
 	for end := len(quoted); end > 0; end-- {
 		if !utf8.ValidString(quoted[:end]) {

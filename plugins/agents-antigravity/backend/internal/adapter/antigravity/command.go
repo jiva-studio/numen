@@ -33,7 +33,6 @@ func getPrintArgs() []string {
 	return []string{flagPrint, flagInputFormat, streamJSON, flagOutputFormat, streamJSON}
 }
 
-// writeInput returns the standard input of a run: the prompt as the one message of the turn.
 func writeInput(prompt string) (string, error) {
 	line, err := json.Marshal(inputMessage{Event: "user", Message: inputUserMessage{Content: prompt}})
 	if err != nil {

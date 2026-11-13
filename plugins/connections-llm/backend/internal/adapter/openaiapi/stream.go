@@ -140,8 +140,6 @@ func awaitLine(ctx context.Context, lines <-chan streamLine, wait time.Duration)
 	}
 }
 
-// awaitFirstByte reports whether the answer is one whole reply rather than a stream, waiting at most wait
-// for the service to send its first byte. A peek left waiting ends when the caller closes the body.
 func awaitFirstByte(ctx context.Context, reader *bufio.Reader, wait time.Duration) (bool, error) {
 	peeked := make(chan bool, 1)
 	go func() { peeked <- isWholeReply(reader) }()

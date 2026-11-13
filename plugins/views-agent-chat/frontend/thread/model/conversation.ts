@@ -291,7 +291,6 @@ function applyMessageChunk(text: string, context: FrameContext): void {
   answer.say(text)
 }
 
-/** The model reasons: the answer so far is done, the line about work comes down and the wait goes up. */
 function applyThought(context: FrameContext): void {
   const { answer, work, calls } = context
   calls.clear()
@@ -300,7 +299,6 @@ function applyThought(context: FrameContext): void {
   work.setWaiting(true)
 }
 
-/** A call still being written shows how much of the text it writes has arrived. */
 function applyToolCallUpdate(change: acp.ToolCallUpdate, context: FrameContext): void {
   if (isEnded(change.status)) {
     endCall(change.toolCallId, context)

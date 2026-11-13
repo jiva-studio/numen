@@ -270,8 +270,6 @@ func (r *Runner) listTools(ctx context.Context) ([]*tools.ToolInfo, error) {
 	return listed.Tools, nil
 }
 
-// serveTools serves the listed tools and returns where, the file of the configuration that names them and
-// the person's own servers, and the names of those servers.
 func (r *Runner) serveTools(
 	ctx context.Context, listed []*tools.ToolInfo, request *contract.TaskRequest,
 ) (ServedTools, string, []string, error) {

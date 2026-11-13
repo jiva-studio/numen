@@ -227,8 +227,6 @@ func serveGardenHost(t *testing.T) (*gardenHost, tools.Client) {
 	return host, tools.NewClient(hostcall.Endpoint{BaseURL: served.URL, Token: "orchard-token"})
 }
 
-// newTestAgent builds the plugin with a configuration folder of Claude Code that names no server of the
-// person.
 func newTestAgent(t *testing.T, host task.Tools) *agent {
 	t.Helper()
 	t.Setenv("CLAUDE_CONFIG_DIR", t.TempDir())

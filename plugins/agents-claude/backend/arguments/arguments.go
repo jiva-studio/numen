@@ -9,7 +9,8 @@ import (
 )
 
 // Options is what a run of the program is started from. Servers are the names of the person's own MCP
-// servers in the configuration, every tool of which the run may call.
+// servers in the configuration, every tool of which the run may call; the names of the tools of a server
+// start with its name, in which a character other than a letter, a digit, "_" or "-" becomes "_".
 type Options struct {
 	Instructions  string
 	Model         string
@@ -94,8 +95,6 @@ func Build(in Options) []string {
 	return appendRunFlags(args, in)
 }
 
-// getServerPrefix returns the name of a server as the names of its tools start with: a character other
-// than a letter, a digit, "_" or "-" becomes "_".
 func getServerPrefix(server string) string {
 	return strings.Map(func(char rune) rune {
 		if char < 128 && (unicode.IsLetter(char) || unicode.IsDigit(char) || char == '_' || char == '-') {
