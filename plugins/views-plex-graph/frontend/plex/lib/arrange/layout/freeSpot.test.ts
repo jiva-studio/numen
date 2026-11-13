@@ -174,7 +174,7 @@ describe('the index agrees with the plain list', () => {
 })
 
 describe('equal costs', () => {
-  it('still give a free spot beside the group, where the direction differs from straight down by float noise only', () => {
+  it('still give a free spot next to the group, where the direction differs from straight down by float noise only', () => {
     const box = at(0, 0)
     const taken = new SpotIndex([box])
     const spot = findFreeSpot(taken, {

@@ -13,7 +13,7 @@ const create = (isLoaded = ref(true)) => {
   return { lines, isLoaded }
 }
 
-describe('the line a note tab is asked to open on', () => {
+describe('the requested line of a note tab', () => {
   it('is revealed once the editor is attached', async () => {
     const { lines } = create()
     const editor = createEditor()
@@ -53,7 +53,7 @@ describe('the line a note tab is asked to open on', () => {
     expect(editor.reveal).toHaveBeenCalledWith(5)
   })
 
-  it('is asked again until the editor takes it, and then not again', async () => {
+  it('is requested again until the editor takes it, and then not again', async () => {
     const { lines } = create()
     const editor = createEditor(false)
     lines.attach(editor)

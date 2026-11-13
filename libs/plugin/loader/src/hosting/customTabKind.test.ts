@@ -675,7 +675,7 @@ describe('createBufferedNoteState', () => {
     return { buffer, noteRef, errRef }
   }
 
-  it('reveals the line it is asked for once the note is read and the editor is attached', async () => {
+  it('reveals the requested line once the note is read and the editor is attached', async () => {
     const { buffer, noteRef } = createMockBuffer()
     const scope = effectScope()
     const state = scope.run(() =>
