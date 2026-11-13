@@ -35,8 +35,7 @@ func (failingActivator) HasEndpoint(string) bool { return false }
 // A plugin that cannot be opened after a setting is reported with its id, and no listener runs.
 func TestEmbedderReportsFailedOpenAfterSettingChange(t *testing.T) {
 	b := &Source{
-		host:     failingActivator{},
-		pluginID: embeddingPluginID,
+		host: failingActivator{},
 		service: bridge.Service[numenv1connect.SearchSourceServiceClient]{
 			Host: failingActivator{}, PluginID: embeddingPluginID, NewClient: numenv1connect.NewSearchSourceServiceClient,
 		},

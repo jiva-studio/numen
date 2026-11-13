@@ -38,12 +38,11 @@ type description struct {
 // Source is the search source plugin seen as a searchsourceport.Source. It holds the plugin only for the
 // length of each call, so the plugin stops once it has been idle for its limit.
 type Source struct {
-	host     Host
-	pluginID string
-	service  bridge.Service[numenv1connect.SearchSourceServiceClient]
-	kept     *Descriptions
-	mu       sync.Mutex
-	current  description
+	host    Host
+	service bridge.Service[numenv1connect.SearchSourceServiceClient]
+	kept    *Descriptions
+	mu      sync.Mutex
+	current description
 
 	announceMu  sync.Mutex
 	changeMu    sync.Mutex
@@ -65,7 +64,7 @@ func Open(ctx context.Context, host Host, kept *Descriptions) (*Source, error) {
 	if readErr != nil {
 		return nil, readErr
 	}
-	b.stopWatch = host.WatchPluginConfig(b.pluginID, b.announceDescriptionChange)
+	b.stopWatch = host.WatchPluginConfig(b.service.PluginID, b.announceDescriptionChange)
 	return b, nil
 }
 
@@ -82,7 +81,7 @@ func OpenWatching(ctx context.Context, host Host, kept *Descriptions, onReadErro
 	}
 	b.onReadError = onReadError
 	b.reportReadError(readErr)
-	b.stopWatch = host.WatchPluginConfig(b.pluginID, b.announceDescriptionChange)
+	b.stopWatch = host.WatchPluginConfig(b.service.PluginID, b.announceDescriptionChange)
 	return b, nil
 }
 
@@ -93,10 +92,9 @@ func open(ctx context.Context, host Host, kept *Descriptions) (b *Source, readEr
 	}
 	pluginID := plugin.Manifest.ID
 	b = &Source{
-		host:     host,
-		pluginID: pluginID,
-		service:  bridge.Service[numenv1connect.SearchSourceServiceClient]{Host: host, PluginID: pluginID, NewClient: numenv1connect.NewSearchSourceServiceClient},
-		kept:     kept,
+		host:    host,
+		service: bridge.Service[numenv1connect.SearchSourceServiceClient]{Host: host, PluginID: pluginID, NewClient: numenv1connect.NewSearchSourceServiceClient},
+		kept:    kept,
 	}
 	if read, isKept := kept.get(pluginID); isKept {
 		b.current, b.announced = read, read.source
@@ -216,7 +214,7 @@ func (b *Source) SearchPassages(ctx context.Context, place searchsource.Place, q
 // DescribeCoverage asks the plugin what a person reads about how far it has indexed the vault of the place. A
 // plugin that does not run is not started for it, and says nothing.
 func (b *Source) DescribeCoverage(ctx context.Context, place searchsource.Place, counts searchsource.Counts) (text string, err error) {
-	if !b.host.HasEndpoint(b.pluginID) {
+	if !b.host.HasEndpoint(b.service.PluginID) {
 		return "", nil
 	}
 	client, call, err := b.service.Open(ctx)
@@ -312,19 +310,19 @@ func (b *Source) readDescriptionChange() []func() {
 	defer cancel()
 	client, call, err := b.service.Open(ctx)
 	if err != nil {
-		b.reportReadError(fmt.Errorf("open search source %s: %w", b.pluginID, err))
+		b.reportReadError(fmt.Errorf("open search source %s: %w", b.service.PluginID, err))
 		return nil
 	}
 	read, readErr := readDescription(ctx, client)
 	if readErr != nil {
-		b.reportReadError(errors.Join(readFailure(b.pluginID, readErr), call.Close()))
+		b.reportReadError(errors.Join(readFailure(b.service.PluginID, readErr), call.Close()))
 		return nil
 	}
 	if err := call.Close(); err != nil {
 		b.reportReadError(err)
 		return nil
 	}
-	b.kept.put(b.pluginID, read)
+	b.kept.put(b.service.PluginID, read)
 	b.mu.Lock()
 	b.current = read
 	b.mu.Unlock()
