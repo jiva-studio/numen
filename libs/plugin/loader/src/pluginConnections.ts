@@ -40,6 +40,5 @@ export const createPluginConnections = (
     }
   },
   listRows: (operation) => client.listRows(pluginId, operation),
-  listRowOptions: (operation, connectionId, field, options) =>
-    client.listRowOptions({ pluginId, operation, connectionId, field, options }),
+  listRowOptions: (request) => client.listRowOptions({ pluginId, ...request }),
 })

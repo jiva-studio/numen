@@ -38,7 +38,7 @@ const REASONING: Readonly<Record<string, readonly { value: string; title: string
 
 const listOptions: NonNullable<AgentListing['listOptions']> = (connectionId, field, options) => {
   const listed =
-    field === 'model' ? MODELS[connectionId] : REASONING[options['model'] ?? ''] ?? []
+    field === 'model' ? MODELS[connectionId] : (REASONING[options['model'] ?? ''] ?? [])
   return (listed ?? []).map((one) => ({ ...one, group: '' }))
 }
 

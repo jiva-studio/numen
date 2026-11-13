@@ -81,7 +81,7 @@ export function createAgentConnections(
   const host: ConnectionHost = {
     call: (operation, payload, options) => tasks.call(operation, payload, options),
     listRows: async (operation) => (operation === acp.OPERATION_TASK ? listing.rows : []),
-    listRowOptions: async (_operation, connectionId, field, options) =>
+    listRowOptions: async ({ connectionId, field, options }) =>
       listing.listOptions?.(connectionId, field, options) ?? [],
   }
   return { host, calls }

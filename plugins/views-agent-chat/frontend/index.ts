@@ -29,7 +29,8 @@ export function activate(context: PluginContext): void {
     throw new Error('an agent chat requires a window, its connections and the links of the vault')
   }
   const agents = createAgentList(connections, WORDS.defaultModel)
-  const reloadAgents = () => runInBackground(agents.reload(), (error) => context.ui.notices.show(String(error), 'error'))
+  const reloadAgents = () =>
+    runInBackground(agents.reload(), (error) => context.ui.notices.show(String(error), 'error'))
   context.settings.onChange(AGENTS_SETTING, reloadAgents)
   const chats = createAgentKind(
     {

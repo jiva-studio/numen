@@ -64,6 +64,15 @@ export interface ConnectionRowOption {
   readonly group: string
 }
 
+// ConnectionRowOptionsRequest names a row field of a connection among the rows of an operation, with the
+// values of the row fields so far.
+export interface ConnectionRowOptionsRequest {
+  readonly operation: string
+  readonly connectionId: string
+  readonly field: string
+  readonly options: Readonly<Record<string, string>>
+}
+
 // ConnectionHost asks the core to carry out operations for the plugin. The core takes the connections
 // from the rows of the setting of the plugin that is used for the operation; a request names no
 // connection and a result holds no key. The core knows an operation by its name only: the payload and
@@ -84,12 +93,7 @@ export interface ConnectionHost {
   // of rows lists none.
   listRows?(operation: string): Promise<readonly ConnectionRow[]>
   // Lists the values a row field of a connection among the rows of the operation can take, as its provider
-  // lists them for `options`. It throws for a connection that is not among the rows and for a provider
+  // lists them for the options of the request. It throws for a connection that is not among the rows and for a provider
   // that cannot list them.
-  listRowOptions?(
-    operation: string,
-    connectionId: string,
-    field: string,
-    options: Readonly<Record<string, string>>,
-  ): Promise<readonly ConnectionRowOption[]>
+  listRowOptions?(request: ConnectionRowOptionsRequest): Promise<readonly ConnectionRowOption[]>
 }

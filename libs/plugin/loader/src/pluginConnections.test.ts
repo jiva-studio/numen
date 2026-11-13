@@ -146,8 +146,11 @@ describe('the connections of a plugin', () => {
     const connections = createPluginConnections(client, 'md.numen.views.agent.chat')
 
     const rows = await connections.listRows?.('acp.task')
-    const options = await connections.listRowOptions?.('acp.task', 'c-claude', 'reasoning', {
-      model: 'opus',
+    const options = await connections.listRowOptions?.({
+      operation: 'acp.task',
+      connectionId: 'c-claude',
+      field: 'reasoning',
+      options: { model: 'opus' },
     })
 
     expect(rows).toStrictEqual([row])

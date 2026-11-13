@@ -10,6 +10,7 @@ import type {
   ConnectionPreferredRow,
   ConnectionRow,
   ConnectionRowOption,
+  ConnectionRowOptionsRequest,
 } from '@numen/plugin-sdk'
 import { acp } from '@numen/plugin-sdk/contracts'
 import type { AgentModelOption, ReasoningLevelOption } from '../message-composer'
@@ -37,13 +38,11 @@ export interface AgentList {
 
 async function listOptions(
   connections: ConnectionHost,
-  row: ConnectionRow,
-  field: string,
-  options: Readonly<Record<string, string>>,
+  request: Omit<ConnectionRowOptionsRequest, 'operation'>,
 ): Promise<readonly ConnectionRowOption[]> {
-  if (!field || !connections.listRowOptions) return []
+  if (!request.field || !connections.listRowOptions) return []
   try {
-    return await connections.listRowOptions(acp.OPERATION_TASK, row.connectionId, field, options)
+    return await connections.listRowOptions({ operation: acp.OPERATION_TASK, ...request })
   } catch {
     return []
   }
@@ -63,7 +62,11 @@ async function listAgent(
     modelTitle: modelTitle || defaultModelTitle,
     isAvailable: true,
   })
-  const listed = await listOptions(connections, row, field, row.options)
+  const listed = await listOptions(connections, {
+    connectionId: row.connectionId,
+    field,
+    options: row.options,
+  })
   const models = listed.map((one) => createOption(one.value, one.title || one.value))
   const own = models.find((one) => one.modelId === current) ?? createOption(current, current)
   return { row, models: [own, ...models.filter((one) => one !== own)] }
@@ -159,9 +162,16 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
         return
       }
       const field = getFieldKey(row, REASONING)
-      const listed = await listOptions(connections, row, field, getModelOptions(row, modelId))
+      const listed = await listOptions(connections, {
+        connectionId: row.connectionId,
+        field,
+        options: getModelOptions(row, modelId),
+      })
       if (!isStale) {
-        reasoningLevels.value = listed.map((one) => ({ id: one.value, title: one.title || one.value }))
+        reasoningLevels.value = listed.map((one) => ({
+          id: one.value,
+          title: one.title || one.value,
+        }))
       }
     },
     { immediate: true },

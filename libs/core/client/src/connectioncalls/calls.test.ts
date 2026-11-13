@@ -203,7 +203,10 @@ describe('createConnectionCallClient', () => {
       },
     }
 
-    const rows = await createConnectionCallClient(rpc).listRows('md.numen.views.agent.chat', 'acp.task')
+    const rows = await createConnectionCallClient(rpc).listRows(
+      'md.numen.views.agent.chat',
+      'acp.task',
+    )
 
     expect(asked).toStrictEqual([{ pluginId: 'md.numen.views.agent.chat', operation: 'acp.task' }])
     expect(rows).toStrictEqual([
