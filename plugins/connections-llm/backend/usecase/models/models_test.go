@@ -198,8 +198,9 @@ func TestAListKeptPastItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testin
 	ageKeptLists(t, dir, 2*models.ListLifetime)
 
 	asked := make(chan struct{}, 1)
-	list, err := newModelsIn(t, &gateway{models: []connection.Option{{Value: "invented/model-b"}}, asked: asked}, dir).
-		ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat})
+	fresh := []connection.Option{{Value: "invented/model-b"}}
+	restarted := newModelsIn(t, &gateway{models: fresh, asked: asked}, dir)
+	list, err := restarted.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat})
 
 	if err != nil || !slices.Equal(list, old) {
 		t.Fatalf("list = %v, err = %v, want the kept list at once", list, err)
@@ -207,7 +208,15 @@ func TestAListKeptPastItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testin
 	select {
 	case <-asked:
 	case <-time.After(5 * time.Second):
-		t.Error("a list past its lifetime was not listed again")
+		t.Fatal("a list past its lifetime was not listed again")
+	}
+	for deadline := time.Now().Add(5 * time.Second); !slices.Equal(list, fresh); time.Sleep(10 * time.Millisecond) {
+		if time.Now().After(deadline) {
+			t.Fatalf("list = %v, want the list listed again kept", list)
+		}
+		if list, err = restarted.ListModels(t.Context(), newOpenRouterCall(openRouterKey), []string{llm.OperationChat}); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 

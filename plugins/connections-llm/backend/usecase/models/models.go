@@ -8,7 +8,6 @@ import (
 	"errors"
 	"slices"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
@@ -69,26 +68,24 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits, lists Lists) (*Mod
 // the address, the SHA-256 of the key and the operations, never under the key.
 func (m *Models) ListModels(ctx context.Context, call connection.Call, operations []string) ([]connection.Option, error) {
 	limit := m.limits.Get(call.Type, call.Fields[servicetype.FieldBaseURL], call.Options[llm.OptionModel], operation.List)
-	// The cache starts a load of its own for a list it does not keep; the once makes that load and the one
-	// this call waits for one request to the service, and the list is kept before the call returns.
-	var once sync.Once
-	var list []connection.Option
-	var err error
 	load := func(ctx context.Context) ([]connection.Option, error) {
-		once.Do(func() { list, err = m.gateway.ListModels(ctx, call, limit, operations) })
-		return list, err
+		return m.gateway.ListModels(ctx, call, limit, operations)
 	}
 	key := getListKey(call, operations)
-	kept, isKept, keptErr := m.lists.Get(ctx, key, load)
-	if keptErr != nil || isKept {
+	_, isKept, err := m.lists.Get(ctx, key, nil)
+	if err != nil {
+		return nil, err
+	}
+	if isKept {
+		kept, _, keptErr := m.lists.Get(ctx, key, load)
 		return kept, keptErr
 	}
-	listed, loadErr := load(ctx)
-	if loadErr != nil {
-		return nil, loadErr
+	list, err := load(ctx)
+	if err != nil {
+		return nil, err
 	}
-	m.lists.Put(key, listed)
-	return listed, nil
+	m.lists.Put(key, list)
+	return list, nil
 }
 
 func getListKey(call connection.Call, operations []string) string {
