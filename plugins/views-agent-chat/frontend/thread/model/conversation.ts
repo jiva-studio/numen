@@ -9,7 +9,12 @@
  */
 import { computed, ref, shallowRef, type Ref } from 'vue'
 import { onNextFrame, type Paint } from '@numen/ui'
-import type { ConnectionError, ConnectionHost, Result } from '@numen/plugin-sdk'
+import type {
+  ConnectionError,
+  ConnectionHost,
+  ConnectionPreferredRow,
+  Result,
+} from '@numen/plugin-sdk'
 import { acp } from '@numen/plugin-sdk/contracts'
 import { createAnswer, type Answer } from './answer'
 import { createWorkLine, type WorkLine } from './work'
@@ -37,7 +42,8 @@ export interface Conversation {
 
 /**
  * toolContext is handed to every tool the agent calls; vault is the vault the tools work on, empty for the
- * vault the window shows.
+ * vault the window shows. getPreferred returns the row each question asks first, undefined for the rows
+ * in their order.
  */
 export interface ConversationOptions {
   readonly connections: ConnectionHost
@@ -46,6 +52,7 @@ export interface ConversationOptions {
   readonly toolContext?: Readonly<Record<string, string>> | undefined
   readonly vault?: string | undefined
   readonly paint?: Paint | undefined
+  readonly getPreferred?: (() => ConnectionPreferredRow | undefined) | undefined
 }
 
 /**
@@ -77,7 +84,7 @@ export function useConversation(options: ConversationOptions): Conversation {
           toolContext: { ...options.toolContext },
           vaultId: options.vault ?? '',
         },
-        { signal: flight.signal, priority: 'interactive' },
+        { signal: flight.signal, priority: 'interactive', ...readPreferred(options.getPreferred) },
       )
       const end = await readFrames(frames, flight.signal, { answer, work, plan })
 
@@ -104,6 +111,13 @@ export function useConversation(options: ConversationOptions): Conversation {
     getSourcePath: (turn: string) => paths.get(turn) ?? null,
     stop,
   }
+}
+
+const readPreferred = (
+  getPreferred: (() => ConnectionPreferredRow | undefined) | undefined,
+): { preferred?: ConnectionPreferredRow } => {
+  const preferred = getPreferred?.()
+  return preferred ? { preferred } : {}
 }
 
 interface SettleTurnOptions {

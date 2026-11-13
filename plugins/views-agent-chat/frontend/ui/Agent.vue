@@ -2,7 +2,7 @@
 import { computed, useTemplateRef, watch } from 'vue'
 import { useWholeViewport } from '@numen/ui'
 import { Thread } from '../thread'
-import { MessageComposer } from '../message-composer'
+import { MessageComposer, type AgentModelOption } from '../message-composer'
 import type { Turn } from '../types'
 import type { AgentProps } from './Agent.types'
 
@@ -13,6 +13,16 @@ withDefaults(defineProps<AgentProps>(), {
   isDisabled: false,
   sendLabel: 'Send',
   stopLabel: 'Stop',
+  options: () => [],
+  selectedAgentId: '',
+  selectedModelId: '',
+  reasoningLevels: () => [],
+  selectedReasoningId: '',
+  reasoningName: 'Reasoning',
+  isAgentMissing: false,
+  noAgentLabel: 'No agent',
+  noAgentMessage: 'No agent is set up.',
+  openSettingsLabel: 'Open settings',
 })
 
 const text = defineModel<string>({ default: '' })
@@ -25,6 +35,11 @@ const emit = defineEmits<{
   /** A turn that the user activated, and that opens something. */
   (event: 'open', turn: Turn): void
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
+  /** A model/agent was selected from the dropdown. */
+  (event: 'select-model', option: AgentModelOption): void
+  /** A depth of reasoning was chosen from the dropdown, by the name of the level. */
+  (event: 'select-reasoning', id: string): void
+  (event: 'open-settings'): void
 }>()
 
 defineExpose({ focus: (how?: Parameters<HTMLElement['focus']>[0]) => composer.value?.focus(how) })
@@ -50,6 +65,14 @@ watch(room, () => thread.value?.toFoot(), { flush: 'post' })
 function onSubmit(text: string) {
   emit('submit', text)
   thread.value?.toFoot(true)
+}
+
+function onSelectModel(option: AgentModelOption) {
+  emit('select-model', option)
+}
+
+function onSelectReasoning(id: string) {
+  emit('select-reasoning', id)
 }
 </script>
 
@@ -78,8 +101,21 @@ function onSubmit(text: string) {
       :is-disabled="isDisabled"
       :send-label="sendLabel"
       :stop-label="stopLabel"
+      :options="options"
+      :selected-agent-id="selectedAgentId"
+      :selected-model-id="selectedModelId"
+      :reasoning-levels="reasoningLevels"
+      :selected-reasoning-id="selectedReasoningId"
+      :reasoning-name="reasoningName"
+      :is-agent-missing="isAgentMissing"
+      :no-agent-label="noAgentLabel"
+      :no-agent-message="noAgentMessage"
+      :open-settings-label="openSettingsLabel"
       @submit="onSubmit"
       @stop="emit('stop')"
+      @select-model="onSelectModel"
+      @select-reasoning="onSelectReasoning"
+      @open-settings="emit('open-settings')"
     />
   </div>
 </template>

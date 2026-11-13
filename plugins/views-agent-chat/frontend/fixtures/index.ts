@@ -11,5 +11,5 @@ export {
   think,
   writeTool,
 } from './connections'
-export type { FrameInit, TaskScript } from './connections'
+export type { AgentListing, FrameInit, TaskScript } from './connections'
 export { byWholeText } from './text'

@@ -1,3 +1,4 @@
+import type { AgentModelOption, ReasoningLevelOption } from '../message-composer'
 import type { Turn } from '../types'
 
 export interface AgentProps {
@@ -7,4 +8,14 @@ export interface AgentProps {
   isDisabled?: boolean
   sendLabel?: string
   stopLabel?: string
+  options?: readonly AgentModelOption[]
+  selectedAgentId?: string
+  selectedModelId?: string
+  reasoningLevels?: readonly ReasoningLevelOption[]
+  selectedReasoningId?: string
+  reasoningName?: string
+  isAgentMissing?: boolean
+  noAgentLabel?: string
+  noAgentMessage?: string
+  openSettingsLabel?: string
 }

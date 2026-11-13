@@ -2,6 +2,9 @@
 import { computed, useTemplateRef } from 'vue'
 import { Textarea } from './textarea'
 import { Disc } from './disc'
+import { AgentModelSelector } from './model-selector'
+import type { AgentModelOption } from '../model/options'
+import { ReasoningSelector } from './reasoning-selector'
 import { COMPOSER_STATES, getComposerState, keyIntent, getMessage } from '../model/state'
 import type { MessageComposerProps } from './MessageComposer.types'
 
@@ -12,6 +15,16 @@ const props = withDefaults(defineProps<MessageComposerProps>(), {
   isDisabled: false,
   sendLabel: 'Send',
   stopLabel: 'Stop',
+  options: () => [],
+  selectedAgentId: '',
+  selectedModelId: '',
+  reasoningLevels: () => [],
+  selectedReasoningId: '',
+  reasoningName: 'Reasoning',
+  isAgentMissing: false,
+  noAgentLabel: 'No agent',
+  noAgentMessage: 'No agent is set up.',
+  openSettingsLabel: 'Open settings',
 })
 
 const text = defineModel<string>({ default: '' })
@@ -22,6 +35,12 @@ const emit = defineEmits<{
   (event: 'submit', text: string): void
   /** Give up on the answer on its way. */
   (event: 'stop'): void
+  /** A model/agent was selected from the dropdown. */
+  (event: 'select-model', option: AgentModelOption): void
+  /** A depth of reasoning was chosen from the dropdown, by the name of the level. */
+  (event: 'select-reasoning', id: string): void
+  /** The link to the settings was pressed. */
+  (event: 'open-settings'): void
 }>()
 
 defineExpose({ focus: (how?: Parameters<HTMLElement['focus']>[0]) => field.value?.focus(how) })
@@ -33,7 +52,7 @@ const state = computed(() => getComposerState(text.value, props.isAnswerPending)
 const descriptor = computed(() => COMPOSER_STATES[state.value])
 
 /** Nothing to say, or turned off. */
-const barred = computed(() => props.isDisabled || !descriptor.value.canAct)
+const barred = computed(() => props.isDisabled || props.isAgentMissing || !descriptor.value.canAct)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAct() {
@@ -47,12 +66,26 @@ function onKeydown(event: KeyboardEvent) {
   event.preventDefault()
   if (descriptor.value.action === 'send') onAct()
 }
+
+function onSelectModel(option: AgentModelOption) {
+  emit('select-model', option)
+}
+
+function onSelectReasoning(id: string) {
+  emit('select-reasoning', id)
+}
 </script>
 
 <template>
   <div class="composer numen text-ink flex flex-col font-sans transition-colors">
     <!-- Multi-line expanding text input -->
-    <div class="composer__grow grid min-w-0">
+    <p v-if="isAgentMissing" class="composer__empty text-hushed">
+      {{ noAgentMessage }}
+      <button type="button" class="composer__link cursor-pointer" @click="emit('open-settings')">
+        {{ openSettingsLabel }}
+      </button>
+    </p>
+    <div v-else class="composer__grow grid min-w-0">
       <div class="composer__mirror">{{ text }}&nbsp;</div>
       <div v-if="!text" class="composer__placeholder text-hushed" aria-hidden="true">
         {{ placeholder }}
@@ -69,8 +102,28 @@ function onKeydown(event: KeyboardEvent) {
       />
     </div>
 
-    <!-- Controls row: the send/stop disc on the bottom right -->
-    <div class="composer__toolbar flex min-w-0 items-center justify-end gap-2 pt-2">
+    <!-- Integrated controls row: flat model selector pill on bottom-left, send/stop disc on bottom-right -->
+    <div class="composer__toolbar flex min-w-0 items-center justify-between gap-2 pt-2">
+      <div class="composer__selectors flex min-w-0 flex-1 items-center gap-1.5">
+        <AgentModelSelector
+          v-if="isAgentMissing || (options && options.length > 0)"
+          :options="options"
+          :selected-agent-id="selectedAgentId"
+          :selected-model-id="selectedModelId"
+          :empty-label="noAgentLabel"
+          :is-disabled="isDisabled || isAnswerPending"
+          @select="onSelectModel"
+        />
+        <ReasoningSelector
+          v-if="reasoningLevels.length > 0"
+          :levels="reasoningLevels"
+          :selected-id="selectedReasoningId"
+          :name="reasoningName"
+          :is-disabled="isDisabled || isAnswerPending"
+          @select="onSelectReasoning"
+        />
+      </div>
+
       <Disc
         class="composer__action shrink-0"
         :action="descriptor.action"
@@ -100,6 +153,24 @@ function onKeydown(event: KeyboardEvent) {
   border-radius: var(--numen-radius-panel);
   box-shadow: none;
   font-size: var(--numen-text-2);
+}
+
+.composer__empty {
+  flex: 1;
+  margin: 0;
+  min-height: var(--line-min);
+  line-height: var(--numen-line-height);
+}
+
+.composer__link {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline dotted;
+  --underline-offset: 0.2em;
+  text-underline-offset: var(--underline-offset);
 }
 
 .composer__grow {

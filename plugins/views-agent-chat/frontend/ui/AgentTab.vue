@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /* --------------------------------- Props ---------------------------------- */
 import Agent from './Agent.vue'
+import type { AgentModelOption } from '../message-composer'
 import type { Turn } from '../types'
 import { WORDS as words } from '../words'
 import type { AgentTabState } from '../model/useAgentConversation'
@@ -27,6 +28,14 @@ function onOpenTurn(turn: Turn) {
 function onFollowLink(turn: Turn, href: string, press: MouseEvent) {
   props.state.addresses.followLink(turn, href, press)
 }
+
+function onSelectModel(option: AgentModelOption) {
+  props.state.agents?.selectModel(option)
+}
+
+function onSelectReasoning(id: string) {
+  props.state.agents?.selectReasoning(id)
+}
 </script>
 
 <template>
@@ -37,11 +46,24 @@ function onFollowLink(turn: Turn, href: string, press: MouseEvent) {
     :placeholder="words.ask"
     :send-label="words.send"
     :stop-label="words.stop"
+    :options="props.state.agents?.options.value ?? []"
+    :selected-agent-id="props.state.agents?.selectedAgentId.value ?? ''"
+    :selected-model-id="props.state.agents?.selectedModelId.value ?? ''"
+    :reasoning-levels="props.state.agents?.reasoningLevels.value ?? []"
+    :selected-reasoning-id="props.state.agents?.selectedReasoningId.value ?? ''"
+    :reasoning-name="words.reasoning"
+    :is-agent-missing="props.state.agents?.isAgentMissing.value ?? false"
+    :no-agent-label="words.noAgent"
+    :no-agent-message="words.noAgentMessage"
+    :open-settings-label="words.openSettings"
     @update:model-value="onUpdateQuestion"
     @submit="onSubmit"
     @stop="onStop"
     @open="onOpenTurn"
     @follow="onFollowLink"
+    @select-model="onSelectModel"
+    @select-reasoning="onSelectReasoning"
+    @open-settings="props.state.openSettings()"
   >
     <template #silence>{{ words.noTranscript }}</template>
     <template #failure="{ turn }">
