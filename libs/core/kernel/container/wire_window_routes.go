@@ -317,7 +317,7 @@ func mountConnection(w *windowWiring) {
 }
 
 func mountConnectionCall(w *windowWiring) {
-	handler := connectioncall.NewService(openModelCalls(w.a))
+	handler := connectioncall.NewService(openModelCalls(w.a), openRowLists(w.a))
 	path, served := connectioncall.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

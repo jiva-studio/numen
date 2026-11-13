@@ -315,9 +315,3 @@ func TestThePluginEndpointDoesNotMountConnectionCallService(t *testing.T) {
 func lookupsOf(world *modelcalltest.World) modelcalls.Connections {
 	return modelcalls.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows}
 }
-
-func (*scriptedCalls) ListRows(string, string) ([]modelcall.Row, error) { return nil, nil }
-
-func (*scriptedCalls) ListRowOptions(context.Context, string, string, string, string, map[string]string) ([]modelcall.Option, error) {
-	return nil, nil
-}

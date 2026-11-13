@@ -74,23 +74,13 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 	if !ok {
 		return
 	}
-	resolve, readSecrets := connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute
-	source := providerbridge.NewSource(c.PluginHost.Runtime)
-	rows := connection.NewListRows(deps, openConnectionRows(c)).Execute
-	c.PluginHost.Endpoint.SetModelCalls(callsAndRows{
-		Calls: modelcall.NewCalls(
-			modelcall.Connections{Resolve: resolve, ReadSecrets: readSecrets, Rows: rows},
-			source, clock.System{}, clock.System{}.Wait, notices,
-		),
-		Rows: modelcall.NewRows(resolve, rows, rowoptions.NewOptions(resolve, readSecrets, source).ListOptions),
-	})
-}
-
-// callsAndRows are the calls of the plugins with the listing of their rows, which the views of the window
-// reach through the plugin endpoint.
-type callsAndRows struct {
-	*modelcall.Calls
-	*modelcall.Rows
+	c.PluginHost.Endpoint.SetModelCalls(modelcall.NewCalls(
+		modelcall.Connections{
+			Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
+			Rows: connection.NewListRows(deps, openConnectionRows(c)).Execute,
+		},
+		providerbridge.NewSource(c.PluginHost.Runtime), clock.System{}, clock.System{}.Wait, notices,
+	))
 }
 
 // GetConnectionCalls is the calls plugin views make through their connections, for a window that serves
@@ -98,4 +88,20 @@ type callsAndRows struct {
 // plugins.
 func GetConnectionCalls(c Config) connectionport.ModelCalls {
 	return openModelCalls(plugins(c))
+}
+
+func openRowLists(c pluginsWiring) connectionport.RowLists {
+	deps, ok := openConnectionDeps(c)
+	if !ok {
+		return nil
+	}
+	resolve := connection.NewResolve(deps).Execute
+	options := rowoptions.NewOptions(resolve, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime))
+	return modelcall.NewRows(resolve, connection.NewListRows(deps, openConnectionRows(c)).Execute, options.ListOptions)
+}
+
+// GetConnectionRows is the listing of the rows plugin views offer a choice of, for a window that serves
+// ConnectionCallService without the routes of the editor. It is nil where the installation runs no plugins.
+func GetConnectionRows(c Config) connectionport.RowLists {
+	return openRowLists(plugins(c))
 }

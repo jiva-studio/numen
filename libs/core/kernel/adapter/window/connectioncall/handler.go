@@ -19,18 +19,23 @@ var errPluginToken = errors.New("ConnectionCallService is not served to a plugin
 // Calls carries out the operations plugins ask for.
 type Calls interface {
 	Call(ctx context.Context, callerPluginID string, request modelcall.Request, send modelcall.Send) ([]byte, error)
+}
+
+// Rows lists the rows of the plugins and the values of their row fields.
+type Rows interface {
 	ListRows(callerPluginID, operation string) ([]modelcall.Row, error)
 	ListRowOptions(ctx context.Context, callerPluginID, operation, connectionID, field string, options map[string]string) ([]modelcall.Option, error)
 }
 
-// Handler serves ConnectionCallService over the calls.
+// Handler serves ConnectionCallService over the calls and the rows.
 type Handler struct {
 	calls Calls
+	rows  Rows
 }
 
-// NewHandler is the handler over the calls of this installation.
-func NewHandler(calls Calls) *Handler {
-	return &Handler{calls: calls}
+// NewHandler is the handler over the calls and the rows of this installation.
+func NewHandler(calls Calls, rows Rows) *Handler {
+	return &Handler{calls: calls, rows: rows}
 }
 
 func refuseToken(header http.Header) error {
@@ -74,7 +79,7 @@ func (h *Handler) ListRows(
 	if err := refuseToken(request.Header()); err != nil {
 		return nil, err
 	}
-	rows, err := h.calls.ListRows(request.Msg.GetPluginId(), request.Msg.GetOperation())
+	rows, err := h.rows.ListRows(request.Msg.GetPluginId(), request.Msg.GetOperation())
 	if err != nil {
 		return nil, wire.NewRowListError(ctx, err)
 	}
@@ -89,7 +94,7 @@ func (h *Handler) ListRowOptions(
 		return nil, err
 	}
 	message := request.Msg
-	options, err := h.calls.ListRowOptions(
+	options, err := h.rows.ListRowOptions(
 		ctx, message.GetPluginId(), message.GetOperation(), message.GetConnectionId(), message.GetField(), message.GetOptions(),
 	)
 	if err != nil {

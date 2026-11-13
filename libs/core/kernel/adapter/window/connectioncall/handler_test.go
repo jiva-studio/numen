@@ -39,10 +39,14 @@ func (s *scriptedCalls) Call(_ context.Context, pluginID string, request modelca
 	return []byte(s.done), nil
 }
 
-func newClient(t *testing.T, calls connectioncall.Calls, options ...connect.ClientOption) numenv1connect.ConnectionCallServiceClient {
+func newClient(t *testing.T, calls *scriptedCalls, options ...connect.ClientOption) numenv1connect.ConnectionCallServiceClient {
 	t.Helper()
+	service := connectioncall.NewService(nil, nil)
+	if calls != nil {
+		service = connectioncall.NewService(calls, calls)
+	}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(connectioncall.NewService(calls)))
+	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(service))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewConnectionCallServiceClient(server.Client(), server.URL, options...)

@@ -54,7 +54,7 @@ func callConnection(t *testing.T, api *API) []*v1.ConnectionCallServiceCallRespo
 func TestTheWindowCarriesOutTheConnectionCallsOfItsPlugins(t *testing.T) {
 	calls := &answeringCalls{calls: make(chan recordedCall, 1)}
 	api := newAPI(t)
-	api.ConnectionCalls = connectioncall.NewHandler(calls)
+	api.ConnectionCalls = connectioncall.NewHandler(calls, calls)
 
 	frames := callConnection(t, api)
 
