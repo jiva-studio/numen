@@ -11,7 +11,7 @@ import (
 )
 
 // Option is one model a task can chat with. Value names the connection and the model, and Title reads
-// "<connection> / <model>".
+// "<connection> · <model>".
 type Option struct {
 	Value string
 	Title string

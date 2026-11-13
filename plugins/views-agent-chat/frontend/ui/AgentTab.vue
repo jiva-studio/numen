@@ -62,6 +62,8 @@ function onOpenChoices() {
     :open-settings-label="words.openSettings"
     :pending-agent-ids="props.state.agents?.offered.pendingAgentIds.value ?? []"
     :loading-label="words.loading"
+    :failed-agent-ids="props.state.agents?.offered.failedAgentIds.value ?? []"
+    :failed-label="words.modelsFailed"
     @update:model-value="onUpdateQuestion"
     @submit="onSubmit"
     @stop="onStop"

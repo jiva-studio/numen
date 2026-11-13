@@ -666,3 +666,37 @@ func TestASearchByWordsAnswersWhileTheSearchByMeaningWaitsForItsSource(t *testin
 		t.Errorf("the stopped meaning search was reported as a failure of the source: %v", errs)
 	}
 }
+
+// reconnecting is an embedder whose network comes back after the first request.
+type reconnecting struct{ asked *int }
+
+func (reconnecting) Describe() searchsource.Description { return getModel() }
+
+func (r reconnecting) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	*r.asked++
+	if *r.asked == 1 {
+		return nil, errors.New("dial tcp: network is unreachable")
+	}
+	return oneWay{direction: newVector(+1)}.Embed(ctx, texts)
+}
+
+func (reconnecting) Close() error { return nil }
+
+func TestASourceThatAnswersAgainIsReportedAsAnswered(t *testing.T) {
+	ctx := t.Context()
+	c := newCorpus(t)
+
+	var report []string
+	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(reconnecting{asked: new(int)}),
+		func(error) { report = append(report, "failed") })
+	finds.ReportAnswered = func() { report = append(report, "answered") }
+
+	for range 2 {
+		if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if !slices.Equal(report, []string{"failed", "answered"}) {
+		t.Fatalf("the source was reported as %v", report)
+	}
+}

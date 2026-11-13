@@ -3,6 +3,7 @@ package toolbridge_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -63,16 +64,12 @@ func TestACallIsLoggedWithItsCallerToolArgumentsResultAndDuration(t *testing.T) 
 			t.Errorf("%s is %v, want %v", key, line[key], value)
 		}
 	}
-	arguments, isObject := line["arguments"].(map[string]any)
-	if !isObject {
-		t.Fatalf("the arguments are logged as %v", line["arguments"])
+	sizes := readArgumentBytes(t, line)
+	if sizes["row"] != float64(1) || sizes["note"] != float64(len(long)+2) {
+		t.Errorf("the argument sizes are logged as %v", sizes)
 	}
-	if arguments["row"] != "7" {
-		t.Errorf("the argument row is logged as %v", arguments["row"])
-	}
-	note, isString := arguments["note"].(string)
-	if !isString || !strings.HasPrefix(note, `"pear pear`) || !strings.HasSuffix(note, "…") || len(note) > 210 {
-		t.Errorf("the long argument is logged as %q", note)
+	if strings.Contains(fmt.Sprint(line), "pear") {
+		t.Errorf("the line of the call holds the text of an argument: %v", line)
 	}
 	if _, hasError := line["error"]; hasError {
 		t.Errorf("a call that ran logged the error %v", line["error"])
@@ -96,4 +93,37 @@ func TestACallForAConnectionIsLoggedWithTheConnection(t *testing.T) {
 	if line["connection"] != "conn-orchard-keeper" {
 		t.Errorf("the connection is logged as %v", line["connection"])
 	}
+}
+
+func TestACallWithManyArgumentsLogsTheSizesOfTheFirstTwentyByName(t *testing.T) {
+	fields := make([]string, 0, 25)
+	for i := range 25 {
+		fields = append(fields, fmt.Sprintf(`"field%02d":"plum"`, i))
+	}
+	line := callLogged(t, &v1.CallToolRequest{Name: "tree_count", Arguments: []byte("{" + strings.Join(fields, ",") + "}")})
+
+	sizes := readArgumentBytes(t, line)
+	if len(sizes) != 20 || sizes["field00"] != float64(len(`"plum"`)) || sizes["field20"] != nil {
+		t.Errorf("the argument sizes are logged as %v", sizes)
+	}
+	if line["argumentsLeftOut"] != float64(5) {
+		t.Errorf("the arguments left out are logged as %v", line["argumentsLeftOut"])
+	}
+}
+
+func TestArgumentsThatAreNotAnObjectAreLoggedByTheirSizeAlone(t *testing.T) {
+	line := callLogged(t, &v1.CallToolRequest{Name: "tree_count", Arguments: []byte(`["pear orchard"]`)})
+
+	if line["unparsedArgumentBytes"] != float64(len(`["pear orchard"]`)) || strings.Contains(fmt.Sprint(line), "pear") {
+		t.Errorf("the arguments are logged as %v", line)
+	}
+}
+
+func readArgumentBytes(t *testing.T, line map[string]any) map[string]any {
+	t.Helper()
+	sizes, isObject := line["argumentBytes"].(map[string]any)
+	if !isObject {
+		t.Fatalf("the line of the call has no argument sizes: %v", line)
+	}
+	return sizes
 }

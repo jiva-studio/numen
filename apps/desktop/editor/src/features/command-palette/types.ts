@@ -15,7 +15,7 @@ export type { StepRow } from '@/shared/model/command'
 /** What the commands ask of the application before anything is chosen. */
 export interface CommandsDeps {
   /** The names in the vault that match. */
-  names(query: string, limit: number): Promise<readonly NameMatch[]>
+  names(query: string, limit: number, signal?: AbortSignal): Promise<readonly NameMatch[]>
   /** Every vault the installation holds, and which of them this window shows. */
   vaults(): Promise<VaultList>
 }

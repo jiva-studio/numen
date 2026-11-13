@@ -15,6 +15,8 @@ const props = withDefaults(defineProps<AgentModelSelectorProps>(), {
   emptyLabel: 'No agent installed',
   pendingAgentIds: () => [],
   loadingLabel: 'Loading…',
+  failedAgentIds: () => [],
+  failedLabel: 'Could not list models',
   timer: () => browserTimer,
 })
 
@@ -55,17 +57,22 @@ const label = computed(() => {
   return `${active.agentTitle} · ${active.modelTitle}`
 })
 
-/** An agent still being asked stands as one disabled row under its name, in its place. */
+/**
+ * An agent still being asked, or one that could not list its models, stands as one disabled row under its
+ * name, in its place.
+ */
 const menuItems = computed<ListItem[]>(() => {
-  const loading = new Set<string>()
+  const placed = new Set<string>()
   return props.options.flatMap((one) => {
-    if (!props.pendingAgentIds.includes(one.agentId)) {
+    const isFailed = props.failedAgentIds.includes(one.agentId)
+    if (!isFailed && !props.pendingAgentIds.includes(one.agentId)) {
       return [{ id: `${one.agentId}:${one.modelId}`, text: one.modelTitle, group: one.agentTitle }]
     }
-    if (loading.has(one.agentId)) return []
-    loading.add(one.agentId)
-    const id = `${one.agentId}:loading`
-    return [{ id, text: props.loadingLabel, group: one.agentTitle, isDisabled: true }]
+    if (placed.has(one.agentId)) return []
+    placed.add(one.agentId)
+    const id = `${one.agentId}:${isFailed ? 'failed' : 'loading'}`
+    const text = isFailed ? props.failedLabel : props.loadingLabel
+    return [{ id, text, group: one.agentTitle, isDisabled: true }]
   })
 })
 

@@ -288,3 +288,19 @@ func TestStartLockedOpensTheModelOnceAndAGetDuringTheLoadWaitsForIt(t *testing.T
 		t.Errorf("a start with the model loaded opened it again: %d opens", opens.Load())
 	}
 }
+
+func TestAFailedLoadStartedInTheBackgroundIsReported(t *testing.T) {
+	h := newHarness(t, func(context.Context, string) (ports.Embedder, error) {
+		return nil, errors.New("model file is truncated")
+	})
+	reported := make(chan string, 1)
+	h.loader.ports.Report = func(what string, err error) { reported <- what + ": " + err.Error() }
+
+	h.lock.Lock()
+	h.loader.StartLocked(start("a", 0))
+	h.lock.Unlock()
+
+	if got := <-reported; got != "load the embedding model: opening onnx embedding engine: model file is truncated" {
+		t.Errorf("reported %q", got)
+	}
+}
