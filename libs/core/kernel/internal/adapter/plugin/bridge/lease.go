@@ -127,7 +127,8 @@ func (s Service[C]) Open(ctx context.Context, why string) (C, *Lease, error) {
 	return Open(ctx, s.Host, s.PluginID, why, s.NewClient)
 }
 
-// OpenForQuestion opens the service as Open does, with a question lease.
+// OpenForQuestion holds the plugin for a question the core asks it for itself, which does not mark the
+// plugin used or move its idle countdown.
 func (s Service[C]) OpenForQuestion(ctx context.Context, why string) (C, *Lease, error) {
 	return OpenForQuestion(ctx, s.Host, s.PluginID, why, s.NewClient)
 }

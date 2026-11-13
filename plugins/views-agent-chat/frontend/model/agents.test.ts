@@ -136,7 +136,7 @@ describe('the agents a chat offers', () => {
     ])
   })
 
-  it('stay pending until their own models are listed, each replaced when its answer comes', async () => {
+  it('stay pending until their own models are listed, each then replaced by its models', async () => {
     const answers = new Map<string, (listed: readonly { value: string; title: string }[]) => void>()
     const { host } = createAgentConnections(
       { frames: [] },
@@ -175,7 +175,9 @@ describe('the agents a chat offers', () => {
   it('stay listed through a reload, with the models listed before', async () => {
     const CLOVER = [{ value: 'clover', title: 'Clover', group: '' }]
     let modelAnswers = 0
-    let answerAgain = () => {}
+    let answerAgain = (): void => {
+      throw new Error('the reload did not ask for the models again')
+    }
     const { host } = createAgentConnections(
       { frames: [] },
       {

@@ -26,7 +26,7 @@ export function useDelayedOpen(isReady: Readonly<Ref<boolean>>, timer: Timer, on
   const isSpinnerShown = shallowRef(false)
   let cancels: (() => void)[] = []
 
-  const stopWaiting = () => {
+  const stopWait = () => {
     for (const cancel of cancels) cancel()
     cancels = []
     isWaiting.value = false
@@ -34,7 +34,7 @@ export function useDelayedOpen(isReady: Readonly<Ref<boolean>>, timer: Timer, on
   }
 
   const open = () => {
-    stopWaiting()
+    stopWait()
     onOpen()
     isOpen.value = true
   }
@@ -54,14 +54,14 @@ export function useDelayedOpen(isReady: Readonly<Ref<boolean>>, timer: Timer, on
   }
 
   const close = () => {
-    stopWaiting()
+    stopWait()
     isOpen.value = false
   }
 
   watch(isReady, (ready) => {
     if (ready && isWaiting.value) open()
   })
-  onScopeDispose(stopWaiting)
+  onScopeDispose(stopWait)
 
   return { isOpen, isWaiting, isSpinnerShown, request, close }
 }

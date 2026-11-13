@@ -392,7 +392,7 @@ func TestGetUsageReturnsTheLastUseAndTheLeases(t *testing.T) {
 	sup.Release(useLease, start.Add(3*time.Second))
 	usage, _ = sup.GetUsage()
 	if len(usage.Holders) != 0 {
-		t.Errorf("released: held by %+v, want none", usage.Holders)
+		t.Errorf("holders after the release %+v, want none", usage.Holders)
 	}
 	usage.Holders = nil
 	if want := (Usage{LastActiveTime: start.Add(3 * time.Second), IsInProcess: true, IsIdle: true, IsUsed: true}); !reflect.DeepEqual(usage, want) {

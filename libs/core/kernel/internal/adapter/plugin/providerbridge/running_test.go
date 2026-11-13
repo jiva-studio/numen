@@ -42,8 +42,8 @@ func TestRunningSourceOpensTheProviderOfARunningPluginForAQuestionAndReleasesIt(
 	if err != nil || string(answer) != "finished" {
 		t.Errorf("answer = %q, %v", answer, err)
 	}
-	if !slices.Equal(host.acquired, []string{pluginID}) || !slices.Equal(host.released, []string{pluginID}) {
-		t.Errorf("acquired = %v, released = %v, want one of each", host.acquired, host.released)
+	if !slices.Equal(host.acquired, []string{pluginID}) || !slices.Equal(host.questionsReleased, []string{pluginID}) || len(host.released) != 0 {
+		t.Errorf("acquired = %v, questions released = %v, uses released = %v, want one question acquired and released", host.acquired, host.questionsReleased, host.released)
 	}
 }
 
@@ -57,7 +57,7 @@ func TestRunningSourceDoesNotOpenAPluginThatDoesNotRun(t *testing.T) {
 	}
 }
 
-func TestTheQuestionSourceHoldsThePluginForAQuestion(t *testing.T) {
+func TestTheQuestionSourceAcquiresAQuestionLease(t *testing.T) {
 	host := newActivator(t, &scriptedService{frames: []*v1.ProviderServiceCallResponse{done(nil)}})
 
 	_, release, err := providerbridge.NewQuestionSource(host).OpenProvider(t.Context(), pluginID)
@@ -73,7 +73,7 @@ func TestTheQuestionSourceHoldsThePluginForAQuestion(t *testing.T) {
 	}
 }
 
-func TestTheSourceHoldsThePluginForAUse(t *testing.T) {
+func TestTheSourceAcquiresAUseLease(t *testing.T) {
 	_, release, host := newBridge(t, &scriptedService{})
 	release()
 

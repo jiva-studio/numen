@@ -26,7 +26,7 @@ func readText(t *testing.T, stores derivedfile.TextStores, v domain.Vault, name 
 }
 
 // A file read through the decoded texts is the file read without them, on the first read and on the next.
-func TestTheDecodedTextsReturnWhatTheFileHolds(t *testing.T) {
+func TestDecodedTextsReturnTheContentOfTheFile(t *testing.T) {
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 	plain := derivedfile.TextStores{}
 	kept := derivedfile.TextStores{Decoded: derivedfile.NewDecodedTexts(derivedfile.DefaultDecodedBudget)}

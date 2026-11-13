@@ -2,11 +2,12 @@ package toolbridge
 
 import (
 	"context"
-	"log/slog"
+	"io"
 	"slices"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
@@ -14,13 +15,16 @@ import (
 type Catalog struct {
 	plugins plugins
 	clock   machineport.Clock
-	logger  *slog.Logger
+	out     io.Writer
 }
 
-// NewCatalog is the tools the plugins of the host offer. The answers of the plugins are kept in memory
-// and in files. Each call is written to the logger at the info level, timed by clock.
-func NewCatalog(host Host, files ListingFiles, clock machineport.Clock, logger *slog.Logger) *Catalog {
-	return &Catalog{plugins: plugins{host: host, listings: newListings(files)}, clock: clock, logger: logger}
+// NewCatalog is the tools the plugins of the host offer, each started by activator. The answers of the
+// plugins are kept in memory and in files. Each call is written to out as one JSON line, timed by clock; a
+// failed write is dropped, as there is nowhere else to report it.
+func NewCatalog(activator bridge.Activator, host Host, files ListingFiles, clock machineport.Clock, out io.Writer) *Catalog {
+	return &Catalog{
+		plugins: plugins{activator: activator, host: host, listings: newListings(files)}, clock: clock, out: out,
+	}
 }
 
 // ListTools lists the tools the caller is allowed: those the other plugins offer, for which the
@@ -40,7 +44,7 @@ func (c *Catalog) ListTools(ctx context.Context, callerID string) []*v1.PluginTo
 // one that runs the tool are started. A tool the caller is not allowed is answered as unknown.
 func (c *Catalog) CallTool(ctx context.Context, callerID string, call *v1.CallToolRequest) (*v1.CallToolResponse, error) {
 	started := c.clock.Now()
-	record := callRecord{callerID: callerID, call: call}
+	record := callRecord{started: started, callerID: callerID, call: call}
 	allowed := c.listAllowedTools(ctx, callerID)
 	index := slices.IndexFunc(allowed, func(one tool) bool { return one.spec.GetName() == call.GetName() })
 	if index < 0 {
@@ -50,7 +54,7 @@ func (c *Catalog) CallTool(ctx context.Context, callerID string, call *v1.CallTo
 		record.response, record.err = c.plugins.callTool(ctx, allowed[index], call)
 	}
 	record.duration = c.clock.Now().Sub(started)
-	logCall(ctx, c.logger, record)
+	writeCall(c.out, record)
 	return record.response, record.err
 }
 

@@ -252,7 +252,7 @@ func TestStartLoadingOpensTheModelOnceAndABatchDuringTheLoadWaitsForIt(t *testin
 	}
 }
 
-func TestStartLoadingLeavesTheModelClosedWhileAConnectionServes(t *testing.T) {
+func TestStartLoadingDoesNotOpenTheModelWhileAConnectionServes(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.updateConfig(map[string]string{"source": SourceConnection})
 	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {

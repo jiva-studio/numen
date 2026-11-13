@@ -149,7 +149,7 @@ func TestAQuestionDoesNotCancelTheReleaseOfAProcess(t *testing.T) {
 	}
 }
 
-func TestListProcessesNamesWhoStartedEachPluginAndWhoHoldsIt(t *testing.T) {
+func TestListProcessesReturnsTheStarterAndTheHoldersOfEachPlugin(t *testing.T) {
 	starter := lifecycle.Lease{Kind: lifecycle.UseLease, Holder: plugindomain.Holder{Who: plugindomain.WhoIndexing, Why: "embed notes"}}
 	asker := lifecycle.Lease{Kind: lifecycle.UseLease, Holder: plugindomain.Holder{PluginID: mapsID, Why: "call tool"}}
 	sups := NewSupervisors(func(error) {}, func(string) {})
@@ -170,6 +170,6 @@ func TestListProcessesNamesWhoStartedEachPluginAndWhoHoldsIt(t *testing.T) {
 		t.Fatalf("got %+v, want the plugin started by %+v", got, starter.Holder)
 	}
 	if want := []plugindomain.Holder{asker.Holder, questionLease.Holder}; !slices.Equal(got[0].Holders, want) {
-		t.Errorf("held by %+v, want %+v", got[0].Holders, want)
+		t.Errorf("holders %+v, want %+v", got[0].Holders, want)
 	}
 }

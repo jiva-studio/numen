@@ -1,22 +1,26 @@
 package toolbridge
 
 import (
-	"context"
 	"encoding/json"
-	"log/slog"
-	"maps"
-	"slices"
+	"io"
+	"os"
 	"time"
 	"unicode/utf8"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
-// maxLoggedValue is the length in bytes an argument value is cut to in the log.
+// maxLoggedValue is the length in bytes each argument value is cut to in the line of a call. Arguments that
+// are not a JSON object are written whole as UnparsedArguments, cut the same way.
 const maxLoggedValue = 200
 
-// callRecord is one tool call as it is written to the log.
+// GetErrorOutput returns the error output of the process, which the catalog of the plugin host writes its
+// calls to.
+func GetErrorOutput() io.Writer { return os.Stderr }
+
+// callRecord is one tool call as it is written to the output.
 type callRecord struct {
+	started  time.Time
 	callerID string
 	pluginID string
 	call     *v1.CallToolRequest
@@ -25,44 +29,61 @@ type callRecord struct {
 	duration time.Duration
 }
 
-func logCall(ctx context.Context, logger *slog.Logger, record callRecord) {
-	attrs := []slog.Attr{
-		slog.String("caller", record.callerID),
-		slog.String("tool", record.call.GetName()),
-		slog.String("plugin", record.pluginID),
-		slog.String("connection", record.call.GetConnectionId()),
-		slog.String("vault", record.call.GetVaultId()),
-		getArgumentsAttr(record.call.GetArguments()),
-		slog.Duration("duration", record.duration),
-	}
-	if code := record.response.GetError(); code != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED {
-		attrs = append(attrs, slog.String("tool_error", code.String()))
-	}
-	if result := record.response.GetResult(); result != nil {
-		attrs = append(attrs,
-			slog.Int("result_text_bytes", len(result.GetText())),
-			slog.Int("result_structured_bytes", len(result.GetStructured())),
-			slog.Bool("result_is_error", result.GetIsError()),
-		)
-	}
-	if record.err != nil {
-		attrs = append(attrs, slog.String("error", record.err.Error()))
-	}
-	logger.LogAttrs(ctx, slog.LevelInfo, "tool call", attrs...)
+// callLine is the JSON line of one tool call. Duration is in nanoseconds.
+type callLine struct {
+	Time                  time.Time         `json:"time"`
+	Message               string            `json:"msg"`
+	Caller                string            `json:"caller"`
+	Tool                  string            `json:"tool"`
+	Plugin                string            `json:"plugin"`
+	Connection            string            `json:"connection"`
+	Vault                 string            `json:"vault"`
+	Arguments             map[string]string `json:"arguments,omitempty"`
+	UnparsedArguments     string            `json:"unparsedArguments,omitempty"`
+	Duration              time.Duration     `json:"duration"`
+	ToolError             string            `json:"toolError,omitempty"`
+	ResultTextBytes       *int              `json:"resultTextBytes,omitempty"`
+	ResultStructuredBytes *int              `json:"resultStructuredBytes,omitempty"`
+	ResultIsError         *bool             `json:"resultIsError,omitempty"`
+	Error                 string            `json:"error,omitempty"`
 }
 
-// getArgumentsAttr is a group of the arguments by name, each value as JSON cut to maxLoggedValue; arguments
-// that are not a JSON object are logged whole, cut the same way.
-func getArgumentsAttr(arguments []byte) slog.Attr {
+func writeCall(out io.Writer, record callRecord) {
+	line := callLine{
+		Time: record.started, Message: "tool call", Caller: record.callerID, Tool: record.call.GetName(),
+		Plugin: record.pluginID, Connection: record.call.GetConnectionId(), Vault: record.call.GetVaultId(),
+		Duration: record.duration,
+	}
+	line.Arguments, line.UnparsedArguments = getArguments(record.call.GetArguments())
+	if code := record.response.GetError(); code != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED {
+		line.ToolError = code.String()
+	}
+	if result := record.response.GetResult(); result != nil {
+		textBytes, structuredBytes, isError := len(result.GetText()), len(result.GetStructured()), result.GetIsError()
+		line.ResultTextBytes, line.ResultStructuredBytes, line.ResultIsError = &textBytes, &structuredBytes, &isError
+	}
+	if record.err != nil {
+		line.Error = record.err.Error()
+	}
+	encoded, err := json.Marshal(line)
+	if err != nil {
+		return
+	}
+	if _, err := out.Write(append(encoded, '\n')); err != nil {
+		return
+	}
+}
+
+func getArguments(arguments []byte) (map[string]string, string) {
 	var values map[string]json.RawMessage
 	if err := json.Unmarshal(arguments, &values); err != nil {
-		return slog.String("arguments", cutValue(string(arguments)))
+		return nil, cutValue(string(arguments))
 	}
-	attrs := make([]any, 0, len(values))
-	for _, name := range slices.Sorted(maps.Keys(values)) {
-		attrs = append(attrs, slog.String(name, cutValue(string(values[name]))))
+	cut := make(map[string]string, len(values))
+	for name, value := range values {
+		cut[name] = cutValue(string(value))
 	}
-	return slog.Group("arguments", attrs...)
+	return cut, ""
 }
 
 func cutValue(value string) string {

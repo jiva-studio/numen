@@ -461,7 +461,8 @@ func (d *Detected) Detect(context.Context, string) {}
 // Refresh asks nothing.
 func (d *Detected) Refresh() {}
 
-// AddRowField declares the row field after the row fields of the type.
+// AddRowField appends the field to the type with typeID; a declaration read before keeps the row fields it
+// had.
 func (w *World) AddRowField(typeID string, field manifest.ConnectionField) {
 	for i := range w.Types.list {
 		if w.Types.list[i].GetID() == typeID {

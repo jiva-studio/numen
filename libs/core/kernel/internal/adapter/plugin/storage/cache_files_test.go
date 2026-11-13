@@ -20,7 +20,7 @@ func newStorage(t *testing.T, cacheRoot string, reported *[]error) *storage.Stor
 	return files
 }
 
-func TestTheDetectedConnectionsOfAPluginAreKeptInTheConnectionsFolder(t *testing.T) {
+func TestTheDetectedConnectionsOfAPluginAreStoredInTheConnectionsFolder(t *testing.T) {
 	root := t.TempDir()
 	var reported []error
 	files := newStorage(t, root, &reported)
@@ -36,7 +36,7 @@ func TestTheDetectedConnectionsOfAPluginAreKeptInTheConnectionsFolder(t *testing
 	}
 }
 
-func TestTheOptionListsOfAPluginAreKeptInTheModelsFolder(t *testing.T) {
+func TestTheOptionListsOfAPluginAreStoredInTheModelsFolder(t *testing.T) {
 	root := t.TempDir()
 	var reported []error
 	lists := []connection.OptionList{{
@@ -56,7 +56,7 @@ func TestTheOptionListsOfAPluginAreKeptInTheModelsFolder(t *testing.T) {
 	}
 }
 
-func TestOptionListsThatCannotBeReadAreReportedAndNotKept(t *testing.T) {
+func TestUnreadableOptionListsAreReportedAndReadAsNone(t *testing.T) {
 	root := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(root, "models"), 0o700); err != nil {
 		t.Fatal(err)

@@ -46,7 +46,7 @@ func (s *setup) listModels(ctx context.Context, operations ...string) ([]modelca
 	return s.options.ListOptions(ctx, s.entry.ID, modelcalltest.ModelOption, map[string]string{modelcalltest.ModelOption: "model-1", reasoningField: "low"}, operations)
 }
 
-func (s *setup) listReasoning(ctx context.Context, model string) ([]modelcalldomain.Option, error) {
+func (s *setup) listReasoningLevels(ctx context.Context, model string) ([]modelcalldomain.Option, error) {
 	row := map[string]string{modelcalltest.ModelOption: model, reasoningField: "low"}
 	return s.options.ListOptions(ctx, s.entry.ID, reasoningField, row, []string{modelcalltest.EmbedOperation})
 }
@@ -65,7 +65,7 @@ func TestListOptionsReturnsTheOptionsTheProviderListsForTheField(t *testing.T) {
 func TestListOptionsCallsTheOperationOfTheFieldWithTheConnectionItsKeyAndTheRowSoFar(t *testing.T) {
 	s := newSetup(t)
 
-	if _, err := s.listReasoning(t.Context(), "model-1"); err != nil {
+	if _, err := s.listReasoningLevels(t.Context(), "model-1"); err != nil {
 		t.Fatal(err)
 	}
 

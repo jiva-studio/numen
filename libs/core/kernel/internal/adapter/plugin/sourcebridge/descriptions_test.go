@@ -77,7 +77,8 @@ func startKeptSource(t *testing.T) keptSource {
 
 func (s keptSource) open(t *testing.T, kept *sourcebridge.Descriptions) *sourcebridge.Source {
 	t.Helper()
-	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(s.host), kept)
+	roles := pluginhost.Join(s.host)
+	bridge, err := sourcebridge.Open(t.Context(), roles, roles, kept)
 	if err != nil {
 		t.Fatal(err)
 	}

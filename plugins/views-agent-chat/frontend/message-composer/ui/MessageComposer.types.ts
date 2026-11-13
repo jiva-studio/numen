@@ -16,7 +16,6 @@ export interface MessageComposerProps {
   noAgentLabel?: string
   noAgentMessage?: string
   openSettingsLabel?: string
-  /** The agents whose models have not been listed yet. */
   pendingAgentIds?: readonly string[]
   loadingLabel?: string
 }

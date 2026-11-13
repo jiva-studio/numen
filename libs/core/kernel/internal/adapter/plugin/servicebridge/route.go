@@ -26,12 +26,12 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid plugin route", http.StatusBadRequest)
 		return
 	}
-	if _, enabled := p.host.GetPlugin(id); !enabled {
+	if _, enabled := p.plugins.GetPlugin(id); !enabled {
 		http.Error(w, "plugin not found", http.StatusNotFound)
 		return
 	}
 	holder := plugin.GetHolder(plugin.WithAskingPlugin(r.Context(), id), "load "+path.Base(rest))
-	endpoint, err := p.host.EnsureActive(r.Context(), id, holder)
+	endpoint, err := p.activator.EnsureActive(r.Context(), id, holder)
 	if err != nil {
 		status := http.StatusServiceUnavailable
 		if errors.Is(err, context.Canceled) {
@@ -40,7 +40,7 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, bridge.ConvertActivationError(id, err).Error(), status)
 		return
 	}
-	lease := &bridge.Lease{Host: p.host, PluginID: id, Holder: holder}
+	lease := &bridge.Lease{Host: p.activator, PluginID: id, Holder: holder}
 	defer p.releasePlugin(lease)
 
 	target := url.URL{Path: wire.PluginRoute + rest, RawQuery: r.URL.RawQuery}
@@ -54,7 +54,7 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 	out.Header.Del("Origin")
 	out.Header.Set("Authorization", "Bearer "+endpoint.Token)
 
-	res, err := transport.GetClient(p.host, endpoint).Do(out)
+	res, err := transport.GetClient(p.activator, endpoint).Do(out)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return

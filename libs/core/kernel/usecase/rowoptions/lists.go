@@ -26,7 +26,7 @@ type RunningProviders interface {
 
 // Lists keeps the option lists through files, for every Options of the host. A listing counts only for
 // the connection as it was read then: a change of its revision, its fields or the version of its plugin
-// makes it count as none.
+// makes it count as none, and a new listing of the connection drops it.
 type Lists struct {
 	files      ListFiles
 	mu         sync.Mutex
@@ -46,8 +46,6 @@ func newOptionList(resolved connection.Resolved, field string, options map[strin
 	}
 }
 
-// getPrecedingOptions returns the values of the row fields the type declares before the field: what the
-// field can take depends on them, not on its own value or on the fields after it.
 func getPrecedingOptions(declaration manifest.ConnectionType, field string, options map[string]string) map[string]string {
 	preceding := map[string]string{}
 	for _, one := range declaration.RowFields {
@@ -82,8 +80,6 @@ func (l *Lists) get(pluginID string, asked connection.OptionList) ([]modelcall.O
 	return nil, false
 }
 
-// put keeps the listing in place of the one of the same request, and drops the listings of the connection
-// made for another state of it.
 func (l *Lists) put(pluginID string, listed connection.OptionList) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -98,7 +94,6 @@ func (l *Lists) put(pluginID string, listed connection.OptionList) {
 	l.files.WriteOptionLists(pluginID, append(lists, listed))
 }
 
-// listRequests returns the listings kept for the connection, in any state of it.
 func (l *Lists) listRequests(pluginID, connectionID string) []connection.OptionList {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -112,7 +107,6 @@ func (l *Lists) listRequests(pluginID, connectionID string) []connection.OptionL
 	return requests
 }
 
-// begin marks a refresh of the connection as running, and returns false where one runs already.
 func (l *Lists) begin(connectionID string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()

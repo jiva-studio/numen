@@ -30,14 +30,14 @@ func TestTheLeasesOfAPluginNameTheirHolders(t *testing.T) {
 		t.Errorf("started by %+v, want %+v", usage.StartedBy, starter.Holder)
 	}
 	if want := []plugin.Holder{starter.Holder, asker.Holder, questionLease.Holder}; !slices.Equal(usage.Holders, want) {
-		t.Errorf("held by %+v, want %+v", usage.Holders, want)
+		t.Errorf("holders %+v, want %+v", usage.Holders, want)
 	}
 
 	sup.Release(asker, start.Add(3*time.Second))
 
 	usage, _ = sup.GetUsage()
 	if want := []plugin.Holder{starter.Holder, questionLease.Holder}; !slices.Equal(usage.Holders, want) {
-		t.Errorf("after the release held by %+v, want %+v", usage.Holders, want)
+		t.Errorf("holders after the release %+v, want %+v", usage.Holders, want)
 	}
 	if usage.StartedBy != starter.Holder {
 		t.Errorf("after the release started by %+v, want %+v", usage.StartedBy, starter.Holder)
@@ -56,7 +56,7 @@ func TestAReleaseOfTheSameHolderTwiceRemovesOneLeaseEachTime(t *testing.T) {
 
 	usage, _ := sup.GetUsage()
 	if want := []plugin.Holder{useLease.Holder, questionLease.Holder}; !slices.Equal(usage.Holders, want) {
-		t.Errorf("held by %+v, want %+v", usage.Holders, want)
+		t.Errorf("holders %+v, want %+v", usage.Holders, want)
 	}
 }
 
@@ -73,6 +73,6 @@ func TestAStoppedPluginHasNoHolders(t *testing.T) {
 
 	usage, _ := sup.GetUsage()
 	if want := []plugin.Holder{questionLease.Holder}; !slices.Equal(usage.Holders, want) {
-		t.Errorf("held by %+v, want %+v", usage.Holders, want)
+		t.Errorf("holders %+v, want %+v", usage.Holders, want)
 	}
 }

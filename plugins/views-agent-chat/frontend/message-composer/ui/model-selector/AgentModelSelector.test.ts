@@ -151,7 +151,6 @@ describe('AgentModelSelector', () => {
   })
 })
 
-/** A timer that runs its work only when the test advances it. */
 function createStubTimer() {
   let now = 0
   let tasks: { at: number; run: () => void }[] = []
@@ -205,7 +204,7 @@ const readRows = () =>
 const isListOpen = () => document.body.querySelector('[role="listbox"]') !== null
 
 describe('AgentModelSelector while the models are listed', () => {
-  const mountPending = (pendingAgentIds: readonly string[]) => {
+  const mountWithPendingAgents = (pendingAgentIds: readonly string[]) => {
     const { timer, advance } = createStubTimer()
     const wrapper = mount(AgentModelSelector, {
       props: {
@@ -222,7 +221,7 @@ describe('AgentModelSelector while the models are listed', () => {
   }
 
   it('opens only once every agent answered', async () => {
-    const { wrapper, advance } = mountPending(['orchard', 'meadow'])
+    const { wrapper, advance } = mountWithPendingAgents(['orchard', 'meadow'])
 
     await wrapper.find('button').trigger('click')
     expect(wrapper.emitted('open')).toEqual([[]])
@@ -238,7 +237,7 @@ describe('AgentModelSelector while the models are listed', () => {
   })
 
   it('shows the spinner only after the wait is long enough to notice', async () => {
-    const { wrapper, advance } = mountPending(['orchard'])
+    const { wrapper, advance } = mountWithPendingAgents(['orchard'])
 
     await wrapper.find('button').trigger('click')
     expect(wrapper.find('.model-selector__spinner').exists()).toBe(false)
@@ -254,8 +253,8 @@ describe('AgentModelSelector while the models are listed', () => {
     wrapper.unmount()
   })
 
-  it('opens at the time limit with a loading row for an agent still asked, replaced when it answers', async () => {
-    const { wrapper, advance } = mountPending(['orchard'])
+  it('opens at the time limit with a loading row for a pending agent, replaced by its models once listed', async () => {
+    const { wrapper, advance } = mountWithPendingAgents(['orchard'])
 
     await wrapper.find('button').trigger('click')
     await advance(999)
@@ -270,7 +269,7 @@ describe('AgentModelSelector while the models are listed', () => {
   })
 
   it('opens at once when the models were listed before', async () => {
-    const { wrapper } = mountPending([])
+    const { wrapper } = mountWithPendingAgents([])
 
     await wrapper.find('button').trigger('click')
     expect(isListOpen()).toBe(true)

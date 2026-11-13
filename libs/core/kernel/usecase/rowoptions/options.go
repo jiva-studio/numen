@@ -182,7 +182,6 @@ func (o *Options) readOptions(
 	return listed, nil
 }
 
-// askProvider reads the options within ReadTimeout and keeps them.
 func (o *Options) askProvider(
 	ctx context.Context, provider connectionport.Provider, resolved connection.Resolved, operation string,
 	secrets map[string]string, asked connection.OptionList,

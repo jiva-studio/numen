@@ -47,6 +47,6 @@ func TestTheHoldersOfAProcessAreNamedByTheirPluginOrConnection(t *testing.T) {
 		{Who: "org.example.unknown", PluginID: "org.example.unknown", Why: "search"},
 	}
 	if !slices.Equal(got[0].Holders, want) {
-		t.Errorf("held by %+v, want %+v", got[0].Holders, want)
+		t.Errorf("holders %+v, want %+v", got[0].Holders, want)
 	}
 }
