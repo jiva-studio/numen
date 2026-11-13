@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, useId, useTemplateRef, type Ref } from 'vue'
+import { computed, reactive, ref, useId, useTemplateRef } from 'vue'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import PlexNodeNames from './PlexNodeNames.vue'
 import PlexThread from './PlexThread.vue'
 import { useEdgeLines } from './lines'
-import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
+import type { Attention, PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
 import { getDraggedShape, getPendingThread, getReachGhost, getReachThread } from './threads'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { getRelationName } from '../../lib/relation'
@@ -57,9 +57,11 @@ const { lines, raisedLines, resting, setOver } = useEdgeLines(() => props.frame,
 
 const restedOn = ref<string | null>(null)
 
-/** The node the pointer is over, and the node whose names it is over: either brings the names of that node forward. */
-const overNode = ref<string | null>(null)
-const overNames = ref<string | null>(null)
+/**
+ * The node the pointer is over, and the node whose names it is over: either brings the names of that node forward.
+ * Only the names read it, so a move of the pointer redraws them and not the nodes.
+ */
+const attention = reactive<Attention>({ node: null, names: null })
 
 const renderedNodes = computed(() => {
   const node = props.frame.nodes.find((each) => each.id === restedOn.value)
@@ -102,9 +104,9 @@ const onSettle = (id: string, isResting: boolean) => {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function attend(slot: Ref<string | null>, id: string, isAttended: boolean) {
-  if (isAttended) slot.value = id
-  else if (slot.value === id) slot.value = null
+function attend(slot: keyof Attention, id: string, isAttended: boolean) {
+  if (isAttended) attention[slot] = id
+  else if (attention[slot] === id) attention[slot] = null
 }
 
 const getRole = (node: PlacedNode): GestureRole => {
@@ -169,7 +171,7 @@ const getRole = (node: PlacedNode): GestureRole => {
         @menu="(at, trigger) => emit('menu', node.id, at, trigger)"
         @enter="(heading) => emit('enter', node.id, heading)"
         @settle="onSettle(node.id, $event)"
-      @attend="attend(overNode, node.id, $event)"
+      @attend="attend('node', node.id, $event)"
       >
         <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
       </PlexNodeView>
@@ -177,8 +179,8 @@ const getRole = (node: PlacedNode): GestureRole => {
         v-if="names?.(node.id)"
         :node="node"
         :room="names(node.id)!"
-      :is-forward="overNode === node.id || overNames === node.id"
-      @attend="attend(overNames, node.id, $event)"
+      :attention="attention"
+      @attend="attend('names', node.id, $event)"
         @choose="emit('choose-name', $event)"
       />
     </g>

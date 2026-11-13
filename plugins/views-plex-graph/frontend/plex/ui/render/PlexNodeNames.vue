@@ -5,6 +5,7 @@
  * choosing one does is the caller's.
  */
 import { computed } from 'vue'
+import type { Attention } from './props'
 import { NAME_OPACITY, placeNames, ROW_RATIO, type NamesRoom } from '../../lib/names'
 import type { PlacedNode } from '../../lib/node'
 
@@ -12,8 +13,7 @@ import type { PlacedNode } from '../../lib/node'
 const props = defineProps<{
   node: PlacedNode
   room: NamesRoom
-  /** Whether the pointer is over the node or over one of its names. */
-  isForward: boolean
+  attention: Attention
 }>()
 
 /* --------------------------------- Events --------------------------------- */
@@ -25,6 +25,11 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+/** Whether the pointer is over the node or over one of its names. */
+const isForward = computed(
+  () => props.attention.node === props.node.id || props.attention.names === props.node.id,
+)
+
 const placed = computed(() => placeNames(props.room, props.node))
 
 /** The type of a name is the size its row was measured at. */

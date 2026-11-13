@@ -101,3 +101,9 @@ export interface PlexDrawnSlots {
   /** Content drawn next to a node's title. */
   icon?(props: { node: PlacedNode }): VNode[]
 }
+
+/** The node the pointer is over and the node whose names it is over. */
+export interface Attention {
+  node: string | null
+  names: string | null
+}
