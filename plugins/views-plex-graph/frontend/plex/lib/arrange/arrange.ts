@@ -53,6 +53,7 @@ export function arrangePlex(
     laid: PlexOptions,
     nodesByRelation: NodesByRelation,
     shouldStop?: PlacementContext['shouldStop'],
+    isRoomed = true,
   ) => {
     const width = createWidthLookup(laid, measure)
     const focus: PlacedNode = {
@@ -69,19 +70,20 @@ export function arrangePlex(
       placed: placement.place(nodesByRelation, focus, {
         options: laid,
         width,
-        room: (node) => rooms.get(node.id) ?? NO_ROOM,
+        room: isRoomed ? (node) => rooms.get(node.id) ?? NO_ROOM : () => NO_ROOM,
         shouldStop,
       }),
     }
   }
 
   // Packed as closely as this window needs and no closer, so a box narrows
-  // and a gap closes before a note is given up.
+  // and a gap closes before a note is given up. The names are left out of it:
+  // a pill is the same size with names as without, and the names then cost notes.
   const resolved = measureCrowding(request, (packed) =>
     isHeld(
-      lay(packed, requested, stopAtOutside(packed.viewport, packed.margin, rooms)).placed,
+      lay(packed, requested, stopAtOutside(packed.viewport, packed.margin, NO_ROOMS), false).placed,
       packed.viewport,
-      { margin: packed.margin, rooms },
+      { margin: packed.margin, rooms: NO_ROOMS },
     ),
   )
 
@@ -134,6 +136,8 @@ interface Fit {
   readonly margin: number
   readonly rooms: ReadonlyMap<string, NodeRoom>
 }
+
+const NO_ROOMS: ReadonlyMap<string, NodeRoom> = new Map()
 
 function createRoomLookup(
   nodes: readonly PlexNode[],
