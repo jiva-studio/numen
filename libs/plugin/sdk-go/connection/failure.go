@@ -67,7 +67,6 @@ func IsStop(err error) bool {
 	return errors.As(err, &one) && !one.isTryNext
 }
 
-// getReason returns the reason of err where err is, or wraps, a try-next or a stop failure.
 func getReason(err error) (Reason, bool) {
 	if one, ok := errors.AsType[*failure](err); ok {
 		return one.reason, true
