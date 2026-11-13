@@ -1,0 +1,21 @@
+/** Words used across the running plugins frontend. */
+export const WORDS = {
+  title: 'Running plugins',
+  close: 'Close running plugins',
+  pluginRunning: 'plugin running',
+  pluginsRunning: 'plugins running',
+  loadingHint: 'Reading the running plugins',
+  unavailable: '–',
+  unavailableHint: 'The running plugins are not available',
+  none: 'No plugin is running',
+  runningFor: 'Running for',
+  idleFor: 'Idle for',
+  stopsIn: 'Stops in',
+  stopsNow: 'Stops at the next check',
+  stopsNowHint: 'The core looks for idle plugins every 30 seconds',
+  inUse: 'In use',
+  lease: 'call, stream or task',
+  leases: 'calls, streams or tasks',
+  inCore: 'Runs inside the core',
+  healthOk: 'Healthy',
+} as const

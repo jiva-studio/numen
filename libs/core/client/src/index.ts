@@ -9,6 +9,7 @@ export * from './settings'
 export * from './themes'
 export * from './tasks'
 export * from './health'
+export * from './processes'
 export {
   formatErrorCodeMessage,
   formatErrorMessage,

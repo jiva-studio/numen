@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/health.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
 
@@ -209,12 +210,62 @@ message PluginReader {
 // PluginService allows querying discovered plugins and their settings schemas.
 service PluginService {
   rpc GetPlugins(GetPluginsRequest) returns (GetPluginsResponse);
+
+  // WatchPluginProcesses sends the plugin processes that run at once and again
+  // on every change, at most once a second, for as long as the caller listens.
+  rpc WatchPluginProcesses(WatchPluginProcessesRequest) returns (stream WatchPluginProcessesResponse);
 }
 
 message GetPluginsRequest {}
 
 message GetPluginsResponse {
   repeated PluginInfo plugins = 1;
+}
+
+message WatchPluginProcessesRequest {}
+
+message WatchPluginProcessesResponse {
+  // The processes that run, in the order of the plugin ids.
+  repeated PluginProcess processes = 1;
+
+  // When the core took the list, in milliseconds since the Unix epoch. A
+  // list sent again unchanged carries the time it was first taken.
+  int64 time_unix_ms = 2;
+}
+
+// PluginProcess is the process of one plugin that runs.
+message PluginProcess {
+  string plugin_id = 1;
+
+  // The name the manifest gives the plugin. Empty for a plugin the core no
+  // longer lists.
+  string plugin_name = 2;
+
+  // When the process started, in milliseconds since the Unix epoch.
+  int64 start_time_unix_ms = 3;
+
+  // When a lease on the process was last taken or returned, in milliseconds
+  // since the Unix epoch.
+  int64 last_use_time_unix_ms = 4;
+
+  // The leases the process holds: open calls, open streams and reported work.
+  int32 lease_count = 5;
+
+  // Whether the plugin is served inside the core rather than by a process of
+  // its own.
+  bool is_in_process = 6;
+
+  // From when the core stops the process for idleness, in milliseconds since
+  // the Unix epoch; the core checks every 30 seconds. Zero while the process
+  // holds a lease.
+  int64 idle_stop_time_unix_ms = 7;
+
+  // The severity of the worst health item of the plugin: HEALTH_SEVERITY_OK
+  // where it has none.
+  HealthSeverity health = 8;
+
+  // The text of that item. Empty where it has none.
+  string health_text = 9;
 }
 
 // PluginEventService hands a running plugin an event its manifest's activationEvents subscribe to.

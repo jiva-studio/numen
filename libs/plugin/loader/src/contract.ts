@@ -67,6 +67,7 @@ export type {
   PluginVault,
   PluginWork,
   PluginLifecycle,
+  ProcessHost,
   ReaderRegistration,
   ReaderTabState,
   RelatedNoteRequest,

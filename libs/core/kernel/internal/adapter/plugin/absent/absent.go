@@ -112,3 +112,12 @@ func (Settings) TeardownAll(context.Context, time.Duration) error { return nil }
 // ObserveDependencies is accepted and ignored: no plugin declares a dependency.
 func (Settings) ObserveDependencies(func(manifest.DependencyRequirement, plugindomain.DependencyStatus)) {
 }
+
+// Processes is the processes of a plugin host that runs nothing.
+type Processes struct{}
+
+// ListProcesses is empty: a host that runs nothing starts no process.
+func (Processes) ListProcesses() []plugindomain.Process { return nil }
+
+// WatchProcesses never signals: nothing runs to change.
+func (Processes) WatchProcesses(context.Context) <-chan struct{} { return nil }

@@ -99,6 +99,7 @@ function createHost(
       getNotices: () => ui.notices as never,
       getTasks: () => work.tasks,
       getBackgroundTasks: () => work.backgroundTasks,
+      getProcesses: () => work.processes,
       ...overrides.window,
     },
   })

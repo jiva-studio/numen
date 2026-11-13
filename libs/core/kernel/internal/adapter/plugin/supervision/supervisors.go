@@ -17,7 +17,8 @@ const rpcShutdownGrace = 2 * time.Second
 
 // Supervisors keeps, for each plugin, the supervisor of its process, the endpoint of the process that
 // runs, the ports that process reported for its listeners and the client that calls it. One lock
-// guards them, so that a plugin is never started twice and never stopped half way.
+// guards them, so that a plugin is never started twice and never stopped half way. The watchers of
+// RunningProcesses are signaled under either side of the lock and changed only under the write side.
 type Supervisors struct {
 	mu            sync.RWMutex
 	byPlugin      map[string]*lifecycle.Supervisor
@@ -26,6 +27,8 @@ type Supervisors struct {
 	clients       *transport.Clients
 	report        func(error)
 	onDrop        func(pluginID string)
+	startTimes    map[string]time.Time
+	watchers      []chan struct{}
 }
 
 // NewSupervisors returns the supervisors of a host that has no plugin. report receives the problems
@@ -36,6 +39,7 @@ func NewSupervisors(report func(error), onDrop func(pluginID string)) *Superviso
 		endpoints:     make(map[string]transport.Endpoint),
 		listenerPorts: make(map[string]map[string]int),
 		clients:       transport.NewClients(),
+		startTimes:    make(map[string]time.Time),
 		report:        report,
 		onDrop:        onDrop,
 	}
@@ -153,6 +157,7 @@ func (s *Supervisors) Release(pluginID, token string, now time.Time) {
 		return
 	}
 	sup.Release(now)
+	notifyLocked(s)
 }
 
 // Clients returns the clients that call the processes, by the token each process was given.
@@ -172,6 +177,7 @@ func (s *Supervisors) Drop(pluginID string) {
 func forgetEndpointLocked(s *Supervisors, pluginID string) {
 	delete(s.endpoints, pluginID)
 	delete(s.listenerPorts, pluginID)
+	delete(s.startTimes, pluginID)
 }
 
 // Claim is what Begin found.
@@ -209,6 +215,7 @@ func (s *Supervisors) acquireRunningLocked(pluginID string, sup *lifecycle.Super
 	if IsNoEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(now) {
 		return NoEndpoint(), false
 	}
+	notifyLocked(s)
 	return endpoint, true
 }
 
@@ -246,6 +253,13 @@ func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachmen
 	s.listenerPorts[pluginID] = listeners
 	sup.SetRPCShutdown(createRPCShutdown(endpoint, s.clients.Get(endpoint), rpcShutdownGrace))
 	sup.FinishActivating()
+	s.startTimes[pluginID] = now
+	exit := sup.GetExitSignal()
+	go func() {
+		<-exit
+		s.NotifyChange()
+	}()
+	notifyLocked(s)
 	return nil
 }
 
@@ -259,6 +273,8 @@ func (s *Supervisors) AttachInProcess(pluginID string, sup *lifecycle.Supervisor
 	}
 	s.endpoints[pluginID] = endpoint
 	sup.ActivateInProcess(now)
+	s.startTimes[pluginID] = now
+	notifyLocked(s)
 	return nil
 }
 
@@ -267,4 +283,21 @@ func (s *Supervisors) SetEndpoint(pluginID string, endpoint transport.Endpoint) 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.endpoints[pluginID] = endpoint
+}
+
+// NotifyChange tells the watchers of RunningProcesses that a plugin took or returned a lease, or
+// stopped, outside the calls of the supervisors.
+func (s *Supervisors) NotifyChange() {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	notifyLocked(s)
+}
+
+func notifyLocked(s *Supervisors) {
+	for _, watcher := range s.watchers {
+		select {
+		case watcher <- struct{}{}:
+		default:
+		}
+	}
 }

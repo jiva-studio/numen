@@ -49,6 +49,9 @@ const (
 	// PluginServiceGetPluginsProcedure is the fully-qualified name of the PluginService's GetPlugins
 	// RPC.
 	PluginServiceGetPluginsProcedure = "/numen.v1.PluginService/GetPlugins"
+	// PluginServiceWatchPluginProcessesProcedure is the fully-qualified name of the PluginService's
+	// WatchPluginProcesses RPC.
+	PluginServiceWatchPluginProcessesProcedure = "/numen.v1.PluginService/WatchPluginProcesses"
 	// PluginEventServiceDeliverEventProcedure is the fully-qualified name of the PluginEventService's
 	// DeliverEvent RPC.
 	PluginEventServiceDeliverEventProcedure = "/numen.v1.PluginEventService/DeliverEvent"
@@ -180,6 +183,9 @@ func (UnimplementedPluginLifecycleServiceHandler) Configure(context.Context, *co
 // PluginServiceClient is a client for the numen.v1.PluginService service.
 type PluginServiceClient interface {
 	GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error)
+	// WatchPluginProcesses sends the plugin processes that run at once and again
+	// on every change, at most once a second, for as long as the caller listens.
+	WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest]) (*connect.ServerStreamForClient[v1.WatchPluginProcessesResponse], error)
 }
 
 // NewPluginServiceClient constructs a client for the numen.v1.PluginService service. By default, it
@@ -199,12 +205,19 @@ func NewPluginServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(pluginServiceMethods.ByName("GetPlugins")),
 			connect.WithClientOptions(opts...),
 		),
+		watchPluginProcesses: connect.NewClient[v1.WatchPluginProcessesRequest, v1.WatchPluginProcessesResponse](
+			httpClient,
+			baseURL+PluginServiceWatchPluginProcessesProcedure,
+			connect.WithSchema(pluginServiceMethods.ByName("WatchPluginProcesses")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // pluginServiceClient implements PluginServiceClient.
 type pluginServiceClient struct {
-	getPlugins *connect.Client[v1.GetPluginsRequest, v1.GetPluginsResponse]
+	getPlugins           *connect.Client[v1.GetPluginsRequest, v1.GetPluginsResponse]
+	watchPluginProcesses *connect.Client[v1.WatchPluginProcessesRequest, v1.WatchPluginProcessesResponse]
 }
 
 // GetPlugins calls numen.v1.PluginService.GetPlugins.
@@ -212,9 +225,17 @@ func (c *pluginServiceClient) GetPlugins(ctx context.Context, req *connect.Reque
 	return c.getPlugins.CallUnary(ctx, req)
 }
 
+// WatchPluginProcesses calls numen.v1.PluginService.WatchPluginProcesses.
+func (c *pluginServiceClient) WatchPluginProcesses(ctx context.Context, req *connect.Request[v1.WatchPluginProcessesRequest]) (*connect.ServerStreamForClient[v1.WatchPluginProcessesResponse], error) {
+	return c.watchPluginProcesses.CallServerStream(ctx, req)
+}
+
 // PluginServiceHandler is an implementation of the numen.v1.PluginService service.
 type PluginServiceHandler interface {
 	GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error)
+	// WatchPluginProcesses sends the plugin processes that run at once and again
+	// on every change, at most once a second, for as long as the caller listens.
+	WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest], *connect.ServerStream[v1.WatchPluginProcessesResponse]) error
 }
 
 // NewPluginServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -230,10 +251,18 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(pluginServiceMethods.ByName("GetPlugins")),
 		connect.WithHandlerOptions(opts...),
 	)
+	pluginServiceWatchPluginProcessesHandler := connect.NewServerStreamHandler(
+		PluginServiceWatchPluginProcessesProcedure,
+		svc.WatchPluginProcesses,
+		connect.WithSchema(pluginServiceMethods.ByName("WatchPluginProcesses")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.PluginService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case PluginServiceGetPluginsProcedure:
 			pluginServiceGetPluginsHandler.ServeHTTP(w, r)
+		case PluginServiceWatchPluginProcessesProcedure:
+			pluginServiceWatchPluginProcessesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -245,6 +274,10 @@ type UnimplementedPluginServiceHandler struct{}
 
 func (UnimplementedPluginServiceHandler) GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.GetPlugins is not implemented"))
+}
+
+func (UnimplementedPluginServiceHandler) WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest], *connect.ServerStream[v1.WatchPluginProcessesResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.WatchPluginProcesses is not implemented"))
 }
 
 // PluginEventServiceClient is a client for the numen.v1.PluginEventService service.

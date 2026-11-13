@@ -368,3 +368,26 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 		}
 	})
 }
+
+func TestGetUsageReturnsTheLastUseAndTheLeases(t *testing.T) {
+	sup := New(nil)
+	if usage, isRunning := sup.GetUsage(); isRunning {
+		t.Fatalf("a dormant plugin has the usage %+v", usage)
+	}
+	start := testsupport.GetEpoch()
+	sup.SetActivating()
+	sup.ActivateInProcess(start)
+	sup.Acquire(start.Add(time.Second))
+
+	usage, _ := sup.GetUsage()
+	if want := (Usage{LastActiveTime: start.Add(time.Second), LeaseCount: 2, IsInProcess: true}); usage != want {
+		t.Errorf("held: got %+v, want %+v", usage, want)
+	}
+
+	sup.Release(start.Add(2 * time.Second))
+	sup.Release(start.Add(3 * time.Second))
+	usage, _ = sup.GetUsage()
+	if want := (Usage{LastActiveTime: start.Add(3 * time.Second), IsInProcess: true, IsIdle: true}); usage != want {
+		t.Errorf("released: got %+v, want %+v", usage, want)
+	}
+}

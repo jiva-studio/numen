@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -130,6 +131,7 @@ type PluginHost struct {
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
 	Health              *pluginhealth.Items
+	Processes           pluginprocess.Processes
 	Detection           *providerbridge.Detection
 }
 
@@ -182,6 +184,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		SetStorage:          func(cacheRoot, dataRoot string) { setPluginStorage(host, cacheRoot, dataRoot, newDependencyRegistry) },
 		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
 		Health:              host.Health,
+		Processes:           host.RunningProcesses,
 		Detection:           detection,
 	}
 }

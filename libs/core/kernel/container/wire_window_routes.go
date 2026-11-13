@@ -29,6 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -191,7 +192,9 @@ func mountSettings(w *windowWiring) {
 
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(getPluginServices(w.a), func(id string) (string, bool) { return getPluginDir(w.a, id) })
-	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.state.Gate.CountQuestions())))
+	host := w.a.PluginHost
+	handler := windowplugin.NewHandler(pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime, clock.System{}))
+	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.state.Gate.CountQuestions())))
 }
 
 func mountHealth(w *windowWiring) {

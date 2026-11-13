@@ -18,6 +18,7 @@ import type {
   JsonValue,
   MountedView,
   NoticeHost,
+  ProcessHost,
   ReaderRegistration,
   SettingsViewRegistration,
   SlotViewRegistration,
@@ -180,6 +181,7 @@ export interface PluginHostDeps {
     severity: 'warning' | 'error',
   ) => void
   readonly getBackgroundTasks?: () => BackgroundTaskHost | undefined
+  readonly getProcesses?: () => ProcessHost | undefined
   readonly health?: HealthReports
   readonly clearNotices?: (pluginId: string) => void
   readonly app?: AppInfo
@@ -294,7 +296,8 @@ export interface ContextVaultHost {
 }
 
 /**
- * The services of the window itself: its workspace, commands, notices, tasks, connections and slots. A service
+ * The services of the window itself: its workspace, commands, notices, tasks, connections, slots and the
+ * plugins that run. A service
  * the window lacks answers undefined.
  */
 export interface ContextWindowHost {
@@ -307,6 +310,7 @@ export interface ContextWindowHost {
   readonly getTasks: (pluginId: string) => TaskHost | undefined
   readonly getConnections: (pluginId: string) => ConnectionHost | undefined
   readonly getBackgroundTasks: () => BackgroundTaskHost | undefined
+  readonly getProcesses: () => ProcessHost | undefined
   readonly getHealth: (pluginId: string) => HealthHost | undefined
   readonly getSlots: () => SlotHost
 }

@@ -60,6 +60,30 @@ func New(onError func(error)) *Supervisor {
 	return &Supervisor{Permissions: security.NewPermissions(), state: StateDormant, onError: onError}
 }
 
+// Usage is what a running plugin holds: when a lease was last taken or returned, the leases, whether
+// it is served inside the host, and whether it is idle.
+type Usage struct {
+	LastActiveTime time.Time
+	LeaseCount     int
+	IsInProcess    bool
+	IsIdle         bool
+}
+
+// GetUsage returns what the plugin holds, and false where it is not running.
+func (s *Supervisor) GetUsage() (Usage, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !isRunning(s) {
+		return Usage{}, false
+	}
+	return Usage{
+		LastActiveTime: s.lastActiveTime,
+		LeaseCount:     s.activeRefCount,
+		IsInProcess:    s.inProcess,
+		IsIdle:         s.state == StateIdle && s.activeRefCount == 0,
+	}, true
+}
+
 // SetOnExit sets a callback invoked when the plugin process terminates, before the supervisor goes Dormant.
 func (s *Supervisor) SetOnExit(fn func()) {
 	s.mu.Lock()
