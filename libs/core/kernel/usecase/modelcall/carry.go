@@ -155,7 +155,7 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 		}
 		judged := readVerdict(resolved, err)
 		if judged.isCooling {
-			c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
+			c.cooldown.Start(resolved.ID, resolved.Revision, judged.reason, judged.retryAfter, c.clock.Now())
 		}
 		if judged.isSkipped || judged.err != nil {
 			return rowOutcome{failure: judged.skip, err: judged.err}, judged.isStale
@@ -163,7 +163,7 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 		if tries == 1 && isRetried(judged.reason) {
 			continue
 		}
-		c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
+		c.cooldown.Start(resolved.ID, resolved.Revision, judged.reason, judged.retryAfter, c.clock.Now())
 		return rowOutcome{
 			failure: &connection.Failure{ConnectionName: resolved.Name, Reason: judged.reason.String()},
 			aside:   &asideRow{id: resolved.ID, name: resolved.Name, revision: resolved.Revision, reason: judged.reason, isDiscovered: row.IsDiscovered},
@@ -184,9 +184,8 @@ func (c *Calls) checkRow(row connection.Row, operation string) (connection.Resol
 	if !resolved.Declaration.HasOperation(operation) {
 		return resolved, newSkip(resolved.Name, "the type does not serve "+operation), nil
 	}
-	version := connectionVersion{id: resolved.ID, revision: resolved.Revision}
-	if cooling, isCooling := c.cooldown.get(version, c.clock.Now()); isCooling {
-		return resolved, newSkip(resolved.Name, cooling.reason.String()), nil
+	if reason, isCooling := c.cooldown.Get(resolved.ID, resolved.Revision, c.clock.Now()); isCooling {
+		return resolved, newSkip(resolved.Name, reason.String()), nil
 	}
 	return resolved, nil, nil
 }
@@ -266,7 +265,7 @@ func (c *Calls) reportSetAside(rows []asideRow, nextName string) {
 		if one.isDiscovered {
 			continue
 		}
-		if c.cooldown.claim(notice{version: connectionVersion{id: one.id, revision: one.revision}, reason: one.reason}) {
+		if c.cooldown.Claim(one.id, one.revision, one.reason) {
 			c.notices(connection.SetAside{ConnectionID: one.id, ConnectionName: one.name, Reason: one.reason, NextName: nextName})
 		}
 	}

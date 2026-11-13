@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -196,10 +197,7 @@ func mountSettings(w *windowWiring) {
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(getPluginServices(w.a), func(id string) (string, bool) { return getPluginDir(w.a, id) })
 	host := w.a.PluginHost
-	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime, clock.System{})
-	if deps, ok := openConnectionDeps(w.a); ok {
-		watch.Resolve = connection.NewResolve(deps).Execute
-	}
+	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime, getConnectionResolve(w.a), clock.System{})
 	handler := windowplugin.NewHandler(watch)
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.state.Gate.CountQuestions())))
 }
@@ -330,4 +328,12 @@ func mountConnectionCall(w *windowWiring) {
 	handler := connectioncall.NewService(openModelCalls(w.a), openRowLists(w.a))
 	path, served := connectioncall.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
+}
+
+func getConnectionResolve(c pluginsWiring) connectionport.ResolveConnection {
+	deps, ok := openConnectionDeps(c)
+	if !ok {
+		return nil
+	}
+	return connection.NewResolve(deps).Execute
 }

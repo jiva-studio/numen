@@ -105,7 +105,7 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 
 func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
 	sup := New(nil)
-	sup.SetActivating()
+	sup.SetActivating(plugin.Holder{})
 	sup.ActivateInProcess(useLease, testsupport.GetEpoch())
 
 	rpcCalled := false
@@ -211,7 +211,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 		t.Fatal("expected closed channel when not activating")
 	}
 
-	ch1 := sup.SetActivating()
+	ch1 := sup.SetActivating(plugin.Holder{})
 	if sup.GetState() != StateActivating {
 		t.Fatalf("expected StateActivating, got %v", sup.GetState())
 	}
@@ -243,7 +243,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 		t.Fatal("expected ch2 to be closed after SetDormant")
 	}
 
-	ch3 := sup.SetActivating()
+	ch3 := sup.SetActivating(plugin.Holder{})
 	if sup.ActivationError() != nil {
 		t.Fatal("expected ActivationError to be cleared on new activation")
 	}
@@ -260,7 +260,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 
 func TestSupervisorTeardownWhileActivating(t *testing.T) {
 	sup := New(nil)
-	ch := sup.SetActivating()
+	ch := sup.SetActivating(plugin.Holder{})
 
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, nil)
 	if err != nil {
@@ -376,7 +376,7 @@ func TestGetUsageReturnsTheLastUseAndTheLeases(t *testing.T) {
 		t.Fatalf("a dormant plugin has the usage %+v", usage)
 	}
 	start := testsupport.GetEpoch()
-	sup.SetActivating()
+	sup.SetActivating(plugin.Holder{})
 	sup.ActivateInProcess(useLease, start)
 	sup.Acquire(useLease, start.Add(time.Second))
 
@@ -403,7 +403,7 @@ func TestGetUsageReturnsTheLastUseAndTheLeases(t *testing.T) {
 func TestAPluginStartedForAQuestionStopsWhenTheQuestionEnds(t *testing.T) {
 	sup := New(nil)
 	start := testsupport.GetEpoch()
-	sup.SetActivating()
+	sup.SetActivating(plugin.Holder{})
 	sup.ActivateInProcess(questionLease, start)
 
 	if sup.BeginDeactivation(testIdleLimit, start.Add(time.Second)) {
@@ -422,7 +422,7 @@ func TestAPluginStartedForAQuestionStopsWhenTheQuestionEnds(t *testing.T) {
 func TestAQuestionKeepsTheIdleCountdownOfAUsedPlugin(t *testing.T) {
 	sup := New(nil)
 	start := testsupport.GetEpoch()
-	sup.SetActivating()
+	sup.SetActivating(plugin.Holder{})
 	sup.ActivateInProcess(useLease, start)
 	sup.Release(useLease, start.Add(time.Minute))
 
@@ -443,7 +443,7 @@ func TestAQuestionKeepsTheIdleCountdownOfAUsedPlugin(t *testing.T) {
 func TestAUseDuringAQuestionMakesThePluginUsed(t *testing.T) {
 	sup := New(nil)
 	start := testsupport.GetEpoch()
-	sup.SetActivating()
+	sup.SetActivating(plugin.Holder{})
 	sup.ActivateInProcess(questionLease, start)
 
 	sup.Acquire(useLease, start.Add(time.Second))
@@ -469,7 +469,7 @@ func TestAStartedProcessCountsAsUnusedAgain(t *testing.T) {
 	defer wiretest.KillProcess(t, cmd.Process)
 	sup := New(nil)
 	start := testsupport.GetEpoch()
-	sup.SetActivating()
+	sup.SetActivating(plugin.Holder{})
 	sup.ActivateInProcess(useLease, start)
 	sup.Release(useLease, start)
 	if err := sup.Teardown(t.Context(), 0, nil); err != nil {

@@ -42,17 +42,17 @@ type Options struct {
 	source      connectionport.ProviderSource
 	running     RunningProviders
 	lists       *Lists
-	// Titles names the operations in the list of running plugins; nil names them by their ids.
-	Titles connectionport.OperationTitles
+	titles      connectionport.OperationTitles
 }
 
 // NewOptions returns the listing over the connections, the providers source opens and the providers
-// running opens while their plugins run, which keeps what the providers listed in lists.
+// running opens while their plugins run, which keeps what the providers listed in lists. titles names the
+// operations in the list of running plugins; a nil titles names them by their ids.
 func NewOptions(
 	resolve connectionport.ResolveConnection, readSecrets connectionport.ReadConnectionSecrets, source connectionport.ProviderSource,
-	running RunningProviders, lists *Lists,
+	running RunningProviders, lists *Lists, titles connectionport.OperationTitles,
 ) *Options {
-	return &Options{resolve: resolve, readSecrets: readSecrets, source: source, running: running, lists: lists}
+	return &Options{resolve: resolve, readSecrets: readSecrets, source: source, running: running, lists: lists, titles: titles}
 }
 
 // ListOptions returns the values the row field can take from the listing kept for the connection as it is
@@ -225,8 +225,8 @@ func readReason(err error) connection.FailureReason {
 }
 
 func (o *Options) describeOperation(operation string) string {
-	if o.Titles == nil {
+	if o.titles == nil {
 		return operation
 	}
-	return connection.GetOperationTitle(o.Titles.ListOperationTitles(), operation)
+	return connection.GetOperationTitle(o.titles.ListOperationTitles(), operation)
 }

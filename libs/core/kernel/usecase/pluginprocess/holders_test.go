@@ -28,9 +28,8 @@ func TestTheHoldersOfAProcessAreNamedByTheirPluginOrConnection(t *testing.T) {
 			{PluginID: "org.example.unknown", Why: "search"},
 		},
 	}
-	watch := pluginprocess.NewWatchProcesses(newProcesses(atlas), newHealth(), getNames(), clock{})
+	watch := pluginprocess.NewWatchProcesses(newProcesses(atlas), newHealth(), getNames(), resolveOrchardKeeper, clock{})
 	watch.Interval = 0
-	watch.Resolve = resolveOrchardKeeper
 
 	got := receive(t, watch.Execute(t.Context()))
 

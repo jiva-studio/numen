@@ -7,12 +7,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/modelcalltest"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 )
 
 func TestTheTimeoutsAreTheDecidedOnes(t *testing.T) {
-	if modelcall.DefaultCooldown != 60*time.Second || modelcall.MaxCooldown != 10*time.Minute {
-		t.Errorf("DefaultCooldown = %v, MaxCooldown = %v, want 60s and 10m", modelcall.DefaultCooldown, modelcall.MaxCooldown)
+	if connection.DefaultCooldown != 60*time.Second || connection.MaxCooldown != 10*time.Minute {
+		t.Errorf("DefaultCooldown = %v, MaxCooldown = %v, want 60s and 10m", connection.DefaultCooldown, connection.MaxCooldown)
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"slices"
 	"sync"
 	"time"
 
@@ -64,23 +63,13 @@ type Supervisor struct {
 	process       *os.Process
 	inProcess     bool
 	teardownBegun bool
-	leases        leaseState
+	leases        plugin.Leases
 	exitCh        chan struct{}
 	onExit        func()
 	activatingCh  chan struct{}
 	activationErr error
 	rpcShutdown   func(ctx context.Context) error
 	onError       func(error)
-}
-
-// leaseState is what the leases on a running process have done: when one was last taken or returned, how
-// many are held and by whom, whether a use lease was taken, and who started the process.
-type leaseState struct {
-	lastActiveTime time.Time
-	activeRefCount int
-	isUsed         bool
-	startedBy      plugin.Holder
-	holders        []plugin.Holder
 }
 
 // New creates an idle supervisor for a plugin. onError receives the errors the supervisor meets outside
@@ -109,14 +98,15 @@ func (s *Supervisor) GetUsage() (Usage, bool) {
 	if !isRunning(s) {
 		return Usage{}, false
 	}
+	leases := s.leases.GetState()
 	return Usage{
-		LastActiveTime: s.leases.lastActiveTime,
-		LeaseCount:     s.leases.activeRefCount,
+		LastActiveTime: leases.LastUseTime,
+		LeaseCount:     len(leases.Holders),
 		IsInProcess:    s.inProcess,
-		IsIdle:         s.state == StateIdle && s.leases.activeRefCount == 0,
-		IsUsed:         s.leases.isUsed,
-		StartedBy:      s.leases.startedBy,
-		Holders:        slices.Clone(s.leases.holders),
+		IsIdle:         s.state == StateIdle && len(leases.Holders) == 0,
+		IsUsed:         leases.IsUsed,
+		StartedBy:      leases.StartedBy,
+		Holders:        leases.Holders,
 	}, true
 }
 
@@ -134,10 +124,11 @@ func (s *Supervisor) GetState() ProcessState {
 	return s.state
 }
 
-// SetActivating transitions the supervisor state to StateActivating.
-func (s *Supervisor) SetActivating() <-chan struct{} {
+// SetActivating transitions the supervisor state to StateActivating, started by the starter.
+func (s *Supervisor) SetActivating(starter plugin.Holder) <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.leases.Begin(starter)
 	s.state = StateActivating
 	s.activationErr = nil
 	s.activatingCh = make(chan struct{})
@@ -180,8 +171,7 @@ func (s *Supervisor) SetDormant(err error) {
 	s.process = nil
 	s.inProcess = false
 	s.teardownBegun = false
-	s.leases.activeRefCount = 0
-	s.leases.holders = nil
+	s.leases.Clear()
 	s.activationErr = err
 	closeActivationSignal(&s.activatingCh)
 }
@@ -203,8 +193,7 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 	s.process = p
 	s.teardownBegun = false
 	s.state = StateActive
-	s.leases.lastActiveTime = now
-	s.leases.isUsed = false
+	s.leases.Start(now)
 	s.activationErr = nil
 	closeActivationSignal(&s.activatingCh)
 	exitCh := make(chan struct{})
@@ -232,8 +221,7 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 			s.inProcess = false
 			s.teardownBegun = false
 			s.state = StateDormant
-			s.leases.activeRefCount = 0
-			s.leases.holders = nil
+			s.leases.Clear()
 		}
 		s.mu.Unlock()
 		close(exitCh)
@@ -247,10 +235,7 @@ func (s *Supervisor) ActivateInProcess(lease Lease, now time.Time) {
 	defer s.mu.Unlock()
 	s.inProcess = true
 	s.state = StateActive
-	s.leases.activeRefCount = 1
-	s.leases.holders = []plugin.Holder{lease.Holder}
-	s.leases.lastActiveTime = now
-	s.leases.isUsed = lease.Kind == UseLease
+	s.leases.StartHeld(lease.Holder, lease.Kind == UseLease, now)
 	s.activationErr = nil
 	closeActivationSignal(&s.activatingCh)
 }
@@ -270,13 +255,8 @@ func (s *Supervisor) Acquire(lease Lease, now time.Time) bool {
 	if !isRunning(s) {
 		return false
 	}
-	s.leases.activeRefCount++
-	s.leases.holders = append(s.leases.holders, lease.Holder)
+	s.leases.Add(lease.Holder, lease.Kind == UseLease, now)
 	s.state = StateActive
-	if lease.Kind == UseLease {
-		s.leases.lastActiveTime = now
-		s.leases.isUsed = true
-	}
 	return true
 }
 
@@ -288,14 +268,7 @@ func (s *Supervisor) Release(lease Lease, now time.Time) {
 	if !isRunning(s) {
 		return
 	}
-	if s.leases.activeRefCount > 0 {
-		s.leases.activeRefCount--
-		s.leases.holders = removeHolder(s.leases.holders, lease.Holder)
-	}
-	if lease.Kind == UseLease {
-		s.leases.lastActiveTime = now
-	}
-	if s.leases.activeRefCount == 0 {
+	if s.leases.Remove(lease.Holder, lease.Kind == UseLease, now) {
 		s.state = StateIdle
 	}
 }
@@ -305,7 +278,7 @@ func (s *Supervisor) Release(lease Lease, now time.Time) {
 func (s *Supervisor) BeginDeactivation(threshold time.Duration, now time.Time) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.state != StateIdle || s.leases.activeRefCount > 0 || (s.leases.isUsed && now.Sub(s.leases.lastActiveTime) < threshold) {
+	if s.state != StateIdle || !s.leases.IsDueToStop(threshold, now) {
 		return false
 	}
 	s.state = StateDeactivating
@@ -393,8 +366,7 @@ func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ct
 	s.state = StateDormant
 	s.inProcess = false
 	s.teardownBegun = false
-	s.leases.activeRefCount = 0
-	s.leases.holders = nil
+	s.leases.Clear()
 	closeActivationSignal(&s.activatingCh)
 	if rpcShutdown != nil {
 		shutdownErr = rpcShutdown(ctx)
@@ -434,8 +406,7 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 		s.process = nil
 		s.inProcess = false
 		s.teardownBegun = false
-		s.leases.activeRefCount = 0
-		s.leases.holders = nil
+		s.leases.Clear()
 		s.activationErr = nil
 		closeActivationSignal(&s.activatingCh)
 	}
@@ -454,23 +425,4 @@ func (s *Supervisor) GetExitSignal() <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.exitCh
-}
-
-// SetStartedBy records the holder whose lease starts the process.
-func (s *Supervisor) SetStartedBy(holder plugin.Holder) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.leases.startedBy = holder
-}
-
-// removeHolder removes the first lease of the holder, or the oldest lease where the holder has none.
-func removeHolder(holders []plugin.Holder, holder plugin.Holder) []plugin.Holder {
-	if len(holders) == 0 {
-		return holders
-	}
-	i := slices.Index(holders, holder)
-	if i < 0 {
-		i = 0
-	}
-	return slices.Delete(holders, i, i+1)
 }

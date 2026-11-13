@@ -878,7 +878,7 @@ func TestAcquireAndReleaseDoNothingWithoutARunningProcess(t *testing.T) {
 	if sup.GetState() != lifecycle.StateDormant {
 		t.Fatalf("Release moved a dormant supervisor to %v", sup.GetState())
 	}
-	sup.SetActivating()
+	sup.SetActivating(plugindomain.Holder{})
 	if sup.Acquire(lifecycle.Lease{Kind: lifecycle.UseLease, Holder: testHolder}, testsupport.GetMachine().Now()) {
 		t.Fatal("Acquire held an activating supervisor")
 	}

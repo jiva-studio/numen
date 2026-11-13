@@ -1,17 +1,9 @@
 package modelcall
 
 import (
-	"time"
-
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-)
-
-const (
-	// DefaultCooldown is how long a connection is set aside when the service gave no wait.
-	DefaultCooldown = 60 * time.Second
-	// MaxCooldown is the longest a connection is set aside for a wait the service asked for.
-	MaxCooldown = 10 * time.Minute
 )
 
 // Calls carries out the operations plugins ask for. It reads the rows of the calling plugin in order and
@@ -31,16 +23,16 @@ type Calls struct {
 	clock       machineport.Clock
 	queues      *queues
 	notices     connectionport.ReportSetAside
-	cooldown    *cooldown
+	cooldown    *connection.Cooldowns
 }
 
 // Connections is where the calls find a connection, its secrets and the rows of the plugins that name it.
+// Titles names the operations in the list of running plugins; a nil Titles names them by their ids.
 type Connections struct {
 	Resolve     connectionport.ResolveConnection
 	ReadSecrets connectionport.ReadConnectionSecrets
 	Rows        connectionport.ListRows
-	// Titles names the operations in the list of running plugins; nil names them by their ids.
-	Titles connectionport.OperationTitles
+	Titles      connectionport.OperationTitles
 }
 
 // NewCalls returns the calls over the connections and the providers the source
@@ -50,6 +42,6 @@ func NewCalls(
 ) *Calls {
 	return &Calls{
 		resolve: connections.Resolve, readSecrets: connections.ReadSecrets, rows: connections.Rows, titles: connections.Titles, source: source, clock: clock, queues: newQueues(wait), notices: notices,
-		cooldown: newCooldown(),
+		cooldown: connection.NewCooldowns(),
 	}
 }

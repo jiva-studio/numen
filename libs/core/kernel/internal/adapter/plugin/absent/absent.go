@@ -60,7 +60,7 @@ func (Runtime) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 // Release has no plugin to release.
 func (Runtime) Release(string, plugindomain.Holder) {}
 
-// ReleaseQuestion has no plugin to release.
+// ReleaseQuestion does nothing: EnsureActiveForQuestion takes no lease here.
 func (Runtime) ReleaseQuestion(string, plugindomain.Holder) {}
 
 // Discover finds no plugin.

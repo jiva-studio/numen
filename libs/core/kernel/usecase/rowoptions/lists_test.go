@@ -64,7 +64,7 @@ func (r *runningProviders) countOpenCalls() int {
 }
 
 func (s *setup) restart() *rowoptions.Options {
-	return rowoptions.NewOptions(s.world.Resolve, s.world.ReadSecrets, s.world.Source, s.running, rowoptions.NewLists(s.files))
+	return rowoptions.NewOptions(s.world.Resolve, s.world.ReadSecrets, s.world.Source, s.running, rowoptions.NewLists(s.files), nil)
 }
 
 func (s *setup) countCalls() int { return len(s.world.Provider.Calls()) }

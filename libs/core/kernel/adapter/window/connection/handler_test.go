@@ -124,7 +124,7 @@ func useCasesOf(all *connectiontest.Connections, source connectionport.ProviderS
 	return UseCases{
 		Edits: Edits{Create: all.Create, Update: all.Update, Delete: all.Delete},
 		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: rowoptions.NewOptions(
-			all.Resolve.Execute, all.ReadSecrets.Execute, source, notRunning{}, rowoptions.NewLists(&memoryLists{byPlugin: map[string][]connection.OptionList{}}),
+			all.Resolve.Execute, all.ReadSecrets.Execute, source, notRunning{}, rowoptions.NewLists(&memoryLists{byPlugin: map[string][]connection.OptionList{}}), nil,
 		)},
 	}
 }

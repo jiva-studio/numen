@@ -19,8 +19,7 @@ func TestTheLeasesOfAPluginNameTheirHolders(t *testing.T) {
 	asker := Lease{Kind: UseLease, Holder: plugin.Holder{PluginID: "org.example.orchard", Why: "call tool"}}
 	sup := New(nil)
 	start := testsupport.GetEpoch()
-	sup.SetActivating()
-	sup.SetStartedBy(starter.Holder)
+	sup.SetActivating(starter.Holder)
 	sup.ActivateInProcess(starter, start)
 	sup.Acquire(asker, start.Add(time.Second))
 	sup.Acquire(questionLease, start.Add(2*time.Second))
@@ -47,7 +46,7 @@ func TestTheLeasesOfAPluginNameTheirHolders(t *testing.T) {
 func TestAReleaseOfTheSameHolderTwiceRemovesOneLeaseEachTime(t *testing.T) {
 	sup := New(nil)
 	start := testsupport.GetEpoch()
-	sup.SetActivating()
+	sup.SetActivating(plugin.Holder{})
 	sup.ActivateInProcess(useLease, start)
 	sup.Acquire(useLease, start)
 	sup.Acquire(questionLease, start)
@@ -63,12 +62,12 @@ func TestAReleaseOfTheSameHolderTwiceRemovesOneLeaseEachTime(t *testing.T) {
 func TestAStoppedPluginHasNoHolders(t *testing.T) {
 	sup := New(nil)
 	start := testsupport.GetEpoch()
-	sup.SetActivating()
+	sup.SetActivating(plugin.Holder{})
 	sup.ActivateInProcess(useLease, start)
 	sup.Acquire(questionLease, start)
 
 	sup.SetDormant(nil)
-	sup.SetActivating()
+	sup.SetActivating(plugin.Holder{})
 	sup.ActivateInProcess(questionLease, start)
 
 	usage, _ := sup.GetUsage()
