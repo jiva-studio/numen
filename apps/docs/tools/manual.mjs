@@ -376,11 +376,11 @@ const kindOfDeclared = (one) => {
 }
 
 /**
- * The sentence a declared setting is described by, with the values it takes. A setting with no
- * description is described by its title.
+ * The sentence a declared setting is described by, with the values it takes: its details, else its
+ * description, else its title.
  */
 const meaningOfDeclared = (one) => {
-  const parts = [(one.description ?? one.title).replace(/\.$/, '')]
+  const parts = [(one.details ?? one.description ?? one.title).replace(/\.$/, '')]
   if (one.optionsFrom === 'themes') parts.push('The name of an installed theme')
   else if (one.type === 'enum') {
     const values = one.options.map((option) => (typeof option === 'string' ? option : option.value))

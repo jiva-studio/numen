@@ -62,21 +62,23 @@
       "key": "executablePath",
       "type": "file",
       "title": "Executable Path",
-      "description": "Path to the Claude Code CLI executable. Empty finds it automatically.",
+      "description": "Path to the Claude Code CLI; empty finds it automatically",
       "default": ""
     },
     {
       "key": "readsHooksAndSkills",
       "type": "boolean",
       "title": "Hooks & skills",
-      "description": "Let Claude Code read the hooks, skills, standing instructions in CLAUDE.md and plugins configured for this person. Off. A hook is a shell command Claude Code runs itself. What a vault contains is never read.",
+      "description": "Use your own Claude Code hooks, skills and CLAUDE.md",
+      "details": "Lets Claude Code read the hooks, skills, standing instructions in CLAUDE.md and plugins configured for this person. Off by default. A hook is a shell command Claude Code runs itself. What a vault contains is never read.",
       "default": false
     },
     {
       "key": "requestTimeout",
       "type": "number",
       "title": "Request timeout",
-      "description": "Seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds.",
+      "description": "Seconds to wait for the program; empty waits 120",
+      "details": "Seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds.",
       "min": 1,
       "max": 3600,
       "step": 1

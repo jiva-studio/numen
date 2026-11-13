@@ -130,7 +130,8 @@
       "key": "dayStartTime",
       "type": "string",
       "title": "Day starts at",
-      "description": "Time a review day starts, HH:MM up to 12:00; other values use 04:00",
+      "description": "Time a review day starts, HH:MM up to 12:00",
+      "details": "The time a review day starts, as HH:MM up to 12:00. Any other value uses 04:00.",
       "default": "04:00"
     },
     {

@@ -121,7 +121,7 @@
       "key": "downloadCaptionsAutomatically",
       "type": "boolean",
       "title": "Download captions automatically",
-      "description": "Download captions or the article of every link note that has none",
+      "description": "Download captions or the article of link notes without them",
       "default": false
     },
     {

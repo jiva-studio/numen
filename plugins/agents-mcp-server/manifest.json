@@ -35,7 +35,8 @@
       "key": "token",
       "type": "string",
       "title": "Token",
-      "description": "Bearer token MCP clients send; made on first start. Empty rejects every request",
+      "description": "Bearer token MCP clients send; made on first start",
+      "details": "The bearer token MCP clients send with each request. The plugin makes one on its first start. An empty token rejects every request.",
       "generate": "token"
     }
   ]
