@@ -37,12 +37,13 @@ describe('the status made before the loader', () => {
     expect(status.getPluginFailure(ORCHARD)).toBeUndefined()
   })
 
-  it('is over for a plugin the loader started', async () => {
+  it('is over for a plugin the loader started on use', async () => {
     const status = createPluginStatus({ isEnabled: () => true })
     const loader = createLoader(status)
 
     await loader.trackPlugins([ORCHARD])
     await loader.start()
+    await status.startPlugin(ORCHARD)
 
     expect(status.isPluginStarting(ORCHARD)).toBe(false)
     expect(status.state.activePlugins.value.has(ORCHARD)).toBe(true)
@@ -55,6 +56,7 @@ describe('the status made before the loader', () => {
 
     await loader.trackPlugins([ORCHARD])
     await loader.start()
+    await status.startPlugin(ORCHARD)
 
     expect(status.getPluginFailure(ORCHARD)).toContain('the orchard is closed')
     expect(loader.status.getPluginFailure(ORCHARD)).toBe(status.getPluginFailure(ORCHARD))

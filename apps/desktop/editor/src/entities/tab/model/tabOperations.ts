@@ -8,7 +8,12 @@ import { closeTab, openTabAdjacent, paneById } from '@numen/workbench'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
 import type { SavedTab } from '../lib/tab'
 import { createRestoreFailedKind } from './restoreFailed'
-import { createUnavailableKind, isUnavailableKind, type UnavailableState } from './unavailable'
+import {
+  createUnavailableKind,
+  isUnavailableKind,
+  type UnavailableKindOptions,
+  type UnavailableState,
+} from './unavailable'
 import { getTabPath, omitEntry, openInScope, showTab, type TabStore } from './tabStore'
 
 const destroyTab = (one: WindowTab, id: string): void => {
@@ -110,17 +115,21 @@ const openInIsolation = (store: TabStore, saved: SavedTab, one: AnyTabKind) => {
   }
 }
 
+const createPluginPlaceholder = (
+  store: TabStore,
+  kind: string,
+  options?: UnavailableKindOptions,
+): AnyTabKind => {
+  store.unavailable.startKindPlugin?.(kind)
+  return createUnavailableKind(store.panes.unavailable, kind, options, store.unavailable)
+}
+
 export function createTabOpeners(store: TabStore) {
   /** A tab the core kept, opened under its id with the state its kind saved. */
   const openSavedTab = (saved: SavedTab) => {
     const one =
       store.byKind.value.get(saved.kind) ??
-      createUnavailableKind(
-        store.panes.unavailable,
-        saved.kind,
-        { title: saved.title },
-        store.unavailable,
-      )
+      createPluginPlaceholder(store, saved.kind, { title: saved.title })
     const [kind, scope, state] = openInIsolation(store, saved, one)
     store.scopes.set(saved.id, scope)
     store.open.value = new Map(store.open.value).set(saved.id, { kind, state })
@@ -136,8 +145,7 @@ export function createTabOpeners(store: TabStore) {
   }
 
   const getKind = (kind: string): AnyTabKind =>
-    store.byKind.value.get(kind) ??
-    createUnavailableKind(store.panes.unavailable, kind, undefined, store.unavailable)
+    store.byKind.value.get(kind) ?? createPluginPlaceholder(store, kind)
 
   /** The open tab a path already has, where the kind gives a tab one identity per path. */
   const findTabOfPath = (one: AnyTabKind, kind: string, targetPath: string) =>

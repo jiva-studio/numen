@@ -3,11 +3,13 @@
  * the plugins that mount them.
  *
  * One plugin at a time draws a capability: a second registration of it throws. A mount waits for a
- * declaration of its capability, and goes back to waiting when the plugin that drew it is disposed. Each view is its own Vue application, given the mounting plugin's context as
+ * declaration of its capability, which starts the plugin that declares it, and goes back to waiting
+ * when the plugin that drew it is disposed. Each view is its own Vue application, given the mounting plugin's context as
  * its `context` prop, behind the stylesheet of the plugin that declared it.
  */
 import { createApp, type App, type Component } from 'vue'
 import type { Disposable, MountedView } from '@numen/plugin-sdk'
+import type { ContributionMatch } from './loading'
 import { adoptPluginStyle, getPluginStyle, type StyleRoot } from './styles'
 
 /** A view as the registry keeps it. The registry matches capabilities by name and knows no list of them. */
@@ -95,7 +97,23 @@ function eraseView(mount: Mount): void {
   mount.instance = undefined
 }
 
-export function createViewRegistry() {
+/**
+ * Starts the plugins that declare a capability under `contributes.viewCapabilities`. A start reports
+ * its own failure, and the mount goes on waiting.
+ */
+export interface ViewRegistryDeps {
+  readonly startPluginsOf?: (match: ContributionMatch) => Promise<void>
+}
+
+function startDeclaringPlugins(deps: ViewRegistryDeps, capability: string): void {
+  deps
+    .startPluginsOf?.((manifest) =>
+      (manifest.contributes?.viewCapabilities ?? []).includes(capability),
+    )
+    .catch(() => undefined)
+}
+
+export function createViewRegistry(deps: ViewRegistryDeps = {}) {
   const declared: DeclaredView[] = []
   const mounts = new Set<Mount>()
 
@@ -147,6 +165,7 @@ export function createViewRegistry() {
     const mount: Mount = { capability, element, context, access }
     mounts.add(mount)
     draw(mount)
+    if (!declaredView) startDeclaringPlugins(deps, capability)
     return {
       focus: () => mount.instance?.exposed.focus?.(),
       dispose: () => {

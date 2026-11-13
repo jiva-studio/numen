@@ -60,6 +60,7 @@ describe('the commands of a view plugin that starts in a window with a backend p
     }))
 
     await loader.start()
+    await loader.status.startPlugin(VIEW)
 
     expect(reportCommandIssue).not.toHaveBeenCalled()
   })

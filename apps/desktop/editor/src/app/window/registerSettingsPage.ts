@@ -42,7 +42,7 @@ export function registerSettingsPage(deps: SettingsPageDeps): void {
     appearance: deps.windowSettings.appearance,
     log: deps.log,
     windowTabs,
-    getSettingsViews: (pluginId) => plugins.host.registered.getRegisteredSettingsViews(pluginId),
+    getSettingsViews: plugins.host.registered.getSettingsViews,
     getPlatform: () => frame.platform.value,
     health: { items: plugins.health, commands: plugins.commands },
   })

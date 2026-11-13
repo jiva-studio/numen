@@ -1,5 +1,5 @@
 /**
- * The start of the plugins with an entry in a window slot, before every other plugin.
+ * The start of the plugins with an entry in a window slot, the only plugins a window starts with.
  * A window is drawn once they have started, or once INTERFACE_WAIT_MS has passed. A plugin of a
  * window slot that is not ready by then goes on starting and adds what it contributes when it is.
  */
@@ -13,7 +13,6 @@ export interface InterfaceStartDeps<Loaded> {
 }
 
 export interface InterfaceStart {
-  readonly others: readonly string[]
   readonly started: Promise<void>
 }
 
@@ -29,7 +28,7 @@ function createDeadline(): { readonly late: Promise<'late'>; readonly cancel: ()
  * Starts the plugins of the window slots, all read at once and activated in the order of the list,
  * each after the one before it until INTERFACE_WAIT_MS has passed, and from then on without waiting
  * for a late one. Settles once they have all started or INTERFACE_WAIT_MS has passed, which also
- * covers telling them apart.
+ * covers telling them apart. The plugins that fill no slot of the window are left idle.
  */
 export async function startInterfacePlugins<Loaded>(
   deps: InterfaceStartDeps<Loaded>,
@@ -52,7 +51,7 @@ export async function startInterfacePlugins<Loaded>(
     }
     const started = Promise.all(runs).then(() => undefined)
     await Promise.race([started, deadline.late])
-    return { others: deps.ids.filter((_, index) => !kinds[index]), started }
+    return { started }
   } finally {
     deadline.cancel()
   }

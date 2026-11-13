@@ -93,12 +93,12 @@ describe('the commands a plugin declares in its manifest', () => {
     )
   })
 
-  it('are listed while the frontend of their plugin is still loading, and running one waits for the plugin', async () => {
+  it('are listed while the frontend of their plugin has not started, and running one starts it and waits', async () => {
     let settle: () => void = () => undefined
     const gate = new Promise<void>((resolve) => {
       settle = resolve
     })
-    const { host } = createHost([declare()], { waitForPlugin: () => gate })
+    const { host } = createHost([declare()], { startPlugin: () => gate })
     const handler = vi.fn()
 
     expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
@@ -116,7 +116,7 @@ describe('the commands a plugin declares in its manifest', () => {
   })
 
   it('are not run for a plugin that failed to activate', async () => {
-    const { host } = createHost([declare()], { waitForPlugin: async () => undefined })
+    const { host } = createHost([declare()], { startPlugin: async () => undefined })
     host.lifecycle.createContext('md.tree', declaring('md.tree'))
     host.lifecycle.disposePlugin('md.tree')
 

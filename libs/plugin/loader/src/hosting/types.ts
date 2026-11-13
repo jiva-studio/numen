@@ -37,6 +37,7 @@ import type {
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
+import type { ContributionMatch } from '../loading'
 import type { AnyTabKind, SourceReader } from './tabKinds'
 import type { DeclaredSlotEntry, SlotCommandLook } from '../slots'
 import type { WhenValues, WhenReader } from '../when'
@@ -103,7 +104,8 @@ export type SlotCommandFinder = (
 /**
  * target is the target of the window, which the plugins it activates read as theirs. A window that opens
  * no tab for a plugin leaves out openTab. getSlotEntries reads the slot entries from the manifests of the
- * plugins whose context the host made, keyed by plugin id.
+ * plugins whose context the host made, keyed by plugin id. startPlugin settles once the plugin is active
+ * or has failed, and does nothing for a plugin that is off; findPluginsOf matches the manifests read so far.
  */
 export interface PluginHostDeps {
   readonly target: string
@@ -121,7 +123,9 @@ export interface PluginHostDeps {
   readonly hasPluginFrontend?: (pluginId: string) => boolean
   readonly hasPluginBackend?: (pluginId: string) => boolean
   readonly isPluginFailed?: (pluginId: string) => boolean
-  readonly waitForPlugin?: (pluginId: string) => Promise<void>
+  readonly startPlugin?: (pluginId: string) => Promise<void>
+  readonly startPluginsOf?: (match: ContributionMatch) => Promise<void>
+  readonly findPluginsOf?: (match: ContributionMatch) => readonly string[]
   readonly reportCommandIssue?: (pluginId: string, message: string) => void
   readonly reportViewIssue?: (pluginId: string, message: string) => void
   readonly registerKind: (kind: AnyTabKind) => () => void

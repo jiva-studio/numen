@@ -37,6 +37,11 @@ function createWindow(activate: (context: PluginContext) => void | Promise<void>
   return { host, loader, reportCommandIssue, onError }
 }
 
+async function startWindow(loader: ReturnType<typeof createWindow>['loader']): Promise<void> {
+  await loader.start()
+  await loader.status.startPlugin(PLUGIN)
+}
+
 function followCommands(host: ReturnType<typeof createPluginHost>): string[][] {
   const reports: string[][] = []
   watch(
@@ -55,7 +60,7 @@ describe('a command a plugin registers while it starts', () => {
     })
     followCommands(host)
 
-    await loader.start()
+    await startWindow(loader)
 
     expect(reportCommandIssue).not.toHaveBeenCalled()
   })
@@ -67,7 +72,7 @@ describe('a command a plugin registers while it starts', () => {
       context.register.command({ id: 'graph.showNote', handler: () => undefined })
     })
 
-    await loader.start()
+    await startWindow(loader)
 
     expect(reportCommandIssue).not.toHaveBeenCalled()
   })
@@ -79,7 +84,7 @@ describe('a command a plugin registers while it starts', () => {
     })
     followCommands(host)
 
-    await loader.start()
+    await startWindow(loader)
     host.commands.getPaletteCommands()
 
     expect(reportCommandIssue).not.toHaveBeenCalled()
@@ -93,7 +98,7 @@ describe('a command a plugin registers while it starts', () => {
       context.register.command({ id: 'graph.showNote', handler: () => undefined })
     })
 
-    await loader.start()
+    await startWindow(loader)
 
     expect(commands).toStrictEqual([`${PLUGIN}:graph.open`, `${PLUGIN}:graph.showNote`])
   })
@@ -107,7 +112,7 @@ describe('a command whose handler is missing after the plugin has started', () =
     })
     followCommands(host)
 
-    await loader.start()
+    await startWindow(loader)
     host.commands.getPaletteCommands()
     host.commands.getPaletteCommands()
 
@@ -125,7 +130,7 @@ describe('the commands of a plugin that is turned off', () => {
       context.register.command({ id: 'graph.open', handler: () => undefined })
       context.register.command({ id: 'graph.showNote', handler: () => undefined })
     })
-    await loader.start()
+    await startWindow(loader)
     const reports = followCommands(host)
 
     host.lifecycle.disposePlugin(PLUGIN)
@@ -145,7 +150,7 @@ describe('a plugin whose start passes 30 s', () => {
         context.register.command({ id: 'graph.showNote', handler: () => undefined })
       })
 
-      const started = loader.start()
+      const started = startWindow(loader)
       await vi.advanceTimersByTimeAsync(30_000 + 100)
 
       expect(loader.status.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
@@ -178,7 +183,7 @@ describe('a start cancelled at 30 s that ends after a newer start', () => {
         context.register.command({ id: 'graph.open', handler: () => undefined })
         context.register.command({ id: 'graph.showNote', handler: () => undefined })
       })
-      const started = loader.start()
+      const started = startWindow(loader)
       await vi.advanceTimersByTimeAsync(30_000 + 100)
       await started
 
@@ -206,7 +211,7 @@ describe('a plugin whose activation throws', () => {
     })
     followCommands(host)
 
-    await loader.start()
+    await startWindow(loader)
     host.commands.getPaletteCommands()
 
     expect(onError).toHaveBeenCalledTimes(1)

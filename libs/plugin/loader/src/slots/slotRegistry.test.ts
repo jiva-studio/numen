@@ -494,3 +494,37 @@ describe('the look of a command entry', () => {
     expect(harbor).toMatchObject({ title: 'Open harbor' })
   })
 })
+
+describe('an entry drawn before its plugin has started', () => {
+  it('starts the plugin of a view it has not registered yet, where the condition holds', () => {
+    const requestPlugin = vi.fn()
+    const { registry } = setup(
+      [
+        { pluginId: LEDGER, slot: 'titleBar.status', view: 'ledger-total' },
+        { pluginId: HARBOR, slot: 'titleBar.status', view: 'harbor-tide', when: 'target.isFolder' },
+        { pluginId: TIDE, slot: 'titleBar.status', view: 'balance' },
+      ],
+      { requestPlugin },
+    )
+
+    expect(describeSlot(registry.getEntries('titleBar.status'))).toStrictEqual(['view balance'])
+    expect(requestPlugin.mock.calls).toStrictEqual([[LEDGER]])
+  })
+
+  it('starts the plugin of a command in a menu as the menu is drawn, and not of one in a bar of the window', () => {
+    const requestPlugin = vi.fn()
+    const { registry } = setup(
+      [
+        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open' },
+        { pluginId: HARBOR, slot: 'fileTree.context', command: 'harbor.open' },
+        { pluginId: TIDE, slot: 'fileTree.context', command: 'app:settings.open' },
+      ],
+      { requestPlugin },
+    )
+
+    registry.getEntries('titleBar.commands')
+    registry.getEntries('fileTree.context')
+
+    expect(requestPlugin.mock.calls).toStrictEqual([[HARBOR]])
+  })
+})

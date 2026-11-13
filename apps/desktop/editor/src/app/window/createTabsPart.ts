@@ -2,10 +2,12 @@
  * The tabs of the window: the tabs, the links between them, the files they open, the sync of their
  * paths and the session that keeps their links with the core.
  */
+import type { PluginStatus } from '@numen/plugin-loader'
 import { getFileKinds } from '@/entities/file'
 import type { SettingsStore } from '@/entities/settings'
 import {
   createTabNavigation,
+  createTabPluginStarts,
   createTabSync,
   createWindowTabs,
   fileOpeners,
@@ -21,17 +23,23 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 /** What the tabs of the window read of the others parts of it. */
 export interface TabsPartDeps {
   readonly writeMessage: MessageWriter
-  readonly rest: Pick<SettingsStore, 'write'>
-  readonly isPluginStarting: (pluginId: string) => boolean
+  readonly rest: Pick<SettingsStore, 'write' | 'state'>
+  readonly status: Pick<PluginStatus, 'isPluginStarting' | 'startPlugin' | 'startTabPlugins'>
   readonly openPluginSettings: (pluginId?: string) => void
 }
 
 export function createTabsPart(deps: TabsPartDeps) {
-  const { writeMessage } = deps
+  const { writeMessage, status } = deps
+  const pluginStarts = createTabPluginStarts({
+    status,
+    getPlugins: () => deps.rest.state.plugins.value,
+    writeMessage,
+  })
   const windowTabs = createWindowTabs(
     { unavailable: UnavailablePane, restoreFailed: RestoreFailedPane },
     {
-      isPluginStarting: deps.isPluginStarting,
+      isPluginStarting: status.isPluginStarting,
+      startKindPlugin: pluginStarts.startKindPlugin,
       enablePlugin: async (pluginId) => {
         await deps.rest.write.writeSetting([pluginId, 'enabled'], true)
       },
@@ -44,6 +52,8 @@ export function createTabsPart(deps: TabsPartDeps) {
   const tabOpeners = fileOpeners({
     fileKinds: getFileKinds,
     reconcileTab: windowTabs.panes.reconcileTab,
+    startTabKind: pluginStarts.startTabKind,
+    startExtensionReader: pluginStarts.startExtensionReader,
   })
   const tabSync = createTabSync({
     windowTabs,

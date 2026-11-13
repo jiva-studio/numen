@@ -11,6 +11,7 @@ export interface PluginStarter {
   readonly close: () => Promise<void>
   readonly status: {
     readonly waitForInterface: () => Promise<void>
+    readonly startPlugin: (id: string) => Promise<void>
     readonly getFailedPlugins: () => readonly { readonly id: string; readonly error: string }[]
   }
 }
@@ -36,8 +37,12 @@ export function useAppStart(loader: PluginStarter) {
       () => undefined,
     )
     try {
-      await loader.trackPlugins((await listPlugins()).map((one) => one.id))
+      const ids = (await listPlugins()).map((one) => one.id)
+      await loader.trackPlugins(ids)
       await loader.start()
+      // The window draws the tab kinds and the slot entries of the plugins it started, so it starts
+      // every plugin it lists rather than each on use.
+      await Promise.all(ids.map((id) => loader.status.startPlugin(id)))
     } catch (error) {
       listError.value = formatError(error)
     } finally {

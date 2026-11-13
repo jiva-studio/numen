@@ -75,7 +75,10 @@ const leaveBookAt = async (page: Page, panel: TabPanel, file: string, target: nu
 
 const leaveRecordingAt = async (page: Page, panel: TabPanel, file: string, time: string): Promise<void> => {
   const player = panel.player()
-  await player.getByRole('slider').fill(String(parseTime(time) * 1000))
+  const slider = player.getByRole('slider')
+  // A seek before the recording has loaded its length is lost.
+  await expect(slider).not.toHaveAttribute('max', '0')
+  await slider.fill(String(parseTime(time) * 1000))
   await expect(player).toContainText(time)
   await expect
     .poll(async () => (await readSavedStates(page.request)).get(file))

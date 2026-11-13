@@ -305,3 +305,33 @@ describe('the same extension reader registered twice', () => {
     expect(activeEditors).toStrictEqual(['read'])
   })
 })
+
+describe('a path opened before the plugin that opens it has started', () => {
+  it('starts the plugin of the tab kind of the note, and opens the note in the kind it registers', async () => {
+    const opened: string[] = []
+    const tabOpeners = fileOpeners({
+      ...vault({ 'Tides.md': note('note', 'tide-chart') }).core,
+      startTabKind: async (kind) => {
+        tabOpeners.registerEditor(kind, (path) => opened.push(`${kind} ${path}`))
+      },
+    })
+
+    await tabOpeners.openFile('Tides.md', 'Tides')
+
+    expect(opened).toStrictEqual(['tide-chart Tides.md'])
+  })
+
+  it('starts the plugin of the reader of the extension, and opens the file in the reader it registers', async () => {
+    const opened: string[] = []
+    const tabOpeners = fileOpeners({
+      ...vault({ 'Charts/Harbor.tide': OTHER }).core,
+      startExtensionReader: async (extension) => {
+        tabOpeners.registerExtensionReader(extension, (path) => opened.push(`${extension} ${path}`))
+      },
+    })
+
+    await tabOpeners.openFile('Charts/Harbor.tide')
+
+    expect(opened).toStrictEqual(['tide Charts/Harbor.tide'])
+  })
+})
