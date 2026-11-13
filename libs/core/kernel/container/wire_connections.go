@@ -76,15 +76,21 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 	}
 	resolve, readSecrets := connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute
 	source := providerbridge.NewSource(c.PluginHost.Runtime)
-	c.PluginHost.Endpoint.SetModelCalls(modelcall.NewCalls(
-		modelcall.Connections{
-			Resolve:     resolve,
-			ReadSecrets: readSecrets,
-			Rows:        connection.NewListRows(deps, openConnectionRows(c)).Execute,
-			ListOptions: rowoptions.NewOptions(resolve, readSecrets, source).ListOptions,
-		},
-		source, clock.System{}, clock.System{}.Wait, notices,
-	))
+	rows := connection.NewListRows(deps, openConnectionRows(c)).Execute
+	c.PluginHost.Endpoint.SetModelCalls(callsAndRows{
+		Calls: modelcall.NewCalls(
+			modelcall.Connections{Resolve: resolve, ReadSecrets: readSecrets, Rows: rows},
+			source, clock.System{}, clock.System{}.Wait, notices,
+		),
+		Rows: modelcall.NewRows(resolve, rows, rowoptions.NewOptions(resolve, readSecrets, source).ListOptions),
+	})
+}
+
+// callsAndRows are the calls of the plugins with the listing of their rows, which the views of the window
+// reach through the plugin endpoint.
+type callsAndRows struct {
+	*modelcall.Calls
+	*modelcall.Rows
 }
 
 // GetConnectionCalls is the calls plugin views make through their connections, for a window that serves

@@ -84,7 +84,11 @@ export function useConversation(options: ConversationOptions): Conversation {
           toolContext: { ...options.toolContext },
           vaultId: options.vault ?? '',
         },
-        { signal: flight.signal, priority: 'interactive', ...readPreferredRow(options.getPreferredRow) },
+        {
+          signal: flight.signal,
+          priority: 'interactive',
+          ...readPreferredRow(options.getPreferredRow),
+        },
       )
       const end = await readFrames(frames, flight.signal, { answer, work, plan })
 
