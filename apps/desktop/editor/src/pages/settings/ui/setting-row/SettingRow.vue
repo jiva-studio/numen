@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
  * One settings row: the title with a one-line description under it on the left, the control on the
- * right. A setting with details shows an info button beside the title that opens them in a popover;
- * Escape closes it and gives the focus back to the button. A value changed from its default shows a
- * Reset action beside the title. When the settings
- * column is narrower than 34rem, the control moves under the title at full width.
+ * right. A setting with details shows an info button beside the title that opens them in a popover.
+ * Escape closes it and gives the focus back to the button, and a press outside closes it; a scroll or
+ * a resize of the page leaves it open, since it moves with its row. A value changed from its default
+ * shows a Reset action beside the title. When the settings column is narrower than 34rem, the control
+ * moves under the title at full width.
  *
  * The title carries the id the control is labelled by, because switches, segments and composite
  * controls have no element a `<label for>` can target; the description carries the id the
@@ -89,7 +90,6 @@ function closeInfo(isFocusReturned: boolean): void {
   if (isFocusReturned) infoButton.value?.focus()
 }
 
-/** The popover moves with its row, so a scroll or a resize of the page leaves it open. */
 function isMoveOfThePage(event: Event): boolean {
   return event.type === 'scroll' || event.type === 'resize'
 }

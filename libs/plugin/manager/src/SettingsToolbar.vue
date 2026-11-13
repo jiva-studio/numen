@@ -10,7 +10,6 @@ import { PLUGIN_WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  /** The names of the levels from Settings to the page, the page last. */
   path: readonly string[]
 }>()
 

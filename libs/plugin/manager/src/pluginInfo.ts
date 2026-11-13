@@ -40,13 +40,15 @@ export interface PluginSettingOptionsBy {
   readonly options: Readonly<Record<string, readonly PluginSettingOption[]>>
 }
 
-/** Declarative setting schema and metadata exposed by a plugin. */
+/**
+ * Declarative setting schema and metadata exposed by a plugin. description is one line; details is
+ * the full text behind it.
+ */
 export interface PluginSettingInfo {
   readonly key: string
   readonly type: PluginSettingType
   readonly title: string
   readonly description: string
-  /** The full text the info button beside the title opens. */
   readonly details?: string | undefined
   readonly default: SettingValue | undefined
   readonly palette?: boolean | undefined

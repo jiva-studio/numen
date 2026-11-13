@@ -34,7 +34,6 @@ const {
 } = useSettingsTab(props.state)
 
 /* -------------------------------- Handlers -------------------------------- */
-/** The plugin list, searched for the plugins of one category. */
 function onOpenCategory(category: string): void {
   updateQuery(`category:${category}`)
   goBack()
