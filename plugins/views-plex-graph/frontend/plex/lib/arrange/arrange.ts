@@ -29,7 +29,7 @@ import {
 import { routeEdges, createRouting } from './edges/routing'
 import { findSpacing } from './layout/spacing'
 import { separateTitles } from './edges/titles'
-import type { PlexGraph, PlexNode } from '../../../types'
+import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
 
 /** `room` is the space a note keeps over and under its pill; a note without one keeps none. */
 export interface ArrangeInput {
@@ -79,8 +79,8 @@ export function arrangePlex(
     }
   }
 
-  // Packed as closely as this window needs and no closer, so a box narrows
-  // and a gap closes before a note is given up. The probes of the packing and of the gaps lay out
+  // Packed as closely as this window needs and no closer, so a gap closes, and without `measure` a box
+  // narrows, before a note is given up. With `measure` a box keeps the width of its title: packing does not narrow it. The probes of the packing and of the gaps lay out
   // without `fits`; with it they pack differently, and arrange.frames.test.ts records the packing
   // they choose. The names are left out of it:
   // a pill is the same size with names as without, and the names then cost notes.
@@ -106,7 +106,7 @@ export function arrangePlex(
         (node) => isInside(node, viewport, { margin, rooms }),
       )
     : requested
-  const overflow = countOverflow(graph.nodes, admitted)
+  const admittedOverflow = countOverflow(graph.nodes, admitted)
 
   const spacing = findSpacing(resolved, (candidate, window) =>
     isHeld(
@@ -117,9 +117,17 @@ export function arrangePlex(
       { margin, rooms },
     ),
   )
-  const { focus, placed } = lay({ ...resolved, ...spacing }, admitted, rooms, {
-    fits: getFits(resolved),
-  })
+  const fit: Fit = { margin, rooms }
+  const spaced = lay({ ...resolved, ...spacing }, admitted, rooms, { fits: getFits(resolved) })
+  // The probes of the gaps lay out without `fits`, so the spaced layout can leave the window where the one admission verified does not.
+  const settled = isHeld(spaced.placed, viewport, fit)
+    ? spaced
+    : lay(resolved, admitted, rooms, { fits: getFits(resolved) })
+  const { focus } = settled
+  const placed = viewport
+    ? settled.placed.filter((node) => isInside(node, viewport, fit))
+    : settled.placed
+  const overflow = addDropped(admittedOverflow, settled.placed, placed)
   const nodes = [focus, ...placed]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
@@ -139,9 +147,27 @@ function createWidthLookup(
     if (!measure) return isFocus ? options.focusSize.width : options.nodeSize.width
     const widest = isFocus ? settings.focusSize.width : settings.nodeSize.width
     // The focus pill is the box its title would have as a neighbor, made larger.
-    const box = Math.max(options.minWidth, measure(node))
+    const measured = measure(node)
+    if (!Number.isFinite(measured)) {
+      return isFocus ? options.focusSize.width : options.nodeSize.width
+    }
+    const box = Math.max(options.minWidth, measured)
     return Math.min(widest, isFocus ? box * options.focusScale : box)
   }
+}
+
+function addDropped(
+  overflow: Partial<Record<PlexRelation, number>>,
+  laid: readonly PlacedNode[],
+  kept: readonly PlacedNode[],
+): Partial<Record<PlexRelation, number>> {
+  const keptIds = new Set(kept.map((node) => node.id))
+  const total = { ...overflow }
+  for (const node of laid) {
+    if (keptIds.has(node.id) || node.relation === 'focus') continue
+    total[node.relation] = (total[node.relation] ?? 0) + 1
+  }
+  return total
 }
 
 /** What a box must keep clear of the window: the margin, and the room each note keeps around its pill. */

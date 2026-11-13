@@ -31,7 +31,7 @@ function tweenNode(start: PlacedNode, target: PlacedNode, t: number): PlacedNode
     y: lerp(start.y, target.y, t),
     width: lerp(start.width, target.width, t),
     height: lerp(start.height, target.height, t),
-    opacity: 1,
+    opacity: lerp(start.opacity, target.opacity, t),
   }
 }
 

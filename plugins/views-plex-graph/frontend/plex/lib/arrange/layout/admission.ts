@@ -59,22 +59,29 @@ function findOutside(
   return new Set(placed.filter((node) => !isInside(node)).map((node) => node.id))
 }
 
-function refill(
+/** Takes cut notes back, one note of each relation in turn, while `isHeld` accepts the set. */
+export function refill(
   admitted: NodesByRelation,
   requested: NodesByRelation,
   isHeld: (nodesByRelation: NodesByRelation) => boolean,
 ): NodesByRelation {
   let current = admitted
+  // Each probe is a full layout. A relation that failed is tried again only after another relation has grown: until then the set is the same.
+  let version = 0
+  const failedAt = new Map<PlexRelation, number>()
   for (let grew = true; grew;) {
     grew = false
     for (const relation of RELATION_NAMES) {
       const all = requested[relation] ?? []
       const have = current[relation]?.length ?? 0
-      if (have >= all.length) continue
+      if (have >= all.length || failedAt.get(relation) === version) continue
       const next = { ...current, [relation]: all.slice(0, have + 1) }
       if (isHeld(next)) {
         current = next
         grew = true
+        version++
+      } else {
+        failedAt.set(relation, version)
       }
     }
   }
