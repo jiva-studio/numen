@@ -182,13 +182,16 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
     chosenReasoning.value = null
   }
 
-  const selectReasoning = (id: string) => {
+  const selectReasoningLevel = (id: string) => {
     chosen.value = current.value
     chosenReasoning.value = id
   }
 
-  /** The row the next turn asks first: none until the person chose, or once the chosen agent is gone. */
-  const getPreferred = (): ConnectionPreferredRow | undefined => {
+  /**
+   * The row the next turn asks first: none until the person chose, or after the chosen agent left the
+   * list.
+   */
+  const getPreferredRow = (): ConnectionPreferredRow | undefined => {
     const choice = chosen.value
     const row = currentRow.value
     if (!choice || !row || !isListed(choice)) return undefined
@@ -207,8 +210,8 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
       reasoningId: selectedReasoningId,
     },
     selectModel,
-    selectReasoning,
-    getPreferred,
+    selectReasoningLevel,
+    getPreferredRow,
   }
 }
 

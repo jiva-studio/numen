@@ -54,7 +54,7 @@ const createChat = async (rows: readonly ConnectionRow[]) => {
     words: WORDS,
     conversation: 'conversation:orchard',
     paint: (draw) => draw(),
-    getPreferred: choice.getPreferred,
+    getPreferredRow: choice.getPreferredRow,
   })
   await waitTask()
   return { choice, conversation, calls: connections.calls }
@@ -170,7 +170,7 @@ describe('the turns of a conversation', () => {
     await waitTask()
     expect(choice.offered.reasoningLevels.value.map((one) => one.id)).toStrictEqual(['low', 'high'])
     expect(choice.selected.reasoningId.value).toBe('')
-    choice.selectReasoning('high')
+    choice.selectReasoningLevel('high')
     await conversation.ask('How many pear trees?')
 
     expect(calls[0]?.options?.preferred).toStrictEqual({
@@ -184,7 +184,7 @@ describe('the turns of a conversation', () => {
       row('c-orchard', 'Orchard agent', { model: 'pear-large', reasoning: 'low' }),
     ])
 
-    choice.selectReasoning('high')
+    choice.selectReasoningLevel('high')
     await conversation.ask('How many pear trees?')
 
     expect(calls[0]?.options?.preferred).toStrictEqual({

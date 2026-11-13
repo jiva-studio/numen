@@ -34,7 +34,7 @@ function onSelectModel(option: AgentModelOption) {
 }
 
 function onSelectReasoning(id: string) {
-  props.state.agents?.selectReasoning(id)
+  props.state.agents?.selectReasoningLevel(id)
 }
 </script>
 

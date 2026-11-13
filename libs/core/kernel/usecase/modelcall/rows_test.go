@@ -54,7 +54,7 @@ func TestTheRowsAfterAPreferredRowThatFailsAreAskedInOrder(t *testing.T) {
 	}
 }
 
-func TestAPreferredConnectionThatIsNotAmongTheRowsLeavesTheirOrder(t *testing.T) {
+func TestAPreferredConnectionOutsideTheRowsKeepsTheirOrder(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	other := s.world.AddServer(t, "Third", "https://three.test/v1", "sk-three-0123456789")
 
@@ -89,7 +89,7 @@ func TestTheRowsAreListedWithTheirConnectionAndTheRowFieldsOfItsType(t *testing.
 	}
 }
 
-func TestTheRowsListLeavesOutAConnectionThatCannotServeTheOperation(t *testing.T) {
+func TestTheRowsListOmitsAConnectionThatCannotServeTheOperation(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
 	completer := s.world.Add(t, modelcalltest.CompleterTypeID, "Completer", "https://three.test/v1", "")
 	s.world.Rows.Set(consumerID, modelcalltest.ChatOperation, modelcalltest.Row(completer, "m"), modelcalltest.Row(s.one, "m"))

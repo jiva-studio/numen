@@ -14,13 +14,13 @@ import (
 // connection and the row fields of its type. A row whose connection is missing, or whose type is
 // unavailable or does not serve the operation, is left out.
 func (c *Calls) ListRows(callerPluginID, operation string) ([]modelcall.Row, error) {
-	rows, err := c.rows(callerPluginID, operation)
+	rows, err := c.connections.Rows(callerPluginID, operation)
 	if err != nil {
 		return nil, err
 	}
 	listed := []modelcall.Row{}
 	for _, row := range rows {
-		resolved, err := c.resolve(row.ConnectionID)
+		resolved, err := c.connections.Resolve(row.ConnectionID)
 		switch {
 		case errors.Is(err, connection.ErrNotFound), errors.Is(err, connection.ErrTypeUnavailable):
 			continue
@@ -47,12 +47,12 @@ func (c *Calls) ListRows(callerPluginID, operation string) ([]modelcall.Row, err
 func (c *Calls) ListRowOptions(
 	ctx context.Context, callerPluginID, operation, connectionID, field string, options map[string]string,
 ) ([]modelcall.Option, error) {
-	rows, err := c.rows(callerPluginID, operation)
+	rows, err := c.connections.Rows(callerPluginID, operation)
 	if err != nil {
 		return nil, err
 	}
 	if !slices.ContainsFunc(rows, func(row connection.Row) bool { return row.ConnectionID == connectionID }) {
 		return nil, connection.ErrNotFound
 	}
-	return c.listOptions(ctx, connectionID, field, options, []string{operation})
+	return c.connections.ListOptions(ctx, connectionID, field, options, []string{operation})
 }

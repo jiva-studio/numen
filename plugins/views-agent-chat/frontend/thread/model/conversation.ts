@@ -42,7 +42,7 @@ export interface Conversation {
 
 /**
  * toolContext is handed to every tool the agent calls; vault is the vault the tools work on, empty for the
- * vault the window shows. getPreferred returns the row each question asks first, undefined for the rows
+ * vault the window shows. getPreferredRow returns the row each question asks first, undefined for the rows
  * in their order.
  */
 export interface ConversationOptions {
@@ -52,7 +52,7 @@ export interface ConversationOptions {
   readonly toolContext?: Readonly<Record<string, string>> | undefined
   readonly vault?: string | undefined
   readonly paint?: Paint | undefined
-  readonly getPreferred?: (() => ConnectionPreferredRow | undefined) | undefined
+  readonly getPreferredRow?: (() => ConnectionPreferredRow | undefined) | undefined
 }
 
 /**
@@ -84,7 +84,7 @@ export function useConversation(options: ConversationOptions): Conversation {
           toolContext: { ...options.toolContext },
           vaultId: options.vault ?? '',
         },
-        { signal: flight.signal, priority: 'interactive', ...readPreferred(options.getPreferred) },
+        { signal: flight.signal, priority: 'interactive', ...readPreferredRow(options.getPreferredRow) },
       )
       const end = await readFrames(frames, flight.signal, { answer, work, plan })
 
@@ -113,10 +113,10 @@ export function useConversation(options: ConversationOptions): Conversation {
   }
 }
 
-const readPreferred = (
-  getPreferred: (() => ConnectionPreferredRow | undefined) | undefined,
+const readPreferredRow = (
+  getPreferredRow: (() => ConnectionPreferredRow | undefined) | undefined,
 ): { preferred?: ConnectionPreferredRow } => {
-  const preferred = getPreferred?.()
+  const preferred = getPreferredRow?.()
   return preferred ? { preferred } : {}
 }
 

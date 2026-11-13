@@ -160,7 +160,7 @@ const createAgentsState = (deps: AgentTabDeps): AgentTabState => {
     connections: host,
     words: WORDS,
     conversation: 'conversation:story',
-    getPreferred: choice.getPreferred,
+    getPreferredRow: choice.getPreferredRow,
   })
   return useAgentConversation(conversation, deps, choice)
 }

@@ -45,7 +45,7 @@ export function activate(context: PluginContext): void {
         connections,
         words: WORDS,
         conversation: `conversation:${crypto.randomUUID()}`,
-        getPreferred: choice.getPreferred,
+        getPreferredRow: choice.getPreferredRow,
       })
       return useAgentConversation(conversation, deps, choice)
     },

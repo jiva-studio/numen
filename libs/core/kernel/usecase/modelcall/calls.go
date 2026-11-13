@@ -23,10 +23,7 @@ const (
 // later row answers, notices receives each connection set aside before it, except a row that discovery made
 // rather than the person.
 type Calls struct {
-	resolve     connectionport.ResolveConnection
-	readSecrets connectionport.ReadConnectionSecrets
-	rows        connectionport.ListRows
-	listOptions connectionport.ListRowOptions
+	connections Connections
 	source      connectionport.ProviderSource
 	clock       machineport.Clock
 	queues      *queues
@@ -49,7 +46,6 @@ func NewCalls(
 	connections Connections, source connectionport.ProviderSource, clock machineport.Clock, wait Wait, notices connectionport.ReportSetAside,
 ) *Calls {
 	return &Calls{
-		resolve: connections.Resolve, readSecrets: connections.ReadSecrets, rows: connections.Rows, listOptions: connections.ListOptions, source: source, clock: clock, queues: newQueues(wait), notices: notices,
-		cooldown: newCooldown(),
+		connections: connections, source: source, clock: clock, queues: newQueues(wait), notices: notices, cooldown: newCooldown(),
 	}
 }

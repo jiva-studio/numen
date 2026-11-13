@@ -157,7 +157,8 @@ type ModelCalls interface {
 	// payload, connection.ErrNoConnection, *connection.AllFailedError or *connection.StoppedError where no
 	// row answers, the error of send when send fails, and the error of the context when the call is canceled.
 	Call(ctx context.Context, callerPluginID string, request modelcall.Request, send modelcall.Send) ([]byte, error)
-	// ListRows and ListRowOptions list the rows of the calling plugin and the values of their row fields.
+	// ListRows and ListRowOptions list the rows of a plugin and the values of their row fields, for the
+	// views of the window, which reach the calls through the endpoint.
 	ListRows(callerPluginID, operation string) ([]modelcall.Row, error)
 	ListRowOptions(ctx context.Context, callerPluginID, operation, connectionID, field string, options map[string]string) ([]modelcall.Option, error)
 }

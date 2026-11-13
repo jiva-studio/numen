@@ -137,7 +137,7 @@ const readFailure = (failure: CallFailure): ConnectionCallFailure => ({
 const writePriority = (priority: ConnectionCallPriority | undefined): Priority =>
   priority === 'interactive' ? Priority.INTERACTIVE : Priority.BACKGROUND
 
-const writePreferred = (preferred: ConnectionCallPreferredRow | undefined) =>
+const writePreferredRow = (preferred: ConnectionCallPreferredRow | undefined) =>
   preferred === undefined
     ? {}
     : { preferred: { connectionId: preferred.connectionId, options: { ...preferred.options } } }
@@ -149,7 +149,7 @@ export const createConnectionCallClient = (rpc: ConnectionCallRpc): ConnectionCa
       {
         ...request,
         priority: writePriority(options?.priority),
-        ...writePreferred(options?.preferred),
+        ...writePreferredRow(options?.preferred),
       },
       options?.signal === undefined ? {} : { signal: options.signal },
     )
