@@ -57,18 +57,31 @@ describe('the running plugins indicator', () => {
     const wrapper = draw([ATLAS])
     await wrapper.find('.plugin-stats__trigger').trigger('click')
     const row = () => wrapper.find('.plugin-popover__plugin')
-    const line = () =>
-      ['__state', '__detail'].map((part) => row().find(`.plugin-popover${part}`).text())
-    expect(line()).toStrictEqual(['Idle 1m 05s', '· stops in 1m 55s'])
+    const countdown = () => row().find('.plugin-popover__countdown')
+    expect(countdown().text()).toBe('1m 55s')
 
     await wrapper.setProps({ now: NOW + 5_000 })
 
-    expect(line()).toStrictEqual(['Idle 1m 10s', '· stops in 1m 50s'])
+    expect(countdown().text()).toBe('1m 50s')
+    expect(countdown().attributes('title')).toBe('Stops in 1m 50s; idle for 1m 10s')
     expect(row().attributes('title')).toBe('org.example.atlas\nRunning for 10m 05s')
     wrapper.unmount()
   })
 
-  it('marks a healthy plugin with a dot and an unhealthy one with the text of its worst item', async () => {
+  it('marks an idle plugin and one in use by the dot in front of the name', async () => {
+    const { idleStopTime: _stop, ...running } = ATLAS
+    const busy = { ...running, pluginId: 'org.example.maps', pluginName: 'Maps', leaseCount: 1 }
+    const wrapper = draw([ATLAS, busy])
+    await wrapper.find('.plugin-stats__trigger').trigger('click')
+    const [atlas, maps] = wrapper.findAll('.plugin-popover__plugin')
+
+    expect(atlas?.find('[role="img"]').attributes('aria-label')).toBe('Idle')
+    expect(maps?.find('[role="img"]').attributes('aria-label')).toBe('In use')
+    expect(maps?.find('.plugin-popover__countdown').text()).toBe('')
+    wrapper.unmount()
+  })
+
+  it('writes the worst health item of an unhealthy plugin and nothing for a healthy one', async () => {
     const sick = {
       ...ATLAS,
       pluginId: 'org.example.maps',
@@ -78,12 +91,12 @@ describe('the running plugins indicator', () => {
     }
     const wrapper = draw([ATLAS, sick])
     await wrapper.find('.plugin-stats__trigger').trigger('click')
-    const [atlas, maps] = wrapper.findAll('.plugin-popover__health')
+    const [atlas, maps] = wrapper.findAll('.plugin-popover__plugin')
 
-    expect(atlas?.find('[role="img"]').attributes('aria-label')).toBe('Healthy')
-    expect(atlas?.find('.plugin-popover__health-text').exists()).toBe(false)
-    expect(maps?.find('.plugin-popover__health-text').text()).toBe('The map server does not answer')
-    expect(maps?.attributes('title')).toBe('The map server does not answer')
+    expect(atlas?.find('.plugin-popover__health').exists()).toBe(false)
+    const health = maps?.find('.plugin-popover__health')
+    expect(health?.text()).toBe('The map server does not answer')
+    expect(health?.attributes('title')).toBe('The map server does not answer')
     wrapper.unmount()
   })
 

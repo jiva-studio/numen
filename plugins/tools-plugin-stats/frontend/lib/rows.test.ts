@@ -16,38 +16,43 @@ const IDLE: PluginProcess = {
   healthText: 'The tiles are old',
 }
 
-const line = (one: PluginProcess, now = NOW) => {
-  const row = getRow(one, now, 'en-US')
-  return [row.state, row.detail]
+const countdown = (one: PluginProcess, now = NOW) => {
+  const row = getRow(one, now)
+  return [row.countdown, row.countdownHint]
 }
 
 describe('the row of a running plugin', () => {
-  it('counts down to the stop of an idle plugin', () => {
-    expect(line(IDLE)).toStrictEqual(['Idle 1m 05s', 'stops in 1m 55s'])
-    expect(line(IDLE, NOW + 60_000)).toStrictEqual(['Idle 2m 05s', 'stops in 55s'])
+  it('counts down to the stop of an idle plugin and keeps its idle time in the tooltip', () => {
+    expect(countdown(IDLE)).toStrictEqual(['1m 55s', 'Stops in 1m 55s; idle for 1m 05s'])
+    expect(countdown(IDLE, NOW + 60_000)).toStrictEqual(['55s', 'Stops in 55s; idle for 2m 05s'])
   })
 
   it('says the plugin is stopping once its stop time has passed', () => {
-    const row = getRow(IDLE, NOW + 200_000)
-
-    expect(row.detail).toBe('stopping')
-    expect(row.detailHint).toBe(
+    expect(countdown(IDLE, NOW + 200_000)).toStrictEqual([
+      'stopping',
       'Stops at the next check; the core looks for idle plugins every 30 seconds',
-    )
+    ])
   })
 
-  it('counts the calls that keep a plugin in use instead of a stop', () => {
+  it('marks a plugin with calls as in use and an idle one as idle', () => {
     const { idleStopTime: _stop, ...running } = IDLE
-    const held = { ...running, leaseCount: 2 }
+    const held = getRow({ ...running, leaseCount: 2 }, NOW)
+    const idle = getRow(IDLE, NOW)
 
-    expect(line(held)).toStrictEqual(['In use', '2 calls'])
-    expect(line({ ...held, leaseCount: 1 })).toStrictEqual(['In use', '1 call'])
+    expect([held.isInUse, held.status]).toStrictEqual([true, 'In use'])
+    expect([idle.isInUse, idle.status]).toStrictEqual([false, 'Idle'])
   })
 
-  it('shows only the idle time of an idle plugin the core gives no stop time', () => {
+  it('shows no time for a plugin in use', () => {
+    const { idleStopTime: _stop, ...running } = IDLE
+
+    expect(countdown({ ...running, leaseCount: 1 })).toStrictEqual(['', ''])
+  })
+
+  it('shows no time for an idle plugin the core gives no stop time', () => {
     const { idleStopTime: _stop, ...idle } = IDLE
 
-    expect(line(idle)).toStrictEqual(['Idle 1m 05s', ''])
+    expect(countdown(idle)).toStrictEqual(['', ''])
   })
 
   it('puts the id, the time it has run and where it runs in the tooltip', () => {
@@ -62,13 +67,7 @@ describe('the row of a running plugin', () => {
   })
 
   it('writes the health only while the plugin is not healthy', () => {
-    const sick = getRow(IDLE, NOW)
-    const healthy = getRow({ ...IDLE, health: 'ok', healthText: '' }, NOW)
-
-    expect([sick.healthText, sick.healthLabel]).toStrictEqual([
-      'The tiles are old',
-      'The tiles are old',
-    ])
-    expect([healthy.healthText, healthy.healthLabel]).toStrictEqual(['', 'Healthy'])
+    expect(getRow(IDLE, NOW).healthText).toBe('The tiles are old')
+    expect(getRow({ ...IDLE, health: 'ok', healthText: 'All good' }, NOW).healthText).toBe('')
   })
 })
