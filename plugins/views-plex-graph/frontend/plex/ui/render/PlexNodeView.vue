@@ -163,9 +163,8 @@ function getMiddle(): Position | null {
     </PlexNodeFace>
 
     <!-- Open, the parts are drawn over the other notes from the layer the whole drawing keeps for them. -->
-    <Teleport :to="liftTarget" :disabled="!liftTarget">
+    <Teleport v-if="isLifted" :to="liftTarget">
       <g
-        v-if="isLifted"
         ref="lifted"
         class="plex__lifted"
         :data-node="node.id"

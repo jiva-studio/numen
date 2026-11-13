@@ -9,7 +9,7 @@ export interface LiftSite {
 }
 
 export function useLift(site: LiftSite) {
-  const isLifted = computed(() => site.layer() !== null && site.open() > 0)
+  const isLifted = computed(() => site.open() > 0 && site.layer() !== null)
 
   // The handle is made again where it moves to, and a focus on it goes with the old one.
   watch(isLifted, async () => {

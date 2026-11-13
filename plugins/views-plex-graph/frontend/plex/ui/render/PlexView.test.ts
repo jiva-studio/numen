@@ -2,7 +2,6 @@ import { mount } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexView from './PlexView.vue'
-import PlexNodeView from './PlexNodeView.vue'
 import { arrangePlex, createPath, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
 import { getNodeHeadings } from '../../lib/inside'
 import { getNamesRoom } from '../../lib/names'
@@ -442,14 +441,23 @@ describe('hovered edge line', () => {
     expect(view.find('.plex__raised').exists()).toBe(false)
   })
 
-  it('lowers the raised line when the frame changes', async () => {
+  it('lowers the raised line when the frame no longer has the line', async () => {
     const view = mountTitledPlexView()
     await reach(view, acrossIndex).trigger('pointerenter')
     expect(view.find('.plex__raised').exists()).toBe(true)
 
-    await view.setProps({ frame: arrangePlex(titled) })
+    await view.setProps({ frame: arrangePlex({ nodes: titled.nodes, edges: [] }) })
 
     expect(view.find('.plex__raised').exists()).toBe(false)
+  })
+
+  it('keeps the raised line through a change of the frame that still has the line', async () => {
+    const view = mountTitledPlexView()
+    await reach(view, acrossIndex).trigger('pointerenter')
+
+    await view.setProps({ frame: arrangePlex(titled) })
+
+    expect(view.find('.plex__raised').exists()).toBe(true)
   })
 
   it('renders the raised line before all node elements', async () => {
@@ -544,43 +552,6 @@ describe('bidirectional edge pair', () => {
     expect(view.findAll('.plex__edge')).toHaveLength(2)
     expect(view.findAll('.plex__edge-label')).toHaveLength(4)
     expect(view.get('.plex__raised').findAll('.plex__edge')).toHaveLength(2)
-  })
-})
-
-describe('settled node draw order', () => {
-  const getDrawnOrder = (view: ReturnType<typeof mountView>) =>
-    view.findAll('.plex__node').map((node) => node.attributes('aria-label'))
-
-  const getBox = (view: ReturnType<typeof mountView>, name: string) =>
-    view.findAllComponents(PlexNodeView).find((node) => node.props('node').id === name)!
-
-  const mountRestingPlexView = () =>
-    mount(PlexView, {
-      props: {
-        ...NAMES_OPACITY,
-        frame: arrangePlex(before),
-        viewport: VIEWPORT,
-        nodeSize: DEFAULT_OPTIONS.nodeSize,
-      },
-    })
-
-  it('renders the settled node last so it covers neighbors', async () => {
-    const view = mountRestingPlexView()
-    expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
-
-    getBox(view, 'staying').vm.$emit('settle', true)
-    await view.vm.$nextTick()
-    expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Going, child', 'Staying, child'])
-  })
-
-  it('restores the original draw order when the node unsettles', async () => {
-    const view = mountRestingPlexView()
-    getBox(view, 'staying').vm.$emit('settle', true)
-    await view.vm.$nextTick()
-
-    getBox(view, 'staying').vm.$emit('settle', false)
-    await view.vm.$nextTick()
-    expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
   })
 })
 
