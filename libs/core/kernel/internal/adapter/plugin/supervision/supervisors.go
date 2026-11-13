@@ -17,7 +17,8 @@ const rpcShutdownGrace = 2 * time.Second
 
 // Supervisors keeps, for each plugin, the supervisor of its process, the endpoint of the process that
 // runs, the ports that process reported for its listeners and the client that calls it. One lock
-// guards them, so that a plugin is never started twice and never stopped half way.
+// guards them, so that a plugin is never started twice and never stopped half way. The watchers of
+// RunningProcesses are signaled under either side of the lock and changed only under the write side.
 type Supervisors struct {
 	mu            sync.RWMutex
 	byPlugin      map[string]*lifecycle.Supervisor
@@ -292,7 +293,6 @@ func (s *Supervisors) NotifyChange() {
 	notifyLocked(s)
 }
 
-// notifyLocked signals the watchers under either lock of the supervisors: only a full lock changes them.
 func notifyLocked(s *Supervisors) {
 	for _, watcher := range s.watchers {
 		select {
