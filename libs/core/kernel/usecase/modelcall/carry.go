@@ -106,8 +106,6 @@ type rowCall struct {
 	secrets  map[string]string
 }
 
-// tryRow calls the connection of the row. A connection that changed while the call read it is resolved again
-// once, and skipped if it changed again.
 func tryRow(ctx context.Context, c *Calls, row connection.Row, ask asking, do attempt) rowOutcome {
 	outcome, isStale := tryResolvedRow(ctx, c, row, ask, do)
 	if isStale {
@@ -241,8 +239,6 @@ func (r *rowCall) callOnce(ctx context.Context) ([]byte, error) {
 	return r.do(ctx, provider, r.resolved.NewCall(r.secrets, r.row.Options))
 }
 
-// reportSetAside tells the person of the rows set aside before the row of nextName answered. A row the person
-// did not choose is not told of.
 func (c *Calls) reportSetAside(rows []asideRow, nextName string) {
 	for _, one := range rows {
 		if one.isDiscovered {
