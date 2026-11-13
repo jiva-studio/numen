@@ -12,6 +12,7 @@ import type {
   PluginContributionKind,
   PluginSettingInfo,
   PluginSettingOption,
+  PluginSettingOptionsBy,
 } from '@numen/plugin-manager'
 
 type Entry = JsonObject
@@ -156,7 +157,7 @@ const readOption = (option: JsonValue): PluginSettingOption => {
 const readOptions = (list: JsonValue): readonly PluginSettingOption[] =>
   Array.isArray(list) ? list.map(readOption) : []
 
-const readOptionsBy = (value: JsonValue) => {
+const readOptionsBy = (value: JsonValue): PluginSettingOptionsBy => {
   const entry = asEntry(value)
   return {
     setting: getText(entry.setting),
@@ -181,7 +182,9 @@ const COPIED_FIELDS = [
 ]
 
 /** The fields whose options the manifest may write as a bare value, each with how it reads them. */
-const OPTION_FIELDS: Readonly<Record<string, (value: JsonValue) => unknown>> = {
+type ReadOptions = (value: JsonValue) => readonly PluginSettingOption[] | PluginSettingOptionsBy
+
+const OPTION_FIELDS: Readonly<Record<string, ReadOptions>> = {
   options: readOptions,
   optionsBy: readOptionsBy,
 }
