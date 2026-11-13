@@ -262,6 +262,28 @@ function toSubmenuItem(
   }
 }
 
+function drawCommand(
+  deps: SlotRegistryDeps,
+  entry: DeclaredSlotEntry,
+  declared: string,
+  target: CommandTarget | undefined,
+): SlotItem | undefined {
+  const command = getFullCommand(entry, declared)
+  // A menu is drawn as it opens, and lists the items of a command only once its plugin started.
+  const owner = getCommandOwner(command)
+  if (!isWindowPlace(entry.slot) && owner !== APP_COMMAND_OWNER) deps.requestPlugin?.(owner)
+  return toCommandItem(entry, command, {
+    look: deps.findCommand(command, target),
+    key: deps.getKeyFor?.(command, entry.values),
+  })
+}
+
+function drawView(deps: SlotRegistryDeps, entry: DeclaredSlotEntry, view: string) {
+  const component = deps.findView(entry.pluginId, view)
+  if (component === undefined) deps.requestPlugin?.(entry.pluginId)
+  return toViewItem(entry, view, component)
+}
+
 function createReport(sink: SlotRegistryDeps['reportIssue']): Report {
   const reported = new Set<string>()
   return (pluginId, message, severity) => {
@@ -297,21 +319,8 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
     target: CommandTarget | undefined,
   ): SlotItem | undefined => {
     if (!isDrawnOver(entry, target)) return undefined
-    if (entry.command) {
-      const command = getFullCommand(entry, entry.command)
-      // A menu is drawn as it opens, and lists the items of a command only once its plugin started.
-      const owner = getCommandOwner(command)
-      if (!isWindowPlace(entry.slot) && owner !== APP_COMMAND_OWNER) deps.requestPlugin?.(owner)
-      return toCommandItem(entry, command, {
-        look: deps.findCommand(command, target),
-        key: deps.getKeyFor?.(command, entry.values),
-      })
-    }
-    if (entry.view) {
-      const component = deps.findView(entry.pluginId, entry.view)
-      if (component === undefined) deps.requestPlugin?.(entry.pluginId)
-      return toViewItem(entry, entry.view, component)
-    }
+    if (entry.command) return drawCommand(deps, entry, entry.command, target)
+    if (entry.view) return drawView(deps, entry, entry.view)
     const { owners, inCycle } = declared.value
     const submenu = entry.submenu
     if (!submenu || owners.get(submenu) !== entry || inCycle.has(submenu)) return undefined

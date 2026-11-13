@@ -118,12 +118,43 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
   }
 }
 
+/**
+ * The starts going on, as `starting` shows them. A plugin may be activated by more than one caller at
+ * once, and it is starting until the last ends; `startOnce` joins the start of a plugin going on.
+ */
+function createStartRuns(starting: LoaderState['starting']) {
+  const runs = new Map<string, number>()
+  const going = new Map<string, Promise<boolean>>()
+  const count = (id: string, step: number): void => {
+    const total = (runs.get(id) ?? 0) + step
+    if (total > 0) runs.set(id, total)
+    else runs.delete(id)
+    const next = new Set(starting.value)
+    if (total > 0) next.add(id)
+    else next.delete(id)
+    starting.value = next
+  }
+  return {
+    track: (id: string, run: () => Promise<boolean>): Promise<boolean> => {
+      count(id, 1)
+      return run().finally(() => count(id, -1))
+    },
+    startOnce: (id: string, start: () => Promise<boolean>): Promise<boolean> => {
+      const found = going.get(id)
+      if (found) return found
+      const one = start().finally(() => going.delete(id))
+      going.set(id, one)
+      return one
+    },
+  }
+}
+
 function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   const { host } = deps
   const defaults = resolveDefaultDeps(deps)
-  const { activePlugins, failures, manifests, moduleLoaders, starting } = state
+  const { activePlugins, failures, manifests, moduleLoaders } = state
   const queues = new Map<string, Promise<void>>()
-  const starts = new Map<string, Promise<boolean>>()
+  const runs = createStartRuns(state.starting)
 
   const enqueue = <T>(id: string, task: () => Promise<T>): Promise<T> => {
     const run = (queues.get(id) ?? Promise.resolve()).then(task)
@@ -135,18 +166,6 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
       ),
     )
     return run
-  }
-
-  // A plugin may be activated by more than one caller at once; it is starting until the last ends.
-  const runs = new Map<string, number>()
-  const setStarting = (id: string, isStarting: boolean): void => {
-    const count = (runs.get(id) ?? 0) + (isStarting ? 1 : -1)
-    if (count > 0) runs.set(id, count)
-    else runs.delete(id)
-    const next = new Set(starting.value)
-    if (count > 0) next.add(id)
-    else next.delete(id)
-    starting.value = next
   }
 
   const activateContext: ActivateContext = {
@@ -168,21 +187,8 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   const readManifest = async (id: string): Promise<Manifest | undefined> =>
     moduleLoaders.has(id) ? manifests.get(id) : readPluginManifest(id, activateContext)
 
-  const activatePlugin = (id: string, module?: PluginModule, limit?: StartLimit) => {
-    setStarting(id, true)
-    return enqueue(id, () => activateEntry(activateContext, id, { module, limit })).finally(() =>
-      setStarting(id, false),
-    )
-  }
-
-  /** Starts the plugin once for every caller that asks while its start goes on. */
-  const startPlugin = (id: string): Promise<boolean> => {
-    const going = starts.get(id)
-    if (going) return going
-    const start = activatePlugin(id).finally(() => starts.delete(id))
-    starts.set(id, start)
-    return start
-  }
+  const activatePlugin = (id: string, module?: PluginModule, limit?: StartLimit) =>
+    runs.track(id, () => enqueue(id, () => activateEntry(activateContext, id, { module, limit })))
 
   return {
     loadModule: (id: string) => resolveModule(id, undefined, activateContext),
@@ -192,7 +198,8 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
       return manifest !== undefined && isWindowSlotManifest(manifest)
     },
     activatePlugin,
-    startPlugin,
+    /** Starts the plugin once for every caller that asks while its start goes on. */
+    startPlugin: (id: string): Promise<boolean> => runs.startOnce(id, () => activatePlugin(id)),
     deactivatePlugin: (id: string) => enqueue(id, () => deactivateEntry(deactivateContext, id)),
   }
 }

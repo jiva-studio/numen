@@ -36,7 +36,10 @@ export function createTabsPart(deps: TabsPartDeps) {
       isPluginStarting: status.isPluginStarting,
       startKindPlugin: (kind) =>
         runInBackground(status.startTabPlugins([kind]), (error) =>
-          writeMessage(`The plugin of the ${kind} tab did not start: ${formatError(error)}`, 'error'),
+          writeMessage(
+            `The plugin of the ${kind} tab did not start: ${formatError(error)}`,
+            'error',
+          ),
         ),
       enablePlugin: async (pluginId) => {
         await deps.rest.write.writeSetting([pluginId, 'enabled'], true)

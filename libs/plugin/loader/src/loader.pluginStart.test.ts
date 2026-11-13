@@ -29,7 +29,6 @@ const MANIFESTS: Record<string, unknown> = {
   [HARBOR]: { id: HARBOR, name: 'Harbor', version: '1.0.0', frontend: {} },
 }
 
-
 interface LoaderOptions {
   readonly broken?: readonly string[]
   readonly disabled?: readonly string[]

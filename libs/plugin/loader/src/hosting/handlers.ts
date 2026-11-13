@@ -24,7 +24,11 @@ interface HandlerParts {
   readonly registry: HostRegistry
 }
 
-function listMatchingHandlers({ deps, registry }: HandlerParts, command: string, note: CommandNote) {
+function listMatchingHandlers(
+  { deps, registry }: HandlerParts,
+  command: string,
+  note: CommandNote,
+) {
   return (deps.getHandlerDeclarations?.() ?? [])
     .filter((one) => one.command === command && !registry.disposed.has(one.pluginId))
     .filter((one) => (one.hasItems ? note.path !== '' : isCommandAvailable(one, note, deps)))

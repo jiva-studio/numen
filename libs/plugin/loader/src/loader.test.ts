@@ -11,7 +11,12 @@ import { parseLifecycleHooks, resolveModule } from './module'
 /** The manifest of a plugin that fills the title bar, a slot of the window, which starts with it. */
 function createWindowSlotManifest(id: string) {
   const parsed = parseManifest(
-    JSON.stringify({ id, name: id, version: '1.0.0', contributes: { slots: [{ slot: 'titleBar', view: 'bar' }] } }),
+    JSON.stringify({
+      id,
+      name: id,
+      version: '1.0.0',
+      contributes: { slots: [{ slot: 'titleBar', view: 'bar' }] },
+    }),
   )
   if (!parsed.ok) throw new Error(parsed.error)
   return parsed.value

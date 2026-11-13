@@ -12,7 +12,14 @@ const LEDGER = 'org.example.ledger'
 const LINKS = 'org.example.links'
 const URI_LIST = 'text/uri-list'
 
-const NOTE = { path: 'Tides.md', title: 'Tides', type: 'note' as const, isFolder: false, others: [], tab: '' }
+const NOTE = {
+  path: 'Tides.md',
+  title: 'Tides',
+  type: 'note' as const,
+  isFolder: false,
+  others: [],
+  tab: '',
+}
 
 const OPEN: CommandDeclaration = { pluginId: LEDGER, id: 'ledger.open', title: 'Open ledger' }
 
@@ -128,11 +135,16 @@ describe('a plugin that has not started', () => {
     const startPluginsOf = vi.fn(async (_match: ContributionMatch) => undefined)
     const { host } = createWindow({}, { startPluginsOf })
 
-    host.contextHost.views.mountView('ledger-sheet', document.createElement('div'), {}, {
-      inherits: false,
-      permissions: [],
-      requirePerm: () => undefined,
-    })
+    host.contextHost.views.mountView(
+      'ledger-sheet',
+      document.createElement('div'),
+      {},
+      {
+        inherits: false,
+        permissions: [],
+        requirePerm: () => undefined,
+      },
+    )
     await settle()
 
     const [match] = startPluginsOf.mock.calls[0] ?? []

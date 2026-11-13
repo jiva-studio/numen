@@ -102,6 +102,15 @@ export interface ViewRegistryDeps {
   readonly startPluginsOf?: (match: ContributionMatch) => Promise<void>
 }
 
+/** Starts the plugins that declare the capability; a start reports its own failure, and the mount waits. */
+function startDeclaringPlugins(deps: ViewRegistryDeps, capability: string): void {
+  deps
+    .startPluginsOf?.((manifest) =>
+      (manifest.contributes?.viewCapabilities ?? []).includes(capability),
+    )
+    .catch(() => undefined)
+}
+
 export function createViewRegistry(deps: ViewRegistryDeps = {}) {
   const declared: DeclaredView[] = []
   const mounts = new Set<Mount>()
@@ -154,14 +163,7 @@ export function createViewRegistry(deps: ViewRegistryDeps = {}) {
     const mount: Mount = { capability, element, context, access }
     mounts.add(mount)
     draw(mount)
-    if (!declaredView) {
-      // The start reports its own failure; the mount goes on waiting.
-      deps
-        .startPluginsOf?.((manifest) =>
-          (manifest.contributes?.viewCapabilities ?? []).includes(capability),
-        )
-        .catch(() => undefined)
-    }
+    if (!declaredView) startDeclaringPlugins(deps, capability)
     return {
       focus: () => mount.instance?.exposed.focus?.(),
       dispose: () => {
