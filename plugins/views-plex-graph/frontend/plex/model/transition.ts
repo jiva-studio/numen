@@ -110,7 +110,6 @@ function startTransition(context: StepContext): number {
   return context.clock.schedule(step)
 }
 
-/** What of the input moves the arrangement. */
 function getInputSources(input: () => ArrangeInput | undefined) {
   return [
     () => input()?.placement,

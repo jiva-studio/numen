@@ -23,13 +23,13 @@ const graphOf = (...ids: string[]): PlexGraph => ({
   edges: [],
 })
 
-const names = (id: string): PlexNames =>
+const getNamesOf = (id: string): PlexNames =>
   id === 'plain'
     ? { above: [], below: [] }
     : { above: [], below: [{ id: `n:${id}`, title: 'Heat' }] }
 
 const setUp = (graph: PlexGraph) => {
-  const props = reactive({ graph, names, showNames: true })
+  const props = reactive({ graph, names: getNamesOf, showNames: true })
   const scope = effectScope()
   const rooms = scope.run(() => useNamesRooms(props, ref(metrics), ref(DEFAULT_OPTIONS)))!
   return { props, rooms }

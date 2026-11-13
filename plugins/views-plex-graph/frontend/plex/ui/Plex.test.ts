@@ -517,7 +517,7 @@ describe('the names of a note', () => {
     } as unknown as CanvasRenderingContext2D)
   }
 
-  const mountNamed = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) => {
+  const mountWithNames = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) => {
     stubCanvas()
     return mountPlex({
       showNames: true,
@@ -529,10 +529,10 @@ describe('the names of a note', () => {
     })
   }
 
-  const getOpacities = (plex: ReturnType<typeof mountNamed>) =>
+  const getOpacities = (plex: ReturnType<typeof mountWithNames>) =>
     plex.findAll('.plex__name').map((name) => Number(name.attributes('opacity')))
 
-  const getName = (plex: ReturnType<typeof mountNamed>, title: string) =>
+  const getName = (plex: ReturnType<typeof mountWithNames>, title: string) =>
     plex.get(`[role="button"][aria-label="${title}"]`)
 
   afterEach(() => {
@@ -542,18 +542,18 @@ describe('the names of a note', () => {
   })
 
   it('are drawn over and under the note they belong to', () => {
-    const plex = mountNamed()
+    const plex = mountWithNames()
 
     expect(plex.findAll('.plex__name')).toHaveLength(2)
     expect(plex.find('[aria-label="Heat"]').exists()).toBe(true)
   })
 
   it('sit at the resting opacity while the pointer is elsewhere', () => {
-    expect(getOpacities(mountNamed())).toEqual([0.3, 0.3])
+    expect(getOpacities(mountWithNames())).toEqual([0.3, 0.3])
   })
 
   it('come forward to the focused opacity while the pointer is over their note, and return', async () => {
-    const plex = mountNamed()
+    const plex = mountWithNames()
 
     await plex.get('[aria-label^="Domain"]').trigger('pointerenter')
     expect(getOpacities(plex)).toEqual([0.9, 0.9])
@@ -563,7 +563,7 @@ describe('the names of a note', () => {
   })
 
   it('come forward while the pointer is over one of them', async () => {
-    const plex = mountNamed({ namesOpacity: 0 })
+    const plex = mountWithNames({ namesOpacity: 0 })
 
     await getName(plex, 'Heat').trigger('pointerenter')
 
@@ -571,7 +571,7 @@ describe('the names of a note', () => {
   })
 
   it('cannot be chosen while they sit back, and can once the pointer brought them forward', async () => {
-    const plex = mountNamed({ namesOpacity: 0 })
+    const plex = mountWithNames({ namesOpacity: 0 })
 
     await getName(plex, 'Heat').trigger('click')
     expect(plex.emitted('chooseName')).toBeUndefined()
@@ -582,9 +582,9 @@ describe('the names of a note', () => {
     expect(plex.emitted('activate')).toBeUndefined()
   })
 
-  it('go with their pill when the note leaves, and are gone when the pill is', async () => {
+  it('stay until the pill of their note is removed from the frame, and are removed with it', async () => {
     const time = stubClock()
-    const plex = mountNamed({ duration: 1000, clock: time.clock })
+    const plex = mountWithNames({ duration: 1000, clock: time.clock })
 
     await plex.setProps({ graph: graphs.leaf })
     time.tick(0)
@@ -598,6 +598,6 @@ describe('the names of a note', () => {
   })
 
   it('are not drawn with the names off', () => {
-    expect(mountNamed({ showNames: false }).findAll('.plex__name')).toHaveLength(0)
+    expect(mountWithNames({ showNames: false }).findAll('.plex__name')).toHaveLength(0)
   })
 })

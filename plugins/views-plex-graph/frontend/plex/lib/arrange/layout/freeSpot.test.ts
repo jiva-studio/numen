@@ -12,7 +12,6 @@ const TOLERANCE = 0.5
 const isFree = (spot: Spot, taken: readonly Spot[], gaps: typeof GAPS): boolean =>
   new SpotIndex(taken).isFree(spot, gaps)
 
-/** The rule checked against every box in turn, as the index must answer it. */
 const isFreeAmong = (spot: Spot, taken: readonly Spot[], gaps: typeof GAPS): boolean =>
   taken.every(
     (other) =>

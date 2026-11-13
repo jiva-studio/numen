@@ -111,7 +111,7 @@ describe('a movement stepped by hand', () => {
 
 describe('a graph and an input that change together', () => {
   /** The real placement, counting how often the arrangement asks it. */
-  const createCounting = () => {
+  const createCountingPlacement = () => {
     const counter = { placed: 0 }
     const placement: Placement = {
       name: clusters.name,
@@ -124,7 +124,7 @@ describe('a graph and an input that change together', () => {
   }
 
   const PLACED_FOR_ONE_ARRANGEMENT = (() => {
-    const { counter, placement } = createCounting()
+    const { counter, placement } = createCountingPlacement()
     arrangePlex(graphs.leaf, { placement })
     return counter.placed
   })()
@@ -133,7 +133,7 @@ describe('a graph and an input that change together', () => {
     const world = stubClock()
     const current = ref<PlexGraph>(graphs.typical)
     const room = ref<ArrangeInput['room']>(undefined)
-    const { counter, placement } = createCounting()
+    const { counter, placement } = createCountingPlacement()
     inScope(() =>
       usePlexTransition(
         () => current.value,

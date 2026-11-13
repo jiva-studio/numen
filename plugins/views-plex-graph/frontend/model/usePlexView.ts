@@ -35,7 +35,7 @@ export function usePlexView(core: RelatedNoteQueries, depth: Readonly<Ref<1 | 2>
   const nextPath = ref('')
 
   /**
-   * Whether the first note graph is still on its way, so an empty plex is told from one that has nothing to show.
+   * Whether the first note graph is still on its way, so an empty plex is distinguished from one that has nothing to show.
    */
   const isLoading = ref(true)
 

@@ -8,7 +8,6 @@ import type { NodeIdMap } from '../lib/nodeIdMap'
 import type { LinkInspectorRequest, PlexEditor, PlexView } from '../types'
 import { areConnectionsEqual, isConnectionEmpty } from './connectionDraft'
 
-/** Whether a connection of the shown note graph joins the two notes: the line to a reference is no connection. */
 const isConnected = (view: PlexView, first: string, second: string): boolean =>
   view.noteGraph.value?.connections.some(
     (one) =>
@@ -32,6 +31,7 @@ export function useLinkInspector(
     const pathA = map.getNodePath(idA ?? '')
     const pathB = map.getNodePath(idB ?? '')
     if (!idA || !idB || !pathA || !pathB) return
+    // The line to a reference is no connection: no record joins its two notes, so there is nothing to inspect.
     if (!isConnected(view, pathA, pathB)) return
 
     const read = await editor.getConnection(pathA, pathB)

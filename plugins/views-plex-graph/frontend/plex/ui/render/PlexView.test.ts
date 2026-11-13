@@ -98,7 +98,7 @@ describe('the attention of the pointer', () => {
     ],
     edges: [{ from: 'focus', to: 'staying' }],
   }
-  const mountNamed = () =>
+  const mountWithNames = () =>
     mount(PlexView, {
       attachTo: document.body,
       props: {
@@ -109,11 +109,11 @@ describe('the attention of the pointer', () => {
         roomOf: () => room,
       },
     })
-  const opacities = (view: ReturnType<typeof mountNamed>) =>
+  const opacities = (view: ReturnType<typeof mountWithNames>) =>
     view.findAll('.plex__name').map((name) => Number(name.attributes('opacity')))
 
   it('brings the names of a node forward while the pointer is over it', async () => {
-    const view = mountNamed()
+    const view = mountWithNames()
     expect(new Set(opacities(view))).toEqual(new Set([0.3]))
 
     await view.get('[aria-label^="Going"]').trigger('pointerenter')
@@ -122,8 +122,8 @@ describe('the attention of the pointer', () => {
     expect(opacities(view).filter((opacity) => opacity === 0.9)).toHaveLength(1)
   })
 
-  it('leaves the names of a node that is gone and comes back at rest', async () => {
-    const view = mountNamed()
+  it('shows the names of a node at rest when it is added again after it was removed', async () => {
+    const view = mountWithNames()
     await view.get('[aria-label^="Going"]').trigger('pointerenter')
     await nextTick()
 
@@ -134,7 +134,7 @@ describe('the attention of the pointer', () => {
   })
 
   it('puts the names of a note back to rest once one of them is chosen', async () => {
-    const view = mountNamed()
+    const view = mountWithNames()
     await view.findAll('.plex__name')[0]!.trigger('pointerenter')
     expect(opacities(view).filter((opacity) => opacity === 0.9)).toHaveLength(1)
 
@@ -563,7 +563,7 @@ describe('edge arrowheads', () => {
 
   const frame = arrangePlex(named)
 
-  const mountNamedPlexView = () =>
+  const mountWithNamesPlexView = () =>
     mount(PlexView, {
       props: { ...NAMES_OPACITY, frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
@@ -574,11 +574,11 @@ describe('edge arrowheads', () => {
   }
 
   it('renders an arrowhead for each edge with arrows', () => {
-    expect(mountNamedPlexView().findAll('.plex__edge-arrow')).toHaveLength(2)
+    expect(mountWithNamesPlexView().findAll('.plex__edge-arrow')).toHaveLength(2)
   })
 
   it('positions and rotates each arrowhead at its edge endpoint', () => {
-    const view = mountNamedPlexView()
+    const view = mountWithNamesPlexView()
     const renderedArrows = view.findAll('.plex__edge-arrow')
 
     for (const [at, edge] of [frame.edges[0]!, frame.edges[1]!].entries()) {
@@ -607,7 +607,7 @@ describe('edge arrowheads', () => {
   })
 
   it('renders arrowheads before edge titles', () => {
-    const view = mountNamedPlexView()
+    const view = mountWithNamesPlexView()
     const arrow = view.findAll('.plex__edge-arrow')[0]!.element
     for (const title of view.findAll('.plex__edge-label')) {
       const where = arrow.compareDocumentPosition(title.element)
@@ -616,7 +616,7 @@ describe('edge arrowheads', () => {
   })
 
   it('raises the arrowhead with its hovered edge line', async () => {
-    const view = mountNamedPlexView()
+    const view = mountWithNamesPlexView()
     await view.findAll('.plex__edge-hit')[0]!.trigger('pointerenter')
 
     expect(view.get('.plex__raised').findAll('.plex__edge-arrow')).toHaveLength(1)

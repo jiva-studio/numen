@@ -187,7 +187,6 @@ function findSpotBeyond(index: SpotIndex, request: SpotRequest): Spot {
   return { x: middle.x, y, ...size }
 }
 
-/** The gaps candidates keep from a neighbor: never nothing, so with no gap they do not touch on float error. */
 function getCandidateGaps(request: SpotRequest): Gaps {
   return {
     gap: Math.max(request.gaps.gap, LEAST_GAP),
@@ -195,7 +194,6 @@ function getCandidateGaps(request: SpotRequest): Gaps {
   }
 }
 
-/** The cost, in the units of the comparison, that no candidate built next to the box can come below. */
 function getLeastCost(box: Spot, request: SpotRequest): number {
   const { middle, size } = request
   const gaps = getCandidateGaps(request)
