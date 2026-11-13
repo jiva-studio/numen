@@ -237,6 +237,7 @@ The settings of the plugin Plex Graph.
 | `highlightLinks` | yes or no | highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted. |
 | `animationLength` | a number | how long moving to another note takes, in milliseconds. 0 moves at once. From 0 to 2000. |
 | `noteRoom` | a number | extra empty space kept around every note. Larger is sparser. From 0 to 40. |
+| `references` | text | show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none. One of `off`, `outgoing`, `both`, `incoming`. |
 
 ### `md.numen.views.titleBar`
 
