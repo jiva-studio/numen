@@ -231,8 +231,7 @@ export function createMockProcessHost(
   let list = { processes: initial, time: initialTime }
   const watchers = new Set<(value: typeof list) => void>()
   return {
-    watch: (handler) =>
-      watchWith(watchers, (value) => handler(value.processes, value.time), list),
+    watch: (handler) => watchWith(watchers, (value) => handler(value.processes, value.time), list),
     setProcesses: (processes, time = list.time) => {
       list = { processes, time }
       notifyAll(watchers, list)

@@ -17,7 +17,7 @@ import (
 )
 
 type processes struct {
-	lists chan []plugindomain.ProcessStatus
+	lists chan plugindomain.ProcessList
 }
 
 func (p processes) Execute(ctx context.Context) <-chan plugindomain.ProcessList {

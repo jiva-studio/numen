@@ -1429,7 +1429,10 @@ func (*WatchPluginProcessesRequest) Descriptor() ([]byte, []int) {
 type WatchPluginProcessesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The processes that run, in the order of the plugin ids.
-	Processes     []*PluginProcess `protobuf:"bytes,1,rep,name=processes,proto3" json:"processes,omitempty"`
+	Processes []*PluginProcess `protobuf:"bytes,1,rep,name=processes,proto3" json:"processes,omitempty"`
+	// When the core took the list, in milliseconds since the Unix epoch. A
+	// list sent again unchanged carries the time it was first taken.
+	TimeUnixMs    int64 `protobuf:"varint,2,opt,name=time_unix_ms,json=timeUnixMs,proto3" json:"time_unix_ms,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1469,6 +1472,13 @@ func (x *WatchPluginProcessesResponse) GetProcesses() []*PluginProcess {
 		return x.Processes
 	}
 	return nil
+}
+
+func (x *WatchPluginProcessesResponse) GetTimeUnixMs() int64 {
+	if x != nil {
+		return x.TimeUnixMs
+	}
+	return 0
 }
 
 // PluginProcess is the process of one plugin that runs.
@@ -1797,9 +1807,11 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x11GetPluginsRequest\"D\n" +
 	"\x12GetPluginsResponse\x12.\n" +
 	"\aplugins\x18\x01 \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\"\x1d\n" +
-	"\x1bWatchPluginProcessesRequest\"U\n" +
+	"\x1bWatchPluginProcessesRequest\"w\n" +
 	"\x1cWatchPluginProcessesResponse\x125\n" +
-	"\tprocesses\x18\x01 \x03(\v2\x17.numen.v1.PluginProcessR\tprocesses\"\xf8\x02\n" +
+	"\tprocesses\x18\x01 \x03(\v2\x17.numen.v1.PluginProcessR\tprocesses\x12 \n" +
+	"\ftime_unix_ms\x18\x02 \x01(\x03R\n" +
+	"timeUnixMs\"\xf8\x02\n" +
 	"\rPluginProcess\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1f\n" +
 	"\vplugin_name\x18\x02 \x01(\tR\n" +
