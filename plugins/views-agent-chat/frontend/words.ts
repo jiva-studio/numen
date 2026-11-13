@@ -21,4 +21,6 @@ export const WORDS = {
   noAgent: 'No agent',
   noAgentMessage: 'No agent is set up.',
   openSettings: 'Open settings',
+  /** The row of an agent in the model list while its models are being asked. */
+  loading: 'Loading…',
 }

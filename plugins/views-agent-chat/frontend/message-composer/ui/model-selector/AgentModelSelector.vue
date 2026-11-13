@@ -1,38 +1,43 @@
 <script setup lang="ts">
 /* --------------------------------- Props ---------------------------------- */
 import { computed, ref, useTemplateRef } from 'vue'
-import { SearchableListPopup, type ListItem, measureRect } from '@numen/ui'
+import { SearchableListPopup, Spinner, type ListItem, measureRect } from '@numen/ui'
 import type { Position } from '@numen/ui'
 import type { AgentModelOption } from '../../model/options'
+import { browserTimer, useDelayedOpen } from '../../model/opening'
+import type { AgentModelSelectorProps } from './AgentModelSelector.types'
 
-const props = withDefaults(
-  defineProps<{
-    options?: readonly AgentModelOption[]
-    selectedAgentId?: string
-    selectedModelId?: string
-    isDisabled?: boolean
-    emptyLabel?: string
-  }>(),
-  {
-    options: () => [],
-    selectedAgentId: '',
-    selectedModelId: '',
-    isDisabled: false,
-    emptyLabel: 'No agent installed',
-  },
-)
+const props = withDefaults(defineProps<AgentModelSelectorProps>(), {
+  options: () => [],
+  selectedAgentId: '',
+  selectedModelId: '',
+  isDisabled: false,
+  emptyLabel: 'No agent installed',
+  pendingAgentIds: () => [],
+  loadingLabel: 'Loading…',
+  timer: () => browserTimer,
+})
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'select', option: AgentModelOption): void
-  /** The list of models opened. */
+  /** The person asked for the list of models; it opens once the models of the agents are listed. */
   (event: 'open'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const isOpen = ref(false)
 const trigger = useTemplateRef<HTMLButtonElement>('trigger')
 const menuPosition = ref<Position>({ x: 0, y: 0 })
+
+const isReady = computed(() => props.pendingAgentIds.length === 0)
+const { isOpen, isWaiting, isSpinnerShown, request, close } = useDelayedOpen(
+  isReady,
+  props.timer,
+  () => {
+    const rect = measureRect(trigger.value)
+    if (rect) menuPosition.value = { x: rect.left, y: rect.bottom + 4 }
+  },
+)
 
 const currentKey = computed(() => `${props.selectedAgentId}:${props.selectedModelId}`)
 
@@ -50,37 +55,39 @@ const label = computed(() => {
   return `${active.agentTitle} · ${active.modelTitle}`
 })
 
-const menuItems = computed<ListItem[]>(() =>
-  props.options.map((one) => ({
-    id: `${one.agentId}:${one.modelId}`,
-    text: one.modelTitle,
-    group: one.agentTitle,
-  })),
-)
+/** An agent still being asked stands as one disabled row under its name, in its place. */
+const menuItems = computed<ListItem[]>(() => {
+  const loading = new Set<string>()
+  return props.options.flatMap((one) => {
+    if (!props.pendingAgentIds.includes(one.agentId)) {
+      return [{ id: `${one.agentId}:${one.modelId}`, text: one.modelTitle, group: one.agentTitle }]
+    }
+    if (loading.has(one.agentId)) return []
+    loading.add(one.agentId)
+    const id = `${one.agentId}:loading`
+    return [{ id, text: props.loadingLabel, group: one.agentTitle, isDisabled: true }]
+  })
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {
   if (props.isDisabled || props.options.length === 0) return
-  if (isOpen.value) {
-    isOpen.value = false
+  if (isOpen.value || isWaiting.value) {
+    close()
     return
   }
-  const rect = measureRect(trigger.value)
-  if (rect) {
-    menuPosition.value = { x: rect.left, y: rect.bottom + 4 }
-  }
-  isOpen.value = true
   emit('open')
+  request()
 }
 
 function onChoose(id: string) {
-  isOpen.value = false
+  close()
   const selectedOption = props.options.find((one) => `${one.agentId}:${one.modelId}` === id)
   if (selectedOption) emit('select', selectedOption)
 }
 
 function onDismiss() {
-  isOpen.value = false
+  close()
 }
 </script>
 
@@ -91,8 +98,10 @@ function onDismiss() {
       type="button"
       class="model-selector__pill bg-bubble text-ink text-small hover:bg-surface rounded-pill inline-flex h-7 max-w-full min-w-0 cursor-pointer items-center gap-1.5 px-2.5 font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
       :disabled="isDisabled || options.length === 0"
+      :aria-busy="isWaiting"
       @click="onToggle"
     >
+      <Spinner v-if="isSpinnerShown" class="model-selector__spinner" />
       <span class="model-selector__label min-w-0 flex-1 truncate">{{ label }}</span>
       <svg
         class="model-selector__chevron h-3.5 w-3.5 shrink-0 opacity-60"

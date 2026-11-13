@@ -25,6 +25,8 @@ const props = withDefaults(defineProps<MessageComposerProps>(), {
   noAgentLabel: 'No agent',
   noAgentMessage: 'No agent is set up.',
   openSettingsLabel: 'Open settings',
+  pendingAgentIds: () => [],
+  loadingLabel: 'Loading…',
 })
 
 const text = defineModel<string>({ default: '' })
@@ -113,6 +115,8 @@ function onSelectReasoning(id: string) {
           :selected-agent-id="selectedAgentId"
           :selected-model-id="selectedModelId"
           :empty-label="noAgentLabel"
+          :pending-agent-ids="pendingAgentIds"
+          :loading-label="loadingLabel"
           :is-disabled="isDisabled || isAnswerPending"
           @select="onSelectModel"
           @open="emit('open-choices')"

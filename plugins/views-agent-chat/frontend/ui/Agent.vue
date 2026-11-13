@@ -23,6 +23,8 @@ withDefaults(defineProps<AgentProps>(), {
   noAgentLabel: 'No agent',
   noAgentMessage: 'No agent is set up.',
   openSettingsLabel: 'Open settings',
+  pendingAgentIds: () => [],
+  loadingLabel: 'Loading…',
 })
 
 const text = defineModel<string>({ default: '' })
@@ -113,6 +115,8 @@ function onSelectReasoning(id: string) {
       :no-agent-label="noAgentLabel"
       :no-agent-message="noAgentMessage"
       :open-settings-label="openSettingsLabel"
+      :pending-agent-ids="pendingAgentIds"
+      :loading-label="loadingLabel"
       @submit="onSubmit"
       @stop="emit('stop')"
       @select-model="onSelectModel"

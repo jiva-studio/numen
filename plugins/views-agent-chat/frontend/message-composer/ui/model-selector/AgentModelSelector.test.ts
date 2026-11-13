@@ -3,6 +3,7 @@ import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import AgentModelSelector from './AgentModelSelector.vue'
 import type { AgentModelOption } from '../../model/options'
+import type { Timer } from '../../model/opening'
 
 const OPTIONS: AgentModelOption[] = [
   {
@@ -146,6 +147,134 @@ describe('AgentModelSelector', () => {
     expect(document.body.querySelectorAll('[role="option"]').length).toBe(
       OPTIONS.length + many.length,
     )
+    wrapper.unmount()
+  })
+})
+
+/** A timer that runs its work only when the test advances it. */
+function createStubTimer() {
+  let now = 0
+  let tasks: { at: number; run: () => void }[] = []
+  const timer: Timer = {
+    start: (delayMs, run) => {
+      const task = { at: now + delayMs, run }
+      tasks.push(task)
+      return () => {
+        tasks = tasks.filter((one) => one !== task)
+      }
+    },
+  }
+  const advance = async (byMs: number) => {
+    now += byMs
+    const due = tasks.filter((one) => one.at <= now)
+    tasks = tasks.filter((one) => one.at > now)
+    for (const task of due) task.run()
+    await nextTick()
+  }
+  return { timer, advance }
+}
+
+const AGENTS: AgentModelOption[] = [
+  {
+    agentId: 'orchard',
+    agentTitle: 'Orchard agent',
+    modelId: 'pear-small',
+    modelTitle: 'Pear Small',
+    isAvailable: true,
+  },
+  {
+    agentId: 'orchard',
+    agentTitle: 'Orchard agent',
+    modelId: 'pear-large',
+    modelTitle: 'Pear Large',
+    isAvailable: true,
+  },
+  {
+    agentId: 'meadow',
+    agentTitle: 'Meadow agent',
+    modelId: 'clover',
+    modelTitle: 'Clover',
+    isAvailable: true,
+  },
+]
+
+const readRows = () =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]')).map((one) =>
+    one.textContent?.trim(),
+  )
+const isListOpen = () => document.body.querySelector('[role="listbox"]') !== null
+
+describe('AgentModelSelector while the models are listed', () => {
+  const mountPending = (pendingAgentIds: readonly string[]) => {
+    const { timer, advance } = createStubTimer()
+    const wrapper = mount(AgentModelSelector, {
+      props: {
+        options: AGENTS,
+        selectedAgentId: 'orchard',
+        selectedModelId: 'pear-small',
+        pendingAgentIds,
+        loadingLabel: 'Loading…',
+        timer,
+      },
+      attachTo: document.body,
+    })
+    return { wrapper, advance }
+  }
+
+  it('opens only once every agent answered', async () => {
+    const { wrapper, advance } = mountPending(['orchard', 'meadow'])
+
+    await wrapper.find('button').trigger('click')
+    expect(wrapper.emitted('open')).toEqual([[]])
+    await advance(100)
+    expect(isListOpen()).toBe(false)
+
+    await wrapper.setProps({ pendingAgentIds: ['meadow'] })
+    expect(isListOpen()).toBe(false)
+    await wrapper.setProps({ pendingAgentIds: [] })
+    expect(isListOpen()).toBe(true)
+    expect(readRows()).toEqual(['Pear Small', 'Pear Large', 'Clover'])
+    wrapper.unmount()
+  })
+
+  it('shows the spinner only after the wait is long enough to notice', async () => {
+    const { wrapper, advance } = mountPending(['orchard'])
+
+    await wrapper.find('button').trigger('click')
+    expect(wrapper.find('.model-selector__spinner').exists()).toBe(false)
+    expect(wrapper.find('button').attributes('aria-busy')).toBe('true')
+    await advance(149)
+    expect(wrapper.find('.model-selector__spinner').exists()).toBe(false)
+    await advance(1)
+    expect(wrapper.find('.model-selector__spinner').exists()).toBe(true)
+
+    await wrapper.setProps({ pendingAgentIds: [] })
+    expect(wrapper.find('.model-selector__spinner').exists()).toBe(false)
+    expect(isListOpen()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('opens at the time limit with a loading row for an agent still asked, replaced when it answers', async () => {
+    const { wrapper, advance } = mountPending(['orchard'])
+
+    await wrapper.find('button').trigger('click')
+    await advance(999)
+    expect(isListOpen()).toBe(false)
+    await advance(1)
+    expect(isListOpen()).toBe(true)
+    expect(readRows()).toEqual(['Loading…', 'Clover'])
+
+    await wrapper.setProps({ pendingAgentIds: [] })
+    expect(readRows()).toEqual(['Pear Small', 'Pear Large', 'Clover'])
+    wrapper.unmount()
+  })
+
+  it('opens at once when the models were listed before', async () => {
+    const { wrapper } = mountPending([])
+
+    await wrapper.find('button').trigger('click')
+    expect(isListOpen()).toBe(true)
+    expect(wrapper.find('.model-selector__spinner').exists()).toBe(false)
     wrapper.unmount()
   })
 })

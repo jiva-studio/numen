@@ -60,7 +60,7 @@ export interface AgentListing {
     connectionId: string,
     field: string,
     options: Readonly<Record<string, string>>,
-  ) => readonly ConnectionRowOption[]
+  ) => readonly ConnectionRowOption[] | Promise<readonly ConnectionRowOption[]>
 }
 
 /**

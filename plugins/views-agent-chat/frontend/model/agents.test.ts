@@ -2,7 +2,7 @@
  * The agents a chat offers and the one a conversation chose: listed from the rows of the plugin, or from
  * what discovery found, and carried on the turns of that conversation.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import type { ConnectionRow } from '@numen/plugin-sdk'
 import { createAgentList, useAgentChoice } from './agents'
@@ -134,6 +134,72 @@ describe('the agents a chat offers', () => {
       'Low',
       'High',
     ])
+  })
+
+  it('stay pending until their own models are listed, each replaced when its answer comes', async () => {
+    const answers = new Map<string, (listed: readonly { value: string; title: string }[]) => void>()
+    const { host } = createAgentConnections(
+      { frames: [] },
+      {
+        rows: [
+          row('c-orchard', 'Orchard agent', { model: 'pear-small' }),
+          row('c-meadow', 'Meadow agent', { model: 'clover' }),
+        ],
+        listOptions: (connectionId, field) =>
+          field === 'model'
+            ? new Promise((resolve) =>
+                answers.set(connectionId, (listed) =>
+                  resolve(listed.map((one) => ({ ...one, group: '' }))),
+                ),
+              )
+            : [],
+      },
+    )
+    const list = createAgentList(host, WORDS.defaultModel)
+    await list.reload()
+    const choice = useAgentChoice(host, list)
+    expect(choice.offered.pendingAgentIds.value).toStrictEqual(['c-orchard', 'c-meadow'])
+
+    const listing = choice.listChoices()
+    await vi.waitFor(() => expect(answers.size).toBe(2))
+    answers.get('c-meadow')!([{ value: 'clover', title: 'Clover' }])
+    await vi.waitFor(() => expect(choice.offered.pendingAgentIds.value).toStrictEqual(['c-orchard']))
+    expect(readOptions(choice)).toStrictEqual(['Orchard agent · pear-small', 'Meadow agent · Clover'])
+
+    answers.get('c-orchard')!([{ value: 'pear-small', title: 'Pear Small' }])
+    await listing
+    expect(choice.offered.pendingAgentIds.value).toStrictEqual([])
+    expect(readOptions(choice)).toStrictEqual(['Orchard agent · Pear Small', 'Meadow agent · Clover'])
+  })
+
+  it('stay listed through a reload, with the models listed before', async () => {
+    const CLOVER = [{ value: 'clover', title: 'Clover', group: '' }]
+    let modelAnswers = 0
+    let answerAgain = () => {}
+    const { host } = createAgentConnections(
+      { frames: [] },
+      {
+        rows: [row('c-meadow', 'Meadow agent', { model: 'clover' })],
+        listOptions: (_, field) => {
+          if (field !== 'model') return []
+          modelAnswers += 1
+          if (modelAnswers === 1) return CLOVER
+          return new Promise((resolve) => {
+            answerAgain = () => resolve(CLOVER)
+          })
+        },
+      },
+    )
+    const list = createAgentList(host, WORDS.defaultModel)
+    const choice = useAgentChoice(host, list)
+    await choice.listChoices()
+
+    const reloading = list.reload()
+    await vi.waitFor(() => expect(modelAnswers).toBe(2))
+    expect(choice.offered.pendingAgentIds.value).toStrictEqual([])
+    expect(readOptions(choice)).toStrictEqual(['Meadow agent · Clover'])
+    answerAgain()
+    await reloading
   })
 
   it('offer each connection once where two rows name it', async () => {

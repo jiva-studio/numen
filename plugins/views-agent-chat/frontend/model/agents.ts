@@ -23,16 +23,21 @@ const REASONING = 'llm.reasoning'
 const getFieldKey = (row: ConnectionRow, optionsFrom: string): string =>
   row.fields.find((field) => field.optionsFrom === optionsFrom)?.key ?? ''
 
-/** One agent: the first row of its connection, and the models it offers with that row's model first. */
+/**
+ * One agent: the first row of its connection, and the models it offers with that row's model first.
+ * `isListed` is false until its connection answered which models it has.
+ */
 export interface Agent {
   readonly row: ConnectionRow
   readonly models: readonly AgentModelOption[]
+  readonly isListed: boolean
 }
 
 /**
  * The agents of the plugin. `agents` is null until they are listed and where the host lists no rows, so
  * nothing is offered then; an empty list is a plugin with no agent. `listModels` lists the models of
- * every agent now and on each reload after; before it, an agent offers the model of its row alone.
+ * every agent now and on each reload after; before it, an agent offers the model of its row alone. An
+ * agent is replaced in the list when the answer for its own models comes.
  */
 export interface AgentList {
   readonly agents: Readonly<Ref<readonly Agent[] | null>>
@@ -54,7 +59,7 @@ async function listOptions(
 
 function createAgent(
   row: ConnectionRow,
-  listed: readonly ConnectionRowOption[],
+  listed: readonly ConnectionRowOption[] | undefined,
   defaultModelTitle: string,
 ): Agent {
   const current = row.options[getFieldKey(row, MODELS)] ?? ''
@@ -65,46 +70,61 @@ function createAgent(
     modelTitle: modelTitle || defaultModelTitle,
     isAvailable: true,
   })
-  const models = listed.map((one) => createOption(one.value, one.title || one.value))
+  const models = (listed ?? []).map((one) => createOption(one.value, one.title || one.value))
   const own = models.find((one) => one.modelId === current) ?? createOption(current, current)
-  return { row, models: [own, ...models.filter((one) => one !== own)] }
+  return {
+    row,
+    models: [own, ...models.filter((one) => one !== own)],
+    isListed: listed !== undefined,
+  }
 }
 
-async function listAgent(
-  connections: ConnectionHost,
-  row: ConnectionRow,
-  defaultModelTitle: string,
-): Promise<Agent> {
-  const listed = await listOptions(connections, {
+const listModelOptions = (connections: ConnectionHost, row: ConnectionRow) =>
+  listOptions(connections, {
     connectionId: row.connectionId,
     field: getFieldKey(row, MODELS),
     options: row.options,
   })
-  return createAgent(row, listed, defaultModelTitle)
-}
 
-/** Lists the agents again on each reload; an answer that comes after a later reload is dropped. */
+/**
+ * Lists the agents again on each reload; an answer that comes after a later reload is dropped. An agent
+ * whose models were listed before keeps them until its new answer comes.
+ */
 export function createAgentList(connections: ConnectionHost, defaultModelTitle: string): AgentList {
   const agents = shallowRef<readonly Agent[] | null>(null)
+  const listedModels = new Map<string, readonly ConnectionRowOption[]>()
   let latest = 0
   let isModelsWanted = false
 
   const reload = async () => {
     if (!connections.listRows) return
     const request = ++latest
-    let listed: readonly Agent[] | null
+    let rows: readonly ConnectionRow[]
     try {
-      const rows = await connections.listRows(acp.OPERATION_TASK)
-      const firsts = rows.filter(
-        (row, index) => rows.findIndex((one) => one.connectionId === row.connectionId) === index,
+      const all = await connections.listRows(acp.OPERATION_TASK)
+      rows = all.filter(
+        (row, index) => all.findIndex((one) => one.connectionId === row.connectionId) === index,
       )
-      listed = isModelsWanted
-        ? await Promise.all(firsts.map((row) => listAgent(connections, row, defaultModelTitle)))
-        : firsts.map((row) => createAgent(row, [], defaultModelTitle))
     } catch {
-      listed = null
+      if (request === latest) agents.value = null
+      return
     }
-    if (request === latest) agents.value = listed
+    if (request !== latest) return
+    const update = () => {
+      agents.value = rows.map((row) =>
+        createAgent(row, listedModels.get(row.connectionId), defaultModelTitle),
+      )
+    }
+    update()
+    if (!isModelsWanted) return
+    await Promise.all(
+      rows.map(async (row) => {
+        const listed = await listModelOptions(connections, row)
+        if (request !== latest) return
+        listedModels.set(row.connectionId, listed)
+        update()
+      }),
+    )
   }
 
   const listModels = async () => {
@@ -135,6 +155,9 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
   const agents = computed(() => list.agents.value ?? [])
   const options = computed(() => agents.value.flatMap((agent) => agent.models))
   const isAgentMissing = computed(() => list.agents.value?.length === 0)
+  const pendingAgentIds = computed(() =>
+    agents.value.filter((agent) => !agent.isListed).map((agent) => agent.row.connectionId),
+  )
 
   const isListed = (choice: Choice) =>
     options.value.some((one) => one.agentId === choice.agentId && one.modelId === choice.modelId)
@@ -233,7 +256,7 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
   }
 
   return {
-    offered: { options, reasoningLevels, isAgentMissing },
+    offered: { options, reasoningLevels, isAgentMissing, pendingAgentIds },
     selected: {
       agentId: computed(() => current.value?.agentId ?? ''),
       modelId: computed(() => current.value?.modelId ?? ''),

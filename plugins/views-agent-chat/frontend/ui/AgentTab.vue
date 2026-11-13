@@ -60,6 +60,8 @@ function onOpenChoices() {
     :no-agent-label="words.noAgent"
     :no-agent-message="words.noAgentMessage"
     :open-settings-label="words.openSettings"
+    :pending-agent-ids="props.state.agents?.offered.pendingAgentIds.value ?? []"
+    :loading-label="words.loading"
     @update:model-value="onUpdateQuestion"
     @submit="onSubmit"
     @stop="onStop"
