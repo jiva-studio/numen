@@ -205,11 +205,11 @@ describe('the look settings of the plex', () => {
     })
   })
 
-  it('declares Highlight links of a hovered note off by default', () => {
+  it('declares Highlight links of a hovered note on by default', () => {
     expect(settings.find((one) => one.key === 'highlightLinks')).toMatchObject({
       type: 'boolean',
       title: 'Highlight links of a hovered note',
-      default: false,
+      default: true,
       palette: true,
       icon: 'waypoints',
     })

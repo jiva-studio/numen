@@ -48,7 +48,7 @@ const parseReferences = (value: Unvalidated): ReferenceMode =>
 const parseShowPills = (value: Unvalidated): boolean => (typeof value === 'boolean' ? value : true)
 
 const parseHighlightLinks = (value: Unvalidated): boolean =>
-  typeof value === 'boolean' ? value : false
+  typeof value === 'boolean' ? value : true
 
 const parseNumber = (value: Unvalidated, range: NumberRange): number =>
   typeof value === 'number' && Number.isFinite(value)

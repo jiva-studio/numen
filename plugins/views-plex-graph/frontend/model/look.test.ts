@@ -9,7 +9,7 @@ const createContext = (initialSettings: Record<string, JsonValue> = {}) =>
 /** The look of a plex as the manifest declares its defaults. */
 const DEFAULTS = {
   showPills: true,
-  highlightLinks: false,
+  highlightLinks: true,
   pillPaddingSides: 10,
   pillPaddingEnds: 9.25,
   focusSize: 1.22,
@@ -26,7 +26,7 @@ const DEFAULTS = {
 /** A value for every setting that is none of the defaults, and inside every range. */
 const CHOSEN = {
   showPills: false,
-  highlightLinks: true,
+  highlightLinks: false,
   pillPaddingSides: 4,
   pillPaddingEnds: 3.5,
   focusSize: 1.6,
@@ -165,7 +165,7 @@ describe('readLook', () => {
 
     expect(look.focusSize.value).toBe(2.5)
     expect(look.lineCurvature.value).toBe(0.55)
-    expect(look.highlightLinks.value).toBe(false)
+    expect(look.highlightLinks.value).toBe(true)
     expect(look.showPills.value).toBe(true)
   })
 

@@ -278,7 +278,7 @@
       "type": "boolean",
       "title": "Highlight links of a hovered note",
       "description": "Highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted.",
-      "default": false,
+      "default": true,
       "palette": true,
       "icon": "waypoints"
     },

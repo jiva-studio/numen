@@ -443,7 +443,7 @@ describe('Highlight links of a hovered note', () => {
   })
 
   it('lifts nothing when it is off', async () => {
-    const plex = mountPlex({ graph: FAMILY })
+    const plex = mountPlex({ graph: FAMILY, highlightLinks: false })
 
     await plex.get('[aria-label^="Hydrology"]').trigger('pointerenter')
 
