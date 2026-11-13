@@ -81,6 +81,12 @@ export class NoteDriver {
     await expect(this.getEditor(notePath).panel()).toContainText(text)
   }
 
+  /** The editor is built after the tab opens and puts the cursor on the line once it is: the line is waited for. */
+  async expectCursorOnLine(reference: string, name: string, line: string): Promise<void> {
+    const editor = this.getEditor(await this.scenario.getPath(reference, name))
+    await expect.poll(() => editor.readCursorLine(), { message: `the cursor of the note "${name}" is not on the line "${line}"` }).toBe(line)
+  }
+
   async expectDoesNotHaveText(reference: string, name: string, text: string): Promise<void> {
     await expect(this.getEditor(await this.scenario.getPath(reference, name)).panel()).not.toContainText(text)
   }
