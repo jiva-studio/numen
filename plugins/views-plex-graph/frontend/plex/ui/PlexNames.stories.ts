@@ -72,7 +72,7 @@ export default meta
 type Story = StoryObj<Knobs>
 
 const getName = (canvas: ReturnType<typeof within>, title: string) =>
-  canvas.getByRole('button', { name: title })
+  canvas.getByRole('button', { name: new RegExp(`^${title}, name under `) })
 
 const getCenterY = (element: Element) => {
   const box = element.getBoundingClientRect()

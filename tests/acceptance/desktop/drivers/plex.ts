@@ -22,8 +22,8 @@ export class PlexDriver {
     return parseReference(reference, name).reference === 'at' ? getStem(name) : name
   }
 
-  /** The graph of the Plex tab, which the person looks at: another tab (the settings) may be in front of it. */
   private async show(): Promise<Locator> {
+    // The settings tab may be in front of the Plex tab, so the graph is looked up each time.
     const graph = getGraph(this.scenario.page)
     if (!(await graph.isVisible())) await this.scenario.page.locator('[role="tab"][data-workspace-tab^="plex"]').first().click()
     await expect(graph).toBeVisible()
@@ -135,15 +135,14 @@ export class PlexDriver {
   }
 
   async expectShowsNoNames(title: string): Promise<void> {
-    const names = (await this.show()).locator(`[role="button"][aria-label$=", name under ${title}"]`)
-    await expect(names).toHaveCount(0)
+    const nameButtons = (await this.show()).locator(`[role="button"][aria-label$=", name under ${title}"]`)
+    await expect(nameButtons).toHaveCount(0)
   }
 
   async chooseName(name: string, title: string): Promise<void> {
     await (await this.getName(name, title)).click()
   }
 
-  /** The line between two notes, as the plex names it: from one to the other with the arrows it has, either way round. */
   private async getLine(first: string, second: string): Promise<Locator> {
     const names = `${escapeRegExp(first)} to ${escapeRegExp(second)}|${escapeRegExp(second)} to ${escapeRegExp(first)}`
     return (await this.show()).getByRole('button', { name: new RegExp(`^Line from (${names})(, arrow to .+)*$`) })
@@ -159,7 +158,6 @@ export class PlexDriver {
     await expect(line).toHaveCount(1)
   }
 
-  /** A point on the line, in the middle of its length, where a click opens the inspector of its link. */
   private async findMiddle(line: Locator): Promise<Point> {
     return line.evaluate((path: SVGPathElement) => {
       const matrix = path.getScreenCTM()
@@ -183,7 +181,6 @@ export class PlexDriver {
     return inspector
   }
 
-  /** The row of the record a note writes: the inspector lists the record of its first note, then the record of the other. */
   private async getRow(inspector: Locator, from: string): Promise<Locator> {
     const titles = await inspector.locator('.plex-link-popover__node-name').allTextContents()
     const rows = inspector.locator('.plex-link-row')
@@ -193,7 +190,6 @@ export class PlexDriver {
     throw new Error(`the link inspector of ${titles.join(' and ')} has ${count} rows: none is the link from "${from}"`)
   }
 
-  /** Clicks the arrow button of a row until it shows the arrow, which takes at most one click for each arrow it can show. */
   private async setArrow(row: Locator, arrow: string): Promise<void> {
     const button = row.getByRole('button', { name: /Click for: / })
     for (let clicks = 0; clicks <= MAX_ARROW_CLICKS; clicks += 1) {

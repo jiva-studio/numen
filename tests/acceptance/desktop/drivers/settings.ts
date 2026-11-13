@@ -7,7 +7,6 @@ import type { Scenario } from './scenario.js'
 
 const OPEN_SETTINGS = 'Open settings'
 
-/** A setting that is a switch is "On" or "Off". */
 const parseSwitch = (name: string, value: string): boolean => {
   if (value !== 'On' && value !== 'Off') throw new Error(`the setting "${name}" is a switch: its value is "On" or "Off", not "${value}"`)
   return value === 'On'

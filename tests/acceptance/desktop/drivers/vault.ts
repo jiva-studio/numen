@@ -146,7 +146,6 @@ export class VaultDriver {
       .toStrictEqual(wanted.map((link) => format(link.from, link.to, link.role, link.description)).sort())
   }
 
-  /** The vault holds a note for each address, and no other link note. */
   private async expectLinkNotes(vault: string, rows: readonly (readonly string[])[]): Promise<void> {
     const addresses = parseColumn(rows, 'address')
     const world = this.scenario.getWorld()
