@@ -294,10 +294,7 @@ function usePlexMenu(options: {
 
 const NO_NAMES: PlexNames = { above: [], below: [] }
 
-function usePlexNames(
-  mover: FocusMover,
-  map: ReturnType<typeof createNodeIdMap>,
-): PlexNamesState {
+function usePlexNames(mover: FocusMover, map: ReturnType<typeof createNodeIdMap>): PlexNamesState {
   const { view, deps } = mover
   const { showNames, namesPerNote } = deps.names
   const names = computed(() => {

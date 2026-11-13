@@ -9,8 +9,12 @@ import { getNames } from './picture'
 
 const token = (path: string) => `id:${path}`
 
-const item = (path: string, relation: RelatedNote['relation'], relatedTo: string, direction?: LinkDirection) =>
-  ({ path, title: path, type: 'note', relation, relatedTo, direction }) as RelatedNote
+const item = (
+  path: string,
+  relation: RelatedNote['relation'],
+  relatedTo: string,
+  direction?: LinkDirection,
+) => ({ path, title: path, type: 'note', relation, relatedTo, direction }) as RelatedNote
 
 const graphOf = (...items: RelatedNote[]): NoteGraph => ({
   focus: { path: 'Here', title: 'Here' },
@@ -20,7 +24,9 @@ const graphOf = (...items: RelatedNote[]): NoteGraph => ({
 })
 
 const titlesBelow = (graph: NoteGraph, references?: Parameters<typeof getNames>[3]) =>
-  getNames(graph, 12, token, references).get(token('Kid'))?.below.map((one) => one.title) ?? []
+  getNames(graph, 12, token, references)
+    .get(token('Kid'))
+    ?.below.map((one) => one.title) ?? []
 
 describe('the names of references', () => {
   const graph = graphOf(
