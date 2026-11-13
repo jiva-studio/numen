@@ -461,6 +461,15 @@ func (d *Detected) Detect(context.Context, string) {}
 // Refresh asks nothing.
 func (d *Detected) Refresh() {}
 
+// AddRowField declares the row field after the row fields of the type.
+func (w *World) AddRowField(typeID string, field manifest.ConnectionField) {
+	for i := range w.Types.list {
+		if w.Types.list[i].GetID() == typeID {
+			w.Types.list[i].Declaration.RowFields = append(slices.Clone(w.Types.list[i].Declaration.RowFields), field)
+		}
+	}
+}
+
 // SetPluginVersion sets the version of the plugin that provides the types of the plugin.
 func (w *World) SetPluginVersion(pluginID, version string) {
 	for i := range w.Types.list {

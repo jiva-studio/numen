@@ -3,18 +3,24 @@ package rowoptions_test
 import (
 	"context"
 	"errors"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/modelcalltest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
-const address = "https://one.test/v1"
+const (
+	address            = "https://one.test/v1"
+	reasoningField     = "reasoning"
+	reasoningOperation = "llm.reasoning"
+)
 
 type setup struct {
 	world   *modelcalltest.World
@@ -31,12 +37,18 @@ func newSetup(t *testing.T) *setup {
 		world: w, entry: w.AddServer(t, "First", address, "sk-one"),
 		files: &memoryLists{byPlugin: map[string][]rowoptions.KeptList{}}, running: &runningProviders{provider: w.Provider},
 	}
+	w.AddRowField(modelcalltest.ServerTypeID, manifest.ConnectionField{Key: reasoningField, Type: "enum", Title: "Reasoning", OptionsFrom: reasoningOperation})
 	s.options = s.restart()
 	return s
 }
 
 func (s *setup) listModels(ctx context.Context, operations ...string) ([]modelcalldomain.Option, error) {
-	return s.options.ListOptions(ctx, s.entry.ID, modelcalltest.ModelOption, map[string]string{"reasoning": "low"}, operations)
+	return s.options.ListOptions(ctx, s.entry.ID, modelcalltest.ModelOption, map[string]string{modelcalltest.ModelOption: "model-1", reasoningField: "low"}, operations)
+}
+
+func (s *setup) listReasoning(ctx context.Context, model string) ([]modelcalldomain.Option, error) {
+	row := map[string]string{modelcalltest.ModelOption: model, reasoningField: "low"}
+	return s.options.ListOptions(ctx, s.entry.ID, reasoningField, row, []string{modelcalltest.EmbedOperation})
 }
 
 func TestListOptionsReturnsTheOptionsTheProviderListsForTheField(t *testing.T) {
@@ -53,14 +65,14 @@ func TestListOptionsReturnsTheOptionsTheProviderListsForTheField(t *testing.T) {
 func TestListOptionsCallsTheOperationOfTheFieldWithTheConnectionItsKeyAndTheRowSoFar(t *testing.T) {
 	s := newSetup(t)
 
-	if _, err := s.listModels(t.Context(), modelcalltest.CompleteOperation); err != nil {
+	if _, err := s.listReasoning(t.Context(), "model-1"); err != nil {
 		t.Fatal(err)
 	}
 
 	got := s.world.Provider.Calls()[0]
-	if got.Operation != modelcalltest.ModelsOperation || got.Call.Options["reasoning"] != "low" ||
+	if got.Operation != reasoningOperation || !maps.Equal(got.Call.Options, map[string]string{modelcalltest.ModelOption: "model-1"}) ||
 		got.Call.Secrets["apiKey"] != "sk-one" || got.Call.Fields["baseUrl"] != address ||
-		!slices.Equal(got.Operations, []string{modelcalltest.CompleteOperation}) {
+		!slices.Equal(got.Operations, []string{modelcalltest.EmbedOperation}) {
 		t.Errorf("call = %+v", got)
 	}
 	if providers := s.world.Source.Opened(); !slices.Equal(providers, []string{modelcalltest.ProviderPluginID}) || s.world.Source.Released() != 1 {
