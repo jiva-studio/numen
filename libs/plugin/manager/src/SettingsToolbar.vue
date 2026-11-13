@@ -97,9 +97,9 @@ function onOpen(level: number): void {
   cursor: default;
 }
 
+/* On the raised toolbar a fill barely shows, so a control under the pointer takes the color of the text. */
 .settings-toolbar__back:hover:not(:disabled),
 .settings-toolbar__segment:hover {
-  background-color: var(--numen-bubble-bg);
   color: var(--numen-ink);
 }
 
