@@ -57,7 +57,7 @@ The core knows an operation by its name only; the payload and the frames are byt
 
 ## Process
 
-`process.NewClientFromEnv()` returns the client that releases the process. `Release(ctx)` tells the host the work is done: the host stops the process at once where no call into it is open, and else as soon as the last call ends; a later call starts it again. `connection.Mount` releases the process after an answer to `connections.detected` or an option list while no other call of the provider is open. `processtest.NewHost(t)` counts the releases for tests.
+`process.NewClientFromEnv()` returns the client that releases the process. `Release(ctx)` tells the host the work is done: the host stops the process at once where no call into it is open, and else as soon as the last call ends; a later call starts it again. `process.ReleaseAndLog(ctx, releaser)` releases through a `process.Releaser` and logs a failure, after which the process stops at its idle limit. `connection.Mount` releases the process after an answer to `connections.detected` or an option list while no other call of the provider is open. `processtest.NewHost(t)` counts the releases for tests.
 
 ## Storage
 

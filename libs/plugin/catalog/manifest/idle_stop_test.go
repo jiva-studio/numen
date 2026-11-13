@@ -28,7 +28,7 @@ func TestABackendKeepsTheIdleLimitItsManifestSets(t *testing.T) {
 	}
 }
 
-func TestABackendWithoutAnIdleLimitTakesTheLimitOfTheHost(t *testing.T) {
+func TestABackendWithoutAnIdleLimitUsesTheLimitOfTheHost(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(`{"id":"org.example.atlas","name":"Atlas","version":"1.0.0","backend":{"entrypoint":"bin/atlas"}}`))
 	if err != nil {
 		t.Fatal(err)

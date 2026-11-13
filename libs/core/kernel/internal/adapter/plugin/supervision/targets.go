@@ -16,7 +16,7 @@ type Target struct {
 }
 
 func takeTargetLocked(s *Supervisors, id string, sup *lifecycle.Supervisor, pid int) Target {
-	target := Target{ID: id, PID: pid, Sup: sup, Endpoint: s.endpoints[id]}
+	target := Target{ID: id, PID: pid, Sup: sup, Endpoint: getEndpointLocked(s, id)}
 	forgetEndpointLocked(s, id)
 	return target
 }
@@ -66,7 +66,9 @@ func takeReleasedTarget(s *Supervisors, pluginID string, now time.Time) []Target
 	if _, isRunning := sup.GetUsage(); !isRunning {
 		return nil
 	}
-	s.released[pluginID] = true
+	if run, ok := s.runs[pluginID]; ok {
+		run.isReleased = true
+	}
 	notifyLocked(s)
 	pid := sup.GetProcessID()
 	if !sup.BeginDeactivation(0, now) {
@@ -77,7 +79,7 @@ func takeReleasedTarget(s *Supervisors, pluginID string, now time.Time) []Target
 
 func getIdleLimitLocked(s *Supervisors, pluginID string, defaultLimit time.Duration) time.Duration {
 	switch {
-	case s.released[pluginID]:
+	case isReleasedLocked(s, pluginID):
 		return 0
 	case s.idleLimits[pluginID] > 0:
 		return s.idleLimits[pluginID]

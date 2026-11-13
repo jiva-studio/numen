@@ -44,7 +44,7 @@ func TestAReleasedPluginWithoutALeaseStopsAtOnce(t *testing.T) {
 	}
 }
 
-func TestAReleasedPluginThatHoldsALeaseStopsOnceTheLeaseIsReturned(t *testing.T) {
+func TestAReleasedPluginWithALeaseStopsWhenTheLeaseIsReturned(t *testing.T) {
 	host := newAtlasHost(t, testsupport.NewClock(), 0)
 	startAtlas(t, host)
 

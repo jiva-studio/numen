@@ -1,6 +1,7 @@
 package process_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -26,5 +27,33 @@ func TestAPluginWithoutAHostHasNoClient(t *testing.T) {
 
 	if _, err := process.NewClientFromEnv(); !errors.Is(err, hostcall.ErrNoHost) {
 		t.Errorf("error = %v, want ErrNoHost", err)
+	}
+}
+
+type failingReleaser struct{ calls int }
+
+func (r *failingReleaser) Release(context.Context) error {
+	r.calls++
+	return errors.New("the host is gone")
+}
+
+func TestReleaseAndLogTellsTheHost(t *testing.T) {
+	host := processtest.NewHost(t)
+
+	process.ReleaseAndLog(t.Context(), host.NewClient(t))
+
+	if got := host.CountReleases(); got != 1 {
+		t.Errorf("releases = %d, want 1", got)
+	}
+}
+
+func TestReleaseAndLogSurvivesAFailedReleaseAndANilReleaser(t *testing.T) {
+	releaser := &failingReleaser{}
+
+	process.ReleaseAndLog(t.Context(), releaser)
+	process.ReleaseAndLog(t.Context(), nil)
+
+	if releaser.calls != 1 {
+		t.Errorf("calls = %d, want 1", releaser.calls)
 	}
 }

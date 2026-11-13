@@ -2,14 +2,13 @@ package connection
 
 import (
 	"context"
-	"log/slog"
 	"sync/atomic"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process"
 )
 
 // Releaser tells the host that the process of the plugin has finished its work.
-type Releaser interface {
-	Release(ctx context.Context) error
-}
+type Releaser = process.Releaser
 
 type lookupKey struct{}
 
@@ -43,10 +42,8 @@ func (o *openCalls) begin() {
 
 func (o *openCalls) end(ctx context.Context, answered *lookup) {
 	isLast := o.count.Add(-1) == 0
-	if !isLast || !answered.isAnswered || o.releaser == nil {
+	if !isLast || !answered.isAnswered {
 		return
 	}
-	if err := o.releaser.Release(context.WithoutCancel(ctx)); err != nil {
-		slog.Debug("connection: release the process", "error", err)
-	}
+	process.ReleaseAndLog(context.WithoutCancel(ctx), o.releaser)
 }

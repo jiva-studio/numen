@@ -15,39 +15,41 @@ import (
 
 const rpcShutdownGrace = 2 * time.Second
 
-// Supervisors keeps, for each plugin, the supervisor of its process, the endpoint of the process that
-// runs, the ports that process reported for its listeners, the client that calls it, the idle limit its
-// manifest sets and whether its process was released. One lock
-// guards them, so that a plugin is never started twice and never stopped half way. The watchers of
-// RunningProcesses are signaled under either side of the lock and changed only under the write side.
+// Supervisors keeps, for each plugin, the supervisor of its process, the idle limit its manifest sets,
+// the process that runs and the client that calls it. One lock guards them, so that a plugin is never
+// started twice and never stopped half way. The watchers of RunningProcesses are signaled under either
+// side of the lock and changed only under the write side.
 type Supervisors struct {
-	mu            sync.RWMutex
-	byPlugin      map[string]*lifecycle.Supervisor
-	endpoints     map[string]transport.Endpoint
-	listenerPorts map[string]map[string]int
-	clients       *transport.Clients
-	report        func(error)
-	onDrop        func(pluginID string)
-	startTimes    map[string]time.Time
-	idleLimits    map[string]time.Duration
-	released      map[string]bool
-	stopReleased  func(pluginID string)
-	watchers      []chan struct{}
+	mu           sync.RWMutex
+	byPlugin     map[string]*lifecycle.Supervisor
+	runs         map[string]*processRun
+	clients      *transport.Clients
+	report       func(error)
+	onDrop       func(pluginID string)
+	idleLimits   map[string]time.Duration
+	stopReleased func(pluginID string)
+	watchers     []chan struct{}
+}
+
+// processRun is the process of a plugin that runs: its endpoint, the ports it reported for its
+// listeners, when it started and whether the plugin released it.
+type processRun struct {
+	endpoint      transport.Endpoint
+	listenerPorts map[string]int
+	startTime     time.Time
+	isReleased    bool
 }
 
 // NewSupervisors returns the supervisors of a host that has no plugin. report receives the problems
 // a supervisor meets, and onDrop is called with the id of a plugin whose process ended.
 func NewSupervisors(report func(error), onDrop func(pluginID string)) *Supervisors {
 	return &Supervisors{
-		byPlugin:      make(map[string]*lifecycle.Supervisor),
-		endpoints:     make(map[string]transport.Endpoint),
-		listenerPorts: make(map[string]map[string]int),
-		clients:       transport.NewClients(),
-		startTimes:    make(map[string]time.Time),
-		idleLimits:    make(map[string]time.Duration),
-		released:      make(map[string]bool),
-		report:        report,
-		onDrop:        onDrop,
+		byPlugin:   make(map[string]*lifecycle.Supervisor),
+		runs:       make(map[string]*processRun),
+		clients:    transport.NewClients(),
+		idleLimits: make(map[string]time.Duration),
+		report:     report,
+		onDrop:     onDrop,
 	}
 }
 
@@ -93,8 +95,30 @@ func (s *Supervisors) Forget(pluginID string) {
 func (s *Supervisors) GetEndpoint(pluginID string) (transport.Endpoint, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	endpoint, ok := s.endpoints[pluginID]
-	return endpoint, ok
+	run, ok := s.runs[pluginID]
+	if !ok {
+		return transport.Endpoint{}, false
+	}
+	return run.endpoint, true
+}
+
+func getEndpointLocked(s *Supervisors, pluginID string) transport.Endpoint {
+	if run, ok := s.runs[pluginID]; ok {
+		return run.endpoint
+	}
+	return transport.Endpoint{}
+}
+
+func getStartTimeLocked(s *Supervisors, pluginID string) time.Time {
+	if run, ok := s.runs[pluginID]; ok {
+		return run.startTime
+	}
+	return time.Time{}
+}
+
+func isReleasedLocked(s *Supervisors, pluginID string) bool {
+	run, ok := s.runs[pluginID]
+	return ok && run.isReleased
 }
 
 // FindByToken returns the id of the running plugin the token was given to.
@@ -103,8 +127,8 @@ func (s *Supervisors) FindByToken(token string) (string, bool) {
 	defer s.mu.RUnlock()
 	var pluginID string
 	var found bool
-	for id, endpoint := range s.endpoints {
-		if localendpoint.IsTokenEqual(endpoint.Token, token) {
+	for id, run := range s.runs {
+		if localendpoint.IsTokenEqual(run.endpoint.Token, token) {
 			pluginID, found = id, true
 		}
 	}
@@ -140,8 +164,8 @@ func (s *Supervisors) ListRunning() []string {
 func (s *Supervisors) ListEndpointOwners() []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	ids := make([]string, 0, len(s.endpoints))
-	for id := range s.endpoints {
+	ids := make([]string, 0, len(s.runs))
+	for id := range s.runs {
 		ids = append(ids, id)
 	}
 	return ids
@@ -151,7 +175,11 @@ func (s *Supervisors) ListEndpointOwners() []string {
 func (s *Supervisors) GetListenerPort(pluginID, name string) (int, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	port, ok := s.listenerPorts[pluginID][name]
+	run, ok := s.runs[pluginID]
+	if !ok {
+		return 0, false
+	}
+	port, ok := run.listenerPorts[name]
 	return port, ok
 }
 
@@ -160,7 +188,7 @@ func (s *Supervisors) Release(pluginID, token string, now time.Time) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	sup, ok := s.byPlugin[pluginID]
-	if !ok || s.endpoints[pluginID].Token != token {
+	if !ok || getEndpointLocked(s, pluginID).Token != token {
 		return
 	}
 	returnHoldLocked(s, pluginID, sup, now)
@@ -176,7 +204,7 @@ func (s *Supervisors) ReturnHold(pluginID string, sup *lifecycle.Supervisor, now
 func returnHoldLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, now time.Time) {
 	sup.Release(now)
 	notifyLocked(s)
-	if usage, isRunning := sup.GetUsage(); isRunning && usage.IsIdle && s.released[pluginID] && s.stopReleased != nil {
+	if usage, isRunning := sup.GetUsage(); isRunning && usage.IsIdle && isReleasedLocked(s, pluginID) && s.stopReleased != nil {
 		go s.stopReleased(pluginID)
 	}
 }
@@ -189,17 +217,14 @@ func (s *Supervisors) Clients() *transport.Clients {
 // Drop forgets the endpoint and the client of a plugin whose process ended.
 func (s *Supervisors) Drop(pluginID string) {
 	s.mu.Lock()
-	s.clients.Remove(s.endpoints[pluginID].Token)
+	s.clients.Remove(getEndpointLocked(s, pluginID).Token)
 	forgetEndpointLocked(s, pluginID)
 	s.mu.Unlock()
 	s.onDrop(pluginID)
 }
 
 func forgetEndpointLocked(s *Supervisors, pluginID string) {
-	delete(s.endpoints, pluginID)
-	delete(s.listenerPorts, pluginID)
-	delete(s.startTimes, pluginID)
-	delete(s.released, pluginID)
+	delete(s.runs, pluginID)
 }
 
 // Claim is what Begin found.
@@ -215,7 +240,7 @@ type Claim struct {
 func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, now time.Time) Claim {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if endpoint, ok := s.acquireRunningLocked(pluginID, sup, now); ok {
+	if endpoint, ok := acquireRunningLocked(s, pluginID, sup, now); ok {
 		return Claim{Endpoint: endpoint, Running: true, State: lifecycle.StateDormant, Started: false}
 	}
 	if state := sup.GetState(); state != lifecycle.StateDormant {
@@ -230,17 +255,17 @@ func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, now time
 func (s *Supervisors) AcquireRunning(pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.acquireRunningLocked(pluginID, sup, now)
+	return acquireRunningLocked(s, pluginID, sup, now)
 }
 
-func (s *Supervisors) acquireRunningLocked(pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
-	endpoint := s.endpoints[pluginID]
-	if IsNoEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(now) {
+func acquireRunningLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
+	run, ok := s.runs[pluginID]
+	if !ok || IsNoEndpoint(run.endpoint) || run.endpoint.Token == "" || !sup.Acquire(now) {
 		return NoEndpoint(), false
 	}
-	delete(s.released, pluginID)
+	run.isReleased = false
 	notifyLocked(s)
-	return endpoint, true
+	return run.endpoint, true
 }
 
 // ProcessAttachment is what AttachProcess records for a started plugin process.
@@ -273,11 +298,9 @@ func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachmen
 		onExit()
 	})
 	sup.Acquire(now)
-	s.endpoints[pluginID] = endpoint
-	s.listenerPorts[pluginID] = listeners
+	s.runs[pluginID] = &processRun{endpoint: endpoint, listenerPorts: listeners, startTime: now, isReleased: false}
 	sup.SetRPCShutdown(createRPCShutdown(endpoint, s.clients.Get(endpoint), rpcShutdownGrace))
 	sup.FinishActivating()
-	s.startTimes[pluginID] = now
 	exit := sup.GetExitSignal()
 	go func() {
 		<-exit
@@ -295,9 +318,8 @@ func (s *Supervisors) AttachInProcess(pluginID string, sup *lifecycle.Supervisor
 	if sup.GetState() != lifecycle.StateActivating {
 		return lifecycle.ErrActivationAborted
 	}
-	s.endpoints[pluginID] = endpoint
+	s.runs[pluginID] = &processRun{endpoint: endpoint, listenerPorts: nil, startTime: now, isReleased: false}
 	sup.ActivateInProcess(now)
-	s.startTimes[pluginID] = now
 	notifyLocked(s)
 	return nil
 }
@@ -306,7 +328,11 @@ func (s *Supervisors) AttachInProcess(pluginID string, sup *lifecycle.Supervisor
 func (s *Supervisors) SetEndpoint(pluginID string, endpoint transport.Endpoint) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.endpoints[pluginID] = endpoint
+	if run, ok := s.runs[pluginID]; ok {
+		run.endpoint = endpoint
+		return
+	}
+	s.runs[pluginID] = &processRun{endpoint: endpoint, listenerPorts: nil, startTime: time.Time{}, isReleased: false}
 }
 
 // NotifyChange tells the watchers of RunningProcesses that a plugin took or returned a lease, or

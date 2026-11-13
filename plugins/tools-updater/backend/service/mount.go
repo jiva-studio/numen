@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/usecase/updates"
 )
 
-func mount(s *server.Server, fetcher updates.Fetcher, releaser Releaser) error {
+func mount(s *server.Server, fetcher updates.Fetcher, releaser process.Releaser) error {
 	checker := updates.NewChecker(fetcher)
 	s.SetUpdateConfig(func(values map[string]string) { checker.Configure(values) })
 	a := s.NewAPI(api.Service)
@@ -21,7 +21,7 @@ func mount(s *server.Server, fetcher updates.Fetcher, releaser Releaser) error {
 // Mount registers the updater API on s. The manifest is requested over the network, and each check
 // releases the process through the host the environment names.
 func Mount(s *server.Server) error {
-	var releaser Releaser
+	var releaser process.Releaser
 	if client, err := process.NewClientFromEnv(); err == nil {
 		releaser = client
 	}

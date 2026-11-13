@@ -31,7 +31,7 @@ func (r *RunningProcesses) ListProcesses() []plugindomain.Process {
 			continue
 		}
 		process := plugindomain.Process{
-			PluginID: id, StartTime: s.startTimes[id], LastUseTime: usage.LastActiveTime,
+			PluginID: id, StartTime: getStartTimeLocked(s, id), LastUseTime: usage.LastActiveTime,
 			LeaseCount: usage.LeaseCount, IsInProcess: usage.IsInProcess,
 		}
 		if usage.IsIdle {
