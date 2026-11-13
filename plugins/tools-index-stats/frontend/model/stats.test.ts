@@ -106,7 +106,9 @@ describe('the index stats model', () => {
     expect(get).toHaveBeenCalledTimes(2)
     expect(model.stats.value?.vectors).toBe(11)
 
-    tasks.setTasks([{ ...task('indexing'), progress: { completedCount: 9, total: 40, counting: '' } }])
+    tasks.setTasks([
+      { ...task('indexing'), progress: { completedCount: 9, total: 40, counting: '' } },
+    ])
     await flush()
     expect(get).toHaveBeenCalledTimes(2)
 
