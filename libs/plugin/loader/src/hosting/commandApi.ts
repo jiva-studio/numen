@@ -98,7 +98,8 @@ export function createCommandApi(
   return {
     handlers,
     getPaletteCommands: () => getAvailableCommands().map((one) => createPaletteCommand(one)),
-    hasCommand: (id: string): boolean => findAvailableCommand(id)?.entry !== undefined,
+    /** Whether the window lists the command, registered or of a plugin that starts when it runs. */
+    hasCommand: (id: string): boolean => findAvailableCommand(id) !== undefined,
     ...createItemApi({
       deps,
       registry,

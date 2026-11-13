@@ -77,6 +77,23 @@ describe('a plugin that has not started', () => {
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, undefined, {})
   })
 
+  it('has its command run from the palette, and starts as it runs', async () => {
+    const handler = vi.fn()
+    const { host, started } = createWindow({
+      [LEDGER]: (one) =>
+        one.lifecycle
+          .createContext(LEDGER, LEDGER_MANIFEST)
+          .register.command({ id: 'ledger.open', handler }),
+    })
+
+    expect(host.commands.hasCommand(`${LEDGER}:ledger.open`)).toBe(true)
+    expect(started).toStrictEqual([])
+    expect(await host.commands.executeCommand(`${LEDGER}:ledger.open`, NOTE)).toBe(true)
+
+    expect(started).toStrictEqual([LEDGER])
+    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, undefined, {})
+  })
+
   it('starts when the palette asks whether its command offers items, and answers once it has', async () => {
     const { host, started } = createWindow({
       [LEDGER]: (one) =>
