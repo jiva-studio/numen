@@ -30,7 +30,7 @@ import (
 // meaningPluginID is a plugin that searches the notes by meaning.
 const meaningPluginID = "md.numen.meaning"
 
-// meaningPlugin describes itself as a source of two-dimensional vectors and counts what it is asked.
+// meaningPlugin describes itself as a source of eight-dimensional vectors and counts what it is asked.
 type meaningPlugin struct {
 	numenv1connect.UnimplementedSearchSourceServiceHandler
 	recipe   atomic.Value
@@ -44,7 +44,7 @@ func (p *meaningPlugin) DescribeSearchSource(
 ) (*connect.Response[v1.DescribeSearchSourceResponse], error) {
 	p.describe.Add(1)
 	recipe, _ := p.recipe.Load().(string)
-	return connect.NewResponse(&v1.DescribeSearchSourceResponse{Name: "orchard-small", Recipe: recipe, Width: 2, Concurrency: 1}), nil
+	return connect.NewResponse(&v1.DescribeSearchSourceResponse{Name: "orchard-small", Recipe: recipe, Width: 8, Concurrency: 1}), nil
 }
 
 func (p *meaningPlugin) IndexTexts(
@@ -53,7 +53,7 @@ func (p *meaningPlugin) IndexTexts(
 	p.texts.Add(int32(len(req.Msg.GetTexts())))
 	vectors := make([]*v1.FloatVector, len(req.Msg.GetTexts()))
 	for i := range vectors {
-		vectors[i] = &v1.FloatVector{Values: []float32{1, 0}}
+		vectors[i] = &v1.FloatVector{Values: []float32{1, 0, 0, 0, 0, 0, 0, 0}}
 	}
 	return connect.NewResponse(&v1.IndexTextsResponse{Vectors: vectors}), nil
 }
@@ -140,7 +140,7 @@ func (c meaningCore) awaitNoLease(t *testing.T, what string) {
 
 func serveMeaningPlugin(t *testing.T, plugin *meaningPlugin) (pluginDir string, port int) {
 	t.Helper()
-	plugin.recipe.Store("orchard|small|2")
+	plugin.recipe.Store("orchard|small|8")
 	mux := http.NewServeMux()
 	wiretest.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(plugin))
@@ -186,7 +186,7 @@ func TestTheSearchSourceRunsOnlyWhileThereIsWork(t *testing.T) {
 	if got := next.launches.Load(); got != 0 {
 		t.Fatalf("opening the vault started the plugin %d times, want none", got)
 	}
-	if source.Describe().SourceRecipe != "orchard|small|2" {
+	if source.Describe().SourceRecipe != "orchard|small|8" {
 		t.Errorf("the source opened as %+v, want the description kept from the first process", source.Describe())
 	}
 
@@ -236,14 +236,14 @@ func TestANewVersionOfTheSearchSourceIsAskedForItsDescription(t *testing.T) {
 	}
 
 	writeMeaningManifest(t, pluginDir, "1.1.0")
-	plugin.recipe.Store("orchard|small|2|v1.1")
+	plugin.recipe.Store("orchard|small|8|v1.1")
 	next := openMeaningCore(t, pluginDir, cacheRoot, port)
 	source := next.openSource(t)
 
 	if got := next.launches.Load(); got != 1 {
 		t.Errorf("the new version was started %d times, want once to describe itself", got)
 	}
-	if got := source.Describe().SourceRecipe; got != "orchard|small|2|v1.1" {
+	if got := source.Describe().SourceRecipe; got != "orchard|small|8|v1.1" {
 		t.Errorf("the source opened with recipe %q, want the one the new version gave", got)
 	}
 }
