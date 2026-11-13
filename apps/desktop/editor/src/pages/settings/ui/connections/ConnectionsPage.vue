@@ -27,6 +27,7 @@ const emit = defineEmits<{
 const page = useConnectionsPage(() => props.connections)
 const { dialog, deletion } = page
 const addButton = useTemplateRef<InstanceType<typeof Button>>('addButton')
+const list = useTemplateRef<HTMLElement>('list')
 let rowOpener: HTMLElement | null = null
 let deleteOpener: HTMLElement | null = null
 
@@ -59,7 +60,20 @@ function onAskDelete(connection: ConnectionInfo): void {
 }
 
 function onConfirmDelete(): void {
-  deletion.confirm(() => deleteOpener?.focus())
+  const at = page.connections.value.findIndex((one) => one.id === deletion.target.value?.id)
+  deletion.confirm(() => {
+    runInBackground(
+      nextTick(() => focusAfterDelete(at)),
+      () => undefined,
+    )
+  })
+}
+
+/** Focuses the row that took the place of the deleted one, the row before it, or Add. */
+function focusAfterDelete(at: number): void {
+  const rows = Array.from(list.value?.children ?? [])
+  const element = rows[at] ?? rows[at - 1] ?? addButton.value?.$el
+  if (element instanceof HTMLElement) element.focus()
 }
 
 function onCancelDelete(): void {
@@ -86,6 +100,7 @@ function onCancelDelete(): void {
 
     <div
       v-if="page.connections.value.length > 0"
+      ref="list"
       class="settings-card connections-page__list"
       role="list"
     >

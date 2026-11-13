@@ -196,7 +196,9 @@ describe('the page of connections', () => {
     await flushPromises()
 
     expect(rowOf('Sample agent').textContent).toContain('Built in')
+    expect(rowOf('Sample agent').getAttribute('aria-disabled')).toBe('true')
     expect(rowOf('Work').textContent).not.toContain('Built in')
+    expect(rowOf('Work').hasAttribute('aria-disabled')).toBe(false)
     await click(rowOf('Sample agent'))
 
     expect(root().querySelector('[role="dialog"]')).toBeNull()
@@ -345,6 +347,21 @@ describe('editing and deleting', () => {
     dispose(wrapper)
   })
 
+  it('sends the revision of the connection as the list last read it', async () => {
+    const updateConnection = vi.fn(() => Promise.resolve(asValue(connection({ revision: 4 }))))
+    const list = ref<readonly ConnectionInfo[]>([connection()])
+    const { wrapper } = mountPage([], [SERVICE], { list, update: updateConnection })
+    await flushPromises()
+    await click(rowOf('Work'))
+
+    list.value = [connection({ revision: 3 })]
+    await flushPromises()
+    await click(findButton(/^save$/i))
+
+    expect(updateConnection).toHaveBeenCalledWith(expect.objectContaining({ revision: 3 }))
+    dispose(wrapper)
+  })
+
   it('opens a row from its button, which the keyboard reaches', async () => {
     const { wrapper } = mountPage([connection()], [SERVICE])
     await flushPromises()
@@ -424,6 +441,30 @@ describe('editing and deleting', () => {
     expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
       'Used by Proofreading and Embeddings. Their rows for it are removed.',
     )
+    dispose(wrapper)
+  })
+
+  it('moves the focus to the next row after a deletion, and to Add after the last one', async () => {
+    const list = ref<readonly ConnectionInfo[]>([
+      connection(),
+      connection({ id: 'c00000002', name: 'Spare' }),
+    ])
+    const deleteConnection = vi.fn((id: string) => {
+      list.value = list.value.filter((one) => one.id !== id)
+      return Promise.resolve(asValue(undefined))
+    })
+    const { wrapper } = mountPage([], [SERVICE], { list, delete: deleteConnection })
+    await flushPromises()
+
+    await click(rowOf('Work'))
+    await click(findButton(/^delete$/i, dialog()))
+    await click(findButton(/^delete$/i, root().querySelector('[role="alertdialog"]')!))
+    expect(document.activeElement).toBe(rowOf('Spare'))
+
+    await click(rowOf('Spare'))
+    await click(findButton(/^delete$/i, dialog()))
+    await click(findButton(/^delete$/i, root().querySelector('[role="alertdialog"]')!))
+    expect(document.activeElement).toBe(findButton(/add connection/i))
     dispose(wrapper)
   })
 

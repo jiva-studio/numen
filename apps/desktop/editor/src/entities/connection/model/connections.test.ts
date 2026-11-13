@@ -186,6 +186,43 @@ describe('createConnectionStore', () => {
     expect(store.connections.value).toHaveLength(0)
   })
 
+  it('keeps the answer to the later read when an earlier read answers last', async () => {
+    const answers: ((rows: readonly ConnectionInfo[]) => void)[] = []
+    const list = () =>
+      new Promise<readonly ConnectionInfo[]>((resolve) => {
+        answers.push(resolve)
+      })
+    const { store } = createStore(createClient({ list }))
+
+    const first = store.load()
+    const second = store.load()
+    answers[1]!([connection({ name: 'Home' })])
+    await second
+    answers[0]!([connection({ name: 'Work' })])
+    await first
+
+    expect(store.connections.value.map((one) => one.name)).toStrictEqual(['Home'])
+  })
+
+  it('reads the list again after an update the core refuses as stale', async () => {
+    const list = vi.fn(() => Promise.resolve([connection({ revision: 3 })]))
+    const update = () => Promise.resolve(asFailure({ errorCode: 'stale_revision', detail: '' }))
+    const { store } = createStore(createClient({ list, update }))
+    await store.load()
+
+    const answer = await store.update({
+      id: 'c00000001',
+      revision: 1,
+      name: 'Work',
+      fields: {},
+      secrets: {},
+    })
+
+    expect(answer.ok).toBe(false)
+    expect(list).toHaveBeenCalledTimes(2)
+    expect(store.connections.value.map((one) => one.revision)).toStrictEqual([3])
+  })
+
   it('reloads only after the first load', async () => {
     const list = vi.fn(() => Promise.resolve([connection()]))
     const { store } = createStore(createClient({ list }))

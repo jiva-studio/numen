@@ -3,6 +3,7 @@
  * them. A value of a secret goes to the core once and is not kept here.
  */
 import { shallowRef } from 'vue'
+import { createRequestGuard } from '@numen/ui'
 import type { Result } from '@/shared/lib/result'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
@@ -28,20 +29,27 @@ export function createConnectionStore(notify: MessageWriter) {
   const types = shallowRef<readonly ConnectionTypeInfo[]>([])
   const operationTitles = shallowRef<OperationTitles>({})
   let hasLoaded = false
+  const guard = createRequestGuard()
 
-  /** Reads the types and the connections again. A failed read keeps what the store held. */
+  /**
+   * Reads the types and the connections again. A failed read keeps what the store held; the answer
+   * to a read started before another is dropped.
+   */
   const load = async (): Promise<void> => {
     hasLoaded = true
+    const mine = guard.acquireRequest()
     try {
       const [readTypes, readConnections] = await Promise.all([
         listConnectionTypes(),
         listConnections(),
       ])
+      if (!mine.isCurrent) return
       types.value = readTypes.types
       operationTitles.value = readTypes.operationTitles
       connections.value = readConnections
       notify('')
     } catch (caughtError) {
+      if (!mine.isCurrent) return
       notify(`${CONNECTION_WORDS.loadFailed} ${formatError(caughtError)}`, 'error')
     }
   }
@@ -56,7 +64,10 @@ export function createConnectionStore(notify: MessageWriter) {
   ): Promise<Result<T, string>> => {
     try {
       const answer = await operation()
-      if (!answer.ok) return { ok: false, error: CONNECTION_WORDS.describeFailure(answer.error) }
+      if (!answer.ok) {
+        if (answer.error.errorCode === 'stale_revision') await load()
+        return { ok: false, error: CONNECTION_WORDS.describeFailure(answer.error) }
+      }
       await load()
       return { ok: true, value: answer.value }
     } catch (caughtError) {
