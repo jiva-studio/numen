@@ -58,7 +58,7 @@ const fontSize = computed(() => `${props.room.rowHeight / ROW_RATIO}px`)
       v-for="name in placed"
       :key="name.id"
       class="plex__name"
-      :style="{ opacity }"
+      :opacity="opacity"
       role="button"
       tabindex="0"
       :aria-label="name.title"

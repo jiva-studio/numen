@@ -30,7 +30,7 @@ const mountNames = (attention: { node: string | null; names: string | null }, pr
   })
 
 const opacityOf = (names: ReturnType<typeof mountNames>): number =>
-  Number((names.get('.plex__name').element as SVGGElement).style.opacity)
+  Number(names.get('.plex__name').attributes('opacity'))
 
 describe('the opacity of the names of a node', () => {
   it('is the resting opacity while the node is not attended to', () => {

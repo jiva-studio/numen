@@ -9,7 +9,7 @@ import { defineComponent, h, shallowRef, type ShallowRef } from 'vue'
 import { useFreeSpace, type PlexSizingProps } from './room'
 import type { PlexMetrics, TitleRoom } from './measure'
 import type { PlacedNode } from '../../lib/node'
-import { DEFAULT_OPTIONS, type Size } from '../../lib/arrange'
+import { type Size } from '../../lib/arrange'
 import type { Viewport } from '@numen/ui'
 
 const stand = vi.hoisted(() => ({

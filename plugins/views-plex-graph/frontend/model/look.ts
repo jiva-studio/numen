@@ -4,7 +4,7 @@
  */
 import { shallowRef, type Ref } from 'vue'
 import type { JsonValue, PluginContext, Unvalidated } from '@numen/plugin-sdk'
-import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../plex/lib/names'
+import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../plex'
 import type { PlexLook, ReferenceMode } from '../types'
 
 /** The key the manifest declares Pill background under. */
