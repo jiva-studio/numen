@@ -162,7 +162,7 @@ function createMetrics(type: PlexType, { padding, beside }: TitleRoom): PlexMetr
   return {
     node: (node) => Math.ceil(title(node.title) + room),
     label: (words) => Math.ceil(label(words)),
-    heading: (text) => Math.ceil(label(text) + 2 * padding),
+    heading: (text) => Math.ceil(title(text) + 2 * padding),
     name: (title) => Math.ceil(name(title)),
     nameSize: parsePixels(nameFont),
     labelType: getLabelType(context, type.labelFont),

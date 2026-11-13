@@ -48,7 +48,7 @@ const headingStyle = computed(() => ({
   --heading-border-radius: 0.1875rem;
   block-size: 100%;
   font-family: var(--numen-font-sans);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-font-size);
   color: var(--numen-ink);
   user-select: none;
   -webkit-user-select: none;

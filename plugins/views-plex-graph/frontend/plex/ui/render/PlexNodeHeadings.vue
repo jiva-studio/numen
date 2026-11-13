@@ -109,12 +109,12 @@ const arrowLine = (arrow: Arrow) =>
 </template>
 
 <style scoped>
-/* The backdrop behind the headings: dense enough to group them, and thin
-   enough to read the picture through. */
+/* The backdrop behind the headings is nearly opaque, so the lines and names under
+   it do not show through the text. */
 .plex__backdrop {
   --backdrop-rx: 0.25rem;
   rx: var(--backdrop-rx);
-  fill: color-mix(in oklab, var(--numen-raised), transparent 25%);
+  fill: color-mix(in oklab, var(--numen-raised), transparent 6%);
   stroke: color-mix(in oklab, var(--numen-rule), transparent 55%);
   stroke-width: var(--numen-stroke);
 }
