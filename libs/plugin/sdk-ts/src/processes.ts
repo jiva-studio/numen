@@ -25,7 +25,7 @@ export interface ProcessHost {
   // until the returned disposable is disposed. A list sent again unchanged carries its first time.
   watch(handler: (processes: readonly PluginProcess[], time: number) => void): Disposable
   // Tells the core that the backend of the plugin has finished its work. The core stops the process at
-  // once where no call into it is open, and else at its first idle check after the last call ends; the
-  // next call into the backend starts it again.
+  // once where no call into it is open, and else as soon as the last call ends; the next call into
+  // the backend starts it again.
   release(): Promise<void>
 }

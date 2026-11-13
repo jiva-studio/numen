@@ -1,7 +1,6 @@
 // Package process lets a plugin tell the host that its process has finished its work. The host stops a
-// released process at once where no call into it is open, and else at its first idle check after the
-// last call ends. A call the host makes into the plugin after the release keeps the process for the
-// idle limit again.
+// released process at once where no call into it is open, and else as soon as the last call ends. A
+// call the host makes into the plugin after the release keeps the process for the idle limit again.
 package process
 
 import (

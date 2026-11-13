@@ -42,7 +42,7 @@ export interface ProcessClient {
   watchProcesses(signal: AbortSignal): AsyncGenerator<PluginProcessList>
   /**
    * Tells the core that the backend of the plugin has finished its work. The core stops the process
-   * at once where no call into it is open, and else at its first idle check after the last call ends.
+   * at once where no call into it is open, and else as soon as the last call ends.
    */
   releaseProcess(pluginId: string): Promise<void>
 }

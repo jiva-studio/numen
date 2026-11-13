@@ -77,8 +77,8 @@ func (t *Teardown) EvictIdle(ctx context.Context, defaultLimit, gracePeriod time
 	return t.stopper.EvictIdle(ctx, defaultLimit, gracePeriod)
 }
 
-// ReleaseProcess stops the process of the plugin at once where it holds no lease, and else at the first
-// idle check after it holds none. A lease taken afterwards cancels the release.
+// ReleaseProcess stops the process of the plugin at once where it holds no lease, and else as soon as
+// it returns the last. A lease taken afterwards cancels the release.
 func (t *Teardown) ReleaseProcess(ctx context.Context, pluginID string) {
 	t.stopper.ReleaseProcess(ctx, pluginID)
 }

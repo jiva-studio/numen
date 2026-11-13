@@ -144,12 +144,12 @@ func (a *Activation) Acquire(pluginID string) {
 	}
 }
 
-// Release decrements the active consumer reference count for a plugin.
+// Release decrements the active consumer reference count for a plugin. A released process that holds no
+// lease after it is stopped at once.
 func (a *Activation) Release(pluginID string) {
 	sup, ok := a.sups.Get(pluginID)
 	if ok {
-		sup.Release(a.clock.Now())
-		a.sups.NotifyChange()
+		a.sups.ReturnHold(pluginID, sup, a.clock.Now())
 	}
 }
 

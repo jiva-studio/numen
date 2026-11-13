@@ -31,6 +31,7 @@ type Supervisors struct {
 	startTimes    map[string]time.Time
 	idleLimits    map[string]time.Duration
 	released      map[string]bool
+	stopReleased  func(pluginID string)
 	watchers      []chan struct{}
 }
 
@@ -162,8 +163,22 @@ func (s *Supervisors) Release(pluginID, token string, now time.Time) {
 	if !ok || s.endpoints[pluginID].Token != token {
 		return
 	}
+	returnHoldLocked(s, pluginID, sup, now)
+}
+
+// ReturnHold gives up a hold on the plugin. A released process that holds no other is stopped at once.
+func (s *Supervisors) ReturnHold(pluginID string, sup *lifecycle.Supervisor, now time.Time) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	returnHoldLocked(s, pluginID, sup, now)
+}
+
+func returnHoldLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, now time.Time) {
 	sup.Release(now)
 	notifyLocked(s)
+	if usage, isRunning := sup.GetUsage(); isRunning && usage.IsIdle && s.released[pluginID] && s.stopReleased != nil {
+		go s.stopReleased(pluginID)
+	}
 }
 
 // Clients returns the clients that call the processes, by the token each process was given.

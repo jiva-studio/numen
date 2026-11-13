@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -53,9 +54,9 @@ func TestAReleasedPluginThatHoldsALeaseStopsOnceTheLeaseIsReturned(t *testing.T)
 	}
 	host.Activation.Release(atlasPlugin)
 
-	if evicted := host.Teardown.EvictIdle(t.Context(), supervision.IdleThreshold, releaseGrace); !slices.Equal(evicted, []string{atlasPlugin}) {
-		t.Errorf("evicted %v at the first idle check, want [%s]", evicted, atlasPlugin)
-	}
+	wiretest.WaitUntil(t, "the released plugin to stop", func() bool {
+		return supervisorOf(host, atlasPlugin).GetState() == lifecycle.StateDormant
+	})
 }
 
 func TestAUseAfterTheReleaseKeepsThePluginForTheIdleLimit(t *testing.T) {

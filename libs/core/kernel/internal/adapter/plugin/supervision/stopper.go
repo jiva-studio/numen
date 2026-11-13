@@ -43,9 +43,14 @@ type Stopper struct {
 	report    func(error)
 }
 
-// NewStopper returns the stopper of the processes the supervisors track.
+// NewStopper returns the stopper of the processes the supervisors track. It also stops a released
+// process when the process returns its last lease.
 func NewStopper(sups *Supervisors, processes stdinHolder, services serviceEndpoint, clock machineport.Clock, report func(error)) *Stopper {
-	return &Stopper{sups: sups, processes: processes, services: services, clock: clock, report: report}
+	stopper := &Stopper{sups: sups, processes: processes, services: services, clock: clock, report: report}
+	sups.mu.Lock()
+	sups.stopReleased = func(pluginID string) { stopper.ReleaseProcess(context.Background(), pluginID) }
+	sups.mu.Unlock()
+	return stopper
 }
 
 // StopPlugin stops the process of the plugin, if one runs, and forgets its endpoint.
