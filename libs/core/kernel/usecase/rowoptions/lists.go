@@ -31,13 +31,14 @@ type RunningProviders interface {
 // kept is not kept.
 type Lists struct {
 	files      ListFiles
+	configs    ConfigRevisions
 	mu         sync.Mutex
 	refreshing map[string]bool
 }
 
-// NewLists returns the lists kept in files.
-func NewLists(files ListFiles) *Lists {
-	return &Lists{files: files, refreshing: map[string]bool{}}
+// NewLists returns the lists kept in files, each for the configuration configs names for its plugin.
+func NewLists(files ListFiles, configs ConfigRevisions) *Lists {
+	return &Lists{files: files, configs: configs, refreshing: map[string]bool{}}
 }
 
 func newOptionList(resolved connection.Resolved, field string, options map[string]string, operations []string) connection.OptionList {
@@ -69,6 +70,10 @@ func isSameRequest(k, other connection.OptionList) bool {
 func isSameState(k, other connection.OptionList) bool {
 	return k.Revision == other.Revision && k.PluginVersion == other.PluginVersion && k.ConfigRevision == other.ConfigRevision &&
 		k.GrantRevision == other.GrantRevision && maps.Equal(k.Fields, other.Fields)
+}
+
+func (l *Lists) getConfigRevision(pluginID string) string {
+	return l.configs.GetPluginConfigRevision(pluginID)
 }
 
 func (l *Lists) get(pluginID string, asked connection.OptionList) ([]modelcall.Option, bool) {

@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// GetGrantRevision names the connections a plugin reaches through its grants as they are now, so that what
-// the plugin answered from them can be told apart from what it would answer after one of them changed.
+// GetGrantRevision names the connections a plugin reaches through its grants as they are now. A list the
+// plugin answered from them is stored under this revision and is read again once the revision changes.
 type GetGrantRevision struct{ operation }
 
 // NewGetGrantRevision returns the use case that names the connections a plugin reaches through its grants.

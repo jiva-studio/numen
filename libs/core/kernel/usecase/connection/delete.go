@@ -43,7 +43,7 @@ func (u *Delete) Execute(ctx context.Context, id string) ([]connection.Use, erro
 	if declared, isFound := u.types.GetType(removed.TypeID); isFound && u.lists != nil {
 		u.lists.DropConnection(declared.PluginID, removed.ID)
 	}
-	uses = u.addGrantUses(uses, removed.TypeID)
+	uses = addGrantUses(u.operation, uses, removed.TypeID)
 	if err := u.uses.RemoveRows(id); err != nil {
 		return uses, err
 	}

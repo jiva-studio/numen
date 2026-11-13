@@ -47,8 +47,8 @@ type GrantRevision func(pluginID string) (string, bool, error)
 
 // Deps is what Options lists from: the connections and their secrets, the providers Source opens, the
 // providers Running opens while their plugins run, the Lists the answers are kept in, the Titles of the
-// operations for the list of running plugins (nil names them by their ids), the configuration of each
-// provider plugin and the connections a provider reaches through its grants.
+// operations for the list of running plugins (nil names them by their ids), and the connections a provider
+// reaches through its grants.
 type Deps struct {
 	Resolve     connectionport.ResolveConnection
 	ReadSecrets connectionport.ReadConnectionSecrets
@@ -56,7 +56,6 @@ type Deps struct {
 	Running     RunningProviders
 	Lists       *Lists
 	Titles      connectionport.OperationTitles
-	Configs     ConfigRevisions
 	Grants      GrantRevision
 }
 
@@ -215,7 +214,7 @@ func (o *Options) newRequest(
 		return request{}, err
 	}
 	key := newOptionList(resolved, field, options, operations)
-	key.ConfigRevision = o.deps.Configs.GetPluginConfigRevision(resolved.PluginID)
+	key.ConfigRevision = o.deps.Lists.getConfigRevision(resolved.PluginID)
 	key.GrantRevision = grantRevision
 	timeout := ReadTimeout
 	if isGranted {

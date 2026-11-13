@@ -111,7 +111,8 @@ func newOpenRouterCall(key string) connection.Call {
 func TestAListOfModelsOutlivesARestartAndIsAnsweredWhileTheServiceFails(t *testing.T) {
 	dir := t.TempDir()
 	listed := []connection.Option{{Value: "invented/model-a", Title: "Model A"}, {Value: "invented/model-b", Title: "Model B"}}
-	if _, err := optionsOf(newModelsIn(t, &gateway{models: listed}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), connection.OptionsQuery{Operations: []string{llm.OperationChat}})); err != nil {
+	chat := connection.OptionsQuery{Operations: []string{llm.OperationChat}}
+	if _, err := optionsOf(newModelsIn(t, &gateway{models: listed}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), chat)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -192,7 +193,8 @@ func TestAFirstListThatFailsReturnsTheFailureAndKeepsNothing(t *testing.T) {
 func TestAListOlderThanItsLifetimeIsAnsweredAndListedAgainAfterARestart(t *testing.T) {
 	dir := t.TempDir()
 	old := []connection.Option{{Value: "invented/model-a"}}
-	if _, err := optionsOf(newModelsIn(t, &gateway{models: old}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), connection.OptionsQuery{Operations: []string{llm.OperationChat}})); err != nil {
+	chat := connection.OptionsQuery{Operations: []string{llm.OperationChat}}
+	if _, err := optionsOf(newModelsIn(t, &gateway{models: old}, dir).ListModels(t.Context(), newOpenRouterCall(openRouterKey), chat)); err != nil {
 		t.Fatal(err)
 	}
 	ageKeptLists(t, dir)
@@ -254,7 +256,7 @@ func optionsOf(listed connection.ListedOptions, err error) ([]connection.Option,
 	return listed.Options, err
 }
 
-func TestAFreshQueryListsAgainPastTheKeptList(t *testing.T) {
+func TestAFreshQueryCallsTheServiceAndStoresTheNewList(t *testing.T) {
 	g := &gateway{}
 	subject := newModels(t, g)
 	query := connection.OptionsQuery{Operations: []string{llm.OperationChat}}

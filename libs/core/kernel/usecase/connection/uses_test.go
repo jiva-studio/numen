@@ -175,7 +175,7 @@ func TestDeleteReturnsThePluginsWhoseGrantReachedTheConnection(t *testing.T) {
 	}
 }
 
-func TestDeleteDropsTheOptionListsKeptForTheConnection(t *testing.T) {
+func TestDeleteRemovesTheOptionListsOfTheConnection(t *testing.T) {
 	f := newFixture(t)
 	lists := &refreshedLists{}
 	deps := connection.NewDeps(f.repository, f.types, f.keys, f.uses).AddOptionLists(lists)

@@ -95,7 +95,7 @@ func (s *setup) restart() *rowoptions.Options {
 func (s *setup) openOver(source connectionport.ProviderSource) *rowoptions.Options {
 	return rowoptions.NewOptions(rowoptions.Deps{
 		Resolve: s.world.Resolve, ReadSecrets: s.world.ReadSecrets, Source: source, Running: s.running,
-		Lists: rowoptions.NewLists(s.files), Configs: s.configs, Grants: s.grants.getGrantRevision,
+		Lists: rowoptions.NewLists(s.files, s.configs), Grants: s.grants.getGrantRevision,
 	})
 }
 

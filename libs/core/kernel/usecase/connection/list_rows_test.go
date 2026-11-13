@@ -121,7 +121,7 @@ func TestListRowsRefusesAnOperationTheGrantDoesNotName(t *testing.T) {
 	}
 }
 
-func TestListRowsGivesTheGrantOfOnePluginToNoOther(t *testing.T) {
+func TestListRowsAppliesAGrantToItsPluginOnly(t *testing.T) {
 	rows := listGrantedRows(t, connectiondomain.RowSetting{}, numenAgentGrant(), chatPluginID, chatOp)
 
 	if len(rows) != 0 {

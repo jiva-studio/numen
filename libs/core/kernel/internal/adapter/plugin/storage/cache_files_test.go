@@ -90,7 +90,7 @@ func TestAHostWithNoCacheRootKeepsNothing(t *testing.T) {
 	}
 }
 
-func TestRemovingTheCacheOfAPluginRemovesWhatTheHostKeptForIt(t *testing.T) {
+func TestRemoveCacheDirDeletesTheCacheFilesOfThePlugin(t *testing.T) {
 	root := t.TempDir()
 	var reported []error
 	files := newStorage(t, root, &reported)

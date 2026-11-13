@@ -296,17 +296,15 @@ func (s secretStore) restore(ctx context.Context, id string, backup snapshot) er
 	return errors.Join(failures...)
 }
 
-// listUses returns the settings of rows that name the connection and the grants that reach it through its
-// type, which must be available, in the order of the plugin ids.
-func (o operation) listUses(one connection.Connection) ([]connection.Use, error) {
+func listUses(o operation, one connection.Connection) ([]connection.Use, error) {
 	uses, err := o.uses.ListUses(one.ID)
 	if err != nil {
 		return nil, err
 	}
-	return o.addGrantUses(uses, one.TypeID), nil
+	return addGrantUses(o, uses, one.TypeID), nil
 }
 
-func (o operation) addGrantUses(uses []connection.Use, typeID string) []connection.Use {
+func addGrantUses(o operation, uses []connection.Use, typeID string) []connection.Use {
 	found, isFound := o.types.GetType(typeID)
 	if !isFound || !found.IsAvailable {
 		return uses
@@ -322,7 +320,7 @@ func (o operation) addGrantUses(uses []connection.Use, typeID string) []connecti
 }
 
 func (o operation) buildEntry(ctx context.Context, one connection.Connection) (Entry, error) {
-	uses, err := o.listUses(one)
+	uses, err := listUses(o, one)
 	if err != nil {
 		return Entry{}, err
 	}

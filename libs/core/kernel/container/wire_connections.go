@@ -135,7 +135,7 @@ func openRowOptions(c pluginsWiring, deps connection.Deps) *rowoptions.Options {
 	return rowoptions.NewOptions(rowoptions.Deps{
 		Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
 		Source: providerbridge.NewQuestionSource(c.PluginHost.Runtime), Running: c.PluginHost.RunningProviders,
-		Lists: c.PluginHost.RowOptions, Titles: c.PluginHost.Views.Operations, Configs: c.PluginHost.ConfigRevisions,
+		Lists: c.PluginHost.RowOptions, Titles: c.PluginHost.Views.Operations,
 		Grants: connection.NewGetGrantRevision(deps).Execute,
 	})
 }

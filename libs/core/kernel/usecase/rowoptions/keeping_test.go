@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
-func TestAListThatIsEmptyOrPartialIsAnsweredButNotKept(t *testing.T) {
+func TestAnEmptyOrPartialListIsReturnedAndNotStored(t *testing.T) {
 	for name, listed := range map[string]modelcalldomain.ListedOptions{
 		"empty":   {},
 		"partial": {Options: []modelcalldomain.Option{{Value: "model-1"}}, IsPartial: true},
@@ -126,7 +126,7 @@ func (s *firstHeldSource) ListOptions(
 	return s.Provider.ListOptions(ctx, operation, call, query)
 }
 
-func TestAListReadForAnEarlierRevisionLeavesTheListOfTheNewOne(t *testing.T) {
+func TestAListOfAnEarlierRevisionDoesNotReplaceTheStoredListOfTheNewRevision(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		s := newSetup(t)
 		source := &firstHeldSource{Provider: s.world.Provider, release: make(chan struct{})}

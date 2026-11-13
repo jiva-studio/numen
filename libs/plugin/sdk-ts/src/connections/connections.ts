@@ -12,7 +12,7 @@ export type ConnectionErrorCode = 'no_connection' | 'all_failed' | 'stopped' | '
 
 // ConnectionFailureCode is the reason a row did not answer, as a program reads it: the codes of
 // connection.Reason of the Go SDK. A row the core set aside for a reason outside these has `unavailable`.
-export type ConnectionFailureCode =
+type ConnectionFailureCode =
   | 'unavailable'
   | 'rejected_key'
   | 'payment_required'
