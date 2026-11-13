@@ -48,8 +48,9 @@ func listConnectionIDs(registries Registries) (map[string]bool, bool) {
 	if !isFound {
 		return nil, false
 	}
-	connectionIDs := make(map[string]bool, len(ids))
-	for _, id := range ids {
+	builtIns, _ := registries(RegistryBuiltInConnections)
+	connectionIDs := make(map[string]bool, len(ids)+len(builtIns))
+	for _, id := range slices.Concat(ids, builtIns) {
 		connectionIDs[id] = true
 	}
 	return connectionIDs, true
@@ -99,19 +100,16 @@ func readRowText(object map[string]any, key string, isRequired bool) (string, er
 	return text, nil
 }
 
-func (f *File) dropInvalidRows(owner string, declared manifest.Setting) {
+func (f *File) dropInvalidRows(owner string, declared manifest.Setting, registries Registries) {
 	list, isList := f.Plugins[owner][declared.Key].([]any)
 	if !isList {
 		return
 	}
-	connectionIDs := make(map[string]bool, len(f.Connections))
-	for _, one := range f.Connections {
-		connectionIDs[one.ID] = true
-	}
+	connectionIDs, isKnown := listConnectionIDs(registries)
 	remainder := make([]any, 0, len(list))
 	pairs := map[rowIdentity]bool{}
 	for index, row := range list {
-		identity, err := readRow(row, connectionIDs, true)
+		identity, err := readRow(row, connectionIDs, isKnown)
 		reason := ""
 		switch {
 		case err != nil:
@@ -148,10 +146,10 @@ func withConnectionIDs(connections []connection.Connection, registries Registrie
 	}
 }
 
-func dropInvalidRowsOf(f *File, owner string, settings []manifest.Setting) {
+func dropInvalidRowsOf(f *File, owner string, settings []manifest.Setting, registries Registries) {
 	for _, one := range settings {
 		if one.Type == manifest.SettingTypeConnections {
-			f.dropInvalidRows(owner, one)
+			f.dropInvalidRows(owner, one, registries)
 		}
 	}
 }

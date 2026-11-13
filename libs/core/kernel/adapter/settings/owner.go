@@ -236,7 +236,7 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 			f.AddNotice(fmt.Sprintf("numen.json: no installed plugin %s; its settings are ignored", id))
 			continue
 		}
-		dropInvalidRowsOf(f, id, settings)
+		dropInvalidRowsOf(f, id, settings, registries)
 		for _, key := range slices.Sorted(maps.Keys(f.Plugins[id])) {
 			if err := CheckWrite(declared, registries, []string{id, key}, f.Plugins[id][key]); err != nil {
 				delete(f.Plugins[id], key)

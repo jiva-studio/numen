@@ -139,8 +139,11 @@ func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 func getRegistries(c settingsWiring) settingsadapter.Registries {
 	themes := themeRegistry(c).GetNames()
 	return func(name string) ([]string, bool) {
-		if name == settingsadapter.RegistryConnections {
+		switch name {
+		case settingsadapter.RegistryConnections:
 			return listConnectionIDs(c)
+		case settingsadapter.RegistryBuiltInConnections:
+			return settingsadapter.ListBuiltInConnectionIDs(c.PluginHost.Views.Types), true
 		}
 		return themes(name)
 	}

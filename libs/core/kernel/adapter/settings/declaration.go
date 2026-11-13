@@ -3,8 +3,10 @@ package settings
 import (
 	_ "embed"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
@@ -29,10 +31,27 @@ const (
 const RegistryThemes = "themes"
 
 // RegistryConnections names the registry that lists the ids of the stored connections. A setting of
-// rows takes a list of at most max objects, each with a connection from this registry and a model,
-// optionally a reasoning level, and no connection and model twice. A registry that lists no
-// connections leaves the connection unchecked.
+// rows takes a list of at most max objects, each with a connection from this registry or from
+// RegistryBuiltInConnections and the row options of its type as text, and no connection with the same
+// options twice. A registry that lists no connections leaves the connection unchecked.
 const RegistryConnections = "connections"
+
+// RegistryBuiltInConnections names the registry that lists the ids of the built-in connections of the
+// available types.
+const RegistryBuiltInConnections = "builtInConnections"
+
+// ListBuiltInConnectionIDs returns the ids of the built-in connections of the types, and none where no
+// plugin host gives types.
+func ListBuiltInConnectionIDs(types connectionport.Types) []string {
+	if types == nil {
+		return nil
+	}
+	var ids []string
+	for _, one := range connection.ListBuiltIns(types.ListTypes()) {
+		ids = append(ids, one.ID)
+	}
+	return ids
+}
 
 func readAppDeclaration() []manifest.Setting {
 	decoded, err := manifestjson.Decode(appDeclaration)

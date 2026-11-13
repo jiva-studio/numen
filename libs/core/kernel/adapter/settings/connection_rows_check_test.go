@@ -232,3 +232,44 @@ func TestAChoiceToDiscoverThatBreaksTheRulesIsRejected(t *testing.T) {
 		}
 	}
 }
+
+func listConnectionsWithBuiltIns(name string) ([]string, bool) {
+	if name == settings.RegistryBuiltInConnections {
+		return settings.ListBuiltInConnectionIDs(builtInTypes{}), true
+	}
+	return knownConnections(name)
+}
+
+func TestARowOfABuiltInConnectionIsAcceptedOnWrite(t *testing.T) {
+	var value any
+	if err := json.Unmarshal([]byte(`[{"connection":"org.example.agents/kite","model":"m"}]`), &value); err != nil {
+		t.Fatal(err)
+	}
+
+	err := settings.CheckWrite(declaredWithRows, listConnectionsWithBuiltIns, []string{rowsPluginID, "connections"}, value)
+
+	if err != nil {
+		t.Errorf("err = %v, want none for the built-in connection of an available type", err)
+	}
+}
+
+func TestARowOfABuiltInConnectionStaysInForceOnRead(t *testing.T) {
+	path := write(t, fmt.Sprintf(rowsFile, `[
+		{"connection":"org.example.agents/kite","model":"m"},
+		{"connection":"org.example.gone/wren","model":"m"}
+	]`))
+	store := settings.NewStore(settings.NewFiles(), func() (string, error) { return path, nil }, declaredWithRows, listConnectionsWithBuiltIns)
+
+	cfg, err := store.ReadCheckedFile()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rows := listRowsInForce(t, cfg)
+	if len(rows) != 1 || rows[0]["connection"] != "org.example.agents/kite" {
+		t.Errorf("rows in force = %v, want the row of Kite only", rows)
+	}
+	if !hasNotice(cfg.Notices, rowsPluginID, "connections", "org.example.gone/wren") {
+		t.Errorf("no notice names the row of the built-in connection of the disabled plugin: %q", cfg.Notices)
+	}
+}
