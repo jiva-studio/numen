@@ -1,6 +1,9 @@
 package plugin
 
-import "time"
+import (
+	"slices"
+	"time"
+)
 
 // Process is the process of a plugin that runs. LastUseTime is when a lease was last taken or
 // returned. IdleStopTime is from when the core stops the process for idleness, and zero while it
@@ -12,6 +15,8 @@ type Process struct {
 	LeaseCount   int
 	IsInProcess  bool
 	IdleStopTime time.Time
+	StartedBy    Holder
+	Holders      []Holder
 }
 
 // ProcessStatus is a process that runs, with the name of its plugin and the worst health item of the
@@ -43,4 +48,12 @@ func GetWorstHealth(items []HealthItem, pluginID string) (HealthItem, bool) {
 type ProcessList struct {
 	Time      time.Time
 	Processes []ProcessStatus
+}
+
+// IsSameStatus reports whether two statuses say the same.
+func IsSameStatus(a, b ProcessStatus) bool {
+	return a.PluginID == b.PluginID && a.StartTime == b.StartTime && a.LastUseTime == b.LastUseTime &&
+		a.LeaseCount == b.LeaseCount && a.IsInProcess == b.IsInProcess && a.IdleStopTime == b.IdleStopTime &&
+		a.StartedBy == b.StartedBy && slices.Equal(a.Holders, b.Holders) &&
+		a.PluginName == b.PluginName && a.Health == b.Health && a.HealthText == b.HealthText
 }

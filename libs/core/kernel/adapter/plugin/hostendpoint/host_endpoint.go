@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 const (
@@ -73,6 +74,10 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	countingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		endpoint.callCount.Add(1)
 		defer endpoint.callCount.Add(-1)
+		if pluginID, err := endpoint.authenticate(r.Header.Get("Authorization")); err == nil {
+			caller := plugin.Caller{Who: "plugin " + pluginID, Call: plugin.GetCallName(r.URL.Path)}
+			r = r.WithContext(plugin.WithCaller(r.Context(), caller))
+		}
 		mux.ServeHTTP(w, r)
 	})
 	endpoint.server = &http.Server{Handler: countingHandler, ReadHeaderTimeout: hostEndpointHeaderTimeout}

@@ -22,7 +22,7 @@ func (r Runtime) unavailable(capability, pluginID string) error {
 }
 
 // EnsureActive reports that the plugin is unavailable.
-func (r Runtime) EnsureActive(_ context.Context, pluginID string) (transport.Endpoint, error) {
+func (r Runtime) EnsureActive(_ context.Context, pluginID string, _ plugindomain.Holder) (transport.Endpoint, error) {
 	return transport.Endpoint{}, r.unavailable("", pluginID)
 }
 
@@ -51,7 +51,7 @@ func (Runtime) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 }
 
 // Release has no plugin to release.
-func (Runtime) Release(string) {}
+func (Runtime) Release(string, plugindomain.Holder) {}
 
 // Discover finds no plugin.
 func (Runtime) Discover() error { return nil }

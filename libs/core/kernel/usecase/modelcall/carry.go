@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 )
@@ -142,6 +143,7 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 	if skip != nil {
 		return rowOutcome{failure: skip}, false
 	}
+	ctx = plugin.WithPurpose(ctx, ask.operation+" on connection "+resolved.Name)
 	call := &rowCall{calls: c, resolved: resolved, row: row, do: do, priority: ask.priority}
 	for tries := 1; ; tries++ {
 		value, err := call.callOnce(ctx)

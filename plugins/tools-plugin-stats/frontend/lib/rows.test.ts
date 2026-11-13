@@ -14,6 +14,8 @@ const IDLE: PluginProcess = {
   idleStopTime: NOW - 65_000 + 180_000,
   health: 'warning',
   healthText: 'The tiles are old',
+  startedBy: { who: 'core', why: 'list tools' },
+  holders: [],
 }
 
 const countdown = (one: PluginProcess, now = NOW) => {

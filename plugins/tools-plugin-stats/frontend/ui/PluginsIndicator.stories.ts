@@ -13,6 +13,8 @@ const MINUTE = 60_000
 
 const HEALTHY = { health: 'ok', healthText: '' } as const
 
+const STARTED_BY_CORE = { who: 'core', why: 'list tools' } as const
+
 /**
  * Made-up plugins, one per state: in use, idle, about to stop, inside the core, and unhealthy.
  */
@@ -24,6 +26,11 @@ const PLUGINS: readonly PluginProcess[] = [
     lastUseTime: NOW - 2_000,
     leaseCount: 2,
     isInProcess: false,
+    startedBy: { who: 'window via FindPassages', why: 'search passages' },
+    holders: [
+      { who: 'window via FindPassages', why: 'search passages' },
+      { who: 'plugin org.example.gazette via CallTool', why: 'call tool atlas.find_place' },
+    ],
     ...HEALTHY,
   },
   {
@@ -34,6 +41,8 @@ const PLUGINS: readonly PluginProcess[] = [
     leaseCount: 0,
     isInProcess: false,
     idleStopTime: NOW + 122_000,
+    startedBy: STARTED_BY_CORE,
+    holders: [],
     ...HEALTHY,
   },
   {
@@ -44,6 +53,8 @@ const PLUGINS: readonly PluginProcess[] = [
     leaseCount: 0,
     isInProcess: false,
     idleStopTime: NOW - 10_000,
+    startedBy: { who: 'core', why: 'deliver event onStartup' },
+    holders: [],
     ...HEALTHY,
   },
   {
@@ -53,6 +64,8 @@ const PLUGINS: readonly PluginProcess[] = [
     lastUseTime: NOW - 4_000,
     leaseCount: 1,
     isInProcess: false,
+    startedBy: { who: 'window via RunCommand', why: 'run command maps.open' },
+    holders: [{ who: 'plugin org.example.maps', why: 'task Draw the tiles' }],
     health: 'error',
     healthText: 'The map server does not answer since the last restart of the tile service',
   },
@@ -63,6 +76,8 @@ const PLUGINS: readonly PluginProcess[] = [
     lastUseTime: NOW - 3 * 60 * MINUTE,
     leaseCount: 1,
     isInProcess: true,
+    startedBy: STARTED_BY_CORE,
+    holders: [STARTED_BY_CORE],
     ...HEALTHY,
   },
 ]

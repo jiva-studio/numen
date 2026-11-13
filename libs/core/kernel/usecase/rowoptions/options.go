@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
@@ -117,7 +118,7 @@ func (o *Options) refreshKept(ctx context.Context, connectionID string, source c
 	if len(requests) == 0 {
 		return
 	}
-	provider, release, err := source.OpenProvider(ctx, resolved.PluginID)
+	provider, release, err := source.OpenProvider(plugin.WithPurpose(ctx, "refresh options of connection "+resolved.Name), resolved.PluginID)
 	if err != nil {
 		return
 	}
@@ -156,7 +157,7 @@ func (o *Options) resolveField(ctx context.Context, connectionID, field string) 
 func (o *Options) readOptions(
 	ctx context.Context, resolved connection.Resolved, declared manifest.ConnectionField, asked KeptList,
 ) ([]modelcall.Option, error) {
-	provider, release, err := o.source.OpenProvider(ctx, resolved.PluginID)
+	provider, release, err := o.source.OpenProvider(plugin.WithPurpose(ctx, "list "+declared.Key+" options of connection "+resolved.Name), resolved.PluginID)
 	if err != nil {
 		return nil, failed(ctx, connection.FailureReasonUnavailable)
 	}

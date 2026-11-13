@@ -89,7 +89,7 @@ func (r *watchRun) sendLists(ctx context.Context) {
 
 func (r *watchRun) sendList(ctx context.Context, isFirst bool) bool {
 	list := r.use.listStatuses(r.items)
-	if !isFirst && slices.Equal(list, r.last) {
+	if !isFirst && slices.EqualFunc(list, r.last, plugin.IsSameStatus) {
 		return true
 	}
 	select {

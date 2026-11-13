@@ -14,6 +14,8 @@ const MAPS: PluginProcess = {
   isInProcess: false,
   health: 'ok',
   healthText: '',
+  startedBy: { who: 'core', why: 'list tools' },
+  holders: [],
 }
 
 const setup = () => {

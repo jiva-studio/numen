@@ -137,29 +137,29 @@ func (a *Activation) HasEndpoint(pluginID string) bool {
 
 // Acquire increments the active consumer reference count for a plugin whose process runs, and cancels a
 // release of that process.
-func (a *Activation) Acquire(pluginID string) {
+func (a *Activation) Acquire(pluginID string, holder plugindomain.Holder) {
 	sup, ok := a.sups.Get(pluginID)
 	if ok {
-		a.sups.AcquireRunning(pluginID, sup, a.clock.Now())
+		a.sups.AcquireRunning(pluginID, sup, a.clock.Now(), holder)
 	}
 }
 
 // AcquireRunning takes a reference on a plugin whose process runs, as Acquire does, and returns the endpoint
 // of the process. A plugin whose process does not run is not started and returns false.
-func (a *Activation) AcquireRunning(pluginID string) (transport.Endpoint, bool) {
+func (a *Activation) AcquireRunning(pluginID string, holder plugindomain.Holder) (transport.Endpoint, bool) {
 	sup, ok := a.sups.Get(pluginID)
 	if !ok {
 		return supervision.NoEndpoint(), false
 	}
-	return a.sups.AcquireRunning(pluginID, sup, a.clock.Now())
+	return a.sups.AcquireRunning(pluginID, sup, a.clock.Now(), holder)
 }
 
 // Release decrements the active consumer reference count for a plugin. A released process that holds no
 // lease after it is stopped at once.
-func (a *Activation) Release(pluginID string) {
+func (a *Activation) Release(pluginID string, holder plugindomain.Holder) {
 	sup, ok := a.sups.Get(pluginID)
 	if ok {
-		a.sups.ReturnHold(pluginID, sup, a.clock.Now())
+		a.sups.ReturnHold(pluginID, sup, a.clock.Now(), holder)
 	}
 }
 
@@ -193,7 +193,7 @@ func (a *Activation) prepareSupervisor(pluginID string) (manifest.Discovered, *l
 	return p, sup, nil
 }
 
-func (a *Activation) awaitActivation(ctx context.Context, pluginID string, sup *lifecycle.Supervisor) (transport.Endpoint, bool, error) {
+func (a *Activation) awaitActivation(ctx context.Context, pluginID string, sup *lifecycle.Supervisor, holder plugindomain.Holder) (transport.Endpoint, bool, error) {
 	waitCh := sup.ActivatingChan()
 	select {
 	case <-ctx.Done():
@@ -201,7 +201,7 @@ func (a *Activation) awaitActivation(ctx context.Context, pluginID string, sup *
 	case <-waitCh:
 	}
 
-	if endpoint, ok := a.sups.AcquireRunning(pluginID, sup, a.clock.Now()); ok {
+	if endpoint, ok := a.sups.AcquireRunning(pluginID, sup, a.clock.Now(), holder); ok {
 		return endpoint, true, nil
 	}
 	if err := sup.ActivationError(); err != nil {
@@ -215,13 +215,14 @@ func (a *Activation) settlePluginInState(
 	pluginID string,
 	sup *lifecycle.Supervisor,
 	state lifecycle.ProcessState,
+	holder plugindomain.Holder,
 ) (transport.Endpoint, bool, error) {
 	switch state {
 	case lifecycle.StateDeactivating:
 		err := sup.WaitWhileDeactivating(ctx)
 		return supervision.NoEndpoint(), err != nil, err
 	case lifecycle.StateActivating:
-		endpoint, ready, err := a.awaitActivation(ctx, pluginID, sup)
+		endpoint, ready, err := a.awaitActivation(ctx, pluginID, sup, holder)
 		return endpoint, ready || err != nil, err
 	default:
 		if err := sup.Teardown(ctx, 0, nil); err != nil && !errors.Is(err, lifecycle.ErrProcessNotRunning) {
@@ -232,11 +233,11 @@ func (a *Activation) settlePluginInState(
 }
 
 // EnsureActive ensures the plugin process is running and returns its endpoint.
-func (a *Activation) EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	return a.ensureActiveDuringDiscovery(ctx, pluginID)
+func (a *Activation) EnsureActive(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return a.ensureActiveDuringDiscovery(ctx, pluginID, holder)
 }
 
-func (a *Activation) ensureActiveDuringDiscovery(ctx context.Context, pluginID string) (transport.Endpoint, error) {
+func (a *Activation) ensureActiveDuringDiscovery(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
 	a.scan.holdStart()
 	defer a.scan.releaseStart()
 
@@ -246,12 +247,12 @@ func (a *Activation) ensureActiveDuringDiscovery(ctx context.Context, pluginID s
 			return supervision.NoEndpoint(), err
 		}
 
-		claim := a.sups.Begin(pluginID, sup, a.clock.Now())
+		claim := a.sups.Begin(pluginID, sup, a.clock.Now(), holder)
 		if claim.Running {
 			return claim.Endpoint, nil
 		}
 		if !claim.Started {
-			endpoint, isDone, err := a.settlePluginInState(ctx, pluginID, sup, claim.State)
+			endpoint, isDone, err := a.settlePluginInState(ctx, pluginID, sup, claim.State, holder)
 			if isDone {
 				return endpoint, err
 			}

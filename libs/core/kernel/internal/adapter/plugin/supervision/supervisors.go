@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
@@ -184,25 +185,25 @@ func (s *Supervisors) GetListenerPort(pluginID, name string) (int, bool) {
 }
 
 // Release gives up a hold on the plugin if its endpoint is still the one the token names.
-func (s *Supervisors) Release(pluginID, token string, now time.Time) {
+func (s *Supervisors) Release(pluginID, token string, now time.Time, holder plugin.Holder) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	sup, ok := s.byPlugin[pluginID]
 	if !ok || getEndpointLocked(s, pluginID).Token != token {
 		return
 	}
-	returnHoldLocked(s, pluginID, sup, now)
+	returnHoldLocked(s, pluginID, sup, now, holder)
 }
 
 // ReturnHold gives up a hold on the plugin. A released process that holds no other is stopped at once.
-func (s *Supervisors) ReturnHold(pluginID string, sup *lifecycle.Supervisor, now time.Time) {
+func (s *Supervisors) ReturnHold(pluginID string, sup *lifecycle.Supervisor, now time.Time, holder plugin.Holder) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	returnHoldLocked(s, pluginID, sup, now)
+	returnHoldLocked(s, pluginID, sup, now, holder)
 }
 
-func returnHoldLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, now time.Time) {
-	sup.Release(now)
+func returnHoldLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, now time.Time, holder plugin.Holder) {
+	sup.Release(now, holder)
 	notifyLocked(s)
 	if usage, isRunning := sup.GetUsage(); isRunning && usage.IsIdle && isReleasedLocked(s, pluginID) && s.stopReleased != nil {
 		go s.stopReleased(pluginID)
@@ -237,30 +238,31 @@ type Claim struct {
 
 // Begin takes a hold on the running plugin, or reports the state of the supervisor, or sets a dormant
 // supervisor to activating.
-func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, now time.Time) Claim {
+func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, now time.Time, holder plugin.Holder) Claim {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if endpoint, ok := acquireRunningLocked(s, pluginID, sup, now); ok {
+	if endpoint, ok := acquireRunningLocked(s, pluginID, sup, now, holder); ok {
 		return Claim{Endpoint: endpoint, Running: true, State: lifecycle.StateDormant, Started: false}
 	}
 	if state := sup.GetState(); state != lifecycle.StateDormant {
 		return Claim{Endpoint: NoEndpoint(), Running: false, State: state, Started: false}
 	}
 	sup.SetActivating()
+	sup.SetStartedBy(holder)
 	return Claim{Endpoint: NoEndpoint(), Running: false, State: lifecycle.StateDormant, Started: true}
 }
 
 // AcquireRunning takes a hold on the plugin and returns its endpoint if a process of it runs. The hold
 // cancels a release of the process.
-func (s *Supervisors) AcquireRunning(pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
+func (s *Supervisors) AcquireRunning(pluginID string, sup *lifecycle.Supervisor, now time.Time, holder plugin.Holder) (transport.Endpoint, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return acquireRunningLocked(s, pluginID, sup, now)
+	return acquireRunningLocked(s, pluginID, sup, now, holder)
 }
 
-func acquireRunningLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
+func acquireRunningLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, now time.Time, holder plugin.Holder) (transport.Endpoint, bool) {
 	run, ok := s.runs[pluginID]
-	if !ok || IsNoEndpoint(run.endpoint) || run.endpoint.Token == "" || !sup.Acquire(now) {
+	if !ok || IsNoEndpoint(run.endpoint) || run.endpoint.Token == "" || !sup.Acquire(now, holder) {
 		return NoEndpoint(), false
 	}
 	run.isReleased = false
@@ -297,7 +299,7 @@ func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachmen
 		s.Drop(pluginID)
 		onExit()
 	})
-	sup.Acquire(now)
+	sup.Acquire(now, sup.GetStartedBy())
 	s.runs[pluginID] = &processRun{endpoint: endpoint, listenerPorts: listeners, startTime: now, isReleased: false}
 	sup.SetRPCShutdown(createRPCShutdown(endpoint, s.clients.Get(endpoint), rpcShutdownGrace))
 	sup.FinishActivating()

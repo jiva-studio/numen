@@ -10,8 +10,8 @@ import (
 
 // toolActivator starts a plugin for the catalog of tools and holds it.
 type toolActivator interface {
-	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
-	Release(pluginID string)
+	EnsureActive(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error)
+	Release(pluginID string, holder plugindomain.Holder)
 }
 
 // pluginInfoLister lists the plugins the host knows and tells the enabled ones.
@@ -32,12 +32,14 @@ func NewToolHost(activation toolActivator, registry pluginInfoLister) ToolHost {
 }
 
 // EnsureActive starts the plugin if it is not running and holds it.
-func (h ToolHost) EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	return h.activation.EnsureActive(ctx, pluginID)
+func (h ToolHost) EnsureActive(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return h.activation.EnsureActive(ctx, pluginID, holder)
 }
 
 // Release gives up the hold EnsureActive took.
-func (h ToolHost) Release(pluginID string) { h.activation.Release(pluginID) }
+func (h ToolHost) Release(pluginID string, holder plugindomain.Holder) {
+	h.activation.Release(pluginID, holder)
+}
 
 // GetPluginInfos lists the plugins the host knows.
 func (h ToolHost) GetPluginInfos() []plugindomain.Info { return h.registry.GetPluginInfos() }

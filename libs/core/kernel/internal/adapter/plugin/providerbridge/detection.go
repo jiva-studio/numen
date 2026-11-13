@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -130,7 +131,7 @@ func (d *Detection) Detect(ctx context.Context, pluginID string) {
 	if len(types) == 0 {
 		return
 	}
-	provider, release, err := d.source.OpenProvider(ctx, pluginID)
+	provider, release, err := d.source.OpenProvider(plugin.WithPurpose(ctx, "detect connections"), pluginID)
 	if err != nil {
 		report(fmt.Errorf("detect the connections of %s: %w", pluginID, err))
 		return

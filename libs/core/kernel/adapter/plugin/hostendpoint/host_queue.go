@@ -45,8 +45,9 @@ func (e *queueEndpoint) EnqueueWork(
 	if err != nil {
 		return err
 	}
-	e.endpoint.callers.Leases.Acquire(pluginID)
-	defer e.endpoint.callers.Leases.Release(pluginID)
+	holder := plugin.Holder{Who: "plugin " + pluginID, Why: "queued work"}
+	e.endpoint.callers.Leases.Acquire(pluginID, holder)
+	defer e.endpoint.callers.Leases.Release(pluginID, holder)
 	var waitErr error
 	turn, err := work.EnqueueWork(ctx, pluginID, req.Msg.GetIsUserStarted(), func() {
 		waitErr = stream.Send(&v1.EnqueueWorkResponse{State: v1.WorkState_WORK_STATE_WAITING})
@@ -102,7 +103,7 @@ func (e *queueEndpoint) ReportTask(
 		if isTaskFinished(task) {
 			e.endpoint.tasks.release(e.endpoint.callers.Leases, pluginID, task.GetId())
 		} else {
-			e.endpoint.tasks.hold(e.endpoint.callers.Leases, pluginID, task.GetId())
+			e.endpoint.tasks.hold(e.endpoint.callers.Leases, pluginID, task.GetId(), task.GetTitle())
 		}
 	}
 	return connect.NewResponse(&v1.ReportTaskResponse{}), nil

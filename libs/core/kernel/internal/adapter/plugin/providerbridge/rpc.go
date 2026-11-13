@@ -31,12 +31,12 @@ func NewSource(host bridge.Activator) *Source { return &Source{host: host} }
 // OpenProvider activates the plugin, which starts it if it is not running, and returns its provider with
 // the function that releases the plugin. The function may be called more than once.
 func (s *Source) OpenProvider(ctx context.Context, pluginID string) (connectionport.Provider, func(), error) {
-	client, lease, err := bridge.Open(ctx, s.host, pluginID, numenv1connect.NewProviderServiceClient)
+	client, lease, err := bridge.Open(ctx, s.host, pluginID, "call provider", numenv1connect.NewProviderServiceClient)
 	if err != nil {
 		return nil, nil, err
 	}
 	var once sync.Once
-	return &provider{client: client}, func() { once.Do(func() { lease.Host.Release(lease.PluginID) }) }, nil
+	return &provider{client: client}, func() { once.Do(func() { lease.Host.Release(lease.PluginID, lease.Holder) }) }, nil
 }
 
 // provider carries the calls of the core to the ProviderService of a plugin. An operation the plugin does

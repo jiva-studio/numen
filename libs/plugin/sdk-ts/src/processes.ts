@@ -4,7 +4,8 @@ import type { Disposable } from './types'
 // when a lease was last taken or returned; a lease is an open call, an open stream or reported work.
 // `idleStopTime` is from when the core stops the plugin for idleness, and is absent while the plugin
 // holds a lease. `health` is the severity of the worst health item of the plugin, `ok` where it has
-// none, and `healthText` the text of that item.
+// none, and `healthText` the text of that item. `startedBy` is the holder whose lease started the
+// plugin, and `holders` the holders of the leases open now, oldest first.
 export interface PluginProcess {
   readonly pluginId: string
   readonly pluginName: string
@@ -15,6 +16,15 @@ export interface PluginProcess {
   readonly idleStopTime?: number
   readonly health: 'ok' | 'warning' | 'error'
   readonly healthText: string
+  readonly startedBy: LeaseHolder
+  readonly holders: readonly LeaseHolder[]
+}
+
+// LeaseHolder is who holds a lease on a plugin that runs and why: `who` is `core`, `window` or
+// `plugin <id>`, followed by the call it came through where there is one.
+export interface LeaseHolder {
+  readonly who: string
+  readonly why: string
 }
 
 // ProcessHost reports the plugins that run. It needs the permission plugins:read.

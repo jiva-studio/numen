@@ -2,9 +2,9 @@
 /**
  * The plugins that run, one line each: whether it is in use, its name, the worst health item of an
  * unhealthy plugin, and when the core stops an idle one. How long it has run is in the tooltip of
- * the line.
+ * the line. Clicking a line shows who started the plugin and who holds it now.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { PluginProcess } from '../types'
 import { getRows } from '../lib/rows'
 import { WORDS as words } from '../words'
@@ -22,10 +22,17 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const rows = computed(() => getRows(props.processes, props.now))
+const expandedIds = ref<ReadonlySet<string>>(new Set())
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClose() {
   emit('close')
+}
+
+function toggleHolders(id: string) {
+  const next = new Set(expandedIds.value)
+  if (!next.delete(id)) next.add(id)
+  expandedIds.value = next
 }
 </script>
 
@@ -52,6 +59,10 @@ function onClose() {
         class="plugin-popover__plugin"
         :aria-label="row.name"
         :title="row.title"
+        :aria-expanded="expandedIds.has(row.id)"
+        tabindex="0"
+        @click="toggleHolders(row.id)"
+        @keydown.enter.space.prevent="toggleHolders(row.id)"
       >
         <span
           class="plugin-popover__status"
@@ -77,6 +88,17 @@ function onClose() {
         <span class="plugin-popover__countdown" :title="row.countdownHint || undefined">
           {{ row.countdown }}
         </span>
+        <dl v-if="expandedIds.has(row.id)" class="plugin-popover__holders">
+          <dt class="plugin-popover__holders-term">{{ words.startedBy }}</dt>
+          <dd class="plugin-popover__holders-value">{{ row.startedBy }}</dd>
+          <dt class="plugin-popover__holders-term">{{ words.heldBy }}</dt>
+          <dd v-if="row.holders.length === 0" class="plugin-popover__holders-value">
+            {{ words.notHeld }}
+          </dd>
+          <dd v-for="(holder, index) in row.holders" :key="index" class="plugin-popover__holders-value">
+            {{ holder }}
+          </dd>
+        </dl>
       </li>
     </ul>
   </div>

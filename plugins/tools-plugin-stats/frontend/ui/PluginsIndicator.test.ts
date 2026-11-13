@@ -16,6 +16,8 @@ const ATLAS: PluginProcess = {
   idleStopTime: NOW + 115_000,
   health: 'ok',
   healthText: '',
+  startedBy: { who: 'core', why: 'list tools' },
+  holders: [],
 }
 
 const draw = (processes: readonly PluginProcess[], phase: Phase = 'ready') =>

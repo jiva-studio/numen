@@ -15,6 +15,7 @@ import (
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
@@ -133,6 +134,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
+		r = r.WithContext(plugindomain.WithCaller(r.Context(), getWindowCaller(r.URL.Path)))
 		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
 		if isWhole && s.plugins != nil && s.plugins.Serves(r.URL.Path) {
 			s.setRequestVault(r)
@@ -292,4 +294,14 @@ func NewFileRoute(state *State, handler *filewindow.Handler) Route {
 func NewMediaRoute(state *State, handler *mediawindow.Handler) Route {
 	path, served := numenv1connect.NewMediaServiceHandler(handler, state.Gate.CountQuestions())
 	return NewRoute(path, served, handler)
+}
+
+// getWindowCaller names the window as the caller of a request, with the RPC the request makes where it
+// makes one: a Connect path is "/<package>.<Service>/<Method>".
+func getWindowCaller(path string) plugindomain.Caller {
+	service, _, isRPC := strings.Cut(strings.TrimPrefix(path, "/"), "/")
+	if !isRPC || !strings.Contains(service, ".") {
+		return plugindomain.Caller{Who: "window", Call: ""}
+	}
+	return plugindomain.Caller{Who: "window", Call: plugindomain.GetCallName(path)}
 }

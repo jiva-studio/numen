@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
@@ -29,7 +30,8 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "plugin not found", http.StatusNotFound)
 		return
 	}
-	endpoint, err := p.host.EnsureActive(r.Context(), id)
+	holder := plugin.GetHolder(r.Context(), "frontend view")
+	endpoint, err := p.host.EnsureActive(r.Context(), id, holder)
 	if err != nil {
 		status := http.StatusServiceUnavailable
 		if errors.Is(err, context.Canceled) {
@@ -38,7 +40,7 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, bridge.ConvertActivationError(id, err).Error(), status)
 		return
 	}
-	lease := &bridge.Lease{Host: p.host, PluginID: id}
+	lease := &bridge.Lease{Host: p.host, PluginID: id, Holder: holder}
 	defer p.releasePlugin(lease)
 
 	target := url.URL{Path: wire.PluginRoute + rest, RawQuery: r.URL.RawQuery}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/eventbus"
@@ -84,13 +85,14 @@ func (e *Events) TriggerEvent(ctx context.Context, event string) ([]string, erro
 	activated := make([]string, 0, len(candidates))
 	var errs []error
 	for _, id := range candidates {
-		endpoint, err := e.activator.EnsureActive(ctx, id)
+		holder := plugindomain.GetHolder(ctx, "deliver event "+event)
+		endpoint, err := e.activator.EnsureActive(ctx, id, holder)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("activate plugin %s on %s: %w", id, event, err))
 			continue
 		}
 		deliverErr := transport.DeliverPluginEvent(ctx, e.sups.Clients().Get(endpoint), endpoint, event)
-		e.activator.Release(id)
+		e.activator.Release(id, holder)
 		activated = append(activated, id)
 		if deliverErr != nil {
 			errs = append(errs, fmt.Errorf("deliver %s to plugin %s: %w", event, id, deliverErr))

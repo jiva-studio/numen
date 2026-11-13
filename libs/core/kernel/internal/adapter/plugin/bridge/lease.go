@@ -15,8 +15,8 @@ import (
 
 // Activator starts a plugin on demand and releases the reference the start took.
 type Activator interface {
-	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
-	Release(pluginID string)
+	EnsureActive(ctx context.Context, pluginID string, holder plugin.Holder) (transport.Endpoint, error)
+	Release(pluginID string, holder plugin.Holder)
 }
 
 // Lease is the one reference a bridge holds on its plugin, from the moment
@@ -24,35 +24,38 @@ type Activator interface {
 type Lease struct {
 	Host     Activator
 	PluginID string
+	Holder   plugin.Holder
 	once     sync.Once
 }
 
 // Close releases the reference. Every call after the first changes nothing.
 func (l *Lease) Close() error {
 	l.once.Do(func() {
-		l.Host.Release(l.PluginID)
+		l.Host.Release(l.PluginID, l.Holder)
 	})
 	return nil
 }
 
 // Open activates the plugin and returns a client for one of its services
-// together with the reference taken on the plugin. A plugin that cannot be
+// together with the reference taken on the plugin, held for why. A plugin that cannot be
 // activated is a *port.UnavailableError, and the end of the context is returned as
 // it is.
 func Open[C any](
 	ctx context.Context,
 	host Activator,
 	pluginID string,
+	why string,
 	newClient func(connect.HTTPClient, string, ...connect.ClientOption) C,
 ) (C, *Lease, error) {
 	var none C
-	endpoint, err := host.EnsureActive(ctx, pluginID)
+	holder := plugin.GetHolder(ctx, why)
+	endpoint, err := host.EnsureActive(ctx, pluginID, holder)
 	if err != nil {
 		return none, nil, ConvertActivationError(pluginID, err)
 	}
 	interceptor := connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token))
 	client := newClient(transport.GetClient(host, endpoint), transport.GetBaseURL(endpoint), interceptor)
-	return client, &Lease{Host: host, PluginID: pluginID}, nil
+	return client, &Lease{Host: host, PluginID: pluginID, Holder: holder}, nil
 }
 
 // ConvertActivationError is the failure to activate a plugin: the end of a
@@ -77,8 +80,8 @@ type Service[C any] struct {
 
 // Open activates the plugin, or finds it running, and returns a client for the
 // endpoint it is at now with the reference the call holds until it is closed.
-func (s Service[C]) Open(ctx context.Context) (C, *Lease, error) {
-	return Open(ctx, s.Host, s.PluginID, s.NewClient)
+func (s Service[C]) Open(ctx context.Context, why string) (C, *Lease, error) {
+	return Open(ctx, s.Host, s.PluginID, why, s.NewClient)
 }
 
 // ReadActivationError sorts the failure to start a plugin: the
