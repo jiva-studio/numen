@@ -148,7 +148,7 @@ function createWidthLookup(
     const widest = isFocus ? settings.focusSize.width : settings.nodeSize.width
     // The focus pill is the box its title would have as a neighbor, made larger.
     const measured = measure(node)
-    if (!Number.isFinite(measured) || measured <= 0) {
+    if (!Number.isFinite(measured)) {
       return isFocus ? options.focusSize.width : options.nodeSize.width
     }
     const box = Math.max(options.minWidth, measured)

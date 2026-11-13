@@ -97,10 +97,16 @@ describe('a final layout that leaves the window', () => {
 })
 
 describe('a measure that is not a width', () => {
+  it.each([0, -20])('gives a box the least width: %s', (measured) => {
+    const frame = arrangePlex(graph, { measure: (node) => (node.id === 'child-1' ? measured : 120) })
+
+    expect(frame.nodes.find((node) => node.id === 'child-1')!.width).toBe(baseline.minWidth)
+  })
+
   const widthOf = (frame: ReturnType<typeof arrangePlex>, id: string) =>
     frame.nodes.find((node) => node.id === id)!.width
 
-  it.each([Number.NaN, 0, -20, Number.POSITIVE_INFINITY * -1])(
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
     'is taken as not measured: %s',
     (measured) => {
       const frame = arrangePlex(graph, {

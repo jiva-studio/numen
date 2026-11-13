@@ -76,6 +76,6 @@ describe('refill', () => {
       expect(after.count).toBeLessThanOrEqual(before.count)
       if (after.count < before.count) fewer++
     }
-    expect(fewer).toBeGreaterThan(ROUNDS / 4)
+    expect(fewer).toBeGreaterThan(20)
   })
 })
