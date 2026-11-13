@@ -117,7 +117,11 @@ describe('what is shown of a graph', () => {
 
 describe('a note that is cut', () => {
   // The graph with every relation at the number of notes shown, and the relation at one more.
-  const cutNodes = (one: Case, frame: ReturnType<typeof arrangeCase>, relation: PlexRelation): Case => {
+  const cutNodes = (
+    one: Case,
+    frame: ReturnType<typeof arrangeCase>,
+    relation: PlexRelation,
+  ): Case => {
     const left = new Set<string>()
     for (const name of RELATION_NAMES) {
       const members = one.graph.nodes.filter((node) => node.relation === name)
@@ -143,31 +147,56 @@ describe('a note that is cut', () => {
   }))
 
   it('is cut in a window of every kind of relation, and not in every window', () => {
-    for (const { relation, rounds } of cuts) expect(rounds.length, relation).toBeGreaterThanOrEqual(5)
+    for (const { relation, rounds } of cuts)
+      expect(rounds.length, relation).toBeGreaterThanOrEqual(5)
     const whole = cases.filter((one) => Object.keys(arrangeCase(one).overflow).length === 0)
     expect(whole.length).toBeGreaterThanOrEqual(10)
   })
 
-  // Known gap, in admission: in some windows the arrangement of the shown notes and the next note of a relation shows that note, so the
-  // window held it. The test fails when the gap is closed; then `it.fails.each` becomes `it.each`.
-  it.fails.each(cuts.map(({ relation, rounds }) => [relation, rounds] as const))(
-    'leaves no room for the next %s note: the arrangement of the shown notes and that note cuts it again',
+  it.each(cuts.map(({ relation, rounds }) => [relation, rounds] as const))(
+    'leaves no room for the next %s note: the shown notes and that note are not all shown together',
     (relation, rounds) => {
       const stillFits: string[] = []
       for (const { round, one, frame, shown } of rounds) {
         const again = arrangeCase(cutNodes(one, frame, relation))
-        if (!again.overflow[relation]) stillFits.push(`case ${round} ${relation} ${shown}`)
+        if (Object.keys(again.overflow).length === 0)
+          stillFits.push(`case ${round} ${relation} ${shown}`)
       }
       expect(stillFits).toStrictEqual([])
     },
   )
+
+  it('shows the same notes when only the shown notes are arranged again', () => {
+    const changed: string[] = []
+    cases.forEach((one, round) => {
+      const frame = arrangeCase(one)
+      if (Object.keys(frame.overflow).length === 0) return
+      const shownIds = new Set(frame.nodes.map((node) => node.id))
+      const again = arrangeCase({
+        ...one,
+        graph: {
+          nodes: one.graph.nodes.filter((node) => shownIds.has(node.id)),
+          edges: one.graph.edges.filter((edge) => shownIds.has(edge.from) && shownIds.has(edge.to)),
+        },
+      })
+      const againIds = new Set(again.nodes.map((node) => node.id))
+      const isSame =
+        againIds.size === shownIds.size && [...againIds].every((id) => shownIds.has(id))
+      if (!isSame) changed.push(`case ${round}`)
+    })
+    expect(changed).toStrictEqual([])
+  })
 })
 
 describe('a window too small for the boxes', () => {
   const nodes: PlexNode[] = [
     { id: 'focus', title: 'Focus', relation: 'focus' },
     ...RELATIONS_CUT.flatMap((relation) =>
-      [1, 2, 3].map((index) => ({ id: `${relation}-${index}`, title: `${relation} ${index}`, relation })),
+      [1, 2, 3].map((index) => ({
+        id: `${relation}-${index}`,
+        title: `${relation} ${index}`,
+        relation,
+      })),
     ),
   ]
   const graph: PlexGraph = { nodes, edges: [] }
@@ -189,7 +218,9 @@ describe('a window too small for the boxes', () => {
     expect(frame.nodes.filter((node) => node.relation === 'focus')).toHaveLength(1)
     for (const node of shown) {
       expect(Math.abs(node.x) + node.width / 2).toBeLessThanOrEqual(viewport.width / 2 - margin + 1)
-      expect(Math.abs(node.y) + node.height / 2).toBeLessThanOrEqual(viewport.height / 2 - margin + 1)
+      expect(Math.abs(node.y) + node.height / 2).toBeLessThanOrEqual(
+        viewport.height / 2 - margin + 1,
+      )
     }
     for (const relation of RELATION_NAMES) {
       expect(countByRelation(shown, relation) + (frame.overflow[relation] ?? 0), relation).toBe(

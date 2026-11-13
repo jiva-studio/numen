@@ -11,7 +11,7 @@ import { assertGraph } from '../graph'
 import type { PlacedNode } from '../node'
 import { admitNodes, countOverflow, requestNodes } from './layout/admission'
 import { clusters } from './layout/clusters'
-import { measureCrowding } from './layout/crowding'
+import { measureCrowding, packOptions } from './layout/crowding'
 import { applyRoom } from './look'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
 import type { Spot } from './layout/freeSpot'
@@ -84,7 +84,7 @@ export function arrangePlex(
   // without `fits`; with it they pack differently, and arrange.frames.test.ts records the packing
   // they choose. The names are left out of it:
   // a pill is the same size with names as without, and the names then cost notes.
-  const resolved = measureCrowding(request, (packed) =>
+  const crowded = measureCrowding(request, (packed) =>
     isHeld(
       lay(packed, requested, NO_ROOMS, {
         shouldStop: stopAtOutside(packed.viewport, packed.margin, NO_ROOMS),
@@ -97,15 +97,27 @@ export function arrangePlex(
   // Admission is settled at that packing, and the gaps then expand into the
   // remaining space. Both are measured against the arrangement itself, so a
   // placement of any shape fits the window.
-  const { viewport, margin } = resolved
-  const admitted = viewport
-    ? admitNodes(
-        requested,
-        (nodesByRelation, shouldStop) =>
-          lay(resolved, nodesByRelation, rooms, { shouldStop, fits: getFits(resolved) }).placed,
-        (node) => isInside(node, viewport, { margin, rooms }),
-      )
-    : requested
+  const { viewport, margin } = crowded
+  const admitAt = (packing: PlexOptions) =>
+    viewport
+      ? admitNodes(
+          requested,
+          (nodesByRelation, shouldStop) =>
+            lay(packing, nodesByRelation, rooms, { shouldStop, fits: getFits(packing) }).placed,
+          (node) => isInside(node, viewport, { margin, rooms }),
+        )
+      : requested
+  // The probes of the packing leave out the rooms, so a packing they find loose can still cut notes that the tightest packing holds.
+  const tightest = packOptions(request, 0)
+  const admittedCrowded = admitAt(crowded)
+  const isTightestBetter =
+    viewport !== undefined &&
+    crowded.gap > tightest.gap &&
+    countNodes(admittedCrowded) < countNodes(requested)
+  const admittedTightest = isTightestBetter ? admitAt(tightest) : admittedCrowded
+  const isTightestKept = countNodes(admittedTightest) > countNodes(admittedCrowded)
+  const resolved = isTightestKept ? tightest : crowded
+  const admitted = isTightestKept ? admittedTightest : admittedCrowded
   const admittedOverflow = countOverflow(graph.nodes, admitted)
 
   const spacing = findSpacing(resolved, (candidate, window) =>
@@ -154,6 +166,10 @@ function createWidthLookup(
     const box = Math.max(options.minWidth, measured)
     return Math.min(widest, isFocus ? box * options.focusScale : box)
   }
+}
+
+function countNodes(nodesByRelation: NodesByRelation): number {
+  return Object.values(nodesByRelation).reduce((total, nodes) => total + nodes.length, 0)
 }
 
 function addDropped(
