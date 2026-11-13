@@ -453,8 +453,11 @@ func (x *GetOpeningNoteResponse) GetNote() *Note {
 }
 
 type ListRelatedNotesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// 1: the notes related to the note in focus. 2: also the notes related to each of those.
+	// 0 reads as 1. Any other value is invalid.
+	Depth         uint32 `protobuf:"varint,2,opt,name=depth,proto3" json:"depth,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -494,6 +497,13 @@ func (x *ListRelatedNotesRequest) GetPath() string {
 		return x.Path
 	}
 	return ""
+}
+
+func (x *ListRelatedNotesRequest) GetDepth() uint32 {
+	if x != nil {
+		return x.Depth
+	}
+	return 0
 }
 
 type ListRelatedNotesResponse struct {
@@ -594,7 +604,10 @@ type RelatedNote struct {
 	// where none holds.
 	TabKind string `protobuf:"bytes,7,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
 	// Set for RELATION_REFERENCE only.
-	Direction     LinkDirection `protobuf:"varint,8,opt,name=direction,proto3,enum=numen.v1.LinkDirection" json:"direction,omitempty"`
+	Direction LinkDirection `protobuf:"varint,8,opt,name=direction,proto3,enum=numen.v1.LinkDirection" json:"direction,omitempty"`
+	// The path of the related note this item belongs to, set for a note found by depth 2.
+	// `relation` is then relative to that note. Empty for a note related to the focus.
+	RelatedTo     string `protobuf:"bytes,9,opt,name=related_to,json=relatedTo,proto3" json:"related_to,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -662,6 +675,13 @@ func (x *RelatedNote) GetDirection() LinkDirection {
 		return x.Direction
 	}
 	return LinkDirection_LINK_DIRECTION_UNSPECIFIED
+}
+
+func (x *RelatedNote) GetRelatedTo() string {
+	if x != nil {
+		return x.RelatedTo
+	}
+	return ""
 }
 
 type ResolveAddressesRequest struct {
@@ -3116,22 +3136,25 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x15GetOpeningNoteRequest\"J\n" +
 	"\x16GetOpeningNoteResponse\x12'\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01B\a\n" +
-	"\x05_note\"-\n" +
+	"\x05_note\"C\n" +
 	"\x17ListRelatedNotesRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xee\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
+	"\x05depth\x18\x02 \x01(\rR\x05depth\"\xee\x01\n" +
 	"\x18ListRelatedNotesResponse\x12$\n" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12/\n" +
 	"\arelated\x18\x02 \x03(\v2\x15.numen.v1.RelatedNoteR\arelated\x12\x1d\n" +
 	"\n" +
 	"focus_type\x18\x03 \x01(\tR\tfocusType\x126\n" +
 	"\vconnections\x18\x04 \x03(\v2\x14.numen.v1.ConnectionR\vconnections\x12$\n" +
-	"\x0efocus_tab_kind\x18\x05 \x01(\tR\ffocusTabKind\"\xc7\x01\n" +
+	"\x0efocus_tab_kind\x18\x05 \x01(\tR\ffocusTabKind\"\xe6\x01\n" +
 	"\vRelatedNote\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12.\n" +
 	"\brelation\x18\x02 \x01(\x0e2\x12.numen.v1.RelationR\brelation\x12\x12\n" +
 	"\x04type\x18\x06 \x01(\tR\x04type\x12\x19\n" +
 	"\btab_kind\x18\a \x01(\tR\atabKind\x125\n" +
-	"\tdirection\x18\b \x01(\x0e2\x17.numen.v1.LinkDirectionR\tdirection\"q\n" +
+	"\tdirection\x18\b \x01(\x0e2\x17.numen.v1.LinkDirectionR\tdirection\x12\x1d\n" +
+	"\n" +
+	"related_to\x18\t \x01(\tR\trelatedTo\"q\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
 	"\awritten\x18\x02 \x03(\tR\awritten\x12\x12\n" +
