@@ -150,15 +150,15 @@ func (h *Handler) DeleteProviderConnection(
 	return connect.NewResponse(&v1.DeleteProviderConnectionResponse{RemovedUses: writeUses(removed)}), nil
 }
 
-// ListRowOptions returns the values a row field of the type of a connection can take, as its provider
-// lists them.
+// ListRowOptions asks the provider of a connection again for the values a row field of its type can take,
+// and keeps them for the choices the plugin views offer.
 func (h *Handler) ListRowOptions(
 	ctx context.Context, r *connect.Request[v1.ListRowOptionsRequest],
 ) (*connect.Response[v1.ListRowOptionsResponse], error) {
 	if h.connections.RowOptions == nil {
 		return connect.NewResponse(&v1.ListRowOptionsResponse{}), nil
 	}
-	listed, err := h.connections.RowOptions.ListOptions(ctx, r.Msg.GetConnectionId(), r.Msg.GetField(), r.Msg.GetOptions(), r.Msg.GetOperations())
+	listed, err := h.connections.RowOptions.RefreshOptions(ctx, r.Msg.GetConnectionId(), r.Msg.GetField(), r.Msg.GetOptions(), r.Msg.GetOperations())
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, connect.NewError(connect.CodeCanceled, ctxErr)

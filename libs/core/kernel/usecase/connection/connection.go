@@ -36,7 +36,13 @@ type operation struct {
 	keys       pluginport.KeyStore
 	uses       connectionport.Uses
 	detected   connectionport.Detected
+	lists      OptionLists
 	gate       *sync.Mutex
+}
+
+// OptionLists asks again for the option lists kept for a connection after it changed.
+type OptionLists interface {
+	RefreshConnection(connectionID string)
 }
 
 // Entry is a connection as a window shows it: the fields the type declares, the keys of the secret
@@ -72,6 +78,12 @@ func NewDeps(
 // AddDetection returns the shared parts with the connections the providers detect listed after the stored ones.
 func (d Deps) AddDetection(detected connectionport.Detected) Deps {
 	d.base.detected = detected
+	return d
+}
+
+// AddOptionLists returns the shared parts with the option lists an update of a connection refreshes.
+func (d Deps) AddOptionLists(lists OptionLists) Deps {
+	d.base.lists = lists
 	return d
 }
 

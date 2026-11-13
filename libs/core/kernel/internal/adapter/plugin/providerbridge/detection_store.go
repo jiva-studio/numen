@@ -1,19 +1,19 @@
 package providerbridge
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/fs"
-	"os"
-	"path/filepath"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 )
 
-// storedFile is the content of the store file of the detection: the answers by type id.
+// DetectionFiles keeps the answers of the providers of each plugin across processes.
+type DetectionFiles interface {
+	ReadDetectedConnections(pluginID string) ([]byte, bool)
+	WriteDetectedConnections(pluginID string, content []byte)
+}
+
+// storedFile is the content of the file of one plugin: the answers by type id.
 type storedFile struct {
 	Answers map[string]storedAnswer `json:"answers"`
 }
@@ -28,21 +28,18 @@ type storedConnection struct {
 	Fields map[string]any `json:"fields"`
 }
 
-func (d *Detection) load() {
-	if d.isLoaded {
+func (d *Detection) load(pluginID string) {
+	if d.files == nil || d.loaded[pluginID] {
 		return
 	}
-	d.isLoaded = true
-	raw, err := os.ReadFile(d.storeFile)
-	if errors.Is(err, fs.ErrNotExist) {
+	d.loaded[pluginID] = true
+	raw, isKept := d.files.ReadDetectedConnections(pluginID)
+	if !isKept {
 		return
 	}
 	var stored storedFile
-	if err == nil {
-		err = json.Unmarshal(raw, &stored)
-	}
-	if err != nil {
-		d.report(fmt.Errorf("read the detected connections: %w", err))
+	if err := json.Unmarshal(raw, &stored); err != nil {
+		d.report(fmt.Errorf("read the detected connections of %s: %w", pluginID, err))
 		return
 	}
 	for typeID, one := range stored.Answers {
@@ -56,37 +53,38 @@ func (d *Detection) load() {
 				ID: connection.GetDetectedID(typeID, kept.Name), TypeID: typeID, Name: kept.Name, Fields: fields,
 			})
 		}
-		d.answers[typeID] = answer{pluginVersion: one.PluginVersion, connections: list}
+		d.answers[typeID] = answer{pluginID: pluginID, pluginVersion: one.PluginVersion, connections: list}
 	}
 }
 
-func (d *Detection) writeStoreFile() error {
+func (d *Detection) writeStoreFile(pluginID string) error {
 	d.writeMu.Lock()
 	defer d.writeMu.Unlock()
-	path, stored := d.readStoredFile()
-	if path == "" {
+	files, stored := d.readStoredFile(pluginID)
+	if files == nil {
 		return nil
 	}
 	raw, err := json.Marshal(stored)
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return err
-	}
-	return atomicfile.WriteFile(path, bytes.NewReader(raw), 0o600)
+	files.WriteDetectedConnections(pluginID, raw)
+	return nil
 }
 
-func (d *Detection) readStoredFile() (string, storedFile) {
+func (d *Detection) readStoredFile(pluginID string) (DetectionFiles, storedFile) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	stored := storedFile{Answers: map[string]storedAnswer{}}
 	for typeID, one := range d.answers {
+		if one.pluginID != pluginID {
+			continue
+		}
 		kept := storedAnswer{PluginVersion: one.pluginVersion, Connections: []storedConnection{}}
 		for _, found := range one.connections {
 			kept.Connections = append(kept.Connections, storedConnection{Name: found.Name, Fields: found.Fields})
 		}
 		stored.Answers[typeID] = kept
 	}
-	return d.storeFile, stored
+	return d.files, stored
 }
