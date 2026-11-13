@@ -102,9 +102,12 @@ describe('the settings tab', () => {
 
     settings.openSettings({ pluginId: 'org.example.atlas', setting: 'source' })
     expect(settings.state.initialPluginId.value).toBe('org.example.atlas')
-    expect(settings.state.markedSetting.value).toBe('source')
+    expect(settings.state.markedSetting.value).toStrictEqual({
+      pluginId: 'org.example.atlas',
+      setting: 'source',
+    })
 
     settings.openSettings({ pluginId: 'org.example.atlas' })
-    expect(settings.state.markedSetting.value).toBe('')
+    expect(settings.state.markedSetting.value).toBeNull()
   })
 })

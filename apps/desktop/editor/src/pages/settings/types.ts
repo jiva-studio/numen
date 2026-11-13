@@ -141,10 +141,16 @@ export type ListRowOptions = InstallationConnections['listRowOptions']
 /** What the fields of one plugin ask of the plugins of the installation. */
 export type PluginFieldsHost = Pick<InstallationPlugin, 'choosePath' | 'getSettingsViews'>
 
+/** A setting of one plugin the settings tab was opened at. Each request is a new object. */
+export interface MarkedSetting {
+  readonly pluginId: string
+  readonly setting: string
+}
+
 /** What the settings tab holds. */
 export interface SettingsTabState {
   readonly installation: Installation
   readonly initialPluginId: Ref<string | null>
   readonly initialSearchQuery: Ref<string>
-  readonly markedSetting: Ref<string>
+  readonly markedSetting: Ref<MarkedSetting | null>
 }

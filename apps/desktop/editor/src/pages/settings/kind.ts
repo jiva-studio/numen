@@ -6,7 +6,7 @@ import { runInBackground } from '@numen/ui'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { SETTINGS } from '@/entities/tab'
 import SettingsTab from './ui/SettingsTab.vue'
-import type { Installation, SettingsTabState } from './types'
+import type { Installation, MarkedSetting, SettingsTabState } from './types'
 import { WORDS as words } from './words'
 import type { Caught } from '@/shared/api/errors'
 import type { SettingsRequest } from '@/shared/model/command'
@@ -19,7 +19,7 @@ export function useSettingsTab(
   const isOpen = ref(false)
   const initialPluginId = ref<string | null>(null)
   const initialSearchQuery = ref('')
-  const markedSetting = ref('')
+  const markedSetting = ref<MarkedSetting | null>(null)
   const state: SettingsTabState = {
     installation,
     initialPluginId,
@@ -53,9 +53,10 @@ export function useSettingsTab(
     if (filter !== undefined) {
       initialPluginId.value = null
       initialSearchQuery.value = filter
+      markedSetting.value = null
     } else if (pluginId !== undefined) {
       initialPluginId.value = pluginId
-      markedSetting.value = setting ?? ''
+      markedSetting.value = setting ? { pluginId, setting } : null
     }
     runInBackground(handle.openTab(SETTINGS, pluginId), reportError)
   }

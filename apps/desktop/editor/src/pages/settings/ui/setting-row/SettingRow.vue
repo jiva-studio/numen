@@ -8,8 +8,9 @@
  * controls have no element a `<label for>` can target; the description carries the id the
  * control is described by, so its whole text reaches the control where the row cuts it short.
  *
- * A marked row is the setting a health item of its plugin names; a focused row is scrolled into view
- * when it is drawn and whenever it becomes focused.
+ * A marked row is the setting a health item of its plugin names. A row is scrolled into view when it
+ * is drawn with a focus request and whenever it is given a new one, so a repeated request scrolls
+ * again.
  */
 import { computed, onMounted, useTemplateRef, watch, type VNode } from 'vue'
 import { RotateCcw, TriangleAlert } from '@lucide/vue'
@@ -21,7 +22,7 @@ const props = defineProps<{
   name: string
   detail: string
   isMarked?: boolean
-  isFocused?: boolean
+  focus?: object | null
   isChanged?: boolean
 }>()
 
@@ -44,13 +45,13 @@ const row = useTemplateRef<HTMLElement>('row')
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
-  if (props.isFocused) scrollIntoView()
+  if (props.focus) scrollIntoView()
 })
 
 watch(
-  () => props.isFocused,
-  (isFocused) => {
-    if (isFocused) scrollIntoView()
+  () => props.focus,
+  (focus) => {
+    if (focus) scrollIntoView()
   },
 )
 

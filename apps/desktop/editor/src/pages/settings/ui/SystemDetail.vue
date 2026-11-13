@@ -8,21 +8,19 @@ import { computed } from 'vue'
 import { BreadcrumbBar, PluginSettingsCard } from '@numen/plugin-manager'
 import PluginFields from './plugins/PluginFields.vue'
 import type { PluginInfo } from '@/entities/settings'
-import type { InstallationConnections, InstallationPlugin, InstallationSettings } from '../types'
+import type { InstallationPlugin, InstallationSettings } from '../types'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   settings: InstallationSettings
   manager: InstallationPlugin
-  connections: InstallationConnections
   section: 'system' | 'appearance'
 }>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (e: 'back'): void
-  (e: 'open-connections'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -60,9 +58,7 @@ function onBack(): void {
       <PluginFields
         :settings="props.settings"
         :host="props.manager"
-        :connections="props.connections"
         :plugin="owner"
-        @open-connections="emit('open-connections')"
       />
     </PluginSettingsCard>
 
