@@ -103,9 +103,10 @@ type streamEvent struct {
 }
 
 type streamDelta struct {
-	Type    string `json:"type"`
-	Text    string `json:"text"`
-	Partial string `json:"-"`
+	Type     string `json:"type"`
+	Text     string `json:"text"`
+	Thinking string `json:"thinking"`
+	Partial  string `json:"-"`
 }
 
 type contentBlock struct {

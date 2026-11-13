@@ -98,4 +98,25 @@ describe('the line that says what the agent has in hand', () => {
     expect(drop).toHaveBeenCalledWith('wait')
     expect(paths.size).toBe(0)
   })
+
+  it('says how many characters the call has written until it settles', () => {
+    const { line, put: sendTurn } = create()
+    line.reach({ title: 'Write note', subject: 'Pear trees', path: '' })
+    line.write(12015)
+    expect(sendTurn).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        text: 'Write note',
+        aside: '12 015 characters',
+        state: 'arriving',
+      }),
+    )
+    line.settle()
+    expect(sendTurn.mock.lastCall?.[0]).not.toHaveProperty('aside')
+  })
+
+  it('writes nothing while no call is shown', () => {
+    const { line, put: sendTurn } = create()
+    line.write(40)
+    expect(sendTurn).not.toHaveBeenCalled()
+  })
 })

@@ -2,6 +2,7 @@ package acp_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
@@ -9,15 +10,20 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp/acptest"
 )
 
-// planner answers a prompt with a plan, a tool call and its update, and a chunk of text.
+// planner answers a prompt with a thought, a plan, a tool call, an update with the note it is writing, its
+// end, and a chunk of text.
 type planner struct{ request *acp.TaskRequest }
 
 func (p *planner) RunTask(_ context.Context, _ connection.Call, request *acp.TaskRequest, send func(*acp.TaskFrame) error) (*acp.TaskDone, error) {
 	p.request = request
 	completed := acp.ToolCallStatus_TOOL_CALL_STATUS_COMPLETED
 	for _, frame := range []*acp.TaskFrame{
+		{Update: &acp.TaskFrame_AgentThoughtChunk{AgentThoughtChunk: &acp.MessageChunk{MessageId: "t1", Text: "The trip note has the dates."}}},
 		{Update: &acp.TaskFrame_Plan{Plan: &acp.Plan{Entries: []*acp.PlanEntry{{Content: "Read the trip notes", Status: acp.PlanEntryStatus_PLAN_ENTRY_STATUS_PENDING}}}}},
 		{Update: &acp.TaskFrame_ToolCall{ToolCall: &acp.ToolCall{ToolCallId: "call-1", Title: "Read Trips/Lisbon.md", Kind: acp.ToolKind_TOOL_KIND_READ}}},
+		{Update: &acp.TaskFrame_ToolCallUpdate{ToolCallUpdate: &acp.ToolCallUpdate{
+			ToolCallId: "call-1", Diffs: []*acp.Diff{{Path: "Trips/Lisbon.md", NewText: "# Lisbon\n\nIn May"}},
+		}}},
 		{Update: &acp.TaskFrame_ToolCallUpdate{ToolCallUpdate: &acp.ToolCallUpdate{ToolCallId: "call-1", Status: &completed}}},
 		{Update: &acp.TaskFrame_AgentMessageChunk{AgentMessageChunk: &acp.MessageChunk{MessageId: "m1", Text: "Lisbon is in May."}}},
 	} {
@@ -40,12 +46,19 @@ func TestATaskStreamsTheSessionUpdatesOfTheTurnAndEndsWithTheStopReason(t *testi
 		ToolContext:  map[string]string{"org.example.trips/trip": "lisbon"},
 	}, func(frame *acp.TaskFrame) error {
 		switch update := frame.GetUpdate().(type) {
+		case *acp.TaskFrame_AgentThoughtChunk:
+			kinds = append(kinds, "thought "+update.AgentThoughtChunk.GetText())
 		case *acp.TaskFrame_Plan:
 			kinds = append(kinds, "plan")
 		case *acp.TaskFrame_ToolCall:
 			kinds = append(kinds, "tool call "+update.ToolCall.GetTitle())
 		case *acp.TaskFrame_ToolCallUpdate:
-			kinds = append(kinds, "update "+update.ToolCallUpdate.GetStatus().String())
+			change := update.ToolCallUpdate
+			if diffs := change.GetDiffs(); len(diffs) > 0 {
+				kinds = append(kinds, "diff "+diffs[0].GetPath()+" "+diffs[0].GetNewText())
+			} else {
+				kinds = append(kinds, "update "+change.GetStatus().String())
+			}
 		case *acp.TaskFrame_AgentMessageChunk:
 			text += update.AgentMessageChunk.GetText()
 		}
@@ -55,8 +68,11 @@ func TestATaskStreamsTheSessionUpdatesOfTheTurnAndEndsWithTheStopReason(t *testi
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"plan", "tool call Read Trips/Lisbon.md", "update TOOL_CALL_STATUS_COMPLETED"}
-	if len(kinds) != len(want) || kinds[0] != want[0] || kinds[1] != want[1] || kinds[2] != want[2] || text != "Lisbon is in May." {
+	want := []string{
+		"thought The trip note has the dates.", "plan", "tool call Read Trips/Lisbon.md", "diff Trips/Lisbon.md # Lisbon\n\nIn May",
+		"update TOOL_CALL_STATUS_COMPLETED",
+	}
+	if !slices.Equal(kinds, want) || text != "Lisbon is in May." {
 		t.Errorf("updates = %v, text = %q", kinds, text)
 	}
 	if done.GetStopReason() != acp.StopReason_STOP_REASON_END_TURN {

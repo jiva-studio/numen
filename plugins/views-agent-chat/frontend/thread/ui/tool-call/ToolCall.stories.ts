@@ -3,6 +3,7 @@
  * works.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect } from 'storybook/test'
 import { STORY_BOXES } from '../../../fixtures/frame'
 import ToolCall from './ToolCall.vue'
 
@@ -60,5 +61,23 @@ export const AwkwardText: Story = {
   args: {
     tool: 'link_list',
     subject: 'a note whose title runs on well past the width of the panel it is drawn in',
+  },
+}
+
+/**
+ * A call carrying the text of a note is written for minutes, and how much has
+ * arrived is the only thing that moves while it is.
+ */
+export const BeingWritten: Story = {
+  args: {
+    tool: 'Write note',
+    subject: "Bram Doyle's warning",
+    aside: '12 015 characters',
+    isWorking: true,
+  },
+  play: async ({ canvasElement }) => {
+    const line = canvasElement.querySelector('.tool-call')
+    await expect(line).toHaveTextContent("Bram Doyle's warning")
+    await expect(line).toHaveTextContent('12 015 characters')
   },
 }

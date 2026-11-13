@@ -67,8 +67,11 @@ func TestATaskStartsAntigravityWithTheToolsOfTheVault(t *testing.T) {
 	}
 
 	argv := readFile(t, out+".argv")
-	if !strings.HasPrefix(argv, "-p\nCite the note you read. Ask before you plan.\n\nPlan the beds\n--output-format\nstream-json\n--dangerously-skip-permissions\n") {
+	if !strings.HasPrefix(argv, "--print=\n--input-format\nstream-json\n--output-format\nstream-json\n--dangerously-skip-permissions\n") {
 		t.Errorf("the arguments are %q", argv)
+	}
+	if prompt := readPrompt(t, out); prompt != "Cite the note you read. Ask before you plan.\n\nPlan the beds" {
+		t.Errorf("the prompt is %q", prompt)
 	}
 	mcp := readFile(t, out+".mcp")
 	if !strings.Contains(mcp, `"serverUrl": "http://127.0.0.1:`) || !strings.Contains(mcp, `"Authorization": "Bearer `) || !strings.Contains(mcp, `"mine"`) {
@@ -98,7 +101,7 @@ func TestWithoutAHostAntigravityAnswersWithNoTool(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if argv := readFile(t, out+".argv"); argv != "-p\nhi\n--output-format\nstream-json\n" {
+	if argv := readFile(t, out+".argv"); argv != "--print=\n--input-format\nstream-json\n--output-format\nstream-json\n" || readPrompt(t, out) != "hi" {
 		t.Errorf("the arguments are %q", argv)
 	}
 	if mcp := readFile(t, out+".mcp"); strings.Contains(mcp, "serverUrl") {
@@ -145,15 +148,15 @@ func TestTheNotesOfTheTaskComeBeforeThePrompt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if argv := readFile(t, out+".argv"); !strings.HasPrefix(argv, "-p\nThe note Garden/Beds.md (Beds):\n\nRaised beds.\n\nWhat grows here?\n") {
-		t.Errorf("the arguments are %q", argv)
+	if prompt := readPrompt(t, out); prompt != "The note Garden/Beds.md (Beds):\n\nRaised beds.\n\nWhat grows here?" {
+		t.Errorf("the prompt is %q", prompt)
 	}
 }
 
 func echoConversation(t *testing.T, dir string) string {
 	t.Helper()
 	return writeScript(t, "agy",
-		"asked=$2\nprev=\n"+
+		"asked=$(sed -e 's/.*\"content\":\"\\([^\"]*\\)\".*/\\1/')\nprev=\n"+
 			"for a in \"$@\"; do\n"+
 			"  if [ \"$prev\" = \"--conversation\" ]; then echo \"$a\" >> "+dir+"/resumed-$asked; fi\n"+
 			"  prev=\"$a\"\n"+

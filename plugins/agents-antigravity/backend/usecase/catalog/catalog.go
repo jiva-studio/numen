@@ -40,14 +40,13 @@ func New(lister Lister, isAsync bool) *Catalog {
 	}
 }
 
-// List returns the models the program lists, each family of levels as one model. A failed load leaves
-// the last list of the cache, or none.
+// List returns the models the program lists, each family of levels as one model. A failed load lists
+// none; while the cache waits to load again after a failure, it lists the last list it kept, or none.
 func (c *Catalog) List(ctx context.Context, program string) []reasoning.Family {
 	list := func(ctx context.Context) ([]model.Model, error) { return c.lister.List(ctx, []string{program}) }
 	items, _, err := c.models.Get(ctx, program, list)
 	if err != nil {
-		// A failed load returns the last list of the cache, or none, and the program is offered with it.
-		return model.Fold(items)
+		return model.Fold(nil)
 	}
 	return model.Fold(items)
 }

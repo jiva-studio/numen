@@ -9,18 +9,26 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/stream"
 )
 
-// shownCall is what the frames of one tool call showed so far.
+// previewChunk is how many characters of the arguments of a call arrive between two previews of the
+// change it writes.
+const previewChunk = 200
+
+// shownCall is what the frames of one tool call showed so far: previewed is the length of the arguments
+// the last preview was read from.
 type shownCall struct {
 	title      string
 	kind       contract.ToolKind
 	isFinished bool
+	previewed  int
 }
 
 // turn turns what one run of the program reports into the frames of the task. The text between two
 // calls is one message. The first report of a call is sent as a tool_call, the others as
 // tool_call_updates, and nothing after the call has finished. A call of a served tool shows the title of
 // the listing, the kind of its effect, what it is about and the vault path it works on; any other call
-// shows its name.
+// shows its name. While a call of a served tool that writes is still arriving, the text it writes to its
+// path is sent as the diff of an update, again after each previewChunk characters of its arguments. The
+// reasoning of the model is sent as thought chunks.
 type turn struct {
 	listed       map[string]*tools.ToolInfo
 	send         func(*contract.TaskFrame) error
@@ -42,6 +50,31 @@ func (t *turn) SendText(text string) error {
 	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_AgentMessageChunk{
 		AgentMessageChunk: &contract.MessageChunk{MessageId: "m" + strconv.Itoa(t.message), Text: text},
 	}})
+}
+
+// SendThought sends a piece of the reasoning of the model as a thought chunk.
+func (t *turn) SendThought(text string) error {
+	t.endMessage()
+	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_AgentThoughtChunk{
+		AgentThoughtChunk: &contract.MessageChunk{MessageId: "t" + strconv.Itoa(t.message), Text: text},
+	}})
+}
+
+// SendToolInput sends the change a call that writes makes, as far as its arguments have arrived.
+func (t *turn) SendToolInput(id, tool, arguments string) error {
+	shown, isKnown := t.calls[id]
+	if !isKnown || shown.isFinished || t.listed[tool].GetEffect() != tools.ReadWrite || len(arguments)-shown.previewed < previewChunk {
+		return nil
+	}
+	path, text := toolcall.ReadPartialText(arguments, "path"), toolcall.ReadPartialText(arguments, "text")
+	if path == "" || text == "" {
+		return nil
+	}
+	shown.previewed = len(arguments)
+	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_ToolCallUpdate{ToolCallUpdate: &contract.ToolCallUpdate{
+		ToolCallId: id, Title: nil, Kind: nil, Status: nil, Content: nil, Locations: nil, RawOutputJson: "",
+		Diffs: []*contract.Diff{{Path: path, OldText: "", NewText: text}},
+	}}})
 }
 
 // SendMessage ends the current message and sends text as a message of its own, so the next text starts
@@ -73,7 +106,7 @@ func (t *turn) SendToolCall(id, tool, arguments string) error {
 	title, kind := describeTool(listed, tool)
 	content, locations := describeArguments(listed, arguments)
 	if !isKnown {
-		t.calls[id] = &shownCall{title: title, kind: kind, isFinished: false}
+		t.calls[id] = &shownCall{title: title, kind: kind, isFinished: false, previewed: 0}
 		status := contract.ToolCallStatus_TOOL_CALL_STATUS_PENDING
 		if arguments != "" {
 			status = contract.ToolCallStatus_TOOL_CALL_STATUS_IN_PROGRESS
@@ -85,7 +118,7 @@ func (t *turn) SendToolCall(id, tool, arguments string) error {
 	}
 	status := contract.ToolCallStatus_TOOL_CALL_STATUS_IN_PROGRESS
 	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_ToolCallUpdate{ToolCallUpdate: &contract.ToolCallUpdate{
-		ToolCallId: id, Title: nil, Kind: nil, Status: &status, Content: content, Locations: locations, RawOutputJson: "",
+		ToolCallId: id, Title: nil, Kind: nil, Status: &status, Content: content, Locations: locations, RawOutputJson: "", Diffs: nil,
 	}}})
 }
 
@@ -102,7 +135,7 @@ func (t *turn) SendToolResult(id string, isFailed bool) error {
 		status = contract.ToolCallStatus_TOOL_CALL_STATUS_FAILED
 	}
 	return t.sendFrame(&contract.TaskFrame{Update: &contract.TaskFrame_ToolCallUpdate{ToolCallUpdate: &contract.ToolCallUpdate{
-		ToolCallId: id, Title: nil, Kind: nil, Status: &status, Content: nil, Locations: nil, RawOutputJson: "",
+		ToolCallId: id, Title: nil, Kind: nil, Status: &status, Content: nil, Locations: nil, RawOutputJson: "", Diffs: nil,
 	}}})
 }
 

@@ -80,13 +80,14 @@ func callTask(t *testing.T, client *http.Client, baseURL string) string {
 	return string(body)
 }
 
-// A task while the settings hold no row of llm.chat stops as unavailable, before the host is reached.
+// A task while the settings hold no row of llm.chat goes to the next row as unavailable, before the host is
+// reached.
 func TestThePluginServesAgentTasksAsAProvider(t *testing.T) {
 	pos := startPlugin(t)
 
 	body := callTask(t, http.DefaultClient, pos)
 
-	if !strings.Contains(body, "FAILURE_KIND_STOP") || !strings.Contains(body, "FAILURE_REASON_UNAVAILABLE") {
+	if !strings.Contains(body, "FAILURE_KIND_TRY_NEXT") || !strings.Contains(body, "FAILURE_REASON_UNAVAILABLE") {
 		t.Errorf("the plugin answered %q", body)
 	}
 }
@@ -101,7 +102,7 @@ func TestTheLinkedHandlerServesAgentTasksAsAProvider(t *testing.T) {
 
 	body := callTask(t, web.Client(), web.URL)
 
-	if !strings.Contains(body, "FAILURE_KIND_STOP") {
+	if !strings.Contains(body, "FAILURE_KIND_TRY_NEXT") {
 		t.Errorf("the plugin answered %q", body)
 	}
 }

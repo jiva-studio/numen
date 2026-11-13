@@ -75,8 +75,8 @@ func TestCompleteStartsCodexWithTheModelTheInstructionsAndNoTool(t *testing.T) {
 	}
 	lines := readArgv(t, dir)
 	joined := strings.Join(lines, "\n")
-	if !strings.HasSuffix(joined, "\n--\nbe brief\n\nfix this") {
-		t.Errorf("the arguments are %v, want the instructions and the question last", lines)
+	if stdin := readFile(t, filepath.Join(dir, "stdin")); lines[len(lines)-1] != "-" || stdin != "be brief\n\nfix this" {
+		t.Errorf("the arguments are %v and the input %q, want the instructions and the question on the input", lines, stdin)
 	}
 	for _, want := range []string{"--model\ngpt-x", `model_reasoning_effort="high"`, "--sandbox\nread-only"} {
 		if !strings.Contains(joined, want) {
@@ -103,8 +103,7 @@ func TestCompleteJoinsTheTurnsOfAConversationIntoOnePrompt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	lines := readArgv(t, dir)
-	if got := lines[len(lines)-1]; got != "User:\none\n\nAssistant:\ntwo\n\nUser:\nthree" {
+	if got := readFile(t, filepath.Join(dir, "stdin")); got != "User:\none\n\nAssistant:\ntwo\n\nUser:\nthree" {
 		t.Errorf("the prompt is %q", got)
 	}
 }

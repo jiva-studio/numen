@@ -49,6 +49,9 @@ type Models interface {
 	// Embed returns one vector per text. A query is embedded as a person's action and a document in the
 	// background.
 	Embed(ctx context.Context, role model.Role, texts []string) ([][]float32, error)
+	// GetEmbeddingProfile returns how the first row of the settings that answers embeds: its model, the
+	// source and pooling of the model, the prefixes of a query and a document, the width of a vector and
+	// the longest text in tokens.
 	GetEmbeddingProfile(ctx context.Context) (model.ConnectionProfile, error)
 }
 

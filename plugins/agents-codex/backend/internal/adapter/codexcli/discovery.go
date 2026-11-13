@@ -1,5 +1,5 @@
 // Package codexcli reaches the Codex CLI and its files on this machine: it finds the program, lists the
-// models it offers, reads its configuration and builds the command lines of a run and starts the program in a process group of its own.
+// models it offers, builds the command lines of a run and starts the program in a process group of its own.
 package codexcli
 
 import (
@@ -22,15 +22,6 @@ func getCodexPlaces() []string {
 		"~/.nix-profile/bin/codex",
 		"/run/current-system/sw/bin/codex",
 	}
-}
-
-// IsCodexInstalled checks whether OpenAI Codex CLI is available on this machine.
-func IsCodexInstalled(customPath ...string) bool {
-	if len(customPath) > 0 && customPath[0] != "" {
-		return isRunnable(customPath[0])
-	}
-	p := FindCodex()
-	return isRunnable(p)
 }
 
 // FindCodex returns the path of the Codex CLI, or the bare name where not found.
@@ -64,18 +55,14 @@ func findCodexIn(places []string, customPath ...string) string {
 // Installation checks for the Codex CLI on this machine.
 type Installation struct{}
 
-// IsInstalled reports whether the CLI is runnable, at path when given, or where it is found.
-func (Installation) IsInstalled(path string) bool {
-	return IsCodexInstalled(path)
-}
-
 // Find returns the program: the custom path when it is runnable, else the Codex found on this machine,
 // else none.
 func (Installation) Find(customPath string) string {
-	if !IsCodexInstalled(customPath) {
+	found := FindCodex(customPath)
+	if !isRunnable(found) {
 		return ""
 	}
-	return FindCodex(customPath)
+	return found
 }
 
 func isRunnable(path string) bool {

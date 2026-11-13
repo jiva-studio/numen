@@ -80,3 +80,43 @@ func TestTheAnswerCommandFailsWhenTheFolderCannotBeCreated(t *testing.T) {
 		t.Error("expected MakeAnswerCommand error when TMPDIR is invalid")
 	}
 }
+
+// The prompt is read on the standard input, never from the command line, and a thread to continue is
+// resumed after the options of the run; only a run that keeps no thread is ephemeral.
+func TestThePromptIsTheInputAndAThreadIsResumed(t *testing.T) {
+	prompt := "-- Plan the beds\n" + strings.Repeat("Raised beds of oak. ", 20)
+	tools := Commands{}.MakeToolsCommand(task.Spec{Program: "/opt/codex", Prompt: prompt, Thread: "thread-beds", IsKept: true})
+	answer, err := Commands{}.MakeAnswerCommand(task.Spec{Program: "/opt/codex", Prompt: prompt, IsKept: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := answer.Release(); err != nil {
+			t.Error(err)
+		}
+	})
+	single, err := Commands{}.MakeAnswerCommand(task.Spec{Program: "/opt/codex", Prompt: prompt})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := single.Release(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	if got := tools.Args[len(tools.Args)-3:]; !slices.Equal(got, []string{"resume", "thread-beds", "-"}) || tools.Stdin != prompt {
+		t.Errorf("the tools command ends in %q and reads %q", got, tools.Stdin)
+	}
+	if answer.Args[len(answer.Args)-1] != "-" || answer.Stdin != prompt || slices.Contains(answer.Args, "--ephemeral") {
+		t.Errorf("the answer command is %q and reads %q", answer.Args, answer.Stdin)
+	}
+	if !slices.Contains(single.Args, "--ephemeral") {
+		t.Errorf("a run that keeps no thread is %q", single.Args)
+	}
+	for _, args := range [][]string{tools.Args, answer.Args, single.Args} {
+		if sliceContainsSubstr(args, "Plan the beds") {
+			t.Errorf("the prompt is on the command line: %q", args)
+		}
+	}
+}

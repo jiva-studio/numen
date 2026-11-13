@@ -29,6 +29,43 @@ describe('createTaskHost', () => {
     expect(end).toMatchObject({ ok: true, value: { stopReason: StopReason.MAX_TOKENS } })
   })
 
+  it('passes a thought and the diff of a call being written as they are served', async () => {
+    const host = createTaskHost(async function* () {
+      yield {
+        update: {
+          case: 'agentThoughtChunk',
+          value: { messageId: 't1', text: 'The note has two beds.' },
+        },
+      }
+      yield {
+        update: {
+          case: 'toolCallUpdate',
+          value: { toolCallId: 'c1', diffs: [{ path: 'Garden/Beds.md', newText: '# Beds' }] },
+        },
+      }
+      return { ok: true, value: StopReason.END_TURN }
+    })
+
+    const frames: TaskFrame[] = []
+    const run = runTask(host, { prompt: 'plan the beds' })
+    for (;;) {
+      const next = await run.next()
+      if (next.done === true) break
+      frames.push(next.value)
+    }
+
+    expect(frames.map((frame) => frame.update)).toMatchObject([
+      { case: 'agentThoughtChunk', value: { messageId: 't1', text: 'The note has two beds.' } },
+      {
+        case: 'toolCallUpdate',
+        value: {
+          toolCallId: 'c1',
+          diffs: [{ path: 'Garden/Beds.md', oldText: '', newText: '# Beds' }],
+        },
+      },
+    ])
+  })
+
   it('returns the error the served task ends with', async () => {
     const host = createTaskHost(async function* () {
       yield* []

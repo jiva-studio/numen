@@ -50,7 +50,8 @@ type streamBody struct {
 
 // Chat asks the chat completions endpoint of the service for the next turn and sends its frames as they
 // arrive: text deltas, then the complete tool calls. It returns why the turn ended. The limit of the request
-// is how long the service may stay silent; it restarts with every line the service sends.
+// is how long the service may stay silent, also before the first byte of its answer; it restarts with every
+// line the service sends. A whole reply is read up to maxResponseBytes.
 func (g *Gateway) Chat(
 	ctx context.Context, call connection.Call, limit time.Duration, request *llm.ChatRequest, send func(*llm.ChatFrame) error,
 ) (*llm.ChatFinish, error) {

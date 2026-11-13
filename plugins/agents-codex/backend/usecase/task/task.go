@@ -47,17 +47,20 @@ type Dependencies struct {
 	ToolServer ToolServer
 }
 
-// Runner starts the program for each task and answer. The tasks of a Runner run in a folder of its
-// own, which Close removes.
+// Runner starts the program for each task and answer, and keeps the thread of each conversation. The
+// tasks of a Runner run in a folder of its own, which Close removes; Close also returns the failures to
+// stop serving the tools of a task.
 type Runner struct {
-	deps Dependencies
+	deps    Dependencies
+	threads sessions
 
-	mu       sync.Mutex
-	running  sync.WaitGroup
-	cancels  map[uint64]context.CancelFunc
-	nextRun  uint64
-	isClosed bool
-	dir      string
+	mu        sync.Mutex
+	running   sync.WaitGroup
+	cancels   map[uint64]context.CancelFunc
+	nextRun   uint64
+	isClosed  bool
+	dir       string
+	cleanErrs error
 }
 
 // New creates a Runner, and refuses dependencies that are missing.
@@ -66,8 +69,9 @@ func New(deps Dependencies) (*Runner, error) {
 		return nil, errors.New("task: every dependency but the tools is required")
 	}
 	return &Runner{
-		deps: deps, mu: sync.Mutex{}, running: sync.WaitGroup{}, cancels: map[uint64]context.CancelFunc{}, nextRun: 0,
-		isClosed: false, dir: "",
+		deps: deps, threads: sessions{mu: sync.Mutex{}, byKey: nil, order: nil},
+		mu: sync.Mutex{}, running: sync.WaitGroup{}, cancels: map[uint64]context.CancelFunc{}, nextRun: 0,
+		isClosed: false, dir: "", cleanErrs: nil,
 	}, nil
 }
 
@@ -81,12 +85,14 @@ func (r *Runner) FindProgram() string {
 
 // RunTask runs the program on one prompt turn and sends what it reports as frames. The program may call
 // the tools of the host the plugin lists; without them it answers with no tool, in a read-only sandbox.
-// Each turn is a run of its own. A program that is not installed is a failure to try the next
-// connection after. A run that fails sends what the program said of the failure as a message of its
-// own and stops. A canceled task returns the error of ctx.
+// The turns of one conversation of one connection continue one thread of the program; a thread the
+// program no longer has, which it answers with a failure before it reports any thread or anything else,
+// is started anew. A program that is not installed is a failure to try the next
+// connection after. A run that fails sends what the program said of the failure as a message of its own
+// and stops. A canceled task returns the error of ctx.
 func (r *Runner) RunTask(
 	ctx context.Context, call connection.Call, request *contract.TaskRequest, send func(*contract.TaskFrame) error,
-) (done *contract.TaskDone, err error) {
+) (*contract.TaskDone, error) {
 	program := r.FindProgram()
 	if program == "" {
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
@@ -101,25 +107,52 @@ func (r *Runner) RunTask(
 	if err != nil {
 		return nil, readFailure(ctx, connection.NewStopError(connection.ReasonUnavailable))
 	}
-	spec := Spec{
-		Program: program, Prompt: writePrompt(writeInstructions(listed), request),
-		Model: call.Options[llm.OptionModel], Reasoning: call.Options[llm.OptionReasoning], ToolsURL: "",
-	}
-	cmd, served, err := r.makeTaskCommand(runCtx, spec, listed, request)
+	served, err := r.serveTools(runCtx, listed, request)
 	if err != nil {
 		return nil, readFailure(ctx, connection.NewStopError(connection.ReasonUnavailable))
 	}
-	defer func() {
-		if served == nil {
-			return
-		}
-		if closeErr := served.Close(context.WithoutCancel(ctx)); closeErr != nil && err == nil {
-			done, err = nil, connection.NewStopError(connection.ReasonUnavailable)
-		}
-	}()
+	defer r.releaseTools(ctx, served)
+
+	key := ""
+	if request.GetConversation() != "" {
+		key = request.GetConversation() + "\x00" + call.ConnectionID
+	}
+	spec := Spec{
+		Program: program, Prompt: writePrompt(writeInstructions(listed), request),
+		Model: call.Options[llm.OptionModel], Reasoning: call.Options[llm.OptionReasoning], ToolsURL: "",
+		Thread: r.threads.get(key), IsKept: key != "",
+	}
 	frames := newTurn(indexTools(listed), send)
-	reason, err := r.runProgram(runCtx, cmd, frames)
+	reason, err := r.runTurn(runCtx, spec, served, frames)
+	if spec.Thread != "" && isThreadGone(runCtx, frames, reason, err) {
+		spec.Thread = ""
+		reason, err = r.runTurn(runCtx, spec, served, frames)
+	}
+	r.threads.set(key, frames.thread)
 	return endTask(ctx, runCtx, frames, reason, err)
+}
+
+func isThreadGone(runCtx context.Context, frames *turn, reason string, err error) bool {
+	return err == nil && reason != "" && runCtx.Err() == nil && frames.thread == "" && !frames.isSent
+}
+
+func (r *Runner) runTurn(ctx context.Context, spec Spec, served ServedTools, frames *turn) (string, error) {
+	cmd, err := r.makeTaskCommand(spec, served)
+	if err != nil {
+		return "", connection.NewStopError(connection.ReasonUnavailable)
+	}
+	return r.runProgram(ctx, cmd, frames)
+}
+
+func (r *Runner) releaseTools(ctx context.Context, served ServedTools) {
+	if served == nil {
+		return
+	}
+	if err := served.Close(context.WithoutCancel(ctx)); err != nil {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		r.cleanErrs = errors.Join(r.cleanErrs, err)
+	}
 }
 
 func endTask(ctx, runCtx context.Context, frames *turn, reason string, err error) (*contract.TaskDone, error) {
@@ -143,28 +176,28 @@ func endTask(ctx, runCtx context.Context, frames *turn, reason string, err error
 	return nil, connection.NewStopError(connection.ReasonUnavailable)
 }
 
-func (r *Runner) makeTaskCommand(
-	ctx context.Context, spec Spec, listed []*tools.ToolInfo, request *contract.TaskRequest,
-) (Command, ServedTools, error) {
+func (r *Runner) serveTools(ctx context.Context, listed []*tools.ToolInfo, request *contract.TaskRequest) (ServedTools, error) {
 	if len(listed) == 0 {
-		cmd, err := r.deps.Commands.MakeAnswerCommand(spec)
-		return cmd, nil, err
+		return nil, nil
+	}
+	toolContext, vaultID := maps.Clone(request.GetToolContext()), request.GetVaultId()
+	return r.deps.ToolServer.Serve(ctx, listed, func(ctx context.Context, name string, arguments []byte) (*tools.CallResponse, error) {
+		return r.deps.Tools.InvokeTool(ctx, tools.Call{Name: name, Arguments: arguments, Context: toolContext, VaultID: vaultID})
+	})
+}
+
+func (r *Runner) makeTaskCommand(spec Spec, served ServedTools) (Command, error) {
+	if served == nil {
+		return r.deps.Commands.MakeAnswerCommand(spec)
 	}
 	dir, err := r.getDir()
 	if err != nil {
-		return Command{}, nil, err
-	}
-	toolContext, vaultID := maps.Clone(request.GetToolContext()), request.GetVaultId()
-	served, err := r.deps.ToolServer.Serve(ctx, listed, func(ctx context.Context, name string, arguments []byte) (*tools.CallResponse, error) {
-		return r.deps.Tools.InvokeTool(ctx, tools.Call{Name: name, Arguments: arguments, Context: toolContext, VaultID: vaultID})
-	})
-	if err != nil {
-		return Command{}, nil, err
+		return Command{}, err
 	}
 	spec.ToolsURL = served.GetURL()
 	cmd := r.deps.Commands.MakeToolsCommand(spec)
 	cmd.Dir, cmd.Token = dir, served.GetToken()
-	return cmd, served, nil
+	return cmd, nil
 }
 
 // Answer runs the program once on the prompt, with the instructions before it, no tool, in a read-only
@@ -182,6 +215,7 @@ func (r *Runner) Answer(ctx context.Context, call connection.Call, instructions,
 	cmd, err := r.deps.Commands.MakeAnswerCommand(Spec{
 		Program: program, Prompt: joinParagraphs(instructions, prompt),
 		Model: call.Options[llm.OptionModel], Reasoning: call.Options[llm.OptionReasoning], ToolsURL: "",
+		Thread: "", IsKept: false,
 	})
 	if err != nil {
 		return "", err
@@ -274,6 +308,15 @@ func (s *countingSink) SendText(text string) error {
 	return s.sink.SendText(text)
 }
 
+func (s *countingSink) RecordThread(id string) {
+	s.sink.RecordThread(id)
+}
+
+func (s *countingSink) SendThought(text string) error {
+	s.count++
+	return s.sink.SendThought(text)
+}
+
 func (s *countingSink) SendToolCall(id, tool, arguments string) error {
 	s.count++
 	return s.sink.SendToolCall(id, tool, arguments)
@@ -330,7 +373,8 @@ func (r *Runner) getDir() (string, error) {
 	return r.dir, nil
 }
 
-// Close ends every run, waits for it, refuses further runs and removes the folder of the tasks.
+// Close ends every run, waits for it, refuses further runs and removes the folder of the tasks. It returns
+// the failures to stop serving the tools of the tasks.
 func (r *Runner) Close() error {
 	r.mu.Lock()
 	if r.isClosed {
@@ -343,13 +387,15 @@ func (r *Runner) Close() error {
 	}
 	r.mu.Unlock()
 	r.running.Wait()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.dir == "" {
-		return nil
+		return r.cleanErrs
 	}
 	if err := os.RemoveAll(r.dir); err != nil {
-		return fmt.Errorf("remove the folder of the tasks: %w", err)
+		return errors.Join(r.cleanErrs, fmt.Errorf("remove the folder of the tasks: %w", err))
 	}
-	return nil
+	return r.cleanErrs
 }
 
 func readFailure(ctx context.Context, err error) error {
@@ -409,6 +455,10 @@ func (c *collector) SendText(text string) error {
 	c.text.WriteString(text)
 	return nil
 }
+
+func (*collector) RecordThread(string) {}
+
+func (*collector) SendThought(string) error { return nil }
 
 func (*collector) SendToolCall(string, string, string) error { return nil }
 
