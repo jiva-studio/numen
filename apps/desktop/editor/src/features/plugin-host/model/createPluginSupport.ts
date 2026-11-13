@@ -11,7 +11,7 @@ import type { Caught } from '@/shared/api/errors'
 import { TARGET } from '../lib/window'
 import type { HostParts, TabActionParts, TabKindParts } from './createHostParts'
 import type { createPluginCatalog } from './createPluginCatalog'
-import { createPluginSettingsAccessor } from './pluginSettings'
+import { createPluginSettingsAccessor, createRowChangeSubscriber } from './pluginSettings'
 
 /** What the plugin host and the plugin loader are made from. */
 export interface PluginSupportDeps {
@@ -22,8 +22,6 @@ export interface PluginSupportDeps {
   readonly tabs: TabActionParts
   readonly parts: readonly HostParts[]
   readonly getPlatform: () => WindowPlatform
-  /** Calls the handler after a change of the settings that can change the rows the plugins list. */
-  readonly subscribeConnectionChanges: (handler: () => void) => () => void
   readonly reports: {
     readonly reportError: (pluginId: string, error: Caught) => void
     readonly reportLoadError: (pluginId: string, error: Caught) => void
@@ -39,6 +37,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     rest,
     deps.reports.reportError,
   )
+  const subscribeRowChanges = createRowChangeSubscriber(rest)
   const pluginHost = createPluginHost({
     target: TARGET,
     ...mergeHostParts(deps.parts),
@@ -59,8 +58,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getSetting,
     onSettingChange,
     getTexts: (pluginId) => getPluginTexts(pluginId),
-    getConnections: (pluginId) =>
-      getPluginConnections(pluginId, deps.subscribeConnectionChanges),
+    getConnections: (pluginId) => getPluginConnections(pluginId, subscribeRowChanges),
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost.lifecycle,

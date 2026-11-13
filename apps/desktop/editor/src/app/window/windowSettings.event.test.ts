@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
 import { createTestTabs } from '@/testing/tabs'
-import { createConnectionStore } from '@/entities/connection'
 import { createSettingsStore, SETTINGS_WORDS, type SettingEdit } from '@/entities/settings'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
@@ -69,10 +68,8 @@ const create = () => {
   restoreCore = installSettingsCore(core, { theme: THEME })
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = createTestTabs()
-  const connections = createConnectionStore(log.getWriter('connections'))
   const settings = createWindowSettingsPart({
     rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
-    connections,
     words: WORDS,
     log,
     windowTabs,
@@ -80,7 +77,7 @@ const create = () => {
     getSettingsViews: () => new Map(),
     getPlatform: () => 'linux',
   })
-  return { settings, core, feed, windowTabs, connections }
+  return { settings, core, feed, windowTabs }
 }
 
 const change = (feed: ReturnType<typeof createFeed>, path: readonly string[], value: unknown) => {
@@ -228,7 +225,7 @@ describe('a setting that changes', () => {
   })
 
   it('tells the connections of a plugin of a change of the connections, the detected ones or an enabled plugin', async () => {
-    const { settings, feed, windowTabs, connections } = create()
+    const { settings, feed, windowTabs } = create()
     const support = createTestPluginSupport({
       windowTabs,
       tabOpeners: {
@@ -237,7 +234,6 @@ describe('a setting that changes', () => {
       } as never,
       rest: settings.rest,
       getServices: () => ({}),
-      subscribeConnectionChanges: connections.changes.subscribe,
     })
     await settings.start()
     const handler = vi.fn()

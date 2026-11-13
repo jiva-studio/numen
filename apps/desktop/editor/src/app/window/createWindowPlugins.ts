@@ -89,7 +89,6 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     windowTabs,
     tabOpeners,
     reports: declarations.reports,
-    subscribeConnectionChanges: foundation.connections.changes.subscribe,
     parts: createServiceParts({
       services,
       notices,
