@@ -49,10 +49,10 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 ### 1.4 Plugin (`plugins/views-plex-graph`, placement: nm-place-plugin)
 
 - `manifest.json`: two settings after `headingLimit`:
-  - `hasNames`: boolean, title "Show notes related to related notes", description "Under each related note, the names of the notes it is related to.", default `true`, `palette: true`, `icon: "waypoints"`.
+  - `showNames`: boolean, title "Show notes related to related notes", description "Under each related note, the names of the notes it is related to.", default `true`, `palette: true`, `icon: "waypoints"`.
   - `namesPerNote`: number, title "Names per note", description "Most names shown under and over a related note.", default `6`, `min` 1, `max` 12, `step` 1.
-- `frontend/model/names.ts` (create, beside `nesting.ts`): `HAS_NAMES = true`, `NAMES_PER_NOTE = 6`, `readNames(context): { hasNames: Ref<boolean>; namesPerNote: Ref<number> }`, keys read in camelCase as `readNesting` does. A value outside min/max or not a number falls back to the default.
-- `frontend/model/usePlexView.ts`: `RelatedNoteQueries.listRelatedNotes(path, depth)`; the tab asks for depth 2 when `hasNames` is on, depth 1 otherwise, and asks again when the setting changes. `areNoteGraphsEqual` compares `relatedTo` too.
+- `frontend/model/names.ts` (create, beside `nesting.ts`): `SHOW_NAMES = true`, `NAMES_PER_NOTE = 6`, `readNames(context): { hasNames: Ref<boolean>; namesPerNote: Ref<number> }`, keys read in camelCase as `readNesting` does. A value outside min/max or not a number falls back to the default.
+- `frontend/model/usePlexView.ts`: `RelatedNoteQueries.listRelatedNotes(path, depth)`; the tab asks for depth 2 when `showNames` is on, depth 1 otherwise, and asks again when the setting changes. `areNoteGraphsEqual` compares `relatedTo` too.
 - `frontend/lib/picture.ts`:
   - `convertNoteGraph` skips every `related` item that has `relatedTo`: they are never nodes, and `getNoteTypes` / `getTabKinds` keep reading all items (a name may be drawn with its type later; no UI uses it now).
   - `getNames(noteGraph, limit, token): ReadonlyMap<string, PlexNames>` where `PlexNames = { above: PlexName[]; below: PlexName[] }` and `PlexName = { id: string; title: string }` (`id` is the `token` of the path, the same function that names nodes). For each related note: its items ordered parents, children, jumps, references (arrival order inside a relation), cut to `limit` in that order, then split: parents into `above`, the rest into `below`. A note with none has no entry.
@@ -67,9 +67,9 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
   - The footprint of a node is `{ width: max(pill width, room.width), height: pill height + room.top + room.bottom }` plus the existing `room` setting (#1836, `applyRoom`) as `noteMargin` of the prototype. `clusters` and `findFreeSpot` place, test `isFree`, index and measure the footprint, so boxes of different heights are supported: the cell, `reach` and `getReach` use the footprint of the node (and of the first of its relation), not `options.nodeSize.height`.
   - The returned `PlacedNode` is the pill: `width` and `height` as today, `y` = footprint center + `(room.top − room.bottom)/2`. The frame, edges (they end at the pill), drag, drop and `getExtent` read pills as before.
   - Admission, crowding and spacing test the footprint against the window. A frame that has no room reservations is byte-identical to the one of #1837.
-- `ui`: `Plex.vue` takes `names?: (id: string) => PlexNames` beside `headings` and `hasNames`, measures names with the existing text measuring (`model/sizing/measure.ts`) at a font size smaller than a title (`NAME_SCALE = 0.75` of the title size, a constant), builds `room` for `arrangePlex`, and emits `chooseName(id)` which `usePlexTab` handles as `activate` does for a node (move the focus to that note). Names render as `PlexNodeNames.vue` (create, `ui/render/`): plain text in `--numen-ink-faint` (or the closest existing token), each name a button with no pill, no outline, no heading list; opacity `NAME_OPACITY = 0.7` at rest, `1` while the pointer is over its note's pill or any of its names (the "brought forward"), `cursor: pointer`. Names follow the pill during the move animation (same transition as the pill). The focus size scales the focus pill only; names keep their size on every note.
+- `ui`: `Plex.vue` takes `names?: (id: string) => PlexNames` beside `headings` and `showNames`, measures names with the existing text measuring (`model/sizing/measure.ts`) at a font size smaller than a title (`NAME_SCALE = 0.75` of the title size, a constant), builds `room` for `arrangePlex`, and emits `chooseName(id)` which `usePlexTab` handles as `activate` does for a node (move the focus to that note). Names render as `PlexNodeNames.vue` (create, `ui/render/`): plain text in `--numen-ink-faint` (or the closest existing token), each name a button with no pill, no outline, no heading list; opacity `NAME_OPACITY = 0.7` at rest, `1` while the pointer is over its note's pill or any of its names (the "brought forward"), `cursor: pointer`. Names follow the pill during the move animation (same transition as the pill). The focus size scales the focus pill only; names keep their size on every note.
 - The line to a note may cross its names: no routing change; names carry `pointer-events` only on the text.
-- `Plex.stories.ts`, `PlexNodeView.stories.ts`: a story with names (`WithNames`) and the `names` / `hasNames` args.
+- `Plex.stories.ts`, `PlexNodeView.stories.ts`: a story with names (`WithNames`) and the `names` / `showNames` args.
 
 ## 2. Blast Radius Matrix
 
@@ -102,11 +102,11 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 
 - The kernel applies no limit and no order by relation; the plugin orders and limits. No second RPC and no per-note call to fetch names.
 - No name is ever a node, an edge end or a connection; `connections` is unchanged for depth 2.
-- No plugin proto and no new wire message beyond the two fields; `generation`, `level`, `via` and boolean fields are not used (`hasNames` is a manifest key, not a wire field).
+- No plugin proto and no new wire message beyond the two fields; `generation`, `level`, `via` and boolean fields are not used (`showNames` is a manifest key, not a wire field).
 - `lib/` of the plex has no Vue, DOM, clock or text measuring: widths and row heights come in as numbers. `arrangePlex` stays pure and deterministic.
 - The `Placement` stays a coordinates strategy: it knows footprints, not names.
 - No camera zoom, no change of pill sizes by the names, no "+N" name.
-- With `hasNames` off, or a graph with no names, every frame, edge and test of #1837 is unchanged.
+- With `showNames` off, or a graph with no names, every frame, edge and test of #1837 is unchanged.
 - Names have no heading list, no menu, no drag; the heading list opens on the pill only.
 - No Go SDK read is added (decision 1); the TS SDK carries `depth` and `relatedTo`.
 - Imperative names (`getNames`, `getNamesRoom`, `placeNames`, `readNames`); American spelling; comments only for what the code cannot show; files <= 350 lines, functions <= 80 lines, complexity <= 10, <= 4 parameters.
@@ -150,7 +150,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 
 ### Plugin
 
-**AC-16: The settings.** `manifest.json` declares `hasNames` (boolean, default true) and `namesPerNote` (number, default 6, min 1, max 12); `readNames` reads both from camelCase keys, ignores snake_case keys, and falls back to the defaults for an out-of-range value.
+**AC-16: The settings.** `manifest.json` declares `showNames` (boolean, default true) and `namesPerNote` (number, default 6, min 1, max 12); `readNames` reads both from camelCase keys, ignores snake_case keys, and falls back to the defaults for an out-of-range value.
 
 **AC-17: Names are ordered and limited.** Given a related note with 3 parents, 4 children, 2 jumps and (when #1839 has landed) 2 references, `getNames` with limit 6 returns the 3 parents in `above` and the first 3 children in `below`; limit 12 returns all, in the order parents, children, jumps, references; limit 1 returns the first parent only.
 
@@ -158,7 +158,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 
 **AC-19: A name is the id of its note.** `getNames` ids equal `token(path)`, so a click resolves to the note.
 
-**AC-20: The depth follows the setting.** With `hasNames` on the tab asks for depth 2; turning it off asks again with depth 1 and the names go; turning it on shows them again; a change of `namesPerNote` changes the names without a new request.
+**AC-20: The depth follows the setting.** With `showNames` on the tab asks for depth 2; turning it off asks again with depth 1 and the names go; turning it on shows them again; a change of `namesPerNote` changes the names without a new request.
 
 **AC-21: Equal graphs.** `areNoteGraphsEqual` is false for two graphs that differ only in an item's `relatedTo`.
 
@@ -188,7 +188,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 
 **AC-32: Hover brings names forward.** Hovering a pill or a name raises the names of that note to full opacity; moving away returns them. The hover of a name opens no heading list; the hover of the pill still opens it.
 
-**AC-33: Names off.** With `hasNames` off the story shows no names and the arrangement equals the one without names.
+**AC-33: Names off.** With `showNames` off the story shows no names and the arrangement equals the one without names.
 
 **AC-34: Limit.** With `namesPerNote` 2 a note with five relations shows two names.
 
@@ -220,7 +220,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 ## 7. Decisions of the Owner (formerly open questions)
 
 1. No Go SDK `ListRelatedNotes` is added; that is a separate issue. Go keeps only what exists. The TS SDK carries `depth` and `relatedTo`.
-2. Both settings stay: **Show notes related to related notes** (`hasNames`, default on) and **Names per note** (`namesPerNote`, default 6). Booleans are `is/has/can` by the frontend rules, so the key is `hasNames`, not `showNames`; the count is a noun phrase.
+2. Both settings stay: **Show notes related to related notes** (`showNames`, default on) and **Names per note** (`namesPerNote`, default 6). so the key would be `hasNames`; the owner chose `showNames` to match `showPills` in the same manifest; the count is a noun phrase.
 3. Siblings get names too.
 4. A name may repeat a note already drawn; only the focus is left out.
 5. The limit counts all names of a note together, parents first.
