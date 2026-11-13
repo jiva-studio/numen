@@ -41,7 +41,7 @@ const namesUnder: Rooms = (node) =>
 
 /** Two names over every parent and none anywhere else. */
 const namesOverParents: Rooms = (node) =>
-  node.relation === 'parent' ? { top: 30, bottom: 0, width: 90 } : NONE
+  node.relation === 'parent' ? { top: 60, bottom: 0, width: 90 } : NONE
 
 /** Names under and over every other note, so any fixture is crowded. */
 const namesAround: Rooms = (node, index = 0) =>
@@ -128,10 +128,10 @@ describe('names under the notes of a relation', () => {
 })
 
 describe('names over the parents', () => {
-  const window = { width: 2400, height: 1400 }
+  const window = { width: 900, height: 700 }
 
   it('keep every other pill out of the strip over a parent', () => {
-    const graph = build('A note', { parent: 4 })
+    const graph = build('A note', { parent: 12 })
 
     const frame = arrange(graph, window, namesOverParents)
 
@@ -141,7 +141,7 @@ describe('names over the parents', () => {
         id: `${parent.id}/names`,
         minX: parent.x - 45,
         maxX: parent.x + 45,
-        minY: parent.y - parent.height / 2 - 30,
+        minY: parent.y - parent.height / 2 - 60,
         maxY: parent.y - parent.height / 2,
       }
       const covering = frame.nodes
@@ -152,7 +152,7 @@ describe('names over the parents', () => {
   })
 
   it('leave the pill of a parent the size it is without names', () => {
-    const graph = build('A note', { parent: 4 })
+    const graph = build('A note', { parent: 12 })
     const bare = arrange(graph, window)
 
     const frame = arrange(graph, window, namesOverParents)
