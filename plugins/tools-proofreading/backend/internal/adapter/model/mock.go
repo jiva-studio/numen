@@ -5,22 +5,22 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/ai"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
 )
 
 // MockMark is appended by the mock proofreader to the end of every line in the prompt.
 const MockMark = "[proofread]"
 
-// CompleteMock answers the last message of a question as a proofreader would, with every numbered
+// CompleteMock answers the last message of a request as a proofreader would, with every numbered
 // line of the prompt returned marked.
-func CompleteMock(ctx context.Context, question *ai.Question) (string, error) {
+func CompleteMock(ctx context.Context, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
 	if err := ctx.Err(); err != nil {
-		return "", err
+		return nil, err
 	}
-	messages := question.GetMessages()
+	messages := request.GetMessages()
 	if len(messages) == 0 {
-		return "", nil
+		return &llm.CompleteResult{}, nil
 	}
 	var rows []string
 	segments := strings.Split(messages[len(messages)-1].GetText(), numbered.Opens)
@@ -35,5 +35,5 @@ func CompleteMock(ctx context.Context, question *ai.Question) (string, error) {
 		}
 		rows = append(rows, number+"|"+text+" "+MockMark)
 	}
-	return strings.Join(rows, "\n"), nil
+	return &llm.CompleteResult{Text: strings.Join(rows, "\n")}, nil
 }

@@ -18,8 +18,6 @@ func addNoteFocus(registry *tools.Registry, control window.Control) error {
 			"not asking, and neither is editing one: the call changes what the window shows. It " +
 			"returns no note content: read the note for its content.",
 		Effect:       tools.ReadOnly,
-		Step:         tools.ByEffect,
-		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{showSentence},
 		Requires:     []string{host.PermissionWindowFocus},
 	}, func(ctx context.Context, in api.NoteFocusInput) (api.NoteFocusOutput, error) {
@@ -43,8 +41,6 @@ func addSourceFocus(registry *tools.Registry, control window.Control) error {
 			"the user asked to see a passage. Talking about a passage is not asking: the call " +
 			"changes what the window shows.",
 		Effect:       tools.ReadOnly,
-		Step:         tools.ByEffect,
-		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{showSentence, passagesSentence},
 		Requires:     []string{host.PermissionWindowFocus},
 	}, func(ctx context.Context, in api.SourceFocusInput) (api.SourceFocusOutput, error) {
@@ -68,8 +64,6 @@ func addWindowTabActivate(registry *tools.Registry, control window.Control) erro
 			"`window_tab_list`. Call it only when the user asked for that tab: the call changes what " +
 			"the window shows.",
 		Effect:       tools.ReadOnly,
-		Step:         tools.ByEffect,
-		Servers:      []tools.Server{tools.Full},
 		Instructions: []string{showSentence, tabIDSentence},
 		Requires:     []string{host.PermissionWindowFocus},
 	}, func(ctx context.Context, in api.WindowTabActivateInput) (api.WindowTabActivateOutput, error) {

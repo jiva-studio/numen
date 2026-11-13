@@ -4,8 +4,6 @@
  */
 import { describe, expect, expectTypeOf, it, vi } from 'vitest'
 import {
-  createMockAgentHost,
-  type AgentHost,
   type BackgroundTaskHost,
   type BufferHost,
   type CommandsHost,
@@ -99,9 +97,9 @@ function createHost(
       isCommandListed: () => true,
       getSlots: () => ui.slots as never,
       getNotices: () => ui.notices as never,
-      getAgent: () => work.agent,
       getTasks: () => work.tasks,
       getBackgroundTasks: () => work.backgroundTasks,
+      getProcesses: () => work.processes,
       ...overrides.window,
     },
   })
@@ -120,11 +118,15 @@ function pick(context: PluginContext, path: readonly string[]): { target: unknow
   return { target, key: path[path.length - 1] ?? '' }
 }
 
+/** The arguments of a member whose wrapper in the context reads them; every other member takes two paths. */
+const ARGUMENTS: Readonly<Record<string, readonly unknown[]>> = {
+  'vault.buffers.track': [{ flush: async () => undefined }],
+}
+
 function call(context: PluginContext, path: readonly string[]): unknown {
   const { target, key } = pick(context, path)
   return (target as Record<string, (...args: unknown[]) => unknown>)[key]?.(
-    ['app', 'agent'],
-    'b.md',
+    ...(ARGUMENTS[path.join('.')] ?? ['a.md', 'b.md']),
   )
 }
 
@@ -178,25 +180,21 @@ describe('the services of a plugin context', () => {
     const needs = (path: string) =>
       MEMBERS.find((one) => label(one.path) === path)?.rule.permissions
 
-    expect(needs('work.agent.ask')).toStrictEqual(['vault:write'])
+    expect(needs('vault.relations.resolveLinks')).toStrictEqual(['vault:read'])
     expect(needs('vault.vaults.getState')).toStrictEqual(['vault:read'])
     expect(needs('vault.vaults.switchTo')).toStrictEqual(['vault:manage'])
     expect(needs('ui.commands.run')).toStrictEqual(['vault:write'])
-    expect(needs('work.agent.finish')).toStrictEqual(needs('work.agent.ask'))
     expect(SERVICE_RULES.tabs.close.permissions).toStrictEqual(['vault:write'])
     expect(SERVICE_RULES.events.emitFileSelect.permissions).toStrictEqual(
       SERVICE_RULES.events.emitVaultChange.permissions,
     )
     expect(needs('ui.workspace.files.open')).toStrictEqual(['vault:read'])
-    expect(needs('ui.workspace.ask')).toStrictEqual(['vault:write'])
     expect(needs('ui.drops.drop')).toStrictEqual(['vault:write'])
   })
 
   it('leave out a member of a service the table does not list', () => {
-    const agent = Object.assign(createMockAgentHost(), { wipeConversations: vi.fn() })
     const notes = { read: vi.fn(), purge: vi.fn() }
     const host = createHost(createFakes(), {
-      window: { getAgent: () => agent },
       vault: { getNotes: () => notes as unknown as VaultNotes },
     })
     const context = createPluginContext(
@@ -205,7 +203,6 @@ describe('the services of a plugin context', () => {
       MANIFEST(['vault:read', 'vault:write']),
     )
 
-    expect(Object.keys(context.work.agent ?? {})).not.toContain('wipeConversations')
     expect(Object.keys(context.vault.notes ?? {})).toStrictEqual(['read'])
   })
 
@@ -225,16 +222,18 @@ describe('the services of a plugin context', () => {
   })
 
   it('check a member a host service defines as a getter', async () => {
-    const ask = vi.fn()
-    const agent = createMockAgentHost()
-    Object.defineProperty(agent, 'ask', { get: () => ask })
-    const host = createHost(createFakes(), { window: { getAgent: () => agent } })
+    const track = vi.fn()
+    const buffers = { addFlushHandler: vi.fn() }
+    Object.defineProperty(buffers, 'track', { get: () => track })
+    const host = createHost(createFakes(), {
+      vault: { getBuffers: () => buffers as unknown as BufferHost },
+    })
     const context = createPluginContext('md.numen.sample', host, MANIFEST(['vault:read']))
 
-    expect(() => (context.work.agent as AgentHost).ask({} as never)).toThrowError(
-      'lacks required permission "vault:write" for agent.ask',
+    expect(() => context.vault.buffers?.track({} as never)).toThrowError(
+      'lacks required permission "vault:write" for buffers.track',
     )
-    expect(ask).not.toHaveBeenCalled()
+    expect(track).not.toHaveBeenCalled()
   })
 
   it('check a service the window offers after the context was made', () => {
@@ -274,13 +273,12 @@ describe('the services of a plugin context', () => {
     expectTypeOf<keyof Rules['ui']['notices']>().toEqualTypeOf<keyof NoticeHost>()
     expectTypeOf<keyof Rules['ui']['drops']>().toEqualTypeOf<keyof DropHost>()
     expectTypeOf<keyof Rules['work']>().toEqualTypeOf<keyof PluginWork>()
-    expectTypeOf<keyof Rules['work']['agent']>().toEqualTypeOf<keyof AgentHost>()
     expectTypeOf<keyof Rules['work']['tasks']>().toEqualTypeOf<keyof TaskHost>()
     expectTypeOf<keyof Rules['work']['backgroundTasks']>().toEqualTypeOf<keyof BackgroundTaskHost>()
   })
 
   it('takes the async flag of a rule from the type of the member', () => {
-    type SyncRule = typeof SERVICE_RULES.work.agent.ask
+    type SyncRule = typeof SERVICE_RULES.vault.buffers.track
     type AsyncRule = typeof SERVICE_RULES.vault.notes.read
     type Fits<Rule, Member> = [Rule] extends [RulesOf<Member>[keyof Member]] ? true : false
 

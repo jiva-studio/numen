@@ -28,14 +28,14 @@ func readManifest(t *testing.T) manifestShape {
 	return shape
 }
 
-// The plugin runs in the editor, reads the search index, and draws one view in the title bar.
+// The plugin runs in the editor, reads the search index, follows the changes of the vault, and draws one view in the title bar.
 func TestTheManifestDeclaresTheStatusViewTheTargetAndThePermission(t *testing.T) {
 	shape := readManifest(t)
 
 	if !slices.Equal(shape.Targets, []string{"desktop.editor"}) {
 		t.Errorf("targets = %v", shape.Targets)
 	}
-	if !slices.Equal(shape.Permissions, []string{"index:read"}) {
+	if !slices.Equal(shape.Permissions, []string{"index:read", "vault:read"}) {
 		t.Errorf("permissions = %v", shape.Permissions)
 	}
 	if !slices.Equal(shape.Services, []string{"md.numen.tools.index.stats"}) {

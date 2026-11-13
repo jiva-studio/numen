@@ -9,12 +9,13 @@ const REPO = path.resolve(import.meta.dirname, "../../../../..");
 const roots = [];
 after(() => roots.forEach((dir) => fs.rmSync(dir, { recursive: true, force: true })));
 
-/** A repository of two library files, linked to the installed jscpd. */
+/** A repository of the given files, with the folders every scope reads, linked to the installed jscpd. */
 function createRepo(files) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "duplication-"));
   roots.push(dir);
   fs.mkdirSync(path.join(dir, "plugins"));
   fs.mkdirSync(path.join(dir, "apps"));
+  fs.mkdirSync(path.join(dir, "libs"));
   for (const [name, text] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(dir, name)), { recursive: true });
     fs.writeFileSync(path.join(dir, name), text);
@@ -35,6 +36,13 @@ describe("the duplication check", () => {
     const result = await runDuplicationCheck({ repoRoot: repo });
     assert.equal(result.pass, false);
     assert.match(result.details, /host: .*exceeds threshold/);
+  });
+
+  it("leaves plugin manifests out, as declarations like the yml files", async () => {
+    const manifest = JSON.stringify({ connectionTypes: Array.from({ length: 3 }, () => ({ operations: ["one", "two", "three"], fields: Array.from({ length: 12 }, (_, i) => ({ key: `field${i}`, type: "string", min: i, max: i * 2 })) })) }, null, 2);
+    const repo = createRepo({ "plugins/board/manifest.json": manifest, "plugins/board/one.ts": createBlock("first", 4) });
+    const result = await runDuplicationCheck({ repoRoot: repo });
+    assert.equal(result.pass, true);
   });
 
   it("passes two files that share nothing", async () => {

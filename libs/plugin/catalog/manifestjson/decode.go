@@ -129,15 +129,15 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Backend:          newBackend(wire.GetBackend()),
 		Frontend:         newFrontend(wire.GetFrontend()),
 		Settings:         settings,
-		Secrets:          newSecrets(wire.GetSecrets()),
 		Services:         wire.GetServices(),
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
 		Contributes:      contributes,
+		IsOffByDefault:   wire.GetIsOffByDefault(),
 	}, nil
 }
 
 func newBackend(wire *v1.ManifestBackend) manifest.Backend {
-	return manifest.Backend{Entrypoint: wire.GetEntrypoint()}
+	return manifest.Backend{Entrypoint: wire.GetEntrypoint(), IdleStopSeconds: int(wire.GetIdleStopSeconds())}
 }
 
 func newFrontend(wire *v1.ManifestFrontend) *manifest.Frontend {
@@ -158,20 +158,6 @@ func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequire
 			ChecksumSHA256: one.GetChecksumSha256(),
 			Metadata:       one.GetMetadata(),
 			PluginDir:      "",
-		})
-	}
-	return out
-}
-
-func newSecrets(wire []*v1.SecretDeclaration) []manifest.SecretDeclaration {
-	var out []manifest.SecretDeclaration
-	for _, one := range wire {
-		out = append(out, manifest.SecretDeclaration{
-			Name:        one.GetName(),
-			Title:       one.GetTitle(),
-			Description: one.GetDescription(),
-			When:        newCondition(one.GetWhen()),
-			Group:       one.GetGroup(),
 		})
 	}
 	return out
@@ -200,6 +186,7 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Type:        one.GetType(),
 			Title:       one.GetTitle(),
 			Description: one.GetDescription(),
+			Details:     one.GetDetails(),
 			Default:     one.GetDefault().AsInterface(),
 			Palette:     one.GetPalette(),
 			Icon:        one.GetIcon(),
@@ -214,6 +201,8 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Preview:     one.GetPreview(),
 			OptionsFrom: one.GetOptionsFrom(),
 			Generate:    one.GetGenerate(),
+			Operations:  one.GetOperations(),
+			Discover:    one.GetDiscover(),
 		})
 	}
 	return out, nil

@@ -42,7 +42,7 @@ func Open(host Host) Commands {
 func (c Commands) RunCommand(
 	ctx context.Context, call plugin.CommandCall,
 ) (result plugin.CommandResult, err error) {
-	client, lease, err := bridge.Open(ctx, c.host, call.PluginID, numenv1connect.NewPluginCommandServiceClient)
+	client, lease, err := bridge.Open(ctx, c.host, call.PluginID, "run command "+call.Command, numenv1connect.NewPluginCommandServiceClient)
 	if err != nil {
 		return plugin.CommandResult{}, err
 	}

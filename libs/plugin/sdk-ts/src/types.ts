@@ -1,15 +1,17 @@
 import type { Component, Ref } from 'vue'
 import type { FileConflict } from './buffers'
-import type { AgentHost } from './agent'
 import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
+import type { ProcessHost } from './processes'
 import type { BackgroundTaskHost } from './backgroundTasks'
+import type { HealthHost } from './health'
 import type { CommandItem, CommandsHost, CommandTarget } from './commands'
 import type { SlotHost } from './slots'
 import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
+import type { ConnectionHost } from './connections'
 import type { MountedView, ViewCapability, ViewContexts, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from './workspace'
 
@@ -44,13 +46,6 @@ export interface ReaderRegistration {
 export interface SettingsViewRegistration {
   readonly id: string
   readonly component: Component
-}
-
-// SettingsViewProps are the props the settings page passes the component of a settings view. The
-// component emits `update:setting` with a key and a value; the host writes it to that setting.
-export interface SettingsViewProps {
-  readonly pluginId: string
-  readonly values: Readonly<Record<string, JsonValue>>
 }
 
 // SlotViewRegistration registers a component a slot draws. The manifest places it, as an entry
@@ -98,15 +93,6 @@ export interface ReaderTabState {
   reportPlace(place: TabPlace): void
   // Hands the window the reader, which it focuses and lays out when the tab is shown.
   attachReader?(reader: ReaderHandle | null): void
-}
-
-// ReaderPaneProps describes the props passed to a reader component by the host pane wrapper.
-export interface ReaderPaneProps {
-  readonly path: string
-  readonly file?: string
-  readonly pluginId?: string
-  readonly title?: string
-  readonly state?: ReaderTabState
 }
 
 // TabTarget identifies the tab a command applies to.
@@ -313,11 +299,12 @@ export interface PluginUi {
   ): MountedView
 }
 
-// PluginWork is the agent and the background work of the core.
+// PluginWork is the connections and the background work of the core, and the plugins that run.
 export interface PluginWork {
-  readonly agent?: AgentHost
+  readonly connections?: ConnectionHost
   readonly tasks?: TaskHost
   readonly backgroundTasks?: BackgroundTaskHost
+  readonly processes?: ProcessHost
 }
 
 // PluginContext provides registration and host services to an activated plugin, in parts.
@@ -330,6 +317,7 @@ export interface PluginContext {
   readonly vault: PluginVault
   readonly ui: PluginUi
   readonly work: PluginWork
+  readonly health?: HealthHost
 }
 
 // JsonValue is a value that survives JSON.stringify and JSON.parse unchanged: the shape of a setting,

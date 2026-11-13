@@ -112,7 +112,7 @@ test('source under test is told apart from tests, stories and barrels', () => {
   assert.equal(isMutatedGo('usecase/note/open_test.go'), false)
   assert.equal(isMutatedGo('usecase/note/testdata/case.go'), false)
   assert.equal(isMutatedGo('internal/testsupport/indexfile/index.go'), false)
-  assert.equal(isMutatedGo('agentrun/agenttest/agenttest.go'), false)
+  assert.equal(isMutatedGo('server/servertest/lifecycle.go'), false)
   assert.equal(isMutatedGo('plugintest/messages.go'), false)
   assert.equal(isMutatedSource('apps/desktop/editor/src/testing/answers.ts'), false)
   assert.equal(isMutatedSource('libs/ui/components/src/features/plex/fixtures/build.ts'), false)

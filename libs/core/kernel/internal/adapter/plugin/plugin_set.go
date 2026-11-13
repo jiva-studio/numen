@@ -1,6 +1,8 @@
 package plugin
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"reflect"
@@ -85,13 +87,14 @@ func (v setView) ordered() []manifest.Discovered {
 
 func (v setView) isEnabled(pluginID string) bool {
 	settings := v.set.values.get(pluginID)
-	if p, ok := v.set.plugins[pluginID]; ok {
+	p, isKnown := v.set.plugins[pluginID]
+	if isKnown {
 		settings = p.Manifest.ResolveSettings(settings)
 	}
 	if val, ok := settings[settingEnabled].(bool); ok {
 		return val
 	}
-	return true
+	return !p.Manifest.IsOffByDefault
 }
 
 func (v setView) settings(pluginID string) map[string]any {
@@ -102,11 +105,6 @@ func (v setView) settings(pluginID string) map[string]any {
 	}
 	if result == nil {
 		result = map[string]any{}
-	}
-	if ok {
-		for _, name := range p.Manifest.GetSecretNames() {
-			delete(result, name)
-		}
 	}
 	return result
 }
@@ -136,6 +134,12 @@ func (s *PluginSet) getKnownPlugin(pluginID string) (manifest.Discovered, bool) 
 func (s *PluginSet) getName(pluginID string) string {
 	p, _ := s.getKnownPlugin(pluginID)
 	return p.Manifest.Name
+}
+
+func (s *PluginSet) isPluginEnabled(pluginID string) bool {
+	v, release := s.view()
+	defer release()
+	return v.isEnabled(pluginID)
 }
 
 func (s *PluginSet) isRegistered(pluginID string) bool {
@@ -179,12 +183,6 @@ func (s *PluginSet) listIDs() []string {
 	return ids
 }
 
-func (s *PluginSet) hasProblems() bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return len(s.problems) > 0
-}
-
 func (s *PluginSet) isOnDisk(pluginID string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -202,6 +200,7 @@ func (s *PluginSet) getLaunch(p manifest.Discovered) supervision.Launch {
 }
 
 func (s *PluginSet) refuseConflicts(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) ([]manifest.Discovered, []manifestjson.DiscoveryProblem) {
+	discovered, problems = s.refuseBuiltInProviders(discovered, problems)
 	s.mu.RLock()
 	ordered := make([]manifest.Discovered, 0, len(s.builtIns)+len(discovered))
 	for id, builtIn := range s.builtIns {
@@ -326,4 +325,24 @@ func (v setView) listProblems() []manifestjson.DiscoveryProblem {
 func (s *PluginSet) GetVersion(pluginID string) string {
 	p, _ := s.getKnownPlugin(pluginID)
 	return p.Manifest.Version
+}
+
+// errProviderIDTaken is a plugin found on disk under the id of a built-in plugin that provides connection
+// types. The keys of a connection go to the plugin that provides its type, so the built-in plugin stays.
+var errProviderIDTaken = errors.New("a built-in plugin of this id provides connection types")
+
+func (s *PluginSet) refuseBuiltInProviders(discovered []manifest.Discovered, problems []manifestjson.DiscoveryProblem) ([]manifest.Discovered, []manifestjson.DiscoveryProblem) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	kept := make([]manifest.Discovered, 0, len(discovered))
+	for _, p := range discovered {
+		if builtIn, isBuiltIn := s.builtIns[p.Manifest.ID]; isBuiltIn && len(builtIn.plugin.Manifest.Contributes.ConnectionTypes) > 0 {
+			problems = append(slices.Clone(problems), manifestjson.DiscoveryProblem{
+				Dir: p.Dir, Err: fmt.Errorf("%w: rejected the plugin in %s", errProviderIDTaken, p.Dir),
+			})
+			continue
+		}
+		kept = append(kept, p)
+	}
+	return kept, problems
 }

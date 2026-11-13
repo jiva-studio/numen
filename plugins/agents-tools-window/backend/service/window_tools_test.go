@@ -47,7 +47,7 @@ func newWindowTools(t *testing.T) windowTools {
 func newRegistry(t *testing.T, on service.Host) *tools.Registry {
 	t.Helper()
 	registry := tools.New()
-	manager := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	manager := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	if err := service.RegisterTools(registry, manager, on); err != nil {
 		t.Fatal(err)
 	}
@@ -94,13 +94,6 @@ func (w windowTools) getToolInfo(t *testing.T, name string) *tools.ToolInfo {
 	return nil
 }
 
-func isOnServer(info *tools.ToolInfo, server tools.Server) bool {
-	if len(info.GetServers()) == 0 {
-		return server == tools.Full
-	}
-	return slices.Contains(info.GetServers(), server)
-}
-
 // tabOutput is one tab as returned by a tool. Place is the raw JSON of the place key, nil where
 // the key is absent.
 type tabOutput struct {
@@ -135,20 +128,6 @@ func requirePlace(t *testing.T, what string, place json.RawMessage, want string)
 	}
 	if !reflect.DeepEqual(got, wanted) {
 		t.Errorf("%s has the place %s, want %s", what, place, want)
-	}
-}
-
-func TestTheToolsThatMoveTheWindowAreOnTheFullServerOnly(t *testing.T) {
-	w := newWindowTools(t)
-	for _, name := range []string{"note_focus", "source_focus", "window_tab_activate"} {
-		info := w.getToolInfo(t, name)
-		if !isOnServer(info, tools.Full) || isOnServer(info, tools.Reading) {
-			t.Errorf("%s is on %v, want the full server only", name, info.GetServers())
-		}
-	}
-	tabs := w.getToolInfo(t, "window_tab_list")
-	if !isOnServer(tabs, tools.Full) || !isOnServer(tabs, tools.Reading) {
-		t.Errorf("window_tab_list is on %v, want the full and the reading server", tabs.GetServers())
 	}
 }
 
@@ -387,4 +366,10 @@ func TestWindowTabListPrefersWindowTabsToTheCallFocus(t *testing.T) {
 	if len(out.Tabs) != 1 || out.Tabs[0].Path != notePath || out.ActiveTabID != "tab-1" {
 		t.Errorf("returned %+v, want the tab of the window", out)
 	}
+}
+
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

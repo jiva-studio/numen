@@ -8,6 +8,7 @@ import type { Page, ViewportSize } from 'playwright/test'
 import { AgentDriver } from './agent.js'
 import { ApplicationDriver } from './application.js'
 import { CommandDriver } from './command.js'
+import { ConnectionsDriver } from './connections.js'
 import { DeckDriver } from './deck.js'
 import { parseEnvironment } from './environment.js'
 import { FileTreeDriver } from './file-tree.js'
@@ -18,6 +19,7 @@ import { ReviewDriver } from './review.js'
 import { PluginDriver } from './plugins.js'
 import { ReaderDriver } from './reader.js'
 import { Scenario } from './scenario.js'
+import { ServiceDriver } from './services.js'
 import { SearchDriver } from './search.js'
 import { SettingsDriver } from './settings.js'
 import { TabDriver } from './tabs.js'
@@ -43,6 +45,8 @@ export class Person {
   readonly window: WindowDriver
   readonly settings: SettingsDriver
   readonly agent: AgentDriver
+  readonly services: ServiceDriver
+  readonly connections: ConnectionsDriver
   readonly reader: ReaderDriver
   readonly deck: DeckDriver
   readonly scenario: Scenario
@@ -70,6 +74,8 @@ export class Person {
     })
     this.settings = new SettingsDriver(this.scenario, this.application)
     this.agent = new AgentDriver(this.scenario)
+    this.services = new ServiceDriver()
+    this.connections = new ConnectionsDriver(this.scenario, this.settings, this.services)
     this.reader = new ReaderDriver(this.scenario, this.tab)
     this.deck = new DeckDriver(this.scenario, this.tab)
   }
@@ -87,6 +93,7 @@ export class Person {
 
   /** Leaves the vault as the scenario found it; a scenario with a world of its own removes the world and its server. */
   async removeNotes(): Promise<void> {
+    this.services.stopAll()
     if (this.scenario.hasWorld) return this.scenario.removeWorld()
     await this.plugin.enableDisabled()
     await this.scenario.removeVersions()

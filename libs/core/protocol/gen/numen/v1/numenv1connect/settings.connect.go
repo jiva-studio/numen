@@ -48,36 +48,6 @@ const (
 	// SettingsServiceWriteSettingsProcedure is the fully-qualified name of the SettingsService's
 	// WriteSettings RPC.
 	SettingsServiceWriteSettingsProcedure = "/numen.v1.SettingsService/WriteSettings"
-	// SettingsServiceCreateSecretProcedure is the fully-qualified name of the SettingsService's
-	// CreateSecret RPC.
-	SettingsServiceCreateSecretProcedure = "/numen.v1.SettingsService/CreateSecret"
-	// SettingsServiceRenameSecretProcedure is the fully-qualified name of the SettingsService's
-	// RenameSecret RPC.
-	SettingsServiceRenameSecretProcedure = "/numen.v1.SettingsService/RenameSecret"
-	// SettingsServiceWriteSecretProcedure is the fully-qualified name of the SettingsService's
-	// WriteSecret RPC.
-	SettingsServiceWriteSecretProcedure = "/numen.v1.SettingsService/WriteSecret"
-	// SettingsServiceDeleteSecretProcedure is the fully-qualified name of the SettingsService's
-	// DeleteSecret RPC.
-	SettingsServiceDeleteSecretProcedure = "/numen.v1.SettingsService/DeleteSecret"
-	// SettingsServiceDeleteSecretGroupProcedure is the fully-qualified name of the SettingsService's
-	// DeleteSecretGroup RPC.
-	SettingsServiceDeleteSecretGroupProcedure = "/numen.v1.SettingsService/DeleteSecretGroup"
-	// SettingsServiceListSecretStatesProcedure is the fully-qualified name of the SettingsService's
-	// ListSecretStates RPC.
-	SettingsServiceListSecretStatesProcedure = "/numen.v1.SettingsService/ListSecretStates"
-	// SettingsServiceMoveSecretProcedure is the fully-qualified name of the SettingsService's
-	// MoveSecret RPC.
-	SettingsServiceMoveSecretProcedure = "/numen.v1.SettingsService/MoveSecret"
-	// SettingsServiceRenameSecretGroupProcedure is the fully-qualified name of the SettingsService's
-	// RenameSecretGroup RPC.
-	SettingsServiceRenameSecretGroupProcedure = "/numen.v1.SettingsService/RenameSecretGroup"
-	// SettingsServiceAllowPluginSecretProcedure is the fully-qualified name of the SettingsService's
-	// AllowPluginSecret RPC.
-	SettingsServiceAllowPluginSecretProcedure = "/numen.v1.SettingsService/AllowPluginSecret"
-	// SettingsServiceDenyPluginSecretProcedure is the fully-qualified name of the SettingsService's
-	// DenyPluginSecret RPC.
-	SettingsServiceDenyPluginSecretProcedure = "/numen.v1.SettingsService/DenyPluginSecret"
 	// SettingsServiceRetryPluginProcedure is the fully-qualified name of the SettingsService's
 	// RetryPlugin RPC.
 	SettingsServiceRetryPluginProcedure = "/numen.v1.SettingsService/RetryPlugin"
@@ -97,34 +67,12 @@ const (
 
 // SettingsServiceClient is a client for the numen.v1.SettingsService service.
 type SettingsServiceClient interface {
-	// GetSettings is every setting of the file, and the models the settings that
-	// name one can be set to.
+	// GetSettings is every setting of the file.
 	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
 	// WriteSettings writes settings into that file. The file is patched as an
 	// object, so every key a person typed keeps its position, and a file the
 	// settings could not be read out of again is not written at all.
 	WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error)
-	// CreateSecret adds a secret at the end of its group and keeps its value outside the settings file.
-	CreateSecret(context.Context, *connect.Request[v1.CreateSecretRequest]) (*connect.Response[v1.CreateSecretResponse], error)
-	// RenameSecret changes the name of a secret. Its id, value and permissions stay.
-	RenameSecret(context.Context, *connect.Request[v1.RenameSecretRequest]) (*connect.Response[v1.RenameSecretResponse], error)
-	// WriteSecret replaces the value of a secret and hands the plugins that may read it their secrets again.
-	WriteSecret(context.Context, *connect.Request[v1.WriteSecretRequest]) (*connect.Response[v1.WriteSecretResponse], error)
-	// DeleteSecret removes a secret with its value and its permissions.
-	DeleteSecret(context.Context, *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error)
-	// DeleteSecretGroup removes every secret of a group with its values and its permissions.
-	DeleteSecretGroup(context.Context, *connect.Request[v1.DeleteSecretGroupRequest]) (*connect.Response[v1.DeleteSecretGroupResponse], error)
-	// ListSecretStates tells for each secret whether its value is on this machine. It reads the key
-	// store once for each secret, so only the page of secrets asks for it.
-	ListSecretStates(context.Context, *connect.Request[v1.ListSecretStatesRequest]) (*connect.Response[v1.ListSecretStatesResponse], error)
-	// MoveSecret changes the priority of a secret inside its group.
-	MoveSecret(context.Context, *connect.Request[v1.MoveSecretRequest]) (*connect.Response[v1.MoveSecretResponse], error)
-	// RenameSecretGroup changes the group of all the secrets of a group the person made.
-	RenameSecretGroup(context.Context, *connect.Request[v1.RenameSecretGroupRequest]) (*connect.Response[v1.RenameSecretGroupResponse], error)
-	// AllowPluginSecret lets one declaration of a plugin read a secret.
-	AllowPluginSecret(context.Context, *connect.Request[v1.AllowPluginSecretRequest]) (*connect.Response[v1.AllowPluginSecretResponse], error)
-	// DenyPluginSecret stops one declaration of a plugin from reading a secret.
-	DenyPluginSecret(context.Context, *connect.Request[v1.DenyPluginSecretRequest]) (*connect.Response[v1.DenyPluginSecretResponse], error)
 	// RetryPlugin forgets the failures of a plugin the host suspends, and starts
 	// it once. A plugin that fails again is suspended again, and the call answers
 	// the reason.
@@ -171,66 +119,6 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(settingsServiceMethods.ByName("WriteSettings")),
 			connect.WithClientOptions(opts...),
 		),
-		createSecret: connect.NewClient[v1.CreateSecretRequest, v1.CreateSecretResponse](
-			httpClient,
-			baseURL+SettingsServiceCreateSecretProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("CreateSecret")),
-			connect.WithClientOptions(opts...),
-		),
-		renameSecret: connect.NewClient[v1.RenameSecretRequest, v1.RenameSecretResponse](
-			httpClient,
-			baseURL+SettingsServiceRenameSecretProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("RenameSecret")),
-			connect.WithClientOptions(opts...),
-		),
-		writeSecret: connect.NewClient[v1.WriteSecretRequest, v1.WriteSecretResponse](
-			httpClient,
-			baseURL+SettingsServiceWriteSecretProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("WriteSecret")),
-			connect.WithClientOptions(opts...),
-		),
-		deleteSecret: connect.NewClient[v1.DeleteSecretRequest, v1.DeleteSecretResponse](
-			httpClient,
-			baseURL+SettingsServiceDeleteSecretProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("DeleteSecret")),
-			connect.WithClientOptions(opts...),
-		),
-		deleteSecretGroup: connect.NewClient[v1.DeleteSecretGroupRequest, v1.DeleteSecretGroupResponse](
-			httpClient,
-			baseURL+SettingsServiceDeleteSecretGroupProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("DeleteSecretGroup")),
-			connect.WithClientOptions(opts...),
-		),
-		listSecretStates: connect.NewClient[v1.ListSecretStatesRequest, v1.ListSecretStatesResponse](
-			httpClient,
-			baseURL+SettingsServiceListSecretStatesProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("ListSecretStates")),
-			connect.WithClientOptions(opts...),
-		),
-		moveSecret: connect.NewClient[v1.MoveSecretRequest, v1.MoveSecretResponse](
-			httpClient,
-			baseURL+SettingsServiceMoveSecretProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("MoveSecret")),
-			connect.WithClientOptions(opts...),
-		),
-		renameSecretGroup: connect.NewClient[v1.RenameSecretGroupRequest, v1.RenameSecretGroupResponse](
-			httpClient,
-			baseURL+SettingsServiceRenameSecretGroupProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("RenameSecretGroup")),
-			connect.WithClientOptions(opts...),
-		),
-		allowPluginSecret: connect.NewClient[v1.AllowPluginSecretRequest, v1.AllowPluginSecretResponse](
-			httpClient,
-			baseURL+SettingsServiceAllowPluginSecretProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("AllowPluginSecret")),
-			connect.WithClientOptions(opts...),
-		),
-		denyPluginSecret: connect.NewClient[v1.DenyPluginSecretRequest, v1.DenyPluginSecretResponse](
-			httpClient,
-			baseURL+SettingsServiceDenyPluginSecretProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("DenyPluginSecret")),
-			connect.WithClientOptions(opts...),
-		),
 		retryPlugin: connect.NewClient[v1.RetryPluginRequest, v1.RetryPluginResponse](
 			httpClient,
 			baseURL+SettingsServiceRetryPluginProcedure,
@@ -266,23 +154,13 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 
 // settingsServiceClient implements SettingsServiceClient.
 type settingsServiceClient struct {
-	getSettings       *connect.Client[v1.GetSettingsRequest, v1.GetSettingsResponse]
-	writeSettings     *connect.Client[v1.WriteSettingsRequest, v1.WriteSettingsResponse]
-	createSecret      *connect.Client[v1.CreateSecretRequest, v1.CreateSecretResponse]
-	renameSecret      *connect.Client[v1.RenameSecretRequest, v1.RenameSecretResponse]
-	writeSecret       *connect.Client[v1.WriteSecretRequest, v1.WriteSecretResponse]
-	deleteSecret      *connect.Client[v1.DeleteSecretRequest, v1.DeleteSecretResponse]
-	deleteSecretGroup *connect.Client[v1.DeleteSecretGroupRequest, v1.DeleteSecretGroupResponse]
-	listSecretStates  *connect.Client[v1.ListSecretStatesRequest, v1.ListSecretStatesResponse]
-	moveSecret        *connect.Client[v1.MoveSecretRequest, v1.MoveSecretResponse]
-	renameSecretGroup *connect.Client[v1.RenameSecretGroupRequest, v1.RenameSecretGroupResponse]
-	allowPluginSecret *connect.Client[v1.AllowPluginSecretRequest, v1.AllowPluginSecretResponse]
-	denyPluginSecret  *connect.Client[v1.DenyPluginSecretRequest, v1.DenyPluginSecretResponse]
-	retryPlugin       *connect.Client[v1.RetryPluginRequest, v1.RetryPluginResponse]
-	choosePluginPath  *connect.Client[v1.ChoosePluginPathRequest, v1.ChoosePluginPathResponse]
-	getPluginData     *connect.Client[v1.GetPluginDataRequest, v1.GetPluginDataResponse]
-	deletePluginData  *connect.Client[v1.DeletePluginDataRequest, v1.DeletePluginDataResponse]
-	watchSettings     *connect.Client[v1.WatchSettingsRequest, v1.WatchSettingsResponse]
+	getSettings      *connect.Client[v1.GetSettingsRequest, v1.GetSettingsResponse]
+	writeSettings    *connect.Client[v1.WriteSettingsRequest, v1.WriteSettingsResponse]
+	retryPlugin      *connect.Client[v1.RetryPluginRequest, v1.RetryPluginResponse]
+	choosePluginPath *connect.Client[v1.ChoosePluginPathRequest, v1.ChoosePluginPathResponse]
+	getPluginData    *connect.Client[v1.GetPluginDataRequest, v1.GetPluginDataResponse]
+	deletePluginData *connect.Client[v1.DeletePluginDataRequest, v1.DeletePluginDataResponse]
+	watchSettings    *connect.Client[v1.WatchSettingsRequest, v1.WatchSettingsResponse]
 }
 
 // GetSettings calls numen.v1.SettingsService.GetSettings.
@@ -293,56 +171,6 @@ func (c *settingsServiceClient) GetSettings(ctx context.Context, req *connect.Re
 // WriteSettings calls numen.v1.SettingsService.WriteSettings.
 func (c *settingsServiceClient) WriteSettings(ctx context.Context, req *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error) {
 	return c.writeSettings.CallUnary(ctx, req)
-}
-
-// CreateSecret calls numen.v1.SettingsService.CreateSecret.
-func (c *settingsServiceClient) CreateSecret(ctx context.Context, req *connect.Request[v1.CreateSecretRequest]) (*connect.Response[v1.CreateSecretResponse], error) {
-	return c.createSecret.CallUnary(ctx, req)
-}
-
-// RenameSecret calls numen.v1.SettingsService.RenameSecret.
-func (c *settingsServiceClient) RenameSecret(ctx context.Context, req *connect.Request[v1.RenameSecretRequest]) (*connect.Response[v1.RenameSecretResponse], error) {
-	return c.renameSecret.CallUnary(ctx, req)
-}
-
-// WriteSecret calls numen.v1.SettingsService.WriteSecret.
-func (c *settingsServiceClient) WriteSecret(ctx context.Context, req *connect.Request[v1.WriteSecretRequest]) (*connect.Response[v1.WriteSecretResponse], error) {
-	return c.writeSecret.CallUnary(ctx, req)
-}
-
-// DeleteSecret calls numen.v1.SettingsService.DeleteSecret.
-func (c *settingsServiceClient) DeleteSecret(ctx context.Context, req *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error) {
-	return c.deleteSecret.CallUnary(ctx, req)
-}
-
-// DeleteSecretGroup calls numen.v1.SettingsService.DeleteSecretGroup.
-func (c *settingsServiceClient) DeleteSecretGroup(ctx context.Context, req *connect.Request[v1.DeleteSecretGroupRequest]) (*connect.Response[v1.DeleteSecretGroupResponse], error) {
-	return c.deleteSecretGroup.CallUnary(ctx, req)
-}
-
-// ListSecretStates calls numen.v1.SettingsService.ListSecretStates.
-func (c *settingsServiceClient) ListSecretStates(ctx context.Context, req *connect.Request[v1.ListSecretStatesRequest]) (*connect.Response[v1.ListSecretStatesResponse], error) {
-	return c.listSecretStates.CallUnary(ctx, req)
-}
-
-// MoveSecret calls numen.v1.SettingsService.MoveSecret.
-func (c *settingsServiceClient) MoveSecret(ctx context.Context, req *connect.Request[v1.MoveSecretRequest]) (*connect.Response[v1.MoveSecretResponse], error) {
-	return c.moveSecret.CallUnary(ctx, req)
-}
-
-// RenameSecretGroup calls numen.v1.SettingsService.RenameSecretGroup.
-func (c *settingsServiceClient) RenameSecretGroup(ctx context.Context, req *connect.Request[v1.RenameSecretGroupRequest]) (*connect.Response[v1.RenameSecretGroupResponse], error) {
-	return c.renameSecretGroup.CallUnary(ctx, req)
-}
-
-// AllowPluginSecret calls numen.v1.SettingsService.AllowPluginSecret.
-func (c *settingsServiceClient) AllowPluginSecret(ctx context.Context, req *connect.Request[v1.AllowPluginSecretRequest]) (*connect.Response[v1.AllowPluginSecretResponse], error) {
-	return c.allowPluginSecret.CallUnary(ctx, req)
-}
-
-// DenyPluginSecret calls numen.v1.SettingsService.DenyPluginSecret.
-func (c *settingsServiceClient) DenyPluginSecret(ctx context.Context, req *connect.Request[v1.DenyPluginSecretRequest]) (*connect.Response[v1.DenyPluginSecretResponse], error) {
-	return c.denyPluginSecret.CallUnary(ctx, req)
 }
 
 // RetryPlugin calls numen.v1.SettingsService.RetryPlugin.
@@ -372,34 +200,12 @@ func (c *settingsServiceClient) WatchSettings(ctx context.Context, req *connect.
 
 // SettingsServiceHandler is an implementation of the numen.v1.SettingsService service.
 type SettingsServiceHandler interface {
-	// GetSettings is every setting of the file, and the models the settings that
-	// name one can be set to.
+	// GetSettings is every setting of the file.
 	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
 	// WriteSettings writes settings into that file. The file is patched as an
 	// object, so every key a person typed keeps its position, and a file the
 	// settings could not be read out of again is not written at all.
 	WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error)
-	// CreateSecret adds a secret at the end of its group and keeps its value outside the settings file.
-	CreateSecret(context.Context, *connect.Request[v1.CreateSecretRequest]) (*connect.Response[v1.CreateSecretResponse], error)
-	// RenameSecret changes the name of a secret. Its id, value and permissions stay.
-	RenameSecret(context.Context, *connect.Request[v1.RenameSecretRequest]) (*connect.Response[v1.RenameSecretResponse], error)
-	// WriteSecret replaces the value of a secret and hands the plugins that may read it their secrets again.
-	WriteSecret(context.Context, *connect.Request[v1.WriteSecretRequest]) (*connect.Response[v1.WriteSecretResponse], error)
-	// DeleteSecret removes a secret with its value and its permissions.
-	DeleteSecret(context.Context, *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error)
-	// DeleteSecretGroup removes every secret of a group with its values and its permissions.
-	DeleteSecretGroup(context.Context, *connect.Request[v1.DeleteSecretGroupRequest]) (*connect.Response[v1.DeleteSecretGroupResponse], error)
-	// ListSecretStates tells for each secret whether its value is on this machine. It reads the key
-	// store once for each secret, so only the page of secrets asks for it.
-	ListSecretStates(context.Context, *connect.Request[v1.ListSecretStatesRequest]) (*connect.Response[v1.ListSecretStatesResponse], error)
-	// MoveSecret changes the priority of a secret inside its group.
-	MoveSecret(context.Context, *connect.Request[v1.MoveSecretRequest]) (*connect.Response[v1.MoveSecretResponse], error)
-	// RenameSecretGroup changes the group of all the secrets of a group the person made.
-	RenameSecretGroup(context.Context, *connect.Request[v1.RenameSecretGroupRequest]) (*connect.Response[v1.RenameSecretGroupResponse], error)
-	// AllowPluginSecret lets one declaration of a plugin read a secret.
-	AllowPluginSecret(context.Context, *connect.Request[v1.AllowPluginSecretRequest]) (*connect.Response[v1.AllowPluginSecretResponse], error)
-	// DenyPluginSecret stops one declaration of a plugin from reading a secret.
-	DenyPluginSecret(context.Context, *connect.Request[v1.DenyPluginSecretRequest]) (*connect.Response[v1.DenyPluginSecretResponse], error)
 	// RetryPlugin forgets the failures of a plugin the host suspends, and starts
 	// it once. A plugin that fails again is suspended again, and the call answers
 	// the reason.
@@ -442,66 +248,6 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 		connect.WithSchema(settingsServiceMethods.ByName("WriteSettings")),
 		connect.WithHandlerOptions(opts...),
 	)
-	settingsServiceCreateSecretHandler := connect.NewUnaryHandler(
-		SettingsServiceCreateSecretProcedure,
-		svc.CreateSecret,
-		connect.WithSchema(settingsServiceMethods.ByName("CreateSecret")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceRenameSecretHandler := connect.NewUnaryHandler(
-		SettingsServiceRenameSecretProcedure,
-		svc.RenameSecret,
-		connect.WithSchema(settingsServiceMethods.ByName("RenameSecret")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceWriteSecretHandler := connect.NewUnaryHandler(
-		SettingsServiceWriteSecretProcedure,
-		svc.WriteSecret,
-		connect.WithSchema(settingsServiceMethods.ByName("WriteSecret")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceDeleteSecretHandler := connect.NewUnaryHandler(
-		SettingsServiceDeleteSecretProcedure,
-		svc.DeleteSecret,
-		connect.WithSchema(settingsServiceMethods.ByName("DeleteSecret")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceDeleteSecretGroupHandler := connect.NewUnaryHandler(
-		SettingsServiceDeleteSecretGroupProcedure,
-		svc.DeleteSecretGroup,
-		connect.WithSchema(settingsServiceMethods.ByName("DeleteSecretGroup")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceListSecretStatesHandler := connect.NewUnaryHandler(
-		SettingsServiceListSecretStatesProcedure,
-		svc.ListSecretStates,
-		connect.WithSchema(settingsServiceMethods.ByName("ListSecretStates")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceMoveSecretHandler := connect.NewUnaryHandler(
-		SettingsServiceMoveSecretProcedure,
-		svc.MoveSecret,
-		connect.WithSchema(settingsServiceMethods.ByName("MoveSecret")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceRenameSecretGroupHandler := connect.NewUnaryHandler(
-		SettingsServiceRenameSecretGroupProcedure,
-		svc.RenameSecretGroup,
-		connect.WithSchema(settingsServiceMethods.ByName("RenameSecretGroup")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceAllowPluginSecretHandler := connect.NewUnaryHandler(
-		SettingsServiceAllowPluginSecretProcedure,
-		svc.AllowPluginSecret,
-		connect.WithSchema(settingsServiceMethods.ByName("AllowPluginSecret")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceDenyPluginSecretHandler := connect.NewUnaryHandler(
-		SettingsServiceDenyPluginSecretProcedure,
-		svc.DenyPluginSecret,
-		connect.WithSchema(settingsServiceMethods.ByName("DenyPluginSecret")),
-		connect.WithHandlerOptions(opts...),
-	)
 	settingsServiceRetryPluginHandler := connect.NewUnaryHandler(
 		SettingsServiceRetryPluginProcedure,
 		svc.RetryPlugin,
@@ -538,26 +284,6 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 			settingsServiceGetSettingsHandler.ServeHTTP(w, r)
 		case SettingsServiceWriteSettingsProcedure:
 			settingsServiceWriteSettingsHandler.ServeHTTP(w, r)
-		case SettingsServiceCreateSecretProcedure:
-			settingsServiceCreateSecretHandler.ServeHTTP(w, r)
-		case SettingsServiceRenameSecretProcedure:
-			settingsServiceRenameSecretHandler.ServeHTTP(w, r)
-		case SettingsServiceWriteSecretProcedure:
-			settingsServiceWriteSecretHandler.ServeHTTP(w, r)
-		case SettingsServiceDeleteSecretProcedure:
-			settingsServiceDeleteSecretHandler.ServeHTTP(w, r)
-		case SettingsServiceDeleteSecretGroupProcedure:
-			settingsServiceDeleteSecretGroupHandler.ServeHTTP(w, r)
-		case SettingsServiceListSecretStatesProcedure:
-			settingsServiceListSecretStatesHandler.ServeHTTP(w, r)
-		case SettingsServiceMoveSecretProcedure:
-			settingsServiceMoveSecretHandler.ServeHTTP(w, r)
-		case SettingsServiceRenameSecretGroupProcedure:
-			settingsServiceRenameSecretGroupHandler.ServeHTTP(w, r)
-		case SettingsServiceAllowPluginSecretProcedure:
-			settingsServiceAllowPluginSecretHandler.ServeHTTP(w, r)
-		case SettingsServiceDenyPluginSecretProcedure:
-			settingsServiceDenyPluginSecretHandler.ServeHTTP(w, r)
 		case SettingsServiceRetryPluginProcedure:
 			settingsServiceRetryPluginHandler.ServeHTTP(w, r)
 		case SettingsServiceChoosePluginPathProcedure:
@@ -583,46 +309,6 @@ func (UnimplementedSettingsServiceHandler) GetSettings(context.Context, *connect
 
 func (UnimplementedSettingsServiceHandler) WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.WriteSettings is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) CreateSecret(context.Context, *connect.Request[v1.CreateSecretRequest]) (*connect.Response[v1.CreateSecretResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.CreateSecret is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) RenameSecret(context.Context, *connect.Request[v1.RenameSecretRequest]) (*connect.Response[v1.RenameSecretResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.RenameSecret is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) WriteSecret(context.Context, *connect.Request[v1.WriteSecretRequest]) (*connect.Response[v1.WriteSecretResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.WriteSecret is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) DeleteSecret(context.Context, *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.DeleteSecret is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) DeleteSecretGroup(context.Context, *connect.Request[v1.DeleteSecretGroupRequest]) (*connect.Response[v1.DeleteSecretGroupResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.DeleteSecretGroup is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) ListSecretStates(context.Context, *connect.Request[v1.ListSecretStatesRequest]) (*connect.Response[v1.ListSecretStatesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.ListSecretStates is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) MoveSecret(context.Context, *connect.Request[v1.MoveSecretRequest]) (*connect.Response[v1.MoveSecretResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.MoveSecret is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) RenameSecretGroup(context.Context, *connect.Request[v1.RenameSecretGroupRequest]) (*connect.Response[v1.RenameSecretGroupResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.RenameSecretGroup is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) AllowPluginSecret(context.Context, *connect.Request[v1.AllowPluginSecretRequest]) (*connect.Response[v1.AllowPluginSecretResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.AllowPluginSecret is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) DenyPluginSecret(context.Context, *connect.Request[v1.DenyPluginSecretRequest]) (*connect.Response[v1.DenyPluginSecretResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.DenyPluginSecret is not implemented"))
 }
 
 func (UnimplementedSettingsServiceHandler) RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error) {

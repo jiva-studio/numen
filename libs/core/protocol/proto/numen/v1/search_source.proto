@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/embedding.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// SearchSourceService is a participant of the search of the core that a plugin with the capability
+// search.source serves. The core decides what is indexed and when, hands the source the texts and
+// the place in the index its vectors are kept in, writes the vectors the source answers into that
+// place, and merges the passages the source answers to a query with those of the other participants.
+service SearchSourceService {
+  // DescribeSearchSource is what the core needs to keep the data of the source: its recipe, the width
+  // of its vectors and the size of the chunks it reads.
+  rpc DescribeSearchSource(DescribeSearchSourceRequest) returns (DescribeSearchSourceResponse);
+
+  // IndexTexts returns one vector per text, in the order of the texts, made for the text as a passage
+  // that is searched. The core keeps them in the place under the chunks of the texts.
+  rpc IndexTexts(IndexTextsRequest) returns (IndexTextsResponse);
+
+  // SearchPassages returns the chunks of the place that answer the query, best first.
+  rpc SearchPassages(SearchSourceServiceSearchPassagesRequest) returns (SearchSourceServiceSearchPassagesResponse);
+
+  // EmbedQueries returns one vector per query, in the order of the queries, as the source compares a
+  // query with its place. The floor calibration of a plugin measures the vault with them.
+  rpc EmbedQueries(EmbedQueriesRequest) returns (EmbedQueriesResponse);
+}
+
+// SearchPlace is where the vectors of a source are kept: the vault and the recipe they were made
+// under. The source passes it back to the host unchanged.
+message SearchPlace {
+  string vault_id = 1;
+  string recipe = 2;
+}
+
+message DescribeSearchSourceRequest {}
+
+message DescribeSearchSourceResponse {
+  // The text a person knows the data of the source by.
+  string name = 1;
+
+  // An opaque string. Two vectors made under different recipes cannot be compared, so a vector kept
+  // under another recipe is stale.
+  string recipe = 2;
+
+  // How many values one vector of the source holds.
+  int32 width = 3;
+
+  // The most tokens one chunk of a note or of a file text may hold, which the core cuts at. Zero
+  // when the source names none, and the core cuts at its default.
+  int32 chunk_tokens = 4;
+
+  // The fewest bytes a chunk has to hold to be handed to the source. A shorter chunk is searched by
+  // its words only. Zero hands every chunk.
+  int32 min_text_length = 5;
+
+  // How many calls of IndexTexts the source answers at once.
+  int32 concurrency = 6;
+
+  // The similarity a passage starts out having to reach to answer a query, zero when the source
+  // knows none.
+  double floor_hint = 7;
+}
+
+// IndexedText is one text the core hands a source: the chunk it was cut as, the path of the source
+// it was cut from relative to the vault, and the text version it was cut from, empty for a note.
+message IndexedText {
+  string chunk_id = 1;
+  string path = 2;
+  string version_id = 3;
+  string text = 4;
+}
+
+message IndexTextsRequest {
+  SearchPlace place = 1;
+  repeated IndexedText texts = 2;
+}
+
+message IndexTextsResponse {
+  repeated FloatVector vectors = 1;
+}
+
+message SearchSourceServiceSearchPassagesRequest {
+  SearchPlace place = 1;
+  string query = 2;
+
+  // The most chunks to answer.
+  int32 limit = 3;
+
+  // The kinds of source to search, "note" or "file". Empty means every kind.
+  repeated string kinds = 4;
+
+  // Limits the search to the sources whose path starts with it, relative to the vault.
+  string path_prefix = 5;
+
+  // The floor the query names, zero where the floor of the vault applies.
+  double floor = 6;
+}
+
+// ChunkMatch is a chunk the core handed the source with its text, and how well it answers.
+message ChunkMatch {
+  string chunk_id = 1;
+  double score = 2;
+}
+
+message SearchSourceServiceSearchPassagesResponse {
+  // Best first.
+  repeated ChunkMatch matches = 1;
+}
+
+message EmbedQueriesRequest {
+  repeated string queries = 1;
+}
+
+message EmbedQueriesResponse {
+  repeated FloatVector vectors = 1;
+}

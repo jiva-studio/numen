@@ -5,7 +5,6 @@ import { ref, shallowRef } from 'vue'
 import type { FileOpeners } from '@/entities/tab'
 import { createIconHost } from './fileServices'
 import {
-  createAgentHost,
   createVaultNotes,
   createWorkspaceFiles,
   createWorkspaceHost,
@@ -20,7 +19,6 @@ interface WorkspaceParts extends Pick<WorkspaceFilesDeps, 'writeMessage'> {
   readonly window: WorkspaceHostDeps['window']
   readonly dragged: WorkspaceHostDeps['dragged']
   readonly tabSync?: WorkspaceFilesDeps['tabSync']
-  readonly ask: WorkspaceHostDeps['ask']
   readonly getNoteInFocus: WorkspaceHostDeps['getNoteInFocus']
   readonly getMessageWriter: (name: string) => WorkspaceFilesDeps['writeMessage']
   readonly today: WorkspaceHostDeps['today']
@@ -40,7 +38,6 @@ const createWorkspace = (overrides: Partial<WorkspaceParts> = {}) => {
       findFileIcon: vi.fn(() => undefined),
     },
     tabSync: { syncPathFromTab: vi.fn(() => true) },
-    ask: vi.fn(),
     getNoteInFocus: () => ({ path: 'Focus.md', title: 'Focus' }),
     writeMessage: vi.fn(),
     getMessageWriter: () => vi.fn(),
@@ -64,7 +61,6 @@ const createWorkspaceFromParts = (parts: WorkspaceParts) =>
       writeMessage: parts.writeMessage,
       getMessageWriter: parts.getMessageWriter,
     }),
-    ask: parts.ask,
     getNoteInFocus: parts.getNoteInFocus,
     today: parts.today,
   })
@@ -117,17 +113,15 @@ describe('the window a plugin is handed', () => {
     expect(workspace).not.toHaveProperty('runCommand')
   })
 
-  it('shares what is dragged, asks the agent and says what failed', () => {
+  it('shares what is dragged and says what failed', () => {
     const { workspace, deps } = createWorkspace()
 
     workspace.dragged.setPaths(['One.md'])
-    workspace.ask('what is One?')
     workspace.messages.showError('the link was not written')
     expect(workspace.window.getToday()).toBe('2026-09-04')
 
     expect(deps.dragged.value).toStrictEqual(['One.md'])
     expect(workspace.dragged.paths.value).toStrictEqual(['One.md'])
-    expect(deps.ask).toHaveBeenCalledWith('what is One?')
     expect(deps.writeMessage).toHaveBeenCalledWith('the link was not written', 'error')
   })
 
@@ -177,83 +171,6 @@ describe('the window a plugin opens files and reads the note in focus through', 
     const { workspace } = createWorkspace()
 
     expect(workspace.getNoteInFocus()).toStrictEqual({ path: 'Focus.md', title: 'Focus' })
-  })
-})
-
-describe('the agent a plugin is handed', () => {
-  const create = () => {
-    const port = { ask: vi.fn(), finish: vi.fn(() => Promise.resolve()) }
-    const resolveAddresses = vi.fn((_request: object) => ({
-      found: [{ raw: '[[A]]', address: 'name://A', text: 'A' }],
-      resolved: [{ written: 'name://A', path: 'A.md', isCrossed: false }],
-    }))
-    answerCore({ notes: { resolveAddresses } })
-    const rest = {
-      read: { getSetting: vi.fn(() => 'zeta'), getModelsAt: vi.fn(() => []) },
-      write: { writeSetting: vi.fn(() => Promise.resolve()) },
-    }
-    const unreachable = ref('')
-    const agent = createAgentHost({ port, window: { vault: { unreachable } }, settings: { rest } })
-    return { agent, port, resolveAddresses, rest, unreachable }
-  }
-
-  it('asks and ends a conversation through the port', async () => {
-    const { agent, port } = create()
-    const query = {
-      question: 'q',
-      focus: '',
-      conversation: 'c:1',
-      signal: new AbortController().signal,
-    }
-
-    agent.ask(query)
-    await agent.finish('c:1')
-
-    expect(port.ask).toHaveBeenCalledWith(query)
-    expect(port.finish).toHaveBeenCalledWith('c:1')
-  })
-
-  it('resolves the wikilinks of an answer from the top of the vault', async () => {
-    const { agent, resolveAddresses } = create()
-
-    expect(await agent.resolveLinks('See [[A]].')).toStrictEqual([
-      { raw: '[[A]]', address: 'name://A', text: 'A', path: 'A.md' },
-    ])
-    expect(resolveAddresses.mock.calls[0]?.[0]).toMatchObject({
-      from: '',
-      text: 'See [[A]].',
-      vault: '',
-    })
-  })
-
-  it('resolves the wikilinks of a text in the vault a plugin names', async () => {
-    const { agent, resolveAddresses } = create()
-
-    await agent.resolveLinks('See [[A]].', 'garden')
-
-    expect(resolveAddresses.mock.calls[0]?.[0]).toMatchObject({
-      from: '',
-      text: 'See [[A]].',
-      vault: 'garden',
-    })
-  })
-
-  it('says why the agent cannot be reached while the window says it', () => {
-    const { agent, unreachable } = create()
-
-    expect(agent.getUnreachable()).toBe('')
-    unreachable.value = 'down'
-    expect(agent.getUnreachable()).toBe('down')
-  })
-
-  it('reads and writes settings and lists models through the settings of the window', async () => {
-    const { agent, rest } = create()
-
-    await agent.writeSetting(['agent', 'use'], 'omega')
-
-    expect(agent.getSetting(['agent', 'use'])).toBe('zeta')
-    expect(agent.getModelsAt(['agent', 'zeta', 'model'])).toStrictEqual([])
-    expect(rest.write.writeSetting).toHaveBeenCalledWith(['agent', 'use'], 'omega')
   })
 })
 

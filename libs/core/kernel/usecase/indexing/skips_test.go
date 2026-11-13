@@ -48,8 +48,6 @@ func (m *holdingModel) Embed(ctx context.Context, texts []string) ([][]float32, 
 	return m.fakeEmbedder.Embed(ctx, texts)
 }
 
-func (*holdingModel) Concurrency() int { return 1 }
-
 func (m *holdingModel) setBlocking(isBlocking bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -75,7 +73,7 @@ func testCanceledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc)
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}
 	made, db := openReading(t)
 	fit(t, db, model)
-	recipe := model.GetModel().Recipe()
+	recipe := model.Describe().Recipe()
 
 	v := made.newVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
 	cut(t, made, db, v)

@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -945,7 +944,7 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	})
 
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), getToday(), standings, deckPresets)
-	counter := flashcards.NewCountCardsDue(standings, schedules, deckPresets, getToday(), clock.NewFake(getSaturday()))
+	counter := flashcards.NewCountCardsDue(standings, schedules, deckPresets, getToday(), newFakeClock(getSaturday()))
 
 	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -983,7 +982,7 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 	})
 
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), getToday(), s.standings, deckPresets)
-	counter := flashcards.NewCountCardsDue(s.standings, schedules, deckPresets, getToday(), clock.NewFake(getSaturday()))
+	counter := flashcards.NewCountCardsDue(s.standings, schedules, deckPresets, getToday(), newFakeClock(getSaturday()))
 
 	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -1008,7 +1007,7 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 		tallied{LogStores: s.logs, reads: reads},
 		review.NewFSRS(), getToday(), s.standings, s.presets,
 	)
-	counter := flashcards.NewCountCardsDue(s.standings, schedules, s.presets, getToday(), clock.NewFake(getSaturday()))
+	counter := flashcards.NewCountCardsDue(s.standings, schedules, s.presets, getToday(), newFakeClock(getSaturday()))
 
 	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)

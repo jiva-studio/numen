@@ -33,6 +33,7 @@ export class Scenario {
   private browser: Browser | undefined
   private currentPage: Page
   private environment: EnvironmentSetting[] = []
+  private readonly programs: string[] = []
   private actionCount = 0
 
   constructor(
@@ -59,6 +60,13 @@ export class Scenario {
   async setEnvironment(settings: readonly EnvironmentSetting[]): Promise<void> {
     this.environment = [...this.environment.filter((old) => !settings.some((one) => one.name === old.name)), ...settings]
     await this.server?.setEnvironment(settings)
+  }
+
+  /** Installs the agent program from the start of the application. */
+  installProgram(name: string): void {
+    this.getWorld()
+    if (this.server !== undefined) throw new Error(`install the program "${name}" before the application starts`)
+    this.programs.push(name)
   }
 
   getServer(): Server {
@@ -103,6 +111,7 @@ export class Scenario {
         vault: world.getFolder(vaults[0]),
         readPageText: (address) => world.readPageText(address),
         environment: this.environment,
+        programs: this.programs,
       })
       this.application = application
     } else {

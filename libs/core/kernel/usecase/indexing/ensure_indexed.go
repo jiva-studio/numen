@@ -86,7 +86,7 @@ func (u *EnsureIndexed) start(ctx context.Context, v domain.Vault) (underway boo
 		return running, reason
 	}
 	isIndexed := u.indexed.Execute(ctx, v)
-	runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	runCtx, cancel := context.WithCancel(plugin.WithBackground(context.WithoutCancel(ctx), plugin.WhoIndexing))
 	go func() {
 		defer cancel()
 		if closing != nil {

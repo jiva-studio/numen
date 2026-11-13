@@ -2,7 +2,6 @@
  * Every client the window talks to the application through.
  */
 export {
-  agentService,
   files,
   notes,
   pluginCommands,
@@ -16,4 +15,8 @@ export {
   workspace,
   keepaliveWorkspace,
   pluginCatalog,
+  connections,
+  connectionCalls,
+  pluginHealth,
+  pluginService,
 } from '@numen/core-client'

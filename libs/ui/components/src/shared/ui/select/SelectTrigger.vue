@@ -3,19 +3,13 @@
  * The line a select shows at rest: what is in force on one line, and the mark that it opens.
  * Attributes and listeners fall through to the button.
  */
-import { useTemplateRef, type HTMLAttributes } from 'vue'
+import { useTemplateRef } from 'vue'
 import { ChevronDown } from '@lucide/vue'
 import { cn } from '@/shared/lib/dom/classes'
+import type { SelectTriggerProps } from './SelectTrigger.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{
-  text: string
-  isHushed: boolean
-  isDisabled: boolean
-  isExpanded: boolean
-  hasPopup: 'menu' | 'listbox'
-  class?: HTMLAttributes['class']
-}>()
+const props = defineProps<SelectTriggerProps>()
 
 defineExpose({
   /** The button itself. */
@@ -36,6 +30,9 @@ const element = useTemplateRef<HTMLButtonElement>('element')
     :aria-haspopup="hasPopup"
     :aria-expanded="isExpanded"
     :disabled="isDisabled"
+    :title="problem || undefined"
+    :aria-description="problem || undefined"
+    :aria-invalid="problem ? true : undefined"
     :class="
       cn(
         'flex w-full max-w-full min-w-0 items-center justify-between gap-2',
@@ -43,6 +40,7 @@ const element = useTemplateRef<HTMLButtonElement>('element')
         'text-ink text-left font-sans text-base leading-none',
         'ease-numen cursor-pointer transition-colors duration-100 outline-none',
         'hover:border-rule',
+        problem && 'border-alarm hover:border-alarm',
         'focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,

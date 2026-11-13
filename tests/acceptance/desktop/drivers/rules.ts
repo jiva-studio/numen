@@ -102,6 +102,9 @@ const TEXT_KIND_TITLES: Record<TextKind, string> = {
   article: 'Article',
 }
 
+/** The title the product gives a kind of text in the list of the versions of a file. */
+export const getVersionTitle = (kind: TextKind): string => TEXT_KIND_TITLES[kind]
+
 /** The title the product gives the live version of a kind of text in the list it offers. */
 export const getCurrentVersionLabel = (kind: TextKind): string => `${TEXT_KIND_TITLES[kind]} (current)`
 

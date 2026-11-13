@@ -67,17 +67,17 @@ func TestServerLifecycleRPC(t *testing.T) {
 	var configureMu sync.Mutex
 
 	s := New(
-		WithPort(0),
-		WithToken(testToken),
-		WithStdout(&stdout),
-		WithStdin(nil),
-		WithConfigure(func(_ context.Context, vals map[string]string, _ Secrets) error {
-			configureMu.Lock()
-			configuredValues = vals
-			configureMu.Unlock()
-			return nil
-		}),
+		withPort(0),
+		withToken(testToken),
+		withStdout(&stdout),
+		withStdin(nil),
 	)
+	s.SetConfigure(func(_ context.Context, vals map[string]string) error {
+		configureMu.Lock()
+		configuredValues = vals
+		configureMu.Unlock()
+		return nil
+	})
 
 	port, err := s.Listen()
 	if err != nil {
@@ -168,10 +168,10 @@ func TestServerLifecycleRPC(t *testing.T) {
 func TestAuthInterceptor(t *testing.T) {
 	testToken := "valid-auth-token"
 	s := New(
-		WithPort(0),
-		WithToken(testToken),
-		WithStdout(io.Discard),
-		WithStdin(nil),
+		withPort(0),
+		withToken(testToken),
+		withStdout(io.Discard),
+		withStdin(nil),
 	)
 
 	port, err := s.Listen()
@@ -228,9 +228,9 @@ func TestServerStdinEOFShutdown(t *testing.T) {
 	stdinReader, stdinWriter := io.Pipe()
 
 	s := New(
-		WithPort(0),
-		WithStdout(io.Discard),
-		WithStdin(stdinReader),
+		withPort(0),
+		withStdout(io.Discard),
+		withStdin(stdinReader),
 	)
 
 	if _, err := s.Listen(); err != nil {
@@ -263,10 +263,10 @@ func TestServerStdinEOFShutdown(t *testing.T) {
 
 func TestServerContextCancellation(t *testing.T) {
 	s := New(
-		WithPort(0),
-		WithToken("cancel-token"),
-		WithStdout(io.Discard),
-		WithStdin(nil),
+		withPort(0),
+		withToken("cancel-token"),
+		withStdout(io.Discard),
+		withStdin(nil),
 	)
 
 	if _, err := s.Listen(); err != nil {
@@ -294,9 +294,10 @@ func TestServerContextCancellation(t *testing.T) {
 func TestLifecycleUnitMethods(t *testing.T) {
 	ch := make(chan struct{})
 	var updated map[string]string
-	life := NewLifecycleServer(ch, WithLifecycleUpdateConfig(func(m map[string]string, _ Secrets) {
+	life := NewLifecycleServer(ch)
+	life.SetUpdateConfig(func(m map[string]string) {
 		updated = m
-	}))
+	})
 
 	ctx := t.Context()
 	handler := lifecycleHandler{state: life}
@@ -340,11 +341,11 @@ func TestServerShutdownTimeoutError(t *testing.T) {
 	})
 
 	s := New(
-		WithPort(0),
-		WithToken("timeout-token"),
-		WithStdout(io.Discard),
-		WithStdin(nil),
-		WithShutdownTimeout(10*time.Millisecond),
+		withPort(0),
+		withToken("timeout-token"),
+		withStdout(io.Discard),
+		withStdin(nil),
+		withShutdownTimeout(10*time.Millisecond),
 	)
 
 	s.Register("/block", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -429,7 +430,7 @@ func (p *protoRecorder) RoundTrip(req *http.Request) (*http.Response, error) {
 
 func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 	const testToken = "proto-token"
-	s := New(WithPort(0), WithToken(testToken), WithStdout(io.Discard), WithStdin(nil))
+	s := New(withPort(0), withToken(testToken), withStdout(io.Discard), withStdin(nil))
 	port, err := s.Listen()
 	if err != nil {
 		t.Fatalf("Listen failed: %v", err)
@@ -469,7 +470,7 @@ func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 
 // A server that serves on a port runs what OnClose added when Serve returns.
 func TestServerRunsItsClosersWhenServeReturns(t *testing.T) {
-	s := New(WithPort(0), WithToken("closer-token"), WithStdout(io.Discard), WithStdin(nil))
+	s := New(withPort(0), withToken("closer-token"), withStdout(io.Discard), withStdin(nil))
 	closed := 0
 	s.OnClose(func() error { closed++; return nil })
 	if _, err := s.Listen(); err != nil {
@@ -506,7 +507,7 @@ func TestRunExitsOnServeError(t *testing.T) {
 	var errBuf bytes.Buffer
 	exitCode := run(&errBuf, func(*Server) error {
 		return nil
-	}, WithPort(-1), WithStdout(io.Discard), WithStdin(nil))
+	}, withPort(-1), withStdout(io.Discard), withStdin(nil))
 
 	if exitCode != 1 {
 		t.Fatalf("exit code = %d, want 1", exitCode)
@@ -521,7 +522,7 @@ func TestRunServesAndTerminatesCleanly(t *testing.T) {
 	var errBuf bytes.Buffer
 	code := run(&errBuf, func(*Server) error {
 		return nil
-	}, WithPort(0), WithStdout(io.Discard), WithStdin(strings.NewReader("clean-token\n")), WithSignals())
+	}, withPort(0), withStdout(io.Discard), withStdin(strings.NewReader("clean-token\n")), withSignals())
 	if code != 0 {
 		t.Fatalf("exit code %d (%s), want 0", code, errBuf.String())
 	}
@@ -532,9 +533,9 @@ func TestServerReadsTokenFromStdin(t *testing.T) {
 	stdinReader, stdinWriter := io.Pipe()
 	token := "stdin-secret-token"
 	s := New(
-		WithPort(0),
-		WithStdout(io.Discard),
-		WithStdin(stdinReader),
+		withPort(0),
+		withStdout(io.Discard),
+		withStdin(stdinReader),
 	)
 
 	port, err := s.Listen()
@@ -578,18 +579,18 @@ func TestServerReadsTokenFromStdin(t *testing.T) {
 // A server fails to start when the auth token is empty.
 func TestServerRejectsEmptyToken(t *testing.T) {
 	s := New(
-		WithPort(0),
-		WithStdout(io.Discard),
-		WithStdin(nil),
+		withPort(0),
+		withStdout(io.Discard),
+		withStdin(nil),
 	)
 	if err := s.Serve(); err == nil || !strings.Contains(err.Error(), "empty auth token") {
 		t.Fatalf("Serve with nil stdin = %v, want empty auth token", err)
 	}
 
 	s2 := New(
-		WithPort(0),
-		WithStdout(io.Discard),
-		WithStdin(strings.NewReader("   \n")),
+		withPort(0),
+		withStdout(io.Discard),
+		withStdin(strings.NewReader("   \n")),
 	)
 	if err := s2.Serve(); err == nil || !strings.Contains(err.Error(), "empty auth token") {
 		t.Fatalf("Serve with whitespace stdin = %v, want empty auth token", err)
@@ -697,22 +698,16 @@ func TestAuthInterceptor_EdgeCases(t *testing.T) {
 }
 
 func TestLifecycleServer_EdgeCases(t *testing.T) {
-	called := false
 	ls := NewLifecycleServer(
 		make(chan struct{}),
-		WithLifecycleConfigure(func(context.Context, map[string]string, Secrets) error {
-			called = true
-			return nil
-		}),
-		WithLifecycleUpdateConfig(nil),
 		WithLifecycleShutdown(func() error {
 			return errors.New("shutdown hook error")
 		}),
 	)
-	if _, err := ls.ApplyConfig(t.Context(), map[string]string{"k1": "v1"}, nil); err != nil || called {
-		t.Fatalf("expected nil callback after WithLifecycleUpdateConfig(nil), got err=%v called=%v", err, called)
+	if _, err := ls.ApplyConfig(t.Context(), map[string]string{"k1": "v1"}); err != nil {
+		t.Fatal(err)
 	}
-	if _, err := ls.ApplyConfig(t.Context(), map[string]string{"k2": "v2"}, nil); err != nil {
+	if _, err := ls.ApplyConfig(t.Context(), map[string]string{"k2": "v2"}); err != nil {
 		t.Fatal(err)
 	}
 	if v, ok := ls.GetConfig("k1"); !ok || v != "v1" {
@@ -723,7 +718,7 @@ func TestLifecycleServer_EdgeCases(t *testing.T) {
 	}
 
 	var zeroLS LifecycleServer
-	if err := zeroLS.configureWith(t.Context(), map[string]string{"z": "1"}, nil); err != nil {
+	if err := zeroLS.configureWith(t.Context(), map[string]string{"z": "1"}); err != nil {
 		t.Fatal(err)
 	}
 	if v, ok := zeroLS.GetConfig("z"); !ok || v != "1" {
@@ -767,7 +762,7 @@ func TestParseDefaultFlagsAndOptions(t *testing.T) {
 		t.Fatalf("readEnvPort invalid = %d, want 0", got)
 	}
 
-	s := New(WithPort(8123), WithSignals(os.Interrupt))
+	s := New(withPort(8123), withSignals(os.Interrupt))
 	if s.Port() != 8123 {
 		t.Fatalf("s.Port() = %d, want 8123", s.Port())
 	}
@@ -776,11 +771,6 @@ func TestParseDefaultFlagsAndOptions(t *testing.T) {
 	}
 	if s.shutdownTimeout != 2*time.Second || s.readHeaderTimeout != 5*time.Second {
 		t.Fatalf("default timeouts = %v, %v; want 2s, 5s", s.shutdownTimeout, s.readHeaderTimeout)
-	}
-
-	s.SetConfigure(func(context.Context, map[string]string, Secrets) error { return nil })
-	if s.onConfigure == nil {
-		t.Fatal("expected s.onConfigure to be set")
 	}
 
 	_, err := NewLinkedHandler(map[string]string{tokenVar: "tok"}, func(ls *Server) error {
@@ -799,7 +789,7 @@ func TestParseDefaultFlagsAndOptions(t *testing.T) {
 }
 
 func TestServerListenServeAndHelpers(t *testing.T) {
-	sBad := New(WithPort(-1), WithToken("tok"), WithStdout(nil), WithStdin(nil))
+	sBad := New(withPort(-1), withToken("tok"), withStdout(nil), withStdin(nil))
 	var opErr *net.OpError
 	if port, err := sBad.Listen(); err == nil || port != 0 || !errors.As(err, &opErr) {
 		t.Fatalf("expected wrapped *net.OpError on port -1, got port=%d err=%v", port, err)
@@ -808,7 +798,7 @@ func TestServerListenServeAndHelpers(t *testing.T) {
 		t.Fatalf("expected Serve listen error, got %v", err)
 	}
 
-	s := New(WithPort(0), WithToken("tok"), WithStdout(nil), WithStdin(nil), WithSignals())
+	s := New(withPort(0), withToken("tok"), withStdout(nil), withStdin(nil), withSignals())
 	p1, err := s.Listen()
 	if err != nil || p1 <= 0 || s.Port() != p1 {
 		t.Fatalf("first Listen = %d, %v, Port()=%d", p1, err, s.Port())
@@ -831,7 +821,7 @@ func TestServerListenServeAndHelpers(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantCloseErr := errors.New("custom close err")
-	sCloseErr := New(WithPort(0), WithToken("tok"), WithStdout(nil), WithStdin(nil), WithSignals())
+	sCloseErr := New(withPort(0), withToken("tok"), withStdout(nil), withStdin(nil), withSignals())
 	sCloseErr.listener = &closeErrListener{Listener: ln, closeErr: wantCloseErr}
 	tcpAddr, ok := ln.Addr().(*net.TCPAddr)
 	if !ok {
@@ -845,14 +835,14 @@ func TestServerListenServeAndHelpers(t *testing.T) {
 	}
 
 	// ServeContext with OnClose returning error
-	sCloserErr := New(WithPort(0), WithToken("tok"), WithStdout(nil), WithStdin(nil), WithSignals())
+	sCloserErr := New(withPort(0), withToken("tok"), withStdout(nil), withStdin(nil), withSignals())
 	sCloserErr.OnClose(func() error { return errors.New("closer boom") })
 	if err := sCloserErr.ServeContext(ctx); err == nil || !strings.Contains(err.Error(), "closer boom") {
 		t.Fatalf("expected closer boom from ServeContext, got %v", err)
 	}
 
 	// ServeContext with failing stdout in announceReady
-	sStdoutErr := New(WithPort(0), WithToken("tok"), WithStdout(errWriter{}), WithStdin(nil), WithSignals())
+	sStdoutErr := New(withPort(0), withToken("tok"), withStdout(errWriter{}), withStdin(nil), withSignals())
 	if err := sStdoutErr.Serve(); !errors.Is(err, errWriteFailed) {
 		t.Fatalf("expected wrapped write ready line error, got %v", err)
 	}
@@ -863,7 +853,7 @@ func TestServerListenServeAndHelpers(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantAcceptErr := errors.New("accept boom")
-	sServeFail := New(WithPort(0), WithToken("tok"), WithStdout(nil), WithStdin(nil), WithSignals())
+	sServeFail := New(withPort(0), withToken("tok"), withStdout(nil), withStdin(nil), withSignals())
 	sServeFail.listener = &closeErrListener{
 		Listener: lnFail,
 		acceptFn: func() (net.Conn, error) {
@@ -898,39 +888,39 @@ func TestServerListenServeAndHelpers(t *testing.T) {
 	}
 
 	// authenticate edge cases
-	sTokenStdin := New(WithToken("preset"), WithStdin(strings.NewReader("stdin-tok\n")))
+	sTokenStdin := New(withToken("preset"), withStdin(strings.NewReader("stdin-tok\n")))
 	if err := sTokenStdin.authenticate(); err != nil || sTokenStdin.token != "preset" {
 		t.Fatalf("expected preset token to be kept, got %q err=%v", sTokenStdin.token, err)
 	}
 
-	sReadErr := New(WithStdin(errReader{}))
+	sReadErr := New(withStdin(errReader{}))
 	if err := sReadErr.authenticate(); !errors.Is(err, errReadFailed) {
 		t.Fatalf("expected wrapped read auth token error, got %v", err)
 	}
 
-	sBadEnv := New(WithToken("bad\x00token"), WithStdin(nil))
+	sBadEnv := New(withToken("bad\x00token"), withStdin(nil))
 	if err := sBadEnv.authenticate(); !errors.Is(err, syscall.EINVAL) {
 		t.Fatalf("expected wrapped EINVAL setenv error for NUL byte token, got %v", err)
 	}
 
 	// watchStdin edge cases
-	sNilStdin := New(WithStdin(nil))
+	sNilStdin := New(withStdin(nil))
 	if sNilStdin.watchStdin() == nil {
 		t.Fatal("expected non-nil channel from watchStdin when stdin is nil")
 	}
 	bsr := &bufSizeReader{sizes: make(chan int, 1)}
-	sBufStdin := New(WithStdin(bsr))
+	sBufStdin := New(withStdin(bsr))
 	eofCh := sBufStdin.watchStdin()
 	if gotSize := <-bsr.sizes; gotSize != 1 {
 		t.Fatalf("watchStdin read buffer size = %d, want 1", gotSize)
 	}
 	<-eofCh
 
-	sZeroNil := New(WithStdin(&multiStepStdinReader{mode: "zero-nil"}))
+	sZeroNil := New(withStdin(&multiStepStdinReader{mode: "zero-nil"}))
 	<-sZeroNil.watchStdin()
 
 	stepReader := &multiStepStdinReader{mode: "step-eof"}
-	sStepEOF := New(WithStdin(stepReader))
+	sStepEOF := New(withStdin(stepReader))
 	<-sStepEOF.watchStdin()
 	if stepReader.step != 2 {
 		t.Fatalf("watchStdin step = %d, want 2", stepReader.step)

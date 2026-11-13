@@ -25,7 +25,6 @@ func newRegistry(t *testing.T) *Registry {
 	registry := New()
 	err := Add(registry, Spec{
 		Name: "greet", Title: "Greet", Description: "Greets.", Effect: ReadOnly,
-		Servers: []Server{Full, Reading}, Step: Search,
 	}, func(_ context.Context, in greetIn) (greetOut, error) {
 		if in.Name == "" {
 			return greetOut{}, errors.New("recipient required")
@@ -47,7 +46,7 @@ func call(t *testing.T, registry *Registry, name, arguments string) *v1.CallTool
 	return res.Msg
 }
 
-func TestListTools_ReturnsSchemasAndServers(t *testing.T) {
+func TestListTools_ReturnsSchemasAndEffect(t *testing.T) {
 	res, err := registryHandler{registry: newRegistry(t)}.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -66,8 +65,7 @@ func TestListTools_ReturnsSchemasAndServers(t *testing.T) {
 	if len(tool.GetOutputSchema()) == 0 {
 		t.Error("the result is a struct and lists no schema")
 	}
-	if tool.GetEffect() != v1.ToolEffect_TOOL_EFFECT_READ_ONLY || tool.GetStep() != v1.ToolStep_TOOL_STEP_SEARCH ||
-		len(tool.GetServers()) != 2 {
+	if tool.GetEffect() != v1.ToolEffect_TOOL_EFFECT_READ_ONLY {
 		t.Errorf("the tool came out as %v", tool)
 	}
 }
@@ -192,20 +190,14 @@ func TestConversionsConstantsAndSchemaErrors(t *testing.T) {
 	if ReadOnly != 1 || ReadWrite != 2 {
 		t.Fatalf("effects = %d, %d", ReadOnly, ReadWrite)
 	}
-	if Full != 1 || Reading != 2 {
-		t.Fatalf("servers = %d, %d", Full, Reading)
-	}
 	if ErrorCodeUnspecified != 0 || ErrorCodeUnknownTool != 1 || ErrorCodeBadArguments != 2 {
 		t.Fatalf("error codes = %d, %d, %d", ErrorCodeUnspecified, ErrorCodeUnknownTool, ErrorCodeBadArguments)
 	}
 	if readEffect(v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED) != 0 {
 		t.Fatal("expected 0 for unspecified effect")
 	}
-	if readToolInfo(nil) != nil || writeToolInfo(nil) != nil || readCallResponse(nil) != nil {
+	if readToolInfo(nil) != nil || readCallResponse(nil) != nil {
 		t.Fatal("expected nil for nil conversions")
-	}
-	if got := writeCallResponse(nil); got == nil || got.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || got.GetResult() != nil {
-		t.Fatalf("writeCallResponse(nil) = %v", got)
 	}
 	if res := writeResult(make(chan int)); !res.GetIsError() || !strings.HasPrefix(res.GetText(), "the result cannot be encoded:") {
 		t.Fatalf("writeResult(chan) = %v", res)

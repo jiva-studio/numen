@@ -15,6 +15,7 @@ const request = {
   joinNotes: vi.fn(),
   createRelatedNote: vi.fn(),
   listBacklinks: vi.fn(),
+  resolveAddresses: vi.fn(),
 }
 
 let restore: () => void
@@ -202,5 +203,23 @@ describe('the connections between notes', () => {
       },
     ])
     expect(request.listBacklinks.mock.lastCall?.[0]).toMatchObject({ path: 'a.md' })
+  })
+})
+
+describe('the wikilinks of a text', () => {
+  it('are resolved in the vault named, from no note', async () => {
+    request.resolveAddresses.mockResolvedValue({
+      found: [{ raw: '[[Tides]]', address: 'name://Tides', text: 'Tides' }],
+      resolved: [{ written: 'name://Tides', path: 'Sea/Tides.md', isCrossed: false }],
+    })
+
+    expect(await relations.resolveLinks('See [[Tides]].', 'v-sea')).toEqual([
+      { raw: '[[Tides]]', address: 'name://Tides', text: 'Tides', path: 'Sea/Tides.md' },
+    ])
+    expect(request.resolveAddresses.mock.lastCall?.[0]).toMatchObject({
+      from: '',
+      text: 'See [[Tides]].',
+      vault: 'v-sea',
+    })
   })
 })

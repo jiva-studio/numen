@@ -114,6 +114,10 @@ jobs:
           status=0
           wait "$plugins" || status=$?
           cat "$RUNNER_TEMP/plugins.log"
+          # The fake OpenAI server of the connection specs; the test jobs have no Go toolchain.
+          if [ "$status" -eq 0 ]; then
+            (cd plugins/connections-llm && go build -o bin/fakeopenai ./backend/cmd/fakeopenai) || status=$?
+          fi
           exit "$status"
 
       # Saves the build cache when the exact key was not restored.

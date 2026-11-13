@@ -1,22 +1,16 @@
-# Rules for every Go file, production code and tests alike.
+# Rules for every Go file of the plugin SDK, production code and tests alike.
 #
-# This file is one of two Go lint configurations, and both always run together
-# (make lint targets and CI). The second one,
-# .golangci-structure.yml, holds the rules that apply to production code only:
-# complexity, function length, struct completeness and enum switches. golangci-lint
-# scopes a linter to non-test files only through `run.tests: false` for a whole
-# configuration or through path exclusions; exclusions are not used, so those rules
-# live in a configuration that does not load tests.
+# The SDK has a configuration of its own: the linters and their settings are those of the root
+# .golangci.yml, and the import rules are the ones that apply to the SDK. tools/checks verifies that
+# it enables every linter the root configuration enables. The second configuration,
+# .golangci-structure.yml, is a byte-identical copy of the root one and holds the rules for
+# production code only.
 #
 # A rule here has no path exclusion, no exclusion preset and no suppression
 # comment. gochecknoglobals keeps its allowances: error values, compiled regular
-# expressions, embedded files and blank identifiers. Reads of the machine clock are not
-# a forbidigo rule: a type-aware test in
-# libs/core/kernel/container (clock_port_test.go) permits them only inside the Now method
-# of a clock port implementation. Plugin directories and libs/plugin/sdk-go carry
-# byte-identical copies of both files; tools/checks verifies the copies.
+# expressions, embedded files and blank identifiers.
 #
-# Run from the directory of a module.
+# Run from the directory of the module.
 
 version: "2"
 
@@ -103,6 +97,18 @@ linters:
 
     depguard:
       rules:
+        # The SDK and its feature modules import no core package and no application.
+        sdk-isolation:
+          list-mode: lax
+          files:
+            - "**/libs/plugin/sdk-go/**"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel"
+              desc: "plugin SDK must not import core packages"
+            - pkg: "github.com/jiva-studio/numen/apps"
+              desc: "plugin SDK must not import host applications"
+
+        # The note types the SDK names (host/domain) reach no application or plugin and perform no I/O.
         domain:
           list-mode: lax
           files:
@@ -113,420 +119,14 @@ linters:
             - "net/url"
             - "net/netip"
           deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter"
-              desc: "the domain does not reach adapters"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter"
-              desc: "the domain does not reach adapters"
-            - pkg: "github.com/jiva-studio/numen/apps/desktop/internal/adapter"
-              desc: "the domain does not reach adapters"
             - pkg: "github.com/jiva-studio/numen/apps"
               desc: "the domain does not reach applications"
             - pkg: "github.com/jiva-studio/numen/plugins"
               desc: "the domain does not reach plugins"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/usecase"
-              desc: "the domain does not reach use cases"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/port"
-              desc: "the domain does not reach ports"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/container"
-              desc: "the domain does not reach the composition root"
             - pkg: "os"
               desc: "the domain performs no I/O"
             - pkg: "net"
               desc: "the domain performs no I/O"
-
-        # Every module of the plugin SDK, the base and each feature module under it.
-        # Only plugins and applications may import the plugin SDK.
-        plugin-sdk:
-          list-mode: lax
-          files:
-            - "**/libs/core/kernel/**"
-            - "**/libs/note/**"
-            - "**/libs/core/protocol/**"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/sdk-go"
-              desc: "only plugins and applications may import the plugin SDK"
-
-        usecase:
-          list-mode: lax
-          files:
-            - "**/usecase/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter"
-              desc: "a use case does not reach concrete adapters"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter"
-              desc: "a use case does not reach concrete adapters"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/container"
-              desc: "a use case does not reach the composition root"
-            - pkg: "encoding/json"
-              desc: "a use case does not parse wire or storage formats"
-            - pkg: "path/filepath"
-              desc: "a use case uses slash-separated vault paths (path), not OS filepath"
-            - pkg: "io/fs"
-              desc: "a use case uses domain/port error sentinels, not io/fs"
-
-        port:
-          list-mode: lax
-          files:
-            - "**/port/**"
-            - "!$test"
-          deny:
-            - pkg: "encoding/json"
-              desc: "a port defines pure contracts without serialization formats"
-            - pkg: "net/url"
-              desc: "a port uses domain value objects instead of net/url"
-            - pkg: "path/filepath"
-              desc: "a port does not depend on OS filepath"
-            - pkg: "io/fs"
-              desc: "a port defines its own sentinels and does not leak io/fs"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/port/"
-              desc: "a port package is an independent contract and imports no sibling port package"
-
-        driven-adapter:
-          list-mode: lax
-          files:
-            - "**/adapter/index/**"
-            - "**/adapter/settings/**"
-            - "**/internal/adapter/appstate/**"
-            - "**/internal/adapter/clock/**"
-            - "**/internal/adapter/filesystem/**"
-            - "**/internal/adapter/models/**"
-            - "**/internal/adapter/onnxruntime/**"
-            - "**/internal/adapter/plugin/*.go"
-            - "**/internal/adapter/plugin/agentbridge/**"
-            - "**/internal/adapter/plugin/agenttoolsbridge/**"
-            - "**/internal/adapter/plugin/bridge/**"
-            - "**/internal/adapter/plugin/commandbridge/**"
-            - "**/internal/adapter/plugin/delivery/**"
-            - "**/internal/adapter/plugin/embedderbridge/**"
-            - "**/internal/adapter/plugin/lifecycle/**"
-            - "**/internal/adapter/plugin/portproxy/**"
-            - "**/internal/adapter/plugin/process/**"
-            - "**/internal/adapter/plugin/security/**"
-            - "**/internal/adapter/plugin/servicebridge/**"
-            - "**/internal/adapter/plugin/storage/**"
-            - "**/internal/adapter/plugin/transport/**"
-            - "**/internal/adapter/provision/**"
-            - "**/internal/adapter/settingevents/**"
-            - "**/internal/adapter/themefiles/**"
-            - "**/internal/adapter/trash/**"
-            - "**/internal/adapter/windowview/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/usecase"
-              desc: "a driven adapter stands behind a port and runs no scenario"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/container"
-              desc: "an adapter is given what it needs and assembles nothing"
-
-        driving-adapter:
-          list-mode: lax
-          files:
-            - "**/adapter/window/**"
-            - "**/adapter/mcp/**"
-            - "**/adapter/cli/**"
-            - "**/adapter/plugin/hostendpoint/**"
-            - "**/adapter/plugin/hostsearch/**"
-            - "**/adapter/plugin/hosttext/**"
-            - "**/adapter/plugin/hostvault/**"
-            - "**/adapter/window/theme/**"
-            - "**/internal/adapterlib/wire/**"
-            - "**/apps/desktop/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/port"
-              desc: "a driving adapter calls the use case layer and imports no port directly"
-
-        # The plugin adapter reaches the vault, files, models and windows through use case
-        # contracts, never through another adapter.
-        plugin-adapter-isolation:
-          list-mode: lax
-          files:
-            - "**/internal/adapter/plugin/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/window"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/models"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/trash"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowfocus"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowvaults"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowview"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-
-        # A bridge calls a plugin for the core. It uses the shared bridge package and no other
-        # bridge, and nothing of the host side that serves plugin calls.
-        plugin-agentbridge:
-          list-mode: lax
-          files:
-            - "**/internal/adapter/plugin/agentbridge/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-        plugin-commandbridge:
-          list-mode: lax
-          files:
-            - "**/internal/adapter/plugin/commandbridge/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-        plugin-embedderbridge:
-          list-mode: lax
-          files:
-            - "**/internal/adapter/plugin/embedderbridge/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-        plugin-servicebridge:
-          list-mode: lax
-          files:
-            - "**/internal/adapter/plugin/servicebridge/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-
-        plugin-agenttoolsbridge:
-          list-mode: lax
-          files:
-            - "**/internal/adapter/plugin/agenttoolsbridge/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-              desc: "a bridge to a plugin does not use another bridge"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
-              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
-
-        # A host package answers what a plugin calls on the core. It uses no bridge to a plugin.
-        plugin-host-side:
-          list-mode: lax
-          files:
-            - "**/adapter/plugin/hostendpoint/**"
-            - "**/adapter/plugin/hosttext/**"
-            - "**/adapter/plugin/hostsearch/**"
-            - "**/adapter/plugin/hostvault/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-              desc: "the host side that serves plugin calls does not use the bridges to a plugin"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
-              desc: "the host side that serves plugin calls does not use the bridges to a plugin"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-              desc: "the host side that serves plugin calls does not use the bridges to a plugin"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
-              desc: "the host side that serves plugin calls does not use the bridges to a plugin"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-              desc: "the host side that serves plugin calls does not use the bridges to a plugin"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
-              desc: "the host side that serves plugin calls does not use the bridges to a plugin"
-
-        # A plugin reaches the host through the plugin SDK. The rule covers every
-        # file outside libs/, apps/ and tools/, which includes a plugin checked out alone.
-        # The longer match wins, so the SDK is allowed under the denied libs/.
-        plugin-isolation:
-          list-mode: lax
-          files:
-            - "$all"
-            - "!**/libs/**"
-            - "!**/apps/**"
-            - "!**/tools/**"
-          allow:
-            - "github.com/jiva-studio/numen/libs/plugin/sdk-go"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs"
-              desc: "a plugin depends on the plugin SDK and on no other library of this repository"
-            - pkg: "github.com/jiva-studio/numen/apps"
-              desc: "a plugin reaches no application"
-            - pkg: "connectrpc.com/connect"
-              desc: "a plugin calls and answers the core through the plugin SDK"
-            - pkg: "google.golang.org/protobuf"
-              desc: "a plugin calls and answers the core through the plugin SDK"
-
-        # The plugin catalog: manifest is the model, catalog the service over it, and
-        # every other package an adapter that depends inward.
-        plugin-catalog-manifest:
-          list-mode: lax
-          files:
-            - "**/libs/plugin/catalog/manifest/**"
-            - "!$test"
-          allow:
-            # The manifest checks the when clauses of its slot entries with package when.
-            - "github.com/jiva-studio/numen/libs/plugin/catalog/when"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog"
-              desc: "the manifest model depends on no other package of the catalog"
-            - pkg: "github.com/jiva-studio/numen/libs/core/protocol"
-              desc: "the manifest model knows no wire format"
-            - pkg: "google.golang.org/protobuf"
-              desc: "the manifest model knows no wire format"
-            - pkg: "encoding/json"
-              desc: "the manifest model knows no wire format"
-            - pkg: "os"
-              desc: "the manifest model performs no I/O"
-            - pkg: "io/fs"
-              desc: "the manifest model performs no I/O"
-            - pkg: "path/filepath"
-              desc: "the manifest model uses slash-separated paths and performs no I/O"
-            - pkg: "net"
-              desc: "the manifest model performs no I/O"
-        plugin-catalog-service:
-          list-mode: lax
-          files:
-            - "**/libs/plugin/catalog/catalog/**"
-            - "!$test"
-          allow:
-            - "github.com/jiva-studio/numen/libs/plugin/catalog/manifest$"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs"
-              desc: "the catalog service depends on the manifest model only"
-            - pkg: "google.golang.org/protobuf"
-              desc: "the catalog service knows no wire format"
-            - pkg: "os"
-              desc: "the catalog service reaches files through its ports"
-            - pkg: "net"
-              desc: "the catalog service reaches the network through its ports"
-        plugin-catalog-format:
-          list-mode: lax
-          files:
-            - "**/libs/plugin/catalog/manifestjson/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
-              desc: "the manifest format depends on the manifest model only"
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog/localsource"
-              desc: "an adapter does not use another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog/indexsource"
-              desc: "an adapter does not use another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog/packagecache"
-              desc: "an adapter does not use another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog/snapshotcache"
-              desc: "an adapter does not use another adapter"
-        plugin-catalog-adapter:
-          list-mode: lax
-          files:
-            - "**/libs/plugin/catalog/localsource/**"
-            - "**/libs/plugin/catalog/indexsource/**"
-            - "**/libs/plugin/catalog/packagecache/**"
-            - "**/libs/plugin/catalog/snapshotcache/**"
-            - "!$test"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog/localsource"
-              desc: "an adapter does not use another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog/indexsource"
-              desc: "an adapter does not use another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog/packagecache"
-              desc: "an adapter does not use another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog/snapshotcache"
-              desc: "an adapter does not use another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog/catalogtest"
-              desc: "production code does not use the test doubles"
-
-        # The plugin SDK and its feature modules import no core package and no application.
-        sdk-isolation:
-          list-mode: lax
-          files:
-            - "**/libs/plugin/sdk-go/**"
-          deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel"
-              desc: "plugin SDK must not import core packages"
-            - pkg: "github.com/jiva-studio/numen/apps"
-              desc: "plugin SDK must not import host applications"
 
     errcheck:
       check-type-assertions: true
@@ -550,14 +150,6 @@ linters:
       alias:
         - pkg: github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1
           alias: v1
-        - pkg: github.com/modelcontextprotocol/go-sdk/mcp
-          alias: sdk
-        - pkg: github.com/getcharzp/onnxruntime_purego
-          alias: ort
-        - pkg: github.com/getcharzp/go-ocr
-          alias: read
-        - pkg: github.com/open-spaced-repetition/go-fsrs/v3
-          alias: fsrs
 
     usetesting:
       context-background: true

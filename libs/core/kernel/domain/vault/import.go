@@ -6,6 +6,15 @@ import (
 	"strings"
 )
 
+// ImportedFile is one item the user supplied to this application, by the name
+// the source machine gives it.
+type ImportedFile struct {
+	Name     string
+	Handle   string
+	IsFolder bool
+	IsFile   bool
+}
+
 // ImportFailure is one file that stayed outside the vault, by the name it
 // carries on this machine and by what stopped it.
 type ImportFailure struct {

@@ -22,23 +22,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/hold"
 )
 
-// channelWatcher is the watch of the filesystem: the paths it reports and the loss of the watch are
-// channels a test writes to.
-type channelWatcher struct {
-	changes chan []string
-	loss    chan struct{}
-}
-
-func (w channelWatcher) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
-	return w.changes, w.loss, nil
-}
-
 // diskVaults is the vaults of an installation over folders on disk: the real readers and writers
-// under the use cases of the host, and the index, the watch and the window as stand-ins the test
+// under the use cases of the host, and the index, the moves and the window as stand-ins the test
 // controls.
 type diskVaults struct {
 	mu      sync.Mutex
@@ -47,8 +35,7 @@ type diskVaults struct {
 	state   plugin.IndexState
 	scanned [][]string
 
-	watcher channelWatcher
-	moves   chan struct{}
+	moves chan struct{}
 }
 
 func (d *diskVaults) setCurrent(v *domain.Vault) {
@@ -83,7 +70,6 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 				}
 				return *d.current, true
 			},
-			Watcher: vaults.NewWatchChanges(d.watcher).Execute,
 			Vaults: func() ([]domain.Vault, error) {
 				d.mu.Lock()
 				defer d.mu.Unlock()
@@ -123,7 +109,7 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 			},
 			Locks: hold.NewLocks(writers, hold.LockHold),
 		},
-		hostvault.Lookups{}, hostvault.Connections{}, hostvault.Arranger{},
+		hostvault.Lookups{}, hostvault.Arranger{},
 		hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
 	)
 }
@@ -148,7 +134,6 @@ func newDiskVaults(t *testing.T, files map[string]string) (*diskVaults, numenv1c
 		current: &physics,
 		vaults:  map[domain.VaultID]domain.Vault{physics.ID: physics, chemistry.ID: chemistry},
 		state:   plugin.IndexState{Status: plugin.Indexed},
-		watcher: channelWatcher{changes: make(chan []string, 4), loss: make(chan struct{})},
 		moves:   make(chan struct{}, 4),
 	}
 	return disk, openReadEndpoint(t, disk.access(t))
@@ -284,46 +269,6 @@ func TestReadCacheAndWriteCacheKeepEntriesPerPluginAndName(t *testing.T) {
 
 	if err != nil || !after.Msg.GetIsFound() || string(after.Msg.GetContent()) != "{}" {
 		t.Errorf("the cache answered %v (%v)", after.Msg, err)
-	}
-}
-
-func TestAWatchTellsOfTheFilesThatChangedUntilItIsLost(t *testing.T) {
-	disk, client := newDiskVaults(t, nil)
-	stream, err := client.WatchVault(t.Context(), connect.NewRequest(&v1.WatchVaultRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, stream)
-
-	if !stream.Receive() || len(stream.Msg().GetPaths()) != 0 {
-		t.Fatalf("the watch did not begin: %v", stream.Err())
-	}
-	disk.watcher.changes <- []string{"samples/A.md"}
-	if !stream.Receive() || !slices.Equal(stream.Msg().GetPaths(), []string{"samples/A.md"}) {
-		t.Fatalf("the change was not told: %v %v", stream.Msg(), stream.Err())
-	}
-	close(disk.watcher.loss)
-	if stream.Receive() {
-		t.Errorf("a watch that was lost went on with %v", stream.Msg())
-	}
-}
-
-func TestAWatchEndsWhenTheWindowShowsAnotherVault(t *testing.T) {
-	disk, client := newDiskVaults(t, nil)
-	stream, err := client.WatchVault(t.Context(), connect.NewRequest(&v1.WatchVaultRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, stream)
-	if !stream.Receive() {
-		t.Fatal(stream.Err())
-	}
-
-	other := domain.Vault{ID: "v2", Path: t.TempDir()}
-	disk.setCurrent(&other)
-
-	if !stream.Receive() || !stream.Msg().GetIsVaultChanged() {
-		t.Errorf("the change of vault was not told: %v %v", stream.Msg(), stream.Err())
 	}
 }
 

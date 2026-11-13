@@ -25,7 +25,7 @@ func (notes) ListExtensions(domain.ContentType) []string { return []string{"md"}
 func entry(pluginID, kind, when string, rank domain.HandlerRank) plugin.TabKindEntry {
 	return plugin.TabKindEntry{
 		PluginID: pluginID,
-		TabKind:  manifest.TabKind{Kind: kind, Title: kind, Icon: "", When: when, Rank: rank},
+		TabKind:  manifest.TabKind{Kind: kind, Title: kind, Icon: "", When: when, Rank: rank, IsNoteEditor: false},
 	}
 }
 

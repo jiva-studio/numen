@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
-
 	"github.com/klippa-app/go-pdfium/enums"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
@@ -72,7 +70,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer cleanup.Close(t, doc)
+			defer closeAndCheck(t, doc)
 
 			for i := range doc.pages {
 				response := doc.text(i)
@@ -438,7 +436,7 @@ func TestDocumentWordsInvalidPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, doc)
+	defer closeAndCheck(t, doc)
 
 	if boxes := doc.words(9999, 0); len(boxes) != 0 {
 		t.Errorf("doc.words(9999) returned %d boxes, want 0", len(boxes))

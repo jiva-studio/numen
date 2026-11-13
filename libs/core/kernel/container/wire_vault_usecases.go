@@ -168,7 +168,8 @@ func vaultMakeRefresh(c vaultWiring, db *Index, notes noteport.NoteRepository) v
 }
 
 func newTextVersions(c vaultWiring, db *Index) *TextVersions {
-	stores, files, readers := db.Versions, derivedfile.TextStores{Options: vaultOptions(c)}, vaultReaders(c)
+	files := derivedfile.TextStores{Options: vaultOptions(c), Decoded: derivedfile.NewDecodedTexts(derivedfile.DefaultDecodedBudget)}
+	stores, readers := db.Versions, vaultReaders(c)
 	texts := textversion.NewTexts(stores, files, readers, note.NewReadFrontmatter(readers), c.Clock)
 	changes := textversion.NewChanges(texts)
 	versions := textversion.NewVersions(stores, files, c.RunningHost.Runtime, c.Clock, changes)

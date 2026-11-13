@@ -11,7 +11,6 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/domain/acp"
 )
@@ -47,7 +46,7 @@ func (Launcher) Launch(ctx context.Context, program string, command []string) (a
 	if len(command) == 0 {
 		return nil, fmt.Errorf("no command starts %s", program)
 	}
-	dir, cleanDir, err := agentrun.CreateTempDir("numen-acp-*")
+	dir, cleanDir, err := createTempDir("numen-acp-*")
 	if err != nil {
 		return nil, fmt.Errorf("create the session folder: %w", err)
 	}
@@ -128,6 +127,19 @@ func (c *Child) Close() error {
 	}
 	c.stop()
 	return errors.Join(err, c.cleanDir())
+}
+
+func createTempDir(pattern string) (string, func() error, error) {
+	dir, err := os.MkdirTemp("", pattern)
+	if err != nil {
+		return "", func() error { return nil }, err
+	}
+	return dir, func() error {
+		if err := os.RemoveAll(dir); err != nil {
+			return fmt.Errorf("remove %s: %w", dir, err)
+		}
+		return nil
+	}, nil
 }
 
 func isStopped(err error) bool {

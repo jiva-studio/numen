@@ -6,13 +6,14 @@
 import { createPluginNotices, createPluginTasks, type PluginHostDeps } from '@numen/plugin-loader'
 import type { NoticeQueue } from '@numen/workbench'
 import { registerTabKindIcon } from '@/entities/note'
+import { healthReports, processHost } from '@/entities/plugin'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { PluginServices } from './pluginServices'
 
 /** The host dependencies of one concern; the host reads the ones it is given. */
 export type HostParts = Pick<
   PluginHostDeps,
-  Exclude<keyof PluginHostDeps, 'registerKind' | 'registerExtensionReader' | 'openTab'>
+  Exclude<keyof PluginHostDeps, 'target' | 'registerKind' | 'registerExtensionReader' | 'openTab'>
 >
 
 /** How a plugin registers the tab kinds and the readers it brings. */
@@ -68,11 +69,11 @@ export function createTabActionParts(deps: {
   }
 }
 
-/** The notes, links, files, agent, commands, vaults and window the window gives a plugin. */
+/** The notes, links, files, commands, vaults and window the window gives a plugin. */
 export function createVaultServiceParts(deps: {
   readonly services: Pick<
     PluginServices,
-    'workspace' | 'notes' | 'relations' | 'files' | 'agent' | 'commands' | 'vaults' | 'window'
+    'workspace' | 'notes' | 'relations' | 'files' | 'commands' | 'vaults' | 'window'
   >
 }): HostParts {
   const { services } = deps
@@ -81,14 +82,13 @@ export function createVaultServiceParts(deps: {
     getNotes: () => services.notes,
     getRelations: () => services.relations,
     getFiles: () => services.files,
-    getAgent: () => services.agent,
     getCommands: () => services.commands,
     getVaults: () => services.vaults,
     getWindow: () => services.window,
   }
 }
 
-/** The buffers and the tasks the window gives a plugin. */
+/** The buffers, the tasks, the health items and the plugins that run the window gives a plugin. */
 export function createTaskServiceParts(deps: {
   readonly services: Pick<PluginServices, 'buffers' | 'noteBuffer' | 'taskList' | 'backgroundTasks'>
 }): HostParts {
@@ -98,6 +98,8 @@ export function createTaskServiceParts(deps: {
     getNoteBuffer: () => services.noteBuffer,
     getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
     getBackgroundTasks: () => services.backgroundTasks,
+    getProcesses: () => processHost,
+    health: healthReports,
   }
 }
 

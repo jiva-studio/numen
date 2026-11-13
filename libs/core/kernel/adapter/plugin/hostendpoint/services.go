@@ -6,8 +6,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
@@ -17,17 +19,12 @@ type Identity interface {
 	CheckPluginPermission(pluginID, permission string) error
 }
 
-// Leases holds a plugin from being stopped as idle while it works.
+// Leases holds a plugin from being stopped as idle while it works on its own. A lease is taken on the
+// process that runs under the token and does not cancel a release of that process; AcquireOwn reports
+// whether it took one.
 type Leases interface {
-	Acquire(pluginID string)
-	Release(pluginID string)
-}
-
-// Completer answers a question of a plugin with text, from the default agent of the settings.
-type Completer interface {
-	// Complete answers the question of the plugin with the given id. A question no agent answers
-	// fails with completion.ErrNoRoute, and an unreachable agent with ErrUnavailable.
-	Complete(ctx context.Context, pluginID string, question completion.Question) (string, error)
+	AcquireOwn(pluginID, token string, holder plugin.Holder) bool
+	ReleaseOwn(pluginID, token string, holder plugin.Holder)
 }
 
 // WorkQueue is the core's shared queue of heavy work and its list of tasks, as the plugins use them.
@@ -46,13 +43,39 @@ type WorkQueue interface {
 
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
 // plugin may do, and what the host lends the plugin to work with. Lent holds what exists only while a
-// window shows a vault; the dependencies and the tools are read at each call.
+// window shows a vault; the tools are read at each call.
 type Callers struct {
-	Identity     Identity
-	Leases       Leases
-	Lent         *Services
-	Dependencies func() Dependencies
-	Tools        func() PluginTools
+	Identity  Identity
+	Leases    Leases
+	Lent      *Services
+	Tools     func() PluginTools
+	Health    HealthCalls
+	Processes ProcessRelease
+}
+
+// ProcessRelease stops the process of a plugin that has finished its work: at once where it holds no
+// lease, and else once it holds none. A host without it answers that it does not stop plugins on request.
+type ProcessRelease interface {
+	ReleaseProcess(ctx context.Context, pluginID string)
+}
+
+// HealthReport puts a health item in the list as the plugin's. It returns plugin.ErrInvalidHealth for an
+// item the core refuses.
+type HealthReport interface {
+	Execute(pluginID string, item plugin.HealthItem) error
+}
+
+// HealthClear removes the health item of the plugin under the key. It returns plugin.ErrInvalidHealth
+// for a key the plugin cannot clear.
+type HealthClear interface {
+	Execute(pluginID, key string) error
+}
+
+// HealthCalls is what a plugin says about whether it works. A host without them answers that it keeps
+// no health items.
+type HealthCalls struct {
+	Report HealthReport
+	Clear  HealthClear
 }
 
 // TextVersions is the text versions of the vaults, as the plugins that call the host work them.
@@ -60,8 +83,6 @@ type Callers struct {
 type TextVersions interface {
 	// PutVersion records a version of the plugin, or replaces the one it has under the key.
 	PutVersion(ctx context.Context, v domain.Vault, pluginID string, params plugin.TextPut) (domain.TextVersion, error)
-	// RemoveVersion removes the record of a version of the plugin.
-	RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path, key string) error
 	// ListVersions is the versions of a file and which of them is live.
 	ListVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextListing, error)
 	// ReadText is one page of any version's segments, read from its file.
@@ -99,6 +120,10 @@ type PassageSearch interface {
 	// source and every text version: by keywords, and by embedding when the installation has a model.
 	// An installation with no model searches by keywords only.
 	SearchPassages(ctx context.Context, v domain.Vault, q plugin.PassageQuery) ([]domain.Passage, error)
+	// FindNearestPassages returns the small chunks of the vault nearest the vector under the recipe of the
+	// query, nearest first, at or above its floor, else the effective floor of the vault. The recipe
+	// rules of SearchIndex apply.
+	FindNearestPassages(ctx context.Context, v domain.Vault, q sourcedomain.NearestQuery) ([]searchsource.Match, error)
 }
 
 // SearchFloors is the floor a search by meaning applies to the vaults, as the plugins that call the
@@ -132,4 +157,23 @@ type WindowControl interface {
 	// window reports them afterwards. An id with no open tab returns fs.ErrNotExist, and a tab the
 	// window does not report active in time returns plugin.ErrTabNotShown.
 	ActivateTab(ctx context.Context, id string) (windowdomain.OpenTabs, error)
+}
+
+// ModelCalls carries out the operations the plugins ask for. The connections come from the rows of the
+// calling plugin, and a request names none.
+type ModelCalls interface {
+	// Call asks the rows in order and sends the data frames to send as they arrive. It returns the done
+	// payload, connection.ErrNoConnection, *connection.AllFailedError or *connection.StoppedError where no
+	// row answers, the error of send when send fails, and the error of the context when the call is canceled.
+	Call(ctx context.Context, callerPluginID string, request modelcall.Request, send modelcall.Send) ([]byte, error)
+}
+
+// RowLists lists the rows of the calling plugin and the values of their row fields.
+type RowLists interface {
+	// ListRows returns the rows of the plugin for the operation in the order of use, without the rows whose
+	// connection is missing or whose type is unavailable or does not serve the operation.
+	ListRows(callerPluginID, operation string) ([]modelcall.Row, error)
+	// ListRowOptions returns the values a row field of a connection among those rows can take. It fails with
+	// connection.ErrNotFound for a connection that is not among the rows.
+	ListRowOptions(ctx context.Context, callerPluginID, operation, connectionID, field string, options map[string]string) ([]modelcall.Option, error)
 }

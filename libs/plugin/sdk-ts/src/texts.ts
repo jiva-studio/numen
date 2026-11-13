@@ -2,7 +2,7 @@ import type { JsonObject, Result } from './types'
 
 // TextKind is what a text version is, as the plugin that makes it names it. The core
 // compares it as an opaque string.
-export type TextKind = string
+type TextKind = string
 
 // Selector locates a segment in the file its text was made from (W3C Web Annotation selector). The
 // core stores it as is and returns it with search hits; the plugin that made the text and the view
@@ -23,7 +23,7 @@ export type TextVersionId = string
 
 // TextSourceProperty is a frontmatter property of a note that a text version was made from: the key
 // and its string value.
-export interface TextSourceProperty {
+interface TextSourceProperty {
   readonly key: string
   readonly value: string
 }

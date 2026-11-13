@@ -6,10 +6,12 @@ Use Google Antigravity (`agy`) installed on your computer to chat with your vaul
 
 ## What You Can Do
 
-- **Ask questions about your library**: Chat with Gemini models through your local Antigravity setup to explore notes, books, PDFs, and recordings.
-- **Draft and refine notes**: Ask the assistant to create or update notes and review every suggested change before applying it.
+- **Chat in the Agent Chat panel**: When Antigravity is installed on this computer, the connection Antigravity is on the Connections page, marked Discovered, with no setup, and the assistant answers in Agent Chat as it writes. A row of the Agents setting of Agent Chat chooses its model and level of reasoning; with no model, the program uses its own default.
+- **Ask questions about your library**: Chat with Gemini models through your local Antigravity setup to explore notes, books, PDFs, and recordings with the tools of your vault.
+- **Continue a conversation**: The turns of one chat continue one conversation of Antigravity.
+- **Answer requests of other plugins**: A request from a connection runs the program with no tools, in an empty folder.
 
 ## Settings
 
 - **Executable path**: Choose where the `agy` program is located on your computer if it is not found automatically.
-- **Hooks & skills**: Enable your personal Antigravity skills and custom workflows during conversations.
+- **Request timeout**: Seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds.

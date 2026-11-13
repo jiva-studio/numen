@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -18,12 +17,12 @@ import (
 // copied, and the source file is left in place.
 type Import struct {
 	writers vaultport.FolderWriters
-	files   sourceport.ImportedFiles
+	files   vaultport.ImportedFiles
 }
 
 // NewImport creates an Import from the writers of the target vault and the port
 // that reads imported files.
-func NewImport(writers vaultport.FolderWriters, files sourceport.ImportedFiles) Import {
+func NewImport(writers vaultport.FolderWriters, files vaultport.ImportedFiles) Import {
 	return Import{writers: writers, files: files}
 }
 

@@ -494,36 +494,6 @@ func TestPluginValidate_InvalidJSON(t *testing.T) {
 	}
 }
 
-func TestPluginValidate_MissingEntrypointFiles(t *testing.T) {
-	dir := writeManifestFile(t, `{"id":"md.numen.x","name":"X","version":"1.0.0",
-"backend": {"entrypoint": "bin/x"},"frontend": {}}`)
-	issues, err := Validate(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	joined := strings.Join(issues, "\n")
-	if !strings.Contains(joined, "backend entrypoint") || !strings.Contains(joined, "frontend bundle") {
-		t.Fatalf("got %v", issues)
-	}
-
-	if err := os.MkdirAll(filepath.Join(dir, "backend"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "backend", "main.go"), []byte("package main"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.MkdirAll(filepath.Join(dir, "frontend"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "frontend", "index.ts"), []byte("export {}"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	issues, err = Validate(filepath.Join(dir, "manifest.json"))
-	if err != nil || len(issues) != 0 {
-		t.Fatalf("Validate with source entrypoints = %v, %v; want nil, nil", issues, err)
-	}
-}
-
 func TestPluginValidate_MissingPath(t *testing.T) {
 	if _, err := Validate(filepath.Join(t.TempDir(), "absent")); !errors.Is(err, fs.ErrNotExist) || !strings.Contains(err.Error(), "stat path:") {
 		t.Fatalf("expected stat path ErrNotExist for a missing path, got %v", err)
@@ -531,9 +501,5 @@ func TestPluginValidate_MissingPath(t *testing.T) {
 	emptyDir := t.TempDir()
 	if _, err := Validate(emptyDir); !errors.Is(err, fs.ErrNotExist) || !strings.Contains(err.Error(), "read manifest at") {
 		t.Fatalf("expected read manifest ErrNotExist for an empty dir without manifest.json, got %v", err)
-	}
-	whitespaceBackendDir := writeManifestFile(t, `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"   "}}`)
-	if issues, err := Validate(whitespaceBackendDir); err != nil || len(issues) != 1 {
-		t.Fatalf("expected only manifest issue for whitespace entrypoint, got %v (%v)", issues, err)
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-// KeyStore keeps the keys of plugin secrets in memory for the life of the process. A test server
+// KeyStore keeps the keys of connections in memory for the life of the process. A test server
 // keeps its keys here, and the keychain of the machine is never read or written.
 type KeyStore struct {
 	mu   sync.Mutex

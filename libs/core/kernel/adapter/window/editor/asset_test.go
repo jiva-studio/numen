@@ -8,6 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
 func TestOpenVaultFileReadsAFileOfTheVault(t *testing.T) {
@@ -83,9 +86,10 @@ func TestAssetHeadersFollowTheExtension(t *testing.T) {
 		{"notes.md", "application/octet-stream", true},
 		{"no-extension", "application/octet-stream", true},
 	}
+	types := file.NewGetMediaType(contenttype.Open())
 	for _, c := range cases {
 		head := http.Header{}
-		setAssetHeaders(head, c.name)
+		setAssetHeaders(head, types.Execute(c.name))
 		if got := head.Get("Content-Type"); got != c.wantType {
 			t.Errorf("%s: type %q, want %q", c.name, got, c.wantType)
 		}
@@ -100,7 +104,7 @@ func TestAssetHeadersFollowTheExtension(t *testing.T) {
 
 func TestAnSVGIsSandboxedWhenOpenedAsAPage(t *testing.T) {
 	head := http.Header{}
-	setAssetHeaders(head, "diagram.svg")
+	setAssetHeaders(head, file.NewGetMediaType(contenttype.Open()).Execute("diagram.svg"))
 	if got := head.Get("Content-Security-Policy"); !strings.Contains(got, "sandbox") || !strings.Contains(got, "default-src 'none'") {
 		t.Fatalf("policy %q does not sandbox the picture", got)
 	}

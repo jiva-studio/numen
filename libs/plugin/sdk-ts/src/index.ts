@@ -1,14 +1,16 @@
 export * from './types'
 export * from './plugin'
 export * from './workspace'
-export * from './agent'
 export * from './views'
 export * from './testing/index'
 export * from './buffers'
 export * from './texts'
+export * from './connections'
 export * from './notices'
 export * from './tasks'
+export * from './processes'
 export * from './backgroundTasks'
+export * from './health'
 export * from './commands'
 export * from './slots'
 export * from './window'
@@ -23,8 +25,6 @@ export {
   getAssetUrl,
   getBytesQuery,
   getRelationErrorWords,
-  MAX_BUSY_RETRIES,
-  ReportedError,
   type Caught,
   type ErrorCode,
   type Unvalidated,

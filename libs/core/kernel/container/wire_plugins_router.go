@@ -15,45 +15,15 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
-
-func newCompletionRouter(c pluginsWiring) *completion.Router {
-	provider := pluginsAgentProvider(c)
-	programs := completion.NewPrograms(provider, func() completion.AgentSettings { return completionAgentSettings(c) })
-	return completion.NewRouter(
-		func() completion.Config {
-			return completion.Config{Default: completion.Route(settingsGetSettingsOrDefaults(c.settings).AI.Default)}
-		},
-		programs, agentcase.NewAnswer(programs),
-	)
-}
-
-func setCompleter(c pluginsWiring) {
-	c.RunningHost.Endpoint.SetCompleter(newCompletionRouter(c))
-}
-
-func getSettingsAgent(c pluginsWiring) agentport.Agent {
-	return completion.NewSettingsAgent(completion.NewPrograms(getToolProvider(c), func() completion.AgentSettings { return completionAgentSettings(c) }))
-}
-
-func getToolProvider(c pluginsWiring) agentport.AgentProvider {
-	return agentbridge.NewServingRouter(c.RunningHost.Runtime, func(agent agentport.Agent, pluginID string) agentport.Agent {
-		return agenttoolsbridge.NewAgent(agent, c.RunningHost.Runtime, agenttoolsbridge.Full, pluginID)
-	})
-}
 
 func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 	show := run.NewDependencyTasks(tasks)
@@ -71,10 +41,9 @@ type pluginInstall struct {
 	RunningHost     *PluginHost
 	PluginCatalog   catalog.Config
 	KeyStore        pluginport.KeyStore
-	CredentialsPath func(ctx context.Context) string
 }
 
-// pluginsWiring wires the plugin catalog, plugin host, agent provider and dependencies over the settings and
+// pluginsWiring wires the plugin catalog, plugin host and dependencies over the settings and
 // the vaults the plugins work with.
 type pluginsWiring struct {
 	pluginInstall
@@ -149,20 +118,15 @@ func newPluginCommands(c pluginsWiring, host *PluginHost, versions plugincommand
 }
 
 func getPluginServices(c pluginsWiring) editor.PluginServices {
-	return servicebridge.Open(c.PluginHost.Runtime)
+	return servicebridge.Open(c.PluginHost.Runtime, c.PluginHost.Runtime)
 }
 
 func getPluginRetrier(c pluginsWiring) func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
 	return c.PluginHost.Runtime.RetryPlugin
 }
 
-func reportPluginFailures(c pluginsWiring, tasks *run.Tasks) {
-	show := run.NewPluginFailureTasks(tasks)
-	c.PluginHost.Runtime.SetOnPluginFailed(show.Report)
-	c.PluginHost.Runtime.SetOnFailureCleared(func(pluginID string) {
-		show.Clear(pluginID)
-		signalPluginChanges(c)
-	})
+func signalFailureClears(c pluginsWiring) {
+	c.PluginHost.Runtime.SetOnFailureCleared(func(string) { signalPluginChanges(c) })
 }
 
 func setPluginWork(c pluginsWiring, tasks *run.Tasks, models *run.Lock) {
@@ -207,8 +171,9 @@ func newDependencyRegistry(defaultDir string) pluginport.DependencyRegistry {
 	}
 	runtimeConfig := onnxruntime.FromEnvironment(clock.System{})
 	runtimeConfig.Dir = onnxruntime.GetModelsDir(defaultDir)
+	runtimeConfig.Offline = provision.IsOffline()
 	return provision.NewRegistry(
 		onnxruntime.NewONNXProvisioner(runtimeConfig),
-		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: onnxruntime.IsOffline(), Clock: clock.System{}}),
+		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: runtimeConfig.Offline, Clock: clock.System{}}),
 	)
 }

@@ -1,17 +1,32 @@
 /**
- * What the title bar shows of the index: the last answer of the backend, kept fresh by asking every
- * two seconds while the window is in use.
+ * What the title bar shows of the index: the last answer of the backend.
  *
- * The core emits no event when the index changes, so the model asks. It asks only while the window is
- * visible and has the focus, and once more when the window returns to that state.
+ * The core emits no event with the counts of the index, so the model asks the backend. It asks once at
+ * start and again each time the vault changes or a background task of the window starts or ends, which
+ * is when the counts move. Only while the popover is open, the window is visible and has the focus, it
+ * asks every two seconds, which is what the backend measures the speed of embedding from. With the
+ * popover closed no timer runs past the last change, so the backend is called only on changes.
  */
 import { ref, type Ref } from 'vue'
-import type { ApiError, Result } from '@numen/plugin-sdk'
+import type {
+  ApiError,
+  BackgroundTask,
+  BackgroundTaskHost,
+  Disposable,
+  PluginEvents,
+  Result,
+} from '@numen/plugin-sdk'
 import type { StatsApi } from '../api/wire'
 import type { Stats } from '../api/stats'
 
-/** The wait between two asks. */
+/** The wait between two asks while the popover is open. */
 export const REFRESH_MS = 2_000
+
+/**
+ * The wait before the second ask after a change. The host answers from counts up to a second old, so
+ * the ask at the change alone can return the counts from before it.
+ */
+export const SETTLE_MS = 2_000
 
 /** Starts and stops the waits between asks. */
 export interface Timer {
@@ -33,24 +48,43 @@ export interface StatsDeps {
   readonly api: StatsApi
   readonly timer: Timer
   readonly activity: Activity
+  readonly tasks?: Pick<BackgroundTaskHost, 'watch'> | undefined
+  readonly events?: Pick<PluginEvents, 'onVaultChange'> | undefined
 }
 
 export interface IndexStats {
   readonly stats: Readonly<Ref<Stats | null>>
   readonly phase: Readonly<Ref<Phase>>
-  /** Asks now and keeps asking every two seconds while the window is in use. */
+  /** Asks now, and again each time the vault changes or a background task starts or ends. */
   start(): void
-  /** Ends the asking. */
+  /** Asks now and every two seconds while the window is in use, until close. */
+  open(): void
+  /** Ends the asks every two seconds. */
+  close(): void
+  /** Ends every ask. */
   stop(): void
+}
+
+function getRunningKey(tasks: readonly BackgroundTask[]): string {
+  return tasks
+    .filter((one) => one.state === 'running' || one.state === 'cancelling')
+    .map((one) => one.id)
+    .sort()
+    .join('\n')
 }
 
 export function createIndexStats(deps: StatsDeps): IndexStats {
   const stats = ref<Stats | null>(null)
   const phase = ref<Phase>('loading')
   let handle: number | undefined
+  let settleHandle: number | undefined
   let isStopped = true
+  let isOpen = false
   let isAsking = false
+  let runningKey: string | undefined
   let stopWatching: (() => void) | undefined
+  let taskWatch: Disposable | undefined
+  let vaultWatch: Disposable | undefined
 
   const settle = (result: Result<Stats, ApiError>) => {
     isAsking = false
@@ -71,14 +105,51 @@ export function createIndexStats(deps: StatsDeps): IndexStats {
       .then(settle, () => settle({ ok: false, error: { code: 'unavailable', message: '' } }))
   }
 
+  const clearWait = () => {
+    if (handle !== undefined) deps.timer.clear(handle)
+    handle = undefined
+  }
+
   const wait = () => {
-    if (isStopped) return
+    if (isStopped || !isOpen) return
     handle = deps.timer.set(tick, REFRESH_MS)
   }
 
   function tick(): void {
+    handle = undefined
     if (deps.activity.isActive()) ask()
     wait()
+  }
+
+  const clearSettle = () => {
+    if (settleHandle !== undefined) deps.timer.clear(settleHandle)
+    settleHandle = undefined
+  }
+
+  const askSettled = () => {
+    settleHandle = undefined
+    ask()
+  }
+
+  const onChange = () => {
+    if (isStopped) return
+    ask()
+    clearSettle()
+    settleHandle = deps.timer.set(askSettled, SETTLE_MS)
+  }
+
+  const onTasks = (tasks: readonly BackgroundTask[]) => {
+    const key = getRunningKey(tasks)
+    const isChange = runningKey !== undefined && key !== runningKey
+    runningKey = key
+    if (isChange) onChange()
+  }
+
+  const close = () => {
+    isOpen = false
+    clearWait()
+    stopWatching?.()
+    stopWatching = undefined
   }
 
   return {
@@ -86,16 +157,27 @@ export function createIndexStats(deps: StatsDeps): IndexStats {
     phase,
     start: () => {
       isStopped = false
+      taskWatch = deps.tasks?.watch(onTasks)
+      vaultWatch = deps.events?.onVaultChange(onChange)
+      ask()
+    },
+    open: () => {
+      if (isStopped || isOpen) return
+      isOpen = true
       stopWatching = deps.activity.onActive(ask)
       ask()
       wait()
     },
+    close,
     stop: () => {
+      close()
+      clearSettle()
       isStopped = true
-      if (handle !== undefined) deps.timer.clear(handle)
-      handle = undefined
-      stopWatching?.()
-      stopWatching = undefined
+      taskWatch?.dispose()
+      taskWatch = undefined
+      vaultWatch?.dispose()
+      vaultWatch = undefined
+      runningKey = undefined
     },
   }
 }

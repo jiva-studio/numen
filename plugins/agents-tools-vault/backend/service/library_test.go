@@ -462,9 +462,8 @@ func TestTheDescriptionsSayWhichToolReadsWhat(t *testing.T) {
 		}
 	}
 	for _, name := range []string{"library_search", "library_read"} {
-		servers := byName[name].GetServers()
-		if !slices.Contains(servers, tools.Full) || !slices.Contains(servers, tools.Reading) || len(servers) != 2 {
-			t.Errorf("%s is offered on %v, want the full and the reading server", name, servers)
+		if effect := byName[name].GetEffect(); effect != tools.ReadOnly {
+			t.Errorf("%s has the effect %v, want read-only", name, effect)
 		}
 	}
 }

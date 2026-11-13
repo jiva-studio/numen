@@ -8,8 +8,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/domain/reasoning"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/ports"
 )
@@ -22,8 +22,8 @@ type Catalog struct {
 }
 
 // New creates a catalog that asks lister for the models and passes report the listing errors when
-// List falls back. An async catalog answers with no model
-// while the first list loads, and the fallback models once that load has failed.
+// List falls back. An async catalog answers with no model while the first list loads, and the
+// fallback models once that load has failed.
 func New(lister ports.ModelLister, report func(error), isAsync bool, extra ...cache.Option) (*Catalog, error) {
 	if lister == nil {
 		return nil, errors.New("catalog: the model lister is required")
@@ -62,9 +62,9 @@ func (c *Catalog) Get(ctx context.Context, command, env []string) ([]model.Model
 	return list, nil
 }
 
-// List returns the models of the program as the agent service lists them. A program that is not
-// installed, or does not answer, lists the fallback models.
-func (c *Catalog) List(ctx context.Context, command string, extra, env []string) []*reasoning.Model {
+// List returns the models of the program. A program that is not installed, or does not answer, lists
+// the fallback models.
+func (c *Catalog) List(ctx context.Context, command string, extra, env []string) []model.Model {
 	var list []model.Model
 	var err error
 	if command == "" {
@@ -76,11 +76,7 @@ func (c *Catalog) List(ctx context.Context, command string, extra, env []string)
 		c.report(err)
 		list = model.GetFallback()
 	}
-	out := make([]*reasoning.Model, 0, len(list))
-	for _, one := range list {
-		out = append(out, one.GetReasoningModel())
-	}
-	return out
+	return list
 }
 
 // GetReasoning returns the depth of reasoning a run of the model is given: the requested one when

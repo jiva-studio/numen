@@ -1,19 +1,17 @@
 /**
  * Every setting as the vault holds it, with the value a control requested shown from the request
- * until the vault reads it back; the models a setting that names one can be set to; and settings
- * written at their current position, one batch at a time.
+ * until the vault reads it back; and settings written at their current position, one batch at a
+ * time.
  */
 import { ref, shallowRef } from 'vue'
 import { formatError } from '@/shared/api/errors'
+import { createEmitter } from '@/shared/lib/emitter'
 import type { JsonObject, JsonValue } from '@/shared/api/json'
 import { createRemoteValues } from './remoteValues'
 import type {
   Configuration,
-  Model,
   PluginInfo,
   PluginSettingInfo,
-  SecretMenu,
-  SecretSection,
   SettingEdit,
 } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/model/notices/messages'
@@ -58,6 +56,9 @@ const parseEditValue = (edit: SettingEdit): JsonValue | undefined => {
 /** The first element of the path of a setting of the shell. */
 const OWNER_APP = 'app'
 
+/** The field of a plugin's settings the host keeps: whether the plugin runs. */
+const HOST_FIELD_ENABLED = 'enabled'
+
 const getDeclaredDefault = (
   app: readonly PluginSettingInfo[],
   plugins: readonly PluginInfo[],
@@ -66,8 +67,9 @@ const getDeclaredDefault = (
   const [owner, ...key] = path
   if (owner === OWNER_APP) return app.find((one) => one.key === key.join('.'))?.default
   if (key.length !== 1) return undefined
-  return plugins.find((one) => one.id === owner)?.settings.find((one) => one.key === key[0])
-    ?.default
+  const plugin = plugins.find((one) => one.id === owner)
+  if (plugin?.isOffByDefault && key[0] === HOST_FIELD_ENABLED) return false
+  return plugin?.settings.find((one) => one.key === key[0])?.default
 }
 
 const askVault = async (): Promise<Configuration | undefined> => {
@@ -101,14 +103,10 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
   const target = shallowRef<JsonValue>({})
 
-  /** The file the settings stand in, and the models the settings offer. */
+  /** The file the settings stand in. */
   const path = ref('')
-  const models = shallowRef<readonly Model[]>([])
   const plugins = shallowRef<readonly PluginInfo[]>([])
   const app = shallowRef<readonly PluginSettingInfo[]>([])
-  const secretSections = shallowRef<readonly SecretSection[]>([])
-  const secretMenus = shallowRef<readonly SecretMenu[]>([])
-  const credentialsPath = ref('')
 
   const requested = createRemoteValues<SettingEdit>((values) =>
     updateSettings([...values.values()]),
@@ -123,12 +121,8 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
     requested.takeRead(pendingRead, () => {
       target.value = read.file
       path.value = answer.path
-      models.value = answer.models
       plugins.value = answer.plugins ?? []
       app.value = answer.app ?? []
-      secretSections.value = answer.secretSections ?? []
-      secretMenus.value = answer.secretMenus ?? []
-      credentialsPath.value = answer.credentialsPath ?? ''
     })
   }
 
@@ -154,10 +148,6 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
     return value !== undefined ? value : getDeclaredDefault(app.value, plugins.value, path)
   }
 
-  /** The models one setting can be set to, in the order they are offered. */
-  const getModelsAt = (path: readonly string[]): readonly Model[] =>
-    models.value.filter((one) => one.namedAt.join('.') === path.join('.'))
-
   const writeSettings = async (edits: readonly SettingEdit[]): Promise<void> => {
     if (edits.length === 0) return
     say('')
@@ -180,8 +170,10 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
 
   return {
     start,
-    state: { target, path, models, plugins, app, secretSections, secretMenus, credentialsPath },
-    read: { getSetting, getCommittedSetting, isPending, isRequested, getModelsAt },
+    /** The batches of the stream of changes of the settings, emitted as the window follows them. */
+    changes: createEmitter<readonly SettingEdit[]>(),
+    state: { target, path, plugins, app },
+    read: { getSetting, getCommittedSetting, isPending, isRequested },
     write: { writeSettings, writeSetting },
   }
 }

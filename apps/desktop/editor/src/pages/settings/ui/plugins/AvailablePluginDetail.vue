@@ -12,6 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'back'): void
+  (e: 'open-category', category: string): void
 }>()
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -30,5 +31,6 @@ function onBack(): void {
     :can-install="false"
     :has-settings="false"
     @back="onBack"
+    @open-category="(category) => emit('open-category', category)"
   />
 </template>

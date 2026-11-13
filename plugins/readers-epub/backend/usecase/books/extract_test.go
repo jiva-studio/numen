@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/vault"
 )
 
 func writeBook(t *testing.T) (files *hosttest.Vault, name string, size, mtime int64) {
@@ -88,7 +87,7 @@ func TestReadBookEntry_ErrorsOnPathOutsideVault(t *testing.T) {
 	if codeOf(err) != server.CodePermissionDenied {
 		t.Fatalf("code = %v (%v), want permission denied", codeOf(err), err)
 	}
-	if !strings.Contains(err.Error(), vault.ErrOutsideVault.Error()) {
+	if !strings.Contains(err.Error(), "path outside allowed vault root") {
 		t.Fatalf("err = %v, want the outside-vault message", err)
 	}
 }

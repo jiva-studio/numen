@@ -4,13 +4,17 @@
  */
 import { stepTo } from '@/shared/lib/dom/roving'
 
-/** One entry of a searchable list. The identifier is the caller's, returned as given. */
+/**
+ * One entry of a searchable list. The identifier is the caller's, returned as given. A disabled item is
+ * shown and cannot be chosen; the keyboard skips it.
+ */
 export interface ListItem {
   readonly id: string
   readonly text: string
   readonly detail?: string
   readonly group?: string
   readonly hasSeparator?: boolean
+  readonly isDisabled?: boolean
 }
 
 /** The key of the row that stands first, whatever it is made of. */
@@ -73,10 +77,10 @@ export const getHeadings = (rows: readonly ListRow[]): readonly (string | undefi
   })
 }
 
-/** The row a step from `from` lands on, wrapping at both ends; -1 where there is none. */
-export const stepRow = (count: number, from: number, step: number): number =>
-  stepTo(
-    Array.from({ length: count }, (_, index) => index),
-    { from, by: step },
-    () => true,
-  )
+/** Whether a row can be chosen: the action row, or an item that is not disabled. */
+export const isChoosable = (row: ListRow): boolean =>
+  row.kind === 'action' || row.item.isDisabled !== true
+
+/** The choosable row a step from `from` lands on, wrapping at both ends; -1 where there is none. */
+export const stepRow = (rows: readonly ListRow[], from: number, step: number): number =>
+  stepTo(rows, { from, by: step }, isChoosable)

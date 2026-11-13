@@ -35,6 +35,7 @@ async function createWindow() {
   })
   const reportCommandIssue = vi.fn()
   const host = createPluginHost({
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),
@@ -59,6 +60,7 @@ describe('the commands of a view plugin that starts in a window with a backend p
     }))
 
     await loader.start()
+    await loader.status.startPlugin(VIEW)
 
     expect(reportCommandIssue).not.toHaveBeenCalled()
   })

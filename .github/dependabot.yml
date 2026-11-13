@@ -19,10 +19,8 @@ updates:
       - /libs/core/kernel
       - /libs/core/protocol
       - /libs/plugin/sdk-go
-      - /libs/plugin/sdk-go/agent
       - /libs/plugin/sdk-go/wasm
       - /libs/plugin/sdk-go/models
-      - /libs/plugin/sdk-go/vault
       - /apps/desktop
       - /apps/mobile
       - /apps/desktop/build/tools
@@ -34,6 +32,7 @@ updates:
       - /plugins/agents-numen
       - /plugins/agents-tools-vault
       - /plugins/agents-tools-window
+      - /plugins/connections-llm
       - /plugins/engines-embeddings
       - /plugins/engines-ocr
       - /plugins/engines-transcription

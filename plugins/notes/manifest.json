@@ -1,7 +1,7 @@
 {
   "id": "md.numen.notes",
   "name": "Notes",
-  "version": "2026.11.9",
+  "version": "2026.11.10",
   "protocol": 1,
   "description": "Markdown note editor with live formatting and wikilinks",
   "capabilities": [],
@@ -13,7 +13,8 @@
         "title": "Note",
         "icon": "file-text",
         "when": "target.noteType == 'note'",
-        "rank": "alternate"
+        "rank": "alternate",
+        "isNoteEditor": true
       },
       { "kind": "reader:markdown", "title": "Markdown Note Editor", "icon": "file-text" }
     ],

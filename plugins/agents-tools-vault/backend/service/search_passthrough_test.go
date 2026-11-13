@@ -31,11 +31,16 @@ func (s *searchCalls) getQueries() []host.PassageQuery {
 	return slices.Clone(s.queries)
 }
 
+// passageSearch is the search the fake passes the queries on to.
+type passageSearch interface {
+	SearchPassages(ctx context.Context, query host.PassageQuery) ([]host.Passage, error)
+}
+
 // recordingSearch is the fake search that records every query and rejects a kind it does not know as
 // the host does.
 type recordingSearch struct {
-	host.PassageSearch
-	calls *searchCalls
+	search passageSearch
+	calls  *searchCalls
 }
 
 func (r recordingSearch) SearchPassages(ctx context.Context, query host.PassageQuery) ([]host.Passage, error) {
@@ -47,7 +52,7 @@ func (r recordingSearch) SearchPassages(ctx context.Context, query host.PassageQ
 			return nil, fmt.Errorf("%w: %q is not a searchable source kind: use \"note\" or \"file\"", errInvalidArgument, kind)
 		}
 	}
-	return r.PassageSearch.SearchPassages(ctx, query)
+	return r.search.SearchPassages(ctx, query)
 }
 
 func newRecordedSearch(t *testing.T, vault *hosttest.Vault, passages []host.Passage) (*searchCalls, *tools.Registry) {
@@ -59,7 +64,7 @@ func newRecordedSearch(t *testing.T, vault *hosttest.Vault, passages []host.Pass
 	registry, err := service.New(vaultsOf(vault)).
 		WithLibrary(func(id domain.VaultID) service.Library {
 			on := texts.With(id)
-			return service.Library{Versions: on, Texts: on, Search: recordingSearch{PassageSearch: search.With(id), calls: calls}}
+			return service.Library{Versions: on, Texts: on, Search: recordingSearch{search: search.With(id), calls: calls}}
 		}).
 		Registry()
 	if err != nil {

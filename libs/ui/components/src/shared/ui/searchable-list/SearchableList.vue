@@ -106,7 +106,7 @@ function onChoose(key: string): void {
   const row = findRow(key)
   if (row?.kind === 'action') {
     emit('act', queryText.value)
-  } else if (row) {
+  } else if (row && row.item.isDisabled !== true) {
     model.value = row.item.id
     emit('select', row.item.id)
   }

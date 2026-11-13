@@ -41,7 +41,7 @@ ends the run at once.
 
 It is also told what you have open — every tab of the window and which of them you are looking at — because you move between tabs while it works.
 
-It has web search and web fetch as well, for the questions your notes do not answer.
+Claude Code has web search as well, for the questions your notes do not answer.
 
 Anything it writes is saved in your files, so it appears in the plex and in search at once. An agent that creates a note can find it by searching.
 
@@ -57,41 +57,22 @@ commands for your machine to run. Those are always rejected, whatever the settin
 
 **It cannot erase a vault from your disk.** Removing a folder from the list needs your confirmation. Adding a folder to the list it can do when you ask: nothing already in the folder is moved or rewritten, and the vault's identity is written into the folder so it is recognised after it is moved.
 
-By default it also ignores what is configured for the assistant on this machine — standing
-instructions, hooks, skills, plugins. If you want your own configuration used, turn on
-`readsHooksAndSkills` in the settings of the Claude Code Agent plugin (the object `md.numen.agents.claude`, see [the settings](/settings/)); a vault's own files are
-rejected either way.
+Claude Code also ignores what is configured for it on this machine — standing instructions, hooks,
+skills, plugins — when it answers in the panel.
 
 ## Setting it up
 
-numen auto-discovers installed CLI agents on your machine — checking standard paths and installers for Claude Code and compatible tools. The floating selector island above the message composer lets you pick which discovered agent or model is used for the active conversation.
-
-Where an agent is installed in the usual place, numen finds it automatically and there is nothing to configure.
+The panel answers through a connection, as proofreading and search do. Add a connection of an agent type on the Connections page: **Claude Code**, **Codex** or **Antigravity**, which start their program through the Agent Client Protocol (`claude-code-acp`, `codex-acp`, `agy acp`), **ACP agent** for any other program that implements it, or **Numen agent**, numen's own, which chats through a connection to a model service. A program found on the path needs nothing else; otherwise give the program to start. Then, on the page of the Agent Chat plugin, add a row that names the connection and choose the model and the reasoning level. More than one row is tried in order: the next one answers when one cannot.
 
 ```json
 {
-  "app": {
-    "agent": {
-      "use": "claude",
-      "claude": {
-        "command": [],
-        "model": ""
-      }
-    }
-  },
-  "md.numen.agents.claude": {
-    "readsHooksAndSkills": false
+  "md.numen.views.agent.chat": {
+    "connections": [{ "connection": "c1f0a9e20", "model": "sonnet", "reasoning": "high" }]
   }
 }
 ```
 
-|           |                                                                                                                             |
-| --------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `use`     | which agent is used. Empty means none, and the panel says so.                                                               |
-| `command` | how to start it. Empty looks on the path, then where its installers put it. Set it on a machine with several installations. |
-| `model`   | `opus`, `sonnet`, or a full model name. Empty uses that installation's default model.                                       |
-
-`readsHooksAndSkills` is a setting of the Claude Code Agent plugin, off by default, as described above.
+With no row, the panel says that no agent is set up and offers the page. The flashcard review has rows of its own, on the page of Flashcards Studio.
 
 ## Another agent, in another window
 

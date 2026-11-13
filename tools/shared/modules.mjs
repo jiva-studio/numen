@@ -59,7 +59,7 @@ export const modules = [
     '@numen/editor',
     'apps/desktop/editor',
     'src/app/App.vue',
-    'shell',
+    'editor',
     'The notes window: reaches the components, the shell, the wire and the schema.',
   ),
   createModule(

@@ -7,7 +7,7 @@ import {
   type JsonValue,
   type PluginStatus,
 } from '@numen/plugin-loader'
-import type { SettingsStore } from '@/entities/settings'
+import type { SettingEdit, SettingsStore } from '@/entities/settings'
 import type { Caught } from '@/shared/api/errors'
 
 const getPluginSetting = (
@@ -25,6 +25,24 @@ export const createWindowPluginStatus = (rest: SettingsStore): PluginStatus =>
   createPluginStatus({
     isEnabled: (id) => isPluginEnabledValue(getPluginSetting(rest, id, 'enabled')),
   })
+
+const ROW_KEYS = new Set(['connections', 'detectedConnections'])
+
+const hasRowChange = (batch: readonly SettingEdit[]): boolean =>
+  batch.length === 0 ||
+  batch.some(({ at }) => ROW_KEYS.has(at[0] ?? '') || (at.length === 2 && at[1] === 'enabled'))
+
+/**
+ * Calls the handler after each batch of changes that can change the rows a plugin lists: a change of a
+ * connection, of the connections detected on this machine, or of whether a plugin is enabled. An empty
+ * batch is the first after the stream was lost, and may hold any of them.
+ */
+export const createRowChangeSubscriber =
+  (rest: SettingsStore) =>
+  (handler: () => void): (() => void) =>
+    rest.changes.subscribe((batch) => {
+      if (hasRowChange(batch)) handler()
+    })
 
 /** The settings of a plugin as the plugin host reads them, and the handlers run when one changes. */
 export function createPluginSettingsAccessor(

@@ -23,6 +23,7 @@ var (
 	ErrNotForTarget      = errNotForTarget
 	ErrPathNotFound      = errPathNotFound
 	ErrPluginNotFound    = errPluginNotFound
+	ErrProviderIDTaken   = errProviderIDTaken
 )
 
 // SetPlugin stores p in the set of the registry as it is, without the checks of a scan.
@@ -61,12 +62,6 @@ func SetPerformance(c *ConfigPush, profile string) { c.performance = profile }
 
 func GetDelivery(c *ConfigPush) *delivery.Delivery { return c.delivery }
 
-// SetScanned marks that the push has seen a scan.
-func SetScanned(c *ConfigPush) { c.hasScanned = true }
-
-// PruneSecretPermissions drops the permissions of the secret declarations that are gone.
-func PruneSecretPermissions(c *ConfigPush) { c.pruneSecretPermissions() }
-
 // HoldScan holds the gate against the start of a plugin, as a scan of the folders does.
 func HoldScan(d *Discovery) { d.scan.holdScan() }
 
@@ -77,7 +72,7 @@ func GetStopper(t *Teardown) *supervision.Stopper { return t.stopper }
 
 // RunActivation starts the process of p under sup.
 func RunActivation(ctx context.Context, a *Activation, p manifest.Discovered, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
-	return a.runActivation(ctx, p, sup)
+	return a.runActivation(ctx, p, sup, lifecycle.Lease{Kind: lifecycle.UseLease})
 }
 
 // CreateTarget returns the target the listener name of the plugin forwards its connections to.

@@ -61,7 +61,7 @@ func TestAPassageOfATextVersionCarriesTheSelectorOfItsSegment(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	searches := search.New(search.Index{Passages: c.db.ChunkSearch(), Nearest: c.db.ChunkSearch()}, vaultreader.Readers{}, versionTexts{text: text}, nil, nil, nil)
+	searches := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, versionTexts{text: text}, nil, nil, nil)
 
 	for _, tc := range []struct {
 		query string

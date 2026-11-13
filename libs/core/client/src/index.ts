@@ -1,9 +1,15 @@
 export * from './clients'
 export * from './catalog'
 export * from './manifest'
+export * from './connections'
+export * from './connectioncalls'
 export * from './protocol'
-export { transport } from './transport'
+export { CALLER_HEADER, createCallerTransport, transport } from './transport'
 export * from './settings'
+export * from './themes'
+export * from './tasks'
+export * from './health'
+export * from './processes'
 export {
   formatErrorCodeMessage,
   formatErrorMessage,
@@ -17,4 +23,3 @@ export {
   getKnownErrorCode,
 } from './errors'
 export { asFailure, asValue, type Result } from './result'
-export { findServiceInfo, getServiceInfo, type ServiceInfo } from './services'

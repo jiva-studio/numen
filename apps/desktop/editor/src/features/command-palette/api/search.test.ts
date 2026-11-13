@@ -10,6 +10,7 @@ import { searchCore } from './search'
 const search = {
   searchNames: vi.fn(),
   searchPassages: vi.fn(),
+  cancelSearch: vi.fn(),
 }
 
 let restore: () => void
@@ -174,5 +175,103 @@ describe('the kind of a passage', () => {
     const found = await searchCore.search('war', 'words', 8)
     expect(found[0]?.isNote).toBe(false)
     expect(found[0]?.type).toBe('note')
+  })
+})
+
+describe('a passage search the window aborts', () => {
+  it('cancels the search in the core by its search id', async () => {
+    search.searchPassages.mockReturnValue(new Promise(() => undefined))
+    search.cancelSearch.mockResolvedValue({})
+    const asking = new AbortController()
+
+    const answer = searchCore.search('seeds', 'meaning', 8, asking.signal)
+    await vi.waitFor(() => expect(search.searchPassages).toHaveBeenCalled())
+    asking.abort()
+    await expect(answer).rejects.toThrow()
+
+    const searchId: unknown = search.searchPassages.mock.lastCall?.[0]?.searchId
+    expect(searchId).toEqual(expect.any(String))
+    expect(searchId).not.toBe('')
+    await vi.waitFor(() => expect(search.cancelSearch).toHaveBeenCalledOnce())
+    expect(search.cancelSearch.mock.lastCall?.[0]).toMatchObject({ searchId })
+  })
+
+  it('is not cancelled once the core has answered it', async () => {
+    search.searchPassages.mockResolvedValue({ found: [] })
+    const asking = new AbortController()
+
+    await searchCore.search('seeds', 'meaning', 8, asking.signal)
+    asking.abort()
+
+    expect(search.cancelSearch).not.toHaveBeenCalled()
+  })
+
+  it('sends a new search id with each search', async () => {
+    search.searchPassages.mockResolvedValue({ found: [] })
+
+    await searchCore.search('seeds', 'meaning', 8, new AbortController().signal)
+    await searchCore.search('seeds', 'words', 8, new AbortController().signal)
+
+    const [first, second] = search.searchPassages.mock.calls.map(
+      (call) => (call[0] as { searchId: string }).searchId,
+    )
+    expect(first).not.toBe(second)
+  })
+})
+
+describe('a name search the window aborts', () => {
+  it('cancels the search in the core by its search id', async () => {
+    search.searchNames.mockReturnValue(new Promise(() => undefined))
+    search.cancelSearch.mockResolvedValue({})
+    const asking = new AbortController()
+
+    const answer = searchCore.names('lla', 8, asking.signal)
+    await vi.waitFor(() => expect(search.searchNames).toHaveBeenCalled())
+    asking.abort()
+    await expect(answer).rejects.toThrow()
+
+    const searchId: unknown = search.searchNames.mock.lastCall?.[0]?.searchId
+    expect(searchId).toEqual(expect.any(String))
+    expect(searchId).not.toBe('')
+    await vi.waitFor(() => expect(search.cancelSearch).toHaveBeenCalledOnce())
+    expect(search.cancelSearch.mock.lastCall?.[0]).toMatchObject({ searchId })
+  })
+
+  it('is not cancelled once the core has answered it', async () => {
+    search.searchNames.mockResolvedValue({ found: [] })
+    const asking = new AbortController()
+
+    await searchCore.names('lla', 8, asking.signal)
+    asking.abort()
+
+    expect(search.cancelSearch).not.toHaveBeenCalled()
+  })
+})
+
+describe('the three questions of a query the window aborts', () => {
+  it('are each cancelled in the core by their own id', async () => {
+    search.searchNames.mockReturnValue(new Promise(() => undefined))
+    search.searchPassages.mockReturnValue(new Promise(() => undefined))
+    search.cancelSearch.mockResolvedValue({})
+    const asking = new AbortController()
+
+    const answers = [
+      searchCore.names('seeds', 8, asking.signal),
+      searchCore.search('seeds', 'words', 8, asking.signal),
+      searchCore.search('seeds', 'meaning', 8, asking.signal),
+    ]
+    await vi.waitFor(() => expect(search.searchPassages).toHaveBeenCalledTimes(2))
+    asking.abort()
+    await Promise.allSettled(answers)
+
+    const asked = [...search.searchNames.mock.calls, ...search.searchPassages.mock.calls].map(
+      (call) => (call[0] as { searchId: string }).searchId,
+    )
+    await vi.waitFor(() => expect(search.cancelSearch).toHaveBeenCalledTimes(3))
+    const cancelled = search.cancelSearch.mock.calls.map(
+      (call) => (call[0] as { searchId: string }).searchId,
+    )
+    expect(new Set(cancelled)).toEqual(new Set(asked))
+    expect(new Set(asked).size).toBe(3)
   })
 })

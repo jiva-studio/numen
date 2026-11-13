@@ -3,12 +3,11 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/ai"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
@@ -39,9 +38,13 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	complete := model.Completer(ai.Complete)
+	client, err := connection.NewClientFromEnv()
+	if err != nil {
+		return err
+	}
+	complete := model.NewCompleter(client)
 	if model.IsMockSelected() {
-		complete = model.CompleteMock
+		complete = model.WithMock(complete)
 	}
 	return mount(s, openHostAt(endpoint), complete, nil)
 }
@@ -54,15 +57,13 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	complete := func(ctx context.Context, question *ai.Question) (string, error) {
-		client, err := ai.NewClientFromVars(vars)
-		if err != nil {
-			return "", err
-		}
-		return client.Complete(ctx, question)
+	client, err := connection.NewClientFromVars(vars)
+	if err != nil {
+		return nil, err
 	}
+	complete := model.NewCompleter(client)
 	if model.IsMockEnabled(vars[model.EnvMockML]) {
-		complete = model.CompleteMock
+		complete = model.WithMock(complete)
 	}
 	hosted := openHostAt(endpoint)
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
@@ -78,7 +79,7 @@ func mount(s *server.Server, h proofread.Host, complete model.Completer, vars ma
 	}
 	current := settings.NewStore()
 	if len(vars) > 0 {
-		current.Update(vars, nil)
+		current.Update(vars)
 	}
 	run := newProofreading(h, complete, current)
 	commands, err := newCommands(run)
@@ -91,7 +92,7 @@ func mount(s *server.Server, h proofread.Host, complete model.Completer, vars ma
 }
 
 func newProofreading(h proofread.Host, complete model.Completer, current *settings.Store) *proofread.Proofreading {
-	return proofread.New(h, proofread.GetProofreadKinds(), model.NewAsk(complete, current.GetEndpoint), current.GetRunConfig)
+	return proofread.New(h, proofread.GetProofreadKinds(), model.NewAsk(complete), current.GetRunConfig)
 }
 
 func newCommands(run *proofread.Proofreading) (*command.Registry, error) {

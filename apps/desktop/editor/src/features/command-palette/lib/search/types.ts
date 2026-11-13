@@ -39,8 +39,13 @@ export interface Passage {
  */
 export type SearchMode = 'hybrid' | 'words' | 'meaning' | 'names'
 
-/** The two queries the palette makes of the vault. */
+/** The two queries the palette makes of the vault. An aborted signal stops waiting for the answer. */
 export interface SearchDeps {
-  names(query: string, limit: number): Promise<readonly NameMatch[]>
-  search(query: string, mode: SearchMode, limit: number): Promise<readonly Passage[]>
+  names(query: string, limit: number, signal?: AbortSignal): Promise<readonly NameMatch[]>
+  search(
+    query: string,
+    mode: SearchMode,
+    limit: number,
+    signal?: AbortSignal,
+  ): Promise<readonly Passage[]>
 }

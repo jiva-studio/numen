@@ -49,10 +49,9 @@ type cardAddInput struct {
 
 func (t *Tools) addCardAdd(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:   tools.ByEffect,
-		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
-		Name:  "card_add",
-		Title: "Add a card",
+		Effect: tools.ReadWrite,
+		Name:   "card_add",
+		Title:  "Add a card",
 		Description: "Append one card to a deck, or to one of its sections. Name its card model as " +
 			"`card_model_list` returns it under `name`, and give a value for every field that " +
 			"card model declares, the first included. Do not write cards into the deck file " +
@@ -90,10 +89,9 @@ type cardEditInput struct {
 
 func (t *Tools) addCardEdit(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:   tools.ByEffect,
-		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
-		Name:  "card_edit",
-		Title: "Edit a card",
+		Effect: tools.ReadWrite,
+		Name:   "card_edit",
+		Title:  "Edit a card",
 		Description: "Write field values into one card of a deck. A field the card has is replaced, " +
 			"a field it lacks is appended to the card, and fields left out of the call are " +
 			"unchanged. Send only the fields to change; `card_value_remove` removes a field. " +
@@ -123,9 +121,9 @@ type cardValueRemoveInput struct {
 
 func (t *Tools) addCardValueRemove(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full}, Step: tools.Remove,
-		Name:  "card_value_remove",
-		Title: "Remove a card's field",
+		Effect: tools.ReadWrite,
+		Name:   "card_value_remove",
+		Title:  "Remove a card's field",
 		Description: "Remove one field from one card: its heading and its value. `card_edit` writes " +
 			"values and never removes one, and an empty value is an empty field, not a removed " +
 			"one. The other fields keep their order, and the rest of the file is unchanged. " +
@@ -148,9 +146,9 @@ type cardRemoveInput struct {
 
 func (t *Tools) addCardRemove(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full}, Step: tools.Remove,
-		Name:  "card_remove",
-		Title: "Remove a card",
+		Effect: tools.ReadWrite,
+		Name:   "card_remove",
+		Title:  "Remove a card",
 		Description: "Remove one card from a deck: its heading, its card model link and every value. " +
 			"The rest of the file is unchanged byte for byte, blank lines and trailing " +
 			"whitespace included; every deck write adds a missing card id and rewrites a " +
@@ -172,10 +170,9 @@ type cardSectionAddInput struct {
 
 func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:   tools.ByEffect,
-		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
-		Name:  "card_section_add",
-		Title: "Add a section",
+		Effect: tools.ReadWrite,
+		Name:   "card_section_add",
+		Title:  "Add a section",
 		Description: "Append a section to a deck. A section is a name for a range of cards and has " +
 			"no other content: no field, no card model and no schedule. `card_add` appends a card to " +
 			"a section, and `card_read` returns the section index of each card. " +
@@ -196,9 +193,9 @@ type cardSectionRenameInput struct {
 
 func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full}, Step: tools.Move,
-		Name:  "card_section_rename",
-		Title: "Rename a section",
+		Effect: tools.ReadWrite,
+		Name:   "card_section_rename",
+		Title:  "Rename a section",
 		Description: "Rename one section of a deck. Only the heading line is written: the cards under " +
 			"it keep their position, card ids and values, and text under the heading is " +
 			"unchanged. The section is addressed by its index in the deck, counted from 0, as " +
@@ -219,9 +216,9 @@ type cardSectionRemoveInput struct {
 
 func (t *Tools) addCardSectionRemove(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full}, Step: tools.Remove,
-		Name:  "card_section_remove",
-		Title: "Remove a section",
+		Effect: tools.ReadWrite,
+		Name:   "card_section_remove",
+		Title:  "Remove a section",
 		Description: "Remove the heading of one section of a deck. A section is only a name, so only " +
 			"the name is removed: no card is removed, and the cards under the heading stay in the " +
 			"file in their order, under the preceding section. Text under the heading stays too. " +
@@ -244,10 +241,9 @@ type cardModelEditInput struct {
 
 func (t *Tools) addCardCardModelEdit(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:   tools.ByEffect,
-		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
-		Name:  "card_model_edit",
-		Title: "Edit a card model",
+		Effect: tools.ReadWrite,
+		Name:   "card_model_edit",
+		Title:  "Edit a card model",
 		Description: "Change the field names and templates of a card model in place. Pass the " +
 			"fingerprint from `card_model_read`; a write against a changed card model is rejected.",
 	}, t.writeCardCardModelEdit)

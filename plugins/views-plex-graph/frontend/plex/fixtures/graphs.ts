@@ -90,7 +90,7 @@ const overcrowded: PlexGraph = graph('Everything, again', [
 ])
 
 /** Not Latin, far too long, nothing to break at, and nothing at all. */
-export const awkwardLabels: PlexGraph = graph(
+const awkwardLabels: PlexGraph = graph(
   'Заметка про сарай с довольно длинным названием, которое не влезает',
   [
     { id: 'parent-0', title: 'बगीचा', relation: 'parent' },

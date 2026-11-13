@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -40,12 +41,12 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatalf("expected StateActive, got %v", sup.GetState())
 	}
 
-	sup.Acquire(now)
+	sup.Acquire(getUseLease(), now)
 	if sup.GetState() != StateActive {
 		t.Fatalf("expected StateActive after acquire, got %v", sup.GetState())
 	}
 
-	sup.Release(now)
+	sup.Release(getUseLease(), now)
 	if sup.GetState() != StateIdle {
 		t.Fatalf("expected StateIdle after release, got %v", sup.GetState())
 	}
@@ -55,7 +56,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatal("BeginDeactivation took a plugin that was just released")
 	}
 
-	sup.Acquire(now.Add(70 * time.Millisecond))
+	sup.Acquire(getUseLease(), now.Add(70*time.Millisecond))
 	if sup.GetState() != StateActive {
 		t.Fatalf("expected StateActive after re-acquire, got %v", sup.GetState())
 	}
@@ -104,8 +105,8 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 
 func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
 	sup := New(nil)
-	sup.SetActivating()
-	sup.ActivateInProcess(testsupport.GetEpoch())
+	sup.SetActivating(plugin.Holder{})
+	sup.ActivateInProcess(getUseLease(), testsupport.GetEpoch())
 
 	rpcCalled := false
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, func(_ context.Context) error {
@@ -210,7 +211,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 		t.Fatal("expected closed channel when not activating")
 	}
 
-	ch1 := sup.SetActivating()
+	ch1 := sup.SetActivating(plugin.Holder{})
 	if sup.GetState() != StateActivating {
 		t.Fatalf("expected StateActivating, got %v", sup.GetState())
 	}
@@ -242,7 +243,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 		t.Fatal("expected ch2 to be closed after SetDormant")
 	}
 
-	ch3 := sup.SetActivating()
+	ch3 := sup.SetActivating(plugin.Holder{})
 	if sup.ActivationError() != nil {
 		t.Fatal("expected ActivationError to be cleared on new activation")
 	}
@@ -259,7 +260,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 
 func TestSupervisorTeardownWhileActivating(t *testing.T) {
 	sup := New(nil)
-	ch := sup.SetActivating()
+	ch := sup.SetActivating(plugin.Holder{})
 
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, nil)
 	if err != nil {
@@ -288,7 +289,8 @@ func TestAcquire_RejectsDeactivatingPlugin(t *testing.T) {
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
-	sup.Release(now)
+	sup.Acquire(getUseLease(), now)
+	sup.Release(getUseLease(), now)
 
 	if !sup.BeginDeactivation(0, now) {
 		t.Fatal("expected an idle plugin to begin deactivating")
@@ -296,7 +298,7 @@ func TestAcquire_RejectsDeactivatingPlugin(t *testing.T) {
 	if sup.GetState() != StateDeactivating {
 		t.Fatalf("expected StateDeactivating, got %v", sup.GetState())
 	}
-	if sup.Acquire(now) {
+	if sup.Acquire(getUseLease(), now) {
 		t.Fatal("Acquire held a deactivating plugin")
 	}
 }
@@ -314,7 +316,7 @@ func TestADeactivationDoesNotBeginOnAHeldPlugin(t *testing.T) {
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
-	sup.Acquire(now)
+	sup.Acquire(getUseLease(), now)
 
 	if sup.BeginDeactivation(0, now) {
 		t.Fatal("a held plugin began deactivating")
@@ -368,3 +370,121 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 		}
 	})
 }
+
+func TestGetUsageReturnsTheLastUseAndTheLeases(t *testing.T) {
+	sup := New(nil)
+	if usage, isRunning := sup.GetUsage(); isRunning {
+		t.Fatalf("a dormant plugin has the usage %+v", usage)
+	}
+	start := testsupport.GetEpoch()
+	sup.SetActivating(plugin.Holder{})
+	sup.ActivateInProcess(getUseLease(), start)
+	sup.Acquire(getUseLease(), start.Add(time.Second))
+
+	usage, _ := sup.GetUsage()
+	if want := (Usage{
+		LastActiveTime: start.Add(time.Second), LeaseCount: 2, IsInProcess: true, IsUsed: true,
+		Holders: []plugin.Holder{getUseLease().Holder, getUseLease().Holder},
+	}); !reflect.DeepEqual(usage, want) {
+		t.Errorf("held: got %+v, want %+v", usage, want)
+	}
+
+	sup.Release(getUseLease(), start.Add(2*time.Second))
+	sup.Release(getUseLease(), start.Add(3*time.Second))
+	usage, _ = sup.GetUsage()
+	if len(usage.Holders) != 0 {
+		t.Errorf("holders after the release %+v, want none", usage.Holders)
+	}
+	usage.Holders = nil
+	if want := (Usage{LastActiveTime: start.Add(3 * time.Second), IsInProcess: true, IsIdle: true, IsUsed: true}); !reflect.DeepEqual(usage, want) {
+		t.Errorf("released: got %+v, want %+v", usage, want)
+	}
+}
+
+func TestAPluginStartedForAQuestionStopsWhenTheQuestionEnds(t *testing.T) {
+	sup := New(nil)
+	start := testsupport.GetEpoch()
+	sup.SetActivating(plugin.Holder{})
+	sup.ActivateInProcess(getQuestionLease(), start)
+
+	if sup.BeginDeactivation(testIdleLimit, start.Add(time.Second)) {
+		t.Fatal("a plugin was stopped while a question held it")
+	}
+	sup.Release(getQuestionLease(), start.Add(time.Second))
+
+	if usage, _ := sup.GetUsage(); usage.IsUsed || !usage.LastActiveTime.Equal(start) {
+		t.Errorf("after a question: got %+v, want an unused plugin last active at its start", usage)
+	}
+	if !sup.BeginDeactivation(testIdleLimit, start.Add(time.Second)) {
+		t.Error("a plugin only asked a question was not stopped at once")
+	}
+}
+
+func TestAQuestionKeepsTheIdleCountdownOfAUsedPlugin(t *testing.T) {
+	sup := New(nil)
+	start := testsupport.GetEpoch()
+	sup.SetActivating(plugin.Holder{})
+	sup.ActivateInProcess(getUseLease(), start)
+	sup.Release(getUseLease(), start.Add(time.Minute))
+
+	sup.Acquire(getQuestionLease(), start.Add(2*time.Minute))
+	sup.Release(getQuestionLease(), start.Add(3*time.Minute))
+
+	if usage, _ := sup.GetUsage(); !usage.IsUsed || !usage.LastActiveTime.Equal(start.Add(time.Minute)) {
+		t.Errorf("got %+v, want the last use one minute after the start", usage)
+	}
+	if sup.BeginDeactivation(testIdleLimit, start.Add(time.Minute+testIdleLimit-time.Second)) {
+		t.Error("a used plugin was stopped before its idle limit")
+	}
+	if !sup.BeginDeactivation(testIdleLimit, start.Add(time.Minute+testIdleLimit)) {
+		t.Error("the question moved the idle countdown of a used plugin")
+	}
+}
+
+func TestAUseDuringAQuestionMakesThePluginUsed(t *testing.T) {
+	sup := New(nil)
+	start := testsupport.GetEpoch()
+	sup.SetActivating(plugin.Holder{})
+	sup.ActivateInProcess(getQuestionLease(), start)
+
+	sup.Acquire(getUseLease(), start.Add(time.Second))
+	sup.Release(getUseLease(), start.Add(2*time.Second))
+	sup.Release(getQuestionLease(), start.Add(3*time.Second))
+
+	if usage, _ := sup.GetUsage(); !usage.IsUsed || !usage.LastActiveTime.Equal(start.Add(2*time.Second)) {
+		t.Errorf("got %+v, want a used plugin last active when the use ended", usage)
+	}
+	if sup.BeginDeactivation(testIdleLimit, start.Add(3*time.Second)) {
+		t.Error("a used plugin was stopped before its idle limit")
+	}
+	if !sup.BeginDeactivation(testIdleLimit, start.Add(2*time.Second+testIdleLimit)) {
+		t.Error("a used plugin was not stopped at its idle limit")
+	}
+}
+
+func TestAStartedProcessCountsAsUnusedAgain(t *testing.T) {
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start process: %v", err)
+	}
+	defer wiretest.KillProcess(t, cmd.Process)
+	sup := New(nil)
+	start := testsupport.GetEpoch()
+	sup.SetActivating(plugin.Holder{})
+	sup.ActivateInProcess(getUseLease(), start)
+	sup.Release(getUseLease(), start)
+	if err := sup.Teardown(t.Context(), 0, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := sup.Attach(t.Context(), cmd.Process, start.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+
+	if usage, _ := sup.GetUsage(); usage.IsUsed {
+		t.Errorf("got %+v, want a process that is not used yet", usage)
+	}
+}
+
+// testIdleLimit is the idle limit the tests of the countdown stop a used plugin after.
+const testIdleLimit = 3 * time.Minute

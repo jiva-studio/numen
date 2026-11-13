@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/tools.proto.
  */
 export const file_numen_v1_tools: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS90b29scy5wcm90bxIIbnVtZW4udjEiEgoQTGlzdFRvb2xzUmVxdWVzdCI4ChFMaXN0VG9vbHNSZXNwb25zZRIjCgV0b29scxgBIAMoCzIULm51bWVuLnYxLlBsdWdpblRvb2wipgIKClBsdWdpblRvb2wSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIUCgxpbnB1dF9zY2hlbWEYBCABKAwSFQoNb3V0cHV0X3NjaGVtYRgFIAEoDBIkCgZlZmZlY3QYBiABKA4yFC5udW1lbi52MS5Ub29sRWZmZWN0EiUKB3NlcnZlcnMYByADKA4yFC5udW1lbi52MS5Ub29sU2VydmVyEiAKBHN0ZXAYCCABKA4yEi5udW1lbi52MS5Ub29sU3RlcBIUCgxpbnN0cnVjdGlvbnMYCSADKAkSEAoIcmVxdWlyZXMYCiADKAkSIgoFaGludHMYCyABKAsyEy5udW1lbi52MS5Ub29sSGludHMiWwoJVG9vbEhpbnRzEhEKCXJlYWRfb25seRgBIAEoCBITCgtkZXN0cnVjdGl2ZRgCIAEoCBISCgppZGVtcG90ZW50GAMgASgIEhIKCm9wZW5fd29ybGQYBCABKAgirQEKD0NhbGxUb29sUmVxdWVzdBIMCgRuYW1lGAEgASgJEhEKCWFyZ3VtZW50cxgCIAEoDBI3Cgdjb250ZXh0GAMgAygLMiYubnVtZW4udjEuQ2FsbFRvb2xSZXF1ZXN0LkNvbnRleHRFbnRyeRIQCgh2YXVsdF9pZBgEIAEoCRouCgxDb250ZXh0RW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJgChBDYWxsVG9vbFJlc3BvbnNlEiYKBWVycm9yGAEgASgOMhcubnVtZW4udjEuVG9vbEVycm9yQ29kZRIkCgZyZXN1bHQYAiABKAsyFC5udW1lbi52MS5Ub29sUmVzdWx0IkAKClRvb2xSZXN1bHQSDAoEdGV4dBgBIAEoCRISCgpzdHJ1Y3R1cmVkGAIgASgMEhAKCGlzX2Vycm9yGAMgASgIKmAKClRvb2xFZmZlY3QSGwoXVE9PTF9FRkZFQ1RfVU5TUEVDSUZJRUQQABIZChVUT09MX0VGRkVDVF9SRUFEX09OTFkQARIaChZUT09MX0VGRkVDVF9SRUFEX1dSSVRFEAIqZQoIVG9vbFN0ZXASGQoVVE9PTF9TVEVQX1VOU1BFQ0lGSUVEEAASFAoQVE9PTF9TVEVQX1NFQVJDSBABEhQKEFRPT0xfU1RFUF9SRU1PVkUQAhISCg5UT09MX1NURVBfTU9WRRADKlgKClRvb2xTZXJ2ZXISGwoXVE9PTF9TRVJWRVJfVU5TUEVDSUZJRUQQABIUChBUT09MX1NFUlZFUl9GVUxMEAESFwoTVE9PTF9TRVJWRVJfUkVBRElORxACKnUKDVRvb2xFcnJvckNvZGUSHwobVE9PTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIAocVE9PTF9FUlJPUl9DT0RFX1VOS05PV05fVE9PTBABEiEKHVRPT0xfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAIynAEKEVBsdWdpblRvb2xTZXJ2aWNlEkQKCUxpc3RUb29scxIaLm51bWVuLnYxLkxpc3RUb29sc1JlcXVlc3QaGy5udW1lbi52MS5MaXN0VG9vbHNSZXNwb25zZRJBCghDYWxsVG9vbBIZLm51bWVuLnYxLkNhbGxUb29sUmVxdWVzdBoaLm51bWVuLnYxLkNhbGxUb29sUmVzcG9uc2VCRlpEZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL2NvcmUvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChRudW1lbi92MS90b29scy5wcm90bxIIbnVtZW4udjEiEgoQTGlzdFRvb2xzUmVxdWVzdCI4ChFMaXN0VG9vbHNSZXNwb25zZRIjCgV0b29scxgBIAMoCzIULm51bWVuLnYxLlBsdWdpblRvb2wiuQEKClBsdWdpblRvb2wSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIUCgxpbnB1dF9zY2hlbWEYBCABKAwSFQoNb3V0cHV0X3NjaGVtYRgFIAEoDBIkCgZlZmZlY3QYBiABKA4yFC5udW1lbi52MS5Ub29sRWZmZWN0EhQKDGluc3RydWN0aW9ucxgHIAMoCRIQCghyZXF1aXJlcxgIIAMoCSLEAQoPQ2FsbFRvb2xSZXF1ZXN0EgwKBG5hbWUYASABKAkSEQoJYXJndW1lbnRzGAIgASgMEjcKB2NvbnRleHQYAyADKAsyJi5udW1lbi52MS5DYWxsVG9vbFJlcXVlc3QuQ29udGV4dEVudHJ5EhAKCHZhdWx0X2lkGAQgASgJEhUKDWNvbm5lY3Rpb25faWQYBSABKAkaLgoMQ29udGV4dEVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiYAoQQ2FsbFRvb2xSZXNwb25zZRImCgVlcnJvchgBIAEoDjIXLm51bWVuLnYxLlRvb2xFcnJvckNvZGUSJAoGcmVzdWx0GAIgASgLMhQubnVtZW4udjEuVG9vbFJlc3VsdCJACgpUb29sUmVzdWx0EgwKBHRleHQYASABKAkSEgoKc3RydWN0dXJlZBgCIAEoDBIQCghpc19lcnJvchgDIAEoCCpgCgpUb29sRWZmZWN0EhsKF1RPT0xfRUZGRUNUX1VOU1BFQ0lGSUVEEAASGQoVVE9PTF9FRkZFQ1RfUkVBRF9PTkxZEAESGgoWVE9PTF9FRkZFQ1RfUkVBRF9XUklURRACKnUKDVRvb2xFcnJvckNvZGUSHwobVE9PTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIAocVE9PTF9FUlJPUl9DT0RFX1VOS05PV05fVE9PTBABEiEKHVRPT0xfRVJST1JfQ09ERV9CQURfQVJHVU1FTlRTEAIynAEKEVBsdWdpblRvb2xTZXJ2aWNlEkQKCUxpc3RUb29scxIaLm51bWVuLnYxLkxpc3RUb29sc1JlcXVlc3QaGy5udW1lbi52MS5MaXN0VG9vbHNSZXNwb25zZRJBCghDYWxsVG9vbBIZLm51bWVuLnYxLkNhbGxUb29sUmVxdWVzdBoaLm51bWVuLnYxLkNhbGxUb29sUmVzcG9uc2VCRlpEZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL2NvcmUvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.ListToolsRequest
@@ -96,24 +96,12 @@ export type PluginTool = Message<"numen.v1.PluginTool"> & {
   effect: ToolEffect;
 
   /**
-   * The agent servers the tool is offered on. None is the full server alone.
-   *
-   * @generated from field: repeated numen.v1.ToolServer servers = 7;
-   */
-  servers: ToolServer[];
-
-  /**
-   * @generated from field: numen.v1.ToolStep step = 8;
-   */
-  step: ToolStep;
-
-  /**
    * The instructions about this tool, each one sentence of plain English. A
    * sentence about several tools is attached to each of them with identical
-   * text. An agent server sends an agent the distinct sentences of the tools it
-   * offers, in listing order.
+   * text. Whoever offers the tools to an agent sends it the distinct sentences
+   * of the tools it offers, in listing order.
    *
-   * @generated from field: repeated string instructions = 9;
+   * @generated from field: repeated string instructions = 7;
    */
   instructions: string[];
 
@@ -122,17 +110,9 @@ export type PluginTool = Message<"numen.v1.PluginTool"> & {
    * as vault:manage. The host lists and runs the tool only for a caller that
    * has all of them.
    *
-   * @generated from field: repeated string requires = 10;
+   * @generated from field: repeated string requires = 8;
    */
   requires: string[];
-
-  /**
-   * The hints an agent reads about the tool, set by the SDK from the effect,
-   * the step and the required permissions.
-   *
-   * @generated from field: numen.v1.ToolHints hints = 11;
-   */
-  hints?: ToolHints | undefined;
 };
 
 /**
@@ -141,48 +121,6 @@ export type PluginTool = Message<"numen.v1.PluginTool"> & {
  */
 export const PluginToolSchema: GenMessage<PluginTool> = /*@__PURE__*/
   messageDesc(file_numen_v1_tools, 2);
-
-/**
- * ToolHints are the MCP annotations of a tool.
- *
- * @generated from message numen.v1.ToolHints
- */
-export type ToolHints = Message<"numen.v1.ToolHints"> & {
-  /**
-   * The tool changes nothing: the effect is READ_ONLY.
-   *
-   * @generated from field: bool read_only = 1;
-   */
-  readOnly: boolean;
-
-  /**
-   * The tool removes something: the effect is READ_WRITE and the step REMOVE.
-   *
-   * @generated from field: bool destructive = 2;
-   */
-  destructive: boolean;
-
-  /**
-   * A repeated call with the same arguments has no further effect: the effect is READ_ONLY.
-   *
-   * @generated from field: bool idempotent = 3;
-   */
-  idempotent: boolean;
-
-  /**
-   * The tool reaches outside the machine: requires contains link:open.
-   *
-   * @generated from field: bool open_world = 4;
-   */
-  openWorld: boolean;
-};
-
-/**
- * Describes the message numen.v1.ToolHints.
- * Use `create(ToolHintsSchema)` to create a new message.
- */
-export const ToolHintsSchema: GenMessage<ToolHints> = /*@__PURE__*/
-  messageDesc(file_numen_v1_tools, 3);
 
 /**
  * @generated from message numen.v1.CallToolRequest
@@ -203,24 +141,31 @@ export type CallToolRequest = Message<"numen.v1.CallToolRequest"> & {
   arguments: Uint8Array;
 
   /**
-   * The context of the AskAgentRequest the call was made under: what the asking
+   * The tool context of the task the call was made under: what the asking
    * view shows, under keys that start with the id of the plugin that wrote them
    * and a slash. It is data about the call and no part of the arguments, and it
-   * is empty for a question asked with none, and for a call from a program
-   * outside Numen.
+   * is empty for a task given none.
    *
    * @generated from field: map<string, string> context = 3;
    */
   context: { [key: string]: string };
 
   /**
-   * The vault the call works, by identity: the one the agent run was started
-   * on, or for a call from a program outside Numen the one the host shows.
-   * Empty where there is none.
+   * The vault the call works, by identity: the one the task was started on.
+   * Empty on a call to the host is the vault the Numen-Vault header names, else
+   * the one the host shows.
    *
    * @generated from field: string vault_id = 4;
    */
   vaultId: string;
+
+  /**
+   * The connection whose agent asks for the call, by id. Empty where the
+   * caller asks for itself.
+   *
+   * @generated from field: string connection_id = 5;
+   */
+  connectionId: string;
 };
 
 /**
@@ -228,7 +173,7 @@ export type CallToolRequest = Message<"numen.v1.CallToolRequest"> & {
  * Use `create(CallToolRequestSchema)` to create a new message.
  */
 export const CallToolRequestSchema: GenMessage<CallToolRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_tools, 4);
+  messageDesc(file_numen_v1_tools, 3);
 
 /**
  * @generated from message numen.v1.CallToolResponse
@@ -255,7 +200,7 @@ export type CallToolResponse = Message<"numen.v1.CallToolResponse"> & {
  * Use `create(CallToolResponseSchema)` to create a new message.
  */
 export const CallToolResponseSchema: GenMessage<CallToolResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_tools, 5);
+  messageDesc(file_numen_v1_tools, 4);
 
 /**
  * ToolResult is what a tool answered.
@@ -292,7 +237,7 @@ export type ToolResult = Message<"numen.v1.ToolResult"> & {
  * Use `create(ToolResultSchema)` to create a new message.
  */
 export const ToolResultSchema: GenMessage<ToolResult> = /*@__PURE__*/
-  messageDesc(file_numen_v1_tools, 6);
+  messageDesc(file_numen_v1_tools, 5);
 
 /**
  * ToolEffect is what a tool does to the vault. The zero value means no effect
@@ -328,80 +273,6 @@ export const ToolEffectSchema: GenEnum<ToolEffect> = /*@__PURE__*/
   enumDesc(file_numen_v1_tools, 0);
 
 /**
- * ToolStep is how a call is shown to a person: as what it does. The zero value
- * leaves it to the tool's effect, a look for a tool that reads and an edit for
- * one that writes.
- *
- * @generated from enum numen.v1.ToolStep
- */
-export enum ToolStep {
-  /**
-   * @generated from enum value: TOOL_STEP_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * The call looks for notes.
-   *
-   * @generated from enum value: TOOL_STEP_SEARCH = 1;
-   */
-  SEARCH = 1,
-
-  /**
-   * The call takes something out of the vault.
-   *
-   * @generated from enum value: TOOL_STEP_REMOVE = 2;
-   */
-  REMOVE = 2,
-
-  /**
-   * The call files something elsewhere or under another name.
-   *
-   * @generated from enum value: TOOL_STEP_MOVE = 3;
-   */
-  MOVE = 3,
-}
-
-/**
- * Describes the enum numen.v1.ToolStep.
- */
-export const ToolStepSchema: GenEnum<ToolStep> = /*@__PURE__*/
-  enumDesc(file_numen_v1_tools, 1);
-
-/**
- * ToolServer is one of the servers the host builds for an agent. The zero value
- * means none was named.
- *
- * @generated from enum numen.v1.ToolServer
- */
-export enum ToolServer {
-  /**
-   * @generated from enum value: TOOL_SERVER_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * The server an agent works the whole vault through.
-   *
-   * @generated from enum value: TOOL_SERVER_FULL = 1;
-   */
-  FULL = 1,
-
-  /**
-   * The server an agent answers from, whose every tool reads.
-   *
-   * @generated from enum value: TOOL_SERVER_READING = 2;
-   */
-  READING = 2,
-}
-
-/**
- * Describes the enum numen.v1.ToolServer.
- */
-export const ToolServerSchema: GenEnum<ToolServer> = /*@__PURE__*/
-  enumDesc(file_numen_v1_tools, 2);
-
-/**
  * ToolErrorCode is why a call was served and not run.
  *
  * @generated from enum numen.v1.ToolErrorCode
@@ -431,15 +302,14 @@ export enum ToolErrorCode {
  * Describes the enum numen.v1.ToolErrorCode.
  */
 export const ToolErrorCodeSchema: GenEnum<ToolErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_tools, 3);
+  enumDesc(file_numen_v1_tools, 1);
 
 /**
- * PluginToolService is what a plugin that declares the tools capability serves
- * so that an agent can work through it. The host lists the tools of every
- * running plugin that declares it and offers them on the agent servers it
- * builds; a call an agent makes is handed to the plugin that listed the tool.
- * The host holds a tool to the permission its effect needs, so a plugin that
- * lacks it is offered nowhere.
+ * PluginToolService is what a plugin that declares the tools capability serves.
+ * The host serves it too: it lists the tools of every running plugin that
+ * declares it and hands a call to the plugin that listed the tool. The host
+ * holds a tool to the permission its effect needs, so a tool of a plugin that
+ * lacks it is listed nowhere.
  *
  * @generated from service numen.v1.PluginToolService
  */

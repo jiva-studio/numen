@@ -39,7 +39,7 @@ func sampleEntry(id, version string, state catalog.State, category, kind string)
 		Description: "The " + kind + " plugin",
 		Category:    category,
 		Contributes: manifest.Contributes{
-			TabKinds: []manifest.TabKind{{Kind: kind, Title: "Tab " + kind, Icon: "layers", When: "", Rank: domain.RankDefault}},
+			TabKinds: []manifest.TabKind{{Kind: kind, Title: "Tab " + kind, Icon: "layers", When: "", Rank: domain.RankDefault, IsNoteEditor: false}},
 			Feature:  kind + " feature",
 			Category: category,
 		},

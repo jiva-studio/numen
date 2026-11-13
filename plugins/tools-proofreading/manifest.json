@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.proofreading",
   "name": "LLM Proofreading",
-  "version": "2026.11.10",
+  "version": "2026.11.11",
   "protocol": 1,
   "description": "Cleans up transcripts and scanned text with a language model",
   "targets": ["desktop.editor"],
@@ -17,140 +17,15 @@
       }
     ]
   },
-  "permissions": ["vault:read", "vault:write", "ai:complete", "link:open"],
-  "secrets": [
-    {
-      "name": "apiKey",
-      "title": "API key",
-      "description": "Lets LLM Proofreading send your text to the chat service you chose to have it cleaned up.",
-      "group": "openrouter",
-      "when": {
-        "setting": "provider",
-        "is": ["openrouter"]
-      }
-    },
-    {
-      "name": "apiKey",
-      "title": "API key",
-      "description": "Lets LLM Proofreading send your text to the chat service you chose to have it cleaned up.",
-      "group": "openai",
-      "when": {
-        "setting": "provider",
-        "is": ["openai"]
-      }
-    },
-    {
-      "name": "apiKey",
-      "title": "API key",
-      "description": "Lets LLM Proofreading send your text to the chat service you chose to have it cleaned up.",
-      "when": {
-        "setting": "provider",
-        "is": ["custom"]
-      }
-    }
-  ],
+  "permissions": ["vault:read", "vault:write"],
   "settings": [
     {
-      "key": "provider",
-      "type": "enum",
-      "title": "Provider",
-      "description": "How proofreading requests are executed: through the default Numen agent or directly against an OpenAI-compatible batch/chat API",
-      "default": "agent",
-      "options": [
-        {
-          "value": "agent",
-          "title": "Agent",
-          "detail": "Uses the default Numen agent"
-        },
-        {
-          "value": "openrouter",
-          "title": "OpenRouter",
-          "detail": "Direct parallel batch requests via OpenRouter API"
-        },
-        {
-          "value": "openai",
-          "title": "OpenAI",
-          "detail": "Direct parallel batch requests via OpenAI API"
-        },
-        {
-          "value": "custom",
-          "title": "Custom service",
-          "detail": "Any OpenAI-compatible chat completions API"
-        }
-      ]
-    },
-    {
-      "key": "baseUrl",
-      "type": "string",
-      "title": "Service URL",
-      "description": "Base URL of the OpenAI-compatible API, for example http://localhost:11434/v1",
-      "default": "",
-      "when": {
-        "setting": "provider",
-        "is": ["custom"]
-      }
-    },
-    {
-      "key": "model",
-      "type": "string",
-      "title": "Model",
-      "description": "Model ID used for batch proofreading requests",
-      "default": "openai/gpt-4o-mini",
-      "when": {
-        "setting": "provider",
-        "is": ["openrouter", "openai", "custom"]
-      },
-      "optionsBy": {
-        "setting": "provider",
-        "options": {
-          "openrouter": [
-            {
-              "value": "google/gemini-2.5-flash",
-              "title": "Gemini 2.5 Flash",
-              "detail": "Fast, low-cost batch proofreading · OpenRouter"
-            },
-            {
-              "value": "openai/gpt-4o-mini",
-              "title": "GPT-4o mini",
-              "detail": "Balanced speed and accuracy · OpenRouter"
-            },
-            {
-              "value": "anthropic/claude-3.5-haiku",
-              "title": "Claude 3.5 Haiku",
-              "detail": "High-accuracy text editing · OpenRouter"
-            },
-            {
-              "value": "deepseek/deepseek-chat",
-              "title": "DeepSeek V3",
-              "detail": "Cost-effective bulk proofreading · OpenRouter"
-            }
-          ],
-          "openai": [
-            {
-              "value": "gpt-4o-mini",
-              "title": "GPT-4o mini",
-              "detail": "Fast, low-cost proofreading · OpenAI"
-            },
-            {
-              "value": "gpt-4.1-mini",
-              "title": "GPT-4.1 mini",
-              "detail": "High accuracy · OpenAI"
-            },
-            {
-              "value": "gpt-4.1-nano",
-              "title": "GPT-4.1 nano",
-              "detail": "Lowest cost bulk proofreading · OpenAI"
-            }
-          ],
-          "custom": [
-            {
-              "value": "gpt-4o-mini",
-              "title": "gpt-4o-mini",
-              "detail": "OpenAI-compatible model ID"
-            }
-          ]
-        }
-      }
+      "key": "connections",
+      "type": "connections",
+      "title": "Connections",
+      "description": "Services and agents, tried in order until one answers",
+      "operations": ["llm.complete"],
+      "max": 5
     },
     {
       "key": "batchSize",
@@ -166,7 +41,7 @@
       "key": "overlap",
       "type": "number",
       "title": "Overlap",
-      "description": "Lines shared by neighbouring batches",
+      "description": "Lines shared by neighboring batches",
       "default": 4,
       "min": 0,
       "max": 100,
@@ -186,7 +61,7 @@
       "key": "maxEditDistance",
       "type": "number",
       "title": "Max edit distance",
-      "description": "Maximum edit distance of a correction from the original line",
+      "description": "Largest edit distance of a correction from its line",
       "default": 0.3,
       "min": 0,
       "max": 1,

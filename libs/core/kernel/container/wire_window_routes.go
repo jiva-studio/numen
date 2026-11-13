@@ -4,13 +4,15 @@ import (
 	"context"
 	"io"
 
-	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
+	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connectioncall"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
+	windowhealth "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/health"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
 	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
@@ -21,15 +23,17 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
@@ -93,11 +97,12 @@ func mountVaults(w *windowWiring) {
 
 func mountSearch(w *windowWiring) {
 	state := w.state
-	finds := newSearch(w.a.search, w.db, w.asking, state.ReportWordsAlone)
+	finds := newSearch(w.a.search, w.db, w.asking, state.ReportWordsAlone, state.ClearWordsAlone)
 	handler := windowsearch.NewHandler(
 		state,
 		search.NewFindNames(w.db.NoteQueries(), w.kinds.list),
 		search.NewFindPassages(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
+		searchcancel.NewSearches(w.cfg.Clock()),
 	)
 	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError)
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
@@ -113,7 +118,7 @@ func mountFile(w *windowWiring) {
 	readers := vaultReaders(w.a.vault)
 	kinds := w.kinds
 	folders := filewindow.NewFolders(
-		state, state.Events,
+		state,
 		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), kinds.list),
 		file.NewListFileKinds(kinds.files, kinds.chooser),
 		file.NewCreateFolder(folderWriters(w.a.vault), state.Writes),
@@ -156,9 +161,8 @@ func mountNote(w *windowWiring) {
 		query.NewGetRelatedNotesView(w.db.NoteQueries(), w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
 		query.NewListHeadings(w.db.NoteQueries()),
 	)
-	writeLink := note.NewWriteLink(notes.Edit.Linking, w.db.NoteQueries(), writes)
 	links := notewindow.NewLinks(
-		state, query.NewResolveLinks(w.db.NoteQueries()), &writeLink, &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, writes,
+		state, query.NewResolveLinks(w.db.NoteQueries()), &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, writes,
 	)
 	connections := notewindow.NewConnections(
 		state, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
@@ -167,58 +171,22 @@ func mountNote(w *windowWiring) {
 	w.inst.Mount(editor.NewNoteRoute(state, handler))
 }
 
-func mountAgent(w *windowWiring) {
-	state := w.state
-	handler := &windowagent.Handler{
-		GetRoot:  func() string { return state.GetCurrentVault().Path },
-		GetVault: func() domain.VaultID { return state.GetCurrentVault().ID },
-	}
-	if taking := getToolProvider(w.a); taking != nil {
-		handler.Start = agent.NewStartTask(taking)
-		handler.End = agent.NewEndConversation(taking)
-	}
-	path, served := windowagent.NewRoute(handler, state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
-}
-
-// GetSettingsAgentHandler is the window handler of the agent tasks, over the agent of the settings; it
-// has no use case where no agent is configured.
-func GetSettingsAgentHandler(c Config) *windowagent.Handler {
-	handler := &windowagent.Handler{}
-	if taking := getSettingsAgent(plugins(c)); taking != nil {
-		handler.Start = agent.NewStartTask(taking)
-		handler.End = agent.NewEndConversation(taking)
-	}
-	return handler
-}
-
-func openGetSettings(c Config, provider agentport.AgentProvider) *settings.Get {
-	return settings.NewGet(readSettings(settingsOf(c)), modelsForProvider(c, provider), settingsPlugins(settingsOf(c)), func() []plugin.Setting { return listAppSettings(settingsOf(c)) })
+func openGetSettings(c Config) *settings.Get {
+	return settings.NewGet(readSettings(settingsOf(c)), settingsPlugins(settingsOf(c)), func() []plugin.Setting { return listAppSettings(settingsOf(c)) })
 }
 
 func mountSettings(w *windowWiring) {
 	state := w.state
-	var secretLister settings.SecretLister
-	items, groups := &windowsettings.SecretItems{}, &windowsettings.SecretGroups{}
-	if secrets := openSecrets(w.a); secrets != nil {
-		secretLister = secrets.List.ListForSettings
-		items = windowsettings.NewSecretItems(
-			secrets.Items.Create, secrets.Items.Rename, secrets.Items.Write, secrets.Items.Delete, secrets.Items.Move,
-		)
-		groups = windowsettings.NewSecretGroups(
-			secrets.Groups.Rename, secrets.Groups.Delete, secrets.Access.Allow, secrets.Access.Deny, secrets.Access.ListStates,
-		)
-	}
 	retry := openRetryPlugin(w.a.settings, getPluginRetrier(w.a))
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)
 	if data := openPluginData(w.a.vault); data != nil {
 		folders = windowsettings.NewPluginFolders(retry, data, state)
 	}
 	values := windowsettings.NewValues(
-		settings.NewGetWithSecrets(openGetSettings(w.cfg, pluginsAgentProvider(w.a)), secretLister),
+		openGetSettings(w.cfg),
 		openWriteSettings(w.a.settings), openWatchSettings(w.a.settings), nil,
 	)
-	handler := windowsettings.NewHandler(values, folders, items, groups)
+	handler := windowsettings.NewHandler(values, folders)
 	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.SetPathChooser(openChoosePluginPath(w.a.settings, dialog))
 	})
@@ -228,7 +196,19 @@ func mountSettings(w *windowWiring) {
 
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(getPluginServices(w.a), func(id string) (string, bool) { return getPluginDir(w.a, id) })
-	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.state.Gate.CountQuestions())))
+	host := w.a.PluginHost
+	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime, getConnectionResolve(w.a), clock.System{})
+	handler := windowplugin.NewHandler(watch)
+	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.state.Gate.CountQuestions())))
+}
+
+func mountHealth(w *windowWiring) {
+	host := w.a.PluginHost
+	handler := windowhealth.NewHandler(
+		host.Health, pluginhealth.NewReport(host.Health, host.Runtime), pluginhealth.NewClear(host.Health),
+	)
+	path, served := windowhealth.NewRoute(handler, w.state.Gate.CountQuestions())
+	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
 func shareEditorWindow(db *Index, opened *windowWiring) {
@@ -264,23 +244,23 @@ func mountVault(w *windowWiring) {
 
 func getReadVault(a pluginsWiring, db *Index) indexing.OpenReading {
 	return func(
-		ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+		ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 	) (indexing.ReadWholeVault, error) {
 		search := a.search
 		search.ShouldRebuildIndex = rebuild
-		return readWholeVault(search, ctx, db, embedder, v, vaultMakeRefresh(a.vault, db, db.Notes()))
+		return readWholeVault(search, ctx, db, source, v, vaultMakeRefresh(a.vault, db, db.Notes()))
 	}
 }
 
 func newIndexWorker(a pluginsWiring, db *Index, state *editor.State, embedding *indexing.Embedding, out io.Writer) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:      getReadVault(a, db),
-		Embedder:     embedding.GetEmbedder(),
-		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
-		VectorsReady: state.Events.EmitVectorsReady,
-		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
-		Quiet:        indexing.QuietPeriod,
-		After:        clock.System{}.After,
+		Reading:           getReadVault(a, db),
+		Source:            embedding.GetSource(),
+		VectorCounts:      indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
+		SearchSourceReady: state.Events.EmitSearchSourceReady,
+		Events:            windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
+		Quiet:             indexing.QuietPeriod,
+		After:             clock.System{}.After,
 	})
 }
 
@@ -336,4 +316,24 @@ func startVault(a pluginsWiring, db *Index, current *vault.CurrentRefresh) windo
 			Retire:    current.Retire,
 		}
 	}
+}
+
+func mountConnection(w *windowWiring) {
+	handler := windowconnection.NewService(openConnectionUseCases(w.a))
+	path, served := windowconnection.NewRoute(handler, w.state.Gate.CountQuestions())
+	w.inst.Mount(editor.NewRoute(path, served, handler))
+}
+
+func mountConnectionCall(w *windowWiring) {
+	handler := connectioncall.NewService(openModelCalls(w.a), openRowLists(w.a))
+	path, served := connectioncall.NewRoute(handler, w.state.Gate.CountQuestions())
+	w.inst.Mount(editor.NewRoute(path, served, handler))
+}
+
+func getConnectionResolve(c pluginsWiring) connectionport.ResolveConnection {
+	deps, ok := openConnectionDeps(c)
+	if !ok {
+		return nil
+	}
+	return connection.NewResolve(deps).Execute
 }

@@ -44,38 +44,18 @@ describe('getSettingValues', () => {
 })
 
 describe('hasPluginSettings', () => {
-  it('detects settings, settingsViews, and visible secrets', () => {
+  it('detects settings and settingsViews', () => {
     const empty = createPluginInfo('p', 'P')
-    expect(hasPluginSettings(empty, () => undefined)).toBe(false)
+    expect(hasPluginSettings(empty)).toBe(false)
 
     const withSetting = createPluginInfo('p', 'P', {
       settings: [{ key: 'a', type: 'string', title: 'A', description: '', default: '' }],
     })
-    expect(hasPluginSettings(withSetting, () => undefined)).toBe(true)
+    expect(hasPluginSettings(withSetting)).toBe(true)
 
     const withView = createPluginInfo('p', 'P', {
       settingsViews: [{ id: 'v', title: 'V' }],
     })
-    expect(hasPluginSettings(withView, () => undefined)).toBe(true)
-
-    const withHiddenSecretOnly = createPluginInfo('p', 'P', {
-      settings: [],
-      secrets: [
-        {
-          name: 's1',
-          title: 'S1',
-          description: '',
-          group: '',
-          when: { setting: 'mode', is: ['on'] },
-        },
-      ],
-    })
-    expect(hasPluginSettings(withHiddenSecretOnly, () => 'off')).toBe(false)
-
-    const withNoSettingsSecretsOnly = createPluginInfo('p', 'P', {
-      settings: [],
-      secrets: [{ name: 's1', title: 'S1', description: '', group: '' }],
-    })
-    expect(hasPluginSettings(withNoSettingsSecretsOnly, () => undefined)).toBe(true)
+    expect(hasPluginSettings(withView)).toBe(true)
   })
 })

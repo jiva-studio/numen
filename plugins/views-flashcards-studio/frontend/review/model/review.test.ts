@@ -10,7 +10,8 @@
  */
 import { effectScope, isRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createMockAgentHost, createMockNoticeHost } from '@numen/plugin-sdk/testing'
+import type { ConnectionHost } from '@numen/plugin-sdk'
+import { createMockNoticeHost } from '@numen/plugin-sdk/testing'
 import { ApiFailure } from '../../api/failure'
 
 const wire = vi.hoisted(() => {
@@ -173,8 +174,16 @@ type Review = ReturnType<typeof useReview>
 /** The notice host of the most recently opened review. */
 let notices = createMockNoticeHost()
 
-/** The agent of the window the review last opened. */
-let agent = createMockAgentHost()
+/** The connections of the plugin, which only the conversation view the review mounts calls. */
+const connections: ConnectionHost = {
+  call: async function* () {
+    yield* []
+    return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
+  },
+}
+
+/** The links of the vault, of which the notes of these decks have none. */
+const relations = { resolveLinks: () => Promise.resolve([]) }
 
 /** The callback the most recently opened review calls to return to the vaults. */
 let goToVaults = vi.fn()
@@ -194,7 +203,8 @@ const openReview = async ({ isPageDrawn = true } = {}) => {
       vault: 'roots',
       counts,
       notices,
-      agent,
+      connections,
+      relations,
       mountView: mountEmptyView,
       goToVaults,
       getViewport: () => ({
@@ -257,7 +267,6 @@ beforeEach(() => {
   wire.responses.length = 0
   wire.takenBack.length = 0
   wire.scrolled.length = 0
-  agent = createMockAgentHost()
   wire.opened = { unwritten: [], skipped: 0 }
   wire.isStartRefused = false
   wire.requestedSessions.length = 0
@@ -480,13 +489,15 @@ describe('a session sat down to', () => {
     expect(wire.requestedNotes).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
   })
 
-  it('keeps the conversation out when the agent cannot be reached, and says why', async () => {
-    agent.setUnreachable('no model is set up')
+  it('opens the conversation on the connections of the plugin, in the vault it is on', async () => {
     const review = await openSession()
     review.session.panels.toggleAgent()
 
-    expect(review.session.panels.agentPanel.open.value).toBe(false)
-    expect(notices.getShown()).toMatchObject([{ text: 'no model is set up', severity: 'warning' }])
+    expect(review.session.panels.agentPanel.open.value).toBe(true)
+    expect(review.session.panels.agentPanel.context.value).toMatchObject({
+      connections,
+      vault: 'roots',
+    })
   })
 })
 

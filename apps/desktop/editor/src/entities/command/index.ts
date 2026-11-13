@@ -8,3 +8,4 @@ export type {
   PromptStep,
   RetypeWords,
 } from './model/command'
+export { createCommandTitleReader } from './model/commandTitle'

@@ -10,6 +10,9 @@ export default defineConfig(
     plugins: [vue()],
     hostModules,
     outDir: '../../../libs/core/kernel/adapter/window/editor/pages/app',
-    own: { '@numen/plugin-manager': '../../../libs/plugin/manager/src/index.ts' },
+    own: {
+      '@numen/plugin-manager/testing': '../../../libs/plugin/manager/src/testing/index.ts',
+      '@numen/plugin-manager': '../../../libs/plugin/manager/src/index.ts',
+    },
   }),
 )

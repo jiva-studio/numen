@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIjCgVSYW5nZRINCgVzdGFydBgBIAEoBRILCgNlbmQYAiABKAUiIgoGQm91bmRzEgsKA21pbhgBIAEoARILCgNtYXgYAiABKAEiLQoOUmVhc29uaW5nTGV2ZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCSqfAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIYChRFUlJPUl9DT0RFX05PVF9GT1VORBABEhkKFUVSUk9SX0NPREVfTk9UX0FfTk9URRACEhcKE0VSUk9SX0NPREVfTk9UX1RFWFQQAxIYChRFUlJPUl9DT0RFX1RPT19MQVJHRRAEEh4KGkVSUk9SX0NPREVfQk9EWV9VTldSSVRBQkxFEAUSGQoVRVJST1JfQ09ERV9VTlJFQURBQkxFEAYSHQoZRVJST1JfQ09ERV9BTFJFQURZX0VYSVNUUxAHEhsKF0VSUk9SX0NPREVfSU5WQUxJRF9OQU1FEAgSFwoTRVJST1JfQ09ERV9DT05GTElDVBANQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIjCgVSYW5nZRINCgVzdGFydBgBIAEoBRILCgNlbmQYAiABKAUiIgoGQm91bmRzEgsKA21pbhgBIAEoARILCgNtYXgYAiABKAEqnwIKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEh0KGUVSUk9SX0NPREVfQUxSRUFEWV9FWElTVFMQBxIbChdFUlJPUl9DT0RFX0lOVkFMSURfTkFNRRAIEhcKE0VSUk9SX0NPREVfQ09ORkxJQ1QQDUJGWkRnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvY29yZS9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * FileStat is which file this is: where it is filed, how big it is, and when
@@ -103,34 +103,6 @@ export type Bounds = Message<"numen.v1.Bounds"> & {
  */
 export const BoundsSchema: GenMessage<Bounds> = /*@__PURE__*/
   messageDesc(file_numen_v1_shared, 2);
-
-/**
- * ReasoningLevel is one depth of reasoning a model can be asked to work at.
- *
- * @generated from message numen.v1.ReasoningLevel
- */
-export type ReasoningLevel = Message<"numen.v1.ReasoningLevel"> & {
-  /**
-   * What a task asks for the level by (e.g. "low", "high").
-   *
-   * @generated from field: string name = 1;
-   */
-  name: string;
-
-  /**
-   * What the level is called when shown to a person.
-   *
-   * @generated from field: string title = 2;
-   */
-  title: string;
-};
-
-/**
- * Describes the message numen.v1.ReasoningLevel.
- * Use `create(ReasoningLevelSchema)` to create a new message.
- */
-export const ReasoningLevelSchema: GenMessage<ReasoningLevel> = /*@__PURE__*/
-  messageDesc(file_numen_v1_shared, 3);
 
 /**
  * ErrorCode is why a note could not be read or written.

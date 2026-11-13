@@ -7,15 +7,21 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
+type PluginHealth interface {
+	RemovePlugin(pluginID string)
+}
+
 // ApplyPluginSetting makes a plugin follow a setting that changed: it stores the value in memory,
 // stops the plugin when its dependencies are others, and syncs its listeners and sends it its
-// configuration. A listener that cannot be bound puts the previous value back.
+// configuration. A listener that cannot be bound puts the previous value back. A plugin switched off
+// loses its health items.
 type ApplyPluginSetting struct {
 	values    settingsport.PluginSettingValues
 	stopper   settingsport.PluginStopper
 	failures  settingsport.FailureClearer
 	listeners settingsport.PluginListeners
 	push      settingsport.PluginConfigPush
+	health    PluginHealth
 }
 
 // ApplyPluginSettingDeps is what ApplyPluginSetting is made of.
@@ -25,12 +31,14 @@ type ApplyPluginSettingDeps struct {
 	Failures  settingsport.FailureClearer
 	Listeners settingsport.PluginListeners
 	Push      settingsport.PluginConfigPush
+	Health    PluginHealth
 }
 
 // NewApplyPluginSetting makes the use case.
 func NewApplyPluginSetting(deps ApplyPluginSettingDeps) *ApplyPluginSetting {
 	return &ApplyPluginSetting{
 		values: deps.Values, stopper: deps.Stopper, failures: deps.Failures, listeners: deps.Listeners, push: deps.Push,
+		health: deps.Health,
 	}
 }
 
@@ -65,6 +73,7 @@ func (u *ApplyPluginSetting) applyEnabledFlag(ctx context.Context, pluginID stri
 	var stopErr error
 	if !enabled {
 		stopErr = u.stopper.StopPlugin(ctx, pluginID)
+		u.health.RemovePlugin(pluginID)
 	} else {
 		u.values.FillGeneratedSettings()
 	}

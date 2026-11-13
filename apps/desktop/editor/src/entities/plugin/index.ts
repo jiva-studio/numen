@@ -11,7 +11,9 @@ export {
   type ItemListAnswer,
   type ItemListRequest,
 } from './api/declaredCommands'
-export { agentPort, getPluginTexts } from './api/hostClients'
+export { getPluginConnections, getPluginTexts } from './api/hostClients'
+export { healthReports, watchPluginHealth, type PluginHealthItem } from './api/health'
+export { processHost } from './api/processes'
 export { getFrontendPluginIds } from './lib/frontendPlugins'
 export { readPluginReadme } from './api/readme'
 export { PLUGIN_FAILURE_WORDS } from './words'

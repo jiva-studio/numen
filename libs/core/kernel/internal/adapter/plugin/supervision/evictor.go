@@ -23,7 +23,7 @@ type Evictor struct {
 }
 
 // NewEvictor returns the evictor that starts the timer: every thirty seconds it asks stopper to stop the plugins idle for
-// longer than IdleThreshold.
+// longer than their idle limit, IdleThreshold where the manifest sets none.
 func NewEvictor(stopper idleStopper) *Evictor {
 	e := &Evictor{stopper: stopper, ticker: time.NewTicker(evictInterval), stopSignal: make(chan struct{})}
 	e.wg.Go(func() {

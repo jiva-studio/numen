@@ -20,7 +20,7 @@ vi.mock('../reader', () => ({
 }))
 
 vi.mock('@numen/ui', () => ({
-  LoadingIndicator: defineComponent({ setup: () => () => h('span') }),
+  LoadingIndicator: () => h('span'),
 }))
 
 const PATH = 'library/Corrupted.pdf'

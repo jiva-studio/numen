@@ -14,10 +14,3 @@ type KeyStore interface {
 	// DeleteKey removes the key stored under the name, or fails with plugin.ErrNoKey.
 	DeleteKey(ctx context.Context, name string) error
 }
-
-// CredentialsLocator tells where a key store keeps its values when the machine has no keychain.
-type CredentialsLocator interface {
-	// GetCredentialsPath returns the file the values are kept in, or the empty text while the
-	// system keychain is in use.
-	GetCredentialsPath(ctx context.Context) string
-}

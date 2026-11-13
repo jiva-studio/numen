@@ -3,8 +3,6 @@
  */
 import { computed, type Ref, type ShallowRef } from 'vue'
 import type {
-  AgentHost,
-  AgentPort,
   BackgroundTaskHost,
   BufferHost,
   CommandsHost,
@@ -19,12 +17,11 @@ import type {
   WorkspaceIcons,
 } from '@numen/plugin-loader'
 import type { FileOpeners } from '@/entities/tab'
-import { listRelatedNotes, listHeadings, resolveLinks, type NoteCreator } from '@/entities/note'
+import { listRelatedNotes, listHeadings, type NoteCreator } from '@/entities/note'
 import { getFileKinds } from '@/entities/file'
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { Task } from '@/entities/window'
-import type { SettingsStore } from '@/entities/settings'
 import type { PluginNotes } from './pluginNotes'
 import type { NoteBuffer } from '@numen/plugin-loader'
 
@@ -34,7 +31,6 @@ export interface PluginServices {
   readonly notes: VaultNotes
   readonly relations: VaultRelations
   readonly files: VaultFiles
-  readonly agent: AgentHost
   readonly buffers: BufferHost
   readonly noteBuffer: NoteBuffer
   readonly commands: CommandsHost
@@ -97,7 +93,6 @@ export interface WorkspaceHostDeps {
   readonly files: WorkspaceFiles
   readonly icons: WorkspaceIcons
   readonly messages: WorkspaceHost['messages']
-  readonly ask: (text: string) => void
   readonly getNoteInFocus: () => NoteRef
   readonly today: () => string
 }
@@ -121,7 +116,6 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     messages: deps.messages,
     icons: deps.icons,
     getNoteInFocus: () => deps.getNoteInFocus(),
-    ask: (text) => deps.ask(text),
   }
 }
 
@@ -150,29 +144,5 @@ export function createVaultNotes({ search, making, pluginNotes }: VaultNotesDeps
     read: (path) => pluginNotes.readNote(path),
     write: (path, body) => pluginNotes.writeNote(path, body),
     readProperties: async (path) => (await getFileKinds([path])).get(path)?.properties ?? {},
-  }
-}
-
-/** What the agent a plugin's tabs ask is made from. */
-export interface AgentHostDeps {
-  readonly port: AgentPort
-  readonly window: { readonly vault: { readonly unreachable: Readonly<Ref<string>> } }
-  readonly settings: {
-    readonly rest: {
-      readonly read: Pick<SettingsStore['read'], 'getSetting' | 'getModelsAt'>
-      readonly write: Pick<SettingsStore['write'], 'writeSetting'>
-    }
-  }
-}
-
-export function createAgentHost({ port, window, settings }: AgentHostDeps): AgentHost {
-  return {
-    ask: (query) => port.ask(query),
-    finish: (conversation) => port.finish(conversation),
-    resolveLinks: (text, vault) => resolveLinks('', text, vault),
-    getUnreachable: () => window.vault.unreachable.value,
-    getSetting: (path) => settings.rest.read.getSetting(path),
-    writeSetting: (path, value) => settings.rest.write.writeSetting(path, value),
-    getModelsAt: (path) => settings.rest.read.getModelsAt(path),
   }
 }

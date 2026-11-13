@@ -26,35 +26,21 @@ func TestAnswerLengthIsNotReadFromTheSnakeCaseKey(t *testing.T) {
 
 func TestASettingAbsentFromTheValuesKeepsItsValue(t *testing.T) {
 	store := settings.NewStore()
-	store.Configure(map[string]string{"baseUrl": "http://localhost:1234", "model": "m1", "temperature": "0.5"})
-	store.Configure(map[string]string{"model": "m2"})
+	store.Configure(map[string]string{"temperature": "0.5"})
+	store.Configure(map[string]string{"maxSteps": "7"})
 
 	got := store.Get()
-	if got.BaseURL != "http://localhost:1234" || got.Model != "m2" || got.Temperature == nil || *got.Temperature != 0.5 {
+	if got.Temperature == nil || *got.Temperature != 0.5 || got.MaxSteps != 7 {
 		t.Errorf("the settings are %+v", got)
 	}
 }
 
-func TestATaskLimitOverridesTheConfiguredOne(t *testing.T) {
+func TestTheStepLimitIsTwentyFiveUntilOneIsConfigured(t *testing.T) {
 	store := settings.NewStore()
+	before := store.Get().GetMaxSteps()
 	store.Configure(map[string]string{"maxSteps": "5"})
-	got := store.Get()
 
-	if got.GetMaxSteps(2) != 2 || got.GetMaxSteps(0) != 5 {
-		t.Errorf("the limits are %d and %d", got.GetMaxSteps(2), got.GetMaxSteps(0))
-	}
-}
-
-func TestTheModelIsTheTaskOnesThenTheConfiguredOneThenTheDefault(t *testing.T) {
-	store := settings.NewStore()
-	if got := store.Get().GetModel(""); got != settings.DefaultModel {
-		t.Errorf("the model is %q", got)
-	}
-	store.Configure(map[string]string{"model": "m1"})
-	if got := store.Get().GetModel(""); got != "m1" {
-		t.Errorf("the model is %q", got)
-	}
-	if got := store.Get().GetModel("routed"); got != "routed" {
-		t.Errorf("the model is %q", got)
+	if after := store.Get().GetMaxSteps(); before != 25 || after != 5 {
+		t.Errorf("the limits are %d and %d", before, after)
 	}
 }

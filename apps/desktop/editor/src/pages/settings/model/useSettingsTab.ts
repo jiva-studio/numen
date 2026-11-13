@@ -8,7 +8,7 @@ import { createManagedFromEntries } from '../lib/pluginListing'
 import type { SettingsTabState } from '../types'
 
 export function useSettingsTab(state: SettingsTabState) {
-  const { initialPluginId, initialSearchQuery, installation } = state
+  const { initialPluginId, initialSearchQuery, installation, markedSetting } = state
   const selectedPluginId = ref<string | null>(initialPluginId.value)
 
   const plugins = computed<readonly PluginInfo[]>(() => installation.plugin.plugins.value)
@@ -39,6 +39,7 @@ export function useSettingsTab(state: SettingsTabState) {
   function selectPlugin(pluginId: string): void {
     selectedPluginId.value = pluginId
     initialPluginId.value = pluginId
+    markedSetting.value = null
   }
 
   function updateQuery(query: string): void {
@@ -48,13 +49,20 @@ export function useSettingsTab(state: SettingsTabState) {
   function goBack(): void {
     selectedPluginId.value = null
     initialPluginId.value = null
+    markedSetting.value = null
   }
+
+  /** The setting marked on the page of the open plugin; a mark of another plugin marks nothing. */
+  const marked = computed(() =>
+    markedSetting.value?.pluginId === selectedPluginId.value ? markedSetting.value : null,
+  )
 
   return {
     selectedPluginId,
     plugins,
     uninstalled,
     selectedPlugin,
+    marked,
     selectPlugin,
     updateQuery,
     goBack,

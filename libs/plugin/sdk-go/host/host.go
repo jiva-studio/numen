@@ -14,7 +14,6 @@ import (
 	"errors"
 	"io/fs"
 
-	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
 	notesedit "github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
@@ -32,13 +31,6 @@ var (
 	ErrLockedByAnother = errors.New("the file is locked by another program")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
 	ErrNotANote = notesedit.ErrNotANote
-	// ErrInvalidConnection is what a connection gets that is not one: a role no connection
-	// carries, roles that are not inverse of each other, or a note joined to itself.
-	ErrInvalidConnection = notesdomain.ErrInvalidConnection
-	// ErrHierarchyCycle is what a connection gets that would put a note above itself.
-	ErrHierarchyCycle = notesdomain.ErrHierarchyCycle
-	// ErrNoFreeName is what a new untitled note gets when every numbered name is taken.
-	ErrNoFreeName = notesdomain.ErrNoFreeName
 	// ErrUnknownVault is what a call gets when it names a vault the installation does not know.
 	ErrUnknownVault = errors.New("the vault is not on the list")
 	// ErrNotExist is fs.ErrNotExist: a file, a note or a name that is not there.
@@ -63,15 +55,6 @@ const (
 type IndexState struct {
 	Status IndexStatus
 	Reason string
-}
-
-// Change is what a watch reports: the files that changed, or that the host now shows another vault and
-// the watch must restart. Err is set only on the last change before the channel closes, when the watch
-// ended on a failure.
-type Change struct {
-	Paths          []string
-	IsVaultChanged bool
-	Err            error
 }
 
 // Move is what a watch of moves reports: that something moved in some vault. Err is set only on the
@@ -101,9 +84,6 @@ type VaultIndex interface {
 	// Scan updates the index for the files named.
 	Scan(ctx context.Context, paths []string) error
 	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
-	// Watch reports the files that changed until ctx is done. It returns once the watch is active, and
-	// the channel closes when the watch ends.
-	Watch(ctx context.Context) (<-chan Change, error)
 }
 
 // FileRange is a ranged read of a file: the text, where it begins in the file, and the file stat of

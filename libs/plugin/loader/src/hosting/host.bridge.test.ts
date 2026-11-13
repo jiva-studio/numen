@@ -7,6 +7,7 @@ import type { PluginHostDeps } from './types'
 
 function createDeps(extra: Partial<PluginHostDeps> = {}): PluginHostDeps {
   return {
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),
@@ -222,6 +223,7 @@ describe('a tab kind component', () => {
   it('receives the context of its plugin as the context prop', async () => {
     let kind: { pane?: unknown } | undefined
     const deps = createDeps({
+      target: 'desktop.editor',
       registerKind: vi.fn((registered) => {
         kind = registered as { pane?: unknown }
         return vi.fn()
@@ -253,7 +255,6 @@ describe('a tab kind component', () => {
     const openExternal = vi.fn(async () => undefined)
     const relations = { roles: ['child'] }
     const files = { list: vi.fn() }
-    const agent = { getUnreachable: () => '' }
     const buffers = { track: vi.fn() }
     const texts = { readLiveText: vi.fn(), createEdit: vi.fn() }
     const onError = vi.fn()
@@ -275,9 +276,9 @@ describe('a tab kind component', () => {
       ],
       getRelations: () => relations as never,
       getFiles: () => files as never,
-      getAgent: () => agent as never,
       getBuffers: () => buffers as never,
       getTexts: () => texts as never,
+      target: 'desktop.editor',
       registerKind: vi.fn((registered) => {
         readerKind = registered as { pane?: unknown }
         return vi.fn()
@@ -297,7 +298,6 @@ describe('a tab kind component', () => {
     })
     expect(ctx.vault.relations).toBeDefined()
     expect(ctx.vault.files).toBeDefined()
-    expect(ctx.work.agent).toBeDefined()
     expect(ctx.vault.buffers).toBeDefined()
     expect(ctx.vault.texts).toBeDefined()
 

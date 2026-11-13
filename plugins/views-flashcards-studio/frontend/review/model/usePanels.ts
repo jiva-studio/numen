@@ -7,8 +7,12 @@
  */
 import { computed, ref } from 'vue'
 
-import { formatErrorMessage, type AgentPort, type TextLink, type Caught } from '@numen/plugin-sdk'
-import { createCardAgentPort } from '../api/session/agent'
+import {
+  formatErrorMessage,
+  type ConnectionHost,
+  type TextLink,
+  type Caught,
+} from '@numen/plugin-sdk'
 import { getDeckNeighborhood } from '../api/session/notes'
 import { useAgentPanel } from './session/panel'
 import { useNotesPanel } from './session/notes'
@@ -17,9 +21,8 @@ import type { ReviewCard } from '../lib/card/cards'
 
 /** What the panels ask of the window they stand in. */
 export interface PanelsDeps {
-  readonly agent: AgentPort
+  readonly connections: ConnectionHost
   readonly card: () => ReviewCard | null
-  readonly unreachable: () => string
   readonly vault: () => string
   readonly showNotice: (text: string) => void
   readonly resolveLinks: (text: string) => Promise<readonly TextLink[]>
@@ -52,9 +55,9 @@ export const usePanels = (deps: PanelsDeps) => {
   }
 
   const agentPanel = useAgentPanel({
-    agent: (card) => createCardAgentPort(deps.agent, card, deps.vault()),
+    connections: deps.connections,
     card: deps.card,
-    unreachable: deps.unreachable,
+    vault: deps.vault,
     open: () => showing.value === 'asking',
     // A panel put away takes the window back to the card only when the window is
     // on it: a card answered with the reading up ends the conversation, and the
@@ -63,7 +66,6 @@ export const usePanels = (deps: PanelsDeps) => {
       if (open) showing.value = 'asking'
       else if (showing.value === 'asking') showing.value = 'here'
     },
-    showNotice: deps.showNotice,
   })
 
   const notesPanel = useNotesPanel({

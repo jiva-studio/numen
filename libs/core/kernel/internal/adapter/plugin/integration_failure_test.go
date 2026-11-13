@@ -20,14 +20,12 @@ func failLaunching(_ context.Context, _ manifest.Discovered, _ int, _ string) (*
 	return nil, nil, errors.New("exec format error")
 }
 
-func getFailure(t *testing.T, host *container.PluginRoles, id string) *plugindomain.Failure {
-	t.Helper()
-	for _, info := range host.Registry.GetPluginInfos() {
-		if info.ID == id {
-			return info.Failure
+func getFailure(host *container.PluginRoles, id string) *plugindomain.HealthItem {
+	for _, item := range host.Health.List() {
+		if item.PluginID == id && item.Key == plugindomain.HealthKeyStart {
+			return &item
 		}
 	}
-	t.Fatalf("plugin %s is not listed", id)
 	return nil
 }
 
@@ -36,22 +34,25 @@ func TestAPluginWhoseStartFailedIsListedWithItsReason(t *testing.T) {
 	var procs []*os.Process
 	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion+1, &procs))
 
-	if got := getFailure(t, host, failingPluginID); got != nil {
+	if got := getFailure(host, failingPluginID); got != nil {
 		t.Fatalf("failure before any start = %+v, want none", got)
 	}
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
+	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
 		t.Fatalf("EnsureActive() = %v, want %v", err, manifest.ErrUnsupportedProtocol)
 	}
 
-	got := getFailure(t, host, failingPluginID)
+	got := getFailure(host, failingPluginID)
 	if got == nil {
 		t.Fatal("a plugin on an unsupported protocol is listed without a failure")
 	}
-	if got.PluginID != failingPluginID || got.Name == "" || got.At.IsZero() {
-		t.Fatalf("failure = %+v, want the id, the name and the time", got)
+	if got.Severity != plugindomain.HealthError || got.Detail == "" {
+		t.Fatalf("failure = %+v, want an error with the cause as its detail", got)
 	}
-	if want := lifecycle.DescribeFailure(manifest.ErrUnsupportedProtocol); got.Reason != want {
-		t.Fatalf("reason = %q, want %q", got.Reason, want)
+	if want := lifecycle.DescribeFailure(manifest.ErrUnsupportedProtocol); got.Text != want {
+		t.Fatalf("reason = %q, want %q", got.Text, want)
+	}
+	if got.Action == nil || got.Action.Command != plugindomain.AppCommandOpenSettings || got.Action.Values[plugindomain.OpenSettingsPlugin] != failingPluginID {
+		t.Fatalf("action = %+v, want the settings of the plugin", got.Action)
 	}
 }
 
@@ -61,7 +62,7 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion+1, &procs))
 	var recovered []string
 	host.Failures.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID); err == nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err == nil {
 		t.Fatal("expected the first start to fail")
 	}
 
@@ -71,7 +72,7 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 		t.Fatalf("RetryPlugin() = %+v, %v, want the plugin started", failure, err)
 	}
 
-	if got := getFailure(t, host, failingPluginID); got != nil {
+	if got := getFailure(host, failingPluginID); got != nil {
 		t.Fatalf("failure after a good retry = %+v, want none", got)
 	}
 	if status, _ := host.Registry.GetPluginStatus(failingPluginID); !status.IsActive {
@@ -85,9 +86,6 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 func TestARetryThatFailsAgainAnswersTheReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	host.Processes.SetLauncher(failLaunching)
-	var notified []plugindomain.Failure
-	host.Failures.SetOnPluginFailed(func(failure plugindomain.Failure) { notified = append(notified, failure) })
-
 	failure, err := host.Retry.RetryPlugin(t.Context(), failingPluginID)
 	if err != nil {
 		t.Fatalf("RetryPlugin() error = %v", err)
@@ -98,11 +96,11 @@ func TestARetryThatFailsAgainAnswersTheReason(t *testing.T) {
 	if failure.Detail != "launch plugin org.example.sample: exec format error" {
 		t.Fatalf("failure detail = %q, want the launch error", failure.Detail)
 	}
-	if got := getFailure(t, host, failingPluginID); got == nil || got.Reason != failure.Reason {
+	if got := getFailure(host, failingPluginID); got == nil || got.Text != failure.Reason || got.Detail != failure.Detail {
 		t.Fatalf("listed failure = %+v, want %+v", got, failure)
 	}
-	if len(notified) != 1 || notified[0].PluginID != failingPluginID {
-		t.Fatalf("failure callbacks = %+v, want one for %s", notified, failingPluginID)
+	if items := host.Health.List(); len(items) != 1 {
+		t.Fatalf("health items = %+v, want the one start item", items)
 	}
 }
 
@@ -110,21 +108,21 @@ func TestTheReasonOfAFailedStartIsListedUntilAStartSucceeds(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
 	host.Processes.SetLauncher(failLaunching)
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID); err == nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err == nil {
 		t.Fatal("expected the first start to fail")
 	}
-	if got := getFailure(t, host, failingPluginID); got == nil {
+	if got := getFailure(host, failingPluginID); got == nil {
 		t.Fatal("the failed start is listed without its reason")
 	}
 	var recovered []string
 	host.Failures.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
 
 	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive() on the next use = %v, want the plugin started", err)
 	}
 
-	if got := getFailure(t, host, failingPluginID); got != nil {
+	if got := getFailure(host, failingPluginID); got != nil {
 		t.Fatalf("failure after a start that succeeded = %+v, want none", got)
 	}
 	if len(recovered) != 1 || recovered[0] != failingPluginID {
@@ -159,7 +157,7 @@ func TestEnablingAFailedPluginTellsItRecovered(t *testing.T) {
 	if len(recovered) != 1 || recovered[0] != failingPluginID {
 		t.Fatalf("recovered = %v, want one report of %s", recovered, failingPluginID)
 	}
-	if got := getFailure(t, host, failingPluginID); got != nil {
+	if got := getFailure(host, failingPluginID); got != nil {
 		t.Fatalf("failure after enabling = %+v, want none", got)
 	}
 }
@@ -199,7 +197,7 @@ func TestDisablingAFailedPluginClearsItsFailure(t *testing.T) {
 	if len(cleared) != 1 || cleared[0] != failingPluginID {
 		t.Fatalf("cleared = %v, want one report of %s", cleared, failingPluginID)
 	}
-	if got := getFailure(t, host, failingPluginID); got != nil {
+	if got := getFailure(host, failingPluginID); got != nil {
 		t.Fatalf("failure after disabling = %+v, want none", got)
 	}
 }

@@ -18,7 +18,7 @@ type handlingPlugins struct{ declaredByTwoPlugins }
 func (handlingPlugins) ListHandlers() []plugin.CommandEntry {
 	return []plugin.CommandEntry{
 		{PluginID: "org.example.scans", Command: manifest.Command{ID: "app:file.createText", Title: "Read the scan", When: "target.isFile"}},
-		{PluginID: "org.example.scans", Command: manifest.Command{ID: "app:link.downloadMedia", Title: "Download the reading", When: "version.kind == 'reading'"}},
+		{PluginID: "org.example.readings", Command: manifest.Command{ID: "app:file.createText", Title: "Download the reading", When: "version.kind == 'reading'"}},
 		{PluginID: "org.example.crash", Command: manifest.Command{ID: "app:file.createText", Title: "Crash"}},
 	}
 }
@@ -40,7 +40,7 @@ func TestListCommands_ListsTheHandlersOfThePluginsTheHostRuns(t *testing.T) {
 
 	got := res.Msg.GetHandlers()
 	if len(got) != 2 {
-		t.Fatalf("got %v, want the two handlers of org.example.scans", got)
+		t.Fatalf("got %v, want the handlers of org.example.scans and org.example.readings", got)
 	}
 	if got[0].GetPluginId() != "org.example.scans" || got[0].GetHandler().GetCommand() != "app:file.createText" ||
 		got[0].GetHandler().GetTitle() != "Read the scan" || got[0].GetHandler().GetWhen() != "target.isFile" || got[0].GetHasItems() {
@@ -67,7 +67,7 @@ func TestListCommandItems_OfASharedCommandReadsOnlyTheHandlers(t *testing.T) {
 	commands := newScenarios(commandReadsCounted{reads: &reads}, commandReadsCounted{reads: &reads}, nil, nil, nil)
 	handler := newHandler(commands.withVersions(&versionItems{}))
 
-	list := listItemsOfOne(t, handler, "org.example.scans", "app:link.downloadMedia", "scans/page.png")
+	list := listItemsOfOne(t, handler, "org.example.readings", "app:file.createText", "scans/page.png")
 
 	if len(list.GetItems()) != 2 {
 		t.Errorf("got %v, want the two versions", list)

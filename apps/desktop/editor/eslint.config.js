@@ -47,7 +47,7 @@ const layerPolicies = createLayerPolicies({
 })
 
 export default tseslint.config(
-  ...createBaseConfig(import.meta.dirname),
+  ...createBaseConfig(import.meta.dirname, { allowDefaultProject: ['scripts/*.mjs'] }),
 
   // FSD Layer Hierarchy and boundaries enforcement
   createLayerConfig({

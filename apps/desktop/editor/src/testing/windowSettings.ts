@@ -2,6 +2,8 @@
  * The settings of a window made the way the window makes them: the state its appearance and palette
  * read, and the settings tab.
  */
+import { shallowRef } from 'vue'
+import { createConnectionStore, type ConnectionStore } from '@/entities/connection'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import { createWindowSettings } from '@/features/settings-commands'
@@ -12,24 +14,32 @@ type PageDeps = Parameters<typeof createSettingsPage>[0]
 
 export interface WindowSettingsDeps {
   readonly rest: SettingsStore
+  readonly connections?: ConnectionStore
   readonly words: Parameters<typeof createWindowSettings>[0]['words']
   readonly log: MessageLog
   readonly windowTabs: WindowTabs
   readonly onSizeChanged: () => void
   readonly getSettingsViews: PageDeps['getSettingsViews']
   readonly getPlatform: PageDeps['getPlatform']
+  readonly health?: PageDeps['health']
 }
 
 export function createWindowSettingsPart(deps: WindowSettingsDeps) {
   const { rest, words, log, onSizeChanged } = deps
-  const windowSettings = createWindowSettings({ rest, words, log, onSizeChanged })
+  const connections = deps.connections ?? createConnectionStore(log.getWriter('connections'))
+  const windowSettings = createWindowSettings({ rest, connections, words, log, onSizeChanged })
   const page = createSettingsPage({
     rest,
+    connections,
     appearance: windowSettings.appearance,
     log,
     windowTabs: deps.windowTabs,
     getSettingsViews: deps.getSettingsViews,
     getPlatform: deps.getPlatform,
+    health: deps.health ?? {
+      items: shallowRef([]),
+      commands: { getIds: () => [], run: () => Promise.resolve('') },
+    },
   })
   return {
     rest,

@@ -26,23 +26,16 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-type mockEmbeddingServer struct{}
-
-func (s *mockEmbeddingServer) GetEmbeddingModel(
-	_ context.Context,
-	_ *connect.Request[v1.GetEmbeddingModelRequest],
-) (*connect.Response[v1.GetEmbeddingModelResponse], error) {
-	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
-		Name:       "asked-for",
-		Dimensions: 384,
-	}), nil
+// mockSourceServer is a search source that describes itself and answers nothing else.
+type mockSourceServer struct {
+	numenv1connect.UnimplementedSearchSourceServiceHandler
 }
 
-func (s *mockEmbeddingServer) EmbedBatch(
+func (s *mockSourceServer) DescribeSearchSource(
 	_ context.Context,
-	_ *connect.Request[v1.EmbedBatchRequest],
-) (*connect.Response[v1.EmbedBatchResponse], error) {
-	return connect.NewResponse(&v1.EmbedBatchResponse{}), nil
+	_ *connect.Request[v1.DescribeSearchSourceRequest],
+) (*connect.Response[v1.DescribeSearchSourceResponse], error) {
+	return connect.NewResponse(&v1.DescribeSearchSourceResponse{Name: "asked-for", Recipe: "asked-for|384", Width: 384}), nil
 }
 
 func vaultConfig(t *testing.T) container.Config {
@@ -72,7 +65,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 		"id": "md.numen.embeddings",
 		"name": "Vector Embeddings",
 		"version": "1.0.0",
-		"capabilities": ["embedding"],
+		"capabilities": ["search.source"],
 		"targets": ["desktop.editor"],
 		"backend": {"entrypoint": "bin/embeddings"}
 	}`
@@ -82,7 +75,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 
 	mux := http.NewServeMux()
 	wiretest.HandlePluginLifecycle(mux)
-	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(&mockEmbeddingServer{}))
+	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(&mockSourceServer{}))
 	server := httptest.NewServer(mux)
 	defer server.Close()
 	serverAddress, ok := server.Listener.Addr().(*net.TCPAddr)

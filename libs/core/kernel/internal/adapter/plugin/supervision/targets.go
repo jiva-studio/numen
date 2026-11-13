@@ -16,7 +16,7 @@ type Target struct {
 }
 
 func takeTargetLocked(s *Supervisors, id string, sup *lifecycle.Supervisor, pid int) Target {
-	target := Target{ID: id, PID: pid, Sup: sup, Endpoint: s.endpoints[id]}
+	target := Target{ID: id, PID: pid, Sup: sup, Endpoint: getEndpointLocked(s, id)}
 	forgetEndpointLocked(s, id)
 	return target
 }
@@ -31,17 +31,31 @@ func takeTarget(s *Supervisors, pluginID string) (Target, bool) {
 	return takeTargetLocked(s, pluginID, sup, sup.GetProcessID()), true
 }
 
-func takeIdleTargets(s *Supervisors, threshold time.Duration, now time.Time) []Target {
+func takeIdleTargets(s *Supervisors, defaultLimit time.Duration, now time.Time) []Target {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var targets []Target
 	for id, sup := range s.byPlugin {
 		pid := sup.GetProcessID()
-		if sup.BeginDeactivation(threshold, now) {
+		if sup.BeginDeactivation(getIdleLimitLocked(s, id, defaultLimit), now) {
 			targets = append(targets, takeTargetLocked(s, id, sup, pid))
 		}
 	}
 	return targets
+}
+
+func takeIdleTarget(s *Supervisors, pluginID string, defaultLimit time.Duration, now time.Time) []Target {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sup, ok := s.byPlugin[pluginID]
+	if !ok {
+		return nil
+	}
+	pid := sup.GetProcessID()
+	if !sup.BeginDeactivation(getIdleLimitLocked(s, pluginID, defaultLimit), now) {
+		return nil
+	}
+	return []Target{takeTargetLocked(s, pluginID, sup, pid)}
 }
 
 func takeRunningTargets(s *Supervisors) []Target {
@@ -54,4 +68,35 @@ func takeRunningTargets(s *Supervisors) []Target {
 		}
 	}
 	return targets
+}
+
+func takeReleasedTarget(s *Supervisors, pluginID string, now time.Time) []Target {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sup, ok := s.byPlugin[pluginID]
+	if !ok {
+		return nil
+	}
+	if _, isRunning := sup.GetUsage(); !isRunning {
+		return nil
+	}
+	if run, ok := s.runs[pluginID]; ok {
+		run.isReleased = true
+	}
+	notifyLocked(s)
+	pid := sup.GetProcessID()
+	if !sup.BeginDeactivation(0, now) {
+		return nil
+	}
+	return []Target{takeTargetLocked(s, pluginID, sup, pid)}
+}
+
+func getIdleLimitLocked(s *Supervisors, pluginID string, defaultLimit time.Duration) time.Duration {
+	switch {
+	case isReleasedLocked(s, pluginID):
+		return 0
+	case s.idleLimits[pluginID] > 0:
+		return s.idleLimits[pluginID]
+	}
+	return defaultLimit
 }

@@ -9,7 +9,6 @@ import { WORDS } from '@/shared/ui/words'
 import {
   createSettingsStore,
   SETTINGS_WORDS,
-  type Model,
   type PluginInfo,
   type PluginSettingInfo,
 } from '@/entities/settings'
@@ -35,22 +34,11 @@ const createSettings = (
     getSettings: vi.fn(async () => ({
       written: '{}',
       path: '/vault/.numen/settings.json',
-      models: [],
     })),
     updateSettings: vi.fn(async () => undefined),
     watchSettings: vi.fn(async function* () {
       yield* []
     }),
-    createSecret: vi.fn(async () => 's0a1b2c3d'),
-    renameSecret: vi.fn(async () => undefined),
-    writeSecret: vi.fn(async () => undefined),
-    moveSecret: vi.fn(async () => undefined),
-    renameSecretGroup: vi.fn(async () => undefined),
-    allowPluginSecret: vi.fn(async () => undefined),
-    denyPluginSecret: vi.fn(async () => undefined),
-    deleteSecret: vi.fn(async () => undefined),
-    deleteSecretGroup: vi.fn(async () => undefined),
-    listSecretStates: vi.fn(async () => new Map<string, boolean>()),
     retryPlugin: vi.fn(async () => ''),
     choosePluginPath: vi.fn(async () => ({ path: '/picked', isChosen: true, problem: '' })),
     getPluginData: vi.fn(async () => 5),
@@ -81,19 +69,6 @@ const createSettings = (
   })
   return { settings, writers, writerFns, handle, core, onSizeChanged }
 }
-
-const model = (overrides: Partial<Model> = {}): Model => ({
-  namedAt: ['indexing', 'embedding', 'model', 'name'],
-  name: 'e5-small-int8',
-  title: 'E5 small',
-  group: 'On this machine',
-  isDefault: false,
-  presence: 'present',
-  writes: [],
-  reasoningLevels: [],
-  defaultReasoning: '',
-  ...overrides,
-})
 
 const SHELL_DECLARATION: readonly PluginSettingInfo[] = [
   {
@@ -171,7 +146,6 @@ const SCANNER: PluginInfo = {
   description: '',
   isActive: true,
   capabilities: [],
-  secrets: [],
   hasFrontend: false,
   hasBackend: false,
   settings: [
@@ -190,7 +164,12 @@ describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
 
-    expect([...writers].sort()).toStrictEqual(['appearance', 'configured', 'keys', 'plugins'])
+    expect([...writers].sort()).toStrictEqual([
+      'appearance',
+      'configured',
+      'connections',
+      'plugins',
+    ])
   })
 
   it('opens the settings tab as kind of tab', () => {
@@ -267,7 +246,6 @@ describe('the lists the palette offers for a setting', () => {
     settings.rest.state.target.value = {
       indexing: { embedding: { model: { name: 'people/own-model' } } },
     }
-    settings.rest.state.models.value = [model()]
 
     expect(settings.paletteLists.getStepGroups('app:note.createChild', '')).toStrictEqual([])
   })
@@ -346,7 +324,6 @@ describe('the settings tab', () => {
       vi.mocked(core.getSettings).mockResolvedValue({
         written: JSON.stringify({ app: { performance: { profile: 'eco' } } }),
         path: '/vault/.numen/settings.json',
-        models: [model()],
       })
       const edits = [{ at: ['app', 'performance', 'profile'], value: '"eco"' }]
 
@@ -354,9 +331,6 @@ describe('the settings tab', () => {
       vi.advanceTimersByTime(1500)
 
       expect(installation.settings.getSetting(['app', 'performance', 'profile'])).toBe('eco')
-      expect(
-        installation.settings.getModels(['indexing', 'embedding', 'model', 'name']),
-      ).toStrictEqual([model()])
       expect(core.updateSettings).toHaveBeenCalledWith(edits)
       expect(core.getSettings).toHaveBeenCalledTimes(1)
       settings.close()
@@ -377,43 +351,6 @@ describe('the settings tab', () => {
     expect(installation.settings.getConfirmedSetting?.(['a', 'b'])).toBe('committed-val')
     expect(installation.settings.isPending?.(['a', 'b'])).toBe(false)
 
-    await (installation.secrets.edit.writeSecret(
-      's0a1b2c3d',
-      'secret-val',
-    ) as unknown as Promise<void>)
-    expect(core.writeSecret).toHaveBeenCalledWith('s0a1b2c3d', 'secret-val')
-    expect(core.getSettings).toHaveBeenCalledTimes(1)
-
-    await (installation.secrets.edit.deleteSecret('s0a1b2c3d') as unknown as Promise<void>)
-    expect(core.deleteSecret).toHaveBeenCalledWith('s0a1b2c3d')
-    expect(core.getSettings).toHaveBeenCalledTimes(2)
-
-    await (installation.secrets.access.allowPluginSecret(
-      's0a1b2c3d',
-      'plugin.ocr',
-      'apiKey',
-      'openrouter',
-    ) as unknown as Promise<void>)
-    expect(core.allowPluginSecret).toHaveBeenCalledWith(
-      's0a1b2c3d',
-      'plugin.ocr',
-      'apiKey',
-      'openrouter',
-    )
-    await (installation.secrets.access.denyPluginSecret(
-      's0a1b2c3d',
-      'plugin.ocr',
-      'apiKey',
-      'openrouter',
-    ) as unknown as Promise<void>)
-    expect(core.denyPluginSecret).toHaveBeenCalledWith(
-      's0a1b2c3d',
-      'plugin.ocr',
-      'apiKey',
-      'openrouter',
-    )
-    expect(core.getSettings).toHaveBeenCalledTimes(4)
-
     const ocrPlugins: readonly PluginInfo[] = [
       {
         id: 'plugin.other',
@@ -422,7 +359,6 @@ describe('the settings tab', () => {
         description: '',
         isActive: true,
         capabilities: [],
-        secrets: [],
         hasFrontend: false,
         hasBackend: false,
         settings: [],
@@ -434,7 +370,6 @@ describe('the settings tab', () => {
         description: '',
         isActive: true,
         capabilities: [],
-        secrets: [],
         hasFrontend: false,
         hasBackend: false,
         settings: [],
@@ -443,7 +378,6 @@ describe('the settings tab', () => {
     vi.mocked(core.getSettings).mockImplementation(async () => ({
       written: '{}',
       path: '/vault/.numen/settings.json',
-      models: [],
       plugins: ocrPlugins,
     }))
     settings.rest.state.plugins.value = ocrPlugins
@@ -458,15 +392,6 @@ describe('the settings tab', () => {
 
     vi.useFakeTimers()
     try {
-      vi.mocked(core.getSettings).mockClear()
-      await (installation.secrets.edit.writeSecret(
-        's0a1b2c3d',
-        'secret-val-2',
-      ) as unknown as Promise<void>)
-      expect(core.getSettings).toHaveBeenCalledTimes(1)
-      vi.advanceTimersByTime(1500)
-      expect(core.getSettings).toHaveBeenCalledTimes(1)
-
       vi.mocked(core.getSettings).mockClear()
       vi.mocked(core.choosePluginPath).mockResolvedValueOnce({
         path: '/folder',

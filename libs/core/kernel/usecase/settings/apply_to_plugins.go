@@ -16,12 +16,11 @@ type ApplyToPlugins struct {
 	notify    pluginNotifying
 	subscribe settingsport.ChangeSubscriber
 	hosts     hostSubscribing
-	setup     func()
 }
 
 // ApplyToPluginsDeps is what ApplyToPlugins is made of. The host is identified by Config, which every
-// capability of the host is built from. Setup hands the host what it needs besides settings, such as
-// the key store. Subscribe is nil where the changes are not followed.
+// capability of the host is built from.
+// Subscribe is nil where the changes are not followed.
 type ApplyToPluginsDeps struct {
 	Codec     settingsport.ValueCodec
 	Config    settingsport.PluginConfig
@@ -29,14 +28,13 @@ type ApplyToPluginsDeps struct {
 	Notify    pluginNotifying
 	Subscribe settingsport.ChangeSubscriber
 	Hosts     hostSubscribing
-	Setup     func()
 }
 
 // NewApplyToPlugins makes the use case.
 func NewApplyToPlugins(deps ApplyToPluginsDeps) *ApplyToPlugins {
 	return &ApplyToPlugins{
 		codec: deps.Codec, config: deps.Config, write: deps.Write, notify: deps.Notify,
-		subscribe: deps.Subscribe, hosts: deps.Hosts, setup: deps.Setup,
+		subscribe: deps.Subscribe, hosts: deps.Hosts,
 	}
 }
 
@@ -48,7 +46,6 @@ func (u *ApplyToPlugins) Execute(plugins map[string]map[string]any, profile stri
 		u.config.SetSettings(plugins)
 	}
 	u.config.SetPersistHandler(u.persist)
-	u.setup()
 	if u.subscribe != nil {
 		u.hosts.Subscribe(u.config, u.subscribe, u.notify.Execute)
 	}

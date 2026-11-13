@@ -6,9 +6,8 @@ import (
 	"os/exec"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/model"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/runs"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/task"
 )
 
 // Supervisor ends the whole process group of a command when its context is canceled.
@@ -21,31 +20,45 @@ type CLI struct {
 	supervisor Supervisor
 }
 
+var _ task.Program = (*CLI)(nil)
+
 // New returns the program, whose child processes the supervisor ends.
 func New(supervisor Supervisor) *CLI {
 	return &CLI{supervisor: supervisor}
 }
 
-// IsInstalled reports whether the program is runnable, at path when given, or where it is found.
-func (c *CLI) IsInstalled(path string) bool {
-	return isInstalled(path)
+// Find returns the program at path when it is runnable, else the program found on this machine, else none.
+func (c *CLI) Find(path string) string {
+	found := findProgram(path)
+	if !isRunnable(found) {
+		return ""
+	}
+	return found
+}
+
+// MakeTaskCommand returns the command of a run that may call the tools served at the address of run
+// without asking, in a home of its own whose MCP configuration names them. A run with no address only
+// answers.
+func (c *CLI) MakeTaskCommand(path string, run task.Run) (task.Command, error) {
+	return makeTaskCommand(path, run)
+}
+
+// MakeAnswerCommand returns the command of a run that only answers.
+func (c *CLI) MakeAnswerCommand(path string, run task.Run) (task.Command, error) {
+	return makeAnswerCommand(path, run)
 }
 
 // List runs the "models" command of the program and returns the models it prints.
 func (c *CLI) List(ctx context.Context, command []string) ([]model.Model, error) {
-	name, args := resolveCommand(command)
+	if len(command) == 0 {
+		command = []string{findProgram()}
+	}
+	name, args := command[0], command[1:]
 	cmd := exec.CommandContext(ctx, name, slices.Concat(args, []string{"models"})...)
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="Supervise sets OS process-group attributes for child cleanup."
 	c.supervisor.Supervise(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("list the models of %s: %w", name, err)
 	}
 	return model.Parse(out), nil
-}
-
-func (c *CLI) Build(
-	ctx context.Context, req *agentrun.Request, reg *agentrun.Registry, executablePath string,
-) (runs.Command, error) {
-	return makeAntigravityCommand(ctx, req, reg, executablePath)
 }

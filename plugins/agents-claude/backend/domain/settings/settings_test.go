@@ -1,6 +1,9 @@
 package settings
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestExecutablePathIsReadFromTheCamelCaseKey(t *testing.T) {
 	var s Settings
@@ -38,12 +41,16 @@ func TestHooksAndSkillsAreNotReadFromTheSnakeCaseKey(t *testing.T) {
 	}
 }
 
-func TestApply_EmptyModelKeepsModel(t *testing.T) {
+func TestRequestTimeoutIsReadInSecondsAndInvalidValuesLeaveNone(t *testing.T) {
 	var s Settings
-	s.Apply(map[string]string{"model": "m1"})
-	s.Apply(map[string]string{"model": ""})
-
-	if got := s.Get().DefaultModel; got != "m1" {
-		t.Errorf("default model = %q, want m1 kept when an empty model is configured", got)
+	s.Apply(map[string]string{"requestTimeout": "45"})
+	if got := s.Get().RequestTimeout; got != 45*time.Second {
+		t.Errorf("request timeout = %v, want 45s", got)
+	}
+	for _, value := range []string{"", "soon", "0", "-3", "NaN", "Inf"} {
+		s.Apply(map[string]string{"requestTimeout": value})
+		if got := s.Get().RequestTimeout; got != 0 {
+			t.Errorf("value %q: request timeout = %v, want none", value, got)
+		}
 	}
 }

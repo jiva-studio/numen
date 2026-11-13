@@ -46,9 +46,6 @@ type linksCalls interface {
 	ListBacklinks(
 		ctx context.Context, r *connect.Request[v1.ListBacklinksRequest],
 	) (*connect.Response[v1.ListBacklinksResponse], error)
-	WriteLink(
-		ctx context.Context, r *connect.Request[v1.WriteLinkRequest],
-	) (*connect.Response[v1.WriteLinkResponse], error)
 	ResolveAddresses(
 		ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
 	) (*connect.Response[v1.ResolveAddressesResponse], error)

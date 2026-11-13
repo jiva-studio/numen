@@ -108,7 +108,7 @@ func (w *recordingWindow) getRequests() ([]string, []domain.Place, int) {
 
 func newWindowClient(t *testing.T, window WindowControl, token string) (numenv1connect.HostWindowServiceClient, *callers) {
 	t.Helper()
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.window = window
 	endpoint, err := Open(t.Context(), Address, fakeCallers.asCallers())
 	if err != nil {

@@ -1,20 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createWorkLine } from './work'
 import type { Turn } from '../../types'
-import type { SourceLocation } from '@numen/plugin-sdk'
-
-const PLACE: SourceLocation = { path: 'notes/a.md', range: { start: 2, end: 9 } }
 
 const create = () => {
   const sendTurn = vi.fn<(turn: Turn) => void>()
   const drop = vi.fn<(id: string) => void>()
-  const locations = new Map<string, SourceLocation>()
-  const line = createWorkLine(
-    { put: sendTurn, drop, locations, waitWords: 'Working' },
-    'work',
-    'wait',
-  )
-  return { line, put: sendTurn, drop, locations }
+  const paths = new Map<string, string>()
+  const line = createWorkLine({ put: sendTurn, drop, paths, waitWords: 'Working' }, 'work', 'wait')
+  return { line, put: sendTurn, drop, paths }
 }
 
 describe('the line that says what the agent has in hand', () => {
@@ -24,27 +17,26 @@ describe('the line that says what the agent has in hand', () => {
     expect(sendTurn).not.toHaveBeenCalled()
   })
 
-  it('names the tool as a program is not named, and how much was written', () => {
+  it('names the tool as a program is not named, with what the call is about', () => {
     const { line, put: sendTurn } = create()
-    line.reach({ tool: 'read_note', subject: 'Plans', written: 12 })
+    line.reach({ title: 'read_note', subject: 'Plans', path: '' })
     expect(sendTurn).toHaveBeenCalledExactlyOnceWith({
       id: 'work',
       voice: 'doing',
       text: 'read note',
       subject: 'Plans',
-      aside: '12 characters',
       state: 'arriving',
     })
   })
 
   it('settles in place once reached for', () => {
     const { line, put: sendTurn } = create()
-    line.reach({ tool: 'read_note', subject: 'Plans', written: 0 })
+    line.reach({ title: 'Read note', subject: 'Plans', path: '' })
     line.settle()
     expect(sendTurn).toHaveBeenLastCalledWith(
       expect.objectContaining({
         id: 'work',
-        text: 'read note',
+        text: 'Read note',
         subject: 'Plans',
         state: 'settled',
       }),
@@ -53,7 +45,7 @@ describe('the line that says what the agent has in hand', () => {
 
   it('does not put the line back by settling after it came down', () => {
     const { line, put: sendTurn, drop } = create()
-    line.reach({ tool: 't', subject: 's', written: 0 })
+    line.reach({ title: 't', subject: 's', path: '' })
     line.dropWorkLine()
     sendTurn.mockClear()
     line.settle()
@@ -61,35 +53,27 @@ describe('the line that says what the agent has in hand', () => {
     expect(sendTurn).not.toHaveBeenCalled()
   })
 
-  it('can be opened while the call names a run of a source', () => {
-    const { line, put: sendTurn, locations } = create()
-    line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
-    expect(locations.get('work')).toBe(PLACE)
+  it('can be opened while the call works on a file', () => {
+    const { line, put: sendTurn, paths } = create()
+    line.reach({ title: 't', subject: 's', path: 'notes/Orchard.md' })
+    expect(paths.get('work')).toBe('notes/Orchard.md')
     expect(sendTurn).toHaveBeenLastCalledWith(expect.objectContaining({ canOpen: true }))
   })
 
-  it('cannot be opened once a later call names no run', () => {
-    const { line, put: sendTurn, locations } = create()
-    line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
-    line.reach({
-      tool: 't',
-      subject: 's',
-      location: { path: 'a', range: { start: 4, end: 4 } },
-      written: 0,
-    })
-    expect(locations.has('work')).toBe(false)
+  it('cannot be opened once a later call works on no file', () => {
+    const { line, put: sendTurn, paths } = create()
+    line.reach({ title: 't', subject: 's', path: 'notes/Orchard.md' })
+    line.reach({ title: 't', subject: 's', path: '' })
+    expect(paths.has('work')).toBe(false)
     expect(sendTurn.mock.lastCall?.[0]).not.toHaveProperty('canOpen')
-    line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
-    line.reach({ tool: 't', subject: 's', location: null, written: 0 })
-    expect(locations.has('work')).toBe(false)
   })
 
-  it('forgets the source when the line arrives down', () => {
-    const { line, drop, locations } = create()
-    line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
+  it('clears the file path when the line is removed', () => {
+    const { line, drop, paths } = create()
+    line.reach({ title: 't', subject: 's', path: 'notes/Orchard.md' })
     line.dropWorkLine()
     expect(drop).toHaveBeenCalledWith('work')
-    expect(locations.size).toBe(0)
+    expect(paths.size).toBe(0)
   })
 
   it('puts the wait up and takes it down', () => {
@@ -107,11 +91,32 @@ describe('the line that says what the agent has in hand', () => {
   })
 
   it('brings both lines down on clear', () => {
-    const { line, drop, locations } = create()
-    line.reach({ tool: 't', subject: 's', location: PLACE, written: 0 })
+    const { line, drop, paths } = create()
+    line.reach({ title: 't', subject: 's', path: 'notes/Orchard.md' })
     line.clear()
     expect(drop).toHaveBeenCalledWith('work')
     expect(drop).toHaveBeenCalledWith('wait')
-    expect(locations.size).toBe(0)
+    expect(paths.size).toBe(0)
+  })
+
+  it('says how many characters the call has written until it settles', () => {
+    const { line, put: sendTurn } = create()
+    line.reach({ title: 'Write note', subject: 'Pear trees', path: '' })
+    line.write(12015)
+    expect(sendTurn).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        text: 'Write note',
+        aside: '12 015 characters',
+        state: 'arriving',
+      }),
+    )
+    line.settle()
+    expect(sendTurn.mock.lastCall?.[0]).not.toHaveProperty('aside')
+  })
+
+  it('writes nothing while no call is shown', () => {
+    const { line, put: sendTurn } = create()
+    line.write(40)
+    expect(sendTurn).not.toHaveBeenCalled()
   })
 })

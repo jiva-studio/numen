@@ -73,7 +73,7 @@ func getListenerPort(t *testing.T, ln net.Listener) int {
 
 func TestServeReportsTheListenerPortInTheReadyLine(t *testing.T) {
 	var stdout safeBuffer
-	s := New(WithPort(0), WithToken("listener-token"), WithStdout(&stdout), WithStdin(nil), WithSignals())
+	s := New(withPort(0), withToken("listener-token"), withStdout(&stdout), withStdin(nil), withSignals())
 	listener, err := s.OpenListener("mcp")
 	if err != nil {
 		t.Fatalf("OpenListener: %v", err)
@@ -110,7 +110,7 @@ func TestServeReportsTheListenerPortInTheReadyLine(t *testing.T) {
 }
 
 func TestOpenListenerBindsLoopback(t *testing.T) {
-	s := New(WithPort(0), WithToken("listener-token"), WithStdout(&safeBuffer{}), WithStdin(nil), WithSignals())
+	s := New(withPort(0), withToken("listener-token"), withStdout(&safeBuffer{}), withStdin(nil), withSignals())
 	t.Cleanup(func() {
 		if err := s.Close(); err != nil {
 			t.Errorf("close the server: %v", err)
@@ -135,7 +135,7 @@ func TestOpenListenerBindsLoopback(t *testing.T) {
 
 func TestServeClosesTheListenersItOpenedWhenItReturns(t *testing.T) {
 	var stdout safeBuffer
-	s := New(WithPort(0), WithToken("listener-token"), WithStdout(&stdout), WithStdin(nil), WithSignals())
+	s := New(withPort(0), withToken("listener-token"), withStdout(&stdout), withStdin(nil), withSignals())
 	if _, err := s.OpenListener("mcp"); err != nil {
 		t.Fatalf("OpenListener: %v", err)
 	}

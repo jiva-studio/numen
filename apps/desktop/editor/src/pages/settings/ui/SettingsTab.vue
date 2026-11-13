@@ -3,10 +3,12 @@
  * The settings tab: every numen.json setting the user can change, grouped by
  * the part of the application it governs.
  */
+import { computed } from 'vue'
 import type { SettingsTabState } from '../types'
+import { groupManagedHealth } from '../lib/pluginHealth'
 import { useSettingsTab } from '../model/useSettingsTab'
 import SystemDetail from './SystemDetail.vue'
-import SecretsPage from './secrets/SecretsPage.vue'
+import ConnectionsPage from './connections/ConnectionsPage.vue'
 import { AvailablePluginDetail, PluginsList, PluginDetail } from './plugins'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -14,15 +16,28 @@ const props = defineProps<{ state: SettingsTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
 const { installation, initialSearchQuery } = props.state
+const health = computed(() =>
+  groupManagedHealth(
+    installation.plugin.health.items.value,
+    installation.plugin.health.canRunCommand,
+  ),
+)
 const {
   selectedPluginId,
   plugins,
   uninstalled,
   selectedPlugin,
+  marked,
   selectPlugin,
   updateQuery,
   goBack,
 } = useSettingsTab(props.state)
+
+/* -------------------------------- Handlers -------------------------------- */
+function onOpenCategory(category: string): void {
+  updateQuery(`category:${category}`)
+  goBack()
+}
 </script>
 
 <template>
@@ -30,17 +45,16 @@ const {
     <div class="settings__page">
       <div class="settings__main">
         <SystemDetail
-          v-if="selectedPluginId === 'system'"
+          v-if="selectedPluginId === 'system' || selectedPluginId === 'appearance'"
+          :key="selectedPluginId"
+          :section="selectedPluginId"
           :settings="installation.settings"
           :manager="installation.plugin"
-          :choices="installation.secrets"
           @back="goBack"
-          @open-secrets="selectPlugin('secrets')"
         />
-        <SecretsPage
-          v-else-if="selectedPluginId === 'secrets'"
-          :secrets="installation.secrets"
-          :plugins="plugins"
+        <ConnectionsPage
+          v-else-if="selectedPluginId === 'connections'"
+          :connections="installation.connections"
           @back="goBack"
         />
         <PluginDetail
@@ -48,18 +62,26 @@ const {
           :key="selectedPlugin.id"
           :settings="installation.settings"
           :manager="installation.plugin"
-          :choices="installation.secrets"
+          :connections="installation.connections"
           :plugin="selectedPlugin"
+          :marked-setting="marked"
           @back="goBack"
-          @open-secrets="selectPlugin('secrets')"
+          @open-category="onOpenCategory"
+          @open-connections="selectPlugin('connections')"
         />
-        <AvailablePluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="goBack" />
+        <AvailablePluginDetail
+          v-else-if="uninstalled"
+          :plugin="uninstalled"
+          @back="goBack"
+          @open-category="onOpenCategory"
+        />
         <PluginsList
           v-else
           :settings="installation.settings"
           :catalog="installation.plugin.catalog.value"
           :query="initialSearchQuery"
           :plugins="plugins"
+          :health="health"
           @select-plugin="selectPlugin"
           @update:query="updateQuery"
         />
@@ -70,11 +92,6 @@ const {
 
 <style scoped>
 .settings {
-  --settings-measure: 54rem;
-  --settings-apart: 1.75rem;
-  --settings-near: 0.375rem;
-  --settings-value: 6rem;
-  --settings-choice: 16rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -84,17 +101,11 @@ const {
   color: var(--numen-ink);
 }
 
-.settings__page {
-  flex: 1;
-  min-block-size: 0;
-  overflow-y: auto;
-  padding: var(--numen-gutter);
-}
-
+.settings__page,
 .settings__main {
-  container-type: inline-size;
-  inline-size: 100%;
-  max-inline-size: var(--settings-measure);
-  margin-inline: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
 }
 </style>

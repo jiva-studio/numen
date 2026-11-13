@@ -74,7 +74,7 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	var stuckErr error
 	go func() {
 		defer close(stuckDone)
-		_, stuckErr = host.Activation.EnsureActive(t.Context(), "org.example.sample")
+		_, stuckErr = host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 	}()
 	select {
 	case <-stuck:
@@ -84,7 +84,7 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 
 	reply := make(chan error, 1)
 	go func() {
-		_, err := host.Activation.EnsureActive(t.Context(), "org.example.second")
+		_, err := host.Activation.EnsureActive(t.Context(), "org.example.second", getTestHolder())
 		host.Registry.GetPluginInfos()
 		host.Registry.GetPluginStatuses()
 		reply <- err

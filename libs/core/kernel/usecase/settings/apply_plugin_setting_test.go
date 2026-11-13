@@ -7,6 +7,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
@@ -19,10 +21,11 @@ type pluginRuntime struct {
 	syncError      error
 	stopError      error
 	valuesAtNotify map[string]any
+	health         *pluginhealth.Items
 }
 
 func newPluginRuntime() *pluginRuntime {
-	return &pluginRuntime{values: map[string]any{"mode": "a"}}
+	return &pluginRuntime{values: map[string]any{"mode": "a"}, health: pluginhealth.NewItems()}
 }
 
 func (r *pluginRuntime) ReplaceSetting(_, key string, value any) (any, bool, bool) {
@@ -67,7 +70,7 @@ func (r *pluginRuntime) NotifyPluginConfig(context.Context, string) error {
 
 func newApplier(r *pluginRuntime) *settings.ApplyPluginSetting {
 	return settings.NewApplyPluginSetting(settings.ApplyPluginSettingDeps{
-		Values: r, Stopper: r, Failures: r, Listeners: r, Push: r,
+		Values: r, Stopper: r, Failures: r, Listeners: r, Push: r, Health: r.health,
 	})
 }
 
@@ -124,6 +127,24 @@ func TestADisabledPluginIsStoppedAndForgetsItsFailure(t *testing.T) {
 	want := []string{"replace enabled", "stop", "clear failure", "refresh listeners", "notify"}
 	if !slices.Equal(runtime.events, want) {
 		t.Errorf("events = %v, want %v", runtime.events, want)
+	}
+}
+
+func TestADisabledPluginLosesItsHealthItemsAndAnEnabledOneKeepsThem(t *testing.T) {
+	runtime := newPluginRuntime()
+	runtime.health.Set(plugin.HealthItem{PluginID: "org.example.scans", Key: "scanner", Severity: plugin.HealthError, Text: "Choose a scanner"})
+	runtime.health.Set(plugin.HealthItem{PluginID: "org.example.maps", Key: "tiles", Severity: plugin.HealthWarning, Text: "Tiles are old"})
+
+	if err := newApplier(runtime).Execute(t.Context(), "org.example.maps", "enabled", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := newApplier(runtime).Execute(t.Context(), "org.example.scans", "enabled", false); err != nil {
+		t.Fatal(err)
+	}
+
+	items := runtime.health.List()
+	if len(items) != 1 || items[0].PluginID != "org.example.maps" {
+		t.Errorf("items = %+v, want only the item of the plugin left enabled", items)
 	}
 }
 

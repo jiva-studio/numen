@@ -8,11 +8,11 @@ This file lists the things that exist in Numen, the word a person reads for each
 - vault, folder, workspace, window: a vault is a folder that is added to Numen; a folder is a directory inside a vault; the workspace is the tab layout inside a window; a window shows one vault.
 - tab, pane, panel, banner, popover: a tab is one page in the tab bar; a pane is one stack of tabs; a panel is a side area in the flashcards review (and the palette action panel); a banner is the bar inside a note tab; a popover is a small box opened from the title bar or from a link.
 - task, notice, message, notification: a task is a row in the task list for work or for a failure; a notice is a message from the core or a plugin that shows as a failed task; a message is a line in the agent conversation; "notification" is not a word of the interface.
-- link, wikilink, connection: a link joins two notes and is written in a note; a wikilink is `[[Note Title]]`; a connection is the pair of link records of two notes.
+- link, wikilink, connection: a link joins two notes and is written in a note; a wikilink is `[[Note Title]]`; a connection is how Numen reaches a service or a program (the page "Connections"); the pair of link records of two notes is a note connection.
 - chunk, vector, passage: a chunk is a piece of text of the index; a vector is the numbers made for a chunk; a passage is a piece of text a search shows.
 - transcript, caption, recognition, proofreading: text made from speech, text from a video site, text read from a scan, and a cleaned text.
 - card, review card, card model, template, field: a card is written in a deck; a review card is a card with one template; a card model gives fields and templates.
-- plugin, provider, engine, tool: a plugin is an add-on; "Provider" is a setting name; an engine is a plugin that does heavy work (speech, OCR, vectors); a tool is an action the agent calls.
+- plugin, engine, tool: a plugin is an add-on; an engine is a plugin that does heavy work (speech, OCR, vectors); a tool is an action the agent calls.
 - remove, trash, delete, erase: remove moves a file or folder to the trash (and removes a vault from the list); "Move to trash" is reversible; "Empty trash" deletes what is in the trash for good; "Erase vault" moves the vault folder to the trash.
 
 ## Vault and files
@@ -143,7 +143,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### command palette
 - Is: The pop-up box where you type to find notes or run commands. Two entries: search the vault and show commands (Ctrl or Cmd plus P).
-- Texts: "Search the vault", "Show commands", "Type a command", "Search notes", "Actions", "Search actions", "No actions found", "Text search only: no embedding model set" (editor/src/shared/words.ts).
+- Texts: "Search the vault", "Show commands", "Type a command", "Search notes", "Actions", "Search actions", "No actions found" (editor/src/shared/words.ts).
 - Not: not a "menu"; menus hold the same commands.
 
 ### palette step
@@ -184,7 +184,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### search
 - Is: A search of the active vault. Two questions: names (titles of notes and headings) and passages (text). Modes `words`, `meaning`, `names`, `hybrid`.
-- Texts: result groups "Names", "Text", "Meaning"; "No results found"; "Search failed"; "Semantic index not built yet"; row actions "Open note", "Open note beside", "Open at this heading"; when nothing matches: "Create note", "Create as child", "Create as parent", "Create as jump" (editor/src/features/command-palette/words.ts).
+- Texts: result groups "Names", "Text", "Meaning"; "No results found"; "Search failed"; the text the search source gives when Meaning finds nothing; row actions "Open note", "Open note beside", "Open at this heading"; when nothing matches: "Create note", "Create as child", "Create as parent", "Create as jump" (editor/src/features/command-palette/words.ts).
 - Not: "Meaning" is the search by vectors; with no embedding model only text search runs.
 
 ### passage
@@ -326,8 +326,8 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### agent provider
 - Is: A plugin that connects one kind of AI program as an agent (capability `ai.agent.provider`): "Numen Agent", "Claude Code Agent", "OpenAI Codex Agent", "Antigravity Agent", "ACP Agents".
-- Texts: settings "Chat API", "Model", "Temperature", "Max Tokens", "Max Steps", "Executable Path", "Hooks & skills" (plugins/agents-*/manifest.json).
-- Not: not the setting "Provider".
+- Texts: settings "Connection", "Model", "Temperature", "Max Tokens", "Max Steps", "Executable Path", "Hooks & skills" (plugins/agents-*/manifest.json).
+- Not: a plugin that supplies an agent is not a connection. The agent reaches its model through a connection.
 
 ### agent tab
 - Is: The tab where a person chats with the agent. Tab kind `agent`, tab title "Agent", plugin Agent Chat.
@@ -430,31 +430,38 @@ This file lists the things that exist in Numen, the word a person reads for each
 ### proofreading
 - Is: Cleaning of a transcript or scanned text with a language model, in batches of lines. Plugin "LLM Proofreading".
 - Actions: `proofreading.create` "Proofread text"; `proofreading.delete` "Delete proofreading".
-- Texts: settings "Provider", "Service URL", "Model", "Batch size", "Overlap", "In-flight requests", "Max edit distance" (plugins/tools-proofreading/manifest.json).
+- Texts: settings "Connections", "Batch size", "Overlap", "In-flight requests", "Max edit distance" (plugins/tools-proofreading/manifest.json).
 
-### embedding provider
+### embedding source
 - Is: Where texts are turned into vectors. Plugin "Vector Embeddings" (capability `embedding`).
-- Texts: setting "Provider": Local, OpenRouter, OpenAI, Custom service; "Model": "E5 small (default, CPU, 118 MB)", "Harrier 270M (better, 344 MB)", "BGE-M3 (large, 569 MB)" (plugins/engines-embeddings/manifest.json).
+- Texts: setting "Source": "Local model", "Connection"; with the source "Connection" the setting "Connection" holds the connection and the model; with the source "Local model" the setting "Model": "E5 small (default, CPU, 118 MB)", "Harrier 270M (better, 344 MB)", "BGE-M3 (large, 569 MB)" (plugins/engines-embeddings/manifest.json).
 
 ## Settings and plugins
 
 ### settings
-- Is: Values kept in the file `numen.json`, shown in a tab of kind `settings`, one per window. Pages: "System", "Secrets", a list of plugins.
+- Is: Values kept in the file `numen.json`, shown in a tab of kind `settings`, one per window. Pages: "System", "Connections", a list of plugins.
 - Actions: `settings.open` "Open settings".
 - Texts: "System": "Theme, scale and filename sync."; "Theme", "Light or dark", "Interface size", "Reading size", "Window buttons", "Performance profile"; "Setting not saved:" (editor/src/pages/settings/words.ts, libs/core/adapter/settings/app.json).
 - Not: an invalid value is ignored with a notice; an invalid file stops the start.
 
-### secret
-- Is: A private value, such as an API key, kept on this machine. It is in groups; a plugin sees only the secrets it is allowed.
-- States: "Value is set", "No value yet", "Not saved. Press Enter to try again."
-- Actions: "Add secret", "Add group", "Rename group", "Delete group", "Delete secret", "Move up", "Move down".
-- Texts: columns "Name", "Value", "Used by" (editor/src/pages/settings/words.ts).
-- Not: a secret is not a setting.
+### connection
+- Is: A way to reach a service you pay for, a server you run, or an agent on this computer. It has a name, a type and an address, and may have a key. A plugin uses it in a row of its settings, with a model.
+- States: "Type unavailable" (no installed plugin provides the type), "Incomplete", "No key". A saved key shows as a mask in the field "API key"; the key itself is never shown.
+- Actions: "Add connection", "Edit", "Delete", "Remove key", "Open Connections"; on the page of a plugin: "Connection", "Model", "Reasoning", "Remove row 1".
+- Texts: page "Connections"; fields "Type", "Name", "Address", "API key"; type "OpenAI-compatible server"; "Delete connection"; question "Index the notes again?": "The vault will be indexed again: 3 notes through Name. This can take a while and may cost money.", answers "Index", "Cancel" (editor/src/pages/settings/words.ts, plugins/connections-llm/manifest.json).
+- Not: not a note connection. A key is a private value kept in the system keychain and never shown again after it is saved. A plugin that is a type of connection is "Language model services".
+
+### row
+- Is: One line of the setting "Connection" or "Connections" of a plugin: a connection and a model. The plugin tries the rows in order and uses the next row when one fails.
+- Texts: a failed task reads "<connection name>: rate limited" when the service asks to wait.
+
+### service
+- Is: In a scenario, a program of the test that answers in place of a language model server. It has a name and works unless the scenario makes it busy (it asks to wait) or makes it accept only one key. It is not a word of the interface.
 
 ### plugin
 - Is: An add-on with a manifest. It gives commands, tab kinds, settings, status views, themes, note types or models.
 - States: badge "Enabled", "Disabled", "Stopped", "Not installed".
-- Actions: "Enable", "Disable", "Retry", "Install", "Configure", "Delete data", "Details", "All plugins".
+- Actions: "Enable", "Disable", "Retry", "Install", "Configure", "Delete data", "Details", "Back".
 - Texts: "Search plugins…", "No plugins installed.", "No plugins found." (libs/plugin-manager/src/words.ts).
 - Not: a dependency is a program a plugin needs, not a plugin.
 

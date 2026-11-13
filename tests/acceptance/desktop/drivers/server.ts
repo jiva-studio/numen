@@ -12,7 +12,7 @@ import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { STAND_IN_MODEL, startStandIns } from '../../../e2e/desktop/scripts/stand-ins.mjs'
+import { STAND_IN_CONNECTION, STAND_IN_MODEL, startStandIns } from '../../../e2e/desktop/scripts/stand-ins.mjs'
 import { freeFromRemoval, holdForRemoval } from './reaper.js'
 import { applyEnvironment, type EnvironmentSetting, type EnvironmentTargets } from './environment.js'
 import type { Application } from './rules.js'
@@ -25,6 +25,16 @@ const BINARIES = {
 } as const
 const ARTICLE = path.join(REPO_ROOT, 'tests/e2e/desktop/fixtures/article.html')
 const HOST = '127.0.0.1'
+/** The connection of the Numen agent the chat answers through; its row names the stand-in model of the stand-in connection. */
+const STAND_IN_AGENT_CONNECTION = 'c57a4d101'
+/**
+ * Each agent program a scenario installs: the place in the home folder it is put at, and the variable that names it to
+ * its plugin, so that a program of the machine the run is on is never started. The stand-in answers nothing: only its
+ * presence is looked for.
+ */
+const INSTALLED_PROGRAMS: Readonly<Record<string, { place: string; variable: string } | undefined>> = {
+  'Claude Code': { place: '.local/bin/claude', variable: 'NUMEN_CLAUDE_COMMAND' },
+}
 const STATE_FOLDERS = ['config', 'cache', 'data', 'state', 'home'] as const
 
 const getFreePort = (): Promise<number> =>
@@ -68,6 +78,7 @@ export interface ServerOptions {
   readonly vault: string
   readonly readPageText: (address: string) => string | undefined
   readonly environment: readonly EnvironmentSetting[]
+  readonly programs: readonly string[]
 }
 
 interface Services {
@@ -80,6 +91,7 @@ export class Server {
   private child: ChildProcess | undefined
   private baseURL = ''
   private publicKeyHash = ''
+  private readonly programVariables: Record<string, string> = {}
 
   private constructor(
     private readonly options: ServerOptions,
@@ -96,7 +108,9 @@ export class Server {
     const server = new Server(options, state, { standIns, proxy, mcpPort: await getFreePort() })
     try {
       for (const name of STATE_FOLDERS) fs.mkdirSync(path.join(state, name))
+      fs.mkdirSync(path.join(state, 'home', 'run'))
       server.writeSettings(standIns)
+      for (const program of options.programs) server.installProgram(program)
       await server.setEnvironment(options.environment)
       await server.launch(server.getStartFlags(true))
     } catch (error) {
@@ -118,6 +132,17 @@ export class Server {
   /** Makes the folder dialog answer with the folder, which the command Create vault asks for. */
   writeFolderChoice(folder: string): void {
     fs.writeFileSync(path.join(this.state, 'folder-choice.txt'), folder)
+  }
+
+  private installProgram(name: string): void {
+    const program = INSTALLED_PROGRAMS[name]
+    if (program === undefined) {
+      throw new Error(`no stand-in of the program "${name}": use ${Object.keys(INSTALLED_PROGRAMS).join(', ')}`)
+    }
+    const target = path.join(this.state, 'home', program.place)
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    fs.writeFileSync(target, '#!/bin/sh\nexit 0\n', { mode: 0o755 })
+    this.programVariables[program.variable] = target
   }
 
   /** Puts the settings of the environment in force in the stand-ins of this server. */
@@ -167,12 +192,29 @@ export class Server {
     fs.mkdirSync(folder, { recursive: true })
     const settings = {
       v: 1,
-      app: { agent: { use: 'numen' } },
-      'md.numen.agents.numen': { baseUrl: standIns.chatUrl, model: STAND_IN_MODEL },
+      connections: [
+        {
+          id: STAND_IN_CONNECTION,
+          type: 'md.numen.connections.llm/openai-compatible',
+          name: 'Stand-in',
+          revision: 1,
+          fields: { baseUrl: standIns.chatUrl },
+        },
+        {
+          id: STAND_IN_AGENT_CONNECTION,
+          type: 'md.numen.agents.numen/numen',
+          name: 'Numen agent',
+          revision: 1,
+          fields: {},
+        },
+      ],
       'md.numen.agents.claude': { enabled: false },
       'md.numen.agents.codex': { enabled: false },
       'md.numen.agents.antigravity': { enabled: false },
       'md.numen.agents.acp': { enabled: false },
+      'md.numen.views.agent.chat': {
+        connections: [{ connection: STAND_IN_AGENT_CONNECTION, model: `${STAND_IN_CONNECTION}|${STAND_IN_MODEL}` }],
+      },
       ...(this.options.application === 'editor'
         ? {
             'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },
@@ -191,7 +233,7 @@ export class Server {
     const proxyAddress = this.services.proxy.address() as net.AddressInfo
     const editorEnv =
       this.options.application === 'editor'
-        ? { NUMEN_MOCK_ML: 'true', HTTP_PROXY: `http://${HOST}:${proxyAddress.port}`, NO_PROXY: HOST }
+        ? { NUMEN_TEST_MOCK_ML: 'true', HTTP_PROXY: `http://${HOST}:${proxyAddress.port}`, NO_PROXY: HOST }
         : {}
     const child = spawn(BINARIES[this.options.application], [`-debug-http-addr=${HOST}:0`, ...flags], {
       stdio: ['ignore', 'pipe', log],
@@ -202,11 +244,15 @@ export class Server {
         XDG_DATA_HOME: path.join(this.state, 'data'),
         XDG_STATE_HOME: path.join(this.state, 'state'),
         HOME: path.join(this.state, 'home'),
+        // The run has no session bus and no Secret Service, so the keys of its connections are kept in a file.
+        XDG_RUNTIME_DIR: path.join(this.state, 'home', 'run'),
+        DBUS_SESSION_BUS_ADDRESS: '',
         ...editorEnv,
-        NUMEN_MOCK_EMBED_HOLD_FILE: path.join(this.state, 'embedding-hold'),
+        NUMEN_TEST_MOCK_EMBED_HOLD_FILE: path.join(this.state, 'embedding-hold'),
         NUMEN_PLUGINS_PATH: path.join(REPO_ROOT, 'plugins'),
         NUMEN_DEBUG_TLS_CERT: certificate,
         NUMEN_DEBUG_TLS_KEY: path.join(this.state, 'key.pem'),
+        ...this.programVariables,
       },
     })
     this.child = child

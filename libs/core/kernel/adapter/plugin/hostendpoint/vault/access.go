@@ -70,27 +70,9 @@ type LinkEditor interface {
 	RemoveLinks(ctx context.Context, from string, to domain.Address, role domain.LinkRole, baseline domain.FileStat) (domain.FileStat, error)
 }
 
-// Connections reads and writes the relationships between notes, with the rules of a connection
-// enforced by the host.
-type Connections interface {
-	GetConnection(ctx context.Context, a, b, kind string) (domain.Connection, error)
-	SaveConnection(ctx context.Context, c domain.Connection) error
-	RemoveSide(ctx context.Context, from, to, kind string) error
-	RemoveConnection(ctx context.Context, a, b, kind string) error
-	Join(ctx context.Context, from, to string, side domain.Side) error
-}
-
-// RelatedNotes creates notes in a relationship to another.
-type RelatedNotes interface {
-	// CreateInRelation returns the path of the note it created, which is set when
-	// the note exists even if the error is not nil.
-	CreateInRelation(ctx context.Context, in domain.NewRelatedNote) (string, error)
-}
-
-// Watch follows the changes of the vault.
+// Watch tells of the moves in the vaults of the installation.
 type Watch interface {
 	WatchMoves(ctx context.Context) (<-chan struct{}, error)
-	Watch(ctx context.Context) (changes <-chan []string, lost <-chan struct{}, err error)
 }
 
 // Switch names the vault a call works and the vaults the installation lists.
@@ -134,19 +116,17 @@ type CacheStore interface {
 // notes and links, the plugin's folder in its store, and the cache the installation keeps for a plugin.
 // Each handler uses the capabilities it needs.
 type Access struct {
-	Notes       NoteLookup
-	Links       LinkLookup
-	Files       FileReader
-	Writer      FileWriter
-	Arranger    Arranger
-	LinkEditor  LinkEditor
-	Connections Connections
-	Related     RelatedNotes
-	Watch       Watch
-	Switch      Switch
-	Stores      StoreOpener
-	Cache       CacheStore
-	Locks       Locks
+	Notes      NoteLookup
+	Links      LinkLookup
+	Files      FileReader
+	Writer     FileWriter
+	Arranger   Arranger
+	LinkEditor LinkEditor
+	Watch      Watch
+	Switch     Switch
+	Stores     StoreOpener
+	Cache      CacheStore
+	Locks      Locks
 }
 
 // Locks holds the writers of a vault for a plugin, until the plugin releases them or the hold ends.

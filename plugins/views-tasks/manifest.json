@@ -1,9 +1,9 @@
 {
   "id": "md.numen.views.tasks",
   "name": "Tasks",
-  "version": "2026.11.5",
+  "version": "2026.11.6",
   "protocol": 1,
-  "description": "Shows the background tasks of the window in the title bar: how many run, how many failed, and the list of them",
+  "description": "Background tasks of the window, shown in the title bar",
   "targets": ["desktop.editor"],
   "permissions": ["vault:write"],
   "contributes": {

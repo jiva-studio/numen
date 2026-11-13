@@ -8,5 +8,6 @@ export const searchAnswers = {
   search: {
     searchNames: () => ({ found: mockVaultState.names }),
     searchPassages: () => ({ found: mockVaultState.passages }),
+    cancelSearch: () => ({}),
   },
 }

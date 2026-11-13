@@ -1,95 +1,38 @@
 import { describe, expect, it } from 'vitest'
-import { parsePluginReadme } from './readme'
+import { getReadmeText } from './readme'
 
-describe('parsePluginReadme', () => {
-  it('falls back to the trimmed manifest description when README is empty or only a title', () => {
-    expect(parsePluginReadme('', 'md.numen.notes', '  Fallback description  ')).toStrictEqual({
-      summary: 'Fallback description',
-      more: '',
-    })
-    expect(
-      parsePluginReadme('  # Only Title  \n\n', 'md.numen.notes', '  Fallback  '),
-    ).toStrictEqual({
-      summary: 'Fallback',
-      more: '',
-    })
+describe('getReadmeText', () => {
+  it('removes the leading title and keeps the body', () => {
+    expect(getReadmeText('# Notes\n\nTakes notes.\n')).toBe('Takes notes.')
   })
 
-  it('returns the trimmed body as summary when there is no <!-- more --> marker', () => {
-    const raw = `  # Plugin Title
-
-  Single paragraph summary.
-
-# Inner heading stays  `
-
-    expect(parsePluginReadme(raw, 'md.numen.notes', 'Fallback')).toStrictEqual({
-      summary: 'Single paragraph summary.\n\n# Inner heading stays',
-      more: '',
-    })
-  })
-
-  it('strips an H1 whose title follows several spaces or a line break', () => {
-    expect(parsePluginReadme('#   Title  \n\n\nBody', 'md.numen.notes', 'Fallback').summary).toBe(
-      'Body',
-    )
-    expect(parsePluginReadme('#\nBody\nMore', 'md.numen.notes', 'Fallback').summary).toBe('More')
-  })
-
-  it('keeps a leading # with no space after it', () => {
-    expect(parsePluginReadme('#Tag\n\nBody', 'md.numen.notes', 'Fallback').summary).toBe(
-      '#Tag\n\nBody',
+  it('removes every HTML comment', () => {
+    expect(getReadmeText('Summary.\n\n<!-- more -->\n\nDetails.<!--\nhidden\n-->')).toBe(
+      'Summary.\n\n\n\nDetails.',
     )
   })
 
-  it('keeps a leading subheading that is not an H1', () => {
-    expect(parsePluginReadme('## Subheading\n\nText', 'md.numen.notes', 'Fallback')).toStrictEqual({
-      summary: '## Subheading\n\nText',
-      more: '',
-    })
+  it('removes an unclosed comment up to the end', () => {
+    expect(getReadmeText('Summary.\n\n<!-- draft\nDetails.')).toBe('Summary.')
   })
 
-  it('falls back to the manifest description when nothing precedes <!-- more -->', () => {
-    const raw = `# Title
-
-<!--  MORE  -->
-
-Expanded details.`
-
-    expect(parsePluginReadme(raw, 'md.numen.notes', '  Manifest summary  ')).toStrictEqual({
-      summary: 'Manifest summary',
-      more: 'Expanded details.',
-    })
+  it('removes a comment that the removal of another one joins together', () => {
+    expect(getReadmeText('Summary.<!<!-- inner -->-- outer -->Details.')).toBe('Summary.Details.')
   })
 
-  it('strips a leading H1 title and splits on <!-- more -->', () => {
-    const raw = `# Vector Embeddings
-
-Generates vector embeddings for semantic search.
-
-<!-- more -->
-
-## Providers
-
-Supports local ONNX and remote APIs.`
-
-    expect(parsePluginReadme(raw, 'md.numen.engines.embeddings', 'Fallback')).toStrictEqual({
-      summary: 'Generates vector embeddings for semantic search.',
-      more: '## Providers\n\nSupports local ONNX and remote APIs.',
-    })
+  it('removes a title that follows a comment', () => {
+    expect(getReadmeText('<!-- generated -->\n# Notes\nBody')).toBe('Body')
   })
 
-  it('rewrites relative assets/ links to the plugin route', () => {
-    const raw = `# Sample
+  it('keeps a heading of a lower level and a title further down', () => {
+    expect(getReadmeText('## Setup\n\nText\n\n# Later')).toBe('## Setup\n\nText\n\n# Later')
+  })
 
-Summary text.
+  it('keeps a hash with no space after it', () => {
+    expect(getReadmeText('#tag\n\nBody')).toBe('#tag\n\nBody')
+  })
 
-<!--more-->
-
-![Diagram](assets/diagram.png) and [Guide](./assets/guide.pdf)`
-
-    expect(parsePluginReadme(raw, 'md.numen.sample', 'Fallback')).toStrictEqual({
-      summary: 'Summary text.',
-      more: '![Diagram](/plugin/md.numen.sample/assets/diagram.png) and [Guide](/plugin/md.numen.sample/assets/guide.pdf)',
-    })
+  it('answers an empty text for a README that holds only a title', () => {
+    expect(getReadmeText('# Only a title')).toBe('')
   })
 })

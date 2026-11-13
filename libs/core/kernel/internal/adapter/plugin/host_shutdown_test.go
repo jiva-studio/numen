@@ -26,10 +26,10 @@ func newRunningHost(t *testing.T) (*container.PluginRoles, <-chan struct{}) {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample")
+	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
 	return host, supervisorOf(host, "org.example.sample").GetExitSignal()
 }
 
@@ -51,7 +51,7 @@ func TestAShutDownHostDoesNotStartPluginsAgain(t *testing.T) {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, plugin.ErrHostClosed) {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); !errors.Is(err, plugin.ErrHostClosed) {
 		t.Fatalf("expected plugin.ErrHostClosed, got %v", err)
 	}
 	if started.Load() != 0 {
@@ -110,7 +110,7 @@ func TestApplyingTheEnabledSettingAsFalseStopsThePlugin(t *testing.T) {
 		t.Fatal("the plugin is still enabled after its enabled setting was cleared")
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err == nil {
 		t.Fatal("a disabled plugin was activated")
 	}
 
@@ -206,7 +206,7 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 		"md.numen.absent": plugindomain.NotInstalled,
 		"md.numen.a":      plugindomain.Disabled,
 	} {
-		_, err := host.Activation.EnsureActive(t.Context(), id)
+		_, err := host.Activation.EnsureActive(t.Context(), id, getTestHolder())
 		var missing *plugindomain.UnavailableError
 		if !errors.As(err, &missing) || missing.Reason != want || missing.PluginID != id {
 			t.Errorf("EnsureActive(%q) = %v, want reason %v", id, err, want)
@@ -217,7 +217,9 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
-		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventStartup}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}})
+		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{
+			ID: id, ActivationEvents: []string{manifest.ActivationEventSearchSourceReady}, Backend: manifest.Backend{Entrypoint: "bin/plugin"},
+		}})
 	}
 	var started atomic.Int32
 	working := startSleepLauncher(t, &started, nil)
@@ -228,7 +230,7 @@ func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 		return working(ctx, p, portNumber, token)
 	})
 
-	activated, err := host.Events.TriggerEvent(t.Context(), manifest.ActivationEventStartup)
+	activated, err := host.Events.TriggerEvent(t.Context(), manifest.ActivationEventSearchSourceReady)
 
 	if err == nil {
 		t.Fatal("expected the failing plugin to be reported")

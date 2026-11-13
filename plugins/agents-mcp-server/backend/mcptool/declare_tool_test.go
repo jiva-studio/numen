@@ -11,9 +11,7 @@ import (
 )
 
 // schemaCase is a schema the host lists for a tool, used as both its input and its output schema,
-// and what an MCP client is given for each. The same table is in
-// libs/core/kernel/internal/adapter/plugin/agenttoolsbridge/declare_tool_test.go: both readers declare a
-// tool identically.
+// and what an MCP client is given for each.
 type schemaCase struct {
 	name            string
 	schema          []byte

@@ -20,7 +20,7 @@ const SYNC: BackgroundTask = {
   progress: { completedCount: 1, total: 4, counting: '' },
   error: '',
   allowed: { cancel: true, retry: false },
-  action: { label: '', pluginId: '' },
+  actionLabel: '',
 }
 
 describe('the slots of a mock context', () => {
@@ -133,14 +133,14 @@ describe('the background work of a mock context', () => {
     await ctx.work.backgroundTasks.cancel('sync')
     ctx.work.backgroundTasks.retry('sync')
     ctx.work.backgroundTasks.dismiss('sync')
-    ctx.work.backgroundTasks.openSettings('org.example.ledger')
+    ctx.work.backgroundTasks.runAction('sync')
 
     expect(handler).toHaveBeenLastCalledWith([SYNC])
     expect(ctx.work.backgroundTasks.getActions()).toStrictEqual([
       { action: 'cancel', id: 'sync' },
       { action: 'retry', id: 'sync' },
       { action: 'dismiss', id: 'sync' },
-      { action: 'openSettings', id: 'org.example.ledger' },
+      { action: 'runAction', id: 'sync' },
     ])
   })
 })

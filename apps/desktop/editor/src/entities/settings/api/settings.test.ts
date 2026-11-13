@@ -3,26 +3,15 @@
  * hands the vault to write.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { AGENT_PROVIDER_CAPABILITY, MODEL_PRESENCE } from '@numen/core-client'
+import { PLUGIN_CONTRIBUTION_KIND } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import * as settingsApi from './settings'
-import * as secretsApi from './secrets'
 
-const core = { ...settingsApi, ...secretsApi }
+const core = settingsApi
 
 const request = {
   getSettings: vi.fn(),
   writeSettings: vi.fn(),
-  createSecret: vi.fn(),
-  renameSecret: vi.fn(),
-  writeSecret: vi.fn(),
-  deleteSecret: vi.fn(),
-  deleteSecretGroup: vi.fn(),
-  listSecretStates: vi.fn(),
-  moveSecret: vi.fn(),
-  renameSecretGroup: vi.fn(),
-  allowPluginSecret: vi.fn(),
-  denyPluginSecret: vi.fn(),
   retryPlugin: vi.fn(),
   getPluginData: vi.fn(),
   deletePluginData: vi.fn(),
@@ -32,12 +21,8 @@ const request = {
 const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
   path: '/vault/.numen/settings.json',
-  models: [],
   plugins: [],
   app: [],
-  secretSections: [],
-  secretMenus: [],
-  credentialsPath: '',
   ...overrides,
 })
 
@@ -56,46 +41,7 @@ afterEach(() => {
 })
 
 describe('every setting', () => {
-  it('arrives with each model the settings offer, and whether its files are here', async () => {
-    const model = {
-      namedAt: ['indexing', 'model', 'name'],
-      name: 'e5-small-int8',
-      title: 'E5 small',
-      group: 'On this machine',
-      isDefault: true,
-      writes: [{ at: ['indexing', 'model', 'name'], value: '"e5-small-int8"', extra: 1 }],
-      presence: MODEL_PRESENCE.NOT_FETCHED,
-      reasoningLevels: [{ name: 'high', title: 'High' }],
-      defaultReasoning: 'high',
-      extra: 'not the window’s',
-    }
-    request.getSettings.mockResolvedValue(answer({ a: 1 }, { models: [model] }))
-
-    expect(await core.getSettings()).toStrictEqual({
-      written: '{"a":1}',
-      path: '/vault/.numen/settings.json',
-      models: [
-        {
-          namedAt: ['indexing', 'model', 'name'],
-          name: 'e5-small-int8',
-          title: 'E5 small',
-          group: 'On this machine',
-          isDefault: true,
-          writes: [{ at: ['indexing', 'model', 'name'], value: '"e5-small-int8"' }],
-          presence: 'not fetched',
-          reasoningLevels: [{ name: 'high', title: 'High' }],
-          defaultReasoning: 'high',
-        },
-      ],
-      plugins: [],
-      app: [],
-      secretSections: [],
-      secretMenus: [],
-      credentialsPath: '',
-    })
-  })
-
-  it('arrives with active plugins and their declarative settings', async () => {
+  it('arrives with each plugin, its settings and its contributions of a known kind', async () => {
     request.getSettings.mockResolvedValue(
       answer(
         { a: 1 },
@@ -107,18 +53,29 @@ describe('every setting', () => {
               version: '1.0.0',
               description: 'Sample plugin',
               isActive: true,
-              capabilities: [AGENT_PROVIDER_CAPABILITY],
-              secrets: [{ name: 'apiKey', title: 'API key', description: '', group: 'openrouter' }],
+              capabilities: ['tools'],
               hasFrontend: true,
               hasBackend: false,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
               settingsViews: [{ id: 'floor', title: 'Floor' }],
+              contributions: [
+                {
+                  kind: PLUGIN_CONTRIBUTION_KIND.COMMANDS,
+                  items: [{ text: 'Run', detail: 'sample.plugin.run', keys: 'mod+r' }],
+                },
+                { kind: PLUGIN_CONTRIBUTION_KIND.UNSPECIFIED, items: [{ text: 'x' }] },
+                {
+                  kind: PLUGIN_CONTRIBUTION_KIND.TAB_KINDS,
+                  items: [{ text: 'Sample', detail: 'sample' }],
+                },
+              ],
               settings: [
                 {
                   key: 'autoRun',
                   type: 'boolean',
                   title: 'Auto Run',
                   description: 'Run automatically',
+                  details: 'Runs at every start of the window.',
                   defaultJson: 'true',
                   palette: true,
                   icon: 'sparkles',
@@ -161,26 +118,26 @@ describe('every setting', () => {
         version: '1.0.0',
         description: 'Sample plugin',
         isActive: true,
-        capabilities: [AGENT_PROVIDER_CAPABILITY],
-        secrets: [
-          {
-            name: 'apiKey',
-            title: 'API key',
-            description: '',
-            group: 'openrouter',
-            when: undefined,
-          },
-        ],
+        isOffByDefault: false,
+        capabilities: ['tools'],
         hasFrontend: true,
         hasBackend: false,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],
         settingsViews: [{ id: 'floor', title: 'Floor' }],
+        contributions: [
+          {
+            kind: 'commands',
+            items: [{ text: 'Run', detail: 'sample.plugin.run', keys: 'mod+r' }],
+          },
+          { kind: 'tabKinds', items: [{ text: 'Sample', detail: 'sample', keys: '' }] },
+        ],
         settings: [
           {
             key: 'autoRun',
             type: 'boolean',
             title: 'Auto Run',
             description: 'Run automatically',
+            details: 'Runs at every start of the window.',
             default: true,
             palette: true,
             icon: 'sparkles',
@@ -233,214 +190,7 @@ describe('every setting', () => {
   })
 })
 
-describe('the secrets', () => {
-  it('arrive as the sections the core ordered, with their permissions, the menus by id, and the fallback file path', async () => {
-    request.getSettings.mockResolvedValue(
-      answer(
-        {},
-        {
-          secretSections: [
-            {
-              group: 'openrouter',
-              isAsked: true,
-              secrets: [
-                {
-                  id: 's0a1b2c3d',
-                  name: 'Work',
-                  group: 'openrouter',
-                  allowed: [
-                    { pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter', extra: 1 },
-                  ],
-                },
-              ],
-            },
-            {
-              group: 'work',
-              isAsked: false,
-              secrets: [{ id: 's0e5f6a7b', name: 'Home', group: 'work', allowed: [] }],
-            },
-          ],
-          secretMenus: [
-            {
-              pluginId: 'sample.plugin',
-              name: 'apiKey',
-              group: 'openrouter',
-              secretIds: ['s0a1b2c3d', 's0e5f6a7b'],
-            },
-          ],
-          credentialsPath: '/config/numen/credentials/credentials.json',
-        },
-      ),
-    )
-
-    const got = await core.getSettings()
-
-    const work = {
-      id: 's0a1b2c3d',
-      name: 'Work',
-      group: 'openrouter',
-      allowed: [{ pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter' }],
-    }
-    const home = { id: 's0e5f6a7b', name: 'Home', group: 'work', allowed: [] }
-    expect(got.secretSections).toStrictEqual([
-      { group: 'openrouter', isAsked: true, secrets: [work] },
-      { group: 'work', isAsked: false, secrets: [home] },
-    ])
-    expect(got.secretMenus).toStrictEqual([
-      { pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter', secrets: [work, home] },
-    ])
-    expect(got.credentialsPath).toBe('/config/numen/credentials/credentials.json')
-  })
-
-  it('carry no value in what the window reads', async () => {
-    request.getSettings.mockResolvedValue(
-      answer(
-        {},
-        {
-          secretSections: [
-            {
-              group: 'g',
-              isAsked: false,
-              secrets: [{ id: 's0a1b2c3d', name: 'Work', group: 'g', allowed: [] }],
-            },
-          ],
-        },
-      ),
-    )
-    expect(JSON.stringify(await core.getSettings())).not.toMatch(/value-typed-once/)
-  })
-
-  it('have their states read by a call of their own', async () => {
-    request.listSecretStates.mockResolvedValue({
-      states: [
-        { id: 's0a1b2c3d', hasValue: true },
-        { id: 's0e5f6a7b', hasValue: false },
-      ],
-    })
-    expect(await core.listSecretStates()).toStrictEqual(
-      new Map([
-        ['s0a1b2c3d', true],
-        ['s0e5f6a7b', false],
-      ]),
-    )
-  })
-})
-
-describe('an operation on a secret', () => {
-  const operations: readonly [string, () => Promise<unknown>, keyof typeof request, unknown][] = [
-    [
-      'createSecret',
-      () => core.createSecret('openrouter', 'Work', 'value-typed-once'),
-      'createSecret',
-      { group: 'openrouter', name: 'Work', value: 'value-typed-once' },
-    ],
-    [
-      'renameSecret',
-      () => core.renameSecret('s0a1b2c3d', 'Office'),
-      'renameSecret',
-      { id: 's0a1b2c3d', name: 'Office' },
-    ],
-    [
-      'writeSecret',
-      () => core.writeSecret('s0a1b2c3d', 'value-typed-once'),
-      'writeSecret',
-      { id: 's0a1b2c3d', value: 'value-typed-once' },
-    ],
-    ['deleteSecret', () => core.deleteSecret('s0a1b2c3d'), 'deleteSecret', { id: 's0a1b2c3d' }],
-    [
-      'deleteSecretGroup',
-      () => core.deleteSecretGroup('work'),
-      'deleteSecretGroup',
-      { group: 'work' },
-    ],
-    [
-      'moveSecret',
-      () => core.moveSecret('s0a1b2c3d', 's0e5f6a7b'),
-      'moveSecret',
-      { id: 's0a1b2c3d', beforeId: 's0e5f6a7b' },
-    ],
-    [
-      'moveSecret to the end',
-      () => core.moveSecret('s0a1b2c3d', ''),
-      'moveSecret',
-      { id: 's0a1b2c3d', beforeId: '' },
-    ],
-    [
-      'renameSecretGroup',
-      () => core.renameSecretGroup('work', 'office'),
-      'renameSecretGroup',
-      { group: 'work', name: 'office' },
-    ],
-    [
-      'allowPluginSecret',
-      () => core.allowPluginSecret('s0a1b2c3d', 'sample.plugin', 'apiKey', 'openrouter'),
-      'allowPluginSecret',
-      { secretId: 's0a1b2c3d', pluginId: 'sample.plugin', name: 'apiKey', group: 'openrouter' },
-    ],
-    [
-      'denyPluginSecret',
-      () => core.denyPluginSecret('s0a1b2c3d', 'sample.plugin', 'apiKey', ''),
-      'denyPluginSecret',
-      { secretId: 's0a1b2c3d', pluginId: 'sample.plugin', name: 'apiKey', group: '' },
-    ],
-  ]
-
-  for (const [name, call, method, message] of operations) {
-    it(`${name} is sent to the vault with the ids and names given`, async () => {
-      request[method].mockResolvedValue({ id: 's0a1b2c3d' })
-      await call()
-      expect(request[method].mock.lastCall?.[0]).toMatchObject(message as object)
-    })
-  }
-
-  it('rejection reaches the caller', async () => {
-    request.createSecret.mockRejectedValue(new Error('no keychain'))
-    await expect(core.createSecret('g', 'n', 'k')).rejects.toThrow()
-  })
-
-  it('creating a secret resolves to the id the core made', async () => {
-    request.createSecret.mockResolvedValue({ id: 's0a1b2c3d' })
-    await expect(core.createSecret('g', 'n', 'k')).resolves.toBe('s0a1b2c3d')
-  })
-})
-
 describe('a plugin whose last start failed', () => {
-  it('arrives with the reason and the time it was given up', async () => {
-    request.getSettings.mockResolvedValue(
-      answer(
-        {},
-        {
-          plugins: [
-            {
-              id: 'sample.plugin',
-              name: 'Sample',
-              capabilities: [],
-              secrets: [],
-              readers: [],
-              settingsViews: [],
-              settings: [],
-              failure: {
-                reason: 'Timed out while starting',
-                detail: 'handshake timeout',
-                failedAtUnixMs: 1_700_000_000_123n,
-              },
-            },
-          ],
-        },
-      ),
-    )
-
-    const got = await core.getSettings()
-
-    expect(got.plugins?.[0]?.failure).toStrictEqual({
-      reason: 'Timed out while starting',
-      detail: 'handshake timeout',
-      failedAt: 1_700_000_000_123,
-    })
-    expect(got.plugins?.[0]?.readers).toStrictEqual([])
-    expect(got.plugins?.[0]?.settingsViews).toStrictEqual([])
-  })
-
   it('is started again by its id, and the answer is why it failed again', async () => {
     request.retryPlugin.mockResolvedValue({
       failure: 'Timed out while starting',
@@ -490,7 +240,6 @@ describe('what the core resolved and declared', () => {
               description: '',
               isActive: true,
               capabilities: [],
-              secrets: [],
               hasFrontend: false,
               hasBackend: false,
               readers: [],

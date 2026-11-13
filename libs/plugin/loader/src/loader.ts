@@ -1,6 +1,9 @@
 /**
  * Loads plugin frontends: each module is fetched from the window, activated with a context
- * created by the host, and deactivated according to its `enabled` setting.
+ * created by the host, and deactivated according to its `enabled` setting. The plugins of the window
+ * slots start with the window; every other plugin starts on the first use of what it contributes.
+ * Callers that start a plugin while its start goes on join that start, and the plugin counts as
+ * starting until the last of them ends.
  */
 import type { Caught, Disposable, JsonValue } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
@@ -117,11 +120,39 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
   }
 }
 
+function createStartRuns(starting: LoaderState['starting']) {
+  const runs = new Map<string, number>()
+  const going = new Map<string, Promise<boolean>>()
+  const count = (id: string, step: number): void => {
+    const total = (runs.get(id) ?? 0) + step
+    if (total > 0) runs.set(id, total)
+    else runs.delete(id)
+    const next = new Set(starting.value)
+    if (total > 0) next.add(id)
+    else next.delete(id)
+    starting.value = next
+  }
+  return {
+    track: (id: string, run: () => Promise<boolean>): Promise<boolean> => {
+      count(id, 1)
+      return run().finally(() => count(id, -1))
+    },
+    startOnce: (id: string, start: () => Promise<boolean>): Promise<boolean> => {
+      const found = going.get(id)
+      if (found) return found
+      const one = start().finally(() => going.delete(id))
+      going.set(id, one)
+      return one
+    },
+  }
+}
+
 function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   const { host } = deps
   const defaults = resolveDefaultDeps(deps)
   const { activePlugins, failures, manifests, moduleLoaders } = state
   const queues = new Map<string, Promise<void>>()
+  const runs = createStartRuns(state.starting)
 
   const enqueue = <T>(id: string, task: () => Promise<T>): Promise<T> => {
     const run = (queues.get(id) ?? Promise.resolve()).then(task)
@@ -151,54 +182,45 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
     reportError: defaults.reportError,
   }
 
+  const readManifest = async (id: string): Promise<Manifest | undefined> =>
+    moduleLoaders.has(id) ? manifests.get(id) : readPluginManifest(id, activateContext)
+
+  const activatePlugin = (id: string, module?: PluginModule, limit?: StartLimit) =>
+    runs.track(id, () => enqueue(id, () => activateEntry(activateContext, id, { module, limit })))
+
   return {
     loadModule: (id: string) => resolveModule(id, undefined, activateContext),
-    isInterface: async (id: string): Promise<boolean> =>
-      !moduleLoaders.has(id) && isWindowSlotManifest(await readPluginManifest(id, activateContext)),
-    hasTabKinds: async (id: string): Promise<boolean> =>
-      !moduleLoaders.has(id) &&
-      ((await readPluginManifest(id, activateContext).catch(() => undefined))?.contributes?.tabKinds
-        .length ?? 0) > 0,
-    activatePlugin: (id: string, module?: PluginModule, limit?: StartLimit) =>
-      enqueue(id, () => activateEntry(activateContext, id, { module, limit })),
+    readManifest,
+    isInterface: async (id: string): Promise<boolean> => {
+      const manifest = await readManifest(id)
+      return manifest !== undefined && isWindowSlotManifest(manifest)
+    },
+    activatePlugin,
+    /** Starts the plugin once for every caller that asks while its start goes on. */
+    startPlugin: (id: string): Promise<boolean> => runs.startOnce(id, () => activatePlugin(id)),
     deactivatePlugin: (id: string) => enqueue(id, () => deactivateEntry(deactivateContext, id)),
   }
 }
 
-type LoaderState = Pick<PluginStatus['state'], 'activePlugins' | 'failures' | 'moduleLoaders'> & {
-  readonly manifests: Map<string, Manifest>
-}
+type LoaderState = Pick<
+  PluginStatus['state'],
+  'activePlugins' | 'failures' | 'moduleLoaders' | 'manifests' | 'starting'
+>
 
 interface Activation {
   readonly loadModule: (id: string) => Promise<PluginModule | undefined>
+  readonly readManifest: (id: string) => Promise<Manifest | undefined>
   readonly activatePlugin: (
     id: string,
     module?: PluginModule,
     limit?: StartLimit,
   ) => Promise<boolean>
+  readonly startPlugin: (id: string) => Promise<boolean>
   readonly deactivatePlugin: (id: string) => Promise<boolean>
   readonly isInterface: (id: string) => Promise<boolean>
-  readonly hasTabKinds: (id: string) => Promise<boolean>
 }
 
-function createTabPluginsWait(status: PluginStatus, activation: Activation) {
-  const { isEnabled, listPlugins } = status.state
-  const { settlePlugin } = status
-  return async (): Promise<void> => {
-    const withTabs = await Promise.all(
-      listPlugins()
-        .filter((id) => isEnabled(id))
-        .map(async (id) => ((await activation.hasTabKinds(id)) ? [id] : [])),
-    )
-    await Promise.all(withTabs.flat().map(settlePlugin))
-  }
-}
-
-function createLoaderStatus(
-  status: PluginStatus,
-  activation: Activation,
-  waitForInterface: () => Promise<void>,
-) {
+function createLoaderStatus(status: PluginStatus, waitForInterface: () => Promise<void>) {
   const { activePlugins, failures } = status.state
   return {
     isPluginActive: (id: string) => activePlugins.value.has(id),
@@ -207,8 +229,10 @@ function createLoaderStatus(
     getFailedPlugins: (): { id: string; error: string }[] =>
       [...failures.value].map(([id, error]) => ({ id, error })),
     isPluginStarting: status.isPluginStarting,
-    settlePlugin: status.settlePlugin,
-    waitForTabPlugins: createTabPluginsWait(status, activation),
+    startPlugin: status.startPlugin,
+    startPluginsOf: status.startPluginsOf,
+    findPluginsOf: status.findPluginsOf,
+    startTabPlugins: status.startTabPlugins,
     /** Settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
     waitForInterface,
   }
@@ -228,21 +252,20 @@ function createRuntime(deps: PluginLoaderDeps, status: PluginStatus, activation:
       id,
     )
 
-  const activateInBackground = (id: string): void => {
-    // Stryker disable next-line BlockStatement,CallExpression,OptionalChaining: activatePlugin handles its own errors inside activateEntry
-    activatePlugin(id).catch((error: Caught) => {
-      deps.onError?.(id, error)
-    })
+  /** A plugin listed while the window runs starts at once only where it fills a window slot. */
+  const startInterfacePlugin = async (id: string): Promise<void> => {
+    if (!isEnabled(id) || !(await activation.isInterface(id).catch(() => false))) return
+    await activatePlugin(id)
   }
 
   return {
-    status: createLoaderStatus(status, activation, () => interfaceStarted.promise),
+    status: createLoaderStatus(status, () => interfaceStarted.promise),
     registerPluginModule: (id: string, loader: () => Promise<PluginModule>) => {
       moduleLoaders.set(id, loader)
-      if (isRunning.value) {
-        listen(id)
-        if (isEnabled(id)) activateInBackground(id)
-      }
+      if (!isRunning.value) return
+      listen(id)
+      // Stryker disable next-line BlockStatement,CallExpression,OptionalChaining: activatePlugin handles its own errors inside activateEntry
+      startInterfacePlugin(id).catch((error: Caught) => deps.onError?.(id, error))
     },
     trackPlugins: async (ids: readonly string[]): Promise<void> => {
       for (const id of ids) {
@@ -250,7 +273,7 @@ function createRuntime(deps: PluginLoaderDeps, status: PluginStatus, activation:
         tracked.value = new Set([...tracked.value, id])
         if (!isRunning.value) continue
         listen(id)
-        if (isEnabled(id)) await activatePlugin(id)
+        await startInterfacePlugin(id)
       }
     },
     start: async (): Promise<void> => {
@@ -284,9 +307,14 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
     activePlugins: status.state.activePlugins,
     failures: status.state.failures,
     moduleLoaders: status.state.moduleLoaders,
-    manifests: new Map(),
+    manifests: status.state.manifests,
+    starting: status.state.starting,
   }
   const activation = createActivation(deps, state)
+  status.state.starter.current = {
+    start: activation.startPlugin,
+    readManifest: activation.readManifest,
+  }
   const runtime = createRuntime(deps, status, activation)
 
   return {

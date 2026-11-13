@@ -54,7 +54,7 @@ func (r *rangingTexts) ReadTextRange(_ context.Context, v domain.Vault, path str
 func newRangingTexts(t *testing.T) (*rangingTexts, *callers) {
 	t.Helper()
 	texts := &rangingTexts{memoryTexts: newMemoryTexts()}
-	fakeCallers := newCallers(nil)
+	fakeCallers := newCallers()
 	fakeCallers.vault = vaultOf(newMemoryVault(nil))
 	fakeCallers.texts = texts
 	return texts, fakeCallers

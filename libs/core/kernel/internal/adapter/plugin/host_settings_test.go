@@ -176,7 +176,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Errorf("expected 0 triggered plugins for disabled plugin, got %d", len(triggered))
 	}
 
-	_, err = host.Activation.EnsureActive(ctx, pluginID)
+	_, err = host.Activation.EnsureActive(ctx, pluginID, getTestHolder())
 	if err == nil {
 		t.Errorf("expected EnsureActive to fail for disabled plugin")
 	}
@@ -196,5 +196,39 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 	all := host.Registry.GetPluginStatuses()
 	if len(all) != 1 || !all[0].Enabled {
 		t.Errorf("expected 1 enabled plugin in GetPluginStatuses")
+	}
+}
+
+// A plugin whose manifest keeps it off by default stays off until the person enables it.
+func TestAPluginOffByDefaultRunsOnceEnabled(t *testing.T) {
+	tmp := t.TempDir()
+	pDir := filepath.Join(tmp, "lantern")
+	if err := os.MkdirAll(pDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifest := `{
+		"id": "org.example.lantern",
+		"name": "Lantern",
+		"version": "1.0.0",
+		"targets": ["desktop.editor"],
+		"frontend": {},
+		"isOffByDefault": true
+	}`
+	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Discovery.Discover(); err != nil {
+		t.Fatal(err)
+	}
+
+	if host.Registry.IsPluginEnabled("org.example.lantern") {
+		t.Error("the plugin runs before the person enables it")
+	}
+	if err := setEnabled(t.Context(), host, "org.example.lantern", true); err != nil {
+		t.Fatal(err)
+	}
+	if !host.Registry.IsPluginEnabled("org.example.lantern") {
+		t.Error("the plugin stays off once the person enables it")
 	}
 }

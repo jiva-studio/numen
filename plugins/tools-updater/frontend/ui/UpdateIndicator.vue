@@ -3,7 +3,7 @@
  * The title bar indicator of a new release, and the popover with its details.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import { useMenuDismissal } from '@numen/ui'
+import { isPageMove, useMenuDismissal } from '@numen/ui'
 import type { Update } from '../api/updater'
 import { getTooltip } from '../model/tooltip'
 import type { Platform } from '../types'
@@ -27,7 +27,7 @@ const emit = defineEmits<{
 const isOpen = ref(false)
 const tooltip = computed(() => (props.update ? getTooltip(props.version, props.update) : ''))
 const root = useTemplateRef<HTMLElement>('root')
-const dismissal = useMenuDismissal(root, onClose)
+const dismissal = useMenuDismissal(root, onClose, isPageMove)
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(isOpen, (open) => (open ? dismissal.listen() : dismissal.release()))

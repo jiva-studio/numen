@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -156,7 +155,7 @@ func folderWriters(c vaultWiring) vaultport.FolderWriters { return vaultWriters(
 
 func writeLocks(c vaultWiring) vaultport.VaultLocks { return vaultWriters(c) }
 
-func getImportedFiles(_ vaultWiring) sourceport.ImportedFiles {
+func getImportedFiles(_ vaultWiring) vaultport.ImportedFiles {
 	return filesystem.ImportedFiles{}
 }
 

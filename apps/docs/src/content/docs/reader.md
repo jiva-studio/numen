@@ -30,12 +30,8 @@ The text OCR read from the pages can be corrected afterwards by a model, through
 
 ```json
 {
-  "app": {
-    "ai": {
-      "default": { "agent": "claude", "model": "haiku" }
-    }
-  },
   "md.numen.tools.proofreading": {
+    "connections": [{ "connection": "c1f0a9e20", "model": "google/gemini-2.5-flash" }],
     "batchSize": 40,
     "maxEditDistance": 0.3
   }
@@ -44,7 +40,7 @@ The text OCR read from the pages can be corrected afterwards by a model, through
 
 Each request to the model covers one page. The corrected text is a new version next to the one it was made from, and deleting it (**Delete the text LLM Proofreading made**) restores that one.
 
-The model that is used is chosen by the proofreading plugin's own **Provider** setting, on its page of the settings. With "Agent", it is the one under `app.ai.default`: the agent, the model, and how many questions it handles at once. The `claude` command line you already have installed is one agent. A key is stored with the agent that uses it, and you enter it in the settings of that agent's plugin. With "OpenRouter", "OpenAI" or "Custom service", the plugin calls that service directly with its own model and key. With no agent available, proofreading shows that nothing is available, and the text stays as it was read.
+The model that is used is chosen on the proofreading plugin's page of the settings, in its **Connections** rows: up to five rows, each a connection you made on the Connections page, with a model and optionally a reasoning level. Numen tries the rows in order, and goes to the next one when a service rejects the key, asks for payment, limits the rate or cannot be reached. A connection can be a service such as OpenRouter or OpenAI, a server such as Ollama, or an agent on this computer such as Claude Code. The key stays with the connection and the plugin never sees it. With no row, proofreading is off: its page has a button to the Connections page, and the text stays as it was read.
 
 `maxEditDistance` is the safety limit: how far a correction may change a line's letters and still count as a correction, taken as the Levenshtein distance between them as a share of the longer of the two. Over 931 corrections of one book, every correction with a distance above 0.3 was an error (text taken from the next line, or one corrected word replacing a whole line), and every correction below it was a genuine fix. A correction with a larger distance is dropped, and that line is left as it was read. The default is 0.3.
 

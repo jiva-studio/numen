@@ -1703,106 +1703,6 @@ func (x *CreateNoteResponse) GetIsNameExhausted() bool {
 	return false
 }
 
-type WriteLinkRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The note the link is written in.
-	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Link          *Link  `protobuf:"bytes,2,opt,name=link,proto3" json:"link,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *WriteLinkRequest) Reset() {
-	*x = WriteLinkRequest{}
-	mi := &file_numen_v1_note_proto_msgTypes[22]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *WriteLinkRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*WriteLinkRequest) ProtoMessage() {}
-
-func (x *WriteLinkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[22]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use WriteLinkRequest.ProtoReflect.Descriptor instead.
-func (*WriteLinkRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{22}
-}
-
-func (x *WriteLinkRequest) GetPath() string {
-	if x != nil {
-		return x.Path
-	}
-	return ""
-}
-
-func (x *WriteLinkRequest) GetLink() *Link {
-	if x != nil {
-		return x.Link
-	}
-	return nil
-}
-
-type WriteLinkResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when nothing was written, with the reason. A note that changed between
-	// being read and being written returns ERROR_CODE_CONFLICT, and the caller
-	// reads it again before retrying.
-	Error         *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *WriteLinkResponse) Reset() {
-	*x = WriteLinkResponse{}
-	mi := &file_numen_v1_note_proto_msgTypes[23]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *WriteLinkResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*WriteLinkResponse) ProtoMessage() {}
-
-func (x *WriteLinkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[23]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use WriteLinkResponse.ProtoReflect.Descriptor instead.
-func (*WriteLinkResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{23}
-}
-
-func (x *WriteLinkResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
-	}
-	return ErrorCode_ERROR_CODE_UNSPECIFIED
-}
-
 // ConnectionSide is the record one note writes about the other in a connection.
 type ConnectionSide struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1817,7 +1717,7 @@ type ConnectionSide struct {
 
 func (x *ConnectionSide) Reset() {
 	*x = ConnectionSide{}
-	mi := &file_numen_v1_note_proto_msgTypes[24]
+	mi := &file_numen_v1_note_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1829,7 +1729,7 @@ func (x *ConnectionSide) String() string {
 func (*ConnectionSide) ProtoMessage() {}
 
 func (x *ConnectionSide) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[24]
+	mi := &file_numen_v1_note_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1842,7 +1742,7 @@ func (x *ConnectionSide) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectionSide.ProtoReflect.Descriptor instead.
 func (*ConnectionSide) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{24}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ConnectionSide) GetRole() Role {
@@ -1902,7 +1802,7 @@ type Connection struct {
 
 func (x *Connection) Reset() {
 	*x = Connection{}
-	mi := &file_numen_v1_note_proto_msgTypes[25]
+	mi := &file_numen_v1_note_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1914,7 +1814,7 @@ func (x *Connection) String() string {
 func (*Connection) ProtoMessage() {}
 
 func (x *Connection) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[25]
+	mi := &file_numen_v1_note_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1927,7 +1827,7 @@ func (x *Connection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Connection.ProtoReflect.Descriptor instead.
 func (*Connection) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{25}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *Connection) GetFirst() string {
@@ -1977,7 +1877,7 @@ type GetConnectionRequest struct {
 
 func (x *GetConnectionRequest) Reset() {
 	*x = GetConnectionRequest{}
-	mi := &file_numen_v1_note_proto_msgTypes[26]
+	mi := &file_numen_v1_note_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1989,7 +1889,7 @@ func (x *GetConnectionRequest) String() string {
 func (*GetConnectionRequest) ProtoMessage() {}
 
 func (x *GetConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[26]
+	mi := &file_numen_v1_note_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2002,7 +1902,7 @@ func (x *GetConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetConnectionRequest.ProtoReflect.Descriptor instead.
 func (*GetConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{26}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetConnectionRequest) GetFirst() string {
@@ -2036,7 +1936,7 @@ type GetConnectionResponse struct {
 
 func (x *GetConnectionResponse) Reset() {
 	*x = GetConnectionResponse{}
-	mi := &file_numen_v1_note_proto_msgTypes[27]
+	mi := &file_numen_v1_note_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2048,7 +1948,7 @@ func (x *GetConnectionResponse) String() string {
 func (*GetConnectionResponse) ProtoMessage() {}
 
 func (x *GetConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[27]
+	mi := &file_numen_v1_note_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2061,7 +1961,7 @@ func (x *GetConnectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetConnectionResponse.ProtoReflect.Descriptor instead.
 func (*GetConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{27}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetConnectionResponse) GetConnection() *Connection {
@@ -2087,7 +1987,7 @@ type SaveConnectionRequest struct {
 
 func (x *SaveConnectionRequest) Reset() {
 	*x = SaveConnectionRequest{}
-	mi := &file_numen_v1_note_proto_msgTypes[28]
+	mi := &file_numen_v1_note_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2099,7 +1999,7 @@ func (x *SaveConnectionRequest) String() string {
 func (*SaveConnectionRequest) ProtoMessage() {}
 
 func (x *SaveConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[28]
+	mi := &file_numen_v1_note_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2112,7 +2012,7 @@ func (x *SaveConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveConnectionRequest.ProtoReflect.Descriptor instead.
 func (*SaveConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{28}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *SaveConnectionRequest) GetConnection() *Connection {
@@ -2138,7 +2038,7 @@ type SaveConnectionResponse struct {
 
 func (x *SaveConnectionResponse) Reset() {
 	*x = SaveConnectionResponse{}
-	mi := &file_numen_v1_note_proto_msgTypes[29]
+	mi := &file_numen_v1_note_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2150,7 +2050,7 @@ func (x *SaveConnectionResponse) String() string {
 func (*SaveConnectionResponse) ProtoMessage() {}
 
 func (x *SaveConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[29]
+	mi := &file_numen_v1_note_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2163,7 +2063,7 @@ func (x *SaveConnectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveConnectionResponse.ProtoReflect.Descriptor instead.
 func (*SaveConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{29}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *SaveConnectionResponse) GetError() ErrorCode {
@@ -2201,7 +2101,7 @@ type RemoveSideRequest struct {
 
 func (x *RemoveSideRequest) Reset() {
 	*x = RemoveSideRequest{}
-	mi := &file_numen_v1_note_proto_msgTypes[30]
+	mi := &file_numen_v1_note_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2213,7 +2113,7 @@ func (x *RemoveSideRequest) String() string {
 func (*RemoveSideRequest) ProtoMessage() {}
 
 func (x *RemoveSideRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[30]
+	mi := &file_numen_v1_note_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2226,7 +2126,7 @@ func (x *RemoveSideRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveSideRequest.ProtoReflect.Descriptor instead.
 func (*RemoveSideRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{30}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *RemoveSideRequest) GetPath() string {
@@ -2259,7 +2159,7 @@ type RemoveSideResponse struct {
 
 func (x *RemoveSideResponse) Reset() {
 	*x = RemoveSideResponse{}
-	mi := &file_numen_v1_note_proto_msgTypes[31]
+	mi := &file_numen_v1_note_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2271,7 +2171,7 @@ func (x *RemoveSideResponse) String() string {
 func (*RemoveSideResponse) ProtoMessage() {}
 
 func (x *RemoveSideResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[31]
+	mi := &file_numen_v1_note_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2284,7 +2184,7 @@ func (x *RemoveSideResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveSideResponse.ProtoReflect.Descriptor instead.
 func (*RemoveSideResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{31}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *RemoveSideResponse) GetError() ErrorCode {
@@ -2305,7 +2205,7 @@ type RemoveConnectionRequest struct {
 
 func (x *RemoveConnectionRequest) Reset() {
 	*x = RemoveConnectionRequest{}
-	mi := &file_numen_v1_note_proto_msgTypes[32]
+	mi := &file_numen_v1_note_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2317,7 +2217,7 @@ func (x *RemoveConnectionRequest) String() string {
 func (*RemoveConnectionRequest) ProtoMessage() {}
 
 func (x *RemoveConnectionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[32]
+	mi := &file_numen_v1_note_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2330,7 +2230,7 @@ func (x *RemoveConnectionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveConnectionRequest.ProtoReflect.Descriptor instead.
 func (*RemoveConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{32}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *RemoveConnectionRequest) GetFirst() string {
@@ -2363,7 +2263,7 @@ type RemoveConnectionResponse struct {
 
 func (x *RemoveConnectionResponse) Reset() {
 	*x = RemoveConnectionResponse{}
-	mi := &file_numen_v1_note_proto_msgTypes[33]
+	mi := &file_numen_v1_note_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2375,7 +2275,7 @@ func (x *RemoveConnectionResponse) String() string {
 func (*RemoveConnectionResponse) ProtoMessage() {}
 
 func (x *RemoveConnectionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[33]
+	mi := &file_numen_v1_note_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2388,7 +2288,7 @@ func (x *RemoveConnectionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveConnectionResponse.ProtoReflect.Descriptor instead.
 func (*RemoveConnectionResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{33}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *RemoveConnectionResponse) GetError() ErrorCode {
@@ -2411,7 +2311,7 @@ type JoinNotesRequest struct {
 
 func (x *JoinNotesRequest) Reset() {
 	*x = JoinNotesRequest{}
-	mi := &file_numen_v1_note_proto_msgTypes[34]
+	mi := &file_numen_v1_note_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2423,7 +2323,7 @@ func (x *JoinNotesRequest) String() string {
 func (*JoinNotesRequest) ProtoMessage() {}
 
 func (x *JoinNotesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[34]
+	mi := &file_numen_v1_note_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2436,7 +2336,7 @@ func (x *JoinNotesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinNotesRequest.ProtoReflect.Descriptor instead.
 func (*JoinNotesRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{34}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *JoinNotesRequest) GetFrom() string {
@@ -2475,7 +2375,7 @@ type JoinNotesResponse struct {
 
 func (x *JoinNotesResponse) Reset() {
 	*x = JoinNotesResponse{}
-	mi := &file_numen_v1_note_proto_msgTypes[35]
+	mi := &file_numen_v1_note_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2487,7 +2387,7 @@ func (x *JoinNotesResponse) String() string {
 func (*JoinNotesResponse) ProtoMessage() {}
 
 func (x *JoinNotesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[35]
+	mi := &file_numen_v1_note_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2500,7 +2400,7 @@ func (x *JoinNotesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinNotesResponse.ProtoReflect.Descriptor instead.
 func (*JoinNotesResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{35}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *JoinNotesResponse) GetError() ErrorCode {
@@ -2542,7 +2442,7 @@ type CreateRelatedNoteRequest struct {
 
 func (x *CreateRelatedNoteRequest) Reset() {
 	*x = CreateRelatedNoteRequest{}
-	mi := &file_numen_v1_note_proto_msgTypes[36]
+	mi := &file_numen_v1_note_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2554,7 +2454,7 @@ func (x *CreateRelatedNoteRequest) String() string {
 func (*CreateRelatedNoteRequest) ProtoMessage() {}
 
 func (x *CreateRelatedNoteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[36]
+	mi := &file_numen_v1_note_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2567,7 +2467,7 @@ func (x *CreateRelatedNoteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRelatedNoteRequest.ProtoReflect.Descriptor instead.
 func (*CreateRelatedNoteRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{36}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *CreateRelatedNoteRequest) GetFrom() string {
@@ -2621,7 +2521,7 @@ type CreateRelatedNoteResponse struct {
 
 func (x *CreateRelatedNoteResponse) Reset() {
 	*x = CreateRelatedNoteResponse{}
-	mi := &file_numen_v1_note_proto_msgTypes[37]
+	mi := &file_numen_v1_note_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2633,7 +2533,7 @@ func (x *CreateRelatedNoteResponse) String() string {
 func (*CreateRelatedNoteResponse) ProtoMessage() {}
 
 func (x *CreateRelatedNoteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[37]
+	mi := &file_numen_v1_note_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2646,7 +2546,7 @@ func (x *CreateRelatedNoteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRelatedNoteResponse.ProtoReflect.Descriptor instead.
 func (*CreateRelatedNoteResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{37}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *CreateRelatedNoteResponse) GetPath() string {
@@ -2686,7 +2586,7 @@ type ListBacklinksRequest struct {
 
 func (x *ListBacklinksRequest) Reset() {
 	*x = ListBacklinksRequest{}
-	mi := &file_numen_v1_note_proto_msgTypes[38]
+	mi := &file_numen_v1_note_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2698,7 +2598,7 @@ func (x *ListBacklinksRequest) String() string {
 func (*ListBacklinksRequest) ProtoMessage() {}
 
 func (x *ListBacklinksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[38]
+	mi := &file_numen_v1_note_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2711,7 +2611,7 @@ func (x *ListBacklinksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBacklinksRequest.ProtoReflect.Descriptor instead.
 func (*ListBacklinksRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{38}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *ListBacklinksRequest) GetPath() string {
@@ -2741,7 +2641,7 @@ type Backlink struct {
 
 func (x *Backlink) Reset() {
 	*x = Backlink{}
-	mi := &file_numen_v1_note_proto_msgTypes[39]
+	mi := &file_numen_v1_note_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2753,7 +2653,7 @@ func (x *Backlink) String() string {
 func (*Backlink) ProtoMessage() {}
 
 func (x *Backlink) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[39]
+	mi := &file_numen_v1_note_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2766,7 +2666,7 @@ func (x *Backlink) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Backlink.ProtoReflect.Descriptor instead.
 func (*Backlink) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{39}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *Backlink) GetFrom() *Note {
@@ -2827,7 +2727,7 @@ type ListBacklinksResponse struct {
 
 func (x *ListBacklinksResponse) Reset() {
 	*x = ListBacklinksResponse{}
-	mi := &file_numen_v1_note_proto_msgTypes[40]
+	mi := &file_numen_v1_note_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2839,7 +2739,7 @@ func (x *ListBacklinksResponse) String() string {
 func (*ListBacklinksResponse) ProtoMessage() {}
 
 func (x *ListBacklinksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[40]
+	mi := &file_numen_v1_note_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2852,7 +2752,7 @@ func (x *ListBacklinksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBacklinksResponse.ProtoReflect.Descriptor instead.
 func (*ListBacklinksResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{40}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ListBacklinksResponse) GetBacklinks() []*Backlink {
@@ -2874,7 +2774,7 @@ type RenameNoteRequest struct {
 
 func (x *RenameNoteRequest) Reset() {
 	*x = RenameNoteRequest{}
-	mi := &file_numen_v1_note_proto_msgTypes[41]
+	mi := &file_numen_v1_note_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2886,7 +2786,7 @@ func (x *RenameNoteRequest) String() string {
 func (*RenameNoteRequest) ProtoMessage() {}
 
 func (x *RenameNoteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[41]
+	mi := &file_numen_v1_note_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2899,7 +2799,7 @@ func (x *RenameNoteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenameNoteRequest.ProtoReflect.Descriptor instead.
 func (*RenameNoteRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{41}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *RenameNoteRequest) GetPath() string {
@@ -2942,7 +2842,7 @@ type RenameNoteResponse struct {
 
 func (x *RenameNoteResponse) Reset() {
 	*x = RenameNoteResponse{}
-	mi := &file_numen_v1_note_proto_msgTypes[42]
+	mi := &file_numen_v1_note_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2954,7 +2854,7 @@ func (x *RenameNoteResponse) String() string {
 func (*RenameNoteResponse) ProtoMessage() {}
 
 func (x *RenameNoteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[42]
+	mi := &file_numen_v1_note_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2967,7 +2867,7 @@ func (x *RenameNoteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenameNoteResponse.ProtoReflect.Descriptor instead.
 func (*RenameNoteResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{42}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *RenameNoteResponse) GetPath() string {
@@ -3020,7 +2920,7 @@ type WatchEditsRequest struct {
 
 func (x *WatchEditsRequest) Reset() {
 	*x = WatchEditsRequest{}
-	mi := &file_numen_v1_note_proto_msgTypes[43]
+	mi := &file_numen_v1_note_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3032,7 +2932,7 @@ func (x *WatchEditsRequest) String() string {
 func (*WatchEditsRequest) ProtoMessage() {}
 
 func (x *WatchEditsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[43]
+	mi := &file_numen_v1_note_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3045,7 +2945,7 @@ func (x *WatchEditsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchEditsRequest.ProtoReflect.Descriptor instead.
 func (*WatchEditsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{43}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{41}
 }
 
 type WatchEditsResponse struct {
@@ -3068,7 +2968,7 @@ type WatchEditsResponse struct {
 
 func (x *WatchEditsResponse) Reset() {
 	*x = WatchEditsResponse{}
-	mi := &file_numen_v1_note_proto_msgTypes[44]
+	mi := &file_numen_v1_note_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3080,7 +2980,7 @@ func (x *WatchEditsResponse) String() string {
 func (*WatchEditsResponse) ProtoMessage() {}
 
 func (x *WatchEditsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_note_proto_msgTypes[44]
+	mi := &file_numen_v1_note_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3093,7 +2993,7 @@ func (x *WatchEditsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchEditsResponse.ProtoReflect.Descriptor instead.
 func (*WatchEditsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_note_proto_rawDescGZIP(), []int{44}
+	return file_numen_v1_note_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *WatchEditsResponse) GetChange() string {
@@ -3232,12 +3132,6 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
 	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdated\x12*\n" +
 	"\x11is_name_exhausted\x18\x04 \x01(\bR\x0fisNameExhaustedB\b\n" +
-	"\x06_error\"J\n" +
-	"\x10WriteLinkRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\"\n" +
-	"\x04link\x18\x02 \x01(\v2\x0e.numen.v1.LinkR\x04link\"M\n" +
-	"\x11WriteLinkResponse\x12.\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
 	"\x06_error\"\x9c\x01\n" +
 	"\x0eConnectionSide\x12\"\n" +
 	"\x04role\x18\x01 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x12\n" +
@@ -3372,7 +3266,7 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"NameSource\x12\x1b\n" +
 	"\x17NAME_SOURCE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17NAME_SOURCE_FRONTMATTER\x10\x01\x12\x18\n" +
-	"\x14NAME_SOURCE_FILENAME\x10\x022\xd4\n" +
+	"\x14NAME_SOURCE_FILENAME\x10\x022\x8e\n" +
 	"\n" +
 	"\vNoteService\x12S\n" +
 	"\x0eGetOpeningNote\x12\x1f.numen.v1.GetOpeningNoteRequest\x1a .numen.v1.GetOpeningNoteResponse\x12Y\n" +
@@ -3382,8 +3276,7 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\bReadNote\x12\x19.numen.v1.ReadNoteRequest\x1a\x1a.numen.v1.ReadNoteResponse\x12D\n" +
 	"\tWriteNote\x12\x1a.numen.v1.WriteNoteRequest\x1a\x1b.numen.v1.WriteNoteResponse\x12G\n" +
 	"\n" +
-	"CreateNote\x12\x1b.numen.v1.CreateNoteRequest\x1a\x1c.numen.v1.CreateNoteResponse\x12D\n" +
-	"\tWriteLink\x12\x1a.numen.v1.WriteLinkRequest\x1a\x1b.numen.v1.WriteLinkResponse\x12P\n" +
+	"CreateNote\x12\x1b.numen.v1.CreateNoteRequest\x1a\x1c.numen.v1.CreateNoteResponse\x12P\n" +
 	"\rGetConnection\x12\x1e.numen.v1.GetConnectionRequest\x1a\x1f.numen.v1.GetConnectionResponse\x12S\n" +
 	"\x0eSaveConnection\x12\x1f.numen.v1.SaveConnectionRequest\x1a .numen.v1.SaveConnectionResponse\x12G\n" +
 	"\n" +
@@ -3410,7 +3303,7 @@ func file_numen_v1_note_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_note_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_numen_v1_note_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
+var file_numen_v1_note_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
 var file_numen_v1_note_proto_goTypes = []any{
 	(Relation)(0),                     // 0: numen.v1.Relation
 	(LinkDirection)(0),                // 1: numen.v1.LinkDirection
@@ -3439,39 +3332,37 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(*Link)(nil),                      // 24: numen.v1.Link
 	(*CreateNoteRequest)(nil),         // 25: numen.v1.CreateNoteRequest
 	(*CreateNoteResponse)(nil),        // 26: numen.v1.CreateNoteResponse
-	(*WriteLinkRequest)(nil),          // 27: numen.v1.WriteLinkRequest
-	(*WriteLinkResponse)(nil),         // 28: numen.v1.WriteLinkResponse
-	(*ConnectionSide)(nil),            // 29: numen.v1.ConnectionSide
-	(*Connection)(nil),                // 30: numen.v1.Connection
-	(*GetConnectionRequest)(nil),      // 31: numen.v1.GetConnectionRequest
-	(*GetConnectionResponse)(nil),     // 32: numen.v1.GetConnectionResponse
-	(*SaveConnectionRequest)(nil),     // 33: numen.v1.SaveConnectionRequest
-	(*SaveConnectionResponse)(nil),    // 34: numen.v1.SaveConnectionResponse
-	(*RemoveSideRequest)(nil),         // 35: numen.v1.RemoveSideRequest
-	(*RemoveSideResponse)(nil),        // 36: numen.v1.RemoveSideResponse
-	(*RemoveConnectionRequest)(nil),   // 37: numen.v1.RemoveConnectionRequest
-	(*RemoveConnectionResponse)(nil),  // 38: numen.v1.RemoveConnectionResponse
-	(*JoinNotesRequest)(nil),          // 39: numen.v1.JoinNotesRequest
-	(*JoinNotesResponse)(nil),         // 40: numen.v1.JoinNotesResponse
-	(*CreateRelatedNoteRequest)(nil),  // 41: numen.v1.CreateRelatedNoteRequest
-	(*CreateRelatedNoteResponse)(nil), // 42: numen.v1.CreateRelatedNoteResponse
-	(*ListBacklinksRequest)(nil),      // 43: numen.v1.ListBacklinksRequest
-	(*Backlink)(nil),                  // 44: numen.v1.Backlink
-	(*ListBacklinksResponse)(nil),     // 45: numen.v1.ListBacklinksResponse
-	(*RenameNoteRequest)(nil),         // 46: numen.v1.RenameNoteRequest
-	(*RenameNoteResponse)(nil),        // 47: numen.v1.RenameNoteResponse
-	(*WatchEditsRequest)(nil),         // 48: numen.v1.WatchEditsRequest
-	(*WatchEditsResponse)(nil),        // 49: numen.v1.WatchEditsResponse
-	(ErrorCode)(0),                    // 50: numen.v1.ErrorCode
-	(*FileStat)(nil),                  // 51: numen.v1.FileStat
-	(*MoveResult)(nil),                // 52: numen.v1.MoveResult
-	(*Range)(nil),                     // 53: numen.v1.Range
+	(*ConnectionSide)(nil),            // 27: numen.v1.ConnectionSide
+	(*Connection)(nil),                // 28: numen.v1.Connection
+	(*GetConnectionRequest)(nil),      // 29: numen.v1.GetConnectionRequest
+	(*GetConnectionResponse)(nil),     // 30: numen.v1.GetConnectionResponse
+	(*SaveConnectionRequest)(nil),     // 31: numen.v1.SaveConnectionRequest
+	(*SaveConnectionResponse)(nil),    // 32: numen.v1.SaveConnectionResponse
+	(*RemoveSideRequest)(nil),         // 33: numen.v1.RemoveSideRequest
+	(*RemoveSideResponse)(nil),        // 34: numen.v1.RemoveSideResponse
+	(*RemoveConnectionRequest)(nil),   // 35: numen.v1.RemoveConnectionRequest
+	(*RemoveConnectionResponse)(nil),  // 36: numen.v1.RemoveConnectionResponse
+	(*JoinNotesRequest)(nil),          // 37: numen.v1.JoinNotesRequest
+	(*JoinNotesResponse)(nil),         // 38: numen.v1.JoinNotesResponse
+	(*CreateRelatedNoteRequest)(nil),  // 39: numen.v1.CreateRelatedNoteRequest
+	(*CreateRelatedNoteResponse)(nil), // 40: numen.v1.CreateRelatedNoteResponse
+	(*ListBacklinksRequest)(nil),      // 41: numen.v1.ListBacklinksRequest
+	(*Backlink)(nil),                  // 42: numen.v1.Backlink
+	(*ListBacklinksResponse)(nil),     // 43: numen.v1.ListBacklinksResponse
+	(*RenameNoteRequest)(nil),         // 44: numen.v1.RenameNoteRequest
+	(*RenameNoteResponse)(nil),        // 45: numen.v1.RenameNoteResponse
+	(*WatchEditsRequest)(nil),         // 46: numen.v1.WatchEditsRequest
+	(*WatchEditsResponse)(nil),        // 47: numen.v1.WatchEditsResponse
+	(ErrorCode)(0),                    // 48: numen.v1.ErrorCode
+	(*FileStat)(nil),                  // 49: numen.v1.FileStat
+	(*MoveResult)(nil),                // 50: numen.v1.MoveResult
+	(*Range)(nil),                     // 51: numen.v1.Range
 }
 var file_numen_v1_note_proto_depIdxs = []int32{
 	5,  // 0: numen.v1.GetOpeningNoteResponse.note:type_name -> numen.v1.Note
 	5,  // 1: numen.v1.ListRelatedNotesResponse.focus:type_name -> numen.v1.Note
 	10, // 2: numen.v1.ListRelatedNotesResponse.related:type_name -> numen.v1.RelatedNote
-	30, // 3: numen.v1.ListRelatedNotesResponse.connections:type_name -> numen.v1.Connection
+	28, // 3: numen.v1.ListRelatedNotesResponse.connections:type_name -> numen.v1.Connection
 	5,  // 4: numen.v1.RelatedNote.note:type_name -> numen.v1.Note
 	0,  // 5: numen.v1.RelatedNote.relation:type_name -> numen.v1.Relation
 	1,  // 6: numen.v1.RelatedNote.direction:type_name -> numen.v1.LinkDirection
@@ -3479,82 +3370,78 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	13, // 8: numen.v1.ResolveAddressesResponse.found:type_name -> numen.v1.TextLink
 	17, // 9: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings
 	18, // 10: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
-	50, // 11: numen.v1.ReadNoteResponse.error:type_name -> numen.v1.ErrorCode
-	51, // 12: numen.v1.ReadNoteResponse.at:type_name -> numen.v1.FileStat
-	51, // 13: numen.v1.ReadBaseline.at:type_name -> numen.v1.FileStat
+	48, // 11: numen.v1.ReadNoteResponse.error:type_name -> numen.v1.ErrorCode
+	49, // 12: numen.v1.ReadNoteResponse.at:type_name -> numen.v1.FileStat
+	49, // 13: numen.v1.ReadBaseline.at:type_name -> numen.v1.FileStat
 	21, // 14: numen.v1.WriteNoteRequest.baseline:type_name -> numen.v1.ReadBaseline
-	50, // 15: numen.v1.WriteNoteResponse.error:type_name -> numen.v1.ErrorCode
-	51, // 16: numen.v1.WriteNoteResponse.at:type_name -> numen.v1.FileStat
+	48, // 15: numen.v1.WriteNoteResponse.error:type_name -> numen.v1.ErrorCode
+	49, // 16: numen.v1.WriteNoteResponse.at:type_name -> numen.v1.FileStat
 	2,  // 17: numen.v1.Link.role:type_name -> numen.v1.Role
 	3,  // 18: numen.v1.Link.marker:type_name -> numen.v1.Marker
 	24, // 19: numen.v1.CreateNoteRequest.links:type_name -> numen.v1.Link
-	50, // 20: numen.v1.CreateNoteResponse.error:type_name -> numen.v1.ErrorCode
-	24, // 21: numen.v1.WriteLinkRequest.link:type_name -> numen.v1.Link
-	50, // 22: numen.v1.WriteLinkResponse.error:type_name -> numen.v1.ErrorCode
-	2,  // 23: numen.v1.ConnectionSide.role:type_name -> numen.v1.Role
-	3,  // 24: numen.v1.ConnectionSide.marker:type_name -> numen.v1.Marker
-	2,  // 25: numen.v1.Connection.role:type_name -> numen.v1.Role
-	29, // 26: numen.v1.Connection.first_side:type_name -> numen.v1.ConnectionSide
-	29, // 27: numen.v1.Connection.second_side:type_name -> numen.v1.ConnectionSide
-	30, // 28: numen.v1.GetConnectionResponse.connection:type_name -> numen.v1.Connection
-	50, // 29: numen.v1.GetConnectionResponse.error:type_name -> numen.v1.ErrorCode
-	30, // 30: numen.v1.SaveConnectionRequest.connection:type_name -> numen.v1.Connection
-	50, // 31: numen.v1.SaveConnectionResponse.error:type_name -> numen.v1.ErrorCode
-	50, // 32: numen.v1.RemoveSideResponse.error:type_name -> numen.v1.ErrorCode
-	50, // 33: numen.v1.RemoveConnectionResponse.error:type_name -> numen.v1.ErrorCode
-	29, // 34: numen.v1.JoinNotesRequest.side:type_name -> numen.v1.ConnectionSide
-	50, // 35: numen.v1.JoinNotesResponse.error:type_name -> numen.v1.ErrorCode
-	2,  // 36: numen.v1.CreateRelatedNoteRequest.role:type_name -> numen.v1.Role
-	3,  // 37: numen.v1.CreateRelatedNoteRequest.marker:type_name -> numen.v1.Marker
-	50, // 38: numen.v1.CreateRelatedNoteResponse.error:type_name -> numen.v1.ErrorCode
-	5,  // 39: numen.v1.Backlink.from:type_name -> numen.v1.Note
-	2,  // 40: numen.v1.Backlink.role:type_name -> numen.v1.Role
-	2,  // 41: numen.v1.Backlink.source_role:type_name -> numen.v1.Role
-	3,  // 42: numen.v1.Backlink.marker:type_name -> numen.v1.Marker
-	44, // 43: numen.v1.ListBacklinksResponse.backlinks:type_name -> numen.v1.Backlink
-	4,  // 44: numen.v1.RenameNoteResponse.name_source:type_name -> numen.v1.NameSource
-	52, // 45: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
-	50, // 46: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
-	53, // 47: numen.v1.WatchEditsResponse.range:type_name -> numen.v1.Range
-	6,  // 48: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
-	8,  // 49: numen.v1.NoteService.ListRelatedNotes:input_type -> numen.v1.ListRelatedNotesRequest
-	11, // 50: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest
-	15, // 51: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
-	19, // 52: numen.v1.NoteService.ReadNote:input_type -> numen.v1.ReadNoteRequest
-	22, // 53: numen.v1.NoteService.WriteNote:input_type -> numen.v1.WriteNoteRequest
-	25, // 54: numen.v1.NoteService.CreateNote:input_type -> numen.v1.CreateNoteRequest
-	27, // 55: numen.v1.NoteService.WriteLink:input_type -> numen.v1.WriteLinkRequest
-	31, // 56: numen.v1.NoteService.GetConnection:input_type -> numen.v1.GetConnectionRequest
-	33, // 57: numen.v1.NoteService.SaveConnection:input_type -> numen.v1.SaveConnectionRequest
-	35, // 58: numen.v1.NoteService.RemoveSide:input_type -> numen.v1.RemoveSideRequest
-	37, // 59: numen.v1.NoteService.RemoveConnection:input_type -> numen.v1.RemoveConnectionRequest
-	39, // 60: numen.v1.NoteService.JoinNotes:input_type -> numen.v1.JoinNotesRequest
-	41, // 61: numen.v1.NoteService.CreateRelatedNote:input_type -> numen.v1.CreateRelatedNoteRequest
-	43, // 62: numen.v1.NoteService.ListBacklinks:input_type -> numen.v1.ListBacklinksRequest
-	46, // 63: numen.v1.NoteService.RenameNote:input_type -> numen.v1.RenameNoteRequest
-	48, // 64: numen.v1.NoteService.WatchEdits:input_type -> numen.v1.WatchEditsRequest
-	7,  // 65: numen.v1.NoteService.GetOpeningNote:output_type -> numen.v1.GetOpeningNoteResponse
-	9,  // 66: numen.v1.NoteService.ListRelatedNotes:output_type -> numen.v1.ListRelatedNotesResponse
-	12, // 67: numen.v1.NoteService.ResolveAddresses:output_type -> numen.v1.ResolveAddressesResponse
-	16, // 68: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
-	20, // 69: numen.v1.NoteService.ReadNote:output_type -> numen.v1.ReadNoteResponse
-	23, // 70: numen.v1.NoteService.WriteNote:output_type -> numen.v1.WriteNoteResponse
-	26, // 71: numen.v1.NoteService.CreateNote:output_type -> numen.v1.CreateNoteResponse
-	28, // 72: numen.v1.NoteService.WriteLink:output_type -> numen.v1.WriteLinkResponse
-	32, // 73: numen.v1.NoteService.GetConnection:output_type -> numen.v1.GetConnectionResponse
-	34, // 74: numen.v1.NoteService.SaveConnection:output_type -> numen.v1.SaveConnectionResponse
-	36, // 75: numen.v1.NoteService.RemoveSide:output_type -> numen.v1.RemoveSideResponse
-	38, // 76: numen.v1.NoteService.RemoveConnection:output_type -> numen.v1.RemoveConnectionResponse
-	40, // 77: numen.v1.NoteService.JoinNotes:output_type -> numen.v1.JoinNotesResponse
-	42, // 78: numen.v1.NoteService.CreateRelatedNote:output_type -> numen.v1.CreateRelatedNoteResponse
-	45, // 79: numen.v1.NoteService.ListBacklinks:output_type -> numen.v1.ListBacklinksResponse
-	47, // 80: numen.v1.NoteService.RenameNote:output_type -> numen.v1.RenameNoteResponse
-	49, // 81: numen.v1.NoteService.WatchEdits:output_type -> numen.v1.WatchEditsResponse
-	65, // [65:82] is the sub-list for method output_type
-	48, // [48:65] is the sub-list for method input_type
-	48, // [48:48] is the sub-list for extension type_name
-	48, // [48:48] is the sub-list for extension extendee
-	0,  // [0:48] is the sub-list for field type_name
+	48, // 20: numen.v1.CreateNoteResponse.error:type_name -> numen.v1.ErrorCode
+	2,  // 21: numen.v1.ConnectionSide.role:type_name -> numen.v1.Role
+	3,  // 22: numen.v1.ConnectionSide.marker:type_name -> numen.v1.Marker
+	2,  // 23: numen.v1.Connection.role:type_name -> numen.v1.Role
+	27, // 24: numen.v1.Connection.first_side:type_name -> numen.v1.ConnectionSide
+	27, // 25: numen.v1.Connection.second_side:type_name -> numen.v1.ConnectionSide
+	28, // 26: numen.v1.GetConnectionResponse.connection:type_name -> numen.v1.Connection
+	48, // 27: numen.v1.GetConnectionResponse.error:type_name -> numen.v1.ErrorCode
+	28, // 28: numen.v1.SaveConnectionRequest.connection:type_name -> numen.v1.Connection
+	48, // 29: numen.v1.SaveConnectionResponse.error:type_name -> numen.v1.ErrorCode
+	48, // 30: numen.v1.RemoveSideResponse.error:type_name -> numen.v1.ErrorCode
+	48, // 31: numen.v1.RemoveConnectionResponse.error:type_name -> numen.v1.ErrorCode
+	27, // 32: numen.v1.JoinNotesRequest.side:type_name -> numen.v1.ConnectionSide
+	48, // 33: numen.v1.JoinNotesResponse.error:type_name -> numen.v1.ErrorCode
+	2,  // 34: numen.v1.CreateRelatedNoteRequest.role:type_name -> numen.v1.Role
+	3,  // 35: numen.v1.CreateRelatedNoteRequest.marker:type_name -> numen.v1.Marker
+	48, // 36: numen.v1.CreateRelatedNoteResponse.error:type_name -> numen.v1.ErrorCode
+	5,  // 37: numen.v1.Backlink.from:type_name -> numen.v1.Note
+	2,  // 38: numen.v1.Backlink.role:type_name -> numen.v1.Role
+	2,  // 39: numen.v1.Backlink.source_role:type_name -> numen.v1.Role
+	3,  // 40: numen.v1.Backlink.marker:type_name -> numen.v1.Marker
+	42, // 41: numen.v1.ListBacklinksResponse.backlinks:type_name -> numen.v1.Backlink
+	4,  // 42: numen.v1.RenameNoteResponse.name_source:type_name -> numen.v1.NameSource
+	50, // 43: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
+	48, // 44: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
+	51, // 45: numen.v1.WatchEditsResponse.range:type_name -> numen.v1.Range
+	6,  // 46: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
+	8,  // 47: numen.v1.NoteService.ListRelatedNotes:input_type -> numen.v1.ListRelatedNotesRequest
+	11, // 48: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest
+	15, // 49: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
+	19, // 50: numen.v1.NoteService.ReadNote:input_type -> numen.v1.ReadNoteRequest
+	22, // 51: numen.v1.NoteService.WriteNote:input_type -> numen.v1.WriteNoteRequest
+	25, // 52: numen.v1.NoteService.CreateNote:input_type -> numen.v1.CreateNoteRequest
+	29, // 53: numen.v1.NoteService.GetConnection:input_type -> numen.v1.GetConnectionRequest
+	31, // 54: numen.v1.NoteService.SaveConnection:input_type -> numen.v1.SaveConnectionRequest
+	33, // 55: numen.v1.NoteService.RemoveSide:input_type -> numen.v1.RemoveSideRequest
+	35, // 56: numen.v1.NoteService.RemoveConnection:input_type -> numen.v1.RemoveConnectionRequest
+	37, // 57: numen.v1.NoteService.JoinNotes:input_type -> numen.v1.JoinNotesRequest
+	39, // 58: numen.v1.NoteService.CreateRelatedNote:input_type -> numen.v1.CreateRelatedNoteRequest
+	41, // 59: numen.v1.NoteService.ListBacklinks:input_type -> numen.v1.ListBacklinksRequest
+	44, // 60: numen.v1.NoteService.RenameNote:input_type -> numen.v1.RenameNoteRequest
+	46, // 61: numen.v1.NoteService.WatchEdits:input_type -> numen.v1.WatchEditsRequest
+	7,  // 62: numen.v1.NoteService.GetOpeningNote:output_type -> numen.v1.GetOpeningNoteResponse
+	9,  // 63: numen.v1.NoteService.ListRelatedNotes:output_type -> numen.v1.ListRelatedNotesResponse
+	12, // 64: numen.v1.NoteService.ResolveAddresses:output_type -> numen.v1.ResolveAddressesResponse
+	16, // 65: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
+	20, // 66: numen.v1.NoteService.ReadNote:output_type -> numen.v1.ReadNoteResponse
+	23, // 67: numen.v1.NoteService.WriteNote:output_type -> numen.v1.WriteNoteResponse
+	26, // 68: numen.v1.NoteService.CreateNote:output_type -> numen.v1.CreateNoteResponse
+	30, // 69: numen.v1.NoteService.GetConnection:output_type -> numen.v1.GetConnectionResponse
+	32, // 70: numen.v1.NoteService.SaveConnection:output_type -> numen.v1.SaveConnectionResponse
+	34, // 71: numen.v1.NoteService.RemoveSide:output_type -> numen.v1.RemoveSideResponse
+	36, // 72: numen.v1.NoteService.RemoveConnection:output_type -> numen.v1.RemoveConnectionResponse
+	38, // 73: numen.v1.NoteService.JoinNotes:output_type -> numen.v1.JoinNotesResponse
+	40, // 74: numen.v1.NoteService.CreateRelatedNote:output_type -> numen.v1.CreateRelatedNoteResponse
+	43, // 75: numen.v1.NoteService.ListBacklinks:output_type -> numen.v1.ListBacklinksResponse
+	45, // 76: numen.v1.NoteService.RenameNote:output_type -> numen.v1.RenameNoteResponse
+	47, // 77: numen.v1.NoteService.WatchEdits:output_type -> numen.v1.WatchEditsResponse
+	62, // [62:78] is the sub-list for method output_type
+	46, // [46:62] is the sub-list for method input_type
+	46, // [46:46] is the sub-list for extension type_name
+	46, // [46:46] is the sub-list for extension extendee
+	0,  // [0:46] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_note_proto_init() }
@@ -3576,15 +3463,14 @@ func file_numen_v1_note_proto_init() {
 	file_numen_v1_note_proto_msgTypes[31].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[33].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[35].OneofWrappers = []any{}
-	file_numen_v1_note_proto_msgTypes[37].OneofWrappers = []any{}
-	file_numen_v1_note_proto_msgTypes[42].OneofWrappers = []any{}
+	file_numen_v1_note_proto_msgTypes[40].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_note_proto_rawDesc), len(file_numen_v1_note_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   45,
+			NumMessages:   43,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

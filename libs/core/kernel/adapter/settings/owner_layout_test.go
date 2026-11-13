@@ -110,7 +110,7 @@ func TestAnUnconfiguredInstallationWritesAnAppObjectAndNoSectionAtTheRoot(t *tes
 	if _, ok := root["app"]; !ok {
 		t.Errorf("the file has no app object: %s", listKeys(root))
 	}
-	for _, section := range []string{"appearance", "naming", "performance", "agent", "ai", "plugins"} {
+	for _, section := range []string{"appearance", "naming", "performance", "plugins"} {
 		if _, ok := root[section]; ok {
 			t.Errorf("the section %s is at the root of the file", section)
 		}

@@ -44,7 +44,6 @@ const createWindow = () => {
     getSettings: vi.fn(async () => ({
       written: '{"v":1}',
       path: '/vault/numen.json',
-      models: [],
       app: [
         {
           key: 'appearance.interfaceScale',

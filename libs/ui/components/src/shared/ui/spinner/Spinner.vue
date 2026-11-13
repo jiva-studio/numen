@@ -12,6 +12,13 @@
 </template>
 
 <style scoped>
+/* The size and the line where the caller sets neither. The selector weighs less than any class the
+   caller puts on the spinner, so the caller's values win. */
+:where(.spinner) {
+  --spinner-size: 0.9em;
+  --spinner-thickness: 0.1em;
+}
+
 .spinner {
   --cycle: var(--numen-wait-spin);
 

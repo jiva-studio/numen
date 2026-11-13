@@ -8,12 +8,12 @@ func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
 	go func() {
 		defer close(isDone)
 		for range 200 {
-			srv.updateConfig(map[string]string{"model": "bge-m3"}, nil)
+			srv.updateConfig(map[string]string{"model": "bge-m3"})
 		}
 	}()
 
 	for range 200 {
-		if _, err := srv.GetModelInfo(); err != nil {
+		if _, err := srv.GetModelInfo(t.Context()); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
@@ -73,14 +72,6 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		return err
 	}
 	useCases := vaultNotes(c.vault, db, index, noteViews{Writes: note.OpenGate{}})
-	connections := hostvault.Connections{
-		Reader:      query.NewGetConnection(db.NoteQueries()),
-		Saver:       useCases.Connect.SaveConnection,
-		SideRemover: useCases.Connect.RemoveSide,
-		Remover:     useCases.Connect.RemoveConnection,
-		Joiner:      useCases.Connect.Join,
-		Creator:     useCases.Connect.CreateInRelation,
-	}
 	arranger := newArranger(useCases, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	return hostvault.NewAccess(
@@ -89,7 +80,6 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			Vaults:     registry.Vaults.List,
 			Find:       vaultregistry.NewFindByID(registry.Lookup).Execute,
 			IndexState: hooks.IndexState,
-			Watcher:    vault.NewWatchChanges(vaultWatcher(c.vault)).Execute,
 			Moved:      hooks.Moved,
 			Written:    hooks.Written,
 		},
@@ -108,7 +98,6 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			TypedPaths: db.NoteQueries(),
 			Links:      db.NoteQueries(),
 		},
-		connections,
 		arranger,
 		hostvault.Stores{
 			StoreReaders: func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
@@ -161,41 +150,6 @@ func setPluginWindow(c pluginsWiring, window hostendpoint.WindowControl) {
 
 func emitPluginEvent(c pluginsWiring, event string) {
 	c.PluginHost.Runtime.EmitEvent(event)
-}
-
-func openSecretLedger(c pluginsWiring) *settingsadapter.SecretLedger {
-	s := c.settings
-	return settingsadapter.NewSecretLedger(
-		s.SettingsFiles,
-		func() (string, error) { return settingsSettingsFile(s) },
-		func() (settingsadapter.File, error) { return readCheckedSettings(s) },
-		func() { refreshSettingEvents(s) },
-	)
-}
-
-func openSecrets(c pluginsWiring) *SecretUseCases {
-	base := secret.NewOperation(openSecretLedger(c), c.KeyStore, c.PluginHost.Configuration, c.settings.SecretGate)
-	return &SecretUseCases{
-		Items: SecretItems{
-			Create: secret.NewCreate(base, settingsadapter.CreateSecretID),
-			Rename: secret.NewRename(base),
-			Write:  secret.NewWrite(base),
-			Delete: secret.NewDelete(base),
-			Move:   secret.NewMove(base),
-		},
-		Groups: SecretGroups{Rename: secret.NewRenameGroup(base), Delete: secret.NewDeleteGroup(base)},
-		Access: SecretAccess{Allow: secret.NewAllow(base), Deny: secret.NewDeny(base), ListStates: secret.NewListStates(base)},
-		List:   secret.NewList(base, c.CredentialsPath),
-		Prune:  secret.NewPrune(base),
-	}
-}
-
-func setSecretSource(c pluginsWiring) {
-	ledger := openSecretLedger(c)
-	c.PluginHost.Configuration.SetSecretSource(plugindomain.SecretSource{
-		List:  ledger.GetSecrets,
-		Prune: openSecrets(c).Prune.Execute,
-	})
 }
 
 func signalPluginChanges(c pluginsWiring) {

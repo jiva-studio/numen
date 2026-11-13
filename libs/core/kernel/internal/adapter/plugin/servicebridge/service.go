@@ -17,10 +17,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// Plugins finds the plugin that serves a service to the windows and activates it, and lists the
-// plugins installed.
+// Plugins finds the plugin that serves a service to the windows, and lists the plugins installed.
 type Plugins interface {
-	bridge.Activator
 	ResolveService(service string) (manifest.Discovered, bool)
 	GetPlugin(id string) (manifest.Discovered, bool)
 	GetPluginInfos() []plugin.Info
@@ -30,8 +28,9 @@ type Plugins interface {
 // token by which the plugin identifies the host. It holds a reference on the plugin from the first byte of a
 // call to the last, so a stream cannot outlive its plugin.
 type Proxy struct {
-	host    Plugins
-	onError func(error)
+	activator bridge.Activator
+	plugins   Plugins
+	onError   func(error)
 }
 
 // SetErrorHandler sets the callback that receives errors the proxy meets after a response has begun.
@@ -58,9 +57,9 @@ func (p *Proxy) releasePlugin(lease *bridge.Lease) {
 	}
 }
 
-// Open makes the proxy for the plugins the host runs. It starts none.
-func Open(host Plugins) *Proxy {
-	return &Proxy{host: host}
+// Open makes the proxy for the plugins that activator starts. It starts none.
+func Open(activator bridge.Activator, plugins Plugins) *Proxy {
+	return &Proxy{activator: activator, plugins: plugins}
 }
 
 // GetService is the service a request path names: the first segment of /Service/Method.
@@ -75,7 +74,7 @@ func (p *Proxy) Serves(urlPath string) bool {
 	if svc == "" {
 		return false
 	}
-	_, found := p.host.ResolveService(svc)
+	_, found := p.plugins.ResolveService(svc)
 	return found
 }
 
@@ -88,12 +87,13 @@ func getHopHeaders() []string {
 
 // ServeHTTP forwards the call to the plugin that serves its service.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	found, serves := p.host.ResolveService(GetService(r.URL.Path))
+	found, serves := p.plugins.ResolveService(GetService(r.URL.Path))
 	if !serves {
 		p.reportError(writeConnectError(w, http.StatusNotFound, connect.CodeNotFound, "no plugin serves this service"))
 		return
 	}
-	endpoint, err := p.host.EnsureActive(r.Context(), found.Manifest.ID)
+	holder := plugin.GetHolder(plugin.WithAskingPlugin(r.Context(), found.Manifest.ID), plugin.GetCallTitle(r.URL.Path))
+	endpoint, err := p.activator.EnsureActive(r.Context(), found.Manifest.ID, holder)
 	if err != nil {
 		code := connect.CodeUnavailable
 		if errors.Is(err, context.Canceled) {
@@ -102,7 +102,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		p.reportError(writeConnectError(w, http.StatusServiceUnavailable, code, bridge.ConvertActivationError(found.Manifest.ID, err).Error()))
 		return
 	}
-	lease := &bridge.Lease{Host: p.host, PluginID: found.Manifest.ID}
+	lease := &bridge.Lease{Host: p.activator, PluginID: found.Manifest.ID, Token: endpoint.Token, Holder: holder}
 	defer p.releasePlugin(lease)
 
 	out, err := http.NewRequestWithContext(r.Context(), r.Method, transport.GetBaseURL(endpoint)+r.URL.RequestURI(), r.Body)
@@ -116,7 +116,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	out.Header.Set("Authorization", "Bearer "+endpoint.Token)
 	out.ContentLength = r.ContentLength
 
-	res, err := transport.GetClient(p.host, endpoint).Do(out)
+	res, err := transport.GetClient(p.activator, endpoint).Do(out)
 	if err != nil {
 		p.reportError(writeConnectError(w, http.StatusBadGateway, connect.CodeUnavailable, err.Error()))
 		return

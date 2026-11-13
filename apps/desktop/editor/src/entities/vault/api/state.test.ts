@@ -4,11 +4,10 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installCoreHandlers } from '@numen/core-client/testing'
-import { getAgentUnreachable, getVaultState, watchVaultChanges } from './state'
+import { getVaultState, watchVaultChanges } from './state'
 
 const request = {
   getVaultState: vi.fn(),
-  getAgentState: vi.fn(),
   watchVaultChanges: vi.fn(),
 }
 
@@ -24,7 +23,7 @@ afterEach(() => {
 })
 
 describe('the state of the vault', () => {
-  it('is a scan not begun and nothing indexed where the answer carries neither', async () => {
+  it('is a scan not begun where the answer carries none', async () => {
     request.getVaultState.mockResolvedValue({ id: 'v1', name: 'Zoo', path: '/zoo' })
 
     expect(await getVaultState()).toStrictEqual({
@@ -32,17 +31,15 @@ describe('the state of the vault', () => {
       name: 'Zoo',
       path: '/zoo',
       scan: { isReady: false, error: '', unwatchedPath: '' },
-      coverage: { chunkCount: 0n, embeddedCount: 0n, isEmbedding: false },
     })
   })
 
-  it('carries how far the scan got and how much the index holds', async () => {
+  it('carries how far the scan got', async () => {
     request.getVaultState.mockResolvedValue({
       id: 'v1',
       name: 'Zoo',
       path: '/zoo',
       scan: { isReady: true, error: 'permission denied', watchError: '/zoo/deep' },
-      coverage: { chunkCount: 12n, embeddedCount: 5n, isEmbedding: true },
     })
 
     const state = await getVaultState()
@@ -52,15 +49,6 @@ describe('the state of the vault', () => {
       error: 'permission denied',
       unwatchedPath: '/zoo/deep',
     })
-    expect(state.coverage).toStrictEqual({ chunkCount: 12n, embeddedCount: 5n, isEmbedding: true })
-  })
-})
-
-describe('the agent', () => {
-  it('is unreachable for the reason the core gives', async () => {
-    request.getAgentState.mockResolvedValue({ unreachable: 'offline' })
-
-    expect(await getAgentUnreachable()).toBe('offline')
   })
 })
 

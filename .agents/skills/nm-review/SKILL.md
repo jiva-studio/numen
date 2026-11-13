@@ -80,7 +80,7 @@ _Guide: [`stages/1-gatekeeper.md`](./stages/1-gatekeeper.md)_
 
 1. **Automated gate** — Run the modular target for each touched module from `REPO_ROOT` (e.g. `make lib_core_lint lib_core_test` for core backend, `make lib_ui_components_lint lib_ui_components_test` for UI, etc.). Never run blanket monorepo suites over untouched domains.
 2. **Fail-fast** — a type error, a lint failure, or a broken existing test marks the gate **FAIL**. Stop and reject with the exact error output, unless told to continue.
-3. **Architecture checklist** — dependency direction, ports and adapters, the `@numen/ui` domain boundary, the core/view split, tokens, naming, and one name per concept.
+3. **Architecture checklist** — dependency direction, the core knowing no plugin domain ("which product domain does this know, and why is it not in a plugin or a contract?"), ports and adapters, the `@numen/ui` domain boundary, the core/view split, tokens, naming, and one name per concept.
 
 ### Stage 2: Semantic logic, blast radius & spec audit
 

@@ -15,6 +15,7 @@ const MANIFEST = {
 
 function createWindow(activate: (context: PluginContext) => Promise<void>) {
   const deps: PluginHostDeps = {
+    target: 'desktop.editor',
     registerKind: vi.fn(() => vi.fn()),
     registerExtensionReader: vi.fn(() => vi.fn()),
     openTab: vi.fn(async () => 'tab-1'),
@@ -78,6 +79,7 @@ describe('a start cancelled at 30 s that ends while a newer start runs', () => {
     vi.useFakeTimers()
     const reportCommandIssue = vi.fn()
     const host = createPluginHost({
+      target: 'desktop.editor',
       registerKind: vi.fn(() => vi.fn()),
       registerExtensionReader: vi.fn(() => vi.fn()),
       openTab: vi.fn(async () => 'tab-1'),
@@ -103,7 +105,8 @@ describe('a start cancelled at 30 s that ends while a newer start runs', () => {
         context.register.command({ id: 'ledger.close', handler: () => undefined })
       },
     }))
-    const started = loader.start()
+    await loader.start()
+    const started = loader.status.startPlugin(PLUGIN)
     await vi.advanceTimersByTimeAsync(30_000 + 100)
     await started
     const retry = loader.activation.activatePlugin(PLUGIN)

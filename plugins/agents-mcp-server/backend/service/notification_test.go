@@ -9,7 +9,6 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
@@ -57,7 +56,7 @@ func connectInMemory(t *testing.T, srv *testServer, opts *sdk.ClientOptions) *sd
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.CloseAfter(t, session)
+	t.Cleanup(func() { closeAndCheck(t, session) })
 	return session
 }
 

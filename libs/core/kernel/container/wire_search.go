@@ -8,19 +8,20 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
@@ -34,16 +35,16 @@ func Scan(c Config, db *Index) vault.Scan {
 }
 
 // ReadWholeVault is what makes a vault answer, put together the one way: the
-// notes read, the file texts cut, and the vectors made.
+// notes read, the file texts cut, and the vectors of the search source made.
 func ReadWholeVault(c Config,
-	ctx context.Context, db *Index, embedder embeddingport.Embedder, v domain.Vault,
+	ctx context.Context, db *Index, source searchsourceport.Source, v domain.Vault,
 ) (indexing.ReadWholeVault, error) {
-	return readWholeVault(searchOf(c), ctx, db, embedder, v, makeRefresh(c, db, db.Notes()))
+	return readWholeVault(searchOf(c), ctx, db, source, v, makeRefresh(c, db, db.Notes()))
 }
 
-// Embed gives a vault's chunks the vectors they need.
-func Embed(c Config, db *Index, embedder embeddingport.Embedder, v domain.Vault) (vectorscase.Embed, error) {
-	return searchEmbed(searchOf(c), db, embedder, v)
+// Embed gives a vault's chunks the vectors of the search source they need.
+func Embed(c Config, db *Index, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
+	return searchEmbed(searchOf(c), db, source, v)
 }
 
 // IndexTexts cuts the text versions of a vault's files into chunks.
@@ -52,8 +53,8 @@ func IndexTexts(c Config, db *Index, v domain.Vault) (filetext.Index, error) {
 }
 
 // NewSearch is the search a question is answered by, put together the one way.
-func NewSearch(c Config, db *Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
-	return newSearch(searchOf(c), db, asking, errorHandler)
+func NewSearch(c Config, db *Index, asking searchsourceport.Source, errorHandler func(error)) searchusecase.Search {
+	return newSearch(searchOf(c), db, asking, errorHandler, nil)
 }
 
 // coreFolder is the folder of a vault's store that holds the core's own files.
@@ -64,7 +65,7 @@ type searchWiring struct {
 	ServiceDir         string
 	ShouldRebuildIndex bool
 	Chunks             *note.ChunkTokens
-	ResolvedCompute    settingsdomain.ResolvedCompute
+	ResolvedCompute    machinedomain.ResolvedCompute
 	PluginHost         *PluginHost
 	RunningHost        *PluginHost
 	Clock              machineport.Clock
@@ -100,23 +101,23 @@ func searchScan(c searchWiring, db *Index) vault.Scan {
 }
 
 func readWholeVault(c searchWiring,
-	ctx context.Context, db *Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
+	ctx context.Context, db *Index, source searchsourceport.Source, v domain.Vault, refresh vault.Refresh,
 ) (indexing.ReadWholeVault, error) {
-	if err := fitIndex(c, db).Execute(ctx, embedder); err != nil {
+	if err := fitIndex(c, db).Execute(ctx, source); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
-	return buildReadWholeVault(c, db, embedder, v, refresh)
+	return buildReadWholeVault(c, db, source, v, refresh)
 }
 
 func buildReadWholeVault(c searchWiring,
-	db *Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
+	db *Index, source searchsourceport.Source, v domain.Vault, refresh vault.Refresh,
 ) (indexing.ReadWholeVault, error) {
 	refresh.Force = true
 	texts, err := indexTexts(c, db, v, file.NewReadNoteAgain(createUnreadableFinder(refresh)).Execute)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
-	embed, err := searchEmbed(c, db, embedder, v)
+	embed, err := searchEmbed(c, db, source, v)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
@@ -136,7 +137,7 @@ func fitIndex(c searchWiring, db *Index) vectorscase.FitIndex {
 	return fit
 }
 
-func searchEmbed(c searchWiring, db *Index, embedder embeddingport.Embedder, v domain.Vault) (vectorscase.Embed, error) {
+func searchEmbed(c searchWiring, db *Index, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
 	store, err := derivedfile.OpenDerived(v.Path, vaultconfig.Options{ServiceDir: c.ServiceDir}, coreFolder)
 	if err != nil {
 		return vectorscase.Embed{}, err
@@ -144,7 +145,7 @@ func searchEmbed(c searchWiring, db *Index, embedder embeddingport.Embedder, v d
 	embed := vectorscase.NewEmbed(c.VaultReaders, db.Sources(), db.Sources())
 	embed.Claim = store.NewIndexClaim(coreFolder + "/indexing")
 	embed.Texts = c.TextReaders
-	embed.Embedder = embedder
+	embed.Source = source
 	return embed, nil
 }
 
@@ -162,83 +163,100 @@ func indexTexts(
 	return index, nil
 }
 
-func newSearch(c searchWiring, db *Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
-	policy := newFloorPolicy(c, db, asking, c.ErrorHandler)
-	searching := newSearchOver(c, searchusecase.Index{Passages: db.ChunkSearch(), Nearest: db.ChunkSearch()}, asking, errorHandler)
-	searching.Floor = policy.GetFloor
-	return searching
+func newSearch(c searchWiring, db *Index, asking searchsourceport.Source, errorHandler func(error), reportAnswered func()) searchusecase.Search {
+	return newSearchOver(c, db.ChunkSearch(), getParticipants(db, asking), errorHandler, reportAnswered)
 }
 
-func newSearchOver(c searchWiring, index searchusecase.Index, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
-	policy := searchusecase.NewFloorPolicy(nil, getFloorHint(asking), nil)
-	searching := searchusecase.New(index, c.VaultReaders, c.TextReaders, asking, newEmbedQueries(asking), errorHandler)
+func getParticipants(db *Index, source searchsourceport.Source) []searchusecase.Participant {
+	if source == nil {
+		return nil
+	}
+	return []searchusecase.Participant{searchusecase.NewSource(source, db.ChunkSearch())}
+}
+
+func newSearchOver(c searchWiring, passages sourceport.PassageQueries, sources []searchusecase.Participant, errorHandler func(error), reportAnswered func()) searchusecase.Search {
+	searching := searchusecase.New(passages, c.VaultReaders, c.TextReaders, sources, errorHandler, reportAnswered)
 	if workers := c.ResolvedCompute.Workers; workers > 0 {
 		searching.Extractors = workers
 	}
-	searching.Floor = policy.GetFloor
 	return searching
 }
 
-func newFloorPolicy(_ searchWiring, db *Index, embedder embeddingport.Embedder, errorHandler func(error)) searchusecase.FloorPolicy {
-	return searchusecase.NewFloorPolicy(db.SearchFloors(), getFloorHint(embedder), errorHandler)
+func newFloorPolicy(db *Index, source searchsourceport.Source, errorHandler func(error)) searchusecase.FloorPolicy {
+	return searchusecase.NewFloorPolicy(db.SearchFloors(), getFloorHint(source), errorHandler)
 }
 
-func setPluginSearch(c searchWiring, db *Index, embedder embeddingport.Embedder, errorHandler func(error)) {
-	c.PluginHost.Endpoint.SetPluginSearch(hostsearch.Search{
-		Embedder: embedder,
-		Queries:  newEmbedQueries(embedder),
+func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, errorHandler func(error)) {
+	access := hostsearch.Search{
 		Samples:  db.SearchSamples(),
 		Nearest:  searchusecase.NewGetBestSimilarity(db.ChunkSearch()),
+		Places:   searchusecase.NewFindNearest(db.ChunkSearch()),
 		Progress: db.ChunkVectors(),
 		Stats:    searchusecase.NewStats(db.ChunkVectors(), c.Clock),
-		Policy:   newFloorPolicy(c, db, embedder, errorHandler),
-		Passages: searchusecase.NewSearchPassages(newSearch(c, db, embedder, errorHandler)),
-	}.Access())
+		Policy:   newFloorPolicy(db, source, errorHandler),
+		Passages: searchusecase.NewSearchPassages(newSearch(c, db, source, errorHandler, nil)),
+	}
+	if source != nil {
+		access.Source = source
+		access.Queries = newEmbedQueries(source)
+	}
+	c.PluginHost.Endpoint.SetPluginSearch(access.Access())
 }
 
-func searchEmbedders(c searchWiring, ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.WatchedEmbedder, closer func() error, why error) {
-	embedder, closeEmbedder, err := searchOpenEmbedder(c, ctx, run.NewModelReadReporter(tasks))
+func searchSources(c searchWiring, ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
+	report := pluginhealth.NewReportSearchSource(c.PluginHost.Health)
+	source, closeSource, err := searchOpenSource(c, ctx, func(
+		ctx context.Context, activator bridge.Activator, plugins sourcebridge.Plugins, kept *sourcebridge.Descriptions,
+	) (*sourcebridge.Source, error) {
+		found, err := plugins.ResolveCapability(bridge.CapabilitySearchSource)
+		if err != nil {
+			return nil, err
+		}
+		return sourcebridge.OpenWatching(ctx, activator, plugins, kept, func(readErr error) { report.Execute(found.Manifest.ID, readErr) })
+	})
 	if err != nil {
 		return nil, nil, func() error { return nil }, err
 	}
-	return embedder, embedder, closeEmbedder, nil
+	return source, source, closeSource, nil
 }
 
-func searchEmbedder(c searchWiring, ctx context.Context) (embeddingport.WatchedEmbedder, func() error, error) {
-	return searchOpenEmbedder(c, ctx, nil)
+func searchSource(c searchWiring, ctx context.Context) (searchsourceport.WatchedSource, func() error, error) {
+	return searchOpenSource(c, ctx, sourcebridge.Open)
 }
 
-func searchOpenEmbedder(c searchWiring, ctx context.Context, onReadError func(error)) (embeddingport.WatchedEmbedder, func() error, error) {
-	if _, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilityEmbedding); errors.Is(err, domain.ErrUnavailable) {
+// sourceOpener opens the search source over the plugin host, with the descriptions the host keeps.
+type sourceOpener func(
+	ctx context.Context, activator bridge.Activator, plugins sourcebridge.Plugins, kept *sourcebridge.Descriptions,
+) (*sourcebridge.Source, error)
+
+func searchOpenSource(c searchWiring, ctx context.Context, open sourceOpener) (searchsourceport.WatchedSource, func() error, error) {
+	if _, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource); errors.Is(err, domain.ErrUnavailable) {
 		return nil, func() error { return nil }, nil
 	} else if err != nil {
 		return nil, nil, err
 	}
-	return openEmbedder(c, ctx, c.RunningHost, onReadError)
+	return openSource(c, ctx, c.RunningHost, open)
 }
 
-func openEmbedder(c searchWiring, ctx context.Context, host *PluginHost, onReadError func(error)) (embeddingport.WatchedEmbedder, func() error, error) {
-	opened, err := embedderbridge.Open(ctx, host.Runtime)
+func openSource(c searchWiring, ctx context.Context, host *PluginHost, open sourceOpener) (searchsourceport.WatchedSource, func() error, error) {
+	opened, err := open(ctx, host.Runtime, host.Runtime, host.SourceDescriptions)
 	if err != nil {
 		return nil, nil, err
 	}
-	if onReadError != nil {
-		opened.OnModelReadError(onReadError)
-	}
-	c.Chunks.Follow(opened, opened.OnModelChange)
+	c.Chunks.Follow(opened, opened.OnDescriptionChange)
 	return opened, opened.Close, nil
 }
 
-func newEmbedQueries(embedder embeddingport.Embedder) *vectorscase.EmbedQueries {
-	queries, ok := embedder.(embeddingport.QueryEmbedder)
+func newEmbedQueries(source searchsourceport.Source) *vectorscase.EmbedQueries {
+	queries, ok := source.(searchsourceport.QueryEmbedder)
 	if !ok {
-		return vectorscase.NewEmbedQueries(embedder, nil)
+		return nil
 	}
-	return vectorscase.NewEmbedQueries(embedder, queries)
+	return vectorscase.NewEmbedQueries(queries)
 }
 
-func getFloorHint(embedder embeddingport.Embedder) searchusecase.FloorHint {
-	if advisor, ok := embedder.(embeddingport.FloorAdvisor); ok {
+func getFloorHint(source searchsourceport.Source) searchusecase.FloorHint {
+	if advisor, ok := source.(searchsourceport.FloorAdvisor); ok {
 		return advisor.GetFloorHint
 	}
 	return nil

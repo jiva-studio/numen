@@ -18,14 +18,13 @@ type deckCreateInput struct {
 
 func (t *Tools) addCardDeckCreate(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:  tools.ByEffect,
 		Name:  "card_deck_create",
 		Title: "Create a deck",
 		Description: "Create an empty deck; add cards with `card_add`. A deck is a file of " +
 			"cards and is marked as a deck from creation, before it has any card. Create decks " +
 			"here: a note created with `note_create` is an ordinary note, and `card_add` writes " +
 			"only into a deck. The file is named after the title.",
-		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
+		Effect: tools.ReadWrite,
 	}, func(ctx context.Context, in deckCreateInput) (NoteCreated, error) {
 		v, err := t.getToolVault(ctx)
 		if err != nil {
@@ -44,7 +43,6 @@ type cardModelCreateInput struct {
 
 func (t *Tools) addCardCardModelCreate(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Step:  tools.ByEffect,
 		Name:  "card_model_create",
 		Title: "Create a card model",
 		Description: "Create a card model: its field names in order, and the templates its " +
@@ -53,7 +51,7 @@ func (t *Tools) addCardCardModelCreate(registry *tools.Registry) error {
 			"line of its first field, so at least one field is required. The file is named after " +
 			"the title, and that filename is the name used in a card's wikilink, which " +
 			"`card_model_list` returns under `name`.",
-		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
+		Effect: tools.ReadWrite,
 	}, func(ctx context.Context, in cardModelCreateInput) (NoteCreated, error) {
 		v, err := t.getToolVault(ctx)
 		if err != nil {
@@ -90,7 +88,7 @@ func (t *Tools) addCardFieldRename(registry *tools.Registry) error {
 			"keeps the old heading. Every deck of the vault is read, so the call fails for a " +
 			"vault with more than " + fmt.Sprint(cards.MaxDecksPerRename) + " decks; rename the " +
 			"field in the window then.",
-		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full}, Step: tools.Move,
+		Effect: tools.ReadWrite,
 	}, t.renameCardField)
 }
 

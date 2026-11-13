@@ -1,11 +1,13 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.11.22",
+  "version": "2026.11.23",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
-  "targets": ["desktop.editor"],
+  "targets": [
+    "desktop.editor"
+  ],
   "contributes": {
     "tabKinds": [
       {
@@ -28,7 +30,9 @@
       {
         "slot": "palette.searchResult",
         "command": "app:file.reveal",
-        "values": { "kind": "plex" },
+        "values": {
+          "kind": "plex"
+        },
         "title": "Show in plex",
         "icon": "waypoints",
         "group": "navigate",
@@ -38,16 +42,25 @@
       {
         "slot": "palette.note",
         "command": "app:file.reveal",
-        "values": { "kind": "plex" },
+        "values": {
+          "kind": "plex"
+        },
         "title": "Show in plex",
         "icon": "waypoints",
         "when": "target.isNote"
       },
-      { "slot": "titleBar.commands", "command": "graph.open", "group": "navigate", "order": 20 },
+      {
+        "slot": "titleBar.commands",
+        "command": "graph.open",
+        "group": "navigate",
+        "order": 20
+      },
       {
         "slot": "fileTree.context",
         "command": "app:file.reveal",
-        "values": { "kind": "plex" },
+        "values": {
+          "kind": "plex"
+        },
         "title": "Show in plex",
         "icon": "waypoints",
         "group": "0-open",
@@ -61,9 +74,21 @@
         "icon": "waypoints",
         "group": "4-relation"
       },
-      { "slot": "plex.relation", "command": "app:note.createChild", "order": 10 },
-      { "slot": "plex.relation", "command": "app:note.createParent", "order": 20 },
-      { "slot": "plex.relation", "command": "app:note.createJump", "order": 30 },
+      {
+        "slot": "plex.relation",
+        "command": "app:note.createChild",
+        "order": 10
+      },
+      {
+        "slot": "plex.relation",
+        "command": "app:note.createParent",
+        "order": 20
+      },
+      {
+        "slot": "plex.relation",
+        "command": "app:note.createJump",
+        "order": 30
+      },
       {
         "slot": "plexGraph.context",
         "command": "app:note.create",
@@ -71,11 +96,18 @@
         "order": 10,
         "when": "target.isFolder"
       },
-      { "slot": "plexGraph.context", "command": "app:file.open", "group": "0-open", "order": 10 },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:file.open",
+        "group": "0-open",
+        "order": 10
+      },
       {
         "slot": "plexGraph.context",
         "command": "app:file.reveal",
-        "values": { "kind": "plex" },
+        "values": {
+          "kind": "plex"
+        },
         "title": "Show in plex",
         "icon": "waypoints",
         "group": "1-note",
@@ -106,26 +138,43 @@
         "group": "3-plex",
         "order": 30
       },
-      { "slot": "plexGraph.context", "command": "app:note.rename", "group": "3-plex", "order": 40 },
-      { "slot": "plexGraph.context", "command": "app:file.remove", "group": "9-remove" }
+      {
+        "slot": "plexGraph.context",
+        "command": "app:note.rename",
+        "group": "3-plex",
+        "order": 40
+      },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:file.remove",
+        "group": "9-remove"
+      }
     ],
     "keybindings": [
-      { "key": "mod+shift+x", "command": "graph.open" },
+      {
+        "key": "mod+shift+x",
+        "command": "graph.open"
+      },
       {
         "key": "mod+shift+p",
         "command": "app:file.reveal",
-        "values": { "kind": "plex" },
+        "values": {
+          "kind": "plex"
+        },
         "when": "target.isNote"
       }
     ]
   },
-  "permissions": ["vault:read", "vault:write"],
+  "permissions": [
+    "vault:read",
+    "vault:write"
+  ],
   "settings": [
     {
       "key": "references",
       "type": "enum",
       "title": "References",
-      "description": "Show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none.",
+      "description": "Notes linked in the text, by direction",
       "default": "both",
       "options": [
         {
@@ -144,13 +193,14 @@
           "value": "both",
           "title": "Both"
         }
-      ]
+      ],
+      "details": "Show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none."
     },
     {
       "key": "nestHeadings",
       "type": "boolean",
       "title": "Nest headings under notes",
-      "description": "Show the headings of a note under its node.",
+      "description": "Show the headings of a note under its node",
       "default": true,
       "palette": true,
       "icon": "waypoints"
@@ -159,7 +209,7 @@
       "key": "headingLimit",
       "type": "range",
       "title": "Headings per note",
-      "description": "Maximum number of headings shown under a node. The rest scroll.",
+      "description": "Most headings shown under a node",
       "default": 6,
       "min": 1,
       "max": 12,
@@ -169,7 +219,7 @@
       "key": "showNames",
       "type": "boolean",
       "title": "Show notes related to related notes",
-      "description": "Under each related note, the names of the notes it is related to.",
+      "description": "Under each related note, the names of the notes related to it",
       "default": true,
       "palette": true,
       "icon": "waypoints"
@@ -178,7 +228,7 @@
       "key": "namesPerNote",
       "type": "range",
       "title": "Names per note",
-      "description": "Most names shown under and over a related note.",
+      "description": "Most names shown under and over a related note",
       "default": 6,
       "min": 1,
       "max": 12,
@@ -188,36 +238,39 @@
       "key": "namesOpacity",
       "type": "range",
       "title": "Names opacity",
-      "description": "How visible the names under and over a note are while the note is not in focus. 0 hides them.",
+      "description": "How visible the names are while the note is not in focus; 0 hides them",
       "default": 0.7,
       "min": 0,
       "max": 1,
-      "step": 0.05
+      "step": 0.05,
+      "details": "How visible the names under and over a note are while the note is not in focus. 0 hides them."
     },
     {
       "key": "focusedNamesOpacity",
       "type": "range",
       "title": "Names opacity in focus",
-      "description": "How visible the names under and over a note are while the pointer is over the note or one of them.",
+      "description": "How visible the names are while the pointer is over the note or one of them",
       "default": 1,
       "min": 0.05,
       "max": 1,
-      "step": 0.05
+      "step": 0.05,
+      "details": "How visible the names under and over a note are while the pointer is over the note or one of them."
     },
     {
       "key": "showPills",
       "type": "boolean",
       "title": "Pill background",
-      "description": "Draw a pill behind each title. Off: the title alone.",
+      "description": "Draw a pill behind each title",
       "default": true,
       "palette": true,
-      "icon": "waypoints"
+      "icon": "waypoints",
+      "details": "Draw a pill behind each title. Off: the title alone."
     },
     {
       "key": "pillPaddingSides",
       "type": "range",
       "title": "Pill padding, sides",
-      "description": "Space between a title and the left and right edge of its pill.",
+      "description": "Space beside the title inside its pill",
       "default": 10,
       "min": 0,
       "max": 24,
@@ -227,7 +280,7 @@
       "key": "pillPaddingEnds",
       "type": "range",
       "title": "Pill padding, top and bottom",
-      "description": "Space between a title and the top and bottom edge of its pill.",
+      "description": "Space above and below the title inside its pill",
       "default": 9.25,
       "min": 0,
       "max": 16,
@@ -237,11 +290,12 @@
       "key": "focusSize",
       "type": "range",
       "title": "Focus size",
-      "description": "How much larger the note in the middle is drawn: its pill, title and icon.",
+      "description": "How much larger the middle note is drawn",
       "default": 1.22,
       "min": 1,
       "max": 2.5,
-      "step": 0.01
+      "step": 0.01,
+      "details": "How much larger the note in the middle is drawn: its pill, title and icon."
     },
     {
       "key": "lineThickness",
@@ -267,7 +321,7 @@
       "key": "lineCurvature",
       "type": "range",
       "title": "Line curvature",
-      "description": "How far a line between two notes bends. 0 is a straight line.",
+      "description": "How far lines bend; 0 is straight",
       "default": 0.55,
       "min": 0,
       "max": 1,
@@ -277,16 +331,17 @@
       "key": "highlightLinks",
       "type": "boolean",
       "title": "Highlight links of a hovered note",
-      "description": "Highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted.",
+      "description": "Highlight the lines of a note while the pointer is over it",
       "default": true,
       "palette": true,
-      "icon": "waypoints"
+      "icon": "waypoints",
+      "details": "Highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted."
     },
     {
       "key": "animationLength",
       "type": "range",
       "title": "Animation",
-      "description": "How long moving to another note takes, in milliseconds. 0 moves at once.",
+      "description": "Time to move to another note, in ms; 0 is instant",
       "default": 420,
       "min": 0,
       "max": 2000,
@@ -296,7 +351,7 @@
       "key": "noteRoom",
       "type": "range",
       "title": "Room around a note",
-      "description": "Extra empty space kept around every note. Larger is sparser.",
+      "description": "Empty space around every note",
       "default": 0,
       "min": 0,
       "max": 40,

@@ -2,18 +2,26 @@
 import { expect, type Locator, type Page } from 'playwright/test'
 import { escapeRegExp } from '../rules.js'
 
-const SYSTEM = /^System/
-const BACK = /All plugins/i
+/** The pages of the window: Appearance holds how it looks, System the rest. */
+export type WindowPage = 'System' | 'Appearance'
+const BACK = /^Back$/
+/** The buttons outside the path of the toolbar: a segment of the path carries the name of a page or a category. */
+const OUTSIDE_PATH = 'button:not(nav *)'
 
 export class SettingsPage {
   constructor(private readonly page: Page) {}
 
   getTab(): Locator {
-    return this.page.getByRole('tab', { name: /^Settings/ })
+    return this.page.getByRole('tab', { name: /^(Linked tab )?Settings Close Settings$/ })
   }
 
   getPanel(): Locator {
-    return this.page.getByRole('tabpanel', { name: /Settings/ })
+    return this.page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
+  }
+
+  /** A button of the page by its name that is not a segment of the path. */
+  getPageButton(panel: Locator, name: RegExp): Locator {
+    return panel.getByRole('button', { name }).and(panel.locator(OUTSIDE_PATH))
   }
 
   getBackButton(): Locator {
@@ -21,21 +29,21 @@ export class SettingsPage {
   }
 
   /** The panel on the page of the plugin, or on the page of the window when no plugin is named; the tab is open already. */
-  async showPage(plugin?: string): Promise<Locator> {
+  async showPage(plugin?: string, windowPage: WindowPage = 'System'): Promise<Locator> {
     const panel = this.getPanel()
     await expect(panel).toBeVisible()
-    const entry = plugin === undefined ? SYSTEM : new RegExp(escapeRegExp(plugin), 'i')
-    const button = panel.getByRole('button', { name: entry }).first()
+    const entry = plugin === undefined ? new RegExp(`^${windowPage}`) : new RegExp(escapeRegExp(plugin), 'i')
+    const button = this.getPageButton(panel, entry).first()
     // A page of one plugin hides the list of the pages: the way to another is back to the list.
     if (!(await button.isVisible())) await panel.getByRole('button', { name: BACK }).click()
     await button.click()
     return panel
   }
 
+  /** The row of a setting: a line with its value. */
   getRow(panel: Locator, name: string): Locator {
-    return panel
-      .locator('.settings__row')
-      .filter({ has: this.page.locator('.settings__name', { hasText: new RegExp(`^${escapeRegExp(name)}$`) }) })
+    const title = this.page.locator('.settings__name', { hasText: new RegExp(`^${escapeRegExp(name)}$`) })
+    return panel.locator('.settings__row').filter({ has: title })
   }
 
   async requireRow(panel: Locator, name: string): Promise<Locator> {
@@ -78,6 +86,6 @@ export class SettingsPage {
   }
 
   getPluginButton(panel: Locator, plugin: string): Locator {
-    return panel.getByRole('button', { name: new RegExp(plugin) })
+    return this.getPageButton(panel, new RegExp(plugin))
   }
 }

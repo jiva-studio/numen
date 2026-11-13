@@ -9,6 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+
+	"github.com/jiva-studio/numen/libs/core/protocol"
 )
 
 func TestHostSafeMode(t *testing.T) {
@@ -21,7 +23,7 @@ func TestHostSafeMode(t *testing.T) {
 		"id": "org.example.sample",
 		"name": "Sample",
 		"version": "1.0.0",
-		"capabilities": ["embedding"],
+		"capabilities": ["search.source"],
 		"targets": ["desktop.editor"],
 		"contributes": {
 			"handles": [{"purpose": "text-provider", "contentTypes": ["application/pdf"]}]
@@ -52,16 +54,16 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatal("expected GetPlugin to report false in safe mode")
 	}
 
-	if _, ok := host.Registry.FindPluginByCapability("embedding"); ok {
+	if _, ok := host.Registry.FindPluginByCapability("search.source"); ok {
 		t.Fatal("expected FindPluginByCapability to report false in safe mode")
 	}
 
 	ctx := t.Context()
-	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample"); !errors.Is(err, plugin.ErrSafeModeActive) {
+	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); !errors.Is(err, plugin.ErrSafeModeActive) {
 		t.Fatalf("expected errSafeModeActive, got %v", err)
 	}
 
-	activated, err := host.Events.TriggerEvent(ctx, "onFile:test.pdf")
+	activated, err := host.Events.TriggerEvent(ctx, protocol.GetSearchSourceReadyEvent("v-1"))
 	if err != nil {
 		t.Fatalf("TriggerEvent error: %v", err)
 	}

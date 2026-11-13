@@ -25,6 +25,9 @@ const createLoader = () => {
     status: {
       waitForInterface: () => new Promise<void>((resolve) => (settleInterface = resolve)),
       getFailedPlugins: () => failed,
+      startPlugin: async (id) => {
+        calls.push(`start ${id}`)
+      },
     },
   }
   return { loader, calls, failed, settleInterface: () => settleInterface() }
@@ -63,7 +66,7 @@ describe('useAppStart', () => {
     settleInterface()
     await flushPromises()
     expect(start.isStarted.value).toBe(true)
-    expect(calls).toEqual(['track md.numen.cards', 'start'])
+    expect(calls).toEqual(['track md.numen.cards', 'start', 'start md.numen.cards'])
 
     wrapper.unmount()
     expect(calls).toContain('close')

@@ -58,8 +58,6 @@ const (
 	NoteServiceWriteNoteProcedure = "/numen.v1.NoteService/WriteNote"
 	// NoteServiceCreateNoteProcedure is the fully-qualified name of the NoteService's CreateNote RPC.
 	NoteServiceCreateNoteProcedure = "/numen.v1.NoteService/CreateNote"
-	// NoteServiceWriteLinkProcedure is the fully-qualified name of the NoteService's WriteLink RPC.
-	NoteServiceWriteLinkProcedure = "/numen.v1.NoteService/WriteLink"
 	// NoteServiceGetConnectionProcedure is the fully-qualified name of the NoteService's GetConnection
 	// RPC.
 	NoteServiceGetConnectionProcedure = "/numen.v1.NoteService/GetConnection"
@@ -112,9 +110,6 @@ type NoteServiceClient interface {
 	// the note carries are written into it as it is made, so it arrives joined.
 	// An empty title takes the lowest free "Untitled note N".
 	CreateNote(context.Context, *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error)
-	// WriteLink writes a relationship into one note. The note at the other end is
-	// left alone: a link is one end's account of a relationship.
-	WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error)
 	// GetConnection is the relationship between two notes as a whole: the record
 	// each note writes about the other.
 	GetConnection(context.Context, *connect.Request[v1.GetConnectionRequest]) (*connect.Response[v1.GetConnectionResponse], error)
@@ -200,12 +195,6 @@ func NewNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(noteServiceMethods.ByName("CreateNote")),
 			connect.WithClientOptions(opts...),
 		),
-		writeLink: connect.NewClient[v1.WriteLinkRequest, v1.WriteLinkResponse](
-			httpClient,
-			baseURL+NoteServiceWriteLinkProcedure,
-			connect.WithSchema(noteServiceMethods.ByName("WriteLink")),
-			connect.WithClientOptions(opts...),
-		),
 		getConnection: connect.NewClient[v1.GetConnectionRequest, v1.GetConnectionResponse](
 			httpClient,
 			baseURL+NoteServiceGetConnectionProcedure,
@@ -272,7 +261,6 @@ type noteServiceClient struct {
 	readNote          *connect.Client[v1.ReadNoteRequest, v1.ReadNoteResponse]
 	writeNote         *connect.Client[v1.WriteNoteRequest, v1.WriteNoteResponse]
 	createNote        *connect.Client[v1.CreateNoteRequest, v1.CreateNoteResponse]
-	writeLink         *connect.Client[v1.WriteLinkRequest, v1.WriteLinkResponse]
 	getConnection     *connect.Client[v1.GetConnectionRequest, v1.GetConnectionResponse]
 	saveConnection    *connect.Client[v1.SaveConnectionRequest, v1.SaveConnectionResponse]
 	removeSide        *connect.Client[v1.RemoveSideRequest, v1.RemoveSideResponse]
@@ -317,11 +305,6 @@ func (c *noteServiceClient) WriteNote(ctx context.Context, req *connect.Request[
 // CreateNote calls numen.v1.NoteService.CreateNote.
 func (c *noteServiceClient) CreateNote(ctx context.Context, req *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error) {
 	return c.createNote.CallUnary(ctx, req)
-}
-
-// WriteLink calls numen.v1.NoteService.WriteLink.
-func (c *noteServiceClient) WriteLink(ctx context.Context, req *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error) {
-	return c.writeLink.CallUnary(ctx, req)
 }
 
 // GetConnection calls numen.v1.NoteService.GetConnection.
@@ -396,9 +379,6 @@ type NoteServiceHandler interface {
 	// the note carries are written into it as it is made, so it arrives joined.
 	// An empty title takes the lowest free "Untitled note N".
 	CreateNote(context.Context, *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error)
-	// WriteLink writes a relationship into one note. The note at the other end is
-	// left alone: a link is one end's account of a relationship.
-	WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error)
 	// GetConnection is the relationship between two notes as a whole: the record
 	// each note writes about the other.
 	GetConnection(context.Context, *connect.Request[v1.GetConnectionRequest]) (*connect.Response[v1.GetConnectionResponse], error)
@@ -480,12 +460,6 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(noteServiceMethods.ByName("CreateNote")),
 		connect.WithHandlerOptions(opts...),
 	)
-	noteServiceWriteLinkHandler := connect.NewUnaryHandler(
-		NoteServiceWriteLinkProcedure,
-		svc.WriteLink,
-		connect.WithSchema(noteServiceMethods.ByName("WriteLink")),
-		connect.WithHandlerOptions(opts...),
-	)
 	noteServiceGetConnectionHandler := connect.NewUnaryHandler(
 		NoteServiceGetConnectionProcedure,
 		svc.GetConnection,
@@ -556,8 +530,6 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 			noteServiceWriteNoteHandler.ServeHTTP(w, r)
 		case NoteServiceCreateNoteProcedure:
 			noteServiceCreateNoteHandler.ServeHTTP(w, r)
-		case NoteServiceWriteLinkProcedure:
-			noteServiceWriteLinkHandler.ServeHTTP(w, r)
 		case NoteServiceGetConnectionProcedure:
 			noteServiceGetConnectionHandler.ServeHTTP(w, r)
 		case NoteServiceSaveConnectionProcedure:
@@ -611,10 +583,6 @@ func (UnimplementedNoteServiceHandler) WriteNote(context.Context, *connect.Reque
 
 func (UnimplementedNoteServiceHandler) CreateNote(context.Context, *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.CreateNote is not implemented"))
-}
-
-func (UnimplementedNoteServiceHandler) WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.WriteLink is not implemented"))
 }
 
 func (UnimplementedNoteServiceHandler) GetConnection(context.Context, *connect.Request[v1.GetConnectionRequest]) (*connect.Response[v1.GetConnectionResponse], error) {

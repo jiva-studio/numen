@@ -17,12 +17,11 @@ type (
 	filesCalls struct {
 		*calls
 	}
-	watchCalls       struct{ *calls }
-	cacheCalls       struct{ *calls }
-	lookupsCalls     struct{ *calls }
-	arrangeCalls     struct{ *calls }
-	connectionsCalls struct{ *calls }
-	vaultsCalls      struct{ *calls }
+	watchCalls   struct{ *calls }
+	cacheCalls   struct{ *calls }
+	lookupsCalls struct{ *calls }
+	arrangeCalls struct{ *calls }
+	vaultsCalls  struct{ *calls }
 )
 
 // router serves the procedures of one service from the handler of each.
@@ -61,7 +60,7 @@ func NewHandler(auth Authority, source Source, options ...connect.HandlerOption)
 	files := &filesCalls{base}
 	watch, cache := &watchCalls{base}, &cacheCalls{base}
 	lookups, arrange := &lookupsCalls{base}, &arrangeCalls{base}
-	connections, vaults := &connectionsCalls{base}, &vaultsCalls{base}
+	vaults := &vaultsCalls{base}
 	addUnary(r, numenv1connect.HostVaultServiceGetHostVaultProcedure, "GetHostVault", files.GetHostVault)
 	addUnary(r, numenv1connect.HostVaultServiceListHostVaultsProcedure, "ListHostVaults", files.ListHostVaults)
 	addUnary(r, numenv1connect.HostVaultServiceEnsureVaultIndexedProcedure, "EnsureVaultIndexed", files.EnsureVaultIndexed)
@@ -83,16 +82,9 @@ func NewHandler(auth Authority, source Source, options ...connect.HandlerOption)
 	addUnary(r, numenv1connect.HostVaultServiceGetParseProblemsProcedure, "GetParseProblems", arrange.GetParseProblems)
 	addUnary(r, numenv1connect.HostVaultServiceReadCacheProcedure, "ReadCache", cache.ReadCache)
 	addUnary(r, numenv1connect.HostVaultServiceWriteCacheProcedure, "WriteCache", cache.WriteCache)
-	addStream(r, numenv1connect.HostVaultServiceWatchVaultProcedure, "WatchVault", watch.WatchVault)
 	addUnary(r, numenv1connect.HostVaultServiceAddLinksProcedure, "AddLinks", arrange.AddLinks)
 	addUnary(r, numenv1connect.HostVaultServiceUpdateLinksProcedure, "UpdateLinks", arrange.UpdateLinks)
 	addUnary(r, numenv1connect.HostVaultServiceRemoveLinksProcedure, "RemoveLinks", arrange.RemoveLinks)
-	addUnary(r, numenv1connect.HostVaultServiceGetConnectionProcedure, "GetConnection", connections.GetConnection)
-	addUnary(r, numenv1connect.HostVaultServiceSaveConnectionProcedure, "SaveConnection", connections.SaveConnection)
-	addUnary(r, numenv1connect.HostVaultServiceRemoveSideProcedure, "RemoveSide", connections.RemoveSide)
-	addUnary(r, numenv1connect.HostVaultServiceRemoveConnectionProcedure, "RemoveConnection", connections.RemoveConnection)
-	addUnary(r, numenv1connect.HostVaultServiceJoinNotesProcedure, "JoinNotes", connections.JoinNotes)
-	addUnary(r, numenv1connect.HostVaultServiceCreateRelatedNoteProcedure, "CreateRelatedNote", connections.CreateRelatedNote)
 	addUnary(r, numenv1connect.HostVaultServiceGetVaultProblemsProcedure, "GetVaultProblems", arrange.GetVaultProblems)
 	addUnary(r, numenv1connect.HostVaultServiceRenameNoteProcedure, "RenameNote", arrange.RenameNote)
 	addUnary(r, numenv1connect.HostVaultServiceMoveNotesProcedure, "MoveNotes", arrange.MoveNotes)

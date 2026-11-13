@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * A question over the window that is answered with one of two buttons. Focus starts on the
+ * A question over the window that is answered with one of two buttons, with a title and a text. Focus starts on the
  * cancel button; Escape, a press on the backdrop and the cancel button all emit `cancel`, and
  * Tab stays between the two buttons.
  */
@@ -25,6 +25,7 @@ const emit = defineEmits<{
 }>()
 
 /* ---------------------------------- State --------------------------------- */
+const titleId = useId()
 const textId = useId()
 const dialog = useTemplateRef<HTMLElement>('dialog')
 const cancel = useTemplateRef<InstanceType<typeof Button>>('cancel')
@@ -64,11 +65,12 @@ function onKeepFocus(event: KeyboardEvent): void {
       data-slot="confirm-dialog"
       role="alertdialog"
       aria-modal="true"
-      :aria-label="label"
+      :aria-labelledby="titleId"
       :aria-describedby="textId"
       :data-tone="tone"
       class="confirm-dialog"
     >
+      <h2 :id="titleId" class="confirm-dialog__title">{{ label }}</h2>
       <p :id="textId" class="confirm-dialog__text">{{ text }}</p>
       <div class="confirm-dialog__actions">
         <Button :variant="tone === 'danger' ? 'danger' : 'solid'" @click="emit('confirm')">
@@ -118,6 +120,12 @@ function onKeepFocus(event: KeyboardEvent): void {
 
 .confirm-dialog__text {
   margin: 0;
+}
+
+.confirm-dialog__title {
+  margin: 0;
+  font-size: var(--numen-title-size);
+  font-weight: 500;
 }
 
 .confirm-dialog__actions {

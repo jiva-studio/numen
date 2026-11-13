@@ -1,5 +1,6 @@
 import { createFollower } from '@numen/ui'
 import { watchSettings } from '../api/settings'
+import type { SettingEdit } from '../lib/configuration'
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
@@ -9,7 +10,7 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
  * because it holds what changed meanwhile.
  */
 export function createChangeFollower(deps: {
-  refresh: () => Promise<void>
+  refresh: (batch: readonly SettingEdit[]) => Promise<void>
   wait?: (ms: number) => Promise<void>
 }) {
   const { refresh, wait = sleep } = deps
@@ -32,7 +33,7 @@ export function createChangeFollower(deps: {
         async (batch) => {
           if (batch.length === 0 && !isResumed) return
           isResumed = false
-          await refresh()
+          await refresh(batch)
         },
       ),
     close: () => {

@@ -33,7 +33,7 @@ func newIndex() *hosttest.Search {
 }
 
 func TestTheStatsCarryTheCountsTheModelAndTheProfile(t *testing.T) {
-	view := NewStats(newIndex(), clock.NewFake(getStart()), 16)
+	view := NewStats(newIndex(), newFakeClock(getStart()), 16)
 	view.Configure(map[string]string{"host.performanceProfile": "maximum"})
 
 	got, err := view.Get(t.Context())
@@ -58,7 +58,7 @@ func TestTheStatsCarryTheCountsTheModelAndTheProfile(t *testing.T) {
 }
 
 func TestTheProfileIsBalancedUntilTheHostConfiguresThePlugin(t *testing.T) {
-	view := NewStats(newIndex(), clock.NewFake(getStart()), 16)
+	view := NewStats(newIndex(), newFakeClock(getStart()), 16)
 
 	got, err := view.Get(t.Context())
 
@@ -69,7 +69,7 @@ func TestTheProfileIsBalancedUntilTheHostConfiguresThePlugin(t *testing.T) {
 
 func TestTheSpeedAndTheTimeOfTheLastChangeFollowTheCallsOfTheView(t *testing.T) {
 	index := newIndex()
-	now := clock.NewFake(getStart())
+	now := newFakeClock(getStart())
 	view := NewStats(index, now, 8)
 	ctx := t.Context()
 
@@ -97,9 +97,15 @@ func TestAnIndexWithMoreVectorsThanChunksWaitsForNothing(t *testing.T) {
 	index := newIndex()
 	index.SetProgress(10, 12)
 
-	got, err := NewStats(index, clock.NewFake(getStart()), 8).Get(t.Context())
+	got, err := NewStats(index, newFakeClock(getStart()), 8).Get(t.Context())
 
 	if err != nil || got.Waiting != 0 {
 		t.Errorf("waiting %d (%v), want 0", got.Waiting, err)
 	}
+}
+
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

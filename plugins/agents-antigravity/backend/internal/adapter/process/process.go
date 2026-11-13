@@ -3,14 +3,14 @@
 package process
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/runs"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/usecase/task"
 )
 
 // waitDelay is how long the pipes of a killed child are waited for.
@@ -37,21 +37,21 @@ func (Supervisor) Supervise(cmd *exec.Cmd) {
 type Launcher struct{}
 
 // Start starts spec and returns the running process.
-func (Launcher) Start(ctx context.Context, spec runs.Command) (runs.Process, error) {
+func (Launcher) Start(ctx context.Context, spec task.Command) (task.Process, error) {
 	cmd := exec.CommandContext(ctx, spec.Path, spec.Args...)
 	cmd.Dir = spec.Dir
 	env := spec.Env
 	if len(env) == 0 {
 		env = hostcall.GetChildEnvironment()
 	}
-	if spec.Token != "" {
-		env = append(env, "NUMEN_TOKEN="+spec.Token)
-	}
 	cmd.Env = env
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="Supervise sets OS process-group attributes for child cleanup."
 	Supervise(cmd)
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	if spec.Stdin != "" {
+		cmd.Stdin = strings.NewReader(spec.Stdin)
+	}
+	stderr := new(tailBuffer)
+	cmd.Stderr = stderr
 	stdout, err := cmd.StdoutPipe()
 	// gomutants:disable-next-line BRANCH_IF reason="cmd.StdoutPipe on a fresh command before Start fails only on OS descriptor exhaustion."
 	if err != nil {
@@ -60,13 +60,13 @@ func (Launcher) Start(ctx context.Context, spec runs.Command) (runs.Process, err
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
-	return &startedProcess{cmd: cmd, stdout: stdout, stderr: &stderr}, nil
+	return &startedProcess{cmd: cmd, stdout: stdout, stderr: stderr}, nil
 }
 
 type startedProcess struct {
 	cmd    *exec.Cmd
 	stdout io.ReadCloser
-	stderr *bytes.Buffer
+	stderr *tailBuffer
 }
 
 func (p *startedProcess) Output() io.ReadCloser { return p.stdout }

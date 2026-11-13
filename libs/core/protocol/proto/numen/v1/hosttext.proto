@@ -22,9 +22,6 @@ service HostTextService {
   // reindexes the file.
   rpc PutTextVersion(PutTextVersionRequest) returns (PutTextVersionResponse);
 
-  // RemoveTextVersion removes the record of a version of the calling plugin.
-  rpc RemoveTextVersion(RemoveTextVersionRequest) returns (RemoveTextVersionResponse);
-
   // ListTextVersions lists the versions of a file and names the live one.
   rpc ListTextVersions(ListTextVersionsRequest) returns (ListTextVersionsResponse);
 
@@ -81,15 +78,6 @@ message PutTextVersionRequest {
 message PutTextVersionResponse {
   TextVersion version = 1;
   TextErrorCode error = 2;
-}
-
-message RemoveTextVersionRequest {
-  string path = 1;
-  string key = 2;
-}
-
-message RemoveTextVersionResponse {
-  TextErrorCode error = 1;
 }
 
 message ListTextVersionsRequest {

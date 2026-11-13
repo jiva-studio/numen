@@ -1,29 +1,30 @@
 <script setup lang="ts">
 /**
- * Declarative settings fields and secrets for a plugin: switches,
- * number inputs, sliders, selects, paths, secrets, and text fields. A setting or
- * secret whose condition fails is not shown, and keeps its value.
+ * Declarative settings fields for a plugin: switches, number inputs, sliders,
+ * selects, paths, and text fields. A setting whose condition fails is not shown,
+ * and keeps its value.
  */
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
-import PluginSecretField from './PluginSecret.vue'
 import SettingsViews from './SettingsViews.vue'
-import type { InstallationSettings, PluginFieldsHost, SecretChoices } from '../../types'
+import type { InstallationSettings, MarkedSetting, PluginFieldsHost } from '../../types'
 import type { PluginInfo } from '@/entities/settings'
-import { useEnumFields, usePluginFields, usePluginPaths } from '../../model/usePluginFields'
+import {
+  useEnumFields,
+  usePluginFields,
+  usePluginPaths,
+  useSettingDefaults,
+} from '../../model/usePluginFields'
 import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   settings: InstallationSettings
   host: PluginFieldsHost
-  choices: SecretChoices
   plugin: PluginInfo
-}>()
-
-const emit = defineEmits<{
-  (e: 'open-secrets'): void
+  marked?: readonly string[]
+  focused?: MarkedSetting | null
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -40,44 +41,38 @@ const {
   setSetting: onSettingChange,
 } = fields
 const { getDraft, setDraft, writeDraft } = fields
-const {
-  getEnumOptions,
-  getEnumChoices,
-  getEnumValue,
-  getShownSettings,
-  getTopSecrets,
-  getSecretsAfter,
-} = useEnumFields(fieldDeps)
+const { getEnumOptions, getEnumChoices, getEnumValue, getShownSettings } = useEnumFields(fieldDeps)
 const {
   problems: pathProblems,
   hasManyPaths,
   choosePath: onPathChoose,
   clearPath: onPathClear,
 } = usePluginPaths(fieldDeps, fields)
+const { isChanged, resetSetting: onReset } = useSettingDefaults(fieldDeps)
 </script>
 
 <template>
   <SettingsViews :settings="props.settings" :host="props.host" :plugin="props.plugin" />
 
-  <PluginSecretField
-    :choices="props.choices"
-    :plugin="plugin"
-    :secrets="getTopSecrets()"
-    @open-secrets="emit('open-secrets')"
-  />
-
   <template v-for="setting in getShownSettings()" :key="setting.key">
     <SettingRow
-      v-slot="{ labelledBy }"
+      v-if="setting.type !== 'connections'"
+      v-slot="{ labelledBy, describedBy }"
       :at="`${props.plugin.id}-${setting.key}`"
       :name="setting.title"
       :detail="setting.description"
+      :details="setting.details"
+      :is-marked="props.marked?.includes(setting.key) ?? false"
+      :focus="props.focused?.setting === setting.key ? props.focused : null"
+      :is-changed="isChanged(setting)"
+      @reset="onReset(setting)"
     >
       <Switch
         v-if="setting.type === 'boolean'"
         :model-value="getBooleanSetting(setting.key, setting.default)"
         :aria-labelledby="labelledBy"
-        @update:model-value="(val) => onSettingChange(setting.key, val)"
+        :aria-describedby="describedBy"
+        @update:model-value="(isEnabled) => onSettingChange(setting.key, isEnabled)"
       />
 
       <NumberField
@@ -87,6 +82,7 @@ const {
         :max="setting.max ?? 999999"
         :step="setting.step ?? 1"
         :aria-labelledby="labelledBy"
+        :aria-describedby="describedBy"
         class="settings__number"
         @commit="(val) => val !== null && onSettingChange(setting.key, val)"
       />
@@ -98,6 +94,7 @@ const {
           :max="setting.max ?? 100"
           :step="setting.step ?? 1"
           :aria-labelledby="labelledBy"
+          :aria-describedby="describedBy"
           class="settings__slider"
           @update:model-value="(val) => onSettingChange(setting.key, val)"
           @commit="(val) => onSettingChange(setting.key, val)"
@@ -116,6 +113,7 @@ const {
           v-if="getEnumOptions(setting).length === 1"
           class="settings__fixed"
           :aria-labelledby="labelledBy"
+          :aria-describedby="describedBy"
         >
           {{ getEnumOptions(setting)[0]?.title || getEnumValue(setting) }}
         </span>
@@ -125,6 +123,7 @@ const {
           :choices="getEnumChoices(setting)"
           :name="setting.title"
           :aria-labelledby="labelledBy"
+          :aria-describedby="describedBy"
           class="settings__choice"
           @update:model-value="(val) => onSettingChange(setting.key, val)"
         />
@@ -135,6 +134,7 @@ const {
         :path="getStringSetting(setting.key, setting.default)"
         :problem="pathProblems[setting.key] ?? ''"
         :labelled-by="labelledBy"
+        :described-by="describedBy"
         :is-multi="hasManyPaths(setting)"
         :words="words"
         @choose="onPathChoose(setting)"
@@ -147,6 +147,7 @@ const {
         :choices="getEnumChoices(setting)"
         :name="setting.title"
         :aria-labelledby="labelledBy"
+        :aria-describedby="describedBy"
         is-searchable
         can-enter-custom
         :search-name="words.searchModels"
@@ -159,18 +160,12 @@ const {
         type="text"
         :value="getDraft(setting.key) ?? getStringSetting(setting.key, setting.default)"
         :aria-labelledby="labelledBy"
+        :aria-describedby="describedBy"
         class="settings__text-input"
         @input="(e) => setDraft(setting.key, (e.target as HTMLInputElement).value)"
         @change="(e) => writeDraft(setting.key, (e.target as HTMLInputElement).value)"
       />
     </SettingRow>
-
-    <PluginSecretField
-      :choices="props.choices"
-      :plugin="plugin"
-      :secrets="getSecretsAfter(setting.key)"
-      @open-secrets="emit('open-secrets')"
-    />
   </template>
 </template>
 

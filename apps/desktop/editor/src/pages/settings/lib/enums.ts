@@ -1,16 +1,10 @@
 /**
  * The enum and option-backed settings of a plugin: the options under the values
- * in force, their select choices with detail subtitles, the active value, and
- * the placement of secrets alongside the settings they belong to.
+ * in force, their select choices with detail subtitles, and the active value.
  */
 import type { SelectChoice } from '../types'
 import { createWhenReader } from '@numen/plugin-loader'
-import type {
-  PluginInfo,
-  SecretDeclaration,
-  PluginSettingInfo,
-  PluginSettingOption,
-} from '@/entities/settings'
+import type { PluginInfo, PluginSettingInfo, PluginSettingOption } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
 
 /** The value a plugin's setting holds, or nothing where the file holds none. */
@@ -21,8 +15,6 @@ export interface EnumFields {
   getEnumChoices(this: void, setting: PluginSettingInfo): readonly SelectChoice[]
   getEnumValue(this: void, setting: PluginSettingInfo): string
   getShownSettings(this: void): readonly PluginSettingInfo[]
-  getTopSecrets(this: void): readonly SecretDeclaration[]
-  getSecretsAfter(this: void, settingKey: string): readonly SecretDeclaration[]
 }
 
 function toSelectChoices(
@@ -54,31 +46,6 @@ export function getValueInForce(
 
 const isSettingShown = (setting: PluginSettingInfo): boolean => setting.isShown !== false
 
-/** Whether the condition of a secret holds under the values in force of the settings it reads. */
-export function isSecretShown(
-  plugin: PluginInfo,
-  secret: SecretDeclaration,
-  read: ReadPluginSetting,
-  isRequested: (key: string) => boolean = () => false,
-): boolean {
-  if (!secret.when) return true
-  const parent = plugin.settings.find((one) => one.key === secret.when?.setting)
-  if (!parent || !isSettingShown(parent)) return false
-  return secret.when.is.includes(toText(getValueInForce(parent, read, isRequested)))
-}
-
-function findSecretAnchor(
-  secret: SecretDeclaration,
-  shownKeys: ReadonlySet<string>,
-): string | null {
-  if (secret.when?.setting && shownKeys.has(secret.when.setting)) {
-    return secret.when.setting
-  }
-  if (shownKeys.has('provider')) return 'provider'
-  if (shownKeys.has('baseUrl')) return 'baseUrl'
-  return null
-}
-
 /** The plugin is requested on every call, so a changed plugin is picked up. */
 export function createEnumFields(
   getPlugin: () => PluginInfo,
@@ -108,27 +75,10 @@ export function createEnumFields(
 
   const getShownSettings = () => getPlugin().settings.filter(isSettingShown)
 
-  const getShownSecrets = () =>
-    getPlugin().secrets.filter((one) => isSecretShown(getPlugin(), one, read, isRequested))
-
-  const getShownKeys = () => new Set(getShownSettings().map((one) => one.key))
-
-  const getTopSecrets = () => {
-    const keys = getShownKeys()
-    return getShownSecrets().filter((one) => findSecretAnchor(one, keys) === null)
-  }
-
-  const getSecretsAfter = (settingKey: string) => {
-    const keys = getShownKeys()
-    return getShownSecrets().filter((one) => findSecretAnchor(one, keys) === settingKey)
-  }
-
   return {
     getEnumOptions,
     getEnumChoices,
     getEnumValue,
     getShownSettings,
-    getTopSecrets,
-    getSecretsAfter,
   }
 }

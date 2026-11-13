@@ -11,7 +11,7 @@ import (
 func key(path ...string) string { return settingsdomain.JoinPath(path) }
 
 // A setting holds the stored value, else the default its plugin declares; a plugin with no stored
-// flag is enabled; the secrets section and the agent program join the app settings.
+// flag is enabled; the connections section joins the app settings.
 func TestListSettingValuesListsTheValueInForceOfEverySetting(t *testing.T) {
 	file := &memoryFile{current: stored{
 		values: map[string]any{
@@ -19,16 +19,15 @@ func TestListSettingValuesListsTheValueInForceOfEverySetting(t *testing.T) {
 			"org.example.scans.depth": 4.0,
 			"org.example.off.enabled": false,
 		},
-		secrets: `[{"id":"s"}]`,
+		connections: `[{"id":"c"}]`,
 	}}
 	plugins := pluginInfos{
 		{ID: "org.example.scans", Settings: []plugin.Setting{{Key: "depth"}, {Key: "mode", DefaultJSON: `"fast"`}, {Key: "none"}}},
 		{ID: "org.example.off"},
 	}
 	app := appDeclarations{{Key: "appearance.theme"}, {Key: "appearance.mode"}}
-	late := latePrograms{{Name: "claude", IsDefault: true}}
 
-	got, err := settings.NewListSettingValues(jsonCodec{}, file, file, app, plugins, late).Execute()
+	got, err := settings.NewListSettingValues(jsonCodec{}, file, file, app, plugins).Execute()
 
 	want := settingsdomain.Values{
 		key("app", "appearance", "theme"):   `"preset:night"`,
@@ -36,8 +35,7 @@ func TestListSettingValuesListsTheValueInForceOfEverySetting(t *testing.T) {
 		key("org.example.scans", "mode"):    `"fast"`,
 		key("org.example.scans", "enabled"): `true`,
 		key("org.example.off", "enabled"):   `false`,
-		key("secrets"):                      `[{"id":"s"}]`,
-		key("app", "agent", "use"):          `"claude"`,
+		key("connections"):                  `[{"id":"c"}]`,
 	}
 	if err != nil || len(got) != len(want) {
 		t.Fatalf("values = %v, %v", got, err)
@@ -52,7 +50,7 @@ func TestListSettingValuesListsTheValueInForceOfEverySetting(t *testing.T) {
 // The values of an unconfigured installation come from the defaults, not from the file.
 func TestListSettingValuesListsTheDefaultsOfAnUnconfiguredInstallation(t *testing.T) {
 	file := &memoryFile{current: stored{values: map[string]any{"app.appearance.theme": "preset:night"}}}
-	list := settings.NewListSettingValues(jsonCodec{}, file, file, appDeclarations{{Key: "appearance.theme"}}, nil, nil)
+	list := settings.NewListSettingValues(jsonCodec{}, file, file, appDeclarations{{Key: "appearance.theme"}}, nil)
 
 	got, err := list.ListDefaults()
 

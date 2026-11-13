@@ -11,9 +11,9 @@ func TestRuntimeAnswersUnavailableForItsReason(t *testing.T) {
 	cause := errors.New("safe mode")
 	runtime := Runtime{Reason: plugindomain.Disabled, Cause: cause}
 
-	_, err := runtime.ResolveCapability("embedding")
+	_, err := runtime.ResolveCapability("search.source")
 	var unavailable *plugindomain.UnavailableError
-	if !errors.As(err, &unavailable) || unavailable.Reason != plugindomain.Disabled || unavailable.Capability != "embedding" || !errors.Is(err, cause) {
+	if !errors.As(err, &unavailable) || unavailable.Reason != plugindomain.Disabled || unavailable.Capability != "search.source" || !errors.Is(err, cause) {
 		t.Fatalf("ResolveCapability = %v, want the embedding plugin disabled by safe mode", err)
 	}
 	_, err = runtime.RetryPlugin(t.Context(), "ocr")

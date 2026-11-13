@@ -15,7 +15,7 @@ import (
 )
 
 func TestRegisterTools(t *testing.T) {
-	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -43,7 +43,7 @@ func TestRegisterTools(t *testing.T) {
 }
 
 func TestWindowTabListReturnsNoTabsForAnEmptyWindow(t *testing.T) {
-	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -78,7 +78,7 @@ func TestWindowTabListReturnsNoTabsForAnEmptyWindow(t *testing.T) {
 }
 
 func TestWindowTabListUsesTheFocusOfTheCall(t *testing.T) {
-	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -121,7 +121,7 @@ func TestWindowTabListUsesTheFocusOfTheCall(t *testing.T) {
 }
 
 func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
-	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	vault := hosttest.New("test-vault")
 	ctx := t.Context()
 	if err := vault.Create(ctx, "notes/sample.md", []byte("hello world\nline 2\n")); err != nil {
@@ -170,7 +170,7 @@ func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 }
 
 func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
-	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -247,7 +247,7 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 }
 
 func TestNoteEditPreviewRejectsMissingArguments(t *testing.T) {
-	mgr := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	mgr := preview.NewStore(newFakeClock(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, Host{}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -287,4 +287,10 @@ func marshalJSON(t *testing.T, value any) []byte {
 		t.Fatal(err)
 	}
 	return encoded
+}
+
+func newFakeClock(start time.Time) *clock.Fake {
+	source := new(clock.Fake)
+	source.Set(start)
+	return source
 }

@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"sync"
 	"testing"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
@@ -63,7 +63,6 @@ func TestAggregatorSyncTools(t *testing.T) {
 				InputSchema:  []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
 				OutputSchema: []byte(`{"type":"object","properties":{"text":{"type":"string"}}}`),
 				Effect:       tools.ReadOnly,
-				Hints:        tools.Hints{ReadOnly: true, Idempotent: true},
 			},
 			{
 				Name:        "note_write",
@@ -106,7 +105,7 @@ func TestAggregatorSyncTools(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.CloseAfter(t, session)
+	t.Cleanup(func() { closeAndCheck(t, session) })
 
 	listed, err := session.ListTools(t.Context(), nil)
 	if err != nil {
@@ -328,5 +327,12 @@ func TestAggregatorExecuteTransportFailure(t *testing.T) {
 	_, err := agg.ExecuteTool(t.Context(), "note_read", nil)
 	if !errors.Is(err, sentinelErr) {
 		t.Fatalf("expected wrapped sentinelErr, got %v", err)
+	}
+}
+
+func closeAndCheck(tb testing.TB, c io.Closer) {
+	tb.Helper()
+	if err := c.Close(); err != nil {
+		tb.Errorf("close: %v", err)
 	}
 }

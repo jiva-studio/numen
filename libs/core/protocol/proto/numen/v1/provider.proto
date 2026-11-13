@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
+
+// ProviderService is served by a plugin that provides connection types. The core calls it with the
+// fields of one connection for the length of one call. The provider keeps no state and no key between
+// calls. The core knows an operation by its name only; the payload and the frames are bytes of the
+// contract the operation belongs to.
+service ProviderService {
+  // Call carries out one operation for one connection. The stream holds data frames and ends with one
+  // done or one failure.
+  rpc Call(ProviderServiceCallRequest) returns (stream ProviderServiceCallResponse);
+}
+
+// ProviderCall is the connection one call is made for: a snapshot the core reads at the start of the call.
+message ProviderCall {
+  string connection_id = 1;
+  // type is the id the manifest of the plugin gives the type, without the plugin id.
+  string type = 2;
+  // fields are the fields that are not secret, with the fixed values of the type.
+  map<string, string> fields = 3;
+  repeated ProviderSecret secrets = 4;
+  // options are the values of the row fields of the type that the row of the call holds.
+  map<string, string> options = 5;
+}
+
+message ProviderSecret {
+  string key = 1;
+  string value = 2 [debug_redact = true];
+}
+
+// FailureKind is what the core does after a call fails.
+enum FailureKind {
+  FAILURE_KIND_UNSPECIFIED = 0;
+  // FAILURE_KIND_TRY_NEXT is a connection that cannot serve now; the core goes to the next one.
+  FAILURE_KIND_TRY_NEXT = 1;
+  // FAILURE_KIND_STOP is a request that is wrong in itself; the core goes to no other connection.
+  FAILURE_KIND_STOP = 2;
+}
+
+// FailureReason is why a call failed. The core shows a reason, and sees no HTTP code and no text from a
+// service.
+enum FailureReason {
+  FAILURE_REASON_UNSPECIFIED = 0;
+  FAILURE_REASON_REJECTED_KEY = 1;
+  FAILURE_REASON_PAYMENT_REQUIRED = 2;
+  FAILURE_REASON_RATE_LIMITED = 3;
+  FAILURE_REASON_UNAVAILABLE = 4;
+  FAILURE_REASON_INVALID_REQUEST = 5;
+}
+
+// ProviderFailure is a call that was served and failed.
+message ProviderFailure {
+  FailureKind kind = 1;
+  FailureReason reason = 2;
+  // retry_after_ms is the wait the service asked for, and zero when it gave none.
+  int64 retry_after_ms = 3;
+  // message is for the log of the provider; the core does not show it.
+  string message = 4;
+}
+
+message ProviderServiceCallRequest {
+  // operation is the name of the operation, such as "llm.chat".
+  string operation = 1;
+  ProviderCall call = 2;
+  bytes payload = 3;
+}
+
+// DetectedConnections is the done frame of the operation connections.detected, which the core calls with an
+// empty payload and a call that names the type and no connection: the connections of the type the provider
+// found ready on this machine, none when it found nothing.
+message DetectedConnections {
+  repeated DetectedConnection connections = 1;
+}
+
+// DetectedConnection is one connection a provider found. name is unique within the type. fields are the
+// values of the fields of the type that are not secret, by key; a field left out takes its default.
+message DetectedConnection {
+  string name = 1;
+  map<string, string> fields = 2;
+  // path is where the provider found the connection on this machine, such as the program it runs, with the
+  // home folder written as ~. Empty when there is no such place.
+  string path = 3;
+}
+
+// ProviderServiceCallResponse is one frame of a call.
+message ProviderServiceCallResponse {
+  oneof frame {
+    bytes data = 1;
+    // done ends the call; it may be empty.
+    bytes done = 2;
+    ProviderFailure failure = 3;
+  }
+}

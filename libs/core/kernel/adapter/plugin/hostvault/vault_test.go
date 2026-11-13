@@ -47,7 +47,7 @@ func diskVault(t *testing.T, files map[string]string, hooks diskHooks) (*vault.A
 			OpenWriter:  func(v domain.Vault) (NoteWriter, error) { return writers.Open(v) },
 			Index:       hooks.index,
 		},
-		Lookups{}, Connections{}, Arranger{Notes: NoteChanges{AddLinks: hooks.addLinks}},
+		Lookups{}, Arranger{Notes: NoteChanges{AddLinks: hooks.addLinks}},
 		Stores{
 			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
 				return derivedfile.PluginStores{}.Open(v, pluginID)
@@ -201,16 +201,15 @@ func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
 func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 	access := NewAccess(
 		Session{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }},
-		Files{}, Lookups{}, Connections{}, Arranger{}, Stores{},
+		Files{}, Lookups{}, Arranger{}, Stores{},
 	)
 
 	_, _, readErr := access.Files.Read(t.Context(), "a.md")
 	_, writeErr := access.Writer.WriteFile(t.Context(), "a.md", nil, domain.FileStat{})
 	_, notesErr := access.Notes.GetNotes(t.Context(), nil)
 	_, openErr := access.Stores.OpenStore("md.numen.a")
-	_, _, watchErr := access.Watch.Watch(t.Context())
 
-	for name, err := range map[string]error{"read": readErr, "write": writeErr, "notes": notesErr, "store": openErr, "watch": watchErr} {
+	for name, err := range map[string]error{"read": readErr, "write": writeErr, "notes": notesErr, "store": openErr} {
 		if !errors.Is(err, plugin.ErrNoVault) {
 			t.Errorf("%s was %v", name, err)
 		}

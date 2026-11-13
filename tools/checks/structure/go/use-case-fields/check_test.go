@@ -67,6 +67,15 @@ type Search struct {
 func NewOver(passages port.PassageQueries) Search {
 	return Search{Passages: passages}
 }
+
+type Level struct {
+	Name  string
+	Title string
+}
+
+func NewLevel(name string) Level {
+	return Level{Name: name, Title: name}
+}
 `, 0)
 	if err != nil {
 		t.Fatal(err)

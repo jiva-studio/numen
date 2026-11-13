@@ -76,7 +76,7 @@ const setup = () => {
     runs,
     registry,
     writeMessage: (text, severity) => messages.push([text, severity]),
-    search: () => undefined,
+    navigation: { search: () => undefined },
   })
   const runner = createCommandRunner({
     commands,

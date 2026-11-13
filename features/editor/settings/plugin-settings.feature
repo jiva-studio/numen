@@ -44,13 +44,7 @@ Feature: Plugin settings
       When the person sets the setting "Model" of the plugin "Document OCR" to "PP-OCRv5 Latin"
       Then the settings of the plugin "Document OCR" do not have the field "Model file"
 
-    Scenario: The address of a custom service is asked for
-      When the person sets the setting "Provider" of the plugin "Vector Embeddings" to "Custom service"
-      Then the settings of the plugin "Vector Embeddings" have the field "Service URL"
-
-    Scenario: The address of a service is kept when another provider is chosen
-      Given the person sets the setting "Provider" of the plugin "Vector Embeddings" to "Custom service"
-      And the person sets the setting "Service URL" of the plugin "Vector Embeddings" to "http://numen.test/one"
-      And the person sets the setting "Provider" of the plugin "Vector Embeddings" to "OpenAI"
-      When the person sets the setting "Provider" of the plugin "Vector Embeddings" to "Custom service"
-      Then the setting "Service URL" of the plugin "Vector Embeddings" is "http://numen.test/one"
+    Scenario: A connection is asked for
+      When the person sets the setting "Source" of the plugin "Vector Embeddings" to "Connection"
+      Then the settings of the plugin "Vector Embeddings" have the field "Connection"
+      And the settings of the plugin "Vector Embeddings" do not have the field "Model"

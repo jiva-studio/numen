@@ -41,7 +41,7 @@ func (f failingFileVault) CreateFile(context.Context, string, []byte) error {
 
 func newFailingFileClient(t *testing.T, err error) numenv1connect.HostVaultServiceClient {
 	t.Helper()
-	hosted := newCallers(nil)
+	hosted := newCallers()
 	hosted.vault = vaultOf(failingFileVault{memoryVault: newMemoryVault(map[string]string{"Ganges.md": "# Ganges\n"}), err: err})
 	return newVaultClient(t, hosted, "token-a")
 }
@@ -119,7 +119,7 @@ func (v tooLargeMoveVault) MoveNote(ctx context.Context, from, to string) (domai
 }
 
 func TestMoveNotesReturnsTooLargeForTheNoteThatIsTooLarge(t *testing.T) {
-	hostCallers := newCallers(nil)
+	hostCallers := newCallers()
 	hostCallers.vault = vaultOf(tooLargeMoveVault{newFakeNoteVault()})
 	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()

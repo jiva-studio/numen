@@ -11,7 +11,6 @@ export {
   listHeadings,
   readNote,
   renameNote,
-  resolveLinks,
   resolveNameLink,
   watchEdits,
   writeNote,

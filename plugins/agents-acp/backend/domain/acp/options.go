@@ -1,6 +1,6 @@
 package acp
 
-import "github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
+import "slices"
 
 // Model is one model an ACP agent reports for its sessions.
 type Model struct {
@@ -8,12 +8,22 @@ type Model struct {
 	Name string `json:"name"`
 }
 
+// Level is one depth of reasoning an agent reports for its current model. SetReasoning takes its Name.
+type Level struct {
+	Name  string `json:"name"`
+	Title string `json:"title"`
+}
+
+func containsLevel(levels []Level, name string) bool {
+	return slices.ContainsFunc(levels, func(one Level) bool { return one.Name == name })
+}
+
 // Listing is what an agent reports for a session: its models and the one it answers with.
 type Listing struct {
-	Models  []Model           `json:"models"`
-	Current string            `json:"current"`
-	Levels  []reasoning.Level `json:"levels,omitempty"`
-	Level   string            `json:"level,omitempty"`
+	Models  []Model `json:"models"`
+	Current string  `json:"current"`
+	Levels  []Level `json:"levels,omitempty"`
+	Level   string  `json:"level,omitempty"`
 }
 
 // configOption is one session config option. A select option's values are listed alone or in
@@ -47,14 +57,14 @@ func (o configOption) getModels() []Model {
 	return models
 }
 
-func (o configOption) getLevels() []reasoning.Level {
-	var levels []reasoning.Level
+func (o configOption) getLevels() []Level {
+	var levels []Level
 	for _, one := range o.getModels() {
 		title := one.Name
 		if title == "" {
 			title = one.ID
 		}
-		levels = append(levels, reasoning.Level{Name: one.ID, Title: title})
+		levels = append(levels, Level{Name: one.ID, Title: title})
 	}
 	return levels
 }

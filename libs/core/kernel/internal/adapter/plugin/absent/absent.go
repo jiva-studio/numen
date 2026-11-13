@@ -6,7 +6,6 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -23,8 +22,15 @@ func (r Runtime) unavailable(capability, pluginID string) error {
 }
 
 // EnsureActive reports that the plugin is unavailable.
-func (r Runtime) EnsureActive(_ context.Context, pluginID string) (transport.Endpoint, error) {
+func (r Runtime) EnsureActive(_ context.Context, pluginID string, _ plugindomain.Holder) (transport.Endpoint, error) {
 	return transport.Endpoint{}, r.unavailable("", pluginID)
+}
+
+// EnsureActiveForQuestion reports that the plugin is unavailable.
+func (r Runtime) EnsureActiveForQuestion(
+	ctx context.Context, pluginID string, holder plugindomain.Holder,
+) (transport.Endpoint, error) {
+	return r.EnsureActive(ctx, pluginID, holder)
 }
 
 // RetryPlugin reports that the plugin is unavailable.
@@ -52,7 +58,10 @@ func (Runtime) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 }
 
 // Release has no plugin to release.
-func (Runtime) Release(string) {}
+func (Runtime) Release(string, string, plugindomain.Holder) {}
+
+// ReleaseQuestion does nothing: EnsureActiveForQuestion takes no lease here.
+func (Runtime) ReleaseQuestion(string, string, plugindomain.Holder) {}
 
 // Discover finds no plugin.
 func (Runtime) Discover() error { return nil }
@@ -69,17 +78,14 @@ func (Runtime) IsEnabled(string) bool { return false }
 // EmitEvent has no plugin to tell.
 func (Runtime) EmitEvent(string) {}
 
+// SetOnFailureCleared is accepted and ignored: no failure is cleared.
+func (Runtime) SetOnFailureCleared(func(string)) {}
+
 // SetSafeMode is accepted and ignored.
 func (Runtime) SetSafeMode(bool) {}
 
 // SetVaultPath is accepted and ignored.
 func (Runtime) SetVaultPath(string) {}
-
-// SetOnPluginFailed is accepted and ignored: no plugin fails.
-func (Runtime) SetOnPluginFailed(func(plugindomain.Failure)) {}
-
-// SetOnFailureCleared is accepted and ignored: no failure is cleared.
-func (Runtime) SetOnFailureCleared(func(string)) {}
 
 // IsPluginSuspended reports that no plugin is suspended.
 func (Runtime) IsPluginSuspended(string) bool { return false }
@@ -94,15 +100,6 @@ type Settings struct{}
 func (Settings) GetPluginSettingDeclarations(string) ([]manifest.Setting, bool) {
 	return nil, false
 }
-
-// SetKeyStore is accepted and ignored.
-func (Settings) SetKeyStore(pluginport.KeyStore) {}
-
-// SetSecretSource is accepted and ignored.
-func (Settings) SetSecretSource(plugindomain.SecretSource) {}
-
-// ListDeclarations returns no declaration.
-func (Settings) ListDeclarations() []plugindomain.DeclarationKey { return nil }
 
 // Refresh configures no plugin.
 func (Settings) Refresh(context.Context, ...string) error { return nil }
@@ -125,3 +122,12 @@ func (Settings) TeardownAll(context.Context, time.Duration) error { return nil }
 // ObserveDependencies is accepted and ignored: no plugin declares a dependency.
 func (Settings) ObserveDependencies(func(manifest.DependencyRequirement, plugindomain.DependencyStatus)) {
 }
+
+// Processes is the processes of a plugin host that runs nothing.
+type Processes struct{}
+
+// ListProcesses is empty: a host that runs nothing starts no process.
+func (Processes) ListProcesses() []plugindomain.Process { return nil }
+
+// WatchProcesses never signals: nothing runs to change.
+func (Processes) WatchProcesses(context.Context) <-chan struct{} { return nil }

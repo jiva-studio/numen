@@ -117,18 +117,6 @@ func checkVersionSource(version domain.TextVersion, versions []domain.TextVersio
 	return nil
 }
 
-func (u *Versions) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path, key string) error {
-	writer, err := u.stores.OpenVersionWriter(v)
-	if err != nil {
-		return err
-	}
-	if err := writer.RemoveVersion(ctx, path, domain.NewTextVersionID(pluginID, key)); err != nil {
-		return fmt.Errorf("remove version %s/%s of %s: %w", pluginID, key, path, err)
-	}
-	u.changes.report(ctx, v, path)
-	return nil
-}
-
 // DeleteVersion deletes the version of the file at the path, whichever plugin made it: its record and
 // its file in the folder of that plugin. The listener is notified that the file's versions changed. A version
 // the file does not have is ErrInvalidVersion.

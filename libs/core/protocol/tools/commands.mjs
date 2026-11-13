@@ -61,7 +61,7 @@ const go = [
     '\t\treturn []AppCommandArgument{',
     ...one.arguments.map(
       (argument) =>
-        `\t\t\t{Name: ${JSON.stringify(argument.name)}, Title: ${JSON.stringify(argument.title)}, Type: ${JSON.stringify(argument.type)}, Options: []string{${argument.options.map((value) => JSON.stringify(value)).join(', ')}}},`,
+        `\t\t\t{Name: ${JSON.stringify(argument.name)}, Title: ${JSON.stringify(argument.title)}, Type: ${JSON.stringify(argument.type)}${argument.options ? `, Options: []string{${argument.options.map((value) => JSON.stringify(value)).join(', ')}}` : ''}},`,
     ),
     '\t\t}, true',
   ]),
@@ -123,27 +123,6 @@ const ts = [
   ]),
   ']',
   '',
-  '/** One argument of an app command; an `enum` argument lists the values it allows in `options`. */',
-  'export interface AppCommandArgument {',
-  '  readonly name: string',
-  '  readonly title: string',
-  '  readonly type: string',
-  '  readonly options: readonly string[]',
-  '}',
-  '',
-  '// APP_COMMANDS are the app commands that take arguments. A slot entry passes values only',
-  '// for these arguments and these values.',
-  'export const APP_COMMANDS: Readonly<Record<string, readonly AppCommandArgument[]>> = {',
-  ...appCommands.flatMap((one) => [
-    `  '${one.id}': [`,
-    ...one.arguments.map(
-      (argument) =>
-        `    { name: '${argument.name}', title: '${argument.title}', type: '${argument.type}', options: [${argument.options.map((value) => `'${value}'`).join(', ')}] },`,
-    ),
-    '  ],',
-  ]),
-  '}',
-  '',
   '/** A key of the application: a chord bound to the full id of a command, with values for its arguments and a condition. */',
   'export interface AppKeybinding {',
   '  readonly key: string',
@@ -182,34 +161,6 @@ const sdk = [
     `\t${getGoName(one)} = ${JSON.stringify(one.id)}`,
   ]),
   ')',
-  '',
-  '// IsSharedCommand reports whether the full id is a shared command of the application.',
-  'func IsSharedCommand(id string) bool {',
-  '\tswitch id {',
-  `\tcase ${commands.map((one) => getGoName(one)).join(', ')}:`,
-  '\t\treturn true',
-  '\t}',
-  '\treturn false',
-  '}',
-  '',
-  '// ListSharedCommands lists the shared commands of the application in the order commands.json',
-  '// declares them, each with the arguments the palette asks for and the host checks for every handler.',
-  'func ListSharedCommands() []SharedCommand {',
-  '\treturn []SharedCommand{',
-  ...commands.flatMap((one) =>
-    (one.arguments ?? []).length === 0
-      ? [`\t\t{ID: ${getGoName(one)}, Title: ${JSON.stringify(one.title)}},`]
-      : [
-          `\t\t{ID: ${getGoName(one)}, Title: ${JSON.stringify(one.title)}, Arguments: []SharedCommandArgument{`,
-          ...one.arguments.map(
-            (argument) =>
-              `\t\t\t{Name: ${JSON.stringify(argument.name)}, Title: ${JSON.stringify(argument.title)}, Type: ${JSON.stringify(argument.type)}, IsRequired: ${argument.required === true}},`,
-          ),
-          '\t\t}},',
-        ],
-  ),
-  '\t}',
-  '}',
   '',
 ].join('\n')
 

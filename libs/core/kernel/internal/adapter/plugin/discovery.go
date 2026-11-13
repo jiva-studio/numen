@@ -20,12 +20,6 @@ var (
 	errBuiltInRegistered = errors.New("a built-in plugin of this id is registered")
 )
 
-// scanRecorder keeps what a scan found, for the permissions of the declarations that are gone.
-type scanRecorder interface {
-	recordScan(installed []manifest.Discovered)
-	pruneSecretPermissions()
-}
-
 // cacheRemover removes the files a plugin cached.
 type cacheRemover interface {
 	RemoveCacheDir(pluginID string)
@@ -51,7 +45,8 @@ type scanHold interface {
 	releaseScan()
 }
 
-// Discovery finds the plugins in the folders it is given, registers them, and retires the ones that left the disk.
+// Discovery finds the plugins in the folders it is given, registers them, and retires the ones that left the
+// disk with their cache and their health items.
 type Discovery struct {
 	set       discoveredPlugins
 	registrar pluginRegistrar
@@ -61,7 +56,7 @@ type Discovery struct {
 	stopper   pluginStopper
 	listeners listenerControl
 	storage   cacheRemover
-	scans     scanRecorder
+	health    healthRemover
 	report    func(error)
 	dirs      []string
 	target    string
@@ -78,7 +73,7 @@ type DiscoveryDeps struct {
 	Stopper     *supervision.Stopper
 	Listeners   listenerControl
 	Storage     *storage.Storage
-	Config      scanRecorder
+	Health      healthRemover
 	Report      func(error)
 	Dirs        []string
 	Target      string
@@ -88,7 +83,7 @@ type DiscoveryDeps struct {
 func NewDiscovery(d DiscoveryDeps) *Discovery {
 	return &Discovery{
 		set: d.Set, registrar: d.Registrar, scan: d.Scan, mode: d.Mode, sups: d.Supervisors, stopper: d.Stopper, listeners: d.Listeners,
-		storage: d.Storage, scans: d.Config, report: d.Report, dirs: d.Dirs, target: d.Target,
+		storage: d.Storage, health: d.Health, report: d.Report, dirs: d.Dirs, target: d.Target,
 	}
 }
 
@@ -117,7 +112,6 @@ func (d *Discovery) discoverPlugins() error {
 	if d.mode.IsSafeMode() {
 		return nil
 	}
-	d.scans.recordScan(all)
 	stalePlugins := d.set.replaceDiscovered(discovered, problems)
 
 	for _, problem := range problems {
@@ -127,9 +121,9 @@ func (d *Discovery) discoverPlugins() error {
 		d.retirePlugin(id)
 		if !d.set.isOnDisk(id) {
 			d.storage.RemoveCacheDir(id)
+			d.health.RemovePlugin(id)
 		}
 	}
-	d.scans.pruneSecretPermissions()
 	return nil
 }
 

@@ -13,12 +13,11 @@ interface ViewRule {
 /**
  * The permissions of the two plugins of each view kind. The mounter hands the view a context and
  * the registrant receives it, so the registrant must hold everything the context lets a view do:
- * the conversation context carries an agent that asks and finishes (vault:read, vault:write), the
- * note editor reads and writes the note at its path, and the vault summary receives the name of a
- * vault. A new view kind states both lists here, an empty list when it needs none.
+ * the conversation context carries the connections of the mounter and no vault access, the note
+ * editor reads and writes the note at its path, and the vault summary receives the name of a vault. A new view kind states both lists here, an empty list when it needs none.
  */
 const VIEW_RULES = new Map<string, ViewRule>([
-  [CONVERSATION, { mounter: [], registrant: ['vault:read', 'vault:write'] }],
+  [CONVERSATION, { mounter: [], registrant: [] }],
   [
     NOTE_EDITOR,
     { mounter: ['vault:read', 'vault:write'], registrant: ['vault:read', 'vault:write'] },

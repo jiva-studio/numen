@@ -2,7 +2,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
-import type { AgentPort, ConversationContext } from '@numen/plugin-sdk'
+import type { ConnectionHost, ConversationContext } from '@numen/plugin-sdk'
 
 import AgentPanel from './AgentPanel.vue'
 import { useAgentPanel } from '../../model/session/panel'
@@ -20,24 +20,23 @@ const card: ReviewCard = {
   ahead: null,
 }
 
-const agent: AgentPort = {
-  async *ask() {
+const connections: ConnectionHost = {
+  call: async function* () {
     yield* []
+    return { ok: false, error: { error: 'no_connection', message: 'no row', failures: [] } }
   },
-  finish: async () => undefined,
 }
 
 const createPanel = (): AgentPanelState => {
   const open = ref(false)
   return useAgentPanel({
-    agent: () => agent,
+    connections,
     card: () => card,
-    unreachable: () => '',
+    vault: () => 'garden',
     open: () => open.value,
     showPanel: (isOpen) => {
       open.value = isOpen
     },
-    showNotice: () => undefined,
   })
 }
 
@@ -48,7 +47,7 @@ const createHost = () => {
     const one = { capability, context: context as ConversationContext, isDisposed: false }
     mounts.push(one)
     const note = document.createElement('p')
-    note.textContent = one.context.focus
+    note.textContent = one.context.vault ?? ''
     element.append(note)
     return {
       focus: () => focusCount++,
@@ -78,8 +77,10 @@ describe('AgentPanel', () => {
     await nextTick()
 
     expect(host.mounts.map((it) => it.capability)).toEqual(['conversation'])
-    expect(host.mounts[0]?.context.focus).toBe('decks/Words.md')
-    expect(one.text()).toBe('decks/Words.md')
+    expect(host.mounts[0]?.context.toolContext).toMatchObject({
+      'md.numen.views.flashcards.studio/deck': 'decks/Words.md',
+    })
+    expect(one.text()).toBe('garden')
   })
 
   // A panel opened is a panel opened to write in.

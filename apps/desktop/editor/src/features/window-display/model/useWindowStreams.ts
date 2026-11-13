@@ -5,6 +5,7 @@ import type { Ref, ShallowRef } from 'vue'
 import type { createFollower } from '@numen/ui'
 import { watchEdits, type NoteEdit } from '@/entities/note'
 import { watchFocus, watchTasks, type Task } from '@/entities/window'
+import { watchPluginHealth, type PluginHealthItem } from '@/entities/plugin'
 import { watchVaultChanges, type VaultChange } from '@/entities/vault'
 import type { PathRename } from '@/shared/lib/paths'
 import type { TextRange } from '@/shared/lib/textRange'
@@ -57,12 +58,20 @@ export interface TaskStreamDeps {
   readonly ask: () => Promise<VaultScan>
 }
 
+/** What the stream of the health items of the plugins reaches. */
+export interface HealthStreamDeps {
+  readonly follows: Follows
+  readonly listening: AbortController
+  readonly items: ShallowRef<readonly PluginHealthItem[]>
+}
+
 /** The streams the window follows, each read until the window closes. */
 export interface WindowStreams {
   readonly follow: () => Promise<void>
   readonly draw: () => Promise<void>
   readonly watch: () => Promise<void>
   readonly followTasks: () => Promise<void>
+  readonly followHealth: () => Promise<void>
 }
 
 function isChangeEmpty(change: VaultChange): boolean {
@@ -172,6 +181,17 @@ export function createTaskStream(deps: TaskStreamDeps): () => Promise<void> {
         tasks.value = list
         if (!ran || list.length > 0) return
         await attempt(deps.ask)
+      },
+    )
+}
+
+/** Follows the health items of the plugins. */
+export function createHealthStream(deps: HealthStreamDeps): () => Promise<void> {
+  return () =>
+    deps.follows(
+      () => watchPluginHealth(deps.listening.signal),
+      (list) => {
+        deps.items.value = list
       },
     )
 }

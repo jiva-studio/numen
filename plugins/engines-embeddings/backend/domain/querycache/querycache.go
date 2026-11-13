@@ -1,0 +1,130 @@
+// Package querycache keeps the vectors of the queries embedded before, by recipe.
+package querycache
+
+import (
+	"sync"
+)
+
+// DefaultCapacity is how many query embeddings the cache holds.
+const DefaultCapacity = 256
+
+type cacheKey struct {
+	recipe string
+	query  string
+}
+
+type cacheEntry struct {
+	prev   *cacheEntry
+	next   *cacheEntry
+	key    cacheKey
+	vector []float32
+}
+
+// Cache holds query embeddings in memory.
+type Cache struct {
+	mu       sync.Mutex
+	capacity int
+	entries  map[cacheKey]*cacheEntry
+	head     *cacheEntry
+	tail     *cacheEntry
+}
+
+// New creates an LRU cache with the capacity given.
+func New(capacity int) *Cache {
+	if capacity <= 0 {
+		capacity = DefaultCapacity
+	}
+	return &Cache{
+		mu:       sync.Mutex{},
+		capacity: capacity,
+		entries:  make(map[cacheKey]*cacheEntry, capacity),
+		head:     nil,
+		tail:     nil,
+	}
+}
+
+func (c *Cache) Get(recipe, query string) ([]float32, bool) {
+	if c == nil {
+		return nil, false
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	k := cacheKey{recipe: recipe, query: query}
+	entry, ok := c.entries[k]
+	if !ok {
+		return nil, false
+	}
+	c.moveToFront(entry)
+	return entry.vector, true
+}
+
+func (c *Cache) Put(recipe, query string, vector []float32) {
+	if c == nil || len(vector) == 0 {
+		return
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	k := cacheKey{recipe: recipe, query: query}
+	if entry, ok := c.entries[k]; ok {
+		c.moveToFront(entry)
+		entry.vector = vector
+		return
+	}
+
+	if len(c.entries) >= c.capacity && c.tail != nil {
+		old := c.tail
+		c.remove(old)
+		delete(c.entries, old.key)
+	}
+
+	entry := &cacheEntry{prev: nil, next: nil, key: k, vector: vector}
+	c.pushFront(entry)
+	c.entries[k] = entry
+}
+
+// Count returns how many entries the cache holds.
+func (c *Cache) Count() int {
+	if c == nil {
+		return 0
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return len(c.entries)
+}
+
+func (c *Cache) moveToFront(e *cacheEntry) {
+	if c.head == e {
+		return
+	}
+	c.remove(e)
+	c.pushFront(e)
+}
+
+func (c *Cache) pushFront(e *cacheEntry) {
+	e.prev = nil
+	e.next = c.head
+	if c.head != nil {
+		c.head.prev = e
+	}
+	c.head = e
+	if c.tail == nil {
+		c.tail = e
+	}
+}
+
+func (c *Cache) remove(e *cacheEntry) {
+	if e.prev != nil {
+		e.prev.next = e.next
+	} else {
+		c.head = e.next
+	}
+	if e.next != nil {
+		e.next.prev = e.prev
+	} else {
+		c.tail = e.prev
+	}
+	e.prev = nil
+	e.next = nil
+}

@@ -13,7 +13,7 @@ import type { DeckTabState } from './tabState'
 export const DECK = 'deck'
 
 /** The lists a deck tab loads when it opens and reloads when it is shown. */
-export interface DeckTabLists {
+interface DeckTabLists {
   listCardModels(): Promise<void>
   listPresets(): Promise<void>
   listCardModelsAgain(): void

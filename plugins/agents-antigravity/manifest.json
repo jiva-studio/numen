@@ -1,12 +1,52 @@
 {
   "id": "md.numen.agents.antigravity",
   "name": "Antigravity Agent",
-  "version": "2026.11.11",
+  "version": "2026.11.12",
   "protocol": 1,
   "description": "Google Antigravity AI assistant for chat and note editing",
-  "capabilities": ["ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
-  "contributes": { "category": "agents" },
+  "contributes": {
+    "category": "agents",
+    "operations": [{ "name": "acp.task", "title": "run agent tasks" }],
+    "connectionTypes": [
+      {
+        "id": "antigravity",
+        "title": "Antigravity",
+        "operations": [
+          "llm.complete",
+          "llm.models",
+          "llm.reasoning",
+          "acp.task",
+          "connections.detected"
+        ],
+        "rowFields": [
+          {
+            "key": "model",
+            "type": "string",
+            "title": "Model",
+            "optionsFrom": "llm.models"
+          },
+          {
+            "key": "reasoning",
+            "type": "enum",
+            "title": "Reasoning",
+            "optionsFrom": "llm.reasoning"
+          }
+        ],
+        "fields": [
+          {
+            "key": "parallelRequests",
+            "type": "number",
+            "title": "Parallel requests",
+            "default": 1,
+            "min": 1,
+            "max": 8,
+            "step": 1
+          }
+        ]
+      }
+    ]
+  },
   "permissions": [
     "link:open",
     "vault:read",
@@ -16,14 +56,24 @@
     "index:read"
   ],
   "backend": { "entrypoint": "bin/agents-antigravity" },
-  "services": ["numen.v1.AgentService"],
+  "services": ["numen.v1.ProviderService"],
   "settings": [
     {
       "key": "executablePath",
       "type": "file",
       "title": "Executable Path",
-      "description": "Path to the Antigravity CLI executable. Empty finds it automatically.",
+      "description": "Path to the Antigravity CLI; empty finds it automatically",
       "default": ""
+    },
+    {
+      "key": "requestTimeout",
+      "type": "number",
+      "title": "Request timeout",
+      "description": "Seconds to wait for the program; empty waits 120",
+      "details": "Seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds.",
+      "min": 1,
+      "max": 3600,
+      "step": 1
     }
   ]
 }

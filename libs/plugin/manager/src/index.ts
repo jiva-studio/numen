@@ -1,6 +1,10 @@
 /** The plugin list and the plugin page: data in by props, answers out as events. */
+import './styles.css'
+
 export { default as PluginsList } from './PluginsList.vue'
 export { default as PluginDetail } from './PluginDetail.vue'
+export { default as NavigationRow } from './NavigationRow.vue'
+export { default as SettingsPage } from './SettingsPage.vue'
 export { default as PluginSettingsCard } from './PluginSettingsCard.vue'
 export type { PluginDetailProps } from './PluginDetail.types'
 export {
@@ -11,10 +15,12 @@ export {
   type PluginListing,
 } from './plugins'
 export type {
-  PluginFailure,
+  PluginContribution,
+  PluginContributionItem,
+  PluginContributionKind,
+  PluginHealth,
   PluginInfo,
   PluginReader,
-  SecretDeclaration,
   PluginSettingCondition,
   PluginSettingInfo,
   SettingValue,
@@ -33,6 +39,12 @@ export {
   type ParsedPluginQuery,
   type PluginFilterContext,
 } from './filter'
-export { formatFailedAt, getFailedPlugins, getPluginState, type PluginState } from './state'
-export { parsePluginReadme, type PluginReadmeParts } from './readme'
+export {
+  getPluginState,
+  getStartItem,
+  getWorstItem,
+  START_HEALTH_KEY,
+  type PluginState,
+} from './state'
+export { getReadmeText } from './readme'
 export { PLUGIN_WORDS } from './words'

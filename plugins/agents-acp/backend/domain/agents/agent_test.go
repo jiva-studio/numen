@@ -16,70 +16,74 @@ func (p fakePath) lookPath(name string) (string, error) {
 	return "", errors.New("not found")
 }
 
-func getCommands(agents []Agent) [][]string {
-	var out [][]string
-	for _, one := range agents {
-		out = append(out, one.Command)
+func TestTheProgramIsFoundWithoutTheSpacesAroundIt(t *testing.T) {
+	path := fakePath{"/home/ada/bin/orchard-agent": "/home/ada/bin/orchard-agent"}
+
+	agent, err := Find(TypeACP, " /home/ada/bin/orchard-agent ", path.lookPath)
+
+	if err != nil || !slices.Equal(agent.Command, []string{"/home/ada/bin/orchard-agent"}) {
+		t.Errorf("Find = %v, %v", agent.Command, err)
 	}
-	return out
 }
 
-func TestTheAgentsAreTheProgramsOfTheSettingsWithTheACPPrefix(t *testing.T) {
-	for range 20 {
-		got := GetFromCommands(map[string][]string{
-			"acp:zed":   {"/bin/zed", "acp"},
-			"acp:alpha": {"/bin/alpha"},
-			"acp:none":  nil,
-			"acp:":      {"/bin/empty"},
-			"plain":     {"/bin/plain"},
-		})
+func TestAnACPProgramOfAKnownNameIsStartedWithItsArguments(t *testing.T) {
+	path := fakePath{"/opt/gemini": "/opt/gemini", "opencode": "/usr/bin/opencode", "/opt/orchard-agent": "/opt/orchard-agent"}
 
-		var programs []string
-		for _, agent := range got {
-			programs = append(programs, agent.Program)
-		}
-		if want := []string{"alpha", "zed"}; !slices.Equal(programs, want) {
-			t.Fatalf("got %v, want %v", programs, want)
-		}
-		if got[1].Title != "zed" || !slices.Equal(got[1].Command, []string{"/bin/zed", "acp"}) {
-			t.Errorf("got %+v", got[1])
+	for program, want := range map[string][]string{
+		"/opt/gemini":        {"/opt/gemini", "--acp"},
+		"opencode":           {"/usr/bin/opencode", "acp"},
+		"/opt/orchard-agent": {"/opt/orchard-agent"},
+	} {
+		agent, err := Find(TypeACP, program, path.lookPath)
+		if err != nil || !slices.Equal(agent.Command, want) {
+			t.Errorf("Find %s = %v, %v, want %v", program, agent.Command, err, want)
 		}
 	}
 }
 
-func TestNoAgentIsNamedWithoutCommands(t *testing.T) {
-	if got := GetFromCommands(nil); len(got) != 0 {
-		t.Errorf("got %v", got)
+func TestAnACPConnectionRequiresAProgram(t *testing.T) {
+	if _, err := Find(TypeACP, "  ", fakePath{}.lookPath); !errors.Is(err, ErrNoProgram) {
+		t.Errorf("Find = %v, want %v", err, ErrNoProgram)
 	}
 }
 
-func TestGetProgramNameHandlesEmptyStem(t *testing.T) {
-	if got := GetProgramName(".exe"); got != defaultProgram {
-		t.Errorf("got %q, want %q", got, defaultProgram)
+func TestAProgramThatIsNotThereIsNotFound(t *testing.T) {
+	for _, lookPath := range []func(string) (string, error){fakePath{}.lookPath, nil} {
+		if _, err := Find(TypeACP, "/opt/orchard-agent", lookPath); !errors.Is(err, ErrNotFound) {
+			t.Errorf("Find = %v, want %v", err, ErrNotFound)
+		}
 	}
 }
 
-func TestTheKnownAgentsAreFoundOnThePath(t *testing.T) {
-	path := fakePath{"gemini": "/usr/local/bin/gemini", "codex-acp": "/opt/bin/codex-acp"}
-
-	agents := FindInstalled(path.lookPath)
-
-	want := [][]string{{"/opt/bin/codex-acp"}, {"/usr/local/bin/gemini", "--acp"}}
-	if got := getCommands(agents); !slices.EqualFunc(got, want, slices.Equal) {
-		t.Errorf("agents = %+v, want the commands %v", agents, want)
+func TestTheKeyTellsTheProgramsApart(t *testing.T) {
+	one := Agent{Type: TypeACP, Command: []string{"/opt/gemini", "--acp"}}
+	other := Agent{Type: TypeACP, Command: []string{"/opt/gemini"}}
+	if one.GetKey() == other.GetKey() {
+		t.Error("two command lines share a key")
 	}
 }
 
-func TestNoAgentIsFoundWithoutAPathLookup(t *testing.T) {
-	if got := FindInstalled(nil); len(got) != 0 {
-		t.Errorf("got %v", got)
+func TestAKnownAgentStartsWithTheArgumentsOfTheRegistry(t *testing.T) {
+	path := fakePath{"kiro-cli": "/usr/bin/kiro-cli", "qwen": "/usr/bin/qwen", "amp-acp": "/usr/bin/amp-acp"}
+
+	for program, want := range map[string][]string{
+		"kiro-cli": {"/usr/bin/kiro-cli", "acp", "--agent-engine=v3"},
+		"qwen":     {"/usr/bin/qwen", "--acp", "--experimental-skills"},
+		"amp-acp":  {"/usr/bin/amp-acp"},
+	} {
+		agent, err := Find(TypeACP, program, path.lookPath)
+		if err != nil || !slices.Equal(agent.Command, want) {
+			t.Errorf("Find %s = %v, %v, want %v", program, agent.Command, err, want)
+		}
 	}
 }
 
-func TestExecutablePathsAreOneOnALine(t *testing.T) {
-	got := ParsePaths("/opt/bin/first-acp\n  \n /opt/bin/second-acp \n")
-
-	if want := []string{"/opt/bin/first-acp", "/opt/bin/second-acp"}; !slices.Equal(got, want) {
-		t.Errorf("executable paths = %v, want %v", got, want)
+func TestTheKnownAgentsHaveOneNameAndOneProgramEach(t *testing.T) {
+	names, programs := map[string]bool{}, map[string]bool{}
+	for _, one := range ListKnown() {
+		if names[one.Name] || programs[one.Program] {
+			t.Errorf("%s (%s) is listed twice", one.Name, one.Program)
+		}
+		names[one.Name], programs[one.Program] = true, true
 	}
 }

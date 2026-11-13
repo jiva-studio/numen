@@ -12,7 +12,11 @@ export default defineConfig({
     vue(),
     tailwindcss(),
     createLayeredStylesPlugin(`${src}/styles.css`),
-    dts({ include: ['src'], exclude: ['src/vite.ts'], entryRoot: 'src' }),
+    dts({
+      include: ['src'],
+      exclude: ['src/vite.ts', 'src/**/*.test.ts', 'src/**/*.stories.ts'],
+      entryRoot: 'src',
+    }),
   ],
   resolve: { alias: { '@': src } },
   css: { lightningcss: LIGHTNING_CSS },

@@ -368,267 +368,6 @@ const commands = async () => {
 
 /* -------------------------------------------------------------- settings */
 
-/**
- * The settings one Go type declares, in the order it declares them, and the
- * lines of it this could make nothing of.
- *
- * A field named and tagged is one key. A type embedded with no name of its own
- * is every key that type declares, written at this level, which is what the
- * settings file holds and so what the manual has to say. A line that is
- * neither and is still written down — one exported, tagged with something other
- * than `-` — is returned unread, for whoever asked to refuse it: a field
- * shape this was not taught to read is a setting quietly left out.
- */
-const fieldsOf = (source, name) => {
-  const at = source.search(new RegExp(`^type ${name} struct \\{$`, 'm'))
-  if (at < 0) return null
-  const body = source.slice(at, source.indexOf('\n}', at))
-
-  const fields = []
-  const unread = []
-  let doc = []
-  for (const line of body.split('\n').slice(1)) {
-    const comment = line.match(/^\s*\/\/ ?(.*)$/)
-    if (comment) {
-      doc.push(comment[1])
-      continue
-    }
-    const field = line.match(/^\s*([A-Z][A-Za-z0-9]*)\s+([^\s]+)\s+`json:"([^",]+)(?:,([^"]*))?"`/)
-    const embedded = line.match(/^\s*(\*?(?:[a-z][a-z0-9]*\.)?[A-Z][A-Za-z0-9]*)\s*$/)
-    if (field) {
-      const [, go, type, key] = field
-      if (key !== '-') fields.push({ go, type, key, doc: doc.join(' ').trim() })
-    } else if (embedded) {
-      fields.push({ embedded: true, type: embedded[1], doc: doc.join(' ').trim() })
-    } else if (line.trim() !== '' && !/^\s*[a-z]/.test(line) && !line.includes('json:"-"')) {
-      unread.push(line.trim())
-    }
-    doc = []
-  }
-  return { fields, unread }
-}
-
-/**
- * A Go type's settings, in the order the file declares them.
- *
- * A type keeping its settings unexported writes the keys down on a mirror
- * struct beside it, so a type declaring none is read from its mirror: what a
- * person writes in the settings file is what the mirror says, whatever the
- * fields behind it come to be called. A type with neither returns nothing,
- * which the caller answers for.
- */
-const structOf = (source, name) => {
-  const own = fieldsOf(source, name)
-  if (own === null) return null
-  const mirror = fieldsOf(source, `${name[0].toLowerCase()}${name.slice(1)}File`)
-  const readsMirror = own.fields.length === 0 && mirror !== null
-  const read = readsMirror ? mirror : own
-  const declared = readsMirror ? `${name[0].toLowerCase()}${name.slice(1)}File` : name
-  if (read.unread.length > 0) die(`${name} declares a field this cannot read: ${read.unread[0]}`)
-  if (read.fields.length > 0 && !commentAbove(source, declared).includes(SETTINGS_MARKER)) {
-    die(`${declared} holds settings and has no ${SETTINGS_MARKER} line in its doc comment`)
-  }
-  return read.fields.length > 0 ? read.fields : null
-}
-
-/** What a Go type is called where a person reads it. */
-const kindOf = (given) => {
-  // A field a file may leave out is written as a pointer, which says nothing
-  // about what a person puts there.
-  const type = given.replace(/^\*/, '')
-  if (type === 'string') return 'text'
-  if (type === 'bool') return 'yes or no'
-  if (['int', 'int64', 'float32', 'float64'].includes(type)) return 'a number'
-  if (type === '[]string') return 'a list of words'
-  return ''
-}
-
-/**
- * The comment lines over a type. A settings type carries the line
- * `//numen:settings`: tools/checks/style/comments keeps the comments on its fields,
- * which this reads as the descriptions of the keys.
- */
-const SETTINGS_MARKER = '//numen:settings'
-
-const commentAbove = (source, name) => {
-  const at = source.search(new RegExp(`^type ${name} `, 'm'))
-  if (at < 0) return []
-  const lines = []
-  for (const line of source.slice(0, at).split('\n').reverse().slice(1)) {
-    if (!line.startsWith('//')) break
-    lines.unshift(line)
-  }
-  return lines
-}
-
-/** The doc comment over a type, which is what a section of the file is about. */
-const docOf = (source, name) =>
-  commentAbove(source, name)
-    .filter((line) => !/^\/\/[a-z0-9]+:\S/.test(line))
-    .map((line) => line.replace(/^\/\/ ?/, ''))
-    .join(' ')
-    .trim()
-    .replace(new RegExp(`^${name}\\s+`), '')
-
-/**
- * The words a constant is written as in the file, for the comments that name
- * the constant rather than the value.
- */
-const VALUES = {
-  ModeSystem: '`system`',
-  ModeLight: '`light`',
-  ModeDark: '`dark`',
-  ProfileCustom: '`custom`',
-}
-
-/**
- * What a field's own comment says about it: enough sentences to say something,
- * with the Go name taken off the front and every other name written as the key
- * it is in the file.
- */
-const meaning = (doc, name, keys) => {
-  const said = doc
-    .replace(new RegExp(`^${name}\\s+`), '')
-    .replace(/^(is|are)\s+/, '')
-    .replace(`${name} `, '')
-
-  const sentences = said.match(/(?:[^.!?]|[.!?](?=\S))+[.!?]?/g) ?? []
-  let out = ''
-  for (const sentence of sentences) {
-    out += sentence
-    if (out.trim().length >= 45) break
-  }
-
-  const written = out
-    .trim()
-    .replace(
-      /\b[A-Z][A-Za-z]+\b/g,
-      (word) => VALUES[word] ?? (keys.get(word) ? `\`${keys.get(word)}\`` : word),
-    )
-  return written.replace(/^([A-Z])(?![A-Z])/, (letter) => letter.toLowerCase())
-}
-
-/**
- * Where each package's settings are declared, so the walk crosses from one to
- * the next by itself. The walk runs from the document down, and a package
- * no package listed here stops the build.
- */
-const PACKAGES = {
-  settings: 'adapter/settings',
-  hardware: 'adapter/settings/hardware',
-  completion: 'usecase/completion',
-}
-
-const held = new Map()
-
-/**
- * One package's Go, every file of it read as one.
- *
- * A section is in whichever file of its package a reader put it in, so the
- * package is read whole and a type moved next door keeps its page.
- */
-const sourceOf = async (pkg) => {
-  if (!held.has(pkg)) {
-    const at = new URL(`${pkg}/`, GO)
-    const names = (await readdir(at))
-      .filter((name) => name.endsWith('.go') && !name.endsWith('_test.go'))
-      .sort()
-    held.set(pkg, (await Promise.all(names.map((name) => read(at, name)))).join('\n'))
-  }
-  return held.get(pkg)
-}
-
-/** Every Go name in one file, against the key it is written under. */
-const named = (source) => {
-  const keys = new Map()
-  for (const [, go, key] of source.matchAll(
-    /^[ \t]*([A-Z][A-Za-z0-9]*)\s+[^\s]+\s+`json:"([^",]+)/gm,
-  )) {
-    if (key !== '-') keys.set(go, key)
-  }
-  return keys
-}
-
-/**
- * Where a field's type is declared: in this file, or in another package's.
- * Nothing for a type a person writes a value of. A package not listed above
- * stops the build.
- */
-const declaredIn = (pkg, type) => {
-  const bare = type.replace(/^\*/, '')
-  if (kindOf(bare) !== '' || !/^(?:[a-z][a-z0-9]*\.)?[A-Z][A-Za-z0-9]*$/.test(bare)) return null
-  const elsewhere = bare.match(/^([a-z][a-z0-9]*)\.([A-Z][A-Za-z0-9]*)$/)
-  if (!elsewhere) return { pkg, type: bare }
-  const [, owner, name] = elsewhere
-  if (!PACKAGES[owner]) die(`${pkg} names ${bare}, and no package is listed for ${owner}`)
-  return { pkg: PACKAGES[owner], type: name }
-}
-
-/** Every key under one type, its own and those of the sections inside it. */
-const keysOf = async (pkg, type, under, depth = 0, seen = new Set()) => {
-  const source = await sourceOf(pkg)
-  const keys = named(source)
-  const fields = structOf(source, type)
-  if (!fields) die(`${pkg} declares no settings under ${type}`)
-
-  const out = []
-  for (const field of fields) {
-    // An embedded type has no key of its own: its keys are written where it is
-    // embedded, at the level the settings file holds them at.
-    if (field.embedded) {
-      const at = declaredIn(pkg, field.type)
-      if (!at) die(`${pkg} embeds ${field.type} in ${type}, which is no section`)
-      const stamp = `${at.pkg}:${at.type}`
-      if (seen.has(stamp)) die(`${at.type} is embedded inside itself`)
-      out.push(...(await keysOf(at.pkg, at.type, under, depth, new Set([...seen, stamp]))))
-      continue
-    }
-
-    const path = under ? `${under}.${field.key}` : field.key
-    const at = declaredIn(pkg, field.type)
-    const stamp = at && `${at.pkg}:${at.type}`
-    let inside = null
-    if (at && !seen.has(stamp)) {
-      inside = structOf(await sourceOf(at.pkg), at.type)
-      if (!inside) die(`${path} is a section, and ${at.pkg} declares no settings under ${at.type}`)
-    }
-
-    if (inside) {
-      const doc = field.doc || docOf(await sourceOf(at.pkg), at.type)
-      out.push({ path, depth, group: true, meaning: meaning(doc, field.go, keys), kind: '' })
-      out.push(...(await keysOf(at.pkg, at.type, path, depth + 1, new Set([...seen, stamp]))))
-      continue
-    }
-    out.push({
-      path,
-      depth,
-      group: false,
-      meaning: meaning(field.doc, field.go, keys),
-      kind: kindOf(field.type),
-    })
-  }
-  return out
-}
-
-/**
- * Which groups get a heading of their own.
- *
- * The ones at the top, except that a group holding nothing but groups hands
- * the heading to each of them: `indexing` is three sections and not one.
- */
-const sectioned = (keys) => {
-  const under = (path, depth) =>
-    keys.filter((key) => key.depth === depth && key.path.startsWith(`${path}.`))
-
-  const out = []
-  for (const key of keys.filter((one) => one.depth === 0 && one.group)) {
-    const children = under(key.path, 1)
-    if (children.length > 0 && children.every((child) => child.group)) out.push(...children)
-    else out.push(key)
-  }
-  return out
-}
-
 /** What a declared setting holds, in the words of a person writing it. */
 const kindOfDeclared = (one) => {
   if (one.type === 'boolean') return 'yes or no'
@@ -636,9 +375,12 @@ const kindOfDeclared = (one) => {
   return 'text'
 }
 
-/** The sentence a declared setting is described by, with the values it takes. */
+/**
+ * The sentence a declared setting is described by, with the values it takes: its details, else its
+ * description, else its title.
+ */
 const meaningOfDeclared = (one) => {
-  const parts = [one.description.replace(/\.$/, '')]
+  const parts = [(one.details ?? one.description ?? one.title).replace(/\.$/, '')]
   if (one.optionsFrom === 'themes') parts.push('The name of an installed theme')
   else if (one.type === 'enum') {
     const values = one.options.map((option) => (typeof option === 'string' ? option : option.value))
@@ -668,46 +410,17 @@ const readSettingPlugins = async () => {
 }
 
 /**
- * The settings of the owner app. The shell declares most of them in a JSON of the format of a
- * manifest, and the reference is read from that declaration. The sections of the agent and the AI
- * route stay Go types.
+ * The settings of the owner app. The shell declares them in a JSON of the format of a manifest, and
+ * the reference is read from that declaration.
  */
 const settings = async () => {
   const declared = JSON.parse(await read(new URL('adapter/settings/', GO), 'app.json')).settings
-  const source = await sourceOf(PACKAGES.settings)
-
   const sections = new Map()
   for (const one of declared) {
     const [section, ...rest] = one.key.split('.')
     const rows = sections.get(section) ?? []
     rows.push({ key: rest.join('.'), kind: kindOfDeclared(one), meaning: meaningOfDeclared(one) })
     sections.set(section, rows)
-  }
-
-  const agent = await keysOf(PACKAGES.settings, 'Agent', 'agent')
-  sections.set(
-    'agent',
-    agent.map((key) => ({
-      key: key.path.slice('agent.'.length),
-      kind: key.kind,
-      meaning: key.meaning,
-    })),
-  )
-  const doc = { agent: docOf(source, 'Agent') }
-  const ai = sectioned(await keysOf(PACKAGES.settings, 'AI', 'ai'))
-  const aiKeys = await keysOf(PACKAGES.settings, 'AI', 'ai')
-  for (const section of ai) {
-    sections.set(
-      section.path,
-      aiKeys
-        .filter((one) => one.path.startsWith(`${section.path}.`))
-        .map((key) => ({
-          key: key.path.slice(section.path.length + 1),
-          kind: key.kind,
-          meaning: key.meaning,
-        })),
-    )
-    doc[section.path] = section.meaning
   }
 
   const out = [
@@ -718,7 +431,7 @@ const settings = async () => {
     '| `<plugin id>` |  | holds the settings of one plugin, next to its `enabled`. |',
     '',
   ]
-  const order = ['appearance', 'agent', 'naming', 'performance', 'ai.default']
+  const order = ['appearance', 'naming', 'performance']
   for (const section of [
     ...order,
     ...[...sections.keys()].filter((name) => !order.includes(name)),
@@ -726,11 +439,6 @@ const settings = async () => {
     const rows = sections.get(section)
     if (!rows || rows.length === 0) continue
     out.push(`### \`app.${section}\``, '')
-    if (doc[section])
-      out.push(
-        doc[section].replace(/^./, (c) => c.toUpperCase()),
-        '',
-      )
     out.push('| | | |', '| --- | --- | --- |')
     for (const row of rows) out.push(`| \`${row.key}\` | ${row.kind} | ${row.meaning} |`)
     out.push('')

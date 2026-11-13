@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 import { parse as parseVue } from '@vue/compiler-sfc'
@@ -41,7 +41,7 @@ const listSources = (folder, extensions) =>
 
 const readEditorSources = () =>
   listSources(EDITOR_SRC, ['.ts', '.vue']).filter(
-    (file) => !relative(EDITOR_SRC, file).startsWith('testing'),
+    (file) => !relative(EDITOR_SRC, file).split(sep).includes('testing'),
   )
 
 const unwrapExpression = (node) =>
