@@ -26,8 +26,10 @@ describe('a note that is removed', () => {
   it('says it is no longer resting', async () => {
     vi.useFakeTimers()
     const world = stubClock()
+    const onSettle = vi.fn()
     const view = mount(PlexNodeView, {
       props: {
+        onSettle,
         node,
         wide: { width: 400, offset: 0 },
         behavior: { ...DEFAULT_BEHAVIOR, expansionDelay: 500, clock: world.clock },
@@ -37,10 +39,10 @@ describe('a note that is removed', () => {
     await vi.advanceTimersByTimeAsync(500)
     world.run()
     await view.vm.$nextTick()
-    expect(view.emitted('settle')).toStrictEqual([[true]])
+    expect(onSettle.mock.calls).toStrictEqual([[true]])
 
     view.unmount()
 
-    expect(view.emitted('settle')).toStrictEqual([[true], [false]])
+    expect(onSettle.mock.calls).toStrictEqual([[true], [false]])
   })
 })

@@ -33,11 +33,15 @@ afterEach(() => {
   document.body.replaceChildren()
 })
 
+/** A click as the browser makes it: a mouse click counts one, and one made by assistive technology counts none. */
+const click = (names: ReturnType<typeof mountNames>, detail: number) =>
+  names.get('.plex__name').element.dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
+
 describe('a name clicked while the names sit back', () => {
   it('is chosen when the click came from assistive technology, with no pointer before it', async () => {
     const names = mountNames(getRoom('Heat'))
 
-    await names.get('.plex__name').trigger('click', { detail: 0 })
+    click(names, 0)
 
     expect(names.emitted('choose')).toEqual([['Heat']])
   })
@@ -45,7 +49,7 @@ describe('a name clicked while the names sit back', () => {
   it('is ignored when the click came from a mouse that never entered it', async () => {
     const names = mountNames(getRoom('Heat'))
 
-    await names.get('.plex__name').trigger('click', { detail: 1 })
+    click(names, 1)
 
     expect(names.emitted('choose')).toBeUndefined()
   })
@@ -54,7 +58,7 @@ describe('a name clicked while the names sit back', () => {
     const names = mountNames(getRoom('Heat'))
 
     await names.get('.plex__name').trigger('pointerenter')
-    await names.get('.plex__name').trigger('click', { detail: 0 })
+    click(names, 0)
 
     expect(names.emitted('choose')).toBeUndefined()
   })
