@@ -36,7 +36,7 @@ type LookNumber = (typeof LOOK_NUMBERS)[number][0]
 const REFERENCE_MODES: readonly ReferenceMode[] = ['off', 'outgoing', 'incoming', 'both']
 
 const parseReferences = (value: Unvalidated): ReferenceMode =>
-  REFERENCE_MODES.find((mode) => mode === value) ?? 'both'
+  typeof value === 'string' ? (REFERENCE_MODES.find((mode) => mode === value) ?? 'both') : 'both'
 
 const parseShowPills = (value: Unvalidated): boolean => (typeof value === 'boolean' ? value : true)
 

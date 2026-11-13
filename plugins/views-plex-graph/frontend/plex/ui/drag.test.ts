@@ -89,7 +89,15 @@ describe('dropping something dragged in', () => {
 
   it('reads which way a relation lies off the arrangement', async () => {
     const plex = mountPlex({
-      options: { direction: { parent: 'down', child: 'up', jump: 'left', reference: 'left', sibling: 'right' } },
+      options: {
+        direction: {
+          parent: 'down',
+          child: 'up',
+          jump: 'left',
+          reference: 'left',
+          sibling: 'right',
+        },
+      },
     })
     await letGo(plex, 600, 40)
 
