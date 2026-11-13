@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func showDepth(t *testing.T, g graph, refs *pathLookup, focus string, depth uint32) domain.NoteGraph {
+func showDepth(t *testing.T, g graph, refs *pathLookup, focus string, depth domain.RelationDepth) domain.NoteGraph {
 	t.Helper()
 	got, err := queryRelated(g, refs, focus, depth)
 	if err != nil {
@@ -62,7 +62,7 @@ func TestDepthTwoAddsTheNotesRelatedToEachRelatedNote(t *testing.T) {
 	if want := []string{"child G.md"}; !slices.Equal(itemsOf(got, "C.md"), want) {
 		t.Errorf("notes related to the child %v, want %v", itemsOf(got, "C.md"), want)
 	}
-	if want := []string{"parent GP.md", "jump J.md", "child S.md"}; !slices.Equal(itemsOf(got, "P.md"), want) {
+	if want := []string{"parent GP.md", "jump J.md"}; !slices.Equal(itemsOf(got, "P.md"), want) {
 		t.Errorf("notes related to the parent %v, want %v", itemsOf(got, "P.md"), want)
 	}
 }
@@ -71,7 +71,7 @@ func TestDepthTwoItemsOfASiblingAreNeverSiblings(t *testing.T) {
 	t.Parallel()
 	got := showDepth(t, depthGraph(), &pathLookup{}, "F.md", 2)
 
-	if want := []string{"child SC.md", "parent P.md"}; !slices.Equal(slices.Sorted(slices.Values(itemsOf(got, "S.md"))), slices.Sorted(slices.Values(want))) {
+	if want := []string{"child SC.md"}; !slices.Equal(itemsOf(got, "S.md"), want) {
 		t.Errorf("notes related to the sibling %v, want %v", itemsOf(got, "S.md"), want)
 	}
 	for _, r := range got.Related {
@@ -140,7 +140,7 @@ func TestDepthTwoConnectionsEqualThoseOfDepthOne(t *testing.T) {
 
 func TestDepthOneHasNoItemsOfDepthTwo(t *testing.T) {
 	t.Parallel()
-	for _, depth := range []uint32{0, 1} {
+	for _, depth := range []domain.RelationDepth{domain.DepthNear} {
 		got := showDepth(t, depthGraph(), &pathLookup{}, "F.md", depth)
 		for _, r := range got.Related {
 			if r.RelatedTo != "" {
@@ -186,7 +186,7 @@ func TestNotesMissingFromTheIndexAreDroppedWithTheirItems(t *testing.T) {
 	}
 
 	got = showDepth(t, depthGraph(), &pathLookup{unknown: "GP.md"}, "F.md", 2)
-	if want := []string{"jump J.md", "child S.md"}; !slices.Equal(itemsOf(got, "P.md"), want) {
+	if want := []string{"jump J.md"}; !slices.Equal(itemsOf(got, "P.md"), want) {
 		t.Errorf("items of the parent %v, want %v", itemsOf(got, "P.md"), want)
 	}
 }

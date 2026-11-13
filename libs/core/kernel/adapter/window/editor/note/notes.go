@@ -179,9 +179,9 @@ func (h *Outline) ListRelatedNotes(
 	if err != nil {
 		return nil, err
 	}
-	depth := r.Msg.GetDepth()
-	if depth > 2 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("depth %d is not 0, 1 or 2", depth))
+	depth, err := domain.ParseRelationDepth(r.Msg.GetDepth())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	found, err := h.getRelatedNotes.Execute(ctx, showing, r.Msg.GetPath(), depth)
 	if err != nil {

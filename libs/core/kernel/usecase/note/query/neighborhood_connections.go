@@ -10,40 +10,77 @@ import (
 
 // linkCache reads the links and the backlinks of a note once per query.
 type linkCache struct {
-	queries   noteport.LinkQueries
+	queries   noteport.LinkBatches
 	vault     domain.Vault
 	byPath    map[string][]domain.ResolvedLink
 	backlinks map[string][]domain.ResolvedLink
 }
 
-func (c *linkCache) getBacklinks(ctx context.Context, path string) ([]domain.ResolvedLink, error) {
-	if links, ok := c.backlinks[path]; ok {
-		return links, nil
+// loadBoth reads the links and the backlinks of the paths not read yet, one call each.
+func (c *linkCache) loadBoth(ctx context.Context, paths []string) error {
+	if err := c.loadLinks(ctx, paths); err != nil {
+		return err
 	}
-	links, err := c.queries.GetBacklinks(ctx, c.vault.ID, path)
-	if err != nil {
-		return nil, err
-	}
-	if c.backlinks == nil {
-		c.backlinks = map[string][]domain.ResolvedLink{}
-	}
-	c.backlinks[path] = links
-	return links, nil
+	return c.loadBacklinks(ctx, paths)
 }
 
-func (c *linkCache) get(ctx context.Context, path string) ([]domain.ResolvedLink, error) {
-	if links, ok := c.byPath[path]; ok {
-		return links, nil
-	}
-	links, err := c.queries.GetLinks(ctx, c.vault.ID, path)
-	if err != nil {
-		return nil, err
-	}
+func (c *linkCache) loadLinks(ctx context.Context, paths []string) error {
 	if c.byPath == nil {
 		c.byPath = map[string][]domain.ResolvedLink{}
 	}
-	c.byPath[path] = links
-	return links, nil
+	return loadMissing(paths, c.byPath, func(missing []string) (map[string][]domain.ResolvedLink, error) {
+		return c.queries.GetLinksOf(ctx, c.vault.ID, missing)
+	})
+}
+
+func (c *linkCache) loadBacklinks(ctx context.Context, paths []string) error {
+	if c.backlinks == nil {
+		c.backlinks = map[string][]domain.ResolvedLink{}
+	}
+	return loadMissing(paths, c.backlinks, func(missing []string) (map[string][]domain.ResolvedLink, error) {
+		return c.queries.GetBacklinksOf(ctx, c.vault.ID, missing)
+	})
+}
+
+// loadMissing reads the paths that are not in the cache, in one call, and
+// records a path that has no links as read.
+func loadMissing(
+	paths []string, cache map[string][]domain.ResolvedLink,
+	read func(missing []string) (map[string][]domain.ResolvedLink, error),
+) error {
+	var missing []string
+	queued := map[string]bool{}
+	for _, path := range paths {
+		if _, ok := cache[path]; !ok && !queued[path] {
+			queued[path] = true
+			missing = append(missing, path)
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	found, err := read(missing)
+	if err != nil {
+		return err
+	}
+	for _, path := range missing {
+		cache[path] = found[path]
+	}
+	return nil
+}
+
+func (c *linkCache) getBacklinks(ctx context.Context, path string) ([]domain.ResolvedLink, error) {
+	if err := c.loadBacklinks(ctx, []string{path}); err != nil {
+		return nil, err
+	}
+	return c.backlinks[path], nil
+}
+
+func (c *linkCache) get(ctx context.Context, path string) ([]domain.ResolvedLink, error) {
+	if err := c.loadLinks(ctx, []string{path}); err != nil {
+		return nil, err
+	}
+	return c.byPath[path], nil
 }
 
 func (c *linkCache) isNavigable(l domain.ResolvedLink) bool {
@@ -60,6 +97,9 @@ type record struct {
 type pairKey [2]string
 
 func getConnections(ctx context.Context, cache *linkCache, paths []string) ([]domain.Connection, error) {
+	if err := cache.loadLinks(ctx, paths); err != nil {
+		return nil, err
+	}
 	pairs, records, err := collectRecords(ctx, cache, paths)
 	if err != nil {
 		return nil, err

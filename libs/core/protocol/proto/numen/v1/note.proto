@@ -119,6 +119,10 @@ message ListRelatedNotesRequest {
 
 message ListRelatedNotesResponse {
   Note focus = 1;
+  // The notes related to the focus, then at depth 2 the notes related to each of those.
+  // A note related to the focus is not repeated at depth 2, and a note is not related to
+  // itself, but one note can appear under two different related notes: `note.path` is
+  // not unique here, `(related_to, note.path)` is.
   repeated RelatedNote related = 2;
 
   // The `type` key of the frontmatter of the note in focus, so a client draws a note as
@@ -149,7 +153,8 @@ enum Relation {
   RELATION_REFERENCE = 5;
 }
 
-// LinkDirection tells which note wrote a text link.
+// LinkDirection tells which note wrote a text link. "The note in focus" is the note a
+// related note belongs to: the focus, or `related_to` for a note found by depth 2.
 enum LinkDirection {
   LINK_DIRECTION_UNSPECIFIED = 0;
   LINK_DIRECTION_OUTGOING = 1; // the note in focus links to this note
@@ -171,11 +176,14 @@ message RelatedNote {
   // where none holds.
   string tab_kind = 7;
 
-  // Set for RELATION_REFERENCE only.
+  // Set for RELATION_REFERENCE only. At depth 2 it is relative to `related_to`, not to
+  // the focus.
   LinkDirection direction = 8;
 
   // The path of the related note this item belongs to, set for a note found by depth 2.
-  // `relation` is then relative to that note. Empty for a note related to the focus.
+  // `relation` and `direction` are then relative to that note, not to the focus, and
+  // no connection record joins the item: connections are of depth 1 only. The same path
+  // can be an item of several related notes. Empty for a note related to the focus.
   string related_to = 9;
 }
 

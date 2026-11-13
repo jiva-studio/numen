@@ -49,3 +49,23 @@ func TestTheRelatedNotesOfANoteTellWhichWayAReferenceIsLinked(t *testing.T) {
 		}
 	}
 }
+
+func TestTwoNotesThatLinkEachOtherAreReferencesInBothDirections(t *testing.T) {
+	f := openWindow(t, nil, map[string]string{
+		"Focus.md": "---\ntitle: Focus\n---\n\n# Focus\n\nSee [[Alpha]].\n",
+		"Alpha.md": "---\ntitle: Alpha\n---\n\n# Alpha\n\nBack to [[Focus]].\n",
+	})
+	waitForScan(t, f)
+
+	related, err := f.client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "Focus.md"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := related.Msg.GetRelated()
+	if len(got) != 1 || got[0].GetNote().GetPath() != "Alpha.md" ||
+		got[0].GetRelation() != v1.Relation_RELATION_REFERENCE ||
+		got[0].GetDirection() != v1.LinkDirection_LINK_DIRECTION_BOTH {
+		t.Errorf("related = %v, want Alpha.md as a reference in both directions", got)
+	}
+}

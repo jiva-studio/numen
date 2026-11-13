@@ -1,6 +1,7 @@
 package domain_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -45,5 +46,22 @@ func TestARelatedNoteKeepsThePathOfTheNoteItBelongsTo(t *testing.T) {
 	}
 	if got := target.Related[1].RelatedTo; got != "" {
 		t.Errorf("a note related to the focus belongs to %q, want none", got)
+	}
+}
+
+func TestAWireDepthIsReadAsNearOrFar(t *testing.T) {
+	for wire, want := range map[uint32]domain.RelationDepth{0: domain.DepthNear, 1: domain.DepthNear, 2: domain.DepthFar} {
+		got, err := domain.ParseRelationDepth(wire)
+		if err != nil || got != want {
+			t.Errorf("ParseRelationDepth(%d) = %v, %v, want %v", wire, got, err, want)
+		}
+	}
+}
+
+func TestAWireDepthAboveTwoIsInvalid(t *testing.T) {
+	for _, wire := range []uint32{3, 100} {
+		if _, err := domain.ParseRelationDepth(wire); !errors.Is(err, domain.ErrInvalidRelationDepth) {
+			t.Errorf("ParseRelationDepth(%d) error = %v, want ErrInvalidRelationDepth", wire, err)
+		}
 	}
 }
