@@ -57,10 +57,16 @@ interface Rect {
 /** Placed boxes, bucketed on a grid, so a spot is checked against the boxes near it and not against all of them. */
 export class SpotIndex {
   private readonly cells = new Map<number, Spot[]>()
+  private readonly spots: Spot[] = []
   private extent: Rect = { minX: 0, maxX: 0, minY: 0, maxY: 0 }
 
   constructor(spots: readonly Spot[] = []) {
     for (const spot of spots) this.add(spot)
+  }
+
+  /** Every box in the index, in the order it was added. */
+  list(): readonly Spot[] {
+    return this.spots
   }
 
   /** The bounds of every box in the index. */
@@ -69,6 +75,7 @@ export class SpotIndex {
   }
 
   add(spot: Spot): void {
+    this.spots.push(spot)
     this.extent = {
       minX: Math.min(this.extent.minX, spot.x - spot.width / 2),
       maxX: Math.max(this.extent.maxX, spot.x + spot.width / 2),
@@ -171,6 +178,10 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
     if (found.best && getLeastCost(box, request) > found.best.cost + 1) continue
     listCandidatesAround(box, request).forEach(consider)
   }
+  if (!found.best && request.fits) {
+    // Beside its own group the window has no free place, so the places beside any other box are tried before the window is given up.
+    for (const box of index.list()) listCandidatesAround(box, request).forEach(consider)
+  }
   if (found.best) return toSpot(found.best.point)
   return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)
 }
@@ -255,6 +266,7 @@ function findFreeSpotOutward(index: SpotIndex, request: SpotRequest): Spot | und
         y: middle.y + direction.y * step * stride + direction.x * offset * cell.height,
         ...size,
       }
+      if (request.fits && !request.fits(spot)) continue
       if (index.isFree(spot, gaps) && measureAlong(spot, request) >= -TOLERANCE) return spot
     }
   }
