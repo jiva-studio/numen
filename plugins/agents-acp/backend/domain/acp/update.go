@@ -24,14 +24,17 @@ func (r StopReason) IsCanceled() bool {
 // ServerName is the name the MCP server of the tools of a session is offered under.
 const ServerName = "numen"
 
-// Update is one session update of a turn: exactly one of its fields is set.
+// Update is one session update of a turn: exactly one of its fields is set. Thought is a piece of the
+// reasoning of the agent.
 type Update struct {
-	Chunk *Chunk
-	Plan  *Plan
-	Tool  *ToolUpdate
+	Chunk   *Chunk
+	Thought *Chunk
+	Plan    *Plan
+	Tool    *ToolUpdate
 }
 
-// Chunk is a piece of the answer of the agent. MessageID is empty where the agent names no message.
+// Chunk is a piece of the answer or of the reasoning of the agent. MessageID is empty where the agent names
+// no message.
 type Chunk struct {
 	MessageID string
 	Text      string
@@ -52,7 +55,8 @@ type PlanEntry struct {
 // ToolUpdate is a tool_call (IsStart) or a tool_call_update. A field left nil or empty keeps what the
 // call had. Name is the tool without the prefix the agent adds to a tool of the MCP server of the session:
 // Claude Code names it in _meta, Codex wraps the arguments with the server and the tool, and other agents
-// name it in name. Arguments are the arguments of the tool as one JSON value.
+// name it in name. Arguments are the arguments of the tool as one JSON value. Diffs are the diff entries of
+// the content the agent reports.
 type ToolUpdate struct {
 	ID        string
 	IsStart   bool
@@ -62,6 +66,14 @@ type ToolUpdate struct {
 	Status    *string
 	Arguments json.RawMessage
 	Output    json.RawMessage
+	Diffs     []Diff
+}
+
+// Diff is a change a tool call makes to a file. OldText is empty for a new file.
+type Diff struct {
+	Path    string
+	OldText string
+	NewText string
 }
 
 // rawToolUpdate is the part of a tool_call, a tool_call_update or the tool call of a permission request
@@ -75,7 +87,16 @@ type rawToolUpdate struct {
 	Status             *string         `json:"status"`
 	RawInput           json.RawMessage `json:"rawInput"`
 	RawOutput          json.RawMessage `json:"rawOutput"`
+	Content            []rawContent    `json:"content"`
 	ClaudeCodeToolName string          `json:"-"`
+}
+
+// rawContent is one entry of the content of a tool call; the client reads the entries of the type diff.
+type rawContent struct {
+	Type    string `json:"type"`
+	Path    string `json:"path"`
+	OldText string `json:"oldText"`
+	NewText string `json:"newText"`
 }
 
 // UnmarshalJSON reads the fields and the tool name Claude Code adds under _meta, a key the protocol
@@ -156,7 +177,13 @@ func (s *Session) readUpdate(params json.RawMessage, handler Handler) error {
 	var update *Update
 	switch head.SessionUpdate {
 	case "agent_message_chunk":
-		update = readChunk(envelope.Update)
+		if chunk := readChunk(envelope.Update); chunk != nil {
+			update = &Update{Chunk: chunk, Thought: nil, Plan: nil, Tool: nil}
+		}
+	case "agent_thought_chunk":
+		if chunk := readChunk(envelope.Update); chunk != nil {
+			update = &Update{Chunk: nil, Thought: chunk, Plan: nil, Tool: nil}
+		}
 	case "plan":
 		update = readPlan(envelope.Update)
 	case "tool_call", "tool_call_update":
@@ -172,7 +199,7 @@ func isDecoded(raw json.RawMessage, value any) bool {
 	return json.Unmarshal(raw, value) == nil
 }
 
-func readChunk(raw json.RawMessage) *Update {
+func readChunk(raw json.RawMessage) *Chunk {
 	var chunk struct {
 		MessageID string `json:"messageId"`
 		Content   struct {
@@ -183,7 +210,7 @@ func readChunk(raw json.RawMessage) *Update {
 	if json.Unmarshal(raw, &chunk) != nil || chunk.Content.Type != keyText || chunk.Content.Text == "" {
 		return nil
 	}
-	return &Update{Chunk: &Chunk{MessageID: chunk.MessageID, Text: chunk.Content.Text}, Plan: nil, Tool: nil}
+	return &Chunk{MessageID: chunk.MessageID, Text: chunk.Content.Text}
 }
 
 func readPlan(raw json.RawMessage) *Update {
@@ -201,7 +228,7 @@ func readPlan(raw json.RawMessage) *Update {
 	for _, one := range plan.Entries {
 		entries = append(entries, PlanEntry{Content: one.Content, Priority: one.Priority, Status: one.Status})
 	}
-	return &Update{Chunk: nil, Plan: &Plan{Entries: entries}, Tool: nil}
+	return &Update{Chunk: nil, Thought: nil, Plan: &Plan{Entries: entries}, Tool: nil}
 }
 
 func (s *Session) readToolUpdate(raw json.RawMessage) *Update {
@@ -217,10 +244,16 @@ func (s *Session) readToolUpdate(raw json.RawMessage) *Update {
 	if !isValue(output) {
 		output = nil
 	}
-	return &Update{Chunk: nil, Plan: nil, Tool: &ToolUpdate{
+	var diffs []Diff
+	for _, one := range reported.Content {
+		if one.Type == "diff" && one.Path != "" {
+			diffs = append(diffs, Diff{Path: one.Path, OldText: one.OldText, NewText: one.NewText})
+		}
+	}
+	return &Update{Chunk: nil, Thought: nil, Plan: nil, Tool: &ToolUpdate{
 		ID: reported.ToolCallID, IsStart: reported.SessionUpdate == "tool_call", Name: name,
 		Title: reported.Title, Kind: reported.Kind, Status: reported.Status,
-		Arguments: arguments, Output: output,
+		Arguments: arguments, Output: output, Diffs: diffs,
 	}}
 }
 
