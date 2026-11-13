@@ -323,20 +323,34 @@ func TestAnAnswerEndedByTheLengthLimitStopsAtMaxTokens(t *testing.T) {
 	}
 }
 
-func TestAChatThatFailsSendsTheTaskToTheNextRowAsUnavailableWithoutItsText(t *testing.T) {
-	for _, failure := range []error{
-		connection.ErrNoConnection,
-		&connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "Ferry API", Reason: "rate limited"}}},
+func TestAChatThatFailsStopsTheTaskWithTheReasonOfItsConnection(t *testing.T) {
+	for failure, want := range map[error]connection.Reason{
+		&connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "Ferry API", Reason: "rate limited"}}}: connection.ReasonRateLimited,
+		&connection.StoppedError{ConnectionName: "Ferry API", Reason: "key rejected"}:                                     connection.ReasonRejectedKey,
+		errors.New("the stream broke"): connection.ReasonUnavailable,
 	} {
 		chat := &scriptedChat{err: failure}
 		answerer, _ := newAnswerer(t, chat, &fakeTools{})
 
 		_, _, err := run(t, answerer, &acp.TaskRequest{Prompt: "hi"})
 
-		assertTryNextUnavailable(t, err)
-		if strings.Contains(err.Error(), "Ferry API") || strings.Contains(err.Error(), "connection:") || len(chat.turns) != 1 {
-			t.Errorf("err = %v after %d turns", err, len(chat.turns))
+		if !connection.IsStop(err) || err.Error() != want.String() || len(chat.turns) != 1 {
+			t.Errorf("err = %v after %d turns, want a stop of reason %v", err, len(chat.turns), want)
 		}
+	}
+}
+
+func TestAChatWhoseConnectionLeftLLMChatAsksToChooseAModel(t *testing.T) {
+	chat := &scriptedChat{err: connection.ErrNoConnection}
+	answerer, _ := newAnswerer(t, chat, &fakeTools{})
+
+	frames, _, err := run(t, answerer, &acp.TaskRequest{Prompt: "hi"})
+
+	if !connection.IsStop(err) || err.Error() != connection.ReasonInvalidRequest.String() {
+		t.Errorf("err = %v, want a stop of reason invalid request", err)
+	}
+	if len(frames) != 1 || frames[0].GetAgentMessageChunk().GetText() != answer.NoModelText {
+		t.Errorf("frames = %v", frames)
 	}
 }
 

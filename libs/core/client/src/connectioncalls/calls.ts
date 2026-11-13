@@ -20,10 +20,12 @@ export type ConnectionCallPriority = 'interactive' | 'background'
 /**
  * A connection among the rows of the plugin for the operation, asked before the other rows with `options`
  * in place of the values of its row fields. A connection that is not among the rows is ignored.
+ * `isExclusive` asks that row alone, and no row where the connection is not among the rows.
  */
 export interface ConnectionCallPreferredRow {
   readonly connectionId: string
   readonly options: Readonly<Record<string, string>>
+  readonly isExclusive?: boolean | undefined
 }
 
 /** What a call may carry besides its operation and payload. */
@@ -144,7 +146,13 @@ const writePriority = (priority: ConnectionCallPriority | undefined): Priority =
 const writePreferredRow = (preferred: ConnectionCallPreferredRow | undefined) =>
   preferred === undefined
     ? {}
-    : { preferred: { connectionId: preferred.connectionId, options: { ...preferred.options } } }
+    : {
+        preferred: {
+          connectionId: preferred.connectionId,
+          options: { ...preferred.options },
+          isExclusive: preferred.isExclusive === true,
+        },
+      }
 
 /** The calls carried out through a ConnectionCallService client. */
 export const createConnectionCallClient = (rpc: ConnectionCallRpc): ConnectionCallClient => ({

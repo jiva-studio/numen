@@ -1,5 +1,5 @@
-// Package hostchat asks the host for the turns of a conversation through the operation llm.chat, with the
-// connection and the model of the turn asked first, and lists the connections that serve llm.chat with
+// Package hostchat asks the host for the turns of a conversation through the operation llm.chat, through
+// the connection and the model of the turn alone, and lists the connections that serve llm.chat with
 // their models.
 package hostchat
 
@@ -23,10 +23,10 @@ type Stream interface {
 	Close() error
 }
 
-// Open starts a turn with row asked first.
+// Open starts a turn through row.
 type Open func(ctx context.Context, request *llm.ChatRequest, priority connection.Priority, row connection.PreferredRow) (Stream, error)
 
-// Host is the connection client of the SDK: the calls of llm.chat with a row asked first, and the listing
+// Host is the connection client of the SDK: the calls of llm.chat through a row, and the listing
 // of the rows of llm.chat.
 type Host interface {
 	Prefer(row connection.PreferredRow) connection.Caller
@@ -75,15 +75,15 @@ func FromHost(host Host) *Chat {
 
 var _ ports.Chat = (*Chat)(nil)
 
-// Stream asks the host for the next turn of the conversation, with the connection and the model of the
-// turn first, and passes the text to emit as it arrives. A person waits for the answer, so the turn is
+// Stream asks the host for the next turn of the conversation through the connection and the model of the
+// turn alone, and passes the text to emit as it arrives. A person waits for the answer, so the turn is
 // interactive.
 func (c *Chat) Stream(ctx context.Context, turn conversation.Turn, emit func(string) error) (reply conversation.Reply, err error) {
 	stream, err := c.open(ctx, &llm.ChatRequest{
 		Messages: writeMessages(turn.Messages), Tools: writeTools(turn.Tools),
 		Temperature: turn.Temperature, MaxTokens: int32(turn.MaxTokens),
 	}, connection.PriorityInteractive, connection.PreferredRow{
-		ConnectionID: turn.Model.ConnectionID, Options: map[string]string{turn.Model.Field: turn.Model.ID},
+		ConnectionID: turn.Model.ConnectionID, Options: map[string]string{turn.Model.Field: turn.Model.ID}, IsExclusive: true,
 	})
 	if err != nil {
 		return conversation.Reply{}, err

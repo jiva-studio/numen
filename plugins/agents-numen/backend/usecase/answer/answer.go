@@ -61,8 +61,9 @@ func New(parts Parts) (*Answerer, error) {
 // cut off or the steps of the settings are used up. A tool call frame shows the title of the tool, its kind
 // by the effect, and the query, about or title of the arguments, else their path, with the path of the
 // note. A row that names no model, or a model of a connection that no longer serves llm.chat, sends
-// NoModelText and stops for a reason of invalid request. A task whose model cannot be asked fails for a
-// reason of unavailable so that the next row of acp.task is asked; a closed answerer stops for that reason.
+// NoModelText and stops for a reason of invalid request. A task whose model cannot be asked stops for the
+// reason its connection failed with: no other connection of llm.chat and no other row of acp.task is asked.
+// A closed answerer stops for a reason of unavailable.
 func (a *Answerer) RunTask(ctx context.Context, call connection.Call, task *acp.TaskRequest, send func(*acp.TaskFrame) error) (*acp.TaskDone, error) {
 	taskCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -106,8 +107,11 @@ func (a *Answerer) RunTask(ctx context.Context, call connection.Call, task *acp.
 	if ctxErr := taskCtx.Err(); ctxErr != nil {
 		return nil, ctxErr
 	}
+	if errors.Is(err, errChat) && errors.Is(err, connection.ErrNoConnection) {
+		return nil, a.readModelError(taskCtx, errNoModel, send)
+	}
 	if errors.Is(err, errChat) {
-		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
+		return nil, connection.NewStopError(readChatReason(err))
 	}
 	if err != nil {
 		return nil, err
@@ -121,6 +125,27 @@ var errNoModel = errors.New("the row names no model")
 
 // errConnections is a listing of the connections of llm.chat that failed.
 var errConnections = errors.New("the connections of llm.chat could not be listed")
+
+// readChatReason returns the reason the connection of a failed turn gave, unavailable where it gave none.
+func readChatReason(err error) connection.Reason {
+	var failed *connection.AllFailedError
+	var stopped *connection.StoppedError
+	given := ""
+	switch {
+	case errors.As(err, &failed) && len(failed.Failures) > 0:
+		given = failed.Failures[len(failed.Failures)-1].Reason
+	case errors.As(err, &stopped):
+		given = stopped.Reason
+	}
+	for _, reason := range []connection.Reason{
+		connection.ReasonRejectedKey, connection.ReasonPaymentRequired, connection.ReasonRateLimited, connection.ReasonInvalidRequest,
+	} {
+		if reason.String() == given {
+			return reason
+		}
+	}
+	return connection.ReasonUnavailable
+}
 
 func (a *Answerer) findModel(ctx context.Context, value string) (conversation.Model, error) {
 	none := conversation.Model{ConnectionID: "", Field: "", ID: ""}

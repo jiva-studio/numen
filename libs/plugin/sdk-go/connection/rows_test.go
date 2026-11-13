@@ -115,6 +115,23 @@ func TestACallOfAPreferringCallerNamesThePreferredRow(t *testing.T) {
 	}
 }
 
+func TestACallOfAPreferringCallerNamesAnExclusiveRow(t *testing.T) {
+	host := &rowsHost{fakeHost: fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostDone("finish")}}}
+
+	frames, err := newRowsClient(t, host).Prefer(PreferredRow{ConnectionID: "c-meadow", IsExclusive: true}).
+		Call(t.Context(), "llm.chat", nil, PriorityInteractive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := Collect(frames); err != nil {
+		t.Fatal(err)
+	}
+
+	if !host.received.GetPreferred().GetIsExclusive() {
+		t.Errorf("preferred = %v, want an exclusive row", host.received.GetPreferred())
+	}
+}
+
 func TestACallOfTheClientNamesNoPreferredRow(t *testing.T) {
 	host := &rowsHost{fakeHost: fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostDone("finish")}}}
 

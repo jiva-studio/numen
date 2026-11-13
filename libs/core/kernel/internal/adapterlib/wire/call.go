@@ -61,7 +61,9 @@ func ConvertPreferredRowFromWire(preferred *v1.PreferredRow) *modelcall.Preferre
 	if preferred.GetConnectionId() == "" {
 		return nil
 	}
-	return &modelcall.PreferredRow{ConnectionID: preferred.GetConnectionId(), Options: maps.Clone(preferred.GetOptions())}
+	return &modelcall.PreferredRow{
+		ConnectionID: preferred.GetConnectionId(), Options: maps.Clone(preferred.GetOptions()), IsExclusive: preferred.GetIsExclusive(),
+	}
 }
 
 // ConvertCallRowsToWire returns the rows of a plugin as the call services list them.

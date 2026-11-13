@@ -47,7 +47,11 @@ export function createAgentKind(
       return state
     },
     getState: (state) =>
-      createSavedConversation(state.draft.userQuestion.value, state.addresses.turns.value),
+      createSavedConversation(
+        state.draft.userQuestion.value,
+        state.addresses.turns.value,
+        state.draft.getSavedModel(),
+      ),
     getTitle: getAgentTitle,
     onClose: (state, id) => {
       state.conversation.stop()

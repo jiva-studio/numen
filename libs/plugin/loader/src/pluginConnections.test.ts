@@ -38,6 +38,7 @@ describe('the connections of a plugin', () => {
         {
           priority: 'interactive',
           signal: controller.signal,
+          preferred: { connectionId: 'c-meadow', options: {}, isExclusive: true },
         },
       ),
     )
@@ -49,7 +50,11 @@ describe('the connections of a plugin', () => {
         pluginId: 'md.numen.tools.proofreading',
         operation: 'llm.complete',
         payload: bytes('ask'),
-        options: { priority: 'interactive', signal: controller.signal },
+        options: {
+          priority: 'interactive',
+          signal: controller.signal,
+          preferred: { connectionId: 'c-meadow', options: {}, isExclusive: true },
+        },
       },
     ])
   })

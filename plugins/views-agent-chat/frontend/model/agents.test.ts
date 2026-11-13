@@ -4,10 +4,13 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import type { ConnectionRow } from '@numen/plugin-sdk'
+import type { ConnectionRow, JsonValue } from '@numen/plugin-sdk'
 import { createAgentList, useAgentChoice } from './agents'
+import { createAgentKind } from './kind'
+import { useAgentConversation, type AgentTabState } from './useAgentConversation'
 import { useConversation } from '../thread'
-import { createAgentConnections, say, type AgentListing } from '../fixtures'
+import AgentTab from '../ui/AgentTab.vue'
+import { createAgentConnections, createHost, say, type AgentListing } from '../fixtures'
 import { WORDS } from '../words'
 
 const FIELDS = [
@@ -377,5 +380,112 @@ describe('the turns of a conversation', () => {
       connectionId: 'c-orchard',
       options: { model: 'pear-large', reasoning: 'high' },
     })
+  })
+})
+
+const LANTERN_FIELDS = [
+  { key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: true },
+]
+
+const LANTERN_ROWS: readonly ConnectionRow[] = [
+  row('c-orchard', 'Orchard agent', { model: 'pear-small' }),
+  { connectionId: 'c-lantern', connectionName: 'Lantern agent', options: {}, fields: LANTERN_FIELDS },
+]
+
+/** A window of agent tabs over the rows, started anew for each restart. */
+const startWindow = (rows: readonly ConnectionRow[], models = listOptions) => {
+  const { host, calls } = createAgentConnections(
+    { frames: [say('Twelve.')] },
+    { rows, listOptions: models },
+  )
+  const list = createAgentList(host, WORDS)
+  const chats = createAgentKind(
+    createHost().host,
+    (deps) => {
+      const choice = useAgentChoice(host, list)
+      const conversation = useConversation({
+        connections: host,
+        words: WORDS,
+        conversation: `conversation:${calls.length}`,
+        paint: (draw) => draw(),
+        getPreferredRow: choice.getPreferredRow,
+      })
+      return useAgentConversation(conversation, deps, choice)
+    },
+    AgentTab,
+  )
+  const open = (id: string, saved?: JsonValue): AgentTabState => chats.kind.open!('', id, saved)
+  return { list, kind: chats.kind, open, calls }
+}
+
+const saveWithLanternModel = async () => {
+  const before = startWindow(LANTERN_ROWS)
+  await before.list.reload()
+  const tab = before.open('agent:1')
+  await tab.agents!.listChoices()
+  await waitTask()
+  tab.agents!.selectModel(
+    tab.agents!.offered.options.value.find((one) => one.modelId === 'c-meadow|clover')!,
+  )
+  return before.kind.getState!(tab)
+}
+
+describe('a choice saved before a restart', () => {
+  it('is the connection and the model of the agent the conversation chose', async () => {
+    const saved = await saveWithLanternModel()
+
+    expect(saved).toMatchObject({ model: { connectionId: 'c-lantern', modelId: 'c-meadow|clover' } })
+  })
+
+  it('is restored to its conversation and is the choice of a new one', async () => {
+    const saved = await saveWithLanternModel()
+
+    const after = startWindow(LANTERN_ROWS)
+    await after.list.reload()
+    const restored = after.open('agent:1', JSON.parse(JSON.stringify(saved)))
+    await waitTask()
+    await waitTask()
+    const fresh = after.open('agent:2')
+    await restored.conversation.ask('How many clover fields?')
+
+    expect(restored.agents!.selected.modelId.value).toBe('c-meadow|clover')
+    expect(fresh.agents!.selected.modelId.value).toBe('c-meadow|clover')
+    expect(after.calls[0]?.options?.preferred).toStrictEqual({
+      connectionId: 'c-lantern',
+      options: { model: 'c-meadow|clover' },
+    })
+  })
+
+  it('is dropped where its agent no longer lists the model, so the agent asks to choose one', async () => {
+    const saved = await saveWithLanternModel()
+
+    const after = startWindow(LANTERN_ROWS, (connectionId, field, options) =>
+      connectionId === 'c-lantern' ? [] : listOptions(connectionId, field, options),
+    )
+    await after.list.reload()
+    const restored = after.open('agent:1', JSON.parse(JSON.stringify(saved)))
+    await waitTask()
+    await waitTask()
+    const fresh = after.open('agent:2')
+    await restored.conversation.ask('How many clover fields?')
+
+    expect(restored.agents!.getChosen()).toBeNull()
+    expect(after.kind.getState!(restored)).toMatchObject({ model: null })
+    expect(fresh.agents!.getChosen()).toBeNull()
+    expect(after.calls[0]?.options?.preferred).toBeUndefined()
+    const lantern = restored.agents!.offered.options.value.find((one) => one.agentId === 'c-lantern')
+    expect(lantern?.modelTitle).toBe(WORDS.chooseModel)
+  })
+
+  it('is dropped where its agent is no longer listed', async () => {
+    const saved = await saveWithLanternModel()
+
+    const after = startWindow([row('c-orchard', 'Orchard agent', { model: 'pear-small' })])
+    await after.list.reload()
+    const restored = after.open('agent:1', JSON.parse(JSON.stringify(saved)))
+    await waitTask()
+
+    expect(restored.agents!.getChosen()).toBeNull()
+    expect(restored.agents!.selected.agentId.value).toBe('c-orchard')
   })
 })

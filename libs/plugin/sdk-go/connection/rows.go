@@ -39,10 +39,12 @@ type RowOptionsRequest struct {
 
 // PreferredRow is a connection among the rows of the plugin for the operation, asked before the other rows
 // with Options in place of the values of its row fields. A connection that is not among the rows is
-// ignored.
+// ignored. IsExclusive asks that row alone: the call fails with its failure, and with ErrNoConnection where
+// the connection is not among the rows.
 type PreferredRow struct {
 	ConnectionID string
 	Options      map[string]string
+	IsExclusive  bool
 }
 
 // ListRows returns the rows of the plugin for the operation in the order of use, without the rows whose
@@ -82,7 +84,7 @@ func (c *Client) ListRowOptions(ctx context.Context, request RowOptionsRequest) 
 	return options, nil
 }
 
-// Prefer returns a Caller that asks row before the other rows of the plugin.
+// Prefer returns a Caller that asks row before the other rows of the plugin, or alone where it is exclusive.
 func (c *Client) Prefer(row PreferredRow) Caller {
 	return &preferringClient{client: c, row: row}
 }
@@ -95,7 +97,7 @@ type preferringClient struct {
 func (p *preferringClient) Call(ctx context.Context, operation string, payload []byte, priority Priority) (Frames, error) {
 	return p.client.call(ctx, &v1.HostConnectionServiceCallRequest{
 		Operation: operation, Payload: payload, Priority: writePriority(priority),
-		Preferred: &v1.PreferredRow{ConnectionId: p.row.ConnectionID, Options: maps.Clone(p.row.Options)},
+		Preferred: &v1.PreferredRow{ConnectionId: p.row.ConnectionID, Options: maps.Clone(p.row.Options), IsExclusive: p.row.IsExclusive},
 	})
 }
 

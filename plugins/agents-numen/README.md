@@ -7,7 +7,7 @@ Built-in AI assistant that chats through a connection to a cloud service (OpenRo
 ## What You Can Do
 
 - **Chat and research immediately**: Add a connection in Settings that supports chat, add a connection of the type Numen agent, and choose its model in the agent chat.
-- **Pick the model**: The models of a Numen agent are the models of every connection that supports chat, listed as "OpenRouter · Claude Sonnet 5.5". The agent chat and Flashcards Studio offer them in the row of the agent. Without a chosen model the agent answers "Choose a model."
+- **Pick the model**: The models of a Numen agent are the models of every connection that supports chat, listed as "OpenRouter · Claude Sonnet 5.5". The agent chat and Flashcards Studio offer them in the row of the agent. Without a chosen model the agent answers "Choose a model." A question goes only to the connection of the chosen model; when that connection fails, the answer stops with its reason.
 - **Full vault access**: Can search your notes and books, follow links, and suggest edits in your workspace, with the tools of the other plugins that its permissions allow.
 
 ## Settings

@@ -131,3 +131,17 @@ func TestACallCarriesThePreferredRowOfTheRequest(t *testing.T) {
 		t.Fatalf("preferred = %+v, %v", preferred, err)
 	}
 }
+
+func TestACallCarriesAnExclusiveRow(t *testing.T) {
+	calls := &scriptedCalls{done: "finish"}
+	client, _ := newConnectionClient(t, calls, "token-b")
+
+	_, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{
+		Operation: "llm.chat", Preferred: &v1.PreferredRow{ConnectionId: "c-meadow", IsExclusive: true},
+	})
+
+	preferred := calls.request.Preferred
+	if err != nil || preferred == nil || !preferred.IsExclusive {
+		t.Fatalf("preferred = %+v, %v, want an exclusive row", preferred, err)
+	}
+}

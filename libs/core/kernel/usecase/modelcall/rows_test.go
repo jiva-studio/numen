@@ -68,6 +68,54 @@ func TestAPreferredConnectionOutsideTheRowsKeepsTheirOrder(t *testing.T) {
 	}
 }
 
+func TestAnExclusiveRowThatFailsEndsTheCallWithItsFailure(t *testing.T) {
+	s := newSetup(t, modelcalltest.CompleteOperation)
+	s.world.Provider.FailAlways(addressTwo, tryNext(connection.FailureReasonRateLimited, 0))
+
+	_, err := s.completePreferring(t, &modelcalldomain.PreferredRow{ConnectionID: s.two.ID, IsExclusive: true})
+
+	var failed *connection.AllFailedError
+	if !errors.As(err, &failed) {
+		t.Fatalf("err = %v, want *AllFailedError", err)
+	}
+	want := []connection.Failure{{ConnectionName: "Second", Reason: "rate limited"}}
+	if !slices.Equal(failed.Failures, want) {
+		t.Errorf("failures = %v, want %v", failed.Failures, want)
+	}
+	if len(s.world.Provider.CallsTo(addressOne)) != 0 {
+		t.Error("a row other than the exclusive one was asked")
+	}
+}
+
+func TestAnExclusiveRowIsAskedWithItsOptions(t *testing.T) {
+	s := newSetup(t, modelcalltest.CompleteOperation)
+
+	text, err := s.completePreferring(t, &modelcalldomain.PreferredRow{
+		ConnectionID: s.two.ID, Options: map[string]string{"model": "model-three"}, IsExclusive: true,
+	})
+
+	if err != nil || text != "answer from "+addressTwo {
+		t.Fatalf("Complete = %q, %v, want the answer of the second row", text, err)
+	}
+	if got := s.world.Provider.CallsTo(addressTwo)[0].Call.Options["model"]; got != "model-three" {
+		t.Errorf("model = %q, want model-three", got)
+	}
+}
+
+func TestAnExclusiveConnectionOutsideTheRowsGetsNoConnection(t *testing.T) {
+	s := newSetup(t, modelcalltest.CompleteOperation)
+	other := s.world.AddServer(t, "Third", "https://three.test/v1", "sk-three-0123456789")
+
+	_, err := s.completePreferring(t, &modelcalldomain.PreferredRow{ConnectionID: other.ID, IsExclusive: true})
+
+	if !errors.Is(err, connection.ErrNoConnection) {
+		t.Fatalf("err = %v, want ErrNoConnection", err)
+	}
+	if len(s.world.Provider.CallsTo(addressOne)) != 0 || len(s.world.Provider.CallsTo(addressTwo)) != 0 {
+		t.Error("a row was asked for a connection that is not among the rows")
+	}
+}
+
 func TestTheRowsAreListedWithTheirConnectionAndTheRowFieldsOfItsType(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 

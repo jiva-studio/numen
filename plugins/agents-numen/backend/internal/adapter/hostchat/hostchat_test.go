@@ -100,14 +100,14 @@ func TestATurnIsAskedForInteractivelyWithTheMessagesToolsAndOptions(t *testing.T
 	}
 }
 
-func TestTheConnectionAndTheModelOfTheTurnAreAskedFirst(t *testing.T) {
+func TestTheConnectionAndTheModelOfTheTurnAreAskedAlone(t *testing.T) {
 	_, _, got, err := ask(t, &fakeStream{finish: &llm.ChatFinish{}}, nil)
 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.row.ConnectionID != "c-meadow" || !maps.Equal(got.row.Options, map[string]string{"model": "wren-2"}) {
-		t.Errorf("the row asked first is %+v", got.row)
+	if got.row.ConnectionID != "c-meadow" || !maps.Equal(got.row.Options, map[string]string{"model": "wren-2"}) || !got.row.IsExclusive {
+		t.Errorf("the row asked is %+v, want c-meadow with wren-2 alone", got.row)
 	}
 }
 

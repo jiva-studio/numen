@@ -12,7 +12,7 @@ import {
 } from '../lib/links'
 import type { TextLink } from '@numen/plugin-sdk'
 import type { AgentTabDeps } from '../types'
-import type { SavedConversation } from '../lib/saved'
+import type { SavedConversation, SavedModel } from '../lib/saved'
 import type { AgentChoice } from './agents'
 
 export type { AgentTabDeps } from '../types'
@@ -181,10 +181,18 @@ export function useAgentConversation(
     })
   }
 
-  /** Shows the question and the turns a tab saved before a restart. */
+  /** Shows the question and the turns a tab saved before a restart, and takes the model it chose. */
   const restore = (saved: SavedConversation) => {
     userQuestion.value = saved.question
     if (saved.turns.length > 0) conversation.turns.value = saved.turns.map((turn) => ({ ...turn }))
+    if (saved.model) {
+      agents?.restoreChoice({ agentId: saved.model.connectionId, modelId: saved.model.modelId })
+    }
+  }
+
+  const getSavedModel = (): SavedModel | null => {
+    const chosen = agents?.getChosen()
+    return chosen ? { connectionId: chosen.agentId, modelId: chosen.modelId } : null
   }
 
   const openTurnSource = (turn: Turn) => {
@@ -197,6 +205,6 @@ export function useAgentConversation(
     addresses,
     agents,
     openSettings: deps.openSettings,
-    draft: { userQuestion, setQuestion, send, restore, openTurnSource },
+    draft: { userQuestion, setQuestion, send, restore, getSavedModel, openTurnSource },
   }
 }

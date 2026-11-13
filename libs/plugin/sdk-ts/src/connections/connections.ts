@@ -26,10 +26,12 @@ export interface ConnectionError {
 
 // ConnectionPreferredRow is a connection among the rows of the plugin for the operation, asked before the
 // other rows with `options` in place of the values of its row fields. A connection that is not among the
-// rows is ignored.
+// rows is ignored. `isExclusive` asks that row alone: the call fails with its failure, and with
+// `no_connection` where the connection is not among the rows.
 export interface ConnectionPreferredRow {
   readonly connectionId: string
   readonly options: Readonly<Record<string, string>>
+  readonly isExclusive?: boolean
 }
 
 // ConnectionCallOptions are what a call carries besides its operation and payload. `preferred` is the

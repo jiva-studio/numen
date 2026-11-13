@@ -156,7 +156,7 @@ describe('createConnectionCallClient', () => {
     )
   })
 
-  it('sends the row the call prefers, and none where it prefers none', async () => {
+  it('sends the row the call prefers with whether it is exclusive, and none where it prefers none', async () => {
     const requests: Array<{ preferred?: unknown }> = []
     const rpc: ConnectionCallRpc = {
       ...NO_LISTS,
@@ -173,12 +173,23 @@ describe('createConnectionCallClient', () => {
       }),
     )
     await read(client.call(CHAT_REQUEST))
+    await read(
+      client.call(CHAT_REQUEST, {
+        preferred: { connectionId: 'c-claude', options: {}, isExclusive: true },
+      }),
+    )
 
     expect(requests[0]?.preferred).toStrictEqual({
       connectionId: 'c-claude',
       options: { model: 'opus' },
+      isExclusive: false,
     })
     expect(requests[1]?.preferred).toBeUndefined()
+    expect(requests[2]?.preferred).toStrictEqual({
+      connectionId: 'c-claude',
+      options: {},
+      isExclusive: true,
+    })
   })
 
   it('lists the rows of the plugin with their connection and row fields', async () => {

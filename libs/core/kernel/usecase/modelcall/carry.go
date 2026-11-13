@@ -86,6 +86,9 @@ func putPreferredFirst(rows []connection.Row, preferred *modelcall.PreferredRow)
 		return rows
 	}
 	index := slices.IndexFunc(rows, func(row connection.Row) bool { return row.ConnectionID == preferred.ConnectionID })
+	if index < 0 && preferred.IsExclusive {
+		return nil
+	}
 	if index < 0 {
 		return rows
 	}
@@ -93,6 +96,9 @@ func putPreferredFirst(rows []connection.Row, preferred *modelcall.PreferredRow)
 	first.Options = maps.Clone(preferred.Options)
 	if first.Options == nil {
 		first.Options = map[string]string{}
+	}
+	if preferred.IsExclusive {
+		return []connection.Row{first}
 	}
 	return append([]connection.Row{first}, slices.Delete(slices.Clone(rows), index, index+1)...)
 }

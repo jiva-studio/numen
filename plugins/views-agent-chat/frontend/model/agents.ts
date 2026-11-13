@@ -4,7 +4,9 @@
  * the model and the reasoning level its row holds; from then on, the models the type of its connection
  * lists in llm.models and the levels it lists in llm.reasoning. The turns of a conversation that chose an
  * agent go to it first, with the model and the reasoning level chosen; a conversation that chose none asks
- * the rows in their order. A new conversation starts with the agent and the model chosen last.
+ * the rows in their order. A new conversation starts with the agent and the model chosen last. A choice
+ * restored after a restart lists the models of the agents, and is dropped once its agent, or its model
+ * among the listed models of its agent, is gone.
  */
 import { computed, shallowRef, watch, type Ref } from 'vue'
 import type {
@@ -46,7 +48,7 @@ export interface Agent {
 }
 
 /** An agent and a model the person chose. */
-interface ModelChoice {
+export interface ModelChoice {
   readonly agentId: string
   readonly modelId: string
 }
@@ -178,8 +180,22 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
     agents.value.filter((agent) => !agent.isListed).map((agent) => agent.row.connectionId),
   )
 
-  const isListed = (choice: ModelChoice) =>
-    options.value.some((one) => one.agentId === choice.agentId && one.modelId === choice.modelId)
+  /** Whether the agent of a choice offers its model, or is still being asked which models it has. */
+  const isOffered = (choice: ModelChoice, listed: readonly Agent[]) => {
+    const agent = listed.find((one) => one.row.connectionId === choice.agentId)
+    return !!agent && (!agent.isListed || agent.models.some((one) => one.modelId === choice.modelId))
+  }
+  const isListed = (choice: ModelChoice) => isOffered(choice, agents.value)
+
+  watch(
+    () => [chosen.value, list.agents.value] as const,
+    ([choice, listed]) => {
+      if (!choice || !listed || isOffered(choice, listed)) return
+      if (list.lastChoice.value === choice) list.lastChoice.value = null
+      chosen.value = null
+      chosenReasoning.value = null
+    },
+  )
 
   const current = computed<ModelChoice | null>(() => {
     if (chosen.value && isListed(chosen.value)) return chosen.value
@@ -255,6 +271,16 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
     chosenReasoning.value = null
   }
 
+  /**
+   * Takes the agent and the model a conversation saved before a restart, and as the choice of a new
+   * conversation where none was made since.
+   */
+  const restoreChoice = (saved: ModelChoice) => {
+    chosen.value = saved
+    list.lastChoice.value ??= saved
+    list.listModels().catch(() => undefined)
+  }
+
   const selectReasoningLevel = (id: string) => {
     chosen.value = current.value
     chosenReasoning.value = id
@@ -285,6 +311,8 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
     listChoices,
     selectModel,
     selectReasoningLevel,
+    restoreChoice,
+    getChosen: (): ModelChoice | null => chosen.value,
     getPreferredRow,
   }
 }

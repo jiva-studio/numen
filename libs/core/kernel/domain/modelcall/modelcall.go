@@ -25,10 +25,11 @@ type Request struct {
 
 // PreferredRow is a connection among the rows of the plugin for the operation, asked before the other
 // rows with Options in place of the values of its row fields. A connection that is not among the rows is
-// ignored.
+// ignored. IsExclusive asks that row alone, and no row where the connection is not among the rows.
 type PreferredRow struct {
 	ConnectionID string
 	Options      map[string]string
+	IsExclusive  bool
 }
 
 // Row is one row of a plugin as the plugin lists them: its connection, the values of its row fields, and
