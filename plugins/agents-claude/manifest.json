@@ -12,7 +12,13 @@
       {
         "id": "claude-code",
         "title": "Claude Code",
-        "operations": ["llm.complete", "llm.models", "llm.reasoning", "acp.task", "connections.detected"],
+        "operations": [
+          "llm.complete",
+          "llm.models",
+          "llm.reasoning",
+          "acp.task",
+          "connections.detected"
+        ],
         "rowFields": [
           {
             "key": "model",
