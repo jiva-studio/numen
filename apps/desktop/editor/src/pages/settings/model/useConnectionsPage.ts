@@ -1,7 +1,8 @@
 /**
  * The state of the page of connections: the connections and types it lists, the dialog that adds
  * or edits one, and the question asked before one is deleted. The page reads the connections when
- * it opens.
+ * it opens. The dialog shows the connection it edits as the list last read it, so a save sends the
+ * revision the core holds; a connection gone from the list closes the dialog.
  */
 import { computed, onMounted, ref, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
@@ -15,10 +16,6 @@ import {
 import type { ConnectionEdits, InstallationConnections } from '../types'
 import { WORDS as words } from '../words'
 
-/**
- * The dialog keeps the id of the connection it edits and shows that connection as the list last read
- * it, so a save sends the revision the core holds. A connection gone from the list closes it.
- */
 function useConnectionDialog(connections: Readonly<Ref<readonly ConnectionInfo[]>>) {
   const editingId = ref<string | null>(null)
   const isAdding = ref(false)

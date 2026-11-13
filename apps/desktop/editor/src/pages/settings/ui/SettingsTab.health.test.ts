@@ -105,7 +105,7 @@ describe('the settings opened at a setting of a plugin', () => {
     tab.unmount()
   })
 
-  it('bring the setting into view again when it is asked for again', async () => {
+  it('scroll to the setting again on a repeated request', async () => {
     const installation = createInstallation({ plugins: ref([ATLAS]) })
     const handle = { openTab: async (kind: string) => kind } as unknown as WindowHandle
     const settings = useSettingsTab(handle, installation, vi.fn())

@@ -101,13 +101,11 @@ const asEntry = (value: Field): Entry =>
 
 type ToItem = (one: JsonValue) => PluginContributionItem
 
-/** An item of an entry that is an object, read through `read`. */
 const fromEntry =
   (read: (one: Entry) => PluginContributionItem): ToItem =>
   (one) =>
     read(asEntry(one))
 
-/** An item of an entry that is a text. */
 const fromText: ToItem = (one) => item(getText(one))
 
 /** The kinds of contributes, in the order a page lists them, each with how an entry becomes an item. */
@@ -137,7 +135,6 @@ const MANIFEST_KINDS: readonly (readonly [PluginContributionKind, ToItem])[] = [
   ['activationEvents', fromText],
 ]
 
-/** The list a source holds under a key, each entry made an item; a list it does not hold is empty. */
 const listItems = (source: Entry, key: string, toItem: ToItem) => {
   const list = source[key]
   return Array.isArray(list) ? list.map((one: JsonValue) => toItem(one)) : []
