@@ -36,7 +36,7 @@ func TestSearchPassesPathPrefixToEveryRanking(t *testing.T) {
 	spy := &prefixSpy{}
 	nearest := &nearestFake{}
 	source := sourcefake.Wrap(oneWay{direction: newVector(+1)}).Over(search.NewFindNearest(nearest).Execute)
-	searching := search.New(spy, vaultreader.Readers{}, nil, []search.Participant{search.NewSource(source, nearest)}, nil)
+	searching := search.New(spy, vaultreader.Readers{}, nil, []search.Participant{search.NewSource(source, nearest)}, nil, nil)
 
 	p := search.Parameters{Limit: 5, PathPrefix: "library/"}
 	if _, err := searching.Execute(t.Context(), domain.Vault{ID: "01VAULT"}, "heron", p); err != nil {

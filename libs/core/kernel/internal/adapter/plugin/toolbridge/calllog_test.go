@@ -56,13 +56,15 @@ func TestACallIsLoggedWithItsCallerToolArgumentsResultAndDuration(t *testing.T) 
 
 	want := map[string]any{
 		"msg": "tool call", "caller": callerPlugin, "tool": "tree_count", "plugin": orchardPlugin,
-		"vault": "vault-orchard", "duration": float64(time.Second), "resultTextBytes": float64(len("tree_count")),
-		"resultStructuredBytes": float64(0), "resultIsError": false,
+		"vault": "vault-orchard", "duration": float64(time.Second), "resultIsError": false,
 	}
 	for key, value := range want {
 		if line[key] != value {
 			t.Errorf("%s is %v, want %v", key, line[key], value)
 		}
+	}
+	if result, _ := line["resultBytes"].(map[string]any); result["text"] != float64(len("tree_count")) || result["structured"] != float64(0) {
+		t.Errorf("the result sizes are logged as %v", line["resultBytes"])
 	}
 	sizes := readArgumentBytes(t, line)
 	if sizes["row"] != float64(1) || sizes["note"] != float64(len(long)+2) {

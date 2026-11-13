@@ -50,7 +50,7 @@ func (n waitingNames) GetNameMatches(ctx context.Context, _ domain.VaultID, _ st
 func newWaitingHandler(t *testing.T, source waitingSource) *Handler {
 	t.Helper()
 	failed := func(err error) { t.Errorf("a canceled search was reported as a failure of its source: %v", err) }
-	finds := search.New(nil, nil, nil, []search.Participant{source}, failed)
+	finds := search.New(nil, nil, nil, []search.Participant{source}, failed, nil)
 	return NewHandler(
 		shownVault{v: domain.Vault{ID: "v1", Name: "Garden"}},
 		search.NewFindNames(names{}, tabKinds{}),

@@ -144,7 +144,7 @@ func (c corpus) participants(model sourcefake.Embedder) []search.Participant {
 }
 
 func (c corpus) search(model sourcefake.Embedder) search.Search {
-	return search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(model), nil)
+	return search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(model), nil, nil)
 }
 
 func getModel() searchsource.Description {
@@ -307,7 +307,7 @@ func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 	var errs []error
 	unreachable := outOfReach{why: errors.New("dial tcp: network is unreachable")}
 	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(unreachable),
-		func(err error) { errs = append(errs, err) })
+		func(err error) { errs = append(errs, err) }, nil)
 
 	found, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{})
 	if err != nil {
@@ -328,7 +328,7 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 	c := newCorpus(t)
 
 	canceled := outOfReach{why: context.Canceled}
-	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(canceled), func(error) {})
+	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(canceled), func(error) {}, nil)
 
 	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)
@@ -643,7 +643,7 @@ func TestASearchByWordsAnswersWhileTheSearchByMeaningWaitsForItsSource(t *testin
 	c := newCorpus(t)
 	var errs []error
 	model := opening{asked: make(chan struct{}, 1)}
-	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(model), func(err error) { errs = append(errs, err) })
+	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(model), func(err error) { errs = append(errs, err) }, nil)
 
 	meaningCtx, cancelMeaning := context.WithCancel(t.Context())
 	meaning := make(chan error, 1)
@@ -688,8 +688,7 @@ func TestASourceThatAnswersAgainIsReportedAsAnswered(t *testing.T) {
 
 	var report []string
 	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(reconnecting{asked: new(int)}),
-		func(error) { report = append(report, "failed") })
-	finds.ReportAnswered = func() { report = append(report, "answered") }
+		func(error) { report = append(report, "failed") }, func() { report = append(report, "answered") })
 
 	for range 2 {
 		if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); err != nil {

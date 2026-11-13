@@ -22,7 +22,7 @@ import { getCreateNoteActions } from '../../lib/entries/entries'
 import type { CommandTarget } from '@/shared/model/command'
 import { GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
-export type { NameMatch, Passage, SearchHit, SearchGroup, ResultChoice, SearchDeps }
+export type { NameMatch, SearchHit, SearchGroup, ResultChoice, SearchDeps }
 
 /** The text a palette group shows when it is empty. */
 export interface EmptyWords {

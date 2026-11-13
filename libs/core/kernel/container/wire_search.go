@@ -54,7 +54,7 @@ func IndexTexts(c Config, db *Index, v domain.Vault) (filetext.Index, error) {
 
 // NewSearch is the search a question is answered by, put together the one way.
 func NewSearch(c Config, db *Index, asking searchsourceport.Source, errorHandler func(error)) searchusecase.Search {
-	return newSearch(searchOf(c), db, asking, errorHandler)
+	return newSearch(searchOf(c), db, asking, errorHandler, nil)
 }
 
 // coreFolder is the folder of a vault's store that holds the core's own files.
@@ -163,8 +163,8 @@ func indexTexts(
 	return index, nil
 }
 
-func newSearch(c searchWiring, db *Index, asking searchsourceport.Source, errorHandler func(error)) searchusecase.Search {
-	return newSearchOver(c, db.ChunkSearch(), getParticipants(db, asking), errorHandler)
+func newSearch(c searchWiring, db *Index, asking searchsourceport.Source, errorHandler func(error), reportAnswered func()) searchusecase.Search {
+	return newSearchOver(c, db.ChunkSearch(), getParticipants(db, asking), errorHandler, reportAnswered)
 }
 
 func getParticipants(db *Index, source searchsourceport.Source) []searchusecase.Participant {
@@ -174,8 +174,8 @@ func getParticipants(db *Index, source searchsourceport.Source) []searchusecase.
 	return []searchusecase.Participant{searchusecase.NewSource(source, db.ChunkSearch())}
 }
 
-func newSearchOver(c searchWiring, passages sourceport.PassageQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
-	searching := searchusecase.New(passages, c.VaultReaders, c.TextReaders, sources, errorHandler)
+func newSearchOver(c searchWiring, passages sourceport.PassageQueries, sources []searchusecase.Participant, errorHandler func(error), reportAnswered func()) searchusecase.Search {
+	searching := searchusecase.New(passages, c.VaultReaders, c.TextReaders, sources, errorHandler, reportAnswered)
 	if workers := c.ResolvedCompute.Workers; workers > 0 {
 		searching.Extractors = workers
 	}
@@ -194,7 +194,7 @@ func setPluginSearch(c searchWiring, db *Index, source searchsourceport.Source, 
 		Progress: db.ChunkVectors(),
 		Stats:    searchusecase.NewStats(db.ChunkVectors(), c.Clock),
 		Policy:   newFloorPolicy(db, source, errorHandler),
-		Passages: searchusecase.NewSearchPassages(newSearch(c, db, source, errorHandler)),
+		Passages: searchusecase.NewSearchPassages(newSearch(c, db, source, errorHandler, nil)),
 	}
 	if source != nil {
 		access.Source = source

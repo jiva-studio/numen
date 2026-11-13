@@ -150,7 +150,7 @@ func (s *session) openIndexedSession(
 	// No embedder: a test uses no model, so a query is answered by words alone.
 	indexed.Search = cli.Search{
 		Search: search.NewByName(find, preparing(search.New(db.ChunkSearch(), vaultreader.Readers{Options: vaultOptions},
-			testsupport.Texts{Readers: vaultreader.Readers{Options: vaultOptions}}, nil, options.ErrorHandler))),
+			testsupport.Texts{Readers: vaultreader.Readers{Options: vaultOptions}}, nil, options.ErrorHandler, nil))),
 	}
 	indexed.Links = query.NewShowLinksByName(find, query.NewShowLinks(db.NoteQueries()))
 	indexed.Problems = vaults.NewGetProblemsByName(find, vaults.NewGetProblems(check.Standard(db.NoteProblems())))

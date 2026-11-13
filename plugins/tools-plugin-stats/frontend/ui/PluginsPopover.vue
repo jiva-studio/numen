@@ -97,7 +97,11 @@ function onToggleHolders(id: string) {
           <dd v-if="row.holders.length === 0" class="plugin-popover__holders-value">
             {{ words.notHeld }}
           </dd>
-          <dd v-for="(holder, index) in row.holders" :key="index" class="plugin-popover__holders-value">
+          <dd
+            v-for="(holder, index) in row.holders"
+            :key="index"
+            class="plugin-popover__holders-value"
+          >
             {{ holder }}
           </dd>
         </dl>

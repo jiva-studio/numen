@@ -96,17 +96,16 @@ type VaultPreparing = func(ctx context.Context, v domain.Vault) (Search, error)
 // Search answers a query within one vault. Without a search source only the participants of the core run.
 // Extractors is how many sources are extracted at once; the default holds where it is not positive.
 type Search struct {
-	find         VaultFinding
-	prepare      VaultPreparing
-	words        Participant
-	names        Participant
-	sources      []Participant
-	readers      vaultport.VaultReaders
-	texts        textdomain.Readers
-	errorHandler window.ErrorHandler
-	Extractors   int
-	// ReportAnswered is called each time a search source answers; nil calls no one.
-	ReportAnswered func()
+	find           VaultFinding
+	prepare        VaultPreparing
+	words          Participant
+	names          Participant
+	sources        []Participant
+	readers        vaultport.VaultReaders
+	texts          textdomain.Readers
+	errorHandler   window.ErrorHandler
+	Extractors     int
+	reportAnswered func()
 }
 
 // NewByName creates a Search that resolves the vault and prepares the search over it.
@@ -138,18 +137,20 @@ func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p P
 // No source means the installation has none, and the participants of the core answer alone.
 // A nil `texts` means only notes return their text.
 // `errorHandler` receives the error of a search source that could not answer; nil ignores such errors.
-func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textdomain.Readers, sources []Participant, errorHandler window.ErrorHandler) Search {
+// `reportAnswered` is called each time a search source answers; nil calls no one.
+func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textdomain.Readers, sources []Participant, errorHandler window.ErrorHandler, reportAnswered func()) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}
 	return Search{
-		words:        NewWords(passages),
-		names:        NewNames(passages),
-		sources:      sources,
-		readers:      readers,
-		texts:        texts,
-		errorHandler: errorHandler,
-		Extractors:   defaultExtractors,
+		words:          NewWords(passages),
+		names:          NewNames(passages),
+		sources:        sources,
+		readers:        readers,
+		texts:          texts,
+		errorHandler:   errorHandler,
+		Extractors:     defaultExtractors,
+		reportAnswered: reportAnswered,
 	}
 }
 
@@ -227,8 +228,8 @@ func (u Search) rank(ctx context.Context, v domain.Vault, one asked, q Query) (*
 	ranking, err := one.participant.Rank(ctx, v, q)
 	switch {
 	case err == nil:
-		if one.isTolerated && u.ReportAnswered != nil {
-			u.ReportAnswered()
+		if one.isTolerated && u.reportAnswered != nil {
+			u.reportAnswered()
 		}
 		return &ranking, nil
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):

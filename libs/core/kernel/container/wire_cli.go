@@ -117,7 +117,7 @@ func prepareCLISearch(
 	}
 	embedder, why := openCLIEmbedder(r, asking, ctx)
 	reportSearchFallback(errorHandler, why)
-	return newSearch(asking.search, db, embedder, errorHandler), nil
+	return newSearch(asking.search, db, embedder, errorHandler, nil), nil
 }
 
 func reportSearchFallback(errorHandler window.ErrorHandler, err error) {

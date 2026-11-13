@@ -61,6 +61,7 @@ func writeHomeAsTilde(path, home string) string {
 	if home == "" {
 		return path
 	}
+	home = filepath.Clean(home)
 	if path == home {
 		return "~"
 	}

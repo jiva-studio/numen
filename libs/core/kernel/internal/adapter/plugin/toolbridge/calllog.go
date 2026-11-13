@@ -31,6 +31,7 @@ type callRecord struct {
 
 // callLine is the JSON line of one tool call. Duration is in nanoseconds. ArgumentBytes is the size of the
 // JSON value of each argument; UnparsedArgumentBytes is the size of arguments that are not a JSON object.
+// ResultBytes is the size of the text and of the structured value of the result.
 type callLine struct {
 	Time                  time.Time      `json:"time"`
 	Message               string         `json:"msg"`
@@ -44,8 +45,7 @@ type callLine struct {
 	UnparsedArgumentBytes *int           `json:"unparsedArgumentBytes,omitempty"`
 	Duration              time.Duration  `json:"duration"`
 	ToolError             string         `json:"toolError,omitempty"`
-	ResultTextBytes       *int           `json:"resultTextBytes,omitempty"`
-	ResultStructuredBytes *int           `json:"resultStructuredBytes,omitempty"`
+	ResultBytes           map[string]int `json:"resultBytes,omitempty"`
 	ResultIsError         *bool          `json:"resultIsError,omitempty"`
 	Error                 string         `json:"error,omitempty"`
 }
@@ -61,8 +61,9 @@ func writeCall(out io.Writer, record callRecord) {
 		line.ToolError = code.String()
 	}
 	if result := record.response.GetResult(); result != nil {
-		textBytes, structuredBytes, isError := len(result.GetText()), len(result.GetStructured()), result.GetIsError()
-		line.ResultTextBytes, line.ResultStructuredBytes, line.ResultIsError = &textBytes, &structuredBytes, &isError
+		isError := result.GetIsError()
+		line.ResultBytes = map[string]int{"text": len(result.GetText()), "structured": len(result.GetStructured())}
+		line.ResultIsError = &isError
 	}
 	if record.err != nil {
 		line.Error = record.err.Error()

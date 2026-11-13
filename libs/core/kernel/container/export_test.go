@@ -50,7 +50,7 @@ func (c Config) Embedders(ctx context.Context) (indexing, asking searchsourcepor
 }
 
 func (c Config) NewSearchOver(passages sourceport.PassageQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
-	return newSearchOver(searchOf(c), passages, sources, errorHandler)
+	return newSearchOver(searchOf(c), passages, sources, errorHandler, nil)
 }
 
 func (c Config) OpenGetSettings() *settings.Get {
