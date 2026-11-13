@@ -336,6 +336,16 @@ describe('the links of a hovered note', () => {
     )
   })
 
+  it('draws the lifted edges under every node, so what opens under a note covers them', async () => {
+    const view = createLinkedView()
+    await note(view, 'Below').trigger('pointerenter')
+
+    const stack = view.get('.plex__stack').element
+    const lifted = view.get('.plex__raised').element
+
+    expect(lifted.compareDocumentPosition(stack) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('lifts the edges of another note when the pointer moves to it', async () => {
     const view = createLinkedView()
     await note(view, 'Below').trigger('pointerenter')

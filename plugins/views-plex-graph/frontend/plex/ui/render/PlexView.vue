@@ -181,6 +181,14 @@ const getRole = (node: PlacedNode): GestureRole => {
       />
     </g>
 
+    <!-- Over the names and the other lines, and under every node, so the headings that open under a node cover them. -->
+    <g v-if="raisedLines.length" class="plex__raised" aria-hidden="true">
+      <template v-for="line in raisedLines" :key="line.key">
+        <PlexEdgeLine :line="line" is-raised />
+        <PlexEdgeTitle v-if="showEdgeLabels" :line="line" is-raised />
+      </template>
+    </g>
+
     <g v-for="node in renderedNodes" :key="node.id" class="plex__stack">
       <PlexNodeView
         :ref="holdNode(node.id)"
@@ -203,13 +211,6 @@ const getRole = (node: PlacedNode): GestureRole => {
       >
         <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
       </PlexNodeView>
-    </g>
-
-    <g v-if="raisedLines.length" class="plex__raised" aria-hidden="true">
-      <template v-for="line in raisedLines" :key="line.key">
-        <PlexEdgeLine :line="line" is-raised />
-        <PlexEdgeTitle v-if="showEdgeLabels" :line="line" is-raised />
-      </template>
     </g>
 
     <PlexThread v-if="thread" class="plex__reach" :d="thread" :ghost="ghost" />
