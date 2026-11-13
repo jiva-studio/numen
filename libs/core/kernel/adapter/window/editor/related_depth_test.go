@@ -98,7 +98,7 @@ func TestDepthTwoAnswersTheNotesRelatedToEachRelatedNote(t *testing.T) {
 	if want := []string{"RELATION_CHILD Engine.md"}; !slices.Equal(itemsRelatedTo(got, "Heat.md"), want) {
 		t.Errorf("related to Heat: %v, want %v", itemsRelatedTo(got, "Heat.md"), want)
 	}
-	want := []string{"RELATION_CHILD Mirror.md", "RELATION_CHILD Optics.md", "RELATION_JUMP Cosmos.md", "RELATION_PARENT Science.md"}
+	want := []string{"RELATION_JUMP Cosmos.md", "RELATION_PARENT Science.md"}
 	if g := itemsRelatedTo(got, "Physics.md"); !slices.Equal(g, want) {
 		t.Errorf("related to Physics: %v, want %v", g, want)
 	}
@@ -112,7 +112,7 @@ func TestASiblingHasItsOwnRelatedNotesAndNoSiblings(t *testing.T) {
 
 	got := mustAskRelated(t, client, "Entropy.md", 2)
 
-	if want := []string{"RELATION_CHILD Lens.md", "RELATION_PARENT Physics.md"}; !slices.Equal(itemsRelatedTo(got, "Optics.md"), want) {
+	if want := []string{"RELATION_CHILD Lens.md"}; !slices.Equal(itemsRelatedTo(got, "Optics.md"), want) {
 		t.Errorf("related to Optics: %v, want %v", itemsRelatedTo(got, "Optics.md"), want)
 	}
 	for _, r := range got.GetRelated() {

@@ -126,6 +126,11 @@ export type ListRelatedNotesResponse = Message<"numen.v1.ListRelatedNotesRespons
   focus?: Note | undefined;
 
   /**
+   * The notes related to the focus, then at depth 2 the notes related to each of those.
+   * A note related to the focus is not repeated at depth 2, and a note is not related to
+   * itself, but one note can appear under two different related notes: `note.path` is
+   * not unique here, `(related_to, note.path)` is.
+   *
    * @generated from field: repeated numen.v1.RelatedNote related = 2;
    */
   related: RelatedNote[];
@@ -199,7 +204,8 @@ export type RelatedNote = Message<"numen.v1.RelatedNote"> & {
   tabKind: string;
 
   /**
-   * Set for RELATION_REFERENCE only.
+   * Set for RELATION_REFERENCE only. At depth 2 it is relative to `related_to`, not to
+   * the focus.
    *
    * @generated from field: numen.v1.LinkDirection direction = 8;
    */
@@ -207,7 +213,9 @@ export type RelatedNote = Message<"numen.v1.RelatedNote"> & {
 
   /**
    * The path of the related note this item belongs to, set for a note found by depth 2.
-   * `relation` is then relative to that note. Empty for a note related to the focus.
+   * `relation` and `direction` are then relative to that note, not to the focus, and
+   * no connection record joins the item: connections are of depth 1 only. The same path
+   * can be an item of several related notes. Empty for a note related to the focus.
    *
    * @generated from field: string related_to = 9;
    */
@@ -1517,7 +1525,8 @@ export const RelationSchema: GenEnum<Relation> = /*@__PURE__*/
   enumDesc(file_numen_v1_note, 0);
 
 /**
- * LinkDirection tells which note wrote a text link.
+ * LinkDirection tells which note wrote a text link. "The note in focus" is the note a
+ * related note belongs to: the focus, or `related_to` for a note found by depth 2.
  *
  * @generated from enum numen.v1.LinkDirection
  */

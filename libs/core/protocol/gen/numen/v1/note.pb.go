@@ -90,7 +90,8 @@ func (Relation) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{0}
 }
 
-// LinkDirection tells which note wrote a text link.
+// LinkDirection tells which note wrote a text link. "The note in focus" is the note a
+// related note belongs to: the focus, or `related_to` for a note found by depth 2.
 type LinkDirection int32
 
 const (
@@ -507,9 +508,13 @@ func (x *ListRelatedNotesRequest) GetDepth() uint32 {
 }
 
 type ListRelatedNotesResponse struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	Focus   *Note                  `protobuf:"bytes,1,opt,name=focus,proto3" json:"focus,omitempty"`
-	Related []*RelatedNote         `protobuf:"bytes,2,rep,name=related,proto3" json:"related,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Focus *Note                  `protobuf:"bytes,1,opt,name=focus,proto3" json:"focus,omitempty"`
+	// The notes related to the focus, then at depth 2 the notes related to each of those.
+	// A note related to the focus is not repeated at depth 2, and a note is not related to
+	// itself, but one note can appear under two different related notes: `note.path` is
+	// not unique here, `(related_to, note.path)` is.
+	Related []*RelatedNote `protobuf:"bytes,2,rep,name=related,proto3" json:"related,omitempty"`
 	// The `type` key of the frontmatter of the note in focus, so a client draws a note as
 	// what it is. Empty for an ordinary note.
 	FocusType string `protobuf:"bytes,3,opt,name=focus_type,json=focusType,proto3" json:"focus_type,omitempty"`
@@ -603,10 +608,13 @@ type RelatedNote struct {
 	// The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
 	// where none holds.
 	TabKind string `protobuf:"bytes,7,opt,name=tab_kind,json=tabKind,proto3" json:"tab_kind,omitempty"`
-	// Set for RELATION_REFERENCE only.
+	// Set for RELATION_REFERENCE only. At depth 2 it is relative to `related_to`, not to
+	// the focus.
 	Direction LinkDirection `protobuf:"varint,8,opt,name=direction,proto3,enum=numen.v1.LinkDirection" json:"direction,omitempty"`
 	// The path of the related note this item belongs to, set for a note found by depth 2.
-	// `relation` is then relative to that note. Empty for a note related to the focus.
+	// `relation` and `direction` are then relative to that note, not to the focus, and
+	// no connection record joins the item: connections are of depth 1 only. The same path
+	// can be an item of several related notes. Empty for a note related to the focus.
 	RelatedTo     string `protobuf:"bytes,9,opt,name=related_to,json=relatedTo,proto3" json:"related_to,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
