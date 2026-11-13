@@ -429,9 +429,9 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### connection
 - Is: A way to reach a service you pay for, a server you run, or an agent on this computer. It has a name, a type and an address, and may have a key. A plugin uses it in a row of its settings, with a model.
-- States: "Type unavailable" (no installed plugin provides the type), "Incomplete", "No key". A stored key reads "A key is stored. Type to replace it."
+- States: "Type unavailable" (no installed plugin provides the type), "Incomplete", "No key". A saved key shows as a mask in the field "API key"; the key itself is never shown.
 - Actions: "Add connection", "Edit", "Delete", "Remove key", "Open Connections"; on the page of a plugin: "Connection", "Model", "Reasoning", "Remove row 1".
-- Texts: page "Connections"; fields "Type", "Name", "Address", "API key"; type "OpenAI-compatible server"; "Delete connection"; "This indexes 3 notes through Name. It may cost money." (editor/src/pages/settings/words.ts, plugins/connections-llm/manifest.json).
+- Texts: page "Connections"; fields "Type", "Name", "Address", "API key"; type "OpenAI-compatible server"; "Delete connection"; question "Index the notes again?": "The vault will be indexed again: 3 notes through Name. This can take a while and may cost money.", answers "Index", "Cancel" (editor/src/pages/settings/words.ts, plugins/connections-llm/manifest.json).
 - Not: not a note connection. A key is a private value kept in the system keychain and never shown again after it is saved. A plugin that is a type of connection is "Language model services".
 
 ### row
@@ -439,7 +439,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Texts: a failed task reads "<connection name>: rate limited" when the service asks to wait.
 
 ### service
-- Is: In a scenario, a program of the test that answers in place of a language model server. It has a name and answers with a status. It is not a word of the interface.
+- Is: In a scenario, a program of the test that answers in place of a language model server. It has a name and works unless the scenario makes it busy (it asks to wait) or makes it accept only one key. It is not a word of the interface.
 
 ### plugin
 - Is: An add-on with a manifest. It gives commands, tab kinds, settings, status views, themes, note types or models.

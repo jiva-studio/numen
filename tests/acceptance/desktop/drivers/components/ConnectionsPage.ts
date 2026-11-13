@@ -40,11 +40,6 @@ export class ConnectionsPage {
     await expect(this.getDialog()).toHaveCount(0)
   }
 
-  async cancel(): Promise<void> {
-    await this.getDialog().getByRole('button', { name: 'Cancel' }).click()
-    await expect(this.getDialog()).toHaveCount(0)
-  }
-
   /** Opens the dialog that edits the connection. */
   async openEdit(panel: Locator, name: string): Promise<void> {
     await this.getRow(panel, name).click()
