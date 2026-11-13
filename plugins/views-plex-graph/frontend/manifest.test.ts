@@ -5,6 +5,11 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import type { JsonValue } from '@numen/plugin-sdk'
+import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { readLook } from './model/look'
+import { readNames } from './model/names'
+import { readNesting } from './model/nesting'
 
 const manifest = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
@@ -184,5 +189,73 @@ describe('the look settings of the plex', () => {
       palette: true,
       icon: 'waypoints',
     })
+  })
+})
+
+describe('the settings the code reads', () => {
+  interface Setting {
+    key: string
+    type: string
+    default: unknown
+    min?: number
+    max?: number
+    options?: readonly { value: string }[]
+  }
+  const { settings } = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
+  ) as { settings: readonly Setting[] }
+
+  const createContext = (initialSettings: Record<string, JsonValue> = {}) =>
+    createMockPluginContext({ pluginId: 'md.numen.views.plex.graph', initialSettings })
+
+  /** The value the code holds for every manifest key, read from a context with these settings. */
+  const readValues = (initialSettings: Record<string, JsonValue>): Record<string, unknown> => {
+    const context = createContext(initialSettings)
+    const look = readLook(context)
+    const names = readNames(context)
+    const nesting = readNesting(context)
+    return {
+      ...Object.fromEntries(Object.entries(look).map(([key, ref]) => [key, ref.value])),
+      showNames: names.showNames.value,
+      namesPerNote: names.namesPerNote.value,
+      nestHeadings: nesting.isNesting.value,
+      headingLimit: nesting.headings.value,
+    }
+  }
+
+  it('are all read by the code, and the code reads no other', () => {
+    expect(Object.keys(readValues({})).sort()).toStrictEqual(settings.map((one) => one.key).sort())
+  })
+
+  it('start at the default the manifest declares', () => {
+    const values = readValues({})
+
+    expect(settings.map((one) => [one.key, values[one.key]])).toStrictEqual(
+      settings.map((one) => [one.key, one.default]),
+    )
+  })
+
+  it('take the minimum and the maximum the manifest declares and no value beyond them', () => {
+    const ranges = settings.filter((one) => one.type === 'range')
+    const getBeyond = (offset: (one: Setting) => number) =>
+      readValues(Object.fromEntries(ranges.map((one) => [one.key, offset(one)])))
+    const below = getBeyond((one) => (one.min ?? 0) - 1000)
+    const above = getBeyond((one) => (one.max ?? 0) + 1000)
+
+    expect(ranges.map((one) => [one.key, below[one.key], above[one.key]])).toStrictEqual(
+      ranges.map((one) => [one.key, one.min, one.max]),
+    )
+  })
+
+  it('take every option of an enum the manifest declares and fall back to the default for another value', () => {
+    const enums = settings.filter((one) => one.type === 'enum')
+
+    for (const one of enums) {
+      const values = (one.options ?? []).map((option) => option.value)
+      const taken = values.map((value) => readValues({ [one.key]: value })[one.key])
+
+      expect(taken).toStrictEqual(values)
+      expect(readValues({ [one.key]: 'no such option' })[one.key]).toBe(one.default)
+    }
   })
 })

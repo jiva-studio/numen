@@ -86,11 +86,11 @@ export interface RelatedNote { ...; readonly direction?: LinkDirection }  // pre
   "options": [
     { "value": "off", "title": "Off" },
     { "value": "outgoing", "title": "Outgoing" },
-    { "value": "both", "title": "Outgoing and incoming" },
-    { "value": "incoming", "title": "Incoming only" } ] }
+    { "value": "incoming", "title": "Incoming" },
+    { "value": "both", "title": "Both" } ] }
 ```
 
-Placed after `noteRoom` (end of the list). Read in `model/look.ts` as `PlexLook.references: Readonly<Ref<ReferenceMode>>` with `type ReferenceMode = 'off' | 'outgoing' | 'incoming' | 'both'`; a stored value that is none of the four falls back to `both`.
+Placed first in the list (the order of the options and of the list is that of the manifest). Read in `model/look.ts` as `PlexLook.references: Readonly<Ref<ReferenceMode>>` with `type ReferenceMode = 'off' | 'outgoing' | 'incoming' | 'both'`; a stored value that is none of the four falls back to `both`.
 
 ## 3. Kernel behavior (`libs/core/kernel/usecase/note/query/related_notes.go`)
 
@@ -126,7 +126,7 @@ For each admitted reference the picture adds one edge `{ from: <focus token>, to
 ### 5.4 Look
 
 - Hue: token `--numen-relation-reference`, added to `libs/ui/components/src/shared/tokens/tokens.css` (light-dark pair) and to every theme of `plugins/themes-presets/themes/*.css` that defines `--numen-relation-sibling` (12 files), and to the table in `docs/themes.md`. The hue differs from the other four in each theme (taken from the theme's own palette).
-- Background: a pill of a reference is filled with the raised surface mixed with its hue (`color-mix(in oklab, var(--numen-raised), var(--relation-hue) 12%)`, hover as the other pills), set in `PlexNodeView.vue` under `.plex__node--reference`. The outline keeps the hue as for every relation. With `showPills` off the dot has the hue as for every relation.
+- Background: a pill of a reference is filled with the raised surface mixed with its hue (`color-mix(in oklab, var(--numen-raised), var(--relation-hue) 12%)`, hover as the other pills), set in `PlexNodeView.vue` under `.plex__node--reference`. The outline keeps the hue as for every relation. With `showPills` off the title has no dot (the dot was removed, #1840 amendment 2).
 - `apps/landing` demo has its own plex and is not touched.
 
 ## 6. Blast radius
@@ -154,7 +154,7 @@ For each admitted reference the picture adds one edge `{ from: <focus token>, to
 | `plugins/views-plex-graph/frontend/plex/fixtures` | `build.ts`, `graphs.ts` | Modify: `reference` count and a `withReferences` fixture | tests |
 | `apps/mobile/bind` | `mobile_test.go` | Check only | see 8 |
 | `plugins/views-plex-graph/frontend/plex/ui` | `Plex.stories.ts`, `PlexMap.stories.ts` | Modify: story with references | Storybook |
-| e2e `tests/e2e/desktop/tests/plugins/views.plex.graph` | new spec | Create (offline, local vault, invented notes) | - |
+| `features/editor/plex` | `plex-references.feature` | Create (offline, local vault, invented notes) | acceptance run |
 
 ## 7. Negative invariants
 
@@ -259,7 +259,7 @@ For each admitted reference the picture adds one edge `{ from: <focus token>, to
 - **Then** the reference nodes are in the DOM with `data-relation`/class `reference`, are pressable (a press emits the activate event for the note), the status reads "N references not shown" when some are left out in a small window, and one `.plex__edge-arrow` is drawn per reference edge. The look of the fill is not asserted.
 
 ### AC-22: The end of the path
-- **Given** a vault of invented notes served by the offline e2e harness, one note with `[[...]]` links to two notes and a third note linking to it
+- **Given** a vault of invented notes served by the offline acceptance harness (`features/editor/plex/plex-references.feature`), one note with `[[...]]` links to two notes and a third note linking to it
 - **When** the plex of that note is opened
 - **Then** three reference nodes are shown; with the setting `outgoing` two; with `off` none.
 
@@ -268,7 +268,7 @@ For each admitted reference the picture adds one edge `{ from: <focus token>, to
 - Go: `libs/note/domain/note_graph_test.go` (rank order lists reference after sibling), `usecase/note/related_notes_test.go` and `related_notes_graph_test.go` (AC-1 to AC-7), `adapter/window/editor/note/wire_test.go` (AC-8), a new window test (AC-9), `apps/mobile/bind/mobile_test.go` (section 8).
 - Vitest: `noteWords.test.ts` (AC-10), `setting-keys.test.ts` and `manifest.test.ts` (AC-11; the list of settings gains `references`), `picture.test.ts` (AC-12, 13, 15), `usePlexTab.test.ts` (AC-14), `relation.test.ts` (AC-19), `arrange/edges/drop.test.ts` and `ui/drag.test.ts`, `ui/gesture.test.ts` (AC-20), `arrange.test.ts` or `clusters.test.ts` (AC-16, 17), `look.test.ts` (AC-18, unchanged), fixtures tests `build.test.ts` (the `reference` count).
 - Stories: `Plex.stories.ts` (AC-21), `PlexMap.stories.ts` re-run; `PlexNodeView.test.ts` gains the reference in its relation list (it asserts the hue variable by relation name).
-- e2e: one spec under `views.plex.graph` (AC-22).
+- Acceptance: `features/editor/plex/plex-references.feature` (AC-22), which replaces the e2e spec.
 - Nothing existing changes an expectation.
 
 ## 11. Decisions of the owner (2026-11-13)
@@ -286,3 +286,6 @@ For each admitted reference the picture adds one edge `{ from: <focus token>, to
 1. The options of the references setting are titled Off, Outgoing, Incoming and Both, in that order; the values are `off`, `outgoing`, `incoming` and `both`, `both` by default.
 2. The line from the focus to a reference is no connection: a click on it, or its context menu, opens no link inspector, because no record joins the two notes. Every other line is unchanged.
 3. `docs/themes.md` counts the tokens a theme sets as forty-five, the number of tokens its tables list, all declared in `tokens.css`; `--numen-relation-reference` is one of them.
+4. AC-22 is the Gherkin acceptance feature `features/editor/plex/plex-references.feature`; no e2e spec under `tests/e2e/.../views.plex.graph` is made.
+5. The plugin version is raised one step over main (`manifest.json` and `package.json` of `views-plex-graph`).
+6. The glossary entry "reference note" names the options Off, Outgoing, Incoming and Both, as the manifest and amendment 1 do.

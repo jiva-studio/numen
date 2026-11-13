@@ -250,7 +250,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Not: "graph" and "map". A node is a note in the plex.
 
 ### reference note
-- Is: A note in the plex that the text of the focus note links to with a wikilink, or that links to the focus note in its text. Its node is read as "<title>, reference"; its line has an arrow at the end the link points to, and the line is read as "Line from <from> to <to>, arrow to <title>". The setting "References" chooses which are shown: "Off", "Outgoing", "Outgoing and incoming", "Incoming only".
+- Is: A note in the plex that the text of the focus note links to with a wikilink, or that links to the focus note in its text. Its node is read as "<title>, reference"; its line has an arrow at the end the link points to, and the line is read as "Line from <from> to <to>, arrow to <title>". The setting "References" chooses which are shown: "Off", "Outgoing", "Incoming", "Both".
 - Not: not a parent, child or jump; those come from the `links` of the frontmatter.
 
 ### name under a note

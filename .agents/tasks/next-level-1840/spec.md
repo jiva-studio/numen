@@ -50,12 +50,12 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 
 - `manifest.json`: two settings after `headingLimit`:
   - `showNames`: boolean, title "Show notes related to related notes", description "Under each related note, the names of the notes it is related to.", default `true`, `palette: true`, `icon: "waypoints"`.
-  - `namesPerNote`: number, title "Names per note", description "Most names shown under and over a related note.", default `6`, `min` 1, `max` 12, `step` 1.
+  - `namesPerNote`: range, title "Names per note", description "Most names shown under and over a related note.", default `6`, `min` 1, `max` 12, `step` 1.
 - `frontend/model/names.ts` (create, beside `nesting.ts`): `SHOW_NAMES = true`, `NAMES_PER_NOTE = 6`, `readNames(context): { showNames: Ref<boolean>; namesPerNote: Ref<number> }`, keys read in camelCase as `readNesting` does. A value outside min/max or not a number falls back to the default.
 - `frontend/model/usePlexView.ts`: `RelatedNoteQueries.listRelatedNotes(path, depth)`; the tab asks for depth 2 when `showNames` is on, depth 1 otherwise, and asks again when the setting changes. `areNoteGraphsEqual` compares `relatedTo` too.
-- `frontend/lib/picture.ts`:
-  - `convertNoteGraph` skips every `related` item that has `relatedTo`: they are never nodes, and `getNoteTypes` / `getTabKinds` keep reading all items (a name may be drawn with its type later; no UI uses it now).
-  - `getNames(noteGraph, limit, token): ReadonlyMap<string, PlexNames>` where `PlexNames = { above: PlexName[]; below: PlexName[] }` and `PlexName = { id: string; title: string }` (`id` is the `token` of the path, the same function that names nodes). For each related note: its items ordered parents, children, jumps, references (arrival order inside a relation), cut to `limit` in that order, then split: parents into `above`, the rest into `below`. A note with none has no entry.
+- `frontend/lib/picture.ts` and `frontend/lib/names.ts`:
+  - `convertNoteGraph` (`picture.ts`) skips every `related` item that has `relatedTo`: they are never nodes, and `getNoteTypes` / `getTabKinds` keep reading all items (a name may be drawn with its type later; no UI uses it now).
+  - `getNames(noteGraph, limit, token, references): ReadonlyMap<string, PlexNames>` (`lib/names.ts`) where `PlexNames = { above: PlexName[]; below: PlexName[] }` and `PlexName = { id: string; title: string }` (`id` is `name:<path>`, made by `getNameToken` and read back by `getNamePath`, both in `lib/names.ts`; a name has an id of its own so that a click reaches its note whether or not that note is a node). For each related note: its items ordered parents, children, jumps, references (arrival order inside a relation), cut to `limit` in that order, then split: parents into `above`, the rest into `below`. A note with none has no entry.
 - `frontend/types.ts`: `PlexName`, `PlexNames` (plex-side types, no note concept).
 
 ### 1.5 Plex (`plugins/views-plex-graph/frontend/plex`, placement: nm-place-plugin, nm-place-window for the shared `@numen/ui` parts)
@@ -66,7 +66,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 - `lib/arrange/arrange.ts` / `layout/placement.ts`: `ArrangeInput.room?: (node: PlexNode) => NodeRoom` with `NodeRoom = { top: number; bottom: number; width: number }`, the extra space of a note over and under its pill and the widest row, supplied by the caller as numbers like `measure`. Absent, or all zero, nothing changes. `PlacementContext` gains `room: (node: PlexNode) => NodeRoom`.
   - The footprint of a node is `{ width: max(pill width, room.width), height: pill height + room.top + room.bottom }` plus the existing `room` setting (#1836, `applyRoom`) as `noteMargin` of the prototype. `clusters` and `findFreeSpot` place, test `isFree`, index and measure the footprint, so boxes of different heights are supported: the cell, `reach` and `getReach` use the footprint of the node (and of the first of its relation), not `options.nodeSize.height`.
   - The returned `PlacedNode` is the pill: `width` and `height` as today, `y` = footprint center + `(room.top − room.bottom)/2`. The frame, edges (they end at the pill), drag, drop and `getExtent` read pills as before.
-  - Admission, crowding and spacing test the footprint against the window. A frame that has no room reservations is byte-identical to the one of #1837.
+  - Admission and spacing test the footprint (pill plus names) against the window; crowding is measured without the names. A frame that has no room reservations is byte-identical to the one of #1837.
 - `ui`: `Plex.vue` takes `names?: (id: string) => PlexNames` beside `headings` and `showNames`, measures names with the existing text measuring (`model/sizing/measure.ts`) at a font size smaller than a title (`NAME_SCALE = 0.75` of the title size, a constant), builds `room` for `arrangePlex`, and emits `chooseName(id)` which `usePlexTab` handles as `activate` does for a node (move the focus to that note). Names render as `PlexNodeNames.vue` (create, `ui/render/`): plain text in `--numen-ink-faint` (or the closest existing token), each name a button with no pill, no outline, no heading list; opacity `NAME_OPACITY = 0.7` at rest, `1` while the pointer is over its note's pill or any of its names (the "brought forward"), `cursor: pointer`. Names follow the pill during the move animation (same transition as the pill). The focus size scales the focus pill only; names keep their size on every note.
 - The line to a note may cross its names: no routing change; names carry `pointer-events` only on the text.
 - `Plex.stories.ts`, `PlexNodeView.stories.ts`: a story with names (`WithNames`) and the `names` / `showNames` args.
@@ -88,13 +88,13 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 | `apps/desktop/editor/src/features/plugin-host/model` | `pluginServices.ts`, `pluginServices.test.ts` | Modify | plugins |
 | `plugins/views-plex-graph` | `manifest.json`, `README.md` | Modify (two settings) | settings UI, `frontend/manifest.test.ts`, `frontend/index.test.ts` |
 | `plugins/views-plex-graph/frontend/model` | `names.ts` (+test), `usePlexView.ts`, `usePlexTab.ts`, `plexOptions.ts` untouched | Create / Modify | `ui` |
-| `plugins/views-plex-graph/frontend/lib` | `picture.ts`, `picture.test.ts` | Modify | `usePlexView`, `usePlexTab` |
+| `plugins/views-plex-graph/frontend/lib` | `picture.ts`, `picture.test.ts`, `names.ts`, `names.test.ts` | Modify | `usePlexView`, `usePlexTab` |
 | `plugins/views-plex-graph/frontend` | `types.ts`, `index.ts` | Modify | all of the plugin |
 | `plugins/views-plex-graph/frontend/plex/lib` | `names.ts` (+test) | Create | `Plex.vue` |
 | `plugins/views-plex-graph/frontend/plex/lib/arrange` | `arrange.ts`, `layout/placement.ts`, `layout/clusters.ts`, `layout/freeSpot.ts`, `layout/admission.ts`, `layout/crowding.ts`, `layout/spacing.ts` | Modify (footprint) | `fixtures/ring.ts`, `arrange.test.ts`, stories |
 | `plugins/views-plex-graph/frontend/plex/ui` | `Plex.vue`, `props.ts`, `render/PlexNodeNames.vue` (create), `render/PlexNodeView.vue` | Modify / Create | `PlexView.vue`, stories |
 | `apps/docs/src/content/docs`, `docs/settings.md` | `plex.mdx`, `reference.md`, `settings.md` | Modify (two settings) | users |
-| `tests/e2e/desktop/tests/plugins/views.plex.graph` | one spec | Create | CI |
+| `features/editor/plex` | `plex-names.feature` | Create | acceptance run |
 
 `apps/landing` keeps its own plex demo and is not touched. The prototype lab folder stays until its own change.
 
@@ -150,13 +150,13 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 
 ### Plugin
 
-**AC-16: The settings.** `manifest.json` declares `showNames` (boolean, default true) and `namesPerNote` (number, default 6, min 1, max 12); `readNames` reads both from camelCase keys, ignores snake_case keys, and falls back to the defaults for an out-of-range value.
+**AC-16: The settings.** `manifest.json` declares `showNames` (boolean, default true) and `namesPerNote` (range, default 6, min 1, max 12); `readNames` reads both from camelCase keys, ignores snake_case keys, and falls back to the defaults for an out-of-range value.
 
 **AC-17: Names are ordered and limited.** Given a related note with 3 parents, 4 children, 2 jumps and (when #1839 has landed) 2 references, `getNames` with limit 6 returns the 3 parents in `above` and the first 3 children in `below`; limit 12 returns all, in the order parents, children, jumps, references; limit 1 returns the first parent only.
 
 **AC-18: Names are not nodes.** `convertNoteGraph` of a response with items of depth 2 returns the same nodes and edges as for depth 1; no node or edge has an id of an item that is not otherwise related to the focus.
 
-**AC-19: A name is the id of its note.** `getNames` ids equal `token(path)`, so a click resolves to the note.
+**AC-19: A name is the id of its note.** `getNames` ids equal `getNameToken(path)` (`name:<path>`), and `getNamePath` gives the path back, so a click resolves to the note.
 
 **AC-20: The depth follows the setting.** With `showNames` on the tab asks for depth 2; turning it off asks again with depth 1 and the names go; turning it on shows them again; a change of `namesPerNote` changes the names without a new request.
 
@@ -192,7 +192,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 
 **AC-34: Limit.** With `namesPerNote` 2 a note with five relations shows two names.
 
-**AC-35: e2e.** In the desktop e2e (offline, local vault): the plex of a note with a child that has a child shows the grandchild's name under the child; clicking it moves the focus.
+**AC-35: Acceptance.** In the Gherkin acceptance feature `features/editor/plex/plex-names.feature` (offline, local vault; it replaces the e2e spec): the plex of a note with a child that has a child shows the grandchild's name under the child; clicking it moves the focus.
 
 ## 5. Tests and Stories to Change
 
@@ -207,7 +207,7 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 - `plugins/views-plex-graph/frontend/plex/lib/names.test.ts` (new): wrapping, order of rows, room, placement over and under the pill, cut names.
 - `plex/lib/arrange/arrange.test.ts`, `layout/clusters.test.ts`, `layout/freeSpot.test.ts`, `layout/admission.test.ts`, `layout/crowding.test.ts`, `layout/spacing.test.ts`, `clusters.acceptance.test.ts`: AC-22 to AC-29 (new cases); existing cases must stay unchanged (AC-22). `fixtures/build.ts` gains a way to give nodes names and `fixtures/ring.ts` implements the new `PlacementContext.room`.
 - `plex/ui/Plex.stories.ts`, `PlexMap.stories.ts`, `render/PlexNodeView.stories.ts`, `PlexNodeView.test.ts`, `Plex.test.ts`: AC-30 to AC-34. Run in Chromium and WebKit, one project at a time. No story asserts a pixel or a color value.
-- `tests/e2e/desktop/tests/plugins/views.plex.graph/`: AC-35 (new spec); the others re-run only.
+- `features/editor/plex/*.feature` and `tests/acceptance`: AC-35 (the Gherkin acceptance features replace the e2e specs of the plex).
 - Docs: `apps/docs/src/content/docs/plex.mdx`, `reference.md`, `docs/settings.md`: the two settings.
 
 ## 6. Order of Work
@@ -235,8 +235,8 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 3. Names opacity: two range settings, see decision 7.
 4. The headings that open under a note are drawn over the names and lines of all notes: the names of every note are drawn in one layer under all the nodes, and the headings reserve no layout room.
 5. Every number setting with a range is declared `range`, which the settings page draws as a slider with its value.
-6. Focus size scales the title text, icon, gap and padding of the focus note together with its pill, with the pill on and off.
-7. The manifest lists the settings in groups (notes shown, names, pill, lines, motion and spacing); the settings page has no section headers.
+6. Focus size scales the title text, icon, gap and padding of the focus note together with its pill, with the pill on and off. Its description reads "its pill, title and icon".
+7. The manifest lists the settings in this order: references, nestHeadings, headingLimit, showNames, namesPerNote, namesOpacity, focusedNamesOpacity, showPills, pillPaddingSides, pillPaddingEnds, focusSize, lineThickness, outlineThickness, lineCurvature, highlightLinks, animationLength, noteRoom. Groups were not built: only the order; the settings page has no section headers.
 8. Names are for the pointer alone. A name has no `tabindex`, no key handler, no focus handler and no focus outline, so the Tab key never reaches one and no key chooses one. `role="button"` and `aria-label` stay on a name as the way tests find it; no screen reader support is built (supersedes AC-30 "buttons" for the keyboard, and AC-31 for a key).
 9. A name is clickable only while it is forward. A click on a name whose note is not attended to emits nothing. The pointer over the note, or over the room of its names (the row of each name, drawn or not), brings the names forward, and then a click chooses. The layout keeps the room for names at a resting opacity of 0; they appear on hover (AC-32).
 10. `focusedNamesOpacity` is never 0: its range is 0.05 to 1, step 0.05, default 1, and a stored value below 0.05 is read as 0.05. `namesOpacity` keeps 0 to 1, default 0.7, and 0 hides the names at rest (decision 7 is changed for the focused setting only).
@@ -250,3 +250,13 @@ The response keeps `focus`, `related` (first the notes related to the focus, in 
 18. `docs/settings.md`, `apps/docs` `plex.mdx` and `reference.md` state the references setting, the two opacity ranges and that names are for the pointer.
 
 19. Setting `highlightLinks` (title "Highlight links of a hovered note", boolean, default on, in the lines group after `lineCurvature`): while the pointer is over a note, every edge of the frame that joins it is drawn in the raised state of a hovered edge (`PlexView` prop `highlightLinks`, `useEdgeLines` parameter `attention`). The owner chose the default on. No edge is raised while the setting is off, while a connection is dragged out of a note, while a note is dragged onto the plex from outside, or while the plex moves (`Plex` passes `highlightLinks && !isMoving`). The raised state is removed when the pointer leaves the note, when the note is not in the frame any more and when the note is unmounted (the attention reset). Edges of names are not raised.
+
+20. Decisions of the owner, final (2026-11-13):
+    - The names of the second level include notes already drawn; only the focus is left out. A sibling owns names (its parents, children, jumps and references) but has no siblings of its own.
+    - Names are for the pointer alone. `role="button"` and `aria-label` stay on a name as the way tests find it. A name of a note that is not forward cannot be clicked.
+    - `focusedNamesOpacity` has a minimum of 0.05; `namesOpacity` may be 0. The room of the names is reserved in the layout at opacity 0, as at any other opacity.
+    - A click on the line to a reference opens no link inspector: no record joins the two notes.
+    - Hovering a note highlights the lines that join it by its own setting, `highlightLinks`, on by default (19).
+    - The headings that open under a note take the text size of a note at rest and do not follow the focus size; their backdrop is nearly opaque; they are drawn over the lifted lines (4). One note has its headings open at a time: a note is closed as soon as another is attended.
+    - When the pill is off the handle lies outside the text of the note, beside its box, and not on its edge.
+    - The menu of a note offers "Open preset" only on a preset note (`plugins/views-flashcards-studio/manifest.json`, condition on the `plexGraph.context` entry).
