@@ -6,7 +6,7 @@
  */
 import { nextTick, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
-import { SettingsToolbar } from '@numen/plugin-manager'
+import { SettingsPage } from '@numen/plugin-manager'
 import { Button, runInBackground } from '@numen/ui'
 import type { ConnectionInfo } from '@/entities/connection'
 import type { InstallationConnections } from '../../types'
@@ -83,8 +83,8 @@ function focusAfterDelete(at: number): void {
 </script>
 
 <template>
-  <div class="connections-page">
-    <SettingsToolbar :path="[words.settings, words.connections]" @back="onBack" @open="onBack">
+  <SettingsPage :path="[words.settings, words.connections]" @back="onBack" @open="onBack">
+    <template #actions>
       <Button
         ref="addButton"
         variant="ghost"
@@ -95,54 +95,55 @@ function focusAfterDelete(at: number): void {
         <Plus :size="14" aria-hidden="true" />
         {{ words.connectionAdd }}
       </Button>
-    </SettingsToolbar>
+    </template>
+    <div class="connections-page">
+      <div
+        v-if="page.connections.value.length > 0"
+        ref="list"
+        class="settings-card connections-page__list"
+        role="list"
+      >
+        <ConnectionRow
+          v-for="connection in page.connections.value"
+          :key="connection.id"
+          :connection="connection"
+          :type="page.types.value.find((one) => one.id === connection.typeId)"
+          @edit="(opener) => onEdit(connection, opener)"
+        />
+      </div>
+      <div v-else class="connections-page__empty">
+        <p class="connections-page__empty-title">{{ words.connectionsEmpty }}</p>
+        <p class="connections-page__empty-detail">
+          {{ page.hasType.value ? words.connectionsEmptyDetail : words.connectionsNoTypes }}
+        </p>
+      </div>
 
-    <div
-      v-if="page.connections.value.length > 0"
-      ref="list"
-      class="settings-card connections-page__list"
-      role="list"
-    >
-      <ConnectionRow
-        v-for="connection in page.connections.value"
-        :key="connection.id"
-        :connection="connection"
-        :type="page.types.value.find((one) => one.id === connection.typeId)"
-        @edit="(opener) => onEdit(connection, opener)"
+      <p v-if="page.hasUnavailable.value" class="connections-page__legend">
+        {{ words.connectionUnavailableDetail }}
+      </p>
+
+      <ConnectionDialog
+        v-if="dialog.isOpen.value"
+        :types="page.types.value"
+        v-bind="dialog.editing.value ? { connection: dialog.editing.value } : {}"
+        :create="page.create"
+        :update="page.update"
+        @delete="onAskDelete"
+        @close="onCloseDialog"
+      />
+
+      <ConfirmDialog
+        v-if="deletion.target.value"
+        tone="danger"
+        :text="deletion.text.value"
+        :label="words.connectionDelete"
+        :confirm-text="words.connectionDeleteConfirm"
+        :cancel-text="words.connectionDeleteCancel"
+        @confirm="onConfirmDelete"
+        @cancel="onCancelDelete"
       />
     </div>
-    <div v-else class="connections-page__empty">
-      <p class="connections-page__empty-title">{{ words.connectionsEmpty }}</p>
-      <p class="connections-page__empty-detail">
-        {{ page.hasType.value ? words.connectionsEmptyDetail : words.connectionsNoTypes }}
-      </p>
-    </div>
-
-    <p v-if="page.hasUnavailable.value" class="connections-page__legend">
-      {{ words.connectionUnavailableDetail }}
-    </p>
-
-    <ConnectionDialog
-      v-if="dialog.isOpen.value"
-      :types="page.types.value"
-      v-bind="dialog.editing.value ? { connection: dialog.editing.value } : {}"
-      :create="page.create"
-      :update="page.update"
-      @delete="onAskDelete"
-      @close="onCloseDialog"
-    />
-
-    <ConfirmDialog
-      v-if="deletion.target.value"
-      tone="danger"
-      :text="deletion.text.value"
-      :label="words.connectionDelete"
-      :confirm-text="words.connectionDeleteConfirm"
-      :cancel-text="words.connectionDeleteCancel"
-      @confirm="onConfirmDelete"
-      @cancel="onCancelDelete"
-    />
-  </div>
+  </SettingsPage>
 </template>
 
 <style scoped>

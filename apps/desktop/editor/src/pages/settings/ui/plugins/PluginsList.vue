@@ -5,7 +5,7 @@
  */
 import {
   PluginsList as PluginsListView,
-  SettingsToolbar,
+  SettingsPage,
   type PluginHealth,
 } from '@numen/plugin-manager'
 import { usePluginsList } from '../../model/usePluginsList'
@@ -49,17 +49,18 @@ function onSelectPlugin(pluginId: string): void {
 </script>
 
 <template>
-  <div class="plugins-page">
-    <SettingsToolbar :path="[words.settings]" />
-    <PluginsListView
-      v-model:query="searchQuery"
-      :plugins="managed"
-      :enabled="enabled"
-      :health="props.health ?? {}"
-      @select-plugin="onSelectPlugin"
-      @toggle-enabled="onTogglePlugin"
-    />
-  </div>
+  <SettingsPage :path="[words.settings]">
+    <div class="plugins-page">
+      <PluginsListView
+        v-model:query="searchQuery"
+        :plugins="managed"
+        :enabled="enabled"
+        :health="props.health ?? {}"
+        @select-plugin="onSelectPlugin"
+        @toggle-enabled="onTogglePlugin"
+      />
+    </div>
+  </SettingsPage>
 </template>
 
 <style scoped>

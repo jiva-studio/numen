@@ -2,7 +2,7 @@
 /**
  * The bar at the top of a settings page: a back button and the path from Settings to the page on the
  * left, the actions of the page on the right. Each earlier segment of the path opens its level. The
- * bar stays at the top while the page scrolls. On the first level, Settings itself, the back button is
+ * bar heads a SettingsPage. On the first level, Settings itself, the back button is
  * disabled, as in the toolbar of macOS System Settings, so the path keeps its place between levels.
  */
 import type { VNode } from 'vue'
@@ -73,24 +73,18 @@ function onOpen(level: number): void {
 
 <style scoped>
 .settings-toolbar {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 2;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  box-sizing: border-box;
-  min-block-size: 3.25rem;
-  padding-block: 0.5rem;
-  background-color: var(--numen-surface);
+  min-block-size: var(--numen-action-size);
 }
 
 .settings-toolbar__back {
   display: grid;
   flex: none;
   place-items: center;
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
   border: none;
   border-radius: var(--numen-radius);
   background: none;

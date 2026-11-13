@@ -17,7 +17,7 @@ import PluginSettingsCard from './PluginSettingsCard.vue'
 import PluginNotice from './PluginNotice.vue'
 import PluginTabs from './PluginTabs.vue'
 import { isInstalled } from './plugins'
-import SettingsToolbar from './SettingsToolbar.vue'
+import SettingsPage from './SettingsPage.vue'
 import { getReadmeText } from './readme'
 import { getPluginState, getStartItem, getWorstItem, hasConnectionSettings } from './state'
 import { FIRST_PLUGIN_TAB, getPanelElementId, getPluginTabs, getTabElementId } from './tabs'
@@ -107,8 +107,8 @@ function onRunAction(key: string): void {
 </script>
 
 <template>
-  <div class="plugin-detail">
-    <SettingsToolbar :path="path" @back="onBack" @open="onOpen">
+  <SettingsPage :path="path" @back="onBack" @open="onOpen">
+    <template #actions>
       <span class="plugin-detail__state">
         <span
           class="plugin-detail__dot"
@@ -127,67 +127,74 @@ function onRunAction(key: string): void {
       <Button v-else-if="props.canInstall" size="small" @click="onInstall">
         {{ words.pluginInstall }}
       </Button>
-    </SettingsToolbar>
-    <PluginHeader :plugin="props.plugin" />
+    </template>
+    <div class="plugin-detail">
+      <PluginHeader :plugin="props.plugin" />
 
-    <PluginNotice
-      v-if="startItem"
-      :item="startItem"
-      :action-label="words.pluginRetry"
-      @run-action="onRetry"
-    />
-    <PluginNotice
-      v-else-if="worstItem"
-      :item="worstItem"
-      :action-label="worstItem.actionLabel"
-      @run-action="onRunAction(worstItem.key)"
-    />
+      <PluginNotice
+        v-if="startItem"
+        :item="startItem"
+        :action-label="words.pluginRetry"
+        @run-action="onRetry"
+      />
+      <PluginNotice
+        v-else-if="worstItem"
+        :item="worstItem"
+        :action-label="worstItem.actionLabel"
+        @run-action="onRunAction(worstItem.key)"
+      />
 
-    <PluginTabs v-model="activeTab" :tabs="tabs" :label="words.pluginSections" :id-base="idBase" />
+      <PluginTabs
+        v-model="activeTab"
+        :tabs="tabs"
+        :label="words.pluginSections"
+        :id-base="idBase"
+      />
 
-    <div
-      :id="getPanelElementId(idBase, activeTab)"
-      class="plugin-detail__panel"
-      role="tabpanel"
-      :aria-labelledby="getTabElementId(idBase, activeTab)"
-    >
-      <PluginSettingsCard v-if="activeTab === 'settings' && props.hasSettings">
-        <slot name="settings" />
-      </PluginSettingsCard>
-      <slot v-if="activeTab === 'settings'" name="sections" />
-      <p
-        v-if="activeTab === 'settings' && !props.hasSettings && !hasConnections"
-        class="plugin-detail__nothing"
+      <div
+        :id="getPanelElementId(idBase, activeTab)"
+        class="plugin-detail__panel"
+        role="tabpanel"
+        :aria-labelledby="getTabElementId(idBase, activeTab)"
       >
-        {{ words.noSettings }}
-      </p>
+        <PluginSettingsCard v-if="activeTab === 'settings' && props.hasSettings">
+          <slot name="settings" />
+        </PluginSettingsCard>
+        <slot v-if="activeTab === 'settings'" name="sections" />
+        <p
+          v-if="activeTab === 'settings' && !props.hasSettings && !hasConnections"
+          class="plugin-detail__nothing"
+        >
+          {{ words.noSettings }}
+        </p>
 
-      <div v-if="activeTab === 'about' && readmeText" class="settings-card plugin-detail__readme">
-        <Prose :text="readmeText" />
+        <div v-if="activeTab === 'about' && readmeText" class="settings-card plugin-detail__readme">
+          <Prose :text="readmeText" />
+        </div>
+        <p v-else-if="activeTab === 'about'" class="plugin-detail__nothing">
+          {{ props.plugin.description }}
+        </p>
+
+        <PluginContributions
+          v-if="activeTab === 'contributions' && contributions.length > 0"
+          :contributions="contributions"
+          :is-apple="props.isApple ?? false"
+        />
+        <p v-else-if="activeTab === 'contributions'" class="plugin-detail__nothing">
+          {{ words.noContributions }}
+        </p>
+
+        <PluginData
+          v-if="activeTab === 'data'"
+          :plugin-id="props.plugin.id"
+          :plugin-name="props.plugin.name"
+          :file-count="props.dataFileCount"
+          :problem="props.problem"
+          @delete-data="onDeleteData"
+        />
       </div>
-      <p v-else-if="activeTab === 'about'" class="plugin-detail__nothing">
-        {{ props.plugin.description }}
-      </p>
-
-      <PluginContributions
-        v-if="activeTab === 'contributions' && contributions.length > 0"
-        :contributions="contributions"
-        :is-apple="props.isApple ?? false"
-      />
-      <p v-else-if="activeTab === 'contributions'" class="plugin-detail__nothing">
-        {{ words.noContributions }}
-      </p>
-
-      <PluginData
-        v-if="activeTab === 'data'"
-        :plugin-id="props.plugin.id"
-        :plugin-name="props.plugin.name"
-        :file-count="props.dataFileCount"
-        :problem="props.problem"
-        @delete-data="onDeleteData"
-      />
     </div>
-  </div>
+  </SettingsPage>
 </template>
 
 <style scoped>

@@ -101,17 +101,12 @@ function onOpenCategory(category: string): void {
   color: var(--numen-ink);
 }
 
-.settings__page {
-  flex: 1;
-  min-block-size: 0;
-  overflow-y: auto;
-  padding: 0 var(--numen-gutter) var(--numen-gutter);
-}
-
+/* Each page is a SettingsPage, which scrolls under its own toolbar. */
+.settings__page,
 .settings__main {
-  container: settings / inline-size;
-  inline-size: 100%;
-  max-inline-size: var(--settings-measure);
-  margin-inline: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
 }
 </style>

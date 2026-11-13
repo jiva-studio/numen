@@ -337,12 +337,13 @@ describe('the settings tab', () => {
         .map((one) => one.text())
     const getCurrent = (tab: Tab) => getPath(tab).get('[aria-current="page"]').text()
 
-    it('shows only Settings on the list, with no back button and no action', () => {
+    it('shows only Settings on the list, with a disabled back button and no action', () => {
       const { tab } = createTab({}, [OCR])
 
       expect(getSegments(tab)).toStrictEqual([])
       expect(getCurrent(tab)).toBe('Settings')
-      expect(getToolbar(tab).find('button').exists()).toBe(false)
+      expect(getToolbar(tab).get('button[aria-label="Back"]').attributes('disabled')).toBeDefined()
+      expect(getToolbar(tab).find('.settings-toolbar__actions').exists()).toBe(false)
     })
 
     it('shows the path of the System and the Appearance page and no action', async () => {

@@ -5,7 +5,7 @@
  * `appearance.*` settings; System holds the rest and the path of the numen.json configuration file.
  */
 import { computed } from 'vue'
-import { PluginSettingsCard, SettingsToolbar } from '@numen/plugin-manager'
+import { PluginSettingsCard, SettingsPage } from '@numen/plugin-manager'
 import PluginFields from './plugins/PluginFields.vue'
 import type { PluginInfo } from '@/entities/settings'
 import type { InstallationPlugin, InstallationSettings } from '../types'
@@ -48,24 +48,24 @@ function onBack(): void {
 </script>
 
 <template>
-  <div class="system-detail">
-    <SettingsToolbar
-      :path="[
-        words.settings,
-        props.section === 'appearance' ? words.appearanceSettings : words.systemSettings,
-      ]"
-      @back="onBack"
-      @open="onBack"
-    />
+  <SettingsPage
+    :path="[
+      words.settings,
+      props.section === 'appearance' ? words.appearanceSettings : words.systemSettings,
+    ]"
+    @back="onBack"
+    @open="onBack"
+  >
+    <div class="system-detail">
+      <PluginSettingsCard>
+        <PluginFields :settings="props.settings" :host="props.manager" :plugin="owner" />
+      </PluginSettingsCard>
 
-    <PluginSettingsCard>
-      <PluginFields :settings="props.settings" :host="props.manager" :plugin="owner" />
-    </PluginSettingsCard>
-
-    <p v-if="props.section === 'system'" class="system-detail__file">
-      {{ props.settings.file.value || words.file }}
-    </p>
-  </div>
+      <p v-if="props.section === 'system'" class="system-detail__file">
+        {{ props.settings.file.value || words.file }}
+      </p>
+    </div>
+  </SettingsPage>
 </template>
 
 <style scoped>
