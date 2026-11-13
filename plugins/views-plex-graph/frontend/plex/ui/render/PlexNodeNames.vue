@@ -7,19 +7,28 @@
  */
 import { computed } from 'vue'
 import type { Attention } from './props'
-import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY, placeNames, ROW_RATIO, type NamesRoom } from '../../lib/names'
+import {
+  DEFAULT_FOCUSED_NAMES_OPACITY,
+  DEFAULT_NAMES_OPACITY,
+  placeNames,
+  ROW_RATIO,
+  type NamesRoom,
+} from '../../lib/names'
 import type { PlacedNode } from '../../lib/node'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = withDefaults(defineProps<{
-  node: PlacedNode
-  room: NamesRoom
-  attention: Attention
-  /** The opacity of the names while their node is not attended to. */
-  restingOpacity?: number
-  /** The opacity of the names while their node, or one of them, is attended to. */
-  focusedOpacity?: number
-}>(), { restingOpacity: DEFAULT_NAMES_OPACITY, focusedOpacity: DEFAULT_FOCUSED_NAMES_OPACITY })
+const props = withDefaults(
+  defineProps<{
+    node: PlacedNode
+    room: NamesRoom
+    attention: Attention
+    /** The opacity of the names while their node is not attended to. */
+    restingOpacity?: number
+    /** The opacity of the names while their node, or one of them, is attended to. */
+    focusedOpacity?: number
+  }>(),
+  { restingOpacity: DEFAULT_NAMES_OPACITY, focusedOpacity: DEFAULT_FOCUSED_NAMES_OPACITY },
+)
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
@@ -44,11 +53,7 @@ const fontSize = computed(() => `${props.room.rowHeight / ROW_RATIO}px`)
 </script>
 
 <template>
-  <g
-    class="plex__names"
-    :opacity="node.opacity"
-    :style="{ fontSize }"
-  >
+  <g class="plex__names" :opacity="node.opacity" :style="{ fontSize }">
     <g
       v-for="name in placed"
       :key="name.id"

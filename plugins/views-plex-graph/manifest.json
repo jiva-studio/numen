@@ -5,9 +5,7 @@
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
-  "targets": [
-    "desktop.editor"
-  ],
+  "targets": ["desktop.editor"],
   "contributes": {
     "tabKinds": [
       {
@@ -165,10 +163,7 @@
       }
     ]
   },
-  "permissions": [
-    "vault:read",
-    "vault:write"
-  ],
+  "permissions": ["vault:read", "vault:write"],
   "settings": [
     {
       "key": "references",

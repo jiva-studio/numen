@@ -9,14 +9,17 @@ import { Comment, computed, Fragment, Text, useSlots, type VNode } from 'vue'
 import type { WideBox } from '../../model/sizing/expansion'
 import type { PlacedNode } from '../../lib/node'
 
-const props = withDefaults(defineProps<{
-  node: PlacedNode
-  box: WideBox
-  isGhost: boolean
-  isTarget: boolean
-  showPills: boolean
-  focusScale?: number
-}>(), { focusScale: 1 })
+const props = withDefaults(
+  defineProps<{
+    node: PlacedNode
+    box: WideBox
+    isGhost: boolean
+    isTarget: boolean
+    showPills: boolean
+    focusScale?: number
+  }>(),
+  { focusScale: 1 },
+)
 
 defineSlots<{
   /** What is drawn beside this node's title. */

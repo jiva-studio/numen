@@ -212,7 +212,7 @@ describe('the look settings of the plex', () => {
         settings.find((one) => one.key === key),
         key,
       ).toMatchObject({
-        type: 'number',
+        type: 'range',
         title,
         default: value,
         min,
@@ -224,14 +224,38 @@ describe('the look settings of the plex', () => {
 
   it('declares the look after the heading and names settings, which keep their keys', () => {
     expect(settings.map((one) => one.key)).toStrictEqual([
+      'references',
       'nestHeadings',
       'headingLimit',
       'showNames',
       'namesPerNote',
+      'namesOpacity',
+      'focusedNamesOpacity',
       'showPills',
-      ...NUMBERS.map(([key]) => key),
-      'references',
+      'pillPaddingSides',
+      'pillPaddingEnds',
+      'focusSize',
+      'lineThickness',
+      'outlineThickness',
+      'lineCurvature',
+      'animationLength',
+      'noteRoom',
     ])
+  })
+
+  it('declares the opacity of the names as two sliders from nothing to one', () => {
+    for (const [key, value] of [
+      ['namesOpacity', 0.7],
+      ['focusedNamesOpacity', 1],
+    ] as const) {
+      expect(settings.find((one) => one.key === key), key).toMatchObject({
+        type: 'range',
+        default: value,
+        min: 0,
+        max: 1,
+        step: 0.05,
+      })
+    }
   })
 
   it('declares References as four choices that show the notes linked in the text, both ways by default', () => {

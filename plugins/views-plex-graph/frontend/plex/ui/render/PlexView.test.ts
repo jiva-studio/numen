@@ -75,7 +75,9 @@ describe('the order things are drawn in', () => {
     const lastNames = view.findAll('.plex__names').at(-1)!.element
     const firstNode = view.get('.plex__node').element
     expect(view.findAll('.plex__names').length).toBeGreaterThan(0)
-    expect(lastNames.compareDocumentPosition(firstNode) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(
+      lastNames.compareDocumentPosition(firstNode) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 })
 
