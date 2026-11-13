@@ -122,13 +122,12 @@
 }
 
 /*
- * One line per plugin. The rows share the columns of the list, so the dots, the names and the
- * times line up; the time column has a fixed width, so a time counting does not move anything.
+ * One line per plugin. Every row has the same columns of fixed width for the dot and the time, so
+ * the dots, the names and the times line up, and a time counting does not move anything.
  */
 .plugin-popover__body {
-  display: grid;
-  grid-template-columns: var(--dot-size) minmax(0, 1fr) var(--countdown-width);
-  column-gap: var(--column-gap);
+  display: flex;
+  flex-direction: column;
   /* The em of the time column is of this size. */
   font-size: var(--numen-text-2);
   margin: 0;
@@ -139,8 +138,8 @@
 
 .plugin-popover__plugin {
   display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: subgrid;
+  grid-template-columns: var(--dot-size) minmax(0, 1fr) var(--countdown-width);
+  column-gap: var(--column-gap);
   align-items: center;
   padding: var(--row-pad-block) var(--row-pad-inline);
   border-radius: var(--numen-radius);
