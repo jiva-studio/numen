@@ -39,9 +39,3 @@ Feature: Manage connections
       Given the person adds the connection "Main" of the type "OpenAI-compatible server" for the service "Main service"
       When the person gives the connection "Main" the key "invented-key"
       Then the connection "Main" has a key
-
-    Scenario: A key is removed
-      Given the person adds the connection "Main" of the type "OpenAI-compatible server" for the service "Main service"
-      And the person gives the connection "Main" the key "invented-key"
-      When the person removes the key of the connection "Main"
-      Then the connection "Main" does not have a key

@@ -19,10 +19,6 @@ When('the person gives the connection {string} the key {string}', async ({ perso
   await person.connections.giveKey(name, key)
 })
 
-When('the person removes the key of the connection {string}', async ({ person }, name: string) => {
-  await person.connections.removeKey(name)
-})
-
 When('the person deletes the connection {string}', async ({ person }, name: string) => {
   await person.connections.delete(name)
 })

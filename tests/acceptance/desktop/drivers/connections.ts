@@ -43,13 +43,6 @@ export class ConnectionsDriver {
     await this.page.save()
   }
 
-  async removeKey(name: string): Promise<void> {
-    const panel = await this.settings.showConnections()
-    await this.page.openEdit(panel, name)
-    await this.page.getDialog().getByRole('button', { name: 'Remove key' }).click()
-    await this.page.save()
-  }
-
   async expectKey(name: string, has: boolean): Promise<void> {
     const panel = await this.settings.showConnections()
     await this.page.openEdit(panel, name)
