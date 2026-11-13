@@ -44,8 +44,25 @@ Feature: Plex links
         | relation | title   |
         | focus    | Quay    |
         | parent   | Harbour |
+      And the plex does not show the following notes:
+        | relation | title      |
+        | parent   | Coast      |
+        | sibling  | Cape       |
+        | sibling  | Jetty      |
+        | jump     | Lighthouse |
 
     Scenario: The plex opens on the note of its tab
       Given the person opens the note titled "Quay"
       When the person runs the command "Show in plex" on the note tab titled "Harbour"
       Then the plex shows the focus note titled "Harbour"
+
+  Rule: Each relation has its side of the focus note
+
+    Scenario: The notes are placed by their relation
+      Then the plex puts the following notes on the side of the focus note:
+        | title      | side       |
+        | Coast      | above      |
+        | Quay       | below      |
+        | Jetty      | below      |
+        | Lighthouse | below left |
+        | Cape       | right      |

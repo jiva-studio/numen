@@ -30,6 +30,11 @@ import {
   parseTabRows,
   parseTarget,
   readLinkAddress,
+  getDirectionStep,
+  getTableBody,
+  isArrow,
+  isOnSides,
+  parseSides,
 } from './rules.js'
 
 describe('parseReference', () => {
@@ -410,5 +415,58 @@ describe('readLinkAddress', () => {
 
   it('leaves a note that is not a link', () => {
     expect(readLinkAddress('---\ntype: note\nurl: http://a\n---\n')).toBeUndefined()
+  })
+})
+
+describe('getDirectionStep', () => {
+  it('reads up, down and left as a step on the screen', () => {
+    expect(getDirectionStep('up')).toEqual([0, -1])
+    expect(getDirectionStep('down')).toEqual([0, 1])
+    expect(getDirectionStep('left')).toEqual([-1, 0])
+  })
+
+  it('throws for a way no line writes', () => {
+    expect(() => getDirectionStep('right')).toThrow('a line cannot be dragged right: use up, down or left')
+  })
+})
+
+describe('the sides of a note', () => {
+  const focus = { x: 0, y: 0 }
+
+  it('reads one side or two', () => {
+    expect(parseSides('above')).toEqual(['above'])
+    expect(parseSides('below left')).toEqual(['below', 'left'])
+  })
+
+  it('throws for a word that is no side', () => {
+    expect(() => parseSides('beside')).toThrow('"beside" is not a side')
+  })
+
+  it('holds when the middle is on every named side of the focus', () => {
+    expect(isOnSides(['below', 'left'], { x: -50, y: 40 }, focus)).toBe(true)
+    expect(isOnSides(['below', 'left'], { x: 50, y: 40 }, focus)).toBe(false)
+    expect(isOnSides(['above'], { x: 90, y: -1 }, focus)).toBe(true)
+    expect(isOnSides(['right'], { x: 1, y: -90 }, focus)).toBe(true)
+  })
+
+  it('does not hold for the same height as the focus', () => {
+    expect(isOnSides(['above'], { x: 0, y: 0 }, focus)).toBe(false)
+  })
+})
+
+describe('getTableBody', () => {
+  it('returns the rows under the header', () => {
+    expect(getTableBody([['title', 'side'], ['A', 'above']], ['title', 'side'])).toEqual([['A', 'above']])
+  })
+
+  it('throws for another header', () => {
+    expect(() => getTableBody([['a']], ['title'])).toThrow('the table must start with the header "| title |"')
+  })
+})
+
+describe('isArrow', () => {
+  it('reads the arrow a button shows from its name', () => {
+    expect(isArrow('Arrow to Quay. Click for: Arrow to Harbour', 'Arrow to Quay')).toBe(true)
+    expect(isArrow('No arrow. Click for: Arrow to Quay', 'Arrow to Quay')).toBe(false)
   })
 })

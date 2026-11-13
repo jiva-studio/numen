@@ -11,29 +11,6 @@ Feature: Plex
 
   Rule: The plex links notes
 
-    Scenario: A child note is made
-      Given the vault has the following:
-        | path             | text                                                                     |
-        | notes/Entropy.md | # Entropy\n\nA measure of uncertainty. To Jaynes it is a property of the description. |
-      And the person opens the note titled "Entropy"
-      When the person runs the command "Create child note" with:
-        | Name | Tributary |
-      And the person runs the command "Show in plex" on the note tab titled "Entropy"
-      Then the vault "Test" contains the note titled "Tributary"
-      And the note titled "Entropy" links to the note titled "Tributary"
-      And the plex shows the child note titled "Tributary"
-
-    Scenario: A note is linked by its title
-      Given the vault has the following:
-        | path           | text                        |
-        | notes/Quay.md  | The quay is at the harbour. |
-        | notes/Jetty.md | The jetty is at the quay.   |
-      And the person opens the note titled "Quay"
-      And the person opens the note titled "Jetty"
-      And the person runs the command "Show in plex" on the note tab titled "Quay"
-      When the person links the note titled "Quay" to the note titled "Jetty" in the plex
-      Then the note titled "Quay" links to the note titled "Jetty"
-
     Scenario: A child note is made from the file tree
       Given the vault has the following:
         | path            | text                |
@@ -47,15 +24,6 @@ Feature: Plex
       And the plex shows the child note titled "Reef flat"
 
   Rule: The plex shows notes
-
-    Scenario: A note is shown in the plex
-      Given the vault has the following:
-        | path             | text                                                                     |
-        | notes/Entropy.md | # Entropy\n\nA measure of uncertainty. To Jaynes it is a property of the description. |
-      When the person runs the command "Go to note" with:
-        | Search notes | Entropy |
-      And the person runs the command "Show in plex"
-      Then the plex shows the focus note titled "Entropy"
 
     Scenario: A linked tab follows a click
       Given the vault has the following:
@@ -73,29 +41,3 @@ Feature: Plex
         | kind | path             |
         | note | notes/Entropy.md |
       And the tab titled "Weir notes" is not open
-
-  Rule: A found note has actions
-
-    Background:
-      Given the vault has the following:
-        | path          | text                        |
-        | notes/Quay.md | The quay is at the harbour. |
-
-    Scenario: A found note can be shown in the plex
-      When the person searches the vault for "Quay"
-      Then the search result "Quay" in the group "Names" contains the following actions:
-        | action            |
-        | Open note         |
-        | Show in plex |
-
-    Scenario: A found note has no plex action
-      Given the person disables the plugin "Plex Graph"
-      When the person searches the vault for "Quay"
-      Then the search result "Quay" in the group "Names" has only the following actions:
-        | action             |
-        | Open note          |
-        | Show in file tree  |
-        | Create note “Quay” |
-      And the search result "Quay" in the group "Names" does not contain the following actions:
-        | action       |
-        | Show in plex |

@@ -20,25 +20,43 @@ Feature: Plex link inspector
 
   Rule: The link inspector changes a link
 
-    Scenario: A link is changed
+    Scenario Outline: The arrow sets what the notes are to each other
       When the person changes the link from "Harbour" to "Quay" in the plex with:
-        | Role        | jump        |
+        | Arrow | <arrow> |
+      Then the vault "Test" has the following links:
+        | from   | to   | role   |
+        | <from> | <to> | <role> |
+
+      Examples:
+        | arrow          | from    | to      | role   |
+        | Arrow to Quay  | Harbour | Quay    | child  |
+        | Arrow to Harbour | Quay  | Harbour | parent |
+        | No arrow       | Harbour | Quay    | jump   |
+
+    Scenario: A description is added to a link
+      When the person changes the link from "Harbour" to "Quay" in the plex with:
         | Description | Daily ferry |
       Then the vault "Test" has the following links:
-        | from    | to   | role | description |
-        | Harbour | Quay | jump | Daily ferry |
+        | from    | to   | role  | description |
+        | Harbour | Quay | child | Daily ferry |
+
+    Scenario: A cancelled change leaves the links unchanged
+      When the person cancels the change of the link from "Harbour" to "Quay" in the plex with:
+        | Arrow       | No arrow    |
+        | Description | Daily ferry |
+      Then the vault "Test" has the following links:
+        | from    | to   | role  |
+        | Harbour | Quay | child |
 
     Scenario: A reverse link is added
-      When the person adds the reverse link from "Quay" to "Harbour" in the plex with:
-        | Role | parent |
+      When the person adds the reverse link from "Quay" to "Harbour" in the plex
       Then the vault "Test" has the following links:
         | from    | to      | role   |
         | Harbour | Quay    | child  |
         | Quay    | Harbour | parent |
 
     Scenario: One direction of a link is removed
-      Given the person adds the reverse link from "Quay" to "Harbour" in the plex with:
-        | Role | parent |
+      Given the person adds the reverse link from "Quay" to "Harbour" in the plex
       When the person removes the link from "Quay" to "Harbour" in the plex
       Then the vault "Test" has the following links:
         | from    | to   | role  |

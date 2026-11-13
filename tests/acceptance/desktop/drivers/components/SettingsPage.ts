@@ -48,6 +48,10 @@ export class SettingsPage {
     return row.locator('.settings__choice')
   }
 
+  getSwitch(row: Locator): Locator {
+    return row.getByRole('switch')
+  }
+
   getTextInput(row: Locator): Locator {
     return row.locator('.settings__text-input')
   }

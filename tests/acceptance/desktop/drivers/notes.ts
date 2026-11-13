@@ -81,6 +81,12 @@ export class NoteDriver {
     await expect(this.getEditor(notePath).panel()).toContainText(text)
   }
 
+  /** The cursor is on the line of the heading, which is where the note opens from a heading of the plex. */
+  async expectAtHeading(reference: string, name: string, heading: string): Promise<void> {
+    const notePath = await this.scenario.getPath(reference, name)
+    await expect(this.getEditor(notePath).text().locator('.cm-activeLine')).toContainText(heading)
+  }
+
   async expectDoesNotHaveText(reference: string, name: string, text: string): Promise<void> {
     await expect(this.getEditor(await this.scenario.getPath(reference, name)).panel()).not.toContainText(text)
   }

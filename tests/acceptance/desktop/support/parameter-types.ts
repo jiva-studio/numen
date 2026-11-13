@@ -102,3 +102,9 @@ defineParameterType({
   regexp: /from "[^"]+" to "[^"]+"|between "[^"]+" and "[^"]+"/,
   transformer: (extent: string) => parseExtent(extent),
 })
+
+defineParameterType({
+  name: 'direction',
+  regexp: /up|down|left/,
+  transformer: (direction: string) => direction,
+})

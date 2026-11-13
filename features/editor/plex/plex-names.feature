@@ -27,11 +27,10 @@ Feature: Plex names
     And the plex does not show the child note titled "Rootstock list"
 
   Scenario: A name moves the focus
-    When the person hovers over the note titled "Pear rows" in the plex
+    When the person rests the pointer on the note titled "Pear rows" in the plex
     And the person clicks the name "Rootstock list" under the note titled "Pear rows"
     Then the plex shows the focus note titled "Rootstock list"
 
   Scenario: Names are hidden
-    When the person runs the command "Plex Graph: Show notes related to related notes" with:
-      | Show notes related to related notes | Off |
+    When the person sets the setting "Show notes related to related notes" of the plugin "Plex Graph" to "Off"
     Then the plex shows no names under the note titled "Pear rows"

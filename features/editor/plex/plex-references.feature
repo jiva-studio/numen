@@ -1,8 +1,8 @@
 Feature: Plex references
-  A person sees the notes that a note links to in its text.
+  A person sees the notes that a note links to in its text, and the notes that link to it.
 
   As a person who keeps notes
-  I want to see the notes named in the text of a note
+  I want to see the notes named in the text of a note and the notes that name it
   So that I can follow a mention to its note
 
   Background:
@@ -11,16 +11,41 @@ Feature: Plex references
       | path           | text           |
       | notes/Quay.md  | See [[Jetty]]. |
       | notes/Jetty.md | # Jetty        |
+      | notes/Dock.md  | See [[Quay]].  |
     And the application "editor" starts
     And the person opens the note titled "Quay"
     And the person runs the command "Show in plex" on the note tab titled "Quay"
 
-  Scenario: A link in the text is shown
-    Then the plex shows the following notes:
-      | relation  | title |
-      | reference | Jetty |
+  Rule: The setting "References" chooses the reference notes
 
-  Scenario: References are hidden
-    When the person runs the command "Plex Graph: References" with:
-      | References | Off |
-    Then the plex does not show the reference note titled "Jetty"
+    Scenario: Both kinds of reference are shown
+      Then the plex shows the following notes:
+        | relation  | title |
+        | reference | Jetty |
+        | reference | Dock  |
+
+    Scenario: References are hidden
+      When the person sets the setting "References" of the plugin "Plex Graph" to "Off"
+      Then the plex does not show the following notes:
+        | relation  | title |
+        | reference | Jetty |
+        | reference | Dock  |
+
+    Scenario Outline: Only the references of one direction are shown
+      When the person sets the setting "References" of the plugin "Plex Graph" to "<setting>"
+      Then the plex shows the reference note titled "<shown>"
+      And the plex does not show the reference note titled "<hidden>"
+      And the plex draws the line from "Quay" to "<shown>" with an arrow to "<arrow>"
+
+      Examples:
+        | setting  | shown | hidden | arrow |
+        | Outgoing | Jetty | Dock   | Jetty |
+        | Incoming | Dock  | Jetty  | Quay  |
+
+    Scenario: Both directions are shown
+      Given the person sets the setting "References" of the plugin "Plex Graph" to "Outgoing"
+      When the person sets the setting "References" of the plugin "Plex Graph" to "Both"
+      Then the plex shows the following notes:
+        | relation  | title |
+        | reference | Jetty |
+        | reference | Dock  |
