@@ -157,7 +157,7 @@ func (u ListRelatedNotes) getRelatedNotes(ctx context.Context, cache *linkCache,
 		}
 	}
 
-	backlinks, err := u.links.GetBacklinks(ctx, cache.vault.ID, path)
+	backlinks, err := cache.getBacklinks(ctx, path)
 	if err != nil {
 		return nil, err
 	}

@@ -303,7 +303,7 @@ function usePlexNames(
   const names = computed(() => {
     const noteGraph = view.noteGraph.value
     if (!noteGraph || !showNames.value) return new Map<string, PlexNames>()
-    return getNames(noteGraph, namesPerNote.value, getNameToken)
+    return getNames(noteGraph, namesPerNote.value, getNameToken, deps.look.references.value)
   })
   const getNodeNames = (node: string): PlexNames =>
     names.value.get(getNameToken(map.getNodePath(node))) ?? NO_NAMES

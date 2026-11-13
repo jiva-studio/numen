@@ -8,11 +8,27 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
-// linkCache reads the links of a note once per query.
+// linkCache reads the links and the backlinks of a note once per query.
 type linkCache struct {
-	queries noteport.LinkQueries
-	vault   domain.Vault
-	byPath  map[string][]domain.ResolvedLink
+	queries   noteport.LinkQueries
+	vault     domain.Vault
+	byPath    map[string][]domain.ResolvedLink
+	backlinks map[string][]domain.ResolvedLink
+}
+
+func (c *linkCache) getBacklinks(ctx context.Context, path string) ([]domain.ResolvedLink, error) {
+	if links, ok := c.backlinks[path]; ok {
+		return links, nil
+	}
+	links, err := c.queries.GetBacklinks(ctx, c.vault.ID, path)
+	if err != nil {
+		return nil, err
+	}
+	if c.backlinks == nil {
+		c.backlinks = map[string][]domain.ResolvedLink{}
+	}
+	c.backlinks[path] = links
+	return links, nil
 }
 
 func (c *linkCache) get(ctx context.Context, path string) ([]domain.ResolvedLink, error) {

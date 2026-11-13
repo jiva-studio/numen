@@ -151,16 +151,19 @@ const NAME_ORDER: readonly NoteRelation[] = ['parent', 'child', 'jump', 'referen
 
 /**
  * The names of the notes related to each related note: its parents over it, and its children, jumps and references under it,
- * cut to `limit` in that order. A name has the id `token` gives its path. A note with no names has no entry.
+ * cut to `limit` in that order. A reference is a name when the references setting admits it, as for a node. A name has the id `token` gives its path. A note with no names has no entry.
  */
 export function getNames(
   noteGraph: NoteGraph,
   limit: number,
   token: (path: string) => string,
+  references: ReferenceMode = 'both',
 ): ReadonlyMap<string, PlexNames> {
   const owners = new Map<string, RelatedNote[]>()
   for (const item of noteGraph.related) {
     if (!item.relatedTo || !NAME_ORDER.includes(item.relation)) continue
+    if (item.path === item.relatedTo) continue
+    if (item.relation === 'reference' && !admitReference(item, references)) continue
     const owned = owners.get(item.relatedTo) ?? []
     owned.push(item)
     owners.set(item.relatedTo, owned)

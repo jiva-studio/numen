@@ -73,14 +73,15 @@ export function usePlexView(core: RelatedNoteQueries, depth: Readonly<Ref<1 | 2>
     guard.cancel()
   }
 
-  const close = () => {
-    guard.close()
-  }
-
-  watch(depth, () => {
+  const stopWatchingDepth = watch(depth, () => {
     const path = nextPath.value || here.value
     if (path) go(path).catch(() => undefined)
   })
+
+  const close = () => {
+    stopWatchingDepth()
+    guard.close()
+  }
 
   return { noteGraph, here, error, nextPath, isLoading, go, followMoves, close }
 }

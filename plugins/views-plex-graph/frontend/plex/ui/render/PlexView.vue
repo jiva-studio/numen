@@ -171,7 +171,7 @@ const getRole = (node: PlacedNode): GestureRole => {
         @menu="(at, trigger) => emit('menu', node.id, at, trigger)"
         @enter="(heading) => emit('enter', node.id, heading)"
         @settle="onSettle(node.id, $event)"
-      @attend="onAttend('node', node.id, $event)"
+        @attend="onAttend('node', node.id, $event)"
       >
         <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
       </PlexNodeView>
@@ -179,8 +179,8 @@ const getRole = (node: PlacedNode): GestureRole => {
         v-if="names?.(node.id)"
         :node="node"
         :room="names(node.id)!"
-      :attention="attention"
-      @attend="onAttend('names', node.id, $event)"
+        :attention="attention"
+        @attend="onAttend('names', node.id, $event)"
         @choose="emit('choose-name', $event)"
       />
     </g>

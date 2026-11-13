@@ -76,7 +76,7 @@ const behavior = computed<PlexBehavior>(() => ({
   clock: props.clock,
 }))
 
-const { rooms: namesRooms, room: getRoom } = useNamesRooms(props, measures, options)
+const { getRoomOf, room: getRoom } = useNamesRooms(props, measures, options)
 
 const { frame, isMoving } = usePlexTransition(
   () => props.graph,
@@ -147,6 +147,8 @@ const overflow = computed(() =>
   ),
 )
 
+const frameStyle = computed(() => getFrameStyle(props, options.value))
+
 /**
  * A graph is drawn from the node it is seen from, so every node walks
  * to a new relation when another one arrives. A menu is anchored where one of them
@@ -163,7 +165,7 @@ watch(
     ref="frame"
     class="plex-frame numen"
     :data-moving="isMoving || undefined"
-    :style="getFrameStyle(props, options)"
+    :style="frameStyle"
   >
     <PlexView
       ref="view"
@@ -177,7 +179,7 @@ watch(
       :relation-name="relationName"
       :widen="widen"
       :hung="hung"
-      :names="(id) => namesRooms.get(id)"
+      :names="getRoomOf"
       :behavior="behavior"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
