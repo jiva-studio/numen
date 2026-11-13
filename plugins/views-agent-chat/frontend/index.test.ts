@@ -134,7 +134,7 @@ describe('view-agent-chat plugin', () => {
     expect(state.agents?.offered.isAgentMissing.value).toBe(false)
   })
 
-  it('offers an agent found while a tab stays open, once the host tells of the change', async () => {
+  it('lists the agents again on a change of the connections while a tab is open', async () => {
     let rows: readonly ConnectionRow[] = []
     const listed: string[] = []
     const ctx = createContext(undefined, undefined, {

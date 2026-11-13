@@ -224,7 +224,7 @@ describe('a setting that changes', () => {
     settings.close()
   })
 
-  it('tells the connections of a plugin of a change of the connections, the detected ones or an enabled plugin', async () => {
+  it('notifies the connections of a plugin of a change of the connections, the detected connections or an enabled plugin', async () => {
     const { settings, feed, windowTabs } = create()
     const support = createTestPluginSupport({
       windowTabs,

@@ -10,8 +10,8 @@ export const getPluginTexts = (pluginId: string): ReturnType<typeof createPlugin
   createPluginTexts(texts, pluginId)
 
 /**
- * The connections a plugin lists in its rows, as the plugin of that id calls them, told of a change of
- * the rows by `subscribeChanges`.
+ * The connections a plugin lists in its rows, as the plugin of that id calls them. `subscribeChanges`
+ * notifies them of a change of the rows.
  */
 export const getPluginConnections = (
   pluginId: string,

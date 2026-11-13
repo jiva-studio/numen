@@ -167,7 +167,7 @@ describe('the connections of a plugin', () => {
     ])
   })
 
-  it('tells the plugin of each change the window signals until the plugin stops listening', () => {
+  it('calls the change handler for each change of the window until the handler is disposed', () => {
     const handlers = new Set<() => void>()
     const subscribe = (handler: () => void) => {
       handlers.add(handler)
