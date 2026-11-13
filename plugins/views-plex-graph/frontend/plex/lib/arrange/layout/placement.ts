@@ -27,6 +27,9 @@ export function getFootprint(
   return { width: Math.max(pill.width, room.width), height: pill.height + room.top + room.bottom }
 }
 
+export const getFootprintCenterY = (pillY: number, room: NodeRoom): number =>
+  pillY + (room.bottom - room.top) / 2
+
 /** The center of the pill of a note whose footprint is centered on `spotY`. */
 export const getPillCenterY = (spotY: number, room: NodeRoom): number =>
   spotY + (room.top - room.bottom) / 2
@@ -34,12 +37,12 @@ export const getPillCenterY = (spotY: number, room: NodeRoom): number =>
 /** What a node keeps around its pill, as numbers the caller measured. */
 export type Rooms = (node: PlexNode) => NodeRoom
 
+/** `fits` reports whether a footprint lies inside the window, so a group grows sideways where it has no room to grow deeper. */
 export interface PlacementContext {
   readonly options: PlexOptions
   readonly width: Widths
   readonly room: Rooms
   readonly shouldStop?: ((node: PlacedNode) => boolean) | undefined
-  /** Whether a footprint lies inside the window, so a group grows sideways where it has no room to grow deeper. */
   readonly fits?: ((footprint: Spot) => boolean) | undefined
 }
 

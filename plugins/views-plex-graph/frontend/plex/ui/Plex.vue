@@ -14,7 +14,7 @@ import { DEFAULT_BEHAVIOR, getBehavior, type PlexBehavior } from '../model/behav
 import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
-import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from './namesOpacity'
+import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../model/namesOpacity'
 import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
@@ -75,23 +75,35 @@ const { room, options, measures, widen, hung } = useFreeSpace(
 /** How the nodes behave, handed down as one. */
 const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
-const { getRoomOf, room: getRoom } = useNamesRooms(props, measures, options)
+const { getRoomOf, getNodeRoom } = useNamesRooms(props, measures, options)
 
 const { frame, isMoving } = usePlexTransition(
   () => props.graph,
   () => ({
-    options: { ...props.options, viewport: room.value },
+    options: options.value,
     placement: props.placement,
     measure: measures.value?.node,
     measureLabel: measures.value?.label,
     labelType: measures.value?.labelType,
-    room: getRoom.value,
+    room: getNodeRoom.value,
   }),
   {
     duration: () => props.duration,
     clock: props.clock,
   },
 )
+
+/**
+ * The overflow, as `[relation, count]` pairs. The renderer of the plex supplies
+ * the labels through the `overflow` slot.
+ */
+const overflow = computed(() =>
+  (Object.entries(frame.value.overflow) as [PlexRelation, number][]).filter(
+    ([, count]) => count > 0,
+  ),
+)
+
+const frameStyle = computed(() => getFrameStyle(props, options.value))
 
 /**
  * A caller that allows no relation has disabled the gesture, so no handle is
@@ -137,18 +149,6 @@ const dragging = usePlexDrag({
 
 /* --------------------------------- Hooks ---------------------------------- */
 /**
- * The overflow, as `[relation, count]` pairs. The renderer of the plex supplies
- * the labels through the `overflow` slot.
- */
-const overflow = computed(() =>
-  (Object.entries(frame.value.overflow) as [PlexRelation, number][]).filter(
-    ([, count]) => count > 0,
-  ),
-)
-
-const frameStyle = computed(() => getFrameStyle(props, options.value))
-
-/**
  * A graph is drawn from the node it is seen from, so every node walks
  * to a new relation when another one arrives. A menu is anchored where one of them
  * was.
@@ -183,12 +183,9 @@ watch(
       :hung="hung"
       :room-of="getRoomOf"
       :behavior="behavior"
-      :gesture-from="gesture.from.value"
-      :gesture-at="gesture.at.value"
-      :gesture-outcome="gesture.outcome.value"
+      :gesture="gesture"
+      :dragging="dragging"
       :pending="pending"
-      :dragged-at="dragging.at.value"
-      :drop-relation="dragging.relation.value"
       :drop-name="dropName"
       @activate="emit('activate', $event)"
       @show="(id, showing) => emit('show', id, showing)"

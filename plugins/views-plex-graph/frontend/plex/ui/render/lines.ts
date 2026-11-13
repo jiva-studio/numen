@@ -1,8 +1,9 @@
 import { computed, ref, watch } from 'vue'
+import type { PlexDragState } from '../../model/interaction/drag'
+import type { Gesture } from '../../model/interaction/gesture'
 import { createArrowTransform, createPath, createReadingPath } from '../../lib/arrange'
 import { edgeKey, type PlacedEdge } from '../../lib/edge'
 import type { PlexFrame } from '../../lib/frame'
-import type { Position } from '../../lib/node'
 import type { Attention } from '../../model/useAttention'
 import type { EdgeArrow } from '../../../types'
 
@@ -49,19 +50,23 @@ export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly Ed
 export interface EdgeLinesProps {
   readonly frame: PlexFrame
   readonly highlightLinks: boolean
-  readonly gestureFrom: string | null
-  readonly draggedAt: Position | null
+  readonly gesture?: Gesture | undefined
+  readonly dragging?: PlexDragState | undefined
 }
 
 /**
- * Splits the frame edges into resting lines and raised lines: the hovered one, and the ones joining
- * the attended note while the setting is on and nothing is dragged.
+ * The edges of the frame as lines, and which of them are raised: the hovered one, and the ones
+ * joining the attended note while the setting is on and nothing is dragged.
+ *
+ * The layers that draw the lines read `isRaised`, so a change of attention redraws those layers
+ * and not the component that holds the lines.
  */
 export function useEdgeLines(props: EdgeLinesProps, uid: string, attention: Attention) {
-  const getNodeToHighlight = () =>
-    props.highlightLinks && props.gestureFrom === null && props.draggedAt === null
-      ? attention.node
-      : null
+  const isIdle = computed(
+    () =>
+      (props.gesture?.from.value ?? null) === null && (props.dragging?.at.value ?? null) === null,
+  )
+  const getNodeToHighlight = () => (props.highlightLinks && isIdle.value ? attention.node : null)
   const frame = () => props.frame
   const lines = computed(() => getLines(frame().edges, uid))
   const overKey = ref<string | null>(null)
@@ -70,20 +75,30 @@ export function useEdgeLines(props: EdgeLinesProps, uid: string, attention: Atte
     overKey.value = null
   })
 
-  const isRaised = (line: EdgeLine) => {
-    const attended = getNodeToHighlight()
-    return (
-      line.pair === overKey.value ||
-      (attended !== null && (line.edge.from === attended || line.edge.to === attended))
-    )
-  }
-
   return {
     lines,
-    raisedLines: computed(() => lines.value.filter(isRaised)),
-    resting: computed(() => lines.value.filter((line) => !isRaised(line))),
+    isRaised: (line: EdgeLine) => {
+      const attended = getNodeToHighlight()
+      return (
+        line.pair === overKey.value ||
+        (attended !== null && (line.edge.from === attended || line.edge.to === attended))
+      )
+    },
     setOver: (pair: string | null) => {
       overKey.value = pair
     },
+  }
+}
+
+/** The lines of one layer of the drawing: the ones raised, and the ones at rest. */
+export function useLayerLines(
+  source: () => {
+    readonly lines: readonly EdgeLine[]
+    readonly isRaised: (line: EdgeLine) => boolean
+  },
+) {
+  return {
+    raised: computed(() => source().lines.filter(source().isRaised)),
+    resting: computed(() => source().lines.filter((line) => !source().isRaised(line))),
   }
 }

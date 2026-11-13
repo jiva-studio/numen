@@ -46,10 +46,10 @@ describe('the room of the names of a node', () => {
 
   it('is given to the arrangement only while some node has names', () => {
     const { props, rooms } = setUp(graphOf('a'))
-    expect(rooms.room.value).toBeDefined()
+    expect(rooms.getNodeRoom.value).toBeDefined()
 
     props.showNames = false
-    expect(rooms.room.value).toBeUndefined()
+    expect(rooms.getNodeRoom.value).toBeUndefined()
   })
 
   it('stays with a node that left the graph, so its names go with its pill', async () => {

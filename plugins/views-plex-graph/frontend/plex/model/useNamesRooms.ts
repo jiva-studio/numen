@@ -15,7 +15,7 @@ export interface NamesRoomsProps {
 /**
  * The room of the names of each node: `getRoomOf` answers for a node with names and nothing for one without.
  * A node that has left the graph keeps the room it had until it is gone from the frame, so its names leave with its pill.
- * `room` is what the arrangement is given, and is absent while no node has names.
+ * `getNodeRoom` is what the arrangement is given, and is absent while no node has names.
  */
 export function useNamesRooms(
   props: NamesRoomsProps,
@@ -23,7 +23,7 @@ export function useNamesRooms(
   options: Readonly<Ref<PlexOptions>>,
 ): {
   getRoomOf: (id: string) => NamesRoom | undefined
-  room: ComputedRef<((node: PlexNode) => NodeRoom) | undefined>
+  getNodeRoom: ComputedRef<((node: PlexNode) => NodeRoom) | undefined>
 } {
   const rooms = computed<ReadonlyMap<string, NamesRoom>>(() => {
     const found = new Map<string, NamesRoom>()
@@ -48,7 +48,7 @@ export function useNamesRooms(
   })
   const drawn = computed(() => new Set(props.graph.nodes.map((node) => node.id)))
 
-  const room = computed(() => {
+  const getNodeRoom = computed(() => {
     const found = rooms.value
     return found.size > 0 ? (node: PlexNode) => found.get(node.id) ?? NO_ROOM : undefined
   })
@@ -56,5 +56,5 @@ export function useNamesRooms(
   const getRoomOf = (id: string) =>
     rooms.value.get(id) ?? (drawn.value.has(id) ? undefined : leaving.get(id))
 
-  return { getRoomOf, room }
+  return { getRoomOf, getNodeRoom }
 }

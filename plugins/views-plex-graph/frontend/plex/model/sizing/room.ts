@@ -22,7 +22,7 @@ import type { Viewport } from '@numen/ui'
 import type { PlexHeading } from '../../../types'
 
 /** The assumed size of the plex until it has been measured. */
-const FALLBACK = { width: 1200, height: 800 }
+export const DEFAULT_VIEWPORT = { width: 1200, height: 800 }
 
 /** What the measuring reads off the plex it belongs to. */
 export interface PlexSizingProps {
@@ -47,7 +47,7 @@ export function useFreeSpace(
   ) => Ref<PlexMetrics | undefined> = useTitleWidths,
 ) {
   /** The available size of the plex, as last measured. */
-  const room = ref<Size>(FALLBACK)
+  const room = ref<Size>(DEFAULT_VIEWPORT)
 
   onMounted(() => {
     const found = element.value

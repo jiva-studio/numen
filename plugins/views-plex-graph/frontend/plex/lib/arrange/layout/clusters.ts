@@ -63,8 +63,8 @@ interface MiddleRequest {
   readonly cell: { readonly width: number; readonly height: number }
 }
 
-/** The middle of a group sits as far out from its start as half the patch is deep. */
-export function getClusterMiddle(start: Vector, direction: Vector, request: MiddleRequest): Vector {
+function getClusterMiddle(start: Vector, direction: Vector, request: MiddleRequest): Vector {
+  // The middle of a group sits as far out from its start as half the patch is deep.
   const { size, cell } = request
   const depth =
     Math.max(0, (Math.sqrt(size) - 1) / 2) *
@@ -163,8 +163,8 @@ function placeClusters(
     const request = createRequest(plan, footprintOf(node), context)
     const spot = findFreeSpot(index, { ...request, group, fits: context.fits })
     index.add(spot)
+    const box = getPlacedNode(node, spot, context, group.length)
     group.push(spot)
-    const box = getPlacedNode(node, spot, context, plan.members.indexOf(node))
     placed.set(node.id, box)
     if (context.shouldStop?.(box)) break
   }

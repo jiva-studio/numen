@@ -12,6 +12,7 @@ export interface Gaps {
   readonly lineGap: number
 }
 
+/** `fits` reports whether a spot lies inside the window; a spot outside it is taken only when no spot inside is free. */
 export interface SpotRequest {
   readonly start: Vector
   readonly middle: Vector
@@ -19,7 +20,6 @@ export interface SpotRequest {
   readonly size: Size
   readonly group: readonly Spot[]
   readonly gaps: Gaps
-  /** Whether a spot lies inside the window; a spot outside it is taken only when no spot inside is free. */
   readonly fits?: ((spot: Spot) => boolean) | undefined
 }
 
@@ -163,8 +163,7 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
   const found: { best?: { point: Vector; cost: number; along: number } } = {}
-  let leastAlong = -TOLERANCE
-  const consider = (point: Vector) => {
+  const consider = (point: Vector, leastAlong: number) => {
     const along = measureAlong(point, request)
     if (along < leastAlong) return
     const cost = Math.round(measureCost(point, request) * COST_PRECISION)
@@ -172,19 +171,21 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
     if (request.fits && !request.fits(toSpot(point))) return
     if (index.isFree(toSpot(point), gaps)) found.best = { point, cost, along }
   }
-  consider(request.middle)
-  consider(request.start)
+  const considerAll = (points: readonly Vector[], leastAlong: number) =>
+    points.forEach((point) => consider(point, leastAlong))
+
+  considerAll([request.middle, request.start], -TOLERANCE)
   for (const box of request.group) {
     // The candidates of a box that all cost more than the best so far cannot win, so they are not built.
     if (found.best && getLeastCost(box, request) > found.best.cost + 1) continue
-    listCandidatesAround(box, request).forEach(consider)
+    considerAll(listCandidatesAround(box, request), -TOLERANCE)
   }
   if (!found.best && request.fits) {
     // The group has no free place in the window on its side of the start. A box wider than the ones before it starts further out, so a place
     // that is free and in the window is also taken where the box reaches back past the start, as long as its center is on the side of the group.
-    leastAlong = -getReach(request.direction, request.size) - TOLERANCE
+    const relaxedAlong = -getReach(request.direction, request.size) - TOLERANCE
     for (const box of [...request.group, ...index.list()])
-      listCandidatesAround(box, request).forEach(consider)
+      considerAll(listCandidatesAround(box, request), relaxedAlong)
   }
   if (found.best) return toSpot(found.best.point)
   return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)
@@ -230,7 +231,7 @@ function getReach(direction: Vector, box: Size): number {
   return Math.abs(direction.x) * (box.width / 2) + Math.abs(direction.y) * (box.height / 2)
 }
 
-function listCandidatesAround(box: Spot, request: SpotRequest): Vector[] {
+export function listCandidatesAround(box: Spot, request: SpotRequest): Vector[] {
   const { size } = request
   const gaps = getCandidateGaps(request)
   const right = box.x + box.width / 2 + gaps.gap + size.width / 2
@@ -249,12 +250,12 @@ function listCandidatesAround(box: Spot, request: SpotRequest): Vector[] {
   ]
 }
 
-function measureAlong(point: Vector, request: SpotRequest): number {
+export function measureAlong(point: Vector, request: SpotRequest): number {
   const { start, direction } = request
   return (point.x - start.x) * direction.x + (point.y - start.y) * direction.y
 }
 
-function measureCost(point: Vector, request: SpotRequest): number {
+export function measureCost(point: Vector, request: SpotRequest): number {
   const { middle, size, gaps } = request
   return Math.hypot(
     (point.x - middle.x) / (size.width + gaps.gap),

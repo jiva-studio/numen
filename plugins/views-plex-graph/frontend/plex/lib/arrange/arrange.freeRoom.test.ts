@@ -41,7 +41,7 @@ const isOverlapping = (a: PlacedNode, b: PlacedNode): boolean => {
   )
 }
 
-describe('a window with free room beside the other groups', () => {
+describe('a window that has free room next to the other groups', () => {
   const frame = arrangePlex(createGraph(), {
     options: { viewport: WINDOW },
     measure: byTitle,

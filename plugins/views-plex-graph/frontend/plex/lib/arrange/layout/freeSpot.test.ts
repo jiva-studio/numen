@@ -1,6 +1,15 @@
 /** Where a box of a cluster goes: the free spot nearest the middle of its group. */
 import { describe, expect, it } from 'vitest'
-import { findFreeSpot, SpotIndex, type Spot } from './freeSpot'
+import {
+  findFreeSpot,
+  listCandidatesAround,
+  measureAlong,
+  measureCost,
+  SpotIndex,
+  type Spot,
+  type SpotRequest,
+} from './freeSpot'
+import { createRandom } from '../../../fixtures/random'
 
 const SIZE = { width: 100, height: 30 }
 const GAPS = { gap: 16, lineGap: 20 }
@@ -101,14 +110,6 @@ describe('the free spot of a group', () => {
   })
 })
 
-function createRandom(seed: number): () => number {
-  let state = seed
-  return () => {
-    state = (state * 1664525 + 1013904223) >>> 0
-    return state / 2 ** 32
-  }
-}
-
 describe('the index agrees with the plain list', () => {
   const random = createRandom(1837)
   const between = (low: number, high: number) => low + random() * (high - low)
@@ -186,5 +187,109 @@ describe('equal costs', () => {
     // The candidate on the right is listed before the one on the left.
     expect(spot.x).toBe(SIZE.width + GAPS.gap)
     expect(spot.y).toBe(0)
+  })
+})
+
+function findLeastCostSpot(index: SpotIndex, request: SpotRequest): Spot | undefined {
+  const costOf = (spot: Spot) => Math.round(measureCost(spot, request) * 1e6)
+  const alongOf = (spot: Spot) => Math.round(measureAlong(spot, request) * 1e6)
+  const candidates = [
+    request.middle,
+    request.start,
+    ...request.group.flatMap((box) => listCandidatesAround(box, request)),
+  ]
+  let best: Spot | undefined
+  for (const point of candidates) {
+    if (measureAlong(point, request) < -TOLERANCE) continue
+    const spot = { x: point.x, y: point.y, ...request.size }
+    if (request.fits && !request.fits(spot)) continue
+    if (!index.isFree(spot, request.gaps)) continue
+    if (
+      !best ||
+      costOf(spot) < costOf(best) ||
+      (costOf(spot) === costOf(best) && alongOf(spot) < alongOf(best))
+    ) {
+      best = spot
+    }
+  }
+  return best
+}
+
+describe('the pruning of boxes that cannot win', () => {
+  const random = createRandom(1837)
+  const between = (low: number, high: number) => low + random() * (high - low)
+  const DIRECTIONS = [
+    { x: 0, y: 1 },
+    { x: 0, y: -1 },
+    { x: 1, y: 0 },
+    { x: -1, y: 0 },
+    { x: -0.92, y: 0.39 },
+  ]
+
+  it('gives the spot of least cost among all candidates, for 200 random groups', () => {
+    let compared = 0
+    for (let round = 0; round < 200; round++) {
+      const size = { width: between(40, 160), height: between(20, 50) }
+      const gaps = { gap: between(0, 30), lineGap: between(0, 30) }
+      const direction = DIRECTIONS[round % DIRECTIONS.length]!
+      const start = { x: between(-200, 200), y: between(-200, 200) }
+      const middle = {
+        x: start.x + direction.x * between(0, 150),
+        y: start.y + direction.y * between(0, 150),
+      }
+      const group: Spot[] = []
+      const index = new SpotIndex([at(0, 0)])
+      const base = { start, middle, direction, size, gaps }
+      for (let placed = between(1, 9) | 0; placed > 0; placed--) {
+        const spot = findFreeSpot(index, { ...base, group })
+        index.add(spot)
+        group.push(spot)
+      }
+      for (let others = between(0, 12) | 0; others > 0; others--) {
+        index.add({ x: between(-400, 400), y: between(-300, 300), ...size })
+      }
+      const request: SpotRequest = {
+        ...base,
+        group,
+        fits: round % 2 === 0 ? undefined : () => true,
+      }
+
+      const least = findLeastCostSpot(index, request)
+      if (!least) continue
+      compared++
+      expect(findFreeSpot(index, request), `round ${round}`).toStrictEqual(least)
+    }
+    expect(compared).toBeGreaterThan(100)
+  })
+})
+
+describe('a window the group has no room to grow deeper in', () => {
+  const taken = at(0, 100)
+  const window = { width: 200, height: 200 }
+  const fits = (spot: Spot) =>
+    Math.abs(spot.x) + spot.width / 2 <= window.width / 2 &&
+    Math.abs(spot.y) + spot.height / 2 <= window.height / 2
+  const request = {
+    start: { x: 0, y: 60 },
+    middle: { x: 0, y: 60 },
+    direction: { x: 0, y: 1 },
+    size: SIZE,
+    group: [],
+    gaps: GAPS,
+  }
+  const index = new SpotIndex([at(0, -200), taken])
+
+  it('takes a free spot inside it that lies a little before the start, as far back as the box reaches', () => {
+    const spot = findFreeSpot(index, { ...request, fits })
+
+    expect(spot).toStrictEqual(at(0, 100 - SIZE.height - GAPS.lineGap))
+    expect(measureAlong(spot, request)).toBeLessThan(-TOLERANCE)
+    expect(measureAlong(spot, request)).toBeGreaterThanOrEqual(-SIZE.height / 2 - TOLERANCE)
+  })
+
+  it('does not go back past the start where it is given no window', () => {
+    const spot = findFreeSpot(index, request)
+
+    expect(measureAlong(spot, request)).toBeGreaterThanOrEqual(-TOLERANCE)
   })
 })

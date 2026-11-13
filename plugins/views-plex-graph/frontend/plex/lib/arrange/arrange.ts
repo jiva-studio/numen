@@ -14,8 +14,10 @@ import { clusters } from './layout/clusters'
 import { measureCrowding } from './layout/crowding'
 import { applyRoom } from './look'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
+import type { Spot } from './layout/freeSpot'
 import {
   getFootprint,
+  getFootprintCenterY,
   NO_ROOM,
   type NodeRoom,
   type Placement,
@@ -78,7 +80,9 @@ export function arrangePlex(
   }
 
   // Packed as closely as this window needs and no closer, so a box narrows
-  // and a gap closes before a note is given up. The names are left out of it:
+  // and a gap closes before a note is given up. The probes of the packing and of the gaps lay out
+  // without `fits`; with it they pack differently, and arrange.frames.test.ts records the packing
+  // they choose. The names are left out of it:
   // a pill is the same size with names as without, and the names then cost notes.
   const resolved = measureCrowding(request, (packed) =>
     isHeld(
@@ -160,22 +164,25 @@ function createRoomLookup(
   return rooms
 }
 
-/** Whether a footprint centered on a spot lies inside the window, which is what a group is given to grow within. */
+function isFootprintInside(spot: Spot, viewport: Size, margin: number): boolean {
+  return (
+    Math.abs(spot.x) + spot.width / 2 <= viewport.width / 2 - margin &&
+    Math.abs(spot.y) + spot.height / 2 <= viewport.height / 2 - margin
+  )
+}
+
 function getFits(options: PlexOptions): PlacementContext['fits'] {
   const { viewport, margin } = options
   if (!viewport) return undefined
-  return (spot) =>
-    Math.abs(spot.x) + spot.width / 2 <= viewport.width / 2 - margin &&
-    Math.abs(spot.y) + spot.height / 2 <= viewport.height / 2 - margin
+  return (spot) => isFootprintInside(spot, viewport, margin)
 }
 
 function isInside(node: PlacedNode, viewport: Size, { margin, rooms }: Fit): boolean {
   const room = rooms.get(node.id) ?? NO_ROOM
-  const footprint = getFootprint(node, room)
-  const centerY = node.y + (room.bottom - room.top) / 2
-  return (
-    Math.abs(node.x) + footprint.width / 2 <= viewport.width / 2 - margin &&
-    Math.abs(centerY) + footprint.height / 2 <= viewport.height / 2 - margin
+  return isFootprintInside(
+    { x: node.x, y: getFootprintCenterY(node.y, room), ...getFootprint(node, room) },
+    viewport,
+    margin,
   )
 }
 

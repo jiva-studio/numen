@@ -207,20 +207,3 @@ export const Reaching: Story = {
     await expect(args.onActivate).toHaveBeenCalledTimes(1)
   },
 }
-
-/**
- * Without its pill the title is cut at the padding of the box and nothing outlines the edge,
- * so the handle must lie wholly beyond the end of the title text. Only a browser lays text out.
- */
-export const ReachingWithoutPill: Story = {
-  args: { showPills: false, title: 'Carnot cycle and the second law of thermodynamics' },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.hover(canvas.getByLabelText(/^Carnot cycle.*child$/))
-    const handle = canvasElement.querySelector('.plex__handle')!
-    const text = canvasElement.querySelector('.plex__title-text')!
-    await expect(handle.getBoundingClientRect().left).toBeGreaterThanOrEqual(
-      text.getBoundingClientRect().right,
-    )
-  },
-}

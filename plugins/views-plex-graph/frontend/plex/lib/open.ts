@@ -76,7 +76,7 @@ function getStride(suspended: NodeHeadings, mode: number): number {
 const LINES = 1
 const WINDOWS = 2
 
-/** The getFurthestOffset the window on the headings may be scrolled down, counted in headings. */
+/** The furthest offset the window on the headings may be scrolled to, counted in headings. */
 export const getFurthestOffset = (suspended: NodeHeadings): number =>
   Math.max(0, suspended.headings.length - suspended.visibleCount)
 

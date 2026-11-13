@@ -4,13 +4,14 @@
  */
 import type { VNode } from 'vue'
 import type { MenuTrigger } from '@numen/ui'
-import type { Drop } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
 import type { NodeHeadings } from '../../lib/inside'
 import type { NamesRoom } from '../../lib/names'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { WideBox } from '../../model/sizing/expansion'
 import type { Attention } from '../../model/useAttention'
+import type { PlexDragState } from '../../model/interaction/drag'
+import type { Gesture } from '../../model/interaction/gesture'
 import type { PlexBehavior } from '../../model/behavior'
 import type { PlexRelation, PlexDestination } from '../../../types'
 
@@ -19,11 +20,12 @@ export interface PlexPending {
   at: Position
 }
 
+/** `gesture` and `dragging` are passed as the refs they are, so the pointer moving through them redraws the lines it draws and not the notes. */
 export interface PlexViewProps {
   frame: PlexFrame
   viewport: { width: number; height: number }
   nodeSize: { width: number; height: number }
-  ghostSize?: { width: number; height: number }
+  ghostSize?: { width: number; height: number } | undefined
   showEdgeLabels?: boolean
   showPills?: boolean
   highlightLinks?: boolean
@@ -35,12 +37,9 @@ export interface PlexViewProps {
   hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
   roomOf?: ((id: string) => NamesRoom | undefined) | undefined
   behavior?: PlexBehavior
-  gestureFrom?: string | null
-  gestureAt?: Position | null
-  gestureOutcome?: Drop | null
+  gesture?: Gesture | undefined
+  dragging?: PlexDragState | undefined
   pending?: PlexPending | null
-  draggedAt?: Position | null
-  dropRelation?: PlexRelation | null
   dropName?: (relation: PlexRelation) => string
   curvature?: number | undefined
 }
@@ -64,6 +63,7 @@ export interface PlexViewEvents {
   (event: 'edge-menu', pair: string, point: Position): void
 }
 
+/** `attention` is what the drawing attends to: a node stays on only while the attention is on no other node. */
 export interface PlexNodeProps {
   node: PlacedNode
   gestureRole?: GestureRole
@@ -72,7 +72,6 @@ export interface PlexNodeProps {
   behavior?: PlexBehavior
   showPills?: boolean
   restHeight?: number
-  /** What the drawing attends to. A node stays on only while the attention is on no other node. */
   attention?: Attention
 }
 
