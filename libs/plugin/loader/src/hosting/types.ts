@@ -129,11 +129,7 @@ export interface PluginHostDeps {
   readonly getReaderExtensions?: (pluginId: string, readerId: string) => readonly string[]
   readonly registerEditor?: (
     type: string,
-    open: (
-      path: string,
-      title?: string,
-      options?: FilePlacement | EditorPlacement | null,
-    ) => void,
+    open: (path: string, title?: string, options?: FilePlacement | EditorPlacement | null) => void,
   ) => (() => void) | void
   readonly openTab: (kind: string, at?: string) => Promise<string>
   readonly openTabAdjacent?: (kind: string, at?: string) => Promise<string>

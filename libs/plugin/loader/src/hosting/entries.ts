@@ -139,7 +139,8 @@ export function registerTabKindEntry(
         opening
           .then((tabId) => {
             if (line === undefined) return
-            const state = deps.getTabState?.(tabId) as { revealLine?: (line: number) => void } | undefined
+            const state = deps.getTabState?.(tabId) as
+              { revealLine?: (line: number) => void } | undefined
             state?.revealLine?.(line)
           })
           .catch((error: Caught) => reportError(deps, pluginId, error))
