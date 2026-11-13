@@ -96,7 +96,7 @@ function placeClusters(
       Math.abs(direction.x) * (box.width / 2) + Math.abs(direction.y) * (box.height / 2)
     const reach = Math.max(getReach(size), getReach(getFootprint(members[0] ?? node)))
     const start = { x: anchor.x + direction.x * reach, y: anchor.y + direction.y * reach }
-    // The middle of a group is counted in pills: a name stands in the gap under a pill, and a note without names sits closer than one with.
+    // The middle of a group is counted in pills: the names of a note fill the gap under its pill, so a note without names packs closer than one with.
     const cell = { width: size.width + gaps.gap, height: height + gaps.lineGap }
     const middle = getClusterMiddle(start, direction, { size: members.length, cell })
 

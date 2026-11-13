@@ -334,7 +334,7 @@ export interface PlexHeading {
   readonly level: number
 }
 
-/** The name of a note shown beside a related note. The id is the caller's, handed back when the name is chosen. */
+/** The name of a note shown beside a related note. The id is the caller's, returned unchanged when the name is chosen. */
 export interface PlexName {
   readonly id: string
   readonly title: string
