@@ -30,7 +30,7 @@ export class PlexDriver {
     const graph = getGraph(this.scenario.page)
     if (!(await graph.isVisible())) await this.scenario.page.locator('[role="tab"][data-workspace-tab^="plex"]').first().click()
     await expect(graph).toBeVisible()
-    await expect(graph.locator('.plex__node--focus'), 'the plex draws no focus note').toHaveCount(1)
+    await expect(graph.locator('.plex__node.plex__node--focus'), 'the plex draws no focus note').toHaveCount(1)
     return graph
   }
 
@@ -108,7 +108,7 @@ export class PlexDriver {
   /** The note is on every side of the focus note that the table names: the middle of its box is compared with the middle of the box of the focus. */
   async expectSides(rows: readonly (readonly string[])[]): Promise<void> {
     const graph = await this.getGraph()
-    const focus = graph.locator('.plex__node--focus')
+    const focus = graph.locator('.plex__node.plex__node--focus')
     for (const [title, side] of getTableBody(rows, ['title', 'side'])) {
       const sides = parseSides(side)
       await expect
