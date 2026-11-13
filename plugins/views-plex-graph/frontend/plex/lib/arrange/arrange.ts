@@ -15,6 +15,7 @@ import { measureCrowding } from './layout/crowding'
 import { applyRoom } from './look'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
 import {
+  getFootprint,
   NO_ROOM,
   type NodeRoom,
   type Placement,
@@ -47,13 +48,13 @@ export function arrangePlex(
   const requested = requestNodes(graph.nodes, request)
   const rooms = createRoomLookup(graph.nodes, room)
 
-  // Lays the nodes out at the given options: the focus, then the placement.
+  // Lays the nodes out at the given options, each keeping the room it is given: the focus, then the placement.
   // A caller that does not need every box passes `shouldStop`.
   const lay = (
     laid: PlexOptions,
     nodesByRelation: NodesByRelation,
+    kept: Fit['rooms'],
     shouldStop?: PlacementContext['shouldStop'],
-    isRoomed = true,
   ) => {
     const width = createWidthLookup(laid, measure, request)
     const focus: PlacedNode = {
@@ -70,7 +71,7 @@ export function arrangePlex(
       placed: placement.place(nodesByRelation, focus, {
         options: laid,
         width,
-        room: isRoomed ? (node) => rooms.get(node.id) ?? NO_ROOM : () => NO_ROOM,
+        room: (node) => kept.get(node.id) ?? NO_ROOM,
         shouldStop,
       }),
     }
@@ -81,7 +82,8 @@ export function arrangePlex(
   // a pill is the same size with names as without, and the names then cost notes.
   const resolved = measureCrowding(request, (packed) =>
     isHeld(
-      lay(packed, requested, stopAtOutside(packed.viewport, packed.margin, NO_ROOMS), false).placed,
+      lay(packed, requested, NO_ROOMS, stopAtOutside(packed.viewport, packed.margin, NO_ROOMS))
+        .placed,
       packed.viewport,
       { margin: packed.margin, rooms: NO_ROOMS },
     ),
@@ -94,7 +96,7 @@ export function arrangePlex(
   const admitted = viewport
     ? admitNodes(
         requested,
-        (nodesByRelation, shouldStop) => lay(resolved, nodesByRelation, shouldStop).placed,
+        (nodesByRelation, shouldStop) => lay(resolved, nodesByRelation, rooms, shouldStop).placed,
         (node) => isInside(node, viewport, { margin, rooms }),
       )
     : requested
@@ -102,12 +104,13 @@ export function arrangePlex(
 
   const spacing = findSpacing(resolved, (candidate, window) =>
     isHeld(
-      lay({ ...resolved, ...candidate }, admitted, stopAtOutside(window, margin, rooms)).placed,
+      lay({ ...resolved, ...candidate }, admitted, rooms, stopAtOutside(window, margin, rooms))
+        .placed,
       window,
       { margin, rooms },
     ),
   )
-  const { focus, placed } = lay({ ...resolved, ...spacing }, admitted)
+  const { focus, placed } = lay({ ...resolved, ...spacing }, admitted, rooms)
   const nodes = [focus, ...placed]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
@@ -153,16 +156,12 @@ function createRoomLookup(
 }
 
 function isInside(node: PlacedNode, viewport: Size, { margin, rooms }: Fit): boolean {
-  const { top, bottom, width } = rooms.get(node.id) ?? NO_ROOM
-  const halfWidth = Math.max(node.width, width) / 2
-  const isHeldAcross = Math.abs(node.x) + halfWidth <= viewport.width / 2 - margin
-  if (top === 0 && bottom === 0) {
-    return isHeldAcross && Math.abs(node.y) + node.height / 2 <= viewport.height / 2 - margin
-  }
+  const room = rooms.get(node.id) ?? NO_ROOM
+  const footprint = getFootprint(node, room)
+  const centerY = node.y + (room.bottom - room.top) / 2
   return (
-    isHeldAcross &&
-    node.y - node.height / 2 - top >= -viewport.height / 2 + margin &&
-    node.y + node.height / 2 + bottom <= viewport.height / 2 - margin
+    Math.abs(node.x) + footprint.width / 2 <= viewport.width / 2 - margin &&
+    Math.abs(centerY) + footprint.height / 2 <= viewport.height / 2 - margin
   )
 }
 

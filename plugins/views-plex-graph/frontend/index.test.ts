@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import type { JsonValue, TabKindRegistration } from '@numen/plugin-sdk'
@@ -421,24 +421,21 @@ describe('the names of the notes related to the related notes of an open plex', 
     await settle()
     await nextTick()
     const getPlex = () => tab.findComponent(Plex)
-    const getKid = () => state.canvas.picture.value!.nodes.find((node) => node.title === 'Kid')!.id
-    const getNames = () => {
-      const names = getPlex().props('names') as
-        | ((id: string) => {
-            above: { id: string; title: string }[]
-            below: { id: string; title: string }[]
-          })
-        | undefined
-      const found = names?.(getKid())
-      return {
-        above: found?.above.map((one) => one.title) ?? [],
-        below: found?.below.map((one) => one.title) ?? [],
-      }
-    }
-    return { ctx, state, tab, asked, getPlex, getKid, getNames }
+    const getNames = () => tab.findAll('.plex__name-text').map((name) => name.text())
+    return { ctx, state, tab, asked, getPlex, getNames }
   }
 
+  beforeEach(() => {
+    vi.stubGlobal('CanvasRenderingContext2D', class {})
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      font: '',
+      measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
+    } as unknown as CanvasRenderingContext2D)
+  })
+
   afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
     document.body.replaceChildren()
   })
 
@@ -447,7 +444,7 @@ describe('the names of the notes related to the related notes of an open plex', 
 
     expect(asked.at(-1)).toEqual(['One.md', 2])
     expect(getPlex().props('showNames')).toBe(true)
-    expect(getNames()).toEqual({ above: ['Aunt'], below: ['Leaf1', 'Leaf2', 'Leaf3'] })
+    expect(getNames()).toEqual(['Aunt', 'Leaf1', 'Leaf2', 'Leaf3'])
     expect(state.canvas.picture.value!.nodes.map((node) => node.title)).toEqual(['One', 'Kid'])
   })
 
@@ -458,19 +455,19 @@ describe('the names of the notes related to the related notes of an open plex', 
     await settle()
     expect(asked.at(-1)).toEqual(['One.md', 1])
     expect(getPlex().props('showNames')).toBe(false)
-    expect(getNames()).toEqual({ above: [], below: [] })
+    expect(getNames()).toEqual([])
 
     ctx.setSetting('showNames', true)
     await settle()
     expect(asked.at(-1)).toEqual(['One.md', 2])
-    expect(getNames()).toEqual({ above: ['Aunt'], below: ['Leaf1', 'Leaf2', 'Leaf3'] })
+    expect(getNames()).toEqual(['Aunt', 'Leaf1', 'Leaf2', 'Leaf3'])
   })
 
   it('asks for depth 1 from the start when the setting is off', async () => {
     const { asked, getNames } = await openPlex({ showNames: false })
 
     expect(asked.every(([, depth]) => depth === 1)).toBe(true)
-    expect(getNames()).toEqual({ above: [], below: [] })
+    expect(getNames()).toEqual([])
   })
 
   it('cuts the names to Names per note without asking again', async () => {
@@ -481,16 +478,26 @@ describe('the names of the notes related to the related notes of an open plex', 
     await settle()
 
     expect(asked).toHaveLength(before)
-    expect(getNames()).toEqual({ above: ['Aunt'], below: ['Leaf1'] })
+    expect(getNames()).toEqual(['Aunt', 'Leaf1'])
   })
 
-  it('moves the focus to the note of a name that is chosen', async () => {
-    const { state, getPlex, getKid } = await openPlex()
-    const names = getPlex().props('names') as (id: string) => { below: { id: string }[] }
+  it('moves the focus to the note of a name that is clicked', async () => {
+    const { tab, state } = await openPlex()
+    const name = tab.get('[role="button"][aria-label="Leaf1"]')
 
-    getPlex().vm.$emit('chooseName', names(getKid()).below[0]!.id)
+    await name.trigger('pointerenter')
+    await name.trigger('click')
     await settle()
 
     expect(state.canvas.view.here.value).toBe('Leaf1.md')
+  })
+
+  it('moves nothing when a name that sits back is clicked', async () => {
+    const { tab, state } = await openPlex()
+
+    await tab.get('[role="button"][aria-label="Leaf1"]').trigger('click')
+    await settle()
+
+    expect(state.canvas.view.here.value).toBe('One.md')
   })
 })

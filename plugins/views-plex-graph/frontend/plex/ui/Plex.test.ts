@@ -502,3 +502,102 @@ describe('Animation', () => {
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(false)
   })
 })
+
+describe('the names of a note', () => {
+  const NAMES_OF_DOMAIN = {
+    above: [{ id: 'name:Boundary', title: 'Boundary' }],
+    below: [{ id: 'name:Heat', title: 'Heat' }],
+  }
+
+  const stubCanvas = () => {
+    vi.stubGlobal('CanvasRenderingContext2D', class {})
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      font: '',
+      measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
+    } as unknown as CanvasRenderingContext2D)
+  }
+
+  const mountNamed = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) => {
+    stubCanvas()
+    return mountPlex({
+      showNames: true,
+      namesOpacity: 0.3,
+      focusedNamesOpacity: 0.9,
+      names: (id) => (id === 'child-0' ? NAMES_OF_DOMAIN : { above: [], below: [] }),
+      readType: () => ({ font: '13px Test Sans', labelFont: '10px Test Sans', gap: 6 }),
+      ...props,
+    })
+  }
+
+  const getOpacities = (plex: ReturnType<typeof mountNamed>) =>
+    plex.findAll('.plex__name').map((name) => Number(name.attributes('opacity')))
+
+  const getName = (plex: ReturnType<typeof mountNamed>, title: string) =>
+    plex.get(`[role="button"][aria-label="${title}"]`)
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+    document.body.replaceChildren()
+  })
+
+  it('are drawn over and under the note they belong to', () => {
+    const plex = mountNamed()
+
+    expect(plex.findAll('.plex__name')).toHaveLength(2)
+    expect(plex.find('[aria-label="Heat"]').exists()).toBe(true)
+  })
+
+  it('sit at the resting opacity while the pointer is elsewhere', () => {
+    expect(getOpacities(mountNamed())).toEqual([0.3, 0.3])
+  })
+
+  it('come forward to the focused opacity while the pointer is over their note, and return', async () => {
+    const plex = mountNamed()
+
+    await plex.get('[aria-label^="Domain"]').trigger('pointerenter')
+    expect(getOpacities(plex)).toEqual([0.9, 0.9])
+
+    await plex.get('[aria-label^="Domain"]').trigger('pointerleave')
+    expect(getOpacities(plex)).toEqual([0.3, 0.3])
+  })
+
+  it('come forward while the pointer is over one of them', async () => {
+    const plex = mountNamed({ namesOpacity: 0 })
+
+    await getName(plex, 'Heat').trigger('pointerenter')
+
+    expect(getOpacities(plex)).toEqual([0.9, 0.9])
+  })
+
+  it('cannot be chosen while they sit back, and can once the pointer brought them forward', async () => {
+    const plex = mountNamed({ namesOpacity: 0 })
+
+    await getName(plex, 'Heat').trigger('click')
+    expect(plex.emitted('chooseName')).toBeUndefined()
+
+    await getName(plex, 'Heat').trigger('pointerenter')
+    await getName(plex, 'Heat').trigger('click')
+    expect(plex.emitted('chooseName')).toStrictEqual([['name:Heat']])
+    expect(plex.emitted('activate')).toBeUndefined()
+  })
+
+  it('go with their pill when the note leaves, and are gone when the pill is', async () => {
+    const time = stubClock()
+    const plex = mountNamed({ duration: 1000, clock: time.clock })
+
+    await plex.setProps({ graph: graphs.leaf })
+    time.tick(0)
+    time.tick(500)
+    await nextTick()
+    expect(plex.findAll('.plex__name')).toHaveLength(2)
+
+    time.tick(1000)
+    await nextTick()
+    expect(plex.findAll('.plex__name')).toHaveLength(0)
+  })
+
+  it('are not drawn with the names off', () => {
+    expect(mountNamed({ showNames: false }).findAll('.plex__name')).toHaveLength(0)
+  })
+})

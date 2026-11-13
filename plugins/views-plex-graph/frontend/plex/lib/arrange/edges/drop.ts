@@ -134,6 +134,5 @@ export function getDropRelation({
   // Close enough to the focus that the direction is pointer jitter.
   if (Math.hypot(point.x - focus.x, point.y - focus.y) < threshold) return null
 
-  const relation = getRelationTowards(focus, point, options, relations)
-  return relation
+  return getRelationTowards(focus, point, options, relations)
 }

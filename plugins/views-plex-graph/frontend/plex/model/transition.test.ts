@@ -1,12 +1,18 @@
 /** A manually driven clock: no waiting, no flakiness. */
 import { effectScope, ref } from 'vue'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { usePlexTransition as baseUsePlexTransition, type Clock } from './transition'
-import { clusters, type ArrangeInput } from '../lib/arrange'
+import { arrangePlex, clusters, NO_ROOM, type ArrangeInput } from '../lib/arrange'
 import { graphs } from '../fixtures/graphs'
 import { stubClock } from '../../fixtures/clock'
 import type { PlacedNode } from '../lib/node'
 import type { PlexGraph } from '../../types'
+
+// The real arrangement, counted at the edge of the transition.
+vi.mock('../lib/arrange', async (importActual) => {
+  const actual = await importActual<typeof import('../lib/arrange')>()
+  return { ...actual, arrangePlex: vi.fn(actual.arrangePlex) }
+})
 
 const usePlexTransition = (
   graph: () => PlexGraph,
@@ -106,6 +112,51 @@ describe('a movement stepped by hand', () => {
     world.tick(200)
     world.tick(600)
     expect(getNode(frame.value.nodes, 'focus')?.title).toBe('Recursive CTE')
+  })
+})
+
+describe('a graph and an input that change together', () => {
+  it('are arranged once', async () => {
+    const world = stubClock()
+    const current = ref<PlexGraph>(graphs.typical)
+    const room = ref<ArrangeInput['room']>(undefined)
+    inScope(() =>
+      usePlexTransition(
+        () => current.value,
+        () => ({ room: room.value }),
+        () => 400,
+        world.clock,
+      ),
+    )
+    const before = vi.mocked(arrangePlex).mock.calls.length
+
+    current.value = graphs.leaf
+    room.value = () => ({ ...NO_ROOM, bottom: 10 })
+    await Promise.resolve()
+
+    expect(vi.mocked(arrangePlex).mock.calls.length - before).toBe(1)
+  })
+
+  it('are arranged once for the graph alone, and once for the input alone', async () => {
+    const world = stubClock()
+    const current = ref<PlexGraph>(graphs.typical)
+    const room = ref<ArrangeInput['room']>(undefined)
+    inScope(() =>
+      usePlexTransition(
+        () => current.value,
+        () => ({ room: room.value }),
+        () => 400,
+        world.clock,
+      ),
+    )
+    const before = vi.mocked(arrangePlex).mock.calls.length
+
+    current.value = graphs.leaf
+    await Promise.resolve()
+    room.value = () => NO_ROOM
+    await Promise.resolve()
+
+    expect(vi.mocked(arrangePlex).mock.calls.length - before).toBe(2)
   })
 })
 

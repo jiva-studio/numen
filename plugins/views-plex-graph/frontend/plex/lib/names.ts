@@ -2,19 +2,13 @@
  * The names set over and under a pill: wrapped into rows, given room, and placed.
  * Pure: the width of a title comes in as a number.
  */
-import { cutToFit } from './arrange/edges/routing'
+import { cutToFit } from './cutToFit'
 import type { PlexName, PlexNames } from '../../types'
 
-/** A name is set at this fraction of the size of a title. */
-export const NAME_SCALE = 0.75
-/** The opacity of a name while its note is not attended to, and while it is. */
-export const DEFAULT_NAMES_OPACITY = 0.7
-export const DEFAULT_FOCUSED_NAMES_OPACITY = 1
-
 /** The height of a row, in sizes of the type. */
-export const ROW_RATIO = 1.3
+const ROW_RATIO = 1.3
 /** The space between two names of a row, in sizes of the type. */
-const SPACING = 0.9
+const NAME_SPACING = 0.9
 /** The gap between the pill and the nearest row, in rows. */
 const PILL_GAP = 0.15
 
@@ -40,6 +34,7 @@ export interface NamesRequest {
 export interface NamesRoom {
   readonly above: readonly Row[]
   readonly below: readonly Row[]
+  readonly fontSize: number
   readonly rowHeight: number
   readonly spacing: number
   readonly width: number
@@ -79,24 +74,25 @@ function wrapNames(names: readonly PlexName[], request: NamesRequest, spacing: n
   return rows
 }
 
-function getHeight(rows: readonly Row[], rowHeight: number): number {
+function getRowsHeight(rows: readonly Row[], rowHeight: number): number {
   return rows.length === 0 ? 0 : rows.length * rowHeight + rowHeight * PILL_GAP
 }
 
 /** The rows the names wrap into and the room they ask for. A note with no names asks for none. */
 export function getNamesRoom(names: PlexNames, request: NamesRequest): NamesRoom {
   const rowHeight = request.fontSize * ROW_RATIO
-  const spacing = request.fontSize * SPACING
+  const spacing = request.fontSize * NAME_SPACING
   const above = wrapNames(names.above, request, spacing)
   const below = wrapNames(names.below, request, spacing)
   return {
     above,
     below,
+    fontSize: request.fontSize,
     rowHeight,
     spacing,
     width: Math.max(0, ...[...above, ...below].map((row) => row.width)),
-    top: getHeight(above, rowHeight),
-    bottom: getHeight(below, rowHeight),
+    top: getRowsHeight(above, rowHeight),
+    bottom: getRowsHeight(below, rowHeight),
   }
 }
 

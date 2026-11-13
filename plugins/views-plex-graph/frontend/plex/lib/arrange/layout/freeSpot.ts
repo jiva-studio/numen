@@ -26,7 +26,7 @@ export interface SpotRequest {
  * floating-point error makes such a box count as overlapping, every touching
  * spot is refused and the groups degrade into lines.
  */
-export const TOLERANCE = 0.5
+const TOLERANCE = 0.5
 
 /** Candidates keep at least this much room from a neighbor, so with no gap they do not touch on float error. */
 const LEAST_GAP = 1e-6
@@ -143,19 +143,14 @@ function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
   )
 }
 
-export function isFree(spot: Spot, spots: readonly Spot[], gaps: Gaps): boolean {
-  return spots.every((other) => isClear(spot, other, gaps))
-}
-
 /**
  * The free spot of least cost: the nearest to the middle, with costs rounded
  * before they are compared so floating-point error does not decide a tie. Of
  * equal costs the one nearer the start wins, which fills a group across its
  * axis before it goes deeper; of those the earlier candidate wins.
  */
-export function findFreeSpot(spots: readonly Spot[] | SpotIndex, request: SpotRequest): Spot {
+export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
   const { size, gaps } = request
-  const index = spots instanceof SpotIndex ? spots : new SpotIndex(spots)
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
   let best: { point: Vector; cost: number; along: number } | undefined

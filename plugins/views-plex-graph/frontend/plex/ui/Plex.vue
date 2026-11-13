@@ -14,7 +14,7 @@ import { DEFAULT_BEHAVIOR, getBehavior, type PlexBehavior } from '../model/behav
 import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
-import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../lib/names'
+import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from './namesOpacity'
 import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
@@ -179,7 +179,7 @@ watch(
       :relation-name="relationName"
       :widen="widen"
       :hung="hung"
-      :names="getRoomOf"
+      :room-of="getRoomOf"
       :behavior="behavior"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"

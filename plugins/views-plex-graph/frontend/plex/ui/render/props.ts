@@ -25,13 +25,13 @@ export interface PlexViewProps {
   ghostSize?: { width: number; height: number }
   showEdgeLabels?: boolean
   showPills?: boolean
-  namesOpacity?: number
-  focusedNamesOpacity?: number
+  namesOpacity: number
+  focusedNamesOpacity: number
   canReach?: boolean
   relationName?: (relation: PlexRelation) => string
   widen?: ((node: PlacedNode) => WideBox | null) | undefined
   hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
-  names?: ((id: string) => NamesRoom | undefined) | undefined
+  roomOf?: ((id: string) => NamesRoom | undefined) | undefined
   behavior?: PlexBehavior
   gestureFrom?: string | null
   gestureAt?: Position | null
@@ -104,10 +104,4 @@ export interface PlexNodeEvents {
 export interface PlexDrawnSlots {
   /** Content drawn next to a node's title. */
   icon?(props: { node: PlacedNode }): VNode[]
-}
-
-/** The node the pointer is over and the node whose names it is over. */
-export interface Attention {
-  node: string | null
-  names: string | null
 }

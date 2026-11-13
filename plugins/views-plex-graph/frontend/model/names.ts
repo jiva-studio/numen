@@ -2,8 +2,9 @@
  * Whether the plex shows the names of the notes related to each related note, and how many
  * of them a note shows, as the plugin's own settings hold them.
  */
-import { ref, type Ref } from 'vue'
+import type { Ref } from 'vue'
 import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
+import { followSetting, NO_SETTINGS } from './followSetting'
 
 /** The keys the manifest declares the two settings under. */
 export const SHOW_NAMES_KEY = 'showNames'
@@ -25,26 +26,17 @@ const parseShowNames = (value: Unvalidated): boolean =>
   typeof value === 'boolean' ? value : SHOW_NAMES
 
 const parseNamesPerNote = (value: Unvalidated): number =>
-  typeof value === 'number' &&
-  Number.isInteger(value) &&
-  value >= NAMES_PER_NOTE_MIN &&
-  value <= NAMES_PER_NOTE_MAX
-    ? value
+  typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(Math.max(Math.round(value), NAMES_PER_NOTE_MIN), NAMES_PER_NOTE_MAX)
     : NAMES_PER_NOTE
 
 /** The two settings read from the context, and followed while the plugin is active. */
 export function readNames(context: Pick<PluginContext, 'settings'>): Names {
-  const showNames = ref(parseShowNames(context.settings.get(SHOW_NAMES_KEY)))
-  const namesPerNote = ref(parseNamesPerNote(context.settings.get(NAMES_PER_NOTE_KEY)))
-  context.settings.onChange(SHOW_NAMES_KEY, (value) => {
-    showNames.value = parseShowNames(value)
-  })
-  context.settings.onChange(NAMES_PER_NOTE_KEY, (value) => {
-    namesPerNote.value = parseNamesPerNote(value)
-  })
-  return { showNames, namesPerNote }
+  return {
+    showNames: followSetting(context, SHOW_NAMES_KEY, parseShowNames),
+    namesPerNote: followSetting(context, NAMES_PER_NOTE_KEY, parseNamesPerNote),
+  }
 }
 
 /** The names settings at their defaults, for a plex no settings are read for. */
-export const getDefaultNames = (): Names =>
-  readNames({ settings: { get: () => undefined, onChange: () => ({ dispose: () => undefined }) } })
+export const getDefaultNames = (): Names => readNames(NO_SETTINGS)

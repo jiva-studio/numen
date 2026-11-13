@@ -18,6 +18,18 @@ export interface NodeRoom {
 /** A note that keeps no room around its pill. */
 export const NO_ROOM: NodeRoom = { top: 0, bottom: 0, width: 0 }
 
+/** The box a note takes: its pill and the room it keeps over and under it. */
+export function getFootprint(
+  pill: { readonly width: number; readonly height: number },
+  room: NodeRoom,
+): { readonly width: number; readonly height: number } {
+  return { width: Math.max(pill.width, room.width), height: pill.height + room.top + room.bottom }
+}
+
+/** The center of the pill of a note whose footprint is centered on `spotY`. */
+export const getPillCenterY = (spotY: number, room: NodeRoom): number =>
+  spotY + (room.top - room.bottom) / 2
+
 /** What a node keeps around its pill, as numbers the caller measured. */
 export type Rooms = (node: PlexNode) => NodeRoom
 

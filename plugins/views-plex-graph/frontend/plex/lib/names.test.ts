@@ -4,7 +4,7 @@ import { getNamesRoom, placeNames } from './names'
 import type { PlexNames } from '../../types'
 
 const FONT_SIZE = 10
-const SPACING = FONT_SIZE * 0.9
+const NAME_SPACING = FONT_SIZE * 0.9
 const ROW_HEIGHT = FONT_SIZE * 1.3
 
 const named = (...titles: string[]) => titles.map((title) => ({ id: `id:${title}`, title }))
@@ -32,15 +32,16 @@ describe('the room of the names of a note', () => {
     const room = getNamesRoom(createNames([], ['a', 'b', 'c']), request)
 
     expect(room.below).toHaveLength(2)
-    expect(room.width).toBeCloseTo(40 + SPACING + 40)
+    expect(room.width).toBeCloseTo(40 + NAME_SPACING + 40)
     expect(room.width).toBeLessThanOrEqual(100)
   })
 
   it('takes the height of its rows under the note and none over it', () => {
     const room = getNamesRoom(createNames([], ['a', 'b', 'c']), request)
 
+    expect(room.fontSize).toBe(FONT_SIZE)
     expect(room.rowHeight).toBeCloseTo(ROW_HEIGHT)
-    expect(room.spacing).toBeCloseTo(SPACING)
+    expect(room.spacing).toBeCloseTo(NAME_SPACING)
     expect(room.bottom).toBeCloseTo(2 * ROW_HEIGHT + ROW_HEIGHT * 0.15)
     expect(room.top).toBe(0)
   })

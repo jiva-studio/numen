@@ -2,8 +2,9 @@
  * How the plex is drawn, as the plugin's own settings hold it: the pills, the size of the
  * focus, the lines, the movement and the room around a note.
  */
-import { shallowRef, type Ref } from 'vue'
-import type { JsonValue, PluginContext, Unvalidated } from '@numen/plugin-sdk'
+import type { Ref } from 'vue'
+import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
+import { followSetting, NO_SETTINGS } from './followSetting'
 import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../plex'
 import type { PlexLook, ReferenceMode } from '../types'
 
@@ -31,7 +32,7 @@ const LOOK_NUMBERS = [
   ['lineCurvature', { fallback: 0.55, min: 0, max: 1 }],
   ['noteRoom', { fallback: 0, min: 0, max: 40 }],
   ['namesOpacity', { fallback: DEFAULT_NAMES_OPACITY, min: 0, max: 1 }],
-  ['focusedNamesOpacity', { fallback: DEFAULT_FOCUSED_NAMES_OPACITY, min: 0, max: 1 }],
+  ['focusedNamesOpacity', { fallback: DEFAULT_FOCUSED_NAMES_OPACITY, min: 0.05, max: 1 }],
 ] as const satisfies readonly (readonly [string, NumberRange])[]
 
 type LookNumber = (typeof LOOK_NUMBERS)[number][0]
@@ -47,18 +48,6 @@ const parseNumber = (value: Unvalidated, range: NumberRange): number =>
   typeof value === 'number' && Number.isFinite(value)
     ? Math.min(Math.max(value, range.min), range.max)
     : range.fallback
-
-function followSetting<T>(
-  context: Pick<PluginContext, 'settings'>,
-  key: string,
-  parse: (value: JsonValue | undefined) => T,
-): Ref<T> {
-  const value = shallowRef(parse(context.settings.get(key)))
-  context.settings.onChange(key, (next) => {
-    value.value = parse(next)
-  })
-  return value
-}
 
 /** The look read from the context, and followed while the plugin is active. */
 export function readLook(context: Pick<PluginContext, 'settings'>): PlexLook {
@@ -76,5 +65,4 @@ export function readLook(context: Pick<PluginContext, 'settings'>): PlexLook {
 }
 
 /** The look at its defaults, for a plex no settings are read for. */
-export const getDefaultLook = (): PlexLook =>
-  readLook({ settings: { get: () => undefined, onChange: () => ({ dispose: () => undefined }) } })
+export const getDefaultLook = (): PlexLook => readLook(NO_SETTINGS)

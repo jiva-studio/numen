@@ -14,12 +14,10 @@ import {
 } from '@numen/plugin-sdk'
 import {
   convertNoteGraph,
-  getNamePath,
-  getNames,
-  getNameToken,
   getNoteTypes,
   getTabKinds,
 } from '../lib/picture'
+import { getNamePath, getNames, getNameToken } from '../lib/names'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
 import { CREATE_NOTE } from '../lib/commands'

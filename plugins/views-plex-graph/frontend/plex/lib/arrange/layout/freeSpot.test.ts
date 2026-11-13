@@ -1,10 +1,25 @@
 /** Where a box of a cluster goes: the free spot nearest the middle of its group. */
 import { describe, expect, it } from 'vitest'
-import { findFreeSpot, isFree, SpotIndex, TOLERANCE } from './freeSpot'
+import { findFreeSpot, SpotIndex, type Spot } from './freeSpot'
 
 const SIZE = { width: 100, height: 30 }
 const GAPS = { gap: 16, lineGap: 20 }
 const at = (x: number, y: number) => ({ x, y, ...SIZE })
+
+/** The distance a spot may sit inside a gap, which float error puts there. */
+const TOLERANCE = 0.5
+
+const isFree = (spot: Spot, taken: readonly Spot[], gaps: typeof GAPS): boolean =>
+  new SpotIndex(taken).isFree(spot, gaps)
+
+/** The rule checked against every box in turn, as the index must answer it. */
+const isFreeAmong = (spot: Spot, taken: readonly Spot[], gaps: typeof GAPS): boolean =>
+  taken.every(
+    (other) =>
+      Math.abs(spot.x - other.x) >= (spot.width + other.width) / 2 + Math.max(0, gaps.gap - TOLERANCE) ||
+      Math.abs(spot.y - other.y) >=
+        (spot.height + other.height) / 2 + Math.max(0, gaps.lineGap - TOLERANCE),
+  )
 
 describe('a spot is free', () => {
   const taken = [at(0, 0)]
@@ -20,7 +35,6 @@ describe('a spot is free', () => {
   })
 
   it('also when floating point error puts it a hair inside one gap', () => {
-    expect(TOLERANCE).toBe(0.5)
     expect(isFree(at(SIZE.width + GAPS.gap - 0.1 * TOLERANCE, 0), taken, GAPS)).toBe(true)
   })
 
@@ -51,7 +65,7 @@ describe('the free spot of a group', () => {
 
   it('touches the one box already placed, at one gap, and is no nearer the focus than the start', () => {
     const first = at(start.x, start.y)
-    const spot = findFreeSpot([at(0, 0), first], request([first]))
+    const spot = findFreeSpot(new SpotIndex([at(0, 0), first]), request([first]))
 
     const sideways = Math.abs(spot.x - first.x) - SIZE.width
     const lengthways = Math.abs(spot.y - first.y) - SIZE.height
@@ -67,7 +81,7 @@ describe('the free spot of a group', () => {
 
   it('is the middle itself when nothing else is there', () => {
     const middle = { x: 40, y: 260 }
-    expect(findFreeSpot([at(0, 0)], request([], middle))).toStrictEqual({ ...middle, ...SIZE })
+    expect(findFreeSpot(new SpotIndex([at(0, 0)]), request([], middle))).toStrictEqual({ ...middle, ...SIZE })
   })
 
   it('moves further out along the direction when every candidate next to the group is occupied', () => {
@@ -77,7 +91,7 @@ describe('the free spot of a group', () => {
         at(column * (SIZE.width + GAPS.gap), start.y + row * (SIZE.height + GAPS.lineGap)),
       ),
     )
-    const spot = findFreeSpot([at(0, 0), ...wall], request([first]))
+    const spot = findFreeSpot(new SpotIndex([at(0, 0), ...wall]), request([first]))
 
     expect(isFree(spot, [at(0, 0), ...wall], GAPS)).toBe(true)
     expect(spot.y).toBeGreaterThan(start.y)
@@ -128,12 +142,12 @@ describe('the index agrees with the plain list', () => {
         ]),
       ]
       for (const probe of probes) {
-        expect(index.isFree(probe, gaps), JSON.stringify(probe)).toBe(isFree(probe, taken, gaps))
+        expect(index.isFree(probe, gaps), JSON.stringify(probe)).toBe(isFreeAmong(probe, taken, gaps))
       }
     },
   )
 
-  it('finds the same spot from the index and from the list, and the plain list calls it free', () => {
+  it('finds a spot the rule checked against every box calls free', () => {
     for (const [x, y] of [
       [0, 0],
       [70, 60],
@@ -148,9 +162,7 @@ describe('the index agrees with the plain list', () => {
         group: [at(x, y)],
         gaps: GAPS,
       }
-      const fromIndex = findFreeSpot(index, request)
-      expect(fromIndex).toStrictEqual(findFreeSpot(taken, request))
-      expect(isFree(fromIndex, taken, GAPS)).toBe(true)
+      expect(isFreeAmong(findFreeSpot(index, request), taken, GAPS)).toBe(true)
     }
   })
 })
@@ -158,7 +170,7 @@ describe('the index agrees with the plain list', () => {
 describe('equal costs', () => {
   it('are decided by the order of the candidates when along differs by float noise only', () => {
     const box = at(0, 0)
-    const spot = findFreeSpot([box], {
+    const spot = findFreeSpot(new SpotIndex([box]), {
       start: { x: 0, y: 0 },
       middle: { x: 0, y: 0 },
       direction: { x: 1e-12, y: 1 },

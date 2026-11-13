@@ -74,7 +74,7 @@ const LOWEST = {
   lineCurvature: 0,
   noteRoom: 0,
   namesOpacity: 0,
-  focusedNamesOpacity: 0,
+  focusedNamesOpacity: 0.05,
 }
 
 const HIGHEST = {
@@ -98,6 +98,13 @@ const getValues = (look: Look, keys: readonly string[]): Record<string, unknown>
   )
 
 describe('readLook', () => {
+  it('never lets the names in focus vanish, and lets the resting names', () => {
+    const look = readLook(createContext({ namesOpacity: 0, focusedNamesOpacity: 0 }))
+
+    expect(look.namesOpacity.value).toBe(0)
+    expect(look.focusedNamesOpacity.value).toBe(0.05)
+  })
+
   it('draws the default look where nothing is set', () => {
     const look = readLook(createContext())
 

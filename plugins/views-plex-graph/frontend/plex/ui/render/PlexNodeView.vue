@@ -5,7 +5,7 @@ import { measureRect } from '@numen/ui'
  * it draws with is already on the node it was handed, but for what it is to a
  * gesture, which arrives as its role in one.
  */
-import { computed, useTemplateRef, watch } from 'vue'
+import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
 import PlexNodeBox from './PlexNodeBox.vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import PlexNodeHeadings from './PlexNodeHeadings.vue'
@@ -13,6 +13,7 @@ import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
 import { useHoverFocus } from '../../model/interaction/hoverFocus'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useOpenBox } from '../../model/sizing/expansion'
+import { useNodeState } from '../../model/useNodeState'
 import { useNodePress } from '../../model/interaction/press'
 import { createAriaLabel, type Position } from '../../lib/node'
 
@@ -49,35 +50,10 @@ const press = useNodePress(props, getMiddle, {
 const { isGhost, canStop, isAnnounced } = press.role
 const { listening } = press
 
-/**
- * Whether the handle is shown: while the pointer is over the node, or while
- * keyboard focus is on it and the keyboard is in use.
- */
-const hasDropTarget = computed(
-  () =>
-    props.behavior.reaching.hasHandle &&
-    props.node.opacity >= 1 &&
-    (props.gestureRole === 'source' || (props.gestureRole === 'open' && hoverFocus.isOn.value)),
-)
-
-/** A node that is not there yet is announced as nothing; the focus is a picture. */
-const role = computed(() => {
-  if (isGhost.value) return undefined
-  return props.node.relation === 'focus' ? 'img' : 'button'
+const { hasDropTarget, role, openPosition, hue } = useNodeState(props, {
+  isGhost,
+  isOn: hoverFocus.isOn,
 })
-
-/** Whether there is anything to open: more of the title, or headings to hang. */
-const canOpen = computed(() => !!props.wide || !!props.hung)
-
-/**
- * The position of the node while it is hovered or focused and can open; null
- * in every other state.
- */
-const openPosition = computed(() =>
-  canOpen.value && props.node.opacity >= 1 && props.gestureRole === 'open' && hoverFocus.isOn.value
-    ? `${props.node.x} ${props.node.y}`
-    : null,
-)
 
 const { open, box, handle } = useOpenBox({
   node: () => props.node,
@@ -86,13 +62,6 @@ const { open, box, handle } = useOpenBox({
   delay: () => props.behavior.expansionDelay,
   clock: props.behavior.clock,
 })
-
-/**
- * One hue per relation, from a token named after it.
- */
-const hue = computed(() => ({
-  '--relation-hue': `var(--numen-relation-${props.node.relation})`,
-}))
 
 /* --------------------------------- Hooks ---------------------------------- */
 // A box that has begun to open is already over its neighbors.
@@ -104,6 +73,7 @@ watch(
   () => hoverFocus.isOn.value,
   (now) => emit('attend', now),
 )
+onBeforeUnmount(() => emit('attend', false))
 
 /* -------------------------------- Helpers --------------------------------- */
 function getMiddle(): Position | null {

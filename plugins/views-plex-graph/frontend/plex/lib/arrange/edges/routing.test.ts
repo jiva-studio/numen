@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { DEFAULT_OPTIONS, resolveOptions } from '../options'
 import {
-  cutToFit,
   getLabelPositions,
   getLabelPlaces,
   getRise,
@@ -404,18 +403,6 @@ describe('the axis a relation is routed along', () => {
     })
     expect(turned.getAxis({ relation: 'child' })).toBe('horizontal')
     expect(turned.getAxis({ relation: 'jump' })).toBe('vertical')
-  })
-})
-
-describe('cutting a title to a room', () => {
-  const perLetter = (label: string) => [...label].length
-
-  it('keeps a label that fills the room exactly', () => {
-    expect(cutToFit('abc', 3, perLetter)).toBe('abc')
-  })
-
-  it('trims the end of the cut and leaves its start as written', () => {
-    expect(cutToFit('  ab cd', 4, perLetter)).toBe('  a…')
   })
 })
 

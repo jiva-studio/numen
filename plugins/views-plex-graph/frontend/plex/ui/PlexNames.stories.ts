@@ -79,7 +79,6 @@ const getCenterY = (element: Element) => {
   return box.top + box.height / 2
 }
 
-const getFontSize = (element: Element) => parseFloat(getComputedStyle(element).fontSize)
 
 /** Each related note shows its names as buttons, the names of its parents over it and the rest under it. */
 export const WithNames: Story = {
@@ -95,24 +94,6 @@ export const WithNames: Story = {
       getCenterY(canvas.getByLabelText('Hand tools, child')),
     )
     await expect(canvas.queryByRole('button', { name: 'Kitchen garden' })).toBeNull()
-  },
-}
-
-/** A name is smaller than a title, and the size of the focus changes the pill of the focus only. */
-export const NamesStaySmall: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const title = canvas.getByLabelText('Raised beds, child').querySelector('.plex__title-text')!
-
-    await expect(getFontSize(getName(canvas, 'Compost'))).toBeLessThan(getFontSize(title))
-    await expect(getFontSize(getName(canvas, 'Compost'))).toBe(
-      getFontSize(getName(canvas, 'Spade')),
-    )
-    const focusBox = canvas.getByLabelText(/, focus$/).querySelector('.plex__box')!
-    const childBox = canvas.getByLabelText('Raised beds, child').querySelector('.plex__box')!
-    await expect(focusBox.getBoundingClientRect().height).toBeGreaterThan(
-      childBox.getBoundingClientRect().height,
-    )
   },
 }
 

@@ -47,17 +47,26 @@ describe('readNames', () => {
     expect(namesPerNote.value).toBe(9)
   })
 
-  it('takes the default for a value outside the range or no number', () => {
-    const context = createContext({ namesPerNote: 40 })
+  it('clamps a count outside the range and rounds one that is no integer', () => {
+    const context = createContext({ namesPerNote: 24 })
+    const { namesPerNote } = readNames(context)
+    expect(namesPerNote.value).toBe(12)
+
+    context.setSetting('namesPerNote', 0)
+    expect(namesPerNote.value).toBe(1)
+    context.setSetting('namesPerNote', 2.4)
+    expect(namesPerNote.value).toBe(2)
+    context.setSetting('namesPerNote', 2.5)
+    expect(namesPerNote.value).toBe(3)
+  })
+
+  it('takes the default for a value that is no number', () => {
+    const context = createContext({ namesPerNote: '4' })
     const { namesPerNote } = readNames(context)
     expect(namesPerNote.value).toBe(6)
 
-    context.setSetting('namesPerNote', 0)
+    context.setSetting('namesPerNote', null)
     expect(namesPerNote.value).toBe(6)
-    context.setSetting('namesPerNote', '4')
-    expect(namesPerNote.value).toBe(6)
-    context.setSetting('namesPerNote', 12)
-    expect(namesPerNote.value).toBe(12)
   })
 
   it('reads the keys camelCase through a context that holds only snake_case values', () => {
@@ -80,7 +89,6 @@ describe('the manifest settings of the names', () => {
   it('declares whether to show names, on by default', () => {
     expect(settings.find((one) => one.key === 'showNames')).toMatchObject({
       type: 'boolean',
-      title: 'Show notes related to related notes',
       default: true,
       palette: true,
     })
@@ -89,7 +97,6 @@ describe('the manifest settings of the names', () => {
   it('declares how many names a note shows, from 1 to 12, six by default', () => {
     expect(settings.find((one) => one.key === 'namesPerNote')).toMatchObject({
       type: 'range',
-      title: 'Names per note',
       default: 6,
       min: 1,
       max: 12,

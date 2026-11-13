@@ -68,11 +68,8 @@ export function usePlexTransition(
     })
   }
 
-  watch(
-    () => graph(),
-    () => run(target()),
-  )
-  watchInputChanges(input, () => run(target()))
+  // One watcher for the graph and the input, so a change of both in one tick arranges once.
+  watch([() => graph(), ...getInputSources(input)], () => run(target()))
   onScopeDispose(stop)
 
   return { frame, isMoving }
@@ -113,9 +110,9 @@ function startTransition(context: StepContext): number {
   return context.clock.schedule(step)
 }
 
-function watchInputChanges(input: () => ArrangeInput | undefined, onChange: () => void): void {
-  watch(
-    [
+/** What of the input moves the arrangement. */
+function getInputSources(input: () => ArrangeInput | undefined): (() => unknown)[] {
+  return [
       () => input()?.placement,
       () => input()?.options?.viewport?.width,
       () => input()?.options?.viewport?.height,
@@ -136,7 +133,5 @@ function watchInputChanges(input: () => ArrangeInput | undefined, onChange: () =
       () => input()?.measureLabel,
       () => input()?.labelType,
       () => input()?.room,
-    ],
-    onChange,
-  )
+  ]
 }

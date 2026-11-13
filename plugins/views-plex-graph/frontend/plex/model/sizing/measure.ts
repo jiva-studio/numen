@@ -8,8 +8,10 @@
 import { doc, hasDocument } from '@numen/ui'
 import { computed, onScopeDispose, shallowRef, type Ref } from 'vue'
 import type { LabelType } from '../../lib/edge'
-import { NAME_SCALE } from '../../lib/names'
 import type { PlexNode } from '../../../types'
+
+/** A name is set at this fraction of the size of a title. */
+const NAME_SCALE = 0.75
 
 /** The width a node's box needs, padding included. */
 type Measure = (node: PlexNode) => number
