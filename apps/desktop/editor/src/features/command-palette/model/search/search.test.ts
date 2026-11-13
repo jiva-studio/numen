@@ -851,3 +851,92 @@ describe('the palette opened and put away', () => {
     expect(palette.groups.value).toStrictEqual([])
   })
 })
+
+describe('the spinner of the field', () => {
+  const answerAll = (vault: ReturnType<typeof createVault>, query: number) => {
+    vault.names[query]?.answer([])
+    for (const which of ['words', 'meaning'] as const)
+      vault.searched.filter((one) => one.mode === which)[query]?.answer.answer([])
+  }
+
+  it('stays while one question of the query is out and goes once the last one fails', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+
+    vault.names[0]?.answer([createNameMatch()])
+    vault.mode('words')?.fail('the index is closed')
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(true)
+
+    vault.mode('meaning')?.fail('no model is set')
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(false)
+  })
+
+  it('goes when the query is cleared, and the late answers of that query do not bring it back', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+
+    palette.setTyped('').catch(rethrow)
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(false)
+
+    answerAll(vault, 0)
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(false)
+  })
+
+  it('goes when the palette is put away with questions out', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    palette.setOpen(true)
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+
+    palette.setOpen(false)
+
+    expect(palette.status.isBusy.value).toBe(false)
+  })
+
+  it('stays gone when the overtaken query answers after the newer query has answered', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    palette.setTyped('entr').catch(rethrow)
+    await flushPromises()
+
+    answerAll(vault, 1)
+    await flushPromises()
+    expect(palette.status.isBusy.value).toBe(false)
+
+    answerAll(vault, 0)
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(false)
+  })
+
+  it('stays while the newer query waits for its meaning, though the overtaken query has answered', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    palette.setTyped('ent').catch(rethrow)
+    await flushPromises()
+    palette.setTyped('entr').catch(rethrow)
+    await flushPromises()
+
+    vault.names[1]?.answer([])
+    vault.searched.filter((one) => one.mode === 'words')[1]?.answer.answer([])
+    answerAll(vault, 0)
+    await flushPromises()
+
+    expect(palette.status.isBusy.value).toBe(true)
+  })
+})
