@@ -25,7 +25,10 @@ export interface PluginProcess {
 }
 
 /** The calls of PluginService a window makes about the plugins that run and their processes. */
-export type ProcessRpc = Pick<Client<typeof PluginService>, 'watchPluginProcesses' | 'releaseProcess'>
+export type ProcessRpc = Pick<
+  Client<typeof PluginService>,
+  'watchPluginProcesses' | 'releaseProcess'
+>
 
 /** The plugins that run, with the time of the core when it took the list. */
 export interface PluginProcessList {
