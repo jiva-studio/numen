@@ -28,15 +28,14 @@ const calibratingTask = "calibrating the search"
 
 // Calibration measures vaults and tells the host when a measurement failed.
 type Calibration struct {
-	mu        sync.Mutex
-	floors    *relevance.Floors
-	queue     host.Queue
-	isChecked bool
+	mu     sync.Mutex
+	floors *relevance.Floors
+	queue  host.Queue
 }
 
 // New returns a calibration that ignores events until Start.
 func New() *Calibration {
-	return &Calibration{mu: sync.Mutex{}, floors: nil, queue: nil, isChecked: false}
+	return &Calibration{mu: sync.Mutex{}, floors: nil, queue: nil}
 }
 
 // StartOver validates the hosts and starts the calibration over them with the clock.
@@ -107,38 +106,22 @@ func (c *Calibration) getParts() (*relevance.Floors, host.Queue) {
 	return c.floors, c.queue
 }
 
-// HandleEvent measures the vault when the host reports that all of its vectors exist. The first event of any kind after the plugin starts checks the vault the host shows as well,
-// so a plugin that starts after the vectors were made still measures.
-// A vault that is measured, or whose floor a person set, is not measured again: an event the host repeats changes nothing.
+// HandleEvent measures the vault when the host reports that its vectors exist, and ignores any other
+// event. A vault that is measured, or whose floor a person set, is not measured again: an event the host
+// repeats changes nothing.
 func (c *Calibration) HandleEvent(ctx context.Context, event string) error {
 	floors, queue := c.getParts()
-	if floors == nil {
-		return nil
-	}
 	vault, isSourceReady := host.ReadSearchSourceReadyEvent(event)
-	if !isSourceReady && c.wasChecked() {
+	if floors == nil || !isSourceReady {
 		return nil
 	}
 	if err := floors.Ensure(ctx, vault); err != nil {
 		return c.reportFailure(ctx, queue, err)
 	}
-	c.markChecked()
 	if err := queue.FinishTask(ctx, calibratingTask); err != nil {
 		return fmt.Errorf("finish the task of the calibration: %w", err)
 	}
 	return nil
-}
-
-func (c *Calibration) wasChecked() bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.isChecked
-}
-
-func (c *Calibration) markChecked() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.isChecked = true
 }
 
 func (c *Calibration) reportFailure(ctx context.Context, queue host.Queue, failure error) error {

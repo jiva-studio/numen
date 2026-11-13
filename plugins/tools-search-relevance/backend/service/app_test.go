@@ -231,25 +231,15 @@ func TestASearchSourceReadyEventMeasuresTheVaultOnceHoweverOftenItRepeats(t *tes
 	}
 }
 
-func TestTheFirstEventOfAnyKindChecksAVaultWhoseVectorsAlreadyExist(t *testing.T) {
-	ctx := t.Context()
+func TestAnEventOtherThanSearchSourceReadyMeasuresNothing(t *testing.T) {
 	f := newFixture(t, 0.4)
 
-	if err := f.app.HandleEvent(ctx, "onFile:md"); err != nil {
+	if err := f.app.HandleEvent(t.Context(), "onVaultOpened:physics"); err != nil {
 		t.Fatal(err)
 	}
-	if _, found := f.search.StoredFloor(modelRecipe); !found {
-		t.Fatal("a plugin that started after the vectors existed did not measure the vault")
-	}
 
-	f.search.FailEmbedding(errors.New("model stopped"))
-	f.search.SetModel(hosttest.SearchModel{Name: "other", Recipe: "other|recipe", FloorHint: 0.4})
-	f.search.SetPassages("other|recipe", passages(60, 3))
-	if err := f.app.HandleEvent(ctx, "onFile:md"); err != nil {
-		t.Fatalf("a later non-vector event ran Ensure again: %v", err)
-	}
-	if batches := f.search.EmbeddedBatches(); len(batches) != 1 {
-		t.Errorf("a later event of another kind measured again: %d measurements", len(batches))
+	if _, found := f.search.StoredFloor(modelRecipe); found || len(f.search.EmbeddedBatches()) != 0 {
+		t.Error("an event other than search source ready measured the vault")
 	}
 }
 
