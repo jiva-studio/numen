@@ -16,26 +16,12 @@ import type {
 
 type Entry = JsonObject
 
-type ManifestOptionEntry = {
-  readonly value: string | number
-  readonly title?: string
-  readonly detail?: string
-  readonly when?: string
-}
-
-type ManifestOption = string | number | ManifestOptionEntry
-
 type ManifestSetting = Entry & {
   readonly key: string
   readonly type: PluginSettingInfo['type']
   readonly title: string
   readonly description?: string
   readonly default?: JsonValue
-  readonly options?: readonly ManifestOption[]
-  readonly optionsBy?: {
-    readonly setting: string
-    readonly options: Readonly<Record<string, readonly ManifestOption[]>>
-  }
 }
 
 type Manifest = Entry & {
@@ -153,15 +139,32 @@ const listContributions = (manifest: Manifest): readonly PluginContribution[] =>
   return sections.filter(([, items]) => items.length > 0).map(([kind, items]) => ({ kind, items }))
 }
 
-const readOption = (option: ManifestOption): PluginSettingOption =>
-  typeof option === 'object'
-    ? {
-        value: String(option.value),
-        title: option.title ?? String(option.value),
-        detail: option.detail ?? '',
-        ...(option.when ? { when: option.when } : {}),
-      }
-    : { value: String(option), title: String(option), detail: '' }
+const readOption = (option: JsonValue): PluginSettingOption => {
+  if (typeof option !== 'object' || option === null)
+    return { value: String(option), title: String(option), detail: '' }
+  const entry = asEntry(option)
+  const value = String(entry.value)
+  const when = getText(entry.when)
+  return {
+    value,
+    title: getText(entry.title) || value,
+    detail: getText(entry.detail),
+    ...(when ? { when } : {}),
+  }
+}
+
+const readOptions = (list: JsonValue): readonly PluginSettingOption[] =>
+  Array.isArray(list) ? list.map(readOption) : []
+
+const readOptionsBy = (value: JsonValue) => {
+  const entry = asEntry(value)
+  return {
+    setting: getText(entry.setting),
+    options: Object.fromEntries(
+      Object.entries(asEntry(entry.options)).map(([key, list]) => [key, readOptions(list)]),
+    ),
+  }
+}
 
 const COPIED_FIELDS = [
   'palette',
@@ -177,26 +180,24 @@ const COPIED_FIELDS = [
   'operations',
 ]
 
+/** The fields whose options the manifest may write as a bare value, each with how it reads them. */
+const OPTION_FIELDS: Readonly<Record<string, (value: JsonValue) => unknown>> = {
+  options: readOptions,
+  optionsBy: readOptionsBy,
+}
+
 const readSetting = (setting: ManifestSetting): PluginSettingInfo => ({
   key: setting.key,
   type: setting.type,
   title: setting.title,
   description: setting.description ?? '',
   default: setting.default,
-  ...(setting.options ? { options: setting.options.map(readOption) } : {}),
-  ...(setting.optionsBy
-    ? {
-        optionsBy: {
-          setting: setting.optionsBy.setting,
-          options: Object.fromEntries(
-            Object.entries(setting.optionsBy.options).map(([value, list]) => [
-              value,
-              list.map(readOption),
-            ]),
-          ),
-        },
-      }
-    : {}),
+  ...Object.fromEntries(
+    Object.entries(OPTION_FIELDS).flatMap(([field, read]) => {
+      const value = setting[field]
+      return value === undefined ? [] : [[field, read(value)]]
+    }),
+  ),
   ...Object.fromEntries(
     COPIED_FIELDS.filter((field) => setting[field] !== undefined).map((field) => [
       field,

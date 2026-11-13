@@ -592,7 +592,7 @@ func TestADiskEntryPastItsTTLIsLoadedAgainAfterARestart(t *testing.T) {
 	}
 }
 
-func TestADiskEntryWithinItsTTLIsKeptAfterARestart(t *testing.T) {
+func TestADiskEntryWithinItsTTLIsServedAfterARestart(t *testing.T) {
 	dir := t.TempDir()
 	now := newFakeClock(time.Unix(6000, 0))
 	before := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithClock(now))

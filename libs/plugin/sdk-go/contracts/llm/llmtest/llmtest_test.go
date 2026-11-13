@@ -136,7 +136,6 @@ func TestAnOperationWithoutFramesThatSendsOneGetsAnError(t *testing.T) {
 	}
 }
 
-// getCallError returns the error of the call from the error the client joined with the error of Close.
 func getCallError(err error) error {
 	if joined, isJoined := err.(interface{ Unwrap() []error }); isJoined && len(joined.Unwrap()) > 0 {
 		return joined.Unwrap()[0]

@@ -76,7 +76,7 @@ async function* serveChat(
   }
 }
 
-const listServed = (roles: Roles): ReadonlyMap<string, Served> => {
+const listOperations = (roles: Roles): ReadonlyMap<string, Served> => {
   const served = new Map<string, Served>()
   const { complete, chat, embed, getProfile } = roles
   if (complete !== undefined)
@@ -109,7 +109,7 @@ const listServed = (roles: Roles): ReadonlyMap<string, Served> => {
  * each frame and the result are encoded as the core passes them.
  */
 export function createLlmHost(roles: Roles): ConnectionHost {
-  const served = listServed(roles)
+  const served = listOperations(roles)
   return {
     call: async function* (operation, payload, options) {
       const serve = served.get(operation)
