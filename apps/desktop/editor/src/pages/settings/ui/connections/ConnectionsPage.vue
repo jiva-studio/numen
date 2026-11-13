@@ -6,7 +6,7 @@
  */
 import { nextTick, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
-import { BreadcrumbBar } from '@numen/plugin-manager'
+import { SettingsToolbar } from '@numen/plugin-manager'
 import { Button, runInBackground } from '@numen/ui'
 import type { ConnectionInfo } from '@/entities/connection'
 import type { InstallationConnections } from '../../types'
@@ -84,19 +84,17 @@ function focusAfterDelete(at: number): void {
 
 <template>
   <div class="connections-page">
-    <BreadcrumbBar :current="words.connections" @back="onBack" />
-
-    <div class="connections-page__head">
+    <SettingsToolbar :path="[words.settings, words.connections]" @back="onBack" @open="onBack">
       <Button
         ref="addButton"
-        variant="outline"
+        size="small"
         :disabled="!page.hasType.value"
         @click="dialog.openAdd"
       >
         <Plus :size="14" aria-hidden="true" />
         {{ words.connectionAdd }}
       </Button>
-    </div>
+    </SettingsToolbar>
 
     <div
       v-if="page.connections.value.length > 0"
@@ -150,21 +148,14 @@ function focusAfterDelete(at: number): void {
 .connections-page {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
   inline-size: 100%;
   max-inline-size: var(--settings-measure);
   margin-inline: auto;
 }
 
-.connections-page__head {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  justify-content: flex-end;
-  margin-block-end: var(--settings-apart);
-}
-
 .connections-page__legend {
-  margin: 0.75rem 0 0;
+  margin: 0;
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
 }

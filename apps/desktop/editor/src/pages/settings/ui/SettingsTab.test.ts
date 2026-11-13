@@ -127,7 +127,7 @@ const openPlugin = async (tab: Tab, name: string) => {
 }
 
 const goBack = async (tab: Tab) => {
-  await tab.get('button[aria-label="All plugins"]').trigger('click')
+  await tab.get('button[aria-label="Back"]').trigger('click')
   await nextTick()
 }
 
@@ -315,5 +315,96 @@ describe('the settings tab', () => {
 
     const restoredInput = tab.get('input[type="search"]')
     expect((restoredInput.element as HTMLInputElement).value).toBe('')
+  })
+  describe('the toolbar', () => {
+    const OCR: PluginInfo = {
+      id: 'md.example.ocr',
+      name: 'Page Reader',
+      version: '1.0.0',
+      description: 'Reads the text of scanned pages',
+      isActive: true,
+      capabilities: [],
+      hasFrontend: false,
+      hasBackend: false,
+      settings: [],
+    }
+
+    const getToolbar = (tab: Tab) => tab.get('.settings-toolbar')
+    const getPath = (tab: Tab) => getToolbar(tab).get('nav[aria-label="Path"]')
+    const getSegments = (tab: Tab) =>
+      getPath(tab)
+        .findAll('button')
+        .map((one) => one.text())
+    const getCurrent = (tab: Tab) => getPath(tab).get('[aria-current="page"]').text()
+
+    it('shows only Settings on the list, with no back button and no action', () => {
+      const { tab } = createTab({}, [OCR])
+
+      expect(getSegments(tab)).toStrictEqual([])
+      expect(getCurrent(tab)).toBe('Settings')
+      expect(getToolbar(tab).find('button').exists()).toBe(false)
+    })
+
+    it('shows the path of the System and the Appearance page and no action', async () => {
+      const { tab } = createTab()
+
+      await openSystemSettings(tab)
+      expect(getSegments(tab)).toStrictEqual(['Settings'])
+      expect(getCurrent(tab)).toBe(words.systemSettings)
+      expect(getToolbar(tab).find('.settings-toolbar__actions').exists()).toBe(false)
+
+      await goBack(tab)
+      await openAppearanceSettings(tab)
+      expect(getCurrent(tab)).toBe(words.appearanceSettings)
+    })
+
+    it('holds Add connection on the Connections page', async () => {
+      const { tab } = createTab()
+
+      await openPlugin(tab, 'Connections')
+
+      expect(getSegments(tab)).toStrictEqual(['Settings'])
+      expect(getCurrent(tab)).toBe(words.connections)
+      expect(getToolbar(tab).get('.settings-toolbar__actions').text()).toContain(
+        words.connectionAdd,
+      )
+    })
+
+    it('holds the state and the enabled switch of a plugin on its page', async () => {
+      const { tab } = createTab({}, [OCR])
+
+      await openPlugin(tab, 'Page Reader')
+
+      expect(getSegments(tab)).toStrictEqual(['Settings', 'Other'])
+      expect(getCurrent(tab)).toBe('Page Reader')
+      const actions = getToolbar(tab).get('.settings-toolbar__actions')
+      expect(actions.text()).toContain('Running')
+      expect(actions.get('[role="switch"]').attributes('aria-label')).toBe('Enabled Page Reader')
+    })
+
+    it('goes back to the list from the Settings segment', async () => {
+      const { tab } = createTab({}, [OCR])
+      await openPlugin(tab, 'Page Reader')
+
+      await getPath(tab).findAll('button')[0]?.trigger('click')
+      await nextTick()
+
+      expect(isList(tab)).toBe(true)
+    })
+
+    it('opens the list searched for the category of a plugin from its segment', async () => {
+      const { tab, initialSearchQuery } = createTab({}, [OCR])
+      await openPlugin(tab, 'Page Reader')
+
+      await getPath(tab).findAll('button')[1]?.trigger('click')
+      await nextTick()
+
+      expect(isList(tab)).toBe(true)
+      expect(initialSearchQuery.value).toBe('category:other')
+      expect((tab.get('input[type="search"]').element as HTMLInputElement).value).toBe(
+        'category:other',
+      )
+      expect(tab.find('button[aria-label="Page Reader"]').exists()).toBe(true)
+    })
   })
 })

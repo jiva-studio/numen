@@ -468,11 +468,14 @@ func (x *ConfigureResponse) GetError() string {
 
 // PluginSetting declares one setting in the plugin's declarative settings schema.
 type PluginSetting struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	Key         string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Type        string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
-	Title       string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Key   string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Type  string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	Title string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	// The one line the settings row shows under the title.
+	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	// The full text the info button beside the title opens. Empty shows no button.
+	Details     string                 `protobuf:"bytes,25,opt,name=details,proto3" json:"details,omitempty"`
 	DefaultJson string                 `protobuf:"bytes,5,opt,name=default_json,json=defaultJson,proto3" json:"default_json,omitempty"`
 	Palette     bool                   `protobuf:"varint,6,opt,name=palette,proto3" json:"palette,omitempty"`
 	Options     []*PluginSettingOption `protobuf:"bytes,7,rep,name=options,proto3" json:"options,omitempty"`
@@ -567,6 +570,13 @@ func (x *PluginSetting) GetTitle() string {
 func (x *PluginSetting) GetDescription() string {
 	if x != nil {
 		return x.Description
+	}
+	return ""
+}
+
+func (x *PluginSetting) GetDetails() string {
+	if x != nil {
+		return x.Details
 	}
 	return ""
 }
@@ -1795,12 +1805,13 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\x81\x06\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\x9b\x06\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x04 \x01(\tR\vdescription\x12!\n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x18\n" +
+	"\adetails\x18\x19 \x01(\tR\adetails\x12!\n" +
 	"\fdefault_json\x18\x05 \x01(\tR\vdefaultJson\x12\x18\n" +
 	"\apalette\x18\x06 \x01(\bR\apalette\x127\n" +
 	"\aoptions\x18\a \x03(\v2\x1d.numen.v1.PluginSettingOptionR\aoptions\x12\x15\n" +

@@ -207,7 +207,8 @@
       "key": "customDictPath",
       "type": "file",
       "title": "Character dictionary",
-      "description": "UTF-8 text, one character per line; empty if the model has its own",
+      "description": "UTF-8 text, one character per line",
+      "details": "A UTF-8 text file with one character per line. Leave it empty when the model carries its own dictionary.",
       "accept": [".txt"],
       "default": "",
       "when": {

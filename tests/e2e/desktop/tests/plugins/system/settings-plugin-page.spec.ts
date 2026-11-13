@@ -73,7 +73,7 @@ test.describe('The page of a plugin', () => {
 
     await settings.getByRole('button', { name: new RegExp(FIRST.name) }).click()
     await expect(settings.getByTestId('setting-path')).toHaveAttribute('title', firstPath)
-    await settings.getByRole('button', { name: 'All plugins' }).click()
+    await settings.getByRole('button', { name: 'Back', exact: true }).click()
 
     await recordPage(page, SECOND.name)
     await settings.getByRole('button', { name: new RegExp(SECOND.name) }).click()

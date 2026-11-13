@@ -1809,14 +1809,17 @@ func (x *ManifestCondition) GetIs() []string {
 }
 
 type ManifestSetting struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	Key         string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Type        string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
-	Title       string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Default     *structpb.Value        `protobuf:"bytes,5,opt,name=default,proto3" json:"default,omitempty"`
-	Palette     bool                   `protobuf:"varint,6,opt,name=palette,proto3" json:"palette,omitempty"`
-	Icon        string                 `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Key   string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Type  string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	Title string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	// description is the one line the settings row shows under the title, at most 64 characters.
+	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	// details is the full text the info button beside the title opens. Empty shows no button.
+	Details string          `protobuf:"bytes,24,opt,name=details,proto3" json:"details,omitempty"`
+	Default *structpb.Value `protobuf:"bytes,5,opt,name=default,proto3" json:"default,omitempty"`
+	Palette bool            `protobuf:"varint,6,opt,name=palette,proto3" json:"palette,omitempty"`
+	Icon    string          `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
 	// options is a JSON list of options.
 	Options   *structpb.ListValue `protobuf:"bytes,8,opt,name=options,proto3" json:"options,omitempty"`
 	Min       *float64            `protobuf:"fixed64,9,opt,name=min,proto3,oneof" json:"min,omitempty"`
@@ -1899,6 +1902,13 @@ func (x *ManifestSetting) GetTitle() string {
 func (x *ManifestSetting) GetDescription() string {
 	if x != nil {
 		return x.Description
+	}
+	return ""
+}
+
+func (x *ManifestSetting) GetDetails() string {
+	if x != nil {
+		return x.Details
 	}
 	return ""
 }
@@ -2529,12 +2539,13 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01\"=\n" +
 	"\x11ManifestCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xa1\x05\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xbb\x05\n" +
 	"\x0fManifestSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x04 \x01(\tR\vdescription\x120\n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x18\n" +
+	"\adetails\x18\x18 \x01(\tR\adetails\x120\n" +
 	"\adefault\x18\x05 \x01(\v2\x16.google.protobuf.ValueR\adefault\x12\x18\n" +
 	"\apalette\x18\x06 \x01(\bR\apalette\x12\x12\n" +
 	"\x04icon\x18\a \x01(\tR\x04icon\x124\n" +

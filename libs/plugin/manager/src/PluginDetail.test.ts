@@ -68,20 +68,37 @@ describe('PluginDetail', () => {
     expect(wrapper.text()).toContain('Takes notes.')
   })
 
-  it('goes back from the back button and from the Settings crumb', async () => {
+  it('goes back from the back button and from the Settings segment of the path', async () => {
     const wrapper = mountDetail()
 
-    await wrapper.get('button[aria-label="All plugins"]').trigger('click')
+    await wrapper.get('button[aria-label="Back"]').trigger('click')
     await wrapper.get('nav button').trigger('click')
 
     expect(wrapper.emitted('back')).toHaveLength(2)
   })
 
-  it('marks the last crumb as the current page', () => {
+  it('opens the category of the plugin from its segment of the path', async () => {
+    const wrapper = mountDetail()
+
+    await wrapper.findAll('nav button')[1]?.trigger('click')
+
+    expect(wrapper.emitted('open-category')).toStrictEqual([['other']])
+    expect(wrapper.emitted('back')).toBeUndefined()
+  })
+
+  it('shows the path from Settings through the category to the plugin, the plugin as the current page', () => {
     const nav = mountDetail().get('nav')
 
-    expect(nav.attributes('aria-label')).toBe('Breadcrumb')
-    expect(nav.get('[aria-current="page"]').text()).toBe('Other')
+    expect(nav.attributes('aria-label')).toBe('Path')
+    expect(nav.findAll('button').map((one) => one.text())).toStrictEqual(['Settings', 'Other'])
+    expect(nav.get('[aria-current="page"]').text()).toBe('Notes')
+  })
+
+  it('puts the state and the enabled switch in the toolbar', () => {
+    const toolbar = mountDetail().get('.settings-toolbar')
+
+    expect(toolbar.text()).toContain('Running')
+    expect(toolbar.find('[role="switch"]').exists()).toBe(true)
   })
 
   it('shows the enabled switch of an installed plugin and emits its change', () => {

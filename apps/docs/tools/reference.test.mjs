@@ -90,13 +90,13 @@ for (const { document } of withSettings) {
   })
 }
 
-test('the reference describes a plugin setting in the words of its manifest, or by its title without them', () => {
+test('the reference describes a plugin setting in the full words of its manifest, or by its title without them', () => {
   const page = readFileSync(REFERENCE, 'utf8')
   for (const { document } of withSettings) {
     const body = getSection(page, document.id) ?? ''
     for (const one of document.settings) {
       const row = body.split('\n').find((line) => line.includes(`\`${one.key}\``)) ?? ''
-      const said = one.description ?? one.title
+      const said = one.details ?? one.description ?? one.title
       const words = said.replace(/\.$/, '').toLowerCase()
       assert.ok(
         row.toLowerCase().includes(words),

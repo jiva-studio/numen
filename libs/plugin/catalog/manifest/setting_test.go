@@ -353,3 +353,32 @@ func TestAnOptionConditionThatIsNotValidIsRejected(t *testing.T) {
 		}
 	}
 }
+
+func readDescribedSetting(description, details string) (Manifest, error) {
+	return manifestjson.Read(strings.NewReader(
+		`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"wrap","type":"boolean","title":"Wrap lines",` +
+			`"description":"` + description + `","details":"` + details + `"}]}`,
+	))
+}
+
+func TestASettingDescriptionLongerThanOneLineIsRefused(t *testing.T) {
+	_, err := readDescribedSetting(strings.Repeat("w", MaxSettingDescriptionLength+1), "")
+
+	if !errors.Is(err, ErrLongSettingDescription) {
+		t.Fatalf("got %v, want %v", err, ErrLongSettingDescription)
+	}
+}
+
+func TestASettingDescriptionOfOneLineIsAcceptedWithItsDetails(t *testing.T) {
+	description := strings.Repeat("é", MaxSettingDescriptionLength)
+	details := "Long lines break at the edge of the editor and are kept whole in the file."
+
+	m, err := readDescribedSetting(description, details)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got := m.Settings[0]; got.Description != description || got.Details != details {
+		t.Errorf("got description %q and details %q", got.Description, got.Details)
+	}
+}

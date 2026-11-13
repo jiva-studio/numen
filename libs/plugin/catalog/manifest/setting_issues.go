@@ -5,9 +5,14 @@ import (
 	"math"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
+
+// MaxSettingDescriptionLength is the most characters the description of a setting holds: one line of a
+// settings row at the full width of the settings page.
+const MaxSettingDescriptionLength = 64
 
 func listManifestSettingIssues(settings []Setting) []error {
 	var issues []error
@@ -39,6 +44,9 @@ func listManifestSettingIssue(s Setting, key string) []error {
 	var issues []error
 	if strings.TrimSpace(s.Title) == "" {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrEmptySettingTitle, key))
+	}
+	if length := utf8.RuneCountInString(s.Description); length > MaxSettingDescriptionLength {
+		issues = append(issues, fmt.Errorf("%w: %s has %d characters, at most %d; the full text goes in details", ErrLongSettingDescription, key, length, MaxSettingDescriptionLength))
 	}
 	if !slices.Contains(listSettingTypes(), s.Type) {
 		issues = append(issues, fmt.Errorf("%w: %q for %s", ErrInvalidSettingType, s.Type, key))

@@ -17,3 +17,13 @@ func TestASettingOfRowsIsShownWithItsOperationsAndItsRowLimit(t *testing.T) {
 		t.Errorf("the setting shown = %+v, want operations llm.embed and llm.profile and max 2", view)
 	}
 }
+
+func TestASettingIsShownWithItsDescriptionAndItsDetails(t *testing.T) {
+	declared := manifest.Setting{Key: "wrap", Type: "boolean", Description: "Wrap long lines", Details: "Long lines break at the edge of the editor."}
+
+	view := NewSetting(declared, "", nil)
+
+	if view.Description != "Wrap long lines" || view.Details != "Long lines break at the edge of the editor." {
+		t.Errorf("the setting shown = %+v", view)
+	}
+}

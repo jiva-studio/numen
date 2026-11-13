@@ -138,7 +138,8 @@
       "key": "model",
       "type": "enum",
       "title": "Model",
-      "description": "From Hugging Face. Parakeet v3: 25 European languages, v2: English only",
+      "description": "Speech recognition model from Hugging Face",
+      "details": "Downloaded from Hugging Face. Parakeet v3 recognizes 25 European languages, Parakeet v2 English only.",
       "default": "parakeet-tdt-0.6b-v3-int8",
       "options": [
         {

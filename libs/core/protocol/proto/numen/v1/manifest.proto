@@ -329,7 +329,10 @@ message ManifestSetting {
   string key = 1;
   string type = 2;
   string title = 3;
+  // description is the one line the settings row shows under the title, at most 64 characters.
   string description = 4;
+  // details is the full text the info button beside the title opens. Empty shows no button.
+  string details = 24;
   google.protobuf.Value default = 5;
   bool palette = 6;
   string icon = 7;
