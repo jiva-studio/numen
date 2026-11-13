@@ -68,9 +68,7 @@ export interface AgentListing {
  * `calls` keeps every task with the options it was called with.
  */
 export function createAgentConnections(
-  answer:
-    | TaskScript
-    | ((request: acp.TaskRequest, options?: ConnectionCallOptions) => TaskScript),
+  answer: TaskScript | ((request: acp.TaskRequest, options?: ConnectionCallOptions) => TaskScript),
   listing?: AgentListing,
 ) {
   const calls: { operation: string; request: acp.TaskRequest; options?: ConnectionCallOptions }[] =

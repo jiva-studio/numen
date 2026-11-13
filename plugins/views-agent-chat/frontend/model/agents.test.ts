@@ -58,16 +58,13 @@ const createChat = async (
   }: { readonly isPickerOpened?: boolean; readonly answer?: TaskAnswer } = {},
 ) => {
   const asked: string[] = []
-  const connections = createAgentConnections(
-    answer,
-    {
-      rows,
-      listOptions: (connectionId, field, options) => {
-        asked.push(`${connectionId} ${field}`)
-        return listOptions(connectionId, field, options)
-      },
+  const connections = createAgentConnections(answer, {
+    rows,
+    listOptions: (connectionId, field, options) => {
+      asked.push(`${connectionId} ${field}`)
+      return listOptions(connectionId, field, options)
     },
-  )
+  })
   const list = createAgentList(connections.host, WORDS)
   await list.reload()
   const choice = useAgentChoice(connections.host, list)
