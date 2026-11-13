@@ -432,7 +432,6 @@ const LANTERN_ROWS: readonly ConnectionRow[] = [
   },
 ]
 
-/** A window of agent tabs over the rows, started anew for each restart. */
 const startWindow = (rows: readonly ConnectionRow[], models = listOptions) => {
   const { host, calls } = createAgentConnections(
     { frames: [say('Twelve.')] },
