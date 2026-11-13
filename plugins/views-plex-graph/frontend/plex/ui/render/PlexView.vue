@@ -104,7 +104,7 @@ const onSettle = (id: string, isResting: boolean) => {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function attend(slot: keyof Attention, id: string, isAttended: boolean) {
+function onAttend(slot: keyof Attention, id: string, isAttended: boolean) {
   if (isAttended) attention[slot] = id
   else if (attention[slot] === id) attention[slot] = null
 }
@@ -171,7 +171,7 @@ const getRole = (node: PlacedNode): GestureRole => {
         @menu="(at, trigger) => emit('menu', node.id, at, trigger)"
         @enter="(heading) => emit('enter', node.id, heading)"
         @settle="onSettle(node.id, $event)"
-      @attend="attend('node', node.id, $event)"
+      @attend="onAttend('node', node.id, $event)"
       >
         <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
       </PlexNodeView>
@@ -180,7 +180,7 @@ const getRole = (node: PlacedNode): GestureRole => {
         :node="node"
         :room="names(node.id)!"
       :attention="attention"
-      @attend="attend('names', node.id, $event)"
+      @attend="onAttend('names', node.id, $event)"
         @choose="emit('choose-name', $event)"
       />
     </g>

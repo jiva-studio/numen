@@ -147,8 +147,6 @@ const overflow = computed(() =>
   ),
 )
 
-const frameStyle = computed(() => getFrameStyle(props, options.value))
-
 /**
  * A graph is drawn from the node it is seen from, so every node walks
  * to a new relation when another one arrives. A menu is anchored where one of them
@@ -165,7 +163,7 @@ watch(
     ref="frame"
     class="plex-frame numen"
     :data-moving="isMoving || undefined"
-    :style="frameStyle"
+    :style="getFrameStyle(props, options)"
   >
     <PlexView
       ref="view"

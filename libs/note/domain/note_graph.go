@@ -61,9 +61,8 @@ type NoteRef struct {
 // records that join it to other notes are in NoteGraph.Connections. Direction is set for RelationReference only.
 type RelatedNote struct {
 	NoteRef
-	Relation Relation
+	Relation  Relation
 	Direction LinkDirection
-
 	RelatedTo string
 }
 
