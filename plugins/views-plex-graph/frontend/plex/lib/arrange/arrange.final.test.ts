@@ -55,7 +55,7 @@ function createRows(
   }
 }
 
-const getShown = (frame: ReturnType<typeof arrangePlex>) =>
+const listNotes = (frame: ReturnType<typeof arrangePlex>) =>
   frame.nodes.filter((node) => node.relation !== 'focus')
 
 describe('a final layout that leaves the window', () => {
@@ -70,7 +70,7 @@ describe('a final layout that leaves the window', () => {
 
     const finals = seen.filter((context) => context.fits && !context.shouldStop)
     expect(finals[0]?.options.lineGap).toBeGreaterThan(baseline.lineGap)
-    expect(getShown(frame).map((node) => node.y)).toStrictEqual(
+    expect(listNotes(frame).map((node) => node.y)).toStrictEqual(
       [1, 2, 3].map((row) => row * (baseline.nodeSize.height + baseline.lineGap)),
     )
     expect(frame.overflow).toStrictEqual({})
@@ -83,7 +83,7 @@ describe('a final layout that leaves the window', () => {
 
     const frame = arrangePlex(graph, { options: { viewport: WINDOW }, placement })
 
-    expect(getShown(frame).map((node) => node.id)).toStrictEqual(['child-0', 'child-2'])
+    expect(listNotes(frame).map((node) => node.id)).toStrictEqual(['child-0', 'child-2'])
     expect(frame.overflow).toStrictEqual({ child: 1 })
     expect(Math.max(...frame.nodes.map((node) => node.y))).toBeLessThan(WINDOW.height)
   })
@@ -91,7 +91,7 @@ describe('a final layout that leaves the window', () => {
   it('leaves a layout inside the window as it is', () => {
     const frame = arrangePlex(graph, { options: { viewport: WINDOW }, placement: createRows(() => false) })
 
-    expect(getShown(frame)).toHaveLength(3)
+    expect(listNotes(frame)).toHaveLength(3)
     expect(frame.overflow).toStrictEqual({})
   })
 })
