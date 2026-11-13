@@ -219,24 +219,40 @@ func TestTheBridgeReadsTheDescriptionOfTheSource(t *testing.T) {
 	if hint := bridge.GetFloorHint(ctx); hint != 0.35 {
 		t.Errorf("floor hint = %v, want 0.35", hint)
 	}
-	recipe := described.Recipe()
-	mockServer.floorHint.Store(0.42)
-	mockServer.minText.Store(0)
-	if refreshed := bridge.Describe(); refreshed.Recipe() != recipe || refreshed.MinTextLength != 0 {
-		t.Errorf("a new floor hint and shortest text read as %+v, recipe was %q", refreshed, recipe)
+}
+
+func TestADescriptionIsAnsweredWithoutAskingThePluginAgain(t *testing.T) {
+	mockServer := &mockSourceServer{}
+	mockServer.recipe.Store("test-provider|test-model|384|1a2b3c4d")
+	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(startSource(t, mockServer)))
+	if err != nil {
+		t.Fatalf("Open failed: %v", err)
 	}
-	if hint := bridge.GetFloorHint(ctx); hint != 0.42 {
-		t.Errorf("floor hint after a read = %v, want 0.42", hint)
-	}
-	mockServer.floorHint.Store(-1.0)
-	bridge.Describe()
-	if hint := bridge.GetFloorHint(ctx); hint != 0 {
-		t.Errorf("a negative floor hint reads as %v, want 0", hint)
-	}
+	defer testsupport.Close(t, bridge)
+	reads := mockServer.describeCalls.Load()
 
 	mockServer.recipe.Store("test-provider|test-model|384|ffffffff")
-	if refreshed := bridge.Describe(); refreshed.Recipe() == recipe {
-		t.Errorf("another source recipe left the recipe as it was: %q", refreshed.Recipe())
+	described := bridge.Describe()
+
+	if got := mockServer.describeCalls.Load() - reads; got != 0 {
+		t.Errorf("Describe asked the plugin %d times, want none", got)
+	}
+	if described.SourceRecipe != "test-provider|test-model|384|1a2b3c4d" {
+		t.Errorf("recipe = %q, want the one read on open", described.SourceRecipe)
+	}
+}
+
+func TestANegativeFloorHintIsReadAsNone(t *testing.T) {
+	mockServer := &mockSourceServer{}
+	mockServer.floorHint.Store(-1.0)
+	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(startSource(t, mockServer)))
+	if err != nil {
+		t.Fatalf("Open failed: %v", err)
+	}
+	defer testsupport.Close(t, bridge)
+
+	if hint := bridge.GetFloorHint(t.Context()); hint != 0 {
+		t.Errorf("a negative floor hint reads as %v, want 0", hint)
 	}
 }
 

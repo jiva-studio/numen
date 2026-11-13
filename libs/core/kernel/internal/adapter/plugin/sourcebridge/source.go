@@ -141,19 +141,9 @@ func readFailure(pluginID string, err error) error {
 	return transport.ReadRPCError("describe search source "+pluginID, err)
 }
 
-// Describe returns the description of the search source, read again from the plugin when it answers.
+// Describe returns the description of the search source as last read: on open, and after each configuration of
+// the plugin, which is when it changes.
 func (b *Source) Describe() searchsource.Description {
-	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelRefreshTimeout)
-	defer cancel()
-	if client, call, err := b.service.Open(ctx); err == nil {
-		read, readErr := readDescription(ctx, client)
-		if errors.Join(readErr, call.Close()) == nil {
-			b.mu.Lock()
-			b.current = read
-			b.mu.Unlock()
-			return read.source
-		}
-	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	return b.current.source

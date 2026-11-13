@@ -167,26 +167,6 @@ func TestASettingOfAnotherPluginAnnouncesNothing(t *testing.T) {
 	}
 }
 
-// A change read by GetModel before the plugin is configured again is still announced: the listeners
-// are notified against the model they hold, not against the one the last read returned.
-func TestAChangeReadByGetModelFirstIsStillAnnounced(t *testing.T) {
-	host, bridge, mock, announced := openConfigurableEmbedder(t)
-
-	mock.modelName.Store("another-model")
-	if got := bridge.Describe().Name; got != "another-model" {
-		t.Fatalf("GetModel reads %q", got)
-	}
-	reads := mock.describeCalls.Load()
-	if err := updateSetting(t.Context(), host, embeddingPluginID, "model", "another-model"); err != nil {
-		t.Fatal(err)
-	}
-	settle(t, bridge, mock, reads)
-
-	if got := announced.Load(); got != 1 {
-		t.Errorf("the model change was announced %d times, want once", got)
-	}
-}
-
 // The chunk size the plugin reports is read with the model.
 func TestTheModelCarriesTheChunkTokensThePluginReports(t *testing.T) {
 	_, bridge, _, _ := openConfigurableEmbedder(t)
@@ -198,12 +178,15 @@ func TestTheModelCarriesTheChunkTokensThePluginReports(t *testing.T) {
 
 // A chunk size below zero is a plugin that names none.
 func TestANegativeChunkTokensIsReadAsNone(t *testing.T) {
-	_, bridge, mock, _ := openConfigurableEmbedder(t)
+	host, bridge, mock, _ := openConfigurableEmbedder(t)
+	reads := mock.describeCalls.Load()
 
-	if got := bridge.Describe().ChunkTokens; got != 256 {
-		t.Fatalf("ChunkTokens = %d, want 256", got)
-	}
 	mock.chunkTokens.Store(-5)
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", -5); err != nil {
+		t.Fatal(err)
+	}
+	settle(t, bridge, mock, reads)
+
 	if got := bridge.Describe().ChunkTokens; got != 0 {
 		t.Errorf("ChunkTokens = %d, want 0", got)
 	}
