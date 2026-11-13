@@ -409,7 +409,9 @@ func TestAChatWhoseServiceSendsHeadersAndThenNothingIsUnavailableAfterTheLimit(t
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(http.StatusOK)
-		w.(http.Flusher).Flush()
+		if err := http.NewResponseController(w).Flush(); err != nil {
+			return
+		}
 		<-r.Context().Done()
 	}))
 	t.Cleanup(server.Close)
@@ -433,14 +435,16 @@ func TestAChatWhoseServiceSendsHeadersAndThenNothingIsUnavailableAfterTheLimit(t
 func TestAWholeReplyLargerThanTheBoundStopsTheChat(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"choices":[{"message":{"role":"assistant","content":"`)
 		piece := strings.Repeat("x", 1<<20)
+		pieces := []string{`{"choices":[{"message":{"role":"assistant","content":"`}
 		for range 65 {
-			if _, err := io.WriteString(w, piece); err != nil {
+			pieces = append(pieces, piece)
+		}
+		for _, one := range append(pieces, `"},"finish_reason":"stop"}]}`) {
+			if _, err := io.WriteString(w, one); err != nil {
 				return
 			}
 		}
-		_, _ = io.WriteString(w, `"},"finish_reason":"stop"}]}`)
 	}))
 	t.Cleanup(server.Close)
 

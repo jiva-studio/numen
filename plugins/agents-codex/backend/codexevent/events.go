@@ -19,29 +19,32 @@ type Sink interface {
 // Handle hands sink what an event reports and returns the error of the sink. An event that reports
 // nothing is ignored.
 func Handle(sink Sink, rawMap map[string]any) error {
-	evType := getString(rawMap, "type")
-	if evType == "thread.started" {
+	item := getMap(rawMap, "item")
+	switch getString(rawMap, "type") {
+	case "thread.started":
 		if id := getString(rawMap, "thread_id"); id != "" {
 			sink.RecordThread(id)
 		}
-		return nil
+	case "item.started":
+		if item != nil && item["type"] == "mcp_tool_call" {
+			return sink.SendToolCall(getString(item, "id"), getToolName(item), getToolArguments(item))
+		}
+	case "item.completed":
+		if item != nil {
+			return handleCompletedItem(sink, item)
+		}
 	}
-	item := getMap(rawMap, "item")
-	if item == nil {
-		return nil
-	}
+	return nil
+}
+
+func handleCompletedItem(sink Sink, item map[string]any) error {
+	text := getString(item, "text")
 	switch {
-	case evType == "item.completed" && item["type"] == "agent_message":
-		if text := getString(item, "text"); text != "" {
-			return sink.SendText(text)
-		}
-	case evType == "item.completed" && item["type"] == "reasoning":
-		if text := getString(item, "text"); text != "" {
-			return sink.SendThought(text)
-		}
-	case evType == "item.started" && item["type"] == "mcp_tool_call":
-		return sink.SendToolCall(getString(item, "id"), getToolName(item), getToolArguments(item))
-	case evType == "item.completed" && item["type"] == "mcp_tool_call":
+	case item["type"] == "agent_message" && text != "":
+		return sink.SendText(text)
+	case item["type"] == "reasoning" && text != "":
+		return sink.SendThought(text)
+	case item["type"] == "mcp_tool_call":
 		return sink.SendToolResult(getString(item, "id"), getString(item, "status") == "failed" || item["error"] != nil)
 	}
 	return nil
