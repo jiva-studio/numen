@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+import { isDeepStrictEqual } from 'node:util'
 import { parse as parseYaml } from 'yaml'
 import { listPluginNames, readPluginManifests } from '../../../../shared/manifests.mjs'
 import { findPluginCommandMismatches } from '../../../../shared/registrations.mjs'
@@ -379,6 +380,28 @@ export function parseEnabledGoLinters(yamlText) {
   return [...(parseYaml(yamlText)?.linters?.enable ?? [])].sort((a, b) => a.localeCompare(b))
 }
 
+/** The linter settings the SDK sets for its own packages: its import rules and import aliases. */
+const SDK_OWN_LINTER_SETTINGS = new Set(['depguard', 'importas'])
+
+/**
+ * Returns a finding for each linter whose settings in `yamlText` differ from those in `rootYamlText`,
+ * leaving out the settings the SDK sets for its own packages.
+ */
+export function findGoLinterSettingsDrift(rootYamlText, yamlText, file) {
+  const rootSettings = parseYaml(rootYamlText)?.linters?.settings ?? {}
+  const settings = parseYaml(yamlText)?.linters?.settings ?? {}
+  const names = [...new Set([...Object.keys(rootSettings), ...Object.keys(settings)])]
+  return names
+    .filter((name) => !SDK_OWN_LINTER_SETTINGS.has(name))
+    .filter((name) => !isDeepStrictEqual(rootSettings[name], settings[name]))
+    .sort((a, b) => a.localeCompare(b))
+    .map((name) => ({
+      file,
+      line: 1,
+      symbol: `settings of linter '${name}' differ from root .golangci.yml`,
+    }))
+}
+
 function findPluginConfigDrift() {
   const found = []
   const exampleDir = path.join(REPO_ROOT, 'plugins/.example')
@@ -409,6 +432,16 @@ function findPluginConfigDrift() {
         })
       }
     }
+  }
+  const sdkGolangci = path.join(REPO_ROOT, SDK_GO_DIR, '.golangci.yml')
+  if (fs.existsSync(rootGolangci) && fs.existsSync(sdkGolangci)) {
+    found.push(
+      ...findGoLinterSettingsDrift(
+        fs.readFileSync(rootGolangci, 'utf8'),
+        fs.readFileSync(sdkGolangci, 'utf8'),
+        `${SDK_GO_DIR}/.golangci.yml`,
+      ),
+    )
   }
 
   if (fs.existsSync(baseEslint) && fs.existsSync(exampleEslint)) {
@@ -454,7 +487,8 @@ function findPluginConfigDrift() {
       .filter((name) => fs.existsSync(path.join(pluginsDir, name, 'go.mod')))
       .map((name) => `plugins/${name}`),
   ]
-  // The SDK has a .golangci.yml of its own, whose linters findPluginConfigDrift compares with the root.
+  // The SDK has a .golangci.yml of its own, whose linters and linter settings
+  // findPluginConfigDrift compares with the root.
   const copiesByName = {
     '.golangci.yml': pluginCopies,
     '.golangci-structure.yml': [...pluginCopies, SDK_GO_DIR],

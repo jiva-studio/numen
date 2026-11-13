@@ -13,6 +13,7 @@ import {
   lintPlantedFrontend,
   listPluginSlices,
   parseEnabledGoLinters,
+  findGoLinterSettingsDrift,
   PLANTED_SLICE_FRONTEND,
   PLANTED_SLICE_REFUSALS,
   readPluginPackageExports,
@@ -103,6 +104,43 @@ test('the exports of the plugin packages of this repository are read', () => {
 test('enabled Go linters are read from the YAML structure', () => {
   const yaml = 'version: "2"\nlinters:\n  default: none\n  enable:\n    - govet\n    # comment\n    - errcheck\n'
   assert.deepEqual(parseEnabledGoLinters(yaml), ['errcheck', 'govet'])
+})
+
+test('linter settings that differ from the root are reported, the import rules and aliases of the SDK are not', () => {
+  const root = [
+    'linters:',
+    '  settings:',
+    '    gocritic:',
+    '      disabled-checks: [argOrder]',
+    '    depguard:',
+    '      rules: {core: {deny: [{pkg: os}]}}',
+    '    importas:',
+    '      alias: [{pkg: a, alias: b}]',
+    '    usetesting:',
+    '      os-temp-dir: true',
+  ].join('\n')
+  const sdk = [
+    'linters:',
+    '  settings:',
+    '    gocritic:',
+    '      disabled-checks: []',
+    '    depguard:',
+    '      rules: {sdk: {deny: [{pkg: net}]}}',
+    '    importas:',
+    '      alias: []',
+    '    staticcheck:',
+    '      checks: [all]',
+  ].join('\n')
+
+  assert.deepEqual(
+    findGoLinterSettingsDrift(root, sdk, 'sdk/.golangci.yml').map((one) => one.symbol),
+    [
+      "settings of linter 'gocritic' differ from root .golangci.yml",
+      "settings of linter 'staticcheck' differ from root .golangci.yml",
+      "settings of linter 'usetesting' differ from root .golangci.yml",
+    ],
+  )
+  assert.deepEqual(findGoLinterSettingsDrift(root, root, 'sdk/.golangci.yml'), [])
 })
 
 const SLICED = [
