@@ -57,11 +57,11 @@ type NoteRef struct {
 	ID    string
 }
 
-// RelatedNote is a note and its relation to the note in focus. The
-// records that join it to other notes are in NoteGraph.Connections. Direction is set for RelationReference only.
+// RelatedNote is a note and its relation to the note in focus. Direction is
+// set for RelationReference only.
 type RelatedNote struct {
 	NoteRef
-	Relation Relation
+	Relation  Relation
 	Direction LinkDirection
 }
 
