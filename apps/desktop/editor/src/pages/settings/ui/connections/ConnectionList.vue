@@ -20,6 +20,8 @@ const emit = defineEmits<{
   (e: 'add'): void
 }>()
 
+defineExpose({ focusAdd, focusRow })
+
 /* --------------------------------- State ---------------------------------- */
 const addButton = useTemplateRef<HTMLButtonElement>('addButton')
 const list = useTemplateRef<HTMLElement>('list')
@@ -43,8 +45,6 @@ function focusRow(at: number): void {
   const element = rows[at] ?? rows[at - 1] ?? addButton.value
   if (element instanceof HTMLElement) element.focus()
 }
-
-defineExpose({ focusAdd, focusRow })
 </script>
 
 <template>
