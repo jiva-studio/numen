@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * The plugins that run: for each its name, its health, how long it has run, and whether it is in use
- * or when the core stops it for idleness.
+ * The plugins that run, one line each: its name, its health, and whether it is in use or when the
+ * core stops it for idleness. How long it has run is in the tooltip of the line.
  */
 import { computed } from 'vue'
 import type { PluginProcess } from '../types'
@@ -46,29 +46,34 @@ function onClose() {
 
     <p v-if="rows.length === 0" class="plugin-popover__empty">{{ words.none }}</p>
     <ul v-else class="plugin-popover__body">
-      <li v-for="row in rows" :key="row.id" class="plugin-popover__plugin" :aria-label="row.name">
-        <div class="plugin-popover__head" :title="row.id">
+      <li
+        v-for="row in rows"
+        :key="row.id"
+        class="plugin-popover__plugin"
+        :aria-label="row.name"
+        :title="row.title"
+      >
+        <span class="plugin-popover__name-cell">
           <span class="plugin-popover__name">{{ row.name }}</span>
-          <span
-            class="plugin-popover__health"
-            :class="`plugin-popover__health--${row.health}`"
-            :title="row.healthText"
-          >
+          <span v-if="row.isInCore" class="plugin-popover__tag" :title="words.inCoreHint">
+            {{ words.inCore }}
+          </span>
+        </span>
+        <span
+          class="plugin-popover__health"
+          :class="`plugin-popover__health--${row.health}`"
+          :title="row.healthLabel"
+        >
+          <span class="plugin-popover__dot" role="img" :aria-label="row.healthLabel"></span>
+          <span v-if="row.healthText" class="plugin-popover__health-text" aria-hidden="true">
             {{ row.healthText }}
           </span>
-        </div>
-        <dl class="plugin-popover__facts">
-          <div
-            v-for="one in row.facts"
-            :key="one.id"
-            class="plugin-popover__fact"
-            :title="one.hint || undefined"
-          >
-            <dt class="plugin-popover__label">{{ one.label }}</dt>
-            <dd class="plugin-popover__value">{{ one.value }}</dd>
-          </div>
-        </dl>
-        <p v-if="row.isInCore" class="plugin-popover__note">{{ words.inCore }}</p>
+        </span>
+        <span class="plugin-popover__state">{{ row.state }}</span>
+        <span class="plugin-popover__detail" :title="row.detailHint || undefined">
+          <span v-if="row.detail" class="plugin-popover__separator" aria-hidden="true">·</span>
+          {{ row.detail }}
+        </span>
       </li>
     </ul>
   </div>

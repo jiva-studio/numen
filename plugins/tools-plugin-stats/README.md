@@ -9,13 +9,14 @@ Shows in the title bar how many plugins run, so you can see that Numen starts on
 - **Count the running plugins**: The title bar shows `◈ 3`, the number of plugins whose process runs. A plugin that has only a frontend has no process and is not counted.
 - **See each plugin**: Click the item for the list. Press Escape or click elsewhere to close it.
 
-For each plugin the list shows:
+Each plugin takes one line, such as `Gazette ● Idle 57s · stops in 2m 02s`:
 
-- **Its name and its health**: `Healthy`, or the text of its worst health item, the same item the plugin's page in the settings shows.
-- **Running for**: how long ago its process started.
-- **In use**: the calls, streams and tasks that keep it running, while it has any.
-- **Idle for** and **Stops in**: once nothing keeps it running, how long it has been idle and how long until Numen stops it. Numen stops a plugin that has been idle for 3 minutes and looks for one every 30 seconds, so a plugin whose time has passed shows `Stops at the next check`.
-- **Runs inside the core**: for a plugin Numen serves inside its own process.
+- **Its name**, followed by `in core` for a plugin Numen serves inside its own process.
+- **Its health**: a dot, green while the plugin is healthy; otherwise the text of its worst health item, the same item the plugin's page in the settings shows, shortened to fit. Point at it for the whole text.
+- **In use** and the number of calls, streams and tasks that keep it running, while it has any.
+- **Idle** and **stops in**: once nothing keeps it running, how long it has been idle and how long until Numen stops it. Numen stops a plugin that has been idle for 3 minutes and looks for one every 30 seconds, so a plugin whose time has passed shows `stopping`.
+
+Point at a line for the plugin's id and how long ago its process started.
 
 The list updates as plugins start, stop, take work and finish it.
 

@@ -1,61 +1,66 @@
 /**
- * The rows of the popover: one per running plugin, with its name, its health and the facts of its
- * process at a moment.
+ * The rows of the popover: one line per running plugin with its name, its health and what it does
+ * at a moment, and the rest in the tooltip of the row.
  */
 import type { PluginProcess } from '../types'
 import { WORDS as words } from '../words'
 import { formatCount, formatDuration } from './format'
 
-/** One fact of a plugin: a label, a value and, where the meaning is not obvious, a one-line hint. */
-export interface Fact {
-  readonly id: string
-  readonly label: string
-  readonly value: string
-  readonly hint: string
-}
-
 export interface Row {
   readonly id: string
   readonly name: string
   readonly health: PluginProcess['health']
+  /** The text of the worst health item, empty while the plugin is healthy. */
   readonly healthText: string
+  /** The health for the tooltip and the accessible name: `Healthy` or the text of the worst item. */
+  readonly healthLabel: string
   readonly isInCore: boolean
-  readonly facts: readonly Fact[]
+  /** `In use` or `Idle 57s`. */
+  readonly state: string
+  /** `2 calls`, `stops in 2m 02s`, `stopping`, or empty. */
+  readonly detail: string
+  readonly detailHint: string
+  /** The tooltip of the row: the id, how long the plugin has run, and where it runs. */
+  readonly title: string
 }
 
-const fact = (id: string, label: string, value: string, hint = ''): Fact => ({
-  id,
-  label,
-  value,
-  hint,
-})
+interface Activity {
+  readonly state: string
+  readonly detail: string
+  readonly detailHint: string
+}
 
-function getUseFacts(one: PluginProcess, now: number, locale?: string): Fact[] {
-  if (one.leaseCount > 0 || one.idleStopTime === undefined) {
-    const unit = one.leaseCount === 1 ? words.lease : words.leases
-    return [fact('in-use', words.inUse, `${formatCount(one.leaseCount, locale)} ${unit}`)]
+function getActivity(one: PluginProcess, now: number, locale?: string): Activity {
+  if (one.leaseCount > 0) {
+    const unit = one.leaseCount === 1 ? words.call : words.calls
+    return {
+      state: words.inUse,
+      detail: `${formatCount(one.leaseCount, locale)} ${unit}`,
+      detailHint: words.callsHint,
+    }
   }
+  const state = `${words.idle} ${formatDuration(now - one.lastUseTime)}`
+  if (one.idleStopTime === undefined) return { state, detail: '', detailHint: '' }
   const left = one.idleStopTime - now
-  return [
-    fact('idle-for', words.idleFor, formatDuration(now - one.lastUseTime)),
-    left > 0
-      ? fact('stops-in', words.stopsIn, formatDuration(left))
-      : fact('stops-in', words.stopsIn, words.stopsNow, words.stopsNowHint),
-  ]
+  return left > 0
+    ? { state, detail: `${words.stopsIn} ${formatDuration(left)}`, detailHint: '' }
+    : { state, detail: words.stopsNow, detailHint: words.stopsNowHint }
 }
 
 /** The row of one plugin at the moment `now`, in milliseconds since the Unix epoch. */
 export function getRow(one: PluginProcess, now: number, locale?: string): Row {
+  const isOk = one.health === 'ok'
+  const title = [one.pluginId, `${words.runningFor} ${formatDuration(now - one.startTime)}`]
+  if (one.isInProcess) title.push(words.inCoreHint)
   return {
     id: one.pluginId,
     name: one.pluginName || one.pluginId,
     health: one.health,
-    healthText: one.health === 'ok' ? words.healthOk : one.healthText,
+    healthText: isOk ? '' : one.healthText,
+    healthLabel: isOk ? words.healthOk : one.healthText,
     isInCore: one.isInProcess,
-    facts: [
-      fact('running-for', words.runningFor, formatDuration(now - one.startTime)),
-      ...getUseFacts(one, now, locale),
-    ],
+    ...getActivity(one, now, locale),
+    title: title.join('\n'),
   }
 }
 

@@ -11,7 +11,11 @@ import '../styles.css'
 const NOW = Date.UTC(2026, 10, 13, 9, 30, 0)
 const MINUTE = 60_000
 
-/** Made-up plugins: one in use, one idle that stops soon, one idle whose stop is due, one in the core. */
+const HEALTHY = { health: 'ok', healthText: '' } as const
+
+/**
+ * Made-up plugins, one per state: in use, idle, about to stop, inside the core, and unhealthy.
+ */
 const PLUGINS: readonly PluginProcess[] = [
   {
     pluginId: 'org.example.atlas',
@@ -20,30 +24,37 @@ const PLUGINS: readonly PluginProcess[] = [
     lastUseTime: NOW - 2_000,
     leaseCount: 2,
     isInProcess: false,
-    health: 'warning',
-    healthText: 'The tiles are old',
+    ...HEALTHY,
   },
   {
     pluginId: 'org.example.gazette',
     pluginName: 'Gazette',
     startTime: NOW - 5 * MINUTE,
-    lastUseTime: NOW - 65_000,
+    lastUseTime: NOW - 57_000,
     leaseCount: 0,
     isInProcess: false,
-    idleStopTime: NOW + 115_000,
-    health: 'ok',
-    healthText: '',
+    idleStopTime: NOW + 122_000,
+    ...HEALTHY,
   },
   {
-    pluginId: 'org.example.maps',
-    pluginName: 'Maps',
+    pluginId: 'org.example.ledger',
+    pluginName: 'Ledger',
     startTime: NOW - 3 * 60 * MINUTE,
     lastUseTime: NOW - 3 * MINUTE - 10_000,
     leaseCount: 0,
     isInProcess: false,
     idleStopTime: NOW - 10_000,
+    ...HEALTHY,
+  },
+  {
+    pluginId: 'org.example.maps',
+    pluginName: 'Maps',
+    startTime: NOW - 20 * MINUTE,
+    lastUseTime: NOW - 4_000,
+    leaseCount: 1,
+    isInProcess: false,
     health: 'error',
-    healthText: 'The map server does not answer',
+    healthText: 'The map server does not answer since the last restart of the tile service',
   },
   {
     pluginId: 'org.example.words',
@@ -52,8 +63,7 @@ const PLUGINS: readonly PluginProcess[] = [
     lastUseTime: NOW - 3 * 60 * MINUTE,
     leaseCount: 1,
     isInProcess: true,
-    health: 'ok',
-    healthText: '',
+    ...HEALTHY,
   },
 ]
 
@@ -78,28 +88,42 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The item counts four plugins; the list names each with its health and its times. */
+const getRowOf = (popover: HTMLElement, name: string) =>
+  within(popover).getByRole('listitem', { name })
+
+/** The item counts five plugins; the list gives each one line: name, health and what it does. */
 export const Open: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(await canvas.findByRole('button', { name: '4 plugins running' }))
+    await userEvent.click(await canvas.findByRole('button', { name: '5 plugins running' }))
     const popover = await canvas.findByRole('dialog', { name: 'Running plugins' })
 
-    const gazette = within(within(popover).getByRole('listitem', { name: 'Gazette' }))
-    await expect(gazette.getByText('Idle for')).toBeVisible()
-    await expect(gazette.getByText('1m 05s')).toBeVisible()
-    await expect(gazette.getByText('1m 55s')).toBeVisible()
+    const atlas = within(getRowOf(popover, 'Atlas'))
+    await expect(atlas.getByText('In use')).toBeVisible()
+    await expect(atlas.getByText('2 calls')).toBeVisible()
+    await expect(atlas.getByRole('img', { name: 'Healthy' })).toBeVisible()
 
-    const atlas = within(within(popover).getByRole('listitem', { name: 'Atlas' }))
-    await expect(atlas.getByText('2 calls, streams or tasks')).toBeVisible()
-    await expect(atlas.getByText('The tiles are old')).toBeVisible()
-    await expect(atlas.queryByText('Stops in')).toBeNull()
+    const gazette = within(getRowOf(popover, 'Gazette'))
+    await expect(gazette.getByText('Idle 57s')).toBeVisible()
+    await expect(gazette.getByText('stops in 2m 02s')).toBeVisible()
 
-    const maps = within(within(popover).getByRole('listitem', { name: 'Maps' }))
-    await expect(maps.getByText('Stops at the next check')).toBeVisible()
+    const ledger = getRowOf(popover, 'Ledger')
+    await expect(within(ledger).getByText('stopping')).toBeVisible()
+    await expect(ledger).toHaveAttribute('title', 'org.example.ledger\nRunning for 3h 00m')
 
-    const words = within(within(popover).getByRole('listitem', { name: 'Words' }))
-    await expect(words.getByText('Runs inside the core')).toBeVisible()
+    const maps = within(getRowOf(popover, 'Maps'))
+    await expect(
+      maps.getByRole('img', {
+        name: 'The map server does not answer since the last restart of the tile service',
+      }),
+    ).toBeVisible()
+
+    const words = getRowOf(popover, 'Words')
+    await expect(within(words).getByText('in core')).toBeVisible()
+    await expect(words).toHaveAttribute(
+      'title',
+      'org.example.words\nRunning for 3h 00m\nRuns inside the core',
+    )
   },
 }
 
