@@ -185,7 +185,7 @@ export interface PluginHostDeps {
     severity: 'warning' | 'error',
   ) => void
   readonly getBackgroundTasks?: () => BackgroundTaskHost | undefined
-  readonly getProcesses?: (pluginId: string) => ProcessHost | undefined
+  readonly getProcesses?: () => ProcessHost | undefined
   readonly health?: HealthReports
   readonly clearNotices?: (pluginId: string) => void
   readonly app?: AppInfo
@@ -314,7 +314,7 @@ export interface ContextWindowHost {
   readonly getTasks: (pluginId: string) => TaskHost | undefined
   readonly getConnections: (pluginId: string) => ConnectionHost | undefined
   readonly getBackgroundTasks: () => BackgroundTaskHost | undefined
-  readonly getProcesses: (pluginId: string) => ProcessHost | undefined
+  readonly getProcesses: () => ProcessHost | undefined
   readonly getHealth: (pluginId: string) => HealthHost | undefined
   readonly getSlots: () => SlotHost
 }

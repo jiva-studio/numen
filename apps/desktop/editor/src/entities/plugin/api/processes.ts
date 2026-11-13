@@ -1,6 +1,5 @@
 /**
- * The plugins that run, as the frontends of the plugins watch them, and the release of the backend of
- * a plugin.
+ * The plugins that run, as the frontends of the plugins watch them.
  */
 import { createProcessClient } from '@numen/core-client'
 import type { ProcessHost } from '@numen/plugin-loader'
@@ -12,10 +11,10 @@ const processes = createProcessClient(pluginService)
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 /**
- * The process host of one plugin: each watch follows the stream of the core, taken up again after it
- * drops, until the watch is disposed, and a release names the plugin.
+ * The plugins that run: each watch follows the stream of the core, taken up again after it drops,
+ * until the watch is disposed.
  */
-export const createProcessHost = (pluginId: string): ProcessHost => ({
+export const processHost: ProcessHost = {
   watch: (handler) => {
     const listening = new AbortController()
     const follows = createFollower({
@@ -33,5 +32,4 @@ export const createProcessHost = (pluginId: string): ProcessHost => ({
     )
     return { dispose: () => listening.abort() }
   },
-  release: () => processes.releaseProcess(pluginId),
-})
+}

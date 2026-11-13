@@ -4,7 +4,6 @@ package plugin
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
@@ -22,26 +21,18 @@ type Processes interface {
 	Execute(ctx context.Context) <-chan plugindomain.ProcessList
 }
 
-// Release stops the process of a plugin that has finished its work.
-type Release interface {
-	Execute(ctx context.Context, pluginID string)
-}
-
 // Handler answers PluginService to a window. The window does not manage plugins, so GetPlugins is
 // unimplemented.
 type Handler struct {
 	numenv1connect.UnimplementedPluginServiceHandler
 	processes Processes
-	release   Release
 }
 
 var _ numenv1connect.PluginServiceHandler = (*Handler)(nil)
 
-var errNoPluginID = errors.New("the request names no plugin")
-
-// NewHandler answers over the plugins that run, and releases their processes through release.
-func NewHandler(processes Processes, release Release) *Handler {
-	return &Handler{processes: processes, release: release}
+// NewHandler answers over the plugins that run.
+func NewHandler(processes Processes) *Handler {
+	return &Handler{processes: processes}
 }
 
 // NewRoute is where PluginService is mounted, what the schema generated to answer it, and the
@@ -85,17 +76,4 @@ func (h *Handler) WatchPluginProcesses(
 
 func describe(list plugindomain.ProcessList) *v1.WatchPluginProcessesResponse {
 	return &v1.WatchPluginProcessesResponse{Processes: wire.DescribePluginProcesses(list.Processes), TimeUnixMs: list.Time.UnixMilli()}
-}
-
-// ReleaseProcess stops the process of the plugin the request names once it holds no lease. A request
-// that names no plugin answers InvalidArgument.
-func (h *Handler) ReleaseProcess(
-	ctx context.Context, req *connect.Request[v1.ReleaseProcessRequest],
-) (*connect.Response[v1.ReleaseProcessResponse], error) {
-	pluginID := req.Msg.GetPluginId()
-	if pluginID == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errNoPluginID)
-	}
-	h.release.Execute(ctx, pluginID)
-	return connect.NewResponse(&v1.ReleaseProcessResponse{}), nil
 }

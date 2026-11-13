@@ -44,12 +44,12 @@ func newProcessClient(t *testing.T, released *releasedProcesses, token string) n
 	return numenv1connect.NewPluginServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
 }
 
-// A plugin releases its own process: the token names the plugin, whatever the request says.
+// A plugin releases its own process: the token names the plugin.
 func TestAPluginReleasesItsOwnProcess(t *testing.T) {
 	released := &releasedProcesses{}
 	client := newProcessClient(t, released, "token-a")
 
-	if _, err := client.ReleaseProcess(t.Context(), connect.NewRequest(&v1.ReleaseProcessRequest{PluginId: "md.numen.b"})); err != nil {
+	if _, err := client.ReleaseProcess(t.Context(), connect.NewRequest(&v1.ReleaseProcessRequest{})); err != nil {
 		t.Fatal(err)
 	}
 

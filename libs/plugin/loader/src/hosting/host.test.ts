@@ -354,25 +354,6 @@ describe('createPluginHost', () => {
     )
   })
 
-  it('releases the backend of the plugin that asks, without a permission', async () => {
-    const { deps } = createMockDeps()
-    const released: string[] = []
-    const host = createPluginHost({
-      ...deps,
-      getProcesses: (pluginId) => ({
-        watch: () => ({ dispose: () => undefined }),
-        release: () => {
-          released.push(pluginId)
-          return Promise.resolve()
-        },
-      }),
-    })
-
-    await host.lifecycle.createContext('org.example.atlas').work.processes?.release()
-
-    expect(released).toStrictEqual(['org.example.atlas'])
-  })
-
   it('delegates getSetting and onSettingChange through host', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)

@@ -1427,10 +1427,7 @@ func (*WatchPluginProcessesRequest) Descriptor() ([]byte, []int) {
 }
 
 type ReleaseProcessRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The plugin whose process is released, when a window calls. The host
-	// endpoint takes the plugin from the token.
-	PluginId      string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1463,13 +1460,6 @@ func (x *ReleaseProcessRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ReleaseProcessRequest.ProtoReflect.Descriptor instead.
 func (*ReleaseProcessRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{19}
-}
-
-func (x *ReleaseProcessRequest) GetPluginId() string {
-	if x != nil {
-		return x.PluginId
-	}
-	return ""
 }
 
 type ReleaseProcessResponse struct {
@@ -1889,9 +1879,8 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x11GetPluginsRequest\"D\n" +
 	"\x12GetPluginsResponse\x12.\n" +
 	"\aplugins\x18\x01 \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\"\x1d\n" +
-	"\x1bWatchPluginProcessesRequest\"4\n" +
-	"\x15ReleaseProcessRequest\x12\x1b\n" +
-	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\"\x18\n" +
+	"\x1bWatchPluginProcessesRequest\"\x17\n" +
+	"\x15ReleaseProcessRequest\"\x18\n" +
 	"\x16ReleaseProcessResponse\"w\n" +
 	"\x1cWatchPluginProcessesResponse\x125\n" +
 	"\tprocesses\x18\x01 \x03(\v2\x17.numen.v1.PluginProcessR\tprocesses\x12 \n" +

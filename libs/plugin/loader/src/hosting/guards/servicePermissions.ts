@@ -269,7 +269,6 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     },
     processes: {
       watch: requirePermissions(PLUGINS_READ),
-      release: requireNothing('it releases the backend of the plugin itself'),
     },
   },
   health: {

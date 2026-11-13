@@ -65,7 +65,7 @@ export function createWindowServiceBridge(
     getNotices: (pluginId) => deps.getNotices?.(pluginId) ?? DISCARDING_NOTICES,
     getTasks: (pluginId) => deps.getTasks?.(pluginId),
     getBackgroundTasks: () => deps.getBackgroundTasks?.(),
-    getProcesses: (pluginId) => deps.getProcesses?.(pluginId),
+    getProcesses: () => deps.getProcesses?.(),
     getHealth: (pluginId) => deps.health && createPluginHealth(deps.health, pluginId),
     getConnections: (pluginId) => deps.getConnections?.(pluginId),
     getSlots: () => slots,
