@@ -747,7 +747,9 @@ func (*DeletePluginDataResponse) Descriptor() ([]byte, []int) {
 type OptionsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// operations are the operations the setting of rows the field belongs to is used for.
-	Operations    []string `protobuf:"bytes,1,rep,name=operations,proto3" json:"operations,omitempty"`
+	Operations []string `protobuf:"bytes,1,rep,name=operations,proto3" json:"operations,omitempty"`
+	// is_fresh asks the provider to read the options anew, past any list it keeps.
+	IsFresh       bool `protobuf:"varint,2,opt,name=is_fresh,json=isFresh,proto3" json:"is_fresh,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -789,11 +791,20 @@ func (x *OptionsRequest) GetOperations() []string {
 	return nil
 }
 
+func (x *OptionsRequest) GetIsFresh() bool {
+	if x != nil {
+		return x.IsFresh
+	}
+	return false
+}
+
 // Options is the done frame of an operation a row field names in options_from: the values the field can
 // take, in the order to show them.
 type Options struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Options       []*Option              `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Options []*Option              `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
+	// is_partial marks a list that misses values the provider could not read now; the core does not keep it.
+	IsPartial     bool `protobuf:"varint,2,opt,name=is_partial,json=isPartial,proto3" json:"is_partial,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -833,6 +844,13 @@ func (x *Options) GetOptions() []*Option {
 		return x.Options
 	}
 	return nil
+}
+
+func (x *Options) GetIsPartial() bool {
+	if x != nil {
+		return x.IsPartial
+	}
+	return false
 }
 
 // Option is one value of a field.
@@ -939,13 +957,16 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"byte_count\x18\x02 \x01(\x03R\tbyteCount\"6\n" +
 	"\x17DeletePluginDataRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\"\x1a\n" +
-	"\x18DeletePluginDataResponse\"0\n" +
+	"\x18DeletePluginDataResponse\"K\n" +
 	"\x0eOptionsRequest\x12\x1e\n" +
 	"\n" +
 	"operations\x18\x01 \x03(\tR\n" +
-	"operations\"5\n" +
+	"operations\x12\x19\n" +
+	"\bis_fresh\x18\x02 \x01(\bR\aisFresh\"T\n" +
 	"\aOptions\x12*\n" +
-	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions\"J\n" +
+	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions\x12\x1d\n" +
+	"\n" +
+	"is_partial\x18\x02 \x01(\bR\tisPartial\"J\n" +
 	"\x06Option\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
