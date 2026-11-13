@@ -99,7 +99,7 @@ func readCall(wire *v1.ProviderCall) Call {
 }
 
 func writeFailure(err error) *v1.ProviderFailure {
-	reason, _ := getReason(err)
+	reason, _ := GetReason(err)
 	retryAfter, isTryNext := IsTryNext(err)
 	if !isTryNext {
 		return &v1.ProviderFailure{Kind: v1.FailureKind_FAILURE_KIND_STOP, Reason: writeReason(reason)}
