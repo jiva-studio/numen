@@ -156,17 +156,13 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 			c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
 		}
 		if judged.isSkipped || judged.err != nil {
-			if judged.isUnavailable {
-				c.redetectIfDetected(resolved)
-			}
+			c.redetectIfUnavailable(resolved, judged.isUnavailable)
 			return rowOutcome{failure: judged.skip, err: judged.err}, judged.isStale
 		}
 		if tries == 1 && isRetried(judged.reason) {
 			continue
 		}
-		if judged.reason == connection.FailureReasonUnavailable {
-			c.redetectIfDetected(resolved)
-		}
+		c.redetectIfUnavailable(resolved, judged.reason == connection.FailureReasonUnavailable)
 		c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
 		return rowOutcome{
 			failure: &connection.Failure{ConnectionName: resolved.Name, Reason: judged.reason.String()},
@@ -175,8 +171,8 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 	}
 }
 
-func (c *Calls) redetectIfDetected(resolved connection.Resolved) {
-	if c.redetect != nil && connection.IsDetected(resolved.ID) {
+func (c *Calls) redetectIfUnavailable(resolved connection.Resolved, isUnavailable bool) {
+	if isUnavailable && c.redetect != nil && connection.IsDetected(resolved.ID) {
 		c.redetect(resolved.PluginID)
 	}
 }

@@ -36,6 +36,7 @@ func TestAListingAsksTheProviderAgain(t *testing.T) {
 	for name, between := range map[string]func(*testing.T, *setup){
 		"after the cache TTL": func(_ *testing.T, s *setup) { s.world.Clock.Advance(rowoptions.CacheTTL) },
 		"after a change of the connection": func(t *testing.T, s *setup) {
+			t.Helper()
 			s.entry = s.world.Edit(t, s.entry, "First renamed")
 		},
 		"after a change of the version of its plugin": func(_ *testing.T, s *setup) {
