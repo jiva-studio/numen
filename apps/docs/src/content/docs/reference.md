@@ -231,6 +231,7 @@ The settings of the plugin Plex Graph.
 | `outlineThickness` | a number | width of the outline of a pill, in pixels. From 0.5 to 4. |
 | `lineCurvature` | a number | how far a line between two notes bends. 0 is a straight line. From 0 to 1. |
 | `noteRoom` | a number | extra empty space kept around every note. Larger is sparser. From 0 to 40. |
+| `references` | text | show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none. One of `off`, `outgoing`, `both`, `incoming`. |
 
 ### `md.numen.views.titleBar`
 

@@ -5,17 +5,19 @@
  * a relation and edges between them and has no concept of a note; the schema
  * has no concept of drawing.
  */
-import type { Connection, ConnectionSide } from '@numen/plugin-sdk'
+import type { Connection, ConnectionSide, LinkDirection } from '@numen/plugin-sdk'
 import type {
   NoteGraph,
   NoteHeading,
   NoteType,
+  RelatedNote,
   EdgeArrow,
   EdgeLabel,
   PlexEdge,
   PlexGraph,
   PlexNode,
   PlexHeading,
+  ReferenceMode,
 } from '../types'
 
 /**
@@ -79,12 +81,36 @@ function createEdge(connection: Connection, token: (path: string) => string): Pl
 }
 
 /**
+ * Whether the setting shows a reference: a mode shows the references written in its direction, a mutual one in
+ * each of the modes that show a direction, and one with no direction in the mode that shows all.
+ */
+function admitReference(reference: RelatedNote, mode: ReferenceMode): boolean {
+  if (mode === 'off') return false
+  if (mode === 'both') return true
+  return reference.direction === mode || reference.direction === 'both'
+}
+
+/** The line to a reference, with its head at the end the link points to: the note, the focus, or both. */
+function createReferenceEdge(from: string, to: string, direction: LinkDirection | undefined): PlexEdge {
+  const arrows: Record<LinkDirection, readonly EdgeArrow[]> = {
+    outgoing: ['to'],
+    incoming: ['from'],
+    both: ['from', 'to'],
+  }
+  return direction ? { from, to, arrows: arrows[direction] } : { from, to }
+}
+
+/**
  * A node is drawn under the token its note holds, as is each end of an edge; the caller supplies a note's token.
  * Every line is drawn from one connection of the note graph, whichever notes it joins.
  * An arrowhead is drawn at each end whose record carries a marker, and nowhere else.
  * Labels are set by how many records there are, not by the arrowheads.
  */
-export function convertNoteGraph(noteGraph: NoteGraph, token: (path: string) => string): PlexGraph {
+export function convertNoteGraph(
+  noteGraph: NoteGraph,
+  token: (path: string) => string,
+  references: ReferenceMode,
+): PlexGraph {
   const focus: PlexNode = {
     id: token(noteGraph.focus.path),
     title: noteGraph.focus.title,
@@ -94,14 +120,23 @@ export function convertNoteGraph(noteGraph: NoteGraph, token: (path: string) => 
   const nodes: PlexNode[] = [focus]
   /** The path of every note this picture draws, the note in focus included. */
   const visiblePaths = new Set<string>([noteGraph.focus.path])
+  const shownReferences: RelatedNote[] = []
   for (const related of noteGraph.related) {
+    if (related.relation === 'reference') {
+      if (!admitReference(related, references)) continue
+      shownReferences.push(related)
+    }
     visiblePaths.add(related.path)
     nodes.push({ id: token(related.path), title: related.title, relation: related.relation })
   }
 
-  const edges = noteGraph.connections
+  const edges: PlexEdge[] = noteGraph.connections
     .filter(({ first, second }) => visiblePaths.has(first) && visiblePaths.has(second))
     .map((connection) => createEdge(connection, token))
+
+  for (const reference of shownReferences) {
+    edges.push(createReferenceEdge(focus.id, token(reference.path), reference.direction))
+  }
 
   return { nodes, edges }
 }
@@ -151,7 +186,8 @@ export function areNoteGraphsEqual(one: NoteGraph | null, other: NoteGraph | nul
         related.path === comparison.path &&
         related.title === comparison.title &&
         related.type === comparison.type &&
-        related.relation === comparison.relation
+        related.relation === comparison.relation &&
+        related.direction === comparison.direction
       )
     }) &&
     one.connections.every((connection, index) =>

@@ -49,6 +49,7 @@ export type {
   UnsavedBuffer,
   JsonObject,
   JsonValue,
+  LinkDirection,
   LinkMarker,
   LinkRole,
   MessageWriter,

@@ -116,8 +116,9 @@ func (u ListRelatedNotes) getRelatedNotes(ctx context.Context, cache *linkCache,
 		}
 		if relation, navigable := getRelation(l.Role); navigable {
 			found.add(domain.RelatedNote{
-				NoteRef:  domain.NoteRef{Path: l.To},
-				Relation: relation,
+				NoteRef:   domain.NoteRef{Path: l.To},
+				Relation:  relation,
+				Direction: getDirection(relation, domain.DirectionOutgoing),
 			})
 		}
 	}
@@ -134,8 +135,9 @@ func (u ListRelatedNotes) getRelatedNotes(ctx context.Context, cache *linkCache,
 			continue
 		}
 		found.add(domain.RelatedNote{
-			NoteRef:  domain.NoteRef{Path: l.From},
-			Relation: relation,
+			NoteRef:   domain.NoteRef{Path: l.From},
+			Relation:  relation,
+			Direction: getDirection(relation, domain.DirectionIncoming),
 		})
 	}
 	return found, nil
@@ -149,11 +151,21 @@ func getRelation(role domain.LinkRole) (domain.Relation, bool) {
 		return domain.RelationChild, true
 	case domain.RoleJump:
 		return domain.RelationJump, true
+	case domain.RoleRef:
+		return domain.RelationReference, true
 	default:
-		// A wikilink in prose and an attachment are links, and neither is a
-		// place in the hierarchy.
+		// An attachment is a link, and not a place in the hierarchy.
 		return "", false
 	}
+}
+
+// getDirection is the direction of a link found on one side, for a reference;
+// any other relation has none.
+func getDirection(relation domain.Relation, direction domain.LinkDirection) domain.LinkDirection {
+	if relation != domain.RelationReference {
+		return ""
+	}
+	return direction
 }
 
 func getOppositeRole(role domain.LinkRole) domain.LinkRole {
@@ -186,8 +198,14 @@ func (s *relatedNoteSet) add(related domain.RelatedNote) {
 		s.order = append(s.order, related)
 		return
 	}
-	if domain.GetRelationRank(related.Relation) < domain.GetRelationRank(s.order[i].Relation) {
+	kept := s.order[i]
+	if domain.GetRelationRank(related.Relation) < domain.GetRelationRank(kept.Relation) {
 		s.order[i] = related
+		return
+	}
+	if kept.Relation == domain.RelationReference && related.Relation == domain.RelationReference &&
+		kept.Direction != related.Direction {
+		s.order[i].Direction = domain.DirectionBoth
 	}
 }
 

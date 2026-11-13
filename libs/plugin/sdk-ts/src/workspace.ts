@@ -23,7 +23,10 @@ export interface NoteHeading {
 }
 
 // NoteRelation is how a related note is linked to the focused note.
-export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling'
+export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling' | 'reference'
+
+// LinkDirection tells which note wrote a text link: the note in focus ('outgoing'), the related note ('incoming'), or each of them ('both').
+export type LinkDirection = 'outgoing' | 'incoming' | 'both'
 
 // LinkMarker is what a link record draws at the end that points at its target. A link without one draws nothing there.
 export type LinkMarker = 'arrow'
@@ -35,6 +38,8 @@ export interface RelatedNote {
   readonly relation: NoteRelation
   readonly type: NoteType
   readonly tabKind?: string
+  // Present for a 'reference' only.
+  readonly direction?: LinkDirection
 }
 
 // NoteGraph is a note in focus, the notes joined to it, and one connection for every line drawn between

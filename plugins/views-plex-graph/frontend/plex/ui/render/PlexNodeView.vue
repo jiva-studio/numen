@@ -185,6 +185,15 @@ function getMiddle(): Position | null {
   fill: color-mix(in oklab, var(--numen-accent), var(--numen-accent-ink) 8%);
 }
 
+/* A reference is a link in a text, not a place in the hierarchy: its pill is tinted with its hue. */
+.plex__node--reference :deep(.plex__box) {
+  fill: color-mix(in oklab, var(--numen-raised), var(--relation-hue) 12%);
+}
+
+.plex__node--reference:hover :deep(.plex__box) {
+  fill: color-mix(in oklab, color-mix(in oklab, var(--numen-raised), var(--relation-hue) 12%), var(--numen-ink) 8%);
+}
+
 .plex__node--focus {
   cursor: default;
 }
