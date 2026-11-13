@@ -495,7 +495,7 @@ describe('references in the picture', () => {
     return { plex, note: map.getNodePath }
   }
 
-  const getShown = (mode: Mode): string[] =>
+  const getShownNodes = (mode: Mode): string[] =>
     draw(withReferences(), mode)
       .plex.nodes.filter((node) => node.relation === 'reference')
       .map((node) => node.title)
@@ -506,7 +506,7 @@ describe('references in the picture', () => {
     ['incoming', ['CitedBy', 'Mutual']],
     ['both', ['Cites', 'CitedBy', 'Mutual']],
   ])('shows with the setting %s the references %j', (mode, titles) => {
-    expect(getShown(mode)).toEqual(titles)
+    expect(getShownNodes(mode)).toEqual(titles)
   })
 
   it.each<Mode>(['off', 'outgoing', 'incoming', 'both'])(
@@ -579,7 +579,7 @@ describe('references in the picture', () => {
     return {
       ...one,
       related: one.related.map((related) =>
-        related.path === 'Cites.md' ? { ...related, direction: value } : related,
+        related.path === 'Cites.md' ? { ...related, ...(value === undefined ? {} : { direction: value }) } : related,
       ),
     }
   }

@@ -244,7 +244,7 @@ describe('while a gesture is under way', () => {
   })
 })
 
-describe('releasing towards the left beside references', () => {
+describe('releasing towards the left when the focus has references', () => {
   it('asks for a jump, never a reference', async () => {
     const { plex, svg } = mountPlex({
       graph: build('A node', { parent: 1, child: 2, jump: 1, reference: 2 }),

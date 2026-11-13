@@ -23,7 +23,6 @@ export interface RelatedNoteSpec {
   reverseMarker?: LinkMarker
   title?: string
   type?: NoteType
-  /** Which note wrote the text link of a reference. */
   direction?: 'outgoing' | 'incoming' | 'both'
 }
 

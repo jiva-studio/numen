@@ -937,10 +937,7 @@ export const HeadingsInside: Story = {
   },
 }
 
-/** Renders the plex inside a small fixed container. */
-export const SmallWindow: Story = {
-  args: { graph: graphs.crowded },
-  render: (args) => ({
+const renderInSmallWindow: NonNullable<Story['render']> = (args) => ({
     components: { Plex },
     setup: () => {
       const type = useTypeSize()
@@ -962,6 +959,12 @@ export const SmallWindow: Story = {
       </div>
     `,
   }),
+})
+
+/** Renders the plex inside a small fixed container. */
+export const SmallWindow: Story = {
+  args: { graph: graphs.crowded },
+  render: renderInSmallWindow,
 }
 
 const withReferences: PlexGraph = {
@@ -1019,7 +1022,7 @@ const crowdedWithReferences: PlexGraph = build('Salt marsh', {
 /** Counts the references left out of a small window like any other relation. */
 export const ManyReferencesInASmallWindow: Story = {
   args: { graph: crowdedWithReferences, duration: 0 },
-  render: SmallWindow.render,
+  render: renderInSmallWindow,
   play: async ({ canvasElement }) => {
     const status = await waitFor(() => {
       const found = canvasElement.querySelector('[role="status"]')

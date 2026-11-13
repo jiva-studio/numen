@@ -14,7 +14,7 @@ const arrange = (graph: PlexGraph, viewport?: Window): PlexFrame =>
   arrangePlex(graph, viewport ? { options: { viewport } } : {})
 
 const getFocus = (frame: PlexFrame): PlacedNode => frame.nodes.find((n) => n.relation === 'focus')!
-const getShown = (frame: PlexFrame, relation: PlexNodeRelation): PlacedNode[] =>
+const getShownNodes = (frame: PlexFrame, relation: PlexNodeRelation): PlacedNode[] =>
   frame.nodes.filter((node) => node.relation === relation)
 const mean = (values: readonly number[]): number =>
   values.reduce((sum, value) => sum + value, 0) / values.length
@@ -30,8 +30,8 @@ const getOverlaps = (frame: PlexFrame): string[] =>
 describe('references and jumps in a window', () => {
   const frame = arrange(build('A note', { reference: 6, jump: 6 }), { width: 1600, height: 1000 })
   const focus = getFocus(frame)
-  const references = getShown(frame, 'reference')
-  const jumps = getShown(frame, 'jump')
+  const references = getShownNodes(frame, 'reference')
+  const jumps = getShownNodes(frame, 'jump')
 
   it('shows every reference and every jump', () => {
     expect(references).toHaveLength(6)
@@ -74,7 +74,7 @@ describe('all five relations together', () => {
     const many = build('A note', { ...FIVE, reference: 40 })
     const frame = arrange(many, viewport)
 
-    expect(getShown(frame, 'reference').length + (frame.overflow.reference ?? 0)).toBe(40)
+    expect(getShownNodes(frame, 'reference').length + (frame.overflow.reference ?? 0)).toBe(40)
   })
 
   it('leaves some references out of a small window and says how many', () => {
