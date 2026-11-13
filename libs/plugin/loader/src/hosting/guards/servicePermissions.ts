@@ -250,6 +250,8 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
   work: {
     connections: {
       call: requireNothing(CONNECTION_GRANT),
+      listRows: requireNothing(CONNECTION_GRANT),
+      listRowOptions: requireNothing(CONNECTION_GRANT),
     },
     tasks: {
       watch: requireNothing('the tasks the plugin itself reported'),

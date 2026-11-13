@@ -14,6 +14,11 @@ export const WORDS = {
   stopped: 'Stopped',
   noTranscript: 'No messages yet',
   agent: 'Agent',
+  reasoning: 'Reasoning',
+  /** The model of an agent whose row names none, which the agent chooses itself. */
+  defaultModel: 'Default model',
+  /** The model control where no agent can answer. */
+  noAgent: 'No agent',
   noAgentMessage: 'No agent is set up.',
   openSettings: 'Open settings',
 }

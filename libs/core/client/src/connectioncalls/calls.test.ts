@@ -3,6 +3,8 @@ import { create } from '@bufbuild/protobuf'
 import {
   CallErrorCode,
   ConnectionCallServiceCallResponseSchema,
+  ConnectionCallServiceListRowOptionsResponseSchema,
+  ConnectionCallServiceListRowsResponseSchema,
   Priority,
   type ConnectionCallServiceCallResponse,
 } from '@numen/protocol'
@@ -26,6 +28,11 @@ const read = async (generator: AsyncGenerator<Uint8Array, unknown>) => {
 
 const bytes = (text: string) => new TextEncoder().encode(text)
 
+const NO_LISTS: Omit<ConnectionCallRpc, 'call'> = {
+  listRows: () => Promise.reject(new Error('no rows')),
+  listRowOptions: () => Promise.reject(new Error('no options')),
+}
+
 const CHAT_REQUEST = {
   pluginId: 'md.numen.agents.numen',
   operation: 'llm.chat',
@@ -37,6 +44,7 @@ describe('createConnectionCallClient', () => {
     const requests: unknown[] = []
     const options: unknown[] = []
     const rpc: ConnectionCallRpc = {
+      ...NO_LISTS,
       call: (request, callOptions) => {
         requests.push(request)
         options.push(callOptions)
@@ -75,6 +83,7 @@ describe('createConnectionCallClient', () => {
   it('sends background where the call names no priority', async () => {
     const priorities: Priority[] = []
     const rpc: ConnectionCallRpc = {
+      ...NO_LISTS,
       call: (request) => {
         priorities.push(request.priority ?? Priority.UNSPECIFIED)
         return streamOf({ case: 'done', value: new Uint8Array() })
@@ -100,6 +109,7 @@ describe('createConnectionCallClient', () => {
     ]
     for (const [code, expected] of codes) {
       const rpc: ConnectionCallRpc = {
+        ...NO_LISTS,
         call: () =>
           streamOf(
             { case: 'data', value: bytes('partial') },
@@ -136,10 +146,104 @@ describe('createConnectionCallClient', () => {
   })
 
   it('throws where the stream ends before the call did', async () => {
-    const rpc: ConnectionCallRpc = { call: () => streamOf({ case: 'data', value: bytes('cut') }) }
+    const rpc: ConnectionCallRpc = {
+      ...NO_LISTS,
+      call: () => streamOf({ case: 'data', value: bytes('cut') }),
+    }
 
     await expect(read(createConnectionCallClient(rpc).call(CHAT_REQUEST))).rejects.toThrow(
       'before the call did',
     )
+  })
+
+  it('sends the row the call prefers, and none where it prefers none', async () => {
+    const requests: Array<{ preferred?: unknown }> = []
+    const rpc: ConnectionCallRpc = {
+      ...NO_LISTS,
+      call: (request) => {
+        requests.push(request)
+        return streamOf({ case: 'done', value: new Uint8Array() })
+      },
+    }
+    const client = createConnectionCallClient(rpc)
+
+    await read(
+      client.call(CHAT_REQUEST, {
+        preferred: { connectionId: 'c-claude', options: { model: 'opus' } },
+      }),
+    )
+    await read(client.call(CHAT_REQUEST))
+
+    expect(requests[0]?.preferred).toStrictEqual({
+      connectionId: 'c-claude',
+      options: { model: 'opus' },
+    })
+    expect(requests[1]?.preferred).toBeUndefined()
+  })
+
+  it('lists the rows of the plugin with their connection and row fields', async () => {
+    const asked: unknown[] = []
+    const rpc: ConnectionCallRpc = {
+      ...NO_LISTS,
+      call: () => streamOf(),
+      listRows: (request) => {
+        asked.push(request)
+        return Promise.resolve(
+          create(ConnectionCallServiceListRowsResponseSchema, {
+            rows: [
+              {
+                connectionId: 'c-claude',
+                connectionName: 'Claude',
+                options: { model: 'opus' },
+                fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models' }],
+              },
+            ],
+          }),
+        )
+      },
+    }
+
+    const rows = await createConnectionCallClient(rpc).listRows(
+      'md.numen.views.agent.chat',
+      'acp.task',
+    )
+
+    expect(asked).toStrictEqual([{ pluginId: 'md.numen.views.agent.chat', operation: 'acp.task' }])
+    expect(rows).toStrictEqual([
+      {
+        connectionId: 'c-claude',
+        connectionName: 'Claude',
+        options: { model: 'opus' },
+        fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models' }],
+      },
+    ])
+  })
+
+  it('lists the values of a row field', async () => {
+    const asked: unknown[] = []
+    const rpc: ConnectionCallRpc = {
+      ...NO_LISTS,
+      call: () => streamOf(),
+      listRowOptions: (request) => {
+        asked.push(request)
+        return Promise.resolve(
+          create(ConnectionCallServiceListRowOptionsResponseSchema, {
+            options: [{ value: 'high', title: 'High', group: '' }],
+          }),
+        )
+      },
+    }
+    const request = {
+      pluginId: 'md.numen.views.agent.chat',
+      operation: 'acp.task',
+      connectionId: 'c-claude',
+      field: 'reasoning',
+      options: { model: 'opus' },
+    }
+
+    const options = await createConnectionCallClient(rpc).listRowOptions(request)
+
+    expect(asked).toStrictEqual([request])
+    expect(options).toStrictEqual([{ value: 'high', title: 'High', group: '' }])
   })
 })

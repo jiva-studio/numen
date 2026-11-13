@@ -21,7 +21,7 @@ import (
 // canceled.
 func (c *Calls) Call(ctx context.Context, callerPluginID string, request modelcall.Request, send modelcall.Send) ([]byte, error) {
 	isStarted := false
-	return carry(ctx, c, asking{callerPluginID, request.Operation, request.Priority}, func(
+	return carry(ctx, c, asking{callerPluginID, request.Operation, request.Priority, request.Preferred}, func(
 		ctx context.Context, provider connectionport.Provider, call modelcall.ProviderCall,
 	) ([]byte, error) {
 		var sendErr error

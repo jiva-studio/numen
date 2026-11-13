@@ -2,7 +2,14 @@
  * The connections of a plugin as a test serves them: every acp.task is answered with the frames of a
  * script, and the requests are kept.
  */
-import type { ConnectionCallOptions, ConnectionError, Result } from '@numen/plugin-sdk'
+import type {
+  ConnectionCallOptions,
+  ConnectionError,
+  ConnectionHost,
+  ConnectionRow,
+  ConnectionRowOption,
+  Result,
+} from '@numen/plugin-sdk'
 import { acp, acptest } from '@numen/plugin-sdk/contracts'
 
 export type FrameInit = acptest.TaskFrameInit
@@ -43,15 +50,40 @@ async function* playScript(
   return script.end ?? { ok: true, value: acp.StopReason.END_TURN }
 }
 
+/**
+ * The agents a test lists: the rows of acp.task, and the values of a row field for a connection and the
+ * values its row holds so far.
+ */
+export interface AgentListing {
+  readonly rows: readonly ConnectionRow[]
+  readonly listOptions?: (
+    connectionId: string,
+    field: string,
+    options: Readonly<Record<string, string>>,
+  ) => readonly ConnectionRowOption[]
+}
+
+/**
+ * Connections whose tasks answer with the script, and which list the agents of `listing` where it is given.
+ * `calls` keeps every task with the options it was called with.
+ */
 export function createAgentConnections(
   answer: TaskScript | ((request: acp.TaskRequest) => TaskScript),
+  listing?: AgentListing,
 ) {
   const calls: { operation: string; request: acp.TaskRequest; options?: ConnectionCallOptions }[] =
     []
-  const host = acptest.createTaskHost((request, options) => {
+  const tasks = acptest.createTaskHost((request, options) => {
     calls.push({ operation: acp.OPERATION_TASK, request, ...(options ? { options } : {}) })
     return playScript(typeof answer === 'function' ? answer(request) : answer, options?.signal)
   })
+  if (!listing) return { host: tasks, calls }
+  const host: ConnectionHost = {
+    call: (operation, payload, options) => tasks.call(operation, payload, options),
+    listRows: async (operation) => (operation === acp.OPERATION_TASK ? listing.rows : []),
+    listRowOptions: async ({ connectionId, field, options }) =>
+      listing.listOptions?.(connectionId, field, options) ?? [],
+  }
   return { host, calls }
 }
 

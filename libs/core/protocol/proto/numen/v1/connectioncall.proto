@@ -3,6 +3,7 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/hostconnection.proto";
+import "numen/v1/settings.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1;numenv1";
 
@@ -12,6 +13,24 @@ option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v
 service ConnectionCallService {
   // Call carries out one operation as HostConnectionService.Call does.
   rpc Call(ConnectionCallServiceCallRequest) returns (stream ConnectionCallServiceCallResponse);
+
+  // ListRows returns the rows of the plugin for an operation, in the order of use, with the connection each
+  // names. A row whose connection is missing, or whose type is unavailable or does not serve the
+  // operation, is left out.
+  rpc ListRows(ConnectionCallServiceListRowsRequest) returns (ConnectionCallServiceListRowsResponse);
+
+  // ListRowOptions returns the values a row field of a connection among the rows of the operation can
+  // take, as the provider lists them for the options given. A connection that is not among the rows is
+  // not found.
+  rpc ListRowOptions(ConnectionCallServiceListRowOptionsRequest) returns (ConnectionCallServiceListRowOptionsResponse);
+}
+
+// PreferredRow is the row a call asks first. connection_id names a connection among the rows of the plugin
+// for the operation; the call goes to it with options in place of the values of its row fields, then to
+// the other rows in order. A connection that is not among the rows is ignored.
+message PreferredRow {
+  string connection_id = 1;
+  map<string, string> options = 2;
 }
 
 message ConnectionCallServiceCallRequest {
@@ -20,6 +39,8 @@ message ConnectionCallServiceCallRequest {
   string operation = 2;
   bytes payload = 3;
   Priority priority = 4;
+  // preferred is unset for the rows in their order.
+  PreferredRow preferred = 5;
 }
 
 // ConnectionCallServiceCallResponse is one frame of a call.
@@ -30,4 +51,45 @@ message ConnectionCallServiceCallResponse {
     bytes done = 2;
     CallFailure failure = 3;
   }
+}
+
+// CallRowField is a row field the type of a connection declares. options_from is the operation that lists
+// its values, empty for none.
+message CallRowField {
+  string key = 1;
+  string title = 2;
+  string options_from = 3;
+}
+
+// CallRow is one row of a plugin: its connection, the values of its row fields, and the row fields the
+// type of the connection declares.
+message CallRow {
+  string connection_id = 1;
+  string connection_name = 2;
+  map<string, string> options = 3;
+  repeated CallRowField fields = 4;
+}
+
+message ConnectionCallServiceListRowsRequest {
+  // plugin_id is the plugin whose rows are listed.
+  string plugin_id = 1;
+  string operation = 2;
+}
+
+message ConnectionCallServiceListRowsResponse {
+  repeated CallRow rows = 1;
+}
+
+message ConnectionCallServiceListRowOptionsRequest {
+  string plugin_id = 1;
+  string operation = 2;
+  string connection_id = 3;
+  // field is the key of the row field.
+  string field = 4;
+  // options are the values of the row fields so far.
+  map<string, string> options = 5;
+}
+
+message ConnectionCallServiceListRowOptionsResponse {
+  repeated Option options = 1;
 }

@@ -23,10 +23,54 @@ export interface ConnectionError {
   readonly failures: readonly ConnectionFailure[]
 }
 
-// ConnectionCallOptions are what a call carries besides its operation and payload.
+// ConnectionPreferredRow is a connection among the rows of the plugin for the operation, asked before the
+// other rows with `options` in place of the values of its row fields. A connection that is not among the
+// rows is ignored.
+export interface ConnectionPreferredRow {
+  readonly connectionId: string
+  readonly options: Readonly<Record<string, string>>
+}
+
+// ConnectionCallOptions are what a call carries besides its operation and payload. `preferred` is the
+// row asked first; without it the rows are asked in their order.
 export interface ConnectionCallOptions {
   readonly signal?: AbortSignal
   readonly priority?: ConnectionPriority
+  readonly preferred?: ConnectionPreferredRow
+}
+
+// ConnectionRowField is a row field a connection type declares. `optionsFrom` is the operation that lists
+// its values, empty for none.
+export interface ConnectionRowField {
+  readonly key: string
+  readonly title: string
+  readonly optionsFrom: string
+}
+
+// ConnectionRow is one row of the plugin: its connection, the values of its row fields by key, and the
+// row fields the type of the connection declares.
+export interface ConnectionRow {
+  readonly connectionId: string
+  readonly connectionName: string
+  readonly options: Readonly<Record<string, string>>
+  readonly fields: readonly ConnectionRowField[]
+}
+
+// ConnectionRowOption is one value a row field can take. An empty title shows the value, and an empty
+// group shows no heading.
+export interface ConnectionRowOption {
+  readonly value: string
+  readonly title: string
+  readonly group: string
+}
+
+// ConnectionRowOptionsRequest names a row field of a connection among the rows of an operation, with the
+// values of the row fields so far.
+export interface ConnectionRowOptionsRequest {
+  readonly operation: string
+  readonly connectionId: string
+  readonly field: string
+  readonly options: Readonly<Record<string, string>>
 }
 
 // ConnectionHost asks the core to carry out operations for the plugin. The core takes the connections
@@ -44,4 +88,12 @@ export interface ConnectionHost {
     payload: Uint8Array,
     options?: ConnectionCallOptions,
   ): AsyncGenerator<Uint8Array, Result<Uint8Array, ConnectionError>>
+  // Lists the rows of the plugin for the operation in the order of use, without the rows whose connection
+  // is missing or whose type is unavailable or does not serve the operation. A host that offers no choice
+  // of rows lists none.
+  listRows?(operation: string): Promise<readonly ConnectionRow[]>
+  // Lists the values a row field of a connection among the rows of the operation can take, as its provider
+  // lists them for the options of the request. It throws for a connection that is not among the rows and for a provider
+  // that cannot list them.
+  listRowOptions?(request: ConnectionRowOptionsRequest): Promise<readonly ConnectionRowOption[]>
 }

@@ -39,10 +39,14 @@ func (s *scriptedCalls) Call(_ context.Context, pluginID string, request modelca
 	return []byte(s.done), nil
 }
 
-func newClient(t *testing.T, calls connectioncall.Calls, options ...connect.ClientOption) numenv1connect.ConnectionCallServiceClient {
+func newClient(t *testing.T, calls *scriptedCalls, options ...connect.ClientOption) numenv1connect.ConnectionCallServiceClient {
 	t.Helper()
+	service := connectioncall.NewService(nil, nil)
+	if calls != nil {
+		service = connectioncall.NewService(calls, calls)
+	}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(connectioncall.NewService(calls)))
+	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(service))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewConnectionCallServiceClient(server.Client(), server.URL, options...)
@@ -128,5 +132,108 @@ func TestAnInstallationWithNoCallsAnswersUnimplemented(t *testing.T) {
 
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("code = %v, want unimplemented", connect.CodeOf(err))
+	}
+}
+
+func (s *scriptedCalls) ListRows(pluginID, operation string) ([]modelcall.Row, error) {
+	s.plugin, s.request = pluginID, modelcall.Request{Operation: operation}
+	return []modelcall.Row{{
+		ConnectionID: "c-claude", ConnectionName: "Claude", Options: map[string]string{"model": "opus"},
+		Fields: []modelcall.RowField{{Key: "model", Title: "Model", OptionsFrom: "llm.models"}},
+	}}, nil
+}
+
+func (s *scriptedCalls) ListRowOptions(
+	_ context.Context, pluginID, operation, connectionID, field string, options map[string]string,
+) ([]modelcall.Option, error) {
+	s.plugin, s.request = pluginID, modelcall.Request{Operation: operation}
+	if connectionID != "c-claude" || field != "reasoning" || options["model"] != "opus" {
+		return nil, connection.ErrNotFound
+	}
+	return []modelcall.Option{{Value: "high", Title: "High"}}, nil
+}
+
+func TestACallCarriesThePreferredRowOfTheRequest(t *testing.T) {
+	calls := &scriptedCalls{done: "finish"}
+	client := newClient(t, calls)
+
+	_, err := call(t, client, connect.NewRequest(&v1.ConnectionCallServiceCallRequest{
+		PluginId: "md.numen.views.agent.chat", Operation: "acp.task",
+		Preferred: &v1.PreferredRow{ConnectionId: "c-claude", Options: map[string]string{"model": "opus"}},
+	}))
+
+	preferred := calls.request.Preferred
+	if err != nil || preferred == nil || preferred.ConnectionID != "c-claude" || preferred.Options["model"] != "opus" {
+		t.Fatalf("preferred = %+v, %v", preferred, err)
+	}
+}
+
+func TestACallWithoutAPreferredRowCarriesNone(t *testing.T) {
+	calls := &scriptedCalls{done: "finish"}
+	client := newClient(t, calls)
+
+	_, err := call(t, client, connect.NewRequest(&v1.ConnectionCallServiceCallRequest{PluginId: "md.numen.views.agent.chat", Operation: "acp.task"}))
+
+	if err != nil || calls.request.Preferred != nil {
+		t.Fatalf("preferred = %+v, %v, want none", calls.request.Preferred, err)
+	}
+}
+
+func TestTheRowsOfThePluginTheRequestNamesAreListed(t *testing.T) {
+	calls := &scriptedCalls{}
+	client := newClient(t, calls)
+
+	response, err := client.ListRows(t.Context(), connect.NewRequest(&v1.ConnectionCallServiceListRowsRequest{
+		PluginId: "md.numen.views.agent.chat", Operation: "acp.task",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rows := response.Msg.GetRows()
+	if calls.plugin != "md.numen.views.agent.chat" || calls.request.Operation != "acp.task" || len(rows) != 1 {
+		t.Fatalf("plugin = %q, operation = %q, rows = %v", calls.plugin, calls.request.Operation, rows)
+	}
+	row := rows[0]
+	if row.GetConnectionId() != "c-claude" || row.GetConnectionName() != "Claude" || row.GetOptions()["model"] != "opus" ||
+		len(row.GetFields()) != 1 || row.GetFields()[0].GetOptionsFrom() != "llm.models" {
+		t.Errorf("row = %v", row)
+	}
+}
+
+func TestTheValuesOfARowFieldAreListed(t *testing.T) {
+	client := newClient(t, &scriptedCalls{})
+
+	response, err := client.ListRowOptions(t.Context(), connect.NewRequest(&v1.ConnectionCallServiceListRowOptionsRequest{
+		PluginId: "md.numen.views.agent.chat", Operation: "acp.task", ConnectionId: "c-claude", Field: "reasoning",
+		Options: map[string]string{"model": "opus"},
+	}))
+
+	if err != nil || len(response.Msg.GetOptions()) != 1 || response.Msg.GetOptions()[0].GetTitle() != "High" {
+		t.Fatalf("ListRowOptions = %v, %v", response, err)
+	}
+}
+
+func TestTheValuesOfARowFieldOfAConnectionOutsideTheRowsAreNotFound(t *testing.T) {
+	client := newClient(t, &scriptedCalls{})
+
+	_, err := client.ListRowOptions(t.Context(), connect.NewRequest(&v1.ConnectionCallServiceListRowOptionsRequest{
+		PluginId: "md.numen.views.agent.chat", Operation: "acp.task", ConnectionId: "c-other", Field: "model",
+	}))
+
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("err = %v, want not found", err)
+	}
+}
+
+func TestAListingThatCarriesAPluginTokenIsRefused(t *testing.T) {
+	client := newClient(t, &scriptedCalls{})
+	request := connect.NewRequest(&v1.ConnectionCallServiceListRowsRequest{PluginId: "md.numen.views.agent.chat", Operation: "acp.task"})
+	request.Header().Set("Authorization", "Bearer token")
+
+	_, err := client.ListRows(t.Context(), request)
+
+	if connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("err = %v, want permission denied", err)
 	}
 }

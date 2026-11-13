@@ -54,7 +54,7 @@ func callConnection(t *testing.T, api *API) []*v1.ConnectionCallServiceCallRespo
 func TestTheWindowCarriesOutTheConnectionCallsOfItsPlugins(t *testing.T) {
 	calls := &answeringCalls{calls: make(chan recordedCall, 1)}
 	api := newAPI(t)
-	api.ConnectionCalls = connectioncall.NewHandler(calls)
+	api.ConnectionCalls = connectioncall.NewHandler(calls, calls)
 
 	frames := callConnection(t, api)
 
@@ -83,4 +83,10 @@ func TestAWindowWithoutConnectionCallsAnswersThemAsUnimplemented(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("the error is %v, want unimplemented", err)
 	}
+}
+
+func (*answeringCalls) ListRows(string, string) ([]modelcall.Row, error) { return nil, nil }
+
+func (*answeringCalls) ListRowOptions(context.Context, string, string, string, string, map[string]string) ([]modelcall.Option, error) {
+	return nil, nil
 }

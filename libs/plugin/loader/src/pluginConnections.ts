@@ -39,4 +39,6 @@ export const createPluginConnections = (
       return { ok: false, error: readCancellation(error, options?.signal) }
     }
   },
+  listRows: (operation) => client.listRows(pluginId, operation),
+  listRowOptions: (request) => client.listRowOptions({ pluginId, ...request }),
 })

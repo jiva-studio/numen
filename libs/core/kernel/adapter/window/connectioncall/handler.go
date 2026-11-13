@@ -21,14 +21,21 @@ type Calls interface {
 	Call(ctx context.Context, callerPluginID string, request modelcall.Request, send modelcall.Send) ([]byte, error)
 }
 
-// Handler serves ConnectionCallService over the calls.
-type Handler struct {
-	calls Calls
+// Rows lists the rows of the plugins and the values of their row fields.
+type Rows interface {
+	ListRows(callerPluginID, operation string) ([]modelcall.Row, error)
+	ListRowOptions(ctx context.Context, callerPluginID, operation, connectionID, field string, options map[string]string) ([]modelcall.Option, error)
 }
 
-// NewHandler is the handler over the calls of this installation.
-func NewHandler(calls Calls) *Handler {
-	return &Handler{calls: calls}
+// Handler serves ConnectionCallService over the calls and the rows.
+type Handler struct {
+	calls Calls
+	rows  Rows
+}
+
+// NewHandler is the handler over the calls and the rows of this installation.
+func NewHandler(calls Calls, rows Rows) *Handler {
+	return &Handler{calls: calls, rows: rows}
 }
 
 func refuseToken(header http.Header) error {
@@ -51,6 +58,7 @@ func (h *Handler) Call(
 	}
 	done, err := h.calls.Call(ctx, request.Msg.GetPluginId(), modelcall.Request{
 		Operation: request.Msg.GetOperation(), Payload: request.Msg.GetPayload(), Priority: wire.ConvertPriorityFromWire(request.Msg.GetPriority()),
+		Preferred: wire.ConvertPreferredRowFromWire(request.Msg.GetPreferred()),
 	}, func(data []byte) error {
 		return stream.Send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Data{Data: data}})
 	})
@@ -62,4 +70,35 @@ func (h *Handler) Call(
 		return wire.NewCallStatusError(ctx, err)
 	}
 	return stream.Send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Failure{Failure: failure}})
+}
+
+// ListRows lists the rows of the plugin the request names for the operation.
+func (h *Handler) ListRows(
+	ctx context.Context, request *connect.Request[v1.ConnectionCallServiceListRowsRequest],
+) (*connect.Response[v1.ConnectionCallServiceListRowsResponse], error) {
+	if err := refuseToken(request.Header()); err != nil {
+		return nil, err
+	}
+	rows, err := h.rows.ListRows(request.Msg.GetPluginId(), request.Msg.GetOperation())
+	if err != nil {
+		return nil, wire.NewRowListError(ctx, err)
+	}
+	return connect.NewResponse(&v1.ConnectionCallServiceListRowsResponse{Rows: wire.ConvertCallRowsToWire(rows)}), nil
+}
+
+// ListRowOptions lists the values a row field of a connection among the rows of the plugin can take.
+func (h *Handler) ListRowOptions(
+	ctx context.Context, request *connect.Request[v1.ConnectionCallServiceListRowOptionsRequest],
+) (*connect.Response[v1.ConnectionCallServiceListRowOptionsResponse], error) {
+	if err := refuseToken(request.Header()); err != nil {
+		return nil, err
+	}
+	message := request.Msg
+	options, err := h.rows.ListRowOptions(
+		ctx, message.GetPluginId(), message.GetOperation(), message.GetConnectionId(), message.GetField(), message.GetOptions(),
+	)
+	if err != nil {
+		return nil, wire.NewRowListError(ctx, err)
+	}
+	return connect.NewResponse(&v1.ConnectionCallServiceListRowOptionsResponse{Options: wire.ConvertOptionsToWire(options)}), nil
 }

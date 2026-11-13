@@ -1,13 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   CONVERSATION,
   SETTINGS_OPEN_COMMAND,
+  type ConnectionRow,
   type TabKindRegistration,
   type VaultRelations,
 } from '@numen/plugin-sdk'
 import { createMockPluginContext, type MockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { activate, AgentTab, AGENT, ConversationView } from './index'
-import { createAgentConnections, createHost, say } from './fixtures'
+import { createAgentConnections, createHost, say, type AgentListing } from './fixtures'
 import type { AgentTabState } from './model/useAgentConversation'
 
 const PLUGIN_ID = 'md.numen.views.agent.chat'
@@ -37,6 +38,7 @@ const createWindow = () => {
 const createContext = (
   answer: Parameters<typeof createAgentConnections>[0] = { frames: [say('Twelve.')] },
   navigateTab?: (kind: string, path: string) => Promise<string>,
+  listing?: AgentListing,
 ): MockPluginContext => {
   const { workspace, relations } = createHost()
   const ctx = createMockPluginContext({
@@ -45,7 +47,7 @@ const createContext = (
     relations: relations as unknown as VaultRelations,
     ...(navigateTab ? { navigateTab } : {}),
   })
-  const { host } = createAgentConnections(answer)
+  const { host } = createAgentConnections(answer, listing)
   return { ...ctx, work: { ...ctx.work, connections: host } }
 }
 
@@ -112,6 +114,24 @@ describe('view-agent-chat plugin', () => {
     while (state.conversation.isAnswerPending.value) await new Promise((go) => setTimeout(go, 0))
 
     expect(state.addresses.turns.value.map((turn) => turn.text)).toContain('Twelve pear trees.')
+  })
+
+  it('offers the agents of the plugin again once its agents setting changes', async () => {
+    let rows: readonly ConnectionRow[] = []
+    const ctx = createContext(undefined, undefined, {
+      get rows() {
+        return rows
+      },
+    })
+    activate(ctx)
+    const state = ctx.getRegisteredTabKinds()[0]!.open!('', 'agent:1') as AgentTabState
+    await vi.waitFor(() => expect(state.agents?.offered.isAgentMissing.value).toBe(true))
+
+    rows = [{ connectionId: 'c-orchard', connectionName: 'Orchard agent', options: {}, fields: [] }]
+    ctx.setSetting('connections', [{ connection: 'c-orchard' }])
+
+    await vi.waitFor(() => expect(state.agents?.selected.agentId.value).toBe('c-orchard'))
+    expect(state.agents?.offered.isAgentMissing.value).toBe(false)
   })
 
   it('opens the settings page of the plugin from a tab', () => {
@@ -196,11 +216,11 @@ describe('view-agent-chat plugin', () => {
     expect(state.draft.userQuestion.value).toBe('notes/Orchard.md — ')
   })
 
-  it('holds the conversation view, the tab kind and its two commands, and nothing else', () => {
+  it('holds the conversation view, the tab kind, its two commands and the watch of its agents, and nothing else', () => {
     const ctx = createContext()
     activate(ctx)
 
-    expect(ctx.plugin.subscriptions).toHaveLength(4)
+    expect(ctx.plugin.subscriptions).toHaveLength(5)
   })
 
   it('refuses to activate in a window that offers no connections', () => {

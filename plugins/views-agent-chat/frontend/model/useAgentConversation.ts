@@ -13,6 +13,7 @@ import {
 import type { TextLink } from '@numen/plugin-sdk'
 import type { AgentTabDeps } from '../types'
 import type { SavedConversation } from '../lib/saved'
+import type { AgentChoice } from './agents'
 
 export type { AgentTabDeps } from '../types'
 
@@ -160,7 +161,12 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
   return { turns, followLink }
 }
 
-export function useAgentConversation(conversation: Conversation, deps: AgentTabDeps) {
+/** agents is the choice of agent of the conversation, null for a conversation that offers none. */
+export function useAgentConversation(
+  conversation: Conversation,
+  deps: AgentTabDeps,
+  agents: AgentChoice | null = null,
+) {
   const userQuestion = ref('')
   const addresses = useConversationAddresses(conversation, deps)
 
@@ -189,6 +195,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
   return {
     conversation,
     addresses,
+    agents,
     openSettings: deps.openSettings,
     draft: { userQuestion, setQuestion, send, restore, openTurnSource },
   }
