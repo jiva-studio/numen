@@ -15,7 +15,8 @@
       "key": "buttons",
       "type": "enum",
       "title": "Window buttons",
-      "description": "Where the bar draws the window buttons; macOS always uses the left",
+      "description": "Side of the bar the window buttons are drawn on",
+      "details": "Where the bar draws the window buttons. macOS always draws them on the left.",
       "default": "windows",
       "options": [
         { "value": "mac", "title": "Left", "detail": "Round buttons at the left, as on macOS." },

@@ -32,6 +32,12 @@ const {
   updateQuery,
   goBack,
 } = useSettingsTab(props.state)
+
+/* -------------------------------- Handlers -------------------------------- */
+function onOpenCategory(category: string): void {
+  updateQuery(`category:${category}`)
+  goBack()
+}
 </script>
 
 <template>
@@ -60,9 +66,15 @@ const {
           :plugin="selectedPlugin"
           :marked-setting="marked"
           @back="goBack"
+          @open-category="onOpenCategory"
           @open-connections="selectPlugin('connections')"
         />
-        <AvailablePluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="goBack" />
+        <AvailablePluginDetail
+          v-else-if="uninstalled"
+          :plugin="uninstalled"
+          @back="goBack"
+          @open-category="onOpenCategory"
+        />
         <PluginsList
           v-else
           :settings="installation.settings"
@@ -93,7 +105,7 @@ const {
   flex: 1;
   min-block-size: 0;
   overflow-y: auto;
-  padding: var(--numen-gutter);
+  padding: 0 var(--numen-gutter) var(--numen-gutter);
 }
 
 .settings__main {

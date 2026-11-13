@@ -15,7 +15,8 @@
       "key": "appearance.mode",
       "type": "enum",
       "title": "Light or dark",
-      "description": "Which half of a color pair the theme is read as. A theme that declares light and dark itself leaves this nothing to choose.",
+      "description": "Which half of a color pair the theme is read as",
+      "details": "Which half of a color pair the theme is read as. A theme that declares light and dark itself leaves this nothing to choose.",
       "default": "system",
       "options": [
         { "value": "system", "title": "System" },

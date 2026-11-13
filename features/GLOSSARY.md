@@ -444,7 +444,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 ### plugin
 - Is: An add-on with a manifest. It gives commands, tab kinds, settings, status views, themes, note types or models.
 - States: badge "Enabled", "Disabled", "Stopped", "Not installed".
-- Actions: "Enable", "Disable", "Retry", "Install", "Configure", "Delete data", "Details", "All plugins".
+- Actions: "Enable", "Disable", "Retry", "Install", "Configure", "Delete data", "Details", "Back".
 - Texts: "Search plugins…", "No plugins installed.", "No plugins found." (libs/plugin-manager/src/words.ts).
 - Not: a dependency is a program a plugin needs, not a plugin.
 

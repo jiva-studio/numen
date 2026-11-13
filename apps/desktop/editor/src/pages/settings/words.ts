@@ -13,6 +13,8 @@ export const WORDS = {
   /** The button of the fix of a health item that names no title of its own. */
   healthAction: 'Fix',
   resetSettingOf: (name: string) => `Reset ${name} to its default`,
+  /** The info button of a setting with details, and the popover it opens. */
+  aboutSetting: (name: string) => `About ${name}`,
   /** The page of connections. */
   secretMasked: '••••••••',
   connectionAdd: 'Add connection',

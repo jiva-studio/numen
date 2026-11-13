@@ -95,7 +95,7 @@ describe('the settings opened at a setting of a plugin', () => {
     settings.openSettings({ pluginId: 'org.example.atlas', setting: 'source' })
     const tab = mount(SettingsTab, { props: { state: settings.state }, attachTo: document.body })
     await flushPromises()
-    await tab.get('button[aria-label="All plugins"]').trigger('click')
+    await tab.get('button[aria-label="Back"]').trigger('click')
     await tab.get('button[aria-label="Atlas"]').trigger('click')
     await flushPromises()
 

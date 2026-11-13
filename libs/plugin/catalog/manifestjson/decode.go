@@ -186,6 +186,7 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Type:        one.GetType(),
 			Title:       one.GetTitle(),
 			Description: one.GetDescription(),
+			Details:     one.GetDetails(),
 			Default:     one.GetDefault().AsInterface(),
 			Palette:     one.GetPalette(),
 			Icon:        one.GetIcon(),

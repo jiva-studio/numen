@@ -4,7 +4,7 @@ import './styles.css'
 export { default as PluginsList } from './PluginsList.vue'
 export { default as PluginDetail } from './PluginDetail.vue'
 export { default as NavigationRow } from './NavigationRow.vue'
-export { default as BreadcrumbBar } from './BreadcrumbBar.vue'
+export { default as SettingsToolbar } from './SettingsToolbar.vue'
 export { default as PluginSettingsCard } from './PluginSettingsCard.vue'
 export type { PluginDetailProps } from './PluginDetail.types'
 export {

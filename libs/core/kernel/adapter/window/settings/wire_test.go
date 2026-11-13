@@ -118,3 +118,18 @@ func TestNewWirePluginInfos_CarriesTheOperationsAndTheRowLimitOfASettingOfRows(t
 		t.Errorf("a plain setting carries operations %q", got[1].GetOperations())
 	}
 }
+
+func TestNewWirePluginInfos_CarriesTheDetails(t *testing.T) {
+	wire := NewWirePluginInfos([]plugin.Info{{
+		ID: "a.b",
+		Settings: []plugin.Setting{{
+			Key: "wrap", Type: "boolean", Description: "Wrap long lines",
+			Details: "Long lines break at the edge of the editor and are kept whole in the file.",
+		}},
+	}})
+
+	got := wire[0].GetSettings()[0]
+	if got.GetDescription() != "Wrap long lines" || got.GetDetails() != "Long lines break at the edge of the editor and are kept whole in the file." {
+		t.Errorf("the setting carries %v", got)
+	}
+}

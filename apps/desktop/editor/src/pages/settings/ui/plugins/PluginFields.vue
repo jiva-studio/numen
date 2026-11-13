@@ -61,6 +61,7 @@ const { isChanged, resetSetting: onReset } = useSettingDefaults(fieldDeps)
       :at="`${props.plugin.id}-${setting.key}`"
       :name="setting.title"
       :detail="setting.description"
+      :details="setting.details"
       :is-marked="props.marked?.includes(setting.key) ?? false"
       :focus="props.focused?.setting === setting.key ? props.focused : null"
       :is-changed="isChanged(setting)"

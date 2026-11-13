@@ -4,7 +4,9 @@ import { escapeRegExp } from '../rules.js'
 
 /** The pages of the window: Appearance holds how it looks, System the rest. */
 export type WindowPage = 'System' | 'Appearance'
-const BACK = /All plugins/i
+const BACK = /^Back$/
+/** The buttons outside the path of the toolbar: a segment of the path carries the name of a page or a category. */
+const OUTSIDE_PATH = 'button:not(nav *)'
 
 export class SettingsPage {
   constructor(private readonly page: Page) {}
@@ -17,6 +19,11 @@ export class SettingsPage {
     return this.page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
   }
 
+  /** A button of the page by its name that is not a segment of the path. */
+  getPageButton(panel: Locator, name: RegExp): Locator {
+    return panel.getByRole('button', { name }).and(panel.locator(OUTSIDE_PATH))
+  }
+
   getBackButton(): Locator {
     return this.getPanel().getByRole('button', { name: BACK })
   }
@@ -26,7 +33,7 @@ export class SettingsPage {
     const panel = this.getPanel()
     await expect(panel).toBeVisible()
     const entry = plugin === undefined ? new RegExp(`^${windowPage}`) : new RegExp(escapeRegExp(plugin), 'i')
-    const button = panel.getByRole('button', { name: entry }).first()
+    const button = this.getPageButton(panel, entry).first()
     // A page of one plugin hides the list of the pages: the way to another is back to the list.
     if (!(await button.isVisible())) await panel.getByRole('button', { name: BACK }).click()
     await button.click()
@@ -75,6 +82,6 @@ export class SettingsPage {
   }
 
   getPluginButton(panel: Locator, plugin: string): Locator {
-    return panel.getByRole('button', { name: new RegExp(plugin) })
+    return this.getPageButton(panel, new RegExp(plugin))
   }
 }

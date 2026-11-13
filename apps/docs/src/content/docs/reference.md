@@ -53,7 +53,7 @@ The settings of the plugin Antigravity Agent.
 
 | | | |
 | --- | --- | --- |
-| `executablePath` | text | path to the Antigravity CLI executable. Empty finds it automatically. |
+| `executablePath` | text | path to the Antigravity CLI; empty finds it automatically. |
 | `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
 
 ### `md.numen.agents.claude`
@@ -62,8 +62,8 @@ The settings of the plugin Claude Code Agent.
 
 | | | |
 | --- | --- | --- |
-| `executablePath` | text | path to the Claude Code CLI executable. Empty finds it automatically. |
-| `readsHooksAndSkills` | yes or no | let Claude Code read the hooks, skills, standing instructions in CLAUDE.md and plugins configured for this person. Off. A hook is a shell command Claude Code runs itself. What a vault contains is never read. |
+| `executablePath` | text | path to the Claude Code CLI; empty finds it automatically. |
+| `readsHooksAndSkills` | yes or no | lets Claude Code read the hooks, skills, standing instructions in CLAUDE.md and plugins configured for this person. Off by default. A hook is a shell command Claude Code runs itself. What a vault contains is never read. |
 | `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
 
 ### `md.numen.agents.codex`
@@ -72,7 +72,7 @@ The settings of the plugin OpenAI Codex Agent.
 
 | | | |
 | --- | --- | --- |
-| `executablePath` | text | path to the OpenAI Codex CLI executable. Empty finds it automatically. |
+| `executablePath` | text | path to the OpenAI Codex CLI; empty finds it automatically. |
 | `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
 
 ### `md.numen.agents.mcp.server`
@@ -82,7 +82,7 @@ The settings of the plugin Model Context Protocol Server.
 | | | |
 | --- | --- | --- |
 | `port` | a number | port on 127.0.0.1 MCP clients connect to, at /mcp. From 1024 to 65535. |
-| `token` | text | bearer token MCP clients send; made on first start. Empty rejects every request. |
+| `token` | text | the bearer token MCP clients send with each request. The plugin makes one on its first start. An empty token rejects every request. |
 
 ### `md.numen.agents.numen`
 
@@ -112,7 +112,7 @@ The settings of the plugin Vector Embeddings.
 | `source` | text | where texts are turned into vectors. One of `local`, `connection`. |
 | `model` | text | local embedding model from Hugging Face; it needs a profile. |
 | `connections` | text | a new connection or model reindexes the vault. |
-| `minChunkLength` | a number | characters a piece needs for a vector; shorter ones are found by words. From 0 to 1000. |
+| `minChunkLength` | a number | the fewest characters a piece of text needs to get a vector. Shorter pieces are found by their words only. From 0 to 1000. |
 | `chunkTokens` | a number | largest piece of a note, in tokens, that gets one vector. From 16 to 8192. |
 
 ### `md.numen.engines.ocr`
@@ -123,7 +123,7 @@ The settings of the plugin Document OCR.
 | --- | --- | --- |
 | `model` | text | text recognition model. One of `pp-ocrv6-tiny`, `pp-ocrv6-small`, `pp-ocrv5-latin`, `pp-ocrv5-eslav`, `pp-ocrv5-cyrillic`, `pp-ocrv5-devanagari`, `pp-ocrv5-greek`, `custom`. |
 | `customModelPath` | text | paddleOCR text recognition model in ONNX format. |
-| `customDictPath` | text | UTF-8 text, one character per line; empty if the model has its own. |
+| `customDictPath` | text | a UTF-8 text file with one character per line. Leave it empty when the model carries its own dictionary. |
 | `dpi` | text | resolution a page is rendered at before recognition. One of `150`, `200`, `300`, `400`, `600`. |
 | `recognizeAutomatically` | yes or no | recognize every PDF and image in the vault that has no text. |
 
@@ -133,7 +133,7 @@ The settings of the plugin Audio/Video Transcription.
 
 | | | |
 | --- | --- | --- |
-| `model` | text | from Hugging Face. Parakeet v3: 25 European languages, v2: English only. One of `parakeet-tdt-0.6b-v3-int8`, `parakeet-tdt-0.6b-v2-int8`. |
+| `model` | text | downloaded from Hugging Face. Parakeet v3 recognizes 25 European languages, Parakeet v2 English only. One of `parakeet-tdt-0.6b-v3-int8`, `parakeet-tdt-0.6b-v2-int8`. |
 | `transcribeAutomatically` | yes or no | transcribe every recording in the vault that has no transcript. |
 
 ### `md.numen.notes`
@@ -163,7 +163,7 @@ The settings of the plugin Media Importer.
 | `ffmpeg` | text | path to the ffmpeg program. |
 | `captions` | text | preferred caption languages, comma-separated. |
 | `automaticCaptions` | yes or no | use auto-generated captions when a site has no others. |
-| `downloadCaptionsAutomatically` | yes or no | download captions or the article of every link note that has none. |
+| `downloadCaptionsAutomatically` | yes or no | download captions or the article of link notes without them. |
 | `copyMaxSizeMb` | a number | largest video to download, in MB; 0 for no limit. From 0 to 100000. |
 
 ### `md.numen.tools.proofreading`
@@ -202,7 +202,7 @@ The settings of the plugin Flashcards Studio.
 
 | | | |
 | --- | --- | --- |
-| `dayStartTime` | text | time a review day starts, HH:MM up to 12:00; other values use 04:00. |
+| `dayStartTime` | text | the time a review day starts, as HH:MM up to 12:00. Any other value uses 04:00. |
 | `agentConnections` | text | agents. |
 
 ### `md.numen.views.plex.graph`
@@ -229,6 +229,6 @@ The settings of the plugin Title bar.
 
 | | | |
 | --- | --- | --- |
-| `buttons` | text | where the bar draws the window buttons; macOS always uses the left. One of `mac`, `windows`, `none`. |
+| `buttons` | text | where the bar draws the window buttons. macOS always draws them on the left. One of `mac`, `windows`, `none`. |
 | `hideInFullscreen` | yes or no | hide the bar while the window is full screen. |
 <!-- END AUTOGEN -->

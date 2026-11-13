@@ -168,6 +168,7 @@ const readOptionsBy = (value: JsonValue): PluginSettingOptionsBy => {
 }
 
 const COPIED_FIELDS = [
+  'details',
   'palette',
   'icon',
   'when',

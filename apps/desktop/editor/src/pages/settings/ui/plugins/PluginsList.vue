@@ -1,13 +1,18 @@
 <script setup lang="ts">
 /**
- * The plugin list of the settings tab: the plugin manager drawn over the installation's plugins,
- * the catalog and the enabled settings.
+ * The plugin list of the settings tab under the toolbar of the first level: the plugin manager
+ * drawn over the installation's plugins, the catalog and the enabled settings.
  */
-import { PluginsList as PluginsListView, type PluginHealth } from '@numen/plugin-manager'
+import {
+  PluginsList as PluginsListView,
+  SettingsToolbar,
+  type PluginHealth,
+} from '@numen/plugin-manager'
 import { usePluginsList } from '../../model/usePluginsList'
 import type { InstallationSettings } from '../../types'
 import type { CatalogEntry } from '@/entities/plugin'
 import type { PluginInfo } from '@/entities/settings'
+import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
@@ -44,12 +49,23 @@ function onSelectPlugin(pluginId: string): void {
 </script>
 
 <template>
-  <PluginsListView
-    v-model:query="searchQuery"
-    :plugins="managed"
-    :enabled="enabled"
-    :health="props.health ?? {}"
-    @select-plugin="onSelectPlugin"
-    @toggle-enabled="onTogglePlugin"
-  />
+  <div class="plugins-page">
+    <SettingsToolbar :path="[words.settings]" />
+    <PluginsListView
+      v-model:query="searchQuery"
+      :plugins="managed"
+      :enabled="enabled"
+      :health="props.health ?? {}"
+      @select-plugin="onSelectPlugin"
+      @toggle-enabled="onTogglePlugin"
+    />
+  </div>
 </template>
+
+<style scoped>
+.plugins-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+</style>

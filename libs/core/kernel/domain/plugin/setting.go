@@ -16,6 +16,7 @@ type Setting struct {
 	Type          string
 	Title         string
 	Description   string
+	Details       string
 	DefaultJSON   string
 	Palette       bool
 	Icon          string
@@ -45,6 +46,7 @@ func NewSetting(declared manifest.Setting, defaultJSON string, options manifest.
 		Type:        declared.Type,
 		Title:       declared.Title,
 		Description: declared.Description,
+		Details:     declared.Details,
 		DefaultJSON: defaultJSON,
 		Palette:     declared.Palette,
 		Icon:        declared.Icon,

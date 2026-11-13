@@ -96,6 +96,7 @@ var (
 	ErrRangeInvalidBounds     = errors.New("range min cannot exceed max")
 	ErrReservedSettingKey     = errors.New("the setting key is kept by the host")
 	ErrInvalidSetting         = errors.New("invalid setting")
+	ErrLongSettingDescription = errors.New("setting description is longer than one line")
 	ErrInvalidService         = errors.New("invalid service name")
 	ErrInvalidNoteType        = errors.New("invalid note type")
 	ErrNoBackend              = errors.New("only a backend serves this, and the plugin declares none")
@@ -191,6 +192,7 @@ type Setting struct {
 	Type        string
 	Title       string
 	Description string
+	Details     string
 	Default     any
 	Palette     bool
 	Icon        string

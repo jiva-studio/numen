@@ -1,13 +1,14 @@
 /** The page "Connections" of the Settings tab: the list of connections, the dialog that adds or edits one, the question before a delete. */
 import { expect, type Locator, type Page } from 'playwright/test'
 import { escapeRegExp } from '../rules.js'
+import { SettingsPage } from './SettingsPage.js'
 
 export class ConnectionsPage {
   constructor(private readonly page: Page) {}
 
   /** The entry of the list of pages that opens the page. */
   getEntry(panel: Locator): Locator {
-    return panel.getByRole('button', { name: /^Connections$/ })
+    return new SettingsPage(this.page).getPageButton(panel, /^Connections$/)
   }
 
   getAddButton(panel: Locator): Locator {

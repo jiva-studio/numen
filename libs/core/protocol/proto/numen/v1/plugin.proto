@@ -44,7 +44,10 @@ message PluginSetting {
   string key = 1;
   string type = 2;
   string title = 3;
+  // The one line the settings row shows under the title.
   string description = 4;
+  // The full text the info button beside the title opens. Empty shows no button.
+  string details = 25;
   string default_json = 5;
   bool palette = 6;
   repeated PluginSettingOption options = 7;
