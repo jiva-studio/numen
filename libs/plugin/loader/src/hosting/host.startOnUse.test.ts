@@ -27,7 +27,10 @@ const LEDGER_MANIFEST = createMockManifest(LEDGER, {
   commands: ['ledger.open'],
   viewCapabilities: ['ledger-sheet'],
 })
-const LINKS_MANIFEST = createMockManifest(LINKS, { dropTypes: [URI_LIST] })
+const LINKS_MANIFEST = createMockManifest(LINKS, {
+  dropTypes: [URI_LIST],
+  permissions: ['vault:read'],
+})
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
 

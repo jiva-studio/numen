@@ -262,13 +262,14 @@ function toSubmenuItem(
   }
 }
 
+/** The item of an entry that names a command, drawn over the target. */
 function drawCommand(
   deps: SlotRegistryDeps,
-  entry: DeclaredSlotEntry,
-  declared: string,
+  place: { readonly entry: DeclaredSlotEntry; readonly command: string },
   target: CommandTarget | undefined,
 ): SlotItem | undefined {
-  const command = getFullCommand(entry, declared)
+  const { entry } = place
+  const command = getFullCommand(entry, place.command)
   // A menu is drawn as it opens, and lists the items of a command only once its plugin started.
   const owner = getCommandOwner(command)
   if (!isWindowPlace(entry.slot) && owner !== APP_COMMAND_OWNER) deps.requestPlugin?.(owner)
@@ -319,7 +320,7 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
     target: CommandTarget | undefined,
   ): SlotItem | undefined => {
     if (!isDrawnOver(entry, target)) return undefined
-    if (entry.command) return drawCommand(deps, entry, entry.command, target)
+    if (entry.command) return drawCommand(deps, { entry, command: entry.command }, target)
     if (entry.view) return drawView(deps, entry, entry.view)
     const { owners, inCycle } = declared.value
     const submenu = entry.submenu
