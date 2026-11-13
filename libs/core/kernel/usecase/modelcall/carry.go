@@ -50,7 +50,7 @@ type asking struct {
 
 func carry(ctx context.Context, c *Calls, ask asking, do attempt) ([]byte, error) {
 	var none []byte
-	rows, err := c.rows(ask.callerPluginID, ask.operation)
+	rows, err := c.connections.Rows(ask.callerPluginID, ask.operation)
 	if err != nil {
 		return none, fmt.Errorf("read the rows of %s: %w", ask.callerPluginID, err)
 	}
@@ -112,7 +112,7 @@ func (c *Calls) openProvider(ctx context.Context, pluginID string) (connectionpo
 }
 
 func (c *Calls) readConnectionSecrets(ctx context.Context, resolved connection.Resolved) (map[string]string, error) {
-	return c.readSecrets(ctx, resolved)
+	return c.connections.ReadSecrets(ctx, resolved)
 }
 
 // rowCall is one row being called: the connection as resolved, the secrets once they are read, and the
@@ -172,13 +172,13 @@ func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask askin
 }
 
 func (c *Calls) redetectIfUnavailable(resolved connection.Resolved, isUnavailable bool) {
-	if isUnavailable && c.redetect != nil && connection.IsDetected(resolved.ID) {
-		c.redetect(resolved.PluginID)
+	if isUnavailable && c.connections.Redetect != nil && connection.IsDetected(resolved.ID) {
+		c.connections.Redetect(resolved.PluginID)
 	}
 }
 
 func (c *Calls) checkRow(row connection.Row, operation string) (connection.Resolved, *connection.Failure, error) {
-	resolved, err := c.resolve(row.ConnectionID)
+	resolved, err := c.connections.Resolve(row.ConnectionID)
 	switch {
 	case errors.Is(err, connection.ErrNotFound):
 		return resolved, newSkip(row.ConnectionID, "connection missing"), nil
@@ -203,14 +203,13 @@ func newSkip(name, reason string) *connection.Failure {
 
 // verdict is what a failed call means for its row.
 type verdict struct {
-	isSkipped  bool
-	skip       *connection.Failure
-	err        error
-	reason     connection.FailureReason
-	retryAfter time.Duration
-	isCooling  bool
-	isStale    bool
-	// isUnavailable is a provider that could not be started.
+	isSkipped     bool
+	skip          *connection.Failure
+	err           error
+	reason        connection.FailureReason
+	retryAfter    time.Duration
+	isCooling     bool
+	isStale       bool
 	isUnavailable bool
 }
 

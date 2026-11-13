@@ -214,8 +214,6 @@ func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 	return services
 }
 
-// getDetectionFile returns the file inside the data root that keeps what the providers detected, or empty
-// where there is no data root.
 func getDetectionFile(dataRoot string) string {
 	if dataRoot == "" {
 		return ""

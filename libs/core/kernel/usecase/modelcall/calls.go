@@ -24,15 +24,12 @@ const (
 // rather than the person. A detected connection that is unavailable makes the provider of its type detect
 // again in the background.
 type Calls struct {
-	resolve     connectionport.ResolveConnection
-	readSecrets connectionport.ReadConnectionSecrets
-	rows        connectionport.ListRows
+	connections Connections
 	source      connectionport.ProviderSource
 	clock       machineport.Clock
 	queues      *queues
 	notices     connectionport.ReportSetAside
 	cooldown    *cooldown
-	redetect    func(pluginID string)
 }
 
 // Connections is where the calls find a connection, its secrets and the rows of the plugins that name it.
@@ -51,7 +48,6 @@ func NewCalls(
 	connections Connections, source connectionport.ProviderSource, clock machineport.Clock, wait Wait, notices connectionport.ReportSetAside,
 ) *Calls {
 	return &Calls{
-		resolve: connections.Resolve, readSecrets: connections.ReadSecrets, rows: connections.Rows, source: source, clock: clock, queues: newQueues(wait), notices: notices,
-		cooldown: newCooldown(), redetect: connections.Redetect,
+		connections: connections, source: source, clock: clock, queues: newQueues(wait), notices: notices, cooldown: newCooldown(),
 	}
 }

@@ -78,7 +78,6 @@ func (c *Cache) get(key cacheKey, state connectionState) ([]modelcall.Option, bo
 	return slices.Clone(entry.options), true
 }
 
-// put keeps the listing and drops the listings of the connection as it was before a change.
 func (c *Cache) put(key cacheKey, state connectionState, options []modelcall.Option) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

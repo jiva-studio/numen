@@ -38,8 +38,6 @@ func setPluginVersion(types detectingTypes, version string) detectingTypes {
 	return changed
 }
 
-// restart returns the detection a new start of the core makes over the same providers, with the types of
-// the plugins installed then and the store file.
 func (f *detectionFixture) restart(types detectingTypes, storeFile string) *providerbridge.Detection {
 	detection := providerbridge.NewDetection(types, f.source, f.clock)
 	detection.SetStoreFile(storeFile)
@@ -52,7 +50,7 @@ func (f *detectionFixture) countCalls() int {
 	return f.source.calls
 }
 
-func TestAnAnswerKeptInTheStoreFileIsListedAfterARestartWithoutAskingTheProvider(t *testing.T) {
+func TestARestartListsTheStoredAnswerWithoutAskingTheProvider(t *testing.T) {
 	f := newDetectionFixture()
 	storeFile := filepath.Join(t.TempDir(), "core", "detected-connections.json")
 	f.detection.SetStoreFile(storeFile)
@@ -73,7 +71,7 @@ func TestAnAnswerKeptInTheStoreFileIsListedAfterARestartWithoutAskingTheProvider
 	}
 }
 
-func TestAnAnswerKeptForAnotherVersionOfThePluginIsPending(t *testing.T) {
+func TestAStoredAnswerOfAnotherPluginVersionIsPending(t *testing.T) {
 	f := newDetectionFixture()
 	storeFile := filepath.Join(t.TempDir(), "detected-connections.json")
 	f.detection.SetStoreFile(storeFile)
@@ -86,7 +84,7 @@ func TestAnAnswerKeptForAnotherVersionOfThePluginIsPending(t *testing.T) {
 	}
 }
 
-func TestAStoreFileThatCannotBeReadIsReportedAndHoldsNoAnswer(t *testing.T) {
+func TestAStoreFileThatCannotBeReadIsReportedAndHasNoAnswer(t *testing.T) {
 	f := newDetectionFixture()
 	storeFile := filepath.Join(t.TempDir(), "detected-connections.json")
 	if err := os.WriteFile(storeFile, []byte("{not json"), 0o600); err != nil {
@@ -101,7 +99,7 @@ func TestAStoreFileThatCannotBeReadIsReportedAndHoldsNoAnswer(t *testing.T) {
 	}
 }
 
-func TestRefreshLeavesAPluginAskedWithinTheRefreshIntervalAlone(t *testing.T) {
+func TestRefreshSkipsAPluginAskedWithinTheRefreshInterval(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		f := newDetectionFixture()
 		f.detect(t)

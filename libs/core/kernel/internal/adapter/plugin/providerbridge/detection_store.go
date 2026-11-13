@@ -28,8 +28,6 @@ type storedConnection struct {
 	Fields map[string]any `json:"fields"`
 }
 
-// load reads the store file once, with d.mu held. A missing file holds no answer; a file that cannot be
-// read is reported, and the next answer replaces it.
 func (d *Detection) load() {
 	if d.isLoaded {
 		return

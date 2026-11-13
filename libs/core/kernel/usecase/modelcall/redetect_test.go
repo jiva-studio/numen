@@ -18,8 +18,6 @@ type redetectSetup struct {
 	redetected []string
 }
 
-// newRedetectSetup holds the detected connection Kite in the first row and the stored connection First in
-// the second, and keeps the plugins asked to detect again.
 func newRedetectSetup(t *testing.T) *redetectSetup {
 	t.Helper()
 	s := &redetectSetup{setup: newSetup(t, modelcalltest.CompleteOperation)}

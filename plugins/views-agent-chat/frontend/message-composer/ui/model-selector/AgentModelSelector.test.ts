@@ -70,7 +70,7 @@ describe('AgentModelSelector', () => {
     expect(button.attributes('disabled')).toBeDefined()
   })
 
-  it('opens menu when pill button is clicked, tells it opened, and emits select on choose', async () => {
+  it('opens menu when pill button is clicked, emits open, and emits select on choose', async () => {
     const wrapper = mount(AgentModelSelector, {
       props: {
         options: OPTIONS,

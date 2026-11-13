@@ -30,7 +30,7 @@ describe('ReasoningSelector', () => {
     expect(off.get('button').attributes('disabled')).toBeDefined()
   })
 
-  it('opens its menu with the levels, tells it opened, and says the one chosen', async () => {
+  it('opens its menu with the levels, emits open, and says the one chosen', async () => {
     const wrapper = mount(ReasoningSelector, {
       props: { levels: LEVELS, selectedId: 'medium' },
       attachTo: document.body,
