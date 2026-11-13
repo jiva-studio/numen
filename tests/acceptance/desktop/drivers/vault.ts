@@ -271,7 +271,6 @@ interface LinkRow {
   readonly description: string
 }
 
-/** The rows of a table with the header from | to | role, and description when it is there. */
 const parseLinkRows = (rows: readonly (readonly string[])[], required: readonly string[], optional: readonly string[]): LinkRow[] => {
   const [header = [], ...body] = rows
   const unknown = header.filter((column) => ![...required, ...optional].includes(column))
