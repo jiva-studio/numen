@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Connection, ConnectionSide, LinkMarker } from '@numen/plugin-sdk'
-import type { NoteGraph, NoteRelation } from '../types'
+import type { NoteGraph, NoteRelation, RelatedNote } from '../types'
 import { areNoteGraphsEqual, convertNoteGraph, getNoteTypes } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 
@@ -574,12 +574,17 @@ describe('references in the picture', () => {
     }
   })
 
+  const withDirection = (related: RelatedNote, value: Direction | undefined): RelatedNote => {
+    const { direction: _previous, ...rest } = related
+    return value === undefined ? rest : { ...rest, direction: value }
+  }
+
   const direction = (value: Direction | undefined): NoteGraph => {
     const one = withReferences()
     return {
       ...one,
       related: one.related.map((related) =>
-        related.path === 'Cites.md' ? { ...related, ...(value === undefined ? {} : { direction: value }) } : related,
+        related.path === 'Cites.md' ? withDirection(related, value) : related,
       ),
     }
   }
