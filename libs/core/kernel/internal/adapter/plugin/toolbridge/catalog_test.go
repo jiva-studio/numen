@@ -266,7 +266,7 @@ func TestTheListingsOnDiskServeANewCatalog(t *testing.T) {
 	}
 }
 
-func TestACallForAConnectionHoldsThePluginOfTheToolInTheNameOfTheConnection(t *testing.T) {
+func TestACallForAConnectionLeasesThePluginOfTheToolForTheConnection(t *testing.T) {
 	host := newTwoPlugins(t)
 	catalog := newCatalog(host, filesIn(t, ""))
 	catalog.ListTools(t.Context(), callerPlugin)

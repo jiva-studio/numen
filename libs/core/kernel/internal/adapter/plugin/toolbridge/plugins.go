@@ -16,10 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 )
 
-// Host is the plugin host used by the tools: it lists the known plugins, tells the enabled ones and
-// starts each on demand.
+// Host is the plugin host used by the tools: it lists the known plugins and tells the enabled ones.
 type Host interface {
-	bridge.Activator
 	GetPluginInfos() []plugin.Info
 	IsEnabled(pluginID string) bool
 }
@@ -33,8 +31,9 @@ type tool struct {
 // plugins calls the PluginToolService of every plugin that declares the tools
 // capability. A version of a plugin is asked for its tools once; its answer is kept in listings.
 type plugins struct {
-	host     Host
-	listings *listings
+	activator bridge.Activator
+	host      Host
+	listings  *listings
 }
 
 func (p plugins) listTools(ctx context.Context, except string) []tool {
@@ -74,7 +73,7 @@ func (p plugins) getPluginTools(ctx context.Context, info plugin.Info) (*v1.List
 }
 
 func (p plugins) listPluginTools(ctx context.Context, pluginID string) (listing *v1.ListToolsResponse, err error) {
-	client, lease, err := bridge.OpenForQuestion(ctx, p.host, pluginID, "list tools", numenv1connect.NewPluginToolServiceClient)
+	client, lease, err := bridge.OpenForQuestion(ctx, p.activator, pluginID, "list tools", numenv1connect.NewPluginToolServiceClient)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +87,7 @@ func (p plugins) listPluginTools(ctx context.Context, pluginID string) (listing 
 }
 
 func (p plugins) callTool(ctx context.Context, one tool, call *v1.CallToolRequest) (response *v1.CallToolResponse, err error) {
-	client, lease, err := bridge.Open(ctx, p.host, one.pluginID, "call tool "+one.spec.GetName(), numenv1connect.NewPluginToolServiceClient)
+	client, lease, err := bridge.Open(ctx, p.activator, one.pluginID, "call tool "+one.spec.GetName(), numenv1connect.NewPluginToolServiceClient)
 	if err != nil {
 		return nil, err
 	}

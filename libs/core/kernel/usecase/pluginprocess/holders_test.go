@@ -28,9 +28,8 @@ func TestTheHoldersOfAProcessAreNamedByTheirPluginOrConnection(t *testing.T) {
 			{PluginID: "org.example.unknown", Why: "search"},
 		},
 	}
-	watch := pluginprocess.NewWatchProcesses(newProcesses(atlas), newHealth(), getNames(), clock{})
+	watch := pluginprocess.NewWatchProcesses(newProcesses(atlas), newHealth(), getNames(), resolveOrchardKeeper, clock{})
 	watch.Interval = 0
-	watch.Resolve = resolveOrchardKeeper
 
 	got := receive(t, watch.Execute(t.Context()))
 
@@ -47,6 +46,6 @@ func TestTheHoldersOfAProcessAreNamedByTheirPluginOrConnection(t *testing.T) {
 		{Who: "org.example.unknown", PluginID: "org.example.unknown", Why: "search"},
 	}
 	if !slices.Equal(got[0].Holders, want) {
-		t.Errorf("held by %+v, want %+v", got[0].Holders, want)
+		t.Errorf("holders %+v, want %+v", got[0].Holders, want)
 	}
 }

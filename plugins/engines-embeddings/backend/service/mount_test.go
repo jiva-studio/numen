@@ -45,10 +45,9 @@ func TestMountRegistersCloseCallback(t *testing.T) {
 	}
 }
 
-// setEmptyModelDir points the local model at an empty folder, so that the load Configure starts fails at
-// once instead of downloading.
 func setEmptyModelDir(t *testing.T) {
 	t.Helper()
+	// An empty folder makes the load Configure starts fail at once instead of downloading.
 	t.Setenv("NUMEN_EMBEDDING_DIR", t.TempDir())
 }
 

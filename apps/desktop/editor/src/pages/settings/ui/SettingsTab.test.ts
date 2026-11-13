@@ -118,8 +118,8 @@ const openAppearanceSettings = async (tab: Tab) => {
   await nextTick()
 }
 
-const getButtonNames = (tab: Tab) =>
-  tab.findAll('button').map((one) => one.attributes('aria-label'))
+const getTileNames = (tab: Tab) =>
+  tab.get('.plugins-page').findAll('button').map((one) => one.attributes('aria-label'))
 
 const openPlugin = async (tab: Tab, name: string) => {
   await tab.get(`button[aria-label="${name}"]`).trigger('click')
@@ -139,7 +139,7 @@ describe('the settings tab', () => {
   it('draws the System tile at the top of the list', () => {
     const { tab } = createTab()
     const system = tab.get('button[aria-label="System"]')
-    expect(getButtonNames(tab)[0]).toBe(words.systemSettings)
+    expect(getTileNames(tab)[0]).toBe(words.systemSettings)
     expect(system.text()).toContain(words.systemSettingsDetail)
   })
 
@@ -156,7 +156,7 @@ describe('the settings tab', () => {
       settings: [],
     }
     const { tab } = createTab({}, [samplePlugin])
-    expect(getButtonNames(tab)).toStrictEqual([
+    expect(getTileNames(tab)).toStrictEqual([
       'System',
       'Appearance',
       'Connections',

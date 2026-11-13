@@ -305,8 +305,6 @@ var windowCallers = map[string]string{
 	"search": "Search", "settings": "Settings", "tasks": "Tasks",
 }
 
-// getWindowCaller names the part of the window that makes a request, by the header it sends, and the
-// window where it sends none.
 func getWindowCaller(header http.Header) plugindomain.Caller {
 	tag := header.Get(CallerHeader)
 	if pluginID, isPlugin := strings.CutPrefix(tag, "plugin:"); isPlugin && pluginID != "" {

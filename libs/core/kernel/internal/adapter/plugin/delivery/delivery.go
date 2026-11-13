@@ -30,8 +30,9 @@ type Snapshot struct {
 
 // Host is what the delivery asks the plugin host for. RecordConfigureAnswer is given the answer of the
 // plugin to each Configure call it answered: nil where it took the configuration, a *RefusedError where
-// it did not.
+// it did not. Equal revisions of GetPluginConfigRevision are one configuration.
 type Host interface {
+	GetPluginConfigRevision(pluginID string) string
 	GetSnapshot(pluginID string) (Snapshot, bool, error)
 	ListPluginIDs() []string
 	GetClient(endpoint transport.Endpoint) *http.Client
@@ -95,7 +96,9 @@ func (d *Delivery) IsAwaitingFirstConfigure(pluginID string) bool {
 
 // WatchConfig registers fn to run each time the plugin has been given its configuration, and each time
 // Configure or a forced Refresh finds it not running, which is a change of its configuration it has not
-// been given. The returned function removes the registration.
+// been given. The first configuration a started plugin is given runs fn only where it differs from the one
+// fn last ran for, so a read that fn makes and that starts the plugin does not run fn again. The returned
+// function removes the registration.
 func (d *Delivery) WatchConfig(pluginID string, fn func()) (stop func()) {
 	return d.watchers.add(pluginID, fn)
 }
@@ -130,7 +133,7 @@ func (d *Delivery) refreshPlugin(ctx context.Context, pluginID string, isForced 
 	}
 	if !isRunning {
 		if isForced {
-			d.watchers.run(pluginID)
+			d.watchers.run(pluginID, d.host.GetPluginConfigRevision(pluginID))
 		}
 		return nil
 	}
@@ -147,13 +150,14 @@ func (d *Delivery) Configure(ctx context.Context, pluginID string) error {
 		return err
 	}
 	if !isRunning {
-		d.watchers.run(pluginID)
+		d.watchers.run(pluginID, d.host.GetPluginConfigRevision(pluginID))
 		return nil
 	}
 	return d.deliver(ctx, snapshot)
 }
 
 func (d *Delivery) deliver(ctx context.Context, snapshot Snapshot) error {
+	isFirst := d.ledger.isAwaitingFirstConfigure(snapshot.PluginID)
 	isConfigured, sendErr := d.sendConfigure(ctx, snapshot)
 	isCaller := sendErr != nil && isCallerFailure(ctx, sendErr)
 	d.ledger.recordOutcome(snapshot.PluginID, sendErr, isCaller)
@@ -162,9 +166,18 @@ func (d *Delivery) deliver(ctx context.Context, snapshot Snapshot) error {
 		d.host.RecordConfigureAnswer(snapshot.PluginID, refused)
 	}
 	if sendErr == nil && isConfigured {
-		d.watchers.run(snapshot.PluginID)
+		d.runWatchers(snapshot.PluginID, isFirst)
 	}
 	return sendErr
+}
+
+func (d *Delivery) runWatchers(pluginID string, isFirst bool) {
+	revision := d.host.GetPluginConfigRevision(pluginID)
+	if isFirst {
+		d.watchers.runIfChanged(pluginID, revision)
+		return
+	}
+	d.watchers.run(pluginID, revision)
 }
 
 func isCallerFailure(ctx context.Context, err error) bool {

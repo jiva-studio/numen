@@ -70,7 +70,7 @@ func (clock) Now() time.Time { return getStartTime().Add(10 * time.Minute) }
 
 func startWatch(t *testing.T, p *processes, h *health) <-chan plugin.ProcessList {
 	t.Helper()
-	watch := pluginprocess.NewWatchProcesses(p, h, getNames(), clock{})
+	watch := pluginprocess.NewWatchProcesses(p, h, getNames(), nil, clock{})
 	watch.Interval = 0
 	return watch.Execute(t.Context())
 }
@@ -148,7 +148,7 @@ func TestAnUnchangedListIsNotSentAgain(t *testing.T) {
 
 func TestTheListIsClosedWhenTheWatchEnds(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
-	watch := pluginprocess.NewWatchProcesses(newProcesses(), newHealth(), getNames(), clock{})
+	watch := pluginprocess.NewWatchProcesses(newProcesses(), newHealth(), getNames(), nil, clock{})
 	watch.Interval = 0
 	lists := watch.Execute(ctx)
 	receive(t, lists)

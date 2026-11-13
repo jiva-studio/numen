@@ -77,7 +77,8 @@ func startKeptSource(t *testing.T) keptSource {
 
 func (s keptSource) open(t *testing.T, kept *sourcebridge.Descriptions) *sourcebridge.Source {
 	t.Helper()
-	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(s.host), kept)
+	roles := pluginhost.Join(s.host)
+	bridge, err := sourcebridge.Open(t.Context(), roles, roles, kept)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,11 +130,13 @@ func TestASettingChangedWhileThePluginIsStoppedIsReadAgain(t *testing.T) {
 	if err := updateSetting(t.Context(), source.host, embeddingPluginID, "model", "large"); err != nil {
 		t.Fatal(err)
 	}
-	// The change is read once, and once more after the start that read caused has configured the plugin.
 	wiretest.WaitUntil(t, "the new model to be read and announced", func() bool {
-		return source.mock.describeCalls.Load()-reads >= 2 && announced.Load() == 1
+		return source.mock.describeCalls.Load()-reads >= 1 && announced.Load() == 1
 	})
 	bridge.WaitForAnnouncements()
+	if got := source.mock.describeCalls.Load() - reads; got != 1 {
+		t.Errorf("the change was read %d times, want once: the start the read caused reads nothing again", got)
+	}
 	source.stop(t)
 	launches := source.launches.Load()
 

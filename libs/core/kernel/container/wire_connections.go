@@ -132,16 +132,12 @@ func openRowOptions(c pluginsWiring, deps connection.Deps) *rowoptions.Options {
 	if c.PluginHost.RowOptions == nil || c.PluginHost.RunningProviders == nil {
 		return nil
 	}
-	options := rowoptions.NewOptions(
+	return rowoptions.NewOptions(
 		connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute,
-		providerbridge.NewQuestionSource(c.PluginHost.Runtime), c.PluginHost.RunningProviders, c.PluginHost.RowOptions,
+		providerbridge.NewQuestionSource(c.PluginHost.Runtime), c.PluginHost.RunningProviders, c.PluginHost.RowOptions, c.PluginHost.Views.Operations,
 	)
-	options.Titles = c.PluginHost.Views.Operations
-	return options
 }
 
-// openCallSource opens the providers of the calls through connections. A call a provider answered makes
-// the option lists of its connection refresh while the plugin runs.
 func openCallSource(c pluginsWiring, deps connection.Deps) connectionport.ProviderSource {
 	var source connectionport.ProviderSource = providerbridge.NewSource(c.PluginHost.Runtime)
 	if c.PluginHost.Detection != nil {

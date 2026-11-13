@@ -80,7 +80,7 @@ func TestServeDetectedAnswersThePathWithTheHomeFolderAsTilde(t *testing.T) {
 	}
 }
 
-func TestWriteHomeAsTildeLeavesAFolderThatOnlyStartsLikeTheHomeFolder(t *testing.T) {
+func TestWriteHomeAsTildeIgnoresAFolderThatOnlyStartsLikeTheHomeFolder(t *testing.T) {
 	home := filepath.Join(string(filepath.Separator)+"home", "ada")
 	neighbor := filepath.Join(string(filepath.Separator)+"home", "adam", "bin", "orchard")
 

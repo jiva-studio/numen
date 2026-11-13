@@ -20,9 +20,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// Host provides plugin resolution and activation for the search source.
-type Host interface {
-	bridge.Activator
+// Plugins finds the plugin of the search source and watches its configuration.
+type Plugins interface {
 	ResolveCapability(capability string) (manifest.Discovered, error)
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
@@ -54,15 +53,15 @@ type Source struct {
 // starts the plugin to read it where kept has none for the configuration the plugin has now. A plugin whose
 // settings do not let it describe a source fails with the sentence the plugin gives. A nil kept reads the
 // plugin every time.
-func Open(ctx context.Context, host Host, kept *Descriptions) (*Source, error) {
-	b, readErr, err := open(ctx, host, kept)
+func Open(ctx context.Context, activator bridge.Activator, plugins Plugins, kept *Descriptions) (*Source, error) {
+	b, readErr, err := open(ctx, activator, plugins, kept)
 	if err != nil {
 		return nil, err
 	}
 	if readErr != nil {
 		return nil, readErr
 	}
-	b.stopWatch = host.WatchPluginConfig(b.service.PluginID, b.announceDescriptionChange)
+	b.stopWatch = plugins.WatchPluginConfig(b.service.PluginID, b.announceDescriptionChange)
 	return b, nil
 }
 
@@ -72,25 +71,29 @@ func Open(ctx context.Context, host Host, kept *Descriptions) (*Source, error) {
 // announces the change. A plugin whose settings do not allow a source answers failed_precondition with a
 // sentence a person reads, and onReadError receives that sentence. It fails only when the plugin cannot be
 // resolved or started.
-func OpenWatching(ctx context.Context, host Host, kept *Descriptions, onReadError func(error)) (*Source, error) {
-	b, readErr, err := open(ctx, host, kept)
+func OpenWatching(
+	ctx context.Context, activator bridge.Activator, plugins Plugins, kept *Descriptions, onReadError func(error),
+) (*Source, error) {
+	b, readErr, err := open(ctx, activator, plugins, kept)
 	if err != nil {
 		return nil, err
 	}
 	b.onReadError = onReadError
 	b.reportReadError(readErr)
-	b.stopWatch = host.WatchPluginConfig(b.service.PluginID, b.announceDescriptionChange)
+	b.stopWatch = plugins.WatchPluginConfig(b.service.PluginID, b.announceDescriptionChange)
 	return b, nil
 }
 
-func open(ctx context.Context, host Host, kept *Descriptions) (b *Source, readErr, err error) {
-	plugin, err := host.ResolveCapability(bridge.CapabilitySearchSource)
+func open(
+	ctx context.Context, activator bridge.Activator, plugins Plugins, kept *Descriptions,
+) (b *Source, readErr, err error) {
+	plugin, err := plugins.ResolveCapability(bridge.CapabilitySearchSource)
 	if err != nil {
 		return nil, nil, err
 	}
 	pluginID := plugin.Manifest.ID
 	b = &Source{
-		service: bridge.Service[numenv1connect.SearchSourceServiceClient]{Host: host, PluginID: pluginID, NewClient: numenv1connect.NewSearchSourceServiceClient},
+		service: bridge.Service[numenv1connect.SearchSourceServiceClient]{Host: activator, PluginID: pluginID, NewClient: numenv1connect.NewSearchSourceServiceClient},
 		kept:    kept,
 	}
 	if read, isKept := kept.get(pluginID); isKept {

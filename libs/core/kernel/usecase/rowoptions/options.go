@@ -42,17 +42,17 @@ type Options struct {
 	source      connectionport.ProviderSource
 	running     RunningProviders
 	lists       *Lists
-	// Titles names the operations in the list of running plugins; nil names them by their ids.
-	Titles connectionport.OperationTitles
+	titles      connectionport.OperationTitles
 }
 
 // NewOptions returns the listing over the connections, the providers source opens and the providers
-// running opens while their plugins run, which keeps what the providers listed in lists.
+// running opens while their plugins run, which keeps what the providers listed in lists. titles names the
+// operations in the list of running plugins; a nil titles names them by their ids.
 func NewOptions(
 	resolve connectionport.ResolveConnection, readSecrets connectionport.ReadConnectionSecrets, source connectionport.ProviderSource,
-	running RunningProviders, lists *Lists,
+	running RunningProviders, lists *Lists, titles connectionport.OperationTitles,
 ) *Options {
-	return &Options{resolve: resolve, readSecrets: readSecrets, source: source, running: running, lists: lists}
+	return &Options{resolve: resolve, readSecrets: readSecrets, source: source, running: running, lists: lists, titles: titles}
 }
 
 // ListOptions returns the values the row field can take from the listing kept for the connection as it is
@@ -68,7 +68,7 @@ func (o *Options) ListOptions(
 	if err != nil {
 		return nil, err
 	}
-	asked := newKeptList(resolved, field, options, operations)
+	asked := newOptionList(resolved, field, options, operations)
 	if listed, isKept := o.lists.get(resolved.PluginID, asked); isKept {
 		return listed, nil
 	}
@@ -84,7 +84,7 @@ func (o *Options) RefreshOptions(
 	if err != nil {
 		return nil, err
 	}
-	return o.readOptions(ctx, resolved, declared, newKeptList(resolved, field, options, operations))
+	return o.readOptions(ctx, resolved, declared, newOptionList(resolved, field, options, operations))
 }
 
 // RefreshConnection asks the provider again, in the background and starting its plugin where needed, for
@@ -93,7 +93,7 @@ func (o *Options) RefreshConnection(connectionID string) {
 	go func() {
 		ctx, cancel := context.WithTimeout(plugin.WithBackground(context.Background(), plugin.WhoConnections), RefreshLimit)
 		defer cancel()
-		o.refreshKept(ctx, connectionID, o.source)
+		o.refreshKept(ctx, connectionID, o.source.OpenProvider)
 	}()
 }
 
@@ -108,11 +108,14 @@ func (o *Options) RefreshRunning(connectionID string) {
 		defer o.lists.end(connectionID)
 		ctx, cancel := context.WithTimeout(plugin.WithBackground(context.Background(), plugin.WhoConnections), RefreshLimit)
 		defer cancel()
-		o.refreshKept(ctx, connectionID, runningSource{running: o.running})
+		o.refreshKept(ctx, connectionID, o.openRunningProvider)
 	}()
 }
 
-func (o *Options) refreshKept(ctx context.Context, connectionID string, source connectionport.ProviderSource) {
+func (o *Options) refreshKept(
+	ctx context.Context, connectionID string,
+	openProvider func(ctx context.Context, pluginID string) (connectionport.Provider, func(), error),
+) {
 	resolved, err := o.resolve(connectionID)
 	if err != nil {
 		return
@@ -121,7 +124,7 @@ func (o *Options) refreshKept(ctx context.Context, connectionID string, source c
 	if len(requests) == 0 {
 		return
 	}
-	provider, release, err := source.OpenProvider(plugin.WithPurpose(ctx, "refresh the lists of "+resolved.Name), resolved.PluginID)
+	provider, release, err := openProvider(plugin.WithPurpose(ctx, "refresh the lists of "+resolved.Name), resolved.PluginID)
 	if err != nil {
 		return
 	}
@@ -135,7 +138,7 @@ func (o *Options) refreshKept(ctx context.Context, connectionID string, source c
 		if !isDeclared || declared.OptionsFrom == "" {
 			continue
 		}
-		asked := newKeptList(resolved, request.Field, request.RowOptions, request.Operations)
+		asked := newOptionList(resolved, request.Field, request.RowOptions, request.Operations)
 		if _, err := o.askProvider(ctx, provider, resolved, declared.OptionsFrom, secrets, asked); err != nil {
 			return
 		}
@@ -158,7 +161,7 @@ func (o *Options) resolveField(ctx context.Context, connectionID, field string) 
 }
 
 func (o *Options) readOptions(
-	ctx context.Context, resolved connection.Resolved, declared manifest.ConnectionField, asked KeptList,
+	ctx context.Context, resolved connection.Resolved, declared manifest.ConnectionField, asked connection.OptionList,
 ) ([]modelcall.Option, error) {
 	provider, release, err := o.source.OpenProvider(plugin.WithPurpose(ctx, o.describeOperation(declared.OptionsFrom)+" of "+resolved.Name), resolved.PluginID)
 	if err != nil {
@@ -179,10 +182,9 @@ func (o *Options) readOptions(
 	return listed, nil
 }
 
-// askProvider reads the options within ReadTimeout and keeps them.
 func (o *Options) askProvider(
 	ctx context.Context, provider connectionport.Provider, resolved connection.Resolved, operation string,
-	secrets map[string]string, asked KeptList,
+	secrets map[string]string, asked connection.OptionList,
 ) ([]modelcall.Option, error) {
 	readCtx, stop := context.WithTimeout(ctx, ReadTimeout)
 	defer stop()
@@ -195,11 +197,8 @@ func (o *Options) askProvider(
 	return listed, nil
 }
 
-// runningSource opens the providers of running as a source, and fails for a plugin that does not run.
-type runningSource struct{ running RunningProviders }
-
-func (s runningSource) OpenProvider(ctx context.Context, pluginID string) (connectionport.Provider, func(), error) {
-	provider, release, isRunning := s.running.OpenRunningProvider(ctx, pluginID)
+func (o *Options) openRunningProvider(ctx context.Context, pluginID string) (connectionport.Provider, func(), error) {
+	provider, release, isRunning := o.running.OpenRunningProvider(ctx, pluginID)
 	if !isRunning {
 		return nil, nil, errNotRunning
 	}
@@ -226,8 +225,8 @@ func readReason(err error) connection.FailureReason {
 }
 
 func (o *Options) describeOperation(operation string) string {
-	if o.Titles == nil {
+	if o.titles == nil {
 		return operation
 	}
-	return connection.GetOperationTitle(o.Titles.ListOperationTitles(), operation)
+	return connection.GetOperationTitle(o.titles.ListOperationTitles(), operation)
 }

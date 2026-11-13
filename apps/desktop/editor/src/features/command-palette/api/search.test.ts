@@ -179,7 +179,7 @@ describe('the kind of a passage', () => {
 })
 
 describe('a passage search the window aborts', () => {
-  it('is cancelled in the core by the id it was asked with', async () => {
+  it('cancels the search in the core by its search id', async () => {
     search.searchPassages.mockReturnValue(new Promise(() => undefined))
     search.cancelSearch.mockResolvedValue({})
     const asking = new AbortController()
@@ -206,7 +206,7 @@ describe('a passage search the window aborts', () => {
     expect(search.cancelSearch).not.toHaveBeenCalled()
   })
 
-  it('carries a new id each time it is asked', async () => {
+  it('sends a new search id with each search', async () => {
     search.searchPassages.mockResolvedValue({ found: [] })
 
     await searchCore.search('seeds', 'meaning', 8, new AbortController().signal)
@@ -220,7 +220,7 @@ describe('a passage search the window aborts', () => {
 })
 
 describe('a name search the window aborts', () => {
-  it('is cancelled in the core by the id it was asked with', async () => {
+  it('cancels the search in the core by its search id', async () => {
     search.searchNames.mockReturnValue(new Promise(() => undefined))
     search.cancelSearch.mockResolvedValue({})
     const asking = new AbortController()

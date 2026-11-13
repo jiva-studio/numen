@@ -118,7 +118,7 @@ func newPluginCommands(c pluginsWiring, host *PluginHost, versions plugincommand
 }
 
 func getPluginServices(c pluginsWiring) editor.PluginServices {
-	return servicebridge.Open(c.PluginHost.Runtime)
+	return servicebridge.Open(c.PluginHost.Runtime, c.PluginHost.Runtime)
 }
 
 func getPluginRetrier(c pluginsWiring) func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {

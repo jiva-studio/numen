@@ -74,7 +74,8 @@ func (c *ConfigPush) Refresh(ctx context.Context, forced ...string) error {
 }
 
 // WatchPluginConfig registers fn to run each time the plugin has been given its configuration, and each
-// time its configuration changes while it does not run and is enabled.
+// time its configuration changes while it does not run and is enabled. A started plugin given the
+// configuration fn last ran for does not run fn.
 // fn runs on its own goroutine, so it may call the plugin while the delivery of Configure is locked.
 // The returned function removes the registration.
 func (c *ConfigPush) WatchPluginConfig(pluginID string, fn func()) (stop func()) {

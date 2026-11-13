@@ -146,7 +146,8 @@ func TestOpenSourceBridgeNoPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(host), nil)
+	roles := pluginhost.Join(host)
+	bridge, err := sourcebridge.Open(t.Context(), roles, roles, nil)
 	if err == nil {
 		t.Fatal("expected error when no search source plugin found, got nil")
 	}
@@ -198,7 +199,8 @@ func TestTheBridgeReadsTheDescriptionOfTheSource(t *testing.T) {
 	mockServer.minText.Store(40)
 	mockServer.recipe.Store("test-provider|test-model|384|1a2b3c4d")
 	ctx := t.Context()
-	bridge, err := sourcebridge.Open(ctx, pluginhost.Join(startSource(t, mockServer)), nil)
+	roles := pluginhost.Join(startSource(t, mockServer))
+	bridge, err := sourcebridge.Open(ctx, roles, roles, nil)
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
@@ -217,7 +219,8 @@ func TestTheBridgeReadsTheDescriptionOfTheSource(t *testing.T) {
 func TestADescriptionIsAnsweredWithoutAskingThePluginAgain(t *testing.T) {
 	mockServer := &mockSourceServer{}
 	mockServer.recipe.Store("test-provider|test-model|384|1a2b3c4d")
-	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(startSource(t, mockServer)), nil)
+	roles := pluginhost.Join(startSource(t, mockServer))
+	bridge, err := sourcebridge.Open(t.Context(), roles, roles, nil)
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
@@ -238,7 +241,8 @@ func TestADescriptionIsAnsweredWithoutAskingThePluginAgain(t *testing.T) {
 func TestANegativeFloorHintIsReadAsNone(t *testing.T) {
 	mockServer := &mockSourceServer{}
 	mockServer.floorHint.Store(-1.0)
-	bridge, err := sourcebridge.Open(t.Context(), pluginhost.Join(startSource(t, mockServer)), nil)
+	roles := pluginhost.Join(startSource(t, mockServer))
+	bridge, err := sourcebridge.Open(t.Context(), roles, roles, nil)
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
@@ -252,7 +256,8 @@ func TestANegativeFloorHintIsReadAsNone(t *testing.T) {
 func TestTheBridgeSendsTheTextsAndTheQueriesToTheSource(t *testing.T) {
 	mockServer := &mockSourceServer{}
 	ctx := t.Context()
-	bridge, err := sourcebridge.Open(ctx, pluginhost.Join(startSource(t, mockServer)), nil)
+	roles := pluginhost.Join(startSource(t, mockServer))
+	bridge, err := sourcebridge.Open(ctx, roles, roles, nil)
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
@@ -298,7 +303,8 @@ func TestASourceTheSettingsDoNotAllowFailsToOpenWithThePlainSentence(t *testing.
 	mockServer := &mockSourceServer{}
 	mockServer.failPrecondition.Store(true)
 
-	_, err := sourcebridge.Open(t.Context(), pluginhost.Join(startSource(t, mockServer)), nil)
+	roles := pluginhost.Join(startSource(t, mockServer))
+	_, err := sourcebridge.Open(t.Context(), roles, roles, nil)
 
 	if err == nil || err.Error() != noConnection {
 		t.Errorf("err = %v, want %q", err, noConnection)
@@ -312,7 +318,7 @@ func TestTheDescriptionIsAQuestionAndASearchIsAUse(t *testing.T) {
 	t.Cleanup(server.Close)
 	host := &plugintest.LeaseHost{Endpoint: transport.Endpoint{Host: "127.0.0.1", Port: wiretest.GetPort(t, server)}}
 
-	bridge, err := sourcebridge.Open(t.Context(), host, nil)
+	bridge, err := sourcebridge.Open(t.Context(), host, host, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

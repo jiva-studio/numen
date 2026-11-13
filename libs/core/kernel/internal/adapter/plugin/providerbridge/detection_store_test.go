@@ -141,7 +141,7 @@ func TestRefreshAsksAPluginAgainOnceTheRefreshIntervalPassed(t *testing.T) {
 	})
 }
 
-func TestTheAnswersOfAPluginAreKeptInItsFileOfTheConnectionsFolder(t *testing.T) {
+func TestTheAnswersOfAPluginAreStoredInItsFileInTheConnectionsFolder(t *testing.T) {
 	f := newDetectionFixture()
 	root := t.TempDir()
 	f.detection.SetFiles(cacheIn(t, root))

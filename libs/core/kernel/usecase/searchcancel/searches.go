@@ -1,4 +1,6 @@
-package search
+// Package searchcancel holds the cancels of the running searches of a window, by the id the window gave
+// each search.
+package searchcancel
 
 import (
 	"context"
@@ -15,10 +17,10 @@ const (
 	earlyCancelLimit = 256
 )
 
-// searches holds the cancel of each running search that carries an id, and the ids cancelled before
-// their search started. A search that starts with such an id starts cancelled. A search without an id
-// cannot be cancelled.
-type searches struct {
+// Searches holds the cancel of each running search that has an id, and the ids canceled before their
+// search started. A search that starts with such an id starts canceled. A search without an id cannot be
+// canceled. It is safe to use from several goroutines.
+type Searches struct {
 	clock machineport.Clock
 
 	mu      sync.Mutex
@@ -26,18 +28,21 @@ type searches struct {
 	early   map[string]time.Time
 }
 
-func newSearches(clock machineport.Clock) *searches {
-	return &searches{clock: clock, running: map[string]context.CancelFunc{}, early: map[string]time.Time{}}
+// NewSearches returns the searches with no search running. clock times the cancels that arrive before
+// their search.
+func NewSearches(clock machineport.Clock) *Searches {
+	return &Searches{clock: clock, running: map[string]context.CancelFunc{}, early: map[string]time.Time{}}
 }
 
-func (s *searches) start(ctx context.Context, id string) (context.Context, func()) {
+// Start returns the context the search with the id runs in, and the function that ends the search.
+func (s *Searches) Start(ctx context.Context, id string) (context.Context, func()) {
 	if id == "" {
 		return ctx, func() {}
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	s.mu.Lock()
 	s.dropExpired()
-	if _, isCancelled := s.early[id]; isCancelled {
+	if _, isCanceled := s.early[id]; isCanceled {
 		delete(s.early, id)
 		s.mu.Unlock()
 		cancel()
@@ -53,7 +58,9 @@ func (s *searches) start(ctx context.Context, id string) (context.Context, func(
 	}
 }
 
-func (s *searches) cancel(id string) {
+// Cancel cancels the running search with the id, or else the search with the id that starts within
+// earlyCancelLife.
+func (s *Searches) Cancel(id string) {
 	if id == "" {
 		return
 	}
@@ -70,7 +77,7 @@ func (s *searches) cancel(id string) {
 	s.early[id] = s.clock.Now()
 }
 
-func (s *searches) dropExpired() {
+func (s *Searches) dropExpired() {
 	now := s.clock.Now()
 	for id, at := range s.early {
 		if now.Sub(at) >= earlyCancelLife {
@@ -79,7 +86,7 @@ func (s *searches) dropExpired() {
 	}
 }
 
-func (s *searches) dropOldest() {
+func (s *Searches) dropOldest() {
 	oldestID, oldestAt := "", time.Time{}
 	for id, at := range s.early {
 		if oldestID == "" || at.Before(oldestAt) {

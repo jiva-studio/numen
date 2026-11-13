@@ -249,8 +249,7 @@ func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, lease li
 	if state := sup.GetState(); state != lifecycle.StateDormant {
 		return Claim{Endpoint: NoEndpoint(), Running: false, State: state, Started: false}
 	}
-	sup.SetActivating()
-	sup.SetStartedBy(lease.Holder)
+	sup.SetActivating(lease.Holder)
 	return Claim{Endpoint: NoEndpoint(), Running: false, State: lifecycle.StateDormant, Started: true}
 }
 

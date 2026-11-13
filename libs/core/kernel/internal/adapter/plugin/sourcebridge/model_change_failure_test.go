@@ -184,7 +184,8 @@ func TestASourceTheSettingsDoNotAllowOpensWatchingWithNoDescription(t *testing.T
 	mock.failPrecondition.Store(true)
 	reports := make(chan error, 8)
 
-	bridge, err := sourcebridge.OpenWatching(t.Context(), pluginhost.Join(startConfigurableSource(t, mock)), nil, func(err error) { reports <- err })
+	roles := pluginhost.Join(startConfigurableSource(t, mock))
+	bridge, err := sourcebridge.OpenWatching(t.Context(), roles, roles, nil, func(err error) { reports <- err })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,7 +206,8 @@ func TestASettingThatAllowsTheSourceAnnouncesItsDescription(t *testing.T) {
 	mock.failPrecondition.Store(true)
 	host := startConfigurableSource(t, mock)
 	reports := make(chan error, 8)
-	bridge, err := sourcebridge.OpenWatching(t.Context(), pluginhost.Join(host), nil, func(err error) { reports <- err })
+	roles := pluginhost.Join(host)
+	bridge, err := sourcebridge.OpenWatching(t.Context(), roles, roles, nil, func(err error) { reports <- err })
 	if err != nil {
 		t.Fatal(err)
 	}

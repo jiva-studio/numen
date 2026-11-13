@@ -82,7 +82,7 @@ type modelOpener struct {
 func modelOpeners() []modelOpener {
 	return []modelOpener{
 		{"search source", func(ctx context.Context, h *stubModelHost) error {
-			b, err := sourcebridge.Open(ctx, h, nil)
+			b, err := sourcebridge.Open(ctx, h, h, nil)
 			if b != nil {
 				return errors.New("a bridge was returned with the error")
 			}

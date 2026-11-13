@@ -42,15 +42,17 @@ type WatchProcesses struct {
 	health    HealthItems
 	plugins   Plugins
 	clock     machineport.Clock
+	resolve   connectionport.ResolveConnection
 	Interval  time.Duration
-	// Resolve names the connections that hold leases; nil names them by the plugin that asked.
-	Resolve connectionport.ResolveConnection
 }
 
 // NewWatchProcesses returns the use case over the plugins that run, their health items, their manifests
-// and the clock that stamps each list, sending at most one list a second.
-func NewWatchProcesses(processes Processes, health HealthItems, plugins Plugins, clock machineport.Clock) *WatchProcesses {
-	return &WatchProcesses{processes: processes, health: health, plugins: plugins, clock: clock, Interval: time.Second}
+// and the clock that stamps each list, sending at most one list a second. resolve names the connections
+// that hold leases; a nil resolve names them by the plugin that asked.
+func NewWatchProcesses(
+	processes Processes, health HealthItems, plugins Plugins, resolve connectionport.ResolveConnection, clock machineport.Clock,
+) *WatchProcesses {
+	return &WatchProcesses{processes: processes, health: health, plugins: plugins, resolve: resolve, clock: clock, Interval: time.Second}
 }
 
 // Execute returns the plugins that run at once, and again after each change that alters them, until the
@@ -151,10 +153,9 @@ func waitInterval(ctx context.Context, interval time.Duration) bool {
 	}
 }
 
-// nameHolder puts the name of the connection or of the plugin that holds a lease in place of its id.
 func (u *WatchProcesses) nameHolder(holder plugin.Holder) plugin.Holder {
-	if holder.ConnectionID != "" && u.Resolve != nil {
-		if resolved, err := u.Resolve(holder.ConnectionID); err == nil && resolved.Name != "" {
+	if holder.ConnectionID != "" && u.resolve != nil {
+		if resolved, err := u.resolve(holder.ConnectionID); err == nil && resolved.Name != "" {
 			holder.Who = resolved.Name
 			return holder
 		}

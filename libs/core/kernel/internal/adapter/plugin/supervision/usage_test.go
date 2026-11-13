@@ -28,7 +28,7 @@ func startInProcess(t *testing.T, sups *Supervisors, ids ...string) {
 	t.Helper()
 	for _, id := range ids {
 		sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: id}})
-		sup.SetActivating()
+		sup.SetActivating(plugindomain.Holder{})
 		endpoint := transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: id}
 		if err := sups.AttachInProcess(id, sup, endpoint, useLease, getStartTime()); err != nil {
 			t.Fatal(err)
@@ -87,7 +87,7 @@ func TestSignalsTheWatchHasNotReceivedAreMergedIntoOne(t *testing.T) {
 func TestTheIdleStopTimeFollowsTheIdleLimitOfTheManifest(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: atlasID, Backend: manifest.Backend{Entrypoint: "bin/atlas", IdleStopSeconds: 600}}})
-	sup.SetActivating()
+	sup.SetActivating(plugindomain.Holder{})
 	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, useLease, getStartTime()); err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func TestAReleasedPluginIsDueToStopAtItsLastUse(t *testing.T) {
 func TestAPluginOnlyAskedAQuestionIsDueToStopAtItsStart(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	sup := sups.Register(manifest.Discovered{Manifest: manifest.Manifest{ID: atlasID}})
-	sup.SetActivating()
+	sup.SetActivating(plugindomain.Holder{})
 	if err := sups.AttachInProcess(atlasID, sup, transport.Endpoint{Host: "127.0.0.1", Port: 4100, Token: atlasID}, questionLease, getStartTime()); err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func TestAQuestionDoesNotCancelTheReleaseOfAProcess(t *testing.T) {
 	}
 }
 
-func TestListProcessesNamesWhoStartedEachPluginAndWhoHoldsIt(t *testing.T) {
+func TestListProcessesReturnsTheStarterAndTheHoldersOfEachPlugin(t *testing.T) {
 	starter := lifecycle.Lease{Kind: lifecycle.UseLease, Holder: plugindomain.Holder{Who: plugindomain.WhoIndexing, Why: "embed notes"}}
 	asker := lifecycle.Lease{Kind: lifecycle.UseLease, Holder: plugindomain.Holder{PluginID: mapsID, Why: "call tool"}}
 	sups := NewSupervisors(func(error) {}, func(string) {})
@@ -170,6 +170,6 @@ func TestListProcessesNamesWhoStartedEachPluginAndWhoHoldsIt(t *testing.T) {
 		t.Fatalf("got %+v, want the plugin started by %+v", got, starter.Holder)
 	}
 	if want := []plugindomain.Holder{asker.Holder, questionLease.Holder}; !slices.Equal(got[0].Holders, want) {
-		t.Errorf("held by %+v, want %+v", got[0].Holders, want)
+		t.Errorf("holders %+v, want %+v", got[0].Holders, want)
 	}
 }

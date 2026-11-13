@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
 const finchPlugin = "org.example.finch"
@@ -20,7 +20,7 @@ func newStorage(t *testing.T, cacheRoot string, reported *[]error) *storage.Stor
 	return files
 }
 
-func TestTheDetectedConnectionsOfAPluginAreKeptInTheConnectionsFolder(t *testing.T) {
+func TestTheDetectedConnectionsOfAPluginAreStoredInTheConnectionsFolder(t *testing.T) {
 	root := t.TempDir()
 	var reported []error
 	files := newStorage(t, root, &reported)
@@ -36,10 +36,10 @@ func TestTheDetectedConnectionsOfAPluginAreKeptInTheConnectionsFolder(t *testing
 	}
 }
 
-func TestTheOptionListsOfAPluginAreKeptInTheModelsFolder(t *testing.T) {
+func TestTheOptionListsOfAPluginAreStoredInTheModelsFolder(t *testing.T) {
 	root := t.TempDir()
 	var reported []error
-	lists := []rowoptions.KeptList{{
+	lists := []connection.OptionList{{
 		ConnectionID: "c0000beak", Field: "model", RowOptions: map[string]string{"reasoning": "low"},
 		Operations: []string{"llm.chat"}, Revision: 3, PluginVersion: "1.2.0", Fields: map[string]string{"baseUrl": "https://finch.test/v1"},
 		Options: []modelcall.Option{{Value: "finch-small", Title: "Finch small", Group: "Finch"}, {Value: "finch-large"}},
@@ -56,7 +56,7 @@ func TestTheOptionListsOfAPluginAreKeptInTheModelsFolder(t *testing.T) {
 	}
 }
 
-func TestOptionListsThatCannotBeReadAreReportedAndNotKept(t *testing.T) {
+func TestUnreadableOptionListsAreReportedAndReadAsNone(t *testing.T) {
 	root := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(root, "models"), 0o700); err != nil {
 		t.Fatal(err)
@@ -78,7 +78,7 @@ func TestAHostWithNoCacheRootKeepsNothing(t *testing.T) {
 	files := newStorage(t, "", &reported)
 
 	files.WriteDetectedConnections(finchPlugin, []byte(`{"answers":{}}`))
-	files.WriteOptionLists(finchPlugin, []rowoptions.KeptList{{ConnectionID: "c0000beak", Field: "model"}})
+	files.WriteOptionLists(finchPlugin, []connection.OptionList{{ConnectionID: "c0000beak", Field: "model"}})
 
 	_, isConnectionsKept := files.ReadDetectedConnections(finchPlugin)
 	_, isListsKept := files.ReadOptionLists(finchPlugin)

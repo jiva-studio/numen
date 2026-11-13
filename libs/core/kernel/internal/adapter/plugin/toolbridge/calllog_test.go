@@ -3,7 +3,7 @@ package toolbridge_test
 import (
 	"bytes"
 	"encoding/json"
-	"log/slog"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -15,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
-func newCatalog(host toolbridge.Host, files *storage.Storage) *toolbridge.Catalog {
-	return toolbridge.NewCatalog(host, files, testsupport.NewClock(), slog.New(slog.DiscardHandler))
+func newCatalog(host *pluginHost, files *storage.Storage) *toolbridge.Catalog {
+	return toolbridge.NewCatalog(host, host, files, testsupport.NewClock(), io.Discard)
 }
 
 // steppingClock moves a second forward on every reading.
@@ -27,8 +27,8 @@ func (c steppingClock) Now() time.Time { return c.clock.Advance(time.Second) }
 func callLogged(t *testing.T, call *v1.CallToolRequest) map[string]any {
 	t.Helper()
 	var out bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&out, nil))
-	catalog := toolbridge.NewCatalog(newTwoPlugins(t), filesIn(t, ""), steppingClock{testsupport.NewClock()}, logger)
+	host := newTwoPlugins(t)
+	catalog := toolbridge.NewCatalog(host, host, filesIn(t, ""), steppingClock{testsupport.NewClock()}, &out)
 
 	if _, err := catalog.CallTool(t.Context(), callerPlugin, call); err != nil {
 		t.Fatal(err)
@@ -54,9 +54,9 @@ func TestACallIsLoggedWithItsCallerToolArgumentsResultAndDuration(t *testing.T) 
 	})
 
 	want := map[string]any{
-		"level": "INFO", "msg": "tool call", "caller": callerPlugin, "tool": "tree_count", "plugin": orchardPlugin,
-		"vault": "vault-orchard", "duration": float64(time.Second), "result_text_bytes": float64(len("tree_count")),
-		"result_structured_bytes": float64(0), "result_is_error": false,
+		"msg": "tool call", "caller": callerPlugin, "tool": "tree_count", "plugin": orchardPlugin,
+		"vault": "vault-orchard", "duration": float64(time.Second), "resultTextBytes": float64(len("tree_count")),
+		"resultStructuredBytes": float64(0), "resultIsError": false,
 	}
 	for key, value := range want {
 		if line[key] != value {
@@ -82,8 +82,8 @@ func TestACallOfAnUnknownToolIsLoggedWithItsToolError(t *testing.T) {
 	if line["tool"] != "pond_depth" || line["plugin"] != "" {
 		t.Errorf("the call is logged as tool %v on plugin %v", line["tool"], line["plugin"])
 	}
-	if line["tool_error"] != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL.String() {
-		t.Errorf("the tool error is logged as %v", line["tool_error"])
+	if line["toolError"] != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL.String() {
+		t.Errorf("the tool error is logged as %v", line["toolError"])
 	}
 }
 

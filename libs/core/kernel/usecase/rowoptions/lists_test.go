@@ -17,17 +17,17 @@ import (
 // memoryLists keeps the option lists in memory, as the cache files of the plugins do across processes.
 type memoryLists struct {
 	mu       sync.Mutex
-	byPlugin map[string][]rowoptions.KeptList
+	byPlugin map[string][]connection.OptionList
 }
 
-func (m *memoryLists) ReadOptionLists(pluginID string) ([]rowoptions.KeptList, bool) {
+func (m *memoryLists) ReadOptionLists(pluginID string) ([]connection.OptionList, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	lists, isKept := m.byPlugin[pluginID]
 	return slices.Clone(lists), isKept
 }
 
-func (m *memoryLists) WriteOptionLists(pluginID string, lists []rowoptions.KeptList) {
+func (m *memoryLists) WriteOptionLists(pluginID string, lists []connection.OptionList) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.byPlugin[pluginID] = slices.Clone(lists)
@@ -57,15 +57,14 @@ func (r *runningProviders) setRunning(isRunning bool) {
 	r.isRunning = isRunning
 }
 
-func (r *runningProviders) countOpened() int {
+func (r *runningProviders) countOpenCalls() int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.opened
 }
 
-// restart returns the listing of a new process over the same files.
 func (s *setup) restart() *rowoptions.Options {
-	return rowoptions.NewOptions(s.world.Resolve, s.world.ReadSecrets, s.world.Source, s.running, rowoptions.NewLists(s.files))
+	return rowoptions.NewOptions(s.world.Resolve, s.world.ReadSecrets, s.world.Source, s.running, rowoptions.NewLists(s.files), nil)
 }
 
 func (s *setup) countCalls() int { return len(s.world.Provider.Calls()) }
@@ -77,7 +76,7 @@ func (s *setup) mustListModels(t *testing.T) {
 	}
 }
 
-func TestAKeptListIsAnsweredWithoutOpeningTheProvider(t *testing.T) {
+func TestListOptionsAnswersAStoredListWithoutOpeningTheProvider(t *testing.T) {
 	s := newSetup(t)
 	s.mustListModels(t)
 	s.world.Source.FailOpen(modelcalltest.ProviderPluginID, errors.New("the plugin must not start"))
@@ -92,7 +91,7 @@ func TestAKeptListIsAnsweredWithoutOpeningTheProvider(t *testing.T) {
 	}
 }
 
-func TestWithNoKeptListTheProviderIsAsked(t *testing.T) {
+func TestListOptionsAsksTheProviderWhenNoListIsStored(t *testing.T) {
 	for name, between := range map[string]func(*testing.T, *setup){
 		"for a connection that changed": func(t *testing.T, s *setup) {
 			t.Helper()
@@ -139,7 +138,7 @@ func TestRefreshRunningAsksARunningPluginAndKeepsTheAnswerForTheConnectionAsItIs
 		synctest.Wait()
 		s.mustListModels(t)
 
-		if opened, calls := s.running.countOpened(), s.countCalls(); opened != 1 || calls != 2 {
+		if opened, calls := s.running.countOpenCalls(), s.countCalls(); opened != 1 || calls != 2 {
 			t.Errorf("running opened = %d, calls = %d, want the refresh alone after the first listing", opened, calls)
 		}
 		if opened := s.world.Source.Opened(); len(opened) != 1 {
@@ -162,7 +161,7 @@ func TestRefreshRunningDoesNotStartAPluginThatDoesNotRun(t *testing.T) {
 	})
 }
 
-func TestARefreshThatFailsKeepsTheListKeptBefore(t *testing.T) {
+func TestAFailedRefreshPreservesTheStoredList(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		s := newSetup(t)
 		s.mustListModels(t)
@@ -195,7 +194,7 @@ func TestRefreshConnectionAsksTheProviderForTheChangedConnection(t *testing.T) {
 	})
 }
 
-func TestARefreshOfAConnectionWithNoKeptListAsksNothing(t *testing.T) {
+func TestRefreshOfAConnectionWithNoStoredListAsksNothing(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		s := newSetup(t)
 		s.running.setRunning(true)
@@ -213,7 +212,7 @@ func TestARefreshOfAConnectionWithNoKeptListAsksNothing(t *testing.T) {
 func TestAListingForAnotherValueOfAFieldBeforeAsksTheProvider(t *testing.T) {
 	s := newSetup(t)
 	for _, model := range []string{"model-1", "model-2"} {
-		if _, err := s.listReasoning(t.Context(), model); err != nil {
+		if _, err := s.listReasoningLevels(t.Context(), model); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -223,7 +222,7 @@ func TestAListingForAnotherValueOfAFieldBeforeAsksTheProvider(t *testing.T) {
 	}
 }
 
-func TestAKeptListIsAnsweredWhateverTheFieldAndTheFieldsAfterItHold(t *testing.T) {
+func TestAStoredListIsAnsweredForAnyValueOfTheFieldAndTheFieldsAfterIt(t *testing.T) {
 	s := newSetup(t)
 	s.mustListModels(t)
 

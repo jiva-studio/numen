@@ -14,6 +14,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -21,7 +22,8 @@ import (
 
 // bridgeHost is what every bridge is opened on.
 type bridgeHost interface {
-	sourcebridge.Host
+	bridge.Activator
+	sourcebridge.Plugins
 }
 
 // contractPluginID is the plugin the bridges are opened on.
@@ -51,7 +53,7 @@ func createContract[B io.Closer](bridge B, err error, call func(B, context.Conte
 func getBridgeContracts() []bridgeContract {
 	return []bridgeContract{
 		{"search source", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-			b, err := sourcebridge.Open(ctx, h, nil)
+			b, err := sourcebridge.Open(ctx, h, h, nil)
 			return createContract(b, err, func(b *sourcebridge.Source, ctx context.Context) (bool, error) {
 				return isZeroResult(b.IndexTexts(ctx, searchsource.Place{}, []searchsource.Text{{ChunkID: "1", Text: "a"}}))
 			})

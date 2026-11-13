@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 )
 
 type shownVault struct{ v domain.Vault }
@@ -76,7 +77,7 @@ func newHandler(vault domain.Vault, found names, kinds tabKinds) *Handler {
 		shownVault{v: vault},
 		search.NewFindNames(found, kinds),
 		search.NewFindPassages(search.Search{}, titles{}, types{}, kinds),
-		testsupport.NewClock(),
+		searchcancel.NewSearches(testsupport.NewClock()),
 	)
 }
 

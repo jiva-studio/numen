@@ -187,7 +187,9 @@ describe('the agents a chat offers', () => {
   it('stay listed through a reload, with the models listed before', async () => {
     const CLOVER = [{ value: 'clover', title: 'Clover', group: '' }]
     let modelAnswers = 0
-    let answerAgain: () => void = () => undefined
+    let answerAgain = (): void => {
+      throw new Error('the reload did not ask for the models again')
+    }
     const { host } = createAgentConnections(
       { frames: [] },
       {

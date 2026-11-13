@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/libs/atomicfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
 // The folders inside the cache root where the host keeps what plugins answered, one file per plugin.
@@ -82,7 +82,7 @@ type optionFile struct {
 
 // ReadOptionLists returns the option lists kept for the connections of the plugin, and false where none
 // are kept, the file cannot be read or the host has no cache root.
-func (s *Storage) ReadOptionLists(pluginID string) ([]rowoptions.KeptList, bool) {
+func (s *Storage) ReadOptionLists(pluginID string) ([]connection.OptionList, bool) {
 	content, isKept := s.readCacheFile(optionListsFolder, pluginID, "the option lists")
 	if !isKept {
 		return nil, false
@@ -92,13 +92,13 @@ func (s *Storage) ReadOptionLists(pluginID string) ([]rowoptions.KeptList, bool)
 		s.report(fmt.Errorf("read the option lists of plugin %s: %w", pluginID, err))
 		return nil, false
 	}
-	lists := make([]rowoptions.KeptList, len(files))
+	lists := make([]connection.OptionList, len(files))
 	for i, one := range files {
 		options := make([]modelcall.Option, len(one.Options))
 		for j, option := range one.Options {
 			options[j] = modelcall.Option{Value: option.Value, Title: option.Title, Group: option.Group}
 		}
-		lists[i] = rowoptions.KeptList{
+		lists[i] = connection.OptionList{
 			ConnectionID: one.ConnectionID, Field: one.Field, RowOptions: one.RowOptions, Operations: one.Operations,
 			Revision: one.Revision, PluginVersion: one.PluginVersion, Fields: one.Fields, Options: options,
 		}
@@ -108,7 +108,7 @@ func (s *Storage) ReadOptionLists(pluginID string) ([]rowoptions.KeptList, bool)
 
 // WriteOptionLists keeps the option lists of the connections of the plugin, whole, in place of those kept
 // before. Where it cannot, the failure is reported.
-func (s *Storage) WriteOptionLists(pluginID string, lists []rowoptions.KeptList) {
+func (s *Storage) WriteOptionLists(pluginID string, lists []connection.OptionList) {
 	files := make([]optionListFile, len(lists))
 	for i, one := range lists {
 		options := make([]optionFile, len(one.Options))

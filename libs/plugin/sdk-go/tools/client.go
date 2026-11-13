@@ -19,14 +19,13 @@ const (
 	ErrorCodeBadArguments ErrorCode = 2
 )
 
-// Call describes an invocation of a tool.
+// Call describes an invocation of a tool. ConnectionID is the connection whose agent asks for the call; the
+// list of running plugins names that connection as the holder of the tool call.
 type Call struct {
-	Name      string
-	Arguments []byte
-	Context   map[string]string
-	VaultID   string
-	// ConnectionID is the connection whose agent asks for the call. The list of running plugins names
-	// that connection as the holder of the tool call.
+	Name         string
+	Arguments    []byte
+	Context      map[string]string
+	VaultID      string
 	ConnectionID string
 }
 

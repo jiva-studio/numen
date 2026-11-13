@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -32,6 +33,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
@@ -100,7 +102,7 @@ func mountSearch(w *windowWiring) {
 		state,
 		search.NewFindNames(w.db.NoteQueries(), w.kinds.list),
 		search.NewFindPassages(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
-		w.cfg.Clock(),
+		searchcancel.NewSearches(w.cfg.Clock()),
 	)
 	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError)
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
@@ -195,10 +197,7 @@ func mountSettings(w *windowWiring) {
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(getPluginServices(w.a), func(id string) (string, bool) { return getPluginDir(w.a, id) })
 	host := w.a.PluginHost
-	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime, clock.System{})
-	if deps, ok := openConnectionDeps(w.a); ok {
-		watch.Resolve = connection.NewResolve(deps).Execute
-	}
+	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime, getConnectionResolve(w.a), clock.System{})
 	handler := windowplugin.NewHandler(watch)
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.state.Gate.CountQuestions())))
 }
@@ -329,4 +328,12 @@ func mountConnectionCall(w *windowWiring) {
 	handler := connectioncall.NewService(openModelCalls(w.a), openRowLists(w.a))
 	path, served := connectioncall.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
+}
+
+func getConnectionResolve(c pluginsWiring) connectionport.ResolveConnection {
+	deps, ok := openConnectionDeps(c)
+	if !ok {
+		return nil
+	}
+	return connection.NewResolve(deps).Execute
 }

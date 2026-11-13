@@ -5,7 +5,7 @@
  * the line. Clicking a line shows who started the plugin and who holds it now.
  */
 import { computed, ref } from 'vue'
-import { createNamedIcon } from '@numen/ui'
+import { ChevronIcon } from '../model/icons'
 import type { PluginProcess } from '../types'
 import { getRows } from '../lib/rows'
 import { WORDS as words } from '../words'
@@ -22,7 +22,6 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const ChevronIcon = createNamedIcon('chevron-right')
 const rows = computed(() => getRows(props.processes, props.now))
 const expandedIds = ref<ReadonlySet<string>>(new Set())
 
@@ -31,7 +30,7 @@ function onClose() {
   emit('close')
 }
 
-function toggleHolders(id: string) {
+function onToggleHolders(id: string) {
   const next = new Set(expandedIds.value)
   if (!next.delete(id)) next.add(id)
   expandedIds.value = next
@@ -63,8 +62,8 @@ function toggleHolders(id: string) {
         :title="row.title"
         :aria-expanded="expandedIds.has(row.id)"
         tabindex="0"
-        @click="toggleHolders(row.id)"
-        @keydown.enter.space.prevent="toggleHolders(row.id)"
+        @click="onToggleHolders(row.id)"
+        @keydown.enter.space.prevent="onToggleHolders(row.id)"
       >
         <span
           class="plugin-popover__status"

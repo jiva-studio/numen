@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
@@ -207,7 +206,8 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 
 func lendHostEndpoint(host *PluginRoles) *hostendpoint.Services {
 	services := hostendpoint.NewServices()
-	tools := toolbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), host.Storage, clock.System{}, slog.Default())
+	toolHost := plugin.NewToolHost(host.Activation, host.Registry)
+	tools := toolbridge.NewCatalog(toolHost, toolHost, host.Storage, clock.System{}, toolbridge.GetErrorOutput())
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation, Processes: host.Teardown,
 		Lent: services,
