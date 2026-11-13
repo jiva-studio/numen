@@ -12,7 +12,7 @@ import (
 func TestReleaseTellsTheHost(t *testing.T) {
 	host := processtest.NewHost(t)
 
-	host.NewClient(t).Release(t.Context())
+	if err := host.NewClient(t).Release(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 

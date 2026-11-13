@@ -6,7 +6,6 @@ package process
 
 import (
 	"context"
-	"log/slog"
 
 	"connectrpc.com/connect"
 
@@ -41,10 +40,8 @@ func NewClientFromEnv() (*Client, error) {
 }
 
 // Release tells the host that the process has finished its work. The answer can arrive after the host
-// has stopped the process, or never where the stop ends the process first. A failed call is logged, and
-// the host then stops the process at its idle limit.
-func (c *Client) Release(ctx context.Context) {
-	if _, err := c.rpc.ReleaseProcess(ctx, connect.NewRequest(&v1.ReleaseProcessRequest{})); err != nil {
-		slog.Debug("process: release", "error", err)
-	}
+// has stopped the process, or never where the stop ends the process first.
+func (c *Client) Release(ctx context.Context) error {
+	_, err := c.rpc.ReleaseProcess(ctx, connect.NewRequest(&v1.ReleaseProcessRequest{}))
+	return err
 }
