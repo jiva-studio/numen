@@ -13,6 +13,11 @@ type DescriptionFiles interface {
 	WriteSourceDescription(pluginID string, content []byte)
 }
 
+// ConfigRevisions names the configuration a plugin has now; equal revisions are one configuration.
+type ConfigRevisions interface {
+	GetPluginConfigRevision(pluginID string) string
+}
+
 // descriptionFile is the on-disk shape of the description a source gave under one revision of its
 // configuration.
 type descriptionFile struct {
@@ -34,20 +39,27 @@ type keptDescription struct {
 
 // Descriptions keeps the last description each search source gave, by plugin id and the revision of its
 // configuration, in memory and in files. A source opened under a revision kept here joins without its
-// plugin being started.
+// plugin being started. A description read is kept under the revision the plugin has when the read ends;
+// a change of configuration during the read is read again.
 type Descriptions struct {
-	files    DescriptionFiles
-	mu       sync.Mutex
-	byPlugin map[string]keptDescription
+	files     DescriptionFiles
+	revisions ConfigRevisions
+	mu        sync.Mutex
+	byPlugin  map[string]keptDescription
 }
 
-// NewDescriptions keeps the descriptions in memory and in files. Nil files keeps them in memory only.
-func NewDescriptions(files DescriptionFiles) *Descriptions {
-	return &Descriptions{files: files, byPlugin: map[string]keptDescription{}}
+// NewDescriptions keeps the descriptions in memory and in files, each under the revision revisions names for its
+// plugin. Nil files keeps them in memory only.
+func NewDescriptions(files DescriptionFiles, revisions ConfigRevisions) *Descriptions {
+	return &Descriptions{files: files, revisions: revisions, byPlugin: map[string]keptDescription{}}
 }
 
-func (d *Descriptions) get(pluginID, revision string) (description, bool) {
-	if d == nil || revision == "" {
+func (d *Descriptions) get(pluginID string) (description, bool) {
+	if d == nil {
+		return description{}, false
+	}
+	revision := d.revisions.GetPluginConfigRevision(pluginID)
+	if revision == "" {
 		return description{}, false
 	}
 	d.mu.Lock()
@@ -63,8 +75,12 @@ func (d *Descriptions) get(pluginID, revision string) (description, bool) {
 	return kept.read, true
 }
 
-func (d *Descriptions) put(pluginID, revision string, read description) {
-	if d == nil || revision == "" {
+func (d *Descriptions) put(pluginID string, read description) {
+	if d == nil {
+		return
+	}
+	revision := d.revisions.GetPluginConfigRevision(pluginID)
+	if revision == "" {
 		return
 	}
 	d.mu.Lock()

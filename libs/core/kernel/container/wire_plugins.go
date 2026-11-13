@@ -202,7 +202,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		Release:             host.Teardown,
 		Detection:           detection,
 		RowOptions:          rowoptions.NewCache(clock.System{}),
-		SourceDescriptions:  sourcebridge.NewDescriptions(host.Storage),
+		SourceDescriptions:  sourcebridge.NewDescriptions(host.Storage, host.Config),
 	}
 }
 

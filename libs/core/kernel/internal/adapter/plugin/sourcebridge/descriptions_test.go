@@ -95,14 +95,14 @@ func (s keptSource) stop(t *testing.T) {
 
 // A source opened again under the configuration it was read under takes the description it gave, from
 // memory and, in a new process, from its file, and starts no plugin.
-func TestASourceOpenedUnderAKeptConfigurationStartsNoPlugin(t *testing.T) {
+func TestReopeningASourceWithTheSameConfigurationStartsNoPlugin(t *testing.T) {
 	source := startKeptSource(t)
 	source.mock.recipe.Store("orchard|small|384")
-	first := source.open(t, sourcebridge.NewDescriptions(source.host.Storage)).Describe()
+	first := source.open(t, sourcebridge.NewDescriptions(source.host.Storage, source.host.Config)).Describe()
 	source.stop(t)
 	reads, launches := source.mock.describeCalls.Load(), source.launches.Load()
 
-	again := source.open(t, sourcebridge.NewDescriptions(source.host.Storage)).Describe()
+	again := source.open(t, sourcebridge.NewDescriptions(source.host.Storage, source.host.Config)).Describe()
 
 	if got := source.launches.Load() - launches; got != 0 {
 		t.Errorf("opening the source again started the plugin %d times", got)
@@ -119,7 +119,7 @@ func TestASourceOpenedUnderAKeptConfigurationStartsNoPlugin(t *testing.T) {
 // new model, and keeps it for the next opening.
 func TestASettingChangedWhileThePluginIsStoppedIsReadAgain(t *testing.T) {
 	source := startKeptSource(t)
-	kept := sourcebridge.NewDescriptions(source.host.Storage)
+	kept := sourcebridge.NewDescriptions(source.host.Storage, source.host.Config)
 	bridge := source.open(t, kept)
 	var announced atomic.Int32
 	bridge.OnDescriptionChange(func() { announced.Add(1) })
@@ -138,7 +138,7 @@ func TestASettingChangedWhileThePluginIsStoppedIsReadAgain(t *testing.T) {
 	source.stop(t)
 	launches := source.launches.Load()
 
-	reopened := source.open(t, sourcebridge.NewDescriptions(source.host.Storage))
+	reopened := source.open(t, sourcebridge.NewDescriptions(source.host.Storage, source.host.Config))
 	if got := reopened.Describe().Name; got != "large" {
 		t.Errorf("the source opened after the change as %q, want the new model", got)
 	}

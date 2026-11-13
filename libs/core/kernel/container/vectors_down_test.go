@@ -60,7 +60,10 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 }
 
 func (h *downEmbeddingHost) lend() *container.PluginHost {
-	return &container.PluginHost{Runtime: container.PluginRuntime{PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding(), ConfigWatcher: h, RunningPlugins: h}, Health: pluginhealth.NewItems()}
+	runtime := container.PluginRuntime{
+		PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding(), ConfigWatcher: h, RunningPlugins: h,
+	}
+	return &container.PluginHost{Runtime: runtime, Health: pluginhealth.NewItems()}
 }
 
 // A plugin that does not answer names no model: the window opens its source undescribed, and a vault read
@@ -102,8 +105,6 @@ func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 
 // WatchPluginConfig never calls back: the plugin is not configured while the test runs.
 func (h *downEmbeddingHost) WatchPluginConfig(string, func()) (stop func()) { return func() {} }
-
-func (h *downEmbeddingHost) GetPluginConfigRevision(string) string { return "" }
 
 func (h *downEmbeddingHost) HasEndpoint(string) bool { return true }
 

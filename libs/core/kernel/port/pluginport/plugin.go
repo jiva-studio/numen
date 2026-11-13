@@ -61,12 +61,9 @@ type SettingsPush interface {
 	SetPerformanceProfile(ctx context.Context, profile string)
 }
 
-// ConfigWatcher tells when a plugin has been given its configuration, and which configuration it is.
+// ConfigWatcher tells when a plugin has been given its configuration.
 type ConfigWatcher interface {
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
-	// GetPluginConfigRevision returns a digest of the version, the settings and the performance profile the
-	// plugin is configured with. Equal revisions are one configuration, in this process or another.
-	GetPluginConfigRevision(pluginID string) string
 }
 
 // RunningPlugins tells which plugins have a process that runs.

@@ -74,8 +74,6 @@ type meaningCore struct {
 	launches *atomic.Int32
 }
 
-// openMeaningCore starts a core whose plugins are in pluginDir and whose cache is in cacheRoot. The plugin
-// it starts answers on port.
 func openMeaningCore(t *testing.T, pluginDir, cacheRoot string, port int) meaningCore {
 	t.Helper()
 	roles := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", pluginDir)
@@ -105,7 +103,6 @@ func openMeaningCore(t *testing.T, pluginDir, cacheRoot string, port int) meanin
 	}
 }
 
-// openSource opens the search source the way a window does when it opens a vault.
 func (c meaningCore) openSource(t *testing.T) searchsourceport.WatchedSource {
 	t.Helper()
 	source, _, closeSource, why := c.config.Embedders(t.Context())
@@ -131,7 +128,6 @@ func (c meaningCore) readVault(t *testing.T, db *container.Index, source searchs
 	}
 }
 
-// awaitNoLease waits until nothing holds the plugin, which then stops after its idle limit.
 func (c meaningCore) awaitNoLease(t *testing.T, what string) {
 	t.Helper()
 	wiretest.WaitUntil(t, what, func() bool {

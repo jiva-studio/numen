@@ -23,10 +23,9 @@ import (
 // Host provides plugin resolution and activation for the search source.
 type Host interface {
 	bridge.Activator
-	pluginport.ConfigWatcher
 	pluginport.RunningPlugins
 	ResolveCapability(capability string) (manifest.Discovered, error)
-	IsPluginEnabled(pluginID string) bool
+	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
 // description is what one read of the source answers: its description, and the floor hint, which is no part
@@ -99,8 +98,7 @@ func open(ctx context.Context, host Host, kept *Descriptions) (b *Source, readEr
 		service:  bridge.Service[numenv1connect.SearchSourceServiceClient]{Host: host, PluginID: pluginID, NewClient: numenv1connect.NewSearchSourceServiceClient},
 		kept:     kept,
 	}
-	revision := host.GetPluginConfigRevision(pluginID)
-	if read, isKept := kept.get(pluginID, revision); isKept {
+	if read, isKept := kept.get(pluginID); isKept {
 		b.current, b.announced = read, read.source
 		return b, nil, nil
 	}
@@ -113,7 +111,7 @@ func open(ctx context.Context, host Host, kept *Descriptions) (b *Source, readEr
 	if err != nil {
 		return b, errors.Join(readFailure(pluginID, err), call.Close()), nil
 	}
-	kept.put(pluginID, revision, read)
+	kept.put(pluginID, read)
 	b.current, b.announced = read, read.source
 	return b, call.Close(), nil
 }
@@ -308,10 +306,6 @@ func (b *Source) announceDescriptionChange() {
 func (b *Source) readDescriptionChange() []func() {
 	b.changeMu.Lock()
 	defer b.changeMu.Unlock()
-	if !b.host.IsPluginEnabled(b.pluginID) {
-		return nil
-	}
-	revision := b.host.GetPluginConfigRevision(b.pluginID)
 	// This read runs in the background. A source served through a connection may need the plugin of that
 	// connection started first, so the read has the same limit as any other read of the description.
 	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelInfoTimeout)
@@ -330,7 +324,7 @@ func (b *Source) readDescriptionChange() []func() {
 		b.reportReadError(err)
 		return nil
 	}
-	b.kept.put(b.pluginID, revision, read)
+	b.kept.put(b.pluginID, read)
 	b.mu.Lock()
 	b.current = read
 	b.mu.Unlock()

@@ -177,9 +177,9 @@ func TestErrorCheck_RejectsBridgeWithWrongResponse(t *testing.T) {
 	}
 }
 
-// A bridge holds its plugin only during a call, so an open bridge lets the plugin go idle, and closing it
+// A bridge takes its plugin only for the length of a call, so an open bridge lets the plugin go idle, and closing it
 // twice gives back nothing more.
-func TestABridgeHoldsNoReferenceBetweenCalls(t *testing.T) {
+func TestABridgeReleasesThePluginAfterEachCall(t *testing.T) {
 	for _, tc := range getBridgeContracts() {
 		t.Run(tc.name, func(t *testing.T) {
 			host := newLeaseHost(t)

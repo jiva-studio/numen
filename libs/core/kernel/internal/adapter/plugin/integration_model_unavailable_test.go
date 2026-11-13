@@ -31,9 +31,7 @@ func (h *stubModelHost) ResolveCapability(string) (manifest.Discovered, error) {
 // WatchPluginConfig registers nothing: the stub is never configured.
 func (h *stubModelHost) WatchPluginConfig(string, func()) func() { return func() {} }
 
-func (h *stubModelHost) GetPluginConfigRevision(string) string { return "" }
-func (h *stubModelHost) IsPluginEnabled(string) bool           { return true }
-func (h *stubModelHost) HasEndpoint(string) bool               { return true }
+func (h *stubModelHost) HasEndpoint(string) bool { return true }
 
 func (h *stubModelHost) ResolveService(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{}, false

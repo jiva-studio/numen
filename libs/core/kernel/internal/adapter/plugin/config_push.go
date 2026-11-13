@@ -24,6 +24,7 @@ type configPlugins interface {
 	listIDs() []string
 	getPluginSettings(pluginID string) map[string]any
 	GetVersion(pluginID string) string
+	isPluginEnabled(pluginID string) bool
 }
 
 // ConfigPush gives the running plugins their configuration: the settings and the performance profile,
@@ -73,11 +74,15 @@ func (c *ConfigPush) Refresh(ctx context.Context, forced ...string) error {
 }
 
 // WatchPluginConfig registers fn to run each time the plugin has been given its configuration, and each
-// time its configuration changes while it does not run.
+// time its configuration changes while it does not run and is enabled.
 // fn runs on its own goroutine, so it may call the plugin while the delivery of Configure is locked.
 // The returned function removes the registration.
 func (c *ConfigPush) WatchPluginConfig(pluginID string, fn func()) (stop func()) {
-	return c.delivery.WatchConfig(pluginID, fn)
+	return c.delivery.WatchConfig(pluginID, func() {
+		if c.set.isPluginEnabled(pluginID) {
+			fn()
+		}
+	})
 }
 
 // GetPluginConfigRevision returns a digest of what the plugin is configured with: its version, its settings

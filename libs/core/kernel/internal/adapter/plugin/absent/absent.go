@@ -83,9 +83,6 @@ func (Runtime) IsPluginSuspended(string) bool { return false }
 // WatchPluginConfig never calls fn, and returns a stop that does nothing.
 func (Runtime) WatchPluginConfig(string, func()) func() { return func() {} }
 
-// GetPluginConfigRevision names no revision: no plugin is configured.
-func (Runtime) GetPluginConfigRevision(string) string { return "" }
-
 // HasEndpoint reports that no plugin runs.
 func (Runtime) HasEndpoint(string) bool { return false }
 

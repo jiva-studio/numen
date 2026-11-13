@@ -30,10 +30,6 @@ func (failingActivator) ResolveCapability(string) (manifest.Discovered, error) {
 
 func (failingActivator) WatchPluginConfig(string, func()) func() { return func() {} }
 
-func (failingActivator) GetPluginConfigRevision(string) string { return "" }
-
-func (failingActivator) IsPluginEnabled(string) bool { return true }
-
 func (failingActivator) HasEndpoint(string) bool { return false }
 
 // A plugin that cannot be opened after a setting is reported with its id, and no listener runs.
