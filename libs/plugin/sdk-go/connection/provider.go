@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
-// Call is the connection one call of a provider is made for. The provider holds it for the length of the
-// call and keeps neither it nor a key.
+// Call is the connection one call of a provider is made for. The provider keeps it, and its secrets, no
+// longer than the work the call starts, such as a refresh of a list in the background, and stores no key.
 //
 //numen:api
 type Call struct {
