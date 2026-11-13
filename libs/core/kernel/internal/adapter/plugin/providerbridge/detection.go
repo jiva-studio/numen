@@ -1,4 +1,4 @@
-package connection
+package providerbridge
 
 import (
 	"context"
@@ -32,8 +32,6 @@ type Detection struct {
 	onChange func()
 	report   func(error)
 }
-
-var _ connectionport.Detected = (*Detection)(nil)
 
 // NewDetection returns the detection over the registry of types and the providers of the plugins, with no
 // answer yet.
@@ -202,13 +200,13 @@ func (d *Detection) store(typeID string, found []connection.Connection) bool {
 func newDetectedConnections(declared connection.Type, found []modelcall.DetectedConnection) []connection.Connection {
 	list := []connection.Connection{}
 	for _, one := range found {
-		if !connection.IsValidName(one.Name) || isNameTaken(list, one.Name, "") {
+		if !connection.IsValidName(one.Name) || slices.ContainsFunc(list, func(kept connection.Connection) bool { return strings.EqualFold(kept.Name, one.Name) }) {
 			continue
 		}
 		fields := map[string]any{}
 		for _, field := range declared.Declaration.Fields {
 			value, isSet := one.Fields[field.Key]
-			if isSet && field.Type != secretFieldType && field.FixedValue == nil {
+			if isSet && field.Type != manifest.ConnectionFieldSecret && field.FixedValue == nil {
 				fields[field.Key] = readFieldValue(field, value)
 			}
 		}
@@ -232,14 +230,3 @@ func readFieldValue(field manifest.ConnectionField, text string) any {
 	}
 	return text
 }
-
-// noDetection is the detection of an installation whose types serve no detection.
-type noDetection struct{}
-
-func (noDetection) ListDetected() []connection.Connection { return nil }
-
-func (noDetection) IsPending(string) bool { return false }
-
-func (noDetection) Detect(context.Context, string) {}
-
-func (noDetection) Refresh() {}

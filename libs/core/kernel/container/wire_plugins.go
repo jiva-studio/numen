@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
-	connectionusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -131,7 +130,7 @@ type PluginHost struct {
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
 	Health              *pluginhealth.Items
-	Detection           *connectionusecase.Detection
+	Detection           *providerbridge.Detection
 }
 
 // AdaptPluginHost lends the capabilities of host, the roles of a plugin host the caller made with NewPluginRoles, to the container. The
@@ -142,7 +141,7 @@ func AdaptPluginHost(host *PluginRoles) *PluginHost {
 
 func adaptPluginHost(host *PluginRoles) *PluginHost {
 	types := plugin.NewConnectionTypes(host.Registry)
-	detection := connectionusecase.NewDetection(types, providerbridge.NewSource(host.Activation))
+	detection := providerbridge.NewDetection(types, providerbridge.NewSource(host.Activation))
 	host.Activation.SetOnStart(detection.DetectInBackground)
 	return &PluginHost{
 		Runtime: PluginRuntime{

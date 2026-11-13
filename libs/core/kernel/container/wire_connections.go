@@ -43,13 +43,13 @@ func openConnectionDeps(c pluginsWiring) (connection.Deps, bool) {
 		return connection.Deps{}, false
 	}
 	deps := connection.NewDeps(openConnectionRepository(c.settings), c.PluginHost.Views.Types, c.KeyStore, openConnectionRows(c))
-	return deps.WithDetected(openDetection(c)), true
+	return deps.AddDetection(openDetection(c)), true
 }
 
 func openDetection(c pluginsWiring) connectionport.Detected {
 	detection := c.PluginHost.Detection
 	if detection == nil {
-		return connection.NewDetection(c.PluginHost.Views.Types, providerbridge.NewSource(c.PluginHost.Runtime))
+		return providerbridge.NewDetection(c.PluginHost.Views.Types, providerbridge.NewSource(c.PluginHost.Runtime))
 	}
 	detection.Follow(func() { refreshSettingEvents(c.settings) }, c.settings.ErrorHandler)
 	return detection

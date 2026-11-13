@@ -37,12 +37,12 @@ func New(
 	return build(connection.NewDeps(repository, types, keys, uses), newID)
 }
 
-// NewWithDetected returns the use cases of New with the connections detected listed after the stored ones.
-func NewWithDetected(
+// NewWithDetection returns the use cases of New with the connections detected listed after the stored ones.
+func NewWithDetection(
 	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, uses connectionport.Uses,
 	detected connectionport.Detected, newID func() (string, error),
 ) *Connections {
-	return build(connection.NewDeps(repository, types, keys, uses).WithDetected(detected), newID)
+	return build(connection.NewDeps(repository, types, keys, uses).AddDetection(detected), newID)
 }
 
 func build(deps connection.Deps, newID func() (string, error)) *Connections {

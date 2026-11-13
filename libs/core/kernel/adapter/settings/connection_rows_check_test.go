@@ -247,7 +247,9 @@ func (detectionTypes) ListTypes() []connection.Type {
 
 func (detectionTypes) GetType(string) (connection.Type, bool) { return connection.Type{}, false }
 
-var listConnectionsWithDetected = settings.AddDetectedRegistries(knownConnections, detectionTypes{}, fixedDetection{})
+func listConnectionsWithDetected(name string) ([]string, bool) {
+	return settings.AddDetectedRegistries(knownConnections, detectionTypes{}, fixedDetection{})(name)
+}
 
 func TestTheIDsOfTheDetectedConnectionsAreAddedToTheValuesAWindowFollows(t *testing.T) {
 	values := settingsdomain.Values{}

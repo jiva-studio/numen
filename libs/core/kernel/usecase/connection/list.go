@@ -15,7 +15,9 @@ type List struct{ operation }
 // to detect again in the background. A secret counts as set only when its entry in the key store holds the
 // fingerprint of the type and the address the connection has now.
 func (u *List) Execute(ctx context.Context) ([]Entry, error) {
-	u.detected.Refresh()
+	if u.detected != nil {
+		u.detected.Refresh()
+	}
 	list, err := u.listConnections()
 	if err != nil {
 		return nil, err

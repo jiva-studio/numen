@@ -186,7 +186,7 @@ func TestARowSetAsideAfterARetryStartsItsCooldown(t *testing.T) {
 func TestARejectedKeyOfADetectedConnectionIsSetAsideForTheDefaultCooldown(t *testing.T) {
 	const addressKite = "https://kite.test/v1"
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	kite := s.world.AddDetected(t, "Kite", addressKite)
+	kite := s.world.AddDetected("Kite", addressKite)
 	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.Row(kite, "m"), modelcalltest.Row(s.two, "m"))
 	s.world.Provider.Fail(addressKite, tryNext(connection.FailureReasonRejectedKey, 0))
 	s.attempt(t)

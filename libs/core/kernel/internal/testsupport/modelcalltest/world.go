@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
@@ -215,7 +214,7 @@ type World struct {
 	Waits       *Waits
 	Clock       *Clock
 	Types       *fixedTypes
-	Detection   *connectionuse.Detection
+	Detected    *Detected
 	repository  *memoryRepository
 	next        int
 }
@@ -255,8 +254,8 @@ func New() *World {
 		Clock: &Clock{now: time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)}, Types: types, repository: &memoryRepository{},
 	}
 	w.Source = NewSource(w.Provider)
-	w.Detection = connectionuse.NewDetection(types, w.Source)
-	w.Connections = connectiontest.NewWithDetected(w.repository, types, w.Keys, NoUses{}, w.Detection, func() (string, error) {
+	w.Detected = &Detected{}
+	w.Connections = connectiontest.NewWithDetection(w.repository, types, w.Keys, NoUses{}, w.Detected, func() (string, error) {
 		w.next++
 		return fmt.Sprintf("c%08x", w.next), nil
 	})
@@ -422,14 +421,42 @@ func newEntry(created connectionuse.Entry) Entry {
 
 // AddDetected adds a type of the first plugin whose calls go to the address, and the connection its provider
 // detects, named name.
-func (w *World) AddDetected(t *testing.T, name, address string) Entry {
-	t.Helper()
+func (w *World) AddDetected(name, address string) Entry {
 	declared := manifest.ConnectionType{
 		ID: "detecting", Title: "Detecting", Operations: append(getCompleteOnly(), connection.OperationDetected),
 		Fields: []manifest.ConnectionField{{Key: addressField, Type: textField, Title: "Address", FixedValue: &address}},
 	}
 	w.Types.list = append(w.Types.list, connection.Type{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: declared})
-	w.Provider.SetDetected(declared.ID, modelcall.DetectedConnection{Name: name})
-	w.Detection.Detect(t.Context(), ProviderPluginID)
-	return Entry{ID: connection.GetDetectedID(manifest.GetConnectionTypeID(ProviderPluginID, declared.ID), name), Name: name, Fields: map[string]any{}}
+	typeID := manifest.GetConnectionTypeID(ProviderPluginID, declared.ID)
+	detected := connection.Connection{ID: connection.GetDetectedID(typeID, name), TypeID: typeID, Name: name, Fields: map[string]any{}}
+	w.Detected.add(detected)
+	return Entry{ID: detected.ID, Name: name, Fields: detected.Fields}
 }
+
+// Detected is the connections the providers of the world detected, every type answered.
+type Detected struct {
+	mu   sync.Mutex
+	list []connection.Connection
+}
+
+func (d *Detected) add(one connection.Connection) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.list = append(d.list, one)
+}
+
+// ListDetected returns the connections added, in order.
+func (d *Detected) ListDetected() []connection.Connection {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return slices.Clone(d.list)
+}
+
+// IsPending reports none: every type answered.
+func (d *Detected) IsPending(string) bool { return false }
+
+// Detect asks nothing.
+func (d *Detected) Detect(context.Context, string) {}
+
+// Refresh asks nothing.
+func (d *Detected) Refresh() {}

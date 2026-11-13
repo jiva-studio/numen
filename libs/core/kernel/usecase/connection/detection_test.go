@@ -8,12 +8,9 @@ import (
 	"slices"
 	"sync"
 	"testing"
-	"time"
 
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
@@ -26,53 +23,49 @@ const (
 	wrenID         = "org.example.gone/wren/Wren agent"
 )
 
-// detectingSource is the providers of the plugins: each answers connections.detected with the connections set for
-// its type, and counts the calls.
-type detectingSource struct {
-	mu       sync.Mutex
-	found    map[string][]modelcall.DetectedConnection
-	calls    int
-	failOpen error
-	failList error
+// answeredDetection stands for the providers of the agents plugin: the type kite is pending until the plugin is
+// asked, and then lists Kite agent.
+type answeredDetection struct {
+	mu        sync.Mutex
+	isAsked   bool
+	refreshes int
+	asked     []string
 }
 
-func (s *detectingSource) OpenProvider(context.Context, string) (connectionport.Provider, func(), error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.failOpen != nil {
-		return nil, nil, s.failOpen
+func (d *answeredDetection) ListDetected() []connectiondomain.Connection {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if !d.isAsked {
+		return nil
 	}
-	return s, func() {}, nil
+	return []connectiondomain.Connection{{
+		ID: kiteID, TypeID: kiteTypeID, Name: "Kite agent", Fields: map[string]any{"program": "kite", "parallelRequests": float64(2)},
+	}}
 }
 
-func (s *detectingSource) Call(context.Context, string, modelcall.ProviderCall, []byte, modelcall.Send) ([]byte, error) {
-	return nil, nil
+func (d *answeredDetection) IsPending(typeID string) bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return typeID == kiteTypeID && !d.isAsked
 }
 
-func (s *detectingSource) ListOptions(context.Context, string, modelcall.ProviderCall, []string) ([]modelcall.Option, error) {
-	return nil, nil
+func (d *answeredDetection) Detect(_ context.Context, pluginID string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.asked = append(d.asked, pluginID)
+	d.isAsked = d.isAsked || pluginID == agentsPluginID
 }
 
-func (s *detectingSource) ListDetected(_ context.Context, call modelcall.ProviderCall) ([]modelcall.DetectedConnection, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.calls++
-	if s.failList != nil {
-		return nil, s.failList
-	}
-	return s.found[call.Type], nil
+func (d *answeredDetection) Refresh() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.refreshes++
 }
 
-func (s *detectingSource) set(typeID string, found ...modelcall.DetectedConnection) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.found[typeID] = found
-}
-
-func (s *detectingSource) countCalls() int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.calls
+func (d *answeredDetection) listAskedPlugins() []string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return slices.Clone(d.asked)
 }
 
 func detectingType(pluginID, id string, isAvailable bool) connectiondomain.Type {
@@ -88,38 +81,25 @@ func detectingType(pluginID, id string, isAvailable bool) connectiondomain.Type 
 
 type detectionFixture struct {
 	*fixture
-	source    *detectingSource
-	detection *connection.Detection
-	changes   chan struct{}
+	detection *answeredDetection
 }
 
 func newDetectionFixture(t *testing.T) *detectionFixture {
 	t.Helper()
-	f := &detectionFixture{fixture: newFixture(t), source: &detectingSource{found: map[string][]modelcall.DetectedConnection{
-		"kite": {{Name: "Kite agent", Fields: map[string]string{"program": "kite", "parallelRequests": "2"}}},
-		"wren": {{Name: "Wren agent"}},
-	}}, changes: make(chan struct{}, 8)}
+	f := &detectionFixture{fixture: newFixture(t), detection: &answeredDetection{}}
 	f.types.types = append(f.types.types, detectingType(agentsPluginID, "kite", true), detectingType("org.example.gone", "wren", false))
-	f.detection = connection.NewDetection(f.types, f.source)
-	f.detection.Follow(func() { f.changes <- struct{}{} }, func(error) {})
 	next := 0
-	f.connection = connectiontest.NewWithDetected(f.repository, f.types, f.keys, f.uses, f.detection, func() (string, error) {
+	f.connection = connectiontest.NewWithDetection(f.repository, f.types, f.keys, f.uses, f.detection, func() (string, error) {
 		next++
 		return fmt.Sprintf("c%08x", next), nil
 	})
 	return f
 }
 
-func (f *detectionFixture) detect(t *testing.T) {
-	t.Helper()
-	f.detection.Detect(t.Context(), agentsPluginID)
-	f.detection.Detect(t.Context(), "org.example.gone")
-}
-
 func TestListShowsTheDetectedConnectionsAfterTheStoredOnes(t *testing.T) {
 	f := newDetectionFixture(t)
 	stored := f.createOpenRouter(t, "Work")
-	f.detect(t)
+	f.detection.Detect(t.Context(), agentsPluginID)
 
 	entries := f.listEntries(t)
 
@@ -136,86 +116,20 @@ func TestListShowsTheDetectedConnectionsAfterTheStoredOnes(t *testing.T) {
 	}
 }
 
-func TestAProviderThatHasNotAnsweredListsNoConnection(t *testing.T) {
-	f := newDetectionFixture(t)
-
-	if listed := f.detection.ListDetected(); len(listed) != 0 || !f.detection.IsPending(kiteTypeID) {
-		t.Errorf("listed = %+v, pending = %v, want none and pending", listed, f.detection.IsPending(kiteTypeID))
-	}
-}
-
-func TestATypeIsPendingWhileItsPluginFailsToStart(t *testing.T) {
-	f := newDetectionFixture(t)
-	f.source.failOpen = errors.New("the plugin did not start")
-
-	f.detect(t)
-
-	if listed := f.detection.ListDetected(); len(listed) != 0 || !f.detection.IsPending(kiteTypeID) {
-		t.Errorf("listed = %+v, want none and the type pending", listed)
-	}
-}
-
-func TestAFailedAnswerKeepsTheConnectionsOfTheAnswerBefore(t *testing.T) {
-	f := newDetectionFixture(t)
-	f.detect(t)
-	f.source.failList = &connectiondomain.TryNextError{Reason: connectiondomain.FailureReasonUnavailable}
-
-	f.detect(t)
-
-	if listed := f.detection.ListDetected(); len(listed) != 1 || listed[0].ID != kiteID {
-		t.Errorf("listed = %+v, want Kite agent as before", listed)
-	}
-}
-
-func TestAnAnswerThatChangesTheConnectionsIsReportedOnce(t *testing.T) {
-	f := newDetectionFixture(t)
-	f.detect(t)
-	f.detect(t)
-	f.source.set("kite")
-	f.detect(t)
-
-	if got := len(f.changes); got != 2 {
-		t.Errorf("changes = %d, want 2: the first answer and the one that found nothing", got)
-	}
-	if listed := f.detection.ListDetected(); len(listed) != 0 || f.detection.IsPending(kiteTypeID) {
-		t.Errorf("listed = %+v, want none and the type answered", listed)
-	}
-}
-
-func TestAnAnswerKeepsOneConnectionOfEachValidName(t *testing.T) {
-	f := newDetectionFixture(t)
-	f.source.set("kite", modelcall.DetectedConnection{Name: "Kite agent"}, modelcall.DetectedConnection{Name: "kite AGENT"},
-		modelcall.DetectedConnection{Name: " Hawk"}, modelcall.DetectedConnection{Name: "Hawk"})
-
-	f.detect(t)
-
-	var names []string
-	for _, one := range f.detection.ListDetected() {
-		names = append(names, one.Name)
-	}
-	if !slices.Equal(names, []string{"Kite agent", "Hawk"}) {
-		t.Errorf("names = %v", names)
-	}
-}
-
-func TestListAsksTheProvidersInTheBackground(t *testing.T) {
+func TestListAsksTheProvidersToDetectAgain(t *testing.T) {
 	f := newDetectionFixture(t)
 
 	f.listEntries(t)
+	f.listEntries(t)
 
-	select {
-	case <-f.changes:
-	case <-time.After(5 * time.Second):
-		t.Fatal("the list did not ask the providers")
-	}
-	if entries := f.listEntries(t); len(entries) != 1 || entries[0].ID != kiteID {
-		t.Errorf("entries = %+v, want Kite agent", entries)
+	if f.detection.refreshes != 2 {
+		t.Errorf("refreshes = %d, want one for each list", f.detection.refreshes)
 	}
 }
 
 func TestADetectedConnectionCannotBeChangedOrDeleted(t *testing.T) {
 	f := newDetectionFixture(t)
-	f.detect(t)
+	f.detection.Detect(t.Context(), agentsPluginID)
 
 	_, updateErr := f.connection.Update.Execute(t.Context(), connection.UpdateRequest{ID: kiteID, Name: "Hawk"})
 	_, deleteErr := f.connection.Delete.Execute(t.Context(), kiteID)
@@ -227,7 +141,7 @@ func TestADetectedConnectionCannotBeChangedOrDeleted(t *testing.T) {
 
 func TestANewConnectionCannotTakeTheNameOfADetectedOne(t *testing.T) {
 	f := newDetectionFixture(t)
-	f.detect(t)
+	f.detection.Detect(t.Context(), agentsPluginID)
 
 	_, err := f.connection.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: openRouterID, Name: "kite agent", Secrets: map[string]string{"apiKey": "sk-or-1"},
@@ -240,7 +154,7 @@ func TestANewConnectionCannotTakeTheNameOfADetectedOne(t *testing.T) {
 
 func TestAStoredConnectionOfADetectingTypeIsAdded(t *testing.T) {
 	f := newDetectionFixture(t)
-	f.detect(t)
+	f.detection.Detect(t.Context(), agentsPluginID)
 
 	created, err := f.connection.Create.Execute(t.Context(), connection.CreateRequest{
 		TypeID: kiteTypeID, Name: "Kite large", Fields: map[string]any{"program": "kite"},
@@ -251,7 +165,7 @@ func TestAStoredConnectionOfADetectingTypeIsAdded(t *testing.T) {
 	}
 }
 
-func TestADetectedConnectionResolvesWithItsFieldsOnceItsProviderAnswered(t *testing.T) {
+func TestADetectedConnectionOfAPendingTypeResolvesOnceItsProviderIsAsked(t *testing.T) {
 	f := newDetectionFixture(t)
 
 	resolved, err := f.connection.Resolve.Execute(kiteID)
@@ -265,6 +179,9 @@ func TestADetectedConnectionResolvesWithItsFieldsOnceItsProviderAnswered(t *test
 
 	if resolved.PluginID != agentsPluginID || resolved.ParallelRequests != 2 || resolved.Fields["program"] != "kite" || len(secrets) != 0 {
 		t.Errorf("resolved = %+v, secrets = %v", resolved, secrets)
+	}
+	if asked := f.detection.listAskedPlugins(); !slices.Equal(asked, []string{agentsPluginID}) {
+		t.Errorf("asked = %v, want the agents plugin once", asked)
 	}
 	if _, err := f.connection.Resolve.Execute(wrenID); !errors.Is(err, connectiondomain.ErrNotFound) {
 		t.Errorf("the detected connection of a disabled plugin: err = %v, want ErrNotFound", err)
@@ -280,9 +197,8 @@ func TestListRowsDiscoversTheDetectedConnectionsAfterTheStoredOnes(t *testing.T)
 		detectingType(agentsPluginID, "kite", true),
 		detectingType("org.example.gone", "wren", false),
 	}}
-	source := &detectingSource{found: map[string][]modelcall.DetectedConnection{"kite": {{Name: "Kite agent"}}, "wren": {{Name: "Wren agent"}}}}
-	deps := connection.NewDeps(repository, types, &memoryKeys{values: map[string]string{}}, &memoryUses{}).
-		WithDetected(connection.NewDetection(types, source))
+	detection := &answeredDetection{}
+	deps := connection.NewDeps(repository, types, &memoryKeys{values: map[string]string{}}, &memoryUses{}).AddDetection(detection)
 
 	rows, err := connection.NewListRows(deps, fixedRowSettings{setting: connectiondomain.RowSetting{IsDiscovering: true}}).Execute(chatPluginID, taskOp)
 	if err != nil {
@@ -293,7 +209,7 @@ func TestListRowsDiscoversTheDetectedConnectionsAfterTheStoredOnes(t *testing.T)
 		{ConnectionID: "c00000002", Options: map[string]string{}, IsDiscovered: true},
 		{ConnectionID: kiteID, Options: map[string]string{}, IsDiscovered: true},
 	}
-	if !reflect.DeepEqual(rows, want) || source.countCalls() != 1 {
-		t.Errorf("rows = %v, calls = %d, want Heron and then Kite agent after one call", rows, source.countCalls())
+	if !reflect.DeepEqual(rows, want) || !slices.Equal(detection.listAskedPlugins(), []string{agentsPluginID}) {
+		t.Errorf("rows = %v, asked = %v, want Heron and then Kite agent after one question", rows, detection.listAskedPlugins())
 	}
 }

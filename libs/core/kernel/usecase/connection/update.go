@@ -64,7 +64,7 @@ func (u *Update) Execute(ctx context.Context, request UpdateRequest) (Entry, err
 			return nil, newNotFoundError(current.ID)
 		case list[position].Revision != current.Revision:
 			return nil, newStaleRevisionError(current.ID)
-		case isNameTaken(append(slices.Clone(list), u.detected.ListDetected()...), updated.Name, updated.ID):
+		case isNameTaken(append(slices.Clone(list), u.listDetectedConnections()...), updated.Name, updated.ID):
 			return nil, newNameTakenError(updated.Name)
 		}
 		changed := slices.Clone(list)

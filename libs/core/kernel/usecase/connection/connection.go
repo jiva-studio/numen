@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 
@@ -24,6 +25,9 @@ var (
 	// ErrNameTaken is a name that another connection has, ignoring case.
 	ErrNameTaken = errors.New("the connection name is taken")
 )
+
+// detectLimit is how long a call waits for the providers of the pending types to answer connections.detected.
+const detectLimit = 30 * time.Second
 
 // operation is what every use case of this package is built from.
 type operation struct {
@@ -62,11 +66,11 @@ type Deps struct{ base operation }
 func NewDeps(
 	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, uses connectionport.Uses,
 ) Deps {
-	return Deps{base: operation{repository: repository, types: types, keys: keys, uses: uses, detected: noDetection{}, gate: &sync.Mutex{}}}
+	return Deps{base: operation{repository: repository, types: types, keys: keys, uses: uses, gate: &sync.Mutex{}}}
 }
 
-// WithDetected returns the shared parts with the connections the providers detect listed after the stored ones.
-func (d Deps) WithDetected(detected connectionport.Detected) Deps {
+// AddDetection returns the shared parts with the connections the providers detect listed after the stored ones.
+func (d Deps) AddDetection(detected connectionport.Detected) Deps {
 	d.base.detected = detected
 	return d
 }
@@ -151,19 +155,26 @@ func (o operation) listConnections() ([]connection.Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	return append(list, o.detected.ListDetected()...), nil
+	return append(list, o.listDetectedConnections()...), nil
+}
+
+func (o operation) listDetectedConnections() []connection.Connection {
+	if o.detected == nil {
+		return nil
+	}
+	return o.detected.ListDetected()
 }
 
 func (o operation) listConnectionsAfterDetection(typeIDs []string) ([]connection.Connection, error) {
 	var plugins []string
 	for _, typeID := range typeIDs {
 		found, isFound := o.types.GetType(typeID)
-		if isFound && o.detected.IsPending(typeID) && !slices.Contains(plugins, found.PluginID) {
+		if isFound && o.detected != nil && o.detected.IsPending(typeID) && !slices.Contains(plugins, found.PluginID) {
 			plugins = append(plugins, found.PluginID)
 		}
 	}
 	if len(plugins) > 0 {
-		ctx, cancel := context.WithTimeout(context.Background(), DetectLimit)
+		ctx, cancel := context.WithTimeout(context.Background(), detectLimit)
 		defer cancel()
 		for _, pluginID := range plugins {
 			o.detected.Detect(ctx, pluginID)

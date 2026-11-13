@@ -90,7 +90,7 @@ func (u *Create) store(ctx context.Context, declared connection.Type, created co
 		written = append(written, key)
 	}
 	err := u.repository.ChangeConnections(func(list []connection.Connection) ([]connection.Connection, error) {
-		if isNameTaken(append(slices.Clone(list), u.detected.ListDetected()...), created.Name, "") {
+		if isNameTaken(append(slices.Clone(list), u.listDetectedConnections()...), created.Name, "") {
 			return nil, newNameTakenError(created.Name)
 		}
 		if getIndex(list, created.ID) >= 0 {

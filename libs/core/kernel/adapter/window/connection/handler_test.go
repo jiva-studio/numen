@@ -139,8 +139,21 @@ func (m *modelList) ListOptions(context.Context, string, modelcall.ProviderCall,
 }
 
 func (m *modelList) ListDetected(context.Context, modelcall.ProviderCall) ([]modelcall.DetectedConnection, error) {
-	return []modelcall.DetectedConnection{{Name: "Kite agent"}}, nil
+	return nil, nil
 }
+
+// kiteDetected is the providers once the agents plugin answered that Kite agent is found.
+type kiteDetected struct{}
+
+func (kiteDetected) ListDetected() []connection.Connection {
+	return []connection.Connection{{ID: "org.example.agents/kite/Kite agent", TypeID: "org.example.agents/kite", Name: "Kite agent", Fields: map[string]any{}}}
+}
+
+func (kiteDetected) IsPending(string) bool { return false }
+
+func (kiteDetected) Detect(context.Context, string) {}
+
+func (kiteDetected) Refresh() {}
 
 func newKeys() *memoryKeys { return &memoryKeys{values: map[string]string{}} }
 
@@ -423,9 +436,7 @@ func TestListProviderConnectionsMarksADetectedConnection(t *testing.T) {
 	types := append(getTypes(), connection.Type{PluginID: "org.example.agents", PluginName: "Kite agent", IsAvailable: true, Declaration: manifest.ConnectionType{
 		ID: "kite", Title: "Kite", Operations: []string{"acp.task", connection.OperationDetected},
 	}})
-	detection := connections.NewDetection(types, &modelList{})
-	detection.Detect(t.Context(), "org.example.agents")
-	handler := NewHandler(useCasesOf(connectiontest.NewWithDetected(&memoryRepository{}, types, newKeys(), fixedUses{}, detection, func() (string, error) {
+	handler := NewHandler(useCasesOf(connectiontest.NewWithDetection(&memoryRepository{}, types, newKeys(), fixedUses{}, kiteDetected{}, func() (string, error) {
 		return "c00000001", nil
 	}), &modelList{}))
 	if _, err := handler.CreateProviderConnection(t.Context(), createRequest("Work")); err != nil {
