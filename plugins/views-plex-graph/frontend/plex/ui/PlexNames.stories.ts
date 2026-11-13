@@ -38,29 +38,20 @@ const HEADINGS: Record<string, readonly PlexHeading[]> = {
 
 interface Knobs {
   showNames: boolean
-  namesPerNote: number
   onActivate: (id: string) => void
   onChooseName: (id: string) => void
 }
 
-const limited = (limit: number) => (id: string): PlexNames => {
-  const found = NAMES[id] ?? { above: [], below: [] }
-  const all = [...found.above.map((one) => ({ one, up: true })), ...found.below.map((one) => ({ one, up: false }))]
-  const kept = all.slice(0, limit)
-  return {
-    above: kept.filter((entry) => entry.up).map((entry) => entry.one),
-    below: kept.filter((entry) => !entry.up).map((entry) => entry.one),
-  }
-}
+const names = (id: string): PlexNames => NAMES[id] ?? { above: [], below: [] }
 
 const meta = {
   title: 'Plex/Names',
   component: Plex,
   parameters: { layout: 'fullscreen' },
-  args: { showNames: true, namesPerNote: 6, onActivate: fn(), onChooseName: fn() },
+  args: { showNames: true, onActivate: fn(), onChooseName: fn() },
   render: (args: Knobs) => ({
     components: { Plex },
-    setup: () => ({ args, graph, names: limited(args.namesPerNote), headings: (id: string) => HEADINGS[id] ?? [] }),
+    setup: () => ({ args, graph, names, headings: (id: string) => HEADINGS[id] ?? [] }),
     template: `
       <div style="height:100vh">
         <Plex
@@ -180,18 +171,5 @@ export const NamesOff: Story = {
     await expect(canvas.queryByRole('button', { name: 'Compost' })).toBeNull()
     await expect(canvas.queryByRole('button', { name: 'Orchard' })).toBeNull()
     await expect(canvas.getByLabelText('Raised beds, child')).toBeInTheDocument()
-  },
-}
-
-/** A limit of two shows two names of a note that has five. */
-export const TwoNamesPerNote: Story = {
-  args: { namesPerNote: 2 },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-
-    await expect(getName(canvas, 'Allotment')).toBeInTheDocument()
-    await expect(getName(canvas, 'Compost')).toBeInTheDocument()
-    await expect(canvas.queryByRole('button', { name: 'Mulch' })).toBeNull()
-    await expect(canvas.queryByRole('button', { name: 'Watering' })).toBeNull()
   },
 }
