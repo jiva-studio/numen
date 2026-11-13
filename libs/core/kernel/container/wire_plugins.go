@@ -152,7 +152,7 @@ func AdaptPluginHost(host *PluginRoles) *PluginHost {
 
 func adaptPluginHost(host *PluginRoles) *PluginHost {
 	types := plugin.NewConnectionTypes(host.Registry)
-	detection := providerbridge.NewDetection(types, providerbridge.NewSource(host.Activation), clock.System{})
+	detection := providerbridge.NewDetection(types, providerbridge.NewQuestionSource(host.Activation), clock.System{})
 	host.Activation.SetOnStart(detection.DetectInBackground)
 	return &PluginHost{
 		Runtime: PluginRuntime{

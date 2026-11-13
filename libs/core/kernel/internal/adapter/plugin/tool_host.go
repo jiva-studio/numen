@@ -12,6 +12,8 @@ import (
 type toolActivator interface {
 	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
 	Release(pluginID string)
+	EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error)
+	ReleaseQuestion(pluginID string)
 }
 
 // pluginInfoLister lists the plugins the host knows and tells the enabled ones.
@@ -38,6 +40,14 @@ func (h ToolHost) EnsureActive(ctx context.Context, pluginID string) (transport.
 
 // Release gives up the hold EnsureActive took.
 func (h ToolHost) Release(pluginID string) { h.activation.Release(pluginID) }
+
+// EnsureActiveForQuestion starts the plugin if it is not running and holds it for a question.
+func (h ToolHost) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
+	return h.activation.EnsureActiveForQuestion(ctx, pluginID)
+}
+
+// ReleaseQuestion gives up the hold EnsureActiveForQuestion took.
+func (h ToolHost) ReleaseQuestion(pluginID string) { h.activation.ReleaseQuestion(pluginID) }
 
 // GetPluginInfos lists the plugins the host knows.
 func (h ToolHost) GetPluginInfos() []plugindomain.Info { return h.registry.GetPluginInfos() }

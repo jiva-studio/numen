@@ -53,7 +53,8 @@ func openConnectionDeps(c pluginsWiring) (connection.Deps, bool) {
 func openDetection(c pluginsWiring) connectionport.Detected {
 	detection := c.PluginHost.Detection
 	if detection == nil {
-		return providerbridge.NewDetection(c.PluginHost.Views.Types, providerbridge.NewSource(c.PluginHost.Runtime), clock.System{})
+		source := providerbridge.NewQuestionSource(c.PluginHost.Runtime)
+		return providerbridge.NewDetection(c.PluginHost.Views.Types, source, clock.System{})
 	}
 	detection.Follow(func() { refreshSettingEvents(c.settings) }, c.settings.ErrorHandler)
 	return detection
@@ -128,8 +129,8 @@ func openRowOptions(c pluginsWiring, deps connection.Deps) *rowoptions.Options {
 		return nil
 	}
 	return rowoptions.NewOptions(
-		connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute, providerbridge.NewSource(c.PluginHost.Runtime),
-		c.PluginHost.RunningProviders, c.PluginHost.RowOptions,
+		connection.NewResolve(deps).Execute, connection.NewReadSecrets(deps).Execute,
+		providerbridge.NewQuestionSource(c.PluginHost.Runtime), c.PluginHost.RunningProviders, c.PluginHost.RowOptions,
 	)
 }
 

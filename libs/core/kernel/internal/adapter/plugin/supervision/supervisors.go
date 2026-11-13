@@ -20,15 +20,15 @@ const rpcShutdownGrace = 2 * time.Second
 // started twice and never stopped half way. The watchers of RunningProcesses are signaled under either
 // side of the lock and changed only under the write side.
 type Supervisors struct {
-	mu           sync.RWMutex
-	byPlugin     map[string]*lifecycle.Supervisor
-	runs         map[string]*processRun
-	clients      *transport.Clients
-	report       func(error)
-	onDrop       func(pluginID string)
-	idleLimits   map[string]time.Duration
-	stopReleased func(pluginID string)
-	watchers     []chan struct{}
+	mu         sync.RWMutex
+	byPlugin   map[string]*lifecycle.Supervisor
+	runs       map[string]*processRun
+	clients    *transport.Clients
+	report     func(error)
+	onDrop     func(pluginID string)
+	idleLimits map[string]time.Duration
+	stopIdle   func(pluginID string)
+	watchers   []chan struct{}
 }
 
 // processRun is the process of a plugin that runs: its endpoint, the ports it reported for its
@@ -191,21 +191,23 @@ func (s *Supervisors) Release(pluginID, token string, now time.Time) {
 	if !ok || getEndpointLocked(s, pluginID).Token != token {
 		return
 	}
-	returnHoldLocked(s, pluginID, sup, now)
+	returnHoldLocked(s, pluginID, sup, lifecycle.UseLease, now)
 }
 
-// ReturnHold gives up a hold on the plugin. A released process that holds no other is stopped at once.
-func (s *Supervisors) ReturnHold(pluginID string, sup *lifecycle.Supervisor, now time.Time) {
+// ReturnHold gives up a hold of the kind on the plugin. A process that holds no other is stopped at once
+// where it was released or never used since it started.
+func (s *Supervisors) ReturnHold(pluginID string, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind, now time.Time) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	returnHoldLocked(s, pluginID, sup, now)
+	returnHoldLocked(s, pluginID, sup, kind, now)
 }
 
-func returnHoldLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, now time.Time) {
-	sup.Release(now)
+func returnHoldLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind, now time.Time) {
+	sup.Release(kind, now)
 	notifyLocked(s)
-	if usage, isRunning := sup.GetUsage(); isRunning && usage.IsIdle && isReleasedLocked(s, pluginID) && s.stopReleased != nil {
-		go s.stopReleased(pluginID)
+	usage, isRunning := sup.GetUsage()
+	if isRunning && usage.IsIdle && (isReleasedLocked(s, pluginID) || !usage.IsUsed) && s.stopIdle != nil {
+		go s.stopIdle(pluginID)
 	}
 }
 
@@ -235,12 +237,12 @@ type Claim struct {
 	Started  bool
 }
 
-// Begin takes a hold on the running plugin, or reports the state of the supervisor, or sets a dormant
-// supervisor to activating.
-func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, now time.Time) Claim {
+// Begin takes a hold of the kind on the running plugin, or reports the state of the supervisor, or sets a
+// dormant supervisor to activating.
+func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind, now time.Time) Claim {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if endpoint, ok := acquireRunningLocked(s, pluginID, sup, now); ok {
+	if endpoint, ok := acquireRunningLocked(s, pluginID, sup, kind, now); ok {
 		return Claim{Endpoint: endpoint, Running: true, State: lifecycle.StateDormant, Started: false}
 	}
 	if state := sup.GetState(); state != lifecycle.StateDormant {
@@ -250,25 +252,32 @@ func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, now time
 	return Claim{Endpoint: NoEndpoint(), Running: false, State: lifecycle.StateDormant, Started: true}
 }
 
-// AcquireRunning takes a hold on the plugin and returns its endpoint if a process of it runs. The hold
-// cancels a release of the process.
-func (s *Supervisors) AcquireRunning(pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
+// AcquireRunning takes a hold of the kind on the plugin and returns its endpoint if a process of it runs.
+// A use hold cancels a release of the process.
+func (s *Supervisors) AcquireRunning(
+	pluginID string, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind, now time.Time,
+) (transport.Endpoint, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return acquireRunningLocked(s, pluginID, sup, now)
+	return acquireRunningLocked(s, pluginID, sup, kind, now)
 }
 
-func acquireRunningLocked(s *Supervisors, pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
+func acquireRunningLocked(
+	s *Supervisors, pluginID string, sup *lifecycle.Supervisor, kind lifecycle.LeaseKind, now time.Time,
+) (transport.Endpoint, bool) {
 	run, ok := s.runs[pluginID]
-	if !ok || IsNoEndpoint(run.endpoint) || run.endpoint.Token == "" || !sup.Acquire(now) {
+	if !ok || IsNoEndpoint(run.endpoint) || run.endpoint.Token == "" || !sup.Acquire(kind, now) {
 		return NoEndpoint(), false
 	}
-	run.isReleased = false
+	if kind == lifecycle.UseLease {
+		run.isReleased = false
+	}
 	notifyLocked(s)
 	return run.endpoint, true
 }
 
-// ProcessAttachment is what AttachProcess records for a started plugin process.
+// ProcessAttachment is what AttachProcess records for a started plugin process, with the kind of the first
+// hold on it.
 type ProcessAttachment struct {
 	PluginID   string
 	Supervisor *lifecycle.Supervisor
@@ -277,6 +286,7 @@ type ProcessAttachment struct {
 	Listeners  map[string]int
 	Now        time.Time
 	OnExit     func()
+	Lease      lifecycle.LeaseKind
 }
 
 // AttachProcess records a process the supervisor now tracks, with its endpoint and the ports of its
@@ -297,7 +307,7 @@ func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachmen
 		s.Drop(pluginID)
 		onExit()
 	})
-	sup.Acquire(now)
+	sup.Acquire(attach.Lease, now)
 	s.runs[pluginID] = &processRun{endpoint: endpoint, listenerPorts: listeners, startTime: now, isReleased: false}
 	sup.SetRPCShutdown(createRPCShutdown(endpoint, s.clients.Get(endpoint), rpcShutdownGrace))
 	sup.FinishActivating()
@@ -310,16 +320,18 @@ func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachmen
 	return nil
 }
 
-// AttachInProcess records the endpoint of a plugin served inside this process and activates it. It
-// fails where the start was aborted meanwhile.
-func (s *Supervisors) AttachInProcess(pluginID string, sup *lifecycle.Supervisor, endpoint transport.Endpoint, now time.Time) error {
+// AttachInProcess records the endpoint of a plugin served inside this process and activates it with a first
+// hold of the kind. It fails where the start was aborted meanwhile.
+func (s *Supervisors) AttachInProcess(
+	pluginID string, sup *lifecycle.Supervisor, endpoint transport.Endpoint, kind lifecycle.LeaseKind, now time.Time,
+) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if sup.GetState() != lifecycle.StateActivating {
 		return lifecycle.ErrActivationAborted
 	}
 	s.runs[pluginID] = &processRun{endpoint: endpoint, listenerPorts: nil, startTime: now, isReleased: false}
-	sup.ActivateInProcess(now)
+	sup.ActivateInProcess(kind, now)
 	notifyLocked(s)
 	return nil
 }

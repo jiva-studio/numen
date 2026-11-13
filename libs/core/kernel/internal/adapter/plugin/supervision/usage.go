@@ -19,7 +19,7 @@ func NewRunningProcesses(sups *Supervisors) *RunningProcesses {
 }
 
 // ListProcesses returns the plugins that run, in the order of their ids. An idle one has the time from
-// which EvictIdle stops it.
+// which EvictIdle stops it: its last use plus its idle limit, or its start for one never used.
 func (r *RunningProcesses) ListProcesses() []plugindomain.Process {
 	s := r.sups
 	s.mu.RLock()
@@ -34,8 +34,11 @@ func (r *RunningProcesses) ListProcesses() []plugindomain.Process {
 			PluginID: id, StartTime: getStartTimeLocked(s, id), LastUseTime: usage.LastActiveTime,
 			LeaseCount: usage.LeaseCount, IsInProcess: usage.IsInProcess,
 		}
-		if usage.IsIdle {
+		switch {
+		case usage.IsIdle && usage.IsUsed:
 			process.IdleStopTime = usage.LastActiveTime.Add(getIdleLimitLocked(s, id, IdleThreshold))
+		case usage.IsIdle:
+			process.IdleStopTime = usage.LastActiveTime
 		}
 		processes = append(processes, process)
 	}

@@ -47,6 +47,12 @@ func (h *downEmbeddingHost) EnsureActive(context.Context, string) (transport.End
 
 func (h *downEmbeddingHost) Release(string) { h.released.Add(1) }
 
+func (h *downEmbeddingHost) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
+	return h.EnsureActive(ctx, pluginID)
+}
+
+func (h *downEmbeddingHost) ReleaseQuestion(pluginID string) { h.Release(pluginID) }
+
 func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	t.Helper()
 	server := httptest.NewServer(http.NotFoundHandler())

@@ -43,12 +43,12 @@ type Stopper struct {
 	report    func(error)
 }
 
-// NewStopper returns the stopper of the processes the supervisors track. It also stops a released
-// process when the process returns its last lease.
+// NewStopper returns the stopper of the processes the supervisors track. It also stops a process that
+// returns its last lease where the process was released or never used since it started.
 func NewStopper(sups *Supervisors, processes stdinHolder, services serviceEndpoint, clock machineport.Clock, report func(error)) *Stopper {
 	stopper := &Stopper{sups: sups, processes: processes, services: services, clock: clock, report: report}
 	sups.mu.Lock()
-	sups.stopReleased = func(pluginID string) { stopper.ReleaseProcess(context.Background(), pluginID) }
+	sups.stopIdle = func(pluginID string) { stopper.evictIdlePlugin(context.Background(), pluginID) }
 	sups.mu.Unlock()
 	return stopper
 }
@@ -81,6 +81,12 @@ func (s *Stopper) stopTarget(ctx context.Context, target Target, gracePeriod tim
 // defaultLimit is the limit of a plugin whose manifest sets none.
 func (s *Stopper) EvictIdle(ctx context.Context, defaultLimit, gracePeriod time.Duration) []string {
 	return s.EvictTargets(ctx, takeIdleTargets(s.sups, defaultLimit, s.clock.Now()), gracePeriod)
+}
+
+func (s *Stopper) evictIdlePlugin(ctx context.Context, pluginID string) {
+	ctx, cancel := context.WithTimeout(ctx, stopPluginTimeout)
+	defer cancel()
+	s.EvictTargets(ctx, takeIdleTarget(s.sups, pluginID, IdleThreshold, s.clock.Now()), stopPluginGracePeriod)
 }
 
 // ReleaseProcess marks the running plugin released and stops it where it holds no lease; a plugin

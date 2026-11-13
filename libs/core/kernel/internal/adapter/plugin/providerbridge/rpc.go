@@ -3,7 +3,6 @@ package providerbridge
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -20,23 +19,32 @@ import (
 
 var errStreamEnded = errors.New("the stream of the provider ended with neither a done nor a failure")
 
-// Source opens the provider of a plugin over its ProviderService.
+// Source opens the provider of a plugin over its ProviderService, with a use lease or, where isQuestion is
+// set, a question lease.
 type Source struct {
-	host bridge.Activator
+	host       bridge.Activator
+	isQuestion bool
 }
 
-// NewSource returns the source over the plugins the host activates.
-func NewSource(host bridge.Activator) *Source { return &Source{host: host} }
+// NewSource returns the source over the plugins the host activates, which holds a plugin for a use of it.
+func NewSource(host bridge.Activator) *Source { return &Source{host: host, isQuestion: false} }
+
+// NewQuestionSource returns the source over the plugins the host activates, which holds a plugin for a
+// question the core asks it for itself.
+func NewQuestionSource(host bridge.Activator) *Source { return &Source{host: host, isQuestion: true} }
 
 // OpenProvider activates the plugin, which starts it if it is not running, and returns its provider with
 // the function that releases the plugin. The function may be called more than once.
 func (s *Source) OpenProvider(ctx context.Context, pluginID string) (connectionport.Provider, func(), error) {
-	client, lease, err := bridge.Open(ctx, s.host, pluginID, numenv1connect.NewProviderServiceClient)
+	open := bridge.Open[numenv1connect.ProviderServiceClient]
+	if s.isQuestion {
+		open = bridge.OpenForQuestion[numenv1connect.ProviderServiceClient]
+	}
+	client, lease, err := open(ctx, s.host, pluginID, numenv1connect.NewProviderServiceClient)
 	if err != nil {
 		return nil, nil, err
 	}
-	var once sync.Once
-	return &provider{client: client}, func() { once.Do(func() { lease.Host.Release(lease.PluginID) }) }, nil
+	return &provider{client: client}, lease.Release, nil
 }
 
 // provider carries the calls of the core to the ProviderService of a plugin. An operation the plugin does

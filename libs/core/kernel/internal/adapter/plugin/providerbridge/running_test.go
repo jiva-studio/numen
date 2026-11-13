@@ -11,14 +11,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
-// runningHost hands out the endpoint of the activator only while isRunning is set.
+// runningHost hands out the endpoint of the activator, for a question, only while isRunning is set.
 type runningHost struct {
 	*activator
 	isRunning bool
 	acquired  []string
 }
 
-func (h *runningHost) AcquireRunning(pluginID string) (transport.Endpoint, bool) {
+func (h *runningHost) AcquireRunningForQuestion(pluginID string) (transport.Endpoint, bool) {
 	if !h.isRunning {
 		return transport.Endpoint{}, false
 	}
@@ -26,7 +26,7 @@ func (h *runningHost) AcquireRunning(pluginID string) (transport.Endpoint, bool)
 	return h.endpoint, true
 }
 
-func TestRunningSourceOpensTheProviderOfARunningPluginAndReleasesIt(t *testing.T) {
+func TestRunningSourceOpensTheProviderOfARunningPluginForAQuestionAndReleasesIt(t *testing.T) {
 	service := &scriptedService{frames: []*v1.ProviderServiceCallResponse{done([]byte("finished"))}}
 	host := &runningHost{activator: newActivator(t, service), isRunning: true}
 
@@ -51,7 +51,32 @@ func TestRunningSourceDoesNotOpenAPluginThatDoesNotRun(t *testing.T) {
 
 	_, _, isRunning := providerbridge.NewRunningSource(host, host).OpenRunningProvider(t.Context(), pluginID)
 
-	if isRunning || len(host.released) != 0 {
-		t.Errorf("running = %v, released = %v, want neither", isRunning, host.released)
+	if isRunning || len(host.questionsReleased) != 0 {
+		t.Errorf("running = %v, released = %v, want neither", isRunning, host.questionsReleased)
+	}
+}
+
+func TestTheQuestionSourceHoldsThePluginForAQuestion(t *testing.T) {
+	host := newActivator(t, &scriptedService{frames: []*v1.ProviderServiceCallResponse{done(nil)}})
+
+	_, release, err := providerbridge.NewQuestionSource(host).OpenProvider(t.Context(), pluginID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	release()
+	release()
+
+	if !slices.Equal(host.questions, []string{pluginID}) || !slices.Equal(host.questionsReleased, []string{pluginID}) || len(host.released) != 0 {
+		t.Errorf("questions = %v, released = %v as a question and %v as a use, want one question lease",
+			host.questions, host.questionsReleased, host.released)
+	}
+}
+
+func TestTheSourceHoldsThePluginForAUse(t *testing.T) {
+	_, release, host := newBridge(t, &scriptedService{})
+	release()
+
+	if len(host.questions) != 0 || !slices.Equal(host.released, []string{pluginID}) {
+		t.Errorf("questions = %v, released = %v, want one use lease", host.questions, host.released)
 	}
 }

@@ -44,8 +44,13 @@ func (h *stubModelHost) EnsureActive(context.Context, string) (transport.Endpoin
 	return h.endpoint, nil
 }
 
+func (h *stubModelHost) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
+	return h.EnsureActive(ctx, pluginID)
+}
+
 func (h *stubModelHost) Acquire(string)                          { h.acquired.Add(1) }
 func (h *stubModelHost) Release(string)                          { h.released.Add(1) }
+func (h *stubModelHost) ReleaseQuestion(pluginID string)         { h.Release(pluginID) }
 func (h *stubModelHost) CheckPluginPermission(_, _ string) error { return nil }
 func (h *stubModelHost) GetVaultPath() string                    { return "" }
 

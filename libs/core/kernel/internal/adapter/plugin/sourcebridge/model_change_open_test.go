@@ -24,6 +24,12 @@ func (failingActivator) EnsureActive(context.Context, string) (transport.Endpoin
 
 func (failingActivator) Release(string) {}
 
+func (a failingActivator) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
+	return a.EnsureActive(ctx, pluginID)
+}
+
+func (failingActivator) ReleaseQuestion(string) {}
+
 func (failingActivator) ResolveCapability(string) (manifest.Discovered, error) {
 	return manifest.Discovered{Manifest: manifest.Manifest{ID: embeddingPluginID}}, nil
 }

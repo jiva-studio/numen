@@ -868,18 +868,18 @@ func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
 
 func TestAcquireAndReleaseDoNothingWithoutARunningProcess(t *testing.T) {
 	sup := lifecycle.New(nil)
-	if sup.Acquire(testsupport.GetMachine().Now()) {
+	if sup.Acquire(lifecycle.UseLease, testsupport.GetMachine().Now()) {
 		t.Fatal("Acquire held a dormant supervisor")
 	}
-	sup.Release(testsupport.GetMachine().Now())
+	sup.Release(lifecycle.UseLease, testsupport.GetMachine().Now())
 	if sup.GetState() != lifecycle.StateDormant {
 		t.Fatalf("Release moved a dormant supervisor to %v", sup.GetState())
 	}
 	sup.SetActivating()
-	if sup.Acquire(testsupport.GetMachine().Now()) {
+	if sup.Acquire(lifecycle.UseLease, testsupport.GetMachine().Now()) {
 		t.Fatal("Acquire held an activating supervisor")
 	}
-	sup.Release(testsupport.GetMachine().Now())
+	sup.Release(lifecycle.UseLease, testsupport.GetMachine().Now())
 	if sup.GetState() != lifecycle.StateActivating {
 		t.Fatalf("Release moved an activating supervisor to %v", sup.GetState())
 	}

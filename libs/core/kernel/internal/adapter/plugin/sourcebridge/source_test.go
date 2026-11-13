@@ -23,9 +23,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -300,5 +302,28 @@ func TestASourceTheSettingsDoNotAllowFailsToOpenWithThePlainSentence(t *testing.
 
 	if err == nil || err.Error() != noConnection {
 		t.Errorf("err = %v, want %q", err, noConnection)
+	}
+}
+
+func TestTheDescriptionIsAQuestionAndASearchIsAUse(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewSearchSourceServiceHandler(&mockSourceServer{}))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	host := &plugintest.LeaseHost{Endpoint: transport.Endpoint{Host: "127.0.0.1", Port: wiretest.GetPort(t, server)}}
+
+	bridge, err := sourcebridge.Open(t.Context(), host, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if asked, released := host.QuestionsAcquired.Load(), host.QuestionsReleased.Load(); asked != 1 || released != 1 {
+		t.Errorf("the description took %d question leases and returned %d, want one", asked, released)
+	}
+
+	if _, err := bridge.SearchPassages(t.Context(), searchsource.Place{}, searchsource.Query{Text: "tides of the inner sea"}); err != nil {
+		t.Fatal(err)
+	}
+	if asked := host.QuestionsAcquired.Load(); asked != 1 || host.Acquired.Load() != 2 {
+		t.Errorf("the search took %d leases in all and %d question leases, want one use lease more", host.Acquired.Load(), asked)
 	}
 }
