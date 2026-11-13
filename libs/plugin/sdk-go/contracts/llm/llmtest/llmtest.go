@@ -65,7 +65,9 @@ func GetProfile(ctx context.Context, provider connection.Provider, call connecti
 func serveInto(
 	ctx context.Context, provider connection.Provider, operation string, call connection.Call, request, result proto.Message,
 ) error {
-	done, err := serve(ctx, provider, operation, call, request, nil)
+	done, err := serve(ctx, provider, operation, call, request, func([]byte) error {
+		return fmt.Errorf("llmtest: %s sends no data frames", operation)
+	})
 	if err != nil {
 		return err
 	}

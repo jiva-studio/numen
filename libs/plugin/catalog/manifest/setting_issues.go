@@ -176,7 +176,12 @@ func listConnectionsSettingIssues(s Setting, key string) []error {
 	if len(s.Operations) == 0 {
 		issues = append(issues, fmt.Errorf("%w: %s names no operation", ErrInvalidSetting, key))
 	}
+	named := map[string]bool{}
 	for _, operation := range s.Operations {
+		if named[operation] {
+			issues = append(issues, fmt.Errorf("%w: %s names the operation %q twice", ErrInvalidSetting, key, operation))
+		}
+		named[operation] = true
 		if !connectionOperationPattern.MatchString(operation) {
 			issues = append(issues, fmt.Errorf("%w: %s needs operations of lowercase words joined by dots, got %q", ErrInvalidSetting, key, operation))
 		}
@@ -212,7 +217,7 @@ func listDuplicateOperationIssues(settings []Setting) []error {
 			continue
 		}
 		for _, operation := range s.Operations {
-			if first, isTaken := keyOf[operation]; isTaken {
+			if first, isTaken := keyOf[operation]; isTaken && first != s.Key {
 				issues = append(issues, fmt.Errorf("%w: %s and %s both hold rows for the operation %q", ErrInvalidSetting, first, s.Key, operation))
 				continue
 			}

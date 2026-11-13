@@ -37,3 +37,10 @@ export interface HealthHost {
 }
 
 export const SETTINGS_OPEN_COMMAND = 'app:settings.open'
+
+// Returns the action that opens the settings of the plugin with the setting of the key marked. An empty
+// key opens the settings of the plugin. It is health.OpenSettings of the Go SDK.
+export const openSettings = (setting = ''): NonNullable<HealthItem['action']> => ({
+  command: SETTINGS_OPEN_COMMAND,
+  values: setting === '' ? {} : { setting },
+})

@@ -433,7 +433,7 @@ func TestCacheZeroValueTimeoutDiskCorruptAndAsyncInFlightEdgeCases(t *testing.T)
 	corruptCache := cache.New[[]string]("models", cache.WithDir(dir), cache.WithDisk(true), cache.WithErrorHandler(func(err error) {
 		corruptErrors = append(corruptErrors, err)
 	}))
-	if err := os.WriteFile(filepath.Join(dir, "models.json"), []byte(`{"k1":["corrupt"],"k2":bad}`), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "models.json"), []byte(`{"k1":{"value":["corrupt"]},"k2":bad}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	got, ok, err := corruptCache.Get(t.Context(), "k1", func(context.Context) ([]string, error) {
@@ -442,7 +442,7 @@ func TestCacheZeroValueTimeoutDiskCorruptAndAsyncInFlightEdgeCases(t *testing.T)
 	if err != nil || !ok || !slices.Equal(got, []string{"fresh"}) {
 		t.Fatalf("expected corrupt disk JSON to be ignored on Get, got %v, %v, %v", got, ok, err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, "models.json"), []byte(`{"k1":["corrupt"],"k2":bad}`), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "models.json"), []byte(`{"k1":{"value":["corrupt"]},"k2":bad}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	corruptCache.Put("k3", []string{"valid"})
@@ -471,7 +471,7 @@ func TestCacheZeroValueTimeoutDiskCorruptAndAsyncInFlightEdgeCases(t *testing.T)
 	}); err != nil || !found || len(v) != 1 || v[0] != "fresh-after-corrupt" {
 		t.Fatalf("expected corrupt disk read to fall back to loader, got %v, %v, %v", v, found, err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, "models.json"), []byte(`{"empty":[]}`), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "models.json"), []byte(`{"empty":{"value":[]}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	emptyReadCache := cache.New[[]string]("models", cache.WithDir(dir))
@@ -496,7 +496,7 @@ func TestCacheZeroValueTimeoutDiskCorruptAndAsyncInFlightEdgeCases(t *testing.T)
 		t.Fatalf("first async miss = found=%v, err=%v", found, err)
 	}
 	<-started
-	if err := os.WriteFile(filepath.Join(dir, "inflight.json"), []byte(`{"miss":["from-disk"]}`), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "inflight.json"), []byte(`{"miss":{"value":["from-disk"]}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if _, found2, err2 := diskAsync.Get(t.Context(), "miss", func(context.Context) ([]string, error) {
@@ -571,4 +571,112 @@ func newFakeClock(start time.Time) *clock.Fake {
 	source := new(clock.Fake)
 	source.Set(start)
 	return source
+}
+
+func TestADiskEntryPastItsTTLIsLoadedAgainAfterARestart(t *testing.T) {
+	dir := t.TempDir()
+	now := newFakeClock(time.Unix(6000, 0))
+	before := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithClock(now))
+	before.Put("k", []string{"old"})
+	now.Advance(2 * time.Hour)
+
+	after := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithClock(now))
+	var calls int
+	got, found, err := after.Get(t.Context(), "k", func(context.Context) ([]string, error) {
+		calls++
+		return []string{"new"}, nil
+	})
+
+	if err != nil || !found || !slices.Equal(got, []string{"new"}) || calls != 1 {
+		t.Errorf("Get() = %v, %v, %v (calls=%d), want the list loaded again", got, found, err, calls)
+	}
+}
+
+func TestADiskEntryWithinItsTTLIsKeptAfterARestart(t *testing.T) {
+	dir := t.TempDir()
+	now := newFakeClock(time.Unix(6000, 0))
+	before := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithClock(now))
+	before.Put("k", []string{"kept"})
+	now.Advance(30 * time.Minute)
+
+	after := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithClock(now))
+	var calls int
+	got, found, err := after.Get(t.Context(), "k", func(context.Context) ([]string, error) {
+		calls++
+		return []string{"new"}, nil
+	})
+
+	if err != nil || !found || !slices.Equal(got, []string{"kept"}) || calls != 0 {
+		t.Errorf("Get() = %v, %v, %v (calls=%d), want the list from disk", got, found, err, calls)
+	}
+}
+
+func TestAnAsyncDiskEntryPastItsTTLIsRefreshedAfterAReadWithoutALoader(t *testing.T) {
+	dir := t.TempDir()
+	now := newFakeClock(time.Unix(6000, 0))
+	before := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithAsync(true), cache.WithClock(now))
+	before.Put("k", []string{"old"})
+	now.Advance(2 * time.Hour)
+
+	after := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithAsync(true), cache.WithClock(now))
+	if got, found, err := after.Get(t.Context(), "k", nil); err != nil || !found || !slices.Equal(got, []string{"old"}) {
+		t.Fatalf("Get() without a loader = %v, %v, %v, want the list from disk", got, found, err)
+	}
+	if _, _, err := after.Get(t.Context(), "k", func(context.Context) ([]string, error) {
+		return []string{"new"}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	waitForCondition(t, func() bool {
+		got, found, err := after.Get(t.Context(), "k", nil)
+		return err == nil && found && slices.Equal(got, []string{"new"})
+	})
+}
+
+func TestAnAsyncDiskEntryWithinItsTTLIsServedWithoutALoad(t *testing.T) {
+	dir := t.TempDir()
+	now := newFakeClock(time.Unix(6000, 0))
+	before := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithAsync(true), cache.WithClock(now))
+	before.Put("k", []string{"kept"})
+	now.Advance(30 * time.Minute)
+
+	after := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithAsync(true), cache.WithClock(now))
+	var calls atomic.Int32
+	got, found, err := after.Get(t.Context(), "k", func(context.Context) ([]string, error) {
+		calls.Add(1)
+		return []string{"new"}, nil
+	})
+	time.Sleep(20 * time.Millisecond)
+
+	if err != nil || !found || !slices.Equal(got, []string{"kept"}) || calls.Load() != 0 {
+		t.Errorf("Get() = %v, %v, %v (calls=%d), want the list from disk and no load", got, found, err, calls.Load())
+	}
+}
+
+func TestAnAsyncDiskEntryPastItsTTLIsServedAndRefreshedOnce(t *testing.T) {
+	dir := t.TempDir()
+	now := newFakeClock(time.Unix(6000, 0))
+	before := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithAsync(true), cache.WithClock(now))
+	before.Put("k", []string{"old"})
+	now.Advance(2 * time.Hour)
+
+	after := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithAsync(true), cache.WithClock(now))
+	var calls atomic.Int32
+	load := func(context.Context) ([]string, error) {
+		calls.Add(1)
+		return []string{"new"}, nil
+	}
+	got, found, err := after.Get(t.Context(), "k", load)
+	if err != nil || !found || !slices.Equal(got, []string{"old"}) {
+		t.Fatalf("Get() = %v, %v, %v, want the list from disk", got, found, err)
+	}
+
+	waitForCondition(t, func() bool {
+		v, ok, err := after.Get(t.Context(), "k", load)
+		return err == nil && ok && slices.Equal(v, []string{"new"})
+	})
+	if calls.Load() != 1 {
+		t.Errorf("loaded %d times, want once", calls.Load())
+	}
 }

@@ -102,3 +102,11 @@ func TestASettingOfRowsThatDiscoversIsReadFromAManifest(t *testing.T) {
 		t.Error("the setting that does not declare discover discovers")
 	}
 }
+
+func TestASettingOfRowsThatNamesAnOperationTwiceIsRejectedOnce(t *testing.T) {
+	_, err := readSettings(`{"key":"completions","type":"connections","title":"Completions","operations":["llm.complete","llm.complete"],"max":1}`)
+
+	if !errors.Is(err, manifest.ErrInvalidSetting) || strings.Count(err.Error(), "llm.complete") != 1 || !strings.Contains(err.Error(), "twice") {
+		t.Errorf("err = %v, want one issue that names the operation twice", err)
+	}
+}

@@ -146,7 +146,7 @@ const SettingTypeEnum = "enum"
 const SettingTypeFile = "file"
 
 // SettingTypeConnections is the type of a setting that holds rows of connections: each names a
-// connection, a model and a reasoning level.
+// connection and holds the values of the row fields of its type.
 const SettingTypeConnections = "connections"
 
 const settingTypeNumber = "number"

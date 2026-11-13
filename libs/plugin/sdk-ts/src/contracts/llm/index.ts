@@ -70,7 +70,11 @@ export const complete = async (
     (bytes) => fromBinary(CompleteResultSchema, bytes),
   )
 
-/** Asks the rows of the plugin, in order, for one vector for each text. No text is no call. */
+/**
+ * Asks the rows of the plugin, in order, for one vector for each text. No text is no call. A result with
+ * another number of vectors than texts throws, as a result that is no message of the contract does; the Go
+ * client returns that error.
+ */
 export const embed = async (
   host: ConnectionHost,
   request: MessageInitShape<typeof EmbedRequestSchema>,
@@ -80,7 +84,14 @@ export const embed = async (
   if (message.texts.length === 0) return asValue(create(EmbedResultSchema))
   return decode(
     await collectCall(host, OPERATION_EMBED, toBinary(EmbedRequestSchema, message), options),
-    (bytes) => fromBinary(EmbedResultSchema, bytes),
+    (bytes) => {
+      const result = fromBinary(EmbedResultSchema, bytes)
+      if (result.vectors.length !== message.texts.length)
+        throw new Error(
+          `llm: ${OPERATION_EMBED} answered ${result.vectors.length} vectors for ${message.texts.length} texts`,
+        )
+      return result
+    },
   )
 }
 
@@ -102,10 +113,18 @@ export const getProfile = async (
     (bytes) => fromBinary(ProfileSchema, bytes),
   )
 
+// The value a turn that ends early hands the call it closes; the call does not read it.
+const STOPPED: Result<Uint8Array, ConnectionError> = {
+  ok: false,
+  error: { error: 'canceled', message: 'the reader stopped the turn', failures: [] },
+}
+
 /**
  * Asks the rows of the plugin, in order, for the next turn of a conversation and yields its frames. The
  * core goes to the next row only when a row fails before its first frame. The generator returns the
- * finish, or the error of the call with the frames before it already yielded.
+ * finish, or the error of the call with the frames before it already yielded. A frame or a finish that is
+ * no message of the contract throws, as a stream that ends before the call does; the Go client returns
+ * that error from Err. The call ends when the generator ends, throws or is returned early.
  */
 export async function* chat(
   host: ConnectionHost,
@@ -117,10 +136,17 @@ export async function* chat(
     toBinary(ChatRequestSchema, create(ChatRequestSchema, request)),
     options,
   )
-  for (;;) {
-    const next = await frames.next()
-    if (next.done === true)
-      return decode(next.value, (bytes) => fromBinary(ChatFinishSchema, bytes))
-    yield fromBinary(ChatFrameSchema, next.value)
+  let isEnded = false
+  try {
+    for (;;) {
+      const next = await frames.next()
+      if (next.done === true) {
+        isEnded = true
+        return decode(next.value, (bytes) => fromBinary(ChatFinishSchema, bytes))
+      }
+      yield fromBinary(ChatFrameSchema, next.value)
+    }
+  } finally {
+    if (!isEnded) await frames.return(STOPPED)
   }
 }
