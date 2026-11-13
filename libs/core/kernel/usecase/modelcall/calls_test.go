@@ -435,16 +435,36 @@ func TestARowThatNamesNoConnectionIsSkipped(t *testing.T) {
 	}
 }
 
-func TestACallIsRefusedWhenTheConnectionChangedWhileItsKeyWasRead(t *testing.T) {
+func TestAConnectionThatChangedWhileItsKeyWasReadIsReadAgain(t *testing.T) {
+	s := newSetup(t, modelcalltest.CompleteOperation)
+	changes := 0
+	s.world.Keys.OnGet = func() {
+		if changes == 0 {
+			s.world.ChangeRevision(t, s.one.ID)
+		}
+		changes++
+	}
+
+	result, err := s.complete(t)
+
+	if err != nil || result.Text != "answer from "+addressOne {
+		t.Errorf("Complete = %v, %v, want the answer of the first row", result, err)
+	}
+	if got := len(s.world.Provider.CallsTo(addressOne)); got != 1 {
+		t.Errorf("the first row was called %d times, want once with its new snapshot", got)
+	}
+}
+
+func TestAConnectionThatKeepsChangingWhileItsKeyIsReadIsSkipped(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Keys.OnGet = func() { s.world.ChangeRevision(t, s.one.ID) }
 
-	_, err := s.complete(t)
+	result, err := s.complete(t)
 
-	if !errors.Is(err, connection.ErrStaleRevision) {
-		t.Errorf("err = %v, want ErrStaleRevision", err)
+	if err != nil || result.Text != "answer from "+addressTwo {
+		t.Errorf("Complete = %v, %v, want the answer of the second row", result, err)
 	}
-	if len(s.world.Provider.Calls()) != 0 {
+	if len(s.world.Provider.CallsTo(addressOne)) != 0 {
 		t.Error("a provider was called with the snapshot of a connection that changed")
 	}
 }

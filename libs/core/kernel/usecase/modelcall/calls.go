@@ -18,7 +18,8 @@ const (
 // goes to the next row on the first failure of a connection. An error of a provider that is neither failure
 // kind counts as a service that is unreachable. A row is skipped, and its reason is in the error
 // when every row fails, if its connection is gone, its type is not provided or lacks the operation, its key is
-// missing, it is set aside, or its connection stayed busy for the wait its priority allows.
+// missing, it is set aside, its connection stayed busy for the wait its priority allows, or its connection changed
+// during the call twice in a row.
 type Calls struct {
 	resolve     connectionport.ResolveConnection
 	readSecrets connectionport.ReadConnectionSecrets

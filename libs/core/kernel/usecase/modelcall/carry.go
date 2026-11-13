@@ -104,29 +104,39 @@ type rowCall struct {
 	secrets  map[string]string
 }
 
+// tryRow calls the connection of the row. A connection that changed while the call read it is resolved again
+// once, and skipped if it changed again.
 func tryRow(ctx context.Context, c *Calls, row connection.Row, ask asking, do attempt) rowOutcome {
+	outcome, isStale := tryResolvedRow(ctx, c, row, ask, do)
+	if isStale {
+		outcome, _ = tryResolvedRow(ctx, c, row, ask, do)
+	}
+	return outcome
+}
+
+func tryResolvedRow(ctx context.Context, c *Calls, row connection.Row, ask asking, do attempt) (rowOutcome, bool) {
 	resolved, skip, err := c.checkRow(row, ask.operation)
 	if err != nil {
-		return rowOutcome{err: err}
+		return rowOutcome{err: err}, false
 	}
 	if skip != nil {
-		return rowOutcome{failure: skip}
+		return rowOutcome{failure: skip}, false
 	}
 	call := &rowCall{calls: c, resolved: resolved, row: row, do: do, priority: ask.priority}
 	for tries := 1; ; tries++ {
 		value, err := call.callOnce(ctx)
 		if err == nil {
-			return rowOutcome{value: value, isDone: true}
+			return rowOutcome{value: value, isDone: true}, false
 		}
 		if ctxErr := ctx.Err(); ctxErr != nil {
-			return rowOutcome{err: ctxErr}
+			return rowOutcome{err: ctxErr}, false
 		}
 		judged := readVerdict(resolved, err)
 		if judged.isCooling {
 			c.cooldown.start(connectionVersion{id: resolved.ID, revision: resolved.Revision}, judged.reason, judged.retryAfter, c.clock.Now())
 		}
 		if judged.isSkipped || judged.err != nil {
-			return rowOutcome{failure: judged.skip, err: judged.err}
+			return rowOutcome{failure: judged.skip, err: judged.err}, judged.isStale
 		}
 		if tries == 1 && isRetried(judged.reason) {
 			continue
@@ -135,7 +145,7 @@ func tryRow(ctx context.Context, c *Calls, row connection.Row, ask asking, do at
 		return rowOutcome{
 			failure: &connection.Failure{ConnectionName: resolved.Name, Reason: judged.reason.String()},
 			aside:   &asideRow{id: resolved.ID, name: resolved.Name, revision: resolved.Revision, reason: judged.reason},
-		}
+		}, false
 	}
 }
 
@@ -171,6 +181,7 @@ type verdict struct {
 	reason     connection.FailureReason
 	retryAfter time.Duration
 	isCooling  bool
+	isStale    bool
 }
 
 func readVerdict(resolved connection.Resolved, err error) verdict {
@@ -193,7 +204,7 @@ func readVerdict(resolved connection.Resolved, err error) verdict {
 	case errors.Is(err, connection.ErrKeyStore):
 		return verdict{isSkipped: true, skip: newSkip(resolved.Name, "key store failed")}
 	case errors.Is(err, connection.ErrStaleRevision):
-		return verdict{err: fmt.Errorf("call %s: %w", resolved.Name, err)}
+		return verdict{isSkipped: true, isStale: true, skip: newSkip(resolved.Name, "changed during the call")}
 	case errors.As(err, &stopError):
 		return verdict{err: &connection.StoppedError{ConnectionName: resolved.Name, Reason: stopError.Reason.String()}}
 	case errors.As(err, &tryNext):
