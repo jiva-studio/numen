@@ -16,7 +16,8 @@ import (
 const rpcShutdownGrace = 2 * time.Second
 
 // Supervisors keeps, for each plugin, the supervisor of its process, the endpoint of the process that
-// runs, the ports that process reported for its listeners and the client that calls it. One lock
+// runs, the ports that process reported for its listeners, the client that calls it, the idle limit its
+// manifest sets and whether its process was released. One lock
 // guards them, so that a plugin is never started twice and never stopped half way. The watchers of
 // RunningProcesses are signaled under either side of the lock and changed only under the write side.
 type Supervisors struct {
@@ -28,6 +29,8 @@ type Supervisors struct {
 	report        func(error)
 	onDrop        func(pluginID string)
 	startTimes    map[string]time.Time
+	idleLimits    map[string]time.Duration
+	released      map[string]bool
 	watchers      []chan struct{}
 }
 
@@ -40,6 +43,8 @@ func NewSupervisors(report func(error), onDrop func(pluginID string)) *Superviso
 		listenerPorts: make(map[string]map[string]int),
 		clients:       transport.NewClients(),
 		startTimes:    make(map[string]time.Time),
+		idleLimits:    make(map[string]time.Duration),
+		released:      make(map[string]bool),
 		report:        report,
 		onDrop:        onDrop,
 	}
@@ -58,7 +63,7 @@ func (s *Supervisors) Register(p manifest.Discovered) *lifecycle.Supervisor {
 		s.byPlugin[id] = sup
 	}
 	sup.Permissions.Set(p.Manifest.Permissions)
-	sup.SetIdleLimit(p.Manifest.Backend.GetIdleStopTime())
+	s.idleLimits[id] = p.Manifest.Backend.GetIdleStopTime()
 	return sup
 }
 
@@ -179,6 +184,7 @@ func forgetEndpointLocked(s *Supervisors, pluginID string) {
 	delete(s.endpoints, pluginID)
 	delete(s.listenerPorts, pluginID)
 	delete(s.startTimes, pluginID)
+	delete(s.released, pluginID)
 }
 
 // Claim is what Begin found.
@@ -204,7 +210,8 @@ func (s *Supervisors) Begin(pluginID string, sup *lifecycle.Supervisor, now time
 	return Claim{Endpoint: NoEndpoint(), Running: false, State: lifecycle.StateDormant, Started: true}
 }
 
-// AcquireRunning takes a hold on the plugin and returns its endpoint if a process of it runs.
+// AcquireRunning takes a hold on the plugin and returns its endpoint if a process of it runs. The hold
+// cancels a release of the process.
 func (s *Supervisors) AcquireRunning(pluginID string, sup *lifecycle.Supervisor, now time.Time) (transport.Endpoint, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -216,6 +223,7 @@ func (s *Supervisors) acquireRunningLocked(pluginID string, sup *lifecycle.Super
 	if IsNoEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(now) {
 		return NoEndpoint(), false
 	}
+	delete(s.released, pluginID)
 	notifyLocked(s)
 	return endpoint, true
 }

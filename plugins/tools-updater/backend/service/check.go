@@ -15,7 +15,6 @@ type Releaser interface {
 	Release(ctx context.Context) error
 }
 
-// newCheckHandler answers a check and then releases the process: the next check starts it again.
 func newCheckHandler(checker *updates.Checker, releaser Releaser) func(context.Context, api.CheckRequest) (api.Status, error) {
 	return func(ctx context.Context, req api.CheckRequest) (api.Status, error) {
 		defer releaseProcess(ctx, releaser)

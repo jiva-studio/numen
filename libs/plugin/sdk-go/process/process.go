@@ -39,16 +39,6 @@ func NewClientFromEnv() (*Client, error) {
 	return NewClient(endpoint), nil
 }
 
-// NewClientFromVars returns the client of the host the variables a linked plugin is given name. It
-// returns hostcall.ErrNoHost where they name none.
-func NewClientFromVars(vars map[string]string) (*Client, error) {
-	endpoint, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return NewClient(endpoint), nil
-}
-
 // Release tells the host that the process has finished its work. The answer can arrive after the host
 // has stopped the process, or never where the stop ends the process first.
 func (c *Client) Release(ctx context.Context) error {

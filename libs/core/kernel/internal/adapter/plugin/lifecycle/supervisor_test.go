@@ -391,25 +391,3 @@ func TestGetUsageReturnsTheLastUseAndTheLeases(t *testing.T) {
 		t.Errorf("released: got %+v, want %+v", usage, want)
 	}
 }
-
-func TestAPluginThatDoesNotRunIsNotMarkedReleased(t *testing.T) {
-	sup := New(nil)
-
-	if sup.MarkReleased() {
-		t.Fatal("a dormant plugin was marked released")
-	}
-}
-
-func TestAReleasedInProcessPluginDeactivatesOnceItsLeaseIsReturned(t *testing.T) {
-	sup := New(nil)
-	now := testsupport.GetEpoch()
-	sup.ActivateInProcess(now)
-	if !sup.MarkReleased() {
-		t.Fatal("a running plugin was not marked released")
-	}
-	sup.Release(now)
-
-	if !sup.BeginDeactivation(time.Hour, now) {
-		t.Fatal("a released plugin waited for the default idle limit")
-	}
-}

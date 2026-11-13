@@ -22,7 +22,9 @@ func TestReleaseTellsTheHost(t *testing.T) {
 }
 
 func TestAPluginWithoutAHostHasNoClient(t *testing.T) {
-	if _, err := process.NewClientFromVars(map[string]string{}); !errors.Is(err, hostcall.ErrNoHost) {
+	t.Setenv(hostcall.HostPortEnv, "")
+
+	if _, err := process.NewClientFromEnv(); !errors.Is(err, hostcall.ErrNoHost) {
 		t.Errorf("error = %v, want ErrNoHost", err)
 	}
 }

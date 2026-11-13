@@ -97,8 +97,9 @@ func TestTheIdleStopTimeFollowsTheIdleLimitOfTheManifest(t *testing.T) {
 func TestAReleasedPluginIsDueToStopAtItsLastUse(t *testing.T) {
 	sups := NewSupervisors(func(error) {}, func(string) {})
 	startInProcess(t, sups, mapsID)
-	sup, _ := sups.Get(mapsID)
-	sup.MarkReleased()
+	if targets := takeReleasedTarget(sups, mapsID, getStartTime()); len(targets) != 0 {
+		t.Fatalf("a plugin that holds a lease was taken to stop: %+v", targets)
+	}
 	sups.Release(mapsID, mapsID, getStartTime().Add(time.Minute))
 
 	got := NewRunningProcesses(sups).ListProcesses()

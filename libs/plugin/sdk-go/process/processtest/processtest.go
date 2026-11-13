@@ -53,19 +53,14 @@ func NewHost(t *testing.T) *Host {
 	return host
 }
 
-// Vars are the variables a host gives a plugin it links in, naming this host and the token.
-func (h *Host) Vars(token string) map[string]string {
-	return map[string]string{hostcall.HostPortEnv: h.port, hostcall.PluginTokenEnv: token}
-}
-
 // NewClient returns a client of the plugin that releases its process on this host.
 func (h *Host) NewClient(t *testing.T) *process.Client {
 	t.Helper()
-	client, err := process.NewClientFromVars(h.Vars("token"))
+	endpoint, err := hostcall.FromVars(map[string]string{hostcall.HostPortEnv: h.port, hostcall.PluginTokenEnv: "token"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return client
+	return process.NewClient(endpoint)
 }
 
 // CountReleases returns how many times the plugin released its process.

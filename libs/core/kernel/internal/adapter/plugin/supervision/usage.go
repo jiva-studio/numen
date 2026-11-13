@@ -35,7 +35,7 @@ func (r *RunningProcesses) ListProcesses() []plugindomain.Process {
 			LeaseCount: usage.LeaseCount, IsInProcess: usage.IsInProcess,
 		}
 		if usage.IsIdle {
-			process.IdleStopTime = usage.LastActiveTime.Add(usage.GetIdleLimit(IdleThreshold))
+			process.IdleStopTime = usage.LastActiveTime.Add(getIdleLimitLocked(s, id, IdleThreshold))
 		}
 		processes = append(processes, process)
 	}

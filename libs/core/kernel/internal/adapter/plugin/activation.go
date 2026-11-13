@@ -135,12 +135,12 @@ func (a *Activation) HasEndpoint(pluginID string) bool {
 	return ok
 }
 
-// Acquire increments the active consumer reference count for a plugin.
+// Acquire increments the active consumer reference count for a plugin whose process runs, and cancels a
+// release of that process.
 func (a *Activation) Acquire(pluginID string) {
 	sup, ok := a.sups.Get(pluginID)
 	if ok {
-		sup.Acquire(a.clock.Now())
-		a.sups.NotifyChange()
+		a.sups.AcquireRunning(pluginID, sup, a.clock.Now())
 	}
 }
 
