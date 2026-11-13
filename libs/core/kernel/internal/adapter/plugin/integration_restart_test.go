@@ -139,20 +139,23 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 				t.Fatalf("the first call failed: %v", err)
 			}
 
-			first, _, firstServer := launcher.get(0)
-			wiretest.KillProcess(t, first)
+			// A start for the description alone stops once it is answered, so the call may have started the
+			// plugin a second time; the process that runs is the last one started.
+			started := launcher.count()
+			running, _, runningServer := launcher.get(started - 1)
+			wiretest.KillProcess(t, running)
 			wiretest.WaitUntil(t, "the stopped plugin to lose its endpoint", func() bool {
 				return !host.Activation.HasEndpoint(contractPluginID)
 			})
-			firstServer.Close()
+			runningServer.Close()
 
 			if _, err := call(t.Context()); err != nil {
 				t.Fatalf("the call after the restart failed: %v", err)
 			}
-			if got := launcher.count(); got != 2 {
-				t.Fatalf("the plugin was started %d times, want 2", got)
+			if got := launcher.count(); got != started+1 {
+				t.Fatalf("the plugin was started %d times, want %d", got, started+1)
 			}
-			if _, again, _ := launcher.get(1); again.requested.Load() != 1 {
+			if _, again, _ := launcher.get(started); again.requested.Load() != 1 {
 				t.Errorf("the plugin started again was asked %d times, want 1", again.requested.Load())
 			}
 			if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
