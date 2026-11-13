@@ -85,7 +85,7 @@
   },
   {
     "file": "plugins/views-plex-graph/frontend/plex/ui/PlexNames.stories.ts",
-    "reason": "the names of a note stand over its parents' pill and under the others, in a smaller type than a title, and fade by whether the pointer is over the note"
+    "reason": "the names of a note stand over its parents' pill and under the others, and fade by whether the pointer is over the note"
   },
   {
     "file": "plugins/views-title-bar/frontend/ui/TitleBar.stories.ts",
