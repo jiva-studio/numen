@@ -50,7 +50,7 @@ func (l *Lister) ListOptions(ctx context.Context) (Listing, error) {
 	if err != nil {
 		return Listing{}, err
 	}
-	listing := Listing{Options: []Option{}}
+	listing := Listing{Options: []Option{}, IsPartial: false}
 	for _, one := range connections {
 		if one.ModelField == "" {
 			continue
