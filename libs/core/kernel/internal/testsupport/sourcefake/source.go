@@ -32,11 +32,11 @@ type Watch func(fn func())
 // Source is a search source over the model of a test. A nil Nearest answers every query with nothing, a
 // nil Queries embeds the queries with the model and a nil Watch announces no change.
 type Source struct {
-	Model    Embedder
-	Nearest  Nearest
-	Queries  Queries
-	Watch    Watch
-	Floor    float64
+	Model   Embedder
+	Nearest Nearest
+	Queries Queries
+	Watch   Watch
+	Floor   float64
 }
 
 // Wrap returns the source over the model, which answers no query.
