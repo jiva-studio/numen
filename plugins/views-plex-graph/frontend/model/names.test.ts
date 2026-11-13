@@ -88,7 +88,7 @@ describe('the manifest settings of the names', () => {
 
   it('declares how many names a note shows, from 1 to 12, six by default', () => {
     expect(settings.find((one) => one.key === 'namesPerNote')).toMatchObject({
-      type: 'number',
+      type: 'range',
       title: 'Names per note',
       default: 6,
       min: 1,
