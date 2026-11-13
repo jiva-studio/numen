@@ -1,6 +1,6 @@
 import { test, expect } from '../../support/test.js'
-import { createNote, createUniqueTitle } from '../../support/vault.js'
-import { destroyNotes, getRow, showInFiles } from '../../support/layout.js'
+import { createNote, createUniqueTitle, openNote } from '../../support/vault.js'
+import { destroyNotes } from '../../support/layout.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
 
 test.describe('the names of the notes related to the related notes of a plex', () => {
@@ -27,10 +27,11 @@ test.describe('the names of the notes related to the related notes of a plex', (
     notes.push(rootPath, childPath, grandchildPath)
 
     await openWorkspace(page)
-    await showInFiles(page, ['notes'])
-    await getRow(page, rootPath).press('Enter')
+    await openNote(page, rootPath)
+    // A plex follows the note it was opened on, so the one of the note in front is opened now.
+    await page.getByRole('button', { name: 'Open plex graph' }).click()
 
-    const graph = getGraph(page)
+    const graph = getGraph(page).filter({ has: page.getByLabel(`${root}, focus`) })
     const name = graph.getByRole('button', { name: grandchild, exact: true })
     await expect(graph.getByLabel(`${child}, child`)).toBeVisible()
     await expect(name).toBeVisible()

@@ -62,8 +62,6 @@ func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path stri
 	return u.createGraph(ctx, cache, v.ID, path, related, items)
 }
 
-// createGraph reads the display data of the focus and of every related note and item,
-// and keeps the ones that still exist.
 func (u ListRelatedNotes) createGraph(ctx context.Context, cache *linkCache, vaultID domain.VaultID, path string, related, items []domain.RelatedNote) (domain.NoteGraph, error) {
 	paths := make([]string, 0, len(related)+len(items)+1)
 	paths = append(paths, path)

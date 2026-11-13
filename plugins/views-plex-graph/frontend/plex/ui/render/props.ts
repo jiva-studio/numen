@@ -22,7 +22,6 @@ export interface PlexViewProps {
   frame: PlexFrame
   viewport: { width: number; height: number }
   nodeSize: { width: number; height: number }
-  /** The size of the shape a new note is dragged out as: a field, whatever the size of a note. */
   ghostSize?: { width: number; height: number }
   showEdgeLabels?: boolean
   showPills?: boolean
@@ -70,7 +69,6 @@ export interface PlexNodeProps {
   hung?: NodeHeadings | null
   behavior?: PlexBehavior
   showPills?: boolean
-  /** The height of a note at rest; a taller node has its title drawn larger by the ratio. */
   restHeight?: number
 }
 

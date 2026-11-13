@@ -117,11 +117,6 @@ export function arrangePlex(
   return { nodes, edges, extent: getExtent(nodes), overflow }
 }
 
-/**
- * The width of each box. Without a measured title a box is the widest the packing allows. With
- * one, a box is as wide as its title needs up to the widest the settings allow: packing a
- * crowded window closes gaps and leaves notes out, and does not cut a title.
- */
 function createWidthLookup(
   options: PlexOptions,
   measure: ((node: PlexNode) => number) | undefined,

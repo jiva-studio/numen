@@ -22,9 +22,7 @@ const props = withDefaults(
     node: PlacedNode
     room: NamesRoom
     attention: Attention
-    /** The opacity of the names while their node is not attended to. */
     restingOpacity?: number
-    /** The opacity of the names while their node, or one of them, is attended to. */
     focusedOpacity?: number
   }>(),
   { restingOpacity: DEFAULT_NAMES_OPACITY, focusedOpacity: DEFAULT_FOCUSED_NAMES_OPACITY },
