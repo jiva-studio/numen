@@ -26,6 +26,7 @@ import type { PlexRelation } from '../../types'
 const props = withDefaults(defineProps<PlexProps>(), {
   showEdgeLabels: true,
   showPills: true,
+  highlightLinks: false,
   lineWidth: 2,
   outlineWidth: 1,
   duration: 420,
@@ -173,6 +174,7 @@ watch(
       :curvature="options.routing.curvature"
       :show-edge-labels="showEdgeLabels"
       :show-pills="showPills"
+      :highlight-links="highlightLinks && !isMoving"
       :names-opacity="namesOpacity"
       :focused-names-opacity="focusedNamesOpacity"
       :can-reach="canReach"

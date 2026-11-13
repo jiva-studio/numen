@@ -20,6 +20,7 @@ import { useNodeViews } from '../../model/useNodeViews'
 const props = withDefaults(defineProps<PlexViewProps>(), {
   showEdgeLabels: true,
   showPills: true,
+  highlightLinks: false,
   canReach: true,
   relationName: getRelationName,
   behavior: () => DEFAULT_BEHAVIOR,
@@ -56,11 +57,11 @@ const viewBox = computed(() => {
 
 const uid = useId()
 
-const { lines, raisedLines, resting, setOver } = useEdgeLines(() => props.frame, uid)
-
 const restedOn = ref<string | null>(null)
 
 const { attention, attend } = useAttention(() => props.frame)
+
+const { lines, raisedLines, resting, setOver } = useEdgeLines(props, uid, attention)
 
 const namedNodes = computed(() => listNamedNodes(props.frame.nodes, props.roomOf))
 

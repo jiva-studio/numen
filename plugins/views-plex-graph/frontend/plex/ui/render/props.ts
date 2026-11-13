@@ -25,6 +25,7 @@ export interface PlexViewProps {
   ghostSize?: { width: number; height: number }
   showEdgeLabels?: boolean
   showPills?: boolean
+  highlightLinks?: boolean
   namesOpacity: number
   focusedNamesOpacity: number
   canReach?: boolean

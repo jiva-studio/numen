@@ -3,7 +3,7 @@ import { nextTick } from 'vue'
 import { describe, expect, it } from 'vitest'
 import PlexView from './PlexView.vue'
 import PlexNodeView from './PlexNodeView.vue'
-import { arrangePlex, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
+import { arrangePlex, createPath, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
 import { getNamesRoom } from '../../lib/names'
 import type { PlacedNode } from '../../lib/node'
 import type { PlexGraph } from '../../../types'
@@ -286,6 +286,96 @@ describe('element opacity', () => {
     const view = mountView()
     const faded = view.findAll('path.plex__edge').map((path) => Number(path.attributes('opacity')))
     expect(faded.some((value) => value > 0 && value < 1)).toBe(true)
+  })
+})
+
+describe('the links of a hovered note', () => {
+  const frame = arrangePlex({
+    nodes: [
+      { id: 'focus', title: 'Start', relation: 'focus' },
+      { id: 'below', title: 'Below', relation: 'child' },
+      { id: 'aside', title: 'Aside', relation: 'jump' },
+    ],
+    edges: [
+      { from: 'focus', to: 'below' },
+      { from: 'focus', to: 'aside' },
+      { from: 'below', to: 'aside' },
+    ],
+  })
+
+  const createLinkedView = (props: Record<string, unknown> = {}) =>
+    mount(PlexView, {
+      attachTo: document.body,
+      props: {
+        ...NAMES_OPACITY,
+        frame,
+        viewport: VIEWPORT,
+        nodeSize: DEFAULT_OPTIONS.nodeSize,
+        highlightLinks: true,
+        ...props,
+      },
+    })
+
+  const note = (view: ReturnType<typeof createLinkedView>, title: string) =>
+    view.get(`[aria-label^="${title}"]`)
+
+  const raised = (view: ReturnType<typeof createLinkedView>) =>
+    view.findAll('.plex__raised .plex__edge').map((edge) => edge.attributes('d'))
+
+  const pathOf = (from: string, to: string) =>
+    createPath(frame.edges.find((edge) => edge.from === from && edge.to === to)!)
+
+  it('lifts every edge that joins the note and no other while the pointer is over it', async () => {
+    const view = createLinkedView()
+    expect(raised(view)).toStrictEqual([])
+
+    await note(view, 'Below').trigger('pointerenter')
+
+    expect(raised(view).sort()).toStrictEqual(
+      [pathOf('focus', 'below'), pathOf('below', 'aside')].sort(),
+    )
+  })
+
+  it('lifts the edges of another note when the pointer moves to it', async () => {
+    const view = createLinkedView()
+    await note(view, 'Below').trigger('pointerenter')
+    await note(view, 'Below').trigger('pointerleave')
+    await note(view, 'Aside').trigger('pointerenter')
+
+    expect(raised(view)).toHaveLength(2)
+    expect(raised(view)).toContain(pathOf('focus', 'aside'))
+    expect(raised(view)).not.toContain(pathOf('focus', 'below'))
+  })
+
+  it('lowers the edges when the pointer leaves the note', async () => {
+    const view = createLinkedView()
+    await note(view, 'Below').trigger('pointerenter')
+    await note(view, 'Below').trigger('pointerleave')
+
+    expect(raised(view)).toStrictEqual([])
+  })
+
+  it('lifts nothing while the setting is off', async () => {
+    const view = createLinkedView({ highlightLinks: false })
+    await note(view, 'Below').trigger('pointerenter')
+
+    expect(raised(view)).toStrictEqual([])
+  })
+
+  it('lifts nothing while a connection is dragged out of a note', async () => {
+    const view = createLinkedView({ gestureFrom: 'focus', gestureAt: { x: 0, y: 0 } })
+    await note(view, 'Below').trigger('pointerenter')
+
+    expect(raised(view)).toStrictEqual([])
+  })
+
+  it('lowers the edges when the note is removed under the pointer', async () => {
+    const view = createLinkedView()
+    await note(view, 'Below').trigger('pointerenter')
+
+    await view.setProps({ frame: arrangePlex(before) })
+
+    expect(view.find('.plex__raised').exists()).toBe(false)
   })
 })
 

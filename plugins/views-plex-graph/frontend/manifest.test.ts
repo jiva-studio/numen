@@ -205,6 +205,16 @@ describe('the look settings of the plex', () => {
     })
   })
 
+  it('declares Highlight links of a hovered note off by default', () => {
+    expect(settings.find((one) => one.key === 'highlightLinks')).toMatchObject({
+      type: 'boolean',
+      title: 'Highlight links of a hovered note',
+      default: false,
+      palette: true,
+      icon: 'waypoints',
+    })
+  })
+
   it('declares every number with its title, default, range and step', () => {
     for (const [key, value, min, max, step] of NUMBERS) {
       expect(
@@ -236,6 +246,7 @@ describe('the look settings of the plex', () => {
       'lineThickness',
       'outlineThickness',
       'lineCurvature',
+      'highlightLinks',
       'animationLength',
       'noteRoom',
     ])

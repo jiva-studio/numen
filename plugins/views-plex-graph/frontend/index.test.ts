@@ -57,8 +57,8 @@ describe('view-plex-graph plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    // The tab kind, the vault, the command, and one for each of the sixteen settings.
-    expect(ctx.plugin.subscriptions).toHaveLength(19)
+    // The tab kind, the vault, the command, and one for each of the seventeen settings.
+    expect(ctx.plugin.subscriptions).toHaveLength(20)
 
     ctx.dispose()
     expect(ctx.plugin.subscriptions).toHaveLength(0)
@@ -255,6 +255,7 @@ describe('the look of an open plex', () => {
   it('draws the plex with the values the settings hold when the tab opens', async () => {
     const { getPlex } = await openPlex({
       showPills: false,
+      highlightLinks: true,
       animationLength: 900,
       lineThickness: 3,
       outlineThickness: 1.5,
@@ -266,6 +267,7 @@ describe('the look of an open plex', () => {
     })
 
     expect(getPlex().props('showPills')).toBe(false)
+    expect(getPlex().props('highlightLinks')).toBe(true)
     expect(getPlex().props('duration')).toBe(900)
     expect(getPlex().props('lineWidth')).toBe(3)
     expect(getPlex().props('outlineWidth')).toBe(1.5)
@@ -281,6 +283,7 @@ describe('the look of an open plex', () => {
     const { getPlex } = await openPlex()
 
     expect(getPlex().props('showPills')).toBe(true)
+    expect(getPlex().props('highlightLinks')).toBe(false)
     expect(getPlex().props('duration')).toBe(420)
     expect(getPlex().props('lineWidth')).toBe(2)
     expect(getPlex().props('outlineWidth')).toBe(1)

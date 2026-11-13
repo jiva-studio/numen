@@ -12,6 +12,7 @@ describe('the keys of the plex look settings', () => {
   it('reads every look setting from its camelCase key', () => {
     const look = readLookFrom({
       showPills: false,
+      highlightLinks: true,
       pillPaddingSides: 4,
       pillPaddingEnds: 3.5,
       focusSize: 1.6,
@@ -26,6 +27,7 @@ describe('the keys of the plex look settings', () => {
     })
 
     expect(look.showPills.value).toBe(false)
+    expect(look.highlightLinks.value).toBe(true)
     expect(look.pillPaddingSides.value).toBe(4)
     expect(look.pillPaddingEnds.value).toBe(3.5)
     expect(look.focusSize.value).toBe(1.6)

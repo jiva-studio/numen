@@ -162,6 +162,7 @@ export interface PlexNamesSettings {
 export interface PlexLook {
   readonly references: Readonly<Ref<ReferenceMode>>
   readonly showPills: Readonly<Ref<boolean>>
+  readonly highlightLinks: Readonly<Ref<boolean>>
   readonly pillPaddingSides: Readonly<Ref<number>>
   readonly pillPaddingEnds: Readonly<Ref<number>>
   readonly focusSize: Readonly<Ref<number>>

@@ -22,6 +22,7 @@ export interface PlexProps {
   placement?: Placement
   showEdgeLabels?: boolean
   showPills?: boolean
+  highlightLinks?: boolean
   lineWidth?: number
   outlineWidth?: number
   duration?: number

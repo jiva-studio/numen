@@ -234,6 +234,7 @@ The settings of the plugin Plex Graph.
 | `lineThickness` | a number | width of the lines between notes, in pixels. From 0.5 to 4. |
 | `outlineThickness` | a number | width of the outline of a pill, in pixels. From 0.5 to 4. |
 | `lineCurvature` | a number | how far a line between two notes bends. 0 is a straight line. From 0 to 1. |
+| `highlightLinks` | yes or no | highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted. |
 | `animationLength` | a number | how long moving to another note takes, in milliseconds. 0 moves at once. From 0 to 2000. |
 | `noteRoom` | a number | extra empty space kept around every note. Larger is sparser. From 0 to 40. |
 

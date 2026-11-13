@@ -11,6 +11,9 @@ import type { PlexLook, ReferenceMode } from '../types'
 /** The key the manifest declares Pill background under. */
 const SHOW_PILLS = 'showPills'
 
+/** The key the manifest declares Highlight links of a hovered note under. */
+const HIGHLIGHT_LINKS = 'highlightLinks'
+
 /** The key the manifest declares References under. */
 const REFERENCES = 'references'
 
@@ -44,6 +47,9 @@ const parseReferences = (value: Unvalidated): ReferenceMode =>
 
 const parseShowPills = (value: Unvalidated): boolean => (typeof value === 'boolean' ? value : true)
 
+const parseHighlightLinks = (value: Unvalidated): boolean =>
+  typeof value === 'boolean' ? value : false
+
 const parseNumber = (value: Unvalidated, range: NumberRange): number =>
   typeof value === 'number' && Number.isFinite(value)
     ? Math.min(Math.max(value, range.min), range.max)
@@ -60,6 +66,7 @@ export function readLook(context: Pick<PluginContext, 'settings'>): PlexLook {
   return {
     ...numbers,
     showPills: followSetting(context, SHOW_PILLS, parseShowPills),
+    highlightLinks: followSetting(context, HIGHLIGHT_LINKS, parseHighlightLinks),
     references: followSetting(context, REFERENCES, parseReferences),
   }
 }

@@ -11,4 +11,4 @@ Explore your notes as an interactive visual map showing how ideas connect as par
 - **Navigate the map**: Click any connected note to move the focus there and follow the links from note to note.
 - **See what is beyond a note**: Under each related note, small grey names show the notes it is related to, its parents over it and the rest under it. Click a name to move the focus there. Turn them off, or choose how many a note shows, in the plugin settings.
 - **Open the plex from the title bar**: The plugin places its Open plex graph command in the title bar as a button.
-- **Change how the plex looks**: In the plugin settings, turn off the pill behind titles, change the padding of pills, the size of the note in the middle, how long moving to another note takes, the thickness and curvature of lines, and the room around each note.
+- **Change how the plex looks**: In the plugin settings, turn off the pill behind titles, change the padding of pills, the size of the note in the middle, how long moving to another note takes, the thickness and curvature of lines, highlight all lines of a note while the pointer is over it, and the room around each note.

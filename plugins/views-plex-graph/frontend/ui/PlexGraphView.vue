@@ -121,6 +121,7 @@ function onDismissLinkInspector() {
       :graph="graph!"
       :options="options"
       :show-pills="look.showPills.value"
+      :highlight-links="look.highlightLinks.value"
       :duration="look.animationLength.value"
       :line-width="look.lineThickness.value"
       :outline-width="look.outlineThickness.value"

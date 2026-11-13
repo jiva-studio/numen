@@ -431,6 +431,26 @@ describe('Pill background', () => {
   })
 })
 
+describe('Highlight links of a hovered note', () => {
+  const raised = (plex: ReturnType<typeof mountPlex>) => plex.findAll('.plex__raised .plex__edge')
+
+  it('lifts the edges of the note the pointer is over when it is on', async () => {
+    const plex = mountPlex({ graph: FAMILY, highlightLinks: true })
+
+    await plex.get('[aria-label^="Hydrology"]').trigger('pointerenter')
+
+    expect(raised(plex)).toHaveLength(1)
+  })
+
+  it('lifts nothing when it is off', async () => {
+    const plex = mountPlex({ graph: FAMILY })
+
+    await plex.get('[aria-label^="Hydrology"]').trigger('pointerenter')
+
+    expect(raised(plex)).toHaveLength(0)
+  })
+})
+
 describe('the pill padding and the focus size, measured', () => {
   const ONE_CHILD: PlexGraph = {
     nodes: [
