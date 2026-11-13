@@ -69,7 +69,13 @@ describe('the running plugins indicator', () => {
   })
 
   it('marks a healthy plugin with a dot and an unhealthy one with the text of its worst item', async () => {
-    const sick = { ...ATLAS, pluginId: 'org.example.maps', pluginName: 'Maps', health: 'error' as const, healthText: 'The map server does not answer' }
+    const sick = {
+      ...ATLAS,
+      pluginId: 'org.example.maps',
+      pluginName: 'Maps',
+      health: 'error' as const,
+      healthText: 'The map server does not answer',
+    }
     const wrapper = draw([ATLAS, sick])
     await wrapper.find('.plugin-stats__trigger').trigger('click')
     const [atlas, maps] = wrapper.findAll('.plugin-popover__health')

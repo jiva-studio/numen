@@ -6,17 +6,17 @@
   height: 100%;
   padding-inline: calc(var(--numen-inset) / 4);
   --popover-offset: 0.25rem;
-  --popover-width: 30rem;
+  --popover-width: 32rem;
   --popover-max-height: 32rem;
   --popover-edge-gap: 1rem;
   --popover-pad: 0.5rem;
   --popover-header-pad-inline: 0.75rem;
   --close-size: 1.25rem;
   --close-text: 0.75rem;
-  --row-gap: 0.75rem;
+  --column-gap: 0.5rem;
   --row-pad-block: 0.375rem;
   --row-pad-inline: 0.5rem;
-  --health-max: 8rem;
+  --health-max: 6rem;
   --state-width: 11ch;
   --detail-width: 16ch;
   --tag-gap: 0.25rem;
@@ -132,7 +132,7 @@
   grid-template-columns:
     minmax(0, 1fr) fit-content(var(--health-max)) var(--state-width)
     var(--detail-width);
-  column-gap: var(--row-gap);
+  column-gap: var(--column-gap);
   /* The ch of the time columns is of this size. */
   font-size: var(--numen-text-2);
   margin: 0;
