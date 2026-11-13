@@ -2,7 +2,8 @@
 import { expect, type Locator, type Page } from 'playwright/test'
 import { escapeRegExp } from '../rules.js'
 
-const SYSTEM = /^System/
+/** The pages of the window: Appearance holds how it looks, System the rest. */
+export type WindowPage = 'System' | 'Appearance'
 const BACK = /All plugins/i
 
 export class SettingsPage {
@@ -21,10 +22,10 @@ export class SettingsPage {
   }
 
   /** The panel on the page of the plugin, or on the page of the window when no plugin is named; the tab is open already. */
-  async showPage(plugin?: string): Promise<Locator> {
+  async showPage(plugin?: string, windowPage: WindowPage = 'System'): Promise<Locator> {
     const panel = this.getPanel()
     await expect(panel).toBeVisible()
-    const entry = plugin === undefined ? SYSTEM : new RegExp(escapeRegExp(plugin), 'i')
+    const entry = plugin === undefined ? new RegExp(`^${windowPage}`) : new RegExp(escapeRegExp(plugin), 'i')
     const button = panel.getByRole('button', { name: entry }).first()
     // A page of one plugin hides the list of the pages: the way to another is back to the list.
     if (!(await button.isVisible())) await panel.getByRole('button', { name: BACK }).click()

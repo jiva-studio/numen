@@ -2,11 +2,13 @@
 import { expect, type Locator } from 'playwright/test'
 import type { ApplicationDriver } from './application.js'
 import { ConnectionsPage } from './components/ConnectionsPage.js'
-import { SettingsPage } from './components/SettingsPage.js'
+import { SettingsPage, type WindowPage } from './components/SettingsPage.js'
 import { escapeRegExp } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 const OPEN_SETTINGS = 'Open settings'
+/** The settings of the window on the page Appearance; the others are on System. */
+const APPEARANCE_SETTINGS = new Set(['Theme', 'Light or dark', 'Interface size', 'Reading size'])
 
 export class SettingsDriver {
   constructor(
@@ -26,9 +28,14 @@ export class SettingsDriver {
   }
 
   /** The panel on the page of the plugin, or on the page of the window when no plugin is named. */
-  async showPage(plugin?: string): Promise<Locator> {
+  async showPage(plugin?: string, windowPage?: WindowPage): Promise<Locator> {
     await this.openTab()
-    return this.settings.showPage(plugin)
+    return this.settings.showPage(plugin, windowPage)
+  }
+
+  /** The panel on the page that holds the setting: that of the plugin, else the page of the window that has it. */
+  private async showPageOf(name: string, plugin?: string): Promise<Locator> {
+    return this.showPage(plugin, APPEARANCE_SETTINGS.has(name) ? 'Appearance' : 'System')
   }
 
   /** The panel on the page "Connections". */
@@ -44,7 +51,7 @@ export class SettingsDriver {
   }
 
   async set(name: string, value: string, plugin?: string): Promise<void> {
-    const row = await this.settings.requireRow(await this.showPage(plugin), name)
+    const row = await this.settings.requireRow(await this.showPageOf(name, plugin), name)
     const choice = this.settings.getChoice(row)
     if ((await choice.count()) === 0) {
       const input = this.settings.getTextInput(row)
@@ -60,7 +67,7 @@ export class SettingsDriver {
   }
 
   async expectValue(name: string, value: string, plugin?: string): Promise<void> {
-    const row = await this.settings.requireRow(await this.showPage(plugin), name)
+    const row = await this.settings.requireRow(await this.showPageOf(name, plugin), name)
     const choice = this.settings.getChoice(row)
     if ((await choice.count()) > 0) await expect(choice).toHaveText(value)
     else await expect(this.settings.getTextInput(row)).toHaveValue(value)
@@ -82,12 +89,12 @@ export class SettingsDriver {
   }
 
   async expectOption(name: string, option: string, has: boolean, plugin?: string): Promise<void> {
-    const row = await this.settings.requireRow(await this.showPage(plugin), name)
+    const row = await this.settings.requireRow(await this.showPageOf(name, plugin), name)
     await expect.poll(() => this.countOptions(row, option)).toBe(has ? 1 : 0)
   }
 
   async expectField(plugin: string, name: string, has: boolean): Promise<void> {
-    const row = this.settings.getRow(await this.showPage(plugin), name)
+    const row = this.settings.getRow(await this.showPageOf(name, plugin), name)
     await expect(row).toHaveCount(has ? 1 : 0)
   }
 }
