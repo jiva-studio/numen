@@ -12,14 +12,14 @@ import (
 // RedetectingSource opens the providers of source. A call through a detected connection that finds its
 // service unavailable makes the detection ask the plugin again in the background.
 type RedetectingSource struct {
-	source    connectionport.ProviderSource
-	detection *Detection
+	source connectionport.ProviderSource
+	detect func(pluginID string)
 }
 
 // NewRedetectingSource returns the source over source that reports unavailable detected connections to
 // detection.
 func NewRedetectingSource(source connectionport.ProviderSource, detection *Detection) *RedetectingSource {
-	return &RedetectingSource{source: source, detection: detection}
+	return &RedetectingSource{source: source, detect: detection.DetectInBackground}
 }
 
 // OpenProvider opens the provider of the plugin through the source it wraps.
@@ -28,13 +28,13 @@ func (s *RedetectingSource) OpenProvider(ctx context.Context, pluginID string) (
 	if err != nil {
 		return nil, nil, err
 	}
-	return &redetectingProvider{Provider: provider, pluginID: pluginID, detection: s.detection}, release, nil
+	return &redetectingProvider{Provider: provider, pluginID: pluginID, detect: s.detect}, release, nil
 }
 
 type redetectingProvider struct {
 	connectionport.Provider
-	pluginID  string
-	detection *Detection
+	pluginID string
+	detect   func(pluginID string)
 }
 
 func (p *redetectingProvider) Call(
@@ -53,7 +53,7 @@ func (p *redetectingProvider) Call(
 
 func (p *redetectingProvider) redetectIfUnavailable(connectionID string, err error) {
 	if connection.IsDetected(connectionID) && isUnavailable(err) {
-		p.detection.DetectInBackground(p.pluginID)
+		p.detect(p.pluginID)
 	}
 }
 
