@@ -21,7 +21,7 @@ export function requestNodes(nodes: readonly PlexNode[], options: PlexOptions): 
  * the first box that is not inside, and the rest is laid out again, since a
  * smaller group is placed differently. A group whose first box is outside is
  * halved instead, since its middle lies nearer the focus when it is smaller.
- * Every pass removes at least one node.
+ * Every pass removes at least one node. What was cut is then taken back, one note of each relation in turn, while the window still holds every box.
  *
  * A pass needs the first box outside of each relation and nothing after it, so
  * it stops once every relation has one or is fully placed.
@@ -36,11 +36,54 @@ export function admitNodes(
 ): NodesByRelation {
   let admitted = requested
   for (;;) {
-    const placed = lay(admitted, createStopWhenSettled(admitted, isInside))
-    const outside = new Set(placed.filter((node) => !isInside(node)).map((node) => node.id))
-    if (outside.size === 0) return admitted
+    const outside = findOutside(admitted, lay, isInside)
+    if (outside.size === 0) break
     admitted = cutBeforeOutside(admitted, outside)
   }
+  return refill(
+    admitted,
+    requested,
+    (nodesByRelation) => findOutside(nodesByRelation, lay, isInside).size === 0,
+  )
+}
+
+function findOutside(
+  nodesByRelation: NodesByRelation,
+  lay: (
+    nodesByRelation: NodesByRelation,
+    shouldStop: (node: PlacedNode) => boolean,
+  ) => readonly PlacedNode[],
+  isInside: (node: PlacedNode) => boolean,
+): ReadonlySet<string> {
+  const placed = lay(nodesByRelation, createStopWhenSettled(nodesByRelation, isInside))
+  return new Set(placed.filter((node) => !isInside(node)).map((node) => node.id))
+}
+
+/**
+ * A cut lays a smaller group closer to the focus than the group it was cut from, so notes that
+ * were cut may fit after all. Each relation takes its next note back, in turn, while the window
+ * still holds every box.
+ */
+function refill(
+  admitted: NodesByRelation,
+  requested: NodesByRelation,
+  isHeld: (nodesByRelation: NodesByRelation) => boolean,
+): NodesByRelation {
+  let current = admitted
+  for (let grew = true; grew;) {
+    grew = false
+    for (const relation of RELATION_NAMES) {
+      const all = requested[relation] ?? []
+      const have = current[relation]?.length ?? 0
+      if (have >= all.length) continue
+      const next = { ...current, [relation]: all.slice(0, have + 1) }
+      if (isHeld(next)) {
+        current = next
+        grew = true
+      }
+    }
+  }
+  return current
 }
 
 function createStopWhenSettled(
