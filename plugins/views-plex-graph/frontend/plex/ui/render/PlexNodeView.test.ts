@@ -268,6 +268,34 @@ describe('the handle of a node without its pill', () => {
   })
 })
 
+describe('the handle against the box it is drawn at', () => {
+  const getRightEdge = (node: ReturnType<typeof mount>, selector: string) => {
+    const box = node.get(selector)
+    return Number(box.attributes('x')) + Number(box.attributes('width'))
+  }
+  const getCentre = (node: ReturnType<typeof mount>) =>
+    Number(
+      /translate\((\S+) /.exec(node.get('.plex__handle-at').attributes('transform') ?? '')?.[1],
+    )
+
+  it.each([100, 144, 230])('sits on the right edge of a pill %i wide', async (width) => {
+    const node = await hover(mount(PlexNodeView, { props: { node: createNode({ width }) } }))
+
+    expect(getCentre(node)).toBe(getRightEdge(node, '.plex__box'))
+  })
+
+  it.each([100, 144, 230])(
+    'starts at the right edge of a box %i wide with no pill',
+    async (width) => {
+      const node = await hover(
+        mount(PlexNodeView, { props: { node: createNode({ width }), showPills: false } }),
+      )
+
+      expect(getCentre(node) - HANDLE_RADIUS).toBe(getRightEdge(node, '.plex__area'))
+    },
+  )
+})
+
 describe('the icon', () => {
   it('is whatever the slot was handed, and sits alongside the title', () => {
     const node = mount(PlexNodeView, {
