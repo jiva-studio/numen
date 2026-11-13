@@ -45,10 +45,16 @@ func (p *redetectingProvider) Call(
 		sendErr = send(data)
 		return sendErr
 	})
-	if err != nil && sendErr == nil && ctx.Err() == nil && connection.IsDetected(call.ConnectionID) && isUnavailable(err) {
-		p.detection.DetectInBackground(p.pluginID)
+	if err != nil && sendErr == nil && ctx.Err() == nil {
+		p.redetectIfUnavailable(call.ConnectionID, err)
 	}
 	return done, err
+}
+
+func (p *redetectingProvider) redetectIfUnavailable(connectionID string, err error) {
+	if connection.IsDetected(connectionID) && isUnavailable(err) {
+		p.detection.DetectInBackground(p.pluginID)
+	}
 }
 
 func isUnavailable(err error) bool {
