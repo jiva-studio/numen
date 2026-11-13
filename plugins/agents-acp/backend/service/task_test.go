@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
@@ -376,6 +377,37 @@ func TestAProgramThatIsMissingOrFailsIsTriedNext(t *testing.T) {
 		_, _, err := runTask(t.Context(), svc, call, &acp.TaskRequest{Prompt: "Which beds face north?"})
 		if _, isTryNext := connection.IsTryNext(err); !isTryNext {
 			t.Errorf("%s: RunTask = %v, want try the next", name, err)
+		}
+	}
+}
+
+// A row without a model leaves the session on the model the program is configured with.
+func TestATaskSetsTheModelOfTheRowAndNoneWithoutOne(t *testing.T) {
+	for _, behavior := range []string{"config", "legacy"} {
+		for _, model := range []string{"", "m2"} {
+			program, record := fakeProgram(t, behavior)
+			call := taskCall("acp", program)
+			call.Options = map[string]string{llm.OptionModel: model}
+
+			if _, _, err := runTask(t.Context(), newTestServer(t), call, &acp.TaskRequest{Prompt: "Which beds face north?"}); err != nil {
+				t.Fatalf("%s, model %q: %v", behavior, model, err)
+			}
+
+			observed := readRecord(t, record)
+			var sent []string
+			for _, message := range observed["session/set_config_option"] {
+				sent = append(sent, getField[string](t, getField[map[string]any](t, message, "params"), "value"))
+			}
+			for _, message := range observed["session/set_model"] {
+				sent = append(sent, getField[string](t, getField[map[string]any](t, message, "params"), "modelId"))
+			}
+			var want []string
+			if model != "" {
+				want = []string{model}
+			}
+			if !slices.Equal(sent, want) {
+				t.Errorf("%s, model %q: the session was set to %v, want %v", behavior, model, sent, want)
+			}
 		}
 	}
 }
