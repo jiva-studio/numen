@@ -767,28 +767,35 @@ export const RestingOnATitle: Story = {
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
     const adjacentNode = canvas.getByLabelText('日本語のノート, child')
 
-    const getWidth = (box: Element) =>
-      box.querySelector('.plex__box')!.getBoundingClientRect().width
-    const nodeWidth = getWidth(node)
+    const getBox = () =>
+      canvasElement.querySelector('.plex__lifted .plex__box') ?? node.querySelector('.plex__box')!
+    const getWidth = () => getBox().getBoundingClientRect().width
+    const getWords = () =>
+      (canvasElement.querySelector('.plex__lifted') ?? node).querySelector<HTMLElement>(
+        '.plex__title-text',
+      )!
+    const nodeWidth = getWidth()
     const adjacentX = adjacentNode.getBoundingClientRect().x
 
-    const words = node.querySelector<HTMLElement>('.plex__title-text')!
+    const words = getWords()
     await expect(words.scrollWidth).toBeGreaterThan(words.clientWidth)
 
     await userEvent.hover(node)
-    await waitFor(async () => await expect(getWidth(node)).toBeGreaterThan(nodeWidth), {
+    await waitFor(async () => await expect(getWidth()).toBeGreaterThan(nodeWidth), {
       timeout: 3000,
     })
     await waitFor(
-      async () => await expect(words.scrollWidth).toBeLessThanOrEqual(words.clientWidth),
+      async () => await expect(getWords().scrollWidth).toBeLessThanOrEqual(getWords().clientWidth),
     )
 
     await expect(adjacentNode.getBoundingClientRect().x).toBe(adjacentX)
-    const boxes = canvasElement.querySelectorAll('.plex__node')
-    await expect(boxes[boxes.length - 1]).toBe(node)
+    const lifted = canvasElement.querySelector('.plex__lifted')!
+    await expect(node.compareDocumentPosition(lifted) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
 
     await userEvent.unhover(node)
-    await waitFor(async () => await expect(getWidth(node)).toBe(nodeWidth))
+    await waitFor(async () => await expect(getWidth()).toBe(nodeWidth))
   },
 }
 
