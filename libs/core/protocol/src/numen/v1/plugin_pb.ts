@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { HealthSeverity } from "./health_pb.js";
+import { file_numen_v1_health } from "./health_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/plugin.proto.
  */
 export const file_numen_v1_plugin: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IjAKDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSEAoIcHJvdG9jb2wYAiABKAUiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSK7BAoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIuCgdvcHRpb25zGAcgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbhIQCgNtaW4YCCABKAFIAIgBARIQCgNtYXgYCSABKAFIAYgBARIRCgRzdGVwGAogASgBSAKIAQESNAoKb3B0aW9uc19ieRgMIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdPcHRpb25zQnkSLgoEd2hlbhgNIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdDb25kaXRpb24SDgoGYWNjZXB0GA4gAygJEgwKBGljb24YDyABKAkSEAoIbXVsdGlwbGUYECABKAgSDwoHcHJldmlldxgRIAEoCBIUCgxvcHRpb25zX2Zyb20YEiABKAkSNQoOYWN0aXZlX29wdGlvbnMYEyADKAsyHS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uEhAKCGlzX3Nob3duGBQgASgIEhIKCnZhbHVlX2pzb24YFSABKAkSEgoKb3BlcmF0aW9ucxgXIAMoCRIQCghkaXNjb3ZlchgYIAEoCEIGCgRfbWluQgYKBF9tYXhCBwoFX3N0ZXBKBAgWEBciUQoTUGx1Z2luU2V0dGluZ09wdGlvbhINCgV2YWx1ZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZkZXRhaWwYAyABKAkSDAoEd2hlbhgEIAEoCSJGChRQbHVnaW5TZXR0aW5nT3B0aW9ucxIuCgdvcHRpb25zGAEgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbiK5AQoWUGx1Z2luU2V0dGluZ09wdGlvbnNCeRIPCgdzZXR0aW5nGAEgASgJEj4KB29wdGlvbnMYAiADKAsyLS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uc0J5Lk9wdGlvbnNFbnRyeRpOCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEi0KBXZhbHVlGAIgASgLMh4ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbnM6AjgBIjUKFlBsdWdpblNldHRpbmdDb25kaXRpb24SDwoHc2V0dGluZxgBIAEoCRIKCgJpcxgCIAMoCSKVAwoKUGx1Z2luSW5mbxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB3ZlcnNpb24YAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSFAoMY2FwYWJpbGl0aWVzGAUgAygJEikKCHNldHRpbmdzGAYgAygLMhcubnVtZW4udjEuUGx1Z2luU2V0dGluZxIRCglpc19hY3RpdmUYByABKAgSEwoLcGVybWlzc2lvbnMYCCADKAkSFAoMaGFzX2Zyb250ZW5kGAsgASgIEicKB3JlYWRlcnMYDCADKAsyFi5udW1lbi52MS5QbHVnaW5SZWFkZXISNAoOc2V0dGluZ3Nfdmlld3MYDSADKAsyHC5udW1lbi52MS5QbHVnaW5TZXR0aW5nc1ZpZXcSEwoLaGFzX2JhY2tlbmQYDiABKAgSMwoNY29udHJpYnV0aW9ucxgPIAMoCzIcLm51bWVuLnYxLlBsdWdpbkNvbnRyaWJ1dGlvbhIZChFpc19vZmZfYnlfZGVmYXVsdBgQIAEoCEoECAoQCyJ1ChJQbHVnaW5Db250cmlidXRpb24SLgoEa2luZBgBIAEoDjIgLm51bWVuLnYxLlBsdWdpbkNvbnRyaWJ1dGlvbktpbmQSLwoFaXRlbXMYAiADKAsyIC5udW1lbi52MS5QbHVnaW5Db250cmlidXRpb25JdGVtIkQKFlBsdWdpbkNvbnRyaWJ1dGlvbkl0ZW0SDAoEdGV4dBgBIAEoCRIOCgZkZXRhaWwYAiABKAkSDAoEa2V5cxgDIAEoCSIvChJQbHVnaW5TZXR0aW5nc1ZpZXcSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkiLgoMUGx1Z2luUmVhZGVyEgoKAmlkGAEgASgJEhIKCmV4dGVuc2lvbnMYAiADKAkiEwoRR2V0UGx1Z2luc1JlcXVlc3QiOwoSR2V0UGx1Z2luc1Jlc3BvbnNlEiUKB3BsdWdpbnMYASADKAsyFC5udW1lbi52MS5QbHVnaW5JbmZvIiQKE0RlbGl2ZXJFdmVudFJlcXVlc3QSDQoFZXZlbnQYASABKAkiVQoURGVsaXZlckV2ZW50UmVzcG9uc2USLQoFZXJyb3IYASABKA4yHi5udW1lbi52MS5QbHVnaW5FdmVudEVycm9yQ29kZRIOCgZyZWFzb24YAiABKAkqqQcKFlBsdWdpbkNvbnRyaWJ1dGlvbktpbmQSKAokUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1VOU1BFQ0lGSUVEEAASJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0NPTU1BTkRTEAESKAokUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0tFWUJJTkRJTkdTEAISJgoiUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1RBQl9LSU5EUxADEiQKIFBMVUdJTl9DT05UUklCVVRJT05fS0lORF9SRUFERVJTEAQSJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0hBTkRMRVJTEAUSJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1RSSUdHRVJTEAYSJwojUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1RFWFRfS0lORFMQBxInCiNQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfTk9URV9UWVBFUxAIEiMKH1BMVUdJTl9DT05UUklCVVRJT05fS0lORF9USEVNRVMQCRIiCh5QTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfU0xPVFMQChImCiJQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfTElTVEVORVJTEAsSLgoqUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1ZJRVdfQ0FQQUJJTElUSUVTEAwSKgomUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0RST1BfSEFORExFUlMQDRIqCiZQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfRlJBTUVfT1JJR0lOUxAOEi0KKVBMVUdJTl9DT05UUklCVVRJT05fS0lORF9DT05ORUNUSU9OX1RZUEVTEA8SJwojUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX09QRVJBVElPTlMQEBIoCiRQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfUEVSTUlTU0lPTlMQERIpCiVQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfREVQRU5ERU5DSUVTEBISJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1NFUlZJQ0VTEBMSKQolUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0NBUEFCSUxJVElFUxAUEi4KKlBMVUdJTl9DT05UUklCVVRJT05fS0lORF9BQ1RJVkFUSU9OX0VWRU5UUxAVKmQKFFBsdWdpbkV2ZW50RXJyb3JDb2RlEicKI1BMVUdJTl9FVkVOVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIwofUExVR0lOX0VWRU5UX0VSUk9SX0NPREVfUkVGVVNFRBABMtgBChZQbHVnaW5MaWZlY3ljbGVTZXJ2aWNlEjUKBFBpbmcSFS5udW1lbi52MS5QaW5nUmVxdWVzdBoWLm51bWVuLnYxLlBpbmdSZXNwb25zZRJBCghTaHV0ZG93bhIZLm51bWVuLnYxLlNodXRkb3duUmVxdWVzdBoaLm51bWVuLnYxLlNodXRkb3duUmVzcG9uc2USRAoJQ29uZmlndXJlEhoubnVtZW4udjEuQ29uZmlndXJlUmVxdWVzdBobLm51bWVuLnYxLkNvbmZpZ3VyZVJlc3BvbnNlMlgKDVBsdWdpblNlcnZpY2USRwoKR2V0UGx1Z2lucxIbLm51bWVuLnYxLkdldFBsdWdpbnNSZXF1ZXN0GhwubnVtZW4udjEuR2V0UGx1Z2luc1Jlc3BvbnNlMmMKElBsdWdpbkV2ZW50U2VydmljZRJNCgxEZWxpdmVyRXZlbnQSHS5udW1lbi52MS5EZWxpdmVyRXZlbnRSZXF1ZXN0Gh4ubnVtZW4udjEuRGVsaXZlckV2ZW50UmVzcG9uc2VCRlpEZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL2NvcmUvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS9wbHVnaW4ucHJvdG8SCG51bWVuLnYxIg0KC1BpbmdSZXF1ZXN0IjAKDFBpbmdSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSEAoIcHJvdG9jb2wYAiABKAUiKgoPU2h1dGRvd25SZXF1ZXN0EhcKD3RpbWVvdXRfc2Vjb25kcxgBIAEoBSIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiqAEKEENvbmZpZ3VyZVJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhoKEmNvbmZpZ3VyYXRpb25fanNvbhgCIAEoCRI2CgZ2YWx1ZXMYAyADKAsyJi5udW1lbi52MS5Db25maWd1cmVSZXF1ZXN0LlZhbHVlc0VudHJ5Gi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMwoRQ29uZmlndXJlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSK7BAoNUGx1Z2luU2V0dGluZxILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIUCgxkZWZhdWx0X2pzb24YBSABKAkSDwoHcGFsZXR0ZRgGIAEoCBIuCgdvcHRpb25zGAcgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbhIQCgNtaW4YCCABKAFIAIgBARIQCgNtYXgYCSABKAFIAYgBARIRCgRzdGVwGAogASgBSAKIAQESNAoKb3B0aW9uc19ieRgMIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdPcHRpb25zQnkSLgoEd2hlbhgNIAEoCzIgLm51bWVuLnYxLlBsdWdpblNldHRpbmdDb25kaXRpb24SDgoGYWNjZXB0GA4gAygJEgwKBGljb24YDyABKAkSEAoIbXVsdGlwbGUYECABKAgSDwoHcHJldmlldxgRIAEoCBIUCgxvcHRpb25zX2Zyb20YEiABKAkSNQoOYWN0aXZlX29wdGlvbnMYEyADKAsyHS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uEhAKCGlzX3Nob3duGBQgASgIEhIKCnZhbHVlX2pzb24YFSABKAkSEgoKb3BlcmF0aW9ucxgXIAMoCRIQCghkaXNjb3ZlchgYIAEoCEIGCgRfbWluQgYKBF9tYXhCBwoFX3N0ZXBKBAgWEBciUQoTUGx1Z2luU2V0dGluZ09wdGlvbhINCgV2YWx1ZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZkZXRhaWwYAyABKAkSDAoEd2hlbhgEIAEoCSJGChRQbHVnaW5TZXR0aW5nT3B0aW9ucxIuCgdvcHRpb25zGAEgAygLMh0ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbiK5AQoWUGx1Z2luU2V0dGluZ09wdGlvbnNCeRIPCgdzZXR0aW5nGAEgASgJEj4KB29wdGlvbnMYAiADKAsyLS5udW1lbi52MS5QbHVnaW5TZXR0aW5nT3B0aW9uc0J5Lk9wdGlvbnNFbnRyeRpOCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEi0KBXZhbHVlGAIgASgLMh4ubnVtZW4udjEuUGx1Z2luU2V0dGluZ09wdGlvbnM6AjgBIjUKFlBsdWdpblNldHRpbmdDb25kaXRpb24SDwoHc2V0dGluZxgBIAEoCRIKCgJpcxgCIAMoCSKVAwoKUGx1Z2luSW5mbxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB3ZlcnNpb24YAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSFAoMY2FwYWJpbGl0aWVzGAUgAygJEikKCHNldHRpbmdzGAYgAygLMhcubnVtZW4udjEuUGx1Z2luU2V0dGluZxIRCglpc19hY3RpdmUYByABKAgSEwoLcGVybWlzc2lvbnMYCCADKAkSFAoMaGFzX2Zyb250ZW5kGAsgASgIEicKB3JlYWRlcnMYDCADKAsyFi5udW1lbi52MS5QbHVnaW5SZWFkZXISNAoOc2V0dGluZ3Nfdmlld3MYDSADKAsyHC5udW1lbi52MS5QbHVnaW5TZXR0aW5nc1ZpZXcSEwoLaGFzX2JhY2tlbmQYDiABKAgSMwoNY29udHJpYnV0aW9ucxgPIAMoCzIcLm51bWVuLnYxLlBsdWdpbkNvbnRyaWJ1dGlvbhIZChFpc19vZmZfYnlfZGVmYXVsdBgQIAEoCEoECAoQCyJ1ChJQbHVnaW5Db250cmlidXRpb24SLgoEa2luZBgBIAEoDjIgLm51bWVuLnYxLlBsdWdpbkNvbnRyaWJ1dGlvbktpbmQSLwoFaXRlbXMYAiADKAsyIC5udW1lbi52MS5QbHVnaW5Db250cmlidXRpb25JdGVtIkQKFlBsdWdpbkNvbnRyaWJ1dGlvbkl0ZW0SDAoEdGV4dBgBIAEoCRIOCgZkZXRhaWwYAiABKAkSDAoEa2V5cxgDIAEoCSIvChJQbHVnaW5TZXR0aW5nc1ZpZXcSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkiLgoMUGx1Z2luUmVhZGVyEgoKAmlkGAEgASgJEhIKCmV4dGVuc2lvbnMYAiADKAkiEwoRR2V0UGx1Z2luc1JlcXVlc3QiOwoSR2V0UGx1Z2luc1Jlc3BvbnNlEiUKB3BsdWdpbnMYASADKAsyFC5udW1lbi52MS5QbHVnaW5JbmZvIh0KG1dhdGNoUGx1Z2luUHJvY2Vzc2VzUmVxdWVzdCJKChxXYXRjaFBsdWdpblByb2Nlc3Nlc1Jlc3BvbnNlEioKCXByb2Nlc3NlcxgBIAMoCzIXLm51bWVuLnYxLlBsdWdpblByb2Nlc3Mi/QEKDVBsdWdpblByb2Nlc3MSEQoJcGx1Z2luX2lkGAEgASgJEhMKC3BsdWdpbl9uYW1lGAIgASgJEhoKEnN0YXJ0X3RpbWVfdW5peF9tcxgDIAEoAxIdChVsYXN0X3VzZV90aW1lX3VuaXhfbXMYBCABKAMSEwoLbGVhc2VfY291bnQYBSABKAUSFQoNaXNfaW5fcHJvY2VzcxgGIAEoCBIeChZpZGxlX3N0b3BfdGltZV91bml4X21zGAcgASgDEigKBmhlYWx0aBgIIAEoDjIYLm51bWVuLnYxLkhlYWx0aFNldmVyaXR5EhMKC2hlYWx0aF90ZXh0GAkgASgJIiQKE0RlbGl2ZXJFdmVudFJlcXVlc3QSDQoFZXZlbnQYASABKAkiVQoURGVsaXZlckV2ZW50UmVzcG9uc2USLQoFZXJyb3IYASABKA4yHi5udW1lbi52MS5QbHVnaW5FdmVudEVycm9yQ29kZRIOCgZyZWFzb24YAiABKAkqqQcKFlBsdWdpbkNvbnRyaWJ1dGlvbktpbmQSKAokUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1VOU1BFQ0lGSUVEEAASJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0NPTU1BTkRTEAESKAokUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0tFWUJJTkRJTkdTEAISJgoiUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1RBQl9LSU5EUxADEiQKIFBMVUdJTl9DT05UUklCVVRJT05fS0lORF9SRUFERVJTEAQSJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0hBTkRMRVJTEAUSJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1RSSUdHRVJTEAYSJwojUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1RFWFRfS0lORFMQBxInCiNQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfTk9URV9UWVBFUxAIEiMKH1BMVUdJTl9DT05UUklCVVRJT05fS0lORF9USEVNRVMQCRIiCh5QTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfU0xPVFMQChImCiJQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfTElTVEVORVJTEAsSLgoqUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1ZJRVdfQ0FQQUJJTElUSUVTEAwSKgomUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0RST1BfSEFORExFUlMQDRIqCiZQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfRlJBTUVfT1JJR0lOUxAOEi0KKVBMVUdJTl9DT05UUklCVVRJT05fS0lORF9DT05ORUNUSU9OX1RZUEVTEA8SJwojUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX09QRVJBVElPTlMQEBIoCiRQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfUEVSTUlTU0lPTlMQERIpCiVQTFVHSU5fQ09OVFJJQlVUSU9OX0tJTkRfREVQRU5ERU5DSUVTEBISJQohUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX1NFUlZJQ0VTEBMSKQolUExVR0lOX0NPTlRSSUJVVElPTl9LSU5EX0NBUEFCSUxJVElFUxAUEi4KKlBMVUdJTl9DT05UUklCVVRJT05fS0lORF9BQ1RJVkFUSU9OX0VWRU5UUxAVKmQKFFBsdWdpbkV2ZW50RXJyb3JDb2RlEicKI1BMVUdJTl9FVkVOVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIwofUExVR0lOX0VWRU5UX0VSUk9SX0NPREVfUkVGVVNFRBABMtgBChZQbHVnaW5MaWZlY3ljbGVTZXJ2aWNlEjUKBFBpbmcSFS5udW1lbi52MS5QaW5nUmVxdWVzdBoWLm51bWVuLnYxLlBpbmdSZXNwb25zZRJBCghTaHV0ZG93bhIZLm51bWVuLnYxLlNodXRkb3duUmVxdWVzdBoaLm51bWVuLnYxLlNodXRkb3duUmVzcG9uc2USRAoJQ29uZmlndXJlEhoubnVtZW4udjEuQ29uZmlndXJlUmVxdWVzdBobLm51bWVuLnYxLkNvbmZpZ3VyZVJlc3BvbnNlMsEBCg1QbHVnaW5TZXJ2aWNlEkcKCkdldFBsdWdpbnMSGy5udW1lbi52MS5HZXRQbHVnaW5zUmVxdWVzdBocLm51bWVuLnYxLkdldFBsdWdpbnNSZXNwb25zZRJnChRXYXRjaFBsdWdpblByb2Nlc3NlcxIlLm51bWVuLnYxLldhdGNoUGx1Z2luUHJvY2Vzc2VzUmVxdWVzdBomLm51bWVuLnYxLldhdGNoUGx1Z2luUHJvY2Vzc2VzUmVzcG9uc2UwATJjChJQbHVnaW5FdmVudFNlcnZpY2USTQoMRGVsaXZlckV2ZW50Eh0ubnVtZW4udjEuRGVsaXZlckV2ZW50UmVxdWVzdBoeLm51bWVuLnYxLkRlbGl2ZXJFdmVudFJlc3BvbnNlQkZaRGdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9jb3JlL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_health]);
 
 /**
  * @generated from message numen.v1.PingRequest
@@ -643,6 +645,119 @@ export const GetPluginsResponseSchema: GenMessage<GetPluginsResponse> = /*@__PUR
   messageDesc(file_numen_v1_plugin, 17);
 
 /**
+ * @generated from message numen.v1.WatchPluginProcessesRequest
+ */
+export type WatchPluginProcessesRequest = Message<"numen.v1.WatchPluginProcessesRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.WatchPluginProcessesRequest.
+ * Use `create(WatchPluginProcessesRequestSchema)` to create a new message.
+ */
+export const WatchPluginProcessesRequestSchema: GenMessage<WatchPluginProcessesRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugin, 18);
+
+/**
+ * @generated from message numen.v1.WatchPluginProcessesResponse
+ */
+export type WatchPluginProcessesResponse = Message<"numen.v1.WatchPluginProcessesResponse"> & {
+  /**
+   * The processes that run, in the order of the plugin ids.
+   *
+   * @generated from field: repeated numen.v1.PluginProcess processes = 1;
+   */
+  processes: PluginProcess[];
+};
+
+/**
+ * Describes the message numen.v1.WatchPluginProcessesResponse.
+ * Use `create(WatchPluginProcessesResponseSchema)` to create a new message.
+ */
+export const WatchPluginProcessesResponseSchema: GenMessage<WatchPluginProcessesResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugin, 19);
+
+/**
+ * PluginProcess is the process of one plugin that runs.
+ *
+ * @generated from message numen.v1.PluginProcess
+ */
+export type PluginProcess = Message<"numen.v1.PluginProcess"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * The name the manifest gives the plugin. Empty for a plugin the core no
+   * longer lists.
+   *
+   * @generated from field: string plugin_name = 2;
+   */
+  pluginName: string;
+
+  /**
+   * When the process started, in milliseconds since the Unix epoch.
+   *
+   * @generated from field: int64 start_time_unix_ms = 3;
+   */
+  startTimeUnixMs: bigint;
+
+  /**
+   * When a lease on the process was last taken or returned, in milliseconds
+   * since the Unix epoch.
+   *
+   * @generated from field: int64 last_use_time_unix_ms = 4;
+   */
+  lastUseTimeUnixMs: bigint;
+
+  /**
+   * The leases the process holds: open calls, open streams and reported work.
+   *
+   * @generated from field: int32 lease_count = 5;
+   */
+  leaseCount: number;
+
+  /**
+   * Whether the plugin is served inside the core rather than by a process of
+   * its own.
+   *
+   * @generated from field: bool is_in_process = 6;
+   */
+  isInProcess: boolean;
+
+  /**
+   * From when the core stops the process for idleness, in milliseconds since
+   * the Unix epoch; the core checks every 30 seconds. Zero while the process
+   * holds a lease.
+   *
+   * @generated from field: int64 idle_stop_time_unix_ms = 7;
+   */
+  idleStopTimeUnixMs: bigint;
+
+  /**
+   * The severity of the worst health item of the plugin: HEALTH_SEVERITY_OK
+   * where it has none.
+   *
+   * @generated from field: numen.v1.HealthSeverity health = 8;
+   */
+  health: HealthSeverity;
+
+  /**
+   * The text of that item. Empty where it has none.
+   *
+   * @generated from field: string health_text = 9;
+   */
+  healthText: string;
+};
+
+/**
+ * Describes the message numen.v1.PluginProcess.
+ * Use `create(PluginProcessSchema)` to create a new message.
+ */
+export const PluginProcessSchema: GenMessage<PluginProcess> = /*@__PURE__*/
+  messageDesc(file_numen_v1_plugin, 20);
+
+/**
  * @generated from message numen.v1.DeliverEventRequest
  */
 export type DeliverEventRequest = Message<"numen.v1.DeliverEventRequest"> & {
@@ -659,7 +774,7 @@ export type DeliverEventRequest = Message<"numen.v1.DeliverEventRequest"> & {
  * Use `create(DeliverEventRequestSchema)` to create a new message.
  */
 export const DeliverEventRequestSchema: GenMessage<DeliverEventRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 18);
+  messageDesc(file_numen_v1_plugin, 21);
 
 /**
  * @generated from message numen.v1.DeliverEventResponse
@@ -681,7 +796,7 @@ export type DeliverEventResponse = Message<"numen.v1.DeliverEventResponse"> & {
  * Use `create(DeliverEventResponseSchema)` to create a new message.
  */
 export const DeliverEventResponseSchema: GenMessage<DeliverEventResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_plugin, 19);
+  messageDesc(file_numen_v1_plugin, 22);
 
 /**
  * PluginContributionKind is a section of a manifest, named after its key. The zero value means
@@ -879,6 +994,17 @@ export const PluginService: GenService<{
     methodKind: "unary";
     input: typeof GetPluginsRequestSchema;
     output: typeof GetPluginsResponseSchema;
+  },
+  /**
+   * WatchPluginProcesses sends the plugin processes that run at once and again
+   * on every change, at most once a second, for as long as the caller listens.
+   *
+   * @generated from rpc numen.v1.PluginService.WatchPluginProcesses
+   */
+  watchPluginProcesses: {
+    methodKind: "server_streaming";
+    input: typeof WatchPluginProcessesRequestSchema;
+    output: typeof WatchPluginProcessesResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_plugin, 1);

@@ -38,6 +38,10 @@ const (
 	// the tabs it has open.
 	PermissionWindowFocus = "window:focus"
 
+	// PermissionPluginsRead allows reading which plugins run, since when, how long each has been idle,
+	// when the host stops it for idleness, and its worst health item.
+	PermissionPluginsRead = "plugins:read"
+
 	// PermissionNetworkAlias is the accepted short spelling of PermissionLinkOpen.
 	PermissionNetworkAlias = "network"
 
@@ -48,7 +52,7 @@ const (
 func PluginPermissions() []string {
 	return []string{
 		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionLinkOpen,
-		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus,
+		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus, PermissionPluginsRead,
 	}
 }
 

@@ -4,6 +4,7 @@ import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
+import type { ProcessHost } from './processes'
 import type { BackgroundTaskHost } from './backgroundTasks'
 import type { HealthHost } from './health'
 import type { CommandItem, CommandsHost, CommandTarget } from './commands'
@@ -298,11 +299,12 @@ export interface PluginUi {
   ): MountedView
 }
 
-// PluginWork is the connections and the background work of the core.
+// PluginWork is the connections and the background work of the core, and the plugins that run.
 export interface PluginWork {
   readonly connections?: ConnectionHost
   readonly tasks?: TaskHost
   readonly backgroundTasks?: BackgroundTaskHost
+  readonly processes?: ProcessHost
 }
 
 // PluginContext provides registration and host services to an activated plugin, in parts.

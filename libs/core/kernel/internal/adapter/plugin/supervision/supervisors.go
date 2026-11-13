@@ -26,6 +26,9 @@ type Supervisors struct {
 	clients       *transport.Clients
 	report        func(error)
 	onDrop        func(pluginID string)
+
+	watchMu  sync.Mutex
+	watchers []chan struct{}
 }
 
 // NewSupervisors returns the supervisors of a host that has no plugin. report receives the problems
@@ -51,6 +54,7 @@ func (s *Supervisors) Register(p manifest.Discovered) *lifecycle.Supervisor {
 	if !exists {
 		sup = lifecycle.New(s.report)
 		sup.SetOnExit(func() { s.Drop(id) })
+		sup.SetOnChange(s.notifyChange)
 		s.byPlugin[id] = sup
 	}
 	sup.Permissions.Set(p.Manifest.Permissions)
@@ -59,6 +63,7 @@ func (s *Supervisors) Register(p manifest.Discovered) *lifecycle.Supervisor {
 
 // Put sets the supervisor of the plugin to one made elsewhere.
 func (s *Supervisors) Put(pluginID string, sup *lifecycle.Supervisor) {
+	sup.SetOnChange(s.notifyChange)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.byPlugin[pluginID] = sup

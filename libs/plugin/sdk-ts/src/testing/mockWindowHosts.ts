@@ -1,5 +1,5 @@
 /**
- * Controllable stand-ins of the commands, the slots, the vaults, the window, the background work and the health items of a window,
+ * Controllable stand-ins of the commands, the slots, the vaults, the window, the background work, the health items and the plugins that run of a window,
  * for the unit tests of the plugins that draw them.
  */
 import type { Disposable } from '../types'
@@ -8,6 +8,7 @@ import type { SlotHost, SlotItem, SlotPlace } from '../slots'
 import type { VaultsHost, VaultsState, WindowHost, WindowState } from '../window'
 import type { BackgroundTask, BackgroundTaskHost } from '../backgroundTasks'
 import type { HealthHost, HealthItem } from '../health'
+import type { PluginProcess, ProcessHost } from '../processes'
 
 function notifyAll<T>(handlers: Set<(value: T) => void>, value: T): void {
   for (const handler of handlers) handler(value)
@@ -214,5 +215,24 @@ export function createMockHealthHost(): MockHealthHost {
       return Promise.resolve()
     },
     getItems: () => [...items.values()],
+  }
+}
+
+// MockProcessHost is a ProcessHost whose plugins a test sets, and whose watchers it counts.
+export interface MockProcessHost extends ProcessHost {
+  setProcesses(processes: readonly PluginProcess[]): void
+  countWatchers(): number
+}
+
+export function createMockProcessHost(initial: readonly PluginProcess[] = []): MockProcessHost {
+  let processes = initial
+  const watchers = new Set<(value: readonly PluginProcess[]) => void>()
+  return {
+    watch: (handler) => watchWith(watchers, handler, processes),
+    setProcesses: (next) => {
+      processes = next
+      notifyAll(watchers, processes)
+    },
+    countWatchers: () => watchers.size,
   }
 }

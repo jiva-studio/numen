@@ -29,6 +29,8 @@ const WRITE = 'vault:write'
 const MANAGE = 'vault:manage'
 /** Consent to open external links; it does not restrict the requests a plugin makes itself, as plugins are trusted code. */
 const LINK_OPEN = 'link:open'
+/** Reading which plugins run; nothing of a vault. */
+const PLUGINS_READ = 'plugins:read'
 /** A model call uses the connections the plugin names in its own settings; the person granted them there. */
 const CONNECTION_GRANT = `the rows of the plugin's own settings are the grant`
 
@@ -263,6 +265,9 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       retry: requirePermissions(WRITE),
       dismiss: requireNothing('it takes a task out of the list the user sees'),
       runAction: requireNothing('it runs the fix the core checked when the item was reported'),
+    },
+    processes: {
+      watch: requirePermissions(PLUGINS_READ),
     },
   },
   health: {

@@ -44,20 +44,62 @@ type Supervisor struct {
 	process        *os.Process
 	inProcess      bool
 	teardownBegun  bool
+	startTime      time.Time
 	lastActiveTime time.Time
 	activeRefCount int
 	exitCh         chan struct{}
 	onExit         func()
+	onChange       func()
 	activatingCh   chan struct{}
 	activationErr  error
 	rpcShutdown    func(ctx context.Context) error
 	onError        func(error)
 }
 
+// Usage is what a running plugin holds: when it started, when a lease was last taken or returned, the
+// leases it holds, whether it is served inside the host, and whether it is idle.
+type Usage struct {
+	StartTime      time.Time
+	LastActiveTime time.Time
+	LeaseCount     int
+	IsInProcess    bool
+	IsIdle         bool
+}
+
 // New creates an idle supervisor for a plugin. onError receives the errors the supervisor meets outside
 // a call, such as a failed wait for the process; it may be nil.
 func New(onError func(error)) *Supervisor {
 	return &Supervisor{Permissions: security.NewPermissions(), state: StateDormant, onError: onError}
+}
+
+// SetOnChange sets the callback invoked, under the lock of the supervisor, each time the plugin starts,
+// stops, or takes or returns a lease. It must return at once and must not call the supervisor.
+func (s *Supervisor) SetOnChange(fn func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.onChange = fn
+}
+
+func (s *Supervisor) notifyLocked() {
+	if s.onChange != nil {
+		s.onChange()
+	}
+}
+
+// GetUsage returns what the plugin holds, and false where it is not running.
+func (s *Supervisor) GetUsage() (Usage, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !isRunning(s) {
+		return Usage{}, false
+	}
+	return Usage{
+		StartTime:      s.startTime,
+		LastActiveTime: s.lastActiveTime,
+		LeaseCount:     s.activeRefCount,
+		IsInProcess:    s.inProcess,
+		IsIdle:         s.state == StateIdle && s.activeRefCount == 0,
+	}, true
 }
 
 // SetOnExit sets a callback invoked when the plugin process terminates, before the supervisor goes Dormant.
@@ -123,6 +165,7 @@ func (s *Supervisor) SetDormant(err error) {
 	s.activeRefCount = 0
 	s.activationErr = err
 	closeActivationSignal(&s.activatingCh)
+	s.notifyLocked()
 }
 
 func closeActivationSignal(ch *chan struct{}) {
@@ -142,11 +185,13 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 	s.process = p
 	s.teardownBegun = false
 	s.state = StateActive
+	s.startTime = now
 	s.lastActiveTime = now
 	s.activationErr = nil
 	closeActivationSignal(&s.activatingCh)
 	exitCh := make(chan struct{})
 	s.exitCh = exitCh
+	s.notifyLocked()
 
 	go func() {
 		_, waitErr := p.Wait()
@@ -171,6 +216,7 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 			s.teardownBegun = false
 			s.state = StateDormant
 			s.activeRefCount = 0
+			s.notifyLocked()
 		}
 		s.mu.Unlock()
 		close(exitCh)
@@ -186,8 +232,10 @@ func (s *Supervisor) ActivateInProcess(now time.Time) {
 	s.state = StateActive
 	s.activeRefCount = 1
 	s.lastActiveTime = now
+	s.startTime = now
 	s.activationErr = nil
 	closeActivationSignal(&s.activatingCh)
+	s.notifyLocked()
 }
 
 func isRunning(s *Supervisor) bool {
@@ -207,6 +255,7 @@ func (s *Supervisor) Acquire(now time.Time) bool {
 	s.activeRefCount++
 	s.lastActiveTime = now
 	s.state = StateActive
+	s.notifyLocked()
 	return true
 }
 
@@ -224,6 +273,7 @@ func (s *Supervisor) Release(now time.Time) {
 	if s.activeRefCount == 0 {
 		s.state = StateIdle
 	}
+	s.notifyLocked()
 }
 
 // BeginDeactivation moves a plugin that has been idle for the threshold to StateDeactivating and reports whether it did.
@@ -234,6 +284,7 @@ func (s *Supervisor) BeginDeactivation(threshold time.Duration, now time.Time) b
 		return false
 	}
 	s.state = StateDeactivating
+	s.notifyLocked()
 	return true
 }
 
@@ -280,6 +331,7 @@ func (s *Supervisor) Teardown(
 	s.state = StateDeactivating
 	s.teardownBegun = true
 	closeActivationSignal(&s.activatingCh)
+	s.notifyLocked()
 	proc := s.process
 	exitCh := s.exitCh
 	if rpcShutdown == nil {
@@ -320,6 +372,7 @@ func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ct
 	s.teardownBegun = false
 	s.activeRefCount = 0
 	closeActivationSignal(&s.activatingCh)
+	s.notifyLocked()
 	if rpcShutdown != nil {
 		shutdownErr = rpcShutdown(ctx)
 	}
@@ -361,6 +414,7 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 		s.activeRefCount = 0
 		s.activationErr = nil
 		closeActivationSignal(&s.activatingCh)
+		s.notifyLocked()
 	}
 }
 
