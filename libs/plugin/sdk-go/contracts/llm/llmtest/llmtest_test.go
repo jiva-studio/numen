@@ -82,7 +82,7 @@ func TestTheCallerEndsWithTheErrorsOfTheCore(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			_, err := llm.Complete(t.Context(), llmtest.NewCaller(one.provider, call), &llm.CompleteRequest{}, connection.PriorityBackground)
 
-			if err == nil || err.Error() != one.want.Error() || reflect.TypeOf(err) != reflect.TypeOf(one.want) {
+			if got := getCallError(err); got == nil || got.Error() != one.want.Error() || reflect.TypeOf(got) != reflect.TypeOf(one.want) {
 				t.Errorf("Complete = %v, want %v", err, one.want)
 			}
 		})
@@ -134,4 +134,12 @@ func TestAnOperationWithoutFramesThatSendsOneGetsAnError(t *testing.T) {
 	if err == nil || errors.Is(err, sendErr) {
 		t.Errorf("Complete = %v, want the error of the send", err)
 	}
+}
+
+// getCallError returns the error of the call from the error the client joined with the error of Close.
+func getCallError(err error) error {
+	if joined, isJoined := err.(interface{ Unwrap() []error }); isJoined && len(joined.Unwrap()) > 0 {
+		return joined.Unwrap()[0]
+	}
+	return err
 }
