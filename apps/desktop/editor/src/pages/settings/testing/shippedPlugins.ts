@@ -5,6 +5,7 @@
  */
 import type { CatalogEntry } from '@/entities/plugin'
 import type { PluginInfo } from '@/entities/settings'
+import type { JsonObject, JsonValue } from '@/shared/api/json'
 import type {
   PluginContribution,
   PluginContributionItem,
@@ -13,22 +14,9 @@ import type {
   PluginSettingOption,
 } from '@numen/plugin-manager'
 
-type Entry = Readonly<Record<string, unknown>>
+type Entry = JsonObject
 
-interface ManifestSetting extends Entry {
-  readonly key: string
-  readonly type: PluginSettingInfo['type']
-  readonly title: string
-  readonly description?: string
-  readonly default?: PluginSettingInfo['default']
-  readonly options?: readonly ManifestOption[]
-  readonly optionsBy?: {
-    readonly setting: string
-    readonly options: Readonly<Record<string, readonly ManifestOption[]>>
-  }
-}
-
-interface ManifestOptionEntry {
+type ManifestOptionEntry = {
   readonly value: string | number
   readonly title?: string
   readonly detail?: string
@@ -37,13 +25,26 @@ interface ManifestOptionEntry {
 
 type ManifestOption = string | number | ManifestOptionEntry
 
-interface Manifest {
+type ManifestSetting = Entry & {
+  readonly key: string
+  readonly type: PluginSettingInfo['type']
+  readonly title: string
+  readonly description?: string
+  readonly default?: JsonValue
+  readonly options?: readonly ManifestOption[]
+  readonly optionsBy?: {
+    readonly setting: string
+    readonly options: Readonly<Record<string, readonly ManifestOption[]>>
+  }
+}
+
+type Manifest = Entry & {
   readonly id: string
   readonly name: string
   readonly version: string
   readonly description?: string
-  readonly frontend?: unknown
-  readonly backend?: unknown
+  readonly frontend?: JsonValue
+  readonly backend?: JsonValue
   readonly capabilities?: readonly string[]
   readonly settings?: readonly ManifestSetting[]
   readonly settingsViews?: PluginInfo['settingsViews']
@@ -56,15 +57,17 @@ interface Manifest {
   }
 }
 
+type Field = JsonValue | undefined
+
 const item = (text: string, detail = '', keys = ''): PluginContributionItem => ({
   text,
   detail,
   keys,
 })
 
-const getText = (value: unknown): string => (typeof value === 'string' ? value : '')
+const getText = (value: Field): string => (typeof value === 'string' ? value : '')
 
-const titled = (title: unknown, id: unknown): PluginContributionItem =>
+const titled = (title: Field, id: Field): PluginContributionItem =>
   item(getText(title) || getText(id), getText(id))
 
 const listCommands = (contributes: NonNullable<Manifest['contributes']>) => {
@@ -91,13 +94,13 @@ const getSlotTarget = (one: Entry): string =>
 const getListenerPort = (one: Entry): string =>
   getText(one.portSetting) || (one.port ? String(one.port) : '')
 
-const getList = (value: unknown): readonly string[] =>
+const getList = (value: Field): readonly string[] =>
   Array.isArray(value) ? value.map(String) : []
 
-const asEntry = (value: unknown): Entry =>
-  typeof value === 'object' && value !== null ? (value as Entry) : {}
+const asEntry = (value: Field): Entry =>
+  typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Entry) : {}
 
-type ToItem = (one: unknown) => PluginContributionItem
+type ToItem = (one: JsonValue) => PluginContributionItem
 
 /** An item of an entry that is an object, read through `read`. */
 const fromEntry =
@@ -136,9 +139,9 @@ const MANIFEST_KINDS: readonly (readonly [PluginContributionKind, ToItem])[] = [
 ]
 
 /** The list a source holds under a key, each entry made an item; a list it does not hold is empty. */
-const listItems = (source: object, key: string, toItem: ToItem) => {
-  const list = asEntry(source)[key]
-  return Array.isArray(list) ? list.map(toItem) : []
+const listItems = (source: Entry, key: string, toItem: ToItem) => {
+  const list = source[key]
+  return Array.isArray(list) ? list.map((one: JsonValue) => toItem(one)) : []
 }
 
 const listContributions = (manifest: Manifest): readonly PluginContribution[] => {

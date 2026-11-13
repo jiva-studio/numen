@@ -55,11 +55,7 @@ function onBack(): void {
     />
 
     <PluginSettingsCard>
-      <PluginFields
-        :settings="props.settings"
-        :host="props.manager"
-        :plugin="owner"
-      />
+      <PluginFields :settings="props.settings" :host="props.manager" :plugin="owner" />
     </PluginSettingsCard>
 
     <p v-if="props.section === 'system'" class="system-detail__file">{{ props.settings.file.value || words.file }}</p>

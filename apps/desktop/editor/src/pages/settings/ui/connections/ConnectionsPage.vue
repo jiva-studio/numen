@@ -69,16 +69,17 @@ function onConfirmDelete(): void {
   })
 }
 
+function onCancelDelete(): void {
+  deletion.cancel()
+  deleteOpener?.focus()
+}
+
+/* -------------------------------- Helpers --------------------------------- */
 /** Focuses the row that took the place of the deleted one, the row before it, or Add. */
 function focusAfterDelete(at: number): void {
   const rows = Array.from(list.value?.children ?? [])
   const element = rows[at] ?? rows[at - 1] ?? addButton.value?.$el
   if (element instanceof HTMLElement) element.focus()
-}
-
-function onCancelDelete(): void {
-  deletion.cancel()
-  deleteOpener?.focus()
 }
 </script>
 
