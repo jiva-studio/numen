@@ -1,10 +1,13 @@
 package plugin_test
 
 import (
+	"log/slog"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
 func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Services, hostendpoint.Callers) {
@@ -13,7 +16,7 @@ func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Se
 		Identity: host.Activation, Leases: host.Activation,
 		Lent: services,
 		Tools: func() hostendpoint.PluginTools {
-			return toolbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), host.Storage)
+			return toolbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), host.Storage, testsupport.NewClock(), slog.New(slog.DiscardHandler))
 		},
 	}
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(address, callers))
