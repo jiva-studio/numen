@@ -259,10 +259,13 @@ export class PlexDriver {
     return inspector
   }
 
+  /** The row of the record that the note writes, taken by its place: a click on the arrow of the row moves the record to the other note, and the row stays where it is. */
   private async getRow(inspector: Locator, from: string): Promise<Locator> {
-    const row = inspector.locator(`.plex-link-row[data-from=${JSON.stringify(from)}]`)
-    await expect(row, `the link inspector has no row of the link from "${from}"`).toHaveCount(1)
-    return row
+    const rows = inspector.locator('.plex-link-row')
+    const authors = await rows.evaluateAll((all) => all.map((row) => row.getAttribute('data-from')))
+    const index = authors.indexOf(from)
+    if (index < 0) throw new Error(`the link inspector has no row of the link from "${from}": its rows are from ${authors.join(' and ') || 'nobody'}`)
+    return rows.nth(index)
   }
 
   private async setArrow(row: Locator, arrow: string): Promise<void> {
