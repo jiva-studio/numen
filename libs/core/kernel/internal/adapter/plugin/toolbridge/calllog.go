@@ -30,6 +30,7 @@ func logCall(ctx context.Context, logger *slog.Logger, record callRecord) {
 		slog.String("caller", record.callerID),
 		slog.String("tool", record.call.GetName()),
 		slog.String("plugin", record.pluginID),
+		slog.String("connection", record.call.GetConnectionId()),
 		slog.String("vault", record.call.GetVaultId()),
 		getArgumentsAttr(record.call.GetArguments()),
 		slog.Duration("duration", record.duration),

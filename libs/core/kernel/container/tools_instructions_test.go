@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"net/http"
 	"slices"
 	"testing"
@@ -85,7 +86,7 @@ func openToolsOfHost(t *testing.T, host *container.PluginRoles) numenv1connect.P
 	if err != nil {
 		t.Fatal(err)
 	}
-	caller, err := host.Activation.EnsureActive(t.Context(), mcpPlugin)
+	caller, err := host.Activation.EnsureActive(t.Context(), mcpPlugin, plugindomain.Holder{Who: plugindomain.WhoWindow})
 	if err != nil {
 		t.Fatal(err)
 	}

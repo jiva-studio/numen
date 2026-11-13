@@ -86,7 +86,7 @@ func (r *Runner) RunTask(
 func (r *Runner) runTurn(
 	ctx context.Context, conv *conversation, call connection.Call, request *contract.TaskRequest, send func(*contract.TaskFrame) error,
 ) (*contract.TaskDone, bool, error) {
-	conv.setScope(request.GetToolContext(), request.GetVaultId())
+	conv.setScope(request.GetToolContext(), request.GetVaultId(), call.ConnectionID)
 	session := conv.session
 	if err := session.SetModel(ctx, call.Options[llm.OptionModel]); err != nil {
 		return nil, true, readFailure(ctx, err)

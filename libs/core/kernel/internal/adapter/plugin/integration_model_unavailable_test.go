@@ -3,6 +3,7 @@ package plugin_test
 import (
 	"context"
 	"errors"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -39,18 +40,20 @@ func (h *stubModelHost) GetPlugin(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.stub"}}, true
 }
 
-func (h *stubModelHost) EnsureActive(context.Context, string) (transport.Endpoint, error) {
+func (h *stubModelHost) EnsureActive(context.Context, string, plugindomain.Holder) (transport.Endpoint, error) {
 	h.acquired.Add(1)
 	return h.endpoint, nil
 }
 
-func (h *stubModelHost) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	return h.EnsureActive(ctx, pluginID)
+func (h *stubModelHost) EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return h.EnsureActive(ctx, pluginID, holder)
 }
 
-func (h *stubModelHost) Acquire(string)                          { h.acquired.Add(1) }
-func (h *stubModelHost) Release(string)                          { h.released.Add(1) }
-func (h *stubModelHost) ReleaseQuestion(pluginID string)         { h.Release(pluginID) }
+func (h *stubModelHost) Acquire(string, plugindomain.Holder) { h.acquired.Add(1) }
+func (h *stubModelHost) Release(string, plugindomain.Holder) { h.released.Add(1) }
+func (h *stubModelHost) ReleaseQuestion(pluginID string, holder plugindomain.Holder) {
+	h.Release(pluginID, holder)
+}
 func (h *stubModelHost) CheckPluginPermission(_, _ string) error { return nil }
 func (h *stubModelHost) GetVaultPath() string                    { return "" }
 

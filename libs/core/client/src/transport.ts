@@ -39,3 +39,23 @@ export const replaceTransport = (next: Transport): (() => void) => {
     replacement = previous
   }
 }
+
+/** The header that names the part of the window a request comes from, for the list of running plugins. */
+export const CALLER_HEADER = 'Numen-Caller'
+
+const addCaller = (header: HeadersInit | undefined, caller: string): Headers => {
+  const out = new Headers(header)
+  out.set(CALLER_HEADER, caller)
+  return out
+}
+
+/**
+ * Sends every request over `wire` with the tag of the part of the window that makes it: `search`,
+ * `settings` and the like, or `plugin:` and the id of the plugin whose view asks.
+ */
+export const createCallerTransport = (caller: string, wire: Transport = transport): Transport => ({
+  unary: (method, signal, timeoutMs, header, input, contextValues) =>
+    wire.unary(method, signal, timeoutMs, addCaller(header, caller), input, contextValues),
+  stream: (method, signal, timeoutMs, header, input, contextValues) =>
+    wire.stream(method, signal, timeoutMs, addCaller(header, caller), input, contextValues),
+})

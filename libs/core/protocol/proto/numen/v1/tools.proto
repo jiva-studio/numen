@@ -89,6 +89,10 @@ message CallToolRequest {
   // Empty on a call to the host is the vault the Numen-Vault header names, else
   // the one the host shows.
   string vault_id = 4;
+
+  // The connection whose agent asks for the call, by id. Empty where the
+  // caller asks for itself.
+  string connection_id = 5;
 }
 
 message CallToolResponse {

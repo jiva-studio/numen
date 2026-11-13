@@ -13,6 +13,8 @@ const MINUTE = 60_000
 
 const HEALTHY = { health: 'ok', healthText: '' } as const
 
+const STARTED_BY_SETTINGS = { who: 'Settings', why: 'list tools' } as const
+
 /**
  * Made-up plugins, one per state: in use, idle, about to stop, inside the core, and unhealthy.
  */
@@ -24,6 +26,11 @@ const PLUGINS: readonly PluginProcess[] = [
     lastUseTime: NOW - 2_000,
     leaseCount: 2,
     isInProcess: false,
+    startedBy: { who: 'Search', why: 'search by meaning' },
+    holders: [
+      { who: 'Search', why: 'search by meaning' },
+      { who: 'Orchard keeper', why: 'call tool find_place' },
+    ],
     ...HEALTHY,
   },
   {
@@ -34,6 +41,8 @@ const PLUGINS: readonly PluginProcess[] = [
     leaseCount: 0,
     isInProcess: false,
     idleStopTime: NOW + 122_000,
+    startedBy: STARTED_BY_SETTINGS,
+    holders: [],
     ...HEALTHY,
   },
   {
@@ -44,6 +53,8 @@ const PLUGINS: readonly PluginProcess[] = [
     leaseCount: 0,
     isInProcess: false,
     idleStopTime: NOW - 10_000,
+    startedBy: { who: 'Events', why: 'deliver onStartup' },
+    holders: [],
     ...HEALTHY,
   },
   {
@@ -53,6 +64,8 @@ const PLUGINS: readonly PluginProcess[] = [
     lastUseTime: NOW - 4_000,
     leaseCount: 1,
     isInProcess: false,
+    startedBy: { who: 'Commands', why: 'run command maps.open' },
+    holders: [{ who: 'Maps', why: 'task: Draw the tiles' }],
     health: 'error',
     healthText: 'The map server does not answer since the last restart of the tile service',
   },
@@ -63,6 +76,8 @@ const PLUGINS: readonly PluginProcess[] = [
     lastUseTime: NOW - 3 * 60 * MINUTE,
     leaseCount: 1,
     isInProcess: true,
+    startedBy: STARTED_BY_SETTINGS,
+    holders: [STARTED_BY_SETTINGS],
     ...HEALTHY,
   },
 ]

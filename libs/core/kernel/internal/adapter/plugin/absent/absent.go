@@ -22,13 +22,15 @@ func (r Runtime) unavailable(capability, pluginID string) error {
 }
 
 // EnsureActive reports that the plugin is unavailable.
-func (r Runtime) EnsureActive(_ context.Context, pluginID string) (transport.Endpoint, error) {
+func (r Runtime) EnsureActive(_ context.Context, pluginID string, _ plugindomain.Holder) (transport.Endpoint, error) {
 	return transport.Endpoint{}, r.unavailable("", pluginID)
 }
 
 // EnsureActiveForQuestion reports that the plugin is unavailable.
-func (r Runtime) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	return r.EnsureActive(ctx, pluginID)
+func (r Runtime) EnsureActiveForQuestion(
+	ctx context.Context, pluginID string, holder plugindomain.Holder,
+) (transport.Endpoint, error) {
+	return r.EnsureActive(ctx, pluginID, holder)
 }
 
 // RetryPlugin reports that the plugin is unavailable.
@@ -56,10 +58,10 @@ func (Runtime) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 }
 
 // Release has no plugin to release.
-func (Runtime) Release(string) {}
+func (Runtime) Release(string, plugindomain.Holder) {}
 
 // ReleaseQuestion has no plugin to release.
-func (Runtime) ReleaseQuestion(string) {}
+func (Runtime) ReleaseQuestion(string, plugindomain.Holder) {}
 
 // Discover finds no plugin.
 func (Runtime) Discover() error { return nil }

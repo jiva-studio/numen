@@ -100,7 +100,7 @@ func TestTheFirstListNamesEachPluginAndItsWorstHealth(t *testing.T) {
 		{Process: idle, PluginName: "Atlas", Health: plugin.HealthError, HealthText: "The atlas did not start"},
 		{Process: maps, PluginName: "Maps", Health: plugin.HealthOK},
 	}
-	if !slices.Equal(got, want) {
+	if !slices.EqualFunc(got, want, plugin.IsSameStatus) {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
 }

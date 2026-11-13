@@ -19,6 +19,7 @@
   --countdown-width: 5em;
   --tag-gap: 0.25rem;
   --dot-size: 0.5rem;
+  --chevron-size: 0.875rem;
 }
 
 /* The chip: flat, with a ground and no border, as the other title bar chips. */
@@ -138,13 +139,14 @@
 
 .plugin-popover__plugin {
   display: grid;
-  grid-template-columns: var(--dot-size) minmax(0, 1fr) var(--countdown-width);
+  grid-template-columns: var(--dot-size) minmax(0, 1fr) var(--countdown-width) var(--chevron-size);
   column-gap: var(--column-gap);
   align-items: center;
   padding: var(--row-pad-block) var(--row-pad-inline);
   border-radius: var(--numen-radius);
   line-height: 1.25;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .plugin-popover__plugin:hover {
@@ -205,4 +207,39 @@
   text-align: right;
   color: var(--numen-hushed);
   font-variant-numeric: tabular-nums;
+}
+
+/* The mark that the line opens: it points down while the line is open. */
+.plugin-popover__chevron {
+  width: var(--chevron-size);
+  height: var(--chevron-size);
+  color: var(--numen-hushed);
+  transition: transform 120ms ease;
+}
+
+.plugin-popover__plugin[aria-expanded='true'] .plugin-popover__chevron {
+  transform: rotate(90deg);
+}
+
+/* Who started the plugin and who holds it, under its line, across all its columns. */
+.plugin-popover__holders {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--column-gap);
+  row-gap: calc(var(--row-pad-block) / 2);
+  margin: var(--row-pad-block) 0 0 calc(var(--dot-size) + var(--column-gap));
+  font-size: var(--numen-text-1);
+  white-space: normal;
+}
+
+.plugin-popover__holders-term {
+  grid-column: 1;
+  color: var(--numen-hushed);
+}
+
+.plugin-popover__holders-value {
+  grid-column: 2;
+  margin: 0;
+  overflow-wrap: anywhere;
 }

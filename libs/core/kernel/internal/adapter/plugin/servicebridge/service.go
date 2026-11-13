@@ -93,7 +93,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		p.reportError(writeConnectError(w, http.StatusNotFound, connect.CodeNotFound, "no plugin serves this service"))
 		return
 	}
-	endpoint, err := p.host.EnsureActive(r.Context(), found.Manifest.ID)
+	holder := plugin.GetHolder(plugin.WithAskingPlugin(r.Context(), found.Manifest.ID), plugin.GetCallTitle(r.URL.Path))
+	endpoint, err := p.host.EnsureActive(r.Context(), found.Manifest.ID, holder)
 	if err != nil {
 		code := connect.CodeUnavailable
 		if errors.Is(err, context.Canceled) {
@@ -102,7 +103,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		p.reportError(writeConnectError(w, http.StatusServiceUnavailable, code, bridge.ConvertActivationError(found.Manifest.ID, err).Error()))
 		return
 	}
-	lease := &bridge.Lease{Host: p.host, PluginID: found.Manifest.ID}
+	lease := &bridge.Lease{Host: p.host, PluginID: found.Manifest.ID, Holder: holder}
 	defer p.releasePlugin(lease)
 
 	out, err := http.NewRequestWithContext(r.Context(), r.Method, transport.GetBaseURL(endpoint)+r.URL.RequestURI(), r.Body)

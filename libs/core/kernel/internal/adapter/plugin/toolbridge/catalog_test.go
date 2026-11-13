@@ -53,6 +53,7 @@ type pluginHost struct {
 	ports     map[string]int
 	starts    []string
 	questions []string
+	holders   []plugin.Holder
 }
 
 func newPluginHost(t *testing.T, plugins map[string]*toolPlugin) *pluginHost {
@@ -77,23 +78,24 @@ func newPluginHost(t *testing.T, plugins map[string]*toolPlugin) *pluginHost {
 	return host
 }
 
-func (h *pluginHost) EnsureActive(_ context.Context, pluginID string) (transport.Endpoint, error) {
+func (h *pluginHost) EnsureActive(_ context.Context, pluginID string, holder plugin.Holder) (transport.Endpoint, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.starts = append(h.starts, pluginID)
+	h.holders = append(h.holders, holder)
 	return transport.Endpoint{Host: "127.0.0.1", Port: h.ports[pluginID], Token: "t-" + pluginID}, nil
 }
 
-func (h *pluginHost) Release(string) {}
+func (h *pluginHost) Release(string, plugin.Holder) {}
 
-func (h *pluginHost) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
+func (h *pluginHost) EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugin.Holder) (transport.Endpoint, error) {
 	h.mu.Lock()
 	h.questions = append(h.questions, pluginID)
 	h.mu.Unlock()
-	return h.EnsureActive(ctx, pluginID)
+	return h.EnsureActive(ctx, pluginID, holder)
 }
 
-func (h *pluginHost) ReleaseQuestion(string) {}
+func (h *pluginHost) ReleaseQuestion(string, plugin.Holder) {}
 
 func (h *pluginHost) GetPluginInfos() []plugin.Info {
 	h.mu.Lock()
@@ -261,5 +263,26 @@ func TestTheListingsOnDiskServeANewCatalog(t *testing.T) {
 	}
 	if starts := host.takeStarts(); len(starts) != 0 {
 		t.Errorf("the new catalog started %v", starts)
+	}
+}
+
+func TestACallForAConnectionHoldsThePluginOfTheToolInTheNameOfTheConnection(t *testing.T) {
+	host := newTwoPlugins(t)
+	catalog := newCatalog(host, filesIn(t, ""))
+	catalog.ListTools(t.Context(), callerPlugin)
+	host.mu.Lock()
+	host.holders = nil
+	host.mu.Unlock()
+	ctx := plugin.WithCaller(t.Context(), plugin.Caller{PluginID: callerPlugin, ConnectionID: "conn-keeper"})
+
+	if _, err := catalog.CallTool(ctx, callerPlugin, &v1.CallToolRequest{Name: "tree_count", Arguments: []byte(`{}`)}); err != nil {
+		t.Fatal(err)
+	}
+
+	host.mu.Lock()
+	defer host.mu.Unlock()
+	want := []plugin.Holder{{PluginID: callerPlugin, ConnectionID: "conn-keeper", Why: "call tool tree_count"}}
+	if !slices.Equal(host.holders, want) {
+		t.Errorf("the call held the plugin for %+v, want %+v", host.holders, want)
 	}
 }

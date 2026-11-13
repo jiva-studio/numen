@@ -10,10 +10,10 @@ import (
 
 // toolActivator starts a plugin for the catalog of tools and holds it.
 type toolActivator interface {
-	EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error)
-	Release(pluginID string)
-	EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error)
-	ReleaseQuestion(pluginID string)
+	EnsureActive(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error)
+	Release(pluginID string, holder plugindomain.Holder)
+	EnsureActiveForQuestion(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error)
+	ReleaseQuestion(pluginID string, holder plugindomain.Holder)
 }
 
 // pluginInfoLister lists the plugins the host knows and tells the enabled ones.
@@ -34,20 +34,26 @@ func NewToolHost(activation toolActivator, registry pluginInfoLister) ToolHost {
 }
 
 // EnsureActive starts the plugin if it is not running and holds it.
-func (h ToolHost) EnsureActive(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	return h.activation.EnsureActive(ctx, pluginID)
+func (h ToolHost) EnsureActive(ctx context.Context, pluginID string, holder plugindomain.Holder) (transport.Endpoint, error) {
+	return h.activation.EnsureActive(ctx, pluginID, holder)
 }
 
 // Release gives up the hold EnsureActive took.
-func (h ToolHost) Release(pluginID string) { h.activation.Release(pluginID) }
+func (h ToolHost) Release(pluginID string, holder plugindomain.Holder) {
+	h.activation.Release(pluginID, holder)
+}
 
 // EnsureActiveForQuestion starts the plugin if it is not running and holds it for a question.
-func (h ToolHost) EnsureActiveForQuestion(ctx context.Context, pluginID string) (transport.Endpoint, error) {
-	return h.activation.EnsureActiveForQuestion(ctx, pluginID)
+func (h ToolHost) EnsureActiveForQuestion(
+	ctx context.Context, pluginID string, holder plugindomain.Holder,
+) (transport.Endpoint, error) {
+	return h.activation.EnsureActiveForQuestion(ctx, pluginID, holder)
 }
 
 // ReleaseQuestion gives up the hold EnsureActiveForQuestion took.
-func (h ToolHost) ReleaseQuestion(pluginID string) { h.activation.ReleaseQuestion(pluginID) }
+func (h ToolHost) ReleaseQuestion(pluginID string, holder plugindomain.Holder) {
+	h.activation.ReleaseQuestion(pluginID, holder)
+}
 
 // GetPluginInfos lists the plugins the host knows.
 func (h ToolHost) GetPluginInfos() []plugindomain.Info { return h.registry.GetPluginInfos() }

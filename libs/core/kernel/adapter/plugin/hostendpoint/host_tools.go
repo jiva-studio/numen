@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 var errNoTools = errors.New("the host offers plugins no tools")
@@ -76,8 +77,12 @@ func (e *toolEndpoint) CallTool(
 	if err != nil {
 		return nil, err
 	}
+	if connectionID := req.Msg.GetConnectionId(); connectionID != "" {
+		ctx = plugin.WithCaller(ctx, plugin.Caller{PluginID: pluginID, ConnectionID: connectionID})
+	}
 	res, err := tools.CallTool(ctx, pluginID, &v1.CallToolRequest{
 		Name: req.Msg.GetName(), Arguments: req.Msg.GetArguments(), Context: req.Msg.GetContext(), VaultId: string(vaultID),
+		ConnectionId: req.Msg.GetConnectionId(),
 	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {

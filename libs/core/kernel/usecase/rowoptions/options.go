@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
@@ -41,6 +42,8 @@ type Options struct {
 	source      connectionport.ProviderSource
 	running     RunningProviders
 	lists       *Lists
+	// Titles names the operations in the list of running plugins; nil names them by their ids.
+	Titles connectionport.OperationTitles
 }
 
 // NewOptions returns the listing over the connections, the providers source opens and the providers
@@ -88,7 +91,7 @@ func (o *Options) RefreshOptions(
 // every listing kept for the connection, with the connection as it is now. A failure keeps nothing.
 func (o *Options) RefreshConnection(connectionID string) {
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), RefreshLimit)
+		ctx, cancel := context.WithTimeout(plugin.WithBackground(context.Background(), plugin.WhoConnections), RefreshLimit)
 		defer cancel()
 		o.refreshKept(ctx, connectionID, o.source.OpenProvider)
 	}()
@@ -103,7 +106,7 @@ func (o *Options) RefreshRunning(connectionID string) {
 	}
 	go func() {
 		defer o.lists.end(connectionID)
-		ctx, cancel := context.WithTimeout(context.Background(), RefreshLimit)
+		ctx, cancel := context.WithTimeout(plugin.WithBackground(context.Background(), plugin.WhoConnections), RefreshLimit)
 		defer cancel()
 		o.refreshKept(ctx, connectionID, o.openRunningProvider)
 	}()
@@ -121,7 +124,7 @@ func (o *Options) refreshKept(
 	if len(requests) == 0 {
 		return
 	}
-	provider, release, err := openProvider(ctx, resolved.PluginID)
+	provider, release, err := openProvider(plugin.WithPurpose(ctx, "refresh the lists of "+resolved.Name), resolved.PluginID)
 	if err != nil {
 		return
 	}
@@ -160,7 +163,7 @@ func (o *Options) resolveField(ctx context.Context, connectionID, field string) 
 func (o *Options) readOptions(
 	ctx context.Context, resolved connection.Resolved, declared manifest.ConnectionField, asked connection.OptionList,
 ) ([]modelcall.Option, error) {
-	provider, release, err := o.source.OpenProvider(ctx, resolved.PluginID)
+	provider, release, err := o.source.OpenProvider(plugin.WithPurpose(ctx, o.describeOperation(declared.OptionsFrom)+" of "+resolved.Name), resolved.PluginID)
 	if err != nil {
 		return nil, failed(ctx, connection.FailureReasonUnavailable)
 	}
@@ -220,4 +223,11 @@ func readReason(err error) connection.FailureReason {
 		return stopError.Reason
 	}
 	return connection.FailureReasonUnavailable
+}
+
+func (o *Options) describeOperation(operation string) string {
+	if o.Titles == nil {
+		return operation
+	}
+	return connection.GetOperationTitle(o.Titles.ListOperationTitles(), operation)
 }

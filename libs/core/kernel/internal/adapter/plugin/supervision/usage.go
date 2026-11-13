@@ -33,6 +33,7 @@ func (r *RunningProcesses) ListProcesses() []plugindomain.Process {
 		process := plugindomain.Process{
 			PluginID: id, StartTime: getStartTimeLocked(s, id), LastUseTime: usage.LastActiveTime,
 			LeaseCount: usage.LeaseCount, IsInProcess: usage.IsInProcess,
+			StartedBy: usage.StartedBy, Holders: usage.Holders,
 		}
 		switch {
 		case usage.IsIdle && usage.IsUsed:

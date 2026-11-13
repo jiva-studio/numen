@@ -23,6 +23,8 @@ func DescribePluginProcesses(statuses []plugin.ProcessStatus) []*v1.PluginProces
 			IdleStopTimeUnixMs: describeUnixMilli(status.IdleStopTime),
 			Health:             describeHealthSeverity(status.Health),
 			HealthText:         status.HealthText,
+			StartedBy:          describeHolder(status.StartedBy),
+			Holders:            describeHolders(status.Holders),
 		})
 	}
 	return out
@@ -33,4 +35,16 @@ func describeUnixMilli(instant time.Time) int64 {
 		return 0
 	}
 	return instant.UnixMilli()
+}
+
+func describeHolder(holder plugin.Holder) *v1.PluginLeaseHolder {
+	return &v1.PluginLeaseHolder{Who: holder.Who, Why: holder.Why}
+}
+
+func describeHolders(holders []plugin.Holder) []*v1.PluginLeaseHolder {
+	out := make([]*v1.PluginLeaseHolder, 0, len(holders))
+	for _, holder := range holders {
+		out = append(out, describeHolder(holder))
+	}
+	return out
 }

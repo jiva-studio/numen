@@ -17,4 +17,8 @@ export const WORDS = {
   stopsNowHint: 'Stops at the next check; the core looks for idle plugins every 30 seconds',
   inCore: 'in core',
   inCoreHint: 'Runs inside the core',
+  startedBy: 'Started by',
+  heldBy: 'Held by',
+  notHeld: 'Not held',
+  unknownHolder: 'unknown',
 } as const

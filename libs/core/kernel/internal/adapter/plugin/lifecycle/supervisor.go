@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
 )
@@ -45,6 +47,12 @@ const (
 	QuestionLease
 )
 
+// Lease is one hold on a plugin: what it holds the plugin for, and who holds it.
+type Lease struct {
+	Kind   LeaseKind
+	Holder plugin.Holder
+}
+
 // Supervisor monitors and controls the execution lifecycle of a single plugin process. Failure keeps why
 // the last start failed, and Permissions what the manifest of the plugin lets it do.
 type Supervisor struct {
@@ -59,6 +67,8 @@ type Supervisor struct {
 	lastActiveTime time.Time
 	activeRefCount int
 	isUsed         bool
+	startedBy      plugin.Holder
+	holders        []plugin.Holder
 	exitCh         chan struct{}
 	onExit         func()
 	activatingCh   chan struct{}
@@ -82,6 +92,8 @@ type Usage struct {
 	IsInProcess    bool
 	IsIdle         bool
 	IsUsed         bool
+	StartedBy      plugin.Holder
+	Holders        []plugin.Holder
 }
 
 // GetUsage returns what the plugin holds, and false where it is not running.
@@ -97,6 +109,8 @@ func (s *Supervisor) GetUsage() (Usage, bool) {
 		IsInProcess:    s.inProcess,
 		IsIdle:         s.state == StateIdle && s.activeRefCount == 0,
 		IsUsed:         s.isUsed,
+		StartedBy:      s.startedBy,
+		Holders:        slices.Clone(s.holders),
 	}, true
 }
 
@@ -161,6 +175,7 @@ func (s *Supervisor) SetDormant(err error) {
 	s.inProcess = false
 	s.teardownBegun = false
 	s.activeRefCount = 0
+	s.holders = nil
 	s.activationErr = err
 	closeActivationSignal(&s.activatingCh)
 }
@@ -212,6 +227,7 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 			s.teardownBegun = false
 			s.state = StateDormant
 			s.activeRefCount = 0
+			s.holders = nil
 		}
 		s.mu.Unlock()
 		close(exitCh)
@@ -219,15 +235,16 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 	return nil
 }
 
-// ActivateInProcess marks a plugin served inside the host as running and held by one lease of the kind.
-func (s *Supervisor) ActivateInProcess(kind LeaseKind, now time.Time) {
+// ActivateInProcess marks a plugin served inside the host as running and held by the lease.
+func (s *Supervisor) ActivateInProcess(lease Lease, now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.inProcess = true
 	s.state = StateActive
 	s.activeRefCount = 1
+	s.holders = []plugin.Holder{lease.Holder}
 	s.lastActiveTime = now
-	s.isUsed = kind == UseLease
+	s.isUsed = lease.Kind == UseLease
 	s.activationErr = nil
 	closeActivationSignal(&s.activatingCh)
 }
@@ -239,26 +256,27 @@ func isRunning(s *Supervisor) bool {
 	return s.process != nil || s.inProcess
 }
 
-// Acquire takes a lease of the kind on a running plugin and reports whether it did. A use lease marks the
-// plugin used and restarts its idle countdown.
-func (s *Supervisor) Acquire(kind LeaseKind, now time.Time) bool {
+// Acquire takes the lease on a running plugin and reports whether it did. A use lease marks the plugin
+// used and restarts its idle countdown.
+func (s *Supervisor) Acquire(lease Lease, now time.Time) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !isRunning(s) {
 		return false
 	}
 	s.activeRefCount++
+	s.holders = append(s.holders, lease.Holder)
 	s.state = StateActive
-	if kind == UseLease {
+	if lease.Kind == UseLease {
 		s.lastActiveTime = now
 		s.isUsed = true
 	}
 	return true
 }
 
-// Release returns a lease of the kind and marks a running plugin idle when it holds none. A use lease
-// restarts the idle countdown.
-func (s *Supervisor) Release(kind LeaseKind, now time.Time) {
+// Release returns the lease and marks a running plugin idle when it holds none. A use lease restarts the
+// idle countdown.
+func (s *Supervisor) Release(lease Lease, now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !isRunning(s) {
@@ -266,8 +284,9 @@ func (s *Supervisor) Release(kind LeaseKind, now time.Time) {
 	}
 	if s.activeRefCount > 0 {
 		s.activeRefCount--
+		s.holders = removeHolder(s.holders, lease.Holder)
 	}
-	if kind == UseLease {
+	if lease.Kind == UseLease {
 		s.lastActiveTime = now
 	}
 	if s.activeRefCount == 0 {
@@ -369,6 +388,7 @@ func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ct
 	s.inProcess = false
 	s.teardownBegun = false
 	s.activeRefCount = 0
+	s.holders = nil
 	closeActivationSignal(&s.activatingCh)
 	if rpcShutdown != nil {
 		shutdownErr = rpcShutdown(ctx)
@@ -409,6 +429,7 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 		s.inProcess = false
 		s.teardownBegun = false
 		s.activeRefCount = 0
+		s.holders = nil
 		s.activationErr = nil
 		closeActivationSignal(&s.activatingCh)
 	}
@@ -427,4 +448,23 @@ func (s *Supervisor) GetExitSignal() <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.exitCh
+}
+
+// SetStartedBy records the holder whose lease starts the process.
+func (s *Supervisor) SetStartedBy(holder plugin.Holder) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.startedBy = holder
+}
+
+// removeHolder removes the first lease of the holder, or the oldest lease where the holder has none.
+func removeHolder(holders []plugin.Holder, holder plugin.Holder) []plugin.Holder {
+	if len(holders) == 0 {
+		return holders
+	}
+	i := slices.Index(holders, holder)
+	if i < 0 {
+		i = 0
+	}
+	return slices.Delete(holders, i, i+1)
 }

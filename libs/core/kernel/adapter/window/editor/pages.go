@@ -15,6 +15,7 @@ import (
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
@@ -133,6 +134,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
+		r = r.WithContext(plugindomain.WithCaller(r.Context(), getWindowCaller(r.Header)))
 		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
 		if isWhole && s.plugins != nil && s.plugins.Serves(r.URL.Path) {
 			s.setRequestVault(r)
@@ -292,4 +294,26 @@ func NewFileRoute(state *State, handler *filewindow.Handler) Route {
 func NewMediaRoute(state *State, handler *mediawindow.Handler) Route {
 	path, served := numenv1connect.NewMediaServiceHandler(handler, state.Gate.CountQuestions())
 	return NewRoute(path, served, handler)
+}
+
+// CallerHeader names the part of the window that makes a request: a tag of windowCallers, or
+// "plugin:" and the id of the plugin whose view asks.
+const CallerHeader = "Numen-Caller"
+
+var windowCallers = map[string]string{
+	"chat": "Chat", "commands": "Commands", "editor": "Editor", "graph": "Graph", "plugins": "Plugins",
+	"search": "Search", "settings": "Settings", "tasks": "Tasks",
+}
+
+// getWindowCaller names the part of the window that makes a request, by the header it sends, and the
+// window where it sends none.
+func getWindowCaller(header http.Header) plugindomain.Caller {
+	tag := header.Get(CallerHeader)
+	if pluginID, isPlugin := strings.CutPrefix(tag, "plugin:"); isPlugin && pluginID != "" {
+		return plugindomain.Caller{PluginID: pluginID}
+	}
+	if who, ok := windowCallers[tag]; ok {
+		return plugindomain.Caller{Who: who}
+	}
+	return plugindomain.Caller{Who: plugindomain.WhoWindow}
 }

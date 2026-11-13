@@ -32,28 +32,30 @@ import {
   WindowService,
   WorkspaceService,
 } from '@numen/protocol'
-import { keepaliveTransport, transport } from './transport'
+import { createCallerTransport, keepaliveTransport, transport } from './transport'
 
-export const createVaultClient = (customTransport: Transport = transport) =>
+const editorTransport = createCallerTransport('editor')
+
+export const createVaultClient = (customTransport: Transport = editorTransport) =>
   createClient(VaultService, customTransport)
-export const getNoteClient = (customTransport: Transport = transport) =>
+export const getNoteClient = (customTransport: Transport = editorTransport) =>
   createClient(NoteService, customTransport)
 
 export const vault = createVaultClient()
 export const workspace = createClient(WorkspaceService, transport)
 /** The workspace client for a request that must complete after the page unloads. */
 export const keepaliveWorkspace = createClient(WorkspaceService, keepaliveTransport)
-export const files = createClient(FileService, transport)
+export const files = createClient(FileService, editorTransport)
 export const notes = getNoteClient()
-export const search = createClient(SearchService, transport)
+export const search = createClient(SearchService, createCallerTransport('search'))
 export const vaultsService = createClient(VaultsService, transport)
-export const settingsService = createClient(SettingsService, transport)
+export const settingsService = createClient(SettingsService, createCallerTransport('settings'))
 export const windowService = createClient(WindowService, transport)
 export const theme = createClient(ThemeService, transport)
-export const texts = createClient(TextService, transport)
-export const pluginCommands = createClient(CommandService, transport)
-export const pluginService = createClient(PluginService, transport)
-export const pluginHealth = createClient(PluginHealthService, transport)
+export const texts = createClient(TextService, editorTransport)
+export const pluginCommands = createClient(CommandService, createCallerTransport('commands'))
+export const pluginService = createClient(PluginService, createCallerTransport('plugins'))
+export const pluginHealth = createClient(PluginHealthService, createCallerTransport('plugins'))
 
 export const NAME_SOURCE = NameSource
 export type NameSourceCode = NameSource

@@ -16,6 +16,8 @@ const ATLAS: PluginProcess = {
   idleStopTime: NOW + 115_000,
   health: 'ok',
   healthText: '',
+  startedBy: { who: 'Settings', why: 'list tools' },
+  holders: [],
 }
 
 const draw = (processes: readonly PluginProcess[], phase: Phase = 'ready') =>
@@ -106,6 +108,63 @@ describe('the running plugins indicator', () => {
     await wrapper.find('.plugin-stats__trigger').trigger('click')
 
     expect(wrapper.find('.plugin-popover__empty').text()).toBe('No plugin is running')
+    wrapper.unmount()
+  })
+
+  it('keeps the list open and a row expanded while the plugins change and the window scrolls', async () => {
+    const maps = { ...ATLAS, pluginId: 'org.example.maps', pluginName: 'Maps' }
+    const wrapper = draw([ATLAS, maps])
+    await wrapper.find('.plugin-stats__trigger').trigger('click')
+    const atlas = () => wrapper.find('[aria-label="Atlas"]')
+    await atlas().trigger('pointerdown')
+    await atlas().trigger('click')
+    const pane = document.body.appendChild(document.createElement('div'))
+
+    pane.dispatchEvent(new Event('scroll'))
+    const held = { ...ATLAS, leaseCount: 1, holders: [{ who: 'Search', why: 'search notes' }] }
+    await wrapper.setProps({ processes: [held], now: NOW + 1_000 })
+
+    expect(wrapper.find('.plugin-popover').exists()).toBe(true)
+    expect(atlas().attributes('aria-expanded')).toBe('true')
+    expect(atlas().find('.plugin-popover__holders').text()).toContain('Search · search notes')
+    expect(wrapper.find('[aria-label="Maps"]').exists()).toBe(false)
+    pane.remove()
+    wrapper.unmount()
+  })
+
+  it('shows who started a plugin and who holds it when its line is clicked', async () => {
+    const held = {
+      ...ATLAS,
+      leaseCount: 2,
+      startedBy: { who: 'Indexing', why: 'embed notes' },
+      holders: [
+        { who: 'Orchard keeper', why: 'call tool tree_count' },
+        { who: 'Search', why: '' },
+      ],
+    }
+    const wrapper = draw([held, { ...ATLAS, pluginId: 'org.example.maps', pluginName: 'Maps' }])
+    await wrapper.find('.plugin-stats__trigger').trigger('click')
+    expect(wrapper.find('.plugin-popover__holders').exists()).toBe(false)
+
+    await wrapper.find('[aria-label="Atlas"]').trigger('click')
+    await wrapper.find('[aria-label="Maps"]').trigger('keydown', { key: 'Enter' })
+
+    const read = (name: string) =>
+      wrapper
+        .find(`[aria-label="${name}"]`)
+        .findAll('.plugin-popover__holders > *')
+        .map((item) => item.text())
+    expect(read('Atlas')).toEqual([
+      'Started by',
+      'Indexing · embed notes',
+      'Held by',
+      'Orchard keeper · call tool tree_count',
+      'Search',
+    ])
+    expect(read('Maps')).toEqual(['Started by', 'Settings · list tools', 'Held by', 'Not held'])
+
+    await wrapper.find('[aria-label="Atlas"]').trigger('click')
+    expect(wrapper.find('[aria-label="Atlas"]').attributes('aria-expanded')).toBe('false')
     wrapper.unmount()
   })
 })

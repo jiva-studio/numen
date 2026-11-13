@@ -22,6 +22,14 @@ export interface PluginProcess {
   readonly idleStopTime?: number
   readonly health: 'ok' | 'warning' | 'error'
   readonly healthText: string
+  readonly startedBy: LeaseHolder
+  readonly holders: readonly LeaseHolder[]
+}
+
+/** Who holds a lease on a plugin that runs and why. */
+export interface LeaseHolder {
+  readonly who: string
+  readonly why: string
 }
 
 /** The calls of PluginService a window makes about the plugins that run. */
@@ -54,6 +62,8 @@ const readProcess = (one: PluginProcessMessage): PluginProcess => ({
   ...(one.idleStopTimeUnixMs > 0n && { idleStopTime: Number(one.idleStopTimeUnixMs) }),
   health: HEALTH[one.health] ?? 'ok',
   healthText: one.healthText,
+  startedBy: { who: one.startedBy?.who ?? '', why: one.startedBy?.why ?? '' },
+  holders: one.holders.map((holder) => ({ who: holder.who, why: holder.why })),
 })
 
 /** The plugins that run over the plugin service. */

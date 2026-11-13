@@ -21,8 +21,8 @@ type Identity interface {
 
 // Leases holds a plugin from being stopped as idle while it works.
 type Leases interface {
-	Acquire(pluginID string)
-	Release(pluginID string)
+	Acquire(pluginID string, holder plugin.Holder)
+	Release(pluginID string, holder plugin.Holder)
 }
 
 // WorkQueue is the core's shared queue of heavy work and its list of tasks, as the plugins use them.
