@@ -13,37 +13,64 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// DetectLimit is how long a provider has to start and answer connections.detected.
-const DetectLimit = 30 * time.Second
+const (
+	// DetectLimit is how long a provider has to start and answer connections.detected.
+	DetectLimit = 30 * time.Second
+	// RefreshInterval is how long Refresh leaves a plugin alone after it was last asked.
+	RefreshInterval = 10 * time.Minute
+)
+
+// answer is what the provider of a type reported, and the version of its plugin then.
+type answer struct {
+	pluginVersion string
+	connections   []connection.Connection
+}
 
 // Detection keeps the connections the providers report ready on this machine, by type. A type takes part
 // when it lists connection.OperationDetected among its operations; until its provider answers, it lists
-// none. A detected connection is not stored: its id is the type id, a slash and its name.
+// none. An answer counts only for the version of the plugin that gave it. A detected connection is not
+// stored with the connections: its id is the type id, a slash and its name. Where a store file is set,
+// the answers are kept in it, so the providers are not asked again after a restart.
 type Detection struct {
 	types  connectionport.Types
 	source connectionport.ProviderSource
+	clock  machineport.Clock
 
-	mu       sync.Mutex
-	answers  map[string][]connection.Connection
-	running  map[string]chan struct{}
-	onChange func()
-	report   func(error)
+	mu        sync.Mutex
+	answers   map[string]answer
+	askedAt   map[string]time.Time
+	running   map[string]chan struct{}
+	storeFile string
+	isLoaded  bool
+	onChange  func()
+	report    func(error)
+
+	writeMu sync.Mutex
 }
 
 // NewDetection returns the detection over the registry of types and the providers of the plugins, with no
-// answer yet.
-func NewDetection(types connectionport.Types, source connectionport.ProviderSource) *Detection {
+// answer yet. clock times the refreshes.
+func NewDetection(types connectionport.Types, source connectionport.ProviderSource, clock machineport.Clock) *Detection {
 	return &Detection{
-		types: types, source: source, answers: map[string][]connection.Connection{}, running: map[string]chan struct{}{},
-		onChange: func() {}, report: func(error) {},
+		types: types, source: source, clock: clock, answers: map[string]answer{}, askedAt: map[string]time.Time{},
+		running: map[string]chan struct{}{}, isLoaded: true, onChange: func() {}, report: func(error) {},
 	}
 }
 
+// SetStoreFile sets the file the answers are kept in; they are read from it on the first use after. An
+// empty path keeps the answers in memory only.
+func (d *Detection) SetStoreFile(path string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.storeFile, d.isLoaded = path, path == ""
+}
+
 // Follow sets what runs after an answer changed the detected connections, and what receives the failures of
-// a provider; it replaces what was set before.
+// a provider and of the store file; it replaces what was set before.
 func (d *Detection) Follow(onChange func(), report func(error)) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -56,16 +83,18 @@ func (d *Detection) ListDetected() []connection.Connection {
 	types := d.types.ListTypes()
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	d.load()
 	var list []connection.Connection
 	for _, one := range types {
-		if isDetecting(one) {
-			list = append(list, d.answers[one.GetID()]...)
+		if found, isAnswered := d.getAnswer(one); isAnswered && isDetecting(one) {
+			list = append(list, found...)
 		}
 	}
 	return list
 }
 
-// IsPending reports whether the type is available, serves detection and its provider has not answered yet.
+// IsPending reports whether the type is available, serves detection and its provider has not answered yet
+// in the version of its plugin installed now.
 func (d *Detection) IsPending(typeID string) bool {
 	found, isFound := d.types.GetType(typeID)
 	if !isFound || !isDetecting(found) {
@@ -73,7 +102,8 @@ func (d *Detection) IsPending(typeID string) bool {
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	_, isAnswered := d.answers[typeID]
+	d.load()
+	_, isAnswered := d.getAnswer(found)
 	return !isAnswered
 }
 
@@ -111,21 +141,27 @@ func (d *Detection) Detect(ctx context.Context, pluginID string) {
 			report(fmt.Errorf("detect the connections of %s: %w", one.GetID(), err))
 			continue
 		}
-		isChanged = d.store(one.GetID(), newDetectedConnections(one, found)) || isChanged
+		isChanged = d.store(one, newDetectedConnections(one, found)) || isChanged
 	}
 	if isChanged {
+		if err := d.writeStoreFile(); err != nil {
+			report(fmt.Errorf("keep the detected connections: %w", err))
+		}
 		onChange()
 	}
 }
 
 // Refresh asks the provider of every plugin with a type that serves detection again, each in the background
-// and within DetectLimit. A plugin whose detection is running is not asked twice.
+// and within DetectLimit. A plugin whose detection is running, or that was asked within RefreshInterval, is
+// not asked.
 func (d *Detection) Refresh() {
 	for _, pluginID := range d.listDetectingPlugins() {
 		d.mu.Lock()
 		_, isRunning := d.running[pluginID]
+		askedAt, isAsked := d.askedAt[pluginID]
+		isRecent := isAsked && d.clock.Now().Sub(askedAt) < RefreshInterval
 		d.mu.Unlock()
-		if isRunning {
+		if isRunning || isRecent {
 			continue
 		}
 		d.DetectInBackground(pluginID)
@@ -153,6 +189,7 @@ func (d *Detection) begin(pluginID string) (chan struct{}, bool) {
 	}
 	done := make(chan struct{})
 	d.running[pluginID] = done
+	d.askedAt[pluginID] = d.clock.Now()
 	return done, true
 }
 
@@ -189,11 +226,20 @@ func (d *Detection) listDetectingPlugins() []string {
 	return plugins
 }
 
-func (d *Detection) store(typeID string, found []connection.Connection) bool {
+func (d *Detection) getAnswer(declared connection.Type) ([]connection.Connection, bool) {
+	found, isAnswered := d.answers[declared.GetID()]
+	if !isAnswered || found.pluginVersion != declared.PluginVersion {
+		return nil, false
+	}
+	return found.connections, true
+}
+
+func (d *Detection) store(declared connection.Type, found []connection.Connection) bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	before, isAnswered := d.answers[typeID]
-	d.answers[typeID] = found
+	d.load()
+	before, isAnswered := d.getAnswer(declared)
+	d.answers[declared.GetID()] = answer{pluginVersion: declared.PluginVersion, connections: found}
 	return !isAnswered || !reflect.DeepEqual(before, found)
 }
 

@@ -70,7 +70,7 @@ describe('AgentModelSelector', () => {
     expect(button.attributes('disabled')).toBeDefined()
   })
 
-  it('opens menu when pill button is clicked and emits select on choose', async () => {
+  it('opens menu when pill button is clicked, emits open, and emits select on choose', async () => {
     const wrapper = mount(AgentModelSelector, {
       props: {
         options: OPTIONS,
@@ -81,6 +81,7 @@ describe('AgentModelSelector', () => {
     })
     const button = wrapper.find('button')
     await button.trigger('click')
+    expect(wrapper.emitted('open')).toEqual([[]])
 
     await nextTick()
     const choice = Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]')).find(

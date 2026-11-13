@@ -69,11 +69,12 @@ type Detected interface {
 	// ListDetected returns the connections the providers last reported for the available types, in the order
 	// of the types. It does not wait for a provider.
 	ListDetected() []connection.Connection
-	// IsPending reports whether the type is available, serves detection and its provider has not answered yet.
+	// IsPending reports whether the type is available, serves detection and its provider has not answered yet
+	// in the version of its plugin installed now; an answer kept from an earlier start counts.
 	IsPending(typeID string) bool
 	// Detect asks the provider of each available type of the plugin that serves detection and waits for the
 	// answers.
 	Detect(ctx context.Context, pluginID string)
-	// Refresh asks every provider again in the background.
+	// Refresh asks every provider not asked lately again in the background.
 	Refresh()
 }

@@ -34,7 +34,8 @@ func (u *Resolve) Execute(connectionID string) (connection.Resolved, error) {
 		return connection.Resolved{}, err
 	}
 	return connection.Resolved{
-		ID: one.ID, Name: one.Name, Revision: one.Revision, PluginID: found.PluginID, Declaration: found.Declaration,
+		ID: one.ID, Name: one.Name, Revision: one.Revision, PluginID: found.PluginID, PluginVersion: found.PluginVersion,
+		Declaration:      found.Declaration,
 		Fields:           formatFields(found.Declaration, one.Fields),
 		ParallelRequests: getParallelRequests(found.Declaration, one.Fields),
 		Fingerprint:      getFingerprint(one.TypeID, getAddress(found.Declaration, one.Fields)),
