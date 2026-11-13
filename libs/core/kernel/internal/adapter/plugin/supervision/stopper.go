@@ -67,7 +67,7 @@ func (s *Stopper) stopTarget(ctx context.Context, target Target, gracePeriod tim
 	s.sups.Clients().Remove(target.Endpoint.Token)
 	s.processes.CloseStdin(target.ID, target.PID)
 	s.services.ClearPlugin(target.ID)
-	s.sups.changes.notify()
+	s.sups.NotifyChange()
 	return err
 }
 

@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"context"
 	"slices"
-	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
@@ -47,36 +46,16 @@ func (r *RunningProcesses) ListProcesses() []plugindomain.Process {
 // WatchProcesses signals each time a plugin starts, stops, or takes or returns a lease, until the
 // context ends. Signals not received yet are merged into one.
 func (r *RunningProcesses) WatchProcesses(ctx context.Context) <-chan struct{} {
-	return r.sups.changes.watch(ctx)
-}
-
-// changeSignal is the watchers of the changes of the plugins.
-type changeSignal struct {
-	mu       sync.Mutex
-	watchers []chan struct{}
-}
-
-func (c *changeSignal) watch(ctx context.Context) <-chan struct{} {
+	s := r.sups
 	watcher := make(chan struct{}, 1)
-	c.mu.Lock()
-	c.watchers = append(c.watchers, watcher)
-	c.mu.Unlock()
+	s.mu.Lock()
+	s.watchers = append(s.watchers, watcher)
+	s.mu.Unlock()
 	go func() {
 		<-ctx.Done()
-		c.mu.Lock()
-		defer c.mu.Unlock()
-		c.watchers = slices.DeleteFunc(c.watchers, func(one chan struct{}) bool { return one == watcher })
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		s.watchers = slices.DeleteFunc(s.watchers, func(one chan struct{}) bool { return one == watcher })
 	}()
 	return watcher
-}
-
-func (c *changeSignal) notify() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	for _, watcher := range c.watchers {
-		select {
-		case watcher <- struct{}{}:
-		default:
-		}
-	}
 }

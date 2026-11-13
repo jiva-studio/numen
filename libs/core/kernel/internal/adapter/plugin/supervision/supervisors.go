@@ -27,7 +27,7 @@ type Supervisors struct {
 	report        func(error)
 	onDrop        func(pluginID string)
 	startTimes    map[string]time.Time
-	changes       *changeSignal
+	watchers      []chan struct{}
 }
 
 // NewSupervisors returns the supervisors of a host that has no plugin. report receives the problems
@@ -39,7 +39,6 @@ func NewSupervisors(report func(error), onDrop func(pluginID string)) *Superviso
 		listenerPorts: make(map[string]map[string]int),
 		clients:       transport.NewClients(),
 		startTimes:    make(map[string]time.Time),
-		changes:       &changeSignal{},
 		report:        report,
 		onDrop:        onDrop,
 	}
@@ -157,7 +156,7 @@ func (s *Supervisors) Release(pluginID, token string, now time.Time) {
 		return
 	}
 	sup.Release(now)
-	s.changes.notify()
+	notifyLocked(s)
 }
 
 // Clients returns the clients that call the processes, by the token each process was given.
@@ -215,7 +214,7 @@ func (s *Supervisors) acquireRunningLocked(pluginID string, sup *lifecycle.Super
 	if IsNoEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(now) {
 		return NoEndpoint(), false
 	}
-	s.changes.notify()
+	notifyLocked(s)
 	return endpoint, true
 }
 
@@ -257,9 +256,9 @@ func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachmen
 	exit := sup.GetExitSignal()
 	go func() {
 		<-exit
-		s.changes.notify()
+		s.NotifyChange()
 	}()
-	s.changes.notify()
+	notifyLocked(s)
 	return nil
 }
 
@@ -274,7 +273,7 @@ func (s *Supervisors) AttachInProcess(pluginID string, sup *lifecycle.Supervisor
 	s.endpoints[pluginID] = endpoint
 	sup.ActivateInProcess(now)
 	s.startTimes[pluginID] = now
-	s.changes.notify()
+	notifyLocked(s)
 	return nil
 }
 
@@ -288,5 +287,17 @@ func (s *Supervisors) SetEndpoint(pluginID string, endpoint transport.Endpoint) 
 // NotifyChange tells the watchers of RunningProcesses that a plugin took or returned a lease, or
 // stopped, outside the calls of the supervisors.
 func (s *Supervisors) NotifyChange() {
-	s.changes.notify()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	notifyLocked(s)
+}
+
+// notifyLocked signals the watchers under either lock of the supervisors: only a full lock changes them.
+func notifyLocked(s *Supervisors) {
+	for _, watcher := range s.watchers {
+		select {
+		case watcher <- struct{}{}:
+		default:
+		}
+	}
 }
