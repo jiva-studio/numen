@@ -36,7 +36,10 @@ export function createPaletteNotes(readNote: ReadNote) {
     runInBackground(
       pending.then(({ type, properties }) => {
         if (requestGeneration !== generation) return
-        notes.value = new Map(notes.value).set(path, { type, ...(properties ? { properties } : {}) })
+        notes.value = new Map(notes.value).set(path, {
+          type,
+          ...(properties ? { properties } : {}),
+        })
       }),
       () => undefined,
     )

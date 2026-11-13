@@ -49,9 +49,7 @@ export function createWhenAvailability(context: WindowWhenContext) {
     if (!condition) return false
     const isOverFile = target.isReady && (target.path || target.file) !== ''
     const note =
-      isOverFile && context.getNote && hasNoteKindVariable(condition)
-        ? context.getNote(target)
-        : {}
+      isOverFile && context.getNote && hasNoteKindVariable(condition) ? context.getNote(target) : {}
     if (note === undefined) return false
     return condition.evaluate(
       getPaletteValues(target, context.getContentTypes(), context.getConfig(), note),
