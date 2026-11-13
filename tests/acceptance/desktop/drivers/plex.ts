@@ -59,7 +59,7 @@ export class PlexDriver {
     const graph = await this.getGraph()
     const lifted = graph
       .locator('.plex__lifted')
-      .filter({ has: graph.locator('.plex__title-text').filter({ hasText: getWholeText(title) }) })
+      .filter({ has: this.scenario.page.locator('.plex__title-text').filter({ hasText: getWholeText(title) }) })
     return (await this.getNode(title)).locator(selector).or(lifted.locator(selector))
   }
 
@@ -144,7 +144,8 @@ export class PlexDriver {
     let before = ''
     await expect
       .poll(async () => {
-        const now = JSON.stringify(await handle.boundingBox())
+        const box = await handle.boundingBox()
+        const now = JSON.stringify(box && [box.x, box.y, box.width, box.height].map(Math.round))
         const isStill = now === before
         before = now
         return isStill

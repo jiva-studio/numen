@@ -57,14 +57,17 @@ Feature: Plex link inspector
 
     Scenario: A reverse link is added
       When the person adds the reverse link from "Quay" to "Harbour" in the plex
-      Then the note titled "Harbour" links to the note titled "Quay"
-      And the note titled "Quay" links to the note titled "Harbour"
+      Then the vault "Test" has the following links:
+        | from    | to      | role   |
+        | Harbour | Quay    | child  |
+        | Quay    | Harbour | parent |
 
     Scenario: One direction of a link is removed
       Given the person adds the reverse link from "Quay" to "Harbour" in the plex
       When the person removes the link from "Quay" to "Harbour" in the plex
-      Then the note titled "Harbour" links to the note titled "Quay"
-      And the note titled "Quay" does not link to the note titled "Harbour"
+      Then the vault "Test" has the following links:
+        | from    | to   | role  |
+        | Harbour | Quay | child |
 
     Scenario: A link is removed
       When the person removes the link between "Harbour" and "Quay" in the plex
