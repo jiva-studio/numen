@@ -770,7 +770,7 @@ export const PluginProcessSchema: GenMessage<PluginProcess> = /*@__PURE__*/
  */
 export type DeliverEventRequest = Message<"numen.v1.DeliverEventRequest"> & {
   /**
-   * The event as the host names it, such as onFile:<extension> or onCommand:<id>.
+   * The event as the host names it, such as onSearchSourceReady:<vault id>.
    *
    * @generated from field: string event = 1;
    */

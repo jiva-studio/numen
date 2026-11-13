@@ -39,6 +39,8 @@ const emit = defineEmits<{
   (event: 'select-model', option: AgentModelOption): void
   /** A depth of reasoning was chosen from the dropdown, by the name of the level. */
   (event: 'select-reasoning', id: string): void
+  /** The list of models or of reasoning levels opened. */
+  (event: 'open-choices'): void
   (event: 'open-settings'): void
 }>()
 
@@ -115,6 +117,7 @@ function onSelectReasoning(id: string) {
       @stop="emit('stop')"
       @select-model="onSelectModel"
       @select-reasoning="onSelectReasoning"
+      @open-choices="emit('open-choices')"
       @open-settings="emit('open-settings')"
     />
   </div>

@@ -9,6 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+
+	"github.com/jiva-studio/numen/libs/core/protocol"
 )
 
 func TestHostSafeMode(t *testing.T) {
@@ -61,7 +63,7 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatalf("expected errSafeModeActive, got %v", err)
 	}
 
-	activated, err := host.Events.TriggerEvent(ctx, "onFile:test.pdf")
+	activated, err := host.Events.TriggerEvent(ctx, protocol.GetSearchSourceReadyEvent("v-1"))
 	if err != nil {
 		t.Fatalf("TriggerEvent error: %v", err)
 	}

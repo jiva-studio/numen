@@ -49,12 +49,18 @@ export function createStatusView(model: IndexStats) {
   return defineComponent({
     name: 'IndexStatsStatusView',
     setup: () => () =>
-      h(StatsIndicator, { stats: model.stats.value, phase: model.phase.value, locale: undefined }),
+      h(StatsIndicator, {
+        stats: model.stats.value,
+        phase: model.phase.value,
+        locale: undefined,
+        onOpen: model.open,
+        onClose: model.close,
+      }),
   })
 }
 
 export const activate = (context: PluginContext, parts: StatsParts = browserParts): void => {
-  const model = createIndexStats(parts)
+  const model = createIndexStats({ ...parts, tasks: context.work.backgroundTasks })
   context.register.slotView({ id: STATS_VIEW, component: createStatusView(model) })
   context.plugin.subscriptions.push({ dispose: () => model.stop() })
   model.start()

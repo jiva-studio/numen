@@ -33,7 +33,8 @@ func (r *ConnectionTypes) ListTypes() []connection.Type {
 		}
 		for _, declared := range plugin.Manifest.Contributes.ConnectionTypes {
 			types = append(types, connection.Type{
-				PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name, IsAvailable: true, Declaration: declared,
+				PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name, PluginVersion: plugin.Manifest.Version,
+				IsAvailable: true, Declaration: declared,
 			})
 		}
 	}
@@ -75,6 +76,7 @@ func (r *ConnectionTypes) GetType(typeID string) (connection.Type, bool) {
 		return connection.Type{}, false
 	}
 	return connection.Type{
-		PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name, IsAvailable: true, Declaration: declared,
+		PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name, PluginVersion: plugin.Manifest.Version,
+		IsAvailable: true, Declaration: declared,
 	}, true
 }

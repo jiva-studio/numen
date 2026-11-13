@@ -19,7 +19,7 @@ import (
 // everyFieldManifest sets every field of the schema at least once, and every kind of option.
 const everyFieldManifest = `{
 	"id": "org.example.full", "name": "Full", "version": "1.2.3", "protocol": 1, "description": "d", "isOffByDefault": true,
-	"capabilities": ["tools"], "targets": ["desktop.editor"], "activationEvents": ["onStartup"],
+	"capabilities": ["tools"], "targets": ["desktop.editor"], "activationEvents": ["onSearchSourceReady"],
 	"permissions": ["vault:read"],
 	"dependencies": [{"id": "weights", "kind": "model", "version": "1", "sourceUrl": "https://example.org/w",
 		"checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000", "metadata": {"k": "v"}}],

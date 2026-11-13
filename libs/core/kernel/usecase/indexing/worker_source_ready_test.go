@@ -45,7 +45,7 @@ func testAPassThatEmbeddedEverythingTellsThatTheVectorsOfItsVaultAreReady(t *tes
 	}
 }
 
-func testAPassWithNothingPendingTellsAgain(t *testing.T, openReading openFunc) {
+func testAPassWithNothingNewTellsNothing(t *testing.T, openReading openFunc) {
 	t.Helper()
 	log := &readyLog{}
 	p := readyPass(t, openReading, &fakeEmbedder{dims: 64}, log)
@@ -53,8 +53,23 @@ func testAPassWithNothingPendingTellsAgain(t *testing.T, openReading openFunc) {
 	p.embed(t.Context())
 	p.embed(t.Context())
 
-	if len(log.vaults) != 2 {
-		t.Errorf("the worker told %d times, want once for each pass", len(log.vaults))
+	if len(log.vaults) != 1 {
+		t.Errorf("the worker told %d times, want once for the pass that made vectors", len(log.vaults))
+	}
+}
+
+func testTheFirstPassOfASessionTellsOfVectorsThatExist(t *testing.T, openReading openFunc) {
+	t.Helper()
+	log := &readyLog{}
+	p := readyPass(t, openReading, &fakeEmbedder{dims: 64}, log)
+	p.embed(t.Context())
+
+	next := p.worker.newPass(p.worker.NewSession(), p.v, false)
+	next.embed(t.Context())
+	next.embed(t.Context())
+
+	if len(log.vaults) != 2 || log.vaults[1] != p.v.ID {
+		t.Errorf("told %v, want the vault once more for the new session", log.vaults)
 	}
 }
 

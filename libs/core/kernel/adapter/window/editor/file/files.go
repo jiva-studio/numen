@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io/fs"
-	"path/filepath"
-	"strings"
 
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -93,12 +91,6 @@ func (h *Folders) ListFileKinds(
 	paths, err := eachOnce(r.Msg.GetPaths())
 	if err != nil {
 		return nil, err
-	}
-	for _, p := range paths {
-		ext := strings.TrimPrefix(filepath.Ext(p), ".")
-		if ext != "" {
-			h.events.EmitFileEvent("onFile:" + ext)
-		}
 	}
 	listing, err := h.listKinds.Execute(ctx, showing, paths)
 	if err != nil {

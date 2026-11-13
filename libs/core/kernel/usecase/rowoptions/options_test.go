@@ -27,7 +27,7 @@ func newSetup(t *testing.T) *setup {
 	w := modelcalltest.New()
 	return &setup{
 		world: w, entry: w.AddServer(t, "First", address, "sk-one"),
-		options: rowoptions.NewOptions(w.Resolve, w.ReadSecrets, w.Source),
+		options: rowoptions.NewOptions(w.Resolve, w.ReadSecrets, w.Source, rowoptions.NewCache(w.Clock)),
 	}
 }
 

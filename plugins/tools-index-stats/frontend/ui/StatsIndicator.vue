@@ -2,7 +2,7 @@
 /**
  * The title bar item that counts the vectors of the search index, and the popover with its details.
  */
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { useMenuDismissal } from '@numen/ui'
 import type { Stats } from '../api/stats'
 import type { Phase } from '../model/stats'
@@ -15,6 +15,12 @@ const props = defineProps<{
   stats: Stats | null
   phase: Phase
   locale?: string | undefined
+}>()
+
+/* --------------------------------- Events --------------------------------- */
+const emit = defineEmits<{
+  (event: 'open'): void
+  (event: 'close'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -32,7 +38,19 @@ const summary = computed(() => {
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
-watch(isOpen, (open) => (open ? dismissal.listen() : dismissal.release()))
+watch(isOpen, (open) => {
+  if (open) {
+    dismissal.listen()
+    emit('open')
+  } else {
+    dismissal.release()
+    emit('close')
+  }
+})
+
+onBeforeUnmount(() => {
+  if (isOpen.value) emit('close')
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {

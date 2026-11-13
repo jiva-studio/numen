@@ -14,9 +14,10 @@ type toolActivator interface {
 	Release(pluginID string)
 }
 
-// pluginInfoLister lists the plugins the host knows.
+// pluginInfoLister lists the plugins the host knows and tells the enabled ones.
 type pluginInfoLister interface {
 	GetPluginInfos() []plugindomain.Info
+	IsEnabled(pluginID string) bool
 }
 
 // ToolHost is what the catalog of tools starts plugins and lists them through.
@@ -40,3 +41,6 @@ func (h ToolHost) Release(pluginID string) { h.activation.Release(pluginID) }
 
 // GetPluginInfos lists the plugins the host knows.
 func (h ToolHost) GetPluginInfos() []plugindomain.Info { return h.registry.GetPluginInfos() }
+
+// IsEnabled is false for a disabled plugin and for every plugin in safe mode.
+func (h ToolHost) IsEnabled(pluginID string) bool { return h.registry.IsEnabled(pluginID) }
