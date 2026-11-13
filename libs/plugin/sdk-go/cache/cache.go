@@ -275,7 +275,10 @@ func (c *Cache[V]) loadDiskAndRefreshLocked(key string, load func(context.Contex
 		if _, exists := c.entries[key]; !exists {
 			c.entries[key] = stored
 		}
-		c.enqueueAsyncLoadLocked(key, load)
+		// Without a TTL an entry never expires, so the read after a restart is its only refresh.
+		if c.ttl <= 0 || !c.isFreshLocked(stored.fetchedAt) {
+			c.enqueueAsyncLoadLocked(key, load)
+		}
 		c.mu.Unlock()
 		return stored.value, true
 	}

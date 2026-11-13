@@ -633,3 +633,50 @@ func TestAnAsyncDiskEntryPastItsTTLIsRefreshedAfterAReadWithoutALoader(t *testin
 		return err == nil && found && slices.Equal(got, []string{"new"})
 	})
 }
+
+func TestAnAsyncDiskEntryWithinItsTTLIsServedWithoutALoad(t *testing.T) {
+	dir := t.TempDir()
+	now := newFakeClock(time.Unix(6000, 0))
+	before := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithAsync(true), cache.WithClock(now))
+	before.Put("k", []string{"kept"})
+	now.Advance(30 * time.Minute)
+
+	after := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithAsync(true), cache.WithClock(now))
+	var calls atomic.Int32
+	got, found, err := after.Get(t.Context(), "k", func(context.Context) ([]string, error) {
+		calls.Add(1)
+		return []string{"new"}, nil
+	})
+	time.Sleep(20 * time.Millisecond)
+
+	if err != nil || !found || !slices.Equal(got, []string{"kept"}) || calls.Load() != 0 {
+		t.Errorf("Get() = %v, %v, %v (calls=%d), want the list from disk and no load", got, found, err, calls.Load())
+	}
+}
+
+func TestAnAsyncDiskEntryPastItsTTLIsServedAndRefreshedOnce(t *testing.T) {
+	dir := t.TempDir()
+	now := newFakeClock(time.Unix(6000, 0))
+	before := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithAsync(true), cache.WithClock(now))
+	before.Put("k", []string{"old"})
+	now.Advance(2 * time.Hour)
+
+	after := cache.New[[]string]("models", cache.WithDir(dir), cache.WithTTL(time.Hour), cache.WithAsync(true), cache.WithClock(now))
+	var calls atomic.Int32
+	load := func(context.Context) ([]string, error) {
+		calls.Add(1)
+		return []string{"new"}, nil
+	}
+	got, found, err := after.Get(t.Context(), "k", load)
+	if err != nil || !found || !slices.Equal(got, []string{"old"}) {
+		t.Fatalf("Get() = %v, %v, %v, want the list from disk", got, found, err)
+	}
+
+	waitForCondition(t, func() bool {
+		v, ok, err := after.Get(t.Context(), "k", load)
+		return err == nil && ok && slices.Equal(v, []string{"new"})
+	})
+	if calls.Load() != 1 {
+		t.Errorf("loaded %d times, want once", calls.Load())
+	}
+}
