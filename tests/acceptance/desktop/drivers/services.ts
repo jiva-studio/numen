@@ -1,7 +1,8 @@
 /**
  * The services a scenario names: programs of the test that stand in for a language model server on
  * this computer, each with a name, an address and the way it answers. A service no step sets up
- * works and takes any key; it starts when a connection first needs its address. The program is the fake
+ * works and takes any key; it starts when a connection first needs its address. A connection keeps
+ * the address it was given, so a service set up again listens where it listened before. The program is the fake
  * OpenAI server of the plugin "Language model services": the CI jobs unpack it, and
  * `make app_desktop_acceptance` builds it.
  */
@@ -81,7 +82,6 @@ export class ServiceDriver {
     return this.states.get(name) ?? { isBusy: false, key: '' }
   }
 
-  /** A connection keeps the address it was given, so a service set up again listens where it listened before. */
   private async restart(name: string, state: ServiceState): Promise<void> {
     const previous = this.running.get(name)
     this.stop(name)

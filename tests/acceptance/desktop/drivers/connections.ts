@@ -11,7 +11,7 @@ import type { SettingsDriver } from './settings.js'
 /** The key field shows this mask in place of a saved key and is empty without one. */
 const KEY_SAVED = '••••••••'
 const KEY_LABEL = 'API key'
-/** The column of a table of rows that names the connection; every other column is a field of the row, by its title. */
+/** The column of a table of rows that names the connection; every other column is a field of the row, by its title: "model" is the field "Model". */
 const CONNECTION_COLUMN = 'connection'
 
 export interface ConnectionEntry {
@@ -20,7 +20,6 @@ export interface ConnectionEntry {
   readonly service: string
 }
 
-/** The rows of a table under its head, each as a map from the column to the cell. */
 const readTable = (table: readonly (readonly string[])[]): Map<string, string>[] => {
   const [head = [], ...rows] = table
   return rows.map((row) => new Map(head.map((column, index) => [column.trim(), (row[index] ?? '').trim()])))
@@ -32,7 +31,6 @@ const requireCell = (row: Map<string, string>, column: string): string => {
   return cell
 }
 
-/** The title of the field a column names: "model" is the field "Model". */
 const getFieldTitle = (column: string): string => column.charAt(0).toUpperCase() + column.slice(1)
 
 export const readConnectionEntries = (table: readonly (readonly string[])[]): ConnectionEntry[] =>

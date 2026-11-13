@@ -34,7 +34,6 @@ export class ConnectionRows {
     return this.getRows(setting).nth(before)
   }
 
-  /** Removes the last row with its button Remove row. */
   async removeLast(setting: Locator): Promise<void> {
     const count = await this.getRows(setting).count()
     await setting.getByRole('button', { name: `Remove row ${count}`, exact: true }).click()
