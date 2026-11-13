@@ -24,6 +24,9 @@ type Host interface {
 	bridge.Activator
 	ResolveCapability(capability string) (manifest.Discovered, error)
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
+	GetPluginConfigRevision(pluginID string) string
+	IsPluginEnabled(pluginID string) bool
+	HasEndpoint(pluginID string) bool
 }
 
 // description is what one read of the source answers: its description, and the floor hint, which is no part
@@ -33,12 +36,13 @@ type description struct {
 	floorHint float64
 }
 
-// Source is the search source plugin seen as a searchsourceport.Source.
+// Source is the search source plugin seen as a searchsourceport.Source. It holds the plugin only for the
+// length of each call, so the plugin stops once it has been idle for its limit.
 type Source struct {
-	host     bridge.Activator
+	host     Host
 	pluginID string
 	service  bridge.Service[numenv1connect.SearchSourceServiceClient]
-	lease    *bridge.Lease
+	kept     *Descriptions
 	mu       sync.Mutex
 	current  description
 
@@ -50,28 +54,30 @@ type Source struct {
 	stopWatch   func()
 }
 
-// Open activates the plugin that declares the search source capability and reads its description. A
-// plugin whose settings do not let it describe a source fails with the sentence the plugin gives.
-func Open(ctx context.Context, host Host) (*Source, error) {
-	b, readErr, err := activate(ctx, host)
+// Open finds the plugin that declares the search source capability and takes its description from kept, or
+// starts the plugin to read it where kept has none for the configuration the plugin has now. A plugin whose
+// settings do not let it describe a source fails with the sentence the plugin gives. A nil kept reads the
+// plugin every time.
+func Open(ctx context.Context, host Host, kept *Descriptions) (*Source, error) {
+	b, readErr, err := open(ctx, host, kept)
 	if err != nil {
 		return nil, err
 	}
 	if readErr != nil {
-		return nil, errors.Join(readErr, b.lease.Close())
+		return nil, readErr
 	}
 	b.stopWatch = host.WatchPluginConfig(b.pluginID, b.announceDescriptionChange)
 	return b, nil
 }
 
-// OpenWatching activates the plugin that declares the search source capability and keeps it active while
-// the source cannot describe itself yet. onReadError receives the outcome of the first read and of every read
-// that follows a configuration of the plugin. A source whose first read fails has the zero description until
-// a later read succeeds, and that read announces the change. A plugin whose settings do not allow a source
-// answers failed_precondition with a sentence a person reads, and onReadError receives that sentence. It
-// fails only when the plugin cannot be resolved or activated.
-func OpenWatching(ctx context.Context, host Host, onReadError func(error)) (*Source, error) {
-	b, readErr, err := activate(ctx, host)
+// OpenWatching opens the source as Open does, and also when it cannot describe itself yet. onReadError
+// receives the outcome of the first read and of every read that follows a change of the configuration of the
+// plugin. A source whose first read fails has the zero description until a later read succeeds, and that read
+// announces the change. A plugin whose settings do not allow a source answers failed_precondition with a
+// sentence a person reads, and onReadError receives that sentence. It fails only when the plugin cannot be
+// resolved or started.
+func OpenWatching(ctx context.Context, host Host, kept *Descriptions, onReadError func(error)) (*Source, error) {
+	b, readErr, err := open(ctx, host, kept)
 	if err != nil {
 		return nil, err
 	}
@@ -81,29 +87,35 @@ func OpenWatching(ctx context.Context, host Host, onReadError func(error)) (*Sou
 	return b, nil
 }
 
-func activate(ctx context.Context, host Host) (b *Source, readErr, err error) {
+func open(ctx context.Context, host Host, kept *Descriptions) (b *Source, readErr, err error) {
 	plugin, err := host.ResolveCapability(bridge.CapabilitySearchSource)
 	if err != nil {
 		return nil, nil, err
 	}
+	pluginID := plugin.Manifest.ID
+	b = &Source{
+		host:     host,
+		pluginID: pluginID,
+		service:  bridge.Service[numenv1connect.SearchSourceServiceClient]{Host: host, PluginID: pluginID, NewClient: numenv1connect.NewSearchSourceServiceClient},
+		kept:     kept,
+	}
+	revision := host.GetPluginConfigRevision(pluginID)
+	if read, isKept := kept.get(pluginID, revision); isKept {
+		b.current, b.announced = read, read.source
+		return b, nil, nil
+	}
 
-	client, lease, err := bridge.Open(ctx, host, plugin.Manifest.ID, numenv1connect.NewSearchSourceServiceClient)
+	client, call, err := b.service.Open(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	read, err := readDescription(ctx, client)
 	if err != nil {
-		readErr = readFailure(plugin.Manifest.ID, err)
+		return b, errors.Join(readFailure(pluginID, err), call.Close()), nil
 	}
-	return &Source{
-		host:      host,
-		pluginID:  plugin.Manifest.ID,
-		service:   bridge.Service[numenv1connect.SearchSourceServiceClient]{Host: host, PluginID: plugin.Manifest.ID, NewClient: numenv1connect.NewSearchSourceServiceClient},
-		lease:     lease,
-		current:   read,
-		announced: read.source,
-	}, readErr, nil
+	kept.put(pluginID, revision, read)
+	b.current, b.announced = read, read.source
+	return b, call.Close(), nil
 }
 
 func readDescription(ctx context.Context, client numenv1connect.SearchSourceServiceClient) (description, error) {
@@ -141,8 +153,8 @@ func readFailure(pluginID string, err error) error {
 	return transport.ReadRPCError("describe search source "+pluginID, err)
 }
 
-// Describe returns the description of the search source as last read: on open, and after each configuration of
-// the plugin, which is when it changes.
+// Describe returns the description of the search source as last read: on open, or kept from a read under the
+// same configuration, and after each change of the configuration of the plugin, which is when it changes.
 func (b *Source) Describe() searchsource.Description {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -203,8 +215,12 @@ func (b *Source) SearchPassages(ctx context.Context, place searchsource.Place, q
 	return matches, nil
 }
 
-// DescribeCoverage asks the plugin what a person reads about how far it has indexed the vault of the place.
+// DescribeCoverage asks the plugin what a person reads about how far it has indexed the vault of the place. A
+// plugin that does not run is not started for it, and says nothing.
 func (b *Source) DescribeCoverage(ctx context.Context, place searchsource.Place, counts searchsource.Counts) (text string, err error) {
+	if !b.host.HasEndpoint(b.pluginID) {
+		return "", nil
+	}
 	client, call, err := b.service.Open(ctx)
 	if err != nil {
 		return "", err
@@ -250,15 +266,15 @@ func readVectors(protoVectors []*v1.FloatVector) [][]float32 {
 	return vectors
 }
 
-// Close releases the active reference count for the search source plugin in the host supervisor.
+// Close stops following the configuration of the plugin.
 func (b *Source) Close() error {
 	b.stopWatch()
-	return b.lease.Close()
+	return nil
 }
 
 // OnDescriptionChange registers fn to run when the plugin reports a description unlike the last one
-// announced: another recipe, width, shortest text, chunk size or concurrency. The plugin is read after it has been
-// given its configuration, so a setting of another plugin never runs fn.
+// announced: another recipe, width, shortest text, chunk size or concurrency. The plugin is read after a change of
+// its own configuration, so a setting of another plugin never runs fn.
 func (b *Source) OnDescriptionChange(fn func()) {
 	b.changeMu.Lock()
 	defer b.changeMu.Unlock()
@@ -292,6 +308,10 @@ func (b *Source) announceDescriptionChange() {
 func (b *Source) readDescriptionChange() []func() {
 	b.changeMu.Lock()
 	defer b.changeMu.Unlock()
+	if !b.host.IsPluginEnabled(b.pluginID) {
+		return nil
+	}
+	revision := b.host.GetPluginConfigRevision(b.pluginID)
 	// This read runs in the background. A source served through a connection may need the plugin of that
 	// connection started first, so the read has the same limit as any other read of the description.
 	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelInfoTimeout)
@@ -310,6 +330,7 @@ func (b *Source) readDescriptionChange() []func() {
 		b.reportReadError(err)
 		return nil
 	}
+	b.kept.put(b.pluginID, revision, read)
 	b.mu.Lock()
 	b.current = read
 	b.mu.Unlock()

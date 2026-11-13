@@ -18,7 +18,7 @@ func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHo
 		Runtime: PluginRuntime{
 			Activator: runtime, PluginRetrier: runtime, PluginDiscoverer: runtime, PluginLister: runtime,
 			PluginResolver: runtime, PluginEventEmitter: runtime, PluginBinding: runtime, TextPlugins: runtime,
-			PluginFailures: runtime, ConfigWatcher: runtime, ClientLookup: transport.NewClientLookup(nil),
+			PluginFailures: runtime, ConfigWatcher: runtime, RunningPlugins: runtime, ClientLookup: transport.NewClientLookup(nil),
 		},
 		Configuration: PluginConfiguration{
 			PluginSettingDeclarer: settings, ConfigRefresher: settings, SettingsPush: settings,

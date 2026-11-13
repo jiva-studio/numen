@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
@@ -90,6 +91,7 @@ type PluginRuntime struct {
 	textport.TextPlugins
 	pluginport.PluginFailures
 	pluginport.ConfigWatcher
+	pluginport.RunningPlugins
 }
 
 // PluginConfiguration is what carries the settings to the plugins.
@@ -125,6 +127,7 @@ type PluginViews struct {
 // store files in and keeps the dependencies in the models folder the host names; RefreshDependencies
 // provisions them as the environment names them now. Detection and RowOptions keep what the providers
 // reported, for every window of the host; SetStorage also sets the file Detection keeps its answers in.
+// SourceDescriptions keeps the description of the search source between its openings and processes.
 type PluginHost struct {
 	Runtime             PluginRuntime
 	Configuration       PluginConfiguration
@@ -139,6 +142,7 @@ type PluginHost struct {
 	Release             pluginprocess.Stopper
 	Detection           *providerbridge.Detection
 	RowOptions          *rowoptions.Cache
+	SourceDescriptions  *sourcebridge.Descriptions
 }
 
 // AdaptPluginHost lends the capabilities of host, the roles of a plugin host the caller made with NewPluginRoles, to the container. The
@@ -164,6 +168,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 			TextPlugins:        host.Registry,
 			PluginFailures:     host.Failures,
 			ConfigWatcher:      host.Config,
+			RunningPlugins:     host.Activation,
 		},
 		Configuration: PluginConfiguration{
 			PluginSettingDeclarer: host.Registry,
@@ -197,6 +202,7 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		Release:             host.Teardown,
 		Detection:           detection,
 		RowOptions:          rowoptions.NewCache(clock.System{}),
+		SourceDescriptions:  sourcebridge.NewDescriptions(host.Storage),
 	}
 }
 
