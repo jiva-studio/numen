@@ -146,7 +146,7 @@ func TestASinkThatRefusedAReportIsHandedNoOther(t *testing.T) {
 	}
 
 	toolSink := &recorder{refusal: refusal}
-	toolHandler := NewHandler(toolSink)
+	toolHandler := New(toolSink)
 	toolHandler.Handle(map[string]any{"tool_calls": []any{map[string]any{"name": "note_read"}}})
 	toolHandler.SendText("after tool refusal")
 	if len(toolSink.reports) != 1 || !errors.Is(toolHandler.Err(), refusal) {

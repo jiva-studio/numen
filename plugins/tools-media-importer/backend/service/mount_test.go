@@ -19,8 +19,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
-// The handler a host that links the plugin in answers the importer API with the token it was
-// given, and rejects a call without it.
 func newEnvHandler(t *testing.T, vars map[string]string) (http.Handler, error) {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, "")
@@ -30,6 +28,8 @@ func newEnvHandler(t *testing.T, vars map[string]string) (http.Handler, error) {
 	return servertest.NewHandler(vars, MountFromEnv)
 }
 
+// The handler a host that links the plugin in answers the importer API with the token it was
+// given, and rejects a call without it.
 func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 	handler, err := newEnvHandler(t, map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token", "NUMEN_HOST_PORT": "1"})
 	if err != nil {
