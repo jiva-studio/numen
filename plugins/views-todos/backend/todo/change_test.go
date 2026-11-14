@@ -207,7 +207,7 @@ func FuzzChangeLineChangesOnlyTheCheckboxAndTheDoneField(f *testing.F) {
 	f.Add("- [ ] a done:2026-01-01 +home")
 	f.Add("* [ ] see `done:2026-01-01` [[x]] [l](done:2026-01-01)")
 	f.Add("- [x] already")
-	f.Add("﻿- [ ] first line")
+	f.Add("\ufeff- [ ] first line")
 	f.Fuzz(func(t *testing.T, line string) {
 		if strings.ContainsAny(line, "\r\n") {
 			return

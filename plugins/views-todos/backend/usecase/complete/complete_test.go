@@ -114,15 +114,15 @@ func TestExecuteKeepsTheLineEndingsTheByteOrderMarkAndTheFrontmatter(t *testing.
 	}{
 		{
 			name: "CRLF endings and a byte order mark before the frontmatter",
-			note: "﻿---\r\ntitle: Plan\r\n---\r\n- [ ] first\r\n- [ ] second\r\n",
+			note: "\ufeff---\r\ntitle: Plan\r\n---\r\n- [ ] first\r\n- [ ] second\r\n",
 			line: 5, raw: "- [ ] second",
-			want: "﻿---\r\ntitle: Plan\r\n---\r\n- [ ] first\r\n- [x] second done:2026-11-14\r\n",
+			want: "\ufeff---\r\ntitle: Plan\r\n---\r\n- [ ] first\r\n- [x] second done:2026-11-14\r\n",
 		},
 		{
 			name: "a byte order mark before a task on the first line",
-			note: "﻿- [ ] first\n- [ ] second",
-			line: 1, raw: "﻿- [ ] first",
-			want: "﻿- [x] first done:2026-11-14\n- [ ] second",
+			note: "\ufeff- [ ] first\n- [ ] second",
+			line: 1, raw: "\ufeff- [ ] first",
+			want: "\ufeff- [x] first done:2026-11-14\n- [ ] second",
 		},
 		{
 			name: "a last line with no line break",
