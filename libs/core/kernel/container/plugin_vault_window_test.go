@@ -49,7 +49,8 @@ func TestTheWindowFollowsANoteAPluginRenamesOrMoves(t *testing.T) {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}, current, window)
-	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: &useCases})
+	changes := container.GetNoteChanges(useCases)
+	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: &changes})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +96,8 @@ func TestWindowIgnoresPluginMoveInOtherVault(t *testing.T) {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}, current, window)
-	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: &useCases})
+	changes := container.GetNoteChanges(useCases)
+	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: &changes})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +165,8 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 		isSwitched.Store(true)
 		return err
 	}, current, window)
-	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: &useCases})
+	changes := container.GetNoteChanges(useCases)
+	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: &changes})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,7 +197,8 @@ func TestWindowMoveAfterPluginMoveIsShownToTheWindow(t *testing.T) {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}, current, window)
-	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: &useCases})
+	changes := container.GetNoteChanges(useCases)
+	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Notes: &changes})
 	if err != nil {
 		t.Fatal(err)
 	}
