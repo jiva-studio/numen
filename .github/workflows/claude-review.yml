@@ -12,10 +12,6 @@ on:
   issue_comment:
     types: [created]
 
-concurrency:
-  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
-  cancel-in-progress: true
-
 permissions: {}
 
 jobs:
@@ -27,6 +23,9 @@ jobs:
         && github.event.issue.pull_request
         && startsWith(github.event.comment.body, '/nm-review')
         && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association))
+    concurrency:
+      group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -94,10 +93,19 @@ jobs:
             echo "BASE_SHA=$base_sha"
             echo "REVIEWED_SHA=$head_sha"
           } >> "$GITHUB_ENV"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            approved=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json reviews --jq \
+              '[.reviews[] | select(.author.login == "github-actions" and .commit.oid == "'"$head_sha"'")][-1].state == "APPROVED"')
+            if [ "$approved" = "true" ]; then
+              echo "::notice::Commit $head_sha is already approved by nm-review"
+              echo "ALREADY_APPROVED=true" >> "$GITHUB_ENV"
+            fi
+          fi
 
       # The review follows the rules and tools of main, so a pull request cannot change the
       # instructions of its own review. The pull request's versions stay readable with git show.
       - name: Take the review rules from main
+        if: env.ALREADY_APPROVED != 'true'
         run: |
           set -euo pipefail
           # The text checks sit in tools/checks, and in tools/lint-narrative on a main from before that move.
@@ -108,28 +116,28 @@ jobs:
           rm -rf .agents .claude/skills tools/checks tools/lint-narrative
           git restore --source=origin/main --worktree -- "${paths[@]}"
 
-      - if: env.MODE == 'full'
+      - if: env.ALREADY_APPROVED != 'true' && env.MODE == 'full'
         uses: ./.github/actions/setup-go
         with:
           go-version-file: libs/core/kernel/go.mod
           cache-key: core-test-plain
 
-      - if: env.MODE == 'full'
+      - if: env.ALREADY_APPROVED != 'true' && env.MODE == 'full'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
           cache: npm
 
-      - if: env.MODE == 'full'
+      - if: env.ALREADY_APPROVED != 'true' && env.MODE == 'full'
         uses: ./.github/actions/install-node-modules
 
-      - if: env.MODE == 'full'
+      - if: env.ALREADY_APPROVED != 'true' && env.MODE == 'full'
         uses: ./.github/actions/build-ui
         with:
           shell: "true"
 
       - name: Quick review
-        if: env.MODE == 'quick'
+        if: env.ALREADY_APPROVED != 'true' && env.MODE == 'quick'
         timeout-minutes: 20
         uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1
         with:
@@ -142,7 +150,7 @@ jobs:
             --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(node tools/checks/style/names/check.mjs:*),Bash(node tools/lint-narrative/scan.mjs:*)"
 
       - name: Full review
-        if: env.MODE == 'full'
+        if: env.ALREADY_APPROVED != 'true' && env.MODE == 'full'
         timeout-minutes: 75
         uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1
         with:
@@ -155,6 +163,7 @@ jobs:
             --allowedTools "Read,Grep,Glob,Write,Edit,Bash(cd:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(go test:*),Bash(npx vitest run:*),Bash(node tools/checks/style/names/check.mjs:*),Bash(node tools/lint-narrative/scan.mjs:*)"
 
       - name: Submit the review
+        if: env.ALREADY_APPROVED != 'true'
         run: |
           set -euo pipefail
           head=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)
