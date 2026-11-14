@@ -19,6 +19,7 @@ import {
 import type { CommandTarget } from '@/shared/model/command'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import type { createVaultServices } from './createVaultServices'
+import type { createTabsPart } from './createTabsPart'
 import type { WindowApi } from './createWindowApi'
 
 type VaultServices = ReturnType<typeof createVaultServices>

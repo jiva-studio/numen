@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { CALLER_HEADER } from '@numen/core-client'
 import { createCoreTransport } from '@numen/core-client/testing'
-import { createWindowClients } from './clients'
+import { createVaultClients } from './clients'
 
 describe('a request of the editor', () => {
   it('names the part of the window that makes it', async () => {
@@ -21,7 +21,7 @@ describe('a request of the editor', () => {
         },
       },
     })
-    const clients = createWindowClients({ transport, keepalive: transport })
+    const clients = createVaultClients(transport)
 
     await clients.notes.resolveAddresses({ text: '[[Peat]]' })
     await clients.search.searchNames({ query: 'Peat', limit: 1 })
