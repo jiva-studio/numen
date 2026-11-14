@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 )
 
 // meadowRows are the rows of llm.chat of md.numen.b: the connection Meadow with its model field.
@@ -41,7 +42,7 @@ func (r *meadowRows) ListRowOptions(
 	return []modelcall.Option{{Value: "wren-2", Title: "Wren 2", Group: "Birds"}}, nil
 }
 
-func newRowsClient(t *testing.T, rows RowLists, token string) numenv1connect.HostConnectionServiceClient {
+func newRowsClient(t *testing.T, rows connectionport.RowLists, token string) numenv1connect.HostConnectionServiceClient {
 	t.Helper()
 	fakeCallers := newCallers()
 	fakeCallers.rowLists = rows

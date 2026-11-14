@@ -81,7 +81,6 @@ func InstallPluginVault(c Config,
 type PluginRuntime struct {
 	bridge.Activator
 	pluginport.PluginRetrier
-	pluginport.PluginDiscoverer
 	pluginport.PluginLister
 	pluginport.PluginResolver
 	pluginport.PluginEventEmitter
@@ -96,9 +95,8 @@ type PluginRuntime struct {
 type PluginConfiguration struct {
 	pluginport.PluginSettingDeclarer
 	pluginport.ConfigRefresher
-	pluginport.SettingsPush
-	pluginport.SettingChecker
-	pluginport.PersistHook
+	settingsport.PluginConfig
+	settingsport.PluginSettings
 }
 
 // PluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
@@ -161,7 +159,6 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		Runtime: PluginRuntime{
 			Activator:          host.Activation,
 			PluginRetrier:      host.Retry,
-			PluginDiscoverer:   host.Discovery,
 			PluginLister:       host.Registry,
 			PluginResolver:     host.Registry,
 			PluginEventEmitter: host.Events,
@@ -174,9 +171,8 @@ func adaptPluginHost(host *PluginRoles) *PluginHost {
 		Configuration: PluginConfiguration{
 			PluginSettingDeclarer: host.Registry,
 			ConfigRefresher:       host.Config,
-			SettingsPush:          host.Settings,
-			SettingChecker:        host.Settings,
-			PersistHook:           host.Settings,
+			PluginConfig:          host.Settings,
+			PluginSettings:        host.Settings,
 		},
 		Watch: PluginWatch{
 			PluginShutdown:     host.Teardown,

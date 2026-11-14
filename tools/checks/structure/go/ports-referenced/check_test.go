@@ -91,7 +91,8 @@ func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 func TestPortWalk_FindsThePlantedPort(t *testing.T) {
 	root := load.WriteTreeFixture(t, map[string]string{
 		"port/noteport/noteport.go": "package noteport\n\ntype Reader interface {\n\tRead() string\n\tClose()\n}\n\ntype Orphan interface{ Drop() }\n",
-		"usecase/note/note.go":      "package note\n\nimport \"fixture/port/noteport\"\n\ntype file struct{}\n\nfunc (file) Close() {}\n\nfunc read(r noteport.Reader) string {\n\tfile{}.Close()\n\treturn r.Read()\n}\n",
+		"usecase/note/note.go": "package note\n\nimport \"fixture/port/noteport\"\n\ntype file struct{}\n\nfunc (file) Close() {}\n\n" +
+			"func read(r noteport.Reader) string {\n\tfile{}.Close()\n\treturn r.Read()\n}\n",
 	})
 	port := filepath.Join(root, "port", "noteport")
 	uncalled, err := getUncalledMethods(root, port, "GOWORK=off")

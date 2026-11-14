@@ -15,9 +15,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// getUncalledMethods loads the packages under root with type information for every shipped platform, since a
-// call can sit in a file only one platform builds, and returns the methods of the port interfaces under dir that
-// no package outside dir calls through the port.
 func getUncalledMethods(root, dir string, env ...string) ([]string, error) {
 	dir, err := filepath.Abs(dir)
 	if err != nil {
@@ -25,6 +22,7 @@ func getUncalledMethods(root, dir string, env ...string) ([]string, error) {
 	}
 	declared := map[string]bool{}
 	called := map[string]bool{}
+	// A call can sit in a file only one platform builds.
 	for _, platform := range load.ListShippedPlatforms() {
 		config := load.NewTypedConfig(root, slices.Concat(env, []string{"GOOS=" + platform.GOOS, "GOARCH=" + platform.GOARCH}))
 		config.Tests = false
@@ -34,7 +32,7 @@ func getUncalledMethods(root, dir string, env ...string) ([]string, error) {
 		}
 		for _, pkg := range pkgs {
 			if len(pkg.Errors) > 0 {
-				return nil, fmt.Errorf("%s does not load for %s/%s: %v", pkg.ID, platform.GOOS, platform.GOARCH, pkg.Errors[0])
+				return nil, fmt.Errorf("%s does not load for %s/%s: %w", pkg.ID, platform.GOOS, platform.GOARCH, pkg.Errors[0])
 			}
 		}
 		methods := getPortMethods(pkgs, dir)
@@ -71,8 +69,6 @@ func getUncalledMethods(root, dir string, env ...string) ([]string, error) {
 	return uncalled, nil
 }
 
-// getPortMethods returns the exported methods that the exported interfaces under dir declare, named
-// Interface.Method. A method an interface takes from an embedded interface belongs to the embedded one.
 func getPortMethods(pkgs []*packages.Package, dir string) map[*types.Func]string {
 	methods := map[*types.Func]string{}
 	for _, pkg := range pkgs {
@@ -89,8 +85,9 @@ func getPortMethods(pkgs []*packages.Package, dir string) map[*types.Func]string
 			if !is {
 				continue
 			}
-			for i := range shape.NumExplicitMethods() {
-				if method := shape.ExplicitMethod(i); method.Exported() {
+			// A method an interface takes from an embedded interface belongs to the embedded one.
+			for method := range shape.ExplicitMethods() {
+				if method.Exported() {
 					methods[method] = name + "." + method.Name()
 				}
 			}
@@ -99,10 +96,10 @@ func getPortMethods(pkgs []*packages.Package, dir string) map[*types.Func]string
 	return methods
 }
 
-// getCalledPortMethod returns the port method that expr selects. The selection resolves to the method object of
-// the port when the receiver is the port, an interface that embeds it, or a type parameter it constrains. A
-// method of the same name on a concrete type resolves to another object and does not count.
 func getCalledPortMethod(info *types.Info, expr *ast.SelectorExpr, methods map[*types.Func]string) (string, bool) {
+	// The selection resolves to the method object of the port when the receiver is the port, an interface that
+	// embeds it, or a type parameter it constrains. A method of the same name on a concrete type resolves to
+	// another object and does not count.
 	selection, is := info.Selections[expr]
 	if !is || selection.Kind() == types.FieldVal {
 		return "", false
