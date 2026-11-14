@@ -36,7 +36,7 @@ func NewVaultHeader(v domain.Vault) *api.VaultCardsDue {
 }
 
 // NewVaultCardsDue is the count of a vault. The title gives the name of a preset by its path.
-func NewVaultCardsDue(counted vaultcount.Result[flashcards.CardsDue], title func(path string) string) *api.VaultCardsDue {
+func NewVaultCardsDue(counted vaultcount.Result, title func(path string) string) *api.VaultCardsDue {
 	one := NewVaultHeader(counted.Vault)
 	one.IsIndexing = counted.IsIndexing
 	one.Unread = counted.Unread
@@ -275,4 +275,10 @@ func NewVaultsResponse(vaults []domain.Vault, day string) *api.WatchCardsDueResp
 		items = append(items, NewVaultHeader(one))
 	}
 	return &api.WatchCardsDueResponse{Vaults: items, Day: day, Counted: nil}
+}
+
+// NewCountedResponse is the count of one vault as the stream of counts sends it. The title gives
+// the name of a preset by its path.
+func NewCountedResponse(counted vaultcount.Result, title func(path string) string) *api.WatchCardsDueResponse {
+	return &api.WatchCardsDueResponse{Vaults: nil, Day: "", Counted: NewVaultCardsDue(counted, title)}
 }

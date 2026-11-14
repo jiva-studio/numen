@@ -9,7 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/vaultcount"
 )
 
@@ -21,11 +21,11 @@ type indexer struct {
 func (i indexer) EnsureIndexed(context.Context) (host.IndexState, error) { return i.state, i.err }
 
 type counter struct {
-	counts flashcards.CardsDue
+	counts review.CardsDue
 	err    error
 }
 
-func (c counter) Execute(context.Context, domain.Vault) (flashcards.CardsDue, error) {
+func (c counter) Execute(context.Context, domain.Vault) (review.CardsDue, error) {
 	return c.counts, c.err
 }
 
@@ -52,7 +52,7 @@ func TestCountReturnsTheUnreadReason(t *testing.T) {
 
 func TestCountCarriesTheCountOfAnIndexedVault(t *testing.T) {
 	ready := indexer{state: host.IndexState{Status: host.Indexed}}
-	got := vaultcount.Count(t.Context(), ready, counter{counts: flashcards.CardsDue{Due: 3}}, domain.Vault{ID: "a"})
+	got := vaultcount.Count(t.Context(), ready, counter{counts: review.CardsDue{Due: 3}}, domain.Vault{ID: "a"})
 	if got.Counts.Due != 3 || got.Unread != "" || got.IsIndexing || got.Vault.ID != "a" {
 		t.Errorf("an indexed vault came back as %+v", got)
 	}

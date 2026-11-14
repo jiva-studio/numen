@@ -475,7 +475,7 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 		cards:             map[string]int{"P.md": 2},
 		allowances:        map[string]*allowance{"P.md": {}},
 	}
-	var out CardsDue
+	var out review.CardsDue
 	dueMap, newMap := rows.countDueAndNew(bDue, asking{dueCards: []ReviewCard{c1, c2}}, &out)
 	if rows.get("decks/B.md").Due != 1 || rows.get("decks/A.md").Due != 1 {
 		t.Fatalf("expected per-deck Due incremented, got %+v, %+v", rows["decks/A.md"], rows["decks/B.md"])

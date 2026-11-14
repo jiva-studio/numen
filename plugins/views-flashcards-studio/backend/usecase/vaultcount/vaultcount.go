@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
@@ -28,24 +29,23 @@ type Indexer interface {
 }
 
 // DueCounter counts the cards of a vault by what is due.
-type DueCounter[C any] interface {
-	Execute(ctx context.Context, v domain.Vault) (C, error)
+type DueCounter interface {
+	Execute(ctx context.Context, v domain.Vault) (review.CardsDue, error)
 }
 
 // Result is how the count of one vault ended. A vault that was not counted says why: it is being
 // indexed, or Unread holds the reason.
-type Result[C any] struct {
+type Result struct {
 	Vault      domain.Vault
 	IsIndexing bool
 	Unread     string
-	Counts     C
+	Counts     review.CardsDue
 }
 
 // Count counts one vault. The vault is brought up to date before it is counted. Nothing is counted
 // from a walk half done, and the numbers arrive with the count that the finished walk wakes.
-func Count[C any](ctx context.Context, index Indexer, due DueCounter[C], v domain.Vault) Result[C] {
-	var none C
-	one := Result[C]{Vault: v, IsIndexing: false, Unread: "", Counts: none}
+func Count(ctx context.Context, index Indexer, due DueCounter, v domain.Vault) Result {
+	one := Result{Vault: v, IsIndexing: false, Unread: "", Counts: review.CardsDue{ReviewCards: 0, Due: 0, New: 0, Decks: nil, Presets: nil}}
 	state, err := index.EnsureIndexed(ctx)
 	if err != nil {
 		one.Unread = err.Error()

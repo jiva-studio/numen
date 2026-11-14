@@ -475,7 +475,7 @@ func TestReviewInternalPaths(t *testing.T) {
 		Now:    vaulttest.NewClock(),
 	})
 	hEnsureErr := bEnsureErr.newReviewHandler()
-	if got := hEnsureErr.countVault(ctx, env.Vault); got == nil || got.Unread != "ensure boom" {
+	if got := hEnsureErr.countVault(ctx, env.Vault).Counted; got == nil || got.Unread != "ensure boom" {
 		t.Fatalf("expected Unread='ensure boom', got %+v", got)
 	}
 
@@ -485,7 +485,7 @@ func TestReviewInternalPaths(t *testing.T) {
 		Now:    vaulttest.NewClock(),
 	})
 	hDueErr := bDueErr.newReviewHandler()
-	if got := hDueErr.countVault(ctx, env.Vault); got == nil || got.Unread != "due boom" {
+	if got := hDueErr.countVault(ctx, env.Vault).Counted; got == nil || got.Unread != "due boom" {
 		t.Fatalf("expected Unread='due boom', got %+v", got)
 	}
 

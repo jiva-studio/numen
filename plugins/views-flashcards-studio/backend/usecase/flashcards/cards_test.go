@@ -457,7 +457,7 @@ func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []flashcards.PresetCardsDue{
+	want := []review.PresetCardsDue{
 		{
 			Preset: "", Decks: 1, Cards: 1, Due: 1,
 			Answered: 1, ReviewedNew: 1, Took: 4 * time.Second,
@@ -500,7 +500,7 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := flashcards.PresetCardsDue{
+	want := review.PresetCardsDue{
 		Preset: "", Decks: 2, Cards: 40, New: 40,
 		Budget: review.Defaults().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Keeps,
 		Limits: review.Defaults().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Limits,
@@ -528,7 +528,7 @@ func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var target *flashcards.PresetCardsDue
+	var target *review.PresetCardsDue
 	for item, one := range counts.Presets {
 		if one.Preset == "Empty.md" {
 			target = &counts.Presets[item]
@@ -537,7 +537,7 @@ func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	if target == nil {
 		t.Fatalf("the preset nothing points at is not in the count: %+v", counts.Presets)
 	}
-	if *target != (flashcards.PresetCardsDue{Preset: "Empty.md"}) {
+	if *target != (review.PresetCardsDue{Preset: "Empty.md"}) {
 		t.Errorf("it came to %+v, want a preset nothing is under", *target)
 	}
 }
@@ -769,7 +769,7 @@ func TestADecksLearnedCardsAreCountedByItsOwnPresetsRule(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := map[string]flashcards.DeckCardsDue{
+	want := map[string]review.DeckCardsDue{
 		// The rule is a chance of recall, and a card answered a minute ago is
 		// as likely to be recalled as a card gets.
 		"decks/One.md": {Deck: "decks/One.md", ReviewCards: 3, Learned: 1},

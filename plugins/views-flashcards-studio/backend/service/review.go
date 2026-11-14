@@ -50,16 +50,12 @@ func (h *reviewHandler) WatchCardsDue(
 	sendVaults := func() error {
 		return send(reviewwire.NewVaultsResponse(recognized, h.flash().Day.GetName(h.now.Now())))
 	}
-	return vaultcount.Watch(ctx, recognized, clock.Tickers{}, h.countVault,
-		func(one *api.VaultCardsDue) error {
-			return send(&api.WatchCardsDueResponse{Vaults: nil, Day: "", Counted: one})
-		},
-		sendVaults)
+	return vaultcount.Watch(ctx, recognized, clock.Tickers{}, h.countVault, send, sendVaults)
 }
 
-func (h *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.VaultCardsDue {
+func (h *reviewHandler) countVault(ctx context.Context, v domain.Vault) *api.WatchCardsDueResponse {
 	counted := vaultcount.Count(ctx, h.vaults(v.ID).Index, h.flash().Counts.CardsDue, v)
-	return reviewwire.NewVaultCardsDue(counted, h.newTitler(ctx, v))
+	return reviewwire.NewCountedResponse(counted, h.newTitler(ctx, v))
 }
 
 // StartSession opens a session over one deck, over one preset, or over the whole vault, and
