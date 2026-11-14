@@ -98,7 +98,7 @@ apps/desktop/editor/src/
 │   ├── file/                     a file of the vault: api/ (file service), lib/
 │   ├── vault/                    the vaults of the installation and the one open: api/, model/, lib/
 │   ├── settings/                 numen.json as the window reads it: api/ (settings and theme services), model/, lib/
-│   ├── tab/                      the open tabs: api/ (saved tabs), model/ (useTabs, useTabKinds, useTabPanes, useRestoredTabs), ui/ (the panes of an unavailable tab), lib/
+│   ├── tab/                      the open tabs: api/ (saved tabs), model/ (useTabs, useTabKinds, useTabPanes, createRestoredTabs), ui/ (the panes of an unavailable tab), lib/
 │   ├── plugin/                   the plugin catalog and what plugins declare: api/, model/
 │   ├── window/                   the window itself: background tasks, quit and focus requests, runtime and kind (secondary or not): api/, model/, lib/
 │   └── command/                  the Command type and the command target that features declare, plus the palette engine (registry, steps, values, keys, to move to shared): lib/, model/

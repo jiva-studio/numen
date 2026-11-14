@@ -27,8 +27,8 @@ export function useTabPanes(store: TabStore) {
   }
 
   /**
-   * Closes a tab its kind lets go, or runs `hold` where the kind holds it, and returns whether the
-   * tab was released. With `hold`, a released tab stays in the layout.
+   * Closes a tab its kind releases, or runs `hold` where the kind keeps it open, and returns
+   * whether the tab was released. With `hold`, a released tab stays in the layout.
    */
   const closeTab = (id: string, hold?: () => void): boolean => {
     if (!closers.releaseTab(id)) {

@@ -43,7 +43,7 @@ async function createPlacedWorkspace(
   return createWorkspace(main, aside)
 }
 
-export function useRestoredTabs(store: TabStore) {
+export function createRestoredTabs(store: TabStore) {
   const { open, layout, byKind } = store
   const openers = createTabOpeners(store)
 

@@ -8,7 +8,7 @@
 import { shallowRef } from 'vue'
 import { createWindowHandle } from './tabOperations'
 import { createTabStore } from './tabStore'
-import { useRestoredTabs } from './useRestoredTabs'
+import { createRestoredTabs } from './createRestoredTabs'
 import { useTabKinds } from './useTabKinds'
 import { useTabPanes } from './useTabPanes'
 import { useTabs } from './useTabs'
@@ -26,7 +26,7 @@ export function createWindowTabs(panes: PlaceholderPanes, unavailable: Unavailab
     tabs: useTabs(store),
     kinds: useTabKinds(store),
     panes: useTabPanes(store),
-    restored: useRestoredTabs(store),
+    restored: createRestoredTabs(store),
     handle: createWindowHandle(store),
     /** The ids of the tabs being dragged, which the plugins read. */
     dragged: shallowRef<readonly string[]>([]),
