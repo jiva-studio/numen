@@ -6,7 +6,7 @@
   "description": "Sets how similar a note must be to your search to appear in the results",
   "targets": ["desktop.editor"],
   "contributes": { "category": "tools" },
-  "activationEvents": ["onSearchSourceReady"],
+  "activationEvents": ["onIndexChanged"],
   "permissions": ["index:read", "search:policy", "vault:read"],
   "services": ["md.numen.tools.search.relevance"],
   "backend": { "entrypoint": "bin/tools-search-relevance" },

@@ -254,13 +254,13 @@ func getReadVault(a pluginsWiring, db *Index) indexing.OpenReading {
 
 func newIndexWorker(a pluginsWiring, db *Index, state *editor.State, embedding *indexing.Embedding, out io.Writer) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:           getReadVault(a, db),
-		Source:            embedding.GetSource(),
-		VectorCounts:      indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
-		SearchSourceReady: state.Events.EmitSearchSourceReady,
-		Events:            windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
-		Quiet:             indexing.QuietPeriod,
-		After:             clock.System{}.After,
+		Reading:      getReadVault(a, db),
+		Source:       embedding.GetSource(),
+		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
+		IndexChanged: state.Events.EmitIndexChanged,
+		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
+		Quiet:        indexing.QuietPeriod,
+		After:        clock.System{}.After,
 	})
 }
 

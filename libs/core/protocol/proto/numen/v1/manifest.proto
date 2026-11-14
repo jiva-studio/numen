@@ -21,7 +21,7 @@ message Manifest {
   // targets are the application windows the plugin runs in. Empty means every target.
   repeated string targets = 7;
   // activation_events are the events that start the plugin's backend and deliver the event to it, such
-  // as `onSearchSourceReady` when the search source has indexed a vault.
+  // as `onIndexChanged` when indexing changed the index of a vault.
   repeated string activation_events = 8;
   repeated string permissions = 9;
   // dependencies are what the host provisions for the plugin: runtimes, models, binaries and datasets.

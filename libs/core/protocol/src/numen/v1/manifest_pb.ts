@@ -64,7 +64,7 @@ export type Manifest = Message<"numen.v1.Manifest"> & {
 
   /**
    * activation_events are the events that start the plugin's backend and deliver the event to it, such
-   * as `onSearchSourceReady` when the search source has indexed a vault.
+   * as `onIndexChanged` when indexing changed the index of a vault.
    *
    * @generated from field: repeated string activation_events = 8;
    */
