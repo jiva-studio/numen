@@ -2,6 +2,7 @@ import type { PlacedNode } from '../../node'
 import type { PlexOptions } from '../options'
 import type { PlexNode, PlexRelation } from '../../../../types'
 import type { Spot } from './freeSpot'
+import type { Link } from './lines'
 
 /** The nodes included in the graph, grouped by relation. */
 export type NodesByRelation = Readonly<Partial<Record<PlexRelation, readonly PlexNode[]>>>
@@ -37,13 +38,17 @@ export const getPillCenterY = (spotY: number, room: NodeRoom): number =>
 /** What a node keeps around its pill, as numbers the caller measured. */
 export type Rooms = (node: PlexNode) => NodeRoom
 
-/** `fits` reports whether a footprint lies inside the window, so a group grows sideways where it has no room to grow deeper. */
+/**
+ * `fits` reports whether a footprint lies inside the window, so a group grows sideways where it has no room to grow deeper.
+ * `edges` are the lines between notes: a note is set where its lines do not run along another line or through another note.
+ */
 export interface PlacementContext {
   readonly options: PlexOptions
   readonly width: Widths
   readonly room: Rooms
   readonly shouldStop?: ((node: PlacedNode) => boolean) | undefined
   readonly fits?: ((footprint: Spot) => boolean) | undefined
+  readonly edges?: readonly Link[] | undefined
 }
 
 /**

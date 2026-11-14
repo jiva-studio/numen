@@ -3,6 +3,7 @@ import { RELATION_NAMES, RELATIONS, type Lean } from '../../relation'
 import type { PlacedNode } from '../../node'
 import type { Direction, PlexOptions } from '../options'
 import { findFreeSpot, SpotIndex, type Spot, type Vector } from './freeSpot'
+import { LineIndex } from './lines'
 import type { Size } from '../options'
 import {
   getFootprint,
@@ -147,9 +148,10 @@ function placeClusters(
       context.room(node),
     )
   const plans = createGroupPlans(nodesByRelation, focus, context, footprintOf)
-  const index = new SpotIndex([
-    { x: focus.x, y: focus.y, width: focus.width, height: focus.height },
-  ])
+  const focusSpot: Spot = { x: focus.x, y: focus.y, width: focus.width, height: focus.height }
+  const index = new SpotIndex([focusSpot])
+  const lines = new LineIndex(context.edges ?? [], focus.id, index)
+  lines.place(focus.id, { x: focus.x, y: focus.y }, focusSpot)
   const groups = new Map<PlexRelation, Spot[]>()
   const placed = new Map<string, PlacedNode>()
 
@@ -161,8 +163,16 @@ function placeClusters(
     groups.set(relation, group)
 
     const request = createRequest(plan, footprintOf(node), context)
-    const spot = findFreeSpot(index, { ...request, group, fits: context.fits })
+    const room = context.room(node)
+    const getCenter = (at: Spot): Vector => ({ x: at.x, y: getPillCenterY(at.y, room) })
+    const spot = findFreeSpot(index, {
+      ...request,
+      group,
+      fits: context.fits,
+      isLineClear: (at) => lines.isClear(node.id, getCenter(at), at),
+    })
     index.add(spot)
+    lines.place(node.id, getCenter(spot), spot)
     const box = getPlacedNode(node, spot, context, group.length)
     group.push(spot)
     placed.set(node.id, box)

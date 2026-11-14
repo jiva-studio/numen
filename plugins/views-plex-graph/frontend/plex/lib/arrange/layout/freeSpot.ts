@@ -21,6 +21,8 @@ export interface SpotRequest {
   readonly group: readonly Spot[]
   readonly gaps: Gaps
   readonly fits?: ((spot: Spot) => boolean) | undefined
+  /** Whether the lines of the note stay apart from the other lines and notes at the spot. A spot that fails it is taken only when no other spot is free. */
+  readonly isLineClear?: ((spot: Spot) => boolean) | undefined
 }
 
 /**
@@ -47,7 +49,7 @@ const CELL = 64
 const CELL_OFFSET = 1 << 20
 const CELL_STRIDE = 1 << 21
 
-interface Rect {
+export interface Rect {
   readonly minX: number
   readonly maxX: number
   readonly minY: number
@@ -121,6 +123,16 @@ export class SpotIndex {
     return free
   }
 
+  /** The boxes in the cells the rectangle touches, so a few more than the ones it overlaps. */
+  listNear(rect: Rect): Spot[] {
+    const near = new Set<Spot>()
+    this.visitCells(rect, (cell) => {
+      for (const spot of this.cells.get(cell) ?? []) near.add(spot)
+      return false
+    })
+    return [...near]
+  }
+
   private visitCells(rect: Rect, visit: (cell: number) => boolean): void {
     const toX = Math.floor(rect.maxX / CELL)
     const fromY = Math.floor(rect.minY / CELL)
@@ -166,7 +178,21 @@ function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
  * axis before it goes deeper; of those the earlier candidate wins.
  */
 export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
+  if (request.isLineClear) {
+    const clear = searchSpot(index, request, true)
+    if (clear) return clear
+  }
+  return searchSpot(index, request, false) ?? findSpotBeyond(index, request)
+}
+
+function searchSpot(
+  index: SpotIndex,
+  request: SpotRequest,
+  isLineChecked: boolean,
+): Spot | undefined {
   const { size, gaps } = request
+  const isLineOk = (spot: Spot): boolean =>
+    !isLineChecked || !request.isLineClear || request.isLineClear(spot)
   const toSpot = (point: Vector): Spot => ({ x: point.x, y: point.y, ...size })
 
   const found: { best?: { point: Vector; cost: number; progress: number } } = {}
@@ -176,7 +202,7 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
     const cost = Math.round(measureCost(point, request) * COST_PRECISION)
     if (found.best && !isBetter(cost, progress, found.best)) return
     if (request.fits && !request.fits(toSpot(point))) return
-    if (index.isFree(toSpot(point), gaps)) found.best = { point, cost, progress }
+    if (index.isFree(toSpot(point), gaps) && isLineOk(toSpot(point))) found.best = { point, cost, progress }
   }
   const considerAll = (points: readonly Vector[], minProgress: number) =>
     points.forEach((point) => consider(point, minProgress))
@@ -195,7 +221,7 @@ export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
       considerAll(listNearbyCandidates(box, request), relaxedMinProgress)
   }
   if (found.best) return toSpot(found.best.point)
-  return findFreeSpotOutward(index, request) ?? findSpotBeyond(index, request)
+  return findFreeSpotOutward(index, request, isLineOk)
 }
 
 function findSpotBeyond(index: SpotIndex, request: SpotRequest): Spot {
@@ -270,7 +296,11 @@ export function measureCost(point: Vector, request: SpotRequest): number {
   )
 }
 
-function findFreeSpotOutward(index: SpotIndex, request: SpotRequest): Spot | undefined {
+function findFreeSpotOutward(
+  index: SpotIndex,
+  request: SpotRequest,
+  isLineOk: (spot: Spot) => boolean,
+): Spot | undefined {
   const { middle, direction, size, gaps } = request
   const cell = { width: size.width + gaps.gap, height: size.height + gaps.lineGap }
   const stride = size.height / 4
@@ -283,7 +313,8 @@ function findFreeSpotOutward(index: SpotIndex, request: SpotRequest): Spot | und
         ...size,
       }
       if (request.fits && !request.fits(spot)) continue
-      if (index.isFree(spot, gaps) && measureProgress(spot, request) >= -TOLERANCE) return spot
+      if (!index.isFree(spot, gaps) || measureProgress(spot, request) < -TOLERANCE) continue
+      if (isLineOk(spot)) return spot
     }
   }
   return undefined

@@ -74,6 +74,7 @@ export function arrangePlex(
         options: laid,
         width,
         room: (node) => roomsById.get(node.id) ?? NO_ROOM,
+        edges: graph.edges,
         ...limits,
       }),
     }
