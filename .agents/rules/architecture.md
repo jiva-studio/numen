@@ -184,12 +184,12 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `workspace-lists-every-module`: `go.work` lists every `go.mod`.
 - `json-keys-camelcase`: every JSON key in a plugin manifest, API fixture and TypeScript JSON type is `camelCase`.
 - `plugin-config-golden-parity`: plugin lint configurations match `plugins/.example/` and the root `.golangci.yml`; `eslint.config.js` and `numen-rules.mjs` are byte-identical copies of the golden files.
-- `plugins-frontend` with the golden `eslint.config.js`: a file of a `lib` segment imports no `ui`, `model` or `api` segment at any depth and no `.vue` file (`no-restricted-imports`), and every component passes `numen/max-inline-props`, `numen/vue-script-sections` and `numen/max-script-lines` from `numen-rules.mjs`. `tools/checks/structure/ts/plugins/golden-config.test.mjs` lints planted files in a copy of the template.
+- `make plugins_lint` with the golden `eslint.config.js`: a file of a `lib` segment imports no `ui`, `model` or `api` segment at any depth and no `.vue` file (`no-restricted-imports`), and every component passes `numen/max-inline-props`, `numen/vue-script-sections` and `numen/max-script-lines` from `numen-rules.mjs`. `tools/checks/structure/ts/plugins/golden-config.test.mjs` lints planted files in a copy of the template.
 - `plugin-backend-layers`: the layers inside a plugin backend point inward.
 - `go/plugin-boundary` and `go/plugin-isolation-packages` (`make checks TAGS=plugin,go`): apply the dependency rule of §11 to the type-checked import graph on 14 platform targets.
 - `plugins-leakage`: manifest schema and static non-leakage.
 - `plugins-use-main-entry`: the SDK and the UI library are imported through their declared entries.
-- `plugins-frontend`: no `@/**` and no `@plugins/**` in a plugin frontend.
+- `make plugins_lint`: no `@/**` and no `@plugins/**` in a plugin frontend.
 - `plugins-isolation-capture`: a file under `plugins/(X)/` references no other plugin.
 - `plugins-hold-no-schema`: no `.proto` file under `plugins/(*)/`.
 - `no-component-below-ui`: no `.vue` file of a library, a window or a plugin frontend lies in a `lib`, `api` or `model` segment.

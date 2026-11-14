@@ -612,36 +612,6 @@ export function verifyPluginConfigGoldenParity() {
   )
 }
 
-/** Runs ESLint across each frontend plugin directory using its own `eslint.config.js`. */
-export function verifyPluginsFrontend() {
-  const pluginsDir = path.join(REPO_ROOT, 'plugins')
-  const exampleConfig = path.join(pluginsDir, '.example', 'eslint.config.js')
-  if (!fs.existsSync(exampleConfig)) {
-    throw new Error('Missing golden frontend config: plugins/.example/eslint.config.js')
-  }
-  const eslintBin = path.join(REPO_ROOT, 'node_modules/.bin/eslint')
-  const frontendPlugins = listPluginNames(pluginsDir).filter((name) =>
-    fs.existsSync(path.join(pluginsDir, name, 'frontend')),
-  )
-
-  const failures = []
-  for (const plugin of frontendPlugins) {
-    const pluginDir = path.join(pluginsDir, plugin)
-    const configPath = path.join(pluginDir, 'eslint.config.js')
-    if (!fs.existsSync(configPath)) {
-      failures.push(`plugins/${plugin}: missing eslint.config.js`)
-      continue
-    }
-    const res = spawnSync(eslintBin, ['.'], { cwd: pluginDir, encoding: 'utf8' })
-    if (res.status !== 0) {
-      failures.push(`plugins/${plugin}:\n${((res.stdout || '') + (res.stderr || '')).trim()}`)
-    }
-  }
-  if (failures.length > 0) {
-    throw new Error(failures.join('\n\n'))
-  }
-}
-
 /** The files at the root of a plugin frontend: the entry, the words and types the slices share, and the stylesheet. */
 const FRONTEND_ROOT_FILES = ['index.ts', 'words.ts', 'types.ts', 'styles.css']
 
@@ -859,13 +829,5 @@ export const PLUGIN_VERIFIERS = [
     module: 'plugins',
     name: 'Plugin Frontend Slices (a slice is its index and four segments; no sibling slice, no deep import; the rule is proven on a planted frontend)',
     run: verifyPluginFrontendSlices,
-  },
-  {
-    id: 'plugins-frontend',
-    isLint: true,
-    scope: 'plugins',
-    module: 'plugins',
-    name: 'Plugin Frontend Contract & Boundaries (no @/**, no @plugins/**)',
-    run: verifyPluginsFrontend,
   },
 ]
