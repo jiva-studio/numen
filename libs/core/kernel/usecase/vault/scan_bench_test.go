@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
@@ -38,13 +39,7 @@ func openIndexFor(b *testing.B) *container.Index {
 }
 
 func scanFor(db *container.Index) vaults.Scan {
-	return vaults.NewScan(
-		vaultreader.Readers{},
-		db.Vaults(),
-		db.Notes(),
-		db.NoteQueries(),
-		db.Maintenance(), nil,
-	)
+	return vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
 }
 
 // BenchmarkColdScan is the full rebuild: an empty index and every note read,

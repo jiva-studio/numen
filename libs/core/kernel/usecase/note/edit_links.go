@@ -36,18 +36,6 @@ func NewEditLinks(
 	return EditLinks{readers: readers, writers: writers, index: index, now: now}
 }
 
-// WithReaders replaces the vault readers.
-func (u EditLinks) WithReaders(readers vaultport.VaultReaders) EditLinks {
-	u.readers = readers
-	return u
-}
-
-// WithWriters replaces the vault writers.
-func (u EditLinks) WithWriters(writers NoteWriting) EditLinks {
-	u.writers = writers
-	return u
-}
-
 // Add writes relationships into a note, in one read and one write. Adding a link
 // to the same place with the same role again changes nothing.
 // At least one link is named, so a call stamps an identifier into a note without one.
@@ -179,4 +167,22 @@ type LinkPoint struct {
 	To   domain.Address
 	Role domain.LinkRole
 	Stat domain.FileStat
+}
+
+func ignoreIndexChange(context.Context, domain.Vault, []string) error { return nil }
+
+func getIndexUpdater(update edit.IndexUpdater) edit.IndexUpdater {
+	if update == nil {
+		return ignoreIndexChange
+	}
+	return update
+}
+
+func ignoreMove(context.Context, domain.Vault, domain.Move) error { return nil }
+
+func getTellMove(tell TellMove) TellMove {
+	if tell == nil {
+		return ignoreMove
+	}
+	return tell
 }

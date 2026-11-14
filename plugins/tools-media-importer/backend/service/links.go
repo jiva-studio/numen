@@ -63,7 +63,7 @@ func (s linkServer) copyMedia(ctx context.Context, req api.CopyMediaRequest) (ap
 	if err != nil {
 		return api.CopyMediaResponse{}, err
 	}
-	media, _ := fetch.ParseMedia(req.Kind)
+	media, _ := fetch.ParseMedia(string(req.Kind))
 	s.links.StartCopy(ctx, found, media)
 	return api.CopyMediaResponse{}, nil
 }
