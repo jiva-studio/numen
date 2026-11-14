@@ -87,17 +87,14 @@ func (q *Problems) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID)
 // The query narrows to links written by a shared name; the same resolution a
 // link goes through anywhere else decides ambiguity, so SQL does not duplicate
 // that rule.
-// diverge.
-func (q *Problems) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) (_ []domain.AmbiguousLink, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
+func (q *Problems) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.AmbiguousLink, error) {
+	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.AmbiguousLink, error) {
+		return r.getAmbiguousLinks(ctx)
+	})
+}
 
-	rows, err := q.db.QueryContext(ctx, sharedNameLinksSQL, vault, vault)
+func (r *resolution) getAmbiguousLinks(ctx context.Context) (_ []domain.AmbiguousLink, err error) {
+	rows, err := r.statements.QueryContext(ctx, sharedNameLinksSQL, r.vault, r.vault)
 	if err != nil {
 		return nil, err
 	}
@@ -115,25 +112,17 @@ func (q *Problems) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID
 		return nil, err
 	}
 
-	// What a name could mean is a property of the name, not of the link, and
-	// these links are here because they share one. Asking once per name rather
-	// than once per link is the difference between a question per link and a
-	// question per duplicate.
-	answers := map[string][]string{}
 	var out []domain.AmbiguousLink
 	for _, l := range candidates {
-		answering, recognized := answers[l.Target.Value]
-		if !recognized {
-			if answering, err = (&Queries{db: q.db}).candidates(ctx, vault, l.Target.Value); err != nil {
-				return nil, err
-			}
-			answers[l.Target.Value] = answering
+		answering, err := r.getCandidates(ctx, l.Target.Value)
+		if err != nil {
+			return nil, err
 		}
 		l.To, l.IsAmbiguous = domain.ChooseMatch(l.From, l.Target.Value, answering)
 		if !l.IsAmbiguous {
 			continue
 		}
-		l.ToVault = vaultID
+		l.ToVault = r.vaultID
 		out = append(out, domain.AmbiguousLink{ResolvedLink: l, Candidates: answering})
 	}
 	return out, nil
