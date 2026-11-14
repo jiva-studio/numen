@@ -7,9 +7,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 )
 
 // initializeFixture is the answer of Claude Code 2.1.303 to the initialize request, cut to its models.
@@ -94,8 +96,8 @@ func TestIsStopped(t *testing.T) {
 }
 
 func TestListModelsReportsAProgramThatCannotStart(t *testing.T) {
-	if _, err := (Lister{}).ListModels(t.Context(), []string{"/nonexistent-claude-bin"}, nil); err == nil {
-		t.Error("expected error when starting nonexistent binary")
+	if _, err := (Lister{}).ListModels(t.Context(), []string{"/nonexistent-claude-bin"}, nil); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("ListModels nonexistent = %v, want os.ErrNotExist", err)
 	}
 }
 
@@ -108,5 +110,55 @@ func TestListModelsPassesTheArgumentsAndTheSanitizedEnvironment(t *testing.T) {
 		[]string{"PATH=" + os.Getenv("PATH"), "CLAUDECODE=1", "KEEP_VAR=yes"})
 	if err != nil || len(list) != 13 {
 		t.Fatalf("ListModels with args and env = (%d, %v)", len(list), err)
+	}
+}
+
+func TestSuperviseAndWaitForExitKillProcessGroup(t *testing.T) {
+	empty := &exec.Cmd{}
+	Supervise(empty)
+	if empty.WaitDelay != 2*time.Second || ExitGrace != time.Second {
+		t.Fatalf("WaitDelay = %v, ExitGrace = %v", empty.WaitDelay, ExitGrace)
+	}
+	if empty.SysProcAttr == nil || !empty.SysProcAttr.Setpgid {
+		t.Fatalf("SysProcAttr = %+v, want Setpgid=true", empty.SysProcAttr)
+	}
+	if err := empty.Cancel(); err != nil {
+		t.Errorf("Cancel on unstarted command = %v, want nil", err)
+	}
+
+	pidFile := filepath.Join(t.TempDir(), "child.pid")
+	script := writeScript(t, "hang", "sleep 30 &\necho $! > "+pidFile+"\nwait\n")
+	cmd := exec.CommandContext(t.Context(), script)
+	Supervise(cmd)
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	var rawPID []byte
+	for time.Now().Before(deadline) {
+		if data, err := os.ReadFile(pidFile); err == nil && strings.TrimSpace(string(data)) != "" {
+			rawPID = data
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	childPID, err := strconv.Atoi(strings.TrimSpace(string(rawPID)))
+	if err != nil {
+		t.Fatalf("read child pid %q: %v", rawPID, err)
+	}
+
+	var stopErr error
+	waitErr := WaitForExit(cmd, func() { stopErr = cmd.Cancel() })
+	if waitErr == nil {
+		t.Error("expected killed command to return non-nil Wait error")
+	}
+	if stopErr != nil {
+		t.Errorf("first Cancel = %v, want nil", stopErr)
+	}
+	if err := syscall.Kill(childPID, 0); !errors.Is(err, syscall.ESRCH) {
+		t.Errorf("expected background child in process group to be killed, Kill(0) = %v", err)
+	}
+	if err := cmd.Cancel(); !errors.Is(err, os.ErrProcessDone) {
+		t.Errorf("Cancel on exited process = %v, want os.ErrProcessDone", err)
 	}
 }

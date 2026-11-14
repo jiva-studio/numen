@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -52,13 +53,12 @@ type Endpoint struct {
 	url      string
 	token    string
 	server   *http.Server
-	stopped  chan struct{}
 	limit    time.Duration
 	statesMu sync.Mutex
 	states   map[net.Conn]http.ConnState
 	once     sync.Once
 	err      error
-	serveErr error
+	serveErr chan error
 }
 
 // Serve starts an endpoint that serves the listed tools and runs each call with invoke. Every input schema
@@ -70,7 +70,11 @@ func (Server) Serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.I
 }
 
 func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*Endpoint, error) {
-	token, err := newToken()
+	return serveOn(ctx, rand.Reader, "127.0.0.1:0", listed, invoke)
+}
+
+func serveOn(ctx context.Context, random io.Reader, address string, listed []*tools.ToolInfo, invoke task.Invoke) (*Endpoint, error) {
+	token, err := newToken(random)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +94,7 @@ func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*
 		})
 	}
 
-	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
+	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", address)
 	if err != nil {
 		return nil, fmt.Errorf("listen for the tools of the agent: %w", err)
 	}
@@ -100,21 +104,21 @@ func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*
 		url:      (&url.URL{Scheme: "http", Host: listener.Addr().String(), Path: endpointPath}).String(),
 		token:    token,
 		server:   &http.Server{Handler: requireToken(token, mux), ReadHeaderTimeout: 10 * time.Second},
-		stopped:  make(chan struct{}),
 		limit:    shutdownLimit,
 		statesMu: sync.Mutex{},
 		states:   make(map[net.Conn]http.ConnState),
 		once:     sync.Once{},
 		err:      nil,
-		serveErr: nil,
+		serveErr: make(chan error),
 	}
 	served.server.ConnState = served.trackConnection
 	go func() {
-		defer close(served.stopped)
 		// Serve returns http.ErrServerClosed once Close is called, which is how it is meant to end.
-		if err := served.server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
-			served.serveErr = err
+		err := served.server.Serve(listener)
+		if errors.Is(err, http.ErrServerClosed) {
+			err = nil
 		}
+		served.serveErr <- err
 	}()
 	return served, nil
 }
@@ -130,9 +134,7 @@ func (e *Endpoint) Close(ctx context.Context) error {
 	e.once.Do(func() {
 		ctx, cancel := context.WithTimeout(ctx, e.limit)
 		defer cancel()
-		e.err = e.shutdown(ctx)
-		<-e.stopped
-		e.err = errors.Join(e.err, e.serveErr)
+		e.err = errors.Join(e.shutdown(ctx), <-e.serveErr)
 	})
 	return e.err
 }
@@ -160,23 +162,15 @@ func (e *Endpoint) getActiveCount() int {
 }
 
 func (e *Endpoint) shutdown(ctx context.Context) error {
-	result := make(chan error, 1)
-	go func() { result <- e.server.Shutdown(ctx) }()
 	poll := time.NewTicker(shutdownPoll)
 	defer poll.Stop()
-	for {
+	for e.getActiveCount() > 0 && ctx.Err() == nil {
 		select {
-		case err := <-result:
-			if err != nil {
-				return errors.Join(err, e.server.Close())
-			}
-			return nil
+		case <-ctx.Done():
 		case <-poll.C:
-			if e.getActiveCount() == 0 {
-				return errors.Join(e.server.Close(), <-result)
-			}
 		}
 	}
+	return errors.Join(ctx.Err(), e.server.Close())
 }
 
 func declareTool(listed *tools.ToolInfo) *sdk.Tool {
@@ -212,6 +206,10 @@ func readInputSchema(raw []byte) json.RawMessage {
 	if hasObjectType(schema) {
 		return json.RawMessage(raw)
 	}
+	return encodeObjectSchema(schema)
+}
+
+func encodeObjectSchema(schema map[string]json.RawMessage) json.RawMessage {
 	schema["type"] = json.RawMessage(`"object"`)
 	encoded, err := json.Marshal(schema)
 	if err != nil {
@@ -268,9 +266,9 @@ func newTextContent(text string) *sdk.TextContent {
 	return &sdk.TextContent{Text: text, Meta: nil, Annotations: nil}
 }
 
-func newToken() (string, error) {
+func newToken(random io.Reader) (string, error) {
 	raw := make([]byte, tokenBytes)
-	if _, err := rand.Read(raw); err != nil {
+	if _, err := io.ReadFull(random, raw); err != nil {
 		return "", fmt.Errorf("create a token for the tools of the agent: %w", err)
 	}
 	return hex.EncodeToString(raw), nil
@@ -301,6 +299,5 @@ func isLoopbackOrigin(origin string) bool {
 	if hostname == "localhost" {
 		return true
 	}
-	ip := net.ParseIP(hostname)
-	return ip != nil && ip.IsLoopback()
+	return net.ParseIP(hostname).IsLoopback()
 }

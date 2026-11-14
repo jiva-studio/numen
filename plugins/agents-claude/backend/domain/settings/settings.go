@@ -45,8 +45,12 @@ func (s *Settings) Apply(values map[string]string) {
 }
 
 func parseSeconds(value string) time.Duration {
-	seconds, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
-	if err != nil || math.IsNaN(seconds) || seconds <= 0 || math.IsInf(seconds, 0) || seconds >= float64(math.MaxInt64/int64(time.Second)) {
+	trimmed := strings.TrimSpace(value)
+	if strings.HasPrefix(trimmed, "-") {
+		return 0
+	}
+	seconds, err := strconv.ParseFloat(trimmed, strconv.IntSize)
+	if err != nil || math.IsNaN(seconds) || seconds >= float64(math.MaxInt64/int64(time.Second)) {
 		return 0
 	}
 	return time.Duration(seconds * float64(time.Second))
