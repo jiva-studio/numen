@@ -273,6 +273,9 @@ func TestAListingReturnsWhatEachEntryIs(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	for i := range entries {
+		entries[i].ModTime = time.Time{}
+	}
 	want := []domain.Entry{
 		{Path: "library/deeper", Name: "deeper", IsFolder: true},
 		{Path: "library/A Book.epub", Name: "A Book.epub", Kind: domain.KindFile},
@@ -643,5 +646,62 @@ func TestAWriteDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 	}
 	if string(retained) != "not yours" {
 		t.Error("a file outside the vault was written")
+	}
+}
+
+func TestAListingReturnsWhenEachFileWasModified(t *testing.T) {
+	v := vaultfixture.NewVault(t, map[string]string{
+		"library/Old.md": "# Old\n",
+		"library/New.md": "# New\n",
+	})
+	vaultfixture.PlaceFile(t, v.Path, "library/scan.png")
+	older := time.Date(2024, 3, 9, 8, 7, 6, 0, time.UTC)
+	newer := time.Date(2025, 11, 2, 10, 30, 0, 0, time.UTC)
+	for name, at := range map[string]time.Time{"Old.md": older, "New.md": newer, "scan.png": older} {
+		if err := os.Chtimes(filepath.Join(v.Path, "library", name), at, at); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	src, err := vaultreader.Open(v.Path, vaultconfig.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := src.List(t.Context(), "library")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := map[string]time.Time{}
+	for _, e := range entries {
+		got[e.Name] = e.ModTime
+	}
+	want := map[string]time.Time{"Old.md": older, "New.md": newer, "scan.png": older}
+	if !maps.EqualFunc(got, want, time.Time.Equal) {
+		t.Errorf("modification times %v, want %v", got, want)
+	}
+}
+
+func TestAListingReturnsTheOwnModificationTimeOfAFolder(t *testing.T) {
+	v := vaultfixture.NewVault(t, map[string]string{"library/deeper/Old.md": "# Old\n"})
+	at := time.Date(2023, 6, 1, 12, 0, 0, 0, time.UTC)
+	if err := os.Chtimes(filepath.Join(v.Path, "library", "deeper"), at, at); err != nil {
+		t.Fatal(err)
+	}
+
+	src, err := vaultreader.Open(v.Path, vaultconfig.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := src.List(t.Context(), "library")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(entries) != 1 || !entries[0].IsFolder {
+		t.Fatalf("listed %+v, want the one folder", entries)
+	}
+	if !entries[0].ModTime.Equal(at) {
+		t.Errorf("the folder was modified %v, want %v", entries[0].ModTime, at)
 	}
 }

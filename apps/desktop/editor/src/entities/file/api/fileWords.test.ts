@@ -41,4 +41,37 @@ describe('a row of a listing', () => {
       type: 'note',
     })
   })
+
+  it('keeps the modified date of an entry that has one', () => {
+    const row = {
+      path: 'Samples/Animals.md',
+      name: 'Animals',
+      isFolder: false,
+      isNote: true,
+      type: 'sample',
+      modifiedAtMs: 1762079400000,
+    } as Entry
+
+    expect(mapEntry(row)).toStrictEqual({
+      path: 'Samples/Animals.md',
+      name: 'Animals',
+      isFolder: false,
+      isNote: true,
+      type: 'sample',
+      modifiedAt: 1762079400000,
+    })
+  })
+
+  it('leaves the modified date out when the entry has none', () => {
+    const row = {
+      path: 'Samples/Animals.md',
+      name: 'Animals',
+      isFolder: false,
+      isNote: true,
+      type: 'sample',
+      modifiedAtMs: 0,
+    } as Entry
+
+    expect(mapEntry(row)).not.toHaveProperty('modifiedAt')
+  })
 })
