@@ -1,7 +1,7 @@
 /**
  * Whether the parts of a node are drawn in the layer over the others, which is while it is open,
- * and the keyboard's way through them there: the layer stands after every node in the document,
- * so the node hands Tab to its handle and takes it back.
+ * and the Tab order through them there. The layer comes after every node in the document, so
+ * the node moves Tab to its handle and back.
  */
 import { computed, nextTick, watch } from 'vue'
 
@@ -12,7 +12,6 @@ export interface LiftSite {
   readonly open: () => number
   readonly group: () => SVGElement | null
   readonly lifted: () => Element | null
-  /** Told of focus moving in and out of the lifted parts. */
   readonly focus: {
     readonly onFocusIn: (event: FocusEvent) => void
     readonly onFocusOut: (event: FocusEvent) => void
@@ -42,8 +41,8 @@ export function useLift(site: LiftSite) {
     getHandle()?.focus()
   })
 
-  // Chromium makes an SVG element with a focus listener a Tab stop, so the lifted parts are
-  // heard from the document.
+  // Chromium makes an SVG element with a focus listener a Tab stop, so focus in the lifted parts
+  // is received from the document.
   const onDocumentFocus = (event: FocusEvent) => {
     const lifted = site.lifted()
     if (!lifted || !(event.target instanceof Node) || !lifted.contains(event.target)) return

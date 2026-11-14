@@ -88,7 +88,7 @@ describe('keyboard focus', () => {
     group.dispatchEvent(new FocusEvent('focusout', { relatedTarget: handle }))
     expect(hoverFocus.isOn.value).toBe(true)
 
-    // The lifted part is heard from the document, which holds everything and is not the node.
+    // Focus in the lifted part is received from the document, which is not a part of the node.
     document.addEventListener('focusout', hoverFocus.onFocusOut)
     document.dispatchEvent(new FocusEvent('focusout', { relatedTarget: document.body }))
     document.removeEventListener('focusout', hoverFocus.onFocusOut)

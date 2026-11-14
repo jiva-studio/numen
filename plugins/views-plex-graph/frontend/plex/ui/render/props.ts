@@ -88,7 +88,6 @@ export interface PlexNodeFaceProps {
   open: number
   isHandleVisible: boolean
   handle: Position
-  /** Drawn in the layer over the others, which Tab reaches through the node and not in document order. */
   isLifted?: boolean
 }
 
