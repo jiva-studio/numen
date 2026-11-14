@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { Cpu, Puzzle } from '@lucide/vue'
 import { Menu } from '@numen/ui'
 import type { PluginHealth } from './pluginInfo'
 import PluginRow from './PluginRow.vue'
@@ -22,12 +23,26 @@ const mountRow = (props: { isEnabled?: boolean; health?: readonly PluginHealth[]
   mount(PluginRow, { props: { plugin: ENGINE, isEnabled: true, ...props } })
 
 describe('PluginRow', () => {
-  it('draws the name and the description, and no version', () => {
-    const row = mountRow().get('button')
+  it('draws the name, the description and the category icon, and no version', () => {
+    const wrapper = mountRow()
+    const row = wrapper.get('button')
 
     expect(row.text()).toContain('Speech Engine')
     expect(row.text()).toContain('Converts speech to text accurately.')
     expect(row.text()).not.toContain('2.1.0')
+    expect(wrapper.findComponent(Puzzle).exists()).toBe(true)
+
+    const enginePlugin = createManagedPlugin(
+      'test.engine',
+      'Speech Engine',
+      {},
+      { category: 'engines' },
+    )
+    expect(
+      mount(PluginRow, { props: { plugin: enginePlugin, isEnabled: true } })
+        .findComponent(Cpu)
+        .exists(),
+    ).toBe(true)
   })
 
   it('emits select-plugin when the row is clicked', async () => {

@@ -2,6 +2,7 @@ package serving
 
 import (
 	"context"
+	"errors"
 	"runtime"
 	"sync"
 	"testing"
@@ -143,6 +144,7 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 		t.Fatalf("nices on repeated balanced config = %v, want [10]", record.nices)
 	}
 
+	runtime.GOMAXPROCS(4)
 	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"})
 	if len(record.nices) != 2 || record.nices[1] != 19 {
 		t.Fatalf("nices on eco config = %v, want [10 19]", record.nices)
@@ -151,8 +153,30 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 		t.Fatalf("GOMAXPROCS = %d, want 1", got)
 	}
 
+	niceErr := errors.New("nice denied")
+	var reportedNiceErr error
+	srv.report = func(_ string, err error) {
+		reportedNiceErr = err
+	}
+	srv.machine = niceRecorder{
+		Process: process.Process{},
+		err:     niceErr,
+		record: func(nice int) {
+			record.mu.Lock()
+			defer record.mu.Unlock()
+			record.nices = append(record.nices, nice)
+		},
+	}
+	// The loader keeps the report it was built with.
+	srv.mu.Lock()
+	srv.loader = srv.newLoader()
+	srv.mu.Unlock()
+
 	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
+	}
+	if !errors.Is(reportedNiceErr, niceErr) {
+		t.Fatalf("reportedNiceErr = %v, want %v", reportedNiceErr, niceErr)
 	}
 	srv.mu.Lock()
 	srv.isProfileSet = false
@@ -213,9 +237,10 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 type niceRecorder struct {
 	process.Process
 	record func(nice int)
+	err    error
 }
 
 func (n niceRecorder) LowerNice(nice int) error {
 	n.record(nice)
-	return nil
+	return n.err
 }

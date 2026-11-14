@@ -66,5 +66,5 @@ Feature: Plex links
         | Coast      | above      |
         | Quay       | below      |
         | Jetty      | below      |
-        | Lighthouse | below left |
+        | Lighthouse | left       |
         | Cape       | right      |

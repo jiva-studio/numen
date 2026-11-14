@@ -112,7 +112,6 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 			Join:             note.NewJoin(connecting),
 			CreateInRelation: note.NewCreateInRelation(create, names),
 		},
-		Refer: NoteReferring{AddLinks: note.NewAddLinks(linking)},
 	}
 }
 

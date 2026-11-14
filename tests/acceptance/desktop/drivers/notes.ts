@@ -6,11 +6,11 @@ import {
   openNote,
   waitForSavedBody,
   writeNote,
-  destroyNote,
 } from '../../../e2e/desktop/tests/support/vault.js'
 import { getConnectionSides } from '../../../e2e/desktop/tests/support/layout.js'
 import { NoteEditor } from './components/NoteEditor.js'
 import { TabStrip } from './components/TabStrip.js'
+import { DEFAULT_VAULT } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 export class NoteDriver {
@@ -50,7 +50,8 @@ export class NoteDriver {
   }
 
   async removeFromDisk(reference: string, name: string): Promise<void> {
-    await destroyNote(this.scenario.page.request, await this.scenario.getPath(reference, name))
+    const notePath = await this.scenario.getPath(reference, name)
+    this.scenario.getWorld().removeFile(this.scenario.getVault(DEFAULT_VAULT), notePath)
   }
 
   async choose(label: string, reference: string, name: string): Promise<void> {
@@ -84,26 +85,51 @@ export class NoteDriver {
   /** The editor is built after the tab opens and puts the cursor on the line once it is: the line is waited for. */
   async expectCursorOnLine(reference: string, name: string, line: string): Promise<void> {
     const editor = this.getEditor(await this.scenario.getPath(reference, name))
-    await expect.poll(() => editor.readCursorLine(), { message: `the cursor of the note "${name}" is not on the line "${line}"` }).toBe(line)
+    await expect
+      .poll(() => editor.readCursorLine(), {
+        message: `the cursor of the note "${name}" is not on the line "${line}"`,
+      })
+      .toBe(line)
   }
 
   async expectDoesNotHaveText(reference: string, name: string, text: string): Promise<void> {
-    await expect(this.getEditor(await this.scenario.getPath(reference, name)).panel()).not.toContainText(text)
+    await expect(
+      this.getEditor(await this.scenario.getPath(reference, name)).panel(),
+    ).not.toContainText(text)
   }
 
   async expectOnDiskHasText(reference: string, name: string, text: string): Promise<void> {
-    await waitForSavedBody(this.scenario.page.request, await this.scenario.getPath(reference, name), text)
+    await waitForSavedBody(
+      this.scenario.page.request,
+      await this.scenario.getPath(reference, name),
+      text,
+    )
   }
 
-  async expectLinks(reference: string, name: string, toReference: string, toName: string): Promise<void> {
+  async expectLinks(
+    reference: string,
+    name: string,
+    toReference: string,
+    toName: string,
+  ): Promise<void> {
     await expect.poll(() => this.isLinked(reference, name, toReference, toName)).toBe(true)
   }
 
-  async expectDoesNotLink(reference: string, name: string, toReference: string, toName: string): Promise<void> {
+  async expectDoesNotLink(
+    reference: string,
+    name: string,
+    toReference: string,
+    toName: string,
+  ): Promise<void> {
     await expect.poll(() => this.isLinked(reference, name, toReference, toName)).toBe(false)
   }
 
-  private async isLinked(reference: string, name: string, toReference: string, toName: string): Promise<boolean> {
+  private async isLinked(
+    reference: string,
+    name: string,
+    toReference: string,
+    toName: string,
+  ): Promise<boolean> {
     const from = await this.scenario.getPath(reference, name)
     const to = await this.scenario.getPath(toReference, toName)
     const { request } = this.scenario.page
@@ -111,5 +137,4 @@ export class NoteDriver {
     const sides = await getConnectionSides(request, from, to)
     return sides.first || sides.second
   }
-
 }

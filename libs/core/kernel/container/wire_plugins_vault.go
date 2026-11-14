@@ -4,7 +4,6 @@ import (
 	"context"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
@@ -31,12 +30,13 @@ type PluginVaultHooks struct {
 	Written    func()
 	IndexState func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
-	Notes      *NoteUseCases
+	Notes      *hostvault.NoteChanges
 }
 
 func getNoteChanges(notes NoteUseCases) hostvault.NoteChanges {
 	return hostvault.NoteChanges{
-		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking, AddLinks: notes.Refer.AddLinks,
+		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking,
+		AddLinks: note.NewAddLinks(notes.Edit.Linking),
 	}
 }
 
@@ -112,7 +112,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 }
 
 func newArranger(
-	useCases NoteUseCases, db *Index, window *NoteUseCases, current func() (domain.Vault, bool),
+	useCases NoteUseCases, db *Index, window *hostvault.NoteChanges, current func() (domain.Vault, bool),
 ) hostvault.Arranger {
 	arranger := hostvault.Arranger{
 		Notes:    getNoteChanges(useCases),
@@ -120,7 +120,7 @@ func newArranger(
 		Problems: db.NoteProblems(),
 	}
 	if window != nil {
-		arranger.Window, arranger.WindowVault = getNoteChanges(*window), current
+		arranger.Window, arranger.WindowVault = *window, current
 	}
 	return arranger
 }
@@ -141,7 +141,7 @@ func getPluginDir(c pluginsWiring, id string) (string, bool) {
 }
 
 func getFrontendPluginIDs(c pluginsWiring) []string {
-	return pluginmanifest.New(c.PluginHost.Runtime).ListFrontendPluginIDs()
+	return getRuntimeManifests(c.PluginHost.Runtime).ListFrontendPluginIDs()
 }
 
 func setPluginWindow(c pluginsWiring, window hostendpoint.WindowControl) {
@@ -161,7 +161,7 @@ func watchPluginChanges(c pluginsWiring) (<-chan struct{}, func()) {
 }
 
 func openChooseTabKind(c pluginsWiring) *tabkind.Choose {
-	return tabkind.NewChoose(pluginmanifest.New(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
+	return tabkind.NewChoose(getRuntimeManifests(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
 }
 
 func openVersionItems(c pluginsWiring) *textversion.VersionItems {
@@ -177,7 +177,7 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: pluginmanifest.New(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost, nil).Run, Readers: vaultReaders(c.vault),
+		Plugins: getRuntimeManifests(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost, nil).Run, Readers: vaultReaders(c.vault),
 		Notes: pluginsNewNoteReader(c), Types: c.RunningHost.Watch, Versions: c.vault.TextVersions.Texts, Config: getWhenConfig(c),
 	})
 }

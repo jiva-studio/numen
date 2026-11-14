@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -50,13 +51,7 @@ func TestNotesAreSavedInGroups(t *testing.T) {
 	content := &groupedWrites{}
 	db := openIndex(t)
 
-	scan := vaults.NewScan(
-		vaultreader.Readers{},
-		db.Vaults(),
-		content,
-		db.NoteQueries(),
-		&countedMeasurements{}, nil,
-	)
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), &countedMeasurements{}, none.SourceBacklog{})
 	res, err := scan.Execute(t.Context(), v)
 	if err != nil {
 		t.Fatal(err)
@@ -102,13 +97,7 @@ func TestScanWrites_LongNoteClosesBatchEarly(t *testing.T) {
 
 	content := &groupedWrites{}
 	db := openIndex(t)
-	scan := vaults.NewScan(
-		vaultreader.Readers{},
-		db.Vaults(),
-		content,
-		db.NoteQueries(),
-		&countedMeasurements{}, nil,
-	)
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), &countedMeasurements{}, none.SourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -130,13 +119,7 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 	writeErr := errors.New("disk full")
 	db := openIndex(t)
 
-	scan := vaults.NewScan(
-		vaultreader.Readers{},
-		db.Vaults(),
-		&groupedWrites{fail: writeErr},
-		db.NoteQueries(),
-		&countedMeasurements{}, nil,
-	)
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), &groupedWrites{fail: writeErr}, db.NoteQueries(), &countedMeasurements{}, none.SourceBacklog{})
 	res, err := scan.Execute(t.Context(), v)
 	if !errors.Is(err, writeErr) {
 		t.Fatalf("error = %v, want the one the index gave", err)
@@ -154,13 +137,7 @@ func TestTheIndexIsMeasuredWhenItChanges(t *testing.T) {
 	db := openIndex(t)
 	measured := &countedMeasurements{}
 
-	scan := vaults.NewScan(
-		readers,
-		db.Vaults(),
-		db.Notes(),
-		db.NoteQueries(),
-		measured, nil,
-	)
+	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), measured, none.SourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

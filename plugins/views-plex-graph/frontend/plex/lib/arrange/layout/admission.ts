@@ -20,7 +20,7 @@ export function requestNodes(nodes: readonly PlexNode[], options: PlexOptions): 
  * The nodes the window holds. The set is laid out, each relation is cut before
  * the first box that is not inside, and the rest is laid out again, since a
  * smaller group is placed differently. A group whose first box is outside is
- * halved instead, since its middle lies nearer the focus when it is smaller.
+ * halved instead, since a smaller block has fewer rows and its first box may lie nearer the focus.
  * Every pass removes at least one node. The notes removed are then added back, one note of each relation in turn, while the window still holds every box.
  *
  * A pass needs the first box outside of each relation and nothing after it, so
@@ -117,8 +117,6 @@ function cutBeforeOutside(nodesByRelation: NodesByRelation, outside: ReadonlySet
     const nodes = nodesByRelation[relation]
     if (!nodes) continue
     const cut = nodes.findIndex((node) => outside.has(node.id))
-    // The middle of a group lies further out the more it holds, so when even the
-    // first box is outside a smaller group may still fit: halve it and lay again.
     kept[relation] = cut === -1 ? nodes : nodes.slice(0, cut === 0 ? nodes.length >> 1 : cut)
   }
   return kept
