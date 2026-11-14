@@ -228,7 +228,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 		return nil, false
 	}
 	registries := func(name string) ([]string, bool) {
-		if name != settingsadapter.RegistryThemes {
+		if name != settingsdomain.RegistryThemes {
 			return nil, false
 		}
 		var names []string
@@ -256,7 +256,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 		Hub:    hub.GetShared(),
 	}
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(declarations, registries), none.PluginSettings{},
+		settingsadapter.JSONCodec{}, declarations, registries, none.PluginSettings{},
 	)
 	write := settingsusecase.NewWriteSettings(check, store, feed)
 
