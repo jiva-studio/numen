@@ -31,7 +31,7 @@ var (
 	ErrNotAnOption = errors.New("not one of the options")
 	// ErrOutOfRange is a number outside the bounds of a range or a number setting.
 	ErrOutOfRange = errors.New("out of range")
-	// ErrInvalidListItem is an item of a list setting that is empty or listed twice.
+	// ErrInvalidListItem refuses a blank entry, or an entry that repeats an earlier one exactly.
 	ErrInvalidListItem = errors.New("invalid list item")
 )
 
@@ -134,7 +134,6 @@ func checkValue(declared manifest.Setting, registries Registries, value any) err
 	return nil
 }
 
-// checkList accepts a list of strings, none empty and none twice.
 func checkList(value any) error {
 	items, isList := value.([]any)
 	if !isList {
