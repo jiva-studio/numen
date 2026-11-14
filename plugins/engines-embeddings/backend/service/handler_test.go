@@ -38,10 +38,10 @@ func noHealth() (*health.Client, error) { return nil, hostcall.ErrNoHost }
 func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_MODEL", "owner/model")
 	hostHealth := healthtest.NewHost(t)
-	vars := hostHealth.Vars(linkedToken)
-	h := newHandler(newServer(nil), noPlaces, sourcehealth.New(func() (*health.Client, error) {
-		return health.NewClientFromVars(vars)
-	}, console.Report))
+	for name, value := range hostHealth.Vars(linkedToken) {
+		t.Setenv(name, value)
+	}
+	h := newHandler(newServer(nil), noPlaces, sourcehealth.New(health.NewClientFromEnv, console.Report))
 
 	_, describeErr := h.Describe(t.Context())
 	if !hasCode(describeErr, rpcerror.FailedPrecondition) {
