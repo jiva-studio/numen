@@ -9,6 +9,7 @@ import type { WindowTabs } from '@/entities/tab'
 import type { Caught } from '@/shared/api/errors'
 import {
   createNoticeParts,
+  createPluginApiParts,
   createPluginCatalog,
   createPluginSupport,
   createTabActionParts,
@@ -19,9 +20,12 @@ import {
   type HostParts,
   type PluginServices,
 } from '@/features/plugin-host'
+import type { WindowApi } from '@/app/window/createWindowApi'
+import { createAnsweredApi } from './coreAnswers'
 
 /** What a test names of the plugin support; the rest is left out as a window without it leaves it out. */
 export interface TestPluginSupportDeps {
+  readonly api?: WindowApi
   readonly windowTabs: WindowTabs
   readonly tabOpeners: Parameters<typeof createTabKindParts>[0]['tabOpeners']
   readonly rest: SettingsStore
@@ -53,6 +57,7 @@ const NO_PLATFORM: WindowPlatform = 'windows'
 const ignoreError = (): void => undefined
 
 export function createTestPluginSupport(deps: TestPluginSupportDeps) {
+  const api = deps.api ?? createAnsweredApi({})
   const partialServices: Partial<PluginServices> = { taskList: ref([]), ...deps.getServices?.() }
   const services = partialServices as PluginServices
   const named: HostParts = pickDefinedEntries({
@@ -81,7 +86,12 @@ export function createTestPluginSupport(deps: TestPluginSupportDeps) {
     tabs: createTabActionParts(deps),
     parts: [
       createVaultServiceParts({ services }),
-      createTaskServiceParts({ services }),
+      createTaskServiceParts({
+        services,
+        processes: api.plugins.processes,
+        healthReports: api.plugins.health.healthReports,
+      }),
+      createPluginApiParts({ api: api.plugins.pluginHost, rest: deps.rest }),
       ...optionalParts.filter((one) => one !== undefined),
       named,
     ],

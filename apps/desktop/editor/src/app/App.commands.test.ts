@@ -16,6 +16,7 @@ import { registerTabKindIcon } from '@/entities/note'
 import {
   requests,
   cards,
+  createWindowTransport,
   DEBOUNCE,
   getWindowParts,
   mountWindow,
@@ -324,7 +325,7 @@ function drawPluginTypes(): void {
 
 describe('the request to open the settings', () => {
   it('opens the settings tab from the placeholder of a plugin that is not running', async () => {
-    answerTabKinds([
+    const tabKinds = answerTabKinds([
       createMockCatalogEntry('sample.notes', {
         name: 'Notes',
         feature: 'Markdown notes',
@@ -332,7 +333,7 @@ describe('the request to open the settings', () => {
         state: CATALOG_STATE.INSTALLED,
       }),
     ])
-    const window = await mountWindow()
+    const window = await mountWindow(createWindowTransport(tabKinds.answers))
     const getTabNames = () => window.findAll('[role="tab"]').map((one) => one.text())
     expect(getTabNames().some((name) => name.includes(WORDS.settings))).toBe(false)
     const saved = [

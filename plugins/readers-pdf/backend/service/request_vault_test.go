@@ -83,7 +83,7 @@ func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 
 	code := postAPI(t, documents, "GetDocument", "Chemistry", `{"path":"tiny.pdf"}`, &res)
 
-	if code != http.StatusOK || len(res.Pages) == 0 {
+	if code != http.StatusOK || len(res.Pages) != 2 || res.Pages[0].Width <= 0 {
 		t.Fatalf("GetDocument in Chemistry = %d %v, want its pages", code, res)
 	}
 	if code := postAPI(t, documents, "GetDocument", "", `{"path":"tiny.pdf"}`, &res); code == http.StatusOK {

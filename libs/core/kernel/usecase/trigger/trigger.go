@@ -16,6 +16,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -24,17 +25,6 @@ import (
 type Plugins interface {
 	pluginport.PluginTriggers
 	ListHandlers() []plugin.CommandEntry
-}
-
-// CommandRun runs a handler checked against its declaration, as a run a person starts is: its
-// backend, its condition and its arguments.
-type CommandRun interface {
-	Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error)
-}
-
-// NoteReader reads the type and the frontmatter of a note from its current file.
-type NoteReader interface {
-	Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteType, map[string]any, error)
 }
 
 // Versions gives the text versions of a file as target.versions holds them.
@@ -57,9 +47,9 @@ type Triggers struct {
 // gives target.versions and Config gives the settings.
 type TriggersDeps struct {
 	Plugins  Plugins
-	Run      CommandRun
+	Run      pluginport.CommandRun
 	Readers  vaultport.VaultReaders
-	Notes    NoteReader
+	Notes    noteport.NoteReader
 	Types    contenttypeport.ContentTypeTable
 	Versions Versions
 	Config   pluginport.WhenConfig
@@ -161,8 +151,8 @@ func (u *Triggers) readTriggers() []trigger {
 // reached in this pass.
 type pass struct {
 	types    contenttypeport.ContentTypeTable
-	run      CommandRun
-	notes    NoteReader
+	run      pluginport.CommandRun
+	notes    noteport.NoteReader
 	versions Versions
 	vault    domain.Vault
 	list     []trigger

@@ -44,8 +44,6 @@ type commandHost struct {
 	infoReads int
 }
 
-func (h *commandHost) Discover() error { return nil }
-
 func (h *commandHost) IsPluginEnabled(id string) bool { return !h.disabled[id] }
 
 func (h *commandHost) IsPluginSuspended(string) bool { return false }

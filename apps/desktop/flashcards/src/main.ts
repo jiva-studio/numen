@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { createOriginTransport } from '@numen/core-client'
 import { interceptExternalLinks, reportFailure, runInBackground } from '@numen/ui'
 import { openExternalUrl } from '@numen/workbench'
 import { createRoot } from './app/createRoot'
@@ -18,4 +19,4 @@ interceptExternalLinks((href) => {
   runInBackground(openExternalUrl(href, loadFrameRuntime), reportFailure)
 })
 
-createApp(createRoot()).mount('#app')
+createApp(createRoot(createOriginTransport())).mount('#app')

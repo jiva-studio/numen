@@ -5,12 +5,13 @@
 import { formatError } from '@/shared/api/errors'
 import type { WindowTabs } from '@/entities/tab'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import { writeTabLinks } from '../api/tab-links'
+import type { TabLinksApi } from '../api/tab-links'
 import { getWindowReport } from './tabLinkSession'
 import { createTabReports } from './tabReports'
 import { useTabLinks } from './useTabLinks'
 
 export interface TabLinkingDeps {
+  readonly writeTabLinks: TabLinksApi['writeTabLinks']
   readonly windowId: string
   readonly windowTabs: Pick<WindowTabs, 'tabs' | 'groups'>
   readonly isMain: boolean
@@ -18,8 +19,9 @@ export interface TabLinkingDeps {
 }
 
 export function createTabLinking(deps: TabLinkingDeps) {
-  const { windowId, writeMessage } = deps
+  const { windowId, writeTabLinks, writeMessage } = deps
   const reports = createTabReports({
+    writeTabLinks,
     windowId,
     getReport: () => getWindowReport(deps.windowTabs, deps.isMain),
     onError: (error) =>
