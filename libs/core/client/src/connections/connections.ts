@@ -186,7 +186,7 @@ const readOptions = (field: ManifestConnectionField): ConnectionFieldInfo['optio
   (field.options?.values ?? []).flatMap((one) => {
     const json = toJson(ValueSchema, one)
     if (typeof json === 'string') return [{ value: json, title: json }]
-    if (typeof json === 'object' && json !== null && !Array.isArray(json)) {
+    if (typeof json === 'object' && json !== null && !Array.isArray(json) && 'value' in json) {
       const { value, title } = json
       if (typeof value !== 'string') return []
       return [{ value, title: typeof title === 'string' && title !== '' ? title : value }]
@@ -264,6 +264,8 @@ const readConnection = (connection: ProviderConnection): ConnectionInfo => {
 
 const readErrorCode = (code: ProviderConnectionErrorCode): ConnectionErrorCode | undefined => {
   switch (code) {
+    case ProviderConnectionErrorCode.UNSPECIFIED:
+      return undefined
     case ProviderConnectionErrorCode.NOT_FOUND:
       return 'not_found'
     case ProviderConnectionErrorCode.NAME_TAKEN:
@@ -278,8 +280,6 @@ const readErrorCode = (code: ProviderConnectionErrorCode): ConnectionErrorCode |
       return 'stale_revision'
     case ProviderConnectionErrorCode.PROVIDER_UNAVAILABLE:
       return 'provider_unavailable'
-    case ProviderConnectionErrorCode.UNSPECIFIED:
-      return undefined
   }
 }
 
