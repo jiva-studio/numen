@@ -2,8 +2,8 @@
  * The files of the vault as a plugin's tabs are given them, and the icons the window draws
  * commands and entries with.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installCoreAnswers } from '@numen/core-client/testing'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { Folder, FolderOpen } from '@lucide/vue'
 import { COMMAND, findIcon } from '@/shared/model/command'
 import { createIconHost, createVaultFiles } from './fileServices'
@@ -19,10 +19,21 @@ const target = {
   source: null,
 }
 
+const api = createAnsweredApi({
+  files: {
+    listFiles: (request) => ({
+      entries: [
+        { path: `${request.path}/a.md`, name: 'a.md', isFolder: false, isNote: true, type: '' },
+      ],
+    }),
+  },
+})
+
 const setup = () => {
   const createUntitledNote = vi.fn()
   const runCommand = vi.fn(() => Promise.resolve())
   const files = createVaultFiles({
+    listFiles: api.file.listFiles,
     making: { createUntitledNote } as never,
     getTarget: () => target as never,
     runCommand,
@@ -30,23 +41,8 @@ const setup = () => {
   return { files, createUntitledNote, runCommand }
 }
 
-let restore: () => void
-
 beforeEach(() => {
-  restore = installCoreAnswers({
-    files: {
-      listFiles: (request) => ({
-        entries: [
-          { path: `${request.path}/a.md`, name: 'a.md', isFolder: false, isNote: true, type: '' },
-        ],
-      }),
-    },
-  })
   vi.clearAllMocks()
-})
-
-afterEach(() => {
-  restore()
 })
 
 describe('the files of the vault a plugin is handed', () => {

@@ -6,8 +6,11 @@ import { createCommandRegistry } from '@/shared/model/command'
 import { describe, expect, it, vi } from 'vitest'
 import type { HandlerDeclaration, PluginHost } from '@numen/plugin-loader'
 import type { CommandTarget, RunSupport } from '@/shared/model/command'
-import { getFileKinds } from '@/entities/file'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
+
+/** The kinds of files, over a core that answers none. */
+const { getFileKinds } = createAnsweredApi({}).file
 
 const HANDLER: HandlerDeclaration = {
   pluginId: 'md.pages',

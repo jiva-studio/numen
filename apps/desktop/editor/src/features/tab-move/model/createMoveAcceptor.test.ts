@@ -1,18 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
 import { TAB_MOVE_ERROR_CODE } from '@numen/core-client'
-import { answerCore } from '@/testing/coreAnswers'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createMoveAcceptor } from './tabMove'
 
 const answerAccept = (accept = vi.fn(() => ({ error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }))) => {
-  answerCore({ workspace: { acceptTabMove: accept } })
-  return accept
+  const api = createAnsweredApi({ workspace: { acceptTabMove: accept } })
+  return { accept, acceptTabMove: api.tabMove.acceptTabMove }
 }
 
 describe('accepting a moved tab', () => {
   it('sends the accept for the window once what must come first has settled', async () => {
-    const accept = answerAccept()
+    const { accept, acceptTabMove } = answerAccept()
     let release: () => void = () => undefined
     const acceptor = createMoveAcceptor(
+      acceptTabMove,
       'window-a',
       () => new Promise<void>((resolve) => (release = resolve)),
     )
@@ -30,9 +31,12 @@ describe('accepting a moved tab', () => {
   })
 
   it('answers the error of a move the core refused', async () => {
-    answerAccept(vi.fn(() => ({ error: TAB_MOVE_ERROR_CODE.TIMEOUT })))
+    const { acceptTabMove } = answerAccept(vi.fn(() => ({ error: TAB_MOVE_ERROR_CODE.TIMEOUT })))
 
-    const result = await createMoveAcceptor('window-a', () => Promise.resolve())('plex:2', 'move-1')
+    const result = await createMoveAcceptor(acceptTabMove, 'window-a', () => Promise.resolve())(
+      'plex:2',
+      'move-1',
+    )
 
     expect(result).toStrictEqual({ ok: false, error: 'timeout' })
   })

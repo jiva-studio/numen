@@ -5,6 +5,7 @@ import { createNoticeQueue } from '@numen/workbench'
 import type { PluginHealthItem } from '@/entities/plugin'
 import type { Task } from '@/entities/window'
 import { createMessageLog } from '@/shared/model/notices/messages'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createWindowBackgroundTasks } from './createWindowBackgroundTasks'
 
 const READING: Task = {
@@ -48,6 +49,7 @@ const setup = (
   const tasks = ref<readonly Task[]>([READING])
   const runs: { command: string; values: Readonly<Record<string, string>> | undefined }[] = []
   const host = createWindowBackgroundTasks({
+    cancelTask: createAnsweredApi({}).tasks.cancelTask,
     log,
     plugins: createNoticeQueue(),
     window: { lost: ref(''), unwatched: ref(unwatched), error: ref(''), tasks },

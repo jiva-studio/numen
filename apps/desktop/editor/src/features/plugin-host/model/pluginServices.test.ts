@@ -1,6 +1,6 @@
 /** The window and the notes of the vault, as a plugin's tabs are handed them. */
 import { describe, expect, it, vi } from 'vitest'
-import { answerCore } from '@/testing/coreAnswers'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { ref, shallowRef } from 'vue'
 import type { FileOpeners } from '@/entities/tab'
 import { createIconHost } from './fileServices'
@@ -200,7 +200,7 @@ describe('the notes of the vault a plugin is handed', () => {
       ],
       connections: [],
     }))
-    answerCore({
+    const api = createAnsweredApi({
       notes: {
         listRelatedNotes,
         listHeadings,
@@ -225,7 +225,13 @@ describe('the notes of the vault a plugin is handed', () => {
       listFileKinds,
       search,
       pluginNotes,
-      notes: createVaultNotes({ search, making, pluginNotes }),
+      notes: createVaultNotes({
+        notes: api.note,
+        getFileKinds: api.file.getFileKinds,
+        search,
+        making,
+        pluginNotes,
+      }),
     }
   }
 

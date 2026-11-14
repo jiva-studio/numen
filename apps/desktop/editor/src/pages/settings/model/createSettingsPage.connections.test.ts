@@ -3,12 +3,12 @@
  * reason the core gives for a refused change. Every value here is invented.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { connections } from '@/shared/api/clients'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import type { ConnectionInfo } from '@/entities/connection'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { WORDS } from '@/shared/ui/words'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createWindowSettingsPart } from '@/testing/windowSettings'
 
 const connection: ConnectionInfo = {
@@ -25,11 +25,15 @@ const connection: ConnectionInfo = {
   uses: [],
 }
 
+/** The calls of a window whose core answers none; a test answers the connections it reads. */
+const api = createAnsweredApi({})
+
 const createSettings = () => {
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = { groups: { handle: { openTab: vi.fn(() => Promise.resolve('')) } } }
   return createWindowSettingsPart({
-    rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
+    api,
+    rest: createSettingsStore(api.settings, SETTINGS_WORDS, vi.fn()),
     words: WORDS,
     log,
     windowTabs: windowTabs as unknown as WindowTabs,
@@ -45,8 +49,11 @@ afterEach(() => {
 
 describe('the connections in the settings tab', () => {
   it('are read when the page asks, and listed in the installation', async () => {
-    vi.spyOn(connections, 'listTypes').mockResolvedValue({ types: [], operations: [] })
-    const list = vi.spyOn(connections, 'list').mockResolvedValue([connection])
+    vi.spyOn(api.connection, 'listConnectionTypes').mockResolvedValue({
+      types: [],
+      operationTitles: {},
+    })
+    const list = vi.spyOn(api.connection, 'listConnections').mockResolvedValue([connection])
     const { connections: installed } = createSettings().configured.state.installation
 
     await installed.load()
@@ -56,7 +63,7 @@ describe('the connections in the settings tab', () => {
   })
 
   it('give the reason in words when the core refuses a create', async () => {
-    vi.spyOn(connections, 'create').mockResolvedValue({
+    vi.spyOn(api.connection, 'createConnection').mockResolvedValue({
       ok: false,
       error: { errorCode: 'name_taken', detail: 'Work' },
     })

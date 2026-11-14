@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { PluginHost } from '@numen/plugin-loader'
 import { createCommandRegistry } from '@/shared/model/command'
-import { getFileKinds } from '@/entities/file'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
+
+/** The kinds of files, over a core that answers none. */
+const { getFileKinds } = createAnsweredApi({}).file
 
 describe('the palette entry of a command a plugin declares with a Shift shortcut', () => {
   it('is drawn with the keystroke holding Shift that the manifest names', () => {

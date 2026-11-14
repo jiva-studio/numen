@@ -4,7 +4,7 @@ import { computed, defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { PluginLoader } from '@numen/plugin-loader'
 import { createWindowLayout, useOpenTabs, type AnyTabKind, type MovedTab } from '@/entities/tab'
-import { answerCore } from '@/testing/coreAnswers'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
 import { createLayoutStart } from './createLayoutStart'
 import { createPluginStart } from './createPluginStart'
@@ -35,7 +35,7 @@ const setup = ({
   vaultId = 'sea',
   detached = null,
 }: Parts = {}) => {
-  answerCore({
+  const api = createAnsweredApi({
     workspace: {
       readOpenTabs: () => {
         if (isReadFailing) throw new Error('core is busy')
@@ -100,6 +100,7 @@ const setup = ({
       isSecondary: false,
       windowId: 'window-a',
       readDetachedTab: vi.fn(() => Promise.resolve(detached)),
+      readOpenTabs: api.savedTabs.readOpenTabs,
       openDetachedTab,
     }),
   }
@@ -107,7 +108,12 @@ const setup = ({
     defineComponent({
       setup() {
         createWindowBootstrap(deps)
-        useOpenTabs({ windowTabs, isWriting: layout.isWritingTabs, writeMessage })
+        useOpenTabs({
+          windowTabs,
+          isWriting: layout.isWritingTabs,
+          writeMessage,
+          writeOpenTabs: api.savedTabs.writeOpenTabs,
+        })
         return () => h('div')
       },
     }),

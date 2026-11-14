@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
 import { createLostConnection } from '@numen/core-client/testing'
-import { answerCore } from '@/testing/coreAnswers'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import type { TabLinksEvent } from '@/entities/tab'
 import { createTabLinkSession, getWindowReport, type TabLinkSessionDeps } from './tabLinkSession'
 import { createTabReports } from './tabReports'
@@ -80,7 +80,7 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
       Promise.resolve(),
     ),
   }
-  answerCore({
+  const api = createAnsweredApi({
     workspace: {
       watchTabLinks: (request, context) => core.watchTabLinks(request.windowId, context.signal),
       cancelWatchTabLinks: async (request) => {
@@ -106,7 +106,9 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
   const wait = vi.fn((_ms: number) => Promise.resolve())
   const onError = vi.fn()
   const deps = {
+    api: api.tabLinks,
     reports: createTabReports({
+      writeTabLinks: api.tabLinks.writeTabLinks,
       windowId: 'window-a',
       getReport: () => ({ tabs: getOpenTabs(), window: WINDOW }),
       wait,

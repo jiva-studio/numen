@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { TAB_MOVE_ERROR_CODE, type TabMoveErrorCodeValue } from '@numen/core-client'
 import type { Tab } from '@/entities/tab'
-import { answerCore } from '@/testing/coreAnswers'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { ACCEPT_ATTEMPTS, ACCEPT_RETRY_MS, ASKING_MESSAGE, STILL_OPEN_MESSAGE } from '../lib/move'
 import type { PaneRect } from '../lib/move'
 import { createMovedTabOpener, createTabMover, type TabMoverDeps } from './tabMove'
@@ -55,7 +55,7 @@ const setup = (asking: () => boolean = () => false) => {
     title,
     state,
   })
-  answerCore({
+  const api = createAnsweredApi({
     workspace: {
       detachTab: ({ tab, x, y, width, height }) =>
         core.detachTab({ tab: toTab(tab!), x, y, width, height }),
@@ -64,6 +64,7 @@ const setup = (asking: () => boolean = () => false) => {
     },
   })
   const deps = {
+    api: api.tabMove,
     windowId: 'window-a',
     windowTabs: {
       tabs: {

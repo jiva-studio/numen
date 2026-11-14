@@ -13,6 +13,7 @@ import type { AnyTabKind } from '@/entities/tab'
 import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createTestPluginSupport, type TestPluginSupportDeps } from '@/testing/pluginSupport'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { getNoteIcon } from '@/entities/note'
 
 const createSupport = () => {
@@ -23,7 +24,7 @@ const createSupport = () => {
       registerExtensionReader: vi.fn(() => () => undefined),
       registerEditor: vi.fn(() => () => undefined),
     } as never,
-    rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
+    rest: createSettingsStore(createAnsweredApi({}).settings, SETTINGS_WORDS, vi.fn()),
     getServices: () => ({
       workspace: { getNoteInFocus: () => ({ path: '', title: '' }) } as unknown as WorkspaceHost,
     }),
@@ -152,7 +153,7 @@ describe('the settings and notices a plugin is given', () => {
         registerExtensionReader: vi.fn(() => () => undefined),
         registerEditor: vi.fn(() => () => undefined),
       } as never,
-      rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
+      rest: createSettingsStore(createAnsweredApi({}).settings, SETTINGS_WORDS, vi.fn()),
       ...more,
     })
 

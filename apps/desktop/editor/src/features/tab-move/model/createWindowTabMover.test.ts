@@ -1,20 +1,26 @@
 import { describe, expect, it, vi } from 'vitest'
-import { answerCore } from '@/testing/coreAnswers'
+import type { CoreAnswers } from '@numen/core-client/testing'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
 import { createWindowTabMover } from './createWindowTabMover'
 
-const setup = (asking = false) => {
+type HighlightWindow = NonNullable<NonNullable<CoreAnswers['workspace']>['highlightWindow']>
+
+const setup = (asking = false, highlightWindow?: (requests: string[]) => HighlightWindow) => {
   const requests: string[] = []
   const gates: (() => void)[] = []
-  answerCore({
+  const api = createAnsweredApi({
     workspace: {
-      highlightWindow: ({ windowId, isOn }) => {
-        requests.push(`${windowId}:${isOn ? 'on' : 'off'}`)
-        return new Promise<Record<string, never>>((resolve) => gates.push(() => resolve({})))
-      },
+      highlightWindow:
+        highlightWindow?.(requests) ??
+        (({ windowId, isOn }) => {
+          requests.push(`${windowId}:${isOn ? 'on' : 'off'}`)
+          return new Promise<Record<string, never>>((resolve) => gates.push(() => resolve({})))
+        }),
     },
   })
   const mover = createWindowTabMover({
+    api: api.tabMove,
     windowId: 'window-a',
     windowTabs: createTestTabs(),
     notes: { asking: () => asking, flushPending: () => Promise.resolve() },
@@ -37,15 +43,10 @@ describe('the outline a window offers over another', () => {
   })
 
   it('goes on after a request that failed', async () => {
-    const { mover, requests } = setup()
-    answerCore({
-      workspace: {
-        highlightWindow: ({ isOn }) => {
-          requests.push(isOn ? 'on' : 'off')
-          if (isOn) throw new Error('window gone')
-          return {}
-        },
-      },
+    const { mover, requests } = setup(false, (asked) => ({ isOn }) => {
+      asked.push(isOn ? 'on' : 'off')
+      if (isOn) throw new Error('window gone')
+      return {}
     })
 
     mover.highlightWindow('window-b', true)
