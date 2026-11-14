@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -158,16 +159,16 @@ func TestAnIndexOfTheCurrentBuildIsOpenedAndUsedAsItIs(t *testing.T) {
 	}
 }
 
-func TestAnIndexOfAnotherVersionIsBuiltAgain(t *testing.T) {
+func TestAnIndexOfANewerVersionIsRefusedAndLeftUntouched(t *testing.T) {
 	ctx := t.Context()
 
-	for _, version := range []int{2, 10, 110} {
+	for _, version := range []int{expectedVersion + 1, 10, 110} {
 		t.Run(fmt.Sprintf("version %d", version), func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "index.db")
 			raw := openRawDB(t, path)
 			for _, statement := range []string{
-				`CREATE TABLE old_marker_rows (marker TEXT)`,
-				`INSERT INTO old_marker_rows VALUES ('01OLDMARKER')`,
+				`CREATE TABLE newer_marker_rows (marker TEXT)`,
+				`INSERT INTO newer_marker_rows VALUES ('01NEWERMARKER')`,
 				fmt.Sprintf("PRAGMA user_version = %d", version),
 			} {
 				if _, err := raw.ExecContext(ctx, statement); err != nil {
@@ -177,21 +178,23 @@ func TestAnIndexOfAnotherVersionIsBuiltAgain(t *testing.T) {
 			if err := raw.Close(); err != nil {
 				t.Fatal(err)
 			}
+			before := hashFile(t, path)
 
 			db, err := Open(ctx, path)
-			if err != nil {
-				t.Fatalf("an index of version %d was not rebuilt: %v", version, err)
+			if err == nil {
+				testsupport.Close(t, db)
+				t.Fatal("an index of a newer version was opened")
 			}
-			defer testsupport.Close(t, db)
-			if v := getUserVersion(ctx, t, db.write); v != expectedVersion {
-				t.Errorf("the index is at version %d, want %d", v, expectedVersion)
+			var newer *NewerIndexError
+			if !errors.As(err, &newer) {
+				t.Fatalf("the error is %v, want a NewerIndexError", err)
 			}
-			var old int
-			if err := db.write.QueryRowContext(ctx, `SELECT count(*) FROM sqlite_master WHERE name = 'old_marker_rows'`).Scan(&old); err != nil {
-				t.Fatal(err)
+			if newer.Found != version || newer.Supported != expectedVersion {
+				t.Errorf("the error carries found %d and supported %d, want %d and %d",
+					newer.Found, newer.Supported, version, expectedVersion)
 			}
-			if old != 0 {
-				t.Error("a table of the old index is still there")
+			if hashFile(t, path) != before {
+				t.Error("the index file changed")
 			}
 		})
 	}
