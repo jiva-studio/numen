@@ -84,13 +84,7 @@ func newPass(
 func cut(t *testing.T, made reading, db *WorkerIndex, v domain.Vault) {
 	t.Helper()
 
-	scan := vault.NewScan(
-		made.GetVaultReaders(),
-		db.Vaults,
-		db.Notes,
-		db.FileStats,
-		db.Maintenance, nil,
-	)
+	scan := vault.NewScan(made.GetVaultReaders(), db.Vaults, db.Notes, db.FileStats, db.Maintenance, noBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -617,4 +611,15 @@ type WorkerIndex struct {
 type testPass struct {
 	*pass
 	worker *Worker
+}
+
+// noBacklog is an index with no source to cut again.
+type noBacklog struct{}
+
+func (noBacklog) GetUnchunkedSources(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
+	return nil, nil
+}
+
+func (noBacklog) GetSourcesWithOtherRecipe(context.Context, domain.VaultID, domain.SourceKind, []string, int) ([]string, error) {
+	return nil, nil
 }

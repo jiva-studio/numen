@@ -30,14 +30,13 @@ var _ acp.Launcher = Launcher{}
 // Child is an agent program started for one session, with a folder of its own as its working
 // directory.
 type Child struct {
-	cmd      *exec.Cmd
-	stdin    io.WriteCloser
-	lines    *bufio.Scanner
-	stderr   *tailBuffer
-	stop     context.CancelFunc
-	cleanDir func() error
-	dir      string
-	program  string
+	cmd     *exec.Cmd
+	stdin   io.WriteCloser
+	lines   *bufio.Scanner
+	stderr  *tailBuffer
+	stop    context.CancelFunc
+	dir     string
+	program string
 }
 
 // Launch starts the command in a new folder, in a process group of its own, and ends the process
@@ -46,20 +45,19 @@ func (Launcher) Launch(ctx context.Context, program string, command []string) (a
 	if len(command) == 0 {
 		return nil, fmt.Errorf("no command starts %s", program)
 	}
-	dir, cleanDir, err := createTempDir("numen-acp-*")
+	dir, err := os.MkdirTemp("", "numen-acp-*")
 	if err != nil {
 		return nil, fmt.Errorf("create the session folder: %w", err)
 	}
 	running, stop := context.WithCancel(ctx)
 	child := &Child{
-		cmd:      exec.CommandContext(running, command[0], command[1:]...),
-		stdin:    nil,
-		lines:    nil,
-		stderr:   &tailBuffer{mu: sync.Mutex{}, buf: nil},
-		stop:     stop,
-		cleanDir: cleanDir,
-		dir:      dir,
-		program:  program,
+		cmd:     exec.CommandContext(running, command[0], command[1:]...),
+		stdin:   nil,
+		lines:   nil,
+		stderr:  &tailBuffer{mu: sync.Mutex{}, buf: nil},
+		stop:    stop,
+		dir:     dir,
+		program: program,
 	}
 	child.cmd.Dir = dir
 	child.cmd.Env = hostcall.GetChildEnvironment()
@@ -126,20 +124,7 @@ func (c *Child) Close() error {
 		}
 	}
 	c.stop()
-	return errors.Join(err, c.cleanDir())
-}
-
-func createTempDir(pattern string) (string, func() error, error) {
-	dir, err := os.MkdirTemp("", pattern)
-	if err != nil {
-		return "", func() error { return nil }, err
-	}
-	return dir, func() error {
-		if err := os.RemoveAll(dir); err != nil {
-			return fmt.Errorf("remove %s: %w", dir, err)
-		}
-		return nil
-	}, nil
+	return errors.Join(err, os.RemoveAll(c.dir))
 }
 
 func isStopped(err error) bool {
@@ -158,9 +143,7 @@ func (t *tailBuffer) Write(p []byte) (int, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.buf = append(t.buf, p...)
-	if overVal := len(t.buf) - stderrTailBytes; overVal > 0 {
-		t.buf = t.buf[overVal:]
-	}
+	t.buf = t.buf[max(0, len(t.buf)-stderrTailBytes):]
 	return len(p), nil
 }
 
