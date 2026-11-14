@@ -3,9 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"os"
 	"path/filepath"
 	"slices"
@@ -13,11 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
@@ -321,14 +319,14 @@ func TestAnAnswerAndATakingBackNameTheVaultThatNoVaultContains(t *testing.T) {
 	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: "nothing", Run: "nothing", Rating: api.RatingGood,
 	})
-	if codeOf(err) != server.CodeNotFound || hasCause(err, sessions.ErrNoRun) {
+	if codeOf(err) != server.CodeNotFound || hasCause(err, flashcards.ErrNoRun) {
 		t.Errorf("answering failed with %v, want a vault nobody holds", err)
 	}
 
 	_, err = handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	})
-	if codeOf(err) != server.CodeNotFound || hasCause(err, sessions.ErrNoRun) {
+	if codeOf(err) != server.CodeNotFound || hasCause(err, flashcards.ErrNoRun) {
 		t.Errorf("taking back failed with %v, want a vault nobody holds", err)
 	}
 }

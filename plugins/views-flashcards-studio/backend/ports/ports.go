@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
@@ -157,4 +158,34 @@ type ScheduleAlgorithm interface {
 type CardModel struct {
 	Path  string
 	Title string
+}
+
+// NoteLinks is what one note is joined to: what it points at, and what points at it.
+type NoteLinks struct {
+	Links     []domain.ResolvedLink
+	Backlinks []domain.ResolvedLink
+}
+
+// PresetReads is a run of reads over the presets of one vault, each preset note read once for the
+// run.
+type PresetReads interface {
+	// HasLinks reports whether the links of a deck can be resolved. Without them every deck is
+	// scheduled by the defaults.
+	HasLinks() bool
+	// GetForDeck returns the preset the deck at path is scheduled by.
+	GetForDeck(ctx context.Context, v domain.Vault, deck string) (presetnote.Contents, error)
+	// GetPreset returns the preset at path.
+	GetPreset(ctx context.Context, v domain.Vault, path string) (presetnote.Contents, error)
+}
+
+// Ticker fires on its channel after each interval until it is stopped.
+type Ticker interface {
+	GetChannel() <-chan time.Time
+	Reset(d time.Duration)
+	Stop()
+}
+
+// Tickers creates the tickers a stream marks its idle intervals by.
+type Tickers interface {
+	CreateTicker(d time.Duration) Ticker
 }

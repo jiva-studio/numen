@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -11,17 +10,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/presetwire"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 func getDeck() map[string]string {
@@ -203,7 +200,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 	if codeOf(err) != server.CodeNotFound {
 		t.Fatalf("the session was over and the answer failed with %v", codeOf(err))
 	}
-	if !hasCause(err, sessions.ErrNoRun) {
+	if !hasCause(err, flashcards.ErrNoRun) {
 		t.Errorf("failed with %v", err)
 	}
 }

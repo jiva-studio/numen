@@ -12,14 +12,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 func newStudiedNotes(cards int) map[string]string {
@@ -1145,7 +1145,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 		}},
 	} {
 		_, err := s.curves(getNoon()).Execute(t.Context(), s.vault, "Sanskrit.md", one.preset)
-		if !errors.Is(err, presets.ErrOutOfBounds) {
+		if !errors.Is(err, presetnote.ErrOutOfBounds) {
 			t.Errorf("%s draws a curve, and answered %v", one.named, err)
 		}
 	}
@@ -1155,7 +1155,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 4)
-	noIndex := flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil)
+	noIndex := flashcards.NewListReviewCards(s.env.Ports.Readers, nil, cards.NewRead(s.env.Ports.Readers, nil))
 	u := flashcards.NewProjectCurve(noIndex, s.schedules, s.presets, getToday(), newFakeClock(getNoon()))
 
 	p := review.Preset{
@@ -1350,7 +1350,7 @@ func TestProjectCurve_ErrorsOnCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
 
-	customCards := flashcards.NewListReviewCards(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, s.links)
+	customCards := flashcards.NewListReviewCards(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, cards.NewRead(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.links))
 	curves := flashcards.NewProjectCurve(customCards, s.schedules, s.presets, getToday(), newFakeClock(getNoon()))
 
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}

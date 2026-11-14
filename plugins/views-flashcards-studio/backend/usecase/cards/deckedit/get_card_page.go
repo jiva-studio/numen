@@ -6,11 +6,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-type GetCardPage struct{ read Read }
+type GetCardPage struct{ read ports.DeckReader }
 
-func NewGetCardPage(read Read) GetCardPage { return GetCardPage{read: read} }
+func NewGetCardPage(read ports.DeckReader) GetCardPage { return GetCardPage{read: read} }
 
 func (u GetCardPage) Execute(ctx context.Context, v domain.Vault, in Query) (Page, error) {
 	contents, err := readExistingDeck(ctx, u.read, v, in.Path)

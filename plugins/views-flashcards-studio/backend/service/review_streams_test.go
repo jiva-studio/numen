@@ -7,14 +7,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 var errPageGone = errors.New("the page is gone")
@@ -434,7 +433,7 @@ func readThrough(handler *API, readers ports.VaultReaders) {
 	shared := hostports.New(handler.vaults, nil)
 	flash := handler.flash()
 	flash.Counts.CardsDue = flashcards.NewCountCardsDue(
-		flashcards.NewListReviewCards(readers, shared.Notes, shared.Links),
+		flashcards.NewListReviewCards(readers, shared.Notes, cards.NewRead(readers, shared.Links)),
 		flash.Schedules.Schedules, flash.Schedules.Presets, flash.Day, handler.now,
 	)
 }

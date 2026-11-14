@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
 
 // ReviewScenarios is what a session of review does: lists the cards, gives the ones that carry no
@@ -21,9 +21,9 @@ type ReviewScenarios struct {
 
 // ScheduleScenarios is what decides when a card is asked: where each card stands, the preset of
 // each deck and the curve of load a preset projects.
-type ScheduleScenarios struct {
+type ScheduleScenarios[P DeckPresets] struct {
 	Schedules Schedules
-	Presets   presets.Presets
+	Presets   P
 	Curves    ProjectCurve
 }
 
@@ -34,38 +34,52 @@ type CountScenarios struct {
 	GetReviewDays GetReviewDays
 }
 
+// IndexUpdate brings the named notes of a vault up to date in the index.
+type IndexUpdate = edit.IndexUpdater
+
+// DeckPresets is the presets each deck of a vault is scheduled by.
+type DeckPresets interface {
+	// OpenReads opens a run of reads sharing the preset notes they open.
+	OpenReads() ports.PresetReads
+	// HasLinks reports whether the links of a deck can be resolved. Without them every deck is
+	// scheduled by the defaults.
+	HasLinks() bool
+	// GetBacklinks returns the links that point at the note at path.
+	GetBacklinks(ctx context.Context, vault domain.VaultID, path string) ([]domain.ResolvedLink, error)
+}
+
 // Notes is what the scenarios built from a Config ask the index of a vault's notes.
 type Notes interface {
 	ports.IndexQueries
 	ports.TypePathQueries
-	ports.NoteRefQueries
-	ports.NameQueries
 }
 
 // Config is what the scenarios that run a vault's cards are built against. Day is where one day of
-// review gives way to the next.
+// review gives way to the next. Cards reads the decks and the card models, and NewDeckWriter makes
+// the writer of a deck over the index update the scenarios pass it.
 type Config struct {
-	Readers   ports.VaultReaders
-	Writers   ports.VaultWriters
-	Notes     Notes
-	Links     ports.LinkQueries
-	Problems  ports.ProblemQueries
-	Index     func(ctx context.Context, v domain.Vault, paths []string) error
-	Logs      ports.LogStores
-	Schedules ports.ScheduleStore
-	DayCounts ports.ScheduleStore
-	Report    func(what string, err error)
-	Day       review.Day
-	Now       ports.Clock
-	Cores     int
-	Scheduler ports.ScheduleAlgorithm
+	Readers       ports.VaultReaders
+	Notes         Notes
+	Cards         ports.CardNoteReader
+	NewDeckWriter func(index IndexUpdate) ports.DeckWriter
+	Index         IndexUpdate
+	Logs          ports.LogStores
+	Schedules     ports.ScheduleStore
+	DayCounts     ports.ScheduleStore
+	Report        func(what string, err error)
+	Day           review.Day
+	Now           ports.Clock
+	Cores         int
+	Scheduler     ports.ScheduleAlgorithm
 }
 
-// NewScenarios builds the scenarios that run a vault's cards against this installation. They share
-// one list of review cards, so a deck or card model the review writes is forgotten before the
-// index is updated for it.
-func NewScenarios(cfg Config) (ReviewScenarios, ScheduleScenarios, CountScenarios) {
-	reviewCards := NewListReviewCards(cfg.Readers, cfg.Notes, cfg.Links)
+// NewScenarios builds the scenarios that run a vault's cards against this installation, with the
+// presets newPresets makes for the day of review. They share one list of review cards, so a deck,
+// a card model or a preset the scenarios write is forgotten before the index is updated for it.
+func NewScenarios[P DeckPresets](
+	cfg Config, newPresets func(index IndexUpdate, day review.Day) P,
+) (ReviewScenarios, ScheduleScenarios[P], CountScenarios) {
+	reviewCards := NewListReviewCards(cfg.Readers, cfg.Notes, cfg.Cards)
 	reviewCards.Cores = cfg.Cores
 	updateIndex := func(ctx context.Context, v domain.Vault, paths []string) error {
 		reviewCards.Invalidate(v.ID, paths...)
@@ -74,14 +88,8 @@ func NewScenarios(cfg Config) (ReviewScenarios, ScheduleScenarios, CountScenario
 		}
 		return cfg.Index(ctx, v, paths)
 	}
-	assigning := NewAssignCardIDs(
-		cfg.Readers, cfg.Writers, cfg.Notes, cfg.Links, updateIndex, cfg.Now,
-	)
-
-	deckPresets := presets.New(presets.Config{
-		Readers: cfg.Readers, Writers: cfg.Writers, Links: cfg.Links, Notes: cfg.Notes,
-		Problems: cfg.Problems, Index: updateIndex, Now: cfg.Now, Day: cfg.Day,
-	})
+	assigning := NewAssignCardIDs(cfg.Notes, cfg.Cards, cfg.NewDeckWriter(updateIndex))
+	deckPresets := newPresets(updateIndex, cfg.Day)
 
 	// Each card is scheduled at the retention target of its own preset.
 	var defaultScheduler review.Scheduler = review.NewFSRS()
@@ -114,7 +122,7 @@ func NewScenarios(cfg Config) (ReviewScenarios, ScheduleScenarios, CountScenario
 			Record:        NewRecord(cfg.Now),
 			Log:           Log{Stores: cfg.Logs},
 		},
-		ScheduleScenarios{Schedules: schedules, Presets: deckPresets, Curves: curves},
+		ScheduleScenarios[P]{Schedules: schedules, Presets: deckPresets, Curves: curves},
 		CountScenarios{
 			CardsDue:      NewCountCardsDue(reviewCards, schedules, deckPresets, cfg.Day, cfg.Now),
 			Counted:       counted,

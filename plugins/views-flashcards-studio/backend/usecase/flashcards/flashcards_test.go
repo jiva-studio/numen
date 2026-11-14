@@ -11,8 +11,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
@@ -58,7 +60,7 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 	}
 
 	logs := env.Ports.Logs
-	standings := flashcards.NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
+	standings := flashcards.NewListReviewCards(env.Ports.Readers, env.Queries, cards.NewRead(env.Ports.Readers, env.Queries))
 	deckPresets := presets.New(presets.Config{
 		Readers:  env.Ports.Readers,
 		Writers:  env.Ports.Writers,
@@ -81,9 +83,8 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 		env:       env,
 		standings: standings,
 		presets:   deckPresets,
-		assigning: flashcards.NewAssignCardIDs(
-			env.Ports.Readers, env.Ports.Writers,
-			env.Queries, env.Queries, scanned, vaulttest.NewClock()),
+		assigning: flashcards.NewAssignCardIDs(env.Queries, cards.NewRead(env.Ports.Readers, env.Queries),
+			cards.NewWrite(env.Ports.Readers, env.Ports.Writers, env.Queries, scanned, vaulttest.NewClock(), machineclock.Entropy{})),
 		schedules: schedules,
 		counted:   counted,
 		logs:      logs,
@@ -928,6 +929,6 @@ type named struct {
 func (n named) GetName() string { return n.name }
 
 func (s vaulted) newAssignCardIDs(index func(ctx context.Context, v domain.Vault, paths []string) error) flashcards.AssignCardIDs {
-	return flashcards.NewAssignCardIDs(
-		s.env.Ports.Readers, s.env.Ports.Writers, s.env.Queries, s.env.Queries, index, vaulttest.NewClock())
+	return flashcards.NewAssignCardIDs(s.env.Queries, cards.NewRead(s.env.Ports.Readers, s.env.Queries),
+		cards.NewWrite(s.env.Ports.Readers, s.env.Ports.Writers, s.env.Queries, index, vaulttest.NewClock(), machineclock.Entropy{}))
 }

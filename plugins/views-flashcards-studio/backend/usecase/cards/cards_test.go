@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -129,7 +130,7 @@ func TestADeckReadAndSavedBackIsTheFileItWas(t *testing.T) {
 
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
-		vaulttest.NewClock())
+		vaulttest.NewClock(), machineclock.Entropy{})
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.FileStat); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -241,7 +242,7 @@ func prose(t *testing.T, raw string) string {
 func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 	vs := newVaults(t)
 	path := filepath.Join(vs.first.Path, "decks", "Mammals.md")
-	if err := os.Truncate(path, cards.MaxBytes+1); err != nil {
+	if err := os.Truncate(path, format.MaxDeckBytes+1); err != nil {
 		t.Fatal(err)
 	}
 
@@ -267,7 +268,7 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 // A card model is a note and is bounded as one, which is a different number.
 func TestACardModelIsBoundedAsANote(t *testing.T) {
 	vs := newVaults(t)
-	if cards.MaxBytes == note.MaxBytes {
+	if format.MaxDeckBytes == note.MaxBytes {
 		t.Fatal("a deck and a note are bounded the same")
 	}
 	if err := os.Truncate(filepath.Join(vs.first.Path, "Animal.md"), note.MaxBytes+1); err != nil {
@@ -289,7 +290,7 @@ func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
-		vaulttest.NewClock())
+		vaulttest.NewClock(), machineclock.Entropy{})
 
 	first, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {

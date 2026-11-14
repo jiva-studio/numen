@@ -11,12 +11,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 func getPointingVault() map[string]string {
@@ -361,7 +362,7 @@ func TestASettingOutsideItsBoundsWritesNothing(t *testing.T) {
 	p := minutes()
 	p.Retention = 1.5
 	_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileStat{})
-	if !errors.Is(err, presets.ErrOutOfBounds) {
+	if !errors.Is(err, presetnote.ErrOutOfBounds) {
 		t.Fatalf("saving a retention of 1.5 said %v", err)
 	}
 	if target := read(t, s.vault, "Sanskrit.md"); target != was {
@@ -799,7 +800,7 @@ func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 			was := read(t, s.vault, "Sanskrit.md")
 
 			_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", one.of(minutes()), domain.FileStat{})
-			if !errors.Is(err, presets.ErrOutOfBounds) {
+			if !errors.Is(err, presetnote.ErrOutOfBounds) {
 				t.Fatalf("saving %s said %v", one.what, err)
 			}
 			if !strings.Contains(err.Error(), one.reason) {
@@ -1259,7 +1260,7 @@ func getPointingDecks(t *testing.T, s vaulted, path string) []string {
 	}
 	var out []string
 	for _, one := range found {
-		if one.Type == presets.LinkType {
+		if one.Type == presetnote.LinkType {
 			out = append(out, one.From)
 		}
 	}

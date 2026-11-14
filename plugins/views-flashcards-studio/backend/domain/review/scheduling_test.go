@@ -153,7 +153,7 @@ func getSchedulingFunctions() []string {
 func TestTheSessionAndTheProjectionAreWhatScheduleADay(t *testing.T) {
 	var calls []string
 	read, declared := 0, 0
-	for _, dir := range []string{".", "../../usecase/projection"} {
+	for _, dir := range []string{".", "../projection"} {
 		target, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)

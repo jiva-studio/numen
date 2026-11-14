@@ -11,12 +11,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostclient"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/rpc"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/settings"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards/deckedit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/cardcommands"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/cardtools"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/rpcwire"
 )
 
 // Mount registers the services of the plugin on s, working the vault and the plugin's folder of its
@@ -58,7 +58,7 @@ const ServiceName = "md.numen.views.flashcards.studio"
 // Mount registers the API, the tools and the commands on s.
 func (b *Backend) Mount(s *server.Server) error {
 	// gomutants:disable-next-line BRANCH_IF reason="Static service and method names are always valid."
-	if err := rpc.Mount(s.NewAPI(ServiceName), b.Handlers()); err != nil {
+	if err := rpcwire.Mount(s.NewAPI(ServiceName), b.Handlers()); err != nil {
 		return err
 	}
 	registry, err := b.Tools()
@@ -93,9 +93,9 @@ func (b *Backend) Tools() (*tools.Registry, error) {
 }
 
 // Handlers returns the handlers of the JSON methods.
-func (b *Backend) Handlers() rpc.Handlers {
+func (b *Backend) Handlers() rpcwire.Handlers {
 	cards, presets, reviews := b.newCardsHandler(), b.newPresetsHandler(), b.newReviewHandler()
-	return rpc.Handlers{
+	return rpcwire.Handlers{
 		Models: cards, Decks: cards, PresetReads: presets, PresetWrites: presets,
 		Sessions: reviews, Watches: reviews, Stats: reviews,
 	}

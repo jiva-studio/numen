@@ -9,8 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
 // Interval is the interval at which a stream with no counts sends a message, so a page can tell an
@@ -29,23 +28,24 @@ type Indexer interface {
 }
 
 // DueCounter counts the cards of a vault by what is due.
-type DueCounter interface {
-	Execute(ctx context.Context, v domain.Vault) (flashcards.CardsDue, error)
+type DueCounter[C any] interface {
+	Execute(ctx context.Context, v domain.Vault) (C, error)
 }
 
 // Result is how the count of one vault ended. A vault that was not counted says why: it is being
 // indexed, or Unread holds the reason.
-type Result struct {
+type Result[C any] struct {
 	Vault      domain.Vault
 	IsIndexing bool
 	Unread     string
-	Counts     flashcards.CardsDue
+	Counts     C
 }
 
 // Count counts one vault. The vault is brought up to date before it is counted. Nothing is counted
 // from a walk half done, and the numbers arrive with the count that the finished walk wakes.
-func Count(ctx context.Context, index Indexer, due DueCounter, v domain.Vault) Result {
-	one := Result{Vault: v, IsIndexing: false, Unread: "", Counts: flashcards.CardsDue{ReviewCards: 0, Due: 0, New: 0, Decks: nil, Presets: nil}}
+func Count[C any](ctx context.Context, index Indexer, due DueCounter[C], v domain.Vault) Result[C] {
+	var none C
+	one := Result[C]{Vault: v, IsIndexing: false, Unread: "", Counts: none}
 	state, err := index.EnsureIndexed(ctx)
 	if err != nil {
 		one.Unread = err.Error()
@@ -126,6 +126,7 @@ func Forward[T any](counted <-chan T, idle <-chan time.Time, onCounted func(T) e
 func Watch[T any](
 	ctx context.Context,
 	vaults []domain.Vault,
+	tickers ports.Tickers,
 	count func(context.Context, domain.Vault) T,
 	onCounted func(T) error,
 	onIdle func() error,
@@ -136,10 +137,10 @@ func Watch[T any](
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
 
-	repeat := clock.NewTicker(Interval)
+	repeat := tickers.CreateTicker(Interval)
 	defer repeat.Stop()
 
-	return Forward(Start(ctx, vaults, count), repeat.C, func(one T) error {
+	return Forward(Start(ctx, vaults, count), repeat.GetChannel(), func(one T) error {
 		if err := onCounted(one); err != nil {
 			return err
 		}

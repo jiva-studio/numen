@@ -1,5 +1,4 @@
-// Package sessions keeps the run open on each vault.
-package sessions
+package flashcards
 
 import (
 	"context"
@@ -10,29 +9,28 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
 
 // ErrNoRun is an answer named against a run this backend did not open. A run is one session at one
 // window, and an answer belongs to the session it was given in.
 var ErrNoRun = errors.New("no run of that name is open")
 
-// Registry is the run open on each vault, by the vault's identity. One session to a vault: opening
+// RunRegistry is the run open on each vault, by the vault's identity. One session to a vault: opening
 // another releases the one before it, and the file that one wrote is never appended to again.
-type Registry struct {
+type RunRegistry struct {
 	mu  sync.Mutex
-	run map[domain.VaultID]*flashcards.LogWriter
+	run map[domain.VaultID]*LogWriter
 }
 
-// NewRegistry returns a registry in which no run is open.
-func NewRegistry() *Registry {
-	return &Registry{mu: sync.Mutex{}, run: make(map[domain.VaultID]*flashcards.LogWriter)}
+// NewRunRegistry returns a registry in which no run is open.
+func NewRunRegistry() *RunRegistry {
+	return &RunRegistry{mu: sync.Mutex{}, run: make(map[domain.VaultID]*LogWriter)}
 }
 
 // Open opens a new run on v at now and makes it the active run for v.
-func (r *Registry) Open(
-	ctx context.Context, log flashcards.Log, v domain.Vault, now time.Time,
-) (*flashcards.LogWriter, error) {
+func (r *RunRegistry) Open(
+	ctx context.Context, log Log, v domain.Vault, now time.Time,
+) (*LogWriter, error) {
 	run, err := log.Open(ctx, v, now)
 	if err != nil {
 		return nil, err
@@ -42,13 +40,13 @@ func (r *Registry) Open(
 }
 
 // Store makes run the one open on the vault v.
-func (r *Registry) Store(v domain.Vault, run *flashcards.LogWriter) {
+func (r *RunRegistry) Store(v domain.Vault, run *LogWriter) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.run[v.ID] = run
 }
 
-func (r *Registry) GetRun(vault domain.VaultID, name string) (*flashcards.LogWriter, error) {
+func (r *RunRegistry) GetRun(vault domain.VaultID, name string) (*LogWriter, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	run, is := r.run[vault]
@@ -68,8 +66,8 @@ type AnswerRequest struct {
 }
 
 // RecordAnswer appends an answer to the active run named on vault.
-func (r *Registry) RecordAnswer(
-	ctx context.Context, record flashcards.Record, req AnswerRequest,
+func (r *RunRegistry) RecordAnswer(
+	ctx context.Context, record Record, req AnswerRequest,
 ) (review.Answer, error) {
 	run, err := r.GetRun(req.Vault, req.Run)
 	if err != nil {
@@ -79,9 +77,9 @@ func (r *Registry) RecordAnswer(
 }
 
 // UndoAnswer withdraws an answer from the active run named on vault.
-func (r *Registry) UndoAnswer(
+func (r *RunRegistry) UndoAnswer(
 	ctx context.Context,
-	record flashcards.Record,
+	record Record,
 	vault domain.VaultID,
 	runName string,
 	answerID string,

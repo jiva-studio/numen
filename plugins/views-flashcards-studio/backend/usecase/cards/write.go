@@ -6,10 +6,10 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
 // Write puts a deck or a card model back where it came from.
@@ -21,28 +21,23 @@ type Write struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
 	links   ports.LinkQueries
-	index   note.IndexUpdater
+	index   edit.IndexUpdater
 	now     ports.Clock
+	entropy Entropy
 }
 
 // NewWrite is what a deck or a card model goes back through: the vault it is read
 // and written through, where the wikilink each card names its card model by lands,
-// what updates the index for the file, and what time it is.
+// what updates the index for the file, what time it is, and the entropy of new card ids.
 func NewWrite(
 	readers ports.VaultReaders,
 	writers ports.VaultWriters,
 	links ports.LinkQueries,
-	index note.IndexUpdater,
+	index edit.IndexUpdater,
 	now ports.Clock,
+	entropy Entropy,
 ) Write {
-	return Write{readers: readers, writers: writers, links: links, index: index, now: now}
-}
-
-// WriteResult is the file stat of a written deck, which is what the caller presents at its next write,
-// and the card id every card that carried none was given.
-type WriteResult struct {
-	FileStat domain.FileStat
-	Given    []format.CardID
+	return Write{readers: readers, writers: writers, links: links, index: index, now: now, entropy: entropy}
 }
 
 // Deck puts body in the deck at path.
@@ -52,20 +47,20 @@ type WriteResult struct {
 // the same file, and none of them has to know the rules.
 func (u Write) Deck(
 	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
-) (WriteResult, error) {
-	if err := note.CheckSize(path, len(body), MaxBytes); err != nil {
-		return WriteResult{}, err
+) (format.DeckWriteResult, error) {
+	if err := edit.CheckSize(path, len(body), format.MaxDeckBytes); err != nil {
+		return format.DeckWriteResult{}, err
 	}
 	whole, provided, err := u.createWholeBody(ctx, v, path, body)
 	if err != nil {
-		return WriteResult{}, err
+		return format.DeckWriteResult{}, err
 	}
-	pos, err := u.createNoteWriter().Execute(ctx, v, path, whole, stat)
-	if err != nil && !errors.Is(err, note.ErrIndexOutdated) {
-		return WriteResult{}, err
+	pos, err := u.writeBody(ctx, v, path, whole, stat)
+	if err != nil && !errors.Is(err, edit.ErrIndexOutdated) {
+		return format.DeckWriteResult{}, err
 	}
 	// index update that failed, and the caller can tell the two apart.
-	return WriteResult{FileStat: pos, Given: provided}, err
+	return format.DeckWriteResult{FileStat: pos, Given: provided}, err
 }
 
 func (u Write) createWholeBody(
@@ -76,8 +71,22 @@ func (u Write) createWholeBody(
 	if err != nil {
 		return "", nil, err
 	}
-	whole, provided := format.Whole(body, delta, createCardID)
+	whole, provided := format.Whole(body, delta, newCardIDs(u.entropy))
 	return whole, provided, nil
+}
+
+// writeBody puts body in the deck at path over the file stat the caller read, under a deck's
+// bound, and leaves its frontmatter alone.
+func (u Write) writeBody(
+	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
+) (domain.FileStat, error) {
+	if markdown.IsFrontmatterStart(body) {
+		return domain.FileStat{}, edit.ErrBodyUnwritable
+	}
+	e, getReleaseError := ports.NewEdit(u.readers, u.writers, u.index, u.now)
+	e.FileStat, e.Bound = stat, format.MaxDeckBytes
+	written, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error { return doc.SetBody(body) })
+	return written, errors.Join(err, getReleaseError())
 }
 
 // CardModel puts the templates and the fields into the card model at path, bounded as a note.
@@ -88,15 +97,15 @@ func (u Write) CardModel(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
 	stat domain.FileStat,
 ) (domain.FileStat, error) {
-	if err := note.CheckSize(path, len(body), note.MaxBytes); err != nil {
+	if err := edit.CheckSize(path, len(body), edit.MaxBytes); err != nil {
 		return domain.FileStat{}, err
 	}
 	if markdown.IsFrontmatterStart(body) {
-		return domain.FileStat{}, note.ErrBodyUnwritable
+		return domain.FileStat{}, edit.ErrBodyUnwritable
 	}
 
-	e, getReleaseError := note.NewEdit(u.readers, u.writers, u.index, u.now)
-	e.FileStat, e.Bound = stat, note.MaxBytes
+	e, getReleaseError := ports.NewEdit(u.readers, u.writers, u.index, u.now)
+	e.FileStat, e.Bound = stat, edit.MaxBytes
 	written, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		// gomutants:disable-next-line BRANCH_IF,RETURN_ERROR_NIL reason="SetBody on an already opened document with non-frontmatter body always succeeds."
 		if err := doc.SetBody(body); err != nil {
@@ -110,12 +119,6 @@ func (u Write) CardModel(
 		return nil
 	})
 	return written, errors.Join(err, getReleaseError())
-}
-
-func (u Write) createNoteWriter() note.Write {
-	writing := note.NewWrite(u.readers, u.writers, u.index, u.now)
-	writing.Bound = MaxBytes
-	return writing
 }
 
 func newBodyNote(body string) domain.Note {

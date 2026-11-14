@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
 
 // CardsDue contains vault card counts, due cards, and unreviewed card statistics for the current day.
@@ -53,13 +52,13 @@ type PresetCardsDue struct {
 type CountCardsDue struct {
 	reviewCards ListReviewCards
 	schedules   Schedules
-	presets     presets.Presets
+	presets     DeckPresets
 	day         review.Day
 	now         ports.Clock
 }
 
 func NewCountCardsDue(
-	reviewCards ListReviewCards, schedules Schedules, presets presets.Presets,
+	reviewCards ListReviewCards, schedules Schedules, presets DeckPresets,
 	day review.Day, now ports.Clock,
 ) CountCardsDue {
 	return CountCardsDue{
@@ -95,7 +94,7 @@ type dueInputs struct {
 	reviewCards []ReviewCard
 	schedules   map[review.CardID]review.Schedule
 	asks        assignment
-	reads       *presets.Reads
+	reads       ports.PresetReads
 	day         *budgets
 	now         time.Time
 }
@@ -194,7 +193,7 @@ func (r deckRows) getSortedRows() []DeckCardsDue {
 }
 
 func (u CountCardsDue) getPresets(
-	ctx context.Context, v domain.Vault, reads *presets.Reads, day *budgets,
+	ctx context.Context, v domain.Vault, reads ports.PresetReads, day *budgets,
 	due, newCards map[string]int,
 ) ([]PresetCardsDue, error) {
 	out := day.getCardsDue(due, newCards)

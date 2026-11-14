@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
 // budgets tracks daily allowances, review card assignments, and deck review progress per preset.
@@ -34,7 +34,7 @@ type allowance struct {
 
 // budgetInputs is what the daily budgets are calculated from.
 type budgetInputs struct {
-	reads       *presets.Reads
+	reads       ports.PresetReads
 	day         review.Day
 	reviewCards []ReviewCard
 	schedules   map[review.CardID]review.Schedule
@@ -102,7 +102,7 @@ type presetSurvey struct {
 }
 
 func readPresetSurvey(
-	ctx context.Context, v domain.Vault, reads *presets.Reads, reviewCards []ReviewCard,
+	ctx context.Context, v domain.Vault, reads ports.PresetReads, reviewCards []ReviewCard,
 	schedules map[review.CardID]review.Schedule, out *budgets,
 ) (presetSurvey, error) {
 	sv := presetSurvey{

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
 // Interval is the interval at which a stream with no changes sends a message, so a page can tell an
@@ -27,10 +27,12 @@ func (e *UnavailableError) Unwrap() error { return e.Err }
 
 // WatchTicks signals that nothing changed at once and every Interval, and that something changed on
 // each move, until ctx ends or the moves stop.
-func WatchTicks(ctx context.Context, moves Moves, invalidate func(), signal func(reload bool) error) error {
-	repeat := clock.NewTicker(Interval)
+func WatchTicks(
+	ctx context.Context, moves Moves, tickers ports.Tickers, invalidate func(), signal func(reload bool) error,
+) error {
+	repeat := tickers.CreateTicker(Interval)
 	defer repeat.Stop()
-	return Watch(ctx, moves, repeat.C, invalidate, signal)
+	return Watch(ctx, moves, repeat.GetChannel(), invalidate, signal)
 }
 
 // Watch signals that nothing changed at once and whenever idle fires, and that something changed on

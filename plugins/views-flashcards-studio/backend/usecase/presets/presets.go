@@ -16,27 +16,13 @@ import (
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
-
-// LinkType is what a deck's link to its preset carries under `type`.
-const LinkType = "preset"
-
-// Contents is one preset as returned by a read.
-type Contents struct {
-	Path       string
-	Outcome    note.ReadOutcome
-	Type       domain.NoteType
-	Settings   review.Preset
-	Stops      review.StopReason
-	StopsToday review.StopReason
-	Problems   []string
-	FileStat   domain.FileStat
-}
 
 // presetNotes is what the presets ask the index: which notes are presets, what they are called, and
 // what a link to one is written by.
@@ -57,7 +43,7 @@ type Presets struct {
 	links    ports.LinkQueries
 	notes    presetNotes
 	problems ports.ProblemQueries
-	index    note.IndexUpdater
+	index    edit.IndexUpdater
 	day      review.Day
 	now      ports.Clock
 }
@@ -71,7 +57,7 @@ type Config struct {
 	Links    ports.LinkQueries
 	Notes    presetNotes
 	Problems ports.ProblemQueries
-	Index    note.IndexUpdater
+	Index    edit.IndexUpdater
 	Day      review.Day
 	Now      ports.Clock
 }
@@ -132,19 +118,11 @@ func (u Presets) List(ctx context.Context, v domain.Vault) ([]Summary, error) {
 	return out, nil
 }
 
-// CreateDefault returns the preset of a deck scheduled by no preset.
-func CreateDefault() Contents {
-	return Contents{
-		Path: "", Outcome: note.Ok, Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil,
-		FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
-	}
-}
-
 // GetForDeck is the preset the deck at path is scheduled by.
 // A link reaching nothing, a link reaching a note that is not a preset, and a `links:` entry with
 // no role all leave the deck on the defaults and say so against it. A deck naming two presets is
 // scheduled by the first and carries a problem.
-func (u Presets) GetForDeck(ctx context.Context, v domain.Vault, deck string) (Contents, error) {
+func (u Presets) GetForDeck(ctx context.Context, v domain.Vault, deck string) (presetnote.Contents, error) {
 	return u.OpenReads().GetForDeck(ctx, v, deck)
 }
 
@@ -155,29 +133,29 @@ func (u Presets) GetForDeck(ctx context.Context, v domain.Vault, deck string) (C
 // as it was when the run began.
 type Reads struct {
 	Presets
-	cachedPresets map[string]Contents
-	scheduling    map[string]Contents
+	cachedPresets map[string]presetnote.Contents
+	scheduling    map[string]presetnote.Contents
 	parseProblems map[string][]string
 }
 
 // OpenReads opens a run of reads sharing the notes they open.
-func (u Presets) OpenReads() *Reads {
+func (u Presets) OpenReads() ports.PresetReads {
 	return &Reads{
 		Presets:       u,
-		cachedPresets: make(map[string]Contents),
-		scheduling:    make(map[string]Contents),
+		cachedPresets: make(map[string]presetnote.Contents),
+		scheduling:    make(map[string]presetnote.Contents),
 		parseProblems: nil,
 	}
 }
 
 // GetForDeck is the preset the deck at path is scheduled by.
-func (r *Reads) GetForDeck(ctx context.Context, v domain.Vault, deck string) (Contents, error) {
+func (r *Reads) GetForDeck(ctx context.Context, v domain.Vault, deck string) (presetnote.Contents, error) {
 	if target, ok := r.scheduling[deck]; ok {
 		return target, nil
 	}
 	out, err := r.getSchedulingPreset(ctx, v, deck)
 	if err != nil {
-		return Contents{}, err
+		return presetnote.Contents{}, err
 	}
 	out.Stops, out.StopsToday = r.getStopReasons(out.Settings)
 	r.scheduling[deck] = out
@@ -186,32 +164,32 @@ func (r *Reads) GetForDeck(ctx context.Context, v domain.Vault, deck string) (Co
 
 func (r *Reads) getSchedulingPreset(
 	ctx context.Context, v domain.Vault, deck string,
-) (Contents, error) {
+) (presetnote.Contents, error) {
 	if r.links == nil {
-		return CreateDefault(), nil
+		return presetnote.CreateDefault(), nil
 	}
 	links, err := r.links.GetLinks(ctx, v.ID, deck)
 	if err != nil {
-		return Contents{}, fmt.Errorf("the links of %s: %w", deck, err)
+		return presetnote.Contents{}, fmt.Errorf("the links of %s: %w", deck, err)
 	}
 
 	var matchedLinks []domain.ResolvedLink
 	for _, link := range links {
-		if link.Type == LinkType {
+		if link.Type == presetnote.LinkType {
 			matchedLinks = append(matchedLinks, link)
 		}
 	}
 	if len(matchedLinks) == 0 {
-		out := CreateDefault()
+		out := presetnote.CreateDefault()
 		if out.Problems, err = r.readRolelessProblems(ctx, v, deck); err != nil {
-			return Contents{}, err
+			return presetnote.Contents{}, err
 		}
 		return out, nil
 	}
 
 	out, delta, err := r.readFirstLink(ctx, v, matchedLinks[0])
 	if err != nil {
-		return Contents{}, err
+		return presetnote.Contents{}, err
 	}
 	if len(matchedLinks) > 1 {
 		out.Problems = append(slices.Clone(out.Problems),
@@ -220,9 +198,9 @@ func (r *Reads) getSchedulingPreset(
 	return out, nil
 }
 
-func (r *Reads) readFirstLink(ctx context.Context, v domain.Vault, first domain.ResolvedLink) (Contents, string, error) {
+func (r *Reads) readFirstLink(ctx context.Context, v domain.Vault, first domain.ResolvedLink) (presetnote.Contents, string, error) {
 	delta := first.Target.GetWritten()
-	out := CreateDefault()
+	out := presetnote.CreateDefault()
 	if first.To == "" {
 		out.Problems = []string{delta + " reaches no note, and the defaults stand"}
 		return out, delta, nil
@@ -230,7 +208,7 @@ func (r *Reads) readFirstLink(ctx context.Context, v domain.Vault, first domain.
 	delta = first.To
 	out, err := r.GetPreset(ctx, v, first.To)
 	if err != nil {
-		return Contents{}, delta, err
+		return presetnote.Contents{}, delta, err
 	}
 	// A note that is not a preset schedules nothing, so the deck is treated like
 	// the decks that name no preset and the problem is reported against it.
@@ -265,13 +243,13 @@ func (r *Reads) readRolelessProblems(ctx context.Context, v domain.Vault, deck s
 }
 
 // GetPreset is the preset at path, read once for the run.
-func (r *Reads) GetPreset(ctx context.Context, v domain.Vault, path string) (Contents, error) {
+func (r *Reads) GetPreset(ctx context.Context, v domain.Vault, path string) (presetnote.Contents, error) {
 	if target, ok := r.cachedPresets[path]; ok {
 		return target, nil
 	}
 	out, err := r.Read(ctx, v, path)
 	if err != nil {
-		return Contents{}, err
+		return presetnote.Contents{}, err
 	}
 	r.cachedPresets[path] = out
 	return out, nil
@@ -280,21 +258,21 @@ func (r *Reads) GetPreset(ctx context.Context, v domain.Vault, path string) (Con
 // Read reads the preset at path.
 //
 // An error is the vault being out of reach. What is wrong with the note itself
-func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (Contents, error) {
+func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (presetnote.Contents, error) {
 	out, err := u.readPreset(ctx, v, path)
 	if err != nil {
-		return Contents{}, err
+		return presetnote.Contents{}, err
 	}
 	out.Stops, out.StopsToday = u.getStopReasons(out.Settings)
 	return out, nil
 }
 
-func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (Contents, error) {
-	out := Contents{Path: path, Outcome: "", Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
+func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (presetnote.Contents, error) {
+	out := presetnote.Contents{Path: path, Outcome: "", Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil, FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
 
 	reader, err := u.readers.Open(v)
 	if err != nil {
-		return Contents{}, err
+		return presetnote.Contents{}, err
 	}
 
 	// The vault reports what is at a path without opening it: a note, a file that
@@ -305,50 +283,50 @@ func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (C
 	case target:
 		out.FileStat = ref
 		if ref.Kind != domain.KindNote {
-			out.Outcome = note.NotANote
+			out.Outcome = edit.NotANote
 			return out, nil
 		}
-		if ref.Size > note.MaxBytes {
-			out.Outcome = note.TooLarge
+		if ref.Size > edit.MaxBytes {
+			out.Outcome = edit.TooLarge
 			return out, nil
 		}
 	case errors.Is(err, ports.ErrNotANote):
-		out.Outcome = note.NotANote
+		out.Outcome = edit.NotANote
 		return out, nil
 	case !ports.IsNotExist(err):
-		return Contents{}, fmt.Errorf("look at %s: %w", path, err)
+		return presetnote.Contents{}, fmt.Errorf("look at %s: %w", path, err)
 	}
 
 	raw, err := reader.Read(ctx, path)
 	switch {
 	case ports.IsNotExist(err):
-		out.Outcome = note.Missing
+		out.Outcome = edit.Missing
 		return out, nil
 	case !target && err == nil:
-		out.Outcome = note.NotANote
+		out.Outcome = edit.NotANote
 		return out, nil
 	case err != nil:
-		return Contents{}, fmt.Errorf("read %s: %w", path, err)
+		return presetnote.Contents{}, fmt.Errorf("read %s: %w", path, err)
 	}
 
 	return parsePresetBytes(out, ref, raw)
 }
 
-func parsePresetBytes(out Contents, ref domain.FileStat, raw []byte) (Contents, error) {
+func parsePresetBytes(out presetnote.Contents, ref domain.FileStat, raw []byte) (presetnote.Contents, error) {
 	if !utf8.Valid(raw) {
-		out.Outcome = note.NotText
+		out.Outcome = edit.NotText
 		return out, nil
 	}
 	if _, err := markdown.Open(raw); errors.Is(err, markdown.ErrUnreadable) {
-		out.Outcome = note.Unreadable
+		out.Outcome = edit.Unreadable
 		return out, nil
 		// gomutants:disable-next-line BRANCH_IF reason="Markdown Open returns only nil or ErrUnreadable."
 	} else if err != nil {
-		return Contents{}, fmt.Errorf("read %s: %w", out.Path, err)
+		return presetnote.Contents{}, fmt.Errorf("read %s: %w", out.Path, err)
 	}
 
 	n := markdown.Parse(ref, raw)
-	out.Outcome, out.Type = note.Ok, n.Type
+	out.Outcome, out.Type = edit.Ok, n.Type
 	if n.Type != format.TypePreset {
 		out.Problems = append(out.Problems, out.Path+" is not a preset, and the defaults stand")
 		return out, nil
@@ -357,15 +335,13 @@ func parsePresetBytes(out Contents, ref domain.FileStat, raw []byte) (Contents, 
 	return out, nil
 }
 
-// The frontmatter keys of a preset's settings. A key outside this list belongs
-// to the user and is never written.
+// The frontmatter keys of a preset's settings, beside presetnote.MinutesADayKey and
+// presetnote.RetentionKey. A key outside them belongs to the user and is never written.
 const (
 	goalKey        = "goal"
 	byDateKey      = "by_date"
-	MinutesADayKey = "minutes_a_day"
 	newADayKey     = "new_a_day"
 	reviewsADayKey = "reviews_a_day"
-	RetentionKey   = "retention"
 	learnedKey     = "learned"
 	intervalKey    = "interval"
 	countsKey      = "counts"
@@ -377,10 +353,6 @@ const (
 // ErrNotAPreset is returned for a note whose `type` is not a preset. Nothing is
 // written.
 var ErrNotAPreset = errors.New("this note is not a preset")
-
-// ErrOutOfBounds is a setting outside what it may be. Nothing is written, and
-// the settings are weighed before the file is opened.
-var ErrOutOfBounds = errors.New("this setting is outside what a preset may hold")
 
 // ErrNoPresets is returned by a build that cannot determine which notes of a
 // vault are presets. It neither lists presets nor points a deck at one, and

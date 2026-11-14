@@ -15,12 +15,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/rpc"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/cardcommands"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/rpcwire"
 )
 
 type faultyVault struct {
@@ -344,7 +345,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 
 	t.Run("validation, bounds, and error codes", func(t *testing.T) {
 		notes := getPointedVault()
-		notes["Huge.md"] = "---\ntype: deck\n---\n\n" + strings.Repeat("x", int(cards.MaxBytes)+10)
+		notes["Huge.md"] = "---\ntype: deck\n---\n\n" + strings.Repeat("x", int(format.MaxDeckBytes)+10)
 		env := vaulttest.New(t, notes)
 		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 		cardsAPI := b.newCardsHandler()
@@ -384,7 +385,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 			t.Fatalf("unexpected ReadDeck missing: %+v, %v", readMissing, err)
 		}
 		readHuge, err := cardsAPI.ReadDeck(ctx, &api.ReadDeckRequest{Path: "Huge.md"})
-		if err != nil || readHuge.Error != api.ErrorCodeDeckTooLarge || readHuge.Bound != cards.MaxBytes {
+		if err != nil || readHuge.Error != api.ErrorCodeDeckTooLarge || readHuge.Bound != format.MaxDeckBytes {
 			t.Fatalf("unexpected ReadDeck huge: %+v, %v", readHuge, err)
 		}
 
@@ -394,9 +395,9 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 		}
 		writeHuge, err := cardsAPI.WriteDeck(ctx, &api.WriteDeckRequest{
 			Path:     "decks/Words.md",
-			Preamble: strings.Repeat("x", int(cards.MaxBytes)+10),
+			Preamble: strings.Repeat("x", int(format.MaxDeckBytes)+10),
 		})
-		if err != nil || writeHuge.Error != api.ErrorCodeDeckTooLarge || writeHuge.Bound != cards.MaxBytes || writeHuge.IsIndexOutdated {
+		if err != nil || writeHuge.Error != api.ErrorCodeDeckTooLarge || writeHuge.Bound != format.MaxDeckBytes || writeHuge.IsIndexOutdated {
 			t.Fatalf("unexpected WriteDeck huge: %+v, %v", writeHuge, err)
 		}
 		writeMissing, err := cardsAPI.WriteDeck(ctx, &api.WriteDeckRequest{Path: "Missing.md"})
@@ -559,9 +560,9 @@ func TestMountAndAllEndpoints(t *testing.T) {
 
 	const tok = "test-mount-token"
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, func(s *server.Server) error {
-		return rpc.Mount(s.NewAPI(""), b.Handlers())
+		return rpcwire.Mount(s.NewAPI(""), b.Handlers())
 	}); err == nil {
-		t.Fatal("expected rpc.Mount with invalid service name to return error")
+		t.Fatal("expected rpcwire.Mount with invalid service name to return error")
 	}
 
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, b.Mount)

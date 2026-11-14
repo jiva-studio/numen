@@ -1,5 +1,5 @@
-// Package rpc registers the JSON methods of the plugin on the API of the SDK server.
-package rpc
+// Package rpcwire registers the JSON methods of the plugin on the API of the SDK server.
+package rpcwire
 
 import (
 	"context"

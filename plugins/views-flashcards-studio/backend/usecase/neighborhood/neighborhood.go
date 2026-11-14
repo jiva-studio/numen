@@ -6,9 +6,9 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
 // MostRead is how many of the joined notes are returned with their text.
@@ -33,7 +33,7 @@ type Neighbor struct {
 	Label       string
 	IsBacklink  bool
 	IsAmbiguous bool
-	Outcome     note.ReadOutcome
+	Outcome     edit.ReadOutcome
 }
 
 // neighborNotes is what the neighborhood asks the index of the notes it found.
@@ -42,15 +42,25 @@ type neighborNotes interface {
 	ports.NoteTypeQueries
 }
 
+// linkReader returns what a note points at and what points at it.
+type linkReader interface {
+	Execute(ctx context.Context, v domain.Vault, path string) (ports.NoteLinks, error)
+}
+
+// noteReader reads the prose of one note. What is wrong with the note itself is an outcome.
+type noteReader interface {
+	Execute(ctx context.Context, v domain.Vault, path string) (edit.Contents, error)
+}
+
 // Show is what the deck being reviewed is joined to, with the text
 // of each.
 //
 // A card's links are written in the deck's file, so a deck already points at
 // everything its cards name: this is the reading beside the review.
 type Show struct {
-	linked note.ShowLinks
+	linked linkReader
 	notes  neighborNotes
-	reads  note.Read
+	reads  noteReader
 }
 
 // NewShow constructs a Show from the source of the
@@ -59,7 +69,7 @@ type Show struct {
 //
 // The prose is read only where a deck names something.
 func NewShow(
-	linked note.ShowLinks, notes neighborNotes, reads note.Read,
+	linked linkReader, notes neighborNotes, reads noteReader,
 ) Show {
 	return Show{linked: linked, notes: notes, reads: reads}
 }
@@ -107,7 +117,7 @@ func (u Show) Execute(
 	return out, nil
 }
 
-func getNeighbors(v domain.Vault, deck string, linked note.Links) []Neighbor {
+func getNeighbors(v domain.Vault, deck string, linked ports.NoteLinks) []Neighbor {
 	observed := map[string]bool{deck: true}
 	var found []Neighbor
 	for _, l := range linked.Links {

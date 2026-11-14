@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/neighborhood"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/reloads"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/vaultcount"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/apierror"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/presetwire"
@@ -37,7 +36,7 @@ func NewVaultHeader(v domain.Vault) *api.VaultCardsDue {
 }
 
 // NewVaultCardsDue is the count of a vault. The title gives the name of a preset by its path.
-func NewVaultCardsDue(counted vaultcount.Result, title func(path string) string) *api.VaultCardsDue {
+func NewVaultCardsDue(counted vaultcount.Result[flashcards.CardsDue], title func(path string) string) *api.VaultCardsDue {
 	one := NewVaultHeader(counted.Vault)
 	one.IsIndexing = counted.IsIndexing
 	one.Unread = counted.Unread
@@ -168,7 +167,7 @@ func ParseRating(r api.Rating) review.Rating {
 
 // NewRecordError is why an answer could not be written down, as an API error.
 func NewRecordError(err error) error {
-	if errors.Is(err, sessions.ErrNoRun) {
+	if errors.Is(err, flashcards.ErrNoRun) {
 		return NewRunError(err)
 	}
 	if errors.Is(err, flashcards.ErrNoRating) {
@@ -179,7 +178,7 @@ func NewRecordError(err error) error {
 
 // NewUndoError is why an answer could not be taken back, as an API error.
 func NewUndoError(err error) error {
-	if errors.Is(err, sessions.ErrNoRun) {
+	if errors.Is(err, flashcards.ErrNoRun) {
 		return NewRunError(err)
 	}
 	if errors.Is(err, flashcards.ErrNoAnswer) {

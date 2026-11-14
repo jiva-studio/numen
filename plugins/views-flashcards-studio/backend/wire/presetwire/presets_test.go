@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/presetnote"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 // Settings that name no rule count by the default rule at its default value.
@@ -96,7 +96,7 @@ func TestConvertCurveToWireCopiesBacklogAndConvertSettingsFromWireHandlesNil(t *
 	if bounds == nil || bounds.MinutesADay == nil || bounds.NewADay == nil {
 		t.Fatalf("got bounds %+v, want non-nil bounds", bounds)
 	}
-	wirePreset := ConvertPresetToWire(presets.Contents{Path: "Preset.md"}, "My Preset")
+	wirePreset := ConvertPresetToWire(presetnote.Contents{Path: "Preset.md"}, "My Preset")
 	if wirePreset == nil || wirePreset.Title != "My Preset" {
 		t.Fatalf("got preset %+v, want My Preset", wirePreset)
 	}

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 // updateFlag names the flag that writes the projections down again, and compares against none of

@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 // A build without a cache computes the schedules from the answers at every
@@ -326,7 +326,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	// The same answers, worked out by the one scheduler and nothing else.
 	direct := flashcards.NewSchedules(
 		s.logs, review.NewFSRS(), getToday(),
-		flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil),
+		flashcards.NewListReviewCards(s.env.Ports.Readers, nil, cards.NewRead(s.env.Ports.Readers, nil)),
 		presets.New(presets.Config{Now: vaulttest.NewClock(), Day: getToday()}),
 	)
 	want, err := direct.Execute(t.Context(), s.vault)
@@ -490,8 +490,9 @@ func (m *mockAlgorithm) CreateScheduler(retention float64) review.Scheduler {
 func TestScheduleAlgorithmPluggable(t *testing.T) {
 	algo := &mockAlgorithm{}
 	flashcards.NewScenarios(flashcards.Config{
-		Scheduler: algo,
-	})
+		Scheduler:     algo,
+		NewDeckWriter: func(flashcards.IndexUpdate) ports.DeckWriter { return nil },
+	}, func(flashcards.IndexUpdate, review.Day) presets.Presets { return presets.Presets{} })
 
 	if len(algo.calledWith) == 0 {
 		t.Fatal("expected scheduler algorithm CreateScheduler to be called")
@@ -928,10 +929,8 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	})
 
 	reads := map[string]int{}
-	standings := flashcards.NewListReviewCards(
-		counting{VaultReaders: s.env.Ports.Readers, reads: reads},
-		s.notes, s.links,
-	)
+	counted := counting{VaultReaders: s.env.Ports.Readers, reads: reads}
+	standings := flashcards.NewListReviewCards(counted, s.notes, cards.NewRead(counted, s.links))
 
 	looks := map[string]int{}
 	deckPresets := presets.New(presets.Config{

@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -93,7 +94,7 @@ func newEditorFixture(t *testing.T) editorFixture {
 	vs := newVaults(t)
 	read := cards.NewRead(vs.ports.Readers, vs.queries)
 	write := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 	return editorFixture{
 		vs: vs, read: read,
 		addCard:       deckedit.NewAddCard(read, write),

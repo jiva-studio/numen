@@ -1,19 +1,8 @@
 package deckedit
 
 import (
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
-
-// Read is the deck reading scenario of the cards package.
-type Read = cards.Read
-
-// Write is the note writing scenario of the cards package.
-type Write = cards.Write
-
-type DeckContents = cards.DeckContents
-
-// MaxBytes is the largest deck that is read.
-const MaxBytes = cards.MaxBytes
 
 // CardScenarios groups the operations that read and edit the cards of a deck.
 type CardScenarios struct {
@@ -24,7 +13,7 @@ type CardScenarios struct {
 	RemoveCard      RemoveCard
 }
 
-func NewCardScenarios(read Read, write Write) CardScenarios {
+func NewCardScenarios(read ports.DeckReader, write ports.DeckWriter) CardScenarios {
 	return CardScenarios{
 		GetCardPage:     NewGetCardPage(read),
 		AddCard:         NewAddCard(read, write),
@@ -41,7 +30,7 @@ type SectionScenarios struct {
 	RemoveSection RemoveSection
 }
 
-func NewSectionScenarios(read Read, write Write) SectionScenarios {
+func NewSectionScenarios(read ports.DeckReader, write ports.DeckWriter) SectionScenarios {
 	return SectionScenarios{
 		AddSection:    NewAddSection(read, write),
 		RenameSection: NewRenameSection(read, write),
