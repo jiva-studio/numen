@@ -422,7 +422,7 @@ func TestVectorStepCanceledByAPersonAfterWritingVectorsEmits(t *testing.T) {
 	s.checkHeard(t, emitted{vault: s.v.ID, texts: 1, plans: 1}, emitted{vault: s.v.ID, texts: 2, plans: 2})
 }
 
-func TestCancelledSessionEmitsNothing(t *testing.T) {
+func TestCanceledSessionEmitsNothing(t *testing.T) {
 	for _, withSource := range []bool{false, true} {
 		s := newSession(withSource)
 		s.steps.read = vaultreading.ScanResult{Notes: 1, Indexed: 1}
