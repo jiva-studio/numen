@@ -1,5 +1,6 @@
 /**
- * The tabs that are open: what each is called, how one is looked up, opened, and navigated.
+ * The tabs that are open: what each is called, how one is looked up, opened, navigated and given
+ * text.
  */
 import { computed } from 'vue'
 import type { Tab } from '@numen/workbench'
@@ -21,11 +22,11 @@ export function useTabs(store: TabStore) {
   return {
     tabs,
     getTab: queries.getTab,
-    getTabStateIn: queries.getTabStateIn,
     createTab: openers.createTab,
     openTabOfKind: openers.openTabOfKind,
     openTabAdjacentOfKind: openers.openTabAdjacentOfKind,
     navigateTab: navigation.navigateTab,
     navigateTabsAt: navigation.navigateTabsAt,
+    sendText: navigation.sendText,
   }
 }

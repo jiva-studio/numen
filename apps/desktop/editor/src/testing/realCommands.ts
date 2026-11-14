@@ -247,7 +247,7 @@ export function createRealWindow(parts: RealWindowParts) {
   const options = {
     emitEvent: parts.emitEvent,
     windowTabs: {
-      panes: { onKeyPress: () => false, requestClose: () => undefined },
+      panes: { onKeyPress: () => false, closeTab: () => true },
       tabs: {
         navigateTab: parts.navigateTab,
         openTabOfKind: () => Promise.resolve(),

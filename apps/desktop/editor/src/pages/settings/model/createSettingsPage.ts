@@ -216,7 +216,7 @@ export function createSettingsPage({
   const catalogEntries = useCatalogEntries(api.listCatalog, rest.state.plugins, reportError)
 
   const configured = useSettingsTab(
-    windowTabs.groups.handle,
+    windowTabs.handle,
     createSettingsTabConfig({
       settings: { appearance, rest, getPlatform, reportError },
       plugin: {

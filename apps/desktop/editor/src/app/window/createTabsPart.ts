@@ -71,7 +71,7 @@ export function createTabsPart(deps: TabsPartDeps) {
   })
   const openMovedTab = createMovedTabStarter({
     windowTabs,
-    closeTab: windowTabs.closeTab,
+    closeTab: windowTabs.panes.closeTab,
     acceptMove: createMoveAcceptor(api.tabMove.acceptTabMove, windowId, reports.waitForReports),
     writeMessage,
   })

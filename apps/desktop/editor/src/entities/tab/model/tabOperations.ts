@@ -243,14 +243,14 @@ export function createTabClosers(store: TabStore) {
     }
   }
 
-  const close = () => {
+  const closeAll = () => {
     for (const [id, one] of store.open.value) {
       destroyTab(one, id)
       store.drop(id)
     }
   }
 
-  return { show, finishClose, onTabShown, releaseTab, requestClose, reconcileTab, close }
+  return { show, finishClose, onTabShown, releaseTab, reconcileTab, closeAll }
 }
 
 export function createTabNavigation(

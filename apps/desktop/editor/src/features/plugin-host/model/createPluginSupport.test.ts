@@ -76,7 +76,7 @@ describe('closing the tabs of a plugin', () => {
 
   it('keeps a tab of a core kind whose state names the plugin', async () => {
     const { windowTabs, support } = createSupport()
-    windowTabs.groups.registerKind(coreKind({ pluginId: 'md.numen.a' }))
+    windowTabs.kinds.registerKind(coreKind({ pluginId: 'md.numen.a' }))
     const id = await windowTabs.tabs.createTab('core', 'x')
 
     support.pluginHost.lifecycle.disposePlugin('md.numen.a')
@@ -125,7 +125,7 @@ describe('the tab kind a plugin adds', () => {
   it('is a kind of the window while the plugin is active', async () => {
     const { windowTabs } = await activateChat()
 
-    expect(windowTabs.groups.hasKind('chat')).toBe(true)
+    expect(windowTabs.kinds.hasKind('chat')).toBe(true)
     expect(windowTabs.tabs.getTab(await windowTabs.tabs.createTab('chat', ''))).not.toBeNull()
   })
 
@@ -135,7 +135,7 @@ describe('the tab kind a plugin adds', () => {
 
     support.pluginHost.lifecycle.disposePlugin(manifest.id)
 
-    expect(windowTabs.groups.hasKind('chat')).toBe(false)
+    expect(windowTabs.kinds.hasKind('chat')).toBe(false)
     expect(windowTabs.tabs.getTab(id)?.state).toMatchObject({
       kind: 'chat',
       targetPath: '',
@@ -479,7 +479,7 @@ describe('the plugins the window loads', () => {
     expect(reportError).toHaveBeenCalledWith('md.numen.a', expect.any(Error))
 
     // Empty pluginId in disposePlugin does not close tabs
-    const closeSpy = vi.spyOn(windowTabs.groups, 'closeTabsOfPlugin')
+    const closeSpy = vi.spyOn(windowTabs.kinds, 'closeTabsOfPlugin')
     pluginHost.lifecycle.disposePlugin('')
     expect(closeSpy).not.toHaveBeenCalled()
 

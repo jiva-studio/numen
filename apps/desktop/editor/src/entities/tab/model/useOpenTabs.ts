@@ -59,7 +59,7 @@ export function useOpenTabs({
    * from. Where the tab in front takes text, the last tab that takes no text.
    */
   const getActiveTabId = (): string => {
-    const frontTab = windowTabs.groups.handle.front()
+    const frontTab = windowTabs.handle.front()
     if (frontTab && !isTakingText(frontTab.id)) {
       if (!isTool(frontTab.id)) return frontTab.id
       const shown = new Set(getPanes(windowTabs.panes.layout.value.root).map((one) => one.active))
@@ -125,7 +125,7 @@ export function useOpenTabs({
 
   /** Returns the declared icon of a kind, or its built-in icon. Tabs of other windows use it. */
   const getKindIcon = (kind: string): Component | null =>
-    windowTabs.groups.findKind((one) => one.kind === kind)?.display?.icon ?? findTabKindIcon(kind)
+    windowTabs.kinds.findKind((one) => one.kind === kind)?.display?.icon ?? findTabKindIcon(kind)
 
   /** The icon the tab's kind declares, or the one the window keeps for that kind. */
   const getTabIcon = (id: string): Component | null => {

@@ -30,7 +30,7 @@ export function createWindowTabParts(deps: WindowTabPartsDeps) {
       windowId,
       windowTabs,
       notes,
-      closeTab: windowTabs.closeTab,
+      closeTab: windowTabs.panes.closeTab,
       writeMessage,
     }),
     openTabs: useOpenTabs({

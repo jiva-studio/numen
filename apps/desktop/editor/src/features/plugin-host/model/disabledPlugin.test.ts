@@ -84,7 +84,7 @@ describe('a disabled plugin', () => {
     catalog.setEntries([entryOf(CATALOG_STATE.DISABLED)])
     support.pluginHost.lifecycle.disposePlugin(PLUGIN_ID)
     const placeholder = windowTabs.tabs.getTab('deck:a')
-    expect(windowTabs.groups.hasKind('deck')).toBe(false)
+    expect(windowTabs.kinds.hasKind('deck')).toBe(false)
     expect(placeholder?.kind.pane).not.toBe(DeckPane)
 
     const pane = mount(placeholder?.kind.pane ?? DeckPane, { props: { state: placeholder?.state } })
@@ -99,7 +99,7 @@ describe('a disabled plugin', () => {
 
     expect(enabled).toStrictEqual([PLUGIN_ID])
     const returned = windowTabs.tabs.getTab('deck:a')
-    expect(windowTabs.groups.hasKind('deck')).toBe(true)
+    expect(windowTabs.kinds.hasKind('deck')).toBe(true)
     expect(returned?.kind).not.toBe(placeholder?.kind)
     expect(returned?.state).toStrictEqual({ targetPath: 'a.deck', saved: { page: 7 } })
   })

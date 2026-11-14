@@ -10,12 +10,10 @@ describe('settings step groups', () => {
       getWriter: () => vi.fn(),
     } as never
     const windowTabs = {
-      groups: {
-        handle: {
-          front: () => null,
-          open: vi.fn(),
-          close: vi.fn(),
-        },
+      handle: {
+        front: () => null,
+        open: vi.fn(),
+        close: vi.fn(),
       },
     } as never
 
