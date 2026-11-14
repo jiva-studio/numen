@@ -7,7 +7,7 @@ require (
 	github.com/ebitengine/purego v0.11.3 // indirect
 	github.com/rjeczalik/notify v0.9.3 // indirect
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
-	github.com/wailsapp/wails/v3 v3.2.0-nightly.20261101
+	github.com/wailsapp/wails/v3 v3.2.0-nightly.20261103
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/sqlite v1.61.1 // indirect
 )
