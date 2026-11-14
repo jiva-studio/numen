@@ -40,7 +40,7 @@ node tools/lint-quality/check.mjs
 # Run specific checks
 node tools/lint-quality/check.mjs --check=duplication,knip
 
-# Run only on changed files (fast pre-push mode)
+# Run only on changed files (fast mode)
 node tools/lint-quality/check.mjs --changed-only
 
 # Advisory / warning mode (exit 0)
