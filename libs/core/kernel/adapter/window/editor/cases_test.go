@@ -8,18 +8,9 @@ import (
 )
 
 func openRegisteredWindow(cfg container.Config, ctx context.Context, named string, out io.Writer) (*container.OpenedWindow, *container.WindowUseCases, error) {
-	db, err := container.OpenIndex(cfg, ctx)
+	installation, err := container.OpenWindow(cfg, ctx, named, out)
 	if err != nil {
 		return nil, nil, err
 	}
-	return openOver(cfg, ctx, db, named, out)
-}
-
-func openOver(cfg container.Config, ctx context.Context, db *container.Index, named string, out io.Writer) (*container.OpenedWindow, *container.WindowUseCases, error) {
-	cases := &container.WindowUseCases{}
-	installation, err := container.OpenWindowWith(cfg, ctx, container.WindowOpening{DB: db, Named: named, Out: out, UseCases: cases})
-	if err != nil {
-		return nil, nil, err
-	}
-	return installation, cases, nil
+	return installation, &installation.UseCases, nil
 }

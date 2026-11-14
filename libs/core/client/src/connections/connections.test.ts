@@ -50,7 +50,19 @@ const createRpc = (overrides: Partial<ConnectionRpc> = {}): ConnectionRpc => ({
                 type: 'enum',
                 title: 'Mode',
                 default: value('fast'),
-                options: { values: [value('fast'), value({ value: 'slow', title: 'Slow' })] },
+                options: {
+                  values: [
+                    value('fast'),
+                    value({ value: 'slow', title: 'Slow' }),
+                    value({ value: 'medium', title: 123 }),
+                    value({ value: 'quiet', title: '' }),
+                    value({ value: 99, title: 'Bad' }),
+                    value({ title: 'NoValue' }),
+                    value(null),
+                    value(42),
+                    value(['list']),
+                  ],
+                },
               },
               {
                 key: 'parallelRequests',
@@ -60,6 +72,23 @@ const createRpc = (overrides: Partial<ConnectionRpc> = {}): ConnectionRpc => ({
                 min: 1,
                 max: 32,
                 step: 1,
+              },
+              {
+                key: 'stream',
+                type: 'boolean',
+                title: 'Stream',
+                default: value(false),
+              },
+              {
+                key: 'certPath',
+                type: 'file',
+                title: 'Certificate',
+                default: value({ ignored: true }),
+              },
+              {
+                key: 'fallbackType',
+                type: '',
+                title: 'Fallback',
               },
             ],
           },
@@ -76,7 +105,13 @@ const createRpc = (overrides: Partial<ConnectionRpc> = {}): ConnectionRpc => ({
             typeId: 'md.numen.connections.llm/openrouter',
             name: 'Work',
             revision: 3,
-            fields: { parallelRequests: value(8), stream: value(true), label: value('a') },
+            fields: {
+              parallelRequests: value(8),
+              stream: value(true),
+              label: value('a'),
+              ignoredList: value(['x']),
+              ignoredNull: value(null),
+            },
             secretKeysSet: ['apiKey'],
             isTypeAvailable: true,
             isComplete: true,
@@ -122,19 +157,48 @@ describe('createConnectionClient', () => {
       operations: ['llm.complete', 'llm.embed', 'llm.models'],
       isAvailable: true,
     })
-    const [address, key, mode, parallel] = type?.fields ?? []
+    const [address, key, mode, parallel, stream, cert, fallback] = type?.fields ?? []
     expect(address).toMatchObject({
       key: 'baseUrl',
+      type: 'string',
       isAddress: true,
       fixedValue: 'https://openrouter.ai/api/v1',
     })
-    expect(key).toMatchObject({ type: 'secret', isRequired: true })
+    expect(key).toStrictEqual({
+      key: 'apiKey',
+      type: 'secret',
+      title: 'API key',
+      description: '',
+      isRequired: true,
+      isAddress: false,
+      options: [],
+    })
+    expect(mode?.type).toBe('enum')
     expect(mode?.options).toStrictEqual([
       { value: 'fast', title: 'fast' },
       { value: 'slow', title: 'Slow' },
+      { value: 'medium', title: 'medium' },
+      { value: 'quiet', title: 'quiet' },
     ])
     expect(mode?.defaultValue).toBe('fast')
-    expect(parallel).toMatchObject({ defaultValue: 4, min: 1, max: 32, step: 1 })
+    expect(parallel).toMatchObject({
+      type: 'number',
+      defaultValue: 4,
+      min: 1,
+      max: 32,
+      step: 1,
+    })
+    expect(stream).toMatchObject({ type: 'boolean', defaultValue: false })
+    expect(cert).toStrictEqual({
+      key: 'certPath',
+      type: 'file',
+      title: 'Certificate',
+      description: '',
+      isRequired: false,
+      isAddress: false,
+      options: [],
+    })
+    expect(fallback?.type).toBe('string')
     expect(type?.rowFields).toStrictEqual([
       expect.objectContaining({ key: 'model', isRequired: true, optionsFrom: 'llm.models' }),
     ])
@@ -241,11 +305,14 @@ describe('createConnectionClient', () => {
   })
 
   it('sends the revision it read when it updates a connection', async () => {
-    const revisions: number[] = []
+    const requests: Array<{ revision: number; secrets: Record<string, string> }> = []
     const client = createConnectionClient(
       createRpc({
         updateProviderConnection: (request) => {
-          revisions.push(request.revision ?? 0)
+          requests.push({
+            revision: request.revision ?? 0,
+            secrets: { ...request.secrets },
+          })
           return Promise.resolve(
             create(UpdateProviderConnectionResponseSchema, {
               connection: { id: request.id ?? '', revision: 4 },
@@ -260,11 +327,32 @@ describe('createConnectionClient', () => {
       revision: 3,
       name: 'N',
       fields: {},
+      secrets: { apiKey: 'sk-2' },
+    })
+
+    expect(requests).toStrictEqual([{ revision: 3, secrets: { apiKey: 'sk-2' } }])
+    expect(answer.ok && answer.value.revision).toBe(4)
+  })
+
+  it('reports not_found when the core returns no connection without an error code', async () => {
+    const client = createConnectionClient(
+      createRpc({
+        createProviderConnection: () =>
+          Promise.resolve(create(CreateProviderConnectionResponseSchema, {})),
+      }),
+    )
+
+    const answer = await client.create({
+      typeId: 'a.b/x',
+      name: 'N',
+      fields: {},
       secrets: {},
     })
 
-    expect(revisions).toStrictEqual([3])
-    expect(answer.ok && answer.value.revision).toBe(4)
+    expect(answer).toStrictEqual({
+      ok: false,
+      error: { errorCode: 'not_found', detail: 'The core returned no connection.' },
+    })
   })
 
   it('reads each served error code as a failure with its detail', async () => {
@@ -299,15 +387,18 @@ describe('createConnectionClient', () => {
   })
 
   it('reads a failed delete as a failure', async () => {
+    const deletedIds: string[] = []
     const client = createConnectionClient(
       createRpc({
-        deleteProviderConnection: () =>
-          Promise.resolve(
+        deleteProviderConnection: (request) => {
+          deletedIds.push(request.id ?? '')
+          return Promise.resolve(
             create(DeleteProviderConnectionResponseSchema, {
               error: ProviderConnectionErrorCode.NOT_FOUND,
               detail: 'gone',
             }),
-          ),
+          )
+        },
       }),
     )
 
@@ -315,6 +406,7 @@ describe('createConnectionClient', () => {
       ok: false,
       error: { errorCode: 'not_found', detail: 'gone' },
     })
+    expect(deletedIds).toStrictEqual(['c00000009'])
     expect(await createConnectionClient(createRpc()).delete('c00000001')).toStrictEqual({
       ok: true,
       value: undefined,

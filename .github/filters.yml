@@ -151,9 +151,6 @@ ui:
   - *ts_config
   - *ui_lib
   - .github/actions/build-ui/**
-  - .github/actions/setup-playwright/**
-  - .github/actions/cache-apt/**
-  - .github/scripts/apt-retry.sh
   - .github/workflows/frontend.yml
   - '!**/*.md'
 desktop_fe:
@@ -167,9 +164,6 @@ desktop_fe:
   - *client_lib
   - *host_lib
   - .github/actions/build-ui/**
-  - .github/actions/setup-playwright/**
-  - .github/actions/cache-apt/**
-  - .github/scripts/apt-retry.sh
   - .github/workflows/frontend.yml
   - apps/desktop/editor/**
   - apps/desktop/flashcards/**
@@ -208,9 +202,6 @@ plugin_stories:
   - *sdk_ts_lib
   - *ui_lib
   - .github/actions/build-ui/**
-  - .github/actions/setup-playwright/**
-  - .github/actions/cache-apt/**
-  - .github/scripts/apt-retry.sh
   - .github/workflows/plugins.yml
   - plugins/*/frontend/**
   - tools/ci-stories/**
