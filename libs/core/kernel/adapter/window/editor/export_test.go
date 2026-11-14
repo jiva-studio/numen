@@ -91,7 +91,7 @@ func createServices(state *State) *Services {
 		state: state,
 		File: filewindow.NewHandler(
 			filewindow.NewFolders(state, nil, nil, nil),
-			filewindow.NewChanges(state, state.Notices, nil, nil, nil, nil),
+			filewindow.NewChanges(state, state.Notices, nil, nil, nil),
 		),
 		Command: newEmptyCommandHandler(state),
 		Media:   mediawindow.NewHandler(state, state, nil),

@@ -28,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
@@ -124,9 +125,8 @@ func mountFile(w *windowWiring) {
 		file.NewCreateFolder(folderWriters(w.a.vault), state.Writes),
 	)
 	moveFile := vault.NewMoveFile(&w.cases.Vaults.Tree.Move, state.Writes, state.Writes)
-	changes := filewindow.NewChanges(
-		state, state.Notices, &moveFile, &w.cases.Notes.Place.Remove, &w.cases.Notes.Place.EmptyTrash, state.Writes,
-	)
+	removeFile := note.NewRemoveFile(&w.cases.Notes.Place.Remove, state.Writes)
+	changes := filewindow.NewChanges(state, state.Notices, &moveFile, &removeFile, &w.cases.Notes.Place.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
 	w.inst.Mount(editor.NewFileRoute(state, handler))
 }

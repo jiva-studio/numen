@@ -405,3 +405,54 @@ func TestDestroyingReportsAFileThatCannotBeRemoved(t *testing.T) {
 }
 
 func (s trashSources) MoveVersions(context.Context, domain.VaultID, string, string) error { return nil }
+
+// followReport is the report of whether the index followed a write, keeping the errors it was asked about.
+type followReport struct {
+	asked []error
+}
+
+func (f *followReport) IsIndexOutdated(err error) bool {
+	f.asked = append(f.asked, err)
+	return errors.Is(err, edit.ErrIndexOutdated)
+}
+
+// A removal the index did not follow keeps the file in the trash and says the index is outdated.
+func TestRemoveFile_ReportsTheIndexDidNotFollow(t *testing.T) {
+	t.Parallel()
+	tr := newTrashScene()
+	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
+	tr.levelErr = errors.New("the index is gone")
+	remove := tr.remove()
+	follow := &followReport{}
+
+	got, isOutdated, err := note.NewRemoveFile(&remove, follow).Execute(t.Context(), domain.Vault{}, "Entropy.md")
+	if !isOutdated {
+		t.Errorf("want the index reported outdated, got followed (err %v)", err)
+	}
+	if got.Trashed != ".trash/Entropy.md" {
+		t.Errorf("want the note in the trash, got %q", got.Trashed)
+	}
+	if len(follow.asked) != 1 || !errors.Is(follow.asked[0], edit.ErrIndexOutdated) {
+		t.Errorf("want the report asked once about the removal's error, got %v", follow.asked)
+	}
+}
+
+// A removal the index followed is reported as followed, so the report can clear what it showed before.
+func TestRemoveFile_ReportsTheIndexFollowed(t *testing.T) {
+	t.Parallel()
+	tr := newTrashScene()
+	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
+	remove := tr.remove()
+	follow := &followReport{}
+
+	_, isOutdated, err := note.NewRemoveFile(&remove, follow).Execute(t.Context(), domain.Vault{}, "Entropy.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if isOutdated {
+		t.Error("want the index reported followed, got outdated")
+	}
+	if len(follow.asked) != 1 || follow.asked[0] != nil {
+		t.Errorf("want the report asked once with no error, got %v", follow.asked)
+	}
+}
