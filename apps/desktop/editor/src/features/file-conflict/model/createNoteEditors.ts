@@ -3,7 +3,7 @@
  */
 import { formatError, type Caught } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
-import { openNotes, createNoteWriter } from '@/entities/note'
+import { useOpenNotes, flattenOpenNotes, createNoteWriter } from '@/entities/note'
 import { reportFlush, watchQuit } from '@/entities/window'
 import type { WindowTabs } from '@/entities/tab'
 import type { MessageLog } from '@/shared/model/notices/messages'
@@ -18,7 +18,7 @@ export interface NoteEditorsDeps {
 
 /** What the store of the notes of the window reads and releases of the notes it opens. */
 type OpenNotes = Pick<
-  ReturnType<typeof openNotes>,
+  ReturnType<typeof flattenOpenNotes>,
   'has' | 'getPath' | 'stale' | 'flushPending' | 'close' | 'getOpenIds'
 >
 
@@ -40,7 +40,7 @@ function createNoteStore(
 }
 
 export function createNoteEditors({ log, windowTabs }: NoteEditorsDeps) {
-  const notes = openNotes({})
+  const notes = flattenOpenNotes(useOpenNotes({}))
   const making = createNoteWriter(log.getWriter('made'))
   const fileFlush = createFileFlush({ watchQuit, reportFlush })
   fileFlush.addHandler(createNoteFlushHandler(notes))
