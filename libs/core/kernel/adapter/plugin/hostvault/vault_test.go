@@ -311,7 +311,7 @@ func TestAVaultNamedByIdentityIsWorkedAsTheVaultShown(t *testing.T) {
 	}
 }
 
-func TestAFileWrittenAndNotIndexedIsReportedAsWritten(t *testing.T) {
+func TestWriteFile_IndexFailureReturnsErrIndexOutdated(t *testing.T) {
 	refused := errors.New("the index is closed")
 	writeCount := 0
 	access, v := diskVault(t, map[string]string{"samples/A.md": "body"}, diskHooks{
