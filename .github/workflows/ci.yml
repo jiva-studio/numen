@@ -4,10 +4,11 @@ name: CI
 # finds the areas a pull request or a push touches from .github/filters.yml; the nightly and a
 # manual run take every area. Each called workflow runs the jobs of its areas. The CI job is the
 # one required check.
+# A green run of a ready pull request starts the Claude review (claude-review.yml).
 on:
   # A new title is checked again, so `edited` is listed beside the default types.
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened, edited, ready_for_review]
   push:
     branches: [main]
   # mutation.yml starts at 01:23.
@@ -141,10 +142,11 @@ jobs:
   e2e:
     name: End-to-End
     needs: [changes]
-    if: needs.changes.outputs.e2e != 'none'
+    if: needs.changes.outputs.e2e != 'none' && !github.event.pull_request.draft
     uses: ./.github/workflows/desktop-e2e.yml
     with:
       scope: ${{ needs.changes.outputs.e2e }}
+      engines: ${{ github.event_name == 'pull_request' && 'webkit' || 'chromium webkit' }}
 
   # Fails when a job failed or was cancelled, and when the areas were not found: every other job
   # is then skipped.
