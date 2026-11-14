@@ -13,7 +13,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/speech"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/transcript"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/ports"
 )
 
 const (
@@ -25,7 +27,7 @@ const (
 // begins, and records each moment a recording was requested for segments from.
 type heardModel struct {
 	mu            sync.Mutex
-	segments      []Audio
+	segments      []speech.Audio
 	words         map[int]string
 	opened        int
 	segmentStarts []int
@@ -37,7 +39,7 @@ type heardModel struct {
 
 var errNoDecoder = errors.New("no decoder reads this")
 
-func (m *heardModel) Open(context.Context, []byte) (Recording, error) {
+func (m *heardModel) Open(context.Context, []byte) (ports.Recording, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.isBroken {
@@ -47,7 +49,7 @@ func (m *heardModel) Open(context.Context, []byte) (Recording, error) {
 	return heardRecording{model: m}, nil
 }
 
-func (m *heardModel) Transcribe(_ context.Context, audio Audio) (string, error) {
+func (m *heardModel) Transcribe(_ context.Context, audio speech.Audio) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.transcribeErr != nil {
@@ -77,7 +79,7 @@ func (r heardRecording) GetDuration() int {
 	return r.model.segments[len(r.model.segments)-1].To
 }
 
-func (r heardRecording) GetSegments(_ context.Context, from, count int) ([]Audio, error) {
+func (r heardRecording) GetSegments(_ context.Context, from, count int) ([]speech.Audio, error) {
 	r.model.mu.Lock()
 	defer r.model.mu.Unlock()
 	if r.model.segmentErr != nil {
@@ -85,7 +87,7 @@ func (r heardRecording) GetSegments(_ context.Context, from, count int) ([]Audio
 	}
 	r.model.segmentStarts = append(r.model.segmentStarts, from)
 	r.model.batchCounts = append(r.model.batchCounts, count)
-	var out []Audio
+	var out []speech.Audio
 	for _, one := range r.model.segments {
 		if one.From >= from && len(out) < count {
 			out = append(out, one)
@@ -149,7 +151,7 @@ func newScene(t *testing.T) *scene {
 	s := &scene{
 		vault: vault, store: vault.Store(), texts: texts, queue: hosttest.NewQueue(),
 		model: &heardModel{
-			segments: []Audio{{From: 0, To: 1000}, {From: 1000, To: 2500}},
+			segments: []speech.Audio{{From: 0, To: 1000}, {From: 1000, To: 2500}},
 			words:    map[int]string{0: "first words", 1000: "second words"},
 		},
 	}
@@ -158,7 +160,7 @@ func newScene(t *testing.T) *scene {
 		storesOf(s.store),
 		textsOf(texts),
 		s.queue,
-		func(context.Context) (Recognizer, error) { return s.model, nil },
+		func(context.Context) (ports.Recognizer, error) { return s.model, nil },
 		noReport,
 	)
 	t.Cleanup(s.transcriber.Close)
@@ -575,7 +577,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	// ReportTask error at start of Transcribe.
 	fq := &faultyQueue{Queue: s.queue, reportErr: errBoom}
 	trReportErr := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, storesOf(s.store), textsOf(s.texts), fq,
-		func(context.Context) (Recognizer, error) { return s.model, nil }, noReport)
+		func(context.Context) (ports.Recognizer, error) { return s.model, nil }, noReport)
 	if err := trReportErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected ReportTask errBoom, got %v", err)
 	}
@@ -592,7 +594,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		foldersOf(fsRead),
 		textsOf(s.texts),
 		s.queue,
-		func(context.Context) (Recognizer, error) { return s.model, nil },
+		func(context.Context) (ports.Recognizer, error) { return s.model, nil },
 		noReport,
 	)
 	if err := trStoreErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
@@ -630,7 +632,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	// takeTurn error when EnqueueWork fails.
 	fqEnq := &faultyQueue{Queue: s.queue, enqueueErr: errBoom}
 	trEnqErr := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, storesOf(s.store), textsOf(s.texts), fqEnq,
-		func(context.Context) (Recognizer, error) { return s.model, nil }, noReport)
+		func(context.Context) (ports.Recognizer, error) { return s.model, nil }, noReport)
 	if err := trEnqErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
 		t.Fatalf("expected enqueueErr, got %v", err)
 	}
@@ -641,7 +643,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		storesOf(s.store),
 		textsOf(s.texts),
 		s.queue,
-		func(context.Context) (Recognizer, error) { return nil, errBoom },
+		func(context.Context) (ports.Recognizer, error) { return nil, errBoom },
 		noReport,
 	)
 	if err := trEngineErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
@@ -651,7 +653,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	// Zero segments in recording: hearSegments returns nil without creating partial file, finish returns ErrNotExist -> nil.
 	emptyModel := &heardModel{segments: nil}
 	trEmpty := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, storesOf(s.store), textsOf(s.texts), s.queue,
-		func(context.Context) (Recognizer, error) { return emptyModel, nil }, noReport)
+		func(context.Context) (ports.Recognizer, error) { return emptyModel, nil }, noReport)
 	if err := trEmpty.Transcribe(ctx, s.vault.Vault().ID, lecture); err != nil {
 		t.Fatalf("expected 0-segment recording to succeed, got %v", err)
 	}
@@ -663,7 +665,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		foldersOf(fsRename),
 		textsOf(s.texts),
 		s.queue,
-		func(context.Context) (Recognizer, error) { return s.model, nil },
+		func(context.Context) (ports.Recognizer, error) { return s.model, nil },
 		noReport,
 	)
 	if err := trRenameErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
@@ -694,7 +696,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		foldersOf(fsReachedErr),
 		textsOf(s2.texts),
 		s2.queue,
-		func(context.Context) (Recognizer, error) { return s2.model, nil },
+		func(context.Context) (ports.Recognizer, error) { return s2.model, nil },
 		noReport,
 	)
 	if err := trReachedErr.Transcribe(ctx, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
@@ -707,7 +709,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		foldersOf(fsAppendErr),
 		textsOf(s2.texts),
 		s2.queue,
-		func(context.Context) (Recognizer, error) { return s2.model, nil },
+		func(context.Context) (ports.Recognizer, error) { return s2.model, nil },
 		noReport,
 	)
 	if err := trAppendErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
@@ -720,7 +722,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		storesOf(hosttest.New("Lectures").Store()),
 		func(domain.VaultID) host.TextVersions { return ftPutErr },
 		s2.queue,
-		func(context.Context) (Recognizer, error) { return s2.model, nil },
+		func(context.Context) (ports.Recognizer, error) { return s2.model, nil },
 		noReport,
 	)
 	if err := trPutErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
@@ -735,7 +737,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		storesOf(hosttest.New("Lectures").Store()),
 		textsOf(s2.texts),
 		fqYieldErr,
-		func(context.Context) (Recognizer, error) { return s2.model, nil },
+		func(context.Context) (ports.Recognizer, error) { return s2.model, nil },
 		noReport,
 	)
 	if err := trYieldErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
@@ -749,7 +751,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		storesOf(s2.store),
 		textsOf(s2.texts),
 		fqProgress,
-		func(context.Context) (Recognizer, error) { return s2.model, nil },
+		func(context.Context) (ports.Recognizer, error) { return s2.model, nil },
 		noReport,
 	)
 	trProgress.reportProgress(ctx, "Lectures", lecture, 999, 1998)

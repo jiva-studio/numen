@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/ports"
 )
 
 func TestTranscriptCreateOfAChangedRecordingStartsARun(t *testing.T) {
@@ -89,7 +90,7 @@ func TestTranscriptCreateWhenTheTaskEndsReturnsTheVersion(t *testing.T) {
 	letGo := sync.OnceFunc(func() { close(queue.let) })
 	t.Cleanup(letGo)
 	transcriber := NewTranscriber(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }},
-		storesOf(s.store), textsOf(s.texts), queue, func(context.Context) (Recognizer, error) { return s.blocking, nil }, noReport)
+		storesOf(s.store), textsOf(s.texts), queue, func(context.Context) (ports.Recognizer, error) { return s.blocking, nil }, noReport)
 	t.Cleanup(transcriber.Close)
 	requests := NewRequests(transcriber, func(id domain.VaultID) Vault { return s.vault.With(id) })
 	first, err := requests.Create(t.Context(), "Lectures", lecture)

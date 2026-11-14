@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/transcript"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/ports"
 )
 
 func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path string, read readRecording, release func()) error {
@@ -127,7 +128,7 @@ func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
 	return nil
 }
 
-func (t *Transcriber) hearSegments(ctx context.Context, j *job, model Recognizer, recording Recording) error {
+func (t *Transcriber) hearSegments(ctx context.Context, j *job, model ports.Recognizer, recording ports.Recording) error {
 	from, err := j.store.readReachedPosition(ctx, j.key)
 	if err != nil {
 		return err
@@ -168,7 +169,7 @@ func (t *Transcriber) yieldTurn(ctx context.Context, j *job) error {
 }
 
 func hearBatch(
-	ctx context.Context, model Recognizer, recording Recording, path string, from int,
+	ctx context.Context, model ports.Recognizer, recording ports.Recording, path string, from int,
 ) ([]transcript.Cue, int, error) {
 	segments, err := recording.GetSegments(ctx, from, batchSize)
 	if err != nil {

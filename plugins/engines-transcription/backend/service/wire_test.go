@@ -11,7 +11,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/speech"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/internal/adapter/hostclient"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/ports"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
 )
 
@@ -30,7 +32,7 @@ type listeningRecognizer struct {
 	release   chan struct{}
 }
 
-func (r *listeningRecognizer) Open(ctx context.Context, _ []byte) (transcribe.Recording, error) {
+func (r *listeningRecognizer) Open(ctx context.Context, _ []byte) (ports.Recording, error) {
 	r.startOnce.Do(func() { close(r.startCh) })
 	select {
 	case <-r.release:
@@ -40,7 +42,7 @@ func (r *listeningRecognizer) Open(ctx context.Context, _ []byte) (transcribe.Re
 	return oneStretch{}, nil
 }
 
-func (*listeningRecognizer) Transcribe(context.Context, transcribe.Audio) (string, error) {
+func (*listeningRecognizer) Transcribe(context.Context, speech.Audio) (string, error) {
 	return "first words", nil
 }
 
@@ -48,11 +50,11 @@ type oneStretch struct{}
 
 func (oneStretch) GetDuration() int { return 1000 }
 
-func (oneStretch) GetSegments(_ context.Context, from, _ int) ([]transcribe.Audio, error) {
+func (oneStretch) GetSegments(_ context.Context, from, _ int) ([]speech.Audio, error) {
 	if from >= 1000 {
 		return nil, nil
 	}
-	return []transcribe.Audio{{Samples: nil, From: 0, To: 1000}}, nil
+	return []speech.Audio{{Samples: nil, From: 0, To: 1000}}, nil
 }
 
 func (oneStretch) Close() error { return nil }
@@ -86,7 +88,7 @@ func newWire(t *testing.T) *wire {
 		func(id domain.VaultID) transcribe.Folder { return store.With(id) },
 		func(id domain.VaultID) host.TextVersions { return texts.With(id) },
 		w.queue,
-		func(context.Context) (transcribe.Recognizer, error) { return w.recognizer, nil }, func(string, error) {})
+		func(context.Context) (ports.Recognizer, error) { return w.recognizer, nil }, func(string, error) {})
 	t.Cleanup(w.transcriber.Close)
 	requests := transcribe.NewRequests(w.transcriber, func(id domain.VaultID) transcribe.Vault { return vault.With(id) })
 	registry, err := newTools(requests).registry()

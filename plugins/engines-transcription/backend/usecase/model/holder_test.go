@@ -7,15 +7,16 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/speech"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/ports"
 )
 
 // quietModel transcribes nothing and counts its closes.
 type quietModel struct{ closed *int }
 
-func (quietModel) Open(context.Context, []byte) (transcribe.Recording, error) { return nil, nil }
+func (quietModel) Open(context.Context, []byte) (ports.Recording, error) { return nil, nil }
 
-func (quietModel) Transcribe(context.Context, transcribe.Audio) (string, error) { return "", nil }
+func (quietModel) Transcribe(context.Context, speech.Audio) (string, error) { return "", nil }
 
 func (m quietModel) Close() error {
 	*m.closed++
