@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import { interceptExternalLinks, reportFailure, runInBackground } from '@numen/ui'
 import { openExternalUrl } from '@numen/workbench'
 import { createRoot } from './app/createRoot'
-import { loadFrameRuntime } from './shared/api/runtime'
+import { loadFrameRuntime } from './app/runtime'
 import './app/app.css'
 
 // The webview's default menu carries browser entries (inspect, reload, view source),

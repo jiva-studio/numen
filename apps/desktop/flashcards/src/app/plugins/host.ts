@@ -22,7 +22,7 @@ import { openExternalUrl, type NoticeQueue, type WindowPlatform } from '@numen/w
 import { createViewIssueReporter, getPluginConnections } from '@/entities/plugin'
 import type { WindowTabs } from '@/entities/tab'
 import { windowRelations } from '@/entities/vault'
-import { loadFrameRuntime } from '@/shared/api/runtime'
+import { loadFrameRuntime } from '@/app/runtime'
 import { TARGET } from '@/shared/lib/window'
 
 /** The commands, the vaults, the window and its background tasks the plugins read. */
