@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
-
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
@@ -443,13 +443,23 @@ func TestTheMountedServerConfiguresTheAgentAndClosesItsRunningTasks(t *testing.T
 		callTaskWithOptions(t, web.Client(), web.URL, map[string]string{"model": "c-harbor|gull-7b"})
 	}()
 
-	<-model.started
+	select {
+	case <-model.started:
+	case <-done:
+		t.Fatal("the task ended before the model started")
+	}
 	if got := model.getTurn().MaxTokens; got != 2048 {
 		t.Errorf("max tokens = %d, want 2048", got)
 	}
 	if err := mounted.Close(); err != nil {
 		t.Fatal(err)
 	}
-	<-model.ended
-	<-done
+	timeout := time.After(10 * time.Second)
+	for _, wait := range []chan struct{}{model.ended, done} {
+		select {
+		case <-wait:
+		case <-timeout:
+			t.Fatal("the task did not stop after Close")
+		}
+	}
 }

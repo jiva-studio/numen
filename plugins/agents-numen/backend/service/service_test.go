@@ -122,6 +122,7 @@ func TestNewHandlerNeedsTheHostOfTheCore(t *testing.T) {
 }
 
 func TestMountNeedsTheHostOfTheCore(t *testing.T) {
+	t.Setenv(hostcall.HostPortEnv, "")
 	if _, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: testToken}, Mount); err == nil {
 		t.Error("Mount accepted an environment with no host port")
 	}
