@@ -18,8 +18,9 @@ permissions:
 
 jobs:
   # Which languages a pull request or a push touches, by the go and js filters of
-  # .github/filters.yml; any other event analyses both. The analyses always start and report under
-  # their own names; an analysis whose language did not change runs no step.
+  # .github/filters.yml; a change that matches neither runs the TypeScript analysis, and any other
+  # event analyses both. The analyses always start and report under their own names; an analysis
+  # whose language is not selected runs no step.
   changes:
     name: Changes
     runs-on: ubuntu-latest
@@ -29,7 +30,7 @@ jobs:
       pull-requests: read
     outputs:
       go: ${{ (github.event_name != 'pull_request' && github.event_name != 'push') || steps.filter.outputs.go == 'true' }}
-      js: ${{ (github.event_name != 'pull_request' && github.event_name != 'push') || steps.filter.outputs.js == 'true' }}
+      js: ${{ (github.event_name != 'pull_request' && github.event_name != 'push') || steps.filter.outputs.js == 'true' || steps.filter.outputs.go != 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: github.event_name == 'pull_request' || github.event_name == 'push'
