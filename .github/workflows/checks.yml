@@ -30,10 +30,12 @@ permissions:
   contents: read
 
 jobs:
-  gitleaks:
-    name: Gitleaks
+  # Checks of a few seconds each: a job of their own would wait minutes in the queue. A part runs
+  # when its area changed, and after a failed part.
+  repository:
+    name: Repository
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       # The scan reads every commit of the change.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -46,45 +48,27 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE || 'free' }}
 
-  title:
-    name: Pull request title
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      # The title becomes the squash commit header; the scopes come from the folders of the tree.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - if: ${{ !cancelled() }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
 
+      # The title becomes the squash commit header; the scopes come from the folders of the tree.
       - name: Check the pull request title
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: node tools/git-hooks/check-commit.mjs
 
-  workflows:
-    name: Workflows
-    if: inputs.workflows || inputs.staging || inputs.mutation_tool
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
       - id: go
-        if: inputs.workflows
+        if: ${{ !cancelled() && inputs.workflows }}
         uses: ./.github/actions/setup-go
         with:
           go-version-file: libs/core/kernel/go.mod
           cache-key: workflows
 
       - name: Verify GitHub Actions workflows
-        if: inputs.workflows
+        if: ${{ !cancelled() && inputs.workflows }}
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
 
       - if: inputs.workflows
@@ -93,13 +77,13 @@ jobs:
           packages: js-yaml picomatch
 
       - name: Test the area filters
-        if: inputs.workflows
+        if: ${{ !cancelled() && inputs.workflows }}
         run: node --test .github/scripts/*.test.mjs
 
       # A plugin with a backend has a bin folder after the build, a plugin with a frontend has a
       # dist folder and a theme plugin carries its themes folder; the release stages that tree.
       - name: Stage the plugins as the release does
-        if: inputs.staging
+        if: ${{ !cancelled() && inputs.staging }}
         run: |
           set -euo pipefail
           built="$RUNNER_TEMP/built"
@@ -122,8 +106,27 @@ jobs:
 
       # The tool behind the nightly mutation workflow; it reads files and nothing else.
       - name: Test the mutation tool
-        if: inputs.mutation_tool
+        if: ${{ !cancelled() && inputs.mutation_tool }}
         run: node --test tools/ci-mutation/*.test.mjs
+
+      # Every picture the manual and the landing page show is a story named as a string, and
+      # renaming a story leaves the name pointing at nothing. Both lists are held against the tree.
+      - if: inputs.references
+        uses: ./.github/actions/install-lock-packages
+        with:
+          packages: "@bufbuild/protobuf typescript"
+
+      - name: Verify documentation story references
+        if: ${{ !cancelled() && inputs.references }}
+        run: node apps/docs/tools/manual.mjs --check
+
+      - name: Test the settings reference
+        if: ${{ !cancelled() && inputs.references }}
+        run: node --test apps/docs/tools/reference.test.mjs apps/docs/tools/cell.test.mjs
+
+      - name: Verify landing page story references
+        if: ${{ !cancelled() && inputs.references }}
+        run: node apps/landing/tools/stories.mjs
 
       - if: ${{ !cancelled() && steps.go.outcome == 'success' }}
         uses: ./.github/actions/save-go-cache
@@ -199,32 +202,3 @@ jobs:
       # and the Go checks of tools/checks/structure/go in the job Structure Checks of go.yml.
       - name: Run the structural, style and documentation checks
         run: make checks EXCLUDE=go CHANGED="$CHANGED"
-  # Every picture the manual and the landing page show is a story named as a string, and renaming a
-  # story leaves the name pointing at nothing. Both lists are held against the tree here. The checks
-  # read files and the plugin manifests, which is all they need installed.
-  references:
-    name: Story References
-    if: inputs.references
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-
-      - uses: ./.github/actions/install-lock-packages
-        with:
-          packages: "@bufbuild/protobuf typescript"
-
-      - name: Verify documentation story references
-        run: node apps/docs/tools/manual.mjs --check
-
-      - name: Test the settings reference
-        run: node --test apps/docs/tools/reference.test.mjs apps/docs/tools/cell.test.mjs
-
-      - name: Verify landing page story references
-        run: node apps/landing/tools/stories.mjs
