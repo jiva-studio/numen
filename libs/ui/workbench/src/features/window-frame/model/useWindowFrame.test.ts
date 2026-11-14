@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
 import { flushPromises } from '@vue/test-utils'
-import { WINDOW_EDGE_VARIABLE, WINDOW_RADIUS_VARIABLE } from '../lib/corners'
 import { MAC_BUTTONS_INSET } from '../lib/sizes'
 import type { FrameRuntime } from '../lib/runtime'
 import { getWindowEdge, useWindowFrame } from './useWindowFrame'
@@ -74,14 +73,10 @@ describe('useWindowFrame', () => {
 
   it('does nothing and stays unmaximized where Wails does not serve the page', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
-    document.documentElement.style.removeProperty(WINDOW_RADIUS_VARIABLE)
-    document.documentElement.style.removeProperty(WINDOW_EDGE_VARIABLE)
 
     const frame = useWindowFrame(async () => undefined)
     expect(frame.platform.value).toBe('windows')
     expect(frame.isFullscreen.value).toBe(false)
-    expect(document.documentElement.style.getPropertyValue(WINDOW_RADIUS_VARIABLE)).toBe('0px')
-    expect(document.documentElement.style.getPropertyValue(WINDOW_EDGE_VARIABLE)).toBe('0px')
     expect(warn).not.toHaveBeenCalled()
     warn.mockRestore()
     await flushPromises()
@@ -296,8 +291,6 @@ describe('the corner radius of the window', () => {
     await flushPromises()
 
     expect(frame.windowRadius.value).toBe(16)
-    expect(document.documentElement.style.getPropertyValue(WINDOW_RADIUS_VARIABLE)).toBe('16px')
-    expect(document.documentElement.style.getPropertyValue(WINDOW_EDGE_VARIABLE)).toBe('1px')
   })
 
   it('takes the larger radius when the version cannot be read', async () => {

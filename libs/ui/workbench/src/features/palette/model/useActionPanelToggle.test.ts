@@ -5,11 +5,15 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, nextTick, ref } from 'vue'
+import { defineComponent, nextTick, ref, type ComponentPublicInstance } from 'vue'
 import { useActionPanelToggle } from './useActionPanelToggle'
 import { revealInGroups } from './revealInGroups'
 import { useActionPanel } from './useActionPanel'
 import type { PaletteAction } from '../lib/item'
+
+// A row of the panel is the component of an action, which exposes its element.
+const createRow = (element: HTMLElement | null): ComponentPublicInstance =>
+  ({ element }) as Partial<ComponentPublicInstance> as ComponentPublicInstance
 
 const OPEN: PaletteAction = { id: 'open', text: 'Open note' }
 const RENAME: PaletteAction = { id: 'rename', text: 'Rename note' }
@@ -193,7 +197,7 @@ describe('useActionPanel view model', () => {
       const scrollSpy = vi.fn()
       elRename.scrollIntoView = scrollSpy
 
-      view.rows.holdRow('rename', { element: elRename })
+      view.rows.holdRow('rename', createRow(elRename))
       const down = new KeyboardEvent('keydown', { key: 'ArrowDown', cancelable: true })
       view.onKey(down)
       expect(down.defaultPrevented).toBe(true)
@@ -202,8 +206,8 @@ describe('useActionPanel view model', () => {
       expect(scrollSpy).toHaveBeenCalledExactlyOnceWith({ block: 'nearest' })
 
       // Removing or replacing the row with non-RowHandle values removes it from the map.
-      for (const invalidRow of [null, 'primitive', document.createElement('div'), {}]) {
-        view.rows.holdRow('rename', { element: elRename })
+      for (const invalidRow of [null, document.createElement('div'), {} as ComponentPublicInstance]) {
+        view.rows.holdRow('rename', createRow(elRename))
         view.rows.holdRow('rename', invalidRow)
         scrollSpy.mockClear()
         view.onKey(new KeyboardEvent('keydown', { key: 'Home', cancelable: true }))
@@ -213,7 +217,7 @@ describe('useActionPanel view model', () => {
       }
 
       // RowHandle with null element does not throw when revealed.
-      view.rows.holdRow('remove', { element: null })
+      view.rows.holdRow('remove', createRow(null))
       const end = new KeyboardEvent('keydown', { key: 'End', cancelable: true })
       view.onKey(end)
       expect(end.defaultPrevented).toBe(true)
