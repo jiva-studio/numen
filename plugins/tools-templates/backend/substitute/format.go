@@ -11,7 +11,6 @@ type token struct {
 	format func(time.Time) string
 }
 
-// getTokens returns the format tokens in the order they are tried, longest first.
 func getTokens() []token {
 	return []token{
 		{"YYYY", func(t time.Time) string { return strconv.Itoa(t.Year()) }},
@@ -68,7 +67,7 @@ func findToken(tokens []token, text string) (token, bool) {
 			return token, true
 		}
 	}
-	return token{}, false
+	return token{name: "", format: nil}, false
 }
 
 func pad(number int) string {

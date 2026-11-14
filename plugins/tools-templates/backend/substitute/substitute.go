@@ -54,25 +54,25 @@ func Apply(text string, vars Variables) Result {
 
 func readVariable(text string, vars Variables) (variable, bool) {
 	if !strings.HasPrefix(text, "{{") {
-		return variable{}, false
+		return variable{text: "", length: 0, isCursor: false}, false
 	}
 	inner, _, isClosed := strings.Cut(text[2:], "}}")
 	if !isClosed || strings.Contains(inner, "\n") {
-		return variable{}, false
+		return variable{text: "", length: 0, isCursor: false}, false
 	}
 	length := len("{{") + len(inner) + len("}}")
 	name, format, hasFormat := strings.Cut(inner, ":")
 	switch {
 	case name == "title" && !hasFormat:
-		return variable{text: vars.Title, length: length}, true
+		return variable{text: vars.Title, length: length, isCursor: false}, true
 	case name == "cursor" && !hasFormat:
-		return variable{length: length, isCursor: true}, true
+		return variable{text: "", length: length, isCursor: true}, true
 	case name == "date":
-		return variable{text: formatTime(vars.Now, format, defaultDateFormat), length: length}, true
+		return variable{text: formatTime(vars.Now, format, defaultDateFormat), length: length, isCursor: false}, true
 	case name == "time":
-		return variable{text: formatTime(vars.Now, format, defaultTimeFormat), length: length}, true
+		return variable{text: formatTime(vars.Now, format, defaultTimeFormat), length: length, isCursor: false}, true
 	}
-	return variable{}, false
+	return variable{text: "", length: 0, isCursor: false}, false
 }
 
 func getUTF16Length(text string) int {

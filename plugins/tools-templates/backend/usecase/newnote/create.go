@@ -188,5 +188,4 @@ func NewFolder(initial string) *Folder {
 // Set replaces the folder.
 func (f *Folder) Set(folder string) { f.value.Store(&folder) }
 
-// Get returns the folder.
 func (f *Folder) Get() string { return *f.value.Load() }
