@@ -56,12 +56,16 @@ var (
 	ErrRecipeMismatch = errors.New("the recipe is not the one of the model in use")
 	// ErrInvalidFloor is a floor outside the range above zero and up to one.
 	ErrInvalidFloor = errors.New("a floor is a cosine similarity above 0 and at most 1")
-	// ErrLimitExceeded is an embedding call with more texts, or longer ones, than one call embeds.
-	ErrLimitExceeded = errors.New("the call exceeds the limits of one embedding call")
+	// ErrLimitExceeded is a call with more items, or longer ones, than one call takes.
+	ErrLimitExceeded = errors.New("the call exceeds the limits of one call")
 	// ErrEmbeddingFailed is an embedding model that could not answer.
 	ErrEmbeddingFailed = errors.New("the embedding model could not answer")
 	// ErrInvalidQuery is a query vector whose dimension count is not the one of the vectors in the index.
 	ErrInvalidQuery = errors.New("a query vector does not match the vectors of the index")
+	// ErrInvalidCondition is a score condition that sets neither or both of its texts, or an empty text.
+	ErrInvalidCondition = errors.New("a condition sets neither or both of meaning and words")
+	// ErrInvalidWords is a words query that FTS5 cannot parse.
+	ErrInvalidWords = errors.New("the words query is not valid FTS5")
 )
 
 // invalidFocusError says what the error of a use case says and is ErrInvalidFocus as well.

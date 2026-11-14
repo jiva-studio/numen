@@ -26,6 +26,14 @@ type QueryEmbedder interface {
 	EmbedQueries(ctx context.Context, queries []string) ([][]float32, error)
 }
 
+// QuerySource is a search source that makes the vector of a query as it does for its own search, under
+// its description.
+type QuerySource interface {
+	// Describe is the description every vector this source returns belongs to.
+	Describe() searchsource.Description
+	QueryEmbedder
+}
+
 // FloorAdvisor reports the similarity a chunk starts out having to reach to answer a query under the
 // source. The hint is not part of the identity and is absent from the recipe.
 type FloorAdvisor interface {

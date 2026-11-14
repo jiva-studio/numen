@@ -40,13 +40,21 @@ type StoredVector struct {
 }
 
 // LexicalQuery is a search by words: the words typed, the kinds of source to
-// look in (all where empty) and how many chunks to return at most.
+// look in (all where empty) and how many chunks to return at most. A raw query is
+// an FTS5 query used as written; otherwise every word is quoted.
 type LexicalQuery struct {
 	Text       string
 	Kinds      []domain.SourceKind
 	PathPrefix string
 	Limit      int
 	IsGrowing  bool
+	IsRaw      bool
+}
+
+// SmallChunk is a small chunk inside the large chunk that encloses a given chunk.
+type SmallChunk struct {
+	Chunk domain.ChunkID
+	Small domain.ChunkID
 }
 
 // Text is one source whose text a producer made: where the file is, what
