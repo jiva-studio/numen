@@ -1,4 +1,4 @@
-/** A note is dropped only when the window has no free place for it. */
+/** A note is dropped only when its block does not fit the window: a block takes the height the window has beside the focus. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { getFootprint } from './layout/placement'
@@ -41,14 +41,14 @@ const isOverlapping = (a: PlacedNode, b: PlacedNode): boolean => {
   )
 }
 
-describe('a window that has free room next to the other groups', () => {
+describe('a window with room beside the focus', () => {
   const frame = arrangePlex(createGraph(), {
     options: { viewport: WINDOW },
     measure: byTitle,
     room: roomOf,
   })
 
-  it('shows every sibling, since the siblings keep a free place above and below their column', () => {
+  it('shows every sibling, since their block takes the height the window has beside the focus', () => {
     expect(frame.overflow.sibling).toBeUndefined()
   })
 

@@ -15,8 +15,8 @@
  * window, twice the square root of its note count, rounded up.
  */
 import { RELATION_NAMES, RELATIONS } from '../../relation'
-import type { PlacedNode } from '../../node'
-import type { Direction, PlexOptions } from '../options'
+import type { PlacedNode, Position } from '../../node'
+import type { Direction, PlexOptions, Size } from '../options'
 import {
   getFootprint,
   getPillCenterY,
@@ -25,11 +25,6 @@ import {
   type PlacementContext,
 } from './placement'
 import type { PlexNode, PlexRelation } from '../../../../types'
-
-interface Size {
-  readonly width: number
-  readonly height: number
-}
 
 /** The notes of one side in the order they fill the cells, and the size of every cell. */
 interface Block {
@@ -161,11 +156,6 @@ function listFromMiddle(count: number): number[] {
   )
 }
 
-interface CellCenter {
-  readonly x: number
-  readonly y: number
-}
-
 function listRowXs(block: Block, shape: BlockShape, count: number, grid: Grid): number[] {
   const { cell } = block
   const stepX = cell.width + grid.gap
@@ -179,7 +169,7 @@ function listRowXs(block: Block, shape: BlockShape, count: number, grid: Grid): 
   })
 }
 
-function listCells(block: Block, shape: BlockShape, grid: Grid): CellCenter[] {
+function listCells(block: Block, shape: BlockShape, grid: Grid): Position[] {
   const { cell } = block
   const count = block.members.length
   const stepY = cell.height + grid.lineGap
@@ -203,7 +193,7 @@ interface Score {
 
 const NO_SCORE: Score = { inside: 0, excess: 0, distance: 0 }
 
-function scoreCells(block: Block, cells: readonly CellCenter[], grid: Grid): Score {
+function scoreCells(block: Block, cells: readonly Position[], grid: Grid): Score {
   const { cell } = block
   const { window } = grid
   let inside = 0
@@ -240,7 +230,7 @@ function getMaxColumns(block: Block, grid: Grid): number {
 
 interface Plan {
   readonly block: Block
-  readonly cells: readonly CellCenter[]
+  readonly cells: readonly Position[]
 }
 
 interface Scored {
@@ -376,7 +366,8 @@ function placeGrid(
   const ordered = RELATION_NAMES.flatMap((relation) =>
     (nodesByRelation[relation] ?? []).flatMap((node) => placed.get(node.id) ?? []),
   )
-  const stopAt = context.shouldStop ? ordered.findIndex((node) => context.shouldStop!(node)) : -1
+  const { shouldStop } = context
+  const stopAt = shouldStop ? ordered.findIndex((node) => shouldStop(node)) : -1
   return stopAt === -1 ? ordered : ordered.slice(0, stopAt + 1)
 }
 
