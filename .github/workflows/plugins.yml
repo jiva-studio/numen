@@ -119,6 +119,14 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
       options: --ipc=host
+      # Root in the container does not own the checkout, and git refuses a repository of another owner.
+      env:
+        GIT_CONFIG_COUNT: 1
+        GIT_CONFIG_KEY_0: safe.directory
+        GIT_CONFIG_VALUE_0: "*"
+        HUSKY: 0
+        # The path of the runner's npm cache, so the cache a runner job saved restores here.
+        npm_config_cache: /home/runner/.npm
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
