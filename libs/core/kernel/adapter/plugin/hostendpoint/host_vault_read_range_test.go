@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
@@ -60,7 +59,6 @@ func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 		"sonar.bin":       "ab\xff\xfecd",
 		"notes/Danube.md": "# Danube\n",
 	})
-	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	readers := vaultreader.Readers{}
 	return openReadEndpoint(t, hostvault.NewAccess(
 		hostvault.Session{Current: func() (domain.Vault, bool) { return v, true }},
@@ -68,9 +66,8 @@ func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 			Stat:        file.NewStatFile(readers),
 			ReadFile:    file.NewReadFile(readers),
 			RangeReader: file.Read{Readers: readers},
-			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
 		},
-		hostvault.Lookups{}, hostvault.Arranger{}, hostvault.Stores{},
+		hostvault.Notes{}, hostvault.Links{}, hostvault.Arranger{}, hostvault.Stores{},
 	))
 }
 

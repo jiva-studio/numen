@@ -2,7 +2,6 @@ package hostvault
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -11,30 +10,17 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
-// NoteWriter writes and creates the notes of one vault.
-type NoteWriter interface {
-	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error)
-	Create(ctx context.Context, path string, content []byte) error
-}
-
 // Files reads and writes the files of the vault. Locks, where set, holds the writers of the vault apart while a call writes.
 type Files struct {
 	Stat        *file.StatFile
 	ReadFile    *file.ReadFile
 	RangeReader file.Read
-	OpenWriter  func(v domain.Vault) (NoteWriter, error)
+	Write       file.WriteFile
+	Create      file.CreateFile
 	Index       func(ctx context.Context, v domain.Vault, paths []string) error
 	Locks       vault.Locks
 
 	session sessionAccess
-}
-
-func (f Files) openWriter() (NoteWriter, error) {
-	v, err := f.session.open()
-	if err != nil {
-		return nil, err
-	}
-	return f.OpenWriter(v)
 }
 
 func (f Files) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
@@ -67,43 +53,18 @@ func (f Files) ReadRange(ctx context.Context, path string, start, length int) (p
 func (f Files) WriteFile(
 	ctx context.Context, path string, content []byte, baseline domain.FileStat,
 ) (domain.FileStat, error) {
-	writer, err := f.openWriter()
+	v, err := f.session.open()
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	pos, err := writer.Write(ctx, path, content, baseline)
-	if err != nil {
-		return pos, err
-	}
-	if err := f.Scan(ctx, []string{path}); err != nil {
-		return pos, fmt.Errorf("index %s after write: %w", path, err)
-	}
-	return pos, nil
+	stat, err := f.Write.Execute(ctx, v, path, content, baseline)
+	return stat, f.session.notifyAfterWrite(err)
 }
 
 func (f Files) CreateFile(ctx context.Context, path string, content []byte) error {
-	writer, err := f.openWriter()
-	if err != nil {
-		return err
-	}
-	if err := writer.Create(ctx, path, content); err != nil {
-		return err
-	}
-	if err := f.Scan(ctx, []string{path}); err != nil {
-		return fmt.Errorf("index %s after create: %w", path, err)
-	}
-	return nil
-}
-
-// Scan updates the index for the files named.
-func (f Files) Scan(ctx context.Context, paths []string) error {
 	v, err := f.session.open()
 	if err != nil {
 		return err
 	}
-	f.session.notifyFileWritten()
-	if f.Index == nil {
-		return nil
-	}
-	return f.Index(ctx, v, paths)
+	return f.session.notifyAfterWrite(f.Create.Execute(ctx, v, path, content))
 }

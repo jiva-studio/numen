@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -38,14 +37,6 @@ func getNoteChanges(notes NoteUseCases) hostvault.NoteChanges {
 	return hostvault.NoteChanges{
 		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking, AddLinks: notes.Refer.AddLinks,
 	}
-}
-
-func openNoteWriter(c pluginsWiring, v domain.Vault) (hostvault.NoteWriter, error) {
-	writer, err := noteWriters(c.vault).OpenNoteWriter(v)
-	if err != nil {
-		return nil, err
-	}
-	return writer, nil
 }
 
 func installPluginVault(c pluginsWiring,
@@ -87,17 +78,13 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			Stat:        file.NewStatFile(vaultReaders(c.vault)),
 			ReadFile:    file.NewReadFile(vaultReaders(c.vault)),
 			RangeReader: file.Read{Readers: vaultReaders(c.vault)},
-			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
+			Write:       file.NewWriteFile(noteWriters(c.vault), index),
+			Create:      file.NewCreateFile(noteWriters(c.vault), index),
 			Index:       index,
 			Locks:       hold.NewLocks(writeLocks(c.vault), hold.LockHold),
 		},
-		hostvault.Lookups{
-			Notes:      db.NoteQueries(),
-			Types:      db.NoteQueries(),
-			NamedPaths: db.NoteQueries(),
-			TypedPaths: db.NoteQueries(),
-			Links:      db.NoteQueries(),
-		},
+		getPluginNotes(db),
+		getPluginLinks(db),
 		arranger,
 		hostvault.Stores{
 			StoreReaders: func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
@@ -117,7 +104,7 @@ func newArranger(
 	arranger := hostvault.Arranger{
 		Notes:    getNoteChanges(useCases),
 		Checks:   getProblemChecks(getProblems(vaultWiring{}, db.NoteProblems())),
-		Problems: db.NoteProblems(),
+		Problems: vault.NewGetParseProblems(db.NoteProblems()),
 	}
 	if window != nil {
 		arranger.Window, arranger.WindowVault = getNoteChanges(*window), current
@@ -127,7 +114,7 @@ func newArranger(
 
 func completeHooks(c pluginsWiring, db *Index, hooks PluginVaultHooks) PluginVaultHooks {
 	if hooks.IndexState == nil {
-		hooks.IndexState = query.NewGetIndexState(db.NoteQueries()).Execute
+		hooks.IndexState = getIndexState(db).Execute
 	}
 	if hooks.Moved == nil {
 		hooks.Moved = func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(c.vault, ctx) }

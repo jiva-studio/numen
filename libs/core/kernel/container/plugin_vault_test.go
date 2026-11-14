@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/fs"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
@@ -119,5 +120,52 @@ func TestAWriteByAPluginIsReportedToTheWindow(t *testing.T) {
 
 	if notifyCount != 1 {
 		t.Errorf("the window received %d times", notifyCount)
+	}
+}
+
+func TestAPluginLooksUpTheNotesAndTheLinksOfTheVault(t *testing.T) {
+	_, shared := openScannedPluginVault(t, map[string]string{
+		"Rivers/Danube.md": "# Danube\n",
+		"Ships/Danube.md":  "# Danube\n",
+		"Rhine.md":         "---\ntype: river\n---\n# Rhine\n",
+		"Deltas.md":        "---\nlinks:\n  - to: Rhine\n    role: parent\n---\n# Deltas\n",
+		"Lakes.md":         "---\nlinks:\n  - to: Baikal\n---\n# Lakes\n",
+	}, container.PluginVaultHooks{})
+	ctx := t.Context()
+
+	notes, err := shared.Notes.GetNotes(ctx, []string{"Rhine.md", "Gone.md"})
+	if err != nil || len(notes) != 1 || notes["Rhine.md"].Title != "Rhine" {
+		t.Errorf("the notes were %+v (%v)", notes, err)
+	}
+	types, err := shared.Notes.GetTypes(ctx, []string{"Rhine.md"})
+	if err != nil || types["Rhine.md"] != "river" {
+		t.Errorf("the types were %v (%v)", types, err)
+	}
+	named, err := shared.Notes.GetNamedPaths(ctx, "Danube")
+	slices.Sort(named)
+	if want := []string{"Rivers/Danube.md", "Ships/Danube.md"}; err != nil || !slices.Equal(named, want) {
+		t.Errorf("the notes named Danube were %v (%v), want %v", named, err, want)
+	}
+	typed, err := shared.Notes.GetPathsOfType(ctx, "river")
+	if err != nil || !slices.Equal(typed, []string{"Rhine.md"}) {
+		t.Errorf("the rivers were %v (%v)", typed, err)
+	}
+
+	links, err := shared.Links.GetLinks(ctx, "Deltas.md")
+	if err != nil || len(links) != 1 || links[0].To != "Rhine.md" {
+		t.Errorf("the links of Deltas were %+v (%v)", links, err)
+	}
+	backlinks, err := shared.Links.GetBacklinks(ctx, "Rhine.md")
+	if err != nil || len(backlinks) != 1 || backlinks[0].From != "Deltas.md" || backlinks[0].Role != domain.RoleParent {
+		t.Errorf("the backlinks of Rhine were %+v (%v)", backlinks, err)
+	}
+	resolved, err := shared.Links.ResolveLinks(ctx, "Deltas.md", []string{"Rhine"})
+	if err != nil || resolved["Rhine"].To != "Rhine.md" {
+		t.Errorf("Rhine resolved to %+v (%v)", resolved, err)
+	}
+
+	problems, err := shared.Arranger.GetParseProblems(ctx)
+	if err != nil || len(problems) != 1 || problems[0].Path != "Lakes.md" {
+		t.Errorf("the parse problems were %+v (%v)", problems, err)
 	}
 }

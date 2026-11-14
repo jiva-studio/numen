@@ -38,16 +38,21 @@ func diskVault(t *testing.T, files map[string]string, hooks diskHooks) (*vault.A
 	t.Helper()
 	v := vaultfixture.NewVault(t, files)
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
+	index := hooks.index
+	if index == nil {
+		index = func(context.Context, domain.Vault, []string) error { return nil }
+	}
 	return NewAccess(
 		Session{Current: func() (domain.Vault, bool) { return v, true }, Written: hooks.onWrite, Find: hooks.find},
 		Files{
 			Stat:        file.NewStatFile(vaultreader.Readers{}),
 			ReadFile:    file.NewReadFile(vaultreader.Readers{}),
 			RangeReader: file.Read{Readers: vaultreader.Readers{}},
-			OpenWriter:  func(v domain.Vault) (NoteWriter, error) { return writers.Open(v) },
+			Write:       file.NewWriteFile(writers, index),
+			Create:      file.NewCreateFile(writers, index),
 			Index:       hooks.index,
 		},
-		Lookups{}, Arranger{Notes: NoteChanges{AddLinks: hooks.addLinks}},
+		Notes{}, Links{}, Arranger{Notes: NoteChanges{AddLinks: hooks.addLinks}},
 		Stores{
 			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
 				return derivedfile.PluginStores{}.Open(v, pluginID)
@@ -201,7 +206,7 @@ func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
 func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 	access := NewAccess(
 		Session{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }},
-		Files{}, Lookups{}, Arranger{}, Stores{},
+		Files{}, Notes{}, Links{}, Arranger{}, Stores{},
 	)
 
 	_, _, readErr := access.Files.Read(t.Context(), "a.md")
@@ -301,5 +306,35 @@ func TestAVaultNamedByIdentityIsWorkedAsTheVaultShown(t *testing.T) {
 	}
 	if now, _ := access.Switch.GetVault(); now.ID != current.ID {
 		t.Errorf("the vault current changed to %v", now.ID)
+	}
+}
+
+func TestAFileWrittenAndNotIndexedIsReportedAsWritten(t *testing.T) {
+	refused := errors.New("the index is closed")
+	writeCount := 0
+	access, v := diskVault(t, map[string]string{"samples/A.md": "body"}, diskHooks{
+		onWrite: func() { writeCount++ },
+		index:   func(context.Context, domain.Vault, []string) error { return refused },
+	})
+	_, pos, err := access.Files.Read(t.Context(), "samples/A.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	written, writeErr := access.Writer.WriteFile(t.Context(), "samples/A.md", []byte("mine"), pos)
+	createErr := access.Writer.CreateFile(t.Context(), "samples/B.md", []byte("b"))
+
+	for _, err := range []error{writeErr, createErr} {
+		if !errors.Is(err, edit.ErrIndexOutdated) || !errors.Is(err, refused) {
+			t.Errorf("a file written and not indexed returned %v, want edit.ErrIndexOutdated", err)
+		}
+	}
+	if written.Size != 4 || writeCount != 2 {
+		t.Errorf("the write returned %+v and notified %d times", written, writeCount)
+	}
+	for path, want := range map[string]string{"samples/A.md": "mine", "samples/B.md": "b"} {
+		if got, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(path))); err != nil || string(got) != want {
+			t.Errorf("%s holds %q (%v), want %q", path, got, err, want)
+		}
 	}
 }

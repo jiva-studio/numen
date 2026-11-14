@@ -17,15 +17,15 @@ type sessionAccess interface {
 // NewAccess returns the capabilities of the open vault the way hostendpoint serves them, each in the
 // group that answers it. Each group reads the vault of a call through session.
 func NewAccess(
-	session Session, files Files, lookups Lookups, arranger Arranger, stores Stores,
+	session Session, files Files, notes Notes, links Links, arranger Arranger, stores Stores,
 ) *vault.Access {
 	session.rebuild = func(found domain.Vault) *vault.Access {
-		return NewAccess(session.showing(found), files, lookups, arranger, stores)
+		return NewAccess(session.showing(found), files, notes, links, arranger, stores)
 	}
-	files.session, lookups.session, arranger.session, stores.session =
-		&session, &session, &session, &session
+	files.session, notes.session, links.session, arranger.session, stores.session =
+		&session, &session, &session, &session, &session
 	return &vault.Access{
-		Notes: lookups, Links: lookups, Files: files, Writer: files, Arranger: arranger, LinkEditor: arranger,
+		Notes: notes, Links: links, Files: files, Writer: files, Arranger: arranger, LinkEditor: arranger,
 		Watch: &session, Switch: &session, Stores: stores, Cache: stores,
 		Locks: files.Locks,
 	}

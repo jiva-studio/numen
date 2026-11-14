@@ -60,6 +60,12 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 	t.Helper()
 	readers := vaultreader.Readers{}
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
+	index := func(_ context.Context, _ domain.Vault, paths []string) error {
+		d.mu.Lock()
+		defer d.mu.Unlock()
+		d.scanned = append(d.scanned, slices.Clone(paths))
+		return nil
+	}
 	return hostvault.NewAccess(
 		hostvault.Session{
 			Current: func() (domain.Vault, bool) {
@@ -100,16 +106,12 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 			Stat:        file.NewStatFile(readers),
 			ReadFile:    file.NewReadFile(readers),
 			RangeReader: file.Read{Readers: readers},
-			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
-			Index: func(_ context.Context, _ domain.Vault, paths []string) error {
-				d.mu.Lock()
-				defer d.mu.Unlock()
-				d.scanned = append(d.scanned, slices.Clone(paths))
-				return nil
-			},
-			Locks: hold.NewLocks(writers, hold.LockHold),
+			Write:       file.NewWriteFile(writers, index),
+			Create:      file.NewCreateFile(writers, index),
+			Index:       index,
+			Locks:       hold.NewLocks(writers, hold.LockHold),
 		},
-		hostvault.Lookups{}, hostvault.Arranger{},
+		hostvault.Notes{}, hostvault.Links{}, hostvault.Arranger{},
 		hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
 	)
 }
