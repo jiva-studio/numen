@@ -4,7 +4,7 @@
  */
 import type { Component } from 'vue'
 
-type Catalog = Readonly<Record<string, Component | symbol | undefined>>
+type Catalog = Readonly<Record<string, Component | undefined>>
 
 let catalog: Promise<Catalog> | null = null
 
@@ -13,7 +13,7 @@ export const getIconKey = (name: string): string =>
   name.replace(/(^|-)([a-z0-9])/g, (_match, _dash, letter: string) => letter.toUpperCase())
 
 const loadCatalog = (): Promise<Catalog> => {
-  catalog ??= import('@lucide/vue').then((lucide) => lucide as Catalog)
+  catalog ??= import('@lucide/vue').then((lucide) => lucide as unknown as Catalog)
   return catalog
 }
 
@@ -25,6 +25,5 @@ export const isIconKey = (key: string): boolean =>
 export async function findNamedIcon(name: string): Promise<Component | null> {
   const key = getIconKey(name)
   if (!isIconKey(key)) return null
-  const found = (await loadCatalog())[key]
-  return typeof found === 'symbol' ? null : (found ?? null)
+  return (await loadCatalog())[key] ?? null
 }
