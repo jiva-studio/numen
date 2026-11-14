@@ -16,6 +16,9 @@ func getTechnologyFreeAdapters() map[string]string {
 	return map[string]string{
 		"internal/adapter/clock":         "the machine clock itself, read through the time package",
 		"internal/adapter/plugin/absent": "the stand-in of a plugin host that runs nothing: it answers unavailable and wraps no technology",
+		// bridge keeps a plugin alive for the length of a call (the lease) and transport connects to the plugin. Merging
+		// the two would only move code to satisfy this check and give transport a second responsibility, so bridge stays
+		// a shared package of the plugin adapter, as architecture.md names it, and is listed here (#1957).
 		"internal/adapter/plugin/bridge": "what every bridge to a plugin shares: the lease a call holds on its plugin and the opening of a client through transport, which calls the network",
 	}
 }
