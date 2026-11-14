@@ -1,7 +1,9 @@
 package service_test
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"reflect"
 	"slices"
 	"strings"
@@ -283,7 +285,8 @@ func TestWindowTabListReturnsThePlaceTheReaderReported(t *testing.T) {
 		"the place of a tab of any kind": {
 			host.OpenTab{Kind: "plex", Path: guidePath, Place: &host.TabPlace{Page: 7}}, `{"page":7}`,
 		},
-		"a note tab whose kind reports no place": {host.OpenTab{Kind: "note", Path: notePath}, ""},
+		"a note tab whose kind reports no place":        {host.OpenTab{Kind: "note", Path: notePath}, ""},
+		"a tab with a pointer to an empty place struct": {host.OpenTab{Kind: "note", Path: notePath, Place: &host.TabPlace{}}, ""},
 	} {
 		t.Run(name, func(t *testing.T) {
 			w := newWindowTools(t)
@@ -362,6 +365,31 @@ func TestWindowTabListPrefersWindowTabsToTheCallFocus(t *testing.T) {
 	}
 	if len(out.Tabs) != 1 || out.Tabs[0].Path != notePath || out.ActiveTabID != "tab-1" {
 		t.Errorf("returned %+v, want the tab of the window", out)
+	}
+}
+
+func TestWindowTabListMarksATabWithoutAnIDInactive(t *testing.T) {
+	w := newWindowTools(t)
+	out := w.readTabs(t, []host.OpenTab{{ID: "", Kind: "note", Path: notePath, Title: "Gray Heron"}}, "")
+	if len(out.Tabs) != 1 || out.Tabs[0].IsActive {
+		t.Errorf("returned %+v, want one inactive tab", out)
+	}
+}
+
+type failingListWindow struct {
+	*hosttest.Window
+}
+
+func (failingListWindow) ReadOpenTabs(context.Context) ([]host.OpenTab, string, error) {
+	return nil, "", errors.New("window bus failed")
+}
+
+func TestWindowTabListReportsAHostErrorAsAToolError(t *testing.T) {
+	vault := hosttest.New(testVault)
+	window := hosttest.NewWindow(vault)
+	w := windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: failingListWindow{Window: window}})}
+	if failure := w.call(t, "window_tab_list", `{}`, nil, nil); !strings.Contains(failure, "window bus failed") {
+		t.Errorf("failure = %q, want window bus failed", failure)
 	}
 }
 

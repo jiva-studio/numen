@@ -80,11 +80,12 @@ const { open, box, handle } = useOpenBox({
   clock: props.behavior.clock,
 })
 
-const { isLifted, target: liftTarget } = useLift({
+const { isLifted, liftTarget, onLiftKeyDown } = useLift({
   layer: () => layer?.value ?? null,
   open: () => open.value,
   group: () => group.value,
   lifted: () => lifted.value,
+  focus: hoverFocus,
 })
 
 const face = computed(() => ({
@@ -111,10 +112,7 @@ watch(
     emit('settle', now)
   },
 )
-watch(
-  () => hoverFocus.isOn.value,
-  (now) => emit('attend', now),
-)
+watch(hoverFocus.isOn, (now) => emit('attend', now))
 // At most one node is on: a leave that never came does not keep this one open.
 watch(
   () => props.attention?.node,
@@ -148,7 +146,9 @@ function getMiddle(): Position | null {
     :role="role"
     :class="[`plex__node--${node.relation}`, `plex__node--${gestureRole}`]"
     :aria-label="isGhost ? undefined : createAriaLabel(node)"
-    @keydown="press.handlers.onKeyDown"
+    @keydown="(press.handlers.onKeyDown($event), onLiftKeyDown($event))"
+    @focusin="hoverFocus.onFocusIn"
+    @focusout="hoverFocus.onFocusOut"
     v-on="events"
   >
     <PlexNodeFace
@@ -174,10 +174,12 @@ function getMiddle(): Position | null {
         :opacity="node.opacity"
         aria-hidden="true"
         :class="[`plex__node--${node.relation}`, `plex__node--${gestureRole}`]"
+        @keydown="onLiftKeyDown"
         v-on="events"
       >
         <PlexNodeFace
           v-bind="face"
+          is-lifted
           @enter="(heading) => emit('enter', heading)"
           @reach="(pointer) => emit('reach', pointer)"
           @ask="emit('ask')"

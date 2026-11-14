@@ -160,7 +160,7 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 
 - `make checks TAGS=go,structure` (the Go module `tools/checks/structure/go`, one folder per check, shared loading in `load/`): the layers of the core, the machine clock, the plugin dependency rule of §11 and the encapsulation of the protocol by the Go SDK. It also holds that no core package declares an alias of another core package's type (`go/core-reexport`), that an adapter is driving or driven and not both and a driving adapter references nothing declared under `port/` (`go/adapter-role`), that an interface stays within the `interfacebloat` maximum counting embedded methods (`go/interface-size`, counted in the kernel, the notes library, the SDK, the applications and the plugins), that no function of a port calls a method of an interface value (`go/port-calls`), and that `container` is the one composition-root package with none below it (`go/composition-root`), that no struct holds more than five use cases (`go/struct-use-cases`), and that no package outside `container` and the application roots imports both a use case and a driven adapter (`go/wiring-package`).
 - `make checks ONLY=go/note-library`: the layer and purity rules of `libs/note`; a package of `libs/note` that the check does not list fails.
-- `golangci-lint` (CI job `core-lint`): `.golangci.yml` depguard rules for the domain and use cases of `libs/core/kernel`.
+- `golangci-lint` (CI job `go / Go Lint`): `.golangci.yml` depguard rules for the domain and use cases of `libs/core/kernel`.
 - `golangci-lint` in `libs/note`: depguard rules of `libs/note`, which depends on nothing of this repository.
 - `sdk-isolation`: the Go SDK imports no core and no application.
 - `sdk-ts-encapsulates-protocol`: no exported declaration of an entry in the `exports` of `@numen/plugin-sdk` reaches a declaration of `libs/core/protocol`.
@@ -184,12 +184,12 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `workspace-lists-every-module`: `go.work` lists every `go.mod`.
 - `json-keys-camelcase`: every JSON key in a plugin manifest, API fixture and TypeScript JSON type is `camelCase`.
 - `plugin-config-golden-parity`: plugin lint configurations match `plugins/.example/` and the root `.golangci.yml`; `eslint.config.js` and `numen-rules.mjs` are byte-identical copies of the golden files.
-- `plugins-frontend` with the golden `eslint.config.js`: a file of a `lib` segment imports no `ui`, `model` or `api` segment at any depth and no `.vue` file (`no-restricted-imports`), and every component passes `numen/max-inline-props`, `numen/vue-script-sections` and `numen/max-script-lines` from `numen-rules.mjs`. `tools/checks/structure/ts/plugins/golden-config.test.mjs` lints planted files in a copy of the template.
+- `make plugins_lint` with the golden `eslint.config.js`: a file of a `lib` segment imports no `ui`, `model` or `api` segment at any depth and no `.vue` file (`no-restricted-imports`), and every component passes `numen/max-inline-props`, `numen/vue-script-sections` and `numen/max-script-lines` from `numen-rules.mjs`. `tools/checks/structure/ts/plugins/golden-config.test.mjs` lints planted files in a copy of the template.
 - `plugin-backend-layers`: the layers inside a plugin backend point inward.
 - `go/plugin-boundary` and `go/plugin-isolation-packages` (`make checks TAGS=plugin,go`): apply the dependency rule of §11 to the type-checked import graph on 14 platform targets.
 - `plugins-leakage`: manifest schema and static non-leakage.
 - `plugins-use-main-entry`: the SDK and the UI library are imported through their declared entries.
-- `plugins-frontend`: no `@/**` and no `@plugins/**` in a plugin frontend.
+- `make plugins_lint`: no `@/**` and no `@plugins/**` in a plugin frontend.
 - `plugins-isolation-capture`: a file under `plugins/(X)/` references no other plugin.
 - `plugins-hold-no-schema`: no `.proto` file under `plugins/(*)/`.
 - `no-component-below-ui`: no `.vue` file of a library, a window or a plugin frontend lies in a `lib`, `api` or `model` segment.

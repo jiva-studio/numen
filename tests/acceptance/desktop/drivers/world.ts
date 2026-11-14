@@ -63,6 +63,11 @@ export class World {
     fs.writeFileSync(target, text)
   }
 
+  removeFile(vault: string, filePath: string): void {
+    assertVaultPath(filePath)
+    fs.rmSync(path.join(this.getFolder(vault), filePath))
+  }
+
   readText(vault: string, filePath: string): string | undefined {
     assertVaultPath(filePath)
     const target = path.join(this.getFolder(vault), filePath)
@@ -77,7 +82,12 @@ export class World {
         const full = path.join(folder, entry.name)
         if (entry.isDirectory()) return entry.name.startsWith('.') ? [] : walk(full)
         if (!entry.name.endsWith('.md')) return []
-        return [{ path: path.relative(root, full).split(path.sep).join('/'), text: fs.readFileSync(full, 'utf8') }]
+        return [
+          {
+            path: path.relative(root, full).split(path.sep).join('/'),
+            text: fs.readFileSync(full, 'utf8'),
+          },
+        ]
       })
     return walk(root)
   }

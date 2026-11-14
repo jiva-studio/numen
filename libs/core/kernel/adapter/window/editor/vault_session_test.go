@@ -716,16 +716,12 @@ func openInstallation(t *testing.T) (*container.OpenedWindow, *container.Index) 
 		t.Fatal(err)
 	}
 
-	db, err := container.OpenIndex(cfg, t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	installation, err := container.OpenWindowWith(cfg, t.Context(), container.WindowOpening{DB: db, Named: "one", Out: io.Discard})
+	installation, err := container.OpenWindow(cfg, t.Context(), "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, installation)
-	return installation, db
+	return installation, installation.Index
 }
 
 // A note saved through the window is in the index when the save is answered.

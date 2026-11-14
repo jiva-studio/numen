@@ -307,11 +307,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		t.Fatal(err)
 	}
 
-	index, err := container.OpenIndex(cfg, t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	installation, cases, err := openOver(cfg, t.Context(), index, "", os.Stderr)
+	installation, cases, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -354,7 +350,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		settings:     cfg.RegistryPath,
 		order:        recorded,
 		cfg:          cfg,
-		index:        index,
+		index:        installation.Index,
 	}
 }
 

@@ -47,7 +47,6 @@ interface Knobs {
   lineGap: number
   focusGap: number
   margin: number
-  spread: number
   squeeze: number
   maxPerCluster: number
   maxHeadings: number
@@ -84,7 +83,6 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   focusGap: a.focusGap,
   margin: a.margin,
   squeeze: a.squeeze,
-  spread: a.spread,
   maxPerCluster: a.maxPerCluster,
   maxHeadings: a.maxHeadings,
   routing: {
@@ -263,7 +261,6 @@ const meta = {
     lineGap: range(0, 64, 2),
     focusGap: range(8, 200, 4),
     margin: range(0, 160, 4),
-    spread: range(1, 4, 0.1),
     squeeze: range(0.2, 1, 0.05),
     maxPerCluster: range(1, 40),
     maxHeadings: range(1, 12),
@@ -346,7 +343,6 @@ const meta = {
     lineGap: 20,
     focusGap: 56,
     margin: 16,
-    spread: 2.5,
     squeeze: 0.35,
     maxPerCluster: 20,
     maxHeadings: 6,
@@ -613,7 +609,7 @@ const titledLines: PlexGraph = {
 
 /** Renders edge labels along curved paths, truncated where they do not fit, and raises hovered lines. */
 export const TitledLines: Story = {
-  args: { graph: titledLines, duration: 0, spread: 1 },
+  args: { graph: titledLines, duration: 0 },
   play: async ({ canvasElement }) => {
     const title = (words: string) =>
       [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].filter(
@@ -1034,6 +1030,58 @@ export const OneOpenNote: Story = {
       },
     )
     await expect(getHeadings('focus')).toHaveLength(0)
+  },
+}
+
+/** Takes Tab from an open note to its handle and on to the next note, and Shift+Tab back. */
+export const TabOrderOfAnOpenNote: Story = {
+  args: {
+    ...invented.args,
+    parents: 1,
+    children: 4,
+    jumps: 1,
+    siblings: 0,
+    headings: (id: string) => INSIDE[id] ?? [],
+  },
+  render: invented.render,
+  play: async ({ canvasElement }) => {
+    // Only the keys the browser itself strikes run its own Tab order.
+    const browser = await import('vitest/browser').catch(() => null)
+    if (!browser) return
+    const keys = browser.userEvent
+    const canvas = within(canvasElement)
+    const focus = canvas.getByLabelText(/, focus$/)
+    const parent = canvas.getByLabelText(/, parent$/)
+    const document = canvasElement.ownerDocument
+    const getOpenBox = () => canvasElement.querySelector('.plex__lifted[data-node="focus"]')
+    const isOnOpenHandle = () =>
+      document.activeElement?.matches('.plex__handle') === true &&
+      getOpenBox()?.contains(document.activeElement) === true
+
+    document.body.setAttribute('tabindex', '-1')
+    document.body.focus()
+    await keys.tab()
+    await expect(focus).toHaveFocus()
+
+    await keys.tab()
+    await expect(document.activeElement).toHaveClass('plex__handle')
+    await waitFor(async () => await expect(isOnOpenHandle()).toBe(true), { timeout: 3000 })
+    await new Promise((isDone) => setTimeout(isDone, EXPANSION_DELAY))
+    await expect(isOnOpenHandle()).toBe(true)
+
+    await keys.tab({ shift: true })
+    await expect(focus).toHaveFocus()
+    await expect(getOpenBox()).not.toBeNull()
+
+    await keys.tab()
+    await expect(isOnOpenHandle()).toBe(true)
+
+    await keys.tab()
+    await expect(parent).toHaveFocus()
+
+    await keys.tab({ shift: true })
+    await expect(focus).toHaveFocus()
+    document.body.removeAttribute('tabindex')
   },
 }
 

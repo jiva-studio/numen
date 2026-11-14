@@ -3,7 +3,8 @@ name: CI
 # The checks of a pull request, of a push to main, of the nightly run and of a manual run. `changes`
 # finds the areas a pull request or a push touches from .github/filters.yml; the nightly and a
 # manual run take every area. Each called workflow runs the jobs of its areas. The CI job is the
-# one required check.
+# one required check. An area whose inputs passed before is skipped
+# (.github/scripts/skip-passed.sh); `mark` saves the markers of the areas that passed.
 # A green run of a ready pull request starts the Claude review (claude-review.yml).
 on:
   # A new title is checked again, so `edited` is listed beside the default types.
@@ -43,12 +44,17 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+      actions: read
+    env:
+      ENGINES: ${{ github.event_name == 'pull_request' && 'webkit' || 'chromium webkit' }}
     outputs:
-      areas: ${{ steps.areas.outputs.areas }}
-      plugin_dirs: ${{ steps.areas.outputs.plugin_dirs }}
-      e2e: ${{ steps.areas.outputs.e2e }}
+      areas: ${{ steps.passed.outputs.areas }}
+      plugin_dirs: ${{ steps.passed.outputs.plugin_dirs }}
+      e2e: ${{ steps.passed.outputs.e2e }}
+      marks: ${{ steps.passed.outputs.marks }}
       platforms: ${{ steps.platforms.outputs.matrix }}
       draft: ${{ steps.draft.outputs.draft }}
+      engines: ${{ env.ENGINES }}
     steps:
       # The filters, the plugin manifests and the end-to-end selection; a pull request's changed
       # files come from the API, a push's from git.
@@ -96,6 +102,17 @@ jobs:
           PULL: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ github.token }}
         run: .github/scripts/platforms.sh | tee -a "$GITHUB_OUTPUT"
+
+      - id: passed
+        env:
+          EVENT: ${{ github.event_name }}
+          PULL: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+          AREAS: ${{ steps.areas.outputs.areas }}
+          PLUGIN_DIRS: ${{ steps.areas.outputs.plugin_dirs }}
+          E2E: ${{ steps.areas.outputs.e2e }}
+          PLATFORMS: ${{ steps.platforms.outputs.matrix }}
+        run: .github/scripts/skip-passed.sh | tee -a "$GITHUB_OUTPUT"
 
   checks:
     needs: [changes]
@@ -156,19 +173,172 @@ jobs:
     uses: ./.github/workflows/desktop-e2e.yml
     with:
       scope: ${{ needs.changes.outputs.e2e }}
-      engines: ${{ github.event_name == 'pull_request' && 'webkit' || 'chromium webkit' }}
+      engines: ${{ needs.changes.outputs.engines }}
 
   # Fails when a job failed or was cancelled, and when the areas were not found: every other job
-  # is then skipped.
+  # is then skipped. Names the markers of the areas whose job passed, also when it fails.
   ci:
     name: CI
     if: ${{ !cancelled() }}
     needs: [changes, checks, go, frontend, plugins, docs, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      keys: ${{ steps.keys.outputs.keys }}
     steps:
+      - id: keys
+        if: needs.changes.result == 'success'
+        continue-on-error: true
+        env:
+          MARKS: ${{ needs.changes.outputs.marks }}
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          jq -c --argjson results "$RESULTS" '[.[] | select($results[.job].result == "success") | .key]' <<< "$MARKS" \
+            | sed 's/^/keys=/' | tee -a "$GITHUB_OUTPUT"
+
       - env:
           RESULTS: ${{ toJSON(needs) }}
         run: |
           jq -r 'to_entries[] | "\(.value.result)\t\(.key)"' <<< "$RESULTS" | sort
           jq -e '.changes.result == "success" and all(.[]; .result != "failure" and .result != "cancelled")' <<< "$RESULTS" > /dev/null
+
+  mark:
+    name: Mark
+    if: ${{ !cancelled() && needs.ci.outputs.keys != '' && needs.ci.outputs.keys != '[]' }}
+    needs: [ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    steps:
+      # actions/cache/save takes one key, so each area has a step of its own.
+      - id: keys
+        env:
+          KEYS: ${{ needs.ci.outputs.keys }}
+          AREAS: code mutation_tool narrative references staging workflows docs e2e desktop_fe mobile_fe ui atomicfile core desktop mobile protocol sdk_go plugin_dirs plugin_stories plugin_versions
+        run: |
+          touch "$RUNNER_TEMP/passed"
+          for area in $AREAS; do
+            printf "%s=%s\n" "$area" "$(jq -r --arg prefix "passed-$area-" 'map(select(startswith($prefix)))[0] // ""' <<< "$KEYS")"
+          done | tee -a "$GITHUB_OUTPUT"
+          jq -r --arg areas " $AREAS " '.[] | (ltrimstr("passed-") | sub("-[0-9a-f]{40}.*$"; "")) as $area
+            | select($areas | contains(" \($area) ") | not) | "::error::\(.) names an area this job does not mark"' <<< "$KEYS"
+
+      - if: steps.keys.outputs.code != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.code }}
+
+      - if: steps.keys.outputs.mutation_tool != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.mutation_tool }}
+
+      - if: steps.keys.outputs.narrative != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.narrative }}
+
+      - if: steps.keys.outputs.references != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.references }}
+
+      - if: steps.keys.outputs.staging != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.staging }}
+
+      - if: steps.keys.outputs.workflows != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.workflows }}
+
+      - if: steps.keys.outputs.docs != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.docs }}
+
+      - if: steps.keys.outputs.e2e != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.e2e }}
+
+      - if: steps.keys.outputs.desktop_fe != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.desktop_fe }}
+
+      - if: steps.keys.outputs.mobile_fe != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.mobile_fe }}
+
+      - if: steps.keys.outputs.ui != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.ui }}
+
+      - if: steps.keys.outputs.atomicfile != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.atomicfile }}
+
+      - if: steps.keys.outputs.core != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.core }}
+
+      - if: steps.keys.outputs.desktop != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.desktop }}
+
+      - if: steps.keys.outputs.mobile != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.mobile }}
+
+      - if: steps.keys.outputs.protocol != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.protocol }}
+
+      - if: steps.keys.outputs.sdk_go != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.sdk_go }}
+
+      - if: steps.keys.outputs.plugin_dirs != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.plugin_dirs }}
+
+      - if: steps.keys.outputs.plugin_stories != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.plugin_stories }}
+
+      - if: steps.keys.outputs.plugin_versions != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/passed
+          key: ${{ steps.keys.outputs.plugin_versions }}
