@@ -209,14 +209,12 @@ func (i *Index) Watch(ctx context.Context, send func(State) error) error {
 	}
 }
 
-// bump changes the revision and wakes the watchers. The caller holds the lock.
 func (i *Index) bump() {
 	i.revision++
 	close(i.changed)
 	i.changed = make(chan struct{})
 }
 
-// listPaths returns the paths of the notes that are not in an ignored folder.
 func (i *Index) listPaths(ctx context.Context) ([]string, error) {
 	listed, err := i.notes.GetPathsOfType(ctx, domain.TypeNote)
 	if err != nil {
@@ -243,8 +241,6 @@ func isUnder(folders []string, path string) bool {
 	})
 }
 
-// dropIgnored removes the entries below the ignored folders and reports whether any was removed.
-// The caller holds the lock.
 func (i *Index) dropIgnored() bool {
 	isDropped := false
 	for path := range i.entries {
@@ -256,8 +252,6 @@ func (i *Index) dropIgnored() bool {
 	return isDropped
 }
 
-// moveEntries moves the entry of each renamed note to its new path and reports which paths got an
-// entry. The caller holds the lock.
 func (i *Index) moveEntries(renames []Rename) []string {
 	var moved []string
 	for _, rename := range renames {
@@ -275,8 +269,6 @@ func (i *Index) moveEntries(renames []Rename) []string {
 	return moved
 }
 
-// checkAll reads the notes that are new or changed since they were read, and drops the entries of
-// notes that are gone.
 func (i *Index) checkAll(ctx context.Context) error {
 	paths, err := i.listPaths(ctx)
 	if err != nil {

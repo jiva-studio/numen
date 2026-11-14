@@ -61,7 +61,6 @@ type scanner struct {
 
 func newScanner() *scanner { return &scanner{} }
 
-// scan reads one line. Raw is the line as the file has it; content is the text to read.
 func (s *scanner) scan(content string, number int, raw string) (Task, bool) {
 	if s.skips(content) {
 		return Task{}, false
@@ -85,8 +84,6 @@ func (s *scanner) scan(content string, number int, raw string) (Task, bool) {
 	return readTask(rest[marker:], raw, number, indent)
 }
 
-// skips reports whether the line is inside a code fence or an HTML comment, or opens or closes
-// one, so it holds no task.
 func (s *scanner) skips(line string) bool {
 	if s.isComment {
 		if strings.Contains(line, "-->") {
@@ -104,7 +101,6 @@ func (s *scanner) skips(line string) bool {
 	return false
 }
 
-// stripQuote removes the block-quote markers at the start of a line.
 func stripQuote(line string) string {
 	for {
 		trimmed := strings.TrimLeft(line, " \t")
@@ -116,7 +112,6 @@ func stripQuote(line string) string {
 	}
 }
 
-// splitIndent returns the width of the spaces and tabs that start the line and the rest.
 func splitIndent(line string) (int, string) {
 	width := 0
 	for i := range len(line) {
@@ -132,8 +127,6 @@ func splitIndent(line string) (int, string) {
 	return width, ""
 }
 
-// getMarkerLength returns the length of a list marker and the spaces after it, or 0 when the line
-// does not start with a list item.
 func getMarkerLength(rest string) int {
 	length := getNumberMarkerLength(rest)
 	if rest != "" && strings.IndexByte("-*+", rest[0]) >= 0 {
@@ -149,7 +142,6 @@ func getMarkerLength(rest string) int {
 	return length + spaces
 }
 
-// readTask reads what follows a list marker as a checkbox and a text.
 func readTask(afterMarker, raw string, number, indent int) (Task, bool) {
 	box, ok := strings.CutPrefix(afterMarker, "[")
 	if !ok || box == "" {
@@ -195,8 +187,6 @@ func getStatus(mark rune) Status {
 	return StatusOther
 }
 
-// getNumberMarkerLength returns the length of a number of 1 to 9 digits and its dot or parenthesis,
-// or 0 when the line starts with none.
 func getNumberMarkerLength(rest string) int {
 	digits := 0
 	for digits < len(rest) && rest[digits] >= '0' && rest[digits] <= '9' {

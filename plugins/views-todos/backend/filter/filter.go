@@ -85,7 +85,6 @@ func (f Filter) isDueAccepted(task todo.Task, today string) bool {
 	return true
 }
 
-// isDueMatched reports whether a due date, empty for none, is the one a filter of an open task asks for.
 func isDueMatched(kind DueFilter, due, today string) bool {
 	switch kind {
 	case DueNone:
@@ -111,7 +110,6 @@ func (f Filter) isPathAccepted(task todo.Task) bool {
 	return task.Path == f.Path
 }
 
-// isAnyOf reports whether no value is wanted or one of the wanted values is among the values.
 func isAnyOf(wanted, values []string) bool {
 	if len(wanted) == 0 {
 		return true
@@ -119,7 +117,6 @@ func isAnyOf(wanted, values []string) bool {
 	return slices.ContainsFunc(values, func(value string) bool { return slices.Contains(wanted, value) })
 }
 
-// compare orders by due date, priority, path and line; an empty due date or priority is last.
 func compare(a, b todo.Task) int {
 	if order := compareFilled(a.Due, b.Due); order != 0 {
 		return order

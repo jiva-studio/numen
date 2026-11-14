@@ -26,8 +26,6 @@ type lineFields struct {
 	seen map[string]bool
 }
 
-// readLineFields reads the text after a checkbox. A token that starts inside inline code, a wikilink or
-// a Markdown link is text.
 func readLineFields(text string) lineFields {
 	f := lineFields{
 		priority: "", due: "", doneOn: "", recurrence: "", projects: nil, contexts: nil, issues: nil, kept: nil,
@@ -47,7 +45,6 @@ type token struct {
 	start int
 }
 
-// splitTokens splits at runs of spaces and tabs.
 func splitTokens(text string) []token {
 	var tokens []token
 	start := -1
@@ -67,8 +64,6 @@ func splitTokens(text string) []token {
 	return tokens
 }
 
-// read takes a token as a field and reports whether it was one. An unreadable value is text, with
-// an issue.
 func (f *lineFields) read(word string, isFirst bool) bool {
 	switch {
 	case isFirst && isLeadingPriority(word):
@@ -105,7 +100,6 @@ func appendOnce(list []string, name string) []string {
 	return append(list, name)
 }
 
-// isFirstOf reports whether the key was not seen before, and marks it as seen.
 func (f *lineFields) isFirstOf(key string) bool {
 	if f.seen[key] {
 		return false
@@ -154,7 +148,6 @@ func (f *lineFields) readRecurrence(word string) bool {
 	return true
 }
 
-// isRecurrence reports whether the value is an optional !, a count from 1 to 999 and one of d, w, m, y.
 func isRecurrence(value string) bool {
 	value = strings.TrimPrefix(value, "!")
 	if len(value) < 2 || !strings.ContainsRune("dwmy", rune(value[len(value)-1])) {
@@ -168,7 +161,6 @@ func isRecurrence(value string) bool {
 	return err == nil && count >= 1 && count <= maxRecurrenceCount
 }
 
-// maskSpans marks the bytes of inline code, wikilinks and Markdown links.
 func maskSpans(text string) []bool {
 	masked := make([]bool, len(text)+1)
 	for i := 0; i < len(text); {
@@ -186,7 +178,6 @@ func maskSpans(text string) []bool {
 	return masked
 }
 
-// spanEnd returns the end of the span that starts at i, or i when none starts there.
 func spanEnd(text string, i int) int {
 	switch {
 	case text[i] == '`':
@@ -201,7 +192,6 @@ func spanEnd(text string, i int) int {
 	return i
 }
 
-// codeEnd returns the end of the code span that opens with a run of backticks at i.
 func codeEnd(text string, i int) int {
 	run := 0
 	for i+run < len(text) && text[i+run] == '`' {
@@ -224,7 +214,6 @@ func codeEnd(text string, i int) int {
 	return i
 }
 
-// linkEnd returns the end of the Markdown link [text](destination) that starts at i.
 func linkEnd(text string, i int) int {
 	closing := strings.IndexByte(text[i:], ']')
 	if closing < 0 || i+closing+1 >= len(text) || text[i+closing+1] != '(' {
