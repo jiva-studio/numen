@@ -273,7 +273,7 @@ func (p *pass) makeVectors(
 		events.ReportTask(pos)
 	}}
 
-	res, err := making.MakeVectors(items, p.v, reporting)
+	res, err = making.MakeVectors(items, p.v, reporting)
 	switch {
 	case err == nil:
 		p.skips.SetSkippedChunks(res.Skipped, plan.generation)
