@@ -177,6 +177,14 @@ The settings of the plugin LLM Proofreading.
 | `inFlight` | a number | parallel model requests per call. From 1 to 32. |
 | `maxEditDistance` | a number | largest edit distance of a correction from its line. From 0 to 1. |
 
+### `md.numen.tools.templates`
+
+The settings of the plugin Templates.
+
+| | | |
+| --- | --- | --- |
+| `folder` | text | the folder that holds the templates. Each note in it is a template, and each subfolder is a group. |
+
 ### `md.numen.tools.updater`
 
 The settings of the plugin Update Notifier.
