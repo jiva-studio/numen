@@ -54,7 +54,7 @@ export function arrangePlex(
     laid: PlexOptions,
     nodesByRelation: NodesByRelation,
     roomsById: Fit['rooms'],
-    limits: Pick<PlacementContext, 'shouldStop'> = {},
+    limits: Pick<PlacementContext, 'shouldStop' | 'isFitFirst'> = {},
   ) => {
     const width = createWidthLookup(laid, measure, request)
     const focus: PlacedNode = {
@@ -94,48 +94,63 @@ export function arrangePlex(
   // Admission is settled at that packing, measured against the arrangement itself, so a
   // placement of any shape fits the window.
   const { viewport, margin } = crowded
-  const admitAt = (packing: PlexOptions) =>
-    viewport
-      ? admitNodes(
-          requested,
-          (nodesByRelation, shouldStop) =>
-            lay(packing, nodesByRelation, rooms, { shouldStop }).placed,
-          (node) => isInside(node, viewport, { margin, rooms }),
-        )
-      : requested
   // The probes of the packing leave out the rooms, so a packing they find loose can still cut notes that the tightest packing holds.
   const tightest = packOptions(request, 0)
-  const admittedCrowded = admitAt(crowded)
-  const isTightestBetter =
-    viewport !== undefined &&
-    crowded.gap > tightest.gap &&
-    countNodes(admittedCrowded) < countNodes(requested)
-  // Admission is greedy, so the tightest packing is also grown from what the crowded one admitted, and the larger set is kept.
-  const canHoldAtTightest = (nodesByRelation: NodesByRelation) =>
-    isInsideWindow(
-      lay(tightest, nodesByRelation, rooms, {
-        shouldStop: stopAtOutside(viewport, margin, rooms),
-      }).placed,
-      viewport,
-      { margin, rooms },
-    )
-  const growAtTightest = () =>
-    canHoldAtTightest(admittedCrowded)
-      ? refill(admittedCrowded, requested, canHoldAtTightest)
-      : admittedCrowded
   const getLargerSet = (first: NodesByRelation, second: NodesByRelation) =>
     countNodes(second) > countNodes(first) ? second : first
-  const admittedTightest = isTightestBetter
-    ? getLargerSet(admitAt(tightest), growAtTightest())
-    : admittedCrowded
-  const isTightestChosen = countNodes(admittedTightest) > countNodes(admittedCrowded)
-  const resolved = isTightestChosen ? tightest : crowded
-  const admitted = isTightestChosen ? admittedTightest : admittedCrowded
+  // Admission is greedy, so a set is also grown from what another packing or shape admitted, and the larger set is kept.
+  const admitInWindow = (isFitFirst: boolean, seed?: NodesByRelation) => {
+    const admitAt = (packing: PlexOptions) =>
+      viewport
+        ? admitNodes(
+            requested,
+            (nodesByRelation, shouldStop) =>
+              lay(packing, nodesByRelation, rooms, { shouldStop, isFitFirst }).placed,
+            (node) => isInside(node, viewport, { margin, rooms }),
+          )
+        : requested
+    const growAt = (packing: PlexOptions, from: NodesByRelation | undefined) => {
+      const canHold = (nodesByRelation: NodesByRelation) =>
+        isInsideWindow(
+          lay(packing, nodesByRelation, rooms, {
+            shouldStop: stopAtOutside(viewport, margin, rooms),
+            isFitFirst,
+          }).placed,
+          viewport,
+          { margin, rooms },
+        )
+      return from && canHold(from) ? refill(from, requested, canHold) : {}
+    }
+    const admittedCrowded = getLargerSet(admitAt(crowded), growAt(crowded, seed))
+    const isTightestBetter =
+      viewport !== undefined &&
+      crowded.gap > tightest.gap &&
+      countNodes(admittedCrowded) < countNodes(requested)
+    const admittedTightest = isTightestBetter
+      ? [admitAt(tightest), growAt(tightest, admittedCrowded), growAt(tightest, seed)].reduce(
+          getLargerSet,
+        )
+      : admittedCrowded
+    const isTightestChosen = countNodes(admittedTightest) > countNodes(admittedCrowded)
+    return {
+      packing: isTightestChosen ? tightest : crowded,
+      admitted: isTightestChosen ? admittedTightest : admittedCrowded,
+      isFitFirst,
+    }
+  }
+  // The placement keeps its usual shape, and leaves it only when another shape holds more notes.
+  const inShape = admitInWindow(false)
+  const fitFirst =
+    countNodes(inShape.admitted) < countNodes(requested)
+      ? admitInWindow(true, inShape.admitted)
+      : inShape
+  const chosen = countNodes(fitFirst.admitted) > countNodes(inShape.admitted) ? fitFirst : inShape
+  const { packing: resolved, admitted, isFitFirst } = chosen
   const admittedOverflow = countOverflow(graph.nodes, admitted)
 
   // The gaps stay as packed: they close in a crowded window and never open to fill a roomy one.
   const fit: Fit = { margin, rooms }
-  const finalLayout = lay(resolved, admitted, rooms)
+  const finalLayout = lay(resolved, admitted, rooms, { isFitFirst })
   const { focus } = finalLayout
   const placed = viewport
     ? finalLayout.placed.filter((node) => isInside(node, viewport, fit))

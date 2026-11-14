@@ -9,16 +9,32 @@
  * both centered on the focus; their rows fill from the middle out and a partial last row is centered. A side block is
  * centered on the row of the focus, ends one line gap over the children block, or starts one line gap under the parents
  * block, unless the side holds two blocks; it is placed past the columns of every block over or under the focus that its
- * rows reach, and its rows fill from the focus out.
+ * rows reach, and its rows fill from the focus out. When the window cuts notes, the placement is asked to fit first
+ * (`PlacementContext.isFitFirst`): a side of two blocks may then be laid as one block, its references over its jumps,
+ * if that block holds the whole side inside the window.
  *
  * The column counts and the side block positions are chosen together: the most notes inside the window first, then the
- * fewest columns a block over or under the focus takes beyond `ACROSS_COLUMNS`, then the least distance of the notes
- * from the focus, counted in cells. A block takes at most as many columns as reach the edge of the window; with no
+ * fewest columns a block over or under the focus takes beyond `ACROSS_COLUMNS`, then the fewest sides of two blocks
+ * laid as one, then the least distance of the notes from the focus, counted in cells. A block takes at most as many columns as reach the edge of the window; with no
  * window, twice the square root of its note count, rounded up.
  */
-import { RELATION_NAMES, RELATIONS, type Lean } from '../../relation'
+import { RELATION_NAMES, RELATIONS } from '../../relation'
 import type { PlacedNode, Position } from '../../node'
 import type { Direction, PlexOptions, Size } from '../options'
+import {
+  createGrid,
+  getBlockSize,
+  isAcross,
+  isBetter,
+  listCells,
+  listColumnCounts,
+  scoreBlock,
+  sumScores,
+  type Block,
+  type BlockShape,
+  type Grid,
+  type Score,
+} from './cells'
 import {
   getFootprint,
   getPillCenterY,
@@ -28,57 +44,31 @@ import {
 } from './placement'
 import type { PlexNode, PlexRelation } from '../../../../types'
 
-/** The notes of one side, or of its upper or lower half, in the order they fill the cells, and the size of every cell. */
-interface Block {
-  readonly side: Direction
-  readonly half: Lean | null
-  readonly members: readonly PlexNode[]
-  readonly cell: Size
-}
-
-interface BlockShape {
-  readonly columns: number
-  readonly minX: number
-  readonly maxX: number
-  readonly minY: number
-  readonly maxY: number
-}
-
-/**
- * The gaps, the distance from the center of the focus to the near edge of a side block (`reach.x`) and of a block over
- * or under it (`reach.y`), and how far from the center a cell may reach and stay inside the window.
- */
-interface Grid {
-  readonly gap: number
-  readonly lineGap: number
-  readonly reach: { readonly x: number; readonly y: number }
-  readonly window: { readonly x: number; readonly y: number }
-}
-
 /** Blocks that touch within this distance do not count as reaching each other. */
 const TOLERANCE = 1e-6
-
-/** The least gap between two neighbors, so neighbors with no gap do not overlap on float error. */
-const LEAST_GAP = 1e-6
 
 /** The column count of a block over or under the focus past which it takes more columns only to show more notes. */
 const ACROSS_COLUMNS = 5
 
 const SIDES: readonly Direction[] = ['left', 'right', 'up', 'down']
 
-const isAcross = (side: Direction): boolean => side === 'up' || side === 'down'
-
 const getLeanRank = (relation: PlexRelation): number => {
   const { lean } = RELATIONS[relation]
   return lean === 'up' ? 0 : lean === null ? 1 : 2
+}
+
+/** The blocks of one side: its one block, and for a side of two blocks also its two halves. */
+interface SideBlocks {
+  readonly whole: Block
+  readonly halves?: readonly [upper: Block, lower: Block]
 }
 
 function createBlocks(
   nodesByRelation: NodesByRelation,
   options: PlexOptions,
   getSize: (node: PlexNode) => Size,
-): Block[] {
-  return SIDES.flatMap((side): Block[] => {
+): SideBlocks[] {
+  return SIDES.flatMap((side): SideBlocks[] => {
     const relations = RELATION_NAMES.filter(
       (relation) =>
         options.direction[relation] === side && (nodesByRelation[relation] ?? []).length > 0,
@@ -90,23 +80,17 @@ function createBlocks(
       width: Math.max(...footprints.map((footprint) => footprint.width)),
       height: Math.max(...footprints.map((footprint) => footprint.height)),
     }
+    const whole: Block = { side, half: null, members, cell }
     const upper = relations.filter((relation) => RELATIONS[relation].lean === 'up')
     if (isAcross(side) || upper.length === 0 || upper.length === relations.length)
-      return [{ side, half: null, members, cell }]
+      return [{ whole }]
     const upperCount = upper.flatMap((relation) => nodesByRelation[relation] ?? []).length
-    return [
+    const halves = [
       { side, half: 'up', members: members.slice(0, upperCount), cell },
       { side, half: 'down', members: members.slice(upperCount), cell },
-    ]
+    ] as const
+    return [{ whole, halves }]
   })
-}
-
-function getBlockSize(block: Block, columns: number, grid: Grid): Size {
-  const rows = Math.ceil(block.members.length / columns)
-  return {
-    width: columns * block.cell.width + (columns - 1) * grid.gap,
-    height: rows * block.cell.height + (rows - 1) * grid.lineGap,
-  }
 }
 
 function shapeAcrossBlock(block: Block, columns: number, grid: Grid): BlockShape {
@@ -118,16 +102,10 @@ function shapeAcrossBlock(block: Block, columns: number, grid: Grid): BlockShape
   return { columns, minX: -width / 2, maxX: width / 2, minY, maxY }
 }
 
-/** The position of a side block: centered on the row of the focus, ending over the children block, or starting under the parents block. */
+/** The position of a side block of one block: centered on the row of the focus, ending over the children block, or starting under the parents block. */
 type Standing = 'center' | 'up' | 'down'
 
 const STANDINGS: readonly Standing[] = ['center', 'up', 'down']
-
-/** The column count of every block of a side, and where a side of one block stands. */
-interface SideOption {
-  readonly columns: readonly number[]
-  readonly standing: Standing
-}
 
 interface Span {
   readonly width: number
@@ -153,11 +131,13 @@ function getSideSpan(block: Block, columns: number, standing: Standing, grid: Gr
 }
 
 function getNearX({ minY, maxY }: Span, acrossShapes: readonly BlockShape[], grid: Grid): number {
-  const reached = acrossShapes.filter(
-    (shape) =>
-      minY < shape.maxY + grid.lineGap - TOLERANCE && shape.minY - grid.lineGap + TOLERANCE < maxY,
-  )
-  return Math.max(grid.reach.x, ...reached.map((shape) => shape.maxX + grid.gap))
+  let near = grid.reach.x
+  for (const shape of acrossShapes) {
+    const isReached =
+      minY < shape.maxY + grid.lineGap - TOLERANCE && shape.minY - grid.lineGap + TOLERANCE < maxY
+    if (isReached) near = Math.max(near, shape.maxX + grid.gap)
+  }
+  return near
 }
 
 function shapeSideBlock(block: Block, columns: number, span: Span, near: number): BlockShape {
@@ -166,197 +146,184 @@ function shapeSideBlock(block: Block, columns: number, span: Span, near: number)
   return { columns, minX, maxX, minY: span.minY, maxY: span.maxY }
 }
 
-function listFromMiddle(count: number): number[] {
-  return Array.from({ length: count }, (_, index) => index).sort(
-    (first, second) =>
-      Math.abs(2 * first - (count - 1)) - Math.abs(2 * second - (count - 1)) || first - second,
-  )
-}
-
-function listRowXs(block: Block, shape: BlockShape, count: number, grid: Grid): number[] {
-  const { cell } = block
-  const stepX = cell.width + grid.gap
-  if (isAcross(block.side)) {
-    const rowWidth = count * cell.width + (count - 1) * grid.gap
-    return listFromMiddle(count).map((place) => -rowWidth / 2 + cell.width / 2 + place * stepX)
-  }
-  return Array.from({ length: count }, (_, column) => {
-    const offset = cell.width / 2 + column * stepX
-    return block.side === 'left' ? shape.maxX - offset : shape.minX + offset
-  })
-}
-
-function listCells(block: Block, shape: BlockShape, grid: Grid): Position[] {
-  const { cell } = block
-  const count = block.members.length
-  const stepY = cell.height + grid.lineGap
-  const rows = Math.ceil(count / shape.columns)
-  return Array.from({ length: rows }, (_, row) => {
-    const inRow = Math.min(shape.columns, count - row * shape.columns)
-    const y =
-      block.side === 'up' || block.half === 'up'
-        ? shape.maxY - cell.height / 2 - row * stepY
-        : shape.minY + cell.height / 2 + row * stepY
-    return listRowXs(block, shape, inRow, grid).map((x) => ({ x, y }))
-  }).flat()
-}
-
-/** The notes inside the window, the columns of blocks over and under the focus beyond `ACROSS_COLUMNS`, and the distance of the notes from the focus in cells. */
-interface Score {
-  readonly inside: number
-  readonly excess: number
-  readonly distance: number
-}
-
-const NO_SCORE: Score = { inside: 0, excess: 0, distance: 0 }
-
-function scoreCells(block: Block, cells: readonly Position[], grid: Grid): Score {
-  const { cell } = block
-  const { window } = grid
-  let inside = 0
-  let distance = 0
-  for (const { x, y } of cells) {
-    if (Math.abs(x) + cell.width / 2 <= window.x && Math.abs(y) + cell.height / 2 <= window.y)
-      inside++
-    distance += Math.hypot(x / (cell.width + grid.gap), y / (cell.height + grid.lineGap))
-  }
-  return { inside, excess: 0, distance }
-}
-
-const isBetter = (score: Score, best: Score | undefined): boolean =>
-  !best ||
-  score.inside > best.inside ||
-  (score.inside === best.inside &&
-    (score.excess < best.excess ||
-      (score.excess === best.excess && score.distance < best.distance - 1e-9)))
-
-const addScores = (first: Score, second: Score): Score => ({
-  inside: first.inside + second.inside,
-  excess: first.excess + second.excess,
-  distance: first.distance + second.distance,
-})
-
-function getMaxColumns(block: Block, grid: Grid): number {
-  const { gap, reach, window } = grid
-  const room = isAcross(block.side) ? 2 * window.x : window.x - reach.x
-  const fitting = Math.floor((room + gap) / (block.cell.width + gap))
-  const square = Math.ceil(Math.sqrt(block.members.length)) * 2
-  const limit = Number.isFinite(fitting) ? Math.max(1, fitting) : square
-  return Math.max(1, Math.min(block.members.length, limit))
-}
-
 interface Plan {
   readonly block: Block
   readonly cells: readonly Position[]
 }
 
-interface Scored {
-  readonly plan: Plan
+interface AcrossChoice {
+  readonly columns: number
+  readonly block: Block
   readonly shape: BlockShape
   readonly score: Score
 }
 
-function listColumnCounts(block: Block, grid: Grid): number[] {
-  return Array.from({ length: getMaxColumns(block, grid) }, (_, index) => index + 1)
-}
-
-function planAcross(block: Block, columns: number, grid: Grid): Scored {
+function chooseAcross(block: Block, columns: number, grid: Grid): AcrossChoice {
   const shape = shapeAcrossBlock(block, columns, grid)
-  const cells = listCells(block, shape, grid)
-  const score = {
-    ...scoreCells(block, cells, grid),
-    excess: Math.max(0, columns - ACROSS_COLUMNS),
+  const score = { ...scoreBlock(block, shape, grid), excess: Math.max(0, columns - ACROSS_COLUMNS) }
+  return { columns, block, shape, score }
+}
+
+/**
+ * The scores of side blocks by the distance of their near column from the focus, kept for the probes that lay the
+ * same blocks at the same options again: each block of a side, its column count and placing.
+ */
+type ScoreCache = Map<string, Map<number, Score>>
+
+const scoreCaches = new WeakMap<PlexOptions, ScoreCache>()
+
+/** One block of a side at one column count and placing, and its scores by the distance of its near column. */
+interface SidePart {
+  readonly block: Block
+  readonly columns: number
+  readonly span: Span
+  readonly scores: Map<number, Score>
+}
+
+/** The parts of a side laid together, and whether they are the one block of a side that splits. */
+interface SideOption {
+  readonly parts: readonly SidePart[]
+  readonly joined: number
+}
+
+function createPart(
+  block: Block,
+  columns: number,
+  standing: Standing,
+  { grid, cache }: { readonly grid: Grid; readonly cache: ScoreCache },
+): SidePart {
+  const { side, half, members, cell } = block
+  const key = `${side}/${half}/${members.length}/${cell.width}/${cell.height}/${columns}/${standing}/${grid.reach.x}/${grid.reach.y}`
+  let scores = cache.get(key)
+  if (!scores) {
+    scores = new Map()
+    cache.set(key, scores)
   }
-  return { plan: { block, cells }, shape, score }
+  return { block, columns, span: getSideSpan(block, columns, standing, grid), scores }
 }
 
-/** The plans of the blocks of one side, by block, column count, standing and distance from the focus. */
-type SideCache = Map<string, Scored>
-
-interface Side {
-  readonly blocks: readonly Block[]
-  readonly options: readonly SideOption[]
-  readonly cache: SideCache
-}
-
-function createSide(blocks: readonly Block[], grid: Grid): Side {
-  const columnSets = blocks.reduce<number[][]>(
-    (sets, block) =>
-      sets.flatMap((set) => listColumnCounts(block, grid).map((columns) => [...set, columns])),
-    [[]],
+function createSide(
+  { whole, halves }: SideBlocks,
+  { grid, cache, isFitFirst }: { grid: Grid; cache: ScoreCache; isFitFirst: boolean },
+): SideOption[] {
+  const context = { grid, cache }
+  const split = halves
+    ? listColumnCounts(halves[0], grid).flatMap((upperColumns) =>
+        listColumnCounts(halves[1], grid).map((lowerColumns) => ({
+          parts: [
+            createPart(halves[0], upperColumns, 'center', context),
+            createPart(halves[1], lowerColumns, 'center', context),
+          ],
+          joined: 0,
+        })),
+      )
+    : []
+  if (halves && !isFitFirst) return split
+  const joined = listColumnCounts(whole, grid).flatMap((columns) =>
+    STANDINGS.map((standing) => ({
+      parts: [createPart(whole, columns, standing, context)],
+      joined: halves ? 1 : 0,
+    })),
   )
-  const standings = blocks.length === 1 ? STANDINGS : STANDINGS.slice(0, 1)
-  const options = columnSets.flatMap((columns) =>
-    standings.map((standing) => ({ columns, standing })),
-  )
-  return { blocks, options, cache: new Map() }
+  return [...split, ...joined]
 }
 
-function planSideOption(
-  side: Side,
-  { columns, standing }: SideOption,
+function scorePart(part: SidePart, near: number, grid: Grid): Score {
+  const cached = part.scores.get(near)
+  if (cached) return cached
+  const score = scoreBlock(
+    part.block,
+    shapeSideBlock(part.block, part.columns, part.span, near),
+    grid,
+  )
+  part.scores.set(near, score)
+  return score
+}
+
+interface SideChoice {
+  readonly option: SideOption
+  readonly near: number
+  readonly scores: readonly Score[]
+  readonly score: Score
+}
+
+function chooseSide(
+  options: readonly SideOption[],
   acrossShapes: readonly BlockShape[],
   grid: Grid,
-): Scored[] {
-  const spans = side.blocks.map((block, index) =>
-    getSideSpan(block, columns[index]!, standing, grid),
-  )
-  const near = Math.max(...spans.map((span) => getNearX(span, acrossShapes, grid)))
-  return side.blocks.map((block, index) => {
-    const key = `${index}/${columns[index]}/${standing}/${near}`
-    const cached = side.cache.get(key)
-    if (cached) return cached
-    const shape = shapeSideBlock(block, columns[index]!, spans[index]!, near)
-    const cells = listCells(block, shape, grid)
-    const scored = { plan: { block, cells }, shape, score: scoreCells(block, cells, grid) }
-    side.cache.set(key, scored)
-    return scored
-  })
+): SideChoice | undefined {
+  let best: SideChoice | undefined
+  for (const option of options) {
+    let near = grid.reach.x
+    for (const part of option.parts) near = Math.max(near, getNearX(part.span, acrossShapes, grid))
+    const scores = option.parts.map((part) => scorePart(part, near, grid))
+    const score = { ...sumScores(scores), joined: option.joined }
+    // A cell inside holds its note, while a note can lie inside a cell that is not: one block that holds less than all
+    // of the side could hold fewer notes than the halves do.
+    if (option.joined > 0 && score.inside < option.parts[0]!.block.members.length) continue
+    if (isBetter(score, best?.score)) best = { option, near, scores, score }
+  }
+  return best
 }
 
-const sumScores = (scored: readonly Scored[]): Score =>
-  scored.reduce((total, one) => addScores(total, one.score), NO_SCORE)
-
-function planSide(side: Side, acrossShapes: readonly BlockShape[], grid: Grid): Scored[] {
-  return side.options
-    .map((option) => planSideOption(side, option, acrossShapes, grid))
-    .reduce((best, next) => (isBetter(sumScores(next), sumScores(best)) ? next : best))
-}
-
-function planBlocks(blocks: readonly Block[], grid: Grid): Plan[] {
-  const across = blocks.filter((block) => isAcross(block.side))
-  const sides = SIDES.filter((side) => !isAcross(side))
-    .map((side) => blocks.filter((block) => block.side === side))
-    .filter((sideBlocks) => sideBlocks.length > 0)
-    .map((sideBlocks) => createSide(sideBlocks, grid))
+function planBlocks(
+  blocks: readonly SideBlocks[],
+  context: { grid: Grid; cache: ScoreCache; isFitFirst: boolean },
+): Plan[] {
+  const { grid } = context
+  const across = blocks.flatMap(({ whole }) => (isAcross(whole.side) ? [whole] : []))
+  const sides = blocks
+    .filter(({ whole }) => !isAcross(whole.side))
+    .map((side) => createSide(side, context))
+  // The column counts are tried best first, so the bound below leaves out most of them.
   const acrossChoices = across.map((block) =>
-    listColumnCounts(block, grid).map((columns) => planAcross(block, columns, grid)),
+    listColumnCounts(block, grid)
+      .map((columns) => chooseAcross(block, columns, grid))
+      .sort((first, second) =>
+        isBetter(first.score, second.score) ? -1 : isBetter(second.score, first.score) ? 1 : 0,
+      ),
   )
-  let best: { plans: Plan[]; score: Score } | undefined
-  const choose = (index: number, chosen: readonly Scored[]) => {
+  let best: { across: AcrossChoice[]; sides: SideChoice[]; score: Score } | undefined
+  // Of two layouts that score the same, the one with fewer columns in the first block over or under the focus wins, then in the next.
+  const isEarlier = (chosen: readonly AcrossChoice[], other: readonly AcrossChoice[]): boolean => {
+    const index = chosen.findIndex((one, at) => one.columns !== other[at]!.columns)
+    return index !== -1 && chosen[index]!.columns < other[index]!.columns
+  }
+  const isWinning = (score: Score, chosen: readonly AcrossChoice[]): boolean =>
+    !best ||
+    isBetter(score, best.score) ||
+    (!isBetter(best.score, score) && isEarlier(chosen, best.across))
+  // A side scores best with its blocks nearest the focus, where no block over or under the focus pushes them out:
+  // a set of column counts whose score with that best is not winning is left out.
+  const sideBounds = sides.flatMap((options) => chooseSide(options, [], grid)?.score ?? [])
+  const choose = (index: number, chosen: readonly AcrossChoice[]) => {
     if (index < across.length) {
       for (const option of acrossChoices[index]!) choose(index + 1, [...chosen, option])
       return
     }
+    const bound = sumScores([...chosen.map((one) => one.score), ...sideBounds])
+    if (!isWinning(bound, chosen)) return
     const shapes = chosen.map((one) => one.shape)
-    const all = [...chosen, ...sides.flatMap((side) => planSide(side, shapes, grid))]
-    const score = sumScores(all)
-    if (isBetter(score, best?.score)) best = { plans: all.map((one) => one.plan), score }
+    const sideChoices = sides.flatMap((options) => chooseSide(options, shapes, grid) ?? [])
+    const scores = [
+      ...chosen.map((one) => one.score),
+      ...sideChoices.flatMap((choice) => choice.scores),
+    ]
+    const joined = sideChoices.reduce((total, choice) => total + choice.option.joined, 0)
+    const score = { ...sumScores(scores), joined }
+    if (isWinning(score, chosen)) best = { across: [...chosen], sides: sideChoices, score }
   }
   choose(0, [])
-  return best?.plans ?? []
-}
-
-function createGrid(focus: PlacedNode, options: PlexOptions): Grid {
-  const { gap, lineGap, focusGap, viewport, margin } = options
-  return {
-    gap: Math.max(gap, LEAST_GAP),
-    lineGap: Math.max(lineGap, LEAST_GAP),
-    reach: { x: focus.width / 2 + focusGap, y: focus.height / 2 + focusGap },
-    window: viewport
-      ? { x: viewport.width / 2 - margin, y: viewport.height / 2 - margin }
-      : { x: Infinity, y: Infinity },
-  }
+  if (!best) return []
+  return [
+    ...best.across.map(({ block, shape }) => ({ block, cells: listCells(block, shape, grid) })),
+    ...best.sides.flatMap(({ option, near }) =>
+      option.parts.map(({ block, columns, span }) => ({
+        block,
+        cells: listCells(block, shapeSideBlock(block, columns, span, near), grid),
+      })),
+    ),
+  ]
 }
 
 function placeGrid(
@@ -377,8 +344,14 @@ function placeGrid(
       (nodesByRelation[relation] ?? []).map((node, order) => [node.id, order] as const),
     ),
   )
+  let cache = scoreCaches.get(context.options)
+  if (!cache) {
+    cache = new Map()
+    scoreCaches.set(context.options, cache)
+  }
+  const plans = planBlocks(blocks, { grid, cache, isFitFirst: context.isFitFirst === true })
   const placed = new Map<string, PlacedNode>()
-  for (const { block, cells } of planBlocks(blocks, grid)) {
+  for (const { block, cells } of plans) {
     block.members.forEach((node, index) => {
       const cell = cells[index]!
       const footprintY = cell.y - block.cell.height / 2 + getSize(node).height / 2

@@ -36,11 +36,13 @@ export const getPillCenterY = (footprintY: number, room: NodeRoom): number =>
 /** What a node keeps around its pill, as numbers the caller measured. */
 export type Rooms = (node: PlexNode) => NodeRoom
 
+/** With `isFitFirst` the placement may leave its usual shape for one that holds more of the nodes inside the window. */
 export interface PlacementContext {
   readonly options: PlexOptions
   readonly width: Widths
   readonly room: Rooms
   readonly shouldStop?: ((node: PlacedNode) => boolean) | undefined
+  readonly isFitFirst?: boolean | undefined
 }
 
 /**

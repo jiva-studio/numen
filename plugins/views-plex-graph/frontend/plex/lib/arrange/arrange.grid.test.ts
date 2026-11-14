@@ -325,3 +325,26 @@ describe('a note with only jumps in 1400×900', () => {
     expect((jumps.minY + jumps.maxY) / 2).toBeCloseTo(getFocus(frame).y, 6)
   })
 })
+
+// The jumps do not fit under the row of the focus, so the references and the jumps share one block.
+describe('a note with 2 references and 10 jumps in 1400×800', () => {
+  const { frame } = arrange({ reference: 2, jump: 10 }, { width: 1400, height: 800 })
+  const references = ofRelation(frame, 'reference')
+  const jumps = ofRelation(frame, 'jump')
+
+  it('shows every reference and every jump', () => {
+    expect(frame.overflow).toStrictEqual({})
+    expect(references).toHaveLength(2)
+    expect(jumps).toHaveLength(10)
+  })
+
+  it('sets no reference under a jump', () => {
+    expect(Math.max(...references.map(getRowY))).toBeLessThanOrEqual(
+      Math.min(...jumps.map(getRowY)) + 1e-6,
+    )
+  })
+
+  it('overlaps no two notes', () => {
+    expect(getOverlaps(frame)).toStrictEqual([])
+  })
+})
