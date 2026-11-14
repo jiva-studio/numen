@@ -11,8 +11,8 @@ const testDir = defineBddConfig({
   outputDir: '.features-gen',
 })
 
-// A run with video (`npm run acceptance:report`) shows each step's text in the video
-// (support/step-chapters.ts), marks the actions, and writes the scenario report of report/.
+// A run with video (`npm run acceptance:report`) marks the actions in the video and writes the
+// scenario report of report/.
 const isVideoOn = Boolean(process.env.PLAYWRIGHT_VIDEO)
 
 // Every scenario starts a world of its own (drivers/world.ts), with a server and a vault of its own,

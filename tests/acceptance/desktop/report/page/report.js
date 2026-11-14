@@ -172,7 +172,6 @@ const createPlayer = (scenario) =>
 const highlightStep = (stepList, index) => {
   for (const item of stepList.children) {
     const isCurrent = Number(item.dataset.index) === index
-    if (isCurrent && !item.classList.contains('current')) item.scrollIntoView({ block: 'nearest' })
     item.classList.toggle('current', isCurrent)
   }
 }

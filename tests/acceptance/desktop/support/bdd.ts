@@ -2,4 +2,4 @@
 import { createBdd } from 'playwright-bdd'
 import { test } from './test.js'
 
-export const { Given, When, Then, BeforeStep } = createBdd(test)
+export const { Given, When, Then } = createBdd(test)
