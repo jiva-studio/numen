@@ -37,10 +37,18 @@ func TestASettingAbsentFromTheValuesKeepsItsValue(t *testing.T) {
 
 func TestTheStepLimitIsTwentyFiveUntilOneIsConfigured(t *testing.T) {
 	store := settings.NewStore()
+	if store.Get().MaxSteps != 0 || store.Get().GetMaxTokens() != 0 {
+		t.Fatalf("initial store = %+v, want zero MaxSteps and GetMaxTokens", store.Get())
+	}
 	before := store.Get().GetMaxSteps()
+	store.Configure(map[string]string{"maxSteps": "1"})
+	one := store.Get().GetMaxSteps()
 	store.Configure(map[string]string{"maxSteps": "5"})
+	for _, invalid := range []string{"0", "-3", "bad", "999999999999999999999"} {
+		store.Configure(map[string]string{"maxSteps": invalid})
+	}
 
-	if after := store.Get().GetMaxSteps(); before != 25 || after != 5 {
-		t.Errorf("the limits are %d and %d", before, after)
+	if after := store.Get().GetMaxSteps(); before != 25 || one != 1 || after != 5 {
+		t.Errorf("the limits are %d, %d and %d, want 25, 1 and 5", before, one, after)
 	}
 }

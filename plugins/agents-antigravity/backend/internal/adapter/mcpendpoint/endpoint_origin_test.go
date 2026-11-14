@@ -64,6 +64,7 @@ func TestARequestFromAnOriginOutsideTheMachineGets403FromTheEndpoint(t *testing.
 		"http://192.168.1.20:3333",
 		"ftp://localhost",
 		"localhost",
+		"://bad-url",
 	} {
 		if status := postInitialize(t, served, served.token, origin); status != http.StatusForbidden {
 			t.Errorf("an initialize with the token from the origin %s returned %d, want 403", origin, status)

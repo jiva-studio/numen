@@ -29,7 +29,8 @@ Each entry names a check or a lint rule and what it forbids. The verifiers run w
 ## Determinism and ports
 
 - ESLint `no-restricted-syntax` (`createClockSelectors`): `Date.now()`, `new Date()` with no argument and `performance.now()` outside the two declarations that read the clock.
-- `createPortConfig`: a clock, a frame request, a measurement or a source of randomness used by code that has to be held still by a test.
+- `createPortConfig`: a clock, a measurement or a source of randomness used by code that has to be held still by a test.
+- ESLint `no-restricted-globals` and `no-restricted-properties` (`createGlobalRules`): a frame request or `matchMedia` in any source file, and `window`, `document`, `navigator` or `location`, bare or through `globalThis`, in `model/` or a `.vue` file. `win` and `doc` of `@numen/ui` are the port.
 
 ## Libraries and styles
 

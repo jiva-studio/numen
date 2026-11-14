@@ -3,6 +3,7 @@
 package process
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"os"
@@ -144,6 +145,22 @@ func TestARunThatEndsByItselfAnswersAsBefore(t *testing.T) {
 	_, err = runTestProgram(t.Context(), []string{bad})
 	if err == nil || !strings.Contains(err.Error(), "no good") {
 		t.Errorf("a run that failed answered %v", err)
+	}
+
+	var into bytes.Buffer
+	streamed, combined, err := (Runner{}).Run(t.Context(), []string{"sh", "-c", "printf 'into-buf'"}, nil, &into)
+	if err != nil || into.String() != "into-buf" || len(streamed) != 0 || combined != "" {
+		t.Errorf("Run with into answered (%q, %q, %v), into=%q", streamed, combined, err, into.String())
+	}
+
+	stdoutOnly, combinedOut, err := (Runner{}).Run(t.Context(), []string{"sh", "-c", "printf 'stdout-only'"}, nil, nil)
+	if err != nil || string(stdoutOnly) != "stdout-only" || combinedOut != "stdout-only" {
+		t.Errorf("Run stdout-only answered (%q, %q, %v)", stdoutOnly, combinedOut, err)
+	}
+
+	bothOut, combinedStderr, err := (Runner{}).Run(t.Context(), []string{"sh", "-c", "printf 'out-bytes'; printf '!' >&2"}, nil, nil)
+	if err != nil || string(bothOut) != "out-bytes" || combinedStderr != "!" {
+		t.Errorf("Run stdout+1B stderr answered (%q, %q, %v)", bothOut, combinedStderr, err)
 	}
 }
 

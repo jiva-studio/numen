@@ -1,7 +1,7 @@
 /**
  * The commands offered over the note in front, and what carries each out.
  */
-import { runInBackground } from '@numen/ui'
+import { runInBackground, win } from '@numen/ui'
 import { type Command, type FeatureCommands } from '@/entities/command'
 import {
   ARGUMENT,
@@ -14,8 +14,8 @@ import {
   type CommandPlace,
   type Notes,
 } from '@/shared/model/command'
-import { getFileKinds, removeFile } from '@/entities/file'
-import { renameNote, type NoteCreator } from '@/entities/note'
+import type { FileApi } from '@/entities/file'
+import type { NoteApi, NoteCreator } from '@/entities/note'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { ConnectionRole } from '@numen/plugin-loader'
@@ -36,6 +36,8 @@ export interface NoteNavigator {
 
 /** What the commands over a note use of the window. */
 export interface NoteCommandsDeps {
+  readonly files: Pick<FileApi, 'getFileKinds' | 'removeFile'>
+  readonly renameNote: NoteApi['renameNote']
   readonly making: NoteCreator
   readonly notes: Notes
   readonly navigator: NoteNavigator
@@ -59,9 +61,9 @@ const revealFile = (invocation: CommandInvocation, deps: NoteCommandsDeps): void
   if (kind) deps.navigator.showTab(kind, invocation.target.path)
 }
 
-const findNoteKind = async (path: string): Promise<string | undefined> => {
+const findNoteKind = async (path: string, deps: NoteCommandsDeps): Promise<string | undefined> => {
   try {
-    return (await getFileKinds([path])).get(path)?.tabKind
+    return (await deps.files.getFileKinds([path])).get(path)?.tabKind
   } catch {
     return undefined
   }
@@ -83,7 +85,7 @@ const createNoteCommand = async (
   )
   if (!made) return
   const { kind } = invocation.target
-  if (made.path && kind && kind === (await findNoteKind(made.path))) {
+  if (made.path && kind && kind === (await findNoteKind(made.path, deps))) {
     deps.notes.openFile(made.path, made.title, 'split')
   } else if (made.path) {
     await deps.navigator.travel(made.path)
@@ -100,7 +102,7 @@ const renameNoteCommand = async (
   if (!invocation.name || invocation.name === invocation.target.title) return
   const tab = await flushTab(invocation.target.path, deps.notes)
   if (tab.isWaiting) return deps.writeMessage(NOTE_WORDS.unanswered, 'warning')
-  const answer = await renameNote(invocation.target.path, invocation.name)
+  const answer = await deps.renameNote(invocation.target.path, invocation.name)
   if (answer.ok) return
   if (answer.error === 'changed') return deps.writeMessage(NOTE_WORDS.stale, 'warning')
   deps.writeMessage(NOTE_WORDS.errors[answer.error], 'error')
@@ -121,7 +123,7 @@ const removeFiles = async (
       isWaiting = true
       continue
     }
-    const answer = await removeFile(path)
+    const answer = await deps.files.removeFile(path)
     if (!answer.ok) {
       errors.push(NOTE_WORDS.errors[answer.error])
       continue
@@ -137,7 +139,7 @@ const removeFiles = async (
 }
 
 const copyPath = (invocation: CommandInvocation, deps: NoteCommandsDeps): void => {
-  const clipboard = navigator.clipboard as Clipboard | undefined
+  const clipboard = win.navigator.clipboard as Clipboard | undefined
   if (!clipboard) return
   runInBackground(clipboard.writeText(invocation.target.path), (error) =>
     deps.writeMessage(formatError(error), 'error'),
@@ -232,10 +234,7 @@ const createRows = (agent: string): readonly Command[] => [
  * The commands over the note in front, and the one that makes a note. A command reached by Shift
  * and Enter on another one's row is declared too; the row it belongs to is the one that names it.
  */
-export const createNoteCommands = (
-  deps: NoteCommandsDeps,
-  agent: string = navigator.userAgent,
-): FeatureCommands => ({
+export const createNoteCommands = (deps: NoteCommandsDeps, agent: string): FeatureCommands => ({
   commands: createRows(agent),
   handlers: {
     [COMMAND.openFile]: (invocation) => openFile(invocation, deps),

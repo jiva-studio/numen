@@ -53,8 +53,8 @@ type MoveDeps struct {
 func NewMove(d MoveDeps) Move {
 	return Move{
 		readers: d.Readers, writers: d.Writers, links: d.Links,
-		names: d.Names, sources: d.Sources, index: d.Index, now: d.Now,
-		drawing: d.Drawing, sync: d.Sync,
+		names: d.Names, sources: d.Sources, index: getIndexUpdater(d.Index), now: d.Now,
+		drawing: getTellMove(d.Drawing), sync: d.Sync,
 	}
 }
 
@@ -105,10 +105,8 @@ func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, 
 
 	// The file is at its new path and the index is in sync. A view still showing
 	// the old name refers to a path with no file.
-	if u.drawing != nil {
-		if err := u.drawing(ctx, v, domain.Move{From: from, To: to}); err != nil {
-			return res, fmt.Errorf("the window cannot show the move of %s to %s: %w", from, to, err)
-		}
+	if err := u.drawing(ctx, v, domain.Move{From: from, To: to}); err != nil {
+		return res, fmt.Errorf("the window cannot show the move of %s to %s: %w", from, to, err)
 	}
 
 	// What a repaired link is pointed at: the name the note is filed under, or
@@ -252,9 +250,6 @@ func (u Move) repair(
 }
 
 func (u Move) updateIndex(ctx context.Context, v domain.Vault, paths ...string) error {
-	if u.index == nil {
-		return nil
-	}
 	// The files are written, so the index follows them even when the caller is canceled.
 	return edit.WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }

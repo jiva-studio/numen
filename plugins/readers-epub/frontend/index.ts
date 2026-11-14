@@ -5,8 +5,8 @@ import BookTab from './ui/BookTab.vue'
 export { BookTab }
 
 export default definePlugin({
-  activate(context: PluginContext) {
-    context.register.reader({
+  activate(plugin: PluginContext) {
+    plugin.register.reader({
       id: 'reader-epub',
       component: BookTab,
       title: 'EPUB Reader',

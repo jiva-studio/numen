@@ -43,11 +43,18 @@ func postInitialize(t *testing.T, served *Endpoint, token string, origins ...str
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := io.Copy(io.Discard, res.Body); err != nil {
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
 		t.Error(err)
 	}
 	if err := res.Body.Close(); err != nil {
 		t.Error(err)
+	}
+	if res.StatusCode == http.StatusUnauthorized && res.Header.Get("WWW-Authenticate") != `Bearer realm="numen"` {
+		t.Errorf("WWW-Authenticate = %q, want Bearer realm=\"numen\"", res.Header.Get("WWW-Authenticate"))
+	}
+	if res.StatusCode == http.StatusOK && !strings.Contains(string(body), `"jsonrpc"`) {
+		t.Errorf("200 response body = %q, want JSON-RPC response", body)
 	}
 	return res.StatusCode
 }

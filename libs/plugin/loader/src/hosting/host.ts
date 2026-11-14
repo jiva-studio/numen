@@ -3,7 +3,6 @@
  */
 import { shallowRef } from 'vue'
 import type {
-  PluginContext,
   SettingsViewRegistration,
   VaultChangeEvent,
   DropRegistry,
@@ -17,7 +16,8 @@ import { createDropRegistry } from '../drops'
 import { createSlotRegistry, type DeclaredSlotEntry } from '../slots'
 import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views'
 import { createViewRegistry, type ViewRegistry } from '../views'
-import { createPluginContext } from './context'
+import type { PluginParts } from '../host'
+import { createPluginParts } from './context'
 import { isNoteEditorKind } from './customTabBuffer'
 import { addListener, notifyListeners, requestPluginStart } from './events'
 import { createCommandApi } from './commandApi'
@@ -70,13 +70,13 @@ function createRegistrationBridge(
       registerReaderEntry(deps, registry, {
         pluginId,
         registration,
-        getContext: () => registry.contexts.get(pluginId),
+        getContext: () => registry.contexts.get(pluginId)?.plugin,
       }),
     registerTabKind: (pluginId, registration) =>
       registerTabKindEntry(deps, registry, {
         pluginId,
         registration,
-        getContext: () => registry.contexts.get(pluginId),
+        getContext: () => registry.contexts.get(pluginId)?.plugin,
         isNoteEditor: isNoteEditorKind(
           registry.contextManifests?.value.get(pluginId),
           registration.kind,
@@ -250,12 +250,12 @@ interface LifecycleParts {
 
 function createLifecycleApi({ registry, contextHost, keybindings, entries }: LifecycleParts) {
   return {
-    createContext: (pluginId: string, manifest?: Manifest): PluginContext => {
-      let ctx = registry.contexts.get(pluginId)
-      if (!ctx) {
+    createContext: (pluginId: string, manifest?: Manifest): PluginParts => {
+      let parts = registry.contexts.get(pluginId)
+      if (!parts) {
         const effectiveManifest = manifest ?? registry.manifests.get(pluginId)
-        ctx = createPluginContext(pluginId, contextHost, effectiveManifest)
-        registry.contexts.set(pluginId, ctx)
+        parts = createPluginParts(pluginId, contextHost, effectiveManifest)
+        registry.contexts.set(pluginId, parts)
         if (effectiveManifest && registry.contextManifests) {
           registry.contextManifests.value = new Map(registry.contextManifests.value).set(
             pluginId,
@@ -265,7 +265,7 @@ function createLifecycleApi({ registry, contextHost, keybindings, entries }: Lif
         registry.disposed.delete(pluginId)
         registry.activated.value = new Set(registry.activated.value).add(pluginId)
       }
-      return ctx
+      return parts
     },
     markPluginStarting: (pluginId: string): void => setStarting(registry, pluginId, true),
     markPluginStarted: (pluginId: string): void => setStarting(registry, pluginId, false),

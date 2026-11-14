@@ -3,7 +3,12 @@
  * their list, drawn in the slot `titleBar.status`.
  */
 import { defineComponent, h } from 'vue'
-import { definePlugin, type BackgroundTaskHost, type PluginContext } from '@numen/plugin-sdk'
+import {
+  definePlugin,
+  type BackgroundTaskHost,
+  type HostServices,
+  type PluginContext,
+} from '@numen/plugin-sdk'
 import { useBackgroundTasks } from './model/useBackgroundTasks'
 import TasksStatus from './ui/TasksStatus.vue'
 
@@ -30,10 +35,10 @@ export function createTasksView(host: BackgroundTaskHost | undefined) {
   })
 }
 
-export const activate = (context: PluginContext): void => {
-  context.register.slotView({
+export const activate = (plugin: PluginContext, host: HostServices): void => {
+  plugin.register.slotView({
     id: TASKS_VIEW,
-    component: createTasksView(context.work.backgroundTasks),
+    component: createTasksView(host.work.backgroundTasks),
   })
 }
 

@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createPluginHost, createPluginLoader, type PluginHost } from '@numen/plugin-loader'
 import type { DeclaredCommand } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
+import { UNANSWERED_RUNS } from '@/testing/declaredCommands'
 
 const declare = (pluginId: string, id: string): DeclaredCommand => ({
   pluginId,
@@ -21,6 +22,7 @@ async function createWindow() {
   const hasBackend = (pluginId: string): boolean => pluginId === BACKEND
   const holder: { current?: PluginHost } = {}
   const declared = useDeclaredCommands({
+    ...UNANSWERED_RUNS,
     list: async () => ({
       commands: [
         declare(VIEW, 'tree.open'),
@@ -53,7 +55,7 @@ describe('the commands of a view plugin that starts in a window with a backend p
   it('are not reported as missing while the plugin registers them one after the other', async () => {
     const { loader, reportCommandIssue } = await createWindow()
     loader.registerPluginModule(VIEW, async () => ({
-      activate: (context: ReturnType<PluginHost['lifecycle']['createContext']>) => {
+      activate: (context: ReturnType<PluginHost['lifecycle']['createContext']>['plugin']) => {
         context.register.command({ id: 'tree.open', handler: () => undefined })
         context.register.command({ id: 'tree.revealNote', handler: () => undefined })
       },

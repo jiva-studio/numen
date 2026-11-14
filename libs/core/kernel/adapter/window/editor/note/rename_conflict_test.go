@@ -53,7 +53,7 @@ func TestRenamingANoteChangedElsewhereAnswersWithAConflict(t *testing.T) {
 		Readers: vaultreader.Readers{}, Writers: staleNoteWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}},
 		Now: testsupport.NewClock(),
 	}
-	rename := notecase.NewRename(deps, notecase.NewMove(deps), notecase.OpenGate{})
+	rename := notecase.NewRename(deps, notecase.NewMove(deps), testsupport.OpenGate{})
 	session := openSession{vault: domain.Vault{ID: "v1", Name: "v1", Path: root}}
 	prose := NewProse(session, nil, nil, nil, &rename, session)
 

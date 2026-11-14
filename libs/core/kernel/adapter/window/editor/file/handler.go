@@ -24,11 +24,6 @@ type Tree interface {
 	PublishChange(paths ...string)
 }
 
-// IndexFollow reports whether the index followed a write.
-type IndexFollow interface {
-	IsIndexOutdated(err error) bool
-}
-
 var (
 	errClosing = broadcast.ErrClosing
 	errNoVault = errors.New("the window has no vault")
@@ -73,17 +68,14 @@ type Changes struct {
 	vault      Vault
 	tree       Tree
 	move       *vaults.MoveFile
-	remove     *note.Remove
+	remove     *note.RemoveFile
 	emptyTrash *note.EmptyTrash
-	writes     IndexFollow
 }
 
 // NewChanges is the part of FileService that moves and removes files.
 func NewChanges(
 	window Vault, tree Tree,
-	move *vaults.MoveFile, remove *note.Remove, emptyTrash *note.EmptyTrash, writes IndexFollow,
+	move *vaults.MoveFile, remove *note.RemoveFile, emptyTrash *note.EmptyTrash,
 ) *Changes {
-	return &Changes{
-		vault: window, tree: tree, move: move, remove: remove, emptyTrash: emptyTrash, writes: writes,
-	}
+	return &Changes{vault: window, tree: tree, move: move, remove: remove, emptyTrash: emptyTrash}
 }
