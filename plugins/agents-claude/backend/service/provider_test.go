@@ -427,3 +427,35 @@ func TestNothingIsDetectedWithoutTheProgram(t *testing.T) {
 		t.Errorf("DetectConnections = %+v, %v, want none", found, err)
 	}
 }
+
+func TestCompleteReturnsAnErrorWhenThePluginStopsAfterSomeText(t *testing.T) {
+	started := filepath.Join(t.TempDir(), "started")
+	script := `printf '%s\n' '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"half an ans"}}}'` +
+		"\ntouch " + started + "\nsleep 30\n"
+	svc := newClaude(t, nil, writeScript(t, "claude", script))
+	type outcome struct {
+		result *llm.CompleteResult
+		err    error
+	}
+	done := make(chan outcome, 1)
+	go func() {
+		result, err := llmtest.Complete(t.Context(), svc.Provider(), completeCall(nil), userMessage("hi"))
+		done <- outcome{result: result, err: err}
+	}()
+	for {
+		if _, err := os.Stat(started); err == nil {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	time.Sleep(100 * time.Millisecond)
+
+	if err := svc.tasks.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	got := <-done
+	if got.err == nil || got.result.GetText() != "" {
+		t.Errorf("Complete = %q, %v, want an error and no text", got.result.GetText(), got.err)
+	}
+}
