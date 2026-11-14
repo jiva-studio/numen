@@ -55,7 +55,9 @@ describe('making an untitled note', () => {
   it('asks the core for a note with no title, in the folder', async () => {
     const { notes, write } = fake()
 
-    expect(await createNoteWriter(making, write).createUntitledNote('physics')).toBe('Untitled note.md')
+    expect(await createNoteWriter(making, write).createUntitledNote('physics')).toBe(
+      'Untitled note.md',
+    )
     expect(notes).toStrictEqual([{ title: '', folder: 'physics' }])
   })
 
@@ -117,7 +119,9 @@ describe('making a note under a name a person gave it', () => {
   it('says why the core made no related note', async () => {
     const { write, messages } = fake({ related: { error: NOTE_ERROR_CODE.NOT_FOUND } })
 
-    expect(await createNoteWriter(making, write).createWithTitle('Entropy', 'A.md', 'parent')).toBeNull()
+    expect(
+      await createNoteWriter(making, write).createWithTitle('Entropy', 'A.md', 'parent'),
+    ).toBeNull()
     expect(messages.at(-1)).toStrictEqual({
       text: getRelationErrorWords('notFound'),
       kind: 'error',
@@ -134,7 +138,9 @@ describe('making a note under a name a person gave it', () => {
     })
     const { write, last, messages } = writer()
 
-    expect(await createNoteWriter(making, write).createWithTitle('Entropy', 'A.md', 'jump')).toBeNull()
+    expect(
+      await createNoteWriter(making, write).createWithTitle('Entropy', 'A.md', 'jump'),
+    ).toBeNull()
     expect(last()).toContain('Numen is not responding')
     expect(messages.at(-1)?.kind).toBe('error')
   })

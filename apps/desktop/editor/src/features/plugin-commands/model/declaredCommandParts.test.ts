@@ -36,7 +36,8 @@ async function load(
   isListed: (id: string) => boolean,
   hasBackend: (pluginId: string) => boolean = () => true,
 ) {
-  const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+  const declared = useDeclaredCommands({
+    ...UNANSWERED_RUNS,
     list: async () => ({ commands: [createDeck, openPreset, openTree], slots: [] }),
     isListed,
     hasBackend,
@@ -107,7 +108,8 @@ describe('the handlers for the plugin host', () => {
       title: 'Extract text layer',
       hasItems: false,
     }
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       list: async () => ({ commands: [], slots: [], handlers: [handler] }),
     })
     expect(declared.contributions.handlers.value).toBeUndefined()

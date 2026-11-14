@@ -10,7 +10,12 @@ const waitForAnswer = (state: unknown) =>
 
 describe('createUnavailableKind', () => {
   it('keeps the name of the missing kind and what the tab stood on', () => {
-    const kind = createUnavailableKind(UnavailablePane, 'reader:viewer', undefined, NO_TAB_KIND_PLUGINS)
+    const kind = createUnavailableKind(
+      UnavailablePane,
+      'reader:viewer',
+      undefined,
+      NO_TAB_KIND_PLUGINS,
+    )
 
     const state = kind.open('/a.bin', 'tab')
 
@@ -20,7 +25,12 @@ describe('createUnavailableKind', () => {
   })
 
   it('keeps the state the plugin saved for the tab', () => {
-    const kind = createUnavailableKind(UnavailablePane, 'reader:viewer', undefined, NO_TAB_KIND_PLUGINS)
+    const kind = createUnavailableKind(
+      UnavailablePane,
+      'reader:viewer',
+      undefined,
+      NO_TAB_KIND_PLUGINS,
+    )
 
     const state = kind.open('a.bin', 'tab', { page: 4 })
 
@@ -42,7 +52,9 @@ describe('createUnavailableKind', () => {
   })
 
   it('draws the tab with the pane it is given', () => {
-    expect(createUnavailableKind(UnavailablePane, 'files', undefined, NO_TAB_KIND_PLUGINS).pane).toBe(UnavailablePane)
+    expect(
+      createUnavailableKind(UnavailablePane, 'files', undefined, NO_TAB_KIND_PLUGINS).pane,
+    ).toBe(UnavailablePane)
   })
 
   it('names a tab with no path and no title after the kind the catalog declares once it answers', async () => {

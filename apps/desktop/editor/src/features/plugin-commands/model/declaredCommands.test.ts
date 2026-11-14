@@ -27,7 +27,8 @@ const createPaletteCommands = async (
   contentTypes: Readonly<Record<string, string>> = {},
   deps: Partial<DeclaredCommandsDeps> = {},
 ) => {
-  const commands = useDeclaredCommands({ ...UNANSWERED_RUNS,
+  const commands = useDeclaredCommands({
+    ...UNANSWERED_RUNS,
     registry,
     list: async () => ({ commands: declared, slots: [], contentTypes }),
     ...deps,
@@ -146,7 +147,8 @@ describe('a declared command with items', () => {
 
   it('runs over the file with the item picked as its itemId', async () => {
     const run = vi.fn().mockResolvedValue({ ok: true, value: { message: '', openedPath: '' } })
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => ({ commands: [proofread], slots: [] }),
       run,
@@ -173,7 +175,8 @@ describe('a declared command with items', () => {
 describe('a run of a declared command', () => {
   it('sends that a place named its target', async () => {
     const run = vi.fn().mockResolvedValue({ ok: true, value: { message: '', openedPath: '' } })
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => ({ commands: [createSample], slots: [] }),
       run,
@@ -216,7 +219,8 @@ describe('a run of a declared command', () => {
       ok: true,
       value: { message: 'Made a sample', openedPath: 'Verbs.md' },
     })
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => ({ commands: [createSample], slots: [] }),
       run,
@@ -258,7 +262,8 @@ describe('a run of a declared command', () => {
   })
 
   it('that failed says why as an error', async () => {
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => ({ commands: [convert], slots: [] }),
       run: async () => ({ ok: false, error: 'the disk is full' }),
@@ -289,7 +294,8 @@ describe('a run of a declared command', () => {
 
   it('is no longer handled once the plugins no longer declare it', async () => {
     let commandList: readonly DeclaredCommand[] = [convert]
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => ({ commands: commandList, slots: [] }),
       run: vi.fn(),
@@ -306,7 +312,8 @@ describe('a run of a declared command', () => {
 
 describe('a run that opens a file', () => {
   it('answers the path it opened', async () => {
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => ({ commands: [createSample], slots: [] }),
       run: async () => ({ ok: true, value: { message: '', openedPath: 'Verbs.md' } }),
@@ -337,7 +344,8 @@ describe('a run that opens a file', () => {
 
 describe('a run that opens a file and says nothing', () => {
   it('writes no message', async () => {
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => ({ commands: [createSample], slots: [] }),
       run: async () => ({ ok: true, value: { message: '', openedPath: 'Verbs.md' } }),
@@ -370,7 +378,8 @@ describe('a run that opens a file and says nothing', () => {
   })
 
   it('does not open a file when openedPath is empty', async () => {
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => ({ commands: [createSample], slots: [] }),
       run: async () => ({ ok: true, value: { message: 'Done', openedPath: '' } }),
@@ -409,7 +418,8 @@ describe('the declared commands read more than once', () => {
       answerFirst = resolve
     })
     const lists = [first, Promise.resolve({ commands: [convert], slots: [] })]
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: () => lists.shift() as Promise<DeclaredList>,
     })
@@ -423,7 +433,8 @@ describe('the declared commands read more than once', () => {
   })
 
   it('keep the lists they hold, and register no command again, when a read answers the same', async () => {
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => ({
         commands: [{ ...createSample, arguments: [...createSample.arguments] }],
@@ -453,7 +464,8 @@ describe('the declared commands read more than once', () => {
       { commands: [createSample], slots: [] },
       { commands: [convert], slots: [] },
     ]
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => lists.shift() as DeclaredList,
     })
@@ -466,7 +478,8 @@ describe('the declared commands read more than once', () => {
 
   it('resolves waitForFirstList after the first list arrives', async () => {
     let answer: (list: DeclaredList) => void = () => undefined
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: () => new Promise<DeclaredList>((resolve) => (answer = resolve)),
     })
@@ -484,7 +497,8 @@ describe('the declared commands read more than once', () => {
   })
 
   it('settle the wait for the first list when the read fails', async () => {
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: () => Promise.reject(new Error('core gone')),
     })
@@ -495,7 +509,8 @@ describe('the declared commands read more than once', () => {
   })
 
   it('are none until the first read has answered', async () => {
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => ({ commands: [convert], slots: [] }),
     })
@@ -509,7 +524,8 @@ describe('the declared commands read more than once', () => {
 
 describe('a declared command the palette leaves out', () => {
   it('is one the plugin host lists', async () => {
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       registry,
       list: async () => ({ commands: [createSample, convert], slots: [] }),
       isListed: () => true,

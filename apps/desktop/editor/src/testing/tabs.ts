@@ -6,7 +6,9 @@ import { createWindowTabs, RestoreFailedPane, UnavailablePane } from '@/entities
 type UnavailableServices = Parameters<typeof createWindowTabs>[1]
 
 /** A catalog that names no plugin for any kind of tab. */
-export const NO_TAB_KIND_PLUGINS: UnavailableServices = { findTabKindPlugin: () => Promise.resolve(null) }
+export const NO_TAB_KIND_PLUGINS: UnavailableServices = {
+  findTabKindPlugin: () => Promise.resolve(null),
+}
 
 /**
  * The tabs of a window; `unavailable` is what the placeholder of a missing kind reads and does, a

@@ -41,22 +41,22 @@ const CORE_FAULT = 'internal error'
 
 /** The core of every window of the test, answered from `wire`. */
 const core = createCoreHandlerTransport({
-    resolveAddresses: (request: unknown) => wire.resolveAddresses(request),
-    getPlugins: (request: unknown) => wire.getPlugins(request),
-    listVaults: (request: unknown) => wire.listVaults(request),
-    listThemes: (request: unknown) => wire.listThemes(request),
-    readTheme: (request: unknown) => wire.readTheme(request),
-    writeAppearance: (request: unknown) => wire.writeAppearance(request),
-    watchThemes: (_request: unknown, context: { signal: AbortSignal }) => {
-      wire.themeSignals.push(context.signal)
-      return wire.themeStream()
-    },
-    watchTasks: (request: unknown, context: { signal: AbortSignal }) => {
-      wire.requestedTasks.push(request)
-      wire.taskSignals.push(context.signal)
-      return wire.tasks()
-    },
-  })
+  resolveAddresses: (request: unknown) => wire.resolveAddresses(request),
+  getPlugins: (request: unknown) => wire.getPlugins(request),
+  listVaults: (request: unknown) => wire.listVaults(request),
+  listThemes: (request: unknown) => wire.listThemes(request),
+  readTheme: (request: unknown) => wire.readTheme(request),
+  writeAppearance: (request: unknown) => wire.writeAppearance(request),
+  watchThemes: (_request: unknown, context: { signal: AbortSignal }) => {
+    wire.themeSignals.push(context.signal)
+    return wire.themeStream()
+  },
+  watchTasks: (request: unknown, context: { signal: AbortSignal }) => {
+    wire.requestedTasks.push(request)
+    wire.taskSignals.push(context.signal)
+    return wire.tasks()
+  },
+})
 
 const VAULTS: readonly VaultRow[] = [
   { id: 'physics', name: 'Physics', path: '/vaults/Physics' },

@@ -29,9 +29,8 @@ export const createAnsweredApi = (answers: CoreAnswers) =>
   createWindowApi(createAnsweredTransports(answers))
 
 /** The clients of a window whose core answers each call by the handler named by its method. */
-export const createHandledClients = (
-  handlers: Parameters<typeof createCoreHandlerTransport>[0],
-) => createWindowClients(createTestTransports(createCoreHandlerTransport(handlers)))
+export const createHandledClients = (handlers: Parameters<typeof createCoreHandlerTransport>[0]) =>
+  createWindowClients(createTestTransports(createCoreHandlerTransport(handlers)))
 
 /** Every call of a window whose core answers each call by the handler named by its method. */
 export const createHandledApi = (handlers: Parameters<typeof createCoreHandlerTransport>[0]) =>

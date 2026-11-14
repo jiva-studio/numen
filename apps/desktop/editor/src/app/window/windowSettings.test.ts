@@ -17,7 +17,6 @@ import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 import { createLostConnection, type CoreAnswers } from '@numen/core-client/testing'
 
-
 const createSettings = (
   overrides: Partial<Parameters<typeof createWindowSettingsPart>[0]> = {},
   others: CoreAnswers = {},

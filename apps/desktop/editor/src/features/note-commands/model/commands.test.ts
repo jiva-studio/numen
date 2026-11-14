@@ -59,9 +59,7 @@ const createWindow = (answers: Answers = {}) => {
         .find(([, code]) => code === request.role)?.[0]
         ?.toLowerCase()
       actions.push(`createRelated ${request.title} ${request.from} ${role}`)
-      return answers.isMade === false
-        ? { isNameExhausted: true }
-        : { path: `${request.title}.md` }
+      return answers.isMade === false ? { isNameExhausted: true } : { path: `${request.title}.md` }
     },
     renameNote: (request: { path: string; title: string }) => {
       actions.push(`rename ${request.path} ${request.title}`)

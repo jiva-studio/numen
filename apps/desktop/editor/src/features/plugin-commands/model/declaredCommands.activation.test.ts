@@ -21,7 +21,8 @@ const BACKEND = 'md.numen.importing'
 async function createWindow() {
   const hasBackend = (pluginId: string): boolean => pluginId === BACKEND
   const holder: { current?: PluginHost } = {}
-  const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+  const declared = useDeclaredCommands({
+    ...UNANSWERED_RUNS,
     list: async () => ({
       commands: [
         declare(VIEW, 'tree.open'),

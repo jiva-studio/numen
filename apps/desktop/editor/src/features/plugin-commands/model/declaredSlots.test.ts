@@ -17,7 +17,10 @@ const list = (...slots: DeclaredSlot[]): DeclaredList => ({ commands: [], slots 
 
 describe('the slot entries of the plugins', () => {
   it('are unknown until the first list has answered', async () => {
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS, list: async () => list(menu('atlas.open')) })
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
+      list: async () => list(menu('atlas.open')),
+    })
 
     expect(declared.slots.value).toBeUndefined()
     await declared.load()
@@ -26,7 +29,8 @@ describe('the slot entries of the plugins', () => {
   })
 
   it('keep the group and the order of each entry', async () => {
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS,
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
       list: async () =>
         list(
           menu('atlas.open', { group: 'navigate', order: 20 }),
@@ -48,7 +52,10 @@ describe('the slot entries of the plugins', () => {
       answerFirst = resolve
     })
     const answers = [first, Promise.resolve(list(menu('atlas.newest')))]
-    const declared = useDeclaredCommands({ ...UNANSWERED_RUNS, list: () => answers.shift() as Promise<DeclaredList> })
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
+      list: () => answers.shift() as Promise<DeclaredList>,
+    })
 
     const slow = declared.load()
     await declared.load()

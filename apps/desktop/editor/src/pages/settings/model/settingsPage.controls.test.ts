@@ -293,7 +293,6 @@ const THEME = {
   },
 }
 
-
 beforeEach(() => {
   vi.useFakeTimers()
   vi.stubGlobal(
