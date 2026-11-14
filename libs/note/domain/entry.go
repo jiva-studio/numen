@@ -8,7 +8,5 @@ type Entry struct {
 	Name     string
 	IsFolder bool
 	Kind     SourceKind
-	// ModTime is when the file or folder was last modified. It is zero where
-	// the entry is not read from a disk.
-	ModTime time.Time
+	ModTime  time.Time
 }
