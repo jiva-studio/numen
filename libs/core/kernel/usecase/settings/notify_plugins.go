@@ -33,9 +33,13 @@ type NotifyPluginsDeps struct {
 
 // NewNotifyPlugins makes the use case.
 func NewNotifyPlugins(deps NotifyPluginsDeps) *NotifyPlugins {
+	signal := deps.Signal
+	if signal == nil {
+		signal = func() {}
+	}
 	return &NotifyPlugins{
 		codec: deps.Codec, apply: deps.Apply, config: deps.Config,
-		resolveProfile: deps.ResolveProfile, signal: deps.Signal, report: deps.Report,
+		resolveProfile: deps.ResolveProfile, signal: signal, report: deps.Report,
 	}
 }
 
@@ -47,9 +51,7 @@ func getPerformancePath() []string {
 // performance profile. A failure is reported and the rest of the batch is still given.
 func (u *NotifyPlugins) Execute(batch []settingsdomain.Setting) {
 	u.updatePluginSettings(batch)
-	if u.signal != nil {
-		defer u.signal()
-	}
+	defer u.signal()
 	for _, one := range batch {
 		if !slices.Equal(one.Path, getPerformancePath()) {
 			continue

@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -499,16 +500,17 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) stubSession {
 			closes.add(db.Close)
 			readerOptions := vaultconfig.Options{}
 			readers := vaultreader.Readers{Options: readerOptions}
-			notes := vaults.NewScan(readers, db.Vaults(),
-				db.Notes(),
-				db.NoteQueries(), db.Maintenance(), nil)
-			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
-			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
+			notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
+			books := filetext.NewIndex(filetext.IndexDeps{
+				Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
+				Texts: testsupport.Texts{Readers: readers},
+			})
+			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, nil, none.SearchSource{})
 			if s.embedder != nil {
 				if err := db.FitVectors(ctx, width, s.embedder.Describe().Recipe()); err != nil {
 					return cli.Indexed{}, err
 				}
-				embed.Source = sourcefake.Wrap(s.embedder)
+				embed = vectors.NewEmbed(readers, db.Sources(), db.Sources(), none.IndexClaim{}, nil, sourcefake.Wrap(s.embedder))
 			}
 			read := indexing.NewReadWholeVaultByName(registry.NewFind(singleVaultList{target}).Execute, preparingRead(indexing.NewReadWholeVault(notes, books, embed)))
 			read.Unembedded = s.unembedded

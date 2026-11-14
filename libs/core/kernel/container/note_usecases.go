@@ -9,7 +9,6 @@ type NoteUseCases struct {
 	Edit    NoteEditing
 	Place   NotePlacing
 	Connect NoteConnecting
-	Refer   NoteReferring
 }
 
 // NoteEditing reads and changes the text of a note.
@@ -37,9 +36,4 @@ type NoteConnecting struct {
 	RemoveConnection note.RemoveConnection
 	Join             note.Join
 	CreateInRelation note.CreateInRelation
-}
-
-// NoteReferring adds the links of notes.
-type NoteReferring struct {
-	AddLinks note.AddLinks
 }
