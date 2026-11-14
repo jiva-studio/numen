@@ -51,7 +51,14 @@ func NewRun(
 	commands pluginport.PluginCommands, runs pluginport.PluginCommandRuns, types contenttypeport.ContentTypeTable,
 	notes NoteReader, config pluginport.WhenConfig, conditions *when.Conditions,
 ) Run {
-	return Run{commands: commands, runs: runs, types: types, notes: notes, config: config, conditions: conditions}
+	run := Run{commands: commands, runs: runs, types: types, notes: noNotes{}, config: noConfig{}, conditions: conditions}
+	if notes != nil {
+		run.notes = readingNotes{notes}
+	}
+	if config != nil {
+		run.config = givenConfig{config}
+	}
+	return run
 }
 
 // List lists the commands the enabled plugins declare.
@@ -119,8 +126,8 @@ type Run struct {
 	commands   pluginport.PluginCommands
 	runs       pluginport.PluginCommandRuns
 	types      contenttypeport.ContentTypeTable
-	notes      NoteReader
-	config     pluginport.WhenConfig
+	notes      targetNotes
+	config     targetConfig
 	conditions *when.Conditions
 }
 
@@ -177,8 +184,8 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared manifest.Co
 	if err != nil {
 		return fmt.Errorf("read the note %s: %w", call.Path, err)
 	}
-	if u.config != nil && slices.Contains(condition.ListNames(), "config") {
-		values = values.WithConfig(u.config.GetWhenConfig())
+	if slices.Contains(condition.ListNames(), "config") {
+		values = u.config.addConfig(values)
 	}
 	if condition.Evaluate(values.Get()) == when.False {
 		return fmt.Errorf("%w: %s is not available over %q, as its condition %q does not hold there",
@@ -240,14 +247,10 @@ func (u Run) readNote(
 	ctx context.Context, v domain.Vault, condition when.Condition, target plugin.TargetValues, path string,
 ) (plugin.TargetValues, error) {
 	names := condition.ListNames()
-	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || u.notes == nil || !target.IsNote() {
+	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || !target.IsNote() {
 		return target, nil
 	}
-	noteType, properties, err := u.notes.Execute(ctx, v, path)
-	if err != nil {
-		return target, err
-	}
-	return target.WithNote(noteType, properties), nil
+	return u.notes.addNote(ctx, v, target, path)
 }
 
 func hasItems(conditions *when.Conditions, command manifest.Command) bool {
@@ -275,3 +278,41 @@ func (u ContentTypes) Execute() map[string]string {
 	}
 	return out
 }
+
+// targetNotes adds the type and the properties of a note to the values a condition reads.
+type targetNotes interface {
+	addNote(ctx context.Context, v domain.Vault, target plugin.TargetValues, path string) (plugin.TargetValues, error)
+}
+
+type readingNotes struct{ reader NoteReader }
+
+func (n readingNotes) addNote(ctx context.Context, v domain.Vault, target plugin.TargetValues, path string) (plugin.TargetValues, error) {
+	noteType, properties, err := n.reader.Execute(ctx, v, path)
+	if err != nil {
+		return target, err
+	}
+	return target.WithNote(noteType, properties), nil
+}
+
+// noNotes leaves a condition over the type or the properties of a note undecided.
+type noNotes struct{}
+
+func (noNotes) addNote(_ context.Context, _ domain.Vault, target plugin.TargetValues, _ string) (plugin.TargetValues, error) {
+	return target, nil
+}
+
+// targetConfig adds the config variable to the values a condition reads.
+type targetConfig interface {
+	addConfig(values plugin.TargetValues) plugin.TargetValues
+}
+
+type givenConfig struct{ config pluginport.WhenConfig }
+
+func (c givenConfig) addConfig(values plugin.TargetValues) plugin.TargetValues {
+	return values.WithConfig(c.config.GetWhenConfig())
+}
+
+// noConfig leaves a condition over config undecided.
+type noConfig struct{}
+
+func (noConfig) addConfig(values plugin.TargetValues) plugin.TargetValues { return values }

@@ -13,8 +13,11 @@ func TestAnAddressThatCannotCarryAKeyIsRefused(t *testing.T) {
 		"no host":                         "https:///v1",
 		"a user name":                     "https://user:pass@example.com/v1",
 		"a link-local address":            "http://169.254.169.254/latest",
+		"https link-local address":        "https://169.254.169.254/latest",
+		"the short metadata name":         "https://metadata/v1",
 		"the metadata name":               "https://metadata.google.internal/v1",
 		"the unspecified host":            "http://0.0.0.0:8080/v1",
+		"https unspecified host":          "https://0.0.0.0:8080/v1",
 		"plain http to a host":            "http://example.com/v1",
 		"plain http to a private address": "http://192.168.1.20/v1",
 	}
@@ -40,6 +43,10 @@ func TestAKeyMayGoOverPlainHTTPToTheLoopbackOnly(t *testing.T) {
 			t.Errorf("%s: err = %v", address, err)
 		}
 	}
+	parsed, err := Parse("https://example.com/v1", true)
+	if err != nil || parsed == nil || parsed.Host != "example.com" {
+		t.Errorf("Parse(https://example.com/v1, true) = %v, %v", parsed, err)
+	}
 }
 
 func TestAResolvedAddressIsCheckedBeforeAConnectionIsMade(t *testing.T) {
@@ -62,7 +69,9 @@ func TestAResolvedAddressIsCheckedBeforeAConnectionIsMade(t *testing.T) {
 		{"::", false, false, true},
 		{"224.0.0.1", false, false, true},
 		{"100.100.100.200", false, false, true},
+		{"::ffff:100.100.100.200", false, false, true},
 		{"fd00:ec2::254", false, false, true},
+		{"fd00:ec2::254%eth0", false, false, true},
 	}
 	for _, one := range cases {
 		err := CheckResolved(netip.MustParseAddr(one.address), one.hasKey && one.isPlain)

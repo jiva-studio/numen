@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"unicode"
 )
 
 // Options is what a run of the program is started from. Servers are the names of the person's own MCP
@@ -95,9 +94,11 @@ func Build(in Options) []string {
 	return appendRunFlags(args, in)
 }
 
+const serverPrefixChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+
 func getServerPrefix(server string) string {
 	return strings.Map(func(char rune) rune {
-		if char < 128 && (unicode.IsLetter(char) || unicode.IsDigit(char) || char == '_' || char == '-') {
+		if strings.ContainsRune(serverPrefixChars, char) {
 			return char
 		}
 		return '_'
