@@ -67,7 +67,11 @@ func TestDrivenAdaptersCallATechnology(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
 	}
-	checkDrivenAdaptersCallATechnology(t, load.Workspace(t, "libs/core/kernel"))
+	for _, platform := range load.ListShippedPlatforms() {
+		t.Run(platform.GOOS+"/"+platform.GOARCH, func(t *testing.T) {
+			checkDrivenAdaptersCallATechnology(t, load.LoadWorkspaceFor(t, platform, "libs/core/kernel"))
+		})
+	}
 }
 
 func TestMain(m *testing.M) {
@@ -129,27 +133,35 @@ func TestConnectClientCallRule_ReadsTheClientTypeOfTheLibrary(t *testing.T) {
 	}
 }
 
-// A package nested in an adapter family that a sibling of the family imports and that implements no port holds what
-// the family shares, and calls no technology of its own. One that implements a port, one that no other package of
-// its family imports, and one imported from another family are adapters and still have to call a technology.
-func TestTechnologyRule_LetsAFamilyShareItsPlumbing(t *testing.T) {
+// The rule is decided per shipped platform: an adapter that calls a technology only in the files of one platform
+// calls nothing on the others.
+func TestTechnologyRule_DecidesPerPlatform(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
-		"port/storeport/store.go":            "package storeport\n\ntype Store interface{ Save() }\n",
+		"adapter/index/recycle/recycle.go":         "package recycle\n\nfunc Empty() error { return empty() }\n",
+		"adapter/index/recycle/recycle_windows.go": "package recycle\n\nimport \"os\"\n\nfunc empty() error { return os.Remove(\"bin\") }\n",
+		"adapter/index/recycle/recycle_other.go":   "//go:build !windows\n\npackage recycle\n\nfunc empty() error { return nil }\n",
+	})
+	for _, platform := range load.ListShippedPlatforms() {
+		found, driven := getAdapterTechnologyFindings(load.LoadFixtureFor(t, dir, platform), "fixture", map[string]string{})
+		var want []string
+		if platform.GOOS != "windows" {
+			want = []string{"adapter/index/recycle is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing"}
+		}
+		if !slices.Equal(found, want) || driven != 1 {
+			t.Errorf("on %s/%s the rule rejects %v of %d driven adapters, want %v of 1", platform.GOOS, platform.GOARCH, found, driven, want)
+		}
+	}
+}
+
+// A package of an adapter family that a sibling imports is an adapter too and has to call a technology.
+func TestTechnologyRule_RejectsAPackageItsFamilyImports(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
 		"internal/adapter/pl/lease/lease.go": "package lease\n\ntype Lease struct{ Release func() }\n",
-		"internal/adapter/pl/store/store.go": "package store\n\ntype Store struct{}\n\nfunc (Store) Save() {}\n",
-		"internal/adapter/pl/user/user.go": "package user\n\nimport (\n\t\"os\"\n\n\t\"fixture/internal/adapter/pl/lease\"\n\t\"fixture/internal/adapter/pl/store\"\n)\n\n" +
-			"func Use(l lease.Lease, s store.Store) { _, _, _ = l, s, os.Getpid() }\n",
-		"internal/adapter/pl/lonely/lonely.go":   "package lonely\n\ntype Lonely struct{ Release func() }\n",
-		"internal/adapter/ot/hollow/hollow.go":   "package hollow\n\ntype Hollow struct{ Release func() }\n",
-		"internal/adapter/ot/user/user.go":       "package user\n\nimport (\n\t\"os\"\n\n\t\"fixture/internal/adapter/ot/hollow\"\n)\n\nfunc Use(h hollow.Hollow) { _, _ = h, os.Getpid() }\n",
-		"internal/adapter/pl/foreign/foreign.go": "package foreign\n\nimport \"fixture/internal/adapter/ot/hollow\"\n\nfunc Use(h hollow.Hollow) error { _ = h; return nil }\n",
+		"internal/adapter/pl/user/user.go": "package user\n\nimport (\n\t\"os\"\n\n\t\"fixture/internal/adapter/pl/lease\"\n)\n\n" +
+			"func Use(l lease.Lease) { _, _ = l, os.Getpid() }\n",
 	})
 	found, _ := getAdapterTechnologyFindings(load.LoadFixture(t, dir), "fixture", map[string]string{})
-	want := []string{
-		"internal/adapter/pl/foreign is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
-		"internal/adapter/pl/lonely is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
-		"internal/adapter/pl/store is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing",
-	}
+	want := []string{"internal/adapter/pl/lease is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing"}
 	if !slices.Equal(found, want) {
 		t.Errorf("the rule rejects %v, want %v", found, want)
 	}

@@ -1,5 +1,6 @@
-const getSearch = (): string =>
-  typeof globalThis.location === 'undefined' ? '' : globalThis.location.search
+import { hasWindow, win } from '@numen/ui'
+
+const getSearch = (): string => (hasWindow() ? win.location.search : '')
 
 /** Whether this window was made to show a tab detached or moved from another window. */
 export function isSecondaryWindow(search: string = getSearch()): boolean {
