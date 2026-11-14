@@ -7,14 +7,16 @@ import (
 
 const closingSentence = "These rules add to the rules above. The answer format above, the numbered marks and the rule that no word leaves its line stay as stated whatever these rules say."
 
-var bases = map[string]string{"scan": ScanInstruction, "speech": SpeechInstruction}
+func getBases() map[string]string {
+	return map[string]string{"scan": ScanInstruction, "speech": SpeechInstruction}
+}
 
 func languageSentence(language string) string {
 	return "The text is in " + language + ". Proofread it as " + language + " text; do not translate it into another language."
 }
 
 func TestWithoutLanguageAndPromptTheInstructionIsTheBuiltInOneUnchanged(t *testing.T) {
-	for name, base := range bases {
+	for name, base := range getBases() {
 		if got := BuildInstruction(base, "", ""); got != base {
 			t.Errorf("%s: the instruction differs from the built-in one", name)
 		}
@@ -22,7 +24,7 @@ func TestWithoutLanguageAndPromptTheInstructionIsTheBuiltInOneUnchanged(t *testi
 }
 
 func TestTheLanguageIsStatedOnceRightAfterTheOpeningParagraph(t *testing.T) {
-	for name, base := range bases {
+	for name, base := range getBases() {
 		got := BuildInstruction(base, "Hindi", "")
 
 		sentence := languageSentence("Hindi")
@@ -38,7 +40,7 @@ func TestTheLanguageIsStatedOnceRightAfterTheOpeningParagraph(t *testing.T) {
 }
 
 func TestTheLanguageAddsNothingButItsSentence(t *testing.T) {
-	for name, base := range bases {
+	for name, base := range getBases() {
 		got := BuildInstruction(base, "Hindi", "")
 
 		without := strings.Replace(got, languageSentence("Hindi"), "", 1)
@@ -50,7 +52,7 @@ func TestTheLanguageAddsNothingButItsSentence(t *testing.T) {
 
 func TestTheOwnRulesComeAfterTheWholeBuiltInInstructionAndTheClosingSentenceAfterThem(t *testing.T) {
 	rules := "Keep the old spelling of Sanskrit names."
-	for name, base := range bases {
+	for name, base := range getBases() {
 		got := BuildInstruction(base, "", rules)
 
 		inBase, inRules, inClosing := strings.Index(got, base), strings.Index(got, rules), strings.Index(got, closingSentence)
@@ -65,7 +67,7 @@ func TestTheOwnRulesComeAfterTheWholeBuiltInInstructionAndTheClosingSentenceAfte
 
 func TestTheOwnRulesAreAddedOnceAndKeepTheirLineBreaks(t *testing.T) {
 	rules := "Keep names.\n\nKeep dates."
-	for name, base := range bases {
+	for name, base := range getBases() {
 		got := BuildInstruction(base, "", rules)
 
 		if n := strings.Count(got, rules); n != 1 {
@@ -76,7 +78,7 @@ func TestTheOwnRulesAreAddedOnceAndKeepTheirLineBreaks(t *testing.T) {
 
 func TestLanguageAndOwnRulesTogetherKeepOneOrder(t *testing.T) {
 	rules := "Keep the old spelling of Sanskrit names."
-	for name, base := range bases {
+	for name, base := range getBases() {
 		got := BuildInstruction(base, "Sanskrit", rules)
 
 		inLanguage, inRules, inClosing := strings.Index(got, languageSentence("Sanskrit")), strings.Index(got, rules), strings.Index(got, closingSentence)
@@ -97,7 +99,7 @@ func TestTheAnswerFormatSurvivesAnyOwnRules(t *testing.T) {
 		"speech": {Opens + "12" + Closes, "12|the corrected line", "12-14|the corrected sentence", "A line is answered for once"},
 	}
 	for rulesName, rules := range hostile {
-		for name, base := range bases {
+		for name, base := range getBases() {
 			for _, language := range []string{"", "Hindi"} {
 				got := BuildInstruction(base, language, rules)
 

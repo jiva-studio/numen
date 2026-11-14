@@ -450,7 +450,10 @@ func TestAnotherLanguageOrPromptMakesAnotherVersionAndLeavesTheFirstAsItWas(t *t
 				return getRows(prompt, func(_, text string) string { return strings.ReplaceAll(text, "spinnig", "spinning") })
 			}
 			first := s.proofreadWith(t, scan, hindi, oldSpeller)
-			before, _ := s.readVersion(t, first.Version)
+			before, err := s.readVersion(t, first.Version)
+			if err != nil {
+				t.Fatalf("read the first version: %v", err)
+			}
 			s.model.script = func(string) string { return "" }
 
 			second := s.proofreadWith(t, scan, other[0], other[1])
@@ -461,7 +464,10 @@ func TestAnotherLanguageOrPromptMakesAnotherVersionAndLeavesTheFirstAsItWas(t *t
 			if got := len(s.getProofreadings(t, scanPath)); got != 2 {
 				t.Errorf("%d proofreadings, want 2", got)
 			}
-			after, _ := s.readVersion(t, first.Version)
+			after, err := s.readVersion(t, first.Version)
+			if err != nil {
+				t.Fatalf("read the first version again: %v", err)
+			}
 			if !reflect.DeepEqual(before, after) {
 				t.Errorf("the first version changed from %+v to %+v", before, after)
 			}
