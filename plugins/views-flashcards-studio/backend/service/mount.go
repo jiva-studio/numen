@@ -85,10 +85,10 @@ func (b *Backend) Commands() (*command.Registry, error) {
 func (b *Backend) Tools() (*tools.Registry, error) {
 	selector := func(id domain.VaultID) host.VaultSelector { return b.vaults(id).Selector }
 	cfg := b.getCardsConfig()
-	set := cards.NewScenarios(cfg)
+	set := cards.NewUseCases(cfg)
 	return cardtools.New(
 		selector, set, cards.NewAgentRename(cfg),
-		deckedit.NewCardScenarios(set.Read, set.Write), deckedit.NewSectionScenarios(set.Read, set.Write),
+		deckedit.NewCardUseCases(set.Read, set.Write), deckedit.NewSectionUseCases(set.Read, set.Write),
 	).Registry()
 }
 

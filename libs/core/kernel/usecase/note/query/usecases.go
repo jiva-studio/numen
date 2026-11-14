@@ -1,8 +1,8 @@
 package query
 
-// Scenarios is everything that answers a question about the notes of a vault, grouped; the container
+// UseCases is everything that answers a question about the notes of a vault, grouped; the container
 // builds each use case on its own.
-type Scenarios struct {
+type UseCases struct {
 	Refer  Referring
 	Browse Browsing
 }

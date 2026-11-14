@@ -5,10 +5,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
-// Scenarios is what acts on the two notes a flashcard is made of. The window and the tools an agent
+// UseCases is what acts on the two notes a flashcard is made of. The window and the tools an agent
 // calls use the same set, so both reject the same inputs; an agent's rename is bounded and is
 // built apart.
-type Scenarios struct {
+type UseCases struct {
 	Read        Read
 	List        List
 	Write       Write
@@ -28,9 +28,9 @@ type Config struct {
 	Now        ports.Clock
 }
 
-// NewScenarios builds the scenarios on the notes of a card. Its rename takes a vault of any size.
-func NewScenarios(cfg Config) Scenarios {
-	return Scenarios{
+// NewUseCases builds the use cases on the notes of a card. Its rename takes a vault of any size.
+func NewUseCases(cfg Config) UseCases {
+	return UseCases{
 		Read:        NewRead(cfg.Readers, cfg.Links),
 		List:        NewList(cfg.Readers, cfg.CardModels),
 		Write:       NewWrite(cfg.Readers, cfg.Writers, cfg.Links, cfg.Index, cfg.Now),

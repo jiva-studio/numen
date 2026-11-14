@@ -1411,7 +1411,7 @@ func TestReviewCardInternalsAndCache(t *testing.T) {
 	}
 }
 
-func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
+func TestUseCasesSchedulesAndSessionInternals(t *testing.T) {
 	ctx := t.Context()
 	v := domain.Vault{ID: "v1"}
 	now := time.Date(2026, 6, 10, 12, 0, 0, 0, time.UTC)
@@ -1420,7 +1420,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 	schedCache := &stubScheduleStore{}
 	dayCountCache := &stubScheduleStore{}
 	probs := stubProblemQueries{}
-	reviewSet, scheduleSet, countSet := NewScenarios(Config{
+	reviewSet, scheduleSet, countSet := NewUseCases(Config{
 		Problems:  probs,
 		Schedules: schedCache,
 		DayCounts: dayCountCache,

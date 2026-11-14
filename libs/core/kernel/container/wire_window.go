@@ -72,7 +72,7 @@ type WindowOpening struct {
 type WindowUseCases struct {
 	Notes       *NoteUseCases
 	PluginNotes *NoteUseCases
-	Queries     *query.Scenarios
+	Queries     *query.UseCases
 	Listing     *registry.Listing
 	Vaults      *VaultUseCases
 	ShowTab     windowsession.ShowTab

@@ -301,8 +301,9 @@ type ShutdownPorts struct {
 	Closers []Closer
 }
 
-// Scenarios are the use cases of a test window.
-type Scenarios struct {
+// UseCases holds what a test drives: vault switching under Switching, shutdown under Closing. It keeps the
+// guard and identity check so a test can build another use case over the same guard.
+type UseCases struct {
 	Switching struct {
 		Show       ShowVault
 		OpenPlugin OpenPluginVault
@@ -319,8 +320,8 @@ type Scenarios struct {
 	Import   ImportFiles
 }
 
-// NewScenarios builds the use cases of the window the way the container does.
-func NewScenarios(rt *Runtime, tabs *TabReports, deps Deps) *Scenarios {
+// NewUseCases builds the use cases of the window the way the container does.
+func NewUseCases(rt *Runtime, tabs *TabReports, deps Deps) *UseCases {
 	diag := NewDiagnostics(deps.Out, deps.Window.Tasks)
 	runner := NewPassRunner(PassRunnerConfig{
 		Failures: rt, Diag: diag, Closing: deps.Closing, NewSession: deps.Index.NewSession,
@@ -330,7 +331,7 @@ func NewScenarios(rt *Runtime, tabs *TabReports, deps Deps) *Scenarios {
 	session := NewSession(rt, deps.Vault.Recorded, diag, deps.EmbedderError, runner)
 	guard := &Guard{}
 	flush := NewPageFlush(deps.Window.Pages, deps.Window.Writes)
-	var s Scenarios
+	var s UseCases
 	s.Switching.Rebuild = NewRebuildSession(guard, session)
 	s.Switching.Show = NewShowVault(guard, session, deps.Vault.Identity, flush, deps.Window.Changes)
 	s.Switching.OpenPlugin = NewOpenPluginVault(guard, deps.Vault.Identity, deps.Window.Pages, nil)
@@ -346,17 +347,17 @@ func NewScenarios(rt *Runtime, tabs *TabReports, deps Deps) *Scenarios {
 
 // window is one window over fakes of every port, with no vault open.
 type testWindow struct {
-	rt        *Runtime
-	tabs      *TabReports
-	scenarios *Scenarios
-	pages     *pageSet
-	writes    *writeSet
-	tasks     *taskList
-	changes   *changeLog
-	passes    *runs
-	wake      *wakeLog
-	front     *tabFront
-	log       *eventLog
+	rt       *Runtime
+	tabs     *TabReports
+	useCases *UseCases
+	pages    *pageSet
+	writes   *writeSet
+	tasks    *taskList
+	changes  *changeLog
+	passes   *runs
+	wake     *wakeLog
+	front    *tabFront
+	log      *eventLog
 }
 
 func newTestWindow(t *testing.T, edit func(*Deps)) *testWindow {
@@ -396,9 +397,9 @@ func newLoggedWindow(t *testing.T, log *eventLog, edit func(*Deps)) *testWindow 
 	if edit != nil {
 		edit(&deps)
 	}
-	w.scenarios = NewScenarios(w.rt, w.tabs, deps)
+	w.useCases = NewUseCases(w.rt, w.tabs, deps)
 	t.Cleanup(func() {
-		if err := w.scenarios.Closing.Close.Execute(t.Context()); err != nil {
+		if err := w.useCases.Closing.Close.Execute(t.Context()); err != nil {
 			t.Log(err)
 		}
 	})
@@ -407,5 +408,5 @@ func newLoggedWindow(t *testing.T, log *eventLog, edit func(*Deps)) *testWindow 
 
 func (w *testWindow) open(t *testing.T, v domain.Vault) {
 	t.Helper()
-	w.scenarios.Start.Execute(t.Context(), v)
+	w.useCases.Start.Execute(t.Context(), v)
 }
