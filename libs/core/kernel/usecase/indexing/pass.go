@@ -10,20 +10,19 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// pass is the indexing of one vault, on the one goroutine that runs it.
+// pass is the indexing of one vault, on the one goroutine that runs it. isIndexChanged is set by a step whose
+// counts show a change of the index and cleared by the index-changed notification; it carries over to the
+// steps that follow at once. quietTimer runs from the last note write until the quiet period has passed.
 type pass struct {
-	env       passEnv
-	events    Events
-	waits     wakeWaits
-	skips     *vaultreading.Skips
-	session   *Session
-	v         domain.Vault
-	isRebuild bool
-	// isIndexChanged records that a step changed the index of the vault since the last index-changed
-	// notification. It carries over the steps that follow at once.
+	env            passEnv
+	events         Events
+	waits          wakeWaits
+	skips          *vaultreading.Skips
+	session        *Session
+	v              domain.Vault
+	isRebuild      bool
 	isIndexChanged bool
-	// quietTimer runs from the last note write until the vault has been quiet for the quiet period.
-	quietTimer <-chan time.Time
+	quietTimer     <-chan time.Time
 }
 
 // passEnv is what a pass takes from the worker it runs for.
@@ -66,10 +65,8 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 	}
 }
 
-// reportIndexChanged notifies that the index of the vault changed, once the steps that changed it leave
-// nothing pending: no wake held, no quiet timer running, and no vector step stopped by a wake.
-func (p *pass) reportIndexChanged(ctx context.Context, isVectorStepStopped bool) {
-	if !p.isIndexChanged || ctx.Err() != nil || isVectorStepStopped || p.quietTimer != nil || p.waits.hasWakes() {
+func (p *pass) reportIndexChanged(ctx context.Context, isStoppedByWake bool) {
+	if !p.isIndexChanged || ctx.Err() != nil || isStoppedByWake || p.quietTimer != nil || p.waits.hasWakes() {
 		return
 	}
 	p.isIndexChanged = false
@@ -103,16 +100,13 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	return true
 }
 
-// indexSources cuts the file texts and makes their vectors. It answers whether a wake stopped the vector step.
-func (p *pass) indexSources(ctx context.Context) bool {
+func (p *pass) indexSources(ctx context.Context) (isStoppedByWake bool) {
 	request := p.isRebuild
 	p.isRebuild = false
 	return p.indexTexts(ctx, request)
 }
 
-// embedRecognized cuts the sources a recognition extended and makes their vectors. It answers whether a
-// wake stopped the vector step.
-func (p *pass) embedRecognized(ctx context.Context) bool {
+func (p *pass) embedRecognized(ctx context.Context) (isStoppedByWake bool) {
 	target := p.session.drain()
 	if len(target) == 0 {
 		return false
@@ -123,7 +117,7 @@ func (p *pass) embedRecognized(ctx context.Context) bool {
 	return p.embed(ctx)
 }
 
-func (p *pass) indexTexts(ctx context.Context, rebuild bool) bool {
+func (p *pass) indexTexts(ctx context.Context, rebuild bool) (isStoppedByWake bool) {
 	events := p.events
 	making, err := p.env.openReading(ctx, p.v, rebuild)
 	if err != nil {
@@ -198,8 +192,7 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	}
 }
 
-// embed makes the vectors the chunks of the vault lack. It answers whether a wake stopped the vector step.
-func (p *pass) embed(ctx context.Context) bool {
+func (p *pass) embed(ctx context.Context) (isStoppedByWake bool) {
 	if !p.env.hasSource() {
 		return false
 	}
@@ -252,8 +245,9 @@ func (plan vectorPlan) getTotal(res vaultreading.EmbedResult) int64 {
 	return max(int64(res.Embedded), plan.pending-found)
 }
 
-// makeVectors runs one vector step. It answers what the step made, and whether a wake stopped it.
-func (p *pass) makeVectors(ctx, limit context.Context, plan vectorPlan) (vaultreading.EmbedResult, bool) {
+func (p *pass) makeVectors(
+	ctx, limit context.Context, plan vectorPlan,
+) (res vaultreading.EmbedResult, isStoppedByWake bool) {
 	events := p.events
 	failed := func(err error) {
 		events.ReportTask(work.Task{ID: work.MakingVectors, Title: "Indexing", Error: err.Error()})
