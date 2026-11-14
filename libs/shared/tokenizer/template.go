@@ -19,71 +19,98 @@ type template struct {
 	pair   []templatePart
 }
 
-type templateEntry struct {
-	SpecialToken *struct {
-		ID     string `json:"id"`
-		TypeID int    `json:"type_id"`
-	} `json:"SpecialToken"`
-	Sequence *struct {
-		ID     string `json:"id"`
-		TypeID int    `json:"type_id"`
-	} `json:"Sequence"`
-}
-
 func newTemplate(s step) (*template, error) {
 	if s.Type != "TemplateProcessing" {
-		return nil, fmt.Errorf("%q is not supported", s.Type)
+		return nil, fmt.Errorf("step %q is not supported", s.Type)
 	}
-	var settings struct {
-		Single        []templateEntry `json:"single"`
-		Pair          []templateEntry `json:"pair"`
-		SpecialTokens map[string]struct {
-			IDs []int `json:"ids"`
-		} `json:"special_tokens"`
+	var singleEntries, pairEntries []jsonObject
+	var tokens map[string]jsonObject
+	for _, field := range []struct {
+		key string
+		out any
+	}{
+		{"single", &singleEntries},
+		{"pair", &pairEntries},
+		{"special_tokens", &tokens},
+	} {
+		if err := s.fields.read(field.key, field.out); err != nil {
+			return nil, fmt.Errorf("step TemplateProcessing: %w", err)
+		}
 	}
-	if err := s.decode(&settings); err != nil {
-		return nil, fmt.Errorf("TemplateProcessing: %w", err)
+	specials := make(map[string][]int, len(tokens))
+	for name, token := range tokens {
+		var ids []int
+		if err := token.read("ids", &ids); err != nil {
+			return nil, fmt.Errorf("step TemplateProcessing: special token %q: %w", name, err)
+		}
+		specials[name] = ids
 	}
-	specials := make(map[string][]int, len(settings.SpecialTokens))
-	for name, token := range settings.SpecialTokens {
-		specials[name] = token.IDs
-	}
-	single, err := parseTemplate(settings.Single, specials, "single")
+	single, err := parseTemplate(singleEntries, specials, "single")
 	if err != nil {
 		return nil, err
 	}
 	if len(single) == 0 {
-		return nil, errors.New("TemplateProcessing: the single template is empty")
+		return nil, errors.New("step TemplateProcessing: the single template is empty")
 	}
 	var pair []templatePart
-	if len(settings.Pair) > 0 {
-		if pair, err = parseTemplate(settings.Pair, specials, "pair"); err != nil {
+	if len(pairEntries) > 0 {
+		if pair, err = parseTemplate(pairEntries, specials, "pair"); err != nil {
 			return nil, err
 		}
 	}
 	return &template{single: single, pair: pair}, nil
 }
 
-func parseTemplate(entries []templateEntry, specials map[string][]int, name string) ([]templatePart, error) {
+func parseTemplate(entries []jsonObject, specials map[string][]int, name string) ([]templatePart, error) {
 	parts := make([]templatePart, 0, len(entries))
 	for i, entry := range entries {
-		switch {
-		case entry.SpecialToken != nil:
-			ids, ok := specials[entry.SpecialToken.ID]
-			if !ok {
-				return nil, fmt.Errorf("TemplateProcessing: %s entry %d names the special token %q, which special_tokens does not hold", name, i, entry.SpecialToken.ID)
-			}
-			parts = append(parts, templatePart{specialIDs: ids, typeID: entry.SpecialToken.TypeID})
-		case entry.Sequence != nil:
-			if entry.Sequence.ID != "A" && entry.Sequence.ID != "B" {
-				return nil, fmt.Errorf("TemplateProcessing: %s entry %d names the sequence %q, want A or B", name, i, entry.Sequence.ID)
-			}
-			parts = append(parts, templatePart{sequence: entry.Sequence.ID, typeID: entry.Sequence.TypeID})
-		default:
-			return nil, fmt.Errorf("TemplateProcessing: %s entry %d is neither a SpecialToken nor a Sequence", name, i)
+		part, err := parseTemplateEntry(entry, specials)
+		if err != nil {
+			return nil, fmt.Errorf("step TemplateProcessing: %s entry %d: %w", name, i, err)
 		}
+		parts = append(parts, part)
 	}
 	return parts, nil
+}
+
+func parseTemplateEntry(entry jsonObject, specials map[string][]int) (templatePart, error) {
+	var special, sequence jsonObject
+	if err := entry.read("SpecialToken", &special); err != nil {
+		return templatePart{}, err
+	}
+	if err := entry.read("Sequence", &sequence); err != nil {
+		return templatePart{}, err
+	}
+	var id string
+	var typeID int
+	switch {
+	case special != nil:
+		if err := readEntryFields(special, &id, &typeID); err != nil {
+			return templatePart{}, err
+		}
+		ids, ok := specials[id]
+		if !ok {
+			return templatePart{}, fmt.Errorf("the special token %q is not in special_tokens", id)
+		}
+		return templatePart{specialIDs: ids, typeID: typeID}, nil
+	case sequence != nil:
+		if err := readEntryFields(sequence, &id, &typeID); err != nil {
+			return templatePart{}, err
+		}
+		if id != "A" && id != "B" {
+			return templatePart{}, fmt.Errorf("the sequence %q is neither A nor B", id)
+		}
+		return templatePart{sequence: id, typeID: typeID}, nil
+	default:
+		return templatePart{}, errors.New("neither a SpecialToken nor a Sequence")
+	}
+}
+
+func readEntryFields(entry jsonObject, id *string, typeID *int) error {
+	if err := entry.read("id", id); err != nil {
+		return err
+	}
+	return entry.read("type_id", typeID)
 }
 
 func (t *template) hasPair() bool {

@@ -2,48 +2,90 @@ package tokenizer
 
 import (
 	"encoding/json"
-	"slices"
+	"fmt"
 )
 
 // tokenizerFile is the part of tokenizer.json a Unigram tokenizer reads. The truncation and padding
-// objects, the decoder and the offsets are left to the caller.
+// objects, the decoder and the offsets are left to the caller. tokenizer.json is the format of
+// Hugging Face, whose keys are snake_case, so it is read by key through jsonObject.
 type tokenizerFile struct {
-	AddedTokens   []addedToken `json:"added_tokens"`
-	Normalizer    *step        `json:"normalizer"`
-	PreTokenizer  *step        `json:"pre_tokenizer"`
-	PostProcessor *step        `json:"post_processor"`
-	Model         unigramModel `json:"model"`
+	AddedTokens   []addedToken
+	Normalizer    *step
+	PreTokenizer  *step
+	PostProcessor *step
+	Model         unigramModel
 }
 
 type addedToken struct {
-	ID      int    `json:"id"`
-	Content string `json:"content"`
+	ID      int
+	Content string
 }
 
 type unigramModel struct {
-	UnkID        *int                `json:"unk_id"`
-	ByteFallback bool                `json:"byte_fallback"`
-	Vocab        [][]json.RawMessage `json:"vocab"`
+	UnkID        *int
+	ByteFallback bool
+	Vocab        [][]json.RawMessage
 }
 
-// step is one normalizer, pre-tokenizer or post-processor. Its settings are decoded once its type
-// is known, so a step of an unsupported type is refused by name rather than by the shape of its fields.
-type step struct {
-	Type string
-	raw  json.RawMessage
-}
+// jsonObject is a JSON object read key by key.
+type jsonObject map[string]json.RawMessage
 
-func (s *step) UnmarshalJSON(data []byte) error {
-	var head struct {
-		Type string `json:"type"`
+func (o jsonObject) read(key string, out any) error {
+	raw, ok := o[key]
+	if !ok {
+		return nil
 	}
-	if err := json.Unmarshal(data, &head); err != nil {
-		return err
+	if err := json.Unmarshal(raw, out); err != nil {
+		return fmt.Errorf("%s: %w", key, err)
 	}
-	s.Type, s.raw = head.Type, slices.Clone(data)
 	return nil
 }
 
-func (s step) decode(settings any) error {
-	return json.Unmarshal(s.raw, settings)
+func parseTokenizerFile(raw []byte) (tokenizerFile, error) {
+	var file tokenizerFile
+	var root, model jsonObject
+	if err := json.Unmarshal(raw, &root); err != nil {
+		return file, err
+	}
+	for _, field := range []struct {
+		key string
+		out any
+	}{
+		{"added_tokens", &file.AddedTokens},
+		{"normalizer", &file.Normalizer},
+		{"pre_tokenizer", &file.PreTokenizer},
+		{"post_processor", &file.PostProcessor},
+		{"model", &model},
+	} {
+		if err := root.read(field.key, field.out); err != nil {
+			return file, err
+		}
+	}
+	for _, field := range []struct {
+		key string
+		out any
+	}{
+		{"unk_id", &file.Model.UnkID},
+		{"byte_fallback", &file.Model.ByteFallback},
+		{"vocab", &file.Model.Vocab},
+	} {
+		if err := model.read(field.key, field.out); err != nil {
+			return file, fmt.Errorf("model: %w", err)
+		}
+	}
+	return file, nil
+}
+
+// step is one normalizer, pre-tokenizer or post-processor. Its settings are read once its type is
+// known, so a step of an unsupported type is refused by name rather than by the shape of its fields.
+type step struct {
+	Type   string
+	fields jsonObject
+}
+
+func (s *step) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, &s.fields); err != nil {
+		return err
+	}
+	return s.fields.read("type", &s.Type)
 }

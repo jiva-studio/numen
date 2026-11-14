@@ -83,8 +83,8 @@ type unigramTokenizer struct {
 }
 
 func loadUnigram(raw []byte) (*unigramTokenizer, error) {
-	var file tokenizerFile
-	if err := json.Unmarshal(raw, &file); err != nil {
+	file, err := parseTokenizerFile(raw)
+	if err != nil {
 		return nil, err
 	}
 	vocab, err := newVocabulary(file.Model)

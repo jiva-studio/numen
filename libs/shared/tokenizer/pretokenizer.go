@@ -14,14 +14,12 @@ type preTokenizer func(pieces []string) []string
 func buildPreTokenizer(s step) (preTokenizer, error) {
 	switch s.Type {
 	case "Sequence":
-		var settings struct {
-			PreTokenizers []step `json:"pretokenizers"`
-		}
-		if err := s.decode(&settings); err != nil {
+		var preTokenizers []step
+		if err := s.fields.read("pretokenizers", &preTokenizers); err != nil {
 			return nil, fmt.Errorf("step Sequence: %w", err)
 		}
-		chain := make([]preTokenizer, 0, len(settings.PreTokenizers))
-		for _, one := range settings.PreTokenizers {
+		chain := make([]preTokenizer, 0, len(preTokenizers))
+		for _, one := range preTokenizers {
 			inner, err := buildPreTokenizer(one)
 			if err != nil {
 				return nil, err
@@ -57,13 +55,23 @@ func splitWhitespace(pieces []string) []string {
 
 func buildMetaspace(s step) (preTokenizer, error) {
 	var settings struct {
-		Replacement    string  `json:"replacement"`
-		PrependScheme  *string `json:"prepend_scheme"`
-		AddPrefixSpace *bool   `json:"add_prefix_space"`
-		Split          *bool   `json:"split"`
+		Replacement    string
+		PrependScheme  *string
+		AddPrefixSpace *bool
+		Split          *bool
 	}
-	if err := s.decode(&settings); err != nil {
-		return nil, err
+	for _, field := range []struct {
+		key string
+		out any
+	}{
+		{"replacement", &settings.Replacement},
+		{"prepend_scheme", &settings.PrependScheme},
+		{"add_prefix_space", &settings.AddPrefixSpace},
+		{"split", &settings.Split},
+	} {
+		if err := s.fields.read(field.key, field.out); err != nil {
+			return nil, err
+		}
 	}
 	if utf8.RuneCountInString(settings.Replacement) != 1 {
 		return nil, fmt.Errorf("the replacement %q is not one character", settings.Replacement)
