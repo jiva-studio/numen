@@ -89,7 +89,8 @@ export const Alone: Story = {
 /**
  * A record is drawn the same way on every line: a head at the end it points at
  * and its words near it, on a line at the focus, from a parent to a sibling,
- * and between two children.
+ * and between two children. The focus has two parents, so the line to each
+ * leaves the focus at a slant and is long enough for its words.
  */
 export const OnEveryLine: Story = {
   render: () => ({
@@ -98,6 +99,7 @@ export const OnEveryLine: Story = {
         'Ontology.md',
         [
           { path: 'Philosophy.md', relation: 'parent', label: 'part of', marker: 'arrow' },
+          { path: 'Science.md', relation: 'parent' },
           { path: 'Being.md', relation: 'child', marker: 'arrow' },
           { path: 'Becoming.md', relation: 'child' },
           {

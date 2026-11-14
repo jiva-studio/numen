@@ -229,7 +229,9 @@ export const Nesting: Story = {
 
 /**
  * Every kind of line the plex draws, each with a record pointing at one end:
- * the focus with a parent, a child and a jump; two siblings; two children. A
+ * the focus with a parent, a child and a jump; two siblings; two children. The
+ * focus has a second parent, so the line to the first leaves the focus at a
+ * slant and is long enough for its words. A
  * parent and a sibling have a record written by each note, one at either end of
  * their line. A line with a record and no arrowhead is the last.
  */
@@ -237,6 +239,7 @@ const EVERY_LINE: PlexGraph = {
   nodes: [
     node('focus', 'Entropy', 'focus'),
     node('thermodynamics', 'Thermodynamics', 'parent'),
+    node('physics', 'Physics', 'parent'),
     node('second-law', 'The second law', 'child'),
     node('heat-death', 'Heat death', 'child'),
     node('demon', "Maxwell's demon", 'jump'),
@@ -245,6 +248,7 @@ const EVERY_LINE: PlexGraph = {
   ],
   edges: [
     createLine('thermodynamics', 'focus', 'measures', 'from'),
+    { from: 'physics', to: 'focus' },
     createLine('focus', 'second-law', 'states', 'to'),
     createLine('demon', 'focus', 'costs', 'to'),
     createPair('thermodynamics', 'pressure', ['includes', 'part of']),
