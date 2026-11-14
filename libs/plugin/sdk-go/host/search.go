@@ -17,12 +17,17 @@ var (
 	ErrRecipeMismatch = errors.New("host: the recipe is not the one of the model in use")
 	// ErrInvalidFloor is what a floor gets that is not above zero and at most one.
 	ErrInvalidFloor = errors.New("host: a floor is a cosine similarity above 0 and at most 1")
-	// ErrLimitExceeded is what an embedding call gets that names more texts, or longer ones, than one call embeds.
-	ErrLimitExceeded = errors.New("host: the call exceeds the limits of one embedding call")
+	// ErrLimitExceeded is what a call gets that names more items, or longer ones, than one call takes.
+	ErrLimitExceeded = errors.New("host: the call exceeds the limits of one call")
 	// ErrEmbeddingFailed is what an embedding call gets when the model could not answer.
 	ErrEmbeddingFailed = errors.New("host: the embedding model could not answer")
 	// ErrInvalidQuery is what a sampling call gets whose query vector has another dimension count than the vectors of the index.
 	ErrInvalidQuery = errors.New("host: a query vector does not match the vectors of the index")
+	// ErrInvalidCondition is what ScoreChunks gets for a condition with no text, with both texts or with an
+	// empty text. A words query FTS5 refuses gets ErrInvalidWords.
+	ErrInvalidCondition = errors.New("host: a condition names neither or both of meaning and words")
+	// ErrInvalidWords is what a words query gets that FTS5 refuses.
+	ErrInvalidWords = errors.New("host: the words query is not valid FTS5")
 )
 
 // The permissions a plugin declares in its manifest. The search reads, the embedding included, need
@@ -209,13 +214,32 @@ type NearestMatch struct {
 }
 
 const (
-	// MaxSearchedResultsPerSource is the maximum number of search results of one source a
-	// SearchText call returns.
-	MaxSearchedResultsPerSource = 3
+	// DefaultSearchedResultsPerSource is the number of search results of one source a SearchText call
+	// returns when the query names none.
+	DefaultSearchedResultsPerSource = 3
+	// MaxResultBytes is the longest Text of a SearchResult: the excerpt of the chunk around the hit.
+	MaxResultBytes = 1200
 	// DefaultSearchedResults is the maximum number of search results a SearchText call returns when its limit
 	// is zero, and MaxSearchedResults the maximum for any limit.
 	DefaultSearchedResults = 20
-	MaxSearchedResults     = 100
+	MaxSearchedResults     = 500
+	// MaxScoredChunks is how many chunks one ScoreChunks call takes, MaxScoredConditions how many
+	// conditions, and MaxConditionBytes the longest text of a condition.
+	MaxScoredChunks     = 500
+	MaxScoredConditions = 16
+	MaxConditionBytes   = 8192
+)
+
+// SearchMode selects the participants of a SearchText call.
+type SearchMode int
+
+const (
+	// SearchModeHybrid fuses the words, the section names and the meaning. It is the zero value.
+	SearchModeHybrid SearchMode = iota
+	// SearchModeWords asks the words of the index alone.
+	SearchModeWords
+	// SearchModeMeaning asks the search source alone. A host with no model returns ErrNoModel.
+	SearchModeMeaning
 )
 
 // SearchResultQuery is a text search request.
@@ -226,21 +250,33 @@ type SearchResultQuery struct {
 	// Limit is the maximum number of search results to return: DefaultSearchedResults when zero, at
 	// most MaxSearchedResults.
 	Limit int
+	// ResultsPerSource is the maximum number of search results of one source:
+	// DefaultSearchedResultsPerSource when zero or less, at most Limit.
+	ResultsPerSource int
 	// Kinds are the kinds of source to search, KindNote or KindFile. Empty means every kind.
 	Kinds []domain.SourceKind
 	// PathPrefix limits the search to the sources whose path starts with it, relative to the vault, in
 	// either Unicode form (NFC or NFD). The index applies it before it truncates the list to Limit. Empty
 	// means the whole vault.
 	PathPrefix string
+	// Mode selects the participants; the zero value is SearchModeHybrid.
+	Mode SearchMode
+	// IsRawWords passes Query to the words of the index as an FTS5 query (phrases, NEAR, prefix *, AND,
+	// OR, NOT), unquoted. It is valid with SearchModeWords only; a query FTS5 refuses returns
+	// ErrInvalidWords.
+	IsRawWords bool
 }
 
 // SearchResult is a span of source text matching a query.
 //
 //numen:api
 type SearchResult struct {
+	// ChunkID names the chunk that was hit. ScoreChunks takes it.
+	ChunkID string
 	// Path is the file the text is read from, relative to the vault.
 	Path string
-	// Text is the text around the hit, truncated to a size and so possibly ending mid-sentence.
+	// Text is the text around the hit, at most MaxResultBytes bytes of the chunk, and so possibly
+	// starting and ending mid-sentence.
 	Text string
 	// PlaceLabel is the location label in the source's numbering (page, chapter, time), empty
 	// when the format has none.
@@ -254,6 +290,64 @@ type SearchResult struct {
 	// Selector locates the hit in the text version, as JSON, with the keys of domain.Selector. Empty
 	// for a note.
 	Selector string
+	// Similarity is the cosine similarity of the query with the best small chunk of this result the
+	// search by meaning returned; nil when the search by meaning did not return this result.
+	Similarity *float64
+	// WordScore is the negated bm25 of the best hit of the words in this result: positive, higher is
+	// better, comparable only within one query; nil when the search by words did not return it.
+	WordScore *float64
+}
+
+// ScoreCondition is one condition ScoreChunks scores a chunk against.
+//
+//numen:api
+type ScoreCondition struct {
+	// Meaning is a text compared by meaning. Exactly one of Meaning and Words is set.
+	Meaning string
+	// Words is an FTS5 query in the syntax of the index (phrases, NEAR, prefix *, AND, OR, NOT).
+	Words string
+}
+
+// ScoreQuery is the chunks a ScoreChunks call scores and the conditions it scores them against.
+//
+//numen:api
+type ScoreQuery struct {
+	// ChunkIDs are the chunk ids of search results, at most MaxScoredChunks.
+	ChunkIDs []string
+	// Conditions are at most MaxScoredConditions, each text at most MaxConditionBytes.
+	Conditions []ScoreCondition
+}
+
+// ConditionScore is how one chunk scores against one condition.
+//
+//numen:api
+type ConditionScore struct {
+	// Similarity is set for a meaning condition when a small chunk inside the chunk carries a vector:
+	// the best cosine similarity among them.
+	Similarity *float64
+	// IsMatch is, for a meaning condition, whether the similarity reaches the floor, and for a words
+	// condition whether the whole text of the chunk matches the query.
+	IsMatch bool
+}
+
+// ChunkScore is the score of one chunk against each condition.
+//
+//numen:api
+type ChunkScore struct {
+	ChunkID string
+	// Conditions holds one score per condition, in the order of the conditions.
+	Conditions []ConditionScore
+}
+
+// ChunkScores is the answer of ScoreChunks.
+//
+//numen:api
+type ChunkScores struct {
+	// Floor is the floor applied to the meaning conditions, zero when there are none.
+	Floor float64
+	// Chunks holds one score per distinct given id the vault holds, in the order given. An id of a
+	// source removed or cut again since the search is left out.
+	Chunks []ChunkScore
 }
 
 // SearchPolicy reads and sets the floor that a search by meaning applies to a vault. It needs the
