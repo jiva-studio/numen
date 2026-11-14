@@ -5,7 +5,7 @@ import { doc } from '@numen/ui'
 import { onBeforeUnmount, onMounted, watch, type Ref } from 'vue'
 import type { LanguageSupport } from '@codemirror/language'
 import type { Extension } from '@codemirror/state'
-import { EditorState } from '@codemirror/state'
+import { EditorState, type StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { EditorChange } from '../lib/change/change'
 import {
@@ -185,8 +185,14 @@ export function useEditor(options: EditorStateOptions) {
     (more) => view?.dispatch({ effects: extensionsCompartment.reconfigure(more ?? []) }),
   )
 
+  /** Reconfigures a setting that changes line heights; the view measures again, so the gutter follows the lines. */
+  function reconfigureLayout(effect: StateEffect<unknown>): void {
+    view?.dispatch({ effects: effect })
+    view?.requestMeasure()
+  }
+
   watch(readSoftWrap, (softWrap) =>
-    view?.dispatch({ effects: wrapCompartment.reconfigure(getWrapExtension(softWrap ?? true)) }),
+    reconfigureLayout(wrapCompartment.reconfigure(getWrapExtension(softWrap ?? true))),
   )
 
   watch(readLineNumbers, (show) =>
@@ -196,19 +202,15 @@ export function useEditor(options: EditorStateOptions) {
   )
 
   watch(readTabSize, (tabSize) =>
-    view?.dispatch({
-      effects: tabSizeCompartment.reconfigure(getTabSizeExtension(tabSize ?? 2)),
-    }),
+    reconfigureLayout(tabSizeCompartment.reconfigure(getTabSizeExtension(tabSize ?? 2))),
   )
 
   watch(readFontFamily, (family) =>
-    view?.dispatch({ effects: fontCompartment.reconfigure(getFontExtension(family ?? '')) }),
+    reconfigureLayout(fontCompartment.reconfigure(getFontExtension(family ?? ''))),
   )
 
   watch(readLineHeight, (height) =>
-    view?.dispatch({
-      effects: lineHeightCompartment.reconfigure(getLineHeightExtension(height ?? 1.6)),
-    }),
+    reconfigureLayout(lineHeightCompartment.reconfigure(getLineHeightExtension(height ?? 1.6))),
   )
 
   watch(readHighlightActiveLine, (isOn) =>

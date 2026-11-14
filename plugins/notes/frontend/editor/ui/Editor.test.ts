@@ -440,4 +440,21 @@ describe('editor preferences reconfiguration', () => {
     expect(view.dom.querySelector('.cm-lineNumbers')).not.toBeNull()
     expect(view.state.tabSize).toBe(4)
   })
+
+  it.each([
+    ['line height', { lineHeight: 2 }],
+    ['font family', { fontFamily: 'serif' }],
+    ['tab size', { tabSize: 4 }],
+    ['soft wrap', { softWrap: false }],
+  ] as [string, Partial<Props>][])(
+    'measures the lines again after the %s changed',
+    async (_name, change) => {
+      const { wrapper, view } = editor({ modelValue: 'one\ntwo' })
+      const measure = vi.spyOn(view, 'requestMeasure')
+
+      await wrapper.setProps(change)
+
+      expect(measure).toHaveBeenCalled()
+    },
+  )
 })
