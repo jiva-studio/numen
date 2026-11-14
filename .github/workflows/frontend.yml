@@ -19,10 +19,15 @@ permissions:
   contents: read
 
 jobs:
+  # The image carries the browsers and the system libraries of the Playwright release that
+  # package-lock.json pins; .github/scripts/playwright-image.test.mjs holds the two together.
   frontend:
     name: Desktop Frontend
     if: inputs.desktop_fe
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
+      options: --ipc=host
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -36,8 +41,6 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - uses: ./.github/actions/install-node-modules
-
-      - uses: ./.github/actions/setup-playwright
 
       # A window reaches the components and the shell through their build.
       - uses: ./.github/actions/build-ui
@@ -57,7 +60,7 @@ jobs:
           npm run lint --prefix libs/plugin/loader
           npm run lint --prefix libs/plugin/manager
           npm run lint --prefix tests/e2e/desktop
-          make app_desktop_acceptance_lint
+          npm run acceptance:lint --prefix tests/acceptance/desktop
           (cd libs/plugin/sdk-ts && ../../../node_modules/.bin/eslint .)
 
       - name: Typecheck screens and SDK
@@ -81,11 +84,14 @@ jobs:
           npm run test:unit --prefix apps/desktop/editor -- --coverage
           npm run test:stories --prefix apps/desktop/editor
           npm run test:unit --prefix apps/desktop/flashcards -- --coverage
+
+  # The components and the mobile screens that are built on them. A part runs when its area changed,
+  # and after a failed part.
   ui:
-    name: UI Components
-    if: inputs.ui
+    name: UI Components and Mobile
+    if: inputs.ui || inputs.mobile_fe
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -100,12 +106,23 @@ jobs:
       - uses: ./.github/actions/install-node-modules
 
       - name: Lint components
+        if: inputs.ui
         run: npm run lint --prefix libs/ui/components
 
-      - uses: ./.github/actions/build-ui
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/build-ui
 
-      - name: Run unit tests
+      - name: Run component unit tests
+        if: ${{ !cancelled() && inputs.ui }}
         run: npm run test:unit --prefix libs/ui/components -- --coverage
+
+      - name: Typecheck, lint and test the mobile screens
+        if: ${{ !cancelled() && inputs.mobile_fe }}
+        run: |
+          set -euo pipefail
+          npm run typecheck --prefix apps/mobile
+          npm run lint --prefix apps/mobile
+          npm test --prefix apps/mobile
 
   # A story runs in a real browser, and several are the only test of what a browser decides: what
   # an overflow clips, where a scroll lands, whether a key reaches an SVG group. The window is WebKit
@@ -114,6 +131,9 @@ jobs:
     name: UI Stories
     if: inputs.ui
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
+      options: --ipc=host
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -127,38 +147,6 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - uses: ./.github/actions/install-node-modules
-
-      - uses: ./.github/actions/setup-playwright
 
       - name: Run story tests
         run: npm run test:stories --prefix libs/ui/components
-
-  mobile-frontend:
-    name: Mobile Frontend
-    if: inputs.mobile_fe
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - uses: ./.github/actions/install-node-modules
-
-      # A screen reaches the components through their build.
-      - uses: ./.github/actions/build-ui
-
-      - name: Typecheck screens
-        run: npm run typecheck --prefix apps/mobile
-
-      - name: Lint screens
-        run: npm run lint --prefix apps/mobile
-
-      - name: Run screen tests
-        run: npm test --prefix apps/mobile

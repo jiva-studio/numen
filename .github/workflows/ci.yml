@@ -176,31 +176,19 @@ jobs:
       engines: ${{ needs.changes.outputs.engines }}
 
   # Fails when a job failed or was cancelled, and when the areas were not found: every other job
-  # is then skipped.
+  # is then skipped. Names the markers of the areas whose job passed, also when it fails.
   ci:
     name: CI
     if: ${{ !cancelled() }}
     needs: [changes, checks, go, frontend, plugins, docs, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    steps:
-      - env:
-          RESULTS: ${{ toJSON(needs) }}
-        run: |
-          jq -r 'to_entries[] | "\(.value.result)\t\(.key)"' <<< "$RESULTS" | sort
-          jq -e '.changes.result == "success" and all(.[]; .result != "failure" and .result != "cancelled")' <<< "$RESULTS" > /dev/null
-
-  passed:
-    name: Passed
-    if: ${{ !cancelled() && needs.changes.result == 'success' }}
-    needs: [changes, checks, go, frontend, plugins, docs, e2e]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    continue-on-error: true
     outputs:
       keys: ${{ steps.keys.outputs.keys }}
     steps:
       - id: keys
+        if: needs.changes.result == 'success'
+        continue-on-error: true
         env:
           MARKS: ${{ needs.changes.outputs.marks }}
           RESULTS: ${{ toJSON(needs) }}
@@ -208,16 +196,22 @@ jobs:
           jq -c --argjson results "$RESULTS" '[.[] | select($results[.job].result == "success") | .key]' <<< "$MARKS" \
             | sed 's/^/keys=/' | tee -a "$GITHUB_OUTPUT"
 
+      - env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          jq -r 'to_entries[] | "\(.value.result)\t\(.key)"' <<< "$RESULTS" | sort
+          jq -e '.changes.result == "success" and all(.[]; .result != "failure" and .result != "cancelled")' <<< "$RESULTS" > /dev/null
+
   mark:
     name: Mark ${{ matrix.key }}
-    if: needs.passed.outputs.keys != '' && needs.passed.outputs.keys != '[]'
-    needs: [passed]
+    if: ${{ !cancelled() && needs.ci.outputs.keys != '' && needs.ci.outputs.keys != '[]' }}
+    needs: [ci]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     continue-on-error: true
     strategy:
       matrix:
-        key: ${{ fromJSON(needs.passed.outputs.keys) }}
+        key: ${{ fromJSON(needs.ci.outputs.keys) }}
     steps:
       - run: touch "$RUNNER_TEMP/passed"
 

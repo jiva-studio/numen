@@ -115,6 +115,10 @@ jobs:
     name: Plugin Stories
     if: inputs.plugin_stories
     runs-on: ubuntu-latest
+    # The browsers and the system libraries of the Playwright release that package-lock.json pins.
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
+      options: --ipc=host
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -129,12 +133,11 @@ jobs:
 
       - uses: ./.github/actions/install-node-modules
 
-      - uses: ./.github/actions/setup-playwright
-
       - uses: ./.github/actions/build-ui
 
+      # The image has no make; this is the command of `make plugins_stories`.
       - name: Run plugin stories
-        run: make plugins_stories SKIP_UI_BUILD=1
+        run: node tools/ci-stories/run.mjs libs/plugin/sdk-ts/stories plugins
 
   # A plugin that changed carries a higher <year>.<month>.<build> version than on the base, the
   # first parent of the merge commit.
