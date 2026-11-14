@@ -54,8 +54,3 @@ type Task struct {
 	Issues     []Issue
 	Depth      int
 }
-
-// ParseNote returns the tasks of a note in the order of its lines.
-func ParseNote(_ []byte) ([]Task, error) {
-	return nil, nil
-}
