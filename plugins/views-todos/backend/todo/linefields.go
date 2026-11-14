@@ -29,7 +29,10 @@ type lineFields struct {
 // readLineFields reads the text after a checkbox. A token that starts inside inline code, a wikilink or
 // a Markdown link is text.
 func readLineFields(text string) lineFields {
-	f := lineFields{seen: map[string]bool{}}
+	f := lineFields{
+		priority: "", due: "", doneOn: "", recurrence: "", projects: nil, contexts: nil, issues: nil, kept: nil,
+		seen: map[string]bool{},
+	}
 	masked := maskSpans(text)
 	for n, token := range splitTokens(text) {
 		if masked[token.start] || !f.read(token.text, n == 0) {

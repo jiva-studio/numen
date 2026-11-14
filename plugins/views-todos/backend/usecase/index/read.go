@@ -94,7 +94,7 @@ func (i *Index) readNote(ctx context.Context, path string) (bool, error) {
 		i.set(path, known)
 		return false, nil
 	}
-	next := entry{stat: stat, hash: hash}
+	next := entry{stat: stat, hash: hash, tasks: nil, isUnreadable: false}
 	tasks, err := i.parse(raw)
 	if err != nil {
 		next.isUnreadable = true
@@ -117,10 +117,11 @@ func (i *Index) recordFailure(ctx context.Context, path string, err error) (bool
 		return i.drop(path), nil
 	}
 	i.mu.Lock()
+	unreadable := entry{stat: domain.FileStat{}, hash: [sha256.Size]byte{}, tasks: nil, isUnreadable: true}
 	known := i.entries[path]
-	i.entries[path] = entry{isUnreadable: true}
+	i.entries[path] = unreadable
 	i.mu.Unlock()
-	return !isSame(known, entry{isUnreadable: true}), nil
+	return !isSame(known, unreadable), nil
 }
 
 // drop removes the entry of a note and reports whether it held tasks or was unreadable.
@@ -129,7 +130,7 @@ func (i *Index) drop(path string) bool {
 	defer i.mu.Unlock()
 	known, isKnown := i.entries[path]
 	delete(i.entries, path)
-	return isKnown && !isSame(known, entry{})
+	return isKnown && !isSame(known, emptyEntry())
 }
 
 func (i *Index) set(path string, next entry) {
@@ -144,4 +145,9 @@ func isSame(a, b entry) bool {
 		return false
 	}
 	return len(a.tasks) == 0 || reflect.DeepEqual(a.tasks, b.tasks)
+}
+
+// emptyEntry is the entry of a note with no tasks that can be read.
+func emptyEntry() entry {
+	return entry{stat: domain.FileStat{}, hash: [sha256.Size]byte{}, tasks: nil, isUnreadable: false}
 }

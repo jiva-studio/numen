@@ -73,7 +73,10 @@ type Index struct {
 
 // New returns an empty index over the notes the reader and the lister show.
 func New(files ports.FileReader, notes ports.NoteLister, parse ParseFunc) *Index {
-	return &Index{files: files, notes: notes, parse: parse, entries: map[string]entry{}, changed: make(chan struct{})}
+	return &Index{
+		files: files, notes: notes, parse: parse,
+		mu: sync.Mutex{}, entries: map[string]entry{}, ignored: nil, revision: 0, isReady: false, changed: make(chan struct{}),
+	}
 }
 
 // Scan reads every note and marks the index ready when the last is read.
@@ -161,7 +164,7 @@ func (i *Index) List(today string, f filter.Filter, limit int) Listing {
 func (i *Index) Summarize(today string) Summary {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-	summary := Summary{IsReady: i.isReady}
+	summary := Summary{IsReady: i.isReady, OverdueCount: 0, TodayCount: 0, NoDateCount: 0, UnreadableCount: 0}
 	for _, one := range i.entries {
 		if one.isUnreadable {
 			summary.UnreadableCount++

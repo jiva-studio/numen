@@ -135,21 +135,12 @@ func splitIndent(line string) (int, string) {
 // getMarkerLength returns the length of a list marker and the spaces after it, or 0 when the line
 // does not start with a list item.
 func getMarkerLength(rest string) int {
-	var length int
-	switch {
-	case rest == "":
-		return 0
-	case strings.IndexByte("-*+", rest[0]) >= 0:
+	length := getNumberMarkerLength(rest)
+	if rest != "" && strings.IndexByte("-*+", rest[0]) >= 0 {
 		length = 1
-	default:
-		digits := 0
-		for digits < len(rest) && rest[digits] >= '0' && rest[digits] <= '9' {
-			digits++
-		}
-		if digits == 0 || digits > maxMarkerDigits || digits >= len(rest) || (rest[digits] != '.' && rest[digits] != ')') {
-			return 0
-		}
-		length = digits + 1
+	}
+	if length == 0 {
+		return 0
 	}
 	spaces := len(rest[length:]) - len(strings.TrimLeft(rest[length:], " "))
 	if spaces == 0 {
@@ -178,6 +169,7 @@ func readTask(afterMarker, raw string, number, indent int) (Task, bool) {
 	}
 	found := readLineFields(text)
 	return Task{
+		Path:       "",
 		Line:       number,
 		Raw:        raw,
 		Text:       strings.TrimSpace(strings.Join(found.kept, " ")),
@@ -201,4 +193,20 @@ func getStatus(mark rune) Status {
 		return StatusDone
 	}
 	return StatusOther
+}
+
+// getNumberMarkerLength returns the length of a number of 1 to 9 digits and its dot or parenthesis,
+// or 0 when the line starts with none.
+func getNumberMarkerLength(rest string) int {
+	digits := 0
+	for digits < len(rest) && rest[digits] >= '0' && rest[digits] <= '9' {
+		digits++
+	}
+	if digits == 0 || digits > maxMarkerDigits || digits >= len(rest) {
+		return 0
+	}
+	if rest[digits] != '.' && rest[digits] != ')' {
+		return 0
+	}
+	return digits + 1
 }

@@ -75,20 +75,30 @@ func (f Filter) isStatusAccepted(task todo.Task) bool {
 }
 
 func (f Filter) isDueAccepted(task todo.Task, today string) bool {
-	isOpen := task.Status == todo.StatusOpen
 	switch f.Due {
-	case DueNone:
-		return isOpen && task.Due == ""
-	case DueOverdue:
-		return isOpen && task.Due != "" && task.Due < today
-	case DueToday:
-		return isOpen && task.Due == today
-	case DueThisWeek:
-		return isOpen && task.Due >= today && task.Due <= todo.AddDays(today, daysOfWeek-1)
+	case DueNone, DueOverdue, DueToday, DueThisWeek:
+		return task.Status == todo.StatusOpen && isDueMatched(f.Due, task.Due, today)
 	case DueRange:
 		return task.Due != "" && (f.From == "" || task.Due >= f.From) && (f.To == "" || task.Due <= f.To)
+	case DueAny:
 	}
 	return true
+}
+
+// isDueMatched reports whether a due date, empty for none, is the one a filter of an open task asks for.
+func isDueMatched(kind DueFilter, due, today string) bool {
+	switch kind {
+	case DueNone:
+		return due == ""
+	case DueOverdue:
+		return due != "" && due < today
+	case DueToday:
+		return due == today
+	case DueThisWeek:
+		return due >= today && due <= todo.AddDays(today, daysOfWeek-1)
+	case DueAny, DueRange:
+	}
+	return false
 }
 
 func (f Filter) isPathAccepted(task todo.Task) bool {
