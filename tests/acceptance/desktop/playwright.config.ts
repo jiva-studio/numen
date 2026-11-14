@@ -18,7 +18,7 @@ export default defineConfig({
   testDir,
   testMatch: undefined,
   fullyParallel: true,
-  workers: 3,
+  workers: '100%',
   webServer: undefined,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
 })
