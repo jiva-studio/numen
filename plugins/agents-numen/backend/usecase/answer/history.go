@@ -33,9 +33,6 @@ func newHistory(clock ports.Clock) *history {
 }
 
 func (h *history) get(id string) []conversation.Message {
-	if id == "" {
-		return nil
-	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.forgetIdle(h.clock.Now())

@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/ports"
 )
@@ -44,22 +45,10 @@ func New(open Open) *Chat {
 	return &Chat{open: open}
 }
 
-// FromEnvironment returns the Chat and the Connections of the host the process environment names.
-func FromEnvironment() (*Chat, *Connections, error) {
-	client, err := connection.NewClientFromEnv()
-	if err != nil {
-		return nil, nil, err
-	}
-	return FromHost(client), NewConnections(client), nil
-}
-
-// FromVariables returns the Chat and the Connections of the host the variables name.
-func FromVariables(vars map[string]string) (*Chat, *Connections, error) {
-	client, err := connection.NewClientFromVars(vars)
-	if err != nil {
-		return nil, nil, err
-	}
-	return FromHost(client), NewConnections(client), nil
+// OpenEndpoint returns the Chat and the Connections of the host at endpoint.
+func OpenEndpoint(endpoint hostcall.Endpoint) (*Chat, *Connections) {
+	client := connection.NewClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Token)
+	return FromHost(client), NewConnections(client)
 }
 
 // FromHost returns a Chat that asks host for each turn.

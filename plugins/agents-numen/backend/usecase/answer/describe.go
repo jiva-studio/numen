@@ -24,7 +24,7 @@ func describeCall(listed map[string]conversation.Tool, call conversation.ToolCal
 	}
 	frame.Content = []string{call.About}
 	if call.Path != "" {
-		frame.Locations = []*acp.ToolCallLocation{{Path: call.Path, Line: 0}}
+		frame.Locations = []*acp.ToolCallLocation{{Path: call.Path}}
 	}
 	return frame
 }

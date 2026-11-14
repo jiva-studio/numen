@@ -16,6 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp/acptest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
@@ -282,16 +284,31 @@ func TestAHostThatCannotListItsToolsFailsTheTaskBeforeTheModelIsAsked(t *testing
 
 // blockingModel says one word and then waits for the context of its request.
 type blockingModel struct {
-	ended chan struct{}
+	mu      sync.Mutex
+	turn    conversation.Turn
+	started chan struct{}
+	ended   chan struct{}
 }
 
-func (m *blockingModel) Stream(ctx context.Context, _ conversation.Turn, emit func(string) error) (conversation.Reply, error) {
+func (m *blockingModel) Stream(ctx context.Context, request conversation.Turn, emit func(string) error) (conversation.Reply, error) {
+	m.mu.Lock()
+	m.turn = request
+	m.mu.Unlock()
+	if m.started != nil {
+		close(m.started)
+	}
 	if err := emit("partial"); err != nil {
 		return conversation.Reply{}, err
 	}
 	<-ctx.Done()
 	close(m.ended)
 	return conversation.Reply{}, ctx.Err()
+}
+
+func (m *blockingModel) getTurn() conversation.Turn {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.turn
 }
 
 func startBlockedTask(ctx context.Context, t *testing.T) (*agent, *blockingModel, chan error) {
@@ -367,4 +384,72 @@ func TestTheModelsOfTheAgentAreTheModelsOfEveryChatConnection(t *testing.T) {
 	if bytes.Index(done, []byte("Meadow · Wren 2")) > bytes.Index(done, []byte("Harbor · Gull 7B")) {
 		t.Errorf("the listing %q is not in the order of the connections", done)
 	}
+}
+
+type failingConnections struct {
+	err error
+}
+
+func (f failingConnections) ListConnections(context.Context) ([]conversation.ChatConnection, error) {
+	return nil, f.err
+}
+
+func (f failingConnections) ListModels(context.Context, conversation.ChatConnection) ([]conversation.ModelOption, error) {
+	return nil, f.err
+}
+
+func TestTheModelsOfTheAgentFailWhenTheConnectionsCannotBeListed(t *testing.T) {
+	failure := errors.New("host unreachable")
+	s, err := newAgent(host{
+		chat:   &fakeModel{turns: []turn{newTextTurn("hi")}},
+		models: failingConnections{err: failure},
+		tools:  hosttools.New(tools.NewClient(hostcall.Endpoint{BaseURL: (&fakeHost{}).serve(t), Token: hostToken})),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.provider[llm.OperationModels](t.Context(), connection.Call{Type: "numen"}, nil, func([]byte) error { return nil })
+	if !errors.Is(err, failure) {
+		t.Errorf("err = %v, want %v", err, failure)
+	}
+}
+
+func TestTheMountedServerConfiguresTheAgentAndClosesItsRunningTasks(t *testing.T) {
+	model := &blockingModel{started: make(chan struct{}), ended: make(chan struct{})}
+	hostSrv := &fakeHost{}
+	var mounted *server.Server
+	handler, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: testToken}, func(s *server.Server) error {
+		mounted = s
+		return mount(s, host{
+			chat:   model,
+			models: chatConnections{},
+			tools:  hosttools.New(tools.NewClient(hostcall.Endpoint{BaseURL: hostSrv.serve(t), Token: hostToken})),
+		})
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	web := httptest.NewServer(handler)
+	defer web.Close()
+
+	if err := servertest.NewLifecycleClient(web.Client(), web.URL, testToken).Configure(t.Context(), map[string]string{"maxTokens": "2048"}); err != nil {
+		t.Fatal(err)
+	}
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		callTaskWithOptions(t, web.Client(), web.URL, map[string]string{"model": "c-harbor|gull-7b"})
+	}()
+
+	<-model.started
+	if got := model.getTurn().MaxTokens; got != 2048 {
+		t.Errorf("max tokens = %d, want 2048", got)
+	}
+	if err := mounted.Close(); err != nil {
+		t.Fatal(err)
+	}
+	<-model.ended
+	<-done
 }

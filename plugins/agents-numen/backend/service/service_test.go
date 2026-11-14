@@ -46,11 +46,20 @@ func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 
 func callTask(t *testing.T, client *http.Client, baseURL string) string {
 	t.Helper()
+	return callTaskWithOptions(t, client, baseURL, nil)
+}
+
+func callTaskWithOptions(t *testing.T, client *http.Client, baseURL string, options map[string]string) string {
+	t.Helper()
 	payload, err := acptest.EncodeTaskRequest(&acp.TaskRequest{Prompt: "When does the ferry leave?"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	message, err := json.Marshal(map[string]any{"operation": acp.OperationTask, "call": map[string]any{"type": "numen"}, "payload": payload})
+	call := map[string]any{"type": "numen"}
+	if options != nil {
+		call["options"] = options
+	}
+	message, err := json.Marshal(map[string]any{"operation": acp.OperationTask, "call": call, "payload": payload})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,5 +118,19 @@ func TestTheLinkedHandlerServesAgentTasksAsAProvider(t *testing.T) {
 func TestNewHandlerNeedsTheHostOfTheCore(t *testing.T) {
 	if _, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken}); err == nil {
 		t.Error("NewHandler accepted variables with no host port")
+	}
+}
+
+func TestMountNeedsTheHostOfTheCore(t *testing.T) {
+	if _, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: testToken}, Mount); err == nil {
+		t.Error("Mount accepted an environment with no host port")
+	}
+}
+
+func TestMountRejectsMissingHostParts(t *testing.T) {
+	if _, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: testToken}, func(s *server.Server) error {
+		return mount(s, host{})
+	}); err == nil {
+		t.Error("mount accepted an empty host")
 	}
 }

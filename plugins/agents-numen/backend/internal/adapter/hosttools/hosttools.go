@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/ports"
@@ -27,24 +26,6 @@ var _ ports.Tools = (*Tools)(nil)
 // New returns Tools that reach the host through client.
 func New(client tools.Client) *Tools {
 	return &Tools{client: client}
-}
-
-// FromEnvironment returns Tools of the host the process environment names.
-func FromEnvironment() (*Tools, error) {
-	endpoint, err := hostcall.FromEnv()
-	if err != nil {
-		return nil, err
-	}
-	return New(tools.NewClient(endpoint)), nil
-}
-
-// FromVariables returns Tools of the host the variables name.
-func FromVariables(vars map[string]string) (*Tools, error) {
-	endpoint, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	return New(tools.NewClient(endpoint)), nil
 }
 
 // ListTools returns the tools the permissions of the plugin allow, in the order of the listing; a tool that

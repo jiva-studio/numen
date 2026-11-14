@@ -10,7 +10,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/hostchat"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/hosttools"
@@ -23,15 +25,16 @@ import (
 // The agent's tasks end when s closes. The models, the connections that serve them and the tools are
 // those of the host the environment names.
 func Mount(s *server.Server) error {
-	chat, connections, err := hostchat.FromEnvironment()
+	endpoint, err := hostcall.FromEnv()
 	if err != nil {
 		return err
 	}
-	tools, err := hosttools.FromEnvironment()
-	if err != nil {
-		return err
-	}
-	return mount(s, host{chat: chat, models: connections, tools: tools})
+	return mount(s, openHost(endpoint))
+}
+
+func openHost(endpoint hostcall.Endpoint) host {
+	chat, connections := hostchat.OpenEndpoint(endpoint)
+	return host{chat: chat, models: connections, tools: hosttools.New(tools.NewClient(endpoint))}
 }
 
 // host is what the agent reaches through the core: the model of a turn, the connections that serve
@@ -67,10 +70,7 @@ func newAgent(reach host) (*agent, error) {
 	if err != nil {
 		return nil, err
 	}
-	lister, err := models.NewLister(reach.models)
-	if err != nil {
-		return nil, err
-	}
+	lister := models.NewLister(reach.models)
 	provider := llm.Provide(acp.Provide(nil, answerer), llm.Roles{Models: modelOptions{lister: lister}})
 	return &agent{settings: store, answerer: answerer, provider: provider}, nil
 }
@@ -97,14 +97,10 @@ func (m modelOptions) ListModels(ctx context.Context, _ connection.Call, _ conne
 // the variables a launched process of the plugin is given. The models, the connections that serve them
 // and the tools are those of the host those variables name.
 func NewHandler(vars map[string]string) (http.Handler, error) {
-	chat, connections, err := hostchat.FromVariables(vars)
+	endpoint, err := hostcall.FromVars(vars)
 	if err != nil {
 		return nil, err
 	}
-	tools, err := hosttools.FromVariables(vars)
-	if err != nil {
-		return nil, err
-	}
-	reach := host{chat: chat, models: connections, tools: tools}
+	reach := openHost(endpoint)
 	return server.NewLinkedHandler(vars, func(s *server.Server) error { return mount(s, reach) })
 }
