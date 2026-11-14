@@ -22,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/windowstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
@@ -197,7 +196,7 @@ func mountSettings(w *windowWiring) {
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(getPluginServices(w.a), func(id string) (string, bool) { return getPluginDir(w.a, id) })
 	host := w.a.PluginHost
-	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime, getConnectionResolve(w.a), clock.System{})
+	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.PluginResolver, getConnectionResolve(w.a), w.cfg.Clock())
 	handler := windowplugin.NewHandler(watch)
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.state.Gate.CountQuestions())))
 }
@@ -205,7 +204,7 @@ func mountPlugin(w *windowWiring) {
 func mountHealth(w *windowWiring) {
 	host := w.a.PluginHost
 	handler := windowhealth.NewHandler(
-		host.Health, pluginhealth.NewReport(host.Health, host.Runtime), pluginhealth.NewClear(host.Health),
+		host.Health, pluginhealth.NewReport(host.Health, host.Runtime.PluginResolver), pluginhealth.NewClear(host.Health),
 	)
 	path, served := windowhealth.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
@@ -260,7 +259,7 @@ func newIndexWorker(a pluginsWiring, db *Index, state *editor.State, embedding *
 		SearchSourceReady: state.Events.EmitSearchSourceReady,
 		Events:            windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
 		Quiet:             indexing.QuietPeriod,
-		After:             clock.System{}.After,
+		After:             a.vault.Clock.After,
 	})
 }
 

@@ -4,7 +4,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
@@ -54,8 +53,8 @@ func openConnectionDeps(c pluginsWiring) (connection.Deps, bool) {
 func openDetection(c pluginsWiring) connectionport.Detected {
 	detection := c.PluginHost.Detection
 	if detection == nil {
-		source := providerbridge.NewQuestionSource(c.PluginHost.Runtime)
-		return providerbridge.NewDetection(c.PluginHost.Views.Types, source, clock.System{})
+		source := providerbridge.NewQuestionSource(c.PluginHost.Runtime.Activator)
+		return providerbridge.NewDetection(c.PluginHost.Views.Types, source, c.vault.Clock)
 	}
 	detection.Follow(func() { refreshSettingEvents(c.settings) }, c.settings.ErrorHandler)
 	return detection
@@ -96,7 +95,7 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 			Rows:   connection.NewListRows(deps, openConnectionRows(c)).Execute,
 			Titles: c.PluginHost.Views.Operations,
 		},
-		openCallSource(c, deps), clock.System{}, clock.System{}.Wait, notices,
+		openCallSource(c, deps), c.vault.Clock, c.vault.Clock.Wait, notices,
 	)
 	lists := openRowLists(c)
 	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
@@ -139,14 +138,14 @@ func openRowOptions(c pluginsWiring, deps connection.Deps) *rowoptions.Options {
 	}
 	return rowoptions.NewOptions(rowoptions.Deps{
 		Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
-		Source: providerbridge.NewQuestionSource(c.PluginHost.Runtime), Running: c.PluginHost.RunningProviders,
+		Source: providerbridge.NewQuestionSource(c.PluginHost.Runtime.Activator), Running: c.PluginHost.RunningProviders,
 		Lists: c.PluginHost.RowOptions, Titles: c.PluginHost.Views.Operations,
 		Grants: connection.NewGetGrantRevision(deps).Execute,
 	})
 }
 
 func openCallSource(c pluginsWiring, deps connection.Deps) connectionport.ProviderSource {
-	var source connectionport.ProviderSource = providerbridge.NewSource(c.PluginHost.Runtime)
+	var source connectionport.ProviderSource = providerbridge.NewSource(c.PluginHost.Runtime.Activator)
 	if c.PluginHost.Detection != nil {
 		source = providerbridge.NewRedetectingSource(source, c.PluginHost.Detection)
 	}

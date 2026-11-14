@@ -62,7 +62,7 @@ type Config struct {
 
 	ErrorHandler window.ErrorHandler
 
-	Now machineport.Clock
+	Now machineport.Timer
 
 	Resources *Resources
 
@@ -127,7 +127,7 @@ func (c Config) runningHost() *PluginHost {
 }
 
 // Clock is the clock every use case assembled here is handed.
-func (c Config) Clock() machineport.Clock {
+func (c Config) Clock() machineport.Timer {
 	if c.Now != nil {
 		return c.Now
 	}

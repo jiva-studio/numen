@@ -1,6 +1,8 @@
 package testsupport
 
 import (
+	"context"
+	"errors"
 	"testing"
 	"time"
 )
@@ -18,5 +20,30 @@ func TestManualClockReportsConfiguredTimeUntilMoved(t *testing.T) {
 	fake.Set(later)
 	if got := fake.Now(); !got.Equal(later) {
 		t.Fatalf("Now() after Set = %v, want %v", got, later)
+	}
+}
+
+func TestManualClockFiresAWaitOnlyOnceMovedPastItsEnd(t *testing.T) {
+	fake := NewClock()
+	fired := fake.After(time.Minute)
+	fake.Advance(59 * time.Second)
+	select {
+	case <-fired:
+		t.Fatal("the wait ended a second before its end")
+	default:
+	}
+	fake.Advance(time.Second)
+	select {
+	case <-fired:
+	default:
+		t.Fatal("the wait did not end when the clock reached its end")
+	}
+}
+
+func TestManualClockWaitEndsWithTheContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if err := NewClock().Wait(ctx, time.Hour); !errors.Is(err, context.Canceled) {
+		t.Fatalf("Wait() = %v, want %v", err, context.Canceled)
 	}
 }
