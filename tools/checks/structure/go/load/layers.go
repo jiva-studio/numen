@@ -12,23 +12,21 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 )
 
 // Module is the base import path prefix for core packages.
 const Module = "github.com/jiva-studio/numen/libs/core/kernel/"
 
-// GetDriving returns the driving adapters of the kernel by package path under the kernel, read once from the tree.
-func GetDriving() map[string]bool { return listKernelDriving() }
-
-var listKernelDriving = sync.OnceValue(func() map[string]bool {
+// GetDriving returns the driving adapters of the kernel by package path under the kernel, read from the tree.
+func GetDriving(t testing.TB) map[string]bool {
+	t.Helper()
 	driving, err := ListDriving("..")
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	return driving
-})
+}
 
 // ListDriving returns the driving adapters under the kernel folder root: the packages of adapter/,
 // internal/adapter/ and internal/adapterlib/ with a file that imports a use case or names a handler of the
@@ -272,6 +270,6 @@ func ParseSourceFiles(t *testing.T, dir string) []*ast.File {
 	return files
 }
 
-func IsDriving(pkg string) bool {
-	return IsAmong(slices.Collect(maps.Keys(GetDriving())), pkg)
+func IsDriving(driving map[string]bool, pkg string) bool {
+	return IsAmong(slices.Collect(maps.Keys(driving)), pkg)
 }

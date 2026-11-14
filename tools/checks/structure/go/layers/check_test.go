@@ -23,7 +23,7 @@ import (
 // Test files are excluded: a test is external to the package it exercises and
 // builds the adapters that stand in for the real ones.
 func TestLayerDependenciesPointInward(t *testing.T) {
-	wrong, err := findOutwardImports("..")
+	wrong, err := findOutwardImports(load.GetDriving(t), "..")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestLayerWalk_FindsThePlantedImports(t *testing.T) {
 		"usecase/note/note.go":   "package note\n\nimport _ \"" + load.Module + "adapter/index\"\n",
 		"adapter/index/index.go": "package index\n\nimport _ \"" + load.Module + "port\"\n",
 	})
-	wrong, err := findOutwardImports(root)
+	wrong, err := findOutwardImports(load.GetDriving(t), root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,12 +50,12 @@ func TestLayerWalk_FindsThePlantedImports(t *testing.T) {
 
 // TestLayerWalk_FailsOnATreeWithoutEdges verifies that a root without an import of this module is an error, not a pass.
 func TestLayerWalk_FailsOnATreeWithoutEdges(t *testing.T) {
-	if _, err := findOutwardImports(t.TempDir()); err == nil {
+	if _, err := findOutwardImports(load.GetDriving(t), t.TempDir()); err == nil {
 		t.Error("a walk over a tree without an edge passed")
 	}
 }
 
-func findOutwardImports(root string) ([]string, error) {
+func findOutwardImports(driving map[string]bool, root string) ([]string, error) {
 	// Fails when it reads no edge.
 	var wrong []string
 	var read int
@@ -77,7 +77,7 @@ func findOutwardImports(root string) ([]string, error) {
 				continue
 			}
 			read++
-			if why := getRefusal(from, strings.TrimPrefix(to, load.Module)); why != "" {
+			if why := getRefusal(driving, from, strings.TrimPrefix(to, load.Module)); why != "" {
 				wrong = append(wrong, from+" reaches "+strings.TrimPrefix(to, load.Module)+": "+why)
 			}
 		}
@@ -186,6 +186,7 @@ import (
 // entry, and a package holding what is true of a note reached one that holds
 // work.
 func TestLayerRule_RefusesForbiddenEdges(t *testing.T) {
+	driving := load.GetDriving(t)
 	for _, one := range []struct {
 		from, to  string
 		isRefused bool
@@ -254,7 +255,7 @@ func TestLayerRule_RefusesForbiddenEdges(t *testing.T) {
 		{"container", "adapter/index", false},
 		{"container", "usecase/run", false},
 	} {
-		why := getRefusal(one.from, one.to)
+		why := getRefusal(driving, one.from, one.to)
 		if one.isRefused && why == "" {
 			t.Errorf("%s reaches %s and is not rejected", one.from, one.to)
 		}
