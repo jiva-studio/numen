@@ -17,9 +17,9 @@ describe('counting a relation', () => {
 })
 
 describe('the reference relation', () => {
-  it('grows to the left, as a jump does', () => {
-    expect(RELATIONS.reference).toMatchObject({ grows: 'left' })
-    expect(RELATIONS.jump).toMatchObject({ grows: 'left' })
+  it('grows to the left and leans up, where a jump grows to the left and leans down', () => {
+    expect(RELATIONS.reference).toMatchObject({ grows: 'left', lean: 'up' })
+    expect(RELATIONS.jump).toMatchObject({ grows: 'left', lean: 'down' })
   })
 
   it('is listed between the jump and the sibling', () => {

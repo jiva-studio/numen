@@ -1,7 +1,7 @@
 import type { PlacedNode } from '../../node'
 import type { PlexOptions } from '../options'
 import type { PlexNode, PlexRelation } from '../../../../types'
-import type { Spot } from './spotIndex'
+import type { Spot } from './freeSpot'
 import type { Link } from './lines'
 
 /** The nodes included in the graph, grouped by relation. */

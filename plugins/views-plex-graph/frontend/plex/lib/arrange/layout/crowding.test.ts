@@ -127,8 +127,8 @@ describe('the loosest packing that fits everything', () => {
     (packed.nodeSize.width - minWidth) / (nodeSize.width - minWidth)
 
   it.each([
-    { width: 480, height: 1000 },
-    { width: 520, height: 1000 },
+    { width: 600, height: 1000 },
+    { width: 700, height: 1000 },
   ])('$width×$height is found to a 128th, and one step looser leaves a note out', (viewport) => {
     const options = { ...DEFAULT_OPTIONS, viewport }
     const packed = measureCrowding(options, canHoldAll)

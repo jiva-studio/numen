@@ -14,9 +14,11 @@
 
 ### In scope
 
-- Each relation takes a sector around the note in the middle (radial layout: Yee et al. 2001, Brandes & Pich). Clockwise from the top: parents (centered at the top), siblings, children, jumps, references. Each group with notes gets at least 36 degrees; the rest of the circle is shared by note count.
-- Each sector is filled ring by ring outward from the note in the middle. A ring takes every free slot inside the window and inside the sector; when it has room to spare, the notes are spread evenly, and alternate rings are shifted by half a slot.
-- A note never leaves its sector. Two notes never overlap.
+- Each relation is a compact group, a patch grown around its own middle, not a line. The middle of the group sits out from the note in the middle by half the depth of the patch, so a large group stands further out than a small one.
+- Where each group grows: parents above, children below, siblings to the right, jumps left (below left where references share the side). The table of directions has a place for a group above left, which references (#1839) take later without changing how groups are placed.
+- The groups take turns, one note each, so every group gets a share of the space near the note in the middle.
+- Two notes never overlap. The areas of two groups may interlock: a note of one group may sit in a gap inside the area of another.
+- No note of a group sits nearer the note in the middle than the point where that group starts.
 - Siblings keep their line to the parent they share with the note in the middle.
 - Notes that do not fit in the window are counted in the text at the bottom left, as today ("N children not shown"). The notes shown of each relation are the first ones of that relation, in the order they arrive.
 - In a crowded window the boxes still narrow and the gaps still close before a note is left out; in a roomy window the gaps still open, as today.
@@ -24,6 +26,7 @@
 
 ### Out of scope
 
+- Zones and rings: no fixed area per relation, no circle around the note in the middle.
 - A "+N" pill or any other new overflow control.
 - Zooming the view in on the note in the middle.
 - References (#1839), the next generation of notes (names under each note), new settings.
@@ -34,17 +37,19 @@
 | Scenario | Expected behavior |
 |---|---|
 | A note with no connections | The note in the middle alone, as today. |
-| One relation only, many notes | That group takes the whole circle and fills ring after ring before notes are left out. |
-| More notes than the window holds | Boxes narrow and gaps close first; then the last notes of the groups whose sectors are full to the border of the window are left out and counted per relation in the text at the bottom left. No note is drawn past the edge of the window. |
+| One relation only, many notes | That group fills the space near the middle in every direction it may grow into, more than one row or column deep, before notes are left out. |
+| More notes than the window holds | Boxes narrow and gaps close first; then the last notes of the groups that run out of room are left out and counted per relation in the text at the bottom left. No note is drawn past the edge of the window. |
 | No window size known (tests, first frame) | A fixed number of notes per group is shown, as today; the rest are counted. |
-| A large group next to a small one | The small group still gets its 36 degrees next to the note in the middle. |
+| A large group next to a small one | The small group still gets the space next to the note in the middle, because the groups take turns. |
+| Two groups grow towards the same free space | Each note goes to the free spot nearest the middle of its own group; no two notes overlap. |
 | Large Room around a note (#1836) | The room shrinks with the gaps in a tight window; notes that still do not fit are counted. |
 | The same note opened twice | The plex is drawn the same way both times, whichever relation is listed first. Within one relation the notes keep the order they arrived in, and the first ones are the ones shown. |
 
 ## 4. Invariants
 
 - Two notes never overlap.
-- Every note lies in the sector of its relation.
+- Every parent is above the note in the middle, every child below it, every sibling to its right, every jump to its left.
+- A group never comes nearer the note in the middle than the point where it starts.
 - The notes shown of a relation are the first ones of that relation; the count of those not shown is exact.
 - No note is drawn outside the window, less its margin.
 - The same input gives the same picture.
@@ -53,8 +58,10 @@
 
 ## 5. Decisions of the owner (fixed)
 
-- Radial sectors (2026-11-14), in place of the clusters and their lanes and territories: clockwise parents (centered at the top), siblings, children, jumps, references; 36 degrees at least per group with notes, the rest by note count; filled ring by ring; a note never leaves its sector. Clear lines are only a preference inside a sector.
-- Boxes never overlap.
+- Clusters only; no zones, no rings.
+- Each relation is a compact patch grown around its own middle; the middle sits out from the focus by half the patch depth; members are chosen nearest that middle measured in boxes, never nearer the focus than the anchor.
+- Groups take turns, one note each. Boxes never overlap; group areas may interlock.
+- Parents above, children below, siblings right, jumps left (below left where references share the side); references (#1839) above left, with a slot left for them.
 - Siblings keep their line to the shared parent.
 - Overflow stays as today: the text "N children not shown" bottom left; no "+N" pill.
 - No camera zoom-in; Focus size (#1836) stays the only thing that enlarges the focus.

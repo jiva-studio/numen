@@ -1,8 +1,7 @@
 /** A note is not set where its line would run along another line or through another note. */
 import { describe, expect, it } from 'vitest'
 import { clusters } from './clusters'
-import { SpotIndex, type Spot } from './spotIndex'
-import { layRing, type RingRequest } from './sectors'
+import { findFreeSpot, SpotIndex, type Spot } from './freeSpot'
 import { LineIndex } from './lines'
 import type { PlacementContext } from './placement'
 import { resolveOptions } from '../options'
@@ -79,42 +78,40 @@ describe('the lines of a note stay apart', () => {
   })
 })
 
-describe('a spot on a ring', () => {
-  const sector = { relation: 'parent' as const, from: -120, to: -60 }
-  const layOne = (request: Partial<RingRequest>): Spot[] => {
-    const { index } = createLines([])
-    const spots: Spot[] = []
-    layRing(index, {
-      sector,
-      radius: 200,
-      isOdd: false,
-      gaps: GAPS,
-      isInside: () => true,
-      isLineClear: () => true,
-      sizes: [SIZE],
-      commit: (_, spot) => spots.push(spot),
-      ...request,
-    })
-    return spots
+describe('a free spot', () => {
+  const request = {
+    start: { x: 0, y: -100 },
+    middle: { x: 0, y: -100 },
+    direction: { x: 0, y: -1 },
+    size: SIZE,
+    group: [] as Spot[],
+    gaps: GAPS,
   }
 
-  it('that keeps its lines apart is taken in place of the middle of the sector', () => {
-    const [spot] = layOne({ isLineClear: (_, candidate) => Math.abs(candidate.x) > 1 })
+  it('that keeps its lines apart is taken in place of a nearer one that does not', () => {
+    const { index } = createLines([])
+    const spot = findFreeSpot(index, {
+      ...request,
+      isLineClear: (candidate) => candidate.x !== 0,
+    })
 
-    expect(Math.abs(spot!.x)).toBeGreaterThan(1)
+    expect(spot.x).not.toBe(0)
   })
 
   it('that does not is still taken when no spot keeps its lines apart', () => {
-    expect(layOne({ isLineClear: () => false })).toStrictEqual(layOne({}))
+    const { index } = createLines([])
+
+    expect(findFreeSpot(index, { ...request, isLineClear: () => false })).toStrictEqual(
+      findFreeSpot(index, request),
+    )
   })
 
   it('that does not is still taken when the window holds no other spot', () => {
-    const [spot] = layOne({
-      isInside: (candidate) => Math.abs(candidate.x) < 2,
-      isLineClear: () => false,
-    })
+    const { index } = createLines([])
+    const only = (spot: Spot) => spot.x === 0 && spot.y === -100
+    const spot = findFreeSpot(index, { ...request, fits: only, isLineClear: () => false })
 
-    expect(spot!.y).toBeCloseTo(-200)
+    expect(spot).toMatchObject({ x: 0, y: -100 })
   })
 })
 

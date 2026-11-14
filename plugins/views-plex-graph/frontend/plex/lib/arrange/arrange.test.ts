@@ -80,10 +80,13 @@ describe('where the relations sit', () => {
     }
   })
 
-  it('puts the jumps on the left half and the siblings on the right half', () => {
-    for (const jump of getNodesByRelation(layout, 'jump')) expect(jump.x).toBeLessThan(0)
-    for (const sibling of getNodesByRelation(layout, 'sibling'))
-      expect(sibling.x).toBeGreaterThan(0)
+  it('puts every jump clear to the left and every sibling clear to the right', () => {
+    for (const jump of getNodesByRelation(layout, 'jump')) {
+      expect(jump.x + jump.width / 2).toBeLessThan(-focus.width / 2)
+    }
+    for (const sibling of getNodesByRelation(layout, 'sibling')) {
+      expect(sibling.x - sibling.width / 2).toBeGreaterThan(focus.width / 2)
+    }
     expect(getNodesByRelation(layout, 'jump').length).toBeGreaterThan(0)
     expect(getNodesByRelation(layout, 'sibling').length).toBeGreaterThan(0)
   })
@@ -131,6 +134,14 @@ describe('a box is as wide as its title needs', () => {
     const layout = arrangePlex(createGraph('child', '', 'A'), { measure: () => 0 })
     expect(getFocus(layout).width).toBeCloseTo(minWidth * focusScale, 6)
     for (const node of getNodesByRelation(layout, 'child')) expect(node.width).toBe(minWidth)
+  })
+
+  it('puts the first box of a group on the axis of its side, whatever the widths', () => {
+    const mixed = createGraph('child', 'A', 'Domain', 'Composition root', 'Port', 'Use case')
+    const children = getNodesByRelation(arrangePlex(mixed, { measure: byTitle }), 'child')
+
+    expect(new Set(children.map((node) => node.width)).size).toBeGreaterThan(1)
+    expect(children[0]!.x).toBe(0)
   })
 
   it('shows as much as it would have shown unmeasured', () => {
@@ -271,6 +282,22 @@ describe('the options are honoured', () => {
     expect(getNodesByRelation(narrow, 'child')).toHaveLength(3)
   })
 
+  it('lets the caller send children up and parents down', () => {
+    const upside = arrangePlex(graphs.typical, {
+      options: {
+        direction: {
+          parent: 'down',
+          child: 'up',
+          jump: 'left',
+          reference: 'left',
+          sibling: 'right',
+        },
+      },
+    })
+    for (const child of getNodesByRelation(upside, 'child')) expect(child.y).toBeLessThan(0)
+    for (const parent of getNodesByRelation(upside, 'parent')) expect(parent.y).toBeGreaterThan(0)
+  })
+
   it('takes a curve setting without receiving the size of a box', () => {
     // Tuning a curve should not need to know the size of a box.
     const straighter = arrangePlex(graphs.typical, {
@@ -363,22 +390,19 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
 })
 
 describe('a window that holds the arrangement exactly', () => {
-  it('opens the gaps into the room and keeps every box inside', () => {
-    const { margin } = DEFAULT_OPTIONS
+  it('opens the gaps that have room, the height being met to the pixel', () => {
+    const { nodeSize, gap, margin } = DEFAULT_OPTIONS
     const two = createGraph('child', 'One', 'Two')
-    const settings = arrangePlex(two).extent
-    const viewport = { width: 2 * (settings.maxX + margin), height: 2 * (settings.maxY + margin) }
+    const settings = getNodesByRelation(arrangePlex(two), 'child')
+    const bottom = Math.max(...settings.map((node) => node.y + node.height / 2))
+    const viewport = { width: 2000, height: 2 * (bottom + margin) }
 
     const frame = arrangePlex(two, { options: { viewport } })
+    const [first, second] = getNodesByRelation(frame, 'child')
 
-    expect(getNodesByRelation(frame, 'child')).toHaveLength(2)
-    for (const node of frame.nodes) {
-      expect(Math.abs(node.x) + node.width / 2).toBeLessThanOrEqual(
-        viewport.width / 2 - margin + 1e-6,
-      )
-      expect(Math.abs(node.y) + node.height / 2).toBeLessThanOrEqual(
-        viewport.height / 2 - margin + 1e-6,
-      )
-    }
+    expect(Math.max(...[first!, second!].map((node) => node.y + node.height / 2))).toBeCloseTo(
+      bottom,
+    )
+    expect(Math.abs(second!.x - first!.x)).toBeGreaterThan(nodeSize.width + gap)
   })
 })

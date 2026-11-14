@@ -1,7 +1,7 @@
 /** Random windows, counts, widths and rooms: what the arrangement shows is what fits, and a note is not cut while there is room. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
-import { SpotIndex } from './layout/spotIndex'
+import { SpotIndex } from './layout/freeSpot'
 import { getFootprint, getFootprintCenterY, type NodeRoom } from './layout/placement'
 import { resolveOptions } from './options'
 import { RELATION_NAMES } from '../relation'
@@ -162,8 +162,7 @@ describe('a note that is cut', () => {
         if (Object.keys(again.overflow).length === 0)
           stillFits.push(`case ${round} ${relation} ${visible}`)
       }
-      // Packing is chosen for the whole graph, so a smaller graph may be packed looser and now and then holds one more.
-      expect(stillFits.length).toBeLessThanOrEqual(1)
+      expect(stillFits).toStrictEqual([])
     },
   )
 
@@ -187,8 +186,7 @@ describe('a note that is cut', () => {
         againIds.size === visibleIds.size && [...againIds].every((id) => visibleIds.has(id))
       if (!isSame) changed.push(`case ${round}`)
     })
-    // Slots on a ring do not grow smoothly with the gaps, so a packing chosen for the smaller graph now and then differs from the one chosen for the whole.
-    expect(changed.length).toBeLessThanOrEqual(3)
+    expect(changed).toStrictEqual([])
   }, 120_000)
 })
 

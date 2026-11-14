@@ -14,7 +14,7 @@ import { clusters } from './layout/clusters'
 import { measureCrowding, packOptions } from './layout/crowding'
 import { applyRoom } from './look'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
-import type { Spot } from './layout/spotIndex'
+import type { Spot } from './layout/freeSpot'
 import {
   getFootprint,
   getFootprintCenterY,

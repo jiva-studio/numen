@@ -23,8 +23,7 @@ const getSeparation = (frame: PlexFrame): number => {
   return smallest
 }
 
-const getNearestY = (frame: PlexFrame): number =>
-  Math.min(...children(frame).map((node) => Math.abs(node.y)))
+const getNearestY = (frame: PlexFrame): number => Math.min(...children(frame).map((node) => node.y))
 
 const findEscapedNodes = (frame: PlexFrame, viewport: { width: number; height: number }) =>
   frame.nodes.filter(

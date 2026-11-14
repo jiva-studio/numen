@@ -25,17 +25,27 @@ graph TD
 
 `export const clusters: Placement = { name: 'clusters', place: placeClusters }`. It replaces `rowsAndColumns` as the default of `ArrangeInput.placement`.
 
-`placeClusters(nodesByRelation, focus, context)` lays the groups in radial sectors around the focus (radial layout as in Yee et al. 2001 and Brandes & Pich; ego networks drawn in sectors):
+`placeClusters(nodesByRelation, focus, context)`:
 
-1. **Sectors.** `getSectors(counts): Sector[]` (`layout/sectors.ts`). The groups that have notes take sectors clockwise in the order parents, siblings, children, jumps, references; the parents' sector is centered at the top. Each such group gets `MIN_SECTOR_DEGREES = 36` and the rest of the 360 degrees is shared by note count. References come in only when the references setting shows them.
-2. **Rings.** Each sector is filled ring by ring outward from the focus. The first ring lies half the focus height plus `focusGap` plus half the tallest footprint of the group from the center; each next ring is one footprint height plus `lineGap` further out. The rings stop where they leave the window (half its diagonal) or at 400 rings without a window.
-3. **One ring.** `layRing(index, request)` walks the arc of the sector in 3 px steps, 4 px inside each border. When the arc cannot hold all the notes still to place, it takes as many as fit, packed one after another. When it can, the notes are spread evenly: each starts at the middle of its share of the arc and takes the first free spot from there. Odd rings start half a slot later, so notes of two rings do not stand on one ray. A spot is free when it is inside the window and keeps `gap` and `lineGap` from every box placed (`SpotIndex.isFree`, `layout/spotIndex.ts`).
-4. **Lines.** Where a spot would make a line run along another line or through another note (`layout/lines.ts`), a free spot a little along the same arc is taken instead, if one has clear lines. This is a preference only: a note never leaves its sector and is never left out for its lines.
-5. **Left out.** A note stays in its sector. The notes that no ring inside the window can hold are set outside the window in the middle of their sector, and `arrangePlex` counts them as not shown.
-6. **Free.** `isClear(spot, other, gaps)`: `|Δx| ≥ (w₁ + w₂)/2 + gap − TOLERANCE` or `|Δy| ≥ (h₁ + h₂)/2 + lineGap − TOLERANCE`, `TOLERANCE = 0.5`, so a box built exactly one gap from a neighbor counts as free despite floating-point error.
+1. **Turns.** `takeTurns(nodesByRelation): PlexNode[]` orders the nodes one per relation in turn, relations in `RELATION_NAMES` order (parent, child, jump, sibling; reference goes between jump and sibling when #1839 adds it, as in the prototype's `ORDER`), each relation in the order it arrived. Relations that run out drop out of the turn. (Prototype `interleave`.)
+2. **Direction of a group.** `getClusterDirection(side: Direction, lean: Lean | null): Vector`, a unit vector: `up` (0, −1), `down` (0, 1), `left` (−1, 0), `right` (1, 0), plus `LEAN = 0.42` on the cross axis toward `lean`, normalized. `side` is `options.direction[relation]` (so a caller who sends children up still moves them); `lean` is `RELATIONS[relation].lean` (section 2). Jump: side `left`, lean `down` → normalize(−1, 0.42) where references share the side; the caller passes `lean = null` for a group that is alone on its side. (Prototype `getDirection`.)
+3. **Anchor.** `getAnchor(direction, focus, options): Vector`, the nearest point a group may reach:
+   - straight direction: `direction × (focus half-size on that axis + focusGap)`;
+   - leaning direction: `x = sign(dx) × (focus.width / 2 + focusGap)`, `y = sign(dy) × (focus.height / 2 + lineGap)`, so the anchor is clear of the focus on both axes.
+4. **Start and middle.** For a box `w × h`: `reach = |dx| × w/2 + |dy| × h/2`; `start = anchor + direction × reach`. Cell = `(w + gap, h + lineGap)`. `depth = max(0, (√size − 1) / 2) × (|dx| × cell.w + |dy| × cell.h)` where `size` is the number of nodes of that relation being placed; `middle = start + direction × depth` (`getClusterMiddle`).
+5. **Free spot.** `findFreeSpot(taken, request): Spot` (prototype `placeNear`):
+   - Candidates, in this order: `middle`, `start`, then for every box `b` already placed in the same group: right, left, below, above of `b` (touching at exactly one gap: `gap` sideways, `lineGap` up and down), then the four half-steps (half-way to the right or left neighbor, one row below or above).
+   - Cost of a candidate `c`: `Infinity` when `(c − start) · direction < −0.5` (nearer the focus than the start); else `hypot((c.x − middle.x) / cell.w, (c.y − middle.y) / cell.h)` — distance to the middle counted in boxes.
+   - Sort by cost, stable, so equal costs keep candidate order (deterministic). The first candidate whose box is free wins.
+   - Tie-break: costs are rounded to 1e-6 before they are compared, so floating-point error does not decide a tie; of equal costs the candidate nearer the start along the direction (smaller `(c − start) · direction`) wins, which fills a group across its axis before it goes deeper; only then does candidate order decide. The search takes the least (cost, along) candidate that is free without sorting; a grid index of the placed boxes answers `isFree`.
+   - The places beside every box already placed inside the window are tried first. A box wider than the ones before it may sit behind the start of its group (the `along` test is relaxed) where the window has room and its center stays on the side of the group.
+   - If none is free, walk outward from `middle`: step `k = 1 … 400` along `direction` by a quarter of `nodeSize.height`, with sideways offsets `0, 1, −1, 2, −2, 3, −3` cells across the direction; the first free box wins; after that, `middle`. (The walk keeps to the window, so a note is dropped only when the window has no free place left for it.)
+   - A spot whose line to a placed note (`PlacementContext.edges`) would run along another line that meets it at a note other than the focus, or through another note, or whose box lies on a line already drawn, is taken only when no free spot is without that defect (`lib/arrange/layout/lines.ts`).
+   - Lanes. Every group has a side and a lane: the half-plane of its side opening from the focus as a cone (a row of parents or children opens wider across, by the ratio of a cell's width to its height). A group leans across its axis only where another group shares its side (jumps and references); alone it grows straight out, so its middle lies on the axis. The free spot is searched in the lane first, and in the lane a spot with clear lines before one without; of equal costs the spot that keeps the center of the group nearest its middle wins, so a group grows on both sides of its axis in turn. A note leaves its lane only when the lane has no free spot in the window. There is no cap on how far a note moves for its lines.
+6. **Free.** `isFree(spot, taken, gaps): boolean` — no taken box (the focus included) with `|Δx| < (w₁ + w₂)/2 + gap − TOLERANCE` and `|Δy| < (h₁ + h₂)/2 + lineGap − TOLERANCE`, `TOLERANCE = 0.5`. The tolerance is load-bearing: candidates are built exactly one gap from a neighbor, and without it floating-point error makes such a box count as overlapping, every touching spot is refused and the groups degrade into lines.
 7. **Output.** Each node keeps its relation, identity and title; `width = context.width(node)`, `height = options.nodeSize.height`, `opacity = 1`, `order` = its index within its relation. The returned array is grouped by relation in `RELATION_NAMES` order, each relation in arrival order — the order today's placement returns, so the drawing order and the tab order of nodes do not change.
 
-Splitting: `clusters.ts` holds `clusters`, `placeClusters` and the ring loop of a sector; `layout/sectors.ts` holds `getSectors` and `layRing`; `layout/spotIndex.ts` holds `SpotIndex` and `isClear`. Each file under 350 lines, each function under 60 lines, complexity 10 and 3 parameters.
+Splitting: `clusters.ts` holds `clusters`, `placeClusters`, `takeTurns`, `getAnchor`, `getClusterMiddle`; `lib/arrange/layout/freeSpot.ts` holds `findFreeSpot`, `listCandidates`, `measureCost`, `findFreeSpotOutward`, `isFree`, `TOLERANCE`. Requests to these take one object (max 4 params). Each file well under 350 lines, each function under 80 lines and complexity 10. `Vector` is `Position` from `lib/node.ts`; a spot is `{ x, y, width, height }`.
 
 ### 1.2 Admission (new, `lib/arrange/layout/admission.ts`)
 
@@ -56,30 +66,33 @@ Replaces `canPlace` in `arrange.ts` and the per-line capacity of `limits.ts`.
 
 - `LimitOptions` becomes `{ maxPerCluster: number; maxHeadings: number }`. `maxPerLine` and `maxLines` are removed (no manifest setting uses them; only stories and tests do).
 - `direction` stays (drop gestures and the edge axis read it, and it sets the side of each group). `isVertical` stays for routing.
-- `lineGap` stays: it is the gap between boxes one above another (open question 2).
+- `lineGap` stays: it is the gap between boxes one above another (open question 2; if one gap should serve both axes, `isFree`, the cell and the leaning anchor use `gap` and `lineGap` is removed).
 
 ### 1.5 Routing
 
-`edges/routing.ts` is not changed. `getAxis` still takes the axis from the side of the relation (`vertical` for parents and children, `horizontal` for jumps and siblings). Sibling edges come from the graph as parent → sibling and are routed as today. Lines that pass behind a box of an inner ring are accepted for this issue (open question 3).
+`edges/routing.ts` is not changed. `getAxis` still takes the axis from the side of the relation (`vertical` for parents and children, `horizontal` for jumps and siblings). Sibling edges come from the graph as parent → sibling and are routed as today. Lines that pass behind a box in a second row are accepted for this issue (open question 3).
 
 ## 2. The direction table (`lib/relation.ts`)
 
-The sectors do not read the table; `grows` is the side a drag from the focus makes a relation on (`drop.ts`).
-
 ```ts
+export type Lean = 'up' | 'down'
+
 export interface RelationDescriptor {
   readonly grows: 'up' | 'down' | 'left' | 'right'
+  /** The cross-axis tilt of the group, or null for a group that grows straight out. */
+  readonly lean: Lean | null
   readonly plural: readonly [one: string, many: string]
 }
 
 export const RELATIONS = {
-  parent: { grows: 'up', plural: ['parent', 'parents'] },
-  child: { grows: 'down', plural: ['child', 'children'] },
-  jump: { grows: 'left', plural: ['jump', 'jumps'] },
-  reference: { grows: 'left', plural: ['reference', 'references'] },
-  sibling: { grows: 'right', plural: ['sibling', 'siblings'] },
+  parent: { grows: 'up', lean: null, plural: ['parent', 'parents'] },
+  child: { grows: 'down', lean: null, plural: ['child', 'children'] },
+  jump: { grows: 'left', lean: 'down', plural: ['jump', 'jumps'] },
+  sibling: { grows: 'right', lean: null, plural: ['sibling', 'siblings'] },
 } as const satisfies Record<PlexRelation, RelationDescriptor>
 ```
+
+#1839 adds `reference: { grows: 'left', lean: 'up', plural: ['reference', 'references'] }` (plus the relation in the types) and nothing in the placement. Which relation a drag to the left makes once two relations share `left` (`drop.ts` takes the first) is #1839's decision.
 
 ## 3. What is removed
 
@@ -94,8 +107,8 @@ export const RELATIONS = {
 
 | Path | File | Action | Consumers |
 |---|---|---|---|
-| `lib` | `relation.ts` | Modify | `options.ts`, `clusters.ts`, `drop.ts`, `fixtures/build.ts` |
-| `lib/arrange/layout` | `clusters.ts`, `sectors.ts`, `spotIndex.ts`, `admission.ts` | Create | `arrange.ts`, `index.ts` |
+| `lib` | `relation.ts` | Modify (`lean`, `Lean`) | `options.ts`, `clusters.ts`, `drop.ts`, `fixtures/build.ts` |
+| `lib/arrange/layout` | `clusters.ts`, `freeSpot.ts`, `admission.ts` | Create | `arrange.ts`, `index.ts` |
 | `lib/arrange/layout` | `placement.ts`, `crowding.ts` | Modify | `arrange.ts`, `fixtures/ring.ts` |
 | `lib/arrange/layout` | `limits.ts`, `limits.test.ts` | Delete | `arrange.ts`, `crowding.ts`, `crowding.test.ts` |
 | `lib/arrange` | `arrange.ts`, `options.ts`, `index.ts` | Modify | `model/transition.ts`, `ui/Plex.vue`, `model/sizing/plexScale.ts` |
@@ -107,7 +120,7 @@ No proto, wire, manifest or setting change. `apps/landing` has its own plex demo
 
 ### Tests and stories that pin rows-and-columns and must change
 
-- `lib/arrange/layout/placement.test.ts`: every `describe` but "what arrives back" pins rows and columns ("a row", "a row too long for one line", "a column", "rows and columns together", "how far a column reaches before it clears the rows"). Replaced by `clusters.test.ts` and `spotIndex.test.ts`; the "what arrives back" cases move to `clusters.test.ts` against `clusters`.
+- `lib/arrange/layout/placement.test.ts`: every `describe` but "what arrives back" pins rows and columns ("a row", "a row too long for one line", "a column", "rows and columns together", "how far a column reaches before it clears the rows"). Replaced by `clusters.test.ts` and `freeSpot.test.ts`; the "what arrives back" cases move to `clusters.test.ts` against `clusters`.
 - `lib/arrange/layout/limits.test.ts`: deleted with `limits.ts`; its window cases ("nothing reaches past the edge", "the margin is a setting") become admission cases.
 - `lib/arrange/layout/crowding.test.ts`: "the loosest packing that fits everything" uses `getLimits` and `canRelationAll`, and "leaves a window alone… twelve to a line and four lines" counts lines; rewritten against `measureCrowding(options, canHoldAll)` with a `canHoldAll` built from `arrangePlex` placement. "leaves the heights, the counts…" checks `maxPerLine`/`maxLines` → `maxPerCluster`.
 - `lib/arrange/arrange.test.ts`: "clears the rows a column runs alongside, and only those"; "leaves a row packed to one gap…", "turns one edge of a column towards the focus", "starts each further column beyond the widest of the one before it"; "the lines of a relation are shared out evenly" (both); "order along a line follows the order given" ("lays a row out left to right", "puts the second line further from the focus than the first"); "counts the nodes past the last line" and "does not let a strategy decide how much is shown" (`maxPerLine × maxLines` → `maxPerCluster`); "lets the caller change how many fit on a line"; "uses rows and columns unless told otherwise" → clusters; "passes a strategy only the relations that have nodes in them" (wraps `rowsAndColumns`); "a window that holds the arrangement exactly" (row-shaped window). "puts every jump clear to the left" stays true and stays.
@@ -125,7 +138,7 @@ No proto, wire, manifest or setting change. `apps/landing` has its own plex demo
 - `arrangePlex` stays pure and deterministic: no randomness, stable sort, ties keep candidate order.
 - The `Placement` interface stays a coordinates-only strategy: admission and fitting live in `arrange.ts` / `admission.ts` / `crowding.ts`, not in `clusters`.
 - No camera zoom, no change of box sizes by the placement, no "+N" node.
-- Files ≤ 350 lines, functions ≤ 60 lines, complexity ≤ 10, ≤ 3 params; imperative names (`placeClusters`, `getSectors`, `layRing`, `isFree`, `requestNodes`, `admitNodes`); comments only for what the code cannot show (the 0.5 tolerance).
+- Files ≤ 350 lines, functions ≤ 80 lines, complexity ≤ 10, ≤ 4 params; imperative names (`placeClusters`, `takeTurns`, `getAnchor`, `getClusterMiddle`, `findFreeSpot`, `listCandidates`, `measureCost`, `isFree`, `requestNodes`, `admitNodes`); comments only for what the code cannot show (the 0.5 tolerance, the stable tie order).
 - Tests use invented fixtures (`fixtures/build.ts`, `fixtures/graphs.ts`), assert behavior on the frame (positions relative to the focus and each other, counts, edges), never CSS or pixels of the rendering, and do not mock the placement or admission they verify.
 
 ## 6. Acceptance criteria
@@ -136,22 +149,37 @@ Every criterion runs through `arrangePlex` unless it names a unit. The counts an
 - **Given** every fixture in `graphs`, unmeasured and measured by title, with no window and in windows 2400×1400, 1200×800, 700×600, 420×320, and the `room` setting at 0 and 20
 - **Then** no two nodes of the frame overlap, the focus included.
 
-### AC-2: Each relation in its sector
-- **Given** `build('A note', { parent: 3, sibling: 40, child: 40, jump: 12, reference: 8 })` in windows 1900×1640 and 1200×900
-- **Then** no note is left out, no two boxes overlap, and the center of every note lies inside the sector `getSectors` gives its relation.
-- **Given** the same graph with names under the notes (`room: 20`), and in a 700×500 window
-- **Then** going once around the focus, the notes of each relation form one run.
+### AC-2: Each relation on its side
+- **Given** `typical` and `build('A note', { parent: 8, child: 20, jump: 8, sibling: 8 })` in a 1600×1000 window
+- **Then** every parent's bottom is above the focus's top, every child's top below the focus's bottom, every sibling's left edge right of the focus's right edge, every jump's right edge left of the focus's left edge; and the mean center of the jumps lies on the row of the focus (a group leans only where another group shares its side).
 
-### AC-3: The sectors
-- **Given** `getSectors` of the counts above
-- **Then** the sectors are in the order parents, siblings, children, jumps, references, cover 360 degrees, the parents' sector is centered at the top, every sector is at least 36 degrees, and a larger group has the wider sector. A relation without notes has no sector.
+### AC-3: A group never comes nearer the focus than its start
+- **Given** a single relation of 1, 4, 9 and 20 nodes, each of the four relations
+- **Then** no node's center lies nearer the focus, measured along the group's direction, than the center of the first node of that relation placed alone.
 
-### AC-4: A note is left out only when its sector is full
-- **Given** the graph of AC-2 in a 700×500 window
-- **Then** notes are left out, and every relation with notes left out has a shown note within one box height plus a gap of the border of the window. A graph of 2/6/6/3/2 notes in the same window shows every note.
+### AC-4: A large group is a block, not a line
+- **Given** `build('A note', { child: 9 })` in a 1600×1000 window (and with no window)
+- **Then** the children take at least two distinct rows (center `y`), and no row holds more than five children.
+- **Given** `build('A note', { sibling: 9 })` likewise
+- **Then** the siblings take at least two distinct columns (center `x`).
 
-### AC-5 to AC-8
-Removed with the clusters around a middle: the sectors take their place (AC-2 to AC-4).
+### AC-5: A larger group stands further out
+- **Given** `build('A note', { child: n })` for n = 1, 4, 9, 16 with no window
+- **Then** the mean center `y` of the children grows with n.
+
+### AC-6: Groups take turns
+- **Given** `build('A note', { child: 20, jump: 1, sibling: 1, parent: 1 })` and the same graph with only the single parent, jump and sibling, no window
+- **Then** the parent, the jump and the sibling sit at the same position in both frames: twenty children placed alongside do not push the first note of another group away from its start.
+
+### AC-7: A group fills free space beside another
+- **Given** `build('A note', { child: 24 })` in a 1600×1000 window
+- **Then** every child is shown, and some child's box lies beside the focus's row of boxes further sideways than the focus's half-width plus one box (the group spreads sideways instead of running down in one column).
+- **Given** `build('A note', { child: 16, jump: 16 })` in a 1600×1000 window
+- **Then** no box overlaps, and the bounding rectangles of the children and of the jumps intersect (group areas interlock).
+
+### AC-8: A long group spreads instead of running into one column
+- **Given** `build('A note', { jump: 30 })` in a 1600×1000 window
+- **Then** at least 20 jumps are shown, and the shown jumps take at least three distinct columns (center `x`) and at least three distinct rows (center `y`).
 
 ### AC-9: Overflow is counted, and only the last notes go
 - **Given** `graphs.overcrowded` and `build('A note', { parent: 9, child: 40, jump: 9, sibling: 9 })` in a 400×400 window
@@ -160,7 +188,7 @@ Removed with the clusters around a middle: the sectors take their place (AC-2 to
 - **Then** 20 are shown (`maxPerCluster`) and `overflow` is 10; with `maxPerCluster: 5`, 5 and 25.
 
 ### AC-10: Boxes narrow and gaps close before a note is left out
-- **Given** `build('A note', { parent: 4, child: 12, jump: 4, sibling: 4 })` in windows 680×800, 640×800, 600×800
+- **Given** `build('A note', { parent: 4, child: 12, jump: 4, sibling: 4 })` in windows 600×1000, 500×1000, 440×1000
 - **Then** `measureCrowding` with the clusters `canHoldAll` returns the loosest packing (to a 128th) at which every node is inside, and one step looser does not hold them all; a window that holds all at the settings is returned unchanged.
 
 ### AC-11: Gaps open in a roomy window and the arrangement stays inside
@@ -177,13 +205,19 @@ Removed with the clusters around a middle: the sectors take their place (AC-2 to
 - **Given** every fixture arranged twice, and `typical` with its relations listed in another order and the nodes of each relation kept in their order
 - **Then** the two arrangements of a fixture are strictly equal, and every node of the reordered `typical` has the position it has in the original.
 
-### AC-14: Free spot unit (`spotIndex.ts`)
+### AC-14: Free spot unit (`freeSpot.ts`)
 - **Given** a taken box and a box of the same size exactly one `gap` to its right (and one `lineGap` below)
-- **Then** `isFree` is true; at one `gap` less 1 it is false. The grid index answers as the check against every box does.
+- **Then** `isFree` is true; at one `gap` less 1 it is false. (Pins the tolerance: without it, the touching spot is refused.)
+- **Given** a group with one placed box and nothing else taken
+- **Then** `findFreeSpot` returns a spot touching that box at one gap, never a spot nearer the focus than `start`.
+- **Given** every candidate taken
+- **Then** `findFreeSpot` returns a free spot further out along the direction.
 
-### AC-15: Lines on a ring
-- **Given** one note on a ring whose middle spot has a line that is not clear
-- **Then** `layRing` takes a spot beside it on the same ring; where no spot has clear lines, or the window holds only that spot, it takes the middle spot.
+### AC-15: The direction table drives the sides
+- **Given** `direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' }`
+- **Then** every child is above the focus and every parent below.
+- **Given** `getClusterDirection('left', 'down')` and `getClusterDirection('left', 'up')`
+- **Then** both are unit vectors with negative `x`; the first has positive `y`, the second negative `y`, of equal size.
 
 ### AC-16: Any placement strategy is admitted by the window
 - **Given** the `ring` placement and `overcrowded` in a 700×600 window
@@ -203,8 +237,8 @@ Measured on mridanga in a 1200×800 window at the time of #1837 (before the name
 
 ## 8. Amendments after #1840 (2026-11-13)
 
-1. A note is dropped only when the window has no free place for it in its sector.
+1. A note is dropped only when the window has no free place for it. The free-spot search tries the places beside every placed box inside the window first, and its walk keeps to the window.
 2. Notes cut by the loop are taken back, one of each relation in turn, while the window still holds every box (refill). The loop halves a group whose first box is outside.
 3. A measured title is never cut by packing: a box keeps the width its title needs, up to the widest box of the settings. Unmeasured boxes narrow with the packing.
-4. Replaced by the sectors of section 1.1 (2026-11-14): there is no start of a group any more.
+4. The `along` test is relaxed for a note wider than the ones before it: where the window has room, it may sit behind the start of its group while its center stays on the side of the group.
 5. The numbers of section 7 were measured on the code of #1837. The footprints of #1840 (names) and the refill change them; the limit of 16 ms stands.

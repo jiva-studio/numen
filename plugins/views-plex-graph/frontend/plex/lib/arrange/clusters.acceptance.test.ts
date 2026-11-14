@@ -1,4 +1,4 @@
-/** Each relation fills a sector around the focus, ring by ring, into whatever space is left. */
+/** Each relation grows as a compact cluster from its side of the focus, into whatever space is left. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { getBox, isOverlapping } from './layout/boxes'
@@ -103,6 +103,73 @@ describe('no two boxes overlap', () => {
   )
 })
 
+describe('each relation is placed on its own side of the focus', () => {
+  const full = build('A note', { parent: 8, child: 20, jump: 8, sibling: 8 })
+  const window = { width: 1600, height: 1000 }
+
+  it.each([
+    ['typical', graphs.typical],
+    ['eight, twenty, eight and eight', full],
+  ])('puts every neighbor on its side in %s', (_name, graph) => {
+    const frame = arrange(graph, inWindow(window))
+    const focus = getFocus(frame)
+    const top = focus.y - focus.height / 2
+    const bottom = focus.y + focus.height / 2
+    const left = focus.x - focus.width / 2
+    const right = focus.x + focus.width / 2
+
+    expect(getShownNodes(frame, 'parent').length).toBeGreaterThan(0)
+    for (const node of getShownNodes(frame, 'parent'))
+      expect(node.y + node.height / 2).toBeLessThan(top)
+    for (const node of getShownNodes(frame, 'child'))
+      expect(node.y - node.height / 2).toBeGreaterThan(bottom)
+    for (const node of getShownNodes(frame, 'sibling'))
+      expect(node.x - node.width / 2).toBeGreaterThan(right)
+    for (const node of getShownNodes(frame, 'jump'))
+      expect(node.x + node.width / 2).toBeLessThan(left)
+  })
+
+  it.each([
+    ['typical', graphs.typical],
+    ['eight, twenty, eight and eight', full],
+  ])('centers the jumps on the row of the focus in %s', (_name, graph) => {
+    const frame = arrange(graph, inWindow(window))
+    const { nodeSize, lineGap } = DEFAULT_OPTIONS
+    expect(
+      Math.abs(mean(getShownNodes(frame, 'jump').map((node) => node.y)) - getFocus(frame).y),
+    ).toBeLessThan(nodeSize.height + lineGap)
+  })
+
+  it('leans the jumps down and the references up where they share the left side', () => {
+    const frame = arrange(build('A note', { jump: 6, reference: 6 }), inWindow(window))
+    const focusY = getFocus(frame).y
+    expect(mean(getShownNodes(frame, 'jump').map((node) => node.y))).toBeGreaterThan(focusY)
+    expect(mean(getShownNodes(frame, 'reference').map((node) => node.y))).toBeLessThan(focusY)
+  })
+})
+
+describe('a group is never nearer the focus than its start', () => {
+  const DIRECTIONS: Record<PlexRelation, readonly [number, number]> = {
+    parent: [0, -1],
+    child: [0, 1],
+    jump: [-1, 0],
+    reference: [-1, 0],
+    sibling: [1, 0],
+  }
+  const along = (node: PlacedNode, [dx, dy]: readonly [number, number]) => node.x * dx + node.y * dy
+
+  it.each(
+    RELATION_NAMES.flatMap((relation) => [1, 4, 9, 20].map((count) => ({ relation, count }))),
+  )('$count $relation: no node is nearer than the first one alone', ({ relation, count }) => {
+    const alone = getShownNodes(arrange(build('A note', { [relation]: 1 })), relation)[0]!
+    const group = getShownNodes(arrange(build('A note', { [relation]: count })), relation)
+    expect(group).toHaveLength(count)
+    const start = along(alone, DIRECTIONS[relation])
+    for (const node of group)
+      expect(along(node, DIRECTIONS[relation])).toBeGreaterThanOrEqual(start - 0.5)
+  })
+})
+
 describe('a large group is a block, not a line', () => {
   it.each([undefined, { width: 1600, height: 1000 }])(
     'stacks nine children in rows of at most five, window %o',
@@ -130,6 +197,32 @@ describe('a large group is a block, not a line', () => {
       ).toBeGreaterThanOrEqual(2)
     },
   )
+})
+
+describe('a larger group is placed further out', () => {
+  it('moves the middle of the children away from the focus as they grow in number', () => {
+    const middles = [1, 4, 9, 16].map((child) =>
+      mean(getShownNodes(arrange(build('A note', { child })), 'child').map((node) => node.y)),
+    )
+    for (let i = 1; i < middles.length; i++) expect(middles[i]!).toBeGreaterThan(middles[i - 1]!)
+  })
+})
+
+describe('groups take turns', () => {
+  it('places the parent as if alone and the jump and the sibling beyond the children', () => {
+    const crowd = arrange(build('A note', { child: 20, jump: 1, sibling: 1, parent: 1 }))
+    const alone = arrange(build('A note', { jump: 1, sibling: 1, parent: 1 }))
+    const parent = crowd.nodes.find((node) => node.id === 'focus/parent-0')!
+    const parentAlone = alone.nodes.find((node) => node.id === 'focus/parent-0')!
+    expect([parent.x, parent.y]).toStrictEqual([parentAlone.x, parentAlone.y])
+
+    const children = getShownNodes(crowd, 'child')
+    const reach = Math.max(...children.map((node) => Math.abs(node.x) + node.width / 2))
+    for (const id of ['focus/jump-0', 'focus/sibling-0']) {
+      const one = crowd.nodes.find((node) => node.id === id)!
+      expect(Math.abs(one.x) - one.width / 2, id).toBeGreaterThanOrEqual(reach)
+    }
+  })
 })
 
 describe('a group fills the free space next to another group', () => {
@@ -226,7 +319,7 @@ describe('what is left out is counted, and only the last notes go', () => {
 
 describe('boxes narrow and gaps close before a note is left out', () => {
   const graph = build('A note', { parent: 4, child: 12, jump: 4, sibling: 4 })
-  const windows = [680, 640, 600].map((width) => ({ width, height: 800 }))
+  const windows = [940, 900, 860].map((width) => ({ width, height: 1000 }))
 
   const createHolder = (viewport: Window) => (packed: PlexOptions) => {
     const frame = arrangePlex(graph, { options: { ...packed, viewport: undefined } })
@@ -344,6 +437,19 @@ describe('the same input gives the same picture', () => {
     expect(positions(arrange(shuffled, options))).toStrictEqual(
       positions(arrange(typical, options)),
     )
+  })
+})
+
+describe('the direction of a side is set by the options', () => {
+  it('puts children above the focus and parents below when told so', () => {
+    const frame = arrange(build('A note', { parent: 3, child: 3 }), {
+      direction: { parent: 'down', child: 'up', jump: 'left', reference: 'left', sibling: 'right' },
+    })
+    const focus = getFocus(frame)
+    for (const child of getShownNodes(frame, 'child'))
+      expect(child.y + child.height / 2).toBeLessThan(focus.y - focus.height / 2)
+    for (const parent of getShownNodes(frame, 'parent'))
+      expect(parent.y - parent.height / 2).toBeGreaterThan(focus.y + focus.height / 2)
   })
 })
 
