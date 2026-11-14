@@ -3,11 +3,11 @@ import { asFailure, asValue } from './results'
 import { computed, watch } from 'vue'
 
 import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
-import { openNotes as openNotesOn, type OpenNotesOptions } from './notes'
+import { useOpenNotes, flattenOpenNotes, type OpenNotesOptions } from './notes'
 
 const openNotes = (core: Partial<Notes>, how?: OpenNotesOptions) => {
   answerNotes(core)
-  return openNotesOn(how)
+  return flattenOpenNotes(useOpenNotes(how))
 }
 
 function rethrow(error: unknown): never {
