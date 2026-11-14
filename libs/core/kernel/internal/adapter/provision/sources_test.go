@@ -57,7 +57,6 @@ func buildZip(t *testing.T, name string, data []byte) []byte {
 	return buffer.Bytes()
 }
 
-// serveFiles answers each path of files with its bytes and counts the requests.
 func serveFiles(t *testing.T, files map[string][]byte) (*httptest.Server, *atomic.Int32) {
 	t.Helper()
 	var requests atomic.Int32

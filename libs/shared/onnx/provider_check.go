@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-// checkProvider returns an error when provider is a GPU provider (cuda, rocm, directml) that the
-// library at libPath was not built with. Another provider passes.
 func checkProvider(libPath string, provider Provider) error {
 	name, isGPU := getRuntimeName(provider)
 	if !isGPU {
@@ -32,6 +30,8 @@ func getRuntimeName(provider Provider) (string, bool) {
 		return "ROCMExecutionProvider", true
 	case ProviderDirectML:
 		return "DmlExecutionProvider", true
+	case ProviderAuto, ProviderCPU, ProviderCoreML:
+		return "", false
 	}
 	return "", false
 }

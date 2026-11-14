@@ -19,7 +19,7 @@ func TestAGPUProviderTheLibraryLacksIsRefused(t *testing.T) {
 	}
 }
 
-func TestAGPUProviderTheLibraryHoldsPasses(t *testing.T) {
+func TestCheckProvidersAcceptsAGPUProviderInTheLibrary(t *testing.T) {
 	gpuBuild := []string{"CUDAExecutionProvider", "CPUExecutionProvider"}
 	name, _ := getRuntimeName(ProviderCUDA)
 	if err := checkProviders(ProviderCUDA, name, "/models/libonnxruntime.so", gpuBuild); err != nil {

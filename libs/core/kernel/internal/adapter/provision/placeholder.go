@@ -19,7 +19,7 @@ type PlaceholderProvisioner struct {
 	discovery discovery
 }
 
-// NewPlaceholderProvisioner keeps its placeholders in dir.
+// NewPlaceholderProvisioner writes a placeholder for each dependency under dir instead of fetching it.
 func NewPlaceholderProvisioner(dir string) *PlaceholderProvisioner {
 	return &PlaceholderProvisioner{dir: dir, discovery: newDiscovery()}
 }
