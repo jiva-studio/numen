@@ -31,3 +31,9 @@ type ServedTools interface {
 type Reasoning interface {
 	GetReasoning(model, requested string) string
 }
+
+// TempDirs creates the folder the runs start in and removes it.
+type TempDirs interface {
+	Create() (string, error)
+	Remove(dir string) error
+}

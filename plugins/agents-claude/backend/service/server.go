@@ -5,6 +5,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/executable"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/mcpendpoint"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/process"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/tempdir"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/toolconfig"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/ports"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/usecase/catalog"
@@ -37,6 +38,7 @@ func newAgent(p parts) (*agent, error) {
 	tasks, err := task.New(task.Dependencies{
 		Settings: values, Finder: executable.Finder{}, Reasoning: models, Launcher: process.Launcher{},
 		ToolConfig: toolconfig.Files{}, Environment: p.environment, Tools: p.tools, ToolServer: mcpendpoint.Server{},
+		TempDirs: tempdir.Folders{Pattern: "numen-claude-*"},
 	})
 	if err != nil {
 		return nil, err
