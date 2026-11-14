@@ -91,16 +91,14 @@ const editorExtensions = computed(() => getEditorExtensions(props))
 const editorLanguage = computed(() => getEditorLanguage(props))
 const fileConflict = computed(() => props.state?.fileConflict?.value ?? null)
 
-const softWrap = computed(() => props.softWrap ?? editorPreferences.softWrap)
-const lineNumbers = computed(() => props.lineNumbers ?? editorPreferences.lineNumbers)
-const tabSize = computed(() => props.tabSize ?? editorPreferences.tabSize)
-const fontFamily = computed(() =>
-  getFontFamilyValue(props.fontFamily ?? editorPreferences.fontFamily) ?? '',
-)
-const lineHeight = computed(() => props.lineHeight ?? editorPreferences.lineHeight)
-const highlightActiveLine = computed(
-  () => props.highlightActiveLine ?? editorPreferences.highlightActiveLine,
-)
+const prefer = <K extends keyof typeof editorPreferences>(key: K) =>
+  computed(() => props[key] ?? editorPreferences[key])
+const softWrap = prefer('softWrap')
+const lineNumbers = prefer('lineNumbers')
+const tabSize = prefer('tabSize')
+const lineHeight = prefer('lineHeight')
+const highlightActiveLine = prefer('highlightActiveLine')
+const fontFamily = computed(() => getFontFamilyValue(prefer('fontFamily').value) ?? '')
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(displayErrorMessage, () => {
