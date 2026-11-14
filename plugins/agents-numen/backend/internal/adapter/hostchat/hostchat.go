@@ -53,15 +53,6 @@ func FromEnvironment() (*Chat, *Connections, error) {
 	return FromHost(client), NewConnections(client), nil
 }
 
-// FromVariables returns the Chat and the Connections of the host the variables name.
-func FromVariables(vars map[string]string) (*Chat, *Connections, error) {
-	client, err := connection.NewClientFromVars(vars)
-	if err != nil {
-		return nil, nil, err
-	}
-	return FromHost(client), NewConnections(client), nil
-}
-
 // FromHost returns a Chat that asks host for each turn.
 func FromHost(host Host) *Chat {
 	return New(func(ctx context.Context, request *llm.ChatRequest, priority connection.Priority, row connection.PreferredRow) (Stream, error) {

@@ -100,14 +100,14 @@ func TestMountFromEnv(t *testing.T) {
 	}
 }
 
-func TestNewHandler(t *testing.T) {
+func TestMountedHandlerRequiresTheToken(t *testing.T) {
 	t.Parallel()
 
-	handler, err := NewHandler(map[string]string{
+	handler, err := server.NewLinkedHandler(map[string]string{
 		"NUMEN_PLUGIN_TOKEN": "secret-plugin-token",
-	})
+	}, Mount)
 	if err != nil {
-		t.Fatalf("NewHandler failed: %v", err)
+		t.Fatalf("NewLinkedHandler failed: %v", err)
 	}
 	if handler == nil {
 		t.Fatal("expected non-nil handler")

@@ -12,8 +12,3 @@ const trueValue = "true"
 func IsMockModel() bool {
 	return os.Getenv(MockModelVariable) == trueValue
 }
-
-// IsMockModelIn returns whether vars ask for the mock downloader.
-func IsMockModelIn(vars map[string]string) bool {
-	return vars[MockModelVariable] == trueValue
-}

@@ -1,9 +1,7 @@
 package service
 
 import (
-	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,61 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/environment"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
-
-// The handler a host that links the plugin in answers the importer API with the token it was
-// given, and rejects a call without it.
-func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token", "NUMEN_HOST_PORT": "1"})
-	if err != nil {
-		t.Fatalf("NewHandler: %v", err)
-	}
-	web := httptest.NewServer(handler)
-	defer web.Close()
-	url := web.URL + "/" + api.Service + "/" + api.MethodGetLink
-
-	post := func(token string) (int, []byte) {
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, strings.NewReader(`{"path":"notes/plain.txt"}`))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if token != "" {
-			req.Header.Set("Authorization", "Bearer "+token)
-		}
-		res, err := web.Client().Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			if closeErr := res.Body.Close(); closeErr != nil {
-				t.Error(closeErr)
-			}
-		}()
-		data, err := io.ReadAll(res.Body)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return res.StatusCode, data
-	}
-
-	if status, _ := post(""); status != http.StatusUnauthorized {
-		t.Fatalf("GetLink without the token = %d, want 401", status)
-	}
-	status, data := post("linked-token")
-	var failure server.APIError
-	if err := json.Unmarshal(data, &failure); err != nil {
-		t.Fatal(err)
-	}
-	if status != http.StatusNotFound || failure.Code != server.CodeNotFound {
-		t.Errorf("a file that is no note is answered %d %+v, want 404 not_found", status, failure)
-	}
-
-	if _, err := NewHandler(map[string]string{}); err == nil {
-		t.Error("NewHandler with empty vars succeeded")
-	}
-}
 
 func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 	_, _, hosted := newMockLinks(t)
@@ -123,16 +68,6 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 	}
 	if err := mountedSrv.Close(); err != nil {
 		t.Fatal(err)
-	}
-
-	// Verify NewHandler forwards the mock variable == "true" vs "false".
-	mockHandler, err := NewHandler(map[string]string{
-		"NUMEN_PLUGIN_TOKEN":          "tok",
-		"NUMEN_HOST_PORT":             "1",
-		environment.MockModelVariable: "true",
-	})
-	if err != nil || mockHandler == nil {
-		t.Fatalf("NewHandler(mock): %v", err)
 	}
 }
 

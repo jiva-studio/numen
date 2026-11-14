@@ -262,7 +262,7 @@ type readResult struct {
 }
 
 func readOutput(stdout io.Reader, sink *runSink) readResult {
-	handler := events.NewHandler(sink)
+	handler := events.New(sink)
 	scanner := bufio.NewScanner(stdout)
 	scanner.Buffer(nil, maxLine)
 	isWritten := false

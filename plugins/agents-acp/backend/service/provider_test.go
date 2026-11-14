@@ -22,6 +22,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/task"
@@ -279,7 +281,8 @@ func TestTheProviderServesCompleteTheListsOfModelsAndReasoningLevelsAndTasks(t *
 
 func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	program, _ := fakeProgram(t, "config")
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"})
+	t.Setenv(hostcall.HostPortEnv, "")
+	handler, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: "tok"}, Mount)
 	if err != nil {
 		t.Fatal(err)
 	}

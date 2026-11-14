@@ -4,7 +4,6 @@ package service
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
@@ -46,41 +45,16 @@ func Mount(s *server.Server) error {
 	if model.IsMockSelected() {
 		complete = model.WithMock(complete)
 	}
-	return mount(s, openHostAt(endpoint), complete, nil)
-}
-
-// NewHandler returns the handler of the plugin's backend for a host that links
-// the plugin in, configured from the variables given to a launched plugin
-// process. It uses the host that those variables name.
-func NewHandler(vars map[string]string) (http.Handler, error) {
-	endpoint, err := hostcall.FromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	client, err := connection.NewClientFromVars(vars)
-	if err != nil {
-		return nil, err
-	}
-	complete := model.NewCompleter(client)
-	if model.IsMockEnabled(vars[model.EnvMockML]) {
-		complete = model.WithMock(complete)
-	}
-	hosted := openHostAt(endpoint)
-	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return mount(s, hosted, complete, vars)
-	})
+	return mount(s, openHostAt(endpoint), complete)
 }
 
 var errIncompleteHost = errors.New("proofreading needs the store, the texts and the queue of the host")
 
-func mount(s *server.Server, h proofread.Host, complete model.Completer, vars map[string]string) error {
+func mount(s *server.Server, h proofread.Host, complete model.Completer) error {
 	if h.Store == nil || h.Texts == nil || h.Queue == nil {
 		return errIncompleteHost
 	}
 	current := settings.NewStore()
-	if len(vars) > 0 {
-		current.Update(vars)
-	}
 	run := newProofreading(h, complete, current)
 	commands, err := newCommands(run)
 	if err != nil {

@@ -90,24 +90,3 @@ func TestThePluginServesAgentTasksAsAProvider(t *testing.T) {
 		t.Errorf("the plugin answered %q", body)
 	}
 }
-
-func TestTheLinkedHandlerServesAgentTasksAsAProvider(t *testing.T) {
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken, "NUMEN_HOST_PORT": "4000"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	web := httptest.NewServer(handler)
-	defer web.Close()
-
-	body := callTask(t, web.Client(), web.URL)
-
-	if !strings.Contains(body, "FAILURE_KIND_STOP") {
-		t.Errorf("the plugin answered %q", body)
-	}
-}
-
-func TestNewHandlerNeedsTheHostOfTheCore(t *testing.T) {
-	if _, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken}); err == nil {
-		t.Error("NewHandler accepted variables with no host port")
-	}
-}
