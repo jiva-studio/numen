@@ -99,16 +99,11 @@ func splitFrontmatter(raw []byte) (frontmatter, body []byte, ok bool) {
 	// because the body is what gets indexed and searched, not what gets parsed.
 	rest := bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf"))
 
-	before, after0, ok := bytes.Cut(rest, []byte{'\n'})
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT reason="at idx 0 rest[:0] is empty and fails isFrontmatterDelimiter on the next line"
-	if !ok {
-		return nil, raw, false
-	}
+	before, after, _ := bytes.Cut(rest, []byte{'\n'})
 	if !isFrontmatterDelimiter(before) {
 		return nil, raw, false
 	}
 
-	after := after0
 	fmStart := len(rest) - len(after)
 	scan := after
 	for {

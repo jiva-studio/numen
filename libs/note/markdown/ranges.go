@@ -141,7 +141,7 @@ func Diff(was, now string) (Range, string) {
 	for head < len(was) && head < len(now) && was[head] == now[head] {
 		head++
 	}
-	for head > 0 && !canSpanBeginAt(was, head) {
+	for !canSpanBeginAt(was, head) {
 		head--
 	}
 
@@ -150,7 +150,7 @@ func Diff(was, now string) (Range, string) {
 	for tail < most && was[len(was)-tail-1] == now[len(now)-tail-1] {
 		tail++
 	}
-	for tail > 0 && !canSpanEndAt(was, len(was)-tail) {
+	for !canSpanEndAt(was, len(was)-tail) {
 		tail--
 	}
 

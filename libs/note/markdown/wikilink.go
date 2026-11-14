@@ -31,25 +31,23 @@ func WikilinksIn(line string) []Wikilink {
 			pos = span[1]
 			continue
 		}
-		closeIdx := strings.Index(line[start+2:], "]]")
+		afterOpen := start + len("[[")
+		closeIdx := strings.Index(line[afterOpen:], "]]")
 		if closeIdx < 0 {
 			break
 		}
-		end := start + 2 + closeIdx
-		inside := line[start+2 : end]
-		if strings.ContainsAny(inside, "[]") || hasCodeSpanIn(spans, start, end+2) {
+		end := afterOpen + closeIdx
+		afterClose := end + len("]]")
+		inside := line[afterOpen:end]
+		if strings.ContainsAny(inside, "[]") || hasCodeSpanIn(spans, start, end) {
 			pos = start + 1
-			continue
-		}
-		if len(inside) == 0 {
-			pos = end + 2
 			continue
 		}
 		target := domain.ParseAddress(inside)
 		if target.Value != "" {
-			out = append(out, Wikilink{At: start, To: end + 2, Inside: inside, Target: target})
+			out = append(out, Wikilink{At: start, To: afterClose, Inside: inside, Target: target})
 		}
-		pos = end + 2
+		pos = afterClose
 	}
 	return out
 }
