@@ -4,7 +4,7 @@
  * no report of.
  */
 import type { WindowTabsReport } from '@/entities/tab'
-import { writeTabLinks } from '../api/tab-links'
+import type { TabLinksApi } from '../api/tab-links'
 import type { Caught } from '@/shared/api/errors'
 import { wait } from '@/shared/model/wait'
 
@@ -12,6 +12,7 @@ import { wait } from '@/shared/model/wait'
 const REPORT_RETRY_MS = 2000
 
 export interface TabReportsDeps {
+  readonly writeTabLinks: TabLinksApi['writeTabLinks']
   readonly windowId: string
   readonly getReport: () => WindowTabsReport
   readonly wait?: (ms: number) => Promise<void>
@@ -38,7 +39,7 @@ export function createTabReports(deps: TabReportsDeps) {
       const report = pendingReport
       pendingReport = null
       try {
-        await writeTabLinks(deps.windowId, report)
+        await deps.writeTabLinks(deps.windowId, report)
         hasFailed = false
       } catch (error) {
         if (!hasFailed) deps.onError(error)

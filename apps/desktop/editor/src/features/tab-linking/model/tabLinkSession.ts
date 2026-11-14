@@ -10,13 +10,14 @@ import type {
   TabPathSync,
   WindowTabsReport,
 } from '@/entities/tab'
-import { cancelTabLinksWatch, watchTabLinks } from '../api/tab-links'
+import type { TabLinksApi } from '../api/tab-links'
 import type { TabLinksState } from '../types'
 import type { TabReports } from './tabReports'
 import type { Caught } from '@/shared/api/errors'
 import { wait } from '@/shared/model/wait'
 
 export interface TabLinkSessionDeps {
+  readonly api: Pick<TabLinksApi, 'watchTabLinks' | 'cancelTabLinksWatch'>
   readonly windowId: string
   readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
   readonly applySync: (sync: TabPathSync) => void
@@ -46,7 +47,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     followStream(
       () => {
         isNewStream = true
-        return watchTabLinks(deps.windowId, abortController.signal)
+        return deps.api.watchTabLinks(deps.windowId, abortController.signal)
       },
       (event) => {
         if (isNewStream) {
@@ -80,7 +81,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     isOpen = false
     deps.reports.stop()
     abortController.abort()
-    cancelTabLinksWatch(deps.windowId).catch(deps.onError)
+    deps.api.cancelTabLinksWatch(deps.windowId).catch(deps.onError)
   }
 
   /** Starts the stream again after close; does nothing while the session is open. */

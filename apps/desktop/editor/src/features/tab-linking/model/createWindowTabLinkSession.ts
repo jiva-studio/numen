@@ -10,8 +10,10 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { TabLinksState } from '../types'
 import { createTabLinkSession, getWindowReport } from './tabLinkSession'
 import type { TabReports } from './tabReports'
+import type { TabLinksApi } from '../api/tab-links'
 
 export interface WindowTabLinkSessionDeps {
+  readonly api: Pick<TabLinksApi, 'watchTabLinks' | 'cancelTabLinksWatch'>
   readonly windowId: string
   readonly windowTabs: Pick<WindowTabs, 'tabs' | 'groups'>
   readonly isMain: boolean

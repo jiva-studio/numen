@@ -19,7 +19,7 @@ import type { PlaceholderPanes, UnavailableServices } from './unavailable'
  * `panes` draw the placeholders and `unavailable` is what the placeholder of a missing kind reads
  * and does.
  */
-export function createWindowTabs(panes: PlaceholderPanes, unavailable: UnavailableServices = {}) {
+export function createWindowTabs(panes: PlaceholderPanes, unavailable: UnavailableServices) {
   const store = createTabStore(panes, unavailable)
   const tabPanes = useTabPanes(store)
   /** Closes a tab, or runs `hold` where its kind holds it, and returns whether the tab was released. */

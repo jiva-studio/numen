@@ -6,8 +6,8 @@ import type { PluginLoader } from '@numen/plugin-loader'
 import {
   openPlacedTabs,
   parseSavedTabs,
-  readOpenTabs,
   type createWindowLayout,
+  type SavedTabsApi,
   type MovedTab,
   type WindowTabs,
 } from '@/entities/tab'
@@ -25,6 +25,7 @@ export interface LayoutStartDeps {
   readonly isSecondary: boolean
   readonly windowId: string
   readonly readDetachedTab: (windowId: string, tabId: string) => Promise<MovedTab | null>
+  readonly readOpenTabs: SavedTabsApi['readOpenTabs']
   readonly openDetachedTab: (moved: MovedTab) => void
 }
 
@@ -42,7 +43,7 @@ export function createLayoutStart(deps: LayoutStartDeps) {
 
   const readSavedTabs = async () => {
     try {
-      return await readOpenTabs()
+      return await deps.readOpenTabs()
     } catch (error) {
       writeMessage(`The saved tabs were not read: ${formatError(error)}`, 'error')
       return null

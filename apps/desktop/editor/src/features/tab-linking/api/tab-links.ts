@@ -4,7 +4,7 @@
  *
  * The core does not order requests; the caller sequences those whose order matters.
  */
-import { keepaliveWorkspace, workspace } from '@/shared/api/clients'
+import type { WindowClients } from '@/shared/api/clients'
 import type {
   Tab,
   TabLinksChange,
@@ -63,62 +63,79 @@ const parseTab = ({ id, kind, path, title, state }: Omit<Tab, 'place'>): Tab => 
 })
 
 /**
- * Streams the link groups and the linkable tabs of all windows, then every change and every
- * path sync, until the signal aborts. When the last stream of this window ends, the core
- * unlinks the tabs of this window unless a new stream starts within a grace period.
+ * The links of the tabs over `workspace`. The cancel of the stream goes over `keepaliveWorkspace`,
+ * so it completes after the page unloads.
  */
-export async function* watchTabLinks(
-  windowId: string,
-  signal: AbortSignal,
-): AsyncIterable<TabLinksEvent> {
-  for await (const { event } of workspace.watchTabLinks({ windowId }, { signal })) {
-    if (event.case === 'links') {
-      yield { links: parseLinks(event.value) }
-    } else if (event.case === 'sync') {
-      const { groupId, sourceTabId, path, title } = event.value
-      yield { sync: { groupId, sourceTabId, path, title } }
-    } else if (event.case === 'movedTab') {
-      const { tab, moveId } = event.value
-      yield tab ? { movedTab: { tab: parseTab(tab), moveId } } : {}
-    } else if (event.case === 'highlight') {
-      yield { isHighlighted: event.value.isOn }
-    } else {
-      yield {}
+export const createTabLinksApi = ({
+  workspace,
+  keepaliveWorkspace,
+}: Pick<WindowClients, 'workspace' | 'keepaliveWorkspace'>) => {
+  /**
+   * Streams the link groups and the linkable tabs of all windows, then every change and every
+   * path sync, until the signal aborts. When the last stream of this window ends, the core
+   * unlinks the tabs of this window unless a new stream starts within a grace period.
+   */
+  async function* watchTabLinks(
+    windowId: string,
+    signal: AbortSignal,
+  ): AsyncIterable<TabLinksEvent> {
+    for await (const { event } of workspace.watchTabLinks({ windowId }, { signal })) {
+      if (event.case === 'links') {
+        yield { links: parseLinks(event.value) }
+      } else if (event.case === 'sync') {
+        const { groupId, sourceTabId, path, title } = event.value
+        yield { sync: { groupId, sourceTabId, path, title } }
+      } else if (event.case === 'movedTab') {
+        const { tab, moveId } = event.value
+        yield tab ? { movedTab: { tab: parseTab(tab), moveId } } : {}
+      } else if (event.case === 'highlight') {
+        yield { isHighlighted: event.value.isOn }
+      } else {
+        yield {}
+      }
     }
+  }
+
+  return {
+    watchTabLinks,
+
+    cancelTabLinksWatch: async (windowId: string): Promise<void> => {
+      await keepaliveWorkspace.cancelWatchTabLinks({ windowId })
+    },
+
+    /** Links two tabs, unlinks a tab, or reports the linkable tabs of the window. */
+    writeTabLinks: async (
+      windowId: string,
+      change: TabLinksChange | WindowTabsReport,
+    ): Promise<void> => {
+      if ('link' in change) {
+        const value = { sourceTabId: change.link.source, targetTabId: change.link.target }
+        await workspace.writeTabLinks({ windowId, change: { case: 'link', value } })
+      } else if ('unlink' in change) {
+        await workspace.writeTabLinks({
+          windowId,
+          change: { case: 'unlinkTabId', value: change.unlink },
+        })
+      } else {
+        const value = {
+          tabs: change.tabs.map((tab) => ({ ...tab })),
+          window: { ...change.window },
+        }
+        await workspace.writeTabLinks({ windowId, change: { case: 'tabs', value } })
+      }
+    },
+
+    /**
+     * Sends the new path of a linked tab to all windows, which navigate their linked tabs to it.
+     */
+    syncTabPath: async (sync: {
+      sourceTabId: string
+      path: string
+      title: string
+    }): Promise<void> => {
+      await workspace.syncTabPath(sync)
+    },
   }
 }
 
-export const cancelTabLinksWatch = async (windowId: string): Promise<void> => {
-  await keepaliveWorkspace.cancelWatchTabLinks({ windowId })
-}
-
-/** Links two tabs, unlinks a tab, or reports the linkable tabs of the window. */
-export const writeTabLinks = async (
-  windowId: string,
-  change: TabLinksChange | WindowTabsReport,
-): Promise<void> => {
-  if ('link' in change) {
-    const value = { sourceTabId: change.link.source, targetTabId: change.link.target }
-    await workspace.writeTabLinks({ windowId, change: { case: 'link', value } })
-  } else if ('unlink' in change) {
-    await workspace.writeTabLinks({
-      windowId,
-      change: { case: 'unlinkTabId', value: change.unlink },
-    })
-  } else {
-    const value = {
-      tabs: change.tabs.map((tab) => ({ ...tab })),
-      window: { ...change.window },
-    }
-    await workspace.writeTabLinks({ windowId, change: { case: 'tabs', value } })
-  }
-}
-
-/** Sends the new path of a linked tab to all windows, which navigate their linked tabs to it. */
-export const syncTabPath = async (sync: {
-  sourceTabId: string
-  path: string
-  title: string
-}): Promise<void> => {
-  await workspace.syncTabPath(sync)
-}
+export type TabLinksApi = ReturnType<typeof createTabLinksApi>

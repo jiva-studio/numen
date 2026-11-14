@@ -5,7 +5,7 @@ import { computed, ref, watch, type Component, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { getPanes } from '@numen/workbench'
 import { findTabKindIcon } from '../lib/icons'
-import { writeOpenTabs as writeOpenTabsToCore } from '../api/saved-tabs'
+import type { SavedTabsApi } from '../api/saved-tabs'
 import type { OpenTabs, SavedTab, Tab } from '../lib/tab'
 import type { WindowTabs } from './windowTabs'
 import { formatError, type Caught } from '@/shared/api/errors'
@@ -16,7 +16,7 @@ export interface OpenTabsDeps {
   windowTabs: WindowTabs
   isWriting?: Readonly<Ref<boolean>>
   writeMessage: MessageWriter
-  writeOpenTabs?: (open: OpenTabs) => Promise<void>
+  writeOpenTabs: SavedTabsApi['writeOpenTabs']
 }
 
 /** The state a kind saved, as JSON, and empty where it saved none. */
@@ -41,7 +41,7 @@ export function useOpenTabs({
   windowTabs,
   isWriting = ref(true),
   writeMessage,
-  writeOpenTabs = writeOpenTabsToCore,
+  writeOpenTabs,
 }: OpenTabsDeps) {
   const reportError = (error: Caught) =>
     writeMessage(`The open tabs were not saved: ${formatError(error)}`, 'error')

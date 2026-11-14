@@ -7,11 +7,12 @@ import { getTabPaneRect } from '@numen/workbench'
 import type { Notes } from '@/shared/model/command'
 import type { WindowTabs } from '@/entities/tab'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import { highlightWindow } from '../api/tab-move'
+import type { TabMoveApi } from '../api/tab-move'
 import type { Point } from '../lib/move'
 import { createTabMover } from './tabMove'
 
 export interface WindowTabMoverDeps {
+  readonly api: Pick<TabMoveApi, 'detachTab' | 'moveTab' | 'highlightWindow'>
   readonly windowId: string
   readonly windowTabs: Pick<WindowTabs, 'tabs' | 'panes'>
   readonly notes: Pick<Notes, 'asking' | 'flushPending'>
@@ -33,7 +34,9 @@ export function createWindowTabMover(deps: WindowTabMoverDeps) {
     windowId: deps.windowId,
     isTabAsking: (id: string): boolean => deps.notes.asking(id),
     highlightWindow: (windowId: string, isOn: boolean): void => {
-      lastHighlight = lastHighlight.then(() => highlightWindow(windowId, isOn)).catch(ignoreError)
+      lastHighlight = lastHighlight
+        .then(() => deps.api.highlightWindow(windowId, isOn))
+        .catch(ignoreError)
     },
     detachTab: (id: string, point: Point): void =>
       runInBackground(mover.detachTab(id, point), ignoreError),

@@ -1,13 +1,16 @@
 import { shallowRef, type Component, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { getFileName } from '@/shared/lib/paths'
-import { findTabKindPlugin } from '../api/tabKindPlugin'
 import type { JsonValue } from '@/shared/api/json'
 import type { AnyTabKind, TabKind } from '../lib/kinds'
-import type { UnavailableLookup } from '../lib/unavailableView'
+import type { TabKindPlugin, UnavailableLookup } from '../lib/unavailableView'
 
-/** What a placeholder asks of the window: the changes it makes. */
+/**
+ * What a placeholder asks of the window: the plugin the catalog names for its kind, and the changes
+ * it makes.
+ */
 export interface UnavailableServices {
+  readonly findTabKindPlugin: (kind: string) => Promise<TabKindPlugin | null>
   readonly enablePlugin?: ((pluginId: string) => Promise<void>) | undefined
   readonly isPluginStarting?: ((pluginId: string) => boolean) | undefined
   readonly startKindPlugin?: ((kind: string) => void) | undefined
@@ -44,10 +47,10 @@ export const isUnavailableKind = (kind: AnyTabKind): boolean => placeholders.has
 const getDeclaredTitle = (lookup: UnavailableLookup): string =>
   lookup.status === 'found' ? lookup.plugin.kindTitle : ''
 
-const startLookup = (kind: string) => {
+const startLookup = (kind: string, services: UnavailableServices) => {
   const lookup = shallowRef<UnavailableLookup>({ status: 'pending' })
   runInBackground(
-    findTabKindPlugin(kind).then((plugin) => {
+    services.findTabKindPlugin(kind).then((plugin) => {
       lookup.value = plugin ? { status: 'found', plugin } : { status: 'missing' }
     }),
     () => {
@@ -67,7 +70,7 @@ export const createUnavailableKind = (
   pane: Component,
   kind: string,
   options?: UnavailableKindOptions,
-  services: UnavailableServices = {},
+  services: UnavailableServices,
 ): AnyTabKind => {
   const placeholder: {
     -readonly [K in keyof TabKind<UnavailableState>]: TabKind<UnavailableState>[K]
@@ -78,7 +81,7 @@ export const createUnavailableKind = (
       targetPath,
       saved,
       title: options?.title,
-      lookup: startLookup(kind),
+      lookup: startLookup(kind, services),
       services,
     }),
     pane,
