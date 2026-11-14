@@ -95,6 +95,8 @@ func getClosedContext(s *server.Server) context.Context {
 	return ctx
 }
 
+func ignore(_ error) {}
+
 func mount(s *server.Server, tasks *index.Index) error {
 	ctx := getClosedContext(s)
 	s.SetUpdateConfig(func(values map[string]string) {
@@ -103,7 +105,7 @@ func mount(s *server.Server, tasks *index.Index) error {
 			return
 		}
 		// A failure leaves the folders set; the next full check of the index catches up.
-		_ = tasks.SetIgnoredFolders(ctx, folders)
+		ignore(tasks.SetIgnoredFolders(ctx, folders))
 	})
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodGetSummary, getSummary(tasks))
@@ -125,6 +127,6 @@ func Mount(s *server.Server) error {
 	}
 	ctx := getClosedContext(s)
 	// A failed scan leaves the index not ready; the next full check of the index scans again.
-	go func() { _ = tasks.Scan(ctx) }()
+	go func() { ignore(tasks.Scan(ctx)) }()
 	return nil
 }
