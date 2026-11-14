@@ -2,7 +2,6 @@ package mcpendpoint
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net"
 	"net/http"
@@ -92,22 +91,16 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
 
-func TestServeDefaultsToolsTrackConnectionAndListenCancel(t *testing.T) {
+func TestServeDefaultsToolsAndTracksConnections(t *testing.T) {
 	if shutdownLimit != 2*time.Second || shutdownPoll != 10*time.Millisecond {
 		t.Fatalf("constants = (%v, %v), want (2s, 10ms)", shutdownLimit, shutdownPoll)
-	}
-
-	canceled, cancel := context.WithCancel(t.Context())
-	cancel()
-	if _, err := (Server{}).Serve(canceled, nil, nil); !errors.Is(err, context.Canceled) {
-		t.Fatalf("Serve with canceled context = %v, want context.Canceled", err)
 	}
 
 	listed := []*tools.ToolInfo{
 		{Name: "first_tool", InputSchema: []byte(`{"type":"object"}`)},
 		{Name: "second_tool", InputSchema: []byte(`{"type":"object"}`)},
 	}
-	servedIfc, err := (Server{}).Serve(t.Context(), listed, func(_ context.Context, name string, _ json.RawMessage) (*tools.CallResponse, error) {
+	servedIfc, err := (Server{}).Serve(t.Context(), listed, func(_ context.Context, name string, _ []byte) (*tools.CallResponse, error) {
 		return &tools.CallResponse{Result: &tools.CallResult{Text: "called:" + name}}, nil
 	})
 	if err != nil {
@@ -162,19 +155,27 @@ func TestServeDefaultsToolsTrackConnectionAndListenCancel(t *testing.T) {
 			t.Error(err)
 		}
 	})
+	// The session above keeps its own connection tracked, so the counts are relative to it.
+	active, tracked := served.getActiveCount(), getTrackedCount(served)
 	served.trackConnection(c1, http.StateActive)
-	if served.getActiveCount() != 1 || len(served.states) != 1 {
-		t.Fatalf("after StateActive: active=%d states=%d, want 1, 1", served.getActiveCount(), len(served.states))
+	if served.getActiveCount() != active+1 || getTrackedCount(served) != tracked+1 {
+		t.Fatalf("after StateActive: active=%d states=%d, want %d, %d", served.getActiveCount(), getTrackedCount(served), active+1, tracked+1)
 	}
 	served.trackConnection(c1, http.StateClosed)
-	if served.getActiveCount() != 0 || len(served.states) != 0 {
-		t.Fatalf("after StateClosed: active=%d states=%d, want 0, 0", served.getActiveCount(), len(served.states))
+	if served.getActiveCount() != active || getTrackedCount(served) != tracked {
+		t.Fatalf("after StateClosed: active=%d states=%d, want %d, %d", served.getActiveCount(), getTrackedCount(served), active, tracked)
 	}
 	served.trackConnection(c1, http.StateActive)
 	served.trackConnection(c1, http.StateHijacked)
-	if served.getActiveCount() != 0 || len(served.states) != 0 {
-		t.Fatalf("after StateHijacked: active=%d states=%d, want 0, 0", served.getActiveCount(), len(served.states))
+	if served.getActiveCount() != active || getTrackedCount(served) != tracked {
+		t.Fatalf("after StateHijacked: active=%d states=%d, want %d, %d", served.getActiveCount(), getTrackedCount(served), active, tracked)
 	}
+}
+
+func getTrackedCount(served *Endpoint) int {
+	served.statesMu.Lock()
+	defer served.statesMu.Unlock()
+	return len(served.states)
 }
 
 type failingAcceptListener struct {
@@ -201,12 +202,14 @@ func (l closeErrorListener) Close() error {
 func TestCloseJoinsServeErrorAndShutdownCloseError(t *testing.T) {
 	errAccept := errors.New("accept failed")
 	ep := &Endpoint{
-		server:  &http.Server{},
+		server:  &http.Server{ReadHeaderTimeout: time.Second},
 		stopped: make(chan struct{}),
 		limit:   shutdownLimit,
 		states:  make(map[net.Conn]http.ConnState),
 	}
 	go ep.run(failingAcceptListener{err: errAccept})
+	// Serve keeps an accept error only when it ends before Close starts the shutdown.
+	<-ep.stopped
 	if err := ep.Close(t.Context()); !errors.Is(err, errAccept) {
 		t.Fatalf("Close with failing listener = %v, want %v", err, errAccept)
 	}
@@ -218,7 +221,7 @@ func TestCloseJoinsServeErrorAndShutdownCloseError(t *testing.T) {
 	errClose := errors.New("listener close failed")
 	epClose := &Endpoint{
 		url:      "http://" + rawLn.Addr().String() + endpointPath,
-		server:   &http.Server{Handler: http.NotFoundHandler()},
+		server:   &http.Server{Handler: http.NotFoundHandler(), ReadHeaderTimeout: time.Second},
 		stopped:  make(chan struct{}),
 		limit:    shutdownLimit,
 		statesMu: sync.Mutex{},

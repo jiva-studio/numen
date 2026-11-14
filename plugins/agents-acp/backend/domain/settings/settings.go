@@ -2,8 +2,8 @@
 package settings
 
 import (
-	"encoding/json"
 	"math"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -35,8 +35,8 @@ func (s *Settings) RequestTimeout() time.Duration {
 }
 
 func parseSeconds(value string) time.Duration {
-	var seconds float64
-	if err := json.Unmarshal([]byte(strings.TrimSpace(value)), &seconds); err != nil || math.Signbit(seconds) || seconds >= float64(math.MaxInt64/int64(time.Second)) {
+	seconds, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
+	if err != nil || math.IsNaN(seconds) || seconds <= 0 || math.IsInf(seconds, 0) || seconds >= float64(math.MaxInt64/int64(time.Second)) {
 		return 0
 	}
 	return time.Duration(seconds * float64(time.Second))

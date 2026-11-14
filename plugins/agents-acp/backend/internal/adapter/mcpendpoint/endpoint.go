@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,7 +18,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -36,6 +36,9 @@ const shutdownPoll = 10 * time.Millisecond
 
 // endpointPath is where the endpoint answers MCP.
 const endpointPath = "/mcp"
+
+// tokenBytes is the size of the token of an endpoint.
+const tokenBytes = 32
 
 // Server serves the tools of sessions, each on an endpoint of its own.
 type Server struct{}
@@ -67,7 +70,10 @@ func (Server) Serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.I
 }
 
 func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*Endpoint, error) {
-	token := rand.Text()
+	token, err := newToken()
+	if err != nil {
+		return nil, err
+	}
 	server := sdk.NewServer(&sdk.Implementation{Name: "numen", Title: "", Description: "", Version: "1.0.0", WebsiteURL: "", Icons: nil}, nil)
 	for _, one := range listed {
 		name := one.GetName()
@@ -84,9 +90,7 @@ func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*
 		})
 	}
 
-	var listenConfig net.ListenConfig
-	listenConfig.Control = func(string, string, syscall.RawConn) error { return ctx.Err() }
-	listener, err := listenConfig.Listen(ctx, "tcp", "127.0.0.1:0")
+	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, fmt.Errorf("listen for the tools of the agent: %w", err)
 	}
@@ -268,6 +272,14 @@ func newErrorResult(text string) *sdk.CallToolResult {
 
 func newTextContent(text string) *sdk.TextContent {
 	return &sdk.TextContent{Text: text, Meta: nil, Annotations: nil}
+}
+
+func newToken() (string, error) {
+	raw := make([]byte, tokenBytes)
+	if _, err := rand.Read(raw); err != nil {
+		return "", fmt.Errorf("create a token for the tools of the agent: %w", err)
+	}
+	return hex.EncodeToString(raw), nil
 }
 
 func requireToken(token string, next http.Handler) http.Handler {

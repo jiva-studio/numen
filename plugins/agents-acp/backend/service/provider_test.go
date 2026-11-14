@@ -10,6 +10,7 @@ import (
 	"maps"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -21,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp/acptest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -318,10 +320,13 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	}
 
 	program, _ := fakeProgram(t, "mcp")
+	hostAddress, err := url.Parse(hostServer.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
 	handlerWithHost, err := NewHandler(map[string]string{
-		"NUMEN_PLUGIN_TOKEN": "tok",
-		"NUMEN_HOST_URL":     hostServer.URL,
-		"NUMEN_HOST_TOKEN":   "orchard-token",
+		hostcall.PluginTokenEnv: "tok",
+		hostcall.HostPortEnv:    hostAddress.Port(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -363,7 +368,7 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 
 func callTask(t *testing.T, url, program string) {
 	t.Helper()
-	payload, err := json.Marshal(map[string]any{"prompt": "How are the beds?"})
+	payload, err := acptest.EncodeTaskRequest(&acp.TaskRequest{Prompt: "How are the beds?"})
 	if err != nil {
 		t.Fatal(err)
 	}
