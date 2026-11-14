@@ -95,8 +95,8 @@ describe('what is visible of a graph', () => {
           .slice(0, index)
           .some(
             (other) =>
-              Math.abs(box.x - other.x) < (box.width + other.width) / 2 - 1 &&
-              Math.abs(box.y - other.y) < (box.height + other.height) / 2 - 1,
+              Math.abs(box.x - other.x) < (box.width + other.width) / 2 - 1e-6 &&
+              Math.abs(box.y - other.y) < (box.height + other.height) / 2 - 1e-6,
           ),
       )
       expect(overlaps).toStrictEqual([])
