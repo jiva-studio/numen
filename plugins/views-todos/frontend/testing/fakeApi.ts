@@ -57,8 +57,10 @@ export interface FakeInit {
 
 export function createFakeApi(init: FakeInit = {}) {
   let summary = init.summary ?? SUMMARY
+  let tasks = init.tasks
   const queue: WatchMessage[] = []
   let wake: (() => void) | null = null
+  let isEnding = false
   const calls: FakeCalls = {
     getSummary: [],
     listTasks: [],
@@ -74,7 +76,7 @@ export function createFakeApi(init: FakeInit = {}) {
     },
     listTasks: async (today, filter, limit) => {
       calls.listTasks.push({ today, filter, limit })
-      return ok(init.tasks?.[filter.due] ?? { tasks: [], total: 0, revision: 1 })
+      return ok(tasks?.[filter.due] ?? { tasks: [], total: 0, revision: 1 })
     },
     refreshIndex: async (paths, renamed) => {
       calls.refreshIndex.push({ paths, renamed })
@@ -82,7 +84,7 @@ export function createFakeApi(init: FakeInit = {}) {
     },
     watchTasks: async function* (signal) {
       calls.watchStarts += 1
-      while (!signal.aborted) {
+      while (!signal.aborted && !isEnding) {
         const next = queue.shift()
         if (next) {
           yield next
@@ -93,6 +95,7 @@ export function createFakeApi(init: FakeInit = {}) {
           signal.addEventListener('abort', () => resolve(), { once: true })
         })
       }
+      isEnding = false
       calls.watchEnds += 1
       return null
     },
@@ -104,9 +107,17 @@ export function createFakeApi(init: FakeInit = {}) {
     setSummary: (next: Summary) => {
       summary = next
     },
+    setTasks: (next: FakeInit['tasks']) => {
+      tasks = next
+    },
     /** Sends a message down the stream. */
     push: (message: WatchMessage) => {
       queue.push(message)
+      wake?.()
+    },
+    /** Ends the stream the way a backend that stops does. */
+    end: () => {
+      isEnding = true
       wake?.()
     },
   }

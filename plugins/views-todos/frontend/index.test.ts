@@ -131,4 +131,35 @@ describe('the todos frontend', () => {
     expect(fake.calls.refreshIndex).toEqual([])
     expect(fake.calls.getSummary).toEqual([TODAY])
   })
+
+  it('updates the chip and the open popover once the backend has checked a changed note', async () => {
+    const { context, fake, clock } = setup()
+    fake.push({ revision: 1, isReady: true })
+    await settle()
+    view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
+    await view.find('button').trigger('click')
+    await settle()
+    expect(view.findAll('li')).toHaveLength(1)
+
+    fake.setSummary({ ...SUMMARY, overdueCount: 0, todayCount: 1 })
+    fake.setTasks({
+      today: {
+        tasks: [task({ path: 'Daily.md', line: 2, text: 'water the plants', due: TODAY })],
+        total: 1,
+        revision: 2,
+      },
+    })
+    context.events.emitVaultChange({ paths: ['Projects/Home.md'] })
+    clock.fire()
+    await settle()
+    await settle()
+
+    expect(fake.calls.getSummary).toEqual([TODAY, TODAY])
+    expect(view.find('button').text().trim()).toBe('1')
+    const rows = view.findAll('li')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.text()).toContain('water the plants')
+  })
 })

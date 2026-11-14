@@ -1,6 +1,10 @@
 import { ref, type Ref } from 'vue'
 import type { TodosApi } from '../api/wire'
 import type { Summary } from '../types'
+import type { Timer } from './timer'
+
+/** How long the feed waits before it opens the stream again after the stream ended, in milliseconds. */
+export const RECONNECT_DELAY_MS = 1000
 
 /** The counts of the open tasks, kept up to date while the backend reports changes. The summary is null before the first read. */
 export interface TaskFeed {
@@ -16,13 +20,19 @@ export interface TaskFeed {
 export function useTaskFeed(
   api: Pick<TodosApi, 'getSummary' | 'watchTasks'>,
   getToday: () => string,
+  timer: Timer,
 ): TaskFeed {
   const summary = ref<Summary | null>(null)
   let controller: AbortController | null = null
+  let retry: number | null = null
+  let latest = 0
 
+  // Only the answer to the last read is kept: an earlier read that answers later holds older counts.
   const refresh = async (): Promise<void> => {
+    latest += 1
+    const asked = latest
     const result = await api.getSummary(getToday())
-    if (result.ok) summary.value = result.value
+    if (result.ok && asked === latest) summary.value = result.value
   }
 
   const follow = async (signal: AbortSignal): Promise<void> => {
@@ -32,15 +42,29 @@ export function useTaskFeed(
     }
   }
 
+  const connect = (): void => {
+    retry = null
+    const current = controller
+    if (!current) return
+    const reconnect = (): void => {
+      if (controller === current && !current.signal.aborted) {
+        retry = timer.set(connect, RECONNECT_DELAY_MS)
+      }
+    }
+    follow(current.signal).then(reconnect, reconnect)
+  }
+
   return {
     summary,
     start: () => {
       if (controller) return
       controller = new AbortController()
-      follow(controller.signal).catch(() => undefined)
+      connect()
     },
     refresh,
     stop: () => {
+      if (retry !== null) timer.clear(retry)
+      retry = null
       controller?.abort()
       controller = null
     },

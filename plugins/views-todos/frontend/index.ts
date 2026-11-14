@@ -46,21 +46,23 @@ export const activate = (context: PluginContext, parts: TodosParts = browserPart
   if (!workspace) {
     throw new Error('the todos plugin needs the window it is drawn in')
   }
-  const feed = useTaskFeed(parts.api, () => workspace.window.getToday())
-  const relay = createRefreshRelay(parts.api, parts.timer)
-  const onFocus = (): void => {
+  const feed = useTaskFeed(parts.api, () => workspace.window.getToday(), parts.timer)
+  const refreshSummary = (): void => {
     feed.refresh().catch(() => undefined)
   }
+  // The counts are read again once the backend has checked the changed notes, so the chip does not
+  // depend on the stream alone.
+  const relay = createRefreshRelay(parts.api, parts.timer, refreshSummary)
 
   context.register.slotView({
     id: TODOS_VIEW,
     component: createTodosView(feed, parts.api, workspace),
   })
   context.events.onVaultChange((event) => relay.push(event))
-  window.addEventListener('focus', onFocus)
+  window.addEventListener('focus', refreshSummary)
   context.plugin.subscriptions.push({
     dispose: () => {
-      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('focus', refreshSummary)
       relay.dispose()
       feed.stop()
     },

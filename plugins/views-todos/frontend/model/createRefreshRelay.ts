@@ -16,13 +16,16 @@ export interface RefreshRelay {
 
 const ignore = (): void => undefined
 
+/** onRefreshed runs after each RefreshIndex call the backend answered without a failure. */
 export function createRefreshRelay(
   api: Pick<TodosApi, 'refreshIndex'>,
   timer: Timer,
+  onRefreshed: () => void,
 ): RefreshRelay {
   const paths = new Set<string>()
   let renamed: Rename[] = []
   let wait: number | null = null
+  let isDisposed = false
 
   const cancel = (): void => {
     if (wait !== null) timer.clear(wait)
@@ -31,10 +34,19 @@ export function createRefreshRelay(
     renamed = []
   }
 
+  const request = (batchPaths: readonly string[], batchRenamed: readonly Rename[]): void => {
+    api
+      .refreshIndex(batchPaths, batchRenamed)
+      .then((result) => {
+        if (result.ok && !isDisposed) onRefreshed()
+      })
+      .catch(ignore)
+  }
+
   const send = (): void => {
     const batch = { paths: [...paths], renamed }
     cancel()
-    api.refreshIndex(batch.paths, batch.renamed).catch(ignore)
+    request(batch.paths, batch.renamed)
   }
 
   return {
@@ -43,13 +55,16 @@ export function createRefreshRelay(
       const eventRenamed = event.renamed ?? []
       if (eventPaths.length === 0 && eventRenamed.length === 0) {
         cancel()
-        api.refreshIndex([], []).catch(ignore)
+        request([], [])
         return
       }
       for (const path of eventPaths) paths.add(path)
       renamed = [...renamed, ...eventRenamed]
       wait ??= timer.set(send, REFRESH_DELAY_MS)
     },
-    dispose: cancel,
+    dispose: () => {
+      isDisposed = true
+      cancel()
+    },
   }
 }

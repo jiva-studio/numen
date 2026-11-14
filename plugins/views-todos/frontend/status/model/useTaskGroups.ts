@@ -46,8 +46,12 @@ export interface TaskGroups {
 
 export function useTaskGroups(api: TaskReader, getToday: () => string): TaskGroups {
   const groups = ref<readonly TaskGroup[]>([])
+  let latest = 0
 
+  // Only the answer to the last load is kept: an earlier load that answers later holds older lists.
   const load = async (): Promise<void> => {
+    latest += 1
+    const asked = latest
     const today = getToday()
     const read = await Promise.all(
       GROUPS.map(async ({ key, label }): Promise<TaskGroup> => {
@@ -57,7 +61,7 @@ export function useTaskGroups(api: TaskReader, getToday: () => string): TaskGrou
           : { key, label, tasks: [], total: 0 }
       }),
     )
-    groups.value = read.filter((group) => group.total > 0)
+    if (asked === latest) groups.value = read.filter((group) => group.total > 0)
   }
 
   return { groups, load }

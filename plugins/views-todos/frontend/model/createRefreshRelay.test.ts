@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { createFakeApi, createFakeTimer } from '../testing/fakeApi'
+import { createFakeApi, createFakeTimer, settle } from '../testing/fakeApi'
 import { createRefreshRelay, REFRESH_DELAY_MS } from './createRefreshRelay'
 
 const setup = () => {
   const fake = createFakeApi()
   const clock = createFakeTimer()
-  const relay = createRefreshRelay(fake.api, clock.timer)
-  return { fake, clock, relay }
+  let refreshed = 0
+  const relay = createRefreshRelay(fake.api, clock.timer, () => {
+    refreshed += 1
+  })
+  return { fake, clock, relay, getRefreshed: () => refreshed }
 }
 
 describe('the refresh relay', () => {
@@ -79,5 +82,37 @@ describe('the refresh relay', () => {
 
     expect(clock.waits).toEqual([])
     expect(fake.calls.refreshIndex).toEqual([])
+  })
+
+  it('tells once the backend has checked the paths it sent, and not before', async () => {
+    const { clock, relay, getRefreshed } = setup()
+    relay.push({ paths: ['a.md'] })
+    await settle()
+    expect(getRefreshed()).toBe(0)
+
+    clock.fire()
+    await settle()
+
+    expect(getRefreshed()).toBe(1)
+  })
+
+  it('tells once the backend has made a full check', async () => {
+    const { relay, getRefreshed } = setup()
+
+    relay.push({})
+    await settle()
+
+    expect(getRefreshed()).toBe(1)
+  })
+
+  it('does not tell when the backend answers after the relay is disposed', async () => {
+    const { clock, relay, getRefreshed } = setup()
+    relay.push({ paths: ['a.md'] })
+    clock.fire()
+
+    relay.dispose()
+    await settle()
+
+    expect(getRefreshed()).toBe(0)
   })
 })
