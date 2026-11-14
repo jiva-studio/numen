@@ -103,7 +103,7 @@ func TestPluginPackage_ReportsAnOutputDirectoryThatCannotBeCreated(t *testing.T)
 	}
 }
 
-func TestPluginPackage_ReportsAnArchiveThatCannotBeWritten(t *testing.T) {
+func TestPluginPackage_ReportsAnArchiveWriteError(t *testing.T) {
 	pluginDir := writePluginDir(t)
 	var stdout bytes.Buffer
 
