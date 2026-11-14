@@ -1,4 +1,4 @@
-/** The listeners a node's parts share, so the note in its place and the note in the layer over the others answer alike. */
+/** The pointer listeners a node's parts share, so the note in its place and the note in the layer over the others answer alike. */
 import { mergeListeners } from './destination'
 import type { useHoverFocus } from './hoverFocus'
 import type { useNodePress } from './press'
@@ -18,8 +18,6 @@ export function getNodeEvents(
       contextmenu: on(press.handlers.onContextMenu),
       pointerenter: on(hoverFocus.onPointerEnter),
       pointerleave: on(hoverFocus.onPointerLeave),
-      focusin: on(hoverFocus.onFocusIn),
-      focusout: on(hoverFocus.onFocusOut),
     },
     press.listening,
   )

@@ -72,6 +72,28 @@ describe('keyboard focus', () => {
     element.dispatchEvent(new FocusEvent('focusout', { relatedTarget: outside }))
     expect(hoverFocus.isOn.value).toBe(false)
   })
+
+  it('stays while focus moves to another of its parts, and ends when it exits all of them', () => {
+    const group = document.createElement('div')
+    const lifted = document.createElement('div')
+    const handle = document.createElement('button')
+    lifted.append(handle)
+    const hoverFocus = useHoverFocus(() => [group, lifted])
+    const keyboardOn = vi.spyOn(group, 'matches').mockReturnValue(true)
+    group.addEventListener('focusin', hoverFocus.onFocusIn)
+    group.addEventListener('focusout', hoverFocus.onFocusOut)
+    group.dispatchEvent(new FocusEvent('focusin'))
+    expect(keyboardOn).toHaveBeenCalledWith(':focus-visible')
+
+    group.dispatchEvent(new FocusEvent('focusout', { relatedTarget: handle }))
+    expect(hoverFocus.isOn.value).toBe(true)
+
+    // The lifted part is heard from the document, which holds everything and is not the node.
+    document.addEventListener('focusout', hoverFocus.onFocusOut)
+    document.dispatchEvent(new FocusEvent('focusout', { relatedTarget: document.body }))
+    document.removeEventListener('focusout', hoverFocus.onFocusOut)
+    expect(hoverFocus.isOn.value).toBe(false)
+  })
 })
 
 describe('release', () => {
