@@ -186,7 +186,7 @@ export function useEditor(options: EditorStateOptions) {
   )
 
   /** Reconfigures a setting that changes line heights; the view measures again, so the gutter follows the lines. */
-  function reconfigureLayout(effect: TransactionSpec['effects']): void {
+  function reconfigureLayout(effect: NonNullable<TransactionSpec['effects']>): void {
     view?.dispatch({ effects: effect })
     view?.requestMeasure()
   }
