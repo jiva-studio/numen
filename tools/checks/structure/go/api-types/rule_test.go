@@ -112,7 +112,6 @@ func getRealDir(t *testing.T, dir string) string {
 	return resolved
 }
 
-// getPluginName is the folder under plugins/ that holds a package, or "" for a package of no plugin.
 func (l layout) getPluginName(pkgPath string) string {
 	rest, ok := strings.CutPrefix(pkgPath, l.modulePath+"plugins/")
 	if !ok {
@@ -202,8 +201,6 @@ func getPosition(pkg *packages.Package, node ast.Node, root string) string {
 	return filepath.ToSlash(rel) + ":" + strconv.Itoa(position.Line)
 }
 
-// getMethods follows a method argument up through the functions that pass it on to the calls that name it
-// by a constant.
 func (x goIndex) getMethods(site goSite, expr ast.Expr, bindings map[*types.TypeParam]types.Type, depth int, root string) []goMethod {
 	if value := site.pkg.TypesInfo.Types[expr].Value; value != nil && value.Kind() == constant.String {
 		return []goMethod{{name: constant.StringVal(value), position: getPosition(site.pkg, expr, root), bindings: bindings, reason: ""}}
@@ -236,8 +233,6 @@ func (x goIndex) getMethods(site goSite, expr ast.Expr, bindings map[*types.Type
 	return methods
 }
 
-// listServedMethods reads the JSON methods each plugin serves through Handle and Stream of the SDK server,
-// by plugin name.
 func listServedMethods(pkgs []*packages.Package, l layout) (map[string][]servedMethod, []finding) {
 	index := newGoIndex(pkgs)
 	served := map[string][]servedMethod{}
@@ -280,7 +275,6 @@ func hasMethod(t types.Type, name string) bool {
 	return ok
 }
 
-// listEnumValues is the non-empty string constants of a named type, sorted.
 func listEnumValues(named *types.Named) []string {
 	pkg := named.Obj().Pkg()
 	if pkg == nil {
@@ -354,17 +348,15 @@ func getBasicShape(basic *types.Basic) shape {
 	return shape{Kind: kindOther, Text: basic.String()}
 }
 
-// getListShape is a list of element, except bytes, which encoding/json sends as base64 text.
 func (b shapeBuilder) getListShape(element types.Type, stack []types.Type) shape {
 	if basic, ok := types.Unalias(element).(*types.Basic); ok && basic.Kind() == types.Byte {
+		// encoding/json sends []byte as base64 text.
 		return shape{Kind: kindString}
 	}
 	inner := b.getShape(element, stack)
 	return shape{Kind: kindArray, Element: &inner}
 }
 
-// readJSONTag is the name and the options of the json key of a struct tag, as reflect reads it, and
-// whether the key leaves the field out.
 func readJSONTag(tag string) (name string, options []string, isSkipped bool) {
 	value, ok := reflect.StructTag(tag).Lookup("json")
 	if !ok {
@@ -377,8 +369,6 @@ func readJSONTag(tag string) (name string, options []string, isSkipped bool) {
 	return name, strings.Split(rest, ","), false
 }
 
-// getFields is the JSON fields of a struct: its own first, then those of embedded structs without a json
-// name that no shallower field shadows.
 func (b shapeBuilder) getFields(st *types.Struct, stack []types.Type) map[string]field {
 	fields := map[string]field{}
 	var embedded []*types.Struct
@@ -439,9 +429,6 @@ func describeKind(s shape) string {
 	return "a " + s.Kind
 }
 
-// compareShapes adds a difference for each place where what Go sends or reads and what TypeScript reads
-// or sends disagree. In a request a field may be optional on either side: a field left out is its zero
-// value.
 func compareShapes(findings *[]string, at string, goShape, tsShape shape, isRequest bool) {
 	if goShape.Kind == kindAny || tsShape.Kind == kindAny {
 		return
@@ -480,6 +467,7 @@ func compareFields(findings *[]string, at string, goFields, tsFields map[string]
 		if !ok {
 			continue
 		}
+		// In a request a field may be optional on either side: a field left out is its zero value.
 		if !isRequest && goField.IsOptional != tsField.IsOptional {
 			if goField.IsOptional {
 				*findings = append(*findings, at+"."+name+": Go omits it when empty, TypeScript says it is always there")
@@ -514,9 +502,6 @@ type comparison struct {
 	calls   int
 }
 
-// compareAPIs compares, for each plugin that serves JSON methods, every call its frontend makes with the
-// method the backend serves under that name. A plugin that serves methods and whose frontend calls none
-// of them through the Api of the SDK has no TypeScript side, and fails.
 func compareAPIs(served map[string][]servedMethod, frontends map[string]frontend) ([]finding, comparison) {
 	var findings []finding
 	var count comparison
@@ -551,7 +536,6 @@ func compareAPIs(served map[string][]servedMethod, frontends map[string]frontend
 	return findings, count
 }
 
-// readFrontends runs types.mjs on the plugin directories and returns its output by plugin name.
 func readFrontends(t *testing.T, root string, dirs map[string]string) map[string]frontend {
 	t.Helper()
 	script := filepath.Join(getRealDir(t, load.RepoRootDir), "tools", "checks", "structure", "go", "api-types", "types.mjs")
@@ -577,8 +561,6 @@ func readFrontends(t *testing.T, root string, dirs map[string]string) map[string
 	return byName
 }
 
-// runAPITypes reads the served methods of pkgs and the calls of the frontends of their plugins and
-// compares them.
 func runAPITypes(t *testing.T, pkgs []*packages.Package, l layout) ([]finding, comparison) {
 	t.Helper()
 	served, findings := listServedMethods(pkgs, l)

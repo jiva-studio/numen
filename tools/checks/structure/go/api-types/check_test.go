@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
-// writeGoSource writes a struct tag between single quotes, since a Go raw string cannot hold a backtick.
 func writeGoSource(text string) string {
+	// A Go raw string cannot hold a backtick, so planted sources write struct tags between single quotes.
 	return strings.ReplaceAll(text, "'", "`")
 }
 
