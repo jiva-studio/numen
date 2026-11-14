@@ -111,14 +111,14 @@ func TestE5TokensMatchHuggingFace(t *testing.T) {
 	}
 }
 
-func TestAUnigramTokenizerGivesTheEmbedderATokenizerVersion(t *testing.T) {
+func TestEmbedderReportsTokenizerVersionForUnigramTokenizer(t *testing.T) {
 	e := &Embedder{encoder: loadTestTokenizer(t, getE5TokenizerPath(t)), window: model.MaxChunkTokens}
 	if e.GetTokenizerVersion() == "" {
 		t.Error("an embedder that reads E5 with the Unigram tokenizer reports no tokenizer version")
 	}
 }
 
-func TestADelegatedBPETokenizerGivesTheEmbedderNoTokenizerVersion(t *testing.T) {
+func TestEmbedderReportsNoTokenizerVersionForDelegatedBPETokenizer(t *testing.T) {
 	e := &Embedder{encoder: loadTestTokenizer(t, filepath.Join("testdata", "bpe.json")), window: model.MaxChunkTokens}
 	if got := e.GetTokenizerVersion(); got != "" {
 		t.Errorf("an embedder that reads a BPE model reports tokenizer version %q, want none", got)
@@ -160,7 +160,9 @@ func TestAnOpenWhoseTokenizerIsNotTheKindOfItsProfileFails(t *testing.T) {
 
 	emb, err := Open(t.Context(), onnx.NewLibrary(), info, local, nil)
 	if err == nil {
-		_ = emb.Close()
+		if closeErr := emb.Close(); closeErr != nil {
+			t.Errorf("Close() = %v", closeErr)
+		}
 		t.Fatal("a BPE tokenizer opened for a profile that names the Unigram tokenizer")
 	}
 	if !strings.Contains(err.Error(), "owner/mismatch") || !strings.Contains(err.Error(), tokenizerPath) {

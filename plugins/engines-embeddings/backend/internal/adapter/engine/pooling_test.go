@@ -125,7 +125,7 @@ func TestPadBatchSetsPositionsOfTheRealTokensAndZeroForPadding(t *testing.T) {
 	in.types[0] = 7
 	in.mask[3] = 7
 	firstIDPtr := &in.ids[0]
-	// New hands back the used padding, so padBatch gets it even when the race detector drops what was put.
+	// New returns the used padding, so padBatch gets it even when the race detector drops what was put.
 	used := &sync.Pool{New: func() any { return in }}
 	_, _, again := padBatch(used, [][]int{{}}, 0, 512)
 	if &again.ids[0] != firstIDPtr {

@@ -234,12 +234,11 @@ const (
 	harrierRecipeBefore = "plugin:md.numen.engines.embeddings|onnx-community/harrier-oss-v1-270m-ONNX|640|512|output|623ccc6f"
 )
 
-// newUnopenedServer returns a server whose model fails the test when it is opened: the recipe is read
-// from the profile alone.
 func newUnopenedServer(t *testing.T, dir string) *Server {
 	t.Helper()
 	srv := newEmbeddingServer()
 	srv.profileSrc = profilefiles.NewDirectory(dir)
+	// The model fails the test when it is opened: the recipe is read from the profile alone.
 	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
 		t.Error("reading the recipe opened the model")
 		return mockembedder.Embedder{}, nil

@@ -429,7 +429,6 @@ func TestProfileNormalizeCloneAndErrorPaths(t *testing.T) {
 	}
 }
 
-// getTokenizerKind returns the tokenizer field of the profile as a profile file names it.
 func getTokenizerKind(t *testing.T, p Profile) string {
 	t.Helper()
 	data, err := json.Marshal(p)
