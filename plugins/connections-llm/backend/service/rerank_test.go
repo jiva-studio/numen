@@ -143,7 +143,7 @@ func TestRerankPostsToTheRerankPathOfTheAddress(t *testing.T) {
 	}
 }
 
-func TestRerankPutsTheInstructionAndALineBreakBeforeTheQuery(t *testing.T) {
+func TestRerankSendsTheInstructionBeforeTheQuery(t *testing.T) {
 	answer := `{"results":[{"index":0,"relevance_score":0.5}]}`
 	got, address := startRecorder(t, answer)
 	svc := newTestService(t)

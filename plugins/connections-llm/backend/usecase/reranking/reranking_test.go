@@ -41,7 +41,7 @@ func (g *gateway) ListModels(context.Context, connection.Call, time.Duration, []
 	return nil, nil
 }
 
-func newReranking(t *testing.T, g *gateway) *reranking.Reranking {
+func newSubject(t *testing.T, g *gateway) *reranking.Reranking {
 	t.Helper()
 	subject, err := reranking.New(g, &limits.Limits{})
 	if err != nil {
@@ -58,7 +58,7 @@ func TestDocumentsAreRerankedWithTheLimitOfTheOperation(t *testing.T) {
 	g := &gateway{scores: []float32{0.2, 0.9}}
 	request := &llm.RerankRequest{Query: "ferry", Documents: []string{"Tide tables", "Ferry times"}}
 
-	result, err := newReranking(t, g).Rerank(t.Context(), call("openrouter", "cohere/rerank-v3.5", "https://openrouter.ai/api/v1"), request)
+	result, err := newSubject(t, g).Rerank(t.Context(), call("openrouter", "cohere/rerank-v3.5", "https://openrouter.ai/api/v1"), request)
 
 	if err != nil || !slices.Equal(result.GetScores(), []float32{0.2, 0.9}) || g.limit != limits.DefaultOtherLimit {
 		t.Errorf("result = %v, err = %v, limit = %v", result, err, g.limit)
@@ -71,7 +71,7 @@ func TestDocumentsAreRerankedWithTheLimitOfTheOperation(t *testing.T) {
 func TestNoDocumentIsNoRequest(t *testing.T) {
 	g := &gateway{}
 
-	result, err := newReranking(t, g).Rerank(t.Context(), call("openrouter", "m", "https://openrouter.ai/api/v1"), &llm.RerankRequest{Query: "ferry"})
+	result, err := newSubject(t, g).Rerank(t.Context(), call("openrouter", "m", "https://openrouter.ai/api/v1"), &llm.RerankRequest{Query: "ferry"})
 
 	if err != nil || len(result.GetScores()) != 0 || g.request != nil {
 		t.Errorf("result = %v, err = %v, request = %v", result, err, g.request)
@@ -80,7 +80,7 @@ func TestNoDocumentIsNoRequest(t *testing.T) {
 
 func TestTheFirstRerankOfACompatibleModelHasALongLimitThatEndsOnceItAnswered(t *testing.T) {
 	g := &gateway{scores: []float32{1}}
-	subject := newReranking(t, g)
+	subject := newSubject(t, g)
 	local := call("openai-compatible", "bge-reranker-v2-m3", "http://127.0.0.1:8080/v1")
 	request := &llm.RerankRequest{Query: "ferry", Documents: []string{"Ferry times"}}
 
@@ -94,7 +94,7 @@ func TestTheFirstRerankOfACompatibleModelHasALongLimitThatEndsOnceItAnswered(t *
 
 func TestAFailedRerankDoesNotEndTheLongFirstLimit(t *testing.T) {
 	g := &gateway{err: errors.New("down")}
-	subject := newReranking(t, g)
+	subject := newSubject(t, g)
 	local := call("openai-compatible", "bge-reranker-v2-m3", "http://127.0.0.1:8080/v1")
 
 	for range 2 {
