@@ -28,7 +28,6 @@ export const createVideoRecorder = (
       recordVideo: {
         dir: testInfo.outputPath('window-videos'),
         size: viewport ?? DEFAULT_SIZE,
-        showActions: { duration: 400, position: 'top-right' },
       },
     },
     // A page records from its creation, so the moment it is ready is the start of its video,

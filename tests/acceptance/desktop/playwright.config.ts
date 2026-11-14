@@ -24,13 +24,9 @@ export default defineConfig({
   fullyParallel: true,
   workers: '100%',
   webServer: undefined,
-  // The text of each step stays on the page for a second before the step runs.
-  ...(isVideoOn && { timeout: 120_000 }),
   use: {
     ...base.use,
-    ...(isVideoOn && {
-      video: { mode: 'on', show: { actions: { duration: 400, position: 'top-right' } } },
-    }),
+    ...(isVideoOn && { video: 'on' }),
   },
   reporter: [
     ['list'],

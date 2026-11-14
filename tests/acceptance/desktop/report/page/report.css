@@ -199,33 +199,25 @@ h2 {
   width: 100%;
   max-width: 960px;
   border: 1px solid var(--border);
+  margin-bottom: 16px;
   border-radius: 6px;
   background: #000;
 }
 
-.files {
-  margin: 10px 0 18px;
+.trace {
+  margin-left: auto;
   color: var(--fg-muted);
+  font-size: 18px;
+  text-decoration: none;
 }
 
-.files a {
+.trace:hover {
   color: var(--accent);
 }
 
-code,
 pre {
   font-family: var(--mono);
   font-size: 12.5px;
-}
-
-.command {
-  display: inline-block;
-  margin-top: 4px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--bg-code);
-  color: var(--fg);
-  user-select: all;
 }
 
 .steps {

@@ -145,16 +145,14 @@ const createStep = (step, index, scenario) => {
   )
 }
 
-const createFiles = (scenario) => {
-  if (!scenario.trace) return createElement('p', { class: 'files' }, ['No trace.'])
-  return createElement('p', { class: 'files' }, [
-    createElement('a', { href: scenario.trace, download: '' }, ['trace.zip']),
-    ' · open it with ',
-    createElement('code', { class: 'command' }, [
-      `npx playwright show-trace "${scenario.tracePath}"`,
-    ]),
-  ])
-}
+const createTraceLink = (scenario) =>
+  scenario.trace
+    ? createElement(
+        'a',
+        { class: 'trace', href: scenario.trace, download: '', title: 'Download the trace' },
+        ['⤓'],
+      )
+    : null
 
 const createScenarioError = (scenario) =>
   scenario.errorMessage ? createElement('pre', { class: 'error' }, [scenario.errorMessage]) : null
@@ -206,10 +204,10 @@ const writeDetail = (scenario) => {
       scenario.name,
       createElement('span', { class: `badge ${scenario.status}` }, [scenario.status]),
       createElement('span', { class: 'time' }, [formatDuration(scenario.duration)]),
+      createTraceLink(scenario),
     ]),
     player,
-    createFiles(scenario),
-    createScenarioError(scenario),
+    ...[createScenarioError(scenario)].filter(Boolean),
     stepList,
   )
   if (player.tagName === 'VIDEO') linkStepsToVideo(player, stepList, scenario)
