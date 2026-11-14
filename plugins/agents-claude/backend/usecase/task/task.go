@@ -171,7 +171,8 @@ func (r *Runner) releaseTools(ctx context.Context, served ServedTools, configFil
 }
 
 // Answer runs the program once on the prompt, with the instructions as the system prompt, no tool and
-// one turn, and returns the text of its answer. A run that fails returns what the program said of it.
+// one turn, and returns the text of its answer. A run that fails returns what the program said of it. A run
+// cut off by Close or by the cancellation of ctx returns the error of the run context and no text.
 func (r *Runner) Answer(ctx context.Context, call connection.Call, instructions, prompt string) (string, error) {
 	program := r.FindProgram()
 	if program == "" {
@@ -192,6 +193,8 @@ func (r *Runner) Answer(ctx context.Context, call connection.Call, instructions,
 	switch {
 	case err != nil:
 		return "", err
+	case runCtx.Err() != nil:
+		return "", runCtx.Err()
 	case reason != "":
 		return "", errors.New(reason)
 	case strings.TrimSpace(answer.text.String()) == "":
