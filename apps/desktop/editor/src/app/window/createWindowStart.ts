@@ -5,7 +5,6 @@ import type { PluginLoader } from '@numen/plugin-loader'
 import type { SettingsStore } from '@/entities/settings'
 import type { createWindowLayout, WindowTabs } from '@/entities/tab'
 import type { useVaults } from '@/entities/vault'
-import { readDetachedTab } from '@/features/tab-move'
 import { createLayoutStart, createPluginStart, createWindowBootstrap } from '@/features/app-start'
 import type { createWindowPalette } from '@/features/command-palette'
 import { createAppKeyRunner, createKeyHandler, useAppHotkeys } from '@/features/hotkeys'
@@ -18,6 +17,7 @@ import type { createWindowPalettes } from './createWindowPalettes'
 import type { createWindowPlugins } from './createWindowPlugins'
 import { createWindowTabMenu } from './createWindowTabMenu'
 import { registerSettingsPage } from './registerSettingsPage'
+import type { WindowApi } from './createWindowApi'
 
 /** What the keys of the window reach. */
 interface WindowKeysDeps {
@@ -65,6 +65,7 @@ function createPluginStarter(deps: PluginStarterDeps) {
 
 /** What the start of the layout of the tabs reads. */
 export interface LayoutStarterDeps {
+  readonly api: Pick<WindowApi, 'tabMove' | 'savedTabs'>
   readonly vaults: Pick<ReturnType<typeof useVaults>, 'activeVault'>
   readonly windowTabs: WindowTabs
   readonly pluginLoader: PluginLoader
@@ -84,7 +85,8 @@ function createLayoutStarter(deps: LayoutStarterDeps) {
     layout: deps.layout,
     isSecondary: deps.isSecondary,
     windowId: deps.windowId,
-    readDetachedTab,
+    readDetachedTab: deps.api.tabMove.readDetachedTab,
+    readOpenTabs: deps.api.savedTabs.readOpenTabs,
     openDetachedTab: deps.openMovedTab,
   })
 }
@@ -105,11 +107,12 @@ export interface WindowStartDeps {
 
 export function createWindowStart(deps: WindowStartDeps) {
   const { foundation, tabs, tabParts, vault, windowSettings, getTarget, plugins, palettes } = deps
-  const { log, rest, connections, frame, writeMessage, settingsRequests } = foundation
+  const { api, log, rest, connections, frame, writeMessage, settingsRequests } = foundation
   const { windowTabs } = tabs
   const { pluginHost, pluginLoader, declaredCommands } = plugins
   const { editing, window, vaults } = vault
   registerSettingsPage({
+    api: { settings: api.settings, listFiles: api.file.listFiles, listCatalog: api.listCatalog },
     rest,
     connections,
     windowSettings,
@@ -143,6 +146,7 @@ export function createWindowStart(deps: WindowStartDeps) {
       tabLinkSession: tabs.linkSession,
       writeMessage,
       layout: createLayoutStarter({
+        api,
         vaults,
         windowTabs,
         pluginLoader,

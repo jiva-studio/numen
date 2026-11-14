@@ -5,7 +5,6 @@
 import { computed } from 'vue'
 import { SLOT, type PluginHost, type PluginStatus } from '@numen/plugin-loader'
 import type { NoticeQueue, WindowFrame } from '@numen/workbench'
-import { resolveNameLink } from '@/entities/note'
 import type { SettingsStore } from '@/entities/settings'
 import type { FileOpeners, WindowTabs } from '@/entities/tab'
 import {
@@ -21,9 +20,11 @@ import {
   type PluginNotes,
   type PluginServices,
 } from '@/features/plugin-host'
+import type { WindowApi } from './createWindowApi'
 
 /** What the host parts that read the services of the window are made from. */
 export interface ServicePartsDeps {
+  readonly api: Pick<WindowApi, 'note' | 'processes' | 'health'>
   readonly services: PluginServices
   readonly notices: NoticeQueue
   readonly pluginNotes: PluginNotes
@@ -32,15 +33,19 @@ export interface ServicePartsDeps {
 
 /** The parts of the host, in the order they are merged: the services, the notices, the notes and the declarations. */
 export function createServiceParts(deps: ServicePartsDeps): readonly HostParts[] {
-  const { services, pluginNotes } = deps
+  const { api, services, pluginNotes } = deps
   return [
     createVaultServiceParts({ services }),
-    createTaskServiceParts({ services }),
+    createTaskServiceParts({
+      services,
+      processes: api.processes,
+      healthReports: api.health.healthReports,
+    }),
     createNoticeParts({ queue: deps.notices }),
     {
       readNote: pluginNotes.readNote,
       writeNote: pluginNotes.writeNote,
-      resolveLink: resolveNameLink,
+      resolveLink: api.note.resolveNameLink,
     },
     ...deps.hostParts,
   ]
@@ -48,6 +53,7 @@ export function createServiceParts(deps: ServicePartsDeps): readonly HostParts[]
 
 /** What the plugin host reads of the window. */
 export interface PluginHostSupportDeps {
+  readonly api: WindowApi['pluginHost']
   readonly rest: SettingsStore
   readonly catalog: ReturnType<typeof createPluginCatalog>
   readonly status: PluginStatus
@@ -62,6 +68,7 @@ export interface PluginHostSupportDeps {
 export function createPluginHostSupport(deps: PluginHostSupportDeps) {
   const { windowTabs, tabOpeners, reports } = deps
   return createPluginSupport({
+    api: deps.api,
     rest: deps.rest,
     catalog: deps.catalog,
     status: deps.status,

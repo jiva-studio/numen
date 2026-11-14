@@ -1,15 +1,18 @@
 /**
  * The window composed in four steps, each made from the ones before: the base (the tabs, the
- * vault, the commands of the features), the plugins, the palettes, and the start.
+ * vault, the commands of the features), the plugins, the palettes, and the start. Every call to the
+ * core goes over the transports the window is given.
  */
+import type { WindowTransports } from '@/shared/api/clients'
+import { createWindowApi } from './createWindowApi'
 import { createWindowBase } from './createWindowBase'
 import { createWindowPalettes } from './createWindowPalettes'
 import { createWindowPlugins } from './createWindowPlugins'
 import { createWindowStart } from './createWindowStart'
 
 /** Everything the window is made of, made once and handed to what draws it. */
-export const createWindow = () => {
-  const base = createWindowBase()
+export const createWindow = (transports: WindowTransports) => {
+  const base = createWindowBase(createWindowApi(transports))
   const { foundation, tabs, tabParts, vault, windowSettings, getTarget, appCommands } = base
   const plugins = createWindowPlugins({
     foundation,

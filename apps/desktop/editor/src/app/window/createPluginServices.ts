@@ -8,7 +8,6 @@ import type { BackgroundTaskHost, CommandsHost, WindowControls } from '@numen/pl
 import type { NoticeQueue } from '@numen/workbench'
 import type { FileOpeners, WindowTabs } from '@/entities/tab'
 import { createWindowBackgroundTasks } from '@/features/background-tasks'
-import { searchCore } from '@/features/command-palette'
 import { createBufferHost } from '@/features/file-conflict'
 import {
   createVaultAccess,
@@ -21,6 +20,7 @@ import {
 import type { CommandTarget } from '@/shared/model/command'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import type { createVaultServices } from './createVaultServices'
+import type { WindowApi } from './createWindowApi'
 
 type VaultServices = ReturnType<typeof createVaultServices>
 
@@ -48,6 +48,7 @@ export function createPluginWorkspace(deps: PluginWorkspaceDeps) {
 
 /** What the notes, the links and the files a plugin is given are made from. */
 export interface PluginAccessDeps {
+  readonly api: Pick<WindowApi, 'note' | 'file' | 'relations' | 'search'>
   readonly making: VaultServices['editing']['making']
   readonly pluginNotes: PluginNotes
   readonly getTarget: () => CommandTarget
@@ -57,7 +58,10 @@ export interface PluginAccessDeps {
 /** The notes, the links and the files a plugin is given. */
 export function createPluginAccess(deps: PluginAccessDeps) {
   return createVaultAccess({
-    search: searchCore,
+    notes: deps.api.note,
+    files: deps.api.file,
+    relations: deps.api.relations,
+    search: deps.api.search,
     making: deps.making,
     pluginNotes: deps.pluginNotes,
     getTarget: deps.getTarget,
@@ -67,6 +71,7 @@ export function createPluginAccess(deps: PluginAccessDeps) {
 
 /** What the background tasks of the plugins read of the window. */
 export interface PluginBackgroundTasksDeps {
+  readonly cancelTask: WindowApi['tasks']['cancelTask']
   readonly log: MessageLog
   readonly notices: NoticeQueue
   readonly window: Pick<VaultServices['window'], 'health' | 'vault' | 'tasks' | 'pluginHealth'>
@@ -80,6 +85,7 @@ export interface PluginBackgroundTasksDeps {
 export function createPluginBackgroundTasks(deps: PluginBackgroundTasksDeps): BackgroundTaskHost {
   const { window } = deps
   return createWindowBackgroundTasks({
+    cancelTask: deps.cancelTask,
     log: deps.log,
     plugins: deps.notices,
     window: {

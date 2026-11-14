@@ -6,6 +6,7 @@ import type { CommandsHost, PluginHost } from '@numen/plugin-loader'
 import type { WindowFrame } from '@numen/workbench'
 import type { ConnectionStore } from '@/entities/connection'
 import type { SettingsStore } from '@/entities/settings'
+import type { SettingsPageApi } from '@/pages/settings'
 import type { WindowTabs } from '@/entities/tab'
 import { createSettingsPage } from '@/pages/settings'
 import type { createWindowSettings } from '@/features/settings-commands'
@@ -16,6 +17,7 @@ import type { PluginHealthItem } from '@/entities/plugin'
 
 /** What the settings page of the window is made from. */
 export interface SettingsPageDeps {
+  readonly api: SettingsPageApi
   readonly rest: SettingsStore
   readonly connections: ConnectionStore
   readonly windowSettings: Pick<ReturnType<typeof createWindowSettings>, 'appearance'>
@@ -37,6 +39,7 @@ interface SettingsPagePlugins {
 export function registerSettingsPage(deps: SettingsPageDeps): void {
   const { plugins, frame, windowTabs } = deps
   const settingsPage = createSettingsPage({
+    api: deps.api,
     rest: deps.rest,
     connections: deps.connections,
     appearance: deps.windowSettings.appearance,

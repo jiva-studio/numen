@@ -5,7 +5,6 @@
  */
 import { createNoticeQueue } from '@numen/workbench'
 import { createCommandTitleReader } from '@/entities/command'
-import { readNote, writeNote } from '@/entities/note'
 import { useDeclaredCommands } from '@/features/plugin-commands'
 import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
 import { syncKeybindings } from '@/features/hotkeys'
@@ -33,13 +32,14 @@ export interface WindowPluginsDeps {
 
 export function createWindowPlugins(deps: WindowPluginsDeps) {
   const { foundation, tabs, vault, windowSettings, getTarget, appCommands } = deps
-  const { log, rest, frame, status, registry } = foundation
+  const { api, log, rest, frame, status, registry } = foundation
   const { windowTabs, tabOpeners } = tabs
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()
   const notices = createNoticeQueue()
-  const pluginNotes = createPluginNotes({ read: readNote, write: writeNote })
+  const pluginNotes = createPluginNotes({ read: api.note.readNote, write: api.note.writeNote })
   const declarations = createPluginDeclarations({
+    api: api.declaredCommands,
     rest,
     log,
     isPaletteOpen: hostPort.isPaletteOpen,
@@ -58,6 +58,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       tabSync: tabs.tabSync,
     }),
     ...createPluginAccess({
+      api,
       making: editing.making,
       pluginNotes,
       getTarget,
@@ -71,6 +72,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       frame,
       log,
       backgroundTasks: createPluginBackgroundTasks({
+        cancelTask: api.tasks.cancelTask,
         log,
         notices,
         window,
@@ -82,6 +84,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     }),
   }
   const { pluginHost, pluginLoader } = createPluginHostSupport({
+    api: api.pluginHost,
     rest,
     catalog: declarations.catalog,
     status,
@@ -90,6 +93,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     tabOpeners,
     reports: declarations.reports,
     parts: createServiceParts({
+      api,
       services,
       notices,
       pluginNotes,
@@ -98,6 +102,8 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
   })
   vault.vaultChanges.subscribe((event) => pluginHost.notifyVaultChange(event))
   const declaredCommands = useDeclaredCommands({
+    list: api.declaredCommands.listDeclaredCommands,
+    run: api.declaredCommands.runDeclaredCommand,
     state: declarations.declared,
     registry,
     isListed: (id) => isCommandListed(pluginHost, id),

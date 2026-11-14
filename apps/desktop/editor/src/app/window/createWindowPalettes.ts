@@ -8,7 +8,6 @@ import {
   createWindowPalette,
   runSupport,
 } from '@/features/command-palette'
-import { getVaultList } from '@/features/window-display'
 import { watchCommandLists } from '@/features/plugin-commands'
 import { createCommandIconFinder, createSearchMenu } from '@/features/plugin-host'
 import type { CommandRegistry, Notes, SettingsRequest } from '@/shared/model/command'
@@ -89,7 +88,8 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
     plugin: pluginPalette.plugin,
     searchRequests,
     searchOptions: { menu: createSearchMenu(pluginHost.slots) },
-    getVaultList,
+    getVaultList: vault.listVaults,
+    searchCore: foundation.api.search,
   })
   watchCommandLists(
     {

@@ -3,7 +3,6 @@
  * paths and the session that keeps their links with the core.
  */
 import type { PluginStatus } from '@numen/plugin-loader'
-import { getFileKinds } from '@/entities/file'
 import type { SettingsStore } from '@/entities/settings'
 import {
   createTabNavigation,
@@ -15,13 +14,15 @@ import {
   UnavailablePane,
 } from '@/entities/tab'
 import { isSecondaryWindow } from '@/entities/window'
-import { createTabLinking, createWindowTabLinkSession, syncTabPath } from '@/features/tab-linking'
+import { createTabLinking, createWindowTabLinkSession } from '@/features/tab-linking'
 import { createMoveAcceptor, createMovedTabStarter } from '@/features/tab-move'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
+import type { WindowApi } from './createWindowApi'
 
 /** What the tabs of the window read of the others parts of it. */
 export interface TabsPartDeps {
+  readonly api: WindowApi
   readonly writeMessage: MessageWriter
   readonly rest: Pick<SettingsStore, 'write' | 'state'>
   readonly status: Pick<PluginStatus, 'isPluginStarting' | 'startPlugin' | 'startTabPlugins'>
@@ -29,7 +30,7 @@ export interface TabsPartDeps {
 }
 
 export function createTabsPart(deps: TabsPartDeps) {
-  const { writeMessage, status } = deps
+  const { api, writeMessage, status } = deps
   const pluginStarts = createTabPluginStarts({
     status,
     getPlugins: () => deps.rest.state.plugins.value,
@@ -38,6 +39,7 @@ export function createTabsPart(deps: TabsPartDeps) {
   const windowTabs = createWindowTabs(
     { unavailable: UnavailablePane, restoreFailed: RestoreFailedPane },
     {
+      findTabKindPlugin: api.findTabKindPlugin,
       isPluginStarting: status.isPluginStarting,
       startKindPlugin: pluginStarts.startKindPlugin,
       enablePlugin: async (pluginId) => {
@@ -48,9 +50,15 @@ export function createTabsPart(deps: TabsPartDeps) {
   )
   const windowId = crypto.randomUUID()
   const isMain = !isSecondaryWindow()
-  const { tabLinks, reports } = createTabLinking({ windowId, windowTabs, isMain, writeMessage })
+  const { tabLinks, reports } = createTabLinking({
+    writeTabLinks: api.tabLinks.writeTabLinks,
+    windowId,
+    windowTabs,
+    isMain,
+    writeMessage,
+  })
   const tabOpeners = fileOpeners({
-    fileKinds: getFileKinds,
+    fileKinds: api.file.getFileKinds,
     reconcileTab: windowTabs.panes.reconcileTab,
     startTabKind: pluginStarts.startTabKind,
     startExtensionReader: pluginStarts.startExtensionReader,
@@ -58,16 +66,17 @@ export function createTabsPart(deps: TabsPartDeps) {
   const tabSync = createTabSync({
     windowTabs,
     tabLinks,
-    sendSync: syncTabPath,
+    sendSync: api.tabLinks.syncTabPath,
     onError: (error) => writeMessage(formatError(error), 'error'),
   })
   const openMovedTab = createMovedTabStarter({
     windowTabs,
     closeTab: windowTabs.closeTab,
-    acceptMove: createMoveAcceptor(windowId, reports.waitForReports),
+    acceptMove: createMoveAcceptor(api.tabMove.acceptTabMove, windowId, reports.waitForReports),
     writeMessage,
   })
   const linkSession = createWindowTabLinkSession({
+    api: api.tabLinks,
     windowId,
     windowTabs,
     isMain,

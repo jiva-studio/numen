@@ -3,7 +3,7 @@
  * reports of the plugins, the slots, and the handlers of the backends.
  */
 import type { Command } from '@/entities/command'
-import { runDeclaredHandler } from '@/entities/plugin'
+import type { DeclaredCommandsApi } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { FileOpeners } from '@/entities/tab'
 import {
@@ -27,6 +27,7 @@ import type { MessageLog } from '@/shared/model/notices/messages'
 
 /** What the plugins read of the window before the host exists. */
 export interface PluginDeclarationsDeps {
+  readonly api: DeclaredCommandsApi
   readonly rest: SettingsStore
   readonly log: MessageLog
   readonly isPaletteOpen: HostPort['isPaletteOpen']
@@ -41,10 +42,11 @@ export interface PluginDeclarationsDeps {
  * that read them: the slots and the handlers of the backends.
  */
 export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
-  const { rest, log, itemLists, tabOpeners } = deps
+  const { api, rest, log, itemLists, tabOpeners } = deps
   const catalog = createPluginCatalog(rest)
   const reports = createPluginReports(log, catalog.getName)
   const declared = createDeclaredState({
+    list: api.listDeclaredCommands,
     getConfig: () => getWindowConfig(rest),
     paletteNotes: {
       read: createCommandNoteReader(itemLists),
@@ -63,7 +65,7 @@ export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
   const handlers = createBackendHandlers({
     getHandlers: () => declared.contributions.handlers.value,
     list: itemLists.listItems,
-    run: runDeclaredHandler,
+    run: api.runDeclaredHandler,
     writeMessage: log.getWriter('command'),
     openFile: (path) => tabOpeners.openFile(path, '', 'current').then(() => undefined),
   })
