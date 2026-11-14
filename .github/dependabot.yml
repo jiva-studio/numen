@@ -104,10 +104,12 @@ updates:
         patterns: ["*"]
         update-types: ["major"]
     # Android Gradle Plugin 8.13 runs on Gradle 8 only; the wrapper stays on 8.x
-    # until the plugin moves to 9.
+    # until the plugin moves to 9. kotlin-bom 1.8.22 aligns kotlin-stdlib-jdk7
+    # and -jdk8 with the kotlin-stdlib version the locked AndroidX tree resolves.
     ignore:
       - dependency-name: gradle-wrapper
         update-types: ["version-update:semver-major"]
+      - dependency-name: org.jetbrains.kotlin:kotlin-bom
 
   - package-ecosystem: github-actions
     directory: /
