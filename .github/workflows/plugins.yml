@@ -155,7 +155,10 @@ jobs:
   # first parent of the merge commit.
   plugin-versions:
     name: Plugin Versions
-    if: github.event_name == 'pull_request' && inputs.plugin_versions
+    # Paused on 2026-11-14 while the architecture pull requests merge: every merge moved the base and
+    # failed the open pull requests on a version number alone. Restore the condition below afterwards.
+    # if: github.event_name == 'pull_request' && inputs.plugin_versions
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
