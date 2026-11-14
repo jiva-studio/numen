@@ -1,6 +1,6 @@
 import { formatError } from '@/shared/api/errors'
 import type { VaultChangeEvent } from '@numen/plugin-loader'
-import { runInBackground } from '@numen/ui'
+import { runInBackground, win } from '@numen/ui'
 import type { FileOpeners, WindowTabs } from '@/entities/tab'
 import type { Emitter } from '@/shared/lib/emitter'
 import type { MessageWriter } from '@/shared/model/notices/messages'
@@ -56,6 +56,6 @@ export function createDisplayOptions(deps: DisplayWiring) {
         writeMessage(formatError(error), 'error'),
       ),
     activateTab: (id: string) => windowTabs.groups.handle.show(id),
-    reload: () => globalThis.location.reload(),
+    reload: () => win.location.reload(),
   }
 }

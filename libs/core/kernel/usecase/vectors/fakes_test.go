@@ -82,14 +82,35 @@ func vectorOf(text string, dims int) []float32 {
 }
 
 func newEmbed(readers vaultport.VaultReaders, chunks searchsourceport.VectorQueries, vectors searchsourceport.VectorRepository) Embed {
-	embed := NewEmbed(readers, chunks, vectors)
-	embed.Texts = bookTexts{readers: readers}
-	return embed
+	return NewEmbed(readers, chunks, vectors, openClaim{}, bookTexts{readers: readers}, noModel{})
 }
 
 func newExtract(
 	readers vaultport.VaultReaders, index *indexfake.Store,
 ) filetext.Index {
-	extract := filetext.NewIndex(readers, index, index, index, index, bookTexts{readers: readers})
+	extract := filetext.NewIndex(filetext.IndexDeps{
+		Readers: readers, Sources: index, Records: index, Backlog: index, Lookup: index,
+		Texts: bookTexts{readers: readers},
+	})
 	return extract
+}
+
+// openClaim holds nothing and is never busy.
+type openClaim struct{}
+
+func (openClaim) ClaimIndex(context.Context) (func() error, error) {
+	return func() error { return nil }, nil
+}
+
+// noModel describes no model, so nothing is embedded until a test sets a source.
+type noModel struct{}
+
+func (noModel) Describe() searchsource.Description { return searchsource.Description{} }
+
+func (noModel) IndexTexts(context.Context, searchsource.Place, []searchsource.Text) ([][]float32, error) {
+	return nil, nil
+}
+
+func (noModel) SearchPassages(context.Context, searchsource.Place, searchsource.Query) ([]searchsource.Match, error) {
+	return nil, nil
 }
