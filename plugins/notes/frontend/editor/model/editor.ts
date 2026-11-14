@@ -5,7 +5,7 @@ import { doc } from '@numen/ui'
 import { onBeforeUnmount, onMounted, watch, type Ref } from 'vue'
 import type { LanguageSupport } from '@codemirror/language'
 import type { Extension } from '@codemirror/state'
-import { EditorState } from '@codemirror/state'
+import { EditorState, type TransactionSpec } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { EditorChange } from '../lib/change/change'
 import {
@@ -16,6 +16,12 @@ import {
   editableCompartment,
   getLineNumbersExtension,
   getTabSizeExtension,
+  getFontExtension,
+  getLineHeightExtension,
+  getActiveLineExtension,
+  fontCompartment,
+  lineHeightCompartment,
+  activeLineCompartment,
   getWrapExtension,
   lineNumbersCompartment,
   preview,
@@ -44,6 +50,9 @@ export interface EditorProps {
   softWrap?: boolean | undefined
   lineNumbers?: boolean | undefined
   tabSize?: number | undefined
+  fontFamily?: string | undefined
+  lineHeight?: number | undefined
+  highlightActiveLine?: boolean | undefined
 }
 
 interface EditorEmit {
@@ -60,6 +69,9 @@ export interface EditorStateOptions {
   readonly softWrap?: () => boolean | undefined
   readonly lineNumbers?: () => boolean | undefined
   readonly tabSize?: () => number | undefined
+  readonly fontFamily?: () => string | undefined
+  readonly lineHeight?: () => number | undefined
+  readonly highlightActiveLine?: () => boolean | undefined
 }
 
 export function useEditor(options: EditorStateOptions) {
@@ -70,6 +82,12 @@ export function useEditor(options: EditorStateOptions) {
   const readLineNumbers = () =>
     options.lineNumbers ? options.lineNumbers() : options.props.lineNumbers
   const readTabSize = () => (options.tabSize ? options.tabSize() : options.props.tabSize)
+  const readFontFamily = () =>
+    options.fontFamily ? options.fontFamily() : options.props.fontFamily
+  const readLineHeight = () =>
+    options.lineHeight ? options.lineHeight() : options.props.lineHeight
+  const readHighlightActiveLine = () =>
+    options.highlightActiveLine ? options.highlightActiveLine() : options.props.highlightActiveLine
 
   function setLanguage(name: string, support: LanguageSupport | null): void {
     if (!view || name !== options.props.language) return
@@ -110,6 +128,9 @@ export function useEditor(options: EditorStateOptions) {
             softWrap: readSoftWrap(),
             lineNumbers: readLineNumbers(),
             tabSize: readTabSize(),
+            fontFamily: readFontFamily(),
+            lineHeight: readLineHeight(),
+            highlightActiveLine: readHighlightActiveLine(),
           }),
           addressResolver.of((address) => options.props.resolve?.(address) ?? address),
           addressOpener.of((address) => options.emit('open', address)),
@@ -164,8 +185,14 @@ export function useEditor(options: EditorStateOptions) {
     (more) => view?.dispatch({ effects: extensionsCompartment.reconfigure(more ?? []) }),
   )
 
+  /** Reconfigures a setting that changes line heights; the view measures again, so the gutter follows the lines. */
+  function reconfigureLayout(effect: NonNullable<TransactionSpec['effects']>): void {
+    view?.dispatch({ effects: effect })
+    view?.requestMeasure()
+  }
+
   watch(readSoftWrap, (softWrap) =>
-    view?.dispatch({ effects: wrapCompartment.reconfigure(getWrapExtension(softWrap ?? true)) }),
+    reconfigureLayout(wrapCompartment.reconfigure(getWrapExtension(softWrap ?? true))),
   )
 
   watch(readLineNumbers, (show) =>
@@ -175,8 +202,20 @@ export function useEditor(options: EditorStateOptions) {
   )
 
   watch(readTabSize, (tabSize) =>
+    reconfigureLayout(tabSizeCompartment.reconfigure(getTabSizeExtension(tabSize ?? 2))),
+  )
+
+  watch(readFontFamily, (family) =>
+    reconfigureLayout(fontCompartment.reconfigure(getFontExtension(family ?? ''))),
+  )
+
+  watch(readLineHeight, (height) =>
+    reconfigureLayout(lineHeightCompartment.reconfigure(getLineHeightExtension(height ?? 1.6))),
+  )
+
+  watch(readHighlightActiveLine, (isOn) =>
     view?.dispatch({
-      effects: tabSizeCompartment.reconfigure(getTabSizeExtension(tabSize ?? 2)),
+      effects: activeLineCompartment.reconfigure(getActiveLineExtension(isOn ?? false)),
     }),
   )
 

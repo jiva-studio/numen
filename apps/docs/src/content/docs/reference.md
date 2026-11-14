@@ -143,6 +143,10 @@ The settings of the plugin Notes.
 | --- | --- | --- |
 | `softWrap` | yes or no | wrap long lines to fit the editor viewport. |
 | `lineNumbers` | yes or no | show line numbers in the editor margin. |
+| `tabSize` | a number | spaces a Tab inserts. From 1 to 8. |
+| `fontFamily` | text | a comma-separated list of families is allowed. A name with spaces needs no quotes. |
+| `lineHeight` | a number | space between lines, as a multiple of the font size. From 1.2 to 2.4. |
+| `highlightActiveLine` | yes or no | mark the line the caret is on. |
 
 ### `md.numen.readers.pdf`
 

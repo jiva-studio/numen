@@ -6,7 +6,7 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import { Editor } from '../editor'
 import type { Extension } from '@codemirror/state'
 import type { EditorHandle, NoteTabState } from '@numen/plugin-sdk'
-import { editorPreferences } from '../model/preferences'
+import { useEditorPreferences } from '../model/useEditorPreferences'
 import {
   getEditorExtensions,
   getEditorLanguage,
@@ -27,6 +27,9 @@ interface Props {
   readonly softWrap?: boolean | undefined
   readonly lineNumbers?: boolean | undefined
   readonly tabSize?: number | undefined
+  readonly fontFamily?: string | undefined
+  readonly lineHeight?: number | undefined
+  readonly highlightActiveLine?: boolean | undefined
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -38,6 +41,9 @@ const props = withDefaults(defineProps<Props>(), {
   softWrap: undefined,
   lineNumbers: undefined,
   tabSize: undefined,
+  fontFamily: undefined,
+  lineHeight: undefined,
+  highlightActiveLine: undefined,
   extensions: undefined,
   state: undefined,
 })
@@ -84,10 +90,7 @@ const editorExtensions = computed(() => getEditorExtensions(props))
 const editorLanguage = computed(() => getEditorLanguage(props))
 const fileConflict = computed(() => props.state?.fileConflict?.value ?? null)
 
-const DEFAULT_TAB_SIZE = 2
-const softWrap = computed(() => props.softWrap ?? editorPreferences.softWrap)
-const lineNumbers = computed(() => props.lineNumbers ?? editorPreferences.lineNumbers)
-const tabSize = computed(() => props.tabSize ?? DEFAULT_TAB_SIZE)
+const preferences = useEditorPreferences(props)
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(displayErrorMessage, () => {
@@ -136,9 +139,12 @@ function onOpen(url: string) {
       :language="editorLanguage"
       is-live
       :is-readonly="isReadOnly || isLoading"
-      :soft-wrap="softWrap"
-      :line-numbers="lineNumbers"
-      :tab-size="tabSize"
+      :soft-wrap="preferences.softWrap"
+      :line-numbers="preferences.lineNumbers"
+      :tab-size="preferences.tabSize"
+      :font-family="preferences.fontFamily"
+      :line-height="preferences.lineHeight"
+      :highlight-active-line="preferences.highlightActiveLine"
       v-bind="editorExtensions ? { extensions: editorExtensions } : {}"
       class="markdown-note-editor__pane note__text"
       @update:model-value="onUpdateModelValue"

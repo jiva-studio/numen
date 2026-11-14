@@ -16,3 +16,7 @@ Write and organize Markdown notes with live formatting, `[[wikilinks]]`, tables,
 - **Live Preview**: Format Markdown cleanly as you type, or turn off to view raw Markdown everywhere.
 - **Line Numbers**: Show or hide line numbers along the left margin of your notes.
 - **Soft Wrap**: Wrap long lines to fit the window width, or scroll horizontally.
+- **Tab Size**: How many spaces the Tab key inserts, from 1 to 8.
+- **Font**: The font of the note text: the interface font, a generic family, or the name of an installed font.
+- **Line Height**: The space between lines, as a multiple of the font size.
+- **Highlight Active Line**: Mark the line the caret is on.
