@@ -17,7 +17,7 @@ export const root = join(dirname(fileURLToPath(import.meta.url)), '../..')
 /** Where runs write their reports, caches and generated configs, relative to the repository. */
 export const OUTPUT = '.mutation'
 
-export const GOMUTANTS = 'github.com/szhekpisov/gomutants@v0.6.1'
+export const GOMUTANTS = 'github.com/gomutants/gomutants@v0.7.2'
 
 /** Lines of source one shard takes, by kind, and the most shards a target is split into. */
 export const SHARD_LINES = { go: 6000, ts: 4500 }
