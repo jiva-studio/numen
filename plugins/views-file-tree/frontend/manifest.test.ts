@@ -10,6 +10,7 @@ const manifest = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
 ) as {
   permissions: readonly string[]
+  settings?: readonly { key: string; type: string; default?: unknown }[]
   contributes: {
     commands: readonly { id: string; title: string; icon: string }[]
     keybindings?: readonly { key: string; command: string }[]
@@ -72,6 +73,15 @@ describe('the manifest', () => {
       title: 'Open file tree',
       icon: 'folder-tree',
     })
+  })
+})
+
+describe('the settings', () => {
+  it('declares expanding to the open note, on by default', () => {
+    const setting = (manifest.settings ?? []).filter((one) => one.key === 'revealOpenNote')
+
+    expect(setting).toHaveLength(1)
+    expect(setting[0]).toMatchObject({ type: 'boolean', default: true })
   })
 })
 
