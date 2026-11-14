@@ -39,7 +39,7 @@
 
 ## Time and identifiers
 
-- The use case receives `machineport.Clock` and calls `Now()` once per scenario, then passes the instant on. Timers and randomness need no port in Go. A function in the domain takes the instant as an argument.
+- The use case receives `machineport.Clock` and calls `Now()` once per scenario, then passes the instant on. Randomness needs no port in Go. A timer whose firing changes what a caller or a test observes (a wait, a quiet period, a timeout) takes `After` and `Wait` from the clock port (`machineport.Timer` in the core), so a test moves the time and the timer fires. A function in the domain takes the instant as an argument.
 - A use case that needs a new identifier receives a port that returns one; the adapter builds the identifier with `ulid`. The domain receives identifiers, never creates them.
 
 ## What an application may keep

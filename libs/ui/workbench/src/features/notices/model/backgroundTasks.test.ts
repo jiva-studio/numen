@@ -82,6 +82,7 @@ describe('the tasks of the window as background tasks', () => {
       state: 'failed',
       error: 'File is corrupted',
       allowed: { cancel: false },
+      actionLabel: '',
     })
   })
 
@@ -203,5 +204,12 @@ describe('the actions on a background task', () => {
     host.runAction('health:md.example.atlas:connection')
 
     expect(deps.runAction).toHaveBeenCalledWith('health:md.example.atlas:connection')
+
+    const hostWithoutAction = createBackgroundTaskHost({
+      tasks: ref<readonly Task[]>([]),
+      cancelTask: vi.fn(() => Promise.resolve()),
+      reportCancelError: vi.fn(),
+    })
+    expect(() => hostWithoutAction.runAction('health:md.example.atlas:connection')).not.toThrow()
   })
 })

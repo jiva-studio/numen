@@ -5,7 +5,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import type { Connection } from '@numen/plugin-sdk'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, ref } from 'vue'
 import PlexGraphView from './PlexGraphView.vue'
 import { createPlexKind } from '../model/kind'
 import { createHost } from '../fixtures/host'
@@ -14,13 +14,15 @@ import { createLine, viewOn, type RelatedNoteInput } from '../fixtures'
 const createTab = (
   focus: string,
   relatedNotes: readonly RelatedNoteInput[],
-  lines: readonly Connection[] = [],
+  { lines = [], noteRoom }: { lines?: readonly Connection[]; noteRoom?: number } = {},
 ) =>
   defineComponent({
     name: 'PlexKindTab',
     setup() {
+      const { host } = createHost({ opening: focus })
+      const look = { ...host.look, noteRoom: ref(noteRoom ?? host.look.noteRoom.value) }
       const { kind } = createPlexKind(
-        createHost({ opening: focus }).host,
+        { ...host, look },
         () => viewOn(focus, relatedNotes, {}, lines).view,
         PlexGraphView,
       )
@@ -89,7 +91,8 @@ export const Alone: Story = {
 /**
  * A record is drawn the same way on every line: a head at the end it points at
  * and its words near it, on a line at the focus, from a parent to a sibling,
- * and between two children.
+ * and between two children. The room around a note is at its most, 40, so every
+ * line is long enough for its words.
  */
 export const OnEveryLine: Story = {
   render: () => ({
@@ -108,14 +111,17 @@ export const OnEveryLine: Story = {
             marker: 'arrow',
           },
         ],
-        [
-          createLine('Being.md', {
-            path: 'Becoming.md',
-            relation: 'child',
-            label: 'precedes',
-            marker: 'arrow',
-          }),
-        ],
+        {
+          lines: [
+            createLine('Being.md', {
+              path: 'Becoming.md',
+              relation: 'child',
+              label: 'precedes',
+              marker: 'arrow',
+            }),
+          ],
+          noteRoom: 40,
+        },
       ),
     },
     template: '<Tab />',

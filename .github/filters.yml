@@ -96,7 +96,7 @@ plugins_all: &plugins_all
 
 # ---------------------------------------------------------------- Go
 
-core:
+core: &core
   - *go_base
   - *node_lock
   - tests/vault/**
@@ -104,6 +104,10 @@ core:
   - tools/build-plugin-index/**
   - tools/checks/structure/go/**
   - '!**/*.md'
+# The Go structure checks read the core and the Go code of every plugin backend.
+structure:
+  - *core
+  - plugins/*/backend/**
 atomicfile:
   - *atomicfile_lib
   - .github/workflows/go.yml
@@ -151,9 +155,6 @@ ui:
   - *ts_config
   - *ui_lib
   - .github/actions/build-ui/**
-  - .github/actions/setup-playwright/**
-  - .github/actions/cache-apt/**
-  - .github/scripts/apt-retry.sh
   - .github/workflows/frontend.yml
   - '!**/*.md'
 desktop_fe:
@@ -167,9 +168,6 @@ desktop_fe:
   - *client_lib
   - *host_lib
   - .github/actions/build-ui/**
-  - .github/actions/setup-playwright/**
-  - .github/actions/cache-apt/**
-  - .github/scripts/apt-retry.sh
   - .github/workflows/frontend.yml
   - apps/desktop/editor/**
   - apps/desktop/flashcards/**
@@ -208,9 +206,6 @@ plugin_stories:
   - *sdk_ts_lib
   - *ui_lib
   - .github/actions/build-ui/**
-  - .github/actions/setup-playwright/**
-  - .github/actions/cache-apt/**
-  - .github/scripts/apt-retry.sh
   - .github/workflows/plugins.yml
   - plugins/*/frontend/**
   - tools/ci-stories/**

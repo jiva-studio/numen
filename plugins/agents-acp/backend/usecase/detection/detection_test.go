@@ -1,6 +1,7 @@
 package detection
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -45,10 +46,12 @@ func TestNothingIsDetectedWithoutAKnownAgentOnThePath(t *testing.T) {
 	writeProgram(t, folder, "orchard-agent")
 	t.Setenv("PATH", folder)
 
-	for _, lookPath := range []func(string) (string, error){exec.LookPath, nil} {
+	emptyPath := func(string) (string, error) { return "", nil }
+	errWithPath := func(string) (string, error) { return "/opt/gemini", errors.New("permission denied") }
+	for _, lookPath := range []func(string) (string, error){exec.LookPath, nil, emptyPath, errWithPath} {
 		found, err := New(lookPath).DetectConnections(t.Context(), connection.Call{Type: "acp"})
-		if err != nil || len(found) != 0 {
-			t.Errorf("DetectConnections = %+v, %v, want none", found, err)
+		if err != nil || found == nil || len(found) != 0 {
+			t.Errorf("DetectConnections = %+v (nil=%v), %v, want non-nil empty slice", found, found == nil, err)
 		}
 	}
 }

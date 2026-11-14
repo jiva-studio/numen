@@ -48,17 +48,18 @@ func (f *fakeCaller) Call(ctx context.Context, operation string, payload []byte,
 }
 
 func newCaller() *fakeCaller {
-	return &fakeCaller{model: fixedModel{vectors: &llm.EmbedResult{Vectors: []*llm.Vector{{Values: []float32{1}}}}}}
+	return &fakeCaller{model: fixedModel{vectors: &llm.EmbedResult{Vectors: []*llm.Vector{{Values: []float32{1}}, {Values: []float32{2}}}}}}
 }
 
 func TestQueriesAreInteractiveAndDocumentsAreBackground(t *testing.T) {
 	caller := newCaller()
 	models := New(caller)
 
-	if _, err := models.Embed(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
-		t.Fatal(err)
+	vectors, err := models.Embed(t.Context(), model.RoleDocument, []string{"a", "b"})
+	if err != nil || len(vectors) != 2 || vectors[0][0] != 1 || vectors[1][0] != 2 {
+		t.Fatalf("vectors = %v, err = %v", vectors, err)
 	}
-	if _, err := models.Embed(t.Context(), model.RoleQuery, []string{"b"}); err != nil {
+	if _, err := models.Embed(t.Context(), model.RoleQuery, []string{"b", "c"}); err != nil {
 		t.Fatal(err)
 	}
 

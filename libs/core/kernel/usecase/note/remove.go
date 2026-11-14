@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // TrashDir is where a removed note is kept. A name beginning with a dot is not
@@ -32,7 +33,7 @@ type Remove struct {
 	queries sourceport.SourcesUnder
 	filer   sourceport.VersionMover
 	index   edit.IndexUpdater
-	gate    WriteGate
+	gate    windowport.WriteGate
 }
 
 // NewRemove is what takes a note out of the vault: the vault it is moved
@@ -41,9 +42,9 @@ type Remove struct {
 // the path it left, and the gate a removal passes.
 func NewRemove(
 	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, filer sourceport.VersionMover,
-	index edit.IndexUpdater, gate WriteGate,
+	index edit.IndexUpdater, gate windowport.WriteGate,
 ) Remove {
-	return Remove{writers: writers, links: links, queries: queries, filer: filer, index: index, gate: gate}
+	return Remove{writers: writers, links: links, queries: queries, filer: filer, index: getIndexUpdater(index), gate: gate}
 }
 
 type RemoveResult struct {
@@ -168,9 +169,6 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 }
 
 func (u Remove) updateIndex(ctx context.Context, v domain.Vault, paths ...string) error {
-	if u.index == nil {
-		return nil
-	}
 	// The files are written, so the index follows them even when the caller is canceled.
 	return edit.WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }

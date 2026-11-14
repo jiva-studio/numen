@@ -28,7 +28,7 @@ func NewDirectory(path string) Directory {
 func GetDefaultDirectory() Directory {
 	dir, err := cache.GetDataDir()
 	if err != nil {
-		return Directory{path: ""}
+		return Directory{}
 	}
 	return Directory{path: filepath.Join(dir, model.ProfilesFolder)}
 }

@@ -12,14 +12,15 @@ import (
 
 // windowParts are what the use cases of one window are built over besides its state.
 type windowParts struct {
-	db            *Index
 	indexer       *indexing.Worker
 	embedding     *indexing.Embedding
-	moves         *VaultUseCases
-	current       *vault.CurrentRefresh
+	passes        windowsession.VaultPassesFunc
+	recordOpen    vault.RecordOpen
+	importFiles   vault.Import
 	out           io.Writer
 	embedderError error
 	closeEmbedder func() error
+	closeIndex    func() error
 }
 
 // windowCases are the use cases that run a window from its start to its close.
@@ -50,10 +51,10 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a), diag),
-		Passes:   startVault(a, parts.db, parts.current), Triggers: getTriggerSource(a),
+		Passes:   parts.passes, Triggers: getTriggerSource(a),
 	})
 	identity := vault.NewCheckIdentity(vaultIdentity(a.vault))
-	session := windowsession.NewSession(&state.Runtime, parts.moves.RecordOpen, diag, parts.embedderError, runner)
+	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)
 	guard := &windowsession.Guard{}
 	flush := windowsession.NewPageFlush(state.Window, state.Writes)
 	rebuild := windowsession.NewRebuildSession(guard, session)
@@ -70,12 +71,12 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 				state.Gate, session,
 				windowsession.CloseFunc(state.ClosePlaying),
 				windowsession.CloseFunc(func(context.Context) error { return parts.closeEmbedder() }),
-				windowsession.CloseFunc(func(context.Context) error { return parts.db.Close() }),
+				windowsession.CloseFunc(func(context.Context) error { return parts.closeIndex() }),
 			),
 		},
 		tools: windowTools{
 			importFiles: windowsession.NewImportFiles(
-				parts.moves.Tree.Import, state.Writes, state.Window, &state.Notices.ChangeEvents,
+				parts.importFiles, state.Writes, state.Window, &state.Notices.ChangeEvents,
 			),
 			showTab: windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, 0),
 		},

@@ -14,11 +14,12 @@ import (
 )
 
 type fakeStream struct {
-	frames []*llm.ChatFrame
-	finish *llm.ChatFinish
-	next   int
-	err    error
-	closed atomic.Bool
+	frames   []*llm.ChatFrame
+	finish   *llm.ChatFinish
+	next     int
+	err      error
+	closeErr error
+	closed   atomic.Bool
 }
 
 func (s *fakeStream) Next() bool {
@@ -42,7 +43,7 @@ func (s *fakeStream) Err() error {
 
 func (s *fakeStream) Close() error {
 	s.closed.Store(true)
-	return nil
+	return s.closeErr
 }
 
 func text(delta string) *llm.ChatFrame {
@@ -115,6 +116,7 @@ func TestTheTextAndTheCallsOfTheStreamMakeTheReply(t *testing.T) {
 	stream := &fakeStream{frames: []*llm.ChatFrame{
 		text("Let me "), text("look. "),
 		{Event: &llm.ChatFrame_ToolCall{ToolCall: &llm.ToolCall{Id: "c2", Name: "note_read", ArgumentsJson: `{"path":"A.md"}`}}},
+		{Event: &llm.ChatFrame_ToolCall{ToolCall: &llm.ToolCall{Id: "c3", Name: "note_read", ArgumentsJson: `{"path":"B.md"}`}}},
 	}, finish: &llm.ChatFinish{Reason: llm.FinishReason_FINISH_REASON_TOOL_CALLS}}
 
 	reply, spoken, _, err := ask(t, stream, nil)
@@ -125,8 +127,8 @@ func TestTheTextAndTheCallsOfTheStreamMakeTheReply(t *testing.T) {
 	if strings.Join(spoken, "|") != "Let me |look. " || reply.Message.Text != "Let me look. " || reply.Message.Role != "assistant" {
 		t.Errorf("spoken %v, reply %+v", spoken, reply)
 	}
-	if len(reply.Message.ToolCalls) != 1 || reply.Message.ToolCalls[0].Arguments != `{"path":"A.md"}` || reply.IsCut ||
-		reply.Message.ToolCalls[0].About != "A.md" || reply.Message.ToolCalls[0].Path != "A.md" {
+	if len(reply.Message.ToolCalls) != 2 || reply.Message.ToolCalls[0].Arguments != `{"path":"A.md"}` || reply.IsCut ||
+		reply.Message.ToolCalls[0].About != "A.md" || reply.Message.ToolCalls[0].Path != "A.md" || reply.Message.ToolCalls[1].Path != "B.md" {
 		t.Errorf("reply = %+v", reply)
 	}
 }
@@ -150,6 +152,20 @@ func TestEveryStreamOfTheModelIsClosed(t *testing.T) {
 
 	if !stream.closed.Load() {
 		t.Error("the stream of the model was left open")
+	}
+
+	closeErr := errors.New("close failed")
+	streamWithErr := &fakeStream{frames: []*llm.ChatFrame{text("hi")}, finish: &llm.ChatFinish{Reason: llm.FinishReason_FINISH_REASON_STOP}, closeErr: closeErr}
+	if _, _, _, err := ask(t, streamWithErr, nil); !errors.Is(err, closeErr) {
+		t.Errorf("close error = %v, want %v", err, closeErr)
+	}
+
+	emitErr := errors.New("emit failed")
+	chat := New(func(context.Context, *llm.ChatRequest, connection.Priority, connection.PreferredRow) (Stream, error) {
+		return &fakeStream{frames: []*llm.ChatFrame{text("one"), text("two")}, finish: &llm.ChatFinish{}}, nil
+	})
+	if _, err := chat.Stream(t.Context(), conversation.Turn{}, func(string) error { return emitErr }); !errors.Is(err, emitErr) {
+		t.Errorf("emit error = %v, want %v", err, emitErr)
 	}
 }
 
@@ -179,10 +195,11 @@ func TestTheSubjectOfACallIsItsQueryAboutOrTitleElseItsPath(t *testing.T) {
 		name, arguments, about, path string
 	}{
 		{"a query before a path", `{"query":"ferry times","path":"Trips"}`, "ferry times", "Trips"},
+		{"empty query before about", `{"query":"","about":"ferry"}`, "ferry", ""},
 		{"a title", `{"title":"Ferry","file":"Trips/Ferry.md"}`, "Ferry", "Trips/Ferry.md"},
 		{"only a path", `{"path":"Trips/Ferry.md"}`, "Trips/Ferry.md", "Trips/Ferry.md"},
 		{"no subject", `{"limit":5}`, "", ""},
-		{"arguments that are not JSON", `{"path":`, "", ""},
+		{"arguments that are not JSON", `{"path":"A.md",`, "", ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
