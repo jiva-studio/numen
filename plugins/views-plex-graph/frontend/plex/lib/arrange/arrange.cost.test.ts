@@ -45,7 +45,7 @@ describe('the number of layouts', () => {
     expect(layouts).toBeLessThanOrEqual(60)
   })
 
-  it('stays bounded when only the shown notes of that graph are arranged again', () => {
+  it('stays bounded when only the visible notes of that graph are arranged again', () => {
     const graph = createGraph(200)
     const visibleIds = new Set(arrangeCounting(graph).frame.nodes.map((node) => node.id))
     const { frame, layouts } = arrangeCounting({

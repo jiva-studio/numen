@@ -66,7 +66,7 @@ const getFocusBox = (frame: ReturnType<typeof arrangeCase>) => {
   return { x: focus.x, y: focus.y, width: focus.width, height: focus.height }
 }
 
-describe('what is shown of a graph', () => {
+describe('what is visible of a graph', () => {
   it.each(cases.map((one, round) => [round, one] as const))(
     'adds up to what arrived, fits the window and overlaps nothing, in case %i',
     (_, one) => {
@@ -166,7 +166,7 @@ describe('a note that is cut', () => {
     },
   )
 
-  it('shows the same notes when only the shown notes are arranged again', () => {
+  it('shows the same notes when only the visible notes are arranged again', () => {
     const changed: string[] = []
     cases.forEach((one, round) => {
       const frame = arrangeCase(one)

@@ -95,7 +95,7 @@ describe('the order of the notes inside a relation', () => {
     return shuffled
   }
 
-  it('does not change how many notes of each relation are shown', () => {
+  it('does not change how many notes of each relation are visible', () => {
     for (let round = 0; round < 60; round++) {
       const requested: NodesByRelation = {
         parent: createNodes('parent', Math.floor(random() * 25)),
