@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/report"
 )
 
 const recipe = "local|bge-m3|1024|512|mean|int8@0.4"
@@ -41,12 +41,12 @@ func TestTheStatsCarryTheCountsTheModelAndTheProfile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := api.Stats{
+	want := Summary{
 		Vectors: 12480, Chunks: 13100, Waiting: 620, Sources: 84,
-		Kinds: []api.KindCount{
-			{Kind: api.KindNotes, Sources: 70, Chunks: 4100},
-			{Kind: api.KindPDF, Sources: 9, Chunks: 7000},
-			{Kind: api.KindEPUB, Sources: 5, Chunks: 2000},
+		Kinds: []report.KindCount{
+			{Kind: report.KindNotes, Sources: 70, Chunks: 4100},
+			{Kind: report.KindPDF, Sources: 9, Chunks: 7000},
+			{Kind: report.KindEPUB, Sources: 5, Chunks: 2000},
 		},
 		Model: "bge-m3", Recipe: recipe, Dimensions: 1024,
 		Profile: "maximum", Threads: 8, Speed: nil, ChangedAt: "",

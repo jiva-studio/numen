@@ -9,8 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
-	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/usecase/report"
+	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/report"
 )
 
 // Clock tells the time.
@@ -21,6 +20,25 @@ type Clock interface {
 // Index reads what the search index of the vault the host shows holds.
 type Index interface {
 	GetIndexStats(ctx context.Context) (host.IndexStats, error)
+}
+
+// Summary is what the index holds, and the model, profile and speed that fill it. Speed is nil and
+// ChangedAt empty while the calls so far do not tell them.
+type Summary struct {
+	Vectors       int64
+	Chunks        int64
+	Waiting       int64
+	Sources       int64
+	Kinds         []report.KindCount
+	Model         string
+	Recipe        string
+	Dimensions    int64
+	Profile       string
+	Threads       int
+	Speed         *float64
+	ChangedAt     string
+	DatabaseBytes int64
+	VectorBytes   int64
 }
 
 // Stats holds what the calls share: the index, the meter and the profile.
@@ -56,14 +74,14 @@ func (s *Stats) getProfile() performance.Profile {
 }
 
 // Get reads what the index holds now.
-func (s *Stats) Get(ctx context.Context) (api.Stats, error) {
+func (s *Stats) Get(ctx context.Context) (Summary, error) {
 	raw, err := s.index.GetIndexStats(ctx)
 	if err != nil {
-		return api.Stats{}, err
+		return Summary{}, err
 	}
 	derived := s.meter.Observe(s.clock.Now(), report.Counts{Vectors: raw.VectorCount, Chunks: raw.ChunkCount, Sources: raw.SourceCount})
 	profile := s.getProfile()
-	answer := api.Stats{
+	answer := Summary{
 		Vectors: raw.VectorCount, Chunks: raw.ChunkCount, Waiting: max(0, raw.ChunkCount-raw.VectorCount),
 		Sources: raw.SourceCount, Kinds: report.GroupByKind(raw.Extensions),
 		Model: raw.Model, Recipe: raw.Recipe, Dimensions: raw.Dimensions,

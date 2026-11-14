@@ -6,16 +6,15 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/usecase/report"
+	"github.com/jiva-studio/numen/plugins/tools-index-stats/backend/report"
 )
 
 func TestTheKindOfASourceIsDerivedFromItsFileExtension(t *testing.T) {
-	tests := map[string]api.Kind{
-		"md": api.KindNotes, "markdown": api.KindNotes, "txt": api.KindNotes,
-		"pdf": api.KindPDF, "epub": api.KindEPUB,
-		"mp3": api.KindMedia, "mp4": api.KindMedia, "m4a": api.KindMedia, "webm": api.KindMedia,
-		"docx": api.KindOther, "": api.KindOther,
+	tests := map[string]report.Kind{
+		"md": report.KindNotes, "markdown": report.KindNotes, "txt": report.KindNotes,
+		"pdf": report.KindPDF, "epub": report.KindEPUB,
+		"mp3": report.KindMedia, "mp4": report.KindMedia, "m4a": report.KindMedia, "webm": report.KindMedia,
+		"docx": report.KindOther, "": report.KindOther,
 	}
 	for extension, want := range tests {
 		if got := report.GetKind(extension); got != want {
@@ -34,11 +33,11 @@ func TestExtensionsAreAddedUpByKindInTheFixedOrderAndAKindWithNoSourceIsLeftOut(
 		{Extension: "epub", SourceCount: 1, ChunkCount: 5},
 		{Extension: "", SourceCount: 1, ChunkCount: 0},
 	})
-	want := []api.KindCount{
-		{Kind: api.KindNotes, Sources: 6, Chunks: 10},
-		{Kind: api.KindEPUB, Sources: 1, Chunks: 5},
-		{Kind: api.KindMedia, Sources: 2, Chunks: 40},
-		{Kind: api.KindOther, Sources: 2, Chunks: 2},
+	want := []report.KindCount{
+		{Kind: report.KindNotes, Sources: 6, Chunks: 10},
+		{Kind: report.KindEPUB, Sources: 1, Chunks: 5},
+		{Kind: report.KindMedia, Sources: 2, Chunks: 40},
+		{Kind: report.KindOther, Sources: 2, Chunks: 2},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)

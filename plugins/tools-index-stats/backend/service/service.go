@@ -19,11 +19,24 @@ import (
 
 func getStats(stats *indexstats.Stats) func(context.Context, api.GetStatsRequest) (api.Stats, error) {
 	return func(ctx context.Context, _ api.GetStatsRequest) (api.Stats, error) {
-		answer, err := stats.Get(ctx)
+		summary, err := stats.Get(ctx)
 		if err != nil {
 			return api.Stats{}, convertError(err)
 		}
-		return answer, nil
+		return toStats(summary), nil
+	}
+}
+
+func toStats(summary indexstats.Summary) api.Stats {
+	kinds := make([]api.KindCount, 0, len(summary.Kinds))
+	for _, one := range summary.Kinds {
+		kinds = append(kinds, api.KindCount{Kind: api.Kind(one.Kind), Sources: one.Sources, Chunks: one.Chunks})
+	}
+	return api.Stats{
+		Vectors: summary.Vectors, Chunks: summary.Chunks, Waiting: summary.Waiting, Sources: summary.Sources,
+		Kinds: kinds, Model: summary.Model, Recipe: summary.Recipe, Dimensions: summary.Dimensions,
+		Profile: summary.Profile, Threads: summary.Threads, Speed: summary.Speed, ChangedAt: summary.ChangedAt,
+		DatabaseBytes: summary.DatabaseBytes, VectorBytes: summary.VectorBytes,
 	}
 }
 
