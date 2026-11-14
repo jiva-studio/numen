@@ -112,7 +112,7 @@ export function createTaskServiceParts(deps: {
   }
 }
 
-/** The texts a plugin reads, and its connections, told of each change of the rows. */
+/** The texts a plugin reads, and its connections, which are notified of each change of the rows. */
 export function createPluginApiParts(deps: {
   readonly api: PluginHostApi
   readonly rest: SettingsStore
