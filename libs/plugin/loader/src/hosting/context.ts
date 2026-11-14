@@ -190,12 +190,6 @@ interface PartsScope {
   readonly check: RequirePermission
 }
 
-/**
- * The context the plugin owns: its identity, its registrations, its settings and its health. Every
- * service in it is built from the table of SERVICE_RULES: a member the table does not list is not
- * reachable, and a member that lists a permission throws, or rejects, where the manifest of the
- * plugin does not declare it.
- */
 function createPluginContext(scope: PartsScope, host: PluginContextHost): PluginContext {
   const { target, add, check } = scope
   const { pluginId, manifest } = target
@@ -229,11 +223,6 @@ function createPluginContext(scope: PartsScope, host: PluginContextHost): Plugin
   })
 }
 
-/**
- * The services the host lends the plugin: the vault, the tabs, the window, the background work and
- * the events, guarded by SERVICE_RULES as the plugin context is. What the plugin is handed through
- * them is tracked in the subscriptions of the plugin.
- */
 function createHostServices(scope: PartsScope, host: PluginContextHost): HostServices {
   const { target, add, check } = scope
   const { pluginId } = target
@@ -247,7 +236,14 @@ function createHostServices(scope: PartsScope, host: PluginContextHost): HostSer
   }
 }
 
-/** The arguments of `activate`: the context the plugin owns and the services the host lends it. */
+/**
+ * The arguments of `activate`: the context the plugin owns (identity, registrations, settings,
+ * health) and the services the host lends it (vault, tabs, window, background work, events). Every
+ * service in both is built from the table of SERVICE_RULES: a member the table does not list is not
+ * reachable, and a member that lists a permission throws, or rejects, where the manifest of the
+ * plugin does not declare it. What the plugin is handed through them is tracked in its
+ * subscriptions.
+ */
 export function createPluginParts(
   pluginId: string,
   host: PluginContextHost,
