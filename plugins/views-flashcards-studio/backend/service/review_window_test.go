@@ -84,7 +84,7 @@ func setNow(handler *API, now time.Time) {
 	day := getReviewDay()
 	handler.flash().Day = day
 	flash := handler.flash()
-	schedules, deckPresets := flash.Schedules.Schedules, flash.Schedules.Presets.OpenReads
+	schedules, deckPresets := flash.Schedules.Schedules, flash.Schedules.OpenPresetReads
 	flash.Reviews.Record = flashcards.NewRecord(pos)
 	flash.Counts.CardsDue = flashcards.NewCountCardsDue(schedules.ReviewCards(), schedules, deckPresets, day, pos)
 	flash.Reviews.Session = flashcards.NewSession(
@@ -184,7 +184,7 @@ func curves(handler *API) flashcards.ProjectCurve {
 	c := flashcards.NewProjectCurve(
 		handler.flash().Schedules.Schedules.ReviewCards(),
 		handler.flash().Schedules.Schedules,
-		handler.flash().Schedules.Presets.OpenReads,
+		handler.flash().Schedules.OpenPresetReads,
 		handler.flash().Day,
 		handler.now,
 	)

@@ -25,8 +25,6 @@ type currentScenarios struct {
 	active atomic.Pointer[reviewScenarios]
 }
 
-// createCurrentScenarios builds the review scenarios from the config and holds them. A count of cores
-// that is not positive is the cores the process may use.
 func createCurrentScenarios(cfg flashcards.Config) *currentScenarios {
 	if cfg.Cores <= 0 {
 		// gomutants:disable-next-line INTEGER_DECREMENT reason="Any non-positive argument queries GOMAXPROCS without changing it."

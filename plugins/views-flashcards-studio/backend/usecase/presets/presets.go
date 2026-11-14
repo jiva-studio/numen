@@ -113,7 +113,8 @@ func CreateDefault() Contents {
 	}
 }
 
-// GetForDeck is the preset a deck is scheduled by.
+// GetForDeck opens a run of reads of its own on each call, so it sees each preset as the file is
+// at that moment.
 type GetForDeck struct{ open OpenReads }
 
 // NewGetForDeck creates the use case that finds the preset of a deck.
@@ -279,7 +280,7 @@ func (r *Reads) GetPreset(ctx context.Context, v domain.Vault, path string) (Con
 	return out, nil
 }
 
-// Read reads a preset.
+// Read opens the preset note on each call and keeps nothing across calls.
 type Read struct {
 	readers ports.VaultReaders
 	day     review.Day
@@ -291,7 +292,8 @@ func NewRead(cfg Config) Read { return Read{readers: cfg.Readers, day: cfg.Day, 
 
 // Execute reads the preset at path.
 //
-// An error is the vault being out of reach. What is wrong with the note itself
+// An error is the vault being out of reach. What is wrong with the note itself is in the Outcome
+// and Problems of the result.
 func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Contents, error) {
 	out, err := u.readPreset(ctx, v, path)
 	if err != nil {

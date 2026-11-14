@@ -19,18 +19,18 @@ type ReviewScenarios struct {
 	Log           Log
 }
 
-// ScheduleScenarios is what decides when a card is asked: where each card stands, the preset of
-// each deck and the curve of load a preset projects.
+// ScheduleScenarios is what decides when a card is asked: where each card stands, the runs of
+// preset reads the schedules share, the preset of each deck and the curve of load a preset projects.
 type ScheduleScenarios struct {
-	Schedules Schedules
-	Presets   PresetScenarios
-	Curves    ProjectCurve
+	Schedules       Schedules
+	OpenPresetReads presets.OpenReads
+	Presets         PresetScenarios
+	Curves          ProjectCurve
 }
 
-// PresetScenarios is what the presets of a vault do: open a run of reads, read one preset, find the preset
-// of a deck, list them, put a deck on one and save the settings of one.
+// PresetScenarios is what the presets of a vault do: read one preset, find the preset of a deck,
+// list them, put a deck on one and save the settings of one.
 type PresetScenarios struct {
-	OpenReads  presets.OpenReads
 	Read       presets.Read
 	GetForDeck presets.GetForDeck
 	List       presets.List
@@ -127,9 +127,8 @@ func NewScenarios(cfg Config) (ReviewScenarios, ScheduleScenarios, CountScenario
 			Log:           Log{Stores: cfg.Logs},
 		},
 		ScheduleScenarios{
-			Schedules: schedules, Curves: curves,
+			Schedules: schedules, OpenPresetReads: deckPresets, Curves: curves,
 			Presets: PresetScenarios{
-				OpenReads:  deckPresets,
 				Read:       presets.NewRead(presetsConfig),
 				GetForDeck: presets.NewGetForDeck(presetsConfig),
 				List:       presets.NewList(presetsConfig),

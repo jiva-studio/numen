@@ -435,6 +435,6 @@ func readThrough(handler *API, readers ports.VaultReaders) {
 	flash := handler.flash()
 	flash.Counts.CardsDue = flashcards.NewCountCardsDue(
 		flashcards.NewListReviewCards(readers, shared.Notes, shared.Links),
-		flash.Schedules.Schedules, flash.Schedules.Presets.OpenReads, flash.Day, handler.now,
+		flash.Schedules.Schedules, flash.Schedules.OpenPresetReads, flash.Day, handler.now,
 	)
 }
