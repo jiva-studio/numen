@@ -48,7 +48,7 @@ func TestACorrectionReachesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
 		{wide(), narrow()},
 		{narrow(), wide()},
 	} {
-		placed, _ := gatherReplies(request, replies, MaxEditDistance)
+		placed, _ := gatherReplies(request, replies, maxEditDistance)
 		if len(placed) != 1 {
 			t.Fatalf("%v put right, want line 3 alone", placed)
 		}
@@ -66,7 +66,7 @@ func TestBatchesSeeingAsMuchAsEachOtherAreSettledByTheLaterOne(t *testing.T) {
 		1: "3|we spoke of the harbor lite",
 	}
 
-	placed, _ := gatherReplies([]Batch{early, late}, replies, MaxEditDistance)
+	placed, _ := gatherReplies([]Batch{early, late}, replies, maxEditDistance)
 	if placed[3].Text != "we spoke of the harbor lite" {
 		t.Errorf("line 3 says %q, want the later batch", placed[3].Text)
 	}
@@ -78,7 +78,7 @@ func TestARefusedReplyPreservesItsLinesToTheOtherBatch(t *testing.T) {
 		1: "3|we spoke of the harbor lite\n4|until the fogg came in",
 	}
 
-	placed, _ := gatherReplies([]Batch{wide(), narrow()}, replies, MaxEditDistance)
+	placed, _ := gatherReplies([]Batch{wide(), narrow()}, replies, maxEditDistance)
 	if placed[3].Text != "we spoke of the harbor lite" {
 		t.Errorf("line 3 says %q, want the batch whose reply was an answer", placed[3].Text)
 	}
@@ -90,7 +90,7 @@ func TestARefusedReplyPreservesItsLinesToTheOtherBatch(t *testing.T) {
 func TestGatherReplies_KeepsUncoveredLinesUnchanged(t *testing.T) {
 	replies := map[int]string{0: "3|we spoke of the harbor lights"}
 
-	placed, _ := gatherReplies([]Batch{wide(), narrow()}, replies, MaxEditDistance)
+	placed, _ := gatherReplies([]Batch{wide(), narrow()}, replies, maxEditDistance)
 	for _, item := range []int{1, 2, 4, 5} {
 		if text, named := placed[item]; named {
 			t.Errorf("line %d was put right to %q with nothing answered about it", item, text.Text)
@@ -101,7 +101,7 @@ func TestGatherReplies_KeepsUncoveredLinesUnchanged(t *testing.T) {
 func TestACorrectionThatMovedTooFarIsInNoBatchesGathering(t *testing.T) {
 	replies := map[int]string{1: "3|we spoke of the harbor lights\n4|fog"}
 
-	placed, _ := gatherReplies([]Batch{narrow()}, replies, MaxEditDistance)
+	placed, _ := gatherReplies([]Batch{narrow()}, replies, maxEditDistance)
 	if _, named := placed[4]; named {
 		t.Errorf("line 4 was put right to %q, whose letters moved too far", placed[4].Text)
 	}
@@ -111,7 +111,7 @@ func TestACorrectionThatMovedTooFarIsInNoBatchesGathering(t *testing.T) {
 }
 
 func TestABatchNothingReturnedAboutInsertsNothingRight(t *testing.T) {
-	if placed, _ := gatherReplies([]Batch{wide()}, nil, MaxEditDistance); len(placed) != 0 {
+	if placed, _ := gatherReplies([]Batch{wide()}, nil, maxEditDistance); len(placed) != 0 {
 		t.Errorf("a batch with no reply put %v right", placed)
 	}
 }

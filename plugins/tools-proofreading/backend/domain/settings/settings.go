@@ -2,11 +2,7 @@
 // move a line, read from the settings the host passes.
 package settings
 
-import (
-	"strconv"
-
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
-)
+import "strconv"
 
 // Config is how a proofreading cuts a text into batches and how far it lets a correction move a
 // line.
@@ -22,6 +18,8 @@ const (
 	DefaultBatchSize = 40
 	DefaultOverlap   = 4
 	DefaultInFlight  = 4
+	// DefaultMaxEditDistance is the largest normalized edit distance a correction may move a line by.
+	DefaultMaxEditDistance = 0.30
 )
 
 // DefaultConfig is the configuration before the host passes one.
@@ -30,7 +28,7 @@ func DefaultConfig() Config {
 		BatchSize:       DefaultBatchSize,
 		Overlap:         DefaultOverlap,
 		InFlight:        DefaultInFlight,
-		MaxEditDistance: numbered.MaxEditDistance,
+		MaxEditDistance: DefaultMaxEditDistance,
 	}
 }
 
