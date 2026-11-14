@@ -2,7 +2,12 @@
  * Tree state and operations for the files tree.
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
-import { formatErrorMessage, getRenamedPath, type PathRename } from '@numen/plugin-sdk'
+import {
+  formatErrorMessage,
+  getRenamedPath,
+  type PathRename,
+  type Unvalidated,
+} from '@numen/plugin-sdk'
 import type { Entry, FileTree, Folders, ListingRow } from '../types'
 
 export const ROOT = ''
@@ -29,7 +34,7 @@ export const getParentFolders = (path: string): readonly string[] => {
 /** How the entries of a folder are ordered in the rows of the tree. */
 export type SortBy = 'name' | 'modified'
 
-export const readSortBy = (_value: unknown): SortBy => {
+export const readSortBy = (_value: Unvalidated): SortBy => {
   throw new Error('not implemented')
 }
 
