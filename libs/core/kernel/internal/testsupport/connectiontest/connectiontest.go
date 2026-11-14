@@ -28,28 +28,24 @@ type Connections struct {
 	Read
 }
 
-// New returns the use cases over the list, the registry of types and the key store. newID makes the id of
-// a new connection.
-func New(
-	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, uses connectionport.Uses,
-	newID func() (string, error),
-) *Connections {
-	return build(connection.NewDeps(repository, types, keys, uses), newID)
+// Parts are what the use cases are built over: the list, the registry of types, the key store, the rows that
+// name a connection, the connections detected, listed after the stored ones, and the titles of the operations.
+type Parts struct {
+	Repository connectionport.Repository
+	Types      connectionport.Types
+	Keys       pluginport.KeyStore
+	Uses       connectionport.Uses
+	Detected   connectionport.Detected
+	Titles     connectionport.OperationTitles
 }
 
-// NewWithDetection returns the use cases of New with the connections detected listed after the stored ones.
-func NewWithDetection(
-	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, uses connectionport.Uses,
-	detected connectionport.Detected, newID func() (string, error),
-) *Connections {
-	return build(connection.NewDeps(repository, types, keys, uses).AddDetection(detected), newID)
-}
-
-func build(deps connection.Deps, newID func() (string, error)) *Connections {
+// New returns the use cases over the parts. newID makes the id of a new connection.
+func New(parts Parts, newID func() (string, error)) *Connections {
+	deps := connection.NewDeps(parts.Repository, parts.Types, parts.Keys, parts.Uses, parts.Detected)
 	return &Connections{
 		Manage: Manage{
 			Create: connection.NewCreate(deps, newID), Update: connection.NewUpdate(deps), Delete: connection.NewDelete(deps),
-			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, nil),
+			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, parts.Titles),
 		},
 		Read: Read{Resolve: connection.NewResolve(deps), ReadSecrets: connection.NewReadSecrets(deps)},
 	}

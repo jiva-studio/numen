@@ -6,9 +6,9 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick, ref } from 'vue'
-import { useActionPanel } from './panel'
+import { useActionPanelToggle } from './useActionPanelToggle'
 import { revealInGroups } from './revealInGroups'
-import { useActionPanel as useActionPanelView } from './useActionPanel'
+import { useActionPanel } from './useActionPanel'
 import type { PaletteAction } from '../lib/item'
 
 const OPEN: PaletteAction = { id: 'open', text: 'Open note' }
@@ -19,7 +19,7 @@ const setUp = (lit: string | undefined) => {
   const actions = ref<readonly PaletteAction[]>([OPEN])
   const choose = vi.fn<(item: string, action: string) => void>()
   const dismiss = vi.fn<() => void>()
-  const panel = useActionPanel({
+  const panel = useActionPanelToggle({
     getActions: () => actions.value,
     getLit: () => lit,
     choose,
@@ -28,7 +28,7 @@ const setUp = (lit: string | undefined) => {
   return { actions, choose, dismiss, panel }
 }
 
-describe('useActionPanel', () => {
+describe('useActionPanelToggle', () => {
   it('remains closed until it is opened', () => {
     expect(setUp('note').panel.open.value).toBe(false)
   })
@@ -98,11 +98,11 @@ function setUpActionPanelView(
   const focusSpy = vi.spyOn(input, 'focus')
   const searchInput = ref<HTMLInputElement | null>(hasInput ? input : null)
   const choose = vi.fn<(action: string) => void>()
-  let view: ReturnType<typeof useActionPanelView> | undefined
+  let view: ReturnType<typeof useActionPanel> | undefined
   const wrapper = mount(
     defineComponent({
       setup() {
-        view = useActionPanelView({
+        view = useActionPanel({
           getActions: () => actions.value,
           open,
           searchInput,
