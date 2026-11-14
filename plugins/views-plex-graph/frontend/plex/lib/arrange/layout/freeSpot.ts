@@ -12,7 +12,10 @@ export interface Gaps {
   readonly lineGap: number
 }
 
-/** `fits` reports whether a spot lies inside the window; a spot outside it is taken only when no spot inside is free. */
+/**
+ * `fits` reports whether a spot lies inside the window; a spot outside it is taken only when no spot inside is free.
+ * `isApart` reports whether a spot keeps clear of the other groups; a spot that does not is taken only when no free spot next to a placed box does.
+ */
 export interface SpotRequest {
   readonly start: Vector
   readonly middle: Vector
@@ -22,6 +25,7 @@ export interface SpotRequest {
   readonly gaps: Gaps
   readonly fits?: ((spot: Spot) => boolean) | undefined
   readonly isLineClear?: ((spot: Spot) => boolean) | undefined
+  readonly isApart?: ((spot: Spot) => boolean) | undefined
 }
 
 /**
@@ -190,15 +194,31 @@ function isClear(spot: Spot, other: Spot, gaps: Gaps): boolean {
  * axis before it goes deeper; of those the earlier candidate wins.
  */
 export function findFreeSpot(index: SpotIndex, request: SpotRequest): Spot {
-  const plain = searchSpot(index, request) ?? findSpotBeyond(index, request)
+  const plain = findNearestSpot(index, request)
   if (!request.isLineClear || request.isLineClear(plain)) return plain
-  const clear =
-    searchSpot(index, request, { left: NEAR_LINE_CHECKS }) ??
-    findClearSpotWide(index, request, { left: WIDE_LINE_CHECKS })
+  const clear = findClearSpot(index, request, plain)
   if (clear && measureCost(clear, request) <= measureCost(plain, request) + MAX_LINE_DETOUR) {
     return clear
   }
   return plain
+}
+
+/** The free spot nearest the middle, and where that spot is not apart from the other groups, the nearest one that is, if any. */
+function findNearestSpot(index: SpotIndex, request: SpotRequest): Spot {
+  const { isApart } = request
+  const nearest = searchSpot(index, request) ?? findSpotBeyond(index, request)
+  if (!isApart || isApart(nearest)) return nearest
+  return findApartSpot(index, request, isApart) ?? nearest
+}
+
+/** A spot whose lines are clear. A spot apart from the other groups is given up for one only to another spot apart. */
+function findClearSpot(index: SpotIndex, request: SpotRequest, plain: Spot): Spot | undefined {
+  const { isApart } = request
+  const near = searchSpot(index, request, { left: NEAR_LINE_CHECKS })
+  if (!isApart || !isApart(plain))
+    return near ?? findClearSpotWide(index, request, { left: WIDE_LINE_CHECKS })
+  if (near && isApart(near)) return near
+  return findApartSpot(index, request, isApart, { left: WIDE_LINE_CHECKS })
 }
 
 function searchSpot(
@@ -239,6 +259,42 @@ function searchSpot(
   }
   if (found.best) return toSpot(found.best.point)
   return budget ? undefined : findFreeSpotOutward(index, request)
+}
+
+/** The spots next to every placed box and those of the wide search, on the side of the group, of least cost first. */
+function listSpotsByCost(index: SpotIndex, request: SpotRequest): Spot[] {
+  const points: Vector[] = [request.middle, request.start, ...listWideSpots(request)]
+  for (const box of index.list()) points.push(...listNearbyCandidates(box, request))
+  return points
+    .filter((point) => measureProgress(point, request) >= -TOLERANCE)
+    .map((point) => ({
+      spot: { x: point.x, y: point.y, ...request.size },
+      cost: Math.round(measureCost(point, request) * COST_PRECISION),
+      progress: roundProgress(measureProgress(point, request)),
+    }))
+    .sort((first, second) => first.cost - second.cost || first.progress - second.progress)
+    .map(({ spot }) => spot)
+}
+
+/**
+ * The free spot of least cost that is apart from the other groups, among the spots next to every placed box and the wide search around the middle.
+ * With a budget, only spots whose lines are clear count, and the budget caps how many are tested.
+ */
+function findApartSpot(
+  index: SpotIndex,
+  request: SpotRequest,
+  isApart: (spot: Spot) => boolean,
+  budget?: { left: number },
+): Spot | undefined {
+  const isOpen = (spot: Spot) =>
+    (!request.fits || request.fits(spot)) && isApart(spot) && index.isFree(spot, request.gaps)
+  for (const spot of listSpotsByCost(index, request)) {
+    if (!isOpen(spot)) continue
+    if (!budget) return spot
+    if (budget.left-- <= 0) return undefined
+    if (request.isLineClear?.(spot)) return spot
+  }
+  return undefined
 }
 
 function listWideSpots(request: SpotRequest): Spot[] {

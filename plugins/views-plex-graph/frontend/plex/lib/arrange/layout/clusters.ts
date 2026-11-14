@@ -2,7 +2,7 @@
 import { RELATION_NAMES, RELATIONS, type Lean } from '../../relation'
 import type { PlacedNode } from '../../node'
 import type { Direction, PlexOptions } from '../options'
-import { findFreeSpot, SpotIndex, type Spot, type Vector } from './freeSpot'
+import { findFreeSpot, SpotIndex, type Rect, type Spot, type Vector } from './freeSpot'
 import { LineIndex } from './lines'
 import type { Size } from '../options'
 import {
@@ -137,11 +137,85 @@ function getPlacedNode(
   }
 }
 
+/** Two boxes closer than this still count as apart, so a spot built one gap from a group is not refused on float error. */
+const TOLERANCE = 0.5
+
+/** The boxes each group may not reach into: the bounds of every larger group, one gap wider on each side. */
+type Zones = ReadonlyMap<PlexRelation, readonly Rect[]>
+
+/**
+ * The groups are laid out once, and again where a group ended up inside the bounds of a larger one: the smaller group is
+ * then set where it keeps out of those bounds (cluster overlap removal, which moves the cluster with fewer notes).
+ * Where no spot apart is free, the note takes the nearest free spot. Groups are kept apart only in a window, which bounds where a group may move to.
+ */
 function placeClusters(
   nodesByRelation: NodesByRelation,
   focus: PlacedNode,
   context: PlacementContext,
 ): PlacedNode[] {
+  if (!context.isKeptApart || !context.fits)
+    return placeGroups(nodesByRelation, focus, context).placed
+  const first = placeGroups(nodesByRelation, focus, { ...context, shouldStop: undefined })
+  const zones = getZones(nodesByRelation, first.groups, context.options)
+  const isInsideZone = [...first.groups].some(([relation, spots]) =>
+    spots.some((spot) => !isApart(spot, zones.get(relation))),
+  )
+  if (!isInsideZone) return first.placed
+  return placeGroups(nodesByRelation, focus, context, zones).placed
+}
+
+function getBounds(spots: readonly Spot[]): Rect {
+  return {
+    minX: Math.min(...spots.map((spot) => spot.x - spot.width / 2)),
+    maxX: Math.max(...spots.map((spot) => spot.x + spot.width / 2)),
+    minY: Math.min(...spots.map((spot) => spot.y - spot.height / 2)),
+    maxY: Math.max(...spots.map((spot) => spot.y + spot.height / 2)),
+  }
+}
+
+function getZones(
+  nodesByRelation: NodesByRelation,
+  groups: ReadonlyMap<PlexRelation, readonly Spot[]>,
+  { gap, lineGap }: PlexOptions,
+): Zones {
+  const countOf = (relation: PlexRelation) => nodesByRelation[relation]?.length ?? 0
+  const zones = new Map<PlexRelation, Rect[]>()
+  for (const relation of groups.keys()) {
+    const larger = [...groups].filter(
+      ([other, spots]) => countOf(other) > countOf(relation) && spots.length > 0,
+    )
+    zones.set(
+      relation,
+      larger.map(([, spots]) => {
+        const bounds = getBounds(spots)
+        return {
+          minX: bounds.minX - gap,
+          maxX: bounds.maxX + gap,
+          minY: bounds.minY - lineGap,
+          maxY: bounds.maxY + lineGap,
+        }
+      }),
+    )
+  }
+  return zones
+}
+
+function isApart(spot: Spot, zones: readonly Rect[] | undefined): boolean {
+  return (zones ?? []).every(
+    (zone) =>
+      spot.x + spot.width / 2 <= zone.minX + TOLERANCE ||
+      spot.x - spot.width / 2 >= zone.maxX - TOLERANCE ||
+      spot.y + spot.height / 2 <= zone.minY + TOLERANCE ||
+      spot.y - spot.height / 2 >= zone.maxY - TOLERANCE,
+  )
+}
+
+function placeGroups(
+  nodesByRelation: NodesByRelation,
+  focus: PlacedNode,
+  context: PlacementContext,
+  zones?: Zones,
+): { placed: PlacedNode[]; groups: ReadonlyMap<PlexRelation, readonly Spot[]> } {
   const footprintOf = (node: PlexNode) =>
     getFootprint(
       { width: context.width(node), height: context.options.nodeSize.height },
@@ -165,11 +239,13 @@ function placeClusters(
     const request = createRequest(plan, footprintOf(node), context)
     const room = context.room(node)
     const getCenter = (at: Spot): Vector => ({ x: at.x, y: getPillCenterY(at.y, room) })
+    const avoided = zones?.get(relation)
     const spot = findFreeSpot(index, {
       ...request,
       group,
       fits: context.fits,
       isLineClear: (at) => lines.isClear(node.id, getCenter(at), at),
+      ...(avoided?.length ? { isApart: (at: Spot) => isApart(at, avoided) } : {}),
     })
     index.add(spot)
     lines.place(node.id, getCenter(spot), spot)
@@ -179,9 +255,12 @@ function placeClusters(
     if (context.shouldStop?.(box)) break
   }
 
-  return RELATION_NAMES.flatMap((relation) =>
-    (nodesByRelation[relation] ?? []).flatMap((node) => placed.get(node.id) ?? []),
-  )
+  return {
+    placed: RELATION_NAMES.flatMap((relation) =>
+      (nodesByRelation[relation] ?? []).flatMap((node) => placed.get(node.id) ?? []),
+    ),
+    groups,
+  }
 }
 
 export const clusters: Placement = { name: 'clusters', place: placeClusters }

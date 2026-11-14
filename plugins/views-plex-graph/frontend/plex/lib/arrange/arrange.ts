@@ -58,9 +58,11 @@ export function arrangePlex(
     roomsById: Fit['rooms'],
     {
       isLineKept = false,
+      isKeptApart = false,
       ...limits
     }: Pick<PlacementContext, 'shouldStop' | 'fits'> & {
       readonly isLineKept?: boolean
+      readonly isKeptApart?: boolean
     } = {},
   ) => {
     const width = createWidthLookup(laid, measure, request)
@@ -80,6 +82,7 @@ export function arrangePlex(
         width,
         room: (node) => roomsById.get(node.id) ?? NO_ROOM,
         ...(isLineKept ? { edges: graph.edges } : {}),
+        ...(isKeptApart ? { isKeptApart } : {}),
         ...limits,
       }),
     }
@@ -136,16 +139,22 @@ export function arrangePlex(
     ),
   )
   const fit: Fit = { margin, rooms }
-  // The lines are kept apart only here and only in a window: what the window holds is settled without them, and a layout
+  // The lines and the groups are kept apart only here and only in a window: what the window holds is settled without them, and a layout
   // that keeps them apart but leaves the window gives way to the one that does not.
   const spacedOptions = { ...resolved, ...spacing }
   const spaced = lay(spacedOptions, admitted, rooms, {
     fits: getFits(resolved),
     isLineKept: viewport !== undefined,
+    isKeptApart: viewport !== undefined,
   })
   // The probes of the gaps lay out without `fits`, so the spaced layout can leave the window where the one admission verified does not.
   const getFinalLayout = () => {
     if (isInsideWindow(spaced.placed, viewport, fit)) return spaced
+    const spacedLines = lay(spacedOptions, admitted, rooms, {
+      fits: getFits(resolved),
+      isLineKept: true,
+    })
+    if (isInsideWindow(spacedLines.placed, viewport, fit)) return spacedLines
     const spacedPlain = lay(spacedOptions, admitted, rooms, { fits: getFits(resolved) })
     if (isInsideWindow(spacedPlain.placed, viewport, fit)) return spacedPlain
     return lay(resolved, admitted, rooms, { fits: getFits(resolved) })

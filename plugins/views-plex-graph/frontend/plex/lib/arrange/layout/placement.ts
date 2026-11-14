@@ -41,6 +41,7 @@ export type Rooms = (node: PlexNode) => NodeRoom
 /**
  * `fits` reports whether a footprint lies inside the window, so a group grows sideways where it has no room to grow deeper.
  * `edges` are the lines between notes: a note is set where its lines do not run along another line or through another note.
+ * `isKeptApart` sets a smaller group out of the bounds of a larger one.
  */
 export interface PlacementContext {
   readonly options: PlexOptions
@@ -49,6 +50,7 @@ export interface PlacementContext {
   readonly shouldStop?: ((node: PlacedNode) => boolean) | undefined
   readonly fits?: ((footprint: Spot) => boolean) | undefined
   readonly edges?: readonly Link[] | undefined
+  readonly isKeptApart?: boolean | undefined
 }
 
 /**
