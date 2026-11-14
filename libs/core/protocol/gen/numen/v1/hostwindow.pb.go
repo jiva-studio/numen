@@ -623,7 +623,7 @@ var File_numen_v1_hostwindow_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostwindow_proto_rawDesc = "" +
 	"\n" +
-	"\x19numen/v1/hostwindow.proto\x12\bnumen.v1\x1a\x18numen/v1/workspace.proto\"&\n" +
+	"\x19numen/v1/hostwindow.proto\x12\bnumen.v1\"&\n" +
 	"\x10FocusNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\x82\x01\n" +
 	"\x11FocusNoteResponse\x123\n" +
@@ -721,7 +721,6 @@ func file_numen_v1_hostwindow_proto_init() {
 	if File_numen_v1_hostwindow_proto != nil {
 		return
 	}
-	file_numen_v1_workspace_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
