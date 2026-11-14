@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
 )
 
 type failingWriter struct{}
@@ -24,7 +23,7 @@ func TestTheMockCopiesAClipOfAVideoSiteAndPublishesItsCaptions(t *testing.T) {
 		t.Fatal("the mock copies what is not a video, or does not copy a video")
 	}
 	text, err := mock.GetText(t.Context(), clip, fetch.PreferredCaptions{})
-	wantCues := []ytdlp.Cue{
+	wantCues := []fetch.Cue{
 		{Text: "The tide comes in twice a day.", From: 0, To: 1000},
 		{Text: "The mill pond fills behind the gate.", From: 1000, To: 2000},
 		{Text: "On the ebb the wheel turns.", From: 2000, To: 3000},

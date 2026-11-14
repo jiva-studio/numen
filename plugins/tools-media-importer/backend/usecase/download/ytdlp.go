@@ -150,7 +150,7 @@ func (v *ytDLP) GetText(ctx context.Context, target string, want fetch.Preferred
 	}, nil
 }
 
-func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]ytdlp.Cue, error) {
+func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]fetch.Cue, error) {
 	if language == "" {
 		return nil, fetch.ErrNothingDownloaded
 	}
@@ -185,7 +185,11 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]y
 	if len(cues) == 0 {
 		return nil, fetch.ErrNothingDownloaded
 	}
-	return cues, nil
+	out := make([]fetch.Cue, len(cues))
+	for i, cue := range cues {
+		out[i] = fetch.Cue(cue)
+	}
+	return out, nil
 }
 
 func findWordsFile(names []string) string {

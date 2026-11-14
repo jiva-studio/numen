@@ -2,11 +2,7 @@
 // tool that fetched it, the programs this machine fetches with, and the user's fetch settings.
 package fetch
 
-import (
-	"errors"
-
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
-)
+import "errors"
 
 // ErrNothingDownloaded is returned when an address responded but contains nothing of what was requested.
 var ErrNothingDownloaded = errors.New("nothing of the sort is published there")
@@ -34,10 +30,17 @@ type PreferredCaptions struct {
 	IsAutomatic bool
 }
 
+// Cue is one stretch of speech: the transcript, and the milliseconds of the recording it spans.
+type Cue struct {
+	Text string
+	From int
+	To   int
+}
+
 // Text is what an address publishes as words.
 type Text struct {
 	Producer string
-	Cues     []ytdlp.Cue
+	Cues     []Cue
 	Prose    string
 	Title    string
 	Length   int

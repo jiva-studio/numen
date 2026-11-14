@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
@@ -61,7 +60,7 @@ func (s *sites) GetText(_ context.Context, address string, _ fetch.PreferredCapt
 	case articleAddress:
 		return fetch.Text{Producer: "article", Title: "Tidal Mills", Prose: "A tidal mill stored seawater behind a sluice gate."}, nil
 	case videoAddress:
-		return fetch.Text{Producer: "captions", Cues: []ytdlp.Cue{
+		return fetch.Text{Producer: "captions", Cues: []fetch.Cue{
 			{Text: "The tide comes in.", From: 0, To: 1500},
 			{Text: "The wheel turns.", From: 1500, To: 3000},
 		}}, nil

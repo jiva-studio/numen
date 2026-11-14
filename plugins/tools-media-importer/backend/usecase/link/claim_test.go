@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/linkrecord"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/selector"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 )
@@ -220,7 +219,7 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	if got := getKind(fetch.Text{}); got != kindArticle {
 		t.Errorf("getKind(empty) = %q, want %q", got, kindArticle)
 	}
-	if got := getKind(fetch.Text{Cues: []ytdlp.Cue{{Text: "one"}}}); got != kindCaptions {
+	if got := getKind(fetch.Text{Cues: []fetch.Cue{{Text: "one"}}}); got != kindCaptions {
 		t.Errorf("getKind(1 cue) = %q, want %q", got, kindCaptions)
 	}
 

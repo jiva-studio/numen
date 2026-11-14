@@ -6,7 +6,6 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
 )
 
 // mockVideo replaces yt-dlp on the video sites: it publishes the captions of a short
@@ -22,8 +21,8 @@ func NewMock(web Web) *Downloader {
 // mockSeconds is how long the clip runs.
 const mockSeconds = 3
 
-func getMockCues() []ytdlp.Cue {
-	return []ytdlp.Cue{
+func getMockCues() []fetch.Cue {
+	return []fetch.Cue{
 		{Text: "The tide comes in twice a day.", From: 0, To: 1000},
 		{Text: "The mill pond fills behind the gate.", From: 1000, To: 2000},
 		{Text: "On the ebb the wheel turns.", From: 2000, To: 3000},
