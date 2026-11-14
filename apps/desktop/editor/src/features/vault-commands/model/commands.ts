@@ -36,8 +36,8 @@ export interface VaultCommandsDeps {
 const showVault = async (id: string, deps: VaultCommandsDeps): Promise<void> => {
   if (!id) return
   const open = deps.tabsHold ? openAfterSavingTabs(vaults.open, deps.tabsHold) : vaults.open
-  const error = await open(id)
-  if (error) return deps.writeMessage(VAULT_WORDS.vaultErrors[error], 'error')
+  const answer = await open(id)
+  if (!answer.ok) return deps.writeMessage(VAULT_WORDS.vaultErrors[answer.error], 'error')
   deps.reload()
 }
 
@@ -65,8 +65,8 @@ const removeVault = async (
   deps: VaultCommandsDeps,
   shouldErase: boolean,
 ): Promise<void> => {
-  const error = await vaults.remove(invocation.target.vault.id, shouldErase)
-  if (error) deps.writeMessage(VAULT_WORDS.vaultErrors[error], 'error')
+  const answer = await vaults.remove(invocation.target.vault.id, shouldErase)
+  if (!answer.ok) deps.writeMessage(VAULT_WORDS.vaultErrors[answer.error], 'error')
 }
 
 const emptyVaultTrash = async (deps: VaultCommandsDeps): Promise<void> => {

@@ -63,9 +63,7 @@ type closeList struct{ fns []func() error }
 func (l *closeList) add(closer func() error) { l.fns = append(l.fns, closer) }
 
 func (d stubSession) session() cli.Session {
-	return cli.Session{
-		OpenVaults: d.OpenVaults, OpenIndexed: d.OpenIndexed, GetPluginCommands: d.GetPluginCommands, Close: d.Close,
-	}
+	return cli.NewSession(d.OpenVaults, d.OpenIndexed, d.GetPluginCommands, d.Close)
 }
 
 func (d stubSession) OpenVaults() (cli.Vaults, error) {

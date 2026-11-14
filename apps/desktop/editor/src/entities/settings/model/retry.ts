@@ -27,8 +27,8 @@ export function createPluginRetry({ words, notify, refresh, getName }: RetryOpti
   const retryPlugin = async (pluginId: string): Promise<void> => {
     notify('')
     try {
-      const failure = await askPluginRetry(pluginId)
-      if (failure !== '') notify(words.stopped(getName(pluginId), failure), 'warning')
+      const answer = await askPluginRetry(pluginId)
+      if (!answer.ok) notify(words.stopped(getName(pluginId), answer.error), 'warning')
     } catch (caughtError) {
       notify(words.retryFailed(getName(pluginId), formatError(caughtError)), 'error')
     }

@@ -378,10 +378,10 @@ func TestWindowTabActivateReturnsTheTabOnly(t *testing.T) {
 func TestNoteEditPreviewReturnsTheDiffOnly(t *testing.T) {
 	w := newWindowTools(t)
 	answer := w.getAnswer(t, "note_edit_preview", `{"path":"notes/Heron.md","proposedText":"Herons fish at dawn."}`)
-	requireKeys(t, "the answer of note_edit_preview", answer, []string{"previewId", "path", "diff", "additions", "deletions"}, []string{"status", "summary"})
+	requireKeys(t, "the answer of note_edit_preview", answer, []string{"path", "diff", "additions", "deletions"}, []string{"previewId", "status", "summary"})
 
 	schema := getToolSchema(t, w.registry, "note_edit_preview", true)
-	requireKeys(t, "the output schema of note_edit_preview", getSchemaProperties(t, schema), []string{"previewId", "diff", "additions", "deletions"}, []string{"status", "summary"})
+	requireKeys(t, "the output schema of note_edit_preview", getSchemaProperties(t, schema), []string{"diff", "additions", "deletions"}, []string{"previewId", "status", "summary"})
 }
 
 func TestWindowToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
