@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"slices"
 	"strings"
 	"testing"
@@ -9,6 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
 )
@@ -37,6 +40,20 @@ func TestRegisterTools(t *testing.T) {
 	// Registering duplicate tools returns an error.
 	if err := RegisterTools(registry, Host{}); err == nil {
 		t.Errorf("expected error when registering duplicate tools")
+	}
+	if err := mount(server.New(), registry, Host{}); err == nil {
+		t.Errorf("expected error when mounting duplicate tools")
+	}
+}
+
+func TestConnectHostReturnsClientsOnlyWithoutError(t *testing.T) {
+	endpoint := hostcall.Endpoint{BaseURL: "http://127.0.0.1:1", Token: "window-token"}
+	if on := connectHost(endpoint, errors.New("no host")); on.Files != nil || on.Window != nil {
+		t.Errorf("connectHost with error = %+v, want zero Host", on)
+	}
+	on := connectHost(endpoint, nil)
+	if on.Files == nil || on.Window == nil || on.Files("vault") == nil {
+		t.Errorf("connectHost without error = %+v, want Files and Window", on)
 	}
 }
 
