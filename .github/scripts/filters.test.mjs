@@ -4,11 +4,11 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
-import yaml from 'js-yaml'
+import { load } from 'js-yaml'
 import picomatch from 'picomatch'
 
 const filters = Object.fromEntries(
-  Object.entries(yaml.load(readFileSync(new URL('../filters.yml', import.meta.url), 'utf8'))).map(
+  Object.entries(load(readFileSync(new URL('../filters.yml', import.meta.url), 'utf8'))).map(
     ([name, globs]) => {
       const matchers = [globs].flat(Infinity).map((glob) => picomatch(glob, { dot: true }, true))
       const includes = matchers.filter((matcher) => !matcher.state.negated)

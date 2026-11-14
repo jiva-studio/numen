@@ -15,7 +15,7 @@
     "acceptance:steps": "node scripts/list-acceptance-steps.mjs"
   },
   "devDependencies": {
-    "@cucumber/cucumber-expressions": "^19.0.0",
+    "@cucumber/cucumber-expressions": "^20.1.0",
     "@cucumber/gherkin": "^42.0.1",
     "@cucumber/messages": "^34.2.1",
     "@types/node": "^26.6.6",
