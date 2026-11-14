@@ -259,7 +259,7 @@ func newIndexWorker(a pluginsWiring, db *Index, state *editor.State, embedding *
 		SearchSourceReady: state.Events.EmitSearchSourceReady,
 		Events:            windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
 		Quiet:             indexing.QuietPeriod,
-		After:             timers().After,
+		After:             a.vault.Clock.After,
 	})
 }
 

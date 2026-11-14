@@ -94,7 +94,7 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 			Rows:   connection.NewListRows(deps, openConnectionRows(c)).Execute,
 			Titles: c.PluginHost.Views.Operations,
 		},
-		openCallSource(c, deps), c.vault.Clock, timers().Wait, notices,
+		openCallSource(c, deps), c.vault.Clock, c.vault.Clock.Wait, notices,
 	))
 	if lists := openRowLists(c); lists != nil {
 		c.PluginHost.Endpoint.SetRowLists(lists)
