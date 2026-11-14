@@ -54,6 +54,7 @@ export const PLUGIN_TESTS = {
   'readers-pdf': [ACCEPTANCE],
   'tools-media-importer': [ACCEPTANCE],
   'tools-proofreading': [ACCEPTANCE],
+  'tools-templates': [ACCEPTANCE],
   'tools-updater': [ACCEPTANCE],
   'views-agent-chat': ['agents.chat', ACCEPTANCE],
   'views-flashcards-studio': [FLASHCARDS, ACCEPTANCE],
