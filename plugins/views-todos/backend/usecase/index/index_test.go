@@ -269,6 +269,9 @@ func TestRefreshReadsAChangedNoteAgainAndNotAnUnchangedOne(t *testing.T) {
 func TestANoteWhoseBytesAreTheSameButWhoseModTimeMovedIsNotParsedAgain(t *testing.T) {
 	f := newFixture(map[string]string{"a.md": "- [ ] first"})
 	f.scan(t)
+	if parsedOnce := f.parser.count(); parsedOnce != 1 {
+		t.Fatalf("parses after the scan = %d, want 1", parsedOnce)
+	}
 	parsed, revision := f.parser.count(), f.index.GetState().Revision
 
 	f.vault.File("a.md", "- [ ] first")
