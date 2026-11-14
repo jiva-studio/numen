@@ -27,6 +27,7 @@ export function activate(context: PluginContext): void {
     },
     () => createFileTree(files),
     FilesTab,
+    { isRevealOpenNote: () => context.settings.get<boolean>('revealOpenNote') !== false },
   )
   context.register.tabKind(trees.kind)
   context.events.onVaultChange((event) => trees.refresh(event))

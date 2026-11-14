@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { effectScope, nextTick, ref } from 'vue'
 import FilesTab from '../ui/FilesTab.vue'
 import { createFilesKind, FILES } from './kind'
-import { ROOT } from './useFileTree'
+import { createFileTree, ROOT } from './useFileTree'
 import { createHost, type HostOptions } from '../fixtures/host'
 import type { Entry, FilesTabState, FileTree } from '../types'
 
@@ -173,5 +173,107 @@ describe('a files tab a linked tab moves', () => {
     await kind.navigate?.(state, 'Books/Guide.pdf', '')
 
     expect(revealPath).toHaveBeenCalledWith('Books/Guide.pdf')
+  })
+})
+
+describe('a files tab and the open note', () => {
+  const entry = (path: string, isFolder = false): Entry => ({
+    path,
+    name: path.split('/').at(-1)!,
+    isFolder,
+    isNote: !isFolder,
+    type: isFolder ? 'folder' : 'note',
+  })
+
+  const folders: Record<string, readonly Entry[]> = {
+    '': [entry('Projects', true), entry('Inbox.md')],
+    Projects: [entry('Projects/Garden', true)],
+    'Projects/Garden': [entry('Projects/Garden/Beds.md')],
+  }
+
+  const createRealKind = (isRevealOpenNote?: () => boolean) => {
+    const fixture = createHost({ folders })
+    const files = { list: fixture.host.files.list }
+    const options = isRevealOpenNote ? { isRevealOpenNote } : undefined
+    const created = (
+      createFilesKind as unknown as (
+        host: unknown,
+        createTree: () => FileTree,
+        component: unknown,
+        options?: unknown,
+      ) => ReturnType<typeof createFilesKind>
+    )(fixture.host, () => createFileTree(files), FilesTab, options)
+    return created
+  }
+
+  const openRealTab = (kind: ReturnType<typeof createFilesKind>['kind'], path = '') => {
+    const scope = effectScope(true)
+    return scope.run(() => kind.open!(path, FILES))! as FilesTabState
+  }
+
+  const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
+
+  it('opens the folders above a note a linked tab moved to and selects it', async () => {
+    const { kind } = createRealKind(() => true)
+    const state = openRealTab(kind)
+    await settle()
+
+    await kind.navigate?.(state, 'Projects/Garden/Beds.md', 'Beds')
+
+    expect(state.list.queries.isFolderOpen('Projects')).toBe(true)
+    expect(state.list.queries.isFolderOpen('Projects/Garden')).toBe(true)
+    expect(state.list.state.selectedPaths.value).toStrictEqual(['Projects/Garden/Beds.md'])
+  })
+
+  it('leaves the tree as it is when a linked tab moves and expanding is off', async () => {
+    const { kind } = createRealKind(() => false)
+    const state = openRealTab(kind)
+    await settle()
+    const before = [...state.list.queries.openRows.value]
+
+    await kind.navigate?.(state, 'Projects/Garden/Beds.md', 'Beds')
+
+    expect(state.list.queries.isFolderOpen('Projects')).toBe(false)
+    expect(state.list.queries.isFolderOpen('Projects/Garden')).toBe(false)
+    expect(state.list.queries.openRows.value).toStrictEqual(before)
+    expect(state.list.state.selectedPaths.value).toStrictEqual([])
+  })
+
+  it('shows the revealed note although expanding is off', async () => {
+    const { kind } = createRealKind(() => false)
+    const state = openRealTab(kind)
+    await settle()
+
+    await kind.navigate?.(state, 'Projects/Garden/Beds.md', '')
+
+    expect(state.list.queries.isFolderOpen('Projects/Garden')).toBe(true)
+    expect(state.list.state.selectedPaths.value).toStrictEqual(['Projects/Garden/Beds.md'])
+  })
+
+  it('follows the setting as it changes, with no restart', async () => {
+    let isOn = false
+    const { kind } = createRealKind(() => isOn)
+    const state = openRealTab(kind)
+    await settle()
+
+    await kind.navigate?.(state, 'Projects/Garden/Beds.md', 'Beds')
+    expect(state.list.state.selectedPaths.value).toStrictEqual([])
+
+    isOn = true
+    await kind.navigate?.(state, 'Projects/Garden/Beds.md', 'Beds')
+    expect(state.list.state.selectedPaths.value).toStrictEqual(['Projects/Garden/Beds.md'])
+
+    isOn = false
+    await kind.navigate?.(state, 'Inbox.md', 'Inbox')
+    expect(state.list.state.selectedPaths.value).toStrictEqual(['Projects/Garden/Beds.md'])
+  })
+
+  it('reveals the path a tab opens on although expanding is off', async () => {
+    const { kind } = createRealKind(() => false)
+    const state = openRealTab(kind, 'Projects/Garden/Beds.md')
+    await settle()
+
+    expect(state.list.queries.isFolderOpen('Projects/Garden')).toBe(true)
+    expect(state.list.state.selectedPaths.value).toStrictEqual(['Projects/Garden/Beds.md'])
   })
 })

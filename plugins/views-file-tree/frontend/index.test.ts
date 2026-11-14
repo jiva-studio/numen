@@ -167,6 +167,58 @@ describe('view-file-tree plugin', () => {
     expect(state.list.state.selectedPaths.value).toStrictEqual(['A.md'])
   })
 
+  const createWindowOver = (initialSettings: Record<string, boolean>) => {
+    const { host } = createHost({
+      folders: {
+        '': [{ ...note('Projects'), isFolder: true, isNote: false, type: 'folder' }],
+        Projects: [note('Projects/Beds.md')],
+      },
+    })
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.views.file.tree',
+      workspace: host.workspace,
+      files: host.files,
+      initialSettings,
+    })
+    activate(ctx)
+    const registration = ctx.getRegisteredTabKinds()[0]!
+    const state = registration.open!('', 'files') as FilesTabState
+    return { ctx, registration, state }
+  }
+
+  it('does not expand to a note a linked tab moved to when the saved setting is off', async () => {
+    const { registration, state } = createWindowOver({ revealOpenNote: false })
+    await settle()
+
+    await registration.navigate?.(state, 'Projects/Beds.md', 'Beds')
+
+    expect(state.list.queries.isFolderOpen('Projects')).toBe(false)
+    expect(state.list.state.selectedPaths.value).toStrictEqual([])
+  })
+
+  it('expands to a note a linked tab moved to when the setting was never saved', async () => {
+    const { registration, state } = createWindowOver({})
+    await settle()
+
+    await registration.navigate?.(state, 'Projects/Beds.md', 'Beds')
+
+    expect(state.list.queries.isFolderOpen('Projects')).toBe(true)
+    expect(state.list.state.selectedPaths.value).toStrictEqual(['Projects/Beds.md'])
+  })
+
+  it('takes a change of the setting into an open tree', async () => {
+    const { ctx, registration, state } = createWindowOver({ revealOpenNote: true })
+    await settle()
+
+    ctx.setSetting('revealOpenNote', false)
+    await registration.navigate?.(state, 'Projects/Beds.md', 'Beds')
+    expect(state.list.state.selectedPaths.value).toStrictEqual([])
+
+    ctx.setSetting('revealOpenNote', true)
+    await registration.navigate?.(state, 'Projects/Beds.md', 'Beds')
+    expect(state.list.state.selectedPaths.value).toStrictEqual(['Projects/Beds.md'])
+  })
+
   it('selects nothing in a files tab when no note is active', async () => {
     const { ctx, strip } = createWindowContext()
     await ctx.triggerCommand('tree.open')
