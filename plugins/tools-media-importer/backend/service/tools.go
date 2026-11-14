@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/linkimport"
 )
 
 // The instruction sentences of url_import: when to call it and what it returns.
@@ -75,7 +74,7 @@ func (t *Tools) importURL(ctx context.Context, in URLImportInput) (URLImportOutp
 	if vault == "" {
 		return URLImportOutput{}, errNoVault
 	}
-	made, err := linkimport.New(t.links).ImportURL(ctx, linkimport.Request{
+	made, err := t.links.ImportURL(ctx, link.ImportRequest{
 		Vault: vault, Folder: in.Folder, URL: in.URL, ShouldDownloadVideo: in.ShouldDownloadVideo,
 	})
 	if err != nil {

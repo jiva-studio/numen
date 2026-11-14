@@ -14,7 +14,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -35,7 +37,7 @@ const (
 // fakeSites returns videoAddress through the mock downloader and the fake pages itself, with
 // no network. A copy of a video waits until release is closed.
 type fakeSites struct {
-	video   link.Fetcher
+	video   ports.Fetcher
 	release chan struct{}
 }
 
@@ -45,38 +47,38 @@ func (s fakeSites) CanCopy(address string) bool {
 	return s.isVideo(address) && s.video.CanCopy(address)
 }
 
-func (s fakeSites) GetDownloadModel(address string) download.Model {
+func (s fakeSites) GetDownloadModel(address string) fetch.Model {
 	if s.isVideo(address) {
 		return s.video.GetDownloadModel(address)
 	}
-	return download.Model{Tool: "invented", Version: "1", Producer: "article"}
+	return fetch.Model{Tool: "invented", Version: "1", Producer: "article"}
 }
 
-func (s fakeSites) GetMetadata(ctx context.Context, address string) (download.Metadata, error) {
+func (s fakeSites) GetMetadata(ctx context.Context, address string) (fetch.Metadata, error) {
 	if s.isVideo(address) {
 		return s.video.GetMetadata(ctx, address)
 	}
-	return download.Metadata{Title: articleTitle}, nil
+	return fetch.Metadata{Title: articleTitle}, nil
 }
 
-func (s fakeSites) GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error) {
+func (s fakeSites) GetText(ctx context.Context, address string, want fetch.PreferredCaptions) (fetch.Text, error) {
 	switch {
 	case s.isVideo(address):
 		return s.video.GetText(ctx, address, want)
 	case address == silentAddress:
-		return download.Text{}, download.ErrNothingDownloaded
+		return fetch.Text{}, fetch.ErrNothingDownloaded
 	case address == brokenAddress:
-		return download.Text{}, errors.New("the server returned 503 Service Unavailable")
+		return fetch.Text{}, errors.New("the server returned 503 Service Unavailable")
 	default:
-		return download.Text{Producer: "article", Title: articleTitle, Prose: articleProse}, nil
+		return fetch.Text{Producer: "article", Title: articleTitle, Prose: articleProse}, nil
 	}
 }
 
-func (s fakeSites) Download(ctx context.Context, address string, media download.Media, into io.Writer) (download.Copy, error) {
+func (s fakeSites) Download(ctx context.Context, address string, media fetch.Media, into io.Writer) (fetch.Copy, error) {
 	select {
 	case <-s.release:
 	case <-ctx.Done():
-		return download.Copy{}, ctx.Err()
+		return fetch.Copy{}, ctx.Err()
 	}
 	return s.video.Download(ctx, address, media, into)
 }
@@ -144,8 +146,8 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 		Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
-		func() link.Fetcher { return sites },
-		func() link.Settings { return link.Settings{IsAutomatic: true} })
+		func() ports.Fetcher { return sites },
+		func() fetch.Settings { return fetch.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
 	registry, err := NewTools(links).Registry()
 	if err != nil {

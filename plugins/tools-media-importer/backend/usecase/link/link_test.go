@@ -17,8 +17,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
@@ -37,7 +38,7 @@ type sites struct {
 	failAt      int
 	beforeGate  int
 	clip        []byte
-	media       []download.Media
+	media       []fetch.Media
 	started     chan struct{}
 	startedOnce sync.Once
 	gate        chan struct{}
@@ -45,34 +46,34 @@ type sites struct {
 
 func (s *sites) CanCopy(address string) bool { return address == videoAddress }
 
-func (s *sites) GetDownloadModel(string) download.Model {
-	return download.Model{Tool: "sites", Version: "1"}
+func (s *sites) GetDownloadModel(string) fetch.Model {
+	return fetch.Model{Tool: "sites", Version: "1"}
 }
 
-func (s *sites) GetMetadata(context.Context, string) (download.Metadata, error) {
-	return download.Metadata{Bytes: int64(len(s.clip))}, nil
+func (s *sites) GetMetadata(context.Context, string) (fetch.Metadata, error) {
+	return fetch.Metadata{Bytes: int64(len(s.clip))}, nil
 }
 
-func (s *sites) GetText(_ context.Context, address string, _ download.PreferredCaptions) (download.Text, error) {
+func (s *sites) GetText(_ context.Context, address string, _ fetch.PreferredCaptions) (fetch.Text, error) {
 	s.texts.Add(1)
 	switch address {
 	case articleAddress:
-		return download.Text{Producer: "article", Title: "Tidal Mills", Prose: "A tidal mill stored seawater behind a sluice gate."}, nil
+		return fetch.Text{Producer: "article", Title: "Tidal Mills", Prose: "A tidal mill stored seawater behind a sluice gate."}, nil
 	case videoAddress:
-		return download.Text{Producer: "captions", Cues: []ytdlp.Cue{
+		return fetch.Text{Producer: "captions", Cues: []ytdlp.Cue{
 			{Text: "The tide comes in.", From: 0, To: 1500},
 			{Text: "The wheel turns.", From: 1500, To: 3000},
 		}}, nil
 	}
-	return download.Text{}, download.ErrNothingDownloaded
+	return fetch.Text{}, fetch.ErrNothingDownloaded
 }
 
-func (s *sites) Download(_ context.Context, _ string, media download.Media, into io.Writer) (download.Copy, error) {
+func (s *sites) Download(_ context.Context, _ string, media fetch.Media, into io.Writer) (fetch.Copy, error) {
 	s.media = append(s.media, media)
 	rest := s.clip
 	if s.beforeGate > 0 {
 		if _, err := into.Write(s.clip[:s.beforeGate]); err != nil {
-			return download.Copy{}, err
+			return fetch.Copy{}, err
 		}
 		rest = s.clip[s.beforeGate:]
 	}
@@ -82,15 +83,15 @@ func (s *sites) Download(_ context.Context, _ string, media download.Media, into
 	}
 	if s.failAt > 0 {
 		if _, err := into.Write(s.clip[:s.failAt]); err != nil {
-			return download.Copy{}, err
+			return fetch.Copy{}, err
 		}
-		return download.Copy{}, errors.New("the site hung up")
+		return fetch.Copy{}, errors.New("the site hung up")
 	}
 	_, err := into.Write(rest)
-	if media == download.MediaAudio {
-		return download.Copy{MediaType: "audio/mp4", Extension: ".m4a"}, err
+	if media == fetch.MediaAudio {
+		return fetch.Copy{MediaType: "audio/mp4", Extension: ".m4a"}, err
 	}
-	return download.Copy{MediaType: "video/mp4", Extension: ".mp4"}, err
+	return fetch.Copy{MediaType: "video/mp4", Extension: ".mp4"}, err
 }
 
 type world struct {
@@ -111,8 +112,8 @@ func newWorld(t *testing.T) *world {
 		queue: hosttest.NewQueue(), sites: &sites{clip: bytes.Repeat([]byte("frame "), 1000)},
 	}
 	w.links = link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(w.texts), Queue: w.queue, Clock: newFakeClock(time.Unix(1_700_000_000, 0))},
-		func() link.Fetcher { return w.sites },
-		func() link.Settings { return link.Settings{CopyMaxSize: w.limit} })
+		func() ports.Fetcher { return w.sites },
+		func() fetch.Settings { return fetch.Settings{CopyMaxSize: w.limit} })
 	w.texts.SetStore(pluginID, w.store)
 	t.Cleanup(w.links.Close)
 	return w
@@ -264,7 +265,7 @@ func TestCopyWritesTheVideoToTheKeyFile(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
 
-	size, err := w.links.Copy(t.Context(), made, download.MediaVideo)
+	size, err := w.links.Copy(t.Context(), made, fetch.MediaVideo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,7 +279,7 @@ func TestCopyWritesTheVideoToTheKeyFile(t *testing.T) {
 	if _, err := w.store.Read(t.Context(), made.Key+".part"); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("the copy arriving is left: %v", err)
 	}
-	if again, err := w.links.Copy(t.Context(), made, download.MediaVideo); err != nil || again != size || len(w.sites.media) != 1 {
+	if again, err := w.links.Copy(t.Context(), made, fetch.MediaVideo); err != nil || again != size || len(w.sites.media) != 1 {
 		t.Errorf("a second copy came to %d bytes (%v) and asked the site %v", again, err, w.sites.media)
 	}
 	if err := w.links.DeleteCopy(t.Context(), made); err != nil {
@@ -297,12 +298,12 @@ func TestCopyDeletesThePartialFileOnFailure(t *testing.T) {
 	made := w.create(t, videoAddress)
 
 	w.sites.failAt = 100
-	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); err == nil {
+	if _, err := w.links.Copy(t.Context(), made, fetch.MediaVideo); err == nil {
 		t.Fatal("a copy the site hung up on was kept")
 	}
 	w.sites.failAt = 0
 	w.limit = 100
-	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); !errors.Is(err, link.ErrTooLarge) {
+	if _, err := w.links.Copy(t.Context(), made, fetch.MediaVideo); !errors.Is(err, link.ErrTooLarge) {
 		t.Errorf("a copy past the limit was answered %v", err)
 	}
 	files, err := w.store.List(t.Context())
@@ -313,7 +314,7 @@ func TestCopyDeletesThePartialFileOnFailure(t *testing.T) {
 	if len(tasks) != 1 || tasks[0].FailureReason == "" || tasks[0].Detail != made.Path {
 		t.Errorf("the failure is shown as %+v", tasks)
 	}
-	if _, err := w.links.Copy(t.Context(), w.create(t, articleAddress), download.MediaVideo); !errors.Is(err, link.ErrNotCopyable) {
+	if _, err := w.links.Copy(t.Context(), w.create(t, articleAddress), fetch.MediaVideo); !errors.Is(err, link.ErrNotCopyable) {
 		t.Errorf("an article was copied: %v", err)
 	}
 }
@@ -396,13 +397,13 @@ func (w *world) edit(t *testing.T, made link.Link) link.Link {
 func TestTheCopyFollowsAnEditOfTheNote(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
-	size, err := w.links.Copy(t.Context(), made, download.MediaVideo)
+	size, err := w.links.Copy(t.Context(), made, fetch.MediaVideo)
 	if err != nil {
 		t.Fatal(err)
 	}
 	edited := w.edit(t, made)
 
-	if again, err := w.links.Copy(t.Context(), edited, download.MediaVideo); err != nil || again != size || len(w.sites.media) != 1 {
+	if again, err := w.links.Copy(t.Context(), edited, fetch.MediaVideo); err != nil || again != size || len(w.sites.media) != 1 {
 		t.Errorf("the copy of the edited note came to %d bytes (%v) and asked the site %v, want %d", again, err, w.sites.media, size)
 	}
 }
@@ -411,7 +412,7 @@ func TestCopyWritesTheAddressOfTheMediaIntoTheNote(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
 
-	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); err != nil {
+	if _, err := w.links.Copy(t.Context(), made, fetch.MediaVideo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -437,7 +438,7 @@ func TestTheTextIsLiveAfterTheMediaAddressIsSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); err != nil {
+	if _, err := w.links.Copy(t.Context(), made, fetch.MediaVideo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -509,7 +510,7 @@ func TestCopyRecordsNoVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := w.links.Copy(t.Context(), read, download.MediaVideo); err != nil {
+	if _, err := w.links.Copy(t.Context(), read, fetch.MediaVideo); err != nil {
 		t.Fatal(err)
 	}
 	if changes := w.texts.TakeChanges(); len(changes) != 0 {
@@ -536,7 +537,7 @@ func TestCreateWritesThePageThatFramesThePlayer(t *testing.T) {
 func TestFetchTextAfterACopyFetchesTheText(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
-	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); err != nil {
+	if _, err := w.links.Copy(t.Context(), made, fetch.MediaVideo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -565,13 +566,13 @@ func TestALinkOfTheShownVaultCarriesItsIdentity(t *testing.T) {
 func TestCopyOfAStoredVideoSetsTheMediaOfANewNote(t *testing.T) {
 	w := newWorld(t)
 	first := w.create(t, videoAddress)
-	if _, err := w.links.Copy(t.Context(), first, download.MediaVideo); err != nil {
+	if _, err := w.links.Copy(t.Context(), first, fetch.MediaVideo); err != nil {
 		t.Fatal(err)
 	}
 	w.vault.Remove(first.Path)
 	again := w.create(t, videoAddress)
 
-	if _, err := w.links.Copy(t.Context(), again, download.MediaVideo); err != nil {
+	if _, err := w.links.Copy(t.Context(), again, fetch.MediaVideo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -602,15 +603,15 @@ func TestCopyInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 		t.Fatalf("paths %q and %q, want the same path", inMills.Path, inChemistry.Path)
 	}
 
-	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), inMills, download.MediaVideo); err != nil || !isStarted {
+	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), inMills, fetch.MediaVideo); err != nil || !isStarted {
 		t.Fatalf("StartMediaCopy in Mills: started=%v, err=%v", isStarted, err)
 	}
 	<-w.sites.started
 
-	if _, _, err := w.links.StartMediaCopy(t.Context(), inMills, download.MediaVideo); !errors.Is(err, link.ErrBeingFetched) {
+	if _, _, err := w.links.StartMediaCopy(t.Context(), inMills, fetch.MediaVideo); !errors.Is(err, link.ErrBeingFetched) {
 		t.Fatalf("second StartMediaCopy in Mills returned %v, want %v", err, link.ErrBeingFetched)
 	}
-	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), inChemistry, download.MediaVideo); err != nil || !isStarted {
+	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), inChemistry, fetch.MediaVideo); err != nil || !isStarted {
 		t.Fatalf("StartMediaCopy in Chemistry: started=%v, err=%v", isStarted, err)
 	}
 

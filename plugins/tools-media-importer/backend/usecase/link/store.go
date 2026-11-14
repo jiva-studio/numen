@@ -8,9 +8,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/linkrecord"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/selector"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 )
 
 // What is kept for a link in the plugin's folder of the vault's store. The text is kept under the
@@ -41,14 +41,14 @@ type folder struct {
 	store Folder
 }
 
-func getKind(fetched download.Text) domain.TextKind {
+func getKind(fetched fetch.Text) domain.TextKind {
 	if len(fetched.Cues) > 0 {
 		return kindCaptions
 	}
 	return kindArticle
 }
 
-func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
+func getSegments(fetched fetch.Text) ([]domain.TextSegment, error) {
 	if len(fetched.Cues) == 0 {
 		return []domain.TextSegment{{Text: fetched.Prose, Heading: "", Selector: ""}}, nil
 	}
@@ -98,7 +98,7 @@ func (f folder) readRecord(ctx context.Context, key string) (linkrecord.Record, 
 	return rec, err
 }
 
-func (f folder) findCopy(ctx context.Context, key string, media download.Media) (host.StoreFile, bool, error) {
+func (f folder) findCopy(ctx context.Context, key string, media fetch.Media) (host.StoreFile, bool, error) {
 	files, err := f.store.Files.List(ctx)
 	if err != nil {
 		return host.StoreFile{}, false, err
@@ -126,14 +126,14 @@ func (f folder) listCopies(ctx context.Context, key string) ([]string, error) {
 	return names, nil
 }
 
-func getCopyName(key string, media download.Media, ext string) string {
+func getCopyName(key string, media fetch.Media, ext string) string {
 	return key + "." + string(media) + ext
 }
 
 func isCopyOf(name, key string) bool {
 	ext := path.Ext(name)
 	switch strings.TrimSuffix(name, ext) {
-	case key + "." + string(download.MediaVideo), key + "." + string(download.MediaAudio):
+	case key + "." + string(fetch.MediaVideo), key + "." + string(fetch.MediaAudio):
 		return isCopyExt(strings.ToLower(ext))
 	}
 	return false

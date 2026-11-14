@@ -4,9 +4,11 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/tempfiles"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 )
 
@@ -14,11 +16,11 @@ const videoAddress = "https://www.youtube.com/watch?v=tidalmill01"
 
 // The settings name the programs, the captions and how large a copy may be.
 func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
-	fMock := New(true, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
+	fMock := newHolder(true)
 	if fMock.GetFetcher() == nil || fMock.GetFetcher().GetDownloadModel(videoAddress).Tool != "mock" {
 		t.Fatalf("mock fetcher = %+v", fMock.GetFetcher())
 	}
-	f := New(false, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
+	f := newHolder(false)
 	if f.GetFetcher() == nil || f.GetFetcher().GetDownloadModel(videoAddress).Tool == "mock" {
 		t.Fatalf("real fetcher = %+v", f.GetFetcher())
 	}
@@ -60,7 +62,7 @@ func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
 }
 
 func TestImportSettingsAreReadFromTheCamelCaseKeys(t *testing.T) {
-	f := New(false, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
+	f := newHolder(false)
 	f.UpdateConfig(map[string]string{
 		"ytDlp": "/custom/yt-dlp", "automaticCaptions": "false", "copyMaxSizeMb": "20",
 	})
@@ -73,7 +75,7 @@ func TestImportSettingsAreReadFromTheCamelCaseKeys(t *testing.T) {
 }
 
 func TestImportSettingsAreNotReadFromTheSnakeCaseKeys(t *testing.T) {
-	f := New(false, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
+	f := newHolder(false)
 	before, command := f.GetSettings(), slices.Clone(f.GetPrograms().Video.Command)
 	f.UpdateConfig(map[string]string{
 		"yt_dlp": "/custom/yt-dlp", "automatic_captions": "false", "copy_max_size_mb": "20",
@@ -84,4 +86,9 @@ func TestImportSettingsAreNotReadFromTheSnakeCaseKeys(t *testing.T) {
 		t.Errorf("automatic captions %t, largest copy %d and video program %v, want them unchanged at %t, %d and %v",
 			after.IsAutomatic, after.CopyMaxSize, f.GetPrograms().Video.Command, before.IsAutomatic, before.CopyMaxSize, command)
 	}
+}
+
+func newHolder(isMock bool) *Holder {
+	tools := download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()}
+	return New(func(programs fetch.Config) ports.Fetcher { return download.Open(isMock, tools, programs) })
 }

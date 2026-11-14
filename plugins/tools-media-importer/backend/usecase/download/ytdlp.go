@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
 )
 
@@ -28,7 +29,7 @@ type ytDLP struct {
 
 const defaultProbeTimeout = 2 * time.Minute
 
-func newYtDLP(c Config, runner Runner, files Files, paths Paths) *ytDLP {
+func newYtDLP(c fetch.Config, runner Runner, files Files, paths Paths) *ytDLP {
 	command := resolveProgram(c.Video, "yt-dlp", runner)
 	v := &ytDLP{
 		command:      command,
@@ -47,8 +48,8 @@ func newYtDLP(c Config, runner Runner, files Files, paths Paths) *ytDLP {
 
 func (v *ytDLP) CanHandle(target string) bool { return isVideoSite(target) && v.command.isPresent() }
 
-func (v *ytDLP) GetDownloadModel(string) Model {
-	return Model{Tool: "yt-dlp", Version: v.getVersion(), Producer: producerCaptions}
+func (v *ytDLP) GetDownloadModel(string) fetch.Model {
+	return fetch.Model{Tool: "yt-dlp", Version: v.getVersion(), Producer: producerCaptions}
 }
 
 func (v *ytDLP) readVersion() string {
@@ -112,16 +113,16 @@ func (v *ytDLP) getTarget(pos string) []string {
 	return []string{pos}
 }
 
-func (v *ytDLP) GetMetadata(ctx context.Context, target string) (Metadata, error) {
+func (v *ytDLP) GetMetadata(ctx context.Context, target string) (fetch.Metadata, error) {
 	output, err := v.readInfo(ctx, target)
 	if err != nil {
-		return Metadata{}, err
+		return fetch.Metadata{}, err
 	}
 	info, err := ytdlp.ParseInfo(output)
 	if err != nil {
-		return Metadata{}, fmt.Errorf("what yt-dlp output about %s: %w", target, err)
+		return fetch.Metadata{}, fmt.Errorf("what yt-dlp output about %s: %w", target, err)
 	}
-	return Metadata{
+	return fetch.Metadata{
 		Title:       info.Title,
 		Length:      info.Length,
 		Language:    info.Language,
@@ -131,16 +132,16 @@ func (v *ytDLP) GetMetadata(ctx context.Context, target string) (Metadata, error
 	}, nil
 }
 
-func (v *ytDLP) GetText(ctx context.Context, target string, want PreferredCaptions) (Text, error) {
+func (v *ytDLP) GetText(ctx context.Context, target string, want fetch.PreferredCaptions) (fetch.Text, error) {
 	meta, err := v.GetMetadata(ctx, target)
 	if err != nil {
-		return Text{}, err
+		return fetch.Text{}, err
 	}
 	cues, err := v.subtitles(ctx, target, chooseLanguage(meta, want.Languages, want.IsAutomatic))
 	if err != nil {
-		return Text{}, err
+		return fetch.Text{}, err
 	}
-	return Text{
+	return fetch.Text{
 		Producer: producerCaptions,
 		Cues:     cues,
 		Prose:    "",
@@ -151,7 +152,7 @@ func (v *ytDLP) GetText(ctx context.Context, target string, want PreferredCaptio
 
 func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]ytdlp.Cue, error) {
 	if language == "" {
-		return nil, ErrNothingDownloaded
+		return nil, fetch.ErrNothingDownloaded
 	}
 	var raw []byte
 	err := v.files.WithTempDir("numen-words-", func(into string) error {
@@ -165,11 +166,11 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]y
 		}
 		names, err := v.files.ReadDir(into)
 		if err != nil {
-			return ErrNothingDownloaded
+			return fetch.ErrNothingDownloaded
 		}
 		found := findWordsFile(names)
 		if found == "" {
-			return ErrNothingDownloaded
+			return fetch.ErrNothingDownloaded
 		}
 		raw, err = v.files.ReadFile(v.paths.Join(into, found))
 		return err
@@ -182,7 +183,7 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]y
 		return nil, err
 	}
 	if len(cues) == 0 {
-		return nil, ErrNothingDownloaded
+		return nil, fetch.ErrNothingDownloaded
 	}
 	return cues, nil
 }
@@ -202,15 +203,15 @@ const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
 // soundFormat is the sound alone, in an MPEG-4 container where the site has one.
 const soundFormat = "bestaudio[acodec^=mp4a]/bestaudio"
 
-func getFormatArguments(media Media) []string {
-	if media == MediaAudio {
+func getFormatArguments(media fetch.Media) []string {
+	if media == fetch.MediaAudio {
 		return []string{"-f", soundFormat}
 	}
 	return []string{"-f", copyFormat, "--merge-output-format", "mp4"}
 }
 
-func (v *ytDLP) Download(ctx context.Context, target string, media Media, into io.Writer) (Copy, error) {
-	var result Copy
+func (v *ytDLP) Download(ctx context.Context, target string, media fetch.Media, into io.Writer) (fetch.Copy, error) {
+	var result fetch.Copy
 	err := v.files.WithTempDir("numen-copy-", func(folder string) error {
 		arguments := append(getFormatArguments(media), "--no-playlist", "-o", v.paths.Join(folder, "copy.%(ext)s"))
 		arguments = append(arguments, v.getTarget(target)...)
@@ -229,17 +230,17 @@ func (v *ytDLP) Download(ctx context.Context, target string, media Media, into i
 			return err
 		}
 		if len(entries) != 1 {
-			return fmt.Errorf("%w: %s", ErrNothingDownloaded, getLastLine(combined))
+			return fmt.Errorf("%w: %s", fetch.ErrNothingDownloaded, getLastLine(combined))
 		}
 		name := v.paths.Join(folder, entries[0])
 		if err := v.files.CopyFile(name, into); err != nil {
 			return err
 		}
-		result = Copy{MediaType: getMediaType(entries[0]), Extension: path.Ext(entries[0])}
+		result = fetch.Copy{MediaType: getMediaType(entries[0]), Extension: path.Ext(entries[0])}
 		return nil
 	})
 	if err != nil {
-		return Copy{}, err
+		return fetch.Copy{}, err
 	}
 	return result, nil
 }
@@ -287,7 +288,7 @@ func getAudioMediaType(extension string) string {
 	return ""
 }
 
-func chooseLanguage(meta Metadata, languages []string, automatic bool) string {
+func chooseLanguage(meta fetch.Metadata, languages []string, automatic bool) string {
 	tracks := meta.Captions
 	if len(tracks) == 0 && automatic {
 		tracks = meta.IsAutomatic

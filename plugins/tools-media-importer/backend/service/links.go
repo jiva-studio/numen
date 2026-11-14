@@ -8,9 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/linkimport"
 )
 
 // linkServer serves the importer API over the links of the vault the host shows.
@@ -64,12 +63,12 @@ func (s linkServer) copyMedia(ctx context.Context, req api.CopyMediaRequest) (ap
 	if err != nil {
 		return api.CopyMediaResponse{}, err
 	}
-	media, _ := download.ParseMedia(req.Kind)
+	media, _ := fetch.ParseMedia(req.Kind)
 	s.links.StartCopy(ctx, found, media)
 	return api.CopyMediaResponse{}, nil
 }
 
 func (s linkServer) createLinks(ctx context.Context, req api.CreateLinksRequest) (api.CreateLinksResponse, error) {
-	paths, failed := linkimport.New(s.links).CreateLinks(ctx, req.Folder, req.URLs)
+	paths, failed := s.links.CreateLinks(ctx, req.Folder, req.URLs)
 	return api.CreateLinksResponse{Paths: paths, Failed: failed}, nil
 }

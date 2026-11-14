@@ -3,20 +3,20 @@ package link_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 )
 
 // A copy of the other media that fails leaves the note with media it can play.
 func TestCopyOfTheVideoThatFailsKeepsTheSoundTheNotePlays(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, videoAddress)
-	if _, err := w.links.Copy(t.Context(), made, download.MediaAudio); err != nil {
+	if _, err := w.links.Copy(t.Context(), made, fetch.MediaAudio); err != nil {
 		t.Fatal(err)
 	}
 	media := w.readProperty(t, made.Path, "media")
 
 	w.sites.failAt = 100
-	if _, err := w.links.Copy(t.Context(), made, download.MediaVideo); err == nil {
+	if _, err := w.links.Copy(t.Context(), made, fetch.MediaVideo); err == nil {
 		t.Fatal("a copy the site hung up on was kept")
 	}
 

@@ -15,10 +15,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/linkrecord"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/selector"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 )
 
 func TestTheSameAddressInAnotherVaultIsOtherWork(t *testing.T) {
@@ -175,39 +176,39 @@ func (q *hookQueue) FinishTask(ctx context.Context, id string) error {
 
 type stubFetcher struct {
 	canCopy   bool
-	meta      download.Metadata
+	meta      fetch.Metadata
 	metaErr   error
-	text      download.Text
+	text      fetch.Text
 	textErr   error
-	copyRes   download.Copy
+	copyRes   fetch.Copy
 	copyBytes []byte
 	copyErr   error
 	downloads int
-	onText    func(ctx context.Context) (download.Text, error)
+	onText    func(ctx context.Context) (fetch.Text, error)
 }
 
 func (f *stubFetcher) CanCopy(string) bool { return f.canCopy }
 
-func (f *stubFetcher) GetDownloadModel(string) download.Model {
-	return download.Model{Tool: "tool", Version: "v2", Producer: "captions"}
+func (f *stubFetcher) GetDownloadModel(string) fetch.Model {
+	return fetch.Model{Tool: "tool", Version: "v2", Producer: "captions"}
 }
 
-func (f *stubFetcher) GetMetadata(context.Context, string) (download.Metadata, error) {
+func (f *stubFetcher) GetMetadata(context.Context, string) (fetch.Metadata, error) {
 	return f.meta, f.metaErr
 }
 
-func (f *stubFetcher) GetText(ctx context.Context, _ string, _ download.PreferredCaptions) (download.Text, error) {
+func (f *stubFetcher) GetText(ctx context.Context, _ string, _ fetch.PreferredCaptions) (fetch.Text, error) {
 	if f.onText != nil {
 		return f.onText(ctx)
 	}
 	return f.text, f.textErr
 }
 
-func (f *stubFetcher) Download(_ context.Context, _ string, _ download.Media, into io.Writer) (download.Copy, error) {
+func (f *stubFetcher) Download(_ context.Context, _ string, _ fetch.Media, into io.Writer) (fetch.Copy, error) {
 	f.downloads++
 	if len(f.copyBytes) > 0 {
 		if _, err := into.Write(f.copyBytes); err != nil {
-			return download.Copy{}, err
+			return fetch.Copy{}, err
 		}
 	}
 	return f.copyRes, f.copyErr
@@ -215,10 +216,10 @@ func (f *stubFetcher) Download(_ context.Context, _ string, _ download.Media, in
 
 func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	ctx := t.Context()
-	if got := getKind(download.Text{}); got != kindArticle {
+	if got := getKind(fetch.Text{}); got != kindArticle {
 		t.Errorf("getKind(empty) = %q, want %q", got, kindArticle)
 	}
-	if got := getKind(download.Text{Cues: []ytdlp.Cue{{Text: "one"}}}); got != kindCaptions {
+	if got := getKind(fetch.Text{Cues: []ytdlp.Cue{{Text: "one"}}}); got != kindCaptions {
 		t.Errorf("getKind(1 cue) = %q, want %q", got, kindCaptions)
 	}
 
@@ -253,7 +254,7 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	hs.writeErr = nil
 
 	hs.listErr = func(int) error { return boom }
-	if _, ok, err := f.findCopy(ctx, "h1", download.MediaVideo); !errors.Is(err, boom) || ok {
+	if _, ok, err := f.findCopy(ctx, "h1", fetch.MediaVideo); !errors.Is(err, boom) || ok {
 		t.Errorf("findCopy(error) = %v, %v", ok, err)
 		if _, err := f.listCopies(ctx, "h1"); !errors.Is(err, boom) {
 			t.Errorf("listCopies(list error) = %v", err)
@@ -261,7 +262,7 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	}
 	hs.listErr = nil
 
-	found, ok, err := f.findCopy(ctx, "h1", download.MediaVideo)
+	found, ok, err := f.findCopy(ctx, "h1", fetch.MediaVideo)
 	if err != nil || ok || found != (host.StoreFile{}) {
 		t.Errorf("findCopy(empty) = %+v, %v, %v", found, ok, err)
 	}
@@ -278,14 +279,14 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	if err := hs.Write(ctx, "h1.video.mp4", []byte("mp4")); err != nil {
 		t.Fatal(err)
 	}
-	found, ok, err = f.findCopy(ctx, "h1", download.MediaVideo)
+	found, ok, err = f.findCopy(ctx, "h1", fetch.MediaVideo)
 	if err != nil || !ok || found.Name != "h1.video.mp4" || found.Size != 3 {
 		t.Errorf("findCopy(match) = %+v, %v, %v", found, ok, err)
 	}
 	if err := hs.Write(ctx, "h1.audio.m4a", []byte("m4a")); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok, err := f.findCopy(ctx, "h1", download.MediaAudio); err != nil || !ok {
+	if _, ok, err := f.findCopy(ctx, "h1", fetch.MediaAudio); err != nil || !ok {
 		t.Errorf("findCopy(audio) = %v, %v", ok, err)
 	}
 	names, err := f.listCopies(ctx, "h1")
@@ -353,9 +354,9 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 	hq = &hookQueue{Queue: hosttest.NewQueue()}
 	sf = &stubFetcher{
 		canCopy:   true,
-		meta:      download.Metadata{Bytes: 4},
-		text:      download.Text{Producer: "article", Title: "T", Prose: "body"},
-		copyRes:   download.Copy{MediaType: "video/mp4", Extension: ".mp4"},
+		meta:      fetch.Metadata{Bytes: 4},
+		text:      fetch.Text{Producer: "article", Title: "T", Prose: "body"},
+		copyRes:   fetch.Copy{MediaType: "video/mp4", Extension: ".mp4"},
 		copyBytes: []byte("data"),
 	}
 	copyMaxSize = new(int64)
@@ -372,8 +373,8 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 		ht.withVault = id
 		return ht
 	}, Queue: hq, Clock: newFakeClock(time.Unix(1_700_000_000, 0))},
-		func() Fetcher { return sf },
-		func() Settings { return Settings{CopyMaxSize: *copyMaxSize} })
+		func() ports.Fetcher { return sf },
+		func() fetch.Settings { return fetch.Settings{CopyMaxSize: *copyMaxSize} })
 	return l, v, hv, hs, ht, hq, sf, copyMaxSize
 }
 
@@ -433,15 +434,15 @@ func TestLinksCloseReadAndStoreScoping(t *testing.T) {
 	// Close cancels in-flight background work and waits for it.
 	started := make(chan struct{})
 	var waited atomic.Bool
-	sf.onText = func(runCtx context.Context) (download.Text, error) {
+	sf.onText = func(runCtx context.Context) (fetch.Text, error) {
 		close(started)
 		select {
 		case <-runCtx.Done():
 			time.Sleep(15 * time.Millisecond)
 			waited.Store(true)
-			return download.Text{}, runCtx.Err()
+			return fetch.Text{}, runCtx.Err()
 		case <-time.After(500 * time.Millisecond):
-			return download.Text{}, errors.New("close did not cancel context")
+			return fetch.Text{}, errors.New("close did not cancel context")
 		}
 	}
 	l.StartFetch(ctx, Link{Path: "notes/good.md", Address: "https://example.com/", Key: "k1"})
@@ -472,7 +473,7 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	l.release("text", made, made.Key)
 
 	l.claim("copy", made, made.Key)
-	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrBeingFetched) || size != 0 {
+	if size, err := l.Copy(ctx, made, fetch.MediaVideo); !errors.Is(err, ErrBeingFetched) || size != 0 {
 		t.Errorf("Copy while claimed = (%d, %v), want (0, ErrBeingFetched)", size, err)
 	}
 	l.release("copy", made, made.Key)
@@ -525,39 +526,39 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 
 	// Copy fails where the folder cannot be listed.
 	hs.listErr = func(int) error { return boom }
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, fetch.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(list err) = %v, want %v", err, boom)
 	}
 	hs.listErr = nil
 
 	// Copy error and boundary paths.
 	sf.canCopy = false
-	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrNotCopyable) || size != 0 {
+	if size, err := l.Copy(ctx, made, fetch.MediaVideo); !errors.Is(err, ErrNotCopyable) || size != 0 {
 		t.Errorf("Copy(not copyable) = (%d, %v)", size, err)
 	}
 	sf.canCopy = true
 
 	sf.metaErr = boom
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, fetch.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(metaErr) = %v", err)
 	}
 	sf.metaErr = nil
 
 	*maxSize = 3
-	sf.meta = download.Metadata{Bytes: 4}
-	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrTooLarge) || size != 4 {
+	sf.meta = fetch.Metadata{Bytes: 4}
+	if size, err := l.Copy(ctx, made, fetch.MediaVideo); !errors.Is(err, ErrTooLarge) || size != 4 {
 		t.Errorf("Copy(too large meta) = (%d, %v), want (4, ErrTooLarge)", size, err)
 	}
 	*maxSize = 1
-	sf.meta = download.Metadata{Bytes: 2}
-	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrTooLarge) || size != 2 {
+	sf.meta = fetch.Metadata{Bytes: 2}
+	if size, err := l.Copy(ctx, made, fetch.MediaVideo); !errors.Is(err, ErrTooLarge) || size != 2 {
 		t.Errorf("Copy(meta 2 > limit 1) = (%d, %v), want (2, ErrTooLarge)", size, err)
 	}
 	*maxSize = 4
-	sf.meta = download.Metadata{Bytes: 4}
+	sf.meta = fetch.Metadata{Bytes: 4}
 
 	hq.enqueueErr = boom
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, fetch.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(enqueueErr) = %v", err)
 	}
 	hq.enqueueErr = nil
@@ -568,31 +569,31 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 		}
 		return nil
 	}
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, fetch.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(delete part err) = %v", err)
 	}
 	hs.deleteErr = nil
 
 	hs.appendErr = func(string) error { return boom }
-	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) || size != 0 {
+	if size, err := l.Copy(ctx, made, fetch.MediaVideo); !errors.Is(err, boom) || size != 0 {
 		t.Errorf("Copy(flush appendErr) = (%d, %v)", size, err)
 	}
 	hs.appendErr = nil
 
-	sf.copyRes = download.Copy{MediaType: "application/octet-stream", Extension: ".exe"}
-	if _, err := l.Copy(ctx, made, download.MediaVideo); err == nil {
+	sf.copyRes = fetch.Copy{MediaType: "application/octet-stream", Extension: ".exe"}
+	if _, err := l.Copy(ctx, made, fetch.MediaVideo); err == nil {
 		t.Error("Copy(.exe) succeeded")
 	}
-	sf.copyRes = download.Copy{MediaType: "video/mp4", Extension: ".mp4"}
+	sf.copyRes = fetch.Copy{MediaType: "video/mp4", Extension: ".mp4"}
 
 	hs.renameErr = boom
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, fetch.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(renameErr) = %v", err)
 	}
 	hs.renameErr = nil
 
 	hq.releaseErr = boom
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
+	if _, err := l.Copy(ctx, made, fetch.MediaVideo); !errors.Is(err, boom) {
 		t.Errorf("Copy(releaseErr) = %v", err)
 	}
 	hq.releaseErr = nil
@@ -602,18 +603,18 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 
 	// Copy with 1-byte file at exact maxSize=1, then 2nd Copy reuses existing 1-byte file without downloading.
 	*maxSize = 1
-	sf.meta = download.Metadata{Bytes: 1}
+	sf.meta = fetch.Metadata{Bytes: 1}
 	sf.copyBytes = []byte{0x7f}
 	sf.downloads = 0
 	hq.tasks = nil
-	size, err := l.Copy(ctx, made, download.MediaVideo)
+	size, err := l.Copy(ctx, made, fetch.MediaVideo)
 	if err != nil || size != 1 || sf.downloads != 1 {
 		t.Fatalf("Copy(1 byte) = (%d, %v), downloads=%d", size, err, sf.downloads)
 	}
 	if len(hq.tasks) < 2 || hq.tasks[0].CompletedCount != 0 || hq.tasks[0].TotalCount != 0 || hq.tasks[1].CompletedCount != 1 || hq.tasks[1].TotalCount != 1 {
 		t.Errorf("Copy tasks = %+v", hq.tasks)
 	}
-	size, err = l.Copy(ctx, made, download.MediaVideo)
+	size, err = l.Copy(ctx, made, fetch.MediaVideo)
 	if err != nil || size != 1 || sf.downloads != 1 {
 		t.Fatalf("second Copy(1 byte) = (%d, %v), downloads=%d", size, err, sf.downloads)
 	}

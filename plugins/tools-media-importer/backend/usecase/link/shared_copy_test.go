@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
@@ -31,7 +31,7 @@ func (w *world) copyShared(t *testing.T) (link.Link, link.Link) {
 	t.Helper()
 	first, second := w.createIn(t, "links", videoAddress), w.createIn(t, "other", videoAddress)
 	for _, one := range []link.Link{first, second} {
-		if _, err := w.links.Copy(t.Context(), one, download.MediaVideo); err != nil {
+		if _, err := w.links.Copy(t.Context(), one, fetch.MediaVideo); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -85,7 +85,7 @@ func TestASwitchToAudioKeepsTheVideoAnotherNoteRefersTo(t *testing.T) {
 	first, second := w.copyShared(t)
 	video := w.readProperty(t, second.Path, "media")
 
-	if _, err := w.links.Copy(t.Context(), first, download.MediaAudio); err != nil {
+	if _, err := w.links.Copy(t.Context(), first, fetch.MediaAudio); err != nil {
 		t.Fatal(err)
 	}
 
@@ -100,7 +100,7 @@ func TestASwitchToAudioKeepsTheVideoAnotherNoteRefersTo(t *testing.T) {
 		t.Fatalf("the store holds copies %v, want the video and the sound", copies)
 	}
 
-	if _, err := w.links.Copy(t.Context(), second, download.MediaAudio); err != nil {
+	if _, err := w.links.Copy(t.Context(), second, fetch.MediaAudio); err != nil {
 		t.Fatal(err)
 	}
 	if got := w.readProperty(t, second.Path, "media"); got != audio {
@@ -117,7 +117,7 @@ func TestDeleteCopyWaitsForTheRunningDownload(t *testing.T) {
 	w.sites.started, w.sites.gate = make(chan struct{}), make(chan struct{})
 	release := sync.OnceFunc(func() { close(w.sites.gate) })
 	t.Cleanup(release)
-	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), made, download.MediaVideo); err != nil || !isStarted {
+	if _, isStarted, err := w.links.StartMediaCopy(t.Context(), made, fetch.MediaVideo); err != nil || !isStarted {
 		t.Fatalf("StartMediaCopy = %v, %v", isStarted, err)
 	}
 	<-w.sites.started

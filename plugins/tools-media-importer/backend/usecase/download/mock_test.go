@@ -7,6 +7,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
 )
 
@@ -22,7 +23,7 @@ func TestTheMockCopiesAClipOfAVideoSiteAndPublishesItsCaptions(t *testing.T) {
 	if !mock.CanCopy(clip) || mock.CanCopy("http://tidal-mills.numen.test/history/rance") {
 		t.Fatal("the mock copies what is not a video, or does not copy a video")
 	}
-	text, err := mock.GetText(t.Context(), clip, PreferredCaptions{})
+	text, err := mock.GetText(t.Context(), clip, fetch.PreferredCaptions{})
 	wantCues := []ytdlp.Cue{
 		{Text: "The tide comes in twice a day.", From: 0, To: 1000},
 		{Text: "The mill pond fills behind the gate.", From: 1000, To: 2000},
@@ -31,11 +32,11 @@ func TestTheMockCopiesAClipOfAVideoSiteAndPublishesItsCaptions(t *testing.T) {
 	if err != nil || text.Producer != "captions" || text.Length != 3000 || !slices.Equal(text.Cues, wantCues) {
 		t.Fatalf("the captions are %+v (%v)", text, err)
 	}
-	if _, err := mock.Download(t.Context(), clip, MediaVideo, failingWriter{}); err == nil {
+	if _, err := mock.Download(t.Context(), clip, fetch.MediaVideo, failingWriter{}); err == nil {
 		t.Fatal("expected error from failing writer")
 	}
 	var into bytes.Buffer
-	copied, err := mock.Download(t.Context(), clip, MediaAudio, &into)
+	copied, err := mock.Download(t.Context(), clip, fetch.MediaAudio, &into)
 	if err != nil {
 		t.Fatal(err)
 	}

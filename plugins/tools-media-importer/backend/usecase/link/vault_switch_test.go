@@ -10,7 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
@@ -99,7 +100,7 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 			return link.Folder{Files: other, Writer: other}
 		},
 		Texts: textsOf(texts), Queue: hosttest.NewQueue(), Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
-	}, func() link.Fetcher { return fetched }, func() link.Settings { return link.Settings{} })
+	}, func() ports.Fetcher { return fetched }, func() fetch.Settings { return fetch.Settings{} })
 	t.Cleanup(links.Close)
 	made, err := links.Create(t.Context(), "", "", videoAddress)
 	if err != nil {
@@ -109,7 +110,7 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, isStarted, err := links.StartMediaCopy(t.Context(), found, download.MediaVideo); err != nil || !isStarted {
+	if _, isStarted, err := links.StartMediaCopy(t.Context(), found, fetch.MediaVideo); err != nil || !isStarted {
 		t.Fatalf("StartMediaCopy = %v, %v", isStarted, err)
 	}
 	<-fetched.started

@@ -13,7 +13,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"io"
 	"net/url"
 	pathpkg "path"
 	"strings"
@@ -25,7 +24,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 )
 
 // NoteType is the `type` a link note carries in its frontmatter.
@@ -52,15 +52,6 @@ var (
 	// ErrTooLarge is a copy larger than the settings let one be.
 	ErrTooLarge = errors.New("the copy is larger than a copy may be")
 )
-
-// Fetcher retrieves the content published at an address.
-type Fetcher interface {
-	CanCopy(address string) bool
-	GetDownloadModel(address string) download.Model
-	GetMetadata(ctx context.Context, address string) (download.Metadata, error)
-	GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error)
-	Download(ctx context.Context, address string, media download.Media, into io.Writer) (download.Copy, error)
-}
 
 // Clock gets the current time.
 type Clock interface {
@@ -104,19 +95,11 @@ type Host struct {
 	Report   func(what string, err error)
 }
 
-// Settings are the user's fetch settings. CopyMaxSize is in bytes; zero means
-// no limit.
-type Settings struct {
-	Captions    []string
-	IsAutomatic bool
-	CopyMaxSize int64
-}
-
 // Links fetches for the links of the vault the host shows.
 type Links struct {
 	host     Host
-	fetcher  func() Fetcher
-	settings func() Settings
+	fetcher  func() ports.Fetcher
+	settings func() fetch.Settings
 	clock    Clock
 
 	closing   chan struct{}
@@ -129,7 +112,7 @@ type Links struct {
 
 // New returns the links service for the host. fetcher and settings are
 // evaluated on every fetch, so a changed setting applies to the next one.
-func New(h Host, fetcher func() Fetcher, settings func() Settings) *Links {
+func New(h Host, fetcher func() ports.Fetcher, settings func() fetch.Settings) *Links {
 	return &Links{
 		host: h, fetcher: fetcher, settings: settings, clock: h.Clock,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},

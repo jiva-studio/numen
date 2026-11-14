@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 )
 
 // text version of the link. An address that publishes no text stores nothing.
@@ -55,10 +55,10 @@ func (l *Links) endTextFetch(ctx context.Context, link Link, task host.Task) err
 
 func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 	fetcher, settings := l.fetcher(), l.settings()
-	fetched, err := fetcher.GetText(ctx, string(link.Address), download.PreferredCaptions{
+	fetched, err := fetcher.GetText(ctx, string(link.Address), fetch.PreferredCaptions{
 		Languages: settings.Captions, IsAutomatic: settings.IsAutomatic,
 	})
-	if errors.Is(err, download.ErrNothingDownloaded) {
+	if errors.Is(err, fetch.ErrNothingDownloaded) {
 		return nil
 	}
 	if err != nil {

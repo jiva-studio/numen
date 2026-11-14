@@ -12,7 +12,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -35,8 +37,8 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
-		func() link.Fetcher { return download.NewMock(webpage.New()) },
-		func() link.Settings { return link.Settings{IsAutomatic: true} })
+		func() ports.Fetcher { return download.NewMock(webpage.New()) },
+		func() fetch.Settings { return fetch.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
 	return links, store, hosted
 }
@@ -140,15 +142,15 @@ type configurableFetcher struct {
 
 func (f *configurableFetcher) CanCopy(string) bool { return f.canCopy }
 
-func (f *configurableFetcher) GetDownloadModel(string) download.Model {
-	return download.Model{Tool: "cfg", Version: "1", Producer: "article"}
+func (f *configurableFetcher) GetDownloadModel(string) fetch.Model {
+	return fetch.Model{Tool: "cfg", Version: "1", Producer: "article"}
 }
 
-func (f *configurableFetcher) GetMetadata(context.Context, string) (download.Metadata, error) {
-	return download.Metadata{Bytes: 10}, nil
+func (f *configurableFetcher) GetMetadata(context.Context, string) (fetch.Metadata, error) {
+	return fetch.Metadata{Bytes: 10}, nil
 }
 
-func (f *configurableFetcher) GetText(context.Context, string, download.PreferredCaptions) (download.Text, error) {
+func (f *configurableFetcher) GetText(context.Context, string, fetch.PreferredCaptions) (fetch.Text, error) {
 	if f.textStartedCh != nil {
 		close(f.textStartedCh)
 	}
@@ -156,12 +158,12 @@ func (f *configurableFetcher) GetText(context.Context, string, download.Preferre
 		<-f.textBlockCh
 	}
 	if f.textErr != nil {
-		return download.Text{}, f.textErr
+		return fetch.Text{}, f.textErr
 	}
-	return download.Text{Producer: "article", Title: "T", Prose: "prose"}, nil
+	return fetch.Text{Producer: "article", Title: "T", Prose: "prose"}, nil
 }
 
-func (f *configurableFetcher) Download(ctx context.Context, _ string, _ download.Media, into io.Writer) (download.Copy, error) {
+func (f *configurableFetcher) Download(ctx context.Context, _ string, _ fetch.Media, into io.Writer) (fetch.Copy, error) {
 	if f.startedCh != nil {
 		close(f.startedCh)
 	}
@@ -169,12 +171,12 @@ func (f *configurableFetcher) Download(ctx context.Context, _ string, _ download
 		<-f.blockCh
 	}
 	if f.copyErr != nil {
-		return download.Copy{}, f.copyErr
+		return fetch.Copy{}, f.copyErr
 	}
 	if _, err := into.Write([]byte("0123456789")); err != nil {
-		return download.Copy{}, err
+		return fetch.Copy{}, err
 	}
-	return download.Copy{MediaType: "audio/wav", Extension: ".wav"}, nil
+	return fetch.Copy{MediaType: "audio/wav", Extension: ".wav"}, nil
 }
 
 type errListStore struct {
@@ -204,8 +206,8 @@ func TestCommandErrorPaths(t *testing.T) {
 	}
 	cf := &configurableFetcher{}
 	links := link.New(hosted,
-		func() link.Fetcher { return cf },
-		func() link.Settings { return link.Settings{IsAutomatic: true} })
+		func() ports.Fetcher { return cf },
+		func() fetch.Settings { return fetch.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
 	commands, err := newCommands(links)
 	if err != nil {
@@ -246,7 +248,7 @@ func TestCommandErrorPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	links.StartCopy(t.Context(), foundLink, download.MediaVideo)
+	links.StartCopy(t.Context(), foundLink, fetch.MediaVideo)
 	<-cf.startedCh
 	ans, callErr := commands.RunCommand(t.Context(), command.Request{Command: commandDownloadMedia, Path: res.OpenedPath})
 	close(cf.blockCh)
@@ -283,8 +285,8 @@ func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Regi
 		Clock:    newFakeClock(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,
-		func() link.Fetcher { return cf },
-		func() link.Settings { return link.Settings{IsAutomatic: true} })
+		func() ports.Fetcher { return cf },
+		func() fetch.Settings { return fetch.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
 	commands, err := newCommands(links)
 	if err != nil {

@@ -11,15 +11,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/process"
 )
 
 // A program run carries the environment it is given.
 func TestProgramBuildCommandSetsEnvironment(t *testing.T) {
-	if env := (Tool{}).getEnvironment(nil); env != nil {
+	if env := getEnvironment(fetch.Tool{}, nil); env != nil {
 		t.Errorf("empty tool environment = %v, want nil", env)
 	}
-	configured := (Tool{Environment: map[string]string{"NUMEN_K": "val"}}).getEnvironment([]string{"BASE=1"})
+	configured := getEnvironment(fetch.Tool{Environment: map[string]string{"NUMEN_K": "val"}}, []string{"BASE=1"})
 	if !slices.Contains(configured, "NUMEN_K=val") || !slices.Contains(configured, "BASE=1") {
 		t.Errorf("configured environment missing NUMEN_K=val or BASE=1: %v", configured)
 	}
@@ -75,13 +76,13 @@ func TestGetLastLine_ReturnsFallbackWhenEmpty(t *testing.T) {
 }
 
 func TestResolveProgramPrecedence(t *testing.T) {
-	if got := resolveProgram(Tool{Command: []string{"/setting/tool"}}, "sh", process.Runner{}).command[0]; got != "/setting/tool" {
+	if got := resolveProgram(fetch.Tool{Command: []string{"/setting/tool"}}, "sh", process.Runner{}).command[0]; got != "/setting/tool" {
 		t.Errorf("setting path = %q, want /setting/tool", got)
 	}
-	if got := resolveProgram(Tool{}, "sh", process.Runner{}); !got.isPresent() || got.command[0] == "sh" {
+	if got := resolveProgram(fetch.Tool{}, "sh", process.Runner{}); !got.isPresent() || got.command[0] == "sh" {
 		t.Errorf("PATH lookup = %v, want the sh found on PATH", got.command)
 	}
-	if got := resolveProgram(Tool{}, "no-such-numen-tool", process.Runner{}); got.isPresent() {
+	if got := resolveProgram(fetch.Tool{}, "no-such-numen-tool", process.Runner{}); got.isPresent() {
 		t.Errorf("missing tool resolved to %v", got.command)
 	}
 }
@@ -91,10 +92,10 @@ func TestEmptyDownloaderRejectsAllOperationsWithNoTool(t *testing.T) {
 	if _, err := empty.GetMetadata(t.Context(), "https://example.com"); !errors.Is(err, ErrNoTool) {
 		t.Errorf("GetMetadata error = %v, want ErrNoTool", err)
 	}
-	if _, err := empty.GetText(t.Context(), "https://example.com", PreferredCaptions{}); !errors.Is(err, ErrNoTool) {
+	if _, err := empty.GetText(t.Context(), "https://example.com", fetch.PreferredCaptions{}); !errors.Is(err, ErrNoTool) {
 		t.Errorf("GetText error = %v, want ErrNoTool", err)
 	}
-	if _, err := empty.Download(t.Context(), "https://example.com", MediaVideo, io.Discard); !errors.Is(err, ErrNoTool) {
+	if _, err := empty.Download(t.Context(), "https://example.com", fetch.MediaVideo, io.Discard); !errors.Is(err, ErrNoTool) {
 		t.Errorf("Download error = %v, want ErrNoTool", err)
 	}
 	if _, err := empty.playerFor("https://example.com"); !errors.Is(err, ErrNoTool) {
@@ -118,10 +119,10 @@ func TestPagesProviderGetsTheArticleText(t *testing.T) {
 	if isVideoSite("http://\x00") {
 		t.Fatal("invalid URL treated as video site")
 	}
-	if y := newYtDLP(Config{}, process.Runner{}, nil, nil); y.probeTimeout != 2*time.Minute {
+	if y := newYtDLP(fetch.Config{}, process.Runner{}, nil, nil); y.probeTimeout != 2*time.Minute {
 		t.Errorf("probeTimeout = %v, want 2m", y.probeTimeout)
 	}
-	text, err := pages.GetText(t.Context(), "https://example.com/post", PreferredCaptions{})
+	text, err := pages.GetText(t.Context(), "https://example.com/post", fetch.PreferredCaptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

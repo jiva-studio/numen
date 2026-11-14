@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"io"
 
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/ytdlp"
 )
 
@@ -31,29 +32,29 @@ func getMockCues() []ytdlp.Cue {
 
 func (mockVideo) CanHandle(address string) bool { return isVideoSite(address) }
 
-func (mockVideo) GetDownloadModel(string) Model {
-	return Model{Tool: "mock", Version: "", Producer: producerCaptions}
+func (mockVideo) GetDownloadModel(string) fetch.Model {
+	return fetch.Model{Tool: "mock", Version: "", Producer: producerCaptions}
 }
 
-func (mockVideo) GetMetadata(context.Context, string) (Metadata, error) {
-	return Metadata{
+func (mockVideo) GetMetadata(context.Context, string) (fetch.Metadata, error) {
+	return fetch.Metadata{
 		Title: "Tidal mill at work", Bytes: int64(len(writeQuietWAV())), Length: mockSeconds * 1000,
 		Language: "en", Captions: []string{"en"}, IsAutomatic: nil,
 	}, nil
 }
 
-func (mockVideo) GetText(context.Context, string, PreferredCaptions) (Text, error) {
-	return Text{
+func (mockVideo) GetText(context.Context, string, fetch.PreferredCaptions) (fetch.Text, error) {
+	return fetch.Text{
 		Producer: producerCaptions, Title: "Tidal mill at work", Length: mockSeconds * 1000,
 		Cues: getMockCues(), Prose: "",
 	}, nil
 }
 
-func (mockVideo) Download(_ context.Context, _ string, _ Media, into io.Writer) (Copy, error) {
+func (mockVideo) Download(_ context.Context, _ string, _ fetch.Media, into io.Writer) (fetch.Copy, error) {
 	if _, err := into.Write(writeQuietWAV()); err != nil {
-		return Copy{}, err
+		return fetch.Copy{}, err
 	}
-	return Copy{MediaType: "audio/wav", Extension: ".wav"}, nil
+	return fetch.Copy{MediaType: "audio/wav", Extension: ".wav"}, nil
 }
 
 func writeQuietWAV() []byte {

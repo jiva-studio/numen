@@ -5,61 +5,52 @@ package fetchers
 import (
 	"sync"
 
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/settings"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 )
+
+// Open makes the downloader that fetches with programs.
+type Open func(programs fetch.Config) ports.Fetcher
 
 // Holder serves the current downloader and settings to the links.
 type Holder struct {
 	mu      sync.RWMutex
-	isMock  bool
-	tools   download.Tools
-	values  settings.Values
-	current *download.Downloader
+	open    Open
+	values  values
+	current ports.Fetcher
 }
 
-// New returns a holder with the default settings. It holds the mock downloader when isMock is set.
-func New(isMock bool, tools download.Tools) *Holder {
-	h := &Holder{
-		mu: sync.RWMutex{}, isMock: isMock, tools: tools,
-		values: settings.Defaults(), current: nil,
-	}
-	h.current = h.open()
+// New returns a holder with the default settings, whose downloader open makes.
+func New(open Open) *Holder {
+	h := &Holder{mu: sync.RWMutex{}, open: open, values: getDefaultValues(), current: nil}
+	h.current = h.open(h.values.Programs)
 	return h
 }
 
-func (h *Holder) open() *download.Downloader {
-	if h.isMock {
-		return download.NewMock(h.tools.Web)
-	}
-	return download.New(h.values.Programs, h.tools.Runner, h.tools.Files, h.tools.Paths, h.tools.Web)
-}
-
 // GetFetcher returns the current downloader.
-func (h *Holder) GetFetcher() link.Fetcher {
+func (h *Holder) GetFetcher() ports.Fetcher {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.current
 }
 
-func (h *Holder) GetSettings() link.Settings {
+func (h *Holder) GetSettings() fetch.Settings {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.values.Fetch
 }
 
 // GetPrograms returns the programs the current downloader uses.
-func (h *Holder) GetPrograms() download.Config {
+func (h *Holder) GetPrograms() fetch.Config {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.values.Programs
 }
 
 // UpdateConfig applies the setting values and makes the downloader again.
-func (h *Holder) UpdateConfig(values map[string]string) {
+func (h *Holder) UpdateConfig(settings map[string]string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.values = settings.Parse(values, h.values)
-	h.current = h.open()
+	h.values = parseValues(settings, h.values)
+	h.current = h.open(h.values.Programs)
 }
