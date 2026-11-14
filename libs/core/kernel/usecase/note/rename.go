@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
@@ -29,7 +30,7 @@ type Rename struct {
 	now     machineport.Clock
 	sync    naming.SyncSetting
 	moving  fileMoving
-	gate    WriteGate
+	gate    windowport.WriteGate
 }
 
 // fileMoving files a note at another path. A note that traveled because it was
@@ -42,7 +43,7 @@ type fileMoving interface {
 // NewRename is the rename over the mover that files the note. It takes the readers,
 // writers, index updater, clock and naming setting of d, and uses the rest of d
 // nowhere. A rename passes gate.
-func NewRename(d MoveDeps, moving fileMoving, gate WriteGate) Rename {
+func NewRename(d MoveDeps, moving fileMoving, gate windowport.WriteGate) Rename {
 	return Rename{readers: d.Readers, writers: d.Writers, index: d.Index, now: d.Now, sync: d.Sync, moving: moving, gate: gate}
 }
 

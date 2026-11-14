@@ -24,8 +24,9 @@ type Tree interface {
 	PublishChange(paths ...string)
 }
 
-// IndexFollow reports whether the index followed a write.
-type IndexFollow interface {
+// Writes tells whether the index followed a write of the window. The port that use cases share is
+// indexport.IndexFollow; a driving adapter names no port, so this package declares its own.
+type Writes interface {
 	IsIndexOutdated(err error) bool
 }
 
@@ -75,13 +76,13 @@ type Changes struct {
 	move       *vaults.MoveFile
 	remove     *note.Remove
 	emptyTrash *note.EmptyTrash
-	writes     IndexFollow
+	writes     Writes
 }
 
 // NewChanges is the part of FileService that moves and removes files.
 func NewChanges(
 	window Vault, tree Tree,
-	move *vaults.MoveFile, remove *note.Remove, emptyTrash *note.EmptyTrash, writes IndexFollow,
+	move *vaults.MoveFile, remove *note.Remove, emptyTrash *note.EmptyTrash, writes Writes,
 ) *Changes {
 	return &Changes{
 		vault: window, tree: tree, move: move, remove: remove, emptyTrash: emptyTrash, writes: writes,

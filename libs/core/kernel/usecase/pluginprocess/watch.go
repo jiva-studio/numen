@@ -7,11 +7,10 @@ import (
 	"slices"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // Processes is the plugins that run.
@@ -29,18 +28,13 @@ type HealthItems interface {
 	Watch(ctx context.Context) <-chan []plugin.HealthItem
 }
 
-// Plugins gives the manifest of a plugin, which names it.
-type Plugins interface {
-	GetPlugin(id string) (manifest.Discovered, bool)
-}
-
 // WatchProcesses lists the plugins that run each time they or their health change, with the time the
 // list was taken. Interval is the shortest time between two lists; changes within it are sent together
 // after it.
 type WatchProcesses struct {
 	processes Processes
 	health    HealthItems
-	plugins   Plugins
+	plugins   pluginport.PluginManifests
 	clock     machineport.Clock
 	resolve   connectionport.ResolveConnection
 	Interval  time.Duration
@@ -50,7 +44,7 @@ type WatchProcesses struct {
 // and the clock that stamps each list, sending at most one list a second. resolve names the connections
 // that hold leases; a nil resolve names them by the plugin that asked.
 func NewWatchProcesses(
-	processes Processes, health HealthItems, plugins Plugins, resolve connectionport.ResolveConnection, clock machineport.Clock,
+	processes Processes, health HealthItems, plugins pluginport.PluginManifests, resolve connectionport.ResolveConnection, clock machineport.Clock,
 ) *WatchProcesses {
 	return &WatchProcesses{processes: processes, health: health, plugins: plugins, resolve: resolve, clock: clock, Interval: time.Second}
 }

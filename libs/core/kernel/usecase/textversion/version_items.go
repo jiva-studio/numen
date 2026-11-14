@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // VersionItems is the text versions of a vault file that the commands of the
@@ -20,7 +21,7 @@ import (
 type VersionItems struct {
 	texts      itemTexts
 	versions   versionRemover
-	run        CommandRun
+	run        pluginport.CommandRun
 	types      contenttypeport.ContentTypeTable
 	conditions *when.Conditions
 }
@@ -37,14 +38,8 @@ type versionRemover interface {
 
 // NewVersionItems returns the version items of the vault files, run with run and using the table
 // to find the type of a file.
-func NewVersionItems(texts *Texts, versions *Versions, run CommandRun, types contenttypeport.ContentTypeTable) *VersionItems {
+func NewVersionItems(texts *Texts, versions *Versions, run pluginport.CommandRun, types contenttypeport.ContentTypeTable) *VersionItems {
 	return &VersionItems{texts: texts, versions: versions, run: run, types: types, conditions: when.NewConditions()}
-}
-
-// CommandRun runs a command of a plugin checked against its declaration: its backend, its condition
-// and its arguments.
-type CommandRun interface {
-	Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error)
 }
 
 func listVersionItems(condition when.Condition, target plugin.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []text.VersionItem {

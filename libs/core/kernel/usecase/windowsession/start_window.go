@@ -4,13 +4,9 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// modelRecorder keeps the model the vault is read under.
-type modelRecorder interface {
-	RecordModel(name, recipe string)
-}
 
 // rebuilder builds the passes behind the open vault again.
 type rebuilder interface {
@@ -22,7 +18,7 @@ type rebuilder interface {
 type ModelFollow struct {
 	model    ModelSource
 	wake     IndexWake
-	recorder modelRecorder
+	recorder indexport.ModelRecorder
 	rebuild  rebuilder
 }
 

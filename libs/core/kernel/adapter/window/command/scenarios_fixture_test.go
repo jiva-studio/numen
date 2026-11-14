@@ -3,6 +3,7 @@ package command_test
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -20,7 +21,7 @@ type scenarios struct {
 
 func newScenarios(
 	commands pluginport.PluginCommands, runs pluginport.PluginCommandRuns, types contenttypeport.ContentTypeTable,
-	notes plugincommand.NoteReader, config pluginport.WhenConfig,
+	notes noteport.NoteReader, config pluginport.WhenConfig,
 ) scenarios {
 	if types == nil {
 		types = noTypes{}

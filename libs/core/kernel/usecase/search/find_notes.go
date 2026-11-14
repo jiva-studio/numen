@@ -4,13 +4,9 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// TabKinds finds the kind of tab each of the notes at some paths opens in.
-type TabKinds interface {
-	Execute(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
-}
 
 // NameResults are the names that match what was typed and the kind of tab each note opens in, by path.
 type NameResults struct {
@@ -21,11 +17,11 @@ type NameResults struct {
 // FindNames finds the names in a vault that match the words typed, with the kind of tab each note opens in.
 type FindNames struct {
 	matches  *GetNameMatches
-	tabKinds TabKinds
+	tabKinds windowport.TabKinds
 }
 
 // NewFindNames creates the search over the names of the index.
-func NewFindNames(matches noteport.NameMatches, tabKinds TabKinds) *FindNames {
+func NewFindNames(matches noteport.NameMatches, tabKinds windowport.TabKinds) *FindNames {
 	return &FindNames{matches: NewGetNameMatches(matches), tabKinds: tabKinds}
 }
 
@@ -74,11 +70,11 @@ type FindPassages struct {
 	finds    passageFinding
 	notes    noteport.NoteRefs
 	types    noteport.NoteTypes
-	tabKinds TabKinds
+	tabKinds windowport.TabKinds
 }
 
 // NewFindPassages creates the search over the text of the vault and the notes of the index.
-func NewFindPassages(finds Search, notes noteport.NoteRefs, types noteport.NoteTypes, tabKinds TabKinds) *FindPassages {
+func NewFindPassages(finds Search, notes noteport.NoteRefs, types noteport.NoteTypes, tabKinds windowport.TabKinds) *FindPassages {
 	return &FindPassages{finds: finds, notes: notes, types: types, tabKinds: tabKinds}
 }
 

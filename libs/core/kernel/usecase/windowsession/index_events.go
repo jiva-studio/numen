@@ -6,18 +6,19 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // IndexEvents shows what the indexing worker reports in the window.
 type IndexEvents struct {
 	rt    *Runtime
-	tasks Tasks
+	tasks windowport.Tasks
 	out   io.Writer
 }
 
 // NewIndexEvents makes the events of the indexing worker of the window over rt. Diagnostics go to out.
-func NewIndexEvents(rt *Runtime, tasks Tasks, out io.Writer) IndexEvents {
+func NewIndexEvents(rt *Runtime, tasks windowport.Tasks, out io.Writer) IndexEvents {
 	return IndexEvents{rt: rt, tasks: tasks, out: out}
 }
 

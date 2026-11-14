@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // TrashedVersions deletes the text versions that follow files into the trash.
@@ -20,10 +21,10 @@ type TrashedVersions interface {
 type EmptyTrash struct {
 	writers  vaultport.TrashEmptiers
 	versions TrashedVersions
-	gate     WriteGate
+	gate     windowport.WriteGate
 }
 
-func NewEmptyTrash(writers vaultport.TrashEmptiers, versions TrashedVersions, gate WriteGate) EmptyTrash {
+func NewEmptyTrash(writers vaultport.TrashEmptiers, versions TrashedVersions, gate windowport.WriteGate) EmptyTrash {
 	return EmptyTrash{writers: writers, versions: versions, gate: gate}
 }
 

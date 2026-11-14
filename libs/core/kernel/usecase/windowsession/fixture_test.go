@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -276,7 +277,7 @@ type Deps struct {
 type WindowPorts struct {
 	Pages    Pages
 	Writes   Writes
-	Tasks    Tasks
+	Tasks    windowport.Tasks
 	Changes  Changes
 	TabFront TabFront
 }

@@ -4,22 +4,19 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
-)
 
-// ModelRecorder keeps the name and the recipe of the model a vault is embedded under.
-type ModelRecorder interface {
-	RecordModel(name, recipe string)
-}
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
+)
 
 // VectorCounts counts the chunks of a vault that can carry a vector and the ones that carry one, under the
 // model the vault is embedded with.
 type VectorCounts struct {
 	embedding *Embedding
-	recorder  ModelRecorder
+	recorder  indexport.ModelRecorder
 }
 
 // NewVectorCounts creates the count over the embedding of a window, and records the model it counts under.
-func NewVectorCounts(embedding *Embedding, recorder ModelRecorder) VectorCounts {
+func NewVectorCounts(embedding *Embedding, recorder indexport.ModelRecorder) VectorCounts {
 	return VectorCounts{embedding: embedding, recorder: recorder}
 }
 

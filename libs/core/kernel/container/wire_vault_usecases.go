@@ -16,8 +16,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/indexfolder"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -62,8 +64,8 @@ func vaultMoves(c vaultWiring, ctx context.Context) (<-chan struct{}, error) {
 // index to follow every write.
 type noteViews struct {
 	Moves  note.TellMove
-	Writes note.WriteGate
-	Follow note.IndexFollow
+	Writes windowport.WriteGate
+	Follow indexport.IndexFollow
 }
 
 func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteViews) NoteUseCases {
@@ -133,7 +135,7 @@ func vaultQueries(db *Index) query.Scenarios {
 	}
 }
 
-func vaultFocusNote(_ vaultWiring, refs noteport.NoteRefs, view query.PlaceFocus) *query.FocusNote {
+func vaultFocusNote(_ vaultWiring, refs noteport.NoteRefs, view windowport.PlaceFocus) *query.FocusNote {
 	return query.NewFocusNote(refs, view)
 }
 

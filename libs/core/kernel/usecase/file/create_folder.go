@@ -7,13 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
-
-// WriteGate admits the writes a window waits for before it closes.
-type WriteGate interface {
-	BeginWrite() bool
-	FinishWrite()
-}
 
 // OpenGate admits every write, for an installation with no window that waits for writes.
 type OpenGate struct{}
@@ -25,10 +20,10 @@ func (OpenGate) FinishWrite()     {}
 // Only the failure to make the folder wraps its cause.
 type CreateFolder struct {
 	writers vaultport.FolderWriters
-	gate    WriteGate
+	gate    windowport.WriteGate
 }
 
-func NewCreateFolder(writers vaultport.FolderWriters, gate WriteGate) *CreateFolder {
+func NewCreateFolder(writers vaultport.FolderWriters, gate windowport.WriteGate) *CreateFolder {
 	return &CreateFolder{writers: writers, gate: gate}
 }
 

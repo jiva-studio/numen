@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -22,13 +23,13 @@ type FileImport interface {
 type ImportFiles struct {
 	imports FileImport
 	gate    Writes
-	tasks   Tasks
+	tasks   windowport.Tasks
 	changes Changes
 }
 
 // NewImportFiles returns the use case over the import of files, the writes the window waits for, the list
 // of work and the feed of changes.
-func NewImportFiles(imports FileImport, gate Writes, tasks Tasks, changes Changes) ImportFiles {
+func NewImportFiles(imports FileImport, gate Writes, tasks windowport.Tasks, changes Changes) ImportFiles {
 	return ImportFiles{imports: imports, gate: gate, tasks: tasks, changes: changes}
 }
 

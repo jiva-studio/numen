@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // writingDiagnostics is the entry in the list of what is being done for a diagnostic line that could
@@ -15,12 +16,12 @@ const writingDiagnostics = "writing diagnostics"
 // task, so it is not lost.
 type Diagnostics struct {
 	out   io.Writer
-	tasks Tasks
+	tasks windowport.Tasks
 }
 
 // NewDiagnostics makes the diagnostics that write to out and report a failed write to tasks. A nil out
 // discards the lines.
-func NewDiagnostics(out io.Writer, tasks Tasks) *Diagnostics {
+func NewDiagnostics(out io.Writer, tasks windowport.Tasks) *Diagnostics {
 	if out == nil {
 		out = io.Discard
 	}
