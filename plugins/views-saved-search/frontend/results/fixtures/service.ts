@@ -29,7 +29,6 @@ interface HeldRead {
 
 /** The scripted service and what it was asked. */
 export interface ScriptedService extends SavedSearchService {
-  /** The methods called, in order. */
   readonly calls: string[]
   readonly reads: GetResultsRequest[]
   readonly readSignals: AbortSignal[]
@@ -82,7 +81,7 @@ export function createScriptedService(first: GetResultsResponse): ScriptedServic
       signal.addEventListener('abort', () => reject(abortError()), { once: true })
     })
 
-  return {
+  const scripted: ScriptedService = {
     calls,
     reads,
     readSignals,
@@ -164,4 +163,5 @@ export function createScriptedService(first: GetResultsResponse): ScriptedServic
       updateAnswer = next
     },
   }
+  return scripted
 }
