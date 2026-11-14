@@ -1,0 +1,104 @@
+{
+  "id": "md.numen.views.saved.search",
+  "name": "Saved Search",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Runs search queries that combine searches by meaning and by words, for agents",
+  "capabilities": ["tools"],
+  "targets": ["desktop.editor"],
+  "contributes": { "category": "views" },
+  "permissions": ["vault:read", "index:read"],
+  "settings": [
+    {
+      "key": "connections",
+      "type": "connections",
+      "title": "Reranking",
+      "description": "Services that order the results of a saved search by relevance, tried in order until one answers",
+      "operations": ["llm.rerank"],
+      "max": 5
+    },
+    {
+      "key": "defaultLimit",
+      "type": "number",
+      "title": "Default results",
+      "description": "Results a search returns when the agent names no limit",
+      "default": 20,
+      "min": 1,
+      "step": 1
+    },
+    {
+      "key": "maxLimit",
+      "type": "number",
+      "title": "Most results",
+      "description": "Most results one search returns",
+      "default": 100,
+      "min": 1,
+      "step": 1
+    },
+    {
+      "key": "resultsPerSearch",
+      "type": "number",
+      "title": "Passages per condition",
+      "description": "Passages the index returns for each meaning and words condition",
+      "default": 100,
+      "min": 1,
+      "max": 500,
+      "step": 1
+    },
+    {
+      "key": "maxCandidates",
+      "type": "number",
+      "title": "Most passages scored",
+      "description": "Most passages the query is applied to",
+      "default": 1000,
+      "min": 1,
+      "step": 1
+    },
+    {
+      "key": "maxPathPrefixes",
+      "type": "number",
+      "title": "Most folders",
+      "description": "Most folders a query joins with path.startsWith and ||",
+      "default": 8,
+      "min": 1,
+      "step": 1
+    },
+    {
+      "key": "rerankedPerResult",
+      "type": "number",
+      "title": "Reranked passages per result",
+      "description": "Passages sent to the reranking service for each result asked for",
+      "default": 3,
+      "min": 1,
+      "step": 1
+    },
+    {
+      "key": "maxReranked",
+      "type": "number",
+      "title": "Most reranked passages",
+      "description": "Most passages sent to the reranking service in one search",
+      "default": 100,
+      "min": 1,
+      "step": 1
+    },
+    {
+      "key": "mergeGapBytes",
+      "type": "number",
+      "title": "Merge gap",
+      "description": "Bytes between two passages of one file that are still joined into one result",
+      "default": 200,
+      "min": 0,
+      "step": 1
+    },
+    {
+      "key": "maxQueryBytes",
+      "type": "number",
+      "title": "Longest query",
+      "description": "Most bytes of the text of one query",
+      "default": 16384,
+      "min": 1,
+      "step": 1
+    }
+  ],
+  "backend": { "entrypoint": "bin/views-saved-search" }
+}

@@ -19,8 +19,8 @@ func TestSearchTextTruncatesALongTextToTheExcerptAroundTheHit(t *testing.T) {
 	if err != nil || len(got) != 2 {
 		t.Fatalf("found %d, %v, want both results", len(got), err)
 	}
-	if text := got[0].Text; len(text) > host.MaxResultBytes || !strings.Contains(text, "heron") {
-		t.Errorf("the long result has %d bytes, heron %v, want at most %d bytes around the hit", len(text), strings.Contains(text, "heron"), host.MaxResultBytes)
+	if text := got[0].Text; len(text) > host.MaxExcerptBytes || !strings.Contains(text, "heron") {
+		t.Errorf("the long result has %d bytes, heron %v, want at most %d bytes around the hit", len(text), strings.Contains(text, "heron"), host.MaxExcerptBytes)
 	}
 	if got[0].Length != len(long) {
 		t.Errorf("the long result has the length %d, want the whole chunk, %d", got[0].Length, len(long))

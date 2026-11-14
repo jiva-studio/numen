@@ -26,7 +26,7 @@ The flashcard review window opens neither link type: an answer there cites its s
 
 ## The tools
 
-Six plugins register the tools an agent can call, each for its own subject. The host lists them for a plugin whose permissions allow their effect, the agent providers serve them to their programs, and `agents-mcp-server` serves them to programs outside Numen. The effect column says whether a tool only reads or also writes; a tool that writes is listed only for a plugin that holds `vault:write`. The host asks each version of a plugin for its tools once and keeps the answer in its cache folder (`tools/<plugin id>.json`), so a listing starts only a plugin it has not listed before and a call starts only the plugin of the tool; a disabled plugin offers none.
+Seven plugins register the tools an agent can call, each for its own subject. The host lists them for a plugin whose permissions allow their effect, the agent providers serve them to their programs, and `agents-mcp-server` serves them to programs outside Numen. The effect column says whether a tool only reads or also writes; a tool that writes is listed only for a plugin that holds `vault:write`. The host asks each version of a plugin for its tools once and keeps the answer in its cache folder (`tools/<plugin id>.json`), so a listing starts only a plugin it has not listed before and a call starts only the plugin of the tool; a disabled plugin offers none.
 
 `agents-tools-vault`, the notes and files of the vault:
 
@@ -85,6 +85,12 @@ Six plugins register the tools an agent can call, each for its own subject. The 
 | `card_value_remove`                                              | remove one field from one card                                                  | writes  |
 | `card_remove`                                                    | remove one card from a deck                                                     | writes  |
 | `card_section_add`, `card_section_rename`, `card_section_remove` | write, rename and remove the sections a deck is divided into                    | writes  |
+
+`views-saved-search`, queries over the library of the vault:
+
+| Tool                   | What it does                                                                                                                                                                                                                                                                                                                                                                          | Effect |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `saved_search_preview` | the passages a CEL query over `meaning("…")`, `words("…")`, `kind` and `path` finds, best first, with the path, title, `place`, `line`, text, `uri`, score and the number of neighboring passages joined into each; ordered by a reranking model when the plugin has a reranking connection; a query that is not valid returns its problems under `errors` with their line and column | reads  |
 
 `engines-ocr`, `engines-transcription` and `tools-media-importer`, the text versions of scans, recordings and web addresses:
 

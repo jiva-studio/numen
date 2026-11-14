@@ -217,8 +217,8 @@ const (
 	// DefaultSearchedResultsPerSource is the number of search results of one source a SearchText call
 	// returns when the query names none.
 	DefaultSearchedResultsPerSource = 3
-	// MaxResultBytes is the longest Text of a SearchResult: the excerpt of the chunk around the hit.
-	MaxResultBytes = 1200
+	// MaxExcerptBytes is the longest Text of a SearchResult: the excerpt of the chunk around the hit.
+	MaxExcerptBytes = 1200
 	// DefaultSearchedResults is the maximum number of search results a SearchText call returns when its limit
 	// is zero, and MaxSearchedResults the maximum for any limit.
 	DefaultSearchedResults = 20
@@ -275,7 +275,7 @@ type SearchResult struct {
 	ChunkID string
 	// Path is the file the text is read from, relative to the vault.
 	Path string
-	// Text is the text around the hit, at most MaxResultBytes bytes of the chunk, and so possibly
+	// Text is the text around the hit, at most MaxExcerptBytes bytes of the chunk, and so possibly
 	// starting and ending mid-sentence.
 	Text string
 	// PlaceLabel is the location label in the source's numbering (page, chapter, time), empty

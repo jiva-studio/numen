@@ -18,7 +18,7 @@ import (
 // SearchText answers from the results SetIndexedResults set, in their order. Words and hybrid mode keep
 // the results whose text contains every word of the query; a raw words query counts its bare words, with
 // the FTS5 operators left out, which is a limit of the fake. Meaning mode keeps the results the embedder
-// gives a vector. The Text of each result is cut to MaxResultBytes around the first word of the query,
+// gives a vector. The Text of each result is cut to MaxExcerptBytes around the first word of the query,
 // as the host cuts it. Raw words outside words mode return an error, as the host refuses them.
 func (s *Search) SearchText(_ context.Context, query host.SearchResultQuery) ([]host.SearchResult, error) {
 	s.all.mu.Lock()
@@ -134,11 +134,11 @@ func findHit(text string, words []string) int {
 }
 
 func getExcerpt(text string, hit int) string {
-	if len(text) <= host.MaxResultBytes {
+	if len(text) <= host.MaxExcerptBytes {
 		return text
 	}
-	start := min(max(hit-host.MaxResultBytes/4, 0), len(text))
-	end := min(start+host.MaxResultBytes, len(text))
+	start := min(max(hit-host.MaxExcerptBytes/4, 0), len(text))
+	end := min(start+host.MaxExcerptBytes, len(text))
 	for start < end && !utf8.RuneStart(text[start]) {
 		start++
 	}
