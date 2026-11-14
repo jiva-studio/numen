@@ -7,7 +7,6 @@ export { useOpeningNote } from './model/useOpeningNote'
 export type { NoteCreator } from './model/maker'
 export { WORDS } from './words'
 export {
-  getInitialOpenPath,
   listRelatedNotes,
   listHeadings,
   readNote,
