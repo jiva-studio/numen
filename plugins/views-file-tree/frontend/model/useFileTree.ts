@@ -26,6 +26,13 @@ export const getParentFolders = (path: string): readonly string[] => {
   return parts.map((_, deep) => parts.slice(0, deep + 1).join('/'))
 }
 
+/** How the entries of a folder are ordered in the rows of the tree. */
+export type SortBy = 'name' | 'modified'
+
+export const readSortBy = (_value: unknown): SortBy => {
+  throw new Error('not implemented')
+}
+
 const isSameEntry = (one: Entry, other: Entry): boolean =>
   one.path === other.path &&
   one.name === other.name &&
@@ -217,7 +224,10 @@ function createTreeQueries(
   return { getEntriesInFolder, isFolderOpen, rows, openRows, getEntryAt }
 }
 
-export function createFileTree(core: Folders): FileTree {
+export function createFileTree(
+  core: Folders,
+  _options?: { readonly sortBy?: Readonly<Ref<SortBy>> },
+): FileTree {
   const state = initTreeState()
   let isAlive = true
 
