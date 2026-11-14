@@ -1,7 +1,7 @@
 /** The connections to services and programs, and what the form of one is built from. */
 export { createConnectionStore } from './model/connections'
 export type { ConnectionStore } from './model/connections'
-export { listRowOptions } from './api/connections'
+export { createConnectionApi, type ConnectionApi } from './api/connections'
 export type {
   ConnectionChange,
   ConnectionDraft,

@@ -7,13 +7,7 @@ import { createRequestGuard } from '@numen/ui'
 import type { Result } from '@/shared/lib/result'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import {
-  createConnection,
-  deleteConnection,
-  listConnections,
-  listConnectionTypes,
-  updateConnection,
-} from '../api/connections'
+import type { ConnectionApi } from '../api/connections'
 import type {
   ConnectionChange,
   ConnectionDraft,
@@ -24,7 +18,7 @@ import type {
 } from '../lib/types'
 import { CONNECTION_WORDS } from '../words'
 
-export function createConnectionStore(notify: MessageWriter) {
+export function createConnectionStore(api: ConnectionApi, notify: MessageWriter) {
   const connections = shallowRef<readonly ConnectionInfo[]>([])
   const types = shallowRef<readonly ConnectionTypeInfo[]>([])
   const operationTitles = shallowRef<OperationTitles>({})
@@ -40,8 +34,8 @@ export function createConnectionStore(notify: MessageWriter) {
     const mine = guard.acquireRequest()
     try {
       const [readTypes, readConnections] = await Promise.all([
-        listConnectionTypes(),
-        listConnections(),
+        api.listConnectionTypes(),
+        api.listConnections(),
       ])
       if (!mine.isCurrent) return
       types.value = readTypes.types
@@ -81,9 +75,10 @@ export function createConnectionStore(notify: MessageWriter) {
     operationTitles,
     load,
     reload,
-    create: (draft: ConnectionDraft) => run(() => createConnection(draft)),
-    update: (change: ConnectionChange) => run(() => updateConnection(change)),
-    delete: (id: string) => run(() => deleteConnection(id)),
+    create: (draft: ConnectionDraft) => run(() => api.createConnection(draft)),
+    update: (change: ConnectionChange) => run(() => api.updateConnection(change)),
+    delete: (id: string) => run(() => api.deleteConnection(id)),
+    listRowOptions: api.listRowOptions,
   }
 }
 export type ConnectionStore = ReturnType<typeof createConnectionStore>
