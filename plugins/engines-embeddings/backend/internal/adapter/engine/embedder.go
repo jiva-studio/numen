@@ -61,7 +61,7 @@ func Open(
 	if err != nil {
 		return nil, err
 	}
-	encoder, err := tokenizer.Load(paths.Tokenizer)
+	encoder, err := loadTokenizer(identity, paths.Tokenizer)
 	if err != nil {
 		return nil, err
 	}
@@ -175,12 +175,6 @@ func (e *Embedder) Close() error {
 // Concurrency is how many batches this embedder runs in parallel.
 func (e *Embedder) Concurrency() int {
 	return e.passes
-}
-
-// GetTokenizerVersion returns the version of the tokenizer the model reads texts with, empty when its
-// ids are the ones the plugin gave before versions were kept.
-func (e *Embedder) GetTokenizerVersion() string {
-	return e.encoder.GetVersion()
 }
 
 func (e *Embedder) GetModel() model.ModelInfo {

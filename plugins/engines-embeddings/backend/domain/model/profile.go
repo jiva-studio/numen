@@ -54,6 +54,7 @@ type Profile struct {
 	SHA256         map[string]string `json:"sha256,omitempty"`
 	ExtraInputs    []string          `json:"extraInputs,omitempty"`
 	FloorHint      float64           `json:"floorHint,omitempty"`
+	Tokenizer      string            `json:"tokenizer"`
 }
 
 // IsNormalized reports whether the vectors of the model are scaled to unit length.
@@ -82,16 +83,15 @@ func (p Profile) GetOptionDetail() string {
 }
 
 // Handling is what is done to a text before the model reads it and to the output after. It decides
-// which vector a text gets, so it is part of the recipe.
+// which vector a text gets, so it is part of the recipe. Tokenizer is the version of the tokenizer the
+// plugin reads the text with: empty for a connection, the mock model and a BPE tokenizer.
 type Handling struct {
 	QueryPrefix    string   `json:"queryPrefix"`
 	DocumentPrefix string   `json:"documentPrefix"`
 	File           string   `json:"file"`
 	Normalize      bool     `json:"normalize"`
 	ExtraInputs    []string `json:"extraInputs"`
-	// Tokenizer is the version of the tokenizer the plugin reads the text with: empty for a connection,
-	// the mock model and a tokenizer whose ids did not change since versions were kept.
-	Tokenizer string `json:"tokenizer"`
+	Tokenizer      string   `json:"tokenizer"`
 }
 
 // Role is what a text is embedded for.
@@ -140,7 +140,7 @@ func (p Profile) GetHandling() Handling {
 		File:           p.GetModelFile(),
 		Normalize:      p.IsNormalized(),
 		ExtraInputs:    p.ExtraInputs,
-		Tokenizer:      "",
+		Tokenizer:      p.GetTokenizerVersion(),
 	}
 }
 
@@ -169,7 +169,7 @@ func (p Profile) Validate() error {
 	if p.OnnxFile == "" {
 		return fmt.Errorf("%s: a local model needs onnxFile", p.ID)
 	}
-	return nil
+	return checkTokenizerKind(p)
 }
 
 func isPooling(name string) bool {
@@ -231,7 +231,7 @@ func GetShippedProfiles() (*Profiles, error) {
 		return table, fmt.Errorf("profiles.json: %w", err)
 	}
 	for _, p := range list {
-		if err := p.Validate(); err != nil {
+		if err := errors.Join(p.Validate(), checkTokenizerNamed(p)); err != nil {
 			return table, fmt.Errorf("profiles.json: %w", err)
 		}
 		table.put(p)
@@ -312,7 +312,11 @@ func (t *Profiles) layer(entry json.RawMessage) (Profile, error) {
 	if err := decodeStrict(entry, &p); err != nil {
 		return Profile{}, err
 	}
-	if base.ID != "" {
+	if base.ID == "" {
+		if err := checkTokenizerNamed(p); err != nil {
+			return Profile{}, err
+		}
+	} else {
 		p.ID = base.ID
 		dropStalePins(&p, base, entry)
 	}
