@@ -100,5 +100,14 @@
     ]
   },
   "permissions": ["vault:read", "vault:write"],
+  "settings": [
+    {
+      "key": "revealOpenNote",
+      "type": "boolean",
+      "title": "Expand to the open note",
+      "description": "Open the folders of the note that opens beside the tree",
+      "default": true
+    }
+  ],
   "frontend": {}
 }

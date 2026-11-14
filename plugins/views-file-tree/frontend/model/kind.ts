@@ -23,7 +23,9 @@ export function createFilesKind(
   host: FileTreeHost,
   createTree: () => FileTree,
   component: Component,
+  options: { readonly isRevealOpenNote?: () => boolean } = {},
 ) {
+  const { isRevealOpenNote = () => true } = options
   const tabs = new Map<string, FilesTabState>()
   let menuTab: FilesTabState | null = null
 
@@ -60,8 +62,11 @@ export function createFilesKind(
       if (menuTab === state) menuTab = null
       return true
     },
-    navigate: async (state, path) => {
-      if (path) await state.list.revealPath(path)
+    navigate: async (state, path, title) => {
+      if (!path) return
+      // A title comes from a linked note tab; '' is the person asking to reveal.
+      if (title !== '' && !isRevealOpenNote()) return
+      await state.list.revealPath(path)
     },
   }
 
