@@ -21,7 +21,7 @@ export function requestNodes(nodes: readonly PlexNode[], options: PlexOptions): 
  * the first box that is not inside, and the rest is laid out again, since a
  * smaller group is placed differently. A group whose first box is outside is
  * halved instead, since its middle lies nearer the focus when it is smaller.
- * Every pass removes at least one node.
+ * Every pass removes at least one node. The notes removed are then added back, one note of each relation in turn, while the window still holds every box.
  *
  * A pass needs the first box outside of each relation and nothing after it, so
  * it stops once every relation has one or is fully placed.
@@ -36,11 +36,56 @@ export function admitNodes(
 ): NodesByRelation {
   let admitted = requested
   for (;;) {
-    const placed = lay(admitted, createStopWhenSettled(admitted, isInside))
-    const outside = new Set(placed.filter((node) => !isInside(node)).map((node) => node.id))
-    if (outside.size === 0) return admitted
+    const outside = findOutside(admitted, lay, isInside)
+    if (outside.size === 0) break
     admitted = cutBeforeOutside(admitted, outside)
   }
+  return refill(
+    admitted,
+    requested,
+    (nodesByRelation) => findOutside(nodesByRelation, lay, isInside).size === 0,
+  )
+}
+
+function findOutside(
+  nodesByRelation: NodesByRelation,
+  lay: (
+    nodesByRelation: NodesByRelation,
+    shouldStop: (node: PlacedNode) => boolean,
+  ) => readonly PlacedNode[],
+  isInside: (node: PlacedNode) => boolean,
+): ReadonlySet<string> {
+  const placed = lay(nodesByRelation, createStopWhenSettled(nodesByRelation, isInside))
+  return new Set(placed.filter((node) => !isInside(node)).map((node) => node.id))
+}
+
+/** Adds the removed notes back, one note of each relation in turn, while `isAccepted` accepts the set. */
+export function refill(
+  admitted: NodesByRelation,
+  requested: NodesByRelation,
+  isAccepted: (nodesByRelation: NodesByRelation) => boolean,
+): NodesByRelation {
+  let current = admitted
+  // Each probe is a full layout. A relation that failed is tried again only after another relation has grown: until then the set is the same.
+  let version = 0
+  const failedAt = new Map<PlexRelation, number>()
+  for (let grew = true; grew;) {
+    grew = false
+    for (const relation of RELATION_NAMES) {
+      const all = requested[relation] ?? []
+      const have = current[relation]?.length ?? 0
+      if (have >= all.length || failedAt.get(relation) === version) continue
+      const next = { ...current, [relation]: all.slice(0, have + 1) }
+      if (isAccepted(next)) {
+        current = next
+        grew = true
+        version++
+      } else {
+        failedAt.set(relation, version)
+      }
+    }
+  }
+  return current
 }
 
 function createStopWhenSettled(

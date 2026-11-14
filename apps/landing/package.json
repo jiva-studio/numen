@@ -22,7 +22,7 @@
     "@lucide/vue": "^1.70.0",
     "@numen/ui": "*",
     "@numen/workbench": "*",
-    "astro": "^7.4.7",
+    "astro": "^7.4.12",
     "sharp": "^0.35.5",
     "vue": "^3.5.45"
   },

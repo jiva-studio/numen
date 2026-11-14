@@ -58,7 +58,7 @@ const meta: Meta<Knobs> = {
         component:
           'A disc with a cross on it, drawn about its own origin and put ' +
           'where it belongs by the one point it takes. Every size in it is a ' +
-          'token, and the hue is whatever it was hung on.',
+          'token, and the hue is whatever it was placed on.',
       },
     },
   },
@@ -81,22 +81,6 @@ export default meta
 type Story = StoryObj<Knobs>
 
 export const Playground: Story = {}
-
-/**
- * One of each, because the hue is not the handle's own: it comes from the node
- * it hangs off, and the focus supplies none at all.
- */
-export const EveryHue: Story = {
-  render: renderScene((args) =>
-    ['focus', ...RELATION_NAMES].map((relation, index) => ({
-      id: relation,
-      x: (index - 2) * (60 / args.zoom),
-      y: 0,
-      relation: relation as PlexNodeRelation,
-    })),
-  ),
-  args: { zoom: 4 },
-}
 
 /**
  * Pressed by pointer and by keyboard, which differ: a pointer can be dragged to

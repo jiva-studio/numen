@@ -26,6 +26,7 @@ interface Knobs {
   graph: PlexGraph
   placement: Placement
   showEdgeLabels: boolean
+  highlightLinks: boolean
   duration: number
   expansionDelay: number
   onActivate: (id: string) => void
@@ -194,6 +195,7 @@ const createNavigableStory = (start: (args: Knobs) => PlexGraph) => (args: Knobs
         :placement="args.placement"
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
+        :highlight-links="args.highlightLinks"
         :duration="args.duration"
         :expansion-delay="args.expansionDelay"
         :dragged="args.dragged"
@@ -281,6 +283,7 @@ const meta = {
     minReach: { ...range(0, 120, 2, 'Edges'), table: { category: 'Edges' } },
     arrowClearance: { ...range(0, 40, 1, 'Edges'), table: { category: 'Edges' } },
     showEdgeLabels: { control: 'boolean', table: { category: 'Edges' } },
+    highlightLinks: { control: 'boolean', table: { category: 'Edges' } },
 
     duration: {
       control: { type: 'range', min: 0, max: 3000, step: 20 },
@@ -319,6 +322,7 @@ const meta = {
   args: {
     placement: clusters,
     showEdgeLabels: true,
+    highlightLinks: false,
     duration: 420,
     expansionDelay: EXPANSION_DELAY,
     onActivate: fn(),
@@ -763,28 +767,35 @@ export const RestingOnATitle: Story = {
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
     const adjacentNode = canvas.getByLabelText('日本語のノート, child')
 
-    const getWidth = (box: Element) =>
-      box.querySelector('.plex__box')!.getBoundingClientRect().width
-    const nodeWidth = getWidth(node)
+    const getBox = () =>
+      canvasElement.querySelector('.plex__lifted .plex__box') ?? node.querySelector('.plex__box')!
+    const getWidth = () => getBox().getBoundingClientRect().width
+    const getWords = () =>
+      (canvasElement.querySelector('.plex__lifted') ?? node).querySelector<HTMLElement>(
+        '.plex__title-text',
+      )!
+    const nodeWidth = getWidth()
     const adjacentX = adjacentNode.getBoundingClientRect().x
 
-    const words = node.querySelector<HTMLElement>('.plex__title-text')!
+    const words = getWords()
     await expect(words.scrollWidth).toBeGreaterThan(words.clientWidth)
 
     await userEvent.hover(node)
-    await waitFor(async () => await expect(getWidth(node)).toBeGreaterThan(nodeWidth), {
+    await waitFor(async () => await expect(getWidth()).toBeGreaterThan(nodeWidth), {
       timeout: 3000,
     })
     await waitFor(
-      async () => await expect(words.scrollWidth).toBeLessThanOrEqual(words.clientWidth),
+      async () => await expect(getWords().scrollWidth).toBeLessThanOrEqual(getWords().clientWidth),
     )
 
     await expect(adjacentNode.getBoundingClientRect().x).toBe(adjacentX)
-    const boxes = canvasElement.querySelectorAll('.plex__node')
-    await expect(boxes[boxes.length - 1]).toBe(node)
+    const lifted = canvasElement.querySelector('.plex__lifted')!
+    await expect(node.compareDocumentPosition(lifted) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
 
     await userEvent.unhover(node)
-    await waitFor(async () => await expect(getWidth(node)).toBe(nodeWidth))
+    await waitFor(async () => await expect(getWidth()).toBe(nodeWidth))
   },
 }
 
@@ -886,54 +897,143 @@ export const HeadingsInside: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const focus = canvas.getByLabelText(/, focus$/)
-    const getHeadings = (node: Element) => [...node.querySelectorAll('.plex__heading')]
+    const getOpenBox = (id: string) =>
+      canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
+    const getHeadings = (id: string) => [
+      ...(getOpenBox(id)?.querySelectorAll('.plex__heading') ?? []),
+    ]
 
     const most = args.maxHeadings
 
-    await expect(getHeadings(focus)).toHaveLength(0)
+    await expect(getHeadings('focus')).toHaveLength(0)
 
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(most), {
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(most), {
       timeout: 3000,
     })
 
     await userEvent.unhover(focus)
-    await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(0))
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(0))
 
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(most), {
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(most), {
       timeout: 3000,
     })
-    await userEvent.click(getHeadings(focus)[1]!)
+    await userEvent.click(getHeadings('focus')[1]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus', '4')
 
     const many = canvas.getByLabelText(/, jump$/)
     await userEvent.hover(many)
-    await waitFor(async () => await expect(getHeadings(many)).toHaveLength(most), { timeout: 3000 })
+    await waitFor(async () => await expect(getHeadings('focus/jump-0')).toHaveLength(most), {
+      timeout: 3000,
+    })
 
-    const arrows = () => [...many.querySelectorAll('.plex__more')]
+    const arrows = () => [...(getOpenBox('focus/jump-0')?.querySelectorAll('.plex__more') ?? [])]
     await expect(arrows()).toHaveLength(1)
 
     const wheel = (deltaY: number) =>
-      many
+      getOpenBox('focus/jump-0')!
         .querySelector('.plex__inside')!
         .dispatchEvent(
           new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }),
         )
     wheel(1)
     await waitFor(
-      async () => await expect(getHeadings(many)[0]!.textContent?.trim()).toBe('Section 2'),
+      async () =>
+        await expect(getHeadings('focus/jump-0')[0]!.textContent?.trim()).toBe('Section 2'),
     )
     await expect(arrows()).toHaveLength(2)
 
     wheel(-1)
     await waitFor(
-      async () => await expect(getHeadings(many)[0]!.textContent?.trim()).toBe('Section 1'),
+      async () =>
+        await expect(getHeadings('focus/jump-0')[0]!.textContent?.trim()).toBe('Section 1'),
     )
 
-    await userEvent.click(getHeadings(many)[0]!)
+    await userEvent.click(getHeadings('focus/jump-0')[0]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus/jump-0', '0')
     await expect(args.onActivate).not.toHaveBeenCalled()
+  },
+}
+
+/** Draws the lines lifted by the highlight setting under the headings that open under a note. */
+export const HeadingsOverLiftedLines: Story = {
+  args: {
+    ...invented.args,
+    parents: 1,
+    children: 4,
+    jumps: 1,
+    siblings: 0,
+    highlightLinks: true,
+    headings: (id: string) => INSIDE[id] ?? [],
+  },
+  render: invented.render,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const focus = canvas.getByLabelText(/, focus$/)
+
+    await userEvent.hover(focus)
+    const backdrop = await waitFor(async () => {
+      const found = canvasElement.querySelector('.plex__backdrop')
+      if (found === null) throw new Error('the headings are not open')
+      return found
+    })
+    const raised = await waitFor(async () => {
+      const found = canvasElement.querySelector('.plex__raised')
+      if (found === null) throw new Error('no line is lifted')
+      return found
+    })
+
+    await expect(raised.querySelectorAll('.plex__edge-line').length).toBeGreaterThan(0)
+    await expect(raised.compareDocumentPosition(backdrop) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
+  },
+}
+
+/** Closes the note that was attended to as soon as another note is, whichever pointer events came. */
+export const OneOpenNote: Story = {
+  args: {
+    ...invented.args,
+    parents: 1,
+    children: 4,
+    jumps: 1,
+    siblings: 0,
+    headings: (id: string) => INSIDE[id] ?? [],
+  },
+  render: invented.render,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const focus = canvas.getByLabelText(/, focus$/)
+    const other = canvas.getByLabelText(/, jump$/)
+    const getOpenBox = (id: string) =>
+      canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
+    const getHeadings = (id: string) => [
+      ...(getOpenBox(id)?.querySelectorAll('.plex__heading') ?? []),
+    ]
+    const getHandles = () => canvasElement.querySelectorAll('.plex__handle')
+
+    await userEvent.hover(focus)
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(args.maxHeadings), {
+      timeout: 3000,
+    })
+    await expect(getHandles()).toHaveLength(1)
+
+    // The pointer reaches the other note without the first one hearing it leave.
+    other.dispatchEvent(new PointerEvent('pointerenter'))
+
+    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(0))
+    await expect(getHandles()).toHaveLength(1)
+    await expect(focus.querySelector('.plex__handle')).toBeNull()
+    await expect(other.querySelector('.plex__handle')).not.toBeNull()
+
+    await waitFor(
+      async () => await expect(getHeadings('focus/jump-0')).toHaveLength(args.maxHeadings),
+      {
+        timeout: 3000,
+      },
+    )
+    await expect(getHeadings('focus')).toHaveLength(0)
   },
 }
 

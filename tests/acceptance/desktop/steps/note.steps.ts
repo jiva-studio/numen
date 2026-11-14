@@ -1,3 +1,4 @@
+import type { TabKindChoice } from '../drivers/rules.js'
 import { Given, Then, When } from '../support/bdd.js'
 
 When('the person opens the note titled {string}', async ({ person }, title: string) => {
@@ -43,6 +44,13 @@ When(
   },
 )
 
+Then(
+  'the cursor of the {tab} {reference} {string} is on the line {string}',
+  async ({ person }, _kind: TabKindChoice, reference: string, name: string, line: string) => {
+    await person.note.expectCursorOnLine(reference, name, line)
+  },
+)
+
 Then('the note {reference} {string} has {string}', async ({ person }, reference: string, name: string, text: string) => {
   await person.note.expectHasText(reference, name, text)
 })
@@ -59,5 +67,12 @@ Then(
   'the note {reference} {string} links to the note {reference} {string}',
   async ({ person }, reference: string, name: string, toReference: string, toName: string) => {
     await person.note.expectLinks(reference, name, toReference, toName)
+  },
+)
+
+Then(
+  'the note titled {string} does not link to the note titled {string}',
+  async ({ person }, title: string, toTitle: string) => {
+    await person.note.expectDoesNotLink('titled', title, 'titled', toTitle)
   },
 )

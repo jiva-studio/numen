@@ -4,7 +4,7 @@
  * A plex tab holds one of these and nothing else: the vault is read once for
  * the whole window, and notifies every plex when to query again.
  */
-import { ref } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 import { formatErrorMessage, getRenamedPath } from '@numen/plugin-sdk'
 import { createRequestGuard } from '@numen/ui'
 import { areNoteGraphsEqual } from '../lib/picture'
@@ -12,12 +12,16 @@ import type { NoteGraph, PathRename } from '../types'
 
 /** The one query a plex makes of the vault: the related notes of a note. */
 export interface RelatedNoteQueries {
-  listRelatedNotes(path: string): Promise<NoteGraph>
+  listRelatedNotes(path: string, depth?: 1 | 2): Promise<NoteGraph>
 }
 
 export type PlexView = ReturnType<typeof usePlexView>
 
-export function usePlexView(core: RelatedNoteQueries) {
+/**
+ * `depth` is how far the notes are read: 2 also reads the notes related to each related note.
+ * The plex reads again when it changes.
+ */
+export function usePlexView(core: RelatedNoteQueries, depth: Readonly<Ref<1 | 2>> = ref(1)) {
   const noteGraph = ref<NoteGraph | null>(null)
   /** The note this plex shows, as requested. */
   const here = ref('')
@@ -31,7 +35,7 @@ export function usePlexView(core: RelatedNoteQueries) {
   const nextPath = ref('')
 
   /**
-   * Whether the first note graph is still on its way. An empty plex and one
+   * Whether the first note graph is still on its way, so an empty plex is distinguished from one that has nothing to show.
    */
   const isLoading = ref(true)
 
@@ -43,7 +47,7 @@ export function usePlexView(core: RelatedNoteQueries) {
     const mine = guard.acquireRequest()
     nextPath.value = path
     try {
-      const answer = await core.listRelatedNotes(path)
+      const answer = await core.listRelatedNotes(path, depth.value)
       if (!mine.isCurrent) return
       if (!answer.focus.path) {
         error.value = `${path} is not in the vault`
@@ -69,7 +73,13 @@ export function usePlexView(core: RelatedNoteQueries) {
     guard.cancel()
   }
 
+  const stopWatchingDepth = watch(depth, () => {
+    const path = nextPath.value || here.value
+    if (path) go(path).catch(() => undefined)
+  })
+
   const close = () => {
+    stopWatchingDepth()
     guard.close()
   }
 

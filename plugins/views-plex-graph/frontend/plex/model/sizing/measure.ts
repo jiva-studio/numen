@@ -10,6 +10,9 @@ import { computed, onScopeDispose, shallowRef, type Ref } from 'vue'
 import type { LabelType } from '../../lib/edge'
 import type { PlexNode } from '../../../types'
 
+/** A name is set at this fraction of the size of a title. */
+const NAME_SCALE = 0.75
+
 /** The width a node's box needs, padding included. */
 type Measure = (node: PlexNode) => number
 
@@ -18,6 +21,8 @@ export interface PlexMetrics {
   readonly node: Measure
   readonly label: (label: string) => number
   readonly heading: (text: string) => number
+  readonly name: (title: string) => number
+  readonly nameSize: number
   readonly labelType: LabelType
 }
 
@@ -149,15 +154,24 @@ function createMetrics(type: PlexType, { padding, beside }: TitleRoom): PlexMetr
 
   const title = textWidths(context, type.font)
   const label = textWidths(context, type.labelFont)
+  const nameFont = getNameFont(type.font)
+  const name = textWidths(context, nameFont)
 
   const room = beside.reduce((sum, width) => sum + width + type.gap, 2 * padding)
 
   return {
     node: (node) => Math.ceil(title(node.title) + room),
     label: (words) => Math.ceil(label(words)),
-    heading: (text) => Math.ceil(label(text) + 2 * padding),
+    heading: (text) => Math.ceil(title(text) + 2 * padding),
+    name: (title) => Math.ceil(name(title)),
+    nameSize: parsePixels(nameFont),
     labelType: getLabelType(context, type.labelFont),
   }
+}
+
+function getNameFont(font: string): string {
+  const size = parsePixels(font)
+  return `${size * NAME_SCALE}px ${font.slice(font.indexOf(' ') + 1)}`
 }
 
 function getLabelType(context: CanvasRenderingContext2D, font: string): LabelType {

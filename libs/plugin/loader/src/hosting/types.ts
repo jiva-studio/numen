@@ -101,6 +101,12 @@ export type SlotCommandFinder = (
   target: CommandTarget | undefined,
 ) => SlotCommandLook | undefined
 
+/** Where a note opens: the pane it opens in, and the line it opens on. */
+export interface EditorPlacement {
+  readonly where?: FilePlacement | undefined
+  readonly line?: number | undefined
+}
+
 /**
  * target is the target of the window, which the plugins it activates read as theirs. A window that opens
  * no tab for a plugin leaves out openTab. getSlotEntries reads the slot entries from the manifests of the
@@ -137,11 +143,7 @@ export interface PluginHostDeps {
   readonly getReaderExtensions?: (pluginId: string, readerId: string) => readonly string[]
   readonly registerEditor?: (
     type: string,
-    open: (
-      path: string,
-      title?: string,
-      options?: FilePlacement | { readonly where?: FilePlacement | undefined },
-    ) => void,
+    open: (path: string, title?: string, options?: FilePlacement | EditorPlacement | null) => void,
   ) => (() => void) | void
   readonly openTab?: (kind: string, at?: string) => Promise<string>
   readonly openTabAdjacent?: (kind: string, at?: string) => Promise<string>

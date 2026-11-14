@@ -1,6 +1,6 @@
 /**
  * Every relation a node can take, declared once. Everything that varies with a
- * relation — directions, wording, color — is derived from this table.
+ * relation — side, lean and wording — is derived from this table.
  */
 
 import type { PlexRelation } from '../../types'

@@ -30,6 +30,7 @@ interface NoteGraphWire {
     readonly tabKind?: string
     readonly relation: NoteRelationCode
     readonly direction?: NoteLinkDirectionCode
+    readonly relatedTo?: string
   }[]
   readonly connections: readonly ConnectionWire[]
 }
@@ -112,6 +113,7 @@ export const mapNoteGraph = (answer: NoteGraphWire): NoteGraph => ({
         ...(one.tabKind ? { tabKind: one.tabKind } : {}),
         relation,
         ...(direction === null ? {} : { direction }),
+        ...(one.relatedTo ? { relatedTo: one.relatedTo } : {}),
       },
     ]
   }),

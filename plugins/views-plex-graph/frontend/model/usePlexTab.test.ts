@@ -23,6 +23,7 @@ import type { NoteHeading, NoteRelation, PathRename } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
 import { getDefaultLook, readLook } from './look'
+import { getDefaultNames } from './names'
 
 /** The icons the window draws a declared command and a note of a declared type with. */
 const SHARE_ICON: Component = { name: 'ShareIcon', render: () => null }
@@ -68,6 +69,7 @@ const createDeps = (editor: PlexTabDeps['editor'], overrides: DepsOverrides = {}
   editor,
   tabId: 'plex:1',
   look: getDefaultLook(),
+  names: getDefaultNames(),
   creatable: ['parent', 'child', 'jump'],
   window: {
     isReady: ref(true),
@@ -122,6 +124,7 @@ const tab = (
     editor: vault.editor,
     tabId: 'plex:1',
     look: getDefaultLook(),
+    names: getDefaultNames(),
     creatable: ['parent', 'child', 'jump'],
     window: {
       isReady: ref(true),
@@ -685,7 +688,7 @@ describe('the headings a node nests', () => {
     expect(one.requestedHeadings).toStrictEqual([])
   })
 
-  it('are hung again once the setting is turned back on', async () => {
+  it('are placed again once the setting is turned back on', async () => {
     // Turning is the only user action; nothing else requests them again.
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])

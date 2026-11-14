@@ -120,6 +120,7 @@ function onDone() {
         v-for="(row, index) in rows"
         :key="index"
         :label="row.side.label"
+        :author="row.key === 'first' ? props.request.nodeA.title : props.request.nodeB.title"
         :direction="row.direction"
         :next-direction="getNextDirection(row.direction, row.key, rows.length)"
         :first-title="props.request.nodeA.title"

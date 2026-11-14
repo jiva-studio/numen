@@ -15,7 +15,7 @@ import (
 // found partly in what it points at and partly in what points at it. Siblings
 // are written nowhere: they are the other children of a shared parent.
 type ListRelatedNotes struct {
-	links noteport.LinkQueries
+	links noteport.LinkBatches
 	notes RefQueries
 }
 
@@ -31,45 +31,46 @@ type RefQueries interface {
 // NewListRelatedNotes builds the related notes of one note: where its links lead,
 // and what is needed to display each linked note.
 //
-// The notes are queried once, after every link has been followed.
-func NewListRelatedNotes(links noteport.LinkQueries, notes RefQueries) ListRelatedNotes {
+// The links are read in one call per step of the walk, and the notes are queried
+// once, after every link has been followed.
+func NewListRelatedNotes(links noteport.LinkBatches, notes RefQueries) ListRelatedNotes {
 	return ListRelatedNotes{links: links, notes: notes}
 }
 
-func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteGraph, error) {
+// Execute gathers the notes related to the note at the path. At DepthFar it also gathers,
+// for each related note (a sibling included), every note that one is related to, the focus
+// and the owner itself excepted: a note already related to the focus is a name under the
+// owner too, and a note may be a name under several owners. The names come in the order of
+// the owners, never as siblings. A name stays only while its owner stays, because the index
+// may not know a note a link resolved to. The notes are queried once for every path, the
+// focus first and each path once.
+func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path string, depth domain.RelationDepth) (domain.NoteGraph, error) {
 	cache := &linkCache{queries: u.links, vault: v}
 	center, err := u.getRelatedNotes(ctx, cache, path)
 	if err != nil {
 		return domain.NoteGraph{}, err
 	}
-
 	if err := u.addSiblings(ctx, cache, center); err != nil {
 		return domain.NoteGraph{}, err
 	}
 	center.remove(path)
 
 	related := center.getAll()
-	paths := make([]string, 0, len(related)+1)
-	paths = append(paths, path)
-	for _, s := range related {
-		paths = append(paths, s.Path)
+	var relatedToRelated []domain.RelatedNote
+	if depth == domain.DepthFar {
+		relatedToRelated, err = u.getRelatedToRelated(ctx, cache, path, related)
+		if err != nil {
+			return domain.NoteGraph{}, err
+		}
 	}
-	notes, err := u.notes.GetNotes(ctx, v.ID, paths)
+
+	notes, err := u.notes.GetNotes(ctx, v.ID, getPaths(path, related, relatedToRelated))
 	if err != nil {
 		return domain.NoteGraph{}, err
 	}
-
-	focus, recognized := notes[path]
-	if !recognized {
-		return domain.NoteGraph{}, nil
-	}
-	out := domain.NoteGraph{Focus: focus}
-	visible := []string{path}
-	for _, s := range related {
-		if note, recognizedVal := notes[s.Path]; recognizedVal {
-			out.AddRelatedNote(note, s)
-			visible = append(visible, s.Path)
-		}
+	out, visible := createGraph(notes, path, related, relatedToRelated)
+	if len(visible) == 0 {
+		return out, nil
 	}
 	out.Connections, err = getConnections(ctx, cache, visible)
 	if err != nil {
@@ -78,12 +79,75 @@ func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, path stri
 	return out, nil
 }
 
-func (u ListRelatedNotes) addSiblings(ctx context.Context, cache *linkCache, targetSet *relatedNoteSet) error {
-	for _, parent := range targetSet.getAll() {
-		if parent.Relation != domain.RelationParent {
-			continue
+func getPaths(focus string, related, relatedToRelated []domain.RelatedNote) []string {
+	paths := []string{focus}
+	visited := map[string]bool{focus: true}
+	for _, n := range slices.Concat(related, relatedToRelated) {
+		if !visited[n.Path] {
+			visited[n.Path] = true
+			paths = append(paths, n.Path)
 		}
-		theirs, err := u.getRelatedNotes(ctx, cache, parent.Path)
+	}
+	return paths
+}
+
+func createGraph(
+	notes map[string]domain.NoteRef, path string, related, relatedToRelated []domain.RelatedNote,
+) (domain.NoteGraph, []string) {
+	focus, ok := notes[path]
+	if !ok {
+		return domain.NoteGraph{}, nil
+	}
+	out := domain.NoteGraph{Focus: focus}
+	visible := []string{path}
+	for _, s := range related {
+		if note, known := notes[s.Path]; known {
+			out.AddRelatedNote(note, s)
+			visible = append(visible, s.Path)
+		}
+	}
+	for _, item := range relatedToRelated {
+		note, known := notes[item.Path]
+		if _, hasOwner := notes[item.RelatedTo]; known && hasOwner {
+			out.AddRelatedNote(note, item)
+		}
+	}
+	return out, visible
+}
+
+func (u ListRelatedNotes) getRelatedToRelated(ctx context.Context, cache *linkCache, focus string, related []domain.RelatedNote) ([]domain.RelatedNote, error) {
+	if err := cache.loadBoth(ctx, getPaths(focus, related, nil)); err != nil {
+		return nil, err
+	}
+	var out []domain.RelatedNote
+	for _, owner := range related {
+		found, err := u.getRelatedNotes(ctx, cache, owner.Path)
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range found.getAll() {
+			if item.Path == focus || item.Path == owner.Path {
+				continue
+			}
+			item.RelatedTo = owner.Path
+			out = append(out, item)
+		}
+	}
+	return out, nil
+}
+
+func (u ListRelatedNotes) addSiblings(ctx context.Context, cache *linkCache, targetSet *relatedNoteSet) error {
+	var parents []string
+	for _, n := range targetSet.getAll() {
+		if n.Relation == domain.RelationParent {
+			parents = append(parents, n.Path)
+		}
+	}
+	if err := cache.loadBoth(ctx, parents); err != nil {
+		return err
+	}
+	for _, parent := range parents {
+		theirs, err := u.getRelatedNotes(ctx, cache, parent)
 		if err != nil {
 			return err
 		}
@@ -118,12 +182,12 @@ func (u ListRelatedNotes) getRelatedNotes(ctx context.Context, cache *linkCache,
 			found.add(domain.RelatedNote{
 				NoteRef:   domain.NoteRef{Path: l.To},
 				Relation:  relation,
-				Direction: getDirection(relation, domain.DirectionOutgoing),
+				Direction: domain.DirectionOutgoing,
 			})
 		}
 	}
 
-	backlinks, err := u.links.GetBacklinks(ctx, cache.vault.ID, path)
+	backlinks, err := cache.getBacklinks(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +201,7 @@ func (u ListRelatedNotes) getRelatedNotes(ctx context.Context, cache *linkCache,
 		found.add(domain.RelatedNote{
 			NoteRef:   domain.NoteRef{Path: l.From},
 			Relation:  relation,
-			Direction: getDirection(relation, domain.DirectionIncoming),
+			Direction: domain.DirectionIncoming,
 		})
 	}
 	return found, nil
@@ -159,13 +223,6 @@ func getRelation(role domain.LinkRole) (domain.Relation, bool) {
 	}
 }
 
-func getDirection(relation domain.Relation, direction domain.LinkDirection) domain.LinkDirection {
-	if relation != domain.RelationReference {
-		return ""
-	}
-	return direction
-}
-
 func getOppositeRole(role domain.LinkRole) domain.LinkRole {
 	switch role {
 	case domain.RoleParent:
@@ -181,12 +238,16 @@ func getOppositeRole(role domain.LinkRole) domain.LinkRole {
 // declaration order; then the links that point at it, in query order; then the
 // siblings of each parent. The order is part of the result, because it is the
 // drawing order, and it is total, so the same vault always gives the same layout.
+// Only a reference keeps the direction it was found with.
 type relatedNoteSet struct {
 	order      []domain.RelatedNote
 	targetPath map[string]int
 }
 
 func (s *relatedNoteSet) add(related domain.RelatedNote) {
+	if related.Relation != domain.RelationReference {
+		related.Direction = ""
+	}
 	if s.targetPath == nil {
 		s.targetPath = map[string]int{}
 	}
@@ -196,13 +257,13 @@ func (s *relatedNoteSet) add(related domain.RelatedNote) {
 		s.order = append(s.order, related)
 		return
 	}
-	kept := s.order[i]
-	if domain.GetRelationRank(related.Relation) < domain.GetRelationRank(kept.Relation) {
+	current := s.order[i]
+	if domain.GetRelationRank(related.Relation) < domain.GetRelationRank(current.Relation) {
 		s.order[i] = related
 		return
 	}
-	if kept.Relation == domain.RelationReference && related.Relation == domain.RelationReference &&
-		kept.Direction != related.Direction {
+	if current.Relation == domain.RelationReference && related.Relation == domain.RelationReference &&
+		current.Direction != related.Direction {
 		s.order[i].Direction = domain.DirectionBoth
 	}
 }

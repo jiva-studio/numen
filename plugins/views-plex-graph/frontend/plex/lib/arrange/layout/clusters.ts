@@ -3,7 +3,14 @@ import { RELATION_NAMES, RELATIONS, type Lean } from '../../relation'
 import type { PlacedNode } from '../../node'
 import type { Direction, PlexOptions } from '../options'
 import { findFreeSpot, SpotIndex, type Spot, type Vector } from './freeSpot'
-import type { NodesByRelation, Placement, PlacementContext } from './placement'
+import type { Size } from '../options'
+import {
+  getFootprint,
+  getPillCenterY,
+  type NodesByRelation,
+  type Placement,
+  type PlacementContext,
+} from './placement'
 import type { PlexNode, PlexRelation } from '../../../../types'
 
 /** How far a leaning group tilts across its axis, as a fraction of the way it grows. */
@@ -56,8 +63,8 @@ interface MiddleRequest {
   readonly cell: { readonly width: number; readonly height: number }
 }
 
-/** The middle of a group sits as far out from its start as half the patch is deep. */
-export function getClusterMiddle(start: Vector, direction: Vector, request: MiddleRequest): Vector {
+function getClusterMiddle(start: Vector, direction: Vector, request: MiddleRequest): Vector {
+  // The middle of a group sits as far out from its start as half the patch is deep.
   const { size, cell } = request
   const depth =
     Math.max(0, (Math.sqrt(size) - 1) / 2) *
@@ -65,14 +72,81 @@ export function getClusterMiddle(start: Vector, direction: Vector, request: Midd
   return { x: start.x + direction.x * depth, y: start.y + direction.y * depth }
 }
 
+/** What every note of one relation shares: the way the group grows, where it begins, and how far its first note reaches. */
+interface GroupPlan {
+  readonly members: readonly PlexNode[]
+  readonly direction: Vector
+  readonly anchor: Vector
+  readonly firstReach: number
+}
+
+const getReach = (direction: Vector, box: { width: number; height: number }): number =>
+  Math.abs(direction.x) * (box.width / 2) + Math.abs(direction.y) * (box.height / 2)
+
+function createGroupPlans(
+  nodesByRelation: NodesByRelation,
+  focus: PlacedNode,
+  context: PlacementContext,
+  footprintOf: (node: PlexNode) => Size,
+): ReadonlyMap<PlexRelation, GroupPlan> {
+  const plans = new Map<PlexRelation, GroupPlan>()
+  for (const relation of RELATION_NAMES) {
+    const members = nodesByRelation[relation] ?? []
+    const first = members[0]
+    if (!first) continue
+    const direction = getClusterDirection(
+      context.options.direction[relation],
+      RELATIONS[relation].lean,
+    )
+    plans.set(relation, {
+      members,
+      direction,
+      anchor: getAnchor(direction, focus, context.options),
+      firstReach: getReach(direction, footprintOf(first)),
+    })
+  }
+  return plans
+}
+
+function createRequest(plan: GroupPlan, size: Size, context: PlacementContext) {
+  const { gap, lineGap } = context.options
+  const { direction, anchor } = plan
+  const reach = Math.max(getReach(direction, size), plan.firstReach)
+  const start = { x: anchor.x + direction.x * reach, y: anchor.y + direction.y * reach }
+  // The middle of a group is counted in footprints: the names of a note fill the gap under its pill, so a note without names packs closer than one with.
+  const cell = { width: size.width + gap, height: size.height + lineGap }
+  const middle = getClusterMiddle(start, direction, { size: plan.members.length, cell })
+  return { start, middle, direction, size, gaps: { gap, lineGap } }
+}
+
+function getPlacedNode(
+  node: PlexNode,
+  spot: Spot,
+  context: PlacementContext,
+  order: number,
+): PlacedNode {
+  return {
+    ...node,
+    x: spot.x,
+    y: getPillCenterY(spot.y, context.room(node)),
+    width: context.width(node),
+    height: context.options.nodeSize.height,
+    order,
+    opacity: 1,
+  }
+}
+
 function placeClusters(
   nodesByRelation: NodesByRelation,
   focus: PlacedNode,
   context: PlacementContext,
 ): PlacedNode[] {
-  const { options, width, shouldStop } = context
-  const gaps = { gap: options.gap, lineGap: options.lineGap }
-  const { height } = options.nodeSize
+  const footprintOf = (node: PlexNode) =>
+    getFootprint(
+      { width: context.width(node), height: context.options.nodeSize.height },
+      context.room(node),
+    )
+  const plans = createGroupPlans(nodesByRelation, focus, context, footprintOf)
   const index = new SpotIndex([
     { x: focus.x, y: focus.y, width: focus.width, height: focus.height },
   ])
@@ -81,34 +155,18 @@ function placeClusters(
 
   for (const node of takeTurns(nodesByRelation)) {
     const relation = node.relation as PlexRelation
-    const members = nodesByRelation[relation] ?? []
+    const plan = plans.get(relation)
+    if (!plan) continue
     const group = groups.get(relation) ?? []
     groups.set(relation, group)
 
-    const size = { width: width(node), height }
-    const direction = getClusterDirection(options.direction[relation], RELATIONS[relation].lean)
-    const anchor = getAnchor(direction, focus, options)
-    const getReach = (boxWidth: number) =>
-      Math.abs(direction.x) * (boxWidth / 2) + Math.abs(direction.y) * (height / 2)
-    const reach = Math.max(getReach(size.width), getReach(width(members[0] ?? node)))
-    const start = { x: anchor.x + direction.x * reach, y: anchor.y + direction.y * reach }
-    const cell = { width: size.width + gaps.gap, height: size.height + gaps.lineGap }
-    const middle = getClusterMiddle(start, direction, { size: members.length, cell })
-
-    const spot = findFreeSpot(index, { start, middle, direction, size, group, gaps })
+    const request = createRequest(plan, footprintOf(node), context)
+    const spot = findFreeSpot(index, { ...request, group, fits: context.fits })
     index.add(spot)
+    const box = getPlacedNode(node, spot, context, group.length)
     group.push(spot)
-    const box: PlacedNode = {
-      ...node,
-      x: spot.x,
-      y: spot.y,
-      width: spot.width,
-      height: spot.height,
-      order: members.indexOf(node),
-      opacity: 1,
-    }
     placed.set(node.id, box)
-    if (shouldStop?.(box)) break
+    if (context.shouldStop?.(box)) break
   }
 
   return RELATION_NAMES.flatMap((relation) =>

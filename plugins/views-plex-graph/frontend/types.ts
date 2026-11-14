@@ -55,7 +55,7 @@ export type { PathRename }
 
 /** The one query a plex makes of the vault: the related notes of a note. */
 export interface RelatedNoteQueries {
-  listRelatedNotes(path: string): Promise<NoteGraph>
+  listRelatedNotes(path: string, depth?: 1 | 2): Promise<NoteGraph>
 }
 
 /** Position of the menu and the node it was requested on. */
@@ -152,10 +152,17 @@ export interface PlexNotesDeps {
   searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
 }
 
+/** Whether names are shown and how many a note shows, as the plugin settings hold them. */
+export interface PlexNamesSettings {
+  readonly showNames: Readonly<Ref<boolean>>
+  readonly namesPerNote: Readonly<Ref<number>>
+}
+
 /** How the plex is drawn, as the plugin settings hold it, followed as they change. */
 export interface PlexLook {
   readonly references: Readonly<Ref<ReferenceMode>>
   readonly showPills: Readonly<Ref<boolean>>
+  readonly highlightLinks: Readonly<Ref<boolean>>
   readonly pillPaddingSides: Readonly<Ref<number>>
   readonly pillPaddingEnds: Readonly<Ref<number>>
   readonly focusSize: Readonly<Ref<number>>
@@ -164,6 +171,8 @@ export interface PlexLook {
   readonly outlineThickness: Readonly<Ref<number>>
   readonly lineCurvature: Readonly<Ref<number>>
   readonly noteRoom: Readonly<Ref<number>>
+  readonly namesOpacity: Readonly<Ref<number>>
+  readonly focusedNamesOpacity: Readonly<Ref<number>>
 }
 
 /** Dependencies for plex tab state. */
@@ -175,6 +184,7 @@ export interface PlexTabDeps {
   readonly window: PlexWindowDeps
   readonly menu: PlexMenuDeps
   readonly notes: PlexNotesDeps
+  readonly names: PlexNamesSettings
   readonly look: PlexLook
 }
 
@@ -184,6 +194,7 @@ export interface PlexViewState {
   readonly empty: ComputedRef<boolean>
   readonly dragged: ComputedRef<readonly string[]>
   readonly creatable: readonly PlexRelation[]
+  readonly names: PlexNamesState
 }
 
 export interface PlexMenuState {
@@ -195,6 +206,16 @@ export interface PlexMenuState {
   openMenu(request: MenuRequest): void
   dismiss(): void
   chooseMenuItem(id: string): void
+}
+
+/**
+ * The names of the notes related to the drawn notes. A node with none, and every node while names are off, has none;
+ * choosing a name moves the focus to the note it stands for.
+ */
+export interface PlexNamesState {
+  readonly showNames: Readonly<Ref<boolean>>
+  getNames(node: string): PlexNames
+  choose(name: string): void
 }
 
 export interface PlexHeadingsState {
@@ -314,4 +335,16 @@ export interface PlexHeading {
   readonly id: string
   readonly text: string
   readonly level: number
+}
+
+/** The name of a note shown beside a related note. The id is the caller's, returned unchanged when the name is chosen. */
+export interface PlexName {
+  readonly id: string
+  readonly title: string
+}
+
+/** The names set over a related note, and those set under it. */
+export interface PlexNames {
+  readonly above: PlexName[]
+  readonly below: PlexName[]
 }

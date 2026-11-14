@@ -23,7 +23,7 @@ func relatedNotesOf(t *testing.T, files map[string]string, path string) domain.N
 	t.Helper()
 	db, v := newIndexedVault(t, files)
 	n, err := query.NewListRelatedNotes(db.NoteQueries(), db.NoteQueries()).
-		Execute(t.Context(), v, path)
+		Execute(t.Context(), v, path, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +305,7 @@ func TestRelatedNotesStayInsideTheirVault(t *testing.T) {
 	}))
 
 	n, err := query.NewListRelatedNotes(db.NoteQueries(), db.NoteQueries()).
-		Execute(t.Context(), here, "Area.md")
+		Execute(t.Context(), here, "Area.md", 1)
 	if err != nil {
 		t.Fatal(err)
 	}

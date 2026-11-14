@@ -150,7 +150,11 @@ func (h *Outline) ListRelatedNotes(
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.getRelatedNotes.Execute(ctx, showing, r.Msg.GetPath())
+	depth, err := domain.ParseRelationDepth(r.Msg.GetDepth())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	found, err := h.getRelatedNotes.Execute(ctx, showing, r.Msg.GetPath(), depth)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -166,6 +170,7 @@ func (h *Outline) ListRelatedNotes(
 			Note:      convertNoteToWire(related.NoteRef),
 			Relation:  convertRelationToWire(related.Relation),
 			Direction: convertDirectionToWire(related.Direction),
+			RelatedTo: related.RelatedTo,
 			Type:      convertNoteTypeToWire(types[related.Path]),
 			TabKind:   tabKinds[related.Path],
 		})

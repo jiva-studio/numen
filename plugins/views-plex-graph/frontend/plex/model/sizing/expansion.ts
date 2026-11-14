@@ -19,12 +19,12 @@ export const EXPANSION_DELAY = 500
  */
 export const EXPANSION_DURATION = 280
 
-export interface WideBox {
+export interface ExpandedBox {
   readonly width: number
   readonly offset: number
 }
 
-export interface WideBoxBounds {
+export interface ExpandedBoxBounds {
   readonly viewport: Size
   readonly margin: number
 }
@@ -34,7 +34,11 @@ export interface WideBoxBounds {
  * It grows about its own midpoint, and shifts back inside the window where the midpoint leaves no space to grow.
  * Returns null when the box already holds the title or the window cannot fit a larger box.
  */
-export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds): WideBox | null {
+export function getExpandedBox(
+  node: PlacedNode,
+  room: number,
+  bounds: ExpandedBoxBounds,
+): ExpandedBox | null {
   const { viewport, margin } = bounds
   const width = Math.min(room, viewport.width - 2 * margin)
   if (width <= node.width) return null
@@ -44,7 +48,7 @@ export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds
   return { width, offset: middle - node.x }
 }
 
-function interpolateBox(node: PlacedNode, expanded: WideBox | null, open: number): WideBox {
+function interpolateBox(node: PlacedNode, expanded: ExpandedBox | null, open: number): ExpandedBox {
   if (!expanded) return { width: node.width, offset: 0 }
   return {
     width: lerp(node.width, expanded.width, open),
@@ -117,9 +121,11 @@ export function useExpansion(
 
 export interface OpenBoxOptions {
   readonly node: () => PlacedNode
-  readonly wide: () => WideBox | null
+  readonly expanded: () => ExpandedBox | null
   readonly on: () => string | null
   readonly delay: () => number
+  readonly hasPill?: (() => boolean) | undefined
+  readonly viewportWidth?: (() => number | undefined) | undefined
   readonly clock?: Clock | undefined
 }
 
@@ -129,13 +135,22 @@ export interface OpenBoxOptions {
  * `on` names what the attention is on, and nothing when it is on none.
  */
 export function useOpenBox(options: OpenBoxOptions) {
-  const { node, wide, on, delay, clock = browserClock } = options
+  const {
+    node,
+    expanded,
+    on,
+    delay,
+    hasPill = () => true,
+    viewportWidth,
+    clock = browserClock,
+  } = options
   const open = useExpansion(on, delay, clock)
-  const box = computed(() => interpolateBox(node(), wide(), open.value))
+  const box = computed(() => interpolateBox(node(), expanded(), open.value))
 
   const handle = computed(() => {
-    const pos = getHandle({ ...node(), width: box.value.width })
-    return { x: pos.x + box.value.offset, y: pos.y }
+    const { offset, width } = box.value
+    const pos = getHandle({ ...node(), x: node().x + offset, width }, hasPill(), viewportWidth?.())
+    return { x: pos.x + offset, y: pos.y }
   })
 
   return { open, box, handle }

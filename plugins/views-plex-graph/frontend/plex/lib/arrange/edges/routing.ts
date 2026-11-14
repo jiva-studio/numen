@@ -10,6 +10,7 @@ import {
   type PlacedEdge,
 } from '../../edge'
 import type { PlacedNode, Position } from '../../node'
+import { cutToFit } from '../../cutToFit'
 import { DEFAULT_OPTIONS, isVertical, type PlexOptions, type RoutingOptions } from '../options'
 import type { EdgeLabel, PlexEdge, PlexNodeRelation } from '../../../../types'
 
@@ -49,9 +50,6 @@ export function createRouting(
     },
   }
 }
-
-/** The one character a cut title ends in. */
-const ELLIPSIS = '…'
 
 /** The middle of a line, where a title with no end is set until something is in the way. */
 export const MIDDLE = 0.5
@@ -150,27 +148,6 @@ export interface TitleSetting {
   readonly side: EdgeSide
   readonly shift: number
   readonly rise: number
-}
-
-/**
- * The longest prefix of the label that fits the curve, including the ellipsis.
- * The prefix is found by bisection, and a curve with no space for any text
- * returns the ellipsis alone.
- */
-export function cutToFit(label: string, room: number, width: (label: string) => number): string {
-  if (width(label) <= room) return label
-
-  const letters = [...label]
-  const truncateTo = (count: number) => `${letters.slice(0, count).join('').trimEnd()}${ELLIPSIS}`
-
-  let fits = 0
-  let overCount = letters.length
-  while (fits + 1 < overCount) {
-    const middle = Math.floor((fits + overCount) / 2)
-    if (width(truncateTo(middle)) <= room) fits = middle
-    else overCount = middle
-  }
-  return truncateTo(fits)
 }
 
 function getEdgeAnchor(node: PlacedNode, side: 'top' | 'bottom' | 'left' | 'right'): Position {

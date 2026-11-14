@@ -81,6 +81,12 @@ export class NoteDriver {
     await expect(this.getEditor(notePath).panel()).toContainText(text)
   }
 
+  /** The editor is built after the tab opens and puts the cursor on the line once it is: the line is waited for. */
+  async expectCursorOnLine(reference: string, name: string, line: string): Promise<void> {
+    const editor = this.getEditor(await this.scenario.getPath(reference, name))
+    await expect.poll(() => editor.readCursorLine(), { message: `the cursor of the note "${name}" is not on the line "${line}"` }).toBe(line)
+  }
+
   async expectDoesNotHaveText(reference: string, name: string, text: string): Promise<void> {
     await expect(this.getEditor(await this.scenario.getPath(reference, name)).panel()).not.toContainText(text)
   }
@@ -90,15 +96,20 @@ export class NoteDriver {
   }
 
   async expectLinks(reference: string, name: string, toReference: string, toName: string): Promise<void> {
+    await expect.poll(() => this.isLinked(reference, name, toReference, toName)).toBe(true)
+  }
+
+  async expectDoesNotLink(reference: string, name: string, toReference: string, toName: string): Promise<void> {
+    await expect.poll(() => this.isLinked(reference, name, toReference, toName)).toBe(false)
+  }
+
+  private async isLinked(reference: string, name: string, toReference: string, toName: string): Promise<boolean> {
     const from = await this.scenario.getPath(reference, name)
     const to = await this.scenario.getPath(toReference, toName)
     const { request } = this.scenario.page
-    const isLinked = async (): Promise<boolean> => {
-      if ((await listBacklinks(request, to)).includes(from)) return true
-      const sides = await getConnectionSides(request, from, to)
-      return sides.first || sides.second
-    }
-    await expect.poll(isLinked).toBe(true)
+    if ((await listBacklinks(request, to)).includes(from)) return true
+    const sides = await getConnectionSides(request, from, to)
+    return sides.first || sides.second
   }
 
 }

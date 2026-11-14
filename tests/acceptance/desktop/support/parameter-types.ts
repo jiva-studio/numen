@@ -1,5 +1,5 @@
 import { defineParameterType } from 'playwright-bdd'
-import { parsePlace, parseTabKind, parseTabRef, parseTarget, parseVaultName } from '../drivers/rules.js'
+import { parseArrow, parseExtent, parsePlace, parseTabKind, parseTabRef, parseTarget, parseVaultName } from '../drivers/rules.js'
 
 defineParameterType({
   name: 'actor',
@@ -51,7 +51,7 @@ defineParameterType({
 
 defineParameterType({
   name: 'relation',
-  regexp: /focus|parent|child/,
+  regexp: /focus|parent|child|jump|reference|sibling/,
   transformer: (relation: string) => relation,
 })
 
@@ -83,4 +83,34 @@ defineParameterType({
   name: 'tabref',
   regexp: /(?:[A-Za-z]+ ){0,2}tab (?:at|titled|for the web address) "[^"]+"/,
   transformer: (tab: string) => parseTabRef(tab),
+})
+
+defineParameterType({
+  name: 'display',
+  regexp: /shows|does not show/,
+  transformer: (display: string) => display === 'shows',
+})
+
+defineParameterType({
+  name: 'destination',
+  regexp: /the note|a new note/,
+  transformer: (destination: string) => destination === 'a new note',
+})
+
+defineParameterType({
+  name: 'extent',
+  regexp: /from "[^"]+" to "[^"]+"|between "[^"]+" and "[^"]+"/,
+  transformer: (extent: string) => parseExtent(extent),
+})
+
+defineParameterType({
+  name: 'direction',
+  regexp: /up|down|left/,
+  transformer: (direction: string) => direction,
+})
+
+defineParameterType({
+  name: 'arrow',
+  regexp: / with an arrow to "[^"]+"| without an arrow|/,
+  transformer: (arrow: string) => parseArrow(arrow),
 })

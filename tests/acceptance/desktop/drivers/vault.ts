@@ -27,7 +27,8 @@ import {
   parsePresets,
   readCardModelFields,
 } from './cards.js'
-import { assertEntry, getStem, parseColumn, readLinkAddress } from './rules.js'
+import { addLinks, getLinkTitle, readLinks, type NoteLink } from './note-links.js'
+import { assertEntry, DEFAULT_VAULT, getStem, parseColumn, readLinkAddress } from './rules.js'
 import { assertPathsAreFree, parseVaultChecks, parseVaultFiles, type VaultWrite } from './vault-files.js'
 import type { Scenario } from './scenario.js'
 
@@ -72,7 +73,10 @@ export class VaultDriver {
   }
 
   addPresets(vault: string, rows: string[][]): void {
-    for (const preset of parsePresets(rows)) this.writeNewCards(vault, preset.title, createPresetText(preset.title, preset.settings))
+    for (const preset of parsePresets(rows)) {
+      this.writeNewCards(vault, preset.title, createPresetText(preset.title, preset.settings))
+      this.scenario.rememberNote(preset.title, getCardFile(preset.title))
+    }
   }
 
   /** Makes the window show another vault of the world, over the calls of the vault list the palette command Open vault makes. */
@@ -106,8 +110,46 @@ export class VaultDriver {
       .toStrictEqual([...names].sort())
   }
 
-  /** The vault holds a note for each address, and no other link note. */
+  /** The links of the notes written before the application starts: each note of the column from writes its links. */
+  addLinks(rows: readonly (readonly string[])[]): void {
+    const world = this.scenario.getWorld()
+    const vault = this.scenario.getVault(DEFAULT_VAULT)
+    const links = parseLinkRows(rows, ['from', 'to', 'role'], ['description'])
+    for (const from of new Set(links.map((link) => link.from))) {
+      const notePath = this.scenario.getNotePath(from)
+      const text = world.readText(vault, notePath)
+      if (text === undefined) throw new Error(`no note is titled "${from}" in the vault: write it before its links`)
+      const noteLinks: NoteLink[] = links
+        .filter((link) => link.from === from)
+        .map((link) => ({ to: `[[${this.scenario.getNotePath(link.to).replace(/\.md$/, '')}]]`, role: link.role, label: link.description }))
+      world.writeText(vault, notePath, addLinks(text, noteLinks))
+    }
+  }
+
+  /** The vault holds the links of the table and no other: a table of addresses lists link notes, a table of notes lists the links they write. */
   async expectLinks(vault: string, rows: readonly (readonly string[])[]): Promise<void> {
+    if (rows[0]?.[0] === 'address') await this.expectLinkNotes(vault, rows)
+    else await this.expectNoteLinks(vault, rows)
+  }
+
+  private async expectNoteLinks(vault: string, rows: readonly (readonly string[])[]): Promise<void> {
+    const wanted = parseLinkRows(rows, ['from', 'to', 'role'], ['description'])
+    const hasDescription = rows[0]?.includes('description') === true
+    const world = this.scenario.getWorld()
+    const name = this.scenario.getVault(vault)
+    const format = (from: string, to: string, role: string, description: string): string =>
+      [from, to, role, hasDescription ? description : ''].join(' | ')
+    await expect
+      .poll(() =>
+        world
+          .listNoteFiles(name)
+          .flatMap((note) => readLinks(note.text).map((link) => format(getStem(note.path), getLinkTitle(link.to), link.role, link.label)))
+          .sort(),
+      )
+      .toStrictEqual(wanted.map((link) => format(link.from, link.to, link.role, link.description)).sort())
+  }
+
+  private async expectLinkNotes(vault: string, rows: readonly (readonly string[])[]): Promise<void> {
     const addresses = parseColumn(rows, 'address')
     const world = this.scenario.getWorld()
     const name = this.scenario.getVault(vault)
@@ -223,4 +265,21 @@ export class VaultDriver {
     const parent = entryPath.split('/').slice(0, -1).join('/')
     return (await listFiles(this.scenario.page.request, parent)).map((one) => one.path)
   }
+}
+
+interface LinkRow {
+  readonly from: string
+  readonly to: string
+  readonly role: string
+  readonly description: string
+}
+
+const parseLinkRows = (rows: readonly (readonly string[])[], required: readonly string[], optional: readonly string[]): LinkRow[] => {
+  const [header = [], ...body] = rows
+  const unknown = header.filter((column) => ![...required, ...optional].includes(column))
+  if (unknown.length > 0 || required.some((column) => !header.includes(column))) {
+    throw new Error(`the table must have the header "| ${required.join(' | ')} |", and may add "${optional.join(', ')}"`)
+  }
+  const cell = (row: readonly string[], column: string): string => row[header.indexOf(column)] ?? ''
+  return body.map((row) => ({ from: cell(row, 'from'), to: cell(row, 'to'), role: cell(row, 'role'), description: cell(row, 'description') }))
 }

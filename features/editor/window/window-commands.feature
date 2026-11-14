@@ -39,7 +39,7 @@ Feature: Window commands
     Scenario: The plex is opened with Ctrl+Shift+X
       Given the person opens the note titled "Entropy"
       When the person presses "Ctrl+Shift+X"
-      Then the plex has the focus note titled "Entropy"
+      Then the plex shows the focus note titled "Entropy"
 
     Scenario: The active tab is closed with Ctrl+Shift+W
       Given the vault has the following:

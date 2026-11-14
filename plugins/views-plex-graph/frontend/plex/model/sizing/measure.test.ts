@@ -422,7 +422,7 @@ describe('what a heading needs', () => {
     expect(widths()!.heading('abc')).toBe(3 * PER_CHARACTER + 20)
   })
 
-  it('is measured in the size a label is set at, in whole pixels', () => {
+  it('is measured in the size a title is set at, in whole pixels', () => {
     const { context } = stubCanvas()
     stubStyles()
     setTheme()
@@ -430,7 +430,15 @@ describe('what a heading needs', () => {
     const measures = widths()!
 
     expect(measures.heading('abc')).toBe(Math.ceil(3 * 6.4 + 20))
-    expect(context.font).toBe('10px Test Sans, sans-serif')
+    expect(context.font).toBe('13px Test Sans, sans-serif')
+  })
+
+  it('follows the title size and not the size of a label', () => {
+    const { context } = stubCanvas()
+    stubStyles()
+    setTheme({ '--numen-edge-label-size': '20px', '--numen-font-size': '26px' })
+    widths()!.heading('abc')
+    expect(context.font).toBe('26px Test Sans, sans-serif')
   })
 })
 

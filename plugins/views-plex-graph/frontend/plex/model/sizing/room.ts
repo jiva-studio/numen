@@ -7,7 +7,7 @@
  * already worked out.
  */
 import { computed, onMounted, onScopeDispose, ref, type Ref, type ShallowRef } from 'vue'
-import { getWideBox } from './expansion'
+import { getExpandedBox } from './expansion'
 import {
   useTitleWidths,
   type PlexMetrics,
@@ -22,7 +22,7 @@ import type { Viewport } from '@numen/ui'
 import type { PlexHeading } from '../../../types'
 
 /** The assumed size of the plex until it has been measured. */
-const FALLBACK = { width: 1200, height: 800 }
+export const DEFAULT_VIEWPORT = { width: 1200, height: 800 }
 
 /** What the measuring reads off the plex it belongs to. */
 export interface PlexSizingProps {
@@ -47,7 +47,7 @@ export function useFreeSpace(
   ) => Ref<PlexMetrics | undefined> = useTitleWidths,
 ) {
   /** The available size of the plex, as last measured. */
-  const room = ref<Size>(FALLBACK)
+  const room = ref<Size>(DEFAULT_VIEWPORT)
 
   onMounted(() => {
     const found = element.value
@@ -69,9 +69,6 @@ export function useFreeSpace(
    */
   const iconWidthReserve = computed(() => (hasIcon() ? options.value.iconWidth : 0))
 
-  /** Space reserved for the dot drawn before a title that has no pill. */
-  const dotWidthReserve = computed(() => (props.showPills === false ? options.value.dotSize : 0))
-
   const padding = computed(() => options.value.padding.inline)
 
   /**
@@ -83,7 +80,7 @@ export function useFreeSpace(
   const measures = measureTitles(
     () => ({
       padding: padding.value,
-      beside: [dotWidthReserve.value, iconWidthReserve.value].filter((width) => width > 0),
+      beside: [iconWidthReserve.value].filter((width) => width > 0),
     }),
     props.readType,
   )
@@ -101,14 +98,14 @@ export function useFreeSpace(
 
     const { margin } = options.value
     const bounds = { viewport: room.value, margin }
-    return (node: PlacedNode) => getWideBox(node, measure(node), bounds)
+    return (node: PlacedNode) => getExpandedBox(node, measure(node), bounds)
   })
 
   /**
-   * The headings each node hangs under its box. The sizes are the ones the whole
-   * picture is drawn to, so a plex set larger hangs them larger.
+   * The headings placed under the box of each node. The sizes are the ones the whole
+   * picture is drawn to, so a plex set larger places them larger.
    */
-  const suspended = computed(() => {
+  const placedHeadings = computed(() => {
     const getHeadings = props.headings
     if (!getHeadings) return undefined
 
@@ -118,5 +115,5 @@ export function useFreeSpace(
       getNodeHeadings(node, getHeadings(node.id), { options: options.value, deps })
   })
 
-  return { room, options, measures, widen: expandWidth, hung: suspended }
+  return { room, options, measures, widen: expandWidth, placedHeadings }
 }

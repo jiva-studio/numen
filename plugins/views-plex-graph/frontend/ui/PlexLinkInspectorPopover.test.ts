@@ -329,6 +329,22 @@ describe('PlexLinkInspectorPopover component', () => {
     wrapper.unmount()
   })
 
+  it('names the note that writes each row', () => {
+    const wrapper = mountPopover({
+      ...defaultRequest,
+      connection: {
+        ...connection,
+        secondSide: { label: 'shelters it', marker: null, reason: '' },
+      },
+    })
+
+    expect(wrapper.findAll('.plex-link-row').map((row) => row.attributes('data-from'))).toEqual([
+      'Harbour',
+      'Lighthouse',
+    ])
+    wrapper.unmount()
+  })
+
   it('emits dismiss on escape key', async () => {
     const wrapper = mountPopover()
     await wrapper.get('.plex-link-popover').trigger('keydown', { key: 'Escape' })

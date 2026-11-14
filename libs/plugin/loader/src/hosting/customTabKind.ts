@@ -46,6 +46,7 @@ import {
   stripMarkdownExtension,
   type PluginComponentSource,
 } from './pane/pluginView'
+import { createLineReveal } from './customTabReveal'
 import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
 import { pickDeclaredParts } from './pluginTabKind'
@@ -187,7 +188,7 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
   const isLoading = ref(false)
   let currentPath = targetPath
   let hasEdited = false
-  let editor: EditorHandle | null = null
+  const lines = createLineReveal(() => !isLoading.value)
   let write = createNoteWriter(targetPath, deps.hostDeps?.writeNote, errorMessageRef)
 
   const readAt = (pathToRead: string): void => {
@@ -214,9 +215,10 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
     isLoading,
     body: computed(() => noteRef.value.body),
     attachEditor: (attached: EditorHandle | null): void => {
-      editor = attached
+      lines.attach(attached)
     },
-    measure: (): void => editor?.measure?.(),
+    revealLine: lines.reveal,
+    measure: lines.measure,
     updateBody: (body: string) => {
       hasEdited = true
       noteRef.value = { path: currentPath, body }

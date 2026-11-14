@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { clusters, getAnchor, getClusterDirection, takeTurns } from './clusters'
 import { DEFAULT_OPTIONS } from '../options'
+import { NO_ROOM } from './placement'
 import type { PlacedNode } from '../../node'
 import type { PlexNode } from '../../../../types'
 
@@ -85,7 +86,7 @@ describe('the result of the placement', () => {
       parent: [node('p0', 'parent')],
     },
     focus,
-    { options: DEFAULT_OPTIONS, width: () => 120 },
+    { options: DEFAULT_OPTIONS, width: () => 120, room: () => NO_ROOM },
   )
 
   it('is called clusters', () => {

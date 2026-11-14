@@ -1,7 +1,7 @@
 /** A box widened while the pointer stays on it: how wide, where, and when. */
 import { effectScope, nextTick, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { EXPANSION_DURATION, useExpansion, getWideBox } from './expansion'
+import { EXPANSION_DURATION, useExpansion, getExpandedBox } from './expansion'
 import { stubClock } from '../../../fixtures/clock'
 import type { PlacedNode } from '../../lib/node'
 
@@ -30,7 +30,7 @@ const getSpan = (node: PlacedNode, expanded: { width: number; offset: number }) 
 describe('a box with more of its title to show', () => {
   it('widens to the room the whole title asks for', () => {
     const node = createNode()
-    expect(getWideBox(node, 300, BOUNDS)).toStrictEqual({
+    expect(getExpandedBox(node, 300, BOUNDS)).toStrictEqual({
       width: 300,
       offset: 0,
     })
@@ -38,37 +38,37 @@ describe('a box with more of its title to show', () => {
 
   it('grows about its own middle, so it opens both ways at once', () => {
     const node = createNode({ x: 120 })
-    const wideBox = getWideBox(node, 300, BOUNDS)!
-    expect(getSpan(node, wideBox)).toStrictEqual({ from: -30, to: 270 })
+    const expandedBox = getExpandedBox(node, 300, BOUNDS)!
+    expect(getSpan(node, expandedBox)).toStrictEqual({ from: -30, to: 270 })
   })
 
   it('slides back inside the window where its middle leaves no room', () => {
     const node = createNode({ x: 500 })
-    const wideBox = getWideBox(node, 300, BOUNDS)!
-    expect(wideBox.width).toBe(300)
-    expect(getSpan(node, wideBox)).toStrictEqual({ from: 284, to: 584 })
+    const expandedBox = getExpandedBox(node, 300, BOUNDS)!
+    expect(expandedBox.width).toBe(300)
+    expect(getSpan(node, expandedBox)).toStrictEqual({ from: 284, to: 584 })
   })
 
   it('constrains width to window minus margins', () => {
     const node = createNode({ x: 500 })
-    const wideBox = getWideBox(node, 2000, BOUNDS)!
-    expect(wideBox.width).toBe(WINDOW.width - 2 * MARGIN)
-    expect(getSpan(node, wideBox)).toStrictEqual({ from: -584, to: 584 })
+    const expandedBox = getExpandedBox(node, 2000, BOUNDS)!
+    expect(expandedBox.width).toBe(WINDOW.width - 2 * MARGIN)
+    expect(getSpan(node, expandedBox)).toStrictEqual({ from: -584, to: 584 })
   })
 })
 
 describe('a box with nothing more to show', () => {
   it('stays as it was placed when its title needs exactly the room it has', () => {
-    expect(getWideBox(createNode(), 144, BOUNDS)).toBeNull()
+    expect(getExpandedBox(createNode(), 144, BOUNDS)).toBeNull()
   })
 
   it('stays as it was placed when its title is already in it', () => {
-    expect(getWideBox(createNode(), 120, BOUNDS)).toBeNull()
+    expect(getExpandedBox(createNode(), 120, BOUNDS)).toBeNull()
   })
 
   it('preserves layout when window width is constrained', () => {
     expect(
-      getWideBox(createNode(), 300, { viewport: { width: 160, height: 800 }, margin: MARGIN }),
+      getExpandedBox(createNode(), 300, { viewport: { width: 160, height: 800 }, margin: MARGIN }),
     ).toBeNull()
   })
 })

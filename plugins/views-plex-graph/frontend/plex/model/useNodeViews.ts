@@ -1,11 +1,13 @@
 import { createRefRegistry } from '@numen/ui'
 
+const isFocusable = <T>(view: T): view is T & { focus: () => void } =>
+  typeof view === 'object' && view !== null && 'focus' in view && typeof view.focus === 'function'
+
 /** The drawn views of the nodes, by node id, held to move the keyboard focus to one of them. */
 export function useNodeViews() {
   const views = new Map<string, { focus: () => void }>()
   const { getRef: holdNode } = createRefRegistry<string>((id, view) => {
-    const focus = view ? Reflect.get(view, 'focus') : undefined
-    if (view && typeof focus === 'function') views.set(id, { focus: () => focus.call(view) })
+    if (isFocusable(view)) views.set(id, view)
     else views.delete(id)
   })
 

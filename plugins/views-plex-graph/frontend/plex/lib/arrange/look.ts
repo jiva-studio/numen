@@ -20,7 +20,7 @@ interface Gaps {
  * The height of one line of a title at the designed type: 13 pixels set at a line height
  * of 1.35.
  */
-export const TITLE_LINE = 13 * 1.35
+const TITLE_LINE = 13 * 1.35
 
 /** The box of a neighbor: a line of title between the top and bottom padding. */
 export const getNodeSize = (width: number, padding: Padding): Size => ({

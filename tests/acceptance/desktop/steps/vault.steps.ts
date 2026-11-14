@@ -13,7 +13,7 @@ Then('{vault} contains the following:', async ({ person }, vault: string, files:
   await person.vault.expectContainsFiles(vault, files.raw())
 })
 
-Given('{vault} contains the {entry} at {string}', async ({ person }, vault: string, entry: string, entryPath: string) => {
+Then('{vault} contains the {entry} at {string}', async ({ person }, vault: string, entry: string, entryPath: string) => {
   await person.vault.expectContains(vault, entry, entryPath)
 })
 
@@ -33,10 +33,14 @@ Then('the window has the vault {string}', async ({ person }, name: string) => {
   await person.vault.expectWindowShows(name)
 })
 
-Given('the vault list has the following:', async ({ person }, vaults: DataTable) => {
+Then('the vault list has the following:', async ({ person }, vaults: DataTable) => {
   await person.vault.expectList(vaults.raw())
 })
 
 Then('{vault} has the following links:', async ({ person }, vault: string, links: DataTable) => {
   await person.vault.expectLinks(vault, links.raw())
+})
+
+Given('the notes have the following links:', ({ person }, links: DataTable) => {
+  person.vault.addLinks(links.raw())
 })

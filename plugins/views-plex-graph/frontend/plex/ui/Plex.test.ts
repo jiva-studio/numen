@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import Plex from './Plex.vue'
 import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
+import { optionsForType } from '../model/sizing/plexScale'
 import type { Viewport } from '@numen/ui'
 import { build } from '../fixtures/build'
 import { graphs } from '../fixtures/graphs'
@@ -340,6 +341,20 @@ describe('how much room the plex has', () => {
     expect(plex.get('svg').attributes('viewBox')).toBe('-450 -350 900 700')
   })
 
+  it('draws the focus at the middle of a tall window at a larger interface size and hides nothing that fits', async () => {
+    const plex = mountPlex({
+      graph: build('Thermodynamics', { parent: 2, child: 8, jump: 5, sibling: 4 }),
+      options: optionsForType(15.6),
+      viewport: createViewport({ width: 1570, height: 1440 }),
+    })
+    await nextTick()
+    expect(plex.get('svg').attributes('viewBox')).toBe('-785 -720 1570 1440')
+    expect(plex.get('[aria-label^="Thermodynamics"]').attributes('transform')).toBe(
+      'translate(0 0)',
+    )
+    expect(plex.find('[role="status"]').exists()).toBe(false)
+  })
+
   it('releases the watching when it is taken down', () => {
     const stop = vi.fn()
     const plex = mountPlex({
@@ -375,11 +390,11 @@ describe('Pill background', () => {
     expect(plex.findAll('.plex__box')).toHaveLength(0)
   })
 
-  it('draws every node as a dot and its title when it is off', () => {
+  it('draws every node as its title alone when it is off', () => {
     const plex = mountPlex({ graph: FAMILY, showPills: false })
 
     for (const node of plex.findAll('.plex__node')) {
-      expect(node.findAll('.plex__dot')).toHaveLength(1)
+      expect(node.findAll('.plex__dot')).toHaveLength(0)
       expect(node.find('.plex__title-text').exists()).toBe(true)
     }
     expect(plex.findAll('.plex__title-text').map((title) => title.text())).toStrictEqual(
@@ -413,6 +428,26 @@ describe('Pill background', () => {
     expect((plex.emitted('menu') as unknown[][] | undefined)?.map(([id]) => id)).toStrictEqual([
       'parent-0',
     ])
+  })
+})
+
+describe('Highlight links of a hovered note', () => {
+  const raised = (plex: ReturnType<typeof mountPlex>) => plex.findAll('.plex__raised .plex__edge')
+
+  it('lifts the edges of the note the pointer is over when it is on', async () => {
+    const plex = mountPlex({ graph: FAMILY, highlightLinks: true })
+
+    await plex.get('[aria-label^="Hydrology"]').trigger('pointerenter')
+
+    expect(raised(plex)).toHaveLength(1)
+  })
+
+  it('lifts nothing when it is off', async () => {
+    const plex = mountPlex({ graph: FAMILY, highlightLinks: false })
+
+    await plex.get('[aria-label^="Hydrology"]').trigger('pointerenter')
+
+    expect(raised(plex)).toHaveLength(0)
   })
 })
 
@@ -500,5 +535,85 @@ describe('Animation', () => {
     expect(plex.vm.isMoving).toBe(false)
     expect(plex.find('[aria-label="Inbox, parent"]').exists()).toBe(true)
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(false)
+  })
+})
+
+describe('the names of a note', () => {
+  const NAMES_OF_DOMAIN = {
+    above: [{ id: 'name:Boundary', title: 'Boundary' }],
+    below: [{ id: 'name:Heat', title: 'Heat' }],
+  }
+
+  const stubCanvas = () => {
+    vi.stubGlobal('CanvasRenderingContext2D', class {})
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      font: '',
+      measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
+    } as unknown as CanvasRenderingContext2D)
+  }
+
+  const mountWithNames = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) => {
+    stubCanvas()
+    return mountPlex({
+      showNames: true,
+      namesOpacity: 0.3,
+      focusedNamesOpacity: 0.9,
+      names: (id) => (id === 'child-0' ? NAMES_OF_DOMAIN : { above: [], below: [] }),
+      readType: () => ({ font: '13px Test Sans', labelFont: '10px Test Sans', gap: 6 }),
+      ...props,
+    })
+  }
+
+  const getOpacities = (plex: ReturnType<typeof mountWithNames>) =>
+    plex.findAll('.plex__name').map((name) => Number(name.attributes('opacity')))
+
+  const getName = (plex: ReturnType<typeof mountWithNames>, title: string) =>
+    plex.get(`[role="button"][aria-label^="${title}, name under "]`)
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+    document.body.replaceChildren()
+  })
+
+  it('come forward while the pointer is over one of them', async () => {
+    const plex = mountWithNames({ namesOpacity: 0 })
+
+    await getName(plex, 'Heat').trigger('pointerenter')
+
+    expect(getOpacities(plex)).toEqual([0.9, 0.9])
+  })
+
+  it('cannot be chosen while they sit back, and can once the pointer brought them forward', async () => {
+    const plex = mountWithNames({ namesOpacity: 0 })
+
+    getName(plex, 'Heat').element.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, detail: 1 }),
+    )
+    expect(plex.emitted('chooseName')).toBeUndefined()
+
+    await getName(plex, 'Heat').trigger('pointerenter')
+    await getName(plex, 'Heat').trigger('click')
+    expect(plex.emitted('chooseName')).toStrictEqual([['name:Heat']])
+    expect(plex.emitted('activate')).toBeUndefined()
+  })
+
+  it('stay until the pill of their note is removed from the frame, and are removed with it', async () => {
+    const time = stubClock()
+    const plex = mountWithNames({ duration: 1000, clock: time.clock })
+
+    await plex.setProps({ graph: graphs.leaf })
+    time.tick(0)
+    time.tick(500)
+    await nextTick()
+    expect(plex.findAll('.plex__name')).toHaveLength(2)
+
+    time.tick(1000)
+    await nextTick()
+    expect(plex.findAll('.plex__name')).toHaveLength(0)
+  })
+
+  it('are not drawn with the names off', () => {
+    expect(mountWithNames({ showNames: false }).findAll('.plex__name')).toHaveLength(0)
   })
 })
