@@ -1,28 +1,16 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Acceptance scenarios</title>
     <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="report.css" />
-    <script>
-      // Before the first paint, so a light page does not open dark.
-      try {
-        if (localStorage.getItem('acceptance-report.theme') === 'light')
-          document.documentElement.dataset.theme = 'light'
-      } catch {
-        // No storage: the page opens in the default theme.
-      }
-    </script>
   </head>
   <body>
     <aside class="sidebar">
       <header class="sidebar-header">
-        <div class="sidebar-title">
-          <h1>Acceptance scenarios</h1>
-          <button id="theme" class="icon-button" type="button"></button>
-        </div>
+        <h1>Acceptance scenarios</h1>
         <section id="overview" class="overview" aria-label="Run"></section>
         <input
           id="search"

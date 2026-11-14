@@ -21,10 +21,7 @@ export type ScenarioRecord = ScenarioEntry & {
   readonly errorMessage: string | undefined
   /** Paths relative to the report folder. */
   readonly video: string | undefined
-  readonly trace: string | undefined
   readonly screenshot: string | undefined
-  /** The trace, absolute, for `npx playwright show-trace`. */
-  readonly tracePath: string | undefined
 }
 
 export type ScenarioSource = {
@@ -82,9 +79,7 @@ export const createScenarioRecord = (
     steps,
     errorMessage: readScenarioError(result, steps),
     video: files.video,
-    trace: files.trace,
     screenshot: files.screenshot,
-    tracePath: files.tracePath,
   }
 }
 
@@ -104,12 +99,11 @@ const readScenarioError = (
 
 const ATTACHMENTS = {
   video: 'video.webm',
-  trace: 'trace.zip',
   screenshot: 'screenshot.png',
 } as const
 
 /**
- * Copies the video, the trace and the screenshot of the result next to the report. The first video
+ * Copies the video and the screenshot of the result next to the report. The first video
  * is the window's (support/video.ts); the last screenshot is of the window, an earlier one of the
  * blank page of the fixture.
  */
@@ -117,7 +111,7 @@ const copyAttachments = (
   result: TestResult,
   dir: string,
   href: string,
-): Partial<Pick<ScenarioRecord, 'video' | 'trace' | 'screenshot' | 'tracePath'>> => {
+): Partial<Pick<ScenarioRecord, 'video' | 'screenshot'>> => {
   const copied: Partial<Record<keyof typeof ATTACHMENTS, string>> = {}
   for (const [name, file] of Object.entries(ATTACHMENTS) as [keyof typeof ATTACHMENTS, string][]) {
     const found = result.attachments.filter((one) => one.name === name && one.path)
@@ -127,5 +121,5 @@ const copyAttachments = (
     fs.copyFileSync(from, path.join(dir, file))
     copied[name] = `${href}/${file}`
   }
-  return { ...copied, ...(copied.trace && { tracePath: path.join(dir, ATTACHMENTS.trace) }) }
+  return copied
 }

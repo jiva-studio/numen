@@ -12,7 +12,7 @@ const testDir = defineBddConfig({
 })
 
 // A run with video (`npm run acceptance:report`) marks the actions in the video and writes the
-// scenario report of report/.
+// scenario report of report/. It keeps a trace only of a failure, as a run without video does.
 const isVideoOn = Boolean(process.env.PLAYWRIGHT_VIDEO)
 
 // Every scenario starts a world of its own (drivers/world.ts), with a server and a vault of its own,
@@ -26,7 +26,7 @@ export default defineConfig({
   webServer: undefined,
   use: {
     ...base.use,
-    ...(isVideoOn && { video: 'on' }),
+    ...(isVideoOn && { video: 'on', trace: 'retain-on-failure' }),
   },
   reporter: [
     ['list'],

@@ -1,7 +1,7 @@
 /**
  * A Playwright reporter that writes a static page of the scenarios of a run with video
  * (PLAYWRIGHT_VIDEO): the tree of features and scenarios, and for each scenario its steps as
- * written, linked to its video, with its trace and the screenshot of a failure.
+ * written, linked to its video, with the screenshot of a failure.
  *
  *   reporter: [['./report/scenario-report.ts', { outputFolder: 'acceptance-report' }]]
  */

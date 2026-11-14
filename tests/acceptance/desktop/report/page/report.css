@@ -7,31 +7,9 @@
 }
 
 :root {
-  color-scheme: dark;
-  --bg: #0f1115;
-  --bg-side: #14161b;
-  --bg-raised: #1b1e24;
-  --bg-hover: #1f232a;
-  --bg-active: #242b38;
-  --bg-code: #1a1d23;
-  --fg: #e7e9ed;
-  --fg-muted: #9198a3;
-  --fg-subtle: #646a75;
-  --border: #252930;
-  --track: #2b3039;
-  --accent: #7ea6f8;
-  --accent-soft: rgb(126 166 248 / 14%);
-  --passed: #4cc583;
-  --failed: #f2706b;
-  --skipped: #8a909a;
-  --failed-bg: rgb(242 112 107 / 8%);
-  --shadow: 0 10px 30px rgb(0 0 0 / 35%);
+  color-scheme: light;
   --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
   --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-}
-
-:root[data-theme='light'] {
-  color-scheme: light;
   --bg: #ffffff;
   --bg-side: #f7f8fa;
   --bg-raised: #ffffff;
@@ -151,16 +129,8 @@ button {
   border-bottom: 1px solid var(--border);
 }
 
-.sidebar-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin: -6px -6px 14px 0;
-}
-
 h1 {
-  margin: 0;
+  margin: 0 0 14px;
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -432,23 +402,63 @@ h2 .time {
   opacity: 1;
 }
 
-.player-frame {
+.video {
+  margin-bottom: 32px;
+}
+
+.player-card {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #000;
+  background: var(--bg-raised);
   box-shadow: var(--shadow);
+}
+
+.player-frame {
+  border-radius: 10px 10px 0 0;
+  background: #000;
 }
 
 .player {
   display: block;
   width: 100%;
-  border-radius: 10px;
+  border-radius: 10px 10px 0 0;
+  cursor: pointer;
+}
+
+.player-bar {
+  padding: 12px 14px 8px;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 10px 10px;
+  background: var(--bg-raised);
+}
+
+.player-card:fullscreen {
+  border: 0;
+  border-radius: 0;
+}
+
+.player-card:fullscreen .player-frame {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.player-card:fullscreen .player {
+  height: 100%;
+  object-fit: contain;
+  border-radius: 0;
+}
+
+.player-card:fullscreen .player-bar {
+  border-radius: 0;
 }
 
 .timeline-wrap {
   position: relative;
-  margin-top: 10px;
 }
 
 .timeline {
@@ -474,7 +484,7 @@ h2 .time {
   height: 6px;
   padding: 0;
   border: 0;
-  border-left: 2px solid var(--bg);
+  border-left: 2px solid var(--bg-raised);
   background: var(--track);
   cursor: pointer;
   transition:
@@ -546,11 +556,21 @@ h2 .time {
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 24px;
+  gap: 8px 20px;
   align-items: center;
-  margin: 14px 0 32px;
+  margin-top: 6px;
   color: var(--fg-muted);
   font-size: 13px;
+}
+
+.toolbar .icon-button {
+  margin: 0 -10px;
+  color: var(--fg);
+}
+
+.clock {
+  min-width: 110px;
+  font-variant-numeric: tabular-nums;
 }
 
 .speed {
@@ -613,7 +633,6 @@ kbd {
   align-items: baseline;
   padding: 8px 0;
   border-radius: 8px;
-  box-shadow: inset 3px 0 transparent;
   cursor: pointer;
   transition: opacity 0.15s;
 }
@@ -653,7 +672,6 @@ kbd {
 
 .step.current {
   background: var(--accent-soft);
-  box-shadow: inset 3px 0 var(--accent);
   opacity: 1;
 }
 
@@ -662,7 +680,7 @@ kbd {
 }
 
 .step.failed.current {
-  box-shadow: inset 3px 0 var(--failed);
+  background: color-mix(in srgb, var(--failed) 14%, transparent);
 }
 
 .step.skipped {

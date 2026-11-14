@@ -3,23 +3,23 @@
 // They are classic scripts, not modules, so the page also opens from file://, and share their
 // top-level names.
 /* global createVideo */
+/* exported writeSetting */
 const report = window.REPORT
 const scenarios = new Map(
   report.features.flatMap((feature) => feature.scenarios.map((s) => [s.id, s])),
 )
 const state = { query: '', isFailedOnly: false, currentId: '' }
 
-const THEME_KEY = 'acceptance-report.theme'
-
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const ICONS = {
   check: 'M3.5 8.5l3 3 6-7',
   cross: 'M4.5 4.5l7 7M11.5 4.5l-7 7',
   dash: 'M4.5 8h7',
-  download: 'M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10',
   link: 'M6.8 9.2l2.4-2.4M7.3 4.6l1-1a2.6 2.6 0 013.7 3.7l-1 1M8.7 11.4l-1 1a2.6 2.6 0 01-3.7-3.7l1-1',
-  sun: 'M8 5.2a2.8 2.8 0 100 5.6 2.8 2.8 0 000-5.6zM8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.4 3.4l.9.9M11.7 11.7l.9.9M3.4 12.6l.9-.9M11.7 4.3l.9-.9',
-  moon: 'M13.2 9.6A5.5 5.5 0 016.4 2.8a5.5 5.5 0 106.8 6.8z',
+  play: 'M5 3.2v9.6L12.6 8z',
+  pause: 'M5.5 3.5v9M10.5 3.5v9',
+  expand: 'M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10',
+  shrink: 'M6 2.5V6H2.5M13.5 6H10V2.5M10 13.5V10h3.5M2.5 10H6v3.5',
 }
 const STATUS_ICONS = { passed: 'check', failed: 'cross', skipped: 'dash' }
 
@@ -66,25 +66,6 @@ const formatOffset = (seconds) => {
 }
 
 const formatCount = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`
-
-// Theme
-
-const getTheme = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark')
-
-const writeThemeButton = () => {
-  const next = getTheme() === 'dark' ? 'light' : 'dark'
-  const button = document.getElementById('theme')
-  button.replaceChildren(createIcon(next === 'light' ? 'sun' : 'moon'))
-  button.setAttribute('aria-label', `Switch to the ${next} theme`)
-  button.title = `Switch to the ${next} theme`
-}
-
-const toggleTheme = () => {
-  const next = getTheme() === 'dark' ? 'light' : 'dark'
-  document.documentElement.dataset.theme = next
-  writeSetting(THEME_KEY, next)
-  writeThemeButton()
-}
 
 // Sidebar
 
@@ -205,20 +186,7 @@ const createActions = (scenario) => {
     [createIcon('link')],
   )
   copy.addEventListener('click', () => copyLink(scenario.id, note))
-  const trace = scenario.trace
-    ? createElement(
-        'a',
-        {
-          class: 'icon-button',
-          href: scenario.trace,
-          download: '',
-          title: 'Download the trace',
-          'aria-label': 'Download the trace',
-        },
-        [createIcon('download')],
-      )
-    : null
-  return createElement('div', { class: 'actions' }, [copy, trace, note])
+  return createElement('div', { class: 'actions' }, [copy, note])
 }
 
 const createScenarioHeader = (scenario) =>
@@ -340,7 +308,6 @@ const getFirstScenarioId = () => {
   return (all.find((scenario) => scenario.status === 'failed') ?? all[0])?.id
 }
 
-document.getElementById('theme').addEventListener('click', toggleTheme)
 document.getElementById('search').addEventListener('input', (event) => {
   state.query = event.target.value.trim().toLowerCase()
   writeTree()
@@ -357,7 +324,6 @@ window.addEventListener('hashchange', () =>
   selectScenario(decodeURIComponent(location.hash.slice(1))),
 )
 
-writeThemeButton()
 writeOverview()
 state.currentId = decodeURIComponent(location.hash.slice(1)) || getFirstScenarioId() || ''
 writeTree()

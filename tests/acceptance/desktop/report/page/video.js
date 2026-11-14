@@ -1,7 +1,7 @@
 // The video of a scenario: the player, the steps on its timeline, the speed and the pause at each
 // step, and the keys. report.js, which the page loads after it, defines the helpers it calls and
 // calls createVideo.
-/* global createElement, writeSetting */
+/* global createElement, createIcon, formatOffset, writeSetting */
 /* exported createVideo */
 const playback = window.playback
 const SPEED_KEY = 'acceptance-report.speed'
@@ -42,27 +42,56 @@ const createHint = () =>
 
 const createVideoSection = () => {
   const parts = {
-    player: createElement('video', {
-      class: 'player',
-      controls: '',
-      preload: 'auto',
-      playsinline: '',
-    }),
+    player: createElement('video', { class: 'player', preload: 'auto', playsinline: '' }),
+    playButton: createElement('button', { class: 'icon-button', type: 'button' }),
+    time: createElement('span', { class: 'clock' }, ['0:00.0 / 0:00.0']),
     timeline: createElement('div', { class: 'timeline', role: 'group', 'aria-label': 'Steps' }),
     tooltip: createElement('div', { class: 'timeline-tooltip', role: 'tooltip', hidden: '' }),
     speed: createSpeedButtons(),
     pauseToggle: createElement('input', { type: 'checkbox' }),
+    fullscreenButton: createElement('button', { class: 'icon-button', type: 'button' }),
   }
-  parts.section = createElement('section', { class: 'video', 'aria-label': 'Video' }, [
+  parts.card = createElement('div', { class: 'player-card' }, [
     createElement('div', { class: 'player-frame' }, [parts.player]),
-    createElement('div', { class: 'timeline-wrap' }, [parts.timeline, parts.tooltip]),
-    createElement('div', { class: 'toolbar' }, [
-      parts.speed,
-      createElement('label', { class: 'check' }, [parts.pauseToggle, 'Pause at each step']),
-      createHint(),
+    createElement('div', { class: 'player-bar' }, [
+      createElement('div', { class: 'timeline-wrap' }, [parts.timeline, parts.tooltip]),
+      createElement('div', { class: 'toolbar' }, [
+        parts.playButton,
+        parts.time,
+        parts.speed,
+        createElement('label', { class: 'check' }, [parts.pauseToggle, 'Pause at each step']),
+        createHint(),
+        parts.fullscreenButton,
+      ]),
     ]),
   ])
+  parts.section = createElement('section', { class: 'video', 'aria-label': 'Video' }, [parts.card])
   return parts
+}
+
+const setIconButton = (button, icon, label) => {
+  button.replaceChildren(createIcon(icon))
+  button.setAttribute('aria-label', label)
+  button.title = label
+}
+
+const writePlayButton = (video) =>
+  video.player.paused
+    ? setIconButton(video.playButton, 'play', 'Play')
+    : setIconButton(video.playButton, 'pause', 'Pause')
+
+const writeFullscreenButton = (video) =>
+  document.fullscreenElement === video.card
+    ? setIconButton(video.fullscreenButton, 'shrink', 'Exit full screen')
+    : setIconButton(video.fullscreenButton, 'expand', 'Full screen')
+
+const toggleFullscreen = (video) => {
+  const request =
+    document.fullscreenElement === video.card
+      ? document.exitFullscreen()
+      : video.card.requestFullscreen()
+  // The browser may refuse full screen; the button stays as it is.
+  request.catch(() => writeFullscreenButton(video))
 }
 
 const setSpeed = (video, speed) => {
@@ -88,6 +117,7 @@ const writePosition = (video) => {
     const phase = phases[Number(segment.dataset.index)]
     for (const name of ['done', 'current', 'ahead']) segment.classList.toggle(name, phase === name)
   }
+  video.time.textContent = `${formatOffset(time)} / ${formatOffset(video.length)}`
   const playhead = video.timeline.querySelector('.playhead')
   if (playhead && video.length > 0)
     playhead.style.left = `${Math.min((time * 100) / video.length, 100)}%`
@@ -251,6 +281,12 @@ const linkControls = (video) => {
     video.isPausingAtSteps = video.pauseToggle.checked
     setPausePoint(video)
   })
+  video.playButton.addEventListener('click', () => togglePlay(video))
+  video.player.addEventListener('click', () => togglePlay(video))
+  video.fullscreenButton.addEventListener('click', () => toggleFullscreen(video))
+  video.card.addEventListener('fullscreenchange', () => writeFullscreenButton(video))
+  writePlayButton(video)
+  writeFullscreenButton(video)
 }
 
 /**
@@ -289,7 +325,9 @@ const linkVideo = (video) => {
     setPausePoint(video)
     writePosition(video)
   })
+  player.addEventListener('pause', () => writePlayButton(video))
   player.addEventListener('play', () => {
+    writePlayButton(video)
     setPausePoint(video)
     cancelAnimationFrame(video.frame)
     video.frame = requestAnimationFrame(() => followPlayback(video))
@@ -314,7 +352,7 @@ const handleKey = (event) => {
   const action = KEY_ACTIONS[event.key]
   if (!action || !currentVideo?.player.isConnected) return
   if (event.altKey || event.ctrlKey || event.metaKey || isTyping(event.target)) return
-  // Ahead of the player's own keys, which would seek by five seconds or toggle twice.
+  // Ahead of a focused button, which would take Space as its own click.
   event.preventDefault()
   event.stopPropagation()
   action(currentVideo)
