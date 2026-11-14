@@ -15,8 +15,8 @@ func isAllIntact(domain.TextVersion) bool { return true }
 
 func TestFindLiveVersionReturnsTheNewestValidVersion(t *testing.T) {
 	versions := []domain.TextVersion{
-		{Path: "a.pdf", PluginID: "fixer", Key: "b", Source: "reader/a", InputHash: "ha", TextHash: "hb", CreateTime: getEpoch().Add(time.Minute)},
 		{Path: "a.pdf", PluginID: "reader", Key: "a", InputHash: "file-1", TextHash: "ha", CreateTime: getEpoch()},
+		{Path: "a.pdf", PluginID: "fixer", Key: "b", Source: "reader/a", InputHash: "ha", TextHash: "hb", CreateTime: getEpoch().Add(time.Minute)},
 		{Path: "a.pdf", PluginID: "stale", Key: "c", InputHash: "old-file", TextHash: "hc", CreateTime: getEpoch().Add(2 * time.Minute)},
 	}
 	got, ok := domain.FindLiveVersion(versions, "file-1", nil, isAllIntact)
