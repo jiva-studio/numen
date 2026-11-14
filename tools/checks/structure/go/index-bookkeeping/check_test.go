@@ -29,7 +29,9 @@ func TestNoCodeOfTheIndexEmptiesItOrReshapesItsBookkeeping(t *testing.T) {
 // function name in a subpackage and a test file.
 func TestBookkeepingRule_RejectsRewritesOfTheIndex(t *testing.T) {
 	root := load.WriteTreeFixture(t, map[string]string{
-		"db.go":          "package index\n\n// resetIndex and ALTER TABLE schema_migrations are gone.\n\nconst next = `CREATE TABLE schema_migrations_next (version INTEGER)`\n\nfunc resetIndex() {}\n\ntype store struct{}\n\nfunc (store) getDropping() {}\n",
+		"db.go": "package index\n\n// resetIndex and ALTER TABLE schema_migrations are gone.\n\n" +
+			"const next = `CREATE TABLE schema_migrations_next (version INTEGER)`\n\n" +
+			"func resetIndex() {}\n\ntype store struct{}\n\nfunc (store) getDropping() {}\n",
 		"chunk/chunk.go": "package chunk\n\nfunc getDropping() {}\n\nfunc findDroppableSQL() string { return \"ALTER TABLE schema_migrations ADD x\" }\n",
 		"db_test.go":     "package index\n\nfunc dropEverything() {}\n",
 	})

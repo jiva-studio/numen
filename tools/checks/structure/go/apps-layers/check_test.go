@@ -144,7 +144,12 @@ func TestApplicationsDoNotImportCoreInternals(t *testing.T) {
 // package of the core, a package of the same application and a test file.
 func TestCoreReachRule_RejectsCoreInternalsAndOtherApplications(t *testing.T) {
 	root := load.WriteTreeFixture(t, map[string]string{
-		"desktop/app/app.go":      "package app\n\nimport (\n\t_ \"" + core + "usecase/note\"\n\t_ \"" + core + "container\"\n\t_ \"" + core + "usecase/notecontract\"\n\t_ \"" + apps + "mobile/bind\"\n\t_ \"" + apps + "desktop/internal/platform\"\n)\n",
+		"desktop/app/app.go": "package app\n\nimport (\n" +
+			"\t_ \"" + core + "usecase/note\"\n" +
+			"\t_ \"" + core + "container\"\n" +
+			"\t_ \"" + core + "usecase/notecontract\"\n" +
+			"\t_ \"" + apps + "mobile/bind\"\n" +
+			"\t_ \"" + apps + "desktop/internal/platform\"\n)\n",
 		"desktop/app/app_test.go": "package app\n\nimport _ \"" + core + "usecase/search\"\n",
 	})
 	wrong, read := findCoreReaches(t, readSources(t, root))
