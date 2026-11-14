@@ -74,30 +74,27 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			Moved:      hooks.Moved,
 			Written:    hooks.Written,
 		},
-		hostvault.Groups{
-			Files: hostvault.Files{
-				Stat:        file.NewStatFile(vaultReaders(c.vault)),
-				ReadFile:    file.NewReadFile(vaultReaders(c.vault)),
-				RangeReader: file.Read{Readers: vaultReaders(c.vault)},
+		hostvault.Files{
+			Stat:        file.NewStatFile(vaultReaders(c.vault)),
+			ReadFile:    file.NewReadFile(vaultReaders(c.vault)),
+			RangeReader: file.Read{Readers: vaultReaders(c.vault)},
+		},
+		hostvault.Writer{
+			Write:  file.NewWriteFile(noteWriters(c.vault), index),
+			Create: file.NewCreateFile(noteWriters(c.vault), index),
+			Index:  file.NewScanFiles(index),
+			Locks:  hold.NewLocks(writeLocks(c.vault), hold.LockHold),
+		},
+		getPluginLookups(db),
+		arranger,
+		hostvault.Stores{
+			StoreReaders: func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
+				return stores.Open(v, pluginID)
 			},
-			Writer: hostvault.Writer{
-				Write:  file.NewWriteFile(noteWriters(c.vault), index),
-				Create: file.NewCreateFile(noteWriters(c.vault), index),
-				Index:  file.NewScanFiles(index),
-				Locks:  hold.NewLocks(writeLocks(c.vault), hold.LockHold),
+			StoreWriters: func(v domain.Vault, pluginID string) (pluginvault.StoreWriter, error) {
+				return stores.OpenWriter(v, pluginID)
 			},
-			Notes:    getPluginNotes(db),
-			Links:    getPluginLinks(db),
-			Arranger: arranger,
-			Stores: hostvault.Stores{
-				StoreReaders: func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
-					return stores.Open(v, pluginID)
-				},
-				StoreWriters: func(v domain.Vault, pluginID string) (pluginvault.StoreWriter, error) {
-					return stores.OpenWriter(v, pluginID)
-				},
-				Cache: cache,
-			},
+			Cache: cache,
 		},
 	), nil
 }

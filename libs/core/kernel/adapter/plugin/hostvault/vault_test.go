@@ -44,27 +44,26 @@ func diskVault(t *testing.T, files map[string]string, hooks diskHooks) (*vault.A
 	}
 	return NewAccess(
 		Session{Current: func() (domain.Vault, bool) { return v, true }, Written: hooks.onWrite, Find: hooks.find},
-		Groups{
-			Files: Files{
-				Stat:        file.NewStatFile(vaultreader.Readers{}),
-				ReadFile:    file.NewReadFile(vaultreader.Readers{}),
-				RangeReader: file.Read{Readers: vaultreader.Readers{}},
+		Files{
+			Stat:        file.NewStatFile(vaultreader.Readers{}),
+			ReadFile:    file.NewReadFile(vaultreader.Readers{}),
+			RangeReader: file.Read{Readers: vaultreader.Readers{}},
+		},
+		Writer{
+			Write:  file.NewWriteFile(writers, index),
+			Create: file.NewCreateFile(writers, index),
+			Index:  file.NewScanFiles(index),
+		},
+		Lookups{},
+		Arranger{Notes: NoteChanges{AddLinks: hooks.addLinks}},
+		Stores{
+			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
+				return derivedfile.PluginStores{}.Open(v, pluginID)
 			},
-			Writer: Writer{
-				Write:  file.NewWriteFile(writers, index),
-				Create: file.NewCreateFile(writers, index),
-				Index:  file.NewScanFiles(index),
+			StoreWriters: func(v domain.Vault, pluginID string) (vault.StoreWriter, error) {
+				return derivedfile.PluginStores{}.OpenWriter(v, pluginID)
 			},
-			Arranger: Arranger{Notes: NoteChanges{AddLinks: hooks.addLinks}},
-			Stores: Stores{
-				StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
-					return derivedfile.PluginStores{}.Open(v, pluginID)
-				},
-				StoreWriters: func(v domain.Vault, pluginID string) (vault.StoreWriter, error) {
-					return derivedfile.PluginStores{}.OpenWriter(v, pluginID)
-				},
-				Cache: appstate.PluginCachesAt(t.TempDir()),
-			},
+			Cache: appstate.PluginCachesAt(t.TempDir()),
 		},
 	), v
 }
@@ -210,7 +209,7 @@ func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
 func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 	access := NewAccess(
 		Session{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }},
-		Groups{},
+		Files{}, Writer{}, Lookups{}, Arranger{}, Stores{},
 	)
 
 	_, _, readErr := access.Files.Read(t.Context(), "a.md")
