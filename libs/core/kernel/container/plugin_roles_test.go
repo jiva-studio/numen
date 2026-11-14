@@ -4,7 +4,7 @@ import "testing"
 
 func openPluginRoles(tb testing.TB, target string, dirs ...string) *PluginRoles {
 	tb.Helper()
-	host, err := OpenPluginRoles(func(error) {}, target, dirs...)
+	host, err := OpenPluginRoles(Config{}, func(error) {}, target, dirs...)
 	if err != nil {
 		tb.Logf("discover plugins: %v", err)
 	}
