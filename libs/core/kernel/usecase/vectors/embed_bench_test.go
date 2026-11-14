@@ -51,7 +51,7 @@ func BenchmarkEmbedDuplicates(b *testing.B) {
 				cutBooks(b, index, shelf, indexfake.GetFirst())
 				model := &embedder{dims: dimensions}
 				embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
-				embed.Source = sourcefake.Wrap(model)
+				embed.source = sourcefake.Wrap(model)
 				embed.BatchCharacters = 4000
 				b.StartTimer()
 
@@ -102,7 +102,7 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 			model := searchsource.Description{Name: "fake", Width: dimensions}
 			index := indexfake.NewStore()
 			embed := newEmbed(indexfake.Vaults{}, index, index)
-			embed.Source = sourcefake.Wrap(&embedder{dims: dimensions})
+			embed.source = sourcefake.Wrap(&embedder{dims: dimensions})
 
 			b.ReportAllocs()
 			b.ResetTimer()
@@ -111,7 +111,7 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 				if err != nil {
 					b.Fatal(err)
 				}
-				if _, err := (inferrer{source: embed.Source}).inferBatch(b.Context(), prep); err != nil {
+				if _, err := (inferrer{source: embed.source}).inferBatch(b.Context(), prep); err != nil {
 					b.Fatal(err)
 				}
 			}
