@@ -154,14 +154,10 @@ func (s *Writer) writeLayer(ctx context.Context, req Request) {
 	err := s.putLayer(ctx, req, task)
 	if err != nil && ctx.Err() == nil {
 		task.FailureReason = err.Error()
-		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
-			s.reportError("show the task "+task.ID, reportErr)
-		}
+		s.reportError("show the task "+task.ID, s.queue.ReportTask(context.WithoutCancel(ctx), task))
 		return
 	}
-	if finishErr := s.queue.FinishTask(context.WithoutCancel(ctx), task.ID); finishErr != nil {
-		s.reportError("finish the task "+task.ID, finishErr)
-	}
+	s.reportError("finish the task "+task.ID, s.queue.FinishTask(context.WithoutCancel(ctx), task.ID))
 }
 
 func (s *Writer) putLayer(ctx context.Context, req Request, task host.Task) (err error) {

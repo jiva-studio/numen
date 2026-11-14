@@ -51,15 +51,9 @@ func (r *Reader) GetPages(ctx context.Context, vault domain.VaultID, path string
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrOpen, err)
 	}
-	defer func() {
-		if closeErr := scan.Close(); closeErr != nil {
-			err = errors.Join(err, fmt.Errorf("%w: %w", ErrClose, closeErr))
-		}
-	}()
+	defer closeScan(scan, &err)
 
-	pageCount := scan.GetPageCount()
-	pages = make([]Page, 0, pageCount)
-	for i := range pageCount {
+	for i := range scan.GetPageCount() {
 		w, h, err := scan.GetPageSize(i)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %w", ErrPageSize, err)
@@ -67,4 +61,10 @@ func (r *Reader) GetPages(ctx context.Context, vault domain.VaultID, path string
 		pages = append(pages, Page{Width: w, Height: h})
 	}
 	return pages, nil
+}
+
+func closeScan(scan *pdf.Scan, err *error) {
+	if closeErr := scan.Close(); closeErr != nil {
+		*err = errors.Join(*err, fmt.Errorf("%w: %w", ErrClose, closeErr))
+	}
 }

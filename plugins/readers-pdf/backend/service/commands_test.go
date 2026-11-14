@@ -5,16 +5,15 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
 )
 
 func TestTheHandlerOfCreateTextWritesTheTextLayerOfTheFile(t *testing.T) {
 	texts, server, _ := testsupport.NewVault(t, "books/tiny.pdf", "tiny.pdf")
-	commands, err := newCommands(server)
-	if err != nil {
-		t.Fatal(err)
-	}
+	commands := newCommands(server)
 
 	result, err := commands.RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: "books/tiny.pdf"})
 	if err != nil {
@@ -32,13 +31,21 @@ func TestTheHandlerOfCreateTextWritesTheTextLayerOfTheFile(t *testing.T) {
 
 func TestTheHandlerOfCreateTextNeedsAFile(t *testing.T) {
 	_, server, _ := testsupport.NewVault(t, "books/tiny.pdf", "tiny.pdf")
-	commands, err := newCommands(server)
-	if err != nil {
-		t.Fatal(err)
-	}
+	commands := newCommands(server)
 
-	_, err = commands.RunCommand(t.Context(), command.Request{Command: command.CreateText})
+	_, err := commands.RunCommand(t.Context(), command.Request{Command: command.CreateText})
 	if !errors.Is(err, command.ErrBadArguments) {
 		t.Errorf("a run over no file answered %v, want ErrBadArguments", err)
+	}
+	_, err = commands.RunCommand(t.Context(), command.Request{Command: "unknown"})
+	if !errors.Is(err, command.ErrUnknownCommand) {
+		t.Errorf("an unknown command answered %v, want ErrUnknownCommand", err)
+	}
+
+	noVault := hosttest.New("")
+	noVaultWriter := testsupport.NewWriter(t, testsupport.FilesOf(noVault), noVault, hosttest.NewTexts("vault", testsupport.PluginID), hosttest.NewQueue())
+	_, err = newCommands(noVaultWriter).RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: "books/tiny.pdf"})
+	if !errors.Is(err, host.ErrNoVault) {
+		t.Errorf("a run with no shown vault answered %v, want ErrNoVault", err)
 	}
 }

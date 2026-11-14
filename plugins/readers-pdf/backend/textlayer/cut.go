@@ -1,6 +1,8 @@
 package textlayer
 
 import (
+	"errors"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
@@ -40,18 +42,14 @@ func GetSegments(book *pdf.Book, readBoxes BoxReader) ([]domain.TextSegment, err
 
 // CutPages cuts the pages from first up to last into segments, using the boxes of their words.
 func CutPages(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) ([]domain.TextSegment, error) {
-	end := len(book.Text)
-	if last < len(book.Pages) {
-		end = book.Pages[last].Offset
-	}
 	layers := layerCut{text: book.Text, sections: nil, parts: nil}
 	for _, part := range book.Parts {
-		if part.Offset >= book.Pages[first].Offset && part.Offset < end {
+		if part.Offset >= book.Pages[first].Offset {
 			layers.sections = append(layers.sections, part)
 		}
 	}
 	for page := first; page < last; page++ {
-		pageEnd := end
+		pageEnd := len(book.Text)
 		if page+1 < len(book.Pages) {
 			pageEnd = book.Pages[page+1].Offset
 		}
@@ -81,18 +79,15 @@ func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) ([]pdf.
 		if box.Page < page || start >= end {
 			continue
 		}
-		if err := c.add(pos, start, page, nil); err != nil {
-			return nil, err
-		}
-		if err := c.add(start, end, page, [][4]float32{{box.MinX, box.MinY, box.MaxX, box.MaxY}}); err != nil {
+		if err := errors.Join(
+			c.add(pos, start, page, nil),
+			c.add(start, end, page, [][4]float32{{box.MinX, box.MinY, box.MaxX, box.MaxY}}),
+		); err != nil {
 			return nil, err
 		}
 		pos = end
 	}
-	if err := c.add(pos, to, page, nil); err != nil {
-		return nil, err
-	}
-	return boxes, nil
+	return boxes, c.add(pos, to, page, nil)
 }
 
 func (c *layerCut) add(from, to, page int, boxes [][4]float32) error {
@@ -107,8 +102,8 @@ func (c *layerCut) add(from, to, page int, boxes [][4]float32) error {
 			c.sections = c.sections[1:]
 		}
 		end := to
-		if len(c.sections) > 0 && c.sections[0].Offset < to {
-			end = c.sections[0].Offset
+		if len(c.sections) > 0 {
+			end = min(end, c.sections[0].Offset)
 		}
 		selector, err := PageSelector{Page: page + 1, Boxes: boxes}.Encode()
 		if err != nil {
