@@ -55,13 +55,24 @@ Before handing work over, an agent must demonstrate concrete evidence:
 
 ---
 
-## 4. Where a test belongs
+## 4. Pull request pipeline
+
+Every pull request follows this sequence:
+
+1. **Open as a draft**: Push the branch and create a draft pull request (`gh pr create --draft`).
+2. **Bring CI to green**: Wait for all CI checks on the draft pull request to pass (`gh pr checks --watch`). Fix any failure and push to the draft branch until CI is green.
+3. **Run `/nm-review`**: Execute the `/nm-review` pipeline on the branch while the pull request is in draft. Fix every reported finding, re-run `/nm-review` until the verdict is `Approved`, and verify that CI remains green.
+4. **Mark ready and request CodeRabbit**: Once CI is green and `/nm-review` approves the change, mark the pull request ready for review (`gh pr ready`) and trigger CodeRabbit (`gh pr comment --body "@coderabbitai review"`).
+
+---
+
+## 5. Where a test belongs
 
 Scenarios in `features/` cover business rules. Technical end-to-end tests (`tests/e2e/desktop`) stay for what needs the whole app but is not a business rule. Checks of layout or file formats belong to stories, vitest or Go tests.
 
 ---
 
-## 5. Decisions reserved for the human
+## 6. Decisions reserved for the human
 
 An agent does not decide these alone. It prepares the change, explains the tradeoffs, and asks the human:
 

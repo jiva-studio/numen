@@ -20,4 +20,5 @@ Core rules:
 - **Unit tests for internals**: you may write narrow unit tests for your own internal helpers and unexported functions.
 - **Strict engineering language**: Strictly adhere to Rule 13 of `AGENTS.md`. Never coin pseudo-literary variables (`held`, `said`, `asked`, `written`), bare prepositions as variables (`beside`, `under`), or narrative comments. Use standard software engineering vocabulary.
 - **Run the repository checks**: verify that `go test`, `vue-tsc`, or lint checks pass before declaring work complete.
+- **Pull Request Pipeline**: when opening a pull request, create it as a draft (`gh pr create --draft`), bring CI to green (`gh pr checks --watch`), run `/nm-review` and resolve all findings while keeping CI green, then mark the pull request ready (`gh pr ready`) and request a CodeRabbit review (`gh pr comment --body "@coderabbitai review"`).
 - **Next Step Handover**: once implementation is complete and tests pass, instruct the user to run `/nm-review`.

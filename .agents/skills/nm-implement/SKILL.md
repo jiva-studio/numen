@@ -76,7 +76,13 @@ npm run format:check   # a change that is not Prettier-clean is rejected
 
 ---
 
-## Step 4: Next Step Handover
+## Step 4: Next Step Handover & Pull Request Pipeline
+
+When local gates pass:
+
+1. If opening a pull request, create it as a draft (`gh pr create --draft`) and wait for CI checks to pass (`gh pr checks --watch`), fixing any CI failures while the pull request remains in draft.
+2. Run `/nm-review` to execute the review pipeline (Gatekeeper, Bug Hunter, Adversary, and the feature conformance check), fix any findings, and confirm CI is green.
+3. Once CI is green and `/nm-review` approves the change, mark the pull request ready for review (`gh pr ready`) and trigger CodeRabbit (`gh pr comment --body "@coderabbitai review"`).
 
 Prompt the user clearly when all tests are green:
 
