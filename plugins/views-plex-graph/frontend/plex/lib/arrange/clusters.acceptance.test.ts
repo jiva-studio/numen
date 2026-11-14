@@ -332,18 +332,16 @@ describe('boxes narrow and gaps close before a note is left out', () => {
   })
 })
 
-describe('gaps open in a roomy window and the arrangement stays inside', () => {
-  it('opens the space between neighboring children, by at most the spread', () => {
+describe('gaps stay as set in a roomy window and the arrangement stays inside', () => {
+  it('keeps the space between neighboring children as set', () => {
     const graph = build('A node', { child: 3 })
     const children = (frame: PlexFrame) => getShownNodes(frame, 'child')
     const settings = getSmallestSeparation(children(arrange(graph)))
-    const opened = getSmallestSeparation(
+    const roomy = getSmallestSeparation(
       children(arrange(graph, inWindow({ width: 2400, height: 1400 }))),
     )
-    const { gap, lineGap, spread } = DEFAULT_OPTIONS
 
-    expect(opened).toBeGreaterThan(settings)
-    expect(opened).toBeLessThanOrEqual(spread * Math.max(gap, lineGap) + 1e-6)
+    expect(roomy).toBeCloseTo(settings, 6)
   })
 
   const crowd = build('A node', { parent: 6, child: 21, jump: 7, sibling: 7 })
@@ -353,8 +351,8 @@ describe('gaps open in a roomy window and the arrangement stays inside', () => {
     { width: 1200, height: 800 },
     { width: 700, height: 600 },
     { width: 560, height: 480 },
-  ])('keeps every box inside a $width×$height window at a spread of four', (viewport) => {
-    const frame = arrange(crowd, inWindow(viewport, { spread: 4 }))
+  ])('keeps every box inside a $width×$height window', (viewport) => {
+    const frame = arrange(crowd, inWindow(viewport))
     expect(getOutside(frame.nodes, viewport)).toStrictEqual([])
   })
 })

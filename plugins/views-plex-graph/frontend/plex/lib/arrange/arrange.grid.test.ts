@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
+import { DEFAULT_OPTIONS } from './options'
 import { build, type RelationCounts } from '../../fixtures/build'
 import { getFootprint, getFootprintCenterY, type NodeRoom } from './layout/placement'
 import type { PlexFrame } from '../frame'
@@ -217,5 +218,68 @@ describe.each([
 
   it('overlaps no two notes', () => {
     expect(getOverlaps(frame)).toStrictEqual([])
+  })
+})
+
+describe('a note whose children sit between many siblings and a few jumps in 1825×1890', () => {
+  const { graph, frame } = arrange(
+    { parent: 1, child: 13, jump: 3, reference: 2, sibling: 39 },
+    { width: 1825, height: 1890 },
+  )
+
+  it('shows every note', () => {
+    expect(frame.overflow).toStrictEqual({})
+    expect(frame.nodes).toHaveLength(graph.nodes.length)
+  })
+
+  it('sets the first row of children right under the focus', () => {
+    const focus = getFocus(frame)
+    const children = ofRelation(frame, 'child')
+    const top = Math.min(...children.map((child) => getBox(child).minY))
+    expect(top).toBeLessThanOrEqual(focus.y + focus.height / 2 + DEFAULT_OPTIONS.focusGap + 1e-6)
+  })
+
+  it('keeps every side note out of the columns of the children at their height', () => {
+    const children = getBounds(ofRelation(frame, 'child').map(getBox))
+    const sides = ofRelation(frame, 'jump', 'reference', 'sibling')
+    expect(listInside(sides, children)).toStrictEqual([])
+  })
+})
+
+describe('a block of short titles', () => {
+  const graph = build('A note', { child: 2, sibling: 9 })
+  const shortTitles = {
+    ...graph,
+    nodes: graph.nodes.map((node, index) =>
+      node.relation === 'focus' ? node : { ...node, title: `T${index}` },
+    ),
+  }
+  const width = (node: PlexNode) => 40 + node.title.length * 7
+  const withNames = (node: PlexNode): NodeRoom => (node.relation === 'child' ? NAMES : NO_ROOM)
+  const frame = arrangePlex(shortTitles, {
+    options: { viewport: { width: 1800, height: 1400 } },
+    measure: width,
+    room: withNames,
+  })
+  const { gap, lineGap, nodeSize } = DEFAULT_OPTIONS
+  const siblings = ofRelation(frame, 'sibling')
+  const steps = (values: readonly number[]) => {
+    const sorted = [...new Set(values.map((value) => Math.round(value * 1e6) / 1e6))].sort(
+      (a, b) => a - b,
+    )
+    return sorted.slice(1).map((value, index) => value - sorted[index]!)
+  }
+
+  it('steps its columns by the widest title and the gap, not by the widest note elsewhere', () => {
+    const widest = Math.max(...siblings.map((sibling) => sibling.width))
+    expect(steps(siblings.map((sibling) => sibling.x)).length).toBeGreaterThan(0)
+    for (const step of steps(siblings.map((sibling) => sibling.x)))
+      expect(step).toBeLessThanOrEqual(widest + gap + 1e-6)
+  })
+
+  it('steps its rows by the height of a note and the line gap, the names of other notes left out', () => {
+    expect(steps(siblings.map((sibling) => sibling.y)).length).toBeGreaterThan(0)
+    for (const step of steps(siblings.map((sibling) => sibling.y)))
+      expect(step).toBeLessThanOrEqual(nodeSize.height + lineGap + 1e-6)
   })
 })

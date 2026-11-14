@@ -143,10 +143,11 @@ describe('a title finds room on its line', () => {
   it('slides the titles that are in the way, and leaves the rest at the middle', () => {
     const crowd = build('A node', { parent: 2, child: 6, jump: 3, sibling: 2 })
     const frame = arrangePlex(crowd, { options: { viewport: VIEWPORT }, ...measured })
-    const moved = frame.edges.filter((edge) => edge.titles[0]!.wordsAt !== 0.5)
+    const titled = frame.edges.filter((edge) => edge.titles[0]?.words)
+    const moved = titled.filter((edge) => edge.titles[0]!.wordsAt !== 0.5)
 
     expect(moved.length).toBeGreaterThan(0)
-    expect(moved.length).toBeLessThan(frame.edges.length)
+    expect(moved.length).toBeLessThan(titled.length)
   })
 
   it('writes nothing at all on a line with nowhere clear along it', () => {
@@ -178,8 +179,8 @@ describe('a title finds room on its line', () => {
     const once = arrangePlex(crowd, { options: { viewport: VIEWPORT }, ...measured })
     const again = arrangePlex(crowd, { options: { viewport: VIEWPORT }, ...measured })
 
-    expect(again.edges.map((edge) => edge.titles[0]!.wordsAt)).toStrictEqual(
-      once.edges.map((edge) => edge.titles[0]!.wordsAt),
+    expect(again.edges.map((edge) => edge.titles[0]?.wordsAt)).toStrictEqual(
+      once.edges.map((edge) => edge.titles[0]?.wordsAt),
     )
   })
 
@@ -189,7 +190,9 @@ describe('a title finds room on its line', () => {
     const crowd = build('A node', { parent: 2, child: 6, jump: 3, sibling: 2 })
     const frame = arrangePlex(crowd, { options: { viewport: VIEWPORT }, ...measured })
 
-    for (const edge of frame.edges) {
+    const titled = frame.edges.filter((edge) => edge.titles[0]?.words)
+    expect(titled.length).toBeGreaterThan(0)
+    for (const edge of titled) {
       expect(edge.titles[0]!.wordsAt, `${edge.from}->${edge.to}`).toBeGreaterThan(0)
       expect(edge.titles[0]!.wordsAt, `${edge.from}->${edge.to}`).toBeLessThan(1)
     }

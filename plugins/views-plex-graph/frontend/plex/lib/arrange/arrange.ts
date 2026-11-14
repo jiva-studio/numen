@@ -26,7 +26,6 @@ import {
   type Widths,
 } from './layout/placement'
 import { routeEdges, createRouting } from './edges/routing'
-import { findSpacing } from './layout/spacing'
 import { separateTitles } from './edges/titles'
 import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
 
@@ -92,8 +91,7 @@ export function arrangePlex(
     ),
   )
 
-  // Admission is settled at that packing, and the gaps then expand into the
-  // remaining space. Both are measured against the arrangement itself, so a
+  // Admission is settled at that packing, measured against the arrangement itself, so a
   // placement of any shape fits the window.
   const { viewport, margin } = crowded
   const admitAt = (packing: PlexOptions) =>
@@ -135,22 +133,9 @@ export function arrangePlex(
   const admitted = isTightestChosen ? admittedTightest : admittedCrowded
   const admittedOverflow = countOverflow(graph.nodes, admitted)
 
-  const spacing = findSpacing(resolved, (candidate, window) =>
-    isInsideWindow(
-      lay({ ...resolved, ...candidate }, admitted, rooms, {
-        shouldStop: stopAtOutside(window, margin, rooms),
-      }).placed,
-      window,
-      { margin, rooms },
-    ),
-  )
+  // The gaps stay as packed: they close in a crowded window and never open to fill a roomy one.
   const fit: Fit = { margin, rooms }
-  const spacedOptions = { ...resolved, ...spacing }
-  const spaced = lay(spacedOptions, admitted, rooms)
-  // A placement of another shape can leave the window with the gaps the probes verified; it then gives way to the layout admission verified.
-  const finalLayout = isInsideWindow(spaced.placed, viewport, fit)
-    ? spaced
-    : lay(resolved, admitted, rooms)
+  const finalLayout = lay(resolved, admitted, rooms)
   const { focus } = finalLayout
   const placed = viewport
     ? finalLayout.placed.filter((node) => isInside(node, viewport, fit))

@@ -287,7 +287,7 @@ describe('the title a line carries while the picture moves', () => {
         },
         {
           measureLabel: measureLabelWidth,
-          options: { viewport: { width: 900, height: 800 }, spread: 1 },
+          options: { viewport: { width: 900, height: 800 } },
         },
       )
 

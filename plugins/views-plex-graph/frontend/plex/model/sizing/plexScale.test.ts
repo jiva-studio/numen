@@ -65,8 +65,7 @@ describe('a label half again as large', () => {
         )
         .filter(([name, value]) => typeof value === 'number' && name !== 'curvature')
         .filter(
-          ([name]) =>
-            !['maxPerCluster', 'maxHeadings', 'spread', 'squeeze', 'focusScale'].includes(name),
+          ([name]) => !['maxPerCluster', 'maxHeadings', 'squeeze', 'focusScale'].includes(name),
         )
         .map(([, value]) => value as number)
         .concat([options.nodeSize, options.focusSize].flatMap((size) => [size.width, size.height]))
@@ -83,7 +82,6 @@ describe('a label half again as large', () => {
     expect(larger.maxHeadings).toBe(DEFAULT_OPTIONS.maxHeadings)
     expect(larger.focusScale).toBe(DEFAULT_OPTIONS.focusScale)
     expect(larger.routing.curvature).toBe(DEFAULT_OPTIONS.routing.curvature)
-    expect(larger.spread).toBe(DEFAULT_OPTIONS.spread)
     expect(larger.squeeze).toBe(DEFAULT_OPTIONS.squeeze)
     expect(larger.motion).toStrictEqual(DEFAULT_OPTIONS.motion)
     expect(larger.gesture).toStrictEqual(DEFAULT_OPTIONS.gesture)

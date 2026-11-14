@@ -391,7 +391,7 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
 })
 
 describe('a window that holds the arrangement exactly', () => {
-  it('opens the gaps that have room, the height being met to the pixel', () => {
+  it('keeps the gaps as set, the height being met to the pixel', () => {
     const { nodeSize, gap, margin } = DEFAULT_OPTIONS
     const two = createGraph('child', 'One', 'Two')
     const settings = getNodesByRelation(arrangePlex(two), 'child')
@@ -404,6 +404,6 @@ describe('a window that holds the arrangement exactly', () => {
     expect(Math.max(...[first!, second!].map((node) => node.y + node.height / 2))).toBeCloseTo(
       bottom,
     )
-    expect(Math.abs(second!.x - first!.x)).toBeGreaterThan(nodeSize.width + gap)
+    expect(Math.abs(second!.x - first!.x)).toBeCloseTo(nodeSize.width + gap, 6)
   })
 })
