@@ -31,3 +31,7 @@ func (d *delegate) GetPadID() (int, bool) {
 	id, err := d.tok.SpecialTokenID(api.TokPad)
 	return id, err == nil
 }
+
+func (d *delegate) GetVersion() string {
+	return ""
+}

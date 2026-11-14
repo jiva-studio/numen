@@ -21,7 +21,14 @@ type Tokenizer interface {
 	EncodePair(first, second string, maxTokens int) (Encoding, error)
 	// GetPadID returns the id of the padding token, and false when the file declares none.
 	GetPadID() (int, bool)
+	// GetVersion returns Version for a tokenizer this package encodes, and "" for a delegated one.
+	// A caller that stores ids keys them by it, so a change to the encoding invalidates them.
+	GetVersion() string
 }
+
+// Version names the encoding of the Unigram tokenizer of this package. It changes whenever the
+// ids it gives for some text change.
+const Version = "unigram-1"
 
 // Encoding is a pair encoded for a cross-encoder.
 type Encoding struct {
@@ -137,6 +144,10 @@ func (u *unigramTokenizer) EncodePair(first, second string, maxTokens int) (Enco
 
 func (u *unigramTokenizer) GetPadID() (int, bool) {
 	return u.padID, u.hasPad
+}
+
+func (u *unigramTokenizer) GetVersion() string {
+	return Version
 }
 
 func (u *unigramTokenizer) encodePieces(text string) []int {
