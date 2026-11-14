@@ -15,10 +15,14 @@ import (
 type fakeRows struct {
 	operations []string
 	asked      []connection.RowOptionsRequest
+	err        error
 }
 
 func (f *fakeRows) ListRows(_ context.Context, operation string) ([]connection.Row, error) {
 	f.operations = append(f.operations, operation)
+	if f.err != nil {
+		return nil, f.err
+	}
 	return []connection.Row{
 		{ConnectionID: "c-meadow", ConnectionName: "Meadow", Fields: []connection.RowField{
 			{Key: "tier", Title: "Tier", OptionsFrom: "", IsRequired: false},
@@ -57,5 +61,11 @@ func TestTheModelsOfAConnectionAreTheValuesOfItsFieldOfModels(t *testing.T) {
 	}
 	if asked := rows.asked[0]; asked.Operation != "llm.chat" || asked.ConnectionID != "c-meadow" || asked.Field != "model" {
 		t.Errorf("asked = %+v", asked)
+	}
+	if _, err := NewConnections(rows).ListModels(t.Context(), conversation.ChatConnection{ID: "c-quarry"}); err == nil {
+		t.Error("expected error listing models of c-quarry")
+	}
+	if _, err := NewConnections(&fakeRows{err: errors.New("rows failed")}).ListConnections(t.Context()); err == nil {
+		t.Error("expected error when ListRows fails")
 	}
 }
