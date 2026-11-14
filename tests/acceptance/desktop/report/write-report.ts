@@ -8,7 +8,15 @@ import type { ScenarioRecord } from './scenario.js'
 import { buildTree } from './tree.js'
 
 const PAGE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'page')
-const PAGE_FILES = ['index.html', 'report.css', 'video.js', 'video-load.js', 'report.js']
+const PAGE_FILES = [
+  'index.html',
+  'tokens/colors.css',
+  'report.css',
+  'controls.js',
+  'video.js',
+  'video-load.js',
+  'report.js',
+]
 const FONT = '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2'
 
 export type RunInfo = GitRevision & { readonly startedAt: Date }
@@ -25,8 +33,7 @@ export const writeReport = (
   run: RunInfo,
 ): void => {
   fs.mkdirSync(outputDir, { recursive: true })
-  for (const file of PAGE_FILES)
-    fs.copyFileSync(path.join(PAGE_DIR, file), path.join(outputDir, file))
+  for (const file of PAGE_FILES) copyPageFile(outputDir, file)
   copyFont(outputDir)
   const features = buildTree(scenarios)
   const data = { overview: createOverview(features, run.startedAt, run), features }
@@ -39,6 +46,12 @@ export const writeReport = (
     '',
   ].join('\n')
   fs.writeFileSync(path.join(outputDir, 'data.js'), script)
+}
+
+const copyPageFile = (outputDir: string, file: string): void => {
+  const to = path.join(outputDir, file)
+  fs.mkdirSync(path.dirname(to), { recursive: true })
+  fs.copyFileSync(path.join(PAGE_DIR, file), to)
 }
 
 const copyFont = (outputDir: string): boolean => {

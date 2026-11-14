@@ -1,93 +1,47 @@
-/* global createElement, createIcon, formatOffset, loadVideo, writeSetting */
+/* global createElement, formatOffset, loadVideo, createControl, createSpeed, createHelp, createClock, createPauseToggle, setControl, showControls, setSpeed, closeSpeedMenu, linkSpeedMenu, linkIdle, readSpeed */
 /* exported createVideo, getOpenTime */
 const playback = window.playback
-const SPEED_KEY = 'acceptance-report.speed'
-const SPEEDS = [0.25, 0.5, 1]
 let currentVideo = null
 
-const readSetting = (key) => {
-  try {
-    return localStorage.getItem(key)
-  } catch {
-    return null
-  }
-}
-
-const readSpeed = () => {
-  const saved = Number(readSetting(SPEED_KEY))
-  return SPEEDS.includes(saved) ? saved : 1
-}
-
-const createSpeedButtons = () =>
-  createElement(
-    'div',
-    { class: 'speed', role: 'group', 'aria-label': 'Playback speed' },
-    SPEEDS.map((speed) =>
-      createElement('button', { type: 'button', 'data-speed': String(speed) }, [`${speed}×`]),
-    ),
-  )
-
-const createHint = () =>
-  createElement('span', { class: 'hint' }, [
-    createElement('kbd', {}, ['Space']),
-    createElement('span', {}, ['play']),
-    createElement('span', { class: 'hint-keys' }, [
-      createElement('kbd', {}, ['←']),
-      createElement('kbd', {}, ['→']),
+const createControls = (parts) =>
+  createElement('div', { class: 'controls' }, [
+    createElement('div', { class: 'timeline-wrap' }, [parts.timeline, parts.tooltip]),
+    createElement('div', { class: 'toolbar' }, [
+      parts.playButton,
+      parts.clock.element,
+      createElement('span', { class: 'spacer' }),
+      parts.pauseToggle,
+      parts.speed.element,
+      createHelp(),
+      parts.fullscreenButton,
     ]),
-    createElement('span', {}, ['steps']),
-  ])
-
-const createPauseToggle = () =>
-  createElement('button', { class: 'toggle', type: 'button', 'aria-pressed': 'false' }, [
-    createElement('span', { class: 'switch', 'aria-hidden': 'true' }),
-    'Pause at each step',
   ])
 
 const createVideoSection = () => {
   const parts = {
     player: createElement('video', { class: 'player', preload: 'auto', playsinline: '' }),
-    playButton: createElement('button', { class: 'icon-button', type: 'button' }),
-    time: createElement('span', { class: 'clock' }, ['0:00.0 / 0:00.0']),
+    playButton: createControl('play-button', 'Play'),
+    clock: createClock(),
     timeline: createElement('div', { class: 'timeline', role: 'group', 'aria-label': 'Steps' }),
     tooltip: createElement('div', { class: 'timeline-tooltip', role: 'tooltip', hidden: '' }),
-    speed: createSpeedButtons(),
+    speed: createSpeed(),
     pauseToggle: createPauseToggle(),
-    fullscreenButton: createElement('button', { class: 'icon-button', type: 'button' }),
+    fullscreenButton: createControl('fullscreen-button', 'Full screen'),
   }
-  parts.card = createElement('div', { class: 'player-card' }, [
-    createElement('div', { class: 'player-frame' }, [parts.player]),
-    createElement('div', { class: 'player-bar' }, [
-      createElement('div', { class: 'timeline-wrap' }, [parts.timeline, parts.tooltip]),
-      createElement('div', { class: 'toolbar' }, [
-        parts.playButton,
-        parts.time,
-        parts.speed,
-        parts.pauseToggle,
-        createHint(),
-        parts.fullscreenButton,
-      ]),
-    ]),
-  ])
+  parts.card = createElement('div', { class: 'player-card' }, [parts.player, createControls(parts)])
   parts.section = createElement('section', { class: 'video', 'aria-label': 'Video' }, [parts.card])
   return parts
 }
 
-const setIconButton = (button, icon, label) => {
-  button.replaceChildren(createIcon(icon))
-  button.setAttribute('aria-label', label)
-  button.title = label
-}
-
 const writePlayButton = (video) =>
   video.player.paused
-    ? setIconButton(video.playButton, 'play', 'Play')
-    : setIconButton(video.playButton, 'pause', 'Pause')
+    ? setControl(video.playButton, 'play', 'Play')
+    : setControl(video.playButton, 'pause', 'Pause')
 
 const writeFullscreenButton = (video) =>
   document.fullscreenElement === video.card
-    ? setIconButton(video.fullscreenButton, 'shrink', 'Exit full screen')
-    : setIconButton(video.fullscreenButton, 'expand', 'Full screen')
+    ? setControl(video.fullscreenButton, 'shrink', 'Exit full screen')
+    : setControl(video.fullscreenButton, 'expand', 'Full screen')
 
 const toggleFullscreen = (video) => {
   const request =
@@ -97,20 +51,24 @@ const toggleFullscreen = (video) => {
   request.catch(() => writeFullscreenButton(video))
 }
 
-const setSpeed = (video, speed) => {
-  video.player.defaultPlaybackRate = speed
-  video.player.playbackRate = speed
-  for (const button of video.speed.children)
-    button.setAttribute('aria-pressed', String(Number(button.dataset.speed) === speed))
-}
-
 const getStarts = (video) => video.scenario.steps.map((step) => step.start)
 
-const isSetupFailed = (video) =>
-  video.scenario.steps.slice(0, video.setupLength).some((step) => step.status === 'failed')
+const findFailedIndex = (video) =>
+  video.scenario.steps.findIndex((step) => step.status === 'failed' && step.start !== null)
 
-const getOpenTime = (video) =>
-  isSetupFailed(video) ? 0 : (playback.findActionStart(getStarts(video), video.setupLength) ?? 0)
+const findActionIndex = (video) =>
+  getStarts(video).findIndex((start, index) => index >= video.setupLength && start !== null)
+
+const findOpenIndex = (video) => {
+  const failed = findFailedIndex(video)
+  return failed === -1 ? findActionIndex(video) : failed
+}
+
+const getOpenTime = (video) => {
+  const failed = findFailedIndex(video)
+  if (failed !== -1) return getStarts(video)[failed]
+  return playback.findActionStart(getStarts(video), video.setupLength) ?? 0
+}
 
 const findCurrentStep = (video, time) => {
   const starts = getStarts(video)
@@ -119,33 +77,53 @@ const findCurrentStep = (video, time) => {
   return picked !== undefined && starts[picked] === starts[index] ? picked : index
 }
 
-const writePosition = (video) => {
-  const time = video.player.currentTime
-  const currentIndex = findCurrentStep(video, time)
-  const phases = playback.getStepPhases(video.stepItems.length, currentIndex)
+const getFill = (segment, percent) => {
+  const left = Number(segment.dataset.left)
+  const width = Number(segment.dataset.width)
+  return Math.min(Math.max((percent - left) / width, 0), 1)
+}
+
+const writeSegments = (video, phases, percent) => {
+  for (const segment of video.timeline.querySelectorAll('.segment')) {
+    const phase = phases[Number(segment.dataset.index)]
+    for (const name of ['done', 'current', 'ahead']) segment.classList.toggle(name, phase === name)
+    segment.style.setProperty('--fill', String(getFill(segment, percent)))
+  }
+}
+
+const writeSteps = (video, phases) =>
   video.stepItems.forEach((item, index) => {
     for (const phase of ['done', 'current', 'ahead'])
       item.classList.toggle(phase, phases[index] === phase)
   })
-  for (const segment of video.timeline.querySelectorAll('.segment')) {
-    const phase = phases[Number(segment.dataset.index)]
-    for (const name of ['done', 'current', 'ahead']) segment.classList.toggle(name, phase === name)
-  }
-  video.time.textContent = `${formatOffset(time)} / ${formatOffset(video.length)}`
+
+const writePosition = (video) => {
+  const time = video.player.currentTime
+  const percent = video.length > 0 ? Math.min((time * 100) / video.length, 100) : 0
+  const phases = playback.getStepPhases(video.stepItems.length, findCurrentStep(video, time))
+  writeSteps(video, phases)
+  writeSegments(video, phases, percent)
+  video.clock.current.textContent = formatOffset(time)
+  video.clock.total.textContent = formatOffset(video.length)
   const playhead = video.timeline.querySelector('.playhead')
-  if (playhead && video.length > 0)
-    playhead.style.left = `${Math.min((time * 100) / video.length, 100)}%`
+  if (playhead) playhead.style.left = `${percent}%`
 }
 
 const createSegment = (video, segment) => {
   const step = video.scenario.steps[segment.index]
-  return createElement('button', {
-    class: `segment ${step.status}`,
-    type: 'button',
-    'data-index': String(segment.index),
-    'aria-label': `${step.keyword} ${step.text}`,
-    style: `left: ${segment.left}%; width: ${segment.width}%`,
-  })
+  return createElement(
+    'button',
+    {
+      class: `segment ${step.status}`,
+      type: 'button',
+      'data-index': String(segment.index),
+      'data-left': String(segment.left),
+      'data-width': String(segment.width),
+      'aria-label': `${step.keyword} ${step.text}`,
+      style: `left: ${segment.left}%; width: ${segment.width}%`,
+    },
+    [createElement('span', { class: 'segment-fill' })],
+  )
 }
 
 const writeTimeline = (video) => {
@@ -159,8 +137,13 @@ const writeTimeline = (video) => {
 }
 
 const getTooltipText = (video, segment) => {
-  const step = video.scenario.steps[Number(segment.dataset.index)]
-  return [createElement('span', { class: 'keyword' }, [step.keyword]), step.text]
+  const index = Number(segment.dataset.index)
+  const step = video.scenario.steps[index]
+  return [
+    createElement('span', { class: 'tooltip-number' }, [String(index + 1)]),
+    createElement('span', { class: 'keyword' }, [step.keyword]),
+    step.text,
+  ]
 }
 
 const showTooltip = (video, segment) => {
@@ -215,6 +198,12 @@ const setPausePoint = (video) => {
     : null
 }
 
+const togglePausing = (video) => {
+  video.isPausingAtSteps = !video.isPausingAtSteps
+  video.pauseToggle.setAttribute('aria-pressed', String(video.isPausingAtSteps))
+  setPausePoint(video)
+}
+
 const followPlayback = (video) => {
   const { player } = video
   if (player.paused || !player.isConnected) return
@@ -245,39 +234,40 @@ const linkTimeline = (video) => {
 }
 
 const linkControls = (video) => {
-  video.speed.addEventListener('click', (event) => {
-    const button = event.target.closest('button')
-    if (!button) return
-    const speed = Number(button.dataset.speed)
-    setSpeed(video, speed)
-    writeSetting(SPEED_KEY, String(speed))
-  })
-  video.pauseToggle.addEventListener('click', () => {
-    video.isPausingAtSteps = !video.isPausingAtSteps
-    video.pauseToggle.setAttribute('aria-pressed', String(video.isPausingAtSteps))
-    setPausePoint(video)
-  })
+  video.pauseToggle.addEventListener('click', () => togglePausing(video))
   video.playButton.addEventListener('click', () => togglePlay(video))
   video.player.addEventListener('click', () => togglePlay(video))
   video.fullscreenButton.addEventListener('click', () => toggleFullscreen(video))
   video.card.addEventListener('fullscreenchange', () => writeFullscreenButton(video))
+  linkSpeedMenu(video)
+  linkIdle(video)
   writePlayButton(video)
   writeFullscreenButton(video)
 }
 
 const openVideo = (video) => {
-  const time = getOpenTime(video)
-  video.pickedIndex =
-    time > 0
-      ? getStarts(video).findIndex((start, index) => index >= video.setupLength && start !== null)
-      : undefined
-  seekTo(video, time)
+  const index = findOpenIndex(video)
+  video.pickedIndex = index === -1 ? undefined : index
+  seekTo(video, getOpenTime(video))
 }
 
 const handleStepClick = (video, event) => {
-  if (event.target.closest('.error, .doc-string, .screenshot')) return
+  if (event.target.closest('.error, .doc-string, .screenshot, .table-scroll')) return
   const item = event.target.closest('.step')
   if (item) seekToStep(video, Number(item.dataset.index))
+}
+
+const handlePlay = (video) => {
+  writePlayButton(video)
+  setPausePoint(video)
+  showControls(video)
+  cancelAnimationFrame(video.frame)
+  video.frame = requestAnimationFrame(() => followPlayback(video))
+}
+
+const handlePause = (video) => {
+  writePlayButton(video)
+  showControls(video)
 }
 
 const linkVideo = (video) => {
@@ -290,13 +280,8 @@ const linkVideo = (video) => {
     setPausePoint(video)
     writePosition(video)
   })
-  player.addEventListener('pause', () => writePlayButton(video))
-  player.addEventListener('play', () => {
-    writePlayButton(video)
-    setPausePoint(video)
-    cancelAnimationFrame(video.frame)
-    video.frame = requestAnimationFrame(() => followPlayback(video))
-  })
+  player.addEventListener('pause', () => handlePause(video))
+  player.addEventListener('play', () => handlePlay(video))
   video.stepList.addEventListener('click', (event) => handleStepClick(video, event))
   linkTimeline(video)
   linkControls(video)
@@ -308,18 +293,23 @@ const KEY_ACTIONS = { ' ': togglePlay, ArrowRight: goToNextStep, ArrowLeft: goTo
 const isTyping = (target) =>
   target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement
 
+const isInMenu = (target) => target instanceof Element && target.closest('.menu') !== null
+
 const handleKey = (event) => {
   const action = KEY_ACTIONS[event.key]
   if (!action || !currentVideo?.player.isConnected) return
   if (event.altKey || event.ctrlKey || event.metaKey || isTyping(event.target)) return
+  if (isInMenu(event.target)) return
   event.preventDefault()
   event.stopPropagation()
   action(currentVideo)
+  showControls(currentVideo)
 }
 
 const createVideo = (scenario, stepList) => {
   const parts = createVideoSection()
   if (currentVideo?.source.startsWith('blob:')) URL.revokeObjectURL(currentVideo.source)
+  if (currentVideo) closeSpeedMenu(currentVideo)
   currentVideo = {
     ...parts,
     scenario,
@@ -330,6 +320,7 @@ const createVideo = (scenario, stepList) => {
     pauseAt: null,
     isPausingAtSteps: false,
     frame: 0,
+    idleTimer: 0,
     source: '',
   }
   linkVideo(currentVideo)

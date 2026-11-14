@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Acceptance scenarios</title>
     <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="tokens/colors.css" />
     <link rel="stylesheet" href="report.css" />
   </head>
   <body>
@@ -14,12 +15,12 @@
           <h1>Acceptance scenarios</h1>
           <p id="started-at" class="started-at"></p>
         </div>
-        <input
-          id="search"
-          type="search"
-          placeholder="Search features and scenarios"
-          aria-label="Search"
-        />
+        <label class="search">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm10 2-4.3-4.3" />
+          </svg>
+          <input id="search" type="search" placeholder="Search scenarios" aria-label="Search" />
+        </label>
         <div id="status-filter" class="status-filter" role="group" aria-label="Status"></div>
       </header>
       <nav id="tree" class="tree" aria-label="Scenarios"></nav>
@@ -28,6 +29,7 @@
       <p class="empty">Choose a scenario.</p>
     </main>
     <script src="data.js"></script>
+    <script src="controls.js"></script>
     <script src="video.js"></script>
     <script src="video-load.js"></script>
     <script src="report.js"></script>
