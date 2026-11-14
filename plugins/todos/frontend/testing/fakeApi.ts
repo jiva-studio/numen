@@ -67,7 +67,9 @@ export const task = (overrides: Partial<Task> & Pick<Task, 'path' | 'line' | 'te
 export interface FakeInit {
   readonly summary?: Summary
   readonly tasks?: Partial<Record<Filter['due'], ListTasksResponse>>
-  readonly setTaskDone?: (request: SetTaskDoneRequest) => Result<SetTaskDoneResponse, ApiError>
+  readonly setTaskDone?: (
+    request: SetTaskDoneRequest,
+  ) => Result<SetTaskDoneResponse, ApiError> | Promise<Result<SetTaskDoneResponse, ApiError>>
 }
 
 /** A SetTaskDone answer that refuses the change. */

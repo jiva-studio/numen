@@ -79,6 +79,10 @@ func (i *Index) readNote(ctx context.Context, path string) (bool, error) {
 	if err != nil {
 		return i.recordFailure(ctx, path, err)
 	}
+	return i.storeNote(path, raw, stat), nil
+}
+
+func (i *Index) storeNote(path string, raw []byte, stat domain.FileStat) bool {
 	hash := sha256.Sum256(raw)
 	i.mu.Lock()
 	known, isKnown := i.entries[path]
@@ -86,7 +90,7 @@ func (i *Index) readNote(ctx context.Context, path string) (bool, error) {
 	if isKnown && known.hash == hash {
 		known.stat = stat
 		i.set(path, known)
-		return false, nil
+		return false
 	}
 	next := entry{stat: stat, hash: hash, tasks: nil, isUnreadable: false}
 	tasks, err := i.parse(raw)
@@ -98,7 +102,7 @@ func (i *Index) readNote(ctx context.Context, path string) (bool, error) {
 	}
 	next.tasks = tasks
 	i.set(path, next)
-	return !isSame(known, next), nil
+	return !isSame(known, next)
 }
 
 func (i *Index) recordFailure(ctx context.Context, path string, err error) (bool, error) {

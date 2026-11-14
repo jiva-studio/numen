@@ -148,6 +148,19 @@ func (i *Index) SetIgnoredFolders(ctx context.Context, folders string) error {
 	return i.checkAll(ctx)
 }
 
+// StoreNote parses the content the plugin wrote to a note and keeps its tasks with the file stat
+// after the write, so the next list shows the change without reading the note again.
+func (i *Index) StoreNote(path string, content []byte, stat domain.FileStat) {
+	if i.isIgnored(path) {
+		return
+	}
+	if i.storeNote(path, content, stat) {
+		i.mu.Lock()
+		i.bump()
+		i.mu.Unlock()
+	}
+}
+
 // List returns the tasks that the filter accepts at today.
 func (i *Index) List(today string, f filter.Filter, limit int) Listing {
 	i.mu.Lock()

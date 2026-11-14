@@ -37,8 +37,6 @@ func start(t *testing.T, notes map[string]string) *app {
 	return startWithWriter(t, notes, nil)
 }
 
-// startWithWriter serves the notes with writes going to the writer getWriter returns, or to the vault
-// when getWriter is nil.
 func startWithWriter(t *testing.T, notes map[string]string, getWriter func(*hosttest.Vault) ports.FileWriter) *app {
 	t.Helper()
 	vault := hosttest.New("notes")

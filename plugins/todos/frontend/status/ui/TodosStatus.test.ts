@@ -257,3 +257,32 @@ describe('ticking a task in the todos popover', () => {
     expect((boxOf(view, 'call the bank').element as HTMLInputElement).checked).toBe(false)
   })
 })
+
+describe('a tick in flight in the todos popover', () => {
+  it('disables the checkbox of the task until the backend answers, so a second click sends nothing', async () => {
+    const pending: { answer?: () => void } = {}
+    const fake = createFakeApi({
+      tasks: TASKS,
+      setTaskDone: (request) =>
+        new Promise((resolve) => {
+          pending.answer = () => resolve(refuse(request, 'notFound'))
+        }),
+    })
+    const { wrapper: view } = draw(SUMMARY, fake)
+    await openPopover(view)
+
+    await boxOf(view, 'call the bank').trigger('click')
+    await settle()
+    await boxOf(view, 'call the bank').trigger('click')
+    await settle()
+
+    expect(boxOf(view, 'call the bank').attributes('disabled')).toBeDefined()
+    expect(boxOf(view, 'fix the tap').attributes('disabled')).toBeUndefined()
+    expect(fake.calls.setTaskDone).toHaveLength(1)
+
+    pending.answer?.()
+    await settle()
+
+    expect(boxOf(view, 'call the bank').attributes('disabled')).toBeUndefined()
+  })
+})

@@ -56,6 +56,16 @@ func TestChangeLineTicksAnOpenTask(t *testing.T) {
 			want: "*   [x]   a    b\tc done:2026-11-14",
 		},
 		{
+			name: "done: goes before the trailing spaces, which stay at the end",
+			line: "- [ ] buy milk  ",
+			want: "- [x] buy milk done:2026-11-14  ",
+		},
+		{
+			name: "done: goes before a block id that has trailing spaces after it",
+			line: "- [ ] buy milk ^milk-1\t ",
+			want: "- [x] buy milk done:2026-11-14 ^milk-1\t ",
+		},
+		{
 			name: "a callout task is ticked inside its quote",
 			line: ">> - [ ] in a callout",
 			want: ">> - [x] in a callout done:2026-11-14",
@@ -161,8 +171,7 @@ func TestChangeLineRefusesAChangeThatDoesNotFitTheTask(t *testing.T) {
 	}
 }
 
-// insertsDone reports whether ticked is before with " done:<today>" put in at one place.
-func insertsDone(before, ticked string) bool {
+func isDoneInserted(before, ticked string) bool {
 	field := " done:" + tickDay
 	for at := strings.Index(ticked, field); at >= 0; {
 		if ticked[:at]+ticked[at+len(field):] == before {
@@ -177,8 +186,7 @@ func insertsDone(before, ticked string) bool {
 	return false
 }
 
-// replacesDone reports whether ticked is before with the value of one done: token set to today.
-func replacesDone(before, ticked string) bool {
+func isDoneReplaced(before, ticked string) bool {
 	if len(before) != len(ticked) {
 		return false
 	}
@@ -228,7 +236,7 @@ func FuzzChangeLineChangesOnlyTheCheckboxAndTheCompletionDate(f *testing.F) {
 			t.Fatalf("ChangeLine(%q) = %q: the box does not hold x", line, ticked)
 		}
 		withX := line[:box+1] + "x" + line[box+2:]
-		if !insertsDone(withX, ticked) && !replacesDone(withX, ticked) {
+		if !isDoneInserted(withX, ticked) && !isDoneReplaced(withX, ticked) {
 			t.Fatalf("ChangeLine(%q) = %q: a byte outside the box and done: changed", line, ticked)
 		}
 		after, err := ParseNote([]byte(ticked))

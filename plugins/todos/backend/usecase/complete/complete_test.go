@@ -264,6 +264,18 @@ func TestExecuteRefusesAChangeTheNoteDoesNotAllowAndWritesNothing(t *testing.T) 
 			want: RefusalNotDone,
 		},
 		{
+			name: "a line of the text inside a code fence",
+			note: "```\n- [ ] buy milk\n```\n",
+			req:  tick("a.md", 2, "- [ ] buy milk"),
+			want: RefusalNotFound,
+		},
+		{
+			name: "a line of the text inside an HTML comment",
+			note: "<!--\n- [ ] buy milk\n-->\n",
+			req:  tick("a.md", 2, "- [ ] buy milk"),
+			want: RefusalNotFound,
+		},
+		{
 			name: "a tick of a task with an invalid recurrence",
 			note: "- [ ] buy milk rec:0w\n",
 			req:  tick("a.md", 1, "- [ ] buy milk rec:0w"),
