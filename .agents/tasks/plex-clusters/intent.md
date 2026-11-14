@@ -15,7 +15,7 @@
 ### In scope
 
 - Each relation takes a sector around the note in the middle (radial layout: Yee et al. 2001, Brandes & Pich). Clockwise from the top: parents (centered at the top), siblings, children, jumps, references. Each group with notes gets at least 36 degrees; the rest of the circle is shared by note count.
-- Each sector is filled ring by ring outward from the note in the middle. A ring takes every free slot inside the window and inside the sector; when it has room to spare, the notes are spread evenly, and alternate rings are shifted by half a slot.
+- One even grid covers the window, aligned to the note in the middle: straight rows and columns, the same step for every group. A cell belongs to the sector its center points into. Each group takes the cells of its sector nearest the note in the middle, so every group is a block of straight rows and columns.
 - A note never leaves its sector. Two notes never overlap.
 - Siblings keep their line to the parent they share with the note in the middle.
 - Notes that do not fit in the window are counted in the text at the bottom left, as today ("N children not shown"). The notes shown of each relation are the first ones of that relation, in the order they arrive.
@@ -34,7 +34,7 @@
 | Scenario | Expected behavior |
 |---|---|
 | A note with no connections | The note in the middle alone, as today. |
-| One relation only, many notes | That group takes the whole circle and fills ring after ring before notes are left out. |
+| One relation only, many notes | That group takes the whole circle, centered on the side it grows to, and fills the sides before it goes behind the note in the middle. |
 | More notes than the window holds | Boxes narrow and gaps close first; then the last notes of the groups whose sectors are full to the border of the window are left out and counted per relation in the text at the bottom left. No note is drawn past the edge of the window. |
 | No window size known (tests, first frame) | A fixed number of notes per group is shown, as today; the rest are counted. |
 | A large group next to a small one | The small group still gets its 36 degrees next to the note in the middle. |
@@ -54,6 +54,7 @@
 ## 5. Decisions of the owner (fixed)
 
 - Radial sectors (2026-11-14), in place of the clusters and their lanes and territories: clockwise parents (centered at the top), siblings, children, jumps, references; 36 degrees at least per group with notes, the rest by note count; filled ring by ring; a note never leaves its sector. Clear lines are only a preference inside a sector.
+- Even grid in the sectors (2026-11-14): notes on rings looked crooked, so the rings gave way to one grid of straight rows and columns for the whole window; the sectors stay as they were.
 - Boxes never overlap.
 - Siblings keep their line to the shared parent.
 - Overflow stays as today: the text "N children not shown" bottom left; no "+N" pill.

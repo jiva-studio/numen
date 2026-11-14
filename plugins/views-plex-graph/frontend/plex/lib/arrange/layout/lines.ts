@@ -123,17 +123,22 @@ export class LineIndex {
     this.boxes.set(id, box)
   }
 
-  /** Whether a note at the spot, with its pill centered on `center`, keeps its lines apart from the other lines and notes. */
-  isClear(id: string, center: Vector, box: Spot): boolean {
+  /** Whether a note at the spot, with its pill centered on `center`, keeps its lines apart from the other lines and notes, `clearance` away from the notes. */
+  isClear(id: string, center: Vector, box: Spot, clearance = CLEARANCE): boolean {
     const own = this.listPlacedNeighbors(id).map((other) => ({
       other,
       segment: { from: center, to: this.centers.get(other)! },
     }))
     return (
-      !this.isCrossed(box) &&
-      own.every(({ other, segment }) => !this.isBlocked(segment, other)) &&
+      !this.isCrossed(box, clearance) &&
+      own.every(({ other, segment }) => !this.isBlocked(segment, other, clearance)) &&
       own.every(({ other, segment }, index) => this.isSeparate(segment, other, own, index))
     )
+  }
+
+  /** Whether the note has a line to a placed note other than the hub. */
+  hasLineBeyondHub(id: string): boolean {
+    return this.listPlacedNeighbors(id).some((other) => other !== this.hub)
   }
 
   private link(from: string, to: string): void {
@@ -146,20 +151,20 @@ export class LineIndex {
     return (this.neighbors.get(id) ?? []).filter((other) => this.centers.has(other))
   }
 
-  private isCrossed(box: Spot): boolean {
-    const rect = grow(getBoxBounds(box), CLEARANCE)
+  private isCrossed(box: Spot, clearance: number): boolean {
+    const rect = grow(getBoxBounds(box), clearance)
     for (const cell of listCells(rect)) {
       for (const segment of this.cells.get(cell) ?? []) if (isCrossing(segment, rect)) return true
     }
     return false
   }
 
-  private isBlocked(segment: Segment, other: string): boolean {
+  private isBlocked(segment: Segment, other: string, clearance: number): boolean {
     const own = this.boxes.get(other)
-    const area = grow(getBounds(segment), CLEARANCE)
+    const area = grow(getBounds(segment), clearance)
     return this.boxIndex
       .listNear(area)
-      .some((box) => box !== own && isCrossing(segment, grow(getBoxBounds(box), CLEARANCE)))
+      .some((box) => box !== own && isCrossing(segment, grow(getBoxBounds(box), clearance)))
   }
 
   private isSeparate(

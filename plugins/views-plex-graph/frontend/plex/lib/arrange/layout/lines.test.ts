@@ -2,7 +2,6 @@
 import { describe, expect, it } from 'vitest'
 import { clusters } from './clusters'
 import { SpotIndex, type Spot } from './spotIndex'
-import { layRing, type RingRequest } from './sectors'
 import { LineIndex } from './lines'
 import type { PlacementContext } from './placement'
 import { resolveOptions } from '../options'
@@ -10,7 +9,6 @@ import type { PlacedNode } from '../../node'
 import type { PlexNode } from '../../../../types'
 
 const SIZE = { width: 100, height: 30 }
-const GAPS = { gap: 16, lineGap: 20 }
 const at = (x: number, y: number): Spot => ({ x, y, ...SIZE })
 
 const FOCUS: Spot = { x: 0, y: 0, width: 140, height: 40 }
@@ -76,45 +74,6 @@ describe('the lines of a note stay apart', () => {
 
     expect(lines.isClear('other', { x: 0, y: -150 }, at(0, -150))).toBe(false)
     expect(lines.isClear('other', { x: 200, y: -150 }, at(200, -150))).toBe(true)
-  })
-})
-
-describe('a spot on a ring', () => {
-  const sector = { relation: 'parent' as const, from: -120, to: -60 }
-  const layOne = (request: Partial<RingRequest>): Spot[] => {
-    const { index } = createLines([])
-    const spots: Spot[] = []
-    layRing(index, {
-      sector,
-      radius: 200,
-      isOdd: false,
-      gaps: GAPS,
-      isInside: () => true,
-      isLineClear: () => true,
-      sizes: [SIZE],
-      commit: (_, spot) => spots.push(spot),
-      ...request,
-    })
-    return spots
-  }
-
-  it('that keeps its lines apart is taken in place of the middle of the sector', () => {
-    const [spot] = layOne({ isLineClear: (_, candidate) => Math.abs(candidate.x) > 1 })
-
-    expect(Math.abs(spot!.x)).toBeGreaterThan(1)
-  })
-
-  it('that does not is still taken when no spot keeps its lines apart', () => {
-    expect(layOne({ isLineClear: () => false })).toStrictEqual(layOne({}))
-  })
-
-  it('that does not is still taken when the window holds no other spot', () => {
-    const [spot] = layOne({
-      isInside: (candidate) => Math.abs(candidate.x) < 2,
-      isLineClear: () => false,
-    })
-
-    expect(spot!.y).toBeCloseTo(-200)
   })
 })
 

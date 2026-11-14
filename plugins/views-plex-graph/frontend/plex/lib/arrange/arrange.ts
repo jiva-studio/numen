@@ -126,15 +126,15 @@ export function arrangePlex(
   const admitted = isTightestChosen ? admittedTightest : admittedCrowded
   const admittedOverflow = countOverflow(graph.nodes, admitted)
 
-  const spacing = findSpacing(resolved, (candidate, window) =>
-    isInsideWindow(
-      lay({ ...resolved, ...candidate }, admitted, rooms, {
-        shouldStop: stopAtOutside(window, margin, rooms),
-      }).placed,
-      window,
-      { margin, rooms },
-    ),
-  )
+  // Wider gaps stretch the arrangement and do not rearrange it: a note stays on its side of the focus.
+  let sides: ReadonlyMap<string, string> | undefined
+  const spacing = findSpacing(resolved, (candidate, window) => {
+    sides ??= getSides(lay(resolved, admitted, rooms).placed)
+    const laid = lay({ ...resolved, ...candidate }, admitted, rooms, {
+      shouldStop: stopAtOutside(window, margin, rooms),
+    }).placed
+    return isInsideWindow(laid, window, { margin, rooms }) && isOnSides(laid, sides)
+  })
   const fit: Fit = { margin, rooms }
   // The lines are kept apart only here and only in a window: what the window holds is settled without them, and a layout
   // that keeps them apart but leaves the window gives way to the one that does not.
@@ -182,6 +182,17 @@ function createWidthLookup(
     const box = Math.max(options.minWidth, measured)
     return Math.min(widest, isFocus ? box * options.focusScale : box)
   }
+}
+
+/** Which side of the focus a note is on, across and up or down, by id. */
+function getSides(nodes: readonly PlacedNode[]): ReadonlyMap<string, string> {
+  const side = (value: number) => (Math.abs(value) < 0.5 ? 0 : Math.sign(value))
+  return new Map(nodes.map((node) => [node.id, `${side(node.x)} ${side(node.y)}`]))
+}
+
+function isOnSides(nodes: readonly PlacedNode[], sides: ReadonlyMap<string, string>): boolean {
+  const now = getSides(nodes)
+  return [...now].every(([id, side]) => sides.get(id) === side)
 }
 
 function countNodes(nodesByRelation: NodesByRelation): number {

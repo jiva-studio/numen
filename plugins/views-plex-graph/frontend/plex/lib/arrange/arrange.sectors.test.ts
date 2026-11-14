@@ -1,4 +1,4 @@
-/** Each group fills its own sector around the focus, ring by ring, and a note is left out only when the window is full. */
+/** Each group takes the cells of one even grid in its own sector around the focus, and a note is left out only when its sector has no cell left. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { getBox, isOverlapping } from './layout/boxes'
@@ -29,6 +29,30 @@ const getOverlaps = (frame: PlexFrame): string[] =>
 
 const countLeftOut = (frame: PlexFrame): number =>
   Object.values(frame.overflow).reduce((sum, count) => sum + count, 0)
+
+/** The distinct values, each a whole number of the smallest distance between two of them from the next. */
+function isEvenlySpaced(values: readonly number[]): boolean {
+  const distinct = [...new Set(values.map((value) => Math.round(value * 1e6) / 1e6))].sort(
+    (a, b) => a - b,
+  )
+  const apart = distinct.slice(1).map((value, index) => value - distinct[index]!)
+  if (apart.length === 0) return true
+  const step = Math.min(...apart)
+  return apart.every((each) => Math.abs(each / step - Math.round(each / step)) < 1e-6)
+}
+
+/** Whether the notes stand in straight columns a step apart, and in straight rows a step apart over and under the focus. */
+function isOnGrid(frame: PlexFrame): boolean {
+  const shown = frame.nodes.filter((node) => node.relation !== 'focus')
+  const over = shown.filter((node) => node.y < 0).map((node) => node.y)
+  const under = shown.filter((node) => node.y > 0).map((node) => node.y)
+  return (
+    isEvenlySpaced(shown.map((node) => node.x)) && isEvenlySpaced(over) && isEvenlySpaced(under)
+  )
+}
+
+const countDistinct = (values: readonly number[]): number =>
+  new Set(values.map((value) => Math.round(value * 1e6))).size
 
 /** How often the relation changes going once around the focus. */
 function countRelationChanges(frame: PlexFrame): number {
@@ -88,6 +112,15 @@ describe.each([
       }
     })
 
+    it('lay the notes in straight rows and columns of one grid', () => {
+      const frame = arrangePlex(graph, { options: { viewport } })
+      const shown = frame.nodes.filter((node) => node.relation !== 'focus')
+
+      expect(isOnGrid(frame)).toBe(true)
+      expect(countDistinct(shown.map((node) => node.x))).toBeLessThan(shown.length / 8)
+      expect(countDistinct(shown.map((node) => node.y))).toBeLessThan(shown.length / 4)
+    })
+
     it('keep each group in one run around the focus when the notes have names under them', () => {
       const frame = arrangePlex(graph, { options: { viewport, room: 20 } })
 
@@ -113,6 +146,10 @@ describe('a window too small for every note', () => {
     expect(countLeftOut(frame)).toBeGreaterThan(0)
     expect(getOverlaps(frame)).toStrictEqual([])
     expect(countRelationChanges(frame)).toBe(SECTOR_ORDER.length)
+  })
+
+  it('lays the notes it shows on one grid', () => {
+    expect(isOnGrid(frame)).toBe(true)
   })
 
   it('shows every note of a smaller graph', () => {

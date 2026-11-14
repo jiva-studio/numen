@@ -1,4 +1,4 @@
-/** Each relation fills a sector around the focus ring by ring outward; the sector angles follow the note counts. */
+/** One even grid around the focus, and each relation takes the cells of its sector nearest the focus; the sector angles follow the note counts. */
 import { RELATION_NAMES } from '../../relation'
 import type { PlacedNode } from '../../node'
 import type { Size } from '../options'
@@ -10,17 +10,28 @@ import {
   type Placement,
   type PlacementContext,
 } from './placement'
-import { getSectors, layRing, type Sector } from './sectors'
-import { SpotIndex, type Spot, type Vector } from './spotIndex'
+import { getSectors, listSectorCells, type Cell, type Sector } from './sectors'
+import { isClear, SpotIndex, type Gaps, type Spot, type Vector } from './spotIndex'
 import type { PlexNode, PlexRelation } from '../../../../types'
 
-/** The rings of a sector stop here when there is no window to end them. */
-const MAX_RINGS = 400
+/** Two lines from the focus closer than this (the sine of the angle between them) to one direction read as one line. */
+const ALONG_SINE = 0.12
+
+/**
+ * How much farther than the nearest free cell a note goes to keep its lines apart; beyond it the block stays compact. A
+ * note joined to a placed note other than the focus goes farther: its line runs between two notes of the plex.
+ */
+const LINE_REACH = 0.5
+const LINE_REACH_BEYOND_HUB = 2
 
 /** What one placement shares across its sectors. */
 interface Run {
-  readonly focus: PlacedNode
+  readonly focusHeight: number
+  readonly focusSpot: Spot
   readonly context: PlacementContext
+  readonly gaps: Gaps
+  /** The distance between two columns and between two rows of the grid, the same for every group. */
+  readonly step: Size
   readonly index: SpotIndex
   readonly lines: LineIndex
   readonly placed: Map<string, PlacedNode>
@@ -77,48 +88,102 @@ function getLeftOutSpot(sector: Sector, cell: Size, context: PlacementContext): 
   return { x: radius * Math.cos(middle), y: radius * Math.sin(middle), ...cell }
 }
 
-/** Fills the sector ring by ring; returns whether a caller asked to stop. */
-function placeSector(run: Run, sector: Sector, members: readonly PlexNode[]): boolean {
-  const { context } = run
-  const { gap, lineGap, focusGap, viewport } = context.options
-  const sizes = members.map((node) => getFootprintOf(node, context))
-  const height = Math.max(...sizes.map((size) => size.height))
-  const first = run.focus.height / 2 + focusGap + height / 2
-  const step = height + lineGap
-  const maxRadius = viewport ? getReach(viewport) / 2 : Number.POSITIVE_INFINITY
-  const placedBefore = run.placed.size
-  let next = 0
-  let isStopped = false
-  for (let ring = 0; next < members.length && ring < MAX_RINGS; ring++) {
-    const radius = first + ring * step
-    if (radius > maxRadius) break
-    const rest = members.slice(next)
-    layRing(run.index, {
-      sector,
-      radius,
-      isOdd: ring % 2 === 1,
-      gaps: { gap, lineGap },
-      isInside: (spot) => isInWindow(spot, context),
-      isLineClear: (position, spot) => isLineClear(run, rest[position]!, spot),
-      sizes: sizes.slice(next),
-      commit: (position, spot) => {
-        isStopped = place(run, rest[position]!, { spot, order: next + position }) || isStopped
-      },
-    })
-    next = run.placed.size - placedBefore
-    if (isStopped) return true
-  }
-  for (; next < members.length; next++) {
-    const node = members[next]!
-    const spot = getLeftOutSpot(sector, getFootprintOf(node, context), context)
-    if (place(run, node, { spot, order: next })) return true
+/** Whether the line from the focus to the note would run along the line to a note placed before, on the same side. */
+function isAlong(run: Run, center: Vector): boolean {
+  const length = Math.hypot(center.x, center.y)
+  for (const other of run.placed.values()) {
+    const cross = center.x * other.y - center.y * other.x
+    const dot = center.x * other.x + center.y * other.y
+    if (dot > 0 && Math.abs(cross) < ALONG_SINE * length * Math.hypot(other.x, other.y)) return true
   }
   return false
 }
 
-function isLineClear(run: Run, node: PlexNode, spot: Spot): boolean {
-  const center = { x: spot.x, y: getPillCenterY(spot.y, run.context.room(node)) }
-  return run.lines.isClear(node.id, center, spot)
+function getPillCenter(run: Run, node: PlexNode, spot: Spot): Vector {
+  return { x: spot.x, y: getPillCenterY(spot.y, run.context.room(node)) }
+}
+
+/** The cells of a sector, nearest first, and the ones already taken. */
+interface SectorCells {
+  readonly cells: readonly Cell[]
+  readonly used: Set<number>
+}
+
+/** A cell a note can take, and the note's box in it. */
+interface Candidate {
+  readonly position: number
+  readonly spot: Spot
+}
+
+/** The free cells for a note of this size, from the nearest free one to `reach` columns farther. */
+function listFreeCells(run: Run, size: Size, sector: SectorCells, reach: number): Candidate[] {
+  const free: Candidate[] = []
+  for (const [position, cell] of sector.cells.entries()) {
+    if (sector.used.has(position)) continue
+    const spot = { x: cell.x, y: cell.y, ...size }
+    if (!isInWindow(spot, run.context) || !run.index.isFree(spot, run.gaps)) continue
+    const nearest = free[0] && sector.cells[free[0].position]!
+    if (nearest && cell.distance > nearest.distance + reach * run.step.width) break
+    free.push({ position, spot })
+  }
+  return free
+}
+
+/**
+ * The cell the note takes, among the cells not much farther than the nearest free one: the first off the lines from the
+ * focus whose lines keep clear of the other lines and notes, then the first whose lines at least run through no note, then
+ * the first off the lines from the focus. Failing those, the nearest free cell.
+ */
+function findCell(run: Run, node: PlexNode, sector: SectorCells): Candidate | undefined {
+  const reach = run.lines.hasLineBeyondHub(node.id) ? LINE_REACH_BEYOND_HUB : LINE_REACH
+  const free = listFreeCells(run, getFootprintOf(node, run.context), sector, reach)
+  const offLine = free.filter(({ spot }) => !isAlong(run, getPillCenter(run, node, spot)))
+  const isClearAt =
+    (clearance?: number) =>
+    ({ spot }: Candidate): boolean =>
+      run.lines.isClear(node.id, getPillCenter(run, node, spot), spot, clearance)
+  return offLine.find(isClearAt()) ?? offLine.find(isClearAt(0)) ?? offLine[0] ?? free[0]
+}
+
+/** Fills the cells of the sector, nearest first; returns whether a caller asked to stop. */
+function placeSector(run: Run, sector: Sector, members: readonly PlexNode[]): boolean {
+  const { context, step, gaps } = run
+  const { viewport, margin, focusGap } = context.options
+  const footprint = { width: step.width - gaps.gap, height: step.height - gaps.lineGap }
+  const cells = listSectorCells({
+    sector,
+    step,
+    firstRow: run.focusHeight / 2 + focusGap + footprint.height / 2,
+    count: members.length,
+    bounds: viewport && {
+      width: viewport.width / 2 - margin,
+      height: viewport.height / 2 - margin,
+    },
+    isUsable: (cell) => isClear({ ...cell, ...footprint }, run.focusSpot, gaps),
+  })
+  const taken: SectorCells = { cells, used: new Set() }
+  for (const [order, node] of members.entries()) {
+    const found = findCell(run, node, taken)
+    if (found) taken.used.add(found.position)
+    const spot = found?.spot ?? getLeftOutSpot(sector, getFootprintOf(node, context), context)
+    if (place(run, node, { spot, order })) return true
+  }
+  return false
+}
+
+/** The widest and the tallest footprint of all notes, and the gaps, make one step of the grid for every group. */
+function getStep(nodesByRelation: NodesByRelation, context: PlacementContext): Size {
+  const { gap, lineGap } = context.options
+  let width = 0
+  let height = 0
+  for (const nodes of Object.values(nodesByRelation)) {
+    for (const node of nodes ?? []) {
+      const size = getFootprintOf(node, context)
+      width = Math.max(width, size.width)
+      height = Math.max(height, size.height)
+    }
+  }
+  return { width: width + gap, height: height + lineGap }
 }
 
 function placeClusters(
@@ -128,7 +193,7 @@ function placeClusters(
 ): PlacedNode[] {
   const { gap, lineGap, focusGap } = context.options
   const counts: Partial<Record<PlexRelation, number>> = {}
-  for (const relation of RELATION_NAMES) counts[relation] = nodesByRelation[relation]?.length
+  for (const relation of RELATION_NAMES) counts[relation] = nodesByRelation[relation]?.length ?? 0
   // The focus keeps `focusGap` around it, where other boxes keep `gap`.
   const focusSpot: Spot = {
     x: focus.x,
@@ -139,7 +204,16 @@ function placeClusters(
   const index = new SpotIndex([focusSpot])
   const lines = new LineIndex(context.edges ?? [], focus.id, index)
   lines.place(focus.id, { x: focus.x, y: focus.y } satisfies Vector, focusSpot)
-  const run: Run = { focus, context, index, lines, placed: new Map() }
+  const run: Run = {
+    focusHeight: focus.height,
+    focusSpot,
+    context,
+    gaps: { gap, lineGap },
+    step: getStep(nodesByRelation, context),
+    index,
+    lines,
+    placed: new Map(),
+  }
   for (const sector of getSectors(counts)) {
     if (placeSector(run, sector, nodesByRelation[sector.relation] ?? [])) break
   }

@@ -28,14 +28,14 @@ graph TD
 `placeClusters(nodesByRelation, focus, context)` lays the groups in radial sectors around the focus (radial layout as in Yee et al. 2001 and Brandes & Pich; ego networks drawn in sectors):
 
 1. **Sectors.** `getSectors(counts): Sector[]` (`layout/sectors.ts`). The groups that have notes take sectors clockwise in the order parents, siblings, children, jumps, references; the parents' sector is centered at the top. Each such group gets `MIN_SECTOR_DEGREES = 36` and the rest of the 360 degrees is shared by note count. References come in only when the references setting shows them.
-2. **Rings.** Each sector is filled ring by ring outward from the focus. The first ring lies half the focus height plus `focusGap` plus half the tallest footprint of the group from the center; each next ring is one footprint height plus `lineGap` further out. The rings stop where they leave the window (half its diagonal) or at 400 rings without a window.
-3. **One ring.** `layRing(index, request)` walks the arc of the sector in 3 px steps, 4 px inside each border. When the arc cannot hold all the notes still to place, it takes as many as fit, packed one after another. When it can, the notes are spread evenly: each starts at the middle of its share of the arc and takes the first free spot from there. Odd rings start half a slot later, so notes of two rings do not stand on one ray. A spot is free when it is inside the window and keeps `gap` and `lineGap` from every box placed (`SpotIndex.isFree`, `layout/spotIndex.ts`).
-4. **Lines.** Where a spot would make a line run along another line or through another note (`layout/lines.ts`), a free spot a little along the same arc is taken instead, if one has clear lines. This is a preference only: a note never leaves its sector and is never left out for its lines.
-5. **Left out.** A note stays in its sector. The notes that no ring inside the window can hold are set outside the window in the middle of their sector, and `arrangePlex` counts them as not shown.
+2. **Grid.** One grid for all groups, aligned to the focus. A column is the widest footprint of all notes plus `gap`; a row is the tallest footprint plus `lineGap`, so names under notes are part of the row. Columns stand at whole steps from the focus. The rows over and under the focus start half the focus height plus `focusGap` plus half the tallest footprint away and follow a row apart; the row of the focus holds cells beside it, and rows between it and the first row stand only a row or more from it. A cell belongs to the sector its center points into (`listSectorCells`, `layout/sectors.ts`); cells outside the window or too near the focus are skipped. Without a window the grid grows until the sector has as many cells as notes.
+3. **Order of the cells.** A sector hands out its cells nearest first, a row away counting 1.6 times a column away (`hypot(x, 1.6·y)`), so a group is a block wider than it is tall. In a sector wider than a half circle, a cell behind the middle of the sector counts up to 4 times as far. A group alone takes the whole circle centered on the side it grows to (children down, parents up). A cell is free when it is inside the window and keeps `gap` and `lineGap` from every box placed (`SpotIndex.isFree`, `layout/spotIndex.ts`).
+4. **Lines.** Among the free cells at most half a column farther than the nearest (two columns for a note joined to a placed note other than the focus), a note takes the first whose line from the focus does not run along the line to a note placed before (same direction, sine below 0.12, same side) and whose lines keep 24 px from other notes and run along no other line (`layout/lines.ts`); then the first whose lines at least run through no note; then the first off the lines from the focus; else the nearest free cell. This is a preference only: a note never leaves its sector and is never left out for its lines.
+5. **Left out.** A note stays in its sector. The notes for which the sector has no free cell inside the window are set outside the window in the middle of their sector, and `arrangePlex` counts them as not shown. Wider gaps (`findSpacing`) are taken only while every note stays on its side of the focus, so opening the gaps stretches the grid and does not rearrange it.
 6. **Free.** `isClear(spot, other, gaps)`: `|Δx| ≥ (w₁ + w₂)/2 + gap − TOLERANCE` or `|Δy| ≥ (h₁ + h₂)/2 + lineGap − TOLERANCE`, `TOLERANCE = 0.5`, so a box built exactly one gap from a neighbor counts as free despite floating-point error.
 7. **Output.** Each node keeps its relation, identity and title; `width = context.width(node)`, `height = options.nodeSize.height`, `opacity = 1`, `order` = its index within its relation. The returned array is grouped by relation in `RELATION_NAMES` order, each relation in arrival order — the order today's placement returns, so the drawing order and the tab order of nodes do not change.
 
-Splitting: `clusters.ts` holds `clusters`, `placeClusters` and the ring loop of a sector; `layout/sectors.ts` holds `getSectors` and `layRing`; `layout/spotIndex.ts` holds `SpotIndex` and `isClear`. Each file under 350 lines, each function under 60 lines, complexity 10 and 3 parameters.
+Splitting: `clusters.ts` holds `clusters`, `placeClusters` and the choice of a cell for each note; `layout/sectors.ts` holds `getSectors` and `listSectorCells`; `layout/spotIndex.ts` holds `SpotIndex` and `isClear`. Each file under 350 lines, each function under 60 lines, complexity 10 and 3 parameters.
 
 ### 1.2 Admission (new, `lib/arrange/layout/admission.ts`)
 
@@ -60,7 +60,7 @@ Replaces `canPlace` in `arrange.ts` and the per-line capacity of `limits.ts`.
 
 ### 1.5 Routing
 
-`edges/routing.ts` is not changed. `getAxis` still takes the axis from the side of the relation (`vertical` for parents and children, `horizontal` for jumps and siblings). Sibling edges come from the graph as parent → sibling and are routed as today. Lines that pass behind a box of an inner ring are accepted for this issue (open question 3).
+`edges/routing.ts` is not changed. `getAxis` still takes the axis from the side of the relation (`vertical` for parents and children, `horizontal` for jumps and siblings). Sibling edges come from the graph as parent → sibling and are routed as today. Lines that pass behind a box nearer the focus are accepted for this issue (open question 3).
 
 ## 2. The direction table (`lib/relation.ts`)
 
@@ -125,7 +125,7 @@ No proto, wire, manifest or setting change. `apps/landing` has its own plex demo
 - `arrangePlex` stays pure and deterministic: no randomness, stable sort, ties keep candidate order.
 - The `Placement` interface stays a coordinates-only strategy: admission and fitting live in `arrange.ts` / `admission.ts` / `crowding.ts`, not in `clusters`.
 - No camera zoom, no change of box sizes by the placement, no "+N" node.
-- Files ≤ 350 lines, functions ≤ 60 lines, complexity ≤ 10, ≤ 3 params; imperative names (`placeClusters`, `getSectors`, `layRing`, `isFree`, `requestNodes`, `admitNodes`); comments only for what the code cannot show (the 0.5 tolerance).
+- Files ≤ 350 lines, functions ≤ 60 lines, complexity ≤ 10, ≤ 3 params; imperative names (`placeClusters`, `getSectors`, `listSectorCells`, `isFree`, `requestNodes`, `admitNodes`); comments only for what the code cannot show (the 0.5 tolerance).
 - Tests use invented fixtures (`fixtures/build.ts`, `fixtures/graphs.ts`), assert behavior on the frame (positions relative to the focus and each other, counts, edges), never CSS or pixels of the rendering, and do not mock the placement or admission they verify.
 
 ## 6. Acceptance criteria
@@ -181,9 +181,9 @@ Removed with the clusters around a middle: the sectors take their place (AC-2 to
 - **Given** a taken box and a box of the same size exactly one `gap` to its right (and one `lineGap` below)
 - **Then** `isFree` is true; at one `gap` less 1 it is false. The grid index answers as the check against every box does.
 
-### AC-15: Lines on a ring
-- **Given** one note on a ring whose middle spot has a line that is not clear
-- **Then** `layRing` takes a spot beside it on the same ring; where no spot has clear lines, or the window holds only that spot, it takes the middle spot.
+### AC-15: The cells of a sector
+- **Given** a sector, a step and a first row
+- **Then** `listSectorCells` gives cells whose centers point into the sector, in columns a step apart and rows a step apart from the first row, nearest first; the notes of a frame stand in straight rows and columns (`arrange.sectors.test.ts`).
 
 ### AC-16: Any placement strategy is admitted by the window
 - **Given** the `ring` placement and `overcrowded` in a 700×600 window

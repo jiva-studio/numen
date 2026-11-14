@@ -32,8 +32,6 @@ const getShownNodes = (frame: PlexFrame, relation: PlexNodeRelation): PlacedNode
   frame.nodes.filter((node) => node.relation === relation)
 const getArrivedNodes = (graph: PlexGraph, relation: PlexRelation): PlexNode[] =>
   graph.nodes.filter((node) => node.relation === relation)
-const mean = (values: readonly number[]): number =>
-  values.reduce((sum, value) => sum + value, 0) / values.length
 
 const getOverlaps = (frame: PlexFrame): string[] =>
   frame.nodes.flatMap((a, index) =>

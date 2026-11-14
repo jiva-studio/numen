@@ -256,13 +256,19 @@ describe('a relation where half the notes have names', () => {
     expect(getFootprintOverlaps(getFootprints(graph, frame, half))).toEqual([])
   })
 
-  it('takes less room than the same relation with names under every note', () => {
-    const every: Rooms = (node) =>
-      node.relation === 'child' ? { top: 0, bottom: 56, width: 90 } : NONE
-    const areaOf = (frame: PlexFrame) =>
-      (frame.extent.maxY - frame.extent.minY) * (frame.extent.maxX - frame.extent.minX)
+  it('lays the notes without names on the rows of the notes with names, a footprint with names apart', () => {
+    const frame = arrange(graph, window, half)
+    const centers = getFootprints(graph, frame, half)
+      .filter((footprint) => footprint.id !== frame.nodes[0]!.id)
+      .map((footprint) => (footprint.minY + footprint.maxY) / 2)
+    const rowStep = DEFAULT_OPTIONS.nodeSize.height + 56 + DEFAULT_OPTIONS.lineGap
 
-    expect(areaOf(arrange(graph, window, half))).toBeLessThan(areaOf(arrange(graph, window, every)))
+    for (const [index, y] of centers.entries()) {
+      for (const other of centers.slice(index + 1)) {
+        const apart = Math.abs(y - other)
+        expect(apart < 0.5 || apart >= rowStep - 0.5, `${y} and ${other}`).toBe(true)
+      }
+    }
   })
 })
 

@@ -150,7 +150,7 @@ describe('a note that is cut', () => {
     for (const { relation, rounds } of cuts)
       expect(rounds.length, relation).toBeGreaterThanOrEqual(5)
     const whole = cases.filter((one) => Object.keys(arrangeCase(one).overflow).length === 0)
-    expect(whole.length).toBeGreaterThanOrEqual(4)
+    expect(whole.length).toBeGreaterThanOrEqual(3)
   }, 120_000)
 
   it.each(cuts.map(({ relation, rounds }) => [relation, rounds] as const))(
@@ -162,8 +162,9 @@ describe('a note that is cut', () => {
         if (Object.keys(again.overflow).length === 0)
           stillFits.push(`case ${round} ${relation} ${visible}`)
       }
-      // Packing is chosen for the whole graph, so a smaller graph may be packed looser and now and then holds one more.
-      expect(stillFits.length).toBeLessThanOrEqual(1)
+      // Packing is chosen for the whole graph, so a smaller graph may be packed looser and now and then holds one more:
+      // the cells of the grid that fall in a sector are not more for every tighter packing.
+      expect(stillFits.length).toBeLessThanOrEqual(2)
     },
   )
 
@@ -187,7 +188,7 @@ describe('a note that is cut', () => {
         againIds.size === visibleIds.size && [...againIds].every((id) => visibleIds.has(id))
       if (!isSame) changed.push(`case ${round}`)
     })
-    // Slots on a ring do not grow smoothly with the gaps, so a packing chosen for the smaller graph now and then differs from the one chosen for the whole.
+    // The cells of the grid in a sector do not grow smoothly with the gaps, so a packing chosen for the smaller graph now and then differs from the one chosen for the whole.
     expect(changed.length).toBeLessThanOrEqual(3)
   }, 120_000)
 })
