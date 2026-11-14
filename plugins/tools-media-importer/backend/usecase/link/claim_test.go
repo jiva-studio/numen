@@ -36,6 +36,14 @@ func TestTheSameAddressInAnotherVaultIsOtherWork(t *testing.T) {
 	if !l.claim("text", physics, physics.Key) {
 		t.Error("a released fetch is still held")
 	}
+	l.release("text", physics, physics.Key)
+	if err := l.waitClaim(t.Context(), "copy", physics, physics.Key); err != nil {
+		t.Fatal(err)
+	}
+	if l.claim("copy", physics, physics.Key) {
+		t.Error("waitClaim did not record the running claim")
+	}
+	l.release("copy", physics, physics.Key)
 }
 
 func TestTimeSelectorEncodeRejectsNaN(t *testing.T) {
@@ -126,6 +134,10 @@ func (x *hookTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.Te
 type hookVault struct {
 	*hosttest.Vault
 	getVaultErr error
+	readErr     func(path string) error
+	writeErr    error
+	scanErr     error
+	getPathsErr error
 }
 
 func (v *hookVault) GetVault(ctx context.Context) (domain.Vault, error) {
@@ -133,6 +145,36 @@ func (v *hookVault) GetVault(ctx context.Context) (domain.Vault, error) {
 		return domain.Vault{}, v.getVaultErr
 	}
 	return v.Vault.GetVault(ctx)
+}
+
+func (v *hookVault) Read(ctx context.Context, path string) ([]byte, domain.FileStat, error) {
+	if v.readErr != nil {
+		if err := v.readErr(path); err != nil {
+			return nil, domain.FileStat{}, err
+		}
+	}
+	return v.Vault.Read(ctx, path)
+}
+
+func (v *hookVault) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
+	if v.writeErr != nil {
+		return domain.FileStat{}, v.writeErr
+	}
+	return v.Vault.Write(ctx, path, content, baseline)
+}
+
+func (v *hookVault) Scan(ctx context.Context, paths []string) error {
+	if v.scanErr != nil {
+		return v.scanErr
+	}
+	return v.Vault.Scan(ctx, paths)
+}
+
+func (v *hookVault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	if v.getPathsErr != nil {
+		return nil, v.getPathsErr
+	}
+	return v.Vault.GetPathsOfType(ctx, noteType)
 }
 
 type hookQueue struct {
@@ -252,6 +294,13 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	}
 	hs.writeErr = nil
 
+	if err := hs.Write(ctx, "bad.json", []byte("{invalid")); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := f.findRecord(ctx, "bad"); err == nil {
+		t.Error("findRecord(invalid json) succeeded")
+	}
+
 	hs.listErr = func(int) error { return boom }
 	if _, ok, err := f.findCopy(ctx, "h1", download.MediaVideo); !errors.Is(err, boom) || ok {
 		t.Errorf("findCopy(error) = %v, %v", ok, err)
@@ -275,6 +324,12 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	if err := hs.Write(ctx, "h1.part", []byte("part")); err != nil {
 		t.Fatal(err)
 	}
+	if err := hs.Write(ctx, "h1.video.txt", []byte("not-a-media-ext")); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, err := f.findCopy(ctx, "h1", download.MediaVideo); err != nil || ok {
+		t.Errorf("findCopy(non-media ext) = %v, %v, want false", ok, err)
+	}
 	if err := hs.Write(ctx, "h1.video.mp4", []byte("mp4")); err != nil {
 		t.Fatal(err)
 	}
@@ -295,6 +350,9 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 }
 
 func TestStoreWriterLimitsAndChunks(t *testing.T) {
+	if copyChunk != 1048576 {
+		t.Fatalf("copyChunk = %d, want 1048576", copyChunk)
+	}
 	var chunks [][]byte
 	var reports []int64
 	w := &storeWriter{
@@ -341,6 +399,14 @@ func TestStoreWriterLimitsAndChunks(t *testing.T) {
 	if err := wErr.flush(); !errors.Is(err, boom) {
 		t.Errorf("flush with append error = %v, want %v", err, boom)
 	}
+	wChunkErr := &storeWriter{
+		limit:       0,
+		appendChunk: func([]byte) error { return boom },
+		report:      func(int64) {},
+	}
+	if _, err := wChunkErr.Write(make([]byte, copyChunk)); !errors.Is(err, boom) {
+		t.Errorf("Write(copyChunk) with append error = %v, want %v", err, boom)
+	}
 }
 
 func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStore, ht *hookTexts, hq *hookQueue, sf *stubFetcher, copyMaxSize *int64) {
@@ -360,7 +426,8 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 	}
 	copyMaxSize = new(int64)
 	l = New(Host{Vaults: func(id domain.VaultID) Vault {
-		if id == "" {
+		// A link names the vault it was made in, so the hooks answer for that vault too.
+		if id == "" || id == v.Vault().ID {
 			return Vault{Files: hv, Writer: hv}
 		}
 		other := v.With(id)
@@ -454,7 +521,11 @@ func TestLinksCloseReadAndStoreScoping(t *testing.T) {
 
 func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	ctx := t.Context()
-	l, v, _, hs, ht, hq, sf, maxSize := createTestLinks()
+	l, v, hv, hs, ht, hq, sf, maxSize := createTestLinks()
+	var reported []string
+	l.host.Report = func(what string, _ error) {
+		reported = append(reported, what)
+	}
 	t.Cleanup(l.Close)
 
 	made, err := l.Create(ctx, "", "links", "https://example.com/a")
@@ -463,6 +534,19 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	}
 	rawNote, _ := v.Content(made.Path)
 	ht.fake.File(made.Path, []byte(rawNote))
+
+	boom := errors.New("store failure")
+	hs.writeErr = func(string) error { return boom }
+	if _, err := l.Create(ctx, "", "links", "https://www.youtube.com/watch?v=tidalmill01"); !errors.Is(err, boom) {
+		t.Errorf("Create(writePage err) = %v, want %v", err, boom)
+	}
+	hs.writeErr = nil
+
+	hv.scanErr = boom
+	if _, err := l.Create(ctx, "", "links", "https://example.com/scan-fail"); !errors.Is(err, boom) {
+		t.Errorf("Create(scanErr) = %v, want %v", err, boom)
+	}
+	hv.scanErr = nil
 
 	// Claim contention on FetchText and Copy.
 	l.claim("text", made, made.Key)
@@ -478,7 +562,6 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	l.release("copy", made, made.Key)
 
 	// readRecord error paths.
-	boom := errors.New("store failure")
 	hs.readErr = func(name string) error {
 		if name == made.Key+recordExt {
 			return boom
@@ -518,6 +601,7 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	// endTask with canceled context still finishes the task using an uncanceled context.
 	canceledCtx, cancel := context.WithCancel(ctx)
 	cancel()
+	hq.finishCtx = nil
 	l.endTask(canceledCtx, host.Task{ID: "t1"}, context.Canceled)
 	if hq.finishCtx == nil || hq.finishCtx.Err() != nil {
 		t.Errorf("endTask finishCtx err = %v, want nil", hq.finishCtx)
@@ -525,21 +609,38 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 
 	// Copy fails where the folder cannot be listed.
 	hs.listErr = func(int) error { return boom }
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
-		t.Errorf("Copy(list err) = %v, want %v", err, boom)
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) || size != 0 {
+		t.Errorf("Copy(list err) = (%d, %v), want (0, %v)", size, err, boom)
 	}
 	hs.listErr = nil
 
+	// prepareCopy ignores a 0-byte copy file and prepares a fresh task with size 0.
+	if err := hs.Write(ctx, made.Key+".video.mp4", nil); err != nil {
+		t.Fatal(err)
+	}
+	if prepTask, prepSize, err := l.prepareCopy(ctx, made, download.MediaVideo); err != nil || prepTask == nil || prepSize != 0 {
+		t.Errorf("prepareCopy(0-byte file) = (%+v, %d, %v), want non-nil task and 0 size", prepTask, prepSize, err)
+	}
+	if err := hs.Delete(ctx, made.Key+".video.mp4"); err != nil {
+		t.Fatal(err)
+	}
+
 	// Copy error and boundary paths.
 	sf.canCopy = false
+	if l.IsCopyable(made.Address) {
+		t.Error("IsCopyable = true when canCopy is false")
+	}
 	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, ErrNotCopyable) || size != 0 {
 		t.Errorf("Copy(not copyable) = (%d, %v)", size, err)
 	}
 	sf.canCopy = true
+	if !l.IsCopyable(made.Address) {
+		t.Error("IsCopyable = false when canCopy is true")
+	}
 
 	sf.metaErr = boom
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
-		t.Errorf("Copy(metaErr) = %v", err)
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) || size != 0 {
+		t.Errorf("Copy(metaErr) = (%d, %v)", size, err)
 	}
 	sf.metaErr = nil
 
@@ -557,8 +658,8 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	sf.meta = download.Metadata{Bytes: 4}
 
 	hq.enqueueErr = boom
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
-		t.Errorf("Copy(enqueueErr) = %v", err)
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) || size != 0 {
+		t.Errorf("Copy(enqueueErr) = (%d, %v)", size, err)
 	}
 	hq.enqueueErr = nil
 
@@ -568,8 +669,8 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 		}
 		return nil
 	}
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
-		t.Errorf("Copy(delete part err) = %v", err)
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) || size != 0 {
+		t.Errorf("Copy(delete part err) = (%d, %v)", size, err)
 	}
 	hs.deleteErr = nil
 
@@ -580,14 +681,14 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	hs.appendErr = nil
 
 	sf.copyRes = download.Copy{MediaType: "application/octet-stream", Extension: ".exe"}
-	if _, err := l.Copy(ctx, made, download.MediaVideo); err == nil {
-		t.Error("Copy(.exe) succeeded")
+	if size, err := l.Copy(ctx, made, download.MediaVideo); err == nil || size != 0 {
+		t.Errorf("Copy(.exe) = (%d, %v), want (0, error)", size, err)
 	}
 	sf.copyRes = download.Copy{MediaType: "video/mp4", Extension: ".mp4"}
 
 	hs.renameErr = boom
-	if _, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) {
-		t.Errorf("Copy(renameErr) = %v", err)
+	if size, err := l.Copy(ctx, made, download.MediaVideo); !errors.Is(err, boom) || size != 0 {
+		t.Errorf("Copy(renameErr) = (%d, %v)", size, err)
 	}
 	hs.renameErr = nil
 
@@ -599,6 +700,35 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	if err := hs.Delete(ctx, made.Key+".video.mp4"); err != nil {
 		t.Fatal(err)
 	}
+
+	// setAddress, publishCopy, and deleteUnreferencedCopies when store has no copies.
+	if err := l.setAddress(ctx, Link{Path: "links/missing.md"}, mediaKey, "x"); !errors.Is(err, host.ErrNotExist) {
+		t.Errorf("setAddress(missing) = %v, want ErrNotExist", err)
+	}
+	v.File("links/unterminated.md", "---\ntype: link\n")
+	if err := l.setAddress(ctx, Link{Path: "links/unterminated.md"}, mediaKey, "x"); err == nil {
+		t.Error("setAddress(unterminated frontmatter) succeeded")
+	}
+	if err := l.setAddress(ctx, made, mediaKey, ""); err != nil {
+		t.Fatal(err)
+	}
+	hv.writeErr = boom
+	if err := l.setAddress(ctx, made, mediaKey, ""); err != nil {
+		t.Errorf("setAddress(unchanged) called Write and returned %v", err)
+	}
+	if err := l.setAddress(ctx, made, mediaKey, "plugin://plug/x"); !errors.Is(err, boom) {
+		t.Errorf("setAddress(writeErr) = %v, want %v", err, boom)
+	}
+	if err := l.publishCopy(ctx, made, "x.mp4"); !errors.Is(err, boom) {
+		t.Errorf("publishCopy(setAddress err) = %v, want %v", err, boom)
+	}
+	hv.writeErr = nil
+
+	hv.getPathsErr = boom
+	if err := l.deleteUnreferencedCopies(ctx, made); err != nil {
+		t.Errorf("deleteUnreferencedCopies(no copies) = %v, want nil", err)
+	}
+	hv.getPathsErr = nil
 
 	// Copy with 1-byte file at exact maxSize=1, then 2nd Copy reuses existing 1-byte file without downloading.
 	*maxSize = 1
@@ -618,17 +748,76 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 		t.Fatalf("second Copy(1 byte) = (%d, %v), downloads=%d", size, err, sf.downloads)
 	}
 
-	// DeleteCopy fails where the folder cannot be listed, and deletes the copy no note refers to.
+	// DeleteCopy and deleteUnreferencedCopies error branches when a copy is present.
+	l.claim("copy", made, made.Key)
+	if err := l.DeleteCopy(canceledCtx, made); !errors.Is(err, context.Canceled) || l.claim("copy", made, made.Key) {
+		t.Errorf("DeleteCopy(waitClaim canceled) = %v or released claim", err)
+	}
+	l.release("copy", made, made.Key)
+
+	if err := l.DeleteCopy(ctx, Link{Path: "links/missing.md", Key: made.Key}); !errors.Is(err, host.ErrNotExist) {
+		t.Errorf("DeleteCopy(missing note) = %v, want ErrNotExist", err)
+	}
+
+	hv.getPathsErr = boom
+	if err := l.deleteUnreferencedCopies(ctx, made); !errors.Is(err, boom) {
+		t.Errorf("deleteUnreferencedCopies(getPathsErr) = %v, want %v", err, boom)
+	}
+	hv.getPathsErr = nil
+
+	hv.readErr = func(path string) error {
+		if path == made.Path {
+			return boom
+		}
+		return nil
+	}
+	if _, err := l.listMediaAddresses(ctx, made); !errors.Is(err, boom) {
+		t.Errorf("listMediaAddresses(readErr) = %v, want %v", err, boom)
+	}
+	hv.readErr = nil
+
 	hs.listErr = func(int) error { return boom }
 	if err := l.DeleteCopy(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("DeleteCopy(listErr) = %v", err)
 	}
 	hs.listErr = nil
-	if err := l.DeleteCopy(ctx, made); err != nil {
-		t.Fatal(err)
+
+	hs.deleteErr = func(name string) error {
+		if name == made.Key+".video.mp4" {
+			return boom
+		}
+		return nil
+	}
+	if err := l.DeleteCopy(ctx, made); !errors.Is(err, boom) {
+		t.Errorf("DeleteCopy(deleteErr) = %v, want %v", err, boom)
+	}
+	hs.deleteErr = nil
+
+	if err := l.deleteUnreferencedCopies(ctx, Link{Path: "links/gone.md", Key: made.Key}); err != nil {
+		t.Fatalf("deleteUnreferencedCopies(missing link path) = %v", err)
 	}
 	if _, err := hs.Read(ctx, made.Key+".video.mp4"); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("the copy no note refers to is kept: %v", err)
+	}
+
+	// StartFetch copies video when IsCopyable is true, and reportBackgroundError filters non-actionable errors.
+	sf.downloads = 0
+	l.StartFetch(ctx, made)
+	l.Wait()
+	if sf.downloads != 1 {
+		t.Errorf("StartFetch downloads = %d, want 1", sf.downloads)
+	}
+
+	reported = nil
+	l.reportBackgroundError(ctx, "fetch the text of", made, nil)
+	l.reportBackgroundError(canceledCtx, "fetch the text of", made, boom)
+	l.reportBackgroundError(ctx, "fetch the text of", made, ErrBeingFetched)
+	if len(reported) != 0 {
+		t.Errorf("reportBackgroundError reported %v on ignored errors", reported)
+	}
+	l.reportBackgroundError(ctx, "fetch the text of", made, boom)
+	if len(reported) != 1 || reported[0] != "fetch the text of "+made.Path {
+		t.Errorf("reportBackgroundError = %v, want [fetch the text of %s]", reported, made.Path)
 	}
 }
 
