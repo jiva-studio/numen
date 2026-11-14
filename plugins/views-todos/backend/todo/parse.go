@@ -135,7 +135,7 @@ func splitIndent(line string) (int, string) {
 // getMarkerLength returns the length of a list marker and the spaces after it, or 0 when the line
 // does not start with a list item.
 func getMarkerLength(rest string) int {
-	length := 0
+	var length int
 	switch {
 	case rest == "":
 		return 0

@@ -1,6 +1,7 @@
 package todo
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -95,10 +96,8 @@ func isLeadingPriority(word string) bool {
 func isLetter(c byte) bool { return c >= 'A' && c <= 'Z' }
 
 func appendOnce(list []string, name string) []string {
-	for _, one := range list {
-		if one == name {
-			return list
-		}
+	if slices.Contains(list, name) {
+		return list
 	}
 	return append(list, name)
 }

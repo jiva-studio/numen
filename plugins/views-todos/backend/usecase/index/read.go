@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
-	"io/fs"
 	"reflect"
 	"sync"
 
@@ -114,7 +113,7 @@ func (i *Index) recordFailure(ctx context.Context, path string, err error) (bool
 	if ctx.Err() != nil || errors.Is(err, host.ErrNoVault) || errors.Is(err, host.ErrUnknownVault) {
 		return false, err
 	}
-	if errors.Is(err, fs.ErrNotExist) || errors.Is(err, host.ErrNotANote) {
+	if errors.Is(err, host.ErrNotExist) || errors.Is(err, host.ErrNotANote) {
 		return i.drop(path), nil
 	}
 	i.mu.Lock()
