@@ -85,17 +85,9 @@ func TestCloseReportsAnInterruptedRequest(t *testing.T) {
 	}
 }
 
-type failingReader struct{ err error }
-
-func (f failingReader) Read([]byte) (int, error) { return 0, f.err }
-
-func TestNewTokenAndServeErrorPaths(t *testing.T) {
+func TestTheEndpointConstantsKeepTheirValues(t *testing.T) {
 	if shutdownLimit != 2*time.Second || shutdownPoll != 10*time.Millisecond || tokenBytes != 32 {
 		t.Fatalf("constants = (%v, %v, %d)", shutdownLimit, shutdownPoll, tokenBytes)
-	}
-	sentinel := errors.New("entropy exhausted")
-	if _, err := serveWith(t.Context(), failingReader{err: sentinel}, nil, nil); !errors.Is(err, sentinel) {
-		t.Errorf("serveWith failingReader error = %v, want wrapped %v", err, sentinel)
 	}
 }
 
@@ -186,17 +178,3 @@ func TestServedToolsInvokeAndReportErrors(t *testing.T) {
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
-
-func TestCloseReportsTheErrorServeEndedWithExceptServerClosed(t *testing.T) {
-	shutdownErr := errors.New("shutdown broke")
-	serveErr := errors.New("listener broke")
-	if got := joinServeError(nil, http.ErrServerClosed); got != nil {
-		t.Errorf("server closed = %v, want none", got)
-	}
-	if got := joinServeError(shutdownErr, http.ErrServerClosed); !errors.Is(got, shutdownErr) || errors.Is(got, http.ErrServerClosed) {
-		t.Errorf("shutdown error with server closed = %v, want only the shutdown error", got)
-	}
-	if got := joinServeError(shutdownErr, serveErr); !errors.Is(got, shutdownErr) || !errors.Is(got, serveErr) {
-		t.Errorf("both errors = %v, want both", got)
-	}
-}

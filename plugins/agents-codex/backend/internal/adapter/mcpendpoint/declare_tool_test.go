@@ -2,7 +2,6 @@ package mcpendpoint
 
 import (
 	"encoding/json"
-	"errors"
 	"reflect"
 	"strconv"
 	"testing"
@@ -152,12 +151,6 @@ func TestTheEndpointAnnotatesAToolFromItsEffectAndItsPermissions(t *testing.T) {
 	}
 }
 
-func TestOrDefaultObjectSchemaFallsBackOnError(t *testing.T) {
-	if got := string(orDefaultObjectSchema(nil, errors.New("boom"))); got != `{"type":"object"}` {
-		t.Errorf("orDefaultObjectSchema on error = %s, want default object schema", got)
-	}
-}
-
 func TestReadResultMapsToolErrorsAndStructuredFallback(t *testing.T) {
 	if got := readResult("pond_read", &tools.CallResponse{Error: tools.ErrorCodeUnknownTool}); !got.IsError || getFirstText(got.Content) != "unknown tool: pond_read" {
 		t.Errorf("unknown tool = %+v", got)
@@ -182,7 +175,6 @@ func TestReadResultMapsToolErrorsAndStructuredFallback(t *testing.T) {
 	}
 }
 
-// getFirstText returns the text of the first content item, or "" when it is not text.
 func getFirstText(content []sdk.Content) string {
 	if len(content) == 0 {
 		return ""

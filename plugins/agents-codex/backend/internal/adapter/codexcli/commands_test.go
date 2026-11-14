@@ -101,8 +101,8 @@ func TestTheAnswerCommandFailsWhenTheFolderCannotBeCreated(t *testing.T) {
 	t.Setenv("TMPDIR", "/dev/null/nonexistent")
 	if _, err := (Commands{}).MakeAnswerCommand(task.Spec{Prompt: "p"}); err == nil {
 		t.Error("expected MakeAnswerCommand error when TMPDIR is invalid")
-	} else if _, ok := errors.AsType[*os.PathError](err); !ok {
-		t.Errorf("expected wrapped *os.PathError, got %T (%v)", err, err)
+	} else if pathErr, ok := errors.AsType[*os.PathError](err); !ok || pathErr.Path == "" {
+		t.Errorf("expected wrapped *os.PathError with a path, got %T (%v)", err, err)
 	}
 }
 
