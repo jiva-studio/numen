@@ -183,7 +183,7 @@ The settings of the plugin Templates.
 
 | | | |
 | --- | --- | --- |
-| `folder` | text | the folder that holds the templates. Each note in it is a template, and each subfolder is a group. |
+| `folder` | text | each note in the folder is a template, and each subfolder is a group. |
 
 ### `md.numen.tools.updater`
 
