@@ -47,7 +47,7 @@ func Mount(s *server.Server) error {
 		Store:     func(id domain.VaultID) recognition.Folder { return store.With(id) },
 		Texts:     func(id domain.VaultID) host.TextVersions { return texts.With(id) },
 		Queue:     queue,
-		Documents: document.NewReader(),
+		Documents: document.NewPluginReader(),
 		Report:    env.ReportError,
 	}, holder)
 }
