@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { UnsavedBuffersError, type FileBuffers } from '@numen/plugin-loader'
-import { openNotes } from '@/entities/note'
+import { useOpenNotes, flattenOpenNotes } from '@/entities/note'
 import { createBufferHost } from './bufferHost'
 import { createFileFlush } from './flush'
+
+const openNotes = (how?: Parameters<typeof useOpenNotes>[0]) => flattenOpenNotes(useOpenNotes(how))
 
 const createFlush = () => {
   const remove = vi.fn(() => true)

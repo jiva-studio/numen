@@ -1,6 +1,6 @@
 {
   "name": "@numen/tools.plugin.stats",
-  "version": "2026.11.1",
+  "version": "2026.11.2",
   "private": true,
   "type": "module",
   "description": "Running plugins plugin frontend for Numen",
