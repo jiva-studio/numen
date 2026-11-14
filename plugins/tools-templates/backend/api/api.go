@@ -5,7 +5,6 @@ package api
 // Service is the service name the manifest declares.
 const Service = "md.numen.tools.templates"
 
-// MethodCreateNote makes a note from a template.
 const MethodCreateNote = "CreateNote"
 
 // CreateNoteRequest asks for a note made from a template.

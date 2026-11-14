@@ -47,7 +47,6 @@ type Result struct {
 	Path string
 }
 
-// CreateFromTemplate makes a note from a template.
 type CreateFromTemplate struct{}
 
 // NewCreateFromTemplate returns the use case. getFolder is read at each call, so a changed setting applies at once.

@@ -20,7 +20,6 @@ const folder = (path: string): VaultEntry => ({
   type: '',
 })
 
-/** The edge of the model: the folders of a small invented vault, and a record of what was listed. */
 const createVault = (folders: Record<string, readonly VaultEntry[] | Error>) => {
   const listed: string[] = []
   const files: TemplateFiles = {
