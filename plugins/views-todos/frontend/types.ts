@@ -1,3 +1,5 @@
+import type { ApiError, Result } from '@numen/plugin-sdk'
+
 /**
  * What the frontend reads of the backend: the messages of the todos service. Keys and meaning match
  * the Go messages in backend/api.
@@ -39,6 +41,12 @@ export interface Filter {
   readonly priorities: readonly string[]
   readonly path: string
   readonly text: string
+}
+
+/** What the lists of the popover and the tab ask of the backend. */
+export interface TaskReader {
+  /** Reads the tasks a filter accepts at a day, limited to a count. */
+  listTasks(today: string, filter: Filter, limit: number): Promise<Result<ListTasksResponse, ApiError>>
 }
 
 export interface GetSummaryRequest {

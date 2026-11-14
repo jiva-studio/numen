@@ -8,6 +8,6 @@ export interface Chip {
 }
 
 /** Gives the chip for the counts, or the hidden chip before the counts are ready. */
-export function getChip(summary: Summary | null): Chip {
+export function getChip(_summary: Summary | null): Chip {
   return { isVisible: true, count: -1, isOverdue: true }
 }

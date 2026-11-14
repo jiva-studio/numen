@@ -14,8 +14,8 @@ export interface RefreshRelay {
 }
 
 export function createRefreshRelay(
-  api: Pick<TodosApi, 'refreshIndex'>,
-  timer: Timer,
+  _api: Pick<TodosApi, 'refreshIndex'>,
+  _timer: Timer,
 ): RefreshRelay {
   return {
     push: () => undefined,

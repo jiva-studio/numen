@@ -4,7 +4,7 @@
 import { createApi, type ApiError, type Result } from '@numen/plugin-sdk'
 import { SERVICE } from './todos'
 import type {
-  Filter,
+  TaskReader,
   ListTasksRequest,
   ListTasksResponse,
   RefreshIndexRequest,
@@ -19,11 +19,9 @@ import type {
 const api = createApi(SERVICE)
 
 /** What the models ask of the backend. */
-export interface TodosApi {
+export interface TodosApi extends TaskReader {
   /** Reads the counts of the open tasks at a day. */
   getSummary(today: string): Promise<Result<Summary, ApiError>>
-  /** Reads the tasks a filter accepts at a day, cut to a limit. */
-  listTasks(today: string, filter: Filter, limit: number): Promise<Result<ListTasksResponse, ApiError>>
   /** Tells the backend which notes changed; no path and no rename is a full check. */
   refreshIndex(
     paths: readonly string[],

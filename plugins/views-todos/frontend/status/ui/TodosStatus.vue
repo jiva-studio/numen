@@ -2,12 +2,11 @@
 /**
  * The chip of the title bar and the popover with the lists Overdue, Today and No date.
  */
-import type { TodosApi } from '../../api/wire'
-import type { Summary } from '../../types'
+import type { Summary, TaskReader } from '../../types'
 
 defineProps<{
   summary: Summary | null
-  api: Pick<TodosApi, 'listTasks'>
+  api: TaskReader
   getToday: () => string
 }>()
 
