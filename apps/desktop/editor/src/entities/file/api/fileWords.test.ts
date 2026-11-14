@@ -49,7 +49,7 @@ describe('a row of a listing', () => {
       isFolder: false,
       isNote: true,
       type: 'sample',
-      modifiedAtMs: 1762079400000,
+      modifiedAtMs: 1762079400000n,
     } as Entry
 
     expect(mapEntry(row)).toStrictEqual({
@@ -69,7 +69,7 @@ describe('a row of a listing', () => {
       isFolder: false,
       isNote: true,
       type: 'sample',
-      modifiedAtMs: 0,
+      modifiedAtMs: 0n,
     } as Entry
 
     expect(mapEntry(row)).not.toHaveProperty('modifiedAt')
