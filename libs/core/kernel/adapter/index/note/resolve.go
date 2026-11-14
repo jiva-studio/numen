@@ -17,7 +17,7 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 
 func (r *resolution) getLinks(ctx context.Context, from string) (_ []domain.ResolvedLink, err error) {
 	var row int64
-	err = r.reads.QueryRowContext(ctx, identifySQL, r.vault, from).Scan(&row)
+	err = r.statements.QueryRowContext(ctx, identifySQL, r.vault, from).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -25,7 +25,7 @@ func (r *resolution) getLinks(ctx context.Context, from string) (_ []domain.Reso
 		return nil, err
 	}
 
-	rows, err := r.reads.QueryContext(ctx, linksOfSQL, row)
+	rows, err := r.statements.QueryContext(ctx, linksOfSQL, row)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (r *resolution) resolve(ctx context.Context, from string, l *domain.Resolve
 		// An identifier names one note globally, so this lookup is not scoped to a
 		// vault. It is the one deliberate exception to the rule that a query without a
 		// vault must not read another vault's notes.
-		err := r.reads.QueryRowContext(ctx, noteByIdentifierSQL, l.Target.Value).
+		err := r.statements.QueryRowContext(ctx, noteByIdentifierSQL, l.Target.Value).
 			Scan(&l.ToVault, &l.To)
 		if errors.Is(err, sql.ErrNoRows) {
 			// Neither dangling nor resolved: no connected vault holds this note. The
@@ -161,7 +161,7 @@ func (r *resolution) queryCandidates(ctx context.Context, name string) (_ []stri
 	withExt := name + domain.NoteExtension
 	base := domain.FoldName(domain.LinkName(name))
 
-	rows, err := r.reads.QueryContext(ctx, candidatesSQL,
+	rows, err := r.statements.QueryContext(ctx, candidatesSQL,
 		r.vault, name, r.vault, withExt, r.vault, base)
 	if err != nil {
 		return nil, err
@@ -193,7 +193,7 @@ func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to s
 func (r *resolution) getBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
 	var row int64
 	var identifier, base string
-	err := r.reads.QueryRowContext(ctx, addressingSQL, r.vault, to).
+	err := r.statements.QueryRowContext(ctx, addressingSQL, r.vault, to).
 		Scan(&row, &identifier, &base)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
@@ -223,7 +223,7 @@ func (r *resolution) getBacklinks(ctx context.Context, to string) ([]domain.Reso
 }
 
 func (r *resolution) getBacklinkCandidates(ctx context.Context, identifier, base string) (_ []domain.ResolvedLink, err error) {
-	rows, err := r.reads.QueryContext(ctx, backlinkCandidatesSQL,
+	rows, err := r.statements.QueryContext(ctx, backlinkCandidatesSQL,
 		identifier, r.vault, base, r.vault)
 	if err != nil {
 		return nil, err

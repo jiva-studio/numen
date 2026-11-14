@@ -94,7 +94,7 @@ func (q *Problems) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID
 }
 
 func (r *resolution) getAmbiguousLinks(ctx context.Context) (_ []domain.AmbiguousLink, err error) {
-	rows, err := r.reads.QueryContext(ctx, sharedNameLinksSQL, r.vault, r.vault)
+	rows, err := r.statements.QueryContext(ctx, sharedNameLinksSQL, r.vault, r.vault)
 	if err != nil {
 		return nil, err
 	}
