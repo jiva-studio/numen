@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 )
 
 type fakeEngine struct{ libPath string }
@@ -77,63 +78,58 @@ func TestOpenTriesAgainAfterALoadFails(t *testing.T) {
 }
 
 func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
-	var r Runtime[*fakeEngine]
-	entered := make(chan struct{})
-	release := make(chan struct{})
-	var loads atomic.Int32
-	load := func(libPath string) (*fakeEngine, error) {
-		loads.Add(1)
-		close(entered)
-		<-release
-		return &fakeEngine{libPath: libPath}, nil
-	}
+	synctest.Test(t, func(t *testing.T) {
+		var r Runtime[*fakeEngine]
+		entered := make(chan struct{})
+		release := make(chan struct{})
+		var loads atomic.Int32
+		load := func(libPath string) (*fakeEngine, error) {
+			loads.Add(1)
+			close(entered)
+			<-release
+			return &fakeEngine{libPath: libPath}, nil
+		}
 
-	isDone := make(chan *fakeEngine)
-	go func() {
+		isDone := make(chan *fakeEngine)
+		go func() {
+			engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
+			if err != nil {
+				t.Errorf("first Open() = %v", err)
+			}
+			isDone <- engine
+		}()
+		<-entered
+
+		canceled, cancel := context.WithCancel(t.Context())
+		cancel()
+		if _, _, err := r.Open(canceled, "/lib/one.so", load); !errors.Is(err, context.Canceled) {
+			t.Fatalf("waiting Open() = %v, want context.Canceled", err)
+		}
+
+		waiterDone := make(chan *fakeEngine)
+		go func() {
+			engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
+			if err != nil {
+				t.Errorf("concurrent Open() = %v", err)
+			}
+			waiterDone <- engine
+		}()
+		synctest.Wait()
+
+		close(release)
+		first := <-isDone
+		waited := <-waiterDone
+		if waited != first {
+			t.Fatalf("concurrent waiter got %v, want %v", waited, first)
+		}
 		engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
-		if err != nil {
-			t.Errorf("first Open() = %v", err)
+		if err != nil || engine != first {
+			t.Fatalf("Open() = %v, %v, want the first engine", engine, err)
 		}
-		isDone <- engine
-	}()
-	<-entered
-
-	canceled, cancel := context.WithCancel(t.Context())
-	cancel()
-	if _, _, err := r.Open(canceled, "/lib/one.so", load); !errors.Is(err, context.Canceled) {
-		t.Fatalf("waiting Open() = %v, want context.Canceled", err)
-	}
-
-	waiterDone := make(chan *fakeEngine)
-	go func() {
-		engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
-		if err != nil {
-			t.Errorf("concurrent Open() = %v", err)
+		if got := loads.Load(); got != 1 {
+			t.Errorf("load ran %d times, want 1", got)
 		}
-		waiterDone <- engine
-	}()
-	for {
-		r.mu.Lock()
-		isOpening := r.opening != nil
-		r.mu.Unlock()
-		if isOpening {
-			break
-		}
-	}
-
-	close(release)
-	first := <-isDone
-	waited := <-waiterDone
-	if waited != first {
-		t.Fatalf("concurrent waiter got %v, want %v", waited, first)
-	}
-	engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
-	if err != nil || engine != first {
-		t.Fatalf("Open() = %v, %v, want the first engine", engine, err)
-	}
-	if got := loads.Load(); got != 1 {
-		t.Errorf("load ran %d times, want 1", got)
-	}
+	})
 }
 
 func TestALibraryIsAvailableWhereTheFileIs(t *testing.T) {

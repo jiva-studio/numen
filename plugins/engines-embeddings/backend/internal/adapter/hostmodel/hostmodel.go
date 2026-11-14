@@ -76,8 +76,6 @@ func readError(err error) error {
 	var failed *connection.AllFailedError
 	var stopped *connection.StoppedError
 	switch {
-	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
-		return err
 	case errors.Is(err, connection.ErrNoConnection):
 		return ports.ConnectionError{Err: ports.ErrNoConnection}
 	case errors.As(err, &failed), errors.As(err, &stopped):

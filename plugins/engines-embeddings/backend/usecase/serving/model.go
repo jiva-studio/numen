@@ -17,9 +17,6 @@ func (s *Server) refreshModelIdentityLocked() {
 	if s.isMock {
 		return
 	}
-	if s.isConnectionLocked() {
-		return
-	}
 	keep := s.modelInfo
 	s.modelInfo = s.localInfo
 	s.modelInfo.Concurrency = keep.Concurrency

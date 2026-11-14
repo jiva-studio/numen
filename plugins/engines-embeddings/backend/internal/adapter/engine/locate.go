@@ -326,7 +326,7 @@ func discardDownload(path string) error {
 	}
 	var removed []error
 	for _, one := range []string{path, target} {
-		if err := os.Remove(one); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := os.Remove(one); !errors.Is(err, fs.ErrNotExist) {
 			removed = append(removed, err)
 		}
 		if target == path {

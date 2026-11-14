@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
@@ -106,12 +107,18 @@ func TestGetMockModelAndEmbedderDetails(t *testing.T) {
 	if err != nil || len(vectors) != 2 {
 		t.Fatalf("Embed() = %d vectors, %v", len(vectors), err)
 	}
+	if _, err := m.Embed(t.Context(), []string{"second"}); err != nil {
+		t.Fatal(err)
+	}
 	if !slices.Equal(vectors[0], vectors[1]) || !slices.Equal(vectors[1], embedMock("boat")) {
 		t.Error("query and document prefixes were not stripped to the same concept vector")
 	}
 	logged, err := os.ReadFile(logFile)
-	if err != nil || !strings.Contains(string(logged), "passage: ferry") {
+	if err != nil || !strings.Contains(string(logged), "passage: ferry") || !strings.Contains(string(logged), "second") {
 		t.Errorf("log file = %q, %v", logged, err)
+	}
+	if info, err := os.Stat(logFile); err != nil || info.Mode().Perm() != 0o600 {
+		t.Errorf("log file mode = %v, %v, want 0600", info, err)
 	}
 
 	origStderr := os.Stderr
@@ -121,6 +128,7 @@ func TestGetMockModelAndEmbedderDetails(t *testing.T) {
 	}
 	os.Stderr = w
 	(Embedder{}).record([]string{"quiet"})
+	m.record([]string{"valid"})
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -130,8 +138,57 @@ func TestGetMockModelAndEmbedderDetails(t *testing.T) {
 		t.Fatal(closeErr)
 	}
 	if err != nil || len(stderrBytes) != 0 {
-		t.Errorf("empty LogPath wrote to stderr: %q, %v", stderrBytes, err)
+		t.Errorf("empty or valid LogPath wrote to stderr: %q, %v", stderrBytes, err)
 	}
+
+	rErr, wErr, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = wErr
+	(Embedder{LogPath: t.TempDir()}).record([]string{"fail"})
+	if err := wErr.Close(); err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = origStderr
+	errBytes, err := io.ReadAll(rErr)
+	if closeErr := rErr.Close(); closeErr != nil {
+		t.Fatal(closeErr)
+	}
+	if err != nil || !strings.Contains(string(errBytes), "write the log of the mock model:") {
+		t.Errorf("failing LogPath stderr = %q, %v", errBytes, err)
+	}
+}
+
+func TestMockEmbedderWaitsForHoldFileAndPollInterval(t *testing.T) {
+	holdFile := filepath.Join(t.TempDir(), "hold")
+	if err := os.WriteFile(holdFile, []byte("1"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(holdFileVariable, holdFile)
+
+	canceled, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := (Embedder{}).Embed(canceled, []string{"boat"}); !errors.Is(err, context.Canceled) {
+		t.Fatalf("Embed with hold file and canceled ctx = %v, want Canceled", err)
+	}
+
+	synctest.Test(t, func(t *testing.T) {
+		start := time.Now()
+		go func() {
+			time.Sleep(10 * time.Millisecond)
+			if err := os.Remove(holdFile); err != nil {
+				t.Error(err)
+			}
+		}()
+		vectors, err := (Embedder{}).Embed(t.Context(), []string{"boat"})
+		if err != nil || len(vectors) != 1 {
+			t.Fatalf("Embed after hold file removed = %d, %v", len(vectors), err)
+		}
+		if elapsed := time.Since(start); elapsed != 50*time.Millisecond {
+			t.Errorf("elapsed = %v, want 50ms", elapsed)
+		}
+	})
 }
 
 func TestEmbedMockDimensionsTermsAndConcepts(t *testing.T) {

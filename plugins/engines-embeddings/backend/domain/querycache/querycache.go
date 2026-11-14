@@ -73,7 +73,7 @@ func (c *Cache) Put(recipe, query string, vector []float32) {
 		return
 	}
 
-	if len(c.entries) >= c.capacity && c.tail != nil {
+	if len(c.entries) >= c.capacity {
 		old := c.tail
 		c.remove(old)
 		delete(c.entries, old.key)
@@ -95,9 +95,6 @@ func (c *Cache) Count() int {
 }
 
 func (c *Cache) moveToFront(e *cacheEntry) {
-	if c.head == e {
-		return
-	}
 	c.remove(e)
 	c.pushFront(e)
 }

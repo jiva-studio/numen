@@ -1,6 +1,7 @@
 package onnx
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -30,11 +31,7 @@ func GetCoreMLCacheDir(modelPath string) (string, error) {
 	}
 	dir := filepath.Join(root, coreMLFolder, key)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="os.Chmod sets the final 0700 permissions on the directory immediately after creation."
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return "", err
-	}
-	// gomutants:disable-next-line BRANCH_IF reason="os.Chmod on a directory just created by os.MkdirAll only fails on a concurrent filesystem change."
-	if err := os.Chmod(dir, 0o700); err != nil {
+	if err := errors.Join(os.MkdirAll(dir, 0o700), os.Chmod(dir, 0o700)); err != nil {
 		return "", err
 	}
 	return dir, nil
@@ -60,12 +57,9 @@ func findCoreMLCacheDir(modelPath string) (string, bool) {
 // it held anything. The caller holds the lock of the folder.
 func DeleteCoreMLCache(modelPath string) bool {
 	dir, dirErr := GetCoreMLCacheDir(modelPath)
-	if dirErr != nil {
-		return false
-	}
-	entries, err := os.ReadDir(dir)
+	entries, readErr := os.ReadDir(dir)
 	// gomutants:disable-next-line BRANCH_IF reason="When os.ReadDir fails, entries is empty and the loop below returns false."
-	if err != nil {
+	if errors.Join(dirErr, readErr) != nil {
 		return false
 	}
 	isDeleted := false
