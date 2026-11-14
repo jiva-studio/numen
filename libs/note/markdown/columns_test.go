@@ -199,7 +199,10 @@ func TestEndingsAndFrontmatterSpanBounds(t *testing.T) {
 	}
 
 	_, err = Open([]byte("---\n: [\n---\n"))
-	if multi, ok := errors.AsType[interface{ Unwrap() []error }](err); !ok || len(multi.Unwrap()) != 2 {
+	if multi, ok := errors.AsType[interface {
+		error
+		Unwrap() []error
+	}](err); !ok || len(multi.Unwrap()) != 2 {
 		t.Errorf("expected dual-wrapped error from Open, got %v", err)
 	}
 }

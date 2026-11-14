@@ -204,18 +204,17 @@ func (d *Document) removeEntries(matches func(domain.Link) bool) (int, error) {
 		return 0, err
 	}
 
-	removed := 0
-	hasKept := false
+	removed, keptCount := 0, 0
 	for _, e := range slices.Backward(b.entries) {
 
 		if !matches(e.link) {
-			hasKept = true
+			keptCount++
 			continue
 		}
 		d.splice(e.start, e.end, nil)
 		removed++
 	}
-	if removed > 0 && !hasKept {
+	if removed > 0 && keptCount == 0 {
 		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="removing links after block() validated the frontmatter always returns nil"
 		if err := d.set("links", nil); err != nil {
 			return removed, err

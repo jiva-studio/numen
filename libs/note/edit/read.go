@@ -57,18 +57,19 @@ type Contents struct {
 func Read(ctx context.Context, files Reader, path string) (Contents, error) {
 	out := Contents{Path: path}
 
-	if err := statNote(ctx, files, path, &out); err != nil {
-		return Contents{}, err
-	}
-	if out.Outcome != "" {
-		return out, nil
-	}
-
-	raw, err := readNoteBytes(ctx, files, path, &out)
+	target, stop, err := statNote(ctx, files, path, &out)
 	if err != nil {
 		return Contents{}, err
 	}
-	if out.Outcome != "" {
+	if stop {
+		return out, nil
+	}
+
+	raw, stop, err := readNoteBytes(ctx, files, path, target, &out)
+	if err != nil {
+		return Contents{}, err
+	}
+	if stop {
 		return out, nil
 	}
 
@@ -80,7 +81,7 @@ func Read(ctx context.Context, files Reader, path string) (Contents, error) {
 	return out, nil
 }
 
-func statNote(ctx context.Context, files Reader, path string, out *Contents) error {
+func statNote(ctx context.Context, files Reader, path string, out *Contents) (target, stop bool, err error) {
 	ref, err := files.StatFile(ctx, path)
 	switch {
 	case err == nil:
@@ -88,32 +89,37 @@ func statNote(ctx context.Context, files Reader, path string, out *Contents) err
 		// A vault holds several kinds of source and this reads one of them.
 		if ref.Kind != domain.KindNote {
 			out.Outcome = NotANote
-		} else if ref.Size > MaxBytes {
-			out.Outcome = TooLarge
+			// gomutants:disable-next-line RETURN_FALSE reason="Read stops immediately when stop is true and never inspects target"
+			return true, true, nil
 		}
-		return nil
+		if ref.Size > MaxBytes {
+			out.Outcome = TooLarge
+			// gomutants:disable-next-line RETURN_FALSE reason="Read stops immediately when stop is true and never inspects target"
+			return true, true, nil
+		}
+		return true, false, nil
 	case errors.Is(err, ErrNotANote):
 		out.Outcome = NotANote
-		return nil
+		return false, true, nil
 	case !errors.Is(err, fs.ErrNotExist):
-		return fmt.Errorf("look at %s: %w", path, err)
+		return false, false, fmt.Errorf("look at %s: %w", path, err)
 	}
-	return nil
+	return false, false, nil
 }
 
-func readNoteBytes(ctx context.Context, files Reader, path string, out *Contents) ([]byte, error) {
-	raw, err := files.Read(ctx, path)
+func readNoteBytes(ctx context.Context, files Reader, path string, target bool, out *Contents) (raw []byte, stop bool, err error) {
+	raw, err = files.Read(ctx, path)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 		out.Outcome = Missing
-		return nil, nil
-	case err != nil:
-		return nil, fmt.Errorf("read %s: %w", path, err)
-	case out.FileStat.Kind != domain.KindNote:
+		return nil, true, nil
+	case !target && err == nil:
 		out.Outcome = NotANote
-		return nil, nil
+		return nil, true, nil
+	case err != nil:
+		return nil, false, fmt.Errorf("read %s: %w", path, err)
 	}
-	return raw, nil
+	return raw, false, nil
 }
 
 func readBody(raw []byte, out *Contents) error {

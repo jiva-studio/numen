@@ -116,7 +116,7 @@ func (d *Document) EntryNames(key string) ([]string, bool) {
 	if target == nil {
 		return nil, false
 	}
-	out := []string{}
+	out := make([]string, 0, len(target.Content)/2)
 	for i := 0; i+1 < len(target.Content); i += 2 {
 		out = append(out, target.Content[i].Value)
 	}

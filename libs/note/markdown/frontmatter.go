@@ -197,10 +197,14 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 	last := max(
 		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="assigning keyLine when last equals keyLine leaves last unchanged"
 		d.endLine(lines, node.Content[keyIdx+1], node.Content[keyIdx].Column), keyLine)
-	if nextIdx := keyIdx + 2; nextIdx < len(node.Content) {
-		last = min(last, node.Content[nextIdx].Line-1)
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to the bound leaves last unchanged"
+	if keyIdx+2 < len(node.Content) && last > node.Content[keyIdx+2].Line-1 {
+		last = node.Content[keyIdx+2].Line - 1
 	}
-	last = min(last, len(lines)-1)
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to len(lines)-1 leaves last unchanged"
+	if last > len(lines)-1 {
+		last = len(lines) - 1
+	}
 	return lines[keyLine-1], lines[last], true
 }
 
@@ -295,8 +299,10 @@ func (d *Document) getWritableNode() (*yaml.Node, error) {
 		return nil, ErrUnterminated
 	}
 	node, err := d.readMapping()
-	if err != nil {
-		return nil, err
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="hasAnchor and isFlowCollection both return false for a nil node"
+	if err != nil || node == nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="readMapping always returns a nil node whenever err is non-nil"
+		return node, err
 	}
 	if hasAnchor(node) {
 		return nil, ErrAnchored

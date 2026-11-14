@@ -34,7 +34,10 @@ const maxFilename = 120
 // title into the `title` key.
 // Every returned name is one IsNameable accepts.
 func GetReducedFilename(title string) (name string, exact bool) {
-	name = trimEnds(truncateAtRuneBoundary(trimEnds(sanitizeRunes(title)), maxFilename))
+	name = trimEnds(sanitizeRunes(title))
+	if len(name) > maxFilename {
+		name = trimEnds(truncateAtRuneBoundary(name, maxFilename))
+	}
 	if name == "" {
 		return "", false
 	}

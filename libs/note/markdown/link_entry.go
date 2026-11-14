@@ -22,16 +22,15 @@ func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 	enc := yaml.NewEncoder(&out)
 	// gomutants:disable-next-line STATEMENT_REMOVE,INTEGER_DECREMENT reason="a top-level sequence of one mapping aligns its keys after the sequence dash regardless of SetIndent"
 	enc.SetIndent(2)
-	entries := []linkEntry{{
+	// gomutants:disable-next-line BRANCH_IF reason="encoding a linkEntry slice to bytes.Buffer cannot fail"
+	if err := enc.Encode([]linkEntry{{
 		To:     l.Target.GetWritten(),
 		Role:   string(l.Role),
 		Type:   l.Type,
 		Note:   l.Why,
 		Label:  l.Label,
 		Marker: string(l.Marker),
-	}}
-	// gomutants:disable-next-line BRANCH_IF reason="encoding a linkEntry slice to bytes.Buffer cannot fail"
-	if err := enc.Encode(entries); err != nil {
+	}}); err != nil {
 		return nil, err
 	}
 	// gomutants:disable-next-line BRANCH_IF reason="closing a yaml.Encoder backed by bytes.Buffer cannot fail"

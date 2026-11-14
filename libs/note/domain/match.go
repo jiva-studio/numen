@@ -2,7 +2,6 @@ package domain
 
 import (
 	"path"
-	"slices"
 	"strings"
 )
 
@@ -24,14 +23,14 @@ func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambi
 	// name the same file.
 	wanted := []string{name, name + NoteExtension}
 	for _, w := range wanted {
-		if idx := slices.Index(folded, FoldName(w)); idx >= 0 {
+		if idx := findIndex(folded, FoldName(w)); idx >= 0 {
 			return candidates[idx], false
 		}
 	}
 
 	for _, w := range wanted {
 		relative := FoldName(path.Join(path.Dir(from), w))
-		if idx := slices.Index(folded, relative); idx >= 0 {
+		if idx := findIndex(folded, relative); idx >= 0 {
 			return candidates[idx], false
 		}
 	}
@@ -42,14 +41,22 @@ func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambi
 
 	// Nearest by how much of the path they have in common with the note the
 	// link was written in — the neighbor is likelier than the stranger.
-	var best string
-	var bestShared int
+	best, bestShared := candidates[0], -1
 	for _, c := range candidates {
-		if shared := countSharedPrefix(from, c); best == "" || shared > bestShared {
+		if shared := countSharedPrefix(from, c); shared > bestShared {
 			best, bestShared = c, shared
 		}
 	}
 	return best, true
+}
+
+func findIndex(keys []string, want string) int {
+	for i, key := range keys {
+		if key == want {
+			return i
+		}
+	}
+	return -1
 }
 
 func countSharedPrefix(a, b string) int {

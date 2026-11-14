@@ -56,7 +56,10 @@ func foldASCII(name string) (folded string, ok bool) {
 //
 // The scan stores what this returns, and it is what a name is matched against.
 func Basename(path string) string {
-	name := path[strings.LastIndexByte(path, '/')+1:]
+	name := path
+	if i := strings.LastIndexByte(name, '/'); i >= 0 {
+		name = name[i+1:]
+	}
 	// A leading dot is part of the name, not the start of an extension.
 	if i := strings.LastIndexByte(name, '.'); i > 0 {
 		name = name[:i]
@@ -72,7 +75,10 @@ const NoteExtension = ".md"
 // The extension is stripped however it is spelled; every other dot belongs to
 // the name, so `[[Lecture 1.2]]` names a note filed under all of it.
 func LinkName(target string) string {
-	name := target[strings.LastIndexByte(target, '/')+1:]
+	name := target
+	if i := strings.LastIndexByte(name, '/'); i >= 0 {
+		name = name[i+1:]
+	}
 	if baseLen := len(name) - len(NoteExtension); baseLen > 0 &&
 		FoldName(name[baseLen:]) == NoteExtension {
 		return name[:baseLen]
