@@ -28,7 +28,7 @@ A red check is fixed in the code. Never loosen the check, add an exclusion or mo
 
 A review is the 3-stage pipeline of [`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md): gatekeeper ([`stages/1-gatekeeper.md`](.agents/skills/nm-review/stages/1-gatekeeper.md)), bug hunter ([`stages/2-bughunter.md`](.agents/skills/nm-review/stages/2-bughunter.md)), adversary ([`stages/3-adversary.md`](.agents/skills/nm-review/stages/3-adversary.md)), and the report templated in the skill. A failing gate stops the pipeline. Go tests run without `-race` locally; the race detector runs in CI only (`GO_RACE=1` turns it on for a make target). One pipeline covers Go and Vue. A reviewer reports findings and does not fix them.
 
-Every pull request follows the draft-first pipeline in [`.agents/rules/process.md`](.agents/rules/process.md): open the pull request as a draft (`gh pr create --draft`), bring CI to green (`gh pr checks --watch`), run `/nm-review` and fix any findings until `/nm-review` approves and CI is green, then mark the pull request ready for review (`gh pr ready`) and request a CodeRabbit review (`gh pr comment --body "@coderabbitai review"`).
+Every pull request follows the draft-first pipeline in [`.agents/rules/process.md`](.agents/rules/process.md): open the pull request as a draft (`gh pr create --draft`), bring CI to green (`gh pr checks --watch`), comment `/nm-review` on the pull request (it starts the Claude review workflow) and fix any findings until the workflow approves and CI is green, then mark the pull request ready for review (`gh pr ready`) and request a CodeRabbit review (`gh pr comment --body "@coderabbitai review"`).
 
 ---
 
