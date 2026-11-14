@@ -54,7 +54,7 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 	t.Setenv(onnxruntime.EnvMockML, "true")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	registry := newDependencyRegistry("")
+	registry := newDependencyRegistry(Config{}.Clock(), "")
 
 	model := manifest.DependencyRequirement{
 		ID: "pp-ocr-det", Kind: manifest.DependencyKindModel,
@@ -100,7 +100,7 @@ func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
 		SourceURL: server.URL + "/model.onnx", ChecksumSHA256: hex.EncodeToString(sum[:]),
 	}
 
-	resolved, err := newDependencyRegistry(models).Provision(t.Context(), req, nil)
+	resolved, err := newDependencyRegistry(Config{}.Clock(), models).Provision(t.Context(), req, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

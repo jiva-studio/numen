@@ -254,13 +254,16 @@ const EVERY_LINE: PlexGraph = {
   ],
 }
 
-/** The same arrowhead and the same label are drawn on a line whichever notes it joins. */
+/**
+ * The same arrowhead and the same label are drawn on a line whichever notes it joins. The room around a note is
+ * at its most, 40, so every line is long enough for its words.
+ */
 export const EveryLine: Story = {
   render: () => ({
     components: { Plex },
     setup: () => ({ graph: ref(EVERY_LINE) }),
     template:
-      '<div style="height: 100vh"><Plex :graph="graph" :creatable="[]" :duration="0" /></div>',
+      '<div style="height: 100vh"><Plex :graph="graph" :creatable="[]" :duration="0" :options="{ room: 40 }" /></div>',
   }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

@@ -82,7 +82,12 @@ export class World {
         const full = path.join(folder, entry.name)
         if (entry.isDirectory()) return entry.name.startsWith('.') ? [] : walk(full)
         if (!entry.name.endsWith('.md')) return []
-        return [{ path: path.relative(root, full).split(path.sep).join('/'), text: fs.readFileSync(full, 'utf8') }]
+        return [
+          {
+            path: path.relative(root, full).split(path.sep).join('/'),
+            text: fs.readFileSync(full, 'utf8'),
+          },
+        ]
       })
     return walk(root)
   }

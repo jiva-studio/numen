@@ -43,7 +43,7 @@ func (u *CheckSettings) check(one settingsdomain.Setting) error {
 	if err := settingsdomain.CheckValue(u.declared, u.registries, one.Path, value); err != nil {
 		return err
 	}
-	if u.plugins != nil && settingsdomain.IsPluginSetting(one.Path) {
+	if settingsdomain.IsPluginSetting(one.Path) {
 		return u.plugins.CheckPluginSetting(one.Path[0], one.Path[1], value)
 	}
 	return nil

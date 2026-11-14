@@ -154,6 +154,12 @@ func TestBuildLcsTableAndHunkCollectorInvariants(t *testing.T) {
 	if got := buildLcsTable([]string{"a", "a"}, []string{"a"})[0][0]; got != 1 {
 		t.Errorf("buildLcsTable duplicate = %d, want 1", got)
 	}
+	if got := buildLcsTable([]string{"a"}, []string{"a", "a"})[0][0]; got != 1 {
+		t.Errorf("buildLcsTable duplicate in proposed = %d, want 1", got)
+	}
+	if script := backtrackEditScript([]string{"a"}, []string{"b"}, [][]int{{2, 0}, {1, 0}}); len(script) != 2 || script[0].kind != opDelete || script[1].kind != opInsert {
+		t.Errorf("backtrackEditScript = %+v, want delete then insert", script)
+	}
 
 	c := newHunkCollector(3)
 	if c.contextLines != 3 || c.origStart != 0 || c.origLen != 0 || c.propStart != 0 || c.propLen != 0 || c.inHunk || c.trailingContext != 0 || c.origLine != 1 || c.propLine != 1 {

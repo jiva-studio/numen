@@ -21,6 +21,7 @@ const EMBEDDING: Stats = {
     { kind: 'media', sources: 0, chunks: 0 },
   ],
   model: 'bge-m3',
+  recipe: 'local|bge-m3|1024|512|mean|int8@0.4',
   dimensions: 1024,
   profile: 'balanced',
   threads: 4,
