@@ -189,9 +189,13 @@ jobs:
     if: inputs.core
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      BASE_REF: HEAD^1
+      CHANGED: ${{ github.event_name == 'pull_request' && '1' || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 2
           persist-credentials: false
 
       - id: go
@@ -210,7 +214,7 @@ jobs:
       - uses: ./.github/actions/install-node-modules
 
       - name: Run the Go checks
-        run: make checks TAGS=go
+        run: make checks TAGS=go CHANGED="$CHANGED"
 
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache

@@ -2,8 +2,8 @@
 // @generated from file llm/llm.proto (package numen.llm, syntax proto3)
 /* eslint-disable */
 
-// The operations of language models: llm.complete, llm.chat, llm.embed and llm.profile carry these
-// messages as their payloads and frames; llm.models and llm.reasoning are option lists of row fields and
+// The operations of language models: llm.complete, llm.chat, llm.embed, llm.rerank and llm.profile carry
+// these messages as their payloads and frames; llm.models and llm.reasoning are option lists of row fields and
 // carry numen.v1.OptionsRequest and numen.v1.Options.
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
@@ -14,7 +14,7 @@ import type { Message as Message$1 } from "@bufbuild/protobuf";
  * Describes the file llm/llm.proto.
  */
 export const file_llm_llm: GenFile = /*@__PURE__*/
-  fileDesc("Cg1sbG0vbGxtLnByb3RvEgludW1lbi5sbG0iJQoHTWVzc2FnZRIMCgRyb2xlGAEgASgJEgwKBHRleHQYAiABKAkidQoPQ29tcGxldGVSZXF1ZXN0EiQKCG1lc3NhZ2VzGAEgAygLMhIubnVtZW4ubGxtLk1lc3NhZ2USGAoLdGVtcGVyYXR1cmUYAiABKAFIAIgBARISCgptYXhfdG9rZW5zGAMgASgFQg4KDF90ZW1wZXJhdHVyZSIeCg5Db21wbGV0ZVJlc3VsdBIMCgR0ZXh0GAEgASgJIjwKCFRvb2xDYWxsEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSFgoOYXJndW1lbnRzX2pzb24YAyABKAkiTAoOVG9vbERlZmluaXRpb24SDAoEbmFtZRgBIAEoCRITCgtkZXNjcmlwdGlvbhgCIAEoCRIXCg9wYXJhbWV0ZXJzX2pzb24YAyABKAkiaAoLQ2hhdE1lc3NhZ2USDAoEcm9sZRgBIAEoCRIMCgR0ZXh0GAIgASgJEicKCnRvb2xfY2FsbHMYAyADKAsyEy5udW1lbi5sbG0uVG9vbENhbGwSFAoMdG9vbF9jYWxsX2lkGAQgASgJIp8BCgtDaGF0UmVxdWVzdBIoCghtZXNzYWdlcxgBIAMoCzIWLm51bWVuLmxsbS5DaGF0TWVzc2FnZRIoCgV0b29scxgCIAMoCzIZLm51bWVuLmxsbS5Ub29sRGVmaW5pdGlvbhIYCgt0ZW1wZXJhdHVyZRgDIAEoAUgAiAEBEhIKCm1heF90b2tlbnMYBCABKAVCDgoMX3RlbXBlcmF0dXJlIlQKCUNoYXRGcmFtZRIUCgp0ZXh0X2RlbHRhGAEgASgJSAASKAoJdG9vbF9jYWxsGAIgASgLMhMubnVtZW4ubGxtLlRvb2xDYWxsSABCBwoFZXZlbnQiNQoKQ2hhdEZpbmlzaBInCgZyZWFzb24YASABKA4yFy5udW1lbi5sbG0uRmluaXNoUmVhc29uIh0KDEVtYmVkUmVxdWVzdBINCgV0ZXh0cxgBIAMoCSIYCgZWZWN0b3ISDgoGdmFsdWVzGAEgAygCIjEKC0VtYmVkUmVzdWx0EiIKB3ZlY3RvcnMYASADKAsyES5udW1lbi5sbG0uVmVjdG9yIhAKDlByb2ZpbGVSZXF1ZXN0IosBCgdQcm9maWxlEg0KBW1vZGVsGAEgASgJEg4KBnNvdXJjZRgCIAEoCRIPCgdwb29saW5nGAMgASgJEhQKDHF1ZXJ5X3ByZWZpeBgEIAEoCRIXCg9kb2N1bWVudF9wcmVmaXgYBSABKAkSDQoFd2lkdGgYBiABKAUSEgoKbWF4X3Rva2VucxgHIAEoBSp9CgxGaW5pc2hSZWFzb24SHQoZRklOSVNIX1JFQVNPTl9VTlNQRUNJRklFRBAAEhYKEkZJTklTSF9SRUFTT05fU1RPUBABEhwKGEZJTklTSF9SRUFTT05fVE9PTF9DQUxMUxACEhgKFEZJTklTSF9SRUFTT05fTEVOR1RIEANCQ1pBZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3BsdWdpbi9zZGstZ28vY29udHJhY3RzL2xsbTtsbG1iBnByb3RvMw");
+  fileDesc("Cg1sbG0vbGxtLnByb3RvEgludW1lbi5sbG0iJQoHTWVzc2FnZRIMCgRyb2xlGAEgASgJEgwKBHRleHQYAiABKAkidQoPQ29tcGxldGVSZXF1ZXN0EiQKCG1lc3NhZ2VzGAEgAygLMhIubnVtZW4ubGxtLk1lc3NhZ2USGAoLdGVtcGVyYXR1cmUYAiABKAFIAIgBARISCgptYXhfdG9rZW5zGAMgASgFQg4KDF90ZW1wZXJhdHVyZSIeCg5Db21wbGV0ZVJlc3VsdBIMCgR0ZXh0GAEgASgJIjwKCFRvb2xDYWxsEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSFgoOYXJndW1lbnRzX2pzb24YAyABKAkiTAoOVG9vbERlZmluaXRpb24SDAoEbmFtZRgBIAEoCRITCgtkZXNjcmlwdGlvbhgCIAEoCRIXCg9wYXJhbWV0ZXJzX2pzb24YAyABKAkiaAoLQ2hhdE1lc3NhZ2USDAoEcm9sZRgBIAEoCRIMCgR0ZXh0GAIgASgJEicKCnRvb2xfY2FsbHMYAyADKAsyEy5udW1lbi5sbG0uVG9vbENhbGwSFAoMdG9vbF9jYWxsX2lkGAQgASgJIp8BCgtDaGF0UmVxdWVzdBIoCghtZXNzYWdlcxgBIAMoCzIWLm51bWVuLmxsbS5DaGF0TWVzc2FnZRIoCgV0b29scxgCIAMoCzIZLm51bWVuLmxsbS5Ub29sRGVmaW5pdGlvbhIYCgt0ZW1wZXJhdHVyZRgDIAEoAUgAiAEBEhIKCm1heF90b2tlbnMYBCABKAVCDgoMX3RlbXBlcmF0dXJlIlQKCUNoYXRGcmFtZRIUCgp0ZXh0X2RlbHRhGAEgASgJSAASKAoJdG9vbF9jYWxsGAIgASgLMhMubnVtZW4ubGxtLlRvb2xDYWxsSABCBwoFZXZlbnQiNQoKQ2hhdEZpbmlzaBInCgZyZWFzb24YASABKA4yFy5udW1lbi5sbG0uRmluaXNoUmVhc29uIh0KDEVtYmVkUmVxdWVzdBINCgV0ZXh0cxgBIAMoCSIYCgZWZWN0b3ISDgoGdmFsdWVzGAEgAygCIjEKC0VtYmVkUmVzdWx0EiIKB3ZlY3RvcnMYASADKAsyES5udW1lbi5sbG0uVmVjdG9yIhAKDlByb2ZpbGVSZXF1ZXN0IosBCgdQcm9maWxlEg0KBW1vZGVsGAEgASgJEg4KBnNvdXJjZRgCIAEoCRIPCgdwb29saW5nGAMgASgJEhQKDHF1ZXJ5X3ByZWZpeBgEIAEoCRIXCg9kb2N1bWVudF9wcmVmaXgYBSABKAkSDQoFd2lkdGgYBiABKAUSEgoKbWF4X3Rva2VucxgHIAEoBSJGCg1SZXJhbmtSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEhMKC2luc3RydWN0aW9uGAIgASgJEhEKCWRvY3VtZW50cxgDIAMoCSIeCgxSZXJhbmtSZXN1bHQSDgoGc2NvcmVzGAEgAygCKn0KDEZpbmlzaFJlYXNvbhIdChlGSU5JU0hfUkVBU09OX1VOU1BFQ0lGSUVEEAASFgoSRklOSVNIX1JFQVNPTl9TVE9QEAESHAoYRklOSVNIX1JFQVNPTl9UT09MX0NBTExTEAISGAoURklOSVNIX1JFQVNPTl9MRU5HVEgQA0JDWkFnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcGx1Z2luL3Nkay1nby9jb250cmFjdHMvbGxtO2xsbWIGcHJvdG8z");
 
 /**
  * Message is one message of a completion. role is system, user or assistant.
@@ -393,6 +393,58 @@ export type Profile = Message$1<"numen.llm.Profile"> & {
  */
 export const ProfileSchema: GenMessage<Profile> = /*@__PURE__*/
   messageDesc(file_llm_llm, 13);
+
+/**
+ * RerankRequest is the payload of llm.rerank.
+ *
+ * @generated from message numen.llm.RerankRequest
+ */
+export type RerankRequest = Message$1<"numen.llm.RerankRequest"> & {
+  /**
+   * @generated from field: string query = 1;
+   */
+  query: string;
+
+  /**
+   * instruction tells the model what makes a document relevant, such as "Find the notes that answer the
+   * question". Empty for none.
+   *
+   * @generated from field: string instruction = 2;
+   */
+  instruction: string;
+
+  /**
+   * @generated from field: repeated string documents = 3;
+   */
+  documents: string[];
+};
+
+/**
+ * Describes the message numen.llm.RerankRequest.
+ * Use `create(RerankRequestSchema)` to create a new message.
+ */
+export const RerankRequestSchema: GenMessage<RerankRequest> = /*@__PURE__*/
+  messageDesc(file_llm_llm, 14);
+
+/**
+ * RerankResult is the done frame of llm.rerank: one score for each document, in the order of the documents.
+ * A higher score is a more relevant document. The call has no data frame.
+ *
+ * @generated from message numen.llm.RerankResult
+ */
+export type RerankResult = Message$1<"numen.llm.RerankResult"> & {
+  /**
+   * @generated from field: repeated float scores = 1;
+   */
+  scores: number[];
+};
+
+/**
+ * Describes the message numen.llm.RerankResult.
+ * Use `create(RerankResultSchema)` to create a new message.
+ */
+export const RerankResultSchema: GenMessage<RerankResult> = /*@__PURE__*/
+  messageDesc(file_llm_llm, 15);
 
 /**
  * FinishReason is why a turn ended.
