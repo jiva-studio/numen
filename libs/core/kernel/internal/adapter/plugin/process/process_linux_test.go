@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -18,9 +19,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 )
 
-func TestConfigureSysProcAttrOnLinux(t *testing.T) {
-	cmd := exec.CommandContext(t.Context(), "sleep", "5")
-	ConfigureSysProcAttr(cmd)
+func TestNewCommandOnLinux(t *testing.T) {
+	cmd := NewCommand(t.Context(), "sleep", 41235)
+	if want := []string{"sleep", "--port=41235"}; !slices.Equal(cmd.Args, want) {
+		t.Errorf("the command line is %v, want %v", cmd.Args, want)
+	}
 	if cmd.SysProcAttr == nil {
 		t.Fatal("expected non-nil SysProcAttr on linux")
 	}

@@ -1,7 +1,7 @@
-/** Each relation grows as a compact cluster from its side of the focus, into whatever space is left. */
+/** Each relation fills a block of the grid on its own side of the focus. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
-import { getBox, isOverlapping, type Box } from './layout/boxes'
+import { getBox, isOverlapping } from './layout/boxes'
 import { measureCrowding, packOptions } from './layout/crowding'
 import { DEFAULT_OPTIONS, resolveOptions, type PlexOptions, type PlexOptionsInput } from './options'
 import { graphs } from '../../fixtures/graphs'
@@ -32,8 +32,6 @@ const getShownNodes = (frame: PlexFrame, relation: PlexNodeRelation): PlacedNode
   frame.nodes.filter((node) => node.relation === relation)
 const getArrivedNodes = (graph: PlexGraph, relation: PlexRelation): PlexNode[] =>
   graph.nodes.filter((node) => node.relation === relation)
-const mean = (values: readonly number[]): number =>
-  values.reduce((sum, value) => sum + value, 0) / values.length
 
 const getOverlaps = (frame: PlexFrame): string[] =>
   frame.nodes.flatMap((a, index) =>
@@ -60,13 +58,6 @@ function countDistinctValues(values: readonly number[], tolerance: number): numb
     0,
   )
 }
-
-const getBounds = (nodes: readonly PlacedNode[]): Box => ({
-  minX: Math.min(...nodes.map((n) => n.x - n.width / 2)),
-  minY: Math.min(...nodes.map((n) => n.y - n.height / 2)),
-  maxX: Math.max(...nodes.map((n) => n.x + n.width / 2)),
-  maxY: Math.max(...nodes.map((n) => n.y + n.height / 2)),
-})
 
 function getSmallestSeparation(nodes: readonly PlacedNode[]): number {
   let smallest = Infinity
@@ -135,24 +126,14 @@ describe('each relation is placed on its own side of the focus', () => {
     for (const node of getShownNodes(frame, 'jump'))
       expect(node.x + node.width / 2).toBeLessThan(left)
   })
-
-  it.each([
-    ['typical', graphs.typical],
-    ['eight, twenty, eight and eight', full],
-  ])('leans the jumps down in %s', (_name, graph) => {
-    const frame = arrange(graph, inWindow(window))
-    expect(mean(getShownNodes(frame, 'jump').map((node) => node.y))).toBeGreaterThan(
-      getFocus(frame).y,
-    )
-  })
 })
 
 describe('a group is never nearer the focus than its start', () => {
   const DIRECTIONS: Record<PlexRelation, readonly [number, number]> = {
     parent: [0, -1],
     child: [0, 1],
-    jump: [-1 / Math.hypot(1, 0.42), 0.42 / Math.hypot(1, 0.42)],
-    reference: [-1 / Math.hypot(1, 0.42), -0.42 / Math.hypot(1, 0.42)],
+    jump: [-1, 0],
+    reference: [-1, 0],
     sibling: [1, 0],
   }
   const along = (node: PlacedNode, [dx, dy]: readonly [number, number]) => node.x * dx + node.y * dy
@@ -198,16 +179,7 @@ describe('a large group is a block, not a line', () => {
   )
 })
 
-describe('a larger group is placed further out', () => {
-  it('moves the middle of the children away from the focus as they grow in number', () => {
-    const middles = [1, 4, 9, 16].map((child) =>
-      mean(getShownNodes(arrange(build('A note', { child })), 'child').map((node) => node.y)),
-    )
-    for (let i = 1; i < middles.length; i++) expect(middles[i]!).toBeGreaterThan(middles[i - 1]!)
-  })
-})
-
-describe('groups take turns', () => {
+describe('a large group leaves the first note of another group in place', () => {
   it('leaves the first note of another group where it would be alone, however many children there are', () => {
     const crowd = arrange(build('A note', { child: 20, jump: 1, sibling: 1, parent: 1 }))
     const alone = arrange(build('A note', { jump: 1, sibling: 1, parent: 1 }))
@@ -219,7 +191,7 @@ describe('groups take turns', () => {
   })
 })
 
-describe('a group fills the free space next to another group', () => {
+describe('a large group spreads over columns', () => {
   const window = { width: 1600, height: 1000 }
 
   it('shows twenty-four children and spreads them sideways instead of running down one column', () => {
@@ -233,14 +205,13 @@ describe('a group fills the free space next to another group', () => {
     ).toBe(true)
   })
 
-  it('interlocks the areas of the children and the jumps without overlapping a box', () => {
+  it('shows the children and the jumps without overlapping a box', () => {
     const frame = arrange(build('A note', { child: 16, jump: 16 }), inWindow(window))
     const children = getShownNodes(frame, 'child')
     const jumps = getShownNodes(frame, 'jump')
     expect(children.length).toBeGreaterThan(0)
     expect(jumps.length).toBeGreaterThan(0)
     expect(getOverlaps(frame)).toStrictEqual([])
-    expect(isOverlapping(getBounds(children), getBounds(jumps))).toBe(true)
   })
 })
 
@@ -361,18 +332,16 @@ describe('boxes narrow and gaps close before a note is left out', () => {
   })
 })
 
-describe('gaps open in a roomy window and the arrangement stays inside', () => {
-  it('opens the space between neighboring children, by at most the spread', () => {
+describe('gaps stay as set in a roomy window and the arrangement stays inside', () => {
+  it('keeps the space between neighboring children as set', () => {
     const graph = build('A node', { child: 3 })
     const children = (frame: PlexFrame) => getShownNodes(frame, 'child')
     const settings = getSmallestSeparation(children(arrange(graph)))
-    const opened = getSmallestSeparation(
+    const roomy = getSmallestSeparation(
       children(arrange(graph, inWindow({ width: 2400, height: 1400 }))),
     )
-    const { gap, lineGap, spread } = DEFAULT_OPTIONS
 
-    expect(opened).toBeGreaterThan(settings)
-    expect(opened).toBeLessThanOrEqual(spread * Math.max(gap, lineGap) + 1e-6)
+    expect(roomy).toBeCloseTo(settings, 6)
   })
 
   const crowd = build('A node', { parent: 6, child: 21, jump: 7, sibling: 7 })
@@ -382,8 +351,8 @@ describe('gaps open in a roomy window and the arrangement stays inside', () => {
     { width: 1200, height: 800 },
     { width: 700, height: 600 },
     { width: 560, height: 480 },
-  ])('keeps every box inside a $width×$height window at a spread of four', (viewport) => {
-    const frame = arrange(crowd, inWindow(viewport, { spread: 4 }))
+  ])('keeps every box inside a $width×$height window', (viewport) => {
+    const frame = arrange(crowd, inWindow(viewport))
     expect(getOutside(frame.nodes, viewport)).toStrictEqual([])
   })
 })

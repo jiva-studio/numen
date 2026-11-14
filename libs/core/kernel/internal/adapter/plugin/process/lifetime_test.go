@@ -62,7 +62,7 @@ func newLifetimePlugin(ctx context.Context, role string, exitPipe *os.File) *exe
 	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestLifetimeHelper$")
 	cmd.Env = append(os.Environ(), lifetimeRoleEnv+"="+role)
 	cmd.ExtraFiles = []*os.File{exitPipe}
-	ConfigureSysProcAttr(cmd)
+	configureSysProcAttr(cmd)
 	return cmd
 }
 

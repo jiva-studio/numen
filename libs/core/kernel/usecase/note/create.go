@@ -35,7 +35,7 @@ type Create struct {
 func NewCreate(
 	writers vaultport.NoteWriters, names edit.NameQueries, index edit.IndexUpdater, now machineport.Clock, gate WriteGate,
 ) Create {
-	return Create{writers: writers, names: names, index: index, now: now, gate: gate}
+	return Create{writers: writers, names: names, index: getIndexUpdater(index), now: now, gate: gate}
 }
 
 // NewNote is what to make. Create resolves Named into Links.
@@ -162,9 +162,6 @@ func writeLinks(content []byte, links []domain.Link) ([]byte, error) {
 }
 
 func (u Create) updateIndex(ctx context.Context, v domain.Vault, paths ...string) error {
-	if u.index == nil {
-		return nil
-	}
 	// The files are written, so the index follows them even when the caller is canceled.
 	return edit.WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }

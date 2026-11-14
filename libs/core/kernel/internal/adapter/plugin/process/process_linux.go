@@ -13,7 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func ConfigureSysProcAttr(cmd *exec.Cmd) {
+func configureSysProcAttr(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid:   true,
 		Pdeathsig: syscall.SIGTERM,

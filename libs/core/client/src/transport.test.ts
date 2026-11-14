@@ -4,8 +4,10 @@
  * This suite runs in Node, where there is no window, so the plain import below
  * already represents every caller without one.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createClient, createRouterTransport } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
+import { PluginHealthService } from '@numen/protocol'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@connectrpc/connect-web', { spy: true })
 
@@ -40,5 +42,36 @@ describe('the wire transport', () => {
       method: 'POST',
       keepalive: true,
     })
+  })
+
+  it('routes unary and stream calls through the replaced transport with the caller header', async () => {
+    const { CALLER_HEADER, createCallerTransport, replaceTransport, transport } =
+      await import('./transport')
+    expect(CALLER_HEADER).toBe('Numen-Caller')
+
+    const callers: Array<string | null> = []
+    const restore = replaceTransport(
+      createRouterTransport(({ service }) => {
+        service(PluginHealthService, {
+          clearHealth: (_request, context) => {
+            callers.push(context.requestHeader.get('Numen-Caller'))
+            return {}
+          },
+          watchHealth: async function* (_request, context) {
+            callers.push(context.requestHeader.get('Numen-Caller'))
+            yield {}
+          },
+        })
+      }),
+    )
+
+    const client = createClient(PluginHealthService, createCallerTransport('search', transport))
+    await client.clearHealth({ pluginId: 'org.example.atlas', key: 'quota' })
+    for await (const update of client.watchHealth({})) {
+      expect(update.items).toStrictEqual([])
+    }
+    restore()
+
+    expect(callers).toStrictEqual(['search', 'search'])
   })
 })

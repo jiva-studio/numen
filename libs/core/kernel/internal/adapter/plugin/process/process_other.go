@@ -4,7 +4,7 @@ package process
 
 import "os/exec"
 
-func ConfigureSysProcAttr(_ *exec.Cmd) {}
+func configureSysProcAttr(_ *exec.Cmd) {}
 
 // Starter needs no dedicated thread here: only Linux ties the parent-death signal to the thread that started the child.
 type Starter struct{}

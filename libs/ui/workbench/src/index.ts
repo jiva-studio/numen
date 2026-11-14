@@ -71,8 +71,8 @@ export { MAC_BUTTONS_INSET } from './features/window-frame'
 
 /** The frame of the desktop window a page is drawn in, as both windows read it. */
 export { getWindowEdge, useWindowFrame } from './features/window-frame'
-/** The runtime the desktop shell serves beside the page, and the system browser it opens an address in. */
-export { loadFrameRuntime, openExternalUrl } from './features/window-frame'
+/** Opens an address in the system browser, through the runtime loader a window passes. */
+export { openExternalUrl } from './features/window-frame'
 export type {
   FrameEdge,
   FrameRuntime,

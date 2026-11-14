@@ -23,11 +23,7 @@ func TestAVaultReportsNoOperationsOnceItIsRead(t *testing.T) {
 	if _, err := cfg.AddVault(root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
-	db, err := container.OpenIndex(cfg, t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	installation, err := container.OpenWindowWith(cfg, t.Context(), container.WindowOpening{DB: db, Out: os.Stderr})
+	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

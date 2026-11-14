@@ -7,6 +7,7 @@ import type { PlexRelation } from '../../types'
 
 export type Lean = 'up' | 'down'
 
+/** On a side shared with relations of another `lean`, `up` puts the notes of the relation on the row of the focus and the rows over it, and the others under it. */
 export interface RelationDescriptor {
   readonly grows: 'up' | 'down' | 'left' | 'right'
   readonly lean: Lean | null

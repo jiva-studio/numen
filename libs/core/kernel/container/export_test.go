@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
@@ -81,6 +82,8 @@ func NotesShowingMoves(
 ) NoteUseCases {
 	return vaultNotes(vaultOf(c), db, index, noteViews{Moves: note.NewTellMoveInShownVault(showing, view), Writes: note.OpenGate{}})
 }
+
+func GetNoteChanges(notes NoteUseCases) hostvault.NoteChanges { return getNoteChanges(notes) }
 
 func embedderReady(c searchWiring) bool {
 	_, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
