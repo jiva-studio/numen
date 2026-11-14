@@ -76,7 +76,18 @@ func WriteTreeFixture(t *testing.T, files map[string]string) string {
 
 func LoadFixture(t *testing.T, dir string) []*packages.Package {
 	t.Helper()
-	pkgs := LoadPackages(t, dir, []string{"GOWORK=off"}, "./...")
+	return loadFixture(t, dir, nil)
+}
+
+// LoadFixtureFor loads the fixture as LoadFixture does, built for platform.
+func LoadFixtureFor(t *testing.T, dir string, platform Platform) []*packages.Package {
+	t.Helper()
+	return loadFixture(t, dir, platform.GetEnv())
+}
+
+func loadFixture(t *testing.T, dir string, env []string) []*packages.Package {
+	t.Helper()
+	pkgs := LoadPackages(t, dir, append([]string{"GOWORK=off"}, env...), "./...")
 	for _, pkg := range pkgs {
 		for _, one := range pkg.Errors {
 			t.Fatalf("the fixture %s does not load: %v", pkg.ID, one)

@@ -27,6 +27,17 @@ func (w WorkspacePackages) ListModule(t *testing.T, dir string) []*packages.Pack
 // root, or every module when none is named.
 func Workspace(t *testing.T, modules ...string) WorkspacePackages {
 	t.Helper()
+	return loadWorkspace(t, nil, modules)
+}
+
+// LoadWorkspaceFor loads and type-checks the modules as Workspace does, built for platform.
+func LoadWorkspaceFor(t *testing.T, platform Platform, modules ...string) WorkspacePackages {
+	t.Helper()
+	return loadWorkspace(t, platform.GetEnv(), modules)
+}
+
+func loadWorkspace(t *testing.T, env []string, modules []string) WorkspacePackages {
+	t.Helper()
 	dirs := ListWorkspaceModules(t)
 	if len(modules) > 0 {
 		dirs = nil
@@ -45,7 +56,7 @@ func Workspace(t *testing.T, modules ...string) WorkspacePackages {
 		group.Go(func() {
 			slots <- struct{}{}
 			defer func() { <-slots }()
-			pkgs, err := packages.Load(NewTypedConfig(dir, nil), "./...")
+			pkgs, err := packages.Load(NewTypedConfig(dir, env), "./...")
 			mu.Lock()
 			defer mu.Unlock()
 			if err != nil && failure == nil {

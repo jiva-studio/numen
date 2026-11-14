@@ -248,7 +248,7 @@ func TestProcessLimits(t *testing.T) {
 	}
 
 	cmd := exec.CommandContext(t.Context(), "sleep", "5")
-	ConfigureSysProcAttr(cmd)
+	configureSysProcAttr(cmd)
 
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start sleep: %v", err)

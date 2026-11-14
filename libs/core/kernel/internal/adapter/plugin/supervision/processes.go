@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
 	"strings"
 	"sync"
@@ -297,8 +296,7 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 		return nil, nil, fmt.Errorf("validate plugin working directory: %w", err)
 	}
 
-	cmd := exec.CommandContext(context.WithoutCancel(ctx), binPath, process.GetPluginArgs(port)...)
-	process.ConfigureSysProcAttr(cmd)
+	cmd := process.NewCommand(context.WithoutCancel(ctx), binPath, port)
 	cmd.Dir = workDir
 
 	pluginVars, err := p.GetLaunchVars(ctx, plug.Manifest.ID, launch.Requirements, launch.VaultPath, port, token)

@@ -1,8 +1,10 @@
 package process
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -196,7 +198,10 @@ func GetPluginVars(pluginID string, launch LaunchEnvironment) []string {
 	return append(vars, launch.RuntimeVars...)
 }
 
-// GetPluginArgs is the command line the host starts a plugin process with.
-func GetPluginArgs(port int) []string {
-	return []string{"--port=" + strconv.Itoa(port)}
+// NewCommand returns the command that starts the plugin binary at binPath listening on port, with the process
+// attributes of the platform.
+func NewCommand(ctx context.Context, binPath string, port int) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, binPath, "--port="+strconv.Itoa(port))
+	configureSysProcAttr(cmd)
+	return cmd
 }
