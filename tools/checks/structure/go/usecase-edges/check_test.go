@@ -16,7 +16,7 @@ import (
 
 // No use case imports another use case. Every package under usecase, nested ones included, is a use case
 // of its own: it imports neither its parent, nor its child, nor a sibling. A use case imports
-// from internal/ only the packages of getSharedPackagesOfUseCases.
+// from internal/ only a helper (load.IsHelper).
 //
 // Test files are not walked.
 func TestNoUseCaseImportsAnotherUseCase(t *testing.T) {
@@ -104,12 +104,15 @@ func TestUseCaseEdgeRule_RejectsImportsBetweenUseCases(t *testing.T) {
 		{"usecase/note", "usecase/note", false},
 		{"usecase/notebook", "usecase/note", true},
 
-		// Shared packages: the listed ones are allowed, every other package under internal/ is refused.
+		// A helper directly under internal/ is allowed; an adapter, shared adapter code, test support and a package
+		// nested in a helper are refused.
 		{"usecase/vectors", "internal/vector", false},
 		{"usecase/file", "internal/text", false},
-		{"usecase/vault", "internal/vaultreading", true},
-		{"usecase/vault", "internal/operation", true},
+		{"usecase/vault", "internal/vaultreading/sub", true},
+		{"usecase/vault", "internal/adapter", true},
 		{"usecase/vault", "internal/adapter/filesystem/vaultreader", true},
+		{"usecase/vault", "internal/adapterlib/wire", true},
+		{"usecase/vault", "internal/testsupport/indexfake", true},
 
 		// Pairs with a side that is not a use case are not this rule's.
 		{"usecase/note", "port", false},

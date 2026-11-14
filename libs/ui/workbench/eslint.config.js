@@ -18,8 +18,6 @@ import {
 const outsideLayers = [
   'src/**/*.stories.ts',
   'src/**/fixtures/**',
-  'src/vite.ts',
-  'src/vite.test.ts',
 ]
 
 const domainImports = createDomainImports({

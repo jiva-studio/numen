@@ -6,6 +6,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -260,6 +261,33 @@ func TestLayerRule_RefusesForbiddenEdges(t *testing.T) {
 		if !one.isRefused && why != "" {
 			t.Errorf("%s reaches %s and is rejected: %s", one.from, one.to, why)
 		}
+	}
+}
+
+// An adapter is driving when a file of it imports a use case or names a handler of the schema. One that builds a
+// client of the schema, imports only a port, or imports a use case in a test file only is driven, and a package
+// outside the adapters is neither.
+func TestListDriving_ReadsTheRoleFromImportsAndHandlers(t *testing.T) {
+	schema := "import \"" + load.Schema + "\"\n\n"
+	root := load.WriteTreeFixture(t, map[string]string{
+		"adapter/cli/cli.go":                       "package cli\n\nimport _ \"" + load.Module + "usecase/note\"\n",
+		"adapter/window/text/text.go":              "package text\n\n" + schema + "var _ numenv1connect.TextServiceHandler\n",
+		"adapter/index/index.go":                   "package index\n\nimport _ \"" + load.Module + "port\"\n",
+		"adapter/index/index_test.go":              "package index\n\nimport _ \"" + load.Module + "usecase/note\"\n",
+		"internal/adapterlib/wire/wire.go":         "package wire\n\n" + schema + "var _ = numenv1connect.NewThemeServiceHandler\n",
+		"internal/adapter/plugin/bridge/bridge.go": "package bridge\n\n" + schema + "var _ = numenv1connect.NewThemeServiceClient\n",
+		"usecase/note/note.go":                     "package note\n\nimport _ \"" + load.Module + "usecase/vault\"\n",
+	})
+	driving, err := load.ListDriving(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := slices.Sorted(maps.Keys(driving))
+	if want := []string{"adapter/cli", "adapter/window/text", "internal/adapterlib/wire"}; !slices.Equal(got, want) {
+		t.Errorf("the driving adapters are %v, want %v", got, want)
+	}
+	if _, err := load.ListDriving(t.TempDir()); err == nil {
+		t.Error("a tree without an adapter passed")
 	}
 }
 

@@ -14,7 +14,7 @@ import (
 )
 
 // TestEveryAdapterServingTheSchemaIsDriving ensures adapters serving or mounting
-// generated protocol handlers are declared as driving adapters.
+// generated protocol handlers are among the driving adapters load.GetDriving reads from the tree.
 func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 	var wrong []string
 	var found int

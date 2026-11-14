@@ -1,6 +1,7 @@
 package load
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -11,37 +12,65 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 )
 
 // Module is the base import path prefix for core packages.
 const Module = "github.com/jiva-studio/numen/libs/core/kernel/"
 
-func GetDriving() map[string]bool {
-	return map[string]bool{
-		"adapter/cli":                   true,
-		"adapter/window/catalog":        true,
-		"adapter/window/command":        true,
-		"adapter/window/connection":     true,
-		"adapter/window/connectioncall": true,
-		"adapter/window/health":         true,
-		"adapter/window/editor":         true,
-		"adapter/window/plugin":         true,
-		"adapter/window/search":         true,
-		"adapter/window/settings":       true,
-		"adapter/window/shell":          true,
-		"adapter/window/text":           true,
-		"adapter/window/vault":          true,
-		"adapter/window/vaults":         true,
-		"adapter/window/windowstate":    true,
-		"adapter/window/workspace":      true,
-		"adapter/plugin/hostendpoint":   true,
-		"adapter/plugin/hostsearch":     true,
-		"adapter/plugin/hosttext":       true,
-		"adapter/plugin/hostvault":      true,
-		"adapter/window/theme":          true,
-		"internal/adapterlib/wire":      true,
+// GetDriving returns the driving adapters of the kernel by package path under the kernel, read once from the tree.
+func GetDriving() map[string]bool { return listKernelDriving() }
+
+var listKernelDriving = sync.OnceValue(func() map[string]bool {
+	driving, err := ListDriving("..")
+	if err != nil {
+		panic(err)
 	}
+	return driving
+})
+
+// ListDriving returns the driving adapters under the kernel folder root: the packages of adapter/,
+// internal/adapter/ and internal/adapterlib/ with a file that imports a use case or names a handler of the
+// schema. Test files and testdata are not read.
+func ListDriving(root string) (map[string]bool, error) {
+	driving := map[string]bool{}
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			if entry.Name() == "testdata" {
+				return fs.SkipDir
+			}
+			return nil
+		}
+		pkg := GetPackage(root, path)
+		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") || (!IsAdapter(pkg) && !IsShared(pkg)) || driving[pkg] {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
+		}
+		if isImportingUseCase(file) || NamesHandler(file) {
+			driving[pkg] = true
+		}
+		return nil
+	})
+	if err == nil && len(driving) == 0 {
+		err = fmt.Errorf("no driving adapter under %s: the walk reads no adapter", root)
+	}
+	return driving, err
+}
+
+func isImportingUseCase(file *ast.File) bool {
+	for _, one := range file.Imports {
+		if to, err := strconv.Unquote(one.Path.Value); err == nil && strings.HasPrefix(to, Module) && IsUnder(strings.TrimPrefix(to, Module), "usecase") {
+			return true
+		}
+	}
+	return false
 }
 
 func IsMachinery(pkg string) bool {
@@ -50,6 +79,13 @@ func IsMachinery(pkg string) bool {
 
 func IsShared(pkg string) bool {
 	return strings.HasPrefix(pkg, "internal/adapterlib/")
+}
+
+// IsHelper reports whether pkg is a helper of the kernel: a package directly under internal/ that is not one of the
+// folders internal/adapter, internal/adapterlib and internal/testsupport.
+func IsHelper(pkg string) bool {
+	name, isInternal := strings.CutPrefix(pkg, "internal/")
+	return isInternal && name != "" && !strings.Contains(name, "/") && !slices.Contains([]string{"adapter", "adapterlib", "testsupport"}, name)
 }
 
 // Identity records an ID field: containing type, field name, and field type.

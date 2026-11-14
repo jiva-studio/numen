@@ -119,6 +119,10 @@ const SOURCE_FILE_NAME = /^[^*]+\.(ts|tsx|vue|js|mjs|cjs|go)$/;
 /** The scripts that state rules: the checks and the configurations of the tools they run. */
 const CHECK_SCRIPT = /^(tools\/(lint-layers|checks)\/.+\.mjs|stylelint\.config\.mjs)$/;
 const REPOSITORY_FILE_PATH = /^(apps|libs|plugins|tools|tests)\/[^*]+\.(ts|tsx|vue|go|mjs|js|json)$/;
+/** A file or folder of the repository below a top-level folder, written out with no pattern: the path of a package. */
+const REPOSITORY_PATH = /^(apps|libs|plugins|tools|tests)(\/[^/*?{}\s]+)+$/;
+/** The data of a check: a JSON file in the folder of a check, below the registry at the root of `tools/checks`. */
+const CHECK_DATA = /^tools\/checks\/.+\/[^/]+\.json$/;
 
 /** The comments of a TypeScript or JavaScript source with their lines. */
 function getScriptComments(file, text, lineOffset = 0) {
@@ -217,16 +221,23 @@ function findFileEntriesInConfig(file, text) {
   return found;
 }
 
-/** The arrays of a check that list repository files, which it would read as exemptions: in a constant or inline. */
+/**
+ * The arrays of a check that list repository files, in a constant or inline, and the constants that list packages: paths
+ * of folders of the repository or import paths of its Go packages. A check derives such a set from the tree.
+ */
 export function findFileListsInChecks(file, text) {
   const ts = require("typescript");
   const sourceFile = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+  const isPackage = (value) => REPOSITORY_PATH.test(value) || (value.startsWith(GO_MODULE_ROOT) && !/[*?{}\s]/.test(value));
   const found = [];
   const visit = (node) => {
-    if (ts.isArrayLiteralExpression(node) && node.elements.length > 0 && node.elements.every((one) => ts.isStringLiteralLike(one) && REPOSITORY_FILE_PATH.test(one.text))) {
+    if (ts.isArrayLiteralExpression(node) && node.elements.length > 0 && node.elements.every((one) => ts.isStringLiteralLike(one))) {
+      const values = node.elements.map((one) => one.text);
       const owner = ts.isNewExpression(node.parent) ? node.parent.parent : node.parent;
-      const name = ts.isVariableDeclaration(owner) ? owner.name.getText(sourceFile) : "inline";
-      found.push({ file, line: sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1, symbol: `file list ${name}` });
+      const name = ts.isVariableDeclaration(owner) ? owner.name.getText(sourceFile) : undefined;
+      const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+      if (values.every((value) => REPOSITORY_FILE_PATH.test(value))) found.push({ file, line, symbol: `file list ${name ?? "inline"}` });
+      else if (name && values.every(isPackage)) found.push({ file, line, symbol: `package list ${name}` });
     }
     ts.forEachChild(node, visit);
   };
@@ -234,10 +245,28 @@ export function findFileListsInChecks(file, text) {
   return found;
 }
 
+/** The arrays of the JSON data of a check that list repository files: as paths, or as entries that each name a file. */
+export function findFileListsInCheckData(file, text) {
+  const isFile = (value) => typeof value === "string" && REPOSITORY_FILE_PATH.test(value);
+  const namesFile = (value) => isFile(value) || (Boolean(value) && typeof value === "object" && !Array.isArray(value) && Object.values(value).some(isFile));
+  const found = [];
+  const visit = (value, at) => {
+    if (Array.isArray(value)) {
+      if (value.length > 0 && value.every(namesFile)) found.push({ file, line: 1, symbol: `file list ${at || "(root)"}` });
+      value.forEach((one, index) => visit(one, `${at}[${index}]`));
+    } else if (value && typeof value === "object") {
+      for (const [key, one] of Object.entries(value)) visit(one, at ? `${at}.${key}` : key);
+    }
+  };
+  visit(JSON.parse(text), "");
+  return found;
+}
+
 /**
  * Every suppression in the sources: a lint or type suppression comment, an exclusion in a golangci
- * configuration, a file named in an eslint `ignores` or `files` entry, and a list of repository files in a
- * check. Generated code, found by its header, is not read.
+ * configuration, a file named in an eslint `ignores` or `files` entry, a list of repository files in a check or
+ * in the JSON data of a check, and a constant of a check that lists packages. Generated code, found by its header,
+ * is not read.
  */
 export function findSuppressions(sources) {
   const found = [];
@@ -254,6 +283,7 @@ export function findSuppressions(sources) {
     }
     if (ESLINT_CONFIG.test(file)) found.push(...findFileEntriesInConfig(file, text));
     if (CHECK_SCRIPT.test(file) && !file.endsWith(".test.mjs")) found.push(...findFileListsInChecks(file, text));
+    if (CHECK_DATA.test(file)) found.push(...findFileListsInCheckData(file, text));
   }
   return found;
 }
@@ -321,7 +351,7 @@ export function findStrykerFindings(sources, cap = STRYKER_DISABLE_CAP) {
 }
 
 export function verifyNoSuppressions() {
-  const sources = readTrackedSources(["."], (file) => SUPPRESSION_FILES.test(file) && !file.includes("node_modules/"));
+  const sources = readTrackedSources(["."], (file) => (SUPPRESSION_FILES.test(file) || CHECK_DATA.test(file)) && !file.includes("node_modules/"));
   const styles = readTrackedSources(["."], (file) => STYLE_FILES.test(file) && !file.includes("node_modules/"));
   requireMatches("sources read for suppressions", sources.length);
   requireMatches("stylesheets and components read for stylelint suppressions", styles.length);
@@ -493,7 +523,7 @@ export const DISCIPLINE_VERIFIERS = [
     id: "no-suppressions",
     scope: "libs",
     module: "quality",
-    name: "Zero Suppressions (no nolint, eslint-disable, @ts-ignore, @ts-expect-error, stylelint ignores, exclusions, file exemptions; Stryker disable needs a reason and stays under a cap)",
+    name: "Zero Suppressions (no nolint, eslint-disable, @ts-ignore, @ts-expect-error, stylelint ignores, exclusions, file exemptions, file and package lists in checks; Stryker disable needs a reason and stays under a cap)",
     run: verifyNoSuppressions,
   },
   {
