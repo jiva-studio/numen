@@ -12,7 +12,13 @@
       { "id": "note.createFromTemplate", "title": "New note from template", "icon": "file-plus" }
     ],
     "slots": [
-      { "slot": "fileTree.new", "command": "note.createFromTemplate", "group": "2-templates", "order": 10, "when": "target.isFolder" }
+      {
+        "slot": "fileTree.new",
+        "command": "note.createFromTemplate",
+        "group": "2-templates",
+        "order": 10,
+        "when": "target.isFolder"
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write"],
