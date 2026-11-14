@@ -1,25 +1,8 @@
-/** Each relation grows as a compact cluster from its side of the focus, one note per relation in turn. */
-import { RELATION_NAMES, RELATIONS, type Lean } from '../../relation'
+/** Each relation fills a sector around the focus ring by ring outward; the sector angles follow the note counts. */
+import { RELATION_NAMES } from '../../relation'
 import type { PlacedNode } from '../../node'
-import type { Direction, PlexOptions } from '../options'
-import {
-  findFreeSpot,
-  findSpotWithin,
-  SpotIndex,
-  type Spot,
-  type SpotRequest,
-  type Vector,
-} from './freeSpot'
-import {
-  findBestAttempt,
-  getStartColumns,
-  isInWindow,
-  measureMiddleBand,
-  type Attempt,
-} from './bands'
-import { LineIndex } from './lines'
-import { createBorders, createTerritory, GROUP_GAP_FACTOR, type Borders } from './territory'
 import type { Size } from '../options'
+import { LineIndex } from './lines'
 import {
   getFootprint,
   getPillCenterY,
@@ -27,294 +10,115 @@ import {
   type Placement,
   type PlacementContext,
 } from './placement'
+import { getSectors, layRing, type Sector } from './sectors'
+import { SpotIndex, type Spot, type Vector } from './spotIndex'
 import type { PlexNode, PlexRelation } from '../../../../types'
 
-/** How far a leaning group tilts across its axis, as a fraction of the way it grows. */
-const LEAN = 0.42
+/** The rings of a sector stop here when there is no window to end them. */
+const MAX_RINGS = 400
 
-/** A lane opens by this much across its axis for each unit it runs along it; a row opens wider by how many times a cell is wider than tall. */
-const LANE_SLOPE = 1
-
-/** A center may lie this far short of the edge of its lane, so a box built exactly on the edge is inside. */
-const LANE_TOLERANCE = 0.5
-
-/** Notes one per relation in turn, so every relation gets a share of the near space. */
-export function takeTurns(nodesByRelation: NodesByRelation): PlexNode[] {
-  const queues = RELATION_NAMES.map((relation) => nodesByRelation[relation] ?? [])
-  const turns: PlexNode[] = []
-  const rounds = Math.max(0, ...queues.map((queue) => queue.length))
-  for (let round = 0; round < rounds; round++) {
-    for (const queue of queues) if (round < queue.length) turns.push(queue[round]!)
-  }
-  return turns
-}
-
-const SIDES: Readonly<Record<Direction, Vector>> = {
-  up: { x: 0, y: -1 },
-  down: { x: 0, y: 1 },
-  left: { x: -1, y: 0 },
-  right: { x: 1, y: 0 },
-}
-
-/** A unit vector: the side the group grows towards, tilted across the axis by its lean. */
-export function getClusterDirection(side: Direction, lean: Lean | null): Vector {
-  const { x, y } = SIDES[side]
-  if (lean === null || x === 0) return { x, y }
-  const tilt = lean === 'down' ? LEAN : -LEAN
-  const length = Math.hypot(x, tilt)
-  return { x: x / length, y: tilt / length }
-}
-
-/** The nearest point a group may reach: clear of the focus on every axis the group moves along. */
-export function getAnchor(
-  direction: Vector,
-  focus: { readonly width: number; readonly height: number },
-  options: PlexOptions,
-): Vector {
-  const { focusGap, lineGap } = options
-  if (direction.x === 0) return { x: 0, y: direction.y * (focus.height / 2 + focusGap) }
-  if (direction.y === 0) return { x: direction.x * (focus.width / 2 + focusGap), y: 0 }
-  return {
-    x: Math.sign(direction.x) * (focus.width / 2 + focusGap),
-    y: Math.sign(direction.y) * (focus.height / 2 + lineGap),
-  }
-}
-
-interface MiddleRequest {
-  readonly size: number
-  readonly cell: { readonly width: number; readonly height: number }
-}
-
-function getClusterMiddle(start: Vector, direction: Vector, request: MiddleRequest): Vector {
-  // The middle of a group sits as far out from its start as half the patch is deep.
-  const { size, cell } = request
-  const depth =
-    Math.max(0, (Math.sqrt(size) - 1) / 2) *
-    (Math.abs(direction.x) * cell.width + Math.abs(direction.y) * cell.height)
-  return { x: start.x + direction.x * depth, y: start.y + direction.y * depth }
-}
-
-/** What every note of one relation shares: the way the group grows, where it begins, and how far its first note reaches. */
-interface GroupPlan {
-  readonly relation: PlexRelation
-  readonly members: readonly PlexNode[]
-  readonly side: Vector
-  readonly direction: Vector
-  readonly anchor: Vector
-  readonly firstReach: number
-  readonly isSide: boolean
-  readonly hasLane: boolean
-  readonly isFenced: boolean
-  readonly isInTerritory: (spot: Spot) => boolean
-}
-
-const getReach = (direction: Vector, box: { width: number; height: number }): number =>
-  Math.abs(direction.x) * (box.width / 2) + Math.abs(direction.y) * (box.height / 2)
-
-interface PlanContext {
+/** What one placement shares across its sectors. */
+interface Run {
   readonly focus: PlacedNode
   readonly context: PlacementContext
-  readonly footprintOf: (node: PlexNode) => Size
-  readonly borders: Borders
+  readonly index: SpotIndex
+  readonly lines: LineIndex
+  readonly placed: Map<string, PlacedNode>
 }
 
-function createGroupPlans(
-  nodesByRelation: NodesByRelation,
-  { focus, context, footprintOf, borders }: PlanContext,
-): ReadonlyMap<PlexRelation, GroupPlan> {
-  const plans = new Map<PlexRelation, GroupPlan>()
-  for (const relation of RELATION_NAMES) {
-    const members = nodesByRelation[relation] ?? []
-    const first = members[0]
-    if (!first) continue
-    const side = context.options.direction[relation]
-    // A group leans only where another group shares its side, so the two part; alone it grows straight out.
-    const isShared = RELATION_NAMES.some(
-      (other) =>
-        other !== relation &&
-        (nodesByRelation[other]?.length ?? 0) > 0 &&
-        context.options.direction[other] === side,
-    )
-    const direction = getClusterDirection(side, isShared ? RELATIONS[relation].lean : null)
-    const isSide = SIDES[side].x !== 0
-    const anchor = getAnchor(direction, focus, context.options)
-    plans.set(relation, {
-      relation,
-      members,
-      side: SIDES[side],
-      direction,
-      anchor: isSide ? { x: SIDES[side].x * borders.sideStart, y: anchor.y } : anchor,
-      firstReach: getReach(direction, footprintOf(first)),
-      isSide,
-      hasLane: !isSide || borders.isOpen,
-      isFenced: !borders.isOpen,
-      isInTerritory: createTerritory(SIDES[side], focus, borders),
-    })
-  }
-  return plans
+const getReach = (viewport: Size): number => Math.hypot(viewport.width, viewport.height)
+
+function isInWindow(spot: Spot, context: PlacementContext): boolean {
+  const { viewport, margin } = context.options
+  if (context.fits && !context.fits(spot)) return false
+  return (
+    !viewport ||
+    (Math.abs(spot.x) + spot.width / 2 <= viewport.width / 2 - margin &&
+      Math.abs(spot.y) + spot.height / 2 <= viewport.height / 2 - margin)
+  )
 }
 
-function createLane(
-  plan: GroupPlan,
-  focus: PlacedNode,
-  cell: Size,
-): ((point: Vector) => boolean) | undefined {
-  const { side, anchor } = plan
-  if (!plan.hasLane) return undefined
-  const isRow = side.x === 0
-  const slope = isRow ? (LANE_SLOPE * cell.width) / cell.height : LANE_SLOPE
-  const base = isRow ? focus.width / 2 + 2 * cell.width : focus.height / 2 + 2 * cell.height
-  return (point) => {
-    const along = side.x * (point.x - anchor.x) + side.y * (point.y - anchor.y)
-    const across = Math.abs(isRow ? point.x - focus.x : point.y - focus.y)
-    return along >= -LANE_TOLERANCE && across <= base + slope * along
-  }
+function getFootprintOf(node: PlexNode, context: PlacementContext): Size {
+  return getFootprint(
+    { width: context.width(node), height: context.options.nodeSize.height },
+    context.room(node),
+  )
 }
 
-function createRequest(plan: GroupPlan, focus: PlacedNode, size: Size, context: PlacementContext) {
-  const { gap, lineGap } = context.options
-  const { direction, anchor } = plan
-  const reach = Math.max(getReach(direction, size), plan.firstReach)
-  // A box of a strip begins with its edge on the border of the strip.
-  const start = {
-    x: plan.isSide ? anchor.x + plan.side.x * (size.width / 2) : anchor.x + direction.x * reach,
-    y: anchor.y + direction.y * reach,
-  }
-  // The middle of a group is counted in footprints: the names of a note fill the gap under its pill, so a note without names packs closer than one with.
-  const cell = { width: size.width + gap, height: size.height + lineGap }
-  const middle = getClusterMiddle(start, direction, { size: plan.members.length, cell })
-  return {
-    start,
-    middle,
-    direction,
-    size,
-    gaps: { gap, lineGap },
-    isInLane: createLane(plan, focus, cell),
-    isInTerritory: plan.isInTerritory,
-  }
+/** Where a note goes and its place in the order of its group. */
+interface Seat {
+  readonly spot: Spot
+  readonly order: number
 }
 
-function getPlacedNode(
-  node: PlexNode,
-  spot: Spot,
-  context: PlacementContext,
-  order: number,
-): PlacedNode {
-  return {
+function place(run: Run, node: PlexNode, { spot, order }: Seat): boolean {
+  const { context } = run
+  const room = context.room(node)
+  const y = getPillCenterY(spot.y, room)
+  const box: PlacedNode = {
     ...node,
     x: spot.x,
-    y: getPillCenterY(spot.y, context.room(node)),
+    y,
     width: context.width(node),
     height: context.options.nodeSize.height,
     order,
     opacity: 1,
   }
+  run.index.add(spot)
+  run.lines.place(node.id, { x: spot.x, y }, spot)
+  run.placed.set(node.id, box)
+  return context.shouldStop?.(box) ?? false
 }
 
-function findNoteSpot(index: SpotIndex, request: SpotRequest, plan: GroupPlan): Spot | undefined {
-  const within = findSpotWithin(index, request)
-  if (plan.isFenced) return within
-  if (within && request.isLineClear?.(within) !== false) return within
-  const loose = findFreeSpot(index, { ...request, isInTerritory: undefined })
-  return !within || request.isLineClear?.(loose) !== false ? loose : within
-}
-
-function getLeftOutSpot(plan: GroupPlan, size: Size, context: PlacementContext): Spot {
+function getLeftOutSpot(sector: Sector, cell: Size, context: PlacementContext): Spot {
+  const middle = (((sector.from + sector.to) / 2) * Math.PI) / 180
   const { viewport } = context.options
-  const reach = viewport ? Math.max(viewport.width, viewport.height) : 0
-  return {
-    x: plan.side.x * (reach + size.width),
-    y: plan.side.y * (reach + size.height),
-    ...size,
-  }
+  const radius = (viewport ? getReach(viewport) : 0) + cell.width
+  return { x: radius * Math.cos(middle), y: radius * Math.sin(middle), ...cell }
 }
 
-/** What one placement shares across its notes: the plans, the boxes and lines placed so far, and the tally of how the notes fared. */
-interface Run {
-  readonly focus: PlacedNode
-  readonly context: PlacementContext
-  readonly plans: ReadonlyMap<PlexRelation, GroupPlan>
-  readonly footprintOf: (node: PlexNode) => Size
-  readonly index: SpotIndex
-  readonly lines: LineIndex
-  readonly groups: Map<PlexRelation, Spot[]>
-  readonly failed: Set<PlexRelation>
-  readonly totals: { failures: number; crossings: number; outside: number; centralReach: number }
+/** Fills the sector ring by ring; returns whether a caller asked to stop. */
+function placeSector(run: Run, sector: Sector, members: readonly PlexNode[]): boolean {
+  const { context } = run
+  const { gap, lineGap, focusGap, viewport } = context.options
+  const sizes = members.map((node) => getFootprintOf(node, context))
+  const height = Math.max(...sizes.map((size) => size.height))
+  const first = run.focus.height / 2 + focusGap + height / 2
+  const step = height + lineGap
+  const maxRadius = viewport ? getReach(viewport) / 2 : Number.POSITIVE_INFINITY
+  const placedBefore = run.placed.size
+  let next = 0
+  let isStopped = false
+  for (let ring = 0; next < members.length && ring < MAX_RINGS; ring++) {
+    const radius = first + ring * step
+    if (radius > maxRadius) break
+    const rest = members.slice(next)
+    layRing(run.index, {
+      sector,
+      radius,
+      isOdd: ring % 2 === 1,
+      gaps: { gap, lineGap },
+      isInside: (spot) => isInWindow(spot, context),
+      isLineClear: (position, spot) => isLineClear(run, rest[position]!, spot),
+      sizes: sizes.slice(next),
+      commit: (position, spot) => {
+        isStopped = place(run, rest[position]!, { spot, order: next + position }) || isStopped
+      },
+    })
+    next = run.placed.size - placedBefore
+    if (isStopped) return true
+  }
+  for (; next < members.length; next++) {
+    const node = members[next]!
+    const spot = getLeftOutSpot(sector, getFootprintOf(node, context), context)
+    if (place(run, node, { spot, order: next })) return true
+  }
+  return false
 }
 
-function tally(run: Run, plan: GroupPlan, spot: Spot, outcome: 'placed' | 'left-out' | 'crossing') {
-  const { totals, failed } = run
-  if (outcome !== 'placed') failed.add(plan.relation)
-  if (outcome === 'left-out') totals.failures++
-  if (outcome === 'crossing') totals.crossings++
-  if (!isInWindow(spot, run.context.options)) totals.outside++
-  if (outcome !== 'left-out' && !plan.isSide) {
-    totals.centralReach = Math.max(totals.centralReach, Math.abs(spot.x) + spot.width / 2)
-  }
-}
-
-function placeNote(run: Run, node: PlexNode): PlacedNode | undefined {
-  const { focus, context, index, lines } = run
-  const plan = run.plans.get(node.relation as PlexRelation)
-  if (!plan) return undefined
-  const group = run.groups.get(plan.relation) ?? []
-  run.groups.set(plan.relation, group)
-  const room = context.room(node)
-  const getCenter = (at: Spot): Vector => ({ x: at.x, y: getPillCenterY(at.y, room) })
-  const size = run.footprintOf(node)
-  const isLineClear = (at: Spot) => lines.isClear(node.id, getCenter(at), at)
-  // A fenced note stays in its territory: with no free spot there it is set beyond the window, and the window cuts it.
-  const within = findNoteSpot(
-    index,
-    { ...createRequest(plan, focus, size, context), group, fits: context.fits, isLineClear },
-    plan,
-  )
-  const spot = within ?? getLeftOutSpot(plan, size, context)
-  const isCrossing = within !== undefined && plan.isFenced && !isLineClear(within)
-  tally(run, plan, spot, !within ? 'left-out' : isCrossing ? 'crossing' : 'placed')
-  const box = getPlacedNode(node, spot, context, group.length)
-  if (within) {
-    index.add(spot)
-    lines.place(node.id, getCenter(spot), spot)
-    group.push(spot)
-  }
-  return box
-}
-
-function placeInTerritories(
-  nodesByRelation: NodesByRelation,
-  focus: PlacedNode,
-  context: PlacementContext,
-  borders: Borders,
-): Attempt {
-  const footprintOf = (node: PlexNode) =>
-    getFootprint(
-      { width: context.width(node), height: context.options.nodeSize.height },
-      context.room(node),
-    )
-  const focusSpot: Spot = { x: focus.x, y: focus.y, width: focus.width, height: focus.height }
-  const index = new SpotIndex([focusSpot])
-  const lines = new LineIndex(context.edges ?? [], focus.id, index)
-  lines.place(focus.id, { x: focus.x, y: focus.y }, focusSpot)
-  const run: Run = {
-    focus,
-    context,
-    footprintOf,
-    index,
-    lines,
-    plans: createGroupPlans(nodesByRelation, { focus, context, footprintOf, borders }),
-    groups: new Map(),
-    failed: new Set(),
-    totals: { failures: 0, crossings: 0, outside: 0, centralReach: 0 },
-  }
-  const placed = new Map<string, PlacedNode>()
-  for (const node of takeTurns(nodesByRelation)) {
-    const box = placeNote(run, node)
-    if (!box) continue
-    placed.set(node.id, box)
-    if (context.shouldStop?.(box)) break
-  }
-  return { placed, failed: run.failed, ...run.totals }
+function isLineClear(run: Run, node: PlexNode, spot: Spot): boolean {
+  const center = { x: spot.x, y: getPillCenterY(spot.y, run.context.room(node)) }
+  return run.lines.isClear(node.id, center, spot)
 }
 
 function placeClusters(
@@ -322,26 +126,25 @@ function placeClusters(
   focus: PlacedNode,
   context: PlacementContext,
 ): PlacedNode[] {
-  const { gap, focusGap } = context.options
-  const band = measureMiddleBand(nodesByRelation, context)
-  const bordersFor = (columns: number) => ({
-    columns,
-    cellWidth: band.cellWidth,
-    hasCentral: band.hasCentral,
-    hasSide: band.hasSide,
-    groupGap: GROUP_GAP_FACTOR * gap,
-    focusReach: focus.width / 2 + focusGap,
-  })
-  const placeAt = (borders: Borders) => placeInTerritories(nodesByRelation, focus, context, borders)
-
-  const best = findBestAttempt(
-    (columns) => placeAt(createBorders(bordersFor(columns))),
-    band,
-    context,
-    getStartColumns(band, context, focus),
-  )
+  const { gap, lineGap, focusGap } = context.options
+  const counts: Partial<Record<PlexRelation, number>> = {}
+  for (const relation of RELATION_NAMES) counts[relation] = nodesByRelation[relation]?.length
+  // The focus keeps `focusGap` around it, where other boxes keep `gap`.
+  const focusSpot: Spot = {
+    x: focus.x,
+    y: focus.y,
+    width: focus.width + 2 * Math.max(0, focusGap - gap),
+    height: focus.height + 2 * Math.max(0, focusGap - lineGap),
+  }
+  const index = new SpotIndex([focusSpot])
+  const lines = new LineIndex(context.edges ?? [], focus.id, index)
+  lines.place(focus.id, { x: focus.x, y: focus.y } satisfies Vector, focusSpot)
+  const run: Run = { focus, context, index, lines, placed: new Map() }
+  for (const sector of getSectors(counts)) {
+    if (placeSector(run, sector, nodesByRelation[sector.relation] ?? [])) break
+  }
   return RELATION_NAMES.flatMap((relation) =>
-    (nodesByRelation[relation] ?? []).flatMap((node) => best.placed.get(node.id) ?? []),
+    (nodesByRelation[relation] ?? []).flatMap((node) => run.placed.get(node.id) ?? []),
   )
 }
 

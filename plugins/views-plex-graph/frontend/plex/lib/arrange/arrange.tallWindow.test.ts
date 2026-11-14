@@ -1,4 +1,4 @@
-/** A wide note of a column on the right may sit where a narrower one before it left room, above or below it; a note never leaves its strip. */
+/** Notes of different widths in a tall narrow window with a wide focus stay clear of each other and inside it. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
@@ -72,15 +72,10 @@ describe('a tall narrow window with a wide focus', () => {
     ).toBe(true)
   })
 
-  it('keeps the siblings to the right of the focus and counts those that do not fit', () => {
-    const focus = frame.nodes.find((node) => node.relation === 'focus')!
+  it('keeps the siblings on the right half and counts those that do not fit', () => {
     const siblings = frame.nodes.filter((node) => node.relation === 'sibling')
 
     expect(siblings.length + (frame.overflow.sibling ?? 0)).toBe(WIDTHS.sibling.length)
-    for (const sibling of siblings) {
-      expect(sibling.x - sibling.width / 2, sibling.id).toBeGreaterThanOrEqual(
-        focus.x + focus.width / 2,
-      )
-    }
+    for (const sibling of siblings) expect(sibling.x, sibling.id).toBeGreaterThan(0)
   })
 })

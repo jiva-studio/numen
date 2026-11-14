@@ -1,5 +1,5 @@
 /**
- * A graph with no references and no names is arranged as the placement by territories leaves it: the numbers of
+ * A graph with no references and no names is arranged as the placement by sectors leaves it: the numbers of
  * the typical and the crowded fixture, taken before references and names existed.
  */
 import { describe, expect, it } from 'vitest'

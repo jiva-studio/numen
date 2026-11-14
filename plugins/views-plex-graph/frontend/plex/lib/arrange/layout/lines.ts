@@ -1,5 +1,5 @@
 /** Where the lines between placed notes run, so a note is not set where its line would hide another line or run through another note. */
-import type { Rect, Spot, SpotIndex, Vector } from './freeSpot'
+import type { Rect, Spot, SpotIndex, Vector } from './spotIndex'
 
 export interface Link {
   readonly from: string

@@ -1,4 +1,4 @@
-/** References grow above and to the left of the focus, jumps below and to the left. */
+/** References take the sector after the jumps, clockwise; with only the two, the jumps sit above the focus and the references below. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { getBox, isOverlapping } from './layout/boxes'
@@ -37,14 +37,9 @@ describe('references and jumps in a window', () => {
     expect(jumps).toHaveLength(6)
   })
 
-  it('puts the references and the jumps left of the focus', () => {
-    const left = focus.x - focus.width / 2
-    for (const node of [...references, ...jumps]) expect(node.x + node.width / 2).toBeLessThan(left)
-  })
-
-  it('puts the references above the focus and the jumps below it', () => {
-    expect(mean(references.map((node) => node.y))).toBeLessThan(focus.y)
-    expect(mean(jumps.map((node) => node.y))).toBeGreaterThan(focus.y)
+  it('gives the jumps and the references half of the circle each, the jumps above the focus', () => {
+    expect(mean(jumps.map((node) => node.y))).toBeLessThan(focus.y)
+    expect(mean(references.map((node) => node.y))).toBeGreaterThan(focus.y)
   })
 
   it('overlaps no two boxes', () => {

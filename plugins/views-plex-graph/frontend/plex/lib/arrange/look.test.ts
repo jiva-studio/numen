@@ -233,7 +233,7 @@ describe('Room around a note', () => {
   })
 
   it('shrinks with the gaps in a tight window, and still lets no box overlap', () => {
-    const tight = { width: 700, height: 500 }
+    const tight = { width: 560, height: 400 }
     const frame = arrange(build('A note', { child: 12 }), { room: 20 }, tight)
     const separation = getChildSeparation(frame)
 
