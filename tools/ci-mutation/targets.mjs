@@ -77,15 +77,16 @@ export const nameTargets = (found) => {
 /**
  * Folders outside `at` that the tests read, from the relative specifiers in
  * their source: `../../core/protocol/testdata/templates.json` from a test in `at`
- * keeps `…/protocol/testdata`.
+ * keeps `…/protocol/testdata`, and a specifier naming one of `folders` keeps
+ * that folder.
  */
-export const findTestdata = (at, tests) => {
+export const findTestdata = (at, tests, folders = new Set()) => {
   const kept = new Set()
   for (const { path, source } of tests) {
     for (const [, specifier] of source.matchAll(/['"](\.\.?\/[^'"?]+)(?:\?[^'"]*)?['"]/g)) {
-      const resolved = normalize(join(dirname(path), specifier))
-      if (resolved.startsWith(`${at}/`) || resolved.startsWith('..')) continue
-      kept.add(dirname(resolved))
+      const resolved = normalize(join(dirname(path), specifier)).replace(/\/$/, '')
+      if (resolved === at || resolved.startsWith(`${at}/`) || resolved.startsWith('..')) continue
+      kept.add(folders.has(resolved) ? resolved : dirname(resolved))
     }
   }
   const sorted = [...kept].sort((a, b) => a.localeCompare(b))
@@ -137,8 +138,19 @@ const readWorkspaces = () => {
   )
 }
 
+const listFolders = (tracked) => {
+  const folders = new Set()
+  for (const path of tracked) {
+    for (let dir = dirname(path); dir !== '.' && !folders.has(dir); dir = dirname(dir)) {
+      folders.add(dir)
+    }
+  }
+  return folders
+}
+
 const findTsTargets = (tracked) => {
   const workspaces = readWorkspaces()
+  const folders = listFolders(tracked)
   return tracked
     .filter((path) => path.endsWith('/package.json'))
     .map(dirname)
@@ -148,7 +160,11 @@ const findTsTargets = (tracked) => {
       const config = `${at}/vitest.config.ts`
       const sources = tracked.filter((path) => isUnder(path, `${at}/src`) && isMutatedSource(path))
       const tests = tracked
-        .filter((path) => isUnder(path, at) && (/\.test\.ts$/.test(path) || path === config))
+        .filter(
+          (path) =>
+            isUnder(path, at) &&
+            (/\.test\.ts$/.test(path) || (isTestSupport(path) && /\.ts$/.test(path)) || path === config),
+        )
         .map((path) => ({ path, source: readFileSync(join(root, path), 'utf8') }))
       if (tests.some((one) => one.path === config && one.source.includes('@numen/workbench/vite'))) {
         tests.push({
@@ -156,7 +172,12 @@ const findTsTargets = (tracked) => {
           source: readFileSync(join(root, 'libs/ui/workbench/src/vite.ts'), 'utf8'),
         })
       }
-      return { kind: 'ts', at, lines: countLines(sources), testdata: findTestdata(at, tests) }
+      return {
+        kind: 'ts',
+        at,
+        lines: countLines(sources),
+        testdata: findTestdata(at, tests, folders),
+      }
     })
     .filter((one) => one.lines > 0)
 }

@@ -9,7 +9,7 @@ A mutant is a small change to the code: a condition inverted, a statement remove
 Targets are found in the tracked tree, and a new module or package is included the night after it is merged:
 
 - **Go:** every Go module under `./` with a `_test.go` of its own. [gomutants](https://github.com/szhekpisov/gomutants) applies each mutant through `go test -overlay`, runs the tests that cover the mutated line, and compiles each survivor to drop the ones whose machine code is unchanged.
-- **TypeScript:** every workspace package with a `vitest.config.ts` and source under `src/`. [Stryker](https://stryker-mutator.io) runs with its Vitest runner against the package's projects that do not run in a browser, through a config written at run time into `./.mutation/vitest/`. Test data the tests import from outside the package is found from their import paths and kept in Stryker's sandbox.
+- **TypeScript:** every workspace package with a `vitest.config.ts` and source under `src/`. [Stryker](https://stryker-mutator.io) runs with its Vitest runner against the package's projects that do not run in a browser, through a config written at run time into `./.mutation/vitest/`. Test data the tests and their helpers read from outside the package is found from the relative paths in their source and kept in Stryker's sandbox: the folder a path names, or the folder of the file it names.
 
 A target is named by its path under `./` with dashes (`libs-core-kernel`, `apps-desktop-editor`), with `-go` or `-ts` appended where one folder holds both. It takes one shard per 6000 lines of Go or 4500 lines of TypeScript, up to 16. A package or file is placed in a shard by a hash of its path, so adding one moves no other.
 
@@ -21,7 +21,7 @@ Neither tool writes to the checked-out source.
 
 ## The cache
 
-Each target has one cache in the Actions cache, `mutation-<target>-run-<run id>`: the gomutants cache of a Go module, or the Stryker incremental report of a package. Every shard starts from it and measures again only the mutants whose code or covering tests changed, and uploads the cache it ends with as the artifact `cache-<shard>`.
+Each target has one cache in the Actions cache, `mutation-<target>-run-<run id>`: the gomutants cache of a Go module, or the Stryker incremental report of a package. Every shard starts from it and measures again only the mutants whose code or covering tests changed, and uploads the cache it ends with, renamed `<shard>.gomutants.json` or `<shard>.stryker.json`, as the artifact `cache-<shard>`.
 
 After the shards, `cache.mjs` merges the target's cache. Each package or file is taken from the shard that holds it under the current shard count, and kept from the previous cache when that shard uploaded nothing. A shard that runs out of time uploads what it measured, and continues from there the next night. A change in shard count moves files between shards and keeps their results.
 
