@@ -1,6 +1,6 @@
 {
   "name": "@numen/tools.templates",
-  "version": "2026.11.17",
+  "version": "2026.11.1",
   "private": true,
   "type": "module",
   "description": "Templates plugin frontend for Numen",

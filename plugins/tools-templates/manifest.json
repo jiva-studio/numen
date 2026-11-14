@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.templates",
   "name": "Templates",
-  "version": "2026.11.17",
+  "version": "2026.11.1",
   "protocol": 1,
   "description": "Makes a new note from a template",
   "targets": ["desktop.editor"],
