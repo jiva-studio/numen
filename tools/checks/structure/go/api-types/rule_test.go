@@ -452,11 +452,16 @@ func compareShapes(findings *[]string, at string, goShape, tsShape shape, isRequ
 	}
 	switch goShape.Kind {
 	case kindString:
-		if len(goShape.Values) > 0 && len(tsShape.Values) > 0 {
-			declared := slices.Clone(tsShape.Values)
-			slices.Sort(declared)
-			declared = slices.DeleteFunc(slices.Compact(declared), func(value string) bool { return value == "" })
+		declared := slices.Clone(tsShape.Values)
+		slices.Sort(declared)
+		declared = slices.DeleteFunc(slices.Compact(declared), func(value string) bool { return value == "" })
+		switch {
+		case len(goShape.Values) > 0 && len(declared) > 0:
 			addDifferences(findings, at, "value", goShape.Values, declared)
+		case len(goShape.Values) > 0:
+			*findings = append(*findings, at+": Go has an enumeration ("+strings.Join(goShape.Values, ", ")+"), TypeScript has a plain string")
+		case len(declared) > 0:
+			*findings = append(*findings, at+": TypeScript has an enumeration ("+strings.Join(declared, ", ")+"), Go has a plain string")
 		}
 	case kindArray, kindRecord:
 		if goShape.Element != nil && tsShape.Element != nil {

@@ -26,11 +26,20 @@ const (
 	StateUnreachable State = "unreachable"
 )
 
+// Platform is the operating system of a build.
+type Platform string
+
+const (
+	PlatformDarwin  Platform = "darwin"
+	PlatformWindows Platform = "windows"
+	PlatformLinux   Platform = "linux"
+)
+
 // App is the running build the frontend reports.
 type App struct {
-	Version  string `json:"version"`
-	Build    int64  `json:"build"`
-	Platform string `json:"platform"`
+	Version  string   `json:"version"`
+	Build    int64    `json:"build"`
+	Platform Platform `json:"platform"`
 }
 
 // CheckRequest asks the endpoint for the newest build and compares it with the running one.

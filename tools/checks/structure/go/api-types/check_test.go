@@ -38,6 +38,13 @@ const (
 	StateLost        State = "lost"
 )
 
+type Format string
+
+const (
+	FormatPaper Format = "paper"
+	FormatEbook Format = "ebook"
+)
+
 type Entry struct {
 	Path  string 'json:"path"'
 	Shelf string 'json:"shelf"'
@@ -64,12 +71,20 @@ type Book struct {
 		jsonschema:"the number of pages"'
 	Mtime int64   'json:"mtime,string"'
 	State State   'json:"state"'
-	Note  *string 'json:"note,omitempty"'
-	cache string
+	Note   *string 'json:"note,omitempty"'
+	Genre  string  'json:"genre"'
+	Format Format  'json:"format"'
+	cache  string
 }
 
 type ReadBookResponse struct {
 	Book *Book 'json:"book,omitempty"'
+}
+
+type CountBooksRequest struct{}
+
+type CountBooksResponse struct {
+	Count int 'json:"count"'
 }
 `),
 		"plugins/shelf/backend/service/mount.go": `package service
@@ -95,9 +110,14 @@ func readBook(context.Context, api.ReadBookRequest) (api.ReadBookResponse, error
 	return api.ReadBookResponse{}, nil
 }
 
+func countBooks(context.Context, api.CountBooksRequest) (api.CountBooksResponse, error) {
+	return api.CountBooksResponse{}, nil
+}
+
 func Mount(a *server.API) {
 	handle(a, "ListBooks", listBooks)
 	server.Handle(a, methodReadBook, readBook)
+	server.Handle(a, "CountBooks", countBooks)
 }
 `,
 		"plugins/attic/backend/service/mount.go": writeGoSource(`package service
@@ -178,6 +198,8 @@ interface Book {
   mtime: number
   state: State
   note?: string
+  genre: 'novel' | 'poem'
+  format: string
   extra: boolean
 }
 
@@ -208,6 +230,17 @@ export const burnBook = (path: string) => call<{ path: string }, Record<string, 
 
 export const lendBook = (path: string) => send('LendBook', { path })
 `,
+		"plugins/shelf/frontend/ui/ShelfCount.vue": `<script setup lang="ts">
+import { createApi } from '@numen/plugin-sdk'
+
+const api = createApi('shelf')
+void api.call<Record<string, never>, { count: string }>('CountBooks', {})
+</script>
+
+<template>
+  <p>shelf</p>
+</template>
+`,
 		"plugins/shelf/frontend/api/wire.test.ts": `import { createApi } from '@numen/plugin-sdk'
 
 export const probe = () => createApi('shelf').call<{ nothing: true }, { nothing: true }>('ListBooks', { nothing: true })
@@ -216,8 +249,9 @@ export const probe = () => createApi('shelf').call<{ nothing: true }, { nothing:
 }
 
 // The rule reads the JSON fields Go sends as reflect reads the tags, also from an embedded struct and from
-// a tag on several lines, follows a method through the functions that pass it on, on both sides, and
-// fails a field, a value or an optionality on one side only, a method the backend does not serve, a call
+// a tag on several lines, reads the calls in the script of a Vue file, follows a method through the
+// functions that pass it on, on both sides, and fails a field, a value, an enumeration or an optionality
+// on one side only, a method the backend does not serve, a call
 // whose types it cannot name, and a plugin that serves methods its frontend never calls. Test files are
 // out of scope, and a plugin that serves no method has nothing to compare.
 func TestAPITypesRule_RejectsDifferencesBetweenGoAndTypeScript(t *testing.T) {
@@ -230,6 +264,9 @@ func TestAPITypesRule_RejectsDifferencesBetweenGoAndTypeScript(t *testing.T) {
 	}
 	slices.Sort(got)
 	want := []string{
+		"CountBooks response.count: Go has a number, TypeScript has a string",
+		"ReadBook response.book.format: Go has an enumeration (ebook, paper), TypeScript has a plain string",
+		"ReadBook response.book.genre: TypeScript has an enumeration (novel, poem), Go has a plain string",
 		"ReadBook response.book.mtime: Go has a string, TypeScript has a number",
 		"ReadBook response.book.state: value lost is missing in TypeScript",
 		"ReadBook response.book: field extra is not in Go",
@@ -242,8 +279,8 @@ func TestAPITypesRule_RejectsDifferencesBetweenGoAndTypeScript(t *testing.T) {
 	if !slices.Equal(got, want) {
 		t.Errorf("the rule rejects\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
-	if count.methods != 3 || count.calls != 3 {
-		t.Errorf("%d served methods and %d frontend calls read, want the 3 methods and the 3 calls of the fixture", count.methods, count.calls)
+	if count.methods != 4 || count.calls != 4 {
+		t.Errorf("%d served methods and %d frontend calls read, want the 4 methods and the 4 calls of the fixture", count.methods, count.calls)
 	}
 }
 

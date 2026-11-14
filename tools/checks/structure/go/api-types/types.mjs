@@ -2,9 +2,9 @@
 /**
  * The TypeScript half of the check `go/api-types`: the JSON methods a plugin frontend calls through the
  * `Api` of `@numen/plugin-sdk`, with the request and response type of each call, read with the type
- * checker of the plugin's tsconfig. Prints JSON keyed by each plugin directory as given:
- * `files`, `calls` as {method, place, request, response} and `failures` as {place, reason} for a call
- * whose method or types the checker cannot name.
+ * checker of the plugin's tsconfig and the script blocks of its Vue files. Prints JSON keyed by each
+ * plugin directory as given: `files`, `calls` as {method, place, request, response} and `failures` as
+ * {place, reason} for a call whose method or types the checker cannot name.
  *
  *   node types.mjs <plugin dir>...
  *
@@ -18,6 +18,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { parse as parseVue } from "@vue/compiler-sfc";
 import ts from "typescript";
 
 const SDK_PACKAGE = "@numen/plugin-sdk";
@@ -47,12 +48,48 @@ function isPluginSource(root, file) {
   return !rel.startsWith("..") && !path.isAbsolute(rel) && !rel.split(path.sep).includes("node_modules") && !isTestFile(file);
 }
 
+const SKIPPED_DIRS = new Set(["node_modules", "dist", "build"]);
+/** A Vue file is read as `<file>.vue.ts`, which is also where TypeScript looks for an import of `<file>.vue`. */
+const VIRTUAL_SUFFIX = ".vue.ts";
+
+function listVueFiles(dir) {
+  const vueFiles = [];
+  for (const one of fs.readdirSync(dir, { withFileTypes: true })) {
+    const file = path.join(dir, one.name);
+    if (one.isDirectory() && !SKIPPED_DIRS.has(one.name) && !one.name.startsWith(".")) vueFiles.push(...listVueFiles(file));
+    else if (one.isFile() && one.name.endsWith(".vue")) vueFiles.push(file);
+  }
+  return vueFiles;
+}
+
+/** The script blocks of a Vue file in place, the rest blanked, so that a line of the text is the line of the file. */
+function readVueScript(file) {
+  const source = fs.readFileSync(file, "utf8");
+  const { descriptor } = parseVue(source, { filename: file });
+  const chars = source.split("").map((char) => (char === "\n" ? "\n" : " "));
+  for (const block of [descriptor.script, descriptor.scriptSetup]) {
+    if (!block) continue;
+    for (let i = block.loc.start.offset; i < block.loc.end.offset; i++) chars[i] = source[i];
+  }
+  return chars.join("");
+}
+
 function createProgram(root) {
   const configFile = path.join(root, "tsconfig.json");
   const config = ts.readConfigFile(configFile, ts.sys.readFile);
   if (config.error) throw new Error(`${configFile}: ${ts.flattenDiagnosticMessageText(config.error.messageText, "\n")}`);
   const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
-  return ts.createProgram({ rootNames: parsed.fileNames, options: { ...parsed.options, noEmit: true } });
+  const options = { ...parsed.options, noEmit: true };
+  const virtual = new Map(listVueFiles(root).map((file) => [file + ".ts", readVueScript(file)]));
+  const host = ts.createCompilerHost(options, true);
+  const getSourceFile = host.getSourceFile.bind(host);
+  const fileExists = host.fileExists.bind(host);
+  const readFile = host.readFile.bind(host);
+  host.getSourceFile = (name, language, onError, create) =>
+    virtual.has(name) ? ts.createSourceFile(name, virtual.get(name), language, true, ts.ScriptKind.TS) : getSourceFile(name, language, onError, create);
+  host.fileExists = (name) => virtual.has(name) || fileExists(name);
+  host.readFile = (name) => (virtual.has(name) ? virtual.get(name) : readFile(name));
+  return ts.createProgram({ rootNames: [...new Set([...parsed.fileNames, ...virtual.keys()])], options, host });
 }
 
 /** Where the type parameters of a method of the Api stand: the one the request parameter has, and the other. */
@@ -73,7 +110,8 @@ function readPlugin(dir) {
   const getPlace = (node) => {
     const file = node.getSourceFile();
     const { line } = file.getLineAndCharacterOfPosition(node.getStart());
-    return `${path.relative(root, file.fileName).split(path.sep).join("/")}:${line + 1}`;
+    const name = file.fileName.endsWith(VIRTUAL_SUFFIX) ? file.fileName.slice(0, -3) : file.fileName;
+    return `${path.relative(root, name).split(path.sep).join("/")}:${line + 1}`;
   };
 
   const isApiMethod = (declaration) =>

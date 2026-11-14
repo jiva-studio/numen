@@ -23,11 +23,19 @@ type GetLinkResponse struct {
 	IsCopyable bool   `json:"isCopyable"`
 }
 
+// MediaKind is what a copy of a link keeps: the video, or the sound alone.
+type MediaKind string
+
+const (
+	MediaKindVideo MediaKind = "video"
+	MediaKindAudio MediaKind = "audio"
+)
+
 // CopyMediaRequest starts copying the media of the link note at Path: the video, or with Kind
 // audio the sound alone.
 type CopyMediaRequest struct {
-	Path string `json:"path"`
-	Kind string `json:"kind"`
+	Path string    `json:"path"`
+	Kind MediaKind `json:"kind"`
 }
 
 // CopyMediaResponse is the acknowledgment of a started copy.
