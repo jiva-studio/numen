@@ -8,6 +8,7 @@ import { openExternalUrl, type WindowPlatform } from '@numen/workbench'
 import { getPluginConnections, getPluginTexts } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { Caught } from '@/shared/api/errors'
+import { loadFrameRuntime } from '@/shared/api/runtime'
 import { TARGET } from '../lib/window'
 import type { HostParts, TabActionParts, TabKindParts } from './createHostParts'
 import type { createPluginCatalog } from './createPluginCatalog'
@@ -54,7 +55,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
       build: import.meta.env.VITE_NUMEN_BUILD,
       getPlatform: deps.getPlatform,
     }),
-    openExternal: (url) => openExternalUrl(url),
+    openExternal: (url) => openExternalUrl(url, loadFrameRuntime),
     onError: deps.reports.reportError,
     getReaderExtensions: catalog.getReaderExtensions,
     getSetting,

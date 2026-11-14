@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { interceptExternalLinks, reportFailure, runInBackground } from '@numen/ui'
 import { openExternalUrl } from '@numen/workbench'
 import { createRoot } from './app/createRoot'
+import { loadFrameRuntime } from './app/runtime'
 import './app/app.css'
 
 // The webview's default menu carries browser entries (inspect, reload, view source),
@@ -14,7 +15,7 @@ document.addEventListener('contextmenu', (event) => {
 
 // The window has no address bar: an external address opens in the system browser.
 interceptExternalLinks((href) => {
-  runInBackground(openExternalUrl(href), reportFailure)
+  runInBackground(openExternalUrl(href, loadFrameRuntime), reportFailure)
 })
 
 createApp(createRoot()).mount('#app')
