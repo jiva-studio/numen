@@ -514,7 +514,8 @@ func compareAPIs(served map[string][]servedMethod, frontends map[string]frontend
 			findings = append(findings, finding{place: dir + "/" + one.Place, text: "the frontend calls a method whose name or types the type checker cannot read: " + one.Reason})
 		}
 		if len(side.Calls) == 0 && len(side.Failures) == 0 {
-			findings = append(findings, finding{place: dir, text: "the backend serves " + strconv.Itoa(len(methods)) + " JSON method(s) and the frontend calls none of them through the Api of @numen/plugin-sdk"})
+			text := "the backend serves " + strconv.Itoa(len(methods)) + " JSON method(s) and the frontend calls none of them through the Api of @numen/plugin-sdk"
+			findings = append(findings, finding{place: dir, text: text})
 		}
 		for _, call := range side.Calls {
 			count.calls++
