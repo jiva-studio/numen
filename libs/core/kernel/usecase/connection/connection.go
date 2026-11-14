@@ -88,7 +88,7 @@ func (noDetection) ListDetected() []connection.Connection { return nil }
 func (noDetection) IsPending(string) bool                 { return false }
 func (noDetection) Detect(context.Context, string)        {}
 func (noDetection) Refresh()                              {}
-// noOptionLists keeps no option lists.
+
 type noOptionLists struct{}
 
 func (noOptionLists) RefreshConnection(string)      {}
