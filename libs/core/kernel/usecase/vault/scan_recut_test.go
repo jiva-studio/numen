@@ -110,7 +110,7 @@ func TestAScanWithNoCheckGivenReadsNoUnchangedNoteWhateverItsSize(t *testing.T) 
 	v, db := newOrchardVault(t), openIndex(t)
 	runScan(t, scanAt(db, 256), v)
 
-	scan := scanAtBacklog(db, 512, nil)
+	scan := scanAtBacklog(db, 512, none.SourceBacklog{})
 	if res := runScan(t, scan, v); res.Indexed != 0 || res.Unchanged != 3 {
 		t.Errorf("indexed %d, unchanged %d; want 0 and 3", res.Indexed, res.Unchanged)
 	}
