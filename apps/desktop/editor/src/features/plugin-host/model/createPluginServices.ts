@@ -4,8 +4,13 @@
  */
 import type { Component } from 'vue'
 import { getCurrentDate } from '@numen/ui'
-import { createWindowHost, type WindowControls, type WindowHost } from '@numen/plugin-loader'
-import { relations } from '@/entities/note'
+import {
+  createWindowHost,
+  type VaultRelations,
+  type WindowControls,
+  type WindowHost,
+} from '@numen/plugin-loader'
+import type { FileApi } from '@/entities/file'
 import { getNoteInFocus, type WindowTabs } from '@/entities/tab'
 import { formatError } from '@/shared/api/errors'
 import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
@@ -61,6 +66,9 @@ export function createWorkspaceService(deps: WorkspaceServiceDeps): PluginServic
 
 /** What the notes and files a plugin's tabs are given are made from. */
 export interface VaultAccessDeps {
+  readonly notes: VaultNotesDeps['notes']
+  readonly files: Pick<FileApi, 'getFileKinds' | 'listFiles'>
+  readonly relations: VaultRelations
   readonly search: VaultNotesDeps['search']
   readonly making: VaultNotesDeps['making']
   readonly pluginNotes: VaultNotesDeps['pluginNotes']
@@ -74,12 +82,15 @@ export function createVaultAccess(
 ): Pick<PluginServices, 'notes' | 'relations' | 'files'> {
   return {
     notes: createVaultNotes({
+      notes: deps.notes,
+      getFileKinds: deps.files.getFileKinds,
       search: deps.search,
       making: deps.making,
       pluginNotes: deps.pluginNotes,
     }),
-    relations,
+    relations: deps.relations,
     files: createVaultFiles({
+      listFiles: deps.files.listFiles,
       making: deps.making,
       getTarget: deps.getTarget,
       runCommand: deps.runInvocation,

@@ -7,9 +7,8 @@ import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 
 const statFile = (body: string): string => `1 1 at:${body}`
 
-const openNotes = (core: Notes, how: Parameters<typeof useOpenNotes>[0]) => {
-  answerNotes(core)
-  return flattenOpenNotes(useOpenNotes(how))
+const openNotes = (core: Notes, how: Parameters<typeof useOpenNotes>[1]) => {
+  return flattenOpenNotes(useOpenNotes(answerNotes(core), how))
 }
 
 function createFiles() {

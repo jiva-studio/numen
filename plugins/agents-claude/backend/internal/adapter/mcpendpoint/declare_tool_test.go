@@ -99,6 +99,9 @@ func TestTheEndpointDeclaresTheSchemasOfATool(t *testing.T) {
 			assertDeclaredSchemas(t, tc, declared)
 		})
 	}
+	if got := string(encodeObjectSchema(map[string]json.RawMessage{"bad": json.RawMessage("invalid")})); got != `{"type":"object"}` {
+		t.Errorf("encodeObjectSchema(invalid) = %s, want {\"type\":\"object\"}", got)
+	}
 }
 
 // annotationCase is a tool with its effect and its required permissions, and the annotations an MCP

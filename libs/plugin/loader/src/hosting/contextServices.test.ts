@@ -8,14 +8,14 @@ import {
   isUnsavedBuffersError,
   UnsavedBuffersError,
   type BufferHost,
-  type PluginContext,
+  type HostServices,
   type VaultFiles,
   type VaultNotes,
   type VaultRelations,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import { createMockCommandsHost } from '@numen/plugin-sdk/testing'
-import { createPluginContext } from './context'
+import { createPluginParts } from './context'
 import { disposeSubscriptions } from './guards/subscriptions'
 import type { PluginContextHost } from './types'
 import { createTestContextHost } from '../testing/contextHost'
@@ -89,7 +89,7 @@ const createServices = () => {
 
 const createContext = (permissions: readonly string[]) => {
   const services = createServices()
-  const context = createPluginContext('md.numen.sample', services.host, {
+  const context = createPluginParts('md.numen.sample', services.host, {
     id: 'md.numen.sample',
     name: 'Sample',
     version: '1.0.0',
@@ -98,7 +98,7 @@ const createContext = (permissions: readonly string[]) => {
   return { ...services, context }
 }
 
-type Call = (context: PluginContext) => unknown
+type Call = (services: HostServices) => unknown
 
 const NOTE_WRITES: Record<string, Call> = {
   createUntitledNote: (c) => c.vault.notes!.createUntitledNote(),
@@ -141,7 +141,7 @@ describe('the relationships a plugin writes', () => {
     async (name, call) => {
       const { context } = createContext(['vault:read'])
 
-      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+      await expect(Promise.resolve().then(() => call(context.host))).rejects.toThrowError(
         `Plugin "md.numen.sample" lacks required permission "vault:write" for relations.${name}`,
       )
     },
@@ -152,7 +152,7 @@ describe('the relationships a plugin writes', () => {
     async (_, call) => {
       const { context } = createContext(['vault:write'])
 
-      await expect(Promise.resolve().then(() => call(context))).resolves.not.toThrow()
+      await expect(Promise.resolve().then(() => call(context.host))).resolves.not.toThrow()
     },
   )
 
@@ -161,7 +161,7 @@ describe('the relationships a plugin writes', () => {
     async (name, call) => {
       const { context } = createContext(['vault:write'])
 
-      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+      await expect(Promise.resolve().then(() => call(context.host))).rejects.toThrowError(
         `Plugin "md.numen.sample" lacks required permission "vault:read" for relations.${name}`,
       )
     },
@@ -172,14 +172,14 @@ describe('the relationships a plugin writes', () => {
     async (_, call) => {
       const { context } = createContext(['vault:read'])
 
-      await expect(Promise.resolve().then(() => call(context))).resolves.not.toThrow()
+      await expect(Promise.resolve().then(() => call(context.host))).resolves.not.toThrow()
     },
   )
 
   it('pass the roles the window offers', () => {
     const { context } = createContext([])
 
-    expect(context.vault.relations!.roles).toStrictEqual(['parent', 'child', 'jump'])
+    expect(context.host.vault.relations!.roles).toStrictEqual(['parent', 'child', 'jump'])
   })
 })
 
@@ -195,7 +195,7 @@ describe('a note a plugin reads and writes', () => {
     async (name, call) => {
       const { context } = createContext(['vault:read'])
 
-      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+      await expect(Promise.resolve().then(() => call(context.host))).rejects.toThrowError(
         `Plugin "md.numen.sample" lacks required permission "vault:write" for notes.${name}`,
       )
     },
@@ -206,14 +206,14 @@ describe('a note a plugin reads and writes', () => {
     async (_, call) => {
       const { context } = createContext(['vault:write'])
 
-      await expect(Promise.resolve().then(() => call(context))).resolves.not.toThrow()
+      await expect(Promise.resolve().then(() => call(context.host))).resolves.not.toThrow()
     },
   )
 
   it.each(Object.entries(NOTE_READS))('fails through %s without vault:read', async (name, call) => {
     const { context, notes } = createContext(['vault:write'])
 
-    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+    await expect(Promise.resolve().then(() => call(context.host))).rejects.toThrowError(
       `Plugin "md.numen.sample" lacks required permission "vault:read" for notes.${name}`,
     )
     expect(notes[name as keyof VaultNotes]).not.toHaveBeenCalled()
@@ -222,7 +222,7 @@ describe('a note a plugin reads and writes', () => {
   it.each(Object.entries(NOTE_READS))('fails through %s with no permission', async (name, call) => {
     const { context } = createContext([])
 
-    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+    await expect(Promise.resolve().then(() => call(context.host))).rejects.toThrowError(
       `Plugin "md.numen.sample" lacks required permission "vault:read" for notes.${name}`,
     )
   })
@@ -230,7 +230,7 @@ describe('a note a plugin reads and writes', () => {
   it.each(Object.entries(NOTE_READS))('is read through %s with vault:read', async (name, call) => {
     const { context, notes } = createContext(['vault:read'])
 
-    await call(context)
+    await call(context.host)
 
     expect(notes[name as keyof VaultNotes]).toHaveBeenCalledOnce()
   })
@@ -238,8 +238,8 @@ describe('a note a plugin reads and writes', () => {
   it('a related-notes read sends its depth to the editor service unchanged', async () => {
     const { context, notes } = createContext(['vault:read'])
 
-    await context.vault.notes!.listRelatedNotes('Notes/Example.md', 2)
-    await context.vault.notes!.listRelatedNotes('Notes/Example.md')
+    await context.host.vault.notes!.listRelatedNotes('Notes/Example.md', 2)
+    await context.host.vault.notes!.listRelatedNotes('Notes/Example.md')
 
     expect(notes.listRelatedNotes).toHaveBeenNthCalledWith(1, 'Notes/Example.md', 2)
     expect(notes.listRelatedNotes).toHaveBeenNthCalledWith(2, 'Notes/Example.md')
@@ -248,7 +248,7 @@ describe('a note a plugin reads and writes', () => {
   it('is read with vault:read and without vault:write', async () => {
     const { context, notes } = createContext(['vault:read'])
 
-    const note = await context.vault.notes!.read('Notes/Example.md')
+    const note = await context.host.vault.notes!.read('Notes/Example.md')
 
     expect(note).toStrictEqual({ body: 'Example prose.' })
     expect(notes.read).toHaveBeenCalledWith('Notes/Example.md')
@@ -257,10 +257,10 @@ describe('a note a plugin reads and writes', () => {
   it('is written and not read with vault:write and without vault:read', async () => {
     const { context, notes } = createContext(['vault:write'])
 
-    await context.vault.notes!.write('Notes/Example.md', 'New prose.')
+    await context.host.vault.notes!.write('Notes/Example.md', 'New prose.')
 
     expect(notes.write).toHaveBeenCalledWith('Notes/Example.md', 'New prose.')
-    await expect(context.vault.notes!.read('Notes/Example.md')).rejects.toThrowError(
+    await expect(context.host.vault.notes!.read('Notes/Example.md')).rejects.toThrowError(
       'Plugin "md.numen.sample" lacks required permission "vault:read" for notes.read',
     )
   })
@@ -277,7 +277,7 @@ describe('the open files a plugin passes the window', () => {
     async (name, call) => {
       const { context } = createContext(['vault:read'])
 
-      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+      await expect(Promise.resolve().then(() => call(context.host))).rejects.toThrowError(
         `Plugin "md.numen.sample" lacks required permission "vault:write" for buffers.${name}`,
       )
     },
@@ -288,17 +288,17 @@ describe('the open files a plugin passes the window', () => {
     async (_, call) => {
       const { context } = createContext(['vault:write'])
 
-      await expect(Promise.resolve().then(() => call(context))).resolves.not.toThrow()
+      await expect(Promise.resolve().then(() => call(context.host))).resolves.not.toThrow()
     },
   )
 
   it('are passed to the window the plugin runs in, and to none where the window made none', () => {
     const { context, buffers } = createContext(['vault:write'])
-    context.vault.buffers!.track({} as never)
+    context.host.vault.buffers!.track({} as never)
 
     expect(buffers.track).toHaveBeenCalledOnce()
     expect(
-      createPluginContext('md.numen.sample', createEmptyHost(), {
+      createPluginParts('md.numen.sample', createEmptyHost(), {
         permissions: ['vault:write'],
       }),
     ).not.toHaveProperty('buffers')
@@ -311,8 +311,8 @@ describe('the text a plugin could not write at quit', () => {
   it('is reported to the window under the id of the plugin, whichever way it flushes', async () => {
     const { context, buffers } = createContext(['vault:write'])
     const flush = () => Promise.reject(new UnsavedBuffersError(unsaved))
-    context.vault.buffers!.track({ flush })
-    context.vault.buffers!.addFlushHandler(flush)
+    context.host.vault.buffers!.track({ flush })
+    context.host.vault.buffers!.addFlushHandler(flush)
 
     const handed = [
       vi.mocked(buffers.track).mock.calls[0]![0].flush,
@@ -328,7 +328,7 @@ describe('the text a plugin could not write at quit', () => {
   it('leaves any other failure of a flush as it was', async () => {
     const { context, buffers } = createContext(['vault:write'])
     const failure = new Error('disk gone')
-    context.vault.buffers!.track({ flush: () => Promise.reject(failure) })
+    context.host.vault.buffers!.track({ flush: () => Promise.reject(failure) })
 
     const handed = vi.mocked(buffers.track).mock.calls[0]![0]
 
@@ -343,10 +343,10 @@ describe('the registrations of a plugin in the open files', () => {
     vi.mocked(buffers.track).mockReturnValue({ dispose: released })
     vi.mocked(buffers.addFlushHandler).mockReturnValue({ dispose: released })
 
-    context.vault.buffers!.track({} as never)
-    context.vault.buffers!.addFlushHandler(vi.fn(() => Promise.resolve()))
-    expect(context.plugin.subscriptions).toHaveLength(2)
-    disposeSubscriptions(context.plugin.subscriptions)
+    context.host.vault.buffers!.track({} as never)
+    context.host.vault.buffers!.addFlushHandler(vi.fn(() => Promise.resolve()))
+    expect(context.plugin.identity.subscriptions).toHaveLength(2)
+    disposeSubscriptions(context.plugin.identity.subscriptions)
 
     expect(released).toHaveBeenCalledTimes(2)
   })
@@ -358,7 +358,7 @@ describe('a file a plugin lists and writes', () => {
     async (name, call) => {
       const { context } = createContext(['vault:read'])
 
-      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+      await expect(Promise.resolve().then(() => call(context.host))).rejects.toThrowError(
         `Plugin "md.numen.sample" lacks required permission "vault:write" for files.${name}`,
       )
     },
@@ -369,14 +369,14 @@ describe('a file a plugin lists and writes', () => {
     async (_, call) => {
       const { context } = createContext(['vault:write'])
 
-      await expect(Promise.resolve().then(() => call(context))).resolves.not.toThrow()
+      await expect(Promise.resolve().then(() => call(context.host))).resolves.not.toThrow()
     },
   )
 
   it('is listed with vault:read and without vault:write', async () => {
     const { context, files } = createContext(['vault:read'])
 
-    await context.vault.files!.list('Notes')
+    await context.host.vault.files!.list('Notes')
 
     expect(files.list).toHaveBeenCalledWith('Notes')
   })
@@ -387,7 +387,7 @@ describe('a file a plugin lists and writes', () => {
   ])('fails to be listed with %s', async (_, permissions) => {
     const { context, files } = createContext(permissions)
 
-    await expect(context.vault.files!.list('Notes')).rejects.toThrowError(
+    await expect(context.host.vault.files!.list('Notes')).rejects.toThrowError(
       'Plugin "md.numen.sample" lacks required permission "vault:read" for files.list',
     )
     expect(files.list).not.toHaveBeenCalled()
@@ -401,7 +401,7 @@ describe('a command a plugin runs over the vault', () => {
   it.each(WRITES)('runs %s through the commands of the window with vault:write', async (id) => {
     const { context, commands } = createContext(['vault:write'])
 
-    await context.ui.commands!.run(id, target)
+    await context.host.ui.commands!.run(id, target)
 
     expect(commands.getRuns()).toStrictEqual([{ command: id, target, itemId: undefined }])
   })
@@ -409,7 +409,7 @@ describe('a command a plugin runs over the vault', () => {
   it('runs a command of its own that no slot lists', async () => {
     const { context, commands } = createContext(['vault:write'])
 
-    await context.ui.commands!.run('md.numen.sample:deck.create', target)
+    await context.host.ui.commands!.run('md.numen.sample:deck.create', target)
 
     expect(commands.getRuns()).toHaveLength(1)
   })
@@ -419,7 +419,7 @@ describe('a command a plugin runs over the vault', () => {
     async (id) => {
       const { context, commands } = createContext(['vault:write'])
 
-      await context.ui.commands!.run(id)
+      await context.host.ui.commands!.run(id)
 
       expect(commands.getRuns()).toHaveLength(1)
     },
@@ -435,7 +435,7 @@ describe('a command a plugin runs over the vault', () => {
   ])('rejects %s, a command it does not own that no slot lists', async (id) => {
     const { context, commands } = createContext(['vault:write'])
 
-    await expect(context.ui.commands!.run(id, target)).rejects.toThrowError(
+    await expect(context.host.ui.commands!.run(id, target)).rejects.toThrowError(
       /does not own and no slot lists/,
     )
     expect(commands.getRuns()).toStrictEqual([])
@@ -444,7 +444,7 @@ describe('a command a plugin runs over the vault', () => {
   it('asks the permission before the command', async () => {
     const { context } = createContext([])
 
-    await expect(context.ui.commands!.run('app:note.trash', target)).rejects.toThrowError(
+    await expect(context.host.ui.commands!.run('app:note.trash', target)).rejects.toThrowError(
       'lacks required permission "vault:write" for commands.run',
     )
   })
@@ -452,12 +452,12 @@ describe('a command a plugin runs over the vault', () => {
   it('checks the permission a command declares before running it', async () => {
     const withoutManage = createContext(['vault:write'])
     await expect(
-      withoutManage.context.ui.commands!.run('md.numen.other:vault.archive', target),
+      withoutManage.context.host.ui.commands!.run('md.numen.other:vault.archive', target),
     ).rejects.toThrowError('lacks required permission "vault:manage" for commands.run')
     expect(withoutManage.commands.getRuns()).toStrictEqual([])
 
     const withManage = createContext(['vault:write', 'vault:manage'])
-    await withManage.context.ui.commands!.run('md.numen.other:vault.archive', target)
+    await withManage.context.host.ui.commands!.run('md.numen.other:vault.archive', target)
     expect(withManage.commands.getRuns()).toStrictEqual([
       { command: 'md.numen.other:vault.archive', target, itemId: undefined },
     ])
@@ -466,22 +466,21 @@ describe('a command a plugin runs over the vault', () => {
   it('reads the commands of the window and their items with no permission', () => {
     const { context, commands } = createContext([])
     const handler = vi.fn()
-    context.ui.commands!.watch(handler)
+    context.host.ui.commands!.watch(handler)
 
     commands.setIds(['app:vault.create'])
 
-    expect(context.ui.commands!.getIds()).toStrictEqual(['app:vault.create'])
+    expect(context.host.ui.commands!.getIds()).toStrictEqual(['app:vault.create'])
     expect(handler).toHaveBeenLastCalledWith(['app:vault.create'])
   })
 
   it('opens a file with vault:read and shows an error without a permission', () => {
     const { context, workspace } = createContext(['vault:read'])
 
-    context.ui.workspace!.files.open('a.md')
-    context.ui.workspace!.messages.showError('no')
+    context.host.ui.workspace!.files.open('a.md')
+    context.host.ui.workspace!.messages.showError('no')
 
     expect(workspace.files.open).toHaveBeenCalledWith('a.md')
     expect(workspace.messages.showError).toHaveBeenCalledWith('no')
   })
 })
-

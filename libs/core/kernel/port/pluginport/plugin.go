@@ -15,13 +15,18 @@ type PluginResolver interface {
 	// ResolveCapability returns the plugin for the capability. Where none answers, the error is an
 	// *UnavailableError saying whether none is installed or every one is disabled.
 	ResolveCapability(capability string) (manifest.Discovered, error)
-	// ResolveService returns the enabled plugin with the lowest id among those that serve the service
-	// to the windows, and false where none does.
-	ResolveService(service string) (manifest.Discovered, bool)
+	ServiceResolver
 	// ResolveNoteProfile returns how the index keeps the notes of a type, as the enabled plugin that
 	// declares the type defines, and false where none does.
 	ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile, bool)
 	GetPlugin(id string) (manifest.Discovered, bool)
+}
+
+// ServiceResolver finds the plugin that serves a service to the windows.
+type ServiceResolver interface {
+	// ResolveService returns the enabled plugin with the lowest id among those that serve the service
+	// to the windows, and false where none does.
+	ResolveService(service string) (manifest.Discovered, bool)
 }
 
 // PluginRetrier starts a plugin once, as any use of it does.
@@ -30,14 +35,14 @@ type PluginRetrier interface {
 	RetryPlugin(ctx context.Context, pluginID string) (*plugin.Failure, error)
 }
 
-// PluginDiscoverer scans for available plugins.
-type PluginDiscoverer interface {
-	Discover() error
-}
-
 // PluginLister returns the metadata of the plugins in the order of their ids.
 type PluginLister interface {
 	GetPluginInfos() []plugin.Info
+	PluginEnablement
+}
+
+// PluginEnablement reports whether the settings of a plugin leave it enabled.
+type PluginEnablement interface {
 	// IsPluginEnabled reports whether the settings of the plugin leave it enabled.
 	IsPluginEnabled(pluginID string) bool
 }
@@ -55,24 +60,9 @@ type ConfigRefresher interface {
 	Refresh(ctx context.Context, forced ...string) error
 }
 
-// SettingsPush gives the plugins the settings the user keeps for them.
-type SettingsPush interface {
-	SetSettings(all map[string]map[string]any)
-	SetPerformanceProfile(ctx context.Context, profile string)
-}
-
 // ConfigWatcher tells when a plugin has been given its configuration.
 type ConfigWatcher interface {
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
-}
-
-type SettingChecker interface {
-	CheckPluginSetting(pluginID, key string, value any) error
-}
-
-// PersistHook receives the function that saves a setting a plugin changes.
-type PersistHook interface {
-	SetPersistHandler(handler plugin.PersistHandler)
 }
 
 type PluginEventEmitter interface {
@@ -82,6 +72,11 @@ type PluginEventEmitter interface {
 // PluginFailures tells the plugins whose start failed.
 type PluginFailures interface {
 	SetOnFailureCleared(fn func(pluginID string))
+	PluginSuspensions
+}
+
+// PluginSuspensions reports whether the host holds a plugin suspended.
+type PluginSuspensions interface {
 	// IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended.
 	IsPluginSuspended(pluginID string) bool
 }

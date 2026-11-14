@@ -1,18 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { installCoreAnswers } from '@numen/core-client/testing'
-import { listPlugins } from './plugins'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createCoreTransport } from '@numen/core-client/testing'
+import { createWindowClients } from '@/shared/api/clients'
+import { createPluginLister } from './plugins'
 
 const core = { getPlugins: vi.fn() }
 
-let restore: () => void
+const listPlugins = createPluginLister(
+  createWindowClients(createCoreTransport({ pluginService: core })).pluginService,
+)
 
 beforeEach(() => {
   vi.resetAllMocks()
-  restore = installCoreAnswers({ pluginService: core })
-})
-
-afterEach(() => {
-  restore()
 })
 
 describe('the installed plugins', () => {

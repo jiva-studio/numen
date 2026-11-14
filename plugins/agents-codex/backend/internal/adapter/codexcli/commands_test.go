@@ -1,6 +1,7 @@
 package codexcli
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"slices"
@@ -26,6 +27,21 @@ func TestTheAnswerCommandTurnsOffTheFeaturesOfCodexThatReachOut(t *testing.T) {
 	if got := getDisabledFeatures(); !slices.Equal(got, wantDisabled) {
 		t.Errorf("getDisabledFeatures = %v, want %v", got, wantDisabled)
 	}
+	answer, err := (Commands{}).MakeAnswerCommand(task.Spec{Program: "/opt/codex", Prompt: "p"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := answer.Release(); err != nil {
+			t.Error(err)
+		}
+	}()
+	joined := strings.Join(answer.Args, "\n")
+	for _, feature := range wantDisabled {
+		if !strings.Contains(joined, "--disable\n"+feature) {
+			t.Errorf("answer command missing --disable %s in %v", feature, answer.Args)
+		}
+	}
 }
 
 func TestTheModelIsOmittedWhenTheRequestAsksForTheDefault(t *testing.T) {
@@ -39,6 +55,13 @@ func TestTheToolsCommandNamesNoMCPServerWithoutAToolsURL(t *testing.T) {
 
 	if sliceContainsSubstr(cmd.Args, "mcp_servers") {
 		t.Errorf("MakeToolsCommand without ToolsURL included mcp_servers: %v", cmd.Args)
+	}
+
+	withTools := Commands{}.MakeToolsCommand(task.Spec{Program: "/custom/bin/codex", Prompt: "hi", ToolsURL: "http://127.0.0.1:4100/mcp"})
+	joined := strings.Join(withTools.Args, "\n")
+	if !strings.Contains(joined, `mcp_servers.numen.url="http://127.0.0.1:4100/mcp"`) ||
+		!strings.Contains(joined, `mcp_servers.numen.bearer_token_env_var="NUMEN_TOKEN"`) {
+		t.Errorf("MakeToolsCommand with ToolsURL = %v", withTools.Args)
 	}
 }
 
@@ -78,6 +101,8 @@ func TestTheAnswerCommandFailsWhenTheFolderCannotBeCreated(t *testing.T) {
 	t.Setenv("TMPDIR", "/dev/null/nonexistent")
 	if _, err := (Commands{}).MakeAnswerCommand(task.Spec{Prompt: "p"}); err == nil {
 		t.Error("expected MakeAnswerCommand error when TMPDIR is invalid")
+	} else if pathErr, ok := errors.AsType[*os.PathError](err); !ok || pathErr.Path == "" {
+		t.Errorf("expected wrapped *os.PathError with a path, got %T (%v)", err, err)
 	}
 }
 

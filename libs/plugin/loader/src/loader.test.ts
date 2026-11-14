@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { PluginContext, PluginSettings, PluginLifecycle } from '@numen/plugin-sdk'
+import type { PluginSettings, PluginLifecycle } from '@numen/plugin-sdk'
 import { parseManifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
-import type { LoaderHost } from './host'
+import type { LoaderHost, PluginParts } from './host'
 import { getPluginStyle, registerPluginStyle } from './styles'
 import { createPluginLoader } from './loader'
 import { parseLifecycleHooks, resolveModule } from './module'
@@ -37,7 +37,7 @@ describe('createPluginLoader', () => {
     triggerSettingChange: (pluginId: string, key: string, value: unknown) => Promise<void>
     settings: Map<string, unknown>
   } {
-    const contexts = new Map<string, PluginContext>()
+    const contexts = new Map<string, PluginParts>()
     const settings = new Map<string, unknown>()
     const settingListeners = new Map<string, Set<(val: unknown) => void | Promise<void>>>()
 
@@ -73,47 +73,51 @@ describe('createPluginLoader', () => {
       registerManifest: vi.fn(),
       createContext: vi.fn((pluginId: string, _manifest?: unknown) => {
         const noop = () => ({ dispose: vi.fn() })
-        const ctx: PluginContext = {
+        const parts: PluginParts = {
           plugin: {
-            id: pluginId,
-            target: 'desktop.test',
-            subscriptions: [],
-            app: { name: 'numen', version: '0.0.0-test', build: 1, platform: 'linux' },
-            openExternal: vi.fn(async () => ({ ok: true as const, value: null })),
+            identity: {
+              id: pluginId,
+              target: 'desktop.test',
+              subscriptions: [],
+              app: { name: 'numen', version: '0.0.0-test', build: 1, platform: 'linux' },
+              openExternal: vi.fn(async () => ({ ok: true as const, value: null })),
+            },
+            register: {
+              slotView: vi.fn(noop),
+              reader: vi.fn(noop),
+              tabKind: vi.fn(noop),
+              command: vi.fn(noop),
+              view: vi.fn(noop),
+              settingsView: vi.fn(noop),
+            },
+            settings: {
+              get: vi.fn((key: string) =>
+                getSetting(pluginId, key),
+              ) as unknown as PluginSettings['get'],
+              onChange: vi.fn((key: string, handler: (val: unknown) => void) =>
+                onSettingChange(pluginId, key, handler),
+              ),
+            },
           },
-          register: {
-            slotView: vi.fn(noop),
-            reader: vi.fn(noop),
-            tabKind: vi.fn(noop),
-            command: vi.fn(noop),
-            view: vi.fn(noop),
-            settingsView: vi.fn(noop),
+          host: {
+            events: {
+              onVaultChange: vi.fn(noop),
+              onFileSelect: vi.fn(noop),
+              emitVaultChange: vi.fn(),
+              emitFileSelect: vi.fn(),
+            },
+            tabs: { open: vi.fn(), navigate: vi.fn(), close: vi.fn() },
+            vault: {},
+            ui: {
+              slots: createMockSlotHost(),
+              notices: createMockNoticeHost(),
+              mountView: vi.fn(() => ({ focus: vi.fn(), dispose: vi.fn() })),
+            },
+            work: {},
           },
-          settings: {
-            get: vi.fn((key: string) =>
-              getSetting(pluginId, key),
-            ) as unknown as PluginSettings['get'],
-            onChange: vi.fn((key: string, handler: (val: unknown) => void) =>
-              onSettingChange(pluginId, key, handler),
-            ),
-          },
-          events: {
-            onVaultChange: vi.fn(noop),
-            onFileSelect: vi.fn(noop),
-            emitVaultChange: vi.fn(),
-            emitFileSelect: vi.fn(),
-          },
-          tabs: { open: vi.fn(), navigate: vi.fn(), close: vi.fn() },
-          vault: {},
-          ui: {
-            slots: createMockSlotHost(),
-            notices: createMockNoticeHost(),
-            mountView: vi.fn(() => ({ focus: vi.fn(), dispose: vi.fn() })),
-          },
-          work: {},
         }
-        contexts.set(pluginId, ctx)
-        return ctx
+        contexts.set(pluginId, parts)
+        return parts
       }),
       getSetting,
       onSettingChange,
@@ -146,7 +150,7 @@ describe('createPluginLoader', () => {
 
     const mockPluginModule: PluginLifecycle = {
       activate: async (ctx) => {
-        expect(ctx.plugin.id).toBe('sample.plugin')
+        expect(ctx.identity.id).toBe('sample.plugin')
         activated = true
       },
       deactivate: async () => {
@@ -356,7 +360,8 @@ describe('createPluginLoader', () => {
 describe('createPluginLoader catalog manifests', () => {
   it('passes the registered manifest to the context of a plugin', async () => {
     const createContext = vi.fn(
-      (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+      (pluginId: string) =>
+        ({ plugin: { identity: { id: pluginId } }, host: {} }) as unknown as PluginParts,
     )
     const host = {
       createContext,
@@ -383,7 +388,8 @@ describe('createPluginLoader failures, order and toggles', () => {
     const listeners = new Map<string, (value: unknown) => void | Promise<void>>()
     const host = {
       createContext: vi.fn(
-        (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+        (pluginId: string) =>
+          ({ plugin: { identity: { id: pluginId } }, host: {} }) as unknown as PluginParts,
       ),
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
@@ -971,7 +977,8 @@ describe('createPluginLoader failure state', () => {
   it('keeps the failure of a plugin that never activated when it is deactivated', async () => {
     const host = {
       createContext: vi.fn(
-        (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+        (pluginId: string) =>
+          ({ plugin: { identity: { id: pluginId } }, host: {} }) as unknown as PluginParts,
       ),
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),

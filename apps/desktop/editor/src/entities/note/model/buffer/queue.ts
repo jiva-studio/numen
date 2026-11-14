@@ -1,7 +1,7 @@
 /**
  * Save timers, flush coordination, and read/write execution for open notes.
  */
-import { readNote, writeNote } from '../../api/notes'
+import type { NoteApi } from '../../api/notes'
 import type { NoteResult, WriteResult as CoreWriteResult } from './types'
 import type { Event, NoteBaseline, NoteErrorCode, ReadResult, WriteResult } from './tab'
 
@@ -25,7 +25,11 @@ const TAB_CODE_OF: Readonly<Record<string, NoteErrorCode>> = {
 export const convertErrorCode = (from: string): NoteErrorCode =>
   TAB_CODE_OF[from] ?? (TAB_CODES.has(from) ? (from as NoteErrorCode) : 'unreadable')
 
+/** The calls the open notes are read and written through. */
+export type NoteBufferApi = Pick<NoteApi, 'readNote' | 'writeNote'>
+
 export interface NoteQueueDeps {
+  api: NoteBufferApi
   dispatch: (id: string, event: Event) => void
   hasTab: (id: string) => boolean
   resumeClosing: (id: string) => void
@@ -76,7 +80,7 @@ function createQueueTimers(dispatch: NoteQueueDeps['dispatch']) {
 }
 
 export function createNoteQueue(deps: NoteQueueDeps) {
-  const { dispatch, hasTab, resumeClosing } = deps
+  const { api, dispatch, hasTab, resumeClosing } = deps
   const { startTimer, cancelTimer } = createQueueTimers(dispatch)
   const flushWaiters = new Map<string, () => void>()
 
@@ -96,7 +100,7 @@ export function createNoteQueue(deps: NoteQueueDeps) {
   const readItem = async (id: string, path: string, generation: number): Promise<void> => {
     let reply: NoteResult
     try {
-      reply = await readNote(path)
+      reply = await api.readNote(path)
     } catch {
       dispatch(id, { kind: 'read', generation, answer: { kind: 'error', error: 'unreachable' } })
       return
@@ -107,7 +111,7 @@ export function createNoteQueue(deps: NoteQueueDeps) {
   const write = async (id: string, request: NoteWriteRequest): Promise<void> => {
     let answer: WriteResult
     try {
-      answer = toWriteResult(await writeNote(request.path, request.body, request.baseline))
+      answer = toWriteResult(await api.writeNote(request.path, request.body, request.baseline))
     } catch {
       answer = { kind: 'error', error: 'unreachable' }
     }

@@ -1,11 +1,17 @@
 /**
  * The vaults of the installation together with the one this window shows.
  */
-import { getShownVault } from '@/entities/window'
-import { vaults, type VaultList } from '@/entities/vault'
+import type { ShownVaultApi } from '@/entities/window'
+import type { VaultList, Vaults } from '@/entities/vault'
 
-/** Every vault the installation holds, and which of them this window shows. */
-export async function getVaultList(): Promise<VaultList> {
-  const [listed, showing] = await Promise.all([vaults.list(), getShownVault()])
+/** What the list of the vaults is read through. */
+export interface VaultListApi {
+  readonly vaults: Pick<Vaults, 'list'>
+  readonly getShownVault: ShownVaultApi['getShownVault']
+}
+
+/** Reads every vault the installation holds, and which of them this window shows. */
+export const createVaultListReader = (api: VaultListApi) => async (): Promise<VaultList> => {
+  const [listed, showing] = await Promise.all([api.vaults.list(), api.getShownVault()])
   return { vaults: listed, showing }
 }

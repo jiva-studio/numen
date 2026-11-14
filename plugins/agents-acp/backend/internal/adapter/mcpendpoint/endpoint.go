@@ -109,14 +109,16 @@ func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*
 		serveErr: nil,
 	}
 	served.server.ConnState = served.trackConnection
-	go func() {
-		defer close(served.stopped)
-		// Serve returns http.ErrServerClosed once Close is called, which is how it is meant to end.
-		if err := served.server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
-			served.serveErr = err
-		}
-	}()
+	go served.run(listener)
 	return served, nil
+}
+
+func (e *Endpoint) run(listener net.Listener) {
+	defer close(e.stopped)
+	// Serve returns http.ErrServerClosed once Close is called, which is how it is meant to end.
+	if err := e.server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
+		e.serveErr = err
+	}
 }
 
 // GetURL returns the http address on 127.0.0.1 and the path /mcp where the endpoint answers.
@@ -160,7 +162,7 @@ func (e *Endpoint) getActiveCount() int {
 }
 
 func (e *Endpoint) shutdown(ctx context.Context) error {
-	result := make(chan error, 1)
+	result := make(chan error)
 	go func() { result <- e.server.Shutdown(ctx) }()
 	poll := time.NewTicker(shutdownPoll)
 	defer poll.Stop()
@@ -213,6 +215,10 @@ func readInputSchema(raw []byte) json.RawMessage {
 		return json.RawMessage(raw)
 	}
 	schema["type"] = json.RawMessage(`"object"`)
+	return marshalSchema(schema)
+}
+
+func marshalSchema(schema map[string]json.RawMessage) json.RawMessage {
 	encoded, err := json.Marshal(schema)
 	if err != nil {
 		return json.RawMessage(`{"type":"object"}`)
@@ -301,6 +307,5 @@ func isLoopbackOrigin(origin string) bool {
 	if hostname == "localhost" {
 		return true
 	}
-	ip := net.ParseIP(hostname)
-	return ip != nil && ip.IsLoopback()
+	return net.ParseIP(hostname).IsLoopback()
 }

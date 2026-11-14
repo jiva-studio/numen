@@ -100,6 +100,9 @@ func TestAChangeOfChunkTokensDoesNotChangeTheModelNorItsHandling(t *testing.T) {
 func TestTheMockModelReportsChunkTokensLimitedByItsMaxTokens(t *testing.T) {
 	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	srv := newEmbeddingServer()
+	if got := getReportedChunkTokens(t, srv); got != 256 {
+		t.Errorf("initial mock chunk tokens = %d, want 256", got)
+	}
 	srv.updateConfig(map[string]string{"chunkTokens": "300"})
 	if got := getReportedChunkTokens(t, srv); got != 300 {
 		t.Errorf("mock chunk tokens = %d, want 300", got)
