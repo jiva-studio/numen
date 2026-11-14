@@ -107,7 +107,10 @@
       "type": "enum",
       "title": "Sort files by",
       "description": "How files and folders are ordered in the tree",
-      "options": ["name", "modified"],
+      "options": [
+        { "value": "name", "title": "Name" },
+        { "value": "modified", "title": "Date modified" }
+      ],
       "default": "name"
     }
   ]

@@ -88,7 +88,10 @@ describe('the settings', () => {
 
     expect(setting).toMatchObject({
       type: 'enum',
-      options: ['name', 'modified'],
+      options: [
+        { value: 'name', title: 'Name' },
+        { value: 'modified', title: 'Date modified' },
+      ],
       default: 'name',
     })
     expect(setting?.title).toBeTruthy()
