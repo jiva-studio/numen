@@ -50,6 +50,9 @@ func TestARelatedNoteKeepsThePathOfTheNoteItBelongsTo(t *testing.T) {
 }
 
 func TestAWireDepthIsReadAsNearOrFar(t *testing.T) {
+	if domain.DepthNear != 1 || domain.DepthFar != 2 {
+		t.Fatalf("DepthNear = %d, DepthFar = %d, want 1, 2", domain.DepthNear, domain.DepthFar)
+	}
 	for wire, want := range map[uint32]domain.RelationDepth{0: domain.DepthNear, 1: domain.DepthNear, 2: domain.DepthFar} {
 		got, err := domain.ParseRelationDepth(wire)
 		if err != nil || got != want {
@@ -60,8 +63,8 @@ func TestAWireDepthIsReadAsNearOrFar(t *testing.T) {
 
 func TestAWireDepthAboveTwoIsInvalid(t *testing.T) {
 	for _, wire := range []uint32{3, 100} {
-		if _, err := domain.ParseRelationDepth(wire); !errors.Is(err, domain.ErrInvalidRelationDepth) {
-			t.Errorf("ParseRelationDepth(%d) error = %v, want ErrInvalidRelationDepth", wire, err)
+		if got, err := domain.ParseRelationDepth(wire); !errors.Is(err, domain.ErrInvalidRelationDepth) || got != 0 {
+			t.Errorf("ParseRelationDepth(%d) = %d, %v, want 0, ErrInvalidRelationDepth", wire, got, err)
 		}
 	}
 }

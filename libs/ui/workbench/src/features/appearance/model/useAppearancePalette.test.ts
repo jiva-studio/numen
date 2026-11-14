@@ -1,7 +1,7 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, ref, shallowRef } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
-import type { Mode, Theme } from '../lib/appearance'
+import { DESIGNED, type Mode, type Sizes, type Theme } from '../lib/appearance'
 import { useAppearancePalette, type AppearancePaletteDeps } from './useAppearancePalette'
 
 const WORDS = {
@@ -21,21 +21,26 @@ const createPalette = (reason = '') => {
     themes: shallowRef<readonly Theme[]>([SEA]),
     applied: ref('preset:numen'),
     mode: ref<Mode>('system'),
+    settings: ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED }),
+    lost: ref(''),
   }
   const shown: [string, Mode][] = []
-  const errors: string[] = []
-  const deps = {
+  const errors: [string, string][] = []
+  const deps: AppearancePaletteDeps & {
+    writeChoice: ReturnType<typeof vi.fn<() => Promise<string>>>
+    onOpen: ReturnType<typeof vi.fn<() => Promise<void>>>
+  } = {
     appearance: {
       state,
       show: async (theme: string, mode: Mode) => {
         shown.push([theme, mode])
       },
-    } as unknown as AppearancePaletteDeps['appearance'],
+    },
     words: WORDS,
     getPluginName: (id: string) => id,
     writeChoice: vi.fn(async () => reason),
     onOpen: vi.fn(async () => undefined),
-    write: (text: string) => errors.push(text),
+    write: (text: string, kind: string) => errors.push([text, kind]),
   }
   let palette: ReturnType<typeof useAppearancePalette> | undefined
   const wrapper = mount(
@@ -50,24 +55,31 @@ const createPalette = (reason = '') => {
   return { palette, deps, shown, errors, wrapper }
 }
 
-const pressToggle = (more: KeyboardEventInit = {}) => {
+const pressToggle = (more: KeyboardEventInit = {}, preventDefault = false) => {
   const event = new KeyboardEvent('keydown', {
     key: 'p',
     ctrlKey: true,
     cancelable: true,
     ...more,
   })
+  if (preventDefault) event.preventDefault()
   globalThis.dispatchEvent(event)
   return event
 }
 
 describe('the appearance palette', () => {
-  it('opens and closes on Ctrl+P, reads again as it opens, and leaves other chords alone', () => {
-    const { palette, deps, wrapper } = createPalette()
+  it('opens and closes on Ctrl+P, reads again as it opens, and leaves other chords alone', async () => {
+    const { palette, deps, errors, wrapper } = createPalette()
+    expect(palette.query.value).toBe('')
     palette.query.value = 'stale'
 
     expect(pressToggle({ shiftKey: true }).defaultPrevented).toBe(false)
+    expect(pressToggle({ altKey: true }).defaultPrevented).toBe(false)
+    expect(pressToggle({ ctrlKey: false, metaKey: false }).defaultPrevented).toBe(false)
+    expect(pressToggle({ key: 'x' }).defaultPrevented).toBe(false)
+    pressToggle({}, true)
     expect(palette.isOpen.value).toBe(false)
+
     expect(pressToggle().defaultPrevented).toBe(true)
     expect(palette.isOpen.value).toBe(true)
     expect(palette.query.value).toBe('')
@@ -75,15 +87,23 @@ describe('the appearance palette', () => {
     pressToggle({ ctrlKey: false, metaKey: true })
     expect(palette.isOpen.value).toBe(false)
 
+    deps.onOpen.mockRejectedValueOnce(new Error('open failed'))
+    pressToggle()
+    await flushPromises()
+    expect(errors).toStrictEqual([['open failed', 'error']])
+
     wrapper.unmount()
     pressToggle()
-    expect(palette.isOpen.value).toBe(false)
+    expect(palette.isOpen.value).toBe(true)
   })
 
   it('writes a theme chosen with the mode in force, then shows it', async () => {
     const { palette, deps, shown } = createPalette()
+    pressToggle()
+    expect(palette.isOpen.value).toBe(true)
 
     await palette.onChoose(`theme:${SEA.name}`)
+    expect(palette.isOpen.value).toBe(false)
     await palette.onChoose('mode:dark')
 
     expect(deps.writeChoice.mock.calls).toStrictEqual([
@@ -101,7 +121,7 @@ describe('the appearance palette', () => {
 
     await palette.onChoose(`theme:${SEA.name}`)
 
-    expect(errors).toStrictEqual(['the settings are read-only'])
+    expect(errors).toStrictEqual([['the settings are read-only', 'error']])
     expect(shown).toStrictEqual([])
   })
 

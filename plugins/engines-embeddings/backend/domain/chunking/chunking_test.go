@@ -70,6 +70,7 @@ func TestClampTokensLimitsTheSizeToTheModelLimit(t *testing.T) {
 		{name: "a size under the limit stays", requested: 400, limit: 512, want: 400},
 		{name: "a size at the limit stays", requested: 512, limit: 512, want: 512},
 		{name: "a size over the limit is the limit", requested: 1000, limit: 512, want: 512},
+		{name: "a limit of one clamps to one", requested: 1000, limit: 1, want: 1},
 		{name: "a model that names no limit holds nothing", requested: 1000, limit: 0, want: 1000},
 		{name: "a negative limit holds nothing", requested: 1000, limit: -1, want: 1000},
 	}
