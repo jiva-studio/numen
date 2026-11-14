@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -28,13 +29,7 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, d
 	}
 	testsupport.CloseAfter(t, db)
 
-	scan := vaults.NewScan(
-		vaultreader.Readers{},
-		db.Vaults(),
-		db.Notes(),
-		db.NoteQueries(),
-		db.Maintenance(), nil,
-	)
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -263,13 +258,7 @@ func TestShowLinks_UnconnectedVaultLinkIsNotResolvedOrBroken(t *testing.T) {
 
 func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 	t.Helper()
-	scan := vaults.NewScan(
-		vaultreader.Readers{},
-		db.Vaults(),
-		db.Notes(),
-		db.NoteQueries(),
-		db.Maintenance(), nil,
-	)
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

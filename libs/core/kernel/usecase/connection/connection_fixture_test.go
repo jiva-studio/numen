@@ -9,6 +9,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
 
@@ -147,7 +148,10 @@ func newFixture(t *testing.T) *fixture {
 	t.Helper()
 	f := &fixture{repository: &memoryRepository{}, keys: &memoryKeys{values: map[string]string{}}, uses: &memoryUses{}, types: newTypes()}
 	next := 0
-	f.connection = connectiontest.New(f.repository, f.types, f.keys, f.uses, func() (string, error) {
+	f.connection = connectiontest.New(connectiontest.Parts{
+		Repository: f.repository, Types: f.types, Keys: f.keys, Uses: f.uses,
+		Detected: none.Detected{}, Titles: none.OperationTitles{},
+	}, func() (string, error) {
 		next++
 		return fmt.Sprintf("c%08x", next), nil
 	})

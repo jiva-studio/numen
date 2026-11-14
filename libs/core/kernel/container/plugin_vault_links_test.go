@@ -36,7 +36,8 @@ func openWindowUseCases(assembly windowVaults) (container.PluginVaultHooks, *win
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	})
-	return container.PluginVaultHooks{Notes: &useCases}, index
+	changes := container.GetNoteChanges(useCases)
+	return container.PluginVaultHooks{Notes: &changes}, index
 }
 
 func statFile(t *testing.T, shared *vaultapi.Access, path string) domain.FileStat {
