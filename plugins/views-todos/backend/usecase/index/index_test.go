@@ -204,11 +204,17 @@ func TestANoteThatFailsToReadIsCountedAsUnreadableAndTheScanGoesOn(t *testing.T)
 
 func TestTheIndexIsNotReadyBeforeTheFirstScanEndsAndAnswersWithWhatItHas(t *testing.T) {
 	f := newFixture(map[string]string{"a.md": "- [ ] one"})
-	f.reader.entered, f.reader.release = make(chan string), make(chan struct{})
+	f.reader.entered, f.reader.release = make(chan string, 64), make(chan struct{})
 	finished := make(chan error, 1)
 	go func() { finished <- f.index.Scan(context.Background()) }()
 
-	<-f.reader.entered
+	select {
+	case <-f.reader.entered:
+	case err := <-finished:
+		t.Fatalf("the scan ended with %v before it read a note", err)
+	case <-time.After(10 * time.Second):
+		t.Fatal("the scan read no note")
+	}
 	if summary := f.index.Summarize(today); summary.IsReady {
 		t.Errorf("summary = %+v, want not ready while a note is being read", summary)
 	}
