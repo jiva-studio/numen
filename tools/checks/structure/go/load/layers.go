@@ -239,3 +239,11 @@ func ParseSourceFiles(t *testing.T, dir string) []*ast.File {
 func IsDriving(pkg string) bool {
 	return IsAmong(slices.Collect(maps.Keys(GetDriving())), pkg)
 }
+
+// IsUseCaseTestSupport reports a package under usecase whose directory name ends in "test" (connectiontest).
+// It builds the use case it sits in for the tests of several packages, as net/http/httptest does for net/http,
+// and is not a use case. pkg is a path relative to the core or a full import path.
+func IsUseCaseTestSupport(pkg string) bool {
+	base := pkg[strings.LastIndex(pkg, "/")+1:]
+	return (strings.HasPrefix(pkg, "usecase/") || strings.Contains(pkg, "/usecase/")) && strings.HasSuffix(base, "test")
+}

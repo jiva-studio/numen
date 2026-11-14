@@ -34,6 +34,8 @@ const (
 
 func getStructLimit(rel string) (structLimit, bool) {
 	switch {
+	case load.IsUseCaseTestSupport(rel):
+		return structLimit{}, false
 	case load.IsWithin(rel, "usecase"):
 		return structLimit{methods: maxUseCaseMethods, fields: maxUseCaseFields}, true
 	case load.IsWithin(rel, "adapter"), load.IsWithin(rel, "internal/adapter"):

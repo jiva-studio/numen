@@ -23,7 +23,8 @@ func isUseCaseType(t types.Type) bool {
 	if !ok || named.Obj().Pkg() == nil {
 		return false
 	}
-	return strings.Contains(named.Obj().Pkg().Path()+"/", "/usecase/")
+	path := named.Obj().Pkg().Path()
+	return strings.Contains(path+"/", "/usecase/") && !load.IsUseCaseTestSupport(path)
 }
 
 // structUseCaseCount is what one walk over structs read.

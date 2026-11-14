@@ -2,13 +2,8 @@
 package usecaseedges
 
 import (
-	"go/parser"
-	"go/token"
-	"io/fs"
 	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
+	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
@@ -16,41 +11,13 @@ import (
 
 // No use case imports another use case. Every package under usecase, nested ones included, is a use case
 // of its own: it imports neither its parent, nor its child, nor a sibling. A use case imports
-// from internal/ only the packages of getSharedPackagesOfUseCases.
+// from internal/ only the packages of getSharedPackagesOfUseCases. A package under usecase whose directory
+// name ends in "test" is test support: it may import any use case, and no production file of the module
+// imports it, so the walk reads the whole module.
 //
 // Test files are not walked.
 func TestNoUseCaseImportsAnotherUseCase(t *testing.T) {
-	var violations []string
-	var importsRead int
-	visited := map[string]bool{}
-	err := filepath.WalkDir("../usecase", func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
-			return err
-		}
-		if strings.HasSuffix(path, "_test.go") {
-			return nil
-		}
-		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
-		if err != nil {
-			return err
-		}
-		from := load.GetPackage("..", path)
-		if name, ok := getUseCaseName(from); ok {
-			visited[name] = true
-		}
-		for _, spec := range file.Imports {
-			to, err := strconv.Unquote(spec.Path.Value)
-			if err != nil || !strings.HasPrefix(to, load.Module) {
-				continue
-			}
-			to = strings.TrimPrefix(to, load.Module)
-			importsRead++
-			if reason := getUseCaseEdgeRefusal(from, to); reason != "" {
-				violations = append(violations, from+" reaches "+to+": "+reason)
-			}
-		}
-		return nil
-	})
+	violations, importsRead, visited, err := listEdgeViolations("..", load.Module)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,6 +78,16 @@ func TestUseCaseEdgeRule_RejectsImportsBetweenUseCases(t *testing.T) {
 		{"usecase/vault", "internal/operation", true},
 		{"usecase/vault", "internal/adapter/filesystem/vaultreader", true},
 
+		// A package whose directory name ends in "test" is test support: it imports the use case it sits in
+		// and any other use case or test support, and no production package imports it.
+		{"usecase/x/xtest", "usecase/x", false},
+		{"usecase/modelcall/modelcalltest", "usecase/connection", false},
+		{"usecase/modelcall/modelcalltest", "usecase/connection/connectiontest", false},
+		{"usecase/x/xtest", "internal/adapterlib/eventbus", true},
+		{"usecase/x", "usecase/x/xtest", true},
+		{"adapter/window/connection", "usecase/x/xtest", true},
+		{"container", "usecase/x/xtest", true},
+
 		// Pairs with a side that is not a use case are not this rule's.
 		{"usecase/note", "port", false},
 		{"container", "usecase/vault", false},
@@ -122,6 +99,25 @@ func TestUseCaseEdgeRule_RejectsImportsBetweenUseCases(t *testing.T) {
 		if !tc.isRefused && reason != "" {
 			t.Errorf("%s reaches %s and fails: %s", tc.from, tc.to, reason)
 		}
+	}
+}
+
+// The walk reads the production files of the whole module: test support that imports the use case it sits in
+// passes, a test that imports test support passes, and a production file that imports it fails.
+func TestEdgeWalk_RejectsAProductionImportOfTestSupport(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"usecase/x/x.go":           "package x\n",
+		"usecase/x/xtest/xtest.go": "package xtest\n\nimport _ \"fixture/usecase/x\"\n",
+		"usecase/x/x_test.go":      "package x_test\n\nimport _ \"fixture/usecase/x/xtest\"\n",
+		"adapter/y/y.go":           "package y\n\nimport _ \"fixture/usecase/x/xtest\"\n",
+	})
+	violations, importsRead, _, err := listEdgeViolations(dir, "fixture/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"adapter/y reaches usecase/x/xtest: only a test imports test support"}
+	if !slices.Equal(violations, want) || importsRead != 2 {
+		t.Errorf("the walk read %d edges and refuses %v, want 2 edges and %v", importsRead, violations, want)
 	}
 }
 

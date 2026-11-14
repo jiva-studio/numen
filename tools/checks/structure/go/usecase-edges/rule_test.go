@@ -1,9 +1,12 @@
 package usecaseedges
 
 import (
+	"go/parser"
+	"go/token"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -22,6 +25,9 @@ func getSharedPackagesOfUseCases() map[string]string {
 }
 
 func getUseCaseEdgeRefusal(from, to string) string {
+	if load.IsUseCaseTestSupport(to) && !load.IsUseCaseTestSupport(from) {
+		return "only a test imports test support"
+	}
 	source, isSource := getUseCaseName(from)
 	if !isSource {
 		return ""
@@ -33,7 +39,7 @@ func getUseCaseEdgeRefusal(from, to string) string {
 		return ""
 	}
 	target, isTarget := getUseCaseName(to)
-	if !isTarget || source == target {
+	if !isTarget || source == target || load.IsUseCaseTestSupport(from) {
 		return ""
 	}
 	return "a use case imports no other use case"
@@ -62,4 +68,43 @@ func getUseCasesWithSource(t *testing.T) []string {
 		t.Fatal(err)
 	}
 	return names
+}
+
+// listEdgeViolations reads the imports of the production files of the module at root, whose import path is
+// module with a trailing slash, and returns the refused edges, the number of edges read and the use cases
+// with a file read.
+func listEdgeViolations(root, module string) (violations []string, importsRead int, visited map[string]bool, err error) {
+	visited = map[string]bool{}
+	err = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() && entry.Name() == "testdata" {
+			return fs.SkipDir
+		}
+		if entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		if err != nil {
+			return err
+		}
+		from := load.GetPackage(root, path)
+		if name, ok := getUseCaseName(from); ok {
+			visited[name] = true
+		}
+		for _, spec := range file.Imports {
+			to, err := strconv.Unquote(spec.Path.Value)
+			if err != nil || !strings.HasPrefix(to, module) {
+				continue
+			}
+			to = strings.TrimPrefix(to, module)
+			importsRead++
+			if reason := getUseCaseEdgeRefusal(from, to); reason != "" {
+				violations = append(violations, from+" reaches "+to+": "+reason)
+			}
+		}
+		return nil
+	})
+	return violations, importsRead, visited, err
 }

@@ -12,6 +12,9 @@ import (
 )
 
 func isUseCaseOrAdapterPath(path string) bool {
+	if load.IsUseCaseTestSupport(path) {
+		return false
+	}
 	return strings.Contains(path+"/", "/usecase/") || strings.Contains(path+"/", "/adapter/")
 }
 
@@ -52,7 +55,7 @@ func isAssigningThroughReceiver(function *ast.FuncDecl, info *types.Info, receiv
 
 func listMutatingWithMethods(pkgs []*packages.Package) (found []load.Finding, useCases int) {
 	for _, pkg := range pkgs {
-		if !strings.Contains(pkg.PkgPath+"/", "/usecase/") {
+		if !strings.Contains(pkg.PkgPath+"/", "/usecase/") || load.IsUseCaseTestSupport(pkg.PkgPath) {
 			continue
 		}
 		for _, file := range pkg.Syntax {
