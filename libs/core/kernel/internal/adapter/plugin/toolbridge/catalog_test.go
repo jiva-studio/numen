@@ -119,6 +119,16 @@ func (h *pluginHost) setVersion(pluginID, version string) {
 	}
 }
 
+func (h *pluginHost) setPermissions(pluginID string, permissions ...string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for i := range h.infos {
+		if h.infos[i].ID == pluginID {
+			h.infos[i].Permissions = permissions
+		}
+	}
+}
+
 func (h *pluginHost) disable(pluginID string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -284,5 +294,47 @@ func TestACallForAConnectionLeasesThePluginOfTheToolForTheConnection(t *testing.
 	want := []plugin.Holder{{PluginID: callerPlugin, ConnectionID: "conn-keeper", Why: "call tool tree_count"}}
 	if !slices.Equal(host.holders, want) {
 		t.Errorf("the call held the plugin for %+v, want %+v", host.holders, want)
+	}
+}
+
+func TestAToolIsOfferedOnlyToACallerThatHoldsThePermissionsOfItsEffect(t *testing.T) {
+	host := newPluginHost(t, map[string]*toolPlugin{gardenPlugin: {tools: []*v1.PluginTool{
+		{Name: "bed_list", Effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY},
+		{Name: "bed_plant", Effect: v1.ToolEffect_TOOL_EFFECT_READ_WRITE},
+	}}})
+	host.setPermissions(gardenPlugin, "vault:read", "vault:write")
+	catalog := newCatalog(host, filesIn(t, ""))
+	cases := []struct {
+		permissions []string
+		want        []string
+	}{
+		{permissions: []string{"vault:read"}, want: []string{"bed_list"}},
+		{permissions: []string{"vault:write"}, want: nil},
+		{permissions: []string{"vault:read", "vault:write"}, want: []string{"bed_list", "bed_plant"}},
+	}
+	for _, c := range cases {
+		host.setPermissions(callerPlugin, c.permissions...)
+
+		if names := getNames(catalog.ListTools(t.Context(), callerPlugin)); !slices.Equal(names, c.want) {
+			t.Errorf("a caller with %v is offered %v, want %v", c.permissions, names, c.want)
+		}
+		res, err := catalog.CallTool(t.Context(), callerPlugin, &v1.CallToolRequest{Name: "bed_plant"})
+		isOffered := slices.Contains(c.want, "bed_plant")
+		if err != nil || isOffered != (res.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL) {
+			t.Errorf("a caller with %v calling bed_plant was answered %v (%v)", c.permissions, res, err)
+		}
+	}
+}
+
+func TestAPluginWithOnlyVaultWriteOffersNoTools(t *testing.T) {
+	host := newPluginHost(t, map[string]*toolPlugin{gardenPlugin: {tools: []*v1.PluginTool{
+		{Name: "bed_list", Effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY},
+		{Name: "bed_plant", Effect: v1.ToolEffect_TOOL_EFFECT_READ_WRITE},
+	}}})
+	host.setPermissions(gardenPlugin, "vault:write")
+	host.setPermissions(callerPlugin, "vault:read", "vault:write")
+
+	if names := getNames(newCatalog(host, filesIn(t, "")).ListTools(t.Context(), callerPlugin)); len(names) != 0 {
+		t.Errorf("a plugin with only vault:write offers %v", names)
 	}
 }

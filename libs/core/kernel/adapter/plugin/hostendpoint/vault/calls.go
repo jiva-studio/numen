@@ -15,6 +15,8 @@ const Header = "Numen-Vault"
 
 // Authority tells which plugin made a call and whether it holds a permission.
 type Authority interface {
+	// Authenticate returns the id of the plugin the Authorization header names.
+	Authenticate(authorization string) (pluginID string, err error)
 	// Authorize returns the id of the plugin the Authorization header names, and refuses a plugin
 	// without the permission.
 	Authorize(authorization, permission string) (pluginID string, err error)
@@ -50,6 +52,18 @@ func (c *calls) begin(header http.Header, permission string) (string, *Access, e
 	if err != nil {
 		return "", nil, err
 	}
+	return c.selectVault(pluginID, header)
+}
+
+func (c *calls) beginOwnData(header http.Header) (string, *Access, error) {
+	pluginID, err := c.auth.Authenticate(header.Get("Authorization"))
+	if err != nil {
+		return "", nil, err
+	}
+	return c.selectVault(pluginID, header)
+}
+
+func (c *calls) selectVault(pluginID string, header http.Header) (string, *Access, error) {
 	access, err := Select(c.source.GetPluginVault(), header)
 	if err != nil {
 		return "", nil, err

@@ -355,3 +355,68 @@ func (m *memoryVault) EnsureIndexed(context.Context) (plugin.IndexState, error) 
 func (m *memoryVault) Lock(context.Context) (func(), error) { return func() {}, nil }
 
 func (m *memoryVault) Scan(context.Context, []string) error { return nil }
+
+func TestVaultReadAndVaultWriteAreGrantedApart(t *testing.T) {
+	cases := []struct {
+		granted         string
+		isRead, isWrite bool
+	}{
+		{granted: manifest.PermissionVaultRead, isRead: true},
+		{granted: manifest.PermissionVaultWrite, isWrite: true},
+	}
+	for _, c := range cases {
+		hosted := newCallers()
+		hosted.vault = vaultOf(newMemoryVault(map[string]string{"a.md": "a"}))
+		hosted.granted, hosted.confined = []string{c.granted}, true
+		client := newVaultClient(t, hosted, "token-a")
+
+		_, readErr := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "a.md"}))
+		_, writeErr := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "b.md"}))
+
+		if c.isRead != (readErr == nil) || (!c.isRead && connect.CodeOf(readErr) != connect.CodePermissionDenied) {
+			t.Errorf("with only %s a read was answered %v", c.granted, readErr)
+		}
+		if c.isWrite != (writeErr == nil) || (!c.isWrite && connect.CodeOf(writeErr) != connect.CodePermissionDenied) {
+			t.Errorf("with only %s a write was answered %v", c.granted, writeErr)
+		}
+	}
+}
+
+// memoryCache keeps the cache entries of the plugins by plugin and name.
+type memoryCache struct {
+	mu      sync.Mutex
+	entries map[string][]byte
+}
+
+func (c *memoryCache) ReadCache(_ context.Context, pluginID, name string) ([]byte, bool, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	content, found := c.entries[pluginID+"/"+name]
+	return content, found, nil
+}
+
+func (c *memoryCache) WriteCache(_ context.Context, pluginID, name string, content []byte) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.entries[pluginID+"/"+name] = content
+	return nil
+}
+
+func TestThePluginsCacheNeedsNoVaultPermission(t *testing.T) {
+	hosted := newCallers()
+	hosted.vault = vaultOf(&memoryCache{entries: map[string][]byte{}})
+	hosted.confined = true
+	client := newVaultClient(t, hosted, "token-a")
+	ctx := t.Context()
+
+	_, writeErr := client.WriteCache(ctx, connect.NewRequest(&v1.WriteCacheRequest{Name: "schedules", Content: []byte("{}")}))
+	read, readErr := client.ReadCache(ctx, connect.NewRequest(&v1.ReadCacheRequest{Name: "schedules"}))
+	_, anonymous := newVaultClient(t, hosted, "").ReadCache(ctx, connect.NewRequest(&v1.ReadCacheRequest{Name: "schedules"}))
+
+	if writeErr != nil || readErr != nil || string(read.Msg.GetContent()) != "{}" {
+		t.Errorf("a plugin without vault permissions wrote its cache (%v) and read %v (%v)", writeErr, read, readErr)
+	}
+	if got := readCode(t, anonymous); got != connect.CodeUnauthenticated {
+		t.Errorf("a cache call with no token is %v", got)
+	}
+}
