@@ -1,4 +1,4 @@
-package layers
+package appslayers
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -30,7 +31,7 @@ func isLinked(deps []string, pkg string) bool {
 // directly into the desktop binaries.
 func TestNothingOfThePluginsIsLinkedIntoDesktopBinaries(t *testing.T) {
 	listing := exec.CommandContext(t.Context(), "go", "list", "-json", "./cmd/...")
-	listing.Dir = "../../"
+	listing.Dir = filepath.Join(appsDir, "desktop")
 	items, err := listing.Output()
 	if err != nil {
 		if ran, ok := errors.AsType[*exec.ExitError](err); ok {

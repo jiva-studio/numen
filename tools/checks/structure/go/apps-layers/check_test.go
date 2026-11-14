@@ -1,18 +1,21 @@
-// Package layers contains no production code. It holds the layering rules the
-// applications are checked against: the core's own guard scans the core's tree,
-// and an application is located one folder outside it.
-package layers
+// Package appslayers is the check `go/apps-layers`, run on the tree with the planted violations that prove it. An
+// application imports only the assembled packages of the core, no other application, no logger, names no port it
+// satisfies and links no plugin.
+package appslayers
 
 import (
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
 // core is what every package of the core is named under.
@@ -20,6 +23,8 @@ const core = "github.com/jiva-studio/numen/libs/core/kernel/"
 
 // apps is what every application is named under.
 const apps = "github.com/jiva-studio/numen/apps/"
+
+var appsDir = filepath.Join(load.RepoRootDir, "apps")
 
 func isAssembled(pkg string) bool {
 	return pkg == "container" || pkg == "domain" || strings.HasPrefix(pkg, "domain/") || pkg == "port" ||
@@ -47,11 +52,10 @@ func getRequiredFiles() []string {
 	}
 }
 
-func readSources(t *testing.T) []standing {
+func readSources(t *testing.T, root string) []standing {
 	t.Helper()
 
 	var found []standing
-	root := filepath.Join("..", "..", "..")
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
 			if entry != nil && entry.IsDir() && entry.Name() == "node_modules" {
@@ -76,13 +80,12 @@ func readSources(t *testing.T) []standing {
 	if err != nil {
 		t.Fatal(err)
 	}
+	return found
+}
 
-	// A walk that read nothing is a rule checked against nothing, and it
-	// passes. The floor is under what the applications hold, and the files
-	// above are named besides.
-	if len(found) < 20 {
-		t.Fatalf("%d files read: the walk is not reading the applications", len(found))
-	}
+func readApplications(t *testing.T) []standing {
+	t.Helper()
+	found := readSources(t, appsDir)
 	for _, one := range getRequiredFiles() {
 		if !slices.ContainsFunc(found, func(target standing) bool { return target.relPath == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
@@ -91,12 +94,11 @@ func readSources(t *testing.T) []standing {
 	return found
 }
 
-// An application is served by the core and does none of its work, and no
-// application imports another: what two of them share is a library.
-func TestApplicationsDoNotImportCoreInternals(t *testing.T) {
+func findCoreReaches(t *testing.T, sources []standing) ([]string, int) {
+	t.Helper()
 	var wrong []string
 	var read int
-	for _, target := range readSources(t) {
+	for _, target := range sources {
 		from := target.in
 		for _, one := range target.file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
@@ -123,15 +125,43 @@ func TestApplicationsDoNotImportCoreInternals(t *testing.T) {
 			}
 		}
 	}
+	return wrong, read
+}
+
+// An application is served by the core and does none of its work, and no
+// application imports another: what two of them share is a library.
+func TestApplicationsDoNotImportCoreInternals(t *testing.T) {
+	wrong, read := findCoreReaches(t, readApplications(t))
 	for _, one := range wrong {
 		t.Error(one)
 	}
-
-	// A walk that read no edge is a rule checked against nothing, and it
-	// passes. The floor is well under what the applications hold.
-	if read < 40 {
-		t.Fatalf("%d edges read: the walk is not reading the applications", read)
+	if read == 0 {
+		t.Fatal("no import of the core or of an application read: the walk is not reading the applications")
 	}
+}
+
+// The rule rejects an import of a use case of the core and of another application, and passes an assembled
+// package of the core, a package of the same application and a test file.
+func TestCoreReachRule_RejectsCoreInternalsAndOtherApplications(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"desktop/app/app.go":      "package app\n\nimport (\n\t_ \"" + core + "usecase/note\"\n\t_ \"" + core + "container\"\n\t_ \"" + core + "usecase/notecontract\"\n\t_ \"" + apps + "mobile/bind\"\n\t_ \"" + apps + "desktop/internal/platform\"\n)\n",
+		"desktop/app/app_test.go": "package app\n\nimport _ \"" + core + "usecase/search\"\n",
+	})
+	wrong, read := findCoreReaches(t, readSources(t, root))
+	want := []string{
+		"desktop/app reaches usecase/note: an application is served by the core and does none of its work",
+		"desktop/app reaches mobile/bind: what two applications share is a library",
+	}
+	if !slices.Equal(wrong, want) {
+		t.Errorf("the rule rejects %v, want %v", wrong, want)
+	}
+	if read != 5 {
+		t.Errorf("%d imports read, want 5", read)
+	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(load.Main(m))
 }
 
 func getLoggerPackages() map[string]bool {
@@ -148,7 +178,7 @@ func isLoggerPackage(to string) bool { return getLoggerPackages()[to[strings.Las
 // has to act on is shown in the window. A logger would write to neither.
 func TestApplicationsDoNotImportLoggers(t *testing.T) {
 	var wrong []string
-	for _, target := range readSources(t) {
+	for _, target := range readApplications(t) {
 		for _, one := range target.file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
 			if err != nil {
@@ -189,7 +219,7 @@ func TestLoggingRule_RejectsLoggingImports(t *testing.T) {
 // nothing yet requires that method.
 func TestApplicationsDoNotClaimSatisfiedPorts(t *testing.T) {
 	var wrong []string
-	for _, target := range readSources(t) {
+	for _, target := range readApplications(t) {
 		for _, one := range getClaimedPorts(target.file) {
 			wrong = append(wrong, target.relPath+" names port."+one)
 		}

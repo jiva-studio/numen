@@ -65,6 +65,22 @@
       "target": "adapters-claim-no-ports"
     },
     {
+      "name": "go/apps-layers",
+      "paths": [
+        "apps/**/*.go",
+        "apps/**/go.mod",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "slow"
+      ],
+      "selftest": "structure/go/apps-layers/check_test.go",
+      "runner": "go",
+      "target": "apps-layers"
+    },
+    {
       "name": "go/clock-port",
       "paths": [
         "**/*.go",
@@ -295,22 +311,6 @@
       "target": "exhaustruct-include"
     },
     {
-      "name": "go/handler-separation",
-      "paths": [
-        "libs/core/kernel/**",
-        "go.work"
-      ],
-      "tags": [
-        "structure",
-        "go",
-        "core",
-        "fast"
-      ],
-      "selftest": "structure/go/handler-separation/check_test.go",
-      "runner": "go",
-      "target": "handler-separation"
-    },
-    {
       "name": "go/identities",
       "paths": [
         "libs/core/kernel/**",
@@ -325,6 +325,22 @@
       "selftest": "structure/go/identities/check_test.go",
       "runner": "go",
       "target": "identities"
+    },
+    {
+      "name": "go/index-bookkeeping",
+      "paths": [
+        "libs/core/kernel/adapter/index/**/*.go",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "fast"
+      ],
+      "selftest": "structure/go/index-bookkeeping/check_test.go",
+      "runner": "go",
+      "target": "index-bookkeeping"
     },
     {
       "name": "go/instants",

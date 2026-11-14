@@ -2,14 +2,9 @@
 package serialization
 
 import (
-	"go/ast"
-	"go/parser"
-	"go/token"
-	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
+	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
@@ -18,56 +13,53 @@ import (
 // TestNoInnerLayerImportsSerializationOrUsesFormatTags verifies that port/, usecase/, and domain/
 // import no wire/storage format packages and carry no serialization struct tags.
 func TestNoInnerLayerImportsSerializationOrUsesFormatTags(t *testing.T) {
-	for _, root := range []string{"../domain", "../port", "../usecase", "../../../note/domain"} {
-		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
-			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-				return err
-			}
-			file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
-			if err != nil {
-				return err
-			}
-			if root != "../domain" {
-				for _, imp := range file.Imports {
-					to, err := strconv.Unquote(imp.Path.Value)
-					if err != nil {
-						continue
-					}
-					if getSerializationImports()[to] || strings.HasPrefix(to, "google.golang.org/protobuf/") {
-						t.Errorf("%s imports %s: inner layers do not parse wire or storage formats", path, to)
-					}
-				}
-			}
-			ast.Inspect(file, func(n ast.Node) bool {
-				spec, ok := n.(*ast.TypeSpec)
-				if !ok {
-					return true
-				}
-				st, ok := spec.Type.(*ast.StructType)
-				if !ok || st.Fields == nil {
-					return true
-				}
-				for _, field := range st.Fields.List {
-					if field.Tag == nil {
-						continue
-					}
-					for _, tag := range listSerializationTags() {
-						if strings.Contains(field.Tag.Value, tag) {
-							fieldName := "<embedded>"
-							if len(field.Names) > 0 {
-								fieldName = field.Names[0].Name
-							}
-							t.Errorf("%s %s.%s has serialization tag %s: format tags belong on adapter DTOs", path, spec.Name.Name, fieldName, field.Tag.Value)
-						}
-					}
-				}
-				return true
-			})
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
+	wrong, read, err := findSerialization([]layerRoot{
+		{dir: "../domain", isImportAllowed: true},
+		{dir: "../port", isImportAllowed: false},
+		{dir: "../usecase", isImportAllowed: false},
+		{dir: "../../../note/domain", isImportAllowed: false},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one)
+	}
+	if read == 0 {
+		t.Fatal("no file of an inner layer read: the rule is checked against nothing")
+	}
+}
+
+// The rule rejects a format import in a port, a protobuf subpackage included, and a format tag in a port and in
+// the domain; it passes a format import in the domain, a tag of another kind and a test file.
+func TestSerializationRule_RejectsFormatImportsAndTags(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"domain/note/note.go":      "package note\n\nimport _ \"encoding/json\"\n\ntype Note struct {\n\tTitle string `json:\"title\"`\n\tBody  string `validate:\"required\"`\n}\n",
+		"port/store/store.go":      "package store\n\nimport (\n\t_ \"encoding/json\"\n\t_ \"google.golang.org/protobuf/proto\"\n)\n\ntype Row struct {\n\tID string `db:\"id\"`\n}\n",
+		"port/store/store_test.go": "package store\n\nimport _ \"encoding/xml\"\n\ntype fixture struct {\n\tName string `xml:\"name\"`\n}\n",
+	})
+	domain := filepath.Join(root, "domain")
+	port := filepath.Join(root, "port")
+	wrong, read, err := findSerialization([]layerRoot{
+		{dir: domain, isImportAllowed: true},
+		{dir: port, isImportAllowed: false},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	notePath := filepath.Join(domain, "note", "note.go")
+	storePath := filepath.Join(port, "store", "store.go")
+	want := []string{
+		notePath + " Note.Title has serialization tag `json:\"title\"`: format tags belong on adapter DTOs",
+		storePath + " imports encoding/json: inner layers do not parse wire or storage formats",
+		storePath + " imports google.golang.org/protobuf/proto: inner layers do not parse wire or storage formats",
+		storePath + " Row.ID has serialization tag `db:\"id\"`: format tags belong on adapter DTOs",
+	}
+	if !slices.Equal(wrong, want) {
+		t.Errorf("the rule rejects %v, want %v", wrong, want)
+	}
+	if read != 2 {
+		t.Errorf("%d files read, want 2", read)
 	}
 }
 

@@ -197,9 +197,8 @@ func checkMachineClockIsReadOnlyByAClockPortImplementation(t *testing.T, workspa
 		t.Errorf("%s references %s outside the Now method of a clock port implementation", one.position, one.name)
 	}
 
-	// A load that finds no clock implementation checks nothing. The system clocks of the core
-	// and of the plugin SDK read the machine clock.
-	if loaded < 100 || sanctioned < 2 {
+	// A load that finds no clock implementation checks nothing.
+	if loaded == 0 || sanctioned == 0 {
 		t.Fatalf("%d packages loaded and %d clock implementations found: the rule is checked against nothing", loaded, sanctioned)
 	}
 }

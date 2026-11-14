@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -65,38 +64,6 @@ func GetTypeName(pos ast.Expr) string {
 		}
 	}
 	return ""
-}
-
-// Schema is the generated connect package. An adapter that names one of its handler types serves
-// something outside the core, whether over the wire or to another adapter, which makes it a driving
-// adapter. An adapter that only builds its messages or clients calls out and is driven.
-const Schema = Wire + "/gen/numen/v1/numenv1connect"
-
-func NamesHandler(file *ast.File) bool {
-	name := ""
-	for _, one := range file.Imports {
-		if to, err := strconv.Unquote(one.Path.Value); err == nil && to == Schema {
-			name = "numenv1connect"
-			if one.Name != nil {
-				name = one.Name.Name
-			}
-		}
-	}
-	if name == "" {
-		return false
-	}
-	found := false
-	ast.Inspect(file, func(node ast.Node) bool {
-		pos, is := node.(*ast.SelectorExpr)
-		if !is {
-			return true
-		}
-		if from, is := pos.X.(*ast.Ident); is && from.Name == name && strings.HasSuffix(pos.Sel.Name, "Handler") {
-			found = true
-		}
-		return true
-	})
-	return found
 }
 
 func GetPackage(root, path string) string {
