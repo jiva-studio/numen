@@ -47,7 +47,12 @@ func TestRequestTimeoutIsReadInSecondsAndInvalidValuesLeaveNone(t *testing.T) {
 	if got := s.Get().RequestTimeout; got != 45*time.Second {
 		t.Errorf("request timeout = %v, want 45s", got)
 	}
-	for _, value := range []string{"", "soon", "0", "-3", "NaN", "Inf"} {
+	s.Apply(map[string]string{"requestTimeout": "9223372035"})
+	// float64 seconds hold no exact nanoseconds at 9223372035 s, the largest whole number accepted.
+	if got, want := s.Get().RequestTimeout, 9223372035*time.Second; got-want > time.Microsecond || want-got > time.Microsecond {
+		t.Errorf("request timeout = %v, want about %v", got, want)
+	}
+	for _, value := range []string{"", "soon", "0", "-0.5", "-3", "NaN", "Inf", "-Inf", "9223372036"} {
 		s.Apply(map[string]string{"requestTimeout": value})
 		if got := s.Get().RequestTimeout; got != 0 {
 			t.Errorf("value %q: request timeout = %v, want none", value, got)

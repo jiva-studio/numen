@@ -642,7 +642,7 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 	f.cases.Notes.Place.Rename = note.NewRename(note.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, Now: testsupport.NewClock(),
 	}, failingAfterMove{f.cases.Notes.Place.Move},
-		note.OpenGate{},
+		testsupport.OpenGate{},
 	)
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{

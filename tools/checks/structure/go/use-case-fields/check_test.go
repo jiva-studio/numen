@@ -15,7 +15,7 @@ import (
 
 // A use case or service across the repository is made with everything it needs, or it is not made.
 func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
-	for _, one := range getUseCases(t) {
+	for _, one := range getUseCases(t, filepath.Join("..", "usecase")) {
 		t.Error(one + ": a use case is made with what it needs, and not given it afterwards")
 	}
 	roots := []string{"../adapter", "../internal", "../../../note", "../../../../plugins"}
@@ -39,6 +39,26 @@ func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestUseCaseRule_ReadsNestedUseCasePackages(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"usecase/vault/registry/find.go": `package registry
+
+type Find struct {
+	Lookup port.VaultLookup
+}
+
+func NewFind(lookup port.VaultLookup) Find {
+	return Find{Lookup: lookup}
+}
+`,
+	})
+	found := getUseCases(t, filepath.Join(dir, "usecase"))
+	want := []string{"usecase/vault/registry/find.go Find exposes Lookup"}
+	if !slices.Equal(found, want) {
+		t.Errorf("the rule finds %v, want %v", found, want)
 	}
 }
 

@@ -74,13 +74,21 @@ func textDelta(text string) string {
 // A call is reported when it starts, with its arguments as far as they arrived after each piece, and once
 // more with its whole arguments, by the name of the vault's tool without the prefix of its server.
 func TestACallIsReportedAtItsStartAsItsArgumentsArriveAndWithItsWholeArguments(t *testing.T) {
-	reports, _ := parseLines(t, startEdit, delta(`{"path":"Beds.md",`), delta(`"text":"Raised"}`), stopBlock)
+	startSecond := `{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"toolu_02","name":"mcp__numen__note_read"}}}`
+	reports, _ := parseLines(t,
+		startEdit, delta(`{"path":"Beds.md",`), delta(`"text":"Raised"}`), stopBlock,
+		stopBlock, delta(`{"ignored":true}`),
+		startSecond, delta(`{"path":"Oak.md"}`), stopBlock,
+	)
 
 	want := []string{
 		"call toolu_01 note_edit ",
 		`input toolu_01 note_edit {"path":"Beds.md",`,
 		`input toolu_01 note_edit {"path":"Beds.md","text":"Raised"}`,
 		`call toolu_01 note_edit {"path":"Beds.md","text":"Raised"}`,
+		"call toolu_02 note_read ",
+		`input toolu_02 note_read {"path":"Oak.md"}`,
+		`call toolu_02 note_read {"path":"Oak.md"}`,
 	}
 	if !slices.Equal(reports, want) {
 		t.Errorf("reports = %q, want %q", reports, want)
@@ -107,16 +115,17 @@ func TestTheReasoningOfTheModelIsReportedAsThoughts(t *testing.T) {
 
 func TestAToolOfAnotherServerIsNamedWithoutItsPrefix(t *testing.T) {
 	reports, _ := parseLines(t,
-		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c","name":"mcp__weather__forecast"}}}`)
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c","name":"mcp__weather__forecast"}}}`,
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c2","name":"mcp__broken"}}}`)
 
-	if !slices.Equal(reports, []string{"call c forecast "}) {
+	if !slices.Equal(reports, []string{"call c forecast ", "call c2 mcp__broken "}) {
 		t.Errorf("reports = %q", reports)
 	}
 }
 
 func TestTheEndOfEachCallIsReportedWithWhetherItFailed(t *testing.T) {
 	reports, _ := parseLines(t,
-		`{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"c1","content":"ok"},{"type":"tool_result","tool_use_id":"c2","is_error":true}]}}`)
+		`{"type":"user","message":{"content":[{"type":"text","tool_use_id":"ignored"},{"type":"tool_result","tool_use_id":123},{"type":"tool_result","tool_use_id":"c1","content":"ok"},{"type":"tool_result","tool_use_id":"c2","is_error":true}]}}`)
 
 	if !slices.Equal(reports, []string{"result c1 done", "result c2 failed"}) {
 		t.Errorf("reports = %q", reports)
@@ -140,11 +149,23 @@ func TestTheWholeMessageOfAStreamedAnswerIsNotReportedAgain(t *testing.T) {
 	if !slices.Equal(reports, []string{"text hello"}) {
 		t.Errorf("reports = %q", reports)
 	}
+
+	thoughtReports, _ := parseLines(t, thinkingDelta("hmm"),
+		`{"type":"assistant","message":{"content":[{"type":"thinking","thinking":"hmm"}]}}`)
+	if !slices.Equal(thoughtReports, []string{"thought hmm"}) {
+		t.Errorf("thoughtReports = %q", thoughtReports)
+	}
+
+	callReports, _ := parseLines(t, startEdit,
+		`{"type":"assistant","message":{"content":[{"type":"text","text":"ignored"}]}}`)
+	if !slices.Equal(callReports, []string{"call toolu_01 note_edit "}) {
+		t.Errorf("callReports = %q", callReports)
+	}
 }
 
 func TestTheVaultThatTheProgramCannotReachIsTheReasonOfTheRun(t *testing.T) {
 	cases := map[string]string{
-		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"failed"}]}`:                                       "the agent could not reach this vault",
+		`{"type":"system","subtype":"init","session_id":"s1","mcp_servers":[{"name":"numen","status":"failed"}]}`:                     "the agent could not reach this vault",
 		`{"type":"system","subtype":"init","mcp_servers":[]}`:                                                                         "the agent was started without this vault",
 		`{"type":"system","subtype":"init","mcp_servers":[{"name":"other","status":"failed"},{"name":"numen","status":"connected"}]}`: "",
 		`{"type":"system","subtype":"init"}`:                                                                                          "",
@@ -203,11 +224,27 @@ func TestTheSessionOfTheProgramIsRecorded(t *testing.T) {
 	}
 }
 
+type cancelingSink struct {
+	recorder
+	cancel context.CancelFunc
+}
+
+func (s *cancelingSink) SendText(text string) error {
+	s.cancel()
+	return s.recorder.SendText(text)
+}
+
 func TestACanceledRunIsCanceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if reason, err := Parse(ctx, strings.NewReader(textDelta("one")+"\n"), &recorder{}, Options{}); err != nil || reason != reasonCanceled {
 		t.Errorf("Parse = %q, %v, want canceled", reason, err)
+	}
+
+	ctx2, cancel2 := context.WithCancel(t.Context())
+	sink := &cancelingSink{recorder: recorder{refusal: os.ErrClosed}, cancel: cancel2}
+	if reason, err := Parse(ctx2, strings.NewReader(textDelta("one")+"\n"+textDelta("two")+"\n"), sink, Options{}); !errors.Is(err, os.ErrClosed) || reason != reasonCanceled {
+		t.Errorf("Parse with mid-stream cancel and refusal = %q, %v, want (%q, os.ErrClosed)", reason, err, reasonCanceled)
 	}
 }
 
@@ -227,9 +264,16 @@ func TestARefusedReportEndsTheReports(t *testing.T) {
 func TestLinesThatAreNotEventsAreSkipped(t *testing.T) {
 	reports, reason := parseLines(t,
 		`{"type":"result","is_error":true,bad`,
+		`{"type":"result","is_error":true,"result":123}`,
+		`{"type":"result","is_error":"bad","subtype":"error_max_turns"}`,
 		`{"type":"user","message":{"content":[{"type":"tool_result"}],bad}}`,
+		`{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"c1"},"bad"]}}`,
 		stopBlock,
 		`{"type":"assistant","message":{"content":[{"type":"text","text":"bad"}],bad}`,
+		`{"type":"assistant","message":{"content":[{"type":"text","text":"bad"},"bad"]}}`,
+		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c","name":123}}}`,
+		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"bad","partial_json":123}}}`,
+		`{"type":"system","subtype":"hook_started","session_id":"s","mcp_servers":[]}`,
 	)
 	if len(reports) != 0 || reason != "" {
 		t.Errorf("got %q and reason %q from lines that are not events", reports, reason)

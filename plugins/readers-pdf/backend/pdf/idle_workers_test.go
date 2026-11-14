@@ -130,6 +130,9 @@ func TestReleasingThePoolClosesEveryWorker(t *testing.T) {
 	if hasPool(workers) {
 		t.Fatal("the pool is still held after it was released")
 	}
+	if workers.release != nil {
+		t.Fatal("the idle release timer is still held after the pool was released")
+	}
 }
 
 func TestAnOpenRacingTheIdleReleaseStartsAFreshPool(t *testing.T) {

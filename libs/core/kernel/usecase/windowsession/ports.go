@@ -5,7 +5,7 @@ import (
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -20,20 +20,11 @@ type Pages interface {
 
 // Writes is the writes taken and not yet finished.
 type Writes interface {
-	// BeginWrite registers a write and reports false once the window is closing, when nothing may be written.
-	BeginWrite() bool
-	// FinishWrite ends a write that BeginWrite registered.
-	FinishWrite()
+	windowport.WriteGate
 	// Seal refuses new writes and answers with what closes once the writes taken have finished.
 	Seal() <-chan struct{}
 	// Open accepts writes again.
 	Open()
-}
-
-// Tasks is the list of what the window is doing.
-type Tasks interface {
-	AddTask(task work.Task)
-	RemoveTask(id string)
 }
 
 // Changes tells the views drawing the vault what changed.

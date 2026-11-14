@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.acp",
   "name": "ACP Agents",
-  "version": "2026.11.13",
+  "version": "2026.11.14",
   "protocol": 1,
   "description": "External AI assistants via the Agent Client Protocol, such as Gemini CLI, OpenCode and Goose",
   "targets": ["desktop.editor", "desktop.flashcards"],

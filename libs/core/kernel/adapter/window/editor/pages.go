@@ -16,7 +16,6 @@ import (
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -78,10 +77,15 @@ type pageSet struct {
 // shows, where its work is listed, where recordings are played from, and the wait for its pages to write.
 type pageWindow interface {
 	shownVault
-	taskList
+	GetTasks() pageTasks
 	GetPlaying() *atomic.Pointer[Loopback]
-	RemoveTask(id string)
 	WaitForFlush(ctx context.Context) bool
+}
+
+// pageTasks is the list of what the window is doing, as its pages add to it and take from it.
+type pageTasks interface {
+	taskList
+	RemoveTask(id string)
 }
 
 // statePages is the window of a State, as its pages see it.
@@ -91,9 +95,7 @@ type statePages struct {
 
 func (s statePages) GetCurrentVault() domain.Vault { return s.state.GetCurrentVault() }
 
-func (s statePages) AddTask(pos work.Task) { s.state.Window.AddTask(pos) }
-
-func (s statePages) RemoveTask(id string) { s.state.Window.RemoveTask(id) }
+func (s statePages) GetTasks() pageTasks { return s.state.Window }
 
 func (s statePages) WaitForFlush(ctx context.Context) bool { return s.state.Window.WaitForFlush(ctx) }
 
@@ -227,7 +229,7 @@ func (s pageSet) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescap
 	if err != nil {
 		return false
 	}
-	defer closeAndReport(s.window.AddTask, file)
+	defer closeAndReport(s.window.GetTasks().AddTask, file)
 	setAssetHeaders(w.Header(), s.mediaTypes.Execute(info.Name()))
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 	return true

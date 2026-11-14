@@ -8,7 +8,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import type { WindowHandle } from '@/entities/tab'
 import type { PluginHealthItem } from '@/entities/plugin'
 import { createInstallation, createPluginInfo } from '../testing/installation'
-import { useSettingsTab } from '../kind'
+import { useSettingsTabKind } from '../useSettingsTabKind'
 import SettingsTab from './SettingsTab.vue'
 import SettingRow from './setting-row/SettingRow.vue'
 
@@ -72,7 +72,7 @@ describe('the settings opened at a setting of a plugin', () => {
       items: ref([CONNECTION]),
     })
     const handle = { openTab: async (kind: string) => kind } as unknown as WindowHandle
-    const settings = useSettingsTab(handle, installation, vi.fn())
+    const settings = useSettingsTabKind(handle, installation, vi.fn())
 
     settings.openSettings({ pluginId: 'org.example.atlas', setting: 'source' })
     const tab = mount(SettingsTab, { props: { state: settings.state }, attachTo: document.body })
@@ -90,7 +90,7 @@ describe('the settings opened at a setting of a plugin', () => {
   it('mark the setting no longer once the user goes back and opens the plugin again', async () => {
     const installation = createInstallation({ plugins: ref([ATLAS]) })
     const handle = { openTab: async (kind: string) => kind } as unknown as WindowHandle
-    const settings = useSettingsTab(handle, installation, vi.fn())
+    const settings = useSettingsTabKind(handle, installation, vi.fn())
 
     settings.openSettings({ pluginId: 'org.example.atlas', setting: 'source' })
     const tab = mount(SettingsTab, { props: { state: settings.state }, attachTo: document.body })
@@ -108,7 +108,7 @@ describe('the settings opened at a setting of a plugin', () => {
   it('scroll to the setting again on a repeated request', async () => {
     const installation = createInstallation({ plugins: ref([ATLAS]) })
     const handle = { openTab: async (kind: string) => kind } as unknown as WindowHandle
-    const settings = useSettingsTab(handle, installation, vi.fn())
+    const settings = useSettingsTabKind(handle, installation, vi.fn())
 
     settings.openSettings({ pluginId: 'org.example.atlas', setting: 'source' })
     const tab = mount(SettingsTab, { props: { state: settings.state }, attachTo: document.body })
@@ -126,7 +126,7 @@ describe('the settings opened at a setting of a plugin', () => {
       items: ref([CONNECTION]),
     })
     const handle = { openTab: async (kind: string) => kind } as unknown as WindowHandle
-    const settings = useSettingsTab(handle, installation, vi.fn())
+    const settings = useSettingsTabKind(handle, installation, vi.fn())
 
     const tab = mount(SettingsTab, { props: { state: settings.state }, attachTo: document.body })
     await flushPromises()

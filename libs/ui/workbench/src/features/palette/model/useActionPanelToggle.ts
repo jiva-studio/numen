@@ -20,7 +20,7 @@ export interface ActionPanelOptions {
   readonly dismiss: () => void
 }
 
-export function useActionPanel(options: ActionPanelOptions): ActionPanelState {
+export function useActionPanelToggle(options: ActionPanelOptions): ActionPanelState {
   const open = ref(false)
 
   watch(options.getActions, (now) => {

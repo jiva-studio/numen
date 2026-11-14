@@ -26,16 +26,13 @@ func getHelperImportFindings(pkg *packages.Package, root, rel string) []string {
 	for path := range pkg.Imports {
 		target := strings.TrimPrefix(strings.TrimPrefix(path, root), "/")
 		switch {
-		case isAdapterLib(rel):
-			if load.IsInLayer(path, root, "usecase") {
-				found = append(found, rel+" imports "+target+": shared adapter code depends on no use case")
-			}
-			if load.IsInLayer(path, root, "adapter") || load.IsInLayer(path, root, "internal/adapter") {
-				found = append(found, rel+" imports "+target+": shared adapter code depends on no other adapter")
-			}
-		case !isTestSupport(rel) && (load.IsInLayer(path, root, "port") || load.IsInLayer(path, root, "usecase")):
-			found = append(found, rel+" imports "+target+": a helper depends on no port and no use case")
-		case load.IsTechnologyImport(path):
+		case load.IsInLayer(path, root, "usecase"):
+			found = append(found, rel+" imports "+target+": a helper depends on no use case")
+		case load.IsInLayer(path, root, "port") && !isTestSupport(rel):
+			found = append(found, rel+" imports "+target+": a helper depends on no port")
+		case isAdapterLib(rel) && (load.IsInLayer(path, root, "adapter") || load.IsInLayer(path, root, "internal/adapter")):
+			found = append(found, rel+" imports "+target+": shared adapter code depends on no other adapter")
+		case !isAdapterLib(rel) && load.IsTechnologyImport(path):
 			found = append(found, rel+" imports "+path+": a helper reaches no technology")
 		}
 	}

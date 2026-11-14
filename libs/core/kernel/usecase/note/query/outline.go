@@ -4,13 +4,9 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// TabKinds finds the kind of tab each of the notes at some paths opens in.
-type TabKinds interface {
-	Execute(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
-}
 
 // RelatedNotesView is a note with the notes joined to it, what each of them is and the kind of tab each
 // opens in, by path.
@@ -24,11 +20,11 @@ type RelatedNotesView struct {
 type GetRelatedNotesView struct {
 	relatedNotes ListRelatedNotes
 	types        noteport.NoteTypes
-	tabKinds     TabKinds
+	tabKinds     windowport.TabKinds
 }
 
 // NewGetRelatedNotesView creates the gathering over the links and the notes of the index.
-func NewGetRelatedNotesView(links noteport.LinkBatches, notes RefQueries, types noteport.NoteTypes, tabKinds TabKinds) *GetRelatedNotesView {
+func NewGetRelatedNotesView(links noteport.LinkBatches, notes RefQueries, types noteport.NoteTypes, tabKinds windowport.TabKinds) *GetRelatedNotesView {
 	return &GetRelatedNotesView{relatedNotes: NewListRelatedNotes(links, notes), types: types, tabKinds: tabKinds}
 }
 

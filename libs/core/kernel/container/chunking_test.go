@@ -40,8 +40,8 @@ func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if trimmed.Sizes != target.CutNotes().Sizes {
-		t.Errorf("cut at %+v, and the settings say %+v", trimmed.Sizes, target.CutNotes().Sizes)
+	if want := chunking.GetTextVersionRecipe(target.CutNotes().Sizes); trimmed.Recipe() != want {
+		t.Errorf("cut by %q, and the settings say %q", trimmed.Recipe(), want)
 	}
 }
 

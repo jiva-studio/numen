@@ -69,12 +69,28 @@ func TestDocumentsAreRerankedWithTheLimitOfTheOperation(t *testing.T) {
 }
 
 func TestNoDocumentIsNoRequest(t *testing.T) {
-	g := &gateway{}
+	g := &gateway{err: errors.New("should not be called")}
+	subject := newSubject(t, g)
 
-	result, err := newSubject(t, g).Rerank(t.Context(), call("openrouter", "m", "https://openrouter.ai/api/v1"), &llm.RerankRequest{Query: "ferry"})
+	result, err := subject.Rerank(t.Context(), call("openrouter", "m", "https://openrouter.ai/api/v1"), &llm.RerankRequest{Query: "ferry"})
 
 	if err != nil || len(result.GetScores()) != 0 || g.request != nil {
 		t.Errorf("result = %v, err = %v, request = %v", result, err, g.request)
+	}
+
+	canceled, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := subject.Rerank(canceled, call("openrouter", "m", "https://openrouter.ai/api/v1"), &llm.RerankRequest{Query: "ferry"}); !errors.Is(err, context.Canceled) {
+		t.Errorf("Rerank with canceled context and no document = %v, want context.Canceled", err)
+	}
+}
+
+func TestARerankingNeedsAGatewayAndLimits(t *testing.T) {
+	if _, err := reranking.New(nil, &limits.Limits{}); err == nil {
+		t.Error("a reranking was made with no gateway")
+	}
+	if _, err := reranking.New(&gateway{}, nil); err == nil {
+		t.Error("a reranking was made with no limits")
 	}
 }
 
