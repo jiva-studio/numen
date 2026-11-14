@@ -14,19 +14,28 @@ type sessionAccess interface {
 	notifyAfterWrite(err error) error
 }
 
+// Groups are the capability groups NewAccess serves, each answering its own part of the service.
+type Groups struct {
+	Files    Files
+	Writer   Writer
+	Notes    Notes
+	Links    Links
+	Arranger Arranger
+	Stores   Stores
+}
+
 // NewAccess returns the capabilities of the open vault the way hostendpoint serves them, each in the
 // group that answers it. Each group reads the vault of a call through session.
-func NewAccess(
-	session Session, files Files, writer Writer, notes Notes, links Links, arranger Arranger, stores Stores,
-) *vault.Access {
+func NewAccess(session Session, groups Groups) *vault.Access {
 	session.rebuild = func(found domain.Vault) *vault.Access {
-		return NewAccess(session.showing(found), files, writer, notes, links, arranger, stores)
+		return NewAccess(session.showing(found), groups)
 	}
-	files.session, writer.session, notes.session, links.session, arranger.session, stores.session =
+	g := groups
+	g.Files.session, g.Writer.session, g.Notes.session, g.Links.session, g.Arranger.session, g.Stores.session =
 		&session, &session, &session, &session, &session, &session
 	return &vault.Access{
-		Notes: notes, Links: links, Files: files, Writer: writer, Arranger: arranger, LinkEditor: arranger,
-		Watch: &session, Switch: &session, Stores: stores, Cache: stores,
-		Locks: writer.Locks,
+		Notes: g.Notes, Links: g.Links, Files: g.Files, Writer: g.Writer, Arranger: g.Arranger, LinkEditor: g.Arranger,
+		Watch: &session, Switch: &session, Stores: g.Stores, Cache: g.Stores,
+		Locks: g.Writer.Locks,
 	}
 }

@@ -102,19 +102,20 @@ func (d *diskVaults) access(t *testing.T) *vaultapi.Access {
 			},
 			Moved: func(context.Context) (<-chan struct{}, error) { return d.moves, nil },
 		},
-		hostvault.Files{
-			Stat:        file.NewStatFile(readers),
-			ReadFile:    file.NewReadFile(readers),
-			RangeReader: file.Read{Readers: readers},
+		hostvault.Groups{
+			Files: hostvault.Files{
+				Stat:        file.NewStatFile(readers),
+				ReadFile:    file.NewReadFile(readers),
+				RangeReader: file.Read{Readers: readers},
+			},
+			Writer: hostvault.Writer{
+				Write:  file.NewWriteFile(writers, index),
+				Create: file.NewCreateFile(writers, index),
+				Index:  file.NewScanFiles(index),
+				Locks:  hold.NewLocks(writers, hold.LockHold),
+			},
+			Stores: hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
 		},
-		hostvault.Writer{
-			Write:  file.NewWriteFile(writers, index),
-			Create: file.NewCreateFile(writers, index),
-			Index:  file.NewScanFiles(index),
-			Locks:  hold.NewLocks(writers, hold.LockHold),
-		},
-		hostvault.Notes{}, hostvault.Links{}, hostvault.Arranger{},
-		hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
 	)
 }
 
