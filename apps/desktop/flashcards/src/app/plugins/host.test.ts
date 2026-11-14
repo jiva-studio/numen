@@ -94,7 +94,7 @@ describe('createShellHost', () => {
   it('gives a plugin Windows where the window gives no platform, as the frame does without the runtime', () => {
     expect(
       createShellHost().host.createContext('md.numen.example', withVault('md.numen.example')).plugin
-        .app.platform,
+        .identity.app.platform,
     ).toBe('windows')
   })
 
