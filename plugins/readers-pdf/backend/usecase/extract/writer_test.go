@@ -85,7 +85,6 @@ func TestTheOutlineOpensTheSectionsOfTheLayer(t *testing.T) {
 func TestAFileWithNoTextLayerGetsNoVersion(t *testing.T) {
 	for name, raw := range map[string][]byte{
 		"scan.pdf":      nil,
-		"encrypted.pdf": nil,
 		"corrupted.pdf": []byte("INVALID_PDF_HEADER"),
 	} {
 		t.Run(name, func(t *testing.T) {

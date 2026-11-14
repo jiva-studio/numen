@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/adapter/clock"
@@ -58,7 +57,11 @@ func mount(s *server.Server, reader *document.Reader, writer *extract.Writer, re
 		return err
 	}
 	s.RegisterRoute(pagesPattern, NewPageServer(reader, report))
-	command.Mount(s, newCommands(writer))
+	commands, err := newCommands(writer)
+	if err != nil {
+		return err
+	}
+	command.Mount(s, commands)
 	s.OnClose(func() error {
 		writer.Close()
 		return nil
@@ -70,16 +73,22 @@ func mount(s *server.Server, reader *document.Reader, writer *extract.Writer, re
 // from the variables a launched process of the plugin is given.
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		addr, err := hostcall.FromVars(vars)
+		texts, err := host.NewTextClientFromVars(vars)
 		if err != nil {
 			return err
 		}
-		return mountClients(
-			s,
-			host.NewClient(addr),
-			host.NewTextClient(addr),
-			host.NewStoreClient(addr),
-			host.NewQueueClient(addr),
-		)
+		store, err := host.NewStoreClientFromVars(vars)
+		if err != nil {
+			return err
+		}
+		files, err := host.NewClientFromVars(vars)
+		if err != nil {
+			return err
+		}
+		queue, err := host.NewQueueClientFromVars(vars)
+		if err != nil {
+			return err
+		}
+		return mountClients(s, files, texts, store, queue)
 	})
 }

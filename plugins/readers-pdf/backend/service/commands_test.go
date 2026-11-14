@@ -13,7 +13,10 @@ import (
 
 func TestTheHandlerOfCreateTextWritesTheTextLayerOfTheFile(t *testing.T) {
 	texts, server, _ := testsupport.NewVault(t, "books/tiny.pdf", "tiny.pdf")
-	commands := newCommands(server)
+	commands, err := newCommands(server)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := commands.RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: "books/tiny.pdf"})
 	if err != nil {
@@ -31,9 +34,12 @@ func TestTheHandlerOfCreateTextWritesTheTextLayerOfTheFile(t *testing.T) {
 
 func TestTheHandlerOfCreateTextNeedsAFile(t *testing.T) {
 	_, server, _ := testsupport.NewVault(t, "books/tiny.pdf", "tiny.pdf")
-	commands := newCommands(server)
+	commands, err := newCommands(server)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	_, err := commands.RunCommand(t.Context(), command.Request{Command: command.CreateText})
+	_, err = commands.RunCommand(t.Context(), command.Request{Command: command.CreateText})
 	if !errors.Is(err, command.ErrBadArguments) {
 		t.Errorf("a run over no file answered %v, want ErrBadArguments", err)
 	}
@@ -42,9 +48,14 @@ func TestTheHandlerOfCreateTextNeedsAFile(t *testing.T) {
 		t.Errorf("an unknown command answered %v, want ErrUnknownCommand", err)
 	}
 
-	noVault := hosttest.New("")
+	noVault := hosttest.New("vault")
+	noVault.Hide()
 	noVaultWriter := testsupport.NewWriter(t, testsupport.FilesOf(noVault), noVault, hosttest.NewTexts("vault", testsupport.PluginID), hosttest.NewQueue())
-	_, err = newCommands(noVaultWriter).RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: "books/tiny.pdf"})
+	noVaultCommands, err := newCommands(noVaultWriter)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = noVaultCommands.RunCommand(t.Context(), command.Request{Command: command.CreateText, Path: "books/tiny.pdf"})
 	if !errors.Is(err, host.ErrNoVault) {
 		t.Errorf("a run with no shown vault answered %v, want ErrNoVault", err)
 	}

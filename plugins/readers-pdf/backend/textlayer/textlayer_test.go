@@ -51,19 +51,19 @@ func TestGetBoxesReadsTheBoxesOfTheSegmentsARunCovers(t *testing.T) {
 	}
 }
 
-func TestCutPagesSplitsBoxesAndSectionsAcrossPages(t *testing.T) {
+func TestPageSegmentsSplitBoxesAndSectionsAcrossPages(t *testing.T) {
 	book := &pdf.Book{
 		Text: "Alpha betaGamma deltaOmega",
 		Pages: []pdf.Page{
-			{Number: 1, Offset: 0},
-			{Number: 2, Offset: 10},
-			{Number: 3, Offset: 21},
+			{Offset: 0},
+			{Offset: 10},
+			{Offset: 21},
 		},
 		Parts: []pdf.Part{
-			{Title: "Intro", Page: 1, Offset: 0},
-			{Title: "Mid", Page: 1, Offset: 3},
-			{Title: "PageTwo", Page: 2, Offset: 10},
-			{Title: "Tail", Page: 2, Offset: 18},
+			{Title: "Intro", Offset: 0},
+			{Title: "Mid", Offset: 3},
+			{Title: "PageTwo", Offset: 10},
+			{Title: "Tail", Offset: 19},
 		},
 	}
 	boxes := []pdf.HighlightBox{
@@ -122,7 +122,7 @@ func TestGetSegmentsReadsPagesInBatches(t *testing.T) {
 	pages := make([]pdf.Page, 20)
 	var text strings.Builder
 	for i := range pages {
-		pages[i] = pdf.Page{Number: i + 1, Offset: text.Len()}
+		pages[i] = pdf.Page{Offset: text.Len()}
 		text.WriteString("x")
 	}
 	book := &pdf.Book{Text: text.String(), Pages: pages}

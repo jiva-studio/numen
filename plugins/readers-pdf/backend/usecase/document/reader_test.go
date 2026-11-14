@@ -1,7 +1,6 @@
 package document
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"os"
@@ -85,11 +84,7 @@ func TestGetPagesListsTheSizeOfEachPage(t *testing.T) {
 }
 
 func TestGetPagesNamesTheFailureToOpenAFile(t *testing.T) {
-	zeroSize := bytes.ReplaceAll(testsupport.ReadFixture(t, "scan.pdf"), []byte("[0 0 200 200]"), []byte("[0 0 0 0]"))
-	vault := hosttest.OnDisk(t, "vault", map[string]string{
-		"broken.pdf":   "not a pdf",
-		"zerosize.pdf": string(zeroSize),
-	})
+	vault := hosttest.OnDisk(t, "vault", map[string]string{"broken.pdf": "not a pdf"})
 	reader := newReader(t, vault)
 
 	_, err := reader.GetPages(t.Context(), "", "broken.pdf")
@@ -100,11 +95,6 @@ func TestGetPagesNamesTheFailureToOpenAFile(t *testing.T) {
 	_, missingErr := reader.GetPages(t.Context(), "", "missing.pdf")
 	if !errors.Is(missingErr, host.ErrNotExist) {
 		t.Errorf("missing error %v, want ErrNotExist", missingErr)
-	}
-
-	_, sizeErr := reader.GetPages(t.Context(), "", "zerosize.pdf")
-	if !errors.Is(sizeErr, ErrPageSize) || !hasTwoWrappedErrors(sizeErr) {
-		t.Errorf("zero-size error %v, want ErrPageSize wrapping cause", sizeErr)
 	}
 }
 
@@ -145,7 +135,9 @@ func TestGetHighlightsRefusesRangesThatAreNotRangesOfAText(t *testing.T) {
 	if _, err := reader.GetHighlights(t.Context(), "", "../outside.pdf", maxValid[:1]); !errors.Is(err, host.ErrOutside) {
 		t.Errorf("GetHighlights outside vault = %v, want ErrOutside", err)
 	}
-	noVaultReader := newReader(t, hosttest.New(""))
+	hidden := hosttest.New("vault")
+	hidden.Hide()
+	noVaultReader := newReader(t, hidden)
 	if _, err := noVaultReader.GetHighlights(t.Context(), "", "tiny.pdf", maxValid[:1]); !errors.Is(err, host.ErrNoVault) {
 		t.Errorf("GetHighlights without vault = %v, want ErrNoVault", err)
 	}

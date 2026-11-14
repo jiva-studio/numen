@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -40,10 +41,10 @@ func (q *fakeQueue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn,
 	if q.enqueueErr != nil {
 		return nil, q.enqueueErr
 	}
-	if q.releaseErr != nil {
-		return fakeTurn{releaseErr: q.releaseErr}, nil
+	if q.releaseErr == nil {
+		return q.Queue.EnqueueWork(ctx, work)
 	}
-	return q.Queue.EnqueueWork(ctx, work)
+	return fakeTurn{releaseErr: q.releaseErr}, nil
 }
 
 func (q *fakeQueue) ReportTask(ctx context.Context, task host.Task) error {
@@ -90,7 +91,7 @@ type slowCancelFiles struct {
 	finished *atomic.Bool
 }
 
-func (f slowCancelFiles) Read(ctx context.Context, name string) ([]byte, domain.FileStat, error) {
+func (f slowCancelFiles) Read(ctx context.Context, _ string) ([]byte, domain.FileStat, error) {
 	close(f.started)
 	<-ctx.Done()
 	time.Sleep(15 * time.Millisecond)
@@ -215,7 +216,8 @@ func TestCloseWaitsForRunningWorkAndRerunsFinishedFiles(t *testing.T) {
 	}
 
 	// CreateText fails when no vault is shown.
-	noVault := hosttest.New("")
+	noVault := hosttest.New("vault")
+	noVault.Hide()
 	noVaultWriter := NewWriter(
 		func(id domain.VaultID) Files { return noVault.With(id) },
 		func(id domain.VaultID) host.TextVersions { return texts.With(id) },
@@ -227,7 +229,7 @@ func TestCloseWaitsForRunningWorkAndRerunsFinishedFiles(t *testing.T) {
 	}
 }
 
-func TestPutLayerReportsAndWrapsEveryFailure(t *testing.T) {
+func TestLayerWriteReportsAndWrapsEveryFailure(t *testing.T) {
 	raw := readPDF(t, "Alpha")
 	vault := hosttest.OnDisk(t, "vault", map[string]string{"a.pdf": string(raw)})
 	texts := hosttest.NewTexts("vault", testPluginID)
@@ -264,8 +266,11 @@ func TestPutLayerReportsAndWrapsEveryFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	wMissing.Wait()
-	if tasks := qMissing.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "read missing.pdf") {
-		t.Errorf("tasks after missing file = %+v, want 1 failed task", tasks)
+	// The putLayer call above reported its own task, text:a.pdf, so the queue holds that one too.
+	tasks := qMissing.ListTasks()
+	failed := slices.IndexFunc(tasks, func(one host.Task) bool { return one.Detail == "missing.pdf" })
+	if failed < 0 || !strings.Contains(tasks[failed].FailureReason, "read missing.pdf") {
+		t.Errorf("tasks after missing file = %+v, want a failed task of missing.pdf", tasks)
 	}
 
 	// 3. Cached layer reuses book and fails in getSegments when cached raw bytes are corrupted.

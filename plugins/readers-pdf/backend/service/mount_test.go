@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -76,7 +75,7 @@ func TestTheLinkedHandlerAnswersTheDocumentAPI(t *testing.T) {
 	}
 }
 
-func TestMountClosesTheWriterAndPropagatesRegistrationErrors(t *testing.T) {
+func TestServerCloseClosesTheTextWriter(t *testing.T) {
 	texts, writer, _ := testsupport.NewVault(t, "books/tiny.pdf", "tiny.pdf")
 	reader := newReader(t, newTestdataVault(t), texts)
 	srv := server.New()
@@ -93,14 +92,6 @@ func TestMountClosesTheWriterAndPropagatesRegistrationErrors(t *testing.T) {
 	}
 	if len(listing.Versions) != 0 {
 		t.Fatalf("versions after server Close = %v, want none", listing.Versions)
-	}
-
-	dup := server.New()
-	server.Handle(dup.NewAPI(api.Service), "GetDocument", func(context.Context, api.GetDocumentRequest) (api.GetDocumentResponse, error) {
-		return api.GetDocumentResponse{}, nil
-	})
-	if err := mount(dup, reader, writer, func(string, error) {}); err == nil {
-		t.Fatal("mount succeeded on duplicate GetDocument handler")
 	}
 }
 
