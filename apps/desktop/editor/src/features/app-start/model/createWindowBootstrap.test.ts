@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { PluginLoader } from '@numen/plugin-loader'
-import { createWindowLayout, type AnyTabKind, type MovedTab } from '@/entities/tab'
+import { createWindowLayout, useOpenTabs, type AnyTabKind, type MovedTab } from '@/entities/tab'
 import { answerCore } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
 import { createLayoutStart } from './createLayoutStart'
@@ -22,14 +22,26 @@ const SAVED = { id: 'note:1', kind: 'note', path: 'Tides.md', title: 'Tides', st
 
 interface Parts {
   readonly saved?: boolean
+  readonly isReadFailing?: boolean
   readonly vaultId?: string
   readonly detached?: MovedTab | null
 }
 
-const setup = ({ saved = false, vaultId = 'sea', detached = null }: Parts = {}) => {
+const writeOpenTabsToCore = vi.fn(() => ({}))
+
+const setup = ({
+  saved = false,
+  isReadFailing = false,
+  vaultId = 'sea',
+  detached = null,
+}: Parts = {}) => {
   answerCore({
     workspace: {
-      readOpenTabs: () => ({ tabs: saved ? [SAVED] : [], activeId: saved ? SAVED.id : '' }),
+      readOpenTabs: () => {
+        if (isReadFailing) throw new Error('core is busy')
+        return { tabs: saved ? [SAVED] : [], activeId: saved ? SAVED.id : '' }
+      },
+      writeOpenTabs: writeOpenTabsToCore,
     },
   })
   const windowTabs = createTestTabs()
@@ -95,11 +107,12 @@ const setup = ({ saved = false, vaultId = 'sea', detached = null }: Parts = {}) 
     defineComponent({
       setup() {
         createWindowBootstrap(deps)
+        useOpenTabs({ windowTabs, isWriting: layout.isWritingTabs, writeMessage })
         return () => h('div')
       },
     }),
   )
-  return { openDetachedTab, windowTabs, layout, calls }
+  return { openDetachedTab, windowTabs, layout, calls, writeMessage }
 }
 
 describe('a window starting', () => {
@@ -134,6 +147,29 @@ describe('a window starting', () => {
     await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
 
     expect(windowTabs.tabs.tabs.value.map((one) => one.id)).toStrictEqual(['note:1'])
+  })
+
+  it('reports a failed read of the saved tabs and never writes the open tabs to the core', async () => {
+    writeOpenTabsToCore.mockClear()
+    const { windowTabs, layout, writeMessage } = setup({ isReadFailing: true })
+
+    await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
+    const [first] = windowTabs.tabs.tabs.value
+    if (first) windowTabs.closeTab(first.id)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(writeMessage).toHaveBeenCalledWith(expect.stringContaining('saved tabs'), 'error')
+    expect(layout.isWritingTabs.value).toBe(false)
+    expect(writeOpenTabsToCore).not.toHaveBeenCalled()
+  })
+
+  it('writes the open tabs to the core where the read of the saved tabs succeeds', async () => {
+    writeOpenTabsToCore.mockClear()
+    const { layout } = setup()
+
+    await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
+
+    await vi.waitFor(() => expect(writeOpenTabsToCore).toHaveBeenCalled())
   })
 
   it('opens no tab and keeps the layout unready where no vault is open', async () => {

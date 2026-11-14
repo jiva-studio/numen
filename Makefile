@@ -673,7 +673,7 @@ typecheck_plugins:
 # The generated code and the UI library are made first, because every part reads them; the parts are
 # independent and run $(JOBS) at a time.
 .PHONY: check_gate
-check_gate: lib_protocol_generate_check lib_ui_components_build ## run every architectural check and the quality gates on changed files (pre-push gate)
+check_gate: lib_protocol_generate_check lib_ui_components_build ## run every architectural check and the quality gates on changed files
 	$(MAKE) -j $(JOBS) $(OUTPUT_SYNC) gate_parts
 
 .PHONY: gate_parts

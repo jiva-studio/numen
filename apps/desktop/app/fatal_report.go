@@ -14,6 +14,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
@@ -84,7 +85,10 @@ const (
 	startingAtAll      = "Numen can't start"
 )
 
-const factSettings = "settings"
+const (
+	factIndex    = "index"
+	factSettings = "settings"
+)
 
 func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	response := getFatalReport(cfg, why)
@@ -114,6 +118,19 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 func getFatalReport(cfg container.Config, why error) fatalReport {
 	if outside, ok := errors.AsType[*settingsdomain.OutsideBoundsError](why); ok {
 		return getSizeFatalReport(cfg, outside)
+	}
+
+	if newer, ok := errors.AsType[*index.NewerIndexError](why); ok {
+		return fatalReport{
+			Heading:  openingTheIndex,
+			Sentence: "The index was written by a newer Numen.",
+			Facts: []detail{
+				{factIndex, newer.File},
+				{"index version", fmt.Sprint(newer.Found)},
+				{"supported version", fmt.Sprint(newer.Supported)},
+			},
+			Remedy: "Update Numen.",
+		}
 	}
 
 	// sqlite reports a failure as a result code, and the accompanying message
@@ -147,7 +164,7 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 	return fatalReport{
 		Heading:  startingAtAll,
 		Sentence: "An unexpected error stopped the start.",
-		Facts:    []detail{{"index", getIndexPath(cfg)}, {factSettings, getSettingsPath(cfg)}},
+		Facts:    []detail{{factIndex, getIndexPath(cfg)}, {factSettings, getSettingsPath(cfg)}},
 		Remedy:   "Start Numen again. If this page comes back, report the details below.",
 		Error:    why.Error(),
 	}
@@ -192,7 +209,7 @@ const (
 
 func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport {
 	pos := getIndexPath(cfg)
-	response := fatalReport{Heading: openingTheIndex, Facts: []detail{{"index", pos}}}
+	response := fatalReport{Heading: openingTheIndex, Facts: []detail{{factIndex, pos}}}
 
 	folder := false
 	if info, err := os.Stat(pos); err == nil {

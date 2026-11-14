@@ -39,9 +39,14 @@ buildscript {
 
 apply from: "variables.gradle"
 
-// The versions every configuration of the app resolves are pinned in
-// app/gradle.lockfile, and the build classpath in buildscript-gradle.lockfile.
-// Write them again with: ./gradlew :app:dependencies buildEnvironment --write-locks
+// The versions every configuration of the project resolves are pinned in
+// gradle.lockfile and app/gradle.lockfile, and the build classpath in
+// buildscript-gradle.lockfile. Write them again with:
+// ./gradlew dependencies :app:dependencies buildEnvironment --write-locks
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 project(':app') {
     dependencyLocking {
         lockAllConfigurations()

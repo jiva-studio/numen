@@ -61,13 +61,18 @@ func (h *Folders) ListFiles(
 
 	out := &v1.ListFilesResponse{Entries: make([]*v1.Entry, 0, len(listing.Entries))}
 	for _, one := range listing.Entries {
+		var modifiedAtMs int64
+		if !one.ModTime.IsZero() {
+			modifiedAtMs = one.ModTime.UnixMilli()
+		}
 		out.Entries = append(out.Entries, &v1.Entry{
-			Path:     one.Path,
-			Name:     one.Name,
-			IsFolder: one.IsFolder,
-			IsNote:   one.Kind == domain.KindNote,
-			Type:     convertNoteTypeToWire(listing.Types[one.Path]),
-			TabKind:  listing.TabKinds[one.Path],
+			Path:         one.Path,
+			Name:         one.Name,
+			IsFolder:     one.IsFolder,
+			IsNote:       one.Kind == domain.KindNote,
+			Type:         convertNoteTypeToWire(listing.Types[one.Path]),
+			TabKind:      listing.TabKinds[one.Path],
+			ModifiedAtMs: modifiedAtMs,
 		})
 	}
 	return connect.NewResponse(out), nil

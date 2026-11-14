@@ -137,6 +137,8 @@ A change that makes a check pass without fixing what it reports is a finding. Lo
 - a name, path or file added to a list of exceptions in a check;
 - logic moved into a folder a check does not walk, such as a sub-package of `container/`.
 
+In general: when code looks shaped around a limit or a ban rather than around what it does, the dodge is the finding. Report it, and say which check would have caught it; a dodge that a script can detect is an issue for `tools/checks`, not a line in this list.
+
 ---
 
 ## What not to report

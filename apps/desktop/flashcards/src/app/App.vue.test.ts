@@ -3,7 +3,12 @@ import { defineComponent, h, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
 import { installCoreHandlers } from '@numen/core-client/testing'
-import { VAULT_SUMMARY, type PluginContext } from '@numen/plugin-loader'
+import {
+  VAULT_SUMMARY,
+  getPluginSheet,
+  getPluginStyle,
+  type PluginContext,
+} from '@numen/plugin-loader'
 import type { VaultRow } from '@numen/workbench'
 import { createRoot } from './createRoot'
 import { createWindow } from './window/createWindow'
@@ -244,9 +249,8 @@ describe('App', () => {
     await flushPromises()
 
     expect(shellDefault?.plugins.failures.value[0]).toContain('md.numen.broken:')
-    expect(
-      document.head.querySelector('link[data-plugin-id="md.numen.closing"]')?.getAttribute('href'),
-    ).toBe('/plugin/md.numen.closing/dist/styles.css')
+    expect(getPluginStyle('md.numen.closing')).toBe('/plugin/md.numen.closing/dist/styles.css')
+    expect(document.adoptedStyleSheets).toContain(getPluginSheet('md.numen.closing'))
     await relations?.resolveLinks('[[Note]]', 'physics')
     expect(wire.resolveAddresses).toHaveBeenCalled()
 
@@ -279,7 +283,8 @@ describe('the window over a plugin that draws the review', () => {
       'due physics',
       'due words',
     ])
-    expect(window.find('link').attributes('href')).toBe('/plugin/md.numen.cards/dist/styles.css')
+    expect(getPluginStyle('md.numen.cards')).toBe('/plugin/md.numen.cards/dist/styles.css')
+    expect(document.adoptedStyleSheets).toContain(getPluginSheet('md.numen.cards'))
   })
 
   it('opens the review on a vault pressed, and goes back to the vaults when the review closes', async () => {

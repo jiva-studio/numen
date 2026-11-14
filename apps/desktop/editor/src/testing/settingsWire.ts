@@ -12,6 +12,7 @@ import type {
   PluginSettingOption,
   SettingEdit,
 } from '@/entities/settings'
+import type { Result } from '@/shared/lib/result'
 
 /** Every setting in effect, as a test core answers them. */
 interface Configuration {
@@ -122,7 +123,7 @@ export interface SettingsCore {
   getSettings(): Promise<Configuration>
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
   watchSettings(signal: AbortSignal): AsyncIterable<readonly SettingEdit[]>
-  retryPlugin(pluginId: string): Promise<string>
+  retryPlugin(pluginId: string): Promise<Result<null, string>>
   choosePluginPath(
     pluginId: string,
     key: string,
@@ -162,9 +163,10 @@ const answerPlugins = (core: Partial<SettingsCore>): Answers => {
   return {
     ...(retryPlugin
       ? {
-          retryPlugin: async (r: { pluginId: string }) => ({
-            failure: await retryPlugin(r.pluginId),
-          }),
+          retryPlugin: async (r: { pluginId: string }) => {
+            const answer = await retryPlugin(r.pluginId)
+            return { failure: answer.ok ? '' : answer.error }
+          },
         }
       : {}),
     ...(choosePluginPath

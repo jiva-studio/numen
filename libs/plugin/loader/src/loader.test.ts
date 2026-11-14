@@ -807,8 +807,8 @@ describe('createPluginLoader failures, order and toggles', () => {
     const loader = createPluginLoader({
       host,
       onError,
-      fetch: (async () => {
-        manifestFetches++
+      fetch: (async (url: string | URL | Request) => {
+        if (String(url).endsWith('/manifest.json')) manifestFetches++
         return {
           ok: true,
           text: async () => JSON.stringify({ id: 'dyn.throw', frontend: {} }),
@@ -852,7 +852,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     const loader = createPluginLoader({
       host,
       fetch: (async (url: string | URL | Request) => {
-        manifestCount++
+        if (String(url).endsWith('/manifest.json')) manifestCount++
         const isBackendOnly = String(url).includes('backend.only')
         return {
           ok: true,

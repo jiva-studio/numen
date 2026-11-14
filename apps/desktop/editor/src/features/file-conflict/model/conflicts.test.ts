@@ -9,9 +9,11 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { raiseConflicts, type Notes } from './conflicts'
 import { asFailure, asValue } from '@numen/core-client'
-import { openNotes } from '@/entities/note'
+import { useOpenNotes, flattenOpenNotes } from '@/entities/note'
 import { answerNotes, type NoteCore as NotesCore } from '@/testing/noteCore'
 import type { Conflict } from './flush'
+
+const openNotes = (how?: Parameters<typeof useOpenNotes>[0]) => flattenOpenNotes(useOpenNotes(how))
 
 /** The words this test puts its notes in. A screen has more; these are enough. */
 type Word = 'clean' | 'unsaved' | 'stale' | 'gone'

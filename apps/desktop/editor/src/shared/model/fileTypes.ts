@@ -30,6 +30,7 @@ export interface Entry {
   readonly isNote: boolean
   readonly type: NoteType
   readonly tabKind?: string
+  readonly modifiedAt?: number
 }
 
 /** Where a note was filed, or why none was made. */

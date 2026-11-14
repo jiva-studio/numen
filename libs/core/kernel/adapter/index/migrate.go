@@ -25,14 +25,26 @@ var files embed.FS
 
 // A migration is one numbered file, applied once, in order.
 //
-// A change of the schema is a new numbered file after the last one. The index is a
-// cache of the vault, so a file at a version no file carries (one a newer build
-// wrote) is deleted and built again, and an unrelated database that has no
-// version is left as it is and reported.
+// A change of the schema is a new numbered file after the last one. A file at a
+// version newer than the last file is refused and left as it is, and so is an
+// unrelated database that has no version.
 type migration struct {
 	version int
 	name    string
 	body    string
+}
+
+// NewerIndexError is an index file written by a newer build than this one. The
+// file is left as it is: it can hold indexing work that took hours.
+type NewerIndexError struct {
+	File      string
+	Found     int
+	Supported int
+}
+
+func (e *NewerIndexError) Error() string {
+	return fmt.Sprintf("The index %s is at version %d and this Numen supports up to version %d. Update Numen.",
+		e.File, e.Found, e.Supported)
 }
 
 // errUnknownVersion is an index at a version this build does not know.
@@ -73,6 +85,9 @@ func checkVersion(ctx context.Context, db *sql.DB, file string, available []migr
 		if err != nil || empty {
 			return 0, err
 		}
+	}
+	if current > newest {
+		return 0, &NewerIndexError{File: file, Found: current, Supported: newest}
 	}
 	if current > 0 {
 		return 0, fmt.Errorf("the index %s is at version %d and this build expects version %d: %w", file, current, newest, errUnknownVersion)

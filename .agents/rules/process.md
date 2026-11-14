@@ -55,13 +55,25 @@ Before handing work over, an agent must demonstrate concrete evidence:
 
 ---
 
-## 4. Where a test belongs
+## 4. Pull request pipeline
+
+Every pull request follows this sequence:
+
+1. **Open as a draft**: Push the branch and create a draft pull request (`gh pr create --draft`).
+2. **Bring CI to green**: Wait for all CI checks on the draft pull request to pass (`gh pr checks --watch`). Fix any failure and push to the draft branch until CI is green.
+3. **Mark ready; the review starts by itself**: Once CI is green, mark the pull request ready for review (`gh pr ready`). Leaving draft starts `.github/workflows/claude-review.yml`, which runs the nm-review skill on the pull request and submits its verdict as an approval or a change request from github-actions[bot]. Wait for the run (`gh run watch` on the latest `claude-review.yml` run) and read the verdict (`gh pr view <N> --json reviews`). Do not run the nm-review skill locally for this step: the approval from the workflow is the one the branch rules count.
+4. **Fix and review again**: Fix every finding, push, wait for CI, and comment `/nm-review` on the pull request (`gh pr comment <N> --body "/nm-review"`; `/nm-review full` also writes and runs the tests that prove its hypotheses) until the verdict is an approval.
+5. **Request CodeRabbit and merge**: Once CI is green and the review workflow has approved, trigger CodeRabbit (`gh pr comment <N> --body "@coderabbitai review"`). The pull request is squash-merged without waiting for CodeRabbit; findings it posts before the merge are fixed.
+
+---
+
+## 5. Where a test belongs
 
 Scenarios in `features/` cover business rules. Technical end-to-end tests (`tests/e2e/desktop`) stay for what needs the whole app but is not a business rule. Checks of layout or file formats belong to stories, vitest or Go tests.
 
 ---
 
-## 5. Decisions reserved for the human
+## 6. Decisions reserved for the human
 
 An agent does not decide these alone. It prepares the change, explains the tradeoffs, and asks the human:
 

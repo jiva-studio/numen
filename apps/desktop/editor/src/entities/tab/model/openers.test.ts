@@ -137,13 +137,15 @@ describe('a path opened', () => {
     expect(activeEditors).toStrictEqual([])
   })
 
-  it('opens in the reader of its extension where the vault could not be requested at all', async () => {
+  it('opens nothing and rejects where the vault could not be requested at all', async () => {
     const tabOpeners = fileOpeners(unreachable)
     const activeEditors = editorsWithNotes(tabOpeners)
 
-    await tabOpeners.openFile('Entropy.md', 'Entropy')
+    await expect(tabOpeners.openFile('Entropy.md', 'Entropy')).rejects.toThrow(
+      'the vault is not there',
+    )
 
-    expect(activeEditors).toStrictEqual(['reader Entropy.md null'])
+    expect(activeEditors).toStrictEqual([])
   })
 
   it('asks the vault what remains there, the caller having returned nothing', async () => {

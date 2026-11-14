@@ -27,6 +27,16 @@ class TextSheet {
 const answer = (text: string, ok = true) =>
   vi.fn(async () => ({ ok, text: async () => text }) as unknown as Response)
 
+const nativeAdoptedDescriptor = Object.getOwnPropertyDescriptor(
+  Document.prototype,
+  'adoptedStyleSheets',
+)
+
+const deleteAdoptedStyleSheets = (): void => {
+  Reflect.deleteProperty(document, 'adoptedStyleSheets')
+  Reflect.deleteProperty(Document.prototype, 'adoptedStyleSheets')
+}
+
 describe('loadPluginStyle and adoptPluginStyle', () => {
   beforeEach(() => {
     vi.stubGlobal('CSSStyleSheet', TextSheet)
@@ -40,12 +50,15 @@ describe('loadPluginStyle and adoptPluginStyle', () => {
     clearPluginStyles()
     vi.unstubAllGlobals()
     Reflect.deleteProperty(document, 'adoptedStyleSheets')
+    if (nativeAdoptedDescriptor) {
+      Object.defineProperty(Document.prototype, 'adoptedStyleSheets', nativeAdoptedDescriptor)
+    }
   })
 
   it('checks whether the engine can construct and adopt stylesheets', () => {
     expect(createSheet('.a {}')).toBeDefined()
 
-    Reflect.deleteProperty(document, 'adoptedStyleSheets')
+    deleteAdoptedStyleSheets()
     expect(createSheet('.a {}')).toBeUndefined()
 
     Object.defineProperty(document, 'adoptedStyleSheets', {
@@ -94,7 +107,7 @@ describe('loadPluginStyle and adoptPluginStyle', () => {
   })
 
   it('skips fetching when sheets cannot be constructed or when sheet creation fails or races', async () => {
-    Reflect.deleteProperty(document, 'adoptedStyleSheets')
+    deleteAdoptedStyleSheets()
     const skippedFetch = answer('.a {}')
     await loadPluginStyle('md.numen.sketch', '/s.css', skippedFetch)
     expect(skippedFetch).not.toHaveBeenCalled()
