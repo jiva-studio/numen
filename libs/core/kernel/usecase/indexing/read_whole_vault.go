@@ -144,9 +144,10 @@ func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault, reporti
 }
 
 // CutOne re-chunks one file from its current live text version.
-func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string) error {
-	if _, err := u.texts.IndexOne(ctx, v, path); err != nil {
-		return fmt.Errorf("cutting %s: %w", path, err)
+func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string) (vaultreading.IndexResult, error) {
+	res, err := u.texts.IndexOne(ctx, v, path)
+	if err != nil {
+		return res, fmt.Errorf("cutting %s: %w", path, err)
 	}
-	return nil
+	return res, nil
 }

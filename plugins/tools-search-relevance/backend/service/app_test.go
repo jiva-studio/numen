@@ -210,10 +210,10 @@ func TestACallWithoutTheTokenOfTheHostIsRefused(t *testing.T) {
 	}
 }
 
-func TestASearchSourceReadyEventMeasuresTheVaultOnceHoweverOftenItRepeats(t *testing.T) {
+func TestAnIndexChangedEventMeasuresTheVaultOnceHoweverOftenItRepeats(t *testing.T) {
 	ctx := t.Context()
 	f := newFixture(t, 0.4)
-	event := getReadyEvent("physics")
+	event := getIndexChangedEvent("physics")
 
 	for range 3 {
 		if err := f.app.HandleEvent(ctx, event); err != nil {
@@ -231,7 +231,7 @@ func TestASearchSourceReadyEventMeasuresTheVaultOnceHoweverOftenItRepeats(t *tes
 	}
 }
 
-func TestAnEventOtherThanSearchSourceReadyMeasuresNothing(t *testing.T) {
+func TestAnEventOtherThanIndexChangedMeasuresNothing(t *testing.T) {
 	f := newFixture(t, 0.4)
 
 	if err := f.app.HandleEvent(t.Context(), "onVaultOpened:physics"); err != nil {
@@ -239,14 +239,14 @@ func TestAnEventOtherThanSearchSourceReadyMeasuresNothing(t *testing.T) {
 	}
 
 	if _, found := f.search.StoredFloor(modelRecipe); found || len(f.search.EmbeddedBatches()) != 0 {
-		t.Error("an event other than search source ready measured the vault")
+		t.Error("an event other than index changed measured the vault")
 	}
 }
 
 func TestAnEventForAnotherVaultMeasuresThatVault(t *testing.T) {
 	ctx := t.Context()
 	f := newFixture(t, 0.4)
-	if err := f.app.HandleEvent(ctx, getReadyEvent("chemistry")); err != nil {
+	if err := f.app.HandleEvent(ctx, getIndexChangedEvent("chemistry")); err != nil {
 		t.Fatal(err)
 	}
 	if _, found := f.search.StoredFloor(modelRecipe); found {
@@ -255,7 +255,7 @@ func TestAnEventForAnotherVaultMeasuresThatVault(t *testing.T) {
 	if batches := f.search.EmbeddedBatches(); len(batches) != 0 {
 		t.Errorf("an empty vault was measured: %d", len(batches))
 	}
-	err := f.app.HandleEvent(ctx, getReadyEvent("biology"))
+	err := f.app.HandleEvent(ctx, getIndexChangedEvent("biology"))
 	if !errors.Is(err, host.ErrUnknownVault) {
 		t.Errorf("an unknown vault gave %v", err)
 	}
@@ -264,7 +264,7 @@ func TestAnEventForAnotherVaultMeasuresThatVault(t *testing.T) {
 func TestAFailedMeasurementIsListedAsATaskAndAFinishedOneRemovesIt(t *testing.T) {
 	ctx := t.Context()
 	f := newFixture(t, 0.4)
-	event := getReadyEvent("physics")
+	event := getIndexChangedEvent("physics")
 
 	f.search.FailEmbedding(errors.New("the plugin is not running"))
 	if err := f.app.HandleEvent(ctx, event); !errors.Is(err, host.ErrEmbeddingFailed) {
@@ -356,7 +356,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		t.Fatal(err)
 	}
 	search.FailEmbedding(errors.New("embed fail"))
-	err := appReportFail.HandleEvent(t.Context(), getReadyEvent("physics"))
+	err := appReportFail.HandleEvent(t.Context(), getIndexChangedEvent("physics"))
 	if !errors.Is(err, host.ErrEmbeddingFailed) || !errors.Is(err, errReport) {
 		t.Errorf("HandleEvent with failing ReportTask gave %v, want both errors", err)
 	}
@@ -369,14 +369,14 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {
 		t.Fatal(err)
 	}
-	if err := appFinishFail.HandleEvent(t.Context(), getReadyEvent("physics")); !errors.Is(err, errFinish) {
+	if err := appFinishFail.HandleEvent(t.Context(), getIndexChangedEvent("physics")); !errors.Is(err, errFinish) {
 		t.Errorf("HandleEvent with failing FinishTask gave %v, want errFinish", err)
 	}
 }
 
 func TestAnEventBeforeTheAppIsMountedIsIgnored(t *testing.T) {
 	app := service.NewApp()
-	if err := app.HandleEvent(t.Context(), getReadyEvent("physics")); err != nil {
+	if err := app.HandleEvent(t.Context(), getIndexChangedEvent("physics")); err != nil {
 		t.Errorf("got %v, want the event ignored", err)
 	}
 }
@@ -392,8 +392,8 @@ func foldersOf(vault *hosttest.Vault) func(domain.VaultID) relevance.Records {
 	return func(id domain.VaultID) relevance.Records { return floorrecords.New(vault.Store().With(id)) }
 }
 
-func getReadyEvent(vault string) string {
-	return "onSearchSourceReady:" + vault
+func getIndexChangedEvent(vault string) string {
+	return "onIndexChanged:" + vault
 }
 
 func newFakeClock(start time.Time) *clock.Fake {
@@ -405,7 +405,7 @@ func newFakeClock(start time.Time) *clock.Fake {
 func TestAnEventReleasesTheProcessOnceItIsHandled(t *testing.T) {
 	f := newFixture(t, 0.4)
 
-	if err := f.app.HandleEvent(t.Context(), getReadyEvent("physics")); err != nil {
+	if err := f.app.HandleEvent(t.Context(), getIndexChangedEvent("physics")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -418,7 +418,7 @@ func TestAnEventThatFailsReleasesTheProcessToo(t *testing.T) {
 	f := newFixture(t, 0.4)
 	f.search.FailEmbedding(errors.New("model stopped"))
 
-	if err := f.app.HandleEvent(t.Context(), getReadyEvent("physics")); err == nil {
+	if err := f.app.HandleEvent(t.Context(), getIndexChangedEvent("physics")); err == nil {
 		t.Fatal("the measurement succeeded without embeddings")
 	}
 

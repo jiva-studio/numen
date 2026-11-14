@@ -4,6 +4,7 @@ import (
 	"context"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -84,8 +85,8 @@ type IndexWake interface {
 	ClearSkips(paths []string)
 }
 
-// ReadNotes reads the notes of a vault once and returns how many it read.
-type ReadNotes = func(ctx context.Context, during func()) (notes int, err error)
+// ReadNotes reads the notes of a vault once and returns what the walk did.
+type ReadNotes = func(ctx context.Context, during func()) (vaultreading.ScanResult, error)
 
 // IndexSession is the pass that reads one vault into the index and cuts again what it is asked to.
 type IndexSession struct {
