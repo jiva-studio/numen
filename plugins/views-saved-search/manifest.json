@@ -13,7 +13,8 @@
       "key": "connections",
       "type": "connections",
       "title": "Reranking",
-      "description": "Services that order the results of a saved search by relevance, tried in order until one answers",
+      "description": "Services that order the results by relevance, tried in order",
+      "details": "Services that order the results of a saved search by relevance, tried in order until one answers",
       "operations": ["llm.rerank"],
       "max": 5
     },
@@ -85,7 +86,7 @@
       "key": "mergeGapBytes",
       "type": "number",
       "title": "Merge gap",
-      "description": "Bytes between two passages of one file that are still joined into one result",
+      "description": "Largest gap in bytes between passages of one file that join",
       "default": 200,
       "min": 0,
       "step": 1
