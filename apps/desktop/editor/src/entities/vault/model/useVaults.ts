@@ -2,6 +2,7 @@
  * Vaults listing and active vault tracking.
  */
 import { computed, ref } from 'vue'
+import { win } from '@numen/ui'
 import type { VaultList } from '../lib/vault'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { VAULT_WORDS } from '../words'
@@ -18,7 +19,7 @@ export interface VaultsDeps {
 }
 
 export function useVaults({ listVaults, log }: VaultsDeps) {
-  const reload = () => globalThis.location.reload()
+  const reload = () => win.location.reload()
   const items = ref<VaultList>({ vaults: [], showing: '' })
 
   /**

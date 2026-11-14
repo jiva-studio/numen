@@ -149,10 +149,7 @@ const createRows = (agent: string): readonly Command[] => [
 ]
 
 /** The commands over the vaults. Going to a note runs the command that opens a file. */
-export const createVaultCommands = (
-  deps: VaultCommandsDeps,
-  agent: string = navigator.userAgent,
-): FeatureCommands => ({
+export const createVaultCommands = (deps: VaultCommandsDeps, agent: string): FeatureCommands => ({
   commands: createRows(agent),
   handlers: {
     [COMMAND.openVault]: (invocation) => showVault(invocation.target.vault.id, deps),

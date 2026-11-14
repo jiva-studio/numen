@@ -10,6 +10,7 @@ import type {
   PluginPaletteCommand,
 } from '@numen/plugin-loader'
 import type { WelcomeAction } from '@numen/workbench'
+import { win } from '@numen/ui'
 import { type Command } from '@/entities/command'
 import { findShortcutKeys, type CommandRegistry, type CommandTarget } from '@/shared/model/command'
 import type { FileKind } from '@/entities/file'
@@ -64,7 +65,7 @@ export function usePluginCommands(
   /** How a plugin's command is drawn: its keystroke and its icon, where it declares them. */
   const getPluginLooks = (cmd: PluginPaletteCommand) => {
     const key = pluginHost?.keybindings.getKeyFor(cmd.id)
-    const keys = key ? findShortcutKeys(key, navigator.userAgent) : undefined
+    const keys = key ? findShortcutKeys(key, win.navigator.userAgent) : undefined
     return {
       ...(keys ? { keys } : {}),
       ...(cmd.icon ? { icon: getNamedIcon(cmd.icon) } : {}),

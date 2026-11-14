@@ -4,7 +4,7 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { getVaultForKey, type Tab, type WelcomeAction } from '@numen/workbench'
-import { runInBackground } from '@numen/ui'
+import { runInBackground, win } from '@numen/ui'
 import {
   createInvocation,
   runInvocation,
@@ -108,8 +108,8 @@ export function useWelcomeScreen(props: WelcomeScreenProps) {
     onOpen(one.id)
   }
 
-  onMounted(() => globalThis.addEventListener('keydown', onKeyDown))
-  onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
+  onMounted(() => win.addEventListener('keydown', onKeyDown))
+  onUnmounted(() => win.removeEventListener('keydown', onKeyDown))
 
   return {
     adding,

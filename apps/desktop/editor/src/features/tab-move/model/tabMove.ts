@@ -2,6 +2,7 @@
  * Sends a tab with its saved state to another open window or a new window, and opens a tab
  * sent from another window.
  */
+import { win } from '@numen/ui'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { wait as waitMs } from '@/shared/model/wait'
 import { focusWindow } from '@/entities/window'
@@ -89,10 +90,7 @@ export function createTabMover(deps: TabMoverDeps) {
 
   /** Opens a tab in a new window over the pane of the tab, with its size. */
   const detachTabInPlace = (id: string): Promise<void> =>
-    sendDetach(
-      id,
-      getPlaceOver(deps.getPaneRect(id), { x: globalThis.screenX, y: globalThis.screenY }),
-    )
+    sendDetach(id, getPlaceOver(deps.getPaneRect(id), { x: win.screenX, y: win.screenY }))
 
   /** Moves a tab into another open window. */
   const moveTabTo = (id: string, targetWindowId: string): Promise<void> =>

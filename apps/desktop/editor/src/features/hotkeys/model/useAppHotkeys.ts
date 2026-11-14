@@ -2,13 +2,14 @@
  * Manages global keyboard shortcuts for the window shell.
  */
 import { onMounted, onUnmounted } from 'vue'
+import { win } from '@numen/ui'
 
 export function useAppHotkeys(onKeydown: (event: KeyboardEvent) => void) {
   onMounted(() => {
-    globalThis.addEventListener('keydown', onKeydown)
+    win.addEventListener('keydown', onKeydown)
   })
 
   onUnmounted(() => {
-    globalThis.removeEventListener('keydown', onKeydown)
+    win.removeEventListener('keydown', onKeydown)
   })
 }
