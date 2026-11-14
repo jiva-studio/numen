@@ -26,7 +26,8 @@ export const describeError = (error: ApiError): string => {
 const call = <M extends keyof Methods>(
   method: M,
   request: Methods[M]['request'],
-): Promise<Result<Methods[M]['response'], ApiError>> => api.call(method, request)
+): Promise<Result<Methods[M]['response'], ApiError>> =>
+  api.call<Methods[M]['request'], Methods[M]['response']>(method, request)
 
 const callWhileBusy = async <M extends keyof Methods>(
   method: M,
