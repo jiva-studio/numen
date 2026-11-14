@@ -59,7 +59,7 @@ func TestPluginLinkAddInActiveVaultUsesWindowNoteUseCases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Writer.Scan(t.Context(), []string{"Danube.md", "Rhine.md"}); err != nil {
+	if err := shared.Writer.ScanFiles(t.Context(), []string{"Danube.md", "Rhine.md"}); err != nil {
 		t.Fatal(err)
 	}
 	before := len(index.getPaths())
@@ -93,7 +93,7 @@ func TestPluginLinkRemoveInActiveVaultUsesWindowNoteUseCases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Writer.Scan(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
+	if err := shared.Writer.ScanFiles(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
 		t.Fatal(err)
 	}
 	before := len(index.getPaths())
@@ -122,7 +122,7 @@ func TestPluginLinkAddInOtherVaultBypassesWindowNoteUseCases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := lakes.Writer.Scan(t.Context(), []string{"Baikal.md", "Lakes.md"}); err != nil {
+	if err := lakes.Writer.ScanFiles(t.Context(), []string{"Baikal.md", "Lakes.md"}); err != nil {
 		t.Fatal(err)
 	}
 	before := len(index.getPaths())

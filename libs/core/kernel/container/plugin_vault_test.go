@@ -40,7 +40,7 @@ func TestAPluginNoteIsInTheIndexOnceItsFileIsScanned(t *testing.T) {
 	if err := shared.Writer.CreateFile(t.Context(), "Made.md", []byte("---\ntitle: Made\n---\n\n# Made\n")); err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Writer.Scan(t.Context(), []string{"Made.md"}); err != nil {
+	if err := shared.Writer.ScanFiles(t.Context(), []string{"Made.md"}); err != nil {
 		t.Fatal(err)
 	}
 

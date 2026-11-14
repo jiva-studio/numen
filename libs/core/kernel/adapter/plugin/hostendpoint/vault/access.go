@@ -37,8 +37,8 @@ type FileWriter interface {
 	// WriteFile replaces the file if it still matches the baseline, and returns the new file stat.
 	WriteFile(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 	CreateFile(ctx context.Context, path string, content []byte) error
-	// Scan updates the index for the files named.
-	Scan(ctx context.Context, paths []string) error
+	// ScanFiles updates the index for the files named.
+	ScanFiles(ctx context.Context, paths []string) error
 }
 
 // Arranger renames, moves and removes the notes of the vault, repairing the links that stop

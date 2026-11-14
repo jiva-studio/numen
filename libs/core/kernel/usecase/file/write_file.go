@@ -57,3 +57,17 @@ func (u CreateFile) Execute(ctx context.Context, v domain.Vault, path string, co
 	}
 	return edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }
+
+// ScanFiles updates the index for files of a vault that were written outside the core.
+type ScanFiles struct {
+	index edit.IndexUpdater
+}
+
+func NewScanFiles(index edit.IndexUpdater) ScanFiles {
+	return ScanFiles{index: index}
+}
+
+// Execute indexes the files at the paths. A failed index update returns edit.ErrIndexOutdated.
+func (u ScanFiles) Execute(ctx context.Context, v domain.Vault, paths []string) error {
+	return edit.WrapIndexOutdated(u.index(ctx, v, paths), paths...)
+}

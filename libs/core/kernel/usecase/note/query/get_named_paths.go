@@ -23,5 +23,5 @@ func (u *GetNamedPaths) Execute(ctx context.Context, v domain.Vault, name string
 	if u == nil || u.queries == nil || name == "" {
 		return nil, nil
 	}
-	return u.queries.GetNamedPaths(ctx, v.ID, domain.LinkName(name))
+	return u.queries.GetNamedPaths(ctx, v.ID, name)
 }

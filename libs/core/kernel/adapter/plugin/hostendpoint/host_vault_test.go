@@ -354,4 +354,4 @@ func (m *memoryVault) EnsureIndexed(context.Context) (plugin.IndexState, error) 
 
 func (m *memoryVault) Lock(context.Context) (func(), error) { return func() {}, nil }
 
-func (m *memoryVault) Scan(context.Context, []string) error { return nil }
+func (m *memoryVault) ScanFiles(context.Context, []string) error { return nil }

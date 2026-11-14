@@ -67,6 +67,7 @@ func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 			ReadFile:    file.NewReadFile(readers),
 			RangeReader: file.Read{Readers: readers},
 		},
+		hostvault.Writer{},
 		hostvault.Notes{}, hostvault.Links{}, hostvault.Arranger{}, hostvault.Stores{},
 	))
 }

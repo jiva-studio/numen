@@ -48,9 +48,11 @@ func diskVault(t *testing.T, files map[string]string, hooks diskHooks) (*vault.A
 			Stat:        file.NewStatFile(vaultreader.Readers{}),
 			ReadFile:    file.NewReadFile(vaultreader.Readers{}),
 			RangeReader: file.Read{Readers: vaultreader.Readers{}},
-			Write:       file.NewWriteFile(writers, index),
-			Create:      file.NewCreateFile(writers, index),
-			Index:       hooks.index,
+		},
+		Writer{
+			Write:  file.NewWriteFile(writers, index),
+			Create: file.NewCreateFile(writers, index),
+			Index:  file.NewScanFiles(index),
 		},
 		Notes{}, Links{}, Arranger{Notes: NoteChanges{AddLinks: hooks.addLinks}},
 		Stores{
@@ -206,7 +208,7 @@ func TestVaultAccess_CacheKeyedByPluginAndNameRejectsEscape(t *testing.T) {
 func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 	access := NewAccess(
 		Session{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }},
-		Files{}, Notes{}, Links{}, Arranger{}, Stores{},
+		Files{}, Writer{}, Notes{}, Links{}, Arranger{}, Stores{},
 	)
 
 	_, _, readErr := access.Files.Read(t.Context(), "a.md")
@@ -219,7 +221,7 @@ func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 			t.Errorf("%s was %v", name, err)
 		}
 	}
-	if err := access.Writer.Scan(t.Context(), []string{"a.md"}); !errors.Is(err, plugin.ErrNoVault) {
+	if err := access.Writer.ScanFiles(t.Context(), []string{"a.md"}); !errors.Is(err, plugin.ErrNoVault) {
 		t.Errorf("a scan was %v", err)
 	}
 }
