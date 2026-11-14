@@ -188,6 +188,10 @@ jobs:
         HUSKY: 0
         # The path of the runner's npm cache, so the cache a runner job saved restores here.
         npm_config_cache: /home/runner/.npm
+    # A container's default shell is sh.
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 25
     strategy:
       fail-fast: false
@@ -271,6 +275,10 @@ jobs:
         HUSKY: 0
         # The path of the runner's npm cache, so the cache a runner job saved restores here.
         npm_config_cache: /home/runner/.npm
+    # A container's default shell is sh.
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -335,6 +343,10 @@ jobs:
         HUSKY: 0
         # The path of the runner's npm cache, so the cache a runner job saved restores here.
         npm_config_cache: /home/runner/.npm
+    # A container's default shell is sh.
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
