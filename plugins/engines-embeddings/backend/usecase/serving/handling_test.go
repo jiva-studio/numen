@@ -226,3 +226,57 @@ func writeFile(t *testing.T, path, content string) {
 		t.Fatal(err)
 	}
 }
+
+// The recipes of the curated models as they were before the tokenizer joined the handling.
+const (
+	e5RecipeBefore      = "plugin:md.numen.engines.embeddings|Xenova/multilingual-e5-small|384|512|mean|52b6c65b"
+	harrierModel        = "onnx-community/harrier-oss-v1-270m-ONNX"
+	harrierRecipeBefore = "plugin:md.numen.engines.embeddings|onnx-community/harrier-oss-v1-270m-ONNX|640|512|output|623ccc6f"
+)
+
+type tokenizingModel struct {
+	mockembedder.Embedder
+	version string
+}
+
+func (m tokenizingModel) GetTokenizerVersion() string {
+	return m.version
+}
+
+func newTokenizingServer(t *testing.T, version string) *Server {
+	t.Helper()
+	srv := newEmbeddingServer()
+	srv.profileSrc = profilefiles.NewDirectory(t.TempDir())
+	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
+		return tokenizingModel{version: version}, nil
+	}
+	t.Cleanup(func() { closeServer(t, srv) })
+	return srv
+}
+
+func getLoadedRecipe(t *testing.T, srv *Server, name string) string {
+	t.Helper()
+	srv.updateConfig(map[string]string{"source": "local", "model": name})
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a note"}); err != nil {
+		t.Fatal(err)
+	}
+	return getModelInfoOf(t, srv).GetRecipe()
+}
+
+func TestTheRecipeOfALocalModelChangesWithTheVersionOfItsTokenizer(t *testing.T) {
+	first := getLoadedRecipe(t, newTokenizingServer(t, "1"), model.DefaultModel)
+	second := getLoadedRecipe(t, newTokenizingServer(t, "2"), model.DefaultModel)
+
+	if first == e5RecipeBefore {
+		t.Errorf("a model read by a tokenizer of version 1 kept the recipe %s it had before", first)
+	}
+	if first == second {
+		t.Errorf("tokenizer versions 1 and 2 give the same recipe %s", first)
+	}
+}
+
+func TestALocalModelWhoseTokenizerHasNoVersionKeepsItsRecipe(t *testing.T) {
+	if got := getLoadedRecipe(t, newTokenizingServer(t, ""), harrierModel); got != harrierRecipeBefore {
+		t.Errorf("recipe = %s, want %s as before", got, harrierRecipeBefore)
+	}
+}

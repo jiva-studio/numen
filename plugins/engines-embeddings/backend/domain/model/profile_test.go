@@ -295,7 +295,7 @@ func TestEveryCuratedModelWithAQueryPrefixAppliesItToQueries(t *testing.T) {
 }
 
 func TestHandlingHashChangesWithWhatItCoversAndWithNothingElse(t *testing.T) {
-	base := Handling{QueryPrefix: "query: ", DocumentPrefix: "passage: ", File: "model.onnx", Normalize: true}
+	base := Handling{QueryPrefix: "query: ", DocumentPrefix: "passage: ", File: "model.onnx", Normalize: true, Tokenizer: "1"}
 	want := base.Hash(512)
 	if len(want) != 8 {
 		t.Errorf("hash %q is not 8 characters", want)
@@ -306,11 +306,13 @@ func TestHandlingHashChangesWithWhatItCoversAndWithNothingElse(t *testing.T) {
 		t.Errorf("extra inputs changed the hash: %s", got)
 	}
 	changed := map[string]string{
-		"query prefix":    func() string { h := base; h.QueryPrefix = "q: "; return h.Hash(512) }(),
-		"document prefix": func() string { h := base; h.DocumentPrefix = "d: "; return h.Hash(512) }(),
-		"file":            func() string { h := base; h.File = "model_q4.onnx"; return h.Hash(512) }(),
-		"normalize":       func() string { h := base; h.Normalize = false; return h.Hash(512) }(),
-		"max tokens":      base.Hash(256),
+		"query prefix":     func() string { h := base; h.QueryPrefix = "q: "; return h.Hash(512) }(),
+		"document prefix":  func() string { h := base; h.DocumentPrefix = "d: "; return h.Hash(512) }(),
+		"file":             func() string { h := base; h.File = "model_q4.onnx"; return h.Hash(512) }(),
+		"normalize":        func() string { h := base; h.Normalize = false; return h.Hash(512) }(),
+		"max tokens":       base.Hash(256),
+		"tokenizer":        func() string { h := base; h.Tokenizer = "2"; return h.Hash(512) }(),
+		"absent tokenizer": func() string { h := base; h.Tokenizer = ""; return h.Hash(512) }(),
 	}
 	for what, got := range changed {
 		if got == want {
@@ -323,10 +325,19 @@ func TestHandlingIsZeroOnlyWhenItChangesNothing(t *testing.T) {
 	if !(Handling{}).IsZero() {
 		t.Error("an empty handling is not zero")
 	}
-	for _, h := range []Handling{{QueryPrefix: "q"}, {DocumentPrefix: "d"}, {File: "f"}, {Normalize: true}, {ExtraInputs: []string{InputPositionIDs}}} {
+	for _, h := range []Handling{{QueryPrefix: "q"}, {DocumentPrefix: "d"}, {File: "f"}, {Normalize: true}, {ExtraInputs: []string{InputPositionIDs}}, {Tokenizer: "1"}} {
 		if h.IsZero() {
 			t.Errorf("%+v is zero", h)
 		}
+	}
+}
+
+// The hash of a handling with no tokenizer was recorded before the tokenizer joined the handling: a
+// connection and the mock model keep their recipe, so nothing they embedded is embedded again.
+func TestAHandlingWithoutATokenizerHashesAsBefore(t *testing.T) {
+	h := Handling{QueryPrefix: "query: ", DocumentPrefix: "passage: ", File: "model.onnx", Normalize: true}
+	if got, want := h.Hash(512), "c69543d1"; got != want {
+		t.Errorf("hash = %s, want %s as before the tokenizer joined the handling", got, want)
 	}
 }
 

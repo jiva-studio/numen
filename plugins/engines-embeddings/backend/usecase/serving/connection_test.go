@@ -419,3 +419,24 @@ func TestAProfileThatArrivesAfterTheCallerStoppedWaitingIsUsedByTheNextCall(t *t
 		t.Errorf("width %d after %d reads of the profile, want 1536 after 1", info.Dimensions, host.countProfileCalls())
 	}
 }
+
+// A connection tokenizes nothing in the plugin, so its recipe is the one it had before the tokenizer
+// joined the handling, whatever tokenizer the local model would read with.
+func TestAConnectionRecipeIgnoresTheTokenizerVersion(t *testing.T) {
+	const recipeBefore = "md.numen.connections.llm/openai https://api.openai.com/v1|text-embedding-3-small|1536|8191|cls|28e76541"
+	prefixed := openAIProfile()
+	prefixed.QueryPrefix, prefixed.DocumentPrefix = "query: ", "passage: "
+	srv := newConnectionServer(&hostModels{profile: prefixed})
+	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
+		return tokenizingModel{version: "1"}, nil
+	}
+	t.Cleanup(func() { closeServer(t, srv) })
+	srv.updateConfig(connectionValues())
+	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a note"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := getModelInfoOf(t, srv).GetRecipe(); got != recipeBefore {
+		t.Errorf("recipe = %s, want %s as before", got, recipeBefore)
+	}
+}
