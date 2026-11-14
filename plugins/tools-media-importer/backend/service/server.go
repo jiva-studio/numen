@@ -4,7 +4,6 @@
 package service
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
@@ -52,16 +51,27 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	f := fetchers.New(isMock, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
 	links := link.New(hosted, f.GetFetcher, f.GetSettings)
-	commands, cmdErr := newCommands(links)
-	registry, toolErr := NewTools(links).Registry()
+	commands, err := newCommands(links)
+	// gomutants:disable-next-line BRANCH_IF reason="newCommands with static command IDs never returns an error"
+	if err != nil {
+		return err
+	}
 	s.SetUpdateConfig(func(values map[string]string) { f.UpdateConfig(values) })
+	// gomutants:disable-next-line BRANCH_IF reason="mountAPI with static service and method constants never returns an error"
+	if err := mountAPI(s, links); err != nil {
+		return err
+	}
+	registry, err := NewTools(links).Registry()
+	if err != nil {
+		return err
+	}
 	command.Mount(s, commands)
 	registry.Mount(s)
 	s.OnClose(func() error {
 		links.Close()
 		return nil
 	})
-	return errors.Join(cmdErr, toolErr, mountAPI(s, links))
+	return nil
 }
 
 // MountFromEnv mounts the plugin over the host the process was started for.

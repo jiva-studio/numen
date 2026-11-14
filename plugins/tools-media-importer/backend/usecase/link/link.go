@@ -185,10 +185,11 @@ func readLink(ctx context.Context, vault Files, path string) (Link, error) {
 	}
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="markdown.Parse ignores FileStat.Size"
 	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, raw)
-	if note.Type != NoteType {
+	value, isText := note.Frontmatter[urlKey].(string)
+	if note.Type != NoteType || !isText || value == "" {
 		return Link{}, fmt.Errorf("%s: %w", path, ErrNotALink)
 	}
-	parsed, err := address.Parse(getText(note.Frontmatter[urlKey]))
+	parsed, err := address.Parse(value)
 	if err != nil {
 		return Link{}, fmt.Errorf("%s: %w: %w", path, ErrNotALink, err)
 	}
@@ -204,7 +205,10 @@ func newLink(path string, parsed address.URL, raw []byte) Link {
 }
 
 func getText(value any) string {
-	text, _ := value.(string)
+	text, isText := value.(string)
+	if !isText {
+		return ""
+	}
 	return text
 }
 

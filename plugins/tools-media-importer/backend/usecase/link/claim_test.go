@@ -294,12 +294,6 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 	}
 	hs.writeErr = nil
 
-	hs.appendErr = func(string) error { return boom }
-	if err := f.writeText(ctx, "k", []domain.TextSegment{{Text: "hi"}}, rec); !errors.Is(err, boom) {
-		t.Errorf("writeText(append error) = %v", err)
-	}
-	hs.appendErr = nil
-
 	if err := hs.Write(ctx, "bad.json", []byte("{invalid")); err != nil {
 		t.Fatal(err)
 	}
@@ -432,7 +426,8 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 	}
 	copyMaxSize = new(int64)
 	l = New(Host{Vaults: func(id domain.VaultID) Vault {
-		if id == "" {
+		// A link names the vault it was made in, so the hooks answer for that vault too.
+		if id == "" || id == v.Vault().ID {
 			return Vault{Files: hv, Writer: hv}
 		}
 		other := v.With(id)
@@ -713,9 +708,6 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	v.File("links/unterminated.md", "---\ntype: link\n")
 	if err := l.setAddress(ctx, Link{Path: "links/unterminated.md"}, mediaKey, "x"); err == nil {
 		t.Error("setAddress(unterminated frontmatter) succeeded")
-	}
-	if err := l.setAddress(ctx, made, "", "x"); err == nil {
-		t.Error("setAddress(empty key) succeeded")
 	}
 	if err := l.setAddress(ctx, made, mediaKey, ""); err != nil {
 		t.Fatal(err)

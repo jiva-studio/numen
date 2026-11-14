@@ -24,11 +24,6 @@ const playerPage = `<!doctype html>
 </body></html>
 `
 
-type playerData struct {
-	Address string
-	Player  string
-}
-
 func writePage(ctx context.Context, store host.StoreWriter, key string, link address.URL) (string, bool, error) {
 	player, ok := address.GetPlayerURL(link)
 	if !ok {
@@ -41,7 +36,10 @@ func writePage(ctx context.Context, store host.StoreWriter, key string, link add
 	}
 	var page bytes.Buffer
 	// gomutants:disable-next-line BRANCH_IF reason="the template writes to a buffer, which does not fail"
-	if err := parsed.Execute(&page, playerData{Address: string(link), Player: player}); err != nil {
+	if err := parsed.Execute(&page, struct {
+		Address string
+		Player  string
+	}{Address: string(link), Player: player}); err != nil {
 		return "", false, err
 	}
 	name := key + pageExt

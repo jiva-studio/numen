@@ -21,7 +21,7 @@ const copyChunk = 1 << 20
 // note refers to any more is deleted.
 func (l *Links) Copy(ctx context.Context, link Link, media download.Media) (int64, error) {
 	task, size, err := l.beginCopy(ctx, link, media)
-	if task == nil {
+	if err != nil || task == nil {
 		return size, err
 	}
 	return l.endCopy(ctx, link, media, *task)
@@ -33,7 +33,7 @@ func (l *Links) Copy(ctx context.Context, link Link, media download.Media) (int6
 // nothing copies what the address publishes. A failure of the copy is current as the error of the task.
 func (l *Links) StartMediaCopy(ctx context.Context, link Link, media download.Media) (int64, bool, error) {
 	task, size, err := l.beginCopy(ctx, link, media)
-	if task == nil {
+	if err != nil || task == nil {
 		return size, false, err
 	}
 	l.wg.Go(func() {
@@ -50,18 +50,18 @@ func (l *Links) beginCopy(ctx context.Context, link Link, media download.Media) 
 		return nil, 0, ErrBeingFetched
 	}
 	task, size, err := l.prepareCopy(ctx, link, media)
-	if task == nil {
+	if err != nil || task == nil {
 		l.release("copy", link, link.Key)
 	}
 	return task, size, err
 }
 
 func (l *Links) prepareCopy(ctx context.Context, link Link, media download.Media) (*host.Task, int64, error) {
-	kept, _, err := folder{store: l.getStore(link)}.findCopy(ctx, link.Key, media)
+	kept, isKept, err := folder{store: l.getStore(link)}.findCopy(ctx, link.Key, media)
 	if err != nil {
 		return nil, 0, err
 	}
-	if kept.Size > 0 {
+	if isKept && kept.Size > 0 {
 		// The copy is kept by the address: the link notes of the address share it, and a note made
 		// again after the first was deleted points at it.
 		return nil, kept.Size, l.publishCopy(ctx, link, kept.Name)
@@ -156,7 +156,7 @@ func (l *Links) DeleteCopy(ctx context.Context, link Link) error {
 func (l *Links) deleteUnreferencedCopies(ctx context.Context, link Link) error {
 	store := l.getStore(link)
 	names, err := folder{store: store}.listCopies(ctx, link.Key)
-	if len(names) == 0 {
+	if err != nil || len(names) == 0 {
 		return err
 	}
 	referred, err := l.listMediaAddresses(ctx, link)

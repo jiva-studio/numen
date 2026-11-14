@@ -3,6 +3,7 @@
 package process
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -25,7 +26,7 @@ func TestRunWithoutAnEnvironmentHidesTheHostVariablesFromTheProgram(t *testing.T
 		t.Errorf("the program lost an ordinary variable:\n%s", out)
 	}
 
-	customOut, _, err := (Runner{}).Run(t.Context(), []string{"sh", "-c", "env"}, []string{"CUSTOM_VAR=pear"}, nil)
+	customOut, _, err := (Runner{}).Run(t.Context(), []string{"sh", "-c", "env"}, []string{"CUSTOM_VAR=pear", "PATH=" + os.Getenv("PATH")}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

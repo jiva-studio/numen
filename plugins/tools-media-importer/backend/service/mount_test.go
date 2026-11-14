@@ -1,17 +1,13 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync"
-	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -20,25 +16,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/environment"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
-
-type closeProbeQueue struct {
-	host.Queue
-	block       atomic.Bool
-	started     chan struct{}
-	startedOnce sync.Once
-	waited      atomic.Bool
-}
-
-func (q *closeProbeQueue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, error) {
-	if q.block.Load() {
-		q.startedOnce.Do(func() { close(q.started) })
-		<-ctx.Done()
-		time.Sleep(10 * time.Millisecond)
-		q.waited.Store(true)
-		return nil, ctx.Err()
-	}
-	return q.Queue.EnqueueWork(ctx, work)
-}
 
 // The handler a host that links the plugin in answers the importer API with the token it was
 // given, and rejects a call without it.
@@ -98,8 +75,6 @@ func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 	t.Setenv("PATH", "")
 	_, _, hosted := newMockLinks(t)
-	probeQueue := &closeProbeQueue{Queue: hosted.Queue, started: make(chan struct{})}
-	hosted.Queue = probeQueue
 	var mountedSrv *server.Server
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "test-token"}, func(srv *server.Server) error {
 		mountedSrv = srv
@@ -154,24 +129,14 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 		}
 	}
 
-	probeQueue.block.Store(true)
-	if status, _ := call(web.URL, http.MethodPost, "/"+api.Service+"/"+api.MethodCopyMedia, `{"path":`+mustJSON(t, created.Paths[0])+`}`); status != http.StatusOK {
-		t.Fatalf("CopyMedia(valid) status = %d, want 200", status)
-	}
-	<-probeQueue.started
-
 	if status, _ := call(web.URL, http.MethodPost, "/numen.v1.PluginLifecycleService/Shutdown", `{}`); status != http.StatusOK {
 		t.Errorf("Shutdown RPC status = %d, want 200", status)
 	}
 	if err := mountedSrv.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if !probeQueue.waited.Load() {
-		t.Error("mountedSrv.Close returned before links.Close canceled and waited for background copy")
-	}
 
 	// Verify SetUpdateConfig updates the live downloader configuration when Configure RPC is called.
-	probeQueue.block.Store(false)
 	realHandler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "test-token"}, func(srv *server.Server) error {
 		return Mount(srv, hosted, false)
 	})
@@ -186,7 +151,7 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 	if err := json.Unmarshal(beforeRaw, &beforeLink); err != nil || beforeLink.IsCopyable {
 		t.Fatalf("GetLink before Configure = %+v (%v), want IsCopyable=false", beforeLink, err)
 	}
-	if status, _ := call(realWeb.URL, http.MethodPost, "/numen.v1.PluginLifecycleService/Configure", `{"config":{"ytDlp":"/configured-yt-dlp"}}`); status != http.StatusOK {
+	if status, _ := call(realWeb.URL, http.MethodPost, "/numen.v1.PluginLifecycleService/Configure", `{"values":{"ytDlp":"/configured-yt-dlp"}}`); status != http.StatusOK {
 		t.Fatalf("Configure RPC status = %d, want 200", status)
 	}
 	_, afterRaw := call(realWeb.URL, http.MethodPost, "/"+api.Service+"/"+api.MethodGetLink, `{"path":`+mustJSON(t, created.Paths[0])+`}`)

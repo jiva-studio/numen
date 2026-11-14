@@ -204,7 +204,8 @@ func TestPagesProviderGetsTheArticleText(t *testing.T) {
 	if _, err := NewPages(fakeWeb{readErr: errors.New("read failed")}).GetText(t.Context(), "https://example.com/post", PreferredCaptions{}); !errors.Is(err, ErrNothingDownloaded) {
 		t.Errorf("GetText(readErr) = %v, want ErrNothingDownloaded", err)
 	}
-	if _, err := NewPages(fakeWeb{page: "<html><head><title>Empty</title></head><body>   </body></html>"}).GetText(t.Context(), "https://example.com/post", PreferredCaptions{}); !errors.Is(err, ErrNothingDownloaded) {
+	empty := fakeWeb{page: "<html><head><title>Empty</title></head><body>   </body></html>"}
+	if _, err := NewPages(empty).GetText(t.Context(), "https://example.com/post", PreferredCaptions{}); !errors.Is(err, ErrNothingDownloaded) {
 		t.Errorf("GetText(empty prose) = %v, want ErrNothingDownloaded", err)
 	}
 }

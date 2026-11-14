@@ -64,7 +64,10 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		Instructions: []string{importerUseSentence, importerFetchSentence, importerOwnNotesSentence, importerDownloadSentence},
 		Requires:     []string{host.PermissionLinkOpen},
 	}, t.importURL)
-	return registry, err
+	if err != nil {
+		return nil, err
+	}
+	return registry, nil
 }
 
 func (t *Tools) importURL(ctx context.Context, in URLImportInput) (URLImportOutput, error) {
