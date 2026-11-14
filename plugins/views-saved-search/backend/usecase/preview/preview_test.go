@@ -30,7 +30,7 @@ func TestPreviewReturnsNotesAboutTidesAndNoneAboutLighthouses(t *testing.T) {
 	}
 }
 
-func TestNegatedWordsDropsAResultWhoseChunkHoldsTheWordPastItsExcerpt(t *testing.T) {
+func TestNegatedWordsDropsAResultWhoseChunkContainsTheWordPastItsExcerpt(t *testing.T) {
 	filler := strings.Repeat("The quay is quiet at dawn. ", 110)
 	long := "The tide turns at noon. " + filler + "The anchor chain rusts."
 	w := newWorld(t)

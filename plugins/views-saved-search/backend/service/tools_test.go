@@ -110,7 +110,10 @@ func TestPreviewToolReturnsResultsWithTheirKeys(t *testing.T) {
 	if _, hasCount := out["candidateCount"]; !hasCount {
 		t.Errorf("output = %v, want candidateCount", out)
 	}
-	result := results[0].(map[string]any)
+	result, isObject := results[0].(map[string]any)
+	if !isObject {
+		t.Fatalf("results[0] = %v, want an object", results[0])
+	}
 	for key, want := range map[string]any{
 		"path": "Notes/Tides.md", "title": "Tide Tables", "text": "The tide at the quay.", "start": float64(0), "length": float64(21),
 		"line": float64(3), "uri": "numen:Notes%2FTides.md?start=0&length=21", "score": float64(1), "chunkCount": float64(1),

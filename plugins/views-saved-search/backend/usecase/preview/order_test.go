@@ -180,7 +180,7 @@ func TestPreviewOrdersWordsOnlyResultsByWordScore(t *testing.T) {
 	}
 }
 
-func TestPreviewPutsResultsWithAScoreBeforeResultsWithout(t *testing.T) {
+func TestPreviewOrdersResultsWithAScoreBeforeResultsWithout(t *testing.T) {
 	w := newWorld(t)
 	score := func(value float64) *float64 { return &value }
 	w.index(

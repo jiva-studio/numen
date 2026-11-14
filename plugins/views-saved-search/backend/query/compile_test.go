@@ -153,7 +153,7 @@ func TestCompileRefusesATextOverEightThousandOneHundredNinetyTwoBytes(t *testing
 	compile(t, `meaning("`+strings.Repeat("a", 8192)+`")`)
 }
 
-func TestCompileSendsATextAsWritten(t *testing.T) {
+func TestCompileSendsATextVerbatim(t *testing.T) {
 	compiled := compile(t, `words(' "harbor master" NEAR tides ')`)
 
 	if len(compiled.Leaves) != 1 || compiled.Leaves[0].Text != ` "harbor master" NEAR tides ` {
@@ -200,7 +200,7 @@ func TestCompileRefusesPathEndsWith(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesALiteralStandingAlone(t *testing.T) {
+func TestCompileRefusesALoneLiteral(t *testing.T) {
 	for _, text := range []string{`meaning("tides") || true`, `"tides"`} {
 		problems := getProblems(t, text)
 
@@ -210,7 +210,7 @@ func TestCompileRefusesALiteralStandingAlone(t *testing.T) {
 	}
 }
 
-func TestCompileRefusesSeventeenLeaves(t *testing.T) {
+func TestCompileRefusesSeventeenLeafNodes(t *testing.T) {
 	leaves := make([]string, 17)
 	for i := range leaves {
 		leaves[i] = fmt.Sprintf(`meaning("tide %d")`, i)
@@ -246,7 +246,7 @@ func TestCompileRefusesAQueryWithoutAPositiveLeaf(t *testing.T) {
 	}
 }
 
-func TestCompileCollectsDistinctLeavesInOrderOfFirstAppearance(t *testing.T) {
+func TestCompileCollectsDistinctLeafNodesInOrderOfFirstAppearance(t *testing.T) {
 	compiled := compile(t, `meaning("tides") || (words("harbor") && meaning("tides")) || !words("storm")`)
 
 	want := []query.Leaf{
@@ -298,7 +298,7 @@ func hasOperator(node query.Node, operator query.Operator) bool {
 	return false
 }
 
-func TestCompilePushesNegationOverOrToTheLeaves(t *testing.T) {
+func TestCompilePushesNegationOverOrToTheLeafNodes(t *testing.T) {
 	compiled := compile(t, `meaning("tides") && !(meaning("lighthouses") || words("storm"))`)
 
 	if hasOperator(compiled.Root, query.OperatorOr) {
@@ -317,7 +317,7 @@ func TestCompilePushesNegationOverOrToTheLeaves(t *testing.T) {
 	}
 }
 
-func TestCompilePushesNegationOverAndToTheLeaves(t *testing.T) {
+func TestCompilePushesNegationOverAndToTheLeafNodes(t *testing.T) {
 	compiled := compile(t, `meaning("tides") && !(words("storm") && kind == "note")`)
 
 	inner := compiled.Root.Children[len(compiled.Root.Children)-1]
@@ -342,7 +342,7 @@ func TestCompileRemovesDoubleNegation(t *testing.T) {
 	}
 }
 
-func TestCompileGivesEachLeafItsPosition(t *testing.T) {
+func TestCompileAssignsEachLeafItsPosition(t *testing.T) {
 	compiled := compile(t, "meaning(\"tides\")\n  && words(\"harbor\")")
 
 	leaves := collectLeafNodes(compiled.Root)

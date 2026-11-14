@@ -30,7 +30,7 @@ func TestPreviewReturnsTwentyResultsByDefault(t *testing.T) {
 	}
 }
 
-func TestPreviewCutsALimitAboveOneHundred(t *testing.T) {
+func TestPreviewCapsALimitAboveOneHundred(t *testing.T) {
 	w := newWorld(t)
 	w.config.ResultsPerSearch = 300
 	indexHarborLogs(w, 150)
@@ -42,7 +42,7 @@ func TestPreviewCutsALimitAboveOneHundred(t *testing.T) {
 	}
 }
 
-func TestPreviewTakesTheLimitsOfTheSettings(t *testing.T) {
+func TestPreviewUsesTheLimitsOfTheSettings(t *testing.T) {
 	w := newWorld(t)
 	w.config.DefaultLimit = 5
 	w.config.MaxLimit = 8
@@ -157,7 +157,7 @@ func TestPreviewRefusesMoreThanEightPathPrefixes(t *testing.T) {
 	}
 }
 
-func TestDefaultConfigHoldsTheNumbersOfTheOwner(t *testing.T) {
+func TestDefaultConfigContainsTheNumbersOfTheOwner(t *testing.T) {
 	want := preview.Config{
 		DefaultLimit: 20, MaxLimit: 100, ResultsPerSearch: 100, MaxCandidates: 1000, MaxPathPrefixes: 8,
 		RerankedPerResult: 3, MaxReranked: 100, MergeGapBytes: 200, MaxQueryBytes: 16384,

@@ -34,7 +34,7 @@ func isScore(outcome scoring.Outcome, want float64) bool {
 	return outcome.Score != nil && *outcome.Score == want
 }
 
-func TestMeaningHoldsForASimilarityAtTheFloor(t *testing.T) {
+func TestMeaningMatchesASimilarityAtTheFloor(t *testing.T) {
 	at := evaluate(t, `meaning("tides")`, "Notes/Tides.md", similar(0.4))
 	below := evaluate(t, `meaning("tides")`, "Notes/Tides.md", similar(0.39))
 
@@ -54,7 +54,7 @@ func TestMeaningDoesNotHoldForAChunkWithoutAVector(t *testing.T) {
 	}
 }
 
-func TestNegatedMeaningDropsAChunkCloserToItThanToThePositiveLeaves(t *testing.T) {
+func TestNegatedMeaningDropsAChunkCloserToItThanToThePositiveLeafNodes(t *testing.T) {
 	outcome := evaluate(t, `meaning("tides") && !meaning("lighthouses")`, "Notes/Keeper.md", similar(0.5), similar(0.8))
 
 	if outcome.IsMatch {
@@ -62,7 +62,7 @@ func TestNegatedMeaningDropsAChunkCloserToItThanToThePositiveLeaves(t *testing.T
 	}
 }
 
-func TestNegatedMeaningKeepsAChunkCloserToThePositiveLeaves(t *testing.T) {
+func TestNegatedMeaningKeepsAChunkCloserToThePositiveLeafNodes(t *testing.T) {
 	outcome := evaluate(t, `meaning("tides") && !meaning("lighthouses")`, "Notes/Tides.md", similar(0.8), similar(0.5))
 
 	if !outcome.IsMatch || !isScore(outcome, 0.8) {
@@ -106,7 +106,7 @@ func TestNegatedWordsDropsAChunkThatMatches(t *testing.T) {
 	}
 }
 
-func TestAndTakesTheLowerScore(t *testing.T) {
+func TestAndReturnsTheLowerScore(t *testing.T) {
 	outcome := evaluate(t, `meaning("tides") && meaning("harbor")`, "Notes/Harbor.md", similar(0.8), similar(0.6))
 
 	if !outcome.IsMatch || !isScore(outcome, 0.6) {
@@ -122,7 +122,7 @@ func TestAndFailsWhenOneChildFails(t *testing.T) {
 	}
 }
 
-func TestOrTakesTheHigherScoreOfTheMatchingChildren(t *testing.T) {
+func TestOrReturnsTheHigherScoreOfTheMatchingChildren(t *testing.T) {
 	outcome := evaluate(t, `(meaning("tides") && words("ferry")) || meaning("storms")`, "Logs/Storm.md",
 		similar(0.9), matching(false), similar(0.6))
 
@@ -131,7 +131,7 @@ func TestOrTakesTheHigherScoreOfTheMatchingChildren(t *testing.T) {
 	}
 }
 
-func TestOrTakesTheHigherOfTwoMatchingScores(t *testing.T) {
+func TestOrReturnsTheHigherOfTwoMatchingScores(t *testing.T) {
 	outcome := evaluate(t, `meaning("tides") || meaning("storms")`, "Logs/Storm.md", similar(0.5), similar(0.7))
 
 	if !outcome.IsMatch || !isScore(outcome, 0.7) {
@@ -139,7 +139,7 @@ func TestOrTakesTheHigherOfTwoMatchingScores(t *testing.T) {
 	}
 }
 
-func TestWordsAloneGivesNoScore(t *testing.T) {
+func TestWordsAloneReturnsNoScore(t *testing.T) {
 	outcome := evaluate(t, `words("harbor")`, "Notes/Harbor.md", matching(true))
 
 	if !outcome.IsMatch || outcome.Score != nil {
@@ -147,7 +147,7 @@ func TestWordsAloneGivesNoScore(t *testing.T) {
 	}
 }
 
-func TestAndOfMeaningAndWordsTakesTheScoreOfMeaning(t *testing.T) {
+func TestAndOfMeaningAndWordsReturnsTheScoreOfMeaning(t *testing.T) {
 	outcome := evaluate(t, `words("harbor") && meaning("tides")`, "Notes/Harbor.md", matching(true), similar(0.7))
 
 	if !outcome.IsMatch || !isScore(outcome, 0.7) {

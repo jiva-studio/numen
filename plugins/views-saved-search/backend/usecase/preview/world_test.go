@@ -22,10 +22,9 @@ const (
 	recipe    = "harbor-recipe"
 )
 
-// The fake model gives a text one dimension for each topic, the count of the topic's word in it.
-var topics = []string{"tide", "lighthouse", "storm", "harbor"}
-
 func embedByTopic(text string) []float32 {
+	// The fake model gives a text one dimension for each topic, the count of the topic's word in it.
+	topics := []string{"tide", "lighthouse", "storm", "harbor"}
 	lower := strings.ToLower(text)
 	vector := make([]float32, len(topics))
 	hasTopic := false
@@ -108,7 +107,7 @@ func (s *standIn) Rerank(_ context.Context, _ connection.Call, request *llm.Rera
 		result.Scores = append(result.Scores, s.scores[document])
 	}
 	if s.count > 0 {
-		result.Scores = result.Scores[:s.count]
+		result.Scores = result.GetScores()[:s.count]
 	}
 	return result, nil
 }
@@ -128,9 +127,9 @@ type world struct {
 	config  preview.Config
 }
 
-// newWorld is a vault with a model and no row for reranking.
 func newWorld(t *testing.T) *world {
 	t.Helper()
+	// A vault with a model and no row for reranking.
 	search := hosttest.NewSearch(testVault)
 	search.SetModel(hosttest.SearchModel{Name: "harbor-model", Recipe: recipe, FloorHint: 0.4})
 	search.SetEmbedder(embedByTopic)
@@ -143,8 +142,8 @@ func newWorld(t *testing.T) *world {
 	}
 }
 
-// withReranker gives the plugin one row for reranking, served by the stand-in.
 func (w *world) withReranker(scores map[string]float32) *standIn {
+	// One row for reranking, served by the stand-in.
 	w.standIn = &standIn{scores: scores}
 	w.caller = llmtest.NewCaller(llm.Provide(nil, llm.Roles{Reranker: w.standIn}), connection.Call{ConnectionID: "harbor-reranker"})
 	return w.standIn

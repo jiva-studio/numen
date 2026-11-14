@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestFilterTakesKindsFromTopLevelConjuncts(t *testing.T) {
+func TestFilterExtractsKindsFromTopLevelConjuncts(t *testing.T) {
 	for text, want := range map[string][]string{
 		`kind == "note" && meaning("tides")`:                             {"note"},
 		`meaning("tides") && kind in ["pdf", "audio"]`:                   {"file"},
@@ -38,7 +38,7 @@ func TestFilterIgnoresATermThatIsTheWholeOr(t *testing.T) {
 	}
 }
 
-func TestFilterTakesPrefixesFromATopLevelOrOfPaths(t *testing.T) {
+func TestFilterExtractsPrefixesFromATopLevelOrOfPaths(t *testing.T) {
 	filter := compile(t, `(path.startsWith("Atlases/") || path.startsWith("Logs/")) && meaning("tides")`).Filter
 
 	if !slices.Equal(filter.Prefixes, []string{"Atlases/", "Logs/"}) {
@@ -46,7 +46,7 @@ func TestFilterTakesPrefixesFromATopLevelOrOfPaths(t *testing.T) {
 	}
 }
 
-func TestFilterTakesThePrefixOfATopLevelPathTerm(t *testing.T) {
+func TestFilterExtractsThePrefixOfATopLevelPathTerm(t *testing.T) {
 	filter := compile(t, `meaning("tides") && path.startsWith("Logs/")`).Filter
 
 	if !slices.Equal(filter.Prefixes, []string{"Logs/"}) {
@@ -54,7 +54,7 @@ func TestFilterTakesThePrefixOfATopLevelPathTerm(t *testing.T) {
 	}
 }
 
-func TestFilterTakesNoPrefixFromANegatedPathOrAMixedOr(t *testing.T) {
+func TestFilterExtractsNoPrefixFromANegatedPathOrAMixedOr(t *testing.T) {
 	for _, text := range []string{
 		`meaning("tides") && !path.startsWith("Archive/")`,
 		`meaning("tides") && (path.startsWith("Logs/") || words("harbor"))`,
