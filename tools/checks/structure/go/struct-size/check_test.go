@@ -137,9 +137,8 @@ type Flat struct{ a, b, c int }
 	}
 }
 
-// Every type of the container, with or without methods, counts its direct and embedded fields and not the
-// fields of the groups it names; a type with behavior outside the container counts the leaf fields of its groups.
-func TestStructSizeRule_CountsDirectFieldsInTheContainerAndLeafFieldsElsewhere(t *testing.T) {
+// A container type counts the leaf fields of the groups it names, like a type of any other layer.
+func TestStructSizeRule_CountsLeafFieldsOfGroupsInTheContainer(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
 		"container/wiring.go": `package container
 
@@ -153,50 +152,17 @@ type Holder struct {
 	C C
 }
 
-type EmbeddingHolder struct {
-	A
-	B
-	C
-}
-
-type Builder struct {
+type Small struct {
 	A A
-	B B
-	C C
+	x int
 }
-
-func (Builder) Build() {}
-
-type Wide struct{ a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13 int }
-
-type WideBuilder struct{ a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13 int }
-
-func (WideBuilder) Build() {}
-`,
-		"adapter/hidden/hidden.go": `package hidden
-
-type G1 struct{ a1, a2, a3, a4, a5, a6, a7, a8, a9, a10 int }
-type G2 struct{ b1, b2, b3, b4, b5, b6, b7, b8, b9, b10 int }
-type G3 struct{ c1, c2, c3, c4, c5, c6, c7, c8, c9, c10 int }
-
-type Hider struct {
-	G1 G1
-	G2 G2
-	G3 G3
-}
-
-func (Hider) Serve() {}
 `,
 	})
 	getLimit := func(path string) (structLimit, bool) {
-		return structLimit{methods: 100, fields: 12, holdsWiring: path == "fixture/container"}, strings.HasPrefix(path, "fixture/")
+		return structLimit{methods: 100, fields: 12}, path == "fixture/container"
 	}
 	found, _ := getOversizedTypes(load.LoadFixture(t, dir), getLimit)
-	want := []string{
-		"hidden.go:7 hidden.Hider has 30 fields, more than 12",
-		"wiring.go:27 container.Wide has 13 fields, more than 12",
-		"wiring.go:29 container.WideBuilder has 13 fields, more than 12",
-	}
+	want := []string{"wiring.go:7 container.Holder has 15 fields, more than 12"}
 	if got := load.FormatFindings(found); !slices.Equal(got, want) {
 		t.Errorf("the rule rejects %v, want %v", got, want)
 	}
