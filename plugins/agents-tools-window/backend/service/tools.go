@@ -21,7 +21,8 @@ type Host struct {
 	Window host.Window
 }
 
-// RegisterTools registers all window interaction and edit preview tools on the given registry.
+// RegisterTools registers all window interaction and edit preview tools on the given registry. The tab
+// list gives a tab no place when its reader reported none or reported a place in another shape.
 func RegisterTools(registry *tools.Registry, on Host) error {
 	control := window.NewControl(on.Window)
 	creator := editpreview.NewCreator(newPreviewFiles(on.Files))
@@ -104,8 +105,6 @@ func newTabInfo(tab host.OpenTab, activeID string) api.TabInfo {
 	}
 }
 
-// newPlace reads the place a reader reported. A tab whose reader reported none, or a place in another
-// shape, has no place.
 func newPlace(reported string) *api.Place {
 	var place readerplace.Place
 	if reported == "" || json.Unmarshal([]byte(reported), &place) != nil || place == (readerplace.Place{}) {

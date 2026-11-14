@@ -4,16 +4,15 @@
  * `libs/plugin/sdk-go/contracts/readerplace`.
  */
 
-/** The place a reader tab shows. A field the reader does not have is left out. */
+/**
+ * The place a reader tab shows. A field the reader does not have is left out. `page` and `pageCount`
+ * belong to a PDF and `page` counts from 1; `positionSeconds` is the time of a recording from its start;
+ * `cfi` is the EPUB CFI of the place shown and `chapter` the table-of-contents title of the EPUB there.
+ */
 export interface Place {
-  /** The page a PDF shows, from 1. */
   readonly page?: number
-  /** The number of pages of a PDF. */
   readonly pageCount?: number
-  /** The time of a recording, in seconds from its start. */
   readonly positionSeconds?: number
-  /** The EPUB CFI of the place shown. */
   readonly cfi?: string
-  /** The table-of-contents title of an EPUB at the place shown. */
   readonly chapter?: string
 }
