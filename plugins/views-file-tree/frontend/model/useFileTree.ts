@@ -6,7 +6,7 @@ import {
   formatErrorMessage,
   getRenamedPath,
   type PathRename,
-  type Unvalidated,
+  type JsonValue,
 } from '@numen/plugin-sdk'
 import type { Entry, FileTree, Folders, ListingRow } from '../types'
 
@@ -34,7 +34,7 @@ export const getParentFolders = (path: string): readonly string[] => {
 /** How the entries of a folder are ordered in the rows of the tree. */
 export type SortBy = 'name' | 'modified'
 
-export const readSortBy = (_value: Unvalidated): SortBy => {
+export const readSortBy = (_value: JsonValue | undefined): SortBy => {
   throw new Error('not implemented')
 }
 
