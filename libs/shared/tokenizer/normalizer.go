@@ -118,23 +118,46 @@ func buildReplace(s step) (normalizer, error) {
 	}
 }
 
+// posixClass is a POSIX class only inside a bracket class. RE2 matches it as ASCII, Oniguruma as Unicode.
+var posixClass = regexp.MustCompile(`^\[:\^?[a-z]+:\]`)
+
 func findUnicodeClass(pattern string) string {
-	for i := 0; i < len(pattern)-1; i++ {
-		if pattern[i] != '\\' {
-			continue
-		}
-		i++
-		if pattern[i] == 'Q' {
-			end := strings.Index(pattern[i:], `\E`)
-			if end < 0 {
-				return ""
+	isInClass := false
+	for i := 0; i < len(pattern); i++ {
+		switch {
+		case pattern[i] == '\\' && i+1 < len(pattern):
+			i++
+			if pattern[i] == 'Q' {
+				end := strings.Index(pattern[i:], `\E`)
+				if end < 0 {
+					return ""
+				}
+				i += end + 1
+				continue
 			}
-			i += end + 1
-			continue
-		}
-		if strings.IndexByte("sSwWdDbB", pattern[i]) >= 0 {
-			return pattern[i-1 : i+1]
+			if strings.IndexByte("sSwWdDbB", pattern[i]) >= 0 {
+				return pattern[i-1 : i+1]
+			}
+		case isInClass:
+			if class := posixClass.FindString(pattern[i:]); class != "" {
+				return class
+			}
+			isInClass = pattern[i] != ']'
+		case pattern[i] == '[':
+			isInClass = true
+			i = skipClassStart(pattern, i+1) - 1
 		}
 	}
 	return ""
+}
+
+func skipClassStart(pattern string, i int) int {
+	if i < len(pattern) && pattern[i] == '^' {
+		i++
+	}
+	// A ] that opens a class is a literal, not its end.
+	if i < len(pattern) && pattern[i] == ']' {
+		i++
+	}
+	return i
 }

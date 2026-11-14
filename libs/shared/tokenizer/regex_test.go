@@ -24,3 +24,12 @@ func TestLoadAcceptsAReplaceRegexWithAnEscapedClassLetter(t *testing.T) {
 		}
 	}
 }
+
+// A colon in a class or an escaped bracket is no POSIX class, so RE2 and Hugging Face agree.
+func TestLoadAcceptsAReplaceRegexWithAColonThatIsNoPOSIXClass(t *testing.T) {
+	for _, pattern := range []string{`[:]`, `\[:space:\]`} {
+		if _, err := loadWithError(t, writeReplaceRegex(t, pattern)); err != nil {
+			t.Errorf("Load with the Replace regex %s: %v, want no error", pattern, err)
+		}
+	}
+}

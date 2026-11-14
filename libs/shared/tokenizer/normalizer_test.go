@@ -37,9 +37,10 @@ func TestEncodeInsertsTheReplacementOfARegexLiterally(t *testing.T) {
 }
 
 // RE2 reads \s, \w, \d and \b as ASCII, Oniguruma in Hugging Face as Unicode: a no-break space
-// would be replaced there and kept here, so the ids would differ.
+// would be replaced there and kept here, so the ids would differ. POSIX classes such as [:space:]
+// differ the same way.
 func TestLoadRefusesAReplaceRegexWithAUnicodeClassAndNamesThePattern(t *testing.T) {
-	for _, pattern := range []string{`\s+`, `\w`, `\d{2}`, `\bx`, `[\s,]`} {
+	for _, pattern := range []string{`\s+`, `\w`, `\d{2}`, `\bx`, `[\s,]`, `[[:space:]]`, `[[:alpha:]]+`, `[[:^digit:]]`} {
 		path := writeVariant(t, func(file map[string]any) {
 			file["normalizer"] = map[string]any{"type": "Replace", "pattern": map[string]any{"Regex": pattern}, "content": "▁"}
 		})
