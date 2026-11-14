@@ -418,7 +418,7 @@ describe('the work behind the window', () => {
     }
     vi.useFakeTimers()
     let shell: ReturnType<typeof createWindow> | undefined
-    let initialListed: readonly { label: string; state: string }[] = []
+    let initialListed: readonly { label: string; state: string }[] | undefined
     const wrapper = mount(
       defineComponent({
         setup: () => {
