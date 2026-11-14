@@ -3,12 +3,16 @@
  * services a plugin is given, made without the host: the services reach the commands through the
  * port, which the palettes connect once they are made.
  */
-import { createNoticeQueue } from '@numen/workbench'
+import type { PluginStatus } from '@numen/plugin-loader'
+import { createNoticeQueue, type WindowFrame } from '@numen/workbench'
 import { createCommandTitleReader } from '@/entities/command'
 import { readNote, writeNote } from '@/entities/note'
+import type { SettingsStore } from '@/entities/settings'
 import { useDeclaredCommands } from '@/features/plugin-commands'
 import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
 import { syncKeybindings } from '@/features/hotkeys'
+import type { CommandRegistry } from '@/shared/model/command'
+import type { MessageLog } from '@/shared/model/notices/messages'
 import type { createWindowBase } from './createWindowBase'
 import { createPluginDeclarations } from './createPluginDeclarations'
 import { createPluginHostSupport, createServiceParts } from './createPluginHost'
@@ -23,7 +27,11 @@ type WindowBase = ReturnType<typeof createWindowBase>
 
 /** What the plugins of the window read of the base. */
 export interface WindowPluginsDeps {
-  readonly foundation: WindowBase['foundation']
+  readonly log: MessageLog
+  readonly rest: SettingsStore
+  readonly frame: WindowFrame
+  readonly status: PluginStatus
+  readonly registry: CommandRegistry
   readonly tabs: WindowBase['tabs']
   readonly vault: WindowBase['vault']
   readonly windowSettings: WindowBase['windowSettings']
@@ -32,8 +40,8 @@ export interface WindowPluginsDeps {
 }
 
 export function createWindowPlugins(deps: WindowPluginsDeps) {
-  const { foundation, tabs, vault, windowSettings, getTarget, appCommands } = deps
-  const { log, rest, frame, status, registry } = foundation
+  const { log, rest, frame, status, registry } = deps
+  const { tabs, vault, windowSettings, getTarget, appCommands } = deps
   const { windowTabs, tabOpeners } = tabs
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()

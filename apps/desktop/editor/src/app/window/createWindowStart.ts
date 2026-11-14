@@ -2,6 +2,8 @@
  * The keys of the window and its start: the parts that connect the others to what the person does.
  */
 import type { PluginLoader } from '@numen/plugin-loader'
+import type { WindowFrame } from '@numen/workbench'
+import type { ConnectionStore } from '@/entities/connection'
 import type { SettingsStore } from '@/entities/settings'
 import type { createWindowLayout, WindowTabs } from '@/entities/tab'
 import type { useVaults } from '@/entities/vault'
@@ -10,8 +12,9 @@ import { createLayoutStart, createPluginStart, createWindowBootstrap } from '@/f
 import type { createWindowPalette } from '@/features/command-palette'
 import { createAppKeyRunner, createKeyHandler, useAppHotkeys } from '@/features/hotkeys'
 import type { createPluginCommandPort, DeclaredCommands } from '@/features/plugin-commands'
-import type { CommandTarget } from '@/shared/model/command'
-import type { MessageWriter } from '@/shared/model/notices/messages'
+import type { Emitter } from '@/shared/lib/emitter'
+import type { CommandTarget, SettingsRequest } from '@/shared/model/command'
+import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
 import type { createWindowBase } from './createWindowBase'
 import { createWindowViews } from './createPluginHost'
 import type { createWindowPalettes } from './createWindowPalettes'
@@ -93,7 +96,12 @@ type WindowBase = ReturnType<typeof createWindowBase>
 
 /** What the start of the window reads of the base, the plugins and the palettes. */
 export interface WindowStartDeps {
-  readonly foundation: WindowBase['foundation']
+  readonly log: MessageLog
+  readonly rest: SettingsStore
+  readonly connections: ConnectionStore
+  readonly frame: WindowFrame
+  readonly writeMessage: MessageWriter
+  readonly settingsRequests: Pick<Emitter<SettingsRequest>, 'subscribe'>
   readonly tabs: WindowBase['tabs']
   readonly tabParts: WindowBase['tabParts']
   readonly vault: WindowBase['vault']
@@ -104,8 +112,8 @@ export interface WindowStartDeps {
 }
 
 export function createWindowStart(deps: WindowStartDeps) {
-  const { foundation, tabs, tabParts, vault, windowSettings, getTarget, plugins, palettes } = deps
-  const { log, rest, connections, frame, writeMessage, settingsRequests } = foundation
+  const { log, rest, connections, frame, writeMessage, settingsRequests } = deps
+  const { tabs, tabParts, vault, windowSettings, getTarget, plugins, palettes } = deps
   const { windowTabs } = tabs
   const { pluginHost, pluginLoader, declaredCommands } = plugins
   const { editing, window, vaults } = vault

@@ -13,6 +13,7 @@ import { watchCommandLists } from '@/features/plugin-commands'
 import { createCommandIconFinder, createSearchMenu } from '@/features/plugin-host'
 import type { CommandRegistry, Notes, SettingsRequest } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
+import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import { createHostConnection } from './createHostConnection'
 import { createPluginPalette } from './createPluginPalette'
@@ -50,7 +51,10 @@ type WindowPlugins = ReturnType<typeof createWindowPlugins>
 
 /** What the palettes of the window read of the base and the plugins. */
 export interface WindowPalettesDeps {
-  readonly foundation: WindowBase['foundation']
+  readonly rest: Pick<SettingsStore, 'state' | 'read'>
+  readonly writeMessage: MessageWriter
+  readonly registry: CommandRegistry
+  readonly openSettings: (request: SettingsRequest) => void
   readonly tabs: WindowBase['tabs']
   readonly vault: WindowBase['vault']
   readonly windowSettings: WindowBase['windowSettings']
@@ -60,24 +64,24 @@ export interface WindowPalettesDeps {
 }
 
 export function createWindowPalettes(deps: WindowPalettesDeps) {
-  const { foundation, vault, windowSettings, getTarget, appCommands, plugins } = deps
-  const { rest, writeMessage } = foundation
+  const { rest, writeMessage, registry, openSettings } = deps
+  const { vault, windowSettings, getTarget, appCommands, plugins } = deps
   const { pluginHost, declaredCommands, hostPort } = plugins
   const { windowTabs } = deps.tabs
   const { commandDeps, searchRequests } = createPaletteBase({
     windowTabs,
     reached: vault.editing.reached,
     settingPalette: windowSettings.settingPalette,
-    registry: foundation.registry,
+    registry,
     writeMessage,
-    openSettings: foundation.settingsRequests.emit,
+    openSettings,
   })
   const pluginPalette = createPluginPalette({
     pluginHost,
     declaredCommands,
     itemLists: vault.itemLists,
     commandDeps,
-    registry: foundation.registry,
+    registry,
     appCommands,
     getTarget,
     windowSettings,

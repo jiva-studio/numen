@@ -1,21 +1,35 @@
 /**
- * The base of the window: what every part reads, the tabs, the parts that read the vault, the
- * settings of the window and the commands of the features.
+ * The base of the window: the log of messages, the store of the settings, the frame and the
+ * registry of the commands, then the tabs, the parts that read the vault, the settings of the
+ * window and the commands of the features.
  */
+import { loadFrameRuntime, useWindowFrame } from '@numen/workbench'
+import { createConnectionStore } from '@/entities/connection'
+import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { measureTabs } from '@/entities/tab'
+import { createTargetResolver } from '@/features/command-target'
+import { createWindowPluginStatus } from '@/features/plugin-host'
 import { createWindowSettings } from '@/features/settings-commands'
 import { createTabCommandsDeps } from '@/features/tab-commands'
-import { createTargetResolver } from '@/features/command-target'
+import { createEmitter } from '@/shared/lib/emitter'
+import { createCommandRegistry, type SettingsRequest } from '@/shared/model/command'
+import { createMessageLog } from '@/shared/model/notices/messages'
 import { WORDS as words } from '@/shared/ui/words'
 import { collectFeatureCommands } from './createFeatureCommands'
 import { createTabsPart } from './createTabsPart'
 import { createVaultServices } from './createVaultServices'
-import { createWindowFoundation } from './createWindowFoundation'
 import { createWindowTabParts } from './createWindowTabParts'
 
 export function createWindowBase() {
-  const foundation = createWindowFoundation()
-  const { log, rest, writeMessage, status, registry, settingsRequests } = foundation
+  const log = createMessageLog()
+  const rest = createSettingsStore(SETTINGS_WORDS, log.getWriter('configured'))
+  const connections = createConnectionStore(log.getWriter('connections'))
+  const writeMessage = log.getWriter('command')
+  const frame = useWindowFrame(loadFrameRuntime)
+  const status = createWindowPluginStatus(rest)
+  const registry = createCommandRegistry()
+  /** The settings a part asks for: the page of a plugin and a setting of it, or the settings tab. */
+  const settingsRequests = createEmitter<SettingsRequest>()
   const tabs = createTabsPart({
     writeMessage,
     rest,
@@ -43,7 +57,14 @@ export function createWindowBase() {
   )
   registry.registerAll(features.handlers)
   return {
-    foundation,
+    log,
+    rest,
+    connections,
+    writeMessage,
+    frame,
+    status,
+    registry,
+    settingsRequests,
     tabs,
     vault,
     tabParts,
@@ -51,7 +72,7 @@ export function createWindowBase() {
     getTarget: createTargetResolver(windowTabs, vaults, window.health),
     windowSettings: createWindowSettings({
       rest,
-      connections: foundation.connections,
+      connections,
       words,
       log,
       onSizeChanged: () => measureTabs(windowTabs),

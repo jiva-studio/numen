@@ -10,9 +10,14 @@ import { createWindowStart } from './createWindowStart'
 /** Everything the window is made of, made once and handed to what draws it. */
 export const createWindow = () => {
   const base = createWindowBase()
-  const { foundation, tabs, tabParts, vault, windowSettings, getTarget, appCommands } = base
+  const { log, rest, connections, frame, writeMessage, status, registry, settingsRequests } = base
+  const { tabs, tabParts, vault, windowSettings, getTarget, appCommands } = base
   const plugins = createWindowPlugins({
-    foundation,
+    log,
+    rest,
+    frame,
+    status,
+    registry,
     tabs,
     vault,
     windowSettings,
@@ -20,7 +25,10 @@ export const createWindow = () => {
     appCommands,
   })
   const palettes = createWindowPalettes({
-    foundation,
+    rest,
+    writeMessage,
+    registry,
+    openSettings: settingsRequests.emit,
     tabs,
     vault,
     windowSettings,
@@ -29,7 +37,12 @@ export const createWindow = () => {
     plugins,
   })
   const { views, tabMenu, bootstrap } = createWindowStart({
-    foundation,
+    log,
+    rest,
+    connections,
+    frame,
+    writeMessage,
+    settingsRequests,
     tabs,
     tabParts,
     vault,
