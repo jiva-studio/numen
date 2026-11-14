@@ -152,7 +152,7 @@ function formatValue(val: string) { ... }
 
 ## 10. Code formatting (Prettier & gofmt)
 
-_TypeScript, Vue, JSON and CSS are formatted with Prettier._ Prettier is configured in `prettier.config.mjs`. Format with `npm run format` at the repository root; the check is `npm run format:check`. Prettier's use is mandatory, and a change that is not Prettier-clean is rejected. Today `format:check` runs by hand and through the pre-commit hook, which runs `npx prettier --check` on the staged files; no CI workflow and no make target runs it.
+_TypeScript, Vue, JSON and CSS are formatted with Prettier._ Prettier is configured in `prettier.config.mjs`. Format with `npm run format` at the repository root; the check is `npm run format:check`. Prettier's use is mandatory, and a change that is not Prettier-clean is rejected. Today `format:check` runs by hand; no git hook, CI workflow or make target runs it.
 
 Go code is formatted with `gofmt` (`gofmt -l .`).
 

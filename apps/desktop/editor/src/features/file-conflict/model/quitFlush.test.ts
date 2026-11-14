@@ -7,10 +7,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/core-client'
 
-import { openNotes } from '@/entities/note'
+import { useOpenNotes, flattenOpenNotes } from '@/entities/note'
 import { answerNotes, type NoteAnswer } from '@/testing/noteCore'
 import { createFileFlush, type Conflict, type FlushDeps } from './flush'
 import { createNoteFlushHandler } from './noteFlush'
+
+const openNotes = (how?: Parameters<typeof useOpenNotes>[0]) => flattenOpenNotes(useOpenNotes(how))
 
 type FlushResult = NonNullable<Parameters<FlushDeps['reportFlush']>[1]>
 
