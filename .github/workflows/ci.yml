@@ -4,10 +4,11 @@ name: CI
 # finds the areas a pull request or a push touches from .github/filters.yml; the nightly and a
 # manual run take every area. Each called workflow runs the jobs of its areas. The CI job is the
 # one required check.
+# A green run of a ready pull request starts the Claude review (claude-review.yml).
 on:
   # A new title is checked again, so `edited` is listed beside the default types.
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened, edited, ready_for_review]
   push:
     branches: [main]
   # mutation.yml starts at 01:23.
@@ -47,6 +48,7 @@ jobs:
       plugin_dirs: ${{ steps.areas.outputs.plugin_dirs }}
       e2e: ${{ steps.areas.outputs.e2e }}
       platforms: ${{ steps.platforms.outputs.matrix }}
+      draft: ${{ steps.draft.outputs.draft }}
     steps:
       # The filters, the plugin manifests and the end-to-end selection; a pull request's changed
       # files come from the API, a push's from git.
@@ -76,6 +78,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           FILTERS: ${{ toJSON(steps.filter.outputs) }}
         run: .github/scripts/areas.sh | tee -a "$GITHUB_OUTPUT"
+
+      # Read live: the payload of a push made just before `gh pr ready` still says draft, and its
+      # run can be the one that cancels the run of `ready_for_review`.
+      - id: draft
+        if: github.event_name == 'pull_request'
+        env:
+          PULL: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: echo "draft=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PULL" --jq .draft)" | tee -a "$GITHUB_OUTPUT"
 
       - id: platforms
         env:
@@ -141,10 +152,11 @@ jobs:
   e2e:
     name: End-to-End
     needs: [changes]
-    if: needs.changes.outputs.e2e != 'none'
+    if: needs.changes.outputs.e2e != 'none' && needs.changes.outputs.draft != 'true'
     uses: ./.github/workflows/desktop-e2e.yml
     with:
       scope: ${{ needs.changes.outputs.e2e }}
+      engines: ${{ github.event_name == 'pull_request' && 'webkit' || 'chromium webkit' }}
 
   # Fails when a job failed or was cancelled, and when the areas were not found: every other job
   # is then skipped.
