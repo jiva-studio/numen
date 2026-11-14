@@ -28,7 +28,10 @@ export function createVaultServices(deps: VaultServicesDeps) {
   const { log, windowTabs, tabOpeners, navigation } = deps
   const writeMessage = log.getWriter('command')
   const noteEditors = createNoteEditors({ log, windowTabs })
-  const editing = { ...noteEditors, reached: createNotes([noteEditors.store], tabOpeners) }
+  const editing = {
+    ...noteEditors,
+    reached: createNotes([noteEditors.store], tabOpeners, writeMessage),
+  }
   const renames = createEmitter<readonly PathRename[]>()
   const vaultChanges = createEmitter<VaultChangeEvent>()
   const window = useWindowDisplay(
