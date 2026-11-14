@@ -89,7 +89,7 @@ func (l *Links) reportBackgroundError(ctx context.Context, work string, link Lin
 }
 
 func (l *Links) reportError(what string, err error) {
-	if l.host.Report != nil && err != nil {
+	if l.host.Report != nil {
 		l.host.Report(what, err)
 	}
 }

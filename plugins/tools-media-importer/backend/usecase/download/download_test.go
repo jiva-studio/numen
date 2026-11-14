@@ -16,7 +16,7 @@ import (
 
 // A program run carries the environment it is given.
 func TestProgramBuildCommandSetsEnvironment(t *testing.T) {
-	if env := (Tool{}).getEnvironment(nil); env != nil {
+	if env := (Tool{}).getEnvironment([]string{"BASE=1"}); env != nil {
 		t.Errorf("empty tool environment = %v, want nil", env)
 	}
 	configured := (Tool{Environment: map[string]string{"NUMEN_K": "val"}}).getEnvironment([]string{"BASE=1"})
@@ -50,7 +50,7 @@ func TestRunRoutesOutputToCustomWriter(t *testing.T) {
 	}
 }
 
-// A failed run wraps the process exit error.
+// A failed run wraps the process exit error, or returns the context error when the context is canceled.
 func TestRunWrapsExecutionError(t *testing.T) {
 	_, err := run(t.Context(), process.Runner{}, program{command: []string{"sh", "-c", `echo failed >&2; exit 2`}}, nil)
 	if err == nil {
@@ -59,7 +59,30 @@ func TestRunWrapsExecutionError(t *testing.T) {
 	if !errors.As(err, new(*exec.ExitError)) {
 		t.Errorf("error %v does not wrap *exec.ExitError", err)
 	}
+	canceledCtx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := run(canceledCtx, &stubRunner{runErr: errors.New("killed")}, program{command: []string{"sh"}}, nil); !errors.Is(err, context.Canceled) {
+		t.Errorf("run with canceled context = %v, want context.Canceled", err)
+	}
 }
+
+type stubRunner struct {
+	environCalls int
+	runErr       error
+}
+
+func (r *stubRunner) LookPath(file string) (string, error) { return "/usr/bin/" + file, nil }
+
+func (r *stubRunner) Environ() []string {
+	r.environCalls++
+	return []string{"BASE=x"}
+}
+
+func (r *stubRunner) Run(context.Context, []string, []string, io.Writer, ...string) ([]byte, string, error) {
+	return nil, "failed", r.runErr
+}
+
+func (r *stubRunner) ReportError(string, error) {}
 
 // A program that produces no output reports that it printed nothing.
 func TestGetLastLine_ReturnsFallbackWhenEmpty(t *testing.T) {
@@ -84,6 +107,19 @@ func TestResolveProgramPrecedence(t *testing.T) {
 	if got := resolveProgram(Tool{}, "no-such-numen-tool", process.Runner{}); got.isPresent() {
 		t.Errorf("missing tool resolved to %v", got.command)
 	}
+	if got := resolveProgram(Tool{}, "sh", nil); got.isPresent() {
+		t.Errorf("nil runner resolved to %v", got.command)
+	}
+	if got := resolveProgram(Tool{Command: []string{"/bin/sh"}, Environment: map[string]string{"A": "1"}}, "sh", nil); !slices.Equal(got.env, []string{"A=1"}) {
+		t.Errorf("nil runner with env = %v, want [A=1]", got.env)
+	}
+	sr := &stubRunner{}
+	if got := resolveProgram(Tool{Command: []string{"/bin/sh"}}, "sh", sr); got.env != nil || sr.environCalls != 0 {
+		t.Errorf("empty env called Environ %d times, env=%v", sr.environCalls, got.env)
+	}
+	if got := resolveProgram(Tool{Command: []string{"/bin/sh"}, Environment: map[string]string{"A": "1"}}, "sh", sr); !slices.Equal(got.env, []string{"BASE=x", "A=1"}) || sr.environCalls != 1 {
+		t.Errorf("non-empty env = %v, environCalls=%d", got.env, sr.environCalls)
+	}
 }
 
 func TestEmptyDownloaderRejectsAllOperationsWithNoTool(t *testing.T) {
@@ -103,29 +139,72 @@ func TestEmptyDownloaderRejectsAllOperationsWithNoTool(t *testing.T) {
 }
 
 type fakeWeb struct {
-	page string
+	page     string
+	err      error
+	readErr  error
+	closeErr error
 }
 
+type fakePageReader struct {
+	io.Reader
+	readErr  error
+	closeErr error
+}
+
+func (r fakePageReader) Read(p []byte) (int, error) {
+	if r.readErr != nil {
+		return 0, r.readErr
+	}
+	return r.Reader.Read(p)
+}
+
+func (r fakePageReader) Close() error { return r.closeErr }
+
 func (w fakeWeb) Fetch(context.Context, string) (io.ReadCloser, error) {
-	return io.NopCloser(strings.NewReader(w.page)), nil
+	if w.err != nil {
+		return nil, w.err
+	}
+	return fakePageReader{Reader: strings.NewReader(w.page), readErr: w.readErr, closeErr: w.closeErr}, nil
 }
 
 func TestPagesProviderGetsTheArticleText(t *testing.T) {
-	pages := NewPages(fakeWeb{page: "<html><head><title>T</title></head><body><article><p>Readability body text here.</p></article></body></html>"})
+	validHTML := "<html><head><title>T</title></head><body><article><p>Readability body text here.</p></article></body></html>"
+	pages := NewPages(fakeWeb{page: validHTML})
 	if !pages.CanHandle("https://example.com/article") || pages.CanHandle("https://www.youtube.com/watch?v=tidalmill01") {
 		t.Fatal("PageProvider.CanHandle misclassified site")
 	}
 	if isVideoSite("http://\x00") {
 		t.Fatal("invalid URL treated as video site")
 	}
-	if y := newYtDLP(Config{}, process.Runner{}, nil, nil); y.probeTimeout != 2*time.Minute {
+	y := newYtDLP(Config{Video: Tool{Command: []string{"sh", "-c", "echo 2025.01.01"}}}, process.Runner{}, nil, nil)
+	if y.probeTimeout != 2*time.Minute {
 		t.Errorf("probeTimeout = %v, want 2m", y.probeTimeout)
+	}
+	if got := y.GetDownloadModel("https://youtu.be/abc").Version; got != "2025.01.01" {
+		t.Errorf("ytDLP version = %q, want 2025.01.01", got)
 	}
 	text, err := pages.GetText(t.Context(), "https://example.com/post", PreferredCaptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if text.Title != "T" || !strings.Contains(text.Prose, "Readability body text here.") {
-		t.Errorf("GetText = %+v, want title T and the body text", text)
+	if text.Title != "T" || text.Producer != "article" || text.Length != 0 || !strings.Contains(text.Prose, "Readability body text here.") {
+		t.Errorf("GetText = %+v, want title T, producer article, length 0, and the body text", text)
+	}
+	if _, err := pages.GetText(t.Context(), "://bad-url", PreferredCaptions{}); err == nil || errors.Is(err, ErrNothingDownloaded) {
+		t.Errorf("GetText(bad url) = %v, want URL parse error", err)
+	}
+	fetchErr := errors.New("fetch failed")
+	if _, err := NewPages(fakeWeb{err: fetchErr}).GetText(t.Context(), "https://example.com/post", PreferredCaptions{}); !errors.Is(err, fetchErr) {
+		t.Errorf("GetText(fetchErr) = %v, want %v", err, fetchErr)
+	}
+	closeErr := errors.New("close failed")
+	if _, err := NewPages(fakeWeb{page: validHTML, closeErr: closeErr}).GetText(t.Context(), "https://example.com/post", PreferredCaptions{}); !errors.Is(err, closeErr) {
+		t.Errorf("GetText(closeErr) = %v, want %v", err, closeErr)
+	}
+	if _, err := NewPages(fakeWeb{readErr: errors.New("read failed")}).GetText(t.Context(), "https://example.com/post", PreferredCaptions{}); !errors.Is(err, ErrNothingDownloaded) {
+		t.Errorf("GetText(readErr) = %v, want ErrNothingDownloaded", err)
+	}
+	if _, err := NewPages(fakeWeb{page: "<html><head><title>Empty</title></head><body>   </body></html>"}).GetText(t.Context(), "https://example.com/post", PreferredCaptions{}); !errors.Is(err, ErrNothingDownloaded) {
+		t.Errorf("GetText(empty prose) = %v, want ErrNothingDownloaded", err)
 	}
 }

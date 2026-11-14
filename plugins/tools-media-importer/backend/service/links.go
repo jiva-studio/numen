@@ -30,9 +30,6 @@ func mountAPI(s *server.Server, links *link.Links) error {
 
 func toAPIError(err error) error {
 	switch {
-	// gomutants:disable-next-line BRANCH_CASE reason="nil error falls through to return err which is nil"
-	case err == nil:
-		return nil
 	case errors.Is(err, link.ErrNotALink), errors.Is(err, address.ErrNotAURL), errors.Is(err, host.ErrNotExist):
 		return server.NewAPIError(server.CodeNotFound, "not a link")
 	case errors.Is(err, host.ErrNoVault):

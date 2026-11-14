@@ -1,13 +1,17 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -16,6 +20,25 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/environment"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
+
+type closeProbeQueue struct {
+	host.Queue
+	block       atomic.Bool
+	started     chan struct{}
+	startedOnce sync.Once
+	waited      atomic.Bool
+}
+
+func (q *closeProbeQueue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, error) {
+	if q.block.Load() {
+		q.startedOnce.Do(func() { close(q.started) })
+		<-ctx.Done()
+		time.Sleep(10 * time.Millisecond)
+		q.waited.Store(true)
+		return nil, ctx.Err()
+	}
+	return q.Queue.EnqueueWork(ctx, work)
+}
 
 // The handler a host that links the plugin in answers the importer API with the token it was
 // given, and rejects a call without it.
@@ -67,10 +90,16 @@ func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 	if _, err := NewHandler(map[string]string{}); err == nil {
 		t.Error("NewHandler with empty vars succeeded")
 	}
+	if _, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"}); err == nil {
+		t.Error("NewHandler without host port succeeded")
+	}
 }
 
 func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
+	t.Setenv("PATH", "")
 	_, _, hosted := newMockLinks(t)
+	probeQueue := &closeProbeQueue{Queue: hosted.Queue, started: make(chan struct{})}
+	hosted.Queue = probeQueue
 	var mountedSrv *server.Server
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "test-token"}, func(srv *server.Server) error {
 		mountedSrv = srv
@@ -82,8 +111,8 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	call := func(method, path, body string) int {
-		req, err := http.NewRequestWithContext(t.Context(), method, web.URL+path, strings.NewReader(body))
+	call := func(targetURL, method, path, body string) (int, []byte) {
+		req, err := http.NewRequestWithContext(t.Context(), method, targetURL+path, strings.NewReader(body))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -100,29 +129,70 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 				t.Error(err)
 			}
 		}()
-		return res.StatusCode
+		raw, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return res.StatusCode, raw
 	}
 
 	// Verify all mounted API methods are reachable.
-	if code := call(http.MethodPost, "/"+api.Service+"/"+api.MethodCreateLinks, `{"folder":"f","urls":["`+videoAddress+`"]}`); code != http.StatusOK {
-		t.Errorf("CreateLinks status = %d, want 200", code)
+	code, createRaw := call(web.URL, http.MethodPost, "/"+api.Service+"/"+api.MethodCreateLinks, `{"folder":"f","urls":["`+videoAddress+`"]}`)
+	if code != http.StatusOK {
+		t.Fatalf("CreateLinks status = %d, want 200", code)
+	}
+	var created api.CreateLinksResponse
+	if err := json.Unmarshal(createRaw, &created); err != nil || len(created.Paths) != 1 {
+		t.Fatalf("CreateLinks response = %s (%v)", createRaw, err)
 	}
 	for _, method := range []string{
 		api.MethodGetLink,
 		api.MethodCopyMedia,
 	} {
-		if code := call(http.MethodPost, "/"+api.Service+"/"+method, `{"path":"missing.md"}`); code != http.StatusNotFound {
-			t.Errorf("%s(missing.md) status = %d, want 404", method, code)
+		if status, _ := call(web.URL, http.MethodPost, "/"+api.Service+"/"+method, `{"path":"missing.md"}`); status != http.StatusNotFound {
+			t.Errorf("%s(missing.md) status = %d, want 404", method, status)
 		}
 	}
-	if code := call(http.MethodPost, "/numen.v1.PluginLifecycleService/Configure", `{"config":{"copyMaxSizeMb":"10"}}`); code != http.StatusOK {
-		t.Errorf("Configure RPC status = %d, want 200", code)
+
+	probeQueue.block.Store(true)
+	if status, _ := call(web.URL, http.MethodPost, "/"+api.Service+"/"+api.MethodCopyMedia, `{"path":`+mustJSON(t, created.Paths[0])+`}`); status != http.StatusOK {
+		t.Fatalf("CopyMedia(valid) status = %d, want 200", status)
 	}
-	if code := call(http.MethodPost, "/numen.v1.PluginLifecycleService/Shutdown", `{}`); code != http.StatusOK {
-		t.Errorf("Shutdown RPC status = %d, want 200", code)
+	<-probeQueue.started
+
+	if status, _ := call(web.URL, http.MethodPost, "/numen.v1.PluginLifecycleService/Shutdown", `{}`); status != http.StatusOK {
+		t.Errorf("Shutdown RPC status = %d, want 200", status)
 	}
 	if err := mountedSrv.Close(); err != nil {
 		t.Fatal(err)
+	}
+	if !probeQueue.waited.Load() {
+		t.Error("mountedSrv.Close returned before links.Close canceled and waited for background copy")
+	}
+
+	// Verify SetUpdateConfig updates the live downloader configuration when Configure RPC is called.
+	probeQueue.block.Store(false)
+	realHandler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "test-token"}, func(srv *server.Server) error {
+		return Mount(srv, hosted, false)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	realWeb := httptest.NewServer(realHandler)
+	defer realWeb.Close()
+
+	_, beforeRaw := call(realWeb.URL, http.MethodPost, "/"+api.Service+"/"+api.MethodGetLink, `{"path":`+mustJSON(t, created.Paths[0])+`}`)
+	var beforeLink api.GetLinkResponse
+	if err := json.Unmarshal(beforeRaw, &beforeLink); err != nil || beforeLink.IsCopyable {
+		t.Fatalf("GetLink before Configure = %+v (%v), want IsCopyable=false", beforeLink, err)
+	}
+	if status, _ := call(realWeb.URL, http.MethodPost, "/numen.v1.PluginLifecycleService/Configure", `{"config":{"ytDlp":"/configured-yt-dlp"}}`); status != http.StatusOK {
+		t.Fatalf("Configure RPC status = %d, want 200", status)
+	}
+	_, afterRaw := call(realWeb.URL, http.MethodPost, "/"+api.Service+"/"+api.MethodGetLink, `{"path":`+mustJSON(t, created.Paths[0])+`}`)
+	var afterLink api.GetLinkResponse
+	if err := json.Unmarshal(afterRaw, &afterLink); err != nil || !afterLink.IsCopyable {
+		t.Fatalf("GetLink after Configure = %+v (%v), want IsCopyable=true", afterLink, err)
 	}
 
 	// Verify NewHandler forwards the mock variable == "true" vs "false".
@@ -134,6 +204,15 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 	if err != nil || mockHandler == nil {
 		t.Fatalf("NewHandler(mock): %v", err)
 	}
+}
+
+func mustJSON(t *testing.T, v any) string {
+	t.Helper()
+	raw, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(raw)
 }
 
 // Every error a link operation reports maps to the API code a client reads.
