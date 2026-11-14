@@ -8,7 +8,6 @@ import {
   getSetupLength,
   getStepPhases,
   getVideoLength,
-  getWorstStatus,
 } from './playback.js'
 
 const starts = [0.5, 2, null, 4.25]
@@ -144,14 +143,6 @@ describe('findActionStart', () => {
   })
 })
 
-describe('getWorstStatus', () => {
-  it('takes failed over skipped over passed', () => {
-    expect(getWorstStatus(['passed', 'skipped', 'failed'])).toBe('failed')
-    expect(getWorstStatus(['passed', 'skipped'])).toBe('skipped')
-    expect(getWorstStatus(['passed'])).toBe('passed')
-  })
-})
-
 describe('the functions as the page runs them', () => {
   it('run from their own source', () => {
     expect(fromSource(findStepAt)(starts, 2.5)).toBe(1)
@@ -162,6 +153,5 @@ describe('the functions as the page runs them', () => {
     expect(fromSource(getVideoLength)(Number.NaN, [{ start: 1, duration: 500 }])).toBe(1.5)
     expect(fromSource(getSetupLength)([{ keyword: 'Given' }, { keyword: 'When' }])).toBe(1)
     expect(fromSource(findActionStart)(starts, 1)).toBe(2)
-    expect(fromSource(getWorstStatus)(['passed', 'failed'])).toBe('failed')
   })
 })

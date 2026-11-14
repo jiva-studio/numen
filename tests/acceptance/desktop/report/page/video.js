@@ -99,9 +99,6 @@ const setSpeed = (video, speed) => {
 
 const getStarts = (video) => video.scenario.steps.map((step) => step.start)
 
-const getStops = (video) =>
-  getStarts(video).map((start, index) => (index < video.setupLength ? null : start))
-
 const isSetupFailed = (video) =>
   video.scenario.steps.slice(0, video.setupLength).some((step) => step.status === 'failed')
 
@@ -115,14 +112,6 @@ const findCurrentStep = (video, time) => {
   return picked !== undefined && starts[picked] === starts[index] ? picked : index
 }
 
-const writeSetupPhase = (video, currentIndex) => {
-  const phase = currentIndex < video.setupLength ? 'current' : 'done'
-  for (const element of [video.setupRow, video.timeline.querySelector('.segment.setup')]) {
-    if (!element) continue
-    for (const name of ['done', 'current']) element.classList.toggle(name, phase === name)
-  }
-}
-
 const writePosition = (video) => {
   const time = video.player.currentTime
   const currentIndex = findCurrentStep(video, time)
@@ -131,8 +120,7 @@ const writePosition = (video) => {
     for (const phase of ['done', 'current', 'ahead'])
       item.classList.toggle(phase, phases[index] === phase)
   })
-  if (video.setupLength > 0) writeSetupPhase(video, currentIndex)
-  for (const segment of video.timeline.querySelectorAll('.segment:not(.setup)')) {
+  for (const segment of video.timeline.querySelectorAll('.segment')) {
     const phase = phases[Number(segment.dataset.index)]
     for (const name of ['done', 'current', 'ahead']) segment.classList.toggle(name, phase === name)
   }
@@ -153,29 +141,10 @@ const createSegment = (video, segment) => {
   })
 }
 
-const getSetupStatus = (video) =>
-  playback.getWorstStatus(video.scenario.steps.slice(0, video.setupLength).map((s) => s.status))
-
-const getSetupLabel = (video) =>
-  `Setup · ${video.setupLength} step${video.setupLength === 1 ? '' : 's'}`
-
-const createSetupSegment = (video) => {
-  const end = playback.findActionStart(getStarts(video), video.setupLength) ?? video.length
-  const width = Math.min((end * 100) / video.length, 100)
-  return createElement('button', {
-    class: `segment setup ${getSetupStatus(video)}`,
-    type: 'button',
-    'aria-label': getSetupLabel(video),
-    style: `left: 0%; width: ${width}%`,
-  })
-}
-
 const writeTimeline = (video) => {
   video.length = playback.getVideoLength(video.player.duration, video.scenario.steps)
-  const segments = playback.getSegments(getStops(video), video.length)
-  const setup = video.setupLength > 0 && video.length > 0 ? [createSetupSegment(video)] : []
+  const segments = playback.getSegments(getStarts(video), video.length)
   video.timeline.replaceChildren(
-    ...setup,
     ...segments.map((segment) => createSegment(video, segment)),
     createElement('div', { class: 'playhead' }),
   )
@@ -183,7 +152,6 @@ const writeTimeline = (video) => {
 }
 
 const getTooltipText = (video, segment) => {
-  if (segment.classList.contains('setup')) return [getSetupLabel(video)]
   const step = video.scenario.steps[Number(segment.dataset.index)]
   return [createElement('span', { class: 'keyword' }, [step.keyword]), step.text]
 }
@@ -210,12 +178,6 @@ const seekToStep = (video, index) => {
   seekTo(video, start)
 }
 
-const seekToSetup = (video) => {
-  video.pickedIndex = undefined
-  video.player.pause()
-  seekTo(video, 0)
-}
-
 const seekTo = (video, time) => {
   video.player.currentTime = time
   writePosition(video)
@@ -231,18 +193,18 @@ const goToNextStep = (video) => {
     playVideo(video)
     return
   }
-  const next = playback.findNextStart(getStops(video), video.player.currentTime)
+  const next = playback.findNextStart(getStarts(video), video.player.currentTime)
   if (next === null) return
   if (video.isPausingAtSteps) video.player.pause()
   seekTo(video, next)
 }
 
 const goToPreviousStep = (video) =>
-  seekTo(video, playback.findPreviousStart(getStops(video), video.player.currentTime))
+  seekTo(video, playback.findPreviousStart(getStarts(video), video.player.currentTime))
 
 const setPausePoint = (video) => {
   video.pauseAt = video.isPausingAtSteps
-    ? playback.findNextStart(getStops(video), video.player.currentTime)
+    ? playback.findNextStart(getStarts(video), video.player.currentTime)
     : null
 }
 
@@ -260,8 +222,7 @@ const followPlayback = (video) => {
 const linkTimeline = (video) => {
   video.timeline.addEventListener('click', (event) => {
     const segment = event.target.closest('.segment')
-    if (segment?.classList.contains('setup')) seekToSetup(video)
-    else if (segment) seekToStep(video, Number(segment.dataset.index))
+    if (segment) seekToStep(video, Number(segment.dataset.index))
   })
   const show = (event) => {
     const segment = event.target.closest('.segment')
@@ -298,16 +259,15 @@ const linkControls = (video) => {
 
 const openVideo = (video) => {
   const time = getOpenTime(video)
-  video.pickedIndex = time > 0 ? video.setupLength : undefined
+  video.pickedIndex =
+    time > 0
+      ? getStarts(video).findIndex((start, index) => index >= video.setupLength && start !== null)
+      : undefined
   seekTo(video, time)
 }
 
 const handleStepClick = (video, event) => {
-  if (event.target.closest('.setup-toggle, .error, .doc-string, .screenshot')) return
-  if (event.target.closest('.setup-row')) {
-    seekToSetup(video)
-    return
-  }
+  if (event.target.closest('.error, .doc-string, .screenshot')) return
   const item = event.target.closest('.step')
   if (item) seekToStep(video, Number(item.dataset.index))
 }
@@ -358,7 +318,6 @@ const createVideo = (scenario, stepList) => {
     scenario,
     stepList,
     stepItems: [...stepList.querySelectorAll('.step')],
-    setupRow: stepList.querySelector('.setup-row'),
     setupLength: playback.getSetupLength(scenario.steps),
     length: 0,
     pauseAt: null,

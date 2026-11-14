@@ -1,5 +1,3 @@
-import type { StepStatus } from './timeline.js'
-
 export type StepStarts = readonly (number | null)[]
 
 export type StepPhase = 'done' | 'current' | 'ahead'
@@ -68,8 +66,3 @@ export const getSetupLength = (steps: readonly { readonly keyword: string }[]): 
 
 export const findActionStart = (starts: StepStarts, setupLength: number): number | null =>
   starts.slice(setupLength).find((start) => start !== null) ?? null
-
-export const getWorstStatus = (statuses: readonly StepStatus[]): StepStatus => {
-  if (statuses.includes('failed')) return 'failed'
-  return statuses.includes('skipped') ? 'skipped' : 'passed'
-}

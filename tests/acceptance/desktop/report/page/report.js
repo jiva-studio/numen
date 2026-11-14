@@ -1,4 +1,4 @@
-/* global createVideo, playback */
+/* global createVideo */
 /* exported writeSetting */
 const report = window.REPORT
 const scenarios = new Map(
@@ -16,7 +16,6 @@ const ICONS = {
   pause: 'M5.5 3.5v9M10.5 3.5v9',
   expand: 'M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10',
   shrink: 'M6 2.5V6H2.5M13.5 6H10V2.5M10 13.5V10h3.5M2.5 10H6v3.5',
-  chevron: 'M6 4l4 4-4 4',
 }
 const STATUS_ICONS = { passed: 'check', failed: 'cross', skipped: 'dash' }
 
@@ -255,12 +254,12 @@ const createStepFailure = (step, scenario) => {
   return parts
 }
 
-const createStep = (step, index, scenario, setupLength) => {
+const createStep = (step, index, scenario) => {
   const isRun = step.start !== null
   return createElement(
     'li',
     {
-      class: `step ${step.status}${index < setupLength ? ' is-setup' : ''}`,
+      class: `step ${step.status}`,
       'data-index': String(index),
       title: `line ${step.line}`,
     },
@@ -283,46 +282,12 @@ const createStep = (step, index, scenario, setupLength) => {
 const createScenarioError = (scenario) =>
   scenario.errorMessage ? createElement('pre', { class: 'error' }, [scenario.errorMessage]) : null
 
-const setSetupOpen = (stepList, isOpen) => {
-  stepList.classList.toggle('is-setup-open', isOpen)
-  const toggle = stepList.querySelector('.setup-toggle')
-  toggle.setAttribute('aria-expanded', String(isOpen))
-  toggle.setAttribute('aria-label', isOpen ? 'Hide the setup steps' : 'Show the setup steps')
-}
-
-const createSetupRow = (setup) => {
-  const toggle = createElement('button', { class: 'setup-toggle', type: 'button' }, [
-    createIcon('chevron'),
-  ])
-  toggle.addEventListener('click', (event) => {
-    const stepList = event.currentTarget.closest('.steps')
-    setSetupOpen(stepList, !stepList.classList.contains('is-setup-open'))
-  })
-  const status = playback.getWorstStatus(setup.map((step) => step.status))
-  const ran = setup.filter((step) => step.start !== null)
-  const duration = ran.reduce((total, step) => total + step.duration, 0)
-  return createElement('li', { class: `setup-row ${status}` }, [
-    createStatusIcon(status),
-    createElement('span', { class: 'keyword' }, ['Setup']),
-    createElement('span', { class: 'step-text' }, [formatCount(setup.length, 'step'), toggle]),
-    createElement('span', { class: 'step-time' }, [
-      ran.length > 0 ? formatDuration(duration) : 'not run',
-    ]),
-  ])
-}
-
-const createStepList = (scenario) => {
-  const setupLength = playback.getSetupLength(scenario.steps)
-  const items = scenario.steps.map((step, index) => createStep(step, index, scenario, setupLength))
-  if (setupLength === 0) return createElement('ol', { class: 'steps' }, items)
-  const setup = scenario.steps.slice(0, setupLength)
-  const stepList = createElement('ol', { class: 'steps' }, [createSetupRow(setup), ...items])
-  setSetupOpen(
-    stepList,
-    setup.some((step) => step.status === 'failed'),
+const createStepList = (scenario) =>
+  createElement(
+    'ol',
+    { class: 'steps' },
+    scenario.steps.map((step, index) => createStep(step, index, scenario)),
   )
-  return stepList
-}
 
 const writeDetail = (scenario) => {
   const stepList = createStepList(scenario)
