@@ -49,7 +49,7 @@ Feature: Automatic proofreading
         | path                      | sample             |
         | assets/pumped-storage.pdf | pumped-storage.pdf |
       When the person recognizes the text of the file at "assets/pumped-storage.pdf"
-      Then the file at "assets/pumped-storage.pdf" does not have the proofread text
+      Then there is no proofread text of the file at "assets/pumped-storage.pdf"
 
   Rule: A text that exists is proofread when the setting is switched on
 

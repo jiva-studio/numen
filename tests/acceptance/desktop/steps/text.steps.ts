@@ -58,6 +58,6 @@ Given('the transcribed recording {string}', async ({ person }, filePath: string)
   await person.text.transcribe(filePath)
 })
 
-Then('the file at {string} does not have the {text}', async ({ person }, filePath: string, kind: TextKind) => {
+Then('there is no {text} of the file at {string}', async ({ person }, kind: TextKind, filePath: string) => {
   await person.text.expectNoVersion(filePath, kind)
 })
