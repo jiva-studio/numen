@@ -236,7 +236,6 @@ export interface VaultEntry {
   readonly isNote: boolean
   readonly type: NoteType
   readonly tabKind?: string
-  // When the file or folder was last modified, in milliseconds since the Unix epoch. Absent where unknown.
   readonly modifiedAt?: number
 }
 
