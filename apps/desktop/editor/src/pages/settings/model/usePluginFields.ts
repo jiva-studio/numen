@@ -170,7 +170,10 @@ export function usePluginLists(
     },
     removeItem: (setting: PluginSettingInfo, item: string): void => {
       const current = getListSetting(setting.key, setting.default)
-      fields.setSetting(setting.key, current.filter((one) => one !== item))
+      fields.setSetting(
+        setting.key,
+        current.filter((one) => one !== item),
+      )
     },
   }
 }
