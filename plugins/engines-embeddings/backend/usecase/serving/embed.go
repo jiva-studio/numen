@@ -7,7 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
 
 // defaultPasses is the passes a model is taken to run when it names none.
@@ -134,7 +134,7 @@ func (s *Server) EmbedTexts(ctx context.Context, role model.Role, texts []string
 	}
 
 	denseVectors, err := emb.Embed(ctx, texts)
-	if errors.Is(err, loading.ErrClosed) {
+	if errors.Is(err, ports.ErrClosed) {
 		// A change of the performance profile retired the model while this batch waited for a pass.
 		if emb, err = s.getEmbedder(ctx); err == nil {
 			denseVectors, err = emb.Embed(ctx, texts)

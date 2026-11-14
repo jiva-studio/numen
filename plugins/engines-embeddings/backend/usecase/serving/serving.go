@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
 )
 
 // Ports is what a server asks of the machine. Report writes a fault nothing else handles.
@@ -50,7 +49,7 @@ type Server struct {
 	chunkTokens int
 
 	mu         sync.Mutex
-	loader     *loading.Loader[modelSpec]
+	loader     *modelLoader[modelSpec]
 	localName  string
 	source     string
 	connection *connectionSource
@@ -108,8 +107,8 @@ func (s *Server) useMockModel() {
 	s.open = s.openMockModel
 }
 
-func (s *Server) newLoader() *loading.Loader[modelSpec] {
-	return loading.New(&s.mu, loading.Ports[modelSpec]{
+func (s *Server) newLoader() *modelLoader[modelSpec] {
+	return newModelLoader(&s.mu, loaderPorts[modelSpec]{
 		Open: func(ctx context.Context, spec modelSpec) (ports.Embedder, error) {
 			return spec.open(ctx, spec.info, spec.local)
 		},
@@ -135,7 +134,7 @@ func (s *Server) StartLoading() {
 	s.loader.StartLocked(s.getStartLocked)
 }
 
-func (s *Server) getStartLocked() loading.Start[modelSpec] {
+func (s *Server) getStartLocked() loadStart[modelSpec] {
 	info := s.modelInfo
 	if !s.isMock {
 		info = s.localInfo
@@ -146,7 +145,7 @@ func (s *Server) getStartLocked() loading.Start[modelSpec] {
 		local.Threads = run.Threads
 	}
 	local.BatchTexts = run.BatchTexts
-	return loading.Start[modelSpec]{Spec: modelSpec{open: s.open, info: info, local: local}, Nice: run.Nice}
+	return loadStart[modelSpec]{Spec: modelSpec{open: s.open, info: info, local: local}, Nice: run.Nice}
 }
 
 func (s *Server) getLimitsLocked() limits.Run {

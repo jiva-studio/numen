@@ -77,3 +77,6 @@ func (e ConnectionError) Error() string {
 func (e ConnectionError) Unwrap() error {
 	return e.Err
 }
+
+// ErrClosed is the error of a batch that meets a closed embedder.
+var ErrClosed = errors.New("the embedder is closed")

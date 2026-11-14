@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
 
 // sessionPool lends a session to at most lanes callers at a time.
@@ -42,13 +42,13 @@ func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 	select {
 	case <-p.stop:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
-		return zero, loading.ErrClosed
+		return zero, ports.ErrClosed
 	default:
 	}
 	select {
 	case <-p.stop:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
-		return zero, loading.ErrClosed
+		return zero, ports.ErrClosed
 	case <-canceled:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 		return zero, ctx.Err()
@@ -57,7 +57,7 @@ func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 		case <-p.stop:
 			p.idle <- s
 			// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
-			return zero, loading.ErrClosed
+			return zero, ports.ErrClosed
 		default:
 			return s, nil
 		}

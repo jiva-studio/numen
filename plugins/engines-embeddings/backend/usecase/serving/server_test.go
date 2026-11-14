@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/loading"
 )
 
 func TestEmbeddingServerGetModel(t *testing.T) {
@@ -340,7 +339,7 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 					srv2.mu.Lock()
 					srv2.loader.ResetLocked()
 					srv2.mu.Unlock()
-					return nil, loading.ErrClosed
+					return nil, ports.ErrClosed
 				}
 				return [][]float32{{1, 2, 3}}, nil
 			},
