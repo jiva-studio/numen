@@ -253,9 +253,13 @@ export const theme = EditorView.theme({
   },
 
   '.cm-bullet': { color: 'var(--editor-marker)' },
+  /* Sized in em to follow the font size; middle alignment keeps it on the text
+     of the first line at any line height. */
   '.cm-box': {
+    width: '1em',
+    height: '1em',
     verticalAlign: 'middle',
-    margin: '0 2px 2px 0',
+    margin: '0 0.3em 0.15em 0',
     accentColor: 'var(--numen-accent)',
     cursor: 'pointer',
   },

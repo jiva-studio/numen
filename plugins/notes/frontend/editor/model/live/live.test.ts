@@ -129,6 +129,20 @@ describe('a list', () => {
     expect(widgets('1. a\n2. b\n')).toHaveLength(0)
   })
 
+  it('draws no disc for something to do', () => {
+    expect(widgets('- [ ] a\n- [x] b\n').some((it) => it instanceof Bullet)).toBe(false)
+  })
+
+  it('hides the dash of something to do', () => {
+    expect(isHidden(getDrawnDecorations('- [ ] a\n'), 0, 1)).toBe(true)
+  })
+
+  it('keeps the disc of a bullet next to something to do', () => {
+    const drawn = widgets('- a\n- [ ] b\n')
+    expect(drawn.filter((it) => it instanceof Bullet)).toHaveLength(1)
+    expect(drawn.filter((it) => it instanceof Box)).toHaveLength(1)
+  })
+
   it('draws a box for something to do, ticked or not', () => {
     const [waiting, isDone] = widgets('- [ ] a\n- [x] b\n').filter((it) => it instanceof Box)
     expect((waiting as Box).isTicked).toBe(false)
@@ -260,6 +274,28 @@ describe('a box for something to do', () => {
       .map((deco) => deco.spec.widget)
       .filter((it): it is Box => it instanceof Box)
     expect(box?.isWritable).toBe(false)
+  })
+
+  it('is ticked and unticked by a click', () => {
+    const doc = '- [ ] a\n'
+    vi.spyOn(EditorView.prototype, 'visibleRanges', 'get').mockReturnValue([
+      { from: 0, to: doc.length },
+    ])
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({ doc, extensions: [markdown({ extensions: GFM }), live] }),
+    })
+    ensureSyntaxTree(view.state, doc.length, 5000)
+    view.dispatch({})
+    try {
+      view.contentDOM.querySelector<HTMLInputElement>('input.cm-box')?.click()
+      expect(view.state.doc.toString()).toBe('- [x] a\n')
+      view.contentDOM.querySelector<HTMLInputElement>('input.cm-box')?.click()
+      expect(view.state.doc.toString()).toBe('- [ ] a\n')
+    } finally {
+      view.destroy()
+      vi.restoreAllMocks()
+    }
   })
 })
 

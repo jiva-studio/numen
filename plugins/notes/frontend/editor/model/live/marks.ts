@@ -147,8 +147,10 @@ class MarkBuilder {
   takeWidget(node: SyntaxNodeRef): boolean | null {
     switch (node.name) {
       case 'ListMark': {
-        if (BULLET.test(this.doc.sliceString(node.from, node.to)))
-          this.found.push(Decoration.replace({ widget: new Bullet() }).range(node.from, node.to))
+        if (!BULLET.test(this.doc.sliceString(node.from, node.to))) return false
+        if (findChild(node.node.parent as SyntaxNode, 'Task'))
+          this.found.push(HIDDEN.range(node.from, node.to))
+        else this.found.push(Decoration.replace({ widget: new Bullet() }).range(node.from, node.to))
         return false
       }
 
