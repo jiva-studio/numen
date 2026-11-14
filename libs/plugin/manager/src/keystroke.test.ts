@@ -26,5 +26,6 @@ describe('parseKeystroke', () => {
 
   it('reads a key with no modifier', () => {
     expect(parseKeystroke('f2', false)).toStrictEqual({ icons: [], letter: 'F2' })
+    expect(parseKeystroke('shift', false)).toStrictEqual({ icons: [], letter: 'SHIFT' })
   })
 })
