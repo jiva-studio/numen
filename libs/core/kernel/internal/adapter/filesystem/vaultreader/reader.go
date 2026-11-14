@@ -163,13 +163,19 @@ func (s *VaultReader) getEntry(target, folder string, d fs.DirEntry) (domain.Ent
 	rel := pathpkg.Join(folder, d.Name())
 	entry := domain.Entry{Path: rel, Name: d.Name(), IsFolder: d.IsDir()}
 	if d.IsDir() {
+		if found, err := d.Info(); err == nil {
+			entry.ModTime = found.ModTime()
+		}
 		return entry, !s.opts.IsService(d.Name()) && !s.ignored.MatchesPath(rel+"/")
 	}
 	if s.ignored.MatchesPath(rel) {
 		return domain.Entry{}, false
 	}
-	if found, err := getEntryInfo(filepath.Join(target, d.Name()), d); err == nil && found.Mode().IsRegular() {
-		entry.Kind = s.opts.Kind(d.Name())
+	if found, err := getEntryInfo(filepath.Join(target, d.Name()), d); err == nil {
+		entry.ModTime = found.ModTime()
+		if found.Mode().IsRegular() {
+			entry.Kind = s.opts.Kind(d.Name())
+		}
 	}
 	return entry, true
 }

@@ -106,8 +106,14 @@ describe('how tall a column is once the text is drawn', () => {
     return text
   }
 
-  const readItem = (box: HTMLElement, text: HTMLElement): number =>
-    setUp(800, 600).readColumns(box, text)
+  const readItem = (box: HTMLElement, text: HTMLElement): number => {
+    document.body.append(text)
+    try {
+      return setUp(800, 600).readColumns(box, text)
+    } finally {
+      text.remove()
+    }
+  }
 
   it('is the whole lines of a paragraph that fit the box', () => {
     expect(readItem(createArea(800, 100), createText('10px', '30px'))).toBe(90)

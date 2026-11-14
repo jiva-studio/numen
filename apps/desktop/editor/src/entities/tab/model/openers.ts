@@ -46,9 +46,6 @@ interface ExtensionReader {
   readonly icon: Component | undefined
 }
 
-/** The kind assumed for a file the vault cannot be queried about: it opens in its reader. */
-const UNKNOWN: FileKind = { isNote: false, type: '' }
-
 const getExtension = (path: string): string => {
   // Stryker disable next-line LogicalOperator: split('/').pop() on a string always returns a string.
   const name = path.split('/').pop() ?? path
@@ -58,11 +55,7 @@ const getExtension = (path: string): string => {
 }
 
 const fetchFileKind = async (vault: FileOpenerDeps, path: string): Promise<FileKind | null> => {
-  try {
-    return (await vault.fileKinds([path])).get(path) ?? null
-  } catch {
-    return UNKNOWN
-  }
+  return (await vault.fileKinds([path])).get(path) ?? null
 }
 
 export function fileOpeners(vault: FileOpenerDeps) {
@@ -137,7 +130,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
 
   /**
    * Opens a file: a note in the tab kind the core chose for it, a note no tab kind takes and any
-   * other file in its reader at the given selector.
+   * other file in its reader at the given selector. A failed kind query rejects and opens nothing.
    */
   const openFile = async (
     path: string,

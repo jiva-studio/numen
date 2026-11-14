@@ -38,7 +38,7 @@ Dependabot sets `dependencies`, `go`, `javascript` and `github_actions` on its o
 
 [Conventional Commits](https://www.conventionalcommits.org).
 
-Merges are squash-only: the PR title becomes the subject of the single commit that is added to `main`.
+Merges are squash-only: the PR title becomes the subject and the PR body becomes the body of the single commit that is added to `main`. How the body and an issue are written is in [`.agents/rules/writing-changes.md`](.agents/rules/writing-changes.md).
 
 ```
 <type>(<scope>): <subject>
@@ -81,4 +81,4 @@ Architecture conventions and technical constraints are in [`AGENTS.md`](AGENTS.m
 2. **Commit conventions**: Use [Conventional Commits](https://www.conventionalcommits.org) format (`<type>(<scope>): <subject>`).
 3. **Run checks locally**:
    - `make desktop` — build the desktop application locally.
-4. **Submit Pull Request**: Open a pull request against `main` with a clear description of the problem solved and testing steps performed.
+4. **Submit Pull Request**: Open a pull request against `main` with the title and body that [`.agents/rules/writing-changes.md`](.agents/rules/writing-changes.md) describes.

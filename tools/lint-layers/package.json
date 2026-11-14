@@ -5,12 +5,12 @@
   "type": "module",
   "description": "The ESLint and stylelint rules of the repository, with the tests that prove them. The checks that apply them live in tools/checks.",
   "dependencies": {
-    "@vue/compiler-sfc": "^3.5.44",
-    "dependency-cruiser": "^18.7.1",
+    "@vue/compiler-sfc": "^3.5.45",
+    "dependency-cruiser": "^18.7.2",
     "postcss": "^8.5.32",
     "postcss-html": "^2.0.0",
     "postcss-value-parser": "^4.2.0",
-    "stylelint": "^17.16.0",
+    "stylelint": "^18.0.0",
     "typescript": "^6.0.3",
     "yaml": "^2.9.1"
   },

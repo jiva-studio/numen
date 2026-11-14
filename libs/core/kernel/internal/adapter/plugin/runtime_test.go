@@ -71,7 +71,7 @@ func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
 		}
 	})
 	catalog := newONNXCatalog()
-	host.Services.SetDependencies(catalog)
+	host.Dependencies.Replace(catalog)
 
 	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
@@ -94,7 +94,7 @@ func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	host.Services.SetDependencies(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
+	host.Dependencies.Replace(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
 		"whisper": {ID: "whisper", EnvVars: map[string]string{"NUMEN_DEPENDENCY_WHISPER": "/deps/whisper.bin"}},
 	}})
 	manifest := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindModel}}}
@@ -116,7 +116,7 @@ func TestAPluginThatDeclaresNoRuntimeProvisionsNothing(t *testing.T) {
 		}
 	})
 	catalog := newONNXCatalog()
-	host.Services.SetDependencies(catalog)
+	host.Dependencies.Replace(catalog)
 
 	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
@@ -142,7 +142,7 @@ func TestAPluginIsNotLaunchedWhenItsRuntimeFailsToProvision(t *testing.T) {
 	failure := errors.New("the archive is not the pinned one")
 	catalog := newONNXCatalog()
 	catalog.err = failure
-	host.Services.SetDependencies(catalog)
+	host.Dependencies.Replace(catalog)
 
 	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Mode.GetVaultPath(), 5, "t")
 	if !errors.Is(err, failure) || !strings.Contains(err.Error(), "md.numen.a") {
@@ -173,7 +173,7 @@ func TestAPluginIsNotLaunchedWithARuntimeTheHostDoesNotKnow(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	host.Services.SetDependencies(newONNXCatalog())
+	host.Dependencies.Replace(newONNXCatalog())
 	unknown := []manifest.DependencyRequirement{{ID: "tensorrt", Kind: manifest.DependencyKindRuntime}}
 
 	if _, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", unknown, host.Mode.GetVaultPath(), 5, "t"); !errors.Is(err, supervision.ErrRuntimeUnavailable) {

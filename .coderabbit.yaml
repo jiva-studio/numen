@@ -6,10 +6,15 @@ reviews:
   profile: "chill"
   request_changes_workflow: true
   high_level_summary: true
+  # The summary goes into the walkthrough comment; in the description it would become part of the squash commit.
+  high_level_summary_in_walkthrough: true
+  # Drafts are reviewed only after "@coderabbitai review"; no "Draft PR not reviewed" notice on open.
+  review_status: false
   poem: false
   auto_review:
     enabled: true
     drafts: false
+    auto_incremental_review: false
   tools:
     ast-grep:
       enabled: true

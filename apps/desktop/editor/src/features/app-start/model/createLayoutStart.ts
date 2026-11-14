@@ -28,14 +28,6 @@ export interface LayoutStartDeps {
   readonly openDetachedTab: (moved: MovedTab) => void
 }
 
-const readSavedTabs = async () => {
-  try {
-    return await readOpenTabs()
-  } catch {
-    return { tabs: [], activeId: '' }
-  }
-}
-
 /** Lays out the tabs of the window once the vault is open and the plugins of their kinds started. */
 export function createLayoutStart(deps: LayoutStartDeps) {
   const { vaults, windowTabs, writeMessage } = deps
@@ -44,6 +36,15 @@ export function createLayoutStart(deps: LayoutStartDeps) {
     try {
       return await deps.readDetachedTab(deps.windowId, tabId)
     } catch {
+      return null
+    }
+  }
+
+  const readSavedTabs = async () => {
+    try {
+      return await readOpenTabs()
+    } catch (error) {
+      writeMessage(`The saved tabs were not read: ${formatError(error)}`, 'error')
       return null
     }
   }
@@ -59,7 +60,9 @@ export function createLayoutStart(deps: LayoutStartDeps) {
       deps.layout.markStarted()
       return
     }
-    const saved = await readSavedTabs()
+    const read = await readSavedTabs()
+    // The tabs the core holds stay as they are until a read has succeeded.
+    const saved = read ?? { tabs: [], activeId: '' }
     // The pane of a tab is the placement of its kind, so the tabs are laid out once the plugins of
     // their kinds have started or failed. A window with no saved tab opens the tabs the kinds place,
     // which only their plugins know, so it starts every plugin with a tab kind.
@@ -71,7 +74,7 @@ export function createLayoutStart(deps: LayoutStartDeps) {
       await startTabPlugins()
       await openPlacedTabs(windowTabs, writeMessage)
     }
-    deps.layout.markStarted()
+    deps.layout.markStarted(read !== null)
   }
 
   if (deps.isSecondary) {

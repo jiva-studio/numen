@@ -18,10 +18,17 @@ export * from './acp_pb'
 /** The name of the operation of the contract. */
 export const OPERATION_TASK = 'acp.task'
 
+// The value a task that ends early hands the call it closes; the call does not read it.
+const STOPPED: Result<Uint8Array, ConnectionError> = {
+  ok: false,
+  error: { error: 'canceled', message: 'the reader stopped the task', failures: [] },
+}
+
 /**
  * Asks the rows of the plugin, in order, to carry out one prompt turn and yields its session updates. The
  * core goes to the next row only when a row fails before its first update. The generator returns the stop
- * reason, or the error of the call with the updates before it already yielded.
+ * reason, or the error of the call with the updates before it already yielded. A frame that is no message
+ * of the contract throws. The call ends when the generator ends, throws or is returned early.
  */
 export async function* runTask(
   host: ConnectionHost,
@@ -33,12 +40,18 @@ export async function* runTask(
     toBinary(TaskRequestSchema, create(TaskRequestSchema, request)),
     options,
   )
-  for (;;) {
-    const next = await frames.next()
-    if (next.done === true) {
-      const end = next.value
-      return end.ok ? asValue(fromBinary(TaskDoneSchema, end.value)) : end
+  let isEnded = false
+  try {
+    for (;;) {
+      const next = await frames.next()
+      if (next.done === true) {
+        isEnded = true
+        const end = next.value
+        return end.ok ? asValue(fromBinary(TaskDoneSchema, end.value)) : end
+      }
+      yield fromBinary(TaskFrameSchema, next.value)
     }
-    yield fromBinary(TaskFrameSchema, next.value)
+  } finally {
+    if (!isEnded) await frames.return(STOPPED)
   }
 }

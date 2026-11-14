@@ -9,7 +9,7 @@ const PATH_ROOTS = ["libs", "apps", "plugins", "tools", ".agents"];
  * The documents that name folders and files of the repository, as patterns of tracked paths. Every pattern must
  * match a tracked file. `docs/architecture/target-layout.md` is not tracked (it lives outside git) and is not covered.
  */
-export const DOCUMENT_PATTERNS = [/^\.agents\/.*\.md$/, /(^|\/)AGENTS\.md$/];
+export const DOCUMENT_PATTERNS = [/^\.agents\/.*\.md$/, /(^|\/)AGENTS\.md$/, /^(tools|libs)\/.*README\.md$/];
 
 /** The patterns that match no tracked file: a document that moved or was never tracked is not covered. */
 export function findUnmatchedPatterns(patterns, tracked) {
@@ -92,7 +92,7 @@ export const DOCUMENT_VERIFIERS = [
     id: "documents-name-existing-paths",
     scope: "libs",
     module: "documents",
-    name: "Paths in Backticks in the Architecture Documents and AGENTS.md Files Exist in the Tree",
+    name: "Paths in Backticks in the Architecture Documents, AGENTS.md Files and the READMEs of tools and libs Exist in the Tree",
     run: verifyDocumentsNameExistingPaths,
   },
 ];

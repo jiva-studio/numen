@@ -1,8 +1,11 @@
-import type { openNotes } from '@/entities/note'
+import type { flattenOpenNotes } from '@/entities/note'
 import type { Conflict, FlushHandler } from './flush'
 
 /** What the flush needs of the notes of a window. */
-type FlushedNotes = Pick<ReturnType<typeof openNotes>, 'flush' | 'getUnsavedTabs' | 'keep' | 'take'>
+type FlushedNotes = Pick<
+  ReturnType<typeof flattenOpenNotes>,
+  'flush' | 'getUnsavedTabs' | 'keep' | 'take'
+>
 
 /**
  * Writes the open notes at quit. A note whose text could still not be written is a conflict: the

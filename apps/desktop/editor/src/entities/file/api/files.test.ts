@@ -81,11 +81,11 @@ describe('a file moved', () => {
 describe('a folder created', () => {
   it('is created at its path, and refused with the error', async () => {
     request.createFolder.mockResolvedValue({})
-    expect(await createFolder('Notes/New')).toBeNull()
+    expect(await createFolder('Notes/New')).toStrictEqual({ ok: true, value: null })
     expect(request.createFolder.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'Notes/New' })
 
     request.createFolder.mockResolvedValue({ error: NOTE_ERROR_CODE.INVALID_NAME })
-    expect(await createFolder('Notes/?')).toBe('invalidName')
+    expect(await createFolder('Notes/?')).toStrictEqual({ ok: false, error: 'invalidName' })
   })
 })
 

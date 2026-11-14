@@ -18,6 +18,8 @@ Core rules:
 
 - **You never edit scenarios or acceptance files.** If a test looks wrong or fails unexpectedly, report it. If a scenario looks wrong or the feature grew, propose the change to the feature file in a commit of its own whose message says so, and list it in your final report.
 - **Unit tests for internals**: you may write narrow unit tests for your own internal helpers and unexported functions.
+- **Pull request and issue text**: write titles and bodies as `.agents/rules/writing-changes.md` says (Problem, Cause, Change, `Closes #N`).
 - **Strict engineering language**: Strictly adhere to Rule 13 of `AGENTS.md`. Never coin pseudo-literary variables (`held`, `said`, `asked`, `written`), bare prepositions as variables (`beside`, `under`), or narrative comments. Use standard software engineering vocabulary.
 - **Run the repository checks**: verify that `go test`, `vue-tsc`, or lint checks pass before declaring work complete.
-- **Next Step Handover**: once implementation is complete and tests pass, instruct the user to run `/nm-review`.
+- **Pull Request Pipeline**: when opening a pull request, create it as a draft (`gh pr create --draft`), bring CI to green (`gh pr checks --watch`), mark the pull request ready (`gh pr ready`), which starts the Claude review workflow, resolve its findings and comment `/nm-review` to review again until it approves, keeping CI green, then request a CodeRabbit review (`gh pr comment --body "@coderabbitai review"`).
+- **Next Step Handover**: once implementation is complete and tests pass, open the draft pull request and follow the pipeline in `.agents/rules/process.md` §4.
