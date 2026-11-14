@@ -20,8 +20,10 @@ vi.mock('@capacitor/core', async (importOriginal) => ({
 async function toastAfter(why: unknown) {
   plugin.start.mockRejectedValueOnce(why)
   const page = mount(VaultPage)
-  await flushPromises()
   const toast = page.getComponent(IonToast)
+  expect(toast.props('isOpen')).toBe(false)
+  expect(toast.props('message')).toBe('')
+  await flushPromises()
   return { page, open: toast.props('isOpen'), message: toast.props('message') }
 }
 

@@ -6,7 +6,7 @@
 #
 # --update runs `apt-get update` before the first attempt; every later attempt is preceded by one.
 # The apt options below are written to apt's configuration first, so apt calls made by the command
-# itself (npx playwright install-deps) retry and time out the same way.
+# itself retry and time out the same way.
 #
 # APT_RETRY_DEADLINE seconds the whole run may take, refreshes and waits included (default 300)
 # APT_RETRY_DELAYS   seconds to wait before attempt 2, 3, 4 (default "10 20 40")
