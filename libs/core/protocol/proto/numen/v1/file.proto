@@ -78,6 +78,10 @@ message Entry {
   // The kind of tab the note opens in, chosen as FileKind.tab_kind is. Empty
   // where none holds, and for an entry that is not a note.
   string tab_kind = 7;
+
+  // When the file or folder was last modified, in milliseconds since the Unix
+  // epoch. 0 where the vault does not know it.
+  int64 modified_at_ms = 8;
 }
 
 message ListFileKindsRequest {

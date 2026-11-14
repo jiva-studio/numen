@@ -236,6 +236,8 @@ export interface VaultEntry {
   readonly isNote: boolean
   readonly type: NoteType
   readonly tabKind?: string
+  // When the file or folder was last modified, in milliseconds since the Unix epoch. Absent where unknown.
+  readonly modifiedAt?: number
 }
 
 // VaultFiles is what a plugin lists of the folders of the vault, and makes and moves in them.

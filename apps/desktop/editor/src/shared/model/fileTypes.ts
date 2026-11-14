@@ -30,6 +30,8 @@ export interface Entry {
   readonly isNote: boolean
   readonly type: NoteType
   readonly tabKind?: string
+  /** Milliseconds since the Unix epoch; absent where the vault does not know it. */
+  readonly modifiedAt?: number
 }
 
 /** Where a note was filed, or why none was made. */
