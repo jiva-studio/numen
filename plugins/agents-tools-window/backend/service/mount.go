@@ -14,13 +14,13 @@ import (
 // Mount registers the window tools on s, using the vault and the window of the host the
 // environment names.
 func Mount(s *server.Server) error {
-	return mount(s, connectHost(hostcall.FromEnv()))
+	return mount(s, tools.New(), connectHost(hostcall.FromEnv()))
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in.
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return mount(s, connectHost(hostcall.FromVars(vars)))
+		return mount(s, tools.New(), connectHost(hostcall.FromVars(vars)))
 	})
 }
 
@@ -33,8 +33,7 @@ func connectHost(endpoint hostcall.Endpoint, err error) Host {
 	return Host{Files: files, Window: client}
 }
 
-func mount(s *server.Server, on Host) error {
-	registry := tools.New()
+func mount(s *server.Server, registry *tools.Registry, on Host) error {
 	if err := RegisterTools(registry, on); err != nil {
 		return err
 	}
