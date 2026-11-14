@@ -134,7 +134,13 @@ func newTestWorkers(t *testing.T) *pdf.Workers {
 
 func readPDF(t *testing.T, name string) []byte {
 	t.Helper()
-	scan := "%PDF-1.4\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj\n4 0 obj << /Length 44 >>\nstream\nBT /F1 12 Tf 20 100 Td (" + name + ") Tj ET\nendstream\nendobj\n5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\ntrailer << /Root 1 0 R /Size 6 >>\n%%EOF\n"
+	scan := "%PDF-1.4\n" +
+		"1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n" +
+		"2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n" +
+		"3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj\n" +
+		"4 0 obj << /Length 44 >>\nstream\nBT /F1 12 Tf 20 100 Td (" + name + ") Tj ET\nendstream\nendobj\n" +
+		"5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n" +
+		"trailer << /Root 1 0 R /Size 6 >>\n%%EOF\n"
 	return []byte(scan)
 }
 
