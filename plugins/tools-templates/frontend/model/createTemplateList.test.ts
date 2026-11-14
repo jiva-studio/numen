@@ -78,7 +78,10 @@ describe('the template list', () => {
   it('lists the notes of nested subfolders in the group of their path', async () => {
     const { files } = createVault({
       Templates: [folder('Templates/Meetings')],
-      'Templates/Meetings': [folder('Templates/Meetings/Weekly'), note('Templates/Meetings/One to one.md')],
+      'Templates/Meetings': [
+        folder('Templates/Meetings/Weekly'),
+        note('Templates/Meetings/One to one.md'),
+      ],
       'Templates/Meetings/Weekly': [note('Templates/Meetings/Weekly/Standup.md')],
     })
 
@@ -100,7 +103,11 @@ describe('the template list', () => {
 
   it('skips files that are not notes', async () => {
     const { files } = createVault({
-      Templates: [file('Templates/diagram.png'), file('Templates/todo.txt'), note('Templates/Plan.md')],
+      Templates: [
+        file('Templates/diagram.png'),
+        file('Templates/todo.txt'),
+        note('Templates/Plan.md'),
+      ],
     })
 
     const items = await createTemplateList({ files, getFolder: () => 'Templates' }).listItems()

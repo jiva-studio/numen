@@ -6,9 +6,8 @@ export interface TemplateFiles {
 }
 
 /** Lists the templates of the folder the setting names. */
-export function createTemplateList(_deps: {
-  files: TemplateFiles
-  getFolder: () => string
-}): { listItems(): Promise<readonly CommandItem[]> } {
+export function createTemplateList(_deps: { files: TemplateFiles; getFolder: () => string }): {
+  listItems(): Promise<readonly CommandItem[]>
+} {
   return { listItems: () => Promise.resolve([{ id: '', title: '' }]) }
 }
