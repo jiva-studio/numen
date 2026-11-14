@@ -2,7 +2,11 @@
 import type { Browser, BrowserContextOptions, Page, ViewportSize } from 'playwright/test'
 import { readSavedStates } from '../../../e2e/desktop/tests/support/test.js'
 import { destroyNote, destroyTrashed, listFiles } from '../../../e2e/desktop/tests/support/vault.js'
-import { getGraph, openWorkspace, waitForWindow } from '../../../e2e/desktop/tests/support/workspace.js'
+import {
+  getGraph,
+  openWorkspace,
+  waitForWindow,
+} from '../../../e2e/desktop/tests/support/workspace.js'
 import { expect } from 'playwright/test'
 import { deleteVersion, listVersionIds } from './text-versions.js'
 import {
@@ -64,19 +68,24 @@ export class Scenario {
 
   /** Sets the environment of the application now, or from the start of it when it has not started. */
   async setEnvironment(settings: readonly EnvironmentSetting[]): Promise<void> {
-    this.environment = [...this.environment.filter((old) => !settings.some((one) => one.name === old.name)), ...settings]
+    this.environment = [
+      ...this.environment.filter((old) => !settings.some((one) => one.name === old.name)),
+      ...settings,
+    ]
     await this.server?.setEnvironment(settings)
   }
 
   /** Installs the agent program from the start of the application. */
   installProgram(name: string): void {
     this.getWorld()
-    if (this.server !== undefined) throw new Error(`install the program "${name}" before the application starts`)
+    if (this.server !== undefined)
+      throw new Error(`install the program "${name}" before the application starts`)
     this.programs.push(name)
   }
 
   getServer(): Server {
-    if (this.server === undefined) throw new Error('the application has not started: begin with the application "editor" starts')
+    if (this.server === undefined)
+      throw new Error('the application has not started: begin with the application "editor" starts')
     return this.server
   }
 
@@ -95,7 +104,8 @@ export class Scenario {
   }
 
   getWorld(): World {
-    if (this.world === undefined) throw new Error('the scenario has no world: begin with the empty vault "Name"')
+    if (this.world === undefined)
+      throw new Error('the scenario has no world: begin with the empty vault "Name"')
     return this.world
   }
 
@@ -108,7 +118,8 @@ export class Scenario {
   async startWorld(application: Application): Promise<void> {
     const world = this.getWorld()
     const vaults = world.getVaults()
-    if (vaults.length === 0) throw new Error('the world has no vault: begin with the empty vault "Name"')
+    if (vaults.length === 0)
+      throw new Error('the world has no vault: begin with the empty vault "Name"')
     assertWorldApplication(application, vaults, this.application)
     this.isRestarted = this.server !== undefined
     if (this.server === undefined) {
@@ -126,7 +137,10 @@ export class Scenario {
     await this.closeBrowser()
     const browserType = this.currentPage.context().browser()?.browserType()
     if (browserType === undefined) throw new Error('the page has no browser to launch another from')
-    const args = browserType.name() === 'chromium' ? [`--ignore-certificate-errors-spki-list=${this.server.getPublicKeyHash()}`] : []
+    const args =
+      browserType.name() === 'chromium'
+        ? [`--ignore-certificate-errors-spki-list=${this.server.getPublicKeyHash()}`]
+        : []
     this.browser = await browserType.launch({ args })
     const context = await this.browser.newContext({
       baseURL: this.server.getBaseURL(),
@@ -197,14 +211,19 @@ export class Scenario {
   /** The paths of the files and folders of the vault below `folder`; the contents of a folder come before the folder. */
   async listEntries(folder = ''): Promise<string[]> {
     const entries = await listFiles(this.page.request, folder)
-    const nested = await Promise.all(entries.filter((one) => one.isFolder).map((one) => this.listEntries(one.path)))
+    const nested = await Promise.all(
+      entries.filter((one) => one.isFolder).map((one) => this.listEntries(one.path)),
+    )
     return [...nested.flat(), ...entries.map((one) => one.path)]
   }
 
   /** Notes the text versions a file has when the person opens it, so the scenario can delete the ones it makes. */
   async watchVersions(filePath: string): Promise<void> {
     if (this.versionsBefore.has(filePath)) return
-    this.versionsBefore.set(filePath, await listVersionIds(this.page.request, filePath).catch(() => []))
+    this.versionsBefore.set(
+      filePath,
+      await listVersionIds(this.page.request, filePath).catch(() => []),
+    )
   }
 
   async claimTitle(title: string): Promise<void> {
@@ -227,7 +246,10 @@ export class Scenario {
   getNotePath(title: string): string {
     const remembered = this.paths.get(title)
     if (remembered !== undefined) return remembered
-    if (this.world === undefined) throw new Error(`no note is titled "${title}": begin with the vault has the following: a row with the path of the note and its text`)
+    if (this.world === undefined)
+      throw new Error(
+        `no note is titled "${title}": begin with the vault has the following: a row with the path of the note and its text`,
+      )
     return getNoteFile(title)
   }
 
@@ -237,7 +259,10 @@ export class Scenario {
   }
 
   setVault(name: string): void {
-    if (name === DEFAULT_VAULT) throw new Error('name the vault: the scenario has no world, so its vault has the name the run gives')
+    if (name === DEFAULT_VAULT)
+      throw new Error(
+        'name the vault: the scenario has no world, so its vault has the name the run gives',
+      )
     this.vaultName ??= name
     if (this.vaultName !== name) {
       throw new Error(`the run has one vault, named "${this.vaultName}" here, not "${name}"`)
@@ -249,7 +274,8 @@ export class Scenario {
     const { request } = this.page
     for (const [filePath, before] of this.versionsBefore) {
       const now = await listVersionIds(request, filePath).catch(() => [])
-      for (const id of now.filter((one) => !before.includes(one))) await deleteVersion(request, filePath, id).catch(() => undefined)
+      for (const id of now.filter((one) => !before.includes(one)))
+        await deleteVersion(request, filePath, id).catch(() => undefined)
     }
     this.versionsBefore.clear()
   }
@@ -258,8 +284,13 @@ export class Scenario {
     const made = this.hasWorkspace
       ? (await this.listEntries()).filter((one) => !this.filesBefore.includes(one))
       : []
-    const paths = [...this.paths.values(), ...[...this.titles].map((title) => `notes/${title}.md`), ...made]
-    for (const notePath of paths) await destroyNote(this.page.request, notePath).catch(() => undefined)
+    const paths = [
+      ...this.paths.values(),
+      ...[...this.titles].map((title) => `notes/${title}.md`),
+      ...made,
+    ]
+    for (const notePath of paths)
+      await destroyNote(this.page.request, notePath).catch(() => undefined)
     for (const title of this.titles) destroyTrashed(`${title}.md`)
   }
 }
