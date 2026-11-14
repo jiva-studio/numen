@@ -1,4 +1,3 @@
-/** Writes the report folder: the page, its script, style and font, and the data of the run as a script. */
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
@@ -14,7 +13,6 @@ const FONT = '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2'
 
 export type RunInfo = GitRevision & { readonly startedAt: Date }
 
-/** Empties the folder and keeps the folder itself, which a server of the report may be serving from. */
 export const clearFolder = (dir: string): void => {
   fs.mkdirSync(dir, { recursive: true })
   for (const entry of fs.readdirSync(dir))
@@ -32,7 +30,6 @@ export const writeReport = (
   copyFont(outputDir)
   const features = buildTree(scenarios)
   const data = { overview: createOverview(features, run.startedAt, run), features }
-  // A script and not JSON: a page opened from file:// cannot fetch a file next to it.
   const functions = Object.entries(playback).map(([name, fn]) => `  ${name}: ${String(fn)},`)
   const script = [
     `window.REPORT = ${JSON.stringify(data)};`,
@@ -44,7 +41,6 @@ export const writeReport = (
   fs.writeFileSync(path.join(outputDir, 'data.js'), script)
 }
 
-/** Whether the font was copied; without it the page falls back to the system font. */
 const copyFont = (outputDir: string): boolean => {
   try {
     const from = createRequire(import.meta.url).resolve(FONT)

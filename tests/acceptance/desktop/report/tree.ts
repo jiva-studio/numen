@@ -1,15 +1,12 @@
-/** The scenarios of a run grouped by feature, in the order of the files and their lines. */
 import type { StepStatus } from './timeline.js'
 
 export type ScenarioEntry = {
   readonly id: string
-  /** The feature file, relative to the repository. */
   readonly featureUri: string
   readonly featureName: string
   readonly name: string
   readonly line: number
   readonly status: StepStatus
-  /** Milliseconds. */
   readonly duration: number
 }
 

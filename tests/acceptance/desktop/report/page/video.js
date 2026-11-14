@@ -1,6 +1,3 @@
-// The video of a scenario: the player, the steps on its timeline, the speed and the pause at each
-// step, and the keys. report.js, which the page loads after it, defines the helpers it calls and
-// calls createVideo.
 /* global createElement, createIcon, formatOffset, loadVideo, writeSetting */
 /* exported createVideo, getOpenTime */
 const playback = window.playback
@@ -90,7 +87,6 @@ const toggleFullscreen = (video) => {
     document.fullscreenElement === video.card
       ? document.exitFullscreen()
       : video.card.requestFullscreen()
-  // The browser may refuse full screen; the button stays as it is.
   request.catch(() => writeFullscreenButton(video))
 }
 
@@ -103,18 +99,15 @@ const setSpeed = (video, speed) => {
 
 const getStarts = (video) => video.scenario.steps.map((step) => step.start)
 
-// The moments the step keys and the pause at each step stop at: the setup is one stop, at 0.
 const getStops = (video) =>
   getStarts(video).map((start, index) => (index < video.setupLength ? null : start))
 
 const isSetupFailed = (video) =>
   video.scenario.steps.slice(0, video.setupLength).some((step) => step.status === 'failed')
 
-/** Where the video opens: at the first action, past the start of the app; at 0 if the setup failed. */
 const getOpenTime = (video) =>
   isSetupFailed(video) ? 0 : (playback.findActionStart(getStarts(video), video.setupLength) ?? 0)
 
-// Steps that start together share one moment of the video; the one clicked stays current there.
 const findCurrentStep = (video, time) => {
   const starts = getStarts(video)
   const index = playback.findStepAt(starts, time)
@@ -166,7 +159,6 @@ const getSetupStatus = (video) =>
 const getSetupLabel = (video) =>
   `Setup · ${video.setupLength} step${video.setupLength === 1 ? '' : 's'}`
 
-/** The setup takes the timeline from 0 to the first action, or to the end when no action ran. */
 const createSetupSegment = (video) => {
   const end = playback.findActionStart(getStarts(video), video.setupLength) ?? video.length
   const width = Math.min((end * 100) / video.length, 100)
@@ -206,7 +198,6 @@ const showTooltip = (video, segment) => {
   video.tooltip.style.left = `${Math.min(Math.max(center, half), wrap.width - half)}px`
 }
 
-// play() fails when the browser blocks playback or the video cannot load; the page shows the position.
 const playVideo = (video) => {
   video.player.play().catch(() => writePosition(video))
 }
@@ -242,7 +233,6 @@ const goToNextStep = (video) => {
   }
   const next = playback.findNextStart(getStops(video), video.player.currentTime)
   if (next === null) return
-  // Pausing at each step, the video stops at the step it skipped to.
   if (video.isPausingAtSteps) video.player.pause()
   seekTo(video, next)
 }
@@ -256,8 +246,6 @@ const setPausePoint = (video) => {
     : null
 }
 
-// Follows the video frame by frame while it plays: `timeupdate` comes four times a second, too
-// seldom to stop at a step's start or to move the playhead smoothly.
 const followPlayback = (video) => {
   const { player } = video
   if (player.paused || !player.isConnected) return
@@ -308,7 +296,6 @@ const linkControls = (video) => {
   writeFullscreenButton(video)
 }
 
-// The step the video opens at stays current though steps after it may share its start.
 const openVideo = (video) => {
   const time = getOpenTime(video)
   video.pickedIndex = time > 0 ? video.setupLength : undefined
@@ -358,13 +345,11 @@ const handleKey = (event) => {
   const action = KEY_ACTIONS[event.key]
   if (!action || !currentVideo?.player.isConnected) return
   if (event.altKey || event.ctrlKey || event.metaKey || isTyping(event.target)) return
-  // Ahead of a focused button, which would take Space as its own click.
   event.preventDefault()
   event.stopPropagation()
   action(currentVideo)
 }
 
-/** The video section of a scenario, linked to the list of its steps. */
 const createVideo = (scenario, stepList) => {
   const parts = createVideoSection()
   if (currentVideo?.source.startsWith('blob:')) URL.revokeObjectURL(currentVideo.source)

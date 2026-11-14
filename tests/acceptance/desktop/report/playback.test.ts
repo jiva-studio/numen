@@ -13,7 +13,6 @@ import {
 
 const starts = [0.5, 2, null, 4.25]
 
-/** The function as the page runs it: rebuilt from its source, with nothing around it. */
 const fromSource = <T extends (...args: never[]) => unknown>(fn: T): T =>
   new Function(`return ${fn.toString()}`)() as T
 

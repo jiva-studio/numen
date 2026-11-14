@@ -1,4 +1,3 @@
-/** The scenarios of a feature file as the author wrote them, with the values of an outline's example row put in. */
 import fs from 'node:fs'
 import { AstBuilder, compile, GherkinClassicTokenMatcher, Parser } from '@cucumber/gherkin'
 import { IdGenerator } from '@cucumber/messages'
@@ -22,7 +21,6 @@ export type GherkinStep = {
 export type GherkinScenario = {
   readonly featureName: string
   readonly name: string
-  /** The line of the scenario, or of the example row for an outline. */
   readonly line: number
   readonly steps: readonly GherkinStep[]
 }
@@ -30,7 +28,6 @@ export type GherkinScenario = {
 export type Feature = {
   readonly name: string
   readonly pickles: readonly Pickle[]
-  /** The line of every node of the document by its id: scenarios, example rows, steps. */
   readonly lines: ReadonlyMap<string, number>
   readonly steps: ReadonlyMap<string, Step>
 }
@@ -70,7 +67,6 @@ const indexChild = (
   }
 }
 
-/** The scenario whose pickle starts at `line`: the scenario's own line, or its example row's. */
 export const findScenario = (feature: Feature, line: number): GherkinScenario | undefined => {
   const pickle = feature.pickles.find((one) => getPickleLine(feature, one) === line)
   if (!pickle) return undefined
@@ -85,7 +81,6 @@ export const findScenario = (feature: Feature, line: number): GherkinScenario | 
 const getPickleLine = (feature: Feature, pickle: Pickle): number | undefined =>
   feature.lines.get(pickle.astNodeIds.at(-1) ?? '')
 
-/** The keyword and line come from the written step; the text and argument from the pickle, with an outline's values in. */
 const toGherkinStep = (feature: Feature, step: PickleStep): GherkinStep => {
   const written = feature.steps.get(step.astNodeIds[0] ?? '')
   return {

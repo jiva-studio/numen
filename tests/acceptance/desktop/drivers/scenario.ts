@@ -19,10 +19,8 @@ import { Palette } from './components/Palette.js'
 import { Server } from './server.js'
 import { World } from './world.js'
 
-/** How a run with video records the windows of a scenario (support/video.ts). */
 export type Recording = {
   readonly contextOptions: Pick<BrowserContextOptions, 'recordVideo'>
-  /** Called with each window once its page is ready. */
   readonly onPage: (page: Page) => void
 }
 
@@ -143,7 +141,6 @@ export class Scenario {
     this.hasWorkspace = false
   }
 
-  /** Closes the contexts before the browser: a context writes out the video of its pages as it closes. */
   private async closeBrowser(): Promise<void> {
     for (const context of this.browser?.contexts() ?? []) await context.close()
     await this.browser?.close()

@@ -1,4 +1,3 @@
-/** What bddgen writes into a generated spec: the feature it came from, and the lines of its scenarios and steps. */
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -15,14 +14,12 @@ export type BddTest = {
 }
 
 export type BddFile = {
-  /** The feature file, absolute. */
   readonly featurePath: string
   readonly tests: readonly BddTest[]
 }
 
 const GENERATED_FROM = /^\/\/ Generated from: (.+)$/
 
-/** Parses a generated spec; `configDir` is the folder the "Generated from" path is relative to. */
 export const parseBddFile = (content: string, configDir: string): BddFile => {
   const lines = content.split('\n')
   const uri = GENERATED_FROM.exec(lines[0] ?? '')?.[1]?.trim()

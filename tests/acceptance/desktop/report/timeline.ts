@@ -1,7 +1,5 @@
-/** Where each step of a scenario is in its video, and how it ended. */
 import { VIDEO_START } from '../support/video.js'
 
-/** The part of Playwright's `TestStep` the report reads. */
 export type StepNode = {
   readonly category: string
   readonly location?: { readonly file: string; readonly line: number }
@@ -17,17 +15,11 @@ export type StepStatus = 'passed' | 'failed' | 'skipped'
 
 export type StepTiming = {
   readonly status: StepStatus
-  /** Seconds from the start of the video; null for a step that did not run. */
   readonly start: number | null
-  /** Milliseconds. */
   readonly duration: number
   readonly errorMessage?: string
 }
 
-/**
- * The steps of the scenario among Playwright's steps: playwright-bdd runs each one as a `test.step`
- * located at its call in the generated spec, a Background step under the hook that runs it.
- */
 export const collectBddSteps = (steps: readonly StepNode[], specFile: string): StepNode[] =>
   steps.flatMap((step) =>
     step.category === 'test.step' && step.location?.file === specFile
@@ -35,7 +27,6 @@ export const collectBddSteps = (steps: readonly StepNode[], specFile: string): S
       : collectBddSteps(step.steps, specFile),
   )
 
-/** The video start the person fixture marked, or the start of the first step when it marked none. */
 export const getVideoStart = (
   annotations: readonly Annotation[],
   steps: readonly StepNode[],
@@ -44,10 +35,6 @@ export const getVideoStart = (
   return Number.isFinite(marked) ? marked : steps[0]?.startTime.getTime()
 }
 
-/**
- * The timing of each step, by the line it is called from in the generated spec. A failed scenario
- * whose steps carry no error failed in the last step that ran: a timeout ends a step without one.
- */
 export const mapStepTimes = (
   pwStepLines: readonly number[],
   steps: readonly StepNode[],

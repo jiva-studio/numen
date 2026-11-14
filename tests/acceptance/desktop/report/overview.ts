@@ -1,17 +1,13 @@
-/** The head of the report: what ran, how it went, and from which commit. */
 import { execFileSync } from 'node:child_process'
 import type { StepStatus } from './timeline.js'
 import { countStatuses, type FeatureNode, type ScenarioEntry } from './tree.js'
 
 export type GitRevision = {
-  /** The short hash. */
   readonly commit: string | undefined
-  /** Undefined on a detached HEAD, as in CI. */
   readonly branch: string | undefined
 }
 
 export type Overview = GitRevision & {
-  /** ISO time the run started. */
   readonly startedAt: string
   readonly features: number
   readonly scenarios: number
@@ -27,7 +23,6 @@ const readGit = (dir: string, args: readonly string[]): string | undefined => {
   }
 }
 
-/** The commit and branch of the checkout at `dir`; undefined for what git cannot tell. */
 export const readGitRevision = (dir: string): GitRevision => ({
   commit: readGit(dir, ['rev-parse', '--short', 'HEAD']),
   branch: readGit(dir, ['branch', '--show-current']),

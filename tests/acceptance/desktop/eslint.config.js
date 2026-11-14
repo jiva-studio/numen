@@ -24,7 +24,6 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
 
-  // The scripts of the report page are classic scripts, which share their top-level names.
   {
     files: ['report/page/*.js'],
     languageOptions: { sourceType: 'script' },

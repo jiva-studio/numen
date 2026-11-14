@@ -1,10 +1,3 @@
-/**
- * A Playwright reporter that writes a static page of the scenarios of a run with video
- * (PLAYWRIGHT_VIDEO): the tree of features and scenarios, and for each scenario its steps as
- * written, linked to its video, with the screenshot of a failure.
- *
- *   reporter: [['./report/scenario-report.ts', { outputFolder: 'acceptance-report' }]]
- */
 import path from 'node:path'
 import type {
   FullConfig,
@@ -56,7 +49,6 @@ export default class ScenarioReport implements Reporter {
       rootDir: this.rootDir,
       outputDir: this.outputDir,
     })
-    // A retry takes the place of the attempt before it.
     if (record) this.scenarios.set(record.id, record)
   }
 

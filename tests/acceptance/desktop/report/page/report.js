@@ -1,14 +1,9 @@
-// The page of the scenario report. data.js sets window.REPORT (the overview of the run and its
-// features and scenarios) and window.playback (playback.ts); video.js comes before this script.
-// They are classic scripts, not modules, so the page also opens from file://, and share their
-// top-level names.
 /* global createVideo, playback */
 /* exported writeSetting */
 const report = window.REPORT
 const scenarios = new Map(
   report.features.flatMap((feature) => feature.scenarios.map((s) => [s.id, s])),
 )
-// `search` is the text as typed, for the empty state; `query` is the form it is matched in.
 const state = { search: '', query: '', status: 'all', currentId: '' }
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
@@ -25,7 +20,6 @@ const ICONS = {
 }
 const STATUS_ICONS = { passed: 'check', failed: 'cross', skipped: 'dash' }
 
-/** Whether the choice was stored; without storage it lasts until the page closes. */
 const writeSetting = (key, value) => {
   try {
     localStorage.setItem(key, value)
@@ -69,8 +63,6 @@ const formatOffset = (seconds) => {
 
 const formatCount = (count, noun) => `${count} ${noun}${count === 1 ? '' : 's'}`
 
-// Sidebar
-
 const STATUS_FILTERS = [
   { status: 'all', label: 'All' },
   { status: 'passed', label: 'Passed' },
@@ -105,7 +97,6 @@ const createFilterButton = ({ status, label }) => {
   )
 }
 
-/** Skipped appears only for a run that skipped something; the other segments always do. */
 const writeStatusFilter = () => {
   const filters = STATUS_FILTERS.filter(
     ({ status }) => status !== 'skipped' || getFilterCount(status) > 0,
@@ -177,8 +168,6 @@ const writeTree = () => {
   tree.replaceChildren(...(nodes.length > 0 ? nodes : [createEmptyTree()]))
 }
 
-// Scenario header
-
 const getScenarioLink = (id) => `${location.href.split('#')[0]}#${encodeURIComponent(id)}`
 
 const showCopied = (note, text) => {
@@ -227,8 +216,6 @@ const createScenarioHeader = (scenario) =>
       createActions(scenario),
     ]),
   ])
-
-// Steps
 
 const createDataTable = (rows) =>
   createElement('div', { class: 'table-scroll' }, [
@@ -324,7 +311,6 @@ const createSetupRow = (setup) => {
   ])
 }
 
-/** The steps, the setup folded into one row; a failed setup shows its steps. */
 const createStepList = (scenario) => {
   const setupLength = playback.getSetupLength(scenario.steps)
   const items = scenario.steps.map((step, index) => createStep(step, index, scenario, setupLength))
@@ -337,8 +323,6 @@ const createStepList = (scenario) => {
   )
   return stepList
 }
-
-// Detail
 
 const writeDetail = (scenario) => {
   const stepList = createStepList(scenario)

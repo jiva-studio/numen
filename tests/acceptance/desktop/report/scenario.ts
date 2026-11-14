@@ -1,4 +1,3 @@
-/** One scenario of the report: its Gherkin, how each step went and where it is in the video, and its files. */
 import fs from 'node:fs'
 import path from 'node:path'
 import type { TestCase, TestResult } from 'playwright/types/testReporter'
@@ -17,9 +16,7 @@ export type ReportStep = GherkinStep & StepTiming
 
 export type ScenarioRecord = ScenarioEntry & {
   readonly steps: readonly ReportStep[]
-  /** The error of a scenario that failed outside its steps, in a hook or a fixture. */
   readonly errorMessage: string | undefined
-  /** Paths relative to the report folder. */
   readonly video: string | undefined
   readonly screenshot: string | undefined
 }
@@ -27,7 +24,6 @@ export type ScenarioRecord = ScenarioEntry & {
 export type ScenarioSource = {
   readonly bddFile: BddFile
   readonly feature: Feature
-  /** The repository root, which feature paths in the report are relative to. */
   readonly rootDir: string
   readonly outputDir: string
 }
@@ -102,11 +98,6 @@ const ATTACHMENTS = {
   screenshot: 'screenshot.png',
 } as const
 
-/**
- * Copies the video and the screenshot of the result next to the report. The first video
- * is the window's (support/video.ts); the last screenshot is of the window, an earlier one of the
- * blank page of the fixture.
- */
 const copyAttachments = (
   result: TestResult,
   dir: string,
