@@ -101,9 +101,8 @@ export const embed = async (
 
 /**
  * Asks the rows of the plugin, in order, for one score for each document. No document is no call. An
- * empty query throws with no call, as the Go client returns an error. A result with another number of
- * scores than documents throws, as a result that is no message of the contract does; the Go client
- * returns that error.
+ * empty query throws with no call. A result with another number of scores than documents throws, as a
+ * result that is no message of the contract does.
  */
 export const rerank = async (
   host: ConnectionHost,
