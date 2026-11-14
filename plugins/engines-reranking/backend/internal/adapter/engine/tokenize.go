@@ -15,7 +15,6 @@ type pairTokenizer struct {
 	pad       int
 }
 
-// loadPairTokenizer reads the tokenizer.json at path and checks that it encodes a pair within maxTokens.
 func loadPairTokenizer(path string, maxTokens int) (*pairTokenizer, error) {
 	tokens, err := tokenizer.Load(path)
 	if err != nil {

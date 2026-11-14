@@ -130,9 +130,8 @@ func listRepoFiles(repo *hub.Repo) (map[string]int64, error) {
 	return sizes, nil
 }
 
-// selectModelFiles returns the model file and the files beside it whose names start with its name, such as
-// the external data of model.onnx in model.onnx_data.
 func selectModelFiles(sizes map[string]int64, onnxFile string) []string {
+	// The files beside the model hold its external data, such as model.onnx_data beside model.onnx.
 	out := []string{onnxFile}
 	for _, name := range slices.Sorted(maps.Keys(sizes)) {
 		if name != onnxFile && path.Dir(name) == path.Dir(onnxFile) && strings.HasPrefix(name, onnxFile) {

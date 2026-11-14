@@ -48,7 +48,6 @@ func newPaddingPool() *sync.Pool {
 	return &sync.Pool{New: func() any { return &padding{ids: nil, mask: nil, types: nil} }}
 }
 
-// padBatch lays the pairs of batch out as rows of one length, filled with pad and masked out past each pair.
 func padBatch(paddings *sync.Pool, batch []tokenizer.Encoding, pad, limit int) (rows, seq int, in *padding) {
 	rows = len(batch)
 	longest := 0

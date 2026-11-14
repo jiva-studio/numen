@@ -143,8 +143,6 @@ func (s *Scorer) ScorePairs(ctx context.Context, query string, documents []strin
 	return scorePairs(ctx, encoded, s.pairs.maxTokens, s.forward)
 }
 
-// scorePairs runs pass over the pairs in batches of similar length and returns the scores in the order of
-// the pairs.
 func scorePairs(
 	ctx context.Context,
 	pairs []tokenizer.Encoding,
@@ -240,7 +238,6 @@ func (s *Scorer) forward(ctx context.Context, batch []tokenizer.Encoding) ([]flo
 	return readScores(logits, outShape)
 }
 
-// readScores returns the score of each row of logits of shape [rows, 1].
 func readScores(logits []float32, shape []int64) ([]float32, error) {
 	if len(shape) != 2 || shape[1] != 1 {
 		return nil, fmt.Errorf("the model answers logits of shape %v, expected one logit per pair", shape)

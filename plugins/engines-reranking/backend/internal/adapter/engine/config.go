@@ -8,8 +8,6 @@ import (
 // batchPairs is the most pairs one pass of the model reads.
 const batchPairs = 8
 
-// getSessionSettings returns the settings of the session of the model at modelPath: the provider the host
-// names, else the CPU, with the default number of threads.
 func getSessionSettings(modelPath string) onnx.SessionSettings {
 	return onnx.SessionSettings{
 		Provider:     onnx.GetSessionProvider(),

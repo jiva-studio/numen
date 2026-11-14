@@ -15,7 +15,7 @@ import (
 func newTestProvider(t *testing.T) connection.Provider {
 	t.Helper()
 	t.Setenv("NUMEN_PLUGIN_DATA_DIR", t.TempDir())
-	r, err := newReranking()
+	r, err := openReranking()
 	if err != nil {
 		t.Fatal(err)
 	}

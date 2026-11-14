@@ -17,7 +17,9 @@
         "title": "Local reranker",
         "description": "Reranks texts with a model on this machine.",
         "operations": ["llm.rerank", "llm.models", "connections.detected"],
-        "rowFields": [{ "key": "model", "type": "string", "title": "Model", "optionsFrom": "llm.models" }],
+        "rowFields": [
+          { "key": "model", "type": "string", "title": "Model", "optionsFrom": "llm.models" }
+        ],
         "fields": [
           {
             "key": "parallelRequests",

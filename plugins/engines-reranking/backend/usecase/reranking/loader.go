@@ -52,8 +52,8 @@ func getKey(p profile.Profile) string {
 	return strings.Join([]string{p.ID, p.OnnxFile, p.Revision, strings.Join(sums, ","), fmt.Sprint(p.MaxTokens)}, "\x00")
 }
 
-// acquire returns the loaded model of p, loading it first. The caller passes the model to release.
 func (l *loader) acquire(ctx context.Context, p profile.Profile) (*loadedModel, error) {
+	// The caller passes the returned model to release.
 	key := getKey(p)
 	for {
 		l.mu.Lock()
@@ -88,8 +88,8 @@ func (l *loader) release(model *loadedModel) {
 	model.calls.Done()
 }
 
-// startLoad detaches the loaded model and loads p in the background. l.mu is held.
 func (l *loader) startLoad(ctx context.Context, p profile.Profile, key string) *modelLoad {
+	// The caller holds l.mu.
 	load := &modelLoad{key: key, done: make(chan struct{}), err: nil}
 	previous := l.loaded
 	l.loaded = nil
