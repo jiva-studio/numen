@@ -24,9 +24,13 @@ func Mount(s *server.Server) error {
 	if endpoint, err := hostcall.FromEnv(); err == nil {
 		host = tools.NewClient(endpoint)
 	}
-	agent, err := newAgentServer(machine{
+	return mountMachine(s, machine{
 		lookPath: process.LookPath, launcher: process.Launcher{}, tools: host, clock: clock.System{}, isAsync: true,
 	})
+}
+
+func mountMachine(s *server.Server, on machine) error {
+	agent, err := newAgentServer(on)
 	if err != nil {
 		return err
 	}

@@ -10,6 +10,7 @@ import (
 	"maps"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -21,9 +22,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp/acptest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/usecase/task"
 )
@@ -279,7 +283,55 @@ func TestTheProviderServesCompleteTheListsOfModelsAndReasoningLevelsAndTasks(t *
 }
 
 func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
-	program, _ := fakeProgram(t, "config")
+	if _, err := newAgentServer(machine{}); err == nil {
+		t.Fatal("newAgentServer(machine{}) succeeded, want error")
+	}
+	if err := mountMachine(server.New(), machine{}); err == nil {
+		t.Fatal("mountMachine(machine{}) succeeded, want error")
+	}
+
+	svc := newTestServer(t)
+	srv, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"}, func(s *server.Server) error {
+		return mount(s, svc)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mountedWeb := httptest.NewServer(srv)
+	defer mountedWeb.Close()
+	mountedLifecycle := servertest.NewLifecycleClient(http.DefaultClient, mountedWeb.URL, "tok")
+	if _, err := mountedLifecycle.Configure(t.Context(), map[string]string{"requestTimeout": "45"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := svc.settings.RequestTimeout(); got != 45*time.Second {
+		t.Fatalf("configured RequestTimeout = %v, want 45s", got)
+	}
+
+	host := &gardenHost{}
+	hostMux := http.NewServeMux()
+	hostMux.Handle(toolstest.NewServiceHandler(host))
+	hostServer := httptest.NewServer(hostMux)
+	defer hostServer.Close()
+
+	program, _ := fakeProgram(t, "mcp")
+	hostAddress, err := url.Parse(hostServer.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(hostcall.HostPortEnv, hostAddress.Port())
+	t.Setenv(hostcall.PluginTokenEnv, "tok")
+	handlerWithHost, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "tok"}, Mount)
+	if err != nil {
+		t.Fatal(err)
+	}
+	webWithHost := httptest.NewServer(handlerWithHost)
+	defer webWithHost.Close()
+	callTask(t, webWithHost.URL, program)
+	if len(host.listCalls()) != 1 {
+		t.Fatalf("linked handler with host ran %d tool calls, want 1", len(host.listCalls()))
+	}
+
+	cfgProgram, _ := fakeProgram(t, "config")
 	t.Setenv(hostcall.HostPortEnv, "")
 	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "tok"}, Mount)
 	if err != nil {
@@ -295,7 +347,7 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	// The plugin reads the models of a program in the background and lists none until they are read.
 	deadline := time.After(5 * time.Second)
 	for {
-		answer := callModels(t, web.URL, program)
+		answer := callModels(t, web.URL, cfgProgram)
 		// The done frame is the encoded list of options, which holds the titles as they are.
 		if bytes.Contains(readDoneFrame(t, answer), []byte("Model Two")) {
 			return
@@ -305,6 +357,44 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 			t.Fatalf("the service answered %q", answer)
 		case <-time.After(20 * time.Millisecond):
 		}
+	}
+}
+
+func callTask(t *testing.T, url, program string) {
+	t.Helper()
+	payload, err := acptest.EncodeTaskRequest(&acp.TaskRequest{Prompt: "How are the beds?"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := json.Marshal(map[string]any{
+		"operation": acp.OperationTask,
+		"call":      map[string]any{"connectionId": "conn-orchard", "type": "acp", "fields": map[string]string{"program": program}},
+		"payload":   payload,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url+"/numen.v1.ProviderService/Call", bytes.NewReader(writeEnvelope(0, body)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/connect+json")
+	request.Header.Set("Authorization", "Bearer tok")
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	answer, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != http.StatusOK || readDoneFrame(t, answer) == nil {
+		t.Fatalf("task call answered %d %q", response.StatusCode, answer)
 	}
 }
 

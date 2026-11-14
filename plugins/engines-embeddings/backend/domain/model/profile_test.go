@@ -385,12 +385,12 @@ func TestProfileNormalizeCloneAndErrorPaths(t *testing.T) {
 	origEmbedded := embeddedProfiles
 	defer func() { embeddedProfiles = origEmbedded }()
 	embeddedProfiles = []byte("[broken")
-	if _, err := GetShippedProfiles(); err == nil {
-		t.Error("expected GetShippedProfiles to fail on broken JSON")
+	if table, err := GetShippedProfiles(); table == nil || err == nil || errors.Unwrap(err) == nil {
+		t.Errorf("GetShippedProfiles on broken JSON = (%v, %v), want non-nil table and wrapped error", table, err)
 	}
 	embeddedProfiles = []byte(`[{"id":"x","dims":0}]`)
-	if _, err := GetShippedProfiles(); err == nil {
-		t.Error("expected GetShippedProfiles to fail on invalid profile")
+	if table, err := GetShippedProfiles(); table == nil || err == nil || errors.Unwrap(err) == nil {
+		t.Errorf("GetShippedProfiles on invalid profile = (%v, %v), want non-nil table and wrapped error", table, err)
 	}
 	embeddedProfiles = origEmbedded
 
