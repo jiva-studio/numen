@@ -306,7 +306,7 @@ service PluginEventService {
 }
 
 message DeliverEventRequest {
-  // The event as the host names it, such as onSearchSourceReady:<vault id>.
+  // The event as the host names it, such as onIndexChanged:<vault id>.
   string event = 1;
 }
 

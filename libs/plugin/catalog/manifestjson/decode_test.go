@@ -18,7 +18,7 @@ func TestReadManifest(t *testing.T) {
 		"description": "Optical character recognition",
 		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["onSearchSourceReady"],
+		"activationEvents": ["onIndexChanged"],
 		"permissions": ["vault:read"],
 		"backend": {
 			"entrypoint": "bin/engines.ocr"
@@ -58,7 +58,7 @@ func TestReadManifest(t *testing.T) {
 	if !m.HasCapability("tools") {
 		t.Errorf("expected capability tools")
 	}
-	if !m.IsActivatedBy("onSearchSourceReady:vault-1") || m.IsActivatedBy("onSearchSourceReady:") || m.IsActivatedBy("onSearchSource") {
+	if !m.IsActivatedBy("onIndexChanged:vault-1") || m.IsActivatedBy("onIndexChanged:") || m.IsActivatedBy("onSearchSource") {
 		t.Errorf("unexpected activation matching for %v", m.ActivationEvents)
 	}
 	if !m.HasService("md.numen.engines.ocr") || !m.HasFrontend() {
@@ -212,7 +212,7 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"a capability no host resolves", `{"id":"a.b","name":"A","version":"1.0.0","capabilities":["agent"]}`, manifest.ErrInvalidCapability},
 		{
 			"activation events without a backend",
-			`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onSearchSourceReady"],"frontend":{}}`,
+			`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onIndexChanged"],"frontend":{}}`,
 			manifest.ErrNoBackend,
 		},
 		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, manifest.ErrNoBackend},

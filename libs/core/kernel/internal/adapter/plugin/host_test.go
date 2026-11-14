@@ -160,7 +160,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
 
 	// TriggerEvent for matching event
-	activated, err := host.Events.TriggerEvent(ctx, protocol.GetSearchSourceReadyEvent("v-1"))
+	activated, err := host.Events.TriggerEvent(ctx, protocol.GetIndexChangedEvent("v-1"))
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
@@ -262,7 +262,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 	}
 
 	// Emit the event through the debounced event bus
-	host.Events.EmitEvent(protocol.GetSearchSourceReadyEvent("v-1"))
+	host.Events.EmitEvent(protocol.GetIndexChangedEvent("v-1"))
 	if err := host.Events.GetEventBus().Flush(ctx); err != nil {
 		t.Fatal(err)
 	}

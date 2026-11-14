@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -206,7 +207,7 @@ func (r *runs) Start(ctx context.Context, v domain.Vault, rebuild bool, report R
 	r.report = append(r.report, report)
 	r.log.add("start " + string(v.ID))
 	return Started{
-		Read: func(context.Context, func()) (int, error) { return 0, nil },
+		Read: func(context.Context, func()) (vaultreading.ScanResult, error) { return vaultreading.ScanResult{}, nil },
 		Run:  func(ctx context.Context) { <-ctx.Done() },
 		Retire: func() {
 			r.mu.Lock()

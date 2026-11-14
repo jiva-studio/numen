@@ -32,8 +32,8 @@ func TestAWalkAnswersHowManyNotesTheVaultContains(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got != 3 {
-		t.Errorf("the vault holds %d notes, the walk says %d", 3, got)
+	if got.Notes != 3 {
+		t.Errorf("the vault holds %d notes, the walk says %d", 3, got.Notes)
 	}
 }
 
@@ -47,8 +47,8 @@ func TestAWalkThatCannotOpenTheVaultReturnsSo(t *testing.T) {
 	if !errors.Is(err, broken) {
 		t.Errorf("the walk said %v", err)
 	}
-	if got != 0 {
-		t.Errorf("the walk read %d notes", got)
+	if got.Notes != 0 {
+		t.Errorf("the walk read %d notes", got.Notes)
 	}
 }
 
@@ -229,7 +229,7 @@ func TestAWalkThatStopsReturnsHowManyNotesItHadRead(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the walk said %v", err)
 	}
-	if got == 0 {
+	if got.Notes == 0 {
 		t.Error("the walk says it read nothing")
 	}
 }

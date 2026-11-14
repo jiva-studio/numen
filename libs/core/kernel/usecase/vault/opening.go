@@ -103,8 +103,8 @@ type runner interface {
 // GetUnwatchedReason is why the vault is not being followed, and nothing while it is.
 func (o *OpenVault) GetUnwatchedReason() error { return o.unwatched }
 
-// Read traverses the vault into the index and returns the number of notes it holds.
-func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err error) {
+// Read traverses the vault into the index and returns what the walk did.
+func (o *OpenVault) Read(ctx context.Context, during func()) (vaultreading.ScanResult, error) {
 	o.buffered.StartRecording()
 
 	var onProgress func(vaultreading.ScanResult)
@@ -115,12 +115,12 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 
 	recSession := o.buffered.StopRecording()
 	if err != nil {
-		return res.Notes, err
+		return res, err
 	}
 	if _, err := o.refresh.Execute(ctx, o.vault, recSession); err != nil {
 		o.handleError(err)
 	}
-	return res.Notes, nil
+	return res, nil
 }
 
 // Run acts on everything the watch collects, and goes on until ctx is done or the watch stops.

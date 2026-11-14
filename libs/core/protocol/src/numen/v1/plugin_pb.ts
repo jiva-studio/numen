@@ -848,7 +848,7 @@ export const PluginLeaseHolderSchema: GenMessage<PluginLeaseHolder> = /*@__PURE_
  */
 export type DeliverEventRequest = Message<"numen.v1.DeliverEventRequest"> & {
   /**
-   * The event as the host names it, such as onSearchSourceReady:<vault id>.
+   * The event as the host names it, such as onIndexChanged:<vault id>.
    *
    * @generated from field: string event = 1;
    */

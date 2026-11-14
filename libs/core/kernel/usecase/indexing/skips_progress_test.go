@@ -43,7 +43,7 @@ func (l *progressLog) getCountedTasks() []work.Task {
 	return counted
 }
 
-func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *readyLog) (*testPass, *holdingModel, int64) {
+func canceledPass(t *testing.T, openReading openFunc, events *progressLog) (*testPass, *holdingModel, int64) {
 	t.Helper()
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}
 	made, db := openReading(t)
@@ -58,7 +58,6 @@ func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *
 	}
 
 	p := newPass(made, db, events, model, recipe, v)
-	p.worker.searchSourceReady = log.report
 	ended := make(chan struct{})
 	go func() {
 		defer close(ended)
@@ -87,7 +86,7 @@ func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *
 func testProgressOfAPassAfterACancelReachesItsTotal(t *testing.T, openReading openFunc) {
 	t.Helper()
 	events := &progressLog{recorder: newRecorder()}
-	p, _, _ := canceledPass(t, openReading, events, &readyLog{})
+	p, _, _ := canceledPass(t, openReading, events)
 	earlier := len(events.getCountedTasks())
 
 	p.embed(t.Context())
@@ -113,21 +112,14 @@ func testProgressOfAPassAfterACancelReachesItsTotal(t *testing.T, openReading op
 	}
 }
 
-func testSearchSourceReadyExcludesTheCanceledNote(t *testing.T, openReading openFunc) {
+func testAPassAfterACancelEmbedsAllButTheCanceledNote(t *testing.T, openReading openFunc) {
 	t.Helper()
 	events := &progressLog{recorder: newRecorder()}
-	log := &readyLog{}
-	p, model, heldChunks := canceledPass(t, openReading, events, log)
-	if len(log.vaults) != 0 {
-		t.Fatalf("told %v after the canceled pass", log.vaults)
-	}
+	p, model, heldChunks := canceledPass(t, openReading, events)
 
 	p.embed(t.Context())
 	p.embed(t.Context())
 
-	if len(log.vaults) != 1 {
-		t.Errorf("told %d times, want once, for the pass after the cancel that made vectors", len(log.vaults))
-	}
 	if calls := model.getHeldCalls(); calls != 0 {
 		t.Errorf("the canceled note was sent to the model %d times", calls)
 	}

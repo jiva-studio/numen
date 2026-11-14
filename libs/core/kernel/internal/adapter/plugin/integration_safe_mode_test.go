@@ -63,7 +63,7 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatalf("expected errSafeModeActive, got %v", err)
 	}
 
-	activated, err := host.Events.TriggerEvent(ctx, protocol.GetSearchSourceReadyEvent("v-1"))
+	activated, err := host.Events.TriggerEvent(ctx, protocol.GetIndexChangedEvent("v-1"))
 	if err != nil {
 		t.Fatalf("TriggerEvent error: %v", err)
 	}
