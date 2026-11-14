@@ -291,7 +291,7 @@ func (r *Recognition) runRecognition(ctx context.Context, req Request, release f
 // HasTextLayer reports whether the file of the vault has text of its own. It reads the file and opens it
 // as a document; an image has none.
 func (r *Recognition) HasTextLayer(_ context.Context, _ domain.VaultID, _ string) (bool, error) {
-	panic("not implemented")
+	return false, errors.New("not implemented")
 }
 
 func GetTaskID(vault domain.VaultID, filePath string) string {
