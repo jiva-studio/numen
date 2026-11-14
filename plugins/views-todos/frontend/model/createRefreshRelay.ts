@@ -14,6 +14,8 @@ export interface RefreshRelay {
   dispose(): void
 }
 
+const ignore = (): void => undefined
+
 export function createRefreshRelay(
   api: Pick<TodosApi, 'refreshIndex'>,
   timer: Timer,
@@ -32,7 +34,7 @@ export function createRefreshRelay(
   const send = (): void => {
     const batch = { paths: [...paths], renamed }
     cancel()
-    void api.refreshIndex(batch.paths, batch.renamed)
+    api.refreshIndex(batch.paths, batch.renamed).catch(ignore)
   }
 
   return {
@@ -41,7 +43,7 @@ export function createRefreshRelay(
       const eventRenamed = event.renamed ?? []
       if (eventPaths.length === 0 && eventRenamed.length === 0) {
         cancel()
-        void api.refreshIndex([], [])
+        api.refreshIndex([], []).catch(ignore)
         return
       }
       for (const path of eventPaths) paths.add(path)

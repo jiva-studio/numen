@@ -32,14 +32,17 @@ const { groups, load } = useTaskGroups(props.api, props.getToday)
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(isOpen, (open) => {
-  if (!open) return dismissal.release()
+  if (!open) {
+    dismissal.release()
+    return
+  }
   dismissal.listen()
-  return load()
+  load().catch(() => undefined)
 })
 watch(
   () => props.summary,
   () => {
-    if (isOpen.value) void load()
+    if (isOpen.value) load().catch(() => undefined)
   },
 )
 

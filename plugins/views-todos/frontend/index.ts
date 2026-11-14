@@ -8,7 +8,7 @@ import { todosApi, type TodosApi } from './api/wire'
 import { createRefreshRelay } from './model/createRefreshRelay'
 import type { Timer } from './model/timer'
 import { useTaskFeed, type TaskFeed } from './model/useTaskFeed'
-import TodosStatus from './status/ui/TodosStatus.vue'
+import { TodosStatus } from './status'
 
 /** The id the manifest declares the title bar view under. */
 export const TODOS_VIEW = 'status'
@@ -49,7 +49,9 @@ export const activate = (context: PluginContext, parts: TodosParts = browserPart
   }
   const feed = useTaskFeed(parts.api, () => workspace.window.getToday())
   const relay = createRefreshRelay(parts.api, parts.timer)
-  const onFocus = (): void => void feed.refresh()
+  const onFocus = (): void => {
+    feed.refresh().catch(() => undefined)
+  }
 
   context.register.slotView({
     id: TODOS_VIEW,

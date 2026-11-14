@@ -37,7 +37,7 @@ export function useTaskFeed(
     start: () => {
       if (controller) return
       controller = new AbortController()
-      void follow(controller.signal)
+      follow(controller.signal).catch(() => undefined)
     },
     refresh,
     stop: () => {
