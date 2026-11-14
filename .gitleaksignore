@@ -2,3 +2,6 @@
 3471a241d7bc4005ab2842fb41b761ca5e2b9961:libs/core/internal/adapter/plugin/hostendpoint/host_model_test.go:generic-api-key:246
 3471a241d7bc4005ab2842fb41b761ca5e2b9961:libs/core/usecase/modelcall/calls_test.go:generic-api-key:21
 3471a241d7bc4005ab2842fb41b761ca5e2b9961:libs/core/usecase/modelcall/calls_test.go:generic-api-key:22
+# Checksums of model files, which the generic key rule takes for keys.
+80a5b4ac5bfbea3f68a3a2995583529b40d1689d:plugins/engines-reranking/backend/domain/profile/profiles.json:generic-api-key:13
+80a5b4ac5bfbea3f68a3a2995583529b40d1689d:plugins/engines-reranking/backend/domain/profile/profiles.json:generic-api-key:27
