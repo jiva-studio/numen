@@ -102,6 +102,14 @@ describe("the selection of changed checks", () => {
     assert.ok(!getRunningChecks(["plugins/views-flashcards-studio/backend/main.go"]).includes("go/layers"));
   });
 
+  it("selects the checks that read the note library and the plugins for a change there", () => {
+    const noteDomain = getRunningChecks(["libs/note/domain/connection.go"]);
+    assert.ok(noteDomain.includes("go/transports"));
+    assert.ok(noteDomain.includes("go/use-case-fields"));
+    assert.ok(getRunningChecks(["plugins/engines-transcription/backend/main.go"]).includes("go/use-case-fields"));
+    assert.ok(getRunningChecks(["plugins/readers-pdf/frontend/api/types.ts"]).includes("ts/api-types"));
+  });
+
   it("selects the check whose own code changed, with the reason", () => {
     const one = selectChecks(registry, options, ["tools/checks/structure/go/layers/check_test.go"]).find((s) => s.entry.name === "go/layers");
     assert.ok(one.run);
