@@ -51,3 +51,9 @@ func NewAgentRename(cfg Config) RenameField {
 func (cfg Config) NewDeckWriter(index edit.IndexUpdater) ports.DeckWriter {
 	return NewWrite(cfg.Readers, cfg.Writers, cfg.Links, index, cfg.Now, cfg.Entropy)
 }
+
+// NewLinkWriter returns what points the `links:` entries of a note over cfg, with index as what
+// brings the index up to date after a write.
+func (cfg Config) NewLinkWriter(index edit.IndexUpdater) ports.LinkWriter {
+	return NewWrite(cfg.Readers, cfg.Writers, cfg.Links, index, cfg.Now, cfg.Entropy)
+}

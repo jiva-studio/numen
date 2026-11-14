@@ -126,3 +126,14 @@ func newBodyNote(body string) domain.Note {
 	n.Body = body
 	return n
 }
+
+// PointAt points the entry of the `links:` block of the note at path that carries `type: of` at
+// to, over the file stat the caller read. An empty address takes that entry out.
+func (u Write) PointAt(
+	ctx context.Context, v domain.Vault, path, of string, to domain.Address, role domain.LinkRole, stat domain.FileStat,
+) (domain.FileStat, error) {
+	e, getReleaseError := newEdit(u.readers, u.writers, u.index, u.now, u.entropy)
+	e.FileStat = stat
+	written, err := e.PointAt(ctx, v, path, of, to, role)
+	return written, errors.Join(err, getReleaseError())
+}

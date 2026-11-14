@@ -24,3 +24,11 @@ type CardNoteReader interface {
 type DeckWriter interface {
 	Deck(ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat) (format.DeckWriteResult, error)
 }
+
+// LinkWriter points an entry of the `links:` block of a note at another note, over the file stat
+// the caller read.
+type LinkWriter interface {
+	PointAt(
+		ctx context.Context, v domain.Vault, path, of string, to domain.Address, role domain.LinkRole, stat domain.FileStat,
+	) (domain.FileStat, error)
+}

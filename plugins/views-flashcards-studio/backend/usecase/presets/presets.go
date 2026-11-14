@@ -38,38 +38,38 @@ type presetNotes interface {
 // `type: preset`. A deck naming none is scheduled by the defaults, which is
 // what a vault holding no preset at all gets.
 type Presets struct {
-	readers  ports.VaultReaders
-	writers  ports.VaultWriters
-	links    ports.LinkQueries
-	notes    presetNotes
-	problems ports.ProblemQueries
-	index    edit.IndexUpdater
-	day      review.Day
-	now      ports.Clock
-	entropy  ports.Entropy
+	readers    ports.VaultReaders
+	writers    ports.VaultWriters
+	links      ports.LinkQueries
+	notes      presetNotes
+	problems   ports.ProblemQueries
+	index      edit.IndexUpdater
+	day        review.Day
+	now        ports.Clock
+	linkWriter ports.LinkWriter
 }
 
 // Config is what the presets are made from. Notes identifies presets and names them. Problems is
 // optional: a link the index does not carry is accounted for in what parsing turned up. Day is the
-// review day boundary that decides whether a preset schedules anything today. Entropy fills the
-// identifier a deck that is pointed at a preset gets when it carries none.
+// review day boundary that decides whether a preset schedules anything today. LinkWriter writes the
+// entry of a deck's `links:` block that names its preset.
 type Config struct {
-	Readers  ports.VaultReaders
-	Writers  ports.VaultWriters
-	Links    ports.LinkQueries
-	Notes    presetNotes
-	Problems ports.ProblemQueries
-	Index    edit.IndexUpdater
-	Day      review.Day
-	Now      ports.Clock
-	Entropy  ports.Entropy
+	Readers    ports.VaultReaders
+	Writers    ports.VaultWriters
+	Links      ports.LinkQueries
+	Notes      presetNotes
+	Problems   ports.ProblemQueries
+	Index      edit.IndexUpdater
+	Day        review.Day
+	Now        ports.Clock
+	LinkWriter ports.LinkWriter
 }
 
 // New creates the use case through which a vault's presets are read and written.
 func New(cfg Config) Presets {
 	return Presets{
 		readers: cfg.Readers, writers: cfg.Writers, links: cfg.Links, notes: cfg.Notes,
-		problems: cfg.Problems, index: cfg.Index, day: cfg.Day, now: cfg.Now, entropy: cfg.Entropy,
+		problems: cfg.Problems, index: cfg.Index, day: cfg.Day, now: cfg.Now, linkWriter: cfg.LinkWriter,
 	}
 }
 

@@ -66,7 +66,7 @@ func (b *Backend) getFlashConfig() flashcards.Config {
 
 func (b *Backend) newPresets(index flashcards.IndexUpdate, day review.Day) presets.Presets {
 	return presets.New(presets.Config{Readers: b.ports.Readers, Writers: b.ports.Writers, Links: b.ports.Links, Notes: b.ports.Notes,
-		Problems: b.ports.Problems, Index: index, Now: b.now, Entropy: b.entropy, Day: day})
+		Problems: b.ports.Problems, Index: index, Now: b.now, Day: day, LinkWriter: b.getCardsConfig().NewLinkWriter(index)})
 }
 
 func (b *Backend) getCardsConfig() cards.Config {
