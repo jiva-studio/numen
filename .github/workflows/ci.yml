@@ -1,14 +1,18 @@
 name: CI
 
-# The checks of a pull request, of a push to main and of a manual run. `changes` finds the areas a
-# pull request or a push touches from .github/filters.yml; a manual run takes every area. Each
-# called workflow runs the jobs of its areas. The CI job is the one required check.
+# The checks of a pull request, of a push to main, of the nightly run and of a manual run. `changes`
+# finds the areas a pull request or a push touches from .github/filters.yml; the nightly and a
+# manual run take every area. Each called workflow runs the jobs of its areas. The CI job is the
+# one required check.
 on:
   # A new title is checked again, so `edited` is listed beside the default types.
   pull_request:
     types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
+  # mutation.yml starts at 01:23.
+  schedule:
+    - cron: "0 3 * * *"
   # Windows and macOS runners cost two and ten times a Linux one, so a manual run asks for them.
   workflow_dispatch:
     inputs:
@@ -21,8 +25,8 @@ on:
         type: boolean
         default: false
 
-# A pull request keeps only its newest run. A push to main and a manual run have a group of their
-# own: a group holds one pending run and cancels the older one, so it cannot queue every merge.
+# A pull request keeps only its newest run. Every other run has a group of its own: a group holds
+# one pending run and cancels the older one, so it cannot queue every merge.
 concurrency:
   group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
