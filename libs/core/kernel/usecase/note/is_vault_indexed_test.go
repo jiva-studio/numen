@@ -3,6 +3,7 @@ package note_test
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -22,7 +23,7 @@ func TestIsVaultIndexedReturnsWhetherTheIndexCarriesTheVault(t *testing.T) {
 
 func TestIsVaultIndexedAnswersFalseWhereNoIndexIsBound(t *testing.T) {
 	t.Parallel()
-	if query.NewIsVaultIndexed(nil).Execute(t.Context(), domain.Vault{ID: "any"}) {
+	if query.NewIsVaultIndexed(none.NoteQueries{}).Execute(t.Context(), domain.Vault{ID: "any"}) {
 		t.Error("a build with no index carries a vault")
 	}
 	var unset *query.IsVaultIndexed

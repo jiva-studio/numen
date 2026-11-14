@@ -30,12 +30,13 @@ type PluginVaultHooks struct {
 	Written    func()
 	IndexState func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
-	Notes      *NoteUseCases
+	Notes      *hostvault.NoteChanges
 }
 
 func getNoteChanges(notes NoteUseCases) hostvault.NoteChanges {
 	return hostvault.NoteChanges{
-		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking, AddLinks: notes.Refer.AddLinks,
+		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking,
+		AddLinks: note.NewAddLinks(notes.Edit.Linking),
 	}
 }
 
@@ -111,7 +112,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 }
 
 func newArranger(
-	useCases NoteUseCases, db *Index, window *NoteUseCases, current func() (domain.Vault, bool),
+	useCases NoteUseCases, db *Index, window *hostvault.NoteChanges, current func() (domain.Vault, bool),
 ) hostvault.Arranger {
 	arranger := hostvault.Arranger{
 		Notes:    getNoteChanges(useCases),
@@ -119,7 +120,7 @@ func newArranger(
 		Problems: db.NoteProblems(),
 	}
 	if window != nil {
-		arranger.Window, arranger.WindowVault = getNoteChanges(*window), current
+		arranger.Window, arranger.WindowVault = *window, current
 	}
 	return arranger
 }
