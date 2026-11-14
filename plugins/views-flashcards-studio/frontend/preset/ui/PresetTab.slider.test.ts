@@ -233,10 +233,13 @@ describe('the one slider', () => {
   it('remains over the knob, and under it where over would leave the picture', async () => {
     const { tab } = mountPresetTab()
     // Which way the bubble is lifted off its anchor, which is the anchor the
-    const lift = () =>
-      /translate:[^;]*\s([^\s;]+);?/.exec(
-        tab.get('[data-control="callout"]').attributes('style') ?? '',
-      )?.[1]
+    const lift = () => {
+      const parts = /translate:\s*([^;]+)/
+        .exec(tab.get('[data-control="callout"]').attributes('style') ?? '')?.[1]
+        ?.trim()
+        .split(/\s+/)
+      return parts ? (parts[1] ?? '0') : undefined
+    }
     const getTailUnder = () => tab.get('[data-control="tail"]').attributes('data-under')
     const slider = tab.get('[data-control="picture"][role="slider"]')
 
@@ -592,12 +595,12 @@ describe('what the control remains at', () => {
     // At either end the knob's value is clamped inside the plot width.
     const slider = tab.get('[data-control="picture"][role="slider"]')
     await slider.trigger('keydown', { key: 'Home' })
-    expect(tab.get('[data-control="number"][data-at-knob]').attributes('style')).toContain(
-      'translate: 0 0',
+    expect(tab.get('[data-control="number"][data-at-knob]').attributes('style')).toMatch(
+      /translate:\s*0(?:px)?(?:\s+0(?:px)?)?;/,
     )
     await slider.trigger('keydown', { key: 'End' })
-    expect(tab.get('[data-control="number"][data-at-knob]').attributes('style')).toContain(
-      'translate: -100% 0',
+    expect(tab.get('[data-control="number"][data-at-knob]').attributes('style')).toMatch(
+      /translate:\s*-100%(?:\s+0(?:px)?)?;/,
     )
   })
 

@@ -35,4 +35,22 @@ describe('a file opened at ranges of its text', () => {
 
     expect(readerCalls).toStrictEqual([['library/Birds.bin', null, ranges]])
   })
+
+  it('opens nothing and rejects where the vault could not be requested', async () => {
+    const tabOpeners = fileOpeners({
+      fileKinds: async () => {
+        throw new Error('the vault is not there')
+      },
+    })
+    const readerCalls: unknown[][] = []
+    tabOpeners.registerExtensionReader('bin', (...args) => {
+      readerCalls.push(args)
+    })
+
+    await expect(
+      tabOpeners.openFileAt('library/Birds.bin', [{ start: 1, end: 2 }]),
+    ).rejects.toThrow('the vault is not there')
+
+    expect(readerCalls).toStrictEqual([])
+  })
 })
