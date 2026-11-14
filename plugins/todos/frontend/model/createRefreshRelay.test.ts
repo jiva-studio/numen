@@ -84,7 +84,7 @@ describe('the refresh relay', () => {
     expect(fake.calls.refreshIndex).toEqual([])
   })
 
-  it('tells once the backend has checked the paths it sent, and not before', async () => {
+  it('calls onRefreshed after the backend has checked the sent paths, not before', async () => {
     const { clock, relay, getRefreshed } = setup()
     relay.push({ paths: ['a.md'] })
     await settle()
@@ -96,7 +96,7 @@ describe('the refresh relay', () => {
     expect(getRefreshed()).toBe(1)
   })
 
-  it('tells once the backend has made a full check', async () => {
+  it('calls onRefreshed after the backend has made a full check', async () => {
     const { relay, getRefreshed } = setup()
 
     relay.push({})
