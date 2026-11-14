@@ -252,6 +252,8 @@ The settings of the plugin Saved Search.
 | `maxReranked` | a number | most passages sent to the reranking service in one search. |
 | `mergeGapBytes` | a number | largest gap in bytes between passages of one file that join. |
 | `maxQueryBytes` | a number | most bytes of the text of one query. |
+| `refreshMinutes` | a number | minutes a saved search waits after its last run before an index change runs it again; 0 runs it at once. A change of its query, rerank text or limit runs it at once. |
+| `defaultFolder` | text | folder of the vault, relative to the vault folder, that saved_search_create puts a note in when the agent names no folder; empty is the vault folder. |
 
 ### `md.numen.views.titleBar`
 
