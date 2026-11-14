@@ -29,7 +29,6 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 | `tools`, `toolstest`             | the tools a plugin offers an agent, served as `PluginToolService`                                                   |
 | `searchsource`                   | a search source, served as `SearchSourceService`                                                                    |
 | `cache`                          | keyed values in memory and on disk, with expiration, backoff and background refresh                                 |
-| `shared`                         | the lock and the model key of the directory the host shares between plugins                                         |
 | `performance`                    | the performance profile of the person and `SetNice`                                                                 |
 | `clock`                          | `clock.System` for the entry point and `clock.Fake` for tests                                                       |
 | `rpcerror`                       | the error codes of the calls a plugin serves                                                                        |

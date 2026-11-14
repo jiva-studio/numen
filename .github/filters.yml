@@ -52,7 +52,8 @@ core_lib: &core_lib
   - libs/plugin/catalog/**
 sdk_go_lib: &sdk_go_lib
   - libs/plugin/sdk-go/**
-  - libs/plugin/onnx/**
+shared_go_lib: &shared_go_lib
+  - libs/shared/**
 sdk_ts_lib: &sdk_ts_lib
   - libs/plugin/sdk-ts/**
 ui_lib: &ui_lib
@@ -87,6 +88,7 @@ plugins_all: &plugins_all
   - *atomicfile_lib
   - *notes_lib
   - *sdk_go_lib
+  - *shared_go_lib
   - *sdk_ts_lib
   - *ui_lib
   - .github/actions/build-ui/**
@@ -124,6 +126,13 @@ sdk_go:
   - *atomicfile_lib
   - *notes_lib
   - *sdk_go_lib
+  - .github/workflows/go.yml
+  - '!**/*.md'
+shared_go:
+  - *ci_router
+  - *go_workspace
+  - *go_rules
+  - *shared_go_lib
   - .github/workflows/go.yml
   - '!**/*.md'
 desktop:

@@ -17,6 +17,9 @@ on:
       sdk_go:
         type: boolean
         required: true
+      shared_go:
+        type: boolean
+        required: true
       desktop:
         type: boolean
         required: true
@@ -38,7 +41,7 @@ jobs:
   # after a failed part.
   lint:
     name: Go Lint
-    if: inputs.core || inputs.desktop || inputs.mobile || inputs.sdk_go || inputs.protocol
+    if: inputs.core || inputs.desktop || inputs.mobile || inputs.sdk_go || inputs.shared_go || inputs.protocol
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -101,6 +104,14 @@ jobs:
           unformatted=$(cd libs/plugin/sdk-go && gofmt -l .)
           if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
           make lib_plugin_sdk_go_lint
+
+      # The Go libraries under libs/shared that plugins import, each a module of its own.
+      - name: Lint the shared libraries
+        if: ${{ !cancelled() && inputs.shared_go }}
+        run: |
+          unformatted=$(cd libs/shared && gofmt -l .)
+          if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
+          make lib_shared_go_lint
 
       # The window links against the system's own browser, so vet and the linters need its headers.
       - if: ${{ !cancelled() && inputs.desktop }}
@@ -321,11 +332,11 @@ jobs:
         with:
           cache-key: ${{ steps.go.outputs.cache-key }}
 
-  # The tests of the desktop app, its command line binary, the mobile app and the Go plugin SDK. A
+  # The tests of the desktop app, its command line binary, the mobile app, the Go plugin SDK and libs/shared. A
   # part runs when its area changed, and after a failed part.
   test:
     name: Go Tests
-    if: inputs.desktop || inputs.mobile || inputs.sdk_go
+    if: inputs.desktop || inputs.mobile || inputs.sdk_go || inputs.shared_go
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -376,6 +387,10 @@ jobs:
       - name: Test the plugin SDK
         if: ${{ !cancelled() && inputs.sdk_go }}
         run: make lib_plugin_sdk_go_test GO_RACE=1
+
+      - name: Test the shared libraries
+        if: ${{ !cancelled() && inputs.shared_go }}
+        run: make lib_shared_go_test GO_RACE=1
 
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache
