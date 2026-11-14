@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/substitute"
 )
 
-// getSaturday is Saturday 2026-11-14 09:05, the instant of the grammar table.
 func getSaturday() time.Time { return time.Date(2026, 11, 14, 9, 5, 0, 0, time.UTC) }
 
 func getVariables() substitute.Variables {

@@ -7,7 +7,7 @@ describe('the folder a note from a template is made in', () => {
     expect(getTargetFolder({ path: 'notes', isFolder: true })).toBe('notes')
   })
 
-  it('makes the note beside a note target', () => {
+  it('makes the note in the folder of a note target', () => {
     expect(getTargetFolder({ path: 'notes/a.md', isFolder: false })).toBe('notes')
     expect(getTargetFolder({ path: 'notes/People/Ada Lovelace.md', isFolder: false })).toBe(
       'notes/People',
