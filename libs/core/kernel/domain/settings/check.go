@@ -84,6 +84,9 @@ func CheckValue(declared Declarations, registries Registries, path []string, val
 }
 
 func getSettingName(owner string, key []string, value any) (string, error) {
+	if slices.Contains(key, "") {
+		return "", fmt.Errorf("%w: a setting key has an empty name", ErrUndeclared)
+	}
 	if owner == AppOwner {
 		return strings.Join(key, "."), nil
 	}
