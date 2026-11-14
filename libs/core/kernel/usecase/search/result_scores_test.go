@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func newScore(value float64) *float64 { return &value }
+func newScore(value float64) *float64 { return new(value) }
 
 func findResult(t *testing.T, found []domain.SearchResult, path string) domain.SearchResult {
 	t.Helper()
