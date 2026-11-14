@@ -15,6 +15,10 @@ type manifestShape struct {
 		Operations []string `json:"operations"`
 		Max        *int     `json:"max"`
 		When       any      `json:"when"`
+		Default    any      `json:"default"`
+		Options    []struct {
+			Value string `json:"value"`
+		} `json:"options"`
 	} `json:"settings"`
 }
 
@@ -59,5 +63,55 @@ func TestManifestAsksForNoNetworkAndNoCompletionPermission(t *testing.T) {
 	want := []string{"vault:read", "vault:write"}
 	if got := readManifest(t).Permissions; !slices.Equal(got, want) {
 		t.Errorf("permissions = %v, want %v", got, want)
+	}
+}
+
+func TestManifestDeclaresLanguageAndPromptAsStringsThatAreEmptyByDefault(t *testing.T) {
+	for _, key := range []string{"language", "prompt"} {
+		var found int
+		for _, one := range readManifest(t).Settings {
+			if one.Key != key {
+				continue
+			}
+			found++
+			if one.Type != "string" || one.Default != "" || one.When != nil {
+				t.Errorf("setting %s = %+v, want type string, default empty and no condition", key, one)
+			}
+		}
+		if found != 1 {
+			t.Errorf("the manifest declares %d settings %s, want 1", found, key)
+		}
+	}
+}
+
+func TestManifestSuggestsLanguagesAndNoPromptText(t *testing.T) {
+	for _, one := range readManifest(t).Settings {
+		var values []string
+		for _, option := range one.Options {
+			values = append(values, option.Value)
+		}
+		switch one.Key {
+		case "language":
+			for _, want := range []string{"English", "Russian", "Sanskrit"} {
+				if !slices.Contains(values, want) {
+					t.Errorf("the language setting does not suggest %s", want)
+				}
+			}
+		case "prompt":
+			if len(values) != 0 {
+				t.Errorf("the prompt setting suggests %v, want free text", values)
+			}
+		}
+	}
+}
+
+func TestManifestOrdersLanguageAndPromptAfterConnectionsAndBeforeTheSizes(t *testing.T) {
+	var keys []string
+	for _, one := range readManifest(t).Settings {
+		keys = append(keys, one.Key)
+	}
+	at := func(key string) int { return slices.Index(keys, key) }
+	if at("connections") < 0 || at("connections") >= at("language") || at("language") >= at("prompt") || at("prompt") >= at("batchSize") {
+		t.Errorf("settings are in the order %v", keys)
 	}
 }

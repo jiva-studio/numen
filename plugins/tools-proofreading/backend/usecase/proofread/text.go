@@ -22,8 +22,8 @@ func getScanDistance(maxDistance float64) float64 {
 	return maxDistance
 }
 
-func proofreadScan(ctx context.Context, ask AskModel, pages []numbered.Batch, maxDistance float64) (textResult, error) {
-	answers, err := askBatches(ctx, ask, numbered.ScanInstruction, pages, getScanDistance(maxDistance))
+func proofreadScan(ctx context.Context, ask AskModel, instruction string, pages []numbered.Batch, maxDistance float64) (textResult, error) {
+	answers, err := askBatches(ctx, ask, instruction, pages, getScanDistance(maxDistance))
 	if err != nil {
 		return textResult{}, err
 	}
@@ -41,16 +41,18 @@ func proofreadScan(ctx context.Context, ask AskModel, pages []numbered.Batch, ma
 	return out, nil
 }
 
-// batchShape is how the lines are cut into batches: the lines in a batch and those it shares with the next.
-type batchShape struct {
+// batchPlan is how the lines are cut into batches: the lines in a batch, those it shares with the next, the first line number to read and how many lines at most.
+type batchPlan struct {
 	size    int
 	overlap int
+	from    int
+	limit   int
 }
 
 func proofreadSpeech(
-	ctx context.Context, ask AskModel, lines []numbered.Line, shape batchShape, from, limit int,
+	ctx context.Context, ask AskModel, instruction string, lines []numbered.Line, plan batchPlan,
 ) (textResult, error) {
-	size, overlap := shape.size, shape.overlap
+	size, overlap, from, limit := plan.size, plan.overlap, plan.from, plan.limit
 	cues := numbered.GetSpokenLines(lines)
 	pos := sort.Search(len(cues), func(i int) bool { return cues[i].Number >= from })
 	if pos >= len(cues) {
@@ -65,13 +67,13 @@ func proofreadSpeech(
 	about := numbered.DescribeSpeech(cues)
 
 	main := setContext(numbered.SpeechBatches(window, size, overlap), about)
-	answers, err := askBatches(ctx, ask, numbered.SpeechInstruction, main, 0)
+	answers, err := askBatches(ctx, ask, instruction, main, 0)
 	if err != nil {
 		return textResult{}, err
 	}
 	_, past := numbered.GatherAnswers(answers)
 	batchedContext := setContext(numbered.CutBatches(window, size, overlap, past), about)
-	more, err := askBatches(ctx, ask, numbered.SpeechInstruction, batchedContext, 0)
+	more, err := askBatches(ctx, ask, instruction, batchedContext, 0)
 	if err != nil {
 		return textResult{}, err
 	}
