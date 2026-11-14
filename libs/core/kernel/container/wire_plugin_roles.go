@@ -36,6 +36,8 @@ type PluginSupervision struct {
 	Processes        *supervision.Processes
 	Failures         *supervision.Failures
 	Services         *supervision.Services
+	Endpoint         *supervision.Slot[supervision.HostEndpoint]
+	Dependencies     *supervision.Slot[pluginport.DependencyRegistry]
 }
 
 // NewPluginRoles creates the roles of a plugin host for the target application and the folders its plugins are in. The
@@ -45,7 +47,8 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *Plu
 	mode := plugin.NewMode()
 	values := plugin.NewSettingValues()
 	readers := plugin.NewContentTypeLookup()
-	services := supervision.NewServices(mode)
+	endpoint, dependencies := &supervision.Slot[supervision.HostEndpoint]{}, &supervision.Slot[pluginport.DependencyRegistry]{}
+	services := supervision.NewServices(mode, endpoint.Get, dependencies.Get)
 	sups := supervision.NewSupervisors(errs.Report, services.ClearPlugin)
 	health := pluginhealth.NewItems()
 	failures := supervision.NewFailures(sups, clock, errs, health)
@@ -66,8 +69,10 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *Plu
 		Set: set, Mode: mode, Supervisors: sups, Activation: activation, Failures: failures, Clock: clock, Report: errs.Report,
 	})
 	return &PluginRoles{
-		PluginSupervision: PluginSupervision{RunningProcesses: supervision.NewRunningProcesses(sups), Processes: processes, Failures: failures, Services: services},
-		Registry:          registry,
+		PluginSupervision: PluginSupervision{RunningProcesses: supervision.NewRunningProcesses(sups), Processes: processes, Failures: failures, Services: services,
+			Endpoint: endpoint, Dependencies: dependencies,
+		},
+		Registry: registry,
 		Discovery: plugin.NewDiscovery(plugin.DiscoveryDeps{
 			Set: set, Registrar: set, Scan: scan, Mode: mode, Supervisors: sups, Stopper: stopper, Listeners: listeners, Storage: files,
 			Health: health, Report: errs.Report, Dirs: dirs, Target: target,
@@ -95,6 +100,6 @@ func setPluginStorage(roles *PluginRoles, cacheRoot, dataRoot string, newRegistr
 	// gomutants:disable-next-line reason="a window started without a models directory gets no dependency registry, which only an installation with downloaded models exercises"
 	if models := roles.Storage.GetModelsDir(); models != "" {
 		// gomutants:disable-next-line reason="the registry is built from the models directory of an installation, which a test does not have"
-		roles.Services.SetDependencies(newRegistry(models))
+		roles.Dependencies.Replace(newRegistry(models))
 	}
 }

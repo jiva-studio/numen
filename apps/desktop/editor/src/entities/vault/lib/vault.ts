@@ -24,6 +24,9 @@ export interface VaultList {
  */
 export type VaultResult = Result<Vault | null, VaultErrorCode>
 
+/** The result of removing or opening a vault, which return no vault. */
+export type VaultAction = Result<null, VaultErrorCode>
+
 export type VaultErrorCode =
   | 'unreadable'
   | 'copy'
@@ -54,9 +57,9 @@ export interface Vaults {
    * Removes a vault from the list. The folder stays in place, and is moved to
    * the system trash when `trash` is true.
    */
-  remove(id: string, trash: boolean): Promise<VaultErrorCode | null>
+  remove(id: string, trash: boolean): Promise<VaultAction>
   /** Shows another vault in this window, replacing the current one. */
-  open(this: void, id: string): Promise<VaultErrorCode | null>
+  open(this: void, id: string): Promise<VaultAction>
 }
 
 /** What the open vault reports about itself. */

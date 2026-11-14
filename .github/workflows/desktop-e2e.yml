@@ -9,12 +9,24 @@ on:
         description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), flashcards for the flashcards window, and acceptance for the scenarios of features/, separated by spaces'
         type: string
         default: all
+      engines:
+        description: 'chromium, webkit, or both separated by a space'
+        type: string
+        default: chromium webkit
   workflow_dispatch:
     inputs:
       scope:
         description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), flashcards for the flashcards window, and acceptance for the scenarios of features/, separated by spaces'
         type: string
         default: all
+      engines:
+        description: 'chromium, webkit, or both separated by a space'
+        type: string
+        default: chromium webkit
+
+env:
+  SCOPE: ${{ inputs.scope || 'all' }}
+  ENGINES: ${{ inputs.engines || 'chromium webkit' }}
 
 permissions:
   contents: read
@@ -45,9 +57,18 @@ jobs:
 
       - id: plan
         name: Plan the jobs
-        env:
-          SCOPE: ${{ inputs.scope }}
-        run: node tests/e2e/desktop/scripts/select-tests.mjs plan "$SCOPE" | tee -a "$GITHUB_OUTPUT"
+        run: |
+          node tests/e2e/desktop/scripts/select-tests.mjs plan "$SCOPE" > "$RUNNER_TEMP/plan.txt"
+          while IFS= read -r line; do
+            case "$line" in
+              matrix=*)
+                jq -c --arg engines "$ENGINES" \
+                  '{include: [.include[] | select(.engine as $engine | $engines | split(" ") | index($engine))]}' \
+                  <<< "${line#matrix=}" | sed 's/^/matrix=/'
+                ;;
+              *) echo "$line" ;;
+            esac
+          done < "$RUNNER_TEMP/plan.txt" | tee -a "$GITHUB_OUTPUT"
 
   # Builds the window, its plugins and the debug binaries once; the test jobs download them.
   build:
@@ -240,6 +261,7 @@ jobs:
 
       - uses: ./.github/actions/setup-playwright
         with:
+          browsers: ${{ env.ENGINES }}
           packages: libgtk-4-1 libwebkitgtk-6.0-4
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -258,9 +280,13 @@ jobs:
             sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           fi
 
-      - name: Run flashcards E2E tests in Chromium, then WebKit
+      - name: Run flashcards E2E tests
         working-directory: tests/e2e/desktop
-        run: npm run test:flashcards
+        run: |
+          read -ra engines <<< "$ENGINES"
+          args=()
+          if [ "${#engines[@]}" -eq 1 ]; then args=(-- "--project=${engines[0]}"); fi
+          npm run test:flashcards "${args[@]}"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
@@ -271,7 +297,6 @@ jobs:
             tests/e2e/desktop/test-results/
           retention-days: 7
 
-  # The scenarios of features/ in Chromium, then WebKit, against the build of the build job.
   acceptance:
     name: Acceptance
     needs: [plan, build]
@@ -294,6 +319,7 @@ jobs:
 
       - uses: ./.github/actions/setup-playwright
         with:
+          browsers: ${{ env.ENGINES }}
           packages: libgtk-4-1 libwebkitgtk-6.0-4
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -312,9 +338,13 @@ jobs:
             sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           fi
 
-      - name: Run the scenarios in Chromium, then WebKit
+      - name: Run the scenarios
         working-directory: tests/acceptance/desktop
-        run: npm run acceptance:test
+        run: |
+          read -ra engines <<< "$ENGINES"
+          args=()
+          if [ "${#engines[@]}" -eq 1 ]; then args=(-- "--project=${engines[0]}"); fi
+          npm run acceptance:test "${args[@]}"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()

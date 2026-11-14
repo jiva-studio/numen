@@ -19,14 +19,14 @@ export interface TabsHold {
 export const openAfterSavingTabs = (open: Vaults['open'], hold: TabsHold): Vaults['open'] => {
   return async (id) => {
     await hold.pause()
-    let error: Awaited<ReturnType<Vaults['open']>>
+    let answer: Awaited<ReturnType<Vaults['open']>>
     try {
-      error = await open(id)
+      answer = await open(id)
     } catch (thrown) {
       hold.resume()
       throw thrown
     }
-    if (error) hold.resume()
-    return error
+    if (!answer.ok) hold.resume()
+    return answer
   }
 }

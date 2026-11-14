@@ -10,8 +10,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
-func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Services, hostendpoint.Callers) {
-	services := hostendpoint.NewServices()
+func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Lender, hostendpoint.Callers) {
+	lender := hostendpoint.NewLender()
+	services := hostendpoint.NewServices(lender.Get)
 	callers := hostendpoint.Callers{
 		Identity: host.Activation, Leases: host.Activation,
 		Lent: services,
@@ -20,8 +21,8 @@ func lendEndpoint(host *container.PluginRoles, address string) (*hostendpoint.Se
 			return toolbridge.NewCatalog(toolHost, toolHost, host.Storage, testsupport.NewClock(), io.Discard)
 		},
 	}
-	host.Services.SetHostEndpoint(hostendpoint.NewServer(address, callers))
-	return services, callers
+	host.Endpoint.Replace(hostendpoint.NewServer(address, callers))
+	return lender, callers
 }
 
 func lentCallers(host *container.PluginRoles) hostendpoint.Callers {

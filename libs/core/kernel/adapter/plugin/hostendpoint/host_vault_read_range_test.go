@@ -35,8 +35,7 @@ func (readerIdentity) CheckPluginPermission(string, string) error { return nil }
 
 func openReadEndpoint(t *testing.T, access *vaultapi.Access) numenv1connect.HostVaultServiceClient {
 	t.Helper()
-	lent := hostendpoint.NewServices()
-	lent.SetPluginVault(access)
+	lent := hostendpoint.NewServices(func() hostendpoint.Lent { return hostendpoint.Lent{Vault: access} })
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, hostendpoint.Callers{
 		Identity: readerIdentity{}, Lent: lent,
 	})

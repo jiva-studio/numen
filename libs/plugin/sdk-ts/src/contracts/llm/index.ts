@@ -15,11 +15,14 @@ import {
   EmbedResultSchema,
   ProfileRequestSchema,
   ProfileSchema,
+  RerankRequestSchema,
+  RerankResultSchema,
   type ChatFinish,
   type ChatFrame,
   type CompleteResult,
   type EmbedResult,
   type Profile,
+  type RerankResult,
 } from './llm_pb'
 
 export * from './llm_pb'
@@ -28,6 +31,7 @@ export * from './llm_pb'
 export const OPERATION_COMPLETE = 'llm.complete'
 export const OPERATION_CHAT = 'llm.chat'
 export const OPERATION_EMBED = 'llm.embed'
+export const OPERATION_RERANK = 'llm.rerank'
 export const OPERATION_PROFILE = 'llm.profile'
 export const OPERATION_MODELS = 'llm.models'
 export const OPERATION_REASONING = 'llm.reasoning'
@@ -89,6 +93,33 @@ export const embed = async (
       if (result.vectors.length !== message.texts.length)
         throw new Error(
           `llm: ${OPERATION_EMBED} answered ${result.vectors.length} vectors for ${message.texts.length} texts`,
+        )
+      return result
+    },
+  )
+}
+
+/**
+ * Asks the rows of the plugin, in order, for one score for each document. No document is no call. An
+ * empty query throws with no call, as the Go client returns an error. A result with another number of
+ * scores than documents throws, as a result that is no message of the contract does; the Go client
+ * returns that error.
+ */
+export const rerank = async (
+  host: ConnectionHost,
+  request: MessageInitShape<typeof RerankRequestSchema>,
+  options?: ConnectionCallOptions,
+): Promise<Result<RerankResult, ConnectionError>> => {
+  const message = create(RerankRequestSchema, request)
+  if (message.documents.length === 0) return asValue(create(RerankResultSchema))
+  if (message.query.trim() === '') throw new Error(`llm: ${OPERATION_RERANK} needs a query`)
+  return decode(
+    await collectCall(host, OPERATION_RERANK, toBinary(RerankRequestSchema, message), options),
+    (bytes) => {
+      const result = fromBinary(RerankResultSchema, bytes)
+      if (result.scores.length !== message.documents.length)
+        throw new Error(
+          `llm: ${OPERATION_RERANK} answered ${result.scores.length} scores for ${message.documents.length} documents`,
         )
       return result
     },

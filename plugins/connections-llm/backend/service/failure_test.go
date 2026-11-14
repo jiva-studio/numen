@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
 
@@ -38,10 +39,13 @@ func TestTheStatusOfAnAnswerDecidesTheKindOfTheFailure(t *testing.T) {
 		fake, address := startFakeServer(t, fakeopenai.Config{})
 		fake.Fail("/chat/completions", one.status, one.retryAfter)
 		fake.Fail("/embeddings", one.status, one.retryAfter)
+		fake.Fail("/rerank", one.status, one.retryAfter)
 
 		_, err := newTestService(t).Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("hi"))
 		checkFailure(t, err, one.want)
 		_, err = newTestService(t).Embed(newContext(t), newCall("openrouter", address, testKey, "m"), []string{"a"})
+		checkFailure(t, err, one.want)
+		_, err = newTestService(t).Rerank(newContext(t), newCall("openrouter", address, testKey, "m"), &llm.RerankRequest{Query: "q", Documents: []string{"a"}})
 		checkFailure(t, err, one.want)
 	}
 }

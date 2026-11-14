@@ -32,8 +32,8 @@ func newWorkingHost(t *testing.T) workingHost {
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
 	tasks := run.NewTasks()
 	work := run.NewPluginWork(&run.Lock{}, tasks, nil)
-	services, _ := lendEndpoint(host, hostendpoint.Address)
-	services.SetPluginWork(work)
+	lender, _ := lendEndpoint(host, hostendpoint.Address)
+	lender.Update(func(l *hostendpoint.Lent) { l.Work = work })
 	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
 		t.Fatal(err)
 	}

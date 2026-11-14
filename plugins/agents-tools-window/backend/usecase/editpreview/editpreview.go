@@ -4,10 +4,11 @@ package editpreview
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/diff"
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/preview"
 )
 
 var (
@@ -15,63 +16,89 @@ var (
 	errMissingEdit = errors.New("either proposedText or diff is required")
 )
 
-// Vault reads the note the edit is proposed to. A nil Vault means the host offers none.
+// Vault reads the note the edit is proposed to.
 type Vault interface {
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
 }
 
-// Request is a proposed edit. Diff is a unified diff to show as it is; otherwise the diff is
-// built from OriginalText, or the text of the note when that is empty, and ProposedText.
+// Files returns the reader of the vault with the identity; the empty identity is the vault the host
+// shows. A nil Files means the host offers none.
+type Files func(vault domain.VaultID) Vault
+
+// Request is a proposed edit of a note in Vault, the vault the host shows when it is empty. Diff is a
+// unified diff to show as it is; otherwise the diff is built from OriginalText, or the text of the
+// note when that is empty, and ProposedText.
 type Request struct {
+	Vault        domain.VaultID
 	Path         string
 	ProposedText string
 	OriginalText string
 	Diff         string
 }
 
-// Creator creates previews and keeps them in a store.
+// Preview is the diff of a proposed edit.
+type Preview struct {
+	Path      string
+	Diff      string
+	Additions int
+	Deletions int
+}
+
+// Creator creates previews.
 type Creator struct {
-	vault Vault
-	store *preview.Store
+	files Files
 }
 
-// NewCreator creates a creator that keeps its previews in store; vault may be nil.
-func NewCreator(store *preview.Store, vault Vault) Creator {
-	return Creator{vault: vault, store: store}
+// NewCreator creates a creator that reads notes through files; files may be nil.
+func NewCreator(files Files) Creator {
+	return Creator{files: files}
 }
 
-func (c Creator) Create(ctx context.Context, req Request) (preview.Preview, error) {
+func (c Creator) Create(ctx context.Context, req Request) (Preview, error) {
 	if req.Path == "" {
-		return preview.Preview{}, errMissingPath
+		return Preview{}, errMissingPath
 	}
 	if req.ProposedText == "" && req.Diff == "" {
-		return preview.Preview{}, errMissingEdit
+		return Preview{}, errMissingEdit
 	}
-	diffText, additions, deletions := c.prepareDiff(ctx, req)
-	created := preview.Preview{
-		ID:           c.store.NextID(),
-		Path:         req.Path,
-		ProposedText: req.ProposedText,
-		OriginalText: req.OriginalText,
-		Diff:         diffText,
-		Additions:    additions,
-		Deletions:    deletions,
-		CreatedAt:    c.store.Now(),
+	diffText, additions, deletions, err := c.prepareDiff(ctx, req)
+	if err != nil {
+		return Preview{}, err
 	}
-	c.store.Save(created)
-	return created, nil
+	return Preview{Path: req.Path, Diff: diffText, Additions: additions, Deletions: deletions}, nil
 }
 
-func (c Creator) prepareDiff(ctx context.Context, req Request) (string, int, int) {
+func (c Creator) prepareDiff(ctx context.Context, req Request) (string, int, int, error) {
 	if req.Diff != "" {
 		additions, deletions := diff.CountChanges(req.Diff)
-		return req.Diff, additions, deletions
+		return req.Diff, additions, deletions, nil
 	}
 	original := req.OriginalText
-	if original == "" && c.vault != nil {
-		if data, _, err := c.vault.Read(ctx, req.Path); err == nil {
-			original = string(data)
+	if original == "" {
+		read, err := c.readNote(ctx, req)
+		if err != nil {
+			return "", 0, 0, err
 		}
+		original = read
 	}
-	return diff.CreateUnified(req.Path, original, req.ProposedText)
+	diffText, additions, deletions := diff.CreateUnified(req.Path, original, req.ProposedText)
+	return diffText, additions, deletions, nil
+}
+
+func (c Creator) readNote(ctx context.Context, req Request) (string, error) {
+	if c.files == nil {
+		return "", nil
+	}
+	vault := c.files(req.Vault)
+	if vault == nil {
+		return "", nil
+	}
+	data, _, err := vault.Read(ctx, req.Path)
+	if errors.Is(err, host.ErrNotExist) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("read the note %s: %w", req.Path, err)
+	}
+	return string(data), nil
 }
