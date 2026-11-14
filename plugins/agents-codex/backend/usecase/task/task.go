@@ -244,7 +244,7 @@ func (r *Runner) runProgram(ctx context.Context, cmd Command, sink codexevent.Si
 		return "", connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	stdout := proc.Output()
-	scanned := make(chan scanResult)
+	scanned := make(chan scanResult, 1)
 	go func() { scanned <- scanOutput(stdout, sink) }()
 	var result scanResult
 	var closeErr error
@@ -429,7 +429,8 @@ func writeInstructions(listed []*tools.ToolInfo) string {
 }
 
 func writePrompt(instructions string, request *contract.TaskRequest) string {
-	texts := []string{instructions}
+	texts := make([]string, 0, len(request.GetContextNotes())+2)
+	texts = append(texts, instructions)
 	for _, note := range request.GetContextNotes() {
 		heading := "The note " + note.GetPath()
 		if title := note.GetTitle(); title != "" {

@@ -64,7 +64,7 @@ type Cache struct {
 func NewCache(source Source, clock Clock, isAsync bool) *Cache {
 	return &Cache{
 		mu: sync.Mutex{}, key: "", models: nil, isCached: false, failedKey: "", failedAt: time.Time{},
-		inFlight: make(map[string]bool), isAsync: isAsync, clock: clock, source: source,
+		inFlight: nil, isAsync: isAsync, clock: clock, source: source,
 	}
 }
 
@@ -97,6 +97,9 @@ func (c *Cache) Get(ctx context.Context, command []string) []agentmodel.Model {
 func (c *Cache) startBackgroundFetch(ctx context.Context, key string, command []string) {
 	if c.inFlight[key] {
 		return
+	}
+	if c.inFlight == nil {
+		c.inFlight = make(map[string]bool)
 	}
 	c.inFlight[key] = true
 	go c.fetchInBackground(context.WithoutCancel(ctx), key, slices.Clone(command))

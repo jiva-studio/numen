@@ -17,6 +17,9 @@ type sessions struct {
 }
 
 func (s *sessions) get(key string) string {
+	if key == "" {
+		return ""
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.byKey[key]

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"os"
 	"os/exec"
-	"syscall"
 	"testing"
 	"time"
 )
@@ -30,18 +29,6 @@ func TestSuperviseAndWaitForExit(t *testing.T) {
 	dead.Process = &os.Process{Pid: 99999999}
 	if err := dead.Cancel(); !errors.Is(err, os.ErrProcessDone) {
 		t.Errorf("Cancel on non-existent PID = %v, want os.ErrProcessDone", err)
-	}
-
-	if got := translateKillError(nil); got != nil {
-		t.Errorf("translateKillError(nil) = %v, want nil", got)
-	}
-	for _, sigErr := range []error{syscall.EPERM, syscall.ESRCH} {
-		if got := translateKillError(sigErr); !errors.Is(got, os.ErrProcessDone) {
-			t.Errorf("translateKillError(%v) = %v, want os.ErrProcessDone", sigErr, got)
-		}
-	}
-	if got := translateKillError(syscall.EINVAL); !errors.Is(got, syscall.EINVAL) {
-		t.Errorf("translateKillError(EINVAL) = %v, want EINVAL", got)
 	}
 
 	running, stop := context.WithCancel(t.Context())

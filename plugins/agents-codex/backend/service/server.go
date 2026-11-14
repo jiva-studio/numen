@@ -1,8 +1,6 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
@@ -28,17 +26,16 @@ type parts struct {
 
 func newAgentServer(p parts) (*agentServer, error) {
 	values := new(settings.Settings)
-	models := modellist.NewCache(codexcli.Models{}, clock.System{}, p.isAsync)
-	return buildAgentServer(values, models, task.Dependencies{
+	tasks, err := task.New(task.Dependencies{
 		Settings: values, Finder: codexcli.Installation{}, Commands: codexcli.Commands{}, Launcher: codexcli.Launcher{},
 		Tools: p.tools, ToolServer: mcpendpoint.Server{},
 	})
-}
-
-func buildAgentServer(values *settings.Settings, models *modellist.Cache, deps task.Dependencies) (*agentServer, error) {
-	tasks, taskErr := task.New(deps)
-	answers, compErr := completion.New(completion.Dependencies{Settings: values, Answerer: tasks, Models: models})
-	if err := errors.Join(taskErr, compErr); err != nil {
+	if err != nil {
+		return nil, err
+	}
+	models := modellist.NewCache(codexcli.Models{}, clock.System{}, p.isAsync)
+	answers, err := completion.New(completion.Dependencies{Settings: values, Answerer: tasks, Models: models})
+	if err != nil {
 		return nil, err
 	}
 	return &agentServer{settings: values, tasks: tasks, completion: answers}, nil
