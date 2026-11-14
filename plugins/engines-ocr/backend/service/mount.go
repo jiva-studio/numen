@@ -86,16 +86,24 @@ func newConfigUpdate(launcher *launch.Launcher, holder *engines.Holder) func(map
 
 func newCommands(launcher *launch.Launcher) (*command.Registry, error) {
 	commands := command.New()
-	if err := commands.Add(command.CreateText, newRecognizeCommand(launcher.StartFile)); err != nil {
+	if err := commands.Add(command.CreateText, newRecognizeCommand(launcher)); err != nil {
 		return nil, err
 	}
-	if err := commands.Add(command.CreateMissingText, newRecognizeCommand(launcher.StartMissingFile)); err != nil {
+	if err := commands.Add(command.CreateMissingText, newRecognizeMissingCommand(launcher)); err != nil {
 		return nil, err
 	}
 	return commands, nil
 }
 
-func newRecognizeCommand(start func(context.Context, string) (string, error)) command.Run {
+func newRecognizeCommand(launcher *launch.Launcher) command.Run {
+	return newStartCommand(launcher.StartFile)
+}
+
+func newRecognizeMissingCommand(launcher *launch.Launcher) command.Run {
+	return newStartCommand(launcher.StartMissingFile)
+}
+
+func newStartCommand(start func(context.Context, string) (string, error)) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		state, err := start(ctx, req.Path)
 		if err != nil {
