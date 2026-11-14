@@ -7,9 +7,8 @@ import (
 	"os"
 	"slices"
 	"strings"
-	"sync/atomic"
+	"sync"
 	"testing"
-	"time"
 
 	"github.com/tetratelabs/wazero"
 
@@ -87,15 +86,18 @@ func (t failingTexts) PutVersion(ctx context.Context, params host.TextPut) (doma
 
 type slowCancelFiles struct {
 	Files
-	started  chan struct{}
-	finished *atomic.Bool
+	started    chan struct{}
+	startOnce  *sync.Once
+	canceled   chan struct{}
+	cancelOnce *sync.Once
+	release    chan struct{}
 }
 
 func (f slowCancelFiles) Read(ctx context.Context, _ string) ([]byte, domain.FileStat, error) {
-	close(f.started)
+	f.startOnce.Do(func() { close(f.started) })
 	<-ctx.Done()
-	time.Sleep(15 * time.Millisecond)
-	f.finished.Store(true)
+	f.cancelOnce.Do(func() { close(f.canceled) })
+	<-f.release
 	return nil, domain.FileStat{}, ctx.Err()
 }
 
@@ -202,11 +204,15 @@ func TestCloseWaitsForRunningWorkAndRerunsFinishedFiles(t *testing.T) {
 	}
 
 	// Close waits for in-flight work to finish before returning.
-	started := make(chan struct{})
-	var finished atomic.Bool
+	slow := slowCancelFiles{
+		Files: nil, started: make(chan struct{}), startOnce: new(sync.Once),
+		canceled: make(chan struct{}), cancelOnce: new(sync.Once), release: make(chan struct{}),
+	}
 	slowWriter := NewWriter(
 		func(id domain.VaultID) Files {
-			return slowCancelFiles{Files: vault.With(id), started: started, finished: &finished}
+			files := slow
+			files.Files = vault.With(id)
+			return files
 		},
 		func(id domain.VaultID) host.TextVersions { return texts.With(id) },
 		func(id domain.VaultID) host.StoreWriter { return vault.Store().With(id) },
@@ -215,11 +221,20 @@ func TestCloseWaitsForRunningWorkAndRerunsFinishedFiles(t *testing.T) {
 	if err := slowWriter.CreateText(t.Context(), Request{Vault: "vault", Path: "a.pdf"}); err != nil {
 		t.Fatal(err)
 	}
-	<-started
-	slowWriter.Close()
-	if !finished.Load() {
-		t.Error("Close returned before the running goroutine finished")
+	<-slow.started
+	closed := make(chan struct{})
+	go func() {
+		slowWriter.Close()
+		close(closed)
+	}()
+	<-slow.canceled
+	select {
+	case <-closed:
+		t.Error("Close returned before the running read was released")
+	default:
 	}
+	close(slow.release)
+	<-closed
 
 	// CreateText fails when no vault is shown.
 	noVault := hosttest.New("vault")
