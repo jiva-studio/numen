@@ -11,7 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
 )
@@ -285,7 +285,7 @@ func TestWindowToolTextsNameNoToolOfAnotherPlugin(t *testing.T) {
 		}
 	})
 	t.Setenv(hostcall.HostPortEnv, "1")
-	handler, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: "window-token"}, service.Mount)
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "window-token"}, service.Mount)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -399,7 +399,7 @@ func TestWindowToolDescriptionsContainNoNarrativeMarker(t *testing.T) {
 func TestWindowToolInstructionsContainNoNarrativeMarker(t *testing.T) {
 	// The window tools are read from the handler the host starts, where the plugin mounts its registry.
 	t.Setenv(hostcall.HostPortEnv, "1")
-	handler, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: "window-token"}, service.Mount)
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "window-token"}, service.Mount)
 	if err != nil {
 		t.Fatal(err)
 	}

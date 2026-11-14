@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process/processtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/domain/release"
 )
@@ -66,7 +67,7 @@ func post(t *testing.T, web *httptest.Server, path, body string) (int, []byte) {
 
 func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 	fetcher := &fakeFetcher{manifest: newManifest()}
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
 		return mount(s, fetcher, nil)
 	})
 	if err != nil {
@@ -104,7 +105,7 @@ func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 }
 
 func TestACheckOfAnUnknownBuildIsAnInvalidArgument(t *testing.T) {
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
 		return mount(s, &fakeFetcher{manifest: newManifest()}, nil)
 	})
 	if err != nil {
@@ -130,7 +131,7 @@ func TestACheckOfAnUnknownBuildIsAnInvalidArgument(t *testing.T) {
 
 func TestACheckReleasesTheProcessOnceItIsAnswered(t *testing.T) {
 	host := processtest.NewHost(t)
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
 		return mount(s, &fakeFetcher{manifest: newManifest()}, host.NewClient(t))
 	})
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service"
@@ -19,7 +19,7 @@ func newMountedHandler(t *testing.T, notes map[string]string) http.Handler {
 	t.Helper()
 	env := vaulttest.New(t, notes)
 	backend := service.New(service.Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": mountToken}, backend.Mount)
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": mountToken}, backend.Mount)
 	if err != nil {
 		t.Fatal(err)
 	}

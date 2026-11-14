@@ -23,7 +23,7 @@ func startPlugin(t *testing.T) string {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, "4000")
 	t.Setenv(hostcall.PluginTokenEnv, testToken)
-	handler, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: testToken}, Mount)
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: testToken}, Mount)
 	if err != nil {
 		t.Fatal(err)
 	}

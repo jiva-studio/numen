@@ -23,7 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm/llmtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 )
 
@@ -275,7 +274,7 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	program := writeScript(t, "agy", modelListing)
 	t.Setenv(hostcall.HostPortEnv, "")
-	handler, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: "tok"}, Mount)
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "tok"}, Mount)
 	if err != nil {
 		t.Fatal(err)
 	}

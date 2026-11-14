@@ -26,6 +26,7 @@ type layout struct {
 	modulePath  string
 	connectPath string
 	sdkGoPath   string
+	sdkGoDir    string
 	protocolDir string
 	sdkTSDir    string
 	libraryDirs []string
@@ -38,6 +39,7 @@ func newRepositoryLayout(t *testing.T) layout {
 		modulePath:  load.NumenRoot,
 		connectPath: load.Wire + "/gen/numen/v1/numenv1connect",
 		sdkGoPath:   load.SdkModule,
+		sdkGoDir:    "libs/plugin/sdk-go",
 		protocolDir: "libs/core/protocol",
 		sdkTSDir:    "libs/plugin/sdk-ts",
 		libraryDirs: []string{"libs/plugin/sdk-go", "libs/plugin/sdk-ts", "libs/core/client"},
@@ -75,9 +77,10 @@ type use struct {
 // usage is what one language reads: the items, the uses and the edges along which the consumers of
 // the second node of a pair become consumers of the first.
 type usage struct {
-	items []item
-	uses  []use
-	edges [][2]string
+	items    []item
+	uses     []use
+	testUses []use
+	edges    [][2]string
 }
 
 func getGoKey(pkgPath, name string) string {
@@ -189,6 +192,19 @@ func collectGoUsage(modules [][]*packages.Package, l layout) usage {
 }
 
 func (l layout) collectModuleUsage(pkgs []*packages.Package, found *usage, seenItems map[string]bool, seenUses map[use]bool, seenPairs map[string]bool) {
+	var tests []*packages.Package
+	var production []*packages.Package
+	for _, pkg := range pkgs {
+		if load.IsTestVariant(pkg) {
+			tests = append(tests, pkg)
+		} else {
+			production = append(production, pkg)
+		}
+	}
+	for _, pkg := range tests {
+		l.collectTestUses(pkg, found, seenUses)
+	}
+	pkgs = production
 	var roots []*types.Package
 	for _, pkg := range pkgs {
 		if pkg.Types != nil {
@@ -219,6 +235,26 @@ func (l layout) collectModuleUsage(pkgs []*packages.Package, found *usage, seenI
 			found.edges = append(found.edges, l.listDispatchEdges(pkg, seenPairs)...)
 		} else if pkg.PkgPath != l.connectPath {
 			found.edges = append(found.edges, l.listOwnInterfaceEdges(pkg, sdkTypes)...)
+		}
+	}
+}
+
+// collectTestUses keeps the uses of a declaration of test support from the test files of pkg. A use of any
+// other export from a test file counts for nothing.
+func (l layout) collectTestUses(pkg *packages.Package, found *usage, seenUses map[use]bool) {
+	if pkg.Types == nil || pkg.TypesInfo == nil || pkg.Fset == nil {
+		return
+	}
+	for _, file := range pkg.Syntax {
+		name := pkg.Fset.Position(file.Pos()).Filename
+		if !strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		for _, one := range l.listGoUses(pkg, file, l.getRelative(name)) {
+			if l.isSupportKey(one.target) && !seenUses[one] {
+				seenUses[one] = true
+				found.testUses = append(found.testUses, one)
+			}
 		}
 	}
 }
@@ -514,6 +550,7 @@ const (
 	placeNone place = iota
 	placeLibrary
 	placeConsumer
+	placeSupport
 )
 
 func isTestPath(rel string) bool {
@@ -531,11 +568,41 @@ func isTestPath(rel string) bool {
 	return false
 }
 
+// A package of libs/plugin/sdk-go whose directory name ends in "test" (servertest, healthtest) is test
+// support. The plugin server runs only as a process: it takes its token and prints its ready line over
+// standard input and output and stops on signals, so a plugin test cannot start it. Test support in a
+// *test package is the one way a test gets a handler, as net/http/httptest does. A use of an SDK export
+// from test support passes on to the consumers of the declaration that holds it, as a use from any
+// other package of the SDK does, and a use from a test file counts only for a declaration of test
+// support. So an export that only a test-support declaration uses stays alive while a test uses that
+// declaration, and an unused test-support declaration is dead with what it alone keeps alive.
+func (l layout) isSupportPath(rel string) bool {
+	if !isWithinDir(rel, l.sdkGoDir) || strings.HasSuffix(rel, "_test.go") || !strings.HasSuffix(rel, ".go") {
+		return false
+	}
+	return hasSupportSegment(strings.Split(path.Dir(rel), "/"))
+}
+
+func (l layout) isSupportKey(key string) bool {
+	pkgPath, _, found := strings.Cut(strings.TrimPrefix(key, "go:"), "|")
+	if !found || !strings.HasPrefix(key, "go:") || !load.IsWithin(pkgPath, l.sdkGoPath) {
+		return false
+	}
+	return hasSupportSegment(strings.Split(strings.TrimPrefix(pkgPath, l.sdkGoPath), "/"))
+}
+
+func hasSupportSegment(segments []string) bool {
+	return slices.ContainsFunc(segments, func(segment string) bool { return strings.HasSuffix(segment, "test") })
+}
+
 func isWithinDir(rel, dir string) bool {
 	return rel == dir || strings.HasPrefix(rel, dir+"/")
 }
 
 func (l layout) classify(rel string) (place, string) {
+	if l.isSupportPath(rel) {
+		return placeSupport, ""
+	}
 	if rel == "" || isTestPath(rel) || isWithinDir(rel, l.protocolDir) {
 		return placeNone, ""
 	}
@@ -596,7 +663,7 @@ func getConsumers(parts []usage, l layout) map[string]map[string]bool {
 			addContainer(one.target)
 			addContainer(one.user)
 			switch kind, consumer := l.classify(one.file); kind {
-			case placeLibrary:
+			case placeLibrary, placeSupport:
 				addEdge(one.target, one.user)
 			case placeConsumer:
 				if consumers[one.target] == nil {
@@ -605,6 +672,12 @@ func getConsumers(parts []usage, l layout) map[string]map[string]bool {
 				consumers[one.target][consumer] = true
 			case placeNone:
 			}
+		}
+		for _, one := range part.testUses {
+			if consumers[one.target] == nil {
+				consumers[one.target] = map[string]bool{}
+			}
+			consumers[one.target]["test"] = true
 		}
 		for _, edge := range part.edges {
 			addContainer(edge[0])
@@ -646,7 +719,7 @@ func findDeadExports(parts []usage, l layout) []finding {
 	for _, part := range parts {
 		for _, one := range part.items {
 			file := getItemFile(one)
-			if seen[one.Key] || (!strings.HasPrefix(one.Key, "rpc:") && (isTestPath(file) || isGeneratedContract(file))) {
+			if seen[one.Key] || (!strings.HasPrefix(one.Key, "rpc:") && ((isTestPath(file) && !l.isSupportPath(file)) || isGeneratedContract(file))) {
 				continue
 			}
 			seen[one.Key] = true
@@ -664,7 +737,7 @@ func checkDeadExports(t *testing.T, workspace load.WorkspacePackages) {
 	l := newRepositoryLayout(t)
 	var modules [][]*packages.Package
 	for _, dir := range load.ListWorkspaceModules(t) {
-		modules = append(modules, load.ListProductionPackages(workspace.ListModule(t, dir)))
+		modules = append(modules, workspace.ListModule(t, dir))
 	}
 	goUsage := collectGoUsage(modules, l)
 	tsUsage, read := collectTSUsage(t, l)

@@ -13,13 +13,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/document"
 )
 
 func newLinkedPages(t *testing.T, files *hosttest.Vault) *httptest.Server {
 	t.Helper()
-	handler, err := server.NewLinkedHandler(map[string]string{
+	handler, err := servertest.NewHandler(map[string]string{
 		"NUMEN_PLUGIN_TOKEN": "linked-token",
 		"NUMEN_HOST_PORT":    "1",
 	}, func(s *server.Server) error {
@@ -27,7 +28,7 @@ func newLinkedPages(t *testing.T, files *hosttest.Vault) *httptest.Server {
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("NewLinkedHandler: %v", err)
+		t.Fatalf("NewHandler: %v", err)
 	}
 	web := httptest.NewServer(handler)
 	t.Cleanup(web.Close)

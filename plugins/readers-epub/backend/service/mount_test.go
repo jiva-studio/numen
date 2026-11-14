@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 )
 
 func postMethod(t *testing.T, handler http.Handler, method, body, token string) *httptest.ResponseRecorder {
@@ -26,9 +26,9 @@ func newMountedHandler(t *testing.T, port string) http.Handler {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, port)
 	t.Setenv(hostcall.PluginTokenEnv, "linked-token")
-	handler, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: "linked-token"}, Mount)
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "linked-token"}, Mount)
 	if err != nil {
-		t.Fatalf("NewLinkedHandler: %v", err)
+		t.Fatalf("NewHandler: %v", err)
 	}
 	return handler
 }

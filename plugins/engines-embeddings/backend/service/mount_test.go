@@ -47,9 +47,9 @@ func newMountedHandler(t *testing.T, vars map[string]string) http.Handler {
 	for name, value := range vars {
 		t.Setenv(name, value)
 	}
-	handler, err := server.NewLinkedHandler(vars, Mount)
+	handler, err := servertest.NewHandler(vars, Mount)
 	if err != nil {
-		t.Fatalf("NewLinkedHandler: %v", err)
+		t.Fatalf("NewHandler: %v", err)
 	}
 	return handler
 }

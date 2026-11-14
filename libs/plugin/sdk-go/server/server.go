@@ -94,8 +94,8 @@ func New(opts ...Option) *Server {
 	return newServer(port, "", opts, false)
 }
 
-// NewLinkedHandler returns the handler a host that links the plugin into its own process serves it
-// through: a server with the services mount registers on it, which authenticates with the token
+// NewLinkedHandler returns the handler of a server that is not run as a process (servertest.NewHandler
+// is its one caller): a server with the services mount registers on it, which authenticates with the token
 // vars holds under NUMEN_PLUGIN_TOKEN and reads no flag.
 func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.Handler, error) {
 	token := vars[tokenVar]

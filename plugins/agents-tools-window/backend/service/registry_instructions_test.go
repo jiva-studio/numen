@@ -8,14 +8,14 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 func listWindowTools(t *testing.T) tools.Listing {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, "1")
-	handler, err := server.NewLinkedHandler(map[string]string{hostcall.PluginTokenEnv: "window-token"}, Mount)
+	handler, err := servertest.NewHandler(map[string]string{hostcall.PluginTokenEnv: "window-token"}, Mount)
 	if err != nil {
 		t.Fatal(err)
 	}

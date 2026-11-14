@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -103,11 +104,11 @@ func TestMountFromEnv(t *testing.T) {
 func TestMountedHandlerRequiresTheToken(t *testing.T) {
 	t.Parallel()
 
-	handler, err := server.NewLinkedHandler(map[string]string{
+	handler, err := servertest.NewHandler(map[string]string{
 		"NUMEN_PLUGIN_TOKEN": "secret-plugin-token",
 	}, Mount)
 	if err != nil {
-		t.Fatalf("NewLinkedHandler failed: %v", err)
+		t.Fatalf("NewHandler failed: %v", err)
 	}
 	if handler == nil {
 		t.Fatal("expected non-nil handler")

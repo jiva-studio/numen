@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/address"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
@@ -17,7 +18,7 @@ import (
 func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 	_, _, hosted := newMockLinks(t)
 	var mountedSrv *server.Server
-	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "test-token"}, func(srv *server.Server) error {
+	handler, err := servertest.NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "test-token"}, func(srv *server.Server) error {
 		mountedSrv = srv
 		return Mount(srv, hosted, true)
 	})

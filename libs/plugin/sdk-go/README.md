@@ -37,7 +37,7 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 
 ## Server
 
-`server.Run(mount)` runs a launched plugin. The port comes from `-port` or `NUMEN_PLUGIN_PORT`, and the token from the first line of standard input. The server answers on loopback, writes `NUMEN_READY port=<port>` once it listens, and stops on `Shutdown`, on an OS signal or when standard input closes. `server.NewLinkedHandler(vars, mount)` is the handler of a plugin the host links into its own process; it takes the token from `vars` and reads no flag. `Server.OnClose(fn)` adds what runs when the server stops.
+`server.Run(mount)` runs a launched plugin. The port comes from `-port` or `NUMEN_PLUGIN_PORT`, and the token from the first line of standard input. The server answers on loopback, writes `NUMEN_READY port=<port>` once it listens, and stops on `Shutdown`, on an OS signal or when standard input closes. `servertest.NewHandler(vars, mount)` is the handler of the mounted plugin for tests; it takes the token from `vars` and reads no flag. `Server.OnClose(fn)` adds what runs when the server stops.
 
 - `SetConfigure` and `SetUpdateConfig` receive the settings of the plugin as a map of text.
 - `server.WithEventHandler(fn)` receives each event the `activationEvents` of the manifest subscribe to. An error the handler returns is the plugin's error for the event.
