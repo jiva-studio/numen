@@ -111,7 +111,7 @@ func TestAnIndexWithoutAVaultReturnsItsError(t *testing.T) {
 
 	got, err := NewStats(index, newFakeClock(getStart()), 8).Get(t.Context())
 
-	if !errors.Is(err, host.ErrNoVault) || !reflect.DeepEqual(got, api.Stats{}) {
+	if !errors.Is(err, host.ErrNoVault) || !reflect.DeepEqual(got, Summary{}) {
 		t.Errorf("got %+v, %v; want empty stats and %v", got, err, host.ErrNoVault)
 	}
 }
