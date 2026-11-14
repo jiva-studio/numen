@@ -107,7 +107,6 @@ func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, er
 	return Result{}, fmt.Errorf("%w %s", ErrNoFreeName, stem)
 }
 
-// createAs makes the note at path unless the name is taken, which it reports as not made.
 func (u CreateFromTemplate) createAs(ctx context.Context, path string, r render) (string, bool, error) {
 	isFree, err := u.isFree(ctx, path)
 	if err != nil || !isFree {
@@ -141,7 +140,6 @@ func (u CreateFromTemplate) isFree(ctx context.Context, path string) (bool, erro
 	return false, nil
 }
 
-// isTemplate reports whether path is a note inside root, written in its cleanest form.
 func isTemplate(path, root string) bool {
 	if path != pathpkg.Clean(path) || !strings.HasPrefix(path, root+"/") || !strings.HasSuffix(path, noteExtension) {
 		return false

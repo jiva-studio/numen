@@ -35,7 +35,6 @@ var tokens = []token{
 	{"a", getMeridiem},
 }
 
-// formatTime writes t as the layout says, or as fallback when the layout is empty.
 func formatTime(t time.Time, layout, fallback string) string {
 	if layout == "" {
 		layout = fallback

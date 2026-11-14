@@ -52,7 +52,6 @@ func Apply(text string, vars Variables) Result {
 	return Result{Text: out.String(), Cursor: cursor}
 }
 
-// readVariable reads the variable that starts at the beginning of text, if one does.
 func readVariable(text string, vars Variables) (variable, bool) {
 	if !strings.HasPrefix(text, "{{") {
 		return variable{}, false
