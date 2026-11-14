@@ -315,39 +315,41 @@ describe('the active line', () => {
 })
 
 describe('the font and the line height', () => {
-  const style = (view: EditorView) => view.dom.getAttribute('style') ?? ''
+  // The attribute selector asks the element whether it carries the declaration, without reading it.
+  const carries = (view: EditorView, declaration: string) =>
+    view.dom.matches(`[style*="${declaration}"]`)
 
   it('adds no font variable where no family is set', () => {
-    expect(style(open({}))).not.toContain('--editor-font')
-    expect(style(open({ fontFamily: '' }))).not.toContain('--editor-font')
+    expect(carries(open({}), '--editor-font')).toBe(false)
+    expect(carries(open({ fontFamily: '' }), '--editor-font')).toBe(false)
   })
 
   it('sets the font variable to the family it is given', () => {
-    expect(style(open({ fontFamily: 'serif' }))).toMatch(/--editor-font:\s*serif/)
+    expect(carries(open({ fontFamily: 'serif' }), '--editor-font: serif')).toBe(true)
   })
 
   it('sets the line height variable to the value it is given', () => {
-    expect(style(open({ lineHeight: 1.8 }))).toMatch(/--editor-line-height:\s*1\.8\b/)
+    expect(carries(open({ lineHeight: 1.8 }), '--editor-line-height: 1.8')).toBe(true)
   })
 
   it('changes the font and clears it with an empty family', () => {
     const view = open({ fontFamily: 'serif' })
     view.dispatch({ effects: fontCompartment.reconfigure(getFontExtension('monospace')) })
-    expect(style(view)).toMatch(/--editor-font:\s*monospace/)
+    expect(carries(view, '--editor-font: monospace')).toBe(true)
     view.dispatch({ effects: fontCompartment.reconfigure(getFontExtension('')) })
-    expect(style(view)).not.toContain('--editor-font')
+    expect(carries(view, '--editor-font')).toBe(false)
   })
 
   it('keeps the font variable when the line height changes', () => {
     const view = open({ fontFamily: 'serif', lineHeight: 1.8 })
     view.dispatch({ effects: lineHeightCompartment.reconfigure(getLineHeightExtension(2)) })
-    expect(style(view)).toMatch(/--editor-font:\s*serif/)
-    expect(style(view)).toMatch(/--editor-line-height:\s*2\b/)
+    expect(carries(view, '--editor-font: serif')).toBe(true)
+    expect(carries(view, '--editor-line-height: 2')).toBe(true)
   })
 
   it('keeps the line height variable when the font changes', () => {
     const view = open({ fontFamily: 'serif', lineHeight: 1.8 })
     view.dispatch({ effects: fontCompartment.reconfigure(getFontExtension('monospace')) })
-    expect(style(view)).toMatch(/--editor-line-height:\s*1\.8\b/)
+    expect(carries(view, '--editor-line-height: 1.8')).toBe(true)
   })
 })
