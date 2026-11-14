@@ -223,7 +223,10 @@ describe('ticking a task in the todos popover', () => {
   })
 
   it('asks to show that the note changed when the backend refuses the tick, and reads the lists again', async () => {
-    const fake = createFakeApi({ tasks: TASKS, setTaskDone: (request) => refuse(request, 'notFound') })
+    const fake = createFakeApi({
+      tasks: TASKS,
+      setTaskDone: (request) => refuse(request, 'notFound'),
+    })
     const { wrapper: view } = draw(SUMMARY, fake)
     await openPopover(view)
     const readsBefore = fake.calls.listTasks.length

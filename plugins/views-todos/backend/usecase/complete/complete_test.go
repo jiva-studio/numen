@@ -150,7 +150,7 @@ func TestExecuteKeepsTheLineEndingsTheByteOrderMarkAndTheFrontmatter(t *testing.
 	}
 }
 
-func TestExecuteUnticksADoneTaskAndRemovesItsDoneField(t *testing.T) {
+func TestExecuteUnticksATickedTaskAndRemovesItsCompletionDate(t *testing.T) {
 	vault, _, u := setup(t, "a.md", "- [x] buy milk done:2026-11-10 ^milk\n- [ ] other\n")
 
 	got := execute(t, u, Request{Path: "a.md", Line: 1, Raw: "- [x] buy milk done:2026-11-10 ^milk", IsDone: false, Today: today})

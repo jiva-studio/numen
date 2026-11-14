@@ -34,12 +34,12 @@ type app struct {
 
 func start(t *testing.T, notes map[string]string) *app {
 	t.Helper()
-	return startWriting(t, notes, nil)
+	return startWithWriter(t, notes, nil)
 }
 
-// startWriting serves the notes with writes going to the writer getWriter returns, or to the vault
+// startWithWriter serves the notes with writes going to the writer getWriter returns, or to the vault
 // when getWriter is nil.
-func startWriting(t *testing.T, notes map[string]string, getWriter func(*hosttest.Vault) ports.FileWriter) *app {
+func startWithWriter(t *testing.T, notes map[string]string, getWriter func(*hosttest.Vault) ports.FileWriter) *app {
 	t.Helper()
 	vault := hosttest.New("notes")
 	for path, text := range notes {
@@ -276,7 +276,7 @@ func tickRequest(path string, line int, raw string) api.SetTaskDoneRequest {
 	return api.SetTaskDoneRequest{Path: path, Line: line, Raw: raw, IsDone: true, Today: today}
 }
 
-func TestSetTaskDoneWritesTheTickAndTheNextListShowsTheTaskDone(t *testing.T) {
+func TestTickOverHTTPWritesTheLineAndTheNextListShowsTheTaskTicked(t *testing.T) {
 	a := start(t, map[string]string{"Home.md": "# Chores\n- [ ] fix the tap +home\n- [ ] buy milk\n"})
 	before := a.list(t, api.Filter{}, 10)
 
@@ -305,7 +305,7 @@ func TestSetTaskDoneWritesTheTickAndTheNextListShowsTheTaskDone(t *testing.T) {
 	}
 }
 
-func TestSetTaskDoneUnticksADoneTask(t *testing.T) {
+func TestUntickOverHTTPReopensATickedTask(t *testing.T) {
 	a := start(t, map[string]string{"a.md": "- [x] buy milk done:2026-11-10\n"})
 
 	status, got, failure := a.setTaskDone(t, api.SetTaskDoneRequest{
@@ -329,7 +329,7 @@ func (w staleWriter) Write(ctx context.Context, path string, content []byte, bas
 	return w.vault.Write(ctx, path, content, baseline)
 }
 
-func TestSetTaskDoneAnswersARefusedChangeWithItsErrorWordAndWritesNothing(t *testing.T) {
+func TestTickOverHTTPAnswersAChangeTheNoteDoesNotAllowWithItsErrorWord(t *testing.T) {
 	cases := []struct {
 		name      string
 		note      string
@@ -352,7 +352,7 @@ func TestSetTaskDoneAnswersARefusedChangeWithItsErrorWordAndWritesNothing(t *tes
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			a := startWriting(t, map[string]string{"a.md": tc.note}, tc.getWriter)
+			a := startWithWriter(t, map[string]string{"a.md": tc.note}, tc.getWriter)
 
 			status, got, failure := a.setTaskDone(t, tc.req)
 
@@ -366,7 +366,7 @@ func TestSetTaskDoneAnswersARefusedChangeWithItsErrorWordAndWritesNothing(t *tes
 	}
 }
 
-func TestSetTaskDoneAnswersAHostFailureWithAnAPIError(t *testing.T) {
+func TestTickOverHTTPAnswersAHostFailureWithAnAPIError(t *testing.T) {
 	cases := []struct {
 		name    string
 		arrange func(*hosttest.Vault)

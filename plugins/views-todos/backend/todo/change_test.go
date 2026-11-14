@@ -74,7 +74,7 @@ func TestChangeLineTicksAnOpenTask(t *testing.T) {
 	}
 }
 
-func TestChangeLineUnticksADoneTask(t *testing.T) {
+func TestChangeLineUnticksATickedTask(t *testing.T) {
 	cases := []struct {
 		name string
 		line string
@@ -200,7 +200,7 @@ func replacesDone(before, ticked string) bool {
 // For any line, a tick changes the checkbox space to x and either adds done:today or sets the
 // value of one done: token; no other byte changes, and the parsed task keeps its text and fields.
 // An untick of a line with no done: before the tick gives the line back.
-func FuzzChangeLineChangesOnlyTheCheckboxAndTheDoneField(f *testing.F) {
+func FuzzChangeLineChangesOnlyTheCheckboxAndTheCompletionDate(f *testing.F) {
 	f.Add("- [ ] buy milk")
 	f.Add("- [ ] buy milk ^milk-1")
 	f.Add("> \t  12) [ ] (A) call @phone due:2026-11-20 pri:B")

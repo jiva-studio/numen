@@ -62,7 +62,7 @@ export const task = (overrides: Partial<Task> & Pick<Task, 'path' | 'line' | 'te
 /**
  * The tasks the fake answers a ListTasks with are keyed by the due filter of the request. A
  * SetTaskDone answers with setTaskDone when it is set; else it ticks the task as the backend does:
- * the task leaves the lists and comes back done.
+ * the task is removed from the lists and returned with the status done.
  */
 export interface FakeInit {
   readonly summary?: Summary
@@ -109,7 +109,9 @@ export function createFakeApi(init: FakeInit = {}) {
       if (init.setTaskDone) return init.setTaskDone(request)
       let ticked: Task | null = null
       for (const [due, list] of Object.entries(lists) as [Filter['due'], ListTasksResponse][]) {
-        const kept = list.tasks.filter((one) => one.path !== request.path || one.line !== request.line)
+        const kept = list.tasks.filter(
+          (one) => one.path !== request.path || one.line !== request.line,
+        )
         if (kept.length === list.tasks.length) continue
         ticked = list.tasks.find((one) => !kept.includes(one)) ?? null
         lists[due] = { tasks: kept, total: list.total - 1, revision: list.revision + 1 }
