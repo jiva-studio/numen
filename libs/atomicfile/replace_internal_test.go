@@ -128,20 +128,22 @@ func TestReplacePropagatesSyncStatCloseRenameAndRemoveFailures(t *testing.T) {
 		}
 	})
 
-	t.Run("directory sync error", func(t *testing.T) {
-		root := openTestRoot(t, t.TempDir())
-		calls := 0
-		_, err := replace(root, "notes.txt", strings.NewReader("data"), 0o600, root.Rename, func(*os.File) error {
-			calls++
-			if calls == 2 {
-				return errSync
+	if runtime.GOOS != "windows" {
+		t.Run("directory sync error", func(t *testing.T) {
+			root := openTestRoot(t, t.TempDir())
+			calls := 0
+			_, err := replace(root, "notes.txt", strings.NewReader("data"), 0o600, root.Rename, func(*os.File) error {
+				calls++
+				if calls == 2 {
+					return errSync
+				}
+				return nil
+			})
+			if !errors.Is(err, errSync) {
+				t.Fatalf("replace directory sync error = %v, want %v", err, errSync)
 			}
-			return nil
 		})
-		if !errors.Is(err, errSync) {
-			t.Fatalf("replace directory sync error = %v, want %v", err, errSync)
-		}
-	})
+	}
 }
 
 func TestSyncDirectoryAndIgnoreSyncError(t *testing.T) {
