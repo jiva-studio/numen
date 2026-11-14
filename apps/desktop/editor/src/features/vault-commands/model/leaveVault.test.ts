@@ -18,19 +18,19 @@ describe('opening a vault', () => {
     const { calls, hold } = record()
     const open = openAfterSavingTabs(async (id) => {
       calls.push(`open ${id}`)
-      return null
+      return { ok: true, value: null }
     }, hold)
 
-    expect(await open('second')).toBeNull()
+    expect(await open('second')).toStrictEqual({ ok: true, value: null })
 
     expect(calls).toStrictEqual(['pause', 'open second'])
   })
 
   it('writes the tabs again when the core refuses the vault', async () => {
     const { calls, hold } = record()
-    const open = openAfterSavingTabs(async () => 'unreadable', hold)
+    const open = openAfterSavingTabs(async () => ({ ok: false, error: 'unreadable' }), hold)
 
-    expect(await open('second')).toBe('unreadable')
+    expect(await open('second')).toStrictEqual({ ok: false, error: 'unreadable' })
 
     expect(calls).toStrictEqual(['pause', 'resume'])
   })
