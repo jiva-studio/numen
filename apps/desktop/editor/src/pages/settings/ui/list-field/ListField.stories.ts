@@ -107,7 +107,8 @@ export const AddByEnter: Story = {
 
     await userEvent.type(input(), '  drafts  {Enter}')
 
-    await expect(args.onAdd).toHaveBeenCalledExactlyOnceWith('drafts')
+    await expect(args.onAdd).toHaveBeenCalledTimes(1)
+    await expect(args.onAdd).toHaveBeenCalledWith('drafts')
     await expect(listItems()).toStrictEqual(['templates', 'archive/old', 'drafts'])
     await expect(input()).toHaveValue('')
   },
@@ -121,7 +122,8 @@ export const AddByButton: Story = {
     await userEvent.type(input(), 'drafts')
     await userEvent.click(add())
 
-    await expect(args.onAdd).toHaveBeenCalledExactlyOnceWith('drafts')
+    await expect(args.onAdd).toHaveBeenCalledTimes(1)
+    await expect(args.onAdd).toHaveBeenCalledWith('drafts')
     await expect(listItems()).toStrictEqual(['templates', 'archive/old', 'drafts'])
     await expect(input()).toHaveValue('')
   },
@@ -171,7 +173,8 @@ export const RemoveOneItem: Story = {
 
     await userEvent.click(remove('archive/old'))
 
-    await expect(args.onRemove).toHaveBeenCalledExactlyOnceWith('archive/old')
+    await expect(args.onRemove).toHaveBeenCalledTimes(1)
+    await expect(args.onRemove).toHaveBeenCalledWith('archive/old')
     await expect(listItems()).toStrictEqual(['templates', 'drafts'])
   },
 }

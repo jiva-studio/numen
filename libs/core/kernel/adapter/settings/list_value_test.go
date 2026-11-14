@@ -13,9 +13,11 @@ import (
 
 const listPluginID = "md.numen.views.todos"
 
-var listSettings = []manifest.Setting{
-	{Key: "ignoredFolders", Type: manifest.SettingTypeList, Title: "Ignored folders", Default: []any{"templates"}},
-	{Key: "label", Type: "string", Title: "Label"},
+func getListSettings() []manifest.Setting {
+	return []manifest.Setting{
+		{Key: "ignoredFolders", Type: manifest.SettingTypeList, Title: "Ignored folders", Default: []any{"templates"}},
+		{Key: "label", Type: "string", Title: "Label"},
+	}
 }
 
 func declaredWithList(owner string) ([]manifest.Setting, bool) {
@@ -23,7 +25,7 @@ func declaredWithList(owner string) ([]manifest.Setting, bool) {
 	case settingsdomain.AppOwner:
 		return settings.GetAppDeclaration(), true
 	case listPluginID:
-		return listSettings, true
+		return getListSettings(), true
 	}
 	return nil, false
 }
@@ -126,7 +128,7 @@ func TestAListSettingStoredAsAStringInTheFileIsReadAndIgnoredWithANotice(t *test
 	if !hasNotice(cfg.Notices, "ignoredFolders") {
 		t.Errorf("the notices are %q", cfg.Notices)
 	}
-	declared := manifest.Manifest{ID: listPluginID, Settings: listSettings}
+	declared := manifest.Manifest{ID: listPluginID, Settings: getListSettings()}
 	inForce := declared.ResolveSettings(cfg.GetOwner(listPluginID))
 	if !reflect.DeepEqual(inForce["ignoredFolders"], []any{"templates"}) {
 		t.Errorf("the value in force is %#v, want the default", inForce["ignoredFolders"])
@@ -136,7 +138,7 @@ func TestAListSettingStoredAsAStringInTheFileIsReadAndIgnoredWithANotice(t *test
 func TestAPluginIsConfiguredWithAListSettingAsItsJSONText(t *testing.T) {
 	cfg := openList(t, `{"`+listPluginID+`":{"ignoredFolders":["a","b"]}}`)
 
-	declared := manifest.Manifest{ID: listPluginID, Settings: listSettings}
+	declared := manifest.Manifest{ID: listPluginID, Settings: getListSettings()}
 	values := plugindomain.FormatSettingValues(declared.ResolveSettings(cfg.GetOwner(listPluginID)))
 
 	if values["ignoredFolders"] != `["a","b"]` {

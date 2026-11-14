@@ -157,7 +157,7 @@ export function usePluginPaths(
  * The items of the list settings, and the add and the remove of an item, each written as the whole
  * list in force at the moment of the call, so a second add before the vault answers keeps the first.
  */
-export function usePluginLists(
+export function createPluginLists(
   deps: PluginFieldsDeps,
   fields: Pick<ReturnType<typeof usePluginFields>, 'setSetting'>,
 ) {
