@@ -1,7 +1,7 @@
 /**
- * The state of the declarative settings form of one plugin, in three parts the form calls one after
- * the other: the values in force with the text drafts, the enum choices, and the paths chosen
- * through the host's dialog.
+ * The state of the declarative settings form of one plugin, in parts the form calls one after the
+ * other: the values in force with the text drafts, the enum choices, the paths chosen through the
+ * host's dialog, and the items of the list settings.
  *
  * A path chosen for another plugin than the one shown when the dialog was opened is dropped.
  */
@@ -49,6 +49,10 @@ function createSettingValues(
     getStringSetting: (key: string, fallback: JsonValue | undefined): string => {
       const val = getValue(key) ?? fallback
       return typeof val === 'string' ? val : String(fallback ?? '')
+    },
+    getListSetting: (key: string, fallback: JsonValue | undefined): readonly string[] => {
+      const val = getValue(key) ?? fallback
+      return Array.isArray(val) ? val.filter((one): one is string => typeof one === 'string') : []
     },
   }
 }
@@ -145,6 +149,28 @@ export function usePluginPaths(
       problems.value = { ...problems.value, [setting.key]: '' }
       const current = fields.getStringSetting(setting.key, setting.default)
       fields.setSetting(setting.key, removePathEntry(current, targetPath))
+    },
+  }
+}
+
+/**
+ * The items of the list settings, and the add and the remove of an item, each written as the whole
+ * list in force at the moment of the call, so a second add before the vault answers keeps the first.
+ */
+export function usePluginLists(
+  deps: PluginFieldsDeps,
+  fields: Pick<ReturnType<typeof usePluginFields>, 'setSetting'>,
+) {
+  const { getListSetting } = createSettingValues(deps, createFieldSettings(deps))
+  return {
+    getListSetting,
+    addItem: (setting: PluginSettingInfo, item: string): void => {
+      const current = getListSetting(setting.key, setting.default)
+      fields.setSetting(setting.key, [...current, item])
+    },
+    removeItem: (setting: PluginSettingInfo, item: string): void => {
+      const current = getListSetting(setting.key, setting.default)
+      fields.setSetting(setting.key, current.filter((one) => one !== item))
     },
   }
 }

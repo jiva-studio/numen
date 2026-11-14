@@ -128,6 +128,30 @@ func checkValue(declared manifest.Setting, registries Registries, value any) err
 		return checkOption(declared, registries, value)
 	case manifest.SettingTypeConnections:
 		return checkRows(declared, registries, value)
+	case manifest.SettingTypeList:
+		return checkList(value)
+	}
+	return nil
+}
+
+// checkList accepts a list of strings, none empty and none twice.
+func checkList(value any) error {
+	items, isList := value.([]any)
+	if !isList {
+		return fmt.Errorf("%w: expected a list of strings", ErrWrongType)
+	}
+	seen := make(map[string]bool, len(items))
+	for _, item := range items {
+		text, isText := item.(string)
+		switch {
+		case !isText:
+			return fmt.Errorf("%w: expected a list of strings", ErrWrongType)
+		case strings.TrimSpace(text) == "":
+			return fmt.Errorf("%w: %q is empty", ErrInvalidListItem, text)
+		case seen[text]:
+			return fmt.Errorf("%w: %q is listed twice", ErrInvalidListItem, text)
+		}
+		seen[text] = true
 	}
 	return nil
 }

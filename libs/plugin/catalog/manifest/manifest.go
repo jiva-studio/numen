@@ -182,7 +182,7 @@ const settingTypeNumber = "number"
 const settingTypeBoolean = CommandArgumentBoolean
 
 func listSettingTypes() []string {
-	return []string{settingTypeBoolean, SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile, SettingTypeConnections}
+	return []string{settingTypeBoolean, SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile, SettingTypeConnections, SettingTypeList}
 }
 
 // Backend describes the server-side executable of a plugin. A zero IdleStopSeconds takes the idle limit

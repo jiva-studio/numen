@@ -372,6 +372,7 @@ const commands = async () => {
 const kindOfDeclared = (one) => {
   if (one.type === 'boolean') return 'yes or no'
   if (one.type === 'number' || one.type === 'range') return 'a number'
+  if (one.type === 'list') return 'a list of text'
   return 'text'
 }
 
