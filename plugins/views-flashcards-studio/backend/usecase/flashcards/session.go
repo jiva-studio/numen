@@ -43,13 +43,13 @@ type Session struct {
 	cardIDs     AssignCardIDs
 	reviewCards ListReviewCards
 	schedules   Schedules
-	presets     presets.Presets
+	presets     presets.OpenReads
 	day         review.Day
 	now         ports.Clock
 }
 
 func NewSession(
-	cardIDs AssignCardIDs, reviewCards ListReviewCards, schedules Schedules, presets presets.Presets,
+	cardIDs AssignCardIDs, reviewCards ListReviewCards, schedules Schedules, presets presets.OpenReads,
 	day review.Day, now ports.Clock,
 ) Session {
 	return Session{
@@ -78,7 +78,7 @@ func (u Session) Execute(
 	if err != nil {
 		return SessionResult{}, err
 	}
-	reads := u.presets.OpenReads()
+	reads := u.presets.Execute()
 	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, reviewCards)
 	if err != nil {
 		return SessionResult{}, err

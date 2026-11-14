@@ -23,7 +23,7 @@ func TestADeckWhosePresetNoteIsMissingExistsOnTheDefaults(t *testing.T) {
 
 	remove(t, s, "Sanskrit.md")
 
-	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
+	target, err := s.getDeckPreset.Execute(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}

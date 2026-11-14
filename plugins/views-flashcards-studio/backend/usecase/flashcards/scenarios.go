@@ -23,8 +23,19 @@ type ReviewScenarios struct {
 // each deck and the curve of load a preset projects.
 type ScheduleScenarios struct {
 	Schedules Schedules
-	Presets   presets.Presets
+	Presets   PresetScenarios
 	Curves    ProjectCurve
+}
+
+// PresetScenarios is what the presets of a vault do: open a run of reads, read one preset, find the preset
+// of a deck, list them, put a deck on one and save the settings of one.
+type PresetScenarios struct {
+	OpenReads  presets.OpenReads
+	Read       presets.Read
+	GetForDeck presets.GetForDeck
+	List       presets.List
+	Point      presets.Point
+	Save       presets.Save
 }
 
 // CountScenarios is what counts a vault: the cards due now and the reviews answered on each day.
@@ -78,10 +89,11 @@ func NewScenarios(cfg Config) (ReviewScenarios, ScheduleScenarios, CountScenario
 		cfg.Readers, cfg.Writers, cfg.Notes, cfg.Links, updateIndex, cfg.Now,
 	)
 
-	deckPresets := presets.New(presets.Config{
+	presetsConfig := presets.Config{
 		Readers: cfg.Readers, Writers: cfg.Writers, Links: cfg.Links, Notes: cfg.Notes,
 		Problems: cfg.Problems, Index: updateIndex, Now: cfg.Now, Day: cfg.Day,
-	})
+	}
+	deckPresets := presets.NewOpenReads(presetsConfig)
 
 	// Each card is scheduled at the retention target of its own preset.
 	var defaultScheduler review.Scheduler = review.NewFSRS()
@@ -114,7 +126,17 @@ func NewScenarios(cfg Config) (ReviewScenarios, ScheduleScenarios, CountScenario
 			Record:        NewRecord(cfg.Now),
 			Log:           Log{Stores: cfg.Logs},
 		},
-		ScheduleScenarios{Schedules: schedules, Presets: deckPresets, Curves: curves},
+		ScheduleScenarios{
+			Schedules: schedules, Curves: curves,
+			Presets: PresetScenarios{
+				OpenReads:  deckPresets,
+				Read:       presets.NewRead(presetsConfig),
+				GetForDeck: presets.NewGetForDeck(presetsConfig),
+				List:       presets.NewList(presetsConfig),
+				Point:      presets.NewPoint(presetsConfig),
+				Save:       presets.NewSave(presetsConfig),
+			},
+		},
 		CountScenarios{
 			CardsDue:      NewCountCardsDue(reviewCards, schedules, deckPresets, cfg.Day, cfg.Now),
 			Counted:       counted,

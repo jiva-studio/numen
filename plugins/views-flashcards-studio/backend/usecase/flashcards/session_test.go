@@ -1417,7 +1417,7 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 				one.gave(t, s)
 			}
 
-			read, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/On.md")
+			read, err := s.getDeckPreset.Execute(t.Context(), s.vault, "decks/On.md")
 			if err != nil {
 				t.Fatal(err)
 			}

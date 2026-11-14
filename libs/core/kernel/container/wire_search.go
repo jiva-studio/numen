@@ -132,7 +132,7 @@ func createUnreadableFinder(refresh vault.Refresh) func(ctx context.Context, v d
 }
 
 func fitIndex(c searchWiring, db *Index) vectorscase.FitIndex {
-	fit := vectorscase.NewFitIndex(db, c.ErrorHandler)
+	fit := vectorscase.NewFitIndex(db.VectorIndex(), c.ErrorHandler)
 	fit.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return fit
 }

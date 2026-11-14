@@ -728,7 +728,7 @@ func TestACountIsDroppedOnceTheWindowHasMissing(t *testing.T) {
 	went()
 
 	u := flashcards.NewCountCardsDue(
-		flashcards.ListReviewCards{}, flashcards.Schedules{}, presets.Presets{},
+		flashcards.ListReviewCards{}, flashcards.Schedules{}, presets.OpenReads{},
 		review.Day{}, vaulttest.NewClock(),
 	)
 	_, err := u.Execute(removed, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
@@ -1210,7 +1210,7 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	scheds := flashcards.NewSchedules(s.logs, nil, getToday(), flashcards.ListReviewCards{}, presets.Presets{})
+	scheds := flashcards.NewSchedules(s.logs, nil, getToday(), flashcards.ListReviewCards{}, presets.OpenReads{})
 	blind := flashcards.NewCountReviews(s.logs, scheds, getToday(), vaulttest.NewClock())
 
 	got, err := blind.Execute(t.Context(), s.vault)

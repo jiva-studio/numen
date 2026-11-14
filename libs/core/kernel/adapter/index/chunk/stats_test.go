@@ -217,7 +217,7 @@ func TestGetIndexCountsBelowTheMinimum(t *testing.T) {
 			db := openIndex(t)
 			source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2", "a3"}}.save(t, db)
 			embed(t, db, vaultA, "lib/a.epub", 0xF0)
-			if _, err := db.ApplyMinChunkLength(t.Context(), one.minimum); err != nil {
+			if _, err := db.VectorIndex().ApplyMinChunkLength(t.Context(), one.minimum); err != nil {
 				t.Fatal(err)
 			}
 

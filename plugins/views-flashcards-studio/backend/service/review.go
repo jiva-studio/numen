@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/neighborhood"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/reloads"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/scenarios"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/vaultcount"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/apierror"
@@ -24,7 +23,7 @@ type reviewHandler struct {
 	*vaultSession
 	now          ports.Clock
 	runs         *sessions.Registry
-	flash        func() *scenarios.Review
+	flash        func() *reviewScenarios
 	neighborhood neighborhood.Show
 }
 
@@ -117,7 +116,7 @@ func (h *reviewHandler) GetVaultDeckPreset(
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.flash().Schedules.Presets.GetForDeck(ctx, v, req.Deck)
+	found, err := h.flash().Schedules.Presets.GetForDeck.Execute(ctx, v, req.Deck)
 	return presetwire.NewVaultDeckPresetResponse(found, err, h.newTitler(ctx, v))
 }
 

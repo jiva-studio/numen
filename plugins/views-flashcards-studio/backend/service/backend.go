@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/scenarios"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
 )
 
@@ -33,7 +32,7 @@ type Backend struct {
 	now   ports.Clock
 	cfg   Config
 	runs  *sessions.Registry
-	flash *scenarios.Current
+	flash *currentScenarios
 }
 
 // New makes the backend over the host's vault.
@@ -43,7 +42,7 @@ func New(cfg Config) *Backend {
 		vaultSession: &vaultSession{vaults: cfg.Vaults, notes: hostPorts.Notes}, ports: hostPorts, now: cfg.Now, cfg: cfg,
 		runs: sessions.NewRegistry(), flash: nil,
 	}
-	b.flash = scenarios.NewCurrent(b.getFlashConfig())
+	b.flash = createCurrentScenarios(b.getFlashConfig())
 	return b
 }
 

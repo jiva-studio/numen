@@ -56,7 +56,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		}
 	}
 
-	removed, err := db.DeleteVectorsOfOtherRecipes(ctx, now)
+	removed, err := db.VectorIndex().DeleteVectorsOfOtherRecipes(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,10 +82,10 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 	}
 
 	// run that has no model to say what it is holding vectors for.
-	if removedVal, err := db.DeleteVectorsOfOtherRecipes(ctx, ""); err != nil || removedVal != 0 {
+	if removedVal, err := db.VectorIndex().DeleteVectorsOfOtherRecipes(ctx, ""); err != nil || removedVal != 0 {
 		t.Errorf("forgetting under no recipe took %d vectors out: %v", removedVal, err)
 	}
-	if err := db.Compact(ctx); err != nil {
+	if err := db.VectorIndex().Compact(ctx); err != nil {
 		t.Fatal(err)
 	}
 	if targetVal, err := db.ChunkVectors().GetKeptVectors(ctx, now, hashes); err != nil || len(targetVal) != len(hashes) {
@@ -101,13 +101,13 @@ func TestForgettingAndCompactingReportTheirFailure(t *testing.T) {
 		run    func(db *DB) error
 	}{
 		{"forgetting", "DELETE FROM vectors", func(db *DB) error {
-			n, err := db.DeleteVectorsOfOtherRecipes(t.Context(), "current")
+			n, err := db.VectorIndex().DeleteVectorsOfOtherRecipes(t.Context(), "current")
 			if n != 0 {
 				t.Errorf("a deletion that failed counted %d", n)
 			}
 			return err
 		}},
-		{"compacting", "VACUUM", func(db *DB) error { return db.Compact(t.Context()) }},
+		{"compacting", "VACUUM", func(db *DB) error { return db.VectorIndex().Compact(t.Context()) }},
 	} {
 		t.Run(step.name, func(t *testing.T) {
 			db, faults := openBreakingDB(t)
