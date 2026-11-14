@@ -1,6 +1,7 @@
 package fakeopenai
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
@@ -169,6 +170,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, path string, body
 		s.serveChat(w, r, body)
 	case r.Method == http.MethodPost && path == "/embeddings":
 		s.serveEmbeddings(w, body)
+	case r.Method == http.MethodPost && path == "/rerank":
+		s.serveRerank(w, body)
 	case r.Method == http.MethodGet && path == "/models":
 		s.serveModels(w, s.config.Models, s.config.IsLabeled, false)
 	case r.Method == http.MethodGet && path == "/embeddings/models" && s.config.IsLabeled:
@@ -358,4 +361,41 @@ func closeConnection(controller *http.ResponseController) {
 	if err := conn.Close(); err != nil {
 		return
 	}
+}
+
+type rerankRequest struct {
+	Model     string   `json:"model"`
+	Query     string   `json:"query"`
+	Documents []string `json:"documents"`
+}
+
+// serveRerank answers in the format of Cohere and Jina, with the results in descending score order, as
+// those services list them.
+func (s *Server) serveRerank(w http.ResponseWriter, body []byte) {
+	var request rerankRequest
+	if err := json.Unmarshal(body, &request); err != nil || request.Model == "" || len(request.Documents) == 0 {
+		writeError(w, http.StatusBadRequest, "model and documents are required")
+		return
+	}
+	order := make([]int, len(request.Documents))
+	for i := range order {
+		order[i] = i
+	}
+	scores := make([]float32, len(request.Documents))
+	for i, document := range request.Documents {
+		scores[i] = s.Score(request.Query, document)
+	}
+	slices.SortStableFunc(order, func(a, b int) int { return cmp.Compare(scores[b], scores[a]) })
+	results := make([]any, len(order))
+	for i, index := range order {
+		results[i] = map[string]any{indexKey: index, "relevance_score": scores[index]}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{modelKey: request.Model, "results": results})
+}
+
+// Score returns the relevance score the server answers for a query and a document: between 0 and 1 and
+// the same for the same pair.
+func (s *Server) Score(query, document string) float32 {
+	digest := sha256.Sum256([]byte(query + "\x00" + document))
+	return float32(float64(binary.BigEndian.Uint32(digest[:4])) / float64(math.MaxUint32))
 }

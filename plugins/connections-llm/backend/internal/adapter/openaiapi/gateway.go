@@ -1,6 +1,7 @@
 // Package openaiapi sends the requests of a connection to a service that implements the OpenAI API:
-// chat completions, embeddings and the list of models. It keeps no key and no connection between
-// calls, and sends a request only to an address the domain allows.
+// chat completions, embeddings and the list of models, and reranking in the format of Cohere and Jina.
+// It keeps no key and no connection between calls, and sends a request only to an address the domain
+// allows.
 package openaiapi
 
 import (
