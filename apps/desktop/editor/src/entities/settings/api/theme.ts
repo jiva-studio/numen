@@ -1,5 +1,8 @@
 /** The theme service of the application, as the window's appearance reads it. */
-import { createThemeClient } from '@numen/core-client'
-import { theme } from '@/shared/api/clients'
+import { createThemeClient, type ThemeClient } from '@numen/core-client'
+import type { WindowClients } from '@/shared/api/clients'
 
-export const themes = createThemeClient(theme)
+/** The themes of the application over `theme`. */
+export const createThemes = (theme: WindowClients['theme']): ThemeClient => createThemeClient(theme)
+
+export type { ThemeClient }

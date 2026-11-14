@@ -1,2 +1,2 @@
 /** The settings tab: everything in numen.json a user can change. */
-export { createSettingsPage } from './model/createSettingsPage'
+export { createSettingsPage, type SettingsPageApi } from './model/createSettingsPage'

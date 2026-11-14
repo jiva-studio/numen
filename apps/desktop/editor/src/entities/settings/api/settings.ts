@@ -9,7 +9,7 @@ import {
   asValue,
   type PluginContributionKindValue,
 } from '@numen/core-client'
-import { settingsService } from '@/shared/api/clients'
+import type { WindowClients } from '@/shared/api/clients'
 import type { JsonValue } from '@/shared/api/json'
 import type { Result } from '@/shared/lib/result'
 import type {
@@ -33,7 +33,7 @@ const readCondition = (
 ): PluginSettingCondition | undefined =>
   when ? { setting: when.setting, is: [...when.is] } : undefined
 
-type ServedSettings = Awaited<ReturnType<typeof settingsService.getSettings>>
+type ServedSettings = Awaited<ReturnType<WindowClients['settingsService']['getSettings']>>
 type ServedPlugin = NonNullable<ServedSettings['plugins']>[number]
 type ServedSetting = NonNullable<ServedPlugin['settings']>[number]
 type ServedContribution = NonNullable<ServedPlugin['contributions']>[number]
@@ -78,7 +78,8 @@ const readContributions = (served: readonly ServedContribution[]): readonly Plug
   })
 
 const readJson = (text: string): JsonValue | undefined => {
-  // Stryker disable next-line ConditionalExpression: empty text fails JSON.parse and leaves the value undefined
+  // Stryker disable next-line ConditionalExpression: empty text fails JSON.parse and leaves the
+  // value undefined
   if (!text) return undefined
   /* Stryker disable BlockStatement: the value is already undefined when JSON.parse throws */
   try {
@@ -128,49 +129,6 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
   }
 }
 
-/** Every setting currently. */
-export const getSettings = async (): Promise<Configuration> => {
-  const answer = await settingsService.getSettings({})
-  return {
-    written: answer.written,
-    path: answer.path,
-    plugins: answer.plugins.map((p) => ({
-      id: p.id,
-      name: p.name,
-      version: p.version,
-      description: p.description,
-      isActive: p.isActive,
-      capabilities: p.capabilities,
-      hasFrontend: p.hasFrontend,
-      hasBackend: p.hasBackend,
-      readers: p.readers.map((one) => ({ id: one.id, extensions: one.extensions })),
-      settingsViews: p.settingsViews.map((one) => ({ id: one.id, title: one.title })),
-      contributions: readContributions(p.contributions),
-      isOffByDefault: p.isOffByDefault,
-      settings: p.settings.map(readPluginSetting),
-    })),
-    app: answer.app.map(readPluginSetting),
-  }
-}
-
-export const updateSettings = async (edits: readonly SettingEdit[]): Promise<void> => {
-  await settingsService.writeSettings({
-    settings: edits.map((one) => ({ at: [...one.at], value: one.value })),
-  })
-}
-
-/**
- * The settings that changed, until the signal aborts: a write by this window, another window, a
- * plugin or the palette, and an edit of the file by hand. Each batch holds the settings that
- * changed together, named by their declared path, with the value each now holds as JSON. The
- * stream opens with an empty batch, which the window ignores.
- */
-export async function* watchSettings(signal: AbortSignal): AsyncGenerator<readonly SettingEdit[]> {
-  for await (const update of settingsService.watchSettings({}, { signal })) {
-    yield update.changed.map((one) => ({ at: [...one.at], value: one.value }))
-  }
-}
-
 /** What the picker of a plugin setting of type file or folder answered. */
 interface ChosenPath {
   readonly path: string
@@ -178,28 +136,83 @@ interface ChosenPath {
   readonly problem: string
 }
 
-/**
- * Opens the system picker for a plugin setting of type file or folder, and writes the selected
- * path.
- */
-export const choosePluginPath = async (pluginId: string, key: string): Promise<ChosenPath> => {
-  const answer = await settingsService.choosePluginPath({ pluginId, key })
-  return { path: answer.path, isChosen: answer.isChosen, problem: answer.problem }
+/** The settings of the vault over `settingsService`. */
+export const createSettingsApi = (settingsService: WindowClients['settingsService']) => {
+  /**
+   * The settings that changed, until the signal aborts: a write by this window, another window, a
+   * plugin or the palette, and an edit of the file by hand. Each batch holds the settings that
+   * changed together, named by their declared path, with the value each now holds as JSON. The
+   * stream opens with an empty batch, which the window ignores.
+   */
+  async function* watchSettings(signal: AbortSignal): AsyncGenerator<readonly SettingEdit[]> {
+    for await (const update of settingsService.watchSettings({}, { signal })) {
+      yield update.changed.map((one) => ({ at: [...one.at], value: one.value }))
+    }
+  }
+
+  return {
+    watchSettings,
+
+    /** Every setting currently. */
+    getSettings: async (): Promise<Configuration> => {
+      const answer = await settingsService.getSettings({})
+      return {
+        written: answer.written,
+        path: answer.path,
+        plugins: answer.plugins.map((p) => ({
+          id: p.id,
+          name: p.name,
+          version: p.version,
+          description: p.description,
+          isActive: p.isActive,
+          capabilities: p.capabilities,
+          hasFrontend: p.hasFrontend,
+          hasBackend: p.hasBackend,
+          readers: p.readers.map((one) => ({ id: one.id, extensions: one.extensions })),
+          settingsViews: p.settingsViews.map((one) => ({ id: one.id, title: one.title })),
+          contributions: readContributions(p.contributions),
+          isOffByDefault: p.isOffByDefault,
+          settings: p.settings.map(readPluginSetting),
+        })),
+        app: answer.app.map(readPluginSetting),
+      }
+    },
+
+    updateSettings: async (edits: readonly SettingEdit[]): Promise<void> => {
+      await settingsService.writeSettings({
+        settings: edits.map((one) => ({ at: [...one.at], value: one.value })),
+      })
+    },
+
+    /**
+     * Opens the system picker for a plugin setting of type file or folder, and writes the selected
+     * path.
+     */
+    choosePluginPath: async (pluginId: string, key: string): Promise<ChosenPath> => {
+      const answer = await settingsService.choosePluginPath({ pluginId, key })
+      return { path: answer.path, isChosen: answer.isChosen, problem: answer.problem }
+    },
+
+    /**
+     * A plugin whose last start failed, started once more. A failure is why it failed again.
+     */
+    retryPlugin: async (pluginId: string): Promise<Result<null, string>> => {
+      const { failure } = await settingsService.retryPlugin({ pluginId })
+      return failure === '' ? asValue(null) : asFailure(failure)
+    },
+
+    /** How many files the folder of a plugin holds in the shown vault, `.numen/<plugin id>/`. */
+    getPluginData: async (pluginId: string): Promise<number> =>
+      (await settingsService.getPluginData({ pluginId })).fileCount,
+
+    /**
+     * The folder of a plugin in the shown vault deleted, with the text versions the plugin made
+     * there.
+     */
+    deletePluginData: async (pluginId: string): Promise<void> => {
+      await settingsService.deletePluginData({ pluginId })
+    },
+  }
 }
 
-/**
- * A plugin whose last start failed, started once more. A failure is why it failed again.
- */
-export const retryPlugin = async (pluginId: string): Promise<Result<null, string>> => {
-  const { failure } = await settingsService.retryPlugin({ pluginId })
-  return failure === '' ? asValue(null) : asFailure(failure)
-}
-
-/** How many files the folder of a plugin holds in the shown vault, `.numen/<plugin id>/`. */
-export const getPluginData = async (pluginId: string): Promise<number> =>
-  (await settingsService.getPluginData({ pluginId })).fileCount
-
-/** The folder of a plugin in the shown vault deleted, with the text versions the plugin made there. */
-export const deletePluginData = async (pluginId: string): Promise<void> => {
-  await settingsService.deletePluginData({ pluginId })
-}
+export type SettingsApi = ReturnType<typeof createSettingsApi>

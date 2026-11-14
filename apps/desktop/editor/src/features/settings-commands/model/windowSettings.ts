@@ -1,6 +1,11 @@
 import { watch } from 'vue'
 import type { ConnectionStore } from '@/entities/connection'
-import { createChangeFollower, themes, type SettingsStore } from '@/entities/settings'
+import {
+  createChangeFollower,
+  type SettingsApi,
+  type SettingsStore,
+  type ThemeClient,
+} from '@/entities/settings'
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { runInBackground } from '@numen/ui'
@@ -11,6 +16,8 @@ import { createWindowSettingPalette } from './windowPalette'
 
 /** What the settings of a window are made from. */
 export interface WindowSettingsDeps {
+  readonly themes: ThemeClient
+  readonly watchSettings: SettingsApi['watchSettings']
   readonly rest: SettingsStore
   readonly connections: Pick<ConnectionStore, 'reload'>
   readonly words: SettingWords
@@ -23,6 +30,8 @@ export interface WindowSettingsDeps {
  * for a setting, both kept current by the stream of changes of the settings file.
  */
 export function createWindowSettings({
+  themes,
+  watchSettings,
   rest,
   connections,
   words,
@@ -39,6 +48,7 @@ export function createWindowSettings({
   watch(appearance.preview.display.sized, () => onSizeChanged())
   const settingPalette = createWindowSettingPalette({ rest, appearance, words })
   const changes = createChangeFollower({
+    watchSettings,
     refresh: async (batch) => {
       try {
         await Promise.all([rest.start(), appearance.reload(), connections.reload()])

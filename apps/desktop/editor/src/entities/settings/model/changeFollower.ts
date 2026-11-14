@@ -1,5 +1,5 @@
 import { createFollower } from '@numen/ui'
-import { watchSettings } from '../api/settings'
+import type { SettingsApi } from '../api/settings'
 import type { SettingEdit } from '../lib/configuration'
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
@@ -10,10 +10,11 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
  * because it holds what changed meanwhile.
  */
 export function createChangeFollower(deps: {
+  watchSettings: SettingsApi['watchSettings']
   refresh: (batch: readonly SettingEdit[]) => Promise<void>
   wait?: (ms: number) => Promise<void>
 }) {
-  const { refresh, wait = sleep } = deps
+  const { watchSettings, refresh, wait = sleep } = deps
   const abortController = new AbortController()
   let isOpen = true
   let isResumed = false

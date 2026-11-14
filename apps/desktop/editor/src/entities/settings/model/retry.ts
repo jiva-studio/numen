@@ -3,7 +3,7 @@
  */
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import { retryPlugin as askPluginRetry } from '../api/settings'
+import type { SettingsApi } from '../api/settings'
 
 /** Notice copy of a retry. */
 interface RetryWords {
@@ -13,6 +13,7 @@ interface RetryWords {
 
 /** Notice output, settings refresh and the plugin name lookup of a retry. */
 interface RetryOptions {
+  readonly askPluginRetry: SettingsApi['retryPlugin']
   readonly words: RetryWords
   readonly notify: MessageWriter
   readonly refresh: () => Promise<void>
@@ -23,7 +24,8 @@ interface RetryOptions {
  * Starts a plugin again. A repeated failure is shown as a notice with the
  * plugin name and the reason; the settings are read again in every case.
  */
-export function createPluginRetry({ words, notify, refresh, getName }: RetryOptions) {
+export function createPluginRetry(options: RetryOptions) {
+  const { askPluginRetry, words, notify, refresh, getName } = options
   const retryPlugin = async (pluginId: string): Promise<void> => {
     notify('')
     try {
