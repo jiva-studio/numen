@@ -90,3 +90,63 @@ func TestADelayedRequestIsCountedAsAbortedWhenTheClientDisconnects(t *testing.T)
 		t.Fatal("the abort was not seen")
 	}
 }
+
+func TestTheServerAnswersARerankWithOneScoreForEachDocumentInDescendingOrder(t *testing.T) {
+	fake := New(Config{})
+	documents := []string{"Tide tables", "Ferry times", "Harbor map", "Lighthouse hours"}
+	body, err := json.Marshal(map[string]any{"model": "m", "query": "when does the ferry leave?", "documents": documents, "top_n": len(documents)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := post(t, fake, "/v1/rerank", "", string(body))
+	var answer struct {
+		Results []struct {
+			Index          int     `json:"index"`
+			RelevanceScore float32 `json:"relevance_score"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &answer); err != nil || recorder.Code != http.StatusOK {
+		t.Fatalf("status %d, answer %s, err %v", recorder.Code, recorder.Body.String(), err)
+	}
+	if len(answer.Results) != len(documents) {
+		t.Fatalf("answer = %s, want one result for each document", recorder.Body.String())
+	}
+	seen := map[int]bool{}
+	for i, one := range answer.Results {
+		if one.Index < 0 || one.Index >= len(documents) || seen[one.Index] {
+			t.Fatalf("answer = %s: index %d is out of range or repeated", recorder.Body.String(), one.Index)
+		}
+		seen[one.Index] = true
+		if want := fake.Score("when does the ferry leave?", documents[one.Index]); one.RelevanceScore != want {
+			t.Errorf("score of document %d = %v, want %v", one.Index, one.RelevanceScore, want)
+		}
+		if i > 0 && one.RelevanceScore > answer.Results[i-1].RelevanceScore {
+			t.Errorf("answer = %s, want the results in descending score order", recorder.Body.String())
+		}
+	}
+}
+
+func TestTheScoreOfAQueryAndADocumentIsTheSameEachTime(t *testing.T) {
+	fake := New(Config{})
+	if fake.Score("ferry", "Ferry times") != New(Config{}).Score("ferry", "Ferry times") {
+		t.Error("two servers score the same pair differently")
+	}
+	if fake.Score("ferry", "Ferry times") == fake.Score("ferry", "Tide tables") {
+		t.Error("two documents got the same score")
+	}
+}
+
+func TestAFailedRerankAnswersItsStatus(t *testing.T) {
+	fake := New(Config{})
+	fake.Fail("/rerank", http.StatusUnauthorized, "")
+	if got := post(t, fake, "/rerank", "", `{"model":"m","query":"q","documents":["a"],"top_n":1}`).Code; got != http.StatusUnauthorized {
+		t.Errorf("status %d, want 401", got)
+	}
+}
+
+func TestAPathWithNoRouteAnswersNotFound(t *testing.T) {
+	fake := New(Config{})
+	if got := post(t, fake, "/v1/classify", "", `{"model":"m"}`).Code; got != http.StatusNotFound {
+		t.Errorf("status %d, want 404", got)
+	}
+}
