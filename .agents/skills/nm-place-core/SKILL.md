@@ -32,7 +32,7 @@ graph TD
 Dependencies point from the outside inward: `libs/note/domain` imports nothing of this repository, `libs/core/kernel/domain/<area>` imports only the standard library, `libs/note/domain` and itself, `port` and `usecase` import the domain and never an adapter, an adapter imports the core and never another adapter, and only `container` names a driven adapter next to the port it satisfies.
 
 - A domain type is a fact about notes, vaults, links or cards, with the rules that follow from the values alone, and it lives in `libs/note/domain`.
-- A concept of the core that is not about notes (settings, theme, connections, the index, search sources, plugin information) is a small package `libs/core/kernel/domain/<area>`. Ports and use cases import it; a plugin and the SDK never do. The sentinel errors of an area are declared in its package. A use case may call `crypto/rand` and timers; only the machine clock stays behind a clock port.
+- A concept of the core that is not about notes (settings, theme, connections, the index, search sources, plugin information) is a small package `libs/core/kernel/domain/<area>`. Ports and use cases import it; a plugin and the SDK never do. The sentinel errors of an area are declared in its package. A use case may call `crypto/rand`. The machine clock stays behind a clock port, and so does a timer whose firing changes what a caller or a test observes (`machineport.Timer`).
 - A port is an interface a use case requires from the world outside the core, named after the need and declared by the code that calls it.
 - A use case is one business scenario: it takes ports and domain values, orchestrates them and returns a result, and it is the unit of work and of the transaction.
 - A driving adapter receives a request from a person or a program (CLI, window, a plugin calling the host), turns it into the arguments of a use case, calls the use case and turns the result back.
@@ -133,7 +133,7 @@ Ask of every new package, type, RPC or export of the core, the core protocol (`l
 The structural checks live in `tools/checks/structure/go` (one folder per check), `tools/checks/structure/ts`; `make checks TAGS=core` runs the ones for the kernel. Each walks the type-checked tree and fails when it reads nothing; a planted tree is read by the same walk. They forbid:
 
 - a package importing from a layer above it, and any package the core is compiled from importing an adapter;
-- `domain`, `port` and `usecase` using `os`, the filesystem, the network, the machine clock (`time.Now`, `Since`, `Until`) outside a method of a clock port, or a logging library; timers and randomness are not checked;
+- `domain`, `port` and `usecase` using `os`, the filesystem, the network, the machine clock (`time.Now`, `Since`, `Until`) outside a method of a clock port, or a logging library; timers and randomness are not checked, so a timer that changes behavior is a review finding when it does not come from the clock port;
 - a use case importing another use case;
 - an adapter naming the port it satisfies, and the composition root returning an adapter type;
 - a port, a port type or a port method that nothing outside `port/` uses;
