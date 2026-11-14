@@ -26,13 +26,13 @@ func newScorerOpener(library *onnx.Library) ports.OpenScorer {
 	}
 }
 
-func openReranking() (*reranking.Reranking, error) {
+func openRerankingUseCase() (*reranking.Reranking, error) {
 	return reranking.New(profilefiles.GetDefaultDirectory(), newScorerOpener(onnx.NewLibrary()), console.Report)
 }
 
 // Mount serves the provider of the local-reranker connection type on s. The loaded model closes with s.
 func Mount(s *server.Server) error {
-	r, err := openReranking()
+	r, err := openRerankingUseCase()
 	if err != nil {
 		return err
 	}
