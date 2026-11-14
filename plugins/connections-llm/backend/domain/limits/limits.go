@@ -4,8 +4,8 @@
 package limits
 
 import (
-	"encoding/json"
 	"math"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -38,18 +38,14 @@ type Limits struct {
 // Configure reads the settings of the plugin. A request timeout that is not a positive number in
 // seconds leaves the default of the operation.
 func (l *Limits) Configure(values map[string]string) {
-	timeout := parseSeconds(values[settingRequestTimeout])
+	seconds, err := strconv.ParseFloat(strings.TrimSpace(values[settingRequestTimeout]), 64)
+	var timeout time.Duration
+	if err == nil && seconds > 0 && !math.IsInf(seconds, 0) && seconds < float64(math.MaxInt64/int64(time.Second)) {
+		timeout = time.Duration(seconds * float64(time.Second))
+	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.timeout = timeout
-}
-
-func parseSeconds(value string) time.Duration {
-	var seconds float64
-	if err := json.Unmarshal([]byte(strings.TrimSpace(value)), &seconds); err != nil || math.Signbit(seconds) || seconds >= float64(math.MaxInt64/int64(time.Second)) {
-		return 0
-	}
-	return time.Duration(seconds * float64(time.Second))
 }
 
 // Get returns how long a request of the operation to the model of the type at the address may take.

@@ -27,12 +27,16 @@ func TestTheSettingRequestTimeoutSetsTheLimitOfEveryOperation(t *testing.T) {
 	}
 	for value, want := range map[string]time.Duration{
 		"0.000000001": time.Nanosecond,
-		"9223372035":  9223372035 * time.Second,
 	} {
 		subject.Configure(map[string]string{"requestTimeout": value})
 		if got := subject.Get("openai", address, "m", "complete"); got != want {
 			t.Errorf("value %q: limit = %v, want %v", value, got, want)
 		}
+	}
+	// 9223372035 s is the largest whole number of seconds accepted; float64 seconds hold no exact nanoseconds there.
+	subject.Configure(map[string]string{"requestTimeout": "9223372035"})
+	if got, want := subject.Get("openai", address, "m", "complete"), 9223372035*time.Second; got-want > time.Microsecond || want-got > time.Microsecond {
+		t.Errorf("value 9223372035: limit = %v, want about %v", got, want)
 	}
 }
 
