@@ -5,10 +5,17 @@
  * with no settings, and a failed write is reported and the window reverts to
  * the stored settings.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createLostConnection, installCoreAnswers } from '@numen/core-client/testing'
+import { describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import { getSettingAt } from '../lib/settingAt'
+import type { CoreAnswers } from '@numen/core-client/testing'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createSettingsStore } from './store'
+
+const createAnsweredSettings = (answers: CoreAnswers) => createAnsweredApi(answers).settings
+
+/** The settings calls of the core the test answered last. */
+let settings = createAnsweredSettings({})
 
 const words = {
   unturned: 'Setting not saved:',
@@ -23,16 +30,9 @@ const answerWith = (text: string, rest: Record<string, unknown> = {}) => ({
   ...rest,
 })
 
-let restore: (() => void) | undefined
-
-afterEach(() => {
-  restore?.()
-  restore = undefined
-})
-
 const createStore = (text: string, failure: string | null = null) => {
   const requests: unknown[] = []
-  restore = installCoreAnswers({
+  settings = createAnsweredSettings({
     settingsService: {
       getSettings: () => answerWith(text),
       writeSettings: (request) => {
@@ -43,7 +43,7 @@ const createStore = (text: string, failure: string | null = null) => {
     },
   })
   const notify = vi.fn()
-  return { requests, notify, kept: createSettingsStore(words, notify) }
+  return { requests, notify, kept: createSettingsStore(settings, words, notify) }
 }
 
 describe('what remains at a setting', () => {
@@ -61,14 +61,14 @@ describe('what remains at a setting', () => {
   })
 
   it('is nothing where the vault cannot be requested', async () => {
-    restore = installCoreAnswers({
+    settings = createAnsweredSettings({
       settingsService: {
         getSettings: () => {
           throw createLostConnection('gone')
         },
       },
     })
-    const retainedState = createSettingsStore(words, vi.fn())
+    const retainedState = createSettingsStore(settings, words, vi.fn())
 
     expect(retainedState.state.plugins.value).toStrictEqual([])
     await retainedState.start()
@@ -93,7 +93,7 @@ describe('what remains at a setting', () => {
 
   /** A store over a vault with one plugin whose `autoRun` setting defaults to true. */
   const createPluginStore = (text: string) => {
-    restore = installCoreAnswers({
+    settings = createAnsweredSettings({
       settingsService: {
         getSettings: () =>
           answerWith(text, {
@@ -118,7 +118,7 @@ describe('what remains at a setting', () => {
           }),
       },
     })
-    return createSettingsStore(words, vi.fn())
+    return createSettingsStore(settings, words, vi.fn())
   }
 
   it('falls back to declarative plugin default when unset in settings file', async () => {
@@ -144,7 +144,7 @@ describe('what remains at a setting', () => {
 
   /** A store over a vault with the Status bar, which its manifest keeps off by default. */
   const createOffByDefaultStore = (text: string) => {
-    restore = installCoreAnswers({
+    settings = createAnsweredSettings({
       settingsService: {
         getSettings: () =>
           answerWith(text, {
@@ -161,7 +161,7 @@ describe('what remains at a setting', () => {
           }),
       },
     })
-    return createSettingsStore(words, vi.fn())
+    return createSettingsStore(settings, words, vi.fn())
   }
 
   it('keeps a plugin off by default off while the file names no enabled value', async () => {
@@ -220,7 +220,7 @@ describe('a setting written', () => {
 
   it('updates committed target tree preserving sibling keys and replacing non-object intermediates', async () => {
     let shouldFailRead = false
-    restore = installCoreAnswers({
+    settings = createAnsweredSettings({
       settingsService: {
         getSettings: () => {
           if (shouldFailRead) throw createLostConnection('offline')
@@ -229,7 +229,7 @@ describe('a setting written', () => {
         writeSettings: () => ({}),
       },
     })
-    const store = createSettingsStore(words, vi.fn())
+    const store = createSettingsStore(settings, words, vi.fn())
     await store.start()
 
     shouldFailRead = true
@@ -266,7 +266,7 @@ describe('a setting written twice in quick succession', () => {
     let file = '{"app":{"naming":{"syncTitleAndFilename":true}}}'
     const writes: ReturnType<typeof defer<void>>[] = []
     const reads: ReturnType<typeof defer<string>>[] = []
-    restore = installCoreAnswers({
+    settings = createAnsweredSettings({
       settingsService: {
         getSettings: async () => {
           const readItem = defer<string>()
@@ -288,7 +288,7 @@ describe('a setting written twice in quick succession', () => {
 
   it('remains at the last value through the answer of the first write and a read between', async () => {
     const vault = createBlockedVault()
-    const retainedState = createSettingsStore(words, vi.fn())
+    const retainedState = createSettingsStore(settings, words, vi.fn())
 
     const first = retainedState.write.writeSetting(settingPath, false)
     const second = retainedState.write.writeSetting(settingPath, true)
@@ -314,7 +314,7 @@ describe('a setting written twice in quick succession', () => {
 
   it('does not accept a read that answers after a newer one', async () => {
     const vault = createBlockedVault()
-    const retainedState = createSettingsStore(words, vi.fn())
+    const retainedState = createSettingsStore(settings, words, vi.fn())
 
     const older = retainedState.start()
     const newer = retainedState.start()
@@ -328,7 +328,7 @@ describe('a setting written twice in quick succession', () => {
 
   it('goes back to the file where the write failed', async () => {
     const vault = createBlockedVault(true)
-    const retainedState = createSettingsStore(words, vi.fn())
+    const retainedState = createSettingsStore(settings, words, vi.fn())
 
     const content = retainedState.write.writeSetting(settingPath, false)
     expect(retainedState.read.getSetting(settingPath)).toBe(false)
@@ -369,10 +369,10 @@ describe('the settings of the shell', () => {
 
   /** A store over a vault that declares the shell setting and holds `text`. */
   const createShellStore = (text: string) => {
-    restore = installCoreAnswers({
+    settings = createAnsweredSettings({
       settingsService: { getSettings: () => answerWith(text, { app: [TEXT_SCALE] }) },
     })
-    return createSettingsStore(words, vi.fn())
+    return createSettingsStore(settings, words, vi.fn())
   }
 
   it('are in force at the default the core declares where the file names none', async () => {

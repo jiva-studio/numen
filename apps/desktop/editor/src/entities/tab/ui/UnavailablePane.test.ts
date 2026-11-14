@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { CATALOG_INCOMPATIBILITY, CATALOG_STATE } from '@numen/core-client'
 import { createMockCatalogEntry, type MockCatalogEntryOptions } from '@numen/core-client/testing'
-import { answerCore } from '@/testing/coreAnswers'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createDeferred } from '@/testing/deferred'
 import { answerTabKinds } from '@/testing/tabCatalog'
 import {
@@ -22,10 +22,15 @@ const notesOptions: MockCatalogEntryOptions = {
 
 const mountPane = async (
   options: MockCatalogEntryOptions | null = notesOptions,
-  services: UnavailableServices = {},
+  services: Omit<UnavailableServices, 'findTabKindPlugin'> = {},
 ) => {
-  answerTabKinds(options === null ? [] : [createMockCatalogEntry('sample.notes', options)])
-  const kind = createUnavailableKind(UnavailablePane, 'reader:viewer', undefined, services)
+  const { findTabKindPlugin } = answerTabKinds(
+    options === null ? [] : [createMockCatalogEntry('sample.notes', options)],
+  )
+  const kind = createUnavailableKind(UnavailablePane, 'reader:viewer', undefined, {
+    ...services,
+    findTabKindPlugin,
+  })
   const state = kind.open('cards/Place.md', 'tab') as UnavailableState
   const view = mount(kind.pane, { props: { state } })
   await vi.waitFor(() => expect(state.lookup.value.status).not.toBe('pending'))
@@ -137,8 +142,13 @@ describe('the pane of a tab no plugin in the catalog provides', () => {
 describe('the pane while the catalog has not answered', () => {
   it('shows the loading state and no placeholder text until the answer arrives', async () => {
     const gate = createDeferred<void>()
-    answerTabKinds([createMockCatalogEntry('sample.notes', notesOptions)], () => gate.promise)
-    const kind = createUnavailableKind(UnavailablePane, 'reader:viewer')
+    const { findTabKindPlugin } = answerTabKinds(
+      [createMockCatalogEntry('sample.notes', notesOptions)],
+      () => gate.promise,
+    )
+    const kind = createUnavailableKind(UnavailablePane, 'reader:viewer', undefined, {
+      findTabKindPlugin,
+    })
     const host = document.createElement('div')
     document.body.append(host)
     const texts: string[] = []
@@ -168,8 +178,10 @@ describe('the pane while the catalog has not answered', () => {
   })
 
   it('shows the missing-plugin text when the core cannot answer', async () => {
-    answerCore({})
-    const kind = createUnavailableKind(UnavailablePane, 'reader:viewer')
+    const { findTabKindPlugin } = createAnsweredApi({})
+    const kind = createUnavailableKind(UnavailablePane, 'reader:viewer', undefined, {
+      findTabKindPlugin,
+    })
     const view = mount(kind.pane, { props: { state: kind.open('cards/Place.md', 'tab') } })
 
     await vi.waitFor(() => expect(view.find('h3').exists()).toBe(true))

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { answerNotes } from '@/testing/noteCore'
+import { createNoteAnswers } from '@/testing/noteCore'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { asValue } from '@numen/core-client'
 import { createTestTabs } from '@/testing/tabs'
 import { createMessageLog } from '@/shared/model/notices/messages'
@@ -7,11 +8,21 @@ import type { AnyTabKind } from '@numen/plugin-loader'
 import { createNoteEditors } from './createNoteEditors'
 
 const create = (windowTabs = createTestTabs()) => {
-  answerNotes({
-    read: async () => asValue({ body: 'High tide at six.', at: '1 1 at:High tide at six.' }),
-    write: async () => asValue({ body: '', at: '1 1 at:' }),
+  const api = createAnsweredApi(
+    createNoteAnswers({
+      read: async () => asValue({ body: 'High tide at six.', at: '1 1 at:High tide at six.' }),
+      write: async () => asValue({ body: '', at: '1 1 at:' }),
+    }),
+  )
+  return createNoteEditors({
+    api: {
+      notes: api.note,
+      making: { createNote: api.note.createNote, relations: api.relations },
+      quit: api.quit,
+    },
+    log: createMessageLog(),
+    windowTabs,
   })
-  return createNoteEditors({ log: createMessageLog(), windowTabs })
 }
 
 describe('the editors of a window', () => {

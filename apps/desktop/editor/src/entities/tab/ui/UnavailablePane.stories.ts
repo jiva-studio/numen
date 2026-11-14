@@ -6,12 +6,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { CATALOG_INCOMPATIBILITY, CATALOG_STATE } from '@numen/core-client'
-import {
-  createMockCatalogEntry,
-  installCoreAnswers,
-  type MockCatalogEntryOptions,
-} from '@numen/core-client/testing'
+import { createMockCatalogEntry, type MockCatalogEntryOptions } from '@numen/core-client/testing'
+import { createAnsweredClients } from '@/testing/coreAnswers'
 import { createDeferred } from '@/testing/deferred'
+import { createTabKindPluginFinder } from '../api/tabKindPlugin'
 import { createUnavailableKind, type UnavailableServices } from '../model/unavailable'
 import UnavailablePane from './UnavailablePane.vue'
 
@@ -42,21 +40,26 @@ const OPTIONS: Record<Exclude<Answer, 'pending' | 'missing'>, MockCatalogEntryOp
 const enablePlugin = fn(() => createDeferred<void>().promise)
 const openPlugin = fn()
 
-const answerCatalog = (answer: Answer): void => {
-  installCoreAnswers({
-    pluginCatalog: {
-      findCatalogEntryByTabKind: () => {
-        if (answer === 'pending') return createDeferred<never>().promise
-        if (answer === 'missing') return {}
-        return { entry: createMockCatalogEntry('sample.notes', OPTIONS[answer]) }
+/** Finds the plugin of a kind of tab in a catalog that answers as `answer` says. */
+const createCatalogFinder = (answer: Answer) =>
+  createTabKindPluginFinder(
+    createAnsweredClients({
+      pluginCatalog: {
+        findCatalogEntryByTabKind: () => {
+          if (answer === 'pending') return createDeferred<never>().promise
+          if (answer === 'missing') return {}
+          return { entry: createMockCatalogEntry('sample.notes', OPTIONS[answer]) }
+        },
       },
-    },
-  })
-}
+    }).pluginCatalog,
+  )
 
 const render = (args: Knobs) => {
-  const services: UnavailableServices = { enablePlugin, openPlugin }
-  answerCatalog(args.answer)
+  const services: UnavailableServices = {
+    findTabKindPlugin: createCatalogFinder(args.answer),
+    enablePlugin,
+    openPlugin,
+  }
   const kind = createUnavailableKind(UnavailablePane, 'sample', undefined, services)
   return {
     components: { Pane: kind.pane },

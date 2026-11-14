@@ -6,8 +6,7 @@ import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 import { useOpenNotes, flattenOpenNotes, type OpenNotesOptions } from './notes'
 
 const openNotes = (core: Partial<Notes>, how?: OpenNotesOptions) => {
-  answerNotes(core)
-  return flattenOpenNotes(useOpenNotes(how))
+  return flattenOpenNotes(useOpenNotes(answerNotes(core), how))
 }
 
 function rethrow(error: unknown): never {

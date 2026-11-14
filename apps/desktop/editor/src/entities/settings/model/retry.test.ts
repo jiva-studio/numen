@@ -1,22 +1,19 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createLostConnection, installCoreAnswers } from '@numen/core-client/testing'
+import { describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
+import type { CoreAnswers } from '@numen/core-client/testing'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createPluginRetry } from './retry'
+
+const createAnsweredSettings = (answers: CoreAnswers) => createAnsweredApi(answers).settings
 
 const words = {
   stopped: (name: string, reason: string) => `${name} stopped: ${reason}`,
   retryFailed: (name: string, message: string) => `Could not retry ${name}: ${message}`,
 }
 
-let restore: (() => void) | undefined
-
-afterEach(() => {
-  restore?.()
-  restore = undefined
-})
-
 const createRetry = (answer: { failure: string } | { rejection: string }) => {
   const calls: string[] = []
-  restore = installCoreAnswers({
+  const settings = createAnsweredSettings({
     settingsService: {
       retryPlugin: (request) => {
         calls.push(request.pluginId)
@@ -32,7 +29,13 @@ const createRetry = (answer: { failure: string } | { rejection: string }) => {
     calls,
     notify,
     refresh,
-    retry: createPluginRetry({ words, notify, refresh, getName }),
+    retry: createPluginRetry({
+      askPluginRetry: settings.retryPlugin,
+      words,
+      notify,
+      refresh,
+      getName,
+    }),
   }
 }
 

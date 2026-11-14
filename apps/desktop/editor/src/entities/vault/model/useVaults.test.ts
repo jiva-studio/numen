@@ -5,8 +5,7 @@
  * The displayed vault is derived from the list, so renaming a vault through the
  * command updates both the welcome screen and the command target.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { installCoreAnswers } from '@numen/core-client/testing'
+import { describe, expect, it, vi } from 'vitest'
 import { useVaults } from './useVaults'
 import { VAULT_WORDS } from '../words'
 
@@ -18,17 +17,7 @@ const TWO = {
   showing: 'roots',
 }
 
-let restore: () => void = () => undefined
-
-afterEach(() => {
-  restore()
-})
-
 const open = () => {
-  restore = installCoreAnswers({
-    vaultsService: { listVaults: () => ({ vaults: TWO.vaults }) },
-    windowService: { getCurrentVault: () => ({ vault: TWO.showing }) },
-  })
   return useVaults({
     listVaults: () => Promise.resolve(TWO),
     log: { getWriter: () => vi.fn() } as never,
@@ -90,14 +79,6 @@ describe('the vault list before and after it is requested for', () => {
     const getWriter = vi.fn()
     const write = vi.fn()
     getWriter.mockReturnValue(write)
-    restore = installCoreAnswers({
-      vaultsService: {
-        listVaults: () => {
-          throw new Error('down')
-        },
-      },
-      windowService: { getCurrentVault: () => ({ vault: 'roots' }) },
-    })
     const target = useVaults({
       listVaults: () => Promise.reject(new Error('down')),
       log: { getWriter } as never,

@@ -13,7 +13,11 @@ import { useOpenNotes, flattenOpenNotes } from '@/entities/note'
 import { answerNotes, type NoteCore as NotesCore } from '@/testing/noteCore'
 import type { Conflict } from './flush'
 
-const openNotes = (how?: Parameters<typeof useOpenNotes>[0]) => flattenOpenNotes(useOpenNotes(how))
+/** The note calls of the core the test answered last. */
+let notesApi = answerNotes({})
+
+const openNotes = (how?: Parameters<typeof useOpenNotes>[1]) =>
+  flattenOpenNotes(useOpenNotes(notesApi, how))
 
 /** The words this test puts its notes in. A screen has more; these are enough. */
 type Word = 'clean' | 'unsaved' | 'stale' | 'gone'
@@ -192,7 +196,7 @@ describe('a window of real notes', () => {
       ['A.md', 'a'],
       ['B.md', 'b'],
     ])
-    answerNotes(createCore(files))
+    notesApi = answerNotes(createCore(files))
     const notes = openNotes({ limits: { quiet: 1000, bound: 5000 } })
     const going = quit()
     let raisedCount = 0

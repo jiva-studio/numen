@@ -2,10 +2,13 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { UnsavedBuffersError, type FileBuffers } from '@numen/plugin-loader'
 import { useOpenNotes, flattenOpenNotes } from '@/entities/note'
+import { answerNotes } from '@/testing/noteCore'
 import { createBufferHost } from './bufferHost'
 import { createFileFlush } from './flush'
 
-const openNotes = (how?: Parameters<typeof useOpenNotes>[0]) => flattenOpenNotes(useOpenNotes(how))
+/** A core that answers no read or write of a note. */
+const openNotes = (how?: Parameters<typeof useOpenNotes>[1]) =>
+  flattenOpenNotes(useOpenNotes(answerNotes({}), how))
 
 const createFlush = () => {
   const remove = vi.fn(() => true)

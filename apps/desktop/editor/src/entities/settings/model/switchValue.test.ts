@@ -1,8 +1,14 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { watch } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { installCoreAnswers } from '@numen/core-client/testing'
+import type { CoreAnswers } from '@numen/core-client/testing'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createSettingsStore } from './store'
+
+const createAnsweredSettings = (answers: CoreAnswers) => createAnsweredApi(answers).settings
+
+/** The settings calls of the core the test answered last. */
+let settings = createAnsweredSettings({})
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const AT = ['p', 'enabled'] as const
@@ -17,17 +23,10 @@ const answerWith = (written: string) => ({
   credentialsPath: '',
 })
 
-let restore: (() => void) | undefined
-
-afterEach(() => {
-  restore?.()
-  restore = undefined
-})
-
 describe('settings store', () => {
   it('shows a written value without reverting while the vault applies it', async () => {
     const file: Record<string, unknown> = { p: { enabled: true } }
-    restore = installCoreAnswers({
+    settings = createAnsweredSettings({
       settingsService: {
         getSettings: () => answerWith(JSON.stringify(file)),
         writeSettings: async (request) => {
@@ -39,7 +38,7 @@ describe('settings store', () => {
         },
       },
     })
-    const store = createSettingsStore({ unturned: 'u', unreadSettings: 'r' }, vi.fn())
+    const store = createSettingsStore(settings, { unturned: 'u', unreadSettings: 'r' }, vi.fn())
     await store.start()
     const values: unknown[] = []
     watch(
@@ -71,7 +70,7 @@ const createHeldVault = (isEnabled: boolean) => {
   let isActive = isEnabled
   const reads: HeldCall[] = []
   const writes: HeldCall[] = []
-  restore = installCoreAnswers({
+  settings = createAnsweredSettings({
     settingsService: {
       getSettings: () =>
         new Promise<ReturnType<typeof answerWith>>((resolve, reject) => {
@@ -111,7 +110,7 @@ const startRead = async (
 describe('the enabled switch of a plugin', () => {
   it('shows each requested value from the click on, with reads out of order and a failed read-back', async () => {
     const vault = createHeldVault(false)
-    const store = createSettingsStore({ unturned: 'u', unreadSettings: 'r' }, vi.fn())
+    const store = createSettingsStore(settings, { unturned: 'u', unreadSettings: 'r' }, vi.fn())
     const first = await startRead(store, vault)
     first.call?.resolve()
     await first.read
@@ -151,7 +150,7 @@ describe('the enabled switch waits for the answer of the vault', () => {
 
   it('keeps its position while the write is in flight, and moves once when the answer arrives', async () => {
     const vault = createHeldVault(true)
-    const store = createSettingsStore(words, vi.fn())
+    const store = createSettingsStore(settings, words, vi.fn())
     const first = await startRead(store, vault)
     first.call?.resolve()
     await first.read
@@ -184,7 +183,7 @@ describe('the enabled switch waits for the answer of the vault', () => {
   it('keeps the old value, stops waiting and says why where the write fails', async () => {
     const vault = createHeldVault(true)
     const say = vi.fn()
-    const store = createSettingsStore(words, say)
+    const store = createSettingsStore(settings, words, say)
     const first = await startRead(store, vault)
     first.call?.resolve()
     await first.read
