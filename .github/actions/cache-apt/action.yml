@@ -1,5 +1,5 @@
-name: "Cache apt packages"
-description: "Keeps the .deb files apt downloads in a cache keyed on what the packages are chosen by, so a run on an unchanged key downloads nothing"
+name: "Restore cached apt packages"
+description: "Restores the .deb files apt downloads from a cache keyed on what the packages are chosen by, so a run on an unchanged key downloads nothing; the caller saves them after the install"
 inputs:
   key:
     description: "The name and the inputs the package set follows from; the runner image is added"
@@ -8,18 +8,25 @@ outputs:
   cache-hit:
     description: "true when the exact key was restored"
     value: ${{ steps.cache.outputs.cache-hit }}
+  key:
+    description: "The key to save the .deb files under"
+    value: ${{ steps.key.outputs.key }}
 runs:
   using: "composite"
   steps:
     # apt writes to this folder as root; the cache reads the .deb files back as the runner user.
     - name: Point apt at the cache folder
+      id: key
       shell: bash
+      env:
+        KEY: apt-${{ inputs.key }}-${{ runner.os }}-${{ env.ImageVersion }}
       run: |
         mkdir -p "$HOME/.cache/apt-archives/partial"
         echo "Dir::Cache::archives \"$HOME/.cache/apt-archives\";" | sudo tee /etc/apt/apt.conf.d/99-numen-archives > /dev/null
+        echo "key=$KEY" >> "$GITHUB_OUTPUT"
 
     - id: cache
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/apt-archives/*.deb
-        key: apt-${{ inputs.key }}-${{ runner.os }}-${{ env.ImageVersion }}
+        key: ${{ steps.key.outputs.key }}

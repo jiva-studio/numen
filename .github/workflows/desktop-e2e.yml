@@ -88,7 +88,8 @@ jobs:
           go-version-file: apps/desktop/go.mod
           cache: false
 
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - id: go-mod-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/go/pkg/mod
           key: go-mod-e2e-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
@@ -100,8 +101,10 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/go-build
-          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
-          restore-keys: go-build-e2e-
+          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-${{ github.sha }}
+          restore-keys: |
+            go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-
+            go-build-e2e-
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -141,12 +144,18 @@ jobs:
           fi
           exit "$status"
 
-      # Saves the build cache when the exact key was not restored.
+      # A pull request's cache is visible only to that pull request; main's to all.
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: steps.go-build-cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && steps.go-mod-cache.outputs.cache-hit != 'true'
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-e2e-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
+
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: github.ref == 'refs/heads/main' && steps.go-build-cache.outputs.cache-hit != 'true'
         with:
           path: ~/.cache/go-build
-          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
+          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-${{ github.sha }}
 
       # An artifact drops the mode bits of its files, and the binaries must stay executable.
       - name: Pack what the tests run
