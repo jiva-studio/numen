@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultfixture"
@@ -53,13 +54,7 @@ func TestLoad(t *testing.T) {
 	}
 	defer testsupport.Close(t, db)
 
-	scan := vaults.NewScan(
-		vaultreader.Readers{},
-		db.Vaults(),
-		db.Notes(),
-		db.NoteQueries(),
-		db.Maintenance(), nil,
-	)
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), none.SourceBacklog{})
 
 	coldStart := testsupport.GetMachine().Now()
 	res, err := scan.Execute(ctx, v)

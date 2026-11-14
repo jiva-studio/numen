@@ -4,6 +4,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
@@ -40,7 +41,7 @@ func TestGetNamedPathsAnswersNothingWhereNoIndexIsBound(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 
-	if got, err := query.NewGetNamedPaths(nil).Execute(t.Context(), c.vault, "Heat"); err != nil || len(got) != 0 {
+	if got, err := query.NewGetNamedPaths(none.NoteQueries{}).Execute(t.Context(), c.vault, "Heat"); err != nil || len(got) != 0 {
 		t.Errorf("an unbound index answered %v, %v", got, err)
 	}
 	var unmade *query.GetNamedPaths
