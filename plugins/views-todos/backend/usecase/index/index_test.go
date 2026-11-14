@@ -140,8 +140,8 @@ func TestScanIndexesTheTasksOfEveryPlainNoteWithItsPath(t *testing.T) {
 	if got := texts(f.list()); !reflect.DeepEqual(got, want) {
 		t.Errorf("tasks = %v, want %v", got, want)
 	}
-	if task := f.list().Tasks[0]; task.Line != 2 || task.Due != "2026-11-20" {
-		t.Errorf("task = %+v, want line 2 due 2026-11-20", task)
+	if tasks := f.list().Tasks; len(tasks) == 0 || tasks[0].Line != 2 || tasks[0].Due != "2026-11-20" {
+		t.Errorf("tasks = %+v, want the first at line 2 due 2026-11-20", tasks)
 	}
 }
 

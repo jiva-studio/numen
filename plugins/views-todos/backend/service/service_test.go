@@ -125,7 +125,7 @@ func TestListTasksAppliesTheFilterAndReportsTheTotalBeforeTheLimit(t *testing.T)
 	got := a.list(t, api.Filter{Due: "overdue", Projects: []string{"home"}}, 2)
 
 	if got.Total != 3 || len(got.Tasks) != 2 || got.Tasks[0].Text != "one" || got.Tasks[1].Text != "two" {
-		t.Errorf("ListTasks = %+v", got)
+		t.Fatalf("ListTasks = %+v", got)
 	}
 	if first := got.Tasks[0]; first.Path != "a.md" || first.Line != 1 || first.Status != "open" || first.Due != "2026-11-01" || first.Projects[0] != "home" {
 		t.Errorf("first task = %+v", first)
