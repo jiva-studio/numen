@@ -282,7 +282,7 @@ func (unopenable) Open(domain.Vault) (ports.LogStore, error) {
 // handed no run to answer on.
 func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.flash().Reviews.Log = flashcards.Log{Stores: unopenable{}}
+	handler.flash().Reviews.Log.Stores = unopenable{}
 
 	out, err := handler.StartSession(t.Context(),
 		&api.StartSessionRequest{Vault: string(target[0].ID)})
@@ -405,7 +405,7 @@ func (refusingStores) Open(domain.Vault) (ports.LogStore, error) { return append
 // taking back of one.
 func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.flash().Reviews.Log = flashcards.Log{Stores: refusingStores{}}
+	handler.flash().Reviews.Log.Stores = refusingStores{}
 	v := target[0]
 	session := startSession(t, handler, v)
 	card := session.Cards[0]
