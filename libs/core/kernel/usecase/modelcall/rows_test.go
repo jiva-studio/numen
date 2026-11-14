@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/modelcalltest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
 )
 
 func (s *setup) completePreferring(t *testing.T, preferred *modelcalldomain.PreferredRow) (string, error) {

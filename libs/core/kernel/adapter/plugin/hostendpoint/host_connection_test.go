@@ -20,8 +20,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/modelcalltest"
 	modelcalls "github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
 )
 
 // scriptedCalls is a ModelCalls that sends the frames the test sets, answers done, and records who asked.

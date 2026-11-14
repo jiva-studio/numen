@@ -1,4 +1,6 @@
-package textfake
+// Package textversiontest builds the use cases over the text versions the way the container builds them, for
+// the tests of several packages.
+package textversiontest
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"

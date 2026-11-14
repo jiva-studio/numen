@@ -6,7 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textversiontest"
 	"io"
 	"io/fs"
 	"runtime"
@@ -133,7 +133,7 @@ type lookup struct {
 	files    *statVault
 	repo     *memoryVersions
 	clock    *setClock
-	versions *textfake.TextVersions
+	versions *textversiontest.TextVersions
 }
 
 func newLookup(t *testing.T) *lookup {
@@ -147,7 +147,7 @@ func newLookup(t *testing.T) *lookup {
 		clock: &setClock{now: getAtlasTime().Add(time.Minute)},
 	}
 	l.repo.addScannedSource(l.vault.ID, atlasPath, int64(len(getAtlasContent())), getAtlasTime())
-	versions := textfake.NewTextVersions(l.repo, &memoryFiles{}, &plugins{}, l.files, l.clock)
+	versions := textversiontest.NewTextVersions(l.repo, &memoryFiles{}, &plugins{}, l.files, l.clock)
 	l.versions = versions
 	return l
 }
@@ -423,7 +423,7 @@ func TestAOneGigabyteFileIsHashedFromAStreamWithBoundedMemory(t *testing.T) {
 	files := &generatedVault{t: t, path: path}
 	repo := &memoryVersions{}
 	repo.addScannedSource("v1", path, gigabyte, getAtlasTime())
-	versions := textfake.NewTextVersions(repo, &memoryFiles{}, &plugins{}, files, &setClock{now: getAtlasTime().Add(time.Minute)})
+	versions := textversiontest.NewTextVersions(repo, &memoryFiles{}, &plugins{}, files, &setClock{now: getAtlasTime().Add(time.Minute)})
 	sum := sha256.New()
 	if _, err := io.Copy(sum, newGeneratedFile(gigabyte)); err != nil {
 		t.Fatal(err)

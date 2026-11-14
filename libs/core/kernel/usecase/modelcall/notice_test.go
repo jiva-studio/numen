@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	connectionuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/modelcalltest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
 )
 
 func TestThePersonIsNotifiedWhenARowIsSetAsideAndTheNextOneAnswersWithBothNames(t *testing.T) {

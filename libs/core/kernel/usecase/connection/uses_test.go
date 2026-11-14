@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/connectiontest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/connectiontest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 )
