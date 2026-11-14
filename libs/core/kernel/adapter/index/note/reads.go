@@ -19,34 +19,36 @@ type reads struct {
 
 func newReads(db *sql.DB) *reads { return &reads{db: db, ready: map[string]*sql.Stmt{}} }
 
-func (r *reads) prepare(ctx context.Context, query string) (*sql.Stmt, error) {
-	if prepared, ok := r.ready[query]; ok {
-		return prepared, nil
-	}
-	prepared, err := prepareStatement(ctx, r.db, query)
-	if err != nil {
-		return nil, err
-	}
-	r.ready[query] = prepared
-	return prepared, nil
-}
-
 func (r *reads) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	prepared, err := r.prepare(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	return prepared.QueryContext(ctx, args...)
+	return useStatement(ctx, r, query, func(prepared *sql.Stmt) (*sql.Rows, error) {
+		return prepared.QueryContext(ctx, args...)
+	})
 }
 
 // QueryRowContext passes a statement that could not be prepared to the pool
 // itself, so the row carries the error to the caller.
 func (r *reads) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	prepared, err := r.prepare(ctx, query)
+	row, err := useStatement(ctx, r, query, func(prepared *sql.Stmt) (*sql.Row, error) {
+		return prepared.QueryRowContext(ctx, args...), nil
+	})
 	if err != nil {
 		return r.db.QueryRowContext(ctx, query, args...)
 	}
-	return prepared.QueryRowContext(ctx, args...)
+	return row
+}
+
+func useStatement[T any](ctx context.Context, r *reads, query string, run func(*sql.Stmt) (T, error)) (T, error) {
+	prepared, ok := r.ready[query]
+	if !ok {
+		var err error
+		prepared, err = prepareStatement(ctx, r.db, query)
+		if err != nil {
+			var zero T
+			return zero, err
+		}
+		r.ready[query] = prepared
+	}
+	return run(prepared)
 }
 
 func prepareStatement(ctx context.Context, db *sql.DB, query string) (*sql.Stmt, error) {
