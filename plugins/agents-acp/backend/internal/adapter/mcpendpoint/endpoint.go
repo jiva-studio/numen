@@ -8,7 +8,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,6 +17,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -36,9 +36,6 @@ const shutdownPoll = 10 * time.Millisecond
 
 // endpointPath is where the endpoint answers MCP.
 const endpointPath = "/mcp"
-
-// tokenBytes is the size of the token of an endpoint.
-const tokenBytes = 32
 
 // Server serves the tools of sessions, each on an endpoint of its own.
 type Server struct{}
@@ -70,10 +67,7 @@ func (Server) Serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.I
 }
 
 func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*Endpoint, error) {
-	token, err := newToken()
-	if err != nil {
-		return nil, err
-	}
+	token := rand.Text()
 	server := sdk.NewServer(&sdk.Implementation{Name: "numen", Title: "", Description: "", Version: "1.0.0", WebsiteURL: "", Icons: nil}, nil)
 	for _, one := range listed {
 		name := one.GetName()
@@ -90,7 +84,9 @@ func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*
 		})
 	}
 
-	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
+	var listenConfig net.ListenConfig
+	listenConfig.Control = func(string, string, syscall.RawConn) error { return ctx.Err() }
+	listener, err := listenConfig.Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, fmt.Errorf("listen for the tools of the agent: %w", err)
 	}
@@ -109,14 +105,16 @@ func serve(ctx context.Context, listed []*tools.ToolInfo, invoke task.Invoke) (*
 		serveErr: nil,
 	}
 	served.server.ConnState = served.trackConnection
-	go func() {
-		defer close(served.stopped)
-		// Serve returns http.ErrServerClosed once Close is called, which is how it is meant to end.
-		if err := served.server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
-			served.serveErr = err
-		}
-	}()
+	go served.run(listener)
 	return served, nil
+}
+
+func (e *Endpoint) run(listener net.Listener) {
+	defer close(e.stopped)
+	// Serve returns http.ErrServerClosed once Close is called, which is how it is meant to end.
+	if err := e.server.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
+		e.serveErr = err
+	}
 }
 
 // GetURL returns the http address on 127.0.0.1 and the path /mcp where the endpoint answers.
@@ -160,7 +158,7 @@ func (e *Endpoint) getActiveCount() int {
 }
 
 func (e *Endpoint) shutdown(ctx context.Context) error {
-	result := make(chan error, 1)
+	result := make(chan error)
 	go func() { result <- e.server.Shutdown(ctx) }()
 	poll := time.NewTicker(shutdownPoll)
 	defer poll.Stop()
@@ -213,6 +211,10 @@ func readInputSchema(raw []byte) json.RawMessage {
 		return json.RawMessage(raw)
 	}
 	schema["type"] = json.RawMessage(`"object"`)
+	return marshalSchema(schema)
+}
+
+func marshalSchema(schema map[string]json.RawMessage) json.RawMessage {
 	encoded, err := json.Marshal(schema)
 	if err != nil {
 		return json.RawMessage(`{"type":"object"}`)
@@ -268,14 +270,6 @@ func newTextContent(text string) *sdk.TextContent {
 	return &sdk.TextContent{Text: text, Meta: nil, Annotations: nil}
 }
 
-func newToken() (string, error) {
-	raw := make([]byte, tokenBytes)
-	if _, err := rand.Read(raw); err != nil {
-		return "", fmt.Errorf("create a token for the tools of the agent: %w", err)
-	}
-	return hex.EncodeToString(raw), nil
-}
-
 func requireToken(token string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if origins, hasOrigin := r.Header["Origin"]; hasOrigin && (len(origins) != 1 || !isLoopbackOrigin(origins[0])) {
@@ -301,6 +295,5 @@ func isLoopbackOrigin(origin string) bool {
 	if hostname == "localhost" {
 		return true
 	}
-	ip := net.ParseIP(hostname)
-	return ip != nil && ip.IsLoopback()
+	return net.ParseIP(hostname).IsLoopback()
 }
