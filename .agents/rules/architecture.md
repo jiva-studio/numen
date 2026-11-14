@@ -154,7 +154,7 @@ A rule has no exception. There is no `nolint`, `eslint-disable`, `@ts-ignore`, `
 
 ## 10. Rules that enforce the boundaries
 
-A check decides by structure. Where an off-the-shelf tool exists, the check is that tool with a configuration: dependency-cruiser for package boundaries and import cycles, depguard and gomodguard for Go imports and `go.mod` requires, golangci-lint linters, stylelint for style sheets. A hand-written check works only on syntax trees, import graphs and type information. A check does not match a word, a regular expression or a list of names against code or comments.
+A check decides by structure. Where an off-the-shelf tool exists, the check is that tool with a configuration: dependency-cruiser for package boundaries and import cycles, depguard and gomodguard for Go imports and `go.mod` requires, golangci-lint linters, stylelint for style sheets. A hand-written check works only on syntax trees, import graphs and type information. A check does not match a word, a regular expression or a list of names against code or comments. The exception is the names and spelling checks (`style/names`, `go/spelling`): they match words, because naming and spelling are word-level rules.
 
 `tools/checks` states each rule once, over a capture or a set derived from the repository, and declares a minimum of what it examines, so a check over nothing fails. Each rule has its own folder with a planted-violation test (`check.test.mjs` or `check_test.go`) and is listed in `tools/checks/rules.json` with the files it reads and its tags. `make checks LIST=1` prints the registry and `make checks TAGS=?` the tags; `make checks CHANGED=1` runs the checks whose files a change touches. The rules:
 
