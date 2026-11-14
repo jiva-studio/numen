@@ -132,18 +132,18 @@ func TestEndpointConfigurationConnectionTrackingAndTools(t *testing.T) {
 		}
 	}()
 	// The requests above leave their own kept-alive connection tracked, so the counts are relative to it.
-	before := countTracked(served)
+	before := getTrackedCount(served)
 	served.trackConnection(clientConn, http.StateNew)
-	if got := countTracked(served); got != before+1 {
+	if got := getTrackedCount(served); got != before+1 {
 		t.Errorf("tracked connections = %d, want %d", got, before+1)
 	}
 	served.trackConnection(clientConn, http.StateClosed)
-	if got := countTracked(served); got != before {
+	if got := getTrackedCount(served); got != before {
 		t.Errorf("tracked connections after StateClosed = %d, want %d", got, before)
 	}
 	served.trackConnection(clientConn, http.StateNew)
 	served.trackConnection(clientConn, http.StateHijacked)
-	if got := countTracked(served); got != before {
+	if got := getTrackedCount(served); got != before {
 		t.Errorf("tracked connections after StateHijacked = %d, want %d", got, before)
 	}
 
@@ -217,7 +217,7 @@ func postMCP(t *testing.T, served *Endpoint, sessionID, body string) string {
 	return string(raw)
 }
 
-func countTracked(served *Endpoint) int {
+func getTrackedCount(served *Endpoint) int {
 	served.statesMu.Lock()
 	defer served.statesMu.Unlock()
 	return len(served.states)
