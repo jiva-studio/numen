@@ -43,7 +43,7 @@ func NewRemove(
 	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, filer sourceport.VersionMover,
 	index edit.IndexUpdater, gate WriteGate,
 ) Remove {
-	return Remove{writers: writers, links: links, queries: queries, filer: filer, index: index, gate: gate}
+	return Remove{writers: writers, links: links, queries: queries, filer: filer, index: getIndexUpdater(index), gate: gate}
 }
 
 type RemoveResult struct {
@@ -168,9 +168,6 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 }
 
 func (u Remove) updateIndex(ctx context.Context, v domain.Vault, paths ...string) error {
-	if u.index == nil {
-		return nil
-	}
 	// The files are written, so the index follows them even when the caller is canceled.
 	return edit.WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }

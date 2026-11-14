@@ -1,7 +1,7 @@
 /**
  * The commands offered over the note in front, and what carries each out.
  */
-import { runInBackground } from '@numen/ui'
+import { runInBackground, win } from '@numen/ui'
 import { type Command, type FeatureCommands } from '@/entities/command'
 import {
   ARGUMENT,
@@ -137,7 +137,7 @@ const removeFiles = async (
 }
 
 const copyPath = (invocation: CommandInvocation, deps: NoteCommandsDeps): void => {
-  const clipboard = navigator.clipboard as Clipboard | undefined
+  const clipboard = win.navigator.clipboard as Clipboard | undefined
   if (!clipboard) return
   runInBackground(clipboard.writeText(invocation.target.path), (error) =>
     deps.writeMessage(formatError(error), 'error'),
@@ -232,10 +232,7 @@ const createRows = (agent: string): readonly Command[] => [
  * The commands over the note in front, and the one that makes a note. A command reached by Shift
  * and Enter on another one's row is declared too; the row it belongs to is the one that names it.
  */
-export const createNoteCommands = (
-  deps: NoteCommandsDeps,
-  agent: string = navigator.userAgent,
-): FeatureCommands => ({
+export const createNoteCommands = (deps: NoteCommandsDeps, agent: string): FeatureCommands => ({
   commands: createRows(agent),
   handlers: {
     [COMMAND.openFile]: (invocation) => openFile(invocation, deps),

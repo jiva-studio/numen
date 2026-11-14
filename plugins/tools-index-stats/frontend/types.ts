@@ -23,6 +23,7 @@ export interface Stats {
   readonly sources: number
   readonly kinds: readonly KindCount[]
   readonly model: string
+  readonly recipe: string
   readonly dimensions: number
   readonly profile: string
   readonly threads: number
