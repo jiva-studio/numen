@@ -83,36 +83,29 @@ func isValueType(expr ast.Expr) bool {
 	return is && slices.Contains([]string{"string", "bool", "int", "int32", "int64", "uint", "float64", "rune", "byte"}, ident.Name)
 }
 
-func getUseCases(t *testing.T) []string {
+func getUseCases(t *testing.T, root string) []string {
 	t.Helper()
 	var findings []string
-	target, err := os.ReadDir(filepath.Join("..", "usecase"))
+	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return err
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		for _, found := range getExposedDependencies(file) {
+			findings = append(findings, fmt.Sprintf("usecase/%s %s exposes %s",
+				filepath.ToSlash(rel), found.in, strings.Join(found.fields, ", ")))
+		}
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
-	}
-	for _, folder := range target {
-		if !folder.IsDir() {
-			continue
-		}
-		pos := filepath.Join("..", "usecase", folder.Name())
-		files, err := os.ReadDir(pos)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, one := range files {
-			if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
-				strings.HasSuffix(one.Name(), "_test.go") {
-				continue
-			}
-			file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(pos, one.Name()), nil, 0)
-			if err != nil {
-				t.Fatal(err)
-			}
-			for _, found := range getExposedDependencies(file) {
-				findings = append(findings, fmt.Sprintf("usecase/%s/%s %s exposes %s",
-					folder.Name(), one.Name(), found.in, strings.Join(found.fields, ", ")))
-			}
-		}
 	}
 	return findings
 }
