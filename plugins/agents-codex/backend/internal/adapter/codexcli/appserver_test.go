@@ -73,16 +73,18 @@ func TestACodexThatExitsAfterListingItsModelsListsThem(t *testing.T) {
 
 func TestAskCodexModelsStartFailure(t *testing.T) {
 	_, err := askCodexModels(t.Context(), []string{"/nonexistent/path/to/binary"})
-	if err == nil {
-		t.Fatal("expected error starting non-existent command, got nil")
+	if !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected os.ErrNotExist starting non-existent command, got %v", err)
 	}
 }
 
 func TestAskCodexModelsStopsCommand(t *testing.T) {
 	needsShell(t)
 	pidFile := filepath.Join(t.TempDir(), "pid")
+	childPidFile := filepath.Join(t.TempDir(), "child-pid")
 	script := writeScript(t, "codex",
 		fmt.Sprintf("echo $$ > %s\n", quoteShell(pidFile))+
+			fmt.Sprintf("(while :; do sleep 0.05; done) &\necho $! > %s\n", quoteShell(childPidFile))+
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"m1"}]}}'`+"\n"+
 			"while :; do sleep 0.05; done\n")
@@ -101,21 +103,29 @@ func TestAskCodexModelsStopsCommand(t *testing.T) {
 		t.Errorf("expected return before the deadline, got %v", ctx.Err())
 	}
 
-	pidBytes, err := os.ReadFile(pidFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	pid, err := strconv.Atoi(strings.TrimSpace(string(pidBytes)))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	proc, err := os.FindProcess(pid)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := proc.Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) && !errors.Is(err, syscall.ESRCH) {
-		t.Fatalf("expected process %d to be stopped and reaped, got %v", pid, err)
+	for _, file := range []string{pidFile, childPidFile} {
+		pidBytes, err := os.ReadFile(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		pid, err := strconv.Atoi(strings.TrimSpace(string(pidBytes)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		proc, err := os.FindProcess(pid)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for range 200 {
+			err = proc.Signal(syscall.Signal(0))
+			if errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH) {
+				break
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		if !errors.Is(err, os.ErrProcessDone) && !errors.Is(err, syscall.ESRCH) {
+			t.Fatalf("expected process %d (%s) to be stopped and reaped, got %v", pid, file, err)
+		}
 	}
 }
 
@@ -133,6 +143,13 @@ func TestListCodexModelsIdFallbackAndEmptyFiltering(t *testing.T) {
 	models, err := listCodexModels(in, out)
 	if err != nil {
 		t.Fatal(err)
+	}
+	sentLines := strings.Split(strings.TrimSpace(in.String()), "\n")
+	if len(sentLines) != 3 ||
+		!strings.Contains(sentLines[0], `"id":1`) || !strings.Contains(sentLines[0], `"method":"initialize"`) ||
+		!strings.Contains(sentLines[1], `"method":"initialized"`) ||
+		!strings.Contains(sentLines[2], `"id":2`) || !strings.Contains(sentLines[2], `"method":"model/list"`) {
+		t.Errorf("unexpected requests sent to codex: %v", sentLines)
 	}
 	if len(models) != 2 {
 		t.Fatalf("expected 2 models, got %d: %v", len(models), models)
@@ -222,8 +239,8 @@ func TestReadCodexCacheAndListEdgeCases(t *testing.T) {
 		t.Fatal(err)
 	}
 	cacheFile := filepath.Join(codexDir, "models_cache.json")
-	// Invalid JSON returns nil.
-	if err := os.WriteFile(cacheFile, []byte("{bad"), 0o600); err != nil {
+	// Invalid JSON returns nil even when earlier fields parsed.
+	if err := os.WriteFile(cacheFile, []byte(`{"models":[{"slug":"partial","display_name":"Partial","visibility":"show"}],"broken":`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if got := readCodexCache(); got != nil {
@@ -261,14 +278,17 @@ func TestReadCodexCacheAndListEdgeCases(t *testing.T) {
 	}
 
 	// listCodexModels fails when answer 1 has error or EOF, when answer 2 has error, or when result 2 is bad JSON.
-	for _, outStr := range []string{
-		"",
-		`{"id":1,"error":{"message":"init failed"}}` + "\n",
-		`{"id":1,"result":{}}` + "\n" + `{"id":2,"error":{"message":"list failed"}}` + "\n",
-		`{"id":1,"result":{}}` + "\n" + `{"id":2,"result":"not-an-object"}` + "\n",
+	for _, tc := range []struct {
+		out  string
+		want string
+	}{
+		{"", "codex exited before answering message 1"},
+		{`{"id":1,"error":{"message":"init failed"}}` + "\n" + `{"id":2,"result":{"data":[]}}` + "\n", "init failed"},
+		{`{"id":1,"result":{}}` + "\n" + `{"id":2,"error":{"message":"list failed"}}` + "\n", "list failed"},
+		{`{"id":1,"result":{}}` + "\n" + `{"id":2,"result":"not-an-object"}` + "\n", "cannot unmarshal"},
 	} {
-		if _, err := listCodexModels(&bytes.Buffer{}, strings.NewReader(outStr)); err == nil {
-			t.Errorf("expected listCodexModels error for output %q", outStr)
+		if _, err := listCodexModels(&bytes.Buffer{}, strings.NewReader(tc.out)); err == nil || !strings.Contains(err.Error(), tc.want) {
+			t.Errorf("listCodexModels(%q) error = %v, want containing %q", tc.out, err, tc.want)
 		}
 	}
 }

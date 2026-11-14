@@ -1,10 +1,18 @@
 package mcpendpoint
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
 	"net"
+	"net/http"
 	"net/url"
 	"testing"
 	"time"
+
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 func dialEndpoint(t *testing.T, served *Endpoint) net.Conn {
@@ -77,3 +85,111 @@ func TestCloseReportsAnInterruptedRequest(t *testing.T) {
 		t.Error("close reported nothing for a request it cut")
 	}
 }
+
+type failingReader struct{ err error }
+
+func (f failingReader) Read([]byte) (int, error) { return 0, f.err }
+
+func TestNewTokenAndServeErrorPaths(t *testing.T) {
+	if shutdownLimit != 2*time.Second || shutdownPoll != 10*time.Millisecond || tokenBytes != 32 {
+		t.Fatalf("constants = (%v, %v, %d)", shutdownLimit, shutdownPoll, tokenBytes)
+	}
+	sentinel := errors.New("entropy exhausted")
+	if _, err := serveWith(t.Context(), failingReader{err: sentinel}, nil, nil); !errors.Is(err, sentinel) {
+		t.Errorf("serveWith failingReader error = %v, want wrapped %v", err, sentinel)
+	}
+
+	canceled, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := (Server{}).Serve(canceled, nil, nil); err == nil || !errors.Is(err, context.Canceled) {
+		t.Errorf("Serve with canceled context = %v, want wrapped context.Canceled", err)
+	}
+}
+
+func TestTrackConnectionRemovesHijackedAndClosedConnections(t *testing.T) {
+	served, err := serve(t.Context(), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := served.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
+	if len(served.GetToken()) != tokenBytes*2 || served.GetURL() == "" || served.limit != 2*time.Second || served.server.ReadHeaderTimeout != 10*time.Second {
+		t.Errorf("endpoint fields: tokenLen=%d url=%q limit=%v headerTimeout=%v", len(served.GetToken()), served.GetURL(), served.limit, served.server.ReadHeaderTimeout)
+	}
+
+	c1, c2 := net.Pipe()
+	defer func() {
+		if err := c1.Close(); err != nil {
+			t.Error(err)
+		}
+		if err := c2.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	served.trackConnection(c1, http.StateActive)
+	if got := served.getActiveCount(); got != 1 {
+		t.Errorf("active count = %d, want 1", got)
+	}
+	served.trackConnection(c1, http.StateHijacked)
+	if got := served.getActiveCount(); got != 0 {
+		t.Errorf("active count after hijack = %d, want 0", got)
+	}
+	served.trackConnection(c1, http.StateActive)
+	served.trackConnection(c1, http.StateClosed)
+	if got := served.getActiveCount(); got != 0 {
+		t.Errorf("active count after close = %d, want 0", got)
+	}
+}
+
+func TestServedToolsInvokeAndReportErrors(t *testing.T) {
+	listed := []*tools.ToolInfo{
+		{Name: "pond_read", Title: "Read pond", Effect: tools.ReadOnly, InputSchema: []byte(`{"type":"object"}`)},
+		{Name: "pond_fail", Title: "Fail pond", Effect: tools.ReadOnly, InputSchema: []byte(`{"type":"object"}`)},
+	}
+	served, err := (Server{}).Serve(t.Context(), listed, func(_ context.Context, name string, args json.RawMessage) (*tools.CallResponse, error) {
+		if name == "pond_fail" {
+			return nil, errors.New("tool broke")
+		}
+		return &tools.CallResponse{Result: &tools.CallResult{Text: "got:" + string(args)}}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := served.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	client := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		req.Header.Set("Authorization", "Bearer "+served.GetToken())
+		return http.DefaultTransport.RoundTrip(req)
+	})}
+	session, err := sdk.NewClient(&sdk.Implementation{Name: "test", Version: "1"}, nil).
+		Connect(t.Context(), &sdk.StreamableClientTransport{Endpoint: served.GetURL(), HTTPClient: client, DisableStandaloneSSE: true}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := session.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	okRes, err := session.CallTool(t.Context(), &sdk.CallToolParams{Name: "pond_read", Arguments: map[string]any{"k": "v"}})
+	if err != nil || okRes.IsError || len(okRes.Content) != 1 || okRes.Content[0].(*sdk.TextContent).Text != `got:{"k":"v"}` {
+		t.Errorf("pond_read = %+v, %v", okRes, err)
+	}
+	failRes, err := session.CallTool(t.Context(), &sdk.CallToolParams{Name: "pond_fail"})
+	if err != nil || !failRes.IsError || len(failRes.Content) != 1 || failRes.Content[0].(*sdk.TextContent).Text != "tool broke" {
+		t.Errorf("pond_fail = %+v, %v", failRes, err)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }

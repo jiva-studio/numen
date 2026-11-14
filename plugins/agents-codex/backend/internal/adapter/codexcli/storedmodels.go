@@ -2,6 +2,7 @@ package codexcli
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -21,16 +22,10 @@ type codexCache struct {
 }
 
 func readCodexCache() []agentmodel.Model {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil
-	}
-	data, err := os.ReadFile(filepath.Join(home, ".codex", "models_cache.json"))
-	if err != nil {
-		return nil
-	}
+	home, homeErr := os.UserHomeDir()
+	data, readErr := os.ReadFile(filepath.Join(home, ".codex", "models_cache.json"))
 	var cache codexCache
-	if err := json.Unmarshal(data, &cache); err != nil {
+	if errors.Join(homeErr, readErr, json.Unmarshal(data, &cache)) != nil {
 		return nil
 	}
 	var models []agentmodel.Model
@@ -38,7 +33,7 @@ func readCodexCache() []agentmodel.Model {
 		if m.Visibility == "hide" || m.Slug == "" {
 			continue
 		}
-		levels := make([]string, 0, len(m.Supported))
+		var levels []string
 		for _, one := range m.Supported {
 			levels = append(levels, one.Effort)
 		}

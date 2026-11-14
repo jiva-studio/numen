@@ -36,10 +36,7 @@ func findCodexIn(places []string, customPath ...string) string {
 	if found, err := exec.LookPath("codex"); err == nil {
 		return found
 	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = ""
-	}
+	home := getHomeDir()
 	for _, p := range places {
 		resolved := p
 		if rest, ok := strings.CutPrefix(p, "~/"); ok && home != "" {
@@ -50,6 +47,13 @@ func findCodexIn(places []string, customPath ...string) string {
 		}
 	}
 	return "codex"
+}
+
+func getHomeDir() string {
+	if home, err := os.UserHomeDir(); err == nil {
+		return home
+	}
+	return ""
 }
 
 // Installation checks for the Codex CLI on this machine.

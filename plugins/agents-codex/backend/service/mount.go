@@ -25,11 +25,18 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 }
 
 func mountWith(s *server.Server, findHost func() (hostcall.Endpoint, error)) error {
-	var host task.Tools
+	built, err := newAgentServer(parts{tools: resolveTools(findHost), isAsync: true})
+	return mountAgent(s, built, err)
+}
+
+func resolveTools(findHost func() (hostcall.Endpoint, error)) task.Tools {
 	if endpoint, err := findHost(); err == nil {
-		host = tools.NewClient(endpoint)
+		return tools.NewClient(endpoint)
 	}
-	built, err := newAgentServer(parts{tools: host, isAsync: true})
+	return nil
+}
+
+func mountAgent(s *server.Server, built *agentServer, err error) error {
 	if err != nil {
 		return err
 	}

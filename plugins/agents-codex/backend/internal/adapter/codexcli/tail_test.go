@@ -6,14 +6,22 @@ import (
 )
 
 func TestTheStandardErrorKeepsOnlyItsEnd(t *testing.T) {
+	if maxStderr != 64*1024 {
+		t.Fatalf("maxStderr = %d, want 65536", maxStderr)
+	}
 	var stderr tailBuffer
+	if n, err := stderr.Write([]byte("short")); err != nil || n != 5 || stderr.String() != "short" {
+		t.Fatalf("short write = (%d, %v), %q", n, err, stderr.String())
+	}
 	for range 3 {
-		if _, err := stderr.Write([]byte(strings.Repeat("a", maxStderr/2))); err != nil {
-			t.Fatal(err)
+		chunk := []byte(strings.Repeat("a", maxStderr/2))
+		if n, err := stderr.Write(chunk); err != nil || n != len(chunk) {
+			t.Fatalf("Write = (%d, %v), want (%d, nil)", n, err, len(chunk))
 		}
 	}
-	if _, err := stderr.Write([]byte("the token was refused")); err != nil {
-		t.Fatal(err)
+	suffix := []byte("the token was refused")
+	if n, err := stderr.Write(suffix); err != nil || n != len(suffix) {
+		t.Fatalf("Write = (%d, %v), want (%d, nil)", n, err, len(suffix))
 	}
 
 	kept := stderr.String()

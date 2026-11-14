@@ -2,9 +2,11 @@ package modellist
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -189,4 +191,99 @@ func newFakeClock(at time.Time) *clock.Fake {
 	fake := &clock.Fake{}
 	fake.Set(at)
 	return fake
+}
+
+type gatedSource struct {
+	mu      sync.Mutex
+	calls   int
+	release chan struct{}
+	models  []agentmodel.Model
+	err     error
+}
+
+func (g *gatedSource) List(context.Context, []string) ([]agentmodel.Model, error) {
+	g.mu.Lock()
+	g.calls++
+	release := g.release
+	models, err := g.models, g.err
+	g.mu.Unlock()
+	if release != nil {
+		<-release
+	}
+	return models, err
+}
+
+func (g *gatedSource) ReadStored() []agentmodel.Model { return nil }
+
+func (g *gatedSource) getCalls() int {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.calls
+}
+
+func TestCacheEmptyKeyBackoffAndInFlightDeduplication(t *testing.T) {
+	now := newFakeClock(time.Unix(1000, 0))
+	src := &gatedSource{models: []agentmodel.Model{{Name: "m-empty"}}}
+	syncCache := NewCache(src, now, false)
+
+	// Fresh cache with empty command (key == "") still fetches because isCached is false.
+	if got := syncCache.Get(t.Context(), nil); len(got) != 1 || got[0].Name != "m-empty" {
+		t.Fatalf("Get(nil) on fresh cache = %v, want [m-empty]", got)
+	}
+
+	// Failed key backoff only blocks the failed key, not another uncached key.
+	syncCache.failedKey, syncCache.failedAt = "bad-cmd", now.Now()
+	if got := syncCache.Get(t.Context(), []string{"good-cmd"}); len(got) != 1 || got[0].Name != "m-empty" {
+		t.Fatalf("Get(good-cmd) while bad-cmd is in backoff = %v, want [m-empty]", got)
+	}
+
+	// Async in-flight deduplication and cleanup after completion.
+	release := make(chan struct{})
+	asyncSrc := &gatedSource{release: release, err: errors.New("boom")}
+	asyncCache := NewCache(asyncSrc, now, true)
+	asyncCache.Get(t.Context(), []string{"async-cmd"})
+	asyncCache.Get(t.Context(), []string{"async-cmd"})
+
+	wall := clock.System{}
+	deadline := wall.Now().Add(5 * time.Second)
+	for wall.Now().Before(deadline) && asyncSrc.getCalls() == 0 {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if got := asyncSrc.getCalls(); got != 1 {
+		t.Fatalf("concurrent async Get started %d fetches, want 1", got)
+	}
+
+	close(release)
+	for wall.Now().Before(deadline) {
+		asyncCache.mu.Lock()
+		inFlight := asyncCache.inFlight["async-cmd"]
+		failed := asyncCache.failedKey == "async-cmd"
+		asyncCache.mu.Unlock()
+		if !inFlight && failed {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	// After failureBackoff, because delete(c.inFlight, key) ran, another background fetch starts.
+	now.Advance(failureBackoff)
+	asyncSrc.mu.Lock()
+	asyncSrc.release = nil
+	asyncSrc.err = nil
+	asyncSrc.models = []agentmodel.Model{{Name: "recovered"}}
+	asyncSrc.mu.Unlock()
+
+	asyncCache.Get(t.Context(), []string{"async-cmd"})
+	for wall.Now().Before(deadline) {
+		asyncCache.mu.Lock()
+		cached := asyncCache.isCached
+		asyncCache.mu.Unlock()
+		if cached {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if got := asyncCache.Get(t.Context(), []string{"async-cmd"}); len(got) != 1 || got[0].Name != "recovered" || asyncSrc.getCalls() != 2 {
+		t.Fatalf("after backoff Get = %v, calls = %d, want [recovered] and 2 calls", got, asyncSrc.getCalls())
+	}
 }

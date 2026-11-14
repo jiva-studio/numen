@@ -20,7 +20,10 @@ func kill(cmd *exec.Cmd) error {
 	if cmd.Process == nil {
 		return nil
 	}
-	err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	return translateKillError(syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL))
+}
+
+func translateKillError(err error) error {
 	if errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.ESRCH) {
 		return os.ErrProcessDone
 	}

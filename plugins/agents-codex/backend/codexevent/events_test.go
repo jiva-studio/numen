@@ -69,10 +69,13 @@ func TestAToolCallStartsAndFinishes(t *testing.T) {
 		map[string]any{"type": "item.started", "item": map[string]any{
 			"id": "i1", "type": "mcp_tool_call", "name": "read_note", "arguments": map[string]any{"path": "a.md"},
 		}},
+		map[string]any{"type": "item.started", "item": map[string]any{
+			"id": "i2", "type": "mcp_tool_call", "name": "list_notes",
+		}},
 		map[string]any{"type": "item.completed", "item": map[string]any{"id": "i1", "type": "mcp_tool_call", "status": "completed"}},
 	)
 
-	if !slices.Equal(sink.reports, []string{`call i1 read_note {"path":"a.md"}`, "result i1 done"}) {
+	if !slices.Equal(sink.reports, []string{`call i1 read_note {"path":"a.md"}`, "call i2 list_notes ", "result i1 done"}) {
 		t.Errorf("reports %q", sink.reports)
 	}
 }
@@ -109,8 +112,10 @@ func TestOtherEventsSendNothing(t *testing.T) {
 		map[string]any{"type": "item.completed"},
 		map[string]any{"type": "item.started", "item": map[string]any{"type": "agent_message", "text": "no"}},
 		map[string]any{"type": "other", "item": map[string]any{"type": "mcp_tool_call", "tool": "t"}},
+		map[string]any{"type": "item.started"},
 		map[string]any{"type": "item.started", "item": map[string]any{"type": "other"}},
 		map[string]any{"type": "item.completed", "item": map[string]any{"type": "other"}},
+		map[string]any{"type": "item.completed", "item": map[string]any{"type": "other", "text": "ignored"}},
 		map[string]any{"type": "item.started", "item": map[string]any{"type": "reasoning", "text": "early"}},
 		map[string]any{"type": "item.completed", "item": map[string]any{"type": "reasoning", "text": ""}},
 		map[string]any{"type": "thread.started"},

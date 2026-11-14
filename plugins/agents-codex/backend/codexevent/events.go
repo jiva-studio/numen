@@ -26,7 +26,7 @@ func Handle(sink Sink, rawMap map[string]any) error {
 			sink.RecordThread(id)
 		}
 	case "item.started":
-		if item != nil && item["type"] == "mcp_tool_call" {
+		if item["type"] == "mcp_tool_call" {
 			return sink.SendToolCall(getString(item, "id"), getToolName(item), getToolArguments(item))
 		}
 	case "item.completed":
@@ -61,9 +61,8 @@ func getToolArguments(item map[string]any) string {
 	if item["arguments"] == nil {
 		return ""
 	}
-	args, err := json.Marshal(item["arguments"])
-	if err != nil {
-		return ""
+	if args, err := json.Marshal(item["arguments"]); err == nil {
+		return string(args)
 	}
-	return string(args)
+	return ""
 }
