@@ -26,6 +26,7 @@ type countingDocuments struct {
 	hasLayer bool
 	failure  error
 	opened   atomic.Int32
+	asked    atomic.Int32
 }
 
 func (d *countingDocuments) Open(_ string, _ []byte) (recognition.Document, error) {
@@ -33,13 +34,19 @@ func (d *countingDocuments) Open(_ string, _ []byte) (recognition.Document, erro
 	if d.failure != nil {
 		return nil, d.failure
 	}
-	return onePage{hasLayer: d.hasLayer}, nil
+	return onePage{hasLayer: d.hasLayer, asked: &d.asked}, nil
 }
 
-type onePage struct{ hasLayer bool }
+type onePage struct {
+	hasLayer bool
+	asked    *atomic.Int32
+}
 
 func (onePage) GetPageCount() int    { return 1 }
-func (p onePage) HasTextLayer() bool { return p.hasLayer }
+func (p onePage) HasTextLayer() bool {
+	p.asked.Add(1)
+	return p.hasLayer
+}
 func (onePage) Close() error         { return nil }
 
 func (onePage) RenderPage(_, _ int) (image.Image, error) {
@@ -91,9 +98,9 @@ func newModeScene(t *testing.T, hasLayer bool) *modeScene {
 
 func (s *modeScene) startFile(t *testing.T) string {
 	t.Helper()
-	state, err := s.launcher.StartFile(t.Context(), bookPath)
+	state, err := s.launcher.StartMissingFile(t.Context(), bookPath)
 	if err != nil {
-		t.Fatalf("StartFile: %v", err)
+		t.Fatalf("StartMissingFile: %v", err)
 	}
 	return state
 }
@@ -179,5 +186,35 @@ func TestAFileThatCannotBeOpenedToCheckItFailsTheRunWithTheError(t *testing.T) {
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("a file that failed the check shows the tasks %+v", tasks)
+	}
+}
+
+func TestStartFileRecognizesAFileWithTextWithoutAskingForItsTextLayerWhateverTheMode(t *testing.T) {
+	for _, mode := range []settings.RecognizeMode{settings.ModeOff, settings.ModeWhenNoTextLayer, settings.ModeAlways} {
+		s := newModeScene(t, true)
+		s.launcher.SetMode(mode)
+
+		state, err := s.launcher.StartFile(t.Context(), bookPath)
+
+		if err != nil || state != launch.StateStarted {
+			t.Errorf("mode %s: StartFile gave %q, %v; want started", mode, state, err)
+		}
+		if asked := s.documents.asked.Load(); asked != 0 {
+			t.Errorf("mode %s: StartFile asked for the text layer %d times, want never", mode, asked)
+		}
+	}
+}
+
+func TestStartMissingFileStartsAFileWithTextUnderAlwaysWithoutAskingForItsTextLayer(t *testing.T) {
+	s := newModeScene(t, true)
+	s.launcher.SetMode(settings.ModeAlways)
+
+	state := s.startFile(t)
+
+	if state != launch.StateStarted {
+		t.Errorf("a file with text gave %q under always, want started", state)
+	}
+	if asked := s.documents.asked.Load(); asked != 0 {
+		t.Errorf("the text layer was asked for %d times under always, want never", asked)
 	}
 }

@@ -94,13 +94,26 @@ func newModeFixture(t *testing.T, mode settings.RecognizeMode) (*toolFixture, *s
 	return s, documents
 }
 
-func (s *toolFixture) createText(t *testing.T, filePath string) command.Result {
+// missingTextCommand is the shared command the trigger of the manifest runs.
+const missingTextCommand = "app:file.createMissingText"
+
+func (s *toolFixture) runCommand(t *testing.T, id, filePath string) command.Result {
 	t.Helper()
-	res, err := s.runHandlerWithin(t, command.Request{Command: "app:file.createText", Path: filePath})
+	res, err := s.runHandlerWithin(t, command.Request{Command: id, Path: filePath})
 	if err != nil {
-		t.Fatalf("createText of %s: %v", filePath, err)
+		t.Fatalf("%s of %s: %v", id, filePath, err)
 	}
 	return res
+}
+
+func (s *toolFixture) createText(t *testing.T, filePath string) command.Result {
+	t.Helper()
+	return s.runCommand(t, "app:file.createText", filePath)
+}
+
+func (s *toolFixture) createMissingText(t *testing.T, filePath string) command.Result {
+	t.Helper()
+	return s.runCommand(t, missingTextCommand, filePath)
 }
 
 func (s *toolFixture) expectRecognized(t *testing.T, filePath string) {
@@ -129,18 +142,18 @@ func (s *toolFixture) expectSkipped(t *testing.T, filePath string, res command.R
 	}
 }
 
-func TestWhenNoTextLayerSkipsAPDFThatHasText(t *testing.T) {
+func TestMissingTextUnderWhenNoTextLayerSkipsAPDFThatHasText(t *testing.T) {
 	s, _ := newModeFixture(t, settings.ModeWhenNoTextLayer)
 
-	res := s.createText(t, textPath)
+	res := s.createMissingText(t, textPath)
 
 	s.expectSkipped(t, textPath, res)
 }
 
-func TestWhenNoTextLayerRecognizesAScannedPDF(t *testing.T) {
+func TestMissingTextUnderWhenNoTextLayerRecognizesAScannedPDF(t *testing.T) {
 	s, _ := newModeFixture(t, settings.ModeWhenNoTextLayer)
 
-	res := s.createText(t, scanPath)
+	res := s.createMissingText(t, scanPath)
 
 	if res.Message != "recognizing "+scanPath {
 		t.Errorf("the message %q, want recognizing %s", res.Message, scanPath)
@@ -148,10 +161,10 @@ func TestWhenNoTextLayerRecognizesAScannedPDF(t *testing.T) {
 	s.expectRecognized(t, scanPath)
 }
 
-func TestWhenNoTextLayerRecognizesAnImage(t *testing.T) {
+func TestMissingTextUnderWhenNoTextLayerRecognizesAnImage(t *testing.T) {
 	s, _ := newModeFixture(t, settings.ModeWhenNoTextLayer)
 
-	res := s.createText(t, picturePath)
+	res := s.createMissingText(t, picturePath)
 
 	if res.Message != "recognizing "+picturePath {
 		t.Errorf("the message %q, want recognizing %s", res.Message, picturePath)
@@ -159,20 +172,36 @@ func TestWhenNoTextLayerRecognizesAnImage(t *testing.T) {
 	s.expectRecognized(t, picturePath)
 }
 
-func TestAlwaysRecognizesAPDFThatHasTextAndAScanWithoutAskingForTheTextLayer(t *testing.T) {
+func TestCreateTextUnderWhenNoTextLayerRecognizesAPDFThatHasTextWithoutAskingForItsTextLayer(t *testing.T) {
+	s, documents := newModeFixture(t, settings.ModeWhenNoTextLayer)
+
+	res := s.createText(t, textPath)
+
+	if res.Message != "recognizing "+textPath {
+		t.Errorf("the message %q, want recognizing %s", res.Message, textPath)
+	}
+	s.expectRecognized(t, textPath)
+	if asked := documents.asked.Load(); asked != 0 {
+		t.Errorf("the text layer was asked for %d times by the menu command, want never", asked)
+	}
+}
+
+func TestBothCommandsUnderAlwaysRecognizeAPDFThatHasTextAndAScanWithoutAskingForTheTextLayer(t *testing.T) {
 	s, documents := newModeFixture(t, settings.ModeAlways)
 
-	s.createText(t, textPath)
+	s.createMissingText(t, textPath)
 	s.expectRecognized(t, textPath)
-	s.createText(t, scanPath)
+	s.createMissingText(t, scanPath)
 	s.expectRecognized(t, scanPath)
+	s.createText(t, picturePath)
+	s.expectRecognized(t, picturePath)
 
 	if asked := documents.asked.Load(); asked != 0 {
 		t.Errorf("the text layer was asked for %d times under always, want never", asked)
 	}
 }
 
-func TestACallOfAPersonUnderOffRecognizesAPDFThatHasText(t *testing.T) {
+func TestCreateTextUnderOffRecognizesAPDFThatHasText(t *testing.T) {
 	s, documents := newModeFixture(t, settings.ModeOff)
 
 	res := s.createText(t, textPath)

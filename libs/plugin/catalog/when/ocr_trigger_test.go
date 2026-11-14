@@ -33,9 +33,9 @@ func getOCRCondition(t *testing.T) when.Condition {
 		t.Fatal(err)
 	}
 	triggers := manifest.Contributes.Triggers
-	index := slices.IndexFunc(triggers, func(trigger ocrTrigger) bool { return trigger.Command == "app:file.createText" })
+	index := slices.IndexFunc(triggers, func(trigger ocrTrigger) bool { return trigger.Command == "app:file.createMissingText" })
 	if index < 0 {
-		t.Fatal("the manifest has no trigger of app:file.createText")
+		t.Fatal("the manifest has no trigger of app:file.createMissingText")
 	}
 	return parse(t, triggers[index].When)
 }
