@@ -78,7 +78,7 @@ func TestUseCaseEdgeRule_RejectsImportsBetweenUseCases(t *testing.T) {
 		{"usecase/vault", "internal/operation", true},
 		{"usecase/vault", "internal/adapter/filesystem/vaultreader", true},
 
-		// A package whose directory name ends in "test" is test support: it imports the use case it sits in
+		// A package whose directory name ends in "test" is test support: it imports its parent use case
 		// and any other use case or test support, and no production package imports it.
 		{"usecase/x/xtest", "usecase/x", false},
 		{"usecase/modelcall/modelcalltest", "usecase/connection", false},
@@ -102,7 +102,7 @@ func TestUseCaseEdgeRule_RejectsImportsBetweenUseCases(t *testing.T) {
 	}
 }
 
-// The walk reads the production files of the whole module: test support that imports the use case it sits in
+// The walk reads the production files of the whole module: test support that imports its parent use case
 // passes, a test that imports test support passes, and a production file that imports it fails.
 func TestEdgeWalk_RejectsAProductionImportOfTestSupport(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
