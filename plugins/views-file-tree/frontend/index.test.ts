@@ -145,7 +145,6 @@ describe('view-file-tree plugin', () => {
     })
   })
 
-
   it('registers the commands of the files', () => {
     const { ctx } = createWindowContext()
 
