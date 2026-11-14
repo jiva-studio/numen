@@ -14,8 +14,7 @@ import {
   type CommandInvocation,
   type VaultRef,
 } from '@/shared/model/command'
-import { emptyTrash } from '@/entities/file'
-import { vaults } from '@/entities/vault'
+import type { Vaults } from '@/entities/vault'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { VAULT_WORDS } from '../words'
 import { openAfterSavingTabs, type TabsHold } from './leaveVault'
@@ -25,8 +24,11 @@ import { openAfterSavingTabs, type TabsHold } from './leaveVault'
  * while the window changes vault, so a write cannot reach the vault it switches to. `reload` draws
  * the page again on the vault the window shows now, because what the page holds belongs to the
  * vault that has gone. `setVaultName` updates the displayed name of one vault in the list.
+ * `emptyTrash` returns how many files it could not delete.
  */
 export interface VaultCommandsDeps {
+  readonly vaults: Vaults
+  readonly emptyTrash: () => Promise<number>
   readonly tabsHold?: TabsHold | undefined
   readonly setVaultName: (vault: VaultRef) => void
   readonly reload: () => void
@@ -35,16 +37,18 @@ export interface VaultCommandsDeps {
 
 const showVault = async (id: string, deps: VaultCommandsDeps): Promise<void> => {
   if (!id) return
-  const open = deps.tabsHold ? openAfterSavingTabs(vaults.open, deps.tabsHold) : vaults.open
+  const open = deps.tabsHold
+    ? openAfterSavingTabs(deps.vaults.open, deps.tabsHold)
+    : deps.vaults.open
   const answer = await open(id)
   if (!answer.ok) return deps.writeMessage(VAULT_WORDS.vaultErrors[answer.error], 'error')
   deps.reload()
 }
 
 const addVault = async (deps: VaultCommandsDeps): Promise<void> => {
-  const path = await vaults.choose(VAULT_WORDS.folder)
+  const path = await deps.vaults.choose(VAULT_WORDS.folder)
   if (!path) return
-  const answer = await vaults.add(path, '')
+  const answer = await deps.vaults.add(path, '')
   if (!answer.ok) return deps.writeMessage(VAULT_WORDS.vaultErrors[answer.error], 'error')
   if (!answer.value) return
   await showVault(answer.value.id, deps)
@@ -55,7 +59,7 @@ const renameVault = async (
   deps: VaultCommandsDeps,
 ): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.target.vault.name) return
-  const answer = await vaults.rename(invocation.target.vault.id, invocation.name)
+  const answer = await deps.vaults.rename(invocation.target.vault.id, invocation.name)
   if (!answer.ok) return deps.writeMessage(VAULT_WORDS.vaultErrors[answer.error], 'error')
   if (answer.value) deps.setVaultName({ id: answer.value.id, name: answer.value.name })
 }
@@ -65,12 +69,12 @@ const removeVault = async (
   deps: VaultCommandsDeps,
   shouldErase: boolean,
 ): Promise<void> => {
-  const answer = await vaults.remove(invocation.target.vault.id, shouldErase)
+  const answer = await deps.vaults.remove(invocation.target.vault.id, shouldErase)
   if (!answer.ok) deps.writeMessage(VAULT_WORDS.vaultErrors[answer.error], 'error')
 }
 
 const emptyVaultTrash = async (deps: VaultCommandsDeps): Promise<void> => {
-  const undeleted = await emptyTrash()
+  const undeleted = await deps.emptyTrash()
   if (undeleted > 0) deps.writeMessage(VAULT_WORDS.undeleted(undeleted), 'error')
 }
 
