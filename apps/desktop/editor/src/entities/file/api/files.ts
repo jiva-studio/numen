@@ -5,6 +5,7 @@
 import { findErrorCode, asFailure, asValue } from '@numen/core-client'
 import { files } from '@/shared/api/clients'
 import type { ErrorCode } from '@/shared/api/errors'
+import type { Result } from '@/shared/lib/result'
 import { mapMoveResult, mapNoteType } from '@/shared/api/wire'
 import type { Entry, FileKind, Movement, RemoveResult } from '@/shared/model/fileTypes'
 import { mapEntry } from './fileWords'
@@ -40,8 +41,10 @@ export const moveFile = async (from: string, to: string): Promise<Movement> => {
 }
 
 /** An empty folder. The folders above it are made with it. */
-export const createFolder = async (path: string): Promise<ErrorCode | null> =>
-  findErrorCode(await files.createFolder({ path }))
+export const createFolder = async (path: string): Promise<Result<null, ErrorCode>> => {
+  const error = findErrorCode(await files.createFolder({ path }))
+  return error ? asFailure(error) : asValue(null)
+}
 
 /**
  * Kind is read from the vault itself, so a path not yet scanned returns what exists there; a path
