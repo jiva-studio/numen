@@ -2,7 +2,10 @@ module github.com/jiva-studio/numen/libs/shared/tokenizer
 
 go 1.26.11
 
-require github.com/gomlx/go-huggingface v0.4.3
+require (
+	github.com/gomlx/go-huggingface v0.4.3
+	github.com/rivo/uniseg v0.4.7
+)
 
 require (
 	github.com/gofrs/flock v0.13.0 // indirect

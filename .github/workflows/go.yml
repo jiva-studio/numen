@@ -17,6 +17,9 @@ on:
       sdk_go:
         type: boolean
         required: true
+      shared_go:
+        type: boolean
+        required: true
       desktop:
         type: boolean
         required: true
@@ -325,6 +328,42 @@ jobs:
 
       - name: Run Go tests
         run: make lib_plugin_sdk_go_test GO_RACE=1
+
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-key: ${{ steps.go.outputs.cache-key }}
+
+  # The Go libraries under libs/shared that plugins import, each a module of its own.
+  shared:
+    name: Shared Go Libraries
+    if: inputs.shared_go
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: libs/shared/onnx/go.mod
+          cache-key: shared
+
+      - uses: ./.github/actions/install-golangci-lint
+
+      - name: Verify Go formatting
+        working-directory: libs/shared
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
+
+      - name: Run linters
+        run: make lib_shared_go_lint
+
+      - name: Run Go tests
+        run: make lib_shared_go_test GO_RACE=1
 
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache
