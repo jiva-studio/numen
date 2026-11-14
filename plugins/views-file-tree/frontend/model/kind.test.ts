@@ -239,7 +239,7 @@ describe('a files tab and the open note', () => {
     expect(state.list.state.selectedPaths.value).toStrictEqual([])
   })
 
-  it('shows a note the person asked for although expanding is off', async () => {
+  it('shows the revealed note although expanding is off', async () => {
     const { kind } = createRealKind(() => false)
     const state = openRealTab(kind)
     await settle()

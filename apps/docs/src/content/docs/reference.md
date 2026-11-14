@@ -195,6 +195,14 @@ The settings of the plugin Agent Chat.
 | --- | --- | --- |
 | `connections` | text | agents. |
 
+### `md.numen.views.file.tree`
+
+The settings of the plugin File Tree Explorer.
+
+| | | |
+| --- | --- | --- |
+| `revealOpenNote` | yes or no | open the folders of the note that opens beside the tree. |
+
 ### `md.numen.views.flashcards.studio`
 
 The settings of the plugin Flashcards Studio.
