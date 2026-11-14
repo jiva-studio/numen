@@ -135,11 +135,9 @@ A change that makes a check pass without fixing what it reports is a finding. Lo
 - an interface split into embedded pieces, each under the size limit, that together exceed it;
 - a file or a package added to an `exclude`, `ignores` or similar entry of a lint or `tsconfig` configuration;
 - a name, path or file added to a list of exceptions in a check;
-- logic moved into a folder a check does not walk, such as a sub-package of `container/`;
-- one object cut into several hooks, factories or structs so that each stays under a size limit, with members placed where they do not belong, or a factory named so that a size rule does not read it (a reactive store not named `use…` or `create…`);
-- a banned API reached indirectly: through a string index (`el[METHOD]()`), through `globalThis`, or through a wrapper that exists only to hide the call;
-- an adapter that declares a local interface to call a driven port directly, so the driving-adapter check does not see that it skips the use case;
-- a rule of a shared lint configuration set again in a package configuration: in ESLint a later entry replaces the option of an earlier one, so restrictions of the base are lost.
+- logic moved into a folder a check does not walk, such as a sub-package of `container/`.
+
+In general: when code looks shaped around a limit or a ban rather than around what it does, the dodge is the finding. Report it, and say which check would have caught it; a dodge that a script can detect is an issue for `tools/checks`, not a line in this list.
 
 ---
 
