@@ -76,7 +76,7 @@ describe('the place a PDF tab saves when the window moves it', () => {
     ranges.value = [...RANGES]
     await flush()
 
-    expect(savePlace).toHaveBeenLastCalledWith(JSON.stringify({ page: 7, pageCount: 12 }))
+    expect(savePlace).toHaveBeenLastCalledWith({ page: 7, pageCount: 12 })
     tab.unmount()
   })
 
@@ -89,7 +89,7 @@ describe('the place a PDF tab saves when the window moves it', () => {
     release()
     await flush()
 
-    expect(savePlace).toHaveBeenLastCalledWith(JSON.stringify({ page: 7, pageCount: 12 }))
+    expect(savePlace).toHaveBeenLastCalledWith({ page: 7, pageCount: 12 })
     tab.unmount()
   })
 })
@@ -104,7 +104,7 @@ describe('the place a PDF tab saves when the reader navigates to another page', 
 
     await goToPage(3)
 
-    expect(savePlace).toHaveBeenLastCalledWith(JSON.stringify({ page: 4, pageCount: 12 }))
+    expect(savePlace).toHaveBeenLastCalledWith({ page: 4, pageCount: 12 })
     tab.unmount()
   })
 })
