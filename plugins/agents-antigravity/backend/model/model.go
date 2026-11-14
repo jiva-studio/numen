@@ -24,8 +24,8 @@ func Parse(output []byte) []Model {
 	var models []Model
 	lines := bufio.NewScanner(bytes.NewReader(output))
 	for lines.Scan() {
-		name, title, found := cutLine(lines.Text())
-		if !found || name == "" {
+		name, title := cutLine(lines.Text())
+		if name == "" {
 			continue
 		}
 		if title == "" {
@@ -45,18 +45,17 @@ func Fold(items []Model) []reasoning.Family {
 	return reasoning.Fold(entries)
 }
 
-func cutLine(line string) (string, string, bool) {
-	if idx := strings.LastIndexByte(line, '\r'); idx >= 0 {
-		line = line[idx+1:]
-	}
+func cutLine(line string) (string, string) {
+	parts := strings.Split(line, "\r")
+	line = parts[len(parts)-1]
 	if name, title, found := strings.Cut(line, "\t"); found {
-		return strings.TrimSpace(name), strings.TrimSpace(title), true
+		return strings.TrimSpace(name), strings.TrimSpace(title)
 	}
 	if name, title, found := strings.Cut(line, "  "); found {
 		name = strings.TrimSpace(name)
-		if name != "" && !strings.Contains(name, " ") {
-			return name, strings.TrimSpace(title), true
+		if !strings.Contains(name, " ") {
+			return name, strings.TrimSpace(title)
 		}
 	}
-	return "", "", false
+	return "", ""
 }

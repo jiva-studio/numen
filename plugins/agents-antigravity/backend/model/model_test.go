@@ -29,10 +29,12 @@ func TestParseKeepsOnlyLinesWithAModelId(t *testing.T) {
 	got := Parse([]byte(
 		"\rcr-at-zero\tCR Zero\n" +
 			"   leading-spaces-only\n" +
+			"  indented-model  Indented Title\n" +
 			"has space  Not A Model ID\n" +
 			"space-bare  \n"))
 	want := []Model{
 		{Name: "cr-at-zero", Title: "CR Zero"},
+		{Name: "indented-model", Title: "Indented Title"},
 		{Name: "space-bare", Title: "space-bare"},
 	}
 	if !slices.Equal(got, want) {

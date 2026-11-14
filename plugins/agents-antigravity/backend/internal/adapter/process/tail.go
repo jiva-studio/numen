@@ -15,9 +15,7 @@ func (b *tailBuffer) Write(p []byte) (int, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.data = append(b.data, p...)
-	if extra := len(b.data) - maxStderr; extra > 0 {
-		b.data = append(b.data[:0], b.data[extra:]...)
-	}
+	b.data = b.data[max(0, len(b.data)-maxStderr):]
 	return len(p), nil
 }
 

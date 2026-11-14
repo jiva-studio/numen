@@ -2,6 +2,7 @@ package mcpendpoint
 
 import (
 	"encoding/json"
+	"errors"
 	"reflect"
 	"strconv"
 	"testing"
@@ -148,5 +149,35 @@ func TestTheEndpointAnnotatesAToolFromItsEffectAndItsPermissions(t *testing.T) {
 				t.Errorf("the tool is annotated %s, want %s", got, want)
 			}
 		})
+	}
+}
+
+func TestOrDefaultObjectSchemaFallsBackOnError(t *testing.T) {
+	if got := string(orDefaultObjectSchema(nil, errors.New("boom"))); got != `{"type":"object"}` {
+		t.Errorf("orDefaultObjectSchema on error = %s, want default object schema", got)
+	}
+}
+
+func TestReadResultMapsToolErrorsAndStructuredFallback(t *testing.T) {
+	if got := readResult("pond_read", &tools.CallResponse{Error: tools.ErrorCodeUnknownTool}); !got.IsError || got.Content[0].(*sdk.TextContent).Text != "unknown tool: pond_read" {
+		t.Errorf("unknown tool = %+v", got)
+	}
+	if got := readResult("pond_read", &tools.CallResponse{Error: tools.ErrorCodeBadArguments}); !got.IsError || got.Content[0].(*sdk.TextContent).Text != "the arguments are not a JSON object" {
+		t.Errorf("bad arguments = %+v", got)
+	}
+	structuredOnly := readResult("pond_read", &tools.CallResponse{
+		Result: &tools.CallResult{Structured: []byte(`{"ok":true}`)},
+	})
+	if len(structuredOnly.Content) != 1 || structuredOnly.Content[0].(*sdk.TextContent).Text != `{"ok":true}` {
+		t.Errorf("structured fallback = %+v", structuredOnly)
+	}
+	if string(structuredOnly.StructuredContent.(json.RawMessage)) != `{"ok":true}` {
+		t.Errorf("structured content = %+v", structuredOnly.StructuredContent)
+	}
+	emptyRes := readResult("pond_read", &tools.CallResponse{
+		Result: &tools.CallResult{IsError: true},
+	})
+	if !emptyRes.IsError || len(emptyRes.Content) != 0 || emptyRes.StructuredContent != nil {
+		t.Errorf("empty error result = %+v", emptyRes)
 	}
 }

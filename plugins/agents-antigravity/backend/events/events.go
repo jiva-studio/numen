@@ -89,10 +89,7 @@ func (r *eventReader) handle(rawMap map[string]any) {
 }
 
 func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
-	evObj, ok := rawMap["event"].(map[string]any)
-	if !ok {
-		return
-	}
+	evObj := getMap(rawMap, "event")
 	switch getString(evObj, "type") {
 	case "content_block_start":
 		r.startBlock(evObj)
@@ -108,29 +105,21 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 }
 
 func (r *eventReader) startBlock(evObj map[string]any) {
-	cb, ok := evObj["content_block"].(map[string]any)
-	if !ok {
-		return
-	}
+	cb := getMap(evObj, "content_block")
 	if cb["type"] != "tool_use" {
 		return
 	}
 	r.currentTool = getString(cb, "name")
 	r.currentArgs.Reset()
-	initInput, ok := cb["input"].(map[string]any)
-	if !ok {
-		return
-	}
-	if raw, err := json.Marshal(initInput); err == nil {
-		r.currentArgs.Write(raw)
+	if initInput := getMap(cb, "input"); initInput != nil {
+		if raw, err := json.Marshal(initInput); err == nil {
+			r.currentArgs.Write(raw)
+		}
 	}
 }
 
 func (r *eventReader) continueBlock(evObj map[string]any) {
-	delta, ok := evObj["delta"].(map[string]any)
-	if !ok {
-		return
-	}
+	delta := getMap(evObj, "delta")
 	if text, ok := delta["text"].(string); ok && text != "" {
 		r.sendText(text)
 	}
@@ -140,28 +129,21 @@ func (r *eventReader) continueBlock(evObj map[string]any) {
 }
 
 func (r *eventReader) handleToolCalls(rawMap map[string]any) {
-	toolCalls, ok := rawMap["tool_calls"].([]any)
-	if !ok {
-		return
-	}
-	for _, tcRaw := range toolCalls {
+	for _, tcRaw := range getSlice(rawMap, "tool_calls") {
 		tc, ok := tcRaw.(map[string]any)
 		if !ok {
 			continue
 		}
-		args, err := json.Marshal(tc["arguments"])
-		if err != nil {
-			args = nil
+		args := ""
+		if encoded, err := json.Marshal(tc["arguments"]); err == nil {
+			args = string(encoded)
 		}
-		r.sendToolCall(getString(tc, "name"), string(args))
+		r.sendToolCall(getString(tc, "name"), args)
 	}
 }
 
 func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
-	delta, ok := rawMap["delta"].(map[string]any)
-	if !ok {
-		return
-	}
+	delta := getMap(rawMap, "delta")
 	if text, ok := delta["text"].(string); ok && text != "" {
 		r.sendText(text)
 	}

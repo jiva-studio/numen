@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -214,6 +215,10 @@ func readInputSchema(raw []byte) json.RawMessage {
 	}
 	schema["type"] = json.RawMessage(`"object"`)
 	encoded, err := json.Marshal(schema)
+	return orDefaultObjectSchema(encoded, err)
+}
+
+func orDefaultObjectSchema(encoded []byte, err error) json.RawMessage {
 	if err != nil {
 		return json.RawMessage(`{"type":"object"}`)
 	}
@@ -269,8 +274,12 @@ func newTextContent(text string) *sdk.TextContent {
 }
 
 func newToken() (string, error) {
+	return newTokenFrom(rand.Reader)
+}
+
+func newTokenFrom(source io.Reader) (string, error) {
 	raw := make([]byte, tokenBytes)
-	if _, err := rand.Read(raw); err != nil {
+	if _, err := io.ReadFull(source, raw); err != nil {
 		return "", fmt.Errorf("create a token for the tools of the agent: %w", err)
 	}
 	return hex.EncodeToString(raw), nil

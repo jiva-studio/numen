@@ -46,7 +46,7 @@ func (c *Catalog) List(ctx context.Context, program string) []reasoning.Family {
 	list := func(ctx context.Context) ([]model.Model, error) { return c.lister.List(ctx, []string{program}) }
 	items, _, err := c.models.Get(ctx, program, list)
 	if err != nil {
-		return model.Fold(nil)
+		return nil
 	}
 	return model.Fold(items)
 }
