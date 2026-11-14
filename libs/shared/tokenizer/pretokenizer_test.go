@@ -40,7 +40,7 @@ func TestEncodeAcceptsTheOlderAddPrefixSpaceSetting(t *testing.T) {
 	checkEncode(t, loadTokenizer(t, path), "hello world", getSingleIDs(t, "▁hello", "▁world"))
 }
 
-func TestEncodeOfAnEmptyTextHoldsOnlyTheSpecialTokens(t *testing.T) {
+func TestEncodeOfAnEmptyTextReturnsOnlyTheSpecialTokens(t *testing.T) {
 	tok := loadFixture(t)
 	checkEncode(t, tok, "", []int{bosID, eosID})
 	checkEncode(t, tok, "   ", []int{bosID, eosID})

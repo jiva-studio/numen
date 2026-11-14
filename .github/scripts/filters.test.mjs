@@ -25,6 +25,7 @@ const AREAS = [
   'core',
   'protocol',
   'sdk_go',
+  'shared_go',
   'desktop',
   'mobile',
   'ui',
@@ -68,6 +69,7 @@ describe('the filters of the changed areas', () => {
       'core',
       'protocol',
       'sdk_go',
+      'shared_go',
       'desktop',
       'mobile',
       'workflows',
@@ -84,6 +86,7 @@ describe('the filters of the changed areas', () => {
       'core',
       'protocol',
       'sdk_go',
+      'shared_go',
       'desktop',
       'mobile',
       'plugins_all',
@@ -139,6 +142,13 @@ describe('the filters of the changed areas', () => {
     assert.ok(areas.includes('plugins_all'))
     assert.ok(!areas.includes('desktop_fe'))
     assert.ok(!areas.includes('plugin_stories'))
+  })
+
+  it('runs the shared libraries and every plugin for a change to a shared library', () => {
+    const areas = getAreas('libs/shared/tokenizer/tokenizer.go')
+    assert.ok(areas.includes('shared_go'))
+    assert.ok(areas.includes('plugins_all'))
+    for (const area of ['core', 'sdk_go', 'desktop']) assert.ok(!areas.includes(area), area)
   })
 
   it('runs the Go modules that build on the core and no frontend for a change to the core', () => {

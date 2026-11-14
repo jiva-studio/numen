@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// grantModel returns a cache root the caller hands to the module and a model file outside it.
 func grantModel(t *testing.T) (root, model string) {
 	t.Helper()
 	root = t.TempDir()

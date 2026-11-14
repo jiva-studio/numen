@@ -99,6 +99,9 @@ func buildReplace(s step) (normalizer, error) {
 	}
 	switch {
 	case expression != nil:
+		if class := findUnicodeClass(*expression); class != "" {
+			return nil, fmt.Errorf("the regex %q uses %s, which RE2 matches as ASCII and Hugging Face as Unicode", *expression, class)
+		}
 		compiled, err := regexp.Compile(*expression)
 		if err != nil {
 			return nil, err
@@ -113,4 +116,25 @@ func buildReplace(s step) (normalizer, error) {
 	default:
 		return nil, errors.New("the pattern is neither a String nor a Regex")
 	}
+}
+
+func findUnicodeClass(pattern string) string {
+	for i := 0; i < len(pattern)-1; i++ {
+		if pattern[i] != '\\' {
+			continue
+		}
+		i++
+		if pattern[i] == 'Q' {
+			end := strings.Index(pattern[i:], `\E`)
+			if end < 0 {
+				return ""
+			}
+			i += end + 1
+			continue
+		}
+		if strings.IndexByte("sSwWdDbB", pattern[i]) >= 0 {
+			return pattern[i-1 : i+1]
+		}
+	}
+	return ""
 }

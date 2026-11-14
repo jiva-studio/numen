@@ -19,6 +19,7 @@ type tokenizerFile struct {
 type addedToken struct {
 	ID      int
 	Content string
+	Special bool
 }
 
 type unigramModel struct {
