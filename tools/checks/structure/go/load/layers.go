@@ -59,7 +59,6 @@ func ListDriving(root string) (map[string]bool, error) {
 	return driving, err
 }
 
-// isDrivingFile reports whether the Go source at path, a file of pkg, makes pkg a driving adapter.
 func isDrivingFile(pkg, path string) (bool, error) {
 	if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") || (!IsAdapter(pkg) && !IsShared(pkg)) {
 		return false, nil
