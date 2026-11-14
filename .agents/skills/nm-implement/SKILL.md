@@ -20,7 +20,7 @@ flowchart TD
     InnerTDD -->|Passes| RunChecks["4. Run Local Gate Checks
     (go test ./..., typecheck, lint, vitest unit, format:check)"]
     RunChecks -->|Errors| Implement
-    RunChecks -->|All Pass| Handover["5. Handover: draft pull request, comment `/nm-review`"]
+    RunChecks -->|All Pass| Handover["5. Handover: draft pull request, then ready for review"]
 ```
 
 ---
@@ -81,8 +81,8 @@ npm run format:check   # a change that is not Prettier-clean is rejected
 When local gates pass:
 
 1. If opening a pull request, create it as a draft (`gh pr create --draft`) and wait for CI checks to pass (`gh pr checks --watch`), fixing any CI failures while the pull request remains in draft.
-2. Comment `/nm-review` on the pull request (`gh pr comment <N> --body "/nm-review"`). The Claude review workflow runs the review pipeline (Gatekeeper, Bug Hunter, Adversary, and the feature conformance check) and approves or requests changes as github-actions[bot]. Fix any findings, push, and comment `/nm-review` again until it approves, with CI green.
-3. Once CI is green and the review workflow has approved, mark the pull request ready for review (`gh pr ready`) and trigger CodeRabbit (`gh pr comment --body "@coderabbitai review"`).
+2. Mark the pull request ready for review (`gh pr ready`). Leaving draft starts the Claude review workflow, which runs the review pipeline (Gatekeeper, Bug Hunter, Adversary, and the feature conformance check) and approves or requests changes as github-actions[bot]. Fix any findings, push, and comment `/nm-review` to review again until it approves, with CI green.
+3. Once CI is green and the review workflow has approved, trigger CodeRabbit (`gh pr comment --body "@coderabbitai review"`).
 
 Prompt the user clearly when all tests are green:
 
@@ -90,4 +90,4 @@ Prompt the user clearly when all tests are green:
 > - All tests passing (green).  
 > - Local typecheck and lint gates passed with exit 0.  
 >  
-> *Next step:* Open the draft pull request and comment `/nm-review` on it to start the review workflow.
+> *Next step:* Open the draft pull request and, once CI is green, mark it ready for review to start the review workflow.
