@@ -25,7 +25,7 @@ func createSharedCommandDeps() (stubSession, *pluginCommands) {
 			ID: "app:file.createText", Title: "Transcribe", When: "target.contentType.startsWith('audio/')",
 		}},
 	}}
-	commands := newScenarios(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	commands := newUseCases(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),

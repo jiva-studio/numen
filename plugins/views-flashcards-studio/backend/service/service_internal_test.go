@@ -164,7 +164,7 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 	}
 }
 
-func TestCreateCardNoteReadsTheEndOfTheScenario(t *testing.T) {
+func TestCreateCardNoteReadsTheEndOfTheUseCase(t *testing.T) {
 	env := vaulttest.New(t, map[string]string{})
 	b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 	ctx := t.Context()

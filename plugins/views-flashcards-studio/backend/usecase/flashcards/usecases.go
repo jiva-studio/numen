@@ -9,9 +9,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
 
-// ReviewScenarios is what a session of review does: lists the cards, gives the ones that carry no
+// ReviewUseCases is what a session of review does: lists the cards, gives the ones that carry no
 // card id one, orders the cards to ask, writes an answer and opens the run that keeps the answers.
-type ReviewScenarios struct {
+type ReviewUseCases struct {
 	ReviewCards   ListReviewCards
 	AssignCardIDs AssignCardIDs
 	Session       Session
@@ -19,18 +19,18 @@ type ReviewScenarios struct {
 	Log           Log
 }
 
-// ScheduleScenarios is what decides when a card is asked: where each card stands, the runs of
+// ScheduleUseCases is what decides when a card is asked: where each card stands, the runs of
 // preset reads the schedules share, the preset of each deck and the curve of load a preset projects.
-type ScheduleScenarios struct {
+type ScheduleUseCases struct {
 	Schedules       Schedules
 	OpenPresetReads presets.OpenReads
-	Presets         PresetScenarios
+	Presets         PresetUseCases
 	Curves          ProjectCurve
 }
 
-// PresetScenarios is what the presets of a vault do: read one preset, find the preset of a deck,
+// PresetUseCases is what the presets of a vault do: read one preset, find the preset of a deck,
 // list them, put a deck on one and save the settings of one.
-type PresetScenarios struct {
+type PresetUseCases struct {
 	Read       presets.Read
 	GetForDeck presets.GetForDeck
 	List       presets.List
@@ -38,8 +38,8 @@ type PresetScenarios struct {
 	Save       presets.Save
 }
 
-// CountScenarios is what counts a vault: the cards due now and the reviews answered on each day.
-type CountScenarios struct {
+// CountUseCases is what counts a vault: the cards due now and the reviews answered on each day.
+type CountUseCases struct {
 	CardsDue      CountCardsDue
 	Counted       CountReviews
 	GetReviewDays GetReviewDays
@@ -72,10 +72,10 @@ type Config struct {
 	Scheduler ports.ScheduleAlgorithm
 }
 
-// NewScenarios builds the scenarios that run a vault's cards against this installation. They share
+// NewUseCases builds the use cases that run a vault's cards against this installation. They share
 // one list of review cards, so a deck or card model the review writes is forgotten before the
 // index is updated for it.
-func NewScenarios(cfg Config) (ReviewScenarios, ScheduleScenarios, CountScenarios) {
+func NewUseCases(cfg Config) (ReviewUseCases, ScheduleUseCases, CountUseCases) {
 	reviewCards := NewListReviewCards(cfg.Readers, cfg.Notes, cfg.Links)
 	reviewCards.Cores = cfg.Cores
 	updateIndex := func(ctx context.Context, v domain.Vault, paths []string) error {
@@ -119,16 +119,16 @@ func NewScenarios(cfg Config) (ReviewScenarios, ScheduleScenarios, CountScenario
 		curves.By = createScheduler
 	}
 
-	return ReviewScenarios{
+	return ReviewUseCases{
 			ReviewCards:   reviewCards,
 			AssignCardIDs: assigning,
 			Session:       NewSession(assigning, reviewCards, schedules, deckPresets, cfg.Day, cfg.Now),
 			Record:        NewRecord(cfg.Now),
 			Log:           Log{Stores: cfg.Logs},
 		},
-		ScheduleScenarios{
+		ScheduleUseCases{
 			Schedules: schedules, OpenPresetReads: deckPresets, Curves: curves,
-			Presets: PresetScenarios{
+			Presets: PresetUseCases{
 				Read:       presets.NewRead(presetsConfig),
 				GetForDeck: presets.NewGetForDeck(presetsConfig),
 				List:       presets.NewList(presetsConfig),
@@ -136,7 +136,7 @@ func NewScenarios(cfg Config) (ReviewScenarios, ScheduleScenarios, CountScenario
 				Save:       presets.NewSave(presetsConfig),
 			},
 		},
-		CountScenarios{
+		CountUseCases{
 			CardsDue:      NewCountCardsDue(reviewCards, schedules, deckPresets, cfg.Day, cfg.Now),
 			Counted:       counted,
 			GetReviewDays: NewGetReviewDays(counted),

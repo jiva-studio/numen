@@ -489,7 +489,7 @@ func (m *mockAlgorithm) CreateScheduler(retention float64) review.Scheduler {
 
 func TestScheduleAlgorithmPluggable(t *testing.T) {
 	algo := &mockAlgorithm{}
-	flashcards.NewScenarios(flashcards.Config{
+	flashcards.NewUseCases(flashcards.Config{
 		Scheduler: algo,
 	})
 

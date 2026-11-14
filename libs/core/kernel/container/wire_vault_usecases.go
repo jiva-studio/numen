@@ -116,9 +116,9 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 	}
 }
 
-func vaultQueries(db *Index) query.Scenarios {
+func vaultQueries(db *Index) query.UseCases {
 	links, refs := db.NoteQueries(), db.NoteQueries()
-	return query.Scenarios{
+	return query.UseCases{
 		Refer: query.Referring{
 			Links:        query.NewShowLinks(links),
 			Backlinks:    query.NewGetBacklinks(links),

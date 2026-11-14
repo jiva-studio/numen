@@ -8,11 +8,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 )
 
-// Scenarios is everything the plugin does for a session of review, built for one day start.
-type Scenarios struct {
-	Reviews   ReviewScenarios
-	Schedules ScheduleScenarios
-	Counts    CountScenarios
+// UseCases is everything the plugin does for a session of review, built for one day start.
+type UseCases struct {
+	Reviews   ReviewUseCases
+	Schedules ScheduleUseCases
+	Counts    CountUseCases
 	Day       review.Day
 }
 
@@ -21,7 +21,7 @@ type Scenarios struct {
 // the scenarios they began under.
 type Current struct {
 	config Config
-	active atomic.Pointer[Scenarios]
+	active atomic.Pointer[UseCases]
 }
 
 // NewCurrent builds the review scenarios from the config and holds them. A count of cores that is not
@@ -31,21 +31,21 @@ func NewCurrent(cfg Config) *Current {
 		// gomutants:disable-next-line INTEGER_DECREMENT reason="Any non-positive argument queries GOMAXPROCS without changing it."
 		cfg.Cores = runtime.GOMAXPROCS(0)
 	}
-	c := &Current{config: cfg, active: atomic.Pointer[Scenarios]{}}
-	c.active.Store(createScenarios(cfg))
+	c := &Current{config: cfg, active: atomic.Pointer[UseCases]{}}
+	c.active.Store(createUseCases(cfg))
 	return c
 }
 
-func (c *Current) Get() *Scenarios { return c.active.Load() }
+func (c *Current) Get() *UseCases { return c.active.Load() }
 
 // SetDayStart builds the review scenarios again with the time past midnight at which a day of review begins.
 func (c *Current) SetDayStart(starts time.Duration) {
 	cfg := c.config
 	cfg.Day = review.Day{Starts: starts, In: nil}
-	c.active.Store(createScenarios(cfg))
+	c.active.Store(createUseCases(cfg))
 }
 
-func createScenarios(cfg Config) *Scenarios {
-	reviews, schedules, counts := NewScenarios(cfg)
-	return &Scenarios{Reviews: reviews, Schedules: schedules, Counts: counts, Day: cfg.Day}
+func createUseCases(cfg Config) *UseCases {
+	reviews, schedules, counts := NewUseCases(cfg)
+	return &UseCases{Reviews: reviews, Schedules: schedules, Counts: counts, Day: cfg.Day}
 }

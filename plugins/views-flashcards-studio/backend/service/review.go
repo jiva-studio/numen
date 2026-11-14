@@ -24,7 +24,7 @@ type reviewHandler struct {
 	*vaultSession
 	now          ports.Clock
 	runs         *sessions.Registry
-	flash        func() *flashcards.Scenarios
+	flash        func() *flashcards.UseCases
 	neighborhood neighborhood.Show
 }
 

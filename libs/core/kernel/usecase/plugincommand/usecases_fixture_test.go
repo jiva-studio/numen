@@ -1,7 +1,6 @@
-package command_test
+package plugincommand_test
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -9,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
-// scenarios are the scenarios over the commands the plugins declare, built the way the container builds them.
-type scenarios struct {
+// useCases are the use cases over the commands the plugins declare, built the way the container builds them.
+type useCases struct {
 	List       plugincommand.List
 	Listing    plugincommand.ListCommands
 	Run        plugincommand.Run
@@ -18,17 +17,17 @@ type scenarios struct {
 	ListItems  plugincommand.ListItems
 }
 
-func newScenarios(
+func newUseCases(
 	commands pluginport.PluginCommands, runs pluginport.PluginCommandRuns, types contenttypeport.ContentTypeTable,
 	notes plugincommand.NoteReader, config pluginport.WhenConfig,
-) scenarios {
+) useCases {
 	if types == nil {
 		types = noTypes{}
 	}
 	conditions := when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
 	run := plugincommand.NewRun(commands, runs, types, notes, config, conditions)
-	return scenarios{
+	return useCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, types),
 		Run:        run,
@@ -37,14 +36,10 @@ func newScenarios(
 	}
 }
 
-func (s scenarios) withVersions(versions plugincommand.VersionItems) scenarios {
+func (s useCases) withVersions(versions plugincommand.VersionItems) useCases {
 	s.RunCommand = plugincommand.NewRunCommand(s.List, s.Run, versions)
 	s.ListItems = plugincommand.NewListItems(s.List, versions)
 	return s
-}
-
-func newHandler(s scenarios) *command.Handler {
-	return command.NewHandler(shownVault{}, s.Listing, s.RunCommand, s.ListItems)
 }
 
 // noTypes is a table that gives no file a type.

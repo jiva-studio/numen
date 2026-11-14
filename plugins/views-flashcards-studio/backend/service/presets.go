@@ -17,7 +17,7 @@ import (
 type presetsHandler struct {
 	*vaultSession
 	create cards.Create
-	flash  func() *flashcards.Scenarios
+	flash  func() *flashcards.UseCases
 }
 
 func (b *Backend) newPresetsHandler() *presetsHandler {
