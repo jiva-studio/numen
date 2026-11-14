@@ -1,5 +1,5 @@
 name: "Setup Playwright Browsers"
-description: "Caches and installs Playwright browser engines"
+description: "Restores or installs Playwright browser engines; a run on main saves them"
 inputs:
   browsers:
     description: "Browsers to install"
@@ -13,7 +13,7 @@ runs:
   using: "composite"
   steps:
     - id: cache
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/ms-playwright
         key: playwright-${{ inputs.browsers }}-${{ hashFiles('package-lock.json') }}
@@ -26,7 +26,8 @@ runs:
       run: npx playwright install $BROWSERS
 
     # The system libraries follow from the Playwright release, the engines and the extra packages.
-    - uses: ./.github/actions/cache-apt
+    - id: apt
+      uses: ./.github/actions/cache-apt
       with:
         key: playwright-${{ inputs.browsers }}-${{ inputs.packages }}-${{ hashFiles('package-lock.json') }}
 
@@ -43,3 +44,16 @@ runs:
             -o Dpkg::Options::=--force-unsafe-io \
             $PACKAGES
         fi
+
+    # A pull request's cache is visible only to that pull request; main's to all.
+    - if: github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ steps.cache.outputs.cache-primary-key }}
+
+    - if: github.ref == 'refs/heads/main' && steps.apt.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/apt-archives/*.deb
+        key: ${{ steps.apt.outputs.key }}

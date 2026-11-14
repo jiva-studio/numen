@@ -17,6 +17,8 @@
 // is built from selects every test; a change outside it, to documentation, or to a unit test,
 // story or linter config outside the e2e suite selects none.
 //
+// `inputs` reads paths and prints the ones the e2e tests are built from or run.
+//
 // `plan` prints `key=value` lines for $GITHUB_OUTPUT:
 //
 //   desktop=true|false     whether any test of the desktop window runs
@@ -84,6 +86,9 @@ const isUnitTestOrStory = (file) =>
 /** Whether `file` is part of what the desktop window, its plugins or its e2e suite are built from. */
 const isDesktopInput = (file) =>
   DESKTOP.test(file) && !isDocumentation(file) && !isUnitTestOrStory(file)
+
+/** Whether the e2e tests are built from `file` or run it. */
+export const isE2eInput = (file) => isAcceptanceInput(file) || isDesktopInput(file)
 
 /** The id of the plugin in plugins/<dir>, from its manifest. */
 const readPluginId = (dir) =>
@@ -216,10 +221,13 @@ if (isMain) {
   const [command, ...rest] = process.argv.slice(2)
   if (command === 'scope') {
     console.log(`scope=${getScope(fs.readFileSync(0, 'utf8').split('\n').filter(Boolean))}`)
+  } else if (command === 'inputs') {
+    const files = fs.readFileSync(0, 'utf8').split('\n').filter(Boolean)
+    console.log(files.filter(isE2eInput).join('\n'))
   } else if (command === 'plan') {
     console.log(getPlan(rest.join(' ')).join('\n'))
   } else {
-    console.error('select-tests: name `scope` or `plan <scope>`')
+    console.error('select-tests: name `scope`, `inputs` or `plan <scope>`')
     process.exit(1)
   }
 }

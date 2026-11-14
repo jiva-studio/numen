@@ -1033,6 +1033,58 @@ export const OneOpenNote: Story = {
   },
 }
 
+/** Takes Tab from an open note to its handle and on to the next note, and Shift+Tab back. */
+export const TabOrderOfAnOpenNote: Story = {
+  args: {
+    ...invented.args,
+    parents: 1,
+    children: 4,
+    jumps: 1,
+    siblings: 0,
+    headings: (id: string) => INSIDE[id] ?? [],
+  },
+  render: invented.render,
+  play: async ({ canvasElement }) => {
+    // Only the keys the browser itself strikes run its own Tab order.
+    const browser = await import('vitest/browser').catch(() => null)
+    if (!browser) return
+    const keys = browser.userEvent
+    const canvas = within(canvasElement)
+    const focus = canvas.getByLabelText(/, focus$/)
+    const parent = canvas.getByLabelText(/, parent$/)
+    const document = canvasElement.ownerDocument
+    const getOpenBox = () => canvasElement.querySelector('.plex__lifted[data-node="focus"]')
+    const isOnOpenHandle = () =>
+      document.activeElement?.matches('.plex__handle') === true &&
+      getOpenBox()?.contains(document.activeElement) === true
+
+    document.body.setAttribute('tabindex', '-1')
+    document.body.focus()
+    await keys.tab()
+    await expect(focus).toHaveFocus()
+
+    await keys.tab()
+    await expect(document.activeElement).toHaveClass('plex__handle')
+    await waitFor(async () => await expect(isOnOpenHandle()).toBe(true), { timeout: 3000 })
+    await new Promise((isDone) => setTimeout(isDone, EXPANSION_DELAY))
+    await expect(isOnOpenHandle()).toBe(true)
+
+    await keys.tab({ shift: true })
+    await expect(focus).toHaveFocus()
+    await expect(getOpenBox()).not.toBeNull()
+
+    await keys.tab()
+    await expect(isOnOpenHandle()).toBe(true)
+
+    await keys.tab()
+    await expect(parent).toHaveFocus()
+
+    await keys.tab({ shift: true })
+    await expect(focus).toHaveFocus()
+    document.body.removeAttribute('tabindex')
+  },
+}
+
 const renderInSmallWindow: NonNullable<Story['render']> = (args) => ({
   components: { Plex },
   setup: () => {

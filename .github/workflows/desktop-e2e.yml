@@ -9,12 +9,24 @@ on:
         description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), flashcards for the flashcards window, and acceptance for the scenarios of features/, separated by spaces'
         type: string
         default: all
+      engines:
+        description: 'chromium, webkit, or both separated by a space'
+        type: string
+        default: chromium webkit
   workflow_dispatch:
     inputs:
       scope:
         description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), flashcards for the flashcards window, and acceptance for the scenarios of features/, separated by spaces'
         type: string
         default: all
+      engines:
+        description: 'chromium, webkit, or both separated by a space'
+        type: string
+        default: chromium webkit
+
+env:
+  SCOPE: ${{ inputs.scope || 'all' }}
+  ENGINES: ${{ inputs.engines || 'chromium webkit' }}
 
 permissions:
   contents: read
@@ -45,9 +57,18 @@ jobs:
 
       - id: plan
         name: Plan the jobs
-        env:
-          SCOPE: ${{ inputs.scope }}
-        run: node tests/e2e/desktop/scripts/select-tests.mjs plan "$SCOPE" | tee -a "$GITHUB_OUTPUT"
+        run: |
+          node tests/e2e/desktop/scripts/select-tests.mjs plan "$SCOPE" > "$RUNNER_TEMP/plan.txt"
+          while IFS= read -r line; do
+            case "$line" in
+              matrix=*)
+                jq -c --arg engines "$ENGINES" \
+                  '{include: [.include[] | select(.engine as $engine | $engines | split(" ") | index($engine))]}' \
+                  <<< "${line#matrix=}" | sed 's/^/matrix=/'
+                ;;
+              *) echo "$line" ;;
+            esac
+          done < "$RUNNER_TEMP/plan.txt" | tee -a "$GITHUB_OUTPUT"
 
   # Builds the window, its plugins and the debug binaries once; the test jobs download them.
   build:
@@ -67,7 +88,8 @@ jobs:
           go-version-file: apps/desktop/go.mod
           cache: false
 
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - id: go-mod-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/go/pkg/mod
           key: go-mod-e2e-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
@@ -79,8 +101,10 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/go-build
-          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
-          restore-keys: go-build-e2e-
+          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-${{ github.sha }}
+          restore-keys: |
+            go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-
+            go-build-e2e-
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -120,12 +144,18 @@ jobs:
           fi
           exit "$status"
 
-      # Saves the build cache when the exact key was not restored.
+      # A pull request's cache is visible only to that pull request; main's to all.
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: steps.go-build-cache.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/main' && steps.go-mod-cache.outputs.cache-hit != 'true'
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-e2e-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
+
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: github.ref == 'refs/heads/main' && steps.go-build-cache.outputs.cache-hit != 'true'
         with:
           path: ~/.cache/go-build
-          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
+          key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}-${{ github.sha }}
 
       # An artifact drops the mode bits of its files, and the binaries must stay executable.
       - name: Pack what the tests run
@@ -240,6 +270,7 @@ jobs:
 
       - uses: ./.github/actions/setup-playwright
         with:
+          browsers: ${{ env.ENGINES }}
           packages: libgtk-4-1 libwebkitgtk-6.0-4
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -258,9 +289,13 @@ jobs:
             sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           fi
 
-      - name: Run flashcards E2E tests in Chromium, then WebKit
+      - name: Run flashcards E2E tests
         working-directory: tests/e2e/desktop
-        run: npm run test:flashcards
+        run: |
+          read -ra engines <<< "$ENGINES"
+          args=()
+          if [ "${#engines[@]}" -eq 1 ]; then args=(-- "--project=${engines[0]}"); fi
+          npm run test:flashcards "${args[@]}"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
@@ -271,7 +306,6 @@ jobs:
             tests/e2e/desktop/test-results/
           retention-days: 7
 
-  # The scenarios of features/ in Chromium, then WebKit, against the build of the build job.
   acceptance:
     name: Acceptance
     needs: [plan, build]
@@ -294,6 +328,7 @@ jobs:
 
       - uses: ./.github/actions/setup-playwright
         with:
+          browsers: ${{ env.ENGINES }}
           packages: libgtk-4-1 libwebkitgtk-6.0-4
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -312,9 +347,13 @@ jobs:
             sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           fi
 
-      - name: Run the scenarios in Chromium, then WebKit
+      - name: Run the scenarios
         working-directory: tests/acceptance/desktop
-        run: npm run acceptance:test
+        run: |
+          read -ra engines <<< "$ENGINES"
+          args=()
+          if [ "${#engines[@]}" -eq 1 ]; then args=(-- "--project=${engines[0]}"); fi
+          npm run acceptance:test "${args[@]}"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()

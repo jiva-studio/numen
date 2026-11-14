@@ -3,12 +3,18 @@ name: Cache Cleanup
 on:
   pull_request:
     types: [closed]
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
 
 permissions: {}
 
 jobs:
   cleanup:
     name: "Clean :: Pull Request Cache"
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       actions: write
@@ -21,3 +27,42 @@ jobs:
         run: |
           gh cache delete --ref "refs/pull/${PR_NUMBER}/merge" || true
           gh cache delete --ref "refs/heads/${HEAD_REF}" || true
+
+  prune:
+    name: "Clean :: Old Main Caches"
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.event != 'pull_request')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: cache-prune
+    permissions:
+      actions: write
+      pull-requests: read
+    steps:
+      # The Go keys end in the go.sum hash and the commit; only the newest of a job is restored.
+      - name: Delete all but the newest main Go cache of each job
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh api --paginate "repos/$GH_REPO/actions/caches?ref=refs/heads/main&key=go-&per_page=100" \
+            -q '.actions_caches[] | [.id, .created_at, .key] | @tsv' |
+            sed -E 's/(-[0-9a-f]{40,64})+$//' |
+            sort -t $'\t' -k3,3 -k2,2r |
+            awk -F'\t' 'seen[$3]++ { print $1 }' |
+            while read -r id; do
+              gh cache delete "$id" || true
+            done
+
+      - name: Delete the caches of closed pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh api --paginate "repos/$GH_REPO/actions/caches?per_page=100" -q '.actions_caches[].ref' |
+            sed -nE 's|^refs/pull/([0-9]+)/merge$|\1|p' | sort -u |
+            while read -r pr; do
+              if [ "$(gh pr view "$pr" --json state -q .state)" != OPEN ]; then
+                gh cache delete --ref "refs/pull/$pr/merge" || true
+              fi
+            done

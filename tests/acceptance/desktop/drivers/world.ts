@@ -63,6 +63,11 @@ export class World {
     fs.writeFileSync(target, text)
   }
 
+  removeFile(vault: string, filePath: string): void {
+    assertVaultPath(filePath)
+    fs.rmSync(path.join(this.getFolder(vault), filePath))
+  }
+
   readText(vault: string, filePath: string): string | undefined {
     assertVaultPath(filePath)
     const target = path.join(this.getFolder(vault), filePath)
