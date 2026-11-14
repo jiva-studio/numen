@@ -70,9 +70,6 @@ func getUseCasesWithSource(t *testing.T) []string {
 	return names
 }
 
-// listEdgeViolations reads the imports of the production files of the module at root, whose import path is
-// module with a trailing slash, and returns the refused edges, the number of edges read and the use cases
-// with a file read.
 func listEdgeViolations(root, module string) (violations []string, importsRead int, visited map[string]bool, err error) {
 	visited = map[string]bool{}
 	err = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
