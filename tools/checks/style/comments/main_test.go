@@ -36,7 +36,9 @@ func TestCheckReportsUnexportedFunctionDocs(t *testing.T) {
 	if len(findings) != 1 || !strings.Contains(findings[0].Message, "function read") {
 		t.Fatalf("findings = %+v, want one on read", findings)
 	}
-	if !strings.Contains(string(fixed), "// Open opens the lock") || !strings.Contains(string(fixed), "//go:noinline\nfunc read") || strings.Contains(string(fixed), "read reads") || strings.Contains(string(fixed), "extra comment") {
+	out := string(fixed)
+	if !strings.Contains(out, "// Open opens the lock") || !strings.Contains(out, "//go:noinline\nfunc read") ||
+		strings.Contains(out, "read reads") || strings.Contains(out, "extra comment") {
 		t.Fatalf("fixed =\n%s", fixed)
 	}
 }
