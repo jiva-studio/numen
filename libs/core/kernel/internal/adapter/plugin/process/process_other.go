@@ -6,7 +6,7 @@ import "os/exec"
 
 func ConfigureSysProcAttr(_ *exec.Cmd) {}
 
-// StartCommand starts cmd and returns the error of cmd.Start.
+// StartCommand needs no dedicated thread here: only Linux ties the parent-death signal to the thread that started the child.
 func StartCommand(cmd *exec.Cmd) error {
 	return cmd.Start()
 }
