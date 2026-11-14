@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/document"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/process"
@@ -66,7 +67,7 @@ func mount(s *server.Server, h recognition.Host, holder *engines.Holder) error {
 	if err != nil {
 		return err
 	}
-	s.SetUpdateConfig(func(values map[string]string) { holder.UpdateSettings(values) })
+	s.SetUpdateConfig(newConfigUpdate(launcher, holder))
 	command.Mount(s, commands)
 	registry.Mount(s)
 	s.OnClose(func() error {
@@ -76,17 +77,27 @@ func mount(s *server.Server, h recognition.Host, holder *engines.Holder) error {
 	return nil
 }
 
+func newConfigUpdate(launcher *launch.Launcher, holder *engines.Holder) func(map[string]string) {
+	return func(values map[string]string) {
+		launcher.SetMode(settings.ParseRecognizeMode(values))
+		holder.UpdateSettings(values)
+	}
+}
+
 func newCommands(launcher *launch.Launcher) (*command.Registry, error) {
 	commands := command.New()
-	if err := commands.Add(command.CreateText, newRecognizeCommand(launcher)); err != nil {
+	if err := commands.Add(command.CreateText, newRecognizeCommand(launcher.StartFile)); err != nil {
+		return nil, err
+	}
+	if err := commands.Add(command.CreateMissingText, newRecognizeCommand(launcher.StartMissingFile)); err != nil {
 		return nil, err
 	}
 	return commands, nil
 }
 
-func newRecognizeCommand(launcher *launch.Launcher) command.Run {
+func newRecognizeCommand(start func(context.Context, string) (string, error)) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
-		state, err := launcher.StartFile(ctx, req.Path)
+		state, err := start(ctx, req.Path)
 		if err != nil {
 			return command.Result{}, err
 		}

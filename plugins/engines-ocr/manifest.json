@@ -22,12 +22,17 @@
         "command": "app:file.createText",
         "title": "Recognize text",
         "when": "target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']"
+      },
+      {
+        "command": "app:file.createMissingText",
+        "title": "Recognize text",
+        "when": "target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']"
       }
     ],
     "triggers": [
       {
         "event": "file.added",
-        "command": "app:file.createText",
+        "command": "app:file.createMissingText",
         "when": "(target.contentType in ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp']) && config.md.numen.engines.ocr.recognizeMode != 'off' && !target.versions.exists(v, v.kind == 'recognition' && v.isValid)"
       }
     ]
