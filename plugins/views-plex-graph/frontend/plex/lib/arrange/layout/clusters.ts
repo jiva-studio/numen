@@ -1,12 +1,12 @@
 /**
  * The `clusters` placement. Each side of the focus holds one block of a grid: the notes of the relations that grow to
- * that side, row by row, the relations leaning up first, so the references stand over the jumps.
+ * that side, row by row, the relations leaning up first, so the references are placed over the jumps.
  *
- * A block's cells are as wide as its widest footprint and as tall as its tallest, and a footprint sits at the top of its
- * cell, so the pills of one row line up. The children block hangs under the focus and the parents block stands over it,
+ * A block's cells are as wide as its widest footprint and as tall as its tallest, and a footprint is aligned to the top of its
+ * cell, so the pills of one row line up. The children block hangs under the focus and the parents block is placed over it,
  * both centered on the focus; their rows fill from the middle out and a partial last row is centered. A side block is
  * centered on the row of the focus, ends one line gap over the children block, or starts one line gap under the parents
- * block; it stands past the columns of every block over or under the focus that its rows reach, and its rows fill from
+ * block; it is placed past the columns of every block over or under the focus that its rows reach, and its rows fill from
  * the focus out.
  *
  * The column counts and the side block positions are chosen together: the most notes inside the window first, then the
@@ -112,7 +112,7 @@ function shapeAcrossBlock(block: Block, columns: number, grid: Grid): BlockShape
   return { columns, minX: -width / 2, maxX: width / 2, minY, maxY }
 }
 
-/** Where a side block stands: centered on the row of the focus, ending over the children block, or starting under the parents block. */
+/** The position of a side block: centered on the row of the focus, ending over the children block, or starting under the parents block. */
 type Standing = 'center' | 'up' | 'down'
 
 const STANDINGS: readonly Standing[] = ['center', 'up', 'down']

@@ -16,7 +16,7 @@
 
 - Each side holds one block of a grid, filled row by row: the children block right under the note in the middle, the parents block right over it, the references and then the jumps on the left, the siblings on the right.
 - A block's cells are sized by its own notes: as wide as its widest note and as tall as its tallest.
-- A side block stands past the columns of the children and parents blocks its rows reach.
+- A side block is placed past the columns of the children and parents blocks its rows reach.
 - The column counts of the blocks are chosen to show the most notes in the window, then to keep the notes nearest the note in the middle.
 - Two notes never overlap.
 - Siblings keep their line to the parent they share with the note in the middle.

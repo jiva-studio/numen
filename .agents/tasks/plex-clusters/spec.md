@@ -26,10 +26,10 @@ graph TD
 
 `placeGrid(nodesByRelation, focus, context)`:
 
-1. **Blocks.** Each side of the focus holds one block: the notes of every relation whose `options.direction[relation]` is that side (so a caller who sends children up still moves them). On a side the relations with `lean: 'up'` come first, then those with no lean, then `lean: 'down'`, so the references stand over the jumps; each relation keeps its arrival order.
-2. **Cells.** A block's cells are as wide as its widest footprint (pill and names) and as tall as its tallest, so a block of short titles stays compact. Neighboring cells are one `gap` apart sideways and one `lineGap` apart up and down. A footprint sits at the top of its cell, so the pills of one row line up.
+1. **Blocks.** Each side of the focus holds one block: the notes of every relation whose `options.direction[relation]` is that side (so a caller who sends children up still moves them). On a side the relations with `lean: 'up'` come first, then those with no lean, then `lean: 'down'`, so the references are placed over the jumps; each relation keeps its arrival order.
+2. **Cells.** A block's cells are as wide as its widest footprint (pill and names) and as tall as its tallest, so a block of short titles stays compact. Neighboring cells are one `gap` apart sideways and one `lineGap` apart up and down. A footprint is aligned to the top of its cell, so the pills of one row line up.
 3. **Blocks over and under the focus.** The children block starts `focusGap` under the focus and the parents block ends `focusGap` over it, both centered on the focus. Their rows fill from the middle out, the row nearest the focus first, and a partial last row is centered.
-4. **Side blocks.** A side block is centered on the row of the focus, ends one `lineGap` over the children block, or starts one `lineGap` under the parents block. It stands `focusGap` from the focus, and further out past the columns of every block over or under the focus that its rows reach. Its rows fill from the focus out.
+4. **Side blocks.** A side block is centered on the row of the focus, ends one `lineGap` over the children block, or starts one `lineGap` under the parents block. It is placed `focusGap` from the focus, and further out past the columns of every block over or under the focus that its rows reach. Its rows fill from the focus out.
 5. **Columns.** A block takes from one column up to as many as reach the edge of the window (with no window, twice the square root of its notes, rounded up), never more than it has notes. The column counts of all blocks and the standing of each side block are chosen together: the most notes inside the window, then the fewest columns a block over or under the focus takes beyond five, then the least distance of the notes from the focus counted in cells.
 6. **Gaps.** The gaps are the packed ones; they close in a crowded window and do not open in a roomy one. A gap of 0 is raised to 1e-6, so neighbors do not overlap on float error.
 7. **Output.** Each node keeps its relation, identity and title; `width = context.width(node)`, `height = options.nodeSize.height`, `opacity = 1`, `order` = its index within its relation. The returned array is grouped by relation in `RELATION_NAMES` order, each relation in arrival order, so the drawing order and the tab order of nodes follow the relations.
@@ -152,7 +152,7 @@ Every criterion runs through `arrangePlex` unless it names a unit. "Window" is `
 
 ### AC-6: A large group leaves the first note of another group in place
 - **Given** `build('A note', { child: 20, jump: 1, sibling: 1, parent: 1 })` and the same graph with only the single parent, jump and sibling, no window
-- **Then** the parent, the jump and the sibling sit at the same position in both frames: twenty children placed alongside do not push the first note of another group away from its start.
+- **Then** the parent, the jump and the sibling are at the same position in both frames: twenty children placed alongside do not push the first note of another group away from its start.
 
 ### AC-7: A large group spreads over columns
 - **Given** `build('A note', { child: 24 })` in a 1600×1000 window
