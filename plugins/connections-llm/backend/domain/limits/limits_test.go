@@ -25,10 +25,19 @@ func TestTheSettingRequestTimeoutSetsTheLimitOfEveryOperation(t *testing.T) {
 			t.Errorf("%s limit = %v, want 45 s", operation, got)
 		}
 	}
+	for value, want := range map[string]time.Duration{
+		"0.000000001": time.Nanosecond,
+		"9223372035":  9223372035 * time.Second,
+	} {
+		subject.Configure(map[string]string{"requestTimeout": value})
+		if got := subject.Get("openai", address, "m", "complete"); got != want {
+			t.Errorf("value %q: limit = %v, want %v", value, got, want)
+		}
+	}
 }
 
 func TestASettingThatIsNotAPositiveNumberKeepsTheDefault(t *testing.T) {
-	for _, value := range []string{"", "soon", "0", "-3", "NaN", "Inf"} {
+	for _, value := range []string{"", "soon", "0", "-0", "-3", "NaN", "Inf", "9223372036", "1e308"} {
 		var subject Limits
 		subject.Configure(map[string]string{"requestTimeout": value})
 		if got := subject.Get("openai", address, "m", "complete"); got != 120*time.Second {
@@ -38,6 +47,9 @@ func TestASettingThatIsNotAPositiveNumberKeepsTheDefault(t *testing.T) {
 }
 
 func TestTheFirstRequestOfAnOpenAICompatibleModelHasALongLimit(t *testing.T) {
+	if FirstRequestLimit != 10*time.Minute {
+		t.Fatalf("FirstRequestLimit = %v, want 10m", FirstRequestLimit)
+	}
 	var subject Limits
 	subject.Configure(map[string]string{"requestTimeout": "0.1"})
 	if got := subject.Get("openai-compatible", address, "qwen2.5:14b", "complete"); got != FirstRequestLimit {

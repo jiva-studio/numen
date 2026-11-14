@@ -54,7 +54,6 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits, lists Lists) (*Mod
 		lists: cache.New[[]connection.Option](
 			name,
 			cache.WithDir(lists.Dir),
-			cache.WithDisk(lists.Dir != ""),
 			cache.WithTTL(ListLifetime),
 			cache.WithAsync(true),
 			cache.WithErrorHandler(lists.Report),
@@ -74,11 +73,7 @@ func (m *Models) ListModels(ctx context.Context, call connection.Call, query con
 	}
 	key := getListKey(call, query.Operations)
 	if !query.IsFresh {
-		_, isKept, err := m.lists.Get(ctx, key, nil)
-		if err != nil {
-			return connection.ListedOptions{}, err
-		}
-		if isKept {
+		if _, isKept, err := m.lists.Get(ctx, key, nil); err == nil && isKept {
 			kept, _, keptErr := m.lists.Get(ctx, key, load)
 			return connection.ListedOptions{Options: kept}, keptErr
 		}
