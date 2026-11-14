@@ -3,7 +3,7 @@
  */
 import { VAULTS_ERROR_CODE, type VaultsErrorCodeValue } from '@numen/core-client'
 import { vaultsService } from '@/shared/api/clients'
-import type { Vault, VaultErrorCode, VaultResult, Vaults } from '../lib/vault'
+import type { Vault, VaultAction, VaultErrorCode, VaultResult, Vaults } from '../lib/vault'
 
 interface VaultWire {
   readonly id: string
@@ -45,6 +45,11 @@ const mapVaultResult = (from: {
   return { ok: true, value: from.vault ? mapVault(from.vault) : null }
 }
 
+const mapNoValue = (from: { error?: VaultsErrorCodeValue | undefined }): VaultAction => {
+  const error = getVaultError(from)
+  return error ? { ok: false, error } : { ok: true, value: null }
+}
+
 /** The vaults this installation holds, in the shape the window requests them. */
 export const vaults: Vaults = {
   list: async () => (await vaultsService.listVaults({})).vaults.map(mapVault),
@@ -55,6 +60,6 @@ export const vaults: Vaults = {
   add: async (path, called) => mapVaultResult(await vaultsService.addVault({ path, name: called })),
   rename: async (id, called) =>
     mapVaultResult(await vaultsService.renameVault({ id, name: called })),
-  remove: async (id, trash) => getVaultError(await vaultsService.removeVault({ id, trash })),
-  open: async (id) => getVaultError(await vaultsService.openVault({ id })),
+  remove: async (id, trash) => mapNoValue(await vaultsService.removeVault({ id, trash })),
+  open: async (id) => mapNoValue(await vaultsService.openVault({ id })),
 }
