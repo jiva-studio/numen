@@ -260,16 +260,20 @@ const SDK_GO_DIR = 'libs/plugin/sdk-go'
 /** The SDK packages a plugin service may import: every package of the Go SDK. */
 const SDK_GO_MODULE = `${GO_MODULE_ROOT}${SDK_GO_DIR}`
 
+/** The shared Go libraries a plugin depends on as it depends on the SDK (architecture §11 (b)); the service builds them as adapters. */
+const SHARED_GO_LIBRARIES = `${GO_MODULE_ROOT}libs/shared/`
+
 /** The packages of the plugin's own backend a service may import: its API, domain, use cases, ports and wire. */
 export const SERVICE_OWN_PACKAGES = ['api', 'domain', 'usecase', 'ports', 'wire']
 
 /** The folder of the plugin's own adapters: the service is the composition root and builds them. */
 const SERVICE_OWN_ADAPTERS = 'internal/adapter/'
 
-/** Whether a service of `plugin` may import `value`: a listed standard package, an SDK package or an own package of the list. */
+/** Whether a service of `plugin` may import `value`: a listed standard package, an SDK package, a shared library or an own package of the list. */
 function isAllowedServiceImport(value, plugin) {
   if (SERVICE_STANDARD_IMPORTS.includes(value)) return true
   if (value === SDK_GO_MODULE || value.startsWith(`${SDK_GO_MODULE}/`)) return true
+  if (value.startsWith(SHARED_GO_LIBRARIES)) return true
   const own = `${GO_MODULE_ROOT}plugins/${plugin}/backend/`
   if (!value.startsWith(own)) return false
   const inner = value.slice(own.length)
@@ -280,7 +284,7 @@ function isAllowedServiceImport(value, plugin) {
 
 /**
  * Finds the imports of a backend `service` package that are not on the allow list: the listed standard packages, the
- * packages of the Go SDK, the `api`, `domain`, `usecase`, `ports` and `wire` packages of its own plugin and its own
+ * packages of the Go SDK and of `libs/shared`, the `api`, `domain`, `usecase`, `ports` and `wire` packages of its own plugin and its own
  * `internal/adapter/*` packages. Machine access (`os`, `sync`, `net`), another standard package, a package of another
  * plugin and any other package of its own backend are refused. `files` holds `{ file, imports }` with each import as `{ line, value }`.
  */
