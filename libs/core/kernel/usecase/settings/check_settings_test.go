@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -50,7 +51,7 @@ func TestCheckSettingsRejectsAValueOutsideTheDeclaration(t *testing.T) {
 	}
 	for name, one := range cases {
 		t.Run(name, func(t *testing.T) {
-			check := settings.NewCheckSettings(jsonCodec{}, declareScans, listThemes, nil)
+			check := settings.NewCheckSettings(jsonCodec{}, declareScans, listThemes, none.PluginSettings{})
 
 			err := check.Execute([]settingsdomain.Setting{{Path: []string{scansPlugin, one.key}, JSON: one.json}})
 
