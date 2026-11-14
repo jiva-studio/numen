@@ -39,7 +39,6 @@ export function getNoteTitle(path: string): string {
 }
 
 export interface TaskGroups {
-  /** The groups that hold a task, in the order Overdue, Today, No date. */
   readonly groups: Readonly<Ref<readonly TaskGroup[]>>
   /** Reads the three lists at the day getToday gives now. */
   load(): Promise<void>

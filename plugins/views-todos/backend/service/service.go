@@ -6,13 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-todos/backend/api"
 	hostadapter "github.com/jiva-studio/numen/plugins/views-todos/backend/internal/adapter/host"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/todo"
 	"github.com/jiva-studio/numen/plugins/views-todos/backend/usecase/index"
 	"github.com/jiva-studio/numen/plugins/views-todos/backend/wire/todos"
 )
@@ -25,9 +23,6 @@ const (
 
 func getSummary(tasks *index.Index) func(context.Context, api.GetSummaryRequest) (api.Summary, error) {
 	return func(_ context.Context, req api.GetSummaryRequest) (api.Summary, error) {
-		if !todo.IsDate(req.Today) {
-			return api.Summary{}, server.NewAPIError(server.CodeInvalidArgument, "today is not a date: "+req.Today)
-		}
 		summary := tasks.Summarize(req.Today)
 		return api.Summary{
 			IsReady:         summary.IsReady,
@@ -41,9 +36,6 @@ func getSummary(tasks *index.Index) func(context.Context, api.GetSummaryRequest)
 
 func listTasks(tasks *index.Index) func(context.Context, api.ListTasksRequest) (api.ListTasksResponse, error) {
 	return func(_ context.Context, req api.ListTasksRequest) (api.ListTasksResponse, error) {
-		if !todo.IsDate(req.Today) {
-			return api.ListTasksResponse{}, server.NewAPIError(server.CodeInvalidArgument, "today is not a date: "+req.Today)
-		}
 		listing := tasks.List(req.Today, todos.DecodeFilter(req.Filter), getLimit(req.Limit))
 		encoded := make([]api.Task, 0, len(listing.Tasks))
 		for _, task := range listing.Tasks {
@@ -95,7 +87,6 @@ func convertError(err error) error {
 	return fmt.Errorf("refresh the index: %w", err)
 }
 
-// getClosedContext returns a context that ends when the server closes.
 func getClosedContext(s *server.Server) context.Context {
 	ctx, stop := context.WithCancel(context.Background())
 	s.OnClose(func() error {
@@ -112,9 +103,8 @@ func mount(s *server.Server, tasks *index.Index) error {
 		if !isSet {
 			return
 		}
-		if err := tasks.SetIgnoredFolders(ctx, folders); err != nil {
-			slog.Error("apply the ignored folders", "error", err)
-		}
+		// A failure leaves the folders set; the next full check of the index catches up.
+		_ = tasks.SetIgnoredFolders(ctx, folders)
 	})
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodGetSummary, getSummary(tasks))
@@ -130,15 +120,12 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	tasks := index.New(vault, vault, todo.ParseNote)
+	tasks := index.NewForNotes(vault, vault)
 	if err := mount(s, tasks); err != nil {
 		return err
 	}
 	ctx := getClosedContext(s)
-	go func() {
-		if err := tasks.Scan(ctx); err != nil && ctx.Err() == nil {
-			slog.Error("read the notes of the vault", "error", err)
-		}
-	}()
+	// A failed scan leaves the index not ready; the next full check of the index scans again.
+	go func() { _ = tasks.Scan(ctx) }()
 	return nil
 }

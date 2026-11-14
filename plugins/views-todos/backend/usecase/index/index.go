@@ -79,6 +79,11 @@ func New(files ports.FileReader, notes ports.NoteLister, parse ParseFunc) *Index
 	}
 }
 
+// NewForNotes returns an empty index that reads its notes with todo.ParseNote.
+func NewForNotes(files ports.FileReader, notes ports.NoteLister) *Index {
+	return New(files, notes, todo.ParseNote)
+}
+
 // Scan reads every note and marks the index ready when the last is read.
 func (i *Index) Scan(ctx context.Context) error {
 	paths, err := i.listPaths(ctx)

@@ -27,7 +27,6 @@ const browserParts: TodosParts = {
   },
 }
 
-/** The view of the slot: the chip over the counts the feed keeps. */
 function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost) {
   return defineComponent({
     name: 'TodosView',
