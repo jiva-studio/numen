@@ -156,7 +156,7 @@ jobs:
   plugin-versions:
     name: Plugin Versions
     # Paused on 2026-11-14 while the architecture pull requests merge: every merge moved the base and
-    # failed the open pull requests on a version number alone. Drop the trailing `&& false` afterwards.
+    # failed the open pull requests on a version number alone. Drop the trailing `&& false` to restore it.
     if: github.event_name == 'pull_request' && inputs.plugin_versions && false
     runs-on: ubuntu-latest
     timeout-minutes: 10
