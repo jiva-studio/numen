@@ -101,7 +101,6 @@ describe('the parts of the tabs of a window', () => {
       'navigateTabsAt',
       'openTabAdjacentOfKind',
       'openTabOfKind',
-      'sendText',
       'tabs',
     ])
     expect(Object.keys(window.kinds).sort()).toStrictEqual([
@@ -1230,61 +1229,6 @@ describe('the tabs standing on a path that went', () => {
     expect(window.tabs.getTab(removed)?.state).toMatchObject({ targetPath: 'Root.md' })
     expect(window.tabs.getTab(survivor)?.state).toMatchObject({ targetPath: 'Elsewhere.md' })
     expect(window.tabs.getTab(stationary)?.state).toMatchObject({ targetPath: 'Gone.md' })
-  })
-})
-
-describe('text put to the tabs of a kind', () => {
-  /** A kind whose tabs keep the text they were handed. */
-  const listener = () =>
-    kind({
-      kind: 'listener',
-      open: () => ({ received: [] as string[], title: '' }),
-      receiveText: (state: { received: string[] }, text: string) => {
-        state.received.push(text)
-      },
-    })
-
-  it('switches to the tab the person was last in, which is put in front', async () => {
-    const window = createTestTabs()
-    window.kinds.registerKinds([listener().one, kind().one])
-    const zero = await window.tabs.openTabOfKind('listener')
-    const first = await window.tabs.openTabOfKind('listener')
-    const second = await window.tabs.openTabOfKind('listener')
-    await window.tabs.openTabOfKind('thing')
-    window.panes.onTabShown(zero)
-    window.panes.onTabShown(first)
-    window.panes.onTabShown(second)
-
-    const dispatched = await window.tabs.sendText('listener', 'what is this?')
-
-    expect(dispatched).toBe(second)
-    expect(window.tabs.getTab(first)?.state).toMatchObject({ received: [] })
-    expect(window.tabs.getTab(second)?.state).toMatchObject({ received: ['what is this?'] })
-    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(
-      second,
-    )
-  })
-
-  it('opens a tab to take it where the window holds none', async () => {
-    const window = createTestTabs()
-    window.kinds.registerKinds([listener().one, kind().one])
-    const otherId = await window.tabs.openTabOfKind('thing')
-
-    const id = await window.tabs.sendText('listener', 'what is this?')
-
-    expect(id).not.toBe(otherId)
-    expect(window.tabs.getTab(id)?.state).toMatchObject({ received: ['what is this?'] })
-    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(
-      id,
-    )
-  })
-
-  it('is left unheard by a tab of a kind that takes no text', async () => {
-    const window = createTestTabs()
-    window.kinds.registerKinds([kind().one])
-    const id = await window.tabs.openTabOfKind('thing')
-
-    await expect(window.tabs.sendText('thing', 'hello')).resolves.toBe(id)
   })
 })
 
