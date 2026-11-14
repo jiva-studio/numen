@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 )
 
-// The mounted plugin serves the local model it is configured for.
 func TestTheMountedPluginServesTheModelItsConfigureNames(t *testing.T) {
 	setEmptyModelDir(t)
 	handler := newMountedHandler(t, map[string]string{hostcall.PluginTokenEnv: linkedToken})
@@ -43,8 +42,6 @@ func TestMountRegistersCloseCallback(t *testing.T) {
 	}
 }
 
-// newMountedHandler returns the handler of a server that Mount registers its services on, with vars as the
-// environment of the process.
 func newMountedHandler(t *testing.T, vars map[string]string) http.Handler {
 	t.Helper()
 	for name, value := range vars {

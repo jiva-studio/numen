@@ -33,8 +33,6 @@ func postDocument(t *testing.T, baseURL, token, body string) int {
 	return res.StatusCode
 }
 
-// newMountedHandler returns the handler of a server that Mount registers its services on, over the host
-// at port.
 func newMountedHandler(t *testing.T, port string) http.Handler {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, port)

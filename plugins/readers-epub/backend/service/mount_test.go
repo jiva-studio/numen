@@ -22,8 +22,6 @@ func postMethod(t *testing.T, handler http.Handler, method, body, token string) 
 	return recorded
 }
 
-// newMountedHandler returns the handler of a server that Mount registers its services on, over the host
-// at port.
 func newMountedHandler(t *testing.T, port string) http.Handler {
 	t.Helper()
 	t.Setenv(hostcall.HostPortEnv, port)
