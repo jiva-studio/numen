@@ -11,11 +11,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/usecase/window"
 )
 
-// Host provides the files of the vaults and the window to the window tools. A nil field means the host
-// offers none.
+// Host provides the files of the vaults and the window to the window tools. Files returns the reader of
+// the vault with the identity, and the empty identity is the vault the window shows. A nil field means
+// the host offers none.
 type Host struct {
-	// Files returns the reader of the vault with the identity; the empty identity is the vault the
-	// window shows.
 	Files  func(vault domain.VaultID) host.FileReader
 	Window host.Window
 }

@@ -69,12 +69,23 @@ func (c Creator) prepareDiff(ctx context.Context, req Request) (string, int, int
 		return req.Diff, additions, deletions
 	}
 	original := req.OriginalText
-	if original == "" && c.files != nil {
-		if vault := c.files(req.Vault); vault != nil {
-			if data, _, err := vault.Read(ctx, req.Path); err == nil {
-				original = string(data)
-			}
-		}
+	if original == "" {
+		original = c.readNote(ctx, req)
 	}
 	return diff.CreateUnified(req.Path, original, req.ProposedText)
+}
+
+func (c Creator) readNote(ctx context.Context, req Request) string {
+	if c.files == nil {
+		return ""
+	}
+	vault := c.files(req.Vault)
+	if vault == nil {
+		return ""
+	}
+	data, _, err := vault.Read(ctx, req.Path)
+	if err != nil {
+		return ""
+	}
+	return string(data)
 }
