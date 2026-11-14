@@ -5,6 +5,7 @@ const (
 	OperationComplete  = "llm.complete"
 	OperationChat      = "llm.chat"
 	OperationEmbed     = "llm.embed"
+	OperationRerank    = "llm.rerank"
 	OperationProfile   = "llm.profile"
 	OperationModels    = "llm.models"
 	OperationReasoning = "llm.reasoning"

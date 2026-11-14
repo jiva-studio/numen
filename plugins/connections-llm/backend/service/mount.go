@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/usecase/completion"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/usecase/embedding"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/usecase/models"
+	"github.com/jiva-studio/numen/plugins/connections-llm/backend/usecase/reranking"
 )
 
 // service is what the plugin builds: the provider of its connection types, the limits its settings
@@ -31,12 +32,16 @@ func newService(source openaiapi.Clock, lists models.Lists) (*service, error) {
 	if err != nil {
 		return nil, err
 	}
+	rerankings, err := reranking.New(gateway, requestLimits)
+	if err != nil {
+		return nil, err
+	}
 	listings, err := models.New(gateway, requestLimits, lists)
 	if err != nil {
 		return nil, err
 	}
 	return &service{
-		provider: &provider{completion: completions, embedding: embeddings, models: listings},
+		provider: &provider{completion: completions, embedding: embeddings, reranking: rerankings, models: listings},
 		limits:   requestLimits,
 		gateway:  gateway,
 	}, nil
