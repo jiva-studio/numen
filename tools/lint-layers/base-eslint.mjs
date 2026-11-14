@@ -668,8 +668,8 @@ export function createBaseConfig(dirname, options = {}) {
 
 /**
  * The flat configuration of a TypeScript library without Vue (`libs/core/client`,
- * `libs/plugin/loader`): the strict rules, the size limits, the package boundary and the
- * determinism of its sources.
+ * `libs/plugin/loader`): the strict rules, the size limits of files, functions and factories, the
+ * package boundary and the determinism of its sources.
  *
  * @param {string} dirname The import.meta.dirname of the package
  * @returns {Array}
@@ -707,6 +707,7 @@ export function createPlainLibraryConfig(dirname) {
         complexity: ['error', 10],
         'max-depth': ['error', 3],
         'max-params': ['error', 3],
+        'numen/max-composable-return-properties': ['error', { max: 8 }],
         'no-nested-ternary': 'error',
         'no-restricted-imports': [
           'error',
@@ -729,6 +730,10 @@ export function createPlainLibraryConfig(dirname) {
           },
         ],
       },
+    },
+    {
+      files: ['**/testing/**', '**/fixtures/**'],
+      rules: { 'numen/max-composable-return-properties': 'off' },
     },
     {
       files: ['**/*.test.ts', '**/*.spec.ts'],
