@@ -1528,7 +1528,7 @@ func TestScenariosSchedulesAndSessionInternals(t *testing.T) {
 		},
 		Now: newFakeClock(now),
 	}).
-		OpenReads()
+		Execute()
 	if _, err := sPlain.getAssignmentFrom(ctx, v, readsOnce, []ReviewCard{c1, c2}); err != nil {
 		t.Fatal(err)
 	}
