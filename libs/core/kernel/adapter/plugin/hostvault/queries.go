@@ -8,53 +8,65 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
-// Lookups reads the index data of the notes and the links of the vault.
+// Lookups reads the index of the vault: the data of its notes and the links between them.
 type Lookups struct {
+	Notes Notes
+	Links Links
+}
+
+// Notes reads the index data of the notes of the vault.
+type Notes struct {
 	Notes      query.GetNotes
 	Types      *query.GetTypes
 	NamedPaths *query.GetNamedPaths
 	TypedPaths query.GetPathsOfType
-	Links      query.GetLinks
-	Backlinks  query.GetBacklinks
-	Targets    *query.ResolveLinks
 
 	session sessionAccess
 }
 
-func (l Lookups) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
-	v, err := l.session.open()
+func (n Notes) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
+	v, err := n.session.open()
 	if err != nil {
 		return nil, err
 	}
-	return l.Notes.Execute(ctx, v, paths)
+	return n.Notes.Execute(ctx, v, paths)
 }
 
-func (l Lookups) GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error) {
-	v, err := l.session.open()
+func (n Notes) GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error) {
+	v, err := n.session.open()
 	if err != nil {
 		return nil, err
 	}
-	return l.Types.Execute(ctx, v, paths)
+	return n.Types.Execute(ctx, v, paths)
 }
 
-func (l Lookups) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
-	v, err := l.session.open()
+func (n Notes) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
+	v, err := n.session.open()
 	if err != nil {
 		return nil, err
 	}
-	return l.NamedPaths.Execute(ctx, v, name)
+	return n.NamedPaths.Execute(ctx, v, name)
 }
 
-func (l Lookups) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
-	v, err := l.session.open()
+func (n Notes) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	v, err := n.session.open()
 	if err != nil {
 		return nil, err
 	}
-	return l.TypedPaths.Execute(ctx, v, noteType)
+	return n.TypedPaths.Execute(ctx, v, noteType)
+}
+
+// Links reads the links between the notes of the vault.
+type Links struct {
+	Links     query.GetLinks
+	Backlinks query.GetBacklinks
+	Targets   *query.ResolveLinks
+
+	session sessionAccess
 }
 
 // GetLinks returns the links of the note at the path.
-func (l Lookups) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
+func (l Links) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
 	v, err := l.session.open()
 	if err != nil {
 		return nil, err
@@ -63,7 +75,7 @@ func (l Lookups) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLi
 }
 
 // GetBacklinks returns the links to the note at the path.
-func (l Lookups) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
+func (l Links) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
 	v, err := l.session.open()
 	if err != nil {
 		return nil, err
@@ -80,7 +92,7 @@ func (l Lookups) GetBacklinks(ctx context.Context, to string) ([]domain.Resolved
 }
 
 // ResolveLinks resolves the addresses the note at the path links to.
-func (l Lookups) ResolveLinks(
+func (l Links) ResolveLinks(
 	ctx context.Context, from string, targets []string,
 ) (map[string]domain.ResolvedLink, error) {
 	v, err := l.session.open()
