@@ -2,10 +2,13 @@
  * The mounted window with every port it uses mocked.
  *
  * A test declares the application's responses in `vaultState`, reads the requests it
- * received from the recorded log, and mounts the window with `mountWindow`.
+ * received from the recorded log, and mounts the window with `mountWindow`, over the transport
+ * of `createWindowTransport` unless it passes its own.
  */
-import { afterEach, beforeEach } from 'vitest'
-import { installCoreAnswers } from '@numen/core-client/testing'
+import { afterEach } from 'vitest'
+import { createCoreTransport, type CoreAnswers } from '@numen/core-client/testing'
+import type { Transport } from '@/shared/api/clients'
+import { createTestTransports } from './coreAnswers'
 import { fileAnswers } from './mocks/file'
 import { noteAnswers } from './mocks/note'
 import { pluginAnswers } from './mocks/plugin'
@@ -33,7 +36,7 @@ import { book, editor, reader } from './stubs'
 import { openNoteTab, registerNoteTabs } from './mocks/noteTabs'
 import type { WindowParts } from '@/app/window/createWindow'
 
-const Root = (await import('@/app/createRoot')).createRoot()
+const { createRoot } = await import('@/app/createRoot')
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
@@ -46,10 +49,12 @@ const DEBOUNCE = 200
  */
 const windows: { unmount(): void }[] = []
 
-let restoreCore: () => void = () => undefined
-
-beforeEach(() => {
-  restoreCore = installCoreAnswers(
+/**
+ * The transport of a mounted window: the core answers as the mocks of every entity say, and as
+ * `extra` says on top of them.
+ */
+const createWindowTransport = (extra: CoreAnswers = {}): Transport =>
+  createCoreTransport(
     mergeAnswers(
       vaultAnswers,
       windowAnswers,
@@ -59,19 +64,18 @@ beforeEach(() => {
       tabAnswers,
       pluginAnswers,
       searchAnswers,
+      extra,
     ),
   )
-})
 
 afterEach(() => {
   for (const window of windows.splice(0)) window.unmount()
-  restoreCore()
   forgetAnswers()
   forgetRequests()
 })
 
-function mountStartingWindow() {
-  const window = mount(Root, {
+function mountStartingWindow(transport: Transport = createWindowTransport()) {
+  const window = mount(createRoot(createTestTransports(transport)), {
     global: {
       // A stub is named by the binding the component is drawn through, and the
       // window's command palette draws the library's under `Palette`.
@@ -94,16 +98,16 @@ function mountStartingWindow() {
   return window
 }
 
-async function mountWindow() {
-  const window = mountStartingWindow()
+async function mountWindow(transport: Transport = createWindowTransport()) {
+  const window = mountStartingWindow(transport)
   await settle()
   await settle()
   await new Promise((isDone) => setTimeout(isDone, 50))
   return window
 }
 
-async function mountWindowWithPalette() {
-  const window = mount(Root, {
+async function mountWindowWithPalette(transport: Transport = createWindowTransport()) {
+  const window = mount(createRoot(createTestTransports(transport)), {
     global: {
       stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Book: book, Tree: true },
     },
@@ -163,6 +167,7 @@ const getTabs = (window: VueWrapper): readonly { id: string; title: string }[] =
   window.findComponent(WorkspaceLayout).props('tabs')
 
 export {
+  createWindowTransport,
   requests,
   cards,
   changed,

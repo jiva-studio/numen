@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { WORDS } from '@/shared/ui/words'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createWindowSettingsPart } from '@/testing/windowSettings'
 
 describe('settings step groups', () => {
@@ -18,8 +19,10 @@ describe('settings step groups', () => {
       },
     } as never
 
+    const api = createAnsweredApi({})
     const settings = createWindowSettingsPart({
-      rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
+      api,
+      rest: createSettingsStore(api.settings, SETTINGS_WORDS, vi.fn()),
       words: WORDS,
       log,
       windowTabs,

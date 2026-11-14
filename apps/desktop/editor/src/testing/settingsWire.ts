@@ -4,7 +4,8 @@
  * core sends them and decodes the requests the way the core reads them.
  */
 import { PLUGIN_CONTRIBUTION_KIND } from '@numen/core-client'
-import { installCoreAnswers, type CoreAnswers } from '@numen/core-client/testing'
+import type { CoreAnswers } from '@numen/core-client/testing'
+import { createAnsweredApi } from './coreAnswers'
 import type { PluginSettingCondition } from '@numen/plugin-manager'
 import type {
   PluginInfo,
@@ -194,15 +195,12 @@ const answerPlugins = (core: Partial<SettingsCore>): Answers => {
 }
 
 /**
- * Answers the settings calls of every client from `core`, through the real clients. The returned
- * function restores the transport installed before. `others` answers the calls of the other
- * clients; the plugin catalog lists nothing unless it says otherwise.
+ * Every call of a window whose core answers the settings calls from `core`, through the real
+ * clients. `others` answers the calls of the other services; the plugin catalog lists nothing
+ * unless it says otherwise.
  */
-export const installSettingsCore = (
-  core: Partial<SettingsCore>,
-  others: CoreAnswers = {},
-): (() => void) =>
-  installCoreAnswers({
+export const createSettingsCoreApi = (core: Partial<SettingsCore>, others: CoreAnswers = {}) =>
+  createAnsweredApi({
     pluginCatalog: { listCatalog: () => ({ entries: [], sourceErrors: [] }) },
     ...others,
     settingsService: {

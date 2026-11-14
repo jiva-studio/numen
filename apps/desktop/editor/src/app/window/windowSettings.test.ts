@@ -3,7 +3,7 @@
  * each setting, and the settings tab reaching each setting through the same
  * piece of code the palette does.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createWindowSettingsPart } from '@/testing/windowSettings'
 import { WORDS } from '@/shared/ui/words'
 import {
@@ -12,17 +12,11 @@ import {
   type PluginInfo,
   type PluginSettingInfo,
 } from '@/entities/settings'
-import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
+import { createSettingsCoreApi, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 import { createLostConnection, type CoreAnswers } from '@numen/core-client/testing'
 
-let restore: (() => void) | undefined
-
-afterEach(() => {
-  restore?.()
-  restore = undefined
-})
 
 const createSettings = (
   overrides: Partial<Parameters<typeof createWindowSettingsPart>[0]> = {},
@@ -44,8 +38,7 @@ const createSettings = (
     getPluginData: vi.fn(async () => 5),
     deletePluginData: vi.fn(async () => undefined),
   } as unknown as SettingsCore
-  restore?.()
-  restore = installSettingsCore(core, others)
+  const api = createSettingsCoreApi(core, others)
   const log = {
     getWriter: (name: string) => {
       writers.push(name)
@@ -58,7 +51,10 @@ const createSettings = (
   const windowTabs = { groups: { handle } } as unknown as WindowTabs
   const onSizeChanged = vi.fn()
   const settings = createWindowSettingsPart({
-    rest: createSettingsStore(SETTINGS_WORDS, (text, level) => writerFns.configured?.(text, level)),
+    api,
+    rest: createSettingsStore(api.settings, SETTINGS_WORDS, (text, level) =>
+      writerFns.configured?.(text, level),
+    ),
     words: WORDS,
     log,
     windowTabs,

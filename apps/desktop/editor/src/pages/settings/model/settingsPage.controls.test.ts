@@ -18,7 +18,7 @@ import {
   type PluginSettingInfo,
   type SettingEdit,
 } from '@/entities/settings'
-import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
+import { createSettingsCoreApi, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { WORDS } from '@/shared/ui/words'
 import { createConnectionStore } from '@/entities/connection'
@@ -179,11 +179,13 @@ const create = (timing: Timing, shown: 'system' | 'appearance') => {
     ),
     watchSettings: vi.fn(() => feed.open()),
   } as unknown as SettingsCore
-  restore = installSettingsCore(core, { theme: THEME })
+  const api = createSettingsCoreApi(core, { theme: THEME })
   const log = { getWriter: () => say } as unknown as MessageLog
-  const rest = createSettingsStore(SETTINGS_WORDS, log.getWriter('configured'))
-  const connections = createConnectionStore(log.getWriter('connections'))
+  const rest = createSettingsStore(api.settings, SETTINGS_WORDS, log.getWriter('configured'))
+  const connections = createConnectionStore(api.connection, log.getWriter('connections'))
   const windowSettings = createWindowSettings({
+    themes: api.themes,
+    watchSettings: api.settings.watchSettings,
     rest,
     connections,
     words: WORDS,
@@ -194,6 +196,7 @@ const create = (timing: Timing, shown: 'system' | 'appearance') => {
     rest,
     ...windowSettings,
     ...createSettingsPage({
+      api: { settings: api.settings, listFiles: api.file.listFiles, listCatalog: api.listCatalog },
       rest,
       connections,
       appearance: windowSettings.appearance,
@@ -290,7 +293,6 @@ const THEME = {
   },
 }
 
-let restore: (() => void) | undefined
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -305,8 +307,6 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  restore?.()
-  restore = undefined
   vi.useRealTimers()
   vi.unstubAllGlobals()
   document.head.querySelectorAll('style[data-appearance]').forEach((one) => one.remove())

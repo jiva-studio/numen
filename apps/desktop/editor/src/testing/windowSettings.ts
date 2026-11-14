@@ -3,6 +3,7 @@
  * read, and the settings tab.
  */
 import { shallowRef } from 'vue'
+import type { WindowApi } from '@/app/window/createWindowApi'
 import { createConnectionStore, type ConnectionStore } from '@/entities/connection'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
@@ -13,6 +14,7 @@ import type { MessageLog } from '@/shared/model/notices/messages'
 type PageDeps = Parameters<typeof createSettingsPage>[0]
 
 export interface WindowSettingsDeps {
+  readonly api: WindowApi
   readonly rest: SettingsStore
   readonly connections?: ConnectionStore
   readonly words: Parameters<typeof createWindowSettings>[0]['words']
@@ -25,10 +27,20 @@ export interface WindowSettingsDeps {
 }
 
 export function createWindowSettingsPart(deps: WindowSettingsDeps) {
-  const { rest, words, log, onSizeChanged } = deps
-  const connections = deps.connections ?? createConnectionStore(log.getWriter('connections'))
-  const windowSettings = createWindowSettings({ rest, connections, words, log, onSizeChanged })
+  const { api, rest, words, log, onSizeChanged } = deps
+  const connections =
+    deps.connections ?? createConnectionStore(api.connection, log.getWriter('connections'))
+  const windowSettings = createWindowSettings({
+    themes: api.themes,
+    watchSettings: api.settings.watchSettings,
+    rest,
+    connections,
+    words,
+    log,
+    onSizeChanged,
+  })
   const page = createSettingsPage({
+    api: { settings: api.settings, listFiles: api.file.listFiles, listCatalog: api.listCatalog },
     rest,
     connections,
     appearance: windowSettings.appearance,

@@ -7,7 +7,7 @@ import { nextTick } from 'vue'
 import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
 import { createTestTabs } from '@/testing/tabs'
 import { createSettingsStore, SETTINGS_WORDS, type SettingEdit } from '@/entities/settings'
-import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
+import { createSettingsCoreApi, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { WORDS } from '@/shared/ui/words'
 import { createTestPluginSupport } from '@/testing/pluginSupport'
@@ -50,7 +50,6 @@ const settle = async () => {
 const PLUGIN = 'md.numen.eventful'
 
 /** Puts back the transport that was installed before the core of the test. */
-let restoreCore: (() => void) | undefined
 
 const create = () => {
   file.current = { app: { appearance: { mode: 'light' }, naming: { syncTitleAndFilename: true } } }
@@ -65,11 +64,12 @@ const create = () => {
     updateSettings: vi.fn(async () => undefined),
     watchSettings: vi.fn((signal: AbortSignal) => feed.open(signal)),
   } as unknown as SettingsCore
-  restoreCore = installSettingsCore(core, { theme: THEME })
+  const api = createSettingsCoreApi(core, { theme: THEME })
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = createTestTabs()
   const settings = createWindowSettingsPart({
-    rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
+    api,
+    rest: createSettingsStore(api.settings, SETTINGS_WORDS, log.getWriter('configured')),
     words: WORDS,
     log,
     windowTabs,
@@ -123,8 +123,6 @@ describe('a setting that changes', () => {
   })
 
   afterEach(() => {
-    restoreCore?.()
-    restoreCore = undefined
     vi.useRealTimers()
   })
 

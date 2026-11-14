@@ -12,6 +12,7 @@ import { createMockCatalogEntry, createMockManifest } from '@numen/core-client/t
 import { answerTabKinds } from '@/testing/tabCatalog'
 import { createTestTabs } from '@/testing/tabs'
 import { createTestPluginSupport } from '@/testing/pluginSupport'
+import { createAnsweredApi } from '@/testing/coreAnswers'
 
 const PLUGIN_ID = 'sample.decks'
 
@@ -33,7 +34,7 @@ const entryOf = (state: typeof CATALOG_STATE.INSTALLED | typeof CATALOG_STATE.DI
 
 const createWindow = () => {
   const entries = [entryOf(CATALOG_STATE.INSTALLED)]
-  const lookups = answerTabKinds(entries)
+  const { lookups, findTabKindPlugin } = answerTabKinds(entries)
   const catalog = {
     setEntries: (next: CatalogEntry[]) => entries.splice(0, entries.length, ...next),
     getAskedKinds: () => lookups,
@@ -41,6 +42,7 @@ const createWindow = () => {
   const enabled: string[] = []
   const holder: { activate?: () => void } = {}
   const windowTabs = createTestTabs({
+    findTabKindPlugin,
     enablePlugin: (pluginId) => {
       enabled.push(pluginId)
       catalog.setEntries([entryOf(CATALOG_STATE.INSTALLED)])
@@ -54,7 +56,7 @@ const createWindow = () => {
       registerExtensionReader: () => () => undefined,
       registerEditor: () => () => undefined,
     } as never,
-    rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
+    rest: createSettingsStore(createAnsweredApi({}).settings, SETTINGS_WORDS, vi.fn()),
   })
   holder.activate = () => {
     support.pluginHost.lifecycle
