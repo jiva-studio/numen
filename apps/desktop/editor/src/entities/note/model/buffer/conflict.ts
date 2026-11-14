@@ -22,21 +22,22 @@ function getErrorMessage(tab: Tab | undefined): string {
 export function createConflictCoordinator(
   dispatch: (id: string, event: Event) => void,
   getTab: (id: string) => Tab | undefined,
+  getOpenIds: () => readonly string[],
 ) {
   const keep = (id: string): void => dispatch(id, { kind: 'keepLocal' })
   const take = (id: string): void => dispatch(id, { kind: 'takeFile' })
-  const notifyChanged = (
-    allIds: () => readonly string[],
+  const applyPathChanges = (
     paths: readonly string[],
+    // Stryker disable next-line ArrayDeclaration: an entry that is not a rename names no file, and every walk over renames skips it.
     renames: readonly PathRename[] = [],
   ): void => {
-    for (const id of allIds()) dispatch(id, { kind: 'changed', paths, renamed: renames })
+    for (const id of getOpenIds()) dispatch(id, { kind: 'changed', paths, renamed: renames })
   }
 
   return {
     keep,
     take,
-    notifyChanged,
+    applyPathChanges,
     stale: (id: string) => findStaleConflict(getTab(id)),
     getErrorMessage: (id: string) => getErrorMessage(getTab(id)),
   }

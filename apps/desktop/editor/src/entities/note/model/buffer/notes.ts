@@ -13,7 +13,6 @@ import {
   DEFAULT_WRITE_LIMITS,
   type Effect,
   type Event,
-  type Move,
   type Tab,
 } from './tab'
 import type { OpenNote, OpenNotesOptions } from './types'
@@ -117,11 +116,11 @@ function applyTabTransition(
 }
 
 function createNoteStoreContext(
+  tabs: Map<string, Tab>,
+  bodies: Map<string, string>,
   limits: Parameters<typeof transitionTab>[2],
   onReplaced: (path: string) => void,
 ) {
-  const tabs = shallowReactive(new Map<string, Tab>())
-  const bodies = shallowReactive(new Map<string, string>())
   const reportedIds = new Set<string>()
   const closeCallbacks = new Map<string, ((removed: boolean) => void)[]>()
 
@@ -151,17 +150,9 @@ function createNoteStoreContext(
   return { context, dispatch }
 }
 
-export function openNotes(how: OpenNotesOptions = {}) {
-  const limits = how.limits ?? DEFAULT_WRITE_LIMITS
-  // Without a listener, a replaced body needs no notification.
-  const onReplaced = how.onReplaced ?? (() => undefined)
-  const now = how.now ?? getMonotonicNow
-
-  const { context, dispatch } = createNoteStoreContext(limits, onReplaced)
-  const { tabs, bodies, queue, reportedIds, closeCallbacks } = context
-
-  const conflicts = createConflictCoordinator(dispatch, (id) => tabs.get(id))
-  const getOpenIds = (): readonly string[] => [...tabs.keys()]
+/** Opening a note, opening it again from its file, and closing it. */
+function createNoteOpening(context: NoteStoreContext) {
+  const { tabs, reportedIds, closeCallbacks } = context
 
   const close = (id: string): Promise<boolean> =>
     new Promise((isDone) => {
@@ -177,7 +168,7 @@ export function openNotes(how: OpenNotesOptions = {}) {
         return
       }
       closeCallbacks.set(id, [isDone])
-      dispatch(id, { kind: 'close' })
+      context.dispatch(id, { kind: 'close' })
     })
 
   return {
@@ -189,20 +180,17 @@ export function openNotes(how: OpenNotesOptions = {}) {
       applyTabTransition(context, id, openTab(path))
     },
     close,
-    flushPending: queue.flushPending,
+  }
+}
+
+/** What is asked of the notes that are open. */
+function createNoteQueries(context: NoteStoreContext) {
+  const { tabs, bodies } = context
+
+  return {
     getPath: (id: string): string => tabs.get(id)?.path ?? id,
     has: (id: string): boolean => tabs.has(id),
     getRevision: (id: string): string => tabs.get(id)?.revision ?? '',
-    setBody: (id: string, body: string) => {
-      bodies.set(id, body)
-      dispatch(id, { kind: 'edited', body, at: now() })
-    },
-    // Stryker disable next-line ArrayDeclaration: an entry that is not a rename names no file, and every walk over renames skips it.
-    applyPathChanges: (paths: readonly string[], renamed: readonly Move[] = []) =>
-      conflicts.notifyChanged(getOpenIds, paths, renamed),
-    save: (id: string) => dispatch(id, { kind: 'save' }),
-    keep: conflicts.keep,
-    take: conflicts.take,
     getOpenNote: (id: string): OpenNote => {
       const tab = tabs.get(id)
       return {
@@ -212,9 +200,25 @@ export function openNotes(how: OpenNotesOptions = {}) {
         error: tab?.error ?? null,
       }
     },
-    getOpenIds,
-    getErrorMessage: conflicts.getErrorMessage,
-    stale: conflicts.stale,
+    getOpenIds: (): readonly string[] => [...tabs.keys()],
+  }
+}
+
+/** Changing the text of a note and writing it. */
+function createNoteEditing(
+  context: NoteStoreContext,
+  getOpenIds: () => readonly string[],
+  now: () => number,
+) {
+  const { tabs, bodies, queue, dispatch } = context
+
+  return {
+    setBody: (id: string, body: string) => {
+      bodies.set(id, body)
+      dispatch(id, { kind: 'edited', body, at: now() })
+    },
+    save: (id: string) => dispatch(id, { kind: 'save' }),
+    flushPending: queue.flushPending,
     /** Writes what every open note holds, trying again the notes an error stopped. */
     flush: async (): Promise<void> => {
       await Promise.all(getOpenIds().map(queue.flushPending))
@@ -225,6 +229,31 @@ export function openNotes(how: OpenNotesOptions = {}) {
         const tab = tabs.get(id)
         return tab !== undefined && isUnsavedTab(tab)
       }),
-    tabs,
   }
+}
+
+export function useOpenNotes(how: OpenNotesOptions = {}) {
+  const limits = how.limits ?? DEFAULT_WRITE_LIMITS
+  // Without a listener, a replaced body needs no notification.
+  const onReplaced = how.onReplaced ?? (() => undefined)
+  const now = how.now ?? getMonotonicNow
+
+  const tabs = shallowReactive(new Map<string, Tab>())
+  const bodies = shallowReactive(new Map<string, string>())
+  const { context, dispatch } = createNoteStoreContext(tabs, bodies, limits, onReplaced)
+
+  const opening = createNoteOpening(context)
+  const queries = createNoteQueries(context)
+  const editing = createNoteEditing(context, queries.getOpenIds, now)
+  const conflicts = createConflictCoordinator(dispatch, (id) => tabs.get(id), queries.getOpenIds)
+
+  return { opening, editing, conflicts, queries }
+}
+
+/** The open notes as parts, one for each responsibility. */
+export type OpenNotes = ReturnType<typeof useOpenNotes>
+
+/** The open notes as one object of the functions of all parts, as a plugin is handed them. */
+export function flattenOpenNotes({ opening, editing, conflicts, queries }: OpenNotes) {
+  return { ...opening, ...editing, ...conflicts, ...queries }
 }
