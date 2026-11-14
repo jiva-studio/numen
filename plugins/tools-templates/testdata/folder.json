@@ -1,0 +1,27 @@
+{
+  "reads an empty folder as Templates": [
+    { "raw": "", "folder": "Templates" },
+    { "raw": "   ", "folder": "Templates" },
+    { "raw": "/", "folder": "Templates" },
+    { "raw": ".", "folder": "Templates" },
+    { "raw": "./", "folder": "Templates" },
+    { "raw": "\\", "folder": "Templates" }
+  ],
+  "drops slashes and dot segments": [
+    { "raw": "Templates", "folder": "Templates" },
+    { "raw": "  Models  ", "folder": "Models" },
+    { "raw": "/Notes/", "folder": "Notes" },
+    { "raw": "Notes//Models", "folder": "Notes/Models" },
+    { "raw": "Notes/./Models", "folder": "Notes/Models" },
+    { "raw": "./Notes", "folder": "Notes" },
+    { "raw": "Notes\\Models", "folder": "Notes/Models" },
+    { "raw": "My Templates", "folder": "My Templates" }
+  ],
+  "reads a parent segment as Templates": [
+    { "raw": "..", "folder": "Templates" },
+    { "raw": "../Secret", "folder": "Templates" },
+    { "raw": "Notes/../Secret", "folder": "Templates" },
+    { "raw": "Notes/..", "folder": "Templates" },
+    { "raw": "Notes\\..\\Secret", "folder": "Templates" }
+  ]
+}
