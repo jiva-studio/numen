@@ -74,7 +74,7 @@ type resolution struct {
 	named   map[string][]string
 }
 
-func readResolved[T any](
+func runResolution[T any](
 	ctx context.Context, db *sql.DB, vaultID domain.VaultID, none T, read func(r *resolution) (T, error),
 ) (_ T, err error) {
 	statements := newReads(db)

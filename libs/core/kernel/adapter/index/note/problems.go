@@ -89,7 +89,7 @@ func (q *Problems) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID)
 // that rule.
 // diverge.
 func (q *Problems) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.AmbiguousLink, error) {
-	return readResolved(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.AmbiguousLink, error) {
+	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.AmbiguousLink, error) {
 		return r.getAmbiguousLinks(ctx)
 	})
 }

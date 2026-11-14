@@ -10,7 +10,7 @@ import (
 )
 
 func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
-	return readResolved(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
+	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
 		return r.getLinks(ctx, from)
 	})
 }
@@ -86,7 +86,7 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 func (q *Queries) ResolveLinks(
 	ctx context.Context, vaultID domain.VaultID, from string, content []string,
 ) (map[string]domain.ResolvedLink, error) {
-	return readResolved(ctx, q.db, vaultID, nil, func(r *resolution) (map[string]domain.ResolvedLink, error) {
+	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) (map[string]domain.ResolvedLink, error) {
 		return r.resolveLinks(ctx, from, content)
 	})
 }
@@ -185,7 +185,7 @@ func (r *resolution) queryCandidates(ctx context.Context, name string) (_ []stri
 // name may resolve to a nearer note of the same name. Every candidate goes
 // through the forward resolution and only those that land here are kept.
 func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
-	return readResolved(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
+	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
 		return r.getBacklinks(ctx, to)
 	})
 }
