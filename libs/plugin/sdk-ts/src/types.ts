@@ -197,7 +197,7 @@ export interface CommandRegistration {
 
 // PluginLifecycle declares the activation and teardown hooks.
 export interface PluginLifecycle {
-  activate(context: PluginContext): void | Promise<void>
+  activate(plugin: PluginContext, host: HostServices): void | Promise<void>
   deactivate?(): void | Promise<void>
 }
 
@@ -307,17 +307,23 @@ export interface PluginWork {
   readonly processes?: ProcessHost
 }
 
-// PluginContext provides registration and host services to an activated plugin, in parts.
+// PluginContext is what an activated plugin owns: who it is, what it registers, its settings and
+// its health.
 export interface PluginContext {
-  readonly plugin: PluginIdentity
+  readonly identity: PluginIdentity
   readonly register: PluginRegistrations
   readonly settings: PluginSettings
-  readonly events: PluginEvents
-  readonly tabs: PluginTabs
+  readonly health?: HealthHost
+}
+
+// HostServices is what the host lends an activated plugin: the vault, the tabs, the window, the
+// background work and the events.
+export interface HostServices {
   readonly vault: PluginVault
+  readonly tabs: PluginTabs
   readonly ui: PluginUi
   readonly work: PluginWork
-  readonly health?: HealthHost
+  readonly events: PluginEvents
 }
 
 // JsonValue is a value that survives JSON.stringify and JSON.parse unchanged: the shape of a setting,

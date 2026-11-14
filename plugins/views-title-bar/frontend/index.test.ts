@@ -5,8 +5,9 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick, type Component } from 'vue'
 import {
   createMockNoticeHost,
+  createMockHostServices,
   createMockPluginContext,
-  type MockPluginContext,
+  type MockHostServices,
 } from '@numen/plugin-sdk/testing'
 import {
   SLOT,
@@ -47,16 +48,17 @@ const activateBar = ({ platform = 'windows', settings = {} }: Options = {}) => {
     initialSettings: settings,
     app: { name: 'numen', version: '2026.11.1', build: 7, platform },
   })
-  activate(context)
+  const host = createMockHostServices()
+  activate(context, host)
   const [registration] = context.getRegisteredSlotViews()
-  return { context, view: registration!.component as Component }
+  return { context, host, view: registration!.component as Component }
 }
 
 const mountBar = (options: Options = {}) => {
-  const { context, view: component } = activateBar(options)
+  const { context, host, view: component } = activateBar(options)
   const bar = mount(component, { attachTo: document.body })
   mounted.push(bar)
-  return { context, bar }
+  return { context, host, bar }
 }
 
 const getButton = (bar: VueWrapper, id: string) => bar.find(`[data-title-bar-command="${id}"]`)
@@ -70,8 +72,8 @@ const getMenuRows = () =>
     one.textContent?.trim(),
   )
 
-const setVaults = async (context: MockPluginContext, current = ORCHARD) => {
-  context.vault.vaults.setState({ vaults: [ORCHARD, GREENHOUSE], current })
+const setVaults = async (host: MockHostServices, current = ORCHARD) => {
+  host.vault.vaults.setState({ vaults: [ORCHARD, GREENHOUSE], current })
   await nextTick()
 }
 
@@ -115,9 +117,9 @@ describe('the plugin', () => {
 
 describe('the commands of the slots', () => {
   it('draws the commands of titleBar.commands as buttons in the order of the slot', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open'), command('map.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open'), command('map.open')])
     await nextTick()
 
     expect(listButtonIds(bar, SLOT.titleBarCommands)).toStrictEqual([
@@ -127,9 +129,9 @@ describe('the commands of the slots', () => {
   })
 
   it('draws the icon of the command and names the button by its title', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
     await nextTick()
 
     const button = getButton(bar, 'org.example.tide:chart.open')
@@ -138,18 +140,18 @@ describe('the commands of the slots', () => {
   })
 
   it('writes the title as the button of a command without an icon', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [commandWithoutIcon('chart.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [commandWithoutIcon('chart.open')])
     await nextTick()
 
     expect(getButton(bar, 'org.example.tide:chart.open').text()).toBe('Open chart.open')
   })
 
   it('shows the title and the shortcut in the tooltip, written for the platform', async () => {
-    const { context, bar } = mountBar({ platform: 'darwin' })
+    const { host, bar } = mountBar({ platform: 'darwin' })
 
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [
       command('chart.open', { shortcut: 'mod+shift+e' }),
       command('map.open'),
     ])
@@ -162,28 +164,29 @@ describe('the commands of the slots', () => {
   })
 
   it('runs the command of a button through the commands of the context, with no target', async () => {
-    const { context, bar } = mountBar()
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
+    const { host, bar } = mountBar()
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
     await nextTick()
 
     await getButton(bar, 'org.example.tide:chart.open').trigger('click')
 
-    expect(context.ui.commands.getRuns()).toStrictEqual([
+    expect(host.ui.commands.getRuns()).toStrictEqual([
       { command: 'org.example.tide:chart.open', target: undefined, itemId: undefined },
     ])
   })
 
   it('shows the error of a run that fails as one notice', async () => {
     const notices = createMockNoticeHost()
-    const context = createMockPluginContext({ pluginId: manifest.id, notices })
-    activate(context)
+    const context = createMockPluginContext({ pluginId: manifest.id })
+    const host = createMockHostServices({ notices })
+    activate(context, host)
     const bar = mount(context.getRegisteredSlotViews()[0]!.component as Component, {
       attachTo: document.body,
     })
     mounted.push(bar)
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
     await nextTick()
-    vi.spyOn(context.ui.commands, 'run').mockRejectedValueOnce(new Error('the chart is gone'))
+    vi.spyOn(host.ui.commands, 'run').mockRejectedValueOnce(new Error('the chart is gone'))
 
     await getButton(bar, 'org.example.tide:chart.open').trigger('click')
     await flushPromises()
@@ -192,20 +195,20 @@ describe('the commands of the slots', () => {
   })
 
   it('follows a change of the entries of the slot', async () => {
-    const { context, bar } = mountBar()
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open'), command('map.open')])
+    const { host, bar } = mountBar()
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open'), command('map.open')])
     await nextTick()
 
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('map.open')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [command('map.open')])
     await nextTick()
 
     expect(listButtonIds(bar, SLOT.titleBarCommands)).toStrictEqual(['org.example.tide:map.open'])
   })
 
   it('draws a separator as a gap between two groups', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [
       command('chart.open'),
       separator(1),
       command('map.open'),
@@ -221,9 +224,9 @@ describe('the commands of the slots', () => {
   })
 
   it('draws a command placed in titleBar.status as a button there', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
-    context.ui.slots.setEntries(SLOT.titleBarStatus, [command('log.open')])
+    host.ui.slots.setEntries(SLOT.titleBarStatus, [command('log.open')])
     await nextTick()
 
     expect(listButtonIds(bar, SLOT.titleBarStatus)).toStrictEqual(['org.example.tide:log.open'])
@@ -232,9 +235,9 @@ describe('the commands of the slots', () => {
 
 describe('the views of the slots', () => {
   it('draws a view of titleBar.status in its place among the entries', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
-    context.ui.slots.setEntries(SLOT.titleBarStatus, [
+    host.ui.slots.setEntries(SLOT.titleBarStatus, [
       view('tasks'),
       command('log.open'),
       view('stats'),
@@ -250,9 +253,9 @@ describe('the views of the slots', () => {
   })
 
   it('draws a view placed in titleBar.commands', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [view('due')])
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [view('due')])
     await nextTick()
 
     expect(
@@ -262,16 +265,16 @@ describe('the views of the slots', () => {
 })
 
 describe('a submenu in a slot', () => {
-  const placeSubmenu = async (context: MockPluginContext) => {
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [
+  const placeSubmenu = async (host: MockHostServices) => {
+    host.ui.slots.setEntries(SLOT.titleBarCommands, [
       submenu('tide.new', [command('chart.create'), separator(1), command('log.create')]),
     ])
     await nextTick()
   }
 
   it('is a button that says it opens a menu', async () => {
-    const { context, bar } = mountBar()
-    await placeSubmenu(context)
+    const { host, bar } = mountBar()
+    await placeSubmenu(host)
 
     const button = bar.find('[data-title-bar-submenu="tide.new"]')
     expect(button.attributes('aria-haspopup')).toBe('menu')
@@ -280,8 +283,8 @@ describe('a submenu in a slot', () => {
   })
 
   it('opens the menu of its entries and runs the one picked', async () => {
-    const { context, bar } = mountBar()
-    await placeSubmenu(context)
+    const { host, bar } = mountBar()
+    await placeSubmenu(host)
 
     await bar.find('[data-title-bar-submenu="tide.new"]').trigger('click')
     expect(getMenuRows()).toStrictEqual(['Open chart.create', 'Open log.create'])
@@ -289,7 +292,7 @@ describe('a submenu in a slot', () => {
     document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')[1]!.click()
     await nextTick()
 
-    expect(context.ui.commands.getRuns()).toStrictEqual([
+    expect(host.ui.commands.getRuns()).toStrictEqual([
       { command: 'org.example.tide:log.create', target: undefined, itemId: undefined },
     ])
     expect(document.body.querySelector('[role="menu"]')).toBeNull()
@@ -298,17 +301,17 @@ describe('a submenu in a slot', () => {
 
 describe('the title', () => {
   it('names the application from the context and the vault the window shows', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
-    await setVaults(context)
+    await setVaults(host)
 
     expect(bar.find('[data-title]').text()).toBe('numen — Orchard notes')
   })
 
   it('names only the application while the window shows no vault', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
-    context.vault.vaults.setState({ vaults: [ORCHARD, GREENHOUSE], current: null })
+    host.vault.vaults.setState({ vaults: [ORCHARD, GREENHOUSE], current: null })
     await nextTick()
 
     expect(bar.find('[data-title]').text()).toBe('numen')
@@ -316,21 +319,21 @@ describe('the title', () => {
   })
 
   it('switches to the vault chosen from the list the title opens', async () => {
-    const { context, bar } = mountBar()
-    await setVaults(context)
+    const { host, bar } = mountBar()
+    await setVaults(host)
 
     await bar.find('[data-title]').trigger('click')
     await nextTick()
     document.body.querySelectorAll<HTMLElement>('[role="option"]')[1]!.click()
     await nextTick()
 
-    expect(context.vault.vaults.getSwitches()).toStrictEqual(['greenhouse'])
+    expect(host.vault.vaults.getSwitches()).toStrictEqual(['greenhouse'])
   })
 
   it('runs the command of the window that creates a vault from the last row of the list', async () => {
-    const { context, bar } = mountBar()
-    context.ui.commands.setIds(['app:vault.create'])
-    await setVaults(context)
+    const { host, bar } = mountBar()
+    host.ui.commands.setIds(['app:vault.create'])
+    await setVaults(host)
 
     await bar.find('[data-title]').trigger('click')
     await nextTick()
@@ -339,15 +342,15 @@ describe('the title', () => {
     options.at(-1)!.click()
     await nextTick()
 
-    expect(context.ui.commands.getRuns()).toStrictEqual([
+    expect(host.ui.commands.getRuns()).toStrictEqual([
       { command: 'app:vault.create', target: undefined, itemId: undefined },
     ])
-    expect(context.vault.vaults.getSwitches()).toStrictEqual([])
+    expect(host.vault.vaults.getSwitches()).toStrictEqual([])
   })
 
   it('draws the row that creates a vault only while the window runs that command', async () => {
-    const { context, bar } = mountBar()
-    await setVaults(context)
+    const { host, bar } = mountBar()
+    await setVaults(host)
     const labels = () =>
       [...document.body.querySelectorAll('[role="option"]')].map((one) => one.textContent?.trim())
 
@@ -355,28 +358,28 @@ describe('the title', () => {
     await nextTick()
     expect(labels()).not.toContain('Create vault')
 
-    context.ui.commands.setIds(['app:vault.create'])
+    host.ui.commands.setIds(['app:vault.create'])
     await nextTick()
     expect(labels()).toContain('Create vault')
   })
 
   it('switches to nothing when the vault the window shows is chosen', async () => {
-    const { context, bar } = mountBar()
-    await setVaults(context)
+    const { host, bar } = mountBar()
+    await setVaults(host)
 
     await bar.find('[data-title]').trigger('click')
     await nextTick()
     document.body.querySelectorAll<HTMLElement>('[role="option"]')[0]!.click()
     await nextTick()
 
-    expect(context.vault.vaults.getSwitches()).toStrictEqual([])
+    expect(host.vault.vaults.getSwitches()).toStrictEqual([])
   })
 
   it('follows a switch of the vault', async () => {
-    const { context, bar } = mountBar()
-    await setVaults(context)
+    const { host, bar } = mountBar()
+    await setVaults(host)
 
-    await setVaults(context, GREENHOUSE)
+    await setVaults(host, GREENHOUSE)
 
     expect(bar.find('[data-title]').text()).toBe('numen — Greenhouse log')
   })
@@ -384,28 +387,28 @@ describe('the title', () => {
 
 describe('the window buttons', () => {
   it('minimize, maximize and close the window through the context', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
     await getControl(bar, 'minimize').trigger('click')
     await getControl(bar, 'toggle-maximize').trigger('click')
     await getControl(bar, 'close').trigger('click')
 
-    expect(context.ui.window.getActions()).toStrictEqual(['minimize', 'toggleMaximize', 'close'])
+    expect(host.ui.window.getActions()).toStrictEqual(['minimize', 'toggleMaximize', 'close'])
   })
 
   it('toggle maximize on a double click on the free space', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
     await bar.find('[data-title-bar]').trigger('dblclick')
 
-    expect(context.ui.window.getActions()).toStrictEqual(['toggleMaximize'])
+    expect(host.ui.window.getActions()).toStrictEqual(['toggleMaximize'])
   })
 
   it('draw the state of the window and follow its change', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
     expect(getControl(bar, 'toggle-maximize').attributes('title')).toBe('Maximize')
 
-    context.ui.window.setState({ isMaximized: true, isFullscreen: false })
+    host.ui.window.setState({ isMaximized: true, isFullscreen: false })
     await nextTick()
 
     expect(getControl(bar, 'toggle-maximize').attributes('title')).toBe('Restore')
@@ -413,10 +416,10 @@ describe('the window buttons', () => {
   })
 
   it('keep room for the macOS buttons, and none in full screen', async () => {
-    const { context, bar } = mountBar({ platform: 'darwin' })
+    const { host, bar } = mountBar({ platform: 'darwin' })
     expect(bar.find('[data-mac-buttons-inset]').exists()).toBe(true)
 
-    context.ui.window.setState({ isMaximized: false, isFullscreen: true })
+    host.ui.window.setState({ isMaximized: false, isFullscreen: true })
     await nextTick()
 
     expect(bar.find('[data-mac-buttons-inset]').exists()).toBe(false)
@@ -453,8 +456,8 @@ describe('the window buttons by the setting', () => {
 })
 
 describe('the setting hideInFullscreen', () => {
-  const setFullscreen = async (context: MockPluginContext, isFullscreen: boolean) => {
-    context.ui.window.setState({ isMaximized: false, isFullscreen })
+  const setFullscreen = async (host: MockHostServices, isFullscreen: boolean) => {
+    host.ui.window.setState({ isMaximized: false, isFullscreen })
     await nextTick()
   }
 
@@ -465,28 +468,28 @@ describe('the setting hideInFullscreen', () => {
   })
 
   it('draws the bar in full screen while the setting is off', async () => {
-    const { context, bar } = mountBar()
+    const { host, bar } = mountBar()
 
-    await setFullscreen(context, true)
+    await setFullscreen(host, true)
 
     expect(bar.find('[data-title-bar]').exists()).toBe(true)
   })
 
   it('draws no bar in full screen while the setting is on, and draws it again after', async () => {
-    const { context, bar } = mountBar({ settings: { hideInFullscreen: true } })
+    const { host, bar } = mountBar({ settings: { hideInFullscreen: true } })
     expect(bar.find('[data-title-bar]').exists()).toBe(true)
 
-    await setFullscreen(context, true)
+    await setFullscreen(host, true)
     expect(bar.find('[data-title-bar]').exists()).toBe(false)
     expect(bar.html()).not.toContain('title-bar')
 
-    await setFullscreen(context, false)
+    await setFullscreen(host, false)
     expect(bar.find('[data-title-bar]').exists()).toBe(true)
   })
 
   it('draws no bar in a window that opens in full screen with the setting on', () => {
-    const { context, view: component } = activateBar({ settings: { hideInFullscreen: true } })
-    context.ui.window.setState({ isMaximized: false, isFullscreen: true })
+    const { host, view: component } = activateBar({ settings: { hideInFullscreen: true } })
+    host.ui.window.setState({ isMaximized: false, isFullscreen: true })
 
     const bar = mount(component, { attachTo: document.body })
     mounted.push(bar)
@@ -495,8 +498,8 @@ describe('the setting hideInFullscreen', () => {
   })
 
   it('follows a change of the setting in full screen', async () => {
-    const { context, bar } = mountBar()
-    await setFullscreen(context, true)
+    const { context, host, bar } = mountBar()
+    await setFullscreen(host, true)
 
     context.setSetting('hideInFullscreen', true)
     await nextTick()
@@ -530,15 +533,14 @@ describe('the bar in a window that offers no slots, vaults or window', () => {
   it('draws the title of the application and no entry', () => {
     const registerSlotView = vi.fn(() => ({ dispose: () => undefined }))
     const mock = createMockPluginContext()
-    const { window: _window, ...ui } = mock.ui
-    const { vaults: _vaults, ...vault } = mock.vault
+    const host = createMockHostServices()
+    const { window: _window, ...ui } = host.ui
+    const { vaults: _vaults, ...vault } = host.vault
     const context: PluginContext = {
       ...mock,
       register: { ...mock.register, slotView: registerSlotView },
-      ui,
-      vault,
     }
-    activate(context)
+    activate(context, { ...host, ui, vault })
     const [[registration]] = registerSlotView.mock.calls as unknown as [[SlotViewRegistration]]
     const bar = mount(registration.component as Component)
     mounted.push(bar)
@@ -550,7 +552,7 @@ describe('the bar in a window that offers no slots, vaults or window', () => {
 
 describe('removing the bar', () => {
   it('stops watching the slots, the vaults and the window', async () => {
-    const { context, view: component } = activateBar()
+    const { host, view: component } = activateBar()
     const disposed: string[] = []
     const track = <T extends { dispose: () => void }>(name: string, one: T): T => ({
       ...one,
@@ -559,8 +561,8 @@ describe('removing the bar', () => {
         one.dispose()
       },
     })
-    const { slots, window } = context.ui
-    const { vaults } = context.vault
+    const { slots, window } = host.ui
+    const { vaults } = host.vault
     const watchEntries = slots.watchEntries
     const watchVaults = vaults.watch
     const watchWindow = window.watch

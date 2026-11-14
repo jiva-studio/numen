@@ -22,12 +22,12 @@ describe('a window that names its target', () => {
     const cards = createPluginHost(createDeps({ target: 'desktop.flashcards' }))
     const editor = createPluginHost(createDeps({ target: 'desktop.editor' }))
 
-    expect(cards.lifecycle.createContext('org.example.ledger', LEDGER).plugin.target).toBe(
+    expect(cards.lifecycle.createContext('org.example.ledger', LEDGER).plugin.identity.target).toBe(
       'desktop.flashcards',
     )
-    expect(editor.lifecycle.createContext('org.example.ledger', LEDGER).plugin.target).toBe(
-      'desktop.editor',
-    )
+    expect(
+      editor.lifecycle.createContext('org.example.ledger', LEDGER).plugin.identity.target,
+    ).toBe('desktop.editor')
   })
 })
 
@@ -65,7 +65,7 @@ describe('a window that opens no tab for a plugin', () => {
       createMockManifest('org.example.ledger', { name: 'Ledger', readers: ['document'] }),
     )
 
-    context.register.reader?.({ id: 'document', title: 'Document', component: {} } as never)
+    context.plugin.register.reader?.({ id: 'document', title: 'Document', component: {} } as never)
 
     expect(registerKind).toHaveBeenCalledOnce()
   })

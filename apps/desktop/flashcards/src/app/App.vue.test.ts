@@ -7,6 +7,7 @@ import {
   VAULT_SUMMARY,
   getPluginSheet,
   getPluginStyle,
+  type HostServices,
   type PluginContext,
 } from '@numen/plugin-loader'
 import type { VaultRow } from '@numen/workbench'
@@ -65,17 +66,17 @@ const VAULTS: readonly VaultRow[] = [
   { id: 'words', name: 'Words', path: '/vaults/Words' },
 ]
 
-const activateCards = (context: {
-  register: { tabKind: (one: unknown) => void; view: (one: unknown) => void }
-  tabs: { close?: (id: string) => void }
-}) => {
-  context.register.tabKind({
+const activateCards = (
+  plugin: { register: { tabKind: (one: unknown) => void; view: (one: unknown) => void } },
+  host: { tabs: { close?: (id: string) => void } },
+) => {
+  plugin.register.tabKind({
     kind: 'review',
     component: defineComponent({
       props: { state: { type: Object, required: true } },
       setup: (props) => () => {
         const state = props.state as { vault: string; id: string }
-        return h('button', { class: 'review', onClick: () => context.tabs.close?.(state.id) }, [
+        return h('button', { class: 'review', onClick: () => host.tabs.close?.(state.id) }, [
           `Review of ${state.vault}`,
         ])
       },
@@ -84,7 +85,7 @@ const activateCards = (context: {
     open: (vault: string, id: string) => ({ vault, id }),
     onKeyPress: (_: unknown, event: KeyboardEvent) => event.key === 'Escape',
   })
-  context.register.view({
+  plugin.register.view({
     capability: VAULT_SUMMARY,
     component: defineComponent({
       props: { context: { type: Object, required: true } },
@@ -220,20 +221,24 @@ describe('App', () => {
               return new Response(JSON.stringify({ ...MANIFEST, id: 'md.numen.closing' }))
             }) as unknown as typeof fetch,
             dynamicImport: async () => ({
-              activate: (ctx: {
-                vault: {
-                  relations?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
-                }
-                plugin: { subscriptions: { dispose: () => void }[] }
-                register: { tabKind: (one: unknown) => void }
-              }) => {
-                relations = ctx.vault.relations
-                ctx.plugin.subscriptions.push({
+              activate: (
+                plugin: {
+                  identity: { subscriptions: { dispose: () => void }[] }
+                  register: { tabKind: (one: unknown) => void }
+                },
+                host: {
+                  vault: {
+                    relations?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
+                  }
+                },
+              ) => {
+                relations = host.vault.relations
+                plugin.identity.subscriptions.push({
                   dispose: () => {
                     throw new Error('close failure')
                   },
                 })
-                ctx.register.tabKind({
+                plugin.register.tabKind({
                   kind: 'review',
                   component: {},
                   placement: { pane: 'main', order: 0 },
@@ -595,27 +600,27 @@ const createBarPlugin = (pluginId: string) => ({
     permissions: ['vault:read', 'vault:write', 'vault:manage'],
     contributes: { slots: [{ slot: 'titleBar', view: 'bar' }] },
   },
-  activate: (context: PluginContext) => {
-    context.register.slotView({
+  activate: (plugin: PluginContext, host: HostServices) => {
+    plugin.register.slotView({
       id: 'bar',
       component: defineComponent({
         setup: () => {
-          const vaults = shallowRef(context.vault.vaults!.getState())
-          context.vault.vaults!.watch((state) => (vaults.value = state))
+          const vaults = shallowRef(host.vault.vaults!.getState())
+          host.vault.vaults!.watch((state) => (vaults.value = state))
           return () =>
             h(
               'header',
               {
                 'data-title-bar': pluginId,
-                'data-maximized': String(context.ui.window!.getState().isMaximized),
+                'data-maximized': String(host.ui.window!.getState().isMaximized),
               },
               [
-                h('span', { 'data-title': '' }, context.plugin.app.name),
+                h('span', { 'data-title': '' }, plugin.identity.app.name),
                 h('span', { 'data-vault': '' }, vaults.value.current?.name ?? ''),
                 h('span', { 'data-vaults': '' }, vaults.value.vaults.map((one) => one.id).join()),
                 h('button', {
                   'data-switch': 'words',
-                  onClick: () => context.vault.vaults!.switchTo('words'),
+                  onClick: () => host.vault.vaults!.switchTo('words'),
                 }),
               ],
             )
