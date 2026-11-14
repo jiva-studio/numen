@@ -1,4 +1,4 @@
-module github.com/jiva-studio/numen/plugins/views-todos
+module github.com/jiva-studio/numen/plugins/todos
 
 go 1.26.11
 

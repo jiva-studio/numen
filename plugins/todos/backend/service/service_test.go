@@ -14,9 +14,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/todo"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/usecase/index"
+	"github.com/jiva-studio/numen/plugins/todos/backend/api"
+	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
+	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
 )
 
 const today = "2026-11-14"

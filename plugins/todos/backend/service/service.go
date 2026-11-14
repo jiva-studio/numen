@@ -9,10 +9,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/api"
-	hostadapter "github.com/jiva-studio/numen/plugins/views-todos/backend/internal/adapter/host"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/usecase/index"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/wire/todos"
+	"github.com/jiva-studio/numen/plugins/todos/backend/api"
+	hostadapter "github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/host"
+	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
+	"github.com/jiva-studio/numen/plugins/todos/backend/wire/todos"
 )
 
 const (

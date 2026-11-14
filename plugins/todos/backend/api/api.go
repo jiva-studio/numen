@@ -3,7 +3,7 @@
 package api
 
 // Service is the service name the manifest declares.
-const Service = "md.numen.views.todos"
+const Service = "md.numen.todos"
 
 const (
 	MethodGetSummary   = "GetSummary"

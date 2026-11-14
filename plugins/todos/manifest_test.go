@@ -42,7 +42,7 @@ func TestTheManifestDeclaresTheEditorTargetTheReadPermissionAndTheService(t *tes
 	if !slices.Equal(shape.Permissions, []string{"vault:read"}) {
 		t.Errorf("permissions = %v", shape.Permissions)
 	}
-	if !slices.Equal(shape.Services, []string{"md.numen.views.todos"}) {
+	if !slices.Equal(shape.Services, []string{"md.numen.todos"}) {
 		t.Errorf("services = %v", shape.Services)
 	}
 }

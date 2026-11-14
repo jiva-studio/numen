@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/todo"
+	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 )
 
 const today = "2026-11-14"

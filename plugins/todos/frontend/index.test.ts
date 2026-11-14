@@ -26,7 +26,7 @@ const setup = () => {
     files: { open },
     messages: { showError: vi.fn() },
   } as unknown as WorkspaceHost
-  const context = createMockPluginContext({ pluginId: 'md.numen.views.todos', workspace })
+  const context = createMockPluginContext({ pluginId: 'md.numen.todos', workspace })
   activate(context, { api: fake.api, timer: clock.timer })
   return { context, fake, clock, open }
 }
@@ -49,7 +49,7 @@ describe('the todos frontend', () => {
   })
 
   it('refuses to activate in a window that offers no workspace', () => {
-    const context = createMockPluginContext({ pluginId: 'md.numen.views.todos' })
+    const context = createMockPluginContext({ pluginId: 'md.numen.todos' })
 
     expect(() =>
       activate(context, { api: createFakeApi().api, timer: createFakeTimer().timer }),

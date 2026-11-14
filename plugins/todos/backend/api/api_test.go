@@ -89,7 +89,7 @@ func TestEveryMessageMatchesItsFixture(t *testing.T) {
 }
 
 func TestTheServiceNameIsTheOneTheManifestDeclares(t *testing.T) {
-	if Service != "md.numen.views.todos" {
+	if Service != "md.numen.todos" {
 		t.Errorf("Service = %q", Service)
 	}
 }

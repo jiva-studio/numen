@@ -14,7 +14,7 @@ import type {
 } from '../types'
 
 /** The service name the manifest declares. */
-export const SERVICE = 'md.numen.views.todos'
+export const SERVICE = 'md.numen.todos'
 
 /** The request and response of each method by name. */
 export interface Methods {

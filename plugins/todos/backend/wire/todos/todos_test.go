@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/filter"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/todo"
+	"github.com/jiva-studio/numen/plugins/todos/backend/api"
+	"github.com/jiva-studio/numen/plugins/todos/backend/filter"
+	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 )
 
 func TestEncodeTaskCopiesEveryFieldAndEncodesEmptyListsAsArrays(t *testing.T) {

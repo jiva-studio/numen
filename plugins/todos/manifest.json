@@ -1,5 +1,5 @@
 {
-  "id": "md.numen.views.todos",
+  "id": "md.numen.todos",
   "name": "Todos",
   "version": "2026.11.1",
   "protocol": 1,
@@ -13,7 +13,7 @@
     ]
   },
   "permissions": ["vault:read"],
-  "services": ["md.numen.views.todos"],
+  "services": ["md.numen.todos"],
   "settings": [
     {
       "key": "ignoredFolders",
@@ -24,6 +24,6 @@
       "default": ""
     }
   ],
-  "backend": { "entrypoint": "bin/views-todos" },
+  "backend": { "entrypoint": "bin/todos" },
   "frontend": {}
 }

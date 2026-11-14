@@ -2,9 +2,9 @@
 package todos
 
 import (
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/api"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/filter"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/todo"
+	"github.com/jiva-studio/numen/plugins/todos/backend/api"
+	"github.com/jiva-studio/numen/plugins/todos/backend/filter"
+	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 )
 
 // EncodeTask returns the message of a task. Its lists are never nil, so they encode as [].

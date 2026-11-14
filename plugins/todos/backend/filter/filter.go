@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/todo"
+	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 )
 
 // DueFilter says which due dates a filter accepts. The empty value accepts any.

@@ -12,8 +12,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/filter"
-	"github.com/jiva-studio/numen/plugins/views-todos/backend/todo"
+	"github.com/jiva-studio/numen/plugins/todos/backend/filter"
+	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 )
 
 const today = "2026-11-14"

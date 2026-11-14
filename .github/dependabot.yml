@@ -38,13 +38,13 @@ updates:
       - /plugins/engines-transcription
       - /plugins/readers-epub
       - /plugins/readers-pdf
+      - /plugins/todos
       - /plugins/tools-index-stats
       - /plugins/tools-media-importer
       - /plugins/tools-proofreading
       - /plugins/tools-search-relevance
       - /plugins/tools-updater
       - /plugins/views-flashcards-studio
-      - /plugins/views-todos
     schedule:
       interval: monthly
     cooldown:
