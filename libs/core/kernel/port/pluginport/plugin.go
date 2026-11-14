@@ -41,7 +41,7 @@ type PluginLister interface {
 	PluginEnablement
 }
 
-// PluginEnablement tells whether the settings of a plugin leave it enabled.
+// PluginEnablement reports whether the settings of a plugin leave it enabled.
 type PluginEnablement interface {
 	// IsPluginEnabled reports whether the settings of the plugin leave it enabled.
 	IsPluginEnabled(pluginID string) bool
@@ -75,7 +75,7 @@ type PluginFailures interface {
 	PluginSuspensions
 }
 
-// PluginSuspensions tells whether the host holds a plugin suspended.
+// PluginSuspensions reports whether the host holds a plugin suspended.
 type PluginSuspensions interface {
 	// IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended.
 	IsPluginSuspended(pluginID string) bool
