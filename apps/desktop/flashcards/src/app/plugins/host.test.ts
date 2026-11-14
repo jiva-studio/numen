@@ -1,8 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, effectScope, h, onScopeDispose } from 'vue'
-import { CONVERSATION, VAULT_SUMMARY } from '@numen/plugin-loader'
+import { CONVERSATION, NOTE_EDITOR, VAULT_SUMMARY } from '@numen/plugin-loader'
 import { createMockManifest } from '@numen/core-client/testing'
-import type { ConnectionHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
+import type {
+  BackgroundTaskHost,
+  ConnectionHost,
+  VaultsHost,
+  WindowHost,
+} from '@numen/plugin-loader'
 import { TARGET } from '@/shared/lib/window'
 import { createNoticeQueue } from '@numen/workbench'
 import { createWindowCommands } from '@/entities/plugin'
@@ -55,6 +60,14 @@ const createMockWindowHost = (): WindowHost => ({
   minimize: () => undefined,
   toggleMaximize: () => undefined,
   close: () => undefined,
+})
+
+const createMockBackgroundTaskHost = (): BackgroundTaskHost => ({
+  watch: () => NOTHING,
+  cancel: async () => undefined,
+  retry: () => undefined,
+  dismiss: () => undefined,
+  runAction: async () => undefined,
 })
 
 const withVault = (id: string) =>
@@ -155,6 +168,7 @@ describe('createShellHost', () => {
       commands: createWindowCommands(),
       vaults: createMockVaultsHost(),
       window: createMockWindowHost(),
+      backgroundTasks: createMockBackgroundTaskHost(),
     }
     const { host } = createShellHost(services)
 
@@ -165,6 +179,8 @@ describe('createShellHost', () => {
     expect(cards.vault.vaults?.getState()).toStrictEqual(services.vaults.getState())
     expect(bar.ui.window?.getState()).toStrictEqual(services.window.getState())
     expect(cards.ui.commands?.getIds()).toStrictEqual(services.commands.getIds())
+    expect(cards.work.backgroundTasks?.watch(() => undefined)).toBe(NOTHING)
+    expect(cards.work.connections).toBeDefined()
   })
 
   it('refuses the vaults to a plugin without vault:read and switching to one without vault:manage', async () => {
@@ -190,6 +206,7 @@ describe('createShellHost', () => {
 
     expect(context.vault.vaults).toBeUndefined()
     expect(context.ui.window).toBeUndefined()
+    expect(context.work.backgroundTasks).toBeUndefined()
   })
 
   it('takes the bar of a plugin away once it is disposed, whatever it does to its subscriptions', () => {
@@ -463,6 +480,7 @@ describe('the tab of the window', () => {
 
     view.dispose()
     expect(row.textContent).toBe('')
+    expect(() => mountView(NOTE_EDITOR, row, {})).toThrowError(TARGET)
   })
 })
 

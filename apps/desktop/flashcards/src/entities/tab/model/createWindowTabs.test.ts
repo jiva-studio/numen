@@ -1,7 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { onScopeDispose } from 'vue'
 import type { AnyTabKind } from '@numen/plugin-loader'
+import { findFrontKind } from '../lib/tab'
 import { createWindowTabs } from './createWindowTabs'
+
+vi.mock('../lib/tab', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/tab')>()
+  return {
+    ...actual,
+    findFrontKind: vi.fn(actual.findFrontKind),
+  }
+})
 
 const createKind = (kind: string, pluginId: string, order?: number) => {
   const released: string[] = []
@@ -53,10 +62,54 @@ describe('createWindowTabs', () => {
   })
 
   it('opens nothing while no kind is in front', () => {
+    vi.mocked(findFrontKind).mockClear()
     const tabs = createWindowTabs()
 
     tabs.openTab('physics')
 
+    expect(findFrontKind).toHaveBeenCalledWith([])
+    expect(tabs.tab.value).toBeNull()
+  })
+
+  it('closes a stateless tab or a kind without destroy handlers without calling onDestroy', () => {
+    const tabs = createWindowTabs()
+    const onDestroy = vi.fn()
+    const dropStateless = tabs.registerKind({
+      kind: 'stateless',
+      pluginId: 'md.numen.a',
+      pane: {},
+      display: { placement: { pane: 'main', order: 0 } },
+      open: () => undefined,
+      events: { onDestroy },
+    })
+
+    tabs.openTab('physics')
+    tabs.closeTab()
+    expect(onDestroy).not.toHaveBeenCalled()
+    dropStateless()
+
+    const dropNoEvents = tabs.registerKind({
+      kind: 'bare',
+      pluginId: 'md.numen.a',
+      pane: {},
+      display: { placement: { pane: 'main', order: 0 } },
+      open: () => ({}),
+    })
+    tabs.openTab('physics')
+    tabs.closeTab()
+    expect(tabs.tab.value).toBeNull()
+    dropNoEvents()
+
+    tabs.registerKind({
+      kind: 'empty-events',
+      pluginId: 'md.numen.a',
+      pane: {},
+      display: { placement: { pane: 'main', order: 0 } },
+      open: () => ({}),
+      events: {},
+    })
+    tabs.openTab('physics')
+    tabs.closeTab()
     expect(tabs.tab.value).toBeNull()
   })
 

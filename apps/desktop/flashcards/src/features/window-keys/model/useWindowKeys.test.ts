@@ -43,9 +43,11 @@ describe('useWindowKeys', () => {
     expect(openCalls).toHaveBeenCalledExactlyOnceWith('physics')
     expect(tabs.tabVault.value).toBe('physics')
 
+    tabs.closeTab()
     wrapper.unmount()
     press('a')
     expect(openCalls).toHaveBeenCalledTimes(1)
+    expect(tabs.tab.value).toBeNull()
   })
 
   it('opens nothing while no plugin registered a front kind', () => {
