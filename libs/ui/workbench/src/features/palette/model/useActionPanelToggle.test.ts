@@ -11,7 +11,6 @@ import { revealInGroups } from './revealInGroups'
 import { useActionPanel } from './useActionPanel'
 import type { PaletteAction } from '../lib/item'
 
-// A row of the panel is the component of an action, which exposes its element.
 const createRow = (element: HTMLElement | null): ComponentPublicInstance =>
   ({ element }) as Partial<ComponentPublicInstance> as ComponentPublicInstance
 
